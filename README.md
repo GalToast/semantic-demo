@@ -1,0 +1,26 @@
+# Semantic Search Vector Explorer
+
+An interactive 3D visualization and exploration tool for semantic vector embeddings, built with Three.js.
+
+## Overview
+
+This project provides a cinematic, interactive environment to navigate and analyze high-dimensional semantic search vectors in a 3D space. It demonstrates advanced data visualization techniques, including particle systems, flow fields, and responsive 3D typography, designed to make complex vector spaces intuitive and visually engaging.
+
+## Features
+
+- **Interactive 3D Navigation:** Pan, zoom, and rotate through a dynamically generated vector constellation.
+- **Semantic Clustering:** Visual grouping and color-coding of semantically related data points based on embedded proximity.
+- **Cinematic Camera Choreography:** Smooth, orchestrated camera movements that guide the user through the data landscape.
+- **High-Performance Rendering:** Built on Three.js for smooth web-based 3D graphics, even with large datasets.
+- **Responsive UI:** A tailored heads-up display (HUD) that adapts to desktop and mobile form factors.
+
+## Architecture Highlights
+
+- **Three.js Core:** Utilizes custom shaders and instanced rendering for optimal performance.
+- **Vector Mapping:** Pre-computed semantic threads are loaded and visualized to represent data relationships.
+- **Dynamic Physics:** Custom particle physics and glow effects create a "biofield" visual aesthetic.
+- **Semantic Backend:** The `backend/` directory contains the Python pipeline used to generate and serve the embeddings. It leverages Qwen 3.6+, LanceDB, and sentence-transformers to build the high-dimensional vector space underlying the visualization.
+
+## Demo
+
+This project was built to be deployed on the web. The entry point is `index.html`. It loads `semantic-demo.css` and the associated `.dat` files for the structural mappings.
