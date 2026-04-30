@@ -4,6 +4,10 @@ Interactive Three.js explorer for semantic vector spaces.
 
 This project turns embedding relationships into a browser-based visual surface: clustered nodes, motion, search focus, responsive HUD controls, and a backend artifact lane for the semantic data. It is meant to make retrieval systems inspectable instead of invisible.
 
+![Semantic demo overview](docs/assets/semantic-demo-overview.png)
+
+![Semantic search results](docs/assets/semantic-search-results.png)
+
 ## Overview
 
 This project provides a cinematic, interactive environment to navigate and analyze high-dimensional semantic search vectors in a 3D space. It demonstrates advanced data visualization techniques, including particle systems, flow fields, and responsive 3D typography, designed to make complex vector spaces intuitive and visually engaging.
@@ -26,6 +30,14 @@ This project provides a cinematic, interactive environment to navigate and analy
 ## Demo
 
 This project was built to be deployed on the web. The entry point is `index.html`. It loads `semantic-demo.css` and the associated `.dat` files for the structural mappings.
+
+## Proof Artifacts
+
+| Artifact | What it shows |
+| --- | --- |
+| `index.html` | Full browser experience and interaction model |
+| `semantic-demo.css` | Responsive UI, HUD styling, search/focus states, and motion polish |
+| `backend/` | Semantic artifact generation path behind the visualization |
 
 ## Recruiter Reading Guide
 
