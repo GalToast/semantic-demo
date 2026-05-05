@@ -15320,7 +15320,24 @@
                 updateLegendGuideState();
             }
 
+            function semanticLaneApiAvailable() {
+                const host = window.location.hostname || '';
+                return host === 'mccullough.cloud' || host.endsWith('.mccullough.cloud') || /\.php$/i.test(window.location.pathname);
+            }
+
             async function fetchSemanticLaneHealth({ warm = false } = {}) {
+                if (!semanticLaneApiAvailable()) {
+                    return {
+                        ok: true,
+                        state: 'healthy',
+                        static_mode: true,
+                        provenance: {
+                            label: 'Static demo mode',
+                            detail: 'PHP semantic lane health checks are disabled for local and static previews.'
+                        }
+                    };
+                }
+
                 const response = await fetch(`api.php?action=semantic_lane_health&warm=${warm ? '1' : '0'}`, {
                     method: 'GET',
                     headers: { Accept: 'application/json' },
