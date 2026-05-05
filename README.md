@@ -31,6 +31,10 @@ This project provides an interactive environment for exploring high-dimensional 
 
 This project was built to be deployed on the web. The entry point is `index.html`. It loads `semantic-demo.css` and the associated `.dat` files for the structural mappings.
 
+## Data Boundary
+
+The public demo uses a compact business-record payload derived from public Montgomery County business records and generated semantic artifacts. It is intended as a corpus-inspection demo, not a private contact database. Private lead notes, outreach logs, mailbox data, and operational CRM state are not included.
+
 ## Proof Artifacts
 
 | Artifact | What it shows |
