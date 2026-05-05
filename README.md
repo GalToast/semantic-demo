@@ -25,7 +25,7 @@ This project provides an interactive environment for exploring high-dimensional 
 - **Three.js Core:** Utilizes custom shaders and instanced rendering for optimal performance.
 - **Vector Mapping:** `data.dat` and the semantic thread artifacts are loaded to represent corpus records and retrieval relationships.
 - **Dynamic Physics:** Custom particle physics and glow effects create a "biofield" visual aesthetic.
-- **Semantic Backend:** The `backend/` directory contains the Python pipeline used to generate and serve embedding artifacts. It supports local Qwen embedding models, LanceDB, and sentence-transformers so the visualization is tied to a real retrieval workflow rather than static decoration.
+- **Semantic Backend:** The sanitized `backend/` directory contains the public Python surface used to build, prepare, restore, and serve semantic search artifacts. It keeps the portfolio repo focused on retrieval infrastructure rather than unrelated local operations.
 
 ## Demo
 
@@ -38,7 +38,7 @@ This project was built to be deployed on the web. The entry point is `index.html
 | `index.html` | Full browser experience and interaction model |
 | `data.dat` | Compact public record payload generated from semantic thread artifacts |
 | `semantic-demo.css` | Responsive UI, HUD styling, search/focus states, and motion polish |
-| `backend/` | Semantic artifact generation path behind the visualization |
+| `backend/` | Sanitized semantic artifact generation and local search service path behind the visualization |
 
 ## Recruiter Reading Guide
 

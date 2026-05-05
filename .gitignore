@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local LeadOps/outreach/backend operations are not part of the public
+# semantic-demo portfolio surface. Keep only the sanitized semantic artifact
+# generation and serving scripts tracked under backend/.
+backend/*
+!backend/bake_galaxy.py
+!backend/benchmark_embedding_models.py
+!backend/build_public_semantic_index.py
+!backend/build_semantic_threads_ui.py
+!backend/compare_semantic_profiles.py
+!backend/enrich_semantic_demo_taxonomy.py
+!backend/prepare_semantic_profile_db.py
+!backend/public_semantic_search_service.py
+!backend/restore_semantic_vectors.py
+!backend/semantic_search.py
+!backend/README.md
