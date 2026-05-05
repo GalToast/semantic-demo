@@ -8,6 +8,12 @@ This project turns local-business embeddings into a browser-based review surface
 
 ![Semantic search results](docs/assets/semantic-search-results.png)
 
+## Walkthrough
+
+[![Semantic demo walkthrough](docs/video/semantic-demo-walkthrough-poster.jpg)](docs/video/semantic-demo-walkthrough.mp4)
+
+Unmute for narration. This 61-second walkthrough shows the core flow: county context, need-based search, a focused semantic neighborhood, map handoff, and return to the same network position.
+
 ## Overview
 
 This project provides an interactive environment for exploring high-dimensional semantic search over a real local-business corpus. It combines a compact public record payload with generated semantic-neighbor artifacts so retrieval behavior can be inspected in the browser instead of hidden behind a text-only search box.
@@ -24,12 +30,12 @@ This project provides an interactive environment for exploring high-dimensional 
 
 - **Three.js Core:** Utilizes custom shaders and instanced rendering for optimal performance.
 - **Vector Mapping:** `data.dat` and the semantic thread artifacts are loaded to represent corpus records and retrieval relationships.
-- **Dynamic Physics:** Custom particle physics and glow effects create a "biofield" visual aesthetic.
+- **Relationship Rendering:** Instanced particles, proximity-based glow, and routed connection lines make semantic neighborhoods inspectable.
 - **Semantic Backend:** The sanitized `backend/` directory contains the public Python surface used to build, prepare, restore, and serve semantic search artifacts. It keeps the portfolio repo focused on retrieval infrastructure rather than unrelated local operations.
 
 ## Demo
 
-This project was built to be deployed on the web. The entry point is `index.html`. It loads `semantic-demo.css` and the associated `.dat` files for the structural mappings.
+This project was built as a working browser prototype. The entry point is `index.html`. It loads `semantic-demo.css` and the associated `.dat` files for the structural mappings.
 
 ## Data Boundary
 
@@ -43,6 +49,7 @@ The public demo uses a compact business-record payload derived from public Montg
 | `data.dat` | Compact public record payload generated from semantic thread artifacts |
 | `semantic-demo.css` | Responsive UI, HUD styling, search/focus states, and motion polish |
 | `backend/` | Sanitized semantic artifact generation and local search service path behind the visualization |
+| `docs/video/semantic-demo-walkthrough.mp4` | Guided 61-second walkthrough with narration and the Motion409 v5 neighborhood proof frame |
 
 ## Recruiter Reading Guide
 
