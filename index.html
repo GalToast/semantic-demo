@@ -12619,7 +12619,7 @@
                     hasSearch ? `"${currentSearchSummary.query}"` : null,
                     activeClusterFilter !== null ? `${describeCluster(activeClusterFilter)} filter` : null,
                     semanticLaneState === 'healthy'
-                        ? 'Lane healthy'
+                        ? 'Ready'
                         : semanticLaneState === 'reconnecting'
                           ? 'Lane reconnecting'
                           : semanticLaneState === 'degraded'
@@ -12655,7 +12655,7 @@
                     chipRowEl.innerHTML = model.chips
                         .map((chip) => {
                             let extraClass = '';
-                            if (chip === 'Lane healthy') extraClass = ' lane-healthy';
+                            if (chip === 'Ready') extraClass = ' lane-healthy';
                             if (chip === 'Lane reconnecting') extraClass = ' lane-reconnecting';
                             if (chip === 'Lane degraded') extraClass = ' lane-degraded';
                             return `<span class="legend-chip${extraClass}">${chip}</span>`;
@@ -15301,7 +15301,7 @@
                 let label = 'Checking lane';
                 let title = 'Checking semantic lane health.';
                 if (state === 'healthy') {
-                    label = options.label || 'Lane healthy';
+                    label = options.label || 'Ready';
                     title = options.title || 'Semantic lane is healthy and ready.';
                 } else if (state === 'reconnecting') {
                     label = options.label || `${scope.label} reconnecting`;
@@ -15377,7 +15377,7 @@
                         cooldown_wait_until: null
                     });
                     setSemanticLaneUiState('healthy', {
-                        label: options.label || provenanceLabel || 'Lane healthy',
+                        label: options.label || provenanceLabel || 'Ready',
                         title: options.title || provenanceDetail || 'Semantic lane is healthy and ready.'
                     });
                     return;
