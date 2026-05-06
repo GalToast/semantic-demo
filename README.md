@@ -39,6 +39,8 @@ This project provides an interactive environment for exploring high-dimensional 
 
 This project was built as a working browser prototype. The default demo runs from static files; the tracked backend scripts document how the semantic artifacts are generated and can serve local search during development. For local review, run a simple web server and open the served `index.html`; direct `file://` loading can block the `.dat` artifact fetches in some browsers.
 
+The hosted `mccullough.cloud` URL is the polished reviewer surface. It wraps the same demo with a recruiter-facing case study and deployment assets, while this repository stays focused on the portable code, public data artifact, and backend generation path.
+
 ```bash
 python -m http.server 5190
 ```
