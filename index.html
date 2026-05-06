@@ -23,10 +23,10 @@
             name="twitter:description"
             content="Explore Montgomery County businesses as a living semantic field with search trails, map anchors, and neighborhood context."
         />
-        <meta property="og:image" content="https://mccullough.cloud/semantic-demo/og-preview.png" />
+        <meta property="og:image" content="https://mccullough.cloud/semantic-demo/recruiter-assets/semantic-demo-case-study-og-motion410-clean.png" />
         <meta property="og:image:width" content="1024" />
         <meta property="og:image:height" content="1024" />
-        <meta name="twitter:image" content="https://mccullough.cloud/semantic-demo/og-preview.png" />
+        <meta name="twitter:image" content="https://mccullough.cloud/semantic-demo/recruiter-assets/semantic-demo-case-study-og-motion410-clean.png" />
         <link rel="canonical" href="https://mccullough.cloud/semantic-demo/vector-explorer-polished.html" />
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
@@ -4302,8 +4302,8 @@
             let searchRequestSequence = 0;
             let semanticGuideAbortController = null;
             let semanticGuideRequestSequence = 0;
-            let semanticGemmaStoryAbortController = null;
-            let semanticGemmaStoryRequestSequence = 0;
+            let semanticTrailStoryAbortController = null;
+            let semanticTrailStoryRequestSequence = 0;
             let currentSemanticGuide = null;
             let summaryCardTypeToken = 0;
             let searchAnchorIndex = null;
@@ -7352,8 +7352,6 @@
                         console.info('Loaded semantic thread artifact.', {
                             artifact: semanticThreadArtifactName,
                             records: semanticNeighborMapByLeadId.size,
-                            backend: bundle?.model?.backend,
-                            embedder: bundle?.model?.embedder,
                             uiNeighborLimit: bundle?.meta?.ui_neighbor_limit ?? null
                         });
                         semanticThreadsStatus = semanticNeighborMapByLeadId.size > 0 ? 'ready' : 'failed';
@@ -14330,7 +14328,7 @@
             function resetSummaryCardContent(elements, settings) {
                 elements.card.classList.remove('is-synthesizing');
                 elements.textEl.textContent = '';
-                hideSummaryGemmaStoryNote();
+                hideSummaryTrailStoryNote();
                 elements.suggestions.classList.remove('active');
                 renderSummarySuggestions(elements.suggestions, settings.suggestions);
                 if (elements.titleEl) elements.titleEl.textContent = settings.title;
@@ -14385,22 +14383,22 @@
 
             function hideSummaryCard() {
                 summaryCardTypeToken += 1;
-                hideSummaryGemmaStoryNote();
+                hideSummaryTrailStoryNote();
                 setSummaryCardVisibility(getSummaryCardElements(), false);
             }
 
-            function getSummaryGemmaStoryElements() {
-                const note = document.getElementById('summary-gemma-story');
+            function getSummaryTrailStoryElements() {
+                const note = document.getElementById('summary-trail-story');
                 return {
                     note,
-                    text: document.getElementById('summary-gemma-story-text'),
-                    source: document.getElementById('summary-gemma-story-source'),
+                    text: document.getElementById('summary-trail-story-text'),
+                    source: document.getElementById('summary-trail-story-source'),
                     isReady: !!note
                 };
             }
 
-            function hideSummaryGemmaStoryNote() {
-                const elements = getSummaryGemmaStoryElements();
+            function hideSummaryTrailStoryNote() {
+                const elements = getSummaryTrailStoryElements();
                 if (!elements.isReady) return;
                 elements.note.classList.add('hidden');
                 elements.note.setAttribute('aria-hidden', 'true');
@@ -14408,28 +14406,27 @@
                 if (elements.source) elements.source.textContent = '';
             }
 
-            function formatSummaryGemmaStoryAge(seconds) {
+            function formatSummaryTrailStoryAge(seconds) {
                 if (seconds < 60) return `${seconds}s`;
                 if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
                 if (seconds < 86400) return `${Math.round(seconds / 3600)}h`;
                 return `${Math.round(seconds / 86400)}d`;
             }
 
-            function formatGemmaStorySource(story = {}) {
-                const source = story.source || 'Gemma 4 E4B';
+            function formatTrailStorySource(story = {}) {
                 if (Number.isFinite(Number(story.cache_age_seconds))) {
                     const age = Math.max(0, Math.round(Number(story.cache_age_seconds)));
-                    return `${source} cached ${formatSummaryGemmaStoryAge(age)} ago`;
+                    return `Cached field note ${formatSummaryTrailStoryAge(age)} ago`;
                 }
-                return `${source} cached field note`;
+                return 'Cached field note';
             }
 
-            function showSummaryGemmaStoryNote(story = {}) {
-                const elements = getSummaryGemmaStoryElements();
+            function showSummaryTrailStoryNote(story = {}) {
+                const elements = getSummaryTrailStoryElements();
                 const text = String(story.story || '').trim();
                 if (!elements.isReady || !text) return;
                 if (elements.text) elements.text.textContent = text;
-                if (elements.source) elements.source.textContent = formatGemmaStorySource(story);
+                if (elements.source) elements.source.textContent = formatTrailStorySource(story);
                 elements.note.classList.remove('hidden');
                 elements.note.setAttribute('aria-hidden', 'false');
             }
@@ -14439,12 +14436,12 @@
                     semanticGuideAbortController.abort();
                     semanticGuideAbortController = null;
                 }
-                if (semanticGemmaStoryAbortController) {
-                    semanticGemmaStoryAbortController.abort();
-                    semanticGemmaStoryAbortController = null;
+                if (semanticTrailStoryAbortController) {
+                    semanticTrailStoryAbortController.abort();
+                    semanticTrailStoryAbortController = null;
                 }
                 semanticGuideRequestSequence += 1;
-                semanticGemmaStoryRequestSequence += 1;
+                semanticTrailStoryRequestSequence += 1;
                 currentSemanticGuide = null;
                 hideSummaryCard();
 
@@ -14489,8 +14486,8 @@
                 return result;
             }
 
-            async function fetchSemanticGemmaStory(payload, signal) {
-                const response = await fetch('api.php?action=semantic_gemma_story', {
+            async function fetchSemanticTrailStory(payload, signal) {
+                const response = await fetch('api.php?action=semantic_trail_story', {
                     method: 'POST',
                     headers: {
                         Accept: 'application/json',
@@ -14508,7 +14505,7 @@
                     return null;
                 }
 
-                if (!response.ok || !result?.ok || result.mode !== 'cached_gemma_story' || !result.story) {
+                if (!response.ok || !result?.ok || result.mode !== 'cached_trail_story' || !result.story) {
                     return null;
                 }
 
@@ -14546,36 +14543,36 @@
                 showSummaryCard(buildSemanticGuideCardConfig(guide));
             }
 
-            async function requestCachedSemanticGemmaStory(payload, guideRequestId) {
+            async function requestCachedSemanticTrailStory(payload, guideRequestId) {
                 if (!payload || !isSemanticGuideRequestCurrent(guideRequestId)) return;
-                if (semanticGemmaStoryAbortController) {
-                    semanticGemmaStoryAbortController.abort();
-                    semanticGemmaStoryAbortController = null;
+                if (semanticTrailStoryAbortController) {
+                    semanticTrailStoryAbortController.abort();
+                    semanticTrailStoryAbortController = null;
                 }
 
-                const storyRequestId = ++semanticGemmaStoryRequestSequence;
+                const storyRequestId = ++semanticTrailStoryRequestSequence;
                 const controller = new AbortController();
-                semanticGemmaStoryAbortController = controller;
+                semanticTrailStoryAbortController = controller;
 
                 try {
-                    const story = await fetchSemanticGemmaStory(payload, controller.signal);
+                    const story = await fetchSemanticTrailStory(payload, controller.signal);
                     if (
                         controller.signal.aborted ||
-                        storyRequestId !== semanticGemmaStoryRequestSequence ||
+                        storyRequestId !== semanticTrailStoryRequestSequence ||
                         !isSemanticGuideRequestCurrent(guideRequestId)
                     ) {
                         return;
                     }
                     if (story) {
-                        showSummaryGemmaStoryNote(story);
+                        showSummaryTrailStoryNote(story);
                     } else {
-                        hideSummaryGemmaStoryNote();
+                        hideSummaryTrailStoryNote();
                     }
                 } catch (error) {
-                    if (!controller.signal.aborted) hideSummaryGemmaStoryNote();
+                    if (!controller.signal.aborted) hideSummaryTrailStoryNote();
                 } finally {
-                    if (semanticGemmaStoryAbortController === controller) {
-                        semanticGemmaStoryAbortController = null;
+                    if (semanticTrailStoryAbortController === controller) {
+                        semanticTrailStoryAbortController = null;
                     }
                 }
             }
@@ -14583,7 +14580,7 @@
             function showSemanticGuideFailure(payload, error) {
                 const card = document.getElementById('semantic-summary-card');
                 if (card) card.classList.remove('is-synthesizing');
-                hideSummaryGemmaStoryNote();
+                hideSummaryTrailStoryNote();
                 const fallback = buildClientSemanticGuideFallback(
                     payload,
                     error?.message || 'Guide is still preparing this trail.'
@@ -14610,7 +14607,7 @@
                     if (!isSemanticGuideRequestCurrent(requestId)) return;
 
                     showSemanticGuideSuccess(guide);
-                    requestCachedSemanticGemmaStory(payload, requestId);
+                    requestCachedSemanticTrailStory(payload, requestId);
                 } catch (error) {
                     if (isSemanticGuideRequestCancelled(requestId, controller)) return;
                     showSemanticGuideFailure(payload, error);
@@ -18222,15 +18219,15 @@
 
             <div class="summary-body">
                 <div id="summary-text" class="typewriter-content"></div>
-                <div id="summary-gemma-story" class="summary-field-note hidden" aria-hidden="true">
+                <div id="summary-trail-story" class="summary-field-note hidden" aria-hidden="true">
                     <div class="summary-field-note-header">
                         <span class="summary-field-note-mark"
                             ><svg class="ui-icon" aria-hidden="true"><use href="#icon-spore"></use></svg
                         ></span>
                         <span>Deep trail note</span>
                     </div>
-                    <div id="summary-gemma-story-text" class="summary-field-note-text"></div>
-                    <div id="summary-gemma-story-source" class="summary-field-note-source"></div>
+                    <div id="summary-trail-story-text" class="summary-field-note-text"></div>
+                    <div id="summary-trail-story-source" class="summary-field-note-source"></div>
                 </div>
                 <div id="summary-suggestions" class="suggestions-row">
                     <button class="suggestion-btn" data-action="similar">
