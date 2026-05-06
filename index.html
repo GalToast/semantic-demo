@@ -3,22 +3,22 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>MoCo Business Mycelium | Live Weather</title>
+        <title>McCullough Digital Semantic Explorer</title>
         <meta
             name="description"
-            content="Explore 8,406 Montgomery County businesses through organic mycelium network visualization with live weather effects."
+            content="Explore 8,406 Montgomery County businesses through a semantic search and visualization interface."
         />
         <meta name="theme-color" content="#071018" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="McCullough Digital" />
-        <meta property="og:title" content="MoCo Business Mycelium" />
+        <meta property="og:title" content="McCullough Digital Semantic Explorer" />
         <meta
             property="og:description"
             content="Explore Montgomery County businesses as a living semantic field with search trails, map anchors, and neighborhood context."
         />
         <meta property="og:url" content="https://mccullough.cloud/semantic-demo/vector-explorer-polished.html" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="MoCo Business Mycelium" />
+        <meta name="twitter:title" content="McCullough Digital Semantic Explorer" />
         <meta
             name="twitter:description"
             content="Explore Montgomery County businesses as a living semantic field with search trails, map anchors, and neighborhood context."
@@ -3460,7 +3460,7 @@
 
         <!-- Weather Widget -->
         <div class="weather-widget fade-in glass-light">
-            <span class="weather-icon" id="weather-icon" aria-label="Current weather" data-condition="cloud"
+            <span class="weather-icon" id="weather-icon" aria-label="Local conditions" data-condition="cloud"
                 ><svg class="ui-icon weather-seed-base" aria-hidden="true"><use href="#icon-weather-seed"></use></svg
                 ><svg class="ui-icon weather-condition-icon" aria-hidden="true"><use href="#icon-cloud"></use></svg
             ></span>
@@ -3539,7 +3539,7 @@
         <!-- Info Panel - collapsible -->
         <div class="info-panel slide-in-left" id="info-panel">
             <div class="info-header" id="info-panel-toggle">
-                <span>MoCo Business Mycelium</span>
+                <span>Semantic Business Explorer</span>
                 <span class="info-toggle-icon" id="info-toggle-icon" aria-hidden="true"
                     ><svg class="ui-icon"><use href="#icon-panel"></use></svg
                 ></span>
@@ -14179,9 +14179,9 @@
 
             function getSemanticGuideTitle(guide = {}) {
                 if (guide.title) return String(guide.title).toUpperCase();
-                if (guide.degraded) return 'FAST FALLBACK';
-                if (guide.cached) return 'CACHED GUIDE';
-                return 'GUIDED SEARCH';
+                if (guide.degraded) return 'Quick Mode';
+                if (guide.cached) return 'Cached Results';
+                return 'Search';
             }
 
             function getSemanticGuideLaneStatus(guide = {}) {
@@ -14313,7 +14313,7 @@
                 return {
                     ...settings,
                     text: String(settings.text || ''),
-                    title: String(settings.title || 'GUIDED SEARCH').trim() || 'GUIDED SEARCH',
+                    title: String(settings.title || 'Search').trim() || 'Search',
                     laneStatus:
                         String(settings.laneStatus || 'Guide engine on demand').trim() || 'Guide engine on demand',
                     suggestions: Array.isArray(settings.suggestions) ? settings.suggestions : [],
@@ -14459,7 +14459,7 @@
                 if (hideTrigger && trigger) {
                     trigger.style.display = 'none';
                 }
-                if (titleEl) titleEl.textContent = 'GUIDED SEARCH';
+                if (titleEl) titleEl.textContent = 'Search';
                 if (laneStatusEl) laneStatusEl.textContent = 'Guide engine on demand';
             }
 
@@ -18213,7 +18213,7 @@
                     <span class="summary-guide-glyph"
                         ><svg class="ui-icon" aria-hidden="true"><use href="#icon-trail-bloom"></use></svg
                     ></span>
-                    <span id="summary-card-title-text">GUIDED SEARCH</span>
+                    <span id="summary-card-title-text">Search</span>
                 </div>
                 <button id="btn-close-summary" class="close-icon" aria-label="Close summary">
                     <svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg>
