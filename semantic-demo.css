@@ -2843,6 +2843,10 @@ body[data-graph-context="focus-search"] .search-result-item.active-focus {
     transition: color 0.2s ease, background 0.2s ease;
 }
 
+.semantic-lane-pill[hidden] {
+    display: none;
+}
+
 .stats-row,
 .demo-starters {
     opacity: 0;

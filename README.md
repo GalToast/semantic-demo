@@ -35,7 +35,13 @@ This project provides an interactive environment for exploring high-dimensional 
 
 ## Demo
 
-This project was built as a working browser prototype. The entry point is `index.html`. It loads `semantic-demo.css` and the associated `.dat` files for the structural mappings.
+This project was built as a working browser prototype. Run it from a local web server, then open the served `index.html`; direct `file://` loading can block the `.dat` artifact fetches in some browsers.
+
+```bash
+python -m http.server 5190
+```
+
+Then visit `http://127.0.0.1:5190/index.html`. The page loads `semantic-demo.css` and the associated `.dat` files for the structural mappings.
 
 ## Data Boundary
 
@@ -53,4 +59,4 @@ The public demo uses a compact business-record payload derived from public Montg
 
 ## Recruiter Reading Guide
 
-Open `index.html` first to inspect the interaction model, then `semantic-demo.css` for the UI polish and responsiveness. The backend folder is intentionally included to show how the visualization connects to generated semantic artifacts rather than being only a decorative 3D page.
+Run the local server and open `index.html` first to inspect the interaction model, then `semantic-demo.css` for the UI polish and responsiveness. The backend folder is intentionally included to show how the visualization connects to generated semantic artifacts rather than being only a decorative 3D page.

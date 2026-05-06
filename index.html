@@ -37,7 +37,7 @@
             href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap"
             rel="stylesheet"
         />
-        <link rel="stylesheet" href="semantic-demo.css?v=20260430-motion322-mobile-mode-hitbox" />
+        <link rel="stylesheet" href="semantic-demo.css?v=20260506-readiness-pill" />
         <link rel="stylesheet" href="vector-explorer-pandora.css?v=20260429-polish305-biolum" />
         <link
             rel="icon"
@@ -3563,8 +3563,8 @@
                             class="semantic-lane-pill"
                             id="semantic-lane-pill"
                             data-state="checking"
-                            title="Checking semantic lane health"
-                            >Checking lane</span
+                            title="Checking search readiness"
+                            >Checking search</span
                         >
                     </div>
                     <div class="search-input-wrapper">
@@ -3607,7 +3607,7 @@
                     <div class="search-trail-cue" id="search-trail-cue" hidden>
                         <div class="search-trail-cue-kicker" id="search-trail-cue-kicker">Trail cue</div>
                         <div class="search-trail-cue-title" id="search-trail-cue-title">
-                            Search sparks a corridor. Click a result to focus it.
+                            Search sparks a corridor. Select a result to focus it.
                         </div>
                         <div class="search-trail-cue-stage" aria-hidden="true">
                             <span class="search-trail-cue-step" data-cue-stage="query">Query</span>
@@ -3620,7 +3620,7 @@
                     </div>
                     <div class="semantic-lane-assist" id="semantic-lane-assist" hidden>
                         <div class="semantic-lane-assist-copy" id="semantic-lane-assist-copy">
-                            Semantic lane checks happen in the background so the next search can recover faster.
+                            Search readiness checks happen in the background so the next search can recover faster.
                         </div>
                         <div class="semantic-lane-assist-row">
                             <div class="semantic-lane-assist-meta" id="semantic-lane-assist-meta">
@@ -3633,12 +3633,12 @@
                     </div>
                     <div class="semantic-lane-ops" id="semantic-lane-ops" hidden>
                         <div class="semantic-lane-ops-header">
-                            <div class="semantic-lane-ops-title">Lane Ops</div>
+                            <div class="semantic-lane-ops-title">Search Status</div>
                             <div class="semantic-lane-ops-badge" id="semantic-lane-ops-badge">loading...</div>
                         </div>
                         <div class="semantic-lane-ops-grid" id="semantic-lane-ops-grid"></div>
                         <div class="semantic-lane-ops-meta" id="semantic-lane-ops-meta">
-                            Loading semantic lane operator summary...
+                            Loading search service summary...
                         </div>
                         <div class="semantic-lane-ops-list" id="semantic-lane-ops-list"></div>
                     </div>
@@ -3672,7 +3672,7 @@
                     <div class="vector-cascade-bg" id="vector-cascade-bg"></div>
                     <div class="panel-section-title" id="selected-card-title">Selected Business</div>
                     <div class="selected-empty" id="selected-empty">
-                        Click a node or map point to inspect one record more closely.
+                        Select a node or map point to inspect one record more closely.
                     </div>
                     <div id="selected-details" style="display: none">
                         <div class="selected-hero">
@@ -3961,29 +3961,29 @@
                 <div class="focus-stage-what" id="focus-stage-what">What they do</div>
                 <div class="focus-stage-meta" id="focus-stage-meta"></div>
                 <div class="focus-stage-note" id="focus-stage-note">
-                    Click any result to focus it. Use Overview to step back, or Recenter if you drift.
+                    Select any result to focus it. Use Overview to step back, or Recenter if you drift.
                 </div>
                 <div class="focus-lens-truth" id="focus-lens-truth" aria-label="Semantic lens explanation">
                     <span class="focus-lens-truth-mark" aria-hidden="true"></span>
                     <span
-                        ><strong>Lens truth:</strong> Glowing lines show semantic relationships; the constellation shape
+                        ><strong>Connection view:</strong> Glowing lines show semantic relationships; the constellation shape
                         is staged for readability.</span
                     >
                 </div>
                 <div class="focus-thread-inspector" id="focus-thread-inspector" aria-live="polite" aria-hidden="true">
                     <div class="focus-thread-inspector-kicker">Connection preview</div>
                     <div class="focus-thread-inspector-title" id="focus-thread-inspector-title">
-                        Hover a nearby stop
+                        Select a nearby stop
                     </div>
                     <div class="focus-thread-inspector-copy" id="focus-thread-inspector-copy">
-                        Pause on a neighbor to read why this connection exists before following it.
+                        Tap or hover a neighbor to read why this connection exists before following it.
                     </div>
                     <div class="focus-thread-inspector-meta" id="focus-thread-inspector-meta">
-                        Relationship source appears here.
+                        Relationship details appear here.
                     </div>
                     <div class="focus-thread-inspector-actions">
                         <button class="focus-thread-inspector-btn" id="btn-thread-pin" type="button" disabled>
-                            Pin Connection
+                            Pin
                         </button>
                         <button
                             class="focus-thread-inspector-btn primary"
@@ -3991,7 +3991,7 @@
                             type="button"
                             disabled
                         >
-                            Follow Connection
+                            Follow
                         </button>
                         <button
                             class="focus-thread-inspector-btn secondary"
@@ -4147,7 +4147,7 @@
 
         <!-- Onboarding hint -->
         <div class="onboarding-hint glass-light" id="onboarding-hint">
-            <p>Start anywhere. <span class="key">Click</span> a spore to open one business in full.</p>
+            <p>Start anywhere. <span class="key">Select</span> a spore to open one business in full.</p>
             <p>
                 <span class="key">Drag</span> the county's mycelium | <span class="key">Scroll</span> or use
                 <span class="key">+ / -</span> to zoom | <span class="key">Prev / Next</span> walks nearby businesses
@@ -4995,9 +4995,7 @@
                 } catch (error) {
                     console.error('Initialization failed:', error);
                     document.getElementById('loading-overlay').innerHTML =
-                        '<div style="color: #ff6b6b; text-align: center; padding: 20px;">Failed to load data<br><small>' +
-                        error.message +
-                        '</small></div>';
+                        '<div class="loading-shell"><div class="loading-title">Could not load demo assets</div><div class="loading-note">Run this project from a local web server, then open the served index page. Some browsers block local data files from file:// pages.</div></div>';
                 }
             }
 
@@ -6350,7 +6348,7 @@
                         const queryLabel = semanticLaneSnapshot?.query
                             ? `"${semanticLaneSnapshot.query}"`
                             : 'this semantic trail';
-                        noteEl.textContent = `This business restored from a shared link, but the ${queryLabel} trail is unavailable while the lane is degraded. Retry now to rebuild it, or use Overview to step back out.`;
+                        noteEl.textContent = `This business restored from a shared link, but the ${queryLabel} trail is temporarily unavailable. Retry now to rebuild it, or use Overview to step back out.`;
                     } else if (navState.threadSource === 'semantic') {
                         noteEl.textContent = currentSearchSummary
                             ? 'Connections are live here. The search trail stays active while this stage keeps the node centered.'
@@ -6681,7 +6679,7 @@
                         ? 'semantic relationship'
                         : 'current cloud fallback'
                     : '';
-                const title = active ? `${focusName} -> ${targetName}` : 'Hover a nearby stop';
+                const title = active ? `${focusName} -> ${targetName}` : 'Select a nearby stop';
                 const pinned = active && pinnedThreadIndex === candidate.index;
                 const journeyPhase =
                     active && strandContinuityState.targetIndex === candidate.index
@@ -6703,11 +6701,11 @@
                           ? `${displayReason}. You arrived through this connection; inspect another connection or backtrack to compare.`
                           : pinned
                             ? `${displayReason}. This connection is pinned for comparison; follow it, keep it pinned, or clear it.`
-                            : `${displayReason}. Preview, pin, or follow this connection without changing the semantic truth.`
-                    : 'Pause on a neighbor to preview the connection, then pin it or follow it when ready.';
+                            : `${displayReason}. Preview, pin, or follow this connection without changing the current focus.`
+                    : 'Tap or hover a neighbor to preview the connection, then pin it or follow it when ready.';
                 const meta = active
                     ? `Source: ${source} | Role: ${role} | State: ${journeyPhase} | Layout: staged for readability`
-                    : 'Relationship source appears here.';
+                    : 'Relationship details appear here.';
                 return {
                     active,
                     index: active ? candidate.index : null,
@@ -6777,7 +6775,7 @@
                 if (metaEl) metaEl.textContent = state.meta;
                 if (pinBtn) {
                     pinBtn.disabled = !state.active;
-                    pinBtn.textContent = state.pinned ? 'Unpin Connection' : 'Pin Connection';
+                    pinBtn.textContent = state.pinned ? 'Unpin' : 'Pin';
                     pinBtn.setAttribute('aria-pressed', String(!!state.pinned));
                     pinBtn.onclick = () => {
                         if (!state.active) return;
@@ -6790,7 +6788,7 @@
                 }
                 if (followBtn) {
                     followBtn.disabled = !state.active || state.journeyPhase === 'walking';
-                    followBtn.textContent = state.journeyPhase === 'walking' ? 'Following' : 'Follow Connection';
+                    followBtn.textContent = state.journeyPhase === 'walking' ? 'Following' : 'Follow';
                     followBtn.onclick = () => {
                         if (!state.active || state.journeyPhase === 'walking') return;
                         walkThreadNeighbor(state.index, { surface: state.surface || options.surface || 'inspector' });
@@ -7527,7 +7525,7 @@
                     const queryLabel = semanticLaneSnapshot?.query
                         ? `"${semanticLaneSnapshot.query}"`
                         : 'this semantic trail';
-                    return `Focused business restored from a shared link, but the ${queryLabel} trail is unavailable while the semantic lane is degraded. Retry now to rebuild nearby semantic neighbors; until then this view is holding on the focused business only.`;
+                    return `Focused business restored from a shared link, but the ${queryLabel} trail is temporarily unavailable. Retry now to rebuild nearby semantic neighbors; until then this view is holding on the focused business only.`;
                 }
                 if (pointIndex < 0 || navState.trailSeedIndex === null || !navState.threadCandidates.length) {
                     if (semanticThreadsStatus === 'loading') {
@@ -8516,13 +8514,13 @@
                     nextBtn.disabled = true;
                     focusPrevBtn.disabled = true;
                     focusNextBtn.disabled = true;
-                    prevBtn.title = `The ${queryLabel} trail did not restore while the lane is degraded.`;
-                    nextBtn.title = `The ${queryLabel} trail did not restore while the lane is degraded.`;
-                    focusPrevBtn.title = `The ${queryLabel} trail did not restore while the lane is degraded.`;
-                    focusNextBtn.title = `The ${queryLabel} trail did not restore while the lane is degraded.`;
-                    contextEl.textContent = `${currentName} restored from this shared link, but the ${queryLabel} trail did not restore while the semantic lane is degraded. Retry now to rebuild it, or use Overview to step back out.`;
-                    focusProgressEl.textContent = `Semantic trail unavailable for ${queryLabel} while the lane is degraded.`;
-                    if (focusNextEl) focusNextEl.textContent = 'Retry the semantic lane before walking this trail.';
+                    prevBtn.title = `The ${queryLabel} trail did not restore yet.`;
+                    nextBtn.title = `The ${queryLabel} trail did not restore yet.`;
+                    focusPrevBtn.title = `The ${queryLabel} trail did not restore yet.`;
+                    focusNextBtn.title = `The ${queryLabel} trail did not restore yet.`;
+                    contextEl.textContent = `${currentName} restored from this shared link, but the ${queryLabel} trail did not restore yet. Retry now to rebuild it, or use Overview to step back out.`;
+                    focusProgressEl.textContent = `Semantic trail unavailable for ${queryLabel}.`;
+                    if (focusNextEl) focusNextEl.textContent = 'Retry search before walking this trail.';
                     updateFocusNeighborRail();
                     return;
                 }
@@ -10659,7 +10657,7 @@
                     note.textContent = STORY_DESCRIPTIONS[activeStoryPrompt];
                 } else if (myceliumMode === 'trail' && focusedNode === null) {
                     note.textContent =
-                        'Trail mode is waiting for a selected business. Click a visible spore to walk outward through semantic neighbors or the cloud fallback.';
+                        'Trail mode is waiting for a selected business. Select a visible spore to walk outward through semantic neighbors or the cloud fallback.';
                 } else {
                     note.textContent = MODE_DESCRIPTIONS[myceliumMode] || MODE_DESCRIPTIONS.default;
                 }
@@ -12398,9 +12396,9 @@
                 document.getElementById('tooltip-what').textContent =
                     'Several nearby businesses are braided together here';
                 document.getElementById('tooltip-trivia').textContent =
-                    'Click to let the graph resolve the nearest business, or zoom in for a sharper read.';
+                    'Select to let the graph resolve the nearest business, or zoom in for a sharper read.';
                 document.getElementById('tooltip-city').textContent = 'Montgomery County, TX';
-                document.getElementById('tooltip-cluster').textContent = 'Click or zoom to refine';
+                document.getElementById('tooltip-cluster').textContent = 'Select or zoom to refine';
 
                 const phoneRow = document.getElementById('contact-phone');
                 const emailRow = document.getElementById('contact-email');
@@ -12581,7 +12579,7 @@
                               : 'County overview';
 
                 let note = 'Each color family marks a different semantic neighborhood across Montgomery County.';
-                let next = 'Click a business to anchor the field, or search to light a semantic trail.';
+                let next = 'Select a business to anchor the field, or search to light a semantic trail.';
 
                 if (currentView === 'map' && hasSearch && focusName) {
                     note = `${focusName} is your live map anchor. The selected card leads here while the county fades back to supporting context.`;
@@ -12597,12 +12595,12 @@
                 } else if (hasSearch && hasGalaxyFocus && focusName) {
                     note = `${focusName} is the live pocket anchor. The brightest local spokes and warm trail rows mark the current semantic walk.`;
                     next =
-                        'Use Prev/Next in the floating stage to keep walking, or hover another result to preview a jump.';
+                        'Use Prev/Next in the floating stage to keep walking, or select another result to preview a jump.';
                 } else if (hasSearch) {
                     note =
                         'Search glow marks businesses semantically related to your query. The warmest node is the current trail anchor.';
                     next =
-                        'Click the anchor or any glowing spore to open a focused pocket and start walking the trail.';
+                        'Select the anchor or any glowing spore to open a focused pocket and start walking the trail.';
                 } else if (hasGalaxyFocus && focusName) {
                     note = `${focusName} is holding the current focus pocket. Nearby records gather closer while the county stays visible around it.`;
                     next =
@@ -12611,7 +12609,7 @@
                     note =
                         'Galaxy view is the full county cloud. Each color family marks a business neighborhood with its own semantic flavor.';
                     next =
-                        'Click a spore to inspect one business, or search by need, venue, service, or clue to light a corridor.';
+                        'Select a spore to inspect one business, or search by need, venue, service, or clue to light a corridor.';
                 }
 
                 const chips = [
@@ -12621,10 +12619,10 @@
                     semanticLaneState === 'healthy'
                         ? 'Ready'
                         : semanticLaneState === 'reconnecting'
-                          ? 'Lane reconnecting'
+                          ? 'Search reconnecting'
                           : semanticLaneState === 'degraded'
-                            ? 'Lane degraded'
-                            : 'Lane checking'
+                            ? 'Search unavailable'
+                            : 'Checking search'
                 ].filter(Boolean);
 
                 return {
@@ -12656,8 +12654,8 @@
                         .map((chip) => {
                             let extraClass = '';
                             if (chip === 'Ready') extraClass = ' lane-healthy';
-                            if (chip === 'Lane reconnecting') extraClass = ' lane-reconnecting';
-                            if (chip === 'Lane degraded') extraClass = ' lane-degraded';
+                            if (chip === 'Search reconnecting') extraClass = ' lane-reconnecting';
+                            if (chip === 'Search unavailable') extraClass = ' lane-degraded';
                             return `<span class="legend-chip${extraClass}">${chip}</span>`;
                         })
                         .join('');
@@ -12973,7 +12971,7 @@
                     });
                     setSemanticLaneUiState('reconnecting', {
                         label: 'Manual retry',
-                        title: 'Manual semantic lane retry is warming the background services.'
+                        title: 'Manual retry is warming the background search services.'
                     });
                     loadSemanticThreads({ reason: 'manual-retry' }).catch(() => {});
                     probeSemanticLane({ warm: true, reason: 'manual-retry' }).catch(() => {});
@@ -14172,9 +14170,9 @@
             function getSemanticGuideLoadingCardConfig() {
                 return {
                     title: 'READING THE TRAIL',
-                    text: 'Qwen is reading the current semantic trail and preparing the next three strongest stops.',
+                    text: 'The guide is reading the current semantic trail and preparing the next three strongest stops.',
                     suggestions: [],
-                    laneStatus: 'QWEN-3.5-0.8B live request',
+                    laneStatus: 'Live guide request',
                     instant: true
                 };
             }
@@ -14187,8 +14185,8 @@
             }
 
             function getSemanticGuideLaneStatus(guide = {}) {
-                if (guide.degraded) return 'Deterministic fallback while Qwen is unavailable';
-                const source = guide.source || 'Qwen/Qwen3.5-0.8B';
+                if (guide.degraded) return 'Deterministic fallback while the guide is unavailable';
+                const source = 'Guide engine';
                 return guide.cached ? `${source} cache hit` : `${source} fresh guide`;
             }
 
@@ -14206,7 +14204,7 @@
                     title: (fallback.title || 'FAST FALLBACK').toUpperCase(),
                     text: fallback.summary || 'The semantic trail is ready for exploration.',
                     suggestions: fallback.suggestions || [],
-                    laneStatus: 'Deterministic fallback while Qwen is unavailable',
+                    laneStatus: 'Deterministic fallback while the guide is unavailable',
                     instant: true
                 };
             }
@@ -14317,7 +14315,7 @@
                     text: String(settings.text || ''),
                     title: String(settings.title || 'GUIDED SEARCH').trim() || 'GUIDED SEARCH',
                     laneStatus:
-                        String(settings.laneStatus || 'QWEN-3.5-0.8B on demand').trim() || 'QWEN-3.5-0.8B on demand',
+                        String(settings.laneStatus || 'Guide engine on demand').trim() || 'Guide engine on demand',
                     suggestions: Array.isArray(settings.suggestions) ? settings.suggestions : [],
                     instant: !!settings.instant
                 };
@@ -14462,7 +14460,7 @@
                     trigger.style.display = 'none';
                 }
                 if (titleEl) titleEl.textContent = 'GUIDED SEARCH';
-                if (laneStatusEl) laneStatusEl.textContent = 'QWEN-3.5-0.8B on demand';
+                if (laneStatusEl) laneStatusEl.textContent = 'Guide engine on demand';
             }
 
             async function fetchSemanticGuide(payload, signal) {
@@ -14481,11 +14479,11 @@
                 try {
                     result = await response.json();
                 } catch (error) {
-                    throw new Error('Guide lane returned invalid JSON.');
+                    throw new Error('Guide request returned invalid JSON.');
                 }
 
                 if (!response.ok || !result?.ok) {
-                    throw new Error(result?.error || 'Guide lane is unavailable right now.');
+                    throw new Error(result?.error || 'Guide is unavailable right now.');
                 }
 
                 return result;
@@ -14588,7 +14586,7 @@
                 hideSummaryGemmaStoryNote();
                 const fallback = buildClientSemanticGuideFallback(
                     payload,
-                    error?.message || 'Guide lane is still warming up.'
+                    error?.message || 'Guide is still preparing this trail.'
                 );
                 showSummaryCard(buildSemanticGuideFallbackCardConfig(fallback));
             }
@@ -14852,14 +14850,14 @@
                     const anchorName = anchorPoint ? formatBusinessName(anchorPoint.name) : 'the current anchor';
                     statusEl.textContent = compactMapCopy
                         ? `${currentSearchSummary.visibleMatches} of ${currentSearchSummary.totalMatches} matches | ${anchorName} anchors this trail.`
-                        : `Showing ${currentSearchSummary.visibleMatches} of ${currentSearchSummary.totalMatches} semantic matches | ${anchorName} is anchoring this view. Hover a card to preview, click to center.`;
+                        : `Showing ${currentSearchSummary.visibleMatches} of ${currentSearchSummary.totalMatches} semantic matches | ${anchorName} is anchoring this view. Select a card to center it.`;
                     updateSearchTrailCue({
                         beat: 'query',
                         kicker: 'Trail ready',
                         title: `${anchorName} is the first strong anchor`,
                         note: compactMapCopy
                             ? 'Tap a match to center it, then use Prev / Next once the trail neighborhood opens.'
-                            : 'The query has found a corridor. Hover to preview alternatives, or click to pull one result into a focused trail neighborhood.'
+                            : 'The query has found a corridor. Select a result to pull it into a focused trail neighborhood.'
                     });
                     return;
                 }
@@ -14871,7 +14869,7 @@
                     beat: 'query',
                     kicker: 'Matches found',
                     title: `${currentSearchSummary.visibleMatches} results are lighting the field`,
-                    note: 'The strongest match becomes the anchor. Click any row to center it and start the trail.'
+                    note: 'The strongest match becomes the anchor. Select any row to center it and start the trail.'
                 });
             }
 
@@ -15012,11 +15010,11 @@
                 try {
                     payload = await response.json();
                 } catch (error) {
-                    throw new Error('Semantic lane ops summary returned invalid JSON.');
+                    throw new Error('Search service summary returned invalid JSON.');
                 }
 
                 if (!response.ok || !payload?.ok) {
-                    throw new Error(payload?.error || 'Semantic lane ops summary failed.');
+                    throw new Error(payload?.error || 'Search service summary failed.');
                 }
 
                 return payload;
@@ -15159,7 +15157,7 @@
                     if (snapshot.retry_source === 'search') {
                         metaParts.push(`Search retry ${retryCount}${retryTotal ? ` of ${retryTotal}` : ''}`);
                     } else {
-                        metaParts.push(`Warmup attempt ${retryCount}`);
+                        metaParts.push(`Recovery attempt ${retryCount}`);
                     }
                 }
 
@@ -15172,7 +15170,7 @@
                 const freshnessLabel = formatSemanticLaneFreshness(snapshot.checked_at, now);
                 metaParts.push(`${checkedLabel} (${freshnessLabel})`);
 
-                if (snapshot.attempted_warm) metaParts.push('warmup requested');
+                if (snapshot.attempted_warm) metaParts.push('recovery requested');
                 metaEl.textContent = metaParts.join(' | ');
             }
 
@@ -15211,11 +15209,11 @@
                     : 'this semantic trail';
                 if (focusPoint) {
                     const pointName = formatBusinessName(focusPoint.name);
-                    statusEl.textContent = `${pointName} restored from this shared link, but the ${queryLabel} trail is unavailable while the semantic lane is degraded. Retry now to rebuild the trail.`;
+                    statusEl.textContent = `${pointName} restored from this shared link, but the ${queryLabel} trail is temporarily unavailable. Retry now to rebuild the trail.`;
                     return true;
                 }
 
-                statusEl.textContent = `The ${queryLabel} trail is unavailable while the semantic lane is degraded. Retry now to rebuild the trail.`;
+                statusEl.textContent = `The ${queryLabel} trail is temporarily unavailable. Retry now to rebuild the trail.`;
                 return true;
             }
 
@@ -15225,28 +15223,28 @@
                 if (searchDown && embedDown) {
                     return {
                         label: 'Search + embed',
-                        detail: 'search down | embed down',
+                        detail: 'search and embed unavailable',
                         assistNoun: 'search and embed services'
                     };
                 }
                 if (searchDown) {
                     return {
                         label: 'Search',
-                        detail: 'search down',
+                        detail: 'search unavailable',
                         assistNoun: 'search service'
                     };
                 }
                 if (embedDown) {
                     return {
                         label: 'Embed',
-                        detail: 'embed down',
+                        detail: 'embed unavailable',
                         assistNoun: 'embed service'
                     };
                 }
                 return {
-                    label: 'Lane',
-                    detail: 'lane state changing',
-                    assistNoun: 'semantic lane'
+                    label: 'Search',
+                    detail: 'search state changing',
+                    assistNoun: 'search services'
                 };
             }
 
@@ -15278,8 +15276,8 @@
                 } else {
                     copyEl.textContent =
                         railMode === 'stale'
-                            ? `${scope.label} degraded (${scope.detail}). The page will keep last stable results visible, and you can retry immediately when you need fresh search.`
-                            : `${scope.label} degraded (${scope.detail}). This shared view restored the focused business, but the semantic trail did not restore. Retry now to rebuild the trail.`;
+                            ? `${scope.label} temporarily unavailable (${scope.detail}). The page will keep last stable results visible, and you can retry immediately when you need fresh search.`
+                            : `${scope.label} temporarily unavailable (${scope.detail}). This shared view restored the focused business, but the semantic trail did not restore. Retry now to rebuild the trail.`;
                 }
 
                 retryBtn.disabled = !!semanticLaneProbePromise;
@@ -15298,17 +15296,17 @@
                 if (!pill) return;
 
                 const scope = getSemanticLaneServiceScope();
-                let label = 'Checking lane';
-                let title = 'Checking semantic lane health.';
+                let label = 'Checking search';
+                let title = 'Checking search readiness.';
                 if (state === 'healthy') {
                     label = options.label || 'Ready';
-                    title = options.title || 'Semantic lane is healthy and ready.';
+                    title = options.title || 'Search is ready.';
                 } else if (state === 'reconnecting') {
                     label = options.label || `${scope.label} reconnecting`;
                     title = options.title || `${scope.label} is reconnecting in the background.`;
                 } else if (state === 'degraded') {
-                    label = options.label || `${scope.label} degraded`;
-                    title = options.title || `${scope.label} is degraded. The page will keep trying to recover.`;
+                    label = options.label || `${scope.label} unavailable`;
+                    title = options.title || `${scope.label} is temporarily unavailable. The page will keep trying to recover.`;
                 }
 
                 pill.dataset.state = state;
@@ -15333,7 +15331,7 @@
                         static_mode: true,
                         provenance: {
                             label: 'Static demo mode',
-                            detail: 'PHP semantic lane health checks are disabled for local and static previews.'
+                            detail: 'Local and static previews use the built-in demo assets.'
                         }
                     };
                 }
@@ -15348,11 +15346,11 @@
                 try {
                     payload = await response.json();
                 } catch (error) {
-                    throw new Error('Semantic lane health check returned invalid JSON.');
+                    throw new Error('Search readiness check returned invalid JSON.');
                 }
 
                 if (!response.ok || !payload?.ok) {
-                    throw new Error(payload?.error || 'Semantic lane health check failed.');
+                    throw new Error(payload?.error || 'Search readiness check failed.');
                 }
 
                 return payload;
@@ -15378,7 +15376,7 @@
                     });
                     setSemanticLaneUiState('healthy', {
                         label: options.label || provenanceLabel || 'Ready',
-                        title: options.title || provenanceDetail || 'Semantic lane is healthy and ready.'
+                        title: options.title || provenanceDetail || 'Search is ready.'
                     });
                     return;
                 }
@@ -15395,17 +15393,17 @@
                         (parts.length ? `Reconnecting ${parts.join(' + ')}` : 'Reconnecting');
                     setSemanticLaneUiState('reconnecting', {
                         label: reconnectLabel,
-                        title: options.title || provenanceDetail || 'Semantic lane is reconnecting in the background.'
+                        title: options.title || provenanceDetail || 'Search is reconnecting in the background.'
                     });
                     return;
                 }
 
                 setSemanticLaneUiState('degraded', {
-                    label: options.label || provenanceLabel || 'Lane degraded',
+                    label: options.label || provenanceLabel || 'Search unavailable',
                     title:
                         options.title ||
                         provenanceDetail ||
-                        'Semantic lane is degraded. Background warmup will keep trying to restore it.'
+                        'Search is temporarily unavailable. Background recovery will keep trying to restore it.'
                 });
             }
 
@@ -15465,7 +15463,7 @@
                             });
                             clearSemanticLaneCooldownProbeTimer();
                             setSemanticLaneUiState('degraded', {
-                                title: `${getSemanticLaneServiceScope().label} health check failed while trying to warm it.`
+                                title: `${getSemanticLaneServiceScope().label} readiness check failed while trying to recover.`
                             });
                         }
                         return null;
@@ -15949,7 +15947,7 @@
                     query: trimmedQuery,
                     provenance: {
                         label: 'Search reconnecting',
-                        detail: 'Public semantic search is retrying while the current result rail stays visible.'
+                        detail: 'Search is retrying while the current results stay visible.'
                     },
                     retry_source: 'search',
                     retry_count: attempt,
@@ -15959,11 +15957,11 @@
                 });
                 setSemanticLaneUiState('reconnecting', {
                     label: 'Search reconnecting',
-                    title: 'Public semantic search is retrying while the current result rail stays visible.'
+                    title: 'Search is retrying while the current results stay visible.'
                 });
                 statusEl.textContent = preservingSameQuery
-                    ? `Semantic lane is reconnecting for "${trimmedQuery}"... keeping ${currentSearchSummary.visibleMatches} matches visible while retry ${nextAttempt} starts in ${retryDelayLabel}.`
-                    : `Semantic lane is reconnecting for "${trimmedQuery}"... retry ${nextAttempt} starts in ${retryDelayLabel}.`;
+                    ? `Search is reconnecting for "${trimmedQuery}"... keeping ${currentSearchSummary.visibleMatches} matches visible while retry ${nextAttempt} starts in ${retryDelayLabel}.`
+                    : `Search is reconnecting for "${trimmedQuery}"... retry ${nextAttempt} starts in ${retryDelayLabel}.`;
             }
 
             function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQuery, error) {
@@ -15983,8 +15981,8 @@
                     embed_ok: semanticLaneSnapshot?.embed_ok === false ? false : true,
                     query: trimmedQuery,
                     provenance: {
-                        label: 'Search degraded',
-                        detail: 'Public semantic search is still degraded after client retries.'
+                        label: 'Search unavailable',
+                        detail: 'Search is still unavailable after client retries.'
                     },
                     rail_mode: preservingSameQuery ? 'stale' : 'none',
                     anchor_lead_id: preservingSameQuery ? getCurrentSearchAnchorLeadId() : null,
@@ -15992,11 +15990,11 @@
                     cooldown_wait_until: null
                 });
                 setSemanticLaneUiState('degraded', {
-                    label: 'Search degraded',
-                    title: 'Public semantic search is still degraded after client retries.'
+                    label: 'Search unavailable',
+                    title: 'Search is still unavailable after client retries.'
                 });
                 statusEl.textContent = preservingSameQuery
-                    ? `Search degraded for "${trimmedQuery}". Keeping the last ${currentSearchSummary.visibleMatches} matches visibible.`
+                    ? `Search is unavailable for "${trimmedQuery}". Keeping the last ${currentSearchSummary.visibleMatches} matches visible.`
                     : error?.message ||
                       `Semantic search is warming up. Please try "${trimmedQuery}" again in a moment.`;
                 updateUrlState({}, { reason: 'search-degraded' });
@@ -16177,7 +16175,7 @@
                         ? `${anchorName} is the first strong anchor`
                         : `${totalMatches} matches found in the field`,
                     note: anchorName
-                        ? 'Next: ask the guide to read this stack, then click one suggested stop to pull it into a focused trail pocket.'
+                        ? 'Next: ask the guide to read this stack, then select one suggested stop to pull it into a focused trail pocket.'
                         : 'Next: ask the guide to read the strongest matches, then open one suggested stop.',
                     immediate: isCompactSearchViewport()
                 });
@@ -18257,7 +18255,7 @@
             </div>
 
             <div class="summary-footer">
-                <div class="lane-status" id="summary-lane-status">QWEN-3.5-0.8B on demand</div>
+                <div class="lane-status" id="summary-lane-status">Guide engine on demand</div>
             </div>
         </div>
     </body>
