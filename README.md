@@ -18,11 +18,11 @@ Start with the live case study. It shows the intended reviewer path: county cont
 
 ## Overview
 
-This project provides an interactive environment for exploring high-dimensional semantic search over a real local-business corpus. It combines a compact public record payload with generated semantic-neighbor artifacts so retrieval behavior can be inspected in the browser instead of hidden behind a text-only search box.
+This project provides an interactive environment for exploring high-dimensional semantic search over a real local-business corpus. It combines a compact public record payload with generated semantic-neighbor artifacts so retrieval behavior can be inspected in the browser instead of hidden behind a text-only search box. The visual layer is an approximate 3D projection of semantic relationships, not a claim that the raw embedding vectors are three-dimensional.
 
 ## Features
 
-- **Interactive Corpus Navigation:** Pan, zoom, rotate, search, and inspect 8,406 business records in a semantic constellation.
+- **Interactive Corpus Navigation:** Pan, zoom, rotate, search, and inspect 8,406 business records in an approximate 3D semantic constellation.
 - **Semantic Clustering:** Visual grouping and color-coding of related business records based on embedded proximity and factual modifiers.
 - **Cinematic Camera Choreography:** Smooth, orchestrated camera movements that guide the user through the data landscape.
 - **High-Performance Rendering:** Built with HTML/CSS/JavaScript, Three.js, and Leaflet for a web-based corpus inspection experience.
@@ -31,7 +31,7 @@ This project provides an interactive environment for exploring high-dimensional 
 ## Architecture Highlights
 
 - **Three.js Core:** Utilizes custom shaders and instanced rendering for optimal performance.
-- **Vector Mapping:** `data.dat` and the semantic thread artifacts are loaded to represent corpus records and retrieval relationships.
+- **Vector Mapping:** `data.dat` and the semantic thread artifacts are loaded to represent corpus records and retrieval relationships without exposing raw embedding coordinates.
 - **Relationship Rendering:** Instanced particles, proximity-based glow, and routed connection lines make semantic neighborhoods inspectable.
 - **Semantic Backend:** The tracked `backend/` files contain the public Python surface used to build, prepare, restore, and serve semantic search artifacts. Local LeadOps and mailbox-era scripts are ignored from the portfolio surface so the published repo stays focused on retrieval infrastructure.
 
