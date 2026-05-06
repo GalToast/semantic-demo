@@ -2,6 +2,8 @@
 
 Semantic retrieval surface for 8,406 Montgomery County business records.
 
+**Live demo:** https://mccullough.cloud/semantic-demo/
+
 This project turns local-business embeddings into a browser-based review surface: clustered records, search focus, semantic neighbor trails, map anchors, responsive HUD controls, and a backend artifact lane for the retrieval data. Three.js and Leaflet are the inspection layer; the core work is making a real semantic search corpus visible enough to audit.
 
 ![Semantic demo overview](docs/assets/semantic-demo-overview.png)
@@ -31,11 +33,11 @@ This project provides an interactive environment for exploring high-dimensional 
 - **Three.js Core:** Utilizes custom shaders and instanced rendering for optimal performance.
 - **Vector Mapping:** `data.dat` and the semantic thread artifacts are loaded to represent corpus records and retrieval relationships.
 - **Relationship Rendering:** Instanced particles, proximity-based glow, and routed connection lines make semantic neighborhoods inspectable.
-- **Semantic Backend:** The sanitized `backend/` directory contains the public Python surface used to build, prepare, restore, and serve semantic search artifacts. It keeps the portfolio repo focused on retrieval infrastructure rather than unrelated local operations.
+- **Semantic Backend:** The tracked `backend/` files contain the public Python surface used to build, prepare, restore, and serve semantic search artifacts. Local LeadOps and mailbox-era scripts are ignored from the portfolio surface so the published repo stays focused on retrieval infrastructure.
 
 ## Demo
 
-This project was built as a working browser prototype. Run it from a local web server, then open the served `index.html`; direct `file://` loading can block the `.dat` artifact fetches in some browsers.
+This project was built as a working browser prototype. The default demo runs from static files; the tracked backend scripts document how the semantic artifacts are generated and can serve local search during development. For local review, run a simple web server and open the served `index.html`; direct `file://` loading can block the `.dat` artifact fetches in some browsers.
 
 ```bash
 python -m http.server 5190
@@ -45,7 +47,7 @@ Then visit `http://127.0.0.1:5190/index.html`. The page loads `semantic-demo.css
 
 ## Data Boundary
 
-The public demo uses a compact business-record payload derived from public Montgomery County business records and generated semantic artifacts. It is intended as a corpus-inspection demo, not a private contact database. Private lead notes, outreach logs, mailbox data, and operational CRM state are not included.
+The public demo uses a compact business-record payload derived from public Montgomery County business records and generated semantic artifacts. It is intended as a corpus-inspection demo, not a private contact database. Lead notes, outreach logs, mailbox data, and operational CRM state are outside the published demo payload.
 
 ## Proof Artifacts
 
@@ -54,7 +56,7 @@ The public demo uses a compact business-record payload derived from public Montg
 | `index.html` | Full browser experience and interaction model |
 | `data.dat` | Compact public record payload generated from semantic thread artifacts |
 | `semantic-demo.css` | Responsive UI, HUD styling, search/focus states, and motion polish |
-| `backend/` | Sanitized semantic artifact generation and local search service path behind the visualization |
+| `backend/` | Tracked semantic artifact generation and local search service path behind the visualization |
 | `docs/video/semantic-demo-walkthrough.mp4` | Guided 61-second walkthrough with narration and the Motion409 v5 neighborhood proof frame |
 
 ## Recruiter Reading Guide

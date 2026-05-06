@@ -1,6 +1,6 @@
 # Semantic Backend
 
-This directory contains the sanitized public backend surface for the semantic business search demo.
+This directory contains the tracked public backend surface for the semantic business search demo.
 
 Tracked scripts focus on:
 
@@ -9,4 +9,4 @@ Tracked scripts focus on:
 - preparing and restoring semantic profile data
 - serving local semantic search for development
 
-Operational LeadOps, mailbox, outreach, draft-management, and private workflow scripts are intentionally kept out of the public portfolio repository.
+Operational LeadOps, mailbox, outreach, draft-management, and private workflow scripts are ignored from the public portfolio repository even if local working copies exist on the development machine.

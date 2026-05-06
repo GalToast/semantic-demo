@@ -2,6 +2,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 tmp/
+docs/video/frames/
+docs/video/qa/
 
 # Local LeadOps/outreach/backend operations are not part of the public
 # semantic-demo portfolio surface. Keep only the sanitized semantic artifact
