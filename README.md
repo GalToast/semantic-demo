@@ -12,9 +12,9 @@ This project turns local-business embeddings into a browser-based review surface
 
 ## Walkthrough
 
-[![Semantic demo walkthrough](docs/video/semantic-demo-walkthrough-poster.jpg)](docs/video/semantic-demo-walkthrough.mp4)
+[![Semantic demo case study](docs/video/semantic-demo-walkthrough-poster.jpg)](https://mccullough.cloud/semantic-demo/case-study.html)
 
-Unmute for narration. This 61-second walkthrough shows the core flow: county context, need-based search, a focused semantic neighborhood, map handoff, and return to the same network position.
+Start with the live case study. It shows the intended reviewer path: county context, need-based search, a focused semantic neighborhood, map handoff, and return to the same network position.
 
 ## Overview
 
@@ -57,7 +57,7 @@ The public demo uses a compact business-record payload derived from public Montg
 | `data.dat` | Compact public record payload generated from semantic thread artifacts |
 | `semantic-demo.css` | Responsive UI, HUD styling, search/focus states, and motion polish |
 | `backend/` | Tracked semantic artifact generation and local search service path behind the visualization |
-| `docs/video/semantic-demo-walkthrough.mp4` | Guided 61-second walkthrough with narration and the Motion409 v5 neighborhood proof frame |
+| `docs/video/semantic-demo-walkthrough-poster.jpg` | Clean poster for README and case-study links |
 
 ## Recruiter Reading Guide
 

@@ -2,12 +2,10 @@
 
 ## Asset
 
-- `semantic-demo-walkthrough.mp4`
-- Duration: 61.63 seconds
-- Encoding: H.264 video, AAC audio, 1280x720
-- Size target: under 25 MB; current asset is under 5 MB
+- `semantic-demo-walkthrough-poster.jpg`
+- The public README links to the live case study instead of carrying a large walkthrough binary in Git history.
 
-## What It Shows
+## What The Case Study Shows
 
 - 0:00-0:10: Montgomery County context with 8,406 public business records visible as one network.
 - 0:10-0:22: Searching for coffee while the county network remains visible.
@@ -16,6 +14,6 @@
 
 ## Source Notes
 
-The base walkthrough came from the verified Motion408 audio repair capture. The neighborhood beat was updated with the Motion409 v5 desktop proof frame so the public repo shows the cleaner 12-candidate neighborhood and routed thread treatment. Raw capture files and intermediate renders are kept outside this repo to avoid adding large binary history.
+Raw capture files, intermediate renders, and regenerated walkthrough exports are kept outside this repo to avoid adding large binary history. The live case study is the canonical public review surface.
 
 The narration frames this as a working prototype over public local-business records, not a production application or private contact database.
