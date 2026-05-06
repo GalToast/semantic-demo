@@ -6,9 +6,15 @@ Semantic retrieval surface for 8,406 Montgomery County business records.
 
 This project turns local-business embeddings into a browser-based review surface: clustered records, search focus, semantic neighbor trails, map anchors, responsive HUD controls, and a backend artifact lane for the retrieval data. Three.js and Leaflet are the inspection layer; the core work is making a real semantic search corpus visible enough to audit.
 
-![Semantic demo overview](docs/assets/semantic-demo-overview.png)
+![County overview in Semantic Explorer](docs/assets/semantic-full-01.png)
 
-![Semantic search results](docs/assets/semantic-search-results.png)
+![Coffee search corridor in Semantic Explorer](docs/assets/semantic-full-02.png)
+
+![Coffee anchor detail in Semantic Explorer](docs/assets/semantic-full-03.png)
+
+![Neighborhood walk in Semantic Explorer](docs/assets/semantic-full-04.png)
+
+![Map handoff in Semantic Explorer](docs/assets/semantic-full-05.png)
 
 ## Walkthrough
 
@@ -34,6 +40,7 @@ This project provides an interactive environment for exploring high-dimensional 
 - **Vector Mapping:** `data.dat` and the semantic thread artifacts are loaded to represent corpus records and retrieval relationships without exposing raw embedding coordinates.
 - **Relationship Rendering:** Instanced particles, proximity-based glow, and routed connection lines make semantic neighborhoods inspectable.
 - **Semantic Backend:** The tracked `backend/` files contain the public Python surface used to build, prepare, restore, and serve semantic search artifacts. Local LeadOps and mailbox-era scripts are ignored from the portfolio surface so the published repo stays focused on retrieval infrastructure.
+- **Hosted Local Model Cache Layer:** The live Hostinger deployment includes a guarded Gemma 4 E4B GGUF worker for precomputed "Deep trail note" artifacts. Public visitors only read cached Gemma artifacts; cache misses fall back silently to deterministic guide copy instead of starting large-model generation.
 
 ## Demo
 
@@ -59,6 +66,7 @@ The public demo uses a compact business-record payload derived from public Montg
 | `data.dat` | Compact public record payload generated from semantic thread artifacts |
 | `semantic-demo.css` | Responsive UI, HUD styling, search/focus states, and motion polish |
 | `backend/` | Tracked semantic artifact generation and local search service path behind the visualization |
+| `docs/assets/semantic-full-*.png` | Full-desktop proof path: overview, search corridor, anchor detail, neighborhood walk, and map handoff |
 | `docs/video/semantic-demo-walkthrough-poster.jpg` | Clean poster for README and case-study links |
 
 ## Recruiter Reading Guide
