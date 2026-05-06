@@ -2831,7 +2831,7 @@ body[data-graph-context="focus-search"] .search-result-item.active-focus {
 }
 
 .semantic-lane-pill {
-    display: inline-flex;
+    /* Display is controlled by [data-state] rules below; hidden by default. */
     align-items: center;
     gap: 5px;
     padding: 2px 6px;
@@ -2876,24 +2876,28 @@ body[data-graph-context="focus-search"] .demo-starters {
 }
 
 .semantic-lane-pill[data-state="checking"] {
+    display: inline-flex;
     color: rgba(210, 224, 255, 0.86);
     background: rgba(120, 160, 255, 0.12);
     border-color: rgba(160, 190, 255, 0.2);
 }
 
 .semantic-lane-pill[data-state="healthy"] {
+    display: inline-flex;
     color: #8ff7d0;
     background: rgba(64, 214, 156, 0.12);
     border-color: rgba(110, 245, 192, 0.24);
 }
 
 .semantic-lane-pill[data-state="reconnecting"] {
+    display: inline-flex;
     color: #ffd98c;
     background: rgba(255, 196, 83, 0.12);
     border-color: rgba(255, 215, 128, 0.24);
 }
 
 .semantic-lane-pill[data-state="degraded"] {
+    display: inline-flex;
     color: #ff9e9e;
     background: rgba(255, 107, 107, 0.12);
     border-color: rgba(255, 145, 145, 0.24);
