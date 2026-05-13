@@ -41,6 +41,7 @@ This project provides an interactive environment for exploring high-dimensional 
 - **Relationship Rendering:** Instanced particles, proximity-based glow, and routed connection lines make semantic neighborhoods inspectable.
 - **Semantic Backend:** The tracked `backend/` files contain the public Python surface used to build, prepare, restore, and serve semantic search artifacts. Local LeadOps and mailbox-era scripts are ignored from the portfolio surface so the published repo stays focused on retrieval infrastructure.
 - **Hosted Local Model Cache Layer:** A local Gemma 4 E4B GGUF worker precomputes "Deep trail note" artifacts for selected semantic trails and writes them to cache.
+- **Gemma Story Contract:** The UI requests `api.php?action=semantic_trail_story` and renders only cached `mode: "cached_trail_story"` artifacts; cache misses remain silent and do not trigger visitor-side heavy-model generation.
 - **Guide Lane Split:** A separate Qwen/ask_moco lightweight path serves short guide text. The live UI reads cache artifacts first; when cache is missing, it returns deterministic guidance instead of triggering heavy model inference.
 
 ## Demo

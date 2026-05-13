@@ -14499,7 +14499,7 @@
             }
 
             async function fetchSemanticGemmaStory(payload, signal) {
-                const response = await fetch('api.php?action=semantic_gemma_story', {
+                const response = await fetch('api.php?action=semantic_trail_story', {
                     method: 'POST',
                     headers: {
                         Accept: 'application/json',
@@ -14517,7 +14517,9 @@
                     return null;
                 }
 
-                if (!response.ok || !result?.ok || result.mode !== 'cached_gemma_story' || !result.story) {
+                const isCachedStory =
+                    result?.mode === 'cached_trail_story' || result?.mode === 'cached_gemma_story';
+                if (!response.ok || !result?.ok || !isCachedStory || !result.story) {
                     return null;
                 }
 
