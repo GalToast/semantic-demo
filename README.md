@@ -4,6 +4,8 @@ Semantic retrieval surface for 8,406 Montgomery County business records.
 
 **Live demo:** https://mccullough.cloud/semantic-demo/
 
+> Live deploy note: this repository is a portable demo snapshot. The canonical live app shell for `mccullough.cloud/semantic-demo` is `..\ops\remote-staging\mccullough.cloud\public_html\semantic-demo\vector-explorer-polished.html`, with runtime source under that tree's `js\modules\`. Do not claim a live fix after editing only this repository's `index.html`; port behavior changes to the canonical deploy tree and run `npm run check:shell` there.
+
 This project turns local-business embeddings into a browser-based review surface: clustered records, search focus, semantic neighbor trails, map anchors, responsive HUD controls, and a backend artifact lane for the retrieval data. Three.js and Leaflet are the inspection layer; the core work is making a real semantic search corpus visible enough to audit.
 
 ![County overview in Semantic Explorer](docs/assets/semantic-full-01.png)
