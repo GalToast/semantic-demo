@@ -258,6 +258,7 @@ function getRoutePositionBounds(routeIndices = []) {
 }
 
 export function isCameraIdleOrbitAllowed() {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true) return false;
     return (
         state.autoRotate &&
         state.currentView === 'galaxy' &&

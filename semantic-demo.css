@@ -203,6 +203,8 @@ html {
 
 .hover-tooltip .business-contact {
     display: none;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .hover-tooltip .contact-row {
@@ -216,6 +218,7 @@ html {
 .hover-tooltip .contact-row a {
     color: #4ecdc4;
     text-decoration: none;
+    pointer-events: auto;
     transition: color 0.2s;
 }
 
@@ -278,6 +281,15 @@ html {
     background: linear-gradient(135deg, rgba(255, 214, 122, 0.28), rgba(255, 189, 89, 0.16));
     border-color: rgba(255, 232, 177, 0.18);
     color: #fff6de;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .hover-tooltip,
+    .hover-tooltip.visible {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+    }
 }
 
 .ambiguous-hover-indicator {
@@ -1412,6 +1424,16 @@ body[data-route-motion="galaxy-return"] .biofield-atmosphere {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+body[data-active-view="galaxy"][data-graph-context="focus-search"] .info-panel,
+body[data-active-view="galaxy"][data-graph-context="focus-search"] .info-panel * {
+    pointer-events: none;
+}
+
+body[data-active-view="galaxy"][data-graph-context="focus-search"] .info-panel .search-container,
+body[data-active-view="galaxy"][data-graph-context="focus-search"] .info-panel .search-container * {
+    pointer-events: auto;
 }
 
 .summary-body {
@@ -4241,6 +4263,11 @@ body[data-active-view="map"] .onboarding-hint {
     .btn-synthesize .sparkle {
         animation: none;
     }
+
+    #map-container .leaflet-interactive.semantic-map-route-pulse,
+    .summary-card.is-synthesizing {
+        animation-name: none;
+    }
 }
 
 /* polish143: extracted focus-stage and selected-card active-trail visual layer. */
@@ -4386,6 +4413,16 @@ html body[data-graph-context="focus-search"] .focus-stage-note {
 html body[data-active-view="galaxy"][data-graph-context="focus"] .focus-stage,
 html body[data-active-view="galaxy"][data-graph-context="focus-search"] .focus-stage {
     width: min(392px, calc(100vw - 32px));
+}
+
+html body[data-active-view="galaxy"][data-graph-context="focus"] .focus-stage {
+    position: relative;
+    z-index: 60;
+}
+
+html body[data-active-view="galaxy"][data-graph-context="focus-search"][data-focus-panel-mode="field-node"] .focus-stage {
+    position: relative;
+    z-index: 60;
 }
 
 html body[data-active-view="galaxy"][data-graph-context="focus"] .focus-stage-card,
@@ -4810,6 +4847,8 @@ html body[data-active-view="galaxy"][data-strand-journey="walking"] .focus-stage
 }
 
 .focus-thread-inspector.active {
+    position: relative;
+    z-index: 60;
     opacity: 1;
     border-color: rgba(255, 226, 132, 0.28);
     background:

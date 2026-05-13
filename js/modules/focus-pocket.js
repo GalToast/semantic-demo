@@ -756,6 +756,7 @@ export function applyLocalNeighborhoodFocus(index) {
 
 export function applyFocusPocketBreathing(now, positions) {
     if (!state.navState.focusPocketMeta?.active || !state.focusPocketMotionByIndex.size || !positions) return false;
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true) return false;
     const age = now - state.focusPocketTransitionStartedAt;
     const anchorIndex = Number.isFinite(state.navState.focusedIndex) ? state.navState.focusedIndex : null;
     const anchor =

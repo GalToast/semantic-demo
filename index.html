@@ -12368,22 +12368,31 @@
 
                 if (phoneRow) {
                     phoneRow.style.display = hasPhone ? 'flex' : 'none';
-                    if (hasPhone) phoneRow.querySelector('a').textContent = point.phone;
+                    if (hasPhone) {
+                        const link = phoneRow.querySelector('a');
+                        link.textContent = point.phone;
+                        const telValue = String(point.phone).replace(/[^\d+]/g, '');
+                        link.href = telValue ? `tel:${telValue}` : '#';
+                    }
                 }
                 if (emailRow) {
                     emailRow.style.display = hasEmail ? 'flex' : 'none';
-                    if (hasEmail) emailRow.querySelector('a').textContent = point.email;
+                    if (hasEmail) {
+                        const link = emailRow.querySelector('a');
+                        link.textContent = point.email;
+                        link.href = `mailto:${point.email}`;
+                    }
                 }
                 if (webRow) {
                     webRow.style.display = hasWebsite ? 'flex' : 'none';
                     if (hasWebsite) {
                         const link = webRow.querySelector('a');
                         link.textContent = point.website.replace(/^https?:\/\//, '').replace(/\/$/, '');
-                        link.href = point.website;
+                        link.href = /^https?:\/\//i.test(point.website) ? point.website : `https://${point.website}`;
                     }
                 }
                 const contactWrap = document.getElementById('tooltip-contact');
-                if (contactWrap) contactWrap.style.display = 'none';
+                if (contactWrap) contactWrap.style.display = hasPhone || hasEmail || hasWebsite ? 'flex' : 'none';
             }
 
             function updateAmbiguousTooltipContent() {
