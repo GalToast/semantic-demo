@@ -393,8 +393,8 @@ html body.is-active #selected-details.active {
     .focus-stage-card::after {
         content: '';
         display: block;
-        height: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
-        flex: 0 0 auto !important;
+        height: calc(20px + env(safe-area-inset-bottom, 0px));
+        flex: 0 0 auto;
     }
 
     html body.is-active[data-panel-surface="semantic-dive"] #focus-stage {
@@ -515,15 +515,15 @@ html body.is-active #selected-details.active {
 
     html body.is-active[data-panel-surface="search"] .search-container.has-query,
     html body.is-active[data-panel-surface="focus-search"] .search-container.has-query {
-        display: flex !important;
-        flex-direction: column !important;
-        height: 100% !important;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
     }
 
     html body.is-active[data-panel-surface="search"] .search-results.active,
     html body.is-active[data-panel-surface="focus-search"] .search-results.active {
-        flex: 1 1 auto !important;
-        overflow-y: auto !important;
-        margin-top: 10px !important;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        margin-top: 10px;
     }
 }
