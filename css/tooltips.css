@@ -1,0 +1,235 @@
+/* Tooltips: hover tooltip and ambiguous-neighbor indicator. */
+.hover-tooltip {
+    position: fixed;
+    width: min(280px, calc(100vw - 32px));
+    background: var(--glass-bg-deep);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: var(--glass-border);
+    border-radius: var(--glass-radius-card);
+    box-shadow: var(--shadow-glass);
+
+    pointer-events: none;
+    z-index: 180;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+    will-change: opacity, transform;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.2s;
+}
+
+.hover-tooltip::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--glass-bg-accent);
+    opacity: 0.4;
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+.hover-tooltip.visible {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transition-delay: 0s;
+    pointer-events: auto;
+}
+
+.hover-tooltip .contact-row a {
+    pointer-events: auto;
+}
+
+@media (hover: none), (pointer: coarse), (max-width: 720px) {
+    .hover-tooltip,
+    .hover-tooltip.visible {
+        visibility: hidden;
+        opacity: 0;
+        transform: none;
+        pointer-events: none;
+        transition: none;
+    }
+}
+
+.hover-tooltip .card-header {
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hover-tooltip .business-name {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+
+.hover-tooltip .business-what {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.hover-tooltip .business-trivia {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 12px;
+    margin-bottom: 0;
+    line-height: 1.55;
+}
+
+.hover-tooltip .business-contact {
+    display: none;
+}
+
+.hover-tooltip .contact-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.hover-tooltip .contact-row a {
+    color: #4ecdc4;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.hover-tooltip .contact-row a:hover {
+    color: #6be0d8;
+}
+
+.hover-tooltip .contact-icon {
+    font-size: 14px;
+    width: 18px;
+    text-align: center;
+}
+
+.hover-tooltip .business-city {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 11px;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.hover-tooltip .business-city::before {
+    content: "City: ";
+}
+
+.hover-tooltip .business-cluster {
+    margin-top: 8px;
+}
+
+.hover-tooltip .business-cluster span {
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(78, 205, 196, 0.3), rgba(69, 183, 209, 0.2));
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hover-tooltip.ambiguous {
+    border-color: rgba(255, 221, 153, 0.16);
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 221, 153, 0.06);
+}
+
+.hover-tooltip.ambiguous .card-header {
+    background:
+        radial-gradient(circle at top right, rgba(255, 214, 122, 0.12), transparent 42%),
+        rgba(255, 255, 255, 0.03);
+}
+
+.hover-tooltip.ambiguous .business-name {
+    color: #ffe8b1;
+}
+
+.hover-tooltip.ambiguous .business-what {
+    color: rgba(255, 244, 220, 0.7);
+}
+
+.hover-tooltip.ambiguous .business-cluster span {
+    background: linear-gradient(135deg, rgba(255, 214, 122, 0.28), rgba(255, 189, 89, 0.16));
+    border-color: rgba(255, 232, 177, 0.18);
+    color: #fff6de;
+}
+
+.ambiguous-hover-indicator {
+    position: fixed;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 229, 170, 0.18);
+    background:
+        conic-gradient(from 110deg, rgba(255, 226, 163, 0.24), transparent 22%, transparent 58%, rgba(255, 226, 163, 0.18) 78%, transparent 100%),
+        radial-gradient(circle, rgba(255, 222, 143, 0.16) 0%, rgba(255, 222, 143, 0.02) 62%, transparent 74%);
+    box-shadow: 0 0 0 1px rgba(255, 244, 214, 0.03), 0 0 26px rgba(255, 205, 112, 0.12);
+    pointer-events: none;
+    z-index: 179;
+    display: none;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+    transition: opacity 0.14s ease, transform 0.14s ease;
+}
+
+.ambiguous-hover-indicator::before {
+    content: '';
+    position: absolute;
+    inset: 7px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 243, 219, 0.38);
+    opacity: 0.72;
+    animation: ambiguous-braid-spin 5.8s linear infinite;
+}
+
+.ambiguous-hover-indicator::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: rgba(255, 245, 225, 0.92);
+    box-shadow:
+        0 0 8px rgba(255, 225, 158, 0.34),
+        -7px -4px 0 rgba(255, 239, 210, 0.74),
+        7px 4px 0 rgba(255, 229, 173, 0.54);
+}
+
+.ambiguous-hover-indicator.visible {
+    display: block;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    animation: ambiguous-pocket-pulse 1.9s ease-in-out infinite;
+}
+
+@keyframes ambiguous-pocket-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 1px rgba(255, 244, 214, 0.03), 0 0 20px rgba(255, 205, 112, 0.08);
+    }
+    50% {
+        box-shadow: 0 0 0 1px rgba(255, 244, 214, 0.05), 0 0 28px rgba(255, 205, 112, 0.16);
+    }
+}
+
+@keyframes ambiguous-braid-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.hover-tooltip .card-body {
+    padding: 14px 16px;
+}
+
+.hover-tooltip .tooltip-section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.45px;
+    color: rgba(255, 255, 255, 0.42);
+    margin-bottom: 6px;
+}

@@ -1,0 +1,453 @@
+/* Synthesis: summary card (bottom-right fixed card) styles. */
+.summary-card {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: min(430px, calc(100vw - 32px));
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: var(--glass-border);
+    border-radius: var(--glass-radius-panel);
+    padding: 0;
+    z-index: 1000;
+    box-shadow: var(--shadow-glass);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+}
+
+.summary-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--glass-bg-accent);
+    opacity: 0.5;
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+.summary-card.is-synthesizing {
+    animation: synthesisPulse 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    border-color: var(--color-primary-ring);
+}
+
+@keyframes synthesisPulse {
+    0% { box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5), 0 0 15px rgba(78, 205, 196, 0.05); background-color: rgba(10, 14, 24, 0.88); }
+    50% { box-shadow: 0 32px 80px rgba(78, 205, 196, 0.12), 0 0 25px rgba(78, 205, 196, 0.15); background-color: rgba(13, 20, 32, 0.9); }
+    100% { box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5), 0 0 15px rgba(78, 205, 196, 0.05); background-color: rgba(10, 14, 24, 0.88); }
+}
+
+.summary-card.hidden {
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.summary-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.summary-title {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+}
+
+.summary-guide-glyph {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 28px;
+    border-radius: 48% 52% 56% 44% / 45% 58% 42% 55%;
+    color: var(--color-primary);
+    background:
+        radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.24), transparent 22%),
+        radial-gradient(circle at 64% 78%, var(--color-accent-soft), transparent 42%),
+        var(--color-primary-soft);
+    box-shadow:
+        inset 0 0 16px var(--color-primary-soft),
+        0 0 22px var(--color-primary-soft);
+}
+
+.summary-guide-glyph::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid var(--color-primary-soft);
+    border-radius: inherit;
+    transform: rotate(-16deg);
+}
+
+.summary-guide-glyph .ui-icon {
+    width: 18px;
+    height: 18px;
+    filter: drop-shadow(0 0 8px var(--color-primary-soft));
+    z-index: 1;
+}
+
+.pulse-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--color-primary);
+    animation: pulse 2s infinite;
+}
+
+.typewriter-content {
+    padding: 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-text-primary);
+    min-height: 100px;
+}
+
+.summary-field-note {
+    position: relative;
+    margin: -4px 20px 18px;
+    padding: 14px 15px 13px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-radius: var(--radius-card);
+    border: 1px solid var(--color-primary-soft);
+    background:
+        radial-gradient(circle at 10% 0%, var(--color-primary-soft), transparent 40%),
+        radial-gradient(circle at 100% 85%, var(--color-accent-soft), transparent 42%),
+        linear-gradient(145deg, rgba(10, 28, 32, 0.74), rgba(8, 12, 22, 0.72));
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.045),
+        var(--shadow-card),
+        0 0 28px var(--color-primary-soft);
+    animation: fieldNoteBloom 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.summary-field-note::before {
+    content: '';
+    position: absolute;
+    inset: 8px auto 8px 8px;
+    width: 2px;
+    border-radius: 99px;
+    background: linear-gradient(to bottom, transparent, var(--color-primary), var(--color-accent), var(--color-primary));
+    box-shadow: 0 0 18px var(--color-primary-soft);
+}
+
+.summary-field-note.hidden {
+    display: none;
+}
+
+.summary-field-note-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-left: 8px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+}
+
+.summary-field-note-mark {
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+    box-shadow: 0 0 18px var(--color-accent-soft);
+}
+
+.summary-field-note-mark .ui-icon {
+    width: 13px;
+    height: 13px;
+}
+
+.summary-field-note-text {
+    padding-left: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    line-height: 1.58;
+    color: var(--color-text-secondary);
+}
+
+.summary-field-note-source {
+    margin-top: 9px;
+    padding-left: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+}
+
+@keyframes fieldNoteBloom {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.suggestions-row {
+    padding: 0 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.suggestions-row.active {
+    opacity: 1;
+}
+
+/* Bug 4 fix: make suggestion-btn (Similar clusters / neighbor / report actions)
+   visually subordinate — ghost/dashed style, clearly secondary to primary CTAs */
+.suggestion-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    border-radius: 10px;
+    padding: 9px 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+}
+
+.suggestion-btn > span:first-child {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.4);
+    box-shadow: none;
+}
+
+.suggestion-btn .suggestion-copy {
+    display: grid;
+    gap: 3px;
+    text-align: left;
+}
+
+.suggestion-btn .suggestion-label {
+    font-size: 8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.28);
+}
+
+.suggestion-btn .suggestion-name {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.suggestion-btn .suggestion-reason {
+    color: rgba(255, 255, 255, 0.38);
+    font-size: 9px;
+    line-height: 1.35;
+}
+
+.suggestion-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.22);
+    border-style: solid;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.suggestion-btn:focus-visible {
+    outline: 2px solid rgba(121, 235, 222, 0.6);
+    outline-offset: 2px;
+}
+
+.summary-footer {
+    padding: 10px 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid var(--color-border-subtle);
+    border-bottom-left-radius: var(--radius-large);
+    border-bottom-right-radius: var(--radius-large);
+}
+
+.lane-status {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--color-text-muted);
+    letter-spacing: 0.05em;
+}
+
+.close-icon {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.2s ease;
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-icon:hover {
+    color: #ff6b6b;
+}
+
+/* Synthesis Trigger Button */
+.synthesize-trigger {
+    position: relative;
+    margin-top: 12px;
+    margin-bottom: 10px;
+    padding: 11px;
+    border-radius: var(--radius-card);
+    border: 1px solid var(--color-primary-soft);
+    background:
+        radial-gradient(circle at 12% 0%, var(--color-primary-soft), transparent 40%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), var(--shadow-card);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.synthesize-trigger::before {
+    content: '';
+    position: absolute;
+    inset: -40% -18%;
+    background:
+        radial-gradient(circle at 22% 45%, var(--color-primary-soft), transparent 20%),
+        radial-gradient(circle at 82% 58%, var(--color-accent-soft), transparent 22%);
+    opacity: 0.7;
+    pointer-events: none;
+    animation: biofield-drift 22s ease-in-out infinite alternate;
+}
+
+.synthesize-trigger > * {
+    position: relative;
+    z-index: 1;
+}
+
+.guide-cta-kicker {
+    margin-bottom: 7px;
+    color: var(--color-accent);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.btn-synthesize {
+    width: 100%;
+    background:
+        linear-gradient(135deg, var(--color-primary-soft), var(--color-accent-soft)),
+        var(--color-primary-soft);
+    border: 1px solid var(--color-primary-ring);
+    border-radius: var(--radius-normal);
+    padding: 12px;
+    color: var(--color-text-strong);
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 12px 28px var(--color-primary-soft), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.btn-synthesize:hover {
+    background: var(--color-primary-soft);
+    border-color: var(--color-primary-ring);
+    transform: translateY(-1px);
+}
+
+.btn-synthesize.is-loading {
+    opacity: 0.78;
+    cursor: progress;
+    transform: none;
+    box-shadow: 0 0 20px rgba(78, 205, 196, 0.15) inset;
+}
+
+.btn-synthesize.is-loading .sparkle {
+    animation: synthesisSparklePulse 1.2s ease-in-out infinite;
+}
+
+@keyframes synthesisSparklePulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; filter: blur(0px); }
+    50% { transform: scale(1.15); opacity: 1; filter: blur(1px); }
+}
+
+.btn-synthesize .sparkle {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 24px;
+    color: var(--color-primary);
+    border-radius: 50% 44% 55% 46% / 44% 55% 46% 58%;
+    background:
+        radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.2), transparent 22%),
+        var(--color-primary-soft);
+    box-shadow: inset 0 0 12px var(--color-primary-soft), 0 0 18px var(--color-primary-soft);
+    animation: sparkle-float 2.8s ease-in-out infinite;
+}
+
+.btn-synthesize .sparkle::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid var(--color-accent-soft);
+    border-radius: inherit;
+    transform: rotate(17deg);
+}
+
+.btn-synthesize .sparkle .ui-icon {
+    width: 15px;
+    height: 15px;
+    filter: drop-shadow(0 0 7px var(--color-primary-soft));
+    z-index: 1;
+}
+
+.guide-cta-note {
+    margin-top: 7px;
+    color: var(--color-text-secondary);
+    font-size: 10.5px;
+    line-height: 1.42;
+}
+
+@keyframes sparkle-float {
+    0%, 100% { transform: translateY(0) scale(1); opacity: 0.8; }
+    50% { transform: translateY(-2px) scale(1.1); opacity: 1; }
+}

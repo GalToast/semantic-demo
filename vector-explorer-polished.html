@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantic Explorer | MoCo Business Mycelium</title>
+    <meta name="description" content="Explore 8,406 Montgomery County businesses through a 3D semantic explorer mapping similarity and neighborhood context.">
+    <meta name="theme-color" content="#071018">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="McCullough Digital">
+    <meta property="og:title" content="Semantic Explorer | MoCo Business Mycelium">
+    <meta property="og:description" content="Explore Montgomery County businesses as a living semantic field with connection paths, map anchors, and neighborhood context.">
+    <meta property="og:url" content="https://mccullough.cloud/semantic-demo/vector-explorer-polished.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Semantic Explorer | MoCo Business Mycelium">
+    <meta name="twitter:description" content="Explore Montgomery County businesses as a living semantic field with connection paths, map anchors, and neighborhood context.">
+    <meta property="og:image" content="https://mccullough.cloud/semantic-demo/og-preview.png">
+    <meta property="og:image:width" content="1024">
+    <meta property="og:image:height" content="1024">
+    <meta name="twitter:image" content="https://mccullough.cloud/semantic-demo/og-preview.png">
+    <link rel="canonical" href="https://mccullough.cloud/semantic-demo/vector-explorer-polished.html">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="semantic-demo.css?v=4d90ba052af4">
+    <link rel="stylesheet" href="vector-explorer-pandora.css?v=99a7d5032027">
+    <link rel="stylesheet" href="css/mobile_premium.css?v=c1ee05187c83">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>M</text></svg>">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <svg class="semantic-icon-sprite" width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;inline-size:0;block-size:0;overflow:hidden">
+        <symbol id="icon-mycelium" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="2.2"></circle>
+            <circle cx="5" cy="6" r="1.6"></circle>
+            <circle cx="19" cy="7" r="1.6"></circle>
+            <circle cx="6" cy="18" r="1.6"></circle>
+            <circle cx="18" cy="18" r="1.6"></circle>
+            <path d="M10.3 10.5 6.3 7.2M13.8 10.7l3.9-2.8M10.2 13.4 7.1 17M13.7 13.5l3 3.2"></path>
+        </symbol>
+        <symbol id="icon-map" viewBox="0 0 24 24">
+            <path d="M4 6.5 9.5 4l5 2.2L20 4v13.5L14.5 20l-5-2.2L4 20V6.5Z"></path>
+            <path d="M9.5 4v13.8M14.5 6.2V20"></path>
+        </symbol>
+        <symbol id="icon-search" viewBox="0 0 24 24">
+            <circle cx="10.5" cy="10.5" r="5.8"></circle>
+            <path d="m15 15 5 5"></path>
+        </symbol>
+        <symbol id="icon-guide" viewBox="0 0 24 24">
+            <path d="M12 3.5 14.1 9l5.4 2.1-5.4 2.1L12 18.5l-2.1-5.3-5.4-2.1L9.9 9 12 3.5Z"></path>
+            <path d="M19 16.5v3M20.5 18h-3"></path>
+        </symbol>
+        <symbol id="icon-trail-bloom" viewBox="0 0 24 24">
+            <path d="M12 3.2c2.6 2.8 3.9 5.2 3.9 7.2A3.9 3.9 0 0 1 12 14.3a3.9 3.9 0 0 1-3.9-3.9c0-2 1.3-4.4 3.9-7.2Z"></path>
+            <path d="M12 14.3v6.1"></path>
+            <path d="M7.3 17.5c1.6-.2 3.1.8 4.7 2.9M16.7 17.5c-1.6-.2-3.1.8-4.7 2.9"></path>
+            <path d="M5.5 10.8c2.4.4 4.6 1.5 6.5 3.5M18.5 10.8c-2.4.4-4.6 1.5-6.5 3.5"></path>
+            <circle cx="12" cy="10.2" r="1.1"></circle>
+        </symbol>
+        <symbol id="icon-arrow-left" viewBox="0 0 24 24">
+            <path d="M15 6 9 12l6 6"></path>
+        </symbol>
+        <symbol id="icon-arrow-right" viewBox="0 0 24 24">
+            <path d="m9 6 6 6-6 6"></path>
+        </symbol>
+        <symbol id="icon-zoom-in" viewBox="0 0 24 24">
+            <circle cx="10.5" cy="10.5" r="5.8"></circle>
+            <path d="M10.5 7.8v5.4M7.8 10.5h5.4M15 15l5 5"></path>
+        </symbol>
+        <symbol id="icon-zoom-out" viewBox="0 0 24 24">
+            <circle cx="10.5" cy="10.5" r="5.8"></circle>
+            <path d="M7.8 10.5h5.4M15 15l5 5"></path>
+        </symbol>
+        <symbol id="icon-reset" viewBox="0 0 24 24">
+            <path d="M7 8a7 7 0 1 1-1 8"></path>
+            <path d="M7 4v4h4"></path>
+        </symbol>
+        <symbol id="icon-rotate" viewBox="0 0 24 24">
+            <path d="M12 4a8 8 0 1 1-7.4 5"></path>
+            <path d="M4 5v4h4"></path>
+        </symbol>
+        <symbol id="icon-panel" viewBox="0 0 24 24">
+            <path d="M5 7.5c2.2-1.8 4.6-2.7 7-2.7s4.8.9 7 2.7v9c-2.2 1.8-4.6 2.7-7 2.7s-4.8-.9-7-2.7v-9Z"></path>
+            <path d="M9.2 6.2v11.6M14.8 6.2v11.6M5.3 11.9c2.1 1.1 4.3 1.7 6.7 1.7s4.6-.6 6.7-1.7"></path>
+        </symbol>
+        <symbol id="icon-spore" viewBox="0 0 24 24">
+            <path d="M12 3.5c3.6 3 5.4 5.8 5.4 8.4a5.4 5.4 0 0 1-10.8 0c0-2.6 1.8-5.4 5.4-8.4Z"></path>
+            <path d="M9.2 13.2c1.8 1.2 3.8 1.2 5.6 0M10.4 9.3c1 .5 2.2.5 3.2 0"></path>
+        </symbol>
+        <symbol id="icon-orbit" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="2.2"></circle>
+            <path d="M4.7 12c0-2.4 3.3-4.3 7.3-4.3s7.3 1.9 7.3 4.3-3.3 4.3-7.3 4.3-7.3-1.9-7.3-4.3Z"></path>
+            <path d="M8.3 5.7c2.1-1.2 5.2.9 7.2 4.4s2 7.2-.1 8.4-5.2-.9-7.2-4.4-2-7.2.1-8.4Z"></path>
+        </symbol>
+        <symbol id="icon-share" viewBox="0 0 24 24">
+            <circle cx="7" cy="12" r="2"></circle>
+            <circle cx="17" cy="6" r="2"></circle>
+            <circle cx="17" cy="18" r="2"></circle>
+            <path d="m8.8 11 6.4-4M8.8 13l6.4 4"></path>
+        </symbol>
+        <symbol id="icon-close" viewBox="0 0 24 24">
+            <path d="m6 6 12 12M18 6 6 18"></path>
+        </symbol>
+        <symbol id="icon-help" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M9.4 9.2a2.8 2.8 0 1 1 3.1 2.7c-.6.4-.9.9-.9 1.6"></path>
+            <path d="M12 17h.01"></path>
+        </symbol>
+        <symbol id="icon-cloud" viewBox="0 0 24 24">
+            <path d="M7.5 18.5h9.2a4.3 4.3 0 0 0 .7-8.5 6.2 6.2 0 0 0-11.8 2.1A3.2 3.2 0 0 0 7.5 18.5Z"></path>
+        </symbol>
+        <symbol id="icon-weather-seed" viewBox="0 0 24 24">
+            <path d="M12 3.5c3.5 3.1 5.3 6 5.3 8.7a5.3 5.3 0 0 1-10.6 0c0-2.7 1.8-5.6 5.3-8.7Z"></path>
+            <path d="M8.4 13.6c2.3 1.6 4.9 1.6 7.2 0"></path>
+            <path d="M9.3 9.6c1.7.8 3.7.8 5.4 0"></path>
+            <path d="M12 17.1v3.1"></path>
+        </symbol>
+        <symbol id="icon-sun" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3.7"></circle>
+            <path d="M12 2.8v2.4M12 18.8v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.8 12h2.4M18.8 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"></path>
+        </symbol>
+        <symbol id="icon-rain" viewBox="0 0 24 24">
+            <path d="M7.5 14.5h9.2a3.8 3.8 0 0 0 .5-7.6A5.8 5.8 0 0 0 6.3 9a3 3 0 0 0 1.2 5.5Z"></path>
+            <path d="m8 18-1 2M12 18l-1 2M16 18l-1 2"></path>
+        </symbol>
+        <symbol id="icon-phone" viewBox="0 0 24 24">
+            <path d="M8 5 6 7c.8 5.4 5.6 10.2 11 11l2-2-3-3-1.8 1.2a10.2 10.2 0 0 1-4.4-4.4L11 8 8 5Z"></path>
+        </symbol>
+        <symbol id="icon-email" viewBox="0 0 24 24">
+            <rect x="4" y="6" width="16" height="12" rx="2"></rect>
+            <path d="m5 8 7 5 7-5"></path>
+        </symbol>
+        <symbol id="icon-web" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="8"></circle>
+            <path d="M4.5 12h15M12 4a13 13 0 0 1 0 16M12 4a13 13 0 0 0 0 16"></path>
+        </symbol>
+    </svg>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay" role="status" aria-live="polite">
+        <div class="loading-shell">
+            <div class="loading-spores" aria-hidden="true">
+                <svg class="loading-thread" viewBox="0 0 118 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 44C33 29 44 24 58 24C74 24 84 33 98 42" stroke="rgba(255,255,255,0.16)" stroke-width="1.2" stroke-linecap="round"/>
+                    <path d="M20 44C40 48 58 50 98 42" stroke="rgba(78,205,196,0.16)" stroke-width="1" stroke-linecap="round"/>
+                </svg>
+                <span class="loading-spore spore-a"></span>
+                <span class="loading-spore spore-b"></span>
+                <span class="loading-spore spore-c"></span>
+            </div>
+            <div class="loading-kicker">Montgomery County</div>
+            <div class="loading-title">Growing the mycelium</div>
+            <div class="loading-note" id="loading-note">8,406 Montgomery County business records woven into a living semantic field. An exploratory portrait — not an official directory.</div>
+            <div class="loading-progress" aria-hidden="true">
+                <div class="loading-progress-bar" id="loading-progress-bar"></div>
+            </div>
+            <div class="loading-phase-row" id="loading-phase-row">
+                <span class="loading-phase-chip is-active" data-loading-phase="records">Records</span>
+                <span class="loading-phase-chip" data-loading-phase="scene">Scene</span>
+                <span class="loading-phase-chip" data-loading-phase="restore">Restore</span>
+                <span class="loading-phase-chip" data-loading-phase="launch">Launch</span>
+            </div>
+            <div class="loading-foot" id="loading-foot">County records are arriving first.</div>
+        </div>
+    </div>
+
+    <!-- Micro-demo veil overlay -->
+    <div id="micro-demo-veil" class="micro-demo-veil" aria-hidden="true"></div>
+
+    <!-- Weather Overlay -->
+    <div class="weather-overlay" id="weather-overlay">
+        <div class="sun-rays" id="sun-rays"></div>
+        <div class="fog-overlay" id="fog-overlay"></div>
+        <div class="rain-container" id="rain-container"></div>
+        <div class="snow-container" id="snow-container"></div>
+        <div class="lightning-flash" id="lightning-flash"></div>
+    </div>
+    
+    <!-- Canvas Container (Galaxy View) -->
+    <main id="main-content"><div id="canvas-container" aria-label="3D mycelium visualization"></div></main>
+    
+    <!-- Map Container -->
+    <div id="map-container" role="region" aria-label="Connection map">
+        <div id="map-trail-strip" class="map-trail-strip" hidden>
+            <div class="map-strip-title">Connection Path</div>
+        </div>
+    </div>
+
+    <div class="biofield-atmosphere" aria-hidden="true" tabindex="-1">
+        <span class="biofield-orb biofield-orb-a"></span>
+        <span class="biofield-orb biofield-orb-b"></span>
+        <span class="biofield-orb biofield-orb-c"></span>
+        <span class="biofield-thread biofield-thread-a"></span>
+        <span class="biofield-thread biofield-thread-b"></span>
+    </div>
+    
+    <!-- Weather Widget -->
+    <div class="weather-widget fade-in glass-light" role="region" aria-label="Current Montgomery County weather" hidden>
+        <span class="weather-icon" id="weather-icon" role="img" aria-label="Current weather" data-condition="cloud"><svg class="ui-icon weather-seed-base" aria-hidden="true"><use href="#icon-weather-seed"></use></svg><svg class="ui-icon weather-condition-icon" aria-hidden="true"><use href="#icon-cloud"></use></svg></span>
+        <div>
+            <div class="weather-temp" id="weather-temp"></div>
+            <div class="weather-desc" id="weather-desc"></div>
+        </div>
+        <div class="weather-wind">
+            <span class="wind-arrow" id="wind-arrow">N</span>
+            <span id="wind-speed"></span>
+        </div>
+        <span class="weather-staleness" id="weather-staleness" aria-live="polite" aria-label="Weather data age"></span>
+    </div>
+    
+    <!-- View Toggle -->
+    <nav class="view-toggle fade-in glass-medium" aria-label="Visualization mode">
+        <button id="btn-galaxy" class="active" type="button" aria-pressed="true"><svg class="ui-icon" aria-hidden="true"><use href="#icon-mycelium"></use></svg><span class="icon-label">Mycelium</span></button>
+        <button id="btn-map" type="button" aria-pressed="false"><svg class="ui-icon" aria-hidden="true"><use href="#icon-map"></use></svg><span class="icon-label">Map</span></button>
+    </nav>
+
+    <div class="view-handoff glass-heavy" id="view-handoff" role="presentation" aria-hidden="true">
+        <div class="view-handoff-rune" id="view-handoff-rune"><svg class="ui-icon" aria-hidden="true"><use href="#icon-mycelium"></use></svg></div>
+        <div class="view-handoff-copy">
+            <div class="view-handoff-kicker" id="view-handoff-kicker">County View</div>
+            <div class="view-handoff-title" id="view-handoff-title">Mycelium view</div>
+            <div class="view-handoff-note" id="view-handoff-note">Semantic neighborhoods stay in motion.</div>
+        </div>
+    </div>
+
+    <div class="journey-compass glass-heavy" id="journey-compass" role="region" aria-label="Journey status" aria-live="off">
+        <div class="journey-compass-copy">
+            <div class="journey-compass-kicker" id="journey-compass-kicker">Journey</div>
+            <div class="journey-compass-title" id="journey-compass-title">County View</div>
+            <div class="journey-compass-note" id="journey-compass-note">Start wide, then search to open one semantic trail.</div>
+        </div>
+        <div class="journey-compass-rail">
+            <button type="button" class="journey-compass-step" data-journey-step="overview" aria-label="Journey step: Overview">Overview</button>
+            <button type="button" class="journey-compass-step" data-journey-step="search" aria-label="Journey step: Search">Search</button>
+            <button type="button" class="journey-compass-step" data-journey-step="focus" aria-label="Journey step: Focus">Focus</button>
+            <button type="button" class="journey-compass-step" data-journey-step="inside" aria-label="Journey step: Step Inside">Step Inside</button>
+            <button type="button" class="journey-compass-step" data-journey-step="map" aria-label="Journey step: Map">Map</button>
+        </div>
+        <div class="journey-compass-actions" aria-label="Journey route controls">
+            <button class="journey-compass-action primary" id="btn-journey-primary" type="button" aria-label="Find a business">Find Business</button>
+            <button class="journey-compass-action" id="btn-journey-secondary" type="button" aria-label="Open map">Map</button>
+            <button class="journey-compass-action" id="btn-journey-tertiary" type="button" aria-label="County View" aria-expanded="false" aria-controls="main-content" aria-disabled="true" title="Return to county overview showing all neighborhoods" hidden>County View</button>
+        </div>
+    </div>
+
+    <!-- Hidden live region for search status updates -->
+    <div id="search-status-live" class="sr-only" role="status" aria-live="polite"></div>
+
+    <!-- Minimal Floating Tag (demo overlay) -->
+    <div class="demo-overlay-tag" id="demo-overlay-tag" hidden aria-hidden="true">
+      <span class="demo-tag-dot"></span>
+      <span class="demo-tag-text">watch how it works</span>
+    </div>
+
+    <!-- Info Panel - collapsible -->
+    <aside class="info-panel slide-in-left active" id="info-panel" role="region" aria-labelledby="info-panel-title">
+        <button class="info-header" id="info-panel-toggle" type="button" aria-label="Toggle MoCo Business Mycelium info panel" aria-expanded="true" aria-controls="info-panel-content">
+            <span id="info-panel-title">MoCo Business Mycelium</span>
+            <span class="info-toggle-icon" id="info-toggle-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-panel"></use></svg></span>
+        </button>
+        <div class="info-content" id="info-panel-content">
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="stat-number" id="total-count">8,406</div>
+                    <div class="stat-label">Businesses</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="city-count">12</div>
+                    <div class="stat-label">Cities</div>
+                </div>
+            </div>
+            <div class="stat-caption">Montgomery County records in the semantic field</div>
+
+            <div class="demo-starters" id="demo-starters" aria-label="Guided demo searches">
+                <div class="demo-starters-kicker">First time here?</div>
+                <div class="demo-starters-copy">Choose a starting need. The view will light an anchor, then suggest related nearby businesses.</div>
+                <div class="demo-journey-steps" aria-hidden="true">
+                    <span><b>1</b> Choose</span>
+                    <span><b>2</b> Guide</span>
+                    <span><b>3</b> Explore</span>
+                </div>
+                <div class="demo-starter-row">
+                    <button class="demo-starter-chip" type="button" data-demo-query="coffee" aria-label="Start demo search for coffee">Coffee</button>
+                    <button class="demo-starter-chip" type="button" data-demo-query="roof repair" aria-label="Start demo search for roof repair">Roof repair</button>
+                    <button class="demo-starter-chip" type="button" data-demo-query="childcare" aria-label="Start demo search for childcare">Childcare</button>
+                    <button class="demo-starter-chip" type="button" data-demo-query="dog friendly" aria-label="Start demo search for dog friendly businesses">Dog friendly</button>
+                </div>
+            </div>
+
+            <button class="launch-btn" id="btn-launch" type="button" title="Launch directly into focus mode with a random business">
+                <svg class="ui-icon" aria-hidden="true"><use href="#icon-mycelium"></use></svg>
+                Surprise Me
+            </button>
+
+            <div class="search-container" role="search">
+                <div class="search-label">
+                    <span class="search-label-text">Semantic Search</span>
+                    <span class="semantic-lane-pill" id="semantic-lane-pill" data-state="checking" title="Checking search readiness.">Search check</span>
+                </div>
+                <div class="search-input-wrapper">
+                    <span class="search-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-search"></use></svg></span>
+                    <input type="text" class="search-input" id="search-input" placeholder="Search need, service, or clue..." aria-label="Search businesses semantically by need, venue, service, or clue" aria-controls="search-results" aria-describedby="search-status-live" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    <div class="search-spinner" id="search-spinner" aria-hidden="true"></div>
+                    <button class="search-clear-btn" id="search-clear-btn" type="button" aria-label="Clear search">
+                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg>
+                    </button>
+                </div>
+                <div class="search-hint" id="search-status" hidden></div>
+                <div class="semantic-lane-assist" id="semantic-lane-assist" data-state="idle" hidden role="region" aria-label="Search status detail" aria-live="polite">
+                    <div class="semantic-lane-assist-row">
+                        <span class="semantic-lane-assist-copy" id="semantic-lane-assist-copy">Search readiness is checking in the background.</span>
+                    </div>
+                    <div class="semantic-lane-assist-meta" id="semantic-lane-assist-meta"></div>
+                </div>
+                <div class="search-trail-cue" id="search-trail-cue" hidden role="status" aria-live="polite">
+                    <div class="search-trail-cue-kicker" id="search-trail-cue-kicker">Connection cue</div>
+                    <div class="search-trail-cue-title" id="search-trail-cue-title">Search opens a trail.</div>
+                    <div class="search-trail-cue-stage" aria-hidden="true">
+                        <span class="search-trail-cue-step" data-cue-stage="query">Query</span>
+                        <span class="search-trail-cue-step" data-cue-stage="anchor">Anchor</span>
+                        <span class="search-trail-cue-step" data-cue-stage="walk">Explore</span>
+                    </div>
+                    <div class="search-trail-cue-note" id="search-trail-cue-note">The first strong match becomes the anchor; from there you can center it and explore the neighborhood.</div>
+                </div>
+                <div class="search-results glass-light" id="search-results" role="region" aria-label="Search results" aria-live="off" aria-atomic="false"></div>
+                <div class="synthesize-trigger" id="synthesize-trigger" style="display: none">
+                    <div class="guide-cta-kicker">Next best move</div>
+                    <button id="btn-synthesize" class="btn-synthesize" type="button">
+                        <span class="sparkle"><svg class="ui-icon" aria-hidden="true"><use href="#icon-guide"></use></svg></span>
+                        Summarize Results
+                    </button>
+                    <div class="guide-cta-note">
+                        Summarize the anchor and suggest three nearby stops from this result stack.
+                    </div>
+                </div>
+
+                <div class="mode-grid" id="mode-grid">
+                    <button class="mode-chip active" type="button" data-mode="default" aria-pressed="true" title="County View — keeps the whole county visible so you can choose where to wander next.">
+                        <span class="mode-name">County View</span>
+                        <span class="sr-only">keeps the whole county visible so you can choose where to wander next.</span>
+                    </button>
+                    <button class="mode-chip" type="button" data-mode="bloom" data-story="signal-rich" aria-pressed="false" title="Bloom — surface businesses with a website plus email or phone.">
+                        <span class="mode-name">Bloom</span>
+                        <span class="sr-only">Surface businesses with a website plus email or phone.</span>
+                    </button>
+                    <button class="mode-chip" type="button" data-mode="bridge" data-story="bridge-businesses" aria-pressed="false" title="Bridge — highlight businesses linking different industry and city clusters.">
+                        <span class="mode-name">Bridge</span>
+                        <span class="sr-only">Highlight businesses linking different industry and city clusters.</span>
+                    </button>
+                    <button class="mode-chip" type="button" data-mode="trail" aria-pressed="false" title="Connection Path — explore related businesses around one focused record. A path forms as you move.">
+                        <span class="mode-name">Path</span>
+                        <span class="sr-only">Explore related businesses around one focused record. A connection path forms as you move.</span>
+                    </button>
+                </div>
+            </div>
+
+
+            <div class="selected-card is-empty" id="selected-card">
+                <div class="vector-cascade-bg" id="vector-cascade-bg" aria-hidden="true"></div>
+                <div class="panel-section-title" id="selected-card-title">Focused Business</div>
+                <div class="selected-empty" id="selected-empty">
+                    <svg class="selected-empty-icon" aria-hidden="true" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="26" cy="26" r="10" fill="none" stroke="rgba(121,235,222,0.5)" stroke-width="2"/>
+                        <circle cx="26" cy="26" r="4" fill="rgba(121,235,222,0.35)"/>
+                        <circle cx="10" cy="14" r="3.5" fill="rgba(255,226,132,0.25)" stroke="rgba(255,226,132,0.4)" stroke-width="1.2"/>
+                        <circle cx="42" cy="18" r="2.8" fill="rgba(255,226,132,0.2)" stroke="rgba(255,226,132,0.35)" stroke-width="1"/>
+                        <circle cx="38" cy="40" r="4" fill="rgba(121,235,222,0.18)" stroke="rgba(121,235,222,0.35)" stroke-width="1.2"/>
+                        <circle cx="14" cy="38" r="3" fill="rgba(255,226,132,0.2)" stroke="rgba(255,226,132,0.3)" stroke-width="1"/>
+                        <circle cx="44" cy="32" r="2.2" fill="rgba(255,226,132,0.15)" stroke="rgba(255,226,132,0.25)" stroke-width="0.9"/>
+                        <circle cx="8" cy="26" r="2.5" fill="rgba(121,235,222,0.2)" stroke="rgba(121,235,222,0.3)" stroke-width="0.9"/>
+                        <line x1="14" y1="38" x2="26" y2="26" stroke="rgba(121,235,222,0.12)" stroke-width="0.8" stroke-dasharray="2,2"/>
+                        <line x1="44" y1="32" x2="26" y2="26" stroke="rgba(121,235,222,0.1)" stroke-width="0.7" stroke-dasharray="2,2"/>
+                        <line x1="8" y1="26" x2="26" y2="26" stroke="rgba(121,235,222,0.1)" stroke-width="0.7" stroke-dasharray="2,2"/>
+                    </svg>
+                    <div class="selected-empty-copy">
+                        <span class="selected-empty-headline">Explore the county's mycelium</span>
+                        <span class="selected-empty-sub">Click any spore in the mycelium to inspect one business and discover its neighborhood.</span>
+                    </div>
+                </div>
+                <div id="selected-details" style="display: none;">
+                    <div class="selected-hero">
+                        <div class="selected-hero-main">
+                            <h3 id="selected-name">Business Name</h3>
+                            <div class="selected-filed-as" id="selected-filed-as" style="display: none;"></div>
+                            <div class="selected-subtitle" id="selected-what">What they do</div>
+                        </div>
+                        <div class="selected-role-badge" id="selected-role-badge">Record</div>
+                    </div>
+                    <div class="selected-meta-strip" id="selected-meta-strip"></div>
+                    <div class="badge-row" id="selected-badges"></div>
+                    <div class="selected-match-panel" id="selected-match-panel" style="display: none;">
+                        <div class="selected-match-label" id="selected-match-label">Why this record</div>
+                        <div class="selected-match-copy" id="selected-match-copy"></div>
+                    </div>
+                    <div class="selected-action-row" id="selected-action-row" style="display: none;"></div>
+                    <div class="selected-grid">
+                        <div class="selected-item">
+                            <div class="selected-item-label">Semantic Neighborhood</div>
+                            <div class="selected-item-value" id="selected-theme">Theme</div>
+                        </div>
+                        <div class="selected-item">
+                            <div class="selected-item-label">Record Status</div>
+                            <div class="selected-item-value" id="selected-status">Record status</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <details class="rail-section cluster-section" id="cluster-section">
+                <summary>
+                    <span class="summary-text">
+                        <span class="summary-title">Semantic Neighborhoods</span>
+                    </span>
+                </summary>
+                <div class="rail-section-body">
+                    <ul class="cluster-list" id="cluster-list" role="group" aria-label="Semantic neighborhood filters"></ul>
+                </div>
+            </details>
+            
+            <details class="rail-section" id="filters-section">
+                <summary>
+                    <span class="summary-text">
+                        <span class="summary-title">Filters</span>
+                    </span>
+                    <span class="filter-preview" id="filter-preview" hidden>All clear</span>
+                </summary>
+                <div class="rail-section-body">
+                    <div class="filter-toolbar" aria-label="Dataset filters">
+                        <div class="filter-row" id="status-filter-row">
+                            <button class="filter-chip active" type="button" data-status-filter="all" aria-pressed="true">All Records</button>
+                            <button class="filter-chip" type="button" data-status-filter="active" aria-pressed="false">Active</button>
+                        </div>
+                        <div class="filter-row" id="signal-filter-row">
+                            <button class="filter-chip" type="button" data-signal-filter="website" aria-pressed="false">Has Website</button>
+                            <button class="filter-chip" type="button" data-signal-filter="email" aria-pressed="false">Has Email</button>
+                        </div>
+                        <select class="filter-select" id="city-filter" aria-label="Filter by city">
+                            <option value="all">All Cities</option>
+                        </select>
+                        <button class="filter-clear-btn" id="filter-clear-btn" type="button" disabled aria-disabled="true">Clear filters</button>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </aside>
+
+    <section class="focus-stage" id="focus-stage" role="region" aria-labelledby="focus-stage-name" hidden>
+        <div class="focus-stage-card focus-pocket" id="focus-pocket" role="region" aria-label="Focus detail panel">
+            <div class="focus-stage-kicker" id="focus-stage-kicker">Focused Business</div>
+            <div class="focus-stage-name" id="focus-stage-name"></div>
+            <div class="focus-stage-filed" id="focus-stage-filed" hidden></div>
+            <div class="focus-stage-what" id="focus-stage-what">What they do</div>
+            <div class="focus-stage-meta" id="focus-stage-meta"></div>
+            <div class="focus-stage-badges" id="focus-stage-badges"></div>
+            <div class="focus-stage-sensitivity" id="focus-stage-sensitivity"></div>
+            <div class="focus-stage-trivia" id="focus-stage-trivia" hidden></div>
+            <div class="focus-stage-note" id="focus-stage-note"></div>
+            <div class="focus-stage-actions">
+                <button class="focus-stage-action-btn" id="btn-focus-overview" type="button" title="Zoom out to show the whole county" aria-label="Return to County View">County</button>
+                <button class="focus-stage-action-btn" id="btn-focus-center" type="button" title="Recenter camera on this business" aria-label="Recenter camera on this business">Recenter</button>
+                <button class="focus-stage-action-btn" id="btn-focus-expand" type="button" title="Expand neighborhood cluster" aria-label="Expand neighborhood cluster">Expand</button>
+                <button class="focus-stage-action-btn" id="btn-focus-path" type="button" title="Show the connection trail from this business" aria-label="Show the connection trail from this business">Show Trail</button>
+            </div>
+            <button class="focus-stage-dive-btn" id="btn-focus-dive" type="button" aria-pressed="false" aria-label="Step Inside">
+                <span class="focus-stage-dive-label">Step Inside</span>
+            </button>
+            <div class="focus-stage-journey" id="focus-stage-journey">
+                <button class="focus-stage-journey-btn" id="btn-focus-prev" type="button" aria-label="Previous path stop" aria-disabled="true"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-left"></use></svg></button>
+                <div class="focus-stage-journey-meta">
+                    <div class="focus-stage-journey-kicker">Route</div>
+                    <div class="focus-stage-route" id="focus-stage-route" aria-hidden="true">
+                        <span class="focus-stage-route-dot is-current"></span>
+                        <span class="focus-stage-route-line"></span>
+                        <span class="focus-stage-route-dot is-next"></span>
+                    </div>
+                    <div class="focus-stage-journey-progress" id="focus-stage-progress">Pick a business, then explore its nearby neighbors.</div>
+                    <div class="focus-stage-next" id="focus-stage-next">Choose a nearby business to continue the path.</div>
+                </div>
+                <button class="focus-stage-journey-btn" id="btn-focus-next" type="button" aria-label="Next path stop"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg></button>
+            </div>
+            <div class="focus-stage-neighbors" id="focus-stage-neighbors" aria-live="off">
+                <div class="focus-stage-neighbor-header">
+                    <div class="focus-stage-neighbor-kicker">Nearby Stops</div>
+                    <div class="focus-stage-neighbor-count" id="focus-stage-neighbor-count">0 visible neighbors</div>
+                </div>
+                <div class="focus-stage-neighbor-list" id="focus-stage-neighbor-list"></div>
+            </div>
+            <div class="focus-stage-inside-status" id="focus-stage-inside-status" role="status" aria-live="polite" aria-atomic="false" aria-hidden="true">
+                <span class="focus-stage-inside-pulse" aria-hidden="true"></span>
+                <span class="focus-stage-inside-status-copy" id="focus-stage-inside-status-copy">Step into this neighborhood to follow related businesses.</span>
+            </div>
+            <div class="focus-stage-inside-controls" id="focus-stage-inside-controls" aria-hidden="true">
+                <button class="focus-stage-inside-btn" id="btn-inside-next" type="button">Next Stop</button>
+                <button class="focus-stage-inside-btn secondary" id="btn-inside-county" type="button" aria-label="Exit Step Inside and return to County View">County</button>
+            </div>
+            <div class="focus-thread-inspector" id="focus-thread-inspector" aria-hidden="true">
+                <div class="focus-thread-inspector-kicker">Connection Preview</div>
+                <div class="focus-thread-inspector-title" id="focus-thread-inspector-title">Select a nearby stop</div>
+                <div class="focus-thread-inspector-copy" id="focus-thread-inspector-copy">Click a neighbor below to preview why it belongs here, then pin or follow.</div>
+                <div class="focus-thread-inspector-meta" id="focus-thread-inspector-meta">Preview connection</div>
+                <div class="focus-thread-inspector-actions">
+                    <button class="focus-thread-inspector-btn" id="btn-thread-pin" type="button" disabled>Pin Connection</button>
+                    <button class="focus-thread-inspector-btn primary" id="btn-thread-follow" type="button" disabled>Follow Connection</button>
+                    <button class="focus-thread-inspector-btn secondary" id="btn-thread-clear" type="button" disabled>Clear</button>
+                </div>
+            </div>
+            <div class="trail-controls" id="trail-controls" aria-label="Connection path controls">
+                <button class="action-btn" id="btn-prev-node" type="button" aria-label="Go to previous path stop" disabled>Prev Stop</button>
+                <button class="action-btn" id="btn-next-node" type="button" aria-label="Go to next path stop" disabled>Next Stop</button>
+            </div>
+            <div class="trail-context" id="trail-context"></div>
+        </div>
+    </section>
+    
+    <div class="controls" role="group" aria-label="Canvas navigation controls">
+        <button class="control-btn" id="btn-zoom-in" type="button" aria-label="Zoom in"><svg class="ui-icon" aria-hidden="true"><use href="#icon-zoom-in"></use></svg></button>
+        <button class="control-btn" id="btn-zoom-out" type="button" aria-label="Zoom out"><svg class="ui-icon" aria-hidden="true"><use href="#icon-zoom-out"></use></svg></button>
+        <button class="control-btn" id="btn-reset" type="button" aria-label="Reset view"><svg class="ui-icon" aria-hidden="true"><use href="#icon-reset"></use></svg></button>
+        <button class="control-btn" id="btn-rotate" type="button" aria-label="Toggle auto-rotate" aria-pressed="true"><svg class="ui-icon" aria-hidden="true"><use href="#icon-rotate"></use></svg></button>
+    </div>
+
+    <button class="panel-toggle" id="btn-panel" type="button" aria-label="Open side panel" aria-expanded="true" aria-controls="info-panel"><svg class="ui-icon" aria-hidden="true"><use href="#icon-panel"></use></svg></button>
+    <button class="legend-toggle" id="btn-legend" type="button" aria-label="Show field guide" aria-expanded="false" aria-pressed="false" aria-controls="legend-panel"><svg class="ui-icon" aria-hidden="true"><use href="#icon-guide"></use></svg></button>
+    <button class="share-toggle" id="btn-share-view" type="button" title="Copy current view link" aria-label="Copy current view link"><svg class="ui-icon" aria-hidden="true"><use href="#icon-share"></use></svg><span class="share-toggle-label">Share</span></button>
+    <button class="help-toggle" id="btn-keyboard-help" type="button" aria-label="Show shortcuts" aria-expanded="false" aria-controls="keyboard-hint-panel"><svg class="ui-icon" aria-hidden="true"><use href="#icon-help"></use></svg></button>
+    <aside class="legend-panel glass-heavy" id="legend-panel" role="region" aria-labelledby="legend-panel-title-handle" aria-hidden="true"></aside>
+    <div class="experience-reset-toast" id="experience-reset-toast" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true">
+        <strong id="experience-toast-title"></strong>
+        <span id="experience-toast-copy"></span>
+    </div>
+    
+    <div class="time-display glass-light" id="time-display" role="region" aria-label="System clock" aria-live="off">--:-- --</div>
+    
+    <div class="hover-tooltip glass-medium" id="hover-tooltip" aria-hidden="true">
+        <div class="card-header">
+            <div class="business-name" id="tooltip-name"></div>
+            <div class="business-what" id="tooltip-what"></div>
+        </div>
+        <div class="card-body">
+            <div class="business-trivia" id="tooltip-trivia"></div>
+            <div class="business-contact" id="tooltip-contact">
+                <div class="contact-row" id="contact-phone" style="display: none;"><a href="#" id="tooltip-phone">Phone</a></div>
+                <div class="contact-row" id="contact-email" style="display: none;"><a href="#" id="tooltip-email">Email</a></div>
+                <div class="contact-row" id="contact-web" style="display: none;"><a href="#" id="tooltip-website" target="_blank">Website</a></div>
+            </div>
+            <div class="business-cluster"><span id="tooltip-cluster"></span></div>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
+            "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js",
+            "three/examples/jsm/lines/Line2.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/lines/Line2.js",
+            "three/examples/jsm/lines/LineGeometry.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/lines/LineGeometry.js",
+            "three/examples/jsm/lines/LineMaterial.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/lines/LineMaterial.js"
+        }
+    }
+    </script>
+    <script type="module" src="dist/bundle.js?v=541b6379aafd"></script>
+
+    <div id="semantic-summary-card" class="summary-card hidden glass-heavy" role="region" aria-labelledby="summary-card-title-text" aria-hidden="true" hidden>
+        <div class="summary-header">
+            <div class="summary-title">
+                <span class="summary-guide-glyph"><svg class="ui-icon" aria-hidden="true"><use href="#icon-trail-bloom"></use></svg></span>
+                <span id="summary-card-title-text">Search</span>
+            </div>
+            <button id="btn-close-summary" class="close-icon" type="button" aria-label="Close summary">
+                <svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg>
+            </button>
+        </div>
+        <div class="summary-body">
+            <div id="summary-text" class="typewriter-content"></div>
+            <div id="summary-gemma-story" class="summary-field-note hidden" aria-hidden="true">
+                <div class="summary-field-note-header">
+                    <span class="summary-field-note-mark"><svg class="ui-icon" aria-hidden="true"><use href="#icon-spore"></use></svg></span>
+                    <span>Deep trail note</span>
+                </div>
+                <div id="summary-gemma-story-text" class="summary-field-note-text"></div>
+                <div id="summary-gemma-story-source" class="summary-field-note-source"></div>
+            </div>
+            <div id="summary-suggestions" class="suggestions-row"></div>
+            <div class="summary-lane-status" id="summary-lane-status">Ready</div>
+        </div>
+    </div>
+
+    <!-- Phase 3: Trail Review Overlay -->
+    <div class="trail-review-overlay" id="trail-review-overlay" role="dialog" aria-modal="false" aria-labelledby="trail-review-title" hidden aria-hidden="true">
+        <div class="trail-review-header">
+            <h3 id="trail-review-title">Semantic Connection Path</h3>
+            <button class="trail-review-close" type="button" aria-label="Close trail review" onclick="window._closeTrailReview()">×</button>
+        </div>
+        <div class="trail-review-content" id="trail-review-list"></div>
+    </div>
+</body>
+</html>

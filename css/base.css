@@ -1,0 +1,143 @@
+/*
+   Semantic Explorer Stylesheet
+   Project: MoCo Business Mycelium
+   Includes: Glassmorphism system, Synthesis Card, and Concierge UI
+*/
+
+/* Glassmorphism System */
+:root {
+    /* Mycelium Glass System - Unified UI Core */
+    --glass-blur: 16px;
+    --glass-blur-heavy: 24px;
+
+    --glass-bg: linear-gradient(165deg, rgba(10, 18, 24, 0.82) 0%, rgba(6, 12, 18, 0.92) 100%);
+    --glass-bg-deep: linear-gradient(180deg, rgba(8, 15, 20, 0.94) 0%, rgba(4, 9, 14, 0.98) 100%);
+    --glass-bg-accent: radial-gradient(circle at 100% 0%, rgba(121, 235, 222, 0.12), transparent 40%);
+
+    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+    --glass-border-glow: 1px solid rgba(121, 235, 222, 0.22);
+    --glass-border-muted: 1px solid rgba(255, 255, 255, 0.04);
+
+    --glass-radius-panel: 16px;
+    --glass-radius-card: 12px;
+    --glass-radius-action: 10px;
+    --glass-radius-pill: 999px;
+
+    --shadow-glass: 0 16px 48px rgba(0, 0, 0, 0.38);
+    --shadow-glass-glow: 0 12px 32px rgba(78, 205, 196, 0.12);
+
+    --font-display: 'Bricolage Grotesque', sans-serif;
+    --font-body: 'Nunito Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Space Mono', monospace;
+
+    --mobile-type-title: 18px;
+    --mobile-type-heading: 16px;
+    --mobile-type-body: 13px;
+    --mobile-type-caption: 11px;
+    --mobile-type-kicker: 9px;
+    --mobile-type-action: 10px;
+    --mobile-line-tight: 1.12;
+    --mobile-line-normal: 1.35;
+    --mobile-line-relaxed: 1.5;
+    --mobile-touch-min: 44px;
+    --mobile-touch-preferred: 48px;
+    --mobile-radius-card: var(--glass-radius-panel);
+    --mobile-radius-button: var(--glass-radius-action);
+    --mobile-radius-input: var(--glass-radius-action);
+    --mobile-radius-pill: var(--glass-radius-pill);
+    --color-primary: #4ecdc4;
+    --color-primary-rgb: 78, 205, 196;
+    --color-primary-soft: rgba(78, 205, 196, 0.2);
+    --color-primary-ring: rgba(78, 205, 196, 0.8);
+    --color-accent: #ffd93d;
+    --color-accent-rgb: 255, 217, 61;
+    --color-accent-soft: rgba(255, 217, 61, 0.1);
+    --color-accent-border: rgba(255, 217, 61, 0.18);
+    --color-surface-glass: rgba(15, 15, 25, 0.85);
+    --color-surface-panel: rgba(15, 19, 28, 0.9);
+    --color-border-subtle: rgba(255, 255, 255, 0.08);
+    --color-border-muted: rgba(255, 255, 255, 0.1);
+    --color-text-strong: rgba(255, 255, 255, 0.94);
+    --color-text-primary: rgba(255, 255, 255, 0.9);
+    --color-text-secondary: rgba(255, 255, 255, 0.72);
+    --color-text-muted: rgba(255, 255, 255, 0.5);
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --radius-tight: 8px;
+    --radius-normal: 12px;
+    --radius-card: 16px;
+    --radius-large: 20px;
+    --radius-pill: 999px;
+    --z-overlay: 100;
+    --z-modal: 190;
+
+    /* Shared panel elevation and glass treatment */
+    --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.24);
+    --shadow-panel: var(--shadow-glass);
+    --shadow-focus-ring: 0 0 0 3px rgba(78, 205, 196, 0.35);
+    --panel-glass-bg: var(--glass-bg);
+    --panel-glass-border: rgba(255, 255, 255, 0.1);
+
+    --line-tight: 1.12;
+    --line-normal: 1.35;
+    --line-relaxed: 1.5;
+}
+
+html {
+    width: 100%;
+    min-height: 100%;
+    overflow: hidden;
+    overflow-x: hidden;
+}
+
+/* iOS safe-area-inset — prevents content from rendering under notch/Dynamic Island */
+body {
+    margin: 0;
+    min-height: 100dvh;
+    overflow: hidden;
+    overflow-x: hidden;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+/* Skip Link — accessibility */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #000;
+    color: #fff;
+    padding: 8px 16px;
+    z-index: 9999;
+    text-decoration: none;
+    font-weight: 700;
+}
+.skip-link:focus {
+    top: 0;
+    z-index: 999999;
+}
+
+/* Screen-reader-only utility — accessible hiding without removing from DOM */
+.sr-only {
+    clip-path: rect(0 0 0 0);
+    border: 0;
+    padding: 0;
+    position: absolute;
+    white-space: nowrap;
+    overflow-y: auto;
+    overflow-x: hidden;
+    width: 1px;
+    height: 1px;
+}
+
+/* WCAG 2.4.7 Focus Visible — keyboard focus rings for interactive elements */
+button:focus-visible {
+    outline: 2px solid var(--color-primary-ring);
+    outline-offset: 2px;
+}

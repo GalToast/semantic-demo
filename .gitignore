@@ -1,0 +1,30 @@
+node_modules/
+dist/*.map
+
+# Local/runtime evidence
+tmp/
+reports/
+test-results/
+playwright-report/
+
+# Local server and deployment scratch
+*.log
+.local-dev-active
+.semantic-demo-last-backup.txt
+backups/
+output/
+
+# One-off screenshots and browser captures
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.mp4
+*.webm
+
+# Keep intentional public assets
+!og-preview.png
+
+# Local OS/editor noise
+.DS_Store
+Thumbs.db

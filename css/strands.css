@@ -1,0 +1,2179 @@
+/* Strands: mobile bottom-sheet and route-specific semantic explorer surfaces. */
+@media (max-width: 768px) {
+    html body[data-active-view="galaxy"] .info-panel {
+        left: 10px;
+        right: 10px;
+        top: auto;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        max-height: min(32vh, 248px);
+        overflow: hidden;
+        border-radius: 20px;
+        transform: translateY(0);
+    }
+
+    html body[data-active-view="galaxy"] .info-panel.active {
+        transform: translateY(0);
+        opacity: 0.92;
+        pointer-events: auto;
+    }
+
+    html body[data-active-view="galaxy"] .info-panel:not(.active) {
+        transform: translateY(calc(100% - 42px));
+        opacity: 0.72;
+        pointer-events: none;
+    }
+
+    html body[data-active-view="galaxy"] .info-header {
+        min-height: 42px;
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    html body[data-active-view="galaxy"] .info-subtitle {
+        display: none;
+    }
+
+    html body[data-active-view="galaxy"] .info-content {
+        max-height: calc(min(32vh, 248px) - 42px);
+        padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: none;
+    }
+
+    html body[data-active-view="galaxy"] .info-content::-webkit-scrollbar,
+    html body[data-active-view="galaxy"] .info-panel::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none;
+    }
+
+    html body[data-panel-surface="idle"] .journey-compass,
+    html body[data-panel-surface="search"] .journey-compass {
+        top: calc(10px + env(safe-area-inset-top, 0px));
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-height: min(22vh, 174px);
+        padding: 10px 11px;
+        gap: 7px;
+        border-radius: 16px;
+        overflow: hidden;
+        scrollbar-width: none;
+    }
+
+    html body[data-panel-surface="idle"] .journey-compass-note,
+    html body[data-panel-surface="search"] .journey-compass-note {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        font-size: 10px;
+        line-height: 1.25;
+    }
+
+    html body[data-panel-surface="search"] .info-panel {
+        max-height: min(23vh, 178px);
+    }
+
+    html body[data-panel-surface="search"] .info-content {
+        max-height: calc(min(23vh, 178px) - 10px);
+        padding: 8px 10px 10px;
+    }
+
+    html body[data-panel-surface="focus"] .info-panel,
+    html body[data-panel-surface="focus-search"] .info-panel,
+    html body[data-panel-surface="semantic-dive"] .info-panel {
+        top: calc(58px + env(safe-area-inset-top, 0px));
+        bottom: auto;
+        max-height: min(15vh, 116px);
+        opacity: 0.68;
+        transform: translateY(0) scale(0.985);
+        pointer-events: auto;
+    }
+
+    html body[data-panel-surface="focus"] .info-panel .info-header,
+    html body[data-panel-surface="focus-search"] .info-panel .info-header,
+    html body[data-panel-surface="semantic-dive"] .info-panel .info-header {
+        display: none;
+    }
+
+    html body[data-panel-surface="focus"] .info-content,
+    html body[data-panel-surface="focus-search"] .info-content,
+    html body[data-panel-surface="semantic-dive"] .info-content {
+        max-height: min(15vh, 116px);
+        padding: 8px 10px;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage,
+    html body[data-panel-surface="focus-search"] .focus-stage,
+    html body[data-panel-surface="semantic-dive"] .focus-stage {
+        left: 10px;
+        right: 10px;
+        bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        z-index: 130;
+        pointer-events: none;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-card,
+    html body[data-panel-surface="focus-search"] .focus-stage-card,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card {
+        max-height: min(34vh, 270px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        border-radius: 20px;
+        pointer-events: auto;
+        scrollbar-width: none;
+    }
+
+    html body[data-active-view="galaxy"] .focus-stage-card::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none;
+    }
+
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card {
+        max-height: min(46vh, 380px);
+    }
+
+    /* SD-149: let the mobile Step Inside bloom read before the cockpit settles. */
+    html body[data-active-view="galaxy"][data-semantic-dive="transitioning"] #search-results.active,
+    html body[data-active-view="galaxy"][data-semantic-dive="transitioning"] .info-panel,
+    html body[data-active-view="galaxy"][data-semantic-dive="transitioning"] .semantic-lane-rail,
+    html body[data-active-view="galaxy"][data-semantic-dive="transitioning"] .selected-card {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(18px) scale(0.985);
+    }
+
+    html body[data-active-view="galaxy"][data-semantic-dive="transitioning"] .focus-stage-card {
+        opacity: 0.42;
+        pointer-events: none;
+        transform: translateY(16px) scale(0.985);
+        backdrop-filter: blur(12px) saturate(1.05);
+        -webkit-backdrop-filter: blur(12px) saturate(1.05);
+        transition:
+            opacity 220ms ease,
+            transform 220ms ease,
+            backdrop-filter 220ms ease;
+    }
+}
+
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+    html body[data-active-view="galaxy"] .info-panel,
+    html body[data-active-view="galaxy"] .focus-stage,
+    html body[data-active-view="galaxy"] .focus-stage-card,
+    html body[data-panel-surface="focus"] .focus-stage-card,
+    html body[data-panel-surface="focus-search"] .focus-stage-card,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card,
+    html body[data-active-view="galaxy"] .journey-compass {
+        transition: none;
+        transition-duration: 0.01ms;
+    }
+
+    html body[data-active-view="galaxy"][data-semantic-dive="transitioning"] .focus-stage-card {
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+        transition: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
+
+/* SD-122: Reduced-motion override for filter/search surfaces
+   Zeroes all transition and animation durations on the overview/search
+   filter controls so computed styles read 0 under prefers-reduced-motion.
+   Using !important is appropriate here — reduced-motion is a user-level
+   accessibility preference and must take precedence over all other rules. */
+@media (prefers-reduced-motion: reduce) {
+    #search-input,
+    #search-input.search-input,
+    .filter-chip,
+    .loading-phase-chip,
+    .loading-phase-chip.is-active,
+    .loading-phase-chip.is-complete,
+    #city-filter,
+    #city-filter.filter-select,
+    .filter-select,
+    .filter-clear-btn,
+    .search-results,
+    .search-results.active,
+    .search-results.searching,
+    .search-results.focusing,
+    .search-results .search-result-item,
+    .search-container .search-input-wrapper,
+    .search-container .search-results,
+    .search-container .search-input {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* Mobile chrome state ownership: compact Journey Compass base.
+   This late layer is canonical for mobile shell chrome while older polish
+   blocks remain in place. Keep it near the route-specific rules below. */
+@media (max-width: 768px) {
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"],
+    html body[data-active-view="galaxy"] .journey-compass[data-density="compact"] {
+        top: calc(10px + env(safe-area-inset-top, 0px));
+        left: 10px;
+        right: 10px;
+        width: auto;
+        min-width: 0;
+        max-height: 60px;
+        display: flex;
+        flex-direction: row;
+        grid-template-columns: none;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 8px;
+        border-radius: 16px;
+        transform: none;
+        overflow: hidden;
+        overscroll-behavior: contain;
+        backdrop-filter: blur(12px) saturate(1.05);
+        -webkit-backdrop-filter: blur(12px) saturate(1.05);
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"] .journey-compass-copy,
+    html body[data-active-view="galaxy"] .journey-compass[data-density="compact"] .journey-compass-copy {
+        display: flex;
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"] .journey-compass-kicker,
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"] .journey-compass-note,
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"] .journey-compass-rail,
+    html body[data-active-view="galaxy"] .journey-compass[data-density="compact"] .journey-compass-kicker,
+    html body[data-active-view="galaxy"] .journey-compass[data-density="compact"] .journey-compass-note,
+    html body[data-active-view="galaxy"] .journey-compass[data-density="compact"] .journey-compass-rail {
+        display: none;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"] .journey-compass-title,
+    html body[data-active-view="galaxy"] .journey-compass[data-density="compact"] .journey-compass-title {
+        min-width: 0;
+        margin: 0;
+        font-size: 12px;
+        font-weight: 760;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"] .journey-compass-actions,
+    html body[data-active-view="galaxy"] .journey-compass[data-density="compact"] .journey-compass-actions {
+        display: flex;
+        flex: 0 1 auto;
+        flex-direction: row;
+        min-width: 0;
+        width: auto;
+        gap: 6px;
+        margin: 0;
+        grid-column: auto;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"] .journey-compass-action,
+    html body[data-active-view="galaxy"] .journey-compass[data-density="compact"] .journey-compass-action {
+        flex: 0 1 auto;
+        width: auto;
+        min-width: 44px;
+        max-width: 112px;
+        min-height: 44px;
+        padding: 0 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 720;
+        line-height: 1.05;
+        white-space: nowrap;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        letter-spacing: 0;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"] .journey-compass-action[hidden],
+    html body[data-active-view="galaxy"] .journey-compass[data-density="compact"] .journey-compass-action[hidden] {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"],
+    html body[data-active-view="galaxy"] .journey-compass[data-density="compact"] {
+        transition: none;
+        transition-duration: 0.01ms;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
+
+@media (max-width: 768px) and (forced-colors: active) {
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"],
+    html body[data-active-view="galaxy"] .journey-compass[data-density="compact"] {
+        border: 2px solid ButtonText;
+        background: Canvas;
+    }
+}
+
+/* Mobile surface coverage pass: explicit touch floors, motion safety, and
+   forced-colors affordances for the remaining high-value mobile atoms. */
+@media (max-width: 768px) {
+    html body[data-panel-surface="focus-search"] .journey-compass-action {
+        min-height: 45px;
+        font-size: 10px;
+    }
+
+    .search-clear-btn,
+    #map-container .leaflet-control-zoom.leaflet-bar a,
+    .mode-grid .mode-chip,
+    .map-trail-strip .trail-strip-btn,
+    .focus-stage-action-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .mode-grid .mode-chip {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.14);
+    }
+
+    .map-trail-strip .trail-strip-btn {
+        justify-content: center;
+        padding: 0 12px;
+    }
+
+    body[data-panel-surface="semantic-dive"] .focus-stage-dive-btn {
+        min-height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border-color: rgba(255, 226, 132, 0.42);
+        background:
+            radial-gradient(circle at 18% 20%, rgba(255, 226, 132, 0.24), transparent 44%),
+            linear-gradient(135deg, rgba(255, 226, 132, 0.2), rgba(18, 42, 42, 0.68));
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            0 14px 30px rgba(0, 0, 0, 0.24),
+            0 0 0 1px rgba(255, 226, 132, 0.08);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-semantic-dive="transitioning"] #canvas-container {
+        filter: none;
+        transform: none;
+        transition: none;
+    }
+
+    body.searching .search-spinner,
+    .search-results.searching .search-spinner-overlay,
+    #search-spinner,
+    .search-glow,
+    .journey-compass-action.primary[data-journey-action="center-anchor"]::after,
+    .journey-compass-action.primary[data-journey-action="next-stop"]::after {
+        animation: none;
+    }
+}
+
+@media (forced-colors: active) {
+    button:focus-visible,
+    .mode-grid .mode-chip:focus-visible,
+    .mode-grid .mode-chip:focus {
+        outline: 2px solid CanvasText;
+        outline-offset: 2px;
+    }
+
+    .loading-overlay {
+        transition: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .selected-card,
+    .vector-cascade-line {
+        transition-duration: 0.01ms;
+        animation-duration: 0.01ms;
+        animation-iteration-count: 1;
+    }
+}
+
+@media (min-width: 769px) and (prefers-reduced-motion: reduce) {
+    html body[data-panel-surface="semantic-dive"] #btn-inside-next.focus-stage-inside-btn[aria-busy="true"] {
+        animation: none;
+    }
+}
+
+@media (max-width: 768px) {
+    html body[data-panel-surface="semantic-dive"] .focus-stage-dive-btn,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-dive-btn,
+    html body[data-panel-surface="focus"][data-semantic-dive="transitioning"] .focus-stage-dive-btn,
+    html body[data-panel-surface="focus-search"][data-semantic-dive="transitioning"] .focus-stage-dive-btn {
+        min-height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 12px;
+        font-weight: 760;
+    }
+
+    html body[data-panel-surface="semantic-dive"] .focus-stage-inside-status,
+    html body[data-active-view="galaxy"][data-semantic-dive="transitioning"] .focus-stage-inside-status {
+        display: grid;
+    }
+
+    html body[data-panel-surface="semantic-dive"] .focus-stage-inside-controls,
+    html body[data-active-view="galaxy"][data-semantic-dive="transitioning"] .focus-stage-inside-controls {
+        display: grid;
+    }
+
+    html body[data-panel-surface="semantic-dive"] .focus-stage-inside-btn,
+    html body[data-active-view="galaxy"][data-semantic-dive="transitioning"] .focus-stage-inside-btn {
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 9.5px;
+    }
+
+    html body[data-panel-surface="map-trail"] .map-trail-strip .trail-strip-btn {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0 12px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    html body[data-active-view="galaxy"] .weather-widget,
+    html body[data-active-view="galaxy"] .view-toggle {
+        display: none;
+        pointer-events: none;
+    }
+
+    html body[data-panel-surface="search"] .info-panel,
+    html body[data-active-view="galaxy"]:has(.search-container.has-query) .info-panel {
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        max-height: min(54vh, 456px);
+        border-radius: 18px;
+        opacity: 0.94;
+    }
+
+    html body[data-panel-surface="search"] .info-content,
+    html body[data-active-view="galaxy"]:has(.search-container.has-query) .info-content {
+        max-height: calc(min(54vh, 456px) - 42px);
+        padding: 9px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+    }
+
+    html body[data-active-view="galaxy"]:has(.search-container.has-query) .stats-row,
+    html body[data-active-view="galaxy"]:has(.search-container.has-query) .launch-btn,
+    html body[data-active-view="galaxy"]:has(.search-container.has-query) .selected-card,
+    html body[data-active-view="galaxy"]:has(.search-container.has-query) .demo-starters,
+    html body[data-active-view="galaxy"]:has(.search-container.has-query) .demo-journey-steps {
+        display: none;
+    }
+
+    html body[data-panel-surface="search"] .search-input-wrapper,
+    html body[data-active-view="galaxy"] .search-container.has-query .search-input-wrapper {
+        min-height: 44px;
+    }
+
+    html body[data-panel-surface="search"] .search-input,
+    html body[data-active-view="galaxy"] .search-container.has-query .search-input {
+        min-height: 44px;
+        height: 44px;
+        line-height: 1.2;
+    }
+
+    html body[data-active-view="galaxy"] .search-container.has-query {
+        position: static;
+        top: auto;
+        margin-top: 0;
+        padding-top: 0;
+        border-top: 0;
+        background: transparent;
+    }
+
+    html body[data-panel-surface="search"] .search-results.active,
+    html body[data-active-view="galaxy"] .search-container.has-query .search-results.active {
+        display: block;
+        max-height: min(32vh, 270px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 6px;
+        border-color: rgba(121, 235, 222, 0.18);
+        background: rgba(5, 10, 16, 0.84);
+    }
+
+    html body[data-panel-surface="search"] .search-result-item,
+    html body[data-active-view="galaxy"] .search-container.has-query .search-result-item {
+        display: block;
+        min-height: 64px;
+        padding: 9px 10px;
+    }
+
+    html body[data-panel-surface="search"] .search-result-item:not(:first-child),
+    html body[data-active-view="galaxy"] .search-container.has-query .search-result-item:not(:first-child) {
+        display: block;
+    }
+
+    html body[data-panel-surface="search"] .search-result-what,
+    html body[data-panel-surface="search"] .search-result-meta,
+    html body[data-panel-surface="search"] .search-result-bar,
+    html body[data-active-view="galaxy"] .search-container.has-query .search-result-what,
+    html body[data-active-view="galaxy"] .search-container.has-query .search-result-meta,
+    html body[data-active-view="galaxy"] .search-container.has-query .search-result-bar {
+        display: block;
+    }
+
+    html body[data-active-view="galaxy"] .search-container.has-query .search-empty-state {
+        min-height: 0;
+        padding: 12px 10px;
+    }
+
+    html body[data-active-view="galaxy"] .search-container.has-query .search-empty-icon-wrap {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 10px;
+    }
+
+    html body[data-active-view="galaxy"] .search-container.has-query .search-empty-title {
+        font-size: 16px;
+        margin-bottom: 6px;
+    }
+
+    html body[data-active-view="galaxy"] .search-container.has-query .search-empty-note,
+    html body[data-active-view="galaxy"] .search-container.has-query .search-empty-discovery {
+        font-size: 12px;
+    }
+
+    html body[data-active-view="galaxy"] .search-container.has-query .search-empty-discovery {
+        margin-top: 10px;
+        padding: 9px 10px;
+    }
+}
+
+/* Landscape/short-height mobile: keep the route controls and active task
+   reachable instead of letting secondary status panels consume the viewport. */
+@media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
+    html body[data-active-view="galaxy"] .weather-widget,
+    html body[data-active-view="galaxy"] .view-toggle {
+        display: none;
+        pointer-events: none;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass,
+    html body[data-active-view="galaxy"] .journey-compass[data-phase],
+    html body[data-active-view="galaxy"] .journey-compass[data-density] {
+        top: calc(8px + env(safe-area-inset-top, 0px));
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-height: 54px;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 8px;
+        overflow: hidden;
+        border-radius: 14px;
+        transform: none;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass-kicker,
+    html body[data-active-view="galaxy"] .journey-compass-note,
+    html body[data-active-view="galaxy"] .journey-compass-rail {
+        display: none;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass-copy {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass-title {
+        margin: 0;
+        font-size: 11px;
+        line-height: 1.05;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass-actions {
+        display: flex;
+        flex: 0 1 auto;
+        gap: 5px;
+        min-width: 0;
+        margin: 0;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass-action {
+        min-width: 44px;
+        max-width: 96px;
+        min-height: 44px;
+        padding: 0 8px;
+        font-size: 9px;
+        line-height: 1.05;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    html body[data-panel-surface="focus"] .info-panel,
+    html body[data-panel-surface="focus-search"] .info-panel,
+    html body[data-panel-surface="semantic-dive"] .info-panel {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(12px) scale(0.98);
+    }
+
+    html body[data-panel-surface="search"] .info-panel,
+    html body[data-active-view="galaxy"]:has(.search-container.has-query) .info-panel {
+        left: 10px;
+        right: 10px;
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+        max-height: min(56vh, 212px);
+    }
+
+    html body[data-panel-surface="search"] .info-content,
+    html body[data-active-view="galaxy"]:has(.search-container.has-query) .info-content {
+        max-height: calc(min(56vh, 212px) - 38px);
+        padding: 7px 9px 9px;
+    }
+
+    html body[data-active-view="galaxy"] .search-container.has-query .semantic-lane-assist {
+        max-height: 62px;
+        overflow-y: auto;
+        padding: 8px 9px;
+        font-size: 10px;
+    }
+
+    html body[data-active-view="galaxy"] .search-container.has-query .semantic-lane-assist-copy {
+        font-size: 10px;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage,
+    html body[data-panel-surface="focus-search"] .focus-stage,
+    html body[data-panel-surface="semantic-dive"] .focus-stage {
+        left: 10px;
+        right: 10px;
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-card,
+    html body[data-panel-surface="focus-search"] .focus-stage-card,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card {
+        max-height: min(54vh, 204px);
+        padding: 10px 12px;
+        border-radius: 16px;
+    }
+
+    html body[data-panel-surface="semantic-dive"] .focus-stage-inside-status {
+        display: none;
+    }
+
+    html body[data-panel-surface="semantic-dive"] .focus-stage-inside-controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
+    }
+
+    html body[data-panel-surface="semantic-dive"] .focus-stage-inside-btn {
+        min-height: 44px;
+        font-size: 9px;
+    }
+
+    /* polish241: cohesive disabled treatment for focus-stage journey and inside
+       buttons so disabled states feel like a deliberate part of the UI, not a
+       raw browser-default gray block. */
+    .focus-stage-journey-btn:disabled {
+        opacity: 0.42;
+        border-color: rgba(185, 255, 242, 0.12);
+        background: rgba(185, 255, 242, 0.06);
+        color: rgba(224, 248, 244, 0.48);
+        cursor: default;
+        pointer-events: none;
+    }
+
+    .focus-stage-inside-btn:disabled {
+        opacity: 0.38;
+        border-color: rgba(185, 255, 242, 0.1);
+        background: rgba(185, 255, 242, 0.04);
+        color: rgba(224, 248, 244, 0.42);
+        cursor: default;
+        pointer-events: none;
+    }
+
+    html body .search-input-wrapper,
+    html body .search-input,
+    html body .search-clear-btn,
+    html body .mode-grid .mode-chip,
+    html body .map-trail-strip .trail-strip-btn,
+    html body #map-container .leaflet-control-zoom.leaflet-bar a {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    html body .search-input {
+        height: 44px;
+        line-height: 1.2;
+    }
+
+    html body .search-clear-btn {
+        width: 44px;
+        height: 44px;
+    }
+
+    html body[data-active-view="map"] .journey-compass-action {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* Mobile touch-target floor for persistent controls in non-query overview and
+   map states. Query-present search has a more specific panel rule above. */
+@media (max-width: 768px) {
+    html body .search-input-wrapper,
+    html body .search-input,
+    html body .search-clear-btn {
+        min-height: 44px;
+    }
+
+    html body .search-input {
+        height: 44px;
+        line-height: 1.2;
+    }
+
+    html body .search-clear-btn {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+    }
+}
+
+/* Mobile chrome state ownership: route-specific surfaces.
+   Focus and inside own the focus stage, search owns the result drawer, and
+   map trail owns the strip. This outranks older query-panel rules without
+   using !important. */
+@media (max-width: 768px) {
+    html body[data-active-view="galaxy"] .help-toggle,
+    html body[data-active-view="galaxy"] .legend-toggle {
+        display: none;
+        pointer-events: none;
+    }
+
+    html body[data-panel-surface="idle"] .info-panel {
+        max-height: min(28vh, 218px);
+    }
+
+    html body[data-panel-surface="idle"] .info-content {
+        max-height: calc(min(28vh, 218px) - 42px);
+        padding: 6px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    }
+
+    html body[data-panel-surface="idle"] .stats-row {
+        display: none;
+    }
+
+    html body[data-panel-surface="idle"] .semantic-lane-pill,
+    html body[data-panel-surface="idle"] .semantic-lane-assist {
+        display: none;
+    }
+
+    html body[data-panel-surface="idle"] .controls.desktop-only,
+    html body[data-panel-surface="search"] .controls.desktop-only {
+        display: none;
+        pointer-events: none;
+    }
+
+    html body[data-panel-surface="idle"] .search-container {
+        margin-top: 0;
+        padding-top: 0;
+    }
+
+    html body[data-panel-surface="focus"] .info-panel,
+    html body[data-panel-surface="focus-search"] .info-panel,
+    html body[data-panel-surface="focus"]:has(.search-container.has-query) .info-panel,
+    html body[data-panel-surface="focus-search"]:has(.search-container.has-query) .info-panel,
+    html body[data-panel-surface="semantic-dive"]:has(.search-container.has-query) .info-panel,
+    html body[data-panel-surface="semantic-dive"] .info-panel {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    html body[data-panel-surface="focus"] .info-content,
+    html body[data-panel-surface="focus-search"] .info-content,
+    html body[data-panel-surface="focus"]:has(.search-container.has-query) .info-content,
+    html body[data-panel-surface="focus-search"]:has(.search-container.has-query) .info-content,
+    html body[data-panel-surface="semantic-dive"]:has(.search-container.has-query) .info-content,
+    html body[data-panel-surface="semantic-dive"] .info-content {
+        max-height: min(14vh, 112px);
+        padding: 8px 10px;
+        overflow-y: auto;
+    }
+
+    html body[data-panel-surface="focus"] .search-results.active,
+    html body[data-panel-surface="focus-search"] .search-results.active,
+    html body[data-panel-surface="focus"]:has(.search-container.has-query) .search-results.active,
+    html body[data-panel-surface="focus-search"]:has(.search-container.has-query) .search-results.active,
+    html body[data-panel-surface="semantic-dive"]:has(.search-container.has-query) .search-results.active,
+    html body[data-panel-surface="semantic-dive"] .search-results.active {
+        max-height: 0;
+        padding: 0;
+        border-width: 0;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="focus"] .controls.desktop-only,
+    html body[data-panel-surface="focus-search"] .controls.desktop-only,
+    html body[data-panel-surface="semantic-dive"] .controls.desktop-only,
+    html body[data-panel-surface="map-trail"] .controls.desktop-only {
+        display: none;
+        pointer-events: none;
+    }
+
+    html body[data-panel-surface="focus"] .journey-compass[data-density="compact"] .journey-compass-actions,
+    html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"] .journey-compass-actions,
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] .journey-compass-actions {
+        flex: 0 0 auto;
+        gap: 6px;
+    }
+
+    html body[data-panel-surface="focus"] .journey-compass[data-density="compact"] .journey-compass-action,
+    html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"] .journey-compass-action,
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] .journey-compass-action {
+        max-width: 92px;
+        padding: 0 9px;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-neighbors.active,
+    html body[data-panel-surface="focus-search"] .focus-stage-neighbors.active {
+        max-height: 64px;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-neighbor-header,
+    html body[data-panel-surface="focus-search"] .focus-stage-neighbor-header {
+        display: none;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-neighbor-list,
+    html body[data-panel-surface="focus-search"] .focus-stage-neighbor-list {
+        max-height: 56px;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-neighbor-pill,
+    html body[data-panel-surface="focus-search"] .focus-stage-neighbor-pill {
+        min-height: 54px;
+    }
+
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card {
+        max-height: min(46vh, 380px);
+    }
+
+    html body[data-panel-surface="semantic-dive"] .trail-controls,
+    html body[data-panel-surface="semantic-dive"] .trail-controls,
+    html body[data-panel-surface="semantic-dive"] .trail-controls,
+    html body[data-panel-surface="focus"] .startup-recovery-notice,
+    html body[data-panel-surface="focus-search"] .startup-recovery-notice,
+    html body[data-panel-surface="semantic-dive"] .startup-recovery-notice {
+        display: none;
+        pointer-events: none;
+    }
+
+    html body[data-panel-surface="map-trail"] .weather-widget {
+        display: none;
+        pointer-events: none;
+    }
+
+    html body[data-panel-surface="map-trail"] .info-panel {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    html body[data-panel-surface="map-trail"] .map-trail-strip {
+        top: calc(86px + env(safe-area-inset-top, 0px));
+        min-height: 56px;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="map-trail"] .map-strip-title {
+        align-self: center;
+        position: static;
+        min-width: 0;
+        padding: 0;
+        line-height: 1.1;
+        transform: none;
+    }
+}
+
+@media (max-width: 430px) {
+    html body[data-panel-surface="focus"] .journey-compass[data-density="compact"] .journey-compass-action:not(.primary),
+    html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"] .journey-compass-action:not(.primary),
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] .journey-compass-action:not(.primary) {
+        display: none;
+    }
+
+    html body[data-panel-surface="focus"] .journey-compass[data-density="compact"] .journey-compass-action.primary,
+    html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"] .journey-compass-action.primary,
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] .journey-compass-action.primary {
+        max-width: 128px;
+    }
+}
+
+/* Mobile chrome legibility floor: keep compact journey actions readable even
+   when earlier state-specific blocks try to squeeze the cockpit. */
+@media (max-width: 768px) {
+    html body[data-active-view="galaxy"] .journey-compass .journey-compass-action {
+        min-height: 44px;
+        font-size: 10px;
+        line-height: 1.08;
+    }
+}
+
+@media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
+    html body[data-active-view="galaxy"] .time-display,
+    html body[data-active-view="galaxy"] .share-toggle,
+    html body[data-active-view="galaxy"] .help-toggle,
+    html body[data-active-view="galaxy"] .legend-toggle {
+        display: none;
+        pointer-events: none;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass .journey-compass-actions {
+        max-width: min(220px, 44vw);
+        flex: 0 1 auto;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass .journey-compass-action {
+        max-width: 104px;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass .journey-compass-action:not(.primary) {
+        display: none;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass .journey-compass-action.primary {
+        flex: 0 0 124px;
+        width: 124px;
+        max-width: 124px;
+    }
+
+    html body[data-panel-surface="idle"] .info-panel {
+        top: calc(70px + env(safe-area-inset-top, 0px));
+        bottom: auto;
+        left: 10px;
+        right: auto;
+        width: min(344px, calc(46vw - 8px));
+        height: auto;
+        max-height: min(calc(100vh - 86px), 178px);
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="idle"] .info-content {
+        max-height: calc(min(calc(100vh - 86px), 178px) - 42px);
+        padding: 7px 10px 10px;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="idle"] .stats-row,
+    html body[data-panel-surface="idle"] .demo-starters,
+    html body[data-panel-surface="idle"] .demo-journey-steps,
+    html body[data-panel-surface="idle"] .semantic-lane-pill,
+    html body[data-panel-surface="idle"] .semantic-lane-assist,
+    html body[data-panel-surface="idle"] .search-hint,
+    html body[data-panel-surface="idle"] .exploration-card,
+    html body[data-panel-surface="idle"] .selected-card,
+    html body[data-panel-surface="idle"] .mode-grid,
+    html body[data-panel-surface="idle"] .rail-section {
+        display: none;
+    }
+
+    html body[data-panel-surface="search"] .info-panel {
+        top: calc(70px + env(safe-area-inset-top, 0px));
+        bottom: auto;
+        left: 10px;
+        right: auto;
+        width: min(344px, calc(46vw - 8px));
+        height: min(calc(100vh - 82px), 308px);
+        max-height: none;
+        border-radius: 15px;
+        opacity: 0.94;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="search"] .info-content {
+        height: 100%;
+        max-height: none;
+        min-height: 0;
+        padding: 8px 10px 10px;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="search"] .info-header,
+    html body[data-panel-surface="search"] .stats-row,
+    html body[data-panel-surface="search"] .launch-btn,
+    html body[data-panel-surface="search"] .demo-starters,
+    html body[data-panel-surface="search"] .demo-journey-steps,
+    html body[data-panel-surface="search"] .search-hint,
+    html body[data-panel-surface="search"] .semantic-lane-assist,
+    html body[data-panel-surface="search"] .semantic-lane-pill,
+    html body[data-panel-surface="search"] .search-trail-cue,
+    html body[data-panel-surface="search"] .synthesize-trigger,
+    html body[data-panel-surface="search"] .mode-grid,
+    html body[data-panel-surface="search"] .surprise-btn {
+        display: none;
+    }
+
+    html body[data-panel-surface="search"] #synthesize-trigger {
+        display: none;
+        position: absolute;
+        left: -100vw;
+        flex: 0 0 0;
+        width: 0;
+        height: 0;
+        max-width: 0;
+        max-height: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        opacity: 0;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    html body[data-panel-surface="search"] .search-container.has-query {
+        position: static;
+        top: auto;
+        height: 100%;
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        display: flex;
+        flex-direction: column;
+        background: transparent;
+    }
+
+    html body[data-panel-surface="search"] .search-label {
+        flex: 0 0 auto;
+        flex-direction: row;
+        align-items: center;
+        gap: 7px;
+        margin: 0 0 6px;
+    }
+
+    html body[data-panel-surface="search"] .search-label-text {
+        font-size: 10px;
+        letter-spacing: 0.12em;
+    }
+
+    html body[data-panel-surface="search"] .search-input-wrapper {
+        display: block;
+        flex: 0 0 44px;
+        min-height: 44px;
+        max-height: none;
+        margin: 0 0 7px;
+        padding: 0;
+        overflow: visible;
+        opacity: 1;
+        visibility: visible;
+    }
+
+    html body[data-panel-surface="search"] .search-input {
+        height: 44px;
+        min-height: 44px;
+        font-size: 12px;
+    }
+
+    html body[data-panel-surface="search"] .search-results.active {
+        display: block;
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        margin-top: 0;
+        padding: 5px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        border-color: rgba(121, 235, 222, 0.18);
+        background: rgba(5, 10, 16, 0.72);
+    }
+
+    html body[data-panel-surface="search"] .search-result-item,
+    html body[data-panel-surface="search"] .search-result-item:not(:first-child) {
+        display: block;
+        min-height: 72px;
+        padding: 8px 9px;
+    }
+
+    html body[data-panel-surface="search"] .search-result-name {
+        font-size: 12px;
+        line-height: 1.15;
+    }
+
+    html body[data-panel-surface="search"] .search-result-what {
+        display: -webkit-box;
+        margin-top: 5px;
+        font-size: 10px;
+        line-height: 1.25;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="search"] .search-result-meta,
+    html body[data-panel-surface="search"] .search-result-bar {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    html body[data-panel-surface="idle"] .demo-starters {
+        display: block;
+        max-height: none;
+        margin-top: 0;
+        padding: 0;
+        overflow: visible;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    html body[data-panel-surface="idle"] .demo-starters::before,
+    html body[data-panel-surface="idle"] .demo-starters-kicker,
+    html body[data-panel-surface="idle"] .demo-starters-copy,
+    html body[data-panel-surface="idle"] .demo-journey-steps,
+    html body[data-panel-surface="idle"] .search-hint,
+    html body[data-panel-surface="idle"] .semantic-lane-assist {
+        display: none;
+    }
+
+    html body[data-panel-surface="idle"] .search-container {
+        max-height: 106px;
+        overflow: visible;
+    }
+
+    html body[data-panel-surface="idle"] .demo-starter-row {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 7px;
+        margin-top: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        scroll-snap-type: x proximity;
+        padding-bottom: 1px;
+    }
+
+    html body[data-panel-surface="idle"] .demo-starter-row::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none;
+    }
+
+    html body[data-panel-surface="idle"] .demo-starter-chip {
+        flex: 0 0 auto;
+        min-height: 44px;
+        max-width: 132px;
+        justify-content: center;
+        scroll-snap-align: start;
+        white-space: nowrap;
+    }
+}
+
+/* SD-143: In mobile map trail state, the compact in-map strip owns navigation.
+   Keep the full journey compass out of the hit-test and visual stack. */
+@media (max-width: 768px) {
+    html body[data-panel-surface="map-trail"] .journey-compass {
+        display: none;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    html body[data-panel-surface="map-trail"] .map-trail-strip {
+        top: calc(86px + env(safe-area-inset-top, 0px));
+        left: 12px;
+        right: 12px;
+        width: auto;
+        max-width: none;
+        transform: none;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        min-height: 56px;
+        padding: 8px 10px;
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="map-trail"] .map-strip-title {
+        align-self: center;
+        position: static;
+        min-width: 0;
+        flex: 1 1 auto;
+        padding: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        line-height: 1.1;
+        transform: none;
+    }
+
+    html body[data-panel-surface="map-trail"] .map-trail-strip .trail-strip-btn {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0 12px;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+    }
+}
+
+/* SD-150: keep the global reset dock physically reachable while a focused
+   business card occupies the bottom-right command area. */
+html body[data-panel-surface="focus"] .controls,
+html body[data-panel-surface="focus-search"] .controls {
+    right: calc(min(392px, calc(100vw - 32px)) + 28px);
+    bottom: 16px;
+    z-index: 1200;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+}
+
+html body[data-panel-surface="focus"] .controls .control-btn,
+html body[data-panel-surface="focus-search"] .controls .control-btn {
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+    html body[data-panel-surface="focus"] .controls,
+    html body[data-panel-surface="focus-search"] .controls {
+        right: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        grid-template-columns: repeat(2, 40px);
+    }
+}
+
+/* Mobile QA recovery: focus and inside own the lower sheet.
+   Keep primary actions visible and remove floating chrome from the tap area. */
+@media (max-width: 768px) {
+    html body[data-panel-surface="focus"] .share-toggle,
+    html body[data-panel-surface="focus-search"] .share-toggle,
+    html body[data-panel-surface="semantic-dive"] .share-toggle,
+    html body[data-panel-surface="focus"] .controls,
+    html body[data-panel-surface="focus-search"] .controls,
+    html body[data-panel-surface="semantic-dive"] .controls {
+        display: none;
+        pointer-events: none;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage,
+    html body[data-panel-surface="focus-search"] .focus-stage {
+        left: 10px;
+        right: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        z-index: 132;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-card,
+    html body[data-panel-surface="focus-search"] .focus-stage-card {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        max-height: min(36vh, 304px);
+        padding: 12px 12px 74px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-note,
+    html body[data-panel-surface="focus-search"] .focus-stage-note,
+    html body[data-panel-surface="focus"] .focus-stage-actions,
+    html body[data-panel-surface="focus-search"] .focus-stage-actions,
+    html body[data-panel-surface="focus"] .focus-stage-meta,
+    html body[data-panel-surface="focus-search"] .focus-stage-meta,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-meta,
+    html body[data-panel-surface="focus"] .focus-stage-neighbor-header,
+    html body[data-panel-surface="focus-search"] .focus-stage-neighbor-header,
+    html body[data-panel-surface="focus"] .focus-stage-neighbors,
+    html body[data-panel-surface="focus-search"] .focus-stage-neighbors,
+    html body[data-panel-surface="focus"] .focus-stage-neighbor-list,
+    html body[data-panel-surface="focus-search"] .focus-stage-neighbor-list,
+    html body[data-panel-surface="focus"] .focus-stage-neighbor-pill,
+    html body[data-panel-surface="focus-search"] .focus-stage-neighbor-pill {
+        display: none;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-dive-btn,
+    html body[data-panel-surface="focus-search"] .focus-stage-dive-btn {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        width: auto;
+        min-height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 10px 12px;
+        text-align: center;
+        font-weight: 760;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-neighbors.active,
+    html body[data-panel-surface="focus-search"] .focus-stage-neighbors.active {
+        flex: 0 0 auto;
+        max-height: 58px;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-neighbor-list,
+    html body[data-panel-surface="focus-search"] .focus-stage-neighbor-list {
+        max-height: 56px;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-neighbor-pill,
+    html body[data-panel-surface="focus-search"] .focus-stage-neighbor-pill {
+        min-height: 54px;
+    }
+
+    html body[data-panel-surface="semantic-dive"] .focus-stage {
+        left: 10px;
+        right: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+    }
+
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card {
+        max-height: min(34vh, 292px);
+        overflow: hidden;
+    }
+}
+
+/* Visual QA hardening: keep primary chrome inside viewport and preserve
+   touch targets after the late mobile/strand cascade. */
+@media (min-width: 769px) {
+    html body[data-active-view="galaxy"] .info-panel {
+        top: 96px;
+        max-height: calc(100dvh - 172px);
+    }
+
+    html body[data-active-view="galaxy"] .info-content {
+        max-height: calc(100dvh - 238px);
+    }
+
+    html body[data-active-view="galaxy"] .weather-widget {
+        color: rgba(245, 255, 253, 0.94);
+    }
+
+    html body[data-active-view="galaxy"] .weather-temp {
+        color: rgba(255, 246, 206, 0.98);
+    }
+
+    html body[data-active-view="galaxy"] .weather-desc,
+    html body[data-active-view="galaxy"] .weather-wind,
+    html body[data-active-view="galaxy"] .weather-staleness {
+        color: rgba(226, 242, 241, 0.72);
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass-step,
+    html body[data-active-view="galaxy"] .focus-stage-action-btn,
+    html body[data-active-view="galaxy"] .focus-stage-neighbor-action,
+    html body[data-active-view="galaxy"] .focus-stage-inside-btn,
+    html body[data-active-view="galaxy"] .mode-chip {
+        min-height: 44px;
+    }
+
+    html body[data-active-view="galaxy"] .focus-stage-dive-btn {
+        min-height: 48px;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage,
+    html body[data-panel-surface="focus-search"] .focus-stage,
+    html body[data-panel-surface="semantic-dive"] .focus-stage {
+        top: 96px;
+        right: 16px;
+        bottom: 14px;
+        left: auto;
+        width: clamp(320px, 27vw, 392px);
+        min-width: 0;
+        display: flex;
+        align-items: stretch;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-card,
+    html body[data-panel-surface="focus-search"] .focus-stage-card,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card {
+        width: 100%;
+        max-height: 100%;
+        padding: 16px 16px 18px;
+        border-radius: 8px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(121, 235, 222, 0.34) transparent;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-name,
+    html body[data-panel-surface="focus-search"] .focus-stage-name,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-name {
+        font-size: 18px;
+        line-height: 1.05;
+        letter-spacing: 0;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-journey.active,
+    html body[data-panel-surface="focus-search"] .focus-stage-journey.active,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-journey.active {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr) 56px;
+        align-items: stretch;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-journey-btn,
+    html body[data-panel-surface="focus-search"] .focus-stage-journey-btn,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-journey-btn {
+        min-width: 56px;
+        min-height: 52px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    html body[data-panel-surface="semantic-dive"] .trail-controls {
+        display: none;
+        pointer-events: none;
+    }
+
+    html body[data-panel-surface="focus"] .journey-compass[data-density="compact"],
+    html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"],
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] {
+        top: 76px;
+        width: clamp(420px, 37vw, 500px);
+        min-width: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+        gap: 8px;
+        padding: 12px;
+        border-radius: 8px;
+        border-color: rgba(121, 235, 222, 0.14);
+        background:
+            radial-gradient(circle at 82% 0%, rgba(121, 235, 222, 0.1), transparent 36%),
+            linear-gradient(180deg, rgba(8, 17, 22, 0.76), rgba(4, 9, 14, 0.62));
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.055),
+            0 18px 44px rgba(0, 0, 0, 0.24);
+        opacity: 0.9;
+    }
+
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] {
+        top: 62px;
+        transform: translateX(-50%);
+        border-color: rgba(255, 226, 132, 0.18);
+        background:
+            radial-gradient(circle at 76% 0%, rgba(255, 226, 132, 0.1), transparent 34%),
+            radial-gradient(circle at 20% 100%, rgba(121, 235, 222, 0.08), transparent 36%),
+            linear-gradient(180deg, rgba(7, 15, 21, 0.76), rgba(4, 8, 13, 0.6));
+    }
+
+    html body[data-panel-surface="focus"] .journey-compass[data-density="compact"]::before,
+    html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"]::before,
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"]::before {
+        opacity: 0.26;
+    }
+
+    html body[data-panel-surface="focus"] .journey-compass[data-density="compact"] .journey-compass-copy,
+    html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"] .journey-compass-copy,
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] .journey-compass-copy {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 2px;
+        min-width: 0;
+    }
+
+    html body[data-panel-surface="focus"] .journey-compass[data-density="compact"] .journey-compass-kicker,
+    html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"] .journey-compass-kicker,
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] .journey-compass-kicker {
+        color: rgba(255, 226, 132, 0.76);
+        font-size: 9px;
+        letter-spacing: 0.16em;
+    }
+
+    html body[data-panel-surface="focus"] .journey-compass[data-density="compact"] .journey-compass-title,
+    html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"] .journey-compass-title,
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] .journey-compass-title {
+        max-width: none;
+        font-size: 18px;
+        line-height: 1.05;
+        letter-spacing: 0;
+    }
+
+    html body[data-panel-surface="focus"] .journey-compass[data-density="compact"] .journey-compass-note,
+    html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"] .journey-compass-note,
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] .journey-compass-note {
+        display: none;
+    }
+
+    html body[data-panel-surface="focus"] .journey-compass[data-density="compact"] .journey-compass-rail,
+    html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"] .journey-compass-rail,
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] .journey-compass-rail {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        min-width: 0;
+        gap: 7px;
+        padding: 3px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.055);
+        background: rgba(255, 255, 255, 0.026);
+    }
+
+    html body[data-panel-surface="focus"] .journey-compass[data-density="compact"] .journey-compass-step,
+    html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"] .journey-compass-step,
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] .journey-compass-step {
+        min-height: 32px;
+        padding: 0 6px;
+        border-radius: 6px;
+        font-size: 8px;
+    }
+
+    html body[data-panel-surface="focus"] .journey-compass[data-density="compact"] .journey-compass-actions,
+    html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"] .journey-compass-actions,
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] .journey-compass-actions {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 8px;
+        justify-content: flex-start;
+        min-width: 0;
+    }
+
+    html body[data-panel-surface="focus"] .journey-compass[data-density="compact"] .journey-compass-action,
+    html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"] .journey-compass-action,
+    html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] .journey-compass-action {
+        flex: 0 1 auto;
+        max-width: none;
+        min-height: 40px;
+        padding: 0 12px;
+        border-radius: 999px;
+        font-size: 9px;
+    }
+
+    html body[data-active-view="galaxy"] #canvas-container {
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="idle"] #canvas-container::before {
+        opacity: 0.86;
+        background:
+            radial-gradient(circle at 52% 49%, rgba(5, 12, 18, 0.2) 0 18%, rgba(5, 12, 18, 0.34) 42%, rgba(4, 9, 14, 0.66) 76%, rgba(3, 6, 10, 0.86) 100%);
+    }
+
+    html body[data-panel-surface="idle"] #canvas-container::after {
+        opacity: 0.7;
+        background:
+            linear-gradient(90deg, rgba(4, 7, 11, 0.72), rgba(4, 7, 11, 0.28) 22%, transparent 42%, transparent 58%, rgba(4, 7, 11, 0.22) 82%, rgba(4, 7, 11, 0.5)),
+            radial-gradient(circle at 50% 53%, rgba(5, 12, 18, 0.1) 0 34%, rgba(4, 12, 17, 0.3) 68%, rgba(3, 7, 11, 0.62) 100%);
+        transform: none;
+    }
+
+    html body[data-panel-surface="idle"] .info-panel {
+        width: 304px;
+        top: 116px;
+        max-height: calc(100dvh - 236px);
+        border-radius: 8px;
+        border-color: rgba(121, 235, 222, 0.14);
+        background:
+            radial-gradient(circle at 100% 0%, rgba(121, 235, 222, 0.07), transparent 32%),
+            linear-gradient(180deg, rgba(6, 15, 20, 0.88), rgba(4, 9, 14, 0.82));
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.045),
+            0 16px 36px rgba(0, 0, 0, 0.24);
+    }
+
+    html body[data-panel-surface="idle"] .info-header {
+        min-height: 54px;
+        padding: 0 16px;
+    }
+
+    html body[data-panel-surface="idle"] .info-content {
+        max-height: calc(100dvh - 300px);
+        padding: 13px 16px 16px;
+    }
+
+    html body[data-panel-surface="idle"] .stats-row {
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    html body[data-panel-surface="idle"] .stat-box {
+        padding: 9px 8px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.026);
+    }
+
+    html body[data-panel-surface="idle"] .stat-number {
+        font-size: 21px;
+    }
+
+    html body[data-panel-surface="idle"] .stat-caption {
+        margin-bottom: 10px;
+    }
+
+    html body[data-panel-surface="idle"] .semantic-lane-pill,
+    html body[data-panel-surface="idle"] .semantic-lane-assist,
+    html body[data-panel-surface="idle"] .selected-card.is-empty,
+    html body[data-panel-surface="idle"] #cluster-section,
+    html body[data-panel-surface="idle"] #filters-section {
+        display: none;
+    }
+
+    html body[data-panel-surface="idle"] .demo-starters {
+        padding: 11px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.026);
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="idle"] .demo-starters-copy {
+        font-size: 10.5px;
+        line-height: 1.35;
+    }
+
+    html body[data-panel-surface="idle"] .demo-starter-row {
+        gap: 6px;
+    }
+
+    html body[data-panel-surface="idle"] .demo-starter-chip {
+        min-height: 40px;
+        border-radius: 8px;
+    }
+
+    html body[data-panel-surface="idle"] .launch-btn {
+        min-height: 44px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        letter-spacing: 0.09em;
+    }
+
+    html body[data-panel-surface="idle"] .weather-staleness {
+        display: none;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"] .journey-compass-kicker {
+        color: rgba(121, 235, 222, 0.7);
+        font-size: 10px;
+        letter-spacing: 0.2em;
+    }
+
+    html body[data-panel-surface="idle"] .journey-compass[data-phase="overview"] {
+        width: min(472px, calc(100vw - 620px));
+        min-width: 430px;
+        top: 98px;
+        padding: 14px 15px 15px;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 9px;
+        border-radius: 8px;
+        border-color: rgba(121, 235, 222, 0.12);
+        background:
+            radial-gradient(circle at 70% 8%, rgba(121, 235, 222, 0.08), transparent 34%),
+            linear-gradient(180deg, rgba(7, 17, 23, 0.8), rgba(4, 9, 14, 0.7));
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.055),
+            0 18px 44px rgba(0, 0, 0, 0.22);
+    }
+
+    html body[data-panel-surface="idle"] .journey-compass[data-phase="overview"] .journey-compass-copy {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 2px;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"] .journey-compass-title {
+        max-width: none;
+        font-size: 22px;
+        line-height: 0.96;
+    }
+
+    html body[data-panel-surface="idle"] .journey-compass-note {
+        display: none;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"] .journey-compass-rail {
+        padding: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.055);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.028);
+    }
+
+    html body[data-panel-surface="idle"] .journey-compass[data-phase="overview"] .journey-compass-step {
+        min-height: 32px;
+        padding: 0 8px;
+        font-size: 9px;
+    }
+
+    html body[data-panel-surface="idle"] .journey-compass-actions {
+        gap: 8px;
+        justify-content: flex-start;
+    }
+
+    html body[data-panel-surface="search"] .journey-compass {
+        width: min(472px, calc(100vw - 620px));
+        min-width: 430px;
+        top: 98px;
+        padding: 14px 15px 15px;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 9px;
+        border-radius: 8px;
+        opacity: 0.9;
+    }
+
+    html body[data-panel-surface="search"] .journey-compass-copy {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 2px;
+    }
+
+    html body[data-panel-surface="search"] .journey-compass-title {
+        max-width: none;
+        font-size: 22px;
+        line-height: 0.96;
+    }
+
+    html body[data-panel-surface="search"] .journey-compass-note {
+        display: none;
+    }
+
+    html body[data-panel-surface="search"] .journey-compass-step {
+        min-height: 32px;
+        padding: 0 8px;
+        font-size: 9px;
+    }
+
+    html body[data-panel-surface="search"] .journey-compass-actions {
+        gap: 8px;
+        justify-content: flex-start;
+    }
+
+    html body[data-panel-surface="search"] .info-panel {
+        width: 318px;
+        top: 116px;
+        bottom: auto;
+        max-height: calc(100dvh - 148px);
+        border-radius: 8px;
+        opacity: 0.96;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="search"] .info-content {
+        max-height: calc(100dvh - 204px);
+        padding: 14px 16px 16px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    html body[data-panel-surface="search"] .stats-row,
+    html body[data-panel-surface="search"] .stat-caption,
+    html body[data-panel-surface="search"] .launch-btn,
+    html body[data-panel-surface="search"] .demo-starters,
+    html body[data-panel-surface="search"] .selected-card.is-empty,
+    html body[data-panel-surface="search"] #cluster-section,
+    html body[data-panel-surface="search"] #filters-section,
+    html body[data-panel-surface="search"] .semantic-lane-assist,
+    html body[data-panel-surface="search"] .search-trail-cue,
+    html body[data-panel-surface="search"] .synthesize-trigger,
+    html body[data-panel-surface="search"] .mode-grid {
+        display: none;
+    }
+
+    html body[data-panel-surface="search"] .search-container.has-query {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    html body[data-panel-surface="search"] .search-results.active {
+        max-height: min(250px, calc(100dvh - 390px));
+        margin-top: 10px;
+        padding: 6px;
+        border-color: rgba(121, 235, 222, 0.18);
+        background: rgba(5, 10, 16, 0.82);
+    }
+
+    html body[data-panel-surface="search"] .search-error-state {
+        align-items: flex-start;
+        gap: 8px;
+        margin: 0;
+        padding: 14px;
+        border-radius: 8px;
+        text-align: left;
+    }
+
+    html body[data-panel-surface="search"] .search-error-text {
+        max-width: none;
+        font-size: 12px;
+        line-height: 1.42;
+    }
+
+    html body[data-panel-surface="search"] .search-error-actions {
+        justify-content: flex-start;
+        margin-top: 2px;
+    }
+
+    html body[data-panel-surface="search"] .search-error-retry-btn,
+    html body[data-panel-surface="search"] .search-error-dismiss-btn {
+        min-height: 40px;
+        padding: 0 13px;
+        font-size: 12px;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass-action.primary {
+        border-color: rgba(78, 205, 196, 0.46);
+        background:
+            radial-gradient(circle at 18% 0%, rgba(121, 235, 222, 0.2), transparent 58%),
+            linear-gradient(180deg, rgba(12, 45, 49, 0.36), rgba(5, 13, 18, 0.34));
+        color: rgba(213, 255, 250, 0.94);
+    }
+
+    html body[data-active-view="galaxy"] .mode-grid .mode-chip {
+        border-radius: 12px;
+    }
+
+    html body[data-active-view="galaxy"] .mode-grid .mode-chip.active {
+        border-color: rgba(78, 205, 196, 0.55);
+        background: rgba(78, 205, 196, 0.16);
+        color: rgba(201, 255, 248, 0.98);
+    }
+
+    html body[data-active-view="galaxy"] .mode-grid .mode-chip:disabled {
+        border-color: rgba(255, 255, 255, 0.11);
+        border-style: dashed;
+        opacity: 0.38;
+    }
+
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card {
+        border-color: rgba(255, 210, 77, 0.3);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            0 18px 58px rgba(0, 0, 0, 0.32),
+            0 0 28px rgba(255, 210, 77, 0.08),
+            0 0 34px rgba(121, 235, 222, 0.08);
+    }
+
+    html body[data-panel-surface="semantic-dive"] .focus-stage-kicker {
+        color: rgba(255, 226, 132, 0.92);
+        letter-spacing: 0.18em;
+    }
+
+    html body[data-panel-surface="semantic-dive"] #btn-inside-next.focus-stage-inside-btn[aria-busy="true"] {
+        animation: insideNextBusy 1.35s ease-in-out infinite;
+    }
+
+    html body[data-panel-surface="focus-search"] .info-panel {
+        display: none;
+        top: 116px;
+        bottom: auto;
+        width: 318px;
+        max-height: 132px;
+        border-radius: 8px;
+        opacity: 0.94;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="focus-search"] .info-content {
+        max-height: none;
+        padding: 14px 16px;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="focus-search"] .info-header,
+    html body[data-panel-surface="focus-search"] .stats-row,
+    html body[data-panel-surface="focus-search"] .stat-caption,
+    html body[data-panel-surface="focus-search"] .launch-btn,
+    html body[data-panel-surface="focus-search"] .demo-starters,
+    html body[data-panel-surface="focus-search"] .selected-card,
+    html body[data-panel-surface="focus-search"] #story-section,
+    html body[data-panel-surface="focus-search"] #cluster-section,
+    html body[data-panel-surface="focus-search"] #filters-section,
+    html body[data-panel-surface="focus-search"] .exploration-card,
+    html body[data-panel-surface="focus-search"] .mode-grid,
+    html body[data-panel-surface="focus-search"] .semantic-lane-assist,
+    html body[data-panel-surface="focus-search"] .search-trail-cue,
+    html body[data-panel-surface="focus-search"] .synthesize-trigger {
+        display: none;
+    }
+
+    html body[data-panel-surface="focus-search"] .search-container {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    html body[data-panel-surface="focus-search"] .search-container.search-degraded .search-label,
+    html body[data-panel-surface="focus-search"] .search-container.search-degraded .search-results.active {
+        display: none;
+    }
+
+    html body[data-panel-surface="idle"] .info-panel {
+        width: 322px;
+        top: 116px;
+        max-height: 432px;
+        border-radius: 8px;
+        border-color: rgba(121, 235, 222, 0.16);
+        background:
+            radial-gradient(circle at 100% 0%, rgba(121, 235, 222, 0.09), transparent 32%),
+            linear-gradient(180deg, rgba(6, 16, 20, 0.9), rgba(4, 9, 14, 0.84));
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.05),
+            0 16px 40px rgba(0, 0, 0, 0.26);
+    }
+
+    html body[data-panel-surface="idle"] .info-header {
+        min-height: 50px;
+        padding: 0 15px;
+    }
+
+    html body[data-panel-surface="idle"] .info-content {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 382px;
+        padding: 12px 14px 14px;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="idle"] .search-container {
+        order: 1;
+        margin: 0;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(121, 235, 222, 0.15);
+        background:
+            radial-gradient(circle at 100% 0%, rgba(121, 235, 222, 0.09), transparent 40%),
+            rgba(255, 255, 255, 0.025);
+    }
+
+    html body[data-panel-surface="idle"] .search-label {
+        margin-bottom: 8px;
+    }
+
+    html body[data-panel-surface="idle"] .search-label-text {
+        color: rgba(219, 252, 248, 0.82);
+        font-size: 10px;
+        letter-spacing: 0.14em;
+    }
+
+    html body[data-panel-surface="idle"] .search-input-wrapper {
+        min-height: 44px;
+        border-color: rgba(121, 235, 222, 0.15);
+        background: rgba(4, 10, 15, 0.78);
+    }
+
+    html body[data-panel-surface="idle"] .search-input {
+        height: 44px;
+        min-height: 44px;
+        font-size: 12px;
+    }
+
+    html body[data-panel-surface="idle"] .demo-starters {
+        order: 2;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+    }
+
+    html body[data-panel-surface="idle"] .demo-starters::before,
+    html body[data-panel-surface="idle"] .demo-starters-copy,
+    html body[data-panel-surface="idle"] .demo-journey-steps {
+        display: none;
+    }
+
+    html body[data-panel-surface="idle"] .demo-starters-kicker {
+        display: block;
+        margin: 0 0 7px;
+        color: rgba(255, 226, 132, 0.74);
+        font-size: 9px;
+        letter-spacing: 0.15em;
+    }
+
+    html body[data-panel-surface="idle"] .demo-starter-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
+        margin: 0;
+    }
+
+    html body[data-panel-surface="idle"] .demo-starter-chip {
+        min-height: 42px;
+        padding: 0 10px;
+        border-radius: 8px;
+        border-color: rgba(121, 235, 222, 0.16);
+        background: rgba(255, 255, 255, 0.028);
+        color: rgba(237, 250, 248, 0.9);
+        font-size: 11px;
+        letter-spacing: 0;
+    }
+
+    html body[data-panel-surface="idle"] .launch-btn {
+        order: 3;
+        min-height: 42px;
+        margin: 0;
+        border-radius: 8px;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+    }
+
+    html body[data-panel-surface="idle"] .stats-row {
+        order: 4;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin: 0;
+    }
+
+    html body[data-panel-surface="idle"] .stat-box {
+        min-height: 48px;
+        padding: 7px 8px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.022);
+    }
+
+    html body[data-panel-surface="idle"] .stat-number {
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    html body[data-panel-surface="idle"] .stat-label {
+        margin-top: 3px;
+        font-size: 8.5px;
+    }
+
+    html body[data-panel-surface="idle"] .stat-caption {
+        display: none;
+    }
+
+    html body[data-panel-surface="idle"] .mode-grid {
+        display: none;
+    }
+
+    @keyframes insideNextBusy {
+        0%, 100% {
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.04),
+                0 4px 14px rgba(0, 0, 0, 0.14),
+                0 0 0 rgba(255, 210, 77, 0);
+        }
+        50% {
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                0 5px 16px rgba(0, 0, 0, 0.16),
+                0 0 18px rgba(255, 210, 77, 0.16);
+        }
+    }
+
+}
+
+@media (max-width: 768px) {
+    html body[data-active-view="galaxy"] .search-container,
+    html body[data-active-view="galaxy"] .search-input-wrapper,
+    html body[data-active-view="galaxy"] .search-input {
+        box-sizing: border-box;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    html body[data-active-view="galaxy"] .search-input {
+        width: 100%;
+    }
+
+    html body[data-active-view="galaxy"] .stat-caption {
+        margin-bottom: 10px;
+        font-size: 8.5px;
+    }
+
+    html body[data-panel-surface="idle"] .journey-compass {
+        top: calc(66px + env(safe-area-inset-top, 0px));
+        left: 12px;
+        right: 12px;
+        width: auto;
+        min-width: 0;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 18px;
+    }
+
+    html body[data-panel-surface="idle"] .journey-compass-rail,
+    html body[data-panel-surface="idle"] .journey-compass-note {
+        display: none;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass-action {
+        min-height: 44px;
+    }
+
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card {
+        border-color: rgba(255, 210, 77, 0.3);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            0 -14px 38px rgba(0, 0, 0, 0.32),
+            0 0 22px rgba(255, 210, 77, 0.08),
+            0 0 28px rgba(121, 235, 222, 0.08);
+    }
+
+    html body[data-panel-surface="idle"] .info-panel {
+        left: 10px;
+        right: 10px;
+        top: auto;
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        min-height: 214px;
+        max-height: min(42vh, 320px);
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="idle"] .info-content {
+        max-height: calc(min(42vh, 320px) - 52px);
+        height: auto;
+        padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    }
+
+    html body[data-panel-surface="idle"] .search-label {
+        display: flex;
+    }
+}

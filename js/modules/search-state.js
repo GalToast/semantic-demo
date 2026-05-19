@@ -1,0 +1,1703 @@
+import { state } from '../state.js';
+import * as THREE from 'three';
+import { 
+    describeCluster, 
+    escapeHtml, 
+    formatBusinessName, 
+    highlightMatch,
+    isPointVisible,
+    sanitizePublicFacingNote,
+    cleanPublicNoteText,
+    isCompactSearchViewport,
+    pointHasGeocode,
+    normalizeCityForFilter as normalizeCityForFilterValue,
+    easeInOutCubic,
+    quadraticBezierComponent
+} from '../utils.js';
+import {
+    fetchSemanticSearchResults,
+    getCachedSemanticSearchPayload,
+    storeSemanticSearchPayload,
+    getSemanticSearchCacheDiagnostics
+} from './semantic-search-api-cache.js';
+
+export {
+    fetchSemanticSearchResults,
+    getCachedSemanticSearchPayload,
+    storeSemanticSearchPayload,
+    getSemanticSearchCacheDiagnostics
+};
+
+// js/modules/search-state.js
+
+const SEARCH_STOP_WORDS = new Set([
+    'a', 'an', 'and', 'are', 'at', 'by', 'for', 'from', 'in', 'into', 'is', 'me', 'my', 'of', 'on', 'or', 'place', 'places', 'take', 'the', 'to', 'with', 'your'
+]);
+
+function getSearchContainer() {
+    return document.querySelector('.search-container');
+}
+
+export function setSearchPanelState({
+    searching,
+    focusing,
+    hasQuery,
+    resultsRendered,
+    degraded
+} = {}) {
+    const searchContainer = getSearchContainer();
+    if (!searchContainer) return;
+
+    if (typeof searching === 'boolean') {
+        searchContainer.classList.toggle('searching', searching);
+    }
+    if (typeof focusing === 'boolean') {
+        searchContainer.classList.toggle('focusing', focusing);
+    }
+    if (typeof hasQuery === 'boolean') {
+        searchContainer.classList.toggle('has-query', hasQuery);
+    } else {
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchContainer.classList.toggle('has-query', Boolean(searchInput.value.trim()));
+    }
+    if (typeof resultsRendered === 'boolean') {
+        searchContainer.classList.toggle('results-rendered', resultsRendered);
+    }
+    if (typeof degraded === 'boolean') {
+        searchContainer.classList.toggle('search-degraded', degraded);
+    }
+}
+
+window.setSearchPanelState = setSearchPanelState;
+
+function setMobileSearchSheetMode(mode = 'peek', { userInitiated = false } = {}) {
+    const safeMode = mode === 'expanded' ? 'expanded' : 'peek';
+    document.body.dataset.mobileSearchSheet = safeMode;
+    document.body.dataset.panelSurfaceDetail = safeMode;
+    if (userInitiated) document.body.dataset.mobileSearchSheetUser = 'true';
+
+    if (safeMode === 'peek') {
+        const content = document.getElementById('info-panel-content');
+        if (content) content.scrollTop = 0;
+    }
+
+    const label = document.querySelector('.search-label');
+    if (label) {
+        label.setAttribute('aria-expanded', String(safeMode === 'expanded'));
+        label.setAttribute('aria-label', safeMode === 'expanded' ? 'Collapse search results panel' : 'Expand search results panel');
+    }
+}
+
+function setupMobileSearchSheetToggle() {
+    const searchContainer = getSearchContainer();
+    const label = searchContainer?.querySelector?.('.search-label');
+    if (!searchContainer || !label) return;
+
+    label.setAttribute('role', 'button');
+    label.setAttribute('tabindex', '0');
+    label.setAttribute('aria-controls', 'search-results');
+
+    if (!label.dataset.mobileSheetToggleBound) {
+        label.addEventListener('click', () => {
+            if (!isCompactSearchViewport() || !searchContainer.classList.contains('has-query')) return;
+            const nextMode = document.body.dataset.mobileSearchSheet === 'expanded' ? 'peek' : 'expanded';
+            setMobileSearchSheetMode(nextMode, { userInitiated: true });
+        });
+        label.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            if (!isCompactSearchViewport() || !searchContainer.classList.contains('has-query')) return;
+            event.preventDefault();
+            const nextMode = document.body.dataset.mobileSearchSheet === 'expanded' ? 'peek' : 'expanded';
+            setMobileSearchSheetMode(nextMode, { userInitiated: true });
+        });
+        label.dataset.mobileSheetToggleBound = 'true';
+    }
+
+    if (isCompactSearchViewport() && searchContainer.classList.contains('has-query')) {
+        if (!document.body.dataset.mobileSearchSheetUser) setMobileSearchSheetMode('peek');
+        else setMobileSearchSheetMode(document.body.dataset.mobileSearchSheet || 'peek');
+    } else {
+        delete document.body.dataset.mobileSearchSheet;
+        delete document.body.dataset.mobileSearchSheetUser;
+        if (document.body.dataset.panelSurface === 'search' || document.body.dataset.panelSurface === 'focus-search') {
+            document.body.dataset.panelSurfaceDetail = 'none';
+        }
+        label.removeAttribute('aria-expanded');
+        label.removeAttribute('aria-label');
+    }
+}
+
+// === Tokenization and Intent ===
+
+const SEARCH_INTENT_EXPANSIONS = [
+    {
+        matchAny: ['alcohol', 'booze', 'drink', 'drinks', 'liquor', 'spirits'],
+        aliases: [
+            'alcohol', 'liquor', 'spirits', 'tequila', 'whiskey', 'vodka', 'beer', 'wine', 'brewery',
+            'distillery', 'cocktail', 'cantina', 'pub', 'tavern', 'bar', 'lounge', 'saloon'
+        ]
+    },
+    {
+        matchAny: ['dog', 'dogs', 'pet', 'pets', 'puppy', 'animal', 'animals'],
+        aliases: [
+            'dog', 'dogs', 'pet', 'pets', 'puppy', 'animal', 'animals', 'grooming', 'groomer', 'groomers',
+            'kennel', 'kennels', 'boarding', 'daycare', 'vet', 'veterinary', 'wash', 'trainer', 'trainers', 'park'
+        ]
+    },
+    {
+        matchPhrases: ['places to take dogs', 'dog friendly', 'take dogs'],
+        aliases: [
+            'dog', 'dogs', 'pet', 'pets', 'park', 'boarding', 'daycare', 'wash', 'grooming', 'veterinary', 'vet', 'trainer'
+        ]
+    }
+];
+
+export function tokenizeSearchText(text) {
+    return [
+        ...new Set(
+            (
+                String(text || '')
+                    .toLowerCase()
+                    .match(/[a-z0-9]+/g) || []
+            )
+                .filter(Boolean)
+                .filter((token) => token.length > 1 && !SEARCH_STOP_WORDS.has(token))
+        )
+    ];
+}
+
+export function expandSearchIntent(query, queryTokens) {
+    const safeQueryTokens = Array.isArray(queryTokens) ? queryTokens : [];
+    const expanded = new Set(safeQueryTokens);
+    const lowerQuery = String(query || '').toLowerCase();
+
+    SEARCH_INTENT_EXPANSIONS.forEach((intent) => {
+        const phraseMatch = (intent.matchPhrases || []).some((phrase) => lowerQuery.includes(phrase));
+        const tokenMatch = (intent.matchAny || []).some((token) => safeQueryTokens.includes(token));
+        if (!phraseMatch && !tokenMatch) return;
+        (intent.aliases || []).forEach((alias) => {
+            if (alias && !SEARCH_STOP_WORDS.has(alias)) expanded.add(alias);
+        });
+    });
+
+    return [...expanded];
+}
+
+export function countTokenMatches(fieldTokens, queryTokens) {
+    if (!Array.isArray(fieldTokens)) fieldTokens = [];
+    if (!Array.isArray(queryTokens)) queryTokens = [];
+    let exact = 0,
+        prefix = 0;
+    queryTokens.forEach((token) => {
+        if (fieldTokens.includes(token)) exact += 1;
+        else if (fieldTokens.some((e) => e.startsWith(token) || token.startsWith(e))) prefix += 1;
+    });
+    return { exact, prefix };
+}
+
+// === Search result strength ===
+
+export function getSearchResultStrength(result, topScore) {
+    if (!Number.isFinite(topScore) || topScore <= 0) return 14;
+    if (!Number.isFinite(result?.score)) return 14;
+    return Math.max(14, Math.min(100, Math.round((result.score / topScore) * 100)));
+}
+
+export function getSearchResultStrengthLabel(order, strength) {
+    if (order === 0) return 'Search Anchor';
+    if (strength >= 90) return 'High Synergy';
+    if (strength >= 75) return 'Strong Signal';
+    if (strength >= 50) return 'Related Link';
+    return 'Broad Match';
+}
+
+export function getSearchResultCardClasses(order, isAnchor) {
+    return ['search-result-item', order === 0 ? 'top-result' : '', isAnchor ? 'is-anchor' : 'is-secondary']
+        .filter(Boolean)
+        .join(' ');
+}
+
+function humanizeSearchSnippetCase(value) {
+    const clean = cleanPublicNoteText(value);
+    if (!clean) return '';
+    return clean
+        .toLowerCase()
+        .replace(/\b([a-z])/g, (match) => match.toUpperCase())
+        .replace(/\b(Llc|Lp|Ltd|Pc|Pllc|Inc)\b/g, (match) => match.toUpperCase());
+}
+
+function compactSearchSnippetText(value, max = 128) {
+    const clean = sanitizePublicFacingNote(value);
+    if (!clean || clean.length <= max) return clean || '';
+    const slice = clean.slice(0, max + 1);
+    const boundary = Math.max(slice.lastIndexOf('. '), slice.lastIndexOf(', '), slice.lastIndexOf(' '));
+    const cutAt = boundary > Math.floor(max * 0.62) ? boundary : max;
+    return `${slice.slice(0, cutAt).replace(/[,\s;:.]+$/, '')}...`;
+}
+
+function buildCategoryLocationSnippet(point) {
+    const category = humanizeSearchSnippetCase(sanitizePublicFacingNote(point?.what || ''));
+    const city = cleanPublicNoteText(point?.city || '');
+    const hasUsefulCategory = category && !/^(local business|montgomery county business|registry or thin business record)$/i.test(category);
+    if (hasUsefulCategory && city) return `${category} in ${city}.`;
+    if (hasUsefulCategory) return category;
+    if (city) return `Montgomery County business in ${city}.`;
+    return 'Montgomery County business.';
+}
+
+function buildOfficialSiteSnippet(note, point) {
+    const category = humanizeSearchSnippetCase(sanitizePublicFacingNote(point?.what || '')).toLowerCase();
+    const city = cleanPublicNoteText(point?.city || '');
+    if (category && city) return `Official site confirms this ${category} in ${city}.`;
+    if (category) return `Official site confirms this ${category}.`;
+    return compactSearchSnippetText(note);
+}
+
+export function buildSearchResultSnippet(result) {
+    const point = result?.point || {};
+    const rawNote = result?.publicNote || result?.publicDetail || '';
+    if (!rawNote) return buildCategoryLocationSnippet(point);
+
+    const sanitized = sanitizePublicFacingNote(rawNote, point);
+    const lower = cleanPublicNoteText(rawNote).toLowerCase();
+
+    if (sanitized && (sanitized !== rawNote || /^legal name:/i.test(rawNote))) {
+        return sanitized;
+    }
+
+    if (
+        lower === 'pending research.' ||
+        lower === 'pending research' ||
+        lower.startsWith('no public') ||
+        lower.startsWith('no verified') ||
+        lower.startsWith('no verifiable') ||
+        lower.startsWith('official texas comptroller') ||
+        lower.startsWith('texas taxpayer record') ||
+        lower.startsWith('registry-only') ||
+        lower.startsWith('search for exact') ||
+        lower.includes('no reliable public business contact')
+    ) {
+        return buildCategoryLocationSnippet(point);
+    }
+
+    if (/^official .*site identifies/i.test(rawNote) || /^official .*site confirms/i.test(rawNote)) {
+        return buildOfficialSiteSnippet(rawNote, point);
+    }
+
+    return compactSearchSnippetText(rawNote);
+}
+
+export function buildSearchRankLabel({ index, order, topIndex, anchorIndex = null, exploreIndex = null }) {
+    if (index === null || index === undefined) return 'Match';
+    if (exploreIndex !== null && exploreIndex !== undefined && index === exploreIndex)
+        return 'Current stop';
+    if (anchorIndex !== null && anchorIndex !== undefined && index === anchorIndex) {
+        if (exploreIndex !== null && exploreIndex !== undefined && exploreIndex !== anchorIndex) return 'Original anchor';
+        return 'Anchor';
+    }
+    if (topIndex !== null && topIndex !== undefined && index === topIndex) {
+        return exploreIndex !== null && exploreIndex !== undefined && exploreIndex !== topIndex
+            ? 'Original top match'
+            : 'Top match';
+    }
+    const orderNum = Number(order);
+    return orderNum === 0 ? 'Top result' : `Result ${orderNum + 1}`;
+}
+
+export function buildSearchStageLabel(index, topIndex, anchorIndex = null, exploreIndex = null) {
+    if (exploreIndex !== null && exploreIndex !== undefined && index === exploreIndex) {
+        return exploreIndex === anchorIndex ? 'Centered' : 'Current stop';
+    }
+    if (anchorIndex !== null && anchorIndex !== undefined && index === anchorIndex) {
+        if (exploreIndex !== null && exploreIndex !== undefined && exploreIndex !== anchorIndex) return 'Original anchor';
+        return index === topIndex ? 'Anchor' : 'Centered';
+    }
+    if (index === topIndex) {
+        return exploreIndex !== null && exploreIndex !== undefined && exploreIndex !== topIndex
+            ? 'Original closest'
+            : 'Closest match';
+    }
+    if (!state.points) return 'Related match';
+    const inBounds = Number.isFinite(index) && index >= 0 && index < state.points.length;
+    const point = inBounds ? state.points[index] : null;
+    if (!point) return 'Related match';
+    if (Number.isFinite(topIndex) && topIndex >= 0 && topIndex < state.points.length && state.points[topIndex]?.cluster === point.cluster) return 'Same theme';
+    return 'Related match';
+}
+
+function buildSearchContactBadge(type, label, iconPath) {
+    return `
+        <span class="search-result-badge ${type}" title="${label}" aria-label="${label}">
+            <svg class="search-result-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                ${iconPath}
+            </svg>
+        </span>
+    `;
+}
+
+// === Build result item HTML ===
+
+export function buildSearchResultItemHtml(result, order, renderContext) {
+    const { trimmedQuery, topIndex, anchorIndex, topScore } = renderContext;
+    const strength = getSearchResultStrength(result, topScore);
+    const strengthLabel = getSearchResultStrengthLabel(order, strength);
+    const isAnchor = anchorIndex !== null && anchorIndex !== undefined && result.index === anchorIndex;
+    const rankLabel = buildSearchRankLabel({ index: result.index, order, topIndex, anchorIndex });
+    const cardClasses = getSearchResultCardClasses(order, isAnchor);
+    const snippetText = buildSearchResultSnippet(result);
+    const detailText = escapeHtml(snippetText);
+    const contextText = `${describeCluster(result.point.cluster)} · ${result.point.city ? result.point.city.trim() : 'Location unknown'}`;
+    const clusterText = escapeHtml(contextText);
+
+    const badges = [];
+    if (result.point.website) {
+        badges.push(buildSearchContactBadge('website', 'Website available', '<circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a13.5 13.5 0 0 1 0 18"></path><path d="M12 3a13.5 13.5 0 0 0 0 18"></path>'));
+    }
+    if (result.point.email) {
+        badges.push(buildSearchContactBadge('email', 'Email available', '<rect x="3.5" y="5.5" width="17" height="13" rx="2"></rect><path d="m4.5 7 7.5 6 7.5-6"></path>'));
+    }
+    if (result.point.phone) {
+        badges.push(buildSearchContactBadge('phone', 'Phone available', '<path d="M7.5 4.5 10 7 8.4 9.1c1 2.2 2.3 3.5 4.5 4.5L15 12l2.5 2.5-.8 3.1c-.2.7-.9 1.1-1.6 1A12.5 12.5 0 0 1 5.4 8.9c-.1-.7.3-1.4 1-1.6l1.1-.3Z"></path>'));
+    }
+    const badgesHtml = badges.length ? `<div class="search-result-badges">${badges.join('')}</div>` : '';
+
+    return `
+        <div class="search-result-listitem" role="listitem">
+        <button class="${cardClasses}" id="search-result-${Number(result.index)}" data-index="${Number(result.index)}" data-order="${order}" type="button" role="button" tabindex="0"
+            aria-label="${escapeHtml(`Focus ${formatBusinessName(result.point.name)}. ${rankLabel}. ${snippetText} ${contextText}.`)}"
+            style="animation-delay:${Math.min(order * 32, 224)}ms">
+            <div class="search-result-row">
+                <div class="search-result-rank">${rankLabel}</div>
+                <div class="search-result-name">${highlightMatch(formatBusinessName(result.point.name), trimmedQuery)}</div>
+                ${badgesHtml}
+            </div>
+            <div class="search-result-what">${detailText}</div>
+            <div class="search-result-context">${clusterText}</div>
+            <div class="search-result-meta">
+                <div class="search-result-stage">${buildSearchStageLabel(result.index, topIndex, anchorIndex)}</div>
+                <div class="search-result-strength">${strengthLabel}</div>
+            </div>
+            <div class="search-result-bar"><span style="width:${strength}%"></span></div>
+        </button>
+        </div>
+    `;
+}
+
+// === Render result items ===
+
+export function renderSearchResultItems(resultsEl, results, renderContext, statusEl) {
+    const INITIAL_SHOW = 5;
+    const total = results.length;
+    const savedCount = (() => {
+        try { return Number.parseInt(sessionStorage.getItem('searchVisibleCount') || '0', 10); } catch { return 0; }
+    })();
+    const visibleCount = Math.min(
+        total,
+        Math.max(INITIAL_SHOW, Number.isFinite(savedCount) && savedCount > 0 ? savedCount : INITIAL_SHOW)
+    );
+    const visible = results.slice(0, visibleCount);
+
+    const setExpandedResultState = (expanded) => {
+        const isExpanded = !!expanded && total > INITIAL_SHOW;
+        resultsEl.classList.toggle('is-expanded', isExpanded);
+        const searchContainer = typeof resultsEl.closest === 'function' ? resultsEl.closest('.search-container') : null;
+        if (searchContainer) searchContainer.classList.toggle('has-expanded-results', isExpanded);
+    };
+
+    const renderResultCountLine = (currentVisibleCount) => {
+        return total === 1 ? '1 trail result' : `${currentVisibleCount} shown · ${total} found`;
+    };
+
+    const renderResultsMarkup = (resultSlice, currentVisibleCount) => {
+        const statusText = renderResultCountLine(currentVisibleCount);
+        resultsEl.innerHTML = `
+            <div id="search-results-count" class="search-results-count" role="status" aria-live="polite" aria-atomic="true">${escapeHtml(statusText)}</div>
+            <div id="search-result-list" class="search-result-list" role="list" aria-label="Search result businesses">
+                ${resultSlice.map((r, i) => buildSearchResultItemHtml(r, i, renderContext)).join('')}
+            </div>
+        `;
+        resultsEl.setAttribute('aria-describedby', 'search-results-count');
+        if (statusEl) statusEl.textContent = statusText;
+        const liveEl = document.getElementById('search-status-live');
+        if (liveEl) liveEl.textContent = statusText;
+        return statusText;
+    };
+
+    setExpandedResultState(visibleCount >= total);
+    renderResultsMarkup(visible, visibleCount);
+    setupMobileSearchSheetToggle();
+    
+    if (total > visibleCount) {
+        const remaining = total - visibleCount;
+        const btn = document.createElement('button');
+        btn.className = 'search-show-more-btn';
+        btn.type = 'button';
+        btn.setAttribute('aria-label', `Show ${remaining} more search results`);
+        btn.setAttribute('aria-expanded', 'false');
+        btn.setAttribute('aria-controls', 'search-result-list');
+        btn.setAttribute('aria-describedby', 'search-results-count');
+        btn.textContent = `Show ${remaining} more results`;
+        btn.onclick = () => {
+            const nextVisibleCount = results.length;
+            const previousScrollTop = resultsEl.scrollTop;
+            btn.setAttribute('aria-expanded', 'true');
+            try { sessionStorage.setItem('searchVisibleCount', String(nextVisibleCount)); } catch (err) { console.warn('[search-state] searchVisibleCount persistence failed:', err); }
+            if (typeof window.updateUrlState === 'function') {
+                window.updateUrlState({ offset: null }, { reason: 'search-more' });
+            }
+            setExpandedResultState(true);
+            renderResultsMarkup(results.slice(0, nextVisibleCount), nextVisibleCount);
+            bindSearchResultInteractions(resultsEl, statusEl, results, renderContext);
+            refreshSearchResultHierarchy(resultsEl);
+            const activeIndex = state.currentSearchSummary?.anchorIndex ?? renderContext.anchorIndex ?? renderContext.topIndex;
+            if (Number.isFinite(activeIndex)) setActiveSearchResultRow(resultsEl, activeIndex, { reveal: false });
+            resultsEl.scrollTop = previousScrollTop;
+            if (typeof window.requestAnimationFrame === 'function') {
+                window.requestAnimationFrame(() => {
+                    resultsEl.scrollTop = previousScrollTop;
+                });
+            }
+        };
+        resultsEl.appendChild(btn);
+    }
+    resultsEl.scrollTop = 0;
+}
+
+// === Refresh hierarchy ===
+
+export function refreshSearchResultHierarchy(resultsEl) {
+    if (!resultsEl || !state.currentSearchSummary) return;
+    const anchorIndex = state.currentSearchSummary.anchorIndex;
+    const topIndex = state.currentSearchSummary.topIndex ?? null;
+    const isCommittedExplore = state.navState.mode === 'trail' && (state.navState.explorationHistoryIndices || []).length > 1;
+    const exploreIndex = isCommittedExplore && Number.isFinite(state.navState.focusedIndex) ? state.navState.focusedIndex : null;
+
+    resultsEl.querySelectorAll('.search-result-item').forEach((row) => {
+        const index = Number.isFinite(+row.dataset.index) ? +row.dataset.index : null;
+        const order = Number.isFinite(+row.dataset.order) ? +row.dataset.order : null;
+        const rankEl = row.querySelector('.search-result-rank');
+        const stageEl = row.querySelector('.search-result-stage');
+        
+        const isOriginAnchor = isCommittedExplore && anchorIndex !== null && index === anchorIndex && index !== exploreIndex;
+        const isOriginTop = isCommittedExplore && topIndex !== null && index === topIndex && index !== exploreIndex && index !== anchorIndex;
+
+        row.classList.toggle('is-origin-anchor', isOriginAnchor);
+        row.classList.toggle('is-origin-top', isOriginTop);
+        
+        if (rankEl && Number.isFinite(order)) {
+            rankEl.textContent = buildSearchRankLabel({ index, order, topIndex, anchorIndex, exploreIndex });
+        }
+        if (stageEl) {
+            stageEl.textContent = buildSearchStageLabel(index, topIndex, anchorIndex, exploreIndex);
+        }
+    });
+}
+
+// === Set active row ===
+
+export function setActiveSearchResultRow(resultsEl, activeIndex = null, { reveal = true } = {}) {
+    if (!resultsEl) return;
+    const isCommittedExplore = state.navState.mode === 'trail' && (state.navState.explorationHistoryIndices || []).length > 1;
+    const effectiveIndex = isCommittedExplore && Number.isFinite(state.navState.focusedIndex) ? state.navState.focusedIndex : activeIndex;
+    const activeKey = effectiveIndex !== null ? String(effectiveIndex) : null;
+    let activeRow = null;
+
+    resultsEl.querySelectorAll('.search-result-item').forEach((row) => {
+        const isActive = activeKey !== null && row.dataset.index === activeKey;
+        row.classList.toggle('active-focus', isActive);
+        row.classList.toggle('active-explore', isActive && isCommittedExplore);
+        if (isActive) {
+            row.setAttribute('aria-current', 'true');
+            activeRow = row;
+        } else {
+            row.removeAttribute('aria-current');
+        }
+    });
+    refreshSearchResultHierarchy(resultsEl);
+
+    if (reveal && activeRow && typeof activeRow.scrollIntoView === 'function') {
+        if (typeof window.isMobileRouteFieldPeekActive === 'function' && window.isMobileRouteFieldPeekActive()) {
+            return;
+        }
+        if (!revealActiveSearchResultOnCompact(resultsEl, activeRow)) {
+            activeRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+        scheduleCompactSearchResultReveal(resultsEl, effectiveIndex);
+    }
+}
+
+// === Focus transition ===
+
+export function focusSearchResultFromElement(resultsEl, statusEl, resultIndices, targetIndex, sourceEl) {
+    const targetPoint = (Number.isFinite(targetIndex) && targetIndex >= 0 && targetIndex < state.points.length)
+        ? state.points[targetIndex]
+        : null;
+    beginSearchFocusTransition(resultsEl, statusEl, resultIndices, targetIndex, targetPoint, sourceEl);
+}
+
+export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, targetIndex, point, el) {
+    if (!point || !state.currentSearchSummary) return;
+    if (!el) return;
+    const token = (state.searchFocusTransitionToken = (state.searchFocusTransitionToken || 0) + 1);
+
+    if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
+    if (typeof window.clearCompactSearchResultRevealTimers === 'function') window.clearCompactSearchResultRevealTimers();
+    if (typeof window.clearSearchPreviewHoverTimer === 'function') window.clearSearchPreviewHoverTimer();
+    if (typeof window.hideTooltip === 'function') window.hideTooltip();
+
+    resultsEl
+        .querySelectorAll('.search-result-item')
+        .forEach((r) => r.classList.remove('active-preview', 'active-focus', 'active-explore', 'is-processing'));
+    
+    // 10/10 Polish: Instant click feedback
+    el.classList.add('is-processing');
+    el.classList.add('active-focus');
+    state.currentSearchSummary.anchorIndex = targetIndex;
+    refreshSearchResultHierarchy(resultsEl);
+    
+    activateSearchGlow(resultIndices, targetIndex);
+    updateSearchPreviewOverlay(targetIndex);
+    if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ focusing: true });
+
+    const focusDelayMs = isCompactSearchViewport() ? 40 : 120;
+    window.setTimeout(() => {
+        if (token !== state.searchFocusTransitionToken) return;
+        if (state.currentView === 'map' && pointHasGeocode(point)) {
+            if (typeof window.focusOnPoint === 'function') window.focusOnPoint(point, { fromSearchResult: true });
+        }
+        if (typeof window.focusOnNode === 'function') {
+            // 10/10 Polish: Dismiss mobile keyboard during transition
+            const input = document.getElementById('search-input');
+            if (input) input.blur();
+
+            window.focusOnNode(targetIndex, { fromSearchResult: true });
+        }
+
+        if (typeof window.syncSearchStatusForFocus === 'function') window.syncSearchStatusForFocus(point, { fromSearchResult: true });
+        if (typeof window.settleCompactSearchFocusCard === 'function') window.settleCompactSearchFocusCard();
+
+        // Fix 3: switch back to galaxy view after focus completes (map view search result click)
+        if (state.currentView === 'map') {
+            window.setTimeout(() => {
+                if (typeof window.switchView === 'function') window.switchView('galaxy');
+            }, 800);
+        }
+
+        window.setTimeout(() => {
+            if (token !== state.searchFocusTransitionToken) return;
+            if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ focusing: false });
+        }, 260);
+    }, focusDelayMs);
+}
+
+// === Update search status message ===
+
+export function updateSearchStatusMessage() {
+    const statusEl = document.getElementById('search-status');
+    const liveEl = document.getElementById('search-status-live');
+    if (!statusEl) return;
+    if (state.currentSearchSummary) {
+        restoreSearchSummaryStatus();
+        return;
+    }
+    const msg = 'Search 8,406 MoCo businesses semantically by need, venue, service, or clue.';
+    statusEl.textContent = msg;
+    if (liveEl) liveEl.textContent = msg;
+}
+
+// === Restore summary status ===
+
+export function restoreSearchSummaryStatus() {
+    const statusEl = document.getElementById('search-status');
+    const liveEl = document.getElementById('search-status-live');
+    const resultsEl = document.getElementById('search-results');
+    if (!statusEl || !state.currentSearchSummary) return;
+    if (!resultsEl?.classList.contains('active')) return;
+    refreshSearchResultHierarchy(resultsEl);
+    const compact = isCompactSearchViewport();
+    let msg = '';
+    if (state.currentSearchSummary.anchorIndex !== null) {
+        const anchorIdx = state.currentSearchSummary.anchorIndex;
+        const anchorPoint = (Number.isFinite(anchorIdx) && anchorIdx >= 0 && anchorIdx < state.points.length)
+            ? state.points[anchorIdx]
+            : null;
+        const anchorName = anchorPoint ? formatBusinessName(anchorPoint.name) : 'the current anchor';
+        msg = compact
+            ? `${state.currentSearchSummary.visibleMatches} of ${state.currentSearchSummary.totalMatches} matches | ${anchorName} anchors this trail.`
+            : `Showing ${state.currentSearchSummary.visibleMatches} of ${state.currentSearchSummary.totalMatches} semantic matches | ${anchorName} is anchoring this view.`;
+    } else {
+        msg = compact
+            ? `${state.currentSearchSummary.visibleMatches} of ${state.currentSearchSummary.totalMatches} semantic matches`
+            : `Showing ${state.currentSearchSummary.visibleMatches} of ${state.currentSearchSummary.totalMatches} semantic matches`;
+    }
+    statusEl.textContent = msg;
+    if (liveEl) liveEl.textContent = msg;
+}
+
+// === Search cue update ===
+
+export function updateSearchTrailCue(nextCue = {}) {
+    const cueEl = document.getElementById('search-trail-cue');
+    const kickerEl = document.getElementById('search-trail-cue-kicker');
+    const titleEl = document.getElementById('search-trail-cue-title');
+    const noteEl = document.getElementById('search-trail-cue-note');
+    if (!cueEl || !kickerEl || !titleEl || !noteEl) return;
+
+    if (nextCue.beat === 'idle' || (!nextCue.title && !nextCue.stage)) {
+        cueEl.hidden = true;
+        cueEl.classList.remove('active');
+        return;
+    }
+    
+    // 10/10 Polish: Narrative framing for search lifecycle
+    const query = state.currentSearchSummary?.query || 'the network';
+    const kicker = nextCue.kicker || (nextCue.stage === 'query' ? 'Scanning...' : 'Connection cue');
+    const title = nextCue.title || (
+        nextCue.stage === 'query' ? `Sifting 8,406 records for '${query}' patterns.` :
+        nextCue.stage === 'anchor' ? 'Anchor identified. Trail initialized.' :
+        nextCue.stage === 'explore' ? 'Search opens a trail.' :
+        'Search opens a trail.'
+    );
+    const note = nextCue.note || (
+        nextCue.stage === 'query' ? 'High-fidelity semantic analysis is aligning relevant business clusters.' :
+        nextCue.stage === 'anchor' ? 'The strongest match has become the anchor. You can now center it and explore its neighborhood.' :
+        nextCue.stage === 'explore' ? 'Enter the neighborhood to explore related businesses and discover record-backed connections.' :
+        'The first strong match becomes the anchor; from there you can center it and continue through related businesses.'
+    );
+
+    kickerEl.textContent = kicker;
+    titleEl.textContent = title;
+    noteEl.textContent = note;
+    
+    // Manage stage indicators
+    const stage = nextCue.stage || 'query';
+    cueEl.querySelectorAll('.search-trail-cue-step').forEach(el => {
+        el.classList.toggle('active', el.dataset.cueStage === stage);
+    });
+
+    cueEl.hidden = false;
+    cueEl.classList.add('active');
+    state.searchTrailCueLastRenderedAt = performance.now();
+}
+
+// === Filtering ===
+
+export function normalizeCityForFilter(city) {
+    return normalizeCityForFilterValue(city);
+}
+
+export function getFilteredIndices() {
+    if (!state.points) return [];
+    const indices = [];
+    for (let i = 0; i < state.points.length; i++) {
+        const point = state.points[i];
+        if (!point) continue;
+        const pointCluster = Number.isFinite(Number(point.cluster)) ? Number(point.cluster) : 0;
+        if (state.activeClusterFilter !== null && pointCluster !== state.activeClusterFilter) continue;
+        if (state.activeFilters.status !== 'all' && point.status !== state.activeFilters.status) continue;
+        if (state.activeFilters.city !== 'all' && normalizeCityForFilter(point.city) !== state.activeFilters.city) continue;
+        if (state.activeFilters.website && !point.website) continue;
+        if (state.activeFilters.email && !point.email) continue;
+        if (state.activeFilters.geocoded && !pointHasGeocode(point)) continue;
+        indices.push(i);
+    }
+    return indices;
+}
+
+export function applyFilters() {
+    if (!state.points) return;
+    const filteredIndices = getFilteredIndices();
+    const filteredCount = filteredIndices.length;
+    const filteredCities = new Set(filteredIndices
+        .filter((idx) => Number.isFinite(idx) && idx >= 0 && idx < state.points.length)
+        .map((index) => {
+            const point = state.points[index];
+            return point ? normalizeCityForFilter(point.city) : null;
+        })
+        .filter(Boolean));
+
+    const totalCountEl = document.getElementById('total-count');
+    const cityCountEl = document.getElementById('city-count');
+    if (totalCountEl) totalCountEl.textContent = filteredCount.toLocaleString();
+    if (cityCountEl) cityCountEl.textContent = filteredCities.size.toLocaleString();
+
+    if (typeof window.updateClusterList === 'function') window.updateClusterList();
+    
+    document.querySelectorAll('.cluster-item').forEach((el) => {
+        el.classList.toggle('active', state.activeClusterFilter !== null && Number(el.dataset.cluster) === state.activeClusterFilter);
+    });
+
+    if (typeof window.buildLegend === 'function') window.buildLegend();
+    updateSearchStatusMessage(filteredCount);
+    if (typeof window.refreshMapMarkers === 'function') window.refreshMapMarkers();
+
+    if (state.selectedPoint) {
+        const selectedIndex = state.points.indexOf(state.selectedPoint);
+        if (selectedIndex >= 0 && !isPointVisible(selectedIndex, state.points, state.activeClusterFilter, state.activeFilters)) {
+            if (typeof window.updateSelectedBusiness === 'function') window.updateSelectedBusiness(null);
+            state.selectedPoint = null;
+            state.focusedNode = null;
+            if (typeof window.syncMobileRoutePeek === 'function') window.syncMobileRoutePeek();
+            state.navState.mode = 'overview';
+            state.navState.focusedIndex = null;
+            state.navState.trailSeedIndex = null;
+            state.navState.trailNeighborIndices = [];
+            state.navState.trailCursor = -1;
+            state.navState.explorationHistoryIndices = [];
+            state.navState.lastTraversalReason = null;
+            state.trailIndices.clear();
+        }
+    }
+
+    if (state.trailDepth >= 1) {
+        if (typeof window.updateTrailIndices === 'function') window.updateTrailIndices();
+    }
+
+    if (typeof window.applyPointFilterColors === 'function') window.applyPointFilterColors();
+    if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
+    if (typeof window.refreshHoverSemanticOverlay === 'function') window.refreshHoverSemanticOverlay();
+}
+
+// === Interaction binding ===
+
+export function bindSearchResultInteractions(resultsEl, statusEl, results, renderContext) {
+    const { resultIndices, fallbackPreviewIndex } = renderContext;
+    resultsEl.querySelectorAll('.search-result-item').forEach((el, order) => {
+        const result = results[order];
+        if (!result) return;
+        const targetIndex = result.index;
+
+        el.onmouseenter = () => {
+            if (isCompactSearchViewport()) return;
+            if (typeof window.clearSearchPreviewHoverTimer === 'function') window.clearSearchPreviewHoverTimer();
+            state.searchPreviewHoverTimer = window.setTimeout(() => {
+                el.classList.add('active-preview');
+                activateSearchGlow(resultIndices, targetIndex);
+                // Fix 5: visual connection — highlight the corresponding node in the mycelium
+                state.hoverHighlightIndex = targetIndex;
+                updateSearchPreviewOverlay(targetIndex);
+                if (typeof window.updateTooltipContent === 'function') window.updateTooltipContent(result.point);
+                const rect = el.getBoundingClientRect();
+                if (typeof window.positionTooltip === 'function') window.positionTooltip(rect.right + 8, rect.top + Math.min(rect.height, 48));
+            }, 85);
+        };
+        el.onmouseleave = () => {
+            if (isCompactSearchViewport()) {
+                if (typeof window.hideTooltip === 'function') window.hideTooltip();
+                return;
+            }
+            if (typeof window.clearSearchPreviewHoverTimer === 'function') window.clearSearchPreviewHoverTimer();
+            el.classList.remove('active-preview');
+            // Fix 5: clear node highlight when leaving search result card
+            state.hoverHighlightIndex = -1;
+            restoreSearchResultPreview(resultIndices, fallbackPreviewIndex);
+            if (typeof window.hideTooltip === 'function') window.hideTooltip();
+        };
+        el.onclick = () => focusSearchResultFromElement(resultsEl, statusEl, resultIndices, targetIndex, el);
+        el.onfocus = () => {
+            el.classList.add('active-preview');
+            activateSearchGlow(resultIndices, targetIndex);
+            updateSearchPreviewOverlay(targetIndex);
+        };
+        el.onblur = () => {
+            el.classList.remove('active-preview');
+            restoreSearchResultPreview(resultIndices, fallbackPreviewIndex);
+        };
+        el.onkeydown = (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            e.stopPropagation();
+            focusSearchResultFromElement(resultsEl, statusEl, resultIndices, targetIndex, e.currentTarget);
+        };
+    });
+}
+
+// === Search glow ===
+
+export function activateSearchGlow(resultIndices, anchorIndex) {
+    state.searchGlowActive = true;
+    state.searchGlowIndices = new Set(resultIndices || []);
+    state.searchGlowTopIndex = anchorIndex;
+    if (typeof window.refreshHoverSemanticOverlay === 'function') window.refreshHoverSemanticOverlay();
+}
+
+export function clearSearchGlow() {
+    state.searchGlowActive = false;
+    state.searchGlowIndices = new Set();
+    state.searchGlowTopIndex = null;
+}
+
+// === Restore preview ===
+
+export function restoreSearchResultPreview(resultIndices, fallbackIndex = null) {
+    const anchorIndex = state.currentSearchSummary?.anchorIndex ?? fallbackIndex;
+    activateSearchGlow(resultIndices, anchorIndex);
+    updateSearchPreviewOverlay(anchorIndex);
+}
+
+// === Clear short semantic search state ===
+export function clearShortSemanticSearchState(resultsEl, statusEl) {
+    if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
+    state.currentSearchSummary = null;
+    setSearchPanelState({ searching: false, focusing: false, resultsRendered: false, degraded: false });
+
+    // 10/10 Polish: Toggle search spinner
+    const spinner = document.getElementById('search-spinner');
+    if (spinner) spinner.style.display = 'none';
+
+    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+}
+
+/**
+ * 10/10 Polish: Comprehensive Search Clearing
+ * Resets all search-related state, UI elements, and classes.
+ */
+window.clearSearch = function () {
+    const searchInput = document.getElementById('search-input');
+    const searchContainer = document.querySelector('.search-container');
+    const resultsEl = document.getElementById('search-results');
+    const statusEl = document.getElementById('search-status');
+
+    clearTimeout(state.searchTimeout);
+    state.searchTimeout = null;
+    state.searchRequestSequence = (state.searchRequestSequence || 0) + 1;
+    if (state.searchAbortController) {
+        state.searchAbortController.abort();
+        state.searchAbortController = null;
+    }
+    stopSearchVectorScramble();
+
+    if (searchInput) searchInput.value = '';
+    if (searchContainer) setSearchPanelState({ searching: false, focusing: false, hasQuery: false, resultsRendered: false, degraded: false });
+    if (resultsEl) {
+        resultsEl.innerHTML = '';
+        resultsEl.classList.remove('active', 'is-expanded');
+    }
+    if (statusEl) {
+        statusEl.textContent = '';
+        statusEl.hidden = true;
+        statusEl.classList.remove('active', 'search-status-compact');
+    }
+
+    clearShortSemanticSearchState();
+    clearSearchGlow();
+
+    if (typeof window.updateUrlState === 'function') {
+        window.updateUrlState({ q: null, anchor: null, offset: null }, { reason: 'search-clear' });
+    }
+    if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
+};
+
+// === Search result state map ===
+
+export function mapSemanticSearchServiceResult(row) {
+    const pointIndex = state.pointIndexByLeadId.get(String(row.lead_id));
+    if (pointIndex === undefined) return null;
+    if (!(Number.isFinite(pointIndex) && pointIndex >= 0 && pointIndex < state.points.length)) return null;
+    const point = state.points[pointIndex];
+    if (!point || !isPointVisible(pointIndex, state.points, state.activeClusterFilter, state.activeFilters)) return null;
+
+    return {
+        point,
+        index: pointIndex,
+        score: Number(row.score || row.semantic_score || 0),
+        semanticScore: Number(row.semantic_score || 0),
+        lexicalBonus: Number(row.lexical_bonus || 0),
+        publicNote: sanitizePublicFacingNote(row.public_note || ''),
+        publicDetail: sanitizePublicFacingNote(row.public_detail || ''),
+        address: cleanPublicNoteText(row.address || ''),
+        naics: cleanPublicNoteText(row.naics || ''),
+    };
+}
+
+export function mapSemanticSearchResults(serviceResults) {
+    return (serviceResults || [])
+        .map(mapSemanticSearchServiceResult)
+        .filter(Boolean);
+}
+
+export function beginSemanticSearchUiState(resultsEl, statusEl, trimmedQuery) {
+    const preservingSameQuery = state.currentSearchSummary?.query === trimmedQuery;
+    if (typeof window.hideTooltip === 'function') window.hideTooltip();
+    
+    // 10/10 Polish: Show search spinner
+    const spinner = document.getElementById('search-spinner');
+    if (spinner) spinner.style.display = 'block';
+
+    if (!preservingSameQuery) {
+        if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
+        state.currentSearchSummary = null;
+        if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+        state.searchAnchorIndex = null;
+        state.searchPreviewIndex = null;
+        // Bug 3: Show loading skeleton instead of canned empty state during async search race
+        resultsEl.innerHTML = `
+            <div class="search-loading">
+                <div class="search-loading-spinner"></div>
+                <div class="search-loading-text">Searching...</div>
+            </div>
+        `;
+        resultsEl.classList.add('active');
+        clearSearchGlow();
+    }
+    if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ searching: true, focusing: false, hasQuery: true, resultsRendered: false, degraded: false });
+    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+    resetSemanticGuideUi({ hideTrigger: true });
+    statusEl.textContent = `Searching for businesses related to "${trimmedQuery}"...`;
+    updateSearchTrailCue({ stage: 'query' });
+    resultsEl.classList.add('searching');
+    if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
+}
+
+export function updateSemanticSearchRetryState({ statusEl, trimmedQuery, attempt, nextAttempt, delayMs, retryTotal }) {
+    const retryDelayLabel = delayMs >= 1000 ? `${Math.round((delayMs / 1000) * 10) / 10}s` : `${delayMs}ms`;
+    const preservingSameQuery = state.currentSearchSummary?.query === trimmedQuery;
+
+    if (typeof window.recordSemanticLaneSnapshot === 'function') {
+        window.recordSemanticLaneSnapshot({
+            state: 'reconnecting', attempted_warm: true, query: trimmedQuery,
+            provenance: { label: 'Search reconnecting', detail: 'Public semantic search is retrying while the current result rail stays visible.' },
+            retry_source: 'search', retry_count: attempt, retry_total: retryTotal,
+            retry_wait_until: new Date(Date.now() + delayMs).toISOString(), cooldown_wait_until: null
+        });
+    }
+    if (typeof window.setSemanticLaneUiState === 'function') {
+        window.setSemanticLaneUiState('reconnecting', {
+            label: 'Search reconnecting', title: 'Public semantic search is retrying while the current result rail stays visible.'
+        });
+    }
+    statusEl.textContent = preservingSameQuery
+        ? `Semantic search is reconnecting for "${trimmedQuery}"... keeping ${state.currentSearchSummary.visibleMatches} matches visible while retry ${nextAttempt} starts in ${retryDelayLabel}.`
+        : `Semantic search is reconnecting for "${trimmedQuery}"... retry ${nextAttempt} starts in ${retryDelayLabel}.`;
+}
+
+export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQuery, error) {
+    resultsEl.classList.remove('searching');
+    
+    // 10/10 Polish: Toggle search spinner
+    const spinner = document.getElementById('search-spinner');
+    if (spinner) spinner.style.display = 'none';
+
+    if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: false, degraded: true });
+    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+    const preservingSameQuery = state.currentSearchSummary?.query === trimmedQuery;
+    if (!preservingSameQuery) {
+        state.currentSearchSummary = null;
+        if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+        resultsEl.classList.remove('active');
+        clearSearchGlow();
+    }
+
+    if (typeof window.recordSemanticLaneSnapshot === 'function') {
+        window.recordSemanticLaneSnapshot({
+            state: 'degraded', search_ok: false, query: trimmedQuery,
+            provenance: { label: 'Search paused', detail: 'Live semantic search is recovering after client retries.' },
+            rail_mode: preservingSameQuery ? 'stale' : 'none',
+            retry_wait_until: null, cooldown_wait_until: null
+        });
+    }
+    if (typeof window.setSemanticLaneUiState === 'function') {
+        window.setSemanticLaneUiState('degraded', {
+            label: 'Search paused', title: 'Live semantic search is recovering. Try again in a moment.'
+        });
+    }
+    statusEl.textContent = preservingSameQuery
+        ? `Search is still getting ready for "${trimmedQuery}". Keeping the last ${state.currentSearchSummary && state.currentSearchSummary.visibleMatches} matches visible.`
+        : `Search paused for "${trimmedQuery}". Try again in a moment.`;
+    statusEl.hidden = false;
+    statusEl.classList.add('active', 'search-status-compact');
+
+    const escapedQuery = escapeHtml(trimmedQuery);
+    if (preservingSameQuery) {
+        const existingInlineRetry = typeof resultsEl.querySelector === 'function' ? resultsEl.querySelector('.search-error-inline-retry') : null;
+        if (existingInlineRetry) existingInlineRetry.remove();
+        const inlineRetryMarkup = `
+            <div class="search-error-inline-retry" role="status" aria-live="polite">
+                <span class="search-error-inline-msg">Search is recovering for "<strong>${escapedQuery}</strong>".</span>
+                <button class="search-error-retry-btn compact" type="button" aria-label="Retry search for ${escapedQuery}">Retry</button>
+            </div>
+        `;
+        if (typeof resultsEl.insertAdjacentHTML === 'function') {
+            resultsEl.insertAdjacentHTML('afterbegin', inlineRetryMarkup);
+            const inlineRetryBtn = resultsEl.querySelector('.search-error-inline-retry .search-error-retry-btn');
+            if (inlineRetryBtn) {
+                inlineRetryBtn.onclick = () => search(trimmedQuery, { preferCachedResults: false });
+            }
+        }
+    } else {
+        resultsEl.innerHTML = `
+            <div class="search-error-state" role="status" aria-live="polite">
+                <span class="search-error-kicker">Retry needed</span>
+                <div class="search-error-text">
+                    We could not finish "<strong>${escapedQuery}</strong>" just now. Retry the live search or clear it and keep exploring.
+                </div>
+                <div class="search-error-actions">
+                    <button class="search-error-retry-btn" type="button" aria-label="Retry search for ${escapedQuery}">Retry</button>
+                    <button class="search-error-dismiss-btn" type="button" aria-label="Clear search and dismiss">Clear</button>
+                </div>
+            </div>
+        `;
+        const retryBtn = typeof resultsEl.querySelector === 'function' ? resultsEl.querySelector('.search-error-retry-btn') : null;
+        if (retryBtn) {
+            retryBtn.onclick = () => search(trimmedQuery, { preferCachedResults: false });
+        }
+        const dismissBtn = typeof resultsEl.querySelector === 'function' ? resultsEl.querySelector('.search-error-dismiss-btn') : null;
+        if (dismissBtn) {
+            dismissBtn.onclick = () => {
+                if (typeof window.clearSearch === 'function') window.clearSearch();
+            };
+        }
+    }
+    resultsEl.classList.add('active');
+    if (typeof window.updateUrlState === 'function') window.updateUrlState({}, { reason: 'search-degraded' });
+    resetSemanticGuideUi({ hideTrigger: true });
+}
+
+export function finishSemanticSearchSuccessState(resultsEl, trimmedQuery, cacheSource = 'network') {
+    // 10/10 Polish: Toggle search spinner
+    const spinner = document.getElementById('search-spinner');
+    if (spinner) spinner.style.display = 'none';
+
+    if (typeof window.recordSemanticLaneSnapshot === 'function') {
+        window.recordSemanticLaneSnapshot({
+            state: 'healthy', search_ok: true, embed_ok: true, attempted_warm: false, query: trimmedQuery, client_cache_source: cacheSource,
+            provenance: null, retry_source: null, retry_count: null, retry_total: null, retry_wait_until: null, cooldown_wait_until: null
+        });
+    }
+    if (typeof window.setSemanticLaneUiState === 'function') window.setSemanticLaneUiState('healthy');
+    if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ searching: false, focusing: false, degraded: false });
+    resultsEl.classList.remove('searching');
+}
+
+export function applyEmptySemanticSearchState(resultsEl, statusEl, trimmedQuery, requestedAnchorLeadId) {
+    state.currentSearchSummary = null;
+    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+    if (typeof window.recordSemanticLaneSnapshot === 'function') {
+        window.recordSemanticLaneSnapshot({ rail_mode: 'none', anchor_lead_id: null, requested_anchor_lead_id: requestedAnchorLeadId });
+    }
+    state.searchAnchorIndex = null;
+    state.searchPreviewIndex = null;
+
+    // 10/10 Polish: Dynamic high-value suggestions for empty state
+    const suggestions = ['coffee', 'plumber', 'restaurant', 'healthcare', 'auto repair'];
+    
+    // Add top clusters if available
+    if (state.points?.length > 0) {
+        const topClusters = [0, 1, 2].map(c => describeCluster(c).toLowerCase());
+        topClusters.forEach(c => {
+            if (!suggestions.includes(c)) suggestions.push(c);
+        });
+    }
+
+    const suggestionButtons = suggestions.slice(0, 6)
+        .map((term) => {
+            const escaped = escapeHtml(term);
+            return `<button class="search-suggestion-chip" data-suggestion="${escaped}" type="button" aria-label="Try search for ${escaped}">${escaped}</button>`;
+        })
+        .join('');
+
+    resultsEl.innerHTML = `
+        <div class="search-empty-state fade-in">
+            <div class="search-empty-icon-wrap">
+                <svg class="search-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                    <path d="M7 11h8" stroke-opacity="0.5"/>
+                </svg>
+            </div>
+            <p class="search-empty-title">No direct matches found</p>
+            <p class="search-empty-note">Try a broader term or one of these high-signal categories to open a new trail:</p>
+            <div class="search-empty-suggestions">
+                <div class="search-suggestion-buttons">${suggestionButtons}</div>
+            </div>
+            <div class="search-empty-discovery">
+                <span class="discovery-tag">Pro Tip</span>
+                <span class="discovery-text">The mycelium thrives on semantic relationships. Try searching for a specific trade like "HVAC" or a mood like "cozy".</span>
+            </div>
+        </div>
+    `;
+
+    resultsEl.querySelectorAll('.search-suggestion-chip').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const term = btn.dataset.suggestion;
+            if (!term) return;
+            const input = document.getElementById('search-input');
+            if (input) {
+                input.value = term;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+    });
+
+    resultsEl.classList.add('active');
+    resultsEl.classList.remove('searching');
+    clearSearchGlow();
+    statusEl.textContent = `No matching records found for "${trimmedQuery}".`;
+    updateSearchTrailCue({
+        beat: 'query', kicker: 'No results trail', title: `No results trail for "${trimmedQuery}"`,
+        note: 'Try a concrete service, place type, or business need.', immediate: true
+    });
+    if (typeof window.updateUrlState === 'function') window.updateUrlState({}, { reason: 'search-empty' });
+    resetSemanticGuideUi({ hideTrigger: true });
+    // Task #923: Remove results-rendered on empty results state
+    if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ resultsRendered: false });
+}
+
+export function finishSemanticSearchController(controller) {
+    if (state.searchAbortController === controller) {
+        state.searchAbortController = null;
+    }
+}
+
+export function getSemanticSearchServiceResults(payload) {
+    return Array.isArray(payload?.results) ? payload.results : [];
+}
+
+export function getSemanticSearchTotalMatches(payload, serviceResults) {
+    return Number.isFinite(Number(payload?.count)) ? Number(payload.count) : serviceResults.length;
+}
+
+export function isNumericOnlySearchQuery(query) {
+    const digits = String(query || '').replace(/\D/g, '');
+    return digits.length >= 3 && digits.length <= 10 && /^[\d\s\-+().#]+$/.test(String(query || '').trim());
+}
+
+export function resultMatchesNumericSearchQuery(result, query) {
+    const digits = String(query || '').replace(/\D/g, '');
+    if (!digits || !result?.point) return false;
+    const point = result.point;
+    const exactFields = [point.lead_id, point.phone, point.lat, point.lng].map((v) => String(v || '').replace(/\D/g, ''));
+    if (exactFields.some((v) => v && v.includes(digits))) return true;
+    const contextualDigits = [result.address, result.publicNote, result.publicDetail, result.naics]
+        .map((v) => String(v || '').replace(/\D/g, '')).filter(Boolean);
+    return contextualDigits.some((v) => v.includes(digits));
+}
+
+function hydrateSemanticResultContext(result) {
+    if (!state.semanticResultContextByLeadId) state.semanticResultContextByLeadId = new Map();
+    state.semanticResultContextByLeadId.set(String(result.point.lead_id), {
+        lead_id: result.point.lead_id, name: result.point.name, city: result.point.city,
+        status: result.point.status, public_note: result.publicNote, public_detail: result.publicDetail,
+        address: result.address, naics: result.naics
+    });
+}
+
+export function hydrateSemanticResultContexts(results) {
+    results.forEach(hydrateSemanticResultContext);
+}
+
+export function getRequestedSearchAnchorLeadId(options = {}) {
+    return (options.restoreAnchorLeadId !== null && options.restoreAnchorLeadId !== undefined && options.restoreAnchorLeadId !== '')
+        ? String(options.restoreAnchorLeadId) : null;
+}
+
+export function stopSearchVectorScramble() {
+    if (state.searchVectorScrambleInterval) {
+        clearInterval(state.searchVectorScrambleInterval);
+        state.searchVectorScrambleInterval = null;
+    }
+    if (state.searchVectorScrambleTimer) {
+        clearTimeout(state.searchVectorScrambleTimer);
+        state.searchVectorScrambleTimer = null;
+    }
+    const scrambleOverlay = document.getElementById('search-vector-scramble');
+    if (scrambleOverlay) {
+        scrambleOverlay.classList.remove('active');
+        scrambleOverlay.textContent = '';
+    }
+}
+
+export function startSearchVectorScramble() {
+    const scrambleOverlay = document.getElementById('search-vector-scramble');
+    if (!scrambleOverlay) return;
+    stopSearchVectorScramble();
+
+    const chars = '0123456789ABCDEF<>[]|{}#*@';
+    const generateVector = () => {
+        const length = window.innerWidth <= 768 ? 6 : 10;
+        const parts = Array.from({ length }, () => (Math.random() * 2 - 1).toFixed(3));
+        const noise = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        return `[${parts.join(', ')}] ${noise}`;
+    };
+
+    let scrambleCount = 0;
+    scrambleOverlay.classList.add('active');
+    scrambleOverlay.textContent = generateVector();
+
+    state.searchVectorScrambleInterval = setInterval(() => {
+        scrambleOverlay.textContent = generateVector();
+        // Polish: longer, more intense scramble (approx 600ms)
+        if (++scrambleCount > 18) stopSearchVectorScramble();
+    }, 32);
+
+    state.searchVectorScrambleTimer = setTimeout(stopSearchVectorScramble, 800);
+}
+
+export async function search(query, options = {}) {
+    try { sessionStorage.removeItem('searchVisibleCount'); } catch {}
+    clearTimeout(state.searchTimeout);
+    state.searchTimeout = null;
+    const trimmedQuery = String(query || '').trim();
+    const resultsEl = document.getElementById('search-results');
+    const statusEl = document.getElementById('search-status');
+    const searchInput = document.getElementById('search-input');
+    if (!resultsEl || !statusEl) return;
+    state.searchFocusTransitionToken = (state.searchFocusTransitionToken || 0) + 1;
+    if (typeof window.clearSearchPreviewHoverTimer === 'function') window.clearSearchPreviewHoverTimer();
+
+    if (state.searchAbortController) {
+        state.searchAbortController.abort();
+        state.searchAbortController = null;
+    }
+
+    if (!trimmedQuery || trimmedQuery.length < 2) {
+        stopSearchVectorScramble();
+        // Bug 1: Feedback for too-short query — transient message if user typed something
+        if (trimmedQuery && trimmedQuery.length > 0 && trimmedQuery.length < 2) {
+            if (statusEl) statusEl.textContent = 'Type at least 2 characters to search';
+            setTimeout(() => {
+                if (statusEl && state.currentSearchSummary === null) {
+                    statusEl.textContent = 'Search 8,406 MoCo businesses semantically by need, venue, service, or clue.';
+                }
+            }, 2000);
+        }
+        clearShortSemanticSearchState(resultsEl, statusEl);
+        return;
+    }
+
+    if (trimmedQuery.length > 200) {
+        // Bug 2: Long query error must be sticky — shake input and truncate excess
+        if (statusEl) {
+            statusEl.textContent = 'Search query is too long. Try a shorter phrase.';
+        }
+        if (searchInput) {
+            // Truncate to 200 chars so the error doesn't keep re-triggering on each keystroke
+            searchInput.value = trimmedQuery.slice(0, 200);
+            searchInput.classList.remove('shake-input');
+            // Force reflow to restart animation if class already present
+            void searchInput.offsetWidth;
+            searchInput.classList.add('shake-input');
+        }
+        return;
+    }
+
+    const replacingPriorQuery = state.currentSearchSummary?.query
+        && state.currentSearchSummary.query !== trimmedQuery;
+    if (replacingPriorQuery) {
+        state.currentSearchSummary = null;
+        state.searchAnchorIndex = null;
+        state.searchPreviewIndex = null;
+    }
+
+    if (state.navState.focusedIndex !== null) {
+        if (typeof window.resetNodePositions === 'function') window.resetNodePositions({ preserveSearch: true, skipUrlSync: true });
+    }
+
+    const requestId = (state.searchRequestSequence = (state.searchRequestSequence || 0) + 1);
+    const controller = new AbortController();
+    state.searchAbortController = controller;
+    beginSemanticSearchUiState(resultsEl, statusEl, trimmedQuery);
+    startSearchVectorScramble();
+
+    let payload;
+    try {
+        const laneState = String(state.semanticLaneState || '').toLowerCase();
+        const shouldFailFastForKnownDegradedLane = ['degraded', 'unavailable', 'reconnecting'].includes(laneState);
+        payload = await fetchSemanticSearchResults(trimmedQuery, controller.signal, {
+            preferCachedResults: options.preferCachedResults !== false,
+            offset: options.offset,
+            timeoutMs: shouldFailFastForKnownDegradedLane ? 2200 : undefined,
+            maxAttempts: shouldFailFastForKnownDegradedLane ? 1 : undefined,
+            onRetry: ({ attempt, nextAttempt, delayMs, retryTotal }) => {
+                if (controller.signal.aborted || requestId !== state.searchRequestSequence) return;
+                updateSemanticSearchRetryState({ statusEl, trimmedQuery, attempt, nextAttempt, delayMs, retryTotal });
+            }
+        });
+    } catch (error) {
+        if (controller.signal.aborted || requestId !== state.searchRequestSequence) return;
+        stopSearchVectorScramble();
+        applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQuery, error);
+        return;
+    } finally {
+        finishSemanticSearchController(controller);
+    }
+
+    if (requestId !== state.searchRequestSequence) return;
+    stopSearchVectorScramble();
+    finishSemanticSearchSuccessState(resultsEl, trimmedQuery, payload?.client_cache_hit ? 'memory-cache' : 'network');
+
+    const serviceResults = getSemanticSearchServiceResults(payload);
+    const totalMatches = getSemanticSearchTotalMatches(payload, serviceResults);
+    let results = mapSemanticSearchResults(serviceResults);
+    if (isNumericOnlySearchQuery(trimmedQuery)) {
+        results = results.filter((result) => resultMatchesNumericSearchQuery(result, trimmedQuery));
+    }
+    hydrateSemanticResultContexts(results);
+
+    const requestedAnchorLeadId = getRequestedSearchAnchorLeadId(options);
+
+    if (!results.length) {
+        applyEmptySemanticSearchState(resultsEl, statusEl, trimmedQuery, requestedAnchorLeadId);
+        return;
+    }
+
+    const topResult = results[0] || null;
+    const topScore = topResult ? Math.max(0.0001, topResult.score || 0.0001) : 1;
+    const resultIndices = results.map((r) => r.index);
+    const anchorResult = requestedAnchorLeadId
+        ? results.find((r) => String(r.point.lead_id) === requestedAnchorLeadId) || topResult
+        : topResult;
+    const anchorIndex = anchorResult?.index ?? topResult?.index ?? null;
+    const anchorName = anchorResult ? formatBusinessName(anchorResult.point.name) : null;
+    
+    state.currentSearchSummary = {
+        query: trimmedQuery, totalMatches, totalSemanticMatches: totalMatches, visibleMatches: results.length,
+        anchorIndex, topIndex: topResult?.index ?? null, resultIndices
+    };
+    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+
+    // Task #9: Special case — exactly 1 result: skip the trail theater,
+    // anchor directly and go to focus stage. No summary prompt needed.
+    if (results.length === 1) {
+        const soleIndex = anchorIndex;
+        const soleName = anchorName || formatBusinessName(results[0].point.name);
+
+        // Hide summary prompt for single-result — there is no result stack to explain.
+        const synthTrigger = document.getElementById('synthesize-trigger');
+        if (synthTrigger) synthTrigger.style.display = 'none';
+        const guideBtn = document.getElementById('btn-synthesize');
+        if (guideBtn) guideBtn.style.display = 'none';
+
+        updateSearchTrailCue({
+            beat: 'focus', kicker: 'Single result',
+            title: `${soleName} — only match for "${trimmedQuery}"`,
+            note: 'Only one record matches. Click it to inspect, or search again for a broader result.',
+            immediate: isCompactSearchViewport()
+        });
+
+        // Auto-center the sole result; focusOnNode cascades syncSearchStatusForFocus which
+        // will overwrite the status message, so we call it first and let that settle.
+        if (Number.isFinite(soleIndex) && typeof window.focusOnNode === 'function') {
+            window.focusOnNode(soleIndex, { fromSearchResult: true });
+        }
+
+        // Set status after focusOnNode (so it sticks after the syncSearchStatusForFocus cascade)
+        statusEl.textContent = `1 match for "${trimmedQuery}" — ${soleName} is the only record.`;
+        if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: false });
+        return;
+    }
+
+    const synthTrigger = document.getElementById('synthesize-trigger');
+    if (synthTrigger) {
+        synthTrigger.style.display = 'none';
+    }
+    
+    resetSemanticGuideUi();
+    if (typeof window.recordSemanticLaneSnapshot === 'function') {
+        window.recordSemanticLaneSnapshot({ rail_mode: 'live', anchor_lead_id: anchorResult?.point?.lead_id ?? null, requested_anchor_lead_id: requestedAnchorLeadId });
+    }
+    activateSearchGlow(resultIndices, anchorIndex);
+    
+    // 10/10 Polish: Disabled "Corridor Bloom" (the giant yellow ball)
+    // but kept the "Particle Trail" and node glow for an "Avatar forest" aesthetic.
+    /*
+    if (typeof window.triggerSearchHeroMoment === 'function') {
+        window.triggerSearchHeroMoment(anchorIndex);
+    }
+    */
+
+    if (typeof window.triggerCorridorNodeGlow === 'function') {
+        window.triggerCorridorNodeGlow(anchorIndex, resultIndices);
+    }
+
+    if (typeof window.triggerSearchCorridorAnimation === 'function') {
+        window.triggerSearchCorridorAnimation(anchorIndex, resultIndices);
+    }
+
+    updateSearchPreviewOverlay(anchorIndex);
+    animateCameraToSearchCorridor(anchorIndex, resultIndices, { reason: payload?.client_cache_hit ? 'search-cache-hit' : 'search-network' });
+
+    const clusterFilterActive = state.activeClusterFilter !== null;
+    const clusterContext = clusterFilterActive ? describeCluster(state.activeClusterFilter) : '';
+    statusEl.textContent = clusterFilterActive
+        ? (anchorName
+            ? `${results.length} of ${totalMatches} matches in ${clusterContext} for "${trimmedQuery}". ${anchorName} anchors this view.`
+            : `${results.length} of ${totalMatches} matches in ${clusterContext} for "${trimmedQuery}".`)
+        : (anchorName
+            ? `${results.length} of ${totalMatches} matches for "${trimmedQuery}". ${anchorName} anchors this view.`
+            : `${results.length} of ${totalMatches} matches for "${trimmedQuery}".`);
+        
+    updateSearchTrailCue({
+        beat: 'explore', kicker: 'Search opens a trail.',
+        title: anchorName ? `${anchorName} anchors "${trimmedQuery}"` : `${totalMatches} matches found for "${trimmedQuery}"`,
+        note: anchorName ? 'Next: ask the guide to read this stack, then click one suggested stop to pull it into a local neighborhood.' : 'Next: ask the guide to read the strongest matches, then open one suggested stop.',
+        immediate: isCompactSearchViewport()
+    });
+
+    const renderContext = {
+        trimmedQuery, topIndex: topResult?.index ?? null, anchorIndex, topScore, resultIndices, fallbackPreviewIndex: topResult?.index ?? null
+    };
+    renderSearchResultItems(resultsEl, results, renderContext, statusEl);
+    bindSearchResultInteractions(resultsEl, statusEl, results, renderContext);
+
+    resultsEl.classList.add('active');
+    if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true });
+    startMobileRouteFieldPeek({
+        resultsEl, activeIndex: anchorIndex, reason: payload?.client_cache_hit ? 'search-cache-hit' : 'search-network'
+    });
+    setActiveSearchResultRow(resultsEl, anchorIndex);
+    if (typeof window.updateUrlState === 'function') window.updateUrlState({ offset: null }, { reason: 'search' });
+    // Advance the Journey compass from overview → search once results are rendered
+    if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
+}
+
+export function resetSemanticGuideUi({ hideTrigger = false } = {}) {
+    if (state.semanticGuideAbortController) {
+        state.semanticGuideAbortController.abort();
+        state.semanticGuideAbortController = null;
+    }
+    if (state.semanticTrailStoryAbortController) {
+        state.semanticTrailStoryAbortController.abort();
+        state.semanticTrailStoryAbortController = null;
+    }
+    state.semanticGuideRequestSequence = (state.semanticGuideRequestSequence || 0) + 1;
+    state.semanticTrailStoryRequestSequence = (state.semanticTrailStoryRequestSequence || 0) + 1;
+    state.currentSemanticGuide = null;
+    if (typeof window.hideSummaryCard === 'function') window.hideSummaryCard();
+
+    const button = document.getElementById('btn-synthesize');
+    const trigger = document.getElementById('synthesize-trigger');
+    const laneStatusEl = document.getElementById('summary-lane-status');
+    const titleEl = document.getElementById('summary-card-title-text');
+
+    if (button && typeof window.setSemanticGuideButtonState === 'function') {
+        window.setSemanticGuideButtonState(button, 'ready', { disabled: !state.currentSearchSummary });
+    }
+    if (hideTrigger && trigger) trigger.style.display = 'none';
+    if (titleEl) titleEl.textContent = 'Search';
+    if (laneStatusEl) laneStatusEl.textContent = 'Ready';
+}
+
+export function updateSearchPreviewOverlay(index = null) {
+    state.searchPreviewIndex = Number.isFinite(index) ? index : null;
+    if (typeof window.refreshHoverSemanticOverlay === 'function') window.refreshHoverSemanticOverlay();
+}
+
+function getRoutePositionBounds(routeIndices = []) {
+    const vectors = routeIndices
+        .map((index) => state.targetPositions[index] || state.nodePositions[index] || state.originalPositions[index])
+        .filter(Boolean)
+        .map((pos) => new THREE.Vector3(pos.x, pos.y, pos.z));
+    if (!vectors.length) return null;
+    const box = new THREE.Box3().setFromPoints(vectors);
+    const center = new THREE.Vector3();
+    const size = new THREE.Vector3();
+    box.getCenter(center);
+    box.getSize(size);
+    return { center, size, radius: Math.max(0.08, size.length() * 0.5) };
+}
+
+export function animateCameraToSearchCorridor(anchorIndex, resultIndices = [], options = {}) {
+    if (!state.camera || !state.controls || state.currentView !== 'galaxy') return false;
+    if (!Number.isFinite(anchorIndex) || state.navState.focusedIndex !== null || state.semanticDiveMode) return false;
+    
+    const routeIndices = [...new Set([anchorIndex, ...(resultIndices || [])])]
+        .filter((index) => Number.isFinite(index) && index >= 0 && index < state.points.length && isPointVisible(index, state.points, state.activeClusterFilter, state.activeFilters))
+        .slice(0, window.innerWidth <= 768 ? 8 : 12);
+    
+    const bounds = getRoutePositionBounds(routeIndices);
+    const anchorPosition = state.targetPositions[anchorIndex] || state.nodePositions[anchorIndex] || state.originalPositions[anchorIndex];
+    if (!bounds || !anchorPosition || !Number.isFinite(anchorPosition.x) || !Number.isFinite(anchorPosition.y) || !Number.isFinite(anchorPosition.z)) return false;
+
+    const anchorVector = new THREE.Vector3(anchorPosition.x, anchorPosition.y, anchorPosition.z);
+    const startTarget = state.controls.target.clone();
+    const startPos = state.camera.position.clone();
+    const currentHeading = startPos.clone().sub(startTarget);
+    if (currentHeading.lengthSq() < 0.0001) currentHeading.set(1.4, 1.1, 2);
+    currentHeading.normalize();
+
+    const worldUp = new THREE.Vector3(0, 1, 0);
+    const rightVector = new THREE.Vector3().crossVectors(worldUp, currentHeading);
+    if (rightVector.lengthSq() < 0.0001) rightVector.set(1, 0, 0);
+    rightVector.normalize();
+
+    const compact = window.innerWidth <= 768;
+    const routeSpan = Math.max(bounds.radius, 0.14);
+    const targetBias = compact ? 0.42 : 0.34;
+    const endTarget = bounds.center.clone().lerp(anchorVector, targetBias).add(worldUp.clone().multiplyScalar(compact ? 0.018 : 0.028));
+    const distance = Math.min(compact ? 2.35 : 1.95, Math.max(compact ? 1.1 : 0.92, routeSpan * (compact ? 4.1 : 3.2) + 0.52));
+    const endPos = endTarget.clone().add(currentHeading.clone().multiplyScalar(distance)).add(worldUp.clone().multiplyScalar(compact ? 0.16 : 0.2)).add(rightVector.clone().multiplyScalar(compact ? 0.035 : 0.065));
+    
+    const duration = options.duration || (compact ? 1180 : 1320);
+    const startTime = performance.now();
+    const animationToken = (state.routeCameraAnimationToken = (state.routeCameraAnimationToken || 0) + 1);
+    
+    if (typeof window.setRouteChoreographyPhase === 'function') {
+        window.setRouteChoreographyPhase('search-corridor', {
+            reason: options.reason || 'search-success', anchorIndex, indexCount: routeIndices.length, lastCameraMove: 'search-corridor'
+        });
+    }
+    if (typeof window.noteSceneInteraction === 'function') window.noteSceneInteraction(duration + 1200);
+
+    const controlTarget = startTarget.clone().lerp(endTarget, 0.56).add(worldUp.clone().multiplyScalar(0.025));
+    
+    function step(now) {
+        if (animationToken !== state.routeCameraAnimationToken || state.navState.focusedIndex !== null || state.currentView !== 'galaxy') return;
+        const t = Math.min((now - startTime) / duration, 1);
+        const eased = easeInOutCubic(t);
+        state.controls.target.set(
+            quadraticBezierComponent(startTarget.x, controlTarget.x, endTarget.x, eased),
+            quadraticBezierComponent(startTarget.y, controlTarget.y, endTarget.y, eased),
+            quadraticBezierComponent(startTarget.z, controlTarget.z, endTarget.z, eased)
+        );
+        state.camera.position.lerpVectors(startPos, endPos, eased);
+        if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    return true;
+}
+
+export function revealActiveSearchResultOnCompact(resultsEl, activeRow = null) {
+    if (!resultsEl || !isCompactSearchViewport()) return false;
+    if (document.body?.dataset?.mobileSearchSheet === 'peek') return false;
+
+    const content = document.getElementById('info-panel-content');
+    const row = activeRow || resultsEl.querySelector('.search-result-item');
+    if (!content || !row) return false;
+
+    const rowRect = row.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+    if (!rowRect.width || !rowRect.height || !contentRect.height) return false;
+
+    const targetTop = Math.min(window.innerHeight * 0.52, Math.max(contentRect.top + 16, contentRect.bottom - rowRect.height - 36));
+    const nextScrollTop = Math.max(0, content.scrollTop + rowRect.top - targetTop);
+    content.scrollTo({ top: nextScrollTop, behavior: 'auto' });
+    return true;
+}
+
+export function clearCompactSearchResultRevealTimers() {
+    state.compactSearchRevealToken = (state.compactSearchRevealToken || 0) + 1;
+    if (state.compactSearchRevealTimers) {
+        state.compactSearchRevealTimers.forEach((timerId) => window.clearTimeout(timerId));
+        state.compactSearchRevealTimers = [];
+    }
+}
+
+export function scheduleCompactSearchResultReveal(resultsEl, activeIndex = null) {
+    if (!resultsEl || !isCompactSearchViewport()) return;
+
+    clearCompactSearchResultRevealTimers();
+    const token = state.compactSearchRevealToken;
+    const reveal = () => {
+        if (token !== state.compactSearchRevealToken || !isCompactSearchViewport()) return;
+        const row = activeIndex !== null && activeIndex !== undefined
+            ? resultsEl.querySelector(`.search-result-item[data-index="${CSS.escape(String(activeIndex))}"]`)
+            : resultsEl.querySelector('.search-result-item.active-focus, .search-result-item');
+        revealActiveSearchResultOnCompact(resultsEl, row);
+    };
+
+    requestAnimationFrame(() => requestAnimationFrame(reveal));
+    if (!state.compactSearchRevealTimers) state.compactSearchRevealTimers = [];
+    [80, 240, 520].forEach((delay) => {
+        state.compactSearchRevealTimers.push(window.setTimeout(reveal, delay));
+    });
+}
+
+export function startMobileRouteFieldPeek({ resultsEl = null, activeIndex = null, reason = 'search-corridor' } = {}) {
+    if (!isCompactSearchViewport() || !resultsEl) {
+        if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
+        return false;
+    }
+
+    if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
+    const token = (state.mobileRouteFieldPeekToken = (state.mobileRouteFieldPeekToken || 0) + 1);
+    document.body.dataset.mobileRoutePeek = 'active';
+    document.body.dataset.mobileRoutePeekReason = reason;
+
+    state.mobileRouteFieldPeekTimer = window.setTimeout(() => {
+        if (token !== state.mobileRouteFieldPeekToken) return;
+        if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
+        if (typeof window.scheduleCompactSearchResultReveal === 'function') window.scheduleCompactSearchResultReveal(resultsEl, activeIndex);
+    }, state.MOBILE_ROUTE_FIELD_PEEK_MS || 1550);
+    return true;
+}
+
+window.clearSearchPreviewHoverTimer = function() {
+    if (state.searchPreviewHoverTimer) {
+        window.clearTimeout(state.searchPreviewHoverTimer);
+        state.searchPreviewHoverTimer = null;
+    }
+};
+
+window.clearMobileRouteFieldPeek = function() {
+    if (state.mobileRouteFieldPeekTimer) {
+        window.clearTimeout(state.mobileRouteFieldPeekTimer);
+        state.mobileRouteFieldPeekTimer = null;
+    }
+    if (document.body) {
+        delete document.body.dataset.mobileRoutePeek;
+        delete document.body.dataset.mobileRoutePeekReason;
+    }
+};
+
+window.isMobileRouteFieldPeekActive = function() {
+    return document.body?.dataset.mobileRoutePeek === 'active';
+};
+
+window.clearCompactSearchResultRevealTimers = clearCompactSearchResultRevealTimers;
+window.scheduleCompactSearchResultReveal = scheduleCompactSearchResultReveal;
+window.getFilteredIndices = getFilteredIndices;
+
+// Debug access
+window._ss = {
+    tokenizeSearchText,
+    expandSearchIntent,
+    countTokenMatches,
+    getSearchResultStrength,
+    setSearchPanelState,
+    getSearchResultStrengthLabel,
+    getSearchResultCardClasses,
+    buildSearchRankLabel,
+    buildSearchStageLabel,
+    buildSearchResultItemHtml,
+    renderSearchResultItems,
+    refreshSearchResultHierarchy,
+    setActiveSearchResultRow,
+    beginSearchFocusTransition,
+    updateSearchStatusMessage,
+    restoreSearchSummaryStatus,
+    updateSearchTrailCue,
+    bindSearchResultInteractions,
+    activateSearchGlow,
+    clearSearchGlow,
+    restoreSearchResultPreview,
+    clearShortSemanticSearchState,
+    mapSemanticSearchServiceResult,
+    mapSemanticSearchResults,
+    search,
+    fetchSemanticSearchResults,
+    beginSemanticSearchUiState,
+    updateSemanticSearchRetryState,
+    applySemanticSearchDegradedState,
+    finishSemanticSearchController,
+    finishSemanticSearchSuccessState,
+    getSemanticSearchServiceResults,
+    getSemanticSearchTotalMatches,
+    isNumericOnlySearchQuery,
+    resultMatchesNumericSearchQuery,
+    hydrateSemanticResultContexts,
+    getRequestedSearchAnchorLeadId,
+    applyEmptySemanticSearchState,
+    getCachedSemanticSearchPayload,
+    storeSemanticSearchPayload,
+    startSearchVectorScramble,
+    stopSearchVectorScramble,
+    resetSemanticGuideUi,
+    updateSearchPreviewOverlay,
+    animateCameraToSearchCorridor,
+    isCompactSearchViewport,
+    startMobileRouteFieldPeek,
+    normalizeCityForFilter,
+    getFilteredIndices,
+    applyFilters
+};

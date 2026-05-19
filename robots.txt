@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /semantic-demo/
+Allow: /semantic-demo/vector-explorer-polished.html
+Allow: /semantic-demo/vector-explorer-live-shell-merge-task666.html
+Allow: /semantic-demo/case-study.html
+
+# Block broken CJS bundle — use versioned bundles only
+Disallow: /semantic-demo/dist/bundle.js
+
+Sitemap: https://mccullough.cloud/semantic-demo/sitemap.xml

@@ -1,0 +1,336 @@
+/**
+ * exploration-modes-contract.mjs
+ *
+ * Node contract test for lifecycle.js exploration-mode slice.
+ * Tests critical integration contracts WITHOUT requiring a browser.
+ *
+ * Covers:
+ *   1. MODE_DESCRIPTIONS and STORY_DESCRIPTIONS are exported constants
+ *   2. setMyceliumMode calls recomputeBloomIndices / recomputeBridgeIndices
+ *   3. setMyceliumMode side-effects and window call surface
+ *   4. setTrailDepth gesture gate for depth=2 (fromUserGesture required)
+ *   5. applyStoryPrompt signal-rich mapping (bloom/bridge/default modes)
+ *
+ * Run from semantic-demo root:
+ *   node tests/exploration-modes-contract.mjs
+ *   node tests/run-from-semantic-demo.cjs exploration-modes-contract.mjs
+ */
+
+// ---------------------------------------------------------------------------
+// Minimal DOM/window shim
+// ---------------------------------------------------------------------------
+
+const _listeners = new Map();
+const _timers = new Map();
+let _timerId = 0;
+const _dispatchedEvents = [];
+
+class FakeClassList {
+  constructor() { this._items = new Set(); }
+  add(...n)    { n.forEach(x => this._items.add(x)); }
+  remove(...n) { n.forEach(x => this._items.delete(x)); }
+  contains(n)  { return this._items.has(n); }
+  toggle(n, f) {
+    const on = f !== undefined ? f : !this._items.has(n);
+    on ? this._items.add(n) : this._items.delete(n);
+    return on;
+  }
+  get length() { return this._items.size; }
+  [Symbol.iterator]() { return this._items[Symbol.iterator](); }
+}
+
+class FakeElement {
+  constructor(tag) {
+    this.tagName    = (tag || 'div').toUpperCase();
+    this.classList  = new FakeClassList();
+    this.dataset    = {};
+    this.style      = {};
+    this.children   = [];
+    this._innerHTML  = '';
+    this._text       = '';
+    this._attr       = new Map();
+    this._elListeners = new Map();
+  }
+  get innerHTML()          { return this._innerHTML; }
+  set innerHTML(v)         { this._innerHTML = String(v); }
+  get textContent()        { return this._text; }
+  set textContent(v)       { this._text = String(v); }
+  appendChild(c)           { this.children.push(c); return c; }
+  setAttribute(k, v)       { this._attr.set(String(k), String(v)); }
+  getAttribute(k)          { return this._attr.get(String(k)) ?? null; }
+  addEventListener(e, h, o) {
+    if (!this._elListeners.has(e)) this._elListeners.set(e, []);
+    this._elListeners.get(e).push(h);
+  }
+  removeEventListener(e, h) {
+    const arr = this._elListeners.get(e) || [];
+    this._elListeners.set(e, arr.filter(x => x !== h));
+  }
+  dispatchEvent(ev)        { document.dispatchEvent(ev); }
+  querySelectorAll()        { return []; }
+}
+
+const _persistentOverlay = new FakeElement('div');
+
+const FakeDocument = {
+  body: new FakeElement('body'),
+  documentElement: new FakeElement('html'),
+  querySelector: () => null,
+  querySelectorAll: () => [],
+  getElementById: (id) => {
+    if (id === 'loading-overlay') return _persistentOverlay;
+    return null;
+  },
+  createElement(tag) { return new FakeElement(tag); },
+  head: new FakeElement('head'),
+  addEventListener() {},
+  removeEventListener() {},
+  dispatchEvent() {},
+};
+
+globalThis.document = FakeDocument;
+
+let _clockNow = Date.now();
+
+globalThis.window = {
+  location: { search: '', pathname: '/', href: 'http://localhost/' },
+  localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {}, clear: () => {} },
+  sessionStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {}, clear: () => {} },
+  matchMedia: (q) => ({ matches: false, media: q }),
+  performance: { now: () => _clockNow },
+  history: { pushState: () => {}, replaceState: () => {}, state: {} },
+  setTimeout: (fn, delay = 0) => { const id = ++_timerId; _timers.set(id, { fn, delay, start: _clockNow }); return id; },
+  clearTimeout: (id) => _timers.delete(id),
+  clearInterval: (id) => _timers.delete(id),
+  dispatchEvent: (ev) => {
+    _dispatchedEvents.push(ev);
+    const handlers = _listeners.get(ev.type) || [];
+    handlers.forEach(h => h.call(globalThis.window, ev));
+    return true;
+  },
+  addEventListener: (e, h, o) => {
+    if (!_listeners.has(e)) _listeners.set(e, []);
+    _listeners.get(e).push(h);
+  },
+  removeEventListener: (e, h) => {
+    const arr = _listeners.get(e) || [];
+    _listeners.set(e, arr.filter(x => x !== h));
+  },
+  // Window functions that lifecycle.js calls
+  applyPointFilterColors: () => {},
+  updateExplorationUi: () => {},
+  updateUrlState: () => {},
+  updateCityFilter: () => {},
+  syncCityFilterUi: () => {},
+  clearShortSemanticSearchState: () => {},
+  clearSearchGlow: () => {},
+  applyFilters: () => {},
+  syncFilterControls: () => {},
+  syncSemanticDiveUi: () => {},
+  updateJourneyCompass: () => {},
+  setTrailDepth: null,    // set dynamically
+  findClusterByKeyword: () => null,
+  navigator: { clipboard: { writeText: () => Promise.resolve() } },
+};
+
+// ---------------------------------------------------------------------------
+// Test helpers
+// ---------------------------------------------------------------------------
+function assert(condition, message) {
+  if (!condition) throw new Error(`FAIL: ${message}`);
+}
+
+function assertEqual(actual, expected, message) {
+  if (actual !== expected) {
+    throw new Error(`FAIL: ${message} - expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Load lifecycle module
+// ---------------------------------------------------------------------------
+const _basePath = 'file://' + process.cwd().replace(/\\/g, '/') + '/js/modules/lifecycle.js';
+let lifecycle;
+try {
+  const mod = await import(_basePath);
+  lifecycle = mod;
+} catch (err) {
+  console.error('Could not import lifecycle.js:', err.message);
+  process.exit(1);
+}
+
+// ---------------------------------------------------------------------------
+// Contract tests
+// ---------------------------------------------------------------------------
+let passed = 0;
+let failed = 0;
+
+async function test(name, fn) {
+  _dispatchedEvents.length = 0;
+  try {
+    await fn();
+    console.log(`  ok ${name}`);
+    passed++;
+  } catch (err) {
+    console.log(`  FAIL ${name}`);
+    console.log(`        ${err.message}`);
+    failed++;
+  }
+}
+
+// Helper to create minimal state for testing
+function makeTestState(overrides = {}) {
+  return {
+    points: [],
+    signalScores: [],
+    bloomIndices: new Set(),
+    bridgeIndices: new Set(),
+    bridgeScores: [],
+    activeFilters: { status: 'all', city: 'all', website: false, email: false, geocoded: false },
+    activeClusterFilter: null,
+    activeStoryPrompt: null,
+    myceliumMode: 'default',
+    trailDepth: 0,
+    focusedNode: null,
+    currentView: 'galaxy',
+    camera: null,
+    renderer: null,
+    originalPositions: [],
+    navState: { mode: 'overview', trailCursor: -1, explorationHistoryIndices: [], walkHistoryIndices: [], threadCandidates: [] },
+    restoringBrowserHistory: false,
+    currentSearchSummary: null,
+    ...overrides
+  };
+}
+
+// Contract 1: MODE_DESCRIPTIONS is a non-empty exported object
+await test('MODE_DESCRIPTIONS is exported and non-empty', () => {
+  assert(typeof lifecycle.MODE_DESCRIPTIONS === 'object', 'MODE_DESCRIPTIONS is an object');
+  assert(Object.keys(lifecycle.MODE_DESCRIPTIONS).length > 0, 'MODE_DESCRIPTIONS has keys');
+  assert(typeof lifecycle.MODE_DESCRIPTIONS.default === 'string', 'MODE_DESCRIPTIONS.default is a string');
+  assert(typeof lifecycle.MODE_DESCRIPTIONS.bloom === 'string', 'MODE_DESCRIPTIONS.bloom is a string');
+  assert(typeof lifecycle.MODE_DESCRIPTIONS.bridge === 'string', 'MODE_DESCRIPTIONS.bridge is a string');
+  assert(typeof lifecycle.MODE_DESCRIPTIONS.trail === 'string', 'MODE_DESCRIPTIONS.trail is a string');
+});
+
+// Contract 2: STORY_DESCRIPTIONS is a non-empty exported object
+await test('STORY_DESCRIPTIONS is exported and non-empty', () => {
+  assert(typeof lifecycle.STORY_DESCRIPTIONS === 'object', 'STORY_DESCRIPTIONS is an object');
+  assert(Object.keys(lifecycle.STORY_DESCRIPTIONS).length > 0, 'STORY_DESCRIPTIONS has keys');
+  assert(typeof lifecycle.STORY_DESCRIPTIONS['signal-rich'] === 'string', 'STORY_DESCRIPTIONS has signal-rich entry');
+});
+
+// Contract 3b: setTrailDepth source has explicit gate for depth=2 escalation
+await test('setTrailDepth source has explicit fromUserGesture gate for depth=2', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  // Gate: if (nextDepth === 2 && prevDepth < 2 && !options.fromUserGesture) { return; }
+  const hasGate = /if\s*\(\s*nextDepth\s*===\s*2\s*&&\s*prevDepth\s*<\s*2\s*&&\s*!options\.fromUserGesture\s*\)\s*\{[\s\S]*?return/.test(src);
+  assert(hasGate, 'setTrailDepth has explicit gesture gate for depth=2 escalation');
+});
+
+// Contract 4: applyStoryPrompt sets up signal-rich → bloom mapping
+await test('applyStoryPrompt source maps signal-rich to bloom mode', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  // story === 'signal-rich' → setMyceliumMode('bloom', ...)
+  const hasSignalRichBloom = /story\s*===\s*['"]signal-rich['"]\s*[\s\S]*?setMyceliumMode\s*\(\s*['"]bloom['"]/.test(src);
+  assert(hasSignalRichBloom, 'signal-rich story maps to bloom mode');
+  // story === 'bridge-businesses' → setMyceliumMode('bridge', ...)
+  const hasBridgeBusinessBridge = /story\s*===\s*['"]bridge-businesses['"]\s*[\s\S]*?setMyceliumMode\s*\(\s*['"]bridge['"]/.test(src);
+  assert(hasBridgeBusinessBridge, 'bridge-businesses story maps to bridge mode');
+  // story === 'mapped-food' → sets geocoded filter
+  const hasMappedFood = /story\s*===\s*['"]mapped-food['"]/.test(src);
+  assert(hasMappedFood, 'mapped-food story is handled');
+});
+
+// Contract 5: setMyceliumMode calls recomputeBloomIndices when mode=bloom
+await test('setMyceliumMode source calls recomputeBloomIndices for bloom mode', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  // if (mode === 'bloom') { recomputeBloomIndices(); }
+  const hasBloomRecompute = /if\s*\(\s*mode\s*===\s*['"]bloom['"]\s*\)\s*\{[\s\S]*?recomputeBloomIndices\s*\(\s*\)/.test(src);
+  assert(hasBloomRecompute, 'setMyceliumMode calls recomputeBloomIndices for bloom');
+  // if (mode === 'bridge') { recomputeBridgeIndices(); }
+  const hasBridgeRecompute = /if\s*\(\s*mode\s*===\s*['"]bridge['"]\s*\)\s*\{[\s\S]*?recomputeBridgeIndices\s*\(\s*\)/.test(src);
+  assert(hasBridgeRecompute, 'setMyceliumMode calls recomputeBridgeIndices for bridge');
+});
+
+// Contract 6: setMyceliumMode calls window.applyPointFilterColors and window.updateExplorationUi
+await test('setMyceliumMode source calls window.applyPointFilterColors and window.updateExplorationUi', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const hasApplyColors = /window\.applyPointFilterColors\s*\(/.test(src);
+  const hasUpdateExplorationUi = /window\.updateExplorationUi\s*\(/.test(src);
+  assert(hasApplyColors, 'setMyceliumMode calls window.applyPointFilterColors');
+  assert(hasUpdateExplorationUi, 'setMyceliumMode calls window.updateExplorationUi');
+});
+
+// Contract 7: applyStoryPrompt resets activeFilters and activeClusterFilter
+await test('applyStoryPrompt source resets activeFilters and activeClusterFilter', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const hasFilterReset = /state\.activeFilters\s*=\s*\{[\s\S]*?status:\s*['"]all['"]/.test(src);
+  const hasClusterReset = /state\.activeClusterFilter\s*=\s*null/.test(src);
+  assert(hasFilterReset, 'applyStoryPrompt resets activeFilters to default');
+  assert(hasClusterReset, 'applyStoryPrompt resets activeClusterFilter to null');
+});
+
+// Contract 8: setMyceliumMode('trail') calls window.setTrailDepth(1, ...)
+await test('setMyceliumMode(\'trail\') source calls window.setTrailDepth(1, ...)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const hasTrailDepth1 = /mode\s*===\s*['"]trail['"][\s\S]*?setTrailDepth\s*\(\s*1\s*,/.test(src);
+  assert(hasTrailDepth1, 'setMyceliumMode with trail mode calls setTrailDepth(1, ...)');
+});
+
+// Contract 9: setMyceliumMode('inside') calls window.setTrailDepth(2, { fromUserGesture: true })
+await test('setMyceliumMode(\'inside\') source calls window.setTrailDepth(2, { fromUserGesture: true })', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const hasTrailDepth2 = /mode\s*===\s*['"]inside['"][\s\S]*?setTrailDepth\s*\(\s*2\s*,[\s\S]*?fromUserGesture:\s*true/.test(src);
+  assert(hasTrailDepth2, 'setMyceliumMode with inside mode calls setTrailDepth(2, { fromUserGesture: true })');
+});
+
+// Contract 10: setMyceliumMode calls window.updateUrlState (with reason: 'mode')
+await test('setMyceliumMode source calls window.updateUrlState with reason: \'mode\'', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const hasUrlSync = /updateUrlState\s*\(\s*\{\}\s*,\s*\{\s*reason:\s*['"]mode['"]\s*\}\s*\)/.test(src);
+  assert(hasUrlSync, 'setMyceliumMode calls updateUrlState with reason: mode');
+});
+
+// Contract 11: applyStoryPrompt calls window.syncFilterControls and window.applyFilters
+await test('applyStoryPrompt source calls window.syncFilterControls and window.applyFilters', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const hasSyncFilters = /window\.syncFilterControls\s*\(/.test(src);
+  const hasApplyFilters = /window\.applyFilters\s*\(/.test(src);
+  assert(hasSyncFilters, 'applyStoryPrompt calls window.syncFilterControls');
+  assert(hasApplyFilters, 'applyStoryPrompt calls window.applyFilters');
+});
+
+// Contract 12: recomputeBloomIndices source exists and references bloomIndices
+await test('recomputeBloomIndices source references state.bloomIndices', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const hasBloomIndices = /state\.bloomIndices/.test(src);
+  assert(hasBloomIndices, 'recomputeBloomIndices references state.bloomIndices');
+});
+
+// Contract 13: recomputeBridgeIndices source exists and references bridgeIndices
+await test('recomputeBridgeIndices source references state.bridgeIndices', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const hasBridgeIndices = /state\.bridgeIndices/.test(src);
+  assert(hasBridgeIndices, 'recomputeBridgeIndices references state.bridgeIndices');
+});
+
+// ---------------------------------------------------------------------------
+// Summary
+// ---------------------------------------------------------------------------
+console.log(`\n${'-'.repeat(50)}`);
+console.log(`Results: ${passed} passed, ${failed} failed`);
+console.log(`${'-'.repeat(50)}\n`);
+
+process.exit(failed > 0 ? 1 : 0);

@@ -1,0 +1,266 @@
+/* Controls: view switcher, panel toggles, control buttons, and reset toast. */
+.view-toggle {
+    position: fixed;
+    top: var(--space-4);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: var(--space-1);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    padding: var(--space-1);
+    border-radius: var(--glass-radius-pill);
+    z-index: var(--z-overlay);
+    border: var(--glass-border);
+    box-shadow: var(--shadow-glass);
+}
+
+.view-toggle button {
+    position: relative;
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    min-height: var(--mobile-touch-min);
+    padding: var(--space-2) var(--space-5);
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    overflow: hidden;
+}
+
+.view-toggle button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.1), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+
+.view-toggle button:hover {
+    color: var(--color-text-strong);
+    transform: translateY(-1px);
+}
+
+.view-toggle button:hover::before {
+    opacity: 1;
+}
+
+.view-toggle button.active {
+    background: rgba(78, 205, 196, 0.15);
+    color: var(--color-primary);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 12px rgba(78, 205, 196, 0.2);
+}
+
+.view-toggle button:focus-visible {
+    outline: 2px solid var(--color-primary-ring);
+    outline-offset: 2px;
+}
+
+.view-handoff {
+    position: fixed;
+    top: 66px;
+    left: 50%;
+    transform: translate(-50%, -10px) scale(0.98);
+    width: min(440px, calc(100vw - 32px));
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 16px;
+    border-radius: var(--glass-radius-panel);
+    background: var(--glass-bg-deep);
+    border: var(--glass-border-glow);
+    box-shadow: var(--shadow-glass-glow), var(--shadow-glass);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    z-index: var(--z-modal);
+    transition: opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1), transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.24s;
+}
+
+.view-handoff::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--glass-bg-accent);
+    opacity: 0.4;
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+/* Accessibility fix: Keyboard hint close button touch target */
+.kh-close {
+    min-width: var(--mobile-touch-min);
+    min-height: var(--mobile-touch-min);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.view-handoff.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0) scale(1);
+    transition-delay: 0s;
+}
+
+.view-handoff-rune {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--glass-radius-action);
+    color: rgba(235, 255, 252, 0.92);
+    background: rgba(255, 255, 255, 0.05);
+    border: var(--glass-border);
+    box-shadow: var(--shadow-glass-glow);
+    font-size: var(--space-5);
+}
+
+.view-handoff-rune .ui-icon {
+    width: 20px;
+    height: 20px;
+    filter: drop-shadow(0 0 10px rgba(121, 235, 222, 0.22));
+}
+
+.view-handoff-copy {
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+}
+
+.view-handoff-kicker {
+    color: rgba(174, 238, 231, 0.72);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.view-handoff-title {
+    color: rgba(250, 255, 253, 0.96);
+    font-size: 15px;
+    font-weight: 800;
+    line-height: var(--line-tight);
+}
+
+.view-handoff-note {
+    color: rgba(230, 239, 237, 0.66);
+    font-size: 12px;
+    line-height: var(--line-normal);
+}
+
+body[data-active-view="map"] .view-handoff {
+    background:
+        radial-gradient(circle at 18% 22%, rgb(var(--color-accent-rgb) / 0.17), transparent 34%),
+        linear-gradient(135deg, rgba(21, 17, 11, 0.9), rgba(8, 13, 17, 0.78));
+    border-color: var(--color-accent-border);
+}
+
+body[data-active-view="map"] .view-handoff-rune {
+    color: rgba(255, 248, 218, 0.94);
+    background: linear-gradient(135deg, rgb(var(--color-accent-rgb) / 0.22), rgb(var(--color-primary-rgb) / 0.1));
+    border-color: rgb(var(--color-accent-rgb) / 0.22);
+    box-shadow: 0 0 24px var(--color-accent-soft);
+}
+
+body[data-active-view="map"] .view-handoff-rune .ui-icon {
+    filter: drop-shadow(0 0 10px rgba(255, 225, 139, 0.22));
+}
+
+body[data-active-view="map"] .view-handoff-kicker {
+    color: rgba(255, 231, 143, 0.76);
+}
+
+body[data-active-view="map"][data-terrain-handoff="landing"] .view-handoff {
+    border-color: rgba(255, 226, 132, 0.3);
+    box-shadow:
+        0 24px 70px rgba(0, 0, 0, 0.46),
+        0 0 52px rgba(121, 235, 222, 0.12),
+        0 0 34px var(--color-accent-soft);
+}
+
+@media (max-width: 768px) {
+    .view-toggle {
+        left: 12px;
+        right: 62px;
+        top: calc(86px + env(safe-area-inset-top, 0px));
+        transform: none;
+        padding: 6px;
+        border-radius: var(--glass-radius-panel);
+        gap: 6px;
+    }
+
+    .view-toggle button {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 12px 10px;
+        font-size: 14px;
+        border-radius: var(--glass-radius-action);
+    }
+
+    .view-handoff {
+        top: calc(142px + env(safe-area-inset-top, 0px));
+        width: calc(100vw - 24px);
+        padding: 14px;
+        border-radius: var(--glass-radius-panel);
+    }
+
+    .view-handoff-rune {
+        width: 34px;
+        height: 34px;
+        border-radius: var(--glass-radius-action);
+        font-size: 13px;
+    }
+
+    .view-handoff-title {
+        font-size: 14px;
+    }
+
+    .view-handoff-note {
+        font-size: 11px;
+    }
+
+    body[data-active-view="galaxy"] .view-toggle {
+        right: 108px;
+        top: calc(10px + env(safe-area-inset-top, 0px));
+        padding: 5px;
+        border-radius: var(--glass-radius-panel);
+        gap: 5px;
+    }
+
+    body[data-active-view="galaxy"] .view-toggle button {
+        padding: 11px 9px;
+        font-size: 13px;
+        border-radius: var(--glass-radius-action);
+    }
+
+    body[data-active-view="map"] .view-toggle {
+        left: 10px;
+        right: 10px;
+        top: calc(68px + env(safe-area-inset-top, 0px));
+        padding: 5px;
+        gap: 5px;
+        border-radius: var(--glass-radius-panel);
+    }
+
+    body[data-active-view="map"] .view-toggle button {
+        padding: 10px 10px;
+        font-size: 13px;
+        border-radius: var(--glass-radius-action);
+    }
+
+    body[data-active-view="map"] .view-handoff {
+        top: calc(122px + env(safe-area-inset-top, 0px));
+    }
+}

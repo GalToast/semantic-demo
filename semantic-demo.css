@@ -1,0 +1,21 @@
+/* Semantic Demo CSS module shell.
+   Source modules live under ./css/ and are imported in the original cascade order.
+   Keep @import rules first; append no local declarations here. */
+
+@import url("./css/base.css?v=8d3d8dd8299d");
+@import url("./css/loading.css?v=d4358e60a43c");
+@import url("./css/tooltips.css?v=cc65c19a31a3");
+@import url("./css/shell.css?v=22848b6dca57");
+@import url("./css/time_weather.css?v=01d13d982629");
+@import url("./css/demo_ui.css?v=ce0cc7fcf61b");
+@import url("./css/synthesis.css?v=4e84c2396328");
+@import url("./css/controls.css?v=fb9b4c7a637f");
+@import url("./css/layout_base.css?v=07d83d86bbd0");
+@import url("./css/search.css?v=ad805276f640");
+@import url("./css/mobile_base.css?v=e4fb476e11b9");
+@import url("./css/journey_steps.css?v=1c17f687640a");
+@import url("./css/journey_active.css?v=aae4fd870f57");
+@import url("./css/clusters.css?v=de9931257398");
+@import url("./css/progressive_disclosure.css?v=4c918345566d");
+@import url("./css/strands.css?v=e8059eb166ae");
+@import url("./css/animations.css?v=d72806412cec");

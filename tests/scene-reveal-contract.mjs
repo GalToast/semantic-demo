@@ -1,0 +1,229 @@
+/**
+ * scene-reveal-contract.mjs
+ *
+ * Node contract test for the extracted scene-reveal.js slice.
+ * Tests critical integration contracts WITHOUT requiring a browser.
+ *
+ * Covers:
+ *   1. startSceneReveal camera/currentView gates
+ *   2. startSceneReveal sceneRevealCameraStart formula (cx*0.42, cy*0.34, max 0.96, cz*0.58)
+ *   3. startSceneReveal calls window.clearAutoRotateResumeTimer and window.setAutoRotateSuspended(true)
+ *   4. getSceneRevealProgress clamps [0,1] and gates on sceneRevealActive/StartedAt
+ *   5. onWindowResize guards on camera/renderer, sets aspect/setSize, calls map.invalidateSize
+ *
+ * Run from semantic-demo root:
+ *   node tests/scene-reveal-contract.mjs
+ *   node tests/run-from-semantic-demo.cjs scene-reveal-contract.mjs
+ */
+
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const CWD = process.cwd();
+const sceneRevealPath = resolve(CWD, 'js/modules/scene-reveal.js');
+const lifecyclePath = resolve(CWD, 'js/modules/lifecycle.js');
+
+let src;
+try {
+  src = readFileSync(sceneRevealPath, 'utf8');
+} catch {
+  src = readFileSync(lifecyclePath, 'utf8');
+}
+
+const checks = [];
+
+// ---------------------------------------------------------------------------
+// Contract 1: startSceneReveal exists and is exported
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'exports:startSceneReveal',
+  pass: /export\s+function\s+startSceneReveal/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 2: startSceneReveal gates on state.camera && state.currentView === 'galaxy'
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'startSceneReveal:gates on state.camera',
+  pass: /function\s+startSceneReveal[\s\S]{0,300}?if\s*\(\s*!\s*state\.camera[\s\S]{0,120}?return/.test(src),
+});
+checks.push({
+  name: 'startSceneReveal:gates on state.currentView',
+  pass: /function\s+startSceneReveal[\s\S]{0,300}?state\.currentView/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 3: startSceneReveal sets sceneRevealActive=true and sceneRevealStartedAt
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'startSceneReveal:sets state.sceneRevealActive = true',
+  pass: /state\.sceneRevealActive\s*=\s*true/.test(src),
+});
+checks.push({
+  name: 'startSceneReveal:sets state.sceneRevealStartedAt = performance.now()',
+  pass: /state\.sceneRevealStartedAt\s*=\s*performance\.now\(\)/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 4: startSceneReveal sceneRevealCameraStart formula
+// cx*0.42, cy*0.34, max(0.96, cz*0.58)
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'startSceneReveal:camera formula uses cx*0.42',
+  pass: /cx\s*\*\s*0\.42/.test(src),
+});
+checks.push({
+  name: 'startSceneReveal:camera formula uses cy*0.34',
+  pass: /cy\s*\*\s*0\.34/.test(src),
+});
+checks.push({
+  name: 'startSceneReveal:camera formula uses max(0.96, cz*0.58)',
+  pass: /Math\.max\s*\(\s*0\.96\s*,\s*cz\s*\*\s*0\.58\s*\)/.test(src),
+});
+checks.push({
+  name: 'startSceneReveal:camera formula falls back to (0,0,1) for non-finite components',
+  pass: /Number\.isFinite/.test(src) && /Vector3\s*\(\s*0\s*,\s*0\s*,\s*1\s*\)/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 5: startSceneReveal calls window.clearAutoRotateResumeTimer
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'startSceneReveal:calls window.clearAutoRotateResumeTimer',
+  pass: /window\.clearAutoRotateResumeTimer\s*\(/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 6: startSceneReveal calls window.setAutoRotateSuspended(true)
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'startSceneReveal:calls window.setAutoRotateSuspended(true)',
+  pass: /window\.setAutoRotateSuspended\s*\(\s*true\s*\)/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 7: getSceneRevealProgress exists and is exported
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'exports:getSceneRevealProgress',
+  pass: /export\s+function\s+getSceneRevealProgress/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 8: getSceneRevealProgress gates on sceneRevealActive and sceneRevealStartedAt
+// Returns 1 early if not active
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'getSceneRevealProgress:gates on state.sceneRevealActive',
+  pass: /function\s+getSceneRevealProgress\s*\([^)]*\)\s*\{[\s\S]*?if\s*\(\s*!\s*state\.sceneRevealActive/.test(src),
+});
+checks.push({
+  name: 'getSceneRevealProgress:returns 1 early when not active',
+  pass: /getSceneRevealProgress[\s\S]*?return\s+1/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 9: getSceneRevealProgress clamps result with Math.min(1, Math.max(0, ...))
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'getSceneRevealProgress:clamps result with Math.min(1, Math.max(0, elapsed/2800))',
+  pass: /Math\.min\s*\(\s*1\s*,\s*Math\.max\s*\(\s*0/.test(src),
+});
+checks.push({
+  name: 'getSceneRevealProgress:uses 2800ms duration',
+  pass: /2800/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 10: onWindowResize exists and is exported
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'exports:onWindowResize',
+  pass: /export\s+function\s+onWindowResize/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 11: onWindowResize guards on camera and renderer
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'onWindowResize:guards on state.camera',
+  pass: /function\s+onWindowResize[\s\S]{0,250}?if\s*\(\s*!\s*state\.camera[\s\S]{0,120}?return/.test(src),
+});
+checks.push({
+  name: 'onWindowResize:guards on state.renderer',
+  pass: /function\s+onWindowResize[\s\S]{0,250}?if\s*\([\s\S]{0,120}!\s*state\.renderer[\s\S]{0,120}?return/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 12: onWindowResize sets camera.aspect and calls updateProjectionMatrix
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'onWindowResize:sets camera.aspect = innerWidth / innerHeight',
+  pass: /state\.camera\.aspect\s*=\s*window\.innerWidth\s*\/\s*window\.innerHeight/.test(src),
+});
+checks.push({
+  name: 'onWindowResize:calls camera.updateProjectionMatrix()',
+  pass: /state\.camera\.updateProjectionMatrix\s*\(\s*\)/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 13: onWindowResize calls renderer.setSize
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'onWindowResize:calls renderer.setSize(innerWidth, innerHeight)',
+  pass: /state\.renderer\.setSize\s*\(\s*window\.innerWidth\s*,\s*window\.innerHeight\s*\)/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 14: onWindowResize calls window.map.invalidateSize()
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'onWindowResize:calls window.map.invalidateSize()',
+  pass: /window\.map\.invalidateSize\s*\(\s*\)/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 15: onWindowResize keeps compact viewport/camera offset hooks
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'onWindowResize:toggles document.body is-mobile breakpoint class',
+  pass: /document\.body\.classList\.toggle\s*\(\s*['"]is-mobile['"]\s*,\s*isMobile\s*\)/.test(src),
+});
+checks.push({
+  name: 'onWindowResize:calls window.updateCameraViewportOffset when available',
+  pass: /window\.updateCameraViewportOffset\s*===\s*['"]function['"][\s\S]{0,120}?window\.updateCameraViewportOffset\s*\(\s*\)/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 16: onWindowResize calls window.syncClusterSectionState
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'onWindowResize:calls window.syncClusterSectionState()',
+  pass: /window\.syncClusterSectionState\s*\(/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Contract 17: onWindowResize calls window.updateTraversalUi
+// --------------------------------------------------------------------------
+checks.push({
+  name: 'onWindowResize:calls window.updateTraversalUi()',
+  pass: /window\.updateTraversalUi\s*\(/.test(src),
+});
+
+// ---------------------------------------------------------------------------
+// Report
+// --------------------------------------------------------------------------
+let passed = 0, failed = 0;
+for (const c of checks) {
+  if (c.pass) { passed++; }
+  else         { failed++; console.error(`FAIL: ${c.name}`); }
+}
+
+console.log(`\nscene-reveal-contract results: ${passed}/${passed + failed} passed`);
+if (failed > 0) {
+  console.error(`${failed} check(s) FAILED`);
+  process.exit(1);
+} else {
+  console.log('All checks passed. Scene-reveal surface is structurally sound.');
+  process.exit(0);
+}
