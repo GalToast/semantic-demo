@@ -17,6 +17,21 @@ function getDocument() {
     return typeof document !== 'undefined' ? document : null;
 }
 
+function detectStaticDevPHP(text) {
+    if (typeof text !== 'string') return false;
+    const trimmed = text.trim();
+    return trimmed.startsWith('<?php') || (trimmed.includes('<?php') && trimmed.indexOf('<?php') < 100);
+}
+
+function allowsStaticDevFallback() {
+    const win = getWindow();
+    if (!win?.location) return false;
+    const host = win.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1' && host !== '::1') return false;
+    const params = new URLSearchParams(win.location.search || '');
+    return params.get('staticDev') !== '0';
+}
+
 export async function fetchSemanticLaneHealth({ warm = false, signal = null } = {}) {
     const response = await fetch(`api.php?action=semantic_lane_health&warm=${warm ? '1' : '0'}`, {
         method: 'GET',
@@ -25,12 +40,31 @@ export async function fetchSemanticLaneHealth({ warm = false, signal = null } = 
         signal
     });
 
+    const responseText = await response.text();
     let payload;
-    try {
-        payload = await response.json();
-    } catch (error) {
+
+    if (detectStaticDevPHP(responseText) && allowsStaticDevFallback()) {
+        console.warn('[semantic-lane] Detected raw PHP response. Assuming static dev server. Returning mock healthy state.');
+        payload = {
+            ok: true,
+            state: 'healthy',
+            provenance: {
+                label: 'Static Dev Mode',
+                detail: 'Local development mock active.'
+            },
+            is_mock: true
+        };
+    } else if (detectStaticDevPHP(responseText)) {
+        const error = new Error('Semantic search readiness check returned raw PHP source.');
         Object.defineProperty(error, 'correlationId', { value: crypto.randomUUID(), writable: false, configurable: true });
-        throw new Error('Semantic search readiness check returned invalid JSON.', { cause: error });
+        throw error;
+    } else {
+        try {
+            payload = JSON.parse(responseText);
+        } catch (error) {
+            Object.defineProperty(error, 'correlationId', { value: crypto.randomUUID(), writable: false, configurable: true });
+            throw new Error('Semantic search readiness check returned invalid JSON.', { cause: error });
+        }
     }
 
     if (!response.ok || !payload?.ok) {

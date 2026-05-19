@@ -1571,7 +1571,6 @@ function buildRouteTraceMaterial() {
             baseOpacity: { value: 0.22 }
         },
         vertexShader: `
-            attribute vec3 color;
             varying vec3 vColor;
             void main() {
                 vColor = color;
@@ -1668,6 +1667,9 @@ export function setRouteChoreographyPhase(phase = 'overview', details = {}) {
         reason: details.reason || state.routeChoreographyState?.reason || 'state',
         startedAt: performance.now()
     };
+    if (document.body?.dataset) {
+        document.body.dataset.routeMotion = state.currentView === 'galaxy' ? phase : 'inactive';
+    }
     refreshRouteTraceOverlay({ reason: details.reason || phase });
 }
 

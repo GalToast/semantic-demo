@@ -10,21 +10,21 @@
     --glass-blur: 16px;
     --glass-blur-heavy: 24px;
 
-    --glass-bg: linear-gradient(165deg, rgba(10, 18, 24, 0.82) 0%, rgba(6, 12, 18, 0.92) 100%);
-    --glass-bg-deep: linear-gradient(180deg, rgba(8, 15, 20, 0.94) 0%, rgba(4, 9, 14, 0.98) 100%);
-    --glass-bg-accent: radial-gradient(circle at 100% 0%, rgba(121, 235, 222, 0.12), transparent 40%);
+    --glass-bg: linear-gradient(165deg, rgba(11, 22, 34, 0.85) 0%, rgba(5, 10, 16, 0.94) 100%);
+    --glass-bg-deep: linear-gradient(180deg, rgba(8, 17, 26, 0.96) 0%, rgba(3, 7, 12, 0.99) 100%);
+    --glass-bg-accent: radial-gradient(circle at 100% 0%, rgba(82, 229, 215, 0.16), transparent 50%);
 
-    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
-    --glass-border-glow: 1px solid rgba(121, 235, 222, 0.22);
-    --glass-border-muted: 1px solid rgba(255, 255, 255, 0.04);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.09);
+    --glass-border-glow: 1px solid rgba(82, 229, 215, 0.3);
+    --glass-border-muted: 1px solid rgba(255, 255, 255, 0.05);
 
     --glass-radius-panel: 16px;
     --glass-radius-card: 12px;
     --glass-radius-action: 10px;
     --glass-radius-pill: 999px;
 
-    --shadow-glass: 0 16px 48px rgba(0, 0, 0, 0.38);
-    --shadow-glass-glow: 0 12px 32px rgba(78, 205, 196, 0.12);
+    --shadow-glass: 0 20px 52px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    --shadow-glass-glow: 0 12px 36px rgba(82, 229, 215, 0.16), 0 0 20px rgba(82, 229, 215, 0.06);
 
     --font-display: 'Bricolage Grotesque', sans-serif;
     --font-body: 'Nunito Sans', sans-serif;
@@ -45,22 +45,22 @@
     --mobile-radius-button: var(--glass-radius-action);
     --mobile-radius-input: var(--glass-radius-action);
     --mobile-radius-pill: var(--glass-radius-pill);
-    --color-primary: #4ecdc4;
-    --color-primary-rgb: 78, 205, 196;
-    --color-primary-soft: rgba(78, 205, 196, 0.2);
-    --color-primary-ring: rgba(78, 205, 196, 0.8);
-    --color-accent: #ffd93d;
-    --color-accent-rgb: 255, 217, 61;
-    --color-accent-soft: rgba(255, 217, 61, 0.1);
-    --color-accent-border: rgba(255, 217, 61, 0.18);
-    --color-surface-glass: rgba(15, 15, 25, 0.85);
-    --color-surface-panel: rgba(15, 19, 28, 0.9);
+    --color-primary: #52e5d7;
+    --color-primary-rgb: 82, 229, 215;
+    --color-primary-soft: rgba(82, 229, 215, 0.2);
+    --color-primary-ring: rgba(82, 229, 215, 0.8);
+    --color-accent: #ffdf4c;
+    --color-accent-rgb: 255, 223, 76;
+    --color-accent-soft: rgba(255, 223, 76, 0.1);
+    --color-accent-border: rgba(255, 223, 76, 0.22);
+    --color-surface-glass: rgba(15, 18, 28, 0.88);
+    --color-surface-panel: rgba(12, 17, 26, 0.93);
     --color-border-subtle: rgba(255, 255, 255, 0.08);
     --color-border-muted: rgba(255, 255, 255, 0.1);
-    --color-text-strong: rgba(255, 255, 255, 0.94);
-    --color-text-primary: rgba(255, 255, 255, 0.9);
-    --color-text-secondary: rgba(255, 255, 255, 0.72);
-    --color-text-muted: rgba(255, 255, 255, 0.5);
+    --color-text-strong: rgba(255, 255, 255, 0.96);
+    --color-text-primary: rgba(255, 255, 255, 0.92);
+    --color-text-secondary: rgba(255, 255, 255, 0.76);
+    --color-text-muted: rgba(255, 255, 255, 0.54);
     --space-1: 4px;
     --space-2: 8px;
     --space-3: 12px;
@@ -76,15 +76,21 @@
     --z-modal: 190;
 
     /* Shared panel elevation and glass treatment */
-    --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.24);
+    --shadow-card: 0 10px 36px rgba(0, 0, 0, 0.28);
     --shadow-panel: var(--shadow-glass);
-    --shadow-focus-ring: 0 0 0 3px rgba(78, 205, 196, 0.35);
+    --shadow-focus-ring: 0 0 0 3px rgba(82, 229, 215, 0.35);
     --panel-glass-bg: var(--glass-bg);
-    --panel-glass-border: rgba(255, 255, 255, 0.1);
+    --panel-glass-border: rgba(255, 255, 255, 0.12);
 
     --line-tight: 1.12;
-    --line-normal: 1.35;
-    --line-relaxed: 1.5;
+    --line-normal: 1.38;
+    --line-relaxed: 1.54;
+
+    --transition-premium: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    --glass-blur-light: 8px;
+    --glass-blur-medium: 16px;
+    --glass-blur-heavy: 24px;
+    --glass-blur-ultra: 32px;
 }
 
 html {

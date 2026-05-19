@@ -123,23 +123,21 @@
     top: 16px;
     left: 16px;
     background:
-        radial-gradient(circle at 8% 0%, rgba(121, 235, 222, 0.18), transparent 34%),
-        radial-gradient(circle at 100% 92%, rgba(255, 225, 139, 0.12), transparent 32%),
-        linear-gradient(145deg, rgba(10, 16, 25, 0.92), rgba(6, 10, 18, 0.84));
-    border-radius: 8px;
-    padding: 10px 14px;
+        radial-gradient(circle at 10% 10%, rgba(82, 229, 215, 0.22), transparent 45%),
+        linear-gradient(145deg, rgba(12, 20, 30, 0.94), rgba(6, 10, 16, 0.88));
+    border-radius: 14px;
+    padding: 11px 16px;
     z-index: 100;
-    border: 1px solid rgba(121, 235, 222, 0.16);
+    border: 1px solid rgba(82, 229, 215, 0.24);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     font-size: 14px;
     overflow: hidden;
     box-shadow:
-        0 14px 34px rgba(0, 0, 0, 0.22),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 0 28px rgba(121, 235, 222, 0.055);
-    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        var(--shadow-glass),
+        0 0 28px rgba(82, 229, 215, 0.06);
+    transition: var(--transition-premium);
 }
 
 .weather-widget::before {
@@ -148,7 +146,7 @@
     inset: 6px 10px auto auto;
     width: 46px;
     height: 17px;
-    border-top: 1px solid rgba(121, 235, 222, 0.18);
+    border-top: 1px solid rgba(82, 229, 215, 0.24);
     border-radius: 999px 45% 999px 45%;
     transform: rotate(-8deg);
     pointer-events: none;
@@ -156,11 +154,11 @@
 
 .weather-widget:hover {
     transform: translateY(-2px);
-    border-color: rgba(121, 235, 222, 0.26);
+    border-color: rgba(82, 229, 215, 0.45);
     box-shadow:
-        0 24px 54px rgba(0, 0, 0, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        0 0 44px rgba(121, 235, 222, 0.12);
+        0 24px 54px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 0 44px rgba(82, 229, 215, 0.16);
 }
 
 .weather-icon {
@@ -324,27 +322,42 @@
     position: fixed;
     right: 16px;
     top: 16px;
-    background: rgba(15, 15, 25, 0.95);
-    color: rgba(255, 255, 255, 0.95);
-    border-radius: 8px;
-    padding: 10px 16px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    background:
+        radial-gradient(circle at 90% 10%, rgba(82, 229, 215, 0.18), transparent 45%),
+        linear-gradient(145deg, rgba(12, 20, 30, 0.94), rgba(6, 10, 16, 0.88));
+    color: var(--color-text-strong);
+    border-radius: 14px;
+    padding: 11px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.04em;
     z-index: 100;
     display: flex;
     align-items: center;
-    gap: 8px;
-    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
+    gap: 10px;
+    box-shadow:
+        var(--shadow-glass),
+        0 0 28px rgba(82, 229, 215, 0.04);
+    transition: var(--transition-premium);
+}
+
+.time-display:hover {
+    border-color: var(--color-primary);
+    box-shadow:
+        var(--shadow-glass),
+        0 0 32px rgba(82, 229, 215, 0.15);
+    transform: translateY(-1px);
 }
 
 .time-display::before {
     content: '';
     width: 8px;
     height: 8px;
-    background: #4ecdc4;
+    background: var(--color-primary);
     border-radius: 50%;
     animation: pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 8px var(--color-primary);
 }
 
 @keyframes pulse {

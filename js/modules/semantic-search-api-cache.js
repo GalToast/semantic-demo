@@ -174,6 +174,20 @@ export function getSemanticSearchCacheDiagnostics() {
     };
 }
 
+function detectStaticDevPHP(text) {
+    if (typeof text !== 'string') return false;
+    const trimmed = text.trim();
+    return trimmed.startsWith('<?php') || (trimmed.includes('<?php') && trimmed.indexOf('<?php') < 100);
+}
+
+function allowsStaticDevFallback() {
+    if (typeof window === 'undefined' || !window.location) return false;
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1' && host !== '::1') return false;
+    const params = new URLSearchParams(window.location.search || '');
+    return params.get('staticDev') !== '0';
+}
+
 export async function fetchSemanticSearchResults(query, signal, options = {}) {
     const trimmedQuery = typeof query === 'string' ? query.trim() : '';
     if (!trimmedQuery) return [];
@@ -212,12 +226,33 @@ export async function fetchSemanticSearchResults(query, signal, options = {}) {
                 { method: 'GET', headers: { Accept: 'application/json' }, cache: 'no-store', signal: attemptController.signal }
             );
 
+            const responseText = await response.text();
             let payload;
-            try {
-                payload = await response.json();
-            } catch (jsonErr) {
-                Object.defineProperty(jsonErr, 'correlationId', { value: crypto.randomUUID(), writable: false, configurable: true });
-                throw new Error('Semantic search returned invalid JSON.', { cause: jsonErr });
+
+            if (detectStaticDevPHP(responseText) && allowsStaticDevFallback()) {
+                console.warn('[semantic-search-api-cache] Detected raw PHP response. Assuming static dev server. Returning mock results.');
+                payload = {
+                    ok: true,
+                    query: trimmedQuery,
+                    results: [
+                        { lead_id: "1", score: 0.98, provenance: "Mock", thread_type: "Search match" },
+                        { lead_id: "2", score: 0.92, provenance: "Mock", thread_type: "Search match" },
+                        { lead_id: "3", score: 0.85, provenance: "Mock", thread_type: "Search match" }
+                    ],
+                    is_mock: true,
+                    dev_mode: "static-php-fallback"
+                };
+            } else if (detectStaticDevPHP(responseText)) {
+                const error = new Error('Semantic search returned raw PHP source.');
+                Object.defineProperty(error, 'correlationId', { value: crypto.randomUUID(), writable: false, configurable: true });
+                throw error;
+            } else {
+                try {
+                    payload = JSON.parse(responseText);
+                } catch (jsonErr) {
+                    Object.defineProperty(jsonErr, 'correlationId', { value: crypto.randomUUID(), writable: false, configurable: true });
+                    throw new Error('Semantic search returned invalid JSON.', { cause: jsonErr });
+                }
             }
 
             if (!response.ok || !payload?.ok) {

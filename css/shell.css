@@ -148,24 +148,24 @@ body[data-mobile-route-peek="active"][data-route-motion="search-corridor"] #canv
 }
 
 body[data-panel-surface="focus"] #canvas-container::before {
-    opacity: 0.34;
+    opacity: 0.24;
 }
 
 body[data-panel-surface="focus"] #canvas-container::after {
-    opacity: 0.56;
+    opacity: 0.38;
 }
 
 body[data-panel-surface="focus-search"] #canvas-container::before {
-    opacity: 0.52;
+    opacity: 0.34;
     background:
-        radial-gradient(circle at 51% 50%, rgba(5, 12, 18, 0) 0%, rgba(5, 12, 18, 0.02) 20%, rgba(5, 10, 16, 0.34) 58%, rgba(3, 6, 10, 0.84) 100%);
+        radial-gradient(circle at 51% 50%, rgba(5, 12, 18, 0) 0%, rgba(5, 12, 18, 0.015) 20%, rgba(5, 10, 16, 0.24) 58%, rgba(3, 6, 10, 0.74) 100%);
 }
 
 body[data-panel-surface="focus-search"] #canvas-container::after {
-    opacity: 0.74;
+    opacity: 0.46;
     background:
-        linear-gradient(90deg, rgba(4, 7, 11, 0.82) 0%, rgba(4, 7, 11, 0.52) 17%, rgba(4, 7, 11, 0.12) 35%, rgba(4, 7, 11, 0) 50%, rgba(4, 7, 11, 0.1) 66%, rgba(4, 7, 11, 0.58) 100%),
-        radial-gradient(circle at 49% 52%, rgba(72, 219, 207, 0.02) 0%, rgba(72, 219, 207, 0.08) 22%, rgba(5, 18, 23, 0.32) 48%, transparent 70%);
+        linear-gradient(90deg, rgba(4, 7, 11, 0.72) 0%, rgba(4, 7, 11, 0.42) 17%, rgba(4, 7, 11, 0.08) 35%, rgba(4, 7, 11, 0) 50%, rgba(4, 7, 11, 0.08) 66%, rgba(4, 7, 11, 0.46) 100%),
+        radial-gradient(circle at 49% 52%, rgba(72, 219, 207, 0.012) 0%, rgba(72, 219, 207, 0.028) 22%, rgba(5, 18, 23, 0.22) 48%, transparent 70%);
 }
 
 body[data-active-view="map"] #canvas-container::before,
@@ -668,7 +668,26 @@ body[data-active-view="map"] .biofield-atmosphere {
 body[data-trail-state="active"] .biofield-atmosphere,
 body[data-panel-surface="focus"] .biofield-atmosphere,
 body[data-panel-surface="focus-search"] .biofield-atmosphere {
-    opacity: 0.42;
+    opacity: 0.18;
+    mix-blend-mode: normal;
+}
+
+body[data-panel-surface="focus"] .biofield-atmosphere::before,
+body[data-panel-surface="focus-search"] .biofield-atmosphere::before {
+    background:
+        radial-gradient(circle at 20% 70%, rgba(53, 179, 168, 0.045), transparent 24%),
+        radial-gradient(circle at 72% 18%, rgba(74, 201, 193, 0.035), transparent 22%),
+        radial-gradient(circle at 86% 78%, rgba(166, 132, 52, 0.024), transparent 26%);
+    filter: blur(14px);
+    opacity: 0.34;
+}
+
+body[data-panel-surface="focus"] .biofield-atmosphere::after,
+body[data-panel-surface="focus-search"] .biofield-atmosphere::after {
+    background:
+        conic-gradient(from 140deg at 52% 50%, transparent 0 20%, rgba(55, 181, 170, 0.026) 27%, transparent 36% 64%, rgba(146, 116, 45, 0.018) 72%, transparent 82% 100%);
+    filter: blur(24px);
+    opacity: 0.2;
 }
 
 body[data-route-motion="search-corridor"] .biofield-atmosphere {
@@ -688,7 +707,7 @@ body[data-panel-surface="focus"] .biofield-orb,
 body[data-panel-surface="focus-search"] .biofield-orb,
 body[data-panel-surface="search"] .biofield-orb,
 body[data-trail-state="active"] .biofield-orb {
-    opacity: 0.08;
+    opacity: 0.025;
     animation: none;
 }
 

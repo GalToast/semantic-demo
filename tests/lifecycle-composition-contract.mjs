@@ -106,6 +106,7 @@ refreshCompositionState();
 
 assert(document.body.dataset.activeView === 'galaxy', 'active view is synchronized');
 assert(document.body.dataset.graphContext === 'focus-search', 'focused record plus degraded search intent owns focus-search context');
+assert(document.body.dataset.panelSurface === 'focus-search', 'focused record plus search intent owns the focus-search panel surface');
 assert(document.body.dataset.trailState === 'active', 'focused record plus search intent marks trail active');
 assert(document.body.dataset.semanticDive === 'inactive', 'semantic dive stays inactive before Step Inside');
 assert(window.clearMobileRouteFieldPeekCalls === 1, 'non-idle graph context clears mobile route peek');

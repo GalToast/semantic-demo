@@ -81,27 +81,28 @@
     height: 28px;
     border-radius: 999px;
     background:
-        radial-gradient(circle at 35% 25%, rgba(121, 235, 222, 0.16), transparent 48%),
-        rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(121, 235, 222, 0.16);
-    color: rgba(226, 255, 250, 0.76);
+        radial-gradient(circle at 35% 25%, rgba(82, 229, 215, 0.18), transparent 48%),
+        rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(82, 229, 215, 0.22);
+    color: rgba(226, 255, 250, 0.82);
     font-size: 16px;
     line-height: 1;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 0 18px rgba(121, 235, 222, 0.055);
-    transition: transform 0.22s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0 18px rgba(82, 229, 215, 0.08);
+    transition: var(--transition-premium);
 }
 
 .info-toggle-icon:hover {
     background:
-        radial-gradient(circle at 35% 25%, rgba(121, 235, 222, 0.28), transparent 48%),
-        rgba(255, 255, 255, 0.09);
-    border-color: rgba(121, 235, 222, 0.3);
+        radial-gradient(circle at 35% 25%, rgba(82, 229, 215, 0.3), transparent 48%),
+        rgba(255, 255, 255, 0.1);
+    border-color: var(--color-primary);
     color: rgba(226, 255, 250, 1);
     transform: scale(1.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 24px rgba(82, 229, 215, 0.22);
 }
 
 .info-toggle-icon:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.8);
+    outline: 2px solid var(--color-primary-ring);
     outline-offset: 2px;
 }
 
@@ -142,19 +143,19 @@
 .legend-panel,
 .journey-compass {
     scrollbar-width: thin;
-    scrollbar-color: rgba(132, 226, 217, 0.32) transparent;
+    scrollbar-color: rgba(82, 229, 215, 0.25) transparent;
 }
 
 .info-content::-webkit-scrollbar,
 .search-results::-webkit-scrollbar,
 .legend-panel::-webkit-scrollbar,
 .journey-compass::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
     height: 0;
 }
 
 .info-panel::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
     height: 0;
 }
 
@@ -169,9 +170,9 @@
 .search-results::-webkit-scrollbar-thumb,
 .legend-panel::-webkit-scrollbar-thumb,
 .journey-compass::-webkit-scrollbar-thumb {
-    background: rgba(132, 226, 217, 0.3);
+    background: rgba(82, 229, 215, 0.28);
     border-radius: 999px;
-    border: 2px solid transparent;
+    border: 1px solid transparent;
     background-clip: padding-box;
 }
 
@@ -221,7 +222,7 @@ body:has(.info-panel.active) .panel-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: var(--transition-premium);
     box-shadow: var(--shadow-glass);
 }
 
@@ -243,9 +244,11 @@ body:has(.info-panel.active) .panel-toggle {
 .share-toggle:hover,
 .legend-toggle:hover,
 .help-toggle:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(82, 229, 215, 0.12);
     border: var(--glass-border-glow);
-    transform: translateY(-1px);
+    box-shadow: var(--shadow-glass-glow), var(--shadow-glass);
+    transform: translateY(-2px);
+    color: var(--color-primary);
 }
 
 .legend-panel {
@@ -291,7 +294,7 @@ body:has(.info-panel.active) .panel-toggle {
     transition-delay: 0s;
 }
 
-.legend-panel[aria-hidden="true"] {
+.legend-panel[aria-hidden="true"]:not(.active) {
     visibility: hidden;
     pointer-events: none;
     opacity: 0;
@@ -301,7 +304,7 @@ body:has(.info-panel.active) .panel-toggle {
 .legend-guide-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .legend-guide-kicker { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(143, 228, 221, 0.72); margin-bottom: 3px; }
 .legend-guide-title { font-family: 'Bricolage Grotesque', sans-serif; font-size: 18px; line-height: 0.96; color: rgba(255,255,255,0.97); }
-.legend-state-badge { border-radius: 999px; padding: 5px 9px; font-size: 10px; line-height: 1; color: rgba(243, 250, 249, 0.88); background: rgba(78,205,196,0.12); border: 1px solid rgba(78,205,196,0.24); white-space: nowrap; }
+.legend-state-badge { border-radius: 999px; padding: 5px 9px; font-size: 10px; line-height: 1; color: rgba(243, 250, 249, 0.88); background: rgba(var(--color-primary-rgb), 0.12); border: 1px solid rgba(var(--color-primary-rgb), 0.24); white-space: nowrap; }
 .legend-guide-note { font-size: 12px; line-height: 1.48; color: rgba(226, 239, 237, 0.76); }
 .legend-guide-next { font-size: 11px; line-height: 1.45; color: rgba(255, 247, 214, 0.76); }
 .legend-lens-truth {
@@ -310,11 +313,11 @@ body:has(.info-panel.active) .panel-toggle {
     gap: 8px;
     margin: 6px 0 0;
     padding: 8px 10px;
-    border: 1px solid rgba(121, 235, 222, 0.14);
+    border: 1px solid rgba(82, 229, 215, 0.14);
     border-radius: 12px;
     background:
-        radial-gradient(circle at 8% 45%, rgba(121, 235, 222, 0.12), transparent 32%),
-        linear-gradient(135deg, rgba(255, 217, 122, 0.06), rgba(121, 235, 222, 0.04));
+        radial-gradient(circle at 8% 45%, rgba(82, 229, 215, 0.12), transparent 32%),
+        linear-gradient(135deg, rgba(255, 217, 122, 0.06), rgba(82, 229, 215, 0.04));
     color: rgba(222, 241, 240, 0.7);
     font-size: 10.5px;
     line-height: 1.35;
@@ -333,31 +336,31 @@ body:has(.info-panel.active) .panel-toggle {
     inset: 5px 1px auto 1px;
     height: 1px;
     border-radius: 999px;
-    background: linear-gradient(90deg, rgba(255, 226, 132, 0.8), rgba(121, 235, 222, 0.78));
-    box-shadow: 0 0 10px rgba(121, 235, 222, 0.3);
+    background: linear-gradient(90deg, rgba(255, 226, 132, 0.8), rgba(82, 229, 215, 0.78));
+    box-shadow: 0 0 10px rgba(82, 229, 215, 0.3);
     transform-origin: center;
 }
 .legend-lens-truth-mark::before { transform: rotate(-17deg); }
 .legend-lens-truth-mark::after { transform: rotate(18deg); opacity: 0.6; }
 .legend-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .legend-chip { border-radius: 999px; padding: 5px 9px; font-size: 10px; line-height: 1; color: rgba(222, 235, 233, 0.72); background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); }
-.legend-chip.lane-healthy { color: rgba(224, 247, 242, 0.84); border-color: rgba(78,205,196,0.22); background: rgba(78,205,196,0.1); }
+.legend-chip.lane-healthy { color: rgba(224, 247, 242, 0.84); border-color: rgba(var(--color-primary-rgb), 0.22); background: rgba(var(--color-primary-rgb), 0.1); }
 .legend-chip.lane-reconnecting { color: rgba(255, 240, 191, 0.9); border-color: rgba(255,217,61,0.24); background: rgba(255,217,61,0.12); }
 .legend-chip.lane-degraded { color: rgba(255, 206, 187, 0.92); border-color: rgba(255,125,95,0.24); background: rgba(255,125,95,0.12); }
 .legend-divider { height: 1px; margin: 12px 0 10px; background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)); }
 .legend-section-title { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
 .legend-list { display: grid; gap: 6px; }
 .legend-item { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 10px; font-size: 11px; color: rgba(255,255,255,0.72); background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05); border-radius: 11px; cursor: pointer; text-align: left; transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease; }
-.legend-item:hover { transform: translateY(-1px); border-color: rgba(132, 226, 217, 0.16); background: rgba(255,255,255,0.042); }
-.legend-item.active { border-color: rgba(132, 226, 217, 0.24); background: rgba(78,205,196,0.08); box-shadow: inset 0 0 0 1px rgba(78,205,196,0.07); }
-.legend-item:focus-visible { outline: 2px solid rgba(78, 205, 196, 0.6); outline-offset: 2px; }
+.legend-item:hover { transform: translateY(-1px); border-color: rgba(82, 229, 215, 0.16); background: rgba(255,255,255,0.042); }
+.legend-item.active { border-color: rgba(82, 229, 215, 0.24); background: rgba(var(--color-primary-rgb), 0.08); box-shadow: inset 0 0 0 1px rgba(var(--color-primary-rgb), 0.07); }
+.legend-item:focus-visible { outline: 2px solid rgba(var(--color-primary-rgb), 0.6); outline-offset: 2px; }
 .legend-item.is-focus-cluster { border-color: rgba(255, 217, 61, 0.18); box-shadow: inset 0 0 0 1px rgba(255,217,61,0.05); }
 .legend-copy { display: grid; gap: 4px; min-width: 0; }
 .legend-label { font-size: 11px; line-height: 1.25; color: rgba(247,248,255,0.92); }
 .legend-meta { display: flex; flex-wrap: wrap; gap: 5px; min-height: 14px; }
 .legend-pill { border-radius: 999px; padding: 2px 6px; font-size: 9px; line-height: 1; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(236, 243, 242, 0.72); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06); }
 .legend-pill.focus { color: rgba(255,247,214,0.92); background: rgba(255,217,61,0.12); border-color: rgba(255,217,61,0.22); }
-.legend-pill.filter { color: rgba(224,247,242,0.9); background: rgba(78,205,196,0.12); border-color: rgba(78,205,196,0.22); }
+.legend-pill.filter { color: rgba(224,247,242,0.9); background: rgba(var(--color-primary-rgb), 0.12); border-color: rgba(var(--color-primary-rgb), 0.22); }
 .legend-count { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.5); }
 .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(255,255,255,0.025); }
 
@@ -654,7 +657,7 @@ body:has(.info-panel.active) .panel-toggle {
 
     .mode-grid .mode-chip:focus-visible,
     .mode-grid .mode-chip:focus {
-        outline: 2px solid rgba(78, 205, 196, 0.8);
+        outline: 2px solid var(--color-primary-ring);
         outline-offset: 2px;
     }
 
@@ -677,10 +680,10 @@ body:has(.info-panel.active) .panel-toggle {
        trailDepth >= 1 means Trail is enabled and actively guiding the user.
        It should feel visually locked-in, not just technically active. */
     .mode-grid .mode-chip.is-locked {
-        background: rgba(78, 205, 196, 0.18);
-        border-color: rgba(78, 205, 196, 0.55);
+        background: rgba(82, 229, 215, 0.18);
+        border-color: rgba(82, 229, 215, 0.55);
         color: rgba(201, 255, 248, 0.98);
-        box-shadow: 0 0 0 1px rgba(78, 205, 196, 0.25), 0 0 12px rgba(78, 205, 196, 0.15);
+        box-shadow: 0 0 0 1px rgba(82, 229, 215, 0.25), 0 0 12px rgba(82, 229, 215, 0.15);
     }
 
     .mode-grid .mode-chip.is-locked .mode-name {
@@ -695,10 +698,10 @@ body:has(.info-panel.active) .panel-toggle {
 
     /* Story chip active state (mirrors inline style in vector-explorer-polished.html) */
     .story-chip.active {
-        background: rgba(78, 205, 196, 0.18);
-        border-color: rgba(78, 205, 196, 0.55);
+        background: rgba(82, 229, 215, 0.18);
+        border-color: rgba(82, 229, 215, 0.55);
         color: rgba(201, 255, 248, 0.98);
-        box-shadow: 0 0 0 1px rgba(78, 205, 196, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        box-shadow: 0 0 0 1px rgba(82, 229, 215, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
 
     /* Mode chip text hierarchy */

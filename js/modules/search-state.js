@@ -574,6 +574,7 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
         }
 
         if (typeof window.syncSearchStatusForFocus === 'function') window.syncSearchStatusForFocus(point, { fromSearchResult: true });
+        if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
         if (typeof window.settleCompactSearchFocusCard === 'function') window.settleCompactSearchFocusCard();
 
         // Fix 3: switch back to galaxy view after focus completes (map view search result click)
@@ -818,6 +819,9 @@ export function activateSearchGlow(resultIndices, anchorIndex) {
     state.searchGlowActive = true;
     state.searchGlowIndices = new Set(resultIndices || []);
     state.searchGlowTopIndex = anchorIndex;
+    if (document.body?.dataset) {
+        document.body.dataset.searchGlow = 'active';
+    }
     if (typeof window.refreshHoverSemanticOverlay === 'function') window.refreshHoverSemanticOverlay();
 }
 
@@ -825,6 +829,9 @@ export function clearSearchGlow() {
     state.searchGlowActive = false;
     state.searchGlowIndices = new Set();
     state.searchGlowTopIndex = null;
+    if (document.body?.dataset) {
+        document.body.dataset.searchGlow = 'inactive';
+    }
 }
 
 // === Restore preview ===

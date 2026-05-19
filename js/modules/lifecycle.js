@@ -23,7 +23,12 @@ import {
     getSceneRevealProgress,
     onWindowResize
 } from './scene-reveal.js';
-import { clearClusterFilter, updateClusterList, getFilteredClusterCounts } from './cluster-filter.js';
+import {
+    clearClusterFilter,
+    updateClusterList,
+    getFilteredClusterCounts,
+    setClusterFilter
+} from './cluster-filter.js';
 import {
     fetchSemanticLaneHealth,
     applySemanticLaneHealthPayload,

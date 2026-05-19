@@ -22,7 +22,7 @@ function getFilteredClusterCounts() {
     return counts;
 }
 
-function setClusterFilter(cluster) {
+export function setClusterFilter(cluster) {
     const nextCluster = Number.isFinite(cluster) ? cluster : null;
     if (state.currentSearchSummary) {
         const resultsEl = document.getElementById('search-results');

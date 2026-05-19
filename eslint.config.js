@@ -67,6 +67,7 @@ export default [
                 AbortSignal: 'readonly',
                 location: 'readonly',
                 history: 'readonly',
+                crypto: 'readonly',
                 ORBIT_MAX_DISTANCE_DEFAULT: 'readonly',
                 ORBIT_ROTATE_SPEED_DEFAULT: 'readonly',
                 ORBIT_PAN_SPEED_DEFAULT: 'readonly',

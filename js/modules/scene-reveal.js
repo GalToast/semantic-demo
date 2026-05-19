@@ -1,9 +1,16 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
 
+export function setSceneRevealDataset(active) {
+    if (typeof document !== 'undefined' && document.body?.dataset) {
+        document.body.dataset.sceneReveal = active ? 'active' : 'inactive';
+    }
+}
+
 export function startSceneReveal() {
     if (!state.camera || state.currentView !== 'galaxy') return;
     state.sceneRevealActive = true;
+    setSceneRevealDataset(true);
     state.sceneRevealStartedAt = performance.now();
     state.sceneRevealCameraEnd = state.camera.position.clone();
 
@@ -23,6 +30,8 @@ export function getSceneRevealProgress(frameNow) {
         && typeof window.matchMedia === 'function'
         && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReduced) {
+        setSceneRevealDataset(false);
+        state.sceneRevealActive = false;
         return 1.0;
     }
     const elapsed = frameNow - state.sceneRevealStartedAt;

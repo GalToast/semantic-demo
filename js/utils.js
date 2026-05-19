@@ -623,33 +623,33 @@ export function createSporeTexture(THREE) {
     ctx.clearRect(0, 0, 96, 96);
 
     const aura = ctx.createRadialGradient(47, 48, 4, 48, 48, 47);
-    aura.addColorStop(0, 'rgba(255,255,246,1)');
-    aura.addColorStop(0.18, 'rgba(238,255,244,0.96)');
-    aura.addColorStop(0.42, 'rgba(147,239,221,0.68)');
-    aura.addColorStop(0.68, 'rgba(255,230,142,0.18)');
+    aura.addColorStop(0, 'rgba(246,255,250,0.98)');
+    aura.addColorStop(0.15, 'rgba(207,255,243,0.86)');
+    aura.addColorStop(0.38, 'rgba(116,230,213,0.56)');
+    aura.addColorStop(0.68, 'rgba(255,224,134,0.16)');
     aura.addColorStop(1, 'rgba(124,231,221,0)');
     ctx.fillStyle = aura;
     ctx.fillRect(0, 0, 96, 96);
 
-    ctx.globalCompositeOperation = 'screen';
+    ctx.globalCompositeOperation = 'source-over';
     const core = ctx.createRadialGradient(38, 35, 1, 46, 46, 23);
-    core.addColorStop(0, 'rgba(255,255,255,0.98)');
-    core.addColorStop(0.34, 'rgba(255,251,211,0.7)');
+    core.addColorStop(0, 'rgba(255,255,246,0.82)');
+    core.addColorStop(0.28, 'rgba(255,247,196,0.5)');
     core.addColorStop(1, 'rgba(255,251,211,0)');
     ctx.fillStyle = core;
     ctx.fillRect(0, 0, 96, 96);
 
     ctx.beginPath();
     ctx.arc(48, 48, 20, -0.42, Math.PI * 1.48);
-    ctx.strokeStyle = 'rgba(255,250,204,0.32)';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255,246,194,0.3)';
+    ctx.lineWidth = 1.6;
     ctx.stroke();
 
     ctx.beginPath();
     ctx.arc(36, 34, 4.5, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.72)';
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = 'rgba(124,231,221,0.62)';
+    ctx.fillStyle = 'rgba(255,255,246,0.62)';
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = 'rgba(124,231,221,0.5)';
     ctx.fill();
     ctx.globalCompositeOperation = 'source-over';
     ctx.shadowBlur = 0;

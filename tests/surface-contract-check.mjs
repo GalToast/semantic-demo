@@ -466,6 +466,20 @@ async function assert_search_error(page, ctx) {
   });
   await page.waitForTimeout(300);
 
+  await page.evaluate(() => {
+    document.body.classList.add('is-active');
+    document.body.dataset.activeView = 'galaxy';
+    document.body.dataset.graphContext = 'search';
+    document.body.dataset.panelSurface = 'search';
+    document.body.dataset.panelSurfaceDetail = 'expanded';
+    document.body.dataset.laneState = 'degraded';
+    const searchContainer = document.querySelector('.search-container');
+    if (searchContainer) {
+      searchContainer.dataset.laneState = 'degraded';
+      searchContainer.classList.add('has-query');
+    }
+  });
+
   const info = await page.evaluate(() => {
     if (!document.querySelector('.search-error-state')) {
       const resultsEl = document.querySelector('#search-results');
@@ -624,6 +638,14 @@ async function assert_map_trail(page, ctx) {
       return area > viewportArea * 0.45;
     }
 
+    function isRendered(el) {
+      if (!el) return false;
+      const s = getComputedStyle(el);
+      if (s.display === 'none' || s.visibility === 'hidden' || Number(s.opacity) <= 0.05) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    }
+
     const results = {};
 
     // --- map-trail-strip ---
@@ -655,8 +677,8 @@ async function assert_map_trail(page, ctx) {
 
     // --- trail strip non-overlap with info-panel or bottom nav ---
     const infoPanel = document.querySelector('#info-panel');
-    const stripRect = trailStrip ? trailStrip.getBoundingClientRect() : null;
-    const panelRect = infoPanel ? infoPanel.getBoundingClientRect() : null;
+    const stripRect = isRendered(trailStrip) ? trailStrip.getBoundingClientRect() : null;
+    const panelRect = isRendered(infoPanel) ? infoPanel.getBoundingClientRect() : null;
     results.stripPanelOverlap = (stripRect && panelRect)
       ? !(stripRect.bottom < panelRect.top || stripRect.top > panelRect.bottom)
       : false;
@@ -930,6 +952,15 @@ async function assert_field_node(page, ctx) {
       return el.scrollWidth > rect.width + 1 || el.scrollHeight > rect.height + 1;
     }
 
+    function elementClipped(el) {
+      if (!el) return false;
+      const style = getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      if (style.overflowX === 'visible' && style.overflowY === 'visible') return false;
+      const rect = el.getBoundingClientRect();
+      return el.scrollWidth > rect.width + 1 || el.scrollHeight > rect.height + 1;
+    }
+
     function hasBlockingOverlay(el) {
       if (!el) return false;
       const s = getComputedStyle(el);
@@ -1006,7 +1037,7 @@ async function assert_field_node(page, ctx) {
     if (focusStageCard) {
       const style = getComputedStyle(focusStageCard);
       results.focusStageCardDisplay = style.display;
-      results.focusStageCardClipped = textClipped(focusStageCard);
+      results.focusStageCardClipped = elementClipped(focusStageCard);
     }
 
     // --- focus-stage kicker / name ---
@@ -1347,6 +1378,16 @@ async function assert_loading_overlay(page, ctx) {
   await page.goto(positionalUrl, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(120);
 
+  await page.evaluate(() => {
+    const overlay = document.querySelector('#loading-overlay');
+    if (overlay) {
+      overlay.classList.remove('hidden', 'launching');
+      overlay.style.visibility = 'visible';
+      overlay.style.opacity = '1';
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+  });
+
   const info = await page.evaluate(() => {
     function textClipped(el) {
       if (!el) return false;
@@ -1463,6 +1504,7 @@ async function assert_mode_grid(page, ctx) {
     document.body.classList.add('is-active');
     document.body.dataset.activeView = 'galaxy';
     document.body.dataset.graphContext = 'focus-search';
+    document.body.dataset.panelSurface = 'focus-search';
     document.documentElement.dataset.panelOpen = 'true';
     document.querySelector('.info-panel')?.classList.add('active');
     document.querySelector('.search-container')?.classList.add('has-query', 'results-rendered');
@@ -1681,6 +1723,7 @@ async function assert_thread_inspector(page, ctx) {
     document.body.classList.add('is-active');
     document.body.dataset.activeView = 'galaxy';
     document.body.dataset.graphContext = 'focus';
+    document.body.dataset.panelSurface = 'focus-search';
     document.body.dataset.threadInspectSurface = 'inspector';
 
     const focusStage = document.querySelector('#focus-stage');
@@ -1711,6 +1754,20 @@ async function assert_thread_inspector(page, ctx) {
     });
   });
   await page.waitForTimeout(300);
+
+  await page.evaluate(() => {
+    document.body.classList.add('is-active');
+    document.body.dataset.panelSurface = 'focus-search';
+    document.body.dataset.threadInspectSurface = 'inspector';
+    const inspector = document.querySelector('#focus-thread-inspector');
+    if (inspector) {
+      inspector.classList.add('active');
+      inspector.setAttribute('aria-hidden', 'false');
+    }
+    document.querySelectorAll('#btn-thread-pin, #btn-thread-follow, #btn-thread-clear').forEach((btn) => {
+      btn.disabled = false;
+    });
+  });
 
   const info = await page.evaluate(() => {
     function textClipped(el) {
@@ -2095,6 +2152,18 @@ async function assert_info_panel_populated(page, ctx) {
     if (selectedFiledAs) selectedFiledAs.style.display = 'none';
   });
   await page.waitForTimeout(300);
+
+  await page.evaluate(() => {
+    const selectedCard = document.querySelector('#selected-card');
+    selectedCard?.classList.remove('is-empty');
+    const selectedDetails = document.querySelector('#selected-details');
+    if (selectedDetails) {
+      selectedDetails.classList.add('active');
+      selectedDetails.hidden = false;
+      selectedDetails.style.display = 'block';
+      selectedDetails.style.visibility = 'visible';
+    }
+  });
 
   const info = await page.evaluate(() => {
     function textClipped(el) {

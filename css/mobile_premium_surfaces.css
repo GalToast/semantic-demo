@@ -141,6 +141,40 @@ html body.is-active #selected-details.active {
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     }
 
+    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-action[data-journey-action] {
+        font-size: 0;
+        letter-spacing: 0;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-action[data-journey-action]::before {
+        font-size: 10.5px;
+        line-height: 1;
+        letter-spacing: 0.02em;
+        text-transform: none;
+        white-space: nowrap;
+    }
+
+    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-action[data-journey-action="center-anchor"]::before {
+        content: 'Center';
+    }
+
+    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-action[data-journey-action="next-stop"]::before {
+        content: 'Next';
+    }
+
+    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-action[data-journey-action="open-map"]::before {
+        content: 'Map';
+    }
+
+    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-action[data-journey-action="search-field"]::before {
+        content: 'Search';
+    }
+
+    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-action[data-journey-action="focus-search"]::before {
+        content: 'Search';
+    }
+
     html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-action.primary {
         background: linear-gradient(180deg, rgba(78, 205, 196, 0.2), rgba(78, 205, 196, 0.08));
         border-color: rgba(78, 205, 196, 0.35);
@@ -157,6 +191,39 @@ html body.is-active #selected-details.active {
     html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-note,
     html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-rail {
         display: none;
+    }
+
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) .journey-compass-title {
+        min-width: 0;
+        font-size: 11.5px;
+        line-height: 1.15;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) #btn-share-view {
+        display: none;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"] #mode-grid .mode-chip,
+    html body.is-active[data-panel-surface="semantic-dive"] #mode-grid .mode-chip {
+        display: none;
+    }
+
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .search-container.has-query .search-error-retry-btn,
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .search-container.has-query .search-error-dismiss-btn {
+        min-height: 44px;
+    }
+
+    html body[data-panel-surface="search"] .focus-stage-dive-btn,
+    html body.is-active[data-panel-surface="search"] .focus-stage-dive-btn {
+        display: none;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"] .focus-stage-dive-btn,
+    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-dive-btn {
+        min-height: 44px;
     }
 
     /* ============================================================
@@ -255,6 +322,7 @@ html body.is-active #selected-details.active {
     .focus-stage-action-btn,
     .focus-stage-dive-btn,
     .focus-stage-journey-btn,
+    .focus-thread-inspector-btn,
     .action-btn {
         appearance: none;
         -webkit-appearance: none;
@@ -310,6 +378,27 @@ html body.is-active #selected-details.active {
         box-shadow: 0 6px 20px rgba(78, 205, 196, 0.3);
     }
 
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) .focus-stage-dive-btn {
+        display: none;
+    }
+
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-thread-inspector-btn {
+        min-height: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .focus-thread-inspector.active .focus-thread-inspector-btn {
+        min-width: 44px;
+        min-height: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     /* Trail/Journey Navigation (The 'Rough' one) */
     html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) #trail-controls,
     html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-journey.active {
@@ -322,6 +411,23 @@ html body.is-active #selected-details.active {
         background: rgba(255, 255, 255, 0.03);
         border: 1px solid rgba(255, 255, 255, 0.06);
         height: auto;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-kicker,
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-name,
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-filed,
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-what,
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-meta,
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-note,
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-dive-btn,
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-neighbors,
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] #trail-controls {
+        display: none;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-journey.active {
+        margin: 0 10px 12px;
+        width: auto;
     }
 
     .action-btn,
@@ -343,7 +449,7 @@ html body.is-active #selected-details.active {
     html body[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass,
     html body[data-focus-panel-mode="field-node"] .journey-compass {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(118px, 36vw);
+        grid-template-columns: minmax(0, 1fr) minmax(154px, 42vw);
         align-items: center;
         gap: 7px;
     }
@@ -376,18 +482,46 @@ html body.is-active #selected-details.active {
         justify-content: stretch;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-action.action-btn,
-    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-action.action-btn,
-    html body[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass-action.action-btn,
-    html body[data-focus-panel-mode="field-node"] .journey-compass-action.action-btn {
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-action,
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-action,
+    html body[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass-action,
+    html body[data-focus-panel-mode="field-node"] .journey-compass-action {
         width: auto;
         min-width: 0;
-        height: 34px;
-        min-height: 34px;
+        height: 44px;
+        min-height: 44px;
         padding: 0 7px;
         border-radius: 999px;
-        font-size: 7.2px;
-        letter-spacing: 0.07em;
+        font-size: 0;
+        letter-spacing: 0;
+        overflow: hidden;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-action::before,
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-action::before,
+    html body[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass-action::before,
+    html body[data-focus-panel-mode="field-node"] .journey-compass-action::before {
+        font-size: 10.5px;
+        line-height: 1;
+        letter-spacing: 0.02em;
+        text-transform: none;
+        white-space: nowrap;
+    }
+
+    html body[data-focus-panel-mode="field-node"] .journey-compass-action[data-journey-action="center-anchor"]::before {
+        content: 'Center';
+    }
+
+    html body[data-focus-panel-mode="field-node"] .journey-compass-action[data-journey-action="next-stop"]::before {
+        content: 'Next';
+    }
+
+    html body[data-focus-panel-mode="field-node"] .journey-compass-action[data-journey-action="open-map"]::before {
+        content: 'Map';
+    }
+
+    html body[data-focus-panel-mode="field-node"] .journey-compass-action[data-journey-action="search-field"]::before {
+        content: 'Search';
     }
 
     html body.is-active[data-panel-surface="idle"]:not([data-panel-surface^="map-"]) .journey-compass {
@@ -409,13 +543,38 @@ html body.is-active #selected-details.active {
         padding-left: 0;
     }
 
+    html body.is-active[data-panel-surface="idle"]:not([data-panel-surface^="map-"]) .journey-compass-action,
     html body.is-active[data-panel-surface="idle"]:not([data-panel-surface^="map-"]) .journey-compass-action.action-btn {
         width: auto;
         min-width: 0;
         height: 34px;
         padding: 0 7px;
-        font-size: 8.5px;
-        letter-spacing: 0.08em;
+        font-size: 0;
+        letter-spacing: 0;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    html body.is-active[data-panel-surface="idle"]:not([data-panel-surface^="map-"]) .journey-compass-action::before,
+    html body.is-active[data-panel-surface="idle"]:not([data-panel-surface^="map-"]) .journey-compass-action.action-btn::before {
+        font-size: 10.5px;
+        line-height: 1;
+        letter-spacing: 0.02em;
+        text-transform: none;
+        white-space: nowrap;
+    }
+
+    html body.is-active[data-panel-surface="idle"] .search-container {
+        position: relative;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        box-sizing: border-box;
+        transform: none;
     }
 
     /* Progress Indicators */
