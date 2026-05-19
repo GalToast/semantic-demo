@@ -74,6 +74,8 @@ assertImportShell('css/mobile_premium.css', [
   'mobile_premium_focus.css',
   'mobile_premium_chrome.css',
   'mobile_premium_state.css',
+  'mobile_premium_idle.css',
+  'mobile_premium_surfaces.css',
 ]);
 
 const shellHtml = read('vector-explorer-polished.html');

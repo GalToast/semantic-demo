@@ -61,7 +61,7 @@ html body.is-active #selected-details.active {
     }
 
     html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-kicker {
-        display: flex !important;
+        display: flex;
         align-items: center;
         gap: 6px;
         font-family: var(--font-mono, 'JetBrains Mono', monospace);
@@ -95,6 +95,12 @@ html body.is-active #selected-details.active {
     @keyframes statusPulseRapid {
         0%, 100% { transform: scale(1); opacity: 1; }
         50% { transform: scale(1.4); opacity: 0.6; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        body.searching .journey-compass-kicker::before {
+            animation: none;
+        }
     }
 
     html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-title {
@@ -150,7 +156,7 @@ html body.is-active #selected-details.active {
 
     html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-note,
     html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-rail {
-        display: none !important;
+        display: none;
     }
 
     /* ============================================================
@@ -177,6 +183,7 @@ html body.is-active #selected-details.active {
         box-shadow: var(--shadow-glass) !important;
         padding: 0 !important;
         margin: 0 !important;
+        transform: none;
         transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
         z-index: 90;
     }

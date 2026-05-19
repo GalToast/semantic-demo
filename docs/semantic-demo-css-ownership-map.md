@@ -37,6 +37,8 @@ The module order below is the cascade order. The first reconstruction preserved 
 | `css/mobile_premium_focus.css` | Final mobile focus-search and semantic-dive composition. |
 | `css/mobile_premium_chrome.css` | Final mobile search drawer, filter/chrome, and map-control polish. |
 | `css/mobile_premium_state.css` | Final mobile idle, focus-search refinement, and map-view state ownership. |
+| `css/mobile_premium_idle.css` | Final narrow idle-state corrections. |
+| `css/mobile_premium_surfaces.css` | Final mobile bottom-sheet and surface geometry corrections. |
 
 ## Mobile Search And Result Drawer
 
@@ -53,7 +55,7 @@ Rules:
 
 - Edit the labeled owner block in `css/mobile_base.css` first for mobile search/result drawer layout, density, count, expanded-results, result-card polish, route-peek suppression, and summary CTA mobile behavior.
 - Use supporting modules only when changing shared/base behavior. Do not add another late mobile override in an unrelated module until the owner block cannot safely express the state.
-- Preserve these state contracts: `.has-query`, `.results-rendered`, `.has-expanded-results`, `#search-results.active`, `#search-results.is-expanded`, `data-mobile-route-peek`, `data-graph-context="search"`, `data-graph-context="focus-search"`, `data-active-view="map"`, and `data-semantic-dive`.
+- Preserve these state contracts: `.has-query`, `.results-rendered`, `.has-expanded-results`, `#search-results.active`, `#search-results.is-expanded`, `data-mobile-route-peek`, `data-panel-surface="search"`, `data-panel-surface="focus-search"`, `data-active-view="map"`, and transition-only `data-semantic-dive`.
 
 ## Mobile Focus And Step Inside
 
@@ -62,7 +64,7 @@ Owner seam: `mobile-focus-stepinside`
 Primary source:
 
 - Markup: `vector-explorer-polished.html`, `.focus-stage`, `.focus-stage-card`, `.focus-stage-inside-status`, `.focus-stage-inside-controls`
-- State: `data-semantic-dive="active"`, `data-semantic-dive="transitioning"`, `data-graph-context="focus"`, `data-graph-context="focus-search"`
+- State: `data-panel-surface="focus"`, `data-panel-surface="focus-search"`, `data-panel-surface="semantic-dive"`, and transition-only `data-semantic-dive="transitioning"`
 - Current cascade owner: `css/mobile_base.css`, section `CSS OWNER: mobile-focus-stepinside`
 - Supporting styles: `css/journey_steps.css`, `css/strands.css`, `css/progressive_disclosure.css`, `css/shell.css`
 

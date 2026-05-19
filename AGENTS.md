@@ -1,4 +1,4 @@
-# Agents - semantic-demo (mccullough.cloud/semantic-demo)
+# Agents - Semantic Explorer
 
 ## Project Overview
 3D semantic mycelium visualization for exploring Montgomery County TX business relationships.
@@ -60,5 +60,5 @@ npm run test:microdemo   # Micro-demo verification
 ## Edit Safety
 - Keep edits inside the assigned slice; do not opportunistically reformat or clean unrelated files.
 - Treat `js/state.js`, `js/modules/app.js`, `js/modules/journey.js`, `js/modules/lifecycle.js`, and deploy scripts as high-risk surfaces that need explicit ownership and targeted tests.
-- CSS is split into 17 ordered modules in `css/`; the root `semantic-demo.css` is an import manifest.
+- CSS is split into ordered modules in `css/`; the root `semantic-demo.css` and `css/mobile_premium.css` are import manifests.
 - Do not move the app root until `deploy.sh` and `deploy.ps1` no longer depend on the sibling `../js/scanner.js` path.

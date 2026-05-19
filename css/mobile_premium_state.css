@@ -1,5 +1,5 @@
 /* ================================================================
-   Mobile state ownership — idle panel, focus-search refinement,
+   Mobile state ownership - idle panel, focus-search refinement,
    and map-view compass.
    ================================================================ */
 @media (max-width: 768px) {
@@ -278,28 +278,29 @@
     }
 
     /* ----------------------------------------------------------------
-       5. Map view — hide non-map chrome + compass
+       5. Map view - hide non-map chrome + compass
        ---------------------------------------------------------------- */
     html body.is-active[data-panel-surface^="map-"] .weather-widget,
     html body.is-active[data-panel-surface^="map-"] .time-display {
         display: none;
     }
 
-    /* SD-143: Restore mobile search in Map mode */
+    /* SD-143: Restore mobile search in Map mode. layout_base sets top/bottom/left/right
+       positioning for map panels; this block handles visibility/display overrides. */
     html body.is-active[data-panel-surface^="map-"] .info-panel {
-        display: block !important; /* Override layout_base/strands */
-        visibility: visible !important;
+        display: block; /* selector specificity already exceeds layout_base:761 */
+        visibility: visible; /* no competing visibility rule in layout/strands */
         pointer-events: none;
         background: none;
         border: none;
         box-shadow: none;
-        transform: none !important;
-        opacity: 1 !important;
+        transform: none; /* overrides layout_base collapsed state through normal cascade */
+        opacity: 1; /* overrides layout_base collapsed state through normal cascade */
     }
 
     html body.is-active[data-panel-surface^="map-"] .search-container {
-        display: block !important;
-        visibility: visible !important;
+        display: block; /* selector specificity already exceeds layout_base:455-485 */
+        visibility: visible; /* no competing visibility rule in layout/strands */
         pointer-events: auto;
         background: var(--glass-bg);
         backdrop-filter: blur(var(--glass-blur));
@@ -314,7 +315,7 @@
     html body.is-active[data-panel-surface^="map-"] .stats-row,
     html body.is-active[data-panel-surface^="map-"] .demo-starters,
     html body.is-active[data-panel-surface^="map-"] .selected-card {
-        display: none !important;
+        display: none; /* specificity already exceeds layout/strands content rules */
     }
 
     html body.is-active[data-panel-surface^="map-"] .journey-compass {
