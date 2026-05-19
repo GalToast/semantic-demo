@@ -583,7 +583,7 @@ body[data-active-view="map"] .onboarding-hint {
         right: 14px;
         display: flex;
         flex-direction: column;
-        width: 52px;
+        width: 60px;
         height: auto;
         gap: 8px;
         padding: 8px;
@@ -597,8 +597,10 @@ body[data-active-view="map"] .onboarding-hint {
     }
 
     html body[data-panel-surface] .controls .control-btn {
-        width: 36px;
-        height: 36px;
+        width: var(--mobile-touch-min, 44px);
+        height: var(--mobile-touch-min, 44px);
+        min-width: var(--mobile-touch-min, 44px);
+        min-height: var(--mobile-touch-min, 44px);
         display: flex;
         align-items: center;
         justify-content: center;

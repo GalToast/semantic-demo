@@ -2252,7 +2252,8 @@ const SURFACES = {
 //      meet >= 44px touch target where they are visible
 //   3. no overlap between active top/global controls (journey-compass) and
 //      primary panel surfaces (info-panel, selected-card, search-container)
-//   4. no clipped labels in focus-stage, search-chrome, and selected-card
+//   4. primary panels stay within viewport and below sane height ratios
+//   5. no clipped labels in focus-stage, search-chrome, and selected-card
 //      surfaces when they are visible
 // ---------------------------------------------------------------------------
 
@@ -2278,10 +2279,35 @@ async function assert_global_spacing(page, ctx) {
         r.top < window.innerHeight && r.left < window.innerWidth;
     }
 
+    function isInteractiveVisible(el) {
+      if (!isVisible(el)) return false;
+      const style = getComputedStyle(el);
+      return Number(style.opacity || 1) > 0.05 && style.pointerEvents !== 'none';
+    }
+
     function rectsOverlap(r1, r2) {
       if (!r1 || !r2) return false;
       return !(r1.bottom < r2.top || r1.top > r2.bottom ||
                r1.right < r2.left || r1.left > r2.right);
+    }
+
+    function panelMetric(selector, maxHeightRatio) {
+      const el = document.querySelector(selector);
+      if (!el || !isVisible(el)) return null;
+      const r = el.getBoundingClientRect();
+      return {
+        selector,
+        width: Math.round(r.width * 10) / 10,
+        height: Math.round(r.height * 10) / 10,
+        heightRatio: Math.round((r.height / window.innerHeight) * 1000) / 1000,
+        maxHeightRatio,
+        withinViewport:
+          r.left >= -1 &&
+          r.right <= window.innerWidth + 1 &&
+          r.top >= -1 &&
+          r.bottom <= window.innerHeight + 1,
+        saneHeight: r.height <= window.innerHeight * maxHeightRatio,
+      };
     }
 
     const results = {};
@@ -2302,7 +2328,7 @@ async function assert_global_spacing(page, ctx) {
 
     const interactiveEls = Array.from(document.querySelectorAll(
       interactiveSelectors.join(',')
-    )).filter(isVisible);
+    )).filter(isInteractiveVisible);
 
     results.interactiveCount = interactiveEls.length;
     results.touchTargetResults = interactiveEls.map((el) => {
@@ -2342,7 +2368,15 @@ async function assert_global_spacing(page, ctx) {
     results.compassSearchContainerOverlap = compassRect && searchContainerRect
       ? rectsOverlap(compassRect, searchContainerRect) : false;
 
-    // --- 4. label clipping in selected / chrome / focus surfaces ---
+    // --- 4. panel proportions and viewport fit ---
+    results.panelMetrics = [
+      panelMetric('#info-panel', 0.62),
+      panelMetric('#selected-card', 0.52),
+      panelMetric('.focus-stage-card', 0.62),
+      panelMetric('.map-trail-strip', 0.2),
+    ].filter(Boolean);
+
+    // --- 5. label clipping in selected / chrome / focus surfaces ---
     const focusStageName = document.querySelector('.focus-stage-name');
     results.focusStageNameClipped = focusStageName ? textClipped(focusStageName) : null;
 
@@ -2408,7 +2442,33 @@ async function assert_global_spacing(page, ctx) {
     ctx.pass('global-spacing', 'layout-overlap:compass-visible-skipped');
   }
 
-  // --- 4. label clipping ---
+  // --- 4. panel proportions and viewport fit ---
+  if (Array.isArray(info.panelMetrics) && info.panelMetrics.length) {
+    const viewportFailures = info.panelMetrics.filter((panel) => !panel.withinViewport);
+    const heightFailures = info.panelMetrics.filter((panel) => !panel.saneHeight);
+    if (viewportFailures.length) {
+      ctx.fail(
+        'global-spacing',
+        'panel-proportion:within-viewport',
+        `panel(s) outside viewport: ${viewportFailures.map((panel) => panel.selector).join(', ')}`
+      );
+    } else {
+      ctx.pass('global-spacing', 'panel-proportion:within-viewport');
+    }
+    if (heightFailures.length) {
+      ctx.fail(
+        'global-spacing',
+        'panel-proportion:max-height-ratio',
+        `panel(s) too tall: ${heightFailures.map((panel) => `${panel.selector}=${panel.heightRatio}`).join(', ')}`
+      );
+    } else {
+      ctx.pass('global-spacing', 'panel-proportion:max-height-ratio');
+    }
+  } else {
+    ctx.pass('global-spacing', 'panel-proportion:no-visible-panels');
+  }
+
+  // --- 5. label clipping ---
   if (info.focusStageNameClipped) ctx.fail('global-spacing', 'text-clipping:focus-stage-name', 'focus-stage-name text is clipped');
   else if (info.focusStageNameClipped === false) ctx.pass('global-spacing', 'text-clipping:focus-stage-name');
 
