@@ -1142,7 +1142,7 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
 
 /* polish195: compact field-node canopy HUD. Preserve identity/actions, remove the heavy two-row mobile compass slab. */
 @media (max-width: 768px) {
-    html body[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass {
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass {
         left: 16px;
         right: 16px;
         top: calc(12px + env(safe-area-inset-top, 0px));
@@ -1165,38 +1165,37 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
         -webkit-backdrop-filter: blur(12px) saturate(1.08);
     }
 
-    html body[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass::before {
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass::before {
         opacity: 0.22;
         mask: linear-gradient(90deg, transparent, #000 22%, transparent 76%);
     }
 
-    html body[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-copy {
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-copy {
         min-width: 0;
     }
 
-    html body[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-kicker {
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-kicker {
         font-size: 7.5px;
         letter-spacing: 0.18em;
         color: rgba(255, 226, 132, 0.68);
     }
 
-    html body[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-title {
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-title {
         margin-top: 1px;
         max-width: 100%;
         font-size: 12px;
         line-height: 1.05;
         white-space: nowrap;
-        overflow-y: auto;
-    overflow-x: hidden;
+        overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    html body[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-note,
-    html body[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-rail {
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-note,
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-rail {
         display: none;
     }
 
-    html body[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-actions {
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-actions {
         grid-column: auto;
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
@@ -1205,7 +1204,7 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
         min-width: 0;
     }
 
-    html body[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-action {
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-action {
         min-width: 0;
         min-height: 34px;
         padding: 0 7px;
@@ -1217,7 +1216,7 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
             rgba(4, 14, 19, 0.3);
     }
 
-    html body[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-action.primary {
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-action.primary {
         border-color: rgba(255, 226, 132, 0.22);
         background:
             radial-gradient(circle at 50% 0%, rgba(255, 226, 132, 0.13), transparent 56%),
@@ -1552,7 +1551,7 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
 }
 
 @media (max-width: 768px) {
-    html body[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass {
+    html body.is-active[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass {
         left: 16px;
         right: 16px;
         top: calc(12px + env(safe-area-inset-top, 0px));
@@ -1575,39 +1574,38 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
         -webkit-backdrop-filter: blur(12px) saturate(1.08);
     }
 
-    html body[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .view-toggle,
-    html body[data-active-view="galaxy"][data-focus-panel-mode="field-node"] #btn-legend {
+    html body.is-active[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .view-toggle,
+    html body.is-active[data-active-view="galaxy"][data-focus-panel-mode="field-node"] #btn-legend {
         display: none;
     }
 
-    html body[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass::before {
+    html body.is-active[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass::before {
         opacity: 0.22;
         mask: linear-gradient(90deg, transparent, #000 22%, transparent 76%);
     }
 
-    html body[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass-kicker {
+    html body.is-active[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass-kicker {
         font-size: 7.5px;
         letter-spacing: 0.18em;
         color: rgba(255, 226, 132, 0.68);
     }
 
-    html body[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass-title {
+    html body.is-active[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass-title {
         margin-top: 1px;
         max-width: 100%;
         font-size: 12px;
         line-height: 1.05;
         white-space: nowrap;
-        overflow-y: auto;
-    overflow-x: hidden;
+        overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    html body[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass-note,
-    html body[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass-rail {
+    html body.is-active[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass-note,
+    html body.is-active[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass-rail {
         display: none;
     }
 
-    html body[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass-actions {
+    html body.is-active[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass-actions {
         grid-column: auto;
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
@@ -1616,7 +1614,7 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
         min-width: 0;
     }
 
-    html body[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass-action {
+    html body.is-active[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass-action {
         min-width: 0;
         min-height: 34px;
         padding: 0 7px;
