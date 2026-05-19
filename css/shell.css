@@ -229,57 +229,6 @@ body[data-trail-depth="2"] #canvas-container::after {
         radial-gradient(circle at 50% 50%, rgba(5, 18, 23, 0.28) 0%, rgba(5, 18, 23, 0.12) 38%, transparent 66%);
 }
 
-/* polish208: mobile cockpit thumb targets without expanding the field overlay. */
-@media (max-width: 768px) {
-    html body[data-active-view="galaxy"] .journey-compass-action {
-        min-height: 45px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0 14px;
-        touch-action: manipulation;
-    }
-
-    html body[data-active-view="galaxy"] .journey-compass-action[hidden] {
-        display: none;
-    }
-
-    html body[data-panel-surface="focus-search"] .journey-compass-actions {
-        gap: 8px;
-    }
-
-    html body[data-panel-surface="focus-search"] .journey-compass-action {
-        min-height: 45px;
-        font-size: 7.5px;
-    }
-
-    html body[data-panel-surface="focus-search"] .focus-stage-journey.active {
-        grid-template-columns: minmax(0, 1fr) minmax(56px, 0.22fr);
-        gap: 7px;
-    }
-
-    html body[data-panel-surface="focus-search"] #btn-focus-next,
-    html body[data-panel-surface="focus-search"] #btn-focus-prev {
-        min-width: 56px;
-        min-height: 48px;
-        touch-action: manipulation;
-    }
-
-    html body[data-panel-surface="semantic-dive"] .focus-stage-inside-controls {
-        gap: 8px;
-        align-items: stretch;
-    }
-
-    html body[data-panel-surface="semantic-dive"] .focus-stage-inside-btn {
-        min-height: 44px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0 12px;
-        touch-action: manipulation;
-    }
-}
-
 #map-container {
     z-index: 2;
     opacity: 0;

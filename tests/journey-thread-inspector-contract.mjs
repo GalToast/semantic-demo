@@ -220,9 +220,9 @@ function testThreadInspectorSemanticFirst() {
   // journey.js must import from journey-thread-model.js, not thread-inspector.js
   assertContains(journeySrc, "from './journey-thread-model.js'", 'journey.js imports from journey-thread-model.js');
 
-  // thread-inspector.js must import from journey-thread-model.js (for normalizeLeadId etc.)
-  const threadInspectorImport = threadInspectorSrc.split('\n').find(l => l.includes("import") && l.includes("journey-thread-model"));
-  // Not required for thread-inspector.js to import journey-thread-model - it has its own copies
+  // thread-inspector.js must use the shared normalizeLeadId to avoid lookup drift.
+  assertContains(threadInspectorSrc, "import { normalizeLeadId } from './journey-thread-model.js';", 'thread-inspector imports shared normalizeLeadId');
+  assertNotContains(threadInspectorSrc, 'function normalizeLeadId(', 'thread-inspector local normalizeLeadId removed');
 
   // thread-inspector.js must expose functions on window._ti
   assertContains(threadInspectorSrc, 'window._ti = {', 'window._ti exposed on thread-inspector');
@@ -243,6 +243,58 @@ function testThreadInspectorSemanticFirst() {
 }
 
 // ---------------------------------------------------------------------------
+// TEST 7: journey-text-helpers extraction
+// ---------------------------------------------------------------------------
+
+function testJourneyTextHelpersExtraction() {
+  console.log('\n[TEST] journey-text-helpers extraction');
+
+  const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const jthSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/journey-text-helpers.js'), 'utf-8');
+
+  // journey.js must import from journey-text-helpers.js
+  assertContains(journeySrc, "from './journey-text-helpers.js'", 'journey.js imports journey-text-helpers');
+
+  // journey.js must NOT contain inline truncateMicrocopy definition
+  assertNotContains(journeySrc, 'function truncateMicrocopy(text, max = 74)', 'truncateMicrocopy inline removed');
+
+  // journey.js must NOT contain inline getSharedTrailTopicLabel definition
+  assertNotContains(journeySrc, 'function getSharedTrailTopicLabel(', 'getSharedTrailTopicLabel inline removed');
+
+  // journey-text-helpers.js must export truncateMicrocopy
+  assertContains(jthSrc, 'export function truncateMicrocopy', 'journey-text-helpers exports truncateMicrocopy');
+
+  // journey-text-helpers.js must export getSharedTrailTopicLabel
+  assertContains(jthSrc, 'export function getSharedTrailTopicLabel', 'journey-text-helpers exports getSharedTrailTopicLabel');
+
+  // journey.js previously exported these helpers; the extraction must preserve that public surface.
+  const textReExport = journeySrc.match(/export\s*\{[^}]*truncateMicrocopy[^}]*getSharedTrailTopicLabel[^}]*\}\s*;/s);
+  assert(textReExport, 'journey.js re-exports journey-text-helpers public helpers');
+
+  console.log('  OK journey-text-helpers extraction verified');
+}
+
+// ---------------------------------------------------------------------------
+// TEST 8: thread-inspector-text-helpers extraction
+// ---------------------------------------------------------------------------
+
+function testThreadInspectorTextHelpersExtraction() {
+  console.log('\n[TEST] thread-inspector-text-helpers extraction');
+
+  const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
+  const helperSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector-text-helpers.js'), 'utf-8');
+
+  assertContains(threadInspectorSrc, "from './thread-inspector-text-helpers.js'", 'thread-inspector imports text helpers');
+  assertNotContains(threadInspectorSrc, 'function truncateMicrocopy(text, limit)', 'thread-inspector inline truncateMicrocopy removed');
+  assertContains(helperSrc, 'export function truncateMicrocopy', 'thread-inspector-text-helpers exports truncateMicrocopy');
+  assertNotContains(helperSrc, 'window.', 'thread-inspector-text-helpers has no window dependency');
+  assertNotContains(helperSrc, 'state.', 'thread-inspector-text-helpers has no state dependency');
+  assertNotContains(helperSrc, 'new THREE', 'thread-inspector-text-helpers has no THREE dependency');
+
+  console.log('  OK thread-inspector-text-helpers extraction verified');
+}
+
+// ---------------------------------------------------------------------------
 // MAIN
 // ---------------------------------------------------------------------------
 
@@ -259,6 +311,8 @@ function main() {
     testBuildRouteTraceMaterial();
     testGetCanvasNodePickingMode();
     testThreadInspectorSemanticFirst();
+    testJourneyTextHelpersExtraction();
+    testThreadInspectorTextHelpersExtraction();
 
     console.log('\n============================================================');
     console.log('ALL TESTS PASSED');

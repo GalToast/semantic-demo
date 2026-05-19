@@ -127,8 +127,8 @@ export function shouldRenderThreads() {
     const { currentSearchSummary } = state;
     const { focusedNode } = state;
 
-    // County overview: threads OFF (too many nodes + meaningless noise)
-    if (currentMode === 'overview' || currentMode === undefined) return false;
+    // County overview: threads ON for ambient visualization
+    if (currentMode === 'overview' || currentMode === undefined) return true;
 
     // Map view: geographic context is primary, threads are visual noise
     if (currentMode === 'map') return false;
@@ -604,6 +604,10 @@ function getThreadPulseOpacity(baseOpacity, pulse, requestedAmplitude, revealPro
 }
 
 function getMyceliumPresentationProfile() {
+    const { currentMode } = state.navState || {};
+    if (currentMode === 'overview' || currentMode === undefined) {
+        return { core: 0.0016, wispy: 0.0, bridge: 0.0006, pulse: 0.0003 };
+    }
     if (state.focusedNode !== null && state.focusedNode !== undefined) {
         return { core: 0.012, wispy: 0.0021, bridge: 0.0012, pulse: 0.0032 };
     }
@@ -1040,6 +1044,7 @@ export function createPoints() {
             varying float vNodeTwinkle;
             varying float vDepthGlow;
             varying float vFocusWake;
+            varying float vAlphaFactor;
             float hash13(vec3 p) {
                 return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453123);
             }`
@@ -1056,15 +1061,26 @@ export function createPoints() {
             vRippleFactor = (rippleWave > 0.0 && rippleWave < 1.0) ? (1.0 - rippleWave) : 0.0;`
         ).replace(
             'gl_PointSize = size;',
-            `// Fix 1: adaptive scale — 1.5x on hover, 0.7x when dense (camera distance)
-            float camDist = -transformed.z;
+            `// Adaptive scale adjusting size attenuation clamp boundary
+            float camDist = -mvPosition.z;
+            #ifdef USE_SIZEATTENUATION
+                float attenAdjust = camDist / clamp(camDist, 0.45, 6.5);
+            #else
+                float attenAdjust = 1.0;
+            #endif
+
             float densityScale = clamp(0.7 + camDist * 0.08, 0.7, 1.05);
             float hoverBoost = 1.0;
             if (uHoverBoost > 1.01) {
                 float hDist = distance(position, uHoverNodePos);
                 hoverBoost = mix(uHoverBoost, 1.0, clamp(hDist / uHoverRadius, 0.0, 1.0));
             }
-            gl_PointSize = size * hoverBoost * densityScale * (0.76 + vDepthGlow * 0.36 + vNodeTwinkle * 0.12 + vFocusWake * 1.15 + vGlowFactor * uGlowIntensity * 0.72 + vRippleFactor * 0.66);
+            gl_PointSize = size * attenAdjust * hoverBoost * densityScale * (0.76 + vDepthGlow * 0.36 + vNodeTwinkle * 0.12 + vFocusWake * 1.15 + vGlowFactor * uGlowIntensity * 0.72 + vRippleFactor * 0.66);
+
+            // Apply alpha factor to fade distant nodes into background without hiding them entirely (maintaining density)
+            float depthAlpha = clamp(1.15 - camDist * 0.14, 0.22, 1.0);
+            float intentVal = max(vFocusWake, max(vGlowFactor * uGlowIntensity, vRippleFactor));
+            vAlphaFactor = mix(depthAlpha, 1.0, clamp(intentVal, 0.0, 1.0));
 
             // 10/10 Polish: Non-linear reveal scale for 'pop-in' effect
             gl_PointSize *= pow(uRevealProgress, 0.42);`
@@ -1077,6 +1093,7 @@ export function createPoints() {
             varying float vRippleFactor;
             varying float vDepthGlow;
             varying float vFocusWake;
+            varying float vAlphaFactor;
             uniform float uGlowIntensity;`
         ).replace(
             'gl_FragColor = vec4( outgoingLight, diffuseColor.a );',
@@ -1095,7 +1112,7 @@ export function createPoints() {
                 finalColor += vec3(0.08, 0.2, 0.18) * vFocusWake;
             }
             finalColor *= (0.86 + vDepthGlow * 0.18);
-            gl_FragColor = vec4( finalColor, diffuseColor.a );
+            gl_FragColor = vec4( finalColor, diffuseColor.a * vAlphaFactor );
             `
         );
         state.pointsMaterial.userData.shader = shader;
@@ -2473,12 +2490,15 @@ export function animate() {
         const threadUpdateStart = performance.now();
 
         // 10/10 Polish: Make breathing speed weather-aware (wind drives the mycelium energy)
-        const basePulseSpeed = 0.015;
+        const prefersReduced = typeof window !== 'undefined'
+            && typeof window.matchMedia === 'function'
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const basePulseSpeed = prefersReduced ? 0.0 : 0.015;
         const windSpeed = state.weather?.wind_speed_10m ?? 8.0; // Default to gentle breeze
         const pulseIncrement = basePulseSpeed * (0.6 + (windSpeed / 15.0));
         state.pulsePhase += pulseIncrement;
 
-        const threadRevealProgress = pointsRevealProgress;
+        const threadRevealProgress = easeOutQuint(Math.min(1.0, Math.max(0.0, (pointsRevealProgress - 0.25) / 0.5)));
         const graphProfile = getMyceliumPresentationProfile();
 
         // Only pulse threads when they are visible (mode allows rendering)

@@ -92,6 +92,19 @@ async function loadAndWait(page, url) {
   await page.waitForTimeout(1800);
 }
 
+async function waitForMobileIdleChrome(page) {
+  await page.waitForFunction(() => {
+    const panel = document.querySelector('#info-panel');
+    if (!panel) return false;
+    const rect = panel.getBoundingClientRect();
+    const edgeAnchored = Math.abs(rect.left) <= 1 && Math.abs(window.innerWidth - rect.right) <= 1;
+    const bottomAnchored = Math.abs(window.innerHeight - rect.bottom) <= 1;
+    const fitsViewport = rect.width <= window.innerWidth + 1 && rect.height < window.innerHeight * 0.58;
+    const inset = rect.left >= 8 && (window.innerWidth - rect.right) >= 8;
+    return document.body?.dataset?.panelSurface === 'idle' && (inset || (edgeAnchored && bottomAnchored && fitsViewport));
+  }, { timeout: 5000 }).catch(() => {});
+}
+
 // Assertion context
 
 function makeAssert(name) {
@@ -115,6 +128,7 @@ function makeAssert(name) {
 
 async function assert_mobile_idle(page, ctx) {
   await loadAndWait(page, positionalUrl);
+  await waitForMobileIdleChrome(page);
 
   const info = await page.evaluate(() => {
     // Browser-side helpers
@@ -772,6 +786,20 @@ async function assert_focus_pocket(page, ctx) {
       return r.width >= 43.5 && r.height >= 43.5;
     }
 
+    function layoutSnapshot(el) {
+      if (!el) return null;
+      const style = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      return {
+        display: style.display,
+        gap: style.gap,
+        gridTemplateColumns: style.gridTemplateColumns,
+        width: rect.width,
+        height: rect.height,
+        visible: style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0,
+      };
+    }
+
     const results = {};
     // --- focus-stage bottom sheet ---
     const focusStage = document.querySelector('#focus-stage');
@@ -810,6 +838,9 @@ async function assert_focus_pocket(page, ctx) {
       ? getComputedStyle(journeyMeta).display !== 'none' && getComputedStyle(journeyMeta).visibility !== 'hidden'
       : null;
 
+    const focusActions = document.querySelector('.focus-stage-actions');
+    results.focusActionsLayout = layoutSnapshot(focusActions);
+
     // --- neighbor list present and not clipped ---
     const neighborList = document.querySelector('#focus-stage-neighbor-list, .focus-stage-neighbor-list');
     results.neighborListPresent = neighborList !== null;
@@ -839,6 +870,18 @@ async function assert_focus_pocket(page, ctx) {
 
   if (info.journeyMetaVisible) ctx.pass('focus-pocket', 'visibility:journey-meta');
   else if (info.journeyMetaVisible === false) ctx.pass('focus-pocket', 'visibility:journey-meta:hidden');
+
+  if (info.focusActionsLayout && info.focusActionsLayout.display !== 'grid') {
+    ctx.fail('focus-pocket', 'computed:focus-actions-display', `expected grid, got ${info.focusActionsLayout.display}`);
+  } else if (info.focusActionsLayout) {
+    ctx.pass('focus-pocket', 'computed:focus-actions-display');
+  }
+
+  if (info.focusActionsLayout && info.focusActionsLayout.gap !== '10px') {
+    ctx.fail('focus-pocket', 'computed:focus-actions-gap', `expected 10px, got ${info.focusActionsLayout.gap}`);
+  } else if (info.focusActionsLayout) {
+    ctx.pass('focus-pocket', 'computed:focus-actions-gap');
+  }
 
   if (info.neighborListClipped) ctx.fail('focus-pocket', 'text-clipping:neighbor-list', 'neighbor list is clipped');
   else if (info.neighborListClipped === false) ctx.pass('focus-pocket', 'text-clipping:neighbor-list');
@@ -906,6 +949,27 @@ async function assert_field_node(page, ctx) {
       return r.width >= 43.5 && r.height >= 43.5;
     }
 
+    function layoutSnapshot(el) {
+      if (!el) return null;
+      const style = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      return {
+        display: style.display,
+        alignItems: style.alignItems,
+        gap: style.gap,
+        marginBottom: style.marginBottom,
+        paddingTop: style.paddingTop,
+        paddingRight: style.paddingRight,
+        paddingBottom: style.paddingBottom,
+        paddingLeft: style.paddingLeft,
+        borderRadius: style.borderRadius,
+        gridTemplateColumns: style.gridTemplateColumns,
+        width: rect.width,
+        height: rect.height,
+        visible: style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0,
+      };
+    }
+
     const results = {};
 
     // --- journey-compass (canopy HUD) ---
@@ -964,6 +1028,12 @@ async function assert_field_node(page, ctx) {
     const journeyBtns = document.querySelectorAll('.focus-stage-journey-btn');
     results.journeyBtnsCount = journeyBtns.length;
 
+    const focusActions = document.querySelector('.focus-stage-actions');
+    results.focusActionsLayout = layoutSnapshot(focusActions);
+
+    const activeJourney = document.querySelector('.focus-stage-journey.active');
+    results.activeJourneyLayout = layoutSnapshot(activeJourney);
+
     // --- overflow guards ---
     results.overflowX = document.documentElement.scrollWidth > window.innerWidth;
     results.overflowY = document.documentElement.scrollHeight > window.innerHeight;
@@ -1012,6 +1082,48 @@ async function assert_field_node(page, ctx) {
 
   if (info.journeyBtnsCount >= 1) ctx.pass('field-node', 'dom:journey-buttons', `found ${info.journeyBtnsCount} journey button(s)`);
   else ctx.fail('field-node', 'dom:journey-buttons', 'no journey buttons found');
+
+  if (info.focusActionsLayout && info.focusActionsLayout.display !== 'grid') {
+    ctx.fail('field-node', 'computed:focus-actions-display', `expected grid, got ${info.focusActionsLayout.display}`);
+  } else if (info.focusActionsLayout) {
+    ctx.pass('field-node', 'computed:focus-actions-display');
+  }
+
+  if (info.focusActionsLayout && info.focusActionsLayout.gap !== '10px') {
+    ctx.fail('field-node', 'computed:focus-actions-gap', `expected 10px, got ${info.focusActionsLayout.gap}`);
+  } else if (info.focusActionsLayout) {
+    ctx.pass('field-node', 'computed:focus-actions-gap');
+  }
+
+  if (info.activeJourneyLayout?.visible && info.activeJourneyLayout.display !== 'flex') {
+    ctx.fail('field-node', 'computed:journey-active-display', `expected flex, got ${info.activeJourneyLayout.display}`);
+  } else if (info.activeJourneyLayout?.visible) {
+    ctx.pass('field-node', 'computed:journey-active-display');
+  }
+
+  if (info.activeJourneyLayout?.visible && info.activeJourneyLayout.gap !== '12px') {
+    ctx.fail('field-node', 'computed:journey-active-gap', `expected 12px, got ${info.activeJourneyLayout.gap}`);
+  } else if (info.activeJourneyLayout?.visible) {
+    ctx.pass('field-node', 'computed:journey-active-gap');
+  }
+
+  if (
+    info.activeJourneyLayout?.visible &&
+    (
+      info.activeJourneyLayout.paddingTop !== '10px' ||
+      info.activeJourneyLayout.paddingRight !== '14px' ||
+      info.activeJourneyLayout.paddingBottom !== '10px' ||
+      info.activeJourneyLayout.paddingLeft !== '14px'
+    )
+  ) {
+    ctx.fail(
+      'field-node',
+      'computed:journey-active-padding',
+      `expected 10px 14px 10px 14px, got ${info.activeJourneyLayout.paddingTop} ${info.activeJourneyLayout.paddingRight} ${info.activeJourneyLayout.paddingBottom} ${info.activeJourneyLayout.paddingLeft}`
+    );
+  } else if (info.activeJourneyLayout?.visible) {
+    ctx.pass('field-node', 'computed:journey-active-padding');
+  }
 
   if (info.overflowX) ctx.fail('field-node', 'viewport-crowding:overflow-x', 'horizontal overflow in field-node mode');
   else ctx.pass('field-node', 'viewport-crowding:overflow-x');

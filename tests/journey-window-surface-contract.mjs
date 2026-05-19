@@ -148,11 +148,11 @@ function testJourneyThreadModelChain() {
   assert(reExportText.includes('getGeometricThreadCandidates'), 'journey.js re-exports getGeometricThreadCandidates');
   assert(reExportText.includes('getThreadCandidatesForIndex'), 'journey.js re-exports getThreadCandidatesForIndex');
 
-  // thread-inspector.js must NOT re-implement normalizeLeadId — must use the shared version
-  // It currently has its own local copy at the top — that's the "hold area" for thread-inspector
-  // This test documents that journey-thread-model is the canonical source
+  // thread-inspector.js must NOT re-implement normalizeLeadId; it must use the shared version.
   assert(journeyModelSrc.includes('function normalizeLeadId'), 'journey-thread-model has canonical normalizeLeadId');
   assert(journeyModelSrc.includes('export function normalizeLeadId'), 'journey-thread-model normalizes exported normalizeLeadId');
+  assertContains(threadInspectorSrc, "import { normalizeLeadId } from './journey-thread-model.js';", 'thread-inspector imports shared normalizeLeadId');
+  assertNotContains(threadInspectorSrc, 'function normalizeLeadId(', 'thread-inspector does not define local normalizeLeadId');
 
   console.log('  OK journey-thread-model chain verified');
 }

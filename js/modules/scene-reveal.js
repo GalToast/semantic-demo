@@ -19,6 +19,12 @@ export function startSceneReveal() {
 
 export function getSceneRevealProgress(frameNow) {
     if (!state.sceneRevealActive || !state.sceneRevealStartedAt) return 1;
+    const prefersReduced = typeof window !== 'undefined'
+        && typeof window.matchMedia === 'function'
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+        return 1.0;
+    }
     const elapsed = frameNow - state.sceneRevealStartedAt;
     return Math.min(1, Math.max(0, elapsed / 2800));
 }

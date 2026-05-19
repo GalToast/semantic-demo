@@ -190,15 +190,6 @@
                 margin-top: 6px;
             }
 
-            .focus-stage-journey.active {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                align-items: stretch;
-                gap: 6px;
-                margin-top: 6px;
-                padding-top: 6px;
-            }
-
             .focus-stage-journey-meta {
                 grid-column: 1 / -1;
                 order: -1;
@@ -664,6 +655,7 @@
 
             body[data-panel-surface="focus"] .focus-stage-actions,
             body[data-panel-surface="focus-search"] .focus-stage-actions {
+                display: grid;
                 gap: 4px;
                 margin-top: 6px;
             }
@@ -841,6 +833,7 @@
 
             body[data-panel-surface="focus"] .focus-stage-actions,
             body[data-panel-surface="focus-search"] .focus-stage-actions {
+                display: grid;
                 gap: 4px;
                 margin-top: 5px;
             }
@@ -914,9 +907,7 @@
             }
 
             body[data-panel-surface="focus-search"] .focus-stage-kicker,
-            body[data-panel-surface="focus-search"] .focus-stage-filed,
             body[data-panel-surface="focus-search"] .focus-stage-what,
-            body[data-panel-surface="focus-search"] .focus-stage-meta,
             body[data-panel-surface="focus-search"] .focus-stage-note,
             body[data-panel-surface="focus-search"] .focus-stage-actions,
             body[data-panel-surface="focus-search"] .focus-stage-neighbors {
@@ -1005,9 +996,7 @@
         }
 
         body[data-panel-surface="semantic-dive"] .focus-stage-kicker,
-        body[data-panel-surface="semantic-dive"] .focus-stage-filed,
         body[data-panel-surface="semantic-dive"] .focus-stage-what,
-        body[data-panel-surface="semantic-dive"] .focus-stage-meta,
         body[data-panel-surface="semantic-dive"] .focus-stage-note,
         body[data-panel-surface="semantic-dive"] .focus-stage-journey,
         body[data-panel-surface="semantic-dive"] .focus-stage-neighbors {
@@ -1021,10 +1010,6 @@
             overflow-y: auto;
     overflow-x: hidden;
             text-overflow: ellipsis;
-        }
-
-        body[data-panel-surface="semantic-dive"] .focus-stage-actions {
-            margin-top: 8px;
         }
 
         body[data-panel-surface="semantic-dive"] .focus-stage-dive-btn {
@@ -1107,9 +1092,7 @@
             }
 
             body[data-panel-surface="semantic-dive"] .focus-stage-kicker,
-            body[data-panel-surface="semantic-dive"] .focus-stage-filed,
             body[data-panel-surface="semantic-dive"] .focus-stage-what,
-            body[data-panel-surface="semantic-dive"] .focus-stage-meta,
             body[data-panel-surface="semantic-dive"] .focus-stage-note,
             body[data-panel-surface="semantic-dive"] .focus-stage-journey,
             body[data-panel-surface="semantic-dive"] .focus-stage-neighbors {
@@ -1200,18 +1183,7 @@
             }
 
             html body[data-panel-surface="semantic-dive"] .focus-stage-kicker,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-filed,
             html body[data-panel-surface="semantic-dive"] .focus-stage-what,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-meta,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-note,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-actions,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-journey,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-neighbors,
-            html body[data-panel-surface="semantic-dive"] .focus-thread-inspector,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-kicker,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-filed,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-what,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-meta,
             html body[data-panel-surface="semantic-dive"] .focus-stage-note,
             html body[data-panel-surface="semantic-dive"] .focus-stage-actions,
             html body[data-panel-surface="semantic-dive"] .focus-stage-journey,

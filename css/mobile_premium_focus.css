@@ -45,58 +45,6 @@
         opacity: 0.96;
     }
 
-    /* Map compass — merged from Section 5 block (grid, gap, backdrop) */
-    html body.is-active[data-panel-surface^="map-"] .journey-compass {
-        min-height: 0;
-        max-height: none;
-        grid-template-columns: minmax(0, 1fr);
-        gap: 9px;
-        padding: 11px;
-        background:
-            linear-gradient(180deg, rgba(7, 18, 23, 0.9), rgba(3, 8, 13, 0.82)),
-            radial-gradient(circle at 100% 0%, rgba(255, 226, 132, 0.1), transparent 42%);
-        box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.05),
-            0 14px 34px rgba(0, 0, 0, 0.28);
-        backdrop-filter: blur(16px) saturate(1.1);
-    }
-
-    html body.is-active[data-panel-surface^="map-"] .journey-compass-kicker,
-    html body.is-active[data-panel-surface^="map-"] .journey-compass-note,
-    html body.is-active[data-panel-surface^="map-"] .journey-compass-rail {
-        display: none;
-    }
-
-    html body.is-active[data-panel-surface^="map-"] .journey-compass-title {
-        margin: 0;
-        font-size: 15px;
-        line-height: 1.1;
-        letter-spacing: 0;
-        text-shadow: none;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    html body.is-active[data-panel-surface^="map-"] .journey-compass-actions {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-        width: 100%;
-    }
-
-    html body.is-active[data-panel-surface^="map-"] .journey-compass-action,
-    html body.is-active[data-panel-surface^="map-"] .journey-compass-action.primary {
-        min-width: 0;
-        min-height: 44px;
-        padding: 0 10px;
-        border-radius: 8px;
-        font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0;
-        text-transform: none;
-    }
-
     /* Pseudo-element glow baseline */
     html body.is-active[data-panel-surface="focus-search"] .journey-compass::before,
     html body.is-active[data-panel-surface="semantic-dive"] .journey-compass::before {
@@ -400,6 +348,14 @@
         font-weight: 700;
         letter-spacing: 0;
         text-transform: none;
+    }
+
+    /* Premium focus owns legacy filed/meta suppression for compact focus states. */
+    html body.is-active[data-panel-surface="focus-search"] .focus-stage-filed,
+    html body.is-active[data-panel-surface="focus-search"] .focus-stage-meta,
+    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-filed,
+    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-meta {
+        display: none;
     }
 
     /* Hide main-stage content in dive state */

@@ -184,15 +184,14 @@ html body.is-active #selected-details.active {
         padding: 0;
         margin: 0;
         transform: none;
-        /* Retained: strands.css prefers-reduced-motion blanket override requires high precedence */
-        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         z-index: 90;
     }
 
     /* Standardized Typography Reset */
     html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .info-panel *,
     html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card * {
-        font-family: var(--font-display, 'Bricolage Grotesque', sans-serif) !important;
+        font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         box-sizing: border-box;
     }
 
@@ -223,33 +222,33 @@ html body.is-active #selected-details.active {
     }
 
     /* Focus Content Layout */
-    .focus-stage-kicker {
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-kicker {
         display: block;
         margin: 24px 20px 4px;
-        font-size: 10px !important;
-        font-weight: 700 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.06em !important;
-        color: var(--color-primary, #4ecdc4) !important;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-primary, #4ecdc4);
     }
 
-    .focus-stage-name {
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-name {
         margin: 0 20px 8px;
-        font-size: 20px !important;
-        font-weight: 800 !important;
-        line-height: 1.1 !important;
-        color: #fff !important;
+        font-size: 20px;
+        font-weight: 800;
+        line-height: 1.1;
+        color: #fff;
     }
 
-    .focus-stage-what {
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-what {
         margin: 0 20px 18px;
-        font-size: 14px !important;
-        line-height: 1.45 !important;
-        color: rgba(255, 255, 255, 0.7) !important;
-        display: -webkit-box !important;
-        -webkit-line-clamp: 2 !important;
-        -webkit-box-orient: vertical !important;
-        overflow: hidden !important;
+        font-size: 14px;
+        line-height: 1.45;
+        color: rgba(255, 255, 255, 0.7);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .journey-compass-action,
@@ -264,28 +263,28 @@ html body.is-active #selected-details.active {
     }
 
     /* Premium Action Buttons */
-    .focus-stage-actions {
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 10px !important;
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
         padding: 0 20px;
         margin-bottom: 18px;
     }
 
-    .focus-stage-action-btn {
-        height: 48px !important;
-        border-radius: 12px !important;
-        background: rgba(255, 255, 255, 0.05) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: #fff !important;
-        font-size: 11px !important;
-        font-weight: 800 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.04em !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        transition: all 0.2s ease !important;
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-action-btn {
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
     }
 
     .focus-stage-action-btn:active {
@@ -294,35 +293,35 @@ html body.is-active #selected-details.active {
     }
 
     /* Step Inside Button */
-    .focus-stage-dive-btn {
-        width: calc(100% - 40px) !important;
-        margin: 0 20px 24px !important;
-        height: 54px !important;
-        border-radius: 16px !important;
-        background: var(--color-primary, #4ecdc4) !important;
-        color: #0d141c !important;
-        font-size: 14px !important;
-        font-weight: 800 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.05em !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        box-shadow: 0 6px 20px rgba(78, 205, 196, 0.3) !important;
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-dive-btn {
+        width: calc(100% - 40px);
+        margin: 0 20px 24px;
+        height: 54px;
+        border-radius: 16px;
+        background: var(--color-primary, #4ecdc4);
+        color: #0d141c;
+        font-size: 14px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 20px rgba(78, 205, 196, 0.3);
     }
 
     /* Trail/Journey Navigation (The 'Rough' one) */
     html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) #trail-controls,
     html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-journey.active {
-        display: flex !important;
-        align-items: center !important;
-        gap: 12px !important;
-        margin: 0 20px 18px !important;
-        padding: 10px 14px !important;
-        border-radius: 16px !important;
-        background: rgba(255, 255, 255, 0.03) !important;
-        border: 1px solid rgba(255, 255, 255, 0.06) !important;
-        height: auto !important;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 20px 18px;
+        padding: 10px 14px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        height: auto;
     }
 
     .action-btn,
@@ -340,6 +339,8 @@ html body.is-active #selected-details.active {
     }
 
     html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass,
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass,
+    html body[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass,
     html body[data-focus-panel-mode="field-node"] .journey-compass {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(118px, 36vw);
@@ -348,16 +349,25 @@ html body.is-active #selected-details.active {
     }
 
     html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-copy,
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-copy,
+    html body[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass-copy,
     html body[data-focus-panel-mode="field-node"] .journey-compass-copy {
         min-width: 0;
     }
 
     html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-title,
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-title,
+    html body[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass-title,
     html body[data-focus-panel-mode="field-node"] .journey-compass-title {
         line-height: 1.2;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
     }
 
     html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-actions,
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-actions,
+    html body[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass-actions,
     html body[data-focus-panel-mode="field-node"] .journey-compass-actions {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
@@ -367,6 +377,8 @@ html body.is-active #selected-details.active {
     }
 
     html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-action.action-btn,
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-action.action-btn,
+    html body[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass-action.action-btn,
     html body[data-focus-panel-mode="field-node"] .journey-compass-action.action-btn {
         width: auto;
         min-width: 0;
@@ -470,127 +482,16 @@ html body.is-active #selected-details.active {
         pointer-events: auto;
     }
 
-    /* HIDE THE OLD MESS */
-    #trail-controls:not(.active),
+    /* Legacy focus fragments stay hidden by default; premium focus owns state-specific suppression. */
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) #trail-controls:not(.active),
+    #trail-controls:not(.active) {
+        display: none;
+    }
     .focus-stage-filed,
     .focus-stage-meta,
     .focus-stage-badges,
     .focus-stage-trivia {
-        display: none !important;
+        display: none;
     }
 
-    /* 3. SEARCH OVERRIDES */
-    html body.is-active[data-panel-surface="search"] .info-panel,
-    html body.is-active[data-panel-surface="focus-search"] .info-panel {
-        max-height: min(57dvh, 480px) !important;
-    }
-
-    html body.is-active[data-panel-surface="search"] .info-content,
-    html body.is-active[data-panel-surface="focus-search"] .info-content {
-        padding: 16px !important;
-        height: 100% !important;
-    }
-
-    html body.is-active[data-panel-surface="search"] .info-header,
-    html body.is-active[data-panel-surface="focus-search"] .info-header {
-        display: none !important;
-    }
-
-    html body.is-active[data-panel-surface="search"] .stat-caption,
-    html body.is-active[data-panel-surface="focus-search"] .stat-caption {
-        display: none !important;
-    }
-
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .info-panel,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .info-panel {
-        height: calc(202px + env(safe-area-inset-bottom, 0px)) !important;
-        min-height: calc(202px + env(safe-area-inset-bottom, 0px)) !important;
-        max-height: calc(202px + env(safe-area-inset-bottom, 0px)) !important;
-    }
-
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .info-content,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .info-content {
-        overflow: hidden !important;
-    }
-
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-container.has-query,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-container.has-query {
-        height: auto !important;
-    }
-
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results.active,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-results.active {
-        display: block !important;
-        flex: 0 0 56px !important;
-        height: 56px !important;
-        max-height: 56px !important;
-        min-height: 56px !important;
-        overflow: hidden !important;
-        padding: 4px !important;
-        margin-top: 8px !important;
-    }
-
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-item,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-item {
-        min-height: 48px !important;
-        height: 48px !important;
-        padding: 7px 9px !important;
-        overflow: hidden !important;
-    }
-
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-item:not(:first-child),
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-item:not(:first-child),
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results-count,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-results-count,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-what,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-what,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-meta,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-meta,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-cluster,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-cluster,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-context,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-context,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-bar,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-bar,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-badges,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-badges {
-        display: none !important;
-    }
-
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-rank,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-rank {
-        font-size: 8px !important;
-        line-height: 1 !important;
-        white-space: nowrap !important;
-    }
-
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-name,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-name {
-        margin-top: 2px !important;
-        font-size: 13px !important;
-        line-height: 1.05 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-    }
-
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .info-panel,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .info-panel {
-        height: min(57dvh, 480px) !important;
-        min-height: min(48dvh, 386px) !important;
-    }
-
-    html body.is-active[data-panel-surface="search"] .search-container.has-query,
-    html body.is-active[data-panel-surface="focus-search"] .search-container.has-query {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-    }
-
-    html body.is-active[data-panel-surface="search"] .search-results.active,
-    html body.is-active[data-panel-surface="focus-search"] .search-results.active {
-        flex: 1 1 auto;
-        overflow-y: auto;
-        margin-top: 10px;
-    }
 }

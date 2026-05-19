@@ -267,18 +267,128 @@
     }
 
     /* ----------------------------------------------------------------
-       4. Focus-search card height cap
+       4. Search and focus-search sheet geometry
        ---------------------------------------------------------------- */
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-card {
-        max-height: min(30vh, 252px);
-        border-radius: var(--glass-radius-panel);
-        background: var(--glass-bg-deep);
-        border: var(--glass-border-glow);
-        box-shadow: var(--shadow-glass-glow), var(--shadow-glass);
+    html body.is-active[data-panel-surface="search"] .info-panel,
+    html body.is-active[data-panel-surface="focus-search"] .info-panel {
+        max-height: min(57dvh, 480px);
+    }
+
+    html body.is-active[data-panel-surface="search"] .info-content,
+    html body.is-active[data-panel-surface="focus-search"] .info-content {
+        padding: 16px;
+        height: 100%;
+    }
+
+    html body.is-active[data-panel-surface="search"] .info-header,
+    html body.is-active[data-panel-surface="focus-search"] .info-header,
+    html body.is-active[data-panel-surface="search"] .stat-caption,
+    html body.is-active[data-panel-surface="focus-search"] .stat-caption {
+        display: none;
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .info-panel,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .info-panel {
+        height: calc(202px + env(safe-area-inset-bottom, 0px));
+        min-height: calc(202px + env(safe-area-inset-bottom, 0px));
+        max-height: calc(202px + env(safe-area-inset-bottom, 0px));
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .info-content,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .info-content {
+        overflow: hidden;
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-container.has-query,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-container.has-query {
+        height: auto;
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results.active,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-results.active {
+        display: block;
+        flex: 0 0 56px;
+        height: 56px;
+        max-height: 56px;
+        min-height: 56px;
+        overflow: hidden;
+        padding: 4px;
+        margin-top: 8px;
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-item,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-item {
+        min-height: 48px;
+        height: 48px;
+        padding: 7px 9px;
+        overflow: hidden;
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-item:not(:first-child),
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-item:not(:first-child),
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results-count,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-results-count,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-what,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-what,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-meta,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-meta,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-cluster,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-cluster,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-context,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-context,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-bar,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-bar,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-badges,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-badges {
+        display: none;
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-rank,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-rank {
+        font-size: 8px;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-name,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-name {
+        margin-top: 2px;
+        font-size: 13px;
+        line-height: 1.05;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .info-panel,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .info-panel {
+        height: min(57dvh, 480px);
+        min-height: min(48dvh, 386px);
+    }
+
+    html body.is-active[data-panel-surface="search"] .search-container.has-query,
+    html body.is-active[data-panel-surface="focus-search"] .search-container.has-query {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    html body.is-active[data-panel-surface="search"] .search-results.active,
+    html body.is-active[data-panel-surface="focus-search"] .search-results.active {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        margin-top: 10px;
     }
 
     /* ----------------------------------------------------------------
-       5. Map view - hide non-map chrome + compass
+       5. Legacy element suppression
+       ---------------------------------------------------------------- */
+    #trail-controls:not(.active) {
+        display: none;
+    }
+
+    /* ----------------------------------------------------------------
+       6. Map view - hide non-map chrome + compass
        ---------------------------------------------------------------- */
     html body.is-active[data-panel-surface^="map-"] .weather-widget,
     html body.is-active[data-panel-surface^="map-"] .time-display {
@@ -326,7 +436,7 @@
     }
 
     /* ----------------------------------------------------------------
-       6. Map empty state
+       7. Map empty state
        ---------------------------------------------------------------- */
     html body.is-active[data-panel-surface^="map-"] .map-empty-state {
         left: 14px;

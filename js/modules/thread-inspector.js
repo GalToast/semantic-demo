@@ -3,6 +3,8 @@ import { state } from '../state.js';
 // js/modules/thread-inspector.js — thread/strand inspection for semantic demo
 ;
 import { formatBusinessName, stripTerminalPunctuation, cleanOptionalValue, normalizeCityForFilter } from '../utils.js';
+import { normalizeLeadId } from './journey-thread-model.js';
+import { truncateMicrocopy } from './thread-inspector-text-helpers.js';
 
 // === Internal helpers (deferred to main script via window) ===
 
@@ -14,11 +16,6 @@ function summarizeNeighborReason(candidate, point, focusPoint) {
 function getInsideRelationshipLabel(candidate, point, focusPoint) {
     if (typeof window.getInsideRelationshipLabel === 'function') return window.getInsideRelationshipLabel(candidate, point, focusPoint);
     return 'Related connection';
-}
-
-function truncateMicrocopy(text, limit) {
-    if (!text || text.length <= limit) return text || '';
-    return text.substring(0, limit - 3) + '...';
 }
 
 function syncSemanticDiveUi() {
@@ -51,12 +48,6 @@ function syncArrivalHandoffOverlay() {
 
 function disposeArrivalHandoffOverlay() {
     if (typeof window.disposeArrivalHandoffOverlay === 'function') window.disposeArrivalHandoffOverlay();
-}
-
-function normalizeLeadId(id) {
-    if (!id) return null;
-    const s = String(id).trim();
-    return s.length >= 4 ? s : null;
 }
 
 // === Candidate selectors ===
