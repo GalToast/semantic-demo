@@ -167,23 +167,24 @@ html body.is-active #selected-details.active {
     /* Root Sheet Style */
     html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .info-panel,
     html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card {
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        border-radius: 24px 24px 0 0 !important;
-        background: var(--glass-bg) !important;
-        backdrop-filter: blur(var(--glass-blur)) !important;
-        -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
-        border: var(--glass-border) !important;
-        border-bottom: none !important;
-        border-left: none !important;
-        border-right: none !important;
-        box-shadow: var(--shadow-glass) !important;
-        padding: 0 !important;
-        margin: 0 !important;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-width: 100%;
+        border-radius: 24px 24px 0 0;
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--glass-blur));
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+        border: var(--glass-border);
+        border-bottom: none;
+        border-left: none;
+        border-right: none;
+        box-shadow: var(--shadow-glass);
+        padding: 0;
+        margin: 0;
         transform: none;
+        /* Retained: strands.css prefers-reduced-motion blanket override requires high precedence */
         transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
         z-index: 90;
     }
