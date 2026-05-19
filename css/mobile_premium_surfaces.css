@@ -224,8 +224,8 @@ html body.is-active #selected-details.active {
 
     /* Focus Content Layout */
     .focus-stage-kicker {
-        display: block !important;
-        margin: 24px 20px 4px !important;
+        display: block;
+        margin: 24px 20px 4px;
         font-size: 10px !important;
         font-weight: 700 !important;
         text-transform: uppercase !important;
@@ -234,7 +234,7 @@ html body.is-active #selected-details.active {
     }
 
     .focus-stage-name {
-        margin: 0 20px 8px !important;
+        margin: 0 20px 8px;
         font-size: 20px !important;
         font-weight: 800 !important;
         line-height: 1.1 !important;
@@ -242,7 +242,7 @@ html body.is-active #selected-details.active {
     }
 
     .focus-stage-what {
-        margin: 0 20px 18px !important;
+        margin: 0 20px 18px;
         font-size: 14px !important;
         line-height: 1.45 !important;
         color: rgba(255, 255, 255, 0.7) !important;
@@ -268,8 +268,8 @@ html body.is-active #selected-details.active {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 10px !important;
-        padding: 0 20px !important;
-        margin-bottom: 18px !important;
+        padding: 0 20px;
+        margin-bottom: 18px;
     }
 
     .focus-stage-action-btn {
@@ -289,8 +289,8 @@ html body.is-active #selected-details.active {
     }
 
     .focus-stage-action-btn:active {
-        transform: scale(0.96) !important;
-        background: rgba(255, 255, 255, 0.1) !important;
+        transform: scale(0.96);
+        background: rgba(255, 255, 255, 0.1);
     }
 
     /* Step Inside Button */
