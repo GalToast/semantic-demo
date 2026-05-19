@@ -175,6 +175,53 @@ html body.is-active #selected-details.active {
         content: 'Search';
     }
 
+    html body[data-panel-surface]:not([data-panel-surface^="map-"]) #btn-journey-primary:not([data-journey-action]) {
+        font-size: 0;
+        letter-spacing: 0;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface]:not([data-panel-surface^="map-"]) #btn-journey-primary:not([data-journey-action])::before {
+        content: 'Find';
+        font-size: 10.5px;
+        line-height: 1;
+        letter-spacing: 0.02em;
+        text-transform: none;
+        white-space: nowrap;
+    }
+
+    #btn-journey-primary {
+        font-size: 0;
+        letter-spacing: 0;
+        overflow: hidden;
+    }
+
+    #btn-journey-primary::before {
+        content: 'Find';
+        font-size: 10.5px;
+        line-height: 1;
+        letter-spacing: 0.02em;
+        text-transform: none;
+        white-space: nowrap;
+    }
+
+    #btn-journey-primary[data-journey-action="center-anchor"]::before {
+        content: 'Center';
+    }
+
+    #btn-journey-primary[data-journey-action="next-stop"]::before {
+        content: 'Next';
+    }
+
+    #btn-journey-primary[data-journey-action="open-map"]::before {
+        content: 'Map';
+    }
+
+    #btn-journey-primary[data-journey-action="search-field"]::before,
+    #btn-journey-primary[data-journey-action="focus-search"]::before {
+        content: 'Search';
+    }
+
     html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-action.primary {
         background: linear-gradient(180deg, rgba(78, 205, 196, 0.2), rgba(78, 205, 196, 0.08));
         border-color: rgba(78, 205, 196, 0.35);
@@ -279,6 +326,12 @@ html body.is-active #selected-details.active {
 
     /* 1. IDLE STATE REFINEMENTS */
     html body.is-active[data-panel-surface="idle"] .info-panel {
+        left: 0;
+        right: 0;
+        width: 100vw;
+        max-width: 100vw;
+        box-sizing: border-box;
+        transform: translate3d(0, 0, 0);
         max-height: min(60dvh, 500px);
     }
 
@@ -569,10 +622,10 @@ html body.is-active #selected-details.active {
         position: relative;
         left: 0;
         right: 0;
-        width: 100%;
-        max-width: 100%;
-        margin-left: 0;
-        margin-right: 0;
+        width: calc(100% - 12px);
+        max-width: calc(100% - 12px);
+        margin-left: 6px;
+        margin-right: 6px;
         box-sizing: border-box;
         transform: none;
     }
@@ -651,6 +704,21 @@ html body.is-active #selected-details.active {
     .focus-stage-badges,
     .focus-stage-trivia {
         display: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html body .info-panel,
+        html body .focus-stage-card,
+        html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .info-panel,
+        html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card,
+        html body[data-panel-surface]:not([data-panel-surface^="map-"]) .info-panel,
+        html body[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card,
+        html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass,
+        html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-action,
+        html body[data-panel-surface]:not([data-panel-surface^="map-"]) .search-container {
+            transition: none;
+            animation-name: none;
+        }
     }
 
 }

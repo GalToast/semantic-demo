@@ -1589,69 +1589,11 @@ body[data-panel-surface="semantic-dive"]::after {
     pointer-events: none;
 }
 
-/* 10/10 Polish: Unified Mobile Journey Compass */
-@media (max-width: 768px) {
-    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass {
-        top: calc(72px + env(safe-area-inset-top, 0px));
-        grid-template-columns: 1fr;
-        padding: 14px;
-        gap: 12px;
-        min-height: 0;
-        max-height: 45vh;
-        overflow-y: auto;
-        overflow-x: hidden;
-        border-radius: 20px;
-        backdrop-filter: blur(20px);
-        opacity: 1;
-        display: grid;
-        scrollbar-width: none;
-    }
-
-    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass::-webkit-scrollbar {
-        display: none;
-    }
-
-    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        width: 100%;
-        grid-column: 1;
-        margin-top: 4px;
-    }
-
-    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-action {
-        width: 100%;
-        min-height: 48px;
-        font-size: 14px;
-        font-weight: 700;
-        border-radius: 12px;
-        padding: 0 16px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        letter-spacing: 0.02em;
-        touch-action: manipulation;
-    }
-
-    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-note {
-        display: block;
-        -webkit-line-clamp: none;
-        font-size: 12px;
-        line-height: 1.4;
-        margin-bottom: 4px;
-    }
-
-    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-title {
-        font-size: 18px;
-        font-weight: 800;
-        margin-top: 0;
-    }
-
-    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-rail {
-        display: none;
-    }
-}
+/* Redundant block removed — mobile journey-compass layout now owned by
+   css/mobile_premium_surfaces.css (cascade load order: layout_base →
+   mobile_base → mobile_premium_*; mobile_premium_surfaces provides the
+   shared non-map .journey-compass rule that this block duplicated).
+   focus-search overrides remain at pcss:1243+ below. */
 
 /* micro-demo: full-screen overlay veil */
 .micro-demo-veil {

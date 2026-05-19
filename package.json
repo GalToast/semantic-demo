@@ -45,6 +45,7 @@
     "qa:contract:global-spacing": "node tests/surface-contract-check.mjs --surface=global-spacing",
     "qa:contract:all": "node tests/surface-contract-check.mjs --surfaces=mobile-idle,desktop-idle,launch-focus,search-error,map-trail,focus-pocket,field-node,info-panel-empty,compass-rail,loading-overlay,mode-grid,filters,thread-inspector,controls,search-chrome,info-panel-populated,global-spacing",
     "qa:ui-quality": "node tests/ui-quality-contract.mjs",
+    "qa:micro-interactions": "node tests/micro-surface-interactions-contract.mjs",
     "qa:surface-redundancy": "node tests/surface-redundancy-contract.mjs",
     "qa:motion-state": "node tests/motion-state-contract.mjs",
     "refresh:cache": "node tests/cache-buster-check.js --fix",

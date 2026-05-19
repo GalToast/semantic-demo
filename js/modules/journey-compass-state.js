@@ -31,7 +31,7 @@ export function getJourneyCompassState() {
                 : 'This is the geography layer: physical proximity after semantic similarity.',
             primaryAction: { label: 'Return to Mycelium', action: 'open-mycelium' },
             secondaryAction: { label: 'County Reset', action: 'county-overview' },
-            tertiaryAction: { label: 'Search Field', action: 'focus-search' }
+            tertiaryAction: { label: 'Search', action: 'focus-search' }
         };
     }
 
@@ -51,7 +51,7 @@ export function getJourneyCompassState() {
             primaryAction: nextPoint
                 ? { label: 'Follow Connection', action: 'next-stop' }
                 : { label: 'End of Trail', action: 'show-trail-panel' },
-            secondaryAction: { label: 'Map Layer', action: 'open-map' },
+            secondaryAction: { label: 'Map', action: 'open-map' },
             tertiaryAction: { label: 'County View', action: 'county-overview', hint: 'Exit trail' }
         };
     }
@@ -68,7 +68,7 @@ export function getJourneyCompassState() {
             : { label: 'Center Anchor', action: 'center-anchor', hint: 'Return to search starting point' };
 
         const secondaryAction = isSearchAnchor
-            ? { label: 'Map Layer', action: 'open-map' }
+            ? { label: 'Map', action: 'open-map' }
             : { label: 'Step Inside', action: 'enter-inside' };
 
         return {
@@ -98,8 +98,8 @@ export function getJourneyCompassState() {
                 : 'Looking for semantic anchors before gathering the trail around your query.',
             primaryAction: Number.isFinite(state.currentSearchSummary?.anchorIndex)
                 ? { label: 'Center Anchor', action: 'center-anchor' }
-                : { label: 'Search Field', action: 'focus-search' },
-            secondaryAction: { label: 'Map Layer', action: 'open-map' },
+                : { label: 'Search', action: 'focus-search' },
+            secondaryAction: { label: 'Map', action: 'open-map' },
             tertiaryAction: null
         };
     }
@@ -123,8 +123,8 @@ export function getJourneyCompassState() {
         title: 'The MoCo Mycelium',
         note: idleNote,
         discovery: isDiscovery,
-        primaryAction: { label: 'Search Field', action: 'focus-search' },
-        secondaryAction: { label: 'Map Layer', action: 'open-map' },
+        primaryAction: { label: 'Search', action: 'focus-search' },
+        secondaryAction: { label: 'Map', action: 'open-map' },
         tertiaryAction: null
     };
 }

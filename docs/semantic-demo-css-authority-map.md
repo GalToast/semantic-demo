@@ -1,6 +1,22 @@
 # Semantic Demo CSS Authority Map
 
 Date: 2026-05-17
+Updated: 2026-05-19
+
+## Compass Ownership Contract
+
+The journey-compass redundancy contract (`tests/surface-redundancy-contract.mjs`) tracks whether compass ownership is **shrinking, stable, or growing** across the CSS cascade.
+
+**Key metrics per primitive:**
+- `ownerCount` — current number of cascade files declaring the primitive
+- `registeredCount` — number of files in the allowedOwners registry
+- `knownDebt = ownerCount - registeredCount` — positive means the registry is under-counting; negative means retired owners remain registered
+- `debtSign` — `shrinking | stable | growing` based on comparing ownerCount to baselineOwnerCount
+- `baselineOwnerCount` — the ownerCount captured at the time the contract was last updated
+
+**Ratchet mode** (`RATCHET=1`): unknown owners cause immediate failure, preventing silent ownership drift. Without RATCHET, unknown owners are still reported but do not fail the contract, allowing the baseline to evolve without forcing a hard reset.
+
+Run: `npm run qa:surface-redundancy` — or `RATCHET=1 npm run qa:surface-redundancy` to enforce strict registry alignment.
 
 `semantic-demo.css` is an import shell only. It is not compiled selector authority, and old cleanup notes that point to selector line numbers inside that file are stale.
 
@@ -8,7 +24,7 @@ Date: 2026-05-17
 |---|---|---|---|---|---|
 | `#info-panel` / `.info-panel` | `css/layout_base.css` | `css/progressive_disclosure.css` | `css/mobile_premium.css` for mobile idle composition | Do not remove scrollbar hiding unless mobile computed `scrollbar-width:none` still holds. `journey_steps.css` has no info-panel authority. | `01-mobile-idle`, `06-mobile-filters-open`, `07-desktop-idle` |
 | `.search-container` / `#search-results` | `css/search.css`; shared `.search-results` scrollbar skin lives in `css/layout_base.css` | `css/search.css`, then later mobile state overrides. Search empty-state and search-input glass component authority live in `css/progressive_disclosure.css`; `css/search.css` keeps base input positioning/mechanics and `css/strands.css` owns scoped has-query overrides. | `css/mobile_premium.css` for final mobile drawer sizing | Do not hide result row subcontent without mobile screenshot proof; search can look present while rows are clipped or invisible. | `02-mobile-search-coffee`, `08-desktop-search-coffee` |
-| `.journey-compass` | `css/layout_base.css`, `css/journey_steps.css` | `css/journey_active.css`, `css/progressive_disclosure.css`; mobile scrollbar hiding is late-owned by `css/progressive_disclosure.css` | `css/mobile_premium.css` for compact mobile states | `field-node` is live JS state. Do not delete `journey_active.css` field-node blocks as dead duplicates. | `01-mobile-idle`, `02-mobile-search-coffee`, `qa:contract:field-node`, mobile canvas-node focus proof |
+| `.journey-compass` | `css/layout_base.css`, `css/journey_steps.css` | `css/journey_active.css`, `css/mobile_base.css`; duplicate mobile layout in `css/progressive_disclosure.css` was removed on 2026-05-19 | `css/mobile_premium_surfaces.css` for shared non-map mobile compass, with `css/mobile_premium_focus.css` / `css/mobile_premium_state.css` owning narrow focus and map variants | `field-node` is live JS state. Do not delete `journey_active.css` field-node blocks as dead duplicates. | `01-mobile-idle`, `02-mobile-search-coffee`, `qa:contract:field-node`, `qa:contract:compass-rail`, mobile canvas-node focus proof |
 | `#focus-stage` / `.focus-stage-card` | `css/clusters.css`, `css/journey_steps.css` | `css/progressive_disclosure.css`, `css/journey_active.css` | `css/mobile_premium.css` for focus/dive sheets | Highest-risk surface. Do not consolidate until every `data-panel-surface`, `data-focus-panel-mode`, and transition-only `data-semantic-dive` state is mapped. | `03-mobile-focus-first-result`, desktop focus |
 | `.galaxy-cluster-label` | `css/clusters.css` for defensive DOM label styling; WebGL sprites are rendered by `js/modules/cluster-labels.js` | `css/clusters.css` mobile constraints | n/a | Treat DOM cluster label CSS as defensive compatibility. Do not add new cluster label systems without checking the WebGL sprite path. | WebGL sprite proof plus `07-desktop-idle` |
 | `.selected-card` / `.about-card` | `css/clusters.css` for base and focus/map accent styling | `css/progressive_disclosure.css` for mobile state visibility and selected-card reduced-motion duration | `css/mobile_premium.css` hides idle mobile selected card | Keep the base and active selected-card package in `css/clusters.css`; `css/search.css`, `css/journey_steps.css`, and `css/mobile_base.css` should not reintroduce selected-card styling. | `07-desktop-idle`, `08-desktop-search-coffee`, `12-desktop-reduced-motion`, selected-card computed coverage |

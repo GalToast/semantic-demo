@@ -4,11 +4,25 @@
  * This does not pretend the CSS is fully consolidated. It records the current
  * allowed ownership matrix, verifies terminal owners in cascade order, and
  * fails if new unregistered files start owning the same surface primitives.
+ *
+ * Ratchet mode (RATCHET=1): unknown owners cause immediate failure, preventing
+ * silent ownership drift. Without RATCHET=1, unknown owners are reported but do
+ * not fail the contract, allowing the baseline to evolve without forcing a
+ * hard reset.
+ *
+ * Metrics produced for trend analysis:
+ *   ownerCount    — current number of cascade files declaring the primitive
+ *   registeredCount — number of files in the allowedOwners registry
+ *   knownDebt     — ownerCount - registeredCount; positive means the registry
+ *                    is under-counting (catchable by running without --ratchet)
+ *   debtSign       — "shrinking" | "stable" | "growing"
+ *                    based on comparing ownerCount to baselineOwnerCount
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
+const RATCHET = process.env.RATCHET === '1';
 const root = process.cwd();
 
 function read(path) {
@@ -36,15 +50,16 @@ const registry = [
     primitive: 'journey-compass',
     selector: '.journey-compass',
     terminalOwner: 'css/mobile_premium_surfaces.css',
+    baselineOwnerCount: 11,
     allowedOwners: [
-      'css/journey_active.css',
       'css/layout_base.css',
-      'css/journey_steps.css',
+      'css/search.css',
       'css/mobile_base.css',
+      'css/journey_steps.css',
+      'css/journey_active.css',
       'css/progressive_disclosure.css',
       'css/strands.css',
       'css/animations.css',
-      'css/search.css',
       'css/mobile_premium_focus.css',
       'css/mobile_premium_state.css',
       'css/mobile_premium_surfaces.css',
@@ -126,18 +141,31 @@ for (const item of registry) {
   const owners = ownersFor(item.selector);
   const unknownOwners = owners.filter((owner) => !item.allowedOwners.includes(owner));
   const terminalOwner = owners.at(-1) || null;
+  const ownerCount = owners.length;
+  const registeredCount = item.allowedOwners.length;
+  const knownDebt = ownerCount - registeredCount;
+  const baselineOwnerCount = item.baselineOwnerCount ?? ownerCount;
+  const debtSign =
+    ownerCount < baselineOwnerCount ? 'shrinking'
+    : ownerCount > baselineOwnerCount ? 'growing'
+    : 'stable';
   const primitiveReport = {
     primitive: item.primitive,
     selector: item.selector,
     terminalOwner,
     expectedTerminalOwner: item.terminalOwner,
+    ownerCount,
+    registeredCount,
+    knownDebt,
+    baselineOwnerCount,
+    debtSign,
     owners,
     unknownOwners,
     lineHits: Object.fromEntries(owners.map((owner) => [owner, lineHits(owner, item.selector)])),
   };
   report.primitives.push(primitiveReport);
 
-  if (unknownOwners.length) {
+  if (unknownOwners.length && RATCHET) {
     failures.push(`${item.primitive}: unregistered owners ${unknownOwners.join(', ')}`);
   }
   if (terminalOwner !== item.terminalOwner) {

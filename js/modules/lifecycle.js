@@ -815,7 +815,7 @@ function syncJourneyCompassActions(compassState = {}) {
     ];
     buttons.forEach(([button, action, role]) => {
         if (!button) return;
-        button.textContent = action?.label || (role === 'primary' ? 'Search Field' : 'Map Layer');
+        button.textContent = action?.label || (role === 'primary' ? 'Search' : 'Map');
         button.dataset.journeyAction = action?.action || '';
         const disabled = !action?.action || (action.action === 'next-stop' && state.strandContinuityState?.phase === 'exploring');
         button.disabled = disabled;
@@ -825,7 +825,7 @@ function syncJourneyCompassActions(compassState = {}) {
             button.setAttribute('aria-label', `${button.textContent} — ${action.hint}`);
             button.setAttribute('title', action.hint);
         } else {
-            button.removeAttribute('aria-label');
+            button.setAttribute('aria-label', button.textContent);
             button.removeAttribute('title');
         }
         // aria-expanded on tertiary button reflects its active state: false when hidden (not active), true when visible

@@ -23,10 +23,21 @@ Use this rubric for surface reviews, visual QA, and future UI contract tests.
 - Accessibility: Important controls need labels, state attributes, and predictable interaction behavior.
 - Motion: Motion should clarify state change and respect reduced-motion preferences.
 
+## Compass Ownership Trend
+
+The journey-compass contract emits `debtSign` for each primitive:
+
+| debtSign | Meaning |
+|---|---|
+| `shrinking` | Owner count dropped — consolidation is progressing |
+| `stable` | Owner count unchanged — no regression |
+| `growing` | Owner count increased — new files adopted the primitive |
+
+To prevent silent ownership drift, run `RATCHET=1 npm run qa:surface-redundancy` in CI. Without the flag, unknown owners are reported but do not fail the contract, preserving the ability to evolve the baseline incrementally.
+
 ## Required Evidence For Surface Signoff
 
 - Targeted surface contract passes.
 - Rendered visual/luminance QA passes for the relevant state.
 - No unresolved severe findings from a designer/adversarial pass.
 - Screenshots or DOM evidence saved under `tmp/` when visual judgment is involved.
-
