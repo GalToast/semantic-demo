@@ -1147,7 +1147,7 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
         right: 16px;
         top: calc(12px + env(safe-area-inset-top, 0px));
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(142px, 42vw);
+        grid-template-columns: minmax(0, 1fr) minmax(118px, 36vw);
         align-items: center;
         gap: 7px;
         min-height: 0;
@@ -1184,7 +1184,7 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
         margin-top: 1px;
         max-width: 100%;
         font-size: 12px;
-        line-height: 1.05;
+        line-height: 1.2;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -1556,7 +1556,7 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
         right: 16px;
         top: calc(12px + env(safe-area-inset-top, 0px));
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(142px, 42vw);
+        grid-template-columns: minmax(0, 1fr) minmax(118px, 36vw);
         align-items: center;
         gap: 7px;
         min-height: 0;
@@ -1594,7 +1594,7 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
         margin-top: 1px;
         max-width: 100%;
         font-size: 12px;
-        line-height: 1.05;
+        line-height: 1.2;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
