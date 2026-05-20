@@ -40,6 +40,20 @@ States: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-resu
 ## Contract Test Suite (`npm run test:contract`)
 Runs the pinned ordered contract suite from `tests/run-all-contracts.js`; `tests/contracts.manifest.json` also classifies targeted groups such as `smoke`, `mobile-critical`, `motion`, `lifecycle`, `render`, `quality`, and `full`.
 
+## Manifest Group Scripts (`npm run test:contract:<group>`)
+
+| Script | Group | Contracts |
+|--------|-------|-----------|
+| `test:contract:smoke` | `smoke` | weather-lifecycle, weather-surface-ownership, camera-auto-rotate-settle, scene-reveal, loading-ui, motion-state (6 contracts, ~400ms total) |
+| `test:contract:mobile-critical` | `mobile-critical` | semantic-dive-ui-surface, search-state-surface, journey-compass-state, focus-pocket-motion, focus-pocket-composition, journey-event-bindings, micro-demo, demo-camera-retirement, cluster-labels, journey-thread-inspector, window-bridge-gaps, loading-ui, exploration-modes, search-peek-expanded-render (14 contracts) |
+| `test:contract:lifecycle` | `lifecycle` | lifecycle-composition, state-transition, demo-init-seam, demo-camera-retirement, demo-state-sync, weather-lifecycle, journey-event-bindings, window-bridge-gaps (8 contracts) |
+| `test:contract:motion` | `motion` | camera-controls-motion, focus-pocket-motion, motion-state, reduced-motion-transition, reduced-motion-interruption, camera-auto-rotate-settle, scene-reveal, scene-atmosphere, three-visual-polish (9 contracts) |
+| `test:contract:render` | `render` | focus-stage-render, info-panel-collapsed-render, mode-chip-state-render, weather-widget-render, connection-analysis-render-state (5 contracts) |
+| `test:contract:quality` | `quality` | css-manifest-contract, ui-quality-contract, micro-surface-interactions, surface-redundancy (4 contracts; may write tmp reports and fails on UI quality regressions) |
+| `test:contract:full` | `full` | All 34 pinned contracts in manifest-defined order |
+| `test:contract:phase-a` | phase-a surfaces | info-panel-empty, compass-rail, loading-overlay, mode-grid |
+| `test:contract:phase-b` | phase-b surfaces | filters, thread-inspector, controls, search-chrome, info-panel-populated |
+
 ## Usage Notes
 All scripts target `http://127.0.0.1:8795/vector-explorer-polished.html` by default. Start the server with `npm run serve` before running any QA scripts.
 

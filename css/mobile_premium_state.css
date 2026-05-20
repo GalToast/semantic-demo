@@ -140,7 +140,9 @@
     }
 
     html body.is-active[data-panel-surface="idle"] .search-label {
+        min-height: 0;
         margin-bottom: 6px;
+        gap: 3px;
         color: rgba(218, 236, 234, 0.58);
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         font-size: 10px;

@@ -26,7 +26,6 @@ Canonical reference for the overview → search → focus → semantic-dive → 
 | `panelSurface` | `idle` \| `search` \| `focus` \| `focus-search` \| `semantic-dive` \| `map-idle` \| `map-search` \| `map-focus` \| `map-focus-search` \| `map-trail` | Always |
 | `trailState` | `active` \| `inactive` | Always |
 | `trailDepth` | `0` \| `1` \| `2` | Always |
-| `trailState` | `active` \| `inactive` | Always |
 
 ## Transition Table
 

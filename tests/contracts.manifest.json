@@ -65,7 +65,8 @@
         "focus-stage-render-contract.mjs",
         "info-panel-collapsed-render-contract.mjs",
         "mode-chip-state-render-contract.mjs",
-        "weather-widget-render-contract.mjs"
+        "weather-widget-render-contract.mjs",
+        "connection-analysis-render-state-contract.mjs"
       ]
     },
     "quality": {
