@@ -197,6 +197,38 @@ assert(ds('trailState') === 'active', 'map-trail: trailState is active');
 assert(state.selectedPoint !== null, 'map-trail: selectedPoint is set');
 console.log('  PASS: map-trail state is correct\n');
 
+// BOUNDARY 2b: map-trail -> semantic-dive reactivation
+// Tests the round-trip: semantic-dive enters map view (semanticDive forced inactive),
+// then returns to galaxy view (semanticDive must reactivate when trailDepth >= 2 && hasFocus).
+// This covers the map-trail -> semantic-dive boundary gap identified in the state machine.
+console.log('[BOUNDARY 2b] map-trail -> galaxy (semantic-dive reactivation)');
+// Set up semantic-dive state first (trailDepth=2, focusedNode, galaxy view)
+state.currentView = 'galaxy';
+state.trailDepth = 2;
+state.currentSearchSummary = null;
+state.focusedNode = 4;
+state.navState.focusedIndex = 4;
+// Ensure semanticDiveMode is set (the getter setter will set trailDepth=2 when true)
+state.semanticDiveMode = true;
+commit('semantic-dive-active');
+assert(ds('semanticDive') === 'active', 'BOUNDARY 2b pre: semanticDive is active in galaxy with trailDepth=2');
+
+// Now switch to map view - semanticDive must be forced inactive
+state.currentView = 'map';
+commit('map-forces-inactive');
+assert(ds('activeView') === 'map', 'BOUNDARY 2b: activeView is map');
+assert(ds('semanticDive') === 'inactive', 'BOUNDARY 2b: map view forces semanticDive inactive');
+
+// Return to galaxy - semanticDive must reactivate when trailDepth=2 and focusedNode is set
+state.currentView = 'galaxy';
+state.trailDepth = 2; // preserve trailDepth
+state.semanticDiveMode = true; // restore (setter will set trailDepth=2)
+commit('galaxy-reactivates');
+assert(ds('activeView') === 'galaxy', 'BOUNDARY 2b: activeView is galaxy on return');
+assert(ds('semanticDive') === 'active', 'BOUNDARY 2b: semanticDive re-activates on galaxy return with trailDepth=2');
+assert(ds('panelSurface') === 'semantic-dive', 'BOUNDARY 2b: panelSurface is semantic-dive on reactivation');
+console.log('  PASS: map-trail -> galaxy semantic-dive reactivation is correct\n');
+
 // BOUNDARY 3: map-trail -> reset (resetStateBeforeUrlRestore)
 console.log('[BOUNDARY 3] map-trail -> reset');
 resetState();

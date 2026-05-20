@@ -395,5 +395,66 @@ assert(ds('activeView') === 'map',        'map-semantic-dive: activeView is map'
 assert(ds('mapContext') === 'focus-search', 'map-semantic-dive: mapContext is focus-search (focus + search)');
 console.log('  PASS: map view overrides semantic-dive\n');
 
-// ── SUMMARY ───────────────────────────────────────────────────────────────────
+// PHASE 5b: focus -> map-trail direct (no semantic-dive, direct galaxy->map handoff)
+// Tests that direct focus->map transition (without entering semantic-dive) correctly
+// sets mapContext=focus-search and panelSurface=map-focus-search.
+// This covers the focus -> map-trail direct boundary gap.
+console.log('[PHASE] focus -> map-trail direct');
+resetState();
+state.currentView = 'galaxy';
+state.focusedNode = 4;
+state.navState.focusedIndex = 4;
+state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
+state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+state.trailDepth = 1; // trail active but not yet at dive depth
+elementsById.set('search-input', new FakeElement('input'));
+commitTransition('focus-pre-map');
+
+// Switch to map directly - no semantic-dive intermediate state
+state.currentView = 'map';
+commitTransition('map-trail-direct');
+
+assert(ds('activeView') === 'map',       'focus->map: activeView is map');
+assert(ds('mapContext') === 'focus-search', 'focus->map: mapContext is focus-search (focus + search)');
+assert(ds('panelSurface') === 'map-focus-search', 'focus->map: panelSurface is map-focus-search');
+assert(ds('semanticDive') === 'inactive','focus->map: semanticDive is inactive');
+assert(ds('trailState') === 'active',    'focus->map: trailState is active');
+assert(state.selectedPoint !== null,     'focus->map: selectedPoint is preserved');
+console.log('  PASS: focus -> map-trail direct transition is correct\n');
+
+// PHASE 6b: reset -> overview UI return (resetStateBeforeUrlRestore returns to idle)
+// Tests that reset from deep state (semantic-dive) properly clears all composition
+// dataset attributes so the UI returns to overview/idle state.
+// This covers the reset -> overview UI return boundary gap.
+console.log('[PHASE] reset -> overview UI return');
+resetState();
+state.currentView = 'galaxy';
+state.focusedNode = 4;
+state.navState.focusedIndex = 4;
+state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
+state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+state.trailDepth = 2;
+state.semanticDiveMode = true; // deep dive state
+elementsById.set('search-input', new FakeElement('input'));
+commitTransition('pre-reset-deep');
+
+// Perform the full reset
+resetStateBeforeUrlRestore({ clearSearchInput: true });
+commitTransition('post-reset-deep');
+
+assert(ds('activeView') === 'galaxy',    'reset: activeView is galaxy (not stuck on map/semantic)');
+assert(ds('graphContext') === 'idle',   'reset: graphContext is idle');
+assert(ds('panelSurface') === 'idle',   'reset: panelSurface is idle');
+assert(ds('semanticDive') === 'inactive','reset: semanticDive is inactive');
+assert(ds('trailState') === 'inactive', 'reset: trailState is inactive');
+assert(ds('mapContext') === 'idle',     'reset: mapContext is idle (not stuck on focus-search)');
+assert(state.focusedNode === null,      'reset: focusedNode is null');
+assert(state.selectedPoint === null,    'reset: selectedPoint is null');
+assert(state.currentSearchSummary === null, 'reset: currentSearchSummary is null');
+assert(state.trailDepth === 0,          'reset: trailDepth is 0');
+assert(state.semanticDiveMode === false, 'reset: semanticDiveMode is false');
+assert(state.navState.mode === 'overview', 'reset: navState.mode is overview');
+console.log('  PASS: reset -> overview UI return is correct\n');
+
+// -- SUMMARY ------------------------------------------------------------------
 console.log('All state-transition contracts passed.');
