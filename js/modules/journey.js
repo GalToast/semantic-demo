@@ -1143,6 +1143,9 @@ export function syncFocusStage(point) {
     }
 
     if (typeof window.applyClusterUiAccent === 'function') window.applyClusterUiAccent(stageCard, effectivePoint);
+    stage.hidden = false;
+    stage.setAttribute('aria-hidden', 'false');
+    stage.classList.add('active');
 
     const presentation = getBusinessNamePresentation(effectivePoint.name);
     const filedEl = document.getElementById('focus-stage-filed');
@@ -1946,9 +1949,9 @@ function isReducedMotionPreferred() {
  * spore animation, breath animation, and semanticScore reaction.
  */
 function buildFocusThreadLineMaterial() {
-    const baseOpacity = state.navState.focusPocketMeta?.active ? 0.42 : 0.48;
+    const baseOpacity = state.navState.focusPocketMeta?.active ? 0.18 : 0.24;
     const lineMaterial = new LineMaterial({
-        linewidth: 3,
+        linewidth: 1.35,
         transparent: true,
         opacity: baseOpacity,
         vertexColors: true,
@@ -2025,13 +2028,13 @@ function buildFocusThreadLineMaterial() {
             vec3 finalColor = mix(baseColor, pearl, spore * 0.36);
             vec3 cueColor = vec3(1.0, 0.82, 0.34);
             finalColor = mix(finalColor, cueColor, vCue * (0.42 + bead * 0.1));
-            float priorityFloor = mix(0.42, 1.0, smoothstep(0.18, 1.0, vPriority));
+            float priorityFloor = mix(0.16, 0.72, smoothstep(0.18, 1.0, vPriority));
             float alpha = diffuseColor.a * breath * priorityFloor
-                + spore * 0.16
-                + bead * 0.07
-                + vCue * 0.12
-                + semanticScore * 0.18;
-            diffuseColor = vec4(finalColor, min(alpha, 0.92));`
+                + spore * 0.06
+                + bead * 0.025
+                + vCue * 0.055
+                + semanticScore * 0.045;
+            diffuseColor = vec4(finalColor, min(alpha, 0.42));`
         );
 
         // Register custom uniforms
@@ -2071,11 +2074,35 @@ export function refreshFocusSemanticOverlay() {
     const semanticCandidates = (state.navState.threadCandidates || [])
         .filter((candidate) => candidate?.source === 'semantic' && candidate.index !== focusIndex)
         .filter((candidate) => isPointVisible(candidate.index, state.points, null, state.activeFilters))
-        .slice(0, 6);
+        .slice(0, 10);
+    const roleByIndex = state.navState.focusPocketRoleByIndex instanceof Map
+        ? state.navState.focusPocketRoleByIndex
+        : new Map();
+    const roleBudgets = { primary: 12, support: 6, halo: 3, trail: 4 };
+    const roleOrder = { primary: 0, support: 1, halo: 2, trail: 3 };
+    const roleCounts = { primary: 0, support: 0, halo: 0, trail: 0 };
+    const pocketThreadIndices = (state.navState.focusPocketIndices || [])
+        .filter((index) => Number.isFinite(index) && index !== focusIndex)
+        .sort((a, b) => {
+            const roleA = roleByIndex.get(a) || 'trail';
+            const roleB = roleByIndex.get(b) || 'trail';
+            return (roleOrder[roleA] ?? 4) - (roleOrder[roleB] ?? 4);
+        })
+        .filter((index) => {
+            const role = roleByIndex.get(index) || 'trail';
+            const budget = roleBudgets[role] ?? roleBudgets.trail;
+            if (roleCounts[role] >= budget) return false;
+            roleCounts[role] += 1;
+            return true;
+        });
+    const pocketThreadSet = new Set(pocketThreadIndices);
+    const stagedSemanticIndices = semanticCandidates
+        .map((candidate) => candidate.index)
+        .filter((index) => pocketThreadSet.has(index));
     const overlayIndices = [...new Set([
         nextFocusIndex,
-        ...semanticCandidates.map((candidate) => candidate.index),
-        ...(state.navState.focusPocketIndices || []).slice(0, 6)
+        ...pocketThreadIndices,
+        ...stagedSemanticIndices
     ])].filter((index) => Number.isFinite(index) && index !== focusIndex);
 
     if (!overlayIndices.length) {
@@ -2152,9 +2179,19 @@ export function refreshFocusSemanticOverlay() {
         }
     };
 
+    const getPocketEdgePriority = (index, order) => {
+        const role = roleByIndex.get(index);
+        if (role === 'primary') return 0.78;
+        if (role === 'support') return 0.54;
+        if (role === 'halo') return 0.34;
+        return pocketSet.has(index) ? 0.62 : 0.58 - order * 0.025;
+    };
+
     overlayIndices.forEach((index, order) => {
         const isNext = index === nextFocusIndex;
-        addEdge(focusIndex, index, 'direct', isNext ? 1 : (pocketSet.has(index) ? 0.72 : 0.58 - order * 0.025));
+        const pocketRole = roleByIndex.get(index);
+        const edgeRole = pocketRole === 'support' || pocketRole === 'halo' ? 'support' : 'direct';
+        addEdge(focusIndex, index, edgeRole, isNext ? 1 : getPocketEdgePriority(index, order));
     });
 
     overlayIndices.slice(0, 3).forEach((index) => {
@@ -2999,7 +3036,11 @@ export function applyPointFilterColors() {
     state.filterColorVersion = state.filterVersion;
     if (state.searchGlowActive && state.searchGlowIndices && state.searchGlowIndices.size > 0) {
         state.searchGlowRenderStateKey = '';
-        if (typeof window.applySearchGlowVisualState === 'function') window.applySearchGlowVisualState(true);
+        if (typeof window.syncSearchStatusForFocus === 'function') {
+            const topIndex = state.searchGlowTopIndex ?? (state.searchGlowIndices.values().next().value ?? -1);
+            const topPoint = Number.isFinite(topIndex) ? state.points[topIndex] : null;
+            window.syncSearchStatusForFocus(topPoint, { fromSearchResult: true, skipTraversalUiUpdate: true });
+        }
     }
 }
 

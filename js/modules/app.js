@@ -317,18 +317,16 @@ export async function init() {
             console.error('applyUrlState failed during init:', urlErr);
             showStartupRecoveryNotice('URL state restoration', urlErr);
         }
-
         if (state.clockTimer) window.clearInterval(state.clockTimer);
         state.clockTimer = setInterval(updateTime, 1000);
         if (graphicsReady !== false) animate();
 
         requestAnimationFrame(async () => {
             setLoadingPhase('launch');
-            startSceneReveal(); 
+            startSceneReveal();
             await hideLoadingOverlay();
             if (safetyValve) clearTimeout(safetyValve);
             startDeferredHydration();
-
             if (typeof window.demoController?.init === 'function') {
                 window.demoController.init();
             }

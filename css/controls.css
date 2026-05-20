@@ -1,4 +1,21 @@
 /* Controls: view switcher, panel toggles, control buttons, and reset toast. */
+.ui-icon {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vertical-align: -0.16em;
+}
+
+.icon-label {
+    margin-left: 6px;
+}
+
 .view-toggle {
     position: fixed;
     top: var(--space-4);
@@ -18,6 +35,10 @@
 
 .view-toggle button {
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     background: transparent;
     border: none;
     color: var(--color-text-secondary);
@@ -61,6 +82,39 @@
 .view-toggle button:focus-visible {
     outline: 2px solid var(--color-primary-ring);
     outline-offset: 2px;
+}
+
+.control-btn .ui-icon,
+.panel-toggle .ui-icon,
+.legend-toggle .ui-icon,
+.share-toggle .ui-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.search-icon .ui-icon,
+.btn-synthesize .ui-icon {
+    width: 15px;
+    height: 15px;
+}
+
+.trail-btn,
+.focus-stage-journey-btn,
+.btn-synthesize,
+.suggestion-btn,
+.share-toggle,
+.close-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.trail-btn,
+.focus-stage-journey-btn,
+.btn-synthesize,
+.suggestion-btn,
+.share-toggle {
+    gap: 6px;
 }
 
 .view-handoff {

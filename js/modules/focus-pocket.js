@@ -21,6 +21,12 @@ function seededUnit(...values) {
     return x - Math.floor(x);
 }
 
+function safeUnitScore(value, fallback = 0) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return fallback;
+    return Math.max(0, Math.min(1, numeric));
+}
+
 // === Focus constellation geometry ===
 
 export function getFocusViewBasis(focusVector) {
@@ -63,6 +69,20 @@ export function getFocusConstellationMotif(index) {
     };
 }
 
+function getFocusConstellationMotifForPersonality(index, personality) {
+    const fallback = getFocusConstellationMotif(index);
+    const overrideKey = personality?.motifOverride;
+    if (!overrideKey) return fallback;
+    const override = state.FOCUS_CONSTELLATION_MOTIFS[overrideKey];
+    if (!override) return fallback;
+    return {
+        ...fallback,
+        ...override,
+        key: overrideKey,
+        seed: fallback.seed
+    };
+}
+
 export function getNeighborhoodPersonality(index) {
     const viewportProfile = getFocusConstellationViewportProfile();
     const primaryCandidates = getSemanticCandidateSlice(index, viewportProfile.primaryLimit);
@@ -93,7 +113,7 @@ export function getNeighborhoodPersonality(index) {
     if (state.trailDepth === 2) {
         personality.type = 'DEEP_DIVE';
         personality.motifOverride = 'rosette';
-        personality.compressionMult = 0.64; // Tighten the neighborhood into a dense rosette
+        personality.compressionMult = 0.84; // Pull the neighborhood together without collapsing the constellation
         personality.cameraDuration = 1100;
         personality.cameraArc = 'tight';
         personality.easing = 'easeOutBack';
@@ -243,7 +263,7 @@ export function getFocusConstellationViewportProfile() {
             haloOriginBlend: 0.045,
             zScale: 0.76,
             beaconLimit: 8,
-            overlayLimit: 6,
+            overlayLimit: 8,
             primaryBeam: 8,
             supportBeam: 6,
             supportSeedLimit: 4,
@@ -259,16 +279,16 @@ export function getFocusConstellationViewportProfile() {
         primaryLimit: 12,
         supportLimit: 10,
         haloLimit: 8,
-        primaryRadiusScale: 0.7,
-        supportRadiusScale: 0.68,
-        haloRadiusScale: 0.66,
-        primarySpreadScale: 1.34,
-        supportSpreadScale: 1.2,
-        haloSpreadScale: 1.08,
-        primaryRadiusFloor: 0.055,
-        primaryRadiusCeiling: 0.108,
-        supportRadiusFloor: 0.082,
-        supportRadiusCeiling: 0.18,
+        primaryRadiusScale: 0.82,
+        supportRadiusScale: 0.78,
+        haloRadiusScale: 0.74,
+        primarySpreadScale: 1.42,
+        supportSpreadScale: 1.3,
+        haloSpreadScale: 1.12,
+        primaryRadiusFloor: 0.072,
+        primaryRadiusCeiling: 0.15,
+        supportRadiusFloor: 0.116,
+        supportRadiusCeiling: 0.25,
         primaryStagedBlend: 0.9,
         supportStagedBlend: 0.88,
         haloStagedBlend: 0.9,
@@ -277,7 +297,7 @@ export function getFocusConstellationViewportProfile() {
         haloOriginBlend: 0.05,
         zScale: 0.78,
         beaconLimit: 12,
-        overlayLimit: 8,
+        overlayLimit: 12,
         primaryBeam: 10,
         supportBeam: 8,
         supportSeedLimit: 5,
@@ -316,7 +336,7 @@ export function getFocusConstellationPlacement(
     viewportProfile = getFocusConstellationViewportProfile(),
     personality = null
 ) {
-    const score = Math.max(0, Math.min(1, entry.score || 0));
+    const score = safeUnitScore(entry.score, 0);
     const isPrimary = group === 'primary';
     const isHalo = group === 'halo';
     const normalized = total <= 1 ? 0 : order / Math.max(1, total - 1) - 0.5;
@@ -454,9 +474,7 @@ export function buildFocusedPocketStagedPositions(index, pocketEntries) {
     const haloEntries = entries.filter((entry) => entry.kind === 'halo');
 
     const personality = state.navState.currentPersonality || { type: 'STANDARD', staggerMult: 1, compressionMult: 1 };
-    const motif = personality.motifOverride
-        ? state.FOCUS_CONSTELLATION_MOTIFS[personality.motifOverride] || getFocusConstellationMotif(index)
-        : getFocusConstellationMotif(index);
+    const motif = getFocusConstellationMotifForPersonality(index, personality);
 
     const viewportProfile = getFocusConstellationViewportProfile();
     const motion = new Map();
@@ -474,19 +492,21 @@ export function buildFocusedPocketStagedPositions(index, pocketEntries) {
     const placeEntry = (entry, order, group) => {
         const original = state.originalPositions[entry.index];
         if (!original) return;
+        const score = safeUnitScore(entry.score, 0);
+        const safeEntry = { ...entry, score };
         const isPrimary = group === 'primary';
         const isHalo = group === 'halo';
         const total = isPrimary ? primaryEntries.length : isHalo ? haloEntries.length : supportEntries.length;
         const placement = { ...getFocusConstellationPlacement(
             motif,
-            entry,
+            safeEntry,
             order,
             group,
             total,
             viewportProfile,
             personality
         ) };
-        const relationSeed = seededUnit(index, entry.index, order, total, entry.score || 0);
+        const relationSeed = seededUnit(index, entry.index, order, total, score);
         const relationSwing = isPrimary ? 0.18 : isHalo ? 0.16 : 0.24;
         placement.angle += (relationSeed - 0.5) * relationSwing;
         placement.radius *= 0.94 + seededUnit(entry.index, index, group.length, order) * (isPrimary ? 0.13 : 0.17);
@@ -900,6 +920,13 @@ export function applyFocusPocketBreathing(now, positions) {
             ? state.targetPositions[anchorIndex] || state.nodePositions[anchorIndex] || state.originalPositions[anchorIndex]
             : null;
     if (anchor && !(Number.isFinite(anchor.x) && Number.isFinite(anchor.y) && Number.isFinite(anchor.z))) return false;
+
+    // Prepare the camera view vector for rotation
+    const viewVec = new THREE.Vector3(0, 0, 1);
+    if (state.camera && anchor) {
+        viewVec.subVectors(state.camera.position, new THREE.Vector3(anchor.x, anchor.y, anchor.z)).normalize();
+    }
+
     let changed = false;
     state.focusPocketMotionByIndex.forEach((motion, index) => {
         const basePosition = state.targetPositions[index] || state.nodePositions[index] || state.originalPositions[index];
@@ -917,9 +944,19 @@ export function applyFocusPocketBreathing(now, positions) {
         const settle = easeOutQuint(t);
         const breatheOffset = Math.sin(age * 0.0015 + phase) * breatheAmp * settle;
         if (!Number.isFinite(breatheOffset)) return;
-        const x = basePosition.x + (basePosition.x - anchor.x) * breatheOffset;
-        const y = basePosition.y + (basePosition.y - anchor.y) * breatheOffset;
-        const z = basePosition.z + (basePosition.z - anchor.z) * breatheOffset;
+
+        // Base offset from anchor
+        const offset = new THREE.Vector3(basePosition.x - anchor.x, basePosition.y - anchor.y, basePosition.z - anchor.z);
+
+        // Slow kinetic orbit swirling
+        const speedFactor = motion.role === 'primary' ? 1.0 : 0.45;
+        const direction = (index % 2 === 0) ? 1 : -1;
+        const orbitAngle = elapsed * 0.00035 * speedFactor * direction * settle;
+        offset.applyAxisAngle(viewVec, orbitAngle);
+
+        const x = anchor.x + offset.x * (1 + breatheOffset);
+        const y = anchor.y + offset.y * (1 + breatheOffset);
+        const z = anchor.z + offset.z * (1 + breatheOffset);
         if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return;
 
         const posObj = positions[index];

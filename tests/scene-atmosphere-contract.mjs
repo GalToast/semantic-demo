@@ -48,7 +48,11 @@ const checks = [
   {
     name: 'base point and spore opacity are driven by scene atmosphere',
     pass: /opacity:\s*state\.POINTS_MATERIAL_BASE_OPACITY\s*\*\s*SCENE_ATMOSPHERE\.pointOpacityScale/.test(src)
-      && /opacity:\s*SCENE_ATMOSPHERE\.sporeOpacity/.test(src),
+      && /const\s+focusPointOpacityScale\s*=\s*focusSceneActive\s*\?\s*0\.018\s*:\s*1\.0/.test(src)
+      && /const\s+focusPointSizeScale\s*=\s*focusSceneActive\s*\?\s*0\.44\s*:\s*1\.0/.test(src)
+      && /state\.pointsMesh\.visible\s*=\s*!focusSceneActive/.test(src)
+      && /opacity:\s*SCENE_ATMOSPHERE\.sporeOpacity/.test(src)
+      && /state\.nodeSporeMaterial\.opacity\s*=\s*SCENE_ATMOSPHERE\.sporeOpacity\s*\*\s*pointsRevealProgress\s*\*\s*focusBoost/.test(src),
   },
   {
     name: 'focus DOM atmosphere does not screen-blend a white veil over WebGL',

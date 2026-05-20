@@ -14,20 +14,20 @@ const cssDir = path.resolve(process.cwd(), 'css');
 
 const selectorBaselines = {
   '.close-icon': {
+    'controls.css': 1,
     'synthesis.css': 2,
-    'time_weather.css': 1,
   },
   '.suggestion-btn': {
+    'controls.css': 2,
     'synthesis.css': 8,
     'search.css': 1,
-    'time_weather.css': 1,
   },
   '.btn-synthesize': {
+    'controls.css': 3,
     'synthesis.css': 7,
     'journey_active.css': 2,
     'mobile_base.css': 1,
     'search.css': 1,
-    'time_weather.css': 2,
   },
   '.focus-stage-route': {
     'journey_steps.css': 15,
@@ -36,19 +36,29 @@ const selectorBaselines = {
     'mobile_premium_surfaces.css': 3,
   },
   '.share-toggle': {
+    'controls.css': 3,
     'layout_base.css': 7,
     'journey_active.css': 3,
     'mobile_base.css': 3,
     'progressive_disclosure.css': 2,
     'strands.css': 4,
     'animations.css': 3,
-    'time_weather.css': 2,
   },
   '.legend-toggle': {
+    'controls.css': 1,
     'layout_base.css': 10,
     'journey_active.css': 1,
     'strands.css': 2,
-    'time_weather.css': 1,
+  },
+  '.search-results.active': {
+    'search.css': 4,
+    'layout_base.css': 2,
+    'journey_active.css': 1,
+    'progressive_disclosure.css': 3,
+    'strands.css': 13,
+    'mobile_premium_chrome.css': 7,
+    'mobile_premium_state.css': 6,
+    'mobile_premium_surfaces.css': 1,
   },
   '.help-toggle': {
     'layout_base.css': 4,

@@ -62,7 +62,7 @@ export function findSemanticPath(startLeadId, targetLeadId) {
         }
     }
 
-    console.info('[pathfinding] No path found between', startLeadId, 'and', targetLeadId);
+    console.warn('[pathfinding] No path found between', startLeadId, 'and', targetLeadId);
     return null;
 }
 

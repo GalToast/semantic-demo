@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { detectStaticDevPHP } from '../utils.js';
 
 const SEMANTIC_SEARCH_RETRY_DELAYS_MS = [900, 1800];
 const SEMANTIC_SEARCH_CACHE_MAX_ENTRIES = 8;
@@ -172,12 +173,6 @@ export function getSemanticSearchCacheDiagnostics() {
         ttlMs: SEMANTIC_SEARCH_CACHE_TTL_MS,
         maxEntries: SEMANTIC_SEARCH_CACHE_MAX_ENTRIES
     };
-}
-
-function detectStaticDevPHP(text) {
-    if (typeof text !== 'string') return false;
-    const trimmed = text.trim();
-    return trimmed.startsWith('<?php') || (trimmed.includes('<?php') && trimmed.indexOf('<?php') < 100);
 }
 
 function allowsStaticDevFallback() {

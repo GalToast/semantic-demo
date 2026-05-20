@@ -22,23 +22,30 @@ https://mccullough.cloud/semantic-demo/vector-explorer-polished.html
 1. `js/modules/app.js` - main entry, imports all modules in dependency order
 2. `js/state.js` - single source of truth for all global state
 3. `js/modules/micro-demo.js` - the 9-second guided first-visit experience
-4. `AGENTS.md` - local agent guidance
-5. `TEST_STRATEGY.md` - how to verify changes
+4. `js/modules/journey.js` - trail state, neighbor calculation, selected-card orchestration
+5. `js/modules/ui-renderers.js` - DOM renderers for legend, search rows, and selected-card chrome
+6. `js/modules/search-state.js` - search engine, query tokenization, result rendering
+7. `AGENTS.md` - local agent guidance (module ownership, state machines, edit safety rules)
+8. `TEST_STRATEGY.md` - how to verify changes (contract vs visual audit layers)
 
 Key commands:
 ```bash
 npm install                # first setup
 npm run build              # bundle to dist/bundle.js
 npm run test               # shell/cache/CSS ownership checks
-npm run test:contract      # structural JS/DOM contracts
+npm run test:contract      # structural JS/DOM contract tests (~20 test files)
 npm run serve              # local static server on 127.0.0.1:8795
-npm run qa:contract:all    # fast DOM/layout checks
-npm run qa:surface:all     # visual screenshot audit
+npm run qa:contract:all    # fast DOM/layout assertions (17 surfaces, ~5-10s)
+npm run qa:surface:all     # visual screenshot audit (12 states, ~60-90s)
 ```
 
 ## Recent Architectural Changes
+- **JS Renderer Extraction**: UI renderer functions (buildLegend, renderSignalBadges, updateSelectedCardHeading, renderSelectedMetaStrip, renderSelectedMatchPanel, renderSelectedActionRow, setActiveSearchResultRow) are centralized in `js/modules/ui-renderers.js`. This module owns all window-bound renderer functions. `js/modules/ui-renderers-lifecycle.js` was a stub removed during extraction — do not recreate.
 - **Modular CSS**: The single monolithic CSS file has been split into 17 ordered modules. See `docs/semantic-demo-css-ownership-map.md` for details.
+- **CSS State Ownership**: `data-panel-surface` and related `data-*` body attributes are the canonical state interface between JS and CSS. See `docs/semantic-demo-mobile-state-ownership.md`.
+- **Mobile Surface Polish**: Deterministic QA with contract tests for mobile layout geometry, panel proportions, and 3D scene quality. Playwright-based surface contracts cover clipping, overlap, and touch targets.
 - **Micro-demo Fixes**: Resolved race conditions in the guided interaction loop, ensuring a reliable "Step Inside" experience for new users.
+- **Journey Compass State Machine**: `journey-compass-state.js` owns action synthesis driven by `data-panel-surface` and `data-journey-phase`.
 
 ## Development & Maintenance
 ### Styles

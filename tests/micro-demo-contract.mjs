@@ -405,8 +405,8 @@ await test('micro-demo bridge listeners are removed after completion and cancel'
 });
 
 // Contract 12: sessionStorage key contract
-await test('sessionStorage moco_mycelium_demo_v1 key can be set and cleared', async () => {
-  const key = 'moco_mycelium_demo_v1';
+await test('sessionStorage moco_mycelium_demo_session_v1 key can be set and cleared', async () => {
+  const key = 'moco_mycelium_demo_session_v1';
   _sessionStorage.set(key, new Date().toISOString());
   assertEqual(_sessionStorage.has(key), true, 'sessionStorage key is set');
   _sessionStorage.delete(key);

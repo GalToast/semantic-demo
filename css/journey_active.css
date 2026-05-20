@@ -211,14 +211,13 @@
     }
 
     body[data-panel-surface="focus-search"] .search-results.active {
-        max-height: 0;
-        margin: 0;
-        padding: 0;
-        border: 0;
-        opacity: 0;
+        max-height: min(24vh, 180px);
+        margin: 8px 0 0;
+        padding: 6px;
+        opacity: 0.94;
         overflow-y: auto;
-    overflow-x: hidden;
-        pointer-events: none;
+        overflow-x: hidden;
+        pointer-events: auto;
     }
 
     html body[data-panel-surface="focus-search"] .focus-stage-note,
@@ -733,10 +732,6 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
         top: calc(132px + env(safe-area-inset-top, 0px));
     }
 
-    html body[data-panel-surface="focus-search"] .weather-widget {
-        display: none;
-    }
-
     body[data-mobile-route-peek="active"][data-active-view="galaxy"] .journey-compass {
         top: calc(62px + env(safe-area-inset-top, 0px));
         gap: 6px;
@@ -1101,6 +1096,7 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
 
     html body[data-panel-surface="focus-search"] .focus-stage-neighbor-pill {
         grid-template-columns: 24px minmax(0, 1fr);
+        align-items: center;
         gap: 6px;
         min-height: 48px;
         padding: 6px 7px;
@@ -1200,7 +1196,8 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
 
     html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-action {
         min-width: 0;
-        min-height: 34px;
+        min-height: 44px;
+        height: 44px;
         padding: 0 7px;
         border-radius: 999px;
         font-size: 7.2px;
@@ -1610,7 +1607,8 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
 
     html body.is-active[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass-action {
         min-width: 0;
-        min-height: 34px;
+        min-height: 44px;
+        height: 44px;
         padding: 0 7px;
         border-radius: 999px;
         font-size: 7.2px;

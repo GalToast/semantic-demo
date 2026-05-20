@@ -20,6 +20,7 @@ node tests/surface-contract-check.mjs --surface=mobile-idle
 npm run qa:contract:all
 npm run qa:contract:mobile-idle
 npm run qa:contract:launch-focus
+npm run qa:contract:mobile-critical   # subset: mobile-idle, search-chrome, focus-pocket, map-trail, controls, field-node, compass-rail, global-spacing
 ```
 
 **Surfaces and what they validate:**
@@ -31,6 +32,10 @@ npm run qa:contract:launch-focus
 | `search-error` | 390x844 | error-state present, retry/dismiss buttons >=44px |
 | `focus-pocket` | 390x844 | pocket nodes rendered, card populated |
 | `field-node` | 390x844 | field node ring + glow active |
+| `map-trail` | 390x844 | map-trail strip present, card title visible |
+| `search-chrome` | 390x844 | search input + clear button + mode chips present |
+| `controls` | 390x844 | toolbar buttons visible, map-toggle present |
+| `global-spacing` | 390x844 | viewport overflow hidden, gutter >=8px |
 
 **Output:** `tmp/surface-contract-check/<run-id>/summary.json` - JSON with pass/fail counts and failure list.
 
@@ -71,6 +76,15 @@ npm run test:microdemo:server  # Playwright E2E with live browser
 npm run check:shell      # CSS delivery contract
 npm run check:cache     # cache-buster integrity
 npm run check:ownership # CSS module ownership map
+npm run check:manifest  # CSS import manifest order
+```
+
+## Layer 5: UI Quality & Motion
+```bash
+npm run qa:ui-quality           # accessibility, touch targets, visual hierarchy
+npm run qa:surface-redundancy   # CSS selector duplication tracking (ratchet mode)
+npm run qa:micro-interactions   # micro-demo choreography, panel transitions
+npm run qa:motion-state         # reduced-motion preference handling
 ```
 
 ## When to Use Which
@@ -80,4 +94,7 @@ npm run check:ownership # CSS module ownership map
 | Visual regression after CSS change | Layer 2 (visual audit) |
 | New feature DOM correctness | Layer 1 surface relevant to feature |
 | Micro-demo choreography change | Layer 3 |
-| Pre-deploy final check | Layer 1 + Layer 2 + Layer 3 |
+| CSS selector ownership drift | Layer 4 + `npm run qa:surface-redundancy` |
+| Accessibility audit | Layer 5 `qa:ui-quality` |
+| Reduced-motion correctness | Layer 5 `qa:motion-state` |
+| Pre-deploy final check | Layer 1 + Layer 2 + Layer 3 + Layer 4 |

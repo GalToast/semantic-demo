@@ -301,10 +301,10 @@
     html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results.active,
     html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-results.active {
         display: block;
-        flex: 0 0 56px;
-        height: 56px;
-        max-height: 56px;
-        min-height: 56px;
+        flex: 0 0 88px;
+        height: 88px;
+        max-height: 88px;
+        min-height: 88px;
         overflow: hidden;
         padding: 4px;
         margin-top: 8px;
@@ -312,14 +312,14 @@
 
     html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-item,
     html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-item {
-        min-height: 48px;
-        height: 48px;
-        padding: 7px 9px;
+        min-height: 86px;
+        height: 86px;
+        padding: 6px 10px;
         overflow: hidden;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-item:not(:first-child),
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-item:not(:first-child),
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-listitem:not(:first-child),
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-listitem:not(:first-child),
     html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results-count,
     html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-results-count,
     html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-what,
@@ -337,6 +337,11 @@
         display: none;
     }
 
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-listitem:not(:first-child) .search-result-item,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-listitem:not(:first-child) .search-result-item {
+        overflow: hidden;
+    }
+
     html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-rank,
     html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-rank {
         font-size: 8px;
@@ -347,17 +352,34 @@
     html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-name,
     html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-name {
         margin-top: 2px;
-        font-size: 13px;
-        line-height: 1.05;
+        font-size: 12px;
+        line-height: 1.15;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        -webkit-line-clamp: 1;
     }
 
     html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .info-panel,
     html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .info-panel {
         height: min(57dvh, 480px);
         min-height: min(48dvh, 386px);
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .search-results-count,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .search-results-count {
+        line-height: 1.35;
+        min-height: 18px;
+        overflow: visible;
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .search-result-what,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .search-result-what {
+        display: block;
+        line-height: 1.4;
+        overflow: visible;
+        overflow-y: visible;
+        -webkit-line-clamp: unset;
     }
 
     html body.is-active[data-panel-surface="search"] .search-container.has-query,
@@ -384,9 +406,15 @@
     /* ----------------------------------------------------------------
        6. Map view - hide non-map chrome + compass
        ---------------------------------------------------------------- */
-    html body.is-active[data-panel-surface^="map-"] .weather-widget,
     html body.is-active[data-panel-surface^="map-"] .time-display {
         display: none;
+    }
+
+    html body[data-panel-surface="map-trail"] .view-toggle,
+    html body[data-panel-surface="map-trail"] .journey-compass {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
     }
 
     /* SD-143: Restore mobile search in Map mode. layout_base sets top/bottom/left/right
@@ -413,7 +441,7 @@
         -webkit-backdrop-filter: blur(var(--glass-blur));
         border-radius: var(--glass-radius-panel);
         left: 8px;
-        right: 82px; /* clears mobile .controls rail (60px wide at right: 14px) */
+        right: 8px;
         top: calc(10px + env(safe-area-inset-top, 0px));
         bottom: auto;
         margin: 0;
@@ -460,13 +488,13 @@
     }
 
     /* ----------------------------------------------------------------
-       7. Map empty state — inset right to clear controls rail
+       7. Map empty state
        ---------------------------------------------------------------- */
     html body.is-active[data-panel-surface^="map-"] .map-empty-state {
         left: 14px;
-        right: 82px; /* clears .controls rail: 60px wide + 14px right offset + 8px gap */
+        right: 14px;
         top: auto;
-        bottom: calc(46px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(74px + env(safe-area-inset-bottom, 0px));
         width: auto;
         max-width: none;
         min-height: 0;
@@ -494,8 +522,56 @@
 
     html body.is-active[data-panel-surface="map-idle"] .map-empty-state {
         left: 18px;
-        right: 86px;
+        right: 18px;
         bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Map navigation belongs to the map, not over the search/results surface. */
+    html body.is-active[data-panel-surface^="map-"] .controls {
+        top: clamp(250px, 31dvh, 270px);
+        left: 50%;
+        right: auto;
+        bottom: auto;
+        width: min(232px, calc(100vw - 32px));
+        min-height: 52px;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+        padding: 6px;
+        transform: translateX(-50%);
+        border-radius: 18px;
+        background:
+            linear-gradient(180deg, rgba(10, 20, 27, 0.9), rgba(5, 10, 15, 0.86)),
+            radial-gradient(circle at 18% 0%, rgba(121, 235, 222, 0.12), transparent 44%);
+        border: 1px solid rgba(121, 235, 222, 0.2);
+        box-shadow:
+            0 18px 42px rgba(0, 0, 0, 0.34),
+            inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        z-index: 1002;
+    }
+
+    html body.is-active[data-panel-surface^="map-"] .controls .control-btn {
+        width: 100%;
+        min-width: 0;
+        height: 40px;
+        min-height: 40px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.045);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: none;
+        color: rgba(134, 245, 235, 0.92);
+    }
+
+    html body.is-active[data-panel-surface^="map-"] .controls .control-btn:hover,
+    html body.is-active[data-panel-surface^="map-"] .controls .control-btn:focus-visible {
+        background: rgba(121, 235, 222, 0.14);
+        border-color: rgba(121, 235, 222, 0.34);
+        color: #eafffb;
+        transform: none;
+    }
+
+    html body.is-active[data-panel-surface^="map-"] #btn-rotate {
+        display: flex;
     }
 
 } /* end @media state ownership */

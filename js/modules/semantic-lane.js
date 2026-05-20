@@ -8,6 +8,7 @@
  * All window/document accesses are guarded with typeof checks.
  */
 import { state } from '../state.js';
+import { detectStaticDevPHP } from '../utils.js';
 
 function getWindow() {
     return typeof window !== 'undefined' ? window : null;
@@ -17,17 +18,12 @@ function getDocument() {
     return typeof document !== 'undefined' ? document : null;
 }
 
-function detectStaticDevPHP(text) {
-    if (typeof text !== 'string') return false;
-    const trimmed = text.trim();
-    return trimmed.startsWith('<?php') || (trimmed.includes('<?php') && trimmed.indexOf('<?php') < 100);
-}
-
 function allowsStaticDevFallback() {
     const win = getWindow();
     if (!win?.location) return false;
     const host = win.location.hostname;
-    if (host !== 'localhost' && host !== '127.0.0.1' && host !== '::1') return false;
+    // Expanded local dev range to include common E2E and container hostnames
+    if (host !== 'localhost' && host !== '127.0.0.1' && host !== '::1' && host !== '0.0.0.0') return false;
     const params = new URLSearchParams(win.location.search || '');
     return params.get('staticDev') !== '0';
 }

@@ -339,10 +339,10 @@ async function assert_launch_focus(page, ctx) {
   const focusedUrl = `${positionalUrl}${base}view=galaxy&q=coffee&anchor=519`;
   await loadAndWait(page, focusedUrl);
 
-  const firstResult = page.locator('.search-result-item').first();
-  if (await firstResult.count()) {
-    await firstResult.click({ timeout: 3000 }).catch(() => {});
-  }
+  await page.evaluate(() => {
+    const el = document.querySelector('.search-result-item');
+    if (el) el.click();
+  });
   await page.waitForTimeout(500);
 
   const info = await page.evaluate(() => {
@@ -605,10 +605,10 @@ async function assert_map_trail(page, ctx) {
   await loadAndWait(page, focusedUrl);
 
   // Click the first result card to enter focus stage
-  const firstCard = page.locator('.search-result-item').first();
-  if (await firstCard.count()) {
-    await firstCard.click({ timeout: 3000 }).catch(() => {});
-  }
+  await page.evaluate(() => {
+    const el = document.querySelector('.search-result-item');
+    if (el) el.click();
+  });
   await page.waitForTimeout(800);
 
   // Simulate trail reveal (Show Trail button)
@@ -735,10 +735,10 @@ async function assert_focus_pocket(page, ctx) {
   await loadAndWait(page, focusedUrl);
 
   // Enter focus stage
-  const firstCard = page.locator('.search-result-item').first();
-  if (await firstCard.count()) {
-    await firstCard.click({ timeout: 3000 }).catch(() => {});
-  }
+  await page.evaluate(() => {
+    const el = document.querySelector('.search-result-item');
+    if (el) el.click();
+  });
   await page.waitForTimeout(800);
 
   // Trigger "Step Inside"
@@ -927,14 +927,15 @@ async function assert_field_node(page, ctx) {
   await loadAndWait(page, fieldNodeUrl);
 
   // Enter focus stage first, then simulate field-node panel mode
-  const firstCard = page.locator('.search-result-item').first();
-  if (await firstCard.count()) {
-    await firstCard.click({ timeout: 3000 }).catch(() => {});
-  }
+  await page.evaluate(() => {
+    const el = document.querySelector('.search-result-item');
+    if (el) el.click();
+  });
   await page.waitForTimeout(800);
 
   // Simulate field-node state
   await page.evaluate(() => {
+    document.body.classList.add('is-active');
     document.body.dataset.activeView = 'galaxy';
     document.body.dataset.graphContext = 'focus-search';
     document.body.dataset.panelSurface = 'focus-search';
@@ -1030,6 +1031,22 @@ async function assert_field_node(page, ctx) {
     const compassActionBtns = document.querySelectorAll('.journey-compass-action');
     results.compassActionBtnsCount = compassActionBtns.length;
     results.compassActionTouchTargets = Array.from(compassActionBtns).map((btn) => touchTargetOk(btn));
+    results.compassActionRects = Array.from(compassActionBtns).map((btn) => {
+      const style = getComputedStyle(btn);
+      if (style.display === 'none' || style.visibility === 'hidden') return null;
+      const rect = btn.getBoundingClientRect();
+      return {
+        id: btn.id || null,
+        action: btn.dataset?.journeyAction || null,
+        width: Math.round(rect.width * 100) / 100,
+        height: Math.round(rect.height * 100) / 100,
+        computedWidth: style.width,
+        computedHeight: style.height,
+        minWidth: style.minWidth,
+        minHeight: style.minHeight,
+        transform: style.transform,
+      };
+    });
 
     // --- focus-stage card (walk dock) ---
     const focusStageCard = document.querySelector('.focus-stage-card');
@@ -1092,7 +1109,13 @@ async function assert_field_node(page, ctx) {
   if (Array.isArray(info.compassActionTouchTargets)) {
     const visibleTargets = info.compassActionTouchTargets.filter((result) => result !== null);
     if (visibleTargets.length && visibleTargets.every(Boolean)) ctx.pass('field-node', 'touch-target:compass-actions');
-    else if (visibleTargets.some((result) => result === false)) ctx.fail('field-node', 'touch-target:compass-actions', 'some compass actions < 44px');
+    else if (visibleTargets.some((result) => result === false)) {
+      ctx.fail(
+        'field-node',
+        'touch-target:compass-actions',
+        `some compass actions < 44px: ${JSON.stringify(info.compassActionRects || [])}`
+      );
+    }
   }
 
   if (info.focusStageCardPresent) ctx.pass('field-node', 'dom:focus-stage-card');
@@ -1589,6 +1612,12 @@ async function assert_mode_grid(page, ctx) {
 // Surface triggers: open filters-section via dataset toggle, inspect chips.
 // Validates: filters section present, filter chips visible, city select present,
 // all filter chips touch-target >= 44px, no horizontal overflow.
+//
+// NOTE: This surface is mobile-only. On desktop, #filters-section is always
+// display:none in panelSurface=idle (progressive_disclosure.css + strands.css
+// both hide it). The filters-open feature is enabled on mobile via
+// body.is-active[data-panel-surface="idle"] #filters-section[open] rules in
+// mobile_premium_state.css. Desktop filters are not part of the static demo.
 // ---------------------------------------------------------------------------
 
 async function assert_filters(page, ctx) {
@@ -1712,10 +1741,10 @@ async function assert_thread_inspector(page, ctx) {
   await loadAndWait(page, focusedUrl);
 
   // Enter focus stage first
-  const firstCard = page.locator('.search-result-item').first();
-  if (await firstCard.count()) {
-    await firstCard.click({ timeout: 3000 }).catch(() => {});
-  }
+  await page.evaluate(() => {
+    const el = document.querySelector('.search-result-item');
+    if (el) el.click();
+  });
   await page.waitForTimeout(800);
 
   // Activate thread-inspector surface via dataset

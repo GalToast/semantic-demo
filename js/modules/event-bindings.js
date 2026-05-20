@@ -1,6 +1,5 @@
 import { state } from '../state.js';
 import { isCompactFocusStageViewport } from '../utils.js';
-import { getSemanticThreadCandidates, getProjectedNeighborCandidates } from './journey-thread-model.js';
 
 function bindClick(id, handler, options = {}) {
     const element = document.getElementById(id);
@@ -438,6 +437,12 @@ function bindWindowControlFunctions(resetExperienceState, resetNodePositions) {
     window.resetExperienceState = resetExperienceState;
     window.resetNodePositions = resetNodePositions;
 
+    window.revealSelectedBusinessCard = function () {
+        if (typeof window.setInfoPanelOpen === 'function') {
+            window.setInfoPanelOpen(true);
+        }
+    };
+
     window.toggleAutoRotate = function () {
         const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
         if (prefersReduced) return;
@@ -480,31 +485,52 @@ function bindWindowControlFunctions(resetExperienceState, resetNodePositions) {
         if (typeof resetNodePositions === 'function') resetNodePositions();
     };
 
-    window.setInfoPanelOpen = function (open) {
+    window.setInfoPanelOpen = function (open, options = {}) {
         const panel = document.querySelector('.info-panel');
         if (!panel) return false;
         const isOpen = panel.classList.contains('active');
         const shouldBeOpen = open !== undefined ? open : !isOpen;
+        const restoreFocus = options.restoreFocus === true || open === undefined;
+
+        const infoPanelToggle = document.getElementById('info-panel-toggle');
+        const panelBtn = document.getElementById('btn-panel');
+        if (shouldBeOpen && restoreFocus) {
+            window._previouslyFocusedInfoPanel = document.activeElement || infoPanelToggle || panelBtn;
+        }
 
         panel.classList.toggle('active', shouldBeOpen);
         document.body.dataset.focusPanelMode = shouldBeOpen ? 'manual-panel' : 'manual-collapsed';
 
-        const panelBtn = document.getElementById('btn-panel');
         if (panelBtn) {
             panelBtn.classList.toggle('is-collapsed', !shouldBeOpen);
             panelBtn.setAttribute('aria-expanded', String(shouldBeOpen));
         }
 
         const infoToggleIcon = document.getElementById('info-toggle-icon');
-        const infoPanelToggle = document.getElementById('info-panel-toggle');
         if (infoToggleIcon) infoToggleIcon.classList.toggle('is-collapsed', !shouldBeOpen);
         if (infoPanelToggle) infoPanelToggle.setAttribute('aria-expanded', String(shouldBeOpen));
+
+        if (!shouldBeOpen && restoreFocus) {
+            const prevFocus = window._previouslyFocusedInfoPanel || infoPanelToggle || panelBtn;
+            if (prevFocus && typeof prevFocus.focus === 'function') {
+                prevFocus.focus({ preventScroll: true });
+            }
+            window._previouslyFocusedInfoPanel = null;
+        } else if (!shouldBeOpen) {
+            window._previouslyFocusedInfoPanel = null;
+        }
 
         return shouldBeOpen;
     };
 }
 
+let _activeResizeHandler = null;
+
 function bindPanelControls(onWindowResize) {
+    if (_activeResizeHandler) {
+        window.removeEventListener('resize', _activeResizeHandler);
+    }
+    _activeResizeHandler = onWindowResize;
     window.addEventListener('resize', onWindowResize);
 
     bindClick('info-panel-toggle', () => {
@@ -522,6 +548,8 @@ function bindPanelControls(onWindowResize) {
                 document.documentElement.dataset.legendActive = 'false';
                 if (legendToggle) legendToggle.setAttribute('aria-expanded', 'false');
             }
+            const infoToggle = document.getElementById('info-panel-toggle');
+            if (infoToggle) infoToggle.setAttribute('aria-expanded', 'true');
         }
     });
 }
@@ -543,6 +571,9 @@ function bindLegendControls() {
     if (legendToggle && legendPanel) {
         legendToggle.onclick = () => {
             const isOpening = !legendPanel.classList.contains('active');
+            if (isOpening) {
+                window._previouslyFocusedLegend = document.activeElement || legendToggle;
+            }
             legendPanel.classList.toggle('active', isOpening);
             legendPanel.setAttribute('aria-hidden', isOpening ? 'false' : 'true');
             document.documentElement.dataset.legendActive = isOpening ? 'true' : 'false';
@@ -552,6 +583,8 @@ function bindLegendControls() {
                     infoPanel.classList.remove('active');
                     document.body.dataset.focusPanelMode = 'legend-open';
                     if (panelBtn) panelBtn.setAttribute('aria-expanded', 'false');
+                    const infoToggle = document.getElementById('info-panel-toggle');
+                    if (infoToggle) infoToggle.setAttribute('aria-expanded', 'false');
                 }
             } else if (!isOpening) {
                 restoreLegendCollapsedPanel();
@@ -564,11 +597,15 @@ function bindLegendControls() {
         document.addEventListener('pointerdown', (e) => {
             if (!legendPanel?.classList.contains('active')) return;
             if (legendPanel.contains(e.target) || legendToggle?.contains(e.target)) return;
+            const prevFocus = window._previouslyFocusedLegend || legendToggle;
             legendPanel.classList.remove('active');
             legendPanel.setAttribute('aria-hidden', 'true');
             document.documentElement.dataset.legendActive = 'false';
             if (legendToggle) legendToggle.setAttribute('aria-expanded', 'false');
             restoreLegendCollapsedPanel();
+            if (prevFocus && typeof prevFocus.focus === 'function') {
+                prevFocus.focus({ preventScroll: true });
+            }
         });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && legendPanel?.classList.contains('active')) {

@@ -477,7 +477,7 @@ body:has(.info-panel.active) .panel-toggle {
         -webkit-line-clamp: 1;
     }
 
-    body[data-mobile-route-peek="active"][data-panel-surface]:not([data-panel-surface^="map-"]) .search-results.active {
+    body[data-mobile-route-peek="active"][data-panel-surface]:not([data-panel-surface^="map-"]) .search-container:not(.search-degraded) .search-results.active {
         display: none;
     }
 
@@ -844,11 +844,6 @@ body:has(.info-panel.active) .panel-toggle {
     body[data-panel-surface="map-search"] .journey-compass,
     body[data-panel-surface="map-focus"] .journey-compass,
     body[data-panel-surface="map-focus-search"] .journey-compass {
-        display: none;
-    }
-
-    /* #925: Hide weather widget in map mode when map-specific task is active */
-    body[data-panel-surface^="map-"] .weather-widget {
         display: none;
     }
 

@@ -126,6 +126,16 @@ export function initClusterLabels() {
         const el = document.createElement('div');
         el.className = 'galaxy-cluster-label';
         el.innerHTML = `${labelText}<span class="galaxy-cluster-label-dot"></span>`;
+
+        el.addEventListener('pointerenter', () => {
+            state.hoveredCluster = cluster;
+        });
+        el.addEventListener('pointerleave', () => {
+            if (state.hoveredCluster === cluster) {
+                state.hoveredCluster = null;
+            }
+        });
+
         container.appendChild(el);
         _labelElements.set(cluster, el);
     });
@@ -214,7 +224,29 @@ export function updateClusterLabels() {
         el.classList.toggle('is-context', !!candidate && !candidate.isActive);
         el.dataset.labelMode = mode;
         if (candidate) {
-            el.style.transform = `translate(-50%, -50%) translate(${candidate.x}px, ${candidate.y}px)`;
+            // Calculate distance to camera to apply depth-based scaling and fading
+            const pos = _clusterCentroids.get(cluster);
+            let scale = 1.0;
+            let depthOpacity = 1.0;
+            if (pos && state.camera) {
+                const dist = state.camera.position.distanceTo(pos);
+                scale = Math.max(0.62, Math.min(1.15, 1.8 / (dist + 0.45)));
+                if (dist < 0.6) {
+                    depthOpacity = Math.max(0.0, (dist - 0.28) / 0.32);
+                } else if (dist > 3.0) {
+                    depthOpacity = Math.max(0.28, 1.0 - (dist - 3.0) / 2.6);
+                }
+            }
+
+            // Sinusoidal floating animation based on time and cluster index
+            const floatOffset = Math.sin(performance.now() * 0.0014 + cluster * 7.0) * 4.0;
+
+            el.style.transform = `translate(-50%, -50%) translate(${candidate.x}px, ${candidate.y + floatOffset}px) scale(${scale.toFixed(3)})`;
+
+            // Multiply base opacity with depth opacity
+            const baseOpacity = candidate.isActive ? 1.0 : (candidate.isContext ? 0.58 : 0.88);
+            el.style.opacity = (baseOpacity * depthOpacity).toFixed(3);
+
             el.style.color = state.COLORS?.[cluster % state.COLORS.length] || '';
         }
     });

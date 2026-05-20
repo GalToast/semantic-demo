@@ -10,9 +10,8 @@ import { animateCameraToNode } from './camera-controls.js';
 import { applyLocalNeighborhoodFocus } from './focus-pocket.js';
 
 // === Constants ===
-const STORAGE_KEY = 'moco_mycelium_demo_v1';
+const SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1';
 const DEMO_START_DELAY_MS = 25000; // wait for scene reveal, app settle, and data
-const DEMO_DURATION_MS = 9000;   // total demo runtime target
 
 // State machine phases
 const PHASE = {
@@ -172,7 +171,7 @@ function _bindInputInterceptor() {
     Object.assign(canvasOverlay.style, {
         position: 'fixed',
         inset: '0',
-        zIndex: '9998',
+        zIndex: '1', // Behind DOM UI, but above 3D canvas
         pointerEvents: 'all',
         cursor: 'default',
         background: 'transparent'
@@ -374,6 +373,10 @@ function _resetAppState() {
     if (typeof window.updateJourneyCompass === 'function') {
         window.updateJourneyCompass();
     }
+    // Restore sidebar panel to open (overview stats state)
+    if (typeof window.setInfoPanelOpen === 'function') {
+        window.setInfoPanelOpen(true);
+    }
 }
 
 // === Public API ===
@@ -383,10 +386,15 @@ function _resetAppState() {
  * Returns false if sessionStorage flag is already set.
  */
 window.shouldRunMicroDemo = function () {
-    if (sessionStorage.getItem(STORAGE_KEY)) return false;
+    const params = new URLSearchParams(window.location.search);
+    const forceDemo = params.get('demo') === 'force';
+    if (!forceDemo && sessionStorage.getItem(SESSION_STORAGE_KEY)) return false;
     if (!_isAppReadyForDemo()) return false;
     return true;
 };
+
+let _startRetryCount = 0;
+const MAX_START_RETRIES = 100; // ~15 seconds of polling at 150ms
 
 /**
  * Start the micro-demo if conditions are right.
@@ -394,13 +402,17 @@ window.shouldRunMicroDemo = function () {
  */
 window.startMicroDemo = function () {
     if (_demoPhase !== PHASE.IDLE) return;
-    if (sessionStorage.getItem(STORAGE_KEY)) return;
+    const params = new URLSearchParams(window.location.search);
+    const forceDemo = params.get('demo') === 'force';
+    if (!forceDemo && sessionStorage.getItem(SESSION_STORAGE_KEY)) return;
     if (!_isAppReadyForDemo()) {
         const now = performance.now();
         if (!_startRetryDeadline) {
             _startRetryDeadline = now + DEMO_START_DELAY_MS;
+            _startRetryCount = 0;
         }
-        if (now < _startRetryDeadline) {
+        if (now < _startRetryDeadline && _startRetryCount < MAX_START_RETRIES) {
+            _startRetryCount++;
             _startRetryTimer = window.setTimeout(() => {
                 _startRetryTimer = null;
                 window.startMicroDemo();
@@ -408,19 +420,19 @@ window.startMicroDemo = function () {
             return;
         }
         // Mark as seen even on skip — don't re-run on refresh
-        try { sessionStorage.setItem(STORAGE_KEY, 'skipped-no-conditions'); } catch {}
+        try { sessionStorage.setItem(SESSION_STORAGE_KEY, 'skipped-no-conditions'); } catch {}
         _notifyDemoUnableToStart();
         return;
     }
 
     _demoNodeIndex = _getDemoNode();
     if (_demoNodeIndex === null) {
-        try { sessionStorage.setItem(STORAGE_KEY, 'skipped-no-node'); } catch {}
+        try { sessionStorage.setItem(SESSION_STORAGE_KEY, 'skipped-no-node'); } catch {}
         _notifyDemoUnableToStart();
         return;
     }
 
-    try { sessionStorage.setItem(STORAGE_KEY, new Date().toISOString()); } catch {}
+    try { sessionStorage.setItem(SESSION_STORAGE_KEY, new Date().toISOString()); } catch {}
     _startRetryDeadline = 0;
     _runDemo();
 };
@@ -442,7 +454,7 @@ function _runDemo() {
     _showVeil(true);
 
     // Show demo pill
-    const pill = _showPill('Demo — watch how it works');
+    _showPill('Demo — watch how it works');
 
     // Bind input interceptor
     _bindInputInterceptor();
@@ -552,8 +564,9 @@ function _runDemo() {
             detail: { index: demoNode, phase: 'wide_view' }
         }));
         // Slide out info card
-        const infoPanel = document.getElementById('info-panel');
-        if (infoPanel) infoPanel.classList.remove('slide-in-left');
+        if (typeof window.setInfoPanelOpen === 'function') {
+            window.setInfoPanelOpen(false);
+        }
     }, 7200));
 
     // T = 7800ms: Return to overview
@@ -604,7 +617,7 @@ function _cleanup() {
  * Cancel the running demo immediately.
  * @param {string} reason - 'user-input' | 'escape-key' | 'error'
  */
-window.cancelMicroDemo = function (reason = 'user-input') {
+export function cancelMicroDemo(reason = 'user-input') {
     if (_demoPhase === PHASE.IDLE || _demoPhase === PHASE.COMPLETE || _demoCancelled) return;
     _demoCancelled = true;
     _demoPhase = PHASE.CANCELLED;
@@ -630,7 +643,8 @@ window.cancelMicroDemo = function (reason = 'user-input') {
 
     // Notify demo-controller so it transitions state
     window.dispatchEvent(new CustomEvent('demo-cancelled'));
-};
+}
+window.cancelMicroDemo = cancelMicroDemo;
 
 // === CSS keyframe injection ===
 const _cssInjected = () => document.getElementById('micro-demo-styles');

@@ -711,6 +711,103 @@ export function applySemanticCentroidCamera(now = performance.now()) {
     }
 }
 
+export function animateCameraToSearchCorridor(anchorIndex, resultIndices = [], options = {}) {
+    if (!state.camera || !state.controls || state.currentView !== 'galaxy') return false;
+    if (!Number.isFinite(anchorIndex) || state.navState.focusedIndex !== null || state.semanticDiveMode) return false;
+
+    const isPointVisible = (index, points, clusterFilter) => {
+        if (!Number.isFinite(index) || index < 0 || index >= points.length) return false;
+        const point = points[index];
+        if (!point) return false;
+        if (clusterFilter !== null) {
+            const pointCluster = Number.isFinite(Number(point.cluster)) ? Number(point.cluster) : 0;
+            if (pointCluster !== clusterFilter) return false;
+        }
+        return true;
+    };
+
+    const routeIndices = [...new Set([anchorIndex, ...(resultIndices || [])])]
+        .filter((index) => Number.isFinite(index) && index >= 0 && index < state.points.length && isPointVisible(index, state.points, state.activeClusterFilter, state.activeFilters))
+        .slice(0, window.innerWidth <= 768 ? 8 : 12);
+
+    const vectors = routeIndices
+        .map((index) => state.targetPositions[index] || state.nodePositions[index] || state.originalPositions[index])
+        .filter(Boolean)
+        .map((pos) => new THREE.Vector3(pos.x, pos.y, pos.z));
+    if (!vectors.length) return null;
+    const box = new THREE.Box3().setFromPoints(vectors);
+    const boundsCenter = new THREE.Vector3();
+    const boundsSize = new THREE.Vector3();
+    box.getCenter(boundsCenter);
+    box.getSize(boundsSize);
+    const radius = Math.max(0.08, boundsSize.length() * 0.5);
+
+    const anchorPosition = state.targetPositions[anchorIndex] || state.nodePositions[anchorIndex] || state.originalPositions[anchorIndex];
+    if (!anchorPosition || !Number.isFinite(anchorPosition.x) || !Number.isFinite(anchorPosition.y) || !Number.isFinite(anchorPosition.z)) return false;
+
+    const anchorVector = new THREE.Vector3(anchorPosition.x, anchorPosition.y, anchorPosition.z);
+    const startTarget = state.controls.target.clone();
+    const startPos = state.camera.position.clone();
+    const currentHeading = startPos.clone().sub(startTarget);
+    if (currentHeading.lengthSq() < 0.0001) currentHeading.set(1.4, 1.1, 2);
+    currentHeading.normalize();
+
+    const worldUp = new THREE.Vector3(0, 1, 0);
+    const rightVector = new THREE.Vector3().crossVectors(worldUp, currentHeading);
+    if (rightVector.lengthSq() < 0.0001) rightVector.set(1, 0, 0);
+    rightVector.normalize();
+
+    const compact = window.innerWidth <= 768;
+    const routeSpan = Math.max(radius, 0.14);
+    const targetBias = compact ? 0.42 : 0.34;
+    const endTarget = boundsCenter.clone().lerp(anchorVector, targetBias).add(worldUp.clone().multiplyScalar(compact ? 0.018 : 0.028));
+    const distance = Math.min(compact ? 2.35 : 1.95, Math.max(compact ? 1.1 : 0.92, routeSpan * (compact ? 4.1 : 3.2) + 0.52));
+    const endPos = endTarget.clone().add(currentHeading.clone().multiplyScalar(distance)).add(worldUp.clone().multiplyScalar(compact ? 0.16 : 0.2)).add(rightVector.clone().multiplyScalar(compact ? 0.035 : 0.065));
+
+    const duration = options.duration || (compact ? 1180 : 1320);
+    const startTime = performance.now();
+    const animationToken = (state.routeCameraAnimationToken = (state.routeCameraAnimationToken || 0) + 1);
+
+    if (typeof window.setRouteChoreographyPhase === 'function') {
+        window.setRouteChoreographyPhase('search-corridor', {
+            reason: options.reason || 'search-success', anchorIndex, indexCount: routeIndices.length, lastCameraMove: 'search-corridor'
+        });
+    }
+    if (typeof window.noteSceneInteraction === 'function') window.noteSceneInteraction(duration + 1200);
+
+    const controlTarget = startTarget.clone().lerp(endTarget, 0.56).add(worldUp.clone().multiplyScalar(0.025));
+
+    function step(now) {
+        if (animationToken !== state.routeCameraAnimationToken || state.navState.focusedIndex !== null || state.currentView !== 'galaxy') return;
+        const t = Math.min((now - startTime) / duration, 1);
+        const eased = easeInOutCubic(t);
+        state.controls.target.set(
+            quadraticBezierComponent(startTarget.x, controlTarget.x, endTarget.x, eased),
+            quadraticBezierComponent(startTarget.y, controlTarget.y, endTarget.y, eased),
+            quadraticBezierComponent(startTarget.z, controlTarget.z, endTarget.z, eased)
+        );
+        state.camera.position.lerpVectors(startPos, endPos, eased);
+        if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    return true;
+}
+
+export function zoomCamera(multiplier) {
+    if (!state.camera || !state.controls) return;
+    const target = state.controls.target;
+    if (!target) return;
+    const camPos = state.camera.position;
+    if (!Number.isFinite(camPos.x + camPos.y + camPos.z + target.x + target.y + target.z)) return;
+    const direction = camPos.clone().sub(target).normalize();
+    const currentDistance = camPos.distanceTo(target);
+    const newDistance = currentDistance * multiplier;
+    const minDist = state.controls.minDistance || state.ORBIT_MIN_DISTANCE_DEFAULT || 0.5;
+    const maxDist = state.controls.maxDistance || state.ORBIT_MAX_DISTANCE_DEFAULT || 8.0;
+    const clampedDistance = Math.max(minDist, Math.min(maxDist, newDistance));
+    state.camera.position.copy(target.clone().add(direction.multiplyScalar(clampedDistance)));
+}
+
 export function clearInsideCentroid() {
     _insideCentroidTarget = null;
     _insideCentroidLerpToken++;
@@ -742,4 +839,6 @@ if (typeof window !== 'undefined') {
     window.animateCameraToTerrainPrelude = animateCameraToTerrainPrelude;
     window.applySemanticCentroidCamera = applySemanticCentroidCamera;
     window.clearInsideCentroid = clearInsideCentroid;
+    window.animateCameraToSearchCorridor = animateCameraToSearchCorridor;
+    window.zoomCamera = zoomCamera;
 }

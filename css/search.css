@@ -8,35 +8,25 @@ body[data-panel-surface="focus-search"] .search-result-item.active-focus {
     box-shadow: 0 20px 42px rgba(0,0,0,0.24), 0 0 0 1px rgba(var(--color-primary-rgb), 0.16);
 }
 
-.search-container {
+/* Alignment fix: ensure search container matches the 16px left rail of the weather widget */
+html body .search-container {
     position: sticky;
-    top: -14px;
+    top: 52px;
     z-index: 14;
     margin-top: 12px;
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
     padding-top: 12px;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     background: linear-gradient(180deg, rgba(15, 15, 25, 0.96), rgba(15, 15, 25, 0.86));
-    pointer-events: none;
-}
-
-.search-container .search-input-wrapper,
-.search-container .semantic-lane-pill,
-.search-container .semantic-lane-assist,
-.search-container .semantic-lane-ops,
-.search-container .demo-starters,
-.search-container .demo-starter-chip,
-.search-container .search-results,
-.search-container .synthesize-trigger,
-.search-container .btn-synthesize,
-.search-container .mode-grid,
-.search-container .mode-chip {
-    pointer-events: auto;
 }
 
 .search-container .search-label,
 .search-container .search-hint,
 .search-container .search-trail-cue {
-    pointer-events: none;
+    /* No-op, just keeping the structure */
 }
 
 /* Mode grid inside search container: visually separated from results above */
@@ -783,7 +773,7 @@ body[data-panel-surface="focus-search"] .search-container.search-degraded .searc
 }
 
 body[data-panel-surface="focus-search"] .search-container.search-degraded .search-results.active {
-    display: none;
+    display: block;
 }
 
 .demo-starters {
@@ -913,12 +903,6 @@ body[data-panel-surface="focus-search"] .search-container.search-degraded .searc
 
 .demo-starter-chip:active {
     transform: translateY(0) scale(0.96);
-}
-    box-shadow:
-        0 12px 24px rgba(0, 0, 0, 0.25),
-        0 0 0 1px rgba(78, 205, 196, 0.15),
-        0 0 15px rgba(78, 205, 196, 0.25);
-    color: #fff;
 }
 
 body[data-panel-surface="search"] .demo-starters,
@@ -1289,6 +1273,15 @@ body[data-panel-surface="map-focus-search"] .exploration-card:hover,
 .search-results.focusing {
     border: var(--glass-border-glow);
     box-shadow: var(--shadow-glass-glow);
+}
+
+.search-results-count {
+    margin: 0 0 8px;
+    color: var(--color-text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.25;
 }
 
 .search-result-item {
@@ -2140,6 +2133,17 @@ body[data-panel-surface="map-trail"] .journey-compass {
 @keyframes processing-pulse {
     0% { background: rgba(78, 205, 196, 0.1); opacity: 0.8; }
     100% { background: rgba(78, 205, 196, 0.3); opacity: 1; }
+}
+
+/* Adversarial Fix: Force visibility and elevated layering to override all other surface logic */
+html body[data-panel-surface="focus-search"] .search-results.active {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 200 !important;
+    max-height: min(35vh, 320px) !important;
+    pointer-events: auto !important;
+    margin-top: 12px;
 }
 
 #search-spinner {

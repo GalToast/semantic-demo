@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import { state } from '../state.js';
 import {
     isCompactMapViewport,
@@ -8,10 +7,16 @@ import {
     normalizeCityForFilter,
     escapeHtml,
     cleanPublicNoteText,
-    getPublicRecordStatusLabel
+    getPublicRecordStatusLabel,
+    updateTime
 } from '../utils.js';
+import {
+    buildSemanticGuideRequestPayload
+} from './semantic-guide-payload.js';
 import { initEventListeners as initSemanticDemoEventListeners } from './event-bindings.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
+import { showSemanticThreadsDetail } from './connection-analysis.js';
+
 import {
     setLoadingPhase,
     hideLoadingOverlay,
@@ -26,8 +31,7 @@ import {
 import {
     clearClusterFilter,
     updateClusterList,
-    getFilteredClusterCounts,
-    setClusterFilter
+    getFilteredClusterCounts
 } from './cluster-filter.js';
 import {
     fetchSemanticLaneHealth,
@@ -46,6 +50,7 @@ export { setLoadingPhase, hideLoadingOverlay, startDeferredHydration, scheduleWe
 export { startSceneReveal, getSceneRevealProgress, onWindowResize };
 export { clearClusterFilter, updateClusterList, getFilteredClusterCounts };
 export { getFocusedJourneyPoint, getJourneyCompassState };
+export { updateTime };
 export {
     fetchSemanticLaneHealth,
     applySemanticLaneHealthPayload,
@@ -76,59 +81,7 @@ export const STORY_DESCRIPTIONS = {
 
 // === Exploration UI & Orchestration ===
 
-export function buildLegend() {
-    const legendPanel = document.getElementById('legend-panel');
-    if (!legendPanel) return;
 
-    const counts = getFilteredClusterCounts();
-    const rows = Array.from(counts.entries())
-        .filter(([, count]) => count > 0)
-        .sort((a, b) => b[1] - a[1] || a[0] - b[0]);
-
-    const guide = state.currentSemanticGuide;
-    const guideTitle = guide ? getSemanticGuideTitle(guide) : 'Read the scene';
-    const guideNote = guide?.text || 'Neighborhood colors group records by shared language, trade, civic role, and business texture.';
-    const activeCluster = state.activeClusterFilter;
-
-    legendPanel.innerHTML = `
-        <div class="legend-guide">
-            <div class="legend-guide-head">
-                <span class="legend-guide-kicker">${escapeHtml(guide?.laneStatus || 'Field Guide')}</span>
-                <span class="legend-state-badge">${activeCluster === null ? 'County overview' : 'Filtered neighborhood'}</span>
-            </div>
-            <div class="legend-guide-title">${escapeHtml(guideTitle)}</div>
-            <div class="legend-guide-note">${escapeHtml(guideNote)}</div>
-            ${guide?.nextLabel ? `<div class="legend-guide-next">${escapeHtml(guide.nextLabel)}</div>` : ''}
-        </div>
-        <div class="legend-lens-truth">
-            <span class="legend-lens-truth-mark" aria-hidden="true"></span>
-            <span>Glowing lines show semantic relationships; the constellation shape is staged for readability.</span>
-        </div>
-        <div class="legend-divider"></div>
-        <div class="legend-section-title">Neighborhood palette</div>
-        <div class="legend-subtitle">Semantic neighborhoods group businesses by shared language, trade, civic role &amp; business texture</div>
-        <div class="legend-list" id="legend-list">
-            ${rows.map(([cluster, count]) => {
-                const active = activeCluster !== null && activeCluster === cluster;
-                const color = state.COLORS[cluster % state.COLORS.length] || '#4ecdc4';
-                return `
-                    <button class="legend-item${active ? ' active' : ''}" type="button" data-legend-cluster="${cluster}" aria-pressed="${String(active)}">
-                        <span class="legend-dot" style="background:${escapeHtml(color)}"></span>
-                        <span class="legend-copy">
-                            <span class="legend-label">${escapeHtml(describeCluster(cluster))}</span>
-                            <span class="legend-meta">${active ? '<span class="legend-pill filter">filter</span>' : ''}</span>
-                        </span>
-                        <span class="legend-count">${count.toLocaleString()}</span>
-                    </button>
-                `;
-            }).join('') || '<div class="legend-guide-note">No neighborhoods match the current filters.</div>'}
-        </div>
-    `;
-
-    legendPanel.querySelectorAll('[data-legend-cluster]').forEach((item) => {
-        item.addEventListener('click', () => setClusterFilter(Number(item.dataset.legendCluster)));
-    });
-}
 
 export function syncCityFilterUi() {
     const activeCity = state.activeFilters.city || 'all';
@@ -1637,54 +1590,6 @@ export function syncSearchStatusForFocus(point, options = {}) {
 
 // === Semantic Guide Summary Card ===
 
-function buildSemanticGuidePayloadResult(index) {
-    if (!state.points) return null;
-    if (!(Number.isFinite(index) && index >= 0 && index < state.points.length)) return null;
-    const point = state.points[index];
-    if (!point) return null;
-    const context = state.semanticResultContextByLeadId?.get?.(String(point.lead_id)) || {};
-
-    return {
-        lead_id: point.lead_id,
-        name: formatBusinessName(point.name),
-        city: cleanPublicNoteText(point.city || context.city || ''),
-        cluster_label: describeCluster(point.cluster),
-        status: getPublicRecordStatusLabel(point.status),
-        public_note: cleanPublicNoteText(context.public_note || point.what || ''),
-        public_detail: cleanPublicNoteText(context.public_detail || ''),
-        address: cleanPublicNoteText(context.address || ''),
-        naics: cleanPublicNoteText(context.naics || '')
-    };
-}
-
-function getSemanticGuidePayloadResults(summary) {
-    if (!state.points) return [];
-    if (!summary?.resultIndices?.length) return [];
-    return summary.resultIndices.slice(0, 6).map(buildSemanticGuidePayloadResult).filter(Boolean);
-}
-
-function getSemanticGuideAnchorPoint(summary) {
-    const idx = summary?.anchorIndex;
-    if (!Number.isFinite(idx) || !state.points) return null;
-    return state.points[idx] || null;
-}
-
-function buildSemanticGuideRequestPayload() {
-    if (!state.currentSearchSummary) return null;
-    const results = getSemanticGuidePayloadResults(state.currentSearchSummary);
-    if (!results.length) return null;
-    const anchorPoint = getSemanticGuideAnchorPoint(state.currentSearchSummary);
-
-    return {
-        query: state.currentSearchSummary.query,
-        view: state.currentView,
-        anchor_lead_id: anchorPoint?.lead_id ?? null,
-        anchor_name: anchorPoint ? formatBusinessName(anchorPoint.name) : '',
-        visible_matches: state.currentSearchSummary.visibleMatches || results.length,
-        results
-    };
-}
-
 function getMostFrequent(values) {
     if (!values?.length) return null;
     const counts = values.reduce((acc, value) => {
@@ -2343,14 +2248,17 @@ export function closeLegendGuide(options = {}) {
     if (options.restoreFocusPanel !== false && typeof window.restoreLegendCollapsedPanel === 'function') {
         window.restoreLegendCollapsedPanel();
     }
-    if (options.restoreFocus && legendToggle) {
-        legendToggle.focus({ preventScroll: true });
+    if (options.restoreFocus) {
+        if (window._previouslyFocusedLegend) {
+            window._previouslyFocusedLegend.focus({ preventScroll: true });
+        } else if (legendToggle) {
+            legendToggle.focus({ preventScroll: true });
+        }
     }
 }
 
 // === Keyboard Shortcuts Hint Panel ===
 
-let _shortcutsPanelDismissed = false;
 let _shortcutsPanelArrowToastShown = false;
 let _keyboardShortcutKeyListenerBound = false;
 
@@ -2577,19 +2485,6 @@ export function initEventListeners() {
     });
 }
 
-// === Clock ===
-
-export function updateTime() {
-    const now = new Date();
-    let hours = now.getHours();
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12 || 12;
-
-    const display = document.getElementById('time-display');
-    if (display) display.textContent = `${hours}:${minutes} ${ampm}`;
-}
-
 // Global exposure for compatibility
 if (typeof window !== 'undefined') {
     window.setLoadingPhase = setLoadingPhase;
@@ -2600,14 +2495,17 @@ if (typeof window !== 'undefined') {
     window.setSemanticLaneUiState = setSemanticLaneUiState;
     window.probeSemanticLane = probeSemanticLane;
     window.scheduleSemanticLaneMonitor = scheduleSemanticLaneMonitor;
-    window.updateTime = updateTime;
-    window.initEventListeners = initEventListeners;
     window.onWindowResize = onWindowResize;
-    
+
     // Extracted functions
     window.syncFilterControls = syncFilterControls;
     window.updateClusterList = updateClusterList;
-    window.buildLegend = buildLegend;
+    window.syncClusterSectionState = function () {
+        const clusterSection = document.getElementById('cluster-section');
+        if (clusterSection && window.innerWidth <= 768) {
+            clusterSection.open = false;
+        }
+    };
     window.populateCityFilter = populateCityFilter;
     window.syncCityFilterUi = syncCityFilterUi;
     window.updateExplorationUi = updateExplorationUi;
@@ -2628,72 +2526,8 @@ if (typeof window !== 'undefined') {
     window.hideViewHandoff = hideViewHandoff;
     window.showExperienceToast = showExperienceToast;
 
-    // Focus-stage selected-record panel renderers (Tasks 749/750)
-    window.renderSignalBadges = function (point) {
-    if (state.currentView === 'map') return '';
-    if (!point) return '';
-    const badges = [];
-        if (point.website) badges.push('<span class="signal-badge meta" title="Website">Website</span>');
-        if (point.email) badges.push('<span class="signal-badge fact" title="Email">Email</span>');
-        if (point.phone) badges.push('<span class="signal-badge ai" title="Phone">Phone</span>');
-        return badges.join('');
-    };
-    window.renderSelectedMetaStrip = function (point) {
-        const el = document.getElementById('selected-meta-strip');
-        if (!el) return;
-        if (state.currentView === 'map') { el.style.display = 'none'; return; }
-        if (!point) return;
-        const rawCity = point.city ? point.city.trim() : null;
-        const rawStatus = point.status ? point.status.trim() : null;
-        // Replace bare dash or empty string with null so we fall through to proper placeholder
-        const cityPart = rawCity === '-' || rawCity === '' ? null : rawCity;
-        const statusPart = rawStatus === '-' || rawStatus === '' ? null : rawStatus;
-        if (cityPart && statusPart) {
-            el.textContent = `${cityPart} — ${statusPart}`;
-        } else if (cityPart) {
-            el.textContent = cityPart;
-        } else if (statusPart) {
-            el.textContent = statusPart;
-        } else {
-            el.textContent = 'Montgomery County';
-        }
-    };
-    window.renderSelectedMatchPanel = function (point) {
-        const panelEl = document.getElementById('selected-match-panel');
-        const copyEl = document.getElementById('selected-match-copy');
-        if (!panelEl || !copyEl) return;
-        if (state.currentView === 'map') { panelEl.style.display = 'none'; return; }
-        if (!point) return;
-        if (state.currentSearchSummary?.anchorIndex !== undefined) {
-            const idx = state.points.indexOf(point);
-            if (idx === state.currentSearchSummary.anchorIndex) {
-                panelEl.style.display = '';
-                copyEl.textContent = 'This record is the semantic search anchor - the starting point for the current connection trail.';
-            } else if ((state.currentSearchSummary.resultIndices || []).includes(idx)) {
-                panelEl.style.display = '';
-                copyEl.textContent = 'This record appeared in the semantic search results as a nearby connection.';
-            } else {
-                panelEl.style.display = 'none';
-            }
-        } else {
-            panelEl.style.display = 'none';
-        }
-    };
-    window.renderSelectedActionRow = function (point) {
-        const el = document.getElementById('selected-action-row');
-        if (!el) return;
-        // Check map view BEFORE point — prevents button flash during galaxy-to-map transition
-        if (state.currentView === 'map') { el.style.display = 'none'; return; }
-        if (!point) return;
-        el.style.display = '';
-        el.innerHTML = '<button class="action-btn" id="btn-selected-map" type="button">View on Map</button>';
-        const btn = document.getElementById('btn-selected-map');
-        if (btn) {
-            btn.addEventListener('click', () => {
-                if (typeof window.switchView === 'function') window.switchView('map');
-            });
-        }
-    };
+
+
     window.getInterestingBusinessNote = function (point) {
         if (!point) return null;
         if (point.trivia) {
@@ -2813,21 +2647,6 @@ if (typeof window !== 'undefined') {
         }
     };
 
-    window.zoomCamera = function (multiplier) {
-        if (!state.camera || !state.controls) return;
-        const target = state.controls.target;
-        if (!target) return;
-        const camPos = state.camera.position;
-        if (!Number.isFinite(camPos.x + camPos.y + camPos.z + target.x + target.y + target.z)) return;
-        const direction = camPos.clone().sub(target).normalize();
-        const currentDistance = camPos.distanceTo(target);
-        const newDistance = currentDistance * multiplier;
-        const minDist = state.controls.minDistance || state.ORBIT_MIN_DISTANCE_DEFAULT || 0.5;
-        const maxDist = state.controls.maxDistance || state.ORBIT_MAX_DISTANCE_DEFAULT || 8.0;
-        const clampedDistance = Math.max(minDist, Math.min(maxDist, newDistance));
-        state.camera.position.copy(target.clone().add(direction.multiplyScalar(clampedDistance)));
-    };
-
     window.toggleAutoRotate = function () {
         const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
         if (prefersReduced) {
@@ -2871,114 +2690,7 @@ if (typeof window !== 'undefined') {
     installSemanticJourneyProbe();
 
     // Trail story detail — triggers on "Full report" button in summary suggestions row
-    window.showSemanticThreadsDetail = (function () {
-        const abortState = { controller: null };
-        return async function () {
-
-            let payload = buildSemanticGuideRequestPayload();
-        if (!payload || !payload.results?.length) {
-            // No active search/trail — fall back to focused node if available
-            const focusedIdx = state.focusedNode;
-            if (!Number.isFinite(focusedIdx) || !state.points?.[focusedIdx]) {
-                const textEl = document.getElementById('summary-text');
-                if (textEl) textEl.textContent = 'Select a business first to load its full connection report.';
-                return;
-            }
-            const fp = state.points[focusedIdx];
-            const context = state.semanticResultContextByLeadId?.get?.(String(fp.lead_id)) || {};
-            payload = payload || {};
-            payload.results = [{
-                lead_id: fp.lead_id,
-                name: formatBusinessName(fp.name),
-                city: cleanPublicNoteText(fp.city || context.city || ''),
-                cluster_label: describeCluster(fp.cluster),
-                status: getPublicRecordStatusLabel(fp.status),
-                public_note: cleanPublicNoteText(context.public_note || fp.what || ''),
-                public_detail: cleanPublicNoteText(context.public_detail || ''),
-                address: cleanPublicNoteText(context.address || ''),
-                naics: cleanPublicNoteText(context.naics || '')
-            }];
-            payload.query = 'connection report';
-            payload.anchor_lead_id = fp.lead_id;
-            payload.anchor_name = formatBusinessName(fp.name);
-        }
-
-        // Abort any in-flight story request
-        let controller;
-        if (abortState.controller) {
-            abortState.controller.abort();
-            controller = abortState.controller;
-        } else {
-            controller = new AbortController();
-        }
-        abortState.controller = controller;
-        const card = document.getElementById('semantic-summary-card');
-        if (card) card.classList.add('is-synthesizing');
-        const storyNoteEl = document.getElementById('summary-gemma-story');
-        const storyTextEl = document.getElementById('summary-gemma-story-text');
-        const storySourceEl = document.getElementById('summary-gemma-story-source');
-        if (storyNoteEl) {
-            storyNoteEl.classList.remove('hidden');
-            storyNoteEl.setAttribute('aria-hidden', 'false');
-        }
-        if (storyTextEl) storyTextEl.textContent = 'Loading the full connection report...';
-        if (storySourceEl) storySourceEl.textContent = '';
-
-        try {
-            const response = await fetch('api.php?action=semantic_trail_story', {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                cache: 'no-store',
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            });
-
-            let result = null;
-            try {
-                result = await response.json();
-            } catch (jsonErr) {
-                Object.defineProperty(jsonErr, 'correlationId', { value: crypto.randomUUID(), writable: false, configurable: true });
-                throw new Error('Connection report returned invalid JSON.', { cause: jsonErr });
-            }
-
-            if (!response.ok || !result?.ok) {
-                const err = new Error(result?.error || 'Connection report is unavailable right now.');
-                Object.defineProperty(err, 'correlationId', { value: crypto.randomUUID(), writable: false, configurable: true });
-                throw err;
-            }
-
-            const cachedStoryMode = result?.mode === 'cached_trail_story' || result?.mode === 'cached_gemma_story';
-            const story = cachedStoryMode ? result.story : '';
-            if (story && storyTextEl) {
-                storyTextEl.textContent = story;
-                if (storySourceEl) {
-                    const src = result.source || 'semantic-guide-engine';
-                    const age = result.cache_age_seconds;
-                    if (age !== null && age !== undefined) {
-                        const mins = Math.round(age / 60);
-                        storySourceEl.textContent = mins < 60
-                            ? `${src} cached ${mins}m ago`
-                            : `${src} cached ${Math.round(mins / 60)}h ago`;
-                    } else {
-                        storySourceEl.textContent = src;
-                    }
-                }
-            } else if (storyTextEl) {
-                storyTextEl.textContent = 'The connection report is still being prepared. Try again in a moment.';
-                if (storySourceEl) storySourceEl.textContent = '';
-            }
-        } catch (err) {
-            if (err.name === 'AbortError') return;
-            if (storyTextEl) storyTextEl.textContent = `Connection report unavailable: ${err.message}`;
-            if (storySourceEl) storySourceEl.textContent = '';
-        } finally {
-            if (card) card.classList.remove('is-synthesizing');
-        }
-    };
-    })();
+    window.showSemanticThreadsDetail = showSemanticThreadsDetail;
 
     let _trailReviewReturnFocus = null;
 
@@ -3037,4 +2749,10 @@ if (typeof window !== 'undefined') {
     window.closeLegendGuide = closeLegendGuide;
     window.updateLegendGuideState = updateLegendGuideState;
     window.handleGalaxyKeydown = handleGalaxyKeydown;
+    window.hydrateLeadContext = function (point, options = {}) {
+        if (!point || !point.lead_id) return;
+        if (typeof window.updateSelectedBusiness === 'function') {
+            window.updateSelectedBusiness(point, { revealCard: !!options.revealCard, skipUrlSync: true });
+        }
+    };
 }

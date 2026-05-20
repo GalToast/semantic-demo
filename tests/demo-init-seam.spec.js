@@ -154,7 +154,7 @@ test.describe('demo-controller init seam', () => {
     const state = await page.evaluate(() => ({
       initCallCount: window.__demoControllerProbe.initCallCount,
       isRunning: window.demoController?.isRunning?.(),
-      sessionStarted: sessionStorage.getItem('moco_mycelium_demo_v1') !== null
+      sessionStarted: sessionStorage.getItem('moco_mycelium_demo_session_v1') !== null
     }));
 
     expect(state.initCallCount).toBe(1);

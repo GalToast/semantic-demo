@@ -1,5 +1,7 @@
 'use strict';
 
+import { state } from '../state.js';
+
 /**
  * MoCo Business Mycelium — Demo Controller
  * Micro-demo state machine and trigger system.
@@ -26,7 +28,7 @@ const State = Object.freeze({
 let _state = State.IDLE;
 let _initCalled = false;        // prevents double-init from concurrent callers
 let _demoTimer = null;          // setTimeout handle for scene-ready fallback
-let _cancelled = false;
+let _cancelled = false;         // true when user cancels before completion
 let _microDemoCompleteHandler = null;
 let _microDemoCancelHandler = null;
 
@@ -184,26 +186,15 @@ function restoreCamera() {
   }
 }
 
-function restoreNavigation() {
-  // Re-enable OrbitControls and auto-rotate
-  if (window._orbitControls) {
-    window._orbitControls.enabled = true;
-  }
-  if (window._app && window._app.autoRotate !== undefined) {
-    window._app.autoRotate = true;
-  }
-}
-
 function reEnableOrbitControls() {
-  if (window._orbitControls) {
-    window._orbitControls.enabled = true;
+  if (state.controls) {
+    state.controls.enabled = true;
   }
 }
 
 function reEnableAutoRotate() {
-  // Re-enable auto-rotate in app.js
-  if (window._app && window._app.autoRotate !== undefined) {
-    window._app.autoRotate = true;
+  if (typeof window.setAutoRotateSuspended === 'function') {
+    window.setAutoRotateSuspended(false);
   }
 }
 
@@ -278,10 +269,10 @@ export function init() {
   const forceDemo = params.has('demo') && params.get('demo') === 'force';
 
   if (!forceDemo) {
-    if (!guardNotSeen())    { console.log('[demo] blocked — already seen'); return; }
-    if (!guardReducedMotion()) { console.log('[demo] blocked — reduced motion'); return; }
-    if (!guardWebGL())      { console.log('[demo] blocked — no WebGL / software renderer'); return; }
-    if (!guardUrlParam())   { console.log('[demo] blocked — nodemo URL param'); return; }
+    if (!guardNotSeen())    { console.warn('[demo] blocked — already seen'); return; }
+    if (!guardReducedMotion()) { console.warn('[demo] blocked — reduced motion'); return; }
+    if (!guardWebGL())      { console.warn('[demo] blocked — no WebGL / software renderer'); return; }
+    if (!guardUrlParam())   { console.warn('[demo] blocked — nodemo URL param'); return; }
   }
 
   setState(State.ELIGIBLE);
@@ -291,7 +282,7 @@ export function init() {
     .then((source) => {
       if (_state === State.ELIGIBLE) {
         if (source === 'timeout') {
-          console.log('[demo] scene-ready timeout, forcing start');
+          console.warn('[demo] scene-ready timeout, forcing start');
         }
         start();
       }
@@ -342,7 +333,7 @@ export function start() {
  * Immediate cancel — no pause, no resume.
  */
 export function cancel() {
-  if (_state !== State.RUNNING) return;
+  if (_state === State.IDLE || _state === State.DONE) return;
   _cancelled = true;
   setState(State.COMPLETING);
   teardown();
@@ -354,7 +345,7 @@ export function cancel() {
  * Normal completion — write localStorage flag, then cleanup.
  */
 export function complete() {
-  if (_state !== State.RUNNING && _state !== State.COMPLETING) return;
+  if (_state === State.IDLE || _state === State.DONE) return;
   setState(State.COMPLETING);
   writeStorageSeen();
   teardown();

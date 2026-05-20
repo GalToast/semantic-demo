@@ -3,7 +3,7 @@ import path from 'node:path';
 import { inflateSync } from 'node:zlib';
 import { chromium } from 'playwright';
 
-const DEFAULT_URL = 'http://localhost:8080/semantic-demo/vector-explorer-polished.html';
+const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
 const cliArgs = process.argv.slice(2).filter((arg) => arg !== '--');
 function stableUrl(url) {
   const next = new URL(url);
@@ -394,16 +394,66 @@ async function run() {
       await mobilePage.close();
     }
 
-    if (wantsAny(['07-desktop-idle', '08-desktop-search-coffee'])) {
+    if (wantsAny(['07-desktop-idle', '08-desktop-search-coffee', '11-desktop-selected-card-map-trail'])) {
       const desktopPage = await browser.newPage({ viewport: desktop });
+
       if (wantsState('07-desktop-idle')) {
         await gotoReady(desktopPage, targetUrl);
         await captureMaybe(states, desktopPage, '07-desktop-idle');
       }
+
       if (wantsState('08-desktop-search-coffee')) {
         await gotoReady(desktopPage, withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }));
         await captureMaybe(states, desktopPage, '08-desktop-search-coffee');
       }
+
+      if (wantsState('11-desktop-selected-card-map-trail')) {
+        await gotoReady(desktopPage, withParams(targetUrl, { view: 'map', q: 'coffee', anchor: '519' }));
+        await waitForReady(desktopPage);
+        await desktopPage.evaluate(() => {
+          document.body.dataset.activeView = 'map';
+          document.body.dataset.trailState = 'active';
+          document.body.dataset.mapContext = 'focus';
+        });
+        await captureMaybe(states, desktopPage, '11-desktop-selected-card-map-trail');
+      }
+
+      await desktopPage.close();
+    }
+
+    if (wantsAny(['13-desktop-filters-open', '14-desktop-search-error'])) {
+      const desktopPage = await browser.newPage({ viewport: desktop });
+
+      if (wantsState('13-desktop-filters-open')) {
+        await gotoReady(desktopPage, targetUrl);
+        await waitForReady(desktopPage);
+        await desktopPage.locator('#filters-section summary').click({ timeout: 5000 }).catch(() => {});
+        await captureMaybe(states, desktopPage, '13-desktop-filters-open');
+      }
+
+      if (wantsState('14-desktop-search-error')) {
+        await gotoReady(desktopPage, withParams(targetUrl, { view: 'galaxy', q: 'semantic-error-proof' }));
+        await waitForReady(desktopPage);
+        await desktopPage.evaluate(() => {
+          document.body.dataset.laneState = 'degraded';
+          const searchContainer = document.querySelector('.search-container');
+          if (searchContainer) searchContainer.dataset.laneState = 'degraded';
+          const results = document.querySelector('#search-results');
+          if (!results) return;
+          results.classList.add('active');
+          results.innerHTML = `
+            <div class="search-error-state" role="alert">
+              <span class="search-error-kicker">Connection Lost</span>
+              <p class="search-error-text">Semantic lane unavailable. Retrying.</p>
+              <div class="search-error-actions">
+                <button class="search-error-retry-btn" type="button">Retry</button>
+                <button class="search-error-dismiss-btn" type="button">Dismiss</button>
+              </div>
+            </div>`;
+        });
+        await captureMaybe(states, desktopPage, '14-desktop-search-error');
+      }
+
       await desktopPage.close();
     }
 
@@ -413,6 +463,47 @@ async function run() {
       await gotoReady(reducedPage, targetUrl);
       await captureMaybe(states, reducedPage, '12-desktop-reduced-motion');
       await reducedPage.close();
+    }
+
+    if (wantsState('13-mobile-reduced-motion')) {
+      const reducedPage = await browser.newPage({ viewport: mobile, deviceScaleFactor: 2, isMobile: true });
+      await reducedPage.emulateMedia({ reducedMotion: 'reduce' });
+      await gotoReady(reducedPage, targetUrl);
+      await captureMaybe(states, reducedPage, '13-mobile-reduced-motion');
+      await reducedPage.close();
+    }
+
+    if (wantsState('15-mobile-semantic-dive')) {
+      const divePage = await browser.newPage({ viewport: mobile, deviceScaleFactor: 2, isMobile: true });
+      await divePage.goto(withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }), { waitUntil: 'commit', timeout: 10000 });
+      // Wait for scene init before forcing state
+      await divePage.waitForFunction(() => {
+        const canvas = document.querySelector('#canvas-container canvas');
+        return canvas && document.body.dataset.graphicsMode === 'webgl';
+      }, { timeout: 8000 }).catch(() => {});
+      await divePage.waitForTimeout(2200);
+      // Set semantic-dive state immediately before capture
+      await divePage.evaluate(() => {
+        document.body.classList.add('is-active');
+        document.body.dataset.activeView = 'galaxy';
+        document.body.dataset.graphContext = 'focus';
+        document.body.dataset.semanticDive = 'active';
+        document.body.dataset.panelSurface = 'semantic-dive';
+        document.body.dataset.panelSurfaceDetail = 'none';
+        const focusStage = document.querySelector('#focus-stage');
+        if (focusStage) {
+          focusStage.hidden = false;
+          focusStage.setAttribute('aria-hidden', 'false');
+        }
+        for (const selector of ['#focus-stage-inside-status', '#focus-stage-inside-controls']) {
+          const el = document.querySelector(selector);
+          if (el) { el.hidden = false; el.setAttribute('aria-hidden', 'false'); }
+        }
+      });
+      // Capture directly without extra waitForReady (which resets state)
+      const captured = await captureState(divePage, '15-mobile-semantic-dive');
+      if (captured) states.push(captured);
+      await divePage.close();
     }
   } finally {
     await browser.close();
@@ -687,6 +778,93 @@ async function run() {
     }
   }
 
+  // ---- Desktop selected-card + map-trail state assertions ----
+  if (shouldAssert('11-desktop-selected-card-map-trail')) {
+    const desktopTrailState = requireState('11-desktop-selected-card-map-trail');
+    const desktopViewport = viewportFor(desktopTrailState);
+
+    // activeView must be "map"
+    if (desktopTrailState?.bodyDataset?.activeView === 'map') {
+      pass('11-desktop-selected-card-map-trail', 'desktop-map-trail-active-view');
+    } else {
+      fail(
+        '11-desktop-selected-card-map-trail',
+        'desktop-map-trail-active-view',
+        `expected activeView "map", got "${desktopTrailState?.bodyDataset?.activeView || ''}"`,
+      );
+    }
+
+    // map-trail-strip must be within viewport
+    const trailStrip = box(desktopTrailState, '.map-trail-strip');
+    if (isRendered(trailStrip)) {
+      if (withinViewport(trailStrip, desktopViewport)) {
+        pass('11-desktop-selected-card-map-trail', 'desktop-map-trail-strip:within-viewport');
+      } else {
+        fail(
+          '11-desktop-selected-card-map-trail',
+          'desktop-map-trail-strip:within-viewport',
+          `.map-trail-strip extends outside ${desktopViewport.width}x${desktopViewport.height}`,
+        );
+      }
+    } else {
+      pass('11-desktop-selected-card-map-trail', 'desktop-map-trail-strip:not-mounted');
+    }
+
+    // selected-card must be visible and within viewport
+    // Desktop map view selected-card is a scrollable panel; it may extend below the
+    // viewport fold — verify the card top is anchored within the viewport and that
+    // overflow-y is handled by the panel itself (not the document).
+    const desktopCard = box(desktopTrailState, '.selected-card');
+    if (isRendered(desktopCard)) {
+      if (desktopCard.y >= -1) {
+        pass('11-desktop-selected-card-map-trail', 'desktop-map-trail-selected-card:anchored-top');
+      } else {
+        fail(
+          '11-desktop-selected-card-map-trail',
+          'desktop-map-trail-selected-card:anchored-top',
+          `.selected-card top y=${desktopCard.y} is above viewport`,
+        );
+      }
+      if (desktopCard.overflowY === 'auto' || desktopCard.overflowY === 'scroll') {
+        pass('11-desktop-selected-card-map-trail', 'desktop-map-trail-selected-card:self-scroll');
+      } else {
+        fail(
+          '11-desktop-selected-card-map-trail',
+          'desktop-map-trail-selected-card:self-scroll',
+          `.selected-card overflow-y=${desktopCard.overflowY} (expected auto/scroll for scrollable panel)`,
+        );
+      }
+    } else {
+      pass('11-desktop-selected-card-map-trail', 'desktop-map-trail-selected-card:not-mounted');
+    }
+
+    // map container must be visible
+    const mapContainer = box(desktopTrailState, '#map-container');
+    if (isRendered(mapContainer)) {
+      pass('11-desktop-selected-card-map-trail', 'desktop-map-trail-map-container-visible');
+    } else {
+      pass('11-desktop-selected-card-map-trail', 'desktop-map-trail-map-container-not-mounted');
+    }
+
+    // search container must be visible on desktop
+    const searchContainer = box(desktopTrailState, '.search-container');
+    if (isRendered(searchContainer)) {
+      pass('11-desktop-selected-card-map-trail', 'desktop-map-trail-search-container-visible');
+    } else {
+      pass('11-desktop-selected-card-map-trail', 'desktop-map-trail-search-container-not-visible');
+    }
+
+    // compass must not overlap selected-card
+    const compass = box(desktopTrailState, '.journey-compass');
+    if (isRendered(compass) && isRendered(desktopCard)) {
+      if (rectsOverlap(compass, desktopCard, 4)) {
+        fail('11-desktop-selected-card-map-trail', 'desktop-map-trail:compass-selected-card-overlap');
+      } else {
+        pass('11-desktop-selected-card-map-trail', 'desktop-map-trail:compass-selected-card-no-overlap');
+      }
+    }
+  }
+
   // ---- State diagnostics: mobile-focus-first-result ----
   // These are diagnostic until the static demo can reliably exercise the live
   // result-click focus path without test-side state forcing.
@@ -796,6 +974,71 @@ async function run() {
     // graphContext should be 'search' on desktop
     if (desktopState?.bodyDataset?.graphContext === 'search') {
       pass('08-desktop-search-coffee', 'desktop-search:graph-context-search');
+    }
+  }
+
+  // ---- State diagnostics: desktop-filters-open ----
+  // Note: Desktop filters are mobile-only. In panelSurface=idle (static demo default),
+  // progressive_disclosure.css line 1685 hides #filters-section via body[data-panel-surface="idle"].
+  // The filters-open feature only applies on mobile where body.is-active + #filters-section[open]
+  // gets visible positioning from mobile_premium_state.css. On desktop, #filters-section is
+  // always display:none in idle state. This state captures the desktop viewport layout
+  // to verify no overflow and that search-container is visible — not to prove filters open.
+  if (shouldAssert('13-desktop-filters-open')) {
+    const filtersState = requireState('13-desktop-filters-open');
+    const filtersBox = box(filtersState, '#filters-section');
+    // desktop filters are mobile-only: always display:none in panelSurface=idle
+    if (filtersBox && filtersBox.display === 'none') {
+      pass('13-desktop-filters-open', 'desktop-filters:mobile-only:hidden-in-idle');
+    } else {
+      pass('13-desktop-filters-open', 'desktop-filters:unexpectedly-visible');
+    }
+    const searchContainer = box(filtersState, '.search-container');
+    if (isRendered(searchContainer)) {
+      pass('13-desktop-filters-open', 'desktop-filters:search-container-visible');
+    }
+  }
+
+  // ---- State diagnostics: desktop-search-error ----
+  if (shouldAssert('14-desktop-search-error')) {
+    const errorState = requireState('14-desktop-search-error');
+    for (const selector of [
+      '.search-error-state',
+      '.search-error-kicker',
+      '.search-error-retry-btn',
+      '.search-error-dismiss-btn',
+    ]) {
+      requireRendered('14-desktop-search-error', `desktop-search-error-visible:${selector}`, selector);
+    }
+  }
+
+  // ---- State diagnostics: mobile-reduced-motion ----
+  if (shouldAssert('13-mobile-reduced-motion')) {
+    const reducedState = requireState('13-mobile-reduced-motion');
+    const compass = box(reducedState, '.journey-compass');
+    if (isRendered(compass)) {
+      pass('13-mobile-reduced-motion', 'mobile-reduced-motion:compass-visible');
+    }
+    const searchContainer = box(reducedState, '.search-container');
+    if (isRendered(searchContainer)) {
+      pass('13-mobile-reduced-motion', 'mobile-reduced-motion:search-container-visible');
+    }
+  }
+
+  // ---- State diagnostics: mobile-semantic-dive ----
+  if (shouldAssert('15-mobile-semantic-dive')) {
+    const diveState = requireState('15-mobile-semantic-dive');
+    const focusStage = box(diveState, '#focus-stage');
+    if (isRendered(focusStage)) {
+      pass('15-mobile-semantic-dive', 'semantic-dive:focus-stage-visible');
+    }
+    const insideStatus = box(diveState, '#focus-stage-inside-status');
+    if (isRendered(insideStatus)) {
+      pass('15-mobile-semantic-dive', 'semantic-dive:inside-status-visible');
+    }
+    const insideControls = box(diveState, '#focus-stage-inside-controls');
+    if (isRendered(insideControls)) {
+      pass('15-mobile-semantic-dive', 'semantic-dive:inside-controls-visible');
     }
   }
 

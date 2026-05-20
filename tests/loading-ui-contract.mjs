@@ -54,6 +54,29 @@ async function testPhaseBodyDataset() {
 }
 
 // ---------------------------------------------------------------------------
+// Test: setLoadingPhase restores the overlay from the hidden terminal state
+// ---------------------------------------------------------------------------
+
+async function testPhaseRestoresOverlayVisibility() {
+    const source = loadingUiSource;
+    if (!source) return skip('loading-ui.js not readable');
+
+    const body = extractBody(source, 'setLoadingPhase') || '';
+    const clearsHiddenAttr = /overlay\.hidden\s*=\s*false/.test(body);
+    const clearsAriaHidden = /overlay\.removeAttribute\(\s*['"]aria-hidden['"]\s*\)/.test(body);
+    const clearsHiddenClasses = /overlay\.classList\.remove\([^)]*['"]hidden['"][^)]*['"]launching['"][^)]*\)/.test(body)
+        || /overlay\.classList\.remove\([^)]*['"]launching['"][^)]*['"]hidden['"][^)]*\)/.test(body);
+    const marksActiveState = /overlay\.dataset\.loadingState\s*=\s*['"]active['"]/.test(body)
+        && /document\.body\.dataset\.loadingOverlay\s*=\s*['"]active['"]/.test(body);
+
+    if (!clearsHiddenAttr) throw new Error('setLoadingPhase must clear overlay.hidden before showing a new phase');
+    if (!clearsAriaHidden) throw new Error('setLoadingPhase must remove aria-hidden from the overlay');
+    if (!clearsHiddenClasses) throw new Error('setLoadingPhase must remove hidden/launching classes from the overlay');
+    if (!marksActiveState) throw new Error('setLoadingPhase must mark overlay and body loading state active');
+    ok('setLoadingPhase restores overlay visibility semantics');
+}
+
+// ---------------------------------------------------------------------------
 // Test: phase progress bar width uses Math.round(percent * 100)
 // ---------------------------------------------------------------------------
 
@@ -81,6 +104,31 @@ async function testSceneReadyDispatch() {
     const dispatchesSceneReady = /window\.dispatchEvent\(\s*new\s+CustomEvent\(\s*['"]scene-ready['"]/.test(source);
     if (!dispatchesSceneReady) throw new Error('hideLoadingOverlay must dispatch window CustomEvent("scene-ready")');
     ok('hideLoadingOverlay dispatches scene-ready CustomEvent on window');
+}
+
+// ---------------------------------------------------------------------------
+// Test: hideLoadingOverlay writes a complete hidden terminal state
+// ---------------------------------------------------------------------------
+
+async function testHideOverlayTerminalState() {
+    const source = loadingUiSource;
+    if (!source) return skip('loading-ui.js not readable');
+
+    const hasHiddenClass = /overlay\.classList\.add\(\s*['"]hidden['"]\s*\)/.test(source);
+    const hasHiddenAttr = /overlay\.hidden\s*=\s*true/.test(source);
+    const hasAriaHidden = /overlay\.setAttribute\(\s*['"]aria-hidden['"]\s*,\s*['"]true['"]\s*\)/.test(source);
+    const hasInert = /overlay\.inert\s*=\s*true/.test(source);
+    const hasOverlayDataset = /overlay\.dataset\.loadingState\s*=\s*['"]hidden['"]/.test(source);
+    const hasBodyDataset = /document\.body\.dataset\.loadingOverlay\s*=\s*['"]hidden['"]/.test(source)
+        && /document\.body\.dataset\.sceneReady\s*=\s*['"]true['"]/.test(source);
+
+    if (!hasHiddenClass) throw new Error('hideLoadingOverlay must add the hidden class');
+    if (!hasHiddenAttr) throw new Error('hideLoadingOverlay must set overlay.hidden = true');
+    if (!hasAriaHidden) throw new Error('hideLoadingOverlay must set aria-hidden="true"');
+    if (!hasInert) throw new Error('hideLoadingOverlay must make the overlay inert');
+    if (!hasOverlayDataset) throw new Error('hideLoadingOverlay must set overlay data-loading-state="hidden"');
+    if (!hasBodyDataset) throw new Error('hideLoadingOverlay must set body loadingOverlay hidden and sceneReady true');
+    ok('hideLoadingOverlay writes complete hidden terminal state');
 }
 
 // ---------------------------------------------------------------------------
@@ -220,8 +268,10 @@ async function testPhaseOrder() {
 
 const tests = [
     testPhaseBodyDataset,
+    testPhaseRestoresOverlayVisibility,
     testProgressWidth,
     testSceneReadyDispatch,
+    testHideOverlayTerminalState,
     testDeferredHydrationIdempotent,
     testScheduleWeatherInitializedGuard,
     testInitWeatherViaWindow,

@@ -1,9 +1,7 @@
 import * as THREE from 'three';
 window.THREE = THREE;
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
-import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { state } from './state.js';
 import {
     releaseFocusCameraAssist,
@@ -21,9 +19,19 @@ import {
     createFocusRingTexture,
     createFocusNextCueTexture
 } from './utils.js';
+import {
+    buildGeometricMyceliumEdges,
+    buildSemanticMyceliumEdges,
+    getBezierControlPoint,
+    pushBezierLinePair,
+    updateMyceliumThreads
+} from './modules/mycelium-engine.js';
+import { setSceneRevealDataset } from './modules/scene-reveal.js';
 
 // three-setup.js - Three.js state.scene initialization, state.scene management, animation loop
 // Extracted from vector-explorer-polished.html inline script
+
+export { updateMyceliumThreads };
 
 // RAF handle for cancelation on deinit/re-init
 let _rafId = null;
@@ -104,6 +112,15 @@ const MYCELIUM_FIELD_SCALE = Object.freeze({
     x: 2.8,
     y: 2.25,
     z: 3.25
+});
+
+const SCENE_ATMOSPHERE = Object.freeze({
+    fogColor: 0x070a12,
+    fogDensity: 0.0034,
+    clearAlpha: 1,
+    toneExposure: 0.92,
+    pointOpacityScale: 0.82,
+    sporeOpacity: 0.16
 });
 
 const NODE_SPORE_BASE_RADIUS = 0.0019;
@@ -350,233 +367,6 @@ function disposeObject3D(object) {
     });
 }
 
-function pairKey(a, b) {
-    return a < b ? `${a}:${b}` : `${b}:${a}`;
-}
-
-function buildGeometricMyceliumEdges(clusterMembers, clusterCentroids) {
-    if (!state.points || !Array.isArray(state.points) || state.points.length === 0) return;
-    const corePairs = [];
-    const wispyPairs = [];
-    const bridgePairs = [];
-    const seenPairs = new Set();
-    const cellSize = 0.1;
-    const grid = new Map();
-
-    for (let i = 0; i < state.points.length; i += 1) {
-        const pos = state.nodePositions[i];
-        if (!pos) continue;
-        const key = `${Math.floor(pos.x / cellSize)},${Math.floor(pos.y / cellSize)},${Math.floor(pos.z / cellSize)}`;
-        if (!grid.has(key)) grid.set(key, []);
-        grid.get(key).push(i);
-    }
-
-    const coreDist = 0.048;
-    const wispyDist = 0.078;
-
-    for (let i = 0; i < state.points.length; i += 1) {
-        const source = state.nodePositions[i];
-        if (!source) continue;
-        const cx = Math.floor(source.x / cellSize);
-        const cy = Math.floor(source.y / cellSize);
-        const cz = Math.floor(source.z / cellSize);
-
-        for (let dx = -1; dx <= 1; dx += 1) {
-            for (let dy = -1; dy <= 1; dy += 1) {
-                for (let dz = -1; dz <= 1; dz += 1) {
-                    const cell = grid.get(`${cx + dx},${cy + dy},${cz + dz}`);
-                    if (!cell) continue;
-                    for (const j of cell) {
-                        if (j <= i || !state.points[i] || !state.points[j] || state.points[i].cluster !== state.points[j].cluster) continue;
-                        const target = state.nodePositions[j];
-                        if (!target) continue;
-                        const dist = Math.hypot(source.x - target.x, source.y - target.y, source.z - target.z);
-                        const key = pairKey(i, j);
-                        if (seenPairs.has(key)) continue;
-                        if (dist < coreDist) {
-                            corePairs.push({ a: i, b: j });
-                            seenPairs.add(key);
-                        } else if (dist < wispyDist) {
-                            wispyPairs.push({ a: i, b: j });
-                            seenPairs.add(key);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    const seenBridgePairs = new Set();
-    const clusterKeys = [...clusterMembers.keys()];
-    clusterKeys.forEach((clusterA) => {
-        const centroidA = clusterCentroids.get(clusterA);
-        if (!centroidA) return;
-        const nearest = clusterKeys
-            .filter((clusterB) => clusterB !== clusterA)
-            .map((clusterB) => {
-                const centroidB = clusterCentroids.get(clusterB);
-                return {
-                    clusterB,
-                    dist: Math.hypot(centroidA.x - centroidB.x, centroidA.y - centroidB.y, centroidA.z - centroidB.z)
-                };
-            })
-            .sort((a, b) => a.dist - b.dist)
-            .slice(0, 2);
-
-        nearest.forEach(({ clusterB, dist }) => {
-            if (dist > 0.42) return;
-            const bridgeKey = [clusterA, clusterB].sort((a, b) => a - b).join(':');
-            if (seenBridgePairs.has(bridgeKey)) return;
-            seenBridgePairs.add(bridgeKey);
-
-            const centroidB = clusterCentroids.get(clusterB);
-            const source = (clusterMembers.get(clusterA) || [])
-                .slice()
-                .sort((a, b) => {
-                    const aPos = state.nodePositions[a];
-                    const bPos = state.nodePositions[b];
-                    if (!aPos || !bPos) return 0;
-                    return Math.hypot(aPos.x - centroidB.x, aPos.y - centroidB.y, aPos.z - centroidB.z)
-                        - Math.hypot(bPos.x - centroidB.x, bPos.y - centroidB.y, bPos.z - centroidB.z);
-                })[0];
-            const target = (clusterMembers.get(clusterB) || [])
-                .slice()
-                .sort((a, b) => {
-                    const aPos = state.nodePositions[a];
-                    const bPos = state.nodePositions[b];
-                    if (!aPos || !bPos) return 0;
-                    return Math.hypot(aPos.x - centroidA.x, aPos.y - centroidA.y, aPos.z - centroidA.z)
-                        - Math.hypot(bPos.x - centroidA.x, bPos.y - centroidA.y, bPos.z - centroidA.z);
-                })[0];
-
-            if (source === undefined || target === undefined) return;
-            bridgePairs.push({ a: source, b: target });
-        });
-    });
-
-    return { corePairs, wispyPairs, bridgePairs };
-}
-
-function buildSemanticMyceliumEdges() {
-    if (!state.semanticNeighborMapByLeadId?.size || !state.pointIndexByLeadId?.size) return null;
-
-    const seenPairs = new Set();
-    const corePairs = [];
-    const wispyPairs = [];
-    const bridgePairs = [];
-    const bridgeCountByNode = new Map();
-
-    state.points.forEach((point, index) => {
-        const leadId = point?.lead_id === null || point?.lead_id === undefined ? '' : String(point.lead_id);
-        if (!leadId) return;
-        const threadNode = state.semanticNeighborMapByLeadId.get(leadId);
-        if (!threadNode?.neighbors?.length) return;
-
-        threadNode.neighbors.forEach((neighbor) => {
-            const candidateIndex = state.pointIndexByLeadId.get(String(neighbor.leadId));
-            if (candidateIndex === undefined || candidateIndex === index) return;
-            const key = pairKey(index, candidateIndex);
-            if (seenPairs.has(key)) return;
-            seenPairs.add(key);
-
-            const semanticScore = Number.isFinite(neighbor.semanticScore) ? neighbor.semanticScore : 0;
-            const bridgeScore = Number.isFinite(neighbor.bridgeScore) ? neighbor.bridgeScore : 0;
-            const sameCluster = state.points[index]?.cluster === state.points[candidateIndex]?.cluster;
-            const sameCity = Boolean(neighbor.sameCity);
-            const isBridgeLike = String(neighbor.threadType || '').toLowerCase().includes('bridge') || bridgeScore >= 0.62;
-
-            if (!sameCluster) {
-                if (!isBridgeLike) return;
-                const aCount = bridgeCountByNode.get(index) || 0;
-                const bCount = bridgeCountByNode.get(candidateIndex) || 0;
-                if (aCount >= 2 || bCount >= 2) return;
-                bridgeCountByNode.set(index, aCount + 1);
-                bridgeCountByNode.set(candidateIndex, bCount + 1);
-                bridgePairs.push({ a: index, b: candidateIndex });
-                return;
-            }
-
-            if (semanticScore >= 0.62 || (semanticScore >= 0.56 && sameCity)) {
-                corePairs.push({ a: index, b: candidateIndex });
-            } else if (semanticScore >= 0.42 || sameCity) {
-                wispyPairs.push({ a: index, b: candidateIndex });
-            }
-        });
-    });
-
-    return corePairs.length || wispyPairs.length || bridgePairs.length ? { corePairs, wispyPairs, bridgePairs } : null;
-}
-
-// --- Bezier sag control for organic mycelium curves ---
-// Slight midpoint sag sells the mycelium metaphor — control point is offset
-// below the segment midpoint along the perpendicular to view direction.
-
-function getBezierControlPoint(a, b, edgeSide = 0, edgeRise = 0) {
-    const start = new THREE.Vector3(a.x, a.y, a.z);
-    const end = new THREE.Vector3(b.x, b.y, b.z);
-    const mid = start.clone().lerp(end, 0.5);
-    const span = new THREE.Vector3().subVectors(end, start);
-    const spanLength = Math.max(span.length(), 0.001);
-
-    // View direction for perpendicular calculation
-    const viewVector = state.camera
-        ? new THREE.Vector3().subVectors(state.camera.position, mid).normalize()
-        : new THREE.Vector3(0.28, 0.2, 1).normalize();
-
-    const worldUp = new THREE.Vector3(0, 1, 0);
-    const rightVector = new THREE.Vector3().crossVectors(worldUp, viewVector);
-    if (rightVector.lengthSq() < 0.0001) rightVector.set(1, 0, 0);
-    rightVector.normalize();
-    const upVector = new THREE.Vector3().crossVectors(viewVector, rightVector).normalize();
-
-    // 10/10 Polish: Increased sag for more organic, hand-drawn mycelium feel
-    const baseSag = Math.min(0.12, Math.max(0.018, spanLength * 0.18));
-    const sideOffset = edgeSide * baseSag * 0.52;
-    const riseOffset = edgeRise * baseSag * 0.32;
-
-    return mid
-        .clone()
-        .addScaledVector(rightVector, sideOffset)
-        .addScaledVector(upVector, -(baseSag * 0.78) + riseOffset) // negative Y = sag downward
-        .addScaledVector(viewVector, baseSag * 0.14); // slight forward offset
-}
-
-function pushBezierLinePair(target, colorTarget, pair, fade = 1, segments = 5) {
-    const a = state.nodePositions[pair.a];
-    const b = state.nodePositions[pair.b];
-    if (!a || !b) return;
-
-    // Edge properties for organic shaping
-    const edgeSide = ((pair.a * 31 + pair.b * 17) % 2 === 0) ? 1 : -1;
-    const edgeRise = (((pair.a + pair.b) % 5) - 2) / 2 || 0.3;
-
-    const control = getBezierControlPoint(a, b, edgeSide, edgeRise);
-
-    const colorA = getThreadCategoryColor(state.points[pair.a]?.cluster || 0, state.COLORS);
-    const colorB = getThreadCategoryColor(state.points[pair.b]?.cluster || 0, state.COLORS);
-
-    // Sample the quadratic bezier: B(t) = (1-t)²A + 2(1-t)tC + t²B
-    for (let i = 0; i <= segments; i++) {
-        const t = i / segments;
-        const invT = 1 - t;
-
-        const x = invT * invT * a.x + 2 * invT * t * control.x + t * t * b.x;
-        const y = invT * invT * a.y + 2 * invT * t * control.y + t * t * b.y;
-        const z = invT * invT * a.z + 2 * invT * t * control.z + t * t * b.z;
-
-        target.push(
-            Number.isFinite(x) ? x : 0,
-            Number.isFinite(y) ? y : 0,
-            Number.isFinite(z) ? z : 0
-        );
-
-        // Interpolate color along the curve
-        const r = colorA.r + (colorB.r - colorA.r) * t;
-        const g = colorA.g + (colorB.g - colorA.g) * t;
-        const bCol = colorA.b + (colorB.b - colorA.b) * t;
-        colorTarget.push(r * fade, g * fade, bCol * fade);
-    }
-}
 
 function createLineSegments(positions, colors, opacity) {
     if (!positions.length) return null;
@@ -606,18 +396,18 @@ function getThreadPulseOpacity(baseOpacity, pulse, requestedAmplitude, revealPro
 function getMyceliumPresentationProfile() {
     const { currentMode } = state.navState || {};
     if (currentMode === 'overview' || currentMode === undefined) {
-        return { core: 0.0016, wispy: 0.0, bridge: 0.0006, pulse: 0.0003 };
+        return { core: 0.07, wispy: 0.026, bridge: 0.045, pulse: 0.018 };
     }
     if (state.focusedNode !== null && state.focusedNode !== undefined) {
-        return { core: 0.012, wispy: 0.0021, bridge: 0.0012, pulse: 0.0032 };
+        return { core: 0.28, wispy: 0.11, bridge: 0.18, pulse: 0.075 };
     }
     if (state.currentSearchSummary || state.searchGlowActive) {
-        return { core: 0.008, wispy: 0.0015, bridge: 0.001, pulse: 0.0022 };
+        return { core: 0.22, wispy: 0.085, bridge: 0.14, pulse: 0.055 };
     }
     if (state.trailDepth >= 1) {
-        return { core: 0.007, wispy: 0.0014, bridge: 0.0009, pulse: 0.002 };
+        return { core: 0.12, wispy: 0.045, bridge: 0.075, pulse: 0.03 };
     }
-    return { core: 0.0062, wispy: 0.0011, bridge: 0.0008, pulse: 0.0018 };
+    return { core: 0.12, wispy: 0.045, bridge: 0.075, pulse: 0.03 };
 }
 
 export function updateCameraViewportOffset() {
@@ -653,7 +443,7 @@ export function initThreeJS() {
     state.scene = new THREE.Scene();
 
     // 10/10 Polish: High-Fidelity Atmospheric Depth
-    state.scene.fog = new THREE.FogExp2(0x070a12, 0.0034);
+    state.scene.fog = new THREE.FogExp2(SCENE_ATMOSPHERE.fogColor, SCENE_ATMOSPHERE.fogDensity);
 
     state.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
     state.camera.position.set(1.5, 1.2, 2.0);
@@ -676,6 +466,9 @@ export function initThreeJS() {
     }
     state.renderer.setSize(window.innerWidth, window.innerHeight);
     state.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    state.renderer.setClearColor(SCENE_ATMOSPHERE.fogColor, SCENE_ATMOSPHERE.clearAlpha);
+    state.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    state.renderer.toneMappingExposure = SCENE_ATMOSPHERE.toneExposure;
     container.querySelectorAll('canvas').forEach((canvas) => {
         if (canvas !== state.renderer.domElement) canvas.remove();
     });
@@ -746,85 +539,6 @@ export function initThreeJS() {
     return true;
 }
 
-function initSemanticLens() {
-    state.semanticLensGroup = new THREE.Group();
-    state.semanticLensGroup.visible = false;
-    state.scene.add(state.semanticLensGroup);
-
-    // 1. Volumetric Glow Sphere
-    const glowGeo = new THREE.SphereGeometry(0.12, 32, 32);
-    const glowMat = new THREE.ShaderMaterial({
-        uniforms: {
-            uTime: { value: 0 },
-            uColor: { value: new THREE.Color(0x4ecdc4) },
-            uOpacity: { value: 0 }
-        },
-        vertexShader: `
-            varying vec3 vNormal;
-            varying vec3 vPosition;
-            void main() {
-                vNormal = normalize(normalMatrix * normal);
-                vPosition = position;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform float uTime;
-            uniform vec3 uColor;
-            uniform float uOpacity;
-            varying vec3 vNormal;
-            varying vec3 vPosition;
-            void main() {
-                float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 3.0);
-                float pulse = 0.8 + sin(uTime * 2.4) * 0.2;
-                gl_FragColor = vec4(uColor, intensity * uOpacity * pulse);
-            }
-        `,
-        transparent: true,
-        side: THREE.BackSide,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-    });
-    state.semanticLensGlow = new THREE.Mesh(glowGeo, glowMat);
-    state.semanticLensGroup.add(state.semanticLensGlow);
-
-    // 2. Semantic Spokes
-    const spokeGeo = new THREE.BufferGeometry();
-    const spokePos = new Float32Array(12 * 2 * 3);
-    const spokeAlpha = new Float32Array(12 * 2);
-    spokeGeo.setAttribute('position', new THREE.BufferAttribute(spokePos, 3));
-    spokeGeo.setAttribute('alpha', new THREE.BufferAttribute(spokeAlpha, 1));
-
-    const spokeMat = new THREE.ShaderMaterial({
-        uniforms: {
-            uTime: { value: 0 },
-            uColor: { value: new THREE.Color(0xfff4ba) }
-        },
-        vertexShader: `
-            attribute float alpha;
-            varying float vAlpha;
-            void main() {
-                vAlpha = alpha;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform float uTime;
-            uniform vec3 uColor;
-            varying float vAlpha;
-            void main() {
-                float wave = 0.72 + sin(uTime * 4.0 + vAlpha * 10.0) * 0.28;
-                gl_FragColor = vec4(uColor, vAlpha * (0.4 + wave * 0.6));
-            }
-        `,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-    });
-    state.semanticLensSpokes = new THREE.LineSegments(spokeGeo, spokeMat);
-    state.semanticLensGroup.add(state.semanticLensSpokes);
-}
-
 function initSemanticManifold() {
     const manifoldGeo = new THREE.CircleGeometry(4, 64);
     const manifoldMat = new THREE.ShaderMaterial({
@@ -880,12 +594,89 @@ function initSemanticManifold() {
         transparent: true,
         side: THREE.DoubleSide,
         depthWrite: false,
-        blending: THREE.AdditiveBlending
+        blending: THREE.NormalBlending
     });
     state.semanticManifold = new THREE.Mesh(manifoldGeo, manifoldMat);
     state.semanticManifold.rotation.x = -Math.PI / 2;
     state.semanticManifold.position.y = -0.8;
     state.scene.add(state.semanticManifold);
+}
+
+function initSemanticLens() {
+    state.semanticLensGroup = new THREE.Group();
+    state.semanticLensGroup.visible = false;
+    state.scene.add(state.semanticLensGroup);
+
+    const glowGeo = new THREE.SphereGeometry(0.12, 32, 32);
+    const glowMat = new THREE.ShaderMaterial({
+        uniforms: {
+            uTime: { value: 0 },
+            uColor: { value: new THREE.Color(0x4ecdc4) },
+            uOpacity: { value: 0 },
+            uSignalScore: { value: 0 }
+        },
+        vertexShader: `
+            varying vec3 vNormal;
+            void main() {
+                vNormal = normalize(normalMatrix * normal);
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform float uTime;
+            uniform vec3 uColor;
+            uniform float uOpacity;
+            uniform float uSignalScore;
+            varying vec3 vNormal;
+            void main() {
+                float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 3.0);
+                float signalLift = 0.76 + clamp(uSignalScore, 0.0, 1.0) * 0.34;
+                float pulse = 0.82 + sin(uTime * 2.4) * 0.18;
+                gl_FragColor = vec4(uColor * signalLift, intensity * uOpacity * pulse);
+            }
+        `,
+        transparent: true,
+        side: THREE.BackSide,
+        blending: THREE.NormalBlending,
+        depthWrite: false
+    });
+    state.semanticLensGlow = new THREE.Mesh(glowGeo, glowMat);
+    state.semanticLensGroup.add(state.semanticLensGlow);
+
+    const spokeGeo = new THREE.BufferGeometry();
+    const spokePos = new Float32Array(12 * 2 * 3);
+    const spokeAlpha = new Float32Array(12 * 2);
+    spokeGeo.setAttribute('position', new THREE.BufferAttribute(spokePos, 3));
+    spokeGeo.setAttribute('alpha', new THREE.BufferAttribute(spokeAlpha, 1));
+
+    const spokeMat = new THREE.ShaderMaterial({
+        uniforms: {
+            uTime: { value: 0 },
+            uColor: { value: new THREE.Color(0xfff4ba) }
+        },
+        vertexShader: `
+            attribute float alpha;
+            varying float vAlpha;
+            void main() {
+                vAlpha = alpha;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform float uTime;
+            uniform vec3 uColor;
+            varying float vAlpha;
+            void main() {
+                float wave = 0.72 + sin(uTime * 4.0 + vAlpha * 10.0) * 0.28;
+                gl_FragColor = vec4(uColor, vAlpha * (0.4 + wave * 0.6));
+            }
+        `,
+        transparent: true,
+        blending: THREE.NormalBlending,
+        depthWrite: false
+    });
+    state.semanticLensSpokes = new THREE.LineSegments(spokeGeo, spokeMat);
+    state.semanticLensGroup.add(state.semanticLensSpokes);
 }
 
 function createNodeSporeLayer() {
@@ -897,9 +688,9 @@ function createNodeSporeLayer() {
         emissiveIntensity: 0.34,
         shininess: 58,
         transparent: true,
-        opacity: 0.18,
+        opacity: SCENE_ATMOSPHERE.sporeOpacity,
         vertexColors: true,
-        blending: THREE.AdditiveBlending,
+        blending: THREE.NormalBlending,
         depthWrite: false
     });
     const sporeMesh = new THREE.InstancedMesh(sporeGeo, sporeMat, state.points.length);
@@ -1002,12 +793,12 @@ export function createPoints() {
         size: state.POINTS_MATERIAL_BASE_SIZE * 1.52,
         vertexColors: true,
         transparent: true,
-        opacity: state.POINTS_MATERIAL_BASE_OPACITY * 0.82,
+        opacity: state.POINTS_MATERIAL_BASE_OPACITY * SCENE_ATMOSPHERE.pointOpacityScale,
         sizeAttenuation: true,
         alphaTest: 0.006,
         map: sporeTexture,
         alphaMap: sporeTexture,
-        blending: THREE.AdditiveBlending,
+        blending: THREE.NormalBlending,
         depthWrite: false
     });
 
@@ -1336,15 +1127,15 @@ export function createMycelium() {
     const bridgeColors = [];
 
     edgeSets.corePairs.forEach((pair) => {
-        pushBezierLinePair(coreConnections, coreColors, pair, semanticEdges ? 0.18 : 0.42);
+        pushBezierLinePair(coreConnections, coreColors, pair, semanticEdges ? 0.38 : 0.28);
         state.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 0 });
     });
     edgeSets.wispyPairs.forEach((pair) => {
-        pushBezierLinePair(wispyConnections, wispyColors, pair, semanticEdges ? 0.1 : 0.22);
+        pushBezierLinePair(wispyConnections, wispyColors, pair, semanticEdges ? 0.22 : 0.16);
         state.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 1 });
     });
     edgeSets.bridgePairs.forEach((pair) => {
-        pushBezierLinePair(bridgeConnections, bridgeColors, pair, semanticEdges ? 0.12 : 0.24);
+        pushBezierLinePair(bridgeConnections, bridgeColors, pair, semanticEdges ? 0.32 : 0.24);
         state.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 2 });
     });
 
@@ -1857,111 +1648,6 @@ export function disposeSearchCorridorAnimation() {
     _corridorAnimStartTime = null;
 }
 
-export function updateMyceliumThreads() {
-    if (!state.myceliumConnectionPairs?.length) return;
-
-    // Bezier sag for organic mycelium feel: at createMycelium time, edges are built
-    // with pushBezierLinePair (5 quadratic segments = 6 vertices = 30 floats per edge).
-    // The update loop here maintains that same 30-float-per-edge stride so the
-    // geometry buffer stays consistent between initial build and position updates.
-    const FLOATS_PER_BEZIER_EDGE = 30; // 6 vertices × 5 floats each (x,y,z per vertex)
-
-    const getSaggedPoint = (a, b) => {
-        if (!a || !b) return null;
-        const ax = Number.isFinite(a.x) ? a.x : 0;
-        const ay = Number.isFinite(a.y) ? a.y : 0;
-        const az = Number.isFinite(a.z) ? a.z : 0;
-        const bx = Number.isFinite(b.x) ? b.x : 0;
-        const by = Number.isFinite(b.y) ? b.y : 0;
-        const bz = Number.isFinite(b.z) ? b.z : 0;
-
-        const midX = (ax + bx) * 0.5;
-        const midY = (ay + by) * 0.5;
-        const midZ = (az + bz) * 0.5;
-        const spanLength = Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2 + (bz - az) ** 2);
-        const sag = Math.min(0.04, Math.max(0.008, spanLength * 0.1));
-
-        // View-dependent right vector for perpendicular sag
-        const viewVec = state.camera
-            ? new THREE.Vector3().subVectors(state.camera.position, new THREE.Vector3(midX, midY, midZ)).normalize()
-            : new THREE.Vector3(0.28, 0.2, 1).normalize();
-        const worldUp = new THREE.Vector3(0, 1, 0);
-        const right = new THREE.Vector3().crossVectors(worldUp, viewVec);
-        if (right.lengthSq() < 0.0001) right.set(1, 0, 0);
-        right.normalize();
-
-        const sagged = { sagX: bx, sagY: by - sag, sagZ: bz };
-
-        // Build 6 vertices of the quadratic bezier: start, p1, p2, p3, p4, end
-        const verts = [];
-        const edgeSide = ((a.index * 31 + b.index * 17) % 2 === 0) ? 1 : -1;
-        const edgeRise = (((a.index + b.index) % 5) - 2) / 2 || 0.3;
-        const control = (() => {
-            const start = new THREE.Vector3(ax, ay, az);
-            const end = new THREE.Vector3(bx, by, bz);
-            const mid = start.clone().lerp(end, 0.5);
-            const baseSag = Math.min(0.06, Math.max(0.012, spanLength * 0.14));
-            const sideOffset = edgeSide * baseSag * 0.45;
-            const riseOffset = edgeRise * baseSag * 0.28;
-            return mid
-                .clone()
-                .addScaledVector(right, sideOffset)
-                .addScaledVector(new THREE.Vector3(0, 1, 0), -(baseSag * 0.7) + riseOffset);
-        })();
-
-        for (let i = 0; i <= 5; i++) {
-            const t = i / 5;
-            const invT = 1 - t;
-            verts.push({
-                x: invT * invT * ax + 2 * invT * t * control.x + t * t * bx,
-                y: invT * invT * ay + 2 * invT * t * control.y + t * t * by,
-                z: invT * invT * az + 2 * invT * t * control.z + t * t * bz
-            });
-        }
-        return verts;
-    };
-
-    const updateLayer = (lines, layer) => {
-        if (!lines?.geometry?.attributes?.position) return;
-        const positions = lines.geometry.attributes.position.array;
-        let offset = 0;
-        state.myceliumConnectionPairs.forEach((pair) => {
-            if (pair.layer !== layer) return;
-            if (pair.a >= state.nodePositions.length || pair.b >= state.nodePositions.length) return;
-            const a = state.nodePositions[pair.a];
-            const b = state.nodePositions[pair.b];
-            if (!a || !b) return;
-
-            // Use full bezier segment (6 vertices, 30 floats)
-            const verts = getSaggedPoint({ x: a.x, y: a.y, z: a.z, index: pair.a }, { x: b.x, y: b.y, z: b.z, index: pair.b });
-            if (verts) {
-                for (let i = 0; i < verts.length; i++) {
-                    positions[offset++] = Number.isFinite(verts[i].x) ? verts[i].x : 0;
-                    positions[offset++] = Number.isFinite(verts[i].y) ? verts[i].y : 0;
-                    positions[offset++] = Number.isFinite(verts[i].z) ? verts[i].z : 0;
-                }
-            } else {
-                // Fallback: write straight line (2 vertices = 6 floats, then zeros for remaining 24)
-                positions[offset++] = Number.isFinite(a.x) ? a.x : 0;
-                positions[offset++] = Number.isFinite(a.y) ? a.y : 0;
-                positions[offset++] = Number.isFinite(a.z) ? a.z : 0;
-                positions[offset++] = Number.isFinite(b.x) ? b.x : 0;
-                positions[offset++] = Number.isFinite(b.y) ? b.y : 0;
-                positions[offset++] = Number.isFinite(b.z) ? b.z : 0;
-                // Fill remaining 24 floats with zeros
-                for (let z = 0; z < 24; z++) positions[offset++] = 0;
-            }
-        });
-        lines.geometry.attributes.position.needsUpdate = true;
-    };
-
-    updateLayer(state.myceliumCoreLines, 0);
-    updateLayer(state.myceliumWispyLines, 1);
-    updateLayer(state.myceliumBridgeLines, 2);
-
-    state.myceliumDirty = false;
-}
-
 export function cancelAnimate() {
     if (_rafId !== null) {
         window.cancelAnimationFrame(_rafId);
@@ -1972,30 +1658,27 @@ export function cancelAnimate() {
         _webglRestoreTimer = null;
     }
     _webglContextLost = false;
-    // Dispose Three.js resources
-    if (state.renderer) {
-        state.renderer.dispose();
-        if (state.renderer.domElement && state.renderer.domElement.parentNode) {
-            state.renderer.domElement.parentNode.removeChild(state.renderer.domElement);
-        }
-        state.renderer = null;
+    // Flush any pending draws before tearing down WebGL resources.
+    // Headless screenshot readback can trigger context loss; flushing
+    // ensures the frame is committed before we tear down.
+    const renderer = state.renderer;
+    const scene = state.scene;
+    const camera = state.camera;
+    if (renderer && scene && camera) {
+        try { renderer.render(scene, camera); } catch (_) { /* context already gone */ }
     }
-    if (state.controls) {
-        state.controls.dispose();
-        state.controls = null;
-    }
-    if (state.scene) {
-        state.scene.traverse((child) => {
-            child.geometry?.dispose();
-            if (Array.isArray(child.material)) {
-                child.material.forEach((m) => m?.dispose());
-            } else {
-                child.material?.dispose();
-            }
-        });
-        state.scene = null;
-    }
+    // Nullify active handles before disposal so accidental RAF re-entry exits safely.
+    state.scene = null;
     state.camera = null;
+    state.controls = null;
+    // Dispose renderer and remove its canvas.
+    if (renderer) {
+        renderer.dispose();
+        const canvas = renderer.domElement;
+        if (canvas?.parentNode) canvas.parentNode.removeChild(canvas);
+    }
+    state.renderer = null;
+    disposeObject3D(scene);
     state.pointsMesh = null;
     state.pointsMaterial = null;
     state.nodeSporeMesh = null;
@@ -2087,7 +1770,7 @@ function updateSelectedNodeFilaments(worldPos, time, isInside) {
     if (!state.focusFilaments?.geometry?.attributes?.position) return;
     const positions = state.focusFilaments.geometry.attributes.position.array;
     const hasFocus = Boolean(worldPos);
-    const targetOpacity = hasFocus ? (isInside ? 0.044 : 0.029) : 0;
+    const targetOpacity = hasFocus ? (isInside ? 0.48 : 0.36) : 0;
     state.focusFilaments.material.opacity += (targetOpacity - state.focusFilaments.material.opacity) * 0.1;
     state.focusFilaments.visible = state.focusFilaments.material.opacity > 0.01;
     if (!hasFocus) {
@@ -2139,6 +1822,18 @@ function updateSelectedNodeFilaments(worldPos, time, isInside) {
     state.focusFilaments.geometry.attributes.position.needsUpdate = true;
 }
 
+function getSemanticLensNeighborIndices(focusedNode) {
+    const point = state.points?.[focusedNode];
+    const leadId = point?.lead_id === null || point?.lead_id === undefined ? '' : String(point.lead_id);
+    if (!leadId) return [];
+    const semanticNode = state.semanticNeighborMapByLeadId ? state.semanticNeighborMapByLeadId.get(leadId) : null;
+    if (!semanticNode?.neighbors?.length || !state.pointIndexByLeadId?.size) return [];
+    return semanticNode.neighbors
+        .map((neighbor) => state.pointIndexByLeadId.get(String(neighbor.leadId)))
+        .filter((index) => Number.isFinite(index) && index !== focusedNode && state.nodePositions?.[index])
+        .slice(0, 12);
+}
+
 /**
  * Animate interaction sprites as soft in-scene blooms instead of flat target rings.
  */
@@ -2163,7 +1858,7 @@ function updateInteractionVisuals(now, hoveredNode, focusedNode) {
         const hasFocus = Number.isFinite(focusIdx) && focusIdx >= 0;
         const isInside = state.trailDepth === 2;
         const isActive = hasFocus && isFocused;
-        const auraTargetOpacity = hasFocus ? (isInside ? 0.74 : 0.66) : 0.0;
+        const auraTargetOpacity = hasFocus ? (isInside ? 0.26 : 0.18) : 0.0;
         const coreTargetOpacity = hasFocus ? (isInside ? 0.98 : 0.92) : 0.0;
         const baseScale = isActive ? 0.042 : (isInside ? 0.039 : 0.037);
 
@@ -2197,7 +1892,7 @@ function updateInteractionVisuals(now, hoveredNode, focusedNode) {
             if (state.focusHalo) {
                 const auraPulse = 1.0 + Math.sin(time * 0.82) * 0.09 + Math.sin(time * 0.31 + 1.4) * 0.035;
                 state.focusHalo.position.copy(worldPos);
-                const auraScale = isInside ? 0.21 : 0.19;
+                const auraScale = isInside ? 0.13 : 0.11;
                 state.focusHalo.scale.set(auraScale * auraPulse, auraScale * auraPulse, 1);
             }
             state.focusCore.position.copy(worldPos);
@@ -2213,6 +1908,65 @@ function updateInteractionVisuals(now, hoveredNode, focusedNode) {
         updateSelectedNodeMotes(null, time, false);
         updateSelectedNodePetals(null, time, false);
         updateSelectedNodeFilaments(null, time, false);
+    }
+
+    if (state.semanticLensGroup && state.semanticLensGlow && state.semanticLensSpokes) {
+        const focusIdx = focusedNode;
+        const hasFocus = Number.isFinite(focusIdx) && focusIdx >= 0 && state.nodePositions?.[focusIdx];
+        const isInside = state.trailDepth === 2;
+        const group = state.semanticLensGroup;
+        const glowUniforms = state.semanticLensGlow.material?.uniforms;
+        const spokes = state.semanticLensSpokes;
+
+        if (!hasFocus || !glowUniforms) {
+            if (glowUniforms?.uOpacity) glowUniforms.uOpacity.value += (0 - glowUniforms.uOpacity.value) * 0.12;
+            group.visible = Boolean(glowUniforms?.uOpacity?.value > 0.01);
+            spokes.visible = false;
+        } else {
+            const focusPos = state.nodePositions[focusIdx];
+            const worldPos = new THREE.Vector3(focusPos.x, focusPos.y, focusPos.z);
+            if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(worldPos);
+            group.position.copy(worldPos);
+            group.visible = true;
+            if (!isInside) {
+                spokes.visible = false;
+            }
+            const targetOpacity = isInside ? 0.2 : 0.11;
+            glowUniforms.uOpacity.value += (targetOpacity - glowUniforms.uOpacity.value) * 0.12;
+
+            const positionAttr = spokes.geometry.attributes.position;
+            const alphaAttr = spokes.geometry.attributes.alpha;
+            const positions = positionAttr.array;
+            const alphas = alphaAttr.array;
+            positions.fill(0);
+            alphas.fill(0);
+
+            if (isInside) {
+                const maxSpokeLength = 0.12;
+                let positionOffset = 0;
+                let alphaOffset = 0;
+                getSemanticLensNeighborIndices(focusIdx).forEach((neighborIndex) => {
+                    const neighborPos = state.nodePositions[neighborIndex];
+                    const neighborWorld = new THREE.Vector3(neighborPos.x, neighborPos.y, neighborPos.z);
+                    if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(neighborWorld);
+                    neighborWorld.sub(worldPos);
+                    const distance = neighborWorld.length();
+                    if (distance <= 0.0001) return;
+                    neighborWorld.normalize().multiplyScalar(Math.min(distance, maxSpokeLength));
+                    positions[positionOffset++] = 0;
+                    positions[positionOffset++] = 0;
+                    positions[positionOffset++] = 0;
+                    positions[positionOffset++] = neighborWorld.x;
+                    positions[positionOffset++] = neighborWorld.y;
+                    positions[positionOffset++] = neighborWorld.z;
+                    alphas[alphaOffset++] = 0.025;
+                    alphas[alphaOffset++] = 0.18;
+                });
+                spokes.visible = positionOffset > 0;
+            }
+            positionAttr.needsUpdate = true;
+            alphaAttr.needsUpdate = true;
+        }
     }
 
     // 3. Handle Semantic Lens (The icosahedron focus lens)
@@ -2319,6 +2073,11 @@ export function animate() {
         _rafId = null;
         return;
     }
+    // Guard against calling animate() after cancelAnimate() nullified handles.
+    if (!state.renderer || !state.scene || !state.camera) {
+        _rafId = null;
+        return;
+    }
 
     // Only continue the loop if we're in the galaxy view or explicitly forced
     if (state.currentView !== 'galaxy' && !state.forceAnimate) {
@@ -2402,6 +2161,7 @@ export function animate() {
             }
             if (revealProgress >= 1) {
                 state.sceneRevealActive = false;
+                setSceneRevealDataset(false);
                 state.sceneRevealCameraStart = null;
                 state.sceneRevealCameraEnd = null;
                 scheduleAutoRotateResume(1200);
@@ -2409,8 +2169,12 @@ export function animate() {
         }
 
         if (state.pointsMaterial) {
-            state.pointsMaterial.opacity = state.POINTS_MATERIAL_BASE_OPACITY * 0.82 * pointsRevealProgress;
-            state.pointsMaterial.size = state.POINTS_MATERIAL_BASE_SIZE * (1.06 + pointsRevealProgress * 0.46);
+            const focusSceneActive = Number.isFinite(state.focusedNode);
+            const focusPointOpacityScale = focusSceneActive ? 0.018 : 1.0;
+            const focusPointSizeScale = focusSceneActive ? 0.44 : 1.0;
+            state.pointsMesh.visible = !focusSceneActive;
+            state.pointsMaterial.opacity = state.POINTS_MATERIAL_BASE_OPACITY * SCENE_ATMOSPHERE.pointOpacityScale * pointsRevealProgress * focusPointOpacityScale;
+            state.pointsMaterial.size = state.POINTS_MATERIAL_BASE_SIZE * (1.06 + pointsRevealProgress * 0.46) * focusPointSizeScale;
             if (state.pointsMaterial.userData.shader) {
                 state.pointsMaterial.userData.shader.uniforms.uRevealProgress.value = pointsRevealProgress;
             }
@@ -2418,7 +2182,7 @@ export function animate() {
 
         // 10/10 Polish: Fog and Light Choreography
         if (state.scene.fog && state.scene.fog.isFogExp2) {
-            state.scene.fog.density = 0.0034 * pointsRevealProgress;
+            state.scene.fog.density = SCENE_ATMOSPHERE.fogDensity * pointsRevealProgress;
         }
         if (state.hemiLight) {
             state.hemiLight.intensity = 0.52 * pointsRevealProgress;
@@ -2428,7 +2192,7 @@ export function animate() {
         }
         if (state.nodeSporeMaterial) {
             const focusBoost = Number.isFinite(state.focusedNode) ? 1.18 : 1.0;
-            state.nodeSporeMaterial.opacity = 0.16 * pointsRevealProgress * focusBoost;
+            state.nodeSporeMaterial.opacity = SCENE_ATMOSPHERE.sporeOpacity * pointsRevealProgress * focusBoost;
         }
         const nodeMotionMs = performance.now() - nodeMotionStart;
 
@@ -2589,10 +2353,11 @@ export function animate() {
 
             // 10/10 Polish: Ensure the lens glow is also updated with time and score
             if (state.semanticLensGlow?.material?.uniforms) {
-                state.semanticLensGlow.material.uniforms.uTime.value = frameNow / 1000;
+                const glowUniforms = state.semanticLensGlow.material.uniforms;
+                glowUniforms.uTime.value = frameNow / 1000;
                 const focusedPoint = (Number.isFinite(state.focusedNode) && state.focusedNode >= 0 && state.focusedNode < state.points.length) ? state.points[state.focusedNode] : null;
                 if (focusedPoint && typeof window.calculateSignalScore === 'function') {
-                    state.semanticLensGlow.material.uniforms.uSignalScore.value = window.calculateSignalScore(focusedPoint);
+                    glowUniforms.uSignalScore.value = window.calculateSignalScore(focusedPoint);
                 }
             }
             if (typeof window.updateInspectedStrandOverlay === 'function') {

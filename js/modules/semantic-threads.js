@@ -150,7 +150,7 @@ export async function loadSemanticThreads(options = {}) {
             state.semanticThreadArtifactName = loadedArtifactName;  
             _buildSemanticNeighborMap(bundle);
             if (new URLSearchParams(window.location.search).has('debug')) {
-                console.info('[semantic-threads] artifact loaded', {
+                console.warn('[semantic-threads] artifact loaded', {
                     artifact: state.semanticThreadArtifactName,
                     records: state.semanticNeighborMapByLeadId.size,
                     uiNeighborLimit: bundle?.meta?.ui_neighbor_limit ?? null

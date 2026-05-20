@@ -21,6 +21,7 @@ const PATH = process.env.TEST_APP_PATH || '/vector-explorer-polished.html';
 const DEMO_FORCE = '?demo=force';
 const DEMO_NODEMO = '?nodemo';
 const STORAGE_KEY = 'moco_mycelium_demo_v1';
+const SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1';
 
 let passed = 0;
 let failed = 0;
@@ -102,7 +103,7 @@ async function runTests() {
 
     // Wait for micro-demo to be running (sessionStorage key set by startMicroDemo)
     await page.waitForFunction(
-      () => sessionStorage.getItem('moco_mycelium_demo_v1') !== null,
+      () => sessionStorage.getItem('moco_mycelium_demo_session_v1') !== null,
       { timeout: 30000 }
     );
 
@@ -146,7 +147,7 @@ async function runTests() {
     await page.goto(`${BASE_URL}${PATH}${DEMO_FORCE}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
     await page.waitForFunction(
-      () => sessionStorage.getItem('moco_mycelium_demo_v1') !== null,
+      () => sessionStorage.getItem('moco_mycelium_demo_session_v1') !== null,
       { timeout: 30000 }
     );
 
@@ -179,7 +180,7 @@ async function runTests() {
     assert(isRunningRepeat === false, 'demoController.isRunning() === false on repeat visit');
 
     // sessionStorage should NOT be set (demo was blocked)
-    const sessionSet = await page.evaluate(() => sessionStorage.getItem('moco_mycelium_demo_v1'));
+    const sessionSet = await page.evaluate(() => sessionStorage.getItem('moco_mycelium_demo_session_v1'));
     assert(sessionSet === null, 'sessionStorage key is NOT set on repeat visit (demo blocked)');
 
     // ── Test 5: demo=force bypasses already-seen guard ────────────────────
@@ -194,8 +195,12 @@ async function runTests() {
     const isRunningForce = await page.evaluate(() => window.demoController.isRunning());
     assert(isRunningForce === true, 'demoController.isRunning() === true with demo=force despite seen flag');
 
-    // Wait for sessionStorage (startMicroDemo sets it synchronously at start)
-    const sessionKeyForce = await page.evaluate(() => sessionStorage.getItem('moco_mycelium_demo_v1'));
+    // Wait for sessionStorage
+    await page.waitForFunction(
+      () => sessionStorage.getItem('moco_mycelium_demo_session_v1') !== null,
+      { timeout: 30000 }
+    );
+    const sessionKeyForce = await page.evaluate(() => sessionStorage.getItem('moco_mycelium_demo_session_v1'));
     assert(sessionKeyForce !== null, 'sessionStorage key is set when demo runs');
 
     // ── Test 6: cancelMicroDemo returns camera to overview ────────────────
@@ -243,7 +248,7 @@ async function runTests() {
     const isRunningNodemo = await page.evaluate(() => window.demoController?.isRunning?.());
     assert(isRunningNodemo === false, 'demoController.isRunning() === false when nodemo param is set');
 
-    const sessionNodemo = await page.evaluate(() => sessionStorage.getItem('moco_mycelium_demo_v1'));
+    const sessionNodemo = await page.evaluate(() => sessionStorage.getItem('moco_mycelium_demo_session_v1'));
     assert(sessionNodemo === null, 'sessionStorage key is NOT set when nodemo param is set');
 
     // ── Test 8: No duplicate running state ────────────────────────────────
@@ -252,13 +257,13 @@ async function runTests() {
     await page.goto(`${BASE_URL}${PATH}${DEMO_FORCE}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
     await page.waitForFunction(
-      () => sessionStorage.getItem('moco_mycelium_demo_v1') !== null,
+      () => sessionStorage.getItem('moco_mycelium_demo_session_v1') !== null,
       { timeout: 30000 }
     );
 
     // Attempt a second forced navigation without clearing sessionStorage
     // Since sessionStorage is set, startMicroDemo should refuse to run again
-    const sessionBefore = await page.evaluate(() => sessionStorage.getItem('moco_mycelium_demo_v1'));
+    const sessionBefore = await page.evaluate(() => sessionStorage.getItem('moco_mycelium_demo_session_v1'));
     assert(sessionBefore !== null, 'sessionStorage key is set from first run');
 
     // Reload with demo=force — sessionStorage should prevent double-fire

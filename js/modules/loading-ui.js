@@ -4,8 +4,17 @@ export function setLoadingPhase(phaseKey, overrides = {}) {
     state.loadingPhaseKey = phaseKey;
     const phase = state.LOADING_PHASE_META[phaseKey] || state.LOADING_PHASE_META.records;
     const overlay = document.getElementById('loading-overlay');
-    if (overlay) overlay.dataset.loadingPhase = phaseKey;
+    if (overlay) {
+        overlay.hidden = false;
+        overlay.inert = false;
+        overlay.removeAttribute('aria-hidden');
+        overlay.classList.remove('hidden', 'launching');
+        overlay.dataset.loadingPhase = phaseKey;
+        overlay.dataset.loadingState = 'active';
+    }
     document.body.dataset.loadingPhase = phaseKey;
+    document.body.dataset.loadingOverlay = 'active';
+    delete document.body.dataset.sceneReady;
 
     const noteEl = document.getElementById('loading-note');
     const footEl = document.getElementById('loading-foot');
@@ -36,9 +45,16 @@ export async function hideLoadingOverlay() {
         await new Promise((resolve) => setTimeout(resolve, remaining));
     }
 
+    overlay.dataset.loadingState = 'launching';
     overlay.classList.add('launching');
     await new Promise((resolve) => setTimeout(resolve, 180));
     overlay.classList.add('hidden');
+    overlay.dataset.loadingState = 'hidden';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.inert = true;
+    overlay.hidden = true;
+    document.body.dataset.loadingOverlay = 'hidden';
+    document.body.dataset.sceneReady = 'true';
 
     window.dispatchEvent(new CustomEvent('scene-ready'));
 }

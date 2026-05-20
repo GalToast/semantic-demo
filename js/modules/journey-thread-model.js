@@ -1,6 +1,5 @@
 import { state } from '../state.js';
 import {
-    isPointVisible,
     normalizeCityForFilter
 } from '../utils.js';
 

@@ -6,10 +6,14 @@ tmp/
 reports/
 test-results/
 playwright-report/
+.playwright-mcp/
+scratch/
 
 # Local server and deployment scratch
 *.log
 .local-dev-active
+decompose-and-delegate.skill
+decompose-and-delegate/
 .semantic-demo-last-backup.txt
 backups/
 output/

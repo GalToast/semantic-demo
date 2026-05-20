@@ -3,22 +3,33 @@
 ## Project Overview
 3D semantic mycelium visualization for exploring Montgomery County TX business relationships.
 
+## Dev Environment Hardening
+- **Static Dev Mode**: The app includes a JS-side fallback for static Python development servers. If `api.php` returns raw PHP source code, the `detectStaticDevPHP` utility triggers a mock healthy state and provides high-synergy search results.
+- **Hardware Resilience**: GPU textures and event listeners are tracked and explicitly disposed of in `three-setup.js` and `event-bindings.js` to prevent leaks during rapid development cycles.
+
 ## Key Files
 | Path | Role |
 |---|---|
 | `js/modules/app.js` | Main entry; imports all modules |
+| `js/state.js` | Single source of truth for all global state |
+| `js/modules/lifecycle.js` | App orchestration, view handoff, window bindings, scene-reveal logic |
 | `js/modules/demo-controller.js` | First-visit trigger + state machine |
 | `js/modules/micro-demo.js` | 9-second guided choreography |
-| `js/state.js` | Single source of truth for all global state |
-| `js/modules/lifecycle.js` | App orchestration, view handoff, window bindings |
-| `js/modules/loading-ui.js` | Loading phases, overlay hide, deferred hydration |
-| `js/modules/scene-reveal.js` | Scene reveal progress and resize/body viewport hooks |
+| `js/modules/journey.js` | Trail state, neighbor calculation, selected-card rendering |
+| `js/modules/ui-renderers.js` | Window-bound DOM renderers for legend, search rows, and selected-card chrome |
+| `js/modules/search-state.js` | Search engine, query tokenization, result rendering |
+| `js/modules/three-setup.js` | WebGL engine: scene, camera, renderer, shaders, instanced meshes |
+| `js/modules/camera-controls.js` | Camera choreography: transitions, auto-rotation, orbit slack |
+| `js/modules/focus-pocket.js` | Focus pocket node layout and animation |
+| `js/modules/event-bindings.js` | Centralized DOM event listeners |
+| `js/modules/journey-compass-state.js` | Journey compass state machine and action synthesis |
+| `js/modules/loading-ui.js` | Loading overlay, phases, deferred hydration |
 
 ## Two Demo Specs (Know Which You're Editing)
-- **SPEC.MYCO-DEMO-CONTROLLER.md** - trigger guard logic, state transitions, storage schema for `demo-controller.js`
-- **MICRO-DEMO-SPEC.md** - camera choreography, timing, node selection for `micro-demo.js`
+- **SPEC.MYCO-DEMO-CONTROLLER.md** - trigger guard logic, state transitions, storage schema for `demo-controller.js` (historical reference; implementation is current)
+- **MICRO-DEMO-SPEC.md** - camera choreography, timing, node selection for `micro-demo.js` (living spec)
 
-These are independent files. `demo-controller.js` manages "should the demo run?"; `micro-demo.js` manages "what does the demo do?". Both are imported by `app.js`.
+`demo-controller.js` manages "should the demo run?"; `micro-demo.js` manages "what does the demo do?". Both are imported by `app.js`.
 
 ## State Machine Reference
 
@@ -40,18 +51,52 @@ IDLE -> GLIDING -> ARRIVED -> CARD_VISIBLE -> PULLBACK -> WIDE_VIEW -> RETURNING
 ```
 Phase timing targets: GLIDING 1400ms, ARRIVED immediate, CARD_VISIBLE 1800ms hold, PULLBACK 1200ms, RETURNING 1000ms.
 
+### journey-compass-state.js (`js/modules/journey-compass-state.js`)
+```
+idle -> checking -> synthesizing -> active
+                |
+                v
+           interrupted -> idle
+```
+Driven by `data-panel-surface` and `data-journey-phase` body attributes. Composes actions from journey, search-state, and lifecycle modules.
+
 ## Storage
 - `localStorage.moco_mycelium_demo_v1` - lifetime per-browser flag (set by demo-controller on completion/cancel)
 - `sessionStorage` - NOT used by current demo-controller (contrast with MICRO-DEMO-SPEC which uses sessionStorage)
+
+## CSS Architecture
+CSS is split into ordered modules in `css/`. The root `semantic-demo.css` is an import manifest that loads modules in cascade order. `css/mobile_premium.css` is the mobile override import manifest.
+
+Key modules:
+- `css/layout_base.css` - info panel, legend, mode chips, broad layout
+- `css/journey_active.css` - active journey, field-node, route, mobile focus cockpit
+- `css/mobile_premium_state.css` - mobile idle, focus-search, map-view state ownership
+- `css/mobile_premium_surfaces.css` - bottom-sheet, surface geometry corrections
+- `css/mobile_premium_focus.css` - mobile focus-search and semantic-dive composition
+- `css/progressive_disclosure.css` - graph-context/dive show/hide behavior, search empty-state
+
+Use `docs/semantic-demo-css-ownership-map.md` and `docs/semantic-demo-mobile-state-ownership.md` to find the owning module before editing.
 
 ## Quick Dev Commands
 ```bash
 npm run build         # esbuild bundle to dist/bundle.js
 npm run lint          # ESLint js/modules/
-npm run qa:contract:all  # DOM/layout assertions (fast)
-npm run qa:surface:all   # Visual screenshot audit
-npm run test:microdemo   # Micro-demo verification
+npm run test          # shell/cache/CSS ownership checks
+npm run test:contract # structural JS/DOM contract tests
+npm run qa:contract:all  # DOM/layout assertions (fast, all surfaces)
+npm run qa:surface:all    # Visual screenshot audit (full suite)
+npm run qa:surface:mobile-idle  # Single visual state
+npm run test:microdemo   # Micro-demo programmatic verification
+npm run serve          # static dev server on 127.0.0.1:8795
 ```
+
+## Surface/Contract Tests (Playwright)
+`tests/surface-contract-check.mjs` runs fast DOM/layout assertions for named surfaces:
+- `mobile-idle`, `desktop-idle`, `launch-focus`, `search-error`, `map-trail`, `focus-pocket`, `field-node`, `info-panel-empty`, `compass-rail`, `loading-overlay`, `mode-grid`, `filters`, `thread-inspector`, `controls`, `search-chrome`, `info-panel-populated`, `global-spacing`
+
+`tests/visual-state-audit.mjs` captures screenshots for visual QA across 12 named states.
+
+Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-demo-contract.mjs`, `tests/focus-pocket-motion-contract.mjs`, `tests/loading-ui-contract.mjs`, `tests/scene-atmosphere-contract.mjs`, `tests/three-visual-polish-contract.mjs`, `tests/weather-surface-ownership-contract.mjs`, `tests/weather-widget-render-contract.mjs`, `tests/info-panel-collapsed-render-contract.mjs`, `tests/mode-chip-state-render-contract.mjs`, `tests/search-peek-expanded-render-contract.mjs`
 
 ## Debug Flags
 - `?demo=force` - re-trigger demo even if already seen
@@ -62,3 +107,11 @@ npm run test:microdemo   # Micro-demo verification
 - Treat `js/state.js`, `js/modules/app.js`, `js/modules/journey.js`, `js/modules/lifecycle.js`, and deploy scripts as high-risk surfaces that need explicit ownership and targeted tests.
 - CSS is split into ordered modules in `css/`; the root `semantic-demo.css` and `css/mobile_premium.css` are import manifests.
 - Do not move the app root until `deploy.sh` and `deploy.ps1` no longer depend on the sibling `../js/scanner.js` path.
+- **CSS state ownership**: Use `docs/semantic-demo-mobile-state-ownership.md` and `docs/semantic-demo-css-ownership-map.md` to trace which `data-*` attribute and CSS module owns a visual surface before editing.
+- **No `!important` in CSS**: Every `!important` is a signal of unresolved specificity conflict. Surface-level `!important` declarations are documented in `docs/semantic-demo-css-ownership-next-pass.md`.
+
+## Delegated Team Pattern
+- Prefer end-to-end seam owners for substantial work: each worker should diagnose, edit, run focused verification, and return changed paths plus risks.
+- Workers do not all need isolated product seams. It is valid to build a small team with distinct roles such as implementer, adversarial reviewer, visual designer, test author, documentation mapper, or release/checkpoint planner.
+- Overlapping read scope is fine. Overlapping write scope needs an explicit lead, a file owner, or a serial handoff so patches do not trample each other.
+- Main Codex lane should coordinate, answer worker blockers, review returned diffs, rerun acceptance checks, and synthesize the final decision.

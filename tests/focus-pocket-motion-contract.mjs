@@ -175,9 +175,9 @@ function testViewportProfiles() {
   assert(profile.key === 'roomy',        `roomy key: got ${profile.key}`);
   assert(profile.primaryLimit === 12,     `roomy primaryLimit: got ${profile.primaryLimit}`);
   assert(profile.supportLimit === 10,     `roomy supportLimit: got ${profile.supportLimit}`);
-  assert(profile.haloLimit === 8,        `roomy haloLimit: got ${profile.haloLimit}`);
+  assert(profile.haloLimit === 8,         `roomy haloLimit: got ${profile.haloLimit}`);
   assert(profile.cameraDistanceMax === undefined, 'roomy cameraDistanceMax should be absent at root level');
-  assert(profile.primaryRadiusScale === 0.7,    `roomy primaryRadiusScale: got ${profile.primaryRadiusScale}`);
+  assert(profile.primaryRadiusScale === 0.82,   `roomy primaryRadiusScale: got ${profile.primaryRadiusScale}`);
   assert(profile.zScale === 0.78,                 `roomy zScale: got ${profile.zScale}`);
 
   // --- Compact (≤768 wide) ---

@@ -49,14 +49,14 @@ function startAudioContext() {
         
         mainOsc.start();
 
-        console.info('[audio] Reactive scape initialized.');
+        console.warn('[audio] Reactive scape initialized.');
         requestAnimationFrame(updateAudio);
     } catch (e) {
         console.warn('[audio] Web Audio API initialization failed.', e);
     }
 }
 
-function updateAudio(now) {
+function updateAudio() {
     if (!audioCtx || audioCtx.state === 'closed') return;
     if (!state.camera) {
         requestAnimationFrame(updateAudio);
@@ -158,7 +158,7 @@ export function triggerCorridorBloom() {
 
         osc.start();
         osc.stop(audioCtx.currentTime + 0.8);
-    } catch (e) {
+    } catch {
         // Silent fail for transient audio
     }
 }

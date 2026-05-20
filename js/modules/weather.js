@@ -172,6 +172,7 @@ export function updateWeatherUi() {
         return;
     }
 
+    revealWeatherWidget();
     const icon = normalizeWeatherIcon(state.weather.icon);
     const condition = state.weather.condition || icon;
     const desc = state.weather.description || getWeatherDescription(state.weather.code);
@@ -231,20 +232,39 @@ export function clearWeatherEffects() {
 }
 
 function renderWeatherFallback() {
+    revealWeatherWidget();
     const tempEl = document.getElementById('weather-temp');
     const descEl = document.getElementById('weather-desc');
     const windSpeedEl = document.getElementById('wind-speed');
     const weatherIconEl = document.getElementById('weather-icon');
     const conditionUseEl = weatherIconEl?.querySelector('.weather-condition-icon use');
+    const stalenessEl = document.getElementById('weather-staleness');
+
     if (conditionUseEl) conditionUseEl.setAttribute('href', '#icon-cloud');
     if (weatherIconEl) {
         weatherIconEl.setAttribute('aria-label', 'Weather unavailable');
         weatherIconEl.dataset.condition = 'cloud';
     }
-    if (tempEl) tempEl.textContent = '';
-    if (descEl) descEl.textContent = 'Unavailable';
-    if (windSpeedEl) windSpeedEl.textContent = '-- mph';
-    updateWeatherStaleness();
+
+    // 10/10 Polish: Differentiate between total failure and loss of signal
+    if (state.lastSuccessfulFetch) {
+        if (descEl) descEl.textContent = 'Service lost';
+        updateWeatherStaleness();
+        if (stalenessEl) {
+            stalenessEl.textContent += ' (Stale)';
+            stalenessEl.style.color = '#ff9b9b';
+        }
+    } else {
+        if (tempEl) tempEl.textContent = '';
+        if (descEl) descEl.textContent = 'Unavailable';
+        if (windSpeedEl) windSpeedEl.textContent = '-- mph';
+        updateWeatherStaleness();
+    }
+}
+
+function revealWeatherWidget() {
+    const widget = document.querySelector('.weather-widget');
+    if (widget) widget.hidden = false;
 }
 
 function normalizeWeatherIcon(icon) {

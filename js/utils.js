@@ -338,6 +338,24 @@ export function quadraticBezierComponent(a, b, c, t) {
     return inverse * inverse * a + 2 * inverse * t * b + t * t * c; 
 }
 
+export function detectStaticDevPHP(text) {
+    if (typeof text !== 'string') return false;
+    const trimmed = text.trim();
+    return trimmed.startsWith('<?php') || (trimmed.includes('<?php') && trimmed.indexOf('<?php') < 100);
+}
+
+export function updateTime() {
+    const el = document.getElementById('time-display');
+    if (!el) return;
+    const now = new Date();
+    const h = now.getHours();
+    const m = now.getMinutes();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    const mStr = m < 10 ? '0' + m : m;
+    el.textContent = `${h12}:${mStr} ${ampm}`;
+}
+
 export function easeOutBack(t) {
     const c1 = 1.70158;
     const c3 = c1 + 1;

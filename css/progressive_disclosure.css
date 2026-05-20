@@ -1688,7 +1688,7 @@ body[data-panel-surface="search"] .rail-section#filters-section {
 
 /* ── Focus: focused business card and trail controls dominate ─────────────────── */
 
-body[data-panel-surface="focus"] .search-results.active,
+body[data-panel-surface="focus"] .search-container:not(.has-query) .search-results.active,
 body[data-panel-surface="focus"] .synthesize-trigger,
 body[data-panel-surface="focus"] .search-trail-cue,
 body[data-panel-surface="focus"] .demo-starters,

@@ -1,7 +1,7 @@
 # Semantic Demo CSS Ownership Map
 
 Status: active
-Updated: 2026-05-17
+Updated: 2026-05-19
 
 ## Purpose
 
@@ -20,10 +20,10 @@ The module order below is the cascade order. The first reconstruction preserved 
 | `css/loading.css` | Loading overlay and startup progress surfaces. |
 | `css/tooltips.css` | Hover tooltip/card preview surfaces. |
 | `css/shell.css` | Core app shell, canvas, map container, map trail strip, biofield shell. |
-| `css/time_weather.css` | Weather overlay, weather widget, time display, and weather/map mobile chrome variants. |
+| `css/time_weather.css` | Weather overlay, weather widget, and time display visibility/visuals. |
 | `css/demo_ui.css` | Demo-specific UI helpers. |
 | `css/synthesis.css` | Synthesis/summary card and guide CTA surfaces. |
-| `css/controls.css` | View toggle, view handoff, keyboard close button, and adjacent control surfaces. |
+| `css/controls.css` | View toggle, view handoff, shared icon/button primitives, keyboard close button, and adjacent control surfaces. |
 | `css/layout_base.css` | Info panel, legend, mode chips, broad layout rules, map/search/focus supporting states. |
 | `css/search.css` | Shared and desktop search/result styles. |
 | `css/mobile_base.css` | Early mobile journey compass and mobile/reduced-motion owner blocks from the original cascade. |
@@ -92,6 +92,8 @@ Phase 1: root stylesheet modularization is active. `semantic-demo.css` imports t
 
 Phase 2: reduce duplicate mobile rules inside `css/mobile_base.css`, `css/progressive_disclosure.css`, and adjacent supporting modules one selector family at a time:
 
+- `.search-results.active` — owned across `css/search.css` (4), `css/layout_base.css` (2), `css/journey_active.css` (1), `css/progressive_disclosure.css` (3), `css/strands.css` (13), `css/mobile_premium_chrome.css` (7), `css/mobile_premium_state.css` (6), `css/mobile_premium_surfaces.css` (1). The baseline count is tracked in `tests/css-ownership-check.mjs`; any new definition beyond these owners will trigger a violation.
+
 - `#search-results.active`
 - `.search-results-count`
 - `.search-result-item` and state variants
@@ -120,4 +122,4 @@ Run the smallest proof that exercises the surface you touched before reaching fo
 | `css/mobile_premium_state.css`, `css/mobile_base.css`, `css/strands.css` mobile state layout | `npm run qa:contract:mobile-idle` plus the touched state-specific surface |
 | `semantic-demo.css` or `css/mobile_premium.css` import/hash edits | `npm run check:shell` and `npm run check:cache` when the JS bundle hash is intentionally current |
 
-Known gaps that still need dedicated small checks: loading overlay, hover tooltip, weather widget, synthesis summary card, mode-chip locked/waiting states, search-trail cue, and short-landscape layout.
+Known gaps that still need dedicated small checks: loading overlay, hover tooltip, synthesis summary card, mode-chip locked/waiting states, search-trail cue, and short-landscape layout. Weather widget ownership is covered by `tests/weather-surface-ownership-contract.mjs`.

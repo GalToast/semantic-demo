@@ -92,10 +92,7 @@
         justify-content: center;
     }
 
-    html body[data-panel-surface="map-trail"] .info-panel,
-    html body[data-panel-surface="map-trail"] .weather-widget,
-    html body[data-panel-surface="map-trail"] .view-toggle,
-    html body[data-panel-surface="map-trail"] .journey-compass {
+    html body[data-panel-surface="map-trail"] .info-panel {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -181,6 +178,9 @@
     html body #map-container,
     html body #view-handoff,
     html body #journey-compass,
+    html body .view-toggle,
+    html body .view-toggle *,
+    html body #btn-legend,
     html body .journey-compass-action,
     html body .journey-compass-step,
     html body .info-panel,

@@ -4,7 +4,8 @@
     position: absolute;
     top: 0;
     left: 0;
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: pointer;
     opacity: 0;
     visibility: hidden;
     display: flex;
@@ -26,7 +27,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     transform: translate(-50%, -50%);
-    transition: all 0.28s ease;
+    transition: opacity 0.28s ease, border-color 0.28s ease, background 0.28s ease, color 0.28s ease, box-shadow 0.28s ease;
     z-index: 6;
 }
 
@@ -1364,7 +1365,7 @@ body[data-panel-surface="map-focus-search"] .trail-context {
             outline-offset: 2px;
         }
 
-        .mode-chip.active,
+        body[data-active-view="galaxy"] .mode-chip.active,
         .story-chip.active {
             border-color: rgba(78, 205, 196, 0.42);
             background: rgba(78, 205, 196, 0.12);

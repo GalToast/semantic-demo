@@ -165,6 +165,7 @@ export const state = {
     _settlingLowFrames: 0,
     pointBaseColors: null,
     hoverHighlightIndex: -1,
+    hoveredCluster: null,
     focusTargetVector: null,
     desiredCameraVector: null,
     searchTimeout: null,
