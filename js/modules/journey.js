@@ -1058,16 +1058,31 @@ export function traverseNeighbor(step) {
 
 // --- Semantic Dive Mode ---
 
+function syncSemanticDiveCompositionState(reason = 'semantic-dive') {
+    if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
+    refreshCompositionState();
+    if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
+    if (typeof window.updateUrlState === 'function') {
+        window.updateUrlState({}, { reason });
+    }
+}
+
 export function setSemanticDiveMode(enabled) {
-    state.semanticDiveMode = Boolean(enabled);
+    const active = Boolean(enabled);
+    state.semanticDiveMode = active;
+    if (active) {
+        state.navState.mode = 'trail';
+    }
     if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
     
     // 10/10 Polish: Trigger the 'Sonic Boom' transition effect
     if (state.semanticDiveMode && document.body) {
         document.body.dataset.semanticDive = 'transitioning';
+        syncSemanticDiveCompositionState('semantic-dive-enter');
         window.setTimeout(() => {
             if (state.semanticDiveMode && document.body.dataset.semanticDive === 'transitioning') {
                 document.body.dataset.semanticDive = 'active';
+                syncSemanticDiveCompositionState('semantic-dive-settled');
             }
         }, 820);
     }
@@ -1084,6 +1099,7 @@ export function setSemanticDiveMode(enabled) {
             clearThreadInspection({ force: true, preserveJourney: false });
         }
     }
+    syncSemanticDiveCompositionState(active ? 'semantic-dive' : 'semantic-dive-exit');
 }
 
 export function walkInsideToNextStop() {
