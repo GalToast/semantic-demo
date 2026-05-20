@@ -478,8 +478,11 @@ function bindWindowControlFunctions(resetExperienceState, resetNodePositions) {
     };
 
     window.returnToCountyView = function () {
-        state.semanticDiveMode = false;
-        if (typeof resetNodePositions === 'function') resetNodePositions();
+        if (typeof window.resetExplorationFocus === 'function') {
+            window.resetExplorationFocus();
+        } else if (typeof resetNodePositions === 'function') {
+            resetNodePositions({ preserveSearch: true });
+        }
     };
 
     window.setInfoPanelOpen = function (open, options = {}) {

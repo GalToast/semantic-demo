@@ -661,6 +661,9 @@ export function clearSearch() {
 
     clearShortSemanticSearchState();
     clearSearchGlow();
+    if (typeof window.resetExplorationFocus === 'function') {
+        window.resetExplorationFocus();
+    }
 
     if (typeof window.updateUrlState === 'function') {
         window.updateUrlState({ q: null, anchor: null, offset: null }, { reason: 'search-clear' });
@@ -1076,8 +1079,17 @@ export async function search(query, options = {}) {
         state.searchPreviewIndex = null;
     }
 
-    if (state.navState.focusedIndex !== null) {
-        if (typeof window.resetNodePositions === 'function') window.resetNodePositions({ preserveSearch: true, skipUrlSync: true });
+    const hasExplorationFocus =
+        state.navState.focusedIndex !== null
+        || state.focusedNode !== null
+        || state.trailDepth > 0
+        || state.myceliumMode !== 'default';
+    if (hasExplorationFocus) {
+        if (typeof window.resetExplorationFocus === 'function') {
+            window.resetExplorationFocus();
+        } else if (typeof window.resetNodePositions === 'function') {
+            window.resetNodePositions({ preserveSearch: true, skipUrlSync: true });
+        }
     }
 
     const requestId = (state.searchRequestSequence = (state.searchRequestSequence || 0) + 1);

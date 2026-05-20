@@ -2413,7 +2413,7 @@ export function handleGalaxyKeydown(event) {
     } else if (event.key === 'Home') {
         if (state.currentView === 'galaxy') {
             event.preventDefault();
-            if (typeof window.resetNodePositions === 'function') window.resetNodePositions();
+            resetExplorationFocus();
         }
     } else if (event.key === 'End' || (event.key === 'c' && !event.ctrlKey && !event.metaKey)) {
         if (state.currentView === 'galaxy') {
@@ -2598,10 +2598,7 @@ if (typeof window !== 'undefined') {
     };
 
     window.returnToCountyView = function () {
-        state.semanticDiveMode = false;
-        if (typeof window.resetNodePositions === 'function') {
-            window.resetNodePositions();
-        }
+        resetExplorationFocus();
     };
 
     // Expose btn-surprise handler

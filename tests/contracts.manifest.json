@@ -19,9 +19,11 @@
         "semantic-dive-ui-surface-contract.mjs",
         "search-state-surface-contract.mjs",
         "journey-compass-state-contract.mjs",
+        "focus-semantic-state-boundary-contract.mjs",
         "focus-pocket-motion-contract.mjs",
         "focus-pocket-composition-contract.mjs",
         "journey-event-bindings-contract.mjs",
+        "reset-callsite-routing-contract.mjs",
         "micro-demo-contract.mjs",
         "demo-camera-retirement-contract.mjs",
         "cluster-labels-contract.mjs",
@@ -29,7 +31,8 @@
         "window-bridge-gaps-contract.mjs",
         "loading-ui-contract.mjs",
         "exploration-modes-contract.mjs",
-        "search-peek-expanded-render-contract.mjs"
+        "search-peek-expanded-render-contract.mjs",
+        "semantic-guide-payload-contract.mjs"
       ]
     },
     "motion": {
@@ -51,7 +54,10 @@
       "contracts": [
         "lifecycle-composition-contract.mjs",
         "state-transition-contract.mjs",
+        "focus-semantic-state-boundary-contract.mjs",
         "demo-init-seam-contract.mjs",
+        "reset-callsite-routing-contract.mjs",
+        "semantic-guide-payload-contract.mjs",
         "demo-camera-retirement-contract.mjs",
         "demo-state-sync-contract.mjs",
         "weather-lifecycle-contract.mjs",
@@ -79,12 +85,13 @@
       ]
     },
     "full": {
-      "description": "All 34 ordered contracts - same as default npm run test:contract.",
+      "description": "All 38 ordered contracts - same as default npm run test:contract.",
       "contracts": [
         "semantic-dive-ui-surface-contract.mjs",
         "search-state-surface-contract.mjs",
         "lifecycle-composition-contract.mjs",
         "state-transition-contract.mjs",
+        "focus-semantic-state-boundary-contract.mjs",
         "journey-compass-state-contract.mjs",
         "semantic-lane-contract.mjs",
         "connection-analysis-contract.mjs",
@@ -94,6 +101,7 @@
         "journey-event-bindings-contract.mjs",
         "micro-demo-contract.mjs",
         "demo-init-seam-contract.mjs",
+        "reset-callsite-routing-contract.mjs",
         "demo-camera-retirement-contract.mjs",
         "cluster-labels-contract.mjs",
         "journey-thread-inspector-contract.mjs",
@@ -114,7 +122,9 @@
         "motion-state-contract.mjs",
         "demo-state-sync-contract.mjs",
         "three-visual-polish-contract.mjs",
-        "search-peek-expanded-render-contract.mjs"
+        "search-peek-expanded-render-contract.mjs",
+        "semantic-guide-payload-contract.mjs",
+        "connection-analysis-render-state-contract.mjs"
       ]
     }
   }

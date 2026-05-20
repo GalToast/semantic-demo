@@ -3,7 +3,7 @@
  *
  * Ordered QA contract runner with optional manifest-based group execution.
  *
- * Default (no flags): runs the pinned ordered list (33 contracts).
+ * Default (no flags): runs the pinned ordered list (38 contracts).
  *   node tests/run-all-contracts.js
  *
  * Group mode: --group=<name> reads from contracts.manifest.json
@@ -37,6 +37,7 @@ const PINNED_FILES = [
   'search-state-surface-contract.mjs',
   'lifecycle-composition-contract.mjs',
   'state-transition-contract.mjs',
+  'focus-semantic-state-boundary-contract.mjs',
   'journey-compass-state-contract.mjs',
   'semantic-lane-contract.mjs',
   'connection-analysis-contract.mjs',
@@ -46,6 +47,7 @@ const PINNED_FILES = [
   'journey-event-bindings-contract.mjs',
   'micro-demo-contract.mjs',
   'demo-init-seam-contract.mjs',
+  'reset-callsite-routing-contract.mjs',
   'demo-camera-retirement-contract.mjs',
   'cluster-labels-contract.mjs',
   'journey-thread-inspector-contract.mjs',
@@ -67,6 +69,8 @@ const PINNED_FILES = [
   'demo-state-sync-contract.mjs',
   'three-visual-polish-contract.mjs',
   'search-peek-expanded-render-contract.mjs',
+  'semantic-guide-payload-contract.mjs',
+  'connection-analysis-render-state-contract.mjs',
 ];
 
 function loadManifest() {
