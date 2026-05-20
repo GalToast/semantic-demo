@@ -53,7 +53,7 @@ test.describe('showSemanticThreadsDetail error fallback', () => {
     await page.evaluate(() => {
       // eslint-disable-next-line no-undef
       if (state.points && state.points.length > 0) {
-        state.focusedNode = 519;
+        state.focusedNode = 0;
       }
     });
 

@@ -33,8 +33,6 @@ import { chromium } from 'playwright';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const OUT_DIR = resolve(ROOT, 'tmp', 'reduced-motion-interruption-proof');
-const PORT = 9988;
-const SERVER_URL = `http://127.0.0.1:${PORT}`;
 
 const MIME = {
   '.html': 'text/html',
@@ -46,7 +44,7 @@ const MIME = {
 
 // ── HTTP server ────────────────────────────────────────────────────────────────
 
-function startServer(port) {
+function startServer() {
   return new Promise((resolve) => {
     const server = createServer((req, res) => {
       let urlPath = req.url.split('?')[0];
@@ -64,7 +62,10 @@ function startServer(port) {
         res.end('Not found');
       }
     });
-    server.listen(port, '127.0.0.1', () => resolve(server));
+    server.listen(0, '127.0.0.1', () => {
+      const actualPort = server.address().port;
+      resolve({ server, port: actualPort });
+    });
   });
 }
 
@@ -182,7 +183,7 @@ function assertNotNull(value, label) {
 async function run() {
   mkdirSync(OUT_DIR, { recursive: true });
 
-  const server = await startServer(PORT);
+  const { server, port } = await startServer();
 
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
@@ -192,7 +193,7 @@ async function run() {
   });
   const page = await context.newPage();
 
-  const url = `${SERVER_URL}/vector-explorer-polished.html?nodemo=1`;
+  const url = `http://127.0.0.1:${port}/vector-explorer-polished.html?nodemo=1`;
   await page.goto(url, { waitUntil: 'commit', timeout: 15000 });
   await waitForReady(page);
 
