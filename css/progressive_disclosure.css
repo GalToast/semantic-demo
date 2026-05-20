@@ -671,13 +671,6 @@
                 border-radius: 9px;
             }
 
-            body[data-panel-surface="focus"] .focus-stage-journey.active,
-            body[data-panel-surface="focus-search"] .focus-stage-journey.active {
-                gap: 5px;
-                margin-top: 5px;
-                padding-top: 5px;
-            }
-
             body[data-panel-surface="focus"] .focus-stage-journey-kicker,
             body[data-panel-surface="focus-search"] .focus-stage-journey-kicker,
             body[data-panel-surface="focus"] .focus-stage-neighbor-kicker,
@@ -845,13 +838,6 @@
                 padding: 7px 8px;
                 font-size: 9px;
                 border-radius: 9px;
-            }
-
-            body[data-panel-surface="focus"] .focus-stage-journey.active,
-            body[data-panel-surface="focus-search"] .focus-stage-journey.active {
-                gap: 5px;
-                margin-top: 5px;
-                padding-top: 5px;
             }
 
             body[data-panel-surface="focus"] .focus-stage-journey-kicker,
@@ -1025,14 +1011,6 @@
             color: rgba(231, 252, 251, 0.78);
         }
 
-        body[data-panel-surface="semantic-dive"] .focus-stage-inside-controls {
-            display: grid;
-        }
-
-        body[data-panel-surface="semantic-dive"] .focus-stage-inside-status {
-            display: grid;
-        }
-
         body[data-panel-surface="semantic-dive"] .controls {
             opacity: 0.38;
             transform: translateY(8px) scale(0.96);
@@ -1123,11 +1101,6 @@
 
             body[data-panel-surface="semantic-dive"] .focus-stage-dive-copy {
                 display: none;
-            }
-
-            body[data-panel-surface="semantic-dive"] .focus-stage-journey.active {
-                margin-top: 6px;
-                padding-top: 6px;
             }
 
             body[data-panel-surface="semantic-dive"] .controls {
@@ -1270,19 +1243,6 @@
                 touch-action: manipulation;
             }
 
-            html body[data-panel-surface="semantic-dive"] .focus-stage-inside-controls {
-                gap: 8px;
-                align-items: stretch;
-            }
-
-            html body[data-panel-surface="semantic-dive"] .focus-stage-inside-btn {
-                min-height: 44px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                padding: 0 12px;
-                touch-action: manipulation;
-            }
         }
 
 @media (prefers-reduced-motion: reduce) {

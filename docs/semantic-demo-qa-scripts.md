@@ -38,7 +38,7 @@ States: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-resu
 | `qa:reduced-motion-transition` | `tests/reduced-motion-transition-contract.mjs` — canonical reduced-motion owner check + Playwright computed-style proof of transition suppression |
 
 ## Contract Test Suite (`npm run test:contract`)
-Runs ~20 individual `.mjs` contract files: `semantic-dive-ui-surface-contract`, `search-state-surface-contract`, `lifecycle-composition-contract`, `journey-compass-state-contract`, `semantic-lane-contract`, `camera-controls-motion-contract`, `focus-pocket-motion-contract`, `journey-event-bindings-contract`, `micro-demo-contract`, `demo-init-seam-contract`, `demo-camera-retirement-contract`, `cluster-labels-contract`, `journey-thread-inspector-contract`, `trail-review-focus-contract`, `share-view-clipboard-contract`, `keyboard-help-aria-contract`, `pathfinding-contract`, `weather-lifecycle-contract`, `camera-auto-rotate-settle-contract`, `semantic-dive-reverse-contract`, `journey-window-surface-contract`, `loading-ui-contract`, `exploration-modes-contract`, `scene-reveal-contract`, `scene-atmosphere-contract`, `motion-state-contract`.
+Runs the pinned ordered contract suite from `tests/run-all-contracts.js`; `tests/contracts.manifest.json` also classifies targeted groups such as `smoke`, `mobile-critical`, `motion`, `lifecycle`, `render`, `quality`, and `full`.
 
 ## Usage Notes
 All scripts target `http://127.0.0.1:8795/vector-explorer-polished.html` by default. Start the server with `npm run serve` before running any QA scripts.

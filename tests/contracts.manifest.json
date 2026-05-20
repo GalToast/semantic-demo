@@ -38,6 +38,8 @@
         "camera-controls-motion-contract.mjs",
         "focus-pocket-motion-contract.mjs",
         "motion-state-contract.mjs",
+        "reduced-motion-transition-contract.mjs",
+        "reduced-motion-interruption-contract.mjs",
         "camera-auto-rotate-settle-contract.mjs",
         "scene-reveal-contract.mjs",
         "scene-atmosphere-contract.mjs",
@@ -55,6 +57,24 @@
         "weather-lifecycle-contract.mjs",
         "journey-event-bindings-contract.mjs",
         "window-bridge-gaps-contract.mjs"
+      ]
+    },
+    "render": {
+      "description": "Browser-backed render contracts for focused UI surfaces.",
+      "contracts": [
+        "focus-stage-render-contract.mjs",
+        "info-panel-collapsed-render-contract.mjs",
+        "mode-chip-state-render-contract.mjs",
+        "weather-widget-render-contract.mjs"
+      ]
+    },
+    "quality": {
+      "description": "UI quality, interaction, and CSS ownership contracts that may write tmp reports.",
+      "contracts": [
+        "css-manifest-contract.mjs",
+        "ui-quality-contract.mjs",
+        "micro-surface-interactions-contract.mjs",
+        "surface-redundancy-contract.mjs"
       ]
     },
     "full": {
