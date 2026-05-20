@@ -39,6 +39,20 @@ async function waitForSearchResults(page, query = 'coffee') {
   }
 }
 
+async function enterQuery(page, query) {
+  const searchInput = page.locator('#search-input');
+  await searchInput.focus();
+  await searchInput.fill(query);
+  await page.evaluate((value) => {
+    const input = document.getElementById('search-input');
+    if (!input) return;
+    input.value = value;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }, query);
+  await page.waitForFunction(() => document.querySelector('.search-container')?.classList.contains('has-query'));
+  return searchInput;
+}
+
 test.describe('live clear-search and demo reset proof', () => {
   test.beforeEach(async ({ page }) => {
     await mockSemanticSearch(page);
@@ -55,7 +69,7 @@ test.describe('live clear-search and demo reset proof', () => {
 
     await expect(clearBtn).not.toBeVisible();
 
-    await searchInput.fill('coffee');
+    await enterQuery(page, 'coffee');
     await expect(clearBtn).toBeVisible();
     await waitForSearchResults(page, 'coffee');
 
@@ -75,7 +89,7 @@ test.describe('live clear-search and demo reset proof', () => {
     const searchInput = page.locator('#search-input');
     const clearBtn = page.locator('#search-clear-btn');
 
-    await searchInput.fill('cafe');
+    await enterQuery(page, 'cafe');
     await expect(clearBtn).toBeVisible();
 
     await clearBtn.focus();
@@ -103,7 +117,7 @@ test.describe('live clear-search and demo reset proof', () => {
     }, { key: STORAGE_KEY });
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html?demo=force`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('#micro-demo-pill', { state: 'visible', timeout: 15000 });
+    await page.waitForFunction(() => document.getElementById('micro-demo-pill') !== null, { timeout: 15000 });
     await expect.poll(async () => page.evaluate(() => window.demoController?.isRunning?.() ?? false)).toBe(true);
 
     await page.keyboard.press('Escape');

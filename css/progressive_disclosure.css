@@ -1171,18 +1171,6 @@
                 font-size: 12px;
             }
 
-            html body[data-panel-surface="semantic-dive"] .focus-stage-dive-btn,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-dive-btn {
-                margin-top: 6px;
-                padding: 8px 9px;
-                border-radius: 12px;
-            }
-
-            html body[data-panel-surface="semantic-dive"] .focus-stage-journey.active,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-journey.active {
-                margin-top: 6px;
-                padding: 6px 0 0;
-            }
         }
 
         html body[data-panel-surface="semantic-dive"] #search-results.active,
