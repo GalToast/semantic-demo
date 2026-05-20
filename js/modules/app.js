@@ -75,6 +75,10 @@ window.clearShortSemanticSearchState = searchModule.clearShortSemanticSearchStat
 window.resetSemanticGuideUi = searchModule.resetSemanticGuideUi;
 window.beginSearchFocusTransition = searchModule.beginSearchFocusTransition;
 window.__semanticSearchCacheProbe = searchModule.getSemanticSearchCacheDiagnostics;
+window.clearSearch = searchModule.clearSearch;
+window.clearSearchPreviewHoverTimer = searchModule.clearSearchPreviewHoverTimer;
+window.clearMobileRouteFieldPeek = searchModule.clearMobileRouteFieldPeek;
+window.isMobileRouteFieldPeekActive = searchModule.isMobileRouteFieldPeekActive;
 
 // Explicitly attach camera helpers used by focus and control contracts
 window.animateCameraToNode = cameraModule.animateCameraToNode;

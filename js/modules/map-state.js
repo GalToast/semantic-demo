@@ -498,20 +498,6 @@ export function getRouteAnchorIndex(routeIndices) {
     return candidates.find((index) => Number.isFinite(index) && routeIndices.includes(index)) ?? null;
 }
 
-// Window shim for compatibility
-if (typeof window !== 'undefined') {
-    window.initMap = initMap;
-    window.loadLeafletAssets = loadLeafletAssets;
-    window.refreshMapMarkers = refreshMapMarkers;
-    window.refreshMapRouteEmbodiment = refreshMapRouteEmbodiment;
-    window.centerMapOnRouteAnchor = centerMapOnRouteAnchor;
-    window.getMapRoutePoints = getMapRoutePoints;
-    window.getRouteAnchorIndex = getRouteAnchorIndex;
-    window.getRouteDirectorState = getRouteDirectorState;
-    window.syncRouteDirectorState = syncRouteDirectorState;
-    window.setTerrainHandoffState = setTerrainHandoffState;
-    window.getRouteEmbodimentIndices = getRouteEmbodimentIndices;
-}
 export function zoomMap(multiplier) {
     if (!state.map) return;
     if (multiplier < 1) {

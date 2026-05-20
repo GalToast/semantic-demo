@@ -129,10 +129,18 @@ const {
   applySemanticSearchDegradedState,
 } = await import('../js/modules/search-state.js');
 
-const originalRefresh = window.refreshCompositionState;
-window.refreshCompositionState = function(...args) {
+window.recordSemanticLaneSnapshotCalls = [];
+window.semanticLaneStates = [];
+window.recordSemanticLaneSnapshot = function(payload) {
+  window.recordSemanticLaneSnapshotCalls.push(payload);
+};
+window.setSemanticLaneUiState = function(...args) {
+  window.semanticLaneStates.push(args);
+};
+
+window.refreshCompositionStateCalls = 0;
+window.refreshCompositionState = function() {
   window.refreshCompositionStateCalls += 1;
-  if (originalRefresh) originalRefresh.apply(this, args);
 };
 
 state.points = [

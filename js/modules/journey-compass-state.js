@@ -1,5 +1,6 @@
 import { state } from '../state.js';
 import { formatBusinessName, describeCluster } from '../utils.js';
+import { getRouteEmbodimentIndices } from './map-state.js';
 
 export function getFocusedJourneyPoint() {
     if (state.selectedPoint) return state.selectedPoint;
@@ -21,7 +22,7 @@ export function getJourneyCompassState() {
     const insideActive = state.semanticDiveMode && state.currentView === 'galaxy' && hasFocus;
 
     if (state.currentView === 'map') {
-        const routeCount = typeof window.getRouteEmbodimentIndices === 'function' ? window.getRouteEmbodimentIndices().length : 0;
+        const routeCount = getRouteEmbodimentIndices().length;
         return {
             phase: 'map',
             kicker: routeCount > 1 ? 'Map | Terrain Bridge' : 'Map | Physical Distance',

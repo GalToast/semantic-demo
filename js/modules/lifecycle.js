@@ -46,6 +46,37 @@ import {
     refreshSemanticLaneOpsSummary,
 } from './semantic-lane.js';
 import { getFocusedJourneyPoint, getJourneyCompassState } from './journey-compass-state.js';
+import {
+    initMap,
+    refreshMapMarkers,
+    refreshMapRouteEmbodiment,
+    centerMapOnRouteAnchor,
+    getRouteEmbodimentIndices,
+    getRouteAnchorIndex,
+    getRouteDirectorState,
+    syncRouteDirectorState,
+    setTerrainHandoffState
+} from './map-state.js';
+import {
+    initWeather,
+    applyWeatherEffects,
+    clearWeatherRefreshTimer,
+    clearWeatherEffects
+} from './weather.js';
+import {
+    search,
+    applyFilters,
+    getFilteredIndices,
+    clearSearchGlow,
+    updateSearchStatusMessage,
+    updateSearchTrailCue,
+    clearShortSemanticSearchState,
+    beginSearchFocusTransition,
+    clearSearch,
+    clearSearchPreviewHoverTimer,
+    clearMobileRouteFieldPeek
+} from './search-state.js';
+import { focusOnNode } from './camera-controls.js';
 
 export { setLoadingPhase, hideLoadingOverlay, startDeferredHydration, scheduleWeatherHydration };
 export { startSceneReveal, getSceneRevealProgress, onWindowResize };
@@ -497,8 +528,9 @@ export function applyStoryPrompt(story, options = {}) {
     }
 
     if (typeof syncFilterControls === 'function') syncFilterControls();
-    if (typeof window.clearSearchGlow === 'function') window.clearSearchGlow();
+    clearSearchGlow();
     if (typeof window.applyFilters === 'function') window.applyFilters();
+    else applyFilters();
     if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
     if (!options.skipUrlSync) {
         if (typeof window.updateUrlState === 'function') window.updateUrlState({ story }, { reason: 'story' });
@@ -674,9 +706,7 @@ export function resetExplorationFocus() {
     resetNodePositions({ preserveSearch: true });
 
     // Explicitly clear search glow (resetNodePositions skips it when preserveSearch=true)
-    if (typeof window.clearSearchGlow === 'function') {
-        window.clearSearchGlow();
-    }
+    clearSearchGlow();
 
     // Ensure focus stage DOM element is hidden
     if (typeof window.syncFocusStage === 'function') {
@@ -737,12 +767,13 @@ export function resetStateBeforeUrlRestore(options = {}) {
     };
     state.selectedPoint = null;
     state.focusedNode = null;
+    state.navState.focusedIndex = null;
     if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ searching: false, focusing: false, resultsRendered: false });
     if (typeof window.hideTooltip === 'function') window.hideTooltip();
-    if (typeof window.clearSearchPreviewHoverTimer === 'function') window.clearSearchPreviewHoverTimer();
+    clearSearchPreviewHoverTimer();
     if (typeof window.clearSearchPreviewOverlay === 'function') window.clearSearchPreviewOverlay();
-    if (typeof window.clearSearchGlow === 'function') window.clearSearchGlow();
-    if (typeof window.updateSearchTrailCue === 'function') window.updateSearchTrailCue({ beat: 'idle' });
+    clearSearchGlow();
+    updateSearchTrailCue({ beat: 'idle' });
     document.querySelectorAll('.cluster-item').forEach((el) => el.classList.remove('active'));
     if (typeof syncFilterControls === 'function') syncFilterControls();
     if (state.pointsMesh && state.originalPositions?.length) {
@@ -750,11 +781,9 @@ export function resetStateBeforeUrlRestore(options = {}) {
     } else {
         if (typeof window.updateSelectedBusiness === 'function') window.updateSelectedBusiness(null);
     }
-    if (typeof window.applyFilters === 'function') window.applyFilters();
+    applyFilters();
     if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
-    if (typeof window.updateSearchStatusMessage === 'function' && typeof window.getFilteredIndices === 'function') {
-        window.updateSearchStatusMessage(window.getFilteredIndices().length);
-    }
+    updateSearchStatusMessage(getFilteredIndices().length);
     if (typeof window.syncFocusStage === 'function') window.syncFocusStage(null);
     if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
     state.semanticDiveMode = false;
@@ -922,9 +951,7 @@ export function executeJourneyCompassAction(action) {
             {
                 const searchInput = document.getElementById('search-input');
                 if (searchInput) searchInput.value = '';
-                if (typeof window.clearShortSemanticSearchState === 'function') {
-                    window.clearShortSemanticSearchState();
-                }
+                clearShortSemanticSearchState();
             }
             return;
         default:
@@ -936,7 +963,7 @@ export function updateJourneyCompass() {
     const capitalize = (s) => s && s.charAt(0).toUpperCase() + s.slice(1);
     const compass = document.getElementById('journey-compass');
     if (!compass) return;
-    if (typeof window.syncRouteDirectorState === 'function') window.syncRouteDirectorState('journey-compass');
+    syncRouteDirectorState('journey-compass');
     const compassState = getJourneyCompassState();
     const phase = compassState.phase || 'overview';
     const presentationState = getJourneyCompassPresentationState(compassState);
@@ -1025,6 +1052,14 @@ function getMobileSearchSheetDetail() {
     return document.body.dataset.mobileSearchSheet === 'expanded' ? 'expanded' : 'peek';
 }
 
+function invokeClearMobileRouteFieldPeek() {
+    if (typeof window.clearMobileRouteFieldPeek === 'function') {
+        window.clearMobileRouteFieldPeek();
+        return;
+    }
+    clearMobileRouteFieldPeek();
+}
+
 function derivePanelSurface({ view, graphContext, mapContext, semanticDive, hasSearchIntent, hasFocus, hasActiveTrailState }) {
     if (view !== 'galaxy') {
         if (mapContext === 'focus-search') return 'map-focus-search';
@@ -1097,14 +1132,16 @@ export function refreshCompositionState() {
             hasActiveTrailState
         });
         document.body.dataset.panelSurfaceDetail = 'none';
-        if (typeof window.syncRouteDirectorState === 'function') window.syncRouteDirectorState('composition-map');
+        syncRouteDirectorState('composition-map');
         if (typeof updateSelectedCardHeading === 'function') updateSelectedCardHeading();
         if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
         if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
         if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
-        if (typeof window.refreshMapMarkers === 'function') window.refreshMapMarkers();
-        if (typeof window.refreshMapRouteEmbodiment === 'function') window.refreshMapRouteEmbodiment();
-        if (typeof window.refreshRouteTraceOverlay === 'function') window.refreshRouteTraceOverlay({ reason: 'composition-map' });
+        refreshMapMarkers();
+        refreshMapRouteEmbodiment();
+        if (typeof window.refreshRouteTraceOverlay === 'function') {
+            window.refreshRouteTraceOverlay({ reason: 'composition-map' });
+        }
         return;
     }
 
@@ -1135,28 +1172,29 @@ export function refreshCompositionState() {
     document.body.dataset.panelSurfaceDetail = context === 'search' || context === 'focus-search'
         ? getMobileSearchSheetDetail()
         : 'none';
-    if (context !== 'idle' && typeof window.clearMobileRouteFieldPeek === 'function') {
-        window.clearMobileRouteFieldPeek();
+    if (context !== 'idle') {
+        invokeClearMobileRouteFieldPeek();
     }
-    if (typeof window.syncRouteDirectorState === 'function') window.syncRouteDirectorState('composition-galaxy');
+    syncRouteDirectorState('composition-galaxy');
     if (typeof updateSelectedCardHeading === 'function') updateSelectedCardHeading();
     if (typeof window.updateLegendGuideState === 'function') window.updateLegendGuideState();
     if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
     if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
     if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
-    if (typeof window.refreshMapMarkers === 'function') window.refreshMapMarkers();
-    if (typeof window.refreshMapRouteEmbodiment === 'function') window.refreshMapRouteEmbodiment();
-    if (typeof window.refreshRouteTraceOverlay === 'function') window.refreshRouteTraceOverlay({ reason: 'composition-galaxy' });
+    refreshMapMarkers();
+    refreshMapRouteEmbodiment();
+    if (typeof window.refreshRouteTraceOverlay === 'function') {
+        window.refreshRouteTraceOverlay({ reason: 'composition-galaxy' });
+    }
 }
 
 // === View Management ===
 
 function scheduleMapRouteRefresh() {
-    if (typeof window.refreshMapRouteEmbodiment !== 'function') return;
     const refresh = () => {
         if (state.currentView !== 'map') return;
-        window.refreshMapRouteEmbodiment();
-        if (typeof window.centerMapOnRouteAnchor === 'function') window.centerMapOnRouteAnchor();
+        refreshMapRouteEmbodiment();
+        centerMapOnRouteAnchor();
     };
     refresh();
     window.requestAnimationFrame(() => window.requestAnimationFrame(refresh));
@@ -1174,7 +1212,7 @@ function getViewHandoffModel(view) {
         : '';
 
     if (view === 'map') {
-        const routeCount = typeof window.getRouteEmbodimentIndices === 'function' ? window.getRouteEmbodimentIndices().length : 0;
+        const routeCount = getRouteEmbodimentIndices().length;
         const origin = state.terrainHandoffState?.from || (typeof window.getRouteLayerOrigin === 'function' ? window.getRouteLayerOrigin() : 'galaxy');
         if (focusName && hasSearch) {
             return {
@@ -1273,7 +1311,7 @@ export function showViewHandoff(view) {
 }
 
 export function switchView(view, options = {}) {
-    if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
+    invokeClearMobileRouteFieldPeek();
     const previousView = state.currentView;
     const handoffFrom = options.handoffFrom || (typeof window.getRouteLayerOrigin === 'function' ? window.getRouteLayerOrigin() : 'galaxy');
     const shouldPreludeToMap =
@@ -1283,18 +1321,16 @@ export function switchView(view, options = {}) {
         !options.skipUrlSync &&
         !options.silentHandoff;
     if (shouldPreludeToMap) {
-        const routeCount = typeof window.getRouteEmbodimentIndices === 'function' ? window.getRouteEmbodimentIndices().length : 0;
+        const routeCount = getRouteEmbodimentIndices().length;
         if (state.viewSwitchPreludeTimer) {
             window.clearTimeout(state.viewSwitchPreludeTimer);
             state.viewSwitchPreludeTimer = null;
         }
-        if (typeof window.setTerrainHandoffState === 'function') {
-            window.setTerrainHandoffState('flattening', {
-                from: handoffFrom,
-                to: 'map',
-                routeCount
-            });
-        }
+        setTerrainHandoffState('flattening', {
+            from: handoffFrom,
+            to: 'map',
+            routeCount
+        });
         if (typeof window.setRouteChoreographyPhase === 'function') {
             window.setRouteChoreographyPhase('terrain-prelude', {
                 reason: 'map-prelude',
@@ -1394,7 +1430,7 @@ export function switchView(view, options = {}) {
             window.clearInterval(state.clockTimer);
             state.clockTimer = null;
         }
-        if (typeof window.clearWeatherRefreshTimer === 'function') window.clearWeatherRefreshTimer();
+        clearWeatherRefreshTimer();
         if (state.semanticLaneMonitorTimer) {
             window.clearInterval(state.semanticLaneMonitorTimer);
             state.semanticLaneMonitorTimer = null;
@@ -1407,23 +1443,19 @@ export function switchView(view, options = {}) {
 
     if (view === 'galaxy') {
         if (previousView === 'map') {
-            if (typeof window.setTerrainHandoffState === 'function') {
-                window.setTerrainHandoffState('returning', {
-                    from: state.terrainHandoffState?.from || 'map',
-                    to: 'galaxy',
-                    routeCount: typeof window.getRouteEmbodimentIndices === 'function' ? window.getRouteEmbodimentIndices().length : 0,
-                    settleAfterMs: 1200,
-                    settlePhase: 'idle'
-                });
-            }
+            setTerrainHandoffState('returning', {
+                from: state.terrainHandoffState?.from || 'map',
+                to: 'galaxy',
+                routeCount: getRouteEmbodimentIndices().length,
+                settleAfterMs: 1200,
+                settlePhase: 'idle'
+            });
         } else {
-            if (typeof window.setTerrainHandoffState === 'function') {
-                window.setTerrainHandoffState('idle', { from: handoffFrom, to: 'galaxy' });
-            }
+            setTerrainHandoffState('idle', { from: handoffFrom, to: 'galaxy' });
         }
         if (canvasContainer) canvasContainer.classList.remove('hidden');
         if (mapContainer) mapContainer.classList.remove('active');
-        if (typeof window.clearWeatherEffects === 'function') window.clearWeatherEffects();
+        clearWeatherEffects();
         document.getElementById('weather-overlay')?.classList.remove('active');
         if (state.selectedPoint) {
             const selectedIndex = state.points.indexOf(state.selectedPoint);
@@ -1482,16 +1514,14 @@ export function switchView(view, options = {}) {
             }
         }
     } else {
-        const routeCount = window.getRouteEmbodimentIndices ? window.getRouteEmbodimentIndices().length : 0;
-        if (typeof window.setTerrainHandoffState === 'function') {
-            window.setTerrainHandoffState('landing', {
-                from: handoffFrom,
-                to: 'map',
-                routeCount,
-                settleAfterMs: 1800,
-                settlePhase: 'settled'
-            });
-        }
+        const routeCount = getRouteEmbodimentIndices().length;
+        setTerrainHandoffState('landing', {
+            from: handoffFrom,
+            to: 'map',
+            routeCount,
+            settleAfterMs: 1800,
+            settlePhase: 'settled'
+        });
         if (typeof window.setRouteChoreographyPhase === 'function') {
             window.setRouteChoreographyPhase('terrain-landing', {
                 reason: 'map-handoff',
@@ -1499,24 +1529,22 @@ export function switchView(view, options = {}) {
                 indexCount: routeCount
             });
         }
-        if (typeof window.initMap === 'function') {
-            window.initMap()
-                .then(() => {
-                    if (state.currentView !== 'map') return;
-                    if (window.map) {
-                        setTimeout(() => {
-                            window.map.invalidateSize();
-                            scheduleMapRouteRefresh();
-                        }, 100);
-                    }
-                    if (state.weather && typeof window.applyWeatherEffects === 'function') window.applyWeatherEffects();
-                })
-                .catch((error) => {
-                    console.error('Map initialization failed:', error);
-                });
-        }
+        initMap()
+            .then(() => {
+                if (state.currentView !== 'map') return;
+                if (state.map) {
+                    setTimeout(() => {
+                        state.map.invalidateSize();
+                        scheduleMapRouteRefresh();
+                    }, 100);
+                }
+                if (state.weather) applyWeatherEffects();
+            })
+            .catch((error) => {
+                console.error('Map initialization failed:', error);
+            });
         if (!state.weatherInitialized) {
-            if (typeof window.scheduleWeatherHydration === 'function') window.scheduleWeatherHydration();
+            scheduleWeatherHydration();
         }
         if (canvasContainer) canvasContainer.classList.add('hidden');
         if (mapContainer) mapContainer.classList.add('active');
@@ -1589,18 +1617,16 @@ export function syncSearchStatusForFocus(point, options = {}) {
             : compactGalaxyCopy
               ? `${pointName} is now centered. Use the pocket controls below to enter, inspect, or explore nearby stops.`
               : `${pointName} is centered in ${queryLabel}. Hover the stack to preview another pocket, or use Prev / Next to explore further.`;
-        if (typeof window.updateSearchTrailCue === 'function') {
-            window.updateSearchTrailCue({
-                beat: 'focus',
-                kicker: 'Anchor locked',
-                title: `${pointName} is now centered`,
-                note: compactMapCopy
-                    ? 'Search opens a trail. Preview nearby matches in the stack or use Prev / Next to explore.'
-                    : compactGalaxyCopy
-                      ? 'Search opens a trail. Enter the mycelium, inspect connections, or explore the nearby stops below.'
-                      : 'Search opens a trail. Preview ranked matches in the stack, or use Prev / Next to explore outward from this neighborhood.'
-            });
-        }
+        updateSearchTrailCue({
+            beat: 'focus',
+            kicker: 'Anchor locked',
+            title: `${pointName} is now centered`,
+            note: compactMapCopy
+                ? 'Search opens a trail. Preview nearby matches in the stack or use Prev / Next to explore.'
+                : compactGalaxyCopy
+                  ? 'Search opens a trail. Enter the mycelium, inspect connections, or explore the nearby stops below.'
+                  : 'Search opens a trail. Preview ranked matches in the stack, or use Prev / Next to explore outward from this neighborhood.'
+        });
         return;
     }
 
@@ -1608,32 +1634,28 @@ export function syncSearchStatusForFocus(point, options = {}) {
         statusEl.textContent = compactMapCopy
             ? `${pointName} is centered in ${queryLabel}. Prev / Next explores nearby businesses.`
             : `${pointName} is now centered in ${queryLabel}. Use Prev / Next to explore nearby businesses, or the result stack to jump back into ranked matches.`;
-        if (typeof window.updateSearchTrailCue === 'function') {
-            window.updateSearchTrailCue({
-                beat: 'walk',
-                kicker: 'Semantic exploration in progress',
-                title: `Exploring from ${pointName}`,
-                note: compactMapCopy
-                    ? 'Prev / Next keeps stepping through this nearby business trail.'
-                    : 'The trail is live now. Use Prev / Next to explore further, or jump sideways from the ranked stack.'
-            });
-        }
+        updateSearchTrailCue({
+            beat: 'walk',
+            kicker: 'Semantic exploration in progress',
+            title: `Exploring from ${pointName}`,
+            note: compactMapCopy
+                ? 'Prev / Next keeps stepping through this nearby business trail.'
+                : 'The trail is live now. Use Prev / Next to explore further, or jump sideways from the ranked stack.'
+        });
         return;
     }
 
     statusEl.textContent = compactMapCopy
         ? `${pointName} is centered in ${queryLabel}. Preview or jump from the stack.`
         : `${pointName} is centered in ${queryLabel}. Use the result stack to preview or jump, or Prev / Next to explore nearby businesses.`;
-    if (typeof window.updateSearchTrailCue === 'function') {
-        window.updateSearchTrailCue({
-            beat: 'focus',
-            kicker: 'Search opens a trail.',
-            title: `${pointName} anchors this trail`,
-            note: compactMapCopy
-                ? 'Preview another match in the stack, or walk forward from this anchor.'
-                : 'The ranked stack still shows the broader query, while this focus keeps the active anchor.'
-        });
-    }
+    updateSearchTrailCue({
+        beat: 'focus',
+        kicker: 'Search opens a trail.',
+        title: `${pointName} anchors this trail`,
+        note: compactMapCopy
+            ? 'Preview another match in the stack, or walk forward from this anchor.'
+            : 'The ranked stack still shows the broader query, while this focus keeps the active anchor.'
+    });
 }
 
 // === Semantic Guide Summary Card ===
@@ -1779,8 +1801,8 @@ function focusSummarySuggestion(leadId, sourceEl = null) {
     // During degraded state (no active search), use the suggestion's name to trigger a search
     if (!state.currentSearchSummary) {
         const name = sourceEl?.dataset?.name || '';
-        if (name && typeof window.search === 'function') {
-            window.search(name);
+        if (name) {
+            search(name);
             return true;
         }
         return false;
@@ -1788,15 +1810,8 @@ function focusSummarySuggestion(leadId, sourceEl = null) {
     if (targetIndex === undefined || !resultsEl || !statusEl) return false;
     const point = state.points[targetIndex];
     if (!point) return false;
-    if (typeof window.beginSearchFocusTransition === 'function') {
-        window.beginSearchFocusTransition(resultsEl, statusEl, state.currentSearchSummary.resultIndices, targetIndex, point, sourceEl);
-        return true;
-    }
-    if (typeof window.focusOnNode === 'function') {
-        window.focusOnNode(targetIndex, { fromSearchResult: true });
-        return true;
-    }
-    return false;
+    beginSearchFocusTransition(resultsEl, statusEl, state.currentSearchSummary.resultIndices, targetIndex, point, sourceEl);
+    return true;
 }
 
 function bindSummarySuggestionClicks(suggestionsEl) {
@@ -2075,7 +2090,7 @@ export function focusOnPoint(point, options = {}) {
 }
 
 export function resetNodePositions(options = {}) {
-    if (!options.preserveSearch && typeof window.clearSearchGlow === 'function') window.clearSearchGlow();
+    if (!options.preserveSearch) clearSearchGlow();
     state.focusedNode = null;
     state.selectedPoint = null;
     state.navState.mode = 'overview';
@@ -2098,7 +2113,7 @@ export function resetNodePositions(options = {}) {
     if (typeof window.updateSelectedBusiness === 'function') window.updateSelectedBusiness(null);
     if (typeof window.applyPointFilterColors === 'function') window.applyPointFilterColors();
     if (typeof window.updateTraversalUi === 'function') window.updateTraversalUi();
-    if (typeof window.refreshMapRouteEmbodiment === 'function') window.refreshMapRouteEmbodiment();
+    refreshMapRouteEmbodiment();
     if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
     if (!options.skipUrlSync && typeof window.updateUrlState === 'function') {
         window.updateUrlState({ record: null }, { reason: 'reset' });
@@ -2373,6 +2388,15 @@ export function handleGalaxyKeydown(event) {
         // Also close/toggle the info panel — escape should close it when open
         if (typeof window.setInfoPanelOpen === 'function') {
             window.setInfoPanelOpen(false);
+        }
+        const searchInput = document.getElementById('search-input');
+        const hasSearchText = Boolean(searchInput?.value?.trim());
+        const hasSearchState = Boolean(state.currentSearchSummary || state.searchGlowActive);
+        const hasFocusState = state.focusedNode !== null || state.navState?.focusedIndex !== null;
+        if (hasSearchText || hasSearchState || hasFocusState) {
+            event.preventDefault();
+            clearSearch();
+            resetExplorationFocus();
         }
         return;
     }

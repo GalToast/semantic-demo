@@ -2,6 +2,13 @@ import { state } from '../state.js';
 import { isCompactFocusStageViewport } from '../utils.js';
 import { syncFilterControls, switchView, resetExperienceState } from './lifecycle.js';
 import { toggleAutoRotate, focusOnNode } from './camera-controls.js';
+import {
+    search,
+    clearSearch,
+    clearShortSemanticSearchState,
+    clearSearchGlow,
+    applyFilters
+} from './search-state.js';
 
 function bindClick(id, handler, options = {}) {
     const element = document.getElementById(id);
@@ -153,7 +160,7 @@ function bindSuggestionControls() {
             if (idx >= 0) {
                 const searchInput = document.getElementById('search-input');
                 if (searchInput) searchInput.value = '';
-                if (typeof window.clearShortSemanticSearchState === 'function') window.clearShortSemanticSearchState();
+                clearShortSemanticSearchState();
                 
                 if (typeof window.focusOnNode === 'function') {
                     window.focusOnNode(idx, { fromCanvasNode: true });
@@ -250,7 +257,7 @@ function bindSearchControls() {
         // Onboarding hint intentionally left unimplemented; quarantine per repair goals.
         clearTimeout(state.searchTimeout);
         updateHasQuery();
-        state.searchTimeout = setTimeout(() => { if (typeof window.search === 'function') window.search(e.target.value); }, 300);
+        state.searchTimeout = setTimeout(() => { search(e.target.value); }, 300);
     };
     if (searchInput._onInputHandler) searchInput.removeEventListener('input', searchInput._onInputHandler);
     searchInput._onInputHandler = searchInputHandler;
@@ -261,11 +268,11 @@ function bindSearchControls() {
             event.stopPropagation();
             clearTimeout(state.searchTimeout);
             searchInput.blur();
-            if (typeof window.search === 'function') window.search(searchInput.value);
+            search(searchInput.value);
         } else if (event.key === 'Escape') {
             event.preventDefault();
             event.stopPropagation();
-            if (typeof window.clearSearch === 'function') window.clearSearch();
+            clearSearch();
             searchInput.blur();
         }
     });
@@ -275,7 +282,7 @@ function bindSearchControls() {
             event?.preventDefault?.();
             event?.stopPropagation?.();
             clearTimeout(state.searchTimeout);
-            if (typeof window.clearSearch === 'function') window.clearSearch();
+            clearSearch();
             searchInput.focus();
             updateHasQuery();
         };
@@ -350,13 +357,11 @@ function bindModeAndPromptControls(setMyceliumMode) {
                 button.textContent = originalText;
             }, 4000);
 
-            const originalSearch = window.search;
-            window.search = function(...args) {
+            const wrappedSearch = (...args) => {
                 clearTimeout(restoreTimer);
-                window.search = originalSearch;
-                return originalSearch.apply(this, args);
+                return search(...args);
             };
-            if (typeof window.search === 'function') window.search(query);
+            wrappedSearch(query);
         };
     });
 
@@ -371,18 +376,18 @@ function bindFilterControls() {
     const refreshActiveSearchResults = () => {
         const searchInput = document.getElementById('search-input');
         const query = searchInput?.value?.trim() || '';
-        if (!query || typeof window.search !== 'function') return;
-        window.search(query);
+        if (!query) return;
+        search(query);
     };
 
     const handleFilter = (filterFn, updateReason) => {
         state.activeStoryPrompt = null;
         state.filterVersion++;
         if (typeof syncFilterControls === 'function') syncFilterControls();
-        if (typeof window.clearSearchGlow === 'function') window.clearSearchGlow();
+        clearSearchGlow();
         clearTimeout(state.searchTimeout);
         state.searchTimeout = setTimeout(() => {
-            if (typeof window.applyFilters === 'function') window.applyFilters();
+            applyFilters();
             if (typeof window.updateUrlState === 'function') window.updateUrlState({}, { reason: updateReason });
             refreshActiveSearchResults();
         }, 150);

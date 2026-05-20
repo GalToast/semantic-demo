@@ -8,6 +8,7 @@ import {
     easeOutBack,
     easeOutQuint
 } from '../utils.js';
+import { refreshMapRouteEmbodiment } from './map-state.js';
 
 // Constants
 
@@ -899,7 +900,7 @@ export function focusOnNode(index, options = {}) {
     if (typeof window.syncFocusStage === 'function') {
         window.syncFocusStage(point);
     }
-    if (typeof window.refreshMapRouteEmbodiment === 'function') window.refreshMapRouteEmbodiment();
+    refreshMapRouteEmbodiment();
     if (typeof window.clearRouteExploration === 'function') {
         window.clearRouteExploration(options.fromTraversal ? 'trail-walk' : options.fromCanvasNode ? 'field-node-focus' : 'focus');
     }

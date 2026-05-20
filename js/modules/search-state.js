@@ -18,6 +18,7 @@ import {
 } from './semantic-search-api-cache.js';
 export { getSemanticSearchCacheDiagnostics };
 import { animateCameraToSearchCorridor } from './camera-controls.js';
+import { refreshMapMarkers } from './map-state.js';
 import { updateClusterList } from './cluster-filter.js';
 import { buildLegend } from './ui-renderers.js';
 
@@ -88,8 +89,6 @@ export function setSearchPanelState({
         searchContainer.classList.toggle('search-degraded', degraded);
     }
 }
-
-window.setSearchPanelState = setSearchPanelState;
 
 function setMobileSearchSheetMode(mode = 'peek', { userInitiated = false } = {}) {
     const safeMode = mode === 'expanded' ? 'expanded' : 'peek';
@@ -504,7 +503,7 @@ export function applyFilters() {
 
     if (typeof buildLegend === 'function') buildLegend();
     updateSearchStatusMessage(filteredCount);
-    if (typeof window.refreshMapMarkers === 'function') window.refreshMapMarkers();
+    refreshMapMarkers();
 
     if (state.selectedPoint) {
         const selectedIndex = state.points.indexOf(state.selectedPoint);
@@ -633,7 +632,7 @@ export function clearShortSemanticSearchState(resultsEl, statusEl) {
  * 10/10 Polish: Comprehensive Search Clearing
  * Resets all search-related state, UI elements, and classes.
  */
-window.clearSearch = function () {
+export function clearSearch() {
     const searchInput = document.getElementById('search-input');
     const searchContainer = document.querySelector('.search-container');
     const resultsEl = document.getElementById('search-results');
@@ -722,7 +721,7 @@ export function beginSemanticSearchUiState(resultsEl, statusEl, trimmedQuery) {
         resultsEl.classList.add('active');
         clearSearchGlow();
     }
-    if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ searching: true, focusing: false, hasQuery: true, resultsRendered: false, degraded: false });
+    setSearchPanelState({ searching: true, focusing: false, hasQuery: true, resultsRendered: false, degraded: false });
     if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
     resetSemanticGuideUi({ hideTrigger: true });
     statusEl.textContent = `Searching for businesses related to "${trimmedQuery}"...`;
@@ -760,7 +759,7 @@ export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQue
     const spinner = document.getElementById('search-spinner');
     if (spinner) spinner.style.display = 'none';
 
-    if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: false, degraded: true });
+    setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: false, degraded: true });
     if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
     const preservingSameQuery = state.currentSearchSummary?.query === trimmedQuery;
     if (!preservingSameQuery) {
@@ -850,7 +849,7 @@ export function finishSemanticSearchSuccessState(resultsEl, trimmedQuery, cacheS
         });
     }
     if (typeof window.setSemanticLaneUiState === 'function') window.setSemanticLaneUiState('healthy');
-    if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ searching: false, focusing: false, degraded: false });
+    setSearchPanelState({ searching: false, focusing: false, degraded: false });
     resultsEl.classList.remove('searching');
 }
 
@@ -1299,14 +1298,14 @@ export function startMobileRouteFieldPeek({ resultsEl = null, activeIndex = null
     return true;
 }
 
-window.clearSearchPreviewHoverTimer = function() {
+export function clearSearchPreviewHoverTimer() {
     if (state.searchPreviewHoverTimer) {
         window.clearTimeout(state.searchPreviewHoverTimer);
         state.searchPreviewHoverTimer = null;
     }
-};
+}
 
-window.clearMobileRouteFieldPeek = function() {
+export function clearMobileRouteFieldPeek() {
     if (state.mobileRouteFieldPeekTimer) {
         window.clearTimeout(state.mobileRouteFieldPeekTimer);
         state.mobileRouteFieldPeekTimer = null;
@@ -1315,15 +1314,11 @@ window.clearMobileRouteFieldPeek = function() {
         delete document.body.dataset.mobileRoutePeek;
         delete document.body.dataset.mobileRoutePeekReason;
     }
-};
+}
 
-window.isMobileRouteFieldPeekActive = function() {
+export function isMobileRouteFieldPeekActive() {
     return document.body?.dataset.mobileRoutePeek === 'active';
-};
-
-window.clearCompactSearchResultRevealTimers = clearCompactSearchResultRevealTimers;
-window.scheduleCompactSearchResultReveal = scheduleCompactSearchResultReveal;
-window.getFilteredIndices = getFilteredIndices;
+}
 
 // Debug access
 window._ss = {

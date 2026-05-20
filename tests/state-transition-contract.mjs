@@ -303,33 +303,23 @@ assert(state.currentSearchSummary === null, 'reset: currentSearchSummary is null
 assert(state.navState.mode === 'overview', 'reset: navState.mode is overview');
 assert(state.trailDepth === 0,        'reset: trailDepth is 0');
 assert(state.semanticDiveMode === false, 'reset: semanticDiveMode is false');
-// Note: navState.focusedIndex is NOT cleared by resetStateBeforeUrlRestore.
-// This is a documented gap: focusedIndex is left stale after reset.
-// It is cleaned up only when a subsequent search or focus event fires.
-// Contract note: we do NOT assert focusedIndex === null here — the gap is known.
+assert(state.navState.focusedIndex === null, 'reset: focusedIndex is null');
 // Re-run composition to observe the cleared state
 commitTransition('post-reset');
 
-// Post-reset: focusedNode and selectedPoint are null, but stale focusedIndex=4
-// makes hasFocus=true → graphContext='focus' and panelSurface='focus'.
-// This is the KNOWN_GAP behavior — reset leaves focusedIndex stale.
+// Post-reset: all focus state is cleared → graphContext='idle' and panelSurface='idle'.
 assert(ds('activeView') === 'galaxy',   'reset: activeView is galaxy');
 assert(ds('semanticDive') === 'inactive','reset: semanticDive is inactive');
 assert(ds('trailState') === 'inactive', 'reset: trailState is inactive');
 assert(state.focusedNode === null,    'reset: focusedNode is null');
 assert(state.selectedPoint === null,  'reset: selectedPoint is null');
-// KNOWN_GAP: navState.focusedIndex stays at 4 (stale). This causes
-// graphContext='focus' and panelSurface='focus' instead of 'idle'.
-// The gap propagates to composition state until next focus/search event clears it.
-assert(ds('graphContext') === 'focus', 'reset: graphContext is focus (STALE - known gap: focusedIndex not cleared)');
-assert(ds('panelSurface') === 'focus', 'reset: panelSurface is focus (STALE - known gap: focusedIndex not cleared)');
-console.log('  PASS: reset state is correct (focusedIndex gap documented)\n');
+assert(ds('graphContext') === 'idle', 'reset: graphContext is idle');
+assert(ds('panelSurface') === 'idle', 'reset: panelSurface is idle');
+console.log('  PASS: reset state is correct\n');
 
-// ── KNOWN ISSUES ──────────────────────────────────────────────────────────────
-// 1. resetStateBeforeUrlRestore does not clear navState.focusedIndex.
-//    This leaves a stale index in the navState that is not reset to null.
-//    Callers that depend on focusedIndex being null after reset will see stale data.
-//    Fix: add `state.navState.focusedIndex = null;` inside resetStateBeforeUrlRestore.
+// ── RESOLVED ───────────────────────────────────────────────────────────────────
+// 1. (resolved) resetStateBeforeUrlRestore now clears navState.focusedIndex.
+//    graphContext and panelSurface correctly return to 'idle' after reset.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── EDGE CASES ────────────────────────────────────────────────────────────────

@@ -38,9 +38,7 @@ Canonical reference for the overview → search → focus → semantic-dive → 
 | **focus** (with search) | `index` | `null` | `index` | `0` | `false` | `focus-search` | `focus-search` | `inactive` |
 | **semantic-dive** | `index` | `null` | `index` | `2` | `true` | `focus` | `semantic-dive` | `active` |
 | **map-trail** | `index` | `object` | `index` | `1+` | `false` | `idle` | `map-focus-search` | `inactive` |
-| **reset** | `null` | `null` | `stale*` | `0` | `false` | `idle` | `idle` | `inactive` |
-
-\* **Known gap**: `resetStateBeforeUrlRestore()` does not clear `navState.focusedIndex`, leaving it stale after reset. This causes `graphContext` and `panelSurface` to be `focus` instead of `idle` in the composition state until the next focus/search event clears it. See contract `state-transition-contract.mjs` KNOWN_ISSUES section.
+| **reset** | `null` | `null` | `null` | `0` | `false` | `idle` | `idle` | `inactive` |
 
 ## Transition Logic (refreshCompositionState)
 
@@ -76,4 +74,4 @@ Map branch (currentView !== 'galaxy'):
 2. `graphContext` and `mapContext` are mutually exclusive (map branch sets graphContext to `idle`)
 3. `panelSurface` derives from both view mode and context, via `derivePanelSurface()`
 4. `trailState` depends on `hasActiveTrailState` which requires `navState.mode === 'trail' OR hasSearchIntent` in galaxy, or different logic in map (see lifecycle.js:1053-1056)
-5. `navState.focusedIndex` is NOT cleared by `resetStateBeforeUrlRestore()` — known behavioral gap
+5. `navState.focusedIndex` is cleared by `resetStateBeforeUrlRestore()` — resolved (2026-05-20)

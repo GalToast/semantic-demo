@@ -290,12 +290,12 @@ export function updateWeatherStaleness() {
     }
     el.setAttribute('aria-label', el.textContent);
 }
-// Expose on window directly so external callers (and setInterval) always resolve it
+
 if (typeof window !== 'undefined') {
     window.updateWeatherStaleness = updateWeatherStaleness;
 }
 
-function describeWeatherCode(code) {
+export function describeWeatherCode(code) {
     if (code === 0) return { label: 'Clear', icon: 'sun', condition: 'sun' };
     if (code <= 3) return { label: 'Partly cloudy', icon: 'cloud', condition: 'cloud' };
     if (code <= 49) return { label: 'Fog', icon: 'cloud', condition: 'fog' };
@@ -393,8 +393,6 @@ function scheduleLightning() {
     lightningTimer = window.setTimeout(flash, 3000);
 }
 
-// Explicitly expose updateWeatherStaleness on window unconditionally
-// Uses a simple assignment that esbuild will preserve in minification
 if (typeof window !== 'undefined') {
     window.refreshWeatherStalenessIndicator = updateWeatherStaleness;
     window.clearWeatherRefreshTimer = clearWeatherRefreshTimer;

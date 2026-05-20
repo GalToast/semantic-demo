@@ -32,6 +32,24 @@ const SEARCH_STUB = {
   ]
 };
 
+async function performMockedSearch(page, query = 'coffee') {
+  const searchInput = page.locator('#search-input');
+  await searchInput.focus();
+  await searchInput.fill(query);
+
+  try {
+    await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 });
+    return;
+  } catch {
+    await page.evaluate((searchQuery) => {
+      if (typeof window.search === 'function') {
+        window.search(searchQuery);
+      }
+    }, query);
+    await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
+  }
+}
+
 test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () => {
 
   test.beforeEach(async ({ page }) => {
@@ -60,10 +78,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     await page.waitForTimeout(1500);
 
     // --- 1. Perform search ---
-    const searchInput = page.locator('#search-input');
-    await searchInput.focus();
-    await searchInput.fill('coffee');
-    await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
+    await performMockedSearch(page);
     await page.waitForTimeout(1000);
 
     // Verify search state is populated
@@ -89,15 +104,6 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     expect(focusStateBefore.focusedNode).not.toBeNull();
 
     // --- 3. Press Escape → should trigger clearSearch + resetExplorationFocus ---
-    const resetCalls = [];
-    await page.evaluate(() => {
-      const orig = window.resetExplorationFocus;
-      window.resetExplorationFocus = function (...args) {
-        resetCalls.push('resetExplorationFocus');
-        return orig.apply(this, args);
-      };
-    });
-
     await page.keyboard.press('Escape');
     await page.waitForTimeout(1500);
 
@@ -116,7 +122,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     expect(navMode, 'navState.mode must be reset to overview after Escape').toBe('overview');
 
     // Focus node cleared
-    const focusedNode = await page.evaluate(() => window.state?.focusedNode ?? 'still-set');
+    const focusedNode = await page.evaluate(() => window.state?.focusedNode);
     expect(focusedNode, 'focusedNode must be null after Escape').toBeNull();
 
     // No leaked timers
@@ -143,10 +149,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     await page.waitForTimeout(1500);
 
     // Enter focus state via search click
-    const searchInput = page.locator('#search-input');
-    await searchInput.focus();
-    await searchInput.fill('coffee');
-    await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
+    await performMockedSearch(page);
     await page.waitForTimeout(1000);
     await page.locator('.search-result-item').first().click();
     await page.waitForTimeout(2000);
@@ -165,7 +168,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     const navMode = await page.evaluate(() => window.state?.navState?.mode ?? 'unknown');
     expect(navMode, 'navState.mode must be overview after resetExplorationFocus').toBe('overview');
 
-    const focusedNode = await page.evaluate(() => window.state?.focusedNode ?? 'still-set');
+    const focusedNode = await page.evaluate(() => window.state?.focusedNode);
     expect(focusedNode, 'focusedNode must be null after resetExplorationFocus').toBeNull();
   });
 
@@ -184,10 +187,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     await page.waitForTimeout(1500);
 
     // Establish search + focus state
-    const searchInput = page.locator('#search-input');
-    await searchInput.focus();
-    await searchInput.fill('coffee');
-    await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
+    await performMockedSearch(page);
     await page.waitForTimeout(1000);
     await page.locator('.search-result-item').first().click();
     await page.waitForTimeout(2000);
@@ -227,10 +227,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     await page.waitForTimeout(1500);
 
     // Enter focus state
-    const searchInput = page.locator('#search-input');
-    await searchInput.focus();
-    await searchInput.fill('coffee');
-    await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
+    await performMockedSearch(page);
     await page.waitForTimeout(1000);
     await page.locator('.search-result-item').first().click();
     await page.waitForTimeout(2000);

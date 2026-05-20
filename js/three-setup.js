@@ -10,6 +10,7 @@ import {
     scheduleAutoRotateResume,
     updateAutoRotateSoftResume
 } from './modules/camera-controls.js';
+import { initMap } from './modules/map-state.js';
 import {
     easeInOutCubic,
     easeOutQuint,
@@ -97,7 +98,7 @@ function showWebGLFallback(container, detail = {}) {
         document.getElementById('map-container')?.classList.add('active');
         container.classList.add('hidden');
         state.currentView = 'map';
-        if (typeof window.initMap === 'function') window.initMap();
+        initMap();
         if (typeof window.switchView === 'function') {
             window.switchView('map', { reason: 'webgl-fallback' });
         }
