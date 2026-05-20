@@ -38,21 +38,27 @@ States: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-resu
 | `qa:reduced-motion-transition` | `tests/reduced-motion-transition-contract.mjs` — canonical reduced-motion owner check + Playwright computed-style proof of transition suppression |
 
 ## Contract Test Suite (`npm run test:contract`)
-Runs the pinned ordered contract suite from `tests/run-all-contracts.js`; `tests/contracts.manifest.json` also classifies targeted groups such as `smoke`, `mobile-critical`, `motion`, `lifecycle`, `render`, `quality`, and `full`.
+Runs the pinned ordered contract suite from `tests/run-all-contracts.js`; `tests/contracts.manifest.json` also classifies targeted groups such as `core`, `navigation`, `scene`, `smoke`, `mobile-critical`, `motion`, `lifecycle`, `browser`, `render`, `quality`, and `full`.
 
 ## Manifest Group Scripts (`npm run test:contract:<group>`)
 
 | Script | Group | Contracts |
 |--------|-------|-----------|
-| `test:contract:smoke` | `smoke` | weather-lifecycle, weather-surface-ownership, camera-auto-rotate-settle, scene-reveal, loading-ui, motion-state (6 contracts, ~400ms total) |
-| `test:contract:mobile-critical` | `mobile-critical` | semantic-dive-ui-surface, search-state-surface, journey-compass-state, focus-pocket-motion, focus-pocket-composition, journey-event-bindings, micro-demo, demo-camera-retirement, cluster-labels, journey-thread-inspector, window-bridge-gaps, loading-ui, exploration-modes, search-peek-expanded-render (14 contracts) |
-| `test:contract:lifecycle` | `lifecycle` | lifecycle-composition, state-transition, demo-init-seam, demo-camera-retirement, demo-state-sync, weather-lifecycle, journey-event-bindings, window-bridge-gaps (8 contracts) |
-| `test:contract:motion` | `motion` | camera-controls-motion, focus-pocket-motion, motion-state, reduced-motion-transition, reduced-motion-interruption, camera-auto-rotate-settle, scene-reveal, scene-atmosphere, three-visual-polish (9 contracts) |
-| `test:contract:render` | `render` | focus-stage-render, info-panel-collapsed-render, mode-chip-state-render, weather-widget-render, connection-analysis-render-state (5 contracts) |
+| `test:contract:core` | `core` | semantic-dive-ui-surface, search-state-surface, state-transition, focus-semantic-state-boundary, semantic-lane, connection-analysis, exploration-modes (7 contracts) |
+| `test:contract:navigation` | `navigation` | journey-compass-state, journey-thread-inspector, journey-window-surface, journey-event-bindings, trail-review-focus, pathfinding (6 contracts) |
+| `test:contract:scene` | `scene` | scene-reveal, scene-atmosphere, three-visual-polish, reduced-motion-transition, reduced-motion-interruption (5 contracts) |
+| `test:contract:smoke` | `smoke` | weather-lifecycle, weather-surface-ownership, camera-auto-rotate-settle, scene-reveal, loading-ui, motion-state (6 contracts, sub-1s total) - fast smoke, no browser needed |
+| `test:contract:mobile-critical` | `mobile-critical` | semantic-dive-ui-surface, search-state-surface, focus-pocket-motion, focus-pocket-composition, micro-demo, demo-init-seam, reset-callsite-routing, demo-camera-retirement, cluster-labels, window-bridge-gaps, loading-ui (11 contracts) |
+| `test:contract:lifecycle` | `lifecycle` | lifecycle-composition, state-transition, focus-semantic-state-boundary, demo-init-seam, reset-callsite-routing, semantic-guide-payload, demo-camera-retirement, demo-state-sync, weather-lifecycle, window-bridge-gaps (10 contracts) |
+| `test:contract:motion` | `motion` | camera-controls-motion, focus-pocket-motion, motion-state, camera-auto-rotate-settle, semantic-dive-reverse (5 contracts) |
+| `test:contract:browser` | `browser` | focus-stage-render, info-panel-collapsed-render, mode-chip-state-render, weather-widget-render, connection-analysis-render-state, search-peek-expanded-render (6 contracts, 5-20s each) - Playwright browser launch required |
+| `test:contract:render` | `render` | Same contracts as `browser` - backward-compatible alias; prefer `test:contract:browser` for new scripts |
 | `test:contract:quality` | `quality` | css-manifest-contract, ui-quality-contract, micro-surface-interactions, surface-redundancy (4 contracts; may write tmp reports and fails on UI quality regressions) |
-| `test:contract:full` | `full` | All 34 pinned contracts in manifest-defined order |
+| `test:contract:full` | `full` | All 38 pinned contracts in manifest-defined order |
 | `test:contract:phase-a` | phase-a surfaces | info-panel-empty, compass-rail, loading-overlay, mode-grid |
 | `test:contract:phase-b` | phase-b surfaces | filters, thread-inspector, controls, search-chrome, info-panel-populated |
+
+**Fast vs slow split:** `smoke` (sub-second, no browser) is the fast lane. `browser`/`render` (5-20s each, Playwright required) is the slow lane. Use `--list` on the runner to preview any group before running: `node tests/run-all-contracts.js --list`.
 
 ## Usage Notes
 All scripts target `http://127.0.0.1:8795/vector-explorer-polished.html` by default. Start the server with `npm run serve` before running any QA scripts.

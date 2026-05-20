@@ -19,6 +19,9 @@
  *   node tests/run-all-contracts.js --group=mobile-critical
  *   node tests/run-all-contracts.js --group=full
  *
+ * List groups: --list shows all available groups with contract counts and descriptions.
+ *   node tests/run-all-contracts.js --list
+ *
  * Validation self-test (no contracts executed):
  *   node tests/run-all-contracts.js --validate
  *
@@ -262,6 +265,23 @@ function runContract(filename) {
 // Main
 
 async function main() {
+  // Intercept --list before anything else.
+  if (process.argv.includes('--list')) {
+    const manifest = loadManifest();
+    if (!manifest || !manifest.groups) {
+      console.error('No manifest groups found.');
+      process.exit(1);
+    }
+    console.log('\n=== Contract Groups ===\n');
+    for (const [name, group] of Object.entries(manifest.groups)) {
+      const count = Array.isArray(group.contracts) ? group.contracts.length : 0;
+      const desc = group.description || '';
+      console.log(`  ${name} (${count})  ${desc}`);
+    }
+    console.log('');
+    return;
+  }
+
   // Intercept --validate before anything else.
   if (process.argv.includes('--validate')) {
     runValidation();
