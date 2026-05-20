@@ -457,12 +457,12 @@
         pointer-events: none;
     }
 
+    /* SEARCH SHEET ONLY: .search-container owns the sheet geometry.
+       #info-panel remains visible as a header/shell but does not
+       get its own glass bottom-sheet treatment in search states. */
     html body[data-panel-surface="search"] .info-panel,
     html body[data-active-view="galaxy"]:has(.search-container.has-query) .info-panel {
-        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-        max-height: min(54vh, 456px);
-        border-radius: 18px;
-        opacity: 0.94;
+        opacity: 0.97;
     }
 
     html body[data-panel-surface="search"] .info-content,
@@ -635,6 +635,8 @@
         transform: translateY(12px) scale(0.98);
     }
 
+    /* SEARCH SHEET ONLY: .search-container owns the tablet search sheet.
+       #info-panel tablet sheet is demoted to avoid double-glass conflict. */
     html body[data-panel-surface="search"] .info-panel,
     html body[data-active-view="galaxy"]:has(.search-container.has-query) .info-panel {
         left: 10px;
@@ -843,6 +845,14 @@
         pointer-events: auto;
     }
 
+    html body[data-panel-surface="semantic-dive"] .search-container,
+    html body[data-panel-surface="semantic-dive"] .search-results.active,
+    html body[data-panel-surface="semantic-dive"] #search-results {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     html body[data-panel-surface="focus"] .controls.desktop-only,
     html body[data-panel-surface="focus-search"] .controls.desktop-only,
     html body[data-panel-surface="semantic-dive"] .controls.desktop-only,
@@ -938,6 +948,7 @@
     html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] .journey-compass-action.primary {
         max-width: 128px;
     }
+
 }
 
 /* Mobile chrome legibility floor: keep compact journey actions readable even

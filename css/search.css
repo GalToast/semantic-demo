@@ -433,6 +433,19 @@ body.searching .search-container.has-query .search-clear-btn {
     display: flex;
     align-items: center;
     justify-content: center;
+    pointer-events: auto;
+    z-index: 1001;
+}
+
+@media (max-width: 1024px) {
+    .search-container.has-query {
+        z-index: 1002;
+    }
+
+    body[data-panel-surface="search"] .controls {
+        display: none;
+        pointer-events: none;
+    }
 }
 
 /* polish289: once user has typed a query, hide the first-time discovery scaffolding */

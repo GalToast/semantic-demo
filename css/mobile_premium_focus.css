@@ -116,8 +116,20 @@
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
     }
 
-    /* Hide non-primary actions in dive state */
     html body.is-active[data-panel-surface="semantic-dive"] .journey-compass-action:not(.primary) {
+        display: none;
+    }
+
+    /* Fix: make .controls non-interactive during semantic-dive so they
+       don't intercept clicks on search-clear-btn or other overlay controls.
+       Controls are still visible (opacity persists) but no longer block
+       taps on the search rail or other overlaid UI. */
+    html body.is-active[data-panel-surface="semantic-dive"] .controls {
+        pointer-events: none;
+    }
+
+    /* Inside mode owns actions from the focus-stage card, not the compass. */
+    html body.is-active[data-panel-surface="semantic-dive"] .journey-compass-actions {
         display: none;
     }
 
@@ -365,6 +377,9 @@
     html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-badges,
     html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-trivia,
     html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-note,
+    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-kicker,
+    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-actions,
+    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-dive-btn,
     html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey,
     html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-neighbors {
         display: none;

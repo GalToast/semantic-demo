@@ -318,6 +318,16 @@
                 box-shadow: 0 18px 40px rgba(0, 0, 0, 0.26);
             }
 
+            /* Hide .controls in galaxy search/focus-search — these states are
+               dominated by the search sheet; the rail is redundant chrome.
+               Map-* states are excluded via [data-panel-surface^="map-"]
+               which does not match "search" or "focus-search". */
+            body[data-panel-surface="search"] .controls,
+            body[data-panel-surface="focus-search"] .controls {
+                visibility: hidden;
+                pointer-events: none;
+            }
+
             .control-btn {
                 width: 44px;
                 height: 44px;
@@ -1014,12 +1024,14 @@
         body[data-panel-surface="semantic-dive"] .controls {
             opacity: 0.38;
             transform: translateY(8px) scale(0.96);
+            pointer-events: none;
         }
 
         body[data-panel-surface="semantic-dive"] .controls:hover,
         body[data-panel-surface="semantic-dive"] .controls:focus-within {
             opacity: 0.88;
             transform: translateY(0) scale(1);
+            pointer-events: auto;
         }
 
         @media (max-width: 768px) {
@@ -1773,4 +1785,14 @@ body[data-panel-surface="semantic-dive"] .launch-btn {
 .trail-review-empty {
     margin: 0;
     color: rgba(226, 232, 240, 0.78);
+}
+
+/* Fix: ensure .search-clear-btn sits above .controls rail at 768x1024
+   so real clicks reach the clear button instead of being intercepted.
+   The .controls rail is at z-index 1000; search-clear-btn must exceed it. */
+@media (max-width: 1024px) {
+    .search-container.has-query .search-clear-btn {
+        z-index: 1001;
+        pointer-events: auto;
+    }
 }
