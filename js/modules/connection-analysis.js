@@ -1,6 +1,14 @@
 // js/modules/connection-analysis.js — Connection Report / Semantic Threads Detail
 import { state } from '../state.js';
 import {
+    getConnectionStateSnapshot,
+    getSummaryTextEl,
+    getSummaryCardEl,
+    getStoryNoteEl,
+    getStoryTextEl,
+    getStorySourceEl,
+} from './connection-analysis-adapter.js';
+import {
     buildSemanticGuidePayloadResult,
     buildSemanticGuideRequestPayload
 } from './semantic-guide-payload.js';
@@ -17,15 +25,15 @@ export function showSemanticThreadsDetail() {
     async function inner() {
         let payload = buildSemanticGuideRequestPayload();
         if (!payload || !payload.results?.length) {
-            const focusedIdx = state.focusedNode;
-            if (!Number.isFinite(focusedIdx) || !state.points?.[focusedIdx]) {
-                const textEl = document.getElementById('summary-text');
+            const { focusedNode: focusedIdx, points } = getConnectionStateSnapshot();
+            if (!Number.isFinite(focusedIdx) || !points?.[focusedIdx]) {
+                const textEl = getSummaryTextEl();
                 if (textEl) textEl.textContent = 'Select a business first to load its full connection report.';
                 return;
             }
             const focusedResult = buildSemanticGuidePayloadResult(focusedIdx);
             if (!focusedResult) {
-                const textEl = document.getElementById('summary-text');
+                const textEl = getSummaryTextEl();
                 if (textEl) textEl.textContent = 'Select a business first to load its full connection report.';
                 return;
             }
@@ -41,11 +49,11 @@ export function showSemanticThreadsDetail() {
         }
         const controller = new AbortController();
         semanticThreadsDetailController = controller;
-        const card = document.getElementById('semantic-summary-card');
+        const card = getSummaryCardEl();
         if (card) card.classList.add('is-synthesizing');
-        const storyNoteEl = document.getElementById('summary-gemma-story');
-        const storyTextEl = document.getElementById('summary-gemma-story-text');
-        const storySourceEl = document.getElementById('summary-gemma-story-source');
+        const storyNoteEl = getStoryNoteEl();
+        const storyTextEl = getStoryTextEl();
+        const storySourceEl = getStorySourceEl();
         if (storyNoteEl) {
             storyNoteEl.classList.remove('hidden');
             storyNoteEl.setAttribute('aria-hidden', 'false');

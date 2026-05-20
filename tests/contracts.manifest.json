@@ -48,6 +48,7 @@
       "description": "Lifecycle and initialization contracts.",
       "contracts": [
         "lifecycle-composition-contract.mjs",
+        "state-transition-contract.mjs",
         "demo-init-seam-contract.mjs",
         "demo-camera-retirement-contract.mjs",
         "demo-state-sync-contract.mjs",
@@ -57,11 +58,12 @@
       ]
     },
     "full": {
-      "description": "All 33 ordered contracts - same as default npm run test:contract.",
+      "description": "All 34 ordered contracts - same as default npm run test:contract.",
       "contracts": [
         "semantic-dive-ui-surface-contract.mjs",
         "search-state-surface-contract.mjs",
         "lifecycle-composition-contract.mjs",
+        "state-transition-contract.mjs",
         "journey-compass-state-contract.mjs",
         "semantic-lane-contract.mjs",
         "connection-analysis-contract.mjs",

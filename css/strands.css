@@ -671,6 +671,7 @@
         left: 10px;
         right: 10px;
         bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+        z-index: 130;
     }
 
     html body[data-panel-surface="focus"] .focus-stage-card,
@@ -679,6 +680,13 @@
         max-height: min(54vh, 204px);
         padding: 10px 12px;
         border-radius: 16px;
+    }
+
+    /* Short-landscape: search-results needs a gentle appear/disappear curve
+       so it doesn't flicker or flash during rapid focus-search transitions. */
+    html body[data-panel-surface="focus"] .search-results.active,
+    html body[data-panel-surface="focus-search"] .search-results.active {
+        transition: opacity 160ms ease, transform 160ms ease;
     }
 
     html body[data-panel-surface="semantic-dive"] .focus-stage-inside-status {
@@ -827,9 +835,6 @@
 
     html body[data-panel-surface="focus"] .search-results.active,
     html body[data-panel-surface="focus-search"] .search-results.active,
-    html body[data-panel-surface="focus"]:has(.search-container.has-query) .search-results.active,
-    html body[data-panel-surface="focus-search"]:has(.search-container.has-query) .search-results.active,
-    html body[data-panel-surface="semantic-dive"]:has(.search-container.has-query) .search-results.active,
     html body[data-panel-surface="semantic-dive"] .search-results.active {
         max-height: min(28vh, 180px);
         padding: 6px 8px;

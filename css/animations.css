@@ -1,6 +1,25 @@
 /* Animations: short-landscape mobile layout overrides.
    Target: stripped focus/dive chrome at <=900px x 480px landscape. */
 @media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
+    /* Short-landscape transitions: faster curves to avoid sluggish panel
+       slides on constrained viewports. Override base 500ms to 180ms so
+       hidden/shown states settle cleanly without an awkward mid-transition
+       flash frame. */
+    html body[data-panel-surface="focus"] .info-panel,
+    html body[data-panel-surface="focus-search"] .info-panel,
+    html body[data-panel-surface="semantic-dive"] .info-panel {
+        transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+    }
+
+    /* z-index anchor: keep the focus-stage above the info-panel in all
+       short-landscape focus states to prevent the stage card clipping
+       under the panel layer. */
+    html body[data-panel-surface="focus"] .focus-stage,
+    html body[data-panel-surface="focus-search"] .focus-stage,
+    html body[data-panel-surface="semantic-dive"] .focus-stage {
+        z-index: 130;
+    }
+
     html body[data-panel-surface="focus"] .controls,
     html body[data-panel-surface="focus-search"] .controls,
     html body[data-panel-surface="semantic-dive"] .controls,

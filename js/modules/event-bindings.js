@@ -1,6 +1,7 @@
 import { state } from '../state.js';
 import { isCompactFocusStageViewport } from '../utils.js';
-import { syncFilterControls } from './lifecycle.js';
+import { syncFilterControls, switchView, resetExperienceState } from './lifecycle.js';
+import { toggleAutoRotate, focusOnNode } from './camera-controls.js';
 
 function bindClick(id, handler, options = {}) {
     const element = document.getElementById(id);
@@ -12,12 +13,12 @@ function bindClick(id, handler, options = {}) {
 }
 
 function bindViewControls() {
-    bindClick('btn-galaxy', () => window.switchView?.('galaxy'));
-    bindClick('btn-map', () => window.switchView?.('map'));
+    bindClick('btn-galaxy', () => switchView('galaxy'));
+    bindClick('btn-map', () => switchView('map'));
     bindClick('btn-zoom-in', () => window.zoomCamera?.(0.84));
     bindClick('btn-zoom-out', () => window.zoomCamera?.(1.18));
-    bindClick('btn-reset', () => window.resetExperienceState?.());
-    bindClick('btn-rotate', () => window.toggleAutoRotate?.());
+    bindClick('btn-reset', () => resetExperienceState());
+    bindClick('btn-rotate', () => toggleAutoRotate());
     bindClick('btn-share-view', () => {
         const btn = document.getElementById('btn-share-view');
         if (!btn) return;
@@ -435,22 +436,12 @@ function bindFilterControls() {
 }
 
 function bindWindowControlFunctions(resetExperienceState, resetNodePositions) {
-    window.resetExperienceState = resetExperienceState;
     window.resetNodePositions = resetNodePositions;
 
     window.revealSelectedBusinessCard = function () {
         if (typeof window.setInfoPanelOpen === 'function') {
             window.setInfoPanelOpen(true);
         }
-    };
-
-    window.toggleAutoRotate = function () {
-        const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
-        if (prefersReduced) return;
-        state.autoRotate = !state.autoRotate;
-        if (state.controls) state.controls.autoRotate = state.autoRotate && !state.autoRotateSuspended;
-        const rotateBtn = document.getElementById('btn-rotate');
-        if (rotateBtn) rotateBtn.setAttribute('aria-pressed', String(state.controls?.autoRotate === true));
     };
 
     window.zoomCamera = function (multiplier) {

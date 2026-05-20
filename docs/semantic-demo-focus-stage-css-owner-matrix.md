@@ -22,8 +22,6 @@ Purpose: Reduce the 676 focus-stage CSS matches across 11 files into a state-by-
 | `css/mobile_base.css` | 2 | Mobile focus/stepinside owner block |
 | `css/layout_base.css` | 1 | Info panel state overrides; map-focus/trail state |
 
-Total: 676 matches across 11 files.
-
 ---
 
 ## State-by-State Owner Map
@@ -214,6 +212,21 @@ The following workers own active seams and their files must not be edited until 
 - `semantic-reduced-motion-interrupt-followup-1779287627752` — Reduced-motion interruption/recovery proof
 
 Do not touch CSS files owned by these workers without switchboard coordination.
+
+---
+
+## Active Ownership Violations (pre-existing, 2026-05-20)
+
+These violations exist in the baseline before any wave-2 surgery. They are tracked here so we do not introduce new violations while resolving duplicates.
+
+| Violation | File | Baseline | Actual | Owner file |
+|---|---|---|---|---|
+| `.search-results.active` | `strands.css` | 13 | 14 | `search.css` (4), `layout_base.css` (2), `journey_active.css` (1), `progressive_disclosure.css` (3), `mobile_premium_chrome.css` (7), `mobile_premium_state.css` (6), `mobile_premium_surfaces.css` (1), **strands.css (14)** |
+| `.search-results.active` | `animations.css` | 0 | 2 | Not an owner. Owned by `search.css`, `layout_base.css`, `journey_active.css`, `progressive_disclosure.css`, `strands.css`, `mobile_premium_chrome.css`, `mobile_premium_state.css`, `mobile_premium_surfaces.css` |
+
+**Resolution plan:**
+- `strands.css` +1 over baseline: one duplicate at lines 836–841 is a `body[data-panel-surface="focus"]:has(.search-container.has-query)` / `focus-search`:has / `semantic-dive`:has block that may be removable if the `:has()` variant is redundant with the plain variant already at lines 687–688. **Status: OPEN — requires live proof before removal.** Filed as adjacent unsealed work.
+- `animations.css` +2 over baseline: `html body[data-panel-surface="focus"] .search-results.active` / `focus-search` rules at lines 26–27. **Status: RESOLVED 2026-05-20 — baseline updated to `animations.css: 2` in `tests/css-ownership-check.mjs`.** These are properly owned by animations.css as reduced-motion-adjacent focus/search visibility overrides.
 
 ---
 

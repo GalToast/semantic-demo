@@ -55,7 +55,7 @@ const selectorBaselines = {
     'layout_base.css': 2,
     'journey_active.css': 1,
     'progressive_disclosure.css': 3,
-    'strands.css': 13,
+    'strands.css': 11,
     'mobile_premium_chrome.css': 7,
     'mobile_premium_state.css': 6,
     'mobile_premium_surfaces.css': 1,

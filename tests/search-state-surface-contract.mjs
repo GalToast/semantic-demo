@@ -72,6 +72,8 @@ function assert(condition, message) {
 const elementsById = new Map();
 const searchContainer = new FakeElement('div');
 globalThis.window = {
+  location: { search: '' },
+  history: { replaceState: () => {} },
   updateUrlStateCalls: [],
   recordSemanticLaneSnapshotCalls: [],
   semanticLaneStates: [],
@@ -126,6 +128,12 @@ const {
   renderSearchResultItems,
   applySemanticSearchDegradedState,
 } = await import('../js/modules/search-state.js');
+
+const originalRefresh = window.refreshCompositionState;
+window.refreshCompositionState = function(...args) {
+  window.refreshCompositionStateCalls += 1;
+  if (originalRefresh) originalRefresh.apply(this, args);
+};
 
 state.points = [
   { cluster: 2 },

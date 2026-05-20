@@ -476,31 +476,29 @@ async function run() {
     if (wantsState('15-mobile-semantic-dive')) {
       const divePage = await browser.newPage({ viewport: mobile, deviceScaleFactor: 2, isMobile: true });
       await divePage.goto(withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }), { waitUntil: 'commit', timeout: 10000 });
-      // Wait for scene init before forcing state
+      // Wait for scene to be interactive
       await divePage.waitForFunction(() => {
         const canvas = document.querySelector('#canvas-container canvas');
         return canvas && document.body.dataset.graphicsMode === 'webgl';
       }, { timeout: 8000 }).catch(() => {});
       await divePage.waitForTimeout(2200);
-      // Set semantic-dive state immediately before capture
-      await divePage.evaluate(() => {
-        document.body.classList.add('is-active');
-        document.body.dataset.activeView = 'galaxy';
-        document.body.dataset.graphContext = 'focus';
-        document.body.dataset.semanticDive = 'active';
-        document.body.dataset.panelSurface = 'semantic-dive';
-        document.body.dataset.panelSurfaceDetail = 'none';
-        const focusStage = document.querySelector('#focus-stage');
-        if (focusStage) {
-          focusStage.hidden = false;
-          focusStage.setAttribute('aria-hidden', 'false');
-        }
-        for (const selector of ['#focus-stage-inside-status', '#focus-stage-inside-controls']) {
-          const el = document.querySelector(selector);
-          if (el) { el.hidden = false; el.setAttribute('aria-hidden', 'false'); }
-        }
-      });
-      // Capture directly without extra waitForReady (which resets state)
+
+      // Step 1: Click the first search result to establish focus + trailDepth >= 1
+      const firstResult = divePage.locator('.search-result-item').first();
+      if (await firstResult.count()) {
+        await firstResult.click({ timeout: 5000 }).catch(() => {});
+        await divePage.waitForTimeout(600);
+      }
+
+      // Step 2: Click the Step Inside button to enter semantic dive mode
+      const diveBtn = divePage.locator('#btn-focus-dive').first();
+      if (await diveBtn.count()) {
+        await diveBtn.click({ timeout: 5000 }).catch(() => {});
+        // Wait for the 'transitioning' → 'active' animation cycle (820ms + buffer)
+        await divePage.waitForTimeout(1100);
+      }
+
+      // Capture the natural dive state
       const captured = await captureState(divePage, '15-mobile-semantic-dive');
       if (captured) states.push(captured);
       await divePage.close();

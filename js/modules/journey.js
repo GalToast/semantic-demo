@@ -35,6 +35,7 @@ import {
     renderSelectedActionRow,
     setActiveSearchResultRow,
 } from './ui-renderers.js';
+import { focusOnNode } from './camera-controls.js';
 
 export {
     normalizeLeadId,
@@ -618,16 +619,14 @@ export function walkThreadNeighbor(index, options = {}) {
             });
         }
     } else {
-        if (typeof window.focusOnNode === 'function') {
-            window.focusOnNode(index, {
-                fromCanvasNode: !!options.fromCanvasNode,
-                fromTraversal: true,
-                preserveNeighborhood,
-                appendHistory: !options.restoreHistory,
-                restoreHistory: !!options.restoreHistory,
-                fromIndex
-            });
-        }
+        focusOnNode(index, {
+            fromCanvasNode: !!options.fromCanvasNode,
+            fromTraversal: true,
+            preserveNeighborhood,
+            appendHistory: !options.restoreHistory,
+            restoreHistory: !!options.restoreHistory,
+            fromIndex
+        });
     }
     if (typeof window.showExperienceToast === 'function') {
         window.showExperienceToast(
@@ -2625,14 +2624,11 @@ export function ensureCanvasNodeInteractionBindings() {
         event.preventDefault();
         if (typeof window.releaseFocusCameraAssist === 'function') window.releaseFocusCameraAssist('field-click');
         if (typeof window.noteSceneInteraction === 'function') window.noteSceneInteraction(state.AUTO_ROTATE_MANUAL_IDLE_MS);
-        if (typeof window.focusOnNode === 'function') {
-            return window.focusOnNode(candidate.index, {
-                fromCanvasNode: true,
-                revealCard: true,
-                historyMode: 'push'
-            });
-        }
-        return false;
+        return focusOnNode(candidate.index, {
+            fromCanvasNode: true,
+            revealCard: true,
+            historyMode: 'push'
+        });
     };
     canvas.addEventListener('pointermove', (event) => {
         if (state.currentView !== 'galaxy') {
@@ -2836,13 +2832,11 @@ function updateWalkBreadcrumb(hasFocus = false) {
             const targetOrder = Number(chip.dataset.walkOrder);
             if (!Number.isFinite(targetIndex) || !Number.isFinite(targetOrder)) return;
             state.navState.walkHistoryIndices = history.slice(0, targetOrder + 1);
-            if (typeof window.focusOnNode === 'function') {
-                window.focusOnNode(targetIndex, {
-                    fromTraversal: true,
-                    restoreHistory: true,
-                    historyMode: 'push'
-                });
-            }
+            focusOnNode(targetIndex, {
+                fromTraversal: true,
+                restoreHistory: true,
+                historyMode: 'push'
+            });
         };
     });
 }

@@ -342,7 +342,9 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
             const input = document.getElementById('search-input');
             if (input) input.blur();
 
-            window.focusOnNode(targetIndex, { fromSearchResult: true });
+            if (typeof window.focusOnNode === 'function') {
+                window.focusOnNode(targetIndex, { fromSearchResult: true });
+            }
         }
 
         if (typeof window.syncSearchStatusForFocus === 'function') window.syncSearchStatusForFocus(point, { fromSearchResult: true });
@@ -830,7 +832,9 @@ export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQue
     }
     resultsEl.hidden = false;
     resultsEl.classList.add('active');
-    if (typeof window.updateUrlState === 'function') window.updateUrlState({}, { reason: 'search-degraded' });
+    if (typeof window.updateUrlState === 'function') {
+        window.updateUrlState({}, { reason: 'search-degraded' });
+    }
     resetSemanticGuideUi({ hideTrigger: true });
 }
 
@@ -919,7 +923,9 @@ export function applyEmptySemanticSearchState(resultsEl, statusEl, trimmedQuery,
         beat: 'query', kicker: 'No results trail', title: `No results trail for "${trimmedQuery}"`,
         note: 'Try a concrete service, place type, or business need.', immediate: true
     });
-    if (typeof window.updateUrlState === 'function') window.updateUrlState({}, { reason: 'search-empty' });
+    if (typeof window.updateUrlState === 'function') {
+        window.updateUrlState({}, { reason: 'search-empty' });
+    }
     resetSemanticGuideUi({ hideTrigger: true });
     // Task #923: Remove results-rendered on empty results state
     if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ resultsRendered: false });
@@ -1159,8 +1165,10 @@ export async function search(query, options = {}) {
 
         // Auto-center the sole result; focusOnNode cascades syncSearchStatusForFocus which
         // will overwrite the status message, so we call it first and let that settle.
-        if (Number.isFinite(soleIndex) && typeof window.focusOnNode === 'function') {
-            window.focusOnNode(soleIndex, { fromSearchResult: true });
+        if (Number.isFinite(soleIndex)) {
+            if (typeof window.focusOnNode === 'function') {
+                window.focusOnNode(soleIndex, { fromSearchResult: true });
+            }
         }
 
         // Set status after focusOnNode (so it sticks after the syncSearchStatusForFocus cascade)
@@ -1229,7 +1237,9 @@ export async function search(query, options = {}) {
         resultsEl, activeIndex: anchorIndex, reason: payload?.client_cache_hit ? 'search-cache-hit' : 'search-network'
     });
     setActiveSearchResultRow(resultsEl, anchorIndex);
-    if (typeof window.updateUrlState === 'function') window.updateUrlState({ offset: null }, { reason: 'search' });
+    if (typeof window.updateUrlState === 'function') {
+        window.updateUrlState({ offset: null }, { reason: 'search' });
+    }
     // Advance the Journey compass from overview → search once results are rendered
     if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
 }

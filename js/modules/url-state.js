@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, syncFilterControls, applyFilters, updateExplorationUi } from './lifecycle.js';
+import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, syncFilterControls, applyFilters, updateExplorationUi, switchView, updateUrlState } from './lifecycle.js';
 import { isPointVisible, formatBusinessName, escapeHtml } from '../utils.js';
 
 // === URL State ===
@@ -63,7 +63,7 @@ export async function applyUrlState(options = {}) {
         if (typeof window.setSemanticLaneOpsMode === 'function') window.setSemanticLaneOpsMode(params.get('ops') === '1' || params.get('debug') === '1');
 
         const view = params.get('view');
-        if (typeof window.switchView === 'function') window.switchView(view === 'map' ? 'map' : 'galaxy', { skipUrlSync: true });
+        switchView(view === 'map' ? 'map' : 'galaxy', { skipUrlSync: true });
 
         const status = params.get('status');
         if (state.activeFilters === null || state.activeFilters === undefined) {
@@ -232,7 +232,7 @@ export async function applyUrlState(options = {}) {
                 if (typeof window.refreshSemanticLaneOpsSummary === 'function') window.refreshSemanticLaneOpsSummary().catch(err => console.error('refreshSemanticLaneOpsSummary failed:', err));
             }
             if (!options.fromHistory) {
-                if (typeof window.updateUrlState === 'function') window.updateUrlState({}, { reason: 'apply-url-story' });
+                updateUrlState({}, { reason: 'apply-url-story' });
             }
             return;
         }
@@ -241,7 +241,7 @@ export async function applyUrlState(options = {}) {
             if (typeof window.refreshSemanticLaneOpsSummary === 'function') window.refreshSemanticLaneOpsSummary().catch(err => console.error('refreshSemanticLaneOpsSummary failed:', err));
         }
         if (!options.fromHistory) {
-            if (typeof window.updateUrlState === 'function') window.updateUrlState({}, { reason: 'apply-url' });
+            updateUrlState({}, { reason: 'apply-url' });
         }
     } finally {
         if (restoreToken === state.urlStateRestoreToken) {

@@ -665,12 +665,18 @@ export function resetExperienceState() {
  * Use this when returning to overview without a full scene wipe.
  */
 export function resetExplorationFocus() {
-    // Reset mycelium mode and trail depth first — this also clears trailIndices
+    // Reset mycelium mode and trail depth — this also clears trailIndices
     // and resets navState.mode to 'overview'
     setMyceliumMode('default', { skipUrlSync: true });
+    setTrailDepth(0, { skipUrlSync: true });
 
     // Clear node focus state while preserving search
     resetNodePositions({ preserveSearch: true });
+
+    // Explicitly clear search glow (resetNodePositions skips it when preserveSearch=true)
+    if (typeof window.clearSearchGlow === 'function') {
+        window.clearSearchGlow();
+    }
 
     // Ensure focus stage DOM element is hidden
     if (typeof window.syncFocusStage === 'function') {
@@ -905,19 +911,20 @@ export function executeJourneyCompassAction(action) {
             switchView('galaxy');
             return;
         case 'county-overview':
-            // 10/10 Polish: Clear search when returning to overview for a fresh start
-            if (typeof window.clearSearch === 'function') {
-                window.clearSearch();
-            } else {
-                const searchInput = document.getElementById('search-input');
-                if (searchInput) searchInput.value = '';
-                if (typeof window.clearShortSemanticSearchState === 'function') window.clearShortSemanticSearchState();
-            }
-
+            // resetExplorationFocus() now handles trailDepth, searchGlow, and node positions
+            // in one unified call — no separate clearSearch() needed here
             if (typeof window.resetExplorationFocus === 'function') {
                 window.resetExplorationFocus();
             } else if (typeof window.resetNodePositions === 'function') {
                 window.resetNodePositions();
+            }
+            // Also clear the search input so the text is gone on return to overview
+            {
+                const searchInput = document.getElementById('search-input');
+                if (searchInput) searchInput.value = '';
+                if (typeof window.clearShortSemanticSearchState === 'function') {
+                    window.clearShortSemanticSearchState();
+                }
             }
             return;
         default:
@@ -2052,117 +2059,7 @@ export async function requestSemanticGuide() {
     }
 }
 
-export function focusOnNode(index, options = {}) {
-    if (!Number.isFinite(index) || index < 0 || !state.points || index >= state.points.length) return false;
-    const point = state.points[index];
-    if (!point) return false;
-
-    state.focusedNode = index;
-    state.selectedPoint = point;
-    state.hoverHighlightIndex = -1;
-    state.pinnedThreadIndex = null;
-    state.navState.mode = options.preserveMode && state.navState.mode ? state.navState.mode : options.fromTraversal ? 'trail' : 'focus';
-    state.navState.focusedIndex = index;
-    if (state.navState.mode === 'trail' || options.fromCanvasNode) {
-        state.activeStoryPrompt = null;
-    }
-
-    // 10/10 Polish: Automatically enter Trail Depth 1 when focusing a node
-    // This resolves the 'broken feedback loop' where the Trail chip stays inactive despite focusing a business.
-    if (state.trailDepth === 0) {
-        if (typeof window.setTrailDepth === 'function') {
-            window.setTrailDepth(1, { skipUrlSync: true });
-        } else {
-            state.trailDepth = 1;
-            state.myceliumMode = 'trail';
-        }
-    }
-
-    // Keep myceliumMode in sync with navState.mode when entering trail mode from focus
-    if (state.navState.mode === 'trail' && state.myceliumMode !== 'trail') {
-        if (typeof window.setMyceliumMode === 'function') {
-            window.setMyceliumMode('trail', { skipUrlSync: true });
-        } else {
-            state.myceliumMode = 'trail';
-        }
-    }
-    if (options.restoreHistory) {
-        state.navState.explorationHistoryIndices = [...(state.navState.explorationHistoryIndices || [])];
-    } else if (options.appendHistory) {
-        const history = [...(state.navState.explorationHistoryIndices || [])];
-        if (history[history.length - 1] !== index) history.push(index);
-        state.navState.explorationHistoryIndices = history;
-    } else {
-        state.navState.explorationHistoryIndices = [index];
-    }
-
-    // 10/10 Polish: Clear processing feedback once transition begins
-    document.querySelectorAll('.search-result-item.is-processing').forEach(el => el.classList.remove('is-processing'));
-
-    document.getElementById('onboarding-hint')?.classList.remove('visible');
-    const hint = document.getElementById('onboarding-hint');
-    if (hint) {
-        hint._dismissedThisSession = true;
-        if (hint._autoHideTimer) clearTimeout(hint._autoHideTimer);
-    }
-    document.body.dataset.focusOrigin = options.fromCanvasNode
-        ? 'field-node'
-        : options.fromSearchResult
-          ? 'search-result'
-          : options.fromTraversal
-            ? 'trail-walk'
-            : 'programmatic';
-    if (options.fromCanvasNode) {
-        document.body.dataset.focusPanelMode = 'field-node';
-    }
-
-    // 10/10 Polish: Reduce mobile UI density by collapsing secondary sections on focus
-    if (window.innerWidth <= 768) {
-        const storySection = document.getElementById('story-section');
-        const clusterSection = document.getElementById('cluster-section');
-        if (storySection) storySection.open = false;
-        if (clusterSection) clusterSection.open = false;
-    }
-
-    if (typeof window.hideTooltip === 'function') window.hideTooltip();
-    if (typeof window.clearThreadInspection === 'function') window.clearThreadInspection({ force: true, preserveJourney: !!options.fromTraversal });
-    if (typeof window.setTrailFromSeed === 'function') window.setTrailFromSeed(index);
-    if (typeof window.updateTrailIndices === 'function') window.updateTrailIndices(index);
-    if (typeof window.refreshFocusSemanticOverlay === 'function') window.refreshFocusSemanticOverlay();
-    if (typeof window._fp?.applyLocalNeighborhoodFocus === 'function') window._fp.applyLocalNeighborhoodFocus(index);
-    if (typeof window.applyPointFilterColors === 'function') window.applyPointFilterColors();
-    if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
-    if (typeof window.updateSelectedBusiness === 'function') {
-        window.updateSelectedBusiness(point, { revealCard: !!options.revealCard || !!options.fromSearchResult });
-    }
-    if (typeof window.syncFocusStage === 'function') {
-        window.syncFocusStage(point);
-    }
-    if (typeof window.refreshMapRouteEmbodiment === 'function') window.refreshMapRouteEmbodiment();
-    if (typeof window.clearRouteExploration === 'function') {
-        window.clearRouteExploration(options.fromTraversal ? 'trail-walk' : options.fromCanvasNode ? 'field-node-focus' : 'focus');
-    }
-    if (typeof window.syncSearchStatusForFocus === 'function') {
-        window.syncSearchStatusForFocus(point, {
-            fromTraversal: !!options.fromTraversal,
-            fromSearchResult: !!options.fromSearchResult
-        });
-    }
-    if (typeof window.animateCameraToNode === 'function') {
-        window.animateCameraToNode(index, {
-            transitionStyle: options.fromTraversal ? 'walk' : options.fromSearchResult ? 'search' : 'focus'
-        });
-    }
-    if (typeof window.updateTraversalUi === 'function') window.updateTraversalUi();
-    if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
-    if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
-    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
-    if (!options.skipUrlSync && typeof window.updateUrlState === 'function') {
-        window.updateUrlState({ record: point.lead_id || null }, { mode: options.historyMode || 'push', reason: 'focus' });
-    }
-    if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
-    return true;
-}
+export { focusOnNode } from './camera-controls.js';
 
 export function focusOnPoint(point, options = {}) {
     if (!point) return false;
@@ -2549,13 +2446,10 @@ if (typeof window !== 'undefined') {
     window.setMyceliumMode = setMyceliumMode;
     window.setTrailDepth = setTrailDepth;
     window.applyStoryPrompt = applyStoryPrompt;
-    window.updateUrlState = updateUrlState;
     window.copyCurrentViewLink = copyCurrentViewLink;
-    window.resetExperienceState = resetExperienceState;
     window.returnToOverview = returnToOverview;
     window.resetExplorationFocus = resetExplorationFocus;
     window.resetStateBeforeUrlRestore = resetStateBeforeUrlRestore;
-    window.switchView = switchView;
     window.refreshCompositionState = refreshCompositionState;
     window.syncSemanticDiveUi = syncSemanticDiveUi;
     window.getJourneyCompassState = getJourneyCompassState;
@@ -2686,32 +2580,6 @@ if (typeof window !== 'undefined') {
         }
     };
 
-    window.toggleAutoRotate = function () {
-        const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
-        if (prefersReduced) {
-            state.autoRotate = false;
-            if (state.controls) {
-                state.controls.autoRotate = false;
-                state.controls.autoRotateSpeed = 0;
-            }
-            const rotateBtn = document.getElementById('btn-rotate');
-            if (rotateBtn) {
-                rotateBtn.setAttribute('aria-pressed', 'false');
-                rotateBtn.setAttribute('aria-disabled', 'true');
-            }
-            return;
-        }
-        state.autoRotate = !state.autoRotate;
-        if (state.controls) {
-            state.controls.autoRotate = state.autoRotate && !state.autoRotateSuspended;
-        }
-        const rotateBtn = document.getElementById('btn-rotate');
-        if (rotateBtn) {
-            rotateBtn.setAttribute('aria-pressed', String(state.controls?.autoRotate === true));
-            rotateBtn.removeAttribute('aria-disabled');
-        }
-    };
-
     // Expose btn-surprise handler
     // 10/10 Polish: Removed redundant legacy __handleSurpriseClick. Handled in event-bindings.js
 
@@ -2719,7 +2587,6 @@ if (typeof window !== 'undefined') {
     window.showSummaryCard = showSummaryCard;
     window.hideSummaryCard = hideSummaryCard;
     window.requestSemanticGuide = requestSemanticGuide;
-    window.focusOnNode = focusOnNode;
     window.focusOnPoint = focusOnPoint;
     window.resetNodePositions = resetNodePositions;
     window.syncSearchStatusForFocus = syncSearchStatusForFocus;

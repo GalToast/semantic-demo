@@ -29,8 +29,13 @@ import {
     scheduleSemanticLaneMonitor,
     updateTime,
     setMyceliumMode,
+    setTrailDepth,
     applyStoryPrompt,
     switchView,
+    updateUrlState,
+    resetExperienceState,
+    returnToOverview,
+    resetExplorationFocus,
     refreshCompositionState,
     clearClusterFilter
 } from './lifecycle.js';
@@ -73,6 +78,8 @@ window.__semanticSearchCacheProbe = searchModule.getSemanticSearchCacheDiagnosti
 
 // Explicitly attach camera helpers used by focus and control contracts
 window.animateCameraToNode = cameraModule.animateCameraToNode;
+window.focusOnNode = cameraModule.focusOnNode;
+window.toggleAutoRotate = cameraModule.toggleAutoRotate;
 window.setFocusTransitionMode = cameraModule.setFocusTransitionMode;
 window.clearRouteExploration = cameraModule.clearRouteExploration;
 window.setRouteExplorationState = cameraModule.setRouteExplorationState;
@@ -102,8 +109,13 @@ window.applyClusterUiAccent = applyClusterUiAccent;
 
 // Explicitly attach lifecycle functions
 window.setMyceliumMode = setMyceliumMode;
+window.setTrailDepth = setTrailDepth;
 window.applyStoryPrompt = applyStoryPrompt;
 window.switchView = switchView;
+window.updateUrlState = updateUrlState;
+window.resetExperienceState = resetExperienceState;
+window.returnToOverview = returnToOverview;
+window.resetExplorationFocus = resetExplorationFocus;
 window.getSceneRevealProgress = getSceneRevealProgress;
 window.refreshCompositionState = refreshCompositionState;
 window.clearClusterFilter = clearClusterFilter;

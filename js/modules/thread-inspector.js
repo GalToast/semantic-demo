@@ -5,6 +5,7 @@ import { state } from '../state.js';
 import { formatBusinessName, stripTerminalPunctuation, cleanOptionalValue, normalizeCityForFilter } from '../utils.js';
 import { normalizeLeadId } from './journey-thread-model.js';
 import { truncateMicrocopy } from './thread-inspector-text-helpers.js';
+import { focusOnNode } from './camera-controls.js';
 
 // === Internal helpers (deferred to main script via window) ===
 
@@ -36,10 +37,6 @@ function showExperienceToast(title, body) {
 
 function focusOnPoint(point, options) {
     if (typeof window.focusOnPoint === 'function') window.focusOnPoint(point, options);
-}
-
-function focusOnNode(index, options) {
-    if (typeof window.focusOnNode === 'function') window.focusOnNode(index, options);
 }
 
 function syncArrivalHandoffOverlay() {
