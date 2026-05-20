@@ -2,8 +2,63 @@
   "$schema": "./contracts.schema.json",
   "description": "Contract manifest for semantic-explorer QA. Groups allow targeted runs without discovering all *.mjs files.",
   "groups": {
+    "core": {
+      "description": "Core state and surface contracts - semantic-dive, search, lanes, state transitions, connection analysis.",
+      "contracts": [
+        "semantic-dive-ui-surface-contract.mjs",
+        "search-state-surface-contract.mjs",
+        "state-transition-contract.mjs",
+        "focus-semantic-state-boundary-contract.mjs",
+        "semantic-lane-contract.mjs",
+        "connection-analysis-contract.mjs",
+        "exploration-modes-contract.mjs"
+      ]
+    },
+    "navigation": {
+      "description": "Journey and wayfinding contracts - compass, thread-inspector, window surface, event bindings, trail review, pathfinding.",
+      "contracts": [
+        "journey-compass-state-contract.mjs",
+        "journey-thread-inspector-contract.mjs",
+        "journey-window-surface-contract.mjs",
+        "journey-event-bindings-contract.mjs",
+        "trail-review-focus-contract.mjs",
+        "pathfinding-contract.mjs"
+      ]
+    },
+    "scene": {
+      "description": "Scene atmosphere and visual polish - reveal, atmosphere, three.js polish, reduced-motion variants.",
+      "contracts": [
+        "scene-reveal-contract.mjs",
+        "scene-atmosphere-contract.mjs",
+        "three-visual-polish-contract.mjs",
+        "reduced-motion-transition-contract.mjs",
+        "reduced-motion-interruption-contract.mjs"
+      ]
+    },
+    "browser": {
+      "description": "Playwright-rendered contracts - all require browser launch, inherently slower (5-20s each).",
+      "contracts": [
+        "focus-stage-render-contract.mjs",
+        "info-panel-collapsed-render-contract.mjs",
+        "mode-chip-state-render-contract.mjs",
+        "weather-widget-render-contract.mjs",
+        "connection-analysis-render-state-contract.mjs",
+        "search-peek-expanded-render-contract.mjs"
+      ]
+    },
+    "render": {
+      "description": "Backward-compatible alias for browser-backed render contracts. Prefer the browser group for new scripts.",
+      "contracts": [
+        "focus-stage-render-contract.mjs",
+        "info-panel-collapsed-render-contract.mjs",
+        "mode-chip-state-render-contract.mjs",
+        "weather-widget-render-contract.mjs",
+        "connection-analysis-render-state-contract.mjs",
+        "search-peek-expanded-render-contract.mjs"
+      ]
+    },
     "smoke": {
-      "description": "Fast smoke checks — weather, loading, scene-reveal, motion settle. Sub-1s each.",
+      "description": "Fast smoke checks - weather, loading, scene-reveal, motion settle. Sub-1s each.",
       "contracts": [
         "weather-lifecycle-contract.mjs",
         "weather-surface-ownership-contract.mjs",
@@ -14,43 +69,33 @@
       ]
     },
     "mobile-critical": {
-      "description": "Mobile-critical surface and interaction contracts.",
+      "description": "Mobile-critical surface and interaction contracts - focused on touch/responsive UI surfaces.",
       "contracts": [
         "semantic-dive-ui-surface-contract.mjs",
         "search-state-surface-contract.mjs",
-        "journey-compass-state-contract.mjs",
-        "focus-semantic-state-boundary-contract.mjs",
         "focus-pocket-motion-contract.mjs",
         "focus-pocket-composition-contract.mjs",
-        "journey-event-bindings-contract.mjs",
-        "reset-callsite-routing-contract.mjs",
         "micro-demo-contract.mjs",
+        "demo-init-seam-contract.mjs",
+        "reset-callsite-routing-contract.mjs",
         "demo-camera-retirement-contract.mjs",
         "cluster-labels-contract.mjs",
-        "journey-thread-inspector-contract.mjs",
         "window-bridge-gaps-contract.mjs",
-        "loading-ui-contract.mjs",
-        "exploration-modes-contract.mjs",
-        "search-peek-expanded-render-contract.mjs",
-        "semantic-guide-payload-contract.mjs"
+        "loading-ui-contract.mjs"
       ]
     },
     "motion": {
-      "description": "Motion/animation contracts.",
+      "description": "Motion/animation system contracts - camera controls, focus pocket, motion state, semantic-dive reverse.",
       "contracts": [
         "camera-controls-motion-contract.mjs",
         "focus-pocket-motion-contract.mjs",
         "motion-state-contract.mjs",
-        "reduced-motion-transition-contract.mjs",
-        "reduced-motion-interruption-contract.mjs",
         "camera-auto-rotate-settle-contract.mjs",
-        "scene-reveal-contract.mjs",
-        "scene-atmosphere-contract.mjs",
-        "three-visual-polish-contract.mjs"
+        "semantic-dive-reverse-contract.mjs"
       ]
     },
     "lifecycle": {
-      "description": "Lifecycle and initialization contracts.",
+      "description": "Lifecycle and initialization contracts - composition, state sync, reset, demo, guide payload.",
       "contracts": [
         "lifecycle-composition-contract.mjs",
         "state-transition-contract.mjs",
@@ -61,18 +106,7 @@
         "demo-camera-retirement-contract.mjs",
         "demo-state-sync-contract.mjs",
         "weather-lifecycle-contract.mjs",
-        "journey-event-bindings-contract.mjs",
         "window-bridge-gaps-contract.mjs"
-      ]
-    },
-    "render": {
-      "description": "Browser-backed render contracts for focused UI surfaces.",
-      "contracts": [
-        "focus-stage-render-contract.mjs",
-        "info-panel-collapsed-render-contract.mjs",
-        "mode-chip-state-render-contract.mjs",
-        "weather-widget-render-contract.mjs",
-        "connection-analysis-render-state-contract.mjs"
       ]
     },
     "quality": {

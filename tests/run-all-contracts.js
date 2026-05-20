@@ -7,10 +7,16 @@
  *   node tests/run-all-contracts.js
  *
  * Group mode: --group=<name> reads from contracts.manifest.json
+ *   node tests/run-all-contracts.js --group=core
+ *   node tests/run-all-contracts.js --group=navigation
+ *   node tests/run-all-contracts.js --group=scene
  *   node tests/run-all-contracts.js --group=smoke
  *   node tests/run-all-contracts.js --group=motion
- *   node tests/run-all-contracts.js --group=mobile-critical
  *   node tests/run-all-contracts.js --group=lifecycle
+ *   node tests/run-all-contracts.js --group=browser
+ *   node tests/run-all-contracts.js --group=render
+ *   node tests/run-all-contracts.js --group=quality
+ *   node tests/run-all-contracts.js --group=mobile-critical
  *   node tests/run-all-contracts.js --group=full
  *
  * Validation self-test (no contracts executed):
