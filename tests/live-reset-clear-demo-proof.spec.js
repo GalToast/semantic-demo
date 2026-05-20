@@ -7,11 +7,20 @@ import { test, expect } from '@playwright/test';
  * Validates the real event path:
  *   keyboard(Escape) -> handleGlobalKeydown -> clearSearch + resetExplorationFocus
  *
+ * The spec runs the same reset paths across desktop, tablet, and mobile
+ * viewports because the search chrome and focus surfaces change responsively.
+ *
  * Run:
  *   npx playwright test tests/live-reset-clear-demo-proof.spec.js --browser=chromium --workers=1
  *   npm run qa:live-reset
  */
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
+
+const VIEWPORTS = [
+  { name: 'desktop', viewport: { width: 1440, height: 1000 }, isMobile: false, hasTouch: false },
+  { name: 'tablet', viewport: { width: 900, height: 1180 }, isMobile: false, hasTouch: true },
+  { name: 'mobile', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }
+];
 
 const SEMANTIC_HEALTH_STUB = {
   ok: true,
@@ -60,7 +69,13 @@ async function waitForResults(page, timeout = 15000) {
   }
 }
 
-test.describe('Live Interaction Proof: Escape key -> clearSearch + resetExplorationFocus', () => {
+for (const viewportProfile of VIEWPORTS) {
+test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorationFocus [${viewportProfile.name}]`, () => {
+  test.use({
+    viewport: viewportProfile.viewport,
+    isMobile: viewportProfile.isMobile,
+    hasTouch: viewportProfile.hasTouch
+  });
 
   test.beforeEach(async ({ page }) => {
     await setupMockSearch(page);
@@ -302,3 +317,4 @@ test.describe('Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     expect(timersAfter.searchTimeout, 'searchTimeout must be null after full Escape reset').toBeNull();
   });
 });
+}
