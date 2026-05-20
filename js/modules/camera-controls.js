@@ -9,6 +9,7 @@ import {
     easeOutQuint
 } from '../utils.js';
 import { refreshMapRouteEmbodiment } from './map-state.js';
+import { refreshCompositionState } from './lifecycle.js';
 
 // Constants
 
@@ -918,7 +919,7 @@ export function focusOnNode(index, options = {}) {
     if (typeof window.updateTraversalUi === 'function') window.updateTraversalUi();
     if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
     if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
-    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+    refreshCompositionState();
     if (!options.skipUrlSync && typeof window.updateUrlState === 'function') {
         window.updateUrlState({ record: point.lead_id || null }, { mode: options.historyMode || 'push', reason: 'focus' });
     }

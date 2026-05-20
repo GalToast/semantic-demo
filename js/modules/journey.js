@@ -36,6 +36,7 @@ import {
     setActiveSearchResultRow,
 } from './ui-renderers.js';
 import { focusOnNode } from './camera-controls.js';
+import { refreshCompositionState } from './lifecycle.js';
 
 export {
     normalizeLeadId,
@@ -1132,7 +1133,7 @@ export function syncFocusStage(point) {
         stage.classList.remove('active');
         stage.hidden = true;
         stage.setAttribute('aria-hidden', 'true');
-        if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+        refreshCompositionState();
         return;
     }
 
@@ -1145,7 +1146,7 @@ export function syncFocusStage(point) {
         stage.classList.remove('active');
         stage.hidden = true;
         stage.setAttribute('aria-hidden', 'true');
-        if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+        refreshCompositionState();
         return;
     }
 
@@ -1256,7 +1257,7 @@ export function syncFocusStage(point) {
         onboardingHint._dismissedThisSession = true;
         if (onboardingHint._autoHideTimer) clearTimeout(onboardingHint._autoHideTimer);
     }
-    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+    refreshCompositionState();
 }
 
 export function setTrailFromSeed(seedIndex) {
