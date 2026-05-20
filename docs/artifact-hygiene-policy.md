@@ -76,6 +76,15 @@ node scripts/report-artifact-volume.js --size-gate
 
 The size gate exits non-zero when any artifact directory exceeds 1 GB; it does not delete files.
 
+Use prune dry-run mode to enumerate stale `tmp/` subdirectories without deleting anything:
+
+```bash
+node scripts/report-artifact-volume.js --prune-dry-run
+node scripts/report-artifact-volume.js --prune-dry-run --dir semantic-ui-visual-audit --age 30 --size-min 10
+```
+
+`--dir` limits the scan to one `tmp/<dir>/` subtree, `--age` overrides the policy threshold in days, and `--size-min` hides candidates smaller than the given MB value. This mode is report-only; deletion is intentionally not implemented.
+
 ---
 
 ## Anti-patterns
