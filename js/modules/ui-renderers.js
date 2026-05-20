@@ -467,23 +467,3 @@ export function renderSelectedActionRow(point) {
         });
     }
 }
-
-// ─── GLOBAL API ─────────────────────────────────────────────────────────────
-
-if (typeof window !== 'undefined') {
-    window.buildSearchRankLabel = buildSearchRankLabel;
-    window.buildSearchStageLabel = buildSearchStageLabel;
-    window.buildSearchResultItemHtml = buildSearchResultItemHtml;
-    window.setActiveSearchResultRow = setActiveSearchResultRow;
-    window.refreshSearchResultHierarchy = refreshSearchResultHierarchy;
-    window.clearCompactSearchResultRevealTimers = clearCompactSearchResultRevealTimers;
-    window.scheduleCompactSearchResultReveal = scheduleCompactSearchResultReveal;
-    window.revealActiveSearchResultOnCompact = revealActiveSearchResultOnCompact;
-    
-    window.buildLegend = buildLegend;
-    window.renderSignalBadges = renderSignalBadges;
-    window.updateSelectedCardHeading = updateSelectedCardHeading;
-    window.renderSelectedMetaStrip = renderSelectedMetaStrip;
-    window.renderSelectedMatchPanel = renderSelectedMatchPanel;
-    window.renderSelectedActionRow = renderSelectedActionRow;
-}

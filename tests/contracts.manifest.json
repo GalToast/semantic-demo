@@ -1,0 +1,98 @@
+{
+  "$schema": "./contracts.schema.json",
+  "description": "Contract manifest for semantic-explorer QA. Groups allow targeted runs without discovering all *.mjs files.",
+  "groups": {
+    "smoke": {
+      "description": "Fast smoke checks — weather, loading, scene-reveal, motion settle. Sub-1s each.",
+      "contracts": [
+        "weather-lifecycle-contract.mjs",
+        "weather-surface-ownership-contract.mjs",
+        "camera-auto-rotate-settle-contract.mjs",
+        "scene-reveal-contract.mjs",
+        "loading-ui-contract.mjs",
+        "motion-state-contract.mjs"
+      ]
+    },
+    "mobile-critical": {
+      "description": "Mobile-critical surface and interaction contracts.",
+      "contracts": [
+        "semantic-dive-ui-surface-contract.mjs",
+        "search-state-surface-contract.mjs",
+        "journey-compass-state-contract.mjs",
+        "focus-pocket-motion-contract.mjs",
+        "focus-pocket-composition-contract.mjs",
+        "journey-event-bindings-contract.mjs",
+        "micro-demo-contract.mjs",
+        "demo-camera-retirement-contract.mjs",
+        "cluster-labels-contract.mjs",
+        "journey-thread-inspector-contract.mjs",
+        "window-bridge-gaps-contract.mjs",
+        "loading-ui-contract.mjs",
+        "exploration-modes-contract.mjs",
+        "search-peek-expanded-render-contract.mjs"
+      ]
+    },
+    "motion": {
+      "description": "Motion/animation contracts.",
+      "contracts": [
+        "camera-controls-motion-contract.mjs",
+        "focus-pocket-motion-contract.mjs",
+        "motion-state-contract.mjs",
+        "camera-auto-rotate-settle-contract.mjs",
+        "scene-reveal-contract.mjs",
+        "scene-atmosphere-contract.mjs",
+        "three-visual-polish-contract.mjs"
+      ]
+    },
+    "lifecycle": {
+      "description": "Lifecycle and initialization contracts.",
+      "contracts": [
+        "lifecycle-composition-contract.mjs",
+        "demo-init-seam-contract.mjs",
+        "demo-camera-retirement-contract.mjs",
+        "demo-state-sync-contract.mjs",
+        "weather-lifecycle-contract.mjs",
+        "journey-event-bindings-contract.mjs",
+        "window-bridge-gaps-contract.mjs"
+      ]
+    },
+    "full": {
+      "description": "All 33 ordered contracts - same as default npm run test:contract.",
+      "contracts": [
+        "semantic-dive-ui-surface-contract.mjs",
+        "search-state-surface-contract.mjs",
+        "lifecycle-composition-contract.mjs",
+        "journey-compass-state-contract.mjs",
+        "semantic-lane-contract.mjs",
+        "connection-analysis-contract.mjs",
+        "camera-controls-motion-contract.mjs",
+        "focus-pocket-motion-contract.mjs",
+        "focus-pocket-composition-contract.mjs",
+        "journey-event-bindings-contract.mjs",
+        "micro-demo-contract.mjs",
+        "demo-init-seam-contract.mjs",
+        "demo-camera-retirement-contract.mjs",
+        "cluster-labels-contract.mjs",
+        "journey-thread-inspector-contract.mjs",
+        "trail-review-focus-contract.mjs",
+        "share-view-clipboard-contract.mjs",
+        "keyboard-help-aria-contract.mjs",
+        "pathfinding-contract.mjs",
+        "weather-lifecycle-contract.mjs",
+        "weather-surface-ownership-contract.mjs",
+        "camera-auto-rotate-settle-contract.mjs",
+        "semantic-dive-reverse-contract.mjs",
+        "journey-window-surface-contract.mjs",
+        "window-bridge-gaps-contract.mjs",
+        "loading-ui-contract.mjs",
+        "exploration-modes-contract.mjs",
+        "scene-reveal-contract.mjs",
+        "scene-atmosphere-contract.mjs",
+        "motion-state-contract.mjs",
+        "demo-state-sync-contract.mjs",
+        "three-visual-polish-contract.mjs",
+        "search-peek-expanded-render-contract.mjs"
+      ]
+    }
+  }
+}

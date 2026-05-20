@@ -48,7 +48,11 @@ function sourceFiles() {
         ...fs.readdirSync(ROOT)
             .filter((entry) => entry.endsWith('.html'))
             .map((entry) => path.join(ROOT, entry)),
-    ].filter((file) => path.relative(ROOT, file) !== path.join('tests', 'demo-camera-retirement-contract.mjs'));
+    ].filter((file) => {
+        const rel = path.relative(ROOT, file);
+        return rel !== path.join('tests', 'demo-camera-retirement-contract.mjs')
+            && rel !== path.join('tests', 'run-all-contracts.js');
+    });
 }
 
 console.log('\n  demo-camera.js retirement contract');

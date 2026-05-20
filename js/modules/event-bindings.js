@@ -1,5 +1,6 @@
 import { state } from '../state.js';
 import { isCompactFocusStageViewport } from '../utils.js';
+import { syncFilterControls } from './lifecycle.js';
 
 function bindClick(id, handler, options = {}) {
     const element = document.getElementById(id);
@@ -46,7 +47,7 @@ function bindFocusControls() {
 
     bindClick('btn-focus-prev', () => window.traverseNeighbor(-1));
     bindClick('btn-focus-next', () => window.traverseNeighbor(1));
-    bindClick('btn-focus-overview', window.resetNodePositions);
+    bindClick('btn-focus-overview', () => { if (typeof window.resetExplorationFocus === 'function') window.resetExplorationFocus(); });
     bindClick('btn-focus-center', () => window.recenterFocusedNode());
     bindClick('btn-focus-expand', window.expandNeighborhoodFromCurrentNode);
     bindClick('btn-focus-dive', () => window.setSemanticDiveMode(!state.semanticDiveMode));
@@ -376,7 +377,7 @@ function bindFilterControls() {
     const handleFilter = (filterFn, updateReason) => {
         state.activeStoryPrompt = null;
         state.filterVersion++;
-        if (typeof window.syncFilterControls === 'function') window.syncFilterControls();
+        if (typeof syncFilterControls === 'function') syncFilterControls();
         if (typeof window.clearSearchGlow === 'function') window.clearSearchGlow();
         clearTimeout(state.searchTimeout);
         state.searchTimeout = setTimeout(() => {
@@ -643,7 +644,7 @@ function bindUtilityButtons() {
     bindClick('btn-synthesize', window.requestSemanticGuide);
     bindClick('btn-prev-node', () => { if (typeof window.traverseNeighbor === 'function') window.traverseNeighbor(-1); });
     bindClick('btn-next-node', () => { if (typeof window.traverseNeighbor === 'function') window.traverseNeighbor(1); });
-    bindClick('btn-overview', () => { if (typeof window.resetNodePositions === 'function') window.resetNodePositions(); }, { optional: true });
+    bindClick('btn-overview', () => { if (typeof window.resetExplorationFocus === 'function') window.resetExplorationFocus(); }, { optional: true });
 }
 
 let _onboardingIdleTimer = null;

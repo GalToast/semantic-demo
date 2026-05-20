@@ -18,6 +18,8 @@ import {
 } from './semantic-search-api-cache.js';
 export { getSemanticSearchCacheDiagnostics };
 import { animateCameraToSearchCorridor } from './camera-controls.js';
+import { updateClusterList } from './cluster-filter.js';
+import { buildLegend } from './ui-renderers.js';
 
 import {
     buildSearchRankLabel,
@@ -492,13 +494,13 @@ export function applyFilters() {
     if (totalCountEl) totalCountEl.textContent = filteredCount.toLocaleString();
     if (cityCountEl) cityCountEl.textContent = filteredCities.size.toLocaleString();
 
-    if (typeof window.updateClusterList === 'function') window.updateClusterList();
-    
+    if (typeof updateClusterList === 'function') updateClusterList();
+
     document.querySelectorAll('.cluster-item').forEach((el) => {
         el.classList.toggle('active', state.activeClusterFilter !== null && Number(el.dataset.cluster) === state.activeClusterFilter);
     });
 
-    if (typeof window.buildLegend === 'function') window.buildLegend();
+    if (typeof buildLegend === 'function') buildLegend();
     updateSearchStatusMessage(filteredCount);
     if (typeof window.refreshMapMarkers === 'function') window.refreshMapMarkers();
 

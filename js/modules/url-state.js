@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS } from './lifecycle.js';
+import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, syncFilterControls, applyFilters, updateExplorationUi } from './lifecycle.js';
 import { isPointVisible, formatBusinessName, escapeHtml } from '../utils.js';
 
 // === URL State ===
@@ -112,7 +112,7 @@ export async function applyUrlState(options = {}) {
             }
         }
 
-        if (typeof window.syncFilterControls === 'function') window.syncFilterControls();
+        if (typeof syncFilterControls === 'function') syncFilterControls();
         if (typeof window.applyFilters === 'function') window.applyFilters();
         if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
 

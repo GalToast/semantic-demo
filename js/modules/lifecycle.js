@@ -16,6 +16,7 @@ import {
 import { initEventListeners as initSemanticDemoEventListeners } from './event-bindings.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 import { showSemanticThreadsDetail } from './connection-analysis.js';
+import { setActiveSearchResultRow, updateSelectedCardHeading } from './ui-renderers.js';
 
 import {
     setLoadingPhase,
@@ -164,7 +165,7 @@ export function syncFilterControls() {
 
     const citySelect = document.getElementById('city-filter');
     if (citySelect) citySelect.value = state.activeFilters.city || 'all';
-    if (typeof window.syncCityFilterUi === 'function') window.syncCityFilterUi();
+    if (typeof syncCityFilterUi === 'function') syncCityFilterUi();
 
     // Update the collapsed Filters section preview badge
     const preview = document.getElementById('filter-preview');
@@ -495,7 +496,7 @@ export function applyStoryPrompt(story, options = {}) {
         setMyceliumMode('default', { keepStoryPrompt: true, skipUrlSync: true });
     }
 
-    if (typeof window.syncFilterControls === 'function') window.syncFilterControls();
+    if (typeof syncFilterControls === 'function') syncFilterControls();
     if (typeof window.clearSearchGlow === 'function') window.clearSearchGlow();
     if (typeof window.applyFilters === 'function') window.applyFilters();
     if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
@@ -658,6 +659,42 @@ export function resetExperienceState() {
     showExperienceToast('Scene restored', 'Search, connection path, filters, and map handoff cleared.');
 }
 
+/**
+ * Official exploration-focus reset: clears focusedNode, trail depth, mycelium mode,
+ * and focus-stage while preserving the current search so the user retains context.
+ * Use this when returning to overview without a full scene wipe.
+ */
+export function resetExplorationFocus() {
+    // Reset mycelium mode and trail depth first — this also clears trailIndices
+    // and resets navState.mode to 'overview'
+    setMyceliumMode('default', { skipUrlSync: true });
+
+    // Clear node focus state while preserving search
+    resetNodePositions({ preserveSearch: true });
+
+    // Ensure focus stage DOM element is hidden
+    if (typeof window.syncFocusStage === 'function') {
+        window.syncFocusStage(null);
+    }
+
+    // Sync UI state to reflect the reset
+    if (typeof window.refreshCompositionState === 'function') {
+        window.refreshCompositionState();
+    }
+    if (typeof window.updateExplorationUi === 'function') {
+        window.updateExplorationUi();
+    }
+}
+
+/**
+ * Official full-reset API. Clears search, filters, focus, and trail state,
+ * and returns the scene to galaxy overview.
+ * Alias for the existing resetExperienceState() — preserves backward compat.
+ */
+export function returnToOverview() {
+    resetExperienceState();
+}
+
 export function resetStateBeforeUrlRestore(options = {}) {
     if (state.searchTimeout) {
         window.clearTimeout(state.searchTimeout);
@@ -701,7 +738,7 @@ export function resetStateBeforeUrlRestore(options = {}) {
     if (typeof window.clearSearchGlow === 'function') window.clearSearchGlow();
     if (typeof window.updateSearchTrailCue === 'function') window.updateSearchTrailCue({ beat: 'idle' });
     document.querySelectorAll('.cluster-item').forEach((el) => el.classList.remove('active'));
-    if (typeof window.syncFilterControls === 'function') window.syncFilterControls();
+    if (typeof syncFilterControls === 'function') syncFilterControls();
     if (state.pointsMesh && state.originalPositions?.length) {
         if (typeof window.resetNodePositions === 'function') window.resetNodePositions({ skipUrlSync: true });
     } else {
@@ -877,7 +914,11 @@ export function executeJourneyCompassAction(action) {
                 if (typeof window.clearShortSemanticSearchState === 'function') window.clearShortSemanticSearchState();
             }
 
-            if (typeof window.resetNodePositions === 'function') window.resetNodePositions();
+            if (typeof window.resetExplorationFocus === 'function') {
+                window.resetExplorationFocus();
+            } else if (typeof window.resetNodePositions === 'function') {
+                window.resetNodePositions();
+            }
             return;
         default:
             return;
@@ -1050,7 +1091,7 @@ export function refreshCompositionState() {
         });
         document.body.dataset.panelSurfaceDetail = 'none';
         if (typeof window.syncRouteDirectorState === 'function') window.syncRouteDirectorState('composition-map');
-        if (typeof window.updateSelectedCardHeading === 'function') window.updateSelectedCardHeading();
+        if (typeof updateSelectedCardHeading === 'function') updateSelectedCardHeading();
         if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
         if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
         if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
@@ -1091,7 +1132,7 @@ export function refreshCompositionState() {
         window.clearMobileRouteFieldPeek();
     }
     if (typeof window.syncRouteDirectorState === 'function') window.syncRouteDirectorState('composition-galaxy');
-    if (typeof window.updateSelectedCardHeading === 'function') window.updateSelectedCardHeading();
+    if (typeof updateSelectedCardHeading === 'function') updateSelectedCardHeading();
     if (typeof window.updateLegendGuideState === 'function') window.updateLegendGuideState();
     if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
     if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
@@ -1521,8 +1562,8 @@ export function syncSearchStatusForFocus(point, options = {}) {
     const resultsEl = document.getElementById('search-results');
     if (!statusEl || !point || !state.currentSearchSummary) return;
     if (!resultsEl?.classList.contains('active')) return;
-    if (typeof window.setActiveSearchResultRow === 'function') {
-        window.setActiveSearchResultRow(
+    if (typeof setActiveSearchResultRow === 'function') {
+        setActiveSearchResultRow(
             resultsEl,
             options.fromTraversal ? state.navState.focusedIndex : state.currentSearchSummary.anchorIndex
         );
@@ -2497,17 +2538,13 @@ if (typeof window !== 'undefined') {
     window.scheduleSemanticLaneMonitor = scheduleSemanticLaneMonitor;
     window.onWindowResize = onWindowResize;
 
-    // Extracted functions
-    window.syncFilterControls = syncFilterControls;
-    window.updateClusterList = updateClusterList;
+    // Extracted functions (de-windowed: use named imports instead)
     window.syncClusterSectionState = function () {
         const clusterSection = document.getElementById('cluster-section');
         if (clusterSection && window.innerWidth <= 768) {
             clusterSection.open = false;
         }
     };
-    window.populateCityFilter = populateCityFilter;
-    window.syncCityFilterUi = syncCityFilterUi;
     window.updateExplorationUi = updateExplorationUi;
     window.setMyceliumMode = setMyceliumMode;
     window.setTrailDepth = setTrailDepth;
@@ -2515,6 +2552,8 @@ if (typeof window !== 'undefined') {
     window.updateUrlState = updateUrlState;
     window.copyCurrentViewLink = copyCurrentViewLink;
     window.resetExperienceState = resetExperienceState;
+    window.returnToOverview = returnToOverview;
+    window.resetExplorationFocus = resetExplorationFocus;
     window.resetStateBeforeUrlRestore = resetStateBeforeUrlRestore;
     window.switchView = switchView;
     window.refreshCompositionState = refreshCompositionState;

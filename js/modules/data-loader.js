@@ -1,4 +1,7 @@
 import { state } from '../state.js'
+import { updateClusterList } from './cluster-filter.js';
+import { populateCityFilter } from './lifecycle.js';
+import { buildLegend } from './ui-renderers.js';
 
 export async function loadData() {
     let raw
@@ -68,9 +71,9 @@ export async function loadData() {
     if (totalCountEl) totalCountEl.textContent = state.points.length.toLocaleString()
 
     try {
-        if (typeof window.updateClusterList === 'function') window.updateClusterList()
-        if (typeof window.buildLegend === 'function') window.buildLegend()
-        if (typeof window.populateCityFilter === 'function') window.populateCityFilter()
+        if (typeof updateClusterList === 'function') updateClusterList()
+        if (typeof buildLegend === 'function') buildLegend()
+        if (typeof populateCityFilter === 'function') populateCityFilter()
         if (typeof window.applyFilters === 'function') window.applyFilters()
     } catch (err) {
         console.warn('Post-load UI refresh failed:', err)

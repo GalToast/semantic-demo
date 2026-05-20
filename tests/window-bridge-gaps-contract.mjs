@@ -9,7 +9,7 @@
  * Gap 2  — syncClusterSectionState: resolved (lifecycle.js window shim)
  * Gap 3a — hydrateLeadContext:   resolved (lifecycle.js window shim)
  * Gap 3b — applySearchGlowVisualState: resolved via alternate call in journey.js
- * Gap 4  — updateSelectedCardHeading: resolved in ui-renderers.js
+ * Gap 4  — updateSelectedCardHeading: resolved via direct module imports
  *
  * Source-only — no DOM, no Playwright.
  * Runs in Node.
@@ -180,13 +180,13 @@ function testGap3b_applySearchGlowVisualState() {
 }
 
 // ---------------------------------------------------------------------------
-// GAP 4 — updateSelectedCardHeading: resolved in ui-renderers.js
+// GAP 4 — updateSelectedCardHeading: resolved via direct module imports.
 // Called from lifecycle.js and journey.js to keep selected-card chrome honest
-// across map, focus, and search-result transitions.
+// across map, focus, and search-result transitions without a window bridge.
 // ---------------------------------------------------------------------------
 
 function testGap4_updateSelectedCardHeading() {
-  console.log('\n[TEST] Gap 4 — updateSelectedCardHeading (RESOLVED in ui-renderers.js)');
+  console.log('\n[TEST] Gap 4 — updateSelectedCardHeading (RESOLVED via direct imports)');
 
   const uiRendererSrc = fs.readFileSync(UI_RENDERERS_PATH, 'utf-8');
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
@@ -196,7 +196,14 @@ function testGap4_updateSelectedCardHeading() {
     /export\s+function\s+updateSelectedCardHeading\s*\(/.test(uiRendererSrc),
     'ui-renderers.js must export updateSelectedCardHeading'
   );
-  assertHasAssignment(uiRendererSrc, 'updateSelectedCardHeading', 'ui-renderers.js', 'Gap 4');
+  assert(
+    /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(lifecycleSrc),
+    'lifecycle.js must import updateSelectedCardHeading from ui-renderers.js'
+  );
+  assert(
+    /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(journeySrc),
+    'journey.js must import updateSelectedCardHeading from ui-renderers.js'
+  );
   assert(
     /selected-card-title/.test(uiRendererSrc),
     'updateSelectedCardHeading must target #selected-card-title'
@@ -204,7 +211,7 @@ function testGap4_updateSelectedCardHeading() {
   assertNoDeadCall(lifecycleSrc, 'updateSelectedCardHeading', 'lifecycle.js', 'Gap 4');
   assertNoDeadCall(journeySrc, 'updateSelectedCardHeading', 'journey.js', 'Gap 4');
 
-  console.log('  OK — updateSelectedCardHeading: RESOLVED');
+  console.log('  OK — updateSelectedCardHeading: RESOLVED via direct imports');
 }
 
 // ---------------------------------------------------------------------------

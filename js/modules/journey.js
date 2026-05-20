@@ -27,6 +27,14 @@ import {
     getThreadCandidatesForIndex
 } from './journey-thread-model.js';
 import { truncateMicrocopy, getSharedTrailTopicLabel } from './journey-text-helpers.js';
+import {
+    renderSignalBadges,
+    updateSelectedCardHeading,
+    renderSelectedMetaStrip,
+    renderSelectedMatchPanel,
+    renderSelectedActionRow,
+    setActiveSearchResultRow,
+} from './ui-renderers.js';
 
 export {
     normalizeLeadId,
@@ -1161,8 +1169,8 @@ export function syncFocusStage(point) {
     if (whatEl) whatEl.textContent = sanitizePublicFacingNote(effectivePoint.what) || 'Montgomery County business record';
     
     // 10/10 Polish: Signal badges for focus stage
-    if (badgesEl && typeof window.renderSignalBadges === 'function') {
-        badgesEl.innerHTML = window.renderSignalBadges(effectivePoint);
+    if (badgesEl && typeof renderSignalBadges === 'function') {
+        badgesEl.innerHTML = renderSignalBadges(effectivePoint);
         // Ensure badges container is visible when it has content
         badgesEl.style.display = badgesEl.innerHTML ? '' : 'none';
     }
@@ -1286,7 +1294,7 @@ export function updateSelectedBusiness(point, options = {}) {
     const cardEl = document.getElementById('selected-card');
     if (!emptyEl || !detailsEl) return;
 
-    if (typeof window.updateSelectedCardHeading === 'function') window.updateSelectedCardHeading(point || null);
+    if (typeof updateSelectedCardHeading === 'function') updateSelectedCardHeading(point || null);
 
     if (!point) {
         if (cardEl) cardEl.style.opacity = '0';
@@ -1299,9 +1307,9 @@ export function updateSelectedBusiness(point, options = {}) {
         }, 180);
         if (cardEl && typeof window.applyClusterUiAccent === 'function') window.applyClusterUiAccent(cardEl, null);
         if (cardEl) cardEl.classList.add('is-empty');
-        if (typeof window.renderSelectedMetaStrip === 'function') window.renderSelectedMetaStrip(null);
-        if (typeof window.renderSelectedMatchPanel === 'function') window.renderSelectedMatchPanel(null);
-        if (typeof window.renderSelectedActionRow === 'function') window.renderSelectedActionRow(null);
+        if (typeof renderSelectedMetaStrip === 'function') renderSelectedMetaStrip(null);
+        if (typeof renderSelectedMatchPanel === 'function') renderSelectedMatchPanel(null);
+        if (typeof renderSelectedActionRow === 'function') renderSelectedActionRow(null);
         const roleEl = document.getElementById('selected-role-badge');
         if (roleEl) roleEl.textContent = COPY.selectedEmptyRole;
         const nameEl = document.getElementById('selected-name');
@@ -1408,13 +1416,13 @@ export function updateSelectedBusiness(point, options = {}) {
     }
     const whatEl = document.getElementById('selected-what');
     if (whatEl) whatEl.textContent = sanitizePublicFacingNote(point.what) || 'Montgomery County business record';
-    if (typeof window.renderSignalBadges === 'function') {
+    if (typeof renderSignalBadges === 'function') {
         const badgesEl = document.getElementById('selected-badges');
-        if (badgesEl) badgesEl.innerHTML = window.renderSignalBadges(point);
+        if (badgesEl) badgesEl.innerHTML = renderSignalBadges(point);
     }
-    if (typeof window.renderSelectedMetaStrip === 'function') window.renderSelectedMetaStrip(point);
-    if (typeof window.renderSelectedMatchPanel === 'function') window.renderSelectedMatchPanel(point);
-    if (typeof window.renderSelectedActionRow === 'function') window.renderSelectedActionRow(point);
+    if (typeof renderSelectedMetaStrip === 'function') renderSelectedMetaStrip(point);
+    if (typeof renderSelectedMatchPanel === 'function') renderSelectedMatchPanel(point);
+    if (typeof renderSelectedActionRow === 'function') renderSelectedActionRow(point);
 
     const factsEl = document.getElementById('selected-facts');
     const themeEl = document.getElementById('selected-theme');

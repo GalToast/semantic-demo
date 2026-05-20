@@ -300,13 +300,13 @@ await test('setMyceliumMode source calls window.updateUrlState with reason: \'mo
   assert(hasUrlSync, 'setMyceliumMode calls updateUrlState with reason: mode');
 });
 
-// Contract 11: applyStoryPrompt calls window.syncFilterControls and window.applyFilters
-await test('applyStoryPrompt source calls window.syncFilterControls and window.applyFilters', async () => {
+// Contract 11: applyStoryPrompt refreshes filter controls and reapplies filters
+await test('applyStoryPrompt source refreshes filters after story prompt changes', async () => {
   const { readFileSync } = await import('node:fs');
   const src = readFileSync('js/modules/lifecycle.js', 'utf8');
-  const hasSyncFilters = /window\.syncFilterControls\s*\(/.test(src);
+  const hasSyncFilters = /syncFilterControls\s*\(/.test(src);
   const hasApplyFilters = /window\.applyFilters\s*\(/.test(src);
-  assert(hasSyncFilters, 'applyStoryPrompt calls window.syncFilterControls');
+  assert(hasSyncFilters, 'applyStoryPrompt calls syncFilterControls');
   assert(hasApplyFilters, 'applyStoryPrompt calls window.applyFilters');
 });
 
