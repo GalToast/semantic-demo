@@ -61,6 +61,7 @@
     "qa:semantic-guide-fallback": "npx playwright test tests/semantic-guide-fallback-contract.spec.js --browser=chromium",
     "qa:live-reset": "npx playwright test tests/live-reset-clear-demo-proof.spec.js --browser=chromium --workers=1",
     "qa:search-peek": "node tests/search-peek-expanded-render-contract.mjs",
+    "report:artifacts": "node scripts/report-artifact-volume.js",
     "refresh:cache": "node tests/cache-buster-check.js --fix",
     "build": "esbuild js/modules/app.js --bundle --minify --keep-names --outfile=dist/bundle.js --target=es2020 --format=esm --external:three --external:three/*",
     "watch": "esbuild js/modules/app.js --bundle --outfile=dist/bundle.js --watch --target=es2020 --format=esm --external:three --external:three/*",
