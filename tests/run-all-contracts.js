@@ -46,6 +46,7 @@ const PINNED_FILES = [
   'search-state-surface-contract.mjs',
   'lifecycle-composition-contract.mjs',
   'state-transition-contract.mjs',
+  'step-inside-state-sync-contract.mjs',
   'focus-semantic-state-boundary-contract.mjs',
   'journey-compass-state-contract.mjs',
   'semantic-lane-contract.mjs',

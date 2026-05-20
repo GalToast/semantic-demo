@@ -99,6 +99,7 @@
       "contracts": [
         "lifecycle-composition-contract.mjs",
         "state-transition-contract.mjs",
+        "step-inside-state-sync-contract.mjs",
         "focus-semantic-state-boundary-contract.mjs",
         "demo-init-seam-contract.mjs",
         "reset-callsite-routing-contract.mjs",
@@ -125,6 +126,7 @@
         "search-state-surface-contract.mjs",
         "lifecycle-composition-contract.mjs",
         "state-transition-contract.mjs",
+        "step-inside-state-sync-contract.mjs",
         "focus-semantic-state-boundary-contract.mjs",
         "journey-compass-state-contract.mjs",
         "semantic-lane-contract.mjs",

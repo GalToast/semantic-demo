@@ -60,6 +60,7 @@
     "qa:ui-renderers-seam": "npx playwright test tests/ui-renderers-validation.spec.js --browser=chromium",
     "qa:semantic-guide-fallback": "npx playwright test tests/semantic-guide-fallback-contract.spec.js --browser=chromium",
     "qa:live-reset": "npx playwright test tests/live-reset-clear-demo-proof.spec.js --browser=chromium --workers=1",
+    "qa:live-step-inside": "npx playwright test tests/live-step-inside-url-body-state-sync.spec.js --browser=chromium --workers=1",
     "qa:search-peek": "node tests/search-peek-expanded-render-contract.mjs",
     "report:artifacts": "node scripts/report-artifact-volume.js",
     "refresh:cache": "node tests/cache-buster-check.js --fix",
