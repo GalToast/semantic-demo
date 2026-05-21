@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { BASE_URL, SEMANTIC_HEALTH_STUB, setupMockSearch, openApp, probe, isValidNodeIndex, projectedCanvasCandidates } from './helpers/3d-interaction-helpers.js';
+import { BASE_URL, SEMANTIC_HEALTH_STUB, setupMockSearch, openApp, probe, isValidNodeIndex, projectedCandidates } from './helpers/3d-interaction-helpers.js';
 
 function cameraDistance(position) {
   return Math.hypot(position.x, position.y, position.z);
 }
 
 async function findClickableNode(page) {
-  const candidates = await projectedCanvasCandidates(page);
+  const candidates = await projectedCandidates(page, { marginRatio: 0.06, maxResults: 24 });
   for (const candidate of candidates) {
     await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 });
     await page.waitForTimeout(80);
