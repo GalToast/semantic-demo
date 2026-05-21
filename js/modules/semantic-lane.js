@@ -83,6 +83,7 @@ function sanitizeProvenanceLabel(raw) {
     if (lower.includes('lane:') || lower.includes('semantic lane:') || lower.includes('ops:') ||
         lower.includes('probing') || lower.includes('cold') || lower.includes('warm') ||
         lower.includes('thread') || lower.includes('embed') ||
+        lower.includes('static') || lower.includes('dev mode') ||
         lower.includes('semanticlaneops') || lower.includes('semantic_lane_ops')) {
         return null;
     }

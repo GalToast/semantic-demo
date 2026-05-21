@@ -291,11 +291,6 @@
         text-overflow: ellipsis;
     }
 
-    html body[data-panel-surface="semantic-dive"] .focus-stage-inside-controls {
-        margin-top: 6px;
-        gap: 6px;
-    }
-
     html body[data-panel-surface="semantic-dive"] .focus-stage-inside-btn {
         min-height: 44px;
         border-radius: 11px;

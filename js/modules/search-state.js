@@ -454,6 +454,41 @@ export function updateSearchTrailCue(nextCue = {}) {
     state.searchTrailCueLastRenderedAt = performance.now();
 }
 
+/**
+ * Clears focus/search-selection state invalidated when the selected point
+ * is no longer visible under the active filters.  All direct writes to
+ * selectedPoint, focusedNode, navState fields, and trailIndices live here so
+ * the ownership is auditable.
+ *
+ * @param {object} [context]
+ * @param {string} [context.reason] - Human-readable cause (e.g. 'filter-hide')
+ * @returns {{ reason: string, hadSelectedPoint: boolean, hadFocusedNode: boolean, hadTrail: boolean }}
+ */
+export function clearSearchRelatedFocusState(context = {}) {
+    const hadSelectedPoint = state.selectedPoint !== null;
+    const hadFocusedNode   = state.focusedNode !== null;
+    const hadTrail         = state.trailIndices.size > 0 || state.navState.trailDepth > 0;
+
+    state.selectedPoint = null;
+    state.focusedNode    = null;
+
+    state.navState.mode                      = 'overview';
+    state.navState.focusedIndex              = null;
+    state.navState.trailSeedIndex            = null;
+    state.navState.trailNeighborIndices      = [];
+    state.navState.trailCursor               = -1;
+    state.navState.explorationHistoryIndices = [];
+    state.navState.lastTraversalReason       = null;
+    state.trailIndices.clear();
+
+    return {
+        reason:             context.reason ?? 'filter-invalidate',
+        hadSelectedPoint,
+        hadFocusedNode,
+        hadTrail,
+    };
+}
+
 // === Filtering ===
 
 export function normalizeCityForFilter(city) {
@@ -509,17 +544,8 @@ export function applyFilters() {
         const selectedIndex = state.points.indexOf(state.selectedPoint);
         if (selectedIndex >= 0 && !isPointVisible(selectedIndex, state.points, state.activeClusterFilter, state.activeFilters)) {
             if (typeof window.updateSelectedBusiness === 'function') window.updateSelectedBusiness(null);
-            state.selectedPoint = null;
-            state.focusedNode = null;
+            clearSearchRelatedFocusState({ reason: 'filter-hide' });
             if (typeof window.syncMobileRoutePeek === 'function') window.syncMobileRoutePeek();
-            state.navState.mode = 'overview';
-            state.navState.focusedIndex = null;
-            state.navState.trailSeedIndex = null;
-            state.navState.trailNeighborIndices = [];
-            state.navState.trailCursor = -1;
-            state.navState.explorationHistoryIndices = [];
-            state.navState.lastTraversalReason = null;
-            state.trailIndices.clear();
         }
     }
 

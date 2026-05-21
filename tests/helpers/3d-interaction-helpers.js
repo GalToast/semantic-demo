@@ -189,12 +189,15 @@ export async function projectedCandidates(page, { marginRatio = 0.08, maxResults
     const { state } = window;
     const canvas = state?.renderer?.domElement;
     if (!canvas || !state?.camera || !state?.pointsMesh || !Array.isArray(state.nodePositions)) return [];
-    // Bail early if WebGL context is lost — avoids GPU readback stall from
+    // Bail early if WebGL context is lost; avoids GPU readback stall from
     // hanging the evaluate call in headless Chrome at short-landscape viewports.
     const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
     if (!gl || gl.isContextLost()) return [];
     const rect = canvas.getBoundingClientRect();
-    const margin = Math.max(34, Math.min(rect.width, rect.height) * mr);
+    // Scale the minimum margin with the viewport so short-landscape canvases
+    // are not over-constrained by the old fixed 34px floor.
+    const minMarginPx = Math.max(16, Math.min(rect.width, rect.height) * 0.04);
+    const margin = Math.max(minMarginPx, Math.min(rect.width, rect.height) * mr);
     const step = Math.max(1, Math.floor(state.nodePositions.length / 140));
     const candidates = [];
     const centerX = rect.left + rect.width / 2;
@@ -226,22 +229,25 @@ export async function projectedCandidates(page, { marginRatio = 0.08, maxResults
         centerDistance: Math.hypot(screenX - centerX, screenY - centerY)
       });
     }
+    // Re-check context loss before returning; it can be lost mid-iteration.
+    if (gl.isContextLost()) return [];
     return candidates
       .sort((a, b) => a.centerDistance - b.centerDistance)
       .slice(0, max);
   }, { marginRatio, maxResults });
 }
 
-export async function projectedCanvasCandidates(page) {
+export async function projectedCanvasCandidates(page, { maxResultsOverride = 8 } = {}) {
   // Short landscape (844x390) exposes GPU ReadPixels stalls in headless Chrome.
-  // Reduce maxResults from 14 to 8 to shrink the candidate-probing loop's
-  // exposure window to the stall before a valid candidate is found.
-  return projectedCandidates(page, { marginRatio: 0.08, maxResults: 8 });
+  // Reduce maxResults to shrink the candidate-probing loop's exposure window
+  // to the stall before a valid candidate is found. Override via parameter
+  // for tests that need more candidates on larger viewports.
+  return projectedCandidates(page, { marginRatio: 0.08, maxResults: maxResultsOverride });
 }
 
 /**
  * Probe focus pocket state: pocket indices, screen reachability, role assignment.
- * Independent of any particular spec's probe() — exposes the full pocket contract.
+ * Independent of any particular spec's probe(); exposes the full pocket contract.
  */
 export async function probeFocusPocket(page) {
   return page.evaluate(() => {

@@ -47,11 +47,12 @@ includesAll(threeSetup, [
     'semanticEdges ? 0.32 : 0.24'
 ], 'mycelium semantic/color fade coefficients');
 
+// Thread contrast contract: raised opacities for legibility.
 includesAll(threeSetup, [
-    'return { core: 0.07, wispy: 0.026, bridge: 0.045, pulse: 0.018 };',
-    'return { core: 0.28, wispy: 0.11, bridge: 0.18, pulse: 0.075 };',
-    'return { core: 0.22, wispy: 0.085, bridge: 0.14, pulse: 0.055 };',
-    'return { core: 0.12, wispy: 0.045, bridge: 0.075, pulse: 0.03 };'
+    'return { core: 0.13, wispy: 0.055, bridge: 0.08, pulse: 0.028 };',
+    'return { core: 0.40, wispy: 0.18, bridge: 0.28, pulse: 0.092 };',
+    'return { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 };',
+    'return { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 };'
 ], 'mycelium presentation opacity profile');
 
 assert(

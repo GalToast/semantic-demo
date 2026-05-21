@@ -96,8 +96,8 @@ function testSemanticDiveModeExitPath() {
     'clearThreadInspection({ force: true, preserveJourney: false })',
     'non-inside-cue path calls clearThreadInspection with force + preserveJourney: false');
 
-  // setSemanticDiveMode must be exported on window
-  assertContains(journeySrc, 'window.setSemanticDiveMode = setSemanticDiveMode', 'setSemanticDiveMode on window');
+  // setSemanticDiveMode must not own the window bridge here; lifecycle owns it.
+  assertNotContains(journeySrc, 'window.setSemanticDiveMode = setSemanticDiveMode', 'setSemanticDiveMode window bridge in journey');
 
   console.log('  OK setSemanticDiveMode exit path guard verified');
 }

@@ -678,6 +678,35 @@ export function buildFocusedSemanticPocket(index) {
     };
 }
 
+// === Focus Pocket Owner API ===
+// All writes to navState.focusPocketIndices and focusPocketMeta must flow through
+// these functions. No direct assignment to state.navState.focusPocketIndices or
+// state.navState.focusPocketMeta is permitted outside this API.
+
+export function getFocusPocketIndices() {
+    return state.navState.focusPocketIndices ?? [];
+}
+
+export function setFocusPocketIndices(indices) {
+    state.navState.focusPocketIndices = indices;
+}
+
+export function clearFocusPocketIndices() {
+    state.navState.focusPocketIndices = [];
+}
+
+export function getFocusPocketMeta() {
+    return state.navState.focusPocketMeta ?? null;
+}
+
+export function setFocusPocketMeta(meta) {
+    state.navState.focusPocketMeta = meta;
+}
+
+export function clearFocusPocketMeta() {
+    state.navState.focusPocketMeta = null;
+}
+
 // === Apply local neighborhood focus ===
 
 export function applyLocalNeighborhoodFocus(index) {
@@ -715,8 +744,8 @@ export function applyLocalNeighborhoodFocus(index) {
         state.focusPocketAnimationFrameId = undefined;
     }
 
-    state.navState.focusPocketIndices = [];
-    state.navState.focusPocketMeta = null;
+    clearFocusPocketIndices();
+    clearFocusPocketMeta();
     state.navState.focusPocketRoleByIndex = new Map();
     state.focusPocketMotionByIndex = new Map();
     state.focusPocketTransitionStartedAt = performance.now();
@@ -729,7 +758,7 @@ export function applyLocalNeighborhoodFocus(index) {
                     state.targetPositions[pocketIndex] = { x: position.x, y: position.y, z: position.z };
                 }
             });
-            state.navState.focusPocketIndices = pocket.indices.filter((candidateIndex) => candidateIndex !== index);
+            setFocusPocketIndices(pocket.indices.filter((candidateIndex) => candidateIndex !== index));
             state.navState.focusPocketRoleByIndex = pocket.roles || new Map();
 
             // --- TRAVERSAL CONTINUITY: inject preserved position into motion for continuing nodes ---
@@ -749,17 +778,17 @@ export function applyLocalNeighborhoodFocus(index) {
             });
             state.focusPocketMotionByIndex = motion;
 
-            state.navState.focusPocketMeta = pocket.meta || {
-                active: state.navState.focusPocketIndices.length > 0,
+            setFocusPocketMeta(pocket.meta || {
+                active: getFocusPocketIndices().length > 0,
                 nodeCount: pocket.indices.length,
-                primaryCount: Math.min(12, state.navState.focusPocketIndices.length),
+                primaryCount: Math.min(12, getFocusPocketIndices().length),
                 supportCount: Math.max(
                     0,
-                    pocket.indices.length - 1 - Math.min(12, state.navState.focusPocketIndices.length)
+                    pocket.indices.length - 1 - Math.min(12, getFocusPocketIndices().length)
                 ),
                 motif: pocket.meta?.motif || 'market',
                 motifLabel: pocket.meta?.motifLabel || 'semantic constellation'
-            };
+            });
             state.nodesAreSettling = true;
             state.autoRotate = false;
             // syncAutoRotateButton() — deferred to main script
@@ -809,10 +838,10 @@ export function applyLocalNeighborhoodFocus(index) {
                 state.targetPositions[pocketIndex] = { x: px, y: py, z: pz };
             }
         });
-        state.navState.focusPocketIndices = [...fallbackPocketEntries.keys()];
+        setFocusPocketIndices([...fallbackPocketEntries.keys()]);
         state.navState.focusPocketRoleByIndex = fallbackPocket.roles || new Map([[index, 'anchor']]);
         state.focusPocketMotionByIndex = fallbackPocket.motion || new Map();
-        state.navState.focusPocketMeta = {
+        setFocusPocketMeta({
             active: true,
             nodeCount: fallbackPocket.positions.size,
             primaryCount: fallbackPocketEntries.size,
@@ -821,13 +850,13 @@ export function applyLocalNeighborhoodFocus(index) {
             motif: fallbackPocket.motif?.key || 'market',
             motifLabel: fallbackPocket.motif?.label || 'threaded neighborhood',
             viewportProfile: fallbackPocket.viewportProfile || viewportProfile
-        };
+        });
         state.nodesAreSettling = true;
         state.autoRotate = false;
         return;
     }
 
-    state.navState.focusPocketIndices = [...localIndices].filter((candidateIndex) => candidateIndex !== index);
+    setFocusPocketIndices([...localIndices].filter((candidateIndex) => candidateIndex !== index));
     state.navState.focusPocketRoleByIndex = new Map([[index, 'anchor']]);
     state.focusPocketMotionByIndex = new Map([
         [
@@ -841,15 +870,15 @@ export function applyLocalNeighborhoodFocus(index) {
             }
         ]
     ]);
-    state.navState.focusPocketMeta = {
-        active: state.navState.focusPocketIndices.length > 0,
+    setFocusPocketMeta({
+        active: getFocusPocketIndices().length > 0,
         nodeCount: localIndices.size,
         primaryCount: primaryIndices.length,
         supportCount: supportIndices.length,
         haloCount: 0,
         viewportProfile,
         personality: personality.type
-    };
+    });
 
     const focusPosX = Number.isFinite(focusPos.x) ? focusPos.x : 0;
     const focusPosY = Number.isFinite(focusPos.y) ? focusPos.y : 0;

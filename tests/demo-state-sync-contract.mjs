@@ -68,8 +68,10 @@ test('micro-demo.js uses setInfoPanelOpen(false) at T=7200ms instead of raw slid
   assert(/window\.setInfoPanelOpen\(\s*false\s*\)/.test(microDemoSource), 'micro-demo.js must call window.setInfoPanelOpen(false) at T=7200ms');
 });
 
-test('micro-demo.js calls setInfoPanelOpen(true) in _resetAppState', () => {
-  assert(/_resetAppState\b[\s\S]*?setInfoPanelOpen\(\s*true\s*\)/.test(microDemoSource), 'micro-demo.js must call window.setInfoPanelOpen(true) inside _resetAppState');
+test('micro-demo.js calls setInfoPanelOpen(true) via __demoReset (called from _resetAppState)', () => {
+  // _resetAppState delegates to __demoReset, which contains all demo state writes
+  assert(/_resetAppState\b[\s\S]*?__demoReset\(\)/.test(microDemoSource), '_resetAppState must call __demoReset()');
+  assert(/function __demoReset\(\)[\s\S]*?setInfoPanelOpen\(\s*true\s*\)/.test(microDemoSource), '__demoReset must call window.setInfoPanelOpen(true)');
 });
 
 test('event-bindings.js defines window.revealSelectedBusinessCard', () => {

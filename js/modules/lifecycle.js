@@ -77,6 +77,7 @@ import {
     clearMobileRouteFieldPeek
 } from './search-state.js';
 import { focusOnNode } from './camera-controls.js';
+import { clearFocusPocketIndices, clearFocusPocketMeta } from './focus-pocket.js';
 import {
     updateSelectedBusiness,
     setTrailFromSeed,
@@ -929,7 +930,7 @@ export function executeJourneyCompassAction(action) {
             if (Number.isFinite(anchorIndex)) {
                 // "Center Anchor" must set trailDepth=1 (via setTrailDepth) so the Trail chip activates
                 if (typeof window.setTrailDepth === 'function') window.setTrailDepth(1, { skipUrlSync: true });
-                if (typeof window.focusOnNode === 'function') window.focusOnNode(anchorIndex, { fromSearchResult: !!state.currentSearchSummary });
+                focusOnNode(anchorIndex, { fromSearchResult: !!state.currentSearchSummary });
                 if (typeof window.recenterFocusedNode === 'function') {
                     window.recenterFocusedNode();
                 }
@@ -1484,14 +1485,12 @@ export function switchView(view, options = {}) {
         if (state.selectedPoint) {
             const selectedIndex = state.points.indexOf(state.selectedPoint);
             if (selectedIndex >= 0) {
-                if (typeof window.focusOnNode === 'function') {
-                    window.focusOnNode(selectedIndex, {
-                        skipUrlSync: true,
-                        fromSearchResult: !!state.currentSearchSummary,
-                        restoreHistory: true,
-                        preserveMode: true
-                    });
-                }
+                focusOnNode(selectedIndex, {
+                    skipUrlSync: true,
+                    fromSearchResult: !!state.currentSearchSummary,
+                    restoreHistory: true,
+                    preserveMode: true
+                });
                 setTrailFromSeed(selectedIndex);
             }
         } else if (
@@ -1515,14 +1514,12 @@ export function switchView(view, options = {}) {
                     }
                 );
             }
-            if (typeof window.focusOnNode === 'function') {
-                window.focusOnNode(anchorIndex, {
-                    skipUrlSync: true,
-                    fromSearchResult: true,
-                    restoreHistory: true,
-                    preserveMode: true
-                });
-            }
+            focusOnNode(anchorIndex, {
+                skipUrlSync: true,
+                fromSearchResult: true,
+                restoreHistory: true,
+                preserveMode: true
+            });
             setTrailFromSeed(anchorIndex);
         } else {
             if (typeof window.setRouteChoreographyPhase === 'function') {
@@ -2120,10 +2117,10 @@ export function resetNodePositions(options = {}) {
     state.navState.trailCursor = -1;
     state.navState.explorationHistoryIndices = [];
     state.navState.lastTraversalReason = null;
-    state.navState.focusPocketIndices = [];
+    clearFocusPocketIndices();
     state.focusPocketMotionByIndex = new Map();
     state.navState.focusPocketRoleByIndex = new Map();
-    state.navState.focusPocketMeta = null;
+    clearFocusPocketMeta();
     setTrailDepth(0, { skipUrlSync: true, allowDiveExit: true });
     document.body.dataset.focusOrigin = 'overview';
     document.body.dataset.focusPanelMode = 'overview';
@@ -2563,7 +2560,11 @@ if (typeof window !== 'undefined') {
 
         // 10/10 Polish: Sync with trailDepth state machine (Step Inside is depth 2)
         if (typeof window.setTrailDepth === 'function') {
-            window.setTrailDepth(nextActive ? 2 : 1, { fromUserGesture: true });
+            const trailDepthOptions = { fromUserGesture: true };
+            // allowDiveExit is required when exiting depth 2 so the guard in setTrailDepth
+            // permits the transition when semanticDiveMode is still true at call time.
+            if (!nextActive) trailDepthOptions.allowDiveExit = true;
+            window.setTrailDepth(nextActive ? 2 : 1, trailDepthOptions);
         }
 
         if (state.semanticDiveMode) {

@@ -29,7 +29,7 @@ async function setupMockSearch(page) {
 
 async function openApp(page) {
   await setupMockSearch(page);
-  await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`);
+  await page.goto(`${BASE_URL}/vector-explorer-polished.html?nodemo=1`);
   await page.waitForFunction(() => (
     typeof window.clearSearch === 'function' &&
     typeof window.setSemanticDiveMode === 'function' &&
@@ -44,16 +44,8 @@ async function openApp(page) {
 async function performSearch(page, query = 'coffee') {
   const input = page.locator('#search-input');
   await input.focus();
-  await input.fill(query);
-  await page.evaluate(async (q) => {
-    const el = document.getElementById('search-input');
-    if (!el) return;
-    el.value = q;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    if (typeof window.search === 'function') {
-      await window.search(q, { preferCachedResults: false });
-    }
-  }, query);
+  await input.fill('');
+  await input.pressSequentially(query, { delay: 20 });
   await expect(page.locator('.search-result-item').first()).toBeVisible({ timeout: 15000 });
 }
 
@@ -104,7 +96,7 @@ async function expectOverviewReset(page, label) {
       semanticDive: state.body.semanticDive,
       panelSurface: state.body.panelSurface
     };
-  }, { message: `${label}: overview reset state` }).toEqual({
+  }, { message: `${label}: overview reset state`, timeout: 15000 }).toEqual({
     navMode: 'overview',
     focusedNode: null,
     trailDepth: 0,

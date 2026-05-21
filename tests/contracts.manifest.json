@@ -7,7 +7,9 @@
       "contracts": [
         "semantic-dive-ui-surface-contract.mjs",
         "search-state-surface-contract.mjs",
+        "search-state-focus-clear-owner-contract.mjs",
         "state-transition-contract.mjs",
+        "state-transition-table-contract.mjs",
         "focus-semantic-state-boundary-contract.mjs",
         "semantic-lane-contract.mjs",
         "connection-analysis-contract.mjs",
@@ -54,6 +56,7 @@
       "description": "Playwright browser-interaction contracts - canvas hit-test and live UI reset interaction proofs. Requires a running dev server on port 8795.",
       "contracts": [
         "live-ui-reset-interaction.spec.js",
+        "live-state-transition-ui-paths.spec.js",
         "canvas-hit-test-interaction.spec.js",
         "reduced-motion-interruption.spec.js",
         "gemma-fallback-error.spec.js"
@@ -95,7 +98,8 @@
         "cluster-labels-contract.mjs",
         "window-bridge-gaps-contract.mjs",
         "loading-ui-contract.mjs",
-        "short-landscape-layout-contract.mjs"
+        "short-landscape-layout-contract.mjs",
+        "critical-visual-layout-regression.spec.js"
       ]
     },
     "motion": {
@@ -113,7 +117,9 @@
       "description": "Lifecycle and initialization contracts - composition, state sync, reset, demo, guide payload.",
       "contracts": [
         "lifecycle-composition-contract.mjs",
+        "composition-state-invariant-contract.mjs",
         "state-transition-contract.mjs",
+        "state-transition-table-contract.mjs",
         "step-inside-state-sync-contract.mjs",
         "focus-semantic-state-boundary-contract.mjs",
         "demo-init-seam-contract.mjs",
@@ -121,14 +127,20 @@
         "semantic-guide-payload-contract.mjs",
         "demo-camera-retirement-contract.mjs",
         "demo-state-sync-contract.mjs",
+        "micro-demo-state-owner-contract.mjs",
         "weather-lifecycle-contract.mjs",
-        "window-bridge-gaps-contract.mjs"
+        "window-bridge-gaps-contract.mjs",
+        "semantic-dive-active-owner-contract.mjs",
+        "state-ownership-contract.mjs",
+        "focus-pocket-state-owner-contract.mjs",
+        "bootstrap-window-export-contract.mjs"
       ]
     },
     "quality": {
       "description": "UI quality, interaction, and CSS ownership contracts that may write tmp reports.",
       "contracts": [
         "css-manifest-contract.mjs",
+        "focus-stage-css-ownership-contract.mjs",
         "ui-quality-contract.mjs",
         "micro-surface-interactions-contract.mjs",
         "surface-redundancy-contract.mjs",
@@ -150,6 +162,7 @@
       "contracts": [
         "3d-node-hit-accuracy.spec.js",
         "3d-hover-affordance.spec.js",
+        "3d-real-pointer-playthrough.spec.js",
         "3d-focus-pocket-selectability.spec.js",
         "3d-cluster-readability.spec.js",
         "3d-thread-orchestration-quality.spec.js",
@@ -166,6 +179,7 @@
       "contracts": [
         "3d-node-hit-accuracy.spec.js",
         "3d-hover-affordance.spec.js",
+        "3d-real-pointer-playthrough.spec.js",
         "3d-focus-pocket-selectability.spec.js"
       ]
     },
@@ -229,6 +243,7 @@
       "contracts": [
         "3d-node-hit-accuracy.spec.js",
         "3d-hover-affordance.spec.js",
+        "3d-real-pointer-playthrough.spec.js",
         "3d-focus-pocket-selectability.spec.js",
         "3d-cluster-readability.spec.js",
         "3d-thread-orchestration-quality.spec.js",
@@ -248,6 +263,7 @@
         "search-state-surface-contract.mjs",
         "lifecycle-composition-contract.mjs",
         "state-transition-contract.mjs",
+        "state-transition-table-contract.mjs",
         "step-inside-state-sync-contract.mjs",
         "focus-semantic-state-boundary-contract.mjs",
         "journey-compass-state-contract.mjs",
@@ -274,6 +290,7 @@
         "journey-window-surface-contract.mjs",
         "window-bridge-gaps-contract.mjs",
         "loading-ui-contract.mjs",
+        "state-ownership-contract.mjs",
         "exploration-modes-contract.mjs",
         "scene-reveal-contract.mjs",
         "scene-atmosphere-contract.mjs",

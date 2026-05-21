@@ -162,9 +162,7 @@ function bindSuggestionControls() {
                 if (searchInput) searchInput.value = '';
                 clearShortSemanticSearchState();
                 
-                if (typeof window.focusOnNode === 'function') {
-                    window.focusOnNode(idx, { fromCanvasNode: true });
-                }
+                focusOnNode(idx, { fromCanvasNode: true });
             }
         }, 800);
     };
@@ -198,7 +196,7 @@ function bindSuggestionControls() {
                     .filter(({ p, i }) => p && p.cluster === cluster && i !== focusedIdx);
                 if (sameCluster.length) {
                     const { i } = sameCluster[Math.floor(Math.random() * sameCluster.length)];
-                    if (typeof window.focusOnNode === 'function') window.focusOnNode(i, { fromCanvasNode: true });
+                    focusOnNode(i, { fromCanvasNode: true });
                 }
             }
         } else if (action === 'neighbor') {
@@ -228,7 +226,7 @@ function bindSuggestionControls() {
                         nearest = i;
                     }
                 });
-                if (nearest !== null && window.focusOnNode) window.focusOnNode(nearest, { fromCanvasNode: true });
+                if (nearest !== null) focusOnNode(nearest, { fromCanvasNode: true });
             }
         } else if (action === 'report') {
             if (typeof window.showSemanticThreadsDetail === 'function') window.showSemanticThreadsDetail();

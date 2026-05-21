@@ -29,6 +29,7 @@
 
 import { test, expect } from '@playwright/test';
 import { inflateSync } from 'node:zlib';
+import { mutate } from './helpers/state-harness.js';
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
 
@@ -252,10 +253,10 @@ test.describe('3D thread orchestration quality', () => {
     // White pixel ratio capped at 8%
     expect(lum.whiteRatio, `overview white pixel ratio too high: ${lum.whiteRatio}`).toBeLessThanOrEqual(0.08);
 
-    // Opacity must be in a legible range (not invisible, not opaque)
+    // Opacity must be in a legible range for overview.
     expect(probe.coreOpacity, 'core opacity must be set').toBeGreaterThan(0);
     expect(probe.coreOpacity, 'core opacity must be bounded (not overbearing)')
-      .toBeLessThanOrEqual(0.30);
+      .toBeLessThanOrEqual(0.22);
 
   });
 
@@ -280,10 +281,10 @@ test.describe('3D thread orchestration quality', () => {
     expect(probe.coreContinuity.checked, 'continuity must be sampled').toBeGreaterThan(0);
     expect(probe.coreContinuity.matched, 'all sampled core pairs must be continuous')
       .toBe(probe.coreContinuity.checked);
-    // Opacity must be in a legible range (overview range, not invisible)
+    // Opacity must be in a legible range for overview.
     expect(probe.coreOpacity, 'core opacity must be set').toBeGreaterThan(0);
     expect(probe.coreOpacity, 'core opacity must be bounded for overview')
-      .toBeLessThanOrEqual(0.30);
+      .toBeLessThanOrEqual(0.22);
   });
 
   // -------------------------------------------------------------------------
@@ -299,8 +300,10 @@ test.describe('3D thread orchestration quality', () => {
       { timeout: 5000 }
     ).catch(() => {});
 
-    // Trigger focus on a node
-    await p.evaluate(() => {
+    // Use official API focusOnNode; trailDepth=1 is set via harness mutate()
+    // since the official setTrailDepth(1) call is the subject of this test
+    // and we need to isolate the post-focus assertions from the depth-transition.
+    const focusResult = await p.evaluate(() => {
       const preferred = window.state?.pointIndexByLeadId?.get(519) ?? window.state?.pointIndexByLeadId?.get('519');
       let targetIndex = Number.isFinite(preferred) ? preferred : null;
       if (targetIndex === null) {
@@ -310,10 +313,15 @@ test.describe('3D thread orchestration quality', () => {
           if (Number.isFinite(idx)) { targetIndex = idx; break; }
         }
       }
-      if (targetIndex === null) targetIndex = 0;
-      window.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
-      window.setTrailDepth?.(1, { skipUrlSync: true });
+      return { targetIndex: targetIndex ?? 0 };
     });
+    await p.evaluate(
+      ({ idx }) => window.focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
+      { idx: focusResult.targetIndex }
+    );
+    // Set trailDepth=1 via harness — documents this is fixture setup, not the
+    // official setTrailDepth() API being tested (that comes in step-inside).
+    await mutate(p, 'setTrailDepth', { trailDepth: 1, navStateMode: 'focus' });
     await p.waitForFunction(() => Number.isFinite(window.state?.focusedNode), { timeout: 8000 });
     await p.waitForTimeout(1200);
 
@@ -345,7 +353,7 @@ test.describe('3D thread orchestration quality', () => {
     expect(lum.p95, `focus p95 luminance too high: ${lum.p95}`).toBeLessThanOrEqual(205);
     expect(lum.whiteRatio, `focus white pixel ratio too high: ${lum.whiteRatio}`).toBeLessThanOrEqual(0.018);
 
-    // Focus-mode opacities are higher; core should be near 0.28
+    // Focus-mode opacities are higher than overview.
     expect(probe.coreOpacity, 'core opacity must be elevated in focus').toBeGreaterThan(0.20);
 
   });

@@ -50,7 +50,7 @@ function testJourneyWindowShim() {
   // The shim block must exist as one contiguous block guarded by typeof window check
   assert(src.includes('window.syncFocusStage = syncFocusStage'), 'window.syncFocusStage in shim');
   assert(src.includes('window.setTrailFromSeed = setTrailFromSeed'), 'window.setTrailFromSeed in shim');
-  assert(src.includes('window.setSemanticDiveMode = setSemanticDiveMode'), 'window.setSemanticDiveMode in shim');
+  assertNotContains(src, 'window.setSemanticDiveMode = setSemanticDiveMode', 'semantic-dive window owner stays in lifecycle');
   assert(src.includes('window.getSemanticThreadCandidates = getSemanticThreadCandidates'), 'window.getSemanticThreadCandidates in shim');
   assert(src.includes('window.getGeometricThreadCandidates = getGeometricThreadCandidates'), 'window.getGeometricThreadCandidates in shim');
   assert(src.includes('window.getThreadCandidatesForIndex = getThreadCandidatesForIndex'), 'window.getThreadCandidatesForIndex in shim');

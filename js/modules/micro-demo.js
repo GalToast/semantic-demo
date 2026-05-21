@@ -7,7 +7,7 @@ import { state } from '../state.js';
 import * as THREE from 'three';
 import { easeInOutSine } from '../utils.js';
 import { animateCameraToNode } from './camera-controls.js';
-import { applyLocalNeighborhoodFocus } from './focus-pocket.js';
+import { applyLocalNeighborhoodFocus, clearFocusPocketIndices, clearFocusPocketMeta } from './focus-pocket.js';
 
 // === Constants ===
 const SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1';
@@ -337,8 +337,11 @@ function _showEndToast() {
     return toast;
 }
 
-function _resetAppState() {
-    // Reset all demo-affected state to overview defaults
+/**
+ * Named orchestration helper for demo reset.
+ * All demo-to-overview state writes MUST stay inside this function.
+ */
+function __demoReset() {
     state.focusedNode = null;
     state.selectedPoint = null;
     state.navState.mode = 'overview';
@@ -347,8 +350,8 @@ function _resetAppState() {
     state.navState.trailNeighborIndices = [];
     state.navState.trailCursor = -1;
     state.navState.walkHistoryIndices = [];
-    state.navState.focusPocketIndices = [];
-    state.navState.focusPocketMeta = null;
+    clearFocusPocketIndices();
+    clearFocusPocketMeta();
     state.focusCameraAssistActive = false;
     state.focusCameraOffset = null;
     state.focusTransitionMode = 'idle';
@@ -356,10 +359,8 @@ function _resetAppState() {
     document.body.dataset.focusTransition = '';
     document.body.dataset.focusTransitionPhase = '';
 
-    // Re-enable controls
     if (state.controls) state.controls.enabled = true;
 
-    // Restore selected-business card to empty state
     if (typeof window.updateSelectedBusiness === 'function') {
         window.updateSelectedBusiness(null);
     }
@@ -369,14 +370,51 @@ function _resetAppState() {
     if (typeof window.refreshCompositionState === 'function') {
         window.refreshCompositionState();
     }
-    // Trigger journey compass update
     if (typeof window.updateJourneyCompass === 'function') {
         window.updateJourneyCompass();
     }
-    // Restore sidebar panel to open (overview stats state)
     if (typeof window.setInfoPanelOpen === 'function') {
         window.setInfoPanelOpen(true);
     }
+}
+
+/**
+ * Named orchestration helper for demo focus setup.
+ * All demo focus-state writes (focusedNode, selectedPoint, navState, UI side-effects)
+ * MUST stay inside this function.
+ * @param {number} demoNode - index into state.points
+ */
+function __demoFocusSetup(demoNode) {
+    const point = state.points[demoNode];
+    state.focusedNode = demoNode;
+    state.selectedPoint = point;
+    state.navState.mode = 'focus';
+    state.navState.focusedIndex = demoNode;
+    state.navState.walkHistoryIndices = [demoNode];
+
+    if (typeof window.updateSelectedBusiness === 'function') {
+        window.updateSelectedBusiness(point, { revealCard: true });
+    }
+    if (typeof window.applyPointFilterColors === 'function') {
+        window.applyPointFilterColors();
+    }
+    if (typeof window.updateExplorationUi === 'function') {
+        window.updateExplorationUi();
+    }
+    if (typeof window.updateJourneyCompass === 'function') {
+        window.updateJourneyCompass('focus');
+    }
+    if (typeof window.refreshCompositionState === 'function') {
+        window.refreshCompositionState();
+    }
+    if (typeof applyLocalNeighborhoodFocus === 'function') {
+        applyLocalNeighborhoodFocus(demoNode);
+    }
+}
+
+function _resetAppState() {
+    // Delegates to named orchestration helper — all demo state writes MUST stay inside __demoReset
+    __demoReset();
 }
 
 // === Public API ===
@@ -490,36 +528,10 @@ function _runDemo() {
         if (_demoCancelled) return;
         _demoPhase = PHASE.ARRIVED;
 
-        const point = state.points[demoNode];
-        state.focusedNode = demoNode;
-        state.selectedPoint = point;
-        state.navState.mode = 'focus';
-        state.navState.focusedIndex = demoNode;
-        state.navState.walkHistoryIndices = [demoNode];
+        // All demo focus state writes MUST go through named orchestration helper
+        __demoFocusSetup(demoNode);
 
         document.body.dataset.focusOrigin = 'micro-demo';
-
-        // Update UI
-        if (typeof window.updateSelectedBusiness === 'function') {
-            window.updateSelectedBusiness(point, { revealCard: true });
-        }
-        if (typeof window.applyPointFilterColors === 'function') {
-            window.applyPointFilterColors();
-        }
-        if (typeof window.updateExplorationUi === 'function') {
-            window.updateExplorationUi();
-        }
-        if (typeof window.updateJourneyCompass === 'function') {
-            window.updateJourneyCompass('focus');
-        }
-        if (typeof window.refreshCompositionState === 'function') {
-            window.refreshCompositionState();
-        }
-
-        // --- NEW: Compute and render focus pocket (neighborhood ring) ---
-        if (typeof applyLocalNeighborhoodFocus === 'function') {
-            applyLocalNeighborhoodFocus(demoNode);
-        }
 
         // Signal spotlight ring to show "clicked" state
         document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {

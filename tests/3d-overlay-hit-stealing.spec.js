@@ -1,8 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { BASE_URL, SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch, openApp, probe, projectedCanvasCandidates, probeFocusPocket } from './helpers/3d-interaction-helpers.js';
+import { mutate } from './helpers/state-harness.js';
 
 function isValidNodeIndex(value, pointCount) {
   return value === null || (Number.isFinite(value) && value >= 0 && value < pointCount);
+}
+
+async function clearPickEvidence(page) {
+  await mutate(page, 'clearPickEvidence');
 }
 
 async function findReachableNodeCoordinate(page) {
@@ -78,18 +83,6 @@ async function overlayCenters(page) {
       });
     }
     return centers;
-  });
-}
-
-async function clearPickEvidence(page) {
-  await page.evaluate(() => {
-    window.__lastCanvasNodePick = null;
-    window.__lastCanvasNodeFocusPick = null;
-    window.state.focusedNode = null;
-    if (window.state.navState) {
-      window.state.navState.focusedIndex = null;
-      window.state.navState.mode = 'overview';
-    }
   });
 }
 

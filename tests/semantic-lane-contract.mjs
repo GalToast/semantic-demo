@@ -194,6 +194,7 @@ const LABEL_REJECT = [
   'cold start',
   'warm thread ready',
   'embed thread analysis',
+  'Static Dev Mode',
 ];
 
 const LABEL_ALLOW = [

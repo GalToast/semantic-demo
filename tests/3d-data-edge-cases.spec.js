@@ -24,6 +24,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { mutate } from './helpers/state-harness.js';
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 
@@ -124,14 +125,7 @@ function isValidNodeIndex(val, count) {
  * the 3D scene handles it without blank-canvas or thrown exceptions.
  */
 async function corruptToEmptyGraph(page) {
-  await page.evaluate(() => {
-    window.state.points = [];
-    window.state.nodePositions = [];
-    // Trigger a re-render cycle by toggling nav mode
-    if (typeof window.resetExplorationFocus === 'function') {
-      window.resetExplorationFocus();
-    }
-  });
+  await mutate(page, 'injectEmptyGraph');
   await page.waitForTimeout(500);
 }
 
@@ -140,11 +134,7 @@ async function corruptToEmptyGraph(page) {
  * does NOT set focusedNode to an out-of-bounds index.
  */
 async function corruptToOneNode(page) {
-  await page.evaluate(() => {
-    window.state.points = window.state.points.slice(0, 1);
-    window.state.nodePositions = window.state.nodePositions.slice(0, 1);
-    window.state.focusedNode = null;
-  });
+  await mutate(page, 'injectOneNode');
   await page.waitForTimeout(300);
 }
 
@@ -183,14 +173,7 @@ async function corruptDuplicateLabels(page) {
  * then verify picking still yields valid indices and no thrown errors.
  */
 async function corruptMissingPositions(page) {
-  await page.evaluate(() => {
-    const positions = window.state.nodePositions;
-    if (!positions?.length) return;
-    // Null out every 3rd position starting at index 1
-    for (let i = 1; i < positions.length; i += 3) {
-      window.state.nodePositions[i] = null;
-    }
-  });
+  await mutate(page, 'injectNullPositions');
   await page.waitForTimeout(300);
 }
 
@@ -199,23 +182,7 @@ async function corruptMissingPositions(page) {
  * the depth-sort / near-clipping path.  Verifies no crash and canvas is non-blank.
  */
 async function injectHugeCluster(page) {
-  await page.evaluate(() => {
-    const base = window.state.nodePositions[0] ?? { x: 0, y: 0, z: 0 };
-    const synthetic = [];
-    for (let i = 0; i < 3000; i++) {
-      synthetic.push({
-        x: base.x + (Math.random() - 0.5) * 0.001,
-        y: base.y + (Math.random() - 0.5) * 0.001,
-        z: base.z + (Math.random() - 0.5) * 0.001,
-      });
-    }
-    // Also add synthetic point metadata
-    const pointTemplate = window.state.points[0] ?? {};
-    for (let i = 0; i < 3000; i++) {
-      window.state.points.push({ ...pointTemplate, lead_id: 9000 + i });
-    }
-    window.state.nodePositions.push(...synthetic);
-  });
+  await mutate(page, 'injectHugeCluster');
   await page.waitForTimeout(500);
 }
 
@@ -225,24 +192,7 @@ async function injectHugeCluster(page) {
  * does not throw or set contradictory state.
  */
 async function injectInvalidCacheEntry(page) {
-  await page.evaluate(() => {
-    if (!window.state.semanticSearchResultCache) {
-      window.state.semanticSearchResultCache = new Map();
-    }
-    // Corrupt cache entry: bad results shape (missing lead_id, score is NaN)
-    window.state.semanticSearchResultCache.set('coffee', {
-      ok: true,
-      count: 2,
-      results: [
-        { lead_id: null, score: NaN, semantic_score: NaN, public_note: undefined },
-        { score: 'not-a-number' }, // missing lead_id entirely
-      ],
-      cachedAt: Date.now() - 1000,
-    });
-    if (!window.state.semanticSearchCacheDiagnostics) {
-      window.state.semanticSearchCacheDiagnostics = { hits: 0, misses: 0 };
-    }
-  });
+  await mutate(page, 'injectMalformedSearchCache');
 }
 
 /** Abort an in-flight semantic search by triggering clearSearch, then verify no stale state leak. */

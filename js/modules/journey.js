@@ -37,6 +37,7 @@ import {
 } from './ui-renderers.js';
 import { focusOnNode } from './camera-controls.js';
 import { refreshCompositionState } from './lifecycle.js';
+import { setFocusPocketMeta } from './focus-pocket.js';
 
 export {
     normalizeLeadId,
@@ -939,11 +940,11 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex) {
     if (!Number.isFinite(seedIndex)) return;
     if (isBoundedNeighborhoodActive()) {
         if (state.navState.focusPocketMeta?.active && !state.navState.focusPocketMeta.boundedLoop) {
-            state.navState.focusPocketMeta = {
+            setFocusPocketMeta({
                 ...state.navState.focusPocketMeta,
                 boundedLoop: true,
                 motifLabel: state.navState.focusPocketMeta.motifLabel || 'selected neighborhood loop'
-            };
+            });
         }
         if (!state.navState.neighborhoodManifest) {
             state.navState.neighborhoodManifest = buildNeighborhoodManifest(
@@ -989,11 +990,11 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex) {
     );
     state.navState.neighborhoodSource = 'semantic';
     state.navState.neighborhoodManifest = manifest;
-    state.navState.focusPocketMeta = {
+    setFocusPocketMeta({
         ...state.navState.focusPocketMeta,
         boundedLoop: true,
         motifLabel: 'selected neighborhood loop'
-    };
+    });
 }
 
 export function primeBoundedSemanticNeighborhoodForTraversal(seedIndex) {
@@ -1068,39 +1069,42 @@ function syncSemanticDiveCompositionState(reason = 'semantic-dive') {
     }
 }
 
+/**
+ * Backward-compatible delegating alias for semantic-dive mode.
+ * The authoritative implementation lives in lifecycle.js as window.setSemanticDiveMode.
+ * This export exists so any legacy code that imports journey.setSemanticDiveMode
+ * directly still routes through the authoritative lifecycle owner.
+ *
+ * Additional side effects not covered by lifecycle:
+ * - previewInsideNextThread (enter): pre-loads next candidate for inside-cue UI
+ * - clearThreadInspection  (exit):  clears stale thread overlays
+ * These are safe to call redundantly (idempotent checks inside each function).
+ */
 export function setSemanticDiveMode(enabled) {
     const active = Boolean(enabled);
-    state.semanticDiveMode = active;
-    if (active) {
-        state.navState.mode = 'trail';
-    }
-    if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
-    
-    // 10/10 Polish: Trigger the 'Sonic Boom' transition effect
-    if (state.semanticDiveMode && document.body) {
-        document.body.dataset.semanticDive = 'transitioning';
-        syncSemanticDiveCompositionState('semantic-dive-enter');
-        window.setTimeout(() => {
-            if (state.semanticDiveMode && document.body.dataset.semanticDive === 'transitioning') {
-                document.body.dataset.semanticDive = 'active';
-                syncSemanticDiveCompositionState('semantic-dive-settled');
-            }
-        }, 820);
+
+    // Delegate to lifecycle's authoritative window wrapper — all canonical state
+    // management (semanticDiveMode, navState.mode, trailDepth, camera, URL) lives there.
+    if (typeof window.setSemanticDiveMode === 'function') {
+        window.setSemanticDiveMode(enabled);
+    } else {
+        return false;
     }
 
-    if (state.semanticDiveMode) {
+    // Additional side effects that lifecycle's window wrapper handles via
+    // window.previewInsideNextThread / window.clearThreadInspection.
+    // Calling them here too is safe (each has idempotent guards) and ensures
+    // they run even when the window bridge is absent.
+    if (active) {
         previewInsideNextThread({ force: true });
     } else {
-        // Always clear thread inspection state on dive exit to avoid stale overlays.
-        // For inside-cue path, preserveJourney keeps the strand continuity alive so
-        // the user can still follow or backtrack. For all other surfaces, clear fully.
         if (document.body.dataset.threadInspectSurface === 'inside-cue') {
             clearThreadInspection({ force: true, preserveJourney: true });
         } else {
             clearThreadInspection({ force: true, preserveJourney: false });
         }
     }
-    syncSemanticDiveCompositionState(active ? 'semantic-dive' : 'semantic-dive-exit');
+    return true;
 }
 
 export function walkInsideToNextStop() {
@@ -3093,7 +3097,6 @@ if (typeof window !== 'undefined') {
     window.updateFocusSemanticOverlayPositions = updateFocusSemanticOverlayPositions;
     window.walkThreadNeighbor = walkThreadNeighbor;
     window.traverseNeighbor = traverseNeighbor;
-    window.setSemanticDiveMode = setSemanticDiveMode;
     window.walkInsideToNextStop = walkInsideToNextStop;
     window.previewInsideNextThread = previewInsideNextThread;
     window.refreshRouteTraceOverlay = refreshRouteTraceOverlay;

@@ -48,7 +48,25 @@ const SERVER_POLL_INTERVAL_MS = 250;
 
 // Groups that require the canonical local static server on port 8795.
 // Alternate-port or environment-specific groups must manage their own setup.
-const SERVER_GROUPS = new Set(['scene', '3d-interaction-quality', 'browser-interaction', 'live-url', 'extraction', 'quality', 'mobile-critical', '3d-engine']);
+const SERVER_GROUPS = new Set([
+  'scene',
+  'browser-interaction',
+  'live-url',
+  'extraction',
+  'quality',
+  'mobile-critical',
+  '3d-engine',
+  '3d-interaction-quality',
+  '3d-pointer',
+  '3d-focus-neighborhood',
+  '3d-visual-quality',
+  '3d-resilience',
+  '3d-state-data',
+  '3d-accessibility-fallback-performance',
+  '3d-smoke',
+  '3d-slow',
+  '3d-full',
+]);
 
 /**
  * Check if a server is already running on SERVER_PORT by sending a light HTTP request.
@@ -157,6 +175,7 @@ const PINNED_FILES = [
   'search-state-surface-contract.mjs',
   'lifecycle-composition-contract.mjs',
   'state-transition-contract.mjs',
+  'state-transition-table-contract.mjs',
   'step-inside-state-sync-contract.mjs',
   'focus-semantic-state-boundary-contract.mjs',
   'journey-compass-state-contract.mjs',
@@ -183,6 +202,7 @@ const PINNED_FILES = [
   'journey-window-surface-contract.mjs',
   'window-bridge-gaps-contract.mjs',
   'loading-ui-contract.mjs',
+  'state-ownership-contract.mjs',
   'exploration-modes-contract.mjs',
   'scene-reveal-contract.mjs',
   'scene-atmosphere-contract.mjs',
@@ -374,7 +394,7 @@ function isPlaywrightTestFile(filename, entry) {
   if (filename.endsWith('.spec.js')) return true;
   if (!filename.endsWith('.mjs')) return false;
   const source = readFileSync(entry, 'utf8');
-  return source.includes("from '@playwright/test'") || source.includes('from "@playwright/test"');
+  return /import\s*\{[^}]*\btest\b[^}]*\}\s*from\s*['"]@playwright\/test['"]/.test(source);
 }
 
 function runContract(filename) {

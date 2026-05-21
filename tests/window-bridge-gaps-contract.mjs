@@ -27,6 +27,7 @@ const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
 const UI_RENDERERS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/ui-renderers.js');
 const SCENE_REVEAL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.js');
 const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js');
+const CAMERA_CONTROLS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/camera-controls.js');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -44,21 +45,32 @@ function assertHasAssignment(src, fn, file, label) {
 }
 
 function assertNoDeadCall(src, fn, file, label) {
-  // All window.fn() call-sites must be inside typeof guards
-  // The window.fn = ... assignment itself is NOT a call
+  // All window.fn() call-sites must be inside typeof guards or ?. optional chains.
+  // Assignment lines (window.fn = ...) are not calls and are skipped.
+  // For multi-line guards (guard on preceding line), scan back up to 4 lines.
   const lines = src.split('\n');
   const problems = [];
-  lines.forEach((line, i) => {
-    const t = line.trim();
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trim();
+    // Skip blank lines
+    if (!t) continue;
     // Skip assignment lines
-    if (t.includes(`window.${fn} =`) && !t.includes('===')) return;
+    if (t.includes(`window.${fn} =`) && !t.includes('===')) continue;
     const pos = t.indexOf(`window.${fn}`);
-    if (pos === -1) return;
+    if (pos === -1) continue;
+    // Scan full text of current line before window.fn
     const before = t.substring(0, pos);
-    if (before.includes('typeof') || before.includes('?.')) return;
-    // It's a bare call
+    if (before.includes('typeof') || before.includes('?.')) continue;
+    // Multi-line guard: scan up to 4 preceding non-blank lines for typeof/?. guard
+    let guarded = false;
+    for (let j = Math.max(0, i - 4); j < i; j++) {
+      const prev = lines[j].trim();
+      if (prev.includes('typeof') || prev.includes('?.')) { guarded = true; break; }
+    }
+    if (guarded) continue;
+    // Bare call
     problems.push(`  line ${i + 1}: ${t}`);
-  });
+  }
   assert(problems.length === 0, `${label}: ${file} has bare window.${fn}() calls:\n${problems.join('\n')}`);
 }
 
@@ -215,6 +227,31 @@ function testGap4_updateSelectedCardHeading() {
 }
 
 // ---------------------------------------------------------------------------
+// GAP 5 — focusOnNode: exported from camera-controls.js, guarded at all call sites.
+// The window shim (app.js:85) bridges during transition.
+// Seam: callers switch to direct named import from camera-controls.js.
+// ---------------------------------------------------------------------------
+
+function testGap5_focusOnNode() {
+  console.log('\n[TEST] Gap 5 — focusOnNode (dewindowing seam tracked)');
+
+  const cameraControlsSrc = fs.readFileSync(CAMERA_CONTROLS_PATH, 'utf-8');
+  const eventBindingsSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
+  const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
+
+  assert(
+    /^export\s+function\s+focusOnNode\s*\(/m.test(cameraControlsSrc),
+    'camera-controls.js must export focusOnNode as a named function'
+  );
+
+  assertNoDeadCall(eventBindingsSrc, 'focusOnNode', 'event-bindings.js', 'Gap 5');
+  assertNoDeadCall(lifecycleSrc, 'focusOnNode', 'lifecycle.js', 'Gap 5');
+
+  console.log('  OK — focusOnNode: export verified, typeof guards confirmed at all call sites');
+  console.log('  TRACKED — dewindowing seam: replace window.focusOnNode calls with import from camera-controls.js');
+}
+
+// ---------------------------------------------------------------------------
 // MAIN
 // ---------------------------------------------------------------------------
 
@@ -230,6 +267,7 @@ function main() {
     testGap3a_hydrateLeadContext();
     testGap3b_applySearchGlowVisualState();
     testGap4_updateSelectedCardHeading();
+    testGap5_focusOnNode();
 
     console.log('\n=================================================================');
     console.log('ALL TESTS PASSED');

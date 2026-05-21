@@ -425,9 +425,10 @@ function createLineSegments(positions, colors, opacity) {
 function getThreadPulseOpacity(baseOpacity, pulse, requestedAmplitude, revealProgress = 1) {
     const safeBase = Math.max(0, Number.isFinite(baseOpacity) ? baseOpacity : 0);
     const safeReveal = Math.max(0, Number.isFinite(revealProgress) ? revealProgress : 1);
+    // Keep pulse motion legible without letting threads disappear at the trough.
     const amplitude = Math.min(
         Math.max(0, Number.isFinite(requestedAmplitude) ? requestedAmplitude : 0),
-        Math.max(0.0006, safeBase * 0.42)
+        Math.max(0.0006, safeBase * 0.26)
     );
     return Math.max(0, safeBase + pulse * amplitude) * safeReveal;
 }
@@ -435,18 +436,18 @@ function getThreadPulseOpacity(baseOpacity, pulse, requestedAmplitude, revealPro
 function getMyceliumPresentationProfile() {
     const currentMode = getNavigationMode();
     if (currentMode === 'overview' || currentMode === undefined) {
-        return { core: 0.07, wispy: 0.026, bridge: 0.045, pulse: 0.018 };
+        return { core: 0.13, wispy: 0.055, bridge: 0.08, pulse: 0.028 };
     }
     if (state.focusedNode !== null && state.focusedNode !== undefined) {
-        return { core: 0.28, wispy: 0.11, bridge: 0.18, pulse: 0.075 };
+        return { core: 0.40, wispy: 0.18, bridge: 0.28, pulse: 0.092 };
     }
     if (state.currentSearchSummary || state.searchGlowActive) {
-        return { core: 0.22, wispy: 0.085, bridge: 0.14, pulse: 0.055 };
+        return { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 };
     }
     if (state.trailDepth >= 1) {
-        return { core: 0.12, wispy: 0.045, bridge: 0.075, pulse: 0.03 };
+        return { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 };
     }
-    return { core: 0.12, wispy: 0.045, bridge: 0.075, pulse: 0.03 };
+    return { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 };
 }
 
 export function updateCameraViewportOffset() {
