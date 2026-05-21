@@ -346,25 +346,7 @@ html body.is-active #selected-details.active {
     }
 
     /* Focus Content Layout */
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-kicker {
-        display: block;
-        margin: 24px 20px 4px;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--color-primary, #4ecdc4);
-    }
-
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-name {
-        margin: 0 20px 8px;
-        font-size: 20px;
-        font-weight: 800;
-        line-height: 1.1;
-        color: #fff;
-    }
-
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-what {
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-what {
         margin: 0 20px 18px;
         font-size: 14px;
         line-height: 1.45;
@@ -650,6 +632,32 @@ html body.is-active #selected-details.active {
         animation-duration: 0s;
     }
 
+    /* focus-search vertical space guard: constrain search results panel height so it
+       cannot crowd the focus-stage below. At 390x844 the info/search sheet and
+       focus-stage share the viewport; without this cap the results can expand and
+       compress focus-stage controls off the bottom. */
+    html body.is-active[data-panel-surface="focus-search"] .search-container {
+        max-height: min(30dvh, 260px);
+        overflow-y: auto;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"] .search-container #search-results.active {
+        max-height: min(28dvh, 240px);
+        overflow-y: auto;
+    }
+
+    @media (min-width: 641px) {
+        html body.is-active[data-panel-surface="focus-search"] .search-container {
+            max-height: min(34dvh, 340px);
+            overflow-y: auto;
+        }
+
+        html body.is-active[data-panel-surface="focus-search"] .search-container #search-results.active {
+            max-height: min(30dvh, 320px);
+            overflow-y: auto;
+        }
+    }
+
     html body.is-active[data-focus-panel-mode="field-node"] .journey-compass-action,
     html body.is-active[data-focus-panel-mode="field-node"] .journey-compass-action.primary {
         min-height: var(--mobile-touch-min);
@@ -751,9 +759,11 @@ html body.is-active #selected-details.active {
         padding: 0;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-actions,
-    html body.is-active[data-panel-surface="semantic-dive"] #trail-controls,
-    html body.is-active[data-panel-surface="semantic-dive"] .trail-controls {
+    html body.is-active[data-panel-surface="semantic-dive"]:not([data-panel-surface^="map-"]) .focus-stage-kicker,
+    html body.is-active[data-panel-surface="semantic-dive"]:not([data-panel-surface^="map-"]) .focus-stage-actions,
+    html body.is-active[data-panel-surface="semantic-dive"]:not([data-panel-surface^="map-"]) .focus-stage-dive-btn,
+    html body.is-active[data-panel-surface="semantic-dive"]:not([data-panel-surface^="map-"]) #trail-controls,
+    html body.is-active[data-panel-surface="semantic-dive"]:not([data-panel-surface^="map-"]) .trail-controls {
         display: none;
         pointer-events: none;
     }

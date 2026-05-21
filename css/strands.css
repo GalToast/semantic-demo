@@ -645,10 +645,29 @@
         max-height: min(56vh, 212px);
     }
 
+    html body[data-panel-surface="idle"] .info-panel {
+        left: 10px;
+        right: auto;
+        top: 116px;
+        bottom: auto;
+        width: 318px;
+        height: min(252px, calc(100dvh - 138px));
+        max-height: calc(100dvh - 138px);
+        overflow: hidden;
+    }
+
     html body[data-panel-surface="search"] .info-content,
     html body[data-active-view="galaxy"]:has(.search-container.has-query) .info-content {
         max-height: calc(min(56vh, 212px) - 38px);
         padding: 7px 9px 9px;
+    }
+
+    html body[data-panel-surface="idle"] .info-content {
+        height: 100%;
+        max-height: calc(100dvh - 176px);
+        padding: 10px 16px 16px;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
 
     html body[data-active-view="galaxy"] .search-container.has-query .semantic-lane-assist {
@@ -1778,6 +1797,7 @@ html body[data-panel-surface="focus-search"] .controls .control-btn {
         width: 318px;
         top: 116px;
         bottom: auto;
+        height: min(430px, calc(100dvh - 148px));
         max-height: calc(100dvh - 148px);
         border-radius: 8px;
         opacity: 0.96;
@@ -1785,6 +1805,7 @@ html body[data-panel-surface="focus-search"] .controls .control-btn {
     }
 
     html body[data-panel-surface="search"] .info-content {
+        height: 100%;
         max-height: calc(100dvh - 204px);
         padding: 14px 16px 16px;
         overflow-y: auto;
@@ -1930,7 +1951,7 @@ html body[data-panel-surface="focus-search"] .controls .control-btn {
         background: transparent;
     }
 
-    html body[data-panel-surface="focus-search"] .search-container.search-degraded .search-results.active {
+    html body[data-panel-surface="focus-search"] .search-container.search-degraded #search-results.active {
         display: block;
         opacity: 1;
         visibility: visible;
@@ -1939,6 +1960,7 @@ html body[data-panel-surface="focus-search"] .controls .control-btn {
     html body[data-panel-surface="idle"] .info-panel {
         width: 322px;
         top: 116px;
+        height: min(252px, calc(100dvh - 138px));
         max-height: 432px;
         border-radius: 8px;
         border-color: rgba(121, 235, 222, 0.16);
@@ -1959,6 +1981,7 @@ html body[data-panel-surface="focus-search"] .controls .control-btn {
         display: flex;
         flex-direction: column;
         gap: 10px;
+        height: 100%;
         max-height: 382px;
         padding: 12px 14px 14px;
         overflow: hidden;

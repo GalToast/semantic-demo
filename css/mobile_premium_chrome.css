@@ -31,6 +31,7 @@
     }
 
     html body.is-active[data-panel-surface="idle"] #filters-section[open] {
+        display: block;
         max-height: min(30vh, 244px);
     }
 

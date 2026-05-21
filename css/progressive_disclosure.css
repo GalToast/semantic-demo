@@ -1119,69 +1119,6 @@
                 opacity: 0.24;
             }
 
-            .focus-stage {
-                left: 0;
-                right: 0;
-                bottom: 0;
-                width: 100%;
-                z-index: 92;
-                pointer-events: none;
-            }
-
-            .focus-stage-card {
-                position: relative;
-                padding: 20px 16px calc(14px + env(safe-area-inset-bottom, 0px));
-                border-radius: 28px 28px 0 0;
-                border-width: 1px 0 0 0;
-                border-color: rgba(121, 235, 222, 0.28);
-                background:
-                    radial-gradient(circle at 50% 0%, rgba(121, 235, 222, 0.18), transparent 45%),
-                    linear-gradient(180deg, rgba(8, 18, 25, 0.88), rgba(5, 12, 18, 0.94));
-                box-shadow:
-                    0 -12px 42px rgba(0, 0, 0, 0.34),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-                backdrop-filter: blur(22px) saturate(1.2);
-                pointer-events: auto;
-            }
-
-            .focus-stage-card::after {
-                content: '';
-                position: absolute;
-                top: 8px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 36px;
-                height: 4px;
-                border-radius: 2px;
-                background: rgba(255, 255, 255, 0.12);
-                box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.1);
-            }
-
-            html body[data-panel-surface="semantic-dive"] .focus-stage-card {
-                display: block;
-                max-height: 224px;
-                padding: 8px 9px;
-                overflow-y: auto;
-    overflow-x: hidden;
-                border-radius: 15px;
-            }
-
-            html body[data-panel-surface="semantic-dive"] .focus-stage-kicker,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-what,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-note,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-actions,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-journey,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-neighbors,
-            html body[data-panel-surface="semantic-dive"] .focus-thread-inspector {
-                display: none;
-            }
-
-            html body[data-panel-surface="semantic-dive"] .focus-stage-name,
-            html body[data-panel-surface="semantic-dive"] .focus-stage-name {
-                margin-bottom: 0;
-                font-size: 12px;
-            }
-
         }
 
         html body[data-panel-surface="semantic-dive"] #search-results.active,
@@ -1627,7 +1564,10 @@ body[data-panel-surface="semantic-dive"]::after {
 body[data-panel-surface="idle"] .selected-card:not(.is-empty),
 body[data-panel-surface="idle"] .search-trail-cue,
 body[data-panel-surface="idle"] .synthesize-trigger,
-body[data-panel-surface="idle"] .search-results.active {
+body[data-panel-surface="idle"] .search-results.active,
+body[data-panel-surface="semantic-dive"] .search-results.active,
+body[data-panel-surface="idle"] #filters-section,
+body[data-panel-surface="idle"] #cluster-section {
     display: none;
 }
 
@@ -1675,8 +1615,6 @@ body[data-panel-surface="focus-search"] .semantic-lane-ops {
 }
 
 /* ── Inside (Step Inside / semantic dive): focus-stage is primary HUD ─────────── */
-
-body[data-panel-surface="semantic-dive"] .search-results.active,
 body[data-panel-surface="semantic-dive"] .synthesize-trigger,
 body[data-panel-surface="semantic-dive"] .search-trail-cue,
 body[data-panel-surface="semantic-dive"] .demo-starters,

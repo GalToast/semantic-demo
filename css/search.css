@@ -2149,14 +2149,13 @@ body[data-panel-surface="map-trail"] .journey-compass {
     100% { background: rgba(78, 205, 196, 0.3); opacity: 1; }
 }
 
-/* Adversarial Fix: Force visibility and elevated layering to override all other surface logic */
-html body[data-panel-surface="focus-search"] .search-results.active {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    z-index: 200 !important;
-    max-height: min(35vh, 320px) !important;
-    pointer-events: auto !important;
+html body[data-panel-surface="focus-search"] .search-container:is(.results-rendered, .search-degraded) .search-results.active {
+    display: block;
+    visibility: visible;
+    opacity: 1;
+    z-index: 200;
+    max-height: min(35vh, 320px);
+    pointer-events: auto;
     margin-top: 12px;
 }
 

@@ -605,6 +605,10 @@ html body[data-panel-surface]:not([data-panel-surface^="map-"])[data-strand-jour
         0 14px 42px rgba(0, 0, 0, 0.24);
 }
 
+.focus-thread-inspector[aria-hidden="true"]:not(.active) {
+    pointer-events: none;
+}
+
 /* polish203: strand preview, pin, follow, and arrival share one state language. */
 body[data-strand-journey="preview"] .focus-thread-inspector.active {
     border-color: rgba(185, 255, 242, 0.34);

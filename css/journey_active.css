@@ -1,22 +1,5 @@
 /* Journey active: focus/search, field-node, compass, and trail state overrides. */
 @media (max-width: 768px) {
-    html body[data-panel-surface="focus-search"] .focus-stage {
-        left: 10px;
-        right: 10px;
-        bottom: calc(58px + env(safe-area-inset-bottom, 0px));
-        width: auto;
-    }
-
-    html body[data-panel-surface="focus-search"] .focus-stage-card {
-        display: grid;
-        gap: 7px;
-        max-height: min(43vh, 365px);
-        padding: 12px 12px 11px;
-        overflow-y: auto;
-        border-radius: 22px;
-        scrollbar-width: none;
-    }
-
     html body[data-panel-surface="focus-search"] .focus-stage-card::-webkit-scrollbar {
         display: none;
     }
