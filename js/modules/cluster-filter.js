@@ -122,3 +122,116 @@ export function updateClusterList() {
 }
 
 export { getFilteredClusterCounts };
+
+export function syncCityFilterUi() {
+    const activeCity = state.activeFilters.city || 'all';
+    const select = document.getElementById('city-filter');
+    if (select && select.value !== activeCity) select.value = activeCity;
+
+    const summary = document.getElementById('city-filter-summary');
+    if (summary) summary.textContent = activeCity === 'all' ? 'All cities' : activeCity;
+
+    document.querySelectorAll('[data-city-filter]').forEach((button) => {
+        const active = (button.dataset.cityFilter || 'all') === activeCity;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+}
+
+export function populateCityFilter() {
+    if (!state.points) return;
+    const select = document.getElementById('city-filter');
+    const pills = document.getElementById('city-filter-pills');
+    const note = document.getElementById('city-filter-note');
+    const counts = new Map();
+
+    state.points.forEach((point) => {
+        const city = normalizeCityForFilter(point?.city);
+        counts.set(city, (counts.get(city) || 0) + 1);
+    });
+
+    const cities = Array.from(counts.entries())
+        .filter(([city]) => city && city !== 'Other / Unparsed')
+        .sort((a, b) => a[0].localeCompare(b[0]));
+
+    if (select) {
+        const current = state.activeFilters.city || 'all';
+        select.innerHTML = [
+            '<option value="all">All Cities</option>',
+            ...cities.map(([city, count]) => `<option value="${escapeHtml(city)}">${escapeHtml(city)} (${count.toLocaleString()})</option>`)
+        ].join('');
+        select.value = cities.some(([city]) => city === current) ? current : 'all';
+        state.activeFilters.city = select.value;
+    }
+
+    if (pills) {
+        const topCities = Array.from(counts.entries())
+            .filter(([city]) => city && city !== 'Other / Unparsed')
+            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+            .slice(0, 6);
+        pills.innerHTML = [
+            '<button class="city-filter-pill" type="button" data-city-filter="all" aria-pressed="false"><span>All</span><b>all</b></button>',
+            ...topCities.map(([city, count]) => `
+                <button class="city-filter-pill" type="button" data-city-filter="${escapeHtml(city)}" aria-pressed="false">
+                    <span>${escapeHtml(city)}</span><b>${count.toLocaleString()}</b>
+                </button>
+            `)
+        ].join('');
+    }
+
+    if (note) {
+        note.textContent = cities.length
+            ? `${cities.length.toLocaleString()} city filters available; graph positions still preserve semantic context.`
+            : 'City filters become available after county records load.';
+    }
+
+    syncCityFilterUi();
+}
+
+export function syncFilterControls() {
+    document.querySelectorAll('[data-status-filter]').forEach((el) => {
+        const active = (el.dataset.statusFilter || 'all') === state.activeFilters.status;
+        el.classList.toggle('active', active);
+        el.setAttribute('aria-pressed', String(active));
+    });
+
+    document.querySelectorAll('[data-signal-filter]').forEach((el) => {
+        const key = el.dataset.signalFilter;
+        const active = Boolean(state.activeFilters[key]);
+        el.classList.toggle('active', active);
+        el.setAttribute('aria-pressed', String(active));
+    });
+
+    const citySelect = document.getElementById('city-filter');
+    if (citySelect) citySelect.value = state.activeFilters.city || 'all';
+    if (typeof syncCityFilterUi === 'function') syncCityFilterUi();
+
+    const preview = document.getElementById('filter-preview');
+    if (!preview) return;
+    const parts = [];
+    const statusLabel = { all: 'All Records', active: 'Active', disqualified: 'Archive' };
+    if (state.activeFilters.status !== 'all') {
+        parts.push(statusLabel[state.activeFilters.status] || state.activeFilters.status);
+    }
+    if (state.activeFilters.website) parts.push('Website');
+    if (state.activeFilters.email) parts.push('Email');
+    if (state.activeFilters.geocoded) parts.push('Mapped');
+    if (state.activeFilters.city && state.activeFilters.city !== 'all') {
+        parts.push(`City: ${state.activeFilters.city}`);
+    }
+
+    const clearFiltersBtn = document.getElementById('filter-clear-btn');
+    if (clearFiltersBtn) {
+        const hasActiveFilters = parts.length > 0;
+        clearFiltersBtn.disabled = !hasActiveFilters;
+        clearFiltersBtn.setAttribute('aria-disabled', String(!hasActiveFilters));
+    }
+
+    if (parts.length === 0) {
+        preview.textContent = 'All clear';
+        preview.hidden = true;
+    } else {
+        preview.textContent = parts.join(' · ');
+        preview.hidden = false;
+    }
+}

@@ -691,6 +691,30 @@ export function setFocusPocketIndices(indices) {
     state.navState.focusPocketIndices = indices;
 }
 
+export function getFocusPocketRoleByIndex() {
+    return state.navState.focusPocketRoleByIndex ?? new Map();
+}
+
+export function setFocusPocketRoleByIndex(map) {
+    state.navState.focusPocketRoleByIndex = map;
+}
+
+export function clearFocusPocketRoleByIndex() {
+    state.navState.focusPocketRoleByIndex = new Map();
+}
+
+export function getFocusPocketMotionByIndex() {
+    return state.focusPocketMotionByIndex ?? new Map();
+}
+
+export function setFocusPocketMotionByIndex(map) {
+    state.focusPocketMotionByIndex = map;
+}
+
+export function clearFocusPocketMotionByIndex() {
+    state.focusPocketMotionByIndex = new Map();
+}
+
 export function clearFocusPocketIndices() {
     state.navState.focusPocketIndices = [];
 }
@@ -746,8 +770,8 @@ export function applyLocalNeighborhoodFocus(index) {
 
     clearFocusPocketIndices();
     clearFocusPocketMeta();
-    state.navState.focusPocketRoleByIndex = new Map();
-    state.focusPocketMotionByIndex = new Map();
+    clearFocusPocketRoleByIndex();
+    clearFocusPocketMotionByIndex();
     state.focusPocketTransitionStartedAt = performance.now();
 
     if (state.navState.threadSource === 'semantic') {
@@ -759,7 +783,7 @@ export function applyLocalNeighborhoodFocus(index) {
                 }
             });
             setFocusPocketIndices(pocket.indices.filter((candidateIndex) => candidateIndex !== index));
-            state.navState.focusPocketRoleByIndex = pocket.roles || new Map();
+            setFocusPocketRoleByIndex(pocket.roles || new Map());
 
             // --- TRAVERSAL CONTINUITY: inject preserved position into motion for continuing nodes ---
             const newPocketSet = new Set(pocket.indices);
@@ -776,7 +800,7 @@ export function applyLocalNeighborhoodFocus(index) {
                     });
                 }
             });
-            state.focusPocketMotionByIndex = motion;
+            setFocusPocketMotionByIndex(motion);
 
             setFocusPocketMeta(pocket.meta || {
                 active: getFocusPocketIndices().length > 0,
@@ -839,8 +863,8 @@ export function applyLocalNeighborhoodFocus(index) {
             }
         });
         setFocusPocketIndices([...fallbackPocketEntries.keys()]);
-        state.navState.focusPocketRoleByIndex = fallbackPocket.roles || new Map([[index, 'anchor']]);
-        state.focusPocketMotionByIndex = fallbackPocket.motion || new Map();
+        setFocusPocketRoleByIndex(fallbackPocket.roles || new Map([[index, 'anchor']]));
+        setFocusPocketMotionByIndex(fallbackPocket.motion || new Map());
         setFocusPocketMeta({
             active: true,
             nodeCount: fallbackPocket.positions.size,
@@ -857,8 +881,8 @@ export function applyLocalNeighborhoodFocus(index) {
     }
 
     setFocusPocketIndices([...localIndices].filter((candidateIndex) => candidateIndex !== index));
-    state.navState.focusPocketRoleByIndex = new Map([[index, 'anchor']]);
-    state.focusPocketMotionByIndex = new Map([
+    setFocusPocketRoleByIndex(new Map([[index, 'anchor']]));
+    setFocusPocketMotionByIndex(new Map([
         [
             index,
             {
@@ -869,7 +893,7 @@ export function applyLocalNeighborhoodFocus(index) {
                 personality: personality.type
             }
         ]
-    ]);
+    ]));
     setFocusPocketMeta({
         active: getFocusPocketIndices().length > 0,
         nodeCount: localIndices.size,

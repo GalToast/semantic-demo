@@ -227,9 +227,11 @@ function testGap4_updateSelectedCardHeading() {
 }
 
 // ---------------------------------------------------------------------------
-// GAP 5 — focusOnNode: exported from camera-controls.js, guarded at all call sites.
-// The window shim (app.js:85) bridges during transition.
-// Seam: callers switch to direct named import from camera-controls.js.
+// GAP 5 — focusOnNode: exported from camera-controls.js.
+// event-bindings.js and lifecycle.js already use direct named imports.
+// The 3 remaining window.focusOnNode call sites (search-state.js:339, 344, 1207)
+// are inside typeof guards — they are documented bootstrap/compatibility guards
+// that use the window shim installed by app.js:85 during the transition period.
 // ---------------------------------------------------------------------------
 
 function testGap5_focusOnNode() {
@@ -238,17 +240,40 @@ function testGap5_focusOnNode() {
   const cameraControlsSrc = fs.readFileSync(CAMERA_CONTROLS_PATH, 'utf-8');
   const eventBindingsSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
+  const searchStateSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/search-state.js'), 'utf-8');
 
   assert(
     /^export\s+function\s+focusOnNode\s*\(/m.test(cameraControlsSrc),
     'camera-controls.js must export focusOnNode as a named function'
   );
 
+  // event-bindings.js and lifecycle.js must use direct imports (no window.focusOnNode calls)
   assertNoDeadCall(eventBindingsSrc, 'focusOnNode', 'event-bindings.js', 'Gap 5');
   assertNoDeadCall(lifecycleSrc, 'focusOnNode', 'lifecycle.js', 'Gap 5');
 
+  // search-state.js: the 3 window.focusOnNode call sites must all be inside typeof guards
+  // (documented bootstrap/compatibility guards — not bare calls)
+  const searchStateLines = searchStateSrc.split('\n');
+  const unguardedCalls = [];
+  for (let i = 0; i < searchStateLines.length; i++) {
+    const line = searchStateLines[i];
+    const pos = line.indexOf('window.focusOnNode');
+    if (pos === -1) continue;
+    const before = line.substring(0, pos);
+    if (before.includes('typeof') || before.includes('?.')) continue;
+    // Multi-line guard: scan up to 3 preceding non-blank lines
+    let guarded = false;
+    for (let j = Math.max(0, i - 3); j < i; j++) {
+      const prev = searchStateLines[j].trim();
+      if (prev.includes('typeof') || prev.includes('?.')) { guarded = true; break; }
+    }
+    if (!guarded) unguardedCalls.push(`  line ${i + 1}: ${line.trim()}`);
+  }
+  assert(unguardedCalls.length === 0, `Gap 5: search-state.js has unguarded window.focusOnNode() calls:\n${unguardedCalls.join('\n')}`);
+
   console.log('  OK — focusOnNode: export verified, typeof guards confirmed at all call sites');
-  console.log('  TRACKED — dewindowing seam: replace window.focusOnNode calls with import from camera-controls.js');
+  console.log('  OK — search-state.js: 3 window.focusOnNode calls are all bootstrap/compatibility guards (typeof-gated)');
+  console.log('  TRACKED — dewindowing seam: search-state.js remaining window.focusOnNode call sites documented as bootstrap guards');
 }
 
 // ---------------------------------------------------------------------------

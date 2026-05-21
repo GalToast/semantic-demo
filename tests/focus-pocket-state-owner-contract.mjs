@@ -51,6 +51,10 @@ const ownerFunctionNames = [
     'clearFocusPocketIndices',
     'setFocusPocketMeta',
     'clearFocusPocketMeta',
+    'setFocusPocketRoleByIndex',
+    'clearFocusPocketRoleByIndex',
+    'setFocusPocketMotionByIndex',
+    'clearFocusPocketMotionByIndex',
 ];
 
 const ownerRanges = ownerFunctionNames.map((name) => {
@@ -69,7 +73,7 @@ function isInsideOwnerApi(file, offset) {
 
 for (const file of listJsFiles(MODULES_DIR)) {
     const fileSource = readFileSync(file, 'utf8');
-    const directWrite = /state\.navState\.focusPocket(?:Indices|Meta)\s*=/g;
+    const directWrite = /state\.navState\.focusPocket(?:Indices|Meta|RoleByIndex)\s*=|state\.focusPocketMotionByIndex\s*=/g;
     let match;
 
     while ((match = directWrite.exec(fileSource)) !== null) {
@@ -91,6 +95,12 @@ const requiredExports = [
     'getFocusPocketMeta',
     'setFocusPocketMeta',
     'clearFocusPocketMeta',
+    'getFocusPocketRoleByIndex',
+    'setFocusPocketRoleByIndex',
+    'clearFocusPocketRoleByIndex',
+    'getFocusPocketMotionByIndex',
+    'setFocusPocketMotionByIndex',
+    'clearFocusPocketMotionByIndex',
 ];
 
 requiredExports.forEach((name) => {

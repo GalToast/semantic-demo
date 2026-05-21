@@ -32,7 +32,10 @@ import {
 import {
     clearClusterFilter,
     updateClusterList,
-    getFilteredClusterCounts
+    getFilteredClusterCounts,
+    syncCityFilterUi,
+    populateCityFilter,
+    syncFilterControls
 } from './cluster-filter.js';
 import {
     fetchSemanticLaneHealth,
@@ -77,7 +80,7 @@ import {
     clearMobileRouteFieldPeek
 } from './search-state.js';
 import { focusOnNode } from './camera-controls.js';
-import { clearFocusPocketIndices, clearFocusPocketMeta } from './focus-pocket.js';
+import { clearFocusPocketIndices, clearFocusPocketMeta, clearFocusPocketRoleByIndex, clearFocusPocketMotionByIndex } from './focus-pocket.js';
 import {
     updateSelectedBusiness,
     setTrailFromSeed,
@@ -87,7 +90,7 @@ import {
 
 export { setLoadingPhase, hideLoadingOverlay, startDeferredHydration, scheduleWeatherHydration };
 export { startSceneReveal, getSceneRevealProgress, onWindowResize };
-export { clearClusterFilter, updateClusterList, getFilteredClusterCounts, applyFilters };
+export { clearClusterFilter, updateClusterList, getFilteredClusterCounts, applyFilters, syncCityFilterUi, populateCityFilter, syncFilterControls };
 export { getFocusedJourneyPoint, getJourneyCompassState };
 export { updateTime };
 export {
@@ -119,122 +122,6 @@ export const STORY_DESCRIPTIONS = {
 };
 
 // === Exploration UI & Orchestration ===
-
-
-
-export function syncCityFilterUi() {
-    const activeCity = state.activeFilters.city || 'all';
-    const select = document.getElementById('city-filter');
-    if (select && select.value !== activeCity) select.value = activeCity;
-
-    const summary = document.getElementById('city-filter-summary');
-    if (summary) summary.textContent = activeCity === 'all' ? 'All cities' : activeCity;
-
-    document.querySelectorAll('[data-city-filter]').forEach((button) => {
-        const active = (button.dataset.cityFilter || 'all') === activeCity;
-        button.classList.toggle('active', active);
-        button.setAttribute('aria-pressed', String(active));
-    });
-}
-
-export function populateCityFilter() {
-    if (!state.points) return;
-    const select = document.getElementById('city-filter');
-    const pills = document.getElementById('city-filter-pills');
-    const note = document.getElementById('city-filter-note');
-    const counts = new Map();
-
-    state.points.forEach((point) => {
-        const city = normalizeCityForFilter(point?.city);
-        counts.set(city, (counts.get(city) || 0) + 1);
-    });
-
-    const cities = Array.from(counts.entries())
-        .filter(([city]) => city && city !== 'Other / Unparsed')
-        .sort((a, b) => a[0].localeCompare(b[0]));
-
-    if (select) {
-        const current = state.activeFilters.city || 'all';
-        select.innerHTML = [
-            '<option value="all">All Cities</option>',
-            ...cities.map(([city, count]) => `<option value="${escapeHtml(city)}">${escapeHtml(city)} (${count.toLocaleString()})</option>`)
-        ].join('');
-        select.value = cities.some(([city]) => city === current) ? current : 'all';
-        state.activeFilters.city = select.value;
-    }
-
-    if (pills) {
-        const topCities = Array.from(counts.entries())
-            .filter(([city]) => city && city !== 'Other / Unparsed')
-            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-            .slice(0, 6);
-        pills.innerHTML = [
-            '<button class="city-filter-pill" type="button" data-city-filter="all" aria-pressed="false"><span>All</span><b>all</b></button>',
-            ...topCities.map(([city, count]) => `
-                <button class="city-filter-pill" type="button" data-city-filter="${escapeHtml(city)}" aria-pressed="false">
-                    <span>${escapeHtml(city)}</span><b>${count.toLocaleString()}</b>
-                </button>
-            `)
-        ].join('');
-    }
-
-    if (note) {
-        note.textContent = cities.length
-            ? `${cities.length.toLocaleString()} city filters available; graph positions still preserve semantic context.`
-            : 'City filters become available after county records load.';
-    }
-
-    syncCityFilterUi();
-}
-
-export function syncFilterControls() {
-    document.querySelectorAll('[data-status-filter]').forEach((el) => {
-        const active = (el.dataset.statusFilter || 'all') === state.activeFilters.status;
-        el.classList.toggle('active', active);
-        el.setAttribute('aria-pressed', String(active));
-    });
-
-    document.querySelectorAll('[data-signal-filter]').forEach((el) => {
-        const key = el.dataset.signalFilter;
-        const active = Boolean(state.activeFilters[key]);
-        el.classList.toggle('active', active);
-        el.setAttribute('aria-pressed', String(active));
-    });
-
-    const citySelect = document.getElementById('city-filter');
-    if (citySelect) citySelect.value = state.activeFilters.city || 'all';
-    if (typeof syncCityFilterUi === 'function') syncCityFilterUi();
-
-    // Update the collapsed Filters section preview badge
-    const preview = document.getElementById('filter-preview');
-    if (!preview) return;
-    const parts = [];
-    const statusLabel = { all: 'All Records', active: 'Active', disqualified: 'Archive' };
-    if (state.activeFilters.status !== 'all') {
-        parts.push(statusLabel[state.activeFilters.status] || state.activeFilters.status);
-    }
-    if (state.activeFilters.website) parts.push('Website');
-    if (state.activeFilters.email) parts.push('Email');
-    if (state.activeFilters.geocoded) parts.push('Mapped');
-    if (state.activeFilters.city && state.activeFilters.city !== 'all') {
-        parts.push(`City: ${state.activeFilters.city}`);
-    }
-
-    const clearFiltersBtn = document.getElementById('filter-clear-btn');
-    if (clearFiltersBtn) {
-        const hasActiveFilters = parts.length > 0;
-        clearFiltersBtn.disabled = !hasActiveFilters;
-        clearFiltersBtn.setAttribute('aria-disabled', String(!hasActiveFilters));
-    }
-
-    if (parts.length === 0) {
-        preview.textContent = 'All clear';
-        preview.hidden = true;
-    } else {
-        preview.textContent = parts.join(' · ');
-        preview.hidden = false;
-    }
-}
 
 export function updateExplorationUi() {
     document.body.dataset.myceliumMode = state.myceliumMode;
@@ -705,6 +592,35 @@ export function resetExperienceState() {
 }
 
 /**
+ * Official focus/selection clear API — clears focusedNode, selectedPoint, navState
+ * focus fields, and trailIndices in one canonical call. All other functions in
+ * lifecycle.js must route through this helper instead of writing those fields
+ * directly.
+ *
+ * @param {object} [options]
+ * @param {boolean} [options.preserveSearch] - if true, skips clearing selectedPoint
+ * @returns {{ hadFocusedNode: boolean, hadSelectedPoint: boolean }}
+ */
+export function clearExplorationFocusSelection(options = {}) {
+    const hadFocusedNode = state.focusedNode !== null;
+    const hadSelectedPoint = state.selectedPoint !== null;
+
+    state.focusedNode = null;
+    if (!options?.preserveSearch) {
+        state.selectedPoint = null;
+    }
+    state.navState.focusedIndex = null;
+    state.navState.trailSeedIndex = null;
+    state.navState.trailNeighborIndices = [];
+    state.navState.trailCursor = -1;
+    state.navState.explorationHistoryIndices = [];
+    state.navState.lastTraversalReason = null;
+    state.trailIndices.clear();
+
+    return { hadFocusedNode, hadSelectedPoint };
+}
+
+/**
  * Official exploration-focus reset: clears focusedNode, trail depth, mycelium mode,
  * and focus-stage while preserving the current search so the user retains context.
  * Use this when returning to overview without a full scene wipe.
@@ -777,9 +693,7 @@ export function resetStateBeforeUrlRestore(options = {}) {
         email: false,
         geocoded: false
     };
-    state.selectedPoint = null;
-    state.focusedNode = null;
-    state.navState.focusedIndex = null;
+    clearExplorationFocusSelection();
     setTrailDepth(0, { skipUrlSync: true, allowDiveExit: true });
     if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ searching: false, focusing: false, resultsRendered: false });
     if (typeof window.hideTooltip === 'function') window.hideTooltip();
@@ -799,11 +713,9 @@ export function resetStateBeforeUrlRestore(options = {}) {
     updateSearchStatusMessage(getFilteredIndices().length);
     if (typeof window.syncFocusStage === 'function') window.syncFocusStage(null);
     if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
-    state.navState.trailCursor = -1;
+    clearExplorationFocusSelection();
     state.navState.mode = 'overview';
-    state.navState.explorationHistoryIndices = [];
     state.navState.threadCandidates = [];
-    state.trailIndices.clear();
     state.nodesAreSettling = false;
 }
 
@@ -2108,18 +2020,11 @@ export function focusOnPoint(point, options = {}) {
 
 export function resetNodePositions(options = {}) {
     if (!options.preserveSearch) clearSearchGlow();
-    state.focusedNode = null;
-    state.selectedPoint = null;
+    clearExplorationFocusSelection();
     state.navState.mode = 'overview';
-    state.navState.focusedIndex = null;
-    state.navState.trailSeedIndex = null;
-    state.navState.trailNeighborIndices = [];
-    state.navState.trailCursor = -1;
-    state.navState.explorationHistoryIndices = [];
-    state.navState.lastTraversalReason = null;
     clearFocusPocketIndices();
-    state.focusPocketMotionByIndex = new Map();
-    state.navState.focusPocketRoleByIndex = new Map();
+    clearFocusPocketRoleByIndex();
+    clearFocusPocketMotionByIndex();
     clearFocusPocketMeta();
     setTrailDepth(0, { skipUrlSync: true, allowDiveExit: true });
     document.body.dataset.focusOrigin = 'overview';

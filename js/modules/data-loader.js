@@ -1,6 +1,5 @@
 import { state } from '../state.js'
-import { updateClusterList } from './cluster-filter.js';
-import { populateCityFilter } from './lifecycle.js';
+import { updateClusterList, populateCityFilter } from './cluster-filter.js';
 import { buildLegend } from './ui-renderers.js';
 
 export async function loadData() {
