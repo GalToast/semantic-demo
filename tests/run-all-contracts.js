@@ -192,6 +192,8 @@ const PINNED_FILES = [
   'search-peek-expanded-render-contract.mjs',
   'semantic-guide-payload-contract.mjs',
   'connection-analysis-render-state-contract.mjs',
+  'reduced-motion-interruption.spec.js',
+  'gemma-fallback-error.spec.js',
 ];
 
 function loadManifest() {

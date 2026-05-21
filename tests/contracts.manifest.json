@@ -54,7 +54,9 @@
       "description": "Playwright browser-interaction contracts - canvas hit-test and live UI reset interaction proofs. Requires a running dev server on port 8795.",
       "contracts": [
         "live-ui-reset-interaction.spec.js",
-        "canvas-hit-test-interaction.spec.js"
+        "canvas-hit-test-interaction.spec.js",
+        "reduced-motion-interruption.spec.js",
+        "gemma-fallback-error.spec.js"
       ]
     },
     "render": {
@@ -280,7 +282,9 @@
         "three-visual-polish-contract.mjs",
         "search-peek-expanded-render-contract.mjs",
         "semantic-guide-payload-contract.mjs",
-        "connection-analysis-render-state-contract.mjs"
+        "connection-analysis-render-state-contract.mjs",
+        "reduced-motion-interruption.spec.js",
+        "gemma-fallback-error.spec.js"
       ]
     },
     "projection": {

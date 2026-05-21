@@ -77,6 +77,12 @@ import {
     clearMobileRouteFieldPeek
 } from './search-state.js';
 import { focusOnNode } from './camera-controls.js';
+import {
+    updateSelectedBusiness,
+    setTrailFromSeed,
+    updateTrailIndices,
+    refreshFocusSemanticOverlay
+} from './journey.js';
 
 export { setLoadingPhase, hideLoadingOverlay, startDeferredHydration, scheduleWeatherHydration };
 export { startSceneReveal, getSceneRevealProgress, onWindowResize };
@@ -785,7 +791,7 @@ export function resetStateBeforeUrlRestore(options = {}) {
     if (state.pointsMesh && state.originalPositions?.length) {
         if (typeof window.resetNodePositions === 'function') window.resetNodePositions({ skipUrlSync: true });
     } else {
-        if (typeof window.updateSelectedBusiness === 'function') window.updateSelectedBusiness(null);
+        updateSelectedBusiness(null);
     }
     applyFilters();
     if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
@@ -1486,9 +1492,7 @@ export function switchView(view, options = {}) {
                         preserveMode: true
                     });
                 }
-                if (typeof window.setTrailFromSeed === 'function') {
-                    window.setTrailFromSeed(selectedIndex);
-                }
+                setTrailFromSeed(selectedIndex);
             }
         } else if (
             state.currentSearchSummary?.anchorIndex !== null &&
@@ -1519,9 +1523,7 @@ export function switchView(view, options = {}) {
                     preserveMode: true
                 });
             }
-            if (typeof window.setTrailFromSeed === 'function') {
-                window.setTrailFromSeed(anchorIndex);
-            }
+            setTrailFromSeed(anchorIndex);
         } else {
             if (typeof window.setRouteChoreographyPhase === 'function') {
                 window.setRouteChoreographyPhase('overview', {
@@ -1576,8 +1578,8 @@ export function switchView(view, options = {}) {
     if (typeof window.syncClusterSectionState === 'function') window.syncClusterSectionState();
     if (typeof window.updateLegendGuideState === 'function') window.updateLegendGuideState();
     if (typeof window.syncFocusStage === 'function') window.syncFocusStage(state.selectedPoint);
-    if (!state.selectedPoint && typeof window.updateSelectedBusiness === 'function') {
-        window.updateSelectedBusiness(null);
+    if (!state.selectedPoint) {
+        updateSelectedBusiness(null);
     }
     if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
     if (!options.silentHandoff) {
@@ -2099,7 +2101,7 @@ export function focusOnPoint(point, options = {}) {
     const pointIndex = state.points.indexOf(point);
     state.selectedPoint = point;
     if (pointIndex >= 0) return focusOnNode(pointIndex, options);
-    if (typeof window.updateSelectedBusiness === 'function') window.updateSelectedBusiness(point, options);
+    updateSelectedBusiness(point, options);
     if (!options.skipUrlSync && typeof window.updateUrlState === 'function') {
         window.updateUrlState({ record: point.lead_id || null }, { mode: options.historyMode || 'push', reason: 'focus' });
     }
@@ -2128,7 +2130,7 @@ export function resetNodePositions(options = {}) {
     if (Array.isArray(state.originalPositions) && state.originalPositions.length) {
         state.targetPositions = state.originalPositions.map((position) => ({ ...position }));
     }
-    if (typeof window.updateSelectedBusiness === 'function') window.updateSelectedBusiness(null);
+    updateSelectedBusiness(null);
     if (typeof window.applyPointFilterColors === 'function') window.applyPointFilterColors();
     if (typeof window.updateTraversalUi === 'function') window.updateTraversalUi();
     refreshMapRouteEmbodiment();
@@ -2706,8 +2708,6 @@ if (typeof window !== 'undefined') {
     window.handleGalaxyKeydown = handleGalaxyKeydown;
     window.hydrateLeadContext = function (point, options = {}) {
         if (!point || !point.lead_id) return;
-        if (typeof window.updateSelectedBusiness === 'function') {
-            window.updateSelectedBusiness(point, { revealCard: !!options.revealCard, skipUrlSync: true });
-        }
+        updateSelectedBusiness(point, { revealCard: !!options.revealCard, skipUrlSync: true });
     };
 }

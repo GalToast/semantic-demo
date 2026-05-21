@@ -204,14 +204,17 @@ export function parseFiniteNumber(value) {
 }
 
 export function isCompactFocusStageViewport() {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
     return window.matchMedia('(max-width: 768px)').matches;
 }
 
 export function isCompactMapViewport() {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
     return window.matchMedia('(max-width: 768px)').matches;
 }
 
 export function isCompactSearchViewport() {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
     return window.matchMedia('(max-width: 768px)').matches;
 }
 

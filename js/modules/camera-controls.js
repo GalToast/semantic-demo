@@ -147,14 +147,26 @@ export function getCanvasUnobstructedRegion() {
 
                 const overlayCenterX = intersection.left + width / 2;
                 const overlayCenterY = intersection.top + height / 2;
-                const edgeDistances = [
-                    { edge: 'left', value: Math.abs(overlayCenterX - canvasRect.left) },
-                    { edge: 'right', value: Math.abs(canvasRect.right - overlayCenterX) },
-                    { edge: 'top', value: Math.abs(overlayCenterY - canvasRect.top) },
-                    { edge: 'bottom', value: Math.abs(canvasRect.bottom - overlayCenterY) }
-                ].sort((a, b) => a.value - b.value);
+                const canvasCenterX = canvasRect.left + canvasRect.width / 2;
+                let edge = null;
 
-                switch (edgeDistances[0]?.edge) {
+                // Short-landscape focus uses a split-screen layout: panels fill
+                // the left side while the right side remains the usable canvas.
+                // Classify narrow overlays by side first so they do not collapse
+                // the vertical safe area to a 1px strip.
+                if (width <= canvasRect.width * 0.65 && height >= canvasRect.height * 0.35) {
+                    edge = overlayCenterX <= canvasCenterX ? 'left' : 'right';
+                } else {
+                    const edgeDistances = [
+                        { edge: 'left', value: Math.abs(overlayCenterX - canvasRect.left) },
+                        { edge: 'right', value: Math.abs(canvasRect.right - overlayCenterX) },
+                        { edge: 'top', value: Math.abs(overlayCenterY - canvasRect.top) },
+                        { edge: 'bottom', value: Math.abs(canvasRect.bottom - overlayCenterY) }
+                    ].sort((a, b) => a.value - b.value);
+                    edge = edgeDistances[0]?.edge || null;
+                }
+
+                switch (edge) {
                     case 'left':
                         leftOverlap = Math.max(leftOverlap, intersection.right - canvasRect.left);
                         break;

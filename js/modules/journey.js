@@ -105,6 +105,7 @@ const ARRIVAL_HANDOFF_SEGMENT_STEPS = 9;
 // --- Helper Functions ---
 
 function isCondensedFocusStageViewport() {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
     return (
         state.currentView === 'galaxy' &&
         (window.matchMedia('(max-width: 768px) and (max-height: 740px)').matches ||
