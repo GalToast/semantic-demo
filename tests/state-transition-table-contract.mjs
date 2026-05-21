@@ -597,7 +597,193 @@ assert(
 );
 console.log('PASS CONTRACT 34: applyingUrlState and restoringBrowserHistory are booleans');
 
+// ─── CONTRACT 35: NAV_TRANSITION_ACTIONS exported ────────────────────────────────
+// NAV_TRANSITION_ACTIONS must be exported from lifecycle.js.
+
+const navActions = await import('../js/modules/lifecycle.js').then(m => m.NAV_TRANSITION_ACTIONS);
+assert(
+  typeof navActions === 'object' && navActions !== null,
+  'NAV_TRANSITION_ACTIONS must be exported from lifecycle.js'
+);
+const requiredActions = ['FOCUS_NODE', 'SET_DEPTH', 'WALK_TO', 'BACKTRACK', 'RESET_FOCUS', 'RESET_EXPERIENCE', 'ENTER_INSIDE', 'EXIT_INSIDE'];
+for (const a of requiredActions) {
+  assert(
+    typeof navActions[a] === 'string' && navActions[a] === a,
+    `NAV_TRANSITION_ACTIONS must have '${a}'`
+  );
+}
+console.log(`PASS CONTRACT 35: NAV_TRANSITION_ACTIONS has all ${requiredActions.length} required actions`);
+
+// ─── CONTRACT 36: dispatchNavTransition exists and is callable ─────────────────
+
+assert(
+  typeof lifecycle.dispatchNavTransition === 'function',
+  'dispatchNavTransition must be exported from lifecycle.js'
+);
+const result = lifecycle.dispatchNavTransition('RESET_FOCUS');
+assert(
+  typeof result === 'object' && result !== null,
+  'dispatchNavTransition must return an object'
+);
+assert(
+  typeof result.handled === 'boolean',
+  'dispatchNavTransition result must have handled: boolean'
+);
+assert(
+  typeof result.noOp === 'boolean',
+  'dispatchNavTransition result must have noOp: boolean'
+);
+assert(
+  typeof result.reason === 'string',
+  'dispatchNavTransition result must have reason: string'
+);
+console.log('PASS CONTRACT 36: dispatchNavTransition is callable and returns structured result');
+
+assert(
+  typeof win.dispatchNavTransition === 'function',
+  'window.dispatchNavTransition must be installed as the production compatibility bridge'
+);
+console.log('PASS CONTRACT 36b: window.dispatchNavTransition compatibility bridge is installed');
+
+// ─── CONTRACT 37: dispatchNavTransition('RESET_FOCUS') is handled ───────────────
+// RESET_FOCUS must be handled (delegates to resetExplorationFocus).
+
+const resetFocusResult = lifecycle.dispatchNavTransition('RESET_FOCUS');
+assert(
+  resetFocusResult.handled === true,
+  'dispatchNavTransition RESET_FOCUS must be handled'
+);
+assert(
+  resetFocusResult.noOp === false,
+  'dispatchNavTransition RESET_FOCUS must not be a noOp'
+);
+console.log('PASS CONTRACT 37: dispatchNavTransition RESET_FOCUS is handled (not a no-op)');
+
+// ─── CONTRACT 38: dispatchNavTransition('RESET_EXPERIENCE') is handled ────────
+
+const resetExpResult = lifecycle.dispatchNavTransition('RESET_EXPERIENCE');
+assert(
+  resetExpResult.handled === true,
+  'dispatchNavTransition RESET_EXPERIENCE must be handled'
+);
+assert(
+  resetExpResult.noOp === false,
+  'dispatchNavTransition RESET_EXPERIENCE must not be a noOp'
+);
+console.log('PASS CONTRACT 38: dispatchNavTransition RESET_EXPERIENCE is handled (not a no-op)');
+
+// ─── CONTRACT 39: dispatchNavTransition('SET_DEPTH') is handled ───────────────
+// SET_DEPTH must be handled (delegates to setTrailDepth).
+
+state.trailDepth = 0;
+const setDepthResult = lifecycle.dispatchNavTransition('SET_DEPTH', { depth: 1 });
+assert(
+  setDepthResult.handled === true,
+  'dispatchNavTransition SET_DEPTH must be handled'
+);
+assert(
+  setDepthResult.noOp === false,
+  'dispatchNavTransition SET_DEPTH must not be a noOp'
+);
+assertEq(state.trailDepth, 1, 'SET_DEPTH {depth:1} must set trailDepth to 1');
+console.log('PASS CONTRACT 39: dispatchNavTransition SET_DEPTH is handled (not a no-op)');
+
+// ─── CONTRACT 40: dispatchNavTransition('SET_DEPTH') silent depth=2 guard ───
+// Silent depth=2 (no fromUserGesture) must be blocked by setTrailDepth's own gate.
+
+state.trailDepth = 0;
+const silentDeepResult = lifecycle.dispatchNavTransition('SET_DEPTH', { depth: 2 });
+assert(
+  silentDeepResult.handled === true,
+  'dispatchNavTransition SET_DEPTH for depth=2 must be handled'
+);
+assertEq(state.trailDepth, 0, 'silent SET_DEPTH {depth:2} must be blocked by setTrailDepth gate');
+console.log('PASS CONTRACT 40: SET_DEPTH silent depth=2 is blocked (gate preserved)');
+
+// ─── CONTRACT 41: dispatchNavTransition('ENTER_INSIDE') handled ─────────────────
+
+state.trailDepth = 0;
+state.semanticDiveMode = false;
+const enterResult = lifecycle.dispatchNavTransition('ENTER_INSIDE');
+assert(
+  enterResult.handled === true,
+  'dispatchNavTransition ENTER_INSIDE must be handled'
+);
+assert(
+  enterResult.noOp === false,
+  'dispatchNavTransition ENTER_INSIDE must not be a noOp'
+);
+console.log('PASS CONTRACT 41: dispatchNavTransition ENTER_INSIDE is handled');
+
+// ─── CONTRACT 42: dispatchNavTransition('EXIT_INSIDE') handled ─────────────────
+
+state.trailDepth = 2;
+state.semanticDiveMode = true;
+const exitResult = lifecycle.dispatchNavTransition('EXIT_INSIDE');
+assert(
+  exitResult.handled === true,
+  'dispatchNavTransition EXIT_INSIDE must be handled'
+);
+assert(
+  exitResult.noOp === false,
+  'dispatchNavTransition EXIT_INSIDE must not be a noOp'
+);
+console.log('PASS CONTRACT 42: dispatchNavTransition EXIT_INSIDE is handled');
+
+// ─── CONTRACT 43: dispatchNavTransition('FOCUS_NODE') returns noOp ─────────────
+// FOCUS_NODE is not migrated in Phase 1 — must return noOp=true, handled=false.
+
+const focusResult = lifecycle.dispatchNavTransition('FOCUS_NODE', { index: 5 });
+assert(
+  focusResult.handled === false,
+  'dispatchNavTransition FOCUS_NODE must be handled=false (Phase 1 migration-pending)'
+);
+assert(
+  focusResult.noOp === true,
+  'dispatchNavTransition FOCUS_NODE must be noOp=true (Phase 1 migration-pending)'
+);
+console.log('PASS CONTRACT 43: dispatchNavTransition FOCUS_NODE is migration-pending noOp');
+
+// ─── CONTRACT 44: dispatchNavTransition('WALK_TO') returns noOp ────────────────
+
+const walkResult = lifecycle.dispatchNavTransition('WALK_TO', { index: 3 });
+assert(
+  walkResult.handled === false,
+  'dispatchNavTransition WALK_TO must be handled=false (Phase 1 migration-pending)'
+);
+assert(
+  walkResult.noOp === true,
+  'dispatchNavTransition WALK_TO must be noOp=true (Phase 1 migration-pending)'
+);
+console.log('PASS CONTRACT 44: dispatchNavTransition WALK_TO is migration-pending noOp');
+
+// ─── CONTRACT 45: dispatchNavTransition('BACKTRACK') returns noOp ──────────────
+
+const backtrackResult = lifecycle.dispatchNavTransition('BACKTRACK');
+assert(
+  backtrackResult.handled === false,
+  'dispatchNavTransition BACKTRACK must be handled=false (Phase 1 migration-pending)'
+);
+assert(
+  backtrackResult.noOp === true,
+  'dispatchNavTransition BACKTRACK must be noOp=true (Phase 1 migration-pending)'
+);
+console.log('PASS CONTRACT 45: dispatchNavTransition BACKTRACK is migration-pending noOp');
+
+// ─── CONTRACT 46: dispatchNavTransition unknown action returns noOp ────────────
+
+const unknownResult = lifecycle.dispatchNavTransition('UNKNOWN_ACTION');
+assert(
+  unknownResult.handled === false,
+  'dispatchNavTransition unknown action must be handled=false'
+);
+assert(
+  unknownResult.noOp === true,
+  'dispatchNavTransition unknown action must be noOp=true'
+);
+console.log('PASS CONTRACT 46: dispatchNavTransition unknown action returns structured noOp');
+
 // ─── Summary ───────────────────────────────────────────────────────────────────
 
 console.log('\n=== state-transition-table-contract.mjs PASSED ===');
-console.log('All 34 contracts verified. The state transition table is correctly implemented.');
+console.log('All 46 contracts verified. The state transition table is correctly implemented.');

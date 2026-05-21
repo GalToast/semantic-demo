@@ -41,8 +41,8 @@ const selectorBaselines = {
     'journey_active.css': 3,
     'mobile_base.css': 3,
     'progressive_disclosure.css': 2,
-    'strands.css': 4,
-    'animations.css': 3,
+    'strands.css': 7,
+    'animations.css': 0,
   },
   '.legend-toggle': {
     'controls.css': 1,

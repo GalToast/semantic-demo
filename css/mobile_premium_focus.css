@@ -343,7 +343,7 @@
     html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-controls {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 6px;
+        gap: 8px;
         margin-top: 6px;
         order: 38;
     }

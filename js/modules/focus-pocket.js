@@ -679,9 +679,9 @@ export function buildFocusedSemanticPocket(index) {
 }
 
 // === Focus Pocket Owner API ===
-// All writes to navState.focusPocketIndices and focusPocketMeta must flow through
-// these functions. No direct assignment to state.navState.focusPocketIndices or
-// state.navState.focusPocketMeta is permitted outside this API.
+// All writes to navState.focusPocketIndices, focusPocketMeta, focusPocketRoleByIndex,
+// and focusPocketMotionByIndex must flow through these functions. No direct assignment
+// to these state properties is permitted outside this API.
 
 export function getFocusPocketIndices() {
     return state.navState.focusPocketIndices ?? [];
@@ -699,6 +699,13 @@ export function setFocusPocketRoleByIndex(map) {
     state.navState.focusPocketRoleByIndex = map;
 }
 
+export function setFocusPocketRoleForIndex(index, role) {
+    if (!(state.navState.focusPocketRoleByIndex instanceof Map)) {
+        state.navState.focusPocketRoleByIndex = new Map();
+    }
+    state.navState.focusPocketRoleByIndex.set(index, role);
+}
+
 export function clearFocusPocketRoleByIndex() {
     state.navState.focusPocketRoleByIndex = new Map();
 }
@@ -709,6 +716,13 @@ export function getFocusPocketMotionByIndex() {
 
 export function setFocusPocketMotionByIndex(map) {
     state.focusPocketMotionByIndex = map;
+}
+
+export function setFocusPocketMotionForIndex(index, motion) {
+    if (!(state.focusPocketMotionByIndex instanceof Map)) {
+        state.focusPocketMotionByIndex = new Map();
+    }
+    state.focusPocketMotionByIndex.set(index, motion);
 }
 
 export function clearFocusPocketMotionByIndex() {
@@ -920,11 +934,11 @@ export function applyLocalNeighborhoodFocus(index) {
         const dy = focusPosY - origY;
         const dz = focusPosZ - origZ;
         const isPrimary = primaryIndices.includes(i);
-        state.navState.focusPocketRoleByIndex.set(i, isPrimary ? 'primary' : 'support');
+        setFocusPocketRoleForIndex(i, isPrimary ? 'primary' : 'support');
 
         const baseDelay = isPrimary ? primaryIndices.indexOf(i) * 34 : 160; // Simplified for fallback
 
-        state.focusPocketMotionByIndex.set(i, {
+        setFocusPocketMotionForIndex(i, {
             role: isPrimary ? 'primary' : 'support',
             delay: baseDelay * personality.staggerMult,
             duration: (isPrimary ? 980 : 1120) * (personality.cameraDuration / 980),

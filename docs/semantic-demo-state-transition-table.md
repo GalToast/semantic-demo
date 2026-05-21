@@ -403,3 +403,122 @@ return 'idle'
 ---
 
 *Last verified against:* `js/state.js` line 67, `js/modules/lifecycle.js` lines 67-68, 182-200, 216, 239-241, 679-744, 811-844, 984-987, 1077-1091, 1099-1213, 1337-1588, 2112-2141, 2394-2421, 2551-2607, `js/modules/semantic-dive-ui.js` lines 54-77, `js/modules/journey.js` lines 337-344, 363, 1081-1085.
+
+---
+
+## Nav Transition Reducer — Consolidation Plan
+
+> **Status:** Planned for future implementation (Wave 22).
+> Current state: `navState.mode`, `trailDepth`, `focusedIndex`, trail/walk history are written
+> by 8+ modules with no central orchestrator. The reducer consolidates these into one transition
+> gate without breaking existing window-bridge APIs.
+>
+> **Evidence:** See `tmp/wave22-nav-transition-reducer-plan.md` for full analysis.
+
+### 8.1 Current Scattered Writers (documented as transitional owners)
+
+| Module | Field(s) written | Current phase |
+|--------|-----------------|---------------|
+| `lifecycle.js` — `setMyceliumMode()` | `navState.mode` | `'inside'` (line 241), `'overview'` (line 247) |
+| `lifecycle.js` — `setSemanticDiveMode()` | `navState.mode = 'trail'` | line 226 |
+| `lifecycle.js` — `resetNodePositions()` | `navState.mode = 'overview'` | line 1564 |
+| `lifecycle.js` — `resetStateBeforeUrlRestore()` | `navState.mode = 'overview'` | line 739 |
+| `lifecycle.js` — `setTrailDepth()` | `trailDepth` | line 304 |
+| `camera-controls.js` — `focusOnNode()` | `navState.mode`, `navState.focusedIndex`, `trailDepth` | lines 1084-1099 |
+| `journey.js` — `walkThreadNeighbor()` | `navState.mode = 'trail'`, `walkHistoryIndices` | line 612 |
+| `thread-inspector.js` — `renderThreadInspection()` | `navState.mode = 'trail'` | transitional owner |
+| `search-state.js` | `navState.mode = 'overview'` | filter eviction clear |
+| `micro-demo.js` | various navState trail fields | demo mode only |
+| `loading-ui.js` | `navState.mode = priorMode` | brief restore only |
+
+### 8.2 Semantic Dissonance (core incoherence the reducer resolves)
+
+```
+setSemanticDiveMode(true):
+  state.semanticDiveMode = true     ← derived setter sets trailDepth=2
+  state.navState.mode = 'trail'     ← NOT 'inside'!
+  setTrailDepth(2, { fromUserGesture: true })
+  → trailDepth=2, semanticDiveMode=true, navState.mode='trail'
+
+Phase table says: 'inside' phase requires navState.mode='inside'
+But the above produces navState.mode='trail' with trailDepth=2
+→ semanticDive='active' but navState.mode is 'trail'
+→ The journey-compass sees 'inside' (from trailDepth) but mode is 'trail'
+```
+
+The reducer's `ENTER_INSIDE` action co-authors `trailDepth=2` **and** `navState.mode='inside'`
+in one atomic step, resolving this dissonance.
+
+### 8.3 Proposed Reducer Actions
+
+| Action | Owned fields | Canonical callers |
+|--------|-------------|-------------------|
+| `FOCUS_NODE` | `navState.mode`, `navState.focusedIndex`, `navState.walkHistoryIndices`, `navState.trailCursor` | `camera-controls.focusOnNode()`, `thread-inspector.renderThreadInspection()` |
+| `SET_DEPTH` | `trailDepth`, `myceliumMode`, `navState.mode` (co-authored) | `lifecycle.setTrailDepth()`, `lifecycle.setMyceliumMode()` |
+| `WALK_TO` | `navState.walkHistoryIndices`, `navState.trailCursor`, `navState.lastTraversalReason`, `navState.mode` | `journey.walkThreadNeighbor()` |
+| `BACKTRACK` | `navState.walkHistoryIndices`, `navState.trailCursor`, `navState.focusedIndex` | `journey.backtrackWalk()` |
+| `RESET_FOCUS` | `navState.mode`, `navState.focusedIndex`, `navState.walkHistoryIndices`, `navState.trailCursor`, `trailDepth` | `lifecycle.resetExplorationFocus()`, `lifecycle.resetNodePositions()` |
+| `RESET_EXPERIENCE` | All above + `currentSearchSummary=null` | `lifecycle.resetExperienceState()`, `lifecycle.resetStateBeforeUrlRestore()` |
+| `ENTER_INSIDE` | `trailDepth=2`, `navState.mode='inside'` | `lifecycle.setSemanticDiveMode(true)` |
+| `EXIT_INSIDE` | `trailDepth=1`, `navState.mode='trail'` | `lifecycle.setSemanticDiveMode(false)` |
+
+### 8.4 Callsite Migration Order (7 phases)
+
+**Phase 1** — Export reducer, no behavior change:
+- Create `navTransitionReducer()` in `lifecycle.js` (internal, non-exported)
+- Export `dispatchNavTransition()` as window bridge
+- All existing callers unchanged; contracts verify reducer parity with scattered writers
+
+**Phase 2** — Redirect `camera-controls.focusOnNode()`:
+- Replace direct `navState.mode`, `navState.focusedIndex`, `navState.walkHistoryIndices` writes with `dispatchNavTransition('FOCUS_NODE', ...)`
+- Retain direct writes to `focusedNode`, `selectedPoint` (its canonical domain)
+
+**Phase 3** — Redirect `lifecycle.setTrailDepth` / `setMyceliumMode`:
+- `setTrailDepth(n, opts)` → `dispatchNavTransition('SET_DEPTH', {depth:n, ...opts})`
+- `setMyceliumMode('trail')` → `dispatchNavTransition('SET_DEPTH', {depth:1})`
+- `setMyceliumMode('inside')` → `dispatchNavTransition('ENTER_INSIDE', {fromUserGesture:true})`
+- `setMyceliumMode('default'|'bridge'|'bloom')` → `dispatchNavTransition('RESET_FOCUS')`
+
+**Phase 4** — Redirect `journey.walkThreadNeighbor()` / `backtrackWalk()`:
+- `walkThreadNeighbor()` → `dispatchNavTransition('WALK_TO', ...)`
+- `backtrackWalk()` → `dispatchNavTransition('BACKTRACK')`
+
+**Phase 5** — Redirect lifecycle reset functions:
+- `resetNodePositions()` → `dispatchNavTransition('RESET_FOCUS')`
+- `resetStateBeforeUrlRestore()` → `dispatchNavTransition('RESET_EXPERIENCE')`
+- `resetExplorationFocus()` → `dispatchNavTransition('RESET_FOCUS', {preserveSearch:true})`
+
+**Phase 6** — Redirect remaining transitional owners:
+- `thread-inspector.renderThreadInspection()` → `dispatchNavTransition('FOCUS_NODE', {index, fromTraversal:true})`
+- `search-state.js` filter-eviction → `dispatchNavTransition('RESET_FOCUS')`
+- `micro-demo.js` demo focus/reset → `dispatchNavTransition(...)` (demo-specific payload)
+
+**Phase 7** — Flag deprecated direct writers:
+- Add `state-ownership-contract.mjs` assertion: no module may directly write `navState.mode`, `navState.walkHistoryIndices`, `navState.trailCursor`, `navState.trailNeighborIndices` outside the reducer
+- Existing direct writes in journey, thread-inspector, search-state, micro-demo are "transitional owners" during migration window only
+
+### 8.5 Breaking Change Audit (backward compatibility)
+
+All existing window-bridge APIs remain callable:
+
+| API | Internally routes to |
+|-----|---------------------|
+| `window.setSemanticDiveMode(bool)` | `dispatchNavTransition(bool ? 'ENTER_INSIDE' : 'EXIT_INSIDE')` |
+| `window.setTrailDepth(n, opts)` | `dispatchNavTransition('SET_DEPTH', {depth:n, ...opts})` |
+| `window.setMyceliumMode(mode, opts)` | Phase 3 migration above |
+| `window.resetExplorationFocus()` | `dispatchNavTransition('RESET_FOCUS', {preserveSearch:true})` |
+| `window.resetExperienceState()` | `dispatchNavTransition('RESET_EXPERIENCE')` |
+| `window.focusOnNode(index, opts)` | `dispatchNavTransition('FOCUS_NODE', {index, ...opts})` |
+
+### 8.6 Pre-condition: focus-pocket.js ownership fix
+
+`resetNodePositions()` now clears focus-pocket role/motion maps through the focus-pocket owner helpers instead of assigning those maps directly. This pre-condition is satisfied before the reducer migration begins, so Phase 5 can move reset orchestration without reintroducing ownership-crossing writes.
+
+Keep this invariant during the reducer migration:
+
+```js
+clearFocusPocketRoleByIndex();
+clearFocusPocketMotionByIndex();
+```
+
+Do not restore direct `state.navState.focusPocketRoleByIndex = new Map()` or `state.focusPocketMotionByIndex = new Map()` writes outside `focus-pocket.js`.

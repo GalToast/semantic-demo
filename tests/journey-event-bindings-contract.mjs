@@ -28,6 +28,7 @@ const SEMDEMO_ROOT = path.resolve(process.cwd());
 const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js');
 const JOURNEY_PATH        = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
 const LIFECYCLE_PATH      = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
+const JOURNEY_COMPASS_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.js');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -126,6 +127,7 @@ function testJourneyCompassActionGuard() {
   console.log('\n[TEST] Journey compass action guard (executeJourneyCompassAction)');
 
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
+  const journeyCompassControllerSrc = fs.readFileSync(JOURNEY_COMPASS_CONTROLLER_PATH, 'utf-8');
   const ebSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
 
   assertContains(ebSrc,
@@ -139,33 +141,37 @@ function testJourneyCompassActionGuard() {
     'direct journey step click call must go through guard helper');
 
   // The next-stop guard: must check strandContinuityState.phase before exploring
-  assertContains(lifecycleSrc,
+  assertContains(journeyCompassControllerSrc,
     "state.strandContinuityState?.phase === 'exploring'",
     'executeJourneyCompassAction next-stop guard');
-  assertContains(lifecycleSrc,
+  assertContains(journeyCompassControllerSrc,
     "return;",
     'next-stop guard returns early when exploring');
 
   // Must call exploreInsideToNextStop in the next-stop case
-  assertContains(lifecycleSrc,
+  assertContains(journeyCompassControllerSrc,
     "exploreInsideToNextStop",
     'next-stop case calls exploreInsideToNextStop');
 
-  // 'county-overview' must clear search
-  assertContains(lifecycleSrc,
-    'window.clearSearch',
-    'county-overview clears search');
-  assertContains(lifecycleSrc,
+  // 'county-overview' must route through the official reset API and clear
+  // short semantic search UI state without bypassing reset ownership.
+  assertContains(journeyCompassControllerSrc,
+    'window.resetExplorationFocus',
+    'county-overview routes through resetExplorationFocus');
+  assertContains(journeyCompassControllerSrc,
+    'clearShortSemanticSearchState',
+    'county-overview clears short semantic search state');
+  assertContains(journeyCompassControllerSrc,
     'window.resetNodePositions',
-    'county-overview calls resetNodePositions');
+    'county-overview keeps resetNodePositions fallback');
 
   // 'enter-inside' must call setSemanticDiveMode(true)
-  assertContains(lifecycleSrc,
+  assertContains(journeyCompassControllerSrc,
     "setSemanticDiveMode(true)",
     'enter-inside activates semantic dive');
 
   // 'open-map' must call switchView('map')
-  assertContains(lifecycleSrc,
+  assertContains(journeyCompassControllerSrc,
     "switchView('map')",
     'open-map calls switchView(map)');
 

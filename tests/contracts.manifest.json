@@ -13,7 +13,8 @@
         "focus-semantic-state-boundary-contract.mjs",
         "semantic-lane-contract.mjs",
         "connection-analysis-contract.mjs",
-        "exploration-modes-contract.mjs"
+        "exploration-modes-contract.mjs",
+        "focus-selection-owner-contract.mjs"
       ]
     },
     "navigation": {
@@ -132,6 +133,7 @@
         "window-bridge-gaps-contract.mjs",
         "semantic-dive-active-owner-contract.mjs",
         "state-ownership-contract.mjs",
+        "focus-selection-owner-contract.mjs",
         "focus-pocket-state-owner-contract.mjs",
         "bootstrap-window-export-contract.mjs"
       ]

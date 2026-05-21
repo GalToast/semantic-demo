@@ -5,7 +5,7 @@
 | Global | Assigned in | Called from | Risk if absent |
 |--------|-------------|-------------|----------------|
 | `window.state` | app.js:48, lifecycle.js (shared state object) | 30+ call sites across tests and runtime | Crash / TypeError |
-| `window.focusOnNode` | app.js:85 → camera-controls.js | lifecycle.js, event-bindings.js, journey.js, camera-controls.js, 6 test files | Silent no-op (guarded) |
+| `window.focusOnNode` | app.js:85 → camera-controls.js | **Direct import callers:** lifecycle.js:79, event-bindings.js:4, search-state.js (dewindowed 2026-05-21 — direct named import from camera-controls.js); **Test callers:** 6 Playwright spec files (unchanged) | Silent no-op (guarded) |
 | `window.returnToOverview` | app.js:121 → lifecycle.js:2493 | event-bindings.js:275, lifecycle.js (internal) | Silent no-op (guarded) |
 | `window.syncFocusStage` | journey.js:3086 (inline wrapper) | camera-controls.js:1158, lifecycle.js:724/725/799, loading-ui.js:94/98, lifecycle.js:1580 | Silent no-op (guarded) |
 | `window.syncClusterSectionState` | lifecycle.js:2482 (window shim) | lifecycle.js:1479, scene-reveal.js:56, event-bindings.js:693 | UI state desync |
@@ -144,34 +144,34 @@ See `tests/bootstrap-window-export-contract.mjs` for the formal contract.
 
 ---
 
-## Proposed first runtime patch
+## Completed patches
 
-### Seam: `window.focusOnNode` → named import from camera-controls.js
+### search-state.js dewindowed (2026-05-21)
+`search-state.js` now imports `focusOnNode` directly from `camera-controls.js` and calls it directly at two call sites (formerly lines 339-347 and 1206-1208). The `typeof window.focusOnNode === 'function'` guards were removed — the direct import is statically available. No cycle was introduced: `search-state.js` does not import from `lifecycle.js`, and `camera-controls.js` does not import from `search-state.js`. Bootstrap window bridge kept intact elsewhere.
 
-**Why**: `window.focusOnNode` is assigned in `app.js:85` wrapping `cameraModule.focusOnNode`. All callers use `typeof window.focusOnNode === 'function'` guards, making this safe to extract.
+---
 
-**Pattern today**:
+## Proposed remaining patches
+
+### focusOnNode — COMPLETED (2026-05-21)
+All runtime callers (event-bindings.js, lifecycle.js, journey.js, journey-compass-controller.js, thread-inspector.js, search-state.js) now use direct named imports from camera-controls.js. app.js window bridge retained for test compatibility during transition.
+
+### Rank 1 — `window.syncFocusStage` → local wrapper in lifecycle.js
+**Risk**: Low. Guard pattern already handles absent case.
+**Call sites** (lifecycle.js: 663, 736, 1029, 1580 — all guarded):
 ```js
-// app.js:85
-window.focusOnNode = cameraModule.focusOnNode;
-
-// event-bindings.js:165
-if (typeof window.focusOnNode === 'function') window.focusOnNode(idx, { fromCanvasNode: true });
+if (typeof window.syncFocusStage === 'function') window.syncFocusStage(point);
 ```
+**Dewindowed approach**: Replace with direct calls to the locally defined `syncFocusStage(point)` wrapper (journey.js:1146 — lifecycle.js re-exports it at line 1546). Remove `typeof` guards since the local wrapper already handles the absent case.
+**Files**: lifecycle.js (4 replacements)
+**Verification**: `rg -n "window\.syncFocusStage" js/modules/lifecycle.js` → expect 0 hits
 
-**Proposed dewindowed call** (event-bindings.js):
+### Rank 2 — `window.updateExplorationUi` → direct local call in lifecycle.js
+**Risk**: Very low. `updateExplorationUi` is locally defined at lifecycle.js:311.
+**Call sites** (lifecycle.js: 441, 456, 672):
 ```js
-import { focusOnNode } from './camera-controls.js';
-// ...
-if (typeof focusOnNode === 'function') focusOnNode(idx, { fromCanvasNode: true });
+if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
 ```
-
-**Files requiring changes**:
-- `js/modules/event-bindings.js` — replace 4 call sites (lines 165, 201, 231, 275)
-- `js/modules/lifecycle.js` — replace 3 call sites (lines 932, 1487, 1518)
-- `js/modules/journey.js` — review 1 call site
-- `js/modules/camera-controls.js` — confirm `focusOnNode` is exported
-- `js/modules/app.js` — remove `window.focusOnNode` assignment (or keep for backward compat during transition)
-- Tests — update `tests/3d-thread-orchestration-quality.spec.js` and `tests/3d-accessibility-fallback-performance.spec.js` to call the imported function directly
-
-**Verification**: `node --check` on edited modules + run `window-bridge-gaps-contract.mjs` to confirm no dead calls.
+**Dewindowed approach**: Replace with direct `updateExplorationUi()` calls — function is already locally defined and exported.
+**Files**: lifecycle.js (3 replacements)
+**Verification**: `rg -n "window\.updateExplorationUi" js/modules/lifecycle.js` → expect 0 hits

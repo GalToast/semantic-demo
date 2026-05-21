@@ -124,7 +124,7 @@
     left: 18px;
     box-sizing: border-box;
     inline-size: min(312px, calc(100vw - 36px));
-    min-block-size: 62px;
+    min-block-size: var(--landscape-weather-widget-height);
     z-index: 100;
     display: grid;
     grid-template-columns: 42px minmax(0, 1fr) auto;

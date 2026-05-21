@@ -448,6 +448,15 @@ const CANONICAL_WRITERS = {
   //                              micro-demo.js (demo reset/focus)
   // journey.js and thread-inspector.js are HELPERS (transitional writers, not standalone owners).
   // event-bindings.js delegates to camera-controls/lifecycle and must not write directly.
+  //
+  // Phase 2 note: camera-controls.js focusOnNode() writes navState.mode and navState.focusedIndex
+  // directly during the Phase 2 migration window. After Phase 2 lands those writes are redirected to
+  // dispatchNavTransition('FOCUS_NODE', ...). During Phase 2 the scan continues to allow
+  // camera-controls.js as a canonical writer; Phase 7 tightens the constraint.
+  //
+  // Phase 2 note: focusOnNode() writes navState.explorationHistoryIndices (distinct from
+  // walkHistoryIndices). It is currently only written by focusOnNode. Phase 2 must migrate it
+  // alongside mode/focusedIndex or clarify it is out-of-scope.
   'navState.mode': new Set([
     'lifecycle.js', 'camera-controls.js', 'journey.js', 'thread-inspector.js',
     'search-state.js', 'micro-demo.js', 'loading-ui.js',
@@ -455,6 +464,7 @@ const CANONICAL_WRITERS = {
   'navState.focusedIndex': new Set([
     'lifecycle.js', 'camera-controls.js', 'search-state.js', 'micro-demo.js',
   ]),
+  'navState.explorationHistoryIndices': new Set(['camera-controls.js']), // Phase 2 migrates to FOCUS_NODE reducer
   'navState.trailNeighborIndices': new Set([
     'lifecycle.js', 'journey.js', 'search-state.js', 'micro-demo.js',
   ]),
@@ -567,17 +577,8 @@ console.log('PASS CONTRACT 13: focus-pocket.js does not directly write focus sta
 
 // ─── CONTRACT 14: navState.focusPocket* ownership is focus-pocket.js only ──────────
 //
-// VIOLATION DETECTED — runtime bug, not contract weakness:
-//   lifecycle.js:2032 writes state.navState.focusPocketRoleByIndex = new Map()
-//   during resetNodePositions(), bypassing focus-pocket.js's clearFocusPocketIndices /
-//   setFocusPocketRoleByIndex API.
-//
-// This is a real ownership violation: lifecycle.js resetNodePositions() must call
-//   window.setFocusPocketRoleByIndex?.(new Map())   OR
-//   focus-pocket.js clearFocusPocketRoleByIndex()  (if such a helper exists)
-//
-// The fix belongs in lifecycle.js resetNodePositions(), not in this contract.
-// Marking contract as FAIL until runtime fix is applied.
+// lifecycle.js reset code must call focus-pocket.js owner helpers instead of
+// directly assigning any navState.focusPocket* maps.
 
 const focusPocketFields = [
   'navState.focusPocketIndices',
@@ -639,6 +640,4 @@ console.log('  event-bindings.js   → delegates, no direct focus writes');
 console.log('  ui-renderers.js      → reads only');
 console.log('  semanticDiveMode     → derived from trailDepth, no independent storage');
 console.log('');
-console.log('VIOLATION (runtime bug — fix in lifecycle.js resetNodePositions):');
-console.log('  lifecycle.js:2032 writes navState.focusPocketRoleByIndex directly');
-console.log('  Fix: call focus-pocket.js clear/set helpers instead of direct assignment');
+console.log('Focus-pocket invariant: reset code delegates navState.focusPocket* writes to focus-pocket.js helpers');

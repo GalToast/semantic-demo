@@ -91,6 +91,14 @@
     --glass-blur-medium: 16px;
     --glass-blur-heavy: 24px;
     --glass-blur-ultra: 32px;
+
+    /* Short-Landscape Layout Heights */
+    --landscape-info-panel-idle-max-height: min(calc(100vh - 86px), 178px);
+    --landscape-info-content-idle-max-height: calc(var(--landscape-info-panel-idle-max-height) - 42px);
+    --landscape-search-panel-height: min(calc(100vh - 82px), 308px);
+    --landscape-search-results-max-height: min(250px, calc(100dvh - 390px));
+    --landscape-weather-widget-height: 62px;
+    --landscape-focus-stage-card-max-height: min(72vh, 282px);
 }
 
 html {

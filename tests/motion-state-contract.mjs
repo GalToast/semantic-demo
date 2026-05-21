@@ -15,6 +15,7 @@ const source = {
   threeSetup: readFileSync(resolve(root, 'js/three-setup.js'), 'utf8'),
   journey: readFileSync(resolve(root, 'js/modules/journey.js'), 'utf8'),
   lifecycle: readFileSync(resolve(root, 'js/modules/lifecycle.js'), 'utf8'),
+  journeyCompassController: readFileSync(resolve(root, 'js/modules/journey-compass-controller.js'), 'utf8'),
 };
 
 const checks = [
@@ -53,8 +54,8 @@ const checks = [
   },
   {
     name: 'focus plus search intent owns focus-search panel surface',
-    pass: /if\s*\(\s*hasSearchIntent\s*\)\s*return\s+hasFocus\s*\?\s*['"]focus-search['"]\s*:\s*['"]search['"]/.test(source.lifecycle)
-      && /context\s*=\s*['"]focus-search['"]/.test(source.lifecycle),
+    pass: /if\s*\(\s*hasSearchIntent\s*\)\s*return\s+hasFocus\s*\?\s*['"]focus-search['"]\s*:\s*['"]search['"]/.test(source.journeyCompassController)
+      && /context\s*=\s*['"]focus-search['"]/.test(source.journeyCompassController),
   },
 ];
 

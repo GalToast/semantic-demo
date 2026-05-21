@@ -28,6 +28,7 @@ const UI_RENDERERS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/ui-renderers.js');
 const SCENE_REVEAL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.js');
 const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js');
 const CAMERA_CONTROLS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/camera-controls.js');
+const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-state.js');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -228,10 +229,8 @@ function testGap4_updateSelectedCardHeading() {
 
 // ---------------------------------------------------------------------------
 // GAP 5 — focusOnNode: exported from camera-controls.js.
-// event-bindings.js and lifecycle.js already use direct named imports.
-// The 3 remaining window.focusOnNode call sites (search-state.js:339, 344, 1207)
-// are inside typeof guards — they are documented bootstrap/compatibility guards
-// that use the window shim installed by app.js:85 during the transition period.
+// event-bindings.js, lifecycle.js, and search-state.js use direct named imports.
+// app.js keeps the window bridge for external/test compatibility.
 // ---------------------------------------------------------------------------
 
 function testGap5_focusOnNode() {
@@ -251,29 +250,17 @@ function testGap5_focusOnNode() {
   assertNoDeadCall(eventBindingsSrc, 'focusOnNode', 'event-bindings.js', 'Gap 5');
   assertNoDeadCall(lifecycleSrc, 'focusOnNode', 'lifecycle.js', 'Gap 5');
 
-  // search-state.js: the 3 window.focusOnNode call sites must all be inside typeof guards
-  // (documented bootstrap/compatibility guards — not bare calls)
-  const searchStateLines = searchStateSrc.split('\n');
-  const unguardedCalls = [];
-  for (let i = 0; i < searchStateLines.length; i++) {
-    const line = searchStateLines[i];
-    const pos = line.indexOf('window.focusOnNode');
-    if (pos === -1) continue;
-    const before = line.substring(0, pos);
-    if (before.includes('typeof') || before.includes('?.')) continue;
-    // Multi-line guard: scan up to 3 preceding non-blank lines
-    let guarded = false;
-    for (let j = Math.max(0, i - 3); j < i; j++) {
-      const prev = searchStateLines[j].trim();
-      if (prev.includes('typeof') || prev.includes('?.')) { guarded = true; break; }
-    }
-    if (!guarded) unguardedCalls.push(`  line ${i + 1}: ${line.trim()}`);
-  }
-  assert(unguardedCalls.length === 0, `Gap 5: search-state.js has unguarded window.focusOnNode() calls:\n${unguardedCalls.join('\n')}`);
+  assert(
+    /import\s+\{[^}]*\bfocusOnNode\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(searchStateSrc),
+    'search-state.js must import focusOnNode directly from camera-controls.js'
+  );
+  assert(
+    !/window\.focusOnNode\b/.test(searchStateSrc),
+    'search-state.js must not call window.focusOnNode after dewindowing'
+  );
 
-  console.log('  OK — focusOnNode: export verified, typeof guards confirmed at all call sites');
-  console.log('  OK — search-state.js: 3 window.focusOnNode calls are all bootstrap/compatibility guards (typeof-gated)');
-  console.log('  TRACKED — dewindowing seam: search-state.js remaining window.focusOnNode call sites documented as bootstrap guards');
+  console.log('  OK — focusOnNode: export verified and runtime modules use direct imports');
+  console.log('  OK — search-state.js is dewindowed; app.js keeps the compatibility bridge');
 }
 
 // ---------------------------------------------------------------------------

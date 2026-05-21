@@ -498,6 +498,7 @@ function bindWindowControlFunctions(resetExperienceState, resetNodePositions) {
         }
 
         panel.classList.toggle('active', shouldBeOpen);
+        panel.setAttribute('aria-hidden', shouldBeOpen ? 'false' : 'true');
         document.body.dataset.focusPanelMode = shouldBeOpen ? 'manual-panel' : 'manual-collapsed';
 
         if (panelBtn) {
@@ -577,6 +578,7 @@ function bindLegendControls() {
             legendPanel.setAttribute('aria-hidden', isOpening ? 'false' : 'true');
             document.documentElement.dataset.legendActive = isOpening ? 'true' : 'false';
             legendToggle.setAttribute('aria-expanded', String(isOpening));
+            legendToggle.setAttribute('aria-pressed', String(isOpening));
             if (isCompactFocusStageViewport() && isOpening) {
                 if (infoPanel?.classList.contains('active')) {
                     infoPanel.classList.remove('active');
@@ -600,7 +602,10 @@ function bindLegendControls() {
             legendPanel.classList.remove('active');
             legendPanel.setAttribute('aria-hidden', 'true');
             document.documentElement.dataset.legendActive = 'false';
-            if (legendToggle) legendToggle.setAttribute('aria-expanded', 'false');
+            if (legendToggle) {
+                legendToggle.setAttribute('aria-expanded', 'false');
+                legendToggle.setAttribute('aria-pressed', 'false');
+            }
             restoreLegendCollapsedPanel();
             if (prevFocus && typeof prevFocus.focus === 'function') {
                 prevFocus.focus({ preventScroll: true });

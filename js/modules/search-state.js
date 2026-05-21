@@ -17,7 +17,7 @@ import {
     getSemanticSearchCacheDiagnostics
 } from './semantic-search-api-cache.js';
 export { getSemanticSearchCacheDiagnostics };
-import { animateCameraToSearchCorridor } from './camera-controls.js';
+import { animateCameraToSearchCorridor, focusOnNode } from './camera-controls.js';
 import { refreshMapMarkers } from './map-state.js';
 import { updateClusterList } from './cluster-filter.js';
 import { buildLegend } from './ui-renderers.js';
@@ -336,15 +336,11 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
         if (state.currentView === 'map' && pointHasGeocode(point)) {
             if (typeof window.focusOnPoint === 'function') window.focusOnPoint(point, { fromSearchResult: true });
         }
-        if (typeof window.focusOnNode === 'function') {
-            // 10/10 Polish: Dismiss mobile keyboard during transition
-            const input = document.getElementById('search-input');
-            if (input) input.blur();
+        // 10/10 Polish: Dismiss mobile keyboard during transition
+        const input = document.getElementById('search-input');
+        if (input) input.blur();
 
-            if (typeof window.focusOnNode === 'function') {
-                window.focusOnNode(targetIndex, { fromSearchResult: true });
-            }
-        }
+        focusOnNode(targetIndex, { fromSearchResult: true });
 
         if (typeof window.syncSearchStatusForFocus === 'function') window.syncSearchStatusForFocus(point, { fromSearchResult: true });
         if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
@@ -1203,9 +1199,7 @@ export async function search(query, options = {}) {
         // Auto-center the sole result; focusOnNode cascades syncSearchStatusForFocus which
         // will overwrite the status message, so we call it first and let that settle.
         if (Number.isFinite(soleIndex)) {
-            if (typeof window.focusOnNode === 'function') {
-                window.focusOnNode(soleIndex, { fromSearchResult: true });
-            }
+            focusOnNode(soleIndex, { fromSearchResult: true });
         }
 
         // Set status after focusOnNode (so it sticks after the syncSearchStatusForFocus cascade)

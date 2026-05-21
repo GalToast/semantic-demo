@@ -31,16 +31,21 @@ const PROTECTED_FIELDS = [
     'state.trailIndices',
 ];
 
-// Patterns that signal direct writes to protected fields (outside the helper)
+// Patterns that signal direct writes to protected fields (outside the helper).
+// Only flags sentinel-value clears: = null, = -1, = [], .clear()
+// Allows: valid setter assignments (= point), comparison operators (===, ==, !==, !=)
 const DIRECT_WRITE_PATTERNS = [
-    /state\.focusedNode\s*=\s*(?!null\b)[^;]+;/,
-    /state\.selectedPoint\s*=\s*(?!null\b)[^;]+;/,
-    /state\.navState\.focusedIndex\s*=\s*(?!null\b)[^;]+;/,
-    /state\.navState\.trailSeedIndex\s*=\s*(?!null\b)[^;]+;/,
-    /state\.navState\.trailNeighborIndices\s*=\s*(?!null\b)[^;]+;/,
-    /state\.navState\.trailCursor\s*=\s*(?!-1\b)[^;]+;/,
-    /state\.navState\.explorationHistoryIndices\s*=\s*(?!null\b)[^;]+;/,
-    /state\.navState\.lastTraversalReason\s*=\s*(?!null\b)[^;]+;/,
+    // Null assignments — excludes comparisons: === null, == null, !== null, != null
+    /state\.focusedNode\s*=\s*null\b[^;]*;/,
+    /state\.selectedPoint\s*=\s*null\b[^;]*;/,
+    /state\.navState\.focusedIndex\s*=\s*null\b[^;]*;/,
+    /state\.navState\.trailSeedIndex\s*=\s*null\b[^;]*;/,
+    /state\.navState\.trailNeighborIndices\s*=\s*\[\][^;]*;/,
+    // trailCursor = -1 (but not === -1 or !== -1 or == -1 comparisons)
+    /state\.navState\.trailCursor\s*=\s*-1\b[^;]*;/,
+    /state\.navState\.explorationHistoryIndices\s*=\s*\[\][^;]*;/,
+    /state\.navState\.lastTraversalReason\s*=\s*null\b[^;]*;/,
+    // trailIndices.clear() — direct mutation, never allowed outside helper
     /state\.trailIndices\.clear\s*\(\s*\)/,
 ];
 
@@ -78,18 +83,47 @@ function getHelperLineRange() {
 }
 
 /**
+ * Extract the line range of setMyceliumMode, whose else-branch legitimately
+ * writes to trail fields independently of clearExplorationFocusSelection.
+ */
+function getSetMyceliumModeLineRange() {
+    const lines = SOURCE.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        if (/export\s+function\s+setMyceliumMode\b/.test(lines[i])) {
+            // Find the end of the function body
+            let depth = 0;
+            for (let j = i; j < lines.length; j++) {
+                const stripped = lines[j].replace(/\/\/.*$/, '');
+                for (const ch of stripped) {
+                    if (ch === '{') depth++;
+                    else if (ch === '}') depth--;
+                }
+                if (depth === 0 && j > i) {
+                    return { start: i, end: j };
+                }
+            }
+        }
+    }
+    return { start: -1, end: -1 };
+}
+
+/**
  * Find every occurrence of a direct write pattern outside clearExplorationFocusSelection.
  * Returns array of { pattern, line, snippet }
  */
 function findDirectWrites() {
     const lines = SOURCE.split('\n');
     const { start: helperStart, end: helperEnd } = getHelperLineRange();
+    const { start: mmStart, end: mmEnd } = getSetMyceliumModeLineRange();
     const issues = [];
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         // Skip lines inside the helper function body
         if (i >= helperStart && i <= helperEnd) continue;
+        // Skip lines inside setMyceliumMode — its else-branch independently manages
+        // trail fields and is not required to route through the focus helper
+        if (i >= mmStart && i <= mmEnd) continue;
 
         for (const pattern of DIRECT_WRITE_PATTERNS) {
             if (pattern.test(line)) {

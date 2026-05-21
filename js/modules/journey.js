@@ -315,7 +315,7 @@ export function summarizeNeighborReason(candidate = {}, point = null, focusPoint
     const threadType = String(candidate.threadType || '')
         .replace(/_/g, ' ')
         .trim();
-        
+
     if (sameCity && sharedTopic) return truncateMicrocopy(`Same-city ${sharedTopic} connection`);
     if (sameCity) return 'Same-city relationship';
     if (candidate.sameStatus) return 'Matching record layer';
@@ -1149,11 +1149,27 @@ export function syncFocusStage(point) {
     const stageCard = stage?.querySelector('.focus-stage-card');
     if (!stage || !stageCard) return;
 
+    const cleanupFocusStageTrap = () => {
+        if (stage._focusStageKeydownListener) {
+            stage.removeEventListener('keydown', stage._focusStageKeydownListener);
+            stage._focusStageKeydownListener = null;
+        }
+        if (window._previouslyFocusedFocusStage) {
+            try {
+                window._previouslyFocusedFocusStage.focus();
+            } catch (e) {
+                console.warn('Failed to restore focus stage previous element:', e);
+            }
+            window._previouslyFocusedFocusStage = null;
+        }
+    };
+
     if (point === null) {
         if (typeof window.applyClusterUiAccent === 'function') window.applyClusterUiAccent(stageCard, null);
         stage.classList.remove('active');
         stage.hidden = true;
         stage.setAttribute('aria-hidden', 'true');
+        cleanupFocusStageTrap();
         refreshCompositionState();
         return;
     }
@@ -1167,14 +1183,54 @@ export function syncFocusStage(point) {
         stage.classList.remove('active');
         stage.hidden = true;
         stage.setAttribute('aria-hidden', 'true');
+        cleanupFocusStageTrap();
         refreshCompositionState();
         return;
     }
+
+    const wasActive = stage.classList.contains('active') && !stage.hidden;
 
     if (typeof window.applyClusterUiAccent === 'function') window.applyClusterUiAccent(stageCard, effectivePoint);
     stage.hidden = false;
     stage.setAttribute('aria-hidden', 'false');
     stage.classList.add('active');
+
+    if (!wasActive) {
+        window._previouslyFocusedFocusStage = document.activeElement;
+
+        const keydownHandler = (e) => {
+            if (e.key !== 'Tab') return;
+            const focusable = Array.from(
+                stage.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+            ).filter(el => {
+                if (el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true') return false;
+                return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+            });
+            if (focusable.length === 0) {
+                e.preventDefault();
+                return;
+            }
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (e.shiftKey) {
+                if (document.activeElement === first) {
+                    last.focus();
+                    e.preventDefault();
+                }
+            } else {
+                if (document.activeElement === last) {
+                    first.focus();
+                    e.preventDefault();
+                }
+            }
+        };
+
+        if (stage._focusStageKeydownListener) {
+            stage.removeEventListener('keydown', stage._focusStageKeydownListener);
+        }
+        stage._focusStageKeydownListener = keydownHandler;
+        stage.addEventListener('keydown', keydownHandler);
+    }
 
     const presentation = getBusinessNamePresentation(effectivePoint.name);
     const filedEl = document.getElementById('focus-stage-filed');
