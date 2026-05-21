@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { BASE_URL, SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch, openApp, probe, projectedCanvasCandidates } from './helpers/3d-interaction-helpers.js';
+import { BASE_URL, SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch, openApp, probe, projectedCanvasCandidates, probeFocusPocket } from './helpers/3d-interaction-helpers.js';
 
 function isValidNodeIndex(value, pointCount) {
   return value === null || (Number.isFinite(value) && value >= 0 && value < pointCount);
@@ -145,5 +145,35 @@ test.describe('3D overlay hit ownership', () => {
     const target = await findReachableNodeCoordinate(page);
     expect(target, 'short landscape should keep at least one node reachable around overlays').not.toBeNull();
     expect(target.stack.some(item => item.isCanvas), `canvas should remain in short-landscape hit stack: ${JSON.stringify(target?.stack)}`).toBe(true);
+  });
+
+  test('short landscape: focus pocket nodes are not consumed by overlay hit-stealing', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 844, height: 390 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 20); i++) {
+        const pt = pts[i];
+        if (pt && window.state.pointIndexByLeadId.has(pt.lead_id)) {
+          const node = window.state.semanticNeighborMapByLeadId?.get(pt.lead_id);
+          if (node?.neighbors?.length > 0) return i;
+        }
+      }
+      return 0;
+    });
+
+    await page.evaluate(idx => {
+      if (typeof window.focusOnNode === 'function') window.focusOnNode(idx);
+    }, entryIndex);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    const pocket = await probeFocusPocket(page);
+    expect(pocket.pocketSize, 'short-landscape pocket must have nodes').toBeGreaterThan(0);
+
+    // At least one pocket node must be reachable at its screen coordinate
+    expect(pocket.reachableCount, `short-landscape pocket must retain reachable nodes, got ${pocket.reachableCount}`).toBeGreaterThan(0);
   });
 });

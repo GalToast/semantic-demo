@@ -104,4 +104,24 @@ test.describe('3D camera/orbit resilience', () => {
     expect(after, 'short landscape should retain a hoverable node after camera gestures').not.toBeNull();
     await clickValidNode(page);
   });
+
+  test('short landscape: camera distance stays finite and orbit is bounded after gestures', async ({ page }) => {
+    test.setTimeout(70000);
+    await openApp(page, { width: 844, height: 390 });
+
+    const beforeDist = cameraDistance((await probe(page)).cameraPosition);
+
+    await wheelAtCanvasCenter(page, -120);
+    await dragCanvas(page, 80, 20);
+    await page.waitForTimeout(500);
+
+    const afterDist = cameraDistance((await probe(page)).cameraPosition);
+    expect(Number.isFinite(afterDist), 'camera distance must stay finite after orbit gestures').toBe(true);
+    // Camera should have moved (not be stuck), but still be in a reasonable range
+    expect(afterDist, 'orbit should produce a finite camera distance').toBeGreaterThan(0);
+    expect(afterDist, 'orbit distance should not be catastrophically large').toBeLessThan(1000);
+    // Delta should be observable (not identical to before)
+    const delta = Math.abs(afterDist - beforeDist);
+    expect(delta, 'wheel/drag should produce observable camera movement').toBeGreaterThan(0.1);
+  });
 });

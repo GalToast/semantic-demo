@@ -402,7 +402,7 @@ html body.is-active #selected-details.active {
     /* Step Inside Button */
     html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-dive-btn {
         width: calc(100% - 40px);
-        margin: 0 20px 24px;
+        margin: 0 20px 14px;
         height: 54px;
         border-radius: 16px;
         background: var(--color-primary, #4ecdc4);

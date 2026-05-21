@@ -260,6 +260,33 @@ test.describe('3D thread orchestration quality', () => {
   });
 
   // -------------------------------------------------------------------------
+  // Desktop overview — threads present and continuous (no mobile override)
+  // -------------------------------------------------------------------------
+  test('desktop overview: core threads present and continuous at 1440x900', async ({ page }) => {
+    test.setTimeout(60000);
+    const p = page;
+    await p.setViewportSize({ width: 1440, height: 900 });
+    await p.goto(withParams({ view: 'galaxy' }), { waitUntil: 'commit' });
+    await waitForScene(p);
+    await p.waitForFunction(
+      () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
+      { timeout: 5000 }
+    ).catch(() => {});
+
+    const probe = await probeThreads(p);
+
+    expect(probe.coreExists, 'core thread must exist on desktop overview').toBe(true);
+    expect(probe.coreSegments, 'core thread must have segments').toBeGreaterThan(10);
+    expect(probe.coreContinuity.checked, 'continuity must be sampled').toBeGreaterThan(0);
+    expect(probe.coreContinuity.matched, 'all sampled core pairs must be continuous')
+      .toBe(probe.coreContinuity.checked);
+    // Opacity must be in a legible range (overview range, not invisible)
+    expect(probe.coreOpacity, 'core opacity must be set').toBeGreaterThan(0);
+    expect(probe.coreOpacity, 'core opacity must be bounded for overview')
+      .toBeLessThanOrEqual(0.30);
+  });
+
+  // -------------------------------------------------------------------------
   // Focus state — point cloud suppressed, lens visible, threads elevated
   // -------------------------------------------------------------------------
   test('focus: global point cloud suppressed, lens visible, threads elevated', async ({ page }) => {

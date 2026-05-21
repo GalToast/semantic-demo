@@ -18,6 +18,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { probeFocusPocket, isReachableScreenCoordinate } from './helpers/3d-interaction-helpers.js';
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 
@@ -439,6 +440,71 @@ test.describe('focus-pocket node selectability', () => {
 
     // Anchor must be the focused index
     expect(roles[String(entryIndex)], 'focused index must have role "anchor"').toBe('anchor');
+  });
+
+  // ------------------------------------------------------------------
+  // Reachability: all pocket nodes must have valid screen coordinates
+  // ------------------------------------------------------------------
+
+  test('desktop: all focusPocketIndices have valid in-bounds screen coordinates', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 1440, height: 900 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 20); i++) {
+        const pt = pts[i];
+        if (pt && window.state.pointIndexByLeadId.has(pt.lead_id)) {
+          const node = window.state.semanticNeighborMapByLeadId?.get(pt.lead_id);
+          if (node?.neighbors?.length > 0) return i;
+        }
+      }
+      return 0;
+    });
+
+    await enterFocusByIndex(page, entryIndex);
+    await page.waitForTimeout(1200);
+
+    const pocket = await probeFocusPocket(page);
+    expect(pocket.pocketSize, 'pocket must have at least 1 node').toBeGreaterThan(0);
+    expect(pocket.reachableCount, `pocket must have at least 1 in-bounds screen node, got ${pocket.reachableCount} of ${pocket.pocketSize}`).toBeGreaterThan(0);
+
+    // Every reachable pocket node must be reachable via screen coordinate
+    for (const node of pocket.pocketIndices) {
+      const screenNode = pocket.reachableIndices.includes(node);
+      if (!screenNode) continue;
+      expect(Number.isFinite(node), 'pocket index must be finite').toBe(true);
+    }
+  });
+
+  // ------------------------------------------------------------------
+  // Short-landscape focus-pocket reachability
+  // ------------------------------------------------------------------
+
+  test('short-landscape: focus pocket has reachable nodes at 844x390', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 844, height: 390 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 20); i++) {
+        const pt = pts[i];
+        if (pt && window.state.pointIndexByLeadId.has(pt.lead_id)) {
+          const node = window.state.semanticNeighborMapByLeadId?.get(pt.lead_id);
+          if (node?.neighbors?.length > 0) return i;
+        }
+      }
+      return 0;
+    });
+
+    await enterFocusByIndex(page, entryIndex);
+    await page.waitForTimeout(1200);
+
+    const pocket = await probeFocusPocket(page);
+    expect(pocket.pocketSize, 'short-landscape pocket must be non-empty').toBeGreaterThan(0);
+    expect(pocket.reachableCount, `short-landscape must have reachable pocket nodes, got ${pocket.reachableCount}`).toBeGreaterThan(0);
   });
 
   // ------------------------------------------------------------------

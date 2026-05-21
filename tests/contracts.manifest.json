@@ -167,6 +167,16 @@
         "3d-focus-pocket-selectability.spec.js"
       ]
     },
+    "3d-focus-neighborhood": {
+      "description": "Focus neighborhood visibility and reachability contracts - pocket screen reachability, overlay hit-stealing at short-landscape, desktop hover reset, desktop thread continuity. Requires a running dev server on port 8795.",
+      "contracts": [
+        "3d-focus-pocket-selectability.spec.js",
+        "3d-overlay-hit-stealing.spec.js",
+        "3d-hover-affordance.spec.js",
+        "3d-thread-orchestration-quality.spec.js",
+        "3d-camera-orbit-resilience.spec.js"
+      ]
+    },
     "3d-visual-quality": {
       "description": "3D visual quality contracts - cluster readability and thread orchestration quality. Requires a running dev server on port 8795.",
       "contracts": [

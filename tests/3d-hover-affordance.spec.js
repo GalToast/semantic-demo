@@ -118,4 +118,46 @@ test.describe('3D node hover affordance', () => {
     expect(isValidNodeIndex(hoverState.focusedNode, hoverState.pointCount), 'focused node should remain valid').toBe(true);
     expect(typeof hoverState.hoverHighlightIndex, 'hover state should remain independently tracked').toBe('number');
   });
+
+  test('desktop: hover state clears cleanly when focus is reset via Escape', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 1440, height: 900 });
+
+    const target = await findHoverableNode(page);
+    expect(target, 'a hoverable node must exist before testing reset').not.toBeNull();
+
+    // Enter focus
+    await page.evaluate((nodeIndex) => {
+      if (typeof window.focusOnNode === 'function') window.focusOnNode(nodeIndex);
+    }, target.resolvedIndex);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForTimeout(600);
+
+    // Verify we are in focus
+    const focusState = await getHoverState(page);
+    expect(focusState.focusedNode, 'should be in focus state').not.toBeNull();
+
+    // Press Escape to reset
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => window.state?.navState?.mode === 'overview', { timeout: 12000 });
+    await page.waitForTimeout(800);
+
+    // Hover should be cleared (null or -1) after reset
+    const afterReset = await getHoverState(page);
+    const cleared = afterReset.hoverHighlightIndex === -1 || afterReset.hoverHighlightIndex === null;
+    expect(cleared, `hover should clear after Escape reset, got ${afterReset.hoverHighlightIndex}`).toBe(true);
+  });
+
+  test('mobile portrait: hover resolves on a real node at 390x844', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 390, height: 844 });
+
+    const target = await findHoverableNode(page);
+    expect(target, 'mobile portrait should expose at least one hoverable node').not.toBeNull();
+
+    const hoverState = await getHoverState(page);
+    expect(isValidNodeIndex(hoverState.hoverHighlightIndex, hoverState.pointCount),
+      'mobile hoverHighlightIndex must be valid').toBe(true);
+    expect(hoverState.canvasCursor, 'mobile canvas cursor should be pointer').toBe('pointer');
+  });
 });

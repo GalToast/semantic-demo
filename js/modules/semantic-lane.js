@@ -209,9 +209,9 @@ export async function probeSemanticLane({ warm = false, reason = 'interval' } = 
             const isTimeout = err.name === 'AbortError';
             if (isTimeout) console.warn('Semantic lane probe timed out after 5s');
 
-            if (reason === 'focus' || reason === 'visibility' || effectiveWarm || isTimeout) {
+            if (reason === 'focus' || reason === 'visibility' || effectiveWarm || isTimeout || state.semanticLaneState === 'checking' || state.semanticLaneState === 'degraded' || state.semanticLaneState === 'unavailable') {
                 recordSemanticLaneSnapshot({
-                    state: 'degraded',
+                    state: 'unavailable',
                     search_ok: false,
                     embed_ok: false,
                     attempted_warm: effectiveWarm,
@@ -219,8 +219,8 @@ export async function probeSemanticLane({ warm = false, reason = 'interval' } = 
                     cooldown_wait_until: null
                 });
                 if (typeof win?.clearSemanticLaneCooldownProbeTimer === 'function') win.clearSemanticLaneCooldownProbeTimer();
-                setSemanticLaneUiState('degraded', {
-                    title: 'Search health check failed while trying to warm it.'
+                setSemanticLaneUiState('unavailable', {
+                    title: 'Search health check failed to connect.'
                 });
             }
             return null;

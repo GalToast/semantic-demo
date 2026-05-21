@@ -189,6 +189,10 @@ export async function projectedCandidates(page, { marginRatio = 0.08, maxResults
     const { state } = window;
     const canvas = state?.renderer?.domElement;
     if (!canvas || !state?.camera || !state?.pointsMesh || !Array.isArray(state.nodePositions)) return [];
+    // Bail early if WebGL context is lost — avoids GPU readback stall from
+    // hanging the evaluate call in headless Chrome at short-landscape viewports.
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    if (!gl || gl.isContextLost()) return [];
     const rect = canvas.getBoundingClientRect();
     const margin = Math.max(34, Math.min(rect.width, rect.height) * mr);
     const step = Math.max(1, Math.floor(state.nodePositions.length / 140));
@@ -229,5 +233,71 @@ export async function projectedCandidates(page, { marginRatio = 0.08, maxResults
 }
 
 export async function projectedCanvasCandidates(page) {
-  return projectedCandidates(page, { marginRatio: 0.08, maxResults: 14 });
+  // Short landscape (844x390) exposes GPU ReadPixels stalls in headless Chrome.
+  // Reduce maxResults from 14 to 8 to shrink the candidate-probing loop's
+  // exposure window to the stall before a valid candidate is found.
+  return projectedCandidates(page, { marginRatio: 0.08, maxResults: 8 });
+}
+
+/**
+ * Probe focus pocket state: pocket indices, screen reachability, role assignment.
+ * Independent of any particular spec's probe() — exposes the full pocket contract.
+ */
+export async function probeFocusPocket(page) {
+  return page.evaluate(() => {
+    const state = window.state?.navState ?? {};
+    const pocket = state.focusPocketIndices ?? [];
+    const camera = window.state?.camera;
+    const canvas = window.state?.renderer?.domElement;
+    const rect = canvas?.getBoundingClientRect?.();
+    const nodePositions = window.state?.nodePositions ?? [];
+    const pointsMesh = window.state?.pointsMesh;
+
+    const withScreen = pocket.map(idx => {
+      const pos = nodePositions[idx];
+      if (!pos || !camera || !rect) return { idx, hasScreen: false, screenX: null, screenY: null };
+      const vec = new window.THREE.Vector3(pos.x, pos.y, pos.z);
+      if (pointsMesh?.localToWorld) pointsMesh.localToWorld(vec);
+      const proj = vec.clone().project(camera);
+      if (proj.z < -1 || proj.z > 1) return { idx, hasScreen: false, screenX: null, screenY: null };
+      const screenX = ((proj.x + 1) / 2) * rect.width + rect.left;
+      const screenY = ((-proj.y + 1) / 2) * rect.height + rect.top;
+      const inBounds = screenX >= rect.left && screenX <= rect.right && screenY >= rect.top && screenY <= rect.bottom;
+      return { idx, hasScreen: inBounds, screenX, screenY };
+    });
+
+    const reachable = withScreen.filter(n => n.hasScreen);
+    const roles = state.focusPocketRoleByIndex ? Object.fromEntries(state.focusPocketRoleByIndex) : {};
+
+    return {
+      pocketIndices: pocket,
+      pocketSize: pocket.length,
+      reachableCount: reachable.length,
+      reachableIndices: reachable.map(n => n.idx),
+      focusPocketMeta: state.focusPocketMeta ?? null,
+      roles,
+      focusedIndex: state.focusedIndex ?? null,
+      focusedNode: window.state?.focusedNode ?? null,
+    };
+  });
+}
+
+/**
+ * Returns true if the given screen coordinate hits the canvas and is not
+ * blocked by any interactive overlay element.
+ */
+export async function isReachableScreenCoordinate(page, screenX, screenY) {
+  return page.evaluate(({ x, y }) => {
+    const canvas = window.state?.renderer?.domElement;
+    if (!canvas) return false;
+    const stack = document.elementsFromPoint(x, y);
+    if (!stack.includes(canvas)) return false;
+    const blocked = stack.some(el => el?.closest?.([
+      'button','a','input','textarea','select',
+      '.info-panel','.focus-stage-card','.summary-card','.controls',
+      '.view-toggle','.journey-compass','.legend-panel',
+      '.weather-widget','.share-toggle'
+    ].join(',')) && getComputedStyle(el).pointerEvents !== 'none');
+    return !blocked;
+  }, { x: screenX, y: screenY });
 }

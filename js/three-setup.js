@@ -121,7 +121,7 @@ const SCENE_ATMOSPHERE = Object.freeze({
     clearAlpha: 1,
     toneExposure: 0.92,
     pointOpacityScale: 0.82,
-    sporeOpacity: 0.16
+    sporeOpacity: 0.22
 });
 
 const NODE_SPORE_BASE_RADIUS = 0.0019;
@@ -758,7 +758,7 @@ function createNodeSporeLayer() {
     hitMesh.frustumCulled = false;
     hitMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     for (let i = 0; i < state.points.length; i += 1) {
-        setNodeSporeInstanceMatrix(i, hitMesh, 1.6);
+        setNodeSporeInstanceMatrix(i, hitMesh, 2.4);
     }
     hitMesh.instanceMatrix.needsUpdate = true;
     state.nodeSporeHitMesh = hitMesh;
