@@ -82,8 +82,33 @@ const globalLegacyPanelStatePatterns = [
   'data-semantic-dive="active"',
 ];
 
+const bannedSelectorImportantRules = [
+  {
+    file: 'search.css',
+    selectorIncludes: [
+      'data-panel-surface="focus-search"',
+      '.search-results.active',
+    ],
+    label: 'focus-search search-results active',
+  },
+];
+
 function stripComments(cssText) {
   return cssText.replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
+function selectorRuleBlocks(cssText) {
+  return stripComments(cssText)
+    .split('}')
+    .map((chunk) => {
+      const braceIndex = chunk.lastIndexOf('{');
+      if (braceIndex === -1) return null;
+      return {
+        prelude: chunk.slice(0, braceIndex).trim(),
+        body: chunk.slice(braceIndex + 1).trim(),
+      };
+    })
+    .filter(Boolean);
 }
 
 function selectorRulePreludes(cssText) {
@@ -115,9 +140,20 @@ const cssFiles = fs.readdirSync(cssDir)
 for (const file of cssFiles) {
   const content = fs.readFileSync(path.join(cssDir, file), 'utf8');
   const uncommentedContent = stripComments(content);
+  const ruleBlocks = selectorRuleBlocks(content);
   for (const pattern of globalLegacyPanelStatePatterns) {
     if (uncommentedContent.includes(pattern)) {
       violations.push(`${file} uses legacy panel state ${pattern}; panel ownership must use data-panel-surface.`);
+    }
+  }
+
+  for (const rule of bannedSelectorImportantRules) {
+    if (file !== rule.file) continue;
+    for (const block of ruleBlocks) {
+      const matchesSelector = rule.selectorIncludes.every((fragment) => block.prelude.includes(fragment));
+      if (matchesSelector && block.body.includes('!important')) {
+        violations.push(`${file} uses !important in ${rule.label}; use state-scoped ownership instead.`);
+      }
     }
   }
 

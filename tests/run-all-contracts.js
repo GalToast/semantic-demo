@@ -14,6 +14,7 @@
  *   node tests/run-all-contracts.js --group=motion
  *   node tests/run-all-contracts.js --group=lifecycle
  *   node tests/run-all-contracts.js --group=browser
+ *   node tests/run-all-contracts.js --group=browser-interaction
  *   node tests/run-all-contracts.js --group=render
  *   node tests/run-all-contracts.js --group=quality
  *   node tests/run-all-contracts.js --group=mobile-critical
@@ -35,10 +36,120 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import http from 'node:http';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const TESTS_DIR = __dirname;
 const MANIFEST_PATH = join(__dirname, 'contracts.manifest.json');
+const PROJECT_ROOT = join(TESTS_DIR, '..');
+const SERVER_PORT = 8795;
+const SERVER_START_TIMEOUT_MS = 10000;
+const SERVER_POLL_INTERVAL_MS = 250;
+
+// Groups that require the canonical local static server on port 8795.
+// Alternate-port or environment-specific groups must manage their own setup.
+const SERVER_GROUPS = new Set(['scene', '3d-interaction-quality', 'browser-interaction', 'live-url', 'extraction', 'quality', 'mobile-critical', '3d-engine']);
+
+/**
+ * Check if a server is already running on SERVER_PORT by sending a light HTTP request.
+ * Returns true if a response is received (server is up), false otherwise.
+ */
+function isServerRunning(port) {
+  return new Promise((resolve) => {
+    const req = http.get({ hostname: '127.0.0.1', port, path: '/', timeout: 2000 }, (res) => {
+      resolve(res.statusCode !== undefined);
+    });
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => { req.destroy(); resolve(false); });
+  });
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Start a local static server from PROJECT_ROOT on SERVER_PORT.
+ * Returns a handle with .kill() for shutdown.
+ */
+async function startStaticServer(port) {
+  return new Promise((resolve, reject) => {
+    const child = spawn('python', ['-m', 'http.server', String(port), '--bind', '127.0.0.1', '--directory', '.'], {
+      stdio: 'ignore',
+      cwd: PROJECT_ROOT,
+      detached: false,
+    });
+    let settled = false;
+    child.on('error', (err) => {
+      if (settled) return;
+      settled = true;
+      reject(err);
+    });
+
+    child.on('exit', (code, signal) => {
+      if (settled) return;
+      settled = true;
+      reject(new Error(`Static server exited before readiness check completed (code=${code}, signal=${signal})`));
+    });
+
+    (async () => {
+      const deadline = Date.now() + SERVER_START_TIMEOUT_MS;
+      while (Date.now() < deadline) {
+        if (await isServerRunning(port)) {
+          if (settled) return;
+          settled = true;
+          resolve({ kill: () => child.kill(), port });
+          return;
+        }
+        await sleep(SERVER_POLL_INTERVAL_MS);
+      }
+      if (!settled) {
+        settled = true;
+        child.kill();
+        reject(new Error(`Static server failed to respond on port ${port} within ${SERVER_START_TIMEOUT_MS}ms`));
+      }
+    })();
+  });
+}
+
+function createServerLease(groupName) {
+  if (!SERVER_GROUPS.has(groupName)) return null;
+  let ownedServer = null;
+  let borrowedLogged = false;
+  const explicitBaseUrl = process.env.TEST_BASE_URL;
+
+  return {
+    async ensure() {
+      if (explicitBaseUrl) {
+        if (!borrowedLogged) {
+          console.log(`  [server] using explicit TEST_BASE_URL=${explicitBaseUrl}`);
+          borrowedLogged = true;
+        }
+        return;
+      }
+
+      if (await isServerRunning(SERVER_PORT)) {
+        if (!ownedServer && !borrowedLogged) {
+          console.log(`  [server] port ${SERVER_PORT} already in use — borrowing pre-warmed dev server`);
+          borrowedLogged = true;
+        }
+        return;
+      }
+
+      console.log(`  [server] auto-starting static server on port ${SERVER_PORT}...`);
+      ownedServer = await startStaticServer(SERVER_PORT);
+      console.log(`  [server] static server running on port ${SERVER_PORT}`);
+    },
+
+    close() {
+      if (!ownedServer) return;
+      console.log(`  [server] shutting down static server on port ${SERVER_PORT}...`);
+      ownedServer.kill();
+      ownedServer = null;
+      console.log(`  [server] closed`);
+    },
+  };
+}
 
 // Pinned ordered list: this is the authoritative default run.
 const PINNED_FILES = [
@@ -108,12 +219,23 @@ function getGroupFromManifest(groupName) {
 /**
  * Discover all *-contract.mjs files in tests/ that are not self-test helpers.
  * Excludes: utils-contract.mjs, surface-contract-check.mjs (multi-surface runners).
+ * Also discovers standalone Playwright interaction specs (*.spec.js) that are
+ * not helper scripts — these are group-member candidates (e.g. canvas-hit-test,
+ * live-reset-interaction) and must not be silently orphaned.
  */
 function discoverUnlistedContracts() {
-  const all = readdirSync(TESTS_DIR).filter(f => f.endsWith('.mjs'));
+  const allMjs = readdirSync(TESTS_DIR).filter(f => f.endsWith('.mjs'));
   const selfTestHelpers = new Set(['utils-contract.mjs', 'surface-contract-check.mjs']);
   const contractPattern = /-contract\.mjs$/;
-  return all.filter(f => contractPattern.test(f) && !selfTestHelpers.has(f));
+  const mjsContracts = allMjs.filter(f => contractPattern.test(f) && !selfTestHelpers.has(f));
+
+  // Playwright *.spec.js files that are not helper utilities.
+  // These use real browser automation and are discoverable contract entries.
+  const allSpec = readdirSync(TESTS_DIR).filter(f => f.endsWith('.spec.js'));
+  const specExclusions = new Set(['inspect_element.js']); // not a test suite
+  const specContracts = allSpec.filter(f => !specExclusions.has(f));
+
+  return { mjsContracts, specContracts };
 }
 
 function resolveFiles() {
@@ -205,11 +327,17 @@ function runValidation() {
   }
 
   // 6. Report unlisted contract files (warn only; they may be intentionally excluded).
-  const unlisted = discoverUnlistedContracts().filter(f => !PINNED_FILES.includes(f));
+  const { mjsContracts, specContracts } = discoverUnlistedContracts();
+  const allUnlisted = [...mjsContracts, ...specContracts];
   const manifestFiles = Object.values(loadManifest()?.groups || {}).flatMap(g => g.contracts || []);
-  const orphanFiles = unlisted.filter(f => !manifestFiles.includes(f));
-  if (orphanFiles.length > 0) {
-    warnings.push(`ORPHAN_CONTRACT_FILES: ${orphanFiles.length} contract file(s) exist but are not in PINNED_FILES or any manifest group: ${orphanFiles.join(', ')}`);
+  const orphanFiles = allUnlisted.filter(f => !PINNED_FILES.includes(f) && !manifestFiles.includes(f));
+  const orphanMjs = orphanFiles.filter(f => f.endsWith('.mjs'));
+  const orphanSpec = orphanFiles.filter(f => f.endsWith('.spec.js'));
+  if (orphanMjs.length > 0) {
+    warnings.push(`ORPHAN_MJS_CONTRACTS: ${orphanMjs.length} .mjs contract file(s) not in PINNED_FILES or any manifest group: ${orphanMjs.join(', ')}`);
+  }
+  if (orphanSpec.length > 0) {
+    warnings.push(`ORPHAN_SPEC_CONTRACTS: ${orphanSpec.length} .spec.js file(s) not in any manifest group: ${orphanSpec.join(', ')}`);
   }
 
   // Output
@@ -226,7 +354,8 @@ function runValidation() {
     console.log('  All validations passed.');
   }
   console.log(`\n  Pinned list:      ${PINNED_FILES.length} files`);
-  console.log(`  Unlisted orphans: ${orphanFiles.length} file(s) (see warnings above)`);
+  const totalOrphans = orphanMjs.length + orphanSpec.length;
+  console.log(`  Unlisted orphans: ${totalOrphans} file(s) (see warnings above)`);
   console.log('');
 
   process.exit(exitCode);
@@ -234,29 +363,71 @@ function runValidation() {
 
 // Execute a single contract file
 
+// Playwright test flags for browser-interaction specs.
+const PLAYWRIGHT_CLI = join(PROJECT_ROOT, 'node_modules', '@playwright', 'test', 'cli.js');
+const PLAYWRIGHT_FLAGS = ['--browser=chromium', '--workers=1'];
+const CONTRACT_TIMEOUT_MS = Number(process.env.CONTRACT_TIMEOUT_MS || 240000);
+
+function isPlaywrightTestFile(filename, entry) {
+  if (filename.endsWith('.spec.js')) return true;
+  if (!filename.endsWith('.mjs')) return false;
+  const source = readFileSync(entry, 'utf8');
+  return source.includes("from '@playwright/test'") || source.includes('from "@playwright/test"');
+}
+
 function runContract(filename) {
   return new Promise((resolve) => {
     const entry = join(TESTS_DIR, filename);
     const start = performance.now();
+    let settled = false;
 
-    const child = spawn(process.execPath, [entry], {
+    // Playwright test suites may use .spec.js or explicit .mjs contract names.
+    // Custom browser scripts that import `playwright` directly still run as Node.
+    const isPlaywrightSpec = isPlaywrightTestFile(filename, entry);
+    const exec = process.execPath;
+    const execArgs = isPlaywrightSpec
+      ? [PLAYWRIGHT_CLI, 'test', `tests/${filename}`, ...PLAYWRIGHT_FLAGS]
+      : [entry];
+
+    const child = spawn(exec, execArgs, {
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env },
+      cwd: PROJECT_ROOT,
+      env: { ...process.env, TEST_BASE_URL: process.env.TEST_BASE_URL || `http://127.0.0.1:${SERVER_PORT}` },
     });
 
     let stdout = '';
     let stderr = '';
+    const timeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      child.kill();
+      const duration = performance.now() - start;
+      resolve({
+        filename,
+        duration,
+        passed: false,
+        code: -1,
+        stdout,
+        stderr: `${stderr}\nContract timed out after ${CONTRACT_TIMEOUT_MS}ms`.trim(),
+      });
+    }, CONTRACT_TIMEOUT_MS);
 
     child.stdout.on('data', (chunk) => { stdout += chunk.toString(); });
     child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
 
     child.on('close', (code) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
       const duration = performance.now() - start;
       const passed = code === 0 && !stdout.includes('FAIL') && !stdout.includes('[FAIL]');
       resolve({ filename, duration, passed, code, stdout, stderr });
     });
 
     child.on('error', (err) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
       const duration = performance.now() - start;
       resolve({ filename, duration, passed: false, code: -1, stdout: '', stderr: err.message });
     });
@@ -290,43 +461,56 @@ async function main() {
   }
 
   const { files, mode } = resolveFiles();
+  const groupName = mode.startsWith('group:') ? mode.slice(6) : null;
   console.log(`\n=== QA Contract Runner ===`);
   console.log(`Mode: ${mode}`);
   console.log(`Running ${files.length} contract file(s)\n`);
 
-  const results = [];
-  for (const file of files) {
-    results.push(await runContract(file));
-  }
+  const serverLease = groupName ? createServerLease(groupName) : null;
 
-  const passed = results.filter(r => r.passed);
-  const failed = results.filter(r => !r.passed);
-
-  console.log('--- Results ---\n');
-
-  for (const r of results) {
-    const ms = r.duration < 1000
-      ? `${r.duration.toFixed(0)}ms`
-      : `${(r.duration / 1000).toFixed(2)}s`;
-    const mark = r.passed ? 'PASS' : 'FAIL';
-    console.log(`  [${mark}] ${r.filename} (${ms})`);
-    if (!r.passed) {
-      if (r.code !== 0) console.log(`         exit code: ${r.code}`);
-      // Surface first failure line if present
-      const failureLine = (r.stdout + r.stderr).split('\n').find(l => l.includes('[FAIL]') || l.includes('Error') || l.includes('FAIL'));
-      if (failureLine) console.log(`         ${failureLine.trim()}`);
+  const runContracts = async () => {
+    const results = [];
+    for (const file of files) {
+      if (serverLease) await serverLease.ensure();
+      console.log(`  [run] ${file}`);
+      results.push(await runContract(file));
     }
+
+    const passed = results.filter(r => r.passed);
+    const failed = results.filter(r => !r.passed);
+
+    console.log('--- Results ---\n');
+
+    for (const r of results) {
+      const ms = r.duration < 1000
+        ? `${r.duration.toFixed(0)}ms`
+        : `${(r.duration / 1000).toFixed(2)}s`;
+      const mark = r.passed ? 'PASS' : 'FAIL';
+      console.log(`  [${mark}] ${r.filename} (${ms})`);
+      if (!r.passed) {
+        if (r.code !== 0) console.log(`         exit code: ${r.code}`);
+        // Surface first failure line if present
+        const failureLine = (r.stdout + r.stderr).split('\n').find(l => l.includes('[FAIL]') || l.includes('Error') || l.includes('FAIL'));
+        if (failureLine) console.log(`         ${failureLine.trim()}`);
+      }
+    }
+
+    console.log(`\n--- Summary ---`);
+    console.log(`  ${passed.length}/${results.length} passed`);
+
+    if (failed.length > 0) {
+      console.log(`\n  Failed: ${failed.map(f => f.filename).join(', ')}`);
+      process.exit(1);
+    }
+
+    console.log('\n  All contracts passed.\n');
+  };
+
+  try {
+    await runContracts();
+  } finally {
+    if (serverLease) serverLease.close();
   }
-
-  console.log(`\n--- Summary ---`);
-  console.log(`  ${passed.length}/${results.length} passed`);
-
-  if (failed.length > 0) {
-    console.log(`\n  Failed: ${failed.map(f => f.filename).join(', ')}`);
-    process.exit(1);
-  }
-
-  console.log('\n  All contracts passed.\n');
 }
 
 main().catch((err) => {

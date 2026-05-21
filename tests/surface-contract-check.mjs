@@ -50,6 +50,22 @@ async function ensureDir(dir) {
   await fs.promises.mkdir(dir, { recursive: true });
 }
 
+function withTimeout(promise, ms, label) {
+  let timer;
+  let settled = false;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      settled = true;
+      reject(new Error(`TIMEOUT(${ms}ms): ${label} did not complete in time`));
+    }, ms);
+  });
+
+  const race = Promise.race([promise, timeout]);
+  return race.finally(() => {
+    if (!settled) clearTimeout(timer);
+  });
+}
+
 // Viewport configs
 
 const VIEWPORTS = {
@@ -72,6 +88,10 @@ const VIEWPORTS = {
   'info-panel-populated': { width: 1440, height: 900, isMobile: false, deviceScaleFactor: 1 },
   // Phase C
   'global-spacing':      { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
+  // Wave 2
+  'mobile-focus-search':  { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
+  'mobile-semantic-dive': { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
+  'tablet-semantic-dive': { width: 768, height: 1024, isMobile: true, deviceScaleFactor: 2 },
 };
 
 // Page setup
@@ -853,15 +873,14 @@ async function assert_focus_pocket(page, ctx) {
       results.countyBtnRect = { width: rect.width, height: rect.height, minHeight: style.minHeight, display: style.display };
       results.countyBtnTouchTarget = touchTargetOk(countyBtn);
     }
+    const insideControls = document.querySelector('#focus-stage-inside-controls, .focus-stage-inside-controls');
+    results.insideControlsLayout = layoutSnapshot(insideControls);
 
     // --- journey meta visible inside pocket ---
     const journeyMeta = document.querySelector('.focus-stage-journey-meta');
     results.journeyMetaVisible = journeyMeta
       ? getComputedStyle(journeyMeta).display !== 'none' && getComputedStyle(journeyMeta).visibility !== 'hidden'
       : null;
-
-    const focusActions = document.querySelector('.focus-stage-actions');
-    results.focusActionsLayout = layoutSnapshot(focusActions);
 
     // --- neighbor list present and not clipped ---
     const neighborList = document.querySelector('#focus-stage-neighbor-list, .focus-stage-neighbor-list');
@@ -893,16 +912,16 @@ async function assert_focus_pocket(page, ctx) {
   if (info.journeyMetaVisible) ctx.pass('focus-pocket', 'visibility:journey-meta');
   else if (info.journeyMetaVisible === false) ctx.pass('focus-pocket', 'visibility:journey-meta:hidden');
 
-  if (info.focusActionsLayout && info.focusActionsLayout.display !== 'grid') {
-    ctx.fail('focus-pocket', 'computed:focus-actions-display', `expected grid, got ${info.focusActionsLayout.display}`);
-  } else if (info.focusActionsLayout) {
-    ctx.pass('focus-pocket', 'computed:focus-actions-display');
+  if (info.insideControlsLayout && info.insideControlsLayout.display !== 'grid') {
+    ctx.fail('focus-pocket', 'computed:inside-controls-display', `expected grid, got ${info.insideControlsLayout.display}`);
+  } else if (info.insideControlsLayout) {
+    ctx.pass('focus-pocket', 'computed:inside-controls-display');
   }
 
-  if (info.focusActionsLayout && info.focusActionsLayout.gap !== '10px') {
-    ctx.fail('focus-pocket', 'computed:focus-actions-gap', `expected 10px, got ${info.focusActionsLayout.gap}`);
-  } else if (info.focusActionsLayout) {
-    ctx.pass('focus-pocket', 'computed:focus-actions-gap');
+  if (info.insideControlsLayout && info.insideControlsLayout.gap !== '8px') {
+    ctx.fail('focus-pocket', 'computed:inside-controls-gap', `expected 8px, got ${info.insideControlsLayout.gap}`);
+  } else if (info.insideControlsLayout) {
+    ctx.pass('focus-pocket', 'computed:inside-controls-gap');
   }
 
   if (info.neighborListClipped) ctx.fail('focus-pocket', 'text-clipping:neighbor-list', 'neighbor list is clipped');
@@ -2338,6 +2357,10 @@ const SURFACES = {
   'info-panel-populated': assert_info_panel_populated,
   // Phase C — global spacing / touch / overflow health
   'global-spacing':       assert_global_spacing,
+  // Wave 2 — mobile focus-search and semantic-dive geometry
+  'mobile-focus-search':   assert_mobile_focus_search,
+  'mobile-semantic-dive':  assert_mobile_semantic_dive,
+  'tablet-semantic-dive':  assert_tablet_semantic_dive,
 };
 
 // ---------------------------------------------------------------------------
@@ -2588,10 +2611,269 @@ async function assert_global_spacing(page, ctx) {
   return info;
 }
 
+// ---------------------------------------------------------------------------
+// mobile-focus-search — validates the focus-search surface at 390x844.
+// Contract: controls rail hidden/noninteractive, search container visible,
+// search result panel visible, no viewport-wide blocking right rail.
+// ---------------------------------------------------------------------------
+
+async function assert_mobile_focus_search(page, ctx) {
+  const focusedUrl = surfaceUrl({ view: 'galaxy', q: 'coffee', anchor: '1', mode: 'trail', depth: '1', record: '1' });
+  await loadAndWait(page, focusedUrl);
+  await page.waitForFunction(() => document.body?.dataset?.panelSurface === 'focus-search', { timeout: 8000 }).catch(() => {});
+
+  const info = await page.evaluate(() => {
+    function isRenderedAndVisible(el) {
+      if (!el) return false;
+      const s = getComputedStyle(el);
+      if (s.display === 'none' || s.visibility === 'hidden') return false;
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    }
+
+    function isInteractive(el) {
+      if (!el) return false;
+      const s = getComputedStyle(el);
+      if (s.display === 'none' || s.visibility === 'hidden') return false;
+      if (s.pointerEvents === 'none') return false;
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    }
+
+    function hasBlockingOverlay(el) {
+      if (!el) return false;
+      const s = getComputedStyle(el);
+      if (s.visibility === 'hidden' || s.display === 'none' || s.pointerEvents === 'none') return false;
+      if (s.position !== 'fixed' && s.position !== 'absolute') return false;
+      const rect = el.getBoundingClientRect();
+      const viewportArea = window.innerWidth * window.innerHeight;
+      const area = Math.max(0, rect.width) * Math.max(0, rect.height);
+      return area > viewportArea * 0.45;
+    }
+
+    const results = {};
+
+    const controls = document.querySelector('.controls');
+    results.controlsPresent = controls !== null;
+    results.controlsHidden = controls
+      ? controls.hidden || getComputedStyle(controls).display === 'none' || getComputedStyle(controls).visibility === 'hidden'
+      : null;
+    results.controlsInteractive = isInteractive(controls);
+
+    const searchContainer = document.querySelector('.search-container');
+    results.searchContainerPresent = searchContainer !== null;
+    results.searchContainerVisible = isRenderedAndVisible(searchContainer);
+
+    const resultsPanel = document.querySelector('#search-results');
+    results.resultsPanelPresent = resultsPanel !== null;
+    results.resultsPanelVisible = isRenderedAndVisible(resultsPanel);
+
+    results.controlsBlocksViewport = controls ? hasBlockingOverlay(controls) : null;
+
+    results.overflowX = document.documentElement.scrollWidth > window.innerWidth;
+
+    return { ...results, bodyDataset: { ...document.body.dataset } };
+  });
+
+  if (info.bodyDataset?.panelSurface === 'focus-search') ctx.pass('mobile-focus-search', 'state:panel-surface');
+  else ctx.fail('mobile-focus-search', 'state:panel-surface', `expected focus-search, got ${info.bodyDataset?.panelSurface || 'missing'}`);
+
+  if (info.controlsPresent) {
+    if (info.controlsHidden) ctx.pass('mobile-focus-search', 'visibility:controls-rail:hidden');
+    else ctx.fail('mobile-focus-search', 'visibility:controls-rail:hidden', '.controls rail should be hidden in focus-search');
+  } else {
+    ctx.pass('mobile-focus-search', 'visibility:controls-rail:absent');
+  }
+
+  if (info.controlsInteractive === false) ctx.pass('mobile-focus-search', 'pointer-events:controls-rail:noninteractive');
+  else if (info.controlsInteractive) ctx.fail('mobile-focus-search', 'pointer-events:controls-rail:noninteractive', '.controls rail should not be interactive in focus-search');
+  else ctx.pass('mobile-focus-search', 'pointer-events:controls-rail:skipped');
+
+  if (info.searchContainerVisible) ctx.pass('mobile-focus-search', 'visibility:search-container');
+  else ctx.fail('mobile-focus-search', 'visibility:search-container', 'search container should be visible in focus-search');
+
+  if (info.resultsPanelVisible) ctx.pass('mobile-focus-search', 'visibility:search-results-panel');
+  else ctx.fail('mobile-focus-search', 'visibility:search-results-panel', 'search results panel should be visible in focus-search');
+
+  if (info.controlsBlocksViewport === false || info.controlsBlocksViewport === null) {
+    ctx.pass('mobile-focus-search', 'overlay:controls-rail:not-blocking');
+  } else if (info.controlsBlocksViewport) {
+    ctx.fail('mobile-focus-search', 'overlay:controls-rail:blocking', '.controls rail blocks the viewport');
+  }
+
+  if (info.overflowX) ctx.fail('mobile-focus-search', 'viewport-crowding:overflow-x', 'horizontal overflow in mobile focus-search');
+  else ctx.pass('mobile-focus-search', 'viewport-crowding:overflow-x');
+
+  return info;
+}
+
+// ---------------------------------------------------------------------------
+// mobile-semantic-dive — validates semantic-dive inside-view at 390x844.
+// Contract: search hidden/noninteractive, legacy focus-stage
+// kicker/actions/dive hidden/noninteractive, inside status/controls visible.
+// ---------------------------------------------------------------------------
+
+async function assert_mobile_semantic_dive(page, ctx) {
+  return assert_semantic_dive_geometry(page, ctx, 'mobile-semantic-dive');
+}
+
+// ---------------------------------------------------------------------------
+// tablet-semantic-dive — validates semantic-dive inside-view at 768x1024.
+// Same contract as mobile-semantic-dive but at tablet viewport.
+// ---------------------------------------------------------------------------
+
+async function assert_tablet_semantic_dive(page, ctx) {
+  return assert_semantic_dive_geometry(page, ctx, 'tablet-semantic-dive');
+}
+
+async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
+  const focusedUrl = surfaceUrl({ view: 'galaxy', q: 'coffee', anchor: '1', mode: 'trail', depth: '1', record: '1' });
+  await loadAndWait(page, focusedUrl);
+  await page.waitForFunction(() => document.body?.dataset?.panelSurface === 'focus-search', { timeout: 8000 }).catch(() => {});
+  await page.evaluate(() => {
+    if (typeof window.setTrailDepth === 'function') {
+      window.setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true });
+    }
+  });
+  await page.waitForFunction(() => document.body?.dataset?.panelSurface === 'semantic-dive', { timeout: 8000 }).catch(() => {});
+  const info = await page.evaluate(() => {
+    function isRenderedAndVisible(el) {
+      if (!el) return false;
+      const s = getComputedStyle(el);
+      if (s.display === 'none' || s.visibility === 'hidden') return false;
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    }
+
+    function isInteractive(el) {
+      if (!el) return false;
+      const s = getComputedStyle(el);
+      if (s.display === 'none' || s.visibility === 'hidden') return false;
+      if (s.pointerEvents === 'none') return false;
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    }
+
+    const results = {};
+
+    const searchContainer = document.querySelector('.search-container');
+    results.searchContainerPresent = searchContainer !== null;
+    results.searchContainerHidden = searchContainer
+      ? searchContainer.hidden || getComputedStyle(searchContainer).display === 'none' || getComputedStyle(searchContainer).visibility === 'hidden'
+      : null;
+    results.searchContainerInteractive = isInteractive(searchContainer);
+
+    const resultsPanel = document.querySelector('#search-results');
+    results.resultsPanelHidden = resultsPanel
+      ? resultsPanel.hidden || getComputedStyle(resultsPanel).display === 'none' || getComputedStyle(resultsPanel).visibility === 'hidden'
+      : null;
+
+    const kicker = document.querySelector('.focus-stage-kicker');
+    results.kickerHidden = kicker
+      ? kicker.hidden || getComputedStyle(kicker).display === 'none'
+      : null;
+    results.kickerInteractive = isInteractive(kicker);
+
+    const focusActions = document.querySelector('.focus-stage-actions');
+    results.focusActionsHidden = focusActions
+      ? focusActions.hidden || getComputedStyle(focusActions).display === 'none'
+      : null;
+    results.focusActionsInteractive = isInteractive(focusActions);
+
+    const diveBtn = document.querySelector('.focus-stage-dive-btn, #btn-focus-dive');
+    results.diveBtnHidden = diveBtn
+      ? diveBtn.hidden || getComputedStyle(diveBtn).display === 'none'
+      : null;
+    results.diveBtnInteractive = isInteractive(diveBtn);
+
+    const insideStatus = document.querySelector('#focus-stage-inside-status, .focus-stage-inside-status');
+    results.insideStatusPresent = insideStatus !== null;
+    results.insideStatusVisible = isRenderedAndVisible(insideStatus);
+
+    const insideControls = document.querySelector('#focus-stage-inside-controls, .focus-stage-inside-controls');
+    results.insideControlsPresent = insideControls !== null;
+    results.insideControlsVisible = isRenderedAndVisible(insideControls);
+
+    results.overflowX = document.documentElement.scrollWidth > window.innerWidth;
+
+    return { ...results, bodyDataset: { ...document.body.dataset } };
+  });
+
+  if (info.bodyDataset?.panelSurface === 'semantic-dive') ctx.pass(surfaceName, 'state:panel-surface');
+  else ctx.fail(surfaceName, 'state:panel-surface', `expected semantic-dive, got ${info.bodyDataset?.panelSurface || 'missing'}`);
+
+  if (info.searchContainerHidden) ctx.pass(surfaceName, 'visibility:search:hidden');
+  else ctx.fail(surfaceName, 'visibility:search:hidden', 'search container should be hidden in semantic-dive');
+
+  if (info.searchContainerInteractive === false) ctx.pass(surfaceName, 'pointer-events:search:noninteractive');
+  else if (info.searchContainerPresent && info.searchContainerInteractive) {
+    ctx.fail(surfaceName, 'pointer-events:search:noninteractive', 'search container should not be interactive in semantic-dive');
+  } else {
+    ctx.pass(surfaceName, 'pointer-events:search:skipped');
+  }
+
+  if (info.resultsPanelHidden) ctx.pass(surfaceName, 'visibility:search-results:hidden');
+  else ctx.fail(surfaceName, 'visibility:search-results:hidden', 'search results panel should be hidden in semantic-dive');
+
+  if (info.kickerHidden) ctx.pass(surfaceName, 'visibility:focus-kicker:hidden');
+  else ctx.fail(surfaceName, 'visibility:focus-kicker:hidden', 'legacy focus-stage kicker should be hidden in semantic-dive');
+
+  if (info.kickerInteractive === false) ctx.pass(surfaceName, 'pointer-events:focus-kicker:noninteractive');
+  else if (info.kickerInteractive) {
+    ctx.fail(surfaceName, 'pointer-events:focus-kicker:noninteractive', 'focus-stage kicker should not be interactive in semantic-dive');
+  } else {
+    ctx.pass(surfaceName, 'pointer-events:focus-kicker:skipped');
+  }
+
+  if (info.focusActionsHidden) ctx.pass(surfaceName, 'visibility:focus-actions:hidden');
+  else ctx.fail(surfaceName, 'visibility:focus-actions:hidden', 'legacy focus-stage actions should be hidden in semantic-dive');
+
+  if (info.focusActionsInteractive === false) ctx.pass(surfaceName, 'pointer-events:focus-actions:noninteractive');
+  else if (info.focusActionsInteractive) {
+    ctx.fail(surfaceName, 'pointer-events:focus-actions:noninteractive', 'focus-stage actions should not be interactive in semantic-dive');
+  } else {
+    ctx.pass(surfaceName, 'pointer-events:focus-actions:skipped');
+  }
+
+  if (info.diveBtnHidden) ctx.pass(surfaceName, 'visibility:dive-btn:hidden');
+  else ctx.fail(surfaceName, 'visibility:dive-btn:hidden', 'legacy dive button should be hidden in semantic-dive');
+
+  if (info.diveBtnInteractive === false) ctx.pass(surfaceName, 'pointer-events:dive-btn:noninteractive');
+  else if (info.diveBtnInteractive) {
+    ctx.fail(surfaceName, 'pointer-events:dive-btn:noninteractive', 'dive button should not be interactive in semantic-dive');
+  } else {
+    ctx.pass(surfaceName, 'pointer-events:dive-btn:skipped');
+  }
+
+  if (info.insideStatusVisible) ctx.pass(surfaceName, 'visibility:inside-status');
+  else ctx.fail(surfaceName, 'visibility:inside-status', 'inside status should be visible in semantic-dive');
+
+  if (info.insideControlsVisible) ctx.pass(surfaceName, 'visibility:inside-controls');
+  else ctx.fail(surfaceName, 'visibility:inside-controls', 'inside controls should be visible in semantic-dive');
+
+  if (info.overflowX) ctx.fail(surfaceName, 'viewport-crowding:overflow-x', `horizontal overflow in ${surfaceName}`);
+  else ctx.pass(surfaceName, 'viewport-crowding:overflow-x');
+
+  return info;
+}
+
+function surfaceUrl(params) {
+  const url = new URL(positionalUrl);
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value);
+  }
+  return url.toString();
+}
+
 const SURFACE_LIST = Object.keys(SURFACES);
 const surfacesToRun = requestedSurfaces.length
   ? requestedSurfaces.filter((s) => SURFACE_LIST.includes(s))
   : SURFACE_LIST;
+
+const PER_SURFACE_MS = 90_000;
+const RUN_TIMEOUT_MS = requestedSurfaces.length
+  ? requestedSurfaces.length * PER_SURFACE_MS * 1.2 + 20_000
+  : Object.keys(SURFACES).length * PER_SURFACE_MS * 1.2 + 20_000;
 
 // Main runner
 
@@ -2602,24 +2884,80 @@ async function run() {
   const allAssertions = [];
   const surfaceResults = [];
 
+  const startRun = Date.now();
+
+  const runTimer = setTimeout(async () => {
+    console.error(`\n[FATAL] Run exceeded global timeout (${RUN_TIMEOUT_MS}ms). Terminating.`);
+    console.error(
+      JSON.stringify({
+        outDir,
+        url: positionalUrl,
+        surfaces: surfaceResults.map((s) => s.surface),
+        pass: allAssertions.filter((a) => a.level === 'pass').length,
+        fail: allAssertions.filter((a) => a.level === 'fail').length,
+        overflowFailures: allAssertions.filter((a) => a.level === 'fail' && a.check.includes('overflow')).length,
+        timedOut: true,
+        elapsedMs: Date.now() - startRun,
+      })
+    );
+    try { await browser.close(); } catch (_) { /* best-effort */ }
+    process.exit(124); // 124 is the standard timeout exit code
+  }, RUN_TIMEOUT_MS);
+
   try {
     for (const surface of surfacesToRun) {
+      const surfaceStart = Date.now();
+      console.error(`[runner] Starting surface: ${surface}`);
+
       const ctx = makeAssert(surface);
-      const page = await makePage(browser, surface);
-      const info = await SURFACES[surface](page, ctx);
-      await page.close();
+      let page = null;
 
-      await fs.promises.writeFile(
-        path.join(outDir, `${surface}.json`),
-        `${JSON.stringify({ surface, info, assertions: ctx.checks }, null, 2)}\n`,
-        'utf8',
-      );
+      try {
+        page = await withTimeout(makePage(browser, surface), 20_000, `makePage(${surface})`);
+        const info = await withTimeout(
+          Promise.resolve(SURFACES[surface](page, ctx)),
+          45_000,
+          `assert_${surface}(page, ctx)`
+        );
 
-      allAssertions.push(...ctx.checks);
-      surfaceResults.push({ surface, assertions: ctx.checks });
+        await page.close().catch(() => {});
+
+        await fs.promises.writeFile(
+          path.join(outDir, `${surface}.json`),
+          `${JSON.stringify({ surface, info, assertions: ctx.checks }, null, 2)}\n`,
+          'utf8',
+        );
+        allAssertions.push(...ctx.checks);
+        surfaceResults.push({ surface, assertions: ctx.checks });
+
+        const elapsed = Date.now() - surfaceStart;
+        console.error(`[runner] Finished surface: ${surface}  (${elapsed}ms, ${ctx.checks.filter((c) => c.level === 'pass').length} pass / ${ctx.checks.filter((c) => c.level === 'fail').length} fail)`);
+      } catch (surfaceErr) {
+        if (page) await page.close().catch(() => {});
+
+        const msg = surfaceErr.message || String(surfaceErr);
+        const isTimeout = msg.startsWith('TIMEOUT(');
+        if (isTimeout) {
+          // A TIMEOUT is a runner failure — surface did not complete.
+          ctx.fail(surface, 'runner:surface-timeout', msg);
+        } else {
+          ctx.fail(surface, 'runner:surface-error', msg);
+        }
+        allAssertions.push(...ctx.checks);
+        surfaceResults.push({ surface, assertions: ctx.checks });
+        await fs.promises.writeFile(
+          path.join(outDir, `${surface}.json`),
+          `${JSON.stringify({ surface, assertions: ctx.checks, error: msg }, null, 2)}\n`,
+          'utf8',
+        ).catch(() => {});
+
+        const elapsed = Date.now() - surfaceStart;
+        console.error(`[runner] Surface error: ${surface}  (${elapsed}ms)  ${msg}`);
+      }
     }
   } finally {
-    await browser.close();
+    clearTimeout(runTimer);
+    try { await browser.close(); } catch (_) { /* best-effort */ }
   }
 
   const passCount = allAssertions.filter((a) => a.level === 'pass').length;
