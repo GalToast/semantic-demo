@@ -279,8 +279,7 @@ html body.is-active #selected-details.active {
        ============================================================ */
 
     /* Root Sheet Style */
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .info-panel,
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card {
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .info-panel {
         left: 0;
         right: 0;
         bottom: 0;
@@ -305,15 +304,13 @@ html body.is-active #selected-details.active {
     }
 
     /* Standardized Typography Reset */
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .info-panel *,
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card * {
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .info-panel * {
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         box-sizing: border-box;
     }
 
     /* Sheet Handle */
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .info-panel::before,
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card::before {
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .info-panel::before {
         content: '';
         position: absolute;
         top: 8px;
@@ -339,11 +336,7 @@ html body.is-active #selected-details.active {
         max-height: min(60dvh, 500px);
     }
 
-    /* 2. FOCUS STATE REFINEMENTS */
-    html body.is-active[data-panel-surface="focus"] .focus-stage-card,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-card {
-        max-height: min(46dvh, 400px);
-    }
+    /* 2. FOCUS STATE REFINEMENTS - Relocated to mobile_premium_focus.css */
 
     /* Focus Content Layout */
     html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-what {

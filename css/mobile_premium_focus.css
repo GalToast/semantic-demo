@@ -437,4 +437,54 @@
         display: none;
     }
 
+    /* ----------------------------------------------------------------
+       9. Relocated focus-stage-card mobile overrides
+       ---------------------------------------------------------------- */
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card {
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-width: 100%;
+        border-radius: 24px 24px 0 0;
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--glass-blur));
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+        border: var(--glass-border);
+        border-bottom: none;
+        border-left: none;
+        border-right: none;
+        box-shadow: var(--shadow-glass);
+        padding: 0;
+        margin: 0;
+        transform: none;
+        animation-name: none;
+        animation-duration: 0s;
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 90;
+    }
+
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card * {
+        font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
+        box-sizing: border-box;
+    }
+
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 36px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.15);
+        z-index: 100;
+    }
+
+    html body.is-active[data-panel-surface="focus"] .focus-stage-card,
+    html body.is-active[data-panel-surface="focus-search"] .focus-stage-card {
+        max-height: min(46dvh, 400px);
+    }
+
 } /* end @media focus/dive states */

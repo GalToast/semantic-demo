@@ -795,23 +795,7 @@ body[data-panel-surface="map-focus-search"] .trail-context {
         }
 
 
-        .focus-stage {
-            position: fixed;
-            right: 16px;
-            bottom: 14px;
-            width: min(332px, calc(100vw - 32px));
-            transform: translateY(18px);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.28s ease, transform 0.28s ease;
-            z-index: 34;
-        }
 
-        .focus-stage.active {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
 
         .focus-stage-card {
             --cluster-rgb: 78 205 196;

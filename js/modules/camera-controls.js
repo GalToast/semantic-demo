@@ -99,40 +99,84 @@ export function getCanvasUnobstructedRegion() {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const body = document.body;
+    const canvasRect = state.renderer?.domElement?.getBoundingClientRect?.() || {
+        left: 0,
+        top: 0,
+        right: vw,
+        bottom: vh,
+        width: vw,
+        height: vh
+    };
 
     const panels = [
-        { selector: '#search-panel, .search-panel, [data-panel="search"]', side: 'left' },
-        { selector: '#focus-stage-panel, .focus-stage-panel, [data-panel="focus-stage"]', side: 'right' },
-        { selector: '#thread-inspector-panel, .thread-inspector-panel, [data-panel="thread"]', side: 'right' },
-        { selector: '.info-panel, .detail-panel, .side-panel', side: 'right' },
-        { selector: '.journey-compass, #journey-compass', side: 'bottom-left' },
-        { selector: '.legend-panel, #legend-panel', side: 'left-bottom' },
-        { selector: '.weather-widget, #weather', side: 'top-right' },
-        { selector: '.controls, .canvas-controls, #controls', side: 'bottom-right' }
+        '#search-panel, .search-panel, [data-panel="search"]',
+        '#focus-stage, .focus-stage, #focus-pocket, .focus-pocket, #focus-stage-panel, .focus-stage-panel, [data-panel="focus-stage"]',
+        '#thread-inspector-panel, .thread-inspector-panel, [data-panel="thread"]',
+        '#info-panel, .info-panel, .detail-panel, .side-panel',
+        '#journey-compass, .journey-compass',
+        '#legend-panel, .legend-panel',
+        '.weather-widget, #weather',
+        '.controls, .canvas-controls, #controls, .panel-toggle, .legend-toggle, .help-toggle'
     ];
 
     let leftOverlap = 0, rightOverlap = 0, topOverlap = 0, bottomOverlap = 0;
 
-    for (const { selector, side } of panels) {
+    for (const selector of panels) {
         try {
-            const el = body.querySelector(selector);
-            if (!el) continue;
-            const styles = getComputedStyle(el);
-            if (styles.display === 'none' || styles.visibility === 'hidden' || parseFloat(styles.opacity) === 0) continue;
-            const rect = el.getBoundingClientRect();
-            if (rect.width < 20 || rect.height < 20) continue;
-            if (side === 'left') leftOverlap = Math.max(leftOverlap, rect.width);
-            if (side === 'right') rightOverlap = Math.max(rightOverlap, vw - rect.right);
-            if (side === 'bottom-left') bottomOverlap = Math.max(bottomOverlap, rect.height);
-            if (side === 'top-right') topOverlap = Math.max(topOverlap, rect.height);
+            for (const el of body.querySelectorAll(selector)) {
+                const styles = getComputedStyle(el);
+                if (styles.display === 'none' || styles.visibility === 'hidden' || parseFloat(styles.opacity) === 0) continue;
+                const rect = el.getBoundingClientRect();
+                if (rect.width < 20 || rect.height < 20) continue;
+
+                const intersects = rect.left < canvasRect.right
+                    && rect.right > canvasRect.left
+                    && rect.top < canvasRect.bottom
+                    && rect.bottom > canvasRect.top;
+                if (!intersects) continue;
+
+                const intersection = {
+                    left: Math.max(rect.left, canvasRect.left),
+                    right: Math.min(rect.right, canvasRect.right),
+                    top: Math.max(rect.top, canvasRect.top),
+                    bottom: Math.min(rect.bottom, canvasRect.bottom)
+                };
+                const width = intersection.right - intersection.left;
+                const height = intersection.bottom - intersection.top;
+                if (width < 20 || height < 20) continue;
+
+                const overlayCenterX = intersection.left + width / 2;
+                const overlayCenterY = intersection.top + height / 2;
+                const edgeDistances = [
+                    { edge: 'left', value: Math.abs(overlayCenterX - canvasRect.left) },
+                    { edge: 'right', value: Math.abs(canvasRect.right - overlayCenterX) },
+                    { edge: 'top', value: Math.abs(overlayCenterY - canvasRect.top) },
+                    { edge: 'bottom', value: Math.abs(canvasRect.bottom - overlayCenterY) }
+                ].sort((a, b) => a.value - b.value);
+
+                switch (edgeDistances[0]?.edge) {
+                    case 'left':
+                        leftOverlap = Math.max(leftOverlap, intersection.right - canvasRect.left);
+                        break;
+                    case 'right':
+                        rightOverlap = Math.max(rightOverlap, canvasRect.right - intersection.left);
+                        break;
+                    case 'top':
+                        topOverlap = Math.max(topOverlap, intersection.bottom - canvasRect.top);
+                        break;
+                    case 'bottom':
+                        bottomOverlap = Math.max(bottomOverlap, canvasRect.bottom - intersection.top);
+                        break;
+                }
+            }
         } catch (_) { /* cross-origin or shadow DOM, skip */ }
     }
 
     return {
-        x: leftOverlap,
-        y: topOverlap,
-        width: Math.max(1, vw - leftOverlap - rightOverlap),
-        height: Math.max(1, vh - topOverlap - bottomOverlap)
+        x: canvasRect.left + leftOverlap,
+        y: canvasRect.top + topOverlap,
+        width: Math.max(1, canvasRect.width - leftOverlap - rightOverlap),
+        height: Math.max(1, canvasRect.height - topOverlap - bottomOverlap)
     };
 }
 
@@ -140,11 +184,12 @@ export function getCanvasUnobstructedRegion() {
  * Project a 3D world position through the camera and return screen coordinates.
  * Returns null if the point is behind the camera or projection fails.
  */
-function projectToScreen(worldPos, camera, renderer) {
+function projectToScreen(worldPos, camera, renderer, pointsMesh = null) {
     if (!camera || !renderer) return null;
     const v = new THREE.Vector3(worldPos.x, worldPos.y, worldPos.z);
+    if (pointsMesh?.localToWorld) pointsMesh.localToWorld(v);
     const projected = v.clone().project(camera);
-    if (projected.z < -1 || projected.z > 10) return null;
+    if (projected.z < -1 || projected.z > 1) return null;
     const rect = renderer.domElement.getBoundingClientRect();
     return {
         screenX: ((projected.x + 1) / 2) * rect.width + rect.left,
@@ -161,6 +206,7 @@ export function computeFocusPocketScreenBounds(focusIndex, pocketIndices, appSta
     const camera = appState.camera;
     const renderer = appState.renderer;
     if (!camera || !renderer) return null;
+    const pointsMesh = appState.pointsMesh || state.pointsMesh || null;
 
     const allIndices = [focusIndex, ...(pocketIndices || [])];
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -169,7 +215,7 @@ export function computeFocusPocketScreenBounds(focusIndex, pocketIndices, appSta
     for (const idx of allIndices) {
         const pos = appState.nodePositions[idx] || appState.originalPositions[idx];
         if (!pos) continue;
-        const screen = projectToScreen(pos, camera, renderer);
+        const screen = projectToScreen(pos, camera, renderer, pointsMesh);
         if (!screen) continue;
         minX = Math.min(minX, screen.screenX);
         minY = Math.min(minY, screen.screenY);
@@ -280,6 +326,7 @@ export function animateCameraToNode(index, options = {}) {
     if (!state.focusCameraTargetOffset?.copy) state.focusCameraTargetOffset = new THREE.Vector3();
     let heading = currentHeading.clone();
     let stageRightVector = null;
+    let safeTargetOffset = null;
     const isSemanticPocketFocus = state.navState.threadSource === 'semantic' && state.navState.focusPocketMeta?.active;
 
     // --- SAFE AREA: keep pocket/neighborhood nodes visible and reachable ---
@@ -300,13 +347,15 @@ export function animateCameraToNode(index, options = {}) {
                 pocketBounds, region, camDist, state.camera, state.controls
             );
             if (safeOffset) {
-                // Apply as immediate target nudge — the animation loop will follow
-                const nudgeTarget = nodePos.clone().add(safeOffset);
+                const nudgeTarget = focusTarget.clone().add(safeOffset);
                 if (Number.isFinite(nudgeTarget.x) && Number.isFinite(nudgeTarget.y) && Number.isFinite(nudgeTarget.z)) {
-                    nodePos.copy(nudgeTarget);
+                    safeTargetOffset = safeOffset;
                 }
             }
         }
+    }
+    if (safeTargetOffset) {
+        focusTarget = focusTarget.clone().add(safeTargetOffset);
     }
 
     if ((transitionStyle === 'walk' || transitionStyle === 'dive' || transitionStyle === 'dive-walk') && framing.travelVector) {
