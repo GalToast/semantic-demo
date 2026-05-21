@@ -136,12 +136,17 @@ const FOCUS_PETAL_COUNT = 26;
 // Constants used in animation
 const THREAD_TINT_COLOR = 0x4ecdc4;
 
+function getNavigationMode() {
+    return state.navState?.mode ?? state.navState?.currentMode;
+}
+
 // --- Progressive thread visibility by mode ---
 // Threads only render when they make semantic sense for the current context.
 // This prevents framerate death at county overview and avoids noise during map view.
 
 export function shouldRenderThreads() {
-    const { currentMode, trailDepth } = state.navState || {};
+    const currentMode = getNavigationMode();
+    const { trailDepth } = state.navState || {};
     const { currentSearchSummary } = state;
     const { focusedNode } = state;
 
@@ -169,7 +174,7 @@ export function shouldRenderThreads() {
 
 export function shouldRenderBridgeThreads() {
     // Bridge mode shows cross-cluster threads as the primary visual
-    const { currentMode } = state.navState || {};
+    const currentMode = getNavigationMode();
     return currentMode === 'bridge';
 }
 
@@ -210,7 +215,28 @@ function seededUnit(index, salt = 0) {
 }
 
 function getNodeSporeScale(index) {
-    return NODE_SPORE_BASE_RADIUS * (0.86 + seededUnit(index, 2.7) * 0.48);
+    let emphasis = 1;
+    if (Number.isFinite(state.focusedNode)) {
+        if (index === state.focusedNode) {
+            emphasis = 2.15;
+        } else if (state.navState.focusPocketIndices?.includes(index)) {
+            const role = state.navState.focusPocketRoleByIndex?.get(index);
+            emphasis = role === 'primary' ? 1.74 : 1.42;
+        } else {
+            const trailNeighbors = state.navState.trailNeighborIndices || [];
+            for (let i = 0; i < Math.min(12, trailNeighbors.length); i += 1) {
+                if (trailNeighbors[i] === index) {
+                    emphasis = 1.48;
+                    break;
+                }
+            }
+            if (emphasis === 1) emphasis = 0.62;
+        }
+    }
+    if (index === state.hoverHighlightIndex) {
+        emphasis = Math.max(emphasis, 1.95);
+    }
+    return NODE_SPORE_BASE_RADIUS * (0.86 + seededUnit(index, 2.7) * 0.48) * emphasis;
 }
 
 function setNodeSporeInstanceMatrix(index, targetMesh = state.nodeSporeMesh, scaleMultiplier = 1) {
@@ -230,6 +256,18 @@ function setNodeSporeInstanceMatrix(index, targetMesh = state.nodeSporeMesh, sca
     );
     _nodeSporeObject.updateMatrix();
     targetMesh.setMatrixAt(index, _nodeSporeObject.matrix);
+    const shouldSyncHitProxy = targetMesh === state.nodeSporeMesh && state.nodeSporeHitMesh && (
+        index === state.focusedNode ||
+        state.navState.focusPocketIndices?.includes(index) ||
+        state.navState.trailNeighborIndices?.includes(index)
+    );
+    if (shouldSyncHitProxy) {
+        const hitBase = NODE_SPORE_BASE_RADIUS * (0.86 + seededUnit(index, 2.7) * 0.48) * 1.85;
+        _nodeSporeObject.position.set(pos.x, pos.y, pos.z);
+        _nodeSporeObject.scale.set(hitBase, hitBase, hitBase);
+        _nodeSporeObject.updateMatrix();
+        state.nodeSporeHitMesh.setMatrixAt(index, _nodeSporeObject.matrix);
+    }
 }
 
 function getNodeSporeColor(index, factor = 1) {
@@ -395,7 +433,7 @@ function getThreadPulseOpacity(baseOpacity, pulse, requestedAmplitude, revealPro
 }
 
 function getMyceliumPresentationProfile() {
-    const { currentMode } = state.navState || {};
+    const currentMode = getNavigationMode();
     if (currentMode === 'overview' || currentMode === undefined) {
         return { core: 0.07, wispy: 0.026, bridge: 0.045, pulse: 0.018 };
     }

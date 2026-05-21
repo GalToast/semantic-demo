@@ -2619,6 +2619,8 @@ export function ensureCanvasNodeInteractionBindings() {
         if (!candidate) candidate = getNearestCanvasThreadCandidate(event, 96);
         if (!candidate) return false;
         event.preventDefault();
+        window.__lastCanvasNodePick = candidate;
+        window.__lastCanvasNodeFocusPick = candidate;
         walkThreadNeighbor(candidate.index, {
             fromCanvasNode: true,
             surface: 'canvas',
@@ -2987,8 +2989,19 @@ export function updateTraversalUi() {
 
 export function applyPointFilterColors() {
     if (!state.pointsMesh || !state.pointBaseColors) return;
-    const capturedVersion = state.filterColorVersion;
-    if (capturedVersion === state.filterVersion) return;
+    const colorStateKey = [
+        state.filterVersion,
+        state.navState.mode || 'overview',
+        state.navState.focusedIndex ?? 'none',
+        state.focusedNode ?? 'none',
+        state.trailDepth ?? 0,
+        state.myceliumMode || 'default',
+        state.navState.threadSource || 'none',
+        (state.navState.trailNeighborIndices || []).slice(0, 12).join(','),
+        (state.navState.focusPocketIndices || []).slice(0, 18).join(','),
+        (state.navState.walkHistoryIndices || []).slice(-6).join(',')
+    ].join('|');
+    if (state.filterColorStateKey === colorStateKey) return;
     const colors = state.pointsMesh.geometry.attributes.color.array;
     const focusLocalIndices = state.navState.focusedIndex !== null
         ? new Set([
@@ -3053,6 +3066,10 @@ export function applyPointFilterColors() {
     state.pointsMesh.geometry.attributes.color.needsUpdate = true;
     state.pointColorStateVersion += 1;
     state.filterColorVersion = state.filterVersion;
+    state.filterColorStateKey = colorStateKey;
+    if (typeof window.syncNodeSporeColorsFromPointColors === 'function') {
+        window.syncNodeSporeColorsFromPointColors();
+    }
     if (state.searchGlowActive && state.searchGlowIndices && state.searchGlowIndices.size > 0) {
         state.searchGlowRenderStateKey = '';
         if (typeof window.syncSearchStatusForFocus === 'function') {

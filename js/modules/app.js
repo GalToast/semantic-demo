@@ -287,6 +287,9 @@ export async function init() {
                 'Graphics acceleration',
                 new Error('3D graphics are unavailable, so the map view is available as the fallback path.')
             );
+            // WebGL fallback is active — dismiss the loading overlay immediately
+            // so the fallback notice is visible instead of a frozen spinner.
+            hideLoadingOverlay();
         }
         initEventListeners();
         initKeyboardShortcutsHint();

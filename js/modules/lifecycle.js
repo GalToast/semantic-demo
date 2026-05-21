@@ -2413,8 +2413,7 @@ export function handleGalaxyKeydown(event) {
         const hasFocusState = state.focusedNode !== null || state.navState?.focusedIndex !== null;
         if (hasSearchText || hasSearchState || hasFocusState) {
             event.preventDefault();
-            clearSearch();
-            resetExplorationFocus();
+            returnToOverview();
         }
         return;
     }

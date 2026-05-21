@@ -130,7 +130,7 @@ export function animateCameraToNode(index, options = {}) {
         }
     }
 
-    if ((transitionStyle === 'search' || transitionStyle === 'focus' || transitionStyle === 'dive' || transitionStyle === 'dive-walk') && isSemanticPocketFocus) {
+    if ((transitionStyle === 'search' || transitionStyle === 'focus' || transitionStyle === 'walk' || transitionStyle === 'dive' || transitionStyle === 'dive-walk') && isSemanticPocketFocus) {
         const pocketProfile = state.navState.focusPocketMeta.viewportProfile || {};
         const baseOrbitBias = pocketProfile.key === 'roomy' ? 0.11 : (pocketProfile.key === 'compact' || pocketProfile.key === 'condensed' ? 0.04 : 0.075);
         const orbitBias = (transitionStyle === 'dive' || transitionStyle === 'dive-walk') ? baseOrbitBias * 1.55 : baseOrbitBias;
@@ -175,7 +175,7 @@ export function animateCameraToNode(index, options = {}) {
     startFocusCameraAssist(duration + 100, transitionStyle);
     const startTime = performance.now();
     if (!Number.isFinite(startTarget.x + startTarget.y + startTarget.z + startPos.x + startPos.y + startPos.z + focusTarget.x + focusTarget.y + focusTarget.z + desiredCamPos.x + desiredCamPos.y + desiredCamPos.z)) return;
-    const stageArcActive = isSemanticPocketFocus && (transitionStyle === 'search' || transitionStyle === 'focus' || transitionStyle === 'dive' || transitionStyle === 'dive-walk');
+    const stageArcActive = isSemanticPocketFocus && (transitionStyle === 'search' || transitionStyle === 'focus' || transitionStyle === 'walk' || transitionStyle === 'dive' || transitionStyle === 'dive-walk');
     let cameraControlPoint = null;
     let targetControlPoint = null;
     if (stageArcActive) {

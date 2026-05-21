@@ -272,7 +272,8 @@ function bindSearchControls() {
         } else if (event.key === 'Escape') {
             event.preventDefault();
             event.stopPropagation();
-            clearSearch();
+            if (typeof window.returnToOverview === 'function') window.returnToOverview();
+            else clearSearch();
             searchInput.blur();
         }
     });
