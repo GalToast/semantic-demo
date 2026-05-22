@@ -730,45 +730,61 @@ assert(
 );
 console.log('PASS CONTRACT 42: dispatchNavTransition EXIT_INSIDE is handled');
 
-// ─── CONTRACT 43: dispatchNavTransition('FOCUS_NODE') returns noOp ─────────────
-// FOCUS_NODE is not migrated in Phase 1 — must return noOp=true, handled=false.
+// ─── CONTRACT 43: dispatchNavTransition('FOCUS_NODE') is handled ─────────────
+// FOCUS_NODE is migrated in Phase 2 — must return handled=true, noOp=false.
+// The reducer owns: navState.mode, navState.focusedIndex, navState.explorationHistoryIndices.
+// focusOnNode retains: focusedNode, selectedPoint, trailDepth, myceliumMode.
 
 const focusResult = lifecycle.dispatchNavTransition('FOCUS_NODE', { index: 5 });
 assert(
-  focusResult.handled === false,
-  'dispatchNavTransition FOCUS_NODE must be handled=false (Phase 1 migration-pending)'
+  focusResult.handled === true,
+  'dispatchNavTransition FOCUS_NODE must be handled=true (Phase 2 migrated)'
 );
 assert(
-  focusResult.noOp === true,
-  'dispatchNavTransition FOCUS_NODE must be noOp=true (Phase 1 migration-pending)'
+  focusResult.noOp === false,
+  'dispatchNavTransition FOCUS_NODE must be noOp=false (Phase 2 migrated)'
 );
-console.log('PASS CONTRACT 43: dispatchNavTransition FOCUS_NODE is migration-pending noOp');
+assertEq(focusResult.mode, 'focus', 'FOCUS_NODE with no flags must result in mode=focus');
+assert(
+  focusResult.reason.includes('FOCUS_NODE reducer'),
+  'FOCUS_NODE result reason must reference the reducer'
+);
+console.log('PASS CONTRACT 43: dispatchNavTransition FOCUS_NODE is handled (Phase 2 migrated)');
 
-// ─── CONTRACT 44: dispatchNavTransition('WALK_TO') returns noOp ────────────────
+// ─── CONTRACT 44: dispatchNavTransition('WALK_TO') is handled (Phase 2 migrated) ──
 
 const walkResult = lifecycle.dispatchNavTransition('WALK_TO', { index: 3 });
 assert(
-  walkResult.handled === false,
-  'dispatchNavTransition WALK_TO must be handled=false (Phase 1 migration-pending)'
+  walkResult.handled === true,
+  'dispatchNavTransition WALK_TO must be handled=true (Phase 2 migrated)'
 );
 assert(
-  walkResult.noOp === true,
-  'dispatchNavTransition WALK_TO must be noOp=true (Phase 1 migration-pending)'
+  walkResult.noOp === false,
+  'dispatchNavTransition WALK_TO must not be a noOp (Phase 2 migrated)'
 );
-console.log('PASS CONTRACT 44: dispatchNavTransition WALK_TO is migration-pending noOp');
+assert(
+  walkResult.reason.includes('reducer'),
+  'WALK_TO result reason must reference the reducer'
+);
+console.log('PASS CONTRACT 44: dispatchNavTransition WALK_TO is handled (Phase 2 migrated — reducer owns walkHistoryIndices)');
 
-// ─── CONTRACT 45: dispatchNavTransition('BACKTRACK') returns noOp ──────────────
+// ─── CONTRACT 45: dispatchNavTransition('BACKTRACK') is handled (Phase 2 migrated) ──
 
-const backtrackResult = lifecycle.dispatchNavTransition('BACKTRACK');
+// Backtrack needs step<0 and restoreHistory to trigger the pop in the reducer
+const backtrackResult = lifecycle.dispatchNavTransition('BACKTRACK', { step: -1, restoreHistory: true });
 assert(
-  backtrackResult.handled === false,
-  'dispatchNavTransition BACKTRACK must be handled=false (Phase 1 migration-pending)'
+  backtrackResult.handled === true,
+  'dispatchNavTransition BACKTRACK must be handled=true (Phase 2 migrated)'
 );
 assert(
-  backtrackResult.noOp === true,
-  'dispatchNavTransition BACKTRACK must be noOp=true (Phase 1 migration-pending)'
+  backtrackResult.noOp === false,
+  'dispatchNavTransition BACKTRACK must not be a noOp (Phase 2 migrated)'
 );
-console.log('PASS CONTRACT 45: dispatchNavTransition BACKTRACK is migration-pending noOp');
+assert(
+  backtrackResult.reason.includes('reducer'),
+  'BACKTRACK result reason must reference the reducer'
+);
+console.log('PASS CONTRACT 45: dispatchNavTransition BACKTRACK is handled (Phase 2 migrated — reducer owns walkHistoryIndices pop)');
 
 // ─── CONTRACT 46: dispatchNavTransition unknown action returns noOp ────────────
 

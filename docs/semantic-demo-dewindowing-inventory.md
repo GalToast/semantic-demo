@@ -116,7 +116,7 @@ Semantic lane uses `getWindow()` / `getDocument()` guard pattern internally (lin
 
 1. **`window.state`** — The central state object. Any dewindowing must provide a stable module-level export. All 6 test files read it; 2 runtime files assign it. Risk of removing: total state desync across map, focus, and search.
 
-2. **`window.focusOnNode`** — Primary navigation action. Called from 4 runtime modules and 6 test files without a dewindowed alternative. Risk of removing: focus navigation silently breaks across all entry points.
+2. **`window.focusOnNode`** — Primary navigation action. Runtime modules now use direct named imports; the app-level window bridge remains for Playwright/test compatibility during the transition. Risk of removing the bridge before test migration: focus navigation proof paths silently break.
 
 3. **`window.syncFocusStage`** — Camera-position synchronization. Only guarded calls exist (safe no-op if absent), but 4 call sites in lifecycle.js plus camera-controls.js and loading-ui.js. Risk of removing: camera drift after semantic search.
 

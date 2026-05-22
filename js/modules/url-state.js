@@ -1,14 +1,36 @@
 import { state } from '../state.js';
-import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, syncFilterControls, applyFilters, updateExplorationUi, switchView, updateUrlState } from './lifecycle.js';
+import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, syncFilterControls, applyFilters, updateExplorationUi, switchView, updateUrlState, resetStateBeforeUrlRestore, setMyceliumMode } from './lifecycle.js';
+import { setSemanticLaneOpsMode, refreshSemanticLaneOpsSummary } from './semantic-lane.js';
 import { isPointVisible, formatBusinessName, escapeHtml } from '../utils.js';
+import { restoreActiveFiltersFromUrl, restoreActiveClusterFilterFromUrl } from './filter-state.js';
 
 // === URL State ===
+
+function getRequestedUrlDepth(params) {
+    const rawDepth = Number(params.get('depth') || 0);
+    return Number.isFinite(rawDepth) ? Math.max(0, Math.min(2, rawDepth)) : 0;
+}
+
+function restoreDepthFromUrlAfterFocus(params) {
+    const requestedDepth = getRequestedUrlDepth(params);
+    if (requestedDepth < 2) return false;
+    if (!state.selectedPoint && !Number.isFinite(state.focusedNode)) return false;
+
+    if (typeof window.setSemanticDiveMode === 'function') {
+        window.setSemanticDiveMode(true);
+        return true;
+    }
+    if (typeof window.setTrailDepth === 'function') {
+        window.setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true });
+        return true;
+    }
+    return false;
+}
 
 async function applyUrlStateFromDeferred() {
     if (!state._deferredUrlState) return;
     const { params } = state._deferredUrlState;
     state._deferredUrlState = null;
-    // Re-run applyUrlState with the stored params
     const searchParams = new URLSearchParams(params);
     const query = searchParams.get('q');
     const offset = Number(searchParams.get('offset') || 0);
@@ -25,6 +47,7 @@ async function applyUrlStateFromDeferred() {
         const target = state.points.find((point) => String(point.lead_id) === record);
         if (target && isPointVisible(state.points.indexOf(target), state.points, state.activeClusterFilter, state.activeFilters)) {
             if (typeof window.focusOnPoint === 'function') window.focusOnPoint(target, { skipUrlSync: true });
+            restoreDepthFromUrlAfterFocus(searchParams);
         }
     }
 }
@@ -59,58 +82,24 @@ export async function applyUrlState(options = {}) {
     }
 
     try {
-        if (typeof window.resetStateBeforeUrlRestore === 'function') window.resetStateBeforeUrlRestore();
-        if (typeof window.setSemanticLaneOpsMode === 'function') window.setSemanticLaneOpsMode(params.get('ops') === '1' || params.get('debug') === '1');
+        resetStateBeforeUrlRestore();
+        setSemanticLaneOpsMode(params.get('ops') === '1' || params.get('debug') === '1');
 
         const view = params.get('view');
         switchView(view === 'map' ? 'map' : 'galaxy', { skipUrlSync: true });
 
-        const status = params.get('status');
-        if (state.activeFilters === null || state.activeFilters === undefined) {
-            state.activeFilters = {};
-        }
-        state.activeFilters.status = 'all';
-        if (status && ['all', 'active', 'disqualified'].includes(status)) {
-            state.activeFilters.status = status;
-        }
-
-        if (state.activeFilters) {
-            state.activeFilters.website = params.get('website') === '1';
-            state.activeFilters.email = params.get('email') === '1';
-            state.activeFilters.geocoded = params.get('geocoded') === '1';
-        }
+        // Official filter restoration — delegates to search-state owner API
+        restoreActiveFiltersFromUrl(params);
 
         const mode = params.get('mode');
         if (mode && MODE_DESCRIPTIONS && MODE_DESCRIPTIONS[mode]) {
             if (state.myceliumMode !== null && state.myceliumMode !== undefined) {
-                if (typeof window.setMyceliumMode === 'function') {
-                    window.setMyceliumMode(mode, { skipUrlSync: true });
-                } else {
-                    state.myceliumMode = mode;
-                }
+                setMyceliumMode(mode, { skipUrlSync: true });
             }
         }
 
-        const requestedCity = params.get('city');
-        if (requestedCity) {
-            if (!state.activeFilters) state.activeFilters = {};
-            if (state.activeFilters) {
-                state.activeFilters.city = requestedCity;
-            }
-            const citySelect = document.getElementById('city-filter');
-            if (citySelect) citySelect.value = requestedCity;
-        }
-
-        const requestedCluster = params.get('cluster');
-        if (
-            requestedCluster !== null &&
-            requestedCluster !== '' &&
-            Number.isFinite(Number(requestedCluster))
-        ) {
-            if (state.activeClusterFilter === null || state.activeClusterFilter === undefined) {
-                state.activeClusterFilter = Number(requestedCluster);
-            }
-        }
+        // Official cluster filter restoration — delegates to cluster-filter owner API
+        restoreActiveClusterFilterFromUrl(params);
 
         if (typeof syncFilterControls === 'function') syncFilterControls();
         if (typeof window.applyFilters === 'function') window.applyFilters();
@@ -187,6 +176,7 @@ export async function applyUrlState(options = {}) {
             }
             if (isPointVisible(state.points.indexOf(target), state.points, state.activeClusterFilter, state.activeFilters)) {
                 if (typeof window.focusOnPoint === 'function') window.focusOnPoint(target, { skipUrlSync: true });
+                restoreDepthFromUrlAfterFocus(params);
                 if (!options.fromHistory) {
                     setTimeout(() => {
                         if (typeof window.showExperienceToast === 'function') {
@@ -229,7 +219,7 @@ export async function applyUrlState(options = {}) {
         if (story && STORY_DESCRIPTIONS && STORY_DESCRIPTIONS[story]) {
             if (typeof window.applyStoryPrompt === 'function') window.applyStoryPrompt(story, { skipUrlSync: true });
             if (state.semanticLaneOpsMode) {
-                if (typeof window.refreshSemanticLaneOpsSummary === 'function') window.refreshSemanticLaneOpsSummary().catch(err => console.error('refreshSemanticLaneOpsSummary failed:', err));
+                refreshSemanticLaneOpsSummary().catch(err => console.error('refreshSemanticLaneOpsSummary failed:', err));
             }
             if (!options.fromHistory) {
                 updateUrlState({}, { reason: 'apply-url-story' });
@@ -238,7 +228,7 @@ export async function applyUrlState(options = {}) {
         }
 
         if (state.semanticLaneOpsMode) {
-            if (typeof window.refreshSemanticLaneOpsSummary === 'function') window.refreshSemanticLaneOpsSummary().catch(err => console.error('refreshSemanticLaneOpsSummary failed:', err));
+            refreshSemanticLaneOpsSummary().catch(err => console.error('refreshSemanticLaneOpsSummary failed:', err));
         }
         if (!options.fromHistory) {
             updateUrlState({}, { reason: 'apply-url' });

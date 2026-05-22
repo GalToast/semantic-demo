@@ -226,7 +226,7 @@ assert(degradedStatus.hidden === false, 'degraded status is exposed for compact 
 assert(degradedStatus.classList.contains('search-status-compact'), 'degraded status uses compact status class');
 assert(searchContainer.classList.contains('search-degraded'), 'degraded search panel state is explicit');
 assert(window.refreshCompositionStateCalls > 0, 'degraded state refreshes composition context');
-assert(window.recordSemanticLaneSnapshotCalls.at(-1)?.state === 'degraded', 'lane snapshot records degraded state');
+assert(state.semanticLaneSnapshot?.state === 'degraded', 'lane snapshot records degraded state');
 assert(window.semanticLaneStates.at(-1)?.[0] === 'degraded', 'lane UI is marked degraded');
 
 state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };

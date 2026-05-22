@@ -84,4 +84,134 @@ test.describe('3D canvas node hit accuracy', () => {
     const { after } = await clickResolvedNode(page);
     expect(isValidNodeIndex(after.focusedNode, after.pointCount), 'short-landscape canvas tap must focus a valid node').toBe(true);
   });
+
+  test('desktop: edge-region click yields a valid pick within tolerance', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 1440, height: 900 });
+
+    const candidates = await projectedCanvasCandidates(page);
+    expect(candidates.length, 'need at least one hoverable candidate').toBeGreaterThan(0);
+
+    // Find the candidate nearest to any canvas edge
+    const canvasRect = await page.evaluate(() => {
+      const c = window.state?.renderer?.domElement;
+      const r = c?.getBoundingClientRect?.();
+      return r ? { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height } : null;
+    });
+    expect(canvasRect, 'canvas rect must be available').not.toBeNull();
+
+    const edgeMargin = 36; // px — simulate edge-region click
+    const edgeCandidates = candidates.filter(c =>
+      c.screenX <= canvasRect.left + edgeMargin ||
+      c.screenX >= canvasRect.right - edgeMargin ||
+      c.screenY <= canvasRect.top + edgeMargin ||
+      c.screenY >= canvasRect.bottom - edgeMargin
+    );
+
+    const target = (edgeCandidates.length > 0 ? edgeCandidates : candidates)[0];
+
+    await page.mouse.move(target.screenX, target.screenY, { steps: 4 });
+    await page.waitForTimeout(150);
+
+    // Confirm hover is live before clicking
+    const pre = await probe(page);
+    expect(pre.canvasCursor, 'canvas cursor should be pointer at candidate').toBe('pointer');
+
+    await page.mouse.click(target.screenX, target.screenY);
+    await page.waitForTimeout(700);
+
+    const after = await probe(page);
+    expect(isValidNodeIndex(after.focusedNode, after.pointCount), 'edge-region click must focus a valid node').toBe(true);
+    expect(after.navMode, 'edge-region click should enter focus mode').toBe('focus');
+
+    const pick = after.lastCanvasNodeFocusPick || after.lastCanvasNodePick;
+    expect(pick, 'edge-region click must record pick evidence').not.toBeNull();
+    expect(isValidNodeIndex(pick.index, after.pointCount), 'edge-region pick index must be valid').toBe(true);
+
+    const pickDist = Math.hypot(pick.screenX - target.screenX, pick.screenY - target.screenY);
+    expect(pickDist, `edge-region pick should stay near click coordinate, distance=${Math.round(pickDist)}px`).toBeLessThanOrEqual(64);
+  });
+
+  test('mobile portrait: edge-region tap yields valid pick within tolerance', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 390, height: 844 });
+
+    const candidates = await projectedCanvasCandidates(page);
+    expect(candidates.length, 'need at least one hoverable candidate on mobile').toBeGreaterThan(0);
+
+    const canvasRect = await page.evaluate(() => {
+      const c = window.state?.renderer?.domElement;
+      const r = c?.getBoundingClientRect?.();
+      return r ? { left: r.left, top: r.top, right: r.right, bottom: r.bottom } : null;
+    });
+    expect(canvasRect, 'canvas rect must be available').not.toBeNull();
+
+    const edgeMargin = 28;
+    const edgeCandidates = candidates.filter(c =>
+      c.screenX <= canvasRect.left + edgeMargin ||
+      c.screenX >= canvasRect.right - edgeMargin ||
+      c.screenY <= canvasRect.top + edgeMargin ||
+      c.screenY >= canvasRect.bottom - edgeMargin
+    );
+
+    const target = (edgeCandidates.length > 0 ? edgeCandidates : candidates)[0];
+
+    await page.mouse.move(target.screenX, target.screenY, { steps: 4 });
+    await page.waitForTimeout(150);
+
+    const pre = await probe(page);
+    expect(pre.canvasCursor, 'canvas cursor should be pointer before mobile edge tap').toBe('pointer');
+
+    await page.mouse.click(target.screenX, target.screenY);
+    await page.waitForTimeout(700);
+
+    const after = await probe(page);
+    expect(isValidNodeIndex(after.focusedNode, after.pointCount), 'mobile edge tap must focus a valid node').toBe(true);
+
+    const pick = after.lastCanvasNodeFocusPick || after.lastCanvasNodePick;
+    expect(pick, 'mobile edge tap must record pick evidence').not.toBeNull();
+
+    const pickDist = Math.hypot(pick.screenX - target.screenX, pick.screenY - target.screenY);
+    expect(pickDist, `mobile edge pick distance=${Math.round(pickDist)}px`).toBeLessThanOrEqual(64);
+  });
+
+  test('short landscape: edge-region click yields valid pick within tolerance', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 844, height: 390 });
+
+    const candidates = await projectedCanvasCandidates(page, { maxResultsOverride: 6 });
+    expect(candidates.length, 'need at least one candidate in short landscape').toBeGreaterThan(0);
+
+    const canvasRect = await page.evaluate(() => {
+      const c = window.state?.renderer?.domElement;
+      const r = c?.getBoundingClientRect?.();
+      return r ? { left: r.left, top: r.top, right: r.right, bottom: r.bottom } : null;
+    });
+    expect(canvasRect, 'canvas rect must be available').not.toBeNull();
+
+    const edgeMargin = 24;
+    const edgeCandidates = candidates.filter(c =>
+      c.screenX <= canvasRect.left + edgeMargin ||
+      c.screenX >= canvasRect.right - edgeMargin ||
+      c.screenY <= canvasRect.top + edgeMargin ||
+      c.screenY >= canvasRect.bottom - edgeMargin
+    );
+
+    const target = (edgeCandidates.length > 0 ? edgeCandidates : candidates)[0];
+
+    await page.mouse.move(target.screenX, target.screenY, { steps: 4 });
+    await page.waitForTimeout(150);
+
+    await page.mouse.click(target.screenX, target.screenY);
+    await page.waitForTimeout(700);
+
+    const after = await probe(page);
+    expect(isValidNodeIndex(after.focusedNode, after.pointCount), 'short-landscape edge click must focus a valid node').toBe(true);
+
+    const pick = after.lastCanvasNodeFocusPick || after.lastCanvasNodePick;
+    expect(pick, 'short-landscape edge click must record pick evidence').not.toBeNull();
+
+    const pickDist = Math.hypot(pick.screenX - target.screenX, pick.screenY - target.screenY);
+    expect(pickDist, `short-landscape edge pick distance=${Math.round(pickDist)}px`).toBeLessThanOrEqual(64);
+  });
 });

@@ -22,6 +22,7 @@
       "contracts": [
         "journey-compass-state-contract.mjs",
         "journey-thread-inspector-contract.mjs",
+        "thread-inspector-dewindowing-contract.mjs",
         "journey-window-surface-contract.mjs",
         "journey-event-bindings-contract.mjs",
         "trail-review-focus-contract.mjs",
@@ -58,6 +59,8 @@
       "contracts": [
         "live-ui-reset-interaction.spec.js",
         "live-state-transition-ui-paths.spec.js",
+        "short-landscape-transition-ui-paths.spec.js",
+        "url-restore-cluster-filter-race.spec.js",
         "canvas-hit-test-interaction.spec.js",
         "reduced-motion-interruption.spec.js",
         "gemma-fallback-error.spec.js"
@@ -133,6 +136,8 @@
         "window-bridge-gaps-contract.mjs",
         "semantic-dive-active-owner-contract.mjs",
         "state-ownership-contract.mjs",
+        "filter-ownership-contract.mjs",
+        "cluster-filter-city-filter-side-effect-contract.mjs",
         "focus-selection-owner-contract.mjs",
         "focus-pocket-state-owner-contract.mjs",
         "bootstrap-window-export-contract.mjs"
@@ -154,6 +159,7 @@
     },
     "3d-engine": {
       "description": "WebGL resilience and memory hygiene contracts for the 3D engine - context loss survival and geometry disposal hygiene. Requires a running dev server on port 8795.",
+      "timeout": 600000,
       "contracts": [
         "webgl-resilience-contract.spec.js",
         "disposal-hygiene-contract.spec.js"
@@ -161,6 +167,7 @@
     },
     "3d-interaction-quality": {
       "description": "3D interaction-quality contracts - aggregate group. Requires a running dev server on port 8795.",
+      "timeout": 600000,
       "contracts": [
         "3d-node-hit-accuracy.spec.js",
         "3d-hover-affordance.spec.js",
@@ -173,11 +180,13 @@
         "3d-viewport-dpr-resilience.spec.js",
         "3d-overlay-hit-stealing.spec.js",
         "3d-state-transition-integrity.spec.js",
-        "3d-data-edge-cases.spec.js"
+        "3d-data-edge-cases.spec.js",
+        "3d-focus-neighborhood-node-selectability.spec.js"
       ]
     },
     "3d-pointer": {
       "description": "3D pointer/contact contracts - projected canvas node hit accuracy, hover/touch affordance, focus-pocket selectability. Requires a running dev server on port 8795.",
+      "timeout": 600000,
       "contracts": [
         "3d-node-hit-accuracy.spec.js",
         "3d-hover-affordance.spec.js",
@@ -187,16 +196,19 @@
     },
     "3d-focus-neighborhood": {
       "description": "Focus neighborhood visibility and reachability contracts - pocket screen reachability, overlay hit-stealing at short-landscape, desktop hover reset, desktop thread continuity. Requires a running dev server on port 8795.",
+      "timeout": 600000,
       "contracts": [
         "3d-focus-pocket-selectability.spec.js",
         "3d-overlay-hit-stealing.spec.js",
         "3d-hover-affordance.spec.js",
         "3d-thread-orchestration-quality.spec.js",
-        "3d-camera-orbit-resilience.spec.js"
+        "3d-camera-orbit-resilience.spec.js",
+        "3d-focus-neighborhood-node-selectability.spec.js"
       ]
     },
     "3d-visual-quality": {
       "description": "3D visual quality contracts - cluster readability and thread orchestration quality. Requires a running dev server on port 8795.",
+      "timeout": 600000,
       "contracts": [
         "3d-cluster-readability.spec.js",
         "3d-thread-orchestration-quality.spec.js"
@@ -204,6 +216,7 @@
     },
     "3d-resilience": {
       "description": "3D resilience contracts - camera/orbit, touch parity, viewport/DPR resilience, and overlay hit ownership. Requires a running dev server on port 8795.",
+      "timeout": 600000,
       "contracts": [
         "3d-camera-orbit-resilience.spec.js",
         "3d-touch-parity.spec.js",
@@ -213,6 +226,7 @@
     },
     "3d-state-data": {
       "description": "3D state and data contracts - state transition integrity and data edge cases. Requires a running dev server on port 8795.",
+      "timeout": 600000,
       "contracts": [
         "3d-state-transition-integrity.spec.js",
         "3d-data-edge-cases.spec.js"
@@ -220,12 +234,14 @@
     },
     "3d-accessibility-fallback-performance": {
       "description": "3D accessibility, fallback, and performance contracts - keyboard focus ownership, reduced-motion final state, WebGL fallback/context loss, and renderer diagnostics. Requires a running dev server on port 8795.",
+      "timeout": 600000,
       "contracts": [
         "3d-accessibility-fallback-performance.spec.js"
       ]
     },
     "3d-smoke": {
       "description": "3D fast smoke - pointer hit, hover affordance, focus-pocket selectability. Sub-5s each, minimal scene complexity.",
+      "timeout": 300000,
       "contracts": [
         "3d-node-hit-accuracy.spec.js",
         "3d-hover-affordance.spec.js",
@@ -234,6 +250,7 @@
     },
     "3d-slow": {
       "description": "3D slow/visual - cluster readability, thread orchestration, accessibility/fallback. 10-30s each, full scene rendering.",
+      "timeout": 600000,
       "contracts": [
         "3d-cluster-readability.spec.js",
         "3d-thread-orchestration-quality.spec.js",
@@ -242,6 +259,7 @@
     },
     "3d-full": {
       "description": "All 3D interaction quality contracts - every 3d-*.spec.js. 10-15 specs, full scene + interaction coverage.",
+      "timeout": 600000,
       "contracts": [
         "3d-node-hit-accuracy.spec.js",
         "3d-hover-affordance.spec.js",
@@ -290,9 +308,12 @@
         "camera-auto-rotate-settle-contract.mjs",
         "semantic-dive-reverse-contract.mjs",
         "journey-window-surface-contract.mjs",
+        "thread-inspector-dewindowing-contract.mjs",
         "window-bridge-gaps-contract.mjs",
         "loading-ui-contract.mjs",
         "state-ownership-contract.mjs",
+        "filter-ownership-contract.mjs",
+        "cluster-filter-city-filter-side-effect-contract.mjs",
         "exploration-modes-contract.mjs",
         "scene-reveal-contract.mjs",
         "scene-atmosphere-contract.mjs",
@@ -326,6 +347,7 @@
       "description": "Live URL-state contracts on port 8795 - URL reconstruction, body state sync, reset proofs, polish adversarial. Requires running dev server.",
       "contracts": [
         "live-url-state-reconstruction.spec.js",
+        "url-restore-cluster-filter-race.spec.js",
         "live-step-inside-url-body-state-sync.spec.js",
         "live-reset-clear-demo-proof.spec.js",
         "live-reset-proof-wave2.spec.js",

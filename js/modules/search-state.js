@@ -18,9 +18,16 @@ import {
 } from './semantic-search-api-cache.js';
 export { getSemanticSearchCacheDiagnostics };
 import { animateCameraToSearchCorridor, focusOnNode } from './camera-controls.js';
+import { recordSemanticLaneSnapshot } from './semantic-lane.js';
 import { refreshMapMarkers } from './map-state.js';
 import { updateClusterList } from './cluster-filter.js';
 import { buildLegend } from './ui-renderers.js';
+export {
+    setActiveFilter,
+    toggleActiveFilterSignal,
+    resetActiveFilters,
+    restoreActiveFiltersFromUrl
+} from './filter-state.js';
 
 import {
     buildSearchRankLabel,
@@ -50,7 +57,6 @@ export {
     getSearchResultCardClasses,
     clearCompactSearchResultRevealTimers
 };
-
 
 const SEARCH_STOP_WORDS = new Set([
     'a', 'an', 'and', 'are', 'at', 'by', 'for', 'from', 'in', 'into', 'is', 'me', 'my', 'of', 'on', 'or', 'place', 'places', 'take', 'the', 'to', 'with', 'your'
@@ -688,7 +694,7 @@ export function clearSearch() {
     }
 
     if (typeof window.updateUrlState === 'function') {
-        window.updateUrlState({ q: null, anchor: null, offset: null }, { reason: 'search-clear' });
+        window.updateUrlState({ q: null, anchor: null, offset: null, record: null }, { reason: 'search-clear' });
     }
     if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
 };
@@ -759,14 +765,12 @@ export function updateSemanticSearchRetryState({ statusEl, trimmedQuery, attempt
     const retryDelayLabel = delayMs >= 1000 ? `${Math.round((delayMs / 1000) * 10) / 10}s` : `${delayMs}ms`;
     const preservingSameQuery = state.currentSearchSummary?.query === trimmedQuery;
 
-    if (typeof window.recordSemanticLaneSnapshot === 'function') {
-        window.recordSemanticLaneSnapshot({
-            state: 'reconnecting', attempted_warm: true, query: trimmedQuery,
-            provenance: { label: 'Search reconnecting', detail: 'Public semantic search is retrying while the current result rail stays visible.' },
-            retry_source: 'search', retry_count: attempt, retry_total: retryTotal,
-            retry_wait_until: new Date(Date.now() + delayMs).toISOString(), cooldown_wait_until: null
-        });
-    }
+    recordSemanticLaneSnapshot({
+        state: 'reconnecting', attempted_warm: true, query: trimmedQuery,
+        provenance: { label: 'Search reconnecting', detail: 'Public semantic search is retrying while the current result rail stays visible.' },
+        retry_source: 'search', retry_count: attempt, retry_total: retryTotal,
+        retry_wait_until: new Date(Date.now() + delayMs).toISOString(), cooldown_wait_until: null
+    });
     if (typeof window.setSemanticLaneUiState === 'function') {
         window.setSemanticLaneUiState('reconnecting', {
             label: 'Search reconnecting', title: 'Public semantic search is retrying while the current result rail stays visible.'
@@ -794,14 +798,12 @@ export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQue
         clearSearchGlow();
     }
 
-    if (typeof window.recordSemanticLaneSnapshot === 'function') {
-        window.recordSemanticLaneSnapshot({
-            state: 'degraded', search_ok: false, query: trimmedQuery,
-            provenance: { label: 'Search paused', detail: 'Live semantic search is recovering after client retries.' },
-            rail_mode: preservingSameQuery ? 'stale' : 'none',
-            retry_wait_until: null, cooldown_wait_until: null
-        });
-    }
+    recordSemanticLaneSnapshot({
+        state: 'degraded', search_ok: false, query: trimmedQuery,
+        provenance: { label: 'Search paused', detail: 'Live semantic search is recovering after client retries.' },
+        rail_mode: preservingSameQuery ? 'stale' : 'none',
+        retry_wait_until: null, cooldown_wait_until: null
+    });
     if (typeof window.setSemanticLaneUiState === 'function') {
         window.setSemanticLaneUiState('degraded', {
             label: 'Search paused', title: 'Live semantic search is recovering. Try again in a moment.'
@@ -867,12 +869,10 @@ export function finishSemanticSearchSuccessState(resultsEl, trimmedQuery, cacheS
     const spinner = document.getElementById('search-spinner');
     if (spinner) spinner.style.display = 'none';
 
-    if (typeof window.recordSemanticLaneSnapshot === 'function') {
-        window.recordSemanticLaneSnapshot({
-            state: 'healthy', search_ok: true, embed_ok: true, attempted_warm: false, query: trimmedQuery, client_cache_source: cacheSource,
-            provenance: null, retry_source: null, retry_count: null, retry_total: null, retry_wait_until: null, cooldown_wait_until: null
-        });
-    }
+    recordSemanticLaneSnapshot({
+        state: 'healthy', search_ok: true, embed_ok: true, attempted_warm: false, query: trimmedQuery, client_cache_source: cacheSource,
+        provenance: null, retry_source: null, retry_count: null, retry_total: null, retry_wait_until: null, cooldown_wait_until: null
+    });
     if (typeof window.setSemanticLaneUiState === 'function') window.setSemanticLaneUiState('healthy');
     setSearchPanelState({ searching: false, focusing: false, degraded: false });
     resultsEl.classList.remove('searching');
@@ -881,9 +881,7 @@ export function finishSemanticSearchSuccessState(resultsEl, trimmedQuery, cacheS
 export function applyEmptySemanticSearchState(resultsEl, statusEl, trimmedQuery, requestedAnchorLeadId) {
     state.currentSearchSummary = null;
     if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
-    if (typeof window.recordSemanticLaneSnapshot === 'function') {
-        window.recordSemanticLaneSnapshot({ rail_mode: 'none', anchor_lead_id: null, requested_anchor_lead_id: requestedAnchorLeadId });
-    }
+    recordSemanticLaneSnapshot({ rail_mode: 'none', anchor_lead_id: null, requested_anchor_lead_id: requestedAnchorLeadId });
     state.searchAnchorIndex = null;
     state.searchPreviewIndex = null;
 
@@ -1214,9 +1212,7 @@ export async function search(query, options = {}) {
     }
     
     resetSemanticGuideUi();
-    if (typeof window.recordSemanticLaneSnapshot === 'function') {
-        window.recordSemanticLaneSnapshot({ rail_mode: 'live', anchor_lead_id: anchorResult?.point?.lead_id ?? null, requested_anchor_lead_id: requestedAnchorLeadId });
-    }
+    recordSemanticLaneSnapshot({ rail_mode: 'live', anchor_lead_id: anchorResult?.point?.lead_id ?? null, requested_anchor_lead_id: requestedAnchorLeadId });
     activateSearchGlow(resultIndices, anchorIndex);
     
     // 10/10 Polish: Disabled "Corridor Bloom" (the giant yellow ball)

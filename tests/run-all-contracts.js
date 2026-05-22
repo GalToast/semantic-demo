@@ -3,7 +3,7 @@
  *
  * Ordered QA contract runner with optional manifest-based group execution.
  *
- * Default (no flags): runs the pinned ordered list (38 contracts).
+ * Default (no flags): runs the pinned ordered list.
  *   node tests/run-all-contracts.js
  *
  * Group mode: --group=<name> reads from contracts.manifest.json
@@ -200,9 +200,12 @@ const PINNED_FILES = [
   'camera-auto-rotate-settle-contract.mjs',
   'semantic-dive-reverse-contract.mjs',
   'journey-window-surface-contract.mjs',
+  'thread-inspector-dewindowing-contract.mjs',
   'window-bridge-gaps-contract.mjs',
   'loading-ui-contract.mjs',
   'state-ownership-contract.mjs',
+  'filter-ownership-contract.mjs',
+  'cluster-filter-city-filter-side-effect-contract.mjs',
   'exploration-modes-contract.mjs',
   'scene-reveal-contract.mjs',
   'scene-atmosphere-contract.mjs',
@@ -266,7 +269,7 @@ function resolveFiles() {
 
   if (!groupArg) {
     // Default: use pinned ordered list; no manifest discovery, no regression.
-    return { files: PINNED_FILES, mode: 'pinned' };
+    return { files: PINNED_FILES, mode: 'pinned', groupTimeout: null };
   }
 
   const groupName = groupArg.split('=')[1];
@@ -276,7 +279,12 @@ function resolveFiles() {
     process.exit(1);
   }
 
-  return { files: group.contracts, mode: `group:${groupName}` };
+  return {
+    files: group.contracts,
+    mode: `group:${groupName}`,
+    // Per-group timeout from manifest; null falls back to CONTRACT_TIMEOUT_MS.
+    groupTimeout: typeof group.timeout === 'number' ? group.timeout : null,
+  };
 }
 
 // Validation
@@ -397,7 +405,7 @@ function isPlaywrightTestFile(filename, entry) {
   return /import\s*\{[^}]*\btest\b[^}]*\}\s*from\s*['"]@playwright\/test['"]/.test(source);
 }
 
-function runContract(filename) {
+function runContract(filename, timeoutMs) {
   return new Promise((resolve) => {
     const entry = join(TESTS_DIR, filename);
     const start = performance.now();
@@ -430,9 +438,9 @@ function runContract(filename) {
         passed: false,
         code: -1,
         stdout,
-        stderr: `${stderr}\nContract timed out after ${CONTRACT_TIMEOUT_MS}ms`.trim(),
+        stderr: `${stderr}\nContract timed out after ${timeoutMs}ms`.trim(),
       });
-    }, CONTRACT_TIMEOUT_MS);
+    }, timeoutMs);
 
     child.stdout.on('data', (chunk) => { stdout += chunk.toString(); });
     child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
@@ -482,7 +490,7 @@ async function main() {
     return; // never reached in practice; runValidation exits
   }
 
-  const { files, mode } = resolveFiles();
+  const { files, mode, groupTimeout } = resolveFiles();
   const groupName = mode.startsWith('group:') ? mode.slice(6) : null;
   console.log(`\n=== QA Contract Runner ===`);
   console.log(`Mode: ${mode}`);
@@ -494,8 +502,9 @@ async function main() {
     const results = [];
     for (const file of files) {
       if (serverLease) await serverLease.ensure();
-      console.log(`  [run] ${file}`);
-      results.push(await runContract(file));
+      const timeoutMs = groupTimeout !== null ? groupTimeout : CONTRACT_TIMEOUT_MS;
+      console.log(`  [run] ${file}${groupTimeout !== null ? ` (timeout=${timeoutMs}ms)` : ''}`);
+      results.push(await runContract(file, timeoutMs));
     }
 
     const passed = results.filter(r => r.passed);

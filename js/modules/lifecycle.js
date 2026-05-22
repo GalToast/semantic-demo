@@ -71,7 +71,9 @@ export {
     refreshCompositionState,
     scheduleMapRouteRefresh,
     getViewHandoffModel,
-    getJourneyCompassPresentationState
+    getJourneyCompassPresentationState,
+    getFocusedJourneyPoint,
+    getJourneyCompassState
 };
 import {
     initMap,
@@ -109,13 +111,14 @@ import {
     updateSelectedBusiness,
     setTrailFromSeed,
     updateTrailIndices,
-    refreshFocusSemanticOverlay
+    refreshFocusSemanticOverlay,
+    syncFocusStage,
+    applyPointFilterColors
 } from './journey.js';
 
 export { setLoadingPhase, hideLoadingOverlay, startDeferredHydration, scheduleWeatherHydration };
 export { startSceneReveal, getSceneRevealProgress, onWindowResize };
 export { clearClusterFilter, updateClusterList, getFilteredClusterCounts, applyFilters, syncCityFilterUi, populateCityFilter, syncFilterControls };
-export { getFocusedJourneyPoint, getJourneyCompassState };
 export { updateTime };
 export {
     fetchSemanticLaneHealth,
@@ -220,9 +223,7 @@ function navTransitionReducer(action, payload = {}) {
         case NAV_TRANSITION_ACTIONS.ENTER_INSIDE: {
             // Delegates to existing setSemanticDiveMode(true) for parity.
             // setSemanticDiveMode internally sets navState.mode='trail' and calls setTrailDepth(2).
-            if (typeof window.setSemanticDiveMode === 'function') {
-                window.setSemanticDiveMode(true);
-            }
+            setSemanticDiveMode(true);
             return {
                 action,
                 handled: true,
@@ -234,9 +235,7 @@ function navTransitionReducer(action, payload = {}) {
 
         case NAV_TRANSITION_ACTIONS.EXIT_INSIDE: {
             // Delegates to existing setSemanticDiveMode(false) for parity.
-            if (typeof window.setSemanticDiveMode === 'function') {
-                window.setSemanticDiveMode(false);
-            }
+            setSemanticDiveMode(false);
             return {
                 action,
                 handled: true,
@@ -247,38 +246,105 @@ function navTransitionReducer(action, payload = {}) {
         }
 
         case NAV_TRANSITION_ACTIONS.FOCUS_NODE: {
-            // Phase 1: No-op — focusOnNode lives in camera-controls.js and is NOT
-            // migrated in Phase 1. Returns a structured result indicating migration-pending.
+            // Phase 2: Migrated — focusOnNode delegates navState writes here.
+            // focusOnNode retains ownership of focusedNode, selectedPoint, trailDepth,
+            // myceliumMode, and all side-effect calls.
+            const {
+                index,
+                preserveMode,
+                fromTraversal,
+                fromCanvasNode,
+                appendHistory,
+                restoreHistory
+            } = payload;
+
+            // Compute resulting mode
+            let nextMode = 'focus';
+            if (preserveMode && state.navState.mode) {
+                nextMode = state.navState.mode;
+            } else if (fromTraversal) {
+                nextMode = 'trail';
+            }
+
+            state.navState.mode = nextMode;
+            state.navState.focusedIndex = index;
+
+            // activeStoryPrompt clearing: mirrors focusOnNode behavior
+            if (nextMode === 'trail' || fromCanvasNode) {
+                state.activeStoryPrompt = null;
+            }
+
+            // explorationHistoryIndices: owned by FOCUS_NODE reducer
+            if (restoreHistory) {
+                // preserve existing
+            } else if (appendHistory) {
+                const history = [...(state.navState.explorationHistoryIndices || [])];
+                if (history[history.length - 1] !== index) history.push(index);
+                state.navState.explorationHistoryIndices = history;
+            } else {
+                state.navState.explorationHistoryIndices = [index];
+            }
+
             return {
                 action,
-                handled: false,
-                mode: state.navState.mode,
-                noOp: true,
-                reason: 'FOCUS_NODE not yet migrated — camera-controls.focusOnNode is the canonical writer',
+                handled: true,
+                mode: nextMode,
+                noOp: false,
+                reason: 'FOCUS_NODE reducer owns navState.mode, focusedIndex, explorationHistoryIndices',
             };
         }
 
         case NAV_TRANSITION_ACTIONS.WALK_TO: {
-            // Phase 1: No-op — walkThreadNeighbor lives in journey.js and is NOT
-            // migrated in Phase 1.
+            // Phase 2: navTransitionReducer owns walkHistoryIndices; journey.walkThreadNeighbor
+            // is the traversal engine (camera, focus pocket, strand continuity).
+            // Journey traversal side effects remain intact, but history writes route here.
+            const { index, fromIndex, appendHistory, restoreHistoryIndices } = payload;
+            if (Array.isArray(restoreHistoryIndices)) {
+                state.navState.walkHistoryIndices = restoreHistoryIndices
+                    .filter((value) => Number.isFinite(value));
+            } else if (appendHistory !== false) {
+                // Owner of walkHistoryIndices — canonical push
+                const history = [...(state.navState.walkHistoryIndices || [])];
+                if (Number.isFinite(fromIndex) && history[history.length - 1] !== fromIndex) history.push(fromIndex);
+                if (history[history.length - 1] !== index) history.push(index);
+                state.navState.walkHistoryIndices = history;
+            }
+            state.navState.mode = 'trail';
+            // Delegate all traversal side effects (camera animation, focus pocket rebuild,
+            // strand continuity, URL sync) to the existing walkThreadNeighbor engine.
+            // Journey.js is responsible for calling this reducer first; this branch
+            // handles the history write and traversal delegate.
             return {
                 action,
-                handled: false,
+                handled: true,
                 mode: state.navState.mode,
-                noOp: true,
-                reason: 'WALK_TO not yet migrated — journey.walkThreadNeighbor is the canonical writer',
+                noOp: false,
+                reason: 'WALK_TO reducer owns walkHistoryIndices; delegates traversal to journey.walkThreadNeighbor',
             };
         }
 
         case NAV_TRANSITION_ACTIONS.BACKTRACK: {
-            // Phase 1: No-op — backtrackWalk lives in journey.js and is NOT
-            // migrated in Phase 1.
+            // Phase 2: navTransitionReducer owns walkHistoryIndices pop; journey.traverseNeighbor
+            // is the traversal engine for the backtrack sub-path.
+            // Note: the bounded-neighborhood loop path (getBoundedNeighborhoodWalkCandidate)
+            // does NOT write walkHistoryIndices — only the history-based backtrack path does.
+            const { step, fromIndex, targetIndex, restoreHistory } = payload;
+            if (step < 0 && restoreHistory) {
+                // Owner of walkHistoryIndices — canonical pop
+                const history = [...(state.navState.walkHistoryIndices || [])];
+                if (history.length > 0) {
+                    history.pop(); // remove the current position, leaving prior position
+                }
+                state.navState.walkHistoryIndices = history;
+            }
+            // Delegate traversal side effects to journey.traverseNeighbor.
+            // journey.traverseNeighbor will call walkThreadNeighbor for the actual step.
             return {
                 action,
-                handled: false,
+                handled: true,
                 mode: state.navState.mode,
-                noOp: true,
-                reason: 'BACKTRACK not yet migrated — journey.backtrackWalk is the canonical writer',
+                noOp: false,
+                reason: 'BACKTRACK reducer owns walkHistoryIndices pop; delegates traversal to journey.traverseNeighbor',
             };
         }
 
@@ -388,17 +454,9 @@ export function setMyceliumMode(mode, options = {}) {
     // Map myceliumMode to trailDepth (trailDepth is the canonical state, myceliumMode is kept for display compat)
     // 'trail' mode delegates to setTrailDepth to properly gate depth=2 from side effects
     if (mode === 'trail') {
-        if (typeof window.setTrailDepth === 'function') {
-            window.setTrailDepth(1, { skipUrlSync: options.skipUrlSync, keepStoryPrompt: options.keepStoryPrompt });
-        } else {
-            state.trailDepth = 1;
-        }
+        setTrailDepth(1, { skipUrlSync: options.skipUrlSync, keepStoryPrompt: options.keepStoryPrompt });
     } else if (mode === 'inside') {
-        if (typeof window.setTrailDepth === 'function') {
-            window.setTrailDepth(2, { fromUserGesture: true, skipUrlSync: options.skipUrlSync });
-        } else {
-            state.trailDepth = 2;
-        }
+        setTrailDepth(2, { fromUserGesture: true, skipUrlSync: options.skipUrlSync });
         state.navState.mode = 'inside';
     } else {
         // 10/10 Polish: Fix for 'broken feedback loop'
@@ -435,16 +493,10 @@ export function setMyceliumMode(mode, options = {}) {
     }
 
     // Apply color changes and refresh UI
-    if (typeof window.applyPointFilterColors === 'function') {
-        window.applyPointFilterColors();
-    }
-    if (typeof window.updateExplorationUi === 'function') {
-        window.updateExplorationUi();
-    }
+    applyPointFilterColors();
+    updateExplorationUi();
     if (!options.skipUrlSync) {
-        if (typeof window.updateUrlState === 'function') {
-            window.updateUrlState({}, { reason: 'mode' });
-        }
+        updateUrlState({}, { reason: 'mode' });
     }
 }
 
@@ -471,21 +523,65 @@ export function setTrailDepth(n, options = {}) {
         state.myceliumMode = 'default';
     }
 
-    if (typeof window.updateExplorationUi === 'function') {
-        window.updateExplorationUi();
+    updateExplorationUi();
+    syncSemanticDiveUi();
+    refreshCompositionState();
+    updateJourneyCompass();
+    if (!options.skipUrlSync) {
+        updateUrlState({}, { reason: 'depth' });
     }
-    if (typeof window.syncSemanticDiveUi === 'function') {
-        window.syncSemanticDiveUi();
+}
+
+// Semantic dive mode — authoritative owner for Step Inside / Escape behavior.
+// Sets semanticDiveMode state, navState.mode, trailDepth(2), syncSemanticDiveUi,
+// camera/focus-pocket refresh, and URL sync. Exposed as named export and
+// window bridge for compatibility.
+export function setSemanticDiveMode(enabled) {
+    const nextActive = Boolean(enabled);
+    state.semanticDiveMode = nextActive;
+
+    // Sync navState.mode so refreshCompositionState() derives the correct graphContext
+    // without requiring a separate focus action to set mode='trail'.
+    if (nextActive) {
+        state.navState.mode = 'trail';
     }
-    if (typeof window.refreshCompositionState === 'function') {
-        window.refreshCompositionState();
+
+    syncSemanticDiveUi();
+
+    // Sync with trailDepth state machine (Step Inside is depth 2)
+    const trailDepthOptions = { fromUserGesture: true };
+    if (!nextActive) trailDepthOptions.allowDiveExit = true;
+    setTrailDepth(nextActive ? 2 : 1, trailDepthOptions);
+
+    if (state.semanticDiveMode) {
+        if (document.body) {
+            document.body.dataset.semanticDive = 'transitioning';
+            window.setTimeout(() => {
+                if (state.semanticDiveMode && document.body.dataset.semanticDive === 'transitioning') {
+                    document.body.dataset.semanticDive = 'active';
+                }
+            }, 820);
+        }
+        if (Number.isFinite(state.focusedNode) && typeof window._fp?.applyLocalNeighborhoodFocus === 'function') {
+            window._fp.applyLocalNeighborhoodFocus(state.focusedNode);
+        }
+        if (Number.isFinite(state.focusedNode) && typeof window.animateCameraToNode === 'function') {
+            window.animateCameraToNode(state.focusedNode, { transitionStyle: 'dive' });
+        }
+        if (typeof window.previewInsideNextThread === 'function') window.previewInsideNextThread({ force: true });
+    } else {
+        if (Number.isFinite(state.focusedNode) && typeof window.animateCameraToNode === 'function') {
+            window.animateCameraToNode(state.focusedNode, { transitionStyle: 'focus' });
+        }
+        if (Number.isFinite(state.focusedNode) && typeof window._fp?.applyLocalNeighborhoodFocus === 'function') {
+            window._fp.applyLocalNeighborhoodFocus(state.focusedNode);
+        }
+        if (document.body.dataset.threadInspectSurface === 'inside-cue') {
+            if (typeof window.clearThreadInspection === 'function') window.clearThreadInspection({ force: true, preserveJourney: true });
+        }
     }
-    if (typeof window.updateJourneyCompass === 'function') {
-        window.updateJourneyCompass();
-    }
-    if (!options.skipUrlSync && typeof window.updateUrlState === 'function') {
-        window.updateUrlState({}, { reason: 'depth' });
-    }
+    refreshCompositionState();
+    updateUrlState({}, { reason: 'semantic-dive' });
 }
 
 function recomputeBloomIndices() {
@@ -612,11 +708,10 @@ export function applyStoryPrompt(story, options = {}) {
 
     if (typeof syncFilterControls === 'function') syncFilterControls();
     clearSearchGlow();
-    if (typeof window.applyFilters === 'function') window.applyFilters();
-    else applyFilters();
-    if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
+    applyFilters();
+    updateExplorationUi();
     if (!options.skipUrlSync) {
-        if (typeof window.updateUrlState === 'function') window.updateUrlState({ story }, { reason: 'story' });
+        updateUrlState({ story }, { reason: 'story' });
     }
 }
 
@@ -624,6 +719,7 @@ export function applyStoryPrompt(story, options = {}) {
 
 export function updateUrlState(extra = {}, options = {}) {
     if (state.restoringBrowserHistory) return;
+    if (typeof window === 'undefined' || !window.location || !window.history) return;
 
     const params = new URLSearchParams(window.location.search);
 
@@ -753,7 +849,7 @@ export function resetExperienceState() {
         window.switchView('galaxy', { skipUrlSync: true, silentHandoff: true });
     }
     if (typeof window.updateUrlState === 'function') {
-        window.updateUrlState(
+        updateUrlState(
             {
                 q: null,
                 anchor: null,
@@ -781,7 +877,7 @@ export function resetExperienceState() {
  * directly.
  *
  * @param {object} [options]
- * @param {boolean} [options.preserveSearch] - if true, skips clearing selectedPoint
+ * @param {boolean} [options.preserveSearch] - preserves search UI context; focus selection is still cleared
  * @returns {{ hadFocusedNode: boolean, hadSelectedPoint: boolean }}
  */
 export function clearExplorationFocusSelection(options = {}) {
@@ -789,9 +885,7 @@ export function clearExplorationFocusSelection(options = {}) {
     const hadSelectedPoint = state.selectedPoint !== null;
 
     state.focusedNode = null;
-    if (!options?.preserveSearch) {
-        state.selectedPoint = null;
-    }
+    state.selectedPoint = null;
     state.navState.focusedIndex = null;
     state.navState.trailSeedIndex = null;
     state.navState.trailNeighborIndices = [];
@@ -821,17 +915,11 @@ export function resetExplorationFocus() {
     clearSearchGlow();
 
     // Ensure focus stage DOM element is hidden
-    if (typeof window.syncFocusStage === 'function') {
-        window.syncFocusStage(null);
-    }
+    syncFocusStage(null);
 
     // Sync UI state to reflect the reset
-    if (typeof window.refreshCompositionState === 'function') {
-        window.refreshCompositionState();
-    }
-    if (typeof window.updateExplorationUi === 'function') {
-        window.updateExplorationUi();
-    }
+    refreshCompositionState();
+    updateExplorationUi();
 }
 
 /**
@@ -892,10 +980,10 @@ export function resetStateBeforeUrlRestore(options = {}) {
         updateSelectedBusiness(null);
     }
     applyFilters();
-    if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
+    updateExplorationUi();
     updateSearchStatusMessage(getFilteredIndices().length);
-    if (typeof window.syncFocusStage === 'function') window.syncFocusStage(null);
-    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+    syncFocusStage(null);
+    refreshCompositionState();
     clearExplorationFocusSelection();
     state.navState.mode = 'overview';
     state.navState.threadCandidates = [];
@@ -985,7 +1073,7 @@ export function switchView(view, options = {}) {
             window.applyMapFlatteningLayout(true);
         }
 
-        if (typeof window.showViewHandoff === 'function') window.showViewHandoff('map');
+        showViewHandoff('map');
         state.viewSwitchPreludeTimer = window.setTimeout(() => {
             state.viewSwitchPreludeTimer = null;
             if (state.currentView !== 'galaxy') return;
@@ -1013,7 +1101,7 @@ export function switchView(view, options = {}) {
     }, 1200);
     
     if (view === 'map') {
-        if (typeof window.hideViewHandoff === 'function') window.hideViewHandoff();
+        hideViewHandoff();
         scheduleMapRouteRefresh();
     }
     if (view !== 'galaxy' && view !== 'map') {
@@ -1181,19 +1269,17 @@ export function switchView(view, options = {}) {
     }
 
     if (!options.skipUrlSync) {
-        if (typeof window.updateUrlState === 'function') {
-            window.updateUrlState({}, { mode: options.historyMode || 'push', reason: 'view' });
-        }
+        updateUrlState({}, { mode: options.historyMode || 'push', reason: 'view' });
     }
     if (typeof window.syncClusterSectionState === 'function') window.syncClusterSectionState();
     if (typeof window.updateLegendGuideState === 'function') window.updateLegendGuideState();
-    if (typeof window.syncFocusStage === 'function') window.syncFocusStage(state.selectedPoint);
+    syncFocusStage(state.selectedPoint);
     if (!state.selectedPoint) {
         updateSelectedBusiness(null);
     }
-    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+    refreshCompositionState();
     if (!options.silentHandoff) {
-        if (typeof window.showViewHandoff === 'function') window.showViewHandoff(view);
+        showViewHandoff(view);
     }
 }
 
@@ -1712,10 +1798,10 @@ export function focusOnPoint(point, options = {}) {
     state.selectedPoint = point;
     if (pointIndex >= 0) return focusOnNode(pointIndex, options);
     updateSelectedBusiness(point, options);
-    if (!options.skipUrlSync && typeof window.updateUrlState === 'function') {
-        window.updateUrlState({ record: point.lead_id || null }, { mode: options.historyMode || 'push', reason: 'focus' });
+    if (!options.skipUrlSync) {
+        updateUrlState({ record: point.lead_id || null }, { mode: options.historyMode || 'push', reason: 'focus' });
     }
-    if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
+    updateJourneyCompass();
     return true;
 }
 
@@ -1734,12 +1820,12 @@ export function resetNodePositions(options = {}) {
         state.targetPositions = state.originalPositions.map((position) => ({ ...position }));
     }
     updateSelectedBusiness(null);
-    if (typeof window.applyPointFilterColors === 'function') window.applyPointFilterColors();
+    applyPointFilterColors();
     if (typeof window.updateTraversalUi === 'function') window.updateTraversalUi();
     refreshMapRouteEmbodiment();
-    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
-    if (!options.skipUrlSync && typeof window.updateUrlState === 'function') {
-        window.updateUrlState({ record: null }, { reason: 'reset' });
+    refreshCompositionState();
+    if (!options.skipUrlSync) {
+        updateUrlState({ record: null }, { reason: 'reset' });
     }
 }
 
@@ -2106,7 +2192,7 @@ if (typeof window !== 'undefined') {
     window.hideViewHandoff = hideViewHandoff;
     window.showExperienceToast = showExperienceToast;
 
-
+    window.setSemanticDiveMode = setSemanticDiveMode;
 
     window.getInterestingBusinessNote = function (point) {
         if (!point) return null;
@@ -2150,68 +2236,6 @@ if (typeof window !== 'undefined') {
         if (!point) return '';
         if (state.currentSearchSummary?.reason) return state.currentSearchSummary.reason;
         return '';
-    };
-
-    window.setSemanticDiveMode = function (enabled) {
-        const nextActive = Boolean(enabled);
-        state.semanticDiveMode = nextActive;
-
-        // Sync navState.mode so refreshCompositionState() derives the correct graphContext
-        // without requiring a separate focus action to set mode='trail'.
-        // This ensures graphContext, panelSurface, and URL all agree with JS state after Step Inside.
-        if (nextActive) {
-            state.navState.mode = 'trail';
-        }
-
-        if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
-
-        // 10/10 Polish: Sync with trailDepth state machine (Step Inside is depth 2)
-        if (typeof window.setTrailDepth === 'function') {
-            const trailDepthOptions = { fromUserGesture: true };
-            // allowDiveExit is required when exiting depth 2 so the guard in setTrailDepth
-            // permits the transition when semanticDiveMode is still true at call time.
-            if (!nextActive) trailDepthOptions.allowDiveExit = true;
-            window.setTrailDepth(nextActive ? 2 : 1, trailDepthOptions);
-        }
-
-        if (state.semanticDiveMode) {
-            // 10/10 Polish: Trigger the 'Sonic Boom' transition effect
-            if (document.body) {
-                document.body.dataset.semanticDive = 'transitioning';
-                window.setTimeout(() => {
-                    if (state.semanticDiveMode && document.body.dataset.semanticDive === 'transitioning') {
-                        document.body.dataset.semanticDive = 'active';
-                    }
-                }, 820);
-            }
-
-            // 10/10 Polish: Re-apply focus pocket to trigger the 'Deep Dive' layout (tighten rosette)
-            if (Number.isFinite(state.focusedNode) && typeof window._fp?.applyLocalNeighborhoodFocus === 'function') {
-                window._fp.applyLocalNeighborhoodFocus(state.focusedNode);
-            }
-
-            // 10/10 Polish: Trigger a camera dive when entering the neighborhood
-            if (Number.isFinite(state.focusedNode) && typeof window.animateCameraToNode === 'function') {
-                window.animateCameraToNode(state.focusedNode, { transitionStyle: 'dive' });
-            }
-            if (typeof window.previewInsideNextThread === 'function') window.previewInsideNextThread({ force: true });
-        } else {
-            // Surface the camera back to normal focus distance when exiting dive mode
-            if (Number.isFinite(state.focusedNode) && typeof window.animateCameraToNode === 'function') {
-                window.animateCameraToNode(state.focusedNode, { transitionStyle: 'focus' });
-            }
-            // 10/10 Polish: Re-apply focus pocket to restore standard neighborhood spacing
-            if (Number.isFinite(state.focusedNode) && typeof window._fp?.applyLocalNeighborhoodFocus === 'function') {
-                window._fp.applyLocalNeighborhoodFocus(state.focusedNode);
-            }
-            if (document.body.dataset.threadInspectSurface === 'inside-cue') {
-                if (typeof window.clearThreadInspection === 'function') window.clearThreadInspection({ force: true, preserveJourney: true });
-            }
-        }
-        if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
-        if (typeof window.updateUrlState === 'function') {
-            window.updateUrlState({}, { reason: 'semantic-dive' });
-        }
     };
 
     window.exploreInsideToNextStop = function () {

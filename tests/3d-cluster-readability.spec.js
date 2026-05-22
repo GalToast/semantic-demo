@@ -137,6 +137,20 @@ async function detectLabelOverlap(page) {
   });
 }
 
+async function enterFocusMode(page) {
+  const focusedIndex = await page.evaluate(() => {
+    const points = window.state?.points ?? [];
+    const index = points.findIndex(point => Number.isFinite(point?.cluster));
+    if (index >= 0 && typeof window.focusOnNode === 'function') {
+      window.focusOnNode(index, { fromCanvasNode: true });
+    }
+    return index;
+  });
+  expect(focusedIndex, 'focusable clustered point must exist').toBeGreaterThanOrEqual(0);
+  await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+  await page.waitForTimeout(1200);
+}
+
 // ── Viewport configurations ────────────────────────────────────────────────────
 
 const VIEWPORTS = {
@@ -259,6 +273,101 @@ test.describe('3D cluster readability', () => {
       expect(counts, `cluster counts must be derivable from state.points at ${vp.label}`).not.toBeNull();
       expect(Object.keys(counts).length, `at least 1 cluster at ${vp.label}`).toBeGreaterThan(0);
     }
+  });
+
+  // ── Overview → Focus transition ─────────────────────────────────────────────
+
+  test('desktop: cluster label visibility drops during overview→focus transition', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(VIEWPORTS.desktop);
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
+    await waitForGalaxyReady(page);
+
+    const overviewProbes = await probeClusterLabels(page);
+    expect(overviewProbes.total, 'overview must have cluster label elements').toBeGreaterThan(0);
+    expect(overviewProbes.visible, 'overview must have at least one visible label').toBeGreaterThan(0);
+
+    await enterFocusMode(page);
+
+    const focusProbes = await probeClusterLabels(page);
+    expect(focusProbes.total, 'label element count must be preserved through transition').toBeGreaterThan(0);
+    expect(focusProbes.visible, 'focus mode should suppress overview cluster labels').toBeLessThan(overviewProbes.visible);
+    expect(focusProbes.withRect, 'visible focus labels must still have nonzero rects').toBeGreaterThanOrEqual(focusProbes.visible);
+
+    // Point count and cluster data must remain valid
+    const state = await page.evaluate(() => ({
+      pointCount: window.state?.points?.length ?? 0,
+      navMode: window.state?.navState?.mode ?? ''
+    }));
+    expect(state.pointCount, 'point count must be preserved through transition').toBeGreaterThan(0);
+    expect(state.navMode, 'nav mode must be focus').toBe('focus');
+  });
+
+  test('mobile: cluster label visibility behaves deterministically through overview→focus', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(VIEWPORTS.mobile);
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
+    await waitForGalaxyReady(page);
+
+    const overviewProbes = await probeClusterLabels(page);
+    expect(overviewProbes.total, 'mobile overview must have label elements').toBeGreaterThan(0);
+    expect(overviewProbes.visible, 'mobile overview must have visible labels').toBeGreaterThan(0);
+
+    await enterFocusMode(page);
+
+    const focusProbes = await probeClusterLabels(page);
+    expect(focusProbes.total, 'mobile label count must be preserved through transition').toBeGreaterThan(0);
+    expect(focusProbes.visible, 'mobile focus should suppress overview cluster labels').toBeLessThan(overviewProbes.visible);
+
+    const state = await page.evaluate(() => ({
+      pointCount: window.state?.points?.length ?? 0,
+      navMode: window.state?.navState?.mode ?? ''
+    }));
+    expect(state.pointCount, 'mobile point count must survive transition').toBeGreaterThan(0);
+    expect(state.navMode, 'mobile nav mode must be focus').toBe('focus');
+  });
+
+  test('short-landscape: cluster label structure is stable during overview→focus transition', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(VIEWPORTS.shortLandscape);
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
+    await waitForGalaxyReady(page);
+
+    const overviewProbes = await probeClusterLabels(page);
+    expect(overviewProbes.total, 'short-landscape overview must have label elements').toBeGreaterThan(0);
+
+    await enterFocusMode(page);
+
+    const focusProbes = await probeClusterLabels(page);
+    expect(focusProbes.total, 'short-landscape label count must be stable through transition').toBeGreaterThan(0);
+    expect(focusProbes.visible, 'short-landscape focus should suppress overview cluster labels').toBeLessThan(overviewProbes.visible);
+
+    const state = await page.evaluate(() => ({
+      pointCount: window.state?.points?.length ?? 0,
+      navMode: window.state?.navState?.mode ?? ''
+    }));
+    expect(state.pointCount, 'short-landscape point count must survive transition').toBeGreaterThan(0);
+    expect(state.navMode, 'short-landscape nav mode should be focus after focusOnNode').toBe('focus');
+  });
+
+  test('overview→focus transition does not corrupt cluster label with-color data', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(VIEWPORTS.desktop);
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
+    await waitForGalaxyReady(page);
+
+    // Capture pre-transition color data
+    const pre = await probeClusterLabels(page);
+    expect(pre.withColor, 'pre-transition at least one label must have color data').toBeGreaterThan(0);
+
+    await enterFocusMode(page);
+
+    // Post-transition: color data may be gone (labels hidden in focus is acceptable)
+    // but the label DOM must not be corrupted (withColor count must not error)
+    const post = await probeClusterLabels(page);
+    expect(post.visible, 'focus mode should reduce visible overview cluster labels').toBeLessThan(pre.visible);
+    expect(typeof post.withColor === 'number', 'withColor must remain a number after transition (no DOM corruption)').toBe(true);
+    expect(post.total, 'total label count must remain accessible after transition').toBeGreaterThan(0);
   });
 
 });

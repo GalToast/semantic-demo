@@ -9,7 +9,16 @@ import {
     easeOutQuint
 } from '../utils.js';
 import { refreshMapRouteEmbodiment } from './map-state.js';
-import { refreshCompositionState } from './lifecycle.js';
+import {
+    refreshCompositionState,
+    dispatchNavTransition,
+    setTrailDepth,
+    setMyceliumMode,
+    updateExplorationUi,
+    syncSearchStatusForFocus,
+    updateUrlState
+} from './lifecycle.js';
+import { applyPointFilterColors, syncFocusStage } from './journey.js';
 
 // Constants
 
@@ -1081,39 +1090,28 @@ export function focusOnNode(index, options = {}) {
     state.selectedPoint = point;
     state.hoverHighlightIndex = -1;
     state.pinnedThreadIndex = null;
-    state.navState.mode = options.preserveMode && state.navState.mode ? state.navState.mode : options.fromTraversal ? 'trail' : 'focus';
-    state.navState.focusedIndex = index;
-    if (state.navState.mode === 'trail' || options.fromCanvasNode) {
-        state.activeStoryPrompt = null;
-    }
 
-    // 10/10 Polish: Automatically enter Trail Depth 1 when focusing a node
+    // Delegate only navState/history writes to the FOCUS_NODE reducer.
+    // focusOnNode retains ownership of focusedNode, selectedPoint, trailDepth,
+    // myceliumMode, and all side-effect calls.
+    dispatchNavTransition('FOCUS_NODE', {
+        index,
+        preserveMode: !!options.preserveMode,
+        fromTraversal: !!options.fromTraversal,
+        fromCanvasNode: !!options.fromCanvasNode,
+        appendHistory: !!options.appendHistory,
+        restoreHistory: !!options.restoreHistory,
+    });
+
+    // 10/10 Polish: Automatically enter Trail Depth 1 when focusing a node.
     // This resolves the 'broken feedback loop' where the Trail chip stays inactive despite focusing a business.
     if (state.trailDepth === 0) {
-        if (typeof window.setTrailDepth === 'function') {
-            window.setTrailDepth(1, { skipUrlSync: true });
-        } else {
-            state.trailDepth = 1;
-            state.myceliumMode = 'trail';
-        }
+        setTrailDepth(1, { skipUrlSync: true });
     }
 
     // Keep myceliumMode in sync with navState.mode when entering trail mode from focus
     if (state.navState.mode === 'trail' && state.myceliumMode !== 'trail') {
-        if (typeof window.setMyceliumMode === 'function') {
-            window.setMyceliumMode('trail', { skipUrlSync: true });
-        } else {
-            state.myceliumMode = 'trail';
-        }
-    }
-    if (options.restoreHistory) {
-        state.navState.explorationHistoryIndices = [...(state.navState.explorationHistoryIndices || [])];
-    } else if (options.appendHistory) {
-        const history = [...(state.navState.explorationHistoryIndices || [])];
-        if (history[history.length - 1] !== index) history.push(index);
-        state.navState.explorationHistoryIndices = history;
-    } else {
-        state.navState.explorationHistoryIndices = [index];
+        setMyceliumMode('trail', { skipUrlSync: true });
     }
 
     // 10/10 Polish: Clear processing feedback once transition begins
@@ -1150,24 +1148,20 @@ export function focusOnNode(index, options = {}) {
     if (typeof window.updateTrailIndices === 'function') window.updateTrailIndices(index);
     if (typeof window.refreshFocusSemanticOverlay === 'function') window.refreshFocusSemanticOverlay();
     if (typeof window._fp?.applyLocalNeighborhoodFocus === 'function') window._fp.applyLocalNeighborhoodFocus(index);
-    if (typeof window.applyPointFilterColors === 'function') window.applyPointFilterColors();
-    if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
+    applyPointFilterColors();
+    updateExplorationUi();
     if (typeof window.updateSelectedBusiness === 'function') {
         window.updateSelectedBusiness(point, { revealCard: !!options.revealCard || !!options.fromSearchResult });
     }
-    if (typeof window.syncFocusStage === 'function') {
-        window.syncFocusStage(point);
-    }
+    syncFocusStage(point);
     refreshMapRouteEmbodiment();
     if (typeof window.clearRouteExploration === 'function') {
         window.clearRouteExploration(options.fromTraversal ? 'trail-walk' : options.fromCanvasNode ? 'field-node-focus' : 'focus');
     }
-    if (typeof window.syncSearchStatusForFocus === 'function') {
-        window.syncSearchStatusForFocus(point, {
-            fromTraversal: !!options.fromTraversal,
-            fromSearchResult: !!options.fromSearchResult
-        });
-    }
+    syncSearchStatusForFocus(point, {
+        fromTraversal: !!options.fromTraversal,
+        fromSearchResult: !!options.fromSearchResult
+    });
     if (typeof window.animateCameraToNode === 'function') {
         window.animateCameraToNode(index, {
             transitionStyle: options.fromTraversal ? 'walk' : options.fromSearchResult ? 'search' : 'focus'
@@ -1177,8 +1171,8 @@ export function focusOnNode(index, options = {}) {
     if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
     if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
     refreshCompositionState();
-    if (!options.skipUrlSync && typeof window.updateUrlState === 'function') {
-        window.updateUrlState({ record: point.lead_id || null }, { mode: options.historyMode || 'push', reason: 'focus' });
+    if (!options.skipUrlSync) {
+        updateUrlState({ record: point.lead_id || null }, { mode: options.historyMode || 'push', reason: 'focus' });
     }
     if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
     return true;

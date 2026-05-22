@@ -1,31 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { setupMockSearch } from './helpers/mock-semantic-search.js';
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
-
-const SEMANTIC_HEALTH_STUB = {
-  ok: true,
-  state: 'healthy',
-  provenance: { label: 'Search ready', detail: 'Semantic search is ready.' }
-};
-
-const SEARCH_STUB = {
-  ok: true,
-  count: 3,
-  results: [
-    { lead_id: 1, score: 0.99, semantic_score: 0.99, public_note: 'Coffee shop on Main St.' },
-    { lead_id: 2, score: 0.91, semantic_score: 0.91, public_note: 'Cafe near the park.' },
-    { lead_id: 20, score: 0.86, semantic_score: 0.86, public_note: 'Espresso bar downtown.' }
-  ]
-};
-
-async function setupMockSearch(page) {
-  await page.route('**/api.php?action=semantic_lane_health**', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEMANTIC_HEALTH_STUB) });
-  });
-  await page.route('**/api.php?action=semantic_search**', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEARCH_STUB) });
-  });
-}
 
 async function openApp(page) {
   await setupMockSearch(page);
@@ -113,7 +89,11 @@ test.describe('Live URL State Reconstruction', () => {
       typeof window.applyUrlState === 'function' &&
       document.body.dataset.graphicsMode === 'webgl'
     ), { timeout: 20000 });
-    await page.waitForTimeout(2000); // allow applyUrlState + search to complete
+    await page.waitForFunction(() => (
+      window.state?.trailDepth === 2 &&
+      window.state?.semanticDiveMode === true &&
+      document.body.dataset.semanticDive === 'active'
+    ), { timeout: 15000 });
 
     const probe = await stateProbe(page);
 
@@ -140,11 +120,11 @@ test.describe('Live URL State Reconstruction', () => {
   });
 
   /**
-   * Test the deferred restoration path: points array is empty when applyUrlState
-   * first runs (data not yet loaded). The search query and record should be
-   * re-applied once semantic-data-loaded fires.
+   * Restoration waits through the async search/focus path instead of sampling
+   * while the page is still loading. The URL should land on the focused record
+   * and activate depth=2 through the lifecycle API.
    */
-  test('deferred restoration: record focus retried after data loads', async ({ page }) => {
+  test('record focus restoration completes after async search/data load', async ({ page }) => {
     test.setTimeout(60000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await openApp(page);
@@ -153,33 +133,23 @@ test.describe('Live URL State Reconstruction', () => {
     await setupMockSearch(page);
     await page.goto(urlWithParams);
 
-    // Block the data-loaded event by clearing points, then fire it manually
-    await page.waitForFunction(() => typeof window.applyUrlState === 'function', { timeout: 20000 });
-    await page.evaluate(() => {
-      // Ensure state.points is empty so applyUrlState defers the record focus
-      window.state.points = [];
-      window.state._deferredUrlState = null;
-    });
-
-    // Now fire semantic-data-loaded — this triggers the retry path
-    await page.evaluate(() => {
-      document.dispatchEvent(new Event('semantic-data-loaded'));
-    });
-
-    await page.waitForTimeout(3000); // allow deferred retry to complete
+    await page.waitForFunction(() => (
+      window.state?.selectedPoint &&
+      window.state?.trailDepth === 2 &&
+      window.state?.semanticDiveMode === true &&
+      document.body.dataset.semanticDive === 'active'
+    ), { timeout: 20000 });
 
     const probe = await stateProbe(page);
 
-    // After data loads, the record focus should be applied
-    // (state.points now has data from the mock search stub)
     expect(probe.state.selectedPoint).toBeTruthy();
     expect(probe.body.semanticDive).toBe('active');
   });
 
   /**
    * Test orphaned depth: navigate directly to a URL with depth=2 but NO record.
-   * The URL has depth=2 but no anchor to trigger the focus chain.
-   * Expected: depth param is ignored, trailDepth stays 0, semanticDive stays inactive.
+   * mode=trail may restore the visible trail shell at depth=1, but depth=2
+   * must not activate without a focused record/anchor.
    */
   test('depth=2 without record anchor is silently ignored', async ({ page }) => {
     test.setTimeout(60000);
@@ -195,15 +165,15 @@ test.describe('Live URL State Reconstruction', () => {
 
     const probe = await stateProbe(page);
 
-    // Without a record anchor, the focus chain never fires, so:
-    // - trailDepth stays 0 (depth param is not parsed)
+    // Without a record anchor, the dive focus chain never fires, so:
+    // - trailDepth may restore to 1 from mode=trail
     // - semanticDiveMode stays false
-    // This is the "orphaned depth" gap — URL says depth=2 but state says 0
-    expect(probe.state.trailDepth).toBe(0);
+    // - depth=2 is ignored because there is no focused record to dive into
+    expect(probe.state.trailDepth).toBe(1);
     expect(probe.state.semanticDiveMode).toBe(false);
     expect(probe.body.semanticDive).toBe('inactive');
-    // The URL still shows depth=2 — it's an independent truth, not a mirror
-    expect(probe.params.depth).toBe('2');
+    // URL state is canonicalized back to depth=1 because no record focus exists.
+    expect(probe.params.depth).toBe('1');
   });
 
   /**

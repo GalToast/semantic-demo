@@ -9,6 +9,11 @@ import {
     clearSearchGlow,
     applyFilters
 } from './search-state.js';
+import {
+    setActiveFilter,
+    toggleActiveFilterSignal,
+    resetActiveFilters
+} from './filter-state.js';
 
 function bindClick(id, handler, options = {}) {
     const element = document.getElementById(id);
@@ -394,7 +399,7 @@ function bindFilterControls() {
 
     document.querySelectorAll('[data-status-filter]').forEach((button) => {
         button.onclick = () => {
-            state.activeFilters.status = button.dataset.statusFilter || 'all';
+            setActiveFilter('status', button.dataset.statusFilter || 'all');
             handleFilter(null, 'status-filter');
         };
     });
@@ -402,7 +407,7 @@ function bindFilterControls() {
     document.querySelectorAll('[data-signal-filter]').forEach((button) => {
         button.onclick = () => {
             const key = button.dataset.signalFilter;
-            state.activeFilters[key] = !state.activeFilters[key];
+            toggleActiveFilterSignal(key);
             handleFilter(null, 'signal-filter');
         };
     });
@@ -410,7 +415,7 @@ function bindFilterControls() {
     const cityFilter = document.getElementById('city-filter');
     if (cityFilter) {
         cityFilter.onchange = (e) => {
-            state.activeFilters.city = e.target.value || 'all';
+            setActiveFilter('city', e.target.value || 'all');
             handleFilter(null, 'city-filter');
         };
     }
@@ -420,7 +425,7 @@ function bindFilterControls() {
         cityFilterPills.onclick = (e) => {
             const btn = e.target.closest('[data-city-filter]');
             if (!btn) return;
-            state.activeFilters.city = btn.dataset.cityFilter || 'all';
+            setActiveFilter('city', btn.dataset.cityFilter || 'all');
             handleFilter(null, 'city-filter-pill');
         };
     }
@@ -428,11 +433,7 @@ function bindFilterControls() {
     const clearFiltersBtn = document.getElementById('filter-clear-btn');
     if (clearFiltersBtn) {
         clearFiltersBtn.onclick = () => {
-            state.activeFilters.status = 'all';
-            state.activeFilters.city = 'all';
-            state.activeFilters.website = false;
-            state.activeFilters.email = false;
-            state.activeFilters.geocoded = false;
+            resetActiveFilters();
             if (typeof window.updateUrlState === 'function') window.updateUrlState({}, { reason: 'filter-clear' });
             handleFilter(null, 'filter-clear');
         };

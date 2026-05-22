@@ -1,6 +1,7 @@
 import { state } from '../state.js'
 import { updateClusterList, populateCityFilter } from './cluster-filter.js';
 import { buildLegend } from './ui-renderers.js';
+import { applyFilters } from './search-state.js';
 
 export async function loadData() {
     let raw
@@ -73,7 +74,7 @@ export async function loadData() {
         if (typeof updateClusterList === 'function') updateClusterList()
         if (typeof buildLegend === 'function') buildLegend()
         if (typeof populateCityFilter === 'function') populateCityFilter()
-        if (typeof window.applyFilters === 'function') window.applyFilters()
+        if (typeof applyFilters === 'function') applyFilters()
     } catch (err) {
         console.warn('Post-load UI refresh failed:', err)
     }

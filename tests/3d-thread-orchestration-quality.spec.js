@@ -194,6 +194,7 @@ async function probeThreads(page) {
       spokePositionNonZero: posArr.filter(v => Math.abs(v) > 0.0001).length,
       // visibility
       pointsMeshVisible: state.pointsMesh?.visible ?? null,
+      pointsMeshOpacity: state.pointsMaterial?.opacity ?? null,
       pointsMeshCount: state.pointsMesh?.geometry?.attributes?.position?.count || 0,
       semanticLensVisible: Boolean(state.semanticLensGroup?.visible),
       semanticLensGlowOpacity: state.semanticLensGlow?.material?.uniforms?.uOpacity?.value ?? 0,
@@ -333,8 +334,11 @@ test.describe('3D thread orchestration quality', () => {
     expect(probe.focusedNode, 'focusedNode must be set').not.toBeNull();
     expect(probe.focusedNode, 'focusedNode must be non-negative').toBeGreaterThanOrEqual(0);
 
-    // Point cloud suppressed so the pocket owns the scene
-    expect(probe.pointsMeshVisible, 'pointsMesh must be suppressed in focus mode').toBe(false);
+    // Ghost graph: point cloud is visible at low opacity (subliminal context), not fully suppressed
+    const pointsOpacity = probe.pointsMeshOpacity ?? 0;
+    expect(pointsOpacity > 0 && pointsOpacity < 0.10,
+      `pointsMesh must be ghosted (not suppressed) in focus mode, got opacity=${pointsOpacity}`
+    ).toBe(true);
 
     // Semantic lens visible
     expect(probe.semanticLensVisible, 'semantic lens must be visible in focus mode').toBe(true);

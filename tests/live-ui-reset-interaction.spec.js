@@ -1,31 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { setupMockSearch } from './helpers/mock-semantic-search.js';
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
-
-const SEMANTIC_HEALTH_STUB = {
-  ok: true,
-  state: 'healthy',
-  provenance: { label: 'Search ready', detail: 'Semantic search is ready.' }
-};
-
-const SEARCH_STUB = {
-  ok: true,
-  count: 3,
-  results: [
-    { lead_id: 1, score: 0.99, semantic_score: 0.99, public_note: 'Coffee shop on Main St.' },
-    { lead_id: 2, score: 0.91, semantic_score: 0.91, public_note: 'Cafe near the park.' },
-    { lead_id: 20, score: 0.86, semantic_score: 0.86, public_note: 'Espresso bar downtown.' }
-  ]
-};
-
-async function setupMockSearch(page) {
-  await page.route('**/api.php?action=semantic_lane_health**', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEMANTIC_HEALTH_STUB) });
-  });
-  await page.route('**/api.php?action=semantic_search**', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEARCH_STUB) });
-  });
-}
 
 async function openApp(page) {
   await setupMockSearch(page);

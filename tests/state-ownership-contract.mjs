@@ -8,21 +8,25 @@
  *   state.js           — owns raw fields: trailDepth (as number),
  *                        semanticDiveMode (derived from trailDepth, no independent storage),
  *                        focusedNode, selectedPoint, navState, activeFilters
- *   lifecycle.js       — owns reset/orchestration: resetStateBeforeUrlRestore,
+ *   lifecycle.js       — owns reset/orchestration and nav transition reduction:
+ *                        dispatchNavTransition('FOCUS_NODE') writes navState.mode,
+ *                        navState.focusedIndex, and navState.explorationHistoryIndices;
+ *                        resetStateBeforeUrlRestore,
  *                        resetExperienceState, returnToOverview, setSemanticDiveMode,
  *                        setTrailDepth (canonical), setMyceliumMode, resetNodePositions,
  *                        plus composition/body-derivation: refreshCompositionState,
  *                        derivePanelSurface
- *   camera-controls.js — owns focusOnNode (sets focusedNode, selectedPoint, trailDepth,
- *                        navState.mode, navState.focusedIndex)
+ *   camera-controls.js — owns focusOnNode (sets focusedNode/selectedPoint and delegates
+ *                        navState/history writes to dispatchNavTransition('FOCUS_NODE'));
+ *                        requests trailDepth/myceliumMode through lifecycle setters
  *   search-state.js    — clears focusedNode/selectedPoint on filter eviction;
  *                        writes navState.mode, navState.focusedIndex, navState.trailNeighborIndices,
  *                        navState.trailCursor during search reset
  *   micro-demo.js      — demo-mode focus writer; writes all navState trail fields
  *   journey.js         — owns trail walk sequencing: walkThreadNeighbor sets
- *                        navState.mode='trail', navState.walkHistoryIndices, and
+ *                        navState.mode='trail' and dispatches walk history writes to lifecycle,
  *                        buildThreadCandidates sets navState.trailNeighborIndices,
- *                        navState.trailCursor, navState.walkHistoryIndices
+ *                        navState.trailCursor
  *   thread-inspector.js — sets navState.mode='trail' during thread inspection
  *
  * semanticDiveMode derivation:
@@ -37,14 +41,14 @@
  *   setSemanticDiveMode(bool)  — enter/exit semantic-dive
  *
  * navState field ownership (distinguished from navState.mode which is tracked separately):
- *   navState.mode              — lifecycle.js (primary reset/setMyceliumMode/setSemanticDiveMode),
- *                                camera-controls.js (focusOnNode), journey.js (walkThreadNeighbor),
+ *   navState.mode              — lifecycle.js (primary reset/setMyceliumMode/setSemanticDiveMode/
+ *                                dispatchNavTransition), journey.js (walkThreadNeighbor),
  *                                thread-inspector.js (renderThreadInspection),
  *                                search-state.js (clear on filter/search reset),
  *                                micro-demo.js (demo reset/focus),
  *                                loading-ui.js (brief priorMode restore)
- *   navState.focusedIndex      — lifecycle.js (resetNodePositions, resetStateBeforeUrlRestore),
- *                                camera-controls.js (focusOnNode),
+ *   navState.focusedIndex      — lifecycle.js (resetNodePositions, resetStateBeforeUrlRestore,
+ *                                dispatchNavTransition),
  *                                search-state.js (clear on search reset),
  *                                micro-demo.js (demo reset/focus)
  *   navState.trailSeedIndex    — lifecycle.js (resetNodePositions), micro-demo.js (demo reset)
@@ -57,8 +61,8 @@
  *                                  journey.js (buildThreadCandidates),
  *                                  search-state.js (clear on search reset),
  *                                  micro-demo.js (demo reset)
- *   navState.walkHistoryIndices — lifecycle.js (setMyceliumMode, resetStateBeforeUrlRestore),
- *                                  journey.js (walkThreadNeighbor, backtrackWalk),
+ *   navState.walkHistoryIndices — lifecycle.js (setMyceliumMode, resetStateBeforeUrlRestore,
+ *                                  dispatchNavTransition WALK_TO/BACKTRACK),
  *                                  micro-demo.js (demo reset/focus)
  *   navState.focusPocket*      — focus-pocket.js only (clearFocusPocketIndices, etc.)
  *
@@ -316,8 +320,8 @@ console.log('PASS CONTRACT 3: All 5 official reset/orchestration APIs are define
 
 const lifecycleSource = readFileSync(join(PROJECT_ROOT, 'js', 'modules', 'lifecycle.js'), 'utf8');
 assert(
-  /window\.setSemanticDiveMode\s*=\s*function\s*\(enabled\)/.test(lifecycleSource),
-  'lifecycle.js must define the authoritative window.setSemanticDiveMode bridge'
+  /window\.setSemanticDiveMode\s*=\s*setSemanticDiveMode\s*;/.test(lifecycleSource),
+  'lifecycle.js must expose the canonical setSemanticDiveMode export through the window bridge'
 );
 assert(
   lifecycleSource.includes('state.semanticDiveMode = nextActive'),
@@ -326,6 +330,18 @@ assert(
 assert(
   lifecycleSource.includes('allowDiveExit'),
   'lifecycle setSemanticDiveMode exit path must pass allowDiveExit through setTrailDepth'
+);
+const semanticDiveBody = lifecycleSource.slice(
+  lifecycleSource.indexOf('export function setSemanticDiveMode'),
+  lifecycleSource.indexOf('\nfunction recomputeBloomIndices')
+);
+assert(
+  /(?<!window\.)setTrailDepth\s*\(/.test(semanticDiveBody),
+  'lifecycle setSemanticDiveMode must call setTrailDepth directly'
+);
+assert(
+  !/window\.setTrailDepth\s*\(/.test(semanticDiveBody),
+  'lifecycle setSemanticDiveMode must not call setTrailDepth through window'
 );
 
 console.log('PASS CONTRACT 4: lifecycle.js owns semantic-dive orchestration bridge');
@@ -428,14 +444,14 @@ const CANONICAL_WRITERS = {
   focusedNode:     new Set(['camera-controls.js', 'lifecycle.js', 'search-state.js', 'micro-demo.js']),
   selectedPoint:   new Set(['camera-controls.js', 'lifecycle.js', 'search-state.js', 'micro-demo.js']),
   trailDepth:      new Set(['lifecycle.js', 'camera-controls.js', 'micro-demo.js']),
-  activeFilters:   new Set(['lifecycle.js', 'micro-demo.js']),
+  activeFilters:   new Set(['filter-state.js', 'lifecycle.js', 'micro-demo.js']),
   // navState is a composite object; each sub-field has its own ownership:
-  //   navState.mode:            lifecycle.js (setMyceliumMode / setSemanticDiveMode / resetNodePositions),
-  //                             camera-controls.js (focusOnNode), journey.js (walkThreadNeighbor),
+  //   navState.mode:            lifecycle.js (setMyceliumMode / setSemanticDiveMode / resetNodePositions /
+  //                             dispatchNavTransition), journey.js (walkThreadNeighbor),
   //                             thread-inspector.js (renderThreadInspection), search-state.js (clear),
   //                             micro-demo.js (demo reset/focus), loading-ui.js (priorMode restore)
-  //   navState.focusedIndex:     lifecycle.js (resetNodePositions / resetStateBeforeUrlRestore),
-  //                             camera-controls.js (focusOnNode), search-state.js (clear),
+  //   navState.focusedIndex:     lifecycle.js (resetNodePositions / resetStateBeforeUrlRestore /
+  //                             dispatchNavTransition), search-state.js (clear),
   //                             micro-demo.js (demo reset/focus)
   //   navState.trailNeighborIndices: lifecycle.js (resetNodePositions / resetStateBeforeUrlRestore),
   //                             journey.js (buildThreadCandidates), search-state.js (clear),
@@ -443,28 +459,22 @@ const CANONICAL_WRITERS = {
   //   navState.trailCursor:      lifecycle.js (setMyceliumMode / setTrailDepth / resetNodePositions /
   //                              resetStateBeforeUrlRestore), journey.js (buildThreadCandidates),
   //                              search-state.js (clear), micro-demo.js (demo reset)
-  //   navState.walkHistoryIndices: lifecycle.js (setMyceliumMode / resetStateBeforeUrlRestore),
-  //                              journey.js (walkThreadNeighbor / backtrackWalk),
+  //   navState.walkHistoryIndices: lifecycle.js (setMyceliumMode / resetStateBeforeUrlRestore /
+  //                              dispatchNavTransition WALK_TO/BACKTRACK),
   //                              micro-demo.js (demo reset/focus)
   // journey.js and thread-inspector.js are HELPERS (transitional writers, not standalone owners).
   // event-bindings.js delegates to camera-controls/lifecycle and must not write directly.
   //
-  // Phase 2 note: camera-controls.js focusOnNode() writes navState.mode and navState.focusedIndex
-  // directly during the Phase 2 migration window. After Phase 2 lands those writes are redirected to
-  // dispatchNavTransition('FOCUS_NODE', ...). During Phase 2 the scan continues to allow
-  // camera-controls.js as a canonical writer; Phase 7 tightens the constraint.
-  //
-  // Phase 2 note: focusOnNode() writes navState.explorationHistoryIndices (distinct from
-  // walkHistoryIndices). It is currently only written by focusOnNode. Phase 2 must migrate it
-  // alongside mode/focusedIndex or clarify it is out-of-scope.
+  // Phase 2: focusOnNode() delegates navState.mode, navState.focusedIndex, and
+  // navState.explorationHistoryIndices to dispatchNavTransition('FOCUS_NODE', ...).
   'navState.mode': new Set([
-    'lifecycle.js', 'camera-controls.js', 'journey.js', 'thread-inspector.js',
+    'lifecycle.js', 'journey.js', 'thread-inspector.js',
     'search-state.js', 'micro-demo.js', 'loading-ui.js',
   ]),
   'navState.focusedIndex': new Set([
-    'lifecycle.js', 'camera-controls.js', 'search-state.js', 'micro-demo.js',
+    'lifecycle.js', 'search-state.js', 'micro-demo.js',
   ]),
-  'navState.explorationHistoryIndices': new Set(['camera-controls.js']), // Phase 2 migrates to FOCUS_NODE reducer
+  'navState.explorationHistoryIndices': new Set(['lifecycle.js']),
   'navState.trailNeighborIndices': new Set([
     'lifecycle.js', 'journey.js', 'search-state.js', 'micro-demo.js',
   ]),
@@ -472,7 +482,7 @@ const CANONICAL_WRITERS = {
     'lifecycle.js', 'journey.js', 'search-state.js', 'micro-demo.js',
   ]),
   'navState.walkHistoryIndices': new Set([
-    'lifecycle.js', 'journey.js', 'micro-demo.js',
+    'lifecycle.js', 'micro-demo.js',
   ]),
   // focusPocket* fields are owned exclusively by focus-pocket.js via clearFocusPocketIndices etc.
   // They are mutated internally and must not be written by other modules.
@@ -485,7 +495,7 @@ const CANONICAL_WRITERS = {
 const MODULES_DIR = join(PROJECT_ROOT, 'js', 'modules');
 const jsModules = [
   'event-bindings.js', 'journey.js', 'journey-compass-state.js',
-  'map-state.js', 'search-state.js', 'semantic-dive-ui.js',
+  'map-state.js', 'filter-state.js', 'search-state.js', 'semantic-dive-ui.js',
   'camera-controls.js', 'lifecycle.js', 'micro-demo.js', 'focus-pocket.js',
   'journey-compass.js', 'thread-inspector.js', 'loading-ui.js', 'ui-renderers.js',
 ];
@@ -586,7 +596,7 @@ const focusPocketFields = [
   'navState.focusPocketRoleByIndex',
   'navState.focusPocketAnimationFrameId',
 ];
-const fpViolations = [];
+let fpViolations = [];
 for (const field of focusPocketFields) {
   const canonicalSet = CANONICAL_WRITERS[field] || new Set();
   const mod = 'lifecycle.js';
@@ -594,27 +604,25 @@ for (const field of focusPocketFields) {
   try {
     const writers = scanWriters(modPath, field);
     const unexpected = writers.filter(w => !canonicalSet.has(mod));
-    if (unexpected.length > 0) {
-      fpViolations.push(`  lifecycle.js:2032 — state.${field.split('.')[1]} = new Map() (resetNodePositions)`);
-    }
+    fpViolations = fpViolations.concat(unexpected.map(w =>
+      `lifecycle.js:${w.lineno} — '${field}': ${w.text} (type:${w.type})`
+    ));
   } catch (e) {
     if (e.code === 'ENOENT') {}
     else throw e;
   }
 }
 
-if (fpViolations.length > 0) {
-  console.log('');
-  console.log('FAIL CONTRACT 14: navState.focusPocket* ownership violation detected');
-  console.log('  focusPocket fields must only be written by focus-pocket.js');
-  console.log('  Violations (runtime bugs, not contract errors):');
-  for (const v of fpViolations) console.log(`    ${v}`);
-  console.log('  Fix: resetNodePositions() in lifecycle.js must call focus-pocket.js helpers');
-  console.log('       instead of directly assigning navState.focusPocketRoleByIndex');
-  console.log('');
-} else {
-  console.log('PASS CONTRACT 14: focusPocket navState fields are only written by focus-pocket.js');
-}
+assert(fpViolations.length === 0,
+  `FAIL CONTRACT 14: navState.focusPocket* ownership violation — lifecycle.js writes focus-pocket fields outside the owner API.\n` +
+  `  focusPocket fields must only be written by focus-pocket.js via its owner helpers.\n` +
+  `  Violations:\n    ${fpViolations.join('\n    ')}\n` +
+  `  Fix: resetNodePositions() in lifecycle.js must call focus-pocket.js helpers\n` +
+  `       (clearFocusPocketIndices, clearFocusPocketMeta, clearFocusPocketRoleByIndex, clearFocusPocketMotionByIndex)\n` +
+  `       instead of directly assigning navState.focusPocketRoleByIndex or other focus-pocket state.`
+);
+
+console.log('PASS CONTRACT 14: focusPocket navState fields are only written by focus-pocket.js');
 
 // ─── Summary ───────────────────────────────────────────────────────────────────
 
@@ -624,15 +632,15 @@ console.log('');
 console.log('Ownership map:');
 console.log('  state.js             → raw fields (trailDepth as number, navState, etc.)');
 console.log('  lifecycle.js         → reset/orchestration + composition + navState.mode (primary)');
-console.log('                         navState.focusedIndex (reset)');
+console.log('                         dispatchNavTransition(FOCUS_NODE): navState.mode/focusedIndex/explorationHistoryIndices');
 console.log('                         navState.trailNeighborIndices/trailCursor/walkHistoryIndices (reset)');
-console.log('  camera-controls.js   → focusOnNode: focusedNode, selectedPoint, trailDepth,');
-console.log('                         navState.mode, navState.focusedIndex');
+console.log('  camera-controls.js   → focusOnNode: focusedNode, selectedPoint, trailDepth via lifecycle setter,');
+console.log('                         delegates navState/history to dispatchNavTransition(FOCUS_NODE)');
 console.log('  search-state.js      → filter-eviction clears focusedNode/selectedPoint');
 console.log('                         navState.mode/focusedIndex/trailNeighborIndices/trailCursor (clear)');
 console.log('  micro-demo.js        → demo focus: navState.mode/focusedIndex/trailNeighborIndices');
 console.log('                         trailCursor/walkHistoryIndices (demo reset/focus)');
-console.log('  journey.js          → walkThreadNeighbor: navState.mode="trail", walkHistoryIndices');
+console.log('  journey.js          → walkThreadNeighbor: navState.mode="trail"; walk history via dispatchNavTransition');
 console.log('                         buildThreadCandidates: trailNeighborIndices, trailCursor');
 console.log('  thread-inspector.js  → navState.mode="trail" during thread inspection');
 console.log('  focus-pocket.js     → navState.focusPocket* fields exclusively');

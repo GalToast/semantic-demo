@@ -9,7 +9,7 @@ let _clusterIndices = new Map();
 const LABEL_BUDGETS = {
     overview: { desktop: 8, mobile: 3 },
     search: { desktop: 5, mobile: 2 },
-    focus: { desktop: 4, mobile: 1 },
+    focus: { desktop: 1, mobile: 1 },
     inside: { desktop: 3, mobile: 1 }
 };
 

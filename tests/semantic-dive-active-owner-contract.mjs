@@ -37,10 +37,10 @@ function testRule1_LifecycleOwnsWindowAssignment() {
   const lc = getSource(LIFECYCLE);
   const jn = getSource(JOURNEY);
 
-  // lifecycle.js MUST assign window.setSemanticDiveMode
+  // lifecycle.js MUST assign the compatibility bridge to the canonical named export.
   assert(
-    /window\.setSemanticDiveMode\s*=\s*function\s*\(/.test(lc),
-    'lifecycle.js must assign window.setSemanticDiveMode'
+    /window\.setSemanticDiveMode\s*=\s*setSemanticDiveMode\s*;/.test(lc),
+    'lifecycle.js must assign window.setSemanticDiveMode to the canonical named export'
   );
 
   // journey.js must NOT assign window.setSemanticDiveMode
@@ -100,16 +100,21 @@ function testRule2_JourneyDelegateIsBackwardCompat() {
 }
 
 // ── OWNERSHIP RULE 3 ──────────────────────────────────────────────────────────
-// lifecycle.js window.setSemanticDiveMode must sync trailDepth with allowDiveExit
+// lifecycle.js setSemanticDiveMode must sync trailDepth with allowDiveExit
 // when deactivating (nextActive=false), to unblock the setTrailDepth guard.
 
 function testRule3_LifecycleHandlesAllowDiveExit() {
-  console.log('\n[Rule 3] lifecycle window.setSemanticDiveMode passes allowDiveExit on exit');
+  console.log('\n[Rule 3] lifecycle setSemanticDiveMode passes allowDiveExit on exit');
 
   const lc = getSource(LIFECYCLE);
 
   const hasAllowDiveExit = /allowDiveExit.*true/.test(lc);
   assert(hasAllowDiveExit, 'lifecycle.js must pass allowDiveExit: true when deactivating semanticDiveMode');
+  const implementationStart = lc.indexOf('export function setSemanticDiveMode');
+  const implementationEnd = lc.indexOf('\nfunction recomputeBloomIndices', implementationStart);
+  const implementationBody = lc.slice(implementationStart, implementationEnd);
+  assert(/(?<!window\.)setTrailDepth\s*\(/.test(implementationBody), 'lifecycle setSemanticDiveMode must call setTrailDepth directly');
+  assert(!/window\.setTrailDepth\s*\(/.test(implementationBody), 'lifecycle setSemanticDiveMode must not call its own trail-depth owner through window');
 
   console.log('  PASS — allowDiveExit guard is handled for depth 2 exit path');
 }

@@ -1,30 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { setupMockSearch } from './helpers/mock-semantic-search.js';
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
-
-const SEMANTIC_HEALTH_STUB = {
-  ok: true,
-  state: 'healthy',
-  provenance: { label: 'Search ready', detail: 'Semantic search is ready.' }
-};
-const SEARCH_STUB = {
-  ok: true,
-  count: 3,
-  results: [
-    { lead_id: 1, score: 0.99, semantic_score: 0.99, public_note: 'Coffee shop on Main St.' },
-    { lead_id: 2, score: 0.91, semantic_score: 0.91, public_note: 'Cafe near the park.' },
-    { lead_id: 20, score: 0.86, semantic_score: 0.86, public_note: 'Espresso bar downtown.' }
-  ]
-};
-
-async function setupMockSearch(page) {
-  await page.route('**/api.php?action=semantic_lane_health**', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEMANTIC_HEALTH_STUB) });
-  });
-  await page.route('**/api.php?action=semantic_search**', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEARCH_STUB) });
-  });
-}
 
 async function openApp(page) {
   await setupMockSearch(page);
@@ -331,7 +308,55 @@ test('desktop search → clear-search-btn resets from pre-focus state', async ({
   expect(urlAfter.searchParams.get('q'), 'q param must be removed after clear button').toBeNull();
 });
 
-// Test 4: semantic-dive reset also clears focus-panel overlap
+// Test 4: desktop: clear-search while already in focus mode resets to overview
+// Gap caught: clear-search-btn was only tested from pre-focus state (Test 3).
+// When the user is already in focus mode (after clicking a search result),
+// the results panel is gone and #search-clear-btn is hidden, but the search
+// input still carries the query. The clear-search handler (which the button
+// triggers) calls clearSearch() → resetExplorationFocus() which resets
+// navState.mode to 'overview' and clears focusedNode/selectedPoint.
+// This test calls window.clearSearch() directly (same handler the button
+// fires) and verifies the in-focus-to-overview reset path.
+test('desktop: clear-search resets from in-focus mode (not just pre-focus)', async ({ page }) => {
+  test.setTimeout(60000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openApp(page);
+
+  // Enter focus mode by clicking a search result
+  await enterFocusFromSearch(page);
+
+  // Verify we are in focus mode with a selected point
+  const preClear = await probe(page);
+  expect(preClear.state.navMode, 'navMode must be focus before clear').toBe('focus');
+  expect(preClear.state.focusedNode, 'focusedNode must be set before clear').not.toBeNull();
+  expect(preClear.state.selectedPoint, 'selectedPoint must be set before clear').not.toBeNull();
+  expect(preClear.body.panelSurface, 'panelSurface must be focus-search before clear').toBe('focus-search');
+
+  // The #search-clear-btn is hidden in focus mode (results panel replaced by
+  // focus detail panel, so .search-container.has-query is not set). Call
+  // clearSearch() directly — same handler the button triggers.
+  await page.evaluate(() => window.clearSearch());
+
+  await page.waitForFunction(() =>
+    window.state?.navState?.mode === 'overview' &&
+    window.state?.focusedNode === null,
+    { timeout: 15000 }
+  );
+
+  const after = await probe(page);
+  expect(after.inputValue, 'search input must be empty after clear from focus mode').toBe('');
+  expect(after.state.navMode, 'navMode must be overview after clear from focus').toBe('overview');
+  expect(after.state.focusedNode, 'focusedNode must be null after clear from focus').toBeNull();
+  expect(after.state.selectedPoint, 'selectedPoint must be null after clear from focus').toBeNull();
+  expect(after.body.panelSurface, 'panelSurface must be idle after clear from focus').toBe('idle');
+
+  const urlAfter = new URL(after.url);
+  expect(urlAfter.searchParams.get('q'), 'q param must be removed after clear from focus').toBeNull();
+
+  expect(urlAfter.searchParams.get('record'), 'record URL param must be removed after clear from focus').toBeNull();
+});
+
+// Test 5: semantic-dive reset also clears focus-panel overlap
 test('semantic-dive reset also clears focus-panel overlap', async ({ page }) => {
   test.setTimeout(90000);
   await page.setViewportSize({ width: 1440, height: 900 });

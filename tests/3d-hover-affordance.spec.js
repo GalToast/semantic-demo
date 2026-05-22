@@ -160,4 +160,101 @@ test.describe('3D node hover affordance', () => {
       'mobile hoverHighlightIndex must be valid').toBe(true);
     expect(hoverState.canvasCursor, 'mobile canvas cursor should be pointer').toBe('pointer');
   });
+
+  test('desktop: rapid mouse movements keep hover state valid and cursor accurate', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 1440, height: 900 });
+
+    const candidates = await projectedCanvasCandidates(page);
+    expect(candidates.length, 'need multiple candidates for rapid-move test').toBeGreaterThan(1);
+
+    let first = null;
+    let second = null;
+    for (const candidate of candidates) {
+      await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 4 });
+      await page.waitForTimeout(160);
+      const resolved = await getHoverState(page);
+      if (!isValidNodeIndex(resolved.hoverHighlightIndex, resolved.pointCount)) continue;
+      const resolvedCandidate = { ...candidate, resolvedIndex: resolved.hoverHighlightIndex };
+      if (!first) {
+        first = resolvedCandidate;
+      } else if (resolvedCandidate.resolvedIndex !== first.resolvedIndex) {
+        second = resolvedCandidate;
+        break;
+      }
+    }
+    expect(first, 'first resolved hover target must exist').not.toBeNull();
+    expect(second, 'second distinct resolved hover target must exist').not.toBeNull();
+
+    await page.mouse.move(first.screenX, first.screenY, { steps: 1 });
+    await page.waitForTimeout(40);
+    await page.mouse.move(second.screenX, second.screenY, { steps: 1 });
+    await page.waitForFunction((expectedIndex) => {
+      const hover = window.state?.hoverHighlightIndex;
+      return hover === expectedIndex;
+    }, second.resolvedIndex, { timeout: 2000 });
+
+    const state = await getHoverState(page);
+    expect(state.hoverHighlightIndex, 'rapid move should settle on the last hovered node, not stale first node').toBe(second.resolvedIndex);
+    expect(state.hoverHighlightIndex, 'rapid move must not leave stale first hover selected').not.toBe(first.resolvedIndex);
+    expect(state.canvasCursor, 'cursor should be pointer after final hover').toBe('pointer');
+  });
+
+  test('desktop: stale hover state from rapid move clears cleanly without focus corruption', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 1440, height: 900 });
+
+    // First establish a solid hover on one node
+    const candidates = await projectedCanvasCandidates(page);
+    expect(candidates.length, 'need candidates for stale-state test').toBeGreaterThan(0);
+
+    const first = candidates[0];
+    await page.mouse.move(first.screenX, first.screenY, { steps: 4 });
+    await page.waitForTimeout(200);
+
+    const initial = await getHoverState(page);
+    expect(isValidNodeIndex(initial.hoverHighlightIndex, initial.pointCount), 'initial hover must be valid').toBe(true);
+
+    // Rapid-move away — simulates losing hover before state update propagates
+    await page.mouse.move(16, 16, { steps: 1 });
+    await page.waitForTimeout(20); // intentionally too short for full hover settle
+
+    const mid = await getHoverState(page);
+    const midValid = isValidNodeIndex(mid.hoverHighlightIndex, mid.pointCount);
+    const midCleared = mid.hoverHighlightIndex === -1 || mid.hoverHighlightIndex === null;
+
+    // Intermediate state is allowed to be mid-transition; just ensure it's not garbage
+    expect(midValid || midCleared, `mid-hover must be valid or cleared, got ${mid.hoverHighlightIndex}`).toBe(true);
+
+    // Wait for full settle
+    await page.waitForTimeout(500);
+
+    const settled = await getHoverState(page);
+    const settledCleared = settled.hoverHighlightIndex === -1 || settled.hoverHighlightIndex === null;
+    expect(settledCleared, `settled hover should be null/-1 after move-away, got ${settled.hoverHighlightIndex}`).toBe(true);
+    expect(settled.canvasCursor, 'cursor should not be pointer after hover clears').not.toBe('pointer');
+
+    // Focus must NOT be corrupted by the stale hover event
+    expect(settled.focusedNode, 'stale hover must not create focus').toBeNull();
+  });
+
+  test('mobile portrait: rapid hover movements keep state valid without cascading errors', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 390, height: 844 });
+
+    const candidates = await projectedCanvasCandidates(page);
+    expect(candidates.length, 'need candidates for mobile rapid-move test').toBeGreaterThan(0);
+
+    // Rapid movement across candidates
+    for (const candidate of candidates.slice(0, 4)) {
+      await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 2 });
+    }
+    await page.waitForTimeout(80);
+
+    const state = await getHoverState(page);
+    const valid = isValidNodeIndex(state.hoverHighlightIndex, state.pointCount);
+    const cleared = state.hoverHighlightIndex === -1 || state.hoverHighlightIndex === null;
+    expect(valid || cleared, `mobile hover state must be valid or cleared, got ${state.hoverHighlightIndex}`).toBe(true);
+    expect(state.pointCount, 'pointCount must still be valid after rapid moves').toBeGreaterThan(0);
+  });
 });

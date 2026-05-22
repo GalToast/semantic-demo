@@ -256,14 +256,18 @@ await test('setMyceliumMode source calls recomputeBloomIndices for bloom mode', 
   assert(hasBridgeRecompute, 'setMyceliumMode calls recomputeBridgeIndices for bridge');
 });
 
-// Contract 6: setMyceliumMode calls window.applyPointFilterColors and window.updateExplorationUi
-await test('setMyceliumMode source calls window.applyPointFilterColors and window.updateExplorationUi', async () => {
+// Contract 6: setMyceliumMode calls direct owner imports instead of window UI bridges
+await test('setMyceliumMode source calls direct applyPointFilterColors and updateExplorationUi owners', async () => {
   const { readFileSync } = await import('node:fs');
   const src = readFileSync('js/modules/lifecycle.js', 'utf8');
-  const hasApplyColors = /window\.applyPointFilterColors\s*\(/.test(src);
-  const hasUpdateExplorationUi = /window\.updateExplorationUi\s*\(/.test(src);
-  assert(hasApplyColors, 'setMyceliumMode calls window.applyPointFilterColors');
-  assert(hasUpdateExplorationUi, 'setMyceliumMode calls window.updateExplorationUi');
+  const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
+  const importsApplyColors = /import\s*\{[\s\S]*?applyPointFilterColors[\s\S]*?\}\s*from\s*['"]\.\/journey\.js['"]/.test(src);
+  const hasApplyColors = /(?<!window\.)applyPointFilterColors\s*\(/.test(setMyceliumModeBody);
+  const hasUpdateExplorationUi = /(?<!window\.)updateExplorationUi\s*\(/.test(setMyceliumModeBody);
+  assert(importsApplyColors, 'lifecycle imports applyPointFilterColors from journey owner');
+  assert(hasApplyColors, 'setMyceliumMode calls direct applyPointFilterColors owner');
+  assert(hasUpdateExplorationUi, 'setMyceliumMode calls direct updateExplorationUi owner');
+  assert(!/window\.(applyPointFilterColors|updateExplorationUi)\s*\(/.test(setMyceliumModeBody), 'setMyceliumMode avoids window UI bridge calls');
 });
 
 // Contract 7: applyStoryPrompt resets activeFilters and activeClusterFilter
@@ -276,38 +280,46 @@ await test('applyStoryPrompt source resets activeFilters and activeClusterFilter
   assert(hasClusterReset, 'applyStoryPrompt resets activeClusterFilter to null');
 });
 
-// Contract 8: setMyceliumMode('trail') calls window.setTrailDepth(1, ...)
-await test('setMyceliumMode(\'trail\') source calls window.setTrailDepth(1, ...)', async () => {
+// Contract 8: setMyceliumMode('trail') calls the direct trailDepth owner
+await test('setMyceliumMode(\'trail\') source calls direct setTrailDepth(1, ...)', async () => {
   const { readFileSync } = await import('node:fs');
   const src = readFileSync('js/modules/lifecycle.js', 'utf8');
-  const hasTrailDepth1 = /mode\s*===\s*['"]trail['"][\s\S]*?setTrailDepth\s*\(\s*1\s*,/.test(src);
-  assert(hasTrailDepth1, 'setMyceliumMode with trail mode calls setTrailDepth(1, ...)');
+  const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
+  const hasTrailDepth1 = /mode\s*===\s*['"]trail['"][\s\S]*?(?<!window\.)setTrailDepth\s*\(\s*1\s*,/.test(setMyceliumModeBody);
+  assert(hasTrailDepth1, 'setMyceliumMode with trail mode calls direct setTrailDepth(1, ...)');
+  assert(!/window\.setTrailDepth\s*\(/.test(setMyceliumModeBody), 'setMyceliumMode avoids the window.setTrailDepth bridge');
 });
 
-// Contract 9: setMyceliumMode('inside') calls window.setTrailDepth(2, { fromUserGesture: true })
-await test('setMyceliumMode(\'inside\') source calls window.setTrailDepth(2, { fromUserGesture: true })', async () => {
+// Contract 9: setMyceliumMode('inside') calls the direct trailDepth owner
+await test('setMyceliumMode(\'inside\') source calls direct setTrailDepth(2, { fromUserGesture: true })', async () => {
   const { readFileSync } = await import('node:fs');
   const src = readFileSync('js/modules/lifecycle.js', 'utf8');
-  const hasTrailDepth2 = /mode\s*===\s*['"]inside['"][\s\S]*?setTrailDepth\s*\(\s*2\s*,[\s\S]*?fromUserGesture:\s*true/.test(src);
-  assert(hasTrailDepth2, 'setMyceliumMode with inside mode calls setTrailDepth(2, { fromUserGesture: true })');
+  const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
+  const hasTrailDepth2 = /mode\s*===\s*['"]inside['"][\s\S]*?(?<!window\.)setTrailDepth\s*\(\s*2\s*,[\s\S]*?fromUserGesture:\s*true/.test(setMyceliumModeBody);
+  assert(hasTrailDepth2, 'setMyceliumMode with inside mode calls direct setTrailDepth(2, { fromUserGesture: true })');
+  assert(!/window\.setTrailDepth\s*\(/.test(setMyceliumModeBody), 'setMyceliumMode avoids the window.setTrailDepth bridge');
 });
 
-// Contract 10: setMyceliumMode calls window.updateUrlState (with reason: 'mode')
-await test('setMyceliumMode source calls window.updateUrlState with reason: \'mode\'', async () => {
+// Contract 10: setMyceliumMode calls direct updateUrlState (with reason: 'mode')
+await test('setMyceliumMode source calls direct updateUrlState with reason: \'mode\'', async () => {
   const { readFileSync } = await import('node:fs');
   const src = readFileSync('js/modules/lifecycle.js', 'utf8');
-  const hasUrlSync = /updateUrlState\s*\(\s*\{\}\s*,\s*\{\s*reason:\s*['"]mode['"]\s*\}\s*\)/.test(src);
-  assert(hasUrlSync, 'setMyceliumMode calls updateUrlState with reason: mode');
+  const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
+  const hasUrlSync = /(?<!window\.)updateUrlState\s*\(\s*\{\}\s*,\s*\{\s*reason:\s*['"]mode['"]\s*\}\s*\)/.test(setMyceliumModeBody);
+  assert(hasUrlSync, 'setMyceliumMode calls direct updateUrlState with reason: mode');
+  assert(!/window\.updateUrlState\s*\(/.test(setMyceliumModeBody), 'setMyceliumMode avoids the window.updateUrlState bridge');
 });
 
 // Contract 11: applyStoryPrompt refreshes filter controls and reapplies filters
 await test('applyStoryPrompt source refreshes filters after story prompt changes', async () => {
   const { readFileSync } = await import('node:fs');
   const src = readFileSync('js/modules/lifecycle.js', 'utf8');
-  const hasSyncFilters = /syncFilterControls\s*\(/.test(src);
-  const hasApplyFilters = /window\.applyFilters\s*\(/.test(src);
+  const applyStoryPromptBody = src.match(/export function applyStoryPrompt\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
+  const hasSyncFilters = /syncFilterControls\s*\(/.test(applyStoryPromptBody);
+  const hasApplyFilters = /(?<!window\.)applyFilters\s*\(/.test(applyStoryPromptBody);
   assert(hasSyncFilters, 'applyStoryPrompt calls syncFilterControls');
-  assert(hasApplyFilters, 'applyStoryPrompt calls window.applyFilters');
+  assert(hasApplyFilters, 'applyStoryPrompt calls direct applyFilters owner');
+  assert(!/window\.applyFilters\s*\(/.test(applyStoryPromptBody), 'applyStoryPrompt avoids window.applyFilters bridge');
 });
 
 // Contract 12: recomputeBloomIndices source exists and references bloomIndices

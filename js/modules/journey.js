@@ -36,7 +36,7 @@ import {
     setActiveSearchResultRow,
 } from './ui-renderers.js';
 import { focusOnNode } from './camera-controls.js';
-import { refreshCompositionState } from './lifecycle.js';
+import { refreshCompositionState, dispatchNavTransition } from './lifecycle.js';
 import { setFocusPocketMeta } from './focus-pocket.js';
 
 export {
@@ -591,14 +591,9 @@ export function walkThreadNeighbor(index, options = {}) {
     state.pinnedThreadIndex = null;
     state.inspectedThreadIndex = index;
     setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason });
-    if (!options.restoreHistory) {
-        const history = [...(state.navState.walkHistoryIndices || [])];
-        if (Number.isFinite(fromIndex) && history[history.length - 1] !== fromIndex) history.push(fromIndex);
-        if (history[history.length - 1] !== index) history.push(index);
-        state.navState.walkHistoryIndices = history;
-    } else if (!Array.isArray(state.navState.walkHistoryIndices)) {
-        state.navState.walkHistoryIndices = Number.isFinite(index) ? [index] : [];
-    }
+    // navTransitionReducer owns walkHistoryIndices for WALK_TO traversal.
+    // The traversal engine below retains camera, focus pocket, strand, and URL side effects.
+    dispatchNavTransition('WALK_TO', { index, fromIndex, appendHistory: !options.restoreHistory });
     if (Number.isFinite(state.strandContinuityState.arrivalTimeoutId)) {
         clearTimeout(state.strandContinuityState.arrivalTimeoutId);
         state.strandContinuityState.arrivalTimeoutId = undefined;
@@ -1027,7 +1022,8 @@ export function traverseNeighbor(step) {
         if ((state.navState.walkHistoryIndices || []).length <= 1) return;
         const previousIndex = state.navState.walkHistoryIndices?.[state.navState.walkHistoryIndices.length - 2];
         if (!Number.isFinite(previousIndex)) return;
-        state.navState.walkHistoryIndices = state.navState.walkHistoryIndices.slice(0, -1);
+        // navTransitionReducer owns walkHistoryIndices pop for BACKTRACK.
+        dispatchNavTransition('BACKTRACK', { step: -1, fromIndex: currentIndex, targetIndex: previousIndex, restoreHistory: true });
         walkThreadNeighbor(previousIndex, {
             fromIndex: currentIndex,
             restoreHistory: true,
@@ -2911,7 +2907,11 @@ function updateWalkBreadcrumb(hasFocus = false) {
             const targetIndex = Number(chip.dataset.walkIndex);
             const targetOrder = Number(chip.dataset.walkOrder);
             if (!Number.isFinite(targetIndex) || !Number.isFinite(targetOrder)) return;
-            state.navState.walkHistoryIndices = history.slice(0, targetOrder + 1);
+            dispatchNavTransition('WALK_TO', {
+                index: targetIndex,
+                restoreHistoryIndices: history.slice(0, targetOrder + 1),
+                appendHistory: false
+            });
             focusOnNode(targetIndex, {
                 fromTraversal: true,
                 restoreHistory: true,

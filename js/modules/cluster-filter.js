@@ -1,5 +1,6 @@
 import { state } from '../state.js';
 import { normalizeCityForFilter, describeCluster, escapeHtml } from '../utils.js';
+import { resetActiveFilters, setActiveFilter } from './filter-state.js';
 
 function pointMatchesActiveFilters(point) {
     if (!point) return false;
@@ -39,13 +40,7 @@ export function setClusterFilter(cluster) {
 }
 
 export function clearClusterFilter() {
-    state.activeFilters = {
-        status: 'all',
-        city: 'all',
-        website: false,
-        email: false,
-        geocoded: false
-    };
+    resetActiveFilters();
     setClusterFilter(null);
     if (typeof window.updateUrlState === 'function') window.updateUrlState({}, { reason: 'cluster-filter-clear' });
 }
@@ -161,7 +156,7 @@ export function populateCityFilter() {
             ...cities.map(([city, count]) => `<option value="${escapeHtml(city)}">${escapeHtml(city)} (${count.toLocaleString()})</option>`)
         ].join('');
         select.value = cities.some(([city]) => city === current) ? current : 'all';
-        state.activeFilters.city = select.value;
+        setActiveFilter('city', select.value);
     }
 
     if (pills) {

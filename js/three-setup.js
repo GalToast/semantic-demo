@@ -2181,6 +2181,10 @@ export function animate() {
                 if (window.applyFocusPocketBreathing(frameNow, state.nodePositions)) {
                     state.focusPocketMotionByIndex.forEach((_, idx) => {
                         setNodeSporeInstanceMatrix(idx);
+                        // Keep hit-proxy aligned with visual spore for focus-pocket nodes during breathing
+                        if (state.nodeSporeHitMesh && state.navState.focusPocketIndices?.includes(idx)) {
+                            setNodeSporeInstanceMatrix(idx, state.nodeSporeHitMesh);
+                        }
                     });
                     anyNodeMoved = true;
                 }
@@ -2208,13 +2212,18 @@ export function animate() {
             }
         }
 
+        // --- Ghost graph: global point cloud becomes faint context in focus modes ---
         if (state.pointsMaterial) {
-            const focusSceneActive = Number.isFinite(state.focusedNode);
-            const focusPointOpacityScale = focusSceneActive ? 0.018 : 1.0;
-            const focusPointSizeScale = focusSceneActive ? 0.44 : 1.0;
-            state.pointsMesh.visible = !focusSceneActive;
-            state.pointsMaterial.opacity = state.POINTS_MATERIAL_BASE_OPACITY * SCENE_ATMOSPHERE.pointOpacityScale * pointsRevealProgress * focusPointOpacityScale;
-            state.pointsMaterial.size = state.POINTS_MATERIAL_BASE_SIZE * (1.06 + pointsRevealProgress * 0.46) * focusPointSizeScale;
+            const isFocused = Number.isFinite(state.focusedNode);
+            const isSemanticDive = state.trailDepth >= 2;
+            // trailDepth 2 (semantic-dive): full suppression; trailDepth 1 (focus): ghost layer at 0.06
+            const pointsOpacityScale = isFocused
+                ? (isSemanticDive ? 0.0 : 0.06)
+                : 1.0;
+            const pointsSizeScale = isFocused ? 0.44 : 1.0;
+            state.pointsMesh.visible = pointsOpacityScale > 0;
+            state.pointsMaterial.opacity = state.POINTS_MATERIAL_BASE_OPACITY * SCENE_ATMOSPHERE.pointOpacityScale * pointsRevealProgress * pointsOpacityScale;
+            state.pointsMaterial.size = state.POINTS_MATERIAL_BASE_SIZE * (1.06 + pointsRevealProgress * 0.46) * pointsSizeScale;
             if (state.pointsMaterial.userData.shader) {
                 state.pointsMaterial.userData.shader.uniforms.uRevealProgress.value = pointsRevealProgress;
             }
