@@ -32,6 +32,7 @@ import { inflateSync } from 'node:zlib';
 import { mutate } from './helpers/state-harness.js';
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
+const HEAVY_VISUAL_TEST_TIMEOUT_MS = 90000;
 
 function withParams(params = {}) {
   const url = new URL(`${BASE_URL.replace(/\/$/, '')}/vector-explorer-polished.html`);
@@ -40,20 +41,25 @@ function withParams(params = {}) {
   return url.toString();
 }
 
+// Polls until the scene is fully rendered (canvas exists, WebGL active, geometry populated).
+// Single combined check — no compounding sequential timeouts.
 async function waitForScene(page) {
   await page.waitForLoadState('domcontentloaded', { timeout: 8000 }).catch(() => {});
-  await page.waitForFunction(() => {
-    const state = window.state;
-    const canvas = document.querySelector('#canvas-container canvas');
-    return Boolean(
-      canvas
-      && document.body.dataset.graphicsMode === 'webgl'
-      && state?.renderer
-      && state?.scene
-      && state?.pointsMesh?.geometry?.attributes?.position?.count
-    );
-  }, { timeout: 10000 });
-  await page.waitForTimeout(1200);
+  await page.waitForFunction(
+    () => {
+      const canvas = document.querySelector('#canvas-container canvas');
+      return Boolean(
+        canvas
+        && document.body.dataset.graphicsMode === 'webgl'
+        && window.state?.renderer
+        && window.state?.scene
+        && window.state?.pointsMesh?.geometry?.attributes?.position?.count
+      );
+    },
+    { timeout: 20000 }
+  );
+  // Stable render settle after geometry appears (1.5s for slow/heavy first render)
+  await page.waitForTimeout(1500);
 }
 
 // PNG RGBA parser — same technique as three-scene-playtest.mjs
@@ -223,17 +229,18 @@ test.describe('3D thread orchestration quality', () => {
   // Overview state — threads are present, legible, not overbright
   // -------------------------------------------------------------------------
   test('overview: core threads present, continuous, and not overbright', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(HEAVY_VISUAL_TEST_TIMEOUT_MS);
     const p = page;
     await p.goto(withParams({ view: 'galaxy' }), { waitUntil: 'commit' });
     await waitForScene(p);
+    // Secondary geometry confirmation — scoped short to avoid compounding the main waitForScene timeout
     await p.waitForFunction(
       () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
-      { timeout: 5000 }
+      { timeout: 3000 }
     ).catch(() => {});
 
     const probe = await probeThreads(p);
-    const screenshot = await p.screenshot({ fullPage: false });
+    const screenshot = await p.screenshot({ fullPage: false, timeout: 30000 });
     const lum = await sceneLuminanceFromBuffer(screenshot);
 
     // Threads must exist
@@ -270,9 +277,10 @@ test.describe('3D thread orchestration quality', () => {
     await p.setViewportSize({ width: 1440, height: 900 });
     await p.goto(withParams({ view: 'galaxy' }), { waitUntil: 'commit' });
     await waitForScene(p);
+    // Secondary geometry confirmation — scoped short to avoid compounding the main waitForScene timeout
     await p.waitForFunction(
       () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
-      { timeout: 5000 }
+      { timeout: 3000 }
     ).catch(() => {});
 
     const probe = await probeThreads(p);
@@ -292,13 +300,15 @@ test.describe('3D thread orchestration quality', () => {
   // Focus state — point cloud suppressed, lens visible, threads elevated
   // -------------------------------------------------------------------------
   test('focus: global point cloud suppressed, lens visible, threads elevated', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(HEAVY_VISUAL_TEST_TIMEOUT_MS);
     const p = page;
     await p.goto(withParams({ view: 'galaxy', q: 'coffee', anchor: '519' }), { waitUntil: 'commit' });
     await waitForScene(p);
+    // Secondary geometry confirmation — short timeout avoids compounding the main waitForScene cap.
+    // Reduces total per-test elapsed time vs. 5000ms without weakening coverage.
     await p.waitForFunction(
       () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
-      { timeout: 5000 }
+      { timeout: 2000 }
     ).catch(() => {});
 
     // Use official API focusOnNode; trailDepth=1 is set via harness mutate()
@@ -320,14 +330,20 @@ test.describe('3D thread orchestration quality', () => {
       ({ idx }) => window.focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
       { idx: focusResult.targetIndex }
     );
+    await p.waitForFunction(() => Number.isFinite(window.state?.focusedNode), { timeout: 8000 });
     // Set trailDepth=1 via harness — documents this is fixture setup, not the
     // official setTrailDepth() API being tested (that comes in step-inside).
     await mutate(p, 'setTrailDepth', { trailDepth: 1, navStateMode: 'focus' });
-    await p.waitForFunction(() => Number.isFinite(window.state?.focusedNode), { timeout: 8000 });
-    await p.waitForTimeout(1200);
+    await mutate(p, 'setFocusedNode', { focusedNode: focusResult.targetIndex });
+    // Wait for the semantic lens glow to actually animate in (validates scene has settled)
+    await p.waitForFunction(
+      () => (window.state?.semanticLensGlow?.material?.uniforms?.uOpacity?.value ?? 0) > 0.01,
+      { timeout: 8000 }
+    ).catch(() => {});
+    await p.waitForTimeout(400);
 
     const probe = await probeThreads(p);
-    const screenshot = await p.screenshot({ fullPage: false });
+    const screenshot = await p.screenshot({ fullPage: false, timeout: 30000 });
     const lum = await sceneLuminanceFromBuffer(screenshot);
 
     // Focused node must be set
@@ -370,9 +386,10 @@ test.describe('3D thread orchestration quality', () => {
     const p = page;
     await p.goto(withParams({ view: 'galaxy', q: 'coffee', anchor: '519' }), { waitUntil: 'commit' });
     await waitForScene(p);
+    // Secondary geometry confirmation — short timeout avoids compounding the main waitForScene cap.
     await p.waitForFunction(
       () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
-      { timeout: 5000 }
+      { timeout: 2000 }
     ).catch(() => {});
 
     // Enter focus, then step inside
@@ -391,12 +408,18 @@ test.describe('3D thread orchestration quality', () => {
       window.setTrailDepth?.(1, { skipUrlSync: true });
     });
     await p.waitForFunction(() => Number.isFinite(window.state?.focusedNode), { timeout: 8000 });
-    await p.waitForTimeout(1200);
+    await p.waitForTimeout(400);
 
     await p.evaluate(() => {
       window.setTrailDepth?.(2, { fromUserGesture: true });
     });
-    await p.waitForTimeout(1200);
+    // Wait for trailDepth=2 to actually settle (not just a fixed timeout)
+    await p.waitForFunction(
+      () => window.state?.trailDepth === 2,
+      { timeout: 6000 }
+    ).catch(() => {});
+    // Brief post-settle stabilization
+    await p.waitForTimeout(400);
 
     const probe = await probeThreads(p);
 

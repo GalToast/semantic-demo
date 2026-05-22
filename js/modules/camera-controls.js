@@ -133,7 +133,7 @@ export function getCanvasUnobstructedRegion() {
     for (const selector of panels) {
         try {
             for (const el of body.querySelectorAll(selector)) {
-                const styles = getComputedStyle(el);
+                const styles = window.getComputedStyle(el);
                 if (styles.display === 'none' || styles.visibility === 'hidden' || parseFloat(styles.opacity) === 0) continue;
                 const rect = el.getBoundingClientRect();
                 if (rect.width < 20 || rect.height < 20) continue;
@@ -834,7 +834,6 @@ export function animateCameraToTerrainPrelude(options = {}) {
     const duration = prefersReducedMotion ? 1 : (options.duration || (state.MAP_HANDOFF_PRELUDE_MS || 1200));
 
     // Show "Preparing terrain..." progress overlay during the prelude
-    let preludeOverlay = null;
     if (typeof window.showTerrainPreludeOverlay === 'function') {
         window.showTerrainPreludeOverlay();
     }
@@ -883,8 +882,8 @@ export function animateCameraToTerrainPrelude(options = {}) {
             }
         }
         requestAnimationFrame(step);
-    } catch (err) {
-        console.warn('animateCameraToTerrainPrelude failed:', err);
+    } catch (_err) {
+        console.warn('animateCameraToTerrainPrelude failed:', _err);
     } finally {
         // Remove the prelude overlay when the animation completes (or on error)
         if (typeof window.hideTerrainPreludeOverlay === 'function') {

@@ -687,15 +687,6 @@
         overflow: hidden;
     }
 
-    html body[data-panel-surface="focus"] .focus-stage,
-    html body[data-panel-surface="focus-search"] .focus-stage,
-    html body[data-panel-surface="semantic-dive"] .focus-stage {
-        left: 10px;
-        right: 10px;
-        bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-        z-index: 130;
-    }
-
     html body[data-panel-surface="focus"] .focus-stage-card,
     html body[data-panel-surface="focus-search"] .focus-stage-card,
     html body[data-panel-surface="semantic-dive"] .focus-stage-card {
@@ -1319,8 +1310,9 @@ html body[data-panel-surface="focus-search"] .controls {
     right: calc(min(392px, calc(100vw - 32px)) + 28px);
     bottom: 16px;
     z-index: 1200;
-    opacity: 1;
-    pointer-events: auto;
+    display: none;
+    opacity: 0;
+    pointer-events: none;
     transform: none;
 }
 
@@ -2280,6 +2272,13 @@ html body[data-active-view="map"] .mode-grid .mode-chip.active {
     html body[data-panel-surface="focus-search"] .share-toggle,
     html body[data-panel-surface="semantic-dive"] .share-toggle {
         display: none;
+        pointer-events: none;
+    }
+
+    html body[data-panel-surface="focus-search"] .search-container:not(.has-query) .search-input-wrapper,
+    html body[data-panel-surface="focus-search"] .search-container:not(.has-query) #search-input.search-input {
+        display: none;
+        visibility: hidden;
         pointer-events: none;
     }
 

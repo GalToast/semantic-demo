@@ -33,7 +33,6 @@ import {
     renderSelectedMetaStrip,
     renderSelectedMatchPanel,
     renderSelectedActionRow,
-    setActiveSearchResultRow,
 } from './ui-renderers.js';
 import { focusOnNode } from './camera-controls.js';
 import { refreshCompositionState, dispatchNavTransition } from './lifecycle.js';
@@ -604,7 +603,7 @@ export function walkThreadNeighbor(index, options = {}) {
     }
     renderThreadInspection(index, { force: true, surface: options.surface || 'walk' });
     state.navState.lastTraversalReason = reason;
-    state.navState.mode = 'trail';
+    // WALK_TO above sets trail mode canonically inside the navTransitionReducer.
     const preserveNeighborhood =
         state.currentView === 'galaxy' && isBoundedNeighborhoodActive() && !options.expandNeighborhood;
     if (state.currentView === 'map') {
@@ -1054,16 +1053,7 @@ export function traverseNeighbor(step) {
     });
 }
 
-// --- Semantic Dive Mode ---
-
-function syncSemanticDiveCompositionState(reason = 'semantic-dive') {
-    if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
-    refreshCompositionState();
-    if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
-    if (typeof window.updateUrlState === 'function') {
-        window.updateUrlState({}, { reason });
-    }
-}
+// --- Bounded Neighborhood Explored ---
 
 /**
  * Backward-compatible delegating alias for semantic-dive mode.
@@ -2669,7 +2659,25 @@ export function ensureCanvasNodeInteractionBindings() {
     const walkCanvasThreadFromPointerEvent = (event) => {
         if (state.currentView !== 'galaxy' || !Number.isFinite(state.navState.focusedIndex)) return false;
         let candidate = null;
-        if (document.body.dataset.threadInspectSurface === 'canvas' && Number.isFinite(state.inspectedThreadIndex)) {
+        const stable = state.stableCanvasHover;
+        const stableIsThreadNeighbor = stable
+            && Number.isFinite(stable.index)
+            && stable.index !== state.navState.focusedIndex
+            && isPointVisible(stable.index, state.points, null, state.activeFilters)
+            && (state.navState.threadCandidates || []).some((item) => item && item.index === stable.index);
+        if (stableIsThreadNeighbor) {
+            const stableDistance = Math.hypot((stable.screenX ?? event.clientX) - event.clientX, (stable.screenY ?? event.clientY) - event.clientY);
+            if (stableDistance <= 96) {
+                const threadCandidate = (state.navState.threadCandidates || []).find((item) => item && item.index === stable.index);
+                candidate = {
+                    ...threadCandidate,
+                    ...stable,
+                    reason: threadCandidate?.reason || stable.reason || 'hovered 3D related node',
+                    source: stable.source || 'stable-hover'
+                };
+            }
+        }
+        if (!candidate && document.body.dataset.threadInspectSurface === 'canvas' && Number.isFinite(state.inspectedThreadIndex)) {
             candidate = (state.navState.threadCandidates || []).find((item) => item && item.index === state.inspectedThreadIndex)
                 || { index: state.inspectedThreadIndex, reason: 'inspected 3D related node' };
         }

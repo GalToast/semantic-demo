@@ -644,7 +644,7 @@ export function restoreSearchResultPreview(resultIndices, fallbackIndex = null) 
 }
 
 // === Clear short semantic search state ===
-export function clearShortSemanticSearchState(resultsEl, statusEl) {
+export function clearShortSemanticSearchState(_resultsEl, _statusEl) {
     if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
     state.currentSearchSummary = null;
     setSearchPanelState({ searching: false, focusing: false, resultsRendered: false, degraded: false });
@@ -781,7 +781,7 @@ export function updateSemanticSearchRetryState({ statusEl, trimmedQuery, attempt
         : `Semantic search is reconnecting for "${trimmedQuery}"... retry ${nextAttempt} starts in ${retryDelayLabel}.`;
 }
 
-export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQuery, error) {
+export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQuery, _error) {
     resultsEl.classList.remove('searching');
     
     // 10/10 Polish: Toggle search spinner

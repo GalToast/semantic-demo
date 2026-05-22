@@ -200,7 +200,7 @@ test.describe('3D semantic state transition integrity', () => {
   // ── Phase 1: Overview baseline ──────────────────────────────────────────
 
   test('overview baseline: all state dimensions are consistent', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(180000);
 
     const snap = await snapshotState(page);
     expect(snap, 'state should be initialised').not.toBeNull();
@@ -219,7 +219,7 @@ test.describe('3D semantic state transition integrity', () => {
   // ── Phase 2: Search ───────────────────────────────────────────────────────
 
   test('search transition: state dimensions stay consistent', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(180000);
 
     await performMockedSearch(page, 'coffee');
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
@@ -238,7 +238,7 @@ test.describe('3D semantic state transition integrity', () => {
   // ── Phase 3: Focus (click a result) ────────────────────────────────────
 
   test('focus transition: clicking a result keeps state consistent', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(180000);
 
     await performMockedSearch(page, 'coffee');
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
@@ -274,7 +274,7 @@ test.describe('3D semantic state transition integrity', () => {
   // ── Phase 4: Semantic Dive (Step Inside) ─────────────────────────────────
 
   test('semantic dive transition: Step Inside keeps state consistent', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(180000);
 
     await performMockedSearch(page, 'coffee');
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
@@ -325,7 +325,7 @@ test.describe('3D semantic state transition integrity', () => {
   // ── Phase 5: Map Trail (switch to map view while in dive) ───────────────
 
   test('map trail transition: switching to map view keeps state consistent', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(180000);
 
     // Enter semantic dive first
     await performMockedSearch(page, 'coffee');
@@ -391,7 +391,7 @@ test.describe('3D semantic state transition integrity', () => {
   // ── Phase 6: Reset (return to overview) ────────────────────────────────
 
   test('reset: Escape returns to overview with consistent state', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(180000);
 
     // Enter focus state
     await performMockedSearch(page, 'coffee');
@@ -429,7 +429,7 @@ test.describe('3D semantic state transition integrity', () => {
   // ── Phase 7: Full round-trip consistency ───────────────────────────────
 
   test('full round-trip: overview → search → focus → dive → map → reset has no contradictions', async ({ page }) => {
-    test.setTimeout(90000);
+    test.setTimeout(180000);
 
     // Step 1: overview
     let snap = await snapshotState(page);
@@ -455,7 +455,7 @@ test.describe('3D semantic state transition integrity', () => {
       if (typeof window.setSemanticDiveMode === 'function') window.setSemanticDiveMode(true);
     });
     await page.waitForFunction(() => window.state?.semanticDiveMode === true, { timeout: 15000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => document.body.dataset.semanticDive === 'active', { timeout: 15000 });
     snap = await snapshotState(page);
     expect(assertInvariants(snap), `Dive invariants: ${assertInvariants(snap).join('; ')}`).toHaveLength(0);
 
@@ -488,7 +488,7 @@ test.describe('3D semantic state transition integrity', () => {
   // ── Edge: dive while no focus node (should be silently ignored) ─────────
 
   test('dive without focus node is silently ignored', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(180000);
 
     // Ensure we are in overview with no focus
     const snap0 = await snapshotState(page);

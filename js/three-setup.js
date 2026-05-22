@@ -23,7 +23,6 @@ import {
 import {
     buildGeometricMyceliumEdges,
     buildSemanticMyceliumEdges,
-    getBezierControlPoint,
     pushBezierLinePair,
     updateMyceliumThreads
 } from './modules/mycelium-engine.js';

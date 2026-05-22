@@ -38,18 +38,22 @@ test.describe('Extraction & De-monolith Contract Verification', () => {
   });
 
   test('Module Seam: UI Renderers', async ({ page }) => {
-    // Verify that functions moved to ui-renderers.js are correctly bound to window
-    const globals = await page.evaluate(() => ({
-      buildLegend: typeof window.buildLegend === 'function',
-      renderSignalBadges: typeof window.renderSignalBadges === 'function',
-      buildSearchResultItemHtml: typeof window.buildSearchResultItemHtml === 'function',
-      setActiveSearchResultRow: typeof window.setActiveSearchResultRow === 'function'
-    }));
+    // Verify that functions moved to ui-renderers.js are exported as module APIs.
+    // These helpers are intentionally dewindowed; live rendering is covered below.
+    const exports = await page.evaluate(async () => {
+      const ui = await import('./js/modules/ui-renderers.js');
+      return {
+        buildLegend: typeof ui.buildLegend === 'function',
+        renderSignalBadges: typeof ui.renderSignalBadges === 'function',
+        buildSearchResultItemHtml: typeof ui.buildSearchResultItemHtml === 'function',
+        setActiveSearchResultRow: typeof ui.setActiveSearchResultRow === 'function'
+      };
+    });
 
-    expect(globals.buildLegend).toBe(true);
-    expect(globals.renderSignalBadges).toBe(true);
-    expect(globals.buildSearchResultItemHtml).toBe(true);
-    expect(globals.setActiveSearchResultRow).toBe(true);
+    expect(exports.buildLegend).toBe(true);
+    expect(exports.renderSignalBadges).toBe(true);
+    expect(exports.buildSearchResultItemHtml).toBe(true);
+    expect(exports.setActiveSearchResultRow).toBe(true);
   });
 
   test('Module Seam: Camera Controls', async ({ page }) => {

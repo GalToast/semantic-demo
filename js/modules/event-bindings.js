@@ -535,10 +535,12 @@ function bindPanelControls(onWindowResize) {
     window.addEventListener('resize', onWindowResize);
 
     bindClick('info-panel-toggle', () => {
+        window.cancelMicroDemo?.('user-input');
         window.setInfoPanelOpen();
     });
 
     bindClick('btn-panel', () => {
+        window.cancelMicroDemo?.('user-input');
         const panelOpen = window.setInfoPanelOpen();
         if (isCompactFocusStageViewport() && panelOpen) {
             const legendPanel = document.getElementById('legend-panel');

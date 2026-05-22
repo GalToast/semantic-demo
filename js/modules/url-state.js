@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, syncFilterControls, applyFilters, updateExplorationUi, switchView, updateUrlState, resetStateBeforeUrlRestore, setMyceliumMode } from './lifecycle.js';
+import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, syncFilterControls, switchView, updateUrlState, resetStateBeforeUrlRestore, setMyceliumMode } from './lifecycle.js';
 import { setSemanticLaneOpsMode, refreshSemanticLaneOpsSummary } from './semantic-lane.js';
 import { isPointVisible, formatBusinessName, escapeHtml } from '../utils.js';
 import { restoreActiveFiltersFromUrl, restoreActiveClusterFilterFromUrl } from './filter-state.js';

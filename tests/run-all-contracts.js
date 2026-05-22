@@ -59,6 +59,11 @@ const SERVER_GROUPS = new Set([
   '3d-interaction-quality',
   '3d-pointer',
   '3d-focus-neighborhood',
+  '3d-focus-neighborhood-geometry',
+  '3d-focus-neighborhood-interaction',
+  '3d-focus-pocket-geometry',
+  '3d-hover-click-interaction',
+  '3d-responsive-ui',
   '3d-visual-quality',
   '3d-resilience',
   '3d-state-data',
@@ -395,7 +400,7 @@ function runValidation() {
 
 // Playwright test flags for browser-interaction specs.
 const PLAYWRIGHT_CLI = join(PROJECT_ROOT, 'node_modules', '@playwright', 'test', 'cli.js');
-const PLAYWRIGHT_FLAGS = ['--browser=chromium', '--workers=1'];
+const PLAYWRIGHT_FLAGS = ['--browser=chromium'];
 const CONTRACT_TIMEOUT_MS = Number(process.env.CONTRACT_TIMEOUT_MS || 240000);
 
 function isPlaywrightTestFile(filename, entry) {

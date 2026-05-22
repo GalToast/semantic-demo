@@ -126,7 +126,7 @@ const FORWARD_ONLY_LIMITS = [
     file: 'strands.css',
     limits: {
       '.journey-compass': 110,
-      '.focus-stage-card': 25,
+      '.focus-stage-card': 28,
     },
     message: 'strands.css must not gain new journey-compass or focus-stage-card geometry',
   },

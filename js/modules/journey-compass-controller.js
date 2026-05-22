@@ -25,6 +25,9 @@ import { focusOnNode } from './camera-controls.js';
 // lifecycle.js - for switchView (needed in executeJourneyCompassAction)
 import { switchView } from './lifecycle.js';
 
+// ui-renderers
+import { updateSelectedCardHeading } from './ui-renderers.js';
+
 export function getJourneyCompassPresentationState(compassState = {}) {
     const phase = compassState.phase || 'overview';
     const hasTrail = document.body?.dataset?.trailState === 'active';
@@ -360,7 +363,7 @@ export function refreshCompositionState() {
             });
             document.body.dataset.panelSurfaceDetail = 'none';
             syncRouteDirectorState('composition-map');
-            if (typeof updateSelectedCardHeading === 'function') updateSelectedCardHeading();
+            updateSelectedCardHeading();
             if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
             if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
             if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
@@ -411,7 +414,7 @@ export function refreshCompositionState() {
         invokeClearMobileRouteFieldPeek();
     }
     syncRouteDirectorState('composition-galaxy');
-    if (typeof updateSelectedCardHeading === 'function') updateSelectedCardHeading();
+    updateSelectedCardHeading();
     if (typeof window.updateLegendGuideState === 'function') window.updateLegendGuideState();
     if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
     if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();

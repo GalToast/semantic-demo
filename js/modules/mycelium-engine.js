@@ -333,7 +333,8 @@ export function updateMyceliumThreads() {
                 positions[offset++] = Number.isFinite(b.x) ? b.x : 0;
                 positions[offset++] = Number.isFinite(b.y) ? b.y : 0;
                 positions[offset++] = Number.isFinite(b.z) ? b.z : 0;
-                for (let z = 0; z < 24; z++) positions[offset++] = 0;
+                const remaining = FLOATS_PER_BEZIER_EDGE - 6;
+                for (let z = 0; z < remaining; z++) positions[offset++] = 0;
             }
         });
         lines.geometry.attributes.position.needsUpdate = true;

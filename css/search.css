@@ -2149,7 +2149,7 @@ body[data-panel-surface="map-trail"] .journey-compass {
     100% { background: rgba(78, 205, 196, 0.3); opacity: 1; }
 }
 
-html body[data-panel-surface="focus-search"] .search-container:is(.results-rendered, .search-degraded) .search-results.active {
+html body[data-panel-surface="focus-search"] .search-container .search-results.active {
     display: block;
     visibility: visible;
     opacity: 1;

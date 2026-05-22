@@ -1,5 +1,4 @@
 // js/modules/connection-analysis.js — Connection Report / Semantic Threads Detail
-import { state } from '../state.js';
 import {
     getConnectionStateSnapshot,
     getSummaryTextEl,

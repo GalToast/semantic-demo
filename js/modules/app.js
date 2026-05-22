@@ -254,7 +254,7 @@ export async function init() {
         // polish133: safety valve for 10/10 demo stability
         safetyValve = setTimeout(() => {
             if (document.getElementById('loading-overlay')?.classList.contains('hidden')) return;
-            console.debug('Init safety valve dismissed a slow loading overlay.');
+            console.warn('Init safety valve dismissed a slow loading overlay.');
             hideLoadingOverlay();
         }, 10000);
 

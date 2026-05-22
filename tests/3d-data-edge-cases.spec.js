@@ -17,7 +17,7 @@
  *
  * Run directly:
  *   node --check tests/3d-data-edge-cases.spec.js
- *   npx playwright test tests/3d-data-edge-cases.spec.js --browser=chromium --workers=1
+ *   npx playwright test tests/3d-data-edge-cases.spec.js --browser=chromium
  *
  * Run via manifest:
  *   node tests/run-all-contracts.js --group=3d-data-edge

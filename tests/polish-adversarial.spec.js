@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:8795';
+const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
 
 test.describe('Adversarial Polish & Edge Case Audit', () => {
   

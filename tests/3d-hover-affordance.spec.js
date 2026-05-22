@@ -192,7 +192,7 @@ test.describe('3D node hover affordance', () => {
     await page.waitForFunction((expectedIndex) => {
       const hover = window.state?.hoverHighlightIndex;
       return hover === expectedIndex;
-    }, second.resolvedIndex, { timeout: 2000 });
+    }, second.resolvedIndex, { timeout: 20000 });
 
     const state = await getHoverState(page);
     expect(state.hoverHighlightIndex, 'rapid move should settle on the last hovered node, not stale first node').toBe(second.resolvedIndex);

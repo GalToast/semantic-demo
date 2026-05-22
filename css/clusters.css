@@ -802,6 +802,7 @@ body[data-panel-surface="map-focus-search"] .trail-context {
             position: relative;
             overflow-y: auto;
             overflow-x: hidden;
+            pointer-events: none;
             padding: 14px 16px;
             border-radius: var(--glass-radius-panel);
             border: var(--glass-border);
@@ -824,6 +825,21 @@ body[data-panel-surface="map-focus-search"] .trail-context {
         .focus-stage-card > * {
             position: relative;
             z-index: 1;
+        }
+
+        .focus-stage-card :is(
+            button,
+            a,
+            input,
+            textarea,
+            select,
+            [role="button"],
+            .focus-stage-journey.active,
+            .focus-stage-neighbors.active,
+            .focus-stage-neighbor-pill,
+            .focus-thread-inspector.active
+        ) {
+            pointer-events: auto;
         }
 
         body[data-panel-surface="focus"] .focus-stage-card,

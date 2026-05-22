@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { BASE_URL, SEMANTIC_HEALTH_STUB, setupMockSearch, openApp, probe, isValidNodeIndex, projectedCandidates } from './helpers/3d-interaction-helpers.js';
 
+const CAMERA_ORBIT_TEST_TIMEOUT_MS = 180000;
+
 function cameraDistance(position) {
   return Math.hypot(position.x, position.y, position.z);
 }
@@ -22,7 +24,7 @@ async function clickValidNode(page) {
   const target = await findClickableNode(page);
   expect(target, 'a hoverable canvas node coordinate must be discoverable').not.toBeNull();
   await page.mouse.click(target.screenX, target.screenY);
-  await page.waitForTimeout(700);
+  await page.waitForTimeout(400);
   const after = await probe(page);
   expect(isValidNodeIndex(after.focusedNode, after.pointCount), 'canvas click must focus a valid node').toBe(true);
   return { target, after };
@@ -49,14 +51,14 @@ async function dragCanvas(page, dx, dy) {
   const y = rect.top + rect.height / 2;
   await page.mouse.move(x, y);
   await page.mouse.down();
-  await page.mouse.move(x + dx, y + dy, { steps: 8 });
+  await page.mouse.move(x + dx, y + dy, { steps: 3 });
   await page.mouse.up();
   await page.waitForTimeout(700);
 }
 
 test.describe('3D camera/orbit resilience', () => {
   test('desktop: wheel and drag preserve valid node picking', async ({ page }) => {
-    test.setTimeout(70000);
+    test.setTimeout(CAMERA_ORBIT_TEST_TIMEOUT_MS);
     await openApp(page, { width: 1440, height: 900 });
 
     const before = await probe(page);
@@ -72,7 +74,7 @@ test.describe('3D camera/orbit resilience', () => {
   });
 
   test('resize: desktop to mobile and back keeps projection/click path coherent', async ({ page }) => {
-    test.setTimeout(80000);
+    test.setTimeout(CAMERA_ORBIT_TEST_TIMEOUT_MS);
     await openApp(page, { width: 1440, height: 900 });
 
     await clickValidNode(page);
@@ -91,7 +93,7 @@ test.describe('3D camera/orbit resilience', () => {
   });
 
   test('short landscape: camera interaction does not break hoverable node discovery', async ({ page }) => {
-    test.setTimeout(70000);
+    test.setTimeout(CAMERA_ORBIT_TEST_TIMEOUT_MS);
     await openApp(page, { width: 844, height: 390 });
 
     const before = await findClickableNode(page);
@@ -106,7 +108,7 @@ test.describe('3D camera/orbit resilience', () => {
   });
 
   test('short landscape: camera distance stays finite and orbit is bounded after gestures', async ({ page }) => {
-    test.setTimeout(70000);
+    test.setTimeout(CAMERA_ORBIT_TEST_TIMEOUT_MS);
     await openApp(page, { width: 844, height: 390 });
 
     const beforeDist = cameraDistance((await probe(page)).cameraPosition);

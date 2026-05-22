@@ -181,7 +181,8 @@
         "3d-overlay-hit-stealing.spec.js",
         "3d-state-transition-integrity.spec.js",
         "3d-data-edge-cases.spec.js",
-        "3d-focus-neighborhood-node-selectability.spec.js"
+        "3d-focus-neighborhood-geometry.spec.js",
+        "3d-focus-neighborhood-interaction.spec.js"
       ]
     },
     "3d-pointer": {
@@ -195,7 +196,7 @@
       ]
     },
     "3d-focus-neighborhood": {
-      "description": "Focus neighborhood visibility and reachability contracts - pocket screen reachability, overlay hit-stealing at short-landscape, desktop hover reset, desktop thread continuity. Requires a running dev server on port 8795.",
+      "description": "Focus neighborhood visibility and reachability contracts - geometry projection, interaction, overlay hit-stealing, hover affordance, thread orchestration, and camera orbit. Requires a running dev server on port 8795.",
       "timeout": 600000,
       "contracts": [
         "3d-focus-pocket-selectability.spec.js",
@@ -203,7 +204,49 @@
         "3d-hover-affordance.spec.js",
         "3d-thread-orchestration-quality.spec.js",
         "3d-camera-orbit-resilience.spec.js",
-        "3d-focus-neighborhood-node-selectability.spec.js"
+        "3d-focus-neighborhood-geometry.spec.js",
+        "3d-focus-neighborhood-interaction.spec.js"
+      ]
+    },
+    "3d-focus-neighborhood-geometry": {
+      "description": "Focus neighborhood geometry: screen coordinate projection, role distinguishability, and anchor/neighbor spatial separation. Requires a running dev server on port 8795.",
+      "timeout": 300000,
+      "contracts": [
+        "3d-focus-neighborhood-geometry.spec.js"
+      ]
+    },
+    "3d-focus-neighborhood-interaction": {
+      "description": "Focus neighborhood interaction: hover, click, and state integrity through neighbor interaction sequences. Requires a running dev server on port 8795.",
+      "timeout": 300000,
+      "contracts": [
+        "3d-focus-neighborhood-interaction.spec.js"
+      ]
+    },
+    "3d-focus-pocket-geometry": {
+      "description": "Geometry/projection: pocket node screen coordinates, in-canvas reachability, and anchor/neighbor spatial separation. Requires a running dev server on port 8795.",
+      "timeout": 300000,
+      "contracts": [
+        "3d-focus-pocket-selectability.spec.js",
+        "3d-focus-neighborhood-geometry.spec.js"
+      ]
+    },
+    "3d-hover-click-interaction": {
+      "description": "Hover/click interaction: hover affordance, real-pointer playthrough, node hit accuracy, and state integrity through interaction sequences. Requires a running dev server on port 8795.",
+      "timeout": 600000,
+      "contracts": [
+        "3d-hover-affordance.spec.js",
+        "3d-real-pointer-playthrough.spec.js",
+        "3d-node-hit-accuracy.spec.js",
+        "3d-focus-neighborhood-interaction.spec.js"
+      ]
+    },
+    "3d-responsive-ui": {
+      "description": "Responsive UI and viewport resilience: camera aspect/resize coherence, DPR/backing scale, touch parity, and orbit stability across viewports. Requires a running dev server on port 8795.",
+      "timeout": 600000,
+      "contracts": [
+        "3d-camera-orbit-resilience.spec.js",
+        "3d-viewport-dpr-resilience.spec.js",
+        "3d-touch-parity.spec.js"
       ]
     },
     "3d-visual-quality": {
@@ -273,6 +316,8 @@
         "3d-overlay-hit-stealing.spec.js",
         "3d-state-transition-integrity.spec.js",
         "3d-data-edge-cases.spec.js",
+        "3d-focus-neighborhood-geometry.spec.js",
+        "3d-focus-neighborhood-interaction.spec.js",
         "3d-accessibility-fallback-performance.spec.js"
       ]
     },
@@ -359,6 +404,8 @@
       "contracts": [
         "extraction-contracts.spec.js",
         "semantic-guide-fallback-contract.spec.js",
+        "semantic-guide-fetch-fallback-contract.spec.js",
+        "semantic-guide-edge-contract.mjs",
         "short-landscape-contract.spec.js"
       ]
     },

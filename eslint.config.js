@@ -75,7 +75,14 @@ export default [
             }
         },
         rules: {
-            'no-unused-vars': 'warn',
+            'no-unused-vars': ['warn', {
+                vars: 'all',
+                args: 'after-used',
+                ignoreRestSiblings: true,
+                varsIgnorePattern: '^_',
+                argsIgnorePattern: '^_',
+                caughtErrorsIgnorePattern: '^_'
+            }],
             'no-undef': 'error',
             'no-console': ['error', { allow: ['warn', 'error'] }],
             'no-var': 'error',

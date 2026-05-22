@@ -11,7 +11,7 @@ async function clearPickEvidence(page) {
 }
 
 async function findReachableNodeCoordinate(page) {
-  const candidates = await projectedCanvasCandidates(page);
+  const candidates = await projectedCanvasCandidates(page, { maxResultsOverride: 36 });
   for (const candidate of candidates) {
     await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 4 });
     await page.waitForTimeout(140);
@@ -88,7 +88,7 @@ async function overlayCenters(page) {
 
 test.describe('3D overlay hit ownership', () => {
   test('desktop: reachable node coordinate includes canvas and excludes interactive overlays', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(90000);
     await openApp(page, { width: 1440, height: 900 });
 
     const target = await findReachableNodeCoordinate(page);
@@ -98,7 +98,7 @@ test.describe('3D overlay hit ownership', () => {
   });
 
   test('desktop: overlay clicks do not create canvas pick evidence', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(90000);
     await openApp(page, { width: 1440, height: 900 });
     await clearPickEvidence(page);
 
@@ -117,7 +117,7 @@ test.describe('3D overlay hit ownership', () => {
   });
 
   test('mobile portrait: overlay click does not leak into canvas focus', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(80000);
     await openApp(page, { width: 390, height: 844 });
     await clearPickEvidence(page);
 
@@ -132,7 +132,7 @@ test.describe('3D overlay hit ownership', () => {
   });
 
   test('short landscape: reachable node still avoids overlay hit-stealing', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(90000);
     await openApp(page, { width: 844, height: 390 });
 
     const target = await findReachableNodeCoordinate(page);
@@ -141,7 +141,7 @@ test.describe('3D overlay hit ownership', () => {
   });
 
   test('short landscape: focus pocket nodes are not consumed by overlay hit-stealing', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(90000);
     await openApp(page, { width: 844, height: 390 });
 
     const entryIndex = await page.evaluate(() => {

@@ -3,9 +3,11 @@ import { state } from '../state.js';
 // js/modules/thread-inspector.js — thread/strand inspection for semantic demo
 ;
 import { formatBusinessName, stripTerminalPunctuation, cleanOptionalValue, normalizeCityForFilter } from '../utils.js';
+import { getProjectedNeighborCandidates } from './journey-thread-model.js';
 import { normalizeLeadId } from './journey-thread-model.js';
 import { truncateMicrocopy } from './thread-inspector-text-helpers.js';
 import { focusOnNode } from './camera-controls.js';
+import { dispatchNavTransition } from './lifecycle.js';
 
 // === Internal helpers (deferred to main script via window) ===
 
@@ -76,8 +78,8 @@ export function getSemanticThreadCandidates(index) {
 }
 
 export function getGeometricThreadCandidates(index) {
-    if (typeof window.getProjectedNeighborCandidates === 'function') {
-        const projected = window.getProjectedNeighborCandidates(index);
+    if (typeof getProjectedNeighborCandidates === 'function') {
+        const projected = getProjectedNeighborCandidates(index);
         if (!projected || !Array.isArray(projected)) return [];
         return projected.map((candidateIndex) => ({
             index: candidateIndex,
@@ -439,9 +441,10 @@ export function exploreThreadNeighbor(index, options = {}) {
     state.pinnedThreadIndex = null;
     state.inspectedThreadIndex = index;
     setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason });
+    // Route through navTransitionReducer for canonical mode='trail' and walkHistoryIndices ownership.
+    dispatchNavTransition('WALK_TO', { index, fromIndex, appendHistory: !options.restoreHistory });
     renderThreadInspection(index, { force: true, surface: options.surface || 'explore' });
     state.navState.lastTraversalReason = reason;
-    state.navState.mode = 'trail';
     if (state.currentView === 'map') {
         focusOnPoint(targetPoint, {
             fromTraversal: true,
