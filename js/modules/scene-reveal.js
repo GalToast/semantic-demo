@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
+import { clearAutoRotateResumeTimer, setAutoRotateSuspended } from './camera-controls.js';
 
 export function setSceneRevealDataset(active) {
     if (typeof document !== 'undefined' && document.body?.dataset) {
@@ -20,8 +21,8 @@ export function startSceneReveal() {
         return new THREE.Vector3(cx * 0.42, cy * 0.34, Math.max(0.96, cz * 0.58));
     })();
 
-    if (typeof window.clearAutoRotateResumeTimer === 'function') window.clearAutoRotateResumeTimer();
-    if (typeof window.setAutoRotateSuspended === 'function') window.setAutoRotateSuspended(true);
+    clearAutoRotateResumeTimer();
+    setAutoRotateSuspended(true);
 }
 
 export function getSceneRevealProgress(frameNow) {

@@ -59,6 +59,7 @@ globalThis.window = {};
 globalThis.document = {
   body: new FakeElement('body'),
   getElementById: (id) => elementsById.get(id) || null,
+  querySelectorAll: () => [],
 };
 
 const { state } = await import('../js/state.js');

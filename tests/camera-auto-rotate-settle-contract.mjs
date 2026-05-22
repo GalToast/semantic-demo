@@ -53,10 +53,10 @@ console.log('============================================================');
 
 console.log('\n[TEST] startSceneReveal suspends autorotate and clears resume timer');
 assertContains(startReveal, "state.currentView !== 'galaxy'", 'startSceneReveal galaxy gate');
-assertContains(startReveal, 'window.clearAutoRotateResumeTimer', 'startSceneReveal clears pending resume');
-assertContains(startReveal, 'window.setAutoRotateSuspended', 'startSceneReveal calls suspend helper');
+assertContains(startReveal, 'clearAutoRotateResumeTimer()', 'startSceneReveal clears pending resume');
+assertContains(startReveal, 'setAutoRotateSuspended(true)', 'startSceneReveal calls suspend helper');
 assert(
-  startReveal.indexOf('window.clearAutoRotateResumeTimer') < startReveal.indexOf('window.setAutoRotateSuspended'),
+  startReveal.indexOf('clearAutoRotateResumeTimer()') < startReveal.indexOf('setAutoRotateSuspended(true)'),
   'startSceneReveal clears resume timer before suspending autorotate'
 );
 console.log('  OK startSceneReveal autorotate handoff is intact');

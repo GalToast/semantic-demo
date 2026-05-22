@@ -137,6 +137,63 @@ async function detectLabelOverlap(page) {
   });
 }
 
+/**
+ * Probe cluster-label visual accessibility using elementFromPoint at label centers.
+ *
+ * Returns for each visible label:
+ *   - index, centerX, centerY
+ *   - topmostElement: the element returned by document.elementFromPoint at center
+ *   - isOccluded: true if something other than the label itself is topmost
+ *   - zIndex: the label's own z-index (or null if not set)
+ *   - fontSize: computed font-size in px
+ *   - opacity: computed opacity
+ *   - display: computed display
+ *   - visibility: computed visibility
+ *   - pointerEvents: computed pointer-events
+ *
+ * Empty result = no visible labels with nonzero rects to probe.
+ */
+async function detectLabelOcclusion(page) {
+  return page.evaluate(() => {
+    const labels = Array.from(document.querySelectorAll('.galaxy-cluster-label.visible'));
+    if (!labels.length) return [];
+
+    return labels.map((el, idx) => {
+      const rect = el.getBoundingClientRect();
+      if (!rect.width || !rect.height) return null;
+
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+
+      // elementFromPoint returns the topmost positioned element at that coordinate.
+      // Elements with pointer-events:none are skipped per spec.
+      const top = document.elementFromPoint(cx, cy);
+      const isOccluded = (top !== el) && (!el.contains(top));
+
+      const cs = getComputedStyle(el);
+
+      return {
+        idx,
+        centerX: Math.round(cx),
+        centerY: Math.round(cy),
+        topmostTag: top ? top.tagName : null,
+        topmostId: top ? (top.id || null) : null,
+        topmostClass: top ? (top.className || '') : '',
+        isOccluded,
+        zIndex: cs.zIndex !== 'auto' ? cs.zIndex : null,
+        fontSize: parseFloat(cs.fontSize),
+        opacity: parseFloat(cs.opacity),
+        display: cs.display,
+        visibility: cs.visibility,
+        pointerEvents: cs.pointerEvents,
+        rectWidth: Math.round(rect.width),
+        rectHeight: Math.round(rect.height),
+        isCanvasTopmost: top ? top.tagName === 'CANVAS' : false,
+      };
+    }).filter(Boolean);
+  });
+}
+
 async function enterFocusMode(page) {
   const focusedIndex = await page.evaluate(() => {
     const points = window.state?.points ?? [];
@@ -202,6 +259,43 @@ test.describe('3D cluster readability', () => {
     expect(overlaps, `no cluster label should catastrophically overlap search/clear UI (overlapping indices: ${JSON.stringify(overlaps)})`).toHaveLength(0);
   });
 
+  test('desktop: visible cluster labels are not occluded by the canvas at their center points', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(VIEWPORTS.desktop);
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
+    await waitForGalaxyReady(page);
+
+    const occlusions = await detectLabelOcclusion(page);
+    expect(occlusions.length, 'at least one visible label must be probeable at desktop').toBeGreaterThan(0);
+
+    const occludedByCanvas = occlusions.filter(r => r.isCanvasTopmost && r.isOccluded);
+    expect(occludedByCanvas.length,
+      `no visible label should have CANVAS as topmost element at its center point (got ${occludedByCanvas.length} occluded by canvas out of ${occlusions.length} labels)`
+    ).toBe(0);
+
+    const fullyOccluded = occlusions.filter(r => r.isOccluded);
+    expect(fullyOccluded.length,
+      `no visible label should be fully occluded at its center point (got ${fullyOccluded.length} of ${occlusions.length})`
+    ).toBe(0);
+
+    // All probeable labels must have nonzero font-size
+    const tinyFont = occlusions.filter(r => !Number.isFinite(r.fontSize) || r.fontSize < 8);
+    expect(tinyFont.length, `all probeable labels must have font-size >= 8px (got ${tinyFont.length} with tiny/missing font)`).toBe(0);
+
+    // All probeable labels must be visible (display/visibility/opacity)
+    // opacity === 0 alone is excluded because CSS transition mid-flight can leave a
+    // label in an opacity-0 state while it is still a valid rendered element.
+    // display:none and visibility:hidden are structural failures worth failing on.
+    const invisible = occlusions.filter(r => r.display === 'none' || r.visibility === 'hidden');
+    expect(invisible.length, `no probeable label should have display:none or visibility:hidden (got ${invisible.length})`).toBe(0);
+
+    // Z-index must be set (no "auto") for labels that are supposed to float above canvas
+    const noZIndex = occlusions.filter(r => r.zIndex === null);
+    expect(noZIndex.length,
+      `all probeable labels should carry an explicit z-index (got ${noZIndex.length} with z-index:auto)`
+    ).toBe(0);
+  });
+
   // ── Mobile ──────────────────────────────────────────────────────────────────
 
   test('mobile: cluster labels exist, are visible, have nonzero rects, and carry color/accent data', async ({ page }) => {
@@ -232,6 +326,32 @@ test.describe('3D cluster readability', () => {
     expect(overlaps, `no catastrophic overlap on mobile (overlapping indices: ${JSON.stringify(overlaps)})`).toHaveLength(0);
   });
 
+  test('mobile: visible cluster labels are not occluded by the canvas at their center points', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(VIEWPORTS.mobile);
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
+    await waitForGalaxyReady(page);
+
+    const occlusions = await detectLabelOcclusion(page);
+    expect(occlusions.length, 'at least one visible label must be probeable at mobile 390×844').toBeGreaterThan(0);
+
+    const occludedByCanvas = occlusions.filter(r => r.isCanvasTopmost && r.isOccluded);
+    expect(occludedByCanvas.length,
+      `no visible label should have CANVAS as topmost at its center on mobile (got ${occludedByCanvas.length} occluded)`
+    ).toBe(0);
+
+    const fullyOccluded = occlusions.filter(r => r.isOccluded);
+    expect(fullyOccluded.length,
+      `no visible label should be fully occluded at its center on mobile (got ${fullyOccluded.length} of ${occlusions.length})`
+    ).toBe(0);
+
+    const tinyFont = occlusions.filter(r => !Number.isFinite(r.fontSize) || r.fontSize < 6);
+    expect(tinyFont.length, `all probeable labels must have font-size >= 6px on mobile (got ${tinyFont.length} tiny)`).toBe(0);
+
+    const invisible = occlusions.filter(r => r.display === 'none' || r.visibility === 'hidden');
+    expect(invisible.length, `no probeable label should have display:none or visibility:hidden on mobile (got ${invisible.length})`).toBe(0);
+  });
+
   // ── Short-landscape ──────────────────────────────────────────────────────────
 
   test('short-landscape: cluster labels exist and are visible at 844×390', async ({ page }) => {
@@ -258,6 +378,32 @@ test.describe('3D cluster readability', () => {
 
     const overlaps = await detectLabelOverlap(page);
     expect(overlaps, `no catastrophic overlap in short-landscape (overlapping indices: ${JSON.stringify(overlaps)})`).toHaveLength(0);
+  });
+
+  test('short-landscape: visible cluster labels are not occluded by the canvas at their center points', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(VIEWPORTS.shortLandscape);
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
+    await waitForGalaxyReady(page);
+
+    const occlusions = await detectLabelOcclusion(page);
+    expect(occlusions.length, 'at least one visible label must be probeable at 844×390').toBeGreaterThan(0);
+
+    const occludedByCanvas = occlusions.filter(r => r.isCanvasTopmost && r.isOccluded);
+    expect(occludedByCanvas.length,
+      `no visible label should have CANVAS as topmost at its center in short-landscape (got ${occludedByCanvas.length} occluded)`
+    ).toBe(0);
+
+    const fullyOccluded = occlusions.filter(r => r.isOccluded);
+    expect(fullyOccluded.length,
+      `no visible label should be fully occluded at its center in short-landscape (got ${fullyOccluded.length} of ${occlusions.length})`
+    ).toBe(0);
+
+    const tinyFont = occlusions.filter(r => !Number.isFinite(r.fontSize) || r.fontSize < 6);
+    expect(tinyFont.length, `all probeable labels must have font-size >= 6px at 844×390 (got ${tinyFont.length} tiny)`).toBe(0);
+
+    const invisible = occlusions.filter(r => r.display === 'none' || r.visibility === 'hidden');
+    expect(invisible.length, `no probeable label should have display:none or visibility:hidden at 844×390 (got ${invisible.length})`).toBe(0);
   });
 
   // ── Cross-viewport invariants ────────────────────────────────────────────────
@@ -368,6 +514,30 @@ test.describe('3D cluster readability', () => {
     expect(post.visible, 'focus mode should reduce visible overview cluster labels').toBeLessThan(pre.visible);
     expect(typeof post.withColor === 'number', 'withColor must remain a number after transition (no DOM corruption)').toBe(true);
     expect(post.total, 'total label count must remain accessible after transition').toBeGreaterThan(0);
+  });
+
+  test('focus mode: no visible cluster label is occluded or has canvas as topmost at its center', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(VIEWPORTS.desktop);
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
+    await waitForGalaxyReady(page);
+
+    await enterFocusMode(page);
+
+    const occlusions = await detectLabelOcclusion(page);
+    // In focus mode labels may be hidden — empty result is acceptable (not a failure).
+    // But if any labels are still visible, they must not be occluded by canvas.
+    if (occlusions.length === 0) return;
+
+    const occludedByCanvas = occlusions.filter(r => r.isCanvasTopmost && r.isOccluded);
+    expect(occludedByCanvas.length,
+      `in focus mode no visible label should have CANVAS as topmost at its center (got ${occludedByCanvas.length})`
+    ).toBe(0);
+
+    const fullyOccluded = occlusions.filter(r => r.isOccluded);
+    expect(fullyOccluded.length,
+      `in focus mode no visible label should be fully occluded at its center (got ${fullyOccluded.length})`
+    ).toBe(0);
   });
 
 });

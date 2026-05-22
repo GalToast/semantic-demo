@@ -24,6 +24,7 @@
         "journey-thread-inspector-contract.mjs",
         "thread-inspector-dewindowing-contract.mjs",
         "journey-window-surface-contract.mjs",
+        "journey-cluster-accent-dewindowing-contract.mjs",
         "journey-event-bindings-contract.mjs",
         "trail-review-focus-contract.mjs",
         "pathfinding-contract.mjs"
@@ -33,6 +34,7 @@
       "description": "Scene atmosphere and visual polish - reveal, atmosphere, three.js polish, reduced-motion variants.",
       "contracts": [
         "scene-reveal-contract.mjs",
+        "scene-reveal-camera-dewindowing-contract.mjs",
         "scene-atmosphere-contract.mjs",
         "three-visual-polish-contract.mjs",
         "reduced-motion-transition-contract.mjs",
@@ -134,13 +136,24 @@
         "micro-demo-state-owner-contract.mjs",
         "weather-lifecycle-contract.mjs",
         "window-bridge-gaps-contract.mjs",
+        "residual-window-bridge-inventory-contract.mjs",
+        "lifecycle-semantic-guide-residual-bridge-contract.mjs",
+        "legend-ui-ownership-contract.mjs",
+        "semantic-dive-ui-dewindowing-contract.mjs",
         "semantic-dive-active-owner-contract.mjs",
         "state-ownership-contract.mjs",
         "filter-ownership-contract.mjs",
         "cluster-filter-city-filter-side-effect-contract.mjs",
+        "keyboard-reset-ownership-contract.mjs",
+        "url-state-search-dewindowing-contract.mjs",
+        "cluster-filter-dewindowing-contract.mjs",
+        "search-state-ui-adapter-contract.mjs",
+        "url-state-navigation-dewindowing-contract.mjs",
         "focus-selection-owner-contract.mjs",
         "focus-pocket-state-owner-contract.mjs",
-        "bootstrap-window-export-contract.mjs"
+        "bootstrap-window-export-contract.mjs",
+        "lifecycle-search-panel-ownership-contract.mjs",
+        "search-lifecycle-adapter-contract.mjs"
       ]
     },
     "quality": {
@@ -291,6 +304,17 @@
         "3d-focus-pocket-selectability.spec.js"
       ]
     },
+    "3d-regression": {
+      "description": "3D focused regression lane - recent focus-neighborhood, pointer, overlay, and thread orchestration coverage without the full 3D suite cost. Requires a running dev server on port 8795.",
+      "timeout": 600000,
+      "contracts": [
+        "3d-focus-neighborhood-geometry.spec.js",
+        "3d-focus-neighborhood-interaction.spec.js",
+        "3d-overlay-hit-stealing.spec.js",
+        "3d-hover-affordance.spec.js",
+        "3d-thread-orchestration-quality.spec.js"
+      ]
+    },
     "3d-slow": {
       "description": "3D slow/visual - cluster readability, thread orchestration, accessibility/fallback. 10-30s each, full scene rendering.",
       "timeout": 600000,
@@ -354,13 +378,26 @@
         "semantic-dive-reverse-contract.mjs",
         "journey-window-surface-contract.mjs",
         "thread-inspector-dewindowing-contract.mjs",
+        "journey-cluster-accent-dewindowing-contract.mjs",
         "window-bridge-gaps-contract.mjs",
+        "residual-window-bridge-inventory-contract.mjs",
+        "lifecycle-semantic-guide-residual-bridge-contract.mjs",
+        "legend-ui-ownership-contract.mjs",
+        "semantic-dive-ui-dewindowing-contract.mjs",
+        "lifecycle-search-panel-ownership-contract.mjs",
+        "search-lifecycle-adapter-contract.mjs",
         "loading-ui-contract.mjs",
         "state-ownership-contract.mjs",
         "filter-ownership-contract.mjs",
         "cluster-filter-city-filter-side-effect-contract.mjs",
+        "keyboard-reset-ownership-contract.mjs",
+        "url-state-search-dewindowing-contract.mjs",
+        "cluster-filter-dewindowing-contract.mjs",
+        "search-state-ui-adapter-contract.mjs",
+        "url-state-navigation-dewindowing-contract.mjs",
         "exploration-modes-contract.mjs",
         "scene-reveal-contract.mjs",
+        "scene-reveal-camera-dewindowing-contract.mjs",
         "scene-atmosphere-contract.mjs",
         "motion-state-contract.mjs",
         "demo-state-sync-contract.mjs",

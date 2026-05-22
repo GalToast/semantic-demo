@@ -1,6 +1,7 @@
 import { state } from '../state.js';
 import { normalizeCityForFilter, describeCluster, escapeHtml } from '../utils.js';
 import { resetActiveFilters, setActiveFilter } from './filter-state.js';
+import { applyFilters, clearSearchGlow, updateUrlState } from './cluster-filter-adapter.js';
 
 function pointMatchesActiveFilters(point) {
     if (!point) return false;
@@ -23,6 +24,12 @@ function getFilteredClusterCounts() {
     return counts;
 }
 
+export function findClusterByKeyword(keyword) {
+    const lower = String(keyword || '').toLowerCase();
+    const idx = state.CLUSTER_NAMES.findIndex((name) => String(name).toLowerCase().includes(lower));
+    return idx >= 0 ? idx : null;
+}
+
 export function setClusterFilter(cluster) {
     const nextCluster = Number.isFinite(cluster) ? cluster : null;
     if (state.currentSearchSummary) {
@@ -34,15 +41,15 @@ export function setClusterFilter(cluster) {
     }
     state.activeClusterFilter = state.activeClusterFilter === nextCluster ? null : nextCluster;
     state.activeStoryPrompt = null;
-    if (typeof window.clearSearchGlow === 'function') window.clearSearchGlow();
-    if (typeof window.applyFilters === 'function') window.applyFilters();
-    if (typeof window.updateUrlState === 'function') window.updateUrlState({}, { reason: 'cluster-filter' });
+    clearSearchGlow();
+    applyFilters();
+    updateUrlState({}, { reason: 'cluster-filter' });
 }
 
 export function clearClusterFilter() {
     resetActiveFilters();
     setClusterFilter(null);
-    if (typeof window.updateUrlState === 'function') window.updateUrlState({}, { reason: 'cluster-filter-clear' });
+    updateUrlState({}, { reason: 'cluster-filter-clear' });
 }
 
 export function updateClusterList() {

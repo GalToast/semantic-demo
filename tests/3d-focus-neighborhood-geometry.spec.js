@@ -23,7 +23,8 @@
 import { test, expect } from '@playwright/test';
 import {
   BASE_URL, setupMockSearch, openApp,
-  probe, probeFocusPocket, isValidNodeIndex, isReachableScreenCoordinate
+  probe, probeFocusPocket, isValidNodeIndex, isReachableScreenCoordinate,
+  readPocketNodeScales
 } from './helpers/3d-interaction-helpers.js';
 
 const FOCUS_NEIGHBORHOOD_TEST_TIMEOUT_MS = 120000;
@@ -179,6 +180,7 @@ test.describe('focus-neighborhood geometry', () => {
     await page.waitForTimeout(700);
 
     const snap = await probeNeighborhood(page);
+    // Minimum visible separation: desktop can afford a larger gap than short-landscape.
     const MIN_DISTANCE_PX = 28;
 
     const anchorProj = snap.projected.find(n => n.idx === snap.focusedIndex);
@@ -195,6 +197,117 @@ test.describe('focus-neighborhood geometry', () => {
     }
 
     expect(separatedCount, `at least one non-anchor neighbor must be ≥${MIN_DISTANCE_PX}px from anchor, got ${separatedCount}/${nonAnchorProjected.length} separated`).toBeGreaterThan(0);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Visual differentiation: spore scales differ by role
+  // ---------------------------------------------------------------------------
+
+  test('desktop: anchor/primary/support/halo pocket nodes have mathematically distinct spore scales', async ({ page }) => {
+    test.setTimeout(FOCUS_NEIGHBORHOOD_TEST_TIMEOUT_MS);
+    await openApp(page, { width: 1440, height: 900 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 30); i++) {
+        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        if (node?.neighbors?.length > 0) return i;
+      }
+      return 0;
+    });
+
+    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForTimeout(700);
+
+    const snap = await probeNeighborhood(page);
+    expect(snap.focusedIndex, 'focusedIndex must be set').not.toBeNull();
+
+    const anchorRole = snap.roles[String(snap.focusedIndex)];
+    expect(anchorRole, 'anchor must have role "anchor"').toBe('anchor');
+
+    const scales = await readPocketNodeScales(page);
+    expect(scales.length, 'pocket must have at least one node').toBeGreaterThan(0);
+
+    // Build a map: role -> [scales]
+    const scalesByRole = {};
+    for (const s of scales) {
+      if (!scalesByRole[s.role]) scalesByRole[s.role] = [];
+      scalesByRole[s.role].push(s.scale);
+    }
+
+    // Assert we have at least two distinct scale values across roles
+    const allScales = Object.values(scalesByRole).flat();
+    const uniqueScales = [...new Set(allScales.map(s => s.toFixed(6)))];
+    expect(uniqueScales.length, `pocket must expose at least 2 distinct scale values across roles; got ${uniqueScales.join(', ')}`).toBeGreaterThan(1);
+
+    // Anchor (emphasis 2.15) must be the largest scale in the pocket
+    const anchorScaleEntry = scales.find(s => s.idx === snap.focusedIndex);
+    expect(anchorScaleEntry, 'anchor must have a scale entry').toBeDefined();
+    for (const s of scales) {
+      if (s.idx === snap.focusedIndex) continue;
+      expect(
+        anchorScaleEntry.scale > s.scale,
+        `anchor scale (${anchorScaleEntry.scale.toFixed(6)}) must exceed neighbor scale (${s.scale.toFixed(6)}) for idx=${s.idx}`
+      ).toBe(true);
+    }
+
+    // If we have primary and support/halo roles, primary (1.74) must be > support/halo (1.42)
+    if (scalesByRole['primary'] && (scalesByRole['support'] || scalesByRole['halo'])) {
+      const primaryMin = Math.min(...scalesByRole['primary']);
+      const supportMax = Math.max(...(scalesByRole['support'] || []), ...(scalesByRole['halo'] || []));
+      expect(primaryMin > supportMax,
+        `primary scale (${primaryMin.toFixed(6)}) must be > support/halo scale (${supportMax.toFixed(6)})`
+      ).toBe(true);
+    }
+
+    // All scales must be positive finite numbers
+    for (const s of scales) {
+      expect(Number.isFinite(s.scale) && s.scale > 0,
+        `scale for idx=${s.idx} role=${s.role} must be positive finite, got ${s.scale}`
+      ).toBe(true);
+    }
+  });
+
+  test('short-landscape: spore scale differentiation holds at 844x390', async ({ page }) => {
+    test.setTimeout(FOCUS_NEIGHBORHOOD_TEST_TIMEOUT_MS);
+    await openApp(page, { width: 844, height: 390 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 30); i++) {
+        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        if (node?.neighbors?.length > 0) return i;
+      }
+      return 0;
+    });
+
+    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForTimeout(700);
+
+    const snap = await probeNeighborhood(page);
+    expect(snap.focusedIndex, 'focusedIndex must be set at short-landscape').not.toBeNull();
+
+    const scales = await readPocketNodeScales(page);
+    expect(scales.length, 'pocket must be non-empty at short-landscape').toBeGreaterThan(0);
+
+    const anchorEntry = scales.find(s => s.idx === snap.focusedIndex);
+    expect(anchorEntry, 'anchor must have scale entry at short-landscape').toBeDefined();
+
+    // Anchor scale must be larger than every other pocket member
+    for (const s of scales) {
+      if (s.idx === snap.focusedIndex) continue;
+      expect(anchorEntry.scale > s.scale,
+        `anchor scale must exceed neighbor idx=${s.idx} scale at short-landscape`
+      ).toBe(true);
+    }
+
+    // Distinct scale values must exist (proves differentiation is applied)
+    const uniqueScales = [...new Set(scales.map(s => s.scale.toFixed(6)))];
+    expect(uniqueScales.length, `short-landscape pocket must expose ≥2 distinct scales; got ${uniqueScales.length}`).toBeGreaterThan(1);
   });
 
 });

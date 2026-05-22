@@ -40,3 +40,96 @@
         transition: none;
     }
 }
+
+
+/* Relocated prefers-reduced-motion rules (Slice 6) */
+
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+    html body[data-active-view="galaxy"] .info-panel,
+    html body[data-active-view="galaxy"] .focus-stage,
+    html body[data-active-view="galaxy"] .focus-stage-card,
+    html body[data-panel-surface="focus"] .focus-stage-card,
+    html body[data-panel-surface="focus-search"] .focus-stage-card,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card,
+    html body[data-active-view="galaxy"] .journey-compass {
+        transition: none;
+        transition-duration: 0.01ms;
+    }
+
+    html body[data-active-view="galaxy"][data-semantic-dive="transitioning"] .focus-stage-card {
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+        transition: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #search-input,
+    #search-input.search-input,
+    .filter-chip,
+    .loading-phase-chip,
+    .loading-phase-chip.is-active,
+    .loading-phase-chip.is-complete,
+    #city-filter,
+    #city-filter.filter-select,
+    .filter-select,
+    .filter-clear-btn,
+    .search-results,
+    .search-results.active,
+    .search-results.searching,
+    .search-results.focusing,
+    .search-results .search-result-item,
+    .search-container .search-input-wrapper,
+    .search-container .search-results,
+    .search-container .search-input {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+    html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"],
+    html body[data-active-view="galaxy"] .journey-compass[data-density="compact"] {
+        transition: none;
+        transition-duration: 0.01ms;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-semantic-dive="transitioning"] #canvas-container {
+        filter: none;
+        transform: none;
+        transition: none;
+    }
+
+    body.searching .search-spinner,
+    .search-results.searching .search-spinner-overlay,
+    #search-spinner,
+    .search-glow,
+    .journey-compass-action.primary[data-journey-action="center-anchor"]::after,
+    .journey-compass-action.primary[data-journey-action="next-stop"]::after {
+        animation: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .selected-card,
+    .vector-cascade-line {
+        transition-duration: 0.01ms;
+        animation-duration: 0.01ms;
+        animation-iteration-count: 1;
+    }
+}
+
+@media (min-width: 769px) and (prefers-reduced-motion: reduce) {
+    html body[data-panel-surface="semantic-dive"] #btn-inside-next.focus-stage-inside-btn[aria-busy="true"] {
+        animation: none;
+    }
+}

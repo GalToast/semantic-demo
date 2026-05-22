@@ -20,9 +20,9 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const LIFECYCLE_PATH = resolve(CWD, 'js/modules/lifecycle.js');
+const KEYBOARD_HELP_PATH = resolve(CWD, 'js/modules/keyboard-help.js');
 
-const src = readFileSync(LIFECYCLE_PATH, 'utf-8');
+const src = readFileSync(KEYBOARD_HELP_PATH, 'utf-8');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -45,7 +45,7 @@ function testPreviouslyFocusedVariable() {
   console.log('\n[TEST] _previouslyFocused declared at module scope near panel init');
 
   assertContains(src, '_previouslyFocused',
-    '_previouslyFocused variable exists in lifecycle.js');
+    '_previouslyFocused variable exists in keyboard-help.js');
 }
 
 // ---------------------------------------------------------------------------

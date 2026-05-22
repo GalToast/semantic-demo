@@ -22,6 +22,14 @@ import { recordSemanticLaneSnapshot } from './semantic-lane.js';
 import { refreshMapMarkers } from './map-state.js';
 import { updateClusterList } from './cluster-filter.js';
 import { buildLegend } from './ui-renderers.js';
+import { hideTooltip, positionTooltip, updateTooltipContent } from './search-ui-adapter.js';
+import {
+    updateUrlState as adapter_updateUrlState,
+    setSearchPanelState as adapter_setSearchPanelState,
+    focusOnPoint as adapter_focusOnPoint,
+    updateExplorationUi as adapter_updateExplorationUi,
+    resetNodePositions as adapter_resetNodePositions,
+} from './search-lifecycle-adapter.js';
 export {
     setActiveFilter,
     toggleActiveFilterSignal,
@@ -281,9 +289,7 @@ export function renderSearchResultItems(resultsEl, results, renderContext, statu
             const previousScrollTop = resultsEl.scrollTop;
             btn.setAttribute('aria-expanded', 'true');
             try { sessionStorage.setItem('searchVisibleCount', String(nextVisibleCount)); } catch (err) { console.warn('[search-state] searchVisibleCount persistence failed:', err); }
-            if (typeof window.updateUrlState === 'function') {
-                window.updateUrlState({ offset: null }, { reason: 'search-more' });
-            }
+            adapter_updateUrlState({ offset: null }, { reason: 'search-more' });
             setExpandedResultState(true);
             renderResultsMarkup(results.slice(0, nextVisibleCount), nextVisibleCount);
             bindSearchResultInteractions(resultsEl, statusEl, results, renderContext);
@@ -320,7 +326,7 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
     if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
     if (typeof window.clearCompactSearchResultRevealTimers === 'function') window.clearCompactSearchResultRevealTimers();
     if (typeof window.clearSearchPreviewHoverTimer === 'function') window.clearSearchPreviewHoverTimer();
-    if (typeof window.hideTooltip === 'function') window.hideTooltip();
+    hideTooltip();
 
     resultsEl
         .querySelectorAll('.search-result-item')
@@ -334,13 +340,13 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
     
     activateSearchGlow(resultIndices, targetIndex);
     updateSearchPreviewOverlay(targetIndex);
-    if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ focusing: true });
+    adapter_setSearchPanelState({ focusing: true });
 
     const focusDelayMs = isCompactSearchViewport() ? 40 : 120;
     window.setTimeout(() => {
         if (token !== state.searchFocusTransitionToken) return;
         if (state.currentView === 'map' && pointHasGeocode(point)) {
-            if (typeof window.focusOnPoint === 'function') window.focusOnPoint(point, { fromSearchResult: true });
+            adapter_focusOnPoint(point, { fromSearchResult: true });
         }
         // 10/10 Polish: Dismiss mobile keyboard during transition
         const input = document.getElementById('search-input');
@@ -361,7 +367,7 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
 
         window.setTimeout(() => {
             if (token !== state.searchFocusTransitionToken) return;
-            if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ focusing: false });
+            adapter_setSearchPanelState({ focusing: false });
         }, 260);
     }, focusDelayMs);
 }
@@ -556,7 +562,7 @@ export function applyFilters() {
     }
 
     if (typeof window.applyPointFilterColors === 'function') window.applyPointFilterColors();
-    if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
+    adapter_updateExplorationUi();
     if (typeof window.refreshHoverSemanticOverlay === 'function') window.refreshHoverSemanticOverlay();
 }
 
@@ -578,14 +584,14 @@ export function bindSearchResultInteractions(resultsEl, statusEl, results, rende
                 // Fix 5: visual connection — highlight the corresponding node in the mycelium
                 state.hoverHighlightIndex = targetIndex;
                 updateSearchPreviewOverlay(targetIndex);
-                if (typeof window.updateTooltipContent === 'function') window.updateTooltipContent(result.point);
+                updateTooltipContent(result.point);
                 const rect = el.getBoundingClientRect();
-                if (typeof window.positionTooltip === 'function') window.positionTooltip(rect.right + 8, rect.top + Math.min(rect.height, 48));
+                positionTooltip(rect.right + 8, rect.top + Math.min(rect.height, 48));
             }, 85);
         };
         el.onmouseleave = () => {
             if (isCompactSearchViewport()) {
-                if (typeof window.hideTooltip === 'function') window.hideTooltip();
+                hideTooltip();
                 return;
             }
             if (typeof window.clearSearchPreviewHoverTimer === 'function') window.clearSearchPreviewHoverTimer();
@@ -593,7 +599,7 @@ export function bindSearchResultInteractions(resultsEl, statusEl, results, rende
             // Fix 5: clear node highlight when leaving search result card
             state.hoverHighlightIndex = -1;
             restoreSearchResultPreview(resultIndices, fallbackPreviewIndex);
-            if (typeof window.hideTooltip === 'function') window.hideTooltip();
+            hideTooltip();
         };
         el.onclick = () => focusSearchResultFromElement(resultsEl, statusEl, resultIndices, targetIndex, el);
         el.onfocus = () => {
@@ -693,9 +699,7 @@ export function clearSearch() {
         window.resetExplorationFocus();
     }
 
-    if (typeof window.updateUrlState === 'function') {
-        window.updateUrlState({ q: null, anchor: null, offset: null, record: null }, { reason: 'search-clear' });
-    }
+    adapter_updateUrlState({ q: null, anchor: null, offset: null, record: null }, { reason: 'search-clear' });
     if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
 };
 
@@ -729,7 +733,7 @@ export function mapSemanticSearchResults(serviceResults) {
 
 export function beginSemanticSearchUiState(resultsEl, statusEl, trimmedQuery) {
     const preservingSameQuery = state.currentSearchSummary?.query === trimmedQuery;
-    if (typeof window.hideTooltip === 'function') window.hideTooltip();
+    hideTooltip();
     
     // 10/10 Polish: Show search spinner
     const spinner = document.getElementById('search-spinner');
@@ -858,9 +862,7 @@ export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQue
     }
     resultsEl.hidden = false;
     resultsEl.classList.add('active');
-    if (typeof window.updateUrlState === 'function') {
-        window.updateUrlState({}, { reason: 'search-degraded' });
-    }
+    adapter_updateUrlState({}, { reason: 'search-degraded' });
     resetSemanticGuideUi({ hideTrigger: true });
 }
 
@@ -945,12 +947,10 @@ export function applyEmptySemanticSearchState(resultsEl, statusEl, trimmedQuery,
         beat: 'query', kicker: 'No results trail', title: `No results trail for "${trimmedQuery}"`,
         note: 'Try a concrete service, place type, or business need.', immediate: true
     });
-    if (typeof window.updateUrlState === 'function') {
-        window.updateUrlState({}, { reason: 'search-empty' });
-    }
+    adapter_updateUrlState({}, { reason: 'search-empty' });
     resetSemanticGuideUi({ hideTrigger: true });
     // Task #923: Remove results-rendered on empty results state
-    if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ resultsRendered: false });
+    adapter_setSearchPanelState({ resultsRendered: false });
 }
 
 export function finishSemanticSearchController(controller) {
@@ -1107,8 +1107,8 @@ export async function search(query, options = {}) {
     if (hasExplorationFocus) {
         if (typeof window.resetExplorationFocus === 'function') {
             window.resetExplorationFocus();
-        } else if (typeof window.resetNodePositions === 'function') {
-            window.resetNodePositions({ preserveSearch: true, skipUrlSync: true });
+        } else {
+            adapter_resetNodePositions({ preserveSearch: true, skipUrlSync: true });
         }
     }
 
@@ -1202,7 +1202,7 @@ export async function search(query, options = {}) {
 
         // Set status after focusOnNode (so it sticks after the syncSearchStatusForFocus cascade)
         statusEl.textContent = `1 match for "${trimmedQuery}" — ${soleName} is the only record.`;
-        if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: false });
+        adapter_setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: false });
         return;
     }
 
@@ -1259,14 +1259,12 @@ export async function search(query, options = {}) {
 
     resultsEl.hidden = false;
     resultsEl.classList.add('active');
-    if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true });
+    adapter_setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true });
     startMobileRouteFieldPeek({
         resultsEl, activeIndex: anchorIndex, reason: payload?.client_cache_hit ? 'search-cache-hit' : 'search-network'
     });
     setActiveSearchResultRow(resultsEl, anchorIndex);
-    if (typeof window.updateUrlState === 'function') {
-        window.updateUrlState({ offset: null }, { reason: 'search' });
-    }
+    adapter_updateUrlState({ offset: null }, { reason: 'search' });
     // Advance the Journey compass from overview → search once results are rendered
     if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
 }

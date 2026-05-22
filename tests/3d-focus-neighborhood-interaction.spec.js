@@ -114,6 +114,44 @@ async function findHoverableNeighbor(page) {
   return null;
 }
 
+async function tabToNeighborPill(page, maxTabs = 80) {
+  for (let i = 0; i < maxTabs; i++) {
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(80);
+
+    const activeEl = await page.evaluate(() => {
+      const el = document.activeElement;
+      return {
+        tag: el?.tagName,
+        cls: typeof el?.className === 'string' ? el.className : '',
+        id: el?.id,
+        role: el?.getAttribute('role'),
+        ariaLabel: el?.getAttribute('aria-label'),
+        dataIndex: el?.dataset?.index,
+        tabIndex: el?.tabIndex
+      };
+    });
+
+    const isPillOrAction = (activeEl.cls?.includes('focus-stage-neighbor-pill') ?? false)
+      || (activeEl.cls?.includes('focus-stage-neighbor-action') ?? false);
+    if (isPillOrAction) return { ...activeEl, tabPresses: i + 1 };
+  }
+
+  return page.evaluate((tabPresses) => {
+    const el = document.activeElement;
+    return {
+      tag: el?.tagName,
+      cls: typeof el?.className === 'string' ? el.className : '',
+      id: el?.id,
+      role: el?.getAttribute('role'),
+      ariaLabel: el?.getAttribute('aria-label'),
+      dataIndex: el?.dataset?.index,
+      tabIndex: el?.tabIndex,
+      tabPresses
+    };
+  }, maxTabs);
+}
+
 test.describe('focus-neighborhood interaction', () => {
 
   test('desktop: a non-anchor neighbor can be hovered independently without anchor re-selection', async ({ page }) => {
@@ -424,6 +462,195 @@ test.describe('focus-neighborhood interaction', () => {
       visibleHeight >= 16 || hasScrollableRail,
       `mobile-portrait: first neighbor pill must be visible or reachable through a scrollable rail; metrics=${JSON.stringify(metrics)}`
     ).toBe(true);
+  });
+
+  // -------------------------------------------------------------------------
+  // Keyboard navigation: Tab reaches pill controls, focus is visible/semantic,
+  // Enter activates focus state change
+  // -------------------------------------------------------------------------
+
+  test('desktop: Tab reaches neighbor pill and Enter changes focus to that neighbor', async ({ page }) => {
+    test.setTimeout(FOCUS_NEIGHBORHOOD_TEST_TIMEOUT_MS);
+    await openApp(page, { width: 1440, height: 900 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 30); i++) {
+        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        if (node?.neighbors?.length > 0) return i;
+      }
+      return 0;
+    });
+
+    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForTimeout(700);
+
+    const before = await probe(page);
+    const anchorIndex = before.focusedNode;
+    expect(anchorIndex, 'anchor must be focused before keyboard test').not.toBeNull();
+
+    const activeEl = await tabToNeighborPill(page);
+    const isPillOrAction = (activeEl.cls?.includes('focus-stage-neighbor-pill') ?? false)
+      || (activeEl.cls?.includes('focus-stage-neighbor-action') ?? false);
+    expect(isPillOrAction,
+      `Tab must reach a pill or pill action button within ${activeEl.tabPresses} presses, got cls="${activeEl.cls}", tag=${activeEl.tag}, aria-label="${activeEl.ariaLabel}"`
+    ).toBe(true);
+
+    // If we landed on the pill container, Enter walks to that neighbor
+    if (activeEl.cls?.includes('focus-stage-neighbor-pill') && activeEl.dataIndex !== undefined) {
+      const neighborIdx = parseInt(activeEl.dataIndex, 10);
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(600);
+
+      const after = await probe(page);
+      // Enter on a neighbor pill should navigate focus to that neighbor
+      const movedToNeighbor = after.focusedNode !== anchorIndex
+        && isValidNodeIndex(after.focusedNode, after.pointCount)
+        && after.focusedNode !== null;
+      expect(movedToNeighbor,
+        `Enter on neighbor pill must change focus from anchor=${anchorIndex} to neighbor=${neighborIdx}, got focusedNode=${after.focusedNode}`
+      ).toBe(true);
+    }
+  });
+
+  test('desktop: neighbor pill has visible focus and semantic aria-label when focused', async ({ page }) => {
+    test.setTimeout(FOCUS_NEIGHBORHOOD_TEST_TIMEOUT_MS);
+    await openApp(page, { width: 1440, height: 900 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 30); i++) {
+        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        if (node?.neighbors?.length > 0) return i;
+      }
+      return 0;
+    });
+
+    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForTimeout(700);
+
+    const activeEl = await tabToNeighborPill(page);
+    const isPillOrAction = (activeEl.cls?.includes('focus-stage-neighbor-pill') ?? false)
+      || (activeEl.cls?.includes('focus-stage-neighbor-action') ?? false);
+    expect(isPillOrAction,
+      `Tab must reach a neighbor focus target, got cls="${activeEl.cls}", tag=${activeEl.tag}, aria-label="${activeEl.ariaLabel}"`
+    ).toBe(true);
+
+    const focused = await page.evaluate(() => {
+      const el = document.activeElement;
+      if (!el) return null;
+      const styles = getComputedStyle(el);
+      return {
+        cls: el.className,
+        role: el.getAttribute('role'),
+        ariaLabel: el.getAttribute('aria-label'),
+        dataIndex: el.dataset?.index,
+        tabIndex: el.tabIndex,
+        outline: styles.outline,
+        outlineColor: styles.outlineColor,
+        boxShadow: styles.boxShadow
+      };
+    });
+
+    expect(focused, 'an element must be focused after Tab').not.toBeNull();
+
+    const isPillFocused = focused.cls?.includes('focus-stage-neighbor-pill') ?? false;
+    expect(isPillFocused, `focused element must be a neighbor pill, got cls="${focused.cls}"`).toBe(true);
+    expect(focused.role, 'pill must have role=button').toBe('button');
+    expect(focused.ariaLabel, 'pill must have a non-empty aria-label').not.toBeNull();
+    expect(focused.ariaLabel?.trim().length, 'pill aria-label must not be empty').toBeGreaterThan(0);
+    expect(focused.tabIndex, 'pill tabIndex must be >= 0 for keyboard reach').toBeGreaterThanOrEqual(0);
+    const hasSemanticContent = focused.ariaLabel?.toLowerCase().includes('explore')
+      || focused.ariaLabel?.toLowerCase().includes('connection')
+      || focused.ariaLabel?.toLowerCase().includes('neighbor');
+    expect(hasSemanticContent,
+      `pill aria-label must convey semantic intent, got "${focused.ariaLabel}"`).toBe(true);
+  });
+
+  test('short-landscape: Tab reaches neighbor pill and Enter changes focus at 844x390', async ({ page }) => {
+    test.setTimeout(FOCUS_NEIGHBORHOOD_TEST_TIMEOUT_MS);
+    await openApp(page, { width: 844, height: 390 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 30); i++) {
+        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        if (node?.neighbors?.length > 0) return i;
+      }
+      return 0;
+    });
+
+    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForTimeout(700);
+
+    const before = await probe(page);
+    const anchorIndex = before.focusedNode;
+
+    // Verify neighbor pills exist before keyboard navigation
+    const neighborCount = await page.evaluate(() =>
+      document.querySelectorAll('.focus-stage-neighbor-pill').length
+    );
+    expect(neighborCount, 'short-landscape must have neighbor pills for keyboard test').toBeGreaterThan(0);
+
+    const activeEl = await tabToNeighborPill(page);
+
+    const isPillOrAction =
+      (activeEl.cls?.includes('focus-stage-neighbor-pill') ?? false) ||
+      (activeEl.cls?.includes('focus-stage-neighbor-action') ?? false);
+    expect(isPillOrAction,
+      `short-landscape: Tab must reach a pill or action button within ${activeEl.tabPresses} presses, got cls="${activeEl.cls}"`).toBe(true);
+
+    if (activeEl.cls?.includes('focus-stage-neighbor-pill') && activeEl.dataIndex !== undefined) {
+      const neighborIdx = parseInt(activeEl.dataIndex, 10);
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(700);
+
+      const after = await probe(page);
+      const movedToNeighbor = after.focusedNode !== anchorIndex
+        && isValidNodeIndex(after.focusedNode, after.pointCount)
+        && after.focusedNode !== null;
+      expect(movedToNeighbor,
+        `short-landscape: Enter on neighbor pill must change focus, anchor=${anchorIndex} → neighbor=${neighborIdx}, got focusedNode=${after.focusedNode}`
+      ).toBe(true);
+    }
+  });
+
+  test('mobile-portrait: Tab reaches neighbor pill at 390x844', async ({ page }) => {
+    test.setTimeout(FOCUS_NEIGHBORHOOD_TEST_TIMEOUT_MS);
+    await openApp(page, { width: 390, height: 844 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 30); i++) {
+        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        if (node?.neighbors?.length > 0) return i;
+      }
+      return 0;
+    });
+
+    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForTimeout(700);
+
+    const neighborCount = await page.evaluate(() =>
+      document.querySelectorAll('.focus-stage-neighbor-pill').length
+    );
+    expect(neighborCount, 'mobile-portrait: neighbor pills must exist').toBeGreaterThan(0);
+
+    const activeEl = await tabToNeighborPill(page);
+
+    const isPillOrAction =
+      (activeEl.cls?.includes('focus-stage-neighbor-pill') ?? false) ||
+      (activeEl.cls?.includes('focus-stage-neighbor-action') ?? false);
+    expect(isPillOrAction,
+      `mobile-portrait: Tab must reach a pill or action button within ${activeEl.tabPresses} presses, got cls="${activeEl.cls}"`).toBe(true);
   });
 
 });

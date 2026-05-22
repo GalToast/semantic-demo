@@ -1,0 +1,214 @@
+/**
+ * lifecycle-semantic-guide-residual-bridge-contract.mjs
+ *
+ * Documents and guards the two residual window bridges between lifecycle.js
+ * and the legend/semantic-guide seam:
+ *
+ *   Bridge A: window.updateLegendGuideState() — lifecycle-owned, self-call
+ *   Bridge B: window.restoreLegendCollapsedPanel() — legacy bootstrap export
+ *             owned by legend-ui.js; lifecycle.closeLegendGuide uses a direct import
+ *
+ * Design:
+ *   - Documents intentional residual bridges without failing on them
+ *   - Verifies direct-import ownership for extracted legend panel structure
+ *   - Guards against introducing a direct import cycle between
+ *     lifecycle.js and event-bindings.js (which already imports lifecycle)
+ *
+ * Runs in Node. No Playwright, no live network.
+ *
+ * Usage:
+ *   node tests/lifecycle-semantic-guide-residual-bridge-contract.mjs
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+
+const SEMDEMO_ROOT = path.resolve(process.cwd());
+
+const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
+const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js');
+const SEMANTIC_GUIDE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/semantic-guide.js');
+const LEGEND_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.js');
+
+function assert(cond, msg) {
+  if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
+}
+
+// ── Read sources ────────────────────────────────────────────────────────────
+
+function readSrc(p) {
+  return fs.readFileSync(p, 'utf-8');
+}
+
+// ── TEST 1: updateLegendGuideState is defined in lifecycle.js, not semantic-guide.js ──
+
+function testUpdateLegendGuideStateOwner() {
+  console.log('\n[TEST 1] updateLegendGuideState — owned by lifecycle.js, not semantic-guide.js');
+
+  const lifecycleSrc = readSrc(LIFECYCLE_PATH);
+  const semanticGuideSrc = readSrc(SEMANTIC_GUIDE_PATH);
+
+  // lifecycle.js must define (export) updateLegendGuideState
+  assert(
+    lifecycleSrc.includes('export function updateLegendGuideState'),
+    'lifecycle.js must export updateLegendGuideState'
+  );
+
+  // semantic-guide.js must NOT define updateLegendGuideState
+  assert(
+    !semanticGuideSrc.includes('function updateLegendGuideState') &&
+    !semanticGuideSrc.includes('export function updateLegendGuideState'),
+    'semantic-guide.js must NOT define updateLegendGuideState (ownership is lifecycle)'
+  );
+
+  // lifecycle.js must expose it to window
+  assert(
+    lifecycleSrc.includes('window.updateLegendGuideState = updateLegendGuideState'),
+    'lifecycle.js exports updateLegendGuideState to window (compatibility bridge)'
+  );
+
+  // The call site in lifecycle.switchView must be typeof-guarded
+  assert(
+    lifecycleSrc.includes('typeof window.updateLegendGuideState === \'function\'') ||
+    lifecycleSrc.includes('typeof window.updateLegendGuideState === "function"'),
+    'lifecycle.switchView calls updateLegendGuideState with typeof guard'
+  );
+
+  console.log('  OK — updateLegendGuideState: lifecycle-owned, semantic-guide.ts NOT owner');
+}
+
+// ── TEST 2: restoreLegendCollapsedPanel is owned by legend-ui.js ──
+
+function testRestoreLegendCollapsedPanelOwner() {
+  console.log('\n[TEST 2] restoreLegendCollapsedPanel — owned by legend-ui.js');
+
+  const eventBindingsSrc = readSrc(EVENT_BINDINGS_PATH);
+  const lifecycleSrc = readSrc(LIFECYCLE_PATH);
+  const legendUiSrc = readSrc(LEGEND_UI_PATH);
+
+  assert(
+    legendUiSrc.includes('export function restoreLegendCollapsedPanel'),
+    'legend-ui.js must export restoreLegendCollapsedPanel'
+  );
+  assert(
+    legendUiSrc.includes('window.restoreLegendCollapsedPanel = restoreLegendCollapsedPanel'),
+    'legend-ui.js keeps restoreLegendCollapsedPanel as a legacy bootstrap window export'
+  );
+  assert(
+    !eventBindingsSrc.includes('window.restoreLegendCollapsedPanel = restoreLegendCollapsedPanel'),
+    'event-bindings.js must not own the restoreLegendCollapsedPanel window export'
+  );
+
+  const closeLegendGuideMatch = lifecycleSrc.match(/function closeLegendGuide[\s\S]*?^}/m);
+  assert(closeLegendGuideMatch, 'lifecycle.js must define closeLegendGuide');
+
+  const closeLegendGuideBody = closeLegendGuideMatch[0];
+  assert(
+    closeLegendGuideBody.includes('restoreLegendCollapsedPanel(infoPanel, panelBtn)'),
+    'lifecycle.closeLegendGuide calls restoreLegendCollapsedPanel via direct import'
+  );
+  assert(
+    !closeLegendGuideBody.includes('window.restoreLegendCollapsedPanel'),
+    'lifecycle.closeLegendGuide must not call the legacy window bridge'
+  );
+  assert(
+    lifecycleSrc.includes("from './legend-ui.js'") && lifecycleSrc.includes('restoreLegendCollapsedPanel'),
+    'lifecycle.js imports restoreLegendCollapsedPanel from legend-ui.js'
+  );
+
+  console.log('  OK — restoreLegendCollapsedPanel: legend-ui-owned, direct-imported in lifecycle');
+}
+
+// ── TEST 3: No NEW direct lifecycle → event-bindings import cycle introduced ──
+// Note: lifecycle.js already imports initEventListeners from event-bindings.js (line 18).
+// event-bindings.js already imports from lifecycle.js. The bidirectional cycle pre-exists.
+// Adding a direct lifecycle → legend-ui import is safe because legend-ui is import-free.
+
+function testNoNewLifecycleEventBindingsImportCycle() {
+  console.log('\n[TEST 3] No NEW lifecycle → event-bindings import cycle introduced');
+
+  const lifecycleSrc = readSrc(LIFECYCLE_PATH);
+
+  const directRestoreImport = lifecycleSrc.match(/import.*restoreLegendCollapsedPanel.*from.*event/);
+  assert(
+    !directRestoreImport,
+    'lifecycle.js must NOT import restoreLegendCollapsedPanel from event-bindings.js'
+  );
+
+  console.log('  OK — no new direct import of restoreLegendCollapsedPanel from event-bindings.js');
+  console.log('       Note: lifecycle→event-bindings cycle pre-exists via initSemanticDemoEventListeners import');
+}
+
+// ── TEST 4: lifecycle does NOT import updateLegendGuideState from semantic-guide.js ──
+// Note: lifecycle.js DOES import from semantic-guide.js (setSemanticGuideButtonState,
+// showSummaryCard, hideSummaryCard, requestSemanticGuide, semanticGuideIcon,
+// getSemanticGuideTitle). That import is intentional re-export/compatibility.
+// What this test guards: lifecycle must NOT import updateLegendGuideState specifically
+// from semantic-guide, because lifecycle OWNS that function.
+
+function testLifecycleDoesNotImportUpdateLegendGuideStateFromSemanticGuide() {
+  console.log('\n[TEST 4] lifecycle does NOT import updateLegendGuideState from semantic-guide');
+
+  const lifecycleSrc = readSrc(LIFECYCLE_PATH);
+
+  // Check that lifecycle imports from semantic-guide — it does for other functions
+  const hasSemanticGuideImport = lifecycleSrc.includes("from './semantic-guide.js'");
+  assert(hasSemanticGuideImport, 'lifecycle.js does import from semantic-guide.js (re-exports)');
+
+  // But lifecycle must NOT import updateLegendGuideState from semantic-guide
+  const importDeclarations = lifecycleSrc.match(/^import[\s\S]*?;$/gm) || [];
+  const badImport = importDeclarations.some((declaration) =>
+    declaration.includes("from './semantic-guide.js'") &&
+    declaration.includes('updateLegendGuideState')
+  );
+  assert(!badImport, 'lifecycle must NOT import updateLegendGuideState from semantic-guide.js (lifecycle owns it)');
+
+  console.log('  OK — lifecycle imports semantic-guide functions but NOT updateLegendGuideState');
+}
+
+// ── TEST 5: closeLegendGuide is lifecycle-owned and exports to window ──
+
+function testCloseLegendGuideOwnership() {
+  console.log('\n[TEST 5] closeLegendGuide — owned by lifecycle.js, exported to window');
+
+  const lifecycleSrc = readSrc(LIFECYCLE_PATH);
+
+  // closeLegendGuide must be exported from lifecycle
+  assert(
+    lifecycleSrc.includes('export function closeLegendGuide'),
+    'lifecycle.js must export closeLegendGuide'
+  );
+
+  // closeLegendGuide must be exported to window
+  assert(
+    lifecycleSrc.includes('window.closeLegendGuide = closeLegendGuide'),
+    'lifecycle.js exports closeLegendGuide to window (compatibility bridge)'
+  );
+
+  console.log('  OK — closeLegendGuide: lifecycle-owned, window bridge for bootstrap compat');
+}
+
+// ── MAIN ────────────────────────────────────────────────────────────────────
+
+console.log('=================================================================');
+console.log('lifecycle-semantic-guide-residual-bridge-contract.mjs');
+console.log('Documents: lifecycle owns updateLegendGuideState, closeLegendGuide');
+console.log('          legend-ui owns restoreLegendCollapsedPanel');
+console.log('          residual window bridges are intentional, not extracted');
+console.log('=================================================================');
+
+try {
+  testUpdateLegendGuideStateOwner();
+  testRestoreLegendCollapsedPanelOwner();
+  testNoNewLifecycleEventBindingsImportCycle();
+  testLifecycleDoesNotImportUpdateLegendGuideStateFromSemanticGuide();
+  testCloseLegendGuideOwnership();
+
+  console.log('\n=================================================================');
+  console.log('ALL TESTS PASSED — residual bridges documented and guarded');
+  console.log('=================================================================');
+  process.exit(0);
+} catch (err) {
+  console.error('\nTEST FAILED:', err.message);
+  process.exit(1);
+}

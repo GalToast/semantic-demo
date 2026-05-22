@@ -341,21 +341,6 @@ html body[data-panel-surface]:not([data-panel-surface^="map-"])[data-focus-trans
 
 /* polish202: when the user takes the camera, keep the route legible without
    pretending the guided rail is still steering the view. */
-html body[data-panel-surface]:not([data-panel-surface^="map-"])[data-route-exploration="free"] .journey-compass[data-phase="focus"] {
-    border-color: rgba(121, 235, 222, 0.28);
-    background:
-        radial-gradient(circle at 8% 0%, rgba(121, 235, 222, 0.12), transparent 30%),
-        linear-gradient(180deg, rgba(8, 18, 24, 0.82), rgba(5, 8, 13, 0.72));
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.045),
-        0 18px 42px rgba(0, 0, 0, 0.3),
-        0 0 30px rgba(121, 235, 222, 0.08);
-}
-
-html body[data-panel-surface]:not([data-panel-surface^="map-"])[data-route-exploration="free"] .journey-compass[data-phase="focus"] .journey-compass-kicker {
-    color: rgba(121, 235, 222, 0.86);
-}
-
 html body[data-panel-surface]:not([data-panel-surface^="map-"])[data-route-exploration="free"] .focus-stage-card {
     border-color: rgba(121, 235, 222, 0.46);
 }

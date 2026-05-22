@@ -85,4 +85,42 @@ test.describe('short-landscape viewport contracts', () => {
       }
     }
   });
+
+  test('focus card leaves graph breathing room at 667x375', async ({ page }) => {
+    await page.setViewportSize({ width: 667, height: 375 });
+    await page.evaluate(() => {
+      document.body.dataset.activeView = 'galaxy';
+      document.body.dataset.panelSurface = 'focus-search';
+      document.body.dataset.graphContext = 'focus-search';
+      document.body.dataset.focusPanelMode = 'focus';
+
+      const stage = document.querySelector('#focus-stage');
+      const card = document.querySelector('.focus-stage-card');
+      if (stage) {
+        stage.hidden = false;
+        stage.classList.add('active');
+        stage.setAttribute('aria-hidden', 'false');
+        stage.setAttribute('aria-expanded', 'true');
+      }
+      if (card) {
+        card.style.height = '';
+      }
+    });
+
+    const footprint = await page.locator('.focus-stage-card').evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      return {
+        bottom: rect.bottom,
+        height: rect.height,
+        maxHeight: style.maxHeight,
+        top: rect.top,
+        viewportHeight: window.innerHeight || document.documentElement.clientHeight,
+      };
+    });
+
+    expect(footprint.bottom, 'focus card should stay inside short-landscape viewport').toBeLessThanOrEqual(footprint.viewportHeight);
+    expect(footprint.height, 'focus card must not consume the focus-neighborhood canvas in short landscape').toBeLessThanOrEqual(170);
+    expect(footprint.top, 'focus card should leave visible canvas above it for neighborhood nodes and threads').toBeGreaterThanOrEqual(190);
+  });
 });

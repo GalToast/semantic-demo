@@ -111,7 +111,7 @@ async function probe(page) {
       },
       ui: {
         // Focus-stage / thread-inspector panel elements that expose selectable nodes
-        focusStageActions: document.querySelectorAll('.focus-stage-actions,.focus-actions,.focus-stage-action').length,
+        focusStageActions: document.querySelectorAll('.focus-stage-neighbor-actions,.focus-stage-neighbor-action').length,
         threadInspectorItems: document.querySelectorAll('.thread-item,.thread-candidate,.ti-item,.ti-candidate').length,
         nodeDetailCards: document.querySelectorAll('.node-detail,.lead-detail,.person-card,.node-info-card').length,
         pocketCountBadge: document.querySelectorAll('.pocket-count,.focus-pocket-count,.pocket-meta').length
@@ -204,7 +204,7 @@ test.describe('focus-pocket node selectability', () => {
     expect(snap.state.focusedNode, 'focusedNode must be non-null after focusOnNode').not.toBeNull();
 
     // --- Body surface must reflect focus ---
-    expect(['focus', 'focus-search', 'semantic-dive', 'focus-pocket'],
+    expect(['focus', 'focus-search', 'semantic-dive'],
       'body panelSurface must be a focus-related surface'
     ).toContain(snap.body.panelSurface);
 

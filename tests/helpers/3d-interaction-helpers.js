@@ -292,6 +292,61 @@ export async function probeFocusPocket(page) {
  * Returns true if the given screen coordinate hits the canvas and is not
  * blocked by any interactive overlay element.
  */
+export async function readPocketNodeScales(page) {
+  return page.evaluate(() => {
+    const state = window.state || {};
+    const pocket = state.navState?.focusPocketIndices ?? [];
+    const focusedIdx = state.navState?.focusedIndex ?? null;
+    const roles = state.navState?.focusPocketRoleByIndex instanceof Map
+      ? Object.fromEntries(state.navState.focusPocketRoleByIndex)
+      : {};
+
+    // Mirror the private getNodeSporeScale formula in three-setup.js.
+    // Keep these constants synchronized with that shader scale helper.
+    // Formula: BASE * (0.86 + seed(index, 2.7) * 0.48) * emphasis
+    // emphasis: anchor=2.15, primary=1.74, support=1.42, other=0.62
+    const BASE = 0.0019;
+    function seededUnit(index, salt) {
+      const x = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453;
+      return x - Math.floor(x);
+    }
+    function getNodeSporeScale(index) {
+      let emphasis = 1;
+      if (Number.isFinite(focusedIdx)) {
+        if (index === focusedIdx) {
+          emphasis = 2.15;
+        } else if (pocket.includes(index)) {
+          const role = roles[String(index)];
+          emphasis = role === 'primary' ? 1.74 : role === 'support' ? 1.42 : 1.42;
+        } else {
+          const trailNeighbors = state.navState?.trailNeighborIndices || [];
+          for (let i = 0; i < Math.min(12, trailNeighbors.length); i += 1) {
+            if (trailNeighbors[i] === index) { emphasis = 1.48; break; }
+          }
+          if (emphasis === 1) emphasis = 0.62;
+        }
+      }
+      if (index === state.hoverHighlightIndex) {
+        emphasis = Math.max(emphasis, 1.95);
+      }
+      return BASE * (0.86 + seededUnit(index, 2.7) * 0.48) * emphasis;
+    }
+
+    // Include the anchor node (focusedIndex), whose spore scale is not in focusPocketIndices
+    const anchorIdx = Number.isFinite(focusedIdx) ? focusedIdx : null;
+    const allIndices = anchorIdx !== null
+      ? [anchorIdx, ...pocket]
+      : [...pocket];
+    const uniqueIndices = [...new Set(allIndices)];
+
+    return uniqueIndices.map(idx => {
+      const role = idx === anchorIdx ? 'anchor' : (roles[String(idx)] || 'unknown');
+      const scale = getNodeSporeScale(idx);
+      return { idx, role, scale };
+    });
+  });
+}
+
 export async function isReachableScreenCoordinate(page, screenX, screenY) {
   return page.evaluate(({ x, y }) => {
     const canvas = window.state?.renderer?.domElement;

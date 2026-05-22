@@ -2,6 +2,7 @@ import { state } from '../state.js';
 import { isCompactFocusStageViewport } from '../utils.js';
 import { syncFilterControls, switchView, resetExperienceState } from './lifecycle.js';
 import { toggleAutoRotate, focusOnNode } from './camera-controls.js';
+import { handleGalaxyKeydown } from './keyboard-help.js';
 import {
     search,
     clearSearch,
@@ -14,6 +15,7 @@ import {
     toggleActiveFilterSignal,
     resetActiveFilters
 } from './filter-state.js';
+import { closeLegendPanel, openLegendPanel, restoreLegendCollapsedPanel } from './legend-ui.js';
 
 function bindClick(id, handler, options = {}) {
     const element = document.getElementById(id);
@@ -376,7 +378,7 @@ function bindModeAndPromptControls(setMyceliumMode) {
     });
 }
 
-function bindFilterControls() {
+function bindFilterControls(updateUrlState) {
     const refreshActiveSearchResults = () => {
         const searchInput = document.getElementById('search-input');
         const query = searchInput?.value?.trim() || '';
@@ -392,7 +394,7 @@ function bindFilterControls() {
         clearTimeout(state.searchTimeout);
         state.searchTimeout = setTimeout(() => {
             applyFilters();
-            if (typeof window.updateUrlState === 'function') window.updateUrlState({}, { reason: updateReason });
+            if (typeof updateUrlState === 'function') updateUrlState({}, { reason: updateReason });
             refreshActiveSearchResults();
         }, 150);
     };
@@ -434,15 +436,13 @@ function bindFilterControls() {
     if (clearFiltersBtn) {
         clearFiltersBtn.onclick = () => {
             resetActiveFilters();
-            if (typeof window.updateUrlState === 'function') window.updateUrlState({}, { reason: 'filter-clear' });
+            if (typeof updateUrlState === 'function') updateUrlState({}, { reason: 'filter-clear' });
             handleFilter(null, 'filter-clear');
         };
     }
 }
 
 function bindWindowControlFunctions(resetExperienceState, resetNodePositions) {
-    window.resetNodePositions = resetNodePositions;
-
     window.revealSelectedBusinessCard = function () {
         if (typeof window.setInfoPanelOpen === 'function') {
             window.setInfoPanelOpen(true);
@@ -468,7 +468,7 @@ function bindWindowControlFunctions(resetExperienceState, resetNodePositions) {
     window.expandNeighborhoodFromCurrentNode = function () {
         const index = state.focusedNode;
         if (!Number.isFinite(index)) return;
-        if (typeof window.applyLocalNeighborhoodFocus === 'function') window.applyLocalNeighborhoodFocus(index);
+        if (typeof window._fp?.applyLocalNeighborhoodFocus === 'function') window._fp.applyLocalNeighborhoodFocus(index);
     };
 
     window.recenterFocusedNode = function () {
@@ -546,10 +546,7 @@ function bindPanelControls(onWindowResize) {
             const legendPanel = document.getElementById('legend-panel');
             const legendToggle = document.getElementById('btn-legend');
             if (legendPanel?.classList.contains('active')) {
-                legendPanel.classList.remove('active');
-                legendPanel.setAttribute('aria-hidden', 'true');
-                document.documentElement.dataset.legendActive = 'false';
-                if (legendToggle) legendToggle.setAttribute('aria-expanded', 'false');
+                closeLegendPanel();
             }
             const infoToggle = document.getElementById('info-panel-toggle');
             if (infoToggle) infoToggle.setAttribute('aria-expanded', 'true');
@@ -563,35 +560,24 @@ function bindLegendControls() {
     const legendPanel = document.getElementById('legend-panel');
     const legendToggle = document.getElementById('btn-legend');
 
-    const restoreLegendCollapsedPanel = () => {
-        if (!isCompactFocusStageViewport() || document.body.dataset.focusPanelMode !== 'legend-open') return;
-        if (infoPanel) infoPanel.classList.add('active');
-        document.body.dataset.focusPanelMode = 'overview';
-        if (panelBtn) panelBtn.setAttribute('aria-expanded', 'true');
-    };
-    window.restoreLegendCollapsedPanel = restoreLegendCollapsedPanel;
-
     if (legendToggle && legendPanel) {
         legendToggle.onclick = () => {
             const isOpening = !legendPanel.classList.contains('active');
             if (isOpening) {
                 window._previouslyFocusedLegend = document.activeElement || legendToggle;
-            }
-            legendPanel.classList.toggle('active', isOpening);
-            legendPanel.setAttribute('aria-hidden', isOpening ? 'false' : 'true');
-            document.documentElement.dataset.legendActive = isOpening ? 'true' : 'false';
-            legendToggle.setAttribute('aria-expanded', String(isOpening));
-            legendToggle.setAttribute('aria-pressed', String(isOpening));
-            if (isCompactFocusStageViewport() && isOpening) {
-                if (infoPanel?.classList.contains('active')) {
-                    infoPanel.classList.remove('active');
-                    document.body.dataset.focusPanelMode = 'legend-open';
-                    if (panelBtn) panelBtn.setAttribute('aria-expanded', 'false');
-                    const infoToggle = document.getElementById('info-panel-toggle');
-                    if (infoToggle) infoToggle.setAttribute('aria-expanded', 'false');
+                openLegendPanel();
+                if (isCompactFocusStageViewport()) {
+                    if (infoPanel?.classList.contains('active')) {
+                        infoPanel.classList.remove('active');
+                        document.body.dataset.focusPanelMode = 'legend-open';
+                        if (panelBtn) panelBtn.setAttribute('aria-expanded', 'false');
+                        const infoToggle = document.getElementById('info-panel-toggle');
+                        if (infoToggle) infoToggle.setAttribute('aria-expanded', 'false');
+                    }
                 }
-            } else if (!isOpening) {
-                restoreLegendCollapsedPanel();
+            } else {
+                closeLegendPanel();
+                restoreLegendCollapsedPanel(infoPanel, panelBtn);
             }
         };
     }
@@ -602,14 +588,8 @@ function bindLegendControls() {
             if (!legendPanel?.classList.contains('active')) return;
             if (legendPanel.contains(e.target) || legendToggle?.contains(e.target)) return;
             const prevFocus = window._previouslyFocusedLegend || legendToggle;
-            legendPanel.classList.remove('active');
-            legendPanel.setAttribute('aria-hidden', 'true');
-            document.documentElement.dataset.legendActive = 'false';
-            if (legendToggle) {
-                legendToggle.setAttribute('aria-expanded', 'false');
-                legendToggle.setAttribute('aria-pressed', 'false');
-            }
-            restoreLegendCollapsedPanel();
+            closeLegendPanel();
+            restoreLegendCollapsedPanel(infoPanel, panelBtn);
             if (prevFocus && typeof prevFocus.focus === 'function') {
                 prevFocus.focus({ preventScroll: true });
             }
@@ -633,7 +613,7 @@ function bindGlobalEvents() {
                 button.click();
             }
         }, true);
-        window.addEventListener('keydown', (e) => { if (typeof window.handleGalaxyKeydown === 'function') window.handleGalaxyKeydown(e); });
+        window.addEventListener('keydown', (e) => { handleGalaxyKeydown(e); });
         window.addEventListener('focus', () => { if (typeof window.handleSemanticLaneWindowFocus === 'function') window.handleSemanticLaneWindowFocus(); });
         window.addEventListener('popstate', (e) => {
             if (typeof window.applyUrlState === 'function') window.applyUrlState({ fromHistory: true, historyState: e.state }).catch(() => {});
@@ -704,7 +684,8 @@ export function initEventListeners({
     resetExperienceState,
     resetNodePositions,
     setMyceliumMode,
-    setSemanticLaneUiState
+    setSemanticLaneUiState,
+    updateUrlState,
 }) {
     if (state.eventListenersInitialized) return;
     state.eventListenersInitialized = true;
@@ -718,7 +699,7 @@ export function initEventListeners({
     bindGlobalEvents();
     bindModeAndPromptControls(setMyceliumMode);
     bindUtilityButtons();
-    bindFilterControls();
+    bindFilterControls(updateUrlState);
     bindPanelControls(onWindowResize);
     bindLegendControls();
 

@@ -681,3 +681,92 @@
         overflow-y: auto;
     }
 }
+
+
+/* Relocated Semantic Dive mobile rules (Slice 4) */
+@media (max-width: 768px) {
+            body[data-panel-surface="semantic-dive"] .info-panel {
+                transform: translateX(calc(-100% + 24px));
+                opacity: 0.12;
+            }
+
+            body[data-panel-surface="semantic-dive"] .focus-stage {
+                left: 0;
+                right: 0;
+                bottom: 0;
+                width: 100%;
+                z-index: 92;
+                pointer-events: none;
+            }
+
+            body[data-panel-surface="semantic-dive"] .focus-stage-card {
+                position: relative;
+                padding: 20px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+                border-radius: 28px 28px 0 0;
+                border-width: 1px 0 0 0;
+                border-color: rgba(121, 235, 222, 0.28);
+                background:
+                    radial-gradient(circle at 50% 0%, rgba(121, 235, 222, 0.18), transparent 45%),
+                    linear-gradient(180deg, rgba(8, 18, 25, 0.88), rgba(5, 12, 18, 0.94));
+                box-shadow:
+                    0 -12px 42px rgba(0, 0, 0, 0.34),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+                backdrop-filter: blur(22px) saturate(1.2);
+                pointer-events: auto;
+                max-height: 224px;
+                overflow-y: auto;
+    overflow-x: hidden;
+            }
+
+            body[data-panel-surface="semantic-dive"] .focus-stage-card::after {
+                content: '';
+                position: absolute;
+                top: 8px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 36px;
+                height: 4px;
+                border-radius: 2px;
+                background: rgba(255, 255, 255, 0.12);
+                box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.1);
+            }
+
+            body[data-panel-surface="semantic-dive"] .focus-stage-kicker,
+            body[data-panel-surface="semantic-dive"] .focus-stage-what,
+            body[data-panel-surface="semantic-dive"] .focus-stage-note,
+            body[data-panel-surface="semantic-dive"] .focus-stage-journey,
+            body[data-panel-surface="semantic-dive"] .focus-stage-neighbors {
+                display: none;
+            }
+
+            body[data-panel-surface="semantic-dive"] .focus-stage-name {
+                font-size: 12px;
+            }
+
+            body[data-panel-surface="semantic-dive"] .focus-stage-actions {
+                display: none;
+            }
+
+            body[data-panel-surface="semantic-dive"] .focus-thread-inspector {
+                display: none;
+            }
+
+            body[data-panel-surface="semantic-dive"] .focus-stage-dive-btn {
+                margin-top: 6px;
+                padding: 8px 9px;
+                border-radius: 12px;
+            }
+
+            body[data-panel-surface="semantic-dive"] .focus-stage-dive-label {
+                font-size: 11px;
+            }
+
+            body[data-panel-surface="semantic-dive"] .focus-stage-dive-copy {
+                display: none;
+            }
+
+            body[data-panel-surface="semantic-dive"] .controls {
+                opacity: 0.24;
+            }
+
+        }

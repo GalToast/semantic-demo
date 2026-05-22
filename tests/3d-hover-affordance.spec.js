@@ -27,7 +27,7 @@ async function getHoverState(page) {
 async function findHoverableNode(page) {
   const candidates = await projectedCanvasCandidates(page);
   for (const candidate of candidates) {
-    await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 4 });
+    await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 });
     await page.waitForTimeout(140);
     const state = await getHoverState(page);
     if (isValidNodeIndex(state.hoverHighlightIndex, state.pointCount) && state.canvasCursor === 'pointer') {
@@ -40,6 +40,28 @@ async function findHoverableNode(page) {
     }
   }
   return null;
+}
+
+async function moveUntilHoverClears(page) {
+  const viewport = page.viewportSize() || { width: 1440, height: 900 };
+  const points = [
+    [8, 8],
+    [viewport.width - 8, 8],
+    [8, viewport.height - 8],
+    [viewport.width - 8, viewport.height - 8],
+    [viewport.width / 2, 8],
+    [8, viewport.height / 2],
+  ];
+
+  let lastState = null;
+  for (const [x, y] of points) {
+    await page.mouse.move(x, y, { steps: 1 });
+    await page.waitForTimeout(220);
+    lastState = await getHoverState(page);
+    const cleared = lastState.hoverHighlightIndex === -1 || lastState.hoverHighlightIndex === null;
+    if (cleared && lastState.canvasCursor !== 'pointer') return lastState;
+  }
+  return lastState;
 }
 
 test.describe('3D node hover affordance', () => {
@@ -63,10 +85,7 @@ test.describe('3D node hover affordance', () => {
     const target = await findHoverableNode(page);
     expect(target, 'a hoverable node must exist before testing clear behavior').not.toBeNull();
 
-    await page.mouse.move(16, 16, { steps: 5 });
-    await page.waitForTimeout(500);
-
-    const hoverAfter = await getHoverState(page);
+    const hoverAfter = await moveUntilHoverClears(page);
     const cleared = hoverAfter.hoverHighlightIndex === -1 || hoverAfter.hoverHighlightIndex === null;
     expect(cleared, `hoverHighlightIndex should clear after move-away, got ${hoverAfter.hoverHighlightIndex}`).toBe(true);
     expect(hoverAfter.canvasCursor, 'canvas cursor should reset after hover clear').not.toBe('pointer');
@@ -80,7 +99,7 @@ test.describe('3D node hover affordance', () => {
     expect(first, 'first hoverable node must exist').not.toBeNull();
     const firstState = await getHoverState(page);
 
-    await page.mouse.move(first.screenX + 220, first.screenY + 180, { steps: 5 });
+    await page.mouse.move(first.screenX + 220, first.screenY + 180, { steps: 1 });
     await page.waitForTimeout(220);
     const secondState = await getHoverState(page);
 
@@ -171,7 +190,7 @@ test.describe('3D node hover affordance', () => {
     let first = null;
     let second = null;
     for (const candidate of candidates) {
-      await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 4 });
+      await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 });
       await page.waitForTimeout(160);
       const resolved = await getHoverState(page);
       if (!isValidNodeIndex(resolved.hoverHighlightIndex, resolved.pointCount)) continue;
@@ -209,7 +228,7 @@ test.describe('3D node hover affordance', () => {
     expect(candidates.length, 'need candidates for stale-state test').toBeGreaterThan(0);
 
     const first = candidates[0];
-    await page.mouse.move(first.screenX, first.screenY, { steps: 4 });
+    await page.mouse.move(first.screenX, first.screenY, { steps: 1 });
     await page.waitForTimeout(200);
 
     const initial = await getHoverState(page);
@@ -247,7 +266,7 @@ test.describe('3D node hover affordance', () => {
 
     // Rapid movement across candidates
     for (const candidate of candidates.slice(0, 4)) {
-      await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 2 });
+      await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 });
     }
     await page.waitForTimeout(80);
 

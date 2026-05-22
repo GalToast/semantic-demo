@@ -15,9 +15,9 @@ import {
     setTrailDepth,
     setMyceliumMode,
     updateExplorationUi,
-    syncSearchStatusForFocus,
-    updateUrlState
+    syncSearchStatusForFocus
 } from './lifecycle.js';
+import { updateUrlState } from './url-state.js';
 import { applyPointFilterColors, syncFocusStage } from './journey.js';
 
 // Constants

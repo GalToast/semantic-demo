@@ -86,19 +86,21 @@ checks.push({
 });
 
 // ---------------------------------------------------------------------------
-// Contract 5: startSceneReveal calls window.clearAutoRotateResumeTimer
+// Contract 5: startSceneReveal calls clearAutoRotateResumeTimer (direct import, not window)
 // --------------------------------------------------------------------------
 checks.push({
-  name: 'startSceneReveal:calls window.clearAutoRotateResumeTimer',
-  pass: /window\.clearAutoRotateResumeTimer\s*\(/.test(src),
+  name: 'startSceneReveal:calls clearAutoRotateResumeTimer (dewindowed — direct import)',
+  pass: /^export\s+function\s+startSceneReveal[\s\S]{0,700}?clearAutoRotateResumeTimer\s*\(\s*\)/m.test(src) &&
+        !/window\.clearAutoRotateResumeTimer/.test(src),
 });
 
 // ---------------------------------------------------------------------------
-// Contract 6: startSceneReveal calls window.setAutoRotateSuspended(true)
+// Contract 6: startSceneReveal calls setAutoRotateSuspended(true) (direct import, not window)
 // --------------------------------------------------------------------------
 checks.push({
-  name: 'startSceneReveal:calls window.setAutoRotateSuspended(true)',
-  pass: /window\.setAutoRotateSuspended\s*\(\s*true\s*\)/.test(src),
+  name: 'startSceneReveal:calls setAutoRotateSuspended(true) (dewindowed — direct import)',
+  pass: /^export\s+function\s+startSceneReveal[\s\S]{0,700}?setAutoRotateSuspended\s*\(\s*true\s*\)/m.test(src) &&
+        !/window\.setAutoRotateSuspended/.test(src),
 });
 
 // ---------------------------------------------------------------------------

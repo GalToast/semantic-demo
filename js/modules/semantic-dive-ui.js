@@ -1,5 +1,6 @@
 import { state } from '../state.js';
 import { cleanOptionalValue, formatBusinessName, isCompactFocusStageViewport } from '../utils.js';
+import { updateExplorationUi } from './lifecycle.js';
 
 function truncateDiveStatusCopy(text, max = 74) {
     const clean = cleanOptionalValue(text);
@@ -46,7 +47,7 @@ export function syncSemanticDiveUi() {
     const canDive = state.currentView === 'galaxy' && hasFocus;
     if (state.semanticDiveMode && !canDive) {
         state.semanticDiveMode = false;
-        if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
+        updateExplorationUi();
     }
 
     const active = state.semanticDiveMode && canDive;

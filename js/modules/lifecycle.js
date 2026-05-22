@@ -14,10 +14,32 @@ import {
     semanticGuideIcon,
     getSemanticGuideTitle
 } from './semantic-guide.js';
+import { setSearchPanelState } from './search-state.js';
 import { initEventListeners as initSemanticDemoEventListeners } from './event-bindings.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
+import { closeLegendPanel, isLegendPanelOpen, openLegendPanel, restoreLegendCollapsedPanel } from './legend-ui.js';
 import { showSemanticThreadsDetail } from './connection-analysis.js';
 import { setActiveSearchResultRow, updateSelectedCardHeading } from './ui-renderers.js';
+import { updateUrlState, copyCurrentViewLink } from './url-state.js';
+export { updateUrlState, copyCurrentViewLink };
+
+import {
+    isKeyboardTextEntryTarget,
+    isKeyboardControlTarget,
+    initKeyboardShortcutsHint,
+    showKeyboardShortcutsHint,
+    flashArrowKeyToast,
+    handleGalaxyKeydown,
+    initKeyboardResetOwnership
+} from './keyboard-help.js';
+export {
+    isKeyboardTextEntryTarget,
+    isKeyboardControlTarget,
+    initKeyboardShortcutsHint,
+    showKeyboardShortcutsHint,
+    flashArrowKeyToast,
+    handleGalaxyKeydown
+};
 
 import {
     setLoadingPhase,
@@ -36,7 +58,8 @@ import {
     getFilteredClusterCounts,
     syncCityFilterUi,
     populateCityFilter,
-    syncFilterControls
+    syncFilterControls,
+    findClusterByKeyword
 } from './cluster-filter.js';
 import {
     fetchSemanticLaneHealth,
@@ -97,7 +120,9 @@ import {
     updateSelectedBusiness,
     setTrailFromSeed,
     syncFocusStage,
-    applyPointFilterColors
+    applyPointFilterColors,
+    setRouteChoreographyPhase,
+    updateTraversalUi
 } from './journey.js';
 
 export { setLoadingPhase, hideLoadingOverlay, startDeferredHydration, scheduleWeatherHydration };
@@ -679,7 +704,7 @@ export function applyStoryPrompt(story, options = {}) {
     } else if (story === 'bridge-businesses') {
         setMyceliumMode('bridge', { keepStoryPrompt: true, skipUrlSync: true });
     } else if (story === 'mapped-food') {
-        const foodCluster = window.findClusterByKeyword ? window.findClusterByKeyword('restaurant') : null;
+        const foodCluster = findClusterByKeyword('restaurant');
         if (foodCluster !== null) state.activeClusterFilter = foodCluster;
         state.activeFilters.geocoded = true;
         setMyceliumMode('default', { keepStoryPrompt: true, skipUrlSync: true });
@@ -700,133 +725,8 @@ export function applyStoryPrompt(story, options = {}) {
 }
 
 // === Navigation & URL State ===
+// updateUrlState and copyCurrentViewLink have been extracted to url-state.js
 
-export function updateUrlState(extra = {}, options = {}) {
-    if (state.restoringBrowserHistory) return;
-    if (typeof window === 'undefined' || !window.location || !window.history) return;
-
-    const params = new URLSearchParams(window.location.search);
-
-    params.set('view', state.currentView);
-    if (state.semanticLaneOpsMode) params.set('ops', '1');
-    else params.delete('ops');
-
-    const query = (document.getElementById('search-input')?.value || '').trim();
-    if (query) params.set('q', query);
-    else params.delete('q');
-
-    const anchorIndex = state.currentSearchSummary?.anchorIndex;
-    if (!Number.isFinite(anchorIndex) || anchorIndex < 0 || anchorIndex >= state.points?.length) {
-        params.delete('anchor');
-    } else {
-        const anchorLeadId = state.points[anchorIndex]?.lead_id;
-        if (anchorLeadId !== null && anchorLeadId !== undefined && anchorLeadId !== '') {
-            params.set('anchor', String(anchorLeadId));
-        } else {
-            params.delete('anchor');
-        }
-    }
-
-    if (state.activeFilters.status !== 'all') params.set('status', state.activeFilters.status);
-    else params.delete('status');
-
-    if (state.activeFilters.city !== 'all') params.set('city', state.activeFilters.city);
-    else params.delete('city');
-
-    ['website', 'email', 'geocoded'].forEach((key) => {
-        if (state.activeFilters[key]) params.set(key, '1');
-        else params.delete(key);
-    });
-
-    if (state.myceliumMode !== 'default') params.set('mode', state.myceliumMode);
-    else params.delete('mode');
-
-    if (state.trailDepth > 0) params.set('depth', String(state.trailDepth));
-    else params.delete('depth');
-
-    if (state.activeStoryPrompt) params.set('story', state.activeStoryPrompt);
-    else params.delete('story');
-
-    if (state.activeClusterFilter !== null) params.set('cluster', String(state.activeClusterFilter));
-    else params.delete('cluster');
-
-    if (state.selectedPoint?.lead_id) params.set('record', String(state.selectedPoint.lead_id));
-    else params.delete('record');
-    params.delete('lead');
-
-    Object.entries(extra).forEach(([key, value]) => {
-        if (value === null || value === undefined || value === '') params.delete(key);
-        else params.set(key, String(value));
-    });
-
-    const next = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
-    const current = `${window.location.pathname}${window.location.search}`;
-    const historyState = {
-        semanticDemo: true,
-        reason: options.reason || 'state',
-        params: Object.fromEntries(params.entries())
-    };
-    if (next === current) {
-        if (!window.history.state?.semanticDemo || !window.history.state?.params) {
-            window.history.replaceState(historyState, '', next);
-        }
-        return;
-    }
-
-    const method = options.mode === 'push' && !state.applyingUrlState ? 'pushState' : 'replaceState';
-    try {
-        window.history[method](historyState, '', next);
-    } catch (err) {
-        if (err.name !== 'SecurityError') console.warn('updateUrlState history call failed:', err);
-    }
-}
-
-export async function copyCurrentViewLink() {
-    let shareUrl;
-    try {
-        shareUrl = new URL(window.location.href);
-    } catch {
-        if (typeof window.showExperienceToast === 'function') window.showExperienceToast('Copy unavailable', 'Could not read the current page URL.');
-        return null;
-    }
-    shareUrl.searchParams.delete('cb');
-    shareUrl.searchParams.delete('lead');
-    shareUrl.searchParams.set('view', state.currentView || 'galaxy');
-
-    if (state.selectedPoint?.lead_id) {
-        shareUrl.searchParams.set('record', String(state.selectedPoint.lead_id));
-    }
-    if (state.myceliumMode && state.myceliumMode !== 'default') {
-        shareUrl.searchParams.set('mode', state.myceliumMode);
-    }
-    if (state.currentSearchSummary?.query) {
-        shareUrl.searchParams.set('q', state.currentSearchSummary.query);
-    }
-    if (state.activeClusterFilter) {
-        shareUrl.searchParams.set('cluster', state.activeClusterFilter);
-    }
-    if (state.activeStoryPrompt) {
-        shareUrl.searchParams.set('story', state.activeStoryPrompt);
-    }
-    if (Number.isFinite(state.currentSearchSummary?.anchorIndex)) {
-        shareUrl.searchParams.set('anchor', state.currentSearchSummary.anchorIndex);
-    }
-
-    const href = shareUrl.toString();
-    try {
-        await navigator.clipboard.writeText(href);
-    } catch (err) {
-        // Clipboard access can fail with SecurityError or AbortError — do not throw through UI.
-        console.warn('Clipboard write failed:', err);
-        if (typeof window.showExperienceToast === 'function') {
-            window.showExperienceToast('Copy unavailable', 'Could not write to clipboard.');
-        }
-        return null;
-    }
-    state.lastCopiedViewLink = href;
-    if (typeof window.showExperienceToast === 'function') window.showExperienceToast('View link copied', 'Link copied to clipboard.');
-    return href;
-}
 
 export function resetExperienceState() {
     resetStateBeforeUrlRestore({ clearSearchInput: true });
@@ -951,7 +851,7 @@ export function resetStateBeforeUrlRestore(options = {}) {
     };
     clearExplorationFocusSelection();
     setTrailDepth(0, { skipUrlSync: true, allowDiveExit: true });
-    if (typeof window.setSearchPanelState === 'function') window.setSearchPanelState({ searching: false, focusing: false, resultsRendered: false });
+    setSearchPanelState({ searching: false, focusing: false, resultsRendered: false });
     if (typeof window.hideTooltip === 'function') window.hideTooltip();
     clearSearchPreviewHoverTimer();
     if (typeof window.clearSearchPreviewOverlay === 'function') window.clearSearchPreviewOverlay();
@@ -1042,13 +942,11 @@ export function switchView(view, options = {}) {
             to: 'map',
             routeCount
         });
-        if (typeof window.setRouteChoreographyPhase === 'function') {
-            window.setRouteChoreographyPhase('terrain-prelude', {
-                reason: 'map-prelude',
-                anchorIndex: state.currentSearchSummary?.anchorIndex ?? state.navState?.focusedIndex ?? null,
-                indexCount: routeCount
-            });
-        }
+        setRouteChoreographyPhase('terrain-prelude', {
+            reason: 'map-prelude',
+            anchorIndex: state.currentSearchSummary?.anchorIndex ?? state.navState?.focusedIndex ?? null,
+            indexCount: routeCount
+        });
         if (typeof window.animateCameraToTerrainPrelude === 'function') {
             window.animateCameraToTerrainPrelude({ duration: state.MAP_HANDOFF_PRELUDE_MS || 1200 });
         }
@@ -1106,16 +1004,7 @@ export function switchView(view, options = {}) {
         }
     }
 
-    const legendPanel = document.getElementById('legend-panel');
-    const legendToggle = document.getElementById('btn-legend');
-    if (legendPanel && legendToggle) {
-        legendPanel.classList.remove('active');
-        legendPanel.setAttribute('aria-hidden', 'true');
-        document.documentElement.dataset.legendActive = 'false';
-        legendToggle.setAttribute('aria-expanded', 'false');
-        legendToggle.setAttribute('aria-pressed', 'false');
-        legendToggle.setAttribute('aria-label', 'Show field guide');
-    }
+    closeLegendPanel();
 
     const btnGalaxy = document.getElementById('btn-galaxy');
     const btnMap = document.getElementById('btn-map');
@@ -1184,13 +1073,11 @@ export function switchView(view, options = {}) {
             state.currentSearchSummary?.anchorIndex !== undefined
         ) {
             const anchorIndex = state.currentSearchSummary.anchorIndex;
-            if (typeof window.setRouteChoreographyPhase === 'function') {
-                window.setRouteChoreographyPhase('search-corridor', {
-                    reason: 'return-to-mycelium-search',
-                    anchorIndex,
-                    indexCount: state.currentSearchSummary.resultIndices?.length || 0
-                });
-            }
+            setRouteChoreographyPhase('search-corridor', {
+                reason: 'return-to-mycelium-search',
+                anchorIndex,
+                indexCount: state.currentSearchSummary.resultIndices?.length || 0
+            });
             if (typeof window.animateCameraToSearchCorridor === 'function') {
                 window.animateCameraToSearchCorridor(
                     anchorIndex,
@@ -1208,13 +1095,11 @@ export function switchView(view, options = {}) {
             });
             setTrailFromSeed(anchorIndex);
         } else {
-            if (typeof window.setRouteChoreographyPhase === 'function') {
-                window.setRouteChoreographyPhase('overview', {
-                    reason: 'return-to-mycelium-overview',
-                    anchorIndex: null,
-                    indexCount: 0
-                });
-            }
+            setRouteChoreographyPhase('overview', {
+                reason: 'return-to-mycelium-overview',
+                anchorIndex: null,
+                indexCount: 0
+            });
         }
     } else {
         const routeCount = getRouteEmbodimentIndices().length;
@@ -1225,13 +1110,11 @@ export function switchView(view, options = {}) {
             settleAfterMs: 1800,
             settlePhase: 'settled'
         });
-        if (typeof window.setRouteChoreographyPhase === 'function') {
-            window.setRouteChoreographyPhase('terrain-landing', {
-                reason: 'map-handoff',
-                anchorIndex: state.currentSearchSummary?.anchorIndex ?? state.navState?.focusedIndex ?? null,
-                indexCount: routeCount
-            });
-        }
+        setRouteChoreographyPhase('terrain-landing', {
+            reason: 'map-handoff',
+            anchorIndex: state.currentSearchSummary?.anchorIndex ?? state.navState?.focusedIndex ?? null,
+            indexCount: routeCount
+        });
         initMap()
             .then(() => {
                 if (state.currentView !== 'map') return;
@@ -1397,7 +1280,7 @@ export function resetNodePositions(options = {}) {
     }
     updateSelectedBusiness(null);
     applyPointFilterColors();
-    if (typeof window.updateTraversalUi === 'function') window.updateTraversalUi();
+    updateTraversalUi();
     refreshMapRouteEmbodiment();
     refreshCompositionState();
     if (!options.skipUrlSync) {
@@ -1407,52 +1290,19 @@ export function resetNodePositions(options = {}) {
 
 // === Input Helpers & Legend ===
 
-export function isKeyboardTextEntryTarget(target) {
-    if (!target || typeof target.tagName !== 'string') return false;
-    const tagName = target.tagName.toLowerCase();
-    const type = typeof target.type === 'string' ? target.type.toLowerCase() : '';
-    
-    if (tagName === 'input' && (type === 'text' || type === 'search' || type === 'email' || type === 'url' || type === 'password')) {
-        return true;
-    }
-    if (tagName === 'textarea') return true;
-    if (target.isContentEditable) return true;
-    
-    return false;
-}
 
-export function isKeyboardControlTarget(target) {
-    if (!target || typeof target.tagName !== 'string') return false;
-    const tagName = target.tagName.toLowerCase();
-    if (tagName === 'button' || tagName === 'select' || tagName === 'a') return true;
-    return false;
-}
 
 export function updateLegendGuideState() {
     const legendPanel = document.getElementById('legend-panel');
     if (!legendPanel) return;
     const guide = state.currentSemanticGuide;
     if (!guide) {
-        if (legendPanel.classList.contains('active')) {
-            legendPanel.classList.remove('active');
-            legendPanel.setAttribute('aria-hidden', 'true');
-            legendPanel.innerHTML = '';
-            document.documentElement.dataset.legendActive = 'false';
-        }
+        if (isLegendPanelOpen()) closeLegendPanel();
+        legendPanel.innerHTML = '';
         return;
     }
     // Auto-open the legend panel when guide data is available
-    if (!legendPanel.classList.contains('active')) {
-        legendPanel.classList.add('active');
-        legendPanel.setAttribute('aria-hidden', 'false');
-        document.documentElement.dataset.legendActive = 'true';
-        const legendToggle = document.getElementById('btn-legend');
-        if (legendToggle) {
-            legendToggle.setAttribute('aria-expanded', 'true');
-            legendToggle.setAttribute('aria-pressed', 'true');
-            legendToggle.setAttribute('aria-label', 'Hide field guide');
-        }
-    }
+    if (!legendPanel.classList.contains('active')) openLegendPanel();
     const kicker = guide.laneStatus || 'Field Guide';
     const title = getSemanticGuideTitle(guide);
     const note = guide.text || '';
@@ -1470,21 +1320,15 @@ export function updateLegendGuideState() {
 }
 
 export function closeLegendGuide(options = {}) {
-    const legendPanel = document.getElementById('legend-panel');
     const legendToggle = document.getElementById('btn-legend');
-    if (!legendPanel || !legendPanel.classList.contains('active')) return;
+    if (!isLegendPanelOpen()) return;
 
-    legendPanel.classList.remove('active');
-    legendPanel.setAttribute('aria-hidden', 'true');
-    document.documentElement.dataset.legendActive = 'false';
-    if (legendToggle) {
-        legendToggle.setAttribute('aria-expanded', 'false');
-        legendToggle.setAttribute('aria-pressed', 'false');
-        legendToggle.setAttribute('aria-label', 'Show field guide');
-    }
+    closeLegendPanel();
 
-    if (options.restoreFocusPanel !== false && typeof window.restoreLegendCollapsedPanel === 'function') {
-        window.restoreLegendCollapsedPanel();
+    if (options.restoreFocusPanel !== false) {
+        const infoPanel = document.querySelector('.info-panel');
+        const panelBtn = document.getElementById('btn-panel');
+        restoreLegendCollapsedPanel(infoPanel, panelBtn);
     }
     if (options.restoreFocus) {
         if (window._previouslyFocusedLegend) {
@@ -1495,232 +1339,18 @@ export function closeLegendGuide(options = {}) {
     }
 }
 
-// === Keyboard Shortcuts Hint Panel ===
 
-let _shortcutsPanelArrowToastShown = false;
-let _keyboardShortcutKeyListenerBound = false;
-
-export function initKeyboardShortcutsHint() {
-    // Don't re-create if already in DOM
-    if (document.getElementById('keyboard-hint-panel')) return;
-
-    let _previouslyFocused = null;
-
-    const panel = document.createElement('div');
-    panel.id = 'keyboard-hint-panel';
-    panel.className = 'keyboard-hint-panel';
-    panel.setAttribute('role', 'region');
-    panel.setAttribute('aria-label', 'Keyboard shortcuts');
-    panel.setAttribute('aria-hidden', 'true');
-    panel.innerHTML = `
-        <div class="kh-title">Keyboard Shortcuts</div>
-        <div class="kh-row"><span class="kh-keys"><kbd>Arrow</kbd></span><span>Navigate nodes</span></div>
-        <div class="kh-row"><span class="kh-keys"><kbd>Home</kbd></span><span>Reset view</span></div>
-        <div class="kh-row"><span class="kh-keys"><kbd>End</kbd></span><span>Recenter</span></div>
-        <div class="kh-row"><span class="kh-keys"><kbd>+ / -</kbd></span><span>Zoom</span></div>
-        <div class="kh-row"><span class="kh-keys"><kbd>Esc</kbd></span><span>Close overlays</span></div>
-        <button class="kh-close" type="button" aria-label="Dismiss shortcuts panel">&times;</button>
-    `;
-    document.body.appendChild(panel);
-
-    function closePanel() {
-        if (panel._autoDismissTimer) {
-            clearTimeout(panel._autoDismissTimer);
-            panel._autoDismissTimer = null;
-        }
-        panel.classList.remove('visible');
-        panel.setAttribute('aria-hidden', 'true');
-        const helpButton = document.getElementById('btn-keyboard-help');
-        if (helpButton) {
-            helpButton.setAttribute('aria-expanded', 'false');
-            helpButton.setAttribute('aria-pressed', 'false');
-        }
-        sessionStorage.setItem('kh_dismissed', '1');
-        if (_previouslyFocused) {
-            _previouslyFocused.focus();
-            _previouslyFocused = null;
-        }
-        document.removeEventListener('keydown', _onPanelKeydown);
-    }
-
-    function _onPanelKeydown(e) {
-        if (e.key === 'Escape') {
-            e.stopPropagation();
-            closePanel();
-            return;
-        }
-        // Simple focus trap: Tab cycles within the panel
-        if (e.key === 'Tab') {
-            const focusable = panel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-            if (focusable.length === 0) return;
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            if (e.shiftKey && document.activeElement === first) {
-                e.preventDefault();
-                last.focus();
-            } else if (!e.shiftKey && document.activeElement === last) {
-                e.preventDefault();
-                first.focus();
-            }
-        }
-    }
-
-    // Wire the close button
-    panel.querySelector('.kh-close').addEventListener('click', closePanel);
-
-    function openPanel(returnFocusEl) {
-        if (panel._autoDismissTimer) {
-            clearTimeout(panel._autoDismissTimer);
-            panel._autoDismissTimer = null;
-        }
-        _previouslyFocused = returnFocusEl || document.getElementById('btn-keyboard-help') || document.activeElement;
-        const onboarding = document.getElementById('onboarding-hint');
-        onboarding?.classList.remove('visible');
-        onboarding?.setAttribute('aria-hidden', 'true');
-        panel.classList.add('visible');
-        panel.setAttribute('aria-hidden', 'false');
-        const helpButton = document.getElementById('btn-keyboard-help');
-        if (helpButton) {
-            helpButton.setAttribute('aria-expanded', 'true');
-            helpButton.setAttribute('aria-pressed', 'true');
-        }
-        panel.querySelector('.kh-close')?.focus({ preventScroll: true });
-        document.removeEventListener('keydown', _onPanelKeydown);
-        document.addEventListener('keydown', _onPanelKeydown);
-    }
-
-    panel._openKeyboardHintPanel = openPanel;
-    panel._closeKeyboardHintPanel = closePanel;
-
-    // Wire "?" toolbar button if it exists
-    const helpBtn = document.getElementById('btn-keyboard-help');
-    if (helpBtn) {
-        helpBtn.setAttribute('aria-controls', 'keyboard-hint-panel');
-        helpBtn.setAttribute('aria-expanded', 'false');
-        helpBtn.setAttribute('aria-pressed', 'false');
-        helpBtn.addEventListener('click', () => {
-            if (panel.classList.contains('visible')) {
-                closePanel();
-            } else {
-                openPanel(document.activeElement || helpBtn);
-            }
-        });
-    }
-
-    if (!_keyboardShortcutKeyListenerBound) {
-        _keyboardShortcutKeyListenerBound = true;
-        document.addEventListener('keydown', (event) => {
-            const isShortcutKey = event.key === '?' || (event.key === '/' && event.shiftKey);
-            if (!isShortcutKey) return;
-            if (isKeyboardTextEntryTarget(event.target)) return;
-            event.preventDefault();
-            event.stopPropagation();
-            openPanel(document.getElementById('btn-keyboard-help'));
-        });
-    }
-
-    // Keep shortcuts on demand through the toolbar and keyboard shortcut.
-}
-
-export function showKeyboardShortcutsHint() {
-    const panel = document.getElementById('keyboard-hint-panel');
-    if (!panel) return;
-    if (typeof panel._openKeyboardHintPanel === 'function') {
-        panel._openKeyboardHintPanel(document.getElementById('btn-keyboard-help'));
-    } else {
-        const onboarding = document.getElementById('onboarding-hint');
-        onboarding?.classList.remove('visible');
-        onboarding?.setAttribute('aria-hidden', 'true');
-        panel.classList.add('visible');
-        panel.setAttribute('aria-hidden', 'false');
-        panel.querySelector('.kh-close')?.focus({ preventScroll: true });
-    }
-    // Auto-dismiss after 5 seconds — clear any pending auto-dismiss first to avoid double-firing
-    if (panel._autoDismissTimer) clearTimeout(panel._autoDismissTimer);
-    panel._autoDismissTimer = setTimeout(() => {
-        if (typeof panel._closeKeyboardHintPanel === 'function') {
-            panel._closeKeyboardHintPanel();
-        } else {
-            panel.classList.remove('visible');
-            panel.setAttribute('aria-hidden', 'true');
-        }
-        panel._autoDismissTimer = null;
-    }, 5000);
-}
-
-export function flashArrowKeyToast() {
-    if (_shortcutsPanelArrowToastShown) return;
-    _shortcutsPanelArrowToastShown = true;
-    if (typeof window.showExperienceToast === 'function') {
-        window.showExperienceToast('Arrow keys to navigate — press ? for shortcuts', { duration: 3500 });
-    }
-}
-
-export function handleGalaxyKeydown(event) {
-    if (!event?.target) return;
-    if (isKeyboardTextEntryTarget(event.target)) return;
-    const isControlTarget = isKeyboardControlTarget(event.target);
-
-    if (event.key === 'Escape') {
-        // Demo takes priority — cancel it before any other Esc action
-        if (window.demoController?.isRunning?.()) {
-            window.demoController.cancel();
-            return;
-        }
-        if (typeof window.closeLegendGuide === 'function') window.closeLegendGuide({ restoreFocus: true });
-        if (typeof window.hideTooltip === 'function') window.hideTooltip();
-        if (typeof window.hideSummaryCard === 'function') window.hideSummaryCard();
-        // Also close/toggle the info panel — escape should close it when open
-        if (typeof window.setInfoPanelOpen === 'function') {
-            window.setInfoPanelOpen(false);
-        }
-        const searchInput = document.getElementById('search-input');
-        const hasSearchText = Boolean(searchInput?.value?.trim());
-        const hasSearchState = Boolean(state.currentSearchSummary || state.searchGlowActive);
-        const hasFocusState = state.focusedNode !== null || state.navState?.focusedIndex !== null;
-        if (hasSearchText || hasSearchState || hasFocusState) {
-            event.preventDefault();
-            returnToOverview();
-        }
-        return;
-    }
-
-    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-        if (isControlTarget && event.key === 'ArrowUp') return;
-        event.preventDefault();
-        flashArrowKeyToast();
-        if (typeof window.traverseNeighbor === 'function') window.traverseNeighbor(-1);
-    } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-        if (isControlTarget && event.key === 'ArrowDown') return;
-        event.preventDefault();
-        if (typeof window.traverseNeighbor === 'function') window.traverseNeighbor(1);
-    } else if (event.key === 'Home') {
-        if (state.currentView === 'galaxy') {
-            event.preventDefault();
-            resetExplorationFocus();
-        }
-    } else if (event.key === 'End' || (event.key === 'c' && !event.ctrlKey && !event.metaKey)) {
-        if (state.currentView === 'galaxy') {
-            event.preventDefault();
-            if (typeof window.recenterFocusedNode === 'function') window.recenterFocusedNode();
-        }
-    }
-
-    if (event.key === '=' || event.key === '+') {
-        if (typeof window.zoomCamera === 'function') window.zoomCamera(0.84);
-    } else if (event.key === '-' || event.key === '_') {
-        if (typeof window.zoomCamera === 'function') window.zoomCamera(1.18);
-    } else if (event.key === '?' || event.key === '/') {
-        event.preventDefault();
-        if (typeof showKeyboardShortcutsHint === 'function') {
-            showKeyboardShortcutsHint();
-        }
-    }
-}
 
 // === Event Listeners ===
 
 export function initEventListeners() {
+    // Inject authoritative reset APIs into keyboard-help.js so it never
+    // needs to import lifecycle.js (breaking the lifecycle <-> keyboard-help cycle).
+    initKeyboardResetOwnership({
+        returnToOverview,
+        resetExplorationFocus
+    });
+
     return initSemanticDemoEventListeners({
         onWindowResize,
         recordSemanticLaneSnapshot,

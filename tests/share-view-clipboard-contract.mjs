@@ -18,9 +18,9 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const LIFECYCLE_PATH = resolve(CWD, 'js/modules/lifecycle.js');
+const URL_STATE_PATH = resolve(CWD, 'js/modules/url-state.js');
 
-const src = readFileSync(LIFECYCLE_PATH, 'utf-8');
+const src = readFileSync(URL_STATE_PATH, 'utf-8');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -56,7 +56,7 @@ function testClipboardCatchPath() {
     'copyCurrentViewLink has catch block for clipboard error');
 
   // Catch must show toast (not re-throw) so UI stays stable
-  assertContains(src, "showExperienceToast('Copy unavailable'",
+  assertContains(src, "adapterShowExperienceToast('Copy unavailable'",
     'catch block calls showExperienceToast for Copy unavailable');
 
   // Catch must return null — no success value after failure
@@ -75,7 +75,7 @@ function testSuccessPathReturnsHref() {
   assertContains(src, 'state.lastCopiedViewLink = href',
     'success path sets lastCopiedViewLink');
 
-  assertContains(src, "showExperienceToast('View link copied'",
+  assertContains(src, "adapterShowExperienceToast('View link copied'",
     'success path shows View link copied toast');
 
   // Must return href (string), not an object or undefined
@@ -135,7 +135,7 @@ function testNoRethrowOnClipboardFailure() {
     'catch block must not contain an actual throw statement (not just a comment mention)');
   assert(catchBlock.includes('return null'),
     'catch block must return null on failure');
-  assert(catchBlock.includes("showExperienceToast('Copy unavailable'"),
+  assert(catchBlock.includes("adapterShowExperienceToast('Copy unavailable'"),
     'catch block must show toast on failure');
 }
 

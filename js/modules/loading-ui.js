@@ -89,7 +89,7 @@ export function startDeferredHydration() {
                 if (typeof window.refreshFocusSemanticOverlay === 'function') window.refreshFocusSemanticOverlay();
                 if (typeof window.refreshFocusBeaconOverlay === 'function') window.refreshFocusBeaconOverlay();
                 if (typeof window.refreshFocusNextCueOverlay === 'function') window.refreshFocusNextCueOverlay();
-                if (typeof window.applyLocalNeighborhoodFocus === 'function') window.applyLocalNeighborhoodFocus(priorFocused);
+                if (typeof window._fp?.applyLocalNeighborhoodFocus === 'function') window._fp.applyLocalNeighborhoodFocus(priorFocused);
                 if (typeof window.applyPointFilterColors === 'function') window.applyPointFilterColors();
                 if (typeof window.syncFocusStage === 'function') {
                     const priorPoint = (Number.isFinite(priorFocused) && priorFocused >= 0 && priorFocused < state.points.length)

@@ -37,6 +37,7 @@ import {
 import { focusOnNode } from './camera-controls.js';
 import { refreshCompositionState, dispatchNavTransition } from './lifecycle.js';
 import { setFocusPocketMeta } from './focus-pocket.js';
+import { applyClusterUiAccent } from './cluster-ui-accent.js';
 
 export {
     normalizeLeadId,
@@ -998,7 +999,7 @@ export function primeBoundedSemanticNeighborhoodForTraversal(seedIndex) {
 
     setTrailFromSeed(seedIndex);
     if (state.navState.threadSource !== 'semantic') return false;
-    if (typeof window.applyLocalNeighborhoodFocus === 'function') window.applyLocalNeighborhoodFocus(seedIndex);
+    if (typeof window._fp?.applyLocalNeighborhoodFocus === 'function') window._fp.applyLocalNeighborhoodFocus(seedIndex);
     ensureBoundedNeighborhoodFromActivePocket(seedIndex);
     return isBoundedNeighborhoodActive();
 }
@@ -1151,7 +1152,7 @@ export function syncFocusStage(point) {
     };
 
     if (point === null) {
-        if (typeof window.applyClusterUiAccent === 'function') window.applyClusterUiAccent(stageCard, null);
+        applyClusterUiAccent(stageCard, null);
         stage.classList.remove('active');
         stage.hidden = true;
         stage.setAttribute('aria-hidden', 'true');
@@ -1165,7 +1166,7 @@ export function syncFocusStage(point) {
         || ((state.focusedNode !== null && state.focusedNode !== undefined && Number.isFinite(state.focusedNode) && state.focusedNode >= 0 && state.focusedNode < state.points.length) ? state.points[state.focusedNode] : null);
 
     if (!effectivePoint || state.currentView !== 'galaxy' || state.focusedNode === null) {
-        if (typeof window.applyClusterUiAccent === 'function') window.applyClusterUiAccent(stageCard, null);
+        applyClusterUiAccent(stageCard, null);
         stage.classList.remove('active');
         stage.hidden = true;
         stage.setAttribute('aria-hidden', 'true');
@@ -1176,7 +1177,7 @@ export function syncFocusStage(point) {
 
     const wasActive = stage.classList.contains('active') && !stage.hidden;
 
-    if (typeof window.applyClusterUiAccent === 'function') window.applyClusterUiAccent(stageCard, effectivePoint);
+    applyClusterUiAccent(stageCard, effectivePoint);
     stage.hidden = false;
     stage.setAttribute('aria-hidden', 'false');
     stage.classList.add('active');
@@ -1368,7 +1369,7 @@ export function updateSelectedBusiness(point, options = {}) {
             detailsEl.style.display = 'none';
             if (cardEl) cardEl.style.opacity = '1';
         }, 180);
-        if (cardEl && typeof window.applyClusterUiAccent === 'function') window.applyClusterUiAccent(cardEl, null);
+        if (cardEl) applyClusterUiAccent(cardEl, null);
         if (cardEl) cardEl.classList.add('is-empty');
         if (typeof renderSelectedMetaStrip === 'function') renderSelectedMetaStrip(null);
         if (typeof renderSelectedMatchPanel === 'function') renderSelectedMatchPanel(null);
@@ -1432,7 +1433,7 @@ export function updateSelectedBusiness(point, options = {}) {
         emptyEl.style.display = 'none';
         detailsEl.style.display = 'block';
     }
-    if (typeof window.applyClusterUiAccent === 'function') window.applyClusterUiAccent(cardEl, point);
+    if (cardEl) applyClusterUiAccent(cardEl, point);
     if (cardEl) cardEl.classList.remove('is-empty');
 
     const cascadeBg = document.getElementById('vector-cascade-bg');

@@ -8,23 +8,23 @@
  *
  * Group mode: --group=<name> reads from contracts.manifest.json
  *   node tests/run-all-contracts.js --group=core
- *   node tests/run-all-contracts.js --group=navigation
- *   node tests/run-all-contracts.js --group=scene
- *   node tests/run-all-contracts.js --group=smoke
- *   node tests/run-all-contracts.js --group=motion
- *   node tests/run-all-contracts.js --group=lifecycle
- *   node tests/run-all-contracts.js --group=browser
- *   node tests/run-all-contracts.js --group=browser-interaction
- *   node tests/run-all-contracts.js --group=render
- *   node tests/run-all-contracts.js --group=quality
- *   node tests/run-all-contracts.js --group=mobile-critical
- *   node tests/run-all-contracts.js --group=full
+ *   ... (see --list output for all groups)
+ *
+ * Single contract mode: --single= runs one file in isolation.
+ *   node tests/run-all-contracts.js --single=3d-focus-pocket-selectability.spec.js
+ *   node tests/run-all-contracts.js --single=3d-focus-pocket-selectability.spec.js --group=3d-smoke
  *
  * List groups: --list shows all available groups with contract counts and descriptions.
  *   node tests/run-all-contracts.js --list
  *
+ * Runner help:
+ *   node tests/run-all-contracts.js --help
+ *
  * Validation self-test (no contracts executed):
  *   node tests/run-all-contracts.js --validate
+ *
+ * Stop on the first failing contract:
+ *   node tests/run-all-contracts.js --group=3d-focus-neighborhood --stop-on-first-fail
  *
  * Pass detection:
  *   - Exit code 0
@@ -34,7 +34,7 @@
 
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import http from 'node:http';
 
@@ -45,6 +45,7 @@ const PROJECT_ROOT = join(TESTS_DIR, '..');
 const SERVER_PORT = 8795;
 const SERVER_START_TIMEOUT_MS = 10000;
 const SERVER_POLL_INTERVAL_MS = 250;
+const FAILURE_CONTEXT_LINES = 8;
 
 // Groups that require the canonical local static server on port 8795.
 // Alternate-port or environment-specific groups must manage their own setup.
@@ -69,6 +70,7 @@ const SERVER_GROUPS = new Set([
   '3d-state-data',
   '3d-accessibility-fallback-performance',
   '3d-smoke',
+  '3d-regression',
   '3d-slow',
   '3d-full',
 ]);
@@ -89,6 +91,21 @@ function isServerRunning(port) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Kill an entire Chromium browser process tree on Windows.
+ * Playwright spawns Chromium as a grandchild of the CLI node process, so
+ * child.kill() only terminates the CLI — leaked browser processes accumulate
+ * across sequential contracts and cause GPU/memory pressure in headless Chrome.
+ */
+function closeBrowserTree(pid) {
+  if (process.platform !== 'win32') return;
+  try {
+    execFileSync('taskkill', ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', timeout: 8000 });
+  } catch {
+    // Process already gone — nothing to clean up.
+  }
 }
 
 /**
@@ -140,6 +157,11 @@ function createServerLease(groupName) {
   let ownedServer = null;
   let borrowedLogged = false;
   const explicitBaseUrl = process.env.TEST_BASE_URL;
+  // Tracks whether any contract has failed in this run. After the first
+  // failure, the server is in an unknown state (zombie Chromium connections
+  // from the failed run may exhaust Python HTTP server connection slots).
+  // Force a server restart before the next contract to prevent cascade hangs.
+  let hadFailure = false;
 
   return {
     async ensure() {
@@ -156,6 +178,19 @@ function createServerLease(groupName) {
           console.log(`  [server] port ${SERVER_PORT} already in use — borrowing pre-warmed dev server`);
           borrowedLogged = true;
         }
+        // After any failure, the borrowed server may be degraded (zombie Chromium
+        // connections from the failed run consuming server slots). Force a clean
+        // restart so the next contract runs against a healthy server.
+        if (hadFailure && ownedServer === null) {
+          console.log(`  [server] prior failure detected — restarting server to clear degraded state`);
+          try {
+            execFileSync('taskkill', ['/F', '/PID', String((await isServerRunning(SERVER_PORT + 0) && false))], { stdio: 'ignore', timeout: 3000 });
+          } catch {
+            // No-op: just start fresh.
+          }
+          ownedServer = await startStaticServer(SERVER_PORT);
+          console.log(`  [server] restarted on port ${SERVER_PORT}`);
+        }
         return;
       }
 
@@ -164,10 +199,18 @@ function createServerLease(groupName) {
       console.log(`  [server] static server running on port ${SERVER_PORT}`);
     },
 
+    markFailed() {
+      hadFailure = true;
+    },
+
     close() {
       if (!ownedServer) return;
       console.log(`  [server] shutting down static server on port ${SERVER_PORT}...`);
-      ownedServer.kill();
+      try {
+        ownedServer.kill();
+      } catch (err) {
+        console.log(`  [server] kill warning: ${err.message}`);
+      }
       ownedServer = null;
       console.log(`  [server] closed`);
     },
@@ -206,13 +249,26 @@ const PINNED_FILES = [
   'semantic-dive-reverse-contract.mjs',
   'journey-window-surface-contract.mjs',
   'thread-inspector-dewindowing-contract.mjs',
+  'journey-cluster-accent-dewindowing-contract.mjs',
   'window-bridge-gaps-contract.mjs',
+  'residual-window-bridge-inventory-contract.mjs',
+  'lifecycle-semantic-guide-residual-bridge-contract.mjs',
+  'legend-ui-ownership-contract.mjs',
+  'semantic-dive-ui-dewindowing-contract.mjs',
+  'lifecycle-search-panel-ownership-contract.mjs',
+  'search-lifecycle-adapter-contract.mjs',
   'loading-ui-contract.mjs',
   'state-ownership-contract.mjs',
   'filter-ownership-contract.mjs',
   'cluster-filter-city-filter-side-effect-contract.mjs',
+  'keyboard-reset-ownership-contract.mjs',
+  'url-state-search-dewindowing-contract.mjs',
+  'cluster-filter-dewindowing-contract.mjs',
+  'search-state-ui-adapter-contract.mjs',
+  'url-state-navigation-dewindowing-contract.mjs',
   'exploration-modes-contract.mjs',
   'scene-reveal-contract.mjs',
+  'scene-reveal-camera-dewindowing-contract.mjs',
   'scene-atmosphere-contract.mjs',
   'motion-state-contract.mjs',
   'demo-state-sync-contract.mjs',
@@ -271,10 +327,36 @@ function discoverUnlistedContracts() {
 function resolveFiles() {
   const args = process.argv.slice(2);
   const groupArg = args.find(a => a.startsWith('--group='));
+  const singleArg = args.find(a => a.startsWith('--single='));
+
+  // Single contract: run in isolation, with optional group context for server setup.
+  // Group is derived from --single when --group is absent but the file belongs to a group.
+  if (singleArg) {
+    const singleFile = singleArg.split('=')[1];
+    const singlePath = join(TESTS_DIR, singleFile);
+    if (!existsSync(singlePath)) {
+      console.error(`  Error: '${singleFile}' does not exist in tests/`);
+      process.exit(1);
+    }
+    // If a group was also specified, use its server lease and timeout.
+    const groupName = groupArg ? groupArg.split('=')[1] : null;
+    if (groupName) {
+      const group = getGroupFromManifest(groupName);
+      if (!group) process.exit(1);
+      return {
+        files: [singleFile],
+        mode: `single:${singleFile} (via group:${groupName})`,
+        groupTimeout: typeof group.timeout === 'number' ? group.timeout : null,
+        groupName,
+      };
+    }
+    // Lone --single: run without auto-server (no server lease needed for isolated file).
+    return { files: [singleFile], mode: `single:${singleFile}`, groupTimeout: null, groupName: null };
+  }
 
   if (!groupArg) {
     // Default: use pinned ordered list; no manifest discovery, no regression.
-    return { files: PINNED_FILES, mode: 'pinned', groupTimeout: null };
+    return { files: PINNED_FILES, mode: 'pinned', groupTimeout: null, groupName: null };
   }
 
   const groupName = groupArg.split('=')[1];
@@ -289,7 +371,52 @@ function resolveFiles() {
     mode: `group:${groupName}`,
     // Per-group timeout from manifest; null falls back to CONTRACT_TIMEOUT_MS.
     groupTimeout: typeof group.timeout === 'number' ? group.timeout : null,
+    groupName,
   };
+}
+
+function printUsage() {
+  console.log(`
+=== QA Contract Runner ===
+
+Usage:
+  node tests/run-all-contracts.js
+  node tests/run-all-contracts.js --group=<name>
+  node tests/run-all-contracts.js --single=<file>
+  node tests/run-all-contracts.js --single=<file> --group=<name>
+  node tests/run-all-contracts.js --list
+  node tests/run-all-contracts.js --validate
+  node tests/run-all-contracts.js --dry-run [--group=<name>|--single=<file>]
+
+Options:
+  --group=<name>          Run a manifest group.
+  --single=<file>         Run one file from tests/ in isolation.
+  --list                  List manifest groups.
+  --validate              Validate pinned/manifest coverage without running contracts.
+  --dry-run               Print the resolved file list without running contracts.
+  --stop-on-first-fail    Stop the runner after the first failing contract.
+  --help                  Show this help text.
+
+Environment:
+  CONTRACT_TIMEOUT_MS     Default per-contract timeout in milliseconds.
+  TEST_BASE_URL           Reuse an existing app server for browser specs.
+`);
+}
+
+function getFailureContext(result) {
+  const lines = `${result.stdout || ''}\n${result.stderr || ''}`
+    .split('\n')
+    .map(line => line.trimEnd());
+  const index = lines.findIndex(line => (
+    line.includes('[FAIL]')
+    || line.includes('Error:')
+    || line.includes('AssertionError')
+    || line.includes('FAIL')
+  ));
+  if (index < 0) return [];
+  return lines
+    .slice(index, Math.min(lines.length, index + FAILURE_CONTEXT_LINES))
+    .filter(Boolean);
 }
 
 // Validation
@@ -435,7 +562,20 @@ function runContract(filename, timeoutMs) {
     const timeout = setTimeout(() => {
       if (settled) return;
       settled = true;
-      child.kill();
+
+      // Drain stdout/stderr so streams don't hold buffers open before killing.
+      child.stdout?.destroy?.();
+      child.stderr?.destroy?.();
+
+      // On Windows, kill the full Chromium process tree via taskkill /T.
+      // Playwright's CLI is the parent of the browser; killing only the CLI
+      // leaves leaked grandchildren that accumulate GPU context across contracts.
+      if (process.platform === 'win32') {
+        closeBrowserTree(child.pid);
+      } else {
+        child.kill('SIGKILL');
+      }
+
       const duration = performance.now() - start;
       resolve({
         filename,
@@ -443,7 +583,7 @@ function runContract(filename, timeoutMs) {
         passed: false,
         code: -1,
         stdout,
-        stderr: `${stderr}\nContract timed out after ${timeoutMs}ms`.trim(),
+        stderr: `${stderr}\n[RUNNER TIMEOUT] Contract timed out after ${timeoutMs}ms`.trim(),
       });
     }, timeoutMs);
 
@@ -455,6 +595,14 @@ function runContract(filename, timeoutMs) {
       settled = true;
       clearTimeout(timeout);
       const duration = performance.now() - start;
+
+      // On normal exit, also sweep any Chromium children on Windows.
+      // This is belt-and-suspenders: the browsers should exit with their parent,
+      // but any that survive accumulate GPU context across the sequential run.
+      if (process.platform === 'win32') {
+        closeBrowserTree(child.pid);
+      }
+
       const passed = code === 0 && !stdout.includes('FAIL') && !stdout.includes('[FAIL]');
       resolve({ filename, duration, passed, code, stdout, stderr });
     });
@@ -472,6 +620,11 @@ function runContract(filename, timeoutMs) {
 // Main
 
 async function main() {
+  if (process.argv.includes('--help') || process.argv.includes('-h')) {
+    printUsage();
+    return;
+  }
+
   // Intercept --list before anything else.
   if (process.argv.includes('--list')) {
     const manifest = loadManifest();
@@ -495,13 +648,28 @@ async function main() {
     return; // never reached in practice; runValidation exits
   }
 
-  const { files, mode, groupTimeout } = resolveFiles();
-  const groupName = mode.startsWith('group:') ? mode.slice(6) : null;
+  // Intercept --dry-run before anything else: show what would run without executing.
+  if (process.argv.includes('--dry-run')) {
+    const { files, mode, groupTimeout } = resolveFiles();
+    console.log(`\n=== Dry Run: ${mode} ===`);
+    console.log(`Would run ${files.length} contract(s):\n`);
+    for (const file of files) {
+      const note = (groupTimeout !== null && groupTimeout !== CONTRACT_TIMEOUT_MS)
+        ? ` [timeout=${groupTimeout}ms]` : '';
+      console.log(`  ${file}${note}`);
+    }
+    console.log(`\nTotal: ${files.length} contract(s)`);
+    console.log('');
+    return;
+  }
+
+  const { files, mode, groupTimeout, groupName } = resolveFiles();
+  const stopOnFirstFail = process.argv.includes('--stop-on-first-fail');
+  const serverLease = groupName ? createServerLease(groupName) : null;
   console.log(`\n=== QA Contract Runner ===`);
   console.log(`Mode: ${mode}`);
   console.log(`Running ${files.length} contract file(s)\n`);
-
-  const serverLease = groupName ? createServerLease(groupName) : null;
+  if (stopOnFirstFail) console.log('Stop on first fail: enabled\n');
 
   const runContracts = async () => {
     const results = [];
@@ -509,7 +677,15 @@ async function main() {
       if (serverLease) await serverLease.ensure();
       const timeoutMs = groupTimeout !== null ? groupTimeout : CONTRACT_TIMEOUT_MS;
       console.log(`  [run] ${file}${groupTimeout !== null ? ` (timeout=${timeoutMs}ms)` : ''}`);
-      results.push(await runContract(file, timeoutMs));
+      const result = await runContract(file, timeoutMs);
+      results.push(result);
+      if (!result.passed && serverLease) {
+        serverLease.markFailed();
+      }
+      if (stopOnFirstFail && !result.passed) {
+        console.log(`  [stop] first failure: ${file}`);
+        break;
+      }
     }
 
     const passed = results.filter(r => r.passed);
@@ -525,9 +701,10 @@ async function main() {
       console.log(`  [${mark}] ${r.filename} (${ms})`);
       if (!r.passed) {
         if (r.code !== 0) console.log(`         exit code: ${r.code}`);
-        // Surface first failure line if present
-        const failureLine = (r.stdout + r.stderr).split('\n').find(l => l.includes('[FAIL]') || l.includes('Error') || l.includes('FAIL'));
-        if (failureLine) console.log(`         ${failureLine.trim()}`);
+        const failureContext = getFailureContext(r);
+        if (failureContext.length) {
+          for (const line of failureContext) console.log(`         ${line.trim()}`);
+        }
       }
     }
 

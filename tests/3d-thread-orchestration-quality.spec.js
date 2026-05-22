@@ -148,6 +148,78 @@ function continuitySample(line) {
   return { checked, matched };
 }
 
+// probeThreadSag — measures whether core threads are visually curved instead of
+// collapsing into straight centerline chords between endpoint nodes.
+// Layout: FLOATS_PER_BEZIER_EDGE = 30 → 10 vertices (5 bezier segments) × 3 floats each
+const SAG_THRESHOLD = 0.004;
+const FLOATS_PER_VERTEX = 3;
+const VERTS_PER_EDGE = 10;
+const FLOATS_PER_EDGE = FLOATS_PER_VERTEX * VERTS_PER_EDGE; // 30
+
+async function probeThreadSag(page) {
+  return page.evaluate(({ THRESHOLD, FPV, VPE }) => {
+    const floatsPerEdge = FPV * VPE;
+    // Perpendicular distance from point P to line segment AB.
+    const perpDist = (p, a, b) => {
+      const ax = p.x - a.x, ay = p.y - a.y, az = p.z - a.z;
+      const bx = b.x - a.x, by = b.y - a.y, bz = b.z - a.z;
+      const lenSq = bx * bx + by * by + bz * bz;
+      if (lenSq === 0) return Math.sqrt(ax * ax + ay * ay + az * az);
+      const t = Math.max(0, Math.min(1, (ax * bx + ay * by + az * bz) / lenSq));
+      const px = a.x + t * bx, py = a.y + t * by, pz = a.z + t * bz;
+      const dx = p.x - px, dy = p.y - py, dz = p.z - pz;
+      return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    };
+
+    const state = window.state || {};
+    const pairs = state.myceliumConnectionPairs || [];
+    const coreArr = state.myceliumCoreLines?.geometry?.attributes?.position?.array || [];
+
+    if (!coreArr.length || !pairs.length) {
+      return { checked: 0, sagged: 0, maxSag: 0, avgSag: 0, totalEdges: 0 };
+    }
+
+    let checked = 0;
+    let sagged = 0;
+    let maxSag = 0;
+    let totalSag = 0;
+    let totalEdges = 0;
+    let coreEdgeOffset = 0;
+
+    for (let pairIdx = 0; pairIdx < pairs.length; pairIdx++) {
+      const pair = pairs[pairIdx];
+      if (pair.layer !== 0) continue;
+
+      const offset = coreEdgeOffset * floatsPerEdge;
+      coreEdgeOffset++;
+      if (offset + floatsPerEdge > coreArr.length) break;
+
+      const start = { x: coreArr[offset], y: coreArr[offset + 1], z: coreArr[offset + 2] };
+      const endBase = offset + (VPE - 1) * FPV;
+      const end = { x: coreArr[endBase], y: coreArr[endBase + 1], z: coreArr[endBase + 2] };
+
+      for (let vertex = 1; vertex < VPE - 1; vertex++) {
+        const base = offset + vertex * FPV;
+        const point = { x: coreArr[base], y: coreArr[base + 1], z: coreArr[base + 2] };
+        const sag = perpDist(point, start, end);
+        checked++;
+        totalSag += sag;
+        maxSag = Math.max(maxSag, sag);
+        if (sag >= THRESHOLD) sagged++;
+      }
+      totalEdges++;
+    }
+
+    return {
+      checked,
+      sagged,
+      maxSag,
+      avgSag: checked ? totalSag / checked : 0,
+      totalEdges
+    };
+  }, { THRESHOLD: SAG_THRESHOLD, FPV: FLOATS_PER_VERTEX, VPE: VERTS_PER_EDGE });
+}
+
 // Probe all thread state from the running page
 async function probeThreads(page) {
   return page.evaluate(() => {
@@ -439,6 +511,29 @@ test.describe('3D thread orchestration quality', () => {
     expect(probe.coreContinuity.matched, 'core pairs must be continuous in step-inside')
       .toBe(probe.coreContinuity.checked);
 
+  });
+
+  // -------------------------------------------------------------------------
+  // Shape quality — threads should read as organic arcs, not straight chords
+  // -------------------------------------------------------------------------
+  test('overview: core threads arc away from straight endpoint centerlines', async ({ page }) => {
+    test.setTimeout(HEAVY_VISUAL_TEST_TIMEOUT_MS);
+    const p = page;
+    await p.goto(withParams({ view: 'galaxy' }), { waitUntil: 'commit' });
+    await waitForScene(p);
+    await p.waitForFunction(
+      () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
+      { timeout: 3000 }
+    ).catch(() => {});
+
+    const sag = await probeThreadSag(p);
+
+    expect(sag.checked, 'thread sag must be sampled').toBeGreaterThan(0);
+    expect(sag.totalEdges, 'at least some thread edges must exist').toBeGreaterThan(5);
+    expect(sag.maxSag, `at least one core thread should visibly arc; maxSag=${sag.maxSag.toFixed(5)}, avgSag=${sag.avgSag.toFixed(5)}`)
+      .toBeGreaterThanOrEqual(SAG_THRESHOLD);
+    expect(sag.sagged, `a meaningful share of sampled vertices should arc; sagged=${sag.sagged}/${sag.checked}`)
+      .toBeGreaterThanOrEqual(Math.floor(sag.checked * 0.25));
   });
 
   // -------------------------------------------------------------------------

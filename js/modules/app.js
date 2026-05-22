@@ -3,6 +3,11 @@ import * as journeyModule from './journey.js';
 import './demo-controller.js';
 import './micro-demo.js'; // Micro-demo: 10-second guided first-time interaction
 import * as searchModule from './search-state.js';
+import { initUrlSearchAdapter } from './url-search-adapter.js';
+import { initClusterFilterAdapter } from './cluster-filter-adapter.js';
+import { initSearchUiAdapter } from './search-ui-adapter.js';
+import { initSearchLifecycleAdapter } from './search-lifecycle-adapter.js';
+import { initUrlNavigationAdapter } from './url-navigation-adapter.js';
 import * as focusModule from './focus-pocket.js';
 import * as threadModule from './thread-inspector.js';
 import { getProjectedNeighborCandidates } from './journey-thread-model.js';
@@ -11,6 +16,7 @@ import * as mapModule from './map-state.js';
 import * as weatherModule from './weather.js';
 import * as audioModule from './audio-scape.js';
 import './tooltip.js';
+import { hideTooltip, positionTooltip, updateTooltipContent } from './tooltip.js';
 import './pathfinding.js';
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
 import { initThreeJS, animate } from '../three-setup.js';
@@ -23,26 +29,32 @@ import {
     getSceneRevealProgress,
     startDeferredHydration,
     initEventListeners,
-    initKeyboardShortcutsHint,
     setSemanticLaneUiState,
     probeSemanticLane,
     scheduleSemanticLaneMonitor,
     updateTime,
     setMyceliumMode,
     setTrailDepth,
+    setSemanticDiveMode,
     applyStoryPrompt,
     switchView,
-    updateUrlState,
     resetExperienceState,
     returnToOverview,
     resetExplorationFocus,
     refreshCompositionState,
-    clearClusterFilter
+    clearClusterFilter,
+    focusOnPoint,
+    updateExplorationUi,
+    resetNodePositions,
+    recordSemanticLaneSnapshot,
+    showExperienceToast
 } from './lifecycle.js';
-import { applyUrlState } from './url-state.js';
+import { initKeyboardShortcutsHint } from './keyboard-help.js';
+import { applyUrlState, updateUrlState } from './url-state.js';
 import { loadSemanticThreads } from './semantic-threads.js';
 import { initClusterLabels, updateClusterLabels } from './cluster-labels.js';
 import { updateHasQuery } from './event-bindings.js';
+import { findClusterByKeyword } from './cluster-filter.js';
 
 // Global Exposure for compatibility during transition
 window.state = state;
@@ -124,11 +136,7 @@ window.getSceneRevealProgress = getSceneRevealProgress;
 window.refreshCompositionState = refreshCompositionState;
 window.clearClusterFilter = clearClusterFilter;
 window.updateHasQuery = updateHasQuery;
-window.findClusterByKeyword = function (keyword) {
-    const lower = keyword.toLowerCase();
-    const idx = state.CLUSTER_NAMES.findIndex((name) => String(name).toLowerCase().includes(lower));
-    return idx >= 0 ? idx : null;
-};
+window.findClusterByKeyword = findClusterByKeyword;
 window.getSelectedBusinessRoleLabel = function (point) {
     let index = state.points && Array.isArray(state.points) ? state.points.indexOf(point) : -1;
     if (index < 0 && point?.lead_id !== undefined && point?.lead_id !== null) {
@@ -291,7 +299,7 @@ export async function init() {
             // so the fallback notice is visible instead of a frozen spinner.
             hideLoadingOverlay();
         }
-        initEventListeners();
+        initEventListeners({ updateUrlState });
         initKeyboardShortcutsHint();
         if (graphicsReady !== false) initClusterLabels();
         audioModule.initAudio();
@@ -328,7 +336,46 @@ export async function init() {
         scheduleSemanticLaneMonitor();
         setLoadingPhase('restore');
         updateTime(); // start clock BEFORE url restore in case applyUrlState throws
-        
+
+        // Inject search adapter before applyUrlState runs; breaks the url-state/search-state cycle.
+        initUrlSearchAdapter(searchModule);
+
+        // Inject navigation adapter; avoids url-state calling lifecycle/event-bindings through window.
+        initUrlNavigationAdapter({
+            focusOnPoint,
+            updateExplorationUi,
+            recordSemanticLaneSnapshot,
+            applyStoryPrompt,
+            showExperienceToast,
+            setSemanticDiveMode,
+            setTrailDepth,
+        }, {
+            updateHasQuery,
+        });
+
+        // Inject cluster-filter adapter; breaks the cluster-filter/window/url-state cycle.
+        initClusterFilterAdapter({
+            applyFilters: searchModule.applyFilters,
+            clearSearchGlow: searchModule.clearSearchGlow,
+            updateUrlState,
+        });
+
+        // Inject search UI adapter; avoids search-state calling tooltip helpers through window.
+        initSearchUiAdapter({
+            hideTooltip,
+            positionTooltip,
+            updateTooltipContent,
+        });
+
+        // Inject search lifecycle adapter; avoids search-state calling lifecycle/url-state through window.
+        initSearchLifecycleAdapter({
+            updateUrlState,
+            setSearchPanelState: searchModule.setSearchPanelState,
+            focusOnPoint,
+            updateExplorationUi,
+            resetNodePositions,
+        });
+
         // Bug sweep 19: await applyUrlState with a catch to prevent total hang
         try {
             await applyUrlState();
