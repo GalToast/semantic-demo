@@ -611,6 +611,34 @@ html body.is-active #selected-details.active {
         grid-template-columns: 44px;
     }
 
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass.glass-heavy {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 7px;
+        max-height: none;
+        overflow: visible;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass.glass-heavy .journey-compass-copy {
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 0;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass.glass-heavy .journey-compass-title {
+        font-size: 12px;
+        line-height: 1.2;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        width: 100%;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass.glass-heavy .journey-compass-rail {
+        display: none;
+    }
+
     html body.is-active[data-panel-surface="idle"]:not([data-panel-surface^="map-"]) .journey-compass-copy {
         min-width: 0;
     }
