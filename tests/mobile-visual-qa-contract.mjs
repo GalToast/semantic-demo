@@ -64,9 +64,15 @@ function summarize(result) {
   checks.push(['panel-surface', result.expectedSurfaceOk]);
   checks.push(['no-horizontal-overflow', !result.layout.overflowX]);
   checks.push(['compass-title-not-clipped', result.layout.compassTitle?.clipped === false]);
+  checks.push(['compass-steps-not-clipped', result.layout.compassSteps.every((step) => step.clipped === false)]);
   checks.push(['compass-title-not-nowrap', result.layout.compassTitle?.whiteSpace !== 'nowrap']);
   checks.push(['compass-title-no-ellipsis', result.layout.compassTitle?.textOverflow !== 'ellipsis']);
   checks.push(['compass-not-overflowing', result.layout.compass?.overflows === false]);
+  checks.push([
+    'bottom-panel-flush',
+    !['focus-search', 'semantic-dive', 'field-node'].includes(result.state) ||
+      result.layout.focusStageBottomAnchor?.flush === true,
+  ]);
   checks.push(['no-major-overlap', result.layout.majorOverlaps.length === 0]);
   checks.push(['no-console-errors', result.console.errors.length === 0]);
   return checks.map(([name, ok]) => `${ok ? 'PASS' : 'FAIL'} ${name}`).join('; ');
@@ -158,6 +164,42 @@ for (const viewport of viewports) {
         };
       }
 
+      function stepContracts() {
+        return Array.from(document.querySelectorAll('.journey-compass-step'))
+          .filter(visible)
+          .map((el) => {
+            const s = getComputedStyle(el);
+            const r = el.getBoundingClientRect();
+            return {
+              text: el.textContent?.trim() || '',
+              step: el.dataset.journeyStep || '',
+              width: Math.round(r.width * 100) / 100,
+              height: Math.round(r.height * 100) / 100,
+              scrollWidth: el.scrollWidth,
+              scrollHeight: el.scrollHeight,
+              clipped: el.scrollWidth > r.width + 2 || el.scrollHeight > r.height + 2,
+              whiteSpace: s.whiteSpace,
+              overflow: s.overflow,
+              textOverflow: s.textOverflow,
+              fontSize: s.fontSize,
+            };
+          });
+      }
+
+      function bottomAnchorContract(selector) {
+        const el = document.querySelector(selector);
+        if (!visible(el)) return null;
+        const r = el.getBoundingClientRect();
+        const bottomInset = Math.round((window.innerHeight - r.bottom) * 100) / 100;
+        return {
+          selector,
+          bottom: Math.round(r.bottom * 100) / 100,
+          viewportBottom: window.innerHeight,
+          bottomInset,
+          flush: Math.abs(bottomInset) <= 1,
+        };
+      }
+
       function expectedOverlap(a, b) {
         if (a.el.contains(b.el) || b.el.contains(a.el)) return true;
         const pair = [a.data.selector, b.data.selector].sort().join('::');
@@ -165,6 +207,7 @@ for (const viewport of viewports) {
         const expectedPairs = new Set([
           ['#info-panel', '.search-container'].sort().join('::'),
           ['#focus-stage', '#focus-stage-inside-controls, .focus-stage-inside-controls'].sort().join('::'),
+          ['#info-panel', '.galaxy-cluster-label.visible'].sort().join('::'),
         ]);
         return expectedPairs.has(pair) && ['search', 'focus-search', 'semantic-dive'].includes(surface);
       }
@@ -175,6 +218,7 @@ for (const viewport of viewports) {
         boxEntry('#info-panel'),
         boxEntry('#focus-stage'),
         boxEntry('#focus-stage-inside-controls, .focus-stage-inside-controls'),
+        boxEntry('.galaxy-cluster-label.visible'),
         boxEntry('.controls'),
       ].filter(Boolean);
 
@@ -207,6 +251,8 @@ for (const viewport of viewports) {
         overflowX: document.documentElement.scrollWidth > window.innerWidth,
         documentWidth: document.documentElement.scrollWidth,
         compassTitle: titleContract(document.querySelector('.journey-compass-title')),
+        compassSteps: stepContracts(),
+        focusStageBottomAnchor: bottomAnchorContract('#focus-stage'),
         compass: compass ? {
           width: Math.round(compassRect.width * 100) / 100,
           height: Math.round(compassRect.height * 100) / 100,

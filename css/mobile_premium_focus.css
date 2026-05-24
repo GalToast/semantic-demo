@@ -582,7 +582,7 @@
     @media (max-width: 390px) {
         html body.is-active[data-panel-surface="focus-search"] .focus-stage,
         html body.is-active[data-panel-surface="semantic-dive"] .focus-stage {
-            bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+            bottom: 0;
         }
 
         html body.is-active[data-panel-surface="focus-search"] .focus-stage-card,
