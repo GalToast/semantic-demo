@@ -1153,9 +1153,6 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
         max-width: 100%;
         font-size: 12px;
         line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
     html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .journey-compass-note,
@@ -1564,9 +1561,6 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
         max-width: 100%;
         font-size: 12px;
         line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
     html body.is-active[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .journey-compass-note,
