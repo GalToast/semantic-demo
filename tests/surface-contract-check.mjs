@@ -844,6 +844,18 @@ async function assert_focus_pocket(page, ctx) {
       };
     }
 
+    function bottomAnchorContract(el) {
+      if (!el) return null;
+      const style = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0) return null;
+      const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100;
+      return {
+        bottomInset,
+        flush: Math.abs(bottomInset) <= 1,
+      };
+    }
+
     const results = {};
     // --- focus-stage bottom sheet ---
     const focusStage = document.querySelector('#focus-stage');
@@ -851,6 +863,7 @@ async function assert_focus_pocket(page, ctx) {
     results.focusStageHidden = focusStage
       ? focusStage.hidden || getComputedStyle(focusStage).display === 'none'
       : null;
+    results.focusStageBottomAnchor = bottomAnchorContract(focusStage);
 
     // --- inside-status (pulse + copy) ---
     const insideStatus = document.querySelector('#focus-stage-inside-status, .focus-stage-inside-status');
@@ -901,6 +914,12 @@ async function assert_focus_pocket(page, ctx) {
 
   if (info.focusStageHidden) ctx.fail('focus-pocket', 'visibility:focus-stage', 'focus-stage is hidden in pocket mode');
   else if (info.focusStageHidden === false) ctx.pass('focus-pocket', 'visibility:focus-stage');
+
+  if (info.focusStageBottomAnchor?.flush) {
+    ctx.pass('focus-pocket', 'layout:focus-stage-bottom-flush');
+  } else {
+    ctx.fail('focus-pocket', 'layout:focus-stage-bottom-flush', `focus-stage bottom inset ${info.focusStageBottomAnchor?.bottomInset ?? 'missing'}px`);
+  }
 
   if (info.insideStatusClipped) ctx.fail('focus-pocket', 'text-clipping:inside-status', 'inside status text is clipped');
   else if (info.insideStatusClipped === false) ctx.pass('focus-pocket', 'text-clipping:inside-status');
@@ -1023,6 +1042,18 @@ async function assert_field_node(page, ctx) {
       };
     }
 
+    function bottomAnchorContract(el) {
+      if (!el) return null;
+      const style = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0) return null;
+      const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100;
+      return {
+        bottomInset,
+        flush: Math.abs(bottomInset) <= 1,
+      };
+    }
+
     const results = {};
 
     // --- journey-compass (canopy HUD) ---
@@ -1070,6 +1101,9 @@ async function assert_field_node(page, ctx) {
     });
 
     // --- focus-stage card (walk dock) ---
+    const focusStage = document.querySelector('#focus-stage');
+    results.focusStageBottomAnchor = bottomAnchorContract(focusStage);
+
     const focusStageCard = document.querySelector('.focus-stage-card');
     results.focusStageCardPresent = focusStageCard !== null;
     if (focusStageCard) {
@@ -1141,6 +1175,12 @@ async function assert_field_node(page, ctx) {
 
   if (info.focusStageCardPresent) ctx.pass('field-node', 'dom:focus-stage-card');
   else ctx.fail('field-node', 'dom:focus-stage-card', 'missing .focus-stage-card in field-node mode');
+
+  if (info.focusStageBottomAnchor?.flush) {
+    ctx.pass('field-node', 'layout:focus-stage-bottom-flush');
+  } else {
+    ctx.fail('field-node', 'layout:focus-stage-bottom-flush', `focus-stage bottom inset ${info.focusStageBottomAnchor?.bottomInset ?? 'missing'}px`);
+  }
 
   if (info.focusStageCardClipped) ctx.fail('field-node', 'text-clipping:focus-stage-card', 'focus-stage-card content is clipped');
   else if (info.focusStageCardClipped === false) ctx.pass('field-node', 'text-clipping:focus-stage-card');
@@ -2083,6 +2123,18 @@ async function assert_search_chrome(page, ctx) {
       };
     }
 
+    function bottomAnchorContract(el) {
+      if (!el) return null;
+      const style = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0) return null;
+      const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100;
+      return {
+        bottomInset,
+        flush: Math.abs(bottomInset) <= 1,
+      };
+    }
+
     const results = {};
 
     const searchContainer = document.querySelector('.search-container');
@@ -2872,6 +2924,18 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
       };
     }
 
+    function bottomAnchorContract(el) {
+      if (!el) return null;
+      const style = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0) return null;
+      const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100;
+      return {
+        bottomInset,
+        flush: Math.abs(bottomInset) <= 1,
+      };
+    }
+
     const results = {};
 
     const searchContainer = document.querySelector('.search-container');
@@ -2911,6 +2975,9 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
     const insideControls = document.querySelector('#focus-stage-inside-controls, .focus-stage-inside-controls');
     results.insideControlsPresent = insideControls !== null;
     results.insideControlsVisible = isRenderedAndVisible(insideControls);
+
+    const focusStage = document.querySelector('#focus-stage');
+    results.focusStageBottomAnchor = bottomAnchorContract(focusStage);
 
     const compassTitle = document.querySelector('.journey-compass-title');
     results.compassTitle = titleContract(compassTitle);
@@ -2971,6 +3038,12 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
 
   if (info.insideControlsVisible) ctx.pass(surfaceName, 'visibility:inside-controls');
   else ctx.fail(surfaceName, 'visibility:inside-controls', 'inside controls should be visible in semantic-dive');
+
+  if (info.focusStageBottomAnchor?.flush) {
+    ctx.pass(surfaceName, 'layout:focus-stage-bottom-flush');
+  } else {
+    ctx.fail(surfaceName, 'layout:focus-stage-bottom-flush', `focus-stage bottom inset ${info.focusStageBottomAnchor?.bottomInset ?? 'missing'}px`);
+  }
 
   if (info.compassTitle?.clipped) {
     ctx.fail(surfaceName, 'text-clipping:compass-title', 'compass title text is clipped');
