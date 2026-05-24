@@ -11,9 +11,11 @@ import { resolve } from 'node:path';
 const root = process.cwd();
 const source = {
   search: readFileSync(resolve(root, 'js/modules/search-state.js'), 'utf8'),
+  searchAdapter: readFileSync(resolve(root, 'js/modules/search-panel-adapter.js'), 'utf8'),
   sceneReveal: readFileSync(resolve(root, 'js/modules/scene-reveal.js'), 'utf8'),
   threeSetup: readFileSync(resolve(root, 'js/three-setup.js'), 'utf8'),
   journey: readFileSync(resolve(root, 'js/modules/journey.js'), 'utf8'),
+  journeyWebgl: readFileSync(resolve(root, 'js/modules/journey-webgl.js'), 'utf8'),
   lifecycle: readFileSync(resolve(root, 'js/modules/lifecycle.js'), 'utf8'),
   journeyCompassController: readFileSync(resolve(root, 'js/modules/journey-compass-controller.js'), 'utf8'),
 };
@@ -21,11 +23,11 @@ const source = {
 const checks = [
   {
     name: 'search glow exposes active DOM state',
-    pass: /function\s+activateSearchGlow[\s\S]*?document\.body\.dataset\.searchGlow\s*=\s*['"]active['"]/.test(source.search),
+    pass: /function\s+setSearchGlowState[\s\S]*?document\.body\.dataset\.searchGlow\s*=\s*active\s*\?\s*['"]active['"]\s*:\s*['"]inactive['"]/.test(source.searchAdapter),
   },
   {
     name: 'search glow exposes inactive DOM state',
-    pass: /function\s+clearSearchGlow[\s\S]*?document\.body\.dataset\.searchGlow\s*=\s*['"]inactive['"]/.test(source.search),
+    pass: /function\s+setSearchGlowState[\s\S]*?document\.body\.dataset\.searchGlow\s*=\s*active\s*\?\s*['"]active['"]\s*:\s*['"]inactive['"]/.test(source.searchAdapter),
   },
   {
     name: 'scene reveal has a shared DOM-state setter',
@@ -46,11 +48,11 @@ const checks = [
   },
   {
     name: 'route choreography writes data-route-motion',
-    pass: /document\.body\.dataset\.routeMotion\s*=/.test(source.journey),
+    pass: /document\.body\.dataset\.routeMotion\s*=/.test(source.journeyWebgl),
   },
   {
     name: 'route motion is active only in galaxy view',
-    pass: /document\.body\.dataset\.routeMotion\s*=\s*state\.currentView\s*===\s*['"]galaxy['"]\s*\?\s*phase\s*:\s*['"]inactive['"]/.test(source.journey),
+    pass: /document\.body\.dataset\.routeMotion\s*=\s*state\.currentView\s*===\s*['"]galaxy['"]\s*\?\s*phase\s*:\s*['"]inactive['"]/.test(source.journeyWebgl),
   },
   {
     name: 'focus plus search intent owns focus-search panel surface',

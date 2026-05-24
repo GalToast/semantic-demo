@@ -81,6 +81,7 @@
     "test:contract:3d-resilience": "node tests/run-all-contracts.js --group=3d-resilience",
     "test:contract:3d-state-data": "node tests/run-all-contracts.js --group=3d-state-data",
     "test:contract:3d-accessibility-fallback-performance": "node tests/run-all-contracts.js --group=3d-accessibility-fallback-performance",
+    "test:contract:3d-focus-desktop-click": "node tests/run-all-contracts.js --group=3d-focus-desktop-click",
     "test:contract:3d-focus-neighborhood": "node tests/run-all-contracts.js --group=3d-focus-neighborhood",
     "test:contract:3d-focus-neighborhood-geometry": "node tests/run-all-contracts.js --group=3d-focus-neighborhood-geometry",
     "test:contract:3d-focus-neighborhood-interaction": "node tests/run-all-contracts.js --group=3d-focus-neighborhood-interaction",

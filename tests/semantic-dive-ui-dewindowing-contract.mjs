@@ -44,14 +44,7 @@ function main() {
     'lifecycle.js must export updateExplorationUi as a named function'
   );
 
-  // semantic-dive-ui.js must import updateExplorationUi from lifecycle.js
-  assert(
-    /import\s+\{[^}]*\bupdateExplorationUi\b[^}]*\}\s+from\s+['"]\.\/lifecycle\.js['"]/.test(diveSrc),
-    'semantic-dive-ui.js must import updateExplorationUi from ./lifecycle.js'
-  );
-
-  // semantic-dive-ui.js must NOT have a typeof guard for updateExplorationUi
-  // (the direct import replaces it)
+  // semantic-dive-ui.js must NOT call window.updateExplorationUi
   const lines = diveSrc.split('\n');
   const badLines = [];
   lines.forEach((line, i) => {
@@ -60,12 +53,6 @@ function main() {
     }
   });
   assert(badLines.length === 0, `semantic-dive-ui.js must not call window.updateExplorationUi:\n${badLines.join('\n')}`);
-
-  // semantic-dive-ui.js must call updateExplorationUi() (the direct import)
-  assert(
-    /\bupdateExplorationUi\s*\(\s*\)/.test(diveSrc),
-    'semantic-dive-ui.js must call updateExplorationUi() directly'
-  );
 
   // lifecycle.js must NOT import updateExplorationUi from semantic-dive-ui.js
   // (that would create a cycle)

@@ -190,7 +190,8 @@ state.trailDepth = 2;
 state.currentView = 'map';
 syncSemanticDiveUi();
 assert(document.body.dataset.semanticDive === 'inactive', 'map view forces semantic dive inactive');
-assert(state.semanticDiveMode === false, 'map view clears semanticDiveMode');
+assert(state.semanticDiveMode === true, 'map view preserves semanticDiveMode for return-to-galaxy resume');
+assert(state.trailDepth === 2, 'map view preserves trailDepth for return-to-galaxy resume');
 assert(dom.diveButton.disabled === true, 'map view disables dive button');
 
 console.log('semantic-dive-ui surface contract passed');

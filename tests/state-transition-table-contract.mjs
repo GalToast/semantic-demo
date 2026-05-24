@@ -46,7 +46,7 @@ function assert(condition, message) {
   if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);
 }
 function assertEq(actual, expected, label) {
-  if (actual !== expected) throw new Error(`ASSERTION FAILED: ${label} — got '${actual}', want '${expected}'`);
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(`ASSERTION FAILED: ${label} — got '${actual}', want '${expected}'`);
 }
 
 // ─── Fake DOM bootstrap ─────────────────────────────────────────────────────
@@ -497,6 +497,13 @@ console.log('PASS CONTRACT 26: experienceResetToastTimer is nullable timer');
 // refreshCompositionState must be exported from lifecycle.js.
 
 const lifecycle = await import('../js/modules/lifecycle.js');
+const { initNavigationState } = await import('../js/modules/navigation-state.js');
+initNavigationState({
+  resetExplorationFocus: lifecycle.resetExplorationFocus,
+  resetExperienceState: lifecycle.resetExperienceState,
+  setTrailDepth: lifecycle.setTrailDepth,
+  setSemanticDiveMode: lifecycle.setSemanticDiveMode
+});
 assert(
   typeof lifecycle.refreshCompositionState === 'function',
   'refreshCompositionState must be exported from lifecycle.js'
@@ -605,7 +612,7 @@ assert(
   typeof navActions === 'object' && navActions !== null,
   'NAV_TRANSITION_ACTIONS must be exported from lifecycle.js'
 );
-const requiredActions = ['FOCUS_NODE', 'SET_DEPTH', 'WALK_TO', 'BACKTRACK', 'RESET_FOCUS', 'RESET_EXPERIENCE', 'ENTER_INSIDE', 'EXIT_INSIDE'];
+const requiredActions = ['FOCUS_NODE', 'SET_DEPTH', 'WALK_TO', 'BACKTRACK', 'RESET_FOCUS', 'RESET_EXPERIENCE', 'ENTER_INSIDE', 'EXIT_INSIDE', 'RESTORE_EXPLORATION_HISTORY'];
 for (const a of requiredActions) {
   assert(
     typeof navActions[a] === 'string' && navActions[a] === a,
@@ -799,7 +806,40 @@ assert(
 );
 console.log('PASS CONTRACT 46: dispatchNavTransition unknown action returns structured noOp');
 
+// ─── CONTRACT 47: dispatchNavTransition('RESTORE_EXPLORATION_HISTORY') is handled ─────
+// RESTORE_EXPLORATION_HISTORY is the canonical restore path for explorationHistoryIndices.
+// It replaces the former direct write in journey.js restoreFocusTrailState().
+
+const testHistory = [0, 2, 4, 6];
+const restoreResult = lifecycle.dispatchNavTransition('RESTORE_EXPLORATION_HISTORY', { history: testHistory });
+assert(
+  restoreResult.handled === true,
+  'dispatchNavTransition RESTORE_EXPLORATION_HISTORY must be handled'
+);
+assert(
+  restoreResult.noOp === false,
+  'dispatchNavTransition RESTORE_EXPLORATION_HISTORY must not be a noOp'
+);
+assert(
+  restoreResult.reason.includes('RESTORE_EXPLORATION_HISTORY reducer'),
+  'RESTORE_EXPLORATION_HISTORY result reason must reference the reducer'
+);
+assertEq(
+  state.navState.explorationHistoryIndices,
+  testHistory,
+  'RESTORE_EXPLORATION_HISTORY must set explorationHistoryIndices from payload'
+);
+
+// Non-array history defaults to []
+const emptyResult = lifecycle.dispatchNavTransition('RESTORE_EXPLORATION_HISTORY', { history: 'not-an-array' });
+assertEq(
+  state.navState.explorationHistoryIndices,
+  [],
+  'RESTORE_EXPLORATION_HISTORY with non-array history must clear to []'
+);
+console.log('PASS CONTRACT 47: dispatchNavTransition RESTORE_EXPLORATION_HISTORY is handled (Phase 2 restored-from-writer)');
+
 // ─── Summary ───────────────────────────────────────────────────────────────────
 
 console.log('\n=== state-transition-table-contract.mjs PASSED ===');
-console.log('All 46 contracts verified. The state transition table is correctly implemented.');
+console.log('All 47 contracts verified. The state transition table is correctly implemented.');

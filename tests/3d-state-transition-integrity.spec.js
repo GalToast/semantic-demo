@@ -128,6 +128,7 @@ async function snapshotState(page) {
  */
 function assertInvariants(snap) {
   const errors = [];
+  const diveUiVisible = snap.semanticDiveMode && snap.currentView === 'galaxy' && snap.hasFocus;
 
   // rule: semanticDiveMode must equal (trailDepth === 2)
   const expectedDiveMode = snap.trailDepth === 2;
@@ -135,15 +136,16 @@ function assertInvariants(snap) {
     errors.push(`semanticDiveMode=${snap.semanticDiveMode} but trailDepth=${snap.trailDepth} — expected ${expectedDiveMode}`);
   }
 
-  // rule: body.dataset.semanticDive must match the derived value
-  const expectedDiveAttr = snap.semanticDiveMode ? 'active' : 'inactive';
+  // rule: body.dataset.semanticDive tracks whether the galaxy-only dive UI is visible.
+  // Map view may preserve semanticDiveMode/trailDepth=2 while hiding that surface.
+  const expectedDiveAttr = diveUiVisible ? 'active' : 'inactive';
   if (snap.semanticDive !== expectedDiveAttr) {
-    errors.push(`dataset.semanticDive=${snap.semanticDive} but semanticDiveMode=${snap.semanticDiveMode} — expected ${expectedDiveAttr}`);
+    errors.push(`dataset.semanticDive=${snap.semanticDive} but diveUiVisible=${diveUiVisible} — expected ${expectedDiveAttr}`);
   }
 
-  // rule: panelSurface must be 'semantic-dive' when semanticDiveMode is active
-  if (snap.semanticDiveMode && snap.panelSurface !== 'semantic-dive') {
-    errors.push(`panelSurface=${snap.panelSurface} but semanticDiveMode=${snap.semanticDiveMode} — expected 'semantic-dive'`);
+  // rule: panelSurface must be 'semantic-dive' only while the dive UI is visible
+  if (diveUiVisible && snap.panelSurface !== 'semantic-dive') {
+    errors.push(`panelSurface=${snap.panelSurface} but diveUiVisible=${diveUiVisible} — expected 'semantic-dive'`);
   }
 
   // rule: when not in semantic dive, graphContext must be one of the known values
@@ -168,9 +170,9 @@ function assertInvariants(snap) {
     errors.push(`navMode=${snap.navMode} but semanticDiveMode=${snap.semanticDiveMode} — expected navMode='trail'`);
   }
 
-  // rule: when semanticDiveMode is active, body.dataset.semanticDive should be 'active'
-  if (snap.semanticDiveMode && snap.semanticDive !== 'active') {
-    errors.push(`dataset.semanticDive=${snap.semanticDive} but semanticDiveMode=${snap.semanticDiveMode}`);
+  // rule: when semanticDiveMode is active in galaxy view, body.dataset.semanticDive should be 'active'
+  if (diveUiVisible && snap.semanticDive !== 'active') {
+    errors.push(`dataset.semanticDive=${snap.semanticDive} but diveUiVisible=${diveUiVisible}`);
   }
 
   // rule: activeView must be a known view
@@ -378,17 +380,17 @@ test.describe('3D semantic state transition integrity', () => {
 
     // Map trail assertions
     expect(snap.activeView, 'activeView should be map in map trail').toBe('map');
-    // NOTE: switchView('map') → refreshCompositionState() → syncSemanticDiveUi() calls
-    // setSemanticDiveMode(false) when canDive becomes false (because currentView !== 'galaxy').
-    // This is a known side-effect bug: semanticDiveMode should NOT be cleared merely by
-    // switching views while in dive mode. Invariant assertions (below) still hold.
     expect(snap.trailDepth, 'trailDepth must be in [0,1,2]').toBeGreaterThanOrEqual(0);
     expect(snap.trailDepth, 'trailDepth must be in [0,1,2]').toBeLessThanOrEqual(2);
+    // HD-2 fix verified: semanticDiveMode is preserved across view switch (not force-cleared
+    // by syncSemanticDiveUi when canDive becomes false). User can switch back to galaxy
+    // and resume the dive without re-entering from scratch.
+    expect(snap.semanticDiveMode, 'semanticDiveMode preserved across view switch').toBe(true);
     // Core invariant: trailDepth and semanticDiveMode must agree
     expect(snap.semanticDiveMode, 'semanticDiveMode matches trailDepth').toBe(snap.trailDepth === 2);
   });
 
-  // ── Phase 6: Reset (return to overview) ────────────────────────────────
+  // ── Phase 6: Reset (return to overview from focus) ────────────────────────
 
   test('reset: Escape returns to overview with consistent state', async ({ page }) => {
     test.setTimeout(180000);
@@ -424,6 +426,141 @@ test.describe('3D semantic state transition integrity', () => {
     expect(snap.selectedPoint, 'selectedPoint null after reset').toBeNull();
     expect(snap.trailDepth, 'trailDepth 0 after reset').toBe(0);
     expect(snap.semanticDiveMode, 'semanticDiveMode false after reset').toBe(false);
+  });
+
+  // ── Phase 6b: Escape from semantic dive (trailDepth=2) ──────────────────
+
+  test('escape-from-dive: Escape from trailDepth=2 returns to overview with all invariants intact', async ({ page }) => {
+    test.setTimeout(180000);
+
+    // Enter semantic dive (trailDepth=2)
+    await performMockedSearch(page, 'coffee');
+    await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
+    await page.waitForTimeout(800);
+    await page.locator('.search-result-item').first().click();
+    await page.waitForFunction(
+      () => window.state?.navState?.mode === 'focus',
+      { timeout: 15000 }
+    );
+    await page.waitForTimeout(1000);
+
+    // Step Inside to enter dive mode (trailDepth=2)
+    const diveBtn = page.locator('#btn-focus-dive');
+    const diveBtnVisible = await diveBtn.isVisible().catch(() => false);
+    if (diveBtnVisible) {
+      await diveBtn.click();
+    } else {
+      await page.evaluate(() => {
+        if (typeof window.setSemanticDiveMode === 'function') {
+          window.setSemanticDiveMode(true);
+        }
+      });
+    }
+
+    // Wait for dive mode to be active
+    await page.waitForFunction(
+      () => window.state?.semanticDiveMode === true && window.state?.trailDepth === 2,
+      { timeout: 15000 }
+    );
+    await page.waitForTimeout(1500);
+
+    // Verify preconditions before Escape
+    const preSnap = await snapshotState(page);
+    expect(preSnap.semanticDiveMode, 'pre: semanticDiveMode must be true before Escape').toBe(true);
+    expect(preSnap.trailDepth, 'pre: trailDepth must be 2 before Escape').toBe(2);
+    expect(preSnap.navMode, 'pre: navMode must be trail in dive before Escape').toBe('trail');
+    expect(preSnap.semanticDive, 'pre: dataset.semanticDive must be active before Escape').toBe('active');
+
+    // Press Escape — the primary assertion path uses real keyboard event
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(
+      () => window.state?.navState?.mode === 'overview',
+      { timeout: 15000 }
+    );
+    await page.waitForTimeout(1500);
+
+    const snap = await snapshotState(page);
+    expect(snap, 'state must be initialised after Escape from dive').not.toBeNull();
+
+    // Run the full invariant suite — this is the core contractual proof
+    const errors = assertInvariants(snap);
+    expect(errors, 'No state contradictions after Escape from dive:\n' + errors.join('\n')).toHaveLength(0);
+
+    // Dive-reset specific assertions
+    expect(snap.navMode, 'navMode must be overview after Escape from dive').toBe('overview');
+    expect(snap.trailDepth, 'trailDepth must be 0 after Escape from dive').toBe(0);
+    expect(snap.semanticDiveMode, 'semanticDiveMode must be false after Escape from dive').toBe(false);
+    expect(snap.focusedNode, 'focusedNode must be null after Escape from dive').toBeNull();
+    expect(snap.selectedPoint, 'selectedPoint must be null after Escape from dive').toBeNull();
+    expect(snap.semanticDive, 'dataset.semanticDive must be inactive after Escape from dive').toBe('inactive');
+    expect(snap.panelSurface, 'panelSurface must not be semantic-dive after Escape from dive').not.toBe('semantic-dive');
+    expect(snap.trailState, 'trailState must be inactive after Escape from dive').toBe('inactive');
+  });
+
+  // ── Phase 6c: Escape from map-trail while in semantic dive ─────────────
+
+  test('escape-from-map-trail-dive: Escape from map view with active dive resets to overview', async ({ page }) => {
+    test.setTimeout(180000);
+
+    // Enter semantic dive (trailDepth=2)
+    await performMockedSearch(page, 'coffee');
+    await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
+    await page.waitForTimeout(800);
+    await page.locator('.search-result-item').first().click();
+    await page.waitForFunction(
+      () => window.state?.navState?.mode === 'focus',
+      { timeout: 15000 }
+    );
+    await page.waitForTimeout(1000);
+
+    await page.evaluate(() => {
+      if (typeof window.setSemanticDiveMode === 'function') window.setSemanticDiveMode(true);
+    });
+    await page.waitForFunction(
+      () => window.state?.semanticDiveMode === true,
+      { timeout: 15000 }
+    );
+    await page.waitForTimeout(1500);
+
+    // Switch to map view while in dive
+    const mapBtn = page.locator('#btn-map');
+    const mapBtnVisible = await mapBtn.isVisible().catch(() => false);
+    if (mapBtnVisible) {
+      await mapBtn.click();
+    } else {
+      await page.evaluate(() => {
+        if (typeof window.switchView === 'function') window.switchView('map');
+      });
+    }
+    await page.waitForFunction(
+      () => window.state?.currentView === 'map',
+      { timeout: 15000 }
+    );
+    await page.waitForTimeout(1500);
+
+    const preSnap = await snapshotState(page);
+    expect(preSnap.activeView, 'pre: activeView must be map before Escape').toBe('map');
+
+    // Press Escape to reset back to overview
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(
+      () => window.state?.navState?.mode === 'overview',
+      { timeout: 15000 }
+    );
+    await page.waitForTimeout(1500);
+
+    const snap = await snapshotState(page);
+    expect(snap, 'state must be initialised after Escape from map-trail dive').not.toBeNull();
+
+    const errors = assertInvariants(snap);
+    expect(errors, 'No state contradictions after Escape from map-trail dive:\n' + errors.join('\n')).toHaveLength(0);
+
+    // Map-trail-dive-reset specific assertions
+    expect(snap.navMode, 'navMode must be overview after Escape from map-trail dive').toBe('overview');
+    expect(snap.trailDepth, 'trailDepth must be 0 after Escape from map-trail dive').toBe(0);
+    expect(snap.semanticDiveMode, 'semanticDiveMode must be false after Escape from map-trail dive').toBe(false);
+    expect(snap.focusedNode, 'focusedNode must be null after Escape from map-trail dive').toBeNull();
+    expect(snap.activeView, 'activeView must be galaxy (not stuck on map) after Escape from dive').toBe('galaxy');
   });
 
   // ── Phase 7: Full round-trip consistency ───────────────────────────────

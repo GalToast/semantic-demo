@@ -537,6 +537,153 @@ test.describe('3D thread orchestration quality', () => {
   });
 
   // -------------------------------------------------------------------------
+  // Short-landscape (844x390) — thread continuity, sag, luminance
+  // -------------------------------------------------------------------------
+  test('short-landscape 844x390: threads continuous, arc organically, not overbright', async ({ page }) => {
+    test.setTimeout(HEAVY_VISUAL_TEST_TIMEOUT_MS);
+    const p = page;
+    await p.setViewportSize({ width: 844, height: 390 });
+    await p.goto(withParams({ view: 'galaxy' }), { waitUntil: 'commit' });
+    await waitForScene(p);
+    await p.waitForFunction(
+      () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
+      { timeout: 3000 }
+    ).catch(() => {});
+
+    const probe = await probeThreads(p);
+    const sag = await probeThreadSag(p);
+    const screenshot = await p.screenshot({ fullPage: false, timeout: 30000 });
+    const lum = await sceneLuminanceFromBuffer(screenshot);
+
+    // Threads must exist
+    expect(probe.coreExists, 'core thread must exist in short-landscape overview').toBe(true);
+    expect(probe.coreSegments, 'core thread must have segments').toBeGreaterThan(10);
+
+    // Continuity: all sampled pairs must match
+    expect(probe.coreContinuity.checked, 'continuity must be sampled').toBeGreaterThan(0);
+    expect(probe.coreContinuity.matched, 'all sampled core pairs must be continuous')
+      .toBe(probe.coreContinuity.checked);
+
+    // Sag: threads must arc organically, not collapse to straight chords
+    expect(sag.checked, 'thread sag must be sampled').toBeGreaterThan(0);
+    expect(sag.totalEdges, 'at least some thread edges must exist').toBeGreaterThan(5);
+    expect(sag.maxSag, `maxSag=${sag.maxSag.toFixed(5)}, avgSag=${sag.avgSag.toFixed(5)}`)
+      .toBeGreaterThanOrEqual(SAG_THRESHOLD);
+    expect(sag.sagged, `sagged=${sag.sagged}/${sag.checked}`)
+      .toBeGreaterThanOrEqual(Math.floor(sag.checked * 0.25));
+
+    // Not overbright: same cap as overview — washed-out luminance at this viewport is the target gap
+    expect(lum.p95, `short-landscape p95 luminance too high: ${lum.p95}`).toBeLessThanOrEqual(230);
+    expect(lum.whiteRatio, `short-landscape white pixel ratio too high: ${lum.whiteRatio}`).toBeLessThanOrEqual(0.08);
+
+    // Opacity must be in a legible range
+    expect(probe.coreOpacity, 'core opacity must be set').toBeGreaterThan(0);
+    expect(probe.coreOpacity, 'core opacity must be bounded').toBeLessThanOrEqual(0.22);
+  });
+
+  // -------------------------------------------------------------------------
+  // Mobile-portrait (390x844) — thread continuity, sag, luminance
+  // -------------------------------------------------------------------------
+  test('mobile-portrait: threads arc organically and are not overbright at 390x844', async ({ page }) => {
+    test.setTimeout(HEAVY_VISUAL_TEST_TIMEOUT_MS);
+    const p = page;
+    await p.goto(withParams({ view: 'galaxy' }), { waitUntil: 'commit' });
+    await waitForScene(p);
+    await p.waitForFunction(
+      () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
+      { timeout: 3000 }
+    ).catch(() => {});
+
+    const probe = await probeThreads(p);
+    const sag = await probeThreadSag(p);
+    const screenshot = await p.screenshot({ fullPage: false, timeout: 30000 });
+    const lum = await sceneLuminanceFromBuffer(screenshot);
+
+    // Threads must exist
+    expect(probe.coreExists, 'core thread must exist in mobile-portrait overview').toBe(true);
+    expect(probe.coreSegments, 'core thread must have segments').toBeGreaterThan(10);
+
+    // Continuity: all sampled pairs must match
+    expect(probe.coreContinuity.checked, 'continuity must be sampled').toBeGreaterThan(0);
+    expect(probe.coreContinuity.matched, 'all sampled core pairs must be continuous')
+      .toBe(probe.coreContinuity.checked);
+
+    // Sag: threads must arc organically, not collapse to straight chords
+    expect(sag.checked, 'thread sag must be sampled').toBeGreaterThan(0);
+    expect(sag.totalEdges, 'at least some thread edges must exist').toBeGreaterThan(5);
+    expect(sag.maxSag, `maxSag=${sag.maxSag.toFixed(5)}, avgSag=${sag.avgSag.toFixed(5)}`)
+      .toBeGreaterThanOrEqual(SAG_THRESHOLD);
+    expect(sag.sagged, `sagged=${sag.sagged}/${sag.checked}`)
+      .toBeGreaterThanOrEqual(Math.floor(sag.checked * 0.25));
+
+    // Not overbright: washed-out luminance at mobile portrait is the target gap
+    expect(lum.p95, `mobile-portrait p95 luminance too high: ${lum.p95}`).toBeLessThanOrEqual(230);
+    expect(lum.whiteRatio, `mobile-portrait white pixel ratio too high: ${lum.whiteRatio}`).toBeLessThanOrEqual(0.08);
+
+    // Opacity must be in a legible range
+    expect(probe.coreOpacity, 'core opacity must be set').toBeGreaterThan(0);
+    expect(probe.coreOpacity, 'core opacity must be bounded').toBeLessThanOrEqual(0.22);
+  });
+
+  // -------------------------------------------------------------------------
+  // Mobile-portrait focus — thread quality maintained in focus mode
+  // -------------------------------------------------------------------------
+  test('mobile-portrait: focus pocket thread visibility is maintained at 390x844', async ({ page }) => {
+    test.setTimeout(HEAVY_VISUAL_TEST_TIMEOUT_MS);
+    const p = page;
+    await p.goto(withParams({ view: 'galaxy' }), { waitUntil: 'commit' });
+    await waitForScene(p);
+    // Secondary geometry confirmation — short timeout avoids compounding the main waitForScene cap.
+    await p.waitForFunction(
+      () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
+      { timeout: 2000 }
+    ).catch(() => {});
+
+    // Focus on a node with neighbors (same entryIndex search pattern as other tests)
+    const focusResult = await p.evaluate(() => {
+      for (const [leadId, threadNode] of window.state?.semanticNeighborMapByLeadId || []) {
+        if (!threadNode?.neighbors?.length) continue;
+        const idx = window.state?.pointIndexByLeadId?.get(leadId) ?? window.state?.pointIndexByLeadId?.get(String(leadId));
+        if (Number.isFinite(idx)) return { targetIndex: idx };
+      }
+      return { targetIndex: 0 };
+    });
+    await p.evaluate(
+      ({ idx }) => window.focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
+      { idx: focusResult.targetIndex }
+    );
+    await p.waitForFunction(() => Number.isFinite(window.state?.focusedNode), { timeout: 8000 });
+    // Set trailDepth=1 via harness — documents this is fixture setup, not the
+    // official setTrailDepth() API being tested.
+    await mutate(p, 'setTrailDepth', { trailDepth: 1, navStateMode: 'focus' });
+    await mutate(p, 'setFocusedNode', { focusedNode: focusResult.targetIndex });
+    // Wait for the semantic lens glow to actually animate in (validates scene has settled)
+    await p.waitForFunction(
+      () => (window.state?.semanticLensGlow?.material?.uniforms?.uOpacity?.value ?? 0) > 0.01,
+      { timeout: 8000 }
+    ).catch(() => {});
+    await p.waitForTimeout(400);
+
+    const probe = await probeThreads(p);
+    const screenshot = await p.screenshot({ fullPage: false, timeout: 30000 });
+    const lum = await sceneLuminanceFromBuffer(screenshot);
+
+    // Focused node must be set
+    expect(probe.focusedNode, 'focusedNode must be set').not.toBeNull();
+    expect(probe.focusedNode, 'focusedNode must be non-negative').toBeGreaterThanOrEqual(0);
+
+    // Threads still present and continuous in focus mode
+    expect(probe.coreExists, 'core thread must persist in mobile-portrait focus').toBe(true);
+    expect(probe.coreContinuity.checked, 'continuity must be sampled').toBeGreaterThan(0);
+    expect(probe.coreContinuity.matched, 'core pairs must be continuous in mobile-portrait focus')
+      .toBe(probe.coreContinuity.checked);
+
+    // Not overbright in focus: stricter cap at 205 (focus mode has stricter luminance cap)
+    expect(lum.p95, `mobile-portrait focus p95 luminance too high: ${lum.p95}`).toBeLessThanOrEqual(205);
+    expect(lum.whiteRatio, `mobile-portrait focus white pixel ratio too high: ${lum.whiteRatio}`).toBeLessThanOrEqual(0.018);
+  });
+
+  // -------------------------------------------------------------------------
   // Performance guardrail — diagnostics exist and are finite
   // -------------------------------------------------------------------------
   test('performance: scenePerformanceDiagnostics is active and finite', async ({ page }) => {

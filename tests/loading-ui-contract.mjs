@@ -1,4 +1,4 @@
-// loading-ui-contract.mjs — Source-level contract tests for loading-ui.js
+// loading-ui-contract.mjs - Source-level contract tests for loading-ui.js
 // Fast Node tests that verify phase body dataset, progress width, overlay
 // dispatch contract, and deferred hydration scheduling / window.initWeather guard.
 
@@ -94,16 +94,26 @@ async function testProgressWidth() {
 }
 
 // ---------------------------------------------------------------------------
-// Test: hideLoadingOverlay dispatches 'scene-ready' CustomEvent on window
+// Test: hideLoadingOverlay dispatches SCENE_READY constant (not string literal)
 // ---------------------------------------------------------------------------
 
 async function testSceneReadyDispatch() {
     const source = loadingUiSource;
     if (!source) return skip('loading-ui.js not readable');
 
-    const dispatchesSceneReady = /window\.dispatchEvent\(\s*new\s+CustomEvent\(\s*['"]scene-ready['"]/.test(source);
-    if (!dispatchesSceneReady) throw new Error('hideLoadingOverlay must dispatch window CustomEvent("scene-ready")');
-    ok('hideLoadingOverlay dispatches scene-ready CustomEvent on window');
+    // Must import SCENE_READY from scene-events.js
+    const importsSceneReady = /import\s*\{\s*SCENE_READY\s*\}\s*from\s*['"]\.\/scene-events\.js['"]/.test(source);
+    if (!importsSceneReady) throw new Error('loading-ui.js must import SCENE_READY from scene-events.js');
+
+    // Must dispatch via the constant, not a raw string literal
+    const usesConstant = /window\.dispatchEvent\(\s*new\s+CustomEvent\(\s*SCENE_READY\s*\)/.test(source);
+    if (!usesConstant) throw new Error('hideLoadingOverlay must dispatch CustomEvent(SCENE_READY), not a string literal');
+
+    // Must NOT use string literal form
+    const hasStringLiteral = /window\.dispatchEvent\(\s*new\s+CustomEvent\(\s*['"]scene-ready['"]/.test(source);
+    if (hasStringLiteral) throw new Error('hideLoadingOverlay must not dispatch CustomEvent with raw string literal — use SCENE_READY constant');
+
+    ok('hideLoadingOverlay dispatches SCENE_READY constant (not string literal)');
 }
 
 // ---------------------------------------------------------------------------
@@ -141,7 +151,7 @@ async function testDeferredHydrationIdempotent() {
 
     const guards = /if\s*\(\s*state\.deferredHydrationStarted\s*\)\s*return/.test(source);
     if (!guards) throw new Error('startDeferredHydration must return early if state.deferredHydrationStarted is true');
-    ok('startDeferredHydration is idempotent — guards on deferredHydrationStarted');
+    ok('startDeferredHydration is idempotent - guards on deferredHydrationStarted');
 }
 
 // ---------------------------------------------------------------------------
@@ -170,6 +180,57 @@ async function testInitWeatherViaWindow() {
     const callsWindowInit = /window\.initWeather\s*\(/.test(source);
     if (!callsWindowInit) throw new Error('initWeather must be called via window.initWeather()');
     ok('initWeather is called via window.initWeather (not imported directly)');
+}
+
+// ---------------------------------------------------------------------------
+// Test: loading-ui.js imports restoreFocusTrailState from journey.js
+// ---------------------------------------------------------------------------
+
+async function testRestoreFocusTrailStateImport() {
+    const source = loadingUiSource;
+    if (!source) return skip('loading-ui.js not readable');
+
+    // Must import restoreFocusTrailState from journey.js
+    const hasImport = /import\s*\{[^}]*restoreFocusTrailState[^}]*\}\s*from\s*['"]\.\/journey\.js['"]/.test(source);
+    if (!hasImport) throw new Error('loading-ui.js must import restoreFocusTrailState from journey.js');
+
+    // Must NOT call via window.restoreFocusTrailState (old long chain must not return)
+    const callsViaWindow = /window\.restoreFocusTrailState\s*\(/.test(source);
+    if (callsViaWindow) throw new Error('restoreFocusTrailState must not be called via window.restoreFocusTrailState - use direct import');
+
+    // restoreFocusTrailState must actually be called (not just imported and unused)
+    const isCalled = /restoreFocusTrailState\s*\(/.test(source);
+    if (!isCalled) throw new Error('restoreFocusTrailState must be called in loading-ui.js');
+
+    ok('loading-ui.js imports restoreFocusTrailState from journey.js and calls it directly');
+}
+
+// ---------------------------------------------------------------------------
+// Test: window.refreshFocusBeaconOverlay / window.refreshFocusNextCueOverlay
+//    are not present in loading-ui.js (phantom calls must stay removed)
+// ---------------------------------------------------------------------------
+
+async function testNoPhantomFocusOverlayCalls() {
+    const source = loadingUiSource;
+    if (!source) return skip('loading-ui.js not readable');
+
+    // These phantom window calls were removed in Wave52 and must not return
+    const phantomCalls = [
+        'window.refreshFocusBeaconOverlay',
+        'window.refreshFocusNextCueOverlay'
+    ];
+
+    for (const phantom of phantomCalls) {
+        if (source.includes(phantom)) {
+            throw new Error(`${phantom} must not appear in loading-ui.js - phantom call was removed in Wave52`);
+        }
+    }
+
+    // Also verify no unguarded window.* focus restore chain (alternative form)
+    const hasLongChain = /window\.(refreshFocusBeacon|refreshFocusNextCue)/.test(source);
+    if (hasLongChain) throw new Error('Long window.* focus restore chain must not return to loading-ui.js');
+
+    ok('loading-ui.js has no phantom window.refreshFocusBeaconOverlay or window.refreshFocusNextCueOverlay calls');
 }
 
 // ---------------------------------------------------------------------------
@@ -259,7 +320,7 @@ async function testPhaseOrder() {
 
     const orderMatch = source.match(/\['records',\s*'scene',\s*'restore',\s*'launch'\]/);
     if (!orderMatch) throw new Error('setLoadingPhase must use phase order [records, scene, restore, launch]');
-    ok('phase order is records → scene → restore → launch');
+    ok('phase order is records -> scene -> restore -> launch');
 }
 
 // ---------------------------------------------------------------------------
@@ -275,6 +336,8 @@ const tests = [
     testDeferredHydrationIdempotent,
     testScheduleWeatherInitializedGuard,
     testInitWeatherViaWindow,
+    testRestoreFocusTrailStateImport,
+    testNoPhantomFocusOverlayCalls,
     testLifecycleReExports,
     testWindowBindings,
     testNoCircularDependency,

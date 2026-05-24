@@ -24,6 +24,7 @@ const SEMDEMO_ROOT = path.resolve(process.cwd());
 const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
 const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js');
 const JOURNEY_THREAD_MODEL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-model.js');
+const JOURNEY_WEBGL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.js');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -138,27 +139,27 @@ function testApplyPointFilterColorsFactorRanges() {
 function testBuildRouteTraceMaterial() {
   console.log('\n[TEST] buildRouteTraceMaterial shader material');
 
-  const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const webglSrc = fs.readFileSync(JOURNEY_WEBGL_PATH, 'utf-8');
 
   // Must return THREE.ShaderMaterial
-  assertContains(journeySrc, 'return new THREE.ShaderMaterial({', 'buildRouteTraceMaterial returns ShaderMaterial');
+  assertContains(webglSrc, 'return new THREE.ShaderMaterial({', 'buildRouteTraceMaterial returns ShaderMaterial');
 
   // Must have depthWrite: false, depthTest: false
-  assertContains(journeySrc, 'depthWrite: false', 'depthWrite: false in route trace material');
-  assertContains(journeySrc, 'depthTest: false', 'depthTest: false in route trace material');
+  assertContains(webglSrc, 'depthWrite: false', 'depthWrite: false in route trace material');
+  assertContains(webglSrc, 'depthTest: false', 'depthTest: false in route trace material');
 
   // Must have AdditiveBlending
-  assertContains(journeySrc, 'blending: THREE.AdditiveBlending', 'AdditiveBlending in route trace material');
+  assertContains(webglSrc, 'blending: THREE.AdditiveBlending', 'AdditiveBlending in route trace material');
 
   // Shader must declare time uniform for animation
-  assertContains(journeySrc, 'uniform float time;', 'time uniform declared in fragment shader');
+  assertContains(webglSrc, 'uniform float time;', 'time uniform declared in fragment shader');
 
   // Must update time uniform in refreshRouteTraceOverlay
-  assertContains(journeySrc, 'material.uniforms.time.value = now / 1000', 'time uniform updated in updateRouteTraceOverlayPositions');
+  assertContains(webglSrc, 'material.uniforms.time.value = now / 1000', 'time uniform updated in updateRouteTraceOverlayPositions');
 
   // Semantic dive mode must boost baseOpacity to 0.34
-  assertContains(journeySrc, 'material.uniforms.baseOpacity.value = 0.34', 'semantic dive mode boosts baseOpacity to 0.34');
-  assertContains(journeySrc, 'material.uniforms.opacity.value = 0.34', 'semantic dive mode boosts opacity to 0.34');
+  assertContains(webglSrc, 'material.uniforms.baseOpacity.value = 0.34', 'semantic dive mode boosts baseOpacity to 0.34');
+  assertContains(webglSrc, 'material.uniforms.opacity.value = 0.34', 'semantic dive mode boosts opacity to 0.34');
 
   console.log('  OK buildRouteTraceMaterial verified');
 }
@@ -229,7 +230,7 @@ function testThreadInspectorSemanticFirst() {
   assertContains(threadInspectorSrc, 'getSemanticThreadCandidates,', 'window._ti.getSemanticThreadCandidates');
   assertContains(threadInspectorSrc, 'getGeometricThreadCandidates,', 'window._ti.getGeometricThreadCandidates');
   assertContains(threadInspectorSrc, 'getThreadCandidatesForIndex,', 'window._ti.getThreadCandidatesForIndex');
-  assertContains(threadInspectorSrc, 'exploreThreadNeighbor', 'window.exploreThreadNeighbor exposed');
+  assertContains(threadInspectorSrc, 'exploreThreadNeighbor', 'window._ti.exploreThreadNeighbor diagnostic access');
 
   // Journey imports normalizeLeadId from journey-thread-model
   const importBlockEnd = journeySrc.indexOf("} from './journey-thread-model.js'");
@@ -240,6 +241,85 @@ function testThreadInspectorSemanticFirst() {
   assert(normalizeLeadIdNear < importBlockEnd, 'normalizeLeadId is imported from journey-thread-model.js');
 
   console.log('  OK thread-inspector dual candidates strategy verified');
+}
+
+// ---------------------------------------------------------------------------
+// TEST 9: Wave60 - exploreThreadNeighbor stranded phase='arrived' fix
+// ---------------------------------------------------------------------------
+
+function testWave60ExploreThreadNeighborSettleBehavior() {
+  console.log('\n[TEST] Wave60: exploreThreadNeighbor stranded phase=arrived fix + followTargetsCurrent');
+
+  const tiSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
+
+  // exploreThreadNeighbor must clear existing arrivalTimeout before setting phase='exploring'
+  assertContains(tiSrc,
+    'if (Number.isFinite(state.strandContinuityState.arrivalTimeoutId))',
+    'exploreThreadNeighbor clears existing arrivalTimeoutId');
+  assertContains(tiSrc,
+    'window.clearTimeout(state.strandContinuityState.arrivalTimeoutId)',
+    'exploreThreadNeighbor calls clearTimeout on arrivalTimeoutId');
+  assertContains(tiSrc,
+    'state.strandContinuityState.arrivalTimeoutId = undefined',
+    'exploreThreadNeighbor nulls arrivalTimeoutId after clear');
+
+  // exploreThreadNeighbor must clear existing settleTimeout before setting phase='exploring'
+  assertContains(tiSrc,
+    'if (Number.isFinite(state.strandContinuityState.settleTimeoutId))',
+    'exploreThreadNeighbor clears existing settleTimeoutId');
+  assertContains(tiSrc,
+    'window.clearTimeout(state.strandContinuityState.settleTimeoutId)',
+    'exploreThreadNeighbor calls clearTimeout on settleTimeoutId');
+  assertContains(tiSrc,
+    'state.strandContinuityState.settleTimeoutId = undefined',
+    'exploreThreadNeighbor nulls settleTimeoutId after clear');
+
+  // Both clear-timeout blocks must appear BEFORE setStrandContinuityState('exploring'...)
+  const arrivalClearIdx = tiSrc.indexOf('if (Number.isFinite(state.strandContinuityState.arrivalTimeoutId))');
+  const settleClearIdx = tiSrc.indexOf('if (Number.isFinite(state.strandContinuityState.settleTimeoutId))');
+  const exploringIdx = tiSrc.indexOf("setStrandContinuityState('exploring'");
+  assert(arrivalClearIdx !== -1, 'arrivalTimeoutId clear block found');
+  assert(settleClearIdx !== -1, 'settleTimeoutId clear block found');
+  assert(exploringIdx !== -1, "setStrandContinuityState('exploring') found");
+  assert(arrivalClearIdx < exploringIdx, 'arrivalTimeoutId clear appears before exploring phase');
+  assert(settleClearIdx < exploringIdx, 'settleTimeoutId clear appears before exploring phase');
+
+  // exploreThreadNeighbor must schedule a settle-timeout that transitions phase='arrived' -> 'idle'
+  assertContains(tiSrc,
+    "state.strandContinuityState.phase === 'arrived'",
+    'settle-timeout checks phase === arrived');
+  assertContains(tiSrc,
+    "clearStrandContinuityState('arrival-settled')",
+    'settle-timeout calls clearStrandContinuityState with arrival-settled');
+  assertContains(tiSrc,
+    'const settleDelay = options.settleDelay',
+    'exploreThreadNeighbor computes settleDelay');
+  assertContains(tiSrc,
+    'const arrivalTid = window.setTimeout',
+    'exploreThreadNeighbor captures arrival timeout id');
+  assertContains(tiSrc,
+    'state.strandContinuityState.arrivalTimeoutId = arrivalTid',
+    'exploreThreadNeighbor stores arrival timeout id for cancellation');
+  assertContains(tiSrc,
+    'const settleTid = window.setTimeout',
+    'exploreThreadNeighbor captures settle timeout id');
+  assertContains(tiSrc,
+    'state.strandContinuityState.settleTimeoutId = settleTid',
+    'exploreThreadNeighbor stores settle timeout id for cancellation');
+
+  // renderThreadInspection followBtn must guard on followTargetsCurrent
+  assertContains(tiSrc, 'const followTargetsCurrent =', 'renderThreadInspection defines followTargetsCurrent');
+  assertContains(tiSrc,
+    'inspectionState.index === state.navState.focusedIndex',
+    'followTargetsCurrent checks index === focusedIndex');
+  assertContains(tiSrc,
+    'followBtn.disabled = !inspectionState.active || followTargetsCurrent',
+    'followTargetsCurrent disables followBtn');
+  assertContains(tiSrc,
+    "Current Stop",
+    'followTargetsCurrent changes button text to Current Stop');
+
+  console.log('  OK Wave60 exploreThreadNeighbor settle + followTargetsCurrent verified');
 }
 
 // ---------------------------------------------------------------------------
@@ -313,6 +393,7 @@ function main() {
     testThreadInspectorSemanticFirst();
     testJourneyTextHelpersExtraction();
     testThreadInspectorTextHelpersExtraction();
+    testWave60ExploreThreadNeighborSettleBehavior();
 
     console.log('\n============================================================');
     console.log('ALL TESTS PASSED');

@@ -407,6 +407,7 @@ async function assert_launch_focus(page, ctx) {
       const rect = diveBtn.getBoundingClientRect();
       const style = getComputedStyle(diveBtn);
       results.diveBtnVisible = style.display !== 'none' && style.visibility !== 'hidden';
+      results.diveBtnRect = { width: rect.width, height: rect.height };
       results.diveBtnTouchTarget = results.diveBtnVisible ? rect.width >= 43.5 && rect.height >= 43.5 : null;
       results.diveBtnTextClipped = textClipped(diveBtn);
     }

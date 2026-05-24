@@ -169,4 +169,105 @@ test.describe('3D overlay hit ownership', () => {
     // At least one pocket node must be reachable at its screen coordinate
     expect(pocket.reachableCount, `short-landscape pocket must retain reachable nodes, got ${pocket.reachableCount}`).toBeGreaterThan(0);
   });
+
+  test('mobile-portrait: focus neighborhood nodes are not consumed by overlay hit-stealing at 390x844', async ({ page }) => {
+    test.setTimeout(90000);
+    await openApp(page, { width: 390, height: 844 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 20); i++) {
+        const pt = pts[i];
+        if (pt && window.state.pointIndexByLeadId.has(pt.lead_id)) {
+          const node = window.state.semanticNeighborMapByLeadId?.get(pt.lead_id);
+          if (node?.neighbors?.length > 0) return i;
+        }
+      }
+      return 0;
+    });
+
+    await page.evaluate(idx => {
+      if (typeof window.focusOnNode === 'function') window.focusOnNode(idx);
+    }, entryIndex);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    const pocket = await probeFocusPocket(page);
+    expect(pocket.pocketSize, 'mobile-portrait pocket must be populated').toBeGreaterThan(0);
+    expect(pocket.reachableCount, `mobile-portrait pocket must retain reachable nodes, got ${pocket.reachableCount}`).toBeGreaterThan(0);
+  });
+
+  test('mobile-portrait: clicking near a focus-neighborhood node does not create spurious canvas focus pick at 390x844', async ({ page }) => {
+    test.setTimeout(90000);
+    await openApp(page, { width: 390, height: 844 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 20); i++) {
+        const pt = pts[i];
+        if (pt && window.state.pointIndexByLeadId.has(pt.lead_id)) {
+          const node = window.state.semanticNeighborMapByLeadId?.get(pt.lead_id);
+          if (node?.neighbors?.length > 0) return i;
+        }
+      }
+      return 0;
+    });
+
+    await page.evaluate(idx => {
+      if (typeof window.focusOnNode === 'function') window.focusOnNode(idx);
+    }, entryIndex);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForTimeout(1000);
+
+    const centers = await overlayCenters(page);
+
+    // Get projected screen coordinates of 2-3 focus-neighborhood nodes
+    const neighborhoodScreenPoints = await page.evaluate(() => {
+      const nav = window.state?.navState;
+      if (!nav || nav.mode !== 'focus' || !Number.isFinite(nav.focusedIndex)) return [];
+      const anchorIdx = nav.focusedIndex;
+      const pts = window.state.points;
+      const semanticMap = window.state.semanticNeighborMapByLeadId;
+      if (!pts || !semanticMap) return [];
+
+      const anchorLeadId = pts[anchorIdx]?.lead_id;
+      const anchorNeighbors = semanticMap.get(anchorLeadId)?.neighbors || [];
+      const allIndices = [anchorIdx, ...anchorNeighbors].slice(0, 4);
+
+      return allIndices.map(idx => {
+        const pt = pts[idx];
+        if (!pt) return null;
+        const projected = window.state.renderer?.computeProjectedPoint?.(pt);
+        if (!projected) return null;
+        return { idx, screenX: projected.x, screenY: projected.y };
+      }).filter(Boolean);
+    });
+
+    // Click near (but not on) neighborhood nodes, avoiding overlay centers
+    for (const point of neighborhoodScreenPoints.slice(0, 3)) {
+      // Offset the click position slightly to be near but not on the node
+      const offsetX = 15;
+      const offsetY = 15;
+      const clickX = point.screenX + offsetX;
+      const clickY = point.screenY + offsetY;
+
+      // Skip if this click would land on an overlay center
+      const onOverlay = centers.some(c =>
+        Math.abs(c.x - clickX) < 30 && Math.abs(c.y - clickY) < 30
+      );
+      if (onOverlay) continue;
+
+      await page.mouse.click(clickX, clickY);
+      await page.waitForTimeout(200);
+    }
+
+    const after = await probe(page);
+    expect(after.lastCanvasNodeFocusPick, 'clicking near neighborhood nodes should not create spurious canvas focus pick').toBeNull();
+    expect(
+      after.focusedNode === null || isValidNodeIndex(after.focusedNode, after.pointCount),
+      'focusedNode must stay null or remain valid — no state corruption'
+    ).toBe(true);
+  });
 });

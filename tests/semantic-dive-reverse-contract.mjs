@@ -104,7 +104,7 @@ resetDom();
 syncSemanticDiveUi();
 
 assert(state.currentView === 'map', 'view is now map');
-assert(state.semanticDiveMode === false, 'map view clears semanticDiveMode');
+assert(state.semanticDiveMode === true, 'map view preserves semanticDiveMode state');
 assert(document.body.dataset.semanticDive === 'inactive', 'map forces dive inactive');
 
 // Preserve trailDepth but clear focus (user went back to county view)
@@ -151,7 +151,7 @@ resetDom();
 syncSemanticDiveUi();
 
 assert(state.currentView === 'map', 'currentView is map');
-assert(state.semanticDiveMode === false, 'map view guards semanticDiveMode off');
+assert(state.semanticDiveMode === true, 'map view preserves semanticDiveMode state');
 assert(document.body.dataset.semanticDive === 'inactive', 'map forces dataset dive inactive');
 
 // ---------------------------------------------------------------------------
@@ -165,7 +165,7 @@ state.focusedNode = null; // no focus
 state.semanticDiveMode = true; // stale mode
 syncSemanticDiveUi();
 
-assert(state.semanticDiveMode === false, 'no-focus galaxy clears stale semanticDiveMode');
+assert(state.semanticDiveMode === true, 'syncSemanticDiveUi does not mutate state.semanticDiveMode');
 assert(document.body.dataset.semanticDive === 'inactive', 'no-focus galaxy dataset is inactive');
 
 // ---------------------------------------------------------------------------

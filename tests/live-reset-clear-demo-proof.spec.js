@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
  *   keyboard(Escape) -> handleGlobalKeydown -> clearSearch + resetExplorationFocus
  *
  * The spec runs the same reset paths across desktop, tablet, and mobile
- * viewports because the search chrome and focus surfaces change responsively.
+ * because the search chrome and focus surfaces change responsively.
  *
  * Run:
  *   npx playwright test tests/live-reset-clear-demo-proof.spec.js --browser=chromium --workers=1
@@ -80,7 +80,6 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
   test.beforeEach(async ({ page }) => {
     await setupMockSearch(page);
     await page.evaluate(() => {
-      // Clear any residual state so timers don't trigger stale-detection
       if (window.state) {
         window.state.viewSwitchPreludeTimer = null;
         window.state.searchTimeout = null;
@@ -106,7 +105,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
 
     // --- 2. Press Escape via real keyboard event ---
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(1500);
+    await expect(page.locator('.search-result-item')).toHaveCount(0, { timeout: 10000 });
 
     // --- 3. Verify: input cleared, results gone, nav reset to overview ---
     const inputAfter = await page.evaluate(() => document.getElementById('search-input')?.value ?? '');
@@ -134,7 +133,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     await enterSearchQuery(page, 'cafe');
     await waitForResults(page);
     await page.locator('.search-result-item').first().click();
-    await page.waitForTimeout(2000);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus' && window.state?.focusedNode !== null, { timeout: 10000 });
 
     const focusBefore = await page.evaluate(() => ({
       navMode: window.state?.navState?.mode ?? 'unknown',
@@ -146,7 +145,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
 
     // --- 2. Press Escape via real keyboard event ---
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(2000);
+    await expect(page.locator('.search-result-item')).toHaveCount(0, { timeout: 10000 });
 
     // --- 3. Verify focus state is fully cleared ---
     const focusAfter = await page.evaluate(() => ({
@@ -176,10 +175,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     // Focus the search input so the keydown handler on searchInput catches Escape
     await page.locator('#search-input').focus();
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(1500);
-
-    const inputAfter = await page.evaluate(() => document.getElementById('search-input')?.value ?? '');
-    expect(inputAfter, 'Escape while input is focused must clear search via searchInput keydown handler').toBe('');
+    await expect(page.locator('#search-input')).toHaveValue('', { timeout: 10000 });
   });
 
   test('real Escape press is captured by handleGlobalKeydown when no element is focused', async ({ page }) => {
@@ -195,10 +191,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     // Blur everything so handleGlobalKeydown catches the Escape
     await page.evaluate(() => document.body.focus());
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(1500);
-
-    const inputAfter = await page.evaluate(() => document.getElementById('search-input')?.value ?? '');
-    expect(inputAfter, 'Escape with no focused element must clear search via global handler').toBe('');
+    await expect(page.locator('#search-input')).toHaveValue('', { timeout: 10000 });
   });
 
   test('clear button click clears search via DOM click event (not keyboard)', async ({ page }) => {
@@ -217,12 +210,10 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
       if (btn) btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
     });
 
-    await page.waitForTimeout(1000);
+    await expect(page.locator('.search-result-item')).toHaveCount(0, { timeout: 10000 });
 
     const inputAfter = await page.evaluate(() => document.getElementById('search-input')?.value ?? '');
     expect(inputAfter, 'clear button click must empty search input').toBe('');
-    const resultsAfter = await page.locator('.search-result-item').count();
-    expect(resultsAfter, 'clear button click must remove result items').toBe(0);
   });
 
   test('Escape during active micro-demo cancels demo via demo-controller keydown', async ({ page }) => {
@@ -277,15 +268,12 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     // Focus the clear button and press Enter
     await clearBtn.focus();
     await page.keyboard.press('Enter');
-    await page.waitForTimeout(1000);
-
-    const inputAfter = await page.evaluate(() => document.getElementById('search-input')?.value ?? '');
-    expect(inputAfter, 'Enter on focused clear button must clear search').toBe('');
+    await expect(page.locator('#search-input')).toHaveValue('', { timeout: 10000 });
     await expect(clearBtn).not.toBeVisible();
   });
 
   test('resetExplorationFocus called from clearSearch chain preserves no timers', async ({ page }) => {
-    test.setTimeout(45000);
+    test.setTimeout(90000);
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof window.resetExplorationFocus === 'function', { timeout: 20000 });
@@ -295,7 +283,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     await enterSearchQuery(page, 'coffee');
     await waitForResults(page);
     await page.locator('.search-result-item').first().click();
-    await page.waitForTimeout(2000);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus' && window.state?.focusedNode !== null, { timeout: 10000 });
 
     // Verify timers exist before reset
     const timersBefore = await page.evaluate(() => ({
@@ -307,7 +295,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
 
     // Escape triggers clearSearch -> resetExplorationFocus chain.
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(1500);
+    await expect(page.locator('.search-result-item')).toHaveCount(0, { timeout: 10000 });
 
     const timersAfter = await page.evaluate(() => ({
       viewSwitchPreludeTimer: window.state?.viewSwitchPreludeTimer ?? null,

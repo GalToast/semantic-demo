@@ -270,6 +270,139 @@ test.describe('focus-neighborhood geometry', () => {
     }
   });
 
+  test('tablet: non-anchor neighbors have minimum screen distance from anchor at 1024x768', async ({ page }) => {
+    test.setTimeout(FOCUS_NEIGHBORHOOD_TEST_TIMEOUT_MS);
+    await openApp(page, { width: 1024, height: 768 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 30); i++) {
+        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        if (node?.neighbors?.length > 0) return i;
+      }
+      return 0;
+    });
+
+    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForTimeout(700);
+
+    const snap = await probeNeighborhood(page);
+    const MIN_DISTANCE_PX = 22;
+
+    expect(snap.neighborIndices.length, 'tablet pocket must have non-anchor nodes').toBeGreaterThan(0);
+
+    const anchorProj = snap.projected.find(n => n.idx === snap.focusedIndex);
+    expect(anchorProj, 'anchor must be projectable at tablet').toBeTruthy();
+    expect(anchorProj.hasScreen, 'anchor must be on-screen at tablet').toBe(true);
+
+    const nonAnchorProjected = snap.projected.filter(n => n.idx !== snap.focusedIndex && n.hasScreen);
+    expect(nonAnchorProjected.length, 'tablet must have at least one non-anchor projected neighbor').toBeGreaterThan(0);
+
+    let separatedCount = 0;
+    for (const neighbor of nonAnchorProjected) {
+      const dist = Math.hypot(neighbor.screenX - anchorProj.screenX, neighbor.screenY - anchorProj.screenY);
+      if (dist >= MIN_DISTANCE_PX) separatedCount++;
+    }
+    expect(separatedCount, `tablet: at least one non-anchor neighbor must be ≥${MIN_DISTANCE_PX}px from anchor, got ${separatedCount}/${nonAnchorProjected.length}`).toBeGreaterThan(0);
+
+    // Occlusion check: all on-screen projected neighbors must be in unobstructed canvas
+    const onCanvasProjected = nonAnchorProjected.filter(n => n.inCanvas);
+    const unobstructed = [];
+    for (const proj of onCanvasProjected) {
+      const reachable = await isReachableScreenCoordinate(page, proj.screenX, proj.screenY);
+      if (reachable) unobstructed.push(proj.idx);
+    }
+    expect(unobstructed.length, `tablet: non-anchor neighbors must not be occluded by UI overlays; onCanvas=${onCanvasProjected.length}`).toBeGreaterThan(0);
+  });
+
+  test('mobile-portrait: non-anchor neighbors are visible and not occluded at 390x844', async ({ page }) => {
+    test.setTimeout(FOCUS_NEIGHBORHOOD_TEST_TIMEOUT_MS);
+    await openApp(page, { width: 390, height: 844 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 30); i++) {
+        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        if (node?.neighbors?.length > 0) return i;
+      }
+      return 0;
+    });
+
+    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForTimeout(700);
+
+    const snap = await probeNeighborhood(page);
+
+    expect(snap.neighborIndices.length, 'mobile-portrait pocket must have non-anchor nodes').toBeGreaterThan(0);
+
+    const anchorProj = snap.projected.find(n => n.idx === snap.focusedIndex);
+    expect(anchorProj?.hasScreen, 'anchor must be on-screen at mobile-portrait').toBe(true);
+
+    const onScreen = snap.projected.filter(n => n.hasScreen && n.idx !== snap.focusedIndex);
+    const inCanvas = snap.projected.filter(n => n.hasScreen && n.inCanvas && n.idx !== snap.focusedIndex);
+
+    expect(onScreen.length, 'at least one non-anchor neighbor must be on-screen at mobile-portrait').toBeGreaterThan(0);
+
+    const unobstructed = [];
+    for (const proj of inCanvas) {
+      const reachable = await isReachableScreenCoordinate(page, proj.screenX, proj.screenY);
+      if (reachable) unobstructed.push(proj.idx);
+    }
+    expect(unobstructed.length, `mobile-portrait: non-anchor neighbors must not be occluded; onScreen=${onScreen.length}, inCanvas=${inCanvas.length}`).toBeGreaterThan(0);
+
+    const MIN_DISTANCE_PX = 16;
+    let separatedCount = 0;
+    for (const neighbor of onScreen) {
+      const dist = Math.hypot(neighbor.screenX - anchorProj.screenX, neighbor.screenY - anchorProj.screenY);
+      if (dist >= MIN_DISTANCE_PX) separatedCount++;
+    }
+    expect(separatedCount, `mobile-portrait: at least one neighbor must be ≥${MIN_DISTANCE_PX}px from anchor`).toBeGreaterThan(0);
+  });
+
+  test('mobile-portrait: spore scale differentiation holds at 390x844', async ({ page }) => {
+    test.setTimeout(FOCUS_NEIGHBORHOOD_TEST_TIMEOUT_MS);
+    await openApp(page, { width: 390, height: 844 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 30); i++) {
+        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        if (node?.neighbors?.length > 0) return i;
+      }
+      return 0;
+    });
+
+    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
+    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForTimeout(700);
+
+    const snap = await probeNeighborhood(page);
+    expect(snap.focusedIndex, 'focusedIndex must be set at mobile-portrait').not.toBeNull();
+
+    const scales = await readPocketNodeScales(page);
+    expect(scales.length, 'mobile-portrait pocket must be non-empty').toBeGreaterThan(0);
+
+    const anchorEntry = scales.find(s => s.idx === snap.focusedIndex);
+    expect(anchorEntry, 'anchor must have scale entry at mobile-portrait').toBeDefined();
+
+    // Anchor scale must be larger than every other pocket member
+    for (const s of scales) {
+      if (s.idx === snap.focusedIndex) continue;
+      expect(anchorEntry.scale > s.scale,
+        `mobile-portrait: anchor scale must exceed neighbor idx=${s.idx} scale`
+      ).toBe(true);
+    }
+
+    // Distinct scale values must exist (proves differentiation is applied)
+    const uniqueScales = [...new Set(scales.map(s => s.scale.toFixed(6)))];
+    expect(uniqueScales.length, `mobile-portrait pocket must expose ≥2 distinct scales; got ${uniqueScales.length}`).toBeGreaterThan(1);
+  });
+
   test('short-landscape: spore scale differentiation holds at 844x390', async ({ page }) => {
     test.setTimeout(FOCUS_NEIGHBORHOOD_TEST_TIMEOUT_MS);
     await openApp(page, { width: 844, height: 390 });

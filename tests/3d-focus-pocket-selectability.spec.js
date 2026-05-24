@@ -358,6 +358,82 @@ test.describe('focus-pocket node selectability', () => {
   });
 
   // ------------------------------------------------------------------
+  // Tablet (iPad landscape / generic tablet landscape)
+  // ------------------------------------------------------------------
+
+  test('tablet: focusOnNode at 1024x768 populates pocket state and relationship UI is visible', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 1024, height: 768 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 20); i++) {
+        const pt = pts[i];
+        if (pt && window.state.pointIndexByLeadId.has(pt.lead_id)) {
+          const leadId = pt.lead_id;
+          const node = window.state.semanticNeighborMapByLeadId?.get(leadId);
+          if (node?.neighbors?.length > 0) return i;
+        }
+      }
+      return 0;
+    });
+
+    await enterFocusByIndex(page, entryIndex);
+
+    const snap = await probe(page);
+
+    expect(snap.state.mode, 'navState.mode must be focus on tablet').toBe('focus');
+    expect(snap.state.focusedNode, 'focusedNode must be set on tablet').not.toBeNull();
+
+    // Pocket indices or threadCandidates must be present
+    const hasPocketOrCandidates =
+      (Array.isArray(snap.state.focusPocketIndices) && snap.state.focusPocketIndices.length > 0) ||
+      (Array.isArray(snap.state.threadCandidates) && snap.state.threadCandidates.length > 0);
+
+    expect(hasPocketOrCandidates,
+      'At least one of focusPocketIndices or threadCandidates must be populated on tablet'
+    ).toBeTruthy();
+
+    // Relationship UI must be visible on tablet
+    const hasRelationshipUI =
+      snap.ui.threadInspectorItems > 0 ||
+      snap.ui.focusStageActions > 0 ||
+      snap.ui.nodeDetailCards > 0 ||
+      snap.ui.pocketCountBadge > 0;
+
+    expect(hasRelationshipUI,
+      `Tablet: relationship UI must be visible. Got: thread=${snap.ui.threadInspectorItems}, ` +
+      `focusStage=${snap.ui.focusStageActions}, nodeDetail=${snap.ui.nodeDetailCards}, badge=${snap.ui.pocketCountBadge}`
+    ).toBeTruthy();
+  });
+
+  test('tablet: all focusPocketIndices have valid in-bounds screen coordinates at 1024x768', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 1024, height: 768 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 20); i++) {
+        const pt = pts[i];
+        if (pt && window.state.pointIndexByLeadId.has(pt.lead_id)) {
+          const node = window.state.semanticNeighborMapByLeadId?.get(pt.lead_id);
+          if (node?.neighbors?.length > 0) return i;
+        }
+      }
+      return 0;
+    });
+
+    await enterFocusByIndex(page, entryIndex);
+    await page.waitForTimeout(1200);
+
+    const pocket = await probeFocusPocket(page);
+    expect(pocket.pocketSize, 'tablet pocket must have at least 1 node').toBeGreaterThan(0);
+    expect(pocket.reachableCount, `tablet pocket must have at least 1 in-bounds screen node, got ${pocket.reachableCount} of ${pocket.pocketSize}`).toBeGreaterThan(0);
+  });
+
+  // ------------------------------------------------------------------
   // Short-landscape (iPad Mini / small Android landscape)
   // ------------------------------------------------------------------
 
@@ -482,6 +558,31 @@ test.describe('focus-pocket node selectability', () => {
   // Short-landscape focus-pocket reachability
   // ------------------------------------------------------------------
 
+  test('tablet: focus pocket has reachable nodes at 1024x768', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 1024, height: 768 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 20); i++) {
+        const pt = pts[i];
+        if (pt && window.state.pointIndexByLeadId.has(pt.lead_id)) {
+          const node = window.state.semanticNeighborMapByLeadId?.get(pt.lead_id);
+          if (node?.neighbors?.length > 0) return i;
+        }
+      }
+      return 0;
+    });
+
+    await enterFocusByIndex(page, entryIndex);
+    await page.waitForTimeout(1200);
+
+    const pocket = await probeFocusPocket(page);
+    expect(pocket.pocketSize, 'tablet pocket must be non-empty').toBeGreaterThan(0);
+    expect(pocket.reachableCount, `tablet must have reachable pocket nodes, got ${pocket.reachableCount}`).toBeGreaterThan(0);
+  });
+
   test('short-landscape: focus pocket has reachable nodes at 844x390', async ({ page }) => {
     test.setTimeout(60000);
     await openApp(page, { width: 844, height: 390 });
@@ -505,6 +606,31 @@ test.describe('focus-pocket node selectability', () => {
     const pocket = await probeFocusPocket(page);
     expect(pocket.pocketSize, 'short-landscape pocket must be non-empty').toBeGreaterThan(0);
     expect(pocket.reachableCount, `short-landscape must have reachable pocket nodes, got ${pocket.reachableCount}`).toBeGreaterThan(0);
+  });
+
+  test('mobile-portrait: focus pocket has reachable nodes at 390x844', async ({ page }) => {
+    test.setTimeout(60000);
+    await openApp(page, { width: 390, height: 844 });
+
+    const entryIndex = await page.evaluate(() => {
+      const pts = window.state.points;
+      if (!pts || pts.length === 0) return 0;
+      for (let i = 0; i < Math.min(pts.length, 20); i++) {
+        const pt = pts[i];
+        if (pt && window.state.pointIndexByLeadId.has(pt.lead_id)) {
+          const node = window.state.semanticNeighborMapByLeadId?.get(pt.lead_id);
+          if (node?.neighbors?.length > 0) return i;
+        }
+      }
+      return 0;
+    });
+
+    await enterFocusByIndex(page, entryIndex);
+    await page.waitForTimeout(1200);
+
+    const pocket = await probeFocusPocket(page);
+    expect(pocket.pocketSize, 'mobile-portrait pocket must be non-empty').toBeGreaterThan(0);
+    expect(pocket.reachableCount, `mobile-portrait must have reachable pocket nodes, got ${pocket.reachableCount}`).toBeGreaterThan(0);
   });
 
   // ------------------------------------------------------------------

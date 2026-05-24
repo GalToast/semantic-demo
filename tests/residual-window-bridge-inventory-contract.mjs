@@ -44,8 +44,12 @@ const MODULES = {
   journeyCompassState: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-state.js'),
   demoController: path.join(SEMDEMO_ROOT, 'js/modules/demo-controller.js'),
   focusPocket: path.join(SEMDEMO_ROOT, 'js/modules/focus-pocket.js'),
+  threadInspector: path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js'),
   clusterLabels: path.join(SEMDEMO_ROOT, 'js/modules/cluster-labels.js'),
   audio:       path.join(SEMDEMO_ROOT, 'js/modules/audio-scape.js'),
+  viewController: path.join(SEMDEMO_ROOT, 'js/modules/view-controller.js'),
+  navigationState: path.join(SEMDEMO_ROOT, 'js/modules/navigation-state.js'),
+  journeyWebgl: path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.js'),
 };
 
 // ── HELPERS ────────────────────────────────────────────────────────────────
@@ -200,6 +204,7 @@ const EXTRACTION_CANDIDATES = [
   ['journey', 'noteSceneInteraction', 'camera', 'camera owns scene interaction tracking'],
   ['journey', 'syncInspectedStrandOverlay', 'thread-inspector', 'thread-inspector owns overlay sync'],
   ['sceneReveal', 'updateCameraViewportOffset', 'camera', 'camera owns viewport offset'],
+  ['threadInspector', 'exploreThreadNeighbor', 'thread-inspector', 'REMOVED direct backward-compat expose; diagnostic access remains on window._ti and contracts assert the direct window assignment stays absent'],
 ];
 
 // ── TEST 1 — No bare window calls in dewindowed seams ────────────────────────
@@ -420,6 +425,8 @@ function testBareCallBaseline() {
     // Internal state/probes
     '__lastCanvasNodePick', '__lastCanvasNodeHover', '__lastCanvasNodeFocusPick',
     '__semanticJourneyProbe', '__semanticSearchCacheProbe',
+    '__semanticThreadInspectorProbe', '__semanticCanvasThreadProbe',
+    '__semanticFocusCueProbe',
     '_previouslyFocusedLegend', '_previouslyFocusedFocusStage',
   ]);
 
@@ -429,6 +436,7 @@ function testBareCallBaseline() {
     'app', 'lifecycle', 'eventBindings', 'journey', 'camera',
     'demoController', 'journeyCompassCtrl', 'journeyCompassState',
     'clusterFilter', 'focusPocket', 'clusterLabels', 'audio',
+    'viewController', 'navigationState', 'journeyWebgl',
   ]);
 
   const moduleNames = Object.keys(MODULES);

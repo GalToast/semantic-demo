@@ -18,6 +18,7 @@ const SEMDEMO_ROOT = path.resolve(process.cwd());
 
 const LEGEND_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.js');
 const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
+const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/view-controller.js');
 const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js');
 
 function assert(cond, msg) {
@@ -52,10 +53,14 @@ function testLegendUiDoesNotImportLifecycleOrEventBindings() {
 
   assert(!src.includes('from ./lifecycle.js'), 'does not import lifecycle.js');
   assert(!src.includes('from ./event-bindings.js'), 'does not import event-bindings.js');
-  const imports = src.match(/^import .+? from/mg) || [];
-  assert(imports.length === 0, `legend-ui.js should remain DOM-only and import-free, found: ${imports.join(', ')}`);
 
-  console.log('  OK — legend-ui.js is neutral and import-free');
+  // Verify that only safe non-monolithic modules are imported
+  const imports = src.match(/^import .+? from/mg) || [];
+  for (const imp of imports) {
+    assert(!imp.includes('lifecycle.js') && !imp.includes('event-bindings.js'), `unauthorized import: ${imp}`);
+  }
+
+  console.log('  OK — legend-ui.js is neutral and does not import lifecycle or event-bindings');
 }
 
 // ── TEST 3: lifecycle.js imports from legend-ui.js ───────────────────────────────────────
@@ -127,43 +132,43 @@ function testNoNewImportCycle() {
   console.log('  OK — no new import cycle: legend-ui is neutral, lifecycle and event-bindings both import it');
 }
 
-// ── TEST 6: lifecycle.closeLegendGuide uses closeLegendPanel from legend-ui ───────────────
+// ── TEST 6: closeLegendGuide uses closeLegendPanel from legend-ui ───────────────
 
-function testLifecycleCloseLegendGuideUsesAdapter() {
-  console.log('\n[TEST 6] lifecycle.closeLegendGuide delegates to legend-ui adapter');
+function testCloseLegendGuideUsesAdapter() {
+  console.log('\n[TEST 6] closeLegendGuide delegates to legend-ui adapter');
 
-  const lifecycleSrc = readSrc(LIFECYCLE_PATH);
+  const legendUiSrc = readSrc(LEGEND_UI_PATH);
 
   // closeLegendGuide body should call closeLegendPanel() (from legend-ui)
   // and NOT do direct DOM manipulation for panel class/aria
-  const closeMatch = lifecycleSrc.match(/export function closeLegendGuide[\s\S]*?^}/m);
-  assert(closeMatch, 'lifecycle.js defines closeLegendGuide');
+  const closeMatch = legendUiSrc.match(/export function closeLegendGuide[\s\S]*?^}/m);
+  assert(closeMatch, 'legend-ui.js defines closeLegendGuide');
 
   const body = closeMatch[0];
   assert(
     body.includes('closeLegendPanel()'),
-    'closeLegendGuide calls closeLegendPanel() from legend-ui'
+    'closeLegendGuide calls closeLegendPanel()'
   );
   // Should NOT have direct .classList.remove('active') / setAttribute pattern
   assert(
     !body.includes('classList.remove'),
-    'closeLegendGuide does not do direct DOM class manipulation (delegated to legend-ui)'
+    'closeLegendGuide does not do direct DOM class manipulation (delegated to closeLegendPanel)'
   );
 
-  console.log('  OK — closeLegendGuide delegates to legend-ui.closeLegendPanel');
+  console.log('  OK — closeLegendGuide delegates to closeLegendPanel');
 }
 
 // ── TEST 7: lifecycle.switchView uses closeLegendPanel for legend cleanup ─────────────────
 
 function testSwitchViewUsesCloseLegendPanel() {
-  console.log('\n[TEST 7] lifecycle.switchView uses closeLegendPanel from legend-ui');
+  console.log('\n[TEST 7] view-controller.switchView uses closeLegendPanel from legend-ui');
 
-  const lifecycleSrc = readSrc(LIFECYCLE_PATH);
+  const viewControllerSrc = readSrc(VIEW_CONTROLLER_PATH);
 
   // switchView should call closeLegendPanel() (not do direct DOM manipulation)
   // in the section that closes the legend panel when switching views
-  const switchMatch = lifecycleSrc.match(/export function switchView[\s\S]*?const btnGalaxy/m);
-  assert(switchMatch, 'lifecycle.js defines switchView');
+  const switchMatch = viewControllerSrc.match(/export function switchView[\s\S]*?const btnGalaxy/m);
+  assert(switchMatch, 'view-controller.js defines switchView');
 
   // The legend cleanup block should call closeLegendPanel
   // After our edit, it should use closeLegendPanel()
@@ -177,15 +182,15 @@ function testSwitchViewUsesCloseLegendPanel() {
   console.log('  OK — switchView uses closeLegendPanel for legend cleanup');
 }
 
-// ── TEST 8: lifecycle.updateLegendGuideState uses openLegendPanel/closeLegendPanel ────────
+// ── TEST 8: updateLegendGuideState uses openLegendPanel/closeLegendPanel ────────
 
 function testUpdateLegendGuideStateUsesAdapter() {
-  console.log('\n[TEST 8] lifecycle.updateLegendGuideState uses openLegendPanel/closeLegendPanel');
+  console.log('\n[TEST 8] updateLegendGuideState uses openLegendPanel/closeLegendPanel');
 
-  const lifecycleSrc = readSrc(LIFECYCLE_PATH);
+  const legendUiSrc = readSrc(LEGEND_UI_PATH);
 
-  const updateMatch = lifecycleSrc.match(/export function updateLegendGuideState[\s\S]*?^}/m);
-  assert(updateMatch, 'lifecycle.js defines updateLegendGuideState');
+  const updateMatch = legendUiSrc.match(/export function updateLegendGuideState[\s\S]*?^}/m);
+  assert(updateMatch, 'legend-ui.js defines updateLegendGuideState');
 
   const body = updateMatch[0];
   assert(
@@ -193,7 +198,7 @@ function testUpdateLegendGuideStateUsesAdapter() {
     'updateLegendGuideState calls openLegendPanel() or closeLegendPanel()'
   );
 
-  console.log('  OK — updateLegendGuideState uses openLegendPanel/closeLegendPanel from legend-ui');
+  console.log('  OK — updateLegendGuideState uses openLegendPanel/closeLegendPanel');
 }
 
 // ── MAIN ────────────────────────────────────────────────────────────────────
@@ -211,7 +216,7 @@ try {
   testLifecycleImportsFromLegendUi();
   testEventBindingsImportsFromLegendUi();
   testNoNewImportCycle();
-  testLifecycleCloseLegendGuideUsesAdapter();
+  testCloseLegendGuideUsesAdapter();
   testSwitchViewUsesCloseLegendPanel();
   testUpdateLegendGuideStateUsesAdapter();
 

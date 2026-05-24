@@ -27,7 +27,8 @@
         "journey-cluster-accent-dewindowing-contract.mjs",
         "journey-event-bindings-contract.mjs",
         "trail-review-focus-contract.mjs",
-        "pathfinding-contract.mjs"
+        "pathfinding-contract.mjs",
+        "journey-ui-ownership-contract.mjs"
       ]
     },
     "scene": {
@@ -148,12 +149,15 @@
         "url-state-search-dewindowing-contract.mjs",
         "cluster-filter-dewindowing-contract.mjs",
         "search-state-ui-adapter-contract.mjs",
+        "search-panel-adapter-contract.mjs",
         "url-state-navigation-dewindowing-contract.mjs",
         "focus-selection-owner-contract.mjs",
         "focus-pocket-state-owner-contract.mjs",
         "bootstrap-window-export-contract.mjs",
         "lifecycle-search-panel-ownership-contract.mjs",
-        "search-lifecycle-adapter-contract.mjs"
+        "search-lifecycle-adapter-contract.mjs",
+        "view-controller-ownership-contract.mjs",
+        "exploration-data-contract.mjs"
       ]
     },
     "quality": {
@@ -182,6 +186,7 @@
       "description": "3D interaction-quality contracts - aggregate group. Requires a running dev server on port 8795.",
       "timeout": 600000,
       "contracts": [
+        "3d-hidpi-click-accuracy.spec.js",
         "3d-node-hit-accuracy.spec.js",
         "3d-hover-affordance.spec.js",
         "3d-real-pointer-playthrough.spec.js",
@@ -195,13 +200,15 @@
         "3d-state-transition-integrity.spec.js",
         "3d-data-edge-cases.spec.js",
         "3d-focus-neighborhood-geometry.spec.js",
-        "3d-focus-neighborhood-interaction.spec.js"
+        "3d-focus-neighborhood-interaction.spec.js",
+        "3d-rapid-re-selection-contract.spec.js"
       ]
     },
     "3d-pointer": {
       "description": "3D pointer/contact contracts - projected canvas node hit accuracy, hover/touch affordance, focus-pocket selectability. Requires a running dev server on port 8795.",
       "timeout": 600000,
       "contracts": [
+        "3d-hidpi-click-accuracy.spec.js",
         "3d-node-hit-accuracy.spec.js",
         "3d-hover-affordance.spec.js",
         "3d-real-pointer-playthrough.spec.js",
@@ -228,6 +235,20 @@
         "3d-focus-neighborhood-geometry.spec.js"
       ]
     },
+    "3d-focus-ghost-graph-visibility": {
+      "description": "Whole-graph ghost point cloud visibility during focus mode: opacity, size, projected presence, and spore-vs-point-cloud layering. Requires a running dev server on port 8795.",
+      "timeout": 300000,
+      "contracts": [
+        "3d-focus-ghost-graph-visibility.spec.js"
+      ]
+    },
+    "3d-hidpi-click-accuracy": {
+      "description": "HiDPI 3D click/tap accuracy at DPR=2 across desktop, mobile portrait, and short-landscape viewports. Requires a running dev server on port 8795.",
+      "timeout": 300000,
+      "contracts": [
+        "3d-hidpi-click-accuracy.spec.js"
+      ]
+    },
     "3d-focus-neighborhood-interaction": {
       "description": "Focus neighborhood interaction: hover, click, and state integrity through neighbor interaction sequences. Requires a running dev server on port 8795.",
       "timeout": 300000,
@@ -249,8 +270,23 @@
       "contracts": [
         "3d-hover-affordance.spec.js",
         "3d-real-pointer-playthrough.spec.js",
+        "3d-hidpi-click-accuracy.spec.js",
         "3d-node-hit-accuracy.spec.js",
         "3d-focus-neighborhood-interaction.spec.js"
+      ]
+    },
+    "3d-focus-desktop-click": {
+      "description": "Desktop-only 3D focus click lane at 1440x900 - strict hover/click accuracy without mobile-frustum soft-skips. Requires a running dev server on port 8795.",
+      "timeout": 300000,
+      "contracts": [
+        "3d-focus-desktop-click.spec.js"
+      ]
+    },
+    "3d-rapid-re-selection": {
+      "description": "Rapid 3D focus re-selection contracts for A-to-B, A-to-B-to-A, and canvas click race windows. Requires a running dev server on port 8795.",
+      "timeout": 300000,
+      "contracts": [
+        "3d-rapid-re-selection-contract.spec.js"
       ]
     },
     "3d-responsive-ui": {
@@ -309,6 +345,7 @@
       "timeout": 600000,
       "contracts": [
         "3d-focus-neighborhood-geometry.spec.js",
+        "3d-focus-ghost-graph-visibility.spec.js",
         "3d-focus-neighborhood-interaction.spec.js",
         "3d-overlay-hit-stealing.spec.js",
         "3d-hover-affordance.spec.js",
@@ -342,6 +379,7 @@
         "3d-data-edge-cases.spec.js",
         "3d-focus-neighborhood-geometry.spec.js",
         "3d-focus-neighborhood-interaction.spec.js",
+        "3d-focus-desktop-click.spec.js",
         "3d-accessibility-fallback-performance.spec.js"
       ]
     },
@@ -369,6 +407,7 @@
         "cluster-labels-contract.mjs",
         "journey-thread-inspector-contract.mjs",
         "trail-review-focus-contract.mjs",
+        "journey-ui-ownership-contract.mjs",
         "share-view-clipboard-contract.mjs",
         "keyboard-help-aria-contract.mjs",
         "pathfinding-contract.mjs",
@@ -386,7 +425,9 @@
         "semantic-dive-ui-dewindowing-contract.mjs",
         "lifecycle-search-panel-ownership-contract.mjs",
         "search-lifecycle-adapter-contract.mjs",
+        "view-controller-ownership-contract.mjs",
         "loading-ui-contract.mjs",
+        "exploration-data-contract.mjs",
         "state-ownership-contract.mjs",
         "filter-ownership-contract.mjs",
         "cluster-filter-city-filter-side-effect-contract.mjs",
@@ -394,6 +435,7 @@
         "url-state-search-dewindowing-contract.mjs",
         "cluster-filter-dewindowing-contract.mjs",
         "search-state-ui-adapter-contract.mjs",
+        "search-panel-adapter-contract.mjs",
         "url-state-navigation-dewindowing-contract.mjs",
         "exploration-modes-contract.mjs",
         "scene-reveal-contract.mjs",

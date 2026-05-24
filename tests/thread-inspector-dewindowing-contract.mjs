@@ -4,15 +4,15 @@
  * Fast Node contract test for thread-inspector.js backward-compatible window surface.
  *
  * Coverage:
- *   1. window.exploreThreadNeighbor is explicitly exposed as the single direct window assignment.
- *   2. The expose is constrained, documented, and NOT wrapped in a broad wildcard.
+ *   1. window.exploreThreadNeighbor direct assignment has been removed (Wave70).
+ *   2. _ti.exploreThreadNeighbor remains for diagnostic access.
  *   3. All other thread-inspector functions are exposed via window._ti debug namespace only.
- *   4. No other window.* assignments exist in thread-inspector.js beyond the two known exposes.
- *   5. A comment documents the purpose and constraint of the window.exploreThreadNeighbor expose.
- *   6. The expose is at the end of the file, clearly separated from window._ti block.
+ *   4. No other window.* assignments exist in thread-inspector.js beyond window._ti.
+ *   5. A comment documents the Wave70 removal and diagnostic-only state of _ti.exploreThreadNeighbor.
+ *   6. window.exploreThreadNeighbor does NOT appear as a direct window assignment.
  *
- * This contract exists so future dewindowing work cannot accidentally widen the window surface
- * beyond window.exploreThreadNeighbor (the backward-compatibility seam) and window._ti (debug ns).
+ * This contract exists so future dewindowing work cannot accidentally re-widen the window surface.
+ * Only window._ti (diagnostic namespace) is allowed — no bare window.fn direct assignments.
  *
  * Runs in Node — no Playwright, no browser, no DOM.
  * Source-only assertions via string search + structural analysis.
@@ -41,35 +41,39 @@ function assertNotContains(haystack, needle, label) {
   assert(!found, `${label}: source should NOT contain "${needle}", but it was found`);
 }
 
-// ---------------------------------------------------------------------------
-// TEST 1: window.exploreThreadNeighbor is explicitly exposed at end of file
+// Returns the window._ti block content for direct inspection
+function getWindowTiBlock(src) {
+  const tiStart = src.indexOf('window._ti = {');
+  assert(tiStart !== -1, 'window._ti = { block found');
+  const tiEnd = src.indexOf('};', tiStart);
+  return src.slice(tiStart, tiEnd + 2);
+}
+
+// TEST 1: window.exploreThreadNeighbor direct assignment removed (Wave70)
 // ---------------------------------------------------------------------------
 
-function testExploreThreadNeighborExplicitExpose() {
-  console.log('\n[TEST] window.exploreThreadNeighbor explicit expose at end of file');
+function testExploreThreadNeighborDirectAssignmentRemoved() {
+  console.log('\n[TEST] window.exploreThreadNeighbor direct assignment removed (Wave70)');
 
   const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
 
-  // The direct expose must exist — this is the backward-compatibility seam
-  assertContains(src, 'window.exploreThreadNeighbor = exploreThreadNeighbor',
-    'window.exploreThreadNeighbor explicitly assigned');
+  // The direct window.exploreThreadNeighbor = ... assignment must NOT exist
+  assertNotContains(src, 'window.exploreThreadNeighbor = exploreThreadNeighbor',
+    'window.exploreThreadNeighbor direct assignment removed');
 
-  // It must appear at the END of the file (after window._ti block)
-  const lastOccurrence = src.lastIndexOf('window.exploreThreadNeighbor = exploreThreadNeighbor');
-  const tiBlockStart = src.lastIndexOf('window._ti = {');
-  assert(lastOccurrence > tiBlockStart,
-    'window.exploreThreadNeighbor expose appears after window._ti block (at end of file)');
+  // window._ti.exploreThreadNeighbor (diagnostic access) MUST exist
+  const tiBlock = getWindowTiBlock(src);
+  assert(tiBlock.includes('exploreThreadNeighbor'),
+    '_ti.exploreThreadNeighbor diagnostic access remains');
 
-  // There must be a comment above it explaining the backward-compat purpose
-  // The preceding ~200 chars should contain a comment referencing lifecycle or backward-compat
-  const preceding = src.slice(Math.max(0, lastOccurrence - 250), lastOccurrence);
-  const hasComment = /[/][/]|\/\*| Also expose|backward|for callers that use|lifecycle/.test(preceding);
-  assert(hasComment, 'window.exploreThreadNeighbor expose has a comment documenting its purpose');
+  // A comment documenting the Wave70 removal must exist near end of file
+  const last300 = src.slice(Math.max(0, src.length - 400));
+  const hasWave70Comment = /Wave70|diagnostic|removed|window\._ti/.test(last300);
+  assert(hasWave70Comment, 'Wave70 removal comment present at end of file');
 
-  console.log('  OK window.exploreThreadNeighbor explicitly exposed with documentation');
+  console.log('  OK window.exploreThreadNeighbor removed; _ti.exploreThreadNeighbor diagnostic remains');
 }
 
-// ---------------------------------------------------------------------------
 // TEST 2: window._ti is the debug namespace and contains all internal functions
 // ---------------------------------------------------------------------------
 
@@ -78,14 +82,10 @@ function testWindowTiDebugNamespace() {
 
   const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
 
-  // window._ti block must exist
   assert(src.includes('window._ti = {'), 'window._ti namespace exposed');
 
-  const tiStart = src.indexOf('window._ti = {');
-  const tiEnd = src.indexOf('};', tiStart);
-  const tiBlock = src.slice(tiStart, tiEnd + 2);
+  const tiBlock = getWindowTiBlock(src);
 
-  // All expected functions must be in window._ti (trailing comma optional on last entry)
   const expectedTiExports = [
     'getSemanticThreadCandidates',
     'getGeometricThreadCandidates',
@@ -107,7 +107,6 @@ function testWindowTiDebugNamespace() {
   ];
 
   for (const fn of expectedTiExports) {
-    // Match fn with optional trailing comma, or at end-of-block with no comma
     const lastFn = expectedTiExports[expectedTiExports.length - 1];
     const isLast = fn === lastFn;
     assert(
@@ -121,16 +120,15 @@ function testWindowTiDebugNamespace() {
   console.log('  OK window._ti debug namespace verified');
 }
 
-// ---------------------------------------------------------------------------
-// TEST 3: No other window.* direct assignments beyond window._ti and window.exploreThreadNeighbor
-// ---------------------------------------------------------------------------
+// TEST 3: No other window.* direct assignments beyond window._ti
+// Only window._ti is allowed as a direct window assignment (diagnostic namespace).
+// window.exploreThreadNeighbor has been removed (Wave70).
 
 function testNoOtherWindowAssignments() {
   console.log('\n[TEST] No other window.* direct assignments in thread-inspector.js');
 
   const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
 
-  // Find all window.XXX = YYY patterns (direct assignment, not declaration)
   const windowAssignments = [];
   const re = /window\.([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(?!function|const|let|var|import)/g;
   let match;
@@ -138,7 +136,6 @@ function testNoOtherWindowAssignments() {
     windowAssignments.push(match[0]);
   }
 
-  // Filter to only those with a simple identifier on the RHS (not a function keyword)
   const directExposes = windowAssignments.filter(line => {
     return line.includes('= ') && !line.includes('= function') && !line.includes('= () =>');
   });
@@ -147,10 +144,10 @@ function testNoOtherWindowAssignments() {
     const fnMatch = assignment.match(/window\.([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/);
     if (fnMatch) {
       const fn = fnMatch[1];
-      // Only window._ti and window.exploreThreadNeighbor are allowed
+      // Only window._ti is allowed — window.exploreThreadNeighbor removed (Wave70)
       assert(
-        fn === '_ti' || fn === 'exploreThreadNeighbor',
-        `thread-inspector.js: unexpected window.${fn} assignment. Only window._ti and window.exploreThreadNeighbor are allowed.`
+        fn === '_ti',
+        `thread-inspector.js: unexpected window.${fn} assignment. Only window._ti is allowed.`
       );
     }
   }
@@ -158,51 +155,46 @@ function testNoOtherWindowAssignments() {
   console.log('  OK no unexpected window.* direct assignments');
 }
 
-// ---------------------------------------------------------------------------
-// TEST 4: The window.exploreThreadNeighbor expose is NOT inside window._ti block
-// ---------------------------------------------------------------------------
+// TEST 4: window.exploreThreadNeighbor direct assignment is absent
+// (Wave70 removal — only window._ti is allowed now)
 
-function testExploreThreadNeighborOutsideTiBlock() {
-  console.log('\n[TEST] window.exploreThreadNeighbor is outside window._ti block');
+function testExploreThreadNeighborDirectAssignmentAbsent() {
+  console.log('\n[TEST] window.exploreThreadNeighbor direct assignment is absent');
 
   const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
 
-  const tiStart = src.indexOf('window._ti = {');
-  const tiEnd = src.indexOf('};', tiStart);
   const lastExploreOccurrence = src.lastIndexOf('window.exploreThreadNeighbor = exploreThreadNeighbor');
+  assert(lastExploreOccurrence === -1,
+    'window.exploreThreadNeighbor direct assignment removed (not found)');
 
-  // window.exploreThreadNeighbor must appear after the window._ti block closes
-  assert(lastExploreOccurrence > tiEnd,
-    'window.exploreThreadNeighbor is outside and after window._ti block');
+  // Verify _ti.exploreThreadNeighbor still exists in diagnostic namespace
+  const tiBlock = getWindowTiBlock(src);
+  assert(tiBlock.includes('exploreThreadNeighbor'),
+    '_ti.exploreThreadNeighbor diagnostic access is intact');
 
-  console.log('  OK window.exploreThreadNeighbor is cleanly separated from window._ti block');
+  console.log('  OK window.exploreThreadNeighbor direct assignment absent; _ti diagnostic intact');
 }
 
-// ---------------------------------------------------------------------------
-// TEST 5: window.exploreThreadNeighbor comment documents backward-compat purpose
-// ---------------------------------------------------------------------------
+// TEST 5: Wave70 removal comment is specific and accurate
+// The comment at end of file must document the Wave70 removal state accurately.
 
-function testBackwardCompatDocumentation() {
-  console.log('\n[TEST] window.exploreThreadNeighbor backward-compat documentation');
+function testWave70RemovalComment() {
+  console.log('\n[TEST] Wave70 removal comment documents current state');
 
   const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
 
-  // The comment must mention callers that depend on this window expose
-  // and that it is for backward compatibility with lifecycle.js
-  const lastExploreIdx = src.lastIndexOf('window.exploreThreadNeighbor = exploreThreadNeighbor');
-  const preceding = src.slice(Math.max(0, lastExploreIdx - 300), lastExploreIdx);
+  const last300 = src.slice(Math.max(0, src.length - 400));
 
-  const documented = /lifecycle|backward|callers that use|window\.exploreThreadNeighbor/.test(preceding);
-  assert(documented, 'window.exploreThreadNeighbor has a comment documenting backward-compat purpose');
+  // Must reference Wave70 and explain removal
+  assert(/Wave70/.test(last300), 'Wave70 reference in removal comment');
+  // Must acknowledge diagnostic path via _ti
+  assert(/_ti/.test(last300), 'Diagnostic namespace _ti mentioned in removal comment');
+  // Must reference walkThreadNeighbor as the active seam
+  assert(/walkThreadNeighbor/.test(last300), 'walkThreadNeighbor active seam acknowledged');
 
-  // The comment should not be vague — it should reference the specific consumers
-  const hasSpecificRef = /lifecycle|event-bindings|window\.exploreThreadNeighbor/.test(preceding);
-  assert(hasSpecificRef, 'backward-compat comment references specific consumers (lifecycle, event-bindings, etc.)');
-
-  console.log('  OK backward-compat documentation is specific and present');
+  console.log('  OK Wave70 removal comment is accurate and specific');
 }
 
-// ---------------------------------------------------------------------------
 // TEST 6: No wildcard or dynamic window[key] assignments in thread-inspector.js
 // ---------------------------------------------------------------------------
 
@@ -211,21 +203,17 @@ function testNoWildcardWindowAssignments() {
 
   const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
 
-  // No window[...] = ... patterns (dynamic/indirect exposure)
   const dynamicWindowRe = /window\[.*\]\s*=/;
   assert(!dynamicWindowRe.test(src), 'No dynamic window[key] assignment pattern found');
 
-  // No for-in loop over window
   assert(!src.includes('for (const k in window)'), 'No for-in over window pattern');
   assert(!src.includes('for (const key in window)'), 'No for-in over window pattern');
 
-  // No Object.assign(window, ...) patterns
   assert(!src.includes('Object.assign(window'), 'No Object.assign(window, ...) pattern');
 
   console.log('  OK no wildcard or dynamic window assignments');
 }
 
-// ---------------------------------------------------------------------------
 // MAIN
 // ---------------------------------------------------------------------------
 
@@ -236,11 +224,11 @@ function main() {
   console.log('============================================================');
 
   try {
-    testExploreThreadNeighborExplicitExpose();
+    testExploreThreadNeighborDirectAssignmentRemoved();
     testWindowTiDebugNamespace();
     testNoOtherWindowAssignments();
-    testExploreThreadNeighborOutsideTiBlock();
-    testBackwardCompatDocumentation();
+    testExploreThreadNeighborDirectAssignmentAbsent();
+    testWave70RemovalComment();
     testNoWildcardWindowAssignments();
 
     console.log('\n============================================================');

@@ -93,7 +93,7 @@ function testThreadInspectorDebugNamespace() {
   assert(src.includes('syncInspectedStrandOverlay,'), 'window._ti.syncInspectedStrandOverlay');
   assert(src.includes('updateInspectedStrandOverlay,'), 'window._ti.updateInspectedStrandOverlay');
   assert(src.includes('disposeInspectedStrandOverlay'), 'window._ti.disposeInspectedStrandOverlay');
-  assert(src.includes('window.exploreThreadNeighbor = exploreThreadNeighbor'), 'window.exploreThreadNeighbor direct expose');
+  assert(!src.includes('window.exploreThreadNeighbor = exploreThreadNeighbor'), 'window.exploreThreadNeighbor direct expose removed');
 
   console.log('  OK thread-inspector window._ti namespace verified');
 }
@@ -187,21 +187,18 @@ function testNoCrossModuleLeakage() {
   // journey-thread-model must NOT expose anything on window
   assertNotContains(journeyModelSrc, 'window.', 'journey-thread-model: no window.* (pure module)');
 
-  // thread-inspector must NOT own journey window shim entries
-  // (it exposes window._ti and window.exploreThreadNeighbor — that's expected)
-  // but it must NOT reassign journey's window functions
+  // thread-inspector must NOT own journey window shim entries.
+  // Only the window._ti diagnostic namespace is allowed here.
   const tiWindowAssignments = threadInspectorSrc.match(/window\.[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*[a-zA-Z_$][a-zA-Z0-9_$]*;/g) || [];
   // window._ti is the debug namespace — allowed
-  // window.exploreThreadNeighbor is the direct expose — allowed
   // Any other window.Foo = Foo should only be journey.js
   for (const assign of tiWindowAssignments) {
-    if (assign.startsWith('window._ti') || assign.startsWith('window.exploreThreadNeighbor')) continue;
+    if (assign.startsWith('window._ti')) continue;
     // extract function name
     const match = assign.match(/window\.([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*/);
     if (match) {
       const fn = match[1];
-      // These are the only two thread-inspector direct exposes — anything else is a leak
-      assert(false, `thread-inspector.js leaks window ownership: ${fn}. Should only expose via window._ti or window.exploreThreadNeighbor`);
+      assert(false, `thread-inspector.js leaks window ownership: ${fn}. Should only expose via window._ti`);
     }
   }
 

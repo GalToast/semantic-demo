@@ -30,6 +30,7 @@ import path from 'node:path';
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
 const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-state.js');
+const SEARCH_PANEL_ADAPTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-panel-adapter.js');
 const APP_PATH = path.join(SEMDEMO_ROOT, 'js/modules/app.js');
 
 function assert(cond, msg) {
@@ -151,29 +152,38 @@ function testAppJsDoesNotExportSetSearchPanelState() {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 6 — search-state.js setSearchPanelState is the authoritative implementation
-// It must operate on .search-container DOM element
+// TEST 6 — search-state.js owns the setSearchPanelState decision point and
+// delegates the panel DOM writes through search-panel-adapter.js.
 // ---------------------------------------------------------------------------
 
 function testSearchStateImplementsPanelState() {
-  console.log('\n[TEST] search-state.js setSearchPanelState implements panel state on .search-container');
+  console.log('\n[TEST] search-state.js delegates panel DOM state through search-panel-adapter.js');
 
   const src = fs.readFileSync(SEARCH_STATE_PATH, 'utf-8');
+  const adapterSrc = fs.readFileSync(SEARCH_PANEL_ADAPTER_PATH, 'utf-8');
 
-  // Must reference .search-container (the target DOM element)
   assert(
-    /\.search-container/.test(src),
-    'search-state.js setSearchPanelState must operate on .search-container'
+    /from\s+['"]\.\/search-panel-adapter\.js['"]/.test(src),
+    'search-state.js must import search-panel-adapter.js'
   );
 
-  // Must toggle 'searching' and 'focusing' CSS classes
   assert(
-    /\.classList\.toggle\s*\(\s*['"]searching['"]/.test(src) ||
-    /classList\.toggle\s*\(\s*['"]focusing['"]/.test(src),
-    'setSearchPanelState must toggle searching/focusing CSS classes'
+    /setSearchContainerState\s*\(\s*\{/.test(src),
+    'search-state.js setSearchPanelState must delegate to setSearchContainerState'
   );
 
-  console.log('  OK — search-state.js setSearchPanelState implements .search-container class toggling');
+  assert(
+    /\.search-container/.test(adapterSrc),
+    'search-panel-adapter.js must operate on .search-container'
+  );
+
+  assert(
+    /\.classList\.toggle\s*\(\s*['"]searching['"]/.test(adapterSrc) &&
+    /\.classList\.toggle\s*\(\s*['"]focusing['"]/.test(adapterSrc),
+    'search-panel-adapter.js must toggle searching/focusing CSS classes'
+  );
+
+  console.log('  OK — search-state.js owns decision; search-panel-adapter.js owns DOM class toggling');
 }
 
 // ---------------------------------------------------------------------------

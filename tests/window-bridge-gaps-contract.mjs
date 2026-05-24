@@ -23,6 +23,7 @@ import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
+const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/view-controller.js');
 const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
 const UI_RENDERERS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/ui-renderers.js');
 const SCENE_REVEAL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.js');
@@ -83,12 +84,12 @@ function assertNoDeadCall(src, fn, file, label) {
 function testGap1_getRouteLayerOrigin() {
   console.log('\n[TEST] Gap 1 — getRouteLayerOrigin (intentional no-op guard)');
 
-  const src = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
+  const src = fs.readFileSync(VIEW_CONTROLLER_PATH, 'utf-8');
 
   // Must have the typeof guard + 'galaxy' fallback pattern
   assert(
     /typeof\s+window\.getRouteLayerOrigin\s*===\s*['"]function['"]\s*\?\s*window\.getRouteLayerOrigin\(\)\s*:\s*['"]galaxy['"]/.test(src),
-    'lifecycle.js must guard getRouteLayerOrigin with typeof check and "galaxy" fallback'
+    'view-controller.js must guard getRouteLayerOrigin with typeof check and "galaxy" fallback'
   );
 
   // Must NOT have an assignment (it IS intentionally a no-op)

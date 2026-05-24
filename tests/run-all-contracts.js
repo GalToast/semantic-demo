@@ -47,8 +47,8 @@ const SERVER_START_TIMEOUT_MS = 10000;
 const SERVER_POLL_INTERVAL_MS = 250;
 const FAILURE_CONTEXT_LINES = 8;
 
-// Groups that require the canonical local static server on port 8795.
-// Alternate-port or environment-specific groups must manage their own setup.
+// Groups that require a local static server. The runner owns a fresh dynamic
+// port for these groups and passes TEST_BASE_URL to child contracts.
 const SERVER_GROUPS = new Set([
   'scene',
   'browser-interaction',
@@ -61,9 +61,13 @@ const SERVER_GROUPS = new Set([
   '3d-pointer',
   '3d-focus-neighborhood',
   '3d-focus-neighborhood-geometry',
+  '3d-focus-ghost-graph-visibility',
+  '3d-hidpi-click-accuracy',
   '3d-focus-neighborhood-interaction',
   '3d-focus-pocket-geometry',
   '3d-hover-click-interaction',
+  '3d-focus-desktop-click',
+  '3d-rapid-re-selection',
   '3d-responsive-ui',
   '3d-visual-quality',
   '3d-resilience',
@@ -94,9 +98,28 @@ function sleep(ms) {
 }
 
 /**
+ * Find an available port in the range 8795-8895 by attempting to bind each
+ * port and closing the socket immediately. Used when the canonical port
+ * 8795 is contested by an unrelated process.
+ */
+async function findAvailablePort(startPort = 8795, endPort = 8895) {
+  const net = await import('node:net');
+  for (let port = startPort; port <= endPort; port++) {
+    const available = await new Promise((resolve) => {
+      const server = net.createServer();
+      server.on('error', () => resolve(false));
+      server.on('listening', () => { server.close(); resolve(true); });
+      server.listen(port, '127.0.0.1');
+    });
+    if (available) return port;
+  }
+  throw new Error(`No available port in range ${startPort}-${endPort}`);
+}
+
+/**
  * Kill an entire Chromium browser process tree on Windows.
  * Playwright spawns Chromium as a grandchild of the CLI node process, so
- * child.kill() only terminates the CLI — leaked browser processes accumulate
+ * child.kill() only terminates the CLI - leaked browser processes accumulate
  * across sequential contracts and cause GPU/memory pressure in headless Chrome.
  */
 function closeBrowserTree(pid) {
@@ -104,7 +127,7 @@ function closeBrowserTree(pid) {
   try {
     execFileSync('taskkill', ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', timeout: 8000 });
   } catch {
-    // Process already gone — nothing to clean up.
+    // Process already gone - nothing to clean up.
   }
 }
 
@@ -170,33 +193,29 @@ function createServerLease(groupName) {
           console.log(`  [server] using explicit TEST_BASE_URL=${explicitBaseUrl}`);
           borrowedLogged = true;
         }
-        return;
+        return explicitBaseUrl.replace(/\/$/, '');
       }
 
-      if (await isServerRunning(SERVER_PORT)) {
-        if (!ownedServer && !borrowedLogged) {
-          console.log(`  [server] port ${SERVER_PORT} already in use — borrowing pre-warmed dev server`);
-          borrowedLogged = true;
-        }
-        // After any failure, the borrowed server may be degraded (zombie Chromium
-        // connections from the failed run consuming server slots). Force a clean
-        // restart so the next contract runs against a healthy server.
-        if (hadFailure && ownedServer === null) {
-          console.log(`  [server] prior failure detected — restarting server to clear degraded state`);
-          try {
-            execFileSync('taskkill', ['/F', '/PID', String((await isServerRunning(SERVER_PORT + 0) && false))], { stdio: 'ignore', timeout: 3000 });
-          } catch {
-            // No-op: just start fresh.
-          }
-          ownedServer = await startStaticServer(SERVER_PORT);
-          console.log(`  [server] restarted on port ${SERVER_PORT}`);
-        }
-        return;
+      if (ownedServer && !hadFailure) {
+        return `http://127.0.0.1:${ownedServer.port}`;
       }
 
-      console.log(`  [server] auto-starting static server on port ${SERVER_PORT}...`);
-      ownedServer = await startStaticServer(SERVER_PORT);
-      console.log(`  [server] static server running on port ${SERVER_PORT}`);
+      if (ownedServer && hadFailure) {
+        console.log(`  [server] prior failure detected - restarting owned static server`);
+        try {
+          ownedServer.kill();
+        } catch {
+          // Process already gone.
+        }
+        ownedServer = null;
+        hadFailure = false;
+      }
+
+      const port = await findAvailablePort();
+      console.log(`  [server] auto-starting static server on dynamic port ${port}...`);
+      ownedServer = await startStaticServer(port);
+      console.log(`  [server] static server running on port ${ownedServer.port}`);
+      return `http://127.0.0.1:${ownedServer.port}`;
     },
 
     markFailed() {
@@ -205,7 +224,7 @@ function createServerLease(groupName) {
 
     close() {
       if (!ownedServer) return;
-      console.log(`  [server] shutting down static server on port ${SERVER_PORT}...`);
+      console.log(`  [server] shutting down static server on port ${ownedServer.port}...`);
       try {
         ownedServer.kill();
       } catch (err) {
@@ -240,6 +259,7 @@ const PINNED_FILES = [
   'cluster-labels-contract.mjs',
   'journey-thread-inspector-contract.mjs',
   'trail-review-focus-contract.mjs',
+  'journey-ui-ownership-contract.mjs',
   'share-view-clipboard-contract.mjs',
   'keyboard-help-aria-contract.mjs',
   'pathfinding-contract.mjs',
@@ -257,7 +277,9 @@ const PINNED_FILES = [
   'semantic-dive-ui-dewindowing-contract.mjs',
   'lifecycle-search-panel-ownership-contract.mjs',
   'search-lifecycle-adapter-contract.mjs',
+  'view-controller-ownership-contract.mjs',
   'loading-ui-contract.mjs',
+  'exploration-data-contract.mjs',
   'state-ownership-contract.mjs',
   'filter-ownership-contract.mjs',
   'cluster-filter-city-filter-side-effect-contract.mjs',
@@ -265,6 +287,7 @@ const PINNED_FILES = [
   'url-state-search-dewindowing-contract.mjs',
   'cluster-filter-dewindowing-contract.mjs',
   'search-state-ui-adapter-contract.mjs',
+  'search-panel-adapter-contract.mjs',
   'url-state-navigation-dewindowing-contract.mjs',
   'exploration-modes-contract.mjs',
   'scene-reveal-contract.mjs',
@@ -306,7 +329,7 @@ function getGroupFromManifest(groupName) {
  * Discover all *-contract.mjs files in tests/ that are not self-test helpers.
  * Excludes: utils-contract.mjs, surface-contract-check.mjs (multi-surface runners).
  * Also discovers standalone Playwright interaction specs (*.spec.js) that are
- * not helper scripts — these are group-member candidates (e.g. canvas-hit-test,
+ * not helper scripts - these are group-member candidates (e.g. canvas-hit-test,
  * live-reset-interaction) and must not be silently orphaned.
  */
 function discoverUnlistedContracts() {
@@ -318,10 +341,25 @@ function discoverUnlistedContracts() {
   // Playwright *.spec.js files that are not helper utilities.
   // These use real browser automation and are discoverable contract entries.
   const allSpec = readdirSync(TESTS_DIR).filter(f => f.endsWith('.spec.js'));
-  const specExclusions = new Set(['inspect_element.js']); // not a test suite
+  const specExclusions = new Set(['inspect_element.js', 'wave62-diag.spec.js']); // not test suites
   const specContracts = allSpec.filter(f => !specExclusions.has(f));
 
   return { mjsContracts, specContracts };
+}
+
+/**
+ * Find the first manifest group that contains the given contract filename.
+ * Used to auto-infer group/server membership when --single= is used without --group=.
+ */
+function findGroupForFile(singleFile) {
+  const manifest = loadManifest();
+  if (!manifest?.groups) return null;
+  for (const [groupName, group] of Object.entries(manifest.groups)) {
+    if (Array.isArray(group.contracts) && group.contracts.includes(singleFile)) {
+      return groupName;
+    }
+  }
+  return null;
 }
 
 function resolveFiles() {
@@ -330,7 +368,7 @@ function resolveFiles() {
   const singleArg = args.find(a => a.startsWith('--single='));
 
   // Single contract: run in isolation, with optional group context for server setup.
-  // Group is derived from --single when --group is absent but the file belongs to a group.
+  // Group is derived from --single when --group is absent but the file belongs to a server group.
   if (singleArg) {
     const singleFile = singleArg.split('=')[1];
     const singlePath = join(TESTS_DIR, singleFile);
@@ -350,7 +388,19 @@ function resolveFiles() {
         groupName,
       };
     }
-    // Lone --single: run without auto-server (no server lease needed for isolated file).
+    // Lone --single: auto-infer group from manifest to determine server need.
+    const inferredGroupName = findGroupForFile(singleFile);
+    const inferredIsServerGroup = inferredGroupName ? SERVER_GROUPS.has(inferredGroupName) : false;
+    if (inferredIsServerGroup) {
+      const group = getGroupFromManifest(inferredGroupName);
+      return {
+        files: [singleFile],
+        mode: `single:${singleFile} (inferred group:${inferredGroupName})`,
+        groupTimeout: group && typeof group.timeout === 'number' ? group.timeout : null,
+        groupName: inferredGroupName,
+      };
+    }
+    // Non-server file: run without server lease.
     return { files: [singleFile], mode: `single:${singleFile}`, groupTimeout: null, groupName: null };
   }
 
@@ -537,7 +587,7 @@ function isPlaywrightTestFile(filename, entry) {
   return /import\s*\{[^}]*\btest\b[^}]*\}\s*from\s*['"]@playwright\/test['"]/.test(source);
 }
 
-function runContract(filename, timeoutMs) {
+function runContract(filename, timeoutMs, baseUrl = null) {
   return new Promise((resolve) => {
     const entry = join(TESTS_DIR, filename);
     const start = performance.now();
@@ -554,7 +604,7 @@ function runContract(filename, timeoutMs) {
     const child = spawn(exec, execArgs, {
       stdio: ['ignore', 'pipe', 'pipe'],
       cwd: PROJECT_ROOT,
-      env: { ...process.env, TEST_BASE_URL: process.env.TEST_BASE_URL || `http://127.0.0.1:${SERVER_PORT}` },
+      env: { ...process.env, TEST_BASE_URL: process.env.TEST_BASE_URL || baseUrl || `http://127.0.0.1:${SERVER_PORT}` },
     });
 
     let stdout = '';
@@ -674,10 +724,10 @@ async function main() {
   const runContracts = async () => {
     const results = [];
     for (const file of files) {
-      if (serverLease) await serverLease.ensure();
+      const baseUrl = serverLease ? await serverLease.ensure() : null;
       const timeoutMs = groupTimeout !== null ? groupTimeout : CONTRACT_TIMEOUT_MS;
       console.log(`  [run] ${file}${groupTimeout !== null ? ` (timeout=${timeoutMs}ms)` : ''}`);
-      const result = await runContract(file, timeoutMs);
+      const result = await runContract(file, timeoutMs, baseUrl);
       results.push(result);
       if (!result.passed && serverLease) {
         serverLease.markFailed();

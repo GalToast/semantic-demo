@@ -162,7 +162,12 @@ async function runTests() {
     });
     assert(veilOpacity > 0, `Veil overlay is visible (opacity: ${veilOpacity})`);
 
-    // Demo pill should exist somewhere in the DOM
+    // Demo pill should exist somewhere in the DOM and be populated with text
+    await page.waitForFunction(() => {
+      const pill = document.getElementById('micro-demo-pill') || document.querySelector('.micro-demo-pill');
+      return pill && pill.textContent.trim().length > 0;
+    }, { timeout: 4000 }).catch(() => {});
+
     const pillText = await page.evaluate(() => {
       const pill = document.getElementById('micro-demo-pill') || document.querySelector('.micro-demo-pill');
       return pill ? pill.textContent.trim() : '';

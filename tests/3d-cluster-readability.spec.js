@@ -352,6 +352,56 @@ test.describe('3D cluster readability', () => {
     expect(invisible.length, `no probeable label should have display:none or visibility:hidden on mobile (got ${invisible.length})`).toBe(0);
   });
 
+  test('mobile-portrait: cluster labels are click-targetable at 390x844', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(VIEWPORTS.mobile);
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
+    await waitForGalaxyReady(page);
+
+    const probes = await probeClusterLabels(page);
+    expect(probes.total, `at least 1 .galaxy-cluster-label must exist on mobile portrait (got ${probes.total})`).toBeGreaterThan(0);
+    expect(probes.visible, `at least 1 .galaxy-cluster-label must be visible on mobile portrait (got ${probes.visible})`).toBeGreaterThan(0);
+
+    // Verify the first visible label's center point is the label itself, not the canvas underneath.
+    const labelInfo = await page.evaluate(() => {
+      const labels = Array.from(document.querySelectorAll('.galaxy-cluster-label.visible'));
+      if (!labels.length) return null;
+      const el = labels[0];
+      const rect = el.getBoundingClientRect();
+      if (!rect.width || !rect.height) return null;
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const top = document.elementFromPoint(cx, cy);
+      const cs = getComputedStyle(el);
+      return {
+        cx: Math.round(cx),
+        cy: Math.round(cy),
+        topmostTag: top ? top.tagName : null,
+        topmostId: top ? (top.id || null) : null,
+        isLabelTopmost: top === el || el.contains(top),
+        fontSize: parseFloat(cs.fontSize),
+      };
+    });
+
+    expect(labelInfo, 'first visible label must have a computable rect').not.toBeNull();
+    expect(labelInfo.isLabelTopmost,
+      `at mobile portrait 390×844, elementFromPoint(${labelInfo.cx}, ${labelInfo.cy}) must return the label itself, not ${labelInfo.topmostTag}#${labelInfo.topmostId} (canvas beneath would break click targeting)`
+    ).toBe(true);
+    expect(labelInfo.fontSize,
+      `label font-size must be >= 8px on mobile portrait for readability (got ${labelInfo.fontSize}px)`
+    ).toBeGreaterThanOrEqual(8);
+  });
+
+  test('mobile-portrait: cluster labels do not overlap critical UI at 390x844', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(VIEWPORTS.mobile);
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
+    await waitForGalaxyReady(page);
+
+    const overlaps = await detectLabelOverlap(page);
+    expect(overlaps, `no catastrophic cluster-label overlap with search/clear UI on mobile portrait 390×844 (overlapping indices: ${JSON.stringify(overlaps)})`).toHaveLength(0);
+  });
+
   // ── Short-landscape ──────────────────────────────────────────────────────────
 
   test('short-landscape: cluster labels exist and are visible at 844×390', async ({ page }) => {
