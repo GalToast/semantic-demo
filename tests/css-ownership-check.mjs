@@ -67,6 +67,39 @@ const selectorBaselines = {
     'mobile_base.css': 1,
     'strands.css': 2,
   },
+  '.journey-compass-title': {
+    'layout_base.css': 1,
+    'journey_active.css': 14,
+    'mobile_base.css': 1,
+    'mobile_premium_focus.css': 2,
+    'mobile_premium_surfaces.css': 9,
+    'strands.css': 2,
+  },
+  '.journey-compass-actions': {
+    'journey_active.css': 15,
+    'mobile_base.css': 2,
+    'mobile_premium_focus.css': 3,
+    'mobile_premium_surfaces.css': 7,
+    'progressive_disclosure.css': 1,
+    'strands.css': 6,
+  },
+  '.journey-compass-rail': {
+    'layout_base.css': 1,
+    'journey_active.css': 15,
+    'mobile_base.css': 2,
+    'mobile_premium_focus.css': 2,
+    'mobile_premium_surfaces.css': 3,
+    'strands.css': 2,
+  },
+  '.journey-compass-action.primary': {
+    'animations.css': 2,
+    'journey_active.css': 4,
+    'mobile_base.css': 4,
+    'mobile_premium_focus.css': 2,
+    'mobile_premium_surfaces.css': 4,
+    'search.css': 4,
+    'strands.css': 5,
+  },
 };
 
 const mobilePremiumLegacyStatePatterns = [

@@ -31,6 +31,18 @@ Run: `npm run qa:surface-redundancy` — or `RATCHET=1 npm run qa:surface-redund
 | `.map-trail-strip` / map chrome | `css/shell.css` | `css/strands.css` | `css/mobile_premium.css`, `css/animations.css` | Map chrome is distributed. Do not consolidate from one file without a full `rg` sweep. | `05-mobile-map`, direct `?view=map&q=coffee&anchor=519` |
 | Mobile final overrides | n/a | n/a | `css/mobile_premium.css` import shell loading `css/mobile_premium_focus.css`, `css/mobile_premium_chrome.css`, `css/mobile_premium_state.css`, `css/mobile_premium_idle.css`, and `css/mobile_premium_surfaces.css` | Keep scoped to mobile/state selectors; avoid `!important`; verify desktop is untouched. | All mobile states plus `07-desktop-idle` |
 
+### Journey Compass Title/Action Subownership
+
+The compass is still intentionally distributed, but title/action edits must preserve this split:
+
+| Primitive | Primary owner | Allowed modifiers | Guard |
+|---|---|---|---|
+| `.journey-compass-title` | `css/journey_active.css` for base/legacy phase variants | `css/mobile_base.css` for mobile base, `css/mobile_premium_focus.css` for focus/dive composition, `css/mobile_premium_surfaces.css` for loaded-last non-map mobile harmonization, `css/strands.css` for legacy galaxy/mobile variants, `css/layout_base.css` for search base | `npm run check:ownership`, `npm run qa:contract:real-route`, affected `qa:contract` surfaces |
+| `.journey-compass-actions` / `.journey-compass-rail` | `css/journey_active.css` for phase and field-node choreography | `css/mobile_base.css`, `css/mobile_premium_focus.css`, `css/mobile_premium_surfaces.css`, `css/strands.css`, and the existing `css/progressive_disclosure.css` actions modifier | `npm run check:ownership`, `npm run qa:contract:field-node`, `npm run qa:contract:compass-rail` |
+| `.journey-compass-action.primary` | `css/journey_active.css` for base primary action behavior | `css/mobile_premium_focus.css` for focus/dive mobile sizing, `css/mobile_premium_surfaces.css` for final mobile touch-target harmonization, existing `css/mobile_base.css`, `css/search.css`, `css/strands.css`, and `css/animations.css` modifiers | `npm run check:ownership`, `npm run qa:contract:real-route` |
+
+Do not add a new compass title/action selector owner without updating `tests/css-ownership-check.mjs` and this table in the same change. The current counts are a ratchet against further ownership sprawl, not a claim that the existing spread is ideal.
+
 ## Safe Cleanup Order
 
 1. `#info-panel`: move one duplicate at a time, then verify mobile and desktop computed overflow.
