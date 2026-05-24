@@ -293,18 +293,28 @@ export function renderThreadInspection(index = state.inspectedThreadIndex, optio
         };
     }
     if (followBtn) {
-        followBtn.disabled = !inspectionState.active || inspectionState.journeyPhase === 'exploring';
+        const followTargetsCurrent =
+            inspectionState.active &&
+            Number.isFinite(inspectionState.index) &&
+            inspectionState.index === state.navState.focusedIndex;
+        followBtn.disabled = !inspectionState.active || followTargetsCurrent || inspectionState.journeyPhase === 'exploring';
         followBtn.setAttribute('aria-disabled', String(followBtn.disabled));
         followBtn.setAttribute('aria-busy', String(inspectionState.journeyPhase === 'exploring'));
-        followBtn.textContent = inspectionState.journeyPhase === 'exploring' ? 'Following' : 'Follow Connection';
+        followBtn.textContent = inspectionState.journeyPhase === 'exploring'
+            ? 'Following'
+            : followTargetsCurrent
+              ? 'Current Stop'
+              : 'Follow Connection';
         followBtn.setAttribute(
             'aria-label',
             inspectionState.journeyPhase === 'exploring'
                 ? 'Following this connection'
-                : 'Follow this connection as the next path stop'
+                : followTargetsCurrent
+                  ? 'This connection is the current path stop'
+                  : 'Follow this connection as the next path stop'
         );
         followBtn.onclick = () => {
-            if (!inspectionState.active || inspectionState.journeyPhase === 'exploring') return;
+            if (!inspectionState.active || followTargetsCurrent || inspectionState.journeyPhase === 'exploring') return;
             exploreThreadNeighbor(inspectionState.index, {
                 surface: inspectionState.surface || options.surface || 'inspector'
             });
@@ -438,6 +448,14 @@ export function exploreThreadNeighbor(index, options = {}) {
         candidate?.reason ||
         options.reason ||
         'nearby business relationship';
+    if (Number.isFinite(state.strandContinuityState.arrivalTimeoutId)) {
+        window.clearTimeout(state.strandContinuityState.arrivalTimeoutId);
+        state.strandContinuityState.arrivalTimeoutId = undefined;
+    }
+    if (Number.isFinite(state.strandContinuityState.settleTimeoutId)) {
+        window.clearTimeout(state.strandContinuityState.settleTimeoutId);
+        state.strandContinuityState.settleTimeoutId = undefined;
+    }
     state.pinnedThreadIndex = null;
     state.inspectedThreadIndex = index;
     setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason });
@@ -467,14 +485,26 @@ export function exploreThreadNeighbor(index, options = {}) {
     );
     const arrivalDelay = options.arrivalDelay || 820;
     const capturedIndex = index;
-    window.setTimeout(() => {
+    const capturedFromIndex = fromIndex;
+    const capturedReason = reason;
+    const arrivalTid = window.setTimeout(() => {
         if (state.strandContinuityState.phase === 'exploring' && state.strandContinuityState.targetIndex === capturedIndex) {
-            setStrandContinuityState('arrived', { targetIndex: capturedIndex, fromIndex, reason });
+            setStrandContinuityState('arrived', { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason });
             const pointAtArrival = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < state.points.length) ? state.points[capturedIndex] : null;
             syncFocusStage(pointAtArrival || state.selectedPoint || null);
             updateJourneyCompass();
         }
     }, arrivalDelay);
+    state.strandContinuityState.arrivalTimeoutId = arrivalTid;
+    const settleDelay = options.settleDelay || 5200;
+    const settleTid = window.setTimeout(() => {
+        if (state.strandContinuityState.phase === 'arrived' && state.strandContinuityState.targetIndex === capturedIndex) {
+            clearStrandContinuityState('arrival-settled');
+            const pointAtSettle = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < state.points.length) ? state.points[capturedIndex] : null;
+            syncFocusStage(pointAtSettle || state.selectedPoint || null);
+        }
+    }, settleDelay);
+    state.strandContinuityState.settleTimeoutId = settleTid;
     return { targetIndex: index, fromIndex, reason };
 }
 
@@ -779,5 +809,8 @@ window._ti = {
     disposeInspectedStrandOverlay
 };
 
-// Also expose directly on window for callers that use window.exploreThreadNeighbor (lifecycle.js, etc.)
-window.exploreThreadNeighbor = exploreThreadNeighbor;
+// Diagnostic namespace — exploreThreadNeighbor remains accessible via _ti for debugging.
+// The direct window.exploreThreadNeighbor backward-compat bridge has been removed
+// as of Wave70. The active traversal seam is window.walkThreadNeighbor (journey.js).
+// Contracts assert this state via thread-inspector-dewindowing-contract.mjs.
+// Do not re-add window.exploreThreadNeighbor without updating contracts first.

@@ -1,4 +1,6 @@
 import { state } from '../state.js';
+import { restoreFocusTrailState, updateSelectedBusiness } from './journey.js';
+import { SCENE_READY } from './scene-events.js';
 
 export function setLoadingPhase(phaseKey, overrides = {}) {
     state.loadingPhaseKey = phaseKey;
@@ -56,7 +58,7 @@ export async function hideLoadingOverlay() {
     document.body.dataset.loadingOverlay = 'hidden';
     document.body.dataset.sceneReady = 'true';
 
-    window.dispatchEvent(new CustomEvent('scene-ready'));
+    window.dispatchEvent(new CustomEvent(SCENE_READY));
 }
 
 export function startDeferredHydration() {
@@ -76,31 +78,12 @@ export function startDeferredHydration() {
             if (typeof window.createMycelium === 'function') window.createMycelium();
             if (typeof window.applyFilters === 'function') window.applyFilters();
             if (state.focusedNode !== null && state.focusedNode !== undefined) {
-                const priorFocused = state.focusedNode;
                 const priorMode = state.navState.mode;
-                const priorHistory = [...(state.navState.explorationHistoryIndices || [priorFocused])];
-
-                if (typeof window.setTrailFromSeed === 'function') window.setTrailFromSeed(priorFocused);
-                state.navState.explorationHistoryIndices = priorHistory;
-                state.navState.lastTraversalReason = state.navState.lastTraversalReason || null;
+                restoreFocusTrailState(state.focusedNode);
                 state.navState.mode = priorMode;
-
-                if (typeof window.updateTrailIndices === 'function') window.updateTrailIndices(priorFocused);
-                if (typeof window.refreshFocusSemanticOverlay === 'function') window.refreshFocusSemanticOverlay();
-                if (typeof window.refreshFocusBeaconOverlay === 'function') window.refreshFocusBeaconOverlay();
-                if (typeof window.refreshFocusNextCueOverlay === 'function') window.refreshFocusNextCueOverlay();
-                if (typeof window._fp?.applyLocalNeighborhoodFocus === 'function') window._fp.applyLocalNeighborhoodFocus(priorFocused);
-                if (typeof window.applyPointFilterColors === 'function') window.applyPointFilterColors();
-                if (typeof window.syncFocusStage === 'function') {
-                    const priorPoint = (Number.isFinite(priorFocused) && priorFocused >= 0 && priorFocused < state.points.length)
-                        ? state.points[priorFocused]
-                        : null;
-                    window.syncFocusStage(priorPoint || state.selectedPoint || null);
-                }
-                if (typeof window.updateTraversalUi === 'function') window.updateTraversalUi();
             }
-            if (state.selectedPoint && typeof window.updateSelectedBusiness === 'function') {
-                window.updateSelectedBusiness(state.selectedPoint);
+            if (state.selectedPoint) {
+                updateSelectedBusiness(state.selectedPoint);
             }
         }
 

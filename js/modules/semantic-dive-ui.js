@@ -1,6 +1,5 @@
 import { state } from '../state.js';
 import { cleanOptionalValue, formatBusinessName, isCompactFocusStageViewport } from '../utils.js';
-import { updateExplorationUi } from './lifecycle.js';
 
 function truncateDiveStatusCopy(text, max = 74) {
     const clean = cleanOptionalValue(text);
@@ -45,10 +44,10 @@ function getStepInsideConnectionCopy(candidate, focusIndex) {
 export function syncSemanticDiveUi() {
     const hasFocus = state.focusedNode !== null && state.focusedNode !== undefined;
     const canDive = state.currentView === 'galaxy' && hasFocus;
-    if (state.semanticDiveMode && !canDive) {
-        state.semanticDiveMode = false;
-        updateExplorationUi();
-    }
+    // NOTE: semanticDiveMode is NOT force-cleared here when canDive becomes false.
+    // View switches (galaxy -> map) should preserve dive state so the user can
+    // switch back and resume. The UI is gated on `active = semanticDiveMode && canDive`,
+    // so in map view controls are correctly hidden without destroying state.
 
     const active = state.semanticDiveMode && canDive;
     if (document.body) {

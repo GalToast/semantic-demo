@@ -1,23 +1,6 @@
-/**
- * legend-ui.js — narrow adapter for legend panel structural state transitions.
- *
- * Owns only the DOM class/aria changes for legend panel open/close.
- * Does NOT own semantic guide content rendering (lifecycle.js owns that).
- * Does NOT own the legend toggle button click handler (event-bindings owns that).
- *
- * This adapter is neutral — it imports only state (a shared global), not
- * lifecycle.js or event-bindings.js, so both can import it without deepening
- * the existing lifecycle↔event-bindings import cycle.
- *
- * Structural transitions owned here:
- *   - closeLegendPanel()     — remove active class, set aria-hidden, reset toggle aria
- *   - openLegendPanel()     — add active class, clear aria-hidden, set toggle aria
- *   - isLegendPanelOpen()   — read active class state
- *
- * Cross-module bridge owned here (extracted from event-bindings.js):
- *   - restoreLegendCollapsedPanel(infoPanel, panelBtn) — compact focus-stage info panel restore
- *     (previously a local closure in event-bindings, now callable by lifecycle.closeLegendGuide)
- */
+import { state } from '../state.js';
+import { escapeHtml } from '../utils.js';
+import { getSemanticGuideTitle } from './semantic-guide.js';
 
 // ── Viewport helper ──────────────────────────────────────────────────────────
 
@@ -98,10 +81,61 @@ export function restoreLegendCollapsedPanel(infoPanel, panelBtn) {
     if (panelBtn) panelBtn.setAttribute('aria-expanded', 'true');
 }
 
+// ── Legend Guide UI Controls ──────────────────────────────────────────────────
+
+export function updateLegendGuideState() {
+    const legendPanel = document.getElementById('legend-panel');
+    if (!legendPanel) return;
+    const guide = state.currentSemanticGuide;
+    if (!guide) {
+        if (isLegendPanelOpen()) closeLegendPanel();
+        legendPanel.innerHTML = '';
+        return;
+    }
+    // Auto-open the legend panel when guide data is available
+    if (!legendPanel.classList.contains('active')) openLegendPanel();
+    const kicker = guide.laneStatus || 'Field Guide';
+    const title = getSemanticGuideTitle(guide);
+    const note = guide.text || '';
+    const next = guide.nextLabel || '';
+    legendPanel.innerHTML = `
+        <div class="legend-guide">
+            <div class="legend-guide-head">
+                <span class="legend-guide-kicker">${escapeHtml(kicker)}</span>
+            </div>
+            <div class="legend-guide-title">${escapeHtml(title)}</div>
+            ${note ? `<div class="legend-guide-note">${escapeHtml(note)}</div>` : ''}
+            ${next ? `<div class="legend-guide-next">${escapeHtml(next)}</div>` : ''}
+        </div>
+    `;
+}
+
+export function closeLegendGuide(options = {}) {
+    const legendToggle = document.getElementById('btn-legend');
+    if (!isLegendPanelOpen()) return;
+
+    closeLegendPanel();
+
+    if (options.restoreFocusPanel !== false) {
+        const infoPanel = document.querySelector('.info-panel');
+        const panelBtn = document.getElementById('btn-panel');
+        restoreLegendCollapsedPanel(infoPanel, panelBtn);
+    }
+    if (options.restoreFocus) {
+        if (window._previouslyFocusedLegend) {
+            window._previouslyFocusedLegend.focus({ preventScroll: true });
+        } else if (legendToggle) {
+            legendToggle.focus({ preventScroll: true });
+        }
+    }
+}
+
 // ── Window exposure (for bootstrap compatibility) ─────────────────────────────
 if (typeof window !== 'undefined') {
     window.isLegendPanelOpen = isLegendPanelOpen;
     window.openLegendPanel = openLegendPanel;
     window.closeLegendPanel = closeLegendPanel;
     window.restoreLegendCollapsedPanel = restoreLegendCollapsedPanel;
+    window.updateLegendGuideState = updateLegendGuideState;
+    window.closeLegendGuide = closeLegendGuide;
 }

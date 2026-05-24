@@ -1,11 +1,13 @@
 import { state } from '../state.js';
 import {
-    isCompactMapViewport,
-    isCompactSearchViewport,
-    formatBusinessName,
     escapeHtml,
     updateTime
 } from '../utils.js';
+import {
+    computeSignalScores,
+    computeBloomIndices,
+    computeBridgeIndices
+} from './exploration-data.js';
 import {
     setSemanticGuideButtonState,
     showSummaryCard,
@@ -17,11 +19,24 @@ import {
 import { setSearchPanelState } from './search-state.js';
 import { initEventListeners as initSemanticDemoEventListeners } from './event-bindings.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
-import { closeLegendPanel, isLegendPanelOpen, openLegendPanel, restoreLegendCollapsedPanel } from './legend-ui.js';
+import { closeLegendPanel, isLegendPanelOpen, openLegendPanel, restoreLegendCollapsedPanel, updateLegendGuideState, closeLegendGuide } from './legend-ui.js';
+export { updateLegendGuideState, closeLegendGuide };
 import { showSemanticThreadsDetail } from './connection-analysis.js';
-import { setActiveSearchResultRow, updateSelectedCardHeading } from './ui-renderers.js';
+import { updateSelectedCardHeading } from './ui-renderers.js';
+import { showExperienceToast, syncSearchStatusForFocus } from './ui-feedback.js';
 import { updateUrlState, copyCurrentViewLink } from './url-state.js';
 export { updateUrlState, copyCurrentViewLink };
+import { switchView, showViewHandoff, hideViewHandoff } from './view-controller.js';
+export { switchView, showViewHandoff, hideViewHandoff };
+import {
+    NAV_TRANSITION_ACTIONS,
+    clearNavigationFocusState,
+    clearTrailThreadState,
+    dispatchNavTransition,
+    initNavigationState
+} from './navigation-state.js';
+export { NAV_TRANSITION_ACTIONS, dispatchNavTransition };
+
 
 import {
     isKeyboardTextEntryTarget,
@@ -111,9 +126,9 @@ import {
     getFilteredIndices,
     clearSearchGlow,
     updateSearchStatusMessage,
-    updateSearchTrailCue,
     clearSearchPreviewHoverTimer
 } from './search-state.js';
+import { updateSearchTrailCue } from './ui-renderers.js';
 import { focusOnNode } from './camera-controls.js';
 import { clearFocusPocketIndices, clearFocusPocketMeta, clearFocusPocketRoleByIndex, clearFocusPocketMotionByIndex } from './focus-pocket.js';
 import {
@@ -157,229 +172,8 @@ export const STORY_DESCRIPTIONS = {
     'disqualified-ghosts': 'Archive layer brings forward records outside the active public slice.'
 };
 
-// === Nav Transition Reducer — Phase 1 Shell ===
-// Central dispatch for exploration-phase navigation transitions.
-// Phase 1: routes to existing setters/reset functions without changing behavior.
-// Existing callers are NOT yet migrated — this shell provides the API surface.
+// === Nav Transition Reducer — Extracted to navigation-state.js ===
 
-/**
- * Nav transition action types.
- * @readonly
- * @enum {string}
- */
-export const NAV_TRANSITION_ACTIONS = Object.freeze({
-    FOCUS_NODE: 'FOCUS_NODE',
-    SET_DEPTH: 'SET_DEPTH',
-    WALK_TO: 'WALK_TO',
-    BACKTRACK: 'BACKTRACK',
-    RESET_FOCUS: 'RESET_FOCUS',
-    RESET_EXPERIENCE: 'RESET_EXPERIENCE',
-    ENTER_INSIDE: 'ENTER_INSIDE',
-    EXIT_INSIDE: 'EXIT_INSIDE',
-});
-
-/**
- * Internal reducer for nav transition state machine.
- * Phase 1: No-op or delegation only — does not change live behavior.
- *
- * @param {string} action - One of NAV_TRANSITION_ACTIONS
- * @param {object} [payload={}] - Action-specific payload
- * @returns {{ action: string, handled: boolean, mode: string|null, noOp: boolean, reason: string }}
- */
-function navTransitionReducer(action, payload = {}) {
-    switch (action) {
-        case NAV_TRANSITION_ACTIONS.RESET_FOCUS: {
-            // Delegates to existing resetExplorationFocus for parity.
-            // Avoids recursive loops by not calling setTrailDepth/setMyceliumMode here —
-            // resetExplorationFocus handles those internally.
-            resetExplorationFocus();
-            return {
-                action,
-                handled: true,
-                mode: state.navState.mode,
-                noOp: false,
-                reason: 'resetExplorationFocus called',
-            };
-        }
-
-        case NAV_TRANSITION_ACTIONS.RESET_EXPERIENCE: {
-            // Delegates to existing resetExperienceState for parity.
-            resetExperienceState();
-            return {
-                action,
-                handled: true,
-                mode: state.navState.mode,
-                noOp: false,
-                reason: 'resetExperienceState called',
-            };
-        }
-
-        case NAV_TRANSITION_ACTIONS.SET_DEPTH: {
-            // Delegates to existing setTrailDepth for parity.
-            // Guard: depth=2 requires fromUserGesture; silent attempts are silently ignored
-            // by setTrailDepth's own gate (lifecycle.js setTrailDepth line 296).
-            const { depth = 0, fromUserGesture = false, allowDiveExit = false, skipUrlSync = false } = payload;
-            setTrailDepth(depth, { fromUserGesture, allowDiveExit, skipUrlSync });
-            return {
-                action,
-                handled: true,
-                mode: state.navState.mode,
-                noOp: false,
-                reason: `setTrailDepth(${depth}) called`,
-            };
-        }
-
-        case NAV_TRANSITION_ACTIONS.ENTER_INSIDE: {
-            // Delegates to existing setSemanticDiveMode(true) for parity.
-            // setSemanticDiveMode internally sets navState.mode='trail' and calls setTrailDepth(2).
-            setSemanticDiveMode(true);
-            return {
-                action,
-                handled: true,
-                mode: state.navState.mode,
-                noOp: false,
-                reason: 'setSemanticDiveMode(true) called',
-            };
-        }
-
-        case NAV_TRANSITION_ACTIONS.EXIT_INSIDE: {
-            // Delegates to existing setSemanticDiveMode(false) for parity.
-            setSemanticDiveMode(false);
-            return {
-                action,
-                handled: true,
-                mode: state.navState.mode,
-                noOp: false,
-                reason: 'setSemanticDiveMode(false) called',
-            };
-        }
-
-        case NAV_TRANSITION_ACTIONS.FOCUS_NODE: {
-            // Phase 2: Migrated — focusOnNode delegates navState writes here.
-            // focusOnNode retains ownership of focusedNode, selectedPoint, trailDepth,
-            // myceliumMode, and all side-effect calls.
-            const {
-                index,
-                preserveMode,
-                fromTraversal,
-                fromCanvasNode,
-                appendHistory,
-                restoreHistory
-            } = payload;
-
-            // Compute resulting mode
-            let nextMode = 'focus';
-            if (preserveMode && state.navState.mode) {
-                nextMode = state.navState.mode;
-            } else if (fromTraversal) {
-                nextMode = 'trail';
-            }
-
-            state.navState.mode = nextMode;
-            state.navState.focusedIndex = index;
-
-            // activeStoryPrompt clearing: mirrors focusOnNode behavior
-            if (nextMode === 'trail' || fromCanvasNode) {
-                state.activeStoryPrompt = null;
-            }
-
-            // explorationHistoryIndices: owned by FOCUS_NODE reducer
-            if (restoreHistory) {
-                // preserve existing
-            } else if (appendHistory) {
-                const history = [...(state.navState.explorationHistoryIndices || [])];
-                if (history[history.length - 1] !== index) history.push(index);
-                state.navState.explorationHistoryIndices = history;
-            } else {
-                state.navState.explorationHistoryIndices = [index];
-            }
-
-            return {
-                action,
-                handled: true,
-                mode: nextMode,
-                noOp: false,
-                reason: 'FOCUS_NODE reducer owns navState.mode, focusedIndex, explorationHistoryIndices',
-            };
-        }
-
-        case NAV_TRANSITION_ACTIONS.WALK_TO: {
-            // Phase 2: navTransitionReducer owns walkHistoryIndices; journey.walkThreadNeighbor
-            // is the traversal engine (camera, focus pocket, strand continuity).
-            // Journey traversal side effects remain intact, but history writes route here.
-            const { index, fromIndex, appendHistory, restoreHistoryIndices } = payload;
-            if (Array.isArray(restoreHistoryIndices)) {
-                state.navState.walkHistoryIndices = restoreHistoryIndices
-                    .filter((value) => Number.isFinite(value));
-            } else if (appendHistory !== false) {
-                // Owner of walkHistoryIndices — canonical push
-                const history = [...(state.navState.walkHistoryIndices || [])];
-                if (Number.isFinite(fromIndex) && history[history.length - 1] !== fromIndex) history.push(fromIndex);
-                if (history[history.length - 1] !== index) history.push(index);
-                state.navState.walkHistoryIndices = history;
-            }
-            state.navState.mode = 'trail';
-            // Delegate all traversal side effects (camera animation, focus pocket rebuild,
-            // strand continuity, URL sync) to the existing walkThreadNeighbor engine.
-            // Journey.js is responsible for calling this reducer first; this branch
-            // handles the history write and traversal delegate.
-            return {
-                action,
-                handled: true,
-                mode: state.navState.mode,
-                noOp: false,
-                reason: 'WALK_TO reducer owns walkHistoryIndices; delegates traversal to journey.walkThreadNeighbor',
-            };
-        }
-
-        case NAV_TRANSITION_ACTIONS.BACKTRACK: {
-            // Phase 2: navTransitionReducer owns walkHistoryIndices pop; journey.traverseNeighbor
-            // is the traversal engine for the backtrack sub-path.
-            // Note: the bounded-neighborhood loop path (getBoundedNeighborhoodWalkCandidate)
-            // does NOT write walkHistoryIndices — only the history-based backtrack path does.
-            const { step, restoreHistory } = payload;
-            if (step < 0 && restoreHistory) {
-                // Owner of walkHistoryIndices — canonical pop
-                const history = [...(state.navState.walkHistoryIndices || [])];
-                if (history.length > 0) {
-                    history.pop(); // remove the current position, leaving prior position
-                }
-                state.navState.walkHistoryIndices = history;
-            }
-            // Delegate traversal side effects to journey.traverseNeighbor.
-            // journey.traverseNeighbor will call walkThreadNeighbor for the actual step.
-            return {
-                action,
-                handled: true,
-                mode: state.navState.mode,
-                noOp: false,
-                reason: 'BACKTRACK reducer owns walkHistoryIndices pop; delegates traversal to journey.traverseNeighbor',
-            };
-        }
-
-        default: {
-            return {
-                action,
-                handled: false,
-                mode: state.navState.mode,
-                noOp: true,
-                reason: `Unknown action: ${action}`,
-            };
-        }
-    }
-}
-
-/**
- * Central dispatch for nav transition actions.
- * Exported as public API — mirrors the window-bridge pattern used by other lifecycle APIs.
- *
- * @param {string} action - One of NAV_TRANSITION_ACTIONS
- * @param {object} [payload={}] - Action-specific payload
- * @returns {{ action: string, handled: boolean, mode: (string|null), noOp: boolean, reason: string }}
- */
-export function dispatchNavTransition(action, payload = {}) {
-    return navTransitionReducer(action, payload);
-}
 
 // === Exploration UI & Orchestration ===
 
@@ -474,7 +268,7 @@ export function setMyceliumMode(mode, options = {}) {
         clearExplorationFocusSelection({ preserveSearch: true });
         state.navState.mode = 'overview';
         state.navState.walkHistoryIndices = [];
-        state.navState.threadCandidates = [];
+        clearTrailThreadState();
     }
 
     if (!options.keepStoryPrompt) {
@@ -595,97 +389,15 @@ export function setSemanticDiveMode(enabled) {
 
 function recomputeBloomIndices() {
     if (!state.points || state.points.length === 0) return;
-    state.bloomIndices.clear();
-
-    // Calculate signal scores for all points
-    if (state.signalScores.length !== state.points.length) {
-        state.signalScores = new Array(state.points.length).fill(0);
-    }
-    for (let i = 0; i < state.points.length; i++) {
-        const p = state.points[i];
-        let score = 0;
-        if (p.website) score += 1.35;
-        if (p.email) score += 1.0;
-        if (p.phone) score += 0.45;
-        if (p.lat && p.lng) score += 1.25;
-        if (p.status === 'active') score += 0.55;
-        if (p.trivia) score += 0.35;
-        state.signalScores[i] = score;
-    }
-
-    // Keep Bloom mode selective so it reads as a signal layer, not a full-canvas flash.
-    const sorted = [...state.signalScores].sort((a, b) => b - a);
-    const threshold = sorted[Math.min(Math.floor(sorted.length * 0.12), sorted.length - 1)] || 0;
-    const bloomThreshold = Math.max(threshold, 2.95);
-
-    for (let i = 0; i < state.signalScores.length; i++) {
-        if (state.signalScores[i] >= bloomThreshold) {
-            state.bloomIndices.add(i);
-        }
-    }
+    state.signalScores = computeSignalScores(state.points);
+    state.bloomIndices = computeBloomIndices(state.points, state.signalScores);
 }
 
 function recomputeBridgeIndices() {
     if (!state.points || state.points.length === 0 || !state.originalPositions) return;
-    state.bridgeIndices.clear();
-    if (state.bridgeScores.length !== state.points.length) {
-        state.bridgeScores = new Array(state.points.length).fill(0);
-    }
-
-    const cellSize = 0.12;
-    const grid = new Map();
-    for (let i = 0; i < state.originalPositions.length; i++) {
-        const pos = state.originalPositions[i];
-        const gx = Math.floor(pos.x / cellSize);
-        const gy = Math.floor(pos.y / cellSize);
-        const gz = Math.floor(pos.z / cellSize);
-        const key = `${gx},${gy},${gz}`;
-        if (!grid.has(key)) grid.set(key, []);
-        grid.get(key).push(i);
-    }
-
-    const maxDist = 0.17;
-    for (let i = 0; i < state.points.length; i++) {
-        const pos = state.originalPositions[i];
-        if (!pos) continue;
-        const gx = Math.floor(pos.x / cellSize);
-        const gy = Math.floor(pos.y / cellSize);
-        const gz = Math.floor(pos.z / cellSize);
-        const foreignClusters = new Set();
-        let weight = 0;
-
-        for (let dx = -1; dx <= 1; dx++) {
-            for (let dy = -1; dy <= 1; dy++) {
-                for (let dz = -1; dz <= 1; dz++) {
-                    const neighbors = grid.get(`${gx + dx},${gy + dy},${gz + dz}`);
-                    if (!neighbors) continue;
-                    for (const j of neighbors) {
-                        if (j === i) continue;
-                        const neighborPos = state.originalPositions[j];
-                        if (!neighborPos) continue;
-                        const dx = pos.x - neighborPos.x;
-                        const dy = pos.y - neighborPos.y;
-                        const dz = pos.z - neighborPos.z;
-                        const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                        if (d > maxDist) continue;
-                        if (!state.points[i] || !state.points[j]) continue;
-                        const otherCluster = state.points[j].cluster;
-                        if (otherCluster !== state.points[i].cluster) {
-                            foreignClusters.add(otherCluster);
-                            if (Number.isFinite(state.signalScores[j])) {
-                                weight += state.signalScores[j] * (1 - d / maxDist);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        state.bridgeScores[i] = weight;
-        if (foreignClusters.size > 1 && weight >= 0.7) {
-            state.bridgeIndices.add(i);
-        }
-    }
+    const result = computeBridgeIndices(state.points, state.originalPositions, state.signalScores);
+    state.bridgeIndices = result.indices;
+    state.bridgeScores = result.scores;
 }
 
 export function applyStoryPrompt(story, options = {}) {
@@ -771,12 +483,7 @@ export function clearExplorationFocusSelection(_options = {}) {
 
     state.focusedNode = null;
     state.selectedPoint = null;
-    state.navState.focusedIndex = null;
-    state.navState.trailSeedIndex = null;
-    state.navState.trailNeighborIndices = [];
-    state.navState.trailCursor = -1;
-    state.navState.explorationHistoryIndices = [];
-    state.navState.lastTraversalReason = null;
+    clearNavigationFocusState();
     state.trailIndices.clear();
 
     return { hadFocusedNode, hadSelectedPoint };
@@ -871,376 +578,16 @@ export function resetStateBeforeUrlRestore(options = {}) {
     refreshCompositionState();
     clearExplorationFocusSelection();
     state.navState.mode = 'overview';
-    state.navState.threadCandidates = [];
+    clearTrailThreadState();
     state.nodesAreSettling = false;
 }
 
 // === View Management ===
 
-export function hideViewHandoff() {
-    const handoff = document.getElementById('view-handoff');
-    if (state.viewHandoffTimer) {
-        window.clearTimeout(state.viewHandoffTimer);
-        state.viewHandoffTimer = null;
-    }
-    document.body.dataset.viewHandoffActive = 'false';
-    if (!handoff) return;
-    handoff.classList.remove('active');
-    handoff.setAttribute('aria-hidden', 'true');
-}
+// View management functions extracted to view-controller.js
 
-export function showViewHandoff(view) {
-    const handoff = document.getElementById('view-handoff');
-    if (!handoff) return;
-    const model = getViewHandoffModel(view);
-    const runeEl = document.getElementById('view-handoff-rune');
-    const kickerEl = document.getElementById('view-handoff-kicker');
-    const titleEl = document.getElementById('view-handoff-title');
-    const noteEl = document.getElementById('view-handoff-note');
-
-    if (runeEl) {
-        runeEl.innerHTML = semanticGuideIcon(model.icon, view === 'map' ? 'Map view' : 'Mycelium view');
-    }
-    if (kickerEl) kickerEl.textContent = model.kicker;
-    if (titleEl) titleEl.textContent = model.title;
-    if (noteEl) noteEl.textContent = model.note;
-
-    if (state.viewHandoffTimer) {
-        window.clearTimeout(state.viewHandoffTimer);
-        state.viewHandoffTimer = null;
-    }
-
-    handoff.setAttribute('aria-hidden', 'false');
-    handoff.classList.add('active');
-    document.body.dataset.viewHandoffActive = 'true';
-    state.viewHandoffTimer = window.setTimeout(() => {
-        handoff.classList.remove('active');
-        handoff.setAttribute('aria-hidden', 'true');
-        document.body.dataset.viewHandoffActive = 'false';
-        state.viewHandoffTimer = null;
-    }, 2200);
-}
-
-export function switchView(view, options = {}) {
-    invokeClearMobileRouteFieldPeek();
-    const previousView = state.currentView;
-    const handoffFrom = options.handoffFrom || (typeof window.getRouteLayerOrigin === 'function' ? window.getRouteLayerOrigin() : 'galaxy');
-    const shouldPreludeToMap =
-        view === 'map' &&
-        previousView === 'galaxy' &&
-        !options.skipTerrainPrelude &&
-        !options.skipUrlSync &&
-        !options.silentHandoff;
-    if (shouldPreludeToMap) {
-        const routeCount = getRouteEmbodimentIndices().length;
-        if (state.viewSwitchPreludeTimer) {
-            window.clearTimeout(state.viewSwitchPreludeTimer);
-            state.viewSwitchPreludeTimer = null;
-        }
-        setTerrainHandoffState('flattening', {
-            from: handoffFrom,
-            to: 'map',
-            routeCount
-        });
-        setRouteChoreographyPhase('terrain-prelude', {
-            reason: 'map-prelude',
-            anchorIndex: state.currentSearchSummary?.anchorIndex ?? state.navState?.focusedIndex ?? null,
-            indexCount: routeCount
-        });
-        if (typeof window.animateCameraToTerrainPrelude === 'function') {
-            window.animateCameraToTerrainPrelude({ duration: state.MAP_HANDOFF_PRELUDE_MS || 1200 });
-        }
-        
-        // 10/10 Polish: Flatten Three.js nodes to map coordinates during prelude
-        if (typeof window.applyMapFlatteningLayout === 'function') {
-            window.applyMapFlatteningLayout(true);
-        }
-
-        showViewHandoff('map');
-        state.viewSwitchPreludeTimer = window.setTimeout(() => {
-            state.viewSwitchPreludeTimer = null;
-            if (state.currentView !== 'galaxy') return;
-            switchView('map', {
-                ...options,
-                skipTerrainPrelude: true,
-                handoffFrom
-            });
-        }, state.MAP_HANDOFF_PRELUDE_MS || 1200);
-        return;
-    }
-    state.currentView = view;
-    
-    // 10/10 Polish: Transition Choreography
-    document.body.classList.add('view-transitioning');
-    document.body.dataset.activeView = view;
-    document.body.dataset.cameraAssist = 'arriving';
-    
-    // Auto-remove transitioning class after animation completes
-    window.setTimeout(() => {
-        document.body.classList.remove('view-transitioning');
-        if (document.body.dataset.cameraAssist === 'arriving') {
-            document.body.dataset.cameraAssist = 'free';
-        }
-    }, 1200);
-    
-    if (view === 'map') {
-        hideViewHandoff();
-        scheduleMapRouteRefresh();
-    }
-    if (view !== 'galaxy' && view !== 'map') {
-        if (typeof window.clearRouteExploration === 'function') window.clearRouteExploration('map-handoff');
-    } else if (previousView === 'map' && Number.isFinite(state.navState.focusedIndex)) {
-        // 10/10 Polish: Reset map flattening
-        if (typeof window.applyMapFlatteningLayout === 'function') {
-            window.applyMapFlatteningLayout(false);
-        }
-        
-        // returning to galaxy from map while focused: restore focus pocket camera depth
-        if (typeof window.animateCameraToNode === 'function') {
-            window.animateCameraToNode(state.navState.focusedIndex, { 
-                transitionStyle: state.semanticDiveMode ? 'dive' : 'focus',
-                duration: 1100 
-            });
-        }
-    }
-
-    closeLegendPanel();
-
-    const btnGalaxy = document.getElementById('btn-galaxy');
-    const btnMap = document.getElementById('btn-map');
-    if (btnGalaxy) {
-        btnGalaxy.classList.toggle('active', view === 'galaxy');
-        btnGalaxy.setAttribute('aria-pressed', String(view === 'galaxy'));
-    }
-    if (btnMap) {
-        btnMap.classList.toggle('active', view === 'map');
-        btnMap.setAttribute('aria-pressed', String(view === 'map'));
-    }
-
-    const canvasContainer = document.getElementById('canvas-container');
-    const mapContainer = document.getElementById('map-container');
-    if (state.viewSwitchPreludeTimer) {
-        window.clearTimeout(state.viewSwitchPreludeTimer);
-        state.viewSwitchPreludeTimer = null;
-    }
-
-    // Clean up orphaned timers when leaving galaxy view
-    if (view !== 'galaxy') {
-        if (state.clockTimer) {
-            window.clearInterval(state.clockTimer);
-            state.clockTimer = null;
-        }
-        clearWeatherRefreshTimer();
-        if (state.semanticLaneMonitorTimer) {
-            window.clearInterval(state.semanticLaneMonitorTimer);
-            state.semanticLaneMonitorTimer = null;
-        }
-        if (state.semanticLaneOpsRefreshTimer) {
-            window.clearInterval(state.semanticLaneOpsRefreshTimer);
-            state.semanticLaneOpsRefreshTimer = null;
-        }
-    }
-
-    if (view === 'galaxy') {
-        if (previousView === 'map') {
-            setTerrainHandoffState('returning', {
-                from: state.terrainHandoffState?.from || 'map',
-                to: 'galaxy',
-                routeCount: getRouteEmbodimentIndices().length,
-                settleAfterMs: 1200,
-                settlePhase: 'idle'
-            });
-        } else {
-            setTerrainHandoffState('idle', { from: handoffFrom, to: 'galaxy' });
-        }
-        if (canvasContainer) canvasContainer.classList.remove('hidden');
-        if (mapContainer) mapContainer.classList.remove('active');
-        clearWeatherEffects();
-        document.getElementById('weather-overlay')?.classList.remove('active');
-        if (state.selectedPoint) {
-            const selectedIndex = state.points.indexOf(state.selectedPoint);
-            if (selectedIndex >= 0) {
-                focusOnNode(selectedIndex, {
-                    skipUrlSync: true,
-                    fromSearchResult: !!state.currentSearchSummary,
-                    restoreHistory: true,
-                    preserveMode: true
-                });
-                setTrailFromSeed(selectedIndex);
-            }
-        } else if (
-            state.currentSearchSummary?.anchorIndex !== null &&
-            state.currentSearchSummary?.anchorIndex !== undefined
-        ) {
-            const anchorIndex = state.currentSearchSummary.anchorIndex;
-            setRouteChoreographyPhase('search-corridor', {
-                reason: 'return-to-mycelium-search',
-                anchorIndex,
-                indexCount: state.currentSearchSummary.resultIndices?.length || 0
-            });
-            if (typeof window.animateCameraToSearchCorridor === 'function') {
-                window.animateCameraToSearchCorridor(
-                    anchorIndex,
-                    state.currentSearchSummary.resultIndices || [],
-                    {
-                        reason: 'return-to-mycelium'
-                    }
-                );
-            }
-            focusOnNode(anchorIndex, {
-                skipUrlSync: true,
-                fromSearchResult: true,
-                restoreHistory: true,
-                preserveMode: true
-            });
-            setTrailFromSeed(anchorIndex);
-        } else {
-            setRouteChoreographyPhase('overview', {
-                reason: 'return-to-mycelium-overview',
-                anchorIndex: null,
-                indexCount: 0
-            });
-        }
-    } else {
-        const routeCount = getRouteEmbodimentIndices().length;
-        setTerrainHandoffState('landing', {
-            from: handoffFrom,
-            to: 'map',
-            routeCount,
-            settleAfterMs: 1800,
-            settlePhase: 'settled'
-        });
-        setRouteChoreographyPhase('terrain-landing', {
-            reason: 'map-handoff',
-            anchorIndex: state.currentSearchSummary?.anchorIndex ?? state.navState?.focusedIndex ?? null,
-            indexCount: routeCount
-        });
-        initMap()
-            .then(() => {
-                if (state.currentView !== 'map') return;
-                if (state.map) {
-                    setTimeout(() => {
-                        state.map.invalidateSize();
-                        scheduleMapRouteRefresh();
-                    }, 100);
-                }
-                if (state.weather) applyWeatherEffects();
-            })
-            .catch((error) => {
-                console.error('Map initialization failed:', error);
-            });
-        if (!state.weatherInitialized) {
-            scheduleWeatherHydration();
-        }
-        if (canvasContainer) canvasContainer.classList.add('hidden');
-        if (mapContainer) mapContainer.classList.add('active');
-    }
-
-    if (!options.skipUrlSync) {
-        updateUrlState({}, { mode: options.historyMode || 'push', reason: 'view' });
-    }
-    if (typeof window.syncClusterSectionState === 'function') window.syncClusterSectionState();
-    if (typeof window.updateLegendGuideState === 'function') window.updateLegendGuideState();
-    syncFocusStage(state.selectedPoint);
-    if (!state.selectedPoint) {
-        updateSelectedBusiness(null);
-    }
-    refreshCompositionState();
-    if (!options.silentHandoff) {
-        showViewHandoff(view);
-    }
-}
-
-export function showExperienceToast(title, copy) {
-    const toast = document.getElementById('experience-reset-toast');
-    if (!toast) return;
-    const titleEl = document.getElementById('experience-toast-title');
-    const copyEl = document.getElementById('experience-toast-copy');
-    toast.setAttribute('aria-hidden', 'false');
-    toast.setAttribute('aria-live', 'assertive');
-    if (titleEl) titleEl.textContent = title;
-    if (copyEl) copyEl.textContent = copy;
-    toast.classList.add('active');
-    if (state.experienceResetToastTimer) {
-        window.clearTimeout(state.experienceResetToastTimer);
-    }
-    state.experienceResetToastTimer = window.setTimeout(() => {
-        toast.classList.remove('active');
-        toast.setAttribute('aria-hidden', 'true');
-        toast.setAttribute('aria-live', 'polite');
-        if (titleEl) titleEl.textContent = '';
-        if (copyEl) copyEl.textContent = '';
-        state.experienceResetToastTimer = null;
-    }, 2100);
-}
-
-// === Search UI ===
-
-export function syncSearchStatusForFocus(point, options = {}) {
-    const statusEl = document.getElementById('search-status');
-    const resultsEl = document.getElementById('search-results');
-    if (!statusEl || !point || !state.currentSearchSummary) return;
-    if (!resultsEl?.classList.contains('active')) return;
-    if (typeof setActiveSearchResultRow === 'function') {
-        setActiveSearchResultRow(
-            resultsEl,
-            options.fromTraversal ? state.navState.focusedIndex : state.currentSearchSummary.anchorIndex
-        );
-    }
-
-    const pointName = formatBusinessName(point.name);
-    const queryLabel = state.currentSearchSummary.query
-        ? `"${state.currentSearchSummary.query}"`
-        : 'this connection path';
-    const compactMapCopy = isCompactMapViewport();
-    const compactGalaxyCopy = isCompactSearchViewport();
-
-    if (options.fromSearchResult) {
-        statusEl.textContent = compactMapCopy
-            ? `${pointName} is centered in ${queryLabel}. Preview in the stack or use Prev / Next to explore.`
-            : compactGalaxyCopy
-              ? `${pointName} is now centered. Use the pocket controls below to enter, inspect, or explore nearby stops.`
-              : `${pointName} is centered in ${queryLabel}. Hover the stack to preview another pocket, or use Prev / Next to explore further.`;
-        updateSearchTrailCue({
-            beat: 'focus',
-            kicker: 'Anchor locked',
-            title: `${pointName} is now centered`,
-            note: compactMapCopy
-                ? 'Search opens a trail. Preview nearby matches in the stack or use Prev / Next to explore.'
-                : compactGalaxyCopy
-                  ? 'Search opens a trail. Enter the mycelium, inspect connections, or explore the nearby stops below.'
-                  : 'Search opens a trail. Preview ranked matches in the stack, or use Prev / Next to explore outward from this neighborhood.'
-        });
-        return;
-    }
-
-    if (options.fromTraversal) {
-        statusEl.textContent = compactMapCopy
-            ? `${pointName} is centered in ${queryLabel}. Prev / Next explores nearby businesses.`
-            : `${pointName} is now centered in ${queryLabel}. Use Prev / Next to explore nearby businesses, or the result stack to jump back into ranked matches.`;
-        updateSearchTrailCue({
-            beat: 'walk',
-            kicker: 'Semantic exploration in progress',
-            title: `Exploring from ${pointName}`,
-            note: compactMapCopy
-                ? 'Prev / Next keeps stepping through this nearby business trail.'
-                : 'The trail is live now. Use Prev / Next to explore further, or jump sideways from the ranked stack.'
-        });
-        return;
-    }
-
-    statusEl.textContent = compactMapCopy
-        ? `${pointName} is centered in ${queryLabel}. Preview or jump from the stack.`
-        : `${pointName} is centered in ${queryLabel}. Use the result stack to preview or jump, or Prev / Next to explore nearby businesses.`;
-    updateSearchTrailCue({
-        beat: 'focus',
-        kicker: 'Search opens a trail.',
-        title: `${pointName} anchors this trail`,
-        note: compactMapCopy
-            ? 'Preview another match in the stack, or walk forward from this anchor.'
-            : 'The ranked stack still shows the broader query, while this focus keeps the active anchor.'
-    });
-}
+// showExperienceToast and syncSearchStatusForFocus extracted to ui-feedback.js
+export { showExperienceToast, syncSearchStatusForFocus };
 
 // === Semantic Guide Summary Card ===
 export {
@@ -1288,56 +635,8 @@ export function resetNodePositions(options = {}) {
     }
 }
 
-// === Input Helpers & Legend ===
+// === Legend guide functions extracted to legend-ui.js ===
 
-
-
-export function updateLegendGuideState() {
-    const legendPanel = document.getElementById('legend-panel');
-    if (!legendPanel) return;
-    const guide = state.currentSemanticGuide;
-    if (!guide) {
-        if (isLegendPanelOpen()) closeLegendPanel();
-        legendPanel.innerHTML = '';
-        return;
-    }
-    // Auto-open the legend panel when guide data is available
-    if (!legendPanel.classList.contains('active')) openLegendPanel();
-    const kicker = guide.laneStatus || 'Field Guide';
-    const title = getSemanticGuideTitle(guide);
-    const note = guide.text || '';
-    const next = guide.nextLabel || '';
-    legendPanel.innerHTML = `
-        <div class="legend-guide">
-            <div class="legend-guide-head">
-                <span class="legend-guide-kicker">${escapeHtml(kicker)}</span>
-            </div>
-            <div class="legend-guide-title">${escapeHtml(title)}</div>
-            ${note ? `<div class="legend-guide-note">${escapeHtml(note)}</div>` : ''}
-            ${next ? `<div class="legend-guide-next">${escapeHtml(next)}</div>` : ''}
-        </div>
-    `;
-}
-
-export function closeLegendGuide(options = {}) {
-    const legendToggle = document.getElementById('btn-legend');
-    if (!isLegendPanelOpen()) return;
-
-    closeLegendPanel();
-
-    if (options.restoreFocusPanel !== false) {
-        const infoPanel = document.querySelector('.info-panel');
-        const panelBtn = document.getElementById('btn-panel');
-        restoreLegendCollapsedPanel(infoPanel, panelBtn);
-    }
-    if (options.restoreFocus) {
-        if (window._previouslyFocusedLegend) {
-            window._previouslyFocusedLegend.focus({ preventScroll: true });
-        } else if (legendToggle) {
-            legendToggle.focus({ preventScroll: true });
-        }
-    }
-}
 
 
 
@@ -1349,6 +648,14 @@ export function initEventListeners() {
     initKeyboardResetOwnership({
         returnToOverview,
         resetExplorationFocus
+    });
+
+    // Inject authoritative APIs into navigation-state.js to prevent circular imports
+    initNavigationState({
+        resetExplorationFocus,
+        resetExperienceState,
+        setTrailDepth,
+        setSemanticDiveMode
     });
 
     return initSemanticDemoEventListeners({

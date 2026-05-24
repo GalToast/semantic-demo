@@ -368,6 +368,11 @@ export function animateCameraToNode(index, options = {}) {
                 pocketBounds, region, camDist, state.camera, state.controls
             );
             if (safeOffset) {
+                const pocketProfile = state.navState.focusPocketMeta.viewportProfile || {};
+                const offsetLimit = Number.isFinite(pocketProfile.targetOffsetLimit)
+                    ? pocketProfile.targetOffsetLimit
+                    : 0.12;
+                if (safeOffset.length() > offsetLimit) safeOffset.setLength(offsetLimit);
                 const nudgeTarget = focusTarget.clone().add(safeOffset);
                 if (Number.isFinite(nudgeTarget.x) && Number.isFinite(nudgeTarget.y) && Number.isFinite(nudgeTarget.z)) {
                     safeTargetOffset = safeOffset;

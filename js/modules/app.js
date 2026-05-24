@@ -37,7 +37,6 @@ import {
     setTrailDepth,
     setSemanticDiveMode,
     applyStoryPrompt,
-    switchView,
     resetExperienceState,
     returnToOverview,
     resetExplorationFocus,
@@ -46,15 +45,20 @@ import {
     focusOnPoint,
     updateExplorationUi,
     resetNodePositions,
+    dispatchNavTransition,
     recordSemanticLaneSnapshot,
-    showExperienceToast
+    showExperienceToast,
+    syncSearchStatusForFocus,
+    updateJourneyCompass
 } from './lifecycle.js';
+import { switchView } from './view-controller.js';
 import { initKeyboardShortcutsHint } from './keyboard-help.js';
 import { applyUrlState, updateUrlState } from './url-state.js';
 import { loadSemanticThreads } from './semantic-threads.js';
 import { initClusterLabels, updateClusterLabels } from './cluster-labels.js';
 import { updateHasQuery } from './event-bindings.js';
 import { findClusterByKeyword } from './cluster-filter.js';
+import { updateSearchTrailCue } from './ui-renderers.js';
 
 // Global Exposure for compatibility during transition
 window.state = state;
@@ -82,7 +86,7 @@ window.normalizeCityForFilter = searchModule.normalizeCityForFilter;
 window.activateSearchGlow = searchModule.activateSearchGlow;
 window.clearSearchGlow = searchModule.clearSearchGlow;
 window.updateSearchStatusMessage = searchModule.updateSearchStatusMessage;
-window.updateSearchTrailCue = searchModule.updateSearchTrailCue;
+window.updateSearchTrailCue = updateSearchTrailCue;
 window.clearShortSemanticSearchState = searchModule.clearShortSemanticSearchState;
 window.resetSemanticGuideUi = searchModule.resetSemanticGuideUi;
 window.beginSearchFocusTransition = searchModule.beginSearchFocusTransition;
@@ -291,10 +295,6 @@ export async function init() {
         if (graphicsReady !== false) {
             journeyModule.ensureCanvasNodeInteractionBindings();
         } else {
-            showStartupRecoveryNotice(
-                'Graphics acceleration',
-                new Error('3D graphics are unavailable, so the map view is available as the fallback path.')
-            );
             // WebGL fallback is active — dismiss the loading overlay immediately
             // so the fallback notice is visible instead of a frozen spinner.
             hideLoadingOverlay();
@@ -374,6 +374,9 @@ export async function init() {
             focusOnPoint,
             updateExplorationUi,
             resetNodePositions,
+            dispatchNavTransition,
+            syncSearchStatusForFocus,
+            updateJourneyCompass,
         });
 
         // Bug sweep 19: await applyUrlState with a catch to prevent total hang

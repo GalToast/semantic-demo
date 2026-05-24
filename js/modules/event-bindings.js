@@ -1,6 +1,8 @@
 import { state } from '../state.js';
 import { isCompactFocusStageViewport } from '../utils.js';
-import { syncFilterControls, switchView, resetExperienceState } from './lifecycle.js';
+import { syncFilterControls, resetExperienceState, resetExplorationFocus } from './lifecycle.js';
+import { traverseNeighbor, setSemanticDiveMode } from './journey.js';
+import { switchView } from './view-controller.js';
 import { toggleAutoRotate, focusOnNode } from './camera-controls.js';
 import { handleGalaxyKeydown } from './keyboard-help.js';
 import {
@@ -16,6 +18,7 @@ import {
     resetActiveFilters
 } from './filter-state.js';
 import { closeLegendPanel, openLegendPanel, restoreLegendCollapsedPanel } from './legend-ui.js';
+import { requestSemanticGuide } from './semantic-guide.js';
 
 function bindClick(id, handler, options = {}) {
     const element = document.getElementById(id);
@@ -60,14 +63,14 @@ function bindFocusControls() {
         }
     };
 
-    bindClick('btn-focus-prev', () => window.traverseNeighbor(-1));
-    bindClick('btn-focus-next', () => window.traverseNeighbor(1));
-    bindClick('btn-focus-overview', () => { if (typeof window.resetExplorationFocus === 'function') window.resetExplorationFocus(); });
-    bindClick('btn-focus-center', () => window.recenterFocusedNode());
-    bindClick('btn-focus-expand', window.expandNeighborhoodFromCurrentNode);
-    bindClick('btn-focus-dive', () => window.setSemanticDiveMode(!state.semanticDiveMode));
-    bindClick('btn-inside-next', window.exploreInsideToNextStop, { optional: true });
-    bindClick('btn-inside-county', window.returnToCountyView, { optional: true });
+    bindClick('btn-focus-prev', () => { traverseNeighbor(-1); });
+    bindClick('btn-focus-next', () => { traverseNeighbor(1); });
+    bindClick('btn-focus-overview', () => { resetExplorationFocus(); });
+    bindClick('btn-focus-center', () => { if (typeof window.recenterFocusedNode === 'function') window.recenterFocusedNode(); });
+    bindClick('btn-focus-expand', () => { if (typeof window.expandNeighborhoodFromCurrentNode === 'function') window.expandNeighborhoodFromCurrentNode(); });
+    bindClick('btn-focus-dive', () => { setSemanticDiveMode(!state.semanticDiveMode); });
+    bindClick('btn-inside-next', () => { if (typeof window.exploreInsideToNextStop === 'function') window.exploreInsideToNextStop(); }, { optional: true });
+    bindClick('btn-inside-county', () => { if (typeof window.returnToCountyView === 'function') window.returnToCountyView(); }, { optional: true });
     bindClick('btn-journey-primary', (event) =>
         runJourneyCompassAction(event.currentTarget.dataset.journeyAction));
     bindClick('btn-journey-secondary', (event) =>
@@ -478,11 +481,7 @@ function bindWindowControlFunctions(resetExperienceState, resetNodePositions) {
     };
 
     window.returnToCountyView = function () {
-        if (typeof window.resetExplorationFocus === 'function') {
-            window.resetExplorationFocus();
-        } else if (typeof resetNodePositions === 'function') {
-            resetNodePositions({ preserveSearch: true });
-        }
+        resetExplorationFocus();
     };
 
     window.setInfoPanelOpen = function (open, options = {}) {
@@ -627,10 +626,10 @@ function bindUtilityButtons() {
         if (typeof window.hideSummaryCard === 'function') window.hideSummaryCard();
         if (typeof window.closeLegendGuide === 'function') window.closeLegendGuide();
     });
-    bindClick('btn-synthesize', window.requestSemanticGuide);
-    bindClick('btn-prev-node', () => { if (typeof window.traverseNeighbor === 'function') window.traverseNeighbor(-1); });
-    bindClick('btn-next-node', () => { if (typeof window.traverseNeighbor === 'function') window.traverseNeighbor(1); });
-    bindClick('btn-overview', () => { if (typeof window.resetExplorationFocus === 'function') window.resetExplorationFocus(); }, { optional: true });
+    bindClick('btn-synthesize', () => { if (typeof requestSemanticGuide === 'function') requestSemanticGuide(); });
+    bindClick('btn-prev-node', () => { traverseNeighbor(-1); });
+    bindClick('btn-next-node', () => { traverseNeighbor(1); });
+    bindClick('btn-overview', () => { resetExplorationFocus(); }, { optional: true });
 }
 
 let _onboardingIdleTimer = null;

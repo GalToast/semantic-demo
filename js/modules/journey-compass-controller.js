@@ -22,8 +22,8 @@ import { clearShortSemanticSearchState, clearMobileRouteFieldPeek } from './sear
 // camera-controls
 import { focusOnNode } from './camera-controls.js';
 
-// lifecycle.js - for switchView (needed in executeJourneyCompassAction)
-import { switchView } from './lifecycle.js';
+// view-controller.js - for switchView (needed in executeJourneyCompassAction)
+import { switchView } from './view-controller.js';
 
 // ui-renderers
 import { updateSelectedCardHeading } from './ui-renderers.js';

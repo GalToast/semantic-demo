@@ -23,12 +23,17 @@ import { refreshMapMarkers } from './map-state.js';
 import { updateClusterList } from './cluster-filter.js';
 import { buildLegend } from './ui-renderers.js';
 import { hideTooltip, positionTooltip, updateTooltipContent } from './search-ui-adapter.js';
+import { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetToggle } from './search-panel-adapter.js';
+import { clearTrailThreadState } from './navigation-state.js';
 import {
     updateUrlState as adapter_updateUrlState,
     setSearchPanelState as adapter_setSearchPanelState,
     focusOnPoint as adapter_focusOnPoint,
     updateExplorationUi as adapter_updateExplorationUi,
     resetNodePositions as adapter_resetNodePositions,
+    dispatchNavTransition as adapter_dispatchNavTransition,
+    syncSearchStatusForFocus as adapter_syncSearchStatusForFocus,
+    updateJourneyCompass as adapter_updateJourneyCompass,
 } from './search-lifecycle-adapter.js';
 export {
     setActiveFilter,
@@ -49,7 +54,8 @@ import {
     getSearchResultStrength,
     getSearchResultStrengthLabel,
     getSearchResultCardClasses,
-    clearCompactSearchResultRevealTimers
+    clearCompactSearchResultRevealTimers,
+    updateSearchTrailCue
 } from './ui-renderers.js';
 export {
     buildSearchRankLabel,
@@ -63,16 +69,13 @@ export {
     getSearchResultStrength,
     getSearchResultStrengthLabel,
     getSearchResultCardClasses,
-    clearCompactSearchResultRevealTimers
+    clearCompactSearchResultRevealTimers,
+    updateSearchTrailCue
 };
 
 const SEARCH_STOP_WORDS = new Set([
     'a', 'an', 'and', 'are', 'at', 'by', 'for', 'from', 'in', 'into', 'is', 'me', 'my', 'of', 'on', 'or', 'place', 'places', 'take', 'the', 'to', 'with', 'your'
 ]);
-
-function getSearchContainer() {
-    return document.querySelector('.search-container');
-}
 
 export function setSearchPanelState({
     searching,
@@ -81,84 +84,12 @@ export function setSearchPanelState({
     resultsRendered,
     degraded
 } = {}) {
-    const searchContainer = getSearchContainer();
-    if (!searchContainer) return;
-
-    if (typeof searching === 'boolean') {
-        searchContainer.classList.toggle('searching', searching);
-    }
-    if (typeof focusing === 'boolean') {
-        searchContainer.classList.toggle('focusing', focusing);
-    }
-    if (typeof hasQuery === 'boolean') {
-        searchContainer.classList.toggle('has-query', hasQuery);
-    } else {
+    let effectiveHasQuery = hasQuery;
+    if (typeof effectiveHasQuery !== 'boolean') {
         const searchInput = document.getElementById('search-input');
-        if (searchInput) searchContainer.classList.toggle('has-query', Boolean(searchInput.value.trim()));
+        if (searchInput) effectiveHasQuery = Boolean(searchInput.value.trim());
     }
-    if (typeof resultsRendered === 'boolean') {
-        searchContainer.classList.toggle('results-rendered', resultsRendered);
-    }
-    if (typeof degraded === 'boolean') {
-        searchContainer.classList.toggle('search-degraded', degraded);
-    }
-}
-
-function setMobileSearchSheetMode(mode = 'peek', { userInitiated = false } = {}) {
-    const safeMode = mode === 'expanded' ? 'expanded' : 'peek';
-    document.body.dataset.mobileSearchSheet = safeMode;
-    document.body.dataset.panelSurfaceDetail = safeMode;
-    if (userInitiated) document.body.dataset.mobileSearchSheetUser = 'true';
-
-    if (safeMode === 'peek') {
-        const content = document.getElementById('info-panel-content');
-        if (content) content.scrollTop = 0;
-    }
-
-    const label = document.querySelector('.search-label');
-    if (label) {
-        label.setAttribute('aria-expanded', String(safeMode === 'expanded'));
-        label.setAttribute('aria-label', safeMode === 'expanded' ? 'Collapse search results panel' : 'Expand search results panel');
-    }
-}
-
-function setupMobileSearchSheetToggle() {
-    const searchContainer = getSearchContainer();
-    const label = searchContainer?.querySelector?.('.search-label');
-    if (!searchContainer || !label) return;
-
-    label.setAttribute('role', 'button');
-    label.setAttribute('tabindex', '0');
-    label.setAttribute('aria-controls', 'search-results');
-
-    if (!label.dataset.mobileSheetToggleBound) {
-        label.addEventListener('click', () => {
-            if (!isCompactSearchViewport() || !searchContainer.classList.contains('has-query')) return;
-            const nextMode = document.body.dataset.mobileSearchSheet === 'expanded' ? 'peek' : 'expanded';
-            setMobileSearchSheetMode(nextMode, { userInitiated: true });
-        });
-        label.addEventListener('keydown', (event) => {
-            if (event.key !== 'Enter' && event.key !== ' ') return;
-            if (!isCompactSearchViewport() || !searchContainer.classList.contains('has-query')) return;
-            event.preventDefault();
-            const nextMode = document.body.dataset.mobileSearchSheet === 'expanded' ? 'peek' : 'expanded';
-            setMobileSearchSheetMode(nextMode, { userInitiated: true });
-        });
-        label.dataset.mobileSheetToggleBound = 'true';
-    }
-
-    if (isCompactSearchViewport() && searchContainer.classList.contains('has-query')) {
-        if (!document.body.dataset.mobileSearchSheetUser) setMobileSearchSheetMode('peek');
-        else setMobileSearchSheetMode(document.body.dataset.mobileSearchSheet || 'peek');
-    } else {
-        delete document.body.dataset.mobileSearchSheet;
-        delete document.body.dataset.mobileSearchSheetUser;
-        if (document.body.dataset.panelSurface === 'search' || document.body.dataset.panelSurface === 'focus-search') {
-            document.body.dataset.panelSurfaceDetail = 'none';
-        }
-        label.removeAttribute('aria-expanded');
-        label.removeAttribute('aria-label');
-    }
+    setSearchContainerState({ searching, focusing, hasQuery: effectiveHasQuery, resultsRendered, degraded });
 }
 
 // === Tokenization and Intent ===
@@ -272,7 +203,7 @@ export function renderSearchResultItems(resultsEl, results, renderContext, statu
 
     setExpandedResultState(visibleCount >= total);
     renderResultsMarkup(visible, visibleCount);
-    setupMobileSearchSheetToggle();
+    setupMobileSearchSheetToggle({ isCompactSearchViewport });
     
     if (total > visibleCount) {
         const remaining = total - visibleCount;
@@ -354,7 +285,7 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
 
         focusOnNode(targetIndex, { fromSearchResult: true });
 
-        if (typeof window.syncSearchStatusForFocus === 'function') window.syncSearchStatusForFocus(point, { fromSearchResult: true });
+        adapter_syncSearchStatusForFocus(point, { fromSearchResult: true });
         if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
         if (typeof window.settleCompactSearchFocusCard === 'function') window.settleCompactSearchFocusCard();
 
@@ -416,52 +347,6 @@ export function restoreSearchSummaryStatus() {
     if (liveEl) liveEl.textContent = msg;
 }
 
-// === Search cue update ===
-
-export function updateSearchTrailCue(nextCue = {}) {
-    const cueEl = document.getElementById('search-trail-cue');
-    const kickerEl = document.getElementById('search-trail-cue-kicker');
-    const titleEl = document.getElementById('search-trail-cue-title');
-    const noteEl = document.getElementById('search-trail-cue-note');
-    if (!cueEl || !kickerEl || !titleEl || !noteEl) return;
-
-    if (nextCue.beat === 'idle' || (!nextCue.title && !nextCue.stage)) {
-        cueEl.hidden = true;
-        cueEl.classList.remove('active');
-        return;
-    }
-    
-    // 10/10 Polish: Narrative framing for search lifecycle
-    const query = state.currentSearchSummary?.query || 'the network';
-    const kicker = nextCue.kicker || (nextCue.stage === 'query' ? 'Scanning...' : 'Connection cue');
-    const title = nextCue.title || (
-        nextCue.stage === 'query' ? `Sifting 8,406 records for '${query}' patterns.` :
-        nextCue.stage === 'anchor' ? 'Anchor identified. Trail initialized.' :
-        nextCue.stage === 'explore' ? 'Search opens a trail.' :
-        'Search opens a trail.'
-    );
-    const note = nextCue.note || (
-        nextCue.stage === 'query' ? 'High-fidelity semantic analysis is aligning relevant business clusters.' :
-        nextCue.stage === 'anchor' ? 'The strongest match has become the anchor. You can now center it and explore its neighborhood.' :
-        nextCue.stage === 'explore' ? 'Enter the neighborhood to explore related businesses and discover record-backed connections.' :
-        'The first strong match becomes the anchor; from there you can center it and continue through related businesses.'
-    );
-
-    kickerEl.textContent = kicker;
-    titleEl.textContent = title;
-    noteEl.textContent = note;
-    
-    // Manage stage indicators
-    const stage = nextCue.stage || 'query';
-    cueEl.querySelectorAll('.search-trail-cue-step').forEach(el => {
-        el.classList.toggle('active', el.dataset.cueStage === stage);
-    });
-
-    cueEl.hidden = false;
-    cueEl.classList.add('active');
-    state.searchTrailCueLastRenderedAt = performance.now();
-}
-
 /**
  * Clears focus/search-selection state invalidated when the selected point
  * is no longer visible under the active filters.  All direct writes to
@@ -480,12 +365,12 @@ export function clearSearchRelatedFocusState(context = {}) {
     state.selectedPoint = null;
     state.focusedNode    = null;
 
-    state.navState.mode                      = 'overview';
-    state.navState.focusedIndex              = null;
-    state.navState.trailSeedIndex            = null;
-    state.navState.trailNeighborIndices      = [];
-    state.navState.trailCursor               = -1;
-    state.navState.explorationHistoryIndices = [];
+    // navState.mode, navState.focusedIndex, and explorationHistoryIndices are owned by lifecycle/navigation.
+    // search-state.js (secondary/clear helper). Route through lifecycle's canonical
+    // dispatch to keep ownership auditable and prevent duplicate writer conflicts.
+    adapter_dispatchNavTransition('RESET_FOCUS');
+
+    clearTrailThreadState();
     state.navState.lastTraversalReason       = null;
     state.trailIndices.clear();
 
@@ -626,9 +511,7 @@ export function activateSearchGlow(resultIndices, anchorIndex) {
     state.searchGlowActive = true;
     state.searchGlowIndices = new Set(resultIndices || []);
     state.searchGlowTopIndex = anchorIndex;
-    if (document.body?.dataset) {
-        document.body.dataset.searchGlow = 'active';
-    }
+    setSearchGlowState(true);
     if (typeof window.refreshHoverSemanticOverlay === 'function') window.refreshHoverSemanticOverlay();
 }
 
@@ -636,9 +519,7 @@ export function clearSearchGlow() {
     state.searchGlowActive = false;
     state.searchGlowIndices = new Set();
     state.searchGlowTopIndex = null;
-    if (document.body?.dataset) {
-        document.body.dataset.searchGlow = 'inactive';
-    }
+    setSearchGlowState(false);
 }
 
 // === Restore preview ===
@@ -700,7 +581,7 @@ export function clearSearch() {
     }
 
     adapter_updateUrlState({ q: null, anchor: null, offset: null, record: null }, { reason: 'search-clear' });
-    if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
+    adapter_updateJourneyCompass();
 };
 
 // === Search result state map ===
@@ -762,7 +643,7 @@ export function beginSemanticSearchUiState(resultsEl, statusEl, trimmedQuery) {
     statusEl.textContent = `Searching for businesses related to "${trimmedQuery}"...`;
     updateSearchTrailCue({ stage: 'query' });
     resultsEl.classList.add('searching');
-    if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
+    adapter_updateJourneyCompass();
 }
 
 export function updateSemanticSearchRetryState({ statusEl, trimmedQuery, attempt, nextAttempt, delayMs, retryTotal }) {
@@ -1266,7 +1147,7 @@ export async function search(query, options = {}) {
     setActiveSearchResultRow(resultsEl, anchorIndex);
     adapter_updateUrlState({ offset: null }, { reason: 'search' });
     // Advance the Journey compass from overview → search once results are rendered
-    if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
+    adapter_updateJourneyCompass();
 }
 
 export function resetSemanticGuideUi({ hideTrigger = false } = {}) {
