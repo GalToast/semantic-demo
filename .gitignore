@@ -19,6 +19,10 @@ decompose-and-delegate/
 backups/
 output/
 
+# One-off diagnostic test probes
+tests/debug-*.mjs
+tests/wave*-diag.spec.js
+
 # One-off screenshots and browser captures
 *.png
 *.jpg
