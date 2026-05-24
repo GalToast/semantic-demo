@@ -633,7 +633,7 @@ html body.is-active #selected-details.active {
         min-width: 0;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass.glass-heavy .journey-compass-title {
+    html body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]):not([data-panel-surface^="map-"]) .journey-compass:is(.glass-heavy, [data-density="compact"]) .journey-compass-title {
         font-size: 12px;
         line-height: 1.2;
         white-space: normal;

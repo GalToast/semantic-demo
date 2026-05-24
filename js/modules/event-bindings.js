@@ -262,6 +262,7 @@ function bindSearchControls() {
         // was not present in the shell; no orphan call should be made here.
     });
     const searchInputHandler = (e) => {
+        if (!e?.target) return;
         // Onboarding hint intentionally left unimplemented; quarantine per repair goals.
         clearTimeout(state.searchTimeout);
         updateHasQuery();

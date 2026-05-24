@@ -91,6 +91,7 @@ const VIEWPORTS = {
   // Wave 2
   'mobile-focus-search':  { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
   'mobile-semantic-dive': { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
+  'mobile-semantic-dive-320': { width: 320, height: 740, isMobile: true, deviceScaleFactor: 2 },
   'tablet-semantic-dive': { width: 768, height: 1024, isMobile: true, deviceScaleFactor: 2 },
 };
 
@@ -2397,6 +2398,7 @@ const SURFACES = {
   // Wave 2 — mobile focus-search and semantic-dive geometry
   'mobile-focus-search':   assert_mobile_focus_search,
   'mobile-semantic-dive':  assert_mobile_semantic_dive,
+  'mobile-semantic-dive-320': assert_mobile_semantic_dive,
   'tablet-semantic-dive':  assert_tablet_semantic_dive,
 };
 

@@ -36,7 +36,7 @@
     "qa:contract:loading-overlay": "node tests/surface-contract-check.mjs --surface=loading-overlay",
     "qa:contract:mode-grid": "node tests/surface-contract-check.mjs --surface=mode-grid",
     "qa:contract:phase-a": "node tests/surface-contract-check.mjs --surfaces=info-panel-empty,compass-rail,loading-overlay,mode-grid",
-    "qa:contract:mobile-critical": "node tests/surface-contract-check.mjs --surfaces=mobile-idle,search-chrome,focus-pocket,map-trail,controls,field-node,compass-rail,global-spacing",
+    "qa:contract:mobile-critical": "node tests/surface-contract-check.mjs --surfaces=mobile-idle,search-chrome,focus-pocket,map-trail,controls,field-node,compass-rail,global-spacing,mobile-semantic-dive-320",
     "qa:contract:mobile-chrome": "node tests/surface-contract-check.mjs --surface=search-chrome",
     "qa:contract:filters": "node tests/surface-contract-check.mjs --surface=filters",
     "qa:contract:thread-inspector": "node tests/surface-contract-check.mjs --surface=thread-inspector",
