@@ -2045,14 +2045,16 @@ async function assert_controls(page, ctx) {
 
 // ---------------------------------------------------------------------------
 // search-chrome — tests the search container and its inner elements on mobile.
-// Surface triggers: search container present in idle state.
+// Surface triggers: real query route, which settles into the search panel.
 // Validates: search container present, search input present, input placeholder
 // visible, spinner and clear button exist, semantic-lane-pill present,
 // search-hint present (even if hidden), search-label-text visible, no overflow.
 // ---------------------------------------------------------------------------
 
 async function assert_search_chrome(page, ctx) {
-  await loadAndWait(page, positionalUrl);
+  const url = new URL(positionalUrl);
+  if (!url.searchParams.has('q')) url.searchParams.set('q', 'coffee');
+  await loadAndWait(page, url.toString());
 
   const info = await page.evaluate(() => {
     function textClipped(el) {
@@ -2067,6 +2069,17 @@ async function assert_search_chrome(page, ctx) {
       if (!el) return null;
       const r = el.getBoundingClientRect();
       return r.width >= 43.5 && r.height >= 43.5;
+    }
+
+    function titleContract(el) {
+      if (!el) return null;
+      const s = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return {
+        clipped: el.scrollWidth > r.width + 2 || el.scrollHeight > r.height + 2,
+        whiteSpace: s.whiteSpace,
+        textOverflow: s.textOverflow,
+      };
     }
 
     const results = {};
@@ -2085,6 +2098,9 @@ async function assert_search_chrome(page, ctx) {
     const searchLabel = document.querySelector('.search-label-text');
     results.searchLabelText = searchLabel ? searchLabel.textContent.trim() : null;
     results.searchLabelClipped = searchLabel ? textClipped(searchLabel) : null;
+
+    const compassTitle = document.querySelector('.journey-compass-title');
+    results.compassTitle = titleContract(compassTitle);
 
     const lanePill = document.querySelector('#semantic-lane-pill');
     results.lanePillPresent = lanePill !== null;
@@ -2134,6 +2150,26 @@ async function assert_search_chrome(page, ctx) {
 
   if (info.searchLabelClipped) ctx.fail('search-chrome', 'text-clipping:search-label', 'search label text is clipped');
   else if (info.searchLabelClipped === false) ctx.pass('search-chrome', 'text-clipping:search-label');
+
+  if (info.compassTitle?.clipped) {
+    ctx.fail('search-chrome', 'text-clipping:compass-title', 'search compass title is clipped');
+  } else if (info.compassTitle) {
+    ctx.pass('search-chrome', 'text-clipping:compass-title');
+  } else {
+    ctx.fail('search-chrome', 'dom:journey-compass-title', 'missing .journey-compass-title');
+  }
+
+  if (info.compassTitle?.whiteSpace === 'nowrap') {
+    ctx.fail('search-chrome', 'style:compass-title:white-space', 'search compass title should not be nowrap');
+  } else if (info.compassTitle) {
+    ctx.pass('search-chrome', 'style:compass-title:white-space');
+  }
+
+  if (info.compassTitle?.textOverflow === 'ellipsis') {
+    ctx.fail('search-chrome', 'style:compass-title:text-overflow', 'search compass title should not use ellipsis');
+  } else if (info.compassTitle) {
+    ctx.pass('search-chrome', 'style:compass-title:text-overflow');
+  }
 
   if (info.lanePillPresent) ctx.pass('search-chrome', 'dom:#semantic-lane-pill');
   else ctx.fail('search-chrome', 'dom:#semantic-lane-pill', 'missing #semantic-lane-pill');
