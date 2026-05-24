@@ -309,6 +309,22 @@ html body.is-active #selected-details.active {
         box-sizing: border-box;
     }
 
+    /* Override desktop sticky top: 52px positioning on mobile */
+    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .search-container {
+        position: relative;
+        top: auto;
+        left: 0;
+        right: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        z-index: 14;
+        width: 100%;
+        max-width: 100%;
+    }
+
     /* Sheet Handle */
     html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .info-panel::before {
         content: '';
@@ -485,6 +501,10 @@ html body.is-active #selected-details.active {
         grid-template-columns: minmax(0, 1fr) minmax(154px, 42vw);
         align-items: center;
         gap: 7px;
+        height: auto;
+        min-height: 52px;
+        padding-top: 4px;
+        padding-bottom: 4px;
     }
 
     html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-copy,
@@ -494,20 +514,21 @@ html body.is-active #selected-details.active {
         min-width: 0;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-title,
-    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-title,
-    html body[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass-title,
-    html body[data-focus-panel-mode="field-node"] .journey-compass-title {
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass .journey-compass-title,
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass .journey-compass-title,
+    html body.is-active[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass .journey-compass-title,
+    html body.is-active[data-focus-panel-mode="field-node"] .journey-compass .journey-compass-title {
         line-height: 1.2;
         white-space: normal;
         overflow: visible;
         text-overflow: clip;
+        width: 100%;
     }
 
     html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-actions,
     html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-actions,
-    html body[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass-actions,
-    html body[data-focus-panel-mode="field-node"] .journey-compass-actions {
+    html body.is-active[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass-actions,
+    html body.is-active[data-focus-panel-mode="field-node"] .journey-compass-actions {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
         gap: 6px;
@@ -517,10 +538,10 @@ html body.is-active #selected-details.active {
 
     html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-action,
     html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-action,
-    html body[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass-action,
-    html body[data-focus-panel-mode="field-node"] .journey-compass-action {
+    html body.is-active[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass-action,
+    html body.is-active[data-focus-panel-mode="field-node"] .journey-compass-action {
         width: auto;
-        min-width: 0;
+        min-width: 44px;
         height: 44px;
         min-height: 44px;
         padding: 0 7px;

@@ -348,9 +348,19 @@
         display: none;
     }
 
+    html body.is-active:is([data-panel-surface="focus-search"]):not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] #focus-stage .focus-stage-actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    html body.is-active:is([data-panel-surface="focus-search"]):not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] #focus-stage .focus-stage-card {
+        overflow: visible;
+    }
+
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-dive-btn {
-        min-height: 38px;
-        height: 38px;
+        min-height: 44px;
+        height: 44px;
         margin-bottom: 4px;
     }
 
@@ -661,11 +671,21 @@
 
     html body.is-active[data-panel-surface="focus"] .focus-stage-note,
     html body.is-active[data-panel-surface="focus-search"] .focus-stage-note,
-    html body.is-active[data-panel-surface="focus"] .focus-stage-actions,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-actions,
+    html body.is-active[data-panel-surface="focus"]:not([data-focus-panel-mode="field-node"]) .focus-stage-actions,
+    html body.is-active[data-panel-surface="focus-search"]:not([data-focus-panel-mode="field-node"]) .focus-stage-actions,
     html body.is-active[data-panel-surface="focus"] .focus-stage-journey.active,
     html body.is-active[data-panel-surface="focus-search"] .focus-stage-journey.active {
         display: none;
+    }
+
+    html body.is-active:not([data-panel-surface^="map-"])[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] #focus-stage .focus-stage-actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] #focus-stage .focus-stage-card {
+        overflow: visible;
     }
 
     html body.is-active[data-panel-surface="focus"] .focus-stage-neighbors.active,

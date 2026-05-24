@@ -196,23 +196,26 @@ html body[data-panel-surface] .control-btn {
     height: var(--mobile-touch-min, 44px);
     min-width: var(--mobile-touch-min, 44px);
     min-height: var(--mobile-touch-min, 44px);
-    background: rgba(15, 15, 25, 0.85);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    color: rgba(255, 255, 255, 0.6);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: var(--glass-border);
+    border-radius: var(--glass-radius-action);
+    color: var(--color-text-secondary);
     cursor: pointer;
     font-size: 16px;
-    transition: all 0.2s ease;
+    transition: var(--transition-premium);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .control-btn:hover {
-    background: rgba(78, 205, 196, 0.15);
-    color: #4ecdc4;
-    transform: scale(1.05);
+    background: rgba(var(--color-primary-rgb), 0.12);
+    border-color: rgba(var(--color-primary-rgb), 0.4);
+    color: var(--color-primary);
+    transform: translateY(-1px) scale(1.06);
+    box-shadow: var(--shadow-glass-glow);
 }
 
 /* share-toggle: position/sizing handled by layout_base.css for desktop.

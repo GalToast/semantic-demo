@@ -99,9 +99,7 @@
     }
 
     html body.is-active[data-panel-surface="idle"] .demo-starters,
-    html body.is-active[data-panel-surface="search"] .demo-starters,
-    html body.is-active[data-panel-surface="focus-search"] .demo-starters,
-    html body.is-active:has(.search-container.has-query) .demo-starters {
+    html body.is-active[data-panel-surface="idle"]:has(.search-container.has-query) .demo-starters {
         order: 2;
         margin: 0;
         padding: 0;
@@ -109,6 +107,7 @@
         background: transparent;
         box-shadow: none;
         display: flex;
+        flex-direction: column;
         visibility: visible;
         height: auto;
         max-height: none;
@@ -445,6 +444,7 @@
     }
 
     html body.is-active[data-panel-surface^="map-"] .search-container {
+        position: absolute;
         display: block; /* selector specificity already exceeds layout_base:455-485 */
         visibility: visible; /* no competing visibility rule in layout/strands */
         pointer-events: auto;
@@ -588,10 +588,13 @@
         display: flex;
     }
 
+    html body.is-active[data-panel-surface="idle"] #btn-launch {
+        display: inline-flex;
+    }
     html body.is-active[data-panel-surface="search"] #btn-launch,
     html body.is-active[data-panel-surface="focus-search"] #btn-launch,
     html body.is-active:has(.search-container.has-query) #btn-launch {
-        display: inline-flex;
+        display: none;
     }
 
 } /* end @media state ownership */

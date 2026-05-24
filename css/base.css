@@ -7,24 +7,25 @@
 /* Glassmorphism System */
 :root {
     /* Mycelium Glass System - Unified UI Core */
-    --glass-blur: 16px;
-    --glass-blur-heavy: 24px;
+    --glass-blur: 20px;
+    --glass-blur-heavy: 28px;
 
-    --glass-bg: linear-gradient(165deg, rgba(11, 22, 34, 0.85) 0%, rgba(5, 10, 16, 0.94) 100%);
-    --glass-bg-deep: linear-gradient(180deg, rgba(8, 17, 26, 0.96) 0%, rgba(3, 7, 12, 0.99) 100%);
-    --glass-bg-accent: radial-gradient(circle at 100% 0%, rgba(82, 229, 215, 0.16), transparent 50%);
+    --glass-bg: linear-gradient(165deg, rgba(8, 18, 30, 0.72) 0%, rgba(3, 7, 12, 0.88) 100%);
+    --glass-bg-deep: linear-gradient(180deg, rgba(6, 13, 20, 0.90) 0%, rgba(2, 5, 8, 0.96) 100%);
+    --glass-bg-accent: radial-gradient(circle at 100% 0%, rgba(82, 229, 215, 0.20), transparent 60%);
 
-    --glass-border: 1px solid rgba(255, 255, 255, 0.09);
-    --glass-border-glow: 1px solid rgba(82, 229, 215, 0.3);
-    --glass-border-muted: 1px solid rgba(255, 255, 255, 0.05);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.075);
+    --glass-border-glow: 1px solid rgba(82, 229, 215, 0.35);
+    --glass-border-muted: 1px solid rgba(255, 255, 255, 0.04);
 
-    --glass-radius-panel: 16px;
-    --glass-radius-card: 12px;
+    --glass-radius-panel: 18px;
+    --glass-radius-card: 14px;
     --glass-radius-action: 10px;
     --glass-radius-pill: 999px;
 
-    --shadow-glass: 0 20px 52px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    --shadow-glass-glow: 0 12px 36px rgba(82, 229, 215, 0.16), 0 0 20px rgba(82, 229, 215, 0.06);
+    --shadow-glass: 0 24px 64px rgba(0, 0, 0, 0.54), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    --shadow-glass-glow: 0 16px 48px rgba(82, 229, 215, 0.20), 0 0 24px rgba(82, 229, 215, 0.08);
+    --shadow-premium-glow: 0 20px 56px rgba(82, 229, 215, 0.25), 0 0 30px rgba(82, 229, 215, 0.12);
 
     --font-display: 'Bricolage Grotesque', sans-serif;
     --font-body: 'Nunito Sans', sans-serif;
@@ -57,10 +58,10 @@
     --color-surface-panel: rgba(12, 17, 26, 0.93);
     --color-border-subtle: rgba(255, 255, 255, 0.08);
     --color-border-muted: rgba(255, 255, 255, 0.1);
-    --color-text-strong: rgba(255, 255, 255, 0.96);
-    --color-text-primary: rgba(255, 255, 255, 0.92);
-    --color-text-secondary: rgba(255, 255, 255, 0.76);
-    --color-text-muted: rgba(255, 255, 255, 0.54);
+    --color-text-strong: rgba(255, 255, 255, 0.98);
+    --color-text-primary: rgba(255, 255, 255, 0.94);
+    --color-text-secondary: rgba(255, 255, 255, 0.78);
+    --color-text-muted: rgba(255, 255, 255, 0.58);
     --space-1: 4px;
     --space-2: 8px;
     --space-3: 12px;
@@ -76,21 +77,22 @@
     --z-modal: 190;
 
     /* Shared panel elevation and glass treatment */
-    --shadow-card: 0 10px 36px rgba(0, 0, 0, 0.28);
+    --shadow-card: 0 12px 40px rgba(0, 0, 0, 0.32);
     --shadow-panel: var(--shadow-glass);
-    --shadow-focus-ring: 0 0 0 3px rgba(82, 229, 215, 0.35);
+    --shadow-focus-ring: 0 0 0 3px rgba(82, 229, 215, 0.38);
     --panel-glass-bg: var(--glass-bg);
-    --panel-glass-border: rgba(255, 255, 255, 0.12);
+    --panel-glass-border: rgba(255, 255, 255, 0.14);
 
-    --line-tight: 1.12;
-    --line-normal: 1.38;
-    --line-relaxed: 1.54;
+    --line-tight: 1.15;
+    --line-normal: 1.40;
+    --line-relaxed: 1.58;
 
-    --transition-premium: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-    --glass-blur-light: 8px;
-    --glass-blur-medium: 16px;
-    --glass-blur-heavy: 24px;
-    --glass-blur-ultra: 32px;
+    --transition-premium: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-spring: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    --glass-blur-light: 10px;
+    --glass-blur-medium: 20px;
+    --glass-blur-heavy: 28px;
+    --glass-blur-ultra: 44px;
 
     /* Short-Landscape Layout Heights */
     --landscape-info-panel-idle-max-height: min(calc(100vh - 86px), 178px);

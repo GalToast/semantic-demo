@@ -50,7 +50,7 @@
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.02em;
-    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    transition: var(--transition-spring);
     overflow: hidden;
 }
 
@@ -66,7 +66,7 @@
 
 .view-toggle button:hover {
     color: var(--color-text-strong);
-    transform: translateY(-1px);
+    transform: translateY(-2px) scale(1.05);
 }
 
 .view-toggle button:hover::before {
@@ -197,7 +197,7 @@
     color: rgba(174, 238, 231, 0.72);
     font-size: 10px;
     font-weight: 800;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
 }
 
@@ -212,6 +212,10 @@
     color: rgba(230, 239, 237, 0.66);
     font-size: 12px;
     line-height: var(--line-normal);
+}
+
+body[data-active-view="map"] .controls {
+    display: none !important;
 }
 
 body[data-active-view="map"] .view-handoff {

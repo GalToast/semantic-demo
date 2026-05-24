@@ -1311,7 +1311,7 @@ body[data-panel-surface="map-focus-search"] .exploration-card:hover,
     border: var(--glass-border-muted);
     border-radius: var(--glass-radius-card);
     background: rgba(255, 255, 255, 0.02);
-    transition: all 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     opacity: 0;
     transform: translateY(7px) scale(0.994);
     animation: searchResultEnter 0.32s cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
@@ -1325,8 +1325,8 @@ body[data-panel-surface="map-focus-search"] .exploration-card:hover,
 .search-result-item.active-preview {
     background: rgba(255, 255, 255, 0.06);
     border: var(--glass-border);
-    transform: translateY(-1.5px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: var(--shadow-glass-glow);
 }
 
 .search-result-item:focus-visible {

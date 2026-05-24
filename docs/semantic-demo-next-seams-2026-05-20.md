@@ -2,6 +2,21 @@
 
 Status: active audit note
 
+## Wave56 (2026-05-23) — Small Dewindowing Cleanup
+
+- `event-bindings.js:64–65`: Fixed unguarded `window.traverseNeighbor(-1/1)` calls
+  in `bindFocusControls()` (btn-focus-prev/next). Added `typeof` guard to match the
+  pattern already used at lines 632–633. Verification: `node --check` + both contracts pass.
+- `setSemanticDiveMode` duplicate export in `journey.js:1089` — passthrough wrapper; lifecycle.js
+  is canonical owner per `state-ownership-contract.mjs` CONTRACT 4. HD-3 fully resolved:
+  two contracts (`semantic-dive-active-owner-contract.mjs`, `state-ownership-contract.mjs`
+  CONTRACT 4) already prove lifecycle is sole canonical owner and journey is a delegating
+  alias only. No new contract needed — see `tmp/wave56-duplicate-semantic-dive-owner-audit.md`.
+- `__semanticFocusCueProbe` unguarded call at `journey.js:2433` — intentional fail-fast dev probe;
+  correct fix (sequencing in journey-webgl.js) is larger refactor, deferred.
+
+See `tmp/wave56-dewindowing-small-cleanups.md` for full report.
+
 ## Current Follow-Up Workers
 
 MiniMax workers launched from the 2026-05-20 follow-up pass:
@@ -11,6 +26,30 @@ MiniMax workers launched from the 2026-05-20 follow-up pass:
 - `semantic-reduced-motion-interrupt-followup-1779287627752`: owns reduced-motion interruption/recovery proof.
 
 Do not edit their owned files until their diffs are reviewed, unless coordinating through switchboard.
+
+## Wave52 Follow-Up (2026-05-22)
+
+Wave50/Wave51 verified coverage update — new specs and findings from the current lane.
+
+### New Verified Specs (Wave52)
+
+| Spec | File | Score |
+|------|------|-------|
+| Rapid re-selection (A→B, A→B→A, canvas click race) | `3d-rapid-re-selection-contract.spec.js` | **6/6** |
+| HiDPI click accuracy (DPR=2, desktop/mobile/short-landscape) | `3d-hidpi-click-accuracy.spec.js` | **6/6** |
+| Ghost graph visibility (opacity, size, projection, spore layering) | `3d-focus-ghost-graph-visibility.spec.js` | **7/7** |
+| Short-landscape thread quality | `3d-thread-orchestration-quality.spec.js` | **1/1** |
+| Escape-from-dive (state transition, DOM dataset reset) | `3d-state-transition-integrity.spec.js` | **2/2** |
+
+### Runner Isolation Finding
+Runner isolation finding: `3d-focus-neighborhood` runner is sequential and confirmed not causal for remaining failures. Still failing: `3d-overlay-hit-stealing.spec.js`, `3d-hover-affordance.spec.js` — timeout/state-convergence issues, not runner artifacts.
+
+### Manifest Groups
+Targeted groups added: `3d-focus-ghost-graph-visibility`, `3d-hidpi-click-accuracy`, `3d-rapid-re-selection`.
+
+### Docs Updated
+- `semantic-demo-qa-scripts.md` — manifest group table updated with new Wave52 groups, quality/lifecycle counts corrected.
+- `semantic-demo-state-transition-truth-table.md` — HD-5, HD-6 added; verified results table added.
 
 ## Larger Seams Found
 

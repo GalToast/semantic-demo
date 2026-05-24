@@ -150,51 +150,26 @@ window.setSemanticDiveMode = function (enabled) {
 | `focusedNode` | `index` | `index` | Unchanged |
 | `selectedPoint` | `null` | `object` | Set during map handoff |
 | `navState.focusedIndex` | `index` | `index` | |
-| `trailDepth` | `2` | `1` | **BUG**: `syncSemanticDiveUi` forces `semanticDiveMode=false` which sets `trailDepth=1` |
-| `semanticDiveMode` | `true` | `false` | **BUG**: force-cleared by `syncSemanticDiveUi` when `canDive=false` (currentView!=='galaxy') |
+| `trailDepth` | `2` | `2` | **FIXED**: dive state preserved across view switch |
+| `semanticDiveMode` | `true` | `true` | **FIXED**: preserved (no longer force-cleared by syncSemanticDiveUi) |
 | `navState.mode` | `trail` | `trail` | |
 | `currentSearchSummary` | `{query…}` | `{query…}` | |
 | `activeView` | `galaxy` | `map` | |
 | `graphContext` | `focus` | `idle` | Map branch forces graphContext='idle' |
 | `mapContext` | `idle` | `focus-search` | hasFocus + hasSearchIntent in map |
 | `panelSurface` | `semantic-dive` | `map-focus-search` | |
-| `semanticDive` | `active` | `inactive` | Map branch forces 'inactive' (lifecycle.js:1134) |
+| `semanticDive` | `active` | `inactive` | dataset reflects canDive=false; UI correctly hidden |
 
 **Trigger**: Click `#btn-map` OR call `window.switchView('map')`  
 **Owner API**: `window.switchView('map')`  
 **Key code path**:
 1. `switchView('map')` sets `state.currentView = 'map'`
 2. calls `refreshCompositionState()`
-3. `refreshCompositionState()` at line 1147 calls `syncSemanticDiveUi()`
-4. `syncSemanticDiveUi()` (semantic-dive-ui.js:47-50):
-   ```javascript
-   if (state.semanticDiveMode && !canDive) {
-       state.semanticDiveMode = false;  // <-- FORCE CLEARED
-       if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
-   }
-   ```
-5. `state.semanticDiveMode = false` triggers the setter (state.js:396-398) → `state.trailDepth = 0` (setter maps `false → trailDepth=0`); **BUT** the setter also maps `false → trailDepth=0`, NOT to 1. Wait — actually `false → trailDepth = 0` per state.js. Let me re-check.
-
-**ACTUAL BUG DETAIL** (from 3d-state-transition-integrity.spec.js:381-388 and lifecycle.js:47-50):
-
-The bug is that `syncSemanticDiveUi` force-clears `semanticDiveMode` when `canDive` becomes false (view !== galaxy), which cascades:
-
-1. `switchView('map')` → `refreshCompositionState()` → `syncSemanticDiveUi()` called at lifecycle.js:1147 AND 1199 (both galaxy and map branches)
-2. `syncSemanticDiveUi()` sees `canDive = currentView==='galaxy' && hasFocus` → false (currentView is now 'map')
-3. It sets `state.semanticDiveMode = false` (semantic-dive-ui.js:48)
-4. The `semanticDiveMode` setter maps `false → state.trailDepth = 0` (state.js:397: `else state.trailDepth = 0`)
-5. But the contract test at 3d-state-transition-integrity.spec.js:385-388 shows `trailDepth` ends up at `1` (not 0), which means `setTrailDepth` may have been called with 1 during the map handoff (possibly by `focusOnNode` → lifecycle.js:925 calling `setTrailDepth(1)`)
-
-**INVARIANT STILL HOLDS**: `semanticDiveMode === (trailDepth === 2)` remains consistent — when map is switched, both are false/0, so the invariant is not violated. **However**, the user EXPECTS `semanticDiveMode=true` to persist when switching views — the semantic dive state should be preserved, not force-cleared.
-
-**Contract test confirmed** (3d-state-transition-integrity.spec.js:380-388):
-```
-// NOTE: switchView('map') → refreshCompositionState() → syncSemanticDiveUi() calls
-// setSemanticDiveMode(false) when canDive becomes false (because currentView !== 'galaxy').
-// This is a known side-effect bug: semanticDiveMode should NOT be cleared merely by
-// switching views while in dive mode.
-expect(snap.semanticDiveMode, 'semanticDiveMode matches trailDepth').toBe(snap.trailDepth === 2);
-```
+3. `refreshCompositionState()` calls `syncSemanticDiveUi()` in both galaxy and map branches
+4. `syncSemanticDiveUi()` (semantic-dive-ui.js:47-52): removed the force-clear block.
+   The UI is gated on `active = semanticDiveMode && canDive`, so in map view controls
+   are correctly hidden without destroying dive state.
+5. `semanticDiveMode=true` and `trailDepth=2` persist across the view switch.
 
 ---
 
@@ -268,12 +243,12 @@ Clicking a search result currently triggers `setTrailDepth(1)` as a side effect 
 **Decision needed**: Should clicking a search result set `trailDepth=1`? This is a product call — the current behavior is intentional but may not match UX intent.  
 **Verified by**: 3d-state-transition-integrity.spec.js:266-269, lifecycle.js:924-926
 
-### HD-2: semanticDiveMode force-cleared on switchView to map
-`syncSemanticDiveUi()` (semantic-dive-ui.js:47-50) force-clears `semanticDiveMode` when `currentView !== 'galaxy'`. This is a known side-effect bug (documented in 3d-state-transition-integrity.spec.js:381-384).  
-**Code behavior**: `setSemanticDiveMode(false)` → trailDepth=0/1 → user loses dive state when switching to map.  
-**Desired behavior**: Semantic dive state should persist across view switches — the user should be able to switch back to galaxy and resume the dive.  
-**Decision needed**: Should semanticDiveMode be preserved across view switches? A proper fix would require `syncSemanticDiveUi()` to NOT force-clear on canDive becoming false, or to store/restore the dive state.  
-**Verified by**: 3d-state-transition-integrity.spec.js:381-388, semantic-dive-ui.js:47-50, lifecycle.js:1147
+### HD-2: semanticDiveMode preservation across view switches — FIXED
+`syncSemanticDiveUi()` (semantic-dive-ui.js:47-50) was force-clearing `semanticDiveMode` when `currentView !== 'galaxy'`. This caused the user to lose dive state when switching to map.
+**Fix** (semantic-dive-ui.js): Removed the `if (!canDive && state.semanticDiveMode)` block that force-cleared semanticDiveMode. The UI is gated on `active = semanticDiveMode && canDive`, so in map view controls are correctly hidden without destroying dive state.
+**Result**: `semanticDiveMode=true` now persists across galaxy/map switches. User can switch back to galaxy and resume the dive without re-entering from scratch.
+**Verified by**: 3d-state-transition-integrity.spec.js Phase 5 now asserts `semanticDiveMode=true` after map switch (previously the NOTE comment acknowledged the bug; now it asserts the fix).
+**Preserved invariant**: `semanticDiveMode === (trailDepth === 2)` remains true because the setter no longer fires on view switches.
 
 ### HD-3: navState.mode='trail' set by setSemanticDiveMode (journey.js) vs lifecycle.js
 Two `setSemanticDiveMode` implementations exist:
@@ -295,7 +270,7 @@ Semantic dive panel surface is only rendered when `currentView === 'galaxy'`. In
 | T1 overview→search | `tests/search-state-surface-contract.mjs` | graphContext=search, panelSurface=search, semanticDive=inactive |
 | T2 search→focus | `tests/focus-transition-contract.mjs` + `tests/state-transition-contract.mjs` | focusedNode set, graphContext=focus-search, panelSurface=focus-search, trailState=active |
 | T3 focus→dive | `tests/semantic-dive-reverse-contract.mjs` | semanticDiveMode=true, trailDepth=2, panelSurface=semantic-dive |
-| T4 dive→map | `tests/3d-state-transition-integrity.spec.js` (Phase 5) | **BUG: semanticDiveMode force-cleared** — add explicit FAILING test documenting desired behavior |
+| T4 dive→map | `tests/3d-state-transition-integrity.spec.js` (Phase 5) | **FIXED**: semanticDiveMode=true and trailDepth=2 preserved across view switch |
 | T5 reset | `tests/reset-experience-state.spec.js` + `tests/live-reset-proof-wave2.spec.js` | all fields null/0/false, dataset=idle |
 
 ### Tests that can be deleted/merged
@@ -311,6 +286,24 @@ Semantic dive panel surface is only rendered when `currentView === 'galaxy'`. In
 1. **HD-1 (trailDepth on search result click)**: Should clicking a result auto-activate Trail chip (trailDepth=1)? Current code: yes. UX intent: unclear — the chip "Trail" label and "Step Inside" interaction suggest depth=1 is a separate affordance.
 2. **HD-2 (semanticDiveMode across view switches)**: Should dive state survive switching to map and back? Current code: no. User expectation: likely yes — switching view should not lose dive state.
 3. **HD-3 (duplicate setSemanticDiveMode)**: Two implementations exist. Which is canonical? Journey.js 1070 appears to be the older one; lifecycle.js 2549 is what window.setSemanticDiveMode points to.
+4. **HD-5 (overlay-hit-stealing / hover-affordance timeouts)**: Both `3d-overlay-hit-stealing.spec.js` and `3d-hover-affordance.spec.js` fail with timeout/state-convergence issues. `3d-focus-neighborhood` runner is sequential and confirmed innocent — these are genuine interaction/timeout issues in the contracts themselves.
+
+### HD-6: 3d-focus-neighborhood runner isolation — confirmed not causal
+The `3d-focus-neighborhood` runner (sequential contract order) has been investigated and **ruled out** as the cause of remaining `3d-overlay-hit-stealing` and `3d-hover-affordance` failures. Both remaining failures exhibit timeout/state-convergence behavior in the contracts themselves, not a runner-serialization artifact.
+
+---
+
+## Verified Contract Results (Wave50 / Wave51)
+
+| Contract | Spec file | Result |
+|----------|-----------|--------|
+| Rapid re-selection (A→B, A→B→A, canvas click race) | `3d-rapid-re-selection-contract.spec.js` | **6/6 verified** |
+| HiDPI click accuracy (DPR=2, desktop/mobile/short-landscape) | `3d-hidpi-click-accuracy.spec.js` | **6/6 verified** |
+| Ghost graph visibility (opacity, size, projection, spore layering) | `3d-focus-ghost-graph-visibility.spec.js` | **7/7 verified** |
+| Short-landscape thread quality | `3d-thread-orchestration-quality.spec.js` | **1/1 verified** |
+| Escape-from-dive (state transition, DOM dataset reset) | `3d-state-transition-integrity.spec.js` | **2/2 verified** |
+
+**Manifest groups for new Wave52 specs**: `3d-focus-ghost-graph-visibility`, `3d-hidpi-click-accuracy`, `3d-rapid-re-selection`
 
 ---
 
@@ -321,7 +314,7 @@ Semantic dive panel surface is only rendered when `currentView === 'galaxy'`. In
 | `tests/3d-state-transition-integrity.spec.js` | Phase 5 documents the switchView bug; Phase 3 documents trailDepth=1 side effect |
 | `tests/state-transition-contract.mjs` | Phases 1-6 define expected state per transition; edges 1-6 |
 | `js/state.js:393-398` | semanticDiveMode getter: `trailDepth === 2`; setter: `true→2, false→0` |
-| `js/modules/semantic-dive-ui.js:44-198` | syncSemanticDiveUi — **contains bug**: force-clears semanticDiveMode when canDive=false |
+| `js/modules/semantic-dive-ui.js:44-198` | syncSemanticDiveUi — **FIXED**: no longer force-clears semanticDiveMode on canDive=false |
 | `js/modules/lifecycle.js:705-784` | resetExplorationFocus + resetStateBeforeUrlRestore |
 | `js/modules/lifecycle.js:1071-1085` | derivePanelSurface |
 | `js/modules/lifecycle.js:1093-1205` | refreshCompositionState galaxy+map branches |

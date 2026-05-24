@@ -48,15 +48,33 @@ Runs the pinned ordered contract suite from `tests/run-all-contracts.js`; `tests
 | `test:contract:navigation` | `navigation` | journey-compass-state, journey-thread-inspector, journey-window-surface, journey-event-bindings, trail-review-focus, pathfinding (6 contracts) |
 | `test:contract:scene` | `scene` | scene-reveal, scene-atmosphere, three-visual-polish, reduced-motion-transition, reduced-motion-interruption (5 contracts) |
 | `test:contract:smoke` | `smoke` | weather-lifecycle, weather-surface-ownership, camera-auto-rotate-settle, scene-reveal, loading-ui, motion-state (6 contracts, sub-1s total) - fast smoke, no browser needed |
-| `test:contract:mobile-critical` | `mobile-critical` | semantic-dive-ui-surface, search-state-surface, focus-pocket-motion, focus-pocket-composition, micro-demo, demo-init-seam, reset-callsite-routing, demo-camera-retirement, cluster-labels, window-bridge-gaps, loading-ui (11 contracts) |
-| `test:contract:lifecycle` | `lifecycle` | lifecycle-composition, state-transition, focus-semantic-state-boundary, demo-init-seam, reset-callsite-routing, semantic-guide-payload, demo-camera-retirement, demo-state-sync, weather-lifecycle, window-bridge-gaps (10 contracts) |
-| `test:contract:motion` | `motion` | camera-controls-motion, focus-pocket-motion, motion-state, camera-auto-rotate-settle, semantic-dive-reverse (5 contracts) |
+| `test:contract:mobile-critical` | `mobile-critical` | semantic-dive-ui-surface, search-state-surface, focus-pocket-motion, focus-pocket-composition, micro-demo, demo-init-seam, reset-callsite-routing, demo-camera-retirement, cluster-labels, window-bridge-gaps, loading-ui, short-landscape-layout, critical-visual-layout-regression (13 contracts) |
+| `test:contract:lifecycle` | `lifecycle` | lifecycle-composition, state-transition, focus-semantic-state-boundary, demo-init-seam, reset-callsite-routing, semantic-guide-payload, demo-camera-retirement, demo-state-sync, weather-lifecycle, window-bridge-gaps, residual-window-bridge-inventory, lifecycle-semantic-guide-residual-bridge, legend-ui-ownership, semantic-dive-ui-dewindowing, semantic-dive-active-owner, state-ownership, filter-ownership, cluster-filter-city-filter-side-effect, keyboard-reset-ownership, url-state-search-dewindowing, cluster-filter-dewindowing, search-state-ui-adapter, url-state-navigation-dewindowing, focus-selection-owner, focus-pocket-state-owner, bootstrap-window-export, lifecycle-search-panel-ownership, search-lifecycle-adapter (28 contracts) |
+| `test:contract:motion` | `motion` | camera-controls-motion, focus-pocket-motion, motion-state, camera-auto-rotate-settle, semantic-dive-reverse, focus-transition (6 contracts) |
 | `test:contract:browser` | `browser` | focus-stage-render, info-panel-collapsed-render, mode-chip-state-render, weather-widget-render, connection-analysis-render-state, search-peek-expanded-render (6 contracts, 5-20s each) - Playwright browser launch required |
 | `test:contract:render` | `render` | Same contracts as `browser` - backward-compatible alias; prefer `test:contract:browser` for new scripts |
-| `test:contract:quality` | `quality` | css-manifest-contract, ui-quality-contract, micro-surface-interactions, surface-redundancy (4 contracts; may write tmp reports and fails on UI quality regressions) |
-| `test:contract:full` | `full` | All 38 pinned contracts in manifest-defined order |
+| `test:contract:quality` | `quality` | css-manifest-contract, focus-stage-css-ownership-contract, ui-quality-contract, micro-surface-interactions, surface-redundancy, aria-sync-contract, focus-trap-contract, persistence-contract, disposal-hygiene-contract.spec.js (9 contracts; may write tmp reports and fails on UI quality regressions) |
+| `test:contract:full` | `full` | All pinned contracts in manifest-defined order |
 | `test:contract:phase-a` | phase-a surfaces | info-panel-empty, compass-rail, loading-overlay, mode-grid |
 | `test:contract:phase-b` | phase-b surfaces | filters, thread-inspector, controls, search-chrome, info-panel-populated |
+| `test:contract:3d-focus-neighborhood` | `3d-focus-neighborhood` | focus-pocket-selectability, overlay-hit-stealing, hover-affordance, thread-orchestration-quality, camera-orbit-resilience, focus-neighborhood-geometry, focus-neighborhood-interaction (7 contracts; runner is sequential — not the cause of remaining failures) |
+| `test:contract:3d-focus-neighborhood-geometry` | `3d-focus-neighborhood-geometry` | focus-neighborhood-geometry (1 contract) |
+| `test:contract:3d-focus-neighborhood-interaction` | `3d-focus-neighborhood-interaction` | focus-neighborhood-interaction (1 contract) |
+| `test:contract:3d-focus-desktop-click` | `3d-focus-desktop-click` | 3d-focus-desktop-click.spec.js (3 tests) — strict desktop-only lane; desktop hover/click accuracy at 1440×900 without mobile-frustum soft-skips; owns deprecation markers on duplicate desktop tests in `3d-focus-neighborhood-interaction.spec.js` |
+| `test:contract:3d-focus-ghost-graph-visibility` | `3d-focus-ghost-graph-visibility` | 3d-focus-ghost-graph-visibility (1 contract; **verified 7/7**) |
+| `test:contract:3d-hidpi-click-accuracy` | `3d-hidpi-click-accuracy` | 3d-hidpi-click-accuracy (1 contract; **verified 6/6**) |
+| `test:contract:3d-focus-pocket-geometry` | `3d-focus-pocket-geometry` | focus-pocket-selectability, focus-neighborhood-geometry (2 contracts) |
+| `test:contract:3d-hover-click-interaction` | `3d-hover-click-interaction` | hover-affordance, real-pointer-playthrough, hidpi-click-accuracy, node-hit-accuracy, focus-neighborhood-interaction (5 contracts) |
+| `test:contract:3d-rapid-re-selection` | `3d-rapid-re-selection` | 3d-rapid-re-selection-contract (1 contract; **verified 6/6**) |
+| `test:contract:3d-responsive-ui` | `3d-responsive-ui` | camera-orbit-resilience, viewport-dpr-resilience, touch-parity (3 contracts) |
+| `test:contract:3d-visual-quality` | `3d-visual-quality` | cluster-readability, thread-orchestration-quality (2 contracts; thread-orchestration **verified 1/1**) |
+| `test:contract:3d-resilience` | `3d-resilience` | camera-orbit-resilience, touch-parity, viewport-dpr-resilience, overlay-hit-stealing (4 contracts) |
+| `test:contract:3d-state-data` | `3d-state-data` | state-transition-integrity, data-edge-cases (2 contracts; state-transition-integrity covers Escape-from-dive path **2/2**) |
+| `test:contract:3d-accessibility-fallback-performance` | `3d-accessibility-fallback-performance` | accessibility-fallback-performance (1 contract) |
+| `test:contract:3d-smoke` | `3d-smoke` | node-hit-accuracy, hover-affordance, focus-pocket-selectability (3 contracts) |
+| `test:contract:3d-regression` | `3d-regression` | focus-neighborhood-geometry, focus-ghost-graph-visibility, focus-neighborhood-interaction, overlay-hit-stealing, hover-affordance, thread-orchestration-quality (6 contracts) |
+| `test:contract:3d-slow` | `3d-slow` | cluster-readability, thread-orchestration-quality, accessibility-fallback-performance (3 contracts) |
+| `test:contract:3d-full` | `3d-full` | all 3d-*.spec.js contracts (16 contracts) |
 
 **Fast vs slow split:** `smoke` (sub-second, no browser) is the fast lane. `browser`/`render` (5-20s each, Playwright required) is the slow lane. Use `--list` on the runner to preview any group before running: `node tests/run-all-contracts.js --list`.
 

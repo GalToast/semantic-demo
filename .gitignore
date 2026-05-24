@@ -1,5 +1,6 @@
 node_modules/
 dist/*.map
+dist/meta.json
 
 # Local/runtime evidence
 tmp/
