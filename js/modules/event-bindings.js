@@ -263,10 +263,11 @@ function bindSearchControls() {
     });
     const searchInputHandler = (e) => {
         if (!e?.target) return;
+        const query = e.target.value;
         // Onboarding hint intentionally left unimplemented; quarantine per repair goals.
         clearTimeout(state.searchTimeout);
         updateHasQuery();
-        state.searchTimeout = setTimeout(() => { search(e.target.value); }, 300);
+        state.searchTimeout = setTimeout(() => { search(query); }, 300);
     };
     if (searchInput._onInputHandler) searchInput.removeEventListener('input', searchInput._onInputHandler);
     searchInput._onInputHandler = searchInputHandler;

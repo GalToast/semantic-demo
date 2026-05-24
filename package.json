@@ -53,6 +53,7 @@
     "qa:weather-widget": "node tests/weather-widget-render-contract.mjs",
     "qa:focus-stage-render": "node tests/focus-stage-render-contract.mjs",
     "qa:info-panel-collapsed": "node tests/info-panel-collapsed-render-contract.mjs",
+    "qa:mobile-visual": "node tests/mobile-visual-qa-contract.mjs",
     "qa:reduced-motion-scene": "node tests/reduced-motion-scene-diagnostic.mjs",
     "qa:reduced-motion-transition": "node tests/reduced-motion-transition-contract.mjs",
     "qa:mode-chip": "node tests/mode-chip-state-render-contract.mjs",
