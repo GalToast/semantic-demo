@@ -76,9 +76,9 @@
         line-height: 1.1;
         letter-spacing: 0;
         color: rgba(246, 255, 252, 0.96);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
     }
 
     /* Compass actions cell */

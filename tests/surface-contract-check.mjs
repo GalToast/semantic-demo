@@ -2652,6 +2652,17 @@ async function assert_mobile_focus_search(page, ctx) {
       return area > viewportArea * 0.45;
     }
 
+    function titleContract(el) {
+      if (!el) return null;
+      const s = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return {
+        clipped: el.scrollWidth > r.width + 2 || el.scrollHeight > r.height + 2,
+        whiteSpace: s.whiteSpace,
+        textOverflow: s.textOverflow,
+      };
+    }
+
     const results = {};
 
     const controls = document.querySelector('.controls');
@@ -2670,6 +2681,22 @@ async function assert_mobile_focus_search(page, ctx) {
     results.resultsPanelVisible = isRenderedAndVisible(resultsPanel);
 
     results.controlsBlocksViewport = controls ? hasBlockingOverlay(controls) : null;
+
+    const compassTitle = document.querySelector('.journey-compass-title');
+    results.compassTitle = titleContract(compassTitle);
+
+    const compass = document.querySelector('.journey-compass');
+    results.compassPresent = compass !== null;
+    if (compass) {
+      results.compassOverflows = compass.scrollWidth > window.innerWidth + 1;
+    }
+
+    const primaryActions = Array.from(document.querySelectorAll('.journey-compass-action.primary')).filter(isRenderedAndVisible);
+    results.primaryActionsCount = primaryActions.length;
+    results.primaryActionsTouchOk = primaryActions.map((btn) => {
+      const r = btn.getBoundingClientRect();
+      return { ok: r.width >= 43.5 && r.height >= 43.5, w: Math.round(r.width * 100) / 100, h: Math.round(r.height * 100) / 100 };
+    });
 
     results.overflowX = document.documentElement.scrollWidth > window.innerWidth;
 
@@ -2696,6 +2723,26 @@ async function assert_mobile_focus_search(page, ctx) {
   if (info.resultsPanelVisible) ctx.pass('mobile-focus-search', 'visibility:search-results-panel');
   else ctx.fail('mobile-focus-search', 'visibility:search-results-panel', 'search results panel should be visible in focus-search');
 
+  if (info.compassTitle?.clipped) {
+    ctx.fail('mobile-focus-search', 'text-clipping:compass-title', 'compass title text is clipped');
+  } else if (info.compassTitle) {
+    ctx.pass('mobile-focus-search', 'text-clipping:compass-title');
+  } else {
+    ctx.fail('mobile-focus-search', 'dom:journey-compass-title', 'missing .journey-compass-title');
+  }
+
+  if (info.compassTitle?.whiteSpace === 'nowrap') {
+    ctx.fail('mobile-focus-search', 'style:compass-title:white-space', 'compass title should not be nowrap');
+  } else if (info.compassTitle) {
+    ctx.pass('mobile-focus-search', 'style:compass-title:white-space');
+  }
+
+  if (info.compassTitle?.textOverflow === 'ellipsis') {
+    ctx.fail('mobile-focus-search', 'style:compass-title:text-overflow', 'compass title should not use ellipsis');
+  } else if (info.compassTitle) {
+    ctx.pass('mobile-focus-search', 'style:compass-title:text-overflow');
+  }
+
   if (info.controlsBlocksViewport === false || info.controlsBlocksViewport === null) {
     ctx.pass('mobile-focus-search', 'overlay:controls-rail:not-blocking');
   } else if (info.controlsBlocksViewport) {
@@ -2704,6 +2751,27 @@ async function assert_mobile_focus_search(page, ctx) {
 
   if (info.overflowX) ctx.fail('mobile-focus-search', 'viewport-crowding:overflow-x', 'horizontal overflow in mobile focus-search');
   else ctx.pass('mobile-focus-search', 'viewport-crowding:overflow-x');
+
+  if (info.compassPresent) {
+    if (info.compassOverflows) {
+      ctx.fail('mobile-focus-search', 'layout:compass-overflow', '.journey-compass overflows horizontally');
+    } else {
+      ctx.pass('mobile-focus-search', 'layout:compass-no-overflow');
+    }
+  } else {
+    ctx.fail('mobile-focus-search', 'dom:journey-compass', '.journey-compass not found');
+  }
+
+  if (info.primaryActionsCount > 0) {
+    const badTargets = info.primaryActionsTouchOk.filter((t) => !t.ok);
+    if (badTargets.length > 0) {
+      ctx.fail('mobile-focus-search', 'touch-target:compass-action-primary', `.journey-compass-action.primary < 44px: ${JSON.stringify(badTargets)}`);
+    } else {
+      ctx.pass('mobile-focus-search', 'touch-target:compass-action-primary');
+    }
+  } else {
+    ctx.fail('mobile-focus-search', 'dom:compass-action-primary', '.journey-compass-action.primary not found');
+  }
 
   return info;
 }
@@ -2755,6 +2823,17 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
       return r.width > 0 && r.height > 0;
     }
 
+    function titleContract(el) {
+      if (!el) return null;
+      const s = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return {
+        clipped: el.scrollWidth > r.width + 2 || el.scrollHeight > r.height + 2,
+        whiteSpace: s.whiteSpace,
+        textOverflow: s.textOverflow,
+      };
+    }
+
     const results = {};
 
     const searchContainer = document.querySelector('.search-container');
@@ -2794,6 +2873,9 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
     const insideControls = document.querySelector('#focus-stage-inside-controls, .focus-stage-inside-controls');
     results.insideControlsPresent = insideControls !== null;
     results.insideControlsVisible = isRenderedAndVisible(insideControls);
+
+    const compassTitle = document.querySelector('.journey-compass-title');
+    results.compassTitle = titleContract(compassTitle);
 
     results.overflowX = document.documentElement.scrollWidth > window.innerWidth;
 
@@ -2851,6 +2933,26 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
 
   if (info.insideControlsVisible) ctx.pass(surfaceName, 'visibility:inside-controls');
   else ctx.fail(surfaceName, 'visibility:inside-controls', 'inside controls should be visible in semantic-dive');
+
+  if (info.compassTitle?.clipped) {
+    ctx.fail(surfaceName, 'text-clipping:compass-title', 'compass title text is clipped');
+  } else if (info.compassTitle) {
+    ctx.pass(surfaceName, 'text-clipping:compass-title');
+  } else {
+    ctx.fail(surfaceName, 'dom:journey-compass-title', 'missing .journey-compass-title');
+  }
+
+  if (info.compassTitle?.whiteSpace === 'nowrap') {
+    ctx.fail(surfaceName, 'style:compass-title:white-space', 'compass title should not be nowrap');
+  } else if (info.compassTitle) {
+    ctx.pass(surfaceName, 'style:compass-title:white-space');
+  }
+
+  if (info.compassTitle?.textOverflow === 'ellipsis') {
+    ctx.fail(surfaceName, 'style:compass-title:text-overflow', 'compass title should not use ellipsis');
+  } else if (info.compassTitle) {
+    ctx.pass(surfaceName, 'style:compass-title:text-overflow');
+  }
 
   if (info.overflowX) ctx.fail(surfaceName, 'viewport-crowding:overflow-x', `horizontal overflow in ${surfaceName}`);
   else ctx.pass(surfaceName, 'viewport-crowding:overflow-x');

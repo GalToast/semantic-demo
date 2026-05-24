@@ -953,6 +953,9 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
 
     body[data-panel-surface="focus-search"] .journey-compass-title {
         font-size: 12px;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
     }
 
     body[data-panel-surface="focus-search"] .journey-compass-actions {

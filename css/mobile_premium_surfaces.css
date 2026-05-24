@@ -111,9 +111,16 @@ html body.is-active #selected-details.active {
         line-height: 1;
         letter-spacing: -0.015em;
         color: #fff;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass-title,
+    html body.is-active[data-panel-surface="semantic-dive"]:not([data-panel-surface^="map-"]) .journey-compass-title {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
     }
 
     html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-actions {
@@ -639,7 +646,9 @@ html body.is-active #selected-details.active {
         display: none;
     }
 
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass-action.primary,
     html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass.glass-heavy .journey-compass-action.primary {
+        flex-basis: 44px;
         min-width: 44px;
         min-height: 44px;
     }
