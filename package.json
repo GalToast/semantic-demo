@@ -30,6 +30,7 @@
     "qa:contract:map-trail": "node tests/surface-contract-check.mjs --surface=map-trail",
     "qa:contract:focus-pocket": "node tests/surface-contract-check.mjs --surface=focus-pocket",
     "qa:contract:field-node": "node tests/surface-contract-check.mjs --surface=field-node",
+    "qa:contract:real-route": "node tests/real-route-contract.mjs",
     "qa:contract:info-panel-empty": "node tests/surface-contract-check.mjs --surface=info-panel-empty",
     "qa:contract:compass-rail": "node tests/surface-contract-check.mjs --surface=compass-rail",
     "qa:contract:loading-overlay": "node tests/surface-contract-check.mjs --surface=loading-overlay",
