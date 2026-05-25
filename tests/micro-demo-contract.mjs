@@ -11,7 +11,7 @@
  *   4. cancel() fires demo-cancelled and transitions to DONE
  *   5. complete() fires demo-complete and writes localStorage
  *   6. demo=force bypasses the seen guard
- *   7. init() is idempotent (no double-init)
+ *   7. init() is idempotent unless demo=force intentionally re-arms it
  *   8. guardNotSeen blocks when localStorage seen flag is set
  *   9. sessionStorage guard prevents double-fire
  *   10. micro-demo bridge listeners are removed after completion/cancel
@@ -230,6 +230,7 @@ async function clearState() {
   _sessionStorage.clear();
   _timers.clear();
   _listeners.clear();
+  _fakeCanvas._elListeners.clear();
   _dispatchedEvents.length = 0;
   _timerId = 0;
   _clockNow = Date.now();
@@ -305,6 +306,29 @@ await test('init() can only be called once (idempotency guard)', async () => {
   const firstResult = demoController.isRunning();
   demoController.init(); // second call must be no-op
   assertEqual(demoController.isRunning(), firstResult, 'second init does not change state');
+});
+
+await test('demo=force re-init clears active listeners before re-arming', async () => {
+  globalThis.window.location.search = '?demo=force';
+  demoController.init();
+  await Promise.resolve();
+
+  assertEqual((_listeners.get('demo-complete') || []).length, 1, 'demo-complete listener registered once');
+  assertEqual((_listeners.get('demo-cancelled') || []).length, 1, 'demo-cancelled listener registered once');
+  assertEqual((_listeners.get('keydown') || []).length, 1, 'keydown listener registered once');
+  assertEqual((_fakeCanvas._elListeners.get('click') || []).length, 1, 'canvas click listener registered once');
+
+  demoController.init();
+  await Promise.resolve();
+
+  assertEqual((_listeners.get('demo-complete') || []).length, 1, 'demo-complete listener remains singular after force re-init');
+  assertEqual((_listeners.get('demo-cancelled') || []).length, 1, 'demo-cancelled listener remains singular after force re-init');
+  assertEqual((_listeners.get('keydown') || []).length, 1, 'keydown listener remains singular after force re-init');
+  assertEqual((_fakeCanvas._elListeners.get('click') || []).length, 1, 'canvas click listener remains singular after force re-init');
+
+  demoController.complete();
+  assertEqual((_listeners.get('demo-complete') || []).length, 0, 'demo-complete listener removed after forced run completes');
+  assertEqual((_listeners.get('demo-cancelled') || []).length, 0, 'demo-cancelled listener removed after forced run completes');
 });
 
 // Contract 4: demo=force bypasses seen guard

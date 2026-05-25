@@ -27,6 +27,7 @@ const State = Object.freeze({
 
 let _state = State.IDLE;
 let _initCalled = false;        // prevents double-init from concurrent callers
+let _initRunToken = 0;          // invalidates stale scene-ready callbacks
 let _demoTimer = null;          // setTimeout handle for scene-ready fallback
 let _cancelled = false;         // true when user cancels before completion
 let _microDemoCompleteHandler = null;
@@ -257,16 +258,25 @@ function teardown() {
 
 /**
  * Run all sync guards + async sceneReady. Start demo if eligible.
- * Idempotent: safe to call more than once — only the first call takes effect.
+ * Idempotent by default; demo=force intentionally resets and re-arms the demo.
  */
 export function init() {
-  // Idempotency guard — prevent double-init from concurrent scene-ready + fallback
-  if (_initCalled) return;
-  _initCalled = true;
-
   // Check force param first — bypasses all guards
   const params = new URLSearchParams(window.location.search);
   const forceDemo = params.has('demo') && params.get('demo') === 'force';
+
+  if (forceDemo) {
+    _initCalled = false;
+    _state = State.IDLE;
+    _cancelled = false;
+    clearDemoTimers();
+    clearDemoListeners();
+  }
+
+  // Idempotency guard — prevent double-init from concurrent scene-ready + fallback
+  if (_initCalled) return;
+  _initCalled = true;
+  const initRunToken = ++_initRunToken;
 
   if (!forceDemo) {
     if (!guardNotSeen())    { console.warn('[demo] blocked — already seen'); return; }
@@ -280,6 +290,7 @@ export function init() {
   // Async scene-ready guard — resolves when overlay is hidden or on timeout
   waitForSceneReady()
     .then((source) => {
+      if (initRunToken !== _initRunToken) return;
       if (_state === State.ELIGIBLE) {
         if (source === 'timeout') {
           console.warn('[demo] scene-ready timeout, forcing start');
