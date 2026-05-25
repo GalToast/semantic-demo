@@ -49,11 +49,13 @@ test.describe('UI Renderers Module Validation', () => {
     await page.keyboard.press('Enter');
     await page.locator('.search-result-item').first().click();
 
-    // 2. Verify meta strip content
+    // 2. Verify focus metadata is visible, while the legacy selected card renderer
+    // still keeps its cached metadata text current for panel/map surfaces.
+    const focusMeta = page.locator('#focus-stage-meta');
+    await expect(focusMeta).toBeVisible({ timeout: 15000 });
+    await expect(focusMeta).toContainText('Conroe');
+
     const metaStrip = page.locator('#selected-meta-strip');
-    // Allow time for the .focus-stage CSS opacity transition (0.28s) to complete
-    await page.waitForTimeout(500); 
-    await expect(metaStrip).toBeVisible({ timeout: 15000 });
     const text = await metaStrip.textContent();
     // 1845 Solutions is in Conroe
     expect(text).toContain('Conroe');

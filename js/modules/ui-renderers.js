@@ -415,7 +415,8 @@ export function renderSelectedMetaStrip(point) {
     const el = document.getElementById('selected-meta-strip');
     if (!el) return;
     if (state.currentView === 'map') { el.style.display = 'none'; return; }
-    if (!point) return;
+    if (!point) { el.textContent = ''; el.style.display = 'none'; return; }
+    el.style.display = '';
     const rawCity = point.city ? point.city.trim() : null;
     const rawStatus = point.status ? point.status.trim() : null;
     const cityPart = rawCity === '-' || rawCity === '' ? null : rawCity;
