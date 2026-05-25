@@ -173,7 +173,7 @@ const KNOWN_FALLBACKS = new Set([
   'updateLegendGuideState', 'updateTraversalUi', 'restoreLegendCollapsedPanel',
   // journey.js guards
   'syncArrivalHandoffOverlay', 'disposeArrivalHandoffOverlay', 'syncInspectedStrandOverlay',
-  'syncSemanticDiveUi', 'focusOnPoint', 'updateJourneyCompass',
+  'syncSemanticDiveUi', 'updateJourneyCompass',
   'previewInsideNextThread', 'applyLocalNeighborhoodFocus', 'setSemanticDiveMode',
   'applyClusterUiAccent', 'getInterestingBusinessNote', 'buildSelectedMatchNarrative',
   'hasColdDegradedSemanticFallback', 'revealSelectedBusinessCard', 'describeThreadLensForPoint',
@@ -505,7 +505,7 @@ function testBareCallBaseline() {
   console.log('  OK — baseline recorded (informational only, no failure)');
 }
 
-// ── TEST 6 — Runtime callers migrated off retained focusOnPoint bridge ───────
+// ── TEST 6 — Runtime callers migrated off retired focusOnPoint bridge ───────
 
 function testFocusOnPointRuntimeCallersDewindowed() {
   console.log('\n[TEST 6] Runtime callers do not use window.focusOnPoint');
@@ -525,8 +525,8 @@ function testFocusOnPointRuntimeCallersDewindowed() {
 
   const lifecycleSrc = read('lifecycle');
   assert(
-    /window\.focusOnPoint\s*=\s*focusOnPoint/.test(lifecycleSrc),
-    'lifecycle.js should retain the temporary window.focusOnPoint compatibility bridge'
+    !/window\.focusOnPoint\b/.test(lifecycleSrc),
+    'lifecycle.js should not retain the retired window.focusOnPoint compatibility bridge'
   );
 
   assert(
@@ -534,7 +534,7 @@ function testFocusOnPointRuntimeCallersDewindowed() {
     `Runtime focusOnPoint callers must use direct imports, not the window bridge:\n${problems.join('\n')}`
   );
 
-  console.log('  OK — journey/map-state/thread-inspector use direct focusOnPoint imports; lifecycle bridge is compatibility-only');
+  console.log('  OK — journey/map-state/thread-inspector use direct focusOnPoint imports; lifecycle bridge is retired');
 }
 
 // ── TEST 7 — Journey uses direct arrival handoff imports ─────────────────────

@@ -27,7 +27,7 @@
 | `window.resetStateBeforeUrlRestore` | lifecycle.js:2495 | (used internally by lifecycle) | URL restore state bleed |
 | `window.refreshCompositionState` | app.js/lifecycle.js compatibility bridge retained | search-state runtime callers dewindowed 2026-05-25 through `search-lifecycle-adapter.js`; app/lifecycle bridge remains for bootstrap/tests | Temporary test/external compatibility shim |
 | `window.syncSemanticDiveUi` | lifecycle.js compatibility bridge retained 2026-05-25 | Runtime source callers dewindowed 2026-05-25; camera-controls, journey-compass-controller, journey, and thread-inspector import `syncSemanticDiveUi` directly | Retained temporary compatibility shim (tests / external callers only) |
-| `window.focusOnPoint` | lifecycle.js compatibility bridge retained 2026-05-25 | Runtime source callers dewindowed 2026-05-25; map-state, journey, and thread-inspector import `focusOnPoint` directly from lifecycle.js | Temporary test/external compatibility shim |
+| `window.focusOnPoint` | Retired 2026-05-25 | Runtime source callers dewindowed 2026-05-25; map-state, journey, and thread-inspector import `focusOnPoint` directly from lifecycle.js | No compatibility bridge remains |
 | `window.getInterestingBusinessNote` | lifecycle.js:2507 | journey.js:1212/1453 | Empty card notes |
 | `window.buildSelectedMatchNarrative` | lifecycle.js:2545 | journey.js:1214/1455 | Empty match narrative |
 | `window.setSemanticDiveMode` (journey.js) | journey.js:3096 (overrides lifecycle.js) | journey.js:61 | Overwrites lifecycle shim |
@@ -185,5 +185,5 @@ if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi
 - **journey.js**: Added `focusOnPoint` to the lifecycle import and replaced the map-mode traversal window guard with a direct `focusOnPoint()` call.
 - **map-state.js**: Added `focusOnPoint` to the lifecycle import and replaced the marker click window guard with a direct `focusOnPoint()` call.
 - **thread-inspector.js**: Added `focusOnPoint` to the lifecycle import and removed the redundant local window wrapper.
-- **lifecycle.js**: Retains `window.focusOnPoint = focusOnPoint` as a temporary compatibility bridge for external/test callers.
-- **Verification**: `rg -n "window\.focusOnPoint" js/modules` should show only the retained lifecycle bridge.
+- **lifecycle.js**: Removed the temporary `window.focusOnPoint = focusOnPoint` compatibility bridge after runtime callers were direct-imported.
+- **Verification**: `rg -n "window\.focusOnPoint" js/modules` should show 0 hits.

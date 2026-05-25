@@ -141,7 +141,7 @@ recordSemanticLaneSnapshot(partial?: object): Snapshot
 ## Cross-Cutting Observations
 
 ### Tight Coupling: journey.js <-> lifecycle.js via window.*
-`window.updateJourneyCompass`, `window.showExperienceToast`, runtime `window.syncSemanticDiveUi` callers, runtime `window.focusOnPoint` callers, journey arrival handoff callers, and search-state `window.refreshCompositionState` callers were dewindowed 2026-05-25; callers now use direct named imports or leaf adapters from their owner modules. `window.syncSemanticDiveUi`, `window.focusOnPoint`, `window.refreshCompositionState`, and arrival handoff globals remain as temporary compatibility bridges for tests/external callers. To extract `journey.js` cleanly, the remaining bridge calls must become proper named imports.
+`window.updateJourneyCompass`, `window.showExperienceToast`, runtime `window.syncSemanticDiveUi` callers, runtime `window.focusOnPoint` callers, journey arrival handoff callers, and search-state `window.refreshCompositionState` callers were dewindowed 2026-05-25; callers now use direct named imports or leaf adapters from their owner modules. The `window.focusOnPoint` compatibility bridge was retired 2026-05-25. `window.syncSemanticDiveUi`, `window.refreshCompositionState`, and arrival handoff globals remain as temporary compatibility bridges for tests/external callers. To extract `journey.js` cleanly, the remaining bridge calls must become proper named imports.
 
 ### Auto-init Pattern in journey.js (line 66)
 `initJourneyState()` runs on import - a side-effect that prevents journey.js from being a pure module. Moving this to a factory function `createJourneyModule(state)` or requiring callers to invoke `initJourneyState()` first is the extraction prerequisite.

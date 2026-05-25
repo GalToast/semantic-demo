@@ -738,7 +738,6 @@ if (typeof window !== 'undefined') {
     window.showSummaryCard = showSummaryCard;
     window.hideSummaryCard = hideSummaryCard;
     window.requestSemanticGuide = requestSemanticGuide;
-    window.focusOnPoint = focusOnPoint;
     window.resetNodePositions = resetNodePositions;
     window.syncSearchStatusForFocus = syncSearchStatusForFocus;
     window.recordSemanticLaneSnapshot = recordSemanticLaneSnapshot;
