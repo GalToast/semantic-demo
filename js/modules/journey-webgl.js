@@ -411,7 +411,8 @@ export function resetFocusThreadDiagnostics(reason = 'inactive') {
 
 export function removeFocusSemanticOverlay() {
     if (!state.focusSemanticLines) return;
-    if (state.myceliumGroup) state.myceliumGroup.remove(state.focusSemanticLines);
+    const parent = state.focusSemanticLines.parent || state.myceliumGroup || state.scene;
+    if (parent) parent.remove(state.focusSemanticLines);
     state.focusSemanticLines.geometry?.dispose?.();
     state.focusSemanticLines.material?.dispose?.();
     state.focusSemanticLines = null;
@@ -552,7 +553,8 @@ export function refreshFocusSemanticOverlay() {
     removeFocusSemanticOverlay();
     resetFocusThreadDiagnostics('refreshing');
 
-    if (!state.myceliumGroup) {
+    const focusLineParent = state.myceliumGroup || state.scene;
+    if (!focusLineParent) {
         resetFocusThreadDiagnostics('no-mycelium');
         return;
     }
@@ -733,6 +735,7 @@ export function refreshFocusSemanticOverlay() {
         segmentCount: state.focusSemanticConnectionPairs.length,
         vertexCount: positions.length / 3,
         overlayNodeCount: overlayIndices.length,
+        parentKind: state.myceliumGroup ? 'mycelium' : 'scene',
         buildMs: performance.now() - startedAt
     };
     state.focusFrameDiagnostics = {
@@ -751,13 +754,14 @@ export function refreshFocusSemanticOverlay() {
         segmentCount: state.focusSemanticConnectionPairs.length,
         vertexCount: positions.length / 3,
         overlayNodeCount: overlayIndices.length,
+        parentKind: state.myceliumGroup ? 'mycelium' : 'scene',
         nextCueSegments,
         denseBundleMode: overlayIndices.length >= 6,
         buildMs: performance.now() - startedAt,
         avgFrameMs: 0,
         maxFrameMs: 0
     };
-    state.myceliumGroup.add(state.focusSemanticLines);
+    focusLineParent.add(state.focusSemanticLines);
 }
 
 export function updateFocusSemanticOverlayPositions(now = performance.now()) {

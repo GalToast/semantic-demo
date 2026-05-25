@@ -158,7 +158,10 @@ test.describe('focus semantic Line2 shader ownership', () => {
         hasLineDistances: typeof line.computeLineDistances === 'function',
         segmentCount: line.userData?.segmentCount ?? 0,
         focusThreadSegments: probe.focusThreadSegments,
+        nextIndex: probe.nextIndex,
         nextCueSegments: probe.nextCueSegments,
+        hasMyceliumGroup: Boolean(window.state.myceliumGroup),
+        parentKind: line.userData?.parentKind,
         semanticScore: shader.uniforms.semanticScore.value,
         reducedMotion: shader.uniforms.reducedMotion.value,
         time: shader.uniforms.time.value,
@@ -173,7 +176,12 @@ test.describe('focus semantic Line2 shader ownership', () => {
     expect(before.hasLineDistances, 'focus semantic line should be a Line2-style object').toBe(true);
     expect(before.segmentCount, 'focus semantic line should publish edge segments').toBeGreaterThan(0);
     expect(before.focusThreadSegments, 'semantic focus cue probe should report rendered line segments').toBeGreaterThan(0);
-    expect(before.nextCueSegments, 'semantic focus cue probe should report next-cue segments').toBeGreaterThan(0);
+    if (Number.isFinite(before.nextIndex)) {
+      expect(before.nextCueSegments, 'semantic focus cue probe should report next-cue segments when a next stop is available').toBeGreaterThan(0);
+    } else {
+      expect(before.nextCueSegments, 'semantic focus cue probe should not fabricate next-cue segments without an available next stop').toBe(0);
+    }
+    expect(before.parentKind, 'focus line should record the active parent owner').toBe(before.hasMyceliumGroup ? 'mycelium' : 'scene');
     expect(before.semanticScore, 'semanticScore uniform should be a normalized positive value').toBeGreaterThan(0);
     expect(before.semanticScore, 'semanticScore uniform should stay bounded').toBeLessThanOrEqual(1);
     expect(before.materialShaderIsOwnObject, 'assertion must target focusSemanticLines.material.userData.shader').toBe(true);
@@ -213,6 +221,38 @@ test.describe('focus semantic Line2 shader ownership', () => {
     expect(visualDelta.changedPixels, 'hiding focusSemanticLines should materially change rendered scene pixels').toBeGreaterThan(160);
     expect(visualDelta.strongPixels, 'focusSemanticLines should contribute strong visible pixels, not only invisible state').toBeGreaterThan(24);
     expect(visualDelta.meanDelta, 'focusSemanticLines should have measurable visual contrast in the scene band').toBeGreaterThan(0.08);
+
+    const fallbackParent = await page.evaluate(() => {
+      const originalGroup = window.state.myceliumGroup;
+      const scene = window.state.scene;
+      let result = null;
+      try {
+        window.state.myceliumGroup = null;
+        window.refreshFocusSemanticOverlay?.();
+        const line = window.state.focusSemanticLines;
+        const builtInScene = Boolean(line && line.parent === scene && scene?.children?.includes(line));
+        const parentKind = line?.userData?.parentKind || null;
+        window.state.myceliumGroup = originalGroup;
+        window.refreshFocusSemanticOverlay?.();
+        const restoredLine = window.state.focusSemanticLines;
+        result = {
+          builtInScene,
+          parentKind,
+          removedFromScene: Boolean(line && !scene?.children?.includes(line)),
+          restoredParentKind: restoredLine?.userData?.parentKind || null,
+          expectedRestoredParentKind: originalGroup ? 'mycelium' : 'scene'
+        };
+      } finally {
+        window.state.myceliumGroup = originalGroup;
+        window.refreshFocusSemanticOverlay?.();
+      }
+      return result;
+    });
+
+    expect(fallbackParent.builtInScene, 'focus line should fall back to scene ownership while mycelium group is not ready').toBe(true);
+    expect(fallbackParent.parentKind, 'fallback focus line should record scene parent ownership').toBe('scene');
+    expect(fallbackParent.removedFromScene, 'refreshFocusSemanticOverlay should remove fallback-owned scene lines before rebuilding').toBe(true);
+    expect(fallbackParent.restoredParentKind, 'focus line should use the available owner after rebuild').toBe(fallbackParent.expectedRestoredParentKind);
     expect(shaderErrors, 'focus semantic line shader should compile without WebGLProgram errors').toEqual([]);
   });
 });
