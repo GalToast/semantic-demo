@@ -5,7 +5,7 @@
 | Script | Surfaces tested | Viewport |
 |--------|----------------|----------|
 | `qa:contract:all` | all 17 surfaces | mixed |
-| `qa:contract:mobile-critical` | mobile-idle, search-chrome, focus-pocket, map-trail, controls, field-node, compass-rail, global-spacing | 390x844 mobile |
+| `qa:contract:mobile-critical` | mobile-idle, search-chrome, focus-pocket, map-trail, controls, field-node, compass-rail, global-spacing, mobile-semantic-dive-320 | 390x844 mobile + 320px semantic-dive geometry |
 | `qa:contract:mobile-chrome` | search-chrome | 390x844 mobile |
 | `qa:contract:phase-a` | info-panel-empty, compass-rail, loading-overlay, mode-grid | mixed |
 | `qa:contract:phase-b` | filters, thread-inspector, controls, search-chrome, info-panel-populated | mixed |
@@ -96,3 +96,6 @@ All scripts target `http://127.0.0.1:8795/vector-explorer-polished.html` by defa
 | `qa:ui-renderers-seam` | `tests/ui-renderers-validation.spec.js` — Playwright UI renderers module validation |
 | `qa:semantic-guide-fallback` | `tests/semantic-guide-fallback-contract.spec.js` — Playwright contract verifying showSemanticThreadsDetail() error path populates both story-text and source elements on API failure |
 | `qa:live-reset` | `tests/live-reset-clear-demo-proof.spec.js` — Playwright proof for clear-search click/keyboard behavior and Escape during forced demo |
+| `qa:live-step-inside` | `tests/live-step-inside-url-body-state-sync.spec.js` — Playwright proof for Step Inside URL/body state sync |
+| `qa:live-reset-interaction` | `tests/live-ui-reset-interaction.spec.js` — Playwright proof for live reset interaction state cleanup |
+| `qa:canvas-hit-test` | `tests/canvas-hit-test-interaction.spec.js` — Playwright proof for canvas hit-test interaction wiring |

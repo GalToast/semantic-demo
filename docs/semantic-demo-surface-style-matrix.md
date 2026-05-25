@@ -59,5 +59,6 @@ Some surface contracts do not yet have a dedicated visual audit state id. They r
 | Surface | Current coverage | Gap |
 |---|---|---|
 | `global-spacing` | `npm run qa:contract:global-spacing` | Intentional aggregate layout-health contract covering overflow, overlap, panel proportions, touch targets, and text clipping across surfaces; no single screenshot is authoritative. |
+| `mobile-semantic-dive-320` | Included in `npm run qa:contract:mobile-critical`; direct run: `node tests/surface-contract-check.mjs --surface=mobile-semantic-dive-320` | Contract-only 320px semantic-dive geometry check; no dedicated screenshot state yet. |
 
 If any of these surfaces become a visible design-review target, add a visual audit state or add a second matrix section that maps contract-only surfaces to token families and proof requirements.

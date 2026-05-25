@@ -1268,7 +1268,7 @@ body[data-panel-surface="semantic-dive"]::after {
 #journey-compass-note.discovery-active {
     color: #ffd66b;
     font-style: italic;
-    background: rgba(255, 214, 107, 0.04);
+    background: rgba(255, 214, 107, 0.12);
     padding: 4px 8px;
     border-radius: 6px;
     margin-top: 4px;
