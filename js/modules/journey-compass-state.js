@@ -1,6 +1,7 @@
 import { state } from '../state.js';
 import { formatBusinessName, describeCluster } from '../utils.js';
 import { getRouteEmbodimentIndices } from './map-state.js';
+import { getNextExploreCandidateForIndex } from './journey-thread-model.js';
 
 export function getFocusedJourneyPoint() {
     if (state.selectedPoint) return state.selectedPoint;
@@ -37,8 +38,16 @@ export function getJourneyCompassState() {
     }
 
     if (insideActive) {
-        const focusIndex = window.getCurrentTrailFocusIndex ? window.getCurrentTrailFocusIndex() : state.navState?.focusedIndex;
-        const nextCandidate = window.getNextExploreCandidateForIndex ? window.getNextExploreCandidateForIndex(focusIndex) : null;
+        const focusIndex = Number.isFinite(state.navState?.focusedIndex)
+            ? state.navState.focusedIndex
+            : state.focusedNode;
+        const getNextWalkCandidate = typeof window.getNextWalkCandidateForIndex === 'function'
+            ? window.getNextWalkCandidateForIndex
+            : null;
+        const nextCandidate = getNextExploreCandidateForIndex(focusIndex, getNextWalkCandidate, {
+            requireSemantic: state.currentView === 'galaxy',
+            requireOnCanvas: state.currentView === 'galaxy'
+        });
         const nextPoint = nextCandidate ? state.points[nextCandidate.index] : null;
         const clusterName = focusedPoint ? describeCluster(focusedPoint.cluster) : 'Neighborhood';
 

@@ -8,6 +8,35 @@ export function normalizeLeadId(value) {
     return String(value);
 }
 
+/**
+ * Try-semantic-then-fallback wrapper over getNextWalkCandidateForIndex.
+ * Exists as a pure helper so callers can share the same candidate fallback
+ * without importing journey.js and creating lifecycle cycles.
+ *
+ * @param {number|null} currentIndex
+ * @param {function} getNextWalkCandidateFn - getNextWalkCandidateForIndex from journey.js
+ * @param {{ requireSemantic?: boolean, requireOnCanvas?: boolean }} options
+ * @returns {object|null}
+ */
+export function getNextExploreCandidateForIndex(currentIndex, getNextWalkCandidateFn, options = {}) {
+    if (typeof getNextWalkCandidateFn !== 'function') return null;
+    return (
+        getNextWalkCandidateFn(currentIndex, {
+            requireSemantic: true,
+            requireOnCanvas: true,
+            commitNeighborhood: false,
+            ...options
+        }) ||
+        getNextWalkCandidateFn(currentIndex, {
+            requireSemantic: false,
+            requireOnCanvas: false,
+            commitNeighborhood: false,
+            ...options
+        }) ||
+        null
+    );
+}
+
 export function buildSpatialGrid(cellSize = 0.12) {
     const grid = new Map();
     for (let i = 0; i < state.originalPositions.length; i++) {

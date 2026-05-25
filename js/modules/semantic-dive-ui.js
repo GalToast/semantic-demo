@@ -1,5 +1,6 @@
 import { state } from '../state.js';
 import { cleanOptionalValue, formatBusinessName, isCompactFocusStageViewport } from '../utils.js';
+import { getNextExploreCandidateForIndex } from './journey-thread-model.js';
 
 function truncateDiveStatusCopy(text, max = 74) {
     const clean = cleanOptionalValue(text);
@@ -76,24 +77,16 @@ export function syncSemanticDiveUi() {
     if (document.body) {
         document.body.dataset.insideWalkState = active ? (journeyPhase || 'idle') : 'idle';
     }
-    const currentFocusIndex = typeof window.getCurrentTrailFocusIndex === 'function'
-        ? window.getCurrentTrailFocusIndex()
+    const currentFocusIndex = Number.isFinite(state.navState?.focusedIndex)
+        ? state.navState.focusedIndex
         : state.focusedNode;
-    const getNextExploreCandidate =
-        typeof window.getNextExploreCandidateForIndex === 'function'
-            ? window.getNextExploreCandidateForIndex
-            : typeof window.getNextWalkCandidateForIndex === 'function'
-                ? window.getNextWalkCandidateForIndex
-                : null;
-    const nextExploreCandidate = active && getNextExploreCandidate
-        ? getNextExploreCandidate(currentFocusIndex, {
+    const getNextWalkCandidate = typeof window.getNextWalkCandidateForIndex === 'function'
+        ? window.getNextWalkCandidateForIndex
+        : null;
+    const nextExploreCandidate = active
+        ? getNextExploreCandidateForIndex(currentFocusIndex, getNextWalkCandidate, {
             requireSemantic: state.currentView === 'galaxy',
-            requireOnCanvas: state.currentView === 'galaxy',
-            commitNeighborhood: false
-        }) || getNextExploreCandidate(currentFocusIndex, {
-            requireSemantic: false,
-            requireOnCanvas: false,
-            commitNeighborhood: false
+            requireOnCanvas: state.currentView === 'galaxy'
         })
         : null;
     const hasNextCandidate = active && Number.isFinite(nextExploreCandidate?.index);

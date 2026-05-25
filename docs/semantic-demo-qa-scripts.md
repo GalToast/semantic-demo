@@ -63,6 +63,7 @@ Runs the pinned ordered contract suite from `tests/run-all-contracts.js`; `tests
 | `test:contract:phase-a` | phase-a surfaces | info-panel-empty, compass-rail, loading-overlay, mode-grid |
 | `test:contract:phase-b` | phase-b surfaces | filters, thread-inspector, controls, search-chrome, info-panel-populated |
 | `test:contract:3d-focus-neighborhood` | `3d-focus-neighborhood` | focus-pocket-selectability, overlay-hit-stealing, hover-affordance, thread-orchestration-quality, camera-orbit-resilience, focus-neighborhood-geometry, focus-neighborhood-interaction (7 contracts; runner is sequential — not the cause of remaining failures) |
+| `test:contract:3d-engine` | `3d-engine` | webgl-resilience, disposal-hygiene (2 contracts; Playwright/WebGL lane, requires server on port 8795) |
 | `test:contract:3d-focus-neighborhood-geometry` | `3d-focus-neighborhood-geometry` | focus-neighborhood-geometry (1 contract) |
 | `test:contract:3d-focus-neighborhood-interaction` | `3d-focus-neighborhood-interaction` | focus-neighborhood-interaction (1 contract) |
 | `test:contract:3d-focus-desktop-click` | `3d-focus-desktop-click` | 3d-focus-desktop-click.spec.js (3 tests) — strict desktop-only lane; desktop hover/click accuracy at 1440×900 without mobile-frustum soft-skips; owns deprecation markers on duplicate desktop tests in `3d-focus-neighborhood-interaction.spec.js` |
@@ -80,6 +81,12 @@ Runs the pinned ordered contract suite from `tests/run-all-contracts.js`; `tests
 | `test:contract:3d-regression` | `3d-regression` | focus-neighborhood-geometry, focus-ghost-graph-visibility, focus-neighborhood-interaction, overlay-hit-stealing, hover-affordance, thread-orchestration-quality (6 contracts) |
 | `test:contract:3d-slow` | `3d-slow` | cluster-readability, thread-orchestration-quality, accessibility-fallback-performance (3 contracts) |
 | `test:contract:3d-full` | `3d-full` | all 3d-*.spec.js contracts (16 contracts) |
+| `test:contract:projection` | `projection` | projection-state-sync (1 contract; no browser needed) |
+| `test:contract:visual-smoke` | `visual-smoke` | btn-journey-primary-layout, camera-motion-visual-smoke, demo-init-seam, micro-demo, ui-renderers-validation (5 contracts; Playwright lane, requires server on port 8795) |
+| `test:contract:live-url` | `live-url` | live-url-state-reconstruction, url-restore-cluster-filter-race, live-step-inside-url-body-state-sync, live-reset-clear-demo-proof, live-reset-proof-wave2, polish-adversarial (6 contracts; requires server on port 8795) |
+| `test:contract:extraction` | `extraction` | extraction-contracts, semantic-guide-fallback-contract, semantic-guide-fetch-fallback-contract, semantic-guide-edge, short-landscape (5 contracts; mixed Node/Playwright lane, requires server on port 8795 for browser specs) |
+| `test:contract:manual-risk` | `manual-risk` | sd143-map-search-visual, reset-experience-state (2 contracts; alternate-port/manual-risk lane, may require specific environment) |
+| `test:contract:e2e` | `e2e` | switchview-race, e2e-click-flow (2 contracts; requires live server on port 9876) |
 
 **Fast vs slow split:** `smoke` (sub-second, no browser) is the fast lane. `browser`/`render` (5-20s each, Playwright required) is the slow lane. Use `--list` on the runner to preview any group before running: `node tests/run-all-contracts.js --list`.
 
