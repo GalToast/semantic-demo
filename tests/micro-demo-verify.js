@@ -3,7 +3,7 @@
  * Micro-demo Visual QA Test Runner
  *
  * Run: node tests/micro-demo-verify.js
- * Default URL: http://127.0.0.1:8766/vector-explorer-polished.html
+ * Default URL: http://127.0.0.1:8795/vector-explorer-polished.html
  *
  * Override with TEST_BASE_URL and TEST_APP_PATH.
  *
@@ -15,13 +15,15 @@
  */
 
 import { chromium } from 'playwright';
+import fs from 'node:fs/promises';
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8766';
+const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
 const PATH = process.env.TEST_APP_PATH || '/vector-explorer-polished.html';
 const DEMO_FORCE = '?demo=force';
 const DEMO_NODEMO = '?nodemo';
 const STORAGE_KEY = 'moco_mycelium_demo_v1';
 const SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1';
+const PROOF_DIR = 'tmp/micro-demo-proof';
 
 let passed = 0;
 let failed = 0;
@@ -173,6 +175,23 @@ async function runTests() {
       return pill ? pill.textContent.trim() : '';
     });
     assert(pillText.length > 0, `Demo pill is present with text: "${pillText}"`);
+    const pillBox = await page.evaluate(() => {
+      const pill = document.getElementById('micro-demo-pill') || document.querySelector('.micro-demo-pill');
+      if (!pill) return null;
+      const rect = pill.getBoundingClientRect();
+      const style = window.getComputedStyle(pill);
+      return {
+        width: rect.width,
+        height: rect.height,
+        display: style.display,
+        visibility: style.visibility,
+        opacity: Number(style.opacity),
+      };
+    });
+    assert(
+      pillBox && pillBox.width > 0 && pillBox.height > 0 && pillBox.display !== 'none' && pillBox.visibility !== 'hidden' && pillBox.opacity > 0.05,
+      'Demo pill has a visible rendered box',
+    );
 
     const demoActiveViewToggle = await page.evaluate(() => {
       const viewToggle = document.querySelector('.view-toggle');
@@ -183,6 +202,11 @@ async function runTests() {
     });
     assert(demoActiveViewToggle.demoActive === 'true', 'body[data-demo-active="true"] is set while demo runs');
     assert(demoActiveViewToggle.viewToggleDisplay === 'none', 'View toggle is hidden while demo pill is active');
+    await fs.mkdir(PROOF_DIR, { recursive: true });
+    const viewToggleProofPath = `${PROOF_DIR}/view-toggle-hidden-during-demo.png`;
+    await page.screenshot({ path: viewToggleProofPath, fullPage: false });
+    await fs.stat(viewToggleProofPath);
+    assert(true, `Saved visual proof: ${viewToggleProofPath}`);
 
     // ── Test 4: Demo does NOT fire on repeat visits (seen guard) ───────────
     console.log('\nTest 4: Demo does not fire on repeat visits (seen=true blocks)');
