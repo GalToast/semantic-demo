@@ -17,7 +17,7 @@
 | `window.executeJourneyCompassAction` | Dewindowed 2026-05-25; use lifecycle named export from `journey-compass-controller.js` | event-bindings.js imports directly | Bridge removed from lifecycle.js |
 | `window.showViewHandoff` | lifecycle.js:2501 | lifecycle.js:1374/1586, map-state.js:431 | Handoff overlay never shown |
 | `window.hideViewHandoff` | lifecycle.js:2502 | lifecycle.js:1402, map-state.js:431 | Handoff overlay never dismissed |
-| `window.showExperienceToast` | lifecycle.js:2503 | three-setup.js:108/341/352, lifecycle.js:669/675 | Toast notifications silent |
+| `window.showExperienceToast` | Dewindowed 2026-05-25; use direct named export from `ui-feedback.js` | Former three-setup/event-bindings/journey/keyboard/thread/lifecycle callers | Bridge removed from lifecycle.js |
 | `window.updateExplorationUi` | lifecycle.js:2488 | journey.js:1063, lifecycle.js:370/403/406/548, search-state.js:671/733/1255, thread-inspector.js:31 | Exploration UI stale |
 | `window.setMyceliumMode` | lifecycle.js:2489 | app.js:115 | Mycelium mode not synced |
 | `window.setTrailDepth` | lifecycle.js:2490 | app.js:116, lifecycle.js:318/324 | Trail depth not synced |

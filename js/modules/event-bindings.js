@@ -18,6 +18,7 @@ import {
     resetActiveFilters
 } from './filter-state.js';
 import { closeLegendPanel, openLegendPanel, restoreLegendCollapsedPanel } from './legend-ui.js';
+import { showExperienceToast } from './ui-feedback.js';
 import { requestSemanticGuide } from './semantic-guide.js';
 
 function bindClick(id, handler, options = {}) {
@@ -50,7 +51,7 @@ function bindViewControls() {
                     btn.setAttribute('aria-label', originalLabel);
                 }, 2000);
             }).catch(() => {
-                if (typeof window.showExperienceToast === 'function') window.showExperienceToast('Copy unavailable', 'Use the address bar to copy this current view.');
+                showExperienceToast('Copy unavailable', 'Use the address bar to copy this current view.');
             });
         }
     }, { optional: true });
@@ -121,9 +122,7 @@ function bindFocusControls() {
             if (firstClusterBtn) {
                 firstClusterBtn.click();
             } else {
-                if (typeof window.showExperienceToast === 'function') {
-                    window.showExperienceToast('Network explorer', 'No semantic neighborhoods available in the current filter.');
-                }
+                showExperienceToast('Network explorer', 'No semantic neighborhoods available in the current filter.');
             }
         }
     }, { optional: true });
@@ -321,7 +320,7 @@ function bindModeAndPromptControls(setMyceliumMode) {
         button.onclick = () => {
             if (button.dataset.story && typeof window.applyStoryPrompt === 'function') {
                 if (button.dataset.story === 'trail' && state.focusedNode === null) {
-                    if (typeof window.showExperienceToast === 'function') window.showExperienceToast('Trail locked', 'Select a business first.');
+                    showExperienceToast('Trail locked', 'Select a business first.');
                     return;
                 }
                 window.applyStoryPrompt(button.dataset.story);
@@ -329,7 +328,7 @@ function bindModeAndPromptControls(setMyceliumMode) {
             }
             const mode = button.dataset.mode || 'default';
             if (mode === 'trail' && state.focusedNode === null) {
-                if (typeof window.showExperienceToast === 'function') window.showExperienceToast('Trail locked', 'Select a business first.');
+                showExperienceToast('Trail locked', 'Select a business first.');
                 return;
             }
             setMyceliumMode(mode);

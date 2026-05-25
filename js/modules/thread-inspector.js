@@ -8,6 +8,7 @@ import { normalizeLeadId } from './journey-thread-model.js';
 import { truncateMicrocopy } from './thread-inspector-text-helpers.js';
 import { focusOnNode } from './camera-controls.js';
 import { dispatchNavTransition, updateJourneyCompass } from './lifecycle.js';
+import { showExperienceToast } from './ui-feedback.js';
 
 // === Internal helpers (deferred to main script via window) ===
 
@@ -27,10 +28,6 @@ function syncSemanticDiveUi() {
 
 function syncFocusStage(point) {
     if (typeof window.syncFocusStage === 'function') window.syncFocusStage(point);
-}
-
-function showExperienceToast(title, body) {
-    if (typeof window.showExperienceToast === 'function') window.showExperienceToast(title, body);
 }
 
 function focusOnPoint(point, options) {

@@ -14,7 +14,8 @@
         "semantic-lane-contract.mjs",
         "connection-analysis-contract.mjs",
         "exploration-modes-contract.mjs",
-        "focus-selection-owner-contract.mjs"
+        "focus-selection-owner-contract.mjs",
+        "journey-event-bindings-contract.mjs"
       ]
     },
     "navigation": {

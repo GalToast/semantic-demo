@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { showExperienceToast } from './ui-feedback.js';
 
 // Injected reset functions are set via initKeyboardResetOwnership() before first keydown.
 // Falls back to window bridge so keyboard-help.js never needs to import lifecycle.js.
@@ -193,9 +194,7 @@ export function showKeyboardShortcutsHint() {
 export function flashArrowKeyToast() {
     if (_shortcutsPanelArrowToastShown) return;
     _shortcutsPanelArrowToastShown = true;
-    if (typeof window.showExperienceToast === 'function') {
-        window.showExperienceToast('Arrow keys to navigate — press ? for shortcuts', { duration: 3500 });
-    }
+    showExperienceToast('Arrow keys to navigate — press ? for shortcuts', { duration: 3500 });
 }
 
 export function handleGalaxyKeydown(event) {

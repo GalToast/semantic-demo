@@ -37,6 +37,7 @@ import { refreshCompositionState, dispatchNavTransition, NAV_TRANSITION_ACTIONS,
 import { setTrailNavState } from './navigation-state.js';
 import { applyLocalNeighborhoodFocus, setFocusPocketMeta } from './focus-pocket.js';
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
+import { showExperienceToast } from './ui-feedback.js';
 import {
     refreshRouteTraceOverlay,
     updateRouteTraceOverlayPositions,
@@ -649,12 +650,10 @@ export function walkThreadNeighbor(index, options = {}) {
             fromIndex
         });
     }
-    if (typeof window.showExperienceToast === 'function') {
-        window.showExperienceToast(
-            'Following connection',
-            `Moving along the semantic trail to ${formatBusinessName(targetPoint?.name || 'the next stop')}.`
-        );
-    }
+    showExperienceToast(
+        'Following connection',
+        `Moving along the semantic trail to ${formatBusinessName(targetPoint?.name || 'the next stop')}.`
+    );
     const capturedIndex = index;
     const capturedFromIndex = fromIndex;
     const capturedReason = reason;
@@ -1062,12 +1061,10 @@ export function traverseNeighbor(step) {
         commitNeighborhood: true
     });
     if (!nextCandidate) {
-        if (typeof window.showExperienceToast === 'function') {
-            window.showExperienceToast(
-                'End of path',
-                'No more connected neighbors are ready.'
-            );
-        }
+        showExperienceToast(
+            'End of path',
+            'No more connected neighbors are ready.'
+        );
         return;
     }
     walkThreadNeighbor(nextCandidate.index, {

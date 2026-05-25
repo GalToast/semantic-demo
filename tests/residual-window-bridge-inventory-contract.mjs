@@ -154,7 +154,7 @@ const KNOWN_APP_BOOTSTRAP_EXPORTS = new Set([
 
 const KNOWN_FALLBACKS = new Set([
   // event-bindings.js guards — intentional cross-module UI bridge pattern
-  'copyCurrentViewLink', 'showExperienceToast', 'executeJourneyCompassAction',
+  'copyCurrentViewLink', 'executeJourneyCompassAction',
   'resetExplorationFocus', 'recenterFocusedNode', 'setSemanticDiveMode',
   'exploreInsideToNextStop', 'returnToCountyView', 'setInfoPanelOpen',
   'loadSemanticThreads', 'probeSemanticLane', 'applyStoryPrompt',

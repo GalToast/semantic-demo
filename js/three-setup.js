@@ -27,6 +27,7 @@ import {
     updateMyceliumThreads
 } from './modules/mycelium-engine.js';
 import { setSceneRevealDataset } from './modules/scene-reveal.js';
+import { showExperienceToast } from './modules/ui-feedback.js';
 
 // three-setup.js - Three.js state.scene initialization, state.scene management, animation loop
 // Extracted from vector-explorer-polished.html inline script
@@ -103,9 +104,7 @@ function showWebGLFallback(container, detail = {}) {
         }
     });
 
-    if (typeof window.showExperienceToast === 'function') {
-        window.showExperienceToast('Graphics fallback active', 'Map view remains available while 3D graphics are unavailable.');
-    }
+    showExperienceToast('Graphics fallback active', 'Map view remains available while 3D graphics are unavailable.');
 }
 
 const MYCELIUM_FIELD_SCALE = Object.freeze({
@@ -336,9 +335,7 @@ function bindWebGLContextResilience(renderer) {
             _rafId = null;
         }
         state.scenePerformanceDiagnostics.reason = 'webgl-context-lost';
-        if (typeof window.showExperienceToast === 'function') {
-            window.showExperienceToast('Graphics context paused', 'The scene will restore automatically.');
-        }
+        showExperienceToast('Graphics context paused', 'The scene will restore automatically.');
     }, false);
 
     canvas.addEventListener('webglcontextrestored', () => {
@@ -347,9 +344,7 @@ function bindWebGLContextResilience(renderer) {
         if (_webglRestoreTimer) window.clearTimeout(_webglRestoreTimer);
         _webglRestoreTimer = window.setTimeout(() => {
             _webglRestoreTimer = null;
-            if (typeof window.showExperienceToast === 'function') {
-                window.showExperienceToast('Graphics context restored', 'Rebuilding the semantic scene.');
-            }
+            showExperienceToast('Graphics context restored', 'Rebuilding the semantic scene.');
             if (typeof window.init === 'function') {
                 window.init().catch((err) => console.error('WebGL context restore reinit failed:', err));
             }

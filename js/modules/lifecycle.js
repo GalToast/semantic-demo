@@ -700,7 +700,6 @@ if (typeof window !== 'undefined') {
     window.syncSemanticDiveUi = syncSemanticDiveUi;
     window.showViewHandoff = showViewHandoff;
     window.hideViewHandoff = hideViewHandoff;
-    window.showExperienceToast = showExperienceToast;
 
     window.setSemanticDiveMode = setSemanticDiveMode;
 
