@@ -771,8 +771,8 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
     .journey-compass-step {
         min-height: 22px;
         padding-inline: 4px;
-        font-size: 6.9px;
-        letter-spacing: 0.045em;
+        font-size: 8px;
+        letter-spacing: 0.025em;
     }
 
     .journey-compass-actions {
@@ -1861,11 +1861,15 @@ html body[data-panel-surface]:not([data-panel-surface^="map-"])[data-route-explo
         min-width: 0;
         margin: 0;
         font-size: 12px;
-        font-weight: 760;
+        font-weight: 700;
         line-height: 1.1;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    body[data-thread-inspect-surface="inspector"] .journey-compass[data-density="compact"] {
+        --journey-compact-rail-display: none;
     }
 
     html body[data-active-view="galaxy"] .journey-compass[data-phase="overview"] .journey-compass-actions,
@@ -2129,7 +2133,7 @@ html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="com
 html body[data-panel-surface="focus"] .journey-compass[data-density="compact"] .journey-compass-rail,
 html body[data-panel-surface="focus-search"] .journey-compass[data-density="compact"] .journey-compass-rail,
 html body[data-panel-surface="semantic-dive"] .journey-compass[data-density="compact"] .journey-compass-rail {
-    display: grid;
+    display: var(--journey-compact-rail-display, grid);
     grid-template-columns: repeat(5, minmax(0, 1fr));
     min-width: 0;
     gap: 7px;
