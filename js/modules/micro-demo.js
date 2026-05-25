@@ -476,6 +476,7 @@ window.startMicroDemo = function () {
 };
 
 function _runDemo() {
+    document.body.dataset.demoActive = 'true';
     _demoPhase = PHASE.GLIDING;
     _demoCancelled = false;
     _captureOverviewCameraSnapshot();
@@ -616,6 +617,7 @@ function _runDemo() {
 }
 
 function _cleanup() {
+    document.body.removeAttribute('data-demo-active');
     _clearDemoTimers();
     _showVeil(false);
     _removePill();

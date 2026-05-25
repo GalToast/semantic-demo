@@ -174,6 +174,16 @@ async function runTests() {
     });
     assert(pillText.length > 0, `Demo pill is present with text: "${pillText}"`);
 
+    const demoActiveViewToggle = await page.evaluate(() => {
+      const viewToggle = document.querySelector('.view-toggle');
+      return {
+        demoActive: document.body.dataset.demoActive,
+        viewToggleDisplay: viewToggle ? window.getComputedStyle(viewToggle).display : null,
+      };
+    });
+    assert(demoActiveViewToggle.demoActive === 'true', 'body[data-demo-active="true"] is set while demo runs');
+    assert(demoActiveViewToggle.viewToggleDisplay === 'none', 'View toggle is hidden while demo pill is active');
+
     // ── Test 4: Demo does NOT fire on repeat visits (seen guard) ───────────
     console.log('\nTest 4: Demo does not fire on repeat visits (seen=true blocks)');
     await clearDemoState(page);
