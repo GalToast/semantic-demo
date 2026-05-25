@@ -981,6 +981,12 @@ async function assert_field_node(page, ctx) {
     document.body.dataset.panelSurface = 'focus-search';
     document.body.dataset.panelSurfaceDetail = document.body.dataset.mobileSearchSheet || 'peek';
     document.body.dataset.focusPanelMode = 'field-node';
+
+    const focusStage = document.querySelector('#focus-stage');
+    if (focusStage) {
+      focusStage.hidden = false;
+      focusStage.setAttribute('aria-hidden', 'false');
+    }
   });
   await page.waitForTimeout(300);
 
