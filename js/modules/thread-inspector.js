@@ -10,6 +10,7 @@ import { focusOnNode } from './camera-controls.js';
 import { dispatchNavTransition, updateJourneyCompass, focusOnPoint } from './lifecycle.js';
 import { showExperienceToast } from './ui-feedback.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
+import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from './journey-webgl.js';
 
 // === Internal helpers (deferred to main script via window) ===
 
@@ -25,14 +26,6 @@ function getInsideRelationshipLabel(candidate, point, focusPoint) {
 
 function syncFocusStage(point) {
     if (typeof window.syncFocusStage === 'function') window.syncFocusStage(point);
-}
-
-function syncArrivalHandoffOverlay() {
-    if (typeof window.syncArrivalHandoffOverlay === 'function') window.syncArrivalHandoffOverlay();
-}
-
-function disposeArrivalHandoffOverlay() {
-    if (typeof window.disposeArrivalHandoffOverlay === 'function') window.disposeArrivalHandoffOverlay();
 }
 
 // === Candidate selectors ===

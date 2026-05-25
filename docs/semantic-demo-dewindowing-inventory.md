@@ -85,8 +85,8 @@ Semantic lane uses `getWindow()` / `getDocument()` guard pattern internally (lin
 
 | Global | Assigned | Called from |
 |--------|----------|-------------|
-| `window.syncArrivalHandoffOverlay` | journey-webgl.js compatibility bridge retained | journey.js dewindowed 2026-05-25; thread-inspector wrapper still uses bridge |
-| `window.disposeArrivalHandoffOverlay` | journey-webgl.js compatibility bridge retained | journey.js dewindowed 2026-05-25; thread-inspector wrapper still uses bridge |
+| `window.syncArrivalHandoffOverlay` | journey-webgl.js compatibility bridge retained | journey.js and thread-inspector.js dewindowed 2026-05-25; bridge remains for external/test callers |
+| `window.disposeArrivalHandoffOverlay` | journey-webgl.js compatibility bridge retained | journey.js and thread-inspector.js dewindowed 2026-05-25; bridge remains for external/test callers |
 | `window.syncInspectedStrandOverlay` | thread-inspector.js | journey.js:361 |
 | `window.applyLocalNeighborhoodFocus` | journey.js:1006 guard only, NOT assigned | journey.js:1006 |
 | `window.syncSemanticDiveUi` | Retired 2026-05-25 | Runtime source and reduced-motion test callers dewindowed; no compatibility bridge remains |

@@ -537,12 +537,13 @@ function testFocusOnPointRuntimeCallersDewindowed() {
   console.log('  OK — journey/map-state/thread-inspector use direct focusOnPoint imports; lifecycle bridge is retired');
 }
 
-// ── TEST 7 — Journey uses direct arrival handoff imports ─────────────────────
+// ── TEST 7 — Runtime arrival handoff callers use direct imports ──────────────
 
 function testJourneyArrivalHandoffDewindowed() {
-  console.log('\n[TEST 7] journey.js does not use arrival handoff window bridges');
+  console.log('\n[TEST 7] journey/thread-inspector do not use arrival handoff window bridges');
 
   const journeySrc = read('journey');
+  const threadInspectorSrc = read('threadInspector');
   const problems = [];
 
   for (const fn of ['syncArrivalHandoffOverlay', 'disposeArrivalHandoffOverlay']) {
@@ -552,7 +553,17 @@ function testJourneyArrivalHandoffDewindowed() {
     if (!new RegExp(`\\b${fn}\\s*\\(`).test(journeySrc)) {
       problems.push(`  journey: expected direct ${fn}() call after dewindowing`);
     }
+    if (threadInspectorSrc.includes(`window.${fn}`)) {
+      problems.push(`  thread-inspector: still references window.${fn}`);
+    }
+    if (!new RegExp(`\\b${fn}\\s*\\(`).test(threadInspectorSrc)) {
+      problems.push(`  thread-inspector: expected direct ${fn}() call after dewindowing`);
+    }
   }
+  assert(
+    /import\s+\{[^}]*\bsyncArrivalHandoffOverlay\b[^}]*\bdisposeArrivalHandoffOverlay\b[^}]*\}\s+from\s+['"]\.\/journey-webgl\.js['"]/.test(threadInspectorSrc),
+    'thread-inspector.js should import arrival handoff functions directly from journey-webgl.js'
+  );
 
   const journeyWebglSrc = read('journeyWebgl');
   assert(
@@ -566,10 +577,10 @@ function testJourneyArrivalHandoffDewindowed() {
 
   assert(
     problems.length === 0,
-    `journey.js must use direct arrival handoff imports, not window bridges:\n${problems.join('\n')}`
+    `journey.js and thread-inspector.js must use direct arrival handoff imports, not window bridges:\n${problems.join('\n')}`
   );
 
-  console.log('  OK — journey.js uses direct arrival handoff calls; journey-webgl bridges are compatibility-only');
+  console.log('  OK — journey/thread-inspector use direct arrival handoff calls; journey-webgl bridges are compatibility-only');
 }
 
 // ── TEST 8 — Verify window-bridge-gaps-contract.mjs still passes ─────────────
