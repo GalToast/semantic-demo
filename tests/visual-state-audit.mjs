@@ -280,6 +280,8 @@ async function captureState(page, name) {
         backgroundImage: style.backgroundImage,
         boxShadow: style.boxShadow,
         color: style.color,
+        fontSize: style.fontSize,
+        lineHeight: style.lineHeight,
         padding: style.padding,
         transitionProperty: style.transitionProperty,
         transitionDuration: style.transitionDuration,
@@ -1011,6 +1013,23 @@ async function run() {
       pass('16-desktop-info-panel-populated', 'info-panel-populated:mode-grid-hidden');
     } else {
       fail('16-desktop-info-panel-populated', 'info-panel-populated:mode-grid-hidden', 'mode grid should be hidden in populated focus panel state');
+    }
+
+    const compassNote = box(populatedState, '.journey-compass-note');
+    if (isVisible(compassNote)) {
+      pass('16-desktop-info-panel-populated', 'info-panel-populated:compass-note-visible');
+    } else {
+      fail('16-desktop-info-panel-populated', 'info-panel-populated:compass-note-visible', '.journey-compass-note should be visible when populated focus state exposes compass copy');
+    }
+    if (isVisible(compassNote) && compassNote?.fontSize === '12px') {
+      pass('16-desktop-info-panel-populated', 'info-panel-populated:compass-note-font-size');
+    } else {
+      fail('16-desktop-info-panel-populated', 'info-panel-populated:compass-note-font-size', `expected 12px, got ${compassNote?.fontSize || 'missing'}`);
+    }
+    if (isVisible(compassNote) && compassNote?.lineHeight === '18px') {
+      pass('16-desktop-info-panel-populated', 'info-panel-populated:compass-note-line-height');
+    } else {
+      fail('16-desktop-info-panel-populated', 'info-panel-populated:compass-note-line-height', `expected 18px, got ${compassNote?.lineHeight || 'missing'}`);
     }
 
     if (populatedCard?.text?.includes('Downtown Coffee Collective')) {
