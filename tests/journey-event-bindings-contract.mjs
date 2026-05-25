@@ -3,11 +3,14 @@
  *
  * Fast Node contract test for the risky journey/event-bindings cluster.
  * Coverage:
- *   1. journey-compass action guard (executeJourneyCompassAction next-stop guard)
- *   2. info-panel toggle binding (setInfoPanelOpen contract)
- *   3. resize listener behavior (onWindowResize wiring via bindPanelControls)
- *   4. btn-surprise/btn-launch focusRandomBusiness lifecycle (random focus guard)
- *   5. References to removed trail ghost teardown (static grep for ghost terms)
+ *   1. journey-compass direct-import wiring after dewindowing
+ *      (updateJourneyCompass, executeJourneyCompassAction, getJourneyCompassState
+ *       exported as functions from lifecycle, NOT assigned to window)
+ *   2. journey-compass action guard (executeJourneyCompassAction next-stop guard)
+ *   3. info-panel toggle binding (setInfoPanelOpen contract)
+ *   4. resize listener behavior (onWindowResize wiring via bindPanelControls)
+ *   5. btn-surprise/btn-launch focusRandomBusiness lifecycle (random focus guard)
+ *   6. References to removed trail ghost teardown (static grep for ghost terms)
  *
  * Runs in Node with a tiny DOM/element/window shim. No Playwright.
  * Source-only assertions + a minimal fake DOM where practical.
@@ -46,6 +49,11 @@ function assertContains(haystack, needle, label) {
 function assertNotContains(haystack, needle, label) {
   const found = haystack.includes(needle);
   assert(!found, `${label}: source should NOT contain "${needle}" (removed dead code), but it was found`);
+}
+
+function assertMatches(haystack, pattern, label) {
+  const found = pattern.test(haystack);
+  assert(found, `${label}: expected source to match ${pattern}, but it was not found`);
 }
 
 // ---------------------------------------------------------------------------
@@ -120,7 +128,53 @@ const fakeWindow = {
 };
 
 // ---------------------------------------------------------------------------
-// TEST 1: Static source - journey-compass action guard (executeJourneyCompassAction)
+// TEST 1: Static source - journey-compass direct-import wiring (dewindowed)
+// ---------------------------------------------------------------------------
+
+function testJourneyCompassDirectImportWiring() {
+  console.log('\n[TEST] Journey compass direct-import wiring after dewindowing');
+
+  const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
+  const ebSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
+
+  // Verify lifecycle imports and re-exports updateJourneyCompass as a function
+  assertMatches(lifecycleSrc,
+    /import\s*\{[\s\S]*\bgetJourneyCompassState\b[\s\S]*\}\s*from\s*['"]\.\/journey-compass-state\.js['"]/,
+    'lifecycle imports getJourneyCompassState from journey-compass-state');
+  assertMatches(lifecycleSrc,
+    /import\s*\{[\s\S]*\bexecuteJourneyCompassAction\b[\s\S]*\bupdateJourneyCompass\b[\s\S]*\}\s*from\s*['"]\.\/journey-compass-controller\.js['"]/,
+    'lifecycle imports journey compass controller functions directly');
+  assertMatches(lifecycleSrc,
+    /export\s*\{[\s\S]*\bexecuteJourneyCompassAction\b[\s\S]*\bupdateJourneyCompass\b[\s\S]*\bgetJourneyCompassState\b[\s\S]*\}/,
+    'lifecycle re-exports journey compass direct-import functions');
+
+  // Verify lifecycle does NOT assign these to window (dewindowed)
+  assertNotContains(lifecycleSrc,
+    'window.updateJourneyCompass =',
+    'lifecycle must NOT assign updateJourneyCompass to window');
+  assertNotContains(lifecycleSrc,
+    'window.executeJourneyCompassAction =',
+    'lifecycle must NOT assign executeJourneyCompassAction to window');
+  assertNotContains(lifecycleSrc,
+    'window.getJourneyCompassState =',
+    'lifecycle must NOT assign getJourneyCompassState to window');
+
+  // Verify event-bindings does NOT use window. versions of these functions
+  assertNotContains(ebSrc,
+    'window.updateJourneyCompass',
+    'event-bindings must NOT use window.updateJourneyCompass');
+  assertNotContains(ebSrc,
+    'window.executeJourneyCompassAction',
+    'event-bindings must NOT use window.executeJourneyCompassAction (dewindowed)');
+  assertNotContains(ebSrc,
+    'window.getJourneyCompassState',
+    'event-bindings must NOT use window.getJourneyCompassState');
+
+  console.log('  OK lifecycle exports updateJourneyCompass, executeJourneyCompassAction, getJourneyCompassState as functions (direct import, not window-assigned)');
+}
+
+// ---------------------------------------------------------------------------
+// TEST 2: Static source - journey-compass action guard (executeJourneyCompassAction)
 // ---------------------------------------------------------------------------
 
 function testJourneyCompassActionGuard() {
@@ -644,6 +698,7 @@ function main() {
   console.log('============================================================');
 
   try {
+    testJourneyCompassDirectImportWiring();
     testJourneyCompassActionGuard();
     testInfoPanelToggleBinding();
     testBtnPanelFocusSearchSuppression();

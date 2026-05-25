@@ -138,7 +138,7 @@ Completed lanes:
 - `mobile_premium_surfaces.css` no longer carries the search override repair block; search-sheet rules moved without `!important`.
 - `#trail-controls:not(.active)` suppression was converted from `display: none !important` to a higher-specificity normal cascade rule.
 - `js/modules/journey-compass-state.js` now owns `getFocusedJourneyPoint()` and `getJourneyCompassState()`.
-- `lifecycle.js` imports and re-exports the journey compass state helpers, preserving `window.getJourneyCompassState`.
+- `lifecycle.js` imports and re-exports the journey compass state helpers; `window.getJourneyCompassState` was removed 2026-05-25 (dewindowed; use lifecycle named export from `journey-compass-state.js`).
 - `tests/journey-compass-state-contract.mjs` added and wired into `npm run test:contract`.
 - `tests/surface-contract-check.mjs` waits for mobile idle chrome before asserting `chrome:info-panel`, avoiding false reads during startup recovery.
 
