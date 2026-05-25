@@ -33,7 +33,7 @@ import {
 } from './ui-renderers.js';
 import { focusOnNode, noteSceneInteraction, releaseFocusCameraAssist } from './camera-controls.js';
 import { syncInspectedStrandOverlay } from './thread-inspector.js';
-import { refreshCompositionState, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from './lifecycle.js';
+import { refreshCompositionState, dispatchNavTransition, NAV_TRANSITION_ACTIONS, updateJourneyCompass } from './lifecycle.js';
 import { setTrailNavState } from './navigation-state.js';
 import { applyLocalNeighborhoodFocus, setFocusPocketMeta } from './focus-pocket.js';
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
@@ -664,7 +664,7 @@ export function walkThreadNeighbor(index, options = {}) {
             setStrandContinuityState('arrived', { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason });
             const pointAtArrival = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < state.points.length) ? state.points[capturedIndex] : null;
             syncFocusStage(pointAtArrival || state.selectedPoint || null);
-            if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
+            updateJourneyCompass();
             primeNextThreadInspectionAfterWalk(capturedIndex);
             if (state.semanticDiveMode) {
                 if (typeof window.previewInsideNextThread === 'function') window.previewInsideNextThread({ force: true });

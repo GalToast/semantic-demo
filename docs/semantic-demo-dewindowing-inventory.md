@@ -12,9 +12,9 @@
 | `window.hydrateLeadContext` | lifecycle.js (window shim) | journey.js:1490 | Card not updating |
 | `window.setSemanticDiveMode` | journey.js:3096 (overrides lifecycle.js:2551) | lifecycle.js:940/943, event-bindings.js:61 | Dive mode state desync |
 | `window.getRouteLayerOrigin` | NOT assigned (intentional no-op) | lifecycle.js:1240/1340 | Falls back to 'galaxy' |
-| `window.getJourneyCompassState` | lifecycle.js:2498 | journey.js, search-state.js, thread-inspector.js, lifecycle.js | Compass shows stale state |
-| `window.updateJourneyCompass` | lifecycle.js:2499 | 15+ call sites across modules | Compass UI not refreshed |
-| `window.executeJourneyCompassAction` | lifecycle.js:2500 | event-bindings.js:51/84/94 | Compass actions non-functional |
+| `window.getJourneyCompassState` | Dewindowed 2026-05-25; use lifecycle named export from `journey-compass-state.js` | Former journey/search/thread/lifecycle callers | Bridge removed from lifecycle.js |
+| `window.updateJourneyCompass` | Dewindowed 2026-05-25; use lifecycle named export from `journey-compass-controller.js` | Runtime callers now import directly or use adapters | Bridge removed from lifecycle.js |
+| `window.executeJourneyCompassAction` | Dewindowed 2026-05-25; use lifecycle named export from `journey-compass-controller.js` | event-bindings.js imports directly | Bridge removed from lifecycle.js |
 | `window.showViewHandoff` | lifecycle.js:2501 | lifecycle.js:1374/1586, map-state.js:431 | Handoff overlay never shown |
 | `window.hideViewHandoff` | lifecycle.js:2502 | lifecycle.js:1402, map-state.js:431 | Handoff overlay never dismissed |
 | `window.showExperienceToast` | lifecycle.js:2503 | three-setup.js:108/341/352, lifecycle.js:669/675 | Toast notifications silent |
@@ -90,7 +90,7 @@ Semantic lane uses `getWindow()` / `getDocument()` guard pattern internally (lin
 | `window.applyLocalNeighborhoodFocus` | journey.js:1006 guard only, NOT assigned | journey.js:1006 |
 | `window.syncSemanticDiveUi` | lifecycle.js:2497 | journey.js:503/516/652/1077 |
 | `window.previewInsideNextThread` | NOT found | journey.js:651 |
-| `window.updateJourneyCompass` | lifecycle.js:2499 | 15+ call sites |
+| `window.updateJourneyCompass` | Dewindowed 2026-05-25 | Former guarded callers now use direct named imports/adapters |
 | `window.getSelectedBusinessRoleLabel` | NOT found | journey.js:1421 |
 | `window.revealSelectedBusinessCard` | NOT found | journey.js:1463 |
 | `window.describeThreadLensForPoint` | NOT found | journey.js:1508 |
@@ -148,6 +148,9 @@ See `tests/bootstrap-window-export-contract.mjs` for the formal contract.
 
 ### search-state.js dewindowed (2026-05-21)
 `search-state.js` now imports `focusOnNode` directly from `camera-controls.js` and calls it directly at two call sites (formerly lines 339-347 and 1206-1208). The `typeof window.focusOnNode === 'function'` guards were removed — the direct import is statically available. No cycle was introduced: `search-state.js` does not import from `lifecycle.js`, and `camera-controls.js` does not import from `search-state.js`. Bootstrap window bridge kept intact elsewhere.
+
+### journey compass bridge dewindowed (2026-05-25)
+`updateJourneyCompass`, `executeJourneyCompassAction`, and `getJourneyCompassState` are no longer exported onto `window` by `lifecycle.js`. Runtime callers use lifecycle named exports, direct controller imports, or the existing search lifecycle adapter. Playwright/browser tests that need journey compass behavior should use visible UI actions or module contracts instead of `window.updateJourneyCompass`.
 
 ---
 

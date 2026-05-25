@@ -401,9 +401,7 @@ export async function init() {
             }
 
             window.addEventListener('demo-complete', () => {
-                if (typeof window.updateJourneyCompass === 'function') {
-                    window.updateJourneyCompass('overview');
-                }
+                updateJourneyCompass('overview');
             });
 
         });

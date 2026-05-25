@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { easeInOutSine } from '../utils.js';
 import { animateCameraToNode } from './camera-controls.js';
 import { applyLocalNeighborhoodFocus, clearFocusPocketIndices, clearFocusPocketMeta } from './focus-pocket.js';
+import { updateJourneyCompass } from './lifecycle.js';
 
 // === Constants ===
 const SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1';
@@ -370,9 +371,7 @@ function __demoReset() {
     if (typeof window.refreshCompositionState === 'function') {
         window.refreshCompositionState();
     }
-    if (typeof window.updateJourneyCompass === 'function') {
-        window.updateJourneyCompass();
-    }
+    updateJourneyCompass();
     if (typeof window.setInfoPanelOpen === 'function') {
         window.setInfoPanelOpen(true);
     }
@@ -401,9 +400,7 @@ function __demoFocusSetup(demoNode) {
     if (typeof window.updateExplorationUi === 'function') {
         window.updateExplorationUi();
     }
-    if (typeof window.updateJourneyCompass === 'function') {
-        window.updateJourneyCompass('focus');
-    }
+    updateJourneyCompass('focus');
     if (typeof window.refreshCompositionState === 'function') {
         window.refreshCompositionState();
     }

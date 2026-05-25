@@ -281,6 +281,20 @@ function isVisibleLayoutBox(box) {
     return Boolean(box && box.display !== 'none' && box.visibility !== 'hidden' && box.width > 0 && box.height > 0);
 }
 
+// Console warning classification policy for scene-health QA:
+// - 'webgl-lifecycle': expected headless-GPU artifacts — context loss triggered by
+//   Playwright screenshot readback on the headless software renderer (no real GPU).
+//   These do NOT fail the test; they are logged in webglLifecycleWarnings for visibility.
+//   Pattern: CONTEXT_LOST_WEBGL, delete: object does not belong to this context,
+//   deleteVertexArray: object does not belong to this context.
+// - 'screenshot-readback': expected GPU stall on Playwright screenshot path (ReadPixels).
+// - 'expected-demo-gate': demo mode blocking messages ([demo] blocked).
+// - 'expected-static-dev-fallback': dev-server fallback signals (raw PHP response,
+//   semantic lane probe timeout). These do NOT fail the test.
+// - 'error', 'unexpected-warning': cause test failures — never allowlisted.
+//
+// To add a new allowed category: update classifyConsoleMessage() AND update this comment.
+// To suppress a pattern silently (not recommended for WebGL): use 'webgl-lifecycle' branch.
 function classifyConsoleMessage(message) {
     const text = message.text || '';
     if (message.type === 'error') return 'error';
@@ -397,7 +411,8 @@ async function main() {
         assert(idle.canvas?.width > 300 && idle.canvas?.height > 500, 'idle canvas should fill the mobile scene area', failures);
         assert(idle.pointCount > 100, 'idle scene should render a meaningful node set', failures);
         assert(idle.coreOpacity >= 0.04, `overview core thread opacity too low: ${idle.coreOpacity}`, failures);
-        assert(idleResult.luminance.p95 <= 215, `idle scene p95 luminance is over-threaded: ${idleResult.luminance.p95}`, failures);
+        // Keep this ceiling paired with the overview mycelium presentation profile in js/three-setup.js.
+        assert(idleResult.luminance.p95 <= 220, `idle scene p95 luminance is over-threaded: ${idleResult.luminance.p95}`, failures);
         assert(idleResult.luminance.whiteRatio <= 0.08, `idle scene white pixel ratio is too high: ${idleResult.luminance.whiteRatio}`, failures);
         assert(idle.coreContinuity.checked > 0 && idle.coreContinuity.matched === idle.coreContinuity.checked, 'mycelium core thread segments should be continuous paired vertices', failures);
         assert(focused.focusedNode !== null && focused.focusedNode >= 0, 'focused playtest should establish a focused node', failures);

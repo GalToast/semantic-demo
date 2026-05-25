@@ -339,9 +339,6 @@ async function run() {
     if (typeof window.updateExplorationUi === 'function') {
       window.updateExplorationUi();
     }
-    if (typeof window.updateJourneyCompass === 'function') {
-      window.updateJourneyCompass();
-    }
   });
 
   await page.waitForTimeout(100);

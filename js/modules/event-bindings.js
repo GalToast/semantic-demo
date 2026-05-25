@@ -1,6 +1,6 @@
 import { state } from '../state.js';
 import { isCompactFocusStageViewport } from '../utils.js';
-import { syncFilterControls, resetExperienceState, resetExplorationFocus } from './lifecycle.js';
+import { syncFilterControls, resetExperienceState, resetExplorationFocus, executeJourneyCompassAction } from './lifecycle.js';
 import { traverseNeighbor, setSemanticDiveMode } from './journey.js';
 import { switchView } from './view-controller.js';
 import { toggleAutoRotate, focusOnNode } from './camera-controls.js';
@@ -58,8 +58,8 @@ function bindViewControls() {
 
 function bindFocusControls() {
     const runJourneyCompassAction = (action) => {
-        if (action && typeof window.executeJourneyCompassAction === 'function') {
-            window.executeJourneyCompassAction(action);
+        if (action) {
+            executeJourneyCompassAction(action);
         }
     };
 
@@ -91,8 +91,8 @@ function bindFocusControls() {
             const step = event.target.closest?.('.journey-compass-step');
             if (!step) return;
             const action = actionMap[step.dataset.journeyStep];
-            if (action && typeof window.executeJourneyCompassAction === 'function') {
-                window.executeJourneyCompassAction(action);
+            if (action) {
+                executeJourneyCompassAction(action);
             }
         });
         document.addEventListener('keydown', (event) => {
@@ -101,8 +101,8 @@ function bindFocusControls() {
             if (!step) return;
             event.preventDefault();
             const action = actionMap[step.dataset.journeyStep];
-            if (action && typeof window.executeJourneyCompassAction === 'function') {
-                window.executeJourneyCompassAction(action);
+            if (action) {
+                executeJourneyCompassAction(action);
             }
         });
         if (document.body) document.body.dataset.journeyCompassStepDelegated = 'true';

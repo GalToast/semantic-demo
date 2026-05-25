@@ -451,11 +451,12 @@
         text-transform: none;
     }
 
-    /* Premium focus owns legacy filed/meta suppression for compact focus states. */
+    /* Premium focus owns focus-search meta suppression; semantic-dive hides meta with the main-stage content below. */
     html body.is-active[data-panel-surface="focus-search"] .focus-stage-filed,
     html body.is-active[data-panel-surface="focus-search"] .focus-stage-meta,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-filed,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-meta {
+    html body.is-active[data-panel-surface="focus-search"] .focus-stage-badges,
+    html body.is-active[data-panel-surface="focus-search"] .focus-stage-trivia,
+    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-filed {
         display: none;
     }
 

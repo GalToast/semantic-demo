@@ -15,7 +15,8 @@ import {
     setTrailDepth,
     setMyceliumMode,
     updateExplorationUi,
-    syncSearchStatusForFocus
+    syncSearchStatusForFocus,
+    updateJourneyCompass
 } from './lifecycle.js';
 import { updateUrlState } from './url-state.js';
 import { applyPointFilterColors, syncFocusStage } from './journey.js';
@@ -1178,7 +1179,7 @@ export function focusOnNode(index, options = {}) {
     if (!options.skipUrlSync) {
         updateUrlState({ record: point.lead_id || null }, { mode: options.historyMode || 'push', reason: 'focus' });
     }
-    if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
+    updateJourneyCompass();
     return true;
 }
 

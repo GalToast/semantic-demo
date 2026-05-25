@@ -130,9 +130,9 @@ function testJourneyCompassActionGuard() {
   const journeyCompassControllerSrc = fs.readFileSync(JOURNEY_COMPASS_CONTROLLER_PATH, 'utf-8');
   const ebSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
 
-  assertContains(ebSrc,
+  assertNotContains(ebSrc,
     "typeof window.executeJourneyCompassAction === 'function'",
-    'event-bindings guards executeJourneyCompassAction existence');
+    'event-bindings no longer uses window.executeJourneyCompassAction');
   assertNotContains(ebSrc,
     'window.executeJourneyCompassAction(event.currentTarget.dataset.journeyAction));',
     'direct journey button action call must go through guard helper');
@@ -620,10 +620,10 @@ function testActionMapConsistency() {
     'actionMap[step.dataset.journeyStep]',
     'delegated handler uses actionMap lookup');
 
-  // Must check typeof window.executeJourneyCompassAction === 'function'
-  assertContains(ebSrc,
+  // Must no longer check typeof window.executeJourneyCompassAction
+  assertNotContains(ebSrc,
     "typeof window.executeJourneyCompassAction === 'function'",
-    'executeJourneyCompassAction existence check');
+    'executeJourneyCompassAction is properly de-windowed');
 
   // Must set dataset.journeyCompassStepDelegated to prevent double-registration
   assertContains(ebSrc,

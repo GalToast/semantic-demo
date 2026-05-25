@@ -98,7 +98,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
       if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
     });
 
-    await page.waitForTimeout(100);
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
     const afterSearch = await page.evaluate(() => {
       const body = document.body?.dataset || {};
@@ -139,7 +139,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
       if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
     });
 
-    await page.waitForTimeout(100);
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
     const afterFocus = await page.evaluate(() => {
       const body = document.body?.dataset || {};
@@ -169,7 +169,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
       if (typeof window.resetExplorationFocus === 'function') window.resetExplorationFocus();
     });
 
-    await page.waitForTimeout(100);
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
     const afterInterrupt = await page.evaluate(() => {
       const body = document.body?.dataset || {};

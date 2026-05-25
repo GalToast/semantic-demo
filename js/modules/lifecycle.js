@@ -698,9 +698,6 @@ if (typeof window !== 'undefined') {
     window.resetStateBeforeUrlRestore = resetStateBeforeUrlRestore;
     window.refreshCompositionState = refreshCompositionState;
     window.syncSemanticDiveUi = syncSemanticDiveUi;
-    window.getJourneyCompassState = getJourneyCompassState;
-    window.updateJourneyCompass = updateJourneyCompass;
-    window.executeJourneyCompassAction = executeJourneyCompassAction;
     window.showViewHandoff = showViewHandoff;
     window.hideViewHandoff = hideViewHandoff;
     window.showExperienceToast = showExperienceToast;

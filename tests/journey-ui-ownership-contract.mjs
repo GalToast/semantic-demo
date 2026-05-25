@@ -375,12 +375,7 @@ function testNoSearchLaneCompassWindowCalls() {
     'window.openJourneyCompass',
     'window.closeJourneyCompass',
     'window.syncJourneyCompass',
-    'window.updateJourneyCompass',  // allowed: journey.js calls this for its own compass
   ];
-
-  // 'window.updateJourneyCompass' is called BY journey.js on itself, so it is allowed.
-  // Remove it from blocked list for this test.
-  const blockedForTest = blockedWindowCalls.filter(c => c !== 'window.updateJourneyCompass');
 
   const lines = src.split('\n');
   const violations = [];
@@ -388,7 +383,7 @@ function testNoSearchLaneCompassWindowCalls() {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     if (line.startsWith('//') || line.startsWith('*')) continue;
-    for (const call of blockedForTest) {
+    for (const call of blockedWindowCalls) {
       const prop = call.replace('window.', '');
       // Match typeof window.something === 'function' or window.something(...), but
       // allow guarded typeof checks

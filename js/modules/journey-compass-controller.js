@@ -365,7 +365,7 @@ export function refreshCompositionState() {
             syncRouteDirectorState('composition-map');
             updateSelectedCardHeading();
             if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
-            if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
+            updateJourneyCompass();
             if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
             refreshMapMarkers();
             refreshMapRouteEmbodiment();
@@ -417,7 +417,7 @@ export function refreshCompositionState() {
     updateSelectedCardHeading();
     if (typeof window.updateLegendGuideState === 'function') window.updateLegendGuideState();
     if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
-    if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
+    updateJourneyCompass();
     if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
     refreshMapMarkers();
     refreshMapRouteEmbodiment();

@@ -7,7 +7,7 @@ import { getProjectedNeighborCandidates } from './journey-thread-model.js';
 import { normalizeLeadId } from './journey-thread-model.js';
 import { truncateMicrocopy } from './thread-inspector-text-helpers.js';
 import { focusOnNode } from './camera-controls.js';
-import { dispatchNavTransition } from './lifecycle.js';
+import { dispatchNavTransition, updateJourneyCompass } from './lifecycle.js';
 
 // === Internal helpers (deferred to main script via window) ===
 
@@ -27,10 +27,6 @@ function syncSemanticDiveUi() {
 
 function syncFocusStage(point) {
     if (typeof window.syncFocusStage === 'function') window.syncFocusStage(point);
-}
-
-function updateJourneyCompass() {
-    if (typeof window.updateJourneyCompass === 'function') window.updateJourneyCompass();
 }
 
 function showExperienceToast(title, body) {
