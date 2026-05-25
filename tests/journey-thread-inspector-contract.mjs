@@ -375,6 +375,42 @@ function testThreadInspectorTextHelpersExtraction() {
 }
 
 // ---------------------------------------------------------------------------
+// TEST 10: journey WebGL line shader ownership
+// ---------------------------------------------------------------------------
+
+function testJourneyWebglLineShaderOwnership() {
+  console.log('\n[TEST] journey WebGL line shader ownership');
+
+  const webglSrc = fs.readFileSync(JOURNEY_WEBGL_PATH, 'utf-8');
+
+  // Route trace uses a plain ShaderMaterial with direct uniforms. It should
+  // not depend on LineMaterial's late onBeforeCompile userData.shader path.
+  assertContains(webglSrc, 'function buildRouteTraceMaterial()', 'buildRouteTraceMaterial function exists');
+  assertContains(webglSrc, 'return new THREE.ShaderMaterial({', 'route trace returns ShaderMaterial');
+  assertContains(webglSrc, 'material.uniforms.time.value = now / 1000;', 'route trace updates direct uniforms');
+
+  // Focus semantic lines use LineMaterial; onBeforeCompile must retain the
+  // compiled shader handle for custom uniforms, and all update paths must guard it.
+  assertContains(webglSrc, 'function buildFocusThreadLineMaterial()', 'buildFocusThreadLineMaterial function exists');
+  assertContains(webglSrc, 'lineMaterial.onBeforeCompile((shader) => {', 'focus semantic line material uses onBeforeCompile');
+  assertContains(webglSrc, 'lineMaterial.userData.shader = shader;', 'buildFocusThreadLineMaterial assigns shader to lineMaterial.userData.shader');
+  assertContains(webglSrc, 'uniform float time;', 'shader declares time uniform');
+  assertContains(webglSrc, 'uniform float semanticScore;', 'shader declares semanticScore uniform');
+  assertContains(webglSrc, 'uniform float reducedMotion;', 'shader declares reducedMotion uniform');
+  assertContains(webglSrc, 'varying float vProgress;', 'shader declares vProgress varying');
+  assertContains(webglSrc, 'varying float vCue;', 'shader declares vCue varying');
+  assertContains(webglSrc, 'varying float vPriority;', 'shader declares vPriority varying');
+  assertContains(webglSrc, 'varying float vLane;', 'shader declares vLane varying');
+
+  assertContains(webglSrc, 'if (lineMaterial.userData?.shader)', 'refreshFocusSemanticOverlay guards lineMaterial.userData?.shader');
+  assertContains(webglSrc, 'lineMaterial.userData.shader.uniforms.semanticScore.value = avgSemanticScore', 'semanticScore uniform set via guarded access');
+  assertContains(webglSrc, 'if (line.material?.userData?.shader)', 'updateFocusSemanticOverlayPositions guards line.material.userData.shader');
+  assertContains(webglSrc, 'if (!reducedMotion && line.material?.uniforms?.time)', 'updateFocusSemanticOverlayPositions keeps direct-uniform fallback');
+
+  console.log('  OK journey WebGL line shader ownership verified');
+}
+
+// ---------------------------------------------------------------------------
 // MAIN
 // ---------------------------------------------------------------------------
 
@@ -394,6 +430,7 @@ function main() {
     testJourneyTextHelpersExtraction();
     testThreadInspectorTextHelpersExtraction();
     testWave60ExploreThreadNeighborSettleBehavior();
+    testJourneyWebglLineShaderOwnership();
 
     console.log('\n============================================================');
     console.log('ALL TESTS PASSED');
