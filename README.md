@@ -36,7 +36,7 @@ npm run test               # shell/cache/CSS ownership checks
 npm run test:contract      # structural JS/DOM contract tests (~20 test files)
 npm run serve              # local static server on 127.0.0.1:8795
 npm run qa:contract:all    # fast DOM/layout assertions (17 surfaces, ~5-10s)
-npm run qa:surface:all     # visual screenshot audit (12 states, ~60-90s)
+npm run qa:surface:all     # visual screenshot audit (22 states, ~60-90s)
 ```
 
 ## Recent Architectural Changes
@@ -103,6 +103,10 @@ npm run qa:surface:desktop-idle    # 07-desktop-idle
 npm run qa:surface:search-error    # 10-mobile-search-error-state
 npm run qa:surface:map-trail       # 11-mobile-selected-card-map-trail
 npm run qa:surface:reduced-motion   # 12-desktop-reduced-motion
+npm run qa:surface:thread-inspector # 17-mobile-thread-inspector
+npm run qa:surface:loading-overlay  # 18-mobile-loading-overlay
+npm run qa:surface:compass-rail     # 19-mobile-compass-rail
+npm run qa:surface:mode-grid        # 20-mobile-mode-grid-visible
 
 # Combined slices
 npm run qa:surface:focus           # 03-mobile-focus-first-result + 04-mobile-field-node-active
@@ -121,6 +125,6 @@ node tests/visual-state-audit.mjs --states=01-mobile-idle,07-desktop-idle
 SEMANTIC_VISUAL_AUDIT_STATES=01-mobile-idle,07-desktop-idle node tests/visual-state-audit.mjs
 ```
 
-Available states: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-result`, `04-mobile-field-node-active`, `05-mobile-map`, `06-mobile-filters-open`, `07-desktop-idle`, `08-desktop-search-coffee`, `09-mobile-map-empty-state`, `10-mobile-search-error-state`, `11-mobile-selected-card-map-trail`, `12-desktop-reduced-motion`.
+Available states: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-result`, `04-mobile-field-node-active`, `05-mobile-map`, `06-mobile-filters-open`, `07-desktop-idle`, `08-desktop-search-coffee`, `09-mobile-map-empty-state`, `10-mobile-search-error-state`, `11-mobile-selected-card-map-trail`, `11-desktop-selected-card-map-trail`, `12-desktop-reduced-motion`, `13-desktop-filters-open`, `13-mobile-reduced-motion`, `14-desktop-search-error`, `15-mobile-semantic-dive`, `16-desktop-info-panel-populated`, `17-mobile-thread-inspector`, `18-mobile-loading-overlay`, `19-mobile-compass-rail`, `20-mobile-mode-grid-visible`.
 
 Output goes to `tmp/semantic-ui-visual-audit/<run-id>/`. Each state produces `<state-id>.png` (screenshot), `<state-id>.json` (layout/box data), plus `summary.json` and `assertions.json`.

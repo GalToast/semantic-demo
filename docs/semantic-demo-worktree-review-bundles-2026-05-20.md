@@ -1,14 +1,14 @@
 # Semantic Demo Worktree Review Bundles — 2026-05-20
 
-Status: draft review map — do not commit until active workers finish
+Status: historical review map — active-worker blocker closed as of 2026-05-25
 
 ## Purpose
 
-The worktree contains changes from multiple accepted worker waves plus three active follow-up workers. This document maps all modified and new files into coherent review bundles, identifies verification commands per bundle, and flags cross-worker ownership risks.
+This document was created when the worktree contained changes from multiple accepted worker waves plus three follow-up worker lanes. It now serves as a historical review-bundle map for future mixed-worktree triage.
 
 ---
 
-## Active Follow-Up Workers (do not re-work until they sign off)
+## Historical Follow-Up Workers
 
 | Worker ID | Owner | Scope |
 |---|---|---|
@@ -16,7 +16,7 @@ The worktree contains changes from multiple accepted worker waves plus three act
 | `semantic-a11y-focus-followup-1779287626643` | Focus restoration + ARIA fixes | info panel, legend, related controls |
 | `semantic-reduced-motion-interrupt-followup-1779287627752` | Reduced-motion interruption/recovery proof | `tests/reduced-motion-*.mjs` |
 
-Do not edit files in the above scopes unless coordinating via switchboard.
+These worker lanes are not current blockers. Re-audit the listed scopes before editing if they become current work again.
 
 ---
 
@@ -206,9 +206,9 @@ node --check dist/bundle.js 2>&1 | Select-String "error" -SimpleMatch
 
 ---
 
-## Bundle F — Accessibility / Fallback (Follow-up Pending)
+## Bundle F — Accessibility / Fallback (Archived Follow-Up)
 
-**Do not touch until active follow-up workers sign off.**
+This bundle is historical. The follow-up worker lanes are no longer active blockers; re-audit these scopes before taking new work in them.
 
 ### Files pending follow-up worker ownership
 
@@ -221,14 +221,14 @@ node --check dist/bundle.js 2>&1 | Select-String "error" -SimpleMatch
 
 ---
 
-## Proposed Commit Order
+## Proposed Commit Order (Archived Guidance)
 
 1. **Bundle E first** — docs, gitignore, package.json updates. Low risk, sets context.
 2. **Bundle A** — CSS/UI ownership changes. Standalone visual contracts protect this.
 3. **Bundle C** — 3D scene / rendering. Run `tests/three-scene-playtest.mjs` and `tests/three-visual-polish-contract.mjs` first.
 4. **Bundle B** — JS extraction / runtime. Verify `tests/extraction-contracts.spec.js` passes.
 5. **Bundle D** — QA contracts. Run full `test:contract` suite.
-6. **Bundle F last** — after follow-up workers sign off. Merge their branches, run semantic-guide fallback tests, then commit.
+6. **Bundle F last** — after re-auditing fallback, reduced-motion, and ARIA scopes. Run semantic-guide fallback tests before committing new work there.
 
 ---
 
@@ -236,7 +236,7 @@ node --check dist/bundle.js 2>&1 | Select-String "error" -SimpleMatch
 
 | Risk | Severity | Mitigation |
 |---|---|---|
-| Active follow-up workers may re-edit Bundle A/B files | Medium | Wait for sign-off before committing A/B |
+| Historical follow-up scopes may be stale | Medium | Re-audit fallback, reduced-motion, and ARIA scopes before new edits |
 | `js/three-setup.js` massive rewrite | High | Dedicated scene playtest + visual QA before commit |
 | `css/time_weather.css` large churn | Medium | Full visual regression check on weather surface |
 | `dist/bundle.js` is a build artifact — may conflict | Low | Rebuild from source before commit rather than committing modified artifact |

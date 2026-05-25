@@ -1,6 +1,6 @@
 # Semantic Demo Next Seams - 2026-05-20
 
-Status: active audit note
+Status: active next-seams note — historical worker locks closed 2026-05-25
 
 ## Wave56 (2026-05-23) — Small Dewindowing Cleanup
 
@@ -17,7 +17,7 @@ Status: active audit note
 
 See `tmp/wave56-dewindowing-small-cleanups.md` for full report.
 
-## Current Follow-Up Workers
+## Historical Follow-Up Workers
 
 MiniMax workers launched from the 2026-05-20 follow-up pass:
 
@@ -25,7 +25,7 @@ MiniMax workers launched from the 2026-05-20 follow-up pass:
 - `semantic-a11y-focus-followup-1779287626643`: owns focus restoration and ARIA fixes for info panel, legend, and related controls.
 - `semantic-reduced-motion-interrupt-followup-1779287627752`: owns reduced-motion interruption/recovery proof.
 
-Do not edit their owned files until their diffs are reviewed, unless coordinating through switchboard.
+Status as of 2026-05-25: these worker lanes are historical context, not active blockers. Re-audit the listed scopes before editing if they become current work again.
 
 ## Wave52 Follow-Up (2026-05-22)
 
@@ -109,12 +109,12 @@ Best next move:
 
 - Replace the long `test:contract` shell chain with a small manifest-driven Node runner that reports contract file, owner, duration, and failure. Keep existing script names as aliases.
 
-### 4. Dirty Worktree Grouping
+### 4. Worktree Grouping
 
 Evidence:
 
-- The worktree contains broad modified tracked files plus many new tests/modules/docs.
-- Several changes are accepted and verified, while worker follow-up patches are still in flight.
+- This note was created when the worktree contained broad modified tracked files plus many new tests/modules/docs.
+- As of 2026-05-25, the active review-bundle blocker is closed; use this section as historical context for future mixed-worktree reviews.
 
 Risk:
 
@@ -122,7 +122,7 @@ Risk:
 
 Best next move:
 
-- After active workers finish, group diffs into review bundles: CSS/UI ownership, JS extraction/runtime, QA contracts, docs/cache/build artifacts. Run targeted checks per bundle before commit.
+- For future mixed waves, group diffs into review bundles: CSS/UI ownership, JS extraction/runtime, QA contracts, docs/cache/build artifacts. Run targeted checks per bundle before commit.
 
 ### 5. Behavioral Proof Gaps
 
@@ -137,4 +137,3 @@ Known gaps:
 Best next move:
 
 - Promote these to deterministic, narrow tests before large visual polish moves.
-
