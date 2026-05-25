@@ -450,7 +450,7 @@ function getThreadPulseOpacity(baseOpacity, pulse, requestedAmplitude, revealPro
 function getMyceliumPresentationProfile() {
     const currentMode = getNavigationMode();
     if (currentMode === 'overview' || currentMode === undefined) {
-        return { core: 0.13, wispy: 0.055, bridge: 0.08, pulse: 0.028 };
+        return { core: 0.112, wispy: 0.047, bridge: 0.068, pulse: 0.022 };
     }
     if (state.focusedNode !== null && state.focusedNode !== undefined) {
         return { core: 0.40, wispy: 0.18, bridge: 0.28, pulse: 0.092 };
@@ -2231,9 +2231,10 @@ export function animate() {
         if (state.pointsMaterial) {
             const isFocused = Number.isFinite(state.focusedNode);
             const isSemanticDive = state.trailDepth >= 2;
-            // trailDepth 2 (semantic-dive): full suppression; trailDepth 1 (focus): ghost layer at 0.06
+            const isSemanticPocketFocus = state.navState?.threadSource === 'semantic' && state.navState?.focusPocketMeta?.active;
+            // Semantic pocket focus owns the scene; non-semantic focus can keep a faint ghost layer.
             const pointsOpacityScale = isFocused
-                ? (isSemanticDive ? 0.0 : 0.06)
+                ? (isSemanticDive || isSemanticPocketFocus ? 0.0 : 0.06)
                 : 1.0;
             const pointsSizeScale = isFocused ? 0.44 : 1.0;
             state.pointsMesh.visible = pointsOpacityScale > 0;

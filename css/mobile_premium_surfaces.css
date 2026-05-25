@@ -947,6 +947,7 @@ html body.is-active #selected-details.active {
     html body.is-active[data-panel-surface^="map-"] .search-container {
         left: 0;
         right: 0;
+        top: clamp(336px, 41dvh, 360px);
         width: 100%;
         max-width: none;
         max-height: min(38dvh, 320px);

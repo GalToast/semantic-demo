@@ -450,6 +450,11 @@ function buildFocusThreadLineMaterial() {
         depthTest: false,
         blending: THREE.AdditiveBlending
     });
+    lineMaterial.uniforms.time = { value: performance.now() / 1000 };
+    lineMaterial.uniforms.semanticScore = { value: 0.5 };
+    lineMaterial.uniforms.reducedMotion = { value: isReducedMotionPreferred() ? 1 : 0 };
+    lineMaterial.uniforms.denseBundleMode = { value: 0 };
+    lineMaterial.userData.shader = { uniforms: lineMaterial.uniforms };
 
     lineMaterial.onBeforeCompile = (shader) => {
         shader.vertexShader = shader.vertexShader.replace(
@@ -482,6 +487,7 @@ function buildFocusThreadLineMaterial() {
             uniform float time;
             uniform float semanticScore;
             uniform float reducedMotion;
+            uniform float denseBundleMode;
             varying float vProgress;
             varying float vCue;
             varying float vPriority;
@@ -499,13 +505,14 @@ function buildFocusThreadLineMaterial() {
             vec3 baseColor = mix(diffuseColor.rgb, gradientColor, 0.58);
 
             float motionScale = 1.0 - step(0.5, reducedMotion);
+            float denseScale = 1.0 - step(0.5, denseBundleMode) * 0.72;
             float flow = fract(vProgress - time * 0.82 * motionScale);
             float pulseFreq = 0.52 + (semanticScore * 1.6);
             float sporeFlow = fract(vProgress - time * pulseFreq * motionScale + abs(vLane) * 0.08);
             float sporeSize = 1.8 + (semanticScore * 3.2);
-            float spore = pow(1.0 - abs(sporeFlow - 0.58) * 2.0, sporeSize) * motionScale;
-            float bead = pow(1.0 - abs(flow - 0.58) * 2.0, 3.0) * motionScale;
-            float breath = mix(1.0, 0.78 + sin(time * 2.4 + vLane * 2.2) * 0.16, motionScale);
+            float spore = pow(1.0 - abs(sporeFlow - 0.58) * 2.0, sporeSize) * motionScale * denseScale;
+            float bead = pow(1.0 - abs(flow - 0.58) * 2.0, 3.0) * motionScale * denseScale;
+            float breath = mix(1.0, 0.78 + sin(time * 2.4 + vLane * 2.2) * 0.16, motionScale * denseScale);
 
             vec3 finalColor = mix(baseColor, pearl, spore * 0.36);
             vec3 cueColor = vec3(1.0, 0.82, 0.34);
@@ -519,9 +526,10 @@ function buildFocusThreadLineMaterial() {
             diffuseColor = vec4(finalColor, min(alpha, 0.42));`
         );
 
-        shader.uniforms.time = { value: performance.now() / 1000 };
-        shader.uniforms.semanticScore = { value: 0.5 };
-        shader.uniforms.reducedMotion = { value: isReducedMotionPreferred() ? 1 : 0 };
+        shader.uniforms.time = lineMaterial.uniforms.time;
+        shader.uniforms.semanticScore = lineMaterial.uniforms.semanticScore;
+        shader.uniforms.reducedMotion = lineMaterial.uniforms.reducedMotion;
+        shader.uniforms.denseBundleMode = lineMaterial.uniforms.denseBundleMode;
 
         lineMaterial.userData.shader = shader;
     };
@@ -711,15 +719,21 @@ export function refreshFocusSemanticOverlay() {
     lineGeometry.setAttribute('lane', new THREE.Float32BufferAttribute(lane, 1));
     lineGeometry.setAttribute('semanticScore', new THREE.Float32BufferAttribute(semanticScore, 1));
 
+    const denseBundleMode = overlayIndices.length >= 6 ? 1 : 0;
     const lineMaterial = buildFocusThreadLineMaterial();
+    lineMaterial.userData.denseBundleMode = denseBundleMode;
     const avgSemanticScore = semanticScore.length > 0
         ? semanticScore.reduce((s, v) => s + v, 0) / semanticScore.length
         : 0.5;
     if (lineMaterial.userData?.shader) {
         lineMaterial.userData.shader.uniforms.semanticScore.value = avgSemanticScore;
+        lineMaterial.userData.shader.uniforms.denseBundleMode.value = denseBundleMode;
     }
     if (lineMaterial.uniforms?.semanticScore) {
         lineMaterial.uniforms.semanticScore.value = avgSemanticScore;
+    }
+    if (lineMaterial.uniforms?.denseBundleMode) {
+        lineMaterial.uniforms.denseBundleMode.value = denseBundleMode;
     }
 
     state.focusSemanticLines = new Line2(lineGeometry, lineMaterial);
@@ -736,6 +750,7 @@ export function refreshFocusSemanticOverlay() {
         vertexCount: positions.length / 3,
         overlayNodeCount: overlayIndices.length,
         parentKind: state.myceliumGroup ? 'mycelium' : 'scene',
+        denseBundleMode,
         buildMs: performance.now() - startedAt
     };
     state.focusFrameDiagnostics = {
@@ -755,8 +770,8 @@ export function refreshFocusSemanticOverlay() {
         vertexCount: positions.length / 3,
         overlayNodeCount: overlayIndices.length,
         parentKind: state.myceliumGroup ? 'mycelium' : 'scene',
+        denseBundleMode: denseBundleMode === 1,
         nextCueSegments,
-        denseBundleMode: overlayIndices.length >= 6,
         buildMs: performance.now() - startedAt,
         avgFrameMs: 0,
         maxFrameMs: 0
@@ -787,6 +802,7 @@ export function updateFocusSemanticOverlayPositions(now = performance.now()) {
     endAttr.needsUpdate = true;
     if (line.material?.userData?.shader) {
         line.material.userData.shader.uniforms.reducedMotion.value = reducedMotion ? 1 : 0;
+        line.material.userData.shader.uniforms.denseBundleMode.value = line.userData?.denseBundleMode ? 1 : 0;
         if (!reducedMotion) {
             line.material.userData.shader.uniforms.time.value = now / 1000;
         }
@@ -796,6 +812,9 @@ export function updateFocusSemanticOverlayPositions(now = performance.now()) {
     }
     if (line.material?.uniforms?.reducedMotion) {
         line.material.uniforms.reducedMotion.value = reducedMotion ? 1 : 0;
+    }
+    if (line.material?.uniforms?.denseBundleMode) {
+        line.material.uniforms.denseBundleMode.value = line.userData?.denseBundleMode ? 1 : 0;
     }
 }
 

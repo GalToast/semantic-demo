@@ -215,7 +215,7 @@
 }
 
 body[data-active-view="map"] .controls {
-    display: none !important;
+    display: none;
 }
 
 body[data-active-view="map"] .view-handoff {

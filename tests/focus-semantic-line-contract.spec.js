@@ -158,8 +158,11 @@ test.describe('focus semantic Line2 shader ownership', () => {
         hasLineDistances: typeof line.computeLineDistances === 'function',
         segmentCount: line.userData?.segmentCount ?? 0,
         focusThreadSegments: probe.focusThreadSegments,
+        overlayNodeCount: line.userData?.overlayNodeCount ?? 0,
         nextIndex: probe.nextIndex,
         nextCueSegments: probe.nextCueSegments,
+        denseBundleMode: line.userData?.denseBundleMode,
+        denseBundleUniform: shader.uniforms.denseBundleMode?.value,
         hasMyceliumGroup: Boolean(window.state.myceliumGroup),
         parentKind: line.userData?.parentKind,
         semanticScore: shader.uniforms.semanticScore.value,
@@ -176,6 +179,8 @@ test.describe('focus semantic Line2 shader ownership', () => {
     expect(before.hasLineDistances, 'focus semantic line should be a Line2-style object').toBe(true);
     expect(before.segmentCount, 'focus semantic line should publish edge segments').toBeGreaterThan(0);
     expect(before.focusThreadSegments, 'semantic focus cue probe should report rendered line segments').toBeGreaterThan(0);
+    expect(before.denseBundleUniform, 'denseBundleMode uniform should match focus line density state').toBe(before.overlayNodeCount >= 6 ? 1 : 0);
+    expect(Boolean(before.denseBundleMode), 'focus line should record dense bundle state from overlay count').toBe(before.overlayNodeCount >= 6);
     if (Number.isFinite(before.nextIndex)) {
       expect(before.nextCueSegments, 'semantic focus cue probe should report next-cue segments when a next stop is available').toBeGreaterThan(0);
     } else {
