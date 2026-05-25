@@ -104,8 +104,14 @@ async function auditMicroState(page, stateName) {
       return rect.width >= 43.5 && rect.height >= 43.5;
     }
 
+    const routeControls = document.querySelector('[aria-label="Journey route controls"]');
     const primary = document.querySelector('#btn-journey-primary');
-    if (!visible(primary)) failures.push({ check: 'primary-action-visible', selector: '#btn-journey-primary' });
+    const expectsRouteControls = stateName === 'mobile-focus';
+
+    if (!expectsRouteControls) {
+      if (visible(routeControls)) failures.push({ check: 'idle-route-controls-hidden', selector: '[aria-label="Journey route controls"]' });
+      else passes.push({ check: 'idle-route-controls-hidden' });
+    } else if (!visible(primary)) failures.push({ check: 'primary-action-visible', selector: '#btn-journey-primary' });
     else {
       passes.push({ check: 'primary-action-visible' });
       if (!primary.getAttribute('aria-label')) failures.push({ check: 'primary-action-aria-label' });
