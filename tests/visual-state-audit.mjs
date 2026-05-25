@@ -1615,6 +1615,16 @@ async function run() {
         pass('11-mobile-selected-card-map-trail', 'mobile-map-trail:search-results-inside-container');
       }
     }
+    const modeGrid = box(mobileTrailState, '#mode-grid');
+    if (isRendered(modeGrid)) {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail:mode-grid-hidden',
+        '#mode-grid should not render inside the mobile map search sheet',
+      );
+    } else {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail:mode-grid-hidden');
+    }
   }
 
   // ---- Desktop selected-card + map-trail state assertions ----

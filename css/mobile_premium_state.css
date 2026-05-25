@@ -476,6 +476,7 @@
     html body.is-active[data-panel-surface^="map-"] .stats-row,
     html body.is-active[data-panel-surface^="map-"] .demo-starters,
     html body.is-active[data-panel-surface^="map-"] .selected-card,
+    html body.is-active[data-panel-surface^="map-"] #mode-grid,
     html body.is-active[data-panel-surface^="map-"] .semantic-lane-assist,
     html body.is-active[data-panel-surface^="map-"] .search-trail-cue {
         display: none; /* specificity already exceeds layout/strands content rules */
