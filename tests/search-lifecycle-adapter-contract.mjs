@@ -5,20 +5,22 @@
  *
  * Proves:
  *  1. search-state.js does NOT call window.updateUrlState / window.setSearchPanelState /
- *     window.focusOnPoint / window.updateExplorationUi / window.resetNodePositions directly
+ *     window.focusOnPoint / window.updateExplorationUi / window.resetNodePositions /
+ *     window.refreshCompositionState directly
  *  2. search-lifecycle-adapter.js exists and exports initSearchLifecycleAdapter,
  *     isSearchLifecycleAdapterReady, updateUrlState, setSearchPanelState,
  *     focusOnPoint, updateExplorationUi, resetNodePositions, dispatchNavTransition,
- *     syncSearchStatusForFocus, updateJourneyCompass
+ *     syncSearchStatusForFocus, updateJourneyCompass, refreshCompositionState
  *  3. search-lifecycle-adapter.js has no imports that can recreate cycles
  *     (no search-state, no lifecycle, no url-state, no tooltip, no cluster-filter)
- *  4. app.js calls initSearchLifecycleAdapter with all 8 function refs before any search runs
- *  5. search-state.js imports all 8 lifecycle functions from the adapter
+ *  4. app.js calls initSearchLifecycleAdapter with all 9 function refs before any search runs
+ *  5. search-state.js imports all 9 lifecycle functions from the adapter
  *  6. The adapter is a proper leaf — all 5 window call groups in search-state.js
  *     are replaced by direct adapter calls
  *  7. search-state.js routes navState.mode/focusedIndex clears through adapter_dispatchNavTransition
  *  8. search-state.js routes syncSearchStatusForFocus through the adapter (not window)
  *  9. search-state.js routes updateJourneyCompass through the adapter (not window)
+ * 10. search-state.js routes refreshCompositionState through the adapter (not window)
  *
  * Run: node tests/search-lifecycle-adapter-contract.mjs
  */
@@ -60,6 +62,7 @@ function testNoBareWindowLifecycleCalls() {
     'window.focusOnPoint',
     'window.updateExplorationUi',
     'window.resetNodePositions',
+    'window.refreshCompositionState',
   ];
 
   const problems = [];
@@ -82,7 +85,7 @@ function testNoBareWindowLifecycleCalls() {
   assert(problems.length === 0,
     `search-state.js must not call window lifecycle functions directly.\n${problems.join('\n')}`);
 
-  console.log('  PASS — no bare window.updateUrlState/setSearchPanelState/focusOnPoint/updateExplorationUi/resetNodePositions calls in search-state.js');
+  console.log('  PASS — no bare window.updateUrlState/setSearchPanelState/focusOnPoint/updateExplorationUi/resetNodePositions/refreshCompositionState calls in search-state.js');
 }
 
 // ---------------------------------------------------------------------------
@@ -121,6 +124,12 @@ function testAdapterExistsAndExports() {
   assertContains(adapterSrc, 'export function syncSearchStatusForFocus',
     'search-lifecycle-adapter.js must export syncSearchStatusForFocus');
 
+  assertContains(adapterSrc, 'export function updateJourneyCompass',
+    'search-lifecycle-adapter.js must export updateJourneyCompass');
+
+  assertContains(adapterSrc, 'export function refreshCompositionState',
+    'search-lifecycle-adapter.js must export refreshCompositionState');
+
   console.log('  PASS — adapter exists and exports all required functions');
 }
 
@@ -152,11 +161,11 @@ function testAdapterDoesNotImportCycleParticipants() {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 4: app.js calls initSearchLifecycleAdapter with all 8 function refs
+// TEST 4: app.js calls initSearchLifecycleAdapter with all 9 function refs
 // ---------------------------------------------------------------------------
 
 function testAppInjectsAdapterWithLifecycleRefs() {
-  console.log('\n[TEST 4] app.js calls initSearchLifecycleAdapter with all 8 function refs');
+  console.log('\n[TEST 4] app.js calls initSearchLifecycleAdapter with all 9 function refs');
 
   const src = readFileSync(APP_PATH, 'utf-8');
 
@@ -187,24 +196,27 @@ function testAppInjectsAdapterWithLifecycleRefs() {
   assertContains(src, 'updateJourneyCompass',
     'app.js must pass updateJourneyCompass to initSearchLifecycleAdapter');
 
+  assertContains(src, 'refreshCompositionState',
+    'app.js must pass refreshCompositionState to initSearchLifecycleAdapter');
+
   // Verify updateUrlState is imported from url-state.js
   assertContains(src, "from './url-state.js'",
     'app.js must import updateUrlState from url-state.js');
 
   // Verify focusOnPoint, updateExplorationUi, resetNodePositions, dispatchNavTransition,
-  // syncSearchStatusForFocus, and updateJourneyCompass are from lifecycle
+  // syncSearchStatusForFocus, updateJourneyCompass, and refreshCompositionState are from lifecycle
   assertContains(src, "from './lifecycle.js'",
     'app.js must import lifecycle functions from lifecycle.js');
 
-  console.log('  PASS — app.js injects adapter with all 8 function refs');
+  console.log('  PASS — app.js injects adapter with all 9 function refs');
 }
 
 // ---------------------------------------------------------------------------
-// TEST 5: search-state.js imports all 8 lifecycle functions from the adapter
+// TEST 5: search-state.js imports all 9 lifecycle functions from the adapter
 // ---------------------------------------------------------------------------
 
 function testSearchStateImportsFromAdapter() {
-  console.log('\n[TEST 5] search-state.js imports all 8 lifecycle functions from the adapter');
+  console.log('\n[TEST 5] search-state.js imports all 9 lifecycle functions from the adapter');
 
   const src = readFileSync(SEARCH_STATE_PATH, 'utf-8');
 
@@ -235,7 +247,10 @@ function testSearchStateImportsFromAdapter() {
   assertContains(src, 'adapter_updateJourneyCompass',
     'search-state.js must import updateJourneyCompass as adapter_updateJourneyCompass from adapter');
 
-  console.log('  PASS — search-state.js imports all 8 lifecycle functions from adapter');
+  assertContains(src, 'adapter_refreshCompositionState',
+    'search-state.js must import refreshCompositionState as adapter_refreshCompositionState from adapter');
+
+  console.log('  PASS — search-state.js imports all 9 lifecycle functions from adapter');
 }
 
 // ---------------------------------------------------------------------------
@@ -255,6 +270,7 @@ function testAllWindowCallSitesReplaced() {
   const resetNodePositionsCalls = (src.match(/\badapter_resetNodePositions\s*\(/g) || []).length;
   const syncSearchStatusForFocusCalls = (src.match(/\badapter_syncSearchStatusForFocus\s*\(/g) || []).length;
   const updateJourneyCompassCalls = (src.match(/\badapter_updateJourneyCompass\s*\(/g) || []).length;
+  const refreshCompositionStateCalls = (src.match(/\badapter_refreshCompositionState\s*\(/g) || []).length;
 
   assert(updateUrlStateCalls >= 4,
     `Expected at least 4 adapter_updateUrlState calls, found ${updateUrlStateCalls}`);
@@ -270,6 +286,8 @@ function testAllWindowCallSitesReplaced() {
     `Expected at least 1 adapter_syncSearchStatusForFocus call, found ${syncSearchStatusForFocusCalls}`);
   assert(updateJourneyCompassCalls >= 3,
     `Expected at least 3 adapter_updateJourneyCompass calls, found ${updateJourneyCompassCalls}`);
+  assert(refreshCompositionStateCalls >= 7,
+    `Expected at least 7 adapter_refreshCompositionState calls, found ${refreshCompositionStateCalls}`);
 
   // Count the window.* calls that should be gone
   const windowUpdateUrl = (src.match(/window\.updateUrlState\b/g) || []).length;
@@ -279,6 +297,7 @@ function testAllWindowCallSitesReplaced() {
   const windowResetNode = (src.match(/window\.resetNodePositions\b/g) || []).length;
   const windowSyncSearchStatus = (src.match(/window\.syncSearchStatusForFocus\b/g) || []).length;
   const windowUpdateJourneyCompass = (src.match(/window\.updateJourneyCompass\b/g) || []).length;
+  const windowRefreshCompositionState = (src.match(/window\.refreshCompositionState\b/g) || []).length;
 
   assert(windowUpdateUrl === 0,
     `Expected 0 window.updateUrlState calls, found ${windowUpdateUrl}`);
@@ -294,8 +313,10 @@ function testAllWindowCallSitesReplaced() {
     `Expected 0 window.syncSearchStatusForFocus calls, found ${windowSyncSearchStatus}`);
   assert(windowUpdateJourneyCompass === 0,
     `Expected 0 window.updateJourneyCompass calls, found ${windowUpdateJourneyCompass}`);
+  assert(windowRefreshCompositionState === 0,
+    `Expected 0 window.refreshCompositionState calls, found ${windowRefreshCompositionState}`);
 
-  console.log(`  PASS — adapter calls: ${updateUrlStateCalls}× updateUrlState, ${setSearchPanelStateCalls}× setSearchPanelState, ${focusOnPointCalls}× focusOnPoint, ${updateExplorationUiCalls}× updateExplorationUi, ${resetNodePositionsCalls}× resetNodePositions, ${syncSearchStatusForFocusCalls}× syncSearchStatusForFocus, ${updateJourneyCompassCalls}× updateJourneyCompass; 0 window.* equivalents`);
+  console.log(`  PASS — adapter calls: ${updateUrlStateCalls}× updateUrlState, ${setSearchPanelStateCalls}× setSearchPanelState, ${focusOnPointCalls}× focusOnPoint, ${updateExplorationUiCalls}× updateExplorationUi, ${resetNodePositionsCalls}× resetNodePositions, ${syncSearchStatusForFocusCalls}× syncSearchStatusForFocus, ${updateJourneyCompassCalls}× updateJourneyCompass, ${refreshCompositionStateCalls}× refreshCompositionState; 0 window.* equivalents`);
 }
 
 // ---------------------------------------------------------------------------
@@ -367,6 +388,26 @@ function testUpdateJourneyCompassRouting() {
 }
 
 // ---------------------------------------------------------------------------
+// TEST 10: search-state.js routes refreshCompositionState through the adapter
+// ---------------------------------------------------------------------------
+
+function testRefreshCompositionStateRouting() {
+  console.log('\n[TEST 10] search-state.js routes refreshCompositionState through the adapter');
+
+  const src = readFileSync(SEARCH_STATE_PATH, 'utf-8');
+
+  const adapterCalls = (src.match(/\badapter_refreshCompositionState\s*\(/g) || []).length;
+  assert(adapterCalls >= 7,
+    `Expected at least 7 adapter_refreshCompositionState calls, found ${adapterCalls}`);
+
+  const windowCalls = (src.match(/window\.refreshCompositionState\b/g) || []).length;
+  assert(windowCalls === 0,
+    `Expected 0 window.refreshCompositionState calls, found ${windowCalls}`);
+
+  console.log(`  PASS — refreshCompositionState routed through adapter (${adapterCalls} calls), 0 window.* equivalents`);
+}
+
+// ---------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------
 
@@ -380,6 +421,7 @@ const tests = [
   testNavStateRoutingThroughAdapter,
   testSyncSearchStatusForFocusRouting,
   testUpdateJourneyCompassRouting,
+  testRefreshCompositionStateRouting,
 ];
 
 let passed = 0;

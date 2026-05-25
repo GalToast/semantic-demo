@@ -25,7 +25,7 @@
 | `window.copyCurrentViewLink` | lifecycle.js:2492 | lifecycle.js:638 (internal) | Link copy broken |
 | `window.resetExplorationFocus` | lifecycle.js:2494 | app.js:122 | Reset non-functional |
 | `window.resetStateBeforeUrlRestore` | lifecycle.js:2495 | (used internally by lifecycle) | URL restore state bleed |
-| `window.refreshCompositionState` | lifecycle.js:2496 | app.js:124, lifecycle.js:409/729/943 | Composition not refreshed |
+| `window.refreshCompositionState` | app.js/lifecycle.js compatibility bridge retained | search-state runtime callers dewindowed 2026-05-25 through `search-lifecycle-adapter.js`; app/lifecycle bridge remains for bootstrap/tests | Temporary test/external compatibility shim |
 | `window.syncSemanticDiveUi` | lifecycle.js compatibility bridge retained 2026-05-25 | Runtime source callers dewindowed 2026-05-25; camera-controls, journey-compass-controller, journey, and thread-inspector import `syncSemanticDiveUi` directly | Retained temporary compatibility shim (tests / external callers only) |
 | `window.focusOnPoint` | lifecycle.js compatibility bridge retained 2026-05-25 | Runtime source callers dewindowed 2026-05-25; map-state, journey, and thread-inspector import `focusOnPoint` directly from lifecycle.js | Temporary test/external compatibility shim |
 | `window.getInterestingBusinessNote` | lifecycle.js:2507 | journey.js:1212/1453 | Empty card notes |

@@ -377,6 +377,7 @@ export async function init() {
             dispatchNavTransition,
             syncSearchStatusForFocus,
             updateJourneyCompass,
+            refreshCompositionState,
         });
 
         // Bug sweep 19: await applyUrlState with a catch to prevent total hang

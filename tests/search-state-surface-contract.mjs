@@ -128,6 +128,7 @@ const {
   renderSearchResultItems,
   applySemanticSearchDegradedState,
 } = await import('../js/modules/search-state.js');
+const { initSearchLifecycleAdapter } = await import('../js/modules/search-lifecycle-adapter.js');
 
 window.recordSemanticLaneSnapshotCalls = [];
 window.semanticLaneStates = [];
@@ -142,6 +143,9 @@ window.refreshCompositionStateCalls = 0;
 window.refreshCompositionState = function() {
   window.refreshCompositionStateCalls += 1;
 };
+initSearchLifecycleAdapter({
+  refreshCompositionState: window.refreshCompositionState,
+});
 
 state.points = [
   { cluster: 2 },

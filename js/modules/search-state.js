@@ -34,6 +34,7 @@ import {
     dispatchNavTransition as adapter_dispatchNavTransition,
     syncSearchStatusForFocus as adapter_syncSearchStatusForFocus,
     updateJourneyCompass as adapter_updateJourneyCompass,
+    refreshCompositionState as adapter_refreshCompositionState,
 } from './search-lifecycle-adapter.js';
 export {
     setActiveFilter,
@@ -286,7 +287,7 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
         focusOnNode(targetIndex, { fromSearchResult: true });
 
         adapter_syncSearchStatusForFocus(point, { fromSearchResult: true });
-        if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+        adapter_refreshCompositionState();
         if (typeof window.settleCompactSearchFocusCard === 'function') window.settleCompactSearchFocusCard();
 
         // Fix 3: switch back to galaxy view after focus completes (map view search result click)
@@ -540,7 +541,7 @@ export function clearShortSemanticSearchState(_resultsEl, _statusEl) {
     const spinner = document.getElementById('search-spinner');
     if (spinner) spinner.style.display = 'none';
 
-    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+    adapter_refreshCompositionState();
 }
 
 /**
@@ -623,7 +624,7 @@ export function beginSemanticSearchUiState(resultsEl, statusEl, trimmedQuery) {
     if (!preservingSameQuery) {
         if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
         state.currentSearchSummary = null;
-        if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+        adapter_refreshCompositionState();
         state.searchAnchorIndex = null;
         state.searchPreviewIndex = null;
         // Bug 3: Show loading skeleton instead of canned empty state during async search race
@@ -638,7 +639,7 @@ export function beginSemanticSearchUiState(resultsEl, statusEl, trimmedQuery) {
         clearSearchGlow();
     }
     setSearchPanelState({ searching: true, focusing: false, hasQuery: true, resultsRendered: false, degraded: false });
-    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+    adapter_refreshCompositionState();
     resetSemanticGuideUi({ hideTrigger: true });
     statusEl.textContent = `Searching for businesses related to "${trimmedQuery}"...`;
     updateSearchTrailCue({ stage: 'query' });
@@ -674,11 +675,11 @@ export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQue
     if (spinner) spinner.style.display = 'none';
 
     setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: false, degraded: true });
-    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+    adapter_refreshCompositionState();
     const preservingSameQuery = state.currentSearchSummary?.query === trimmedQuery;
     if (!preservingSameQuery) {
         state.currentSearchSummary = null;
-        if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+        adapter_refreshCompositionState();
         resultsEl.classList.remove('active');
         clearSearchGlow();
     }
@@ -763,7 +764,7 @@ export function finishSemanticSearchSuccessState(resultsEl, trimmedQuery, cacheS
 
 export function applyEmptySemanticSearchState(resultsEl, statusEl, trimmedQuery, requestedAnchorLeadId) {
     state.currentSearchSummary = null;
-    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+    adapter_refreshCompositionState();
     recordSemanticLaneSnapshot({ rail_mode: 'none', anchor_lead_id: null, requested_anchor_lead_id: requestedAnchorLeadId });
     state.searchAnchorIndex = null;
     state.searchPreviewIndex = null;
@@ -1054,7 +1055,7 @@ export async function search(query, options = {}) {
         query: trimmedQuery, totalMatches, totalSemanticMatches: totalMatches, visibleMatches: results.length,
         anchorIndex, topIndex: topResult?.index ?? null, resultIndices
     };
-    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+    adapter_refreshCompositionState();
 
     // Task #9: Special case — exactly 1 result: skip the trail theater,
     // anchor directly and go to focus stage. No summary prompt needed.

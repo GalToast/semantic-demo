@@ -29,6 +29,7 @@ let _resetNodePositions = null;
 let _dispatchNavTransition = null;
 let _syncSearchStatusForFocus = null;
 let _updateJourneyCompass = null;
+let _refreshCompositionState = null;
 
 /**
  * Inject the lifecycle function references. Called once from app.js init.
@@ -42,6 +43,7 @@ let _updateJourneyCompass = null;
  * @param {Function|null} deps.dispatchNavTransition
  * @param {Function|null} deps.syncSearchStatusForFocus
  * @param {Function|null} deps.updateJourneyCompass
+ * @param {Function|null} deps.refreshCompositionState
  */
 export function initSearchLifecycleAdapter({
     updateUrlState,
@@ -52,6 +54,7 @@ export function initSearchLifecycleAdapter({
     dispatchNavTransition,
     syncSearchStatusForFocus,
     updateJourneyCompass,
+    refreshCompositionState,
 } = {}) {
     _updateUrlState = typeof updateUrlState === 'function' ? updateUrlState : null;
     _setSearchPanelState = typeof setSearchPanelState === 'function' ? setSearchPanelState : null;
@@ -61,6 +64,7 @@ export function initSearchLifecycleAdapter({
     _dispatchNavTransition = typeof dispatchNavTransition === 'function' ? dispatchNavTransition : null;
     _syncSearchStatusForFocus = typeof syncSearchStatusForFocus === 'function' ? syncSearchStatusForFocus : null;
     _updateJourneyCompass = typeof updateJourneyCompass === 'function' ? updateJourneyCompass : null;
+    _refreshCompositionState = typeof refreshCompositionState === 'function' ? refreshCompositionState : null;
 }
 
 /**
@@ -77,6 +81,7 @@ export function isSearchLifecycleAdapterReady() {
         && _dispatchNavTransition !== null
         && _syncSearchStatusForFocus !== null
         && _updateJourneyCompass !== null
+        && _refreshCompositionState !== null
     );
 }
 
@@ -164,4 +169,13 @@ export function syncSearchStatusForFocus(point, options) {
  */
 export function updateJourneyCompass() {
     if (_updateJourneyCompass) _updateJourneyCompass();
+}
+
+/**
+ * Delegate to the injected refreshCompositionState implementation.
+ * Synchronizes the compass data-attributes based on active selections.
+ * Safe to call when unready; no-op.
+ */
+export function refreshCompositionState() {
+    if (_refreshCompositionState) _refreshCompositionState();
 }
