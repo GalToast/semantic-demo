@@ -1591,6 +1591,17 @@ async function run() {
         `expected activeView "map", got "${mobileTrailState?.bodyDataset?.activeView || ''}"`,
       );
     }
+    const trailStrip = box(mobileTrailState, '.map-trail-strip');
+    const viewToggle = box(mobileTrailState, '.view-toggle');
+    if (isRendered(trailStrip) && isRendered(viewToggle) && rectsOverlap(trailStrip, viewToggle, 0)) {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail:strip-viewtoggle-overlap',
+        '.map-trail-strip overlaps .view-toggle',
+      );
+    } else {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail:strip-viewtoggle-overlap');
+    }
   }
 
   // ---- Desktop selected-card + map-trail state assertions ----

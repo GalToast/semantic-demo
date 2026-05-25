@@ -424,7 +424,9 @@
     }
 
     html body[data-panel-surface="map-trail"] .view-toggle,
-    html body[data-panel-surface="map-trail"] .journey-compass {
+    html body[data-panel-surface="map-trail"] .journey-compass,
+    html body[data-journey-navigation-owner="map-trail-strip"] .view-toggle,
+    html body[data-journey-navigation-owner="map-trail-strip"] .journey-compass {
         display: none;
         visibility: hidden;
         pointer-events: none;
