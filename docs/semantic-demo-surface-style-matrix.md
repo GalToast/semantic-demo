@@ -4,7 +4,7 @@ Date: 2026-05-25
 
 This matrix connects the design tokens in `docs/semantic-demo-design-tokens.md` to the composed app states captured by `tests/visual-state-audit.mjs`. The token sheet defines the primitives; this matrix defines how those primitives should show up across real surfaces.
 
-The current visual audit exposes 19 state ids. This is broader than the older "12-state" shorthand and includes diagnostic desktop/mobile variants such as reduced motion, desktop filters, desktop search error, mobile semantic dive, and mobile thread inspector.
+The current visual audit exposes 20 state ids. This is broader than the older "12-state" shorthand and includes diagnostic desktop/mobile variants such as reduced motion, desktop filters, desktop search error, mobile semantic dive, mobile thread inspector, and mobile loading overlay.
 
 ## Source Of Truth
 
@@ -44,6 +44,7 @@ The current visual audit exposes 19 state ids. This is broader than the older "1
 | `15-mobile-semantic-dive` | Natural mobile semantic dive after focus and Step Inside. | Semantic-dive focus stage, inside status, inside controls, journey/dive copy. | Glass/elevation, mobile type, touch targets, motion, accent/primary contrast. | Dive sheet shells should remain anchored; inside controls need internal safe-area comfort. | `semantic-dive` state in focus-stage owner matrix; `data-panel-surface="semantic-dive"` in mobile state ownership. | `npm run qa:visual -- --states=15-mobile-semantic-dive`; semantic-dive contract/video proof when motion or transition behavior changes. |
 | `16-desktop-info-panel-populated` | Desktop selected-business info panel with representative populated content. | Info panel, selected card, selected details, selected hero, name/what/theme/status fields. | Glass/elevation, card radius, desktop line heights, text contrast, spacing. | Selected card/details must be visible without horizontal overflow; long populated copy should not clip. | `#info-panel` and `.selected-card` rows in `docs/semantic-demo-css-authority-map.md`; `info-panel-populated` in `tests/surface-contract-check.mjs`. | `npm run qa:surface:info-panel-populated`; `npm run qa:contract:info-panel-populated`. |
 | `17-mobile-thread-inspector` | Mobile focus thread inspector with representative relationship content. | Focus thread inspector, relationship title/copy/meta, Pin/Follow/Clear actions, focus-stage context. | Glass/elevation, mobile type/action, touch targets, text contrast, spacing. | Inspector must remain inside the mobile viewport, preserve focus-stage bottom anchoring, and keep all actions at least `44px`. | `.focus-thread-inspector` rows in `docs/semantic-demo-focus-stage-css-owner-matrix.md`; `thread-inspector` in `tests/surface-contract-check.mjs`. | `npm run qa:surface:thread-inspector`; `npm run qa:contract:thread-inspector`. |
+| `18-mobile-loading-overlay` | Mobile loading overlay with representative progress and phase state. | Loading overlay, loading shell, kicker/title/note, progress bar, phase chips, loading foot. | Glass/elevation, loading motion, mobile type, status/phase contrast, progress affordance. | Overlay may cover the viewport intentionally, but shell content must fit without horizontal overflow or clipped loading copy. | `#loading-overlay` and `.loading-shell` rows in `css/loading.css`; `loading-overlay` in `tests/surface-contract-check.mjs`. | `npm run qa:surface:loading-overlay`; `npm run qa:contract:loading-overlay`. |
 
 ## Coverage Rule
 
@@ -56,7 +57,6 @@ Some surface contracts do not yet have a dedicated visual audit state id. They r
 | Surface | Current coverage | Gap |
 |---|---|---|
 | `compass-rail` | `npm run qa:contract:compass-rail` | No dedicated visual audit state row. |
-| `loading-overlay` | `npm run qa:contract:loading-overlay` | No dedicated visual audit state row. |
 | `mode-grid` | `npm run qa:contract:mode-grid` | No dedicated visual audit state row. |
 | `global-spacing` | `npm run qa:contract:global-spacing` | No dedicated visual audit state row. |
 

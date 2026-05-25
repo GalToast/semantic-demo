@@ -218,6 +218,9 @@ async function captureState(page, name) {
   if (name === '16-desktop-info-panel-populated') {
     await applyPopulatedInfoPanelState(page);
   }
+  if (name === '18-mobile-loading-overlay') {
+    await applyLoadingOverlayState(page);
+  }
 
   const data = await page.evaluate(() => {
     const selectors = [
@@ -244,6 +247,16 @@ async function captureState(page, name) {
       '.search-error-kicker',
       '.search-error-retry-btn',
       '.search-error-dismiss-btn',
+      '#loading-overlay',
+      '.loading-shell',
+      '.loading-kicker',
+      '.loading-title',
+      '.loading-note',
+      '.loading-progress',
+      '#loading-progress-bar',
+      '#loading-phase-row',
+      '.loading-phase-chip',
+      '#loading-foot',
       '.focus-stage-journey.active',
       '.focus-stage-kicker',
       '.focus-stage-dive-btn',
@@ -330,6 +343,16 @@ async function captureState(page, name) {
       clusterLabelDiagnostics: typeof window.__clusterLabelDiagnostics === 'function'
         ? window.__clusterLabelDiagnostics()
         : null,
+      loadingOverlayDiagnostics: (() => {
+        const chips = Array.from(document.querySelectorAll('.loading-phase-chip'));
+        const overlay = document.querySelector('#loading-overlay');
+        return {
+          overlayAriaHidden: overlay?.getAttribute('aria-hidden') || null,
+          phaseChipsCount: chips.length,
+          activePhaseCount: chips.filter((chip) => chip.classList.contains('is-active')).length,
+          completePhaseCount: chips.filter((chip) => chip.classList.contains('is-complete')).length,
+        };
+      })(),
     };
   });
 
@@ -400,6 +423,38 @@ async function applyPopulatedInfoPanelState(page) {
   });
 }
 
+async function applyLoadingOverlayState(page) {
+  await page.evaluate(() => {
+    const overlay = document.querySelector('#loading-overlay');
+    if (overlay) {
+      overlay.classList.remove('hidden', 'launching');
+      overlay.style.display = 'grid';
+      overlay.style.visibility = 'visible';
+      overlay.style.opacity = '1';
+      overlay.style.pointerEvents = 'auto';
+      overlay.style.transition = 'none';
+      overlay.setAttribute('aria-hidden', 'false');
+      overlay.dataset.loadingPhase = 'scene';
+    }
+
+    document.body.dataset.loadingPhase = 'scene';
+
+    const progressBar = document.querySelector('#loading-progress-bar');
+    if (progressBar) progressBar.style.width = '62%';
+
+    const note = document.querySelector('#loading-note');
+    if (note) note.textContent = '8,406 Montgomery County business records woven into a living semantic field.';
+
+    document.querySelectorAll('.loading-phase-chip').forEach((chip) => {
+      chip.classList.toggle('is-active', chip.getAttribute('data-loading-phase') === 'scene');
+      chip.classList.toggle('is-complete', chip.getAttribute('data-loading-phase') === 'records');
+    });
+
+    const foot = document.querySelector('#loading-foot');
+    if (foot) foot.textContent = 'Semantic scene is taking shape.';
+  });
+}
+
 async function run() {
   await ensureDir(outDir);
   const states = [];
@@ -416,6 +471,7 @@ async function run() {
       '10-mobile-search-error-state',
       '11-mobile-selected-card-map-trail',
       '17-mobile-thread-inspector',
+      '18-mobile-loading-overlay',
     ])) {
       const browser = await chromium.launch({ headless: true });
       try {
@@ -424,6 +480,11 @@ async function run() {
         if (wantsState('01-mobile-idle')) {
           await gotoReady(mobilePage, targetUrl);
           await captureMaybe(states, mobilePage, '01-mobile-idle');
+        }
+
+        if (wantsState('18-mobile-loading-overlay')) {
+          await gotoReady(mobilePage, targetUrl);
+          await captureMaybe(states, mobilePage, '18-mobile-loading-overlay');
         }
 
         if (wantsAny(['02-mobile-search-coffee', '03-mobile-focus-first-result', '04-mobile-field-node-active'])) {
@@ -722,6 +783,7 @@ async function run() {
     bodyDataset: data.bodyDataset,
     scroll: data.scroll,
     boxes: data.boxes,
+    loadingOverlayDiagnostics: data.loadingOverlayDiagnostics,
     sceneLuminance: data.sceneLuminance,
   }));
 
@@ -921,6 +983,72 @@ async function run() {
         pass('17-mobile-thread-inspector', `thread-inspector:${label}-touch-target`);
       } else if (targetBox) {
         fail('17-mobile-thread-inspector', `thread-inspector:${label}-touch-target`, `${label} button is ${Math.round(targetBox.width)}x${Math.round(targetBox.height)}px`);
+      }
+    }
+  }
+
+  if (shouldAssert('18-mobile-loading-overlay')) {
+    const loadingState = requireState('18-mobile-loading-overlay');
+    const overlay = requireRendered('18-mobile-loading-overlay', 'loading-overlay:overlay-visible', '#loading-overlay');
+    const shell = requireRendered('18-mobile-loading-overlay', 'loading-overlay:shell-visible', '.loading-shell');
+    const kicker = requireRendered('18-mobile-loading-overlay', 'loading-overlay:kicker-visible', '.loading-kicker');
+    const title = requireRendered('18-mobile-loading-overlay', 'loading-overlay:title-visible', '.loading-title');
+    const note = requireRendered('18-mobile-loading-overlay', 'loading-overlay:note-visible', '.loading-note');
+    const progress = requireRendered('18-mobile-loading-overlay', 'loading-overlay:progress-visible', '.loading-progress');
+    const progressBar = requireRendered('18-mobile-loading-overlay', 'loading-overlay:progress-bar-visible', '#loading-progress-bar');
+    const phaseRow = requireRendered('18-mobile-loading-overlay', 'loading-overlay:phase-row-visible', '#loading-phase-row');
+    const phaseChip = requireRendered('18-mobile-loading-overlay', 'loading-overlay:phase-chip-visible', '.loading-phase-chip');
+    const foot = requireRendered('18-mobile-loading-overlay', 'loading-overlay:foot-visible', '#loading-foot');
+
+    const viewport = viewportFor(loadingState);
+    if (shell && withinViewport(shell, viewport)) {
+      pass('18-mobile-loading-overlay', 'loading-overlay:shell-within-viewport');
+    } else if (shell) {
+      fail('18-mobile-loading-overlay', 'loading-overlay:shell-within-viewport', '.loading-shell extends outside mobile viewport');
+    }
+    if (Number.parseInt(overlay?.zIndex || '0', 10) >= 999) {
+      pass('18-mobile-loading-overlay', 'loading-overlay:overlay-layer');
+    } else if (overlay) {
+      fail('18-mobile-loading-overlay', 'loading-overlay:overlay-layer', `expected overlay z-index >= 999, got ${overlay.zIndex || 'missing'}`);
+    }
+    if ((loadingState?.loadingOverlayDiagnostics?.phaseChipsCount || 0) >= 4) {
+      pass('18-mobile-loading-overlay', 'loading-overlay:phase-chip-count');
+    } else {
+      fail('18-mobile-loading-overlay', 'loading-overlay:phase-chip-count', `expected >=4 phase chips, got ${loadingState?.loadingOverlayDiagnostics?.phaseChipsCount || 0}`);
+    }
+    if ((loadingState?.loadingOverlayDiagnostics?.activePhaseCount || 0) === 1) {
+      pass('18-mobile-loading-overlay', 'loading-overlay:single-active-phase');
+    } else {
+      fail('18-mobile-loading-overlay', 'loading-overlay:single-active-phase', `expected one active phase, got ${loadingState?.loadingOverlayDiagnostics?.activePhaseCount || 0}`);
+    }
+    if (title?.text?.includes('Growing the mycelium')) {
+      pass('18-mobile-loading-overlay', 'loading-overlay:title-copy');
+    } else {
+      fail('18-mobile-loading-overlay', 'loading-overlay:title-copy', 'loading title does not include expected copy');
+    }
+    if (note?.text?.includes('Montgomery County business records')) {
+      pass('18-mobile-loading-overlay', 'loading-overlay:note-copy');
+    } else {
+      fail('18-mobile-loading-overlay', 'loading-overlay:note-copy', 'loading note does not include expected county-records copy');
+    }
+    if (foot?.text?.includes('Semantic scene')) {
+      pass('18-mobile-loading-overlay', 'loading-overlay:foot-copy');
+    } else {
+      fail('18-mobile-loading-overlay', 'loading-overlay:foot-copy', 'loading foot does not include expected fixture copy');
+    }
+    for (const [label, targetBox] of [
+      ['kicker', kicker],
+      ['title', title],
+      ['note', note],
+      ['progress', progress],
+      ['progress-bar', progressBar],
+      ['phase-row', phaseRow],
+      ['phase-chip', phaseChip],
+    ]) {
+      if (targetBox && targetBox.width > 0 && targetBox.height > 0) {
+        pass('18-mobile-loading-overlay', `loading-overlay:${label}-has-area`);
+      } else if (targetBox) {
+        fail('18-mobile-loading-overlay', `loading-overlay:${label}-has-area`, `${label} has no measurable area`);
       }
     }
   }
