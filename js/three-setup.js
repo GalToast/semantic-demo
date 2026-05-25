@@ -357,6 +357,21 @@ function bindWebGLContextResilience(renderer) {
     }, false);
 }
 
+function compilePointMaterialForReadiness() {
+    if (!state.renderer || !state.scene || !state.camera || !state.pointsMaterial) return;
+    state.pointsMaterial.needsUpdate = true;
+    try {
+        if (typeof state.renderer.compile === 'function') {
+            state.renderer.compile(state.scene, state.camera);
+        }
+        if (!state.pointsMaterial.userData.shader) {
+            state.renderer.render(state.scene, state.camera);
+        }
+    } catch (error) {
+        console.warn('Semantic point shader precompile failed:', error);
+    }
+}
+
 function getPointBoundsCenter(points) {
     const min = new THREE.Vector3(Infinity, Infinity, Infinity);
     const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
@@ -571,6 +586,7 @@ export function initThreeJS() {
     state.scene.add(refSphere);
 
     createPoints();
+    compilePointMaterialForReadiness();
     initSemanticLens();
     initSemanticManifold();
     document.body.dataset.graphicsMode = 'webgl';

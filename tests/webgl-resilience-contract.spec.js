@@ -31,7 +31,7 @@ async function waitForAppReady(page) {
     window.state.points.length > 0 &&
     window.state.pointIndexByLeadId?.size > 0 &&
     window.state.renderer !== null
-  ), { timeout: 25000 });
+  ), undefined, { timeout: 25000 });
   // Ensure loading overlay is gone so we know the render loop is active
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
@@ -41,7 +41,7 @@ async function waitForAppReady(page) {
       styles.display === 'none' ||
       styles.visibility === 'hidden' ||
       styles.pointerEvents === 'none';
-  }, { timeout: 20000 });
+  }, undefined, { timeout: 20000 });
   await page.waitForTimeout(1500);
 }
 
@@ -235,4 +235,81 @@ test.describe('WebGL Context Loss Resilience', () => {
     expect(canvasPresent, 'canvas element must still be in DOM after context restore').toBe(true);
   });
 
+  test('pointsMaterial shader is reconstructed after context restore; no zombie shader', async ({ page }) => {
+    test.setTimeout(60000);
+    await waitForAppReady(page);
+
+    // Verify shader exists before loss
+    const shaderExistsBefore = await page.evaluate(() => {
+      const mat = window.state?.pointsMaterial;
+      return mat && typeof mat.userData?.shader === 'object' && mat.userData.shader !== null;
+    });
+    expect(shaderExistsBefore, 'shader must exist before loss test').toBe(true);
+
+    // Inject loss/restoration handlers
+    await page.evaluate(() => {
+      const canvas = document.querySelector('canvas');
+      if (!canvas) return;
+      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+      if (!gl) return;
+      const ext = gl.getExtension('WEBGL_lose_context');
+      canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); document.body.dataset.webglContextLost = 'lost'; }, { passive: false });
+      canvas.addEventListener('webglcontextrestored', () => { document.body.dataset.webglContextLost = 'restored'; }, { passive: false });
+      window.__webglLoseContextExt = ext;
+    });
+
+    const extAvailable = await page.evaluate(() => !!window.__webglLoseContextExt);
+    if (!extAvailable) { test.skip('WEBGL_lose_context not available'); return; }
+
+    // Lose then restore
+    await page.evaluate(() => window.__webglLoseContextExt?.loseContext());
+    await page.waitForTimeout(400);
+    await page.evaluate(() => window.__webglLoseContextExt?.restoreContext());
+    await page.waitForTimeout(2000); // Allow restore + reinit to complete
+
+    // Critical: shader must be a valid object after restore (not null, not undefined)
+    const shaderAfterRestore = await page.evaluate(() => {
+      const mat = window.state?.pointsMaterial;
+      if (!mat) return { exists: false, reason: 'pointsMaterial is null' };
+      const shader = mat.userData?.shader;
+      return {
+        exists: typeof shader === 'object' && shader !== null,
+        hasUniforms: shader ? (typeof shader.uniforms === 'object') : false,
+        uniformCount: shader ? Object.keys(shader.uniforms || {}).length : 0
+      };
+    });
+
+    expect(shaderAfterRestore.exists, `shader must be reconstructed after restore (was: ${shaderAfterRestore.reason})`).toBe(true);
+    expect(shaderAfterRestore.hasUniforms, 'shader must have uniforms object').toBe(true);
+    expect(shaderAfterRestore.uniformCount, 'shader must have more than zero uniforms').toBeGreaterThan(0);
+  });
+
+  test('map route precompiles points shader before animation can pause', async ({ page }) => {
+    test.setTimeout(45000);
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=map&nodemo=1&q=coffee&anchor=519`, { waitUntil: 'domcontentloaded' });
+
+    await page.waitForFunction(() => {
+      const state = window.state;
+      return Boolean(
+        state?.renderer &&
+        state?.scene &&
+        state?.camera &&
+        state?.pointsMesh?.geometry?.attributes?.position?.count &&
+        state?.pointsMaterial?.userData?.shader
+      );
+    }, undefined, { timeout: 12000 });
+
+    const mapReady = await page.evaluate(() => ({
+      currentView: window.state?.currentView,
+      graphicsMode: document.body.dataset.graphicsMode,
+      pointCount: window.state?.pointsMesh?.geometry?.attributes?.position?.count ?? 0,
+      shaderUniforms: Object.keys(window.state?.pointsMaterial?.userData?.shader?.uniforms || {}),
+    }));
+
+    expect(mapReady.graphicsMode, 'map route should still initialize WebGL graphics mode').toBe('webgl');
+    expect(mapReady.pointCount, 'map route should keep the semantic point cloud available').toBeGreaterThan(0);
+    expect(mapReady.shaderUniforms, 'map route should precompile semantic point shader uniforms').toEqual(
+      expect.arrayContaining(['uGlowIntensity', 'uRippleTime', 'uRevealProgress'])
+    );
+  });
 });
