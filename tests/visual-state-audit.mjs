@@ -221,6 +221,9 @@ async function captureState(page, name) {
   if (name === '18-mobile-loading-overlay') {
     await applyLoadingOverlayState(page);
   }
+  if (name === '19-mobile-compass-rail') {
+    await applyCompassRailState(page);
+  }
 
   const data = await page.evaluate(() => {
     const selectors = [
@@ -273,6 +276,10 @@ async function captureState(page, name) {
       '.map-empty-state',
       '.journey-compass-note',
       '.journey-compass-rail',
+      '.journey-compass-step',
+      '.journey-compass-kicker',
+      '.journey-compass-title',
+      '.journey-compass-actions',
       '.view-toggle',
       '#btn-legend',
     ];
@@ -351,6 +358,43 @@ async function captureState(page, name) {
           phaseChipsCount: chips.length,
           activePhaseCount: chips.filter((chip) => chip.classList.contains('is-active')).length,
           completePhaseCount: chips.filter((chip) => chip.classList.contains('is-complete')).length,
+        };
+      })(),
+      compassRailDiagnostics: (() => {
+        const textClipped = (el) => {
+          if (!el) return false;
+          const style = getComputedStyle(el);
+          if (style.display === 'none' || style.visibility === 'hidden') return false;
+          const rect = el.getBoundingClientRect();
+          return el.scrollWidth > rect.width + 1 || el.scrollHeight > rect.height + 1;
+        };
+        const rail = document.querySelector('.journey-compass-rail');
+        const steps = Array.from(document.querySelectorAll('.journey-compass-step'));
+        return {
+          railOverflow: rail ? rail.scrollWidth > rail.getBoundingClientRect().width + 1 : null,
+          stepsCount: steps.length,
+          visibleStepsCount: steps.filter((step) => {
+            const style = getComputedStyle(step);
+            return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0.05;
+          }).length,
+          clippedStepsCount: steps.filter((step) => textClipped(step)).length,
+          currentStepsCount: steps.filter((step) => step.classList.contains('current')).length,
+          doneStepsCount: steps.filter((step) => step.classList.contains('done')).length,
+          smallTouchTargets: steps
+            .map((step) => {
+              const rect = step.getBoundingClientRect();
+              const style = getComputedStyle(step);
+              return {
+                text: (step.textContent || '').replace(/\s+/g, ' ').trim(),
+                width: rect.width,
+                height: rect.height,
+                pointerEvents: style.pointerEvents,
+              };
+            })
+            .filter((step) => step.width < 43.5 || step.height < 43.5),
+          kickerClipped: textClipped(document.querySelector('.journey-compass-kicker')),
+          titleClipped: textClipped(document.querySelector('.journey-compass-title')),
+          noteClipped: textClipped(document.querySelector('.journey-compass-note')),
         };
       })(),
     };
@@ -455,6 +499,79 @@ async function applyLoadingOverlayState(page) {
   });
 }
 
+async function applyCompassRailState(page) {
+  await page.evaluate(() => {
+    document.body.classList.add('is-active');
+    document.body.dataset.activeView = 'galaxy';
+    document.body.dataset.graphContext = 'map';
+    document.body.dataset.panelSurface = 'map-idle';
+    document.body.dataset.mapContext = 'idle';
+    document.body.dataset.routeExploration = 'free';
+
+    const loadingOverlay = document.querySelector('#loading-overlay');
+    if (loadingOverlay) {
+      loadingOverlay.classList.add('hidden');
+      loadingOverlay.style.display = 'none';
+      loadingOverlay.setAttribute('aria-hidden', 'true');
+    }
+
+    const searchContainer = document.querySelector('.search-container');
+    if (searchContainer) {
+      searchContainer.classList.remove('has-query', 'results-rendered', 'searching');
+    }
+
+    const compass = document.querySelector('.journey-compass');
+    if (compass) {
+      compass.dataset.phase = 'map';
+      compass.dataset.density = 'standard';
+      compass.style.display = 'grid';
+      compass.style.visibility = 'visible';
+      compass.style.opacity = '1';
+    }
+
+    document.querySelectorAll('.journey-compass-step').forEach((step) => {
+      const stepName = step.getAttribute('data-journey-step');
+      const isCurrent = stepName === 'map';
+      const isDone = ['overview', 'search', 'focus', 'inside'].includes(stepName || '');
+      step.classList.toggle('current', isCurrent);
+      step.classList.toggle('done', isDone);
+      step.setAttribute('aria-current', isCurrent ? 'step' : 'false');
+      step.style.display = 'grid';
+      step.style.visibility = 'visible';
+    });
+
+    const rail = document.querySelector('.journey-compass-rail');
+    if (rail) {
+      rail.style.display = 'grid';
+      rail.style.visibility = 'visible';
+    }
+
+    const actions = document.querySelector('.journey-compass-actions');
+    if (actions) {
+      actions.style.display = 'flex';
+      actions.style.visibility = 'visible';
+    }
+
+    const title = document.querySelector('#journey-compass-title');
+    if (title) {
+      title.textContent = 'Map View';
+      title.style.display = 'block';
+      title.style.visibility = 'visible';
+    }
+    const note = document.querySelector('#journey-compass-note');
+    if (note) {
+      note.textContent = 'The map rail keeps the journey steps visible.';
+      note.style.display = 'block';
+      note.style.visibility = 'visible';
+    }
+    const kicker = document.querySelector('#journey-compass-kicker');
+    if (kicker) {
+      kicker.style.display = 'block';
+      kicker.style.visibility = 'visible';
+    }
+  });
+}
+
 async function run() {
   await ensureDir(outDir);
   const states = [];
@@ -472,6 +589,7 @@ async function run() {
       '11-mobile-selected-card-map-trail',
       '17-mobile-thread-inspector',
       '18-mobile-loading-overlay',
+      '19-mobile-compass-rail',
     ])) {
       const browser = await chromium.launch({ headless: true });
       try {
@@ -485,6 +603,11 @@ async function run() {
         if (wantsState('18-mobile-loading-overlay')) {
           await gotoReady(mobilePage, targetUrl);
           await captureMaybe(states, mobilePage, '18-mobile-loading-overlay');
+        }
+
+        if (wantsState('19-mobile-compass-rail')) {
+          await gotoReady(mobilePage, targetUrl);
+          await captureMaybe(states, mobilePage, '19-mobile-compass-rail');
         }
 
         if (wantsAny(['02-mobile-search-coffee', '03-mobile-focus-first-result', '04-mobile-field-node-active'])) {
@@ -784,6 +907,7 @@ async function run() {
     scroll: data.scroll,
     boxes: data.boxes,
     loadingOverlayDiagnostics: data.loadingOverlayDiagnostics,
+    compassRailDiagnostics: data.compassRailDiagnostics,
     sceneLuminance: data.sceneLuminance,
   }));
 
@@ -836,6 +960,20 @@ async function run() {
     }
     if (!isRendered(targetBox)) {
       fail(name, check, `not displayed: ${selector}`);
+      return null;
+    }
+    pass(name, check);
+    return targetBox;
+  };
+  const requireVisible = (name, check, selector) => {
+    const state = requireState(name);
+    const targetBox = box(state, selector);
+    if (!targetBox) {
+      fail(name, check, `missing selector: ${selector}`);
+      return null;
+    }
+    if (!isVisible(targetBox)) {
+      fail(name, check, `not visible: ${selector}`);
       return null;
     }
     pass(name, check);
@@ -1050,6 +1188,79 @@ async function run() {
       } else if (targetBox) {
         fail('18-mobile-loading-overlay', `loading-overlay:${label}-has-area`, `${label} has no measurable area`);
       }
+    }
+  }
+
+  if (shouldAssert('19-mobile-compass-rail')) {
+    const compassState = requireState('19-mobile-compass-rail');
+    const compass = requireVisible('19-mobile-compass-rail', 'compass-rail:compass-visible', '.journey-compass');
+    const rail = requireVisible('19-mobile-compass-rail', 'compass-rail:rail-visible', '.journey-compass-rail');
+    const step = requireVisible('19-mobile-compass-rail', 'compass-rail:step-visible', '.journey-compass-step');
+    const kicker = box(compassState, '.journey-compass-kicker');
+    const title = requireVisible('19-mobile-compass-rail', 'compass-rail:title-visible', '.journey-compass-title');
+    const note = box(compassState, '.journey-compass-note');
+    requireRendered('19-mobile-compass-rail', 'compass-rail:actions-visible', '.journey-compass-actions');
+
+    const viewport = viewportFor(compassState);
+    if (compass && withinViewport(compass, viewport)) {
+      pass('19-mobile-compass-rail', 'compass-rail:compass-within-viewport');
+    } else if (compass) {
+      fail('19-mobile-compass-rail', 'compass-rail:compass-within-viewport', '.journey-compass extends outside mobile viewport');
+    }
+    if (rail && withinViewport(rail, viewport)) {
+      pass('19-mobile-compass-rail', 'compass-rail:rail-within-viewport');
+    } else if (rail) {
+      fail('19-mobile-compass-rail', 'compass-rail:rail-within-viewport', '.journey-compass-rail extends outside mobile viewport');
+    }
+    if (rail?.pointerEvents === 'none') {
+      pass('19-mobile-compass-rail', 'compass-rail:noninteractive-occlusion-skipped');
+    } else if (rail?.centerTopInside) {
+      pass('19-mobile-compass-rail', 'compass-rail:not-occluded');
+    } else if (rail) {
+      fail('19-mobile-compass-rail', 'compass-rail:not-occluded', `rail center is covered by ${rail.topElement || 'nothing'}`);
+    }
+
+    const diagnostics = compassState?.compassRailDiagnostics || {};
+    if ((diagnostics.stepsCount || 0) >= 4) {
+      pass('19-mobile-compass-rail', 'compass-rail:step-count');
+    } else {
+      fail('19-mobile-compass-rail', 'compass-rail:step-count', `expected >=4 steps, got ${diagnostics.stepsCount || 0}`);
+    }
+    if (diagnostics.visibleStepsCount === diagnostics.stepsCount && diagnostics.stepsCount >= 4) {
+      pass('19-mobile-compass-rail', 'compass-rail:steps-visible');
+    } else {
+      fail('19-mobile-compass-rail', 'compass-rail:steps-visible', `visible ${diagnostics.visibleStepsCount || 0} of ${diagnostics.stepsCount || 0} steps`);
+    }
+    if (!diagnostics.railOverflow) {
+      pass('19-mobile-compass-rail', 'compass-rail:no-rail-overflow');
+    } else {
+      fail('19-mobile-compass-rail', 'compass-rail:no-rail-overflow', 'journey compass rail has horizontal overflow');
+    }
+    if ((diagnostics.clippedStepsCount || 0) === 0 && !diagnostics.kickerClipped && !diagnostics.titleClipped && !diagnostics.noteClipped) {
+      pass('19-mobile-compass-rail', 'compass-rail:no-text-clipping');
+    } else {
+      fail('19-mobile-compass-rail', 'compass-rail:no-text-clipping', `clipped steps=${diagnostics.clippedStepsCount || 0}, kicker=${Boolean(diagnostics.kickerClipped)}, title=${Boolean(diagnostics.titleClipped)}, note=${Boolean(diagnostics.noteClipped)}`);
+    }
+    if ((diagnostics.currentStepsCount || 0) === 1) {
+      pass('19-mobile-compass-rail', 'compass-rail:single-current-step');
+    } else {
+      fail('19-mobile-compass-rail', 'compass-rail:single-current-step', `expected one current step, got ${diagnostics.currentStepsCount || 0}`);
+    }
+    const smallInteractiveTargets = (diagnostics.smallTouchTargets || []).filter((target) => target.pointerEvents !== 'none');
+    if (smallInteractiveTargets.length === 0) {
+      pass('19-mobile-compass-rail', 'compass-rail:interactive-touch-targets');
+    } else {
+      fail('19-mobile-compass-rail', 'compass-rail:interactive-touch-targets', `small targets: ${smallInteractiveTargets.map((target) => `${target.text}:${Math.round(target.width)}x${Math.round(target.height)}`).join(', ')}`);
+    }
+    if (title?.text?.includes('Map View')) {
+      pass('19-mobile-compass-rail', 'compass-rail:copy');
+    } else {
+      fail('19-mobile-compass-rail', 'compass-rail:copy', 'compass title did not include expected map copy');
+    }
+    if (step?.text?.length && (kicker?.text?.length || note?.text?.length || title?.text?.length)) {
+      pass('19-mobile-compass-rail', 'compass-rail:text-mounted');
+    } else {
+      fail('19-mobile-compass-rail', 'compass-rail:text-mounted', 'compass rail text missing');
     }
   }
 
