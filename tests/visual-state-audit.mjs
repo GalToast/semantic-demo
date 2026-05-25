@@ -470,7 +470,6 @@ async function captureState(page, name) {
 
 async function captureMaybe(states, page, name) {
   if (requestedStates.size && !requestedStates.has(name)) {
-    await waitForReady(page);
     return null;
   }
   const captured = await captureState(page, name);

@@ -7,7 +7,7 @@ import { getProjectedNeighborCandidates } from './journey-thread-model.js';
 import { normalizeLeadId } from './journey-thread-model.js';
 import { truncateMicrocopy } from './thread-inspector-text-helpers.js';
 import { focusOnNode } from './camera-controls.js';
-import { dispatchNavTransition, updateJourneyCompass } from './lifecycle.js';
+import { dispatchNavTransition, updateJourneyCompass, focusOnPoint } from './lifecycle.js';
 import { showExperienceToast } from './ui-feedback.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 
@@ -25,10 +25,6 @@ function getInsideRelationshipLabel(candidate, point, focusPoint) {
 
 function syncFocusStage(point) {
     if (typeof window.syncFocusStage === 'function') window.syncFocusStage(point);
-}
-
-function focusOnPoint(point, options) {
-    if (typeof window.focusOnPoint === 'function') window.focusOnPoint(point, options);
 }
 
 function syncArrivalHandoffOverlay() {

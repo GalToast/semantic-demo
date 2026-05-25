@@ -39,6 +39,7 @@ const MODULES = {
   eventBindings: path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js'),
   sceneReveal: path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.js'),
   app:         path.join(SEMDEMO_ROOT, 'js/modules/app.js'),
+  mapState:    path.join(SEMDEMO_ROOT, 'js/modules/map-state.js'),
   clusterFilter: path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.js'),
   journeyCompassCtrl: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.js'),
   journeyCompassState: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-state.js'),
@@ -504,11 +505,43 @@ function testBareCallBaseline() {
   console.log('  OK — baseline recorded (informational only, no failure)');
 }
 
-// ── TEST 6 — Verify window-bridge-gaps-contract.mjs still passes ─────────────
+// ── TEST 6 — Runtime callers migrated off retained focusOnPoint bridge ───────
+
+function testFocusOnPointRuntimeCallersDewindowed() {
+  console.log('\n[TEST 6] Runtime callers do not use window.focusOnPoint');
+
+  const callers = ['journey', 'mapState', 'threadInspector'];
+  const problems = [];
+
+  for (const mod of callers) {
+    const src = read(mod);
+    if (src.includes('window.focusOnPoint')) {
+      problems.push(`  ${mod}: still references window.focusOnPoint`);
+    }
+    if (!/\bfocusOnPoint\b/.test(src)) {
+      problems.push(`  ${mod}: expected a focusOnPoint direct import/call after dewindowing`);
+    }
+  }
+
+  const lifecycleSrc = read('lifecycle');
+  assert(
+    /window\.focusOnPoint\s*=\s*focusOnPoint/.test(lifecycleSrc),
+    'lifecycle.js should retain the temporary window.focusOnPoint compatibility bridge'
+  );
+
+  assert(
+    problems.length === 0,
+    `Runtime focusOnPoint callers must use direct imports, not the window bridge:\n${problems.join('\n')}`
+  );
+
+  console.log('  OK — journey/map-state/thread-inspector use direct focusOnPoint imports; lifecycle bridge is compatibility-only');
+}
+
+// ── TEST 7 — Verify window-bridge-gaps-contract.mjs still passes ─────────────
 // Run the sibling contract to ensure no regressions in the already-dewindowed seams.
 
 function testSiblingContractStillPasses() {
-  console.log('\n[TEST 6] sibling window-bridge-gaps-contract.mjs still passes');
+  console.log('\n[TEST 7] sibling window-bridge-gaps-contract.mjs still passes');
 
   try {
     const result = execFileSync(
@@ -541,6 +574,7 @@ try {
   testAppJsExportsAreThin();
   testExtractionCandidatesDocumented();
   testBareCallBaseline();
+  testFocusOnPointRuntimeCallersDewindowed();
   testSiblingContractStillPasses();
 
   console.log('\n=================================================================');

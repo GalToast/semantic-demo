@@ -4,7 +4,7 @@ import {
     isPointVisible, 
     formatBusinessName
 } from '../utils.js';
-import { showExperienceToast } from './lifecycle.js';
+import { showExperienceToast, focusOnPoint } from './lifecycle.js';
 
 // js/modules/map-state.js
 
@@ -137,7 +137,7 @@ export async function initMap() {
                         );
                         return;
                     }
-                    if (typeof window.focusOnPoint === 'function') window.focusOnPoint(point, { revealCard: true, fromSearchResult: true });
+                    focusOnPoint(point, { revealCard: true, fromSearchResult: true });
                 });
 
                 state.pointMarkers.push({ marker, index });

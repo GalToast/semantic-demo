@@ -26,7 +26,8 @@
 | `window.resetExplorationFocus` | lifecycle.js:2494 | app.js:122 | Reset non-functional |
 | `window.resetStateBeforeUrlRestore` | lifecycle.js:2495 | (used internally by lifecycle) | URL restore state bleed |
 | `window.refreshCompositionState` | lifecycle.js:2496 | app.js:124, lifecycle.js:409/729/943 | Composition not refreshed |
-| `window.syncSemanticDiveUi` | lifecycle.js compatibility bridge retained 2026-05-25 | Runtime source callers dewindowed 2026-05-25; camera-controls, journey-compass-controller, journey, and thread-inspector import `syncSemanticDiveUi` directly | Temporary test/external compatibility shim |
+| `window.syncSemanticDiveUi` | lifecycle.js compatibility bridge retained 2026-05-25 | Runtime source callers dewindowed 2026-05-25; camera-controls, journey-compass-controller, journey, and thread-inspector import `syncSemanticDiveUi` directly | Retained temporary compatibility shim (tests / external callers only) |
+| `window.focusOnPoint` | lifecycle.js compatibility bridge retained 2026-05-25 | Runtime source callers dewindowed 2026-05-25; map-state, journey, and thread-inspector import `focusOnPoint` directly from lifecycle.js | Temporary test/external compatibility shim |
 | `window.getInterestingBusinessNote` | lifecycle.js:2507 | journey.js:1212/1453 | Empty card notes |
 | `window.buildSelectedMatchNarrative` | lifecycle.js:2545 | journey.js:1214/1455 | Empty match narrative |
 | `window.setSemanticDiveMode` (journey.js) | journey.js:3096 (overrides lifecycle.js) | journey.js:61 | Overwrites lifecycle shim |
@@ -178,3 +179,11 @@ if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi
 **Dewindowed approach**: Replace with direct `updateExplorationUi()` calls — function is already locally defined and exported.
 **Files**: lifecycle.js (3 replacements)
 **Verification**: `rg -n "window\.updateExplorationUi" js/modules/lifecycle.js` → expect 0 hits
+
+### focusOnPoint — COMPLETED (2026-05-25)
+`focusOnPoint` runtime callers migrated to direct named imports from `lifecycle.js`:
+- **journey.js**: Added `focusOnPoint` to the lifecycle import and replaced the map-mode traversal window guard with a direct `focusOnPoint()` call.
+- **map-state.js**: Added `focusOnPoint` to the lifecycle import and replaced the marker click window guard with a direct `focusOnPoint()` call.
+- **thread-inspector.js**: Added `focusOnPoint` to the lifecycle import and removed the redundant local window wrapper.
+- **lifecycle.js**: Retains `window.focusOnPoint = focusOnPoint` as a temporary compatibility bridge for external/test callers.
+- **Verification**: `rg -n "window\.focusOnPoint" js/modules` should show only the retained lifecycle bridge.

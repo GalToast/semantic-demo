@@ -33,7 +33,7 @@ import {
 } from './ui-renderers.js';
 import { focusOnNode, noteSceneInteraction, releaseFocusCameraAssist } from './camera-controls.js';
 import { syncInspectedStrandOverlay } from './thread-inspector.js';
-import { refreshCompositionState, dispatchNavTransition, NAV_TRANSITION_ACTIONS, updateJourneyCompass } from './lifecycle.js';
+import { refreshCompositionState, dispatchNavTransition, NAV_TRANSITION_ACTIONS, updateJourneyCompass, focusOnPoint } from './lifecycle.js';
 import { setTrailNavState } from './navigation-state.js';
 import { applyLocalNeighborhoodFocus, setFocusPocketMeta } from './focus-pocket.js';
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
@@ -633,14 +633,12 @@ export function walkThreadNeighbor(index, options = {}) {
     const preserveNeighborhood =
         state.currentView === 'galaxy' && isBoundedNeighborhoodActive() && !options.expandNeighborhood;
     if (state.currentView === 'map') {
-        if (typeof window.focusOnPoint === 'function') {
-            window.focusOnPoint(targetPoint, {
-                fromTraversal: true,
-                appendHistory: !options.restoreHistory,
-                restoreHistory: !!options.restoreHistory,
-                fromIndex
-            });
-        }
+        focusOnPoint(targetPoint, {
+            fromTraversal: true,
+            appendHistory: !options.restoreHistory,
+            restoreHistory: !!options.restoreHistory,
+            fromIndex
+        });
     } else {
         focusOnNode(index, {
             fromCanvasNode: !!options.fromCanvasNode,
