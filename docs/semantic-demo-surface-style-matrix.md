@@ -1,0 +1,63 @@
+# Semantic Demo Surface Style Matrix
+
+Date: 2026-05-25
+
+This matrix connects the design tokens in `docs/semantic-demo-design-tokens.md` to the composed app states captured by `tests/visual-state-audit.mjs`. The token sheet defines the primitives; this matrix defines how those primitives should show up across real surfaces.
+
+The current visual audit exposes 17 state ids. This is broader than the older "12-state" shorthand and includes diagnostic desktop/mobile variants such as reduced motion, desktop filters, desktop search error, and mobile semantic dive.
+
+## Source Of Truth
+
+- Visual state ids come from `tests/visual-state-audit.mjs`.
+- Token values come from `css/base.css` and are described in `docs/semantic-demo-design-tokens.md`.
+- CSS ownership comes from `docs/semantic-demo-css-authority-map.md`, `docs/semantic-demo-mobile-state-ownership.md`, and `docs/semantic-demo-focus-stage-css-owner-matrix.md`.
+- This matrix is a design-governance index, not selector authority.
+
+## Surface Policy
+
+- Docked bottom panels anchor flush to the viewport. Safe-area comfort belongs inside the panel as padding or content inset.
+- Mobile interactive targets use `--mobile-touch-min` (`44px`) or better unless intentionally hidden or pointer-disabled.
+- Glass chrome uses the `--glass-*`, `--shadow-*`, and text color tokens before local one-off values.
+- New state-specific styling should cite the owner doc and preserve `npm run check:ownership`.
+- Visual signoff requires a relevant contract plus screenshot, DOM, layout, or video evidence under `tmp/`.
+
+## Matrix
+
+| Visual state | Intent | Primary surfaces | Token families | Anchoring / safe area | CSS / owner references | Minimum proof |
+|---|---|---|---|---|---|---|
+| `01-mobile-idle` | First mobile overview with scene visible and bottom info available. | Journey compass, bottom info sheet, idle stats/content, hidden idle route controls. | Glass/elevation, mobile type, spacing, mobile touch, text color. | Bottom info shell flush to viewport; internal content scroll/padding handles comfort. | `#info-panel`, `.journey-compass`, Mobile final overrides in `docs/semantic-demo-css-authority-map.md`; state gates in `docs/semantic-demo-mobile-state-ownership.md`. | `npm run qa:surface:mobile-idle`; `npm run qa:contract:mobile-idle`; targeted flush proof when bottom geometry changes. |
+| `02-mobile-search-coffee` | Mobile search corridor with query, results, and compact wayfinding. | Search drawer, search input/results, journey compass, search status. | Glass/elevation, text hierarchy, spacing, mobile touch, primary/accent for active search state. | Search sheet must fit without horizontal overflow; tappable controls stay at least `44px`. | `.search-container`, `#search-results`, `.journey-compass` ownership in authority map; `data-mobile-search-sheet` mirror in mobile state ownership. | `npm run qa:surface`; `npm run qa:contract:search-chrome`; row-content screenshot proof before hiding result subcontent. |
+| `03-mobile-focus-first-result` | Mobile focus after selecting the first result. | Focus stage, selected match/card content, journey action, compact search context. | Glass/elevation, card radius, mobile type, motion, touch targets. | Focus/bottom surfaces must not overlap incoherently; action controls remain reachable. | `#focus-stage` authority map row; `focus` state in focus-stage owner matrix. | `npm run qa:surface:focus`; `npm run qa:contract:focus-pocket`. |
+| `04-mobile-field-node-active` | Dense field-node submode for step-inside/canopy style navigation. | Field-node journey compass, focus-stage walk dock, field step sync chrome. | Mobile type/action, touch targets, glass glow, motion. | Treat `data-focus-panel-mode="field-node"` as a submode paired with `focus-search`; preserve compact reachable controls. | `data-focus-panel-mode` in mobile state ownership; field-node notes in authority/focus-stage owner docs. | `npm run qa:contract:field-node`; `npm run qa:contract:compass-rail`; visual proof for canopy/walk-dock changes. |
+| `05-mobile-map` | Mobile map view with map chrome and trail-aware navigation. | Map container, map trail strip, map controls/chrome, view toggle. | Glass/elevation, map chrome spacing, touch targets, text contrast. | Map chrome must remain within viewport and avoid blocking essential map content. | `.map-trail-strip` authority row; `data-active-view="map"` in mobile state ownership. | `npm run qa:surface:map-trail`; direct `?view=map&q=coffee&anchor=519` proof. |
+| `06-mobile-filters-open` | Mobile filters expanded over the overview/search system. | Filters section, info/search context, details disclosure chrome. | Spacing, text hierarchy, glass surface, touch targets. | Expanded filters must not create horizontal overflow; summary/control targets remain tappable. | `#info-panel` verification states in authority map; filter state gates through panel/search context. | `npm run qa:visual -- --states=06-mobile-filters-open` or targeted visual audit; relevant filters contract when behavior changes. |
+| `07-desktop-idle` | Desktop overview with primary chrome and selected-card behavior stable. | Info panel, selected/about card behavior, compass, labels, scene. | Glass/elevation, desktop line heights, text colors, card radius, scene harmony. | Desktop panels may float when intentional; no accidental overlap with compass or scene labels. | `#info-panel`, `.selected-card`, `.galaxy-cluster-label` authority rows. | `npm run qa:surface:desktop-idle`; desktop idle visual proof. |
+| `08-desktop-search-coffee` | Desktop search results and scene context for a query. | Search panel/results, selected/about card behavior, compass/search context. | Glass/elevation, text hierarchy, spacing, active primary states. | Search/results must remain visible and not clip row subcontent. | `.search-container`, `#search-results`, `.selected-card` authority rows. | `npm run qa:visual -- --states=08-desktop-search-coffee`; search visibility assertions. |
+| `09-mobile-map-empty-state` | Mobile map view with no selected trail/result. | Map container, empty-state copy/action, map chrome. | Text hierarchy, glass/elevation, muted/primary contrast, touch targets. | Empty state should be readable without blocking map orientation. | Map chrome authority row; `data-active-view="map"` ownership. | `npm run qa:visual -- --states=09-mobile-map-empty-state`; map empty-state assertions. |
+| `10-mobile-search-error-state` | Mobile degraded semantic lane/search error. | Search error alert, retry/dismiss buttons, degraded search container. | Accent/primary contrast, text hierarchy, touch targets, glass surface. | Error actions must remain visible and tappable inside the search surface. | Search error state under `.search-container` / `#search-results`; lane degraded data state in visual audit. | `npm run qa:surface:search-error`; `npm run qa:contract:search-error`. |
+| `11-mobile-selected-card-map-trail` | Mobile map-trail with selected card/trail context. | Selected card, map trail strip, map chrome, active map scene. | Card radius, glass/elevation, cluster accent, text contrast, mobile touch. | Selected card and map trail strip must stay within viewport and not fight map content. | `.selected-card`, `.map-trail-strip`, map-trail rows in authority/focus-stage docs. | `npm run qa:contract:map-trail`; `npm run qa:surface:map-trail`. |
+| `11-desktop-selected-card-map-trail` | Desktop map-trail with selected card and map chrome. | Selected card, search container, map container, trail strip, compass. | Glass/elevation, desktop line heights, card radius, text contrast. | Selected card should anchor predictably and self-scroll if content is long; compass/card overlap is a failure. | `.selected-card`, `.map-trail-strip`, map-trail owner rows. | `npm run qa:surface:desktop-map-trail`; `npm run qa:contract:map-trail`. |
+| `12-desktop-reduced-motion` | Desktop overview under reduced-motion preference. | Desktop chrome, selected/about card behavior, scene with reduced motion. | Motion tokens, glass/elevation, text hierarchy. | Motion reduction should preserve final layout and focus visibility. | Reduced-motion rules in CSS architecture/animations; selected-card authority row. | `npm run qa:surface:reduced-motion`; reduced-motion contract/video proof for motion edits. |
+| `13-desktop-filters-open` | Desktop layout diagnostic for the filters-open path. Desktop filters are not a primary product surface here. | Search container, idle desktop chrome, hidden/guarded filters section. | Spacing, glass/elevation, text hierarchy. | The diagnostic must prove no overflow and no search chrome breakage, not that desktop filters are visibly open. | Filter/search surface ownership through `css/search.css`, `css/layout_base.css`, `css/progressive_disclosure.css`, and state docs. | `npm run qa:visual -- --states=13-desktop-filters-open`. |
+| `13-mobile-reduced-motion` | Mobile overview/search chrome under reduced-motion preference. | Mobile info/search chrome, compass, reduced-motion scene. | Motion tokens, mobile type, touch targets, glass/elevation. | Reduced-motion state must preserve reachable controls and stable bottom anchoring. | Reduced-motion CSS plus mobile final override docs. | `npm run qa:visual -- --states=13-mobile-reduced-motion`; motion contract when transitions change. |
+| `14-desktop-search-error` | Desktop degraded semantic lane/search error. | Search error alert, retry/dismiss controls, desktop search results container. | Text hierarchy, primary/accent contrast, glass surface, touch/click target sizing. | Error surface must be visible inside desktop search chrome without clipping. | Search authority row; degraded lane state in visual audit. | `npm run qa:visual -- --states=14-desktop-search-error`; search error assertions. |
+| `15-mobile-semantic-dive` | Natural mobile semantic dive after focus and Step Inside. | Semantic-dive focus stage, inside status, inside controls, journey/dive copy. | Glass/elevation, mobile type, touch targets, motion, accent/primary contrast. | Dive sheet shells should remain anchored; inside controls need internal safe-area comfort. | `semantic-dive` state in focus-stage owner matrix; `data-panel-surface="semantic-dive"` in mobile state ownership. | `npm run qa:visual -- --states=15-mobile-semantic-dive`; semantic-dive contract/video proof when motion or transition behavior changes. |
+
+## Coverage Rule
+
+Every visual audit state id in `tests/visual-state-audit.mjs` must appear in this matrix. If a state is removed or renamed, update this file and the matching visual/contract proof lane in the same change.
+
+## Contract-Only Surface Gaps
+
+Some surface contracts do not yet have a dedicated visual audit state id. They remain covered by contract tests, but they are not represented as composed visual rows above:
+
+| Surface | Current coverage | Gap |
+|---|---|---|
+| `compass-rail` | `npm run qa:contract:compass-rail` | No dedicated visual audit state row. |
+| `loading-overlay` | `npm run qa:contract:loading-overlay` | No dedicated visual audit state row. |
+| `mode-grid` | `npm run qa:contract:mode-grid` | No dedicated visual audit state row. |
+| `global-spacing` | `npm run qa:contract:global-spacing` | No dedicated visual audit state row. |
+| `info-panel-populated` | `npm run qa:contract:info-panel-populated` | No dedicated visual audit state row separate from idle/search states. |
+| `thread-inspector` | `npm run qa:contract:thread-inspector` | No dedicated visual audit state row. |
+
+If any of these surfaces become a visible design-review target, add a visual audit state or add a second matrix section that maps contract-only surfaces to token families and proof requirements.
