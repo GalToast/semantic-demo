@@ -451,8 +451,12 @@ async function captureState(page, name) {
           connectionPairCount: Array.isArray(window.state?.routeTraceConnectionPairs)
             ? window.state.routeTraceConnectionPairs.length
             : 0,
+          motionProbe: window.__routeTraceMotionProbe || null,
         };
       })(),
+      inspectedStrandDiagnostics: {
+        ...(window.state?.inspectedStrandDiagnostics || {}),
+      },
     };
   });
 
@@ -867,6 +871,16 @@ async function run() {
               window.state?.routeTraceLines
             );
           }, undefined, { timeout: 8000 }).catch(() => {});
+          await mobilePage.evaluate(async () => {
+            const t1 = window.state?.routeTraceLines?.material?.uniforms?.time?.value ?? null;
+            await new Promise((resolve) => setTimeout(resolve, 300));
+            const t2 = window.state?.routeTraceLines?.material?.uniforms?.time?.value ?? null;
+            window.__routeTraceMotionProbe = {
+              t1,
+              t2,
+              advanced: Number.isFinite(t1) && Number.isFinite(t2) && t2 > t1,
+            };
+          });
           await captureMaybe(states, mobilePage, '21-mobile-route-trace-visible');
         }
 
@@ -879,11 +893,26 @@ async function run() {
           }
           await mobilePage.waitForTimeout(800);
           await mobilePage.evaluate(() => {
+            const state = window.state || {};
+            if (typeof window.switchView === 'function') {
+              window.switchView('galaxy', { skipUrlSync: true, silentHandoff: true });
+            }
+            if (state.currentView !== 'galaxy') {
+              state.currentView = 'galaxy';
+            }
+            const seedIndex =
+              Number.isFinite(state.navState?.focusedIndex) ? state.navState.focusedIndex :
+              Number.isFinite(state.focusedNode) ? state.focusedNode :
+              Number.isFinite(state.currentSearchSummary?.anchorIndex) ? state.currentSearchSummary.anchorIndex :
+              519;
+            if (typeof window.setTrailFromSeed === 'function' && Number.isFinite(seedIndex)) {
+              window.setTrailFromSeed(seedIndex);
+            }
+
             document.body.classList.add('is-active');
             document.body.dataset.activeView = 'galaxy';
             document.body.dataset.graphContext = 'focus';
             document.body.dataset.panelSurface = 'focus';
-            document.body.dataset.threadInspectSurface = 'inspector';
 
             const focusStage = document.querySelector('#focus-stage');
             if (focusStage) {
@@ -892,18 +921,31 @@ async function run() {
               focusStage.classList.add('active');
             }
 
-            const inspector = document.querySelector('#focus-thread-inspector');
-            if (inspector) {
-              inspector.classList.add('active');
-              inspector.setAttribute('aria-hidden', 'false');
+            const candidate = (state.navState?.threadCandidates || [])
+              .find((item) => item && Number.isFinite(item.index) && item.index !== seedIndex);
+            const renderThreadInspection =
+              typeof window.renderThreadInspection === 'function' ? window.renderThreadInspection :
+              typeof window._ti?.renderThreadInspection === 'function' ? window._ti.renderThreadInspection :
+              null;
+            const inspectThreadNeighbor =
+              typeof window.inspectThreadNeighbor === 'function' ? window.inspectThreadNeighbor :
+              typeof window._ti?.inspectThreadNeighbor === 'function' ? window._ti.inspectThreadNeighbor :
+              null;
+            let inspectionState = null;
+            if (candidate && inspectThreadNeighbor) {
+              inspectionState = inspectThreadNeighbor(candidate.index, { force: true, surface: 'inspector' });
+            } else if (candidate && renderThreadInspection) {
+              state.inspectedThreadIndex = candidate.index;
+              inspectionState = renderThreadInspection(candidate.index, { force: true, surface: 'inspector' });
             }
-
-            const titleEl = document.querySelector('#focus-thread-inspector-title');
-            const copyEl = document.querySelector('#focus-thread-inspector-copy');
-            const metaEl = document.querySelector('#focus-thread-inspector-meta');
-            if (titleEl) titleEl.textContent = 'Coffee Shop A -> Nearby Stop B';
-            if (copyEl) copyEl.textContent = 'Both serve morning commuters in the same strip mall.';
-            if (metaEl) metaEl.textContent = 'Semantic relationship: local_semantic_neighbor';
+            if (typeof window.updateInspectedStrandOverlay === 'function') {
+              window.updateInspectedStrandOverlay(performance.now());
+            }
+            window.__visualThreadInspectorProbe = {
+              candidateIndex: candidate?.index ?? null,
+              active: !!inspectionState?.active,
+              diagnostics: { ...(state.inspectedStrandDiagnostics || {}) },
+            };
 
             document.querySelectorAll('#btn-thread-pin, #btn-thread-follow, #btn-thread-clear').forEach((btn) => {
               btn.disabled = false;
@@ -924,6 +966,15 @@ async function run() {
               infoPanel.style.display = 'none';
             }
           });
+          await mobilePage.waitForFunction(() => {
+            const diagnostics = window.state?.inspectedStrandDiagnostics;
+            return Boolean(
+              diagnostics?.active &&
+              diagnostics.segmentCount > 0 &&
+              diagnostics.braidCount > 0 &&
+              diagnostics.endpointCount > 0
+            );
+          }, undefined, { timeout: 8000 }).catch(() => {});
           await mobilePage.waitForTimeout(300);
           await captureMaybe(states, mobilePage, '17-mobile-thread-inspector');
         }
@@ -1092,6 +1143,7 @@ async function run() {
     compassRailDiagnostics: data.compassRailDiagnostics,
     modeGridDiagnostics: data.modeGridDiagnostics,
     routeTraceDiagnostics: data.routeTraceDiagnostics,
+    inspectedStrandDiagnostics: data.inspectedStrandDiagnostics,
     sceneLuminance: data.sceneLuminance,
   }));
 
@@ -1235,6 +1287,7 @@ async function run() {
 
   if (shouldAssert('17-mobile-thread-inspector')) {
     const inspectorState = requireState('17-mobile-thread-inspector');
+    const strandDiagnostics = inspectorState?.inspectedStrandDiagnostics || {};
     const focusStage = box(inspectorState, '#focus-stage');
     const focusStageCard = requireRendered('17-mobile-thread-inspector', 'thread-inspector:focus-stage-card-visible', '.focus-stage-card');
     const inspector = requireRendered('17-mobile-thread-inspector', 'thread-inspector:panel-visible', '#focus-thread-inspector');
@@ -1280,20 +1333,41 @@ async function run() {
       fail('17-mobile-thread-inspector', 'thread-inspector:not-occluded', `inspector center is covered by ${inspector.topElement || 'nothing'}`);
     }
 
-    if (title?.text?.includes('Coffee Shop A')) {
+    if (title?.text?.includes(' -> ')) {
       pass('17-mobile-thread-inspector', 'thread-inspector:title-copy');
     } else {
-      fail('17-mobile-thread-inspector', 'thread-inspector:title-copy', 'thread inspector title does not include expected fixture copy');
+      fail('17-mobile-thread-inspector', 'thread-inspector:title-copy', 'thread inspector title does not include a real relationship arrow');
     }
-    if (copy?.text?.includes('morning commuters')) {
+    if ((copy?.text || '').length >= 24) {
       pass('17-mobile-thread-inspector', 'thread-inspector:body-copy');
     } else {
-      fail('17-mobile-thread-inspector', 'thread-inspector:body-copy', 'thread inspector body copy does not include expected fixture copy');
+      fail('17-mobile-thread-inspector', 'thread-inspector:body-copy', 'thread inspector body copy is empty or too short');
     }
-    if (meta?.text?.includes('local_semantic_neighbor')) {
+    if ((meta?.text || '').toLowerCase().includes('relationship')) {
       pass('17-mobile-thread-inspector', 'thread-inspector:meta-copy');
     } else {
-      fail('17-mobile-thread-inspector', 'thread-inspector:meta-copy', 'thread inspector meta does not include expected relationship label');
+      fail('17-mobile-thread-inspector', 'thread-inspector:meta-copy', 'thread inspector meta does not include relationship source text');
+    }
+
+    if (strandDiagnostics.active === true) {
+      pass('17-mobile-thread-inspector', 'thread-inspector:strand-active');
+    } else {
+      fail('17-mobile-thread-inspector', 'thread-inspector:strand-active', `inspectedStrandDiagnostics.active=${strandDiagnostics.active}`);
+    }
+    if ((strandDiagnostics.segmentCount || 0) > 0) {
+      pass('17-mobile-thread-inspector', 'thread-inspector:strand-segments');
+    } else {
+      fail('17-mobile-thread-inspector', 'thread-inspector:strand-segments', `segmentCount=${strandDiagnostics.segmentCount || 0}`);
+    }
+    if ((strandDiagnostics.braidCount || 0) > 0) {
+      pass('17-mobile-thread-inspector', 'thread-inspector:strand-braids');
+    } else {
+      fail('17-mobile-thread-inspector', 'thread-inspector:strand-braids', `braidCount=${strandDiagnostics.braidCount || 0}`);
+    }
+    if ((strandDiagnostics.endpointCount || 0) >= 2) {
+      pass('17-mobile-thread-inspector', 'thread-inspector:strand-endpoints');
+    } else {
+      fail('17-mobile-thread-inspector', 'thread-inspector:strand-endpoints', `endpointCount=${strandDiagnostics.endpointCount || 0}`);
     }
 
     for (const [label, targetBox] of [
@@ -1337,6 +1411,15 @@ async function run() {
       pass('21-mobile-route-trace-visible', 'route-trace:route-motion-active');
     } else {
       fail('21-mobile-route-trace-visible', 'route-trace:route-motion-active', `routeMotion=${routeState?.bodyDataset?.routeMotion || ''}`);
+    }
+    if (diagnostics.motionProbe?.advanced === true) {
+      pass('21-mobile-route-trace-visible', 'route-trace:shader-time-advances');
+    } else {
+      fail(
+        '21-mobile-route-trace-visible',
+        'route-trace:shader-time-advances',
+        `time did not advance: ${diagnostics.motionProbe?.t1 ?? 'null'} -> ${diagnostics.motionProbe?.t2 ?? 'null'}`,
+      );
     }
   }
 
