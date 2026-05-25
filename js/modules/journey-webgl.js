@@ -457,10 +457,6 @@ function buildFocusThreadLineMaterial() {
             attribute float cue;
             attribute float priority;
             attribute float lane;
-            varying float vProgress;
-            varying float vCue;
-            varying float vPriority;
-            varying float vLane;
             void main() {`
         );
         shader.vertexShader = shader.vertexShader.replace(
@@ -514,7 +510,7 @@ function buildFocusThreadLineMaterial() {
             vec3 cueColor = vec3(1.0, 0.82, 0.34);
             finalColor = mix(finalColor, cueColor, vCue * (0.42 + bead * 0.1));
             float priorityFloor = mix(0.16, 0.72, smoothstep(0.18, 1.0, vPriority));
-            float alpha = diffuseColor.a * breath * priorityFloor
+            alpha = diffuseColor.a * breath * priorityFloor
                 + spore * 0.06
                 + bead * 0.025
                 + vCue * 0.055

@@ -1,6 +1,103 @@
 import { test, expect } from '@playwright/test';
+import { inflateSync } from 'node:zlib';
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
+
+function parsePngRgba(buffer) {
+  const signature = buffer.subarray(0, 8).toString('hex');
+  if (signature !== '89504e470d0a1a0a') throw new Error('invalid PNG signature');
+  let offset = 8;
+  let width = 0;
+  let height = 0;
+  let bitDepth = 0;
+  let colorType = 0;
+  const idat = [];
+  while (offset < buffer.length) {
+    const length = buffer.readUInt32BE(offset);
+    const type = buffer.subarray(offset + 4, offset + 8).toString('ascii');
+    const data = buffer.subarray(offset + 8, offset + 8 + length);
+    offset += 12 + length;
+    if (type === 'IHDR') {
+      width = data.readUInt32BE(0);
+      height = data.readUInt32BE(4);
+      bitDepth = data[8];
+      colorType = data[9];
+    } else if (type === 'IDAT') {
+      idat.push(data);
+    } else if (type === 'IEND') {
+      break;
+    }
+  }
+  if (bitDepth !== 8 || (colorType !== 2 && colorType !== 6)) {
+    throw new Error(`unsupported PNG format: bitDepth=${bitDepth} colorType=${colorType}`);
+  }
+
+  const sourceBytesPerPixel = colorType === 6 ? 4 : 3;
+  const rowBytes = width * sourceBytesPerPixel;
+  const inflated = inflateSync(Buffer.concat(idat));
+  const raw = Buffer.alloc(width * height * sourceBytesPerPixel);
+  let input = 0;
+  const paeth = (a, b, c) => {
+    const p = a + b - c;
+    const pa = Math.abs(p - a);
+    const pb = Math.abs(p - b);
+    const pc = Math.abs(p - c);
+    if (pa <= pb && pa <= pc) return a;
+    return pb <= pc ? b : c;
+  };
+  for (let y = 0; y < height; y += 1) {
+    const filter = inflated[input++];
+    const row = y * rowBytes;
+    const prev = row - rowBytes;
+    for (let x = 0; x < rowBytes; x += 1) {
+      const left = x >= sourceBytesPerPixel ? raw[row + x - sourceBytesPerPixel] : 0;
+      const up = y > 0 ? raw[prev + x] : 0;
+      const upLeft = y > 0 && x >= sourceBytesPerPixel ? raw[prev + x - sourceBytesPerPixel] : 0;
+      const value = inflated[input + x];
+      raw[row + x] = (filter === 0 ? value
+        : filter === 1 ? value + left
+          : filter === 2 ? value + up
+            : filter === 3 ? value + Math.floor((left + up) / 2)
+              : value + paeth(left, up, upLeft)) & 255;
+    }
+    input += rowBytes;
+  }
+  return { width, height, raw, sourceBytesPerPixel };
+}
+
+function compareSceneBand(beforeBuffer, afterBuffer) {
+  const before = parsePngRgba(beforeBuffer);
+  const after = parsePngRgba(afterBuffer);
+  if (before.width !== after.width || before.height !== after.height) {
+    throw new Error('screenshot dimensions differ');
+  }
+  const x0 = Math.floor(before.width * 0.06);
+  const x1 = Math.ceil(before.width * 0.94);
+  const y0 = Math.floor(before.height * 0.16);
+  const y1 = Math.ceil(before.height * 0.64);
+  let changedPixels = 0;
+  let strongPixels = 0;
+  let totalDelta = 0;
+  for (let y = y0; y < y1; y += 1) {
+    for (let x = x0; x < x1; x += 1) {
+      const beforeIndex = (y * before.width + x) * before.sourceBytesPerPixel;
+      const afterIndex = (y * after.width + x) * after.sourceBytesPerPixel;
+      const delta = Math.abs(before.raw[beforeIndex] - after.raw[afterIndex])
+        + Math.abs(before.raw[beforeIndex + 1] - after.raw[afterIndex + 1])
+        + Math.abs(before.raw[beforeIndex + 2] - after.raw[afterIndex + 2]);
+      if (delta > 18) changedPixels += 1;
+      if (delta > 54) strongPixels += 1;
+      totalDelta += delta;
+    }
+  }
+  const samples = Math.max(1, (x1 - x0) * (y1 - y0));
+  return {
+    changedPixels,
+    strongPixels,
+    meanDelta: Number((totalDelta / samples).toFixed(3)),
+    samples
+  };
+}
 
 async function waitForAppReady(page) {
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
@@ -21,6 +118,12 @@ async function waitForAppReady(page) {
 test.describe('focus semantic Line2 shader ownership', () => {
   test('semantic focus line uses its own runtime shader uniforms', async ({ page }) => {
     test.setTimeout(45000);
+    const shaderErrors = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'error' && /WebGLProgram: Shader Error|VALIDATE_STATUS false|shader is not compiled/i.test(msg.text())) {
+        shaderErrors.push(msg.text());
+      }
+    });
     await waitForAppReady(page);
 
     await page.evaluate(() => {
@@ -98,5 +201,18 @@ test.describe('focus semantic Line2 shader ownership', () => {
       expect(after.time, 'updateFocusSemanticOverlayPositions should advance focus line shader time').toBeGreaterThan(before.time);
     }
     expect(after.reducedMotion, 'reducedMotion uniform should remain numeric').toEqual(expect.any(Number));
+
+    const visibleScreenshot = await page.screenshot({ fullPage: false });
+    await page.evaluate(async () => {
+      window.state.focusSemanticLines.visible = false;
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    });
+    const hiddenScreenshot = await page.screenshot({ fullPage: false });
+    const visualDelta = compareSceneBand(visibleScreenshot, hiddenScreenshot);
+
+    expect(visualDelta.changedPixels, 'hiding focusSemanticLines should materially change rendered scene pixels').toBeGreaterThan(160);
+    expect(visualDelta.strongPixels, 'focusSemanticLines should contribute strong visible pixels, not only invisible state').toBeGreaterThan(24);
+    expect(visualDelta.meanDelta, 'focusSemanticLines should have measurable visual contrast in the scene band').toBeGreaterThan(0.08);
+    expect(shaderErrors, 'focus semantic line shader should compile without WebGLProgram errors').toEqual([]);
   });
 });

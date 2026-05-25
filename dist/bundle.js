@@ -246,10 +246,6 @@ var Ec=Object.defineProperty;var c=(t,n)=>Ec(t,"name",{value:n,configurable:!0})
             attribute float cue;
             attribute float priority;
             attribute float lane;
-            varying float vProgress;
-            varying float vCue;
-            varying float vPriority;
-            varying float vLane;
             void main() {`),o.vertexShader=o.vertexShader.replace("#include <color_pars_vertex>",`#include <color_pars_vertex>
             varying float vProgress;
             varying float vCue;
@@ -287,7 +283,7 @@ var Ec=Object.defineProperty;var c=(t,n)=>Ec(t,"name",{value:n,configurable:!0})
             vec3 cueColor = vec3(1.0, 0.82, 0.34);
             finalColor = mix(finalColor, cueColor, vCue * (0.42 + bead * 0.1));
             float priorityFloor = mix(0.16, 0.72, smoothstep(0.18, 1.0, vPriority));
-            float alpha = diffuseColor.a * breath * priorityFloor
+            alpha = diffuseColor.a * breath * priorityFloor
                 + spore * 0.06
                 + bead * 0.025
                 + vCue * 0.055
