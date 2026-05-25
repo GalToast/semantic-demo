@@ -42,6 +42,7 @@ The current visual audit exposes 17 state ids. This is broader than the older "1
 | `13-mobile-reduced-motion` | Mobile overview/search chrome under reduced-motion preference. | Mobile info/search chrome, compass, reduced-motion scene. | Motion tokens, mobile type, touch targets, glass/elevation. | Reduced-motion state must preserve reachable controls and stable bottom anchoring. | Reduced-motion CSS plus mobile final override docs. | `npm run qa:visual -- --states=13-mobile-reduced-motion`; motion contract when transitions change. |
 | `14-desktop-search-error` | Desktop degraded semantic lane/search error. | Search error alert, retry/dismiss controls, desktop search results container. | Text hierarchy, primary/accent contrast, glass surface, touch/click target sizing. | Error surface must be visible inside desktop search chrome without clipping. | Search authority row; degraded lane state in visual audit. | `npm run qa:visual -- --states=14-desktop-search-error`; search error assertions. |
 | `15-mobile-semantic-dive` | Natural mobile semantic dive after focus and Step Inside. | Semantic-dive focus stage, inside status, inside controls, journey/dive copy. | Glass/elevation, mobile type, touch targets, motion, accent/primary contrast. | Dive sheet shells should remain anchored; inside controls need internal safe-area comfort. | `semantic-dive` state in focus-stage owner matrix; `data-panel-surface="semantic-dive"` in mobile state ownership. | `npm run qa:visual -- --states=15-mobile-semantic-dive`; semantic-dive contract/video proof when motion or transition behavior changes. |
+| `16-desktop-info-panel-populated` | Desktop selected-business info panel with representative populated content. | Info panel, selected card, selected details, selected hero, name/what/theme/status fields. | Glass/elevation, card radius, desktop line heights, text contrast, spacing. | Selected card/details must be visible without horizontal overflow; long populated copy should not clip. | `#info-panel` and `.selected-card` rows in `docs/semantic-demo-css-authority-map.md`; `info-panel-populated` in `tests/surface-contract-check.mjs`. | `npm run qa:surface:info-panel-populated`; `npm run qa:contract:info-panel-populated`. |
 
 ## Coverage Rule
 
@@ -57,7 +58,6 @@ Some surface contracts do not yet have a dedicated visual audit state id. They r
 | `loading-overlay` | `npm run qa:contract:loading-overlay` | No dedicated visual audit state row. |
 | `mode-grid` | `npm run qa:contract:mode-grid` | No dedicated visual audit state row. |
 | `global-spacing` | `npm run qa:contract:global-spacing` | No dedicated visual audit state row. |
-| `info-panel-populated` | `npm run qa:contract:info-panel-populated` | No dedicated visual audit state row separate from idle/search states. |
 | `thread-inspector` | `npm run qa:contract:thread-inspector` | No dedicated visual audit state row. |
 
 If any of these surfaces become a visible design-review target, add a visual audit state or add a second matrix section that maps contract-only surfaces to token families and proof requirements.

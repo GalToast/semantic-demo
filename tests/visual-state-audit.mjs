@@ -215,6 +215,9 @@ function analyzeSceneLuminance(buffer, stateName) {
 
 async function captureState(page, name) {
   await waitForReady(page, name);
+  if (name === '16-desktop-info-panel-populated') {
+    await applyPopulatedInfoPanelState(page);
+  }
 
   const data = await page.evaluate(() => {
     const selectors = [
@@ -222,12 +225,20 @@ async function captureState(page, name) {
       '.journey-compass',
       '.search-container',
       '#search-results',
+      '#mode-grid',
       '#filters-section',
       '#info-panel',
       '#focus-stage',
       '.selected-card',
       '.about-card',
       '.selected-empty',
+      '#selected-details',
+      '#selected-name',
+      '#selected-what',
+      '#selected-theme',
+      '#selected-status',
+      '#selected-role-badge',
+      '.selected-hero',
       '.search-error-state',
       '.search-error-kicker',
       '.search-error-retry-btn',
@@ -327,6 +338,43 @@ function wantsState(name) {
 
 function wantsAny(names) {
   return !requestedStates.size || names.some((name) => requestedStates.has(name));
+}
+
+async function applyPopulatedInfoPanelState(page) {
+  await page.evaluate(() => {
+    document.body.dataset.activeView = 'galaxy';
+    document.body.dataset.graphContext = 'focus';
+    document.body.dataset.panelSurface = 'focus';
+
+    const selectedCard = document.querySelector('#selected-card');
+    selectedCard?.classList.remove('is-empty');
+
+    const selectedDetails = document.querySelector('#selected-details');
+    if (selectedDetails) {
+      selectedDetails.classList.add('active');
+      selectedDetails.hidden = false;
+      selectedDetails.style.display = 'block';
+      selectedDetails.style.visibility = 'visible';
+    }
+
+    const selectedEmpty = document.querySelector('.selected-empty');
+    if (selectedEmpty) selectedEmpty.style.display = 'none';
+
+    const selectedName = document.querySelector('#selected-name');
+    if (selectedName) selectedName.textContent = 'Downtown Coffee Collective';
+
+    const selectedWhat = document.querySelector('#selected-what');
+    if (selectedWhat) selectedWhat.textContent = 'Artisan coffee shop with outdoor seating';
+
+    const selectedTheme = document.querySelector('#selected-theme');
+    if (selectedTheme) selectedTheme.textContent = 'Food & Drink - Cafes';
+
+    const selectedStatus = document.querySelector('#selected-status');
+    if (selectedStatus) selectedStatus.textContent = 'Active';
+
+    const selectedFiledAs = document.querySelector('#selected-filed-as');
+    if (selectedFiledAs) selectedFiledAs.style.display = 'none';
+  });
 }
 
 async function run() {
@@ -438,7 +486,7 @@ async function run() {
       }
     }
 
-    if (wantsAny(['07-desktop-idle', '08-desktop-search-coffee', '11-desktop-selected-card-map-trail'])) {
+    if (wantsAny(['07-desktop-idle', '08-desktop-search-coffee', '11-desktop-selected-card-map-trail', '16-desktop-info-panel-populated'])) {
       const browser = await chromium.launch({ headless: true });
       try {
         const desktopPage = await createAuditPage(browser, { viewport: desktop });
@@ -462,6 +510,15 @@ async function run() {
             document.body.dataset.mapContext = 'focus';
           });
           await captureMaybe(states, desktopPage, '11-desktop-selected-card-map-trail');
+        }
+
+        if (wantsState('16-desktop-info-panel-populated')) {
+          await gotoReady(desktopPage, targetUrl);
+          await waitForReady(desktopPage);
+          await applyPopulatedInfoPanelState(desktopPage);
+          await desktopPage.waitForTimeout(300);
+          await applyPopulatedInfoPanelState(desktopPage);
+          await captureMaybe(states, desktopPage, '16-desktop-info-panel-populated');
         }
 
         await desktopPage.close();
@@ -935,6 +992,41 @@ async function run() {
       } else {
         pass('11-desktop-selected-card-map-trail', 'desktop-map-trail:compass-selected-card-no-overlap');
       }
+    }
+  }
+
+  if (shouldAssert('16-desktop-info-panel-populated')) {
+    const populatedState = requireState('16-desktop-info-panel-populated');
+    const populatedCard = requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-card-visible', '.selected-card');
+    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-details-visible', '#selected-details');
+    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-name-visible', '#selected-name');
+    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-what-visible', '#selected-what');
+    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-theme-visible', '#selected-theme');
+    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-status-visible', '#selected-status');
+    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-role-badge-visible', '#selected-role-badge');
+    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-hero-visible', '.selected-hero');
+
+    const modeGrid = box(populatedState, '#mode-grid');
+    if (!isRendered(modeGrid)) {
+      pass('16-desktop-info-panel-populated', 'info-panel-populated:mode-grid-hidden');
+    } else {
+      fail('16-desktop-info-panel-populated', 'info-panel-populated:mode-grid-hidden', 'mode grid should be hidden in populated focus panel state');
+    }
+
+    if (populatedCard?.text?.includes('Downtown Coffee Collective')) {
+      pass('16-desktop-info-panel-populated', 'info-panel-populated:selected-name-text');
+    } else {
+      fail('16-desktop-info-panel-populated', 'info-panel-populated:selected-name-text', 'selected card does not include expected populated business name');
+    }
+
+    if (populatedState?.bodyDataset?.panelSurface === 'focus') {
+      pass('16-desktop-info-panel-populated', 'info-panel-populated:panel-surface-focus');
+    } else {
+      fail(
+        '16-desktop-info-panel-populated',
+        'info-panel-populated:panel-surface-focus',
+        `expected panelSurface "focus", got "${populatedState?.bodyDataset?.panelSurface || ''}"`,
+      );
     }
   }
 
