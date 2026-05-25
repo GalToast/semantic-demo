@@ -78,7 +78,7 @@ async function waitForReady(page, label = 'unknown') {
     if (!state?.renderer || !state?.scene || !state?.camera) return false;
     if (!state?.pointsMesh?.geometry?.attributes?.position?.count) return false;
     return Boolean(state?.pointsMaterial?.userData?.shader);
-  }, { timeout: 8000 })
+  }, undefined, { timeout: 8000 })
     .then(() => console.log(`[waitForReady:${label}] WebGL/fallback state resolved`))
     .catch((err) => console.log(`[waitForReady:${label}] WebGL state timeout/failed: ${err.message}`));
   
@@ -987,7 +987,7 @@ async function run() {
         await divePage.waitForFunction(() => {
           const canvas = document.querySelector('#canvas-container canvas');
           return canvas && document.body.dataset.graphicsMode === 'webgl';
-        }, { timeout: 8000 }).catch(() => {});
+        }, undefined, { timeout: 8000 }).catch(() => {});
         await divePage.waitForTimeout(2200);
 
         // Step 1: Click the first search result to establish focus + trailDepth >= 1
