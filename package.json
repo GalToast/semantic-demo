@@ -20,6 +20,7 @@
     "qa:surface:desktop-idle": "node tests/visual-state-audit.mjs --states=07-desktop-idle",
     "qa:surface:search-error": "node tests/visual-state-audit.mjs --states=10-mobile-search-error-state",
     "qa:surface:map-trail": "node tests/visual-state-audit.mjs --states=11-mobile-selected-card-map-trail",
+    "qa:surface:route-trace": "node tests/visual-state-audit.mjs --states=21-mobile-route-trace-visible",
     "qa:surface:desktop-map-trail": "node tests/visual-state-audit.mjs --states=11-desktop-selected-card-map-trail",
     "qa:surface:focus": "node tests/visual-state-audit.mjs --states=03-mobile-focus-first-result,04-mobile-field-node-active",
     "qa:surface:reduced-motion": "node tests/visual-state-audit.mjs --states=12-desktop-reduced-motion",

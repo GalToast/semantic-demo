@@ -439,6 +439,20 @@ async function captureState(page, name) {
             .filter((chip) => chip.width < 43.5 || chip.height < 43.5),
         };
       })(),
+      routeTraceDiagnostics: (() => {
+        const diagnostics = window.state?.routeTraceDiagnostics || null;
+        const lines = window.state?.routeTraceLines || null;
+        return {
+          ...(diagnostics || {}),
+          linePresent: !!lines,
+          lineSegmentCount: lines?.geometry?.attributes?.position?.count
+            ? Math.floor(lines.geometry.attributes.position.count / 2)
+            : 0,
+          connectionPairCount: Array.isArray(window.state?.routeTraceConnectionPairs)
+            ? window.state.routeTraceConnectionPairs.length
+            : 0,
+        };
+      })(),
     };
   });
 
@@ -703,6 +717,7 @@ async function run() {
       '18-mobile-loading-overlay',
       '19-mobile-compass-rail',
       '20-mobile-mode-grid-visible',
+      '21-mobile-route-trace-visible',
     ])) {
       const browser = await chromium.launch({ headless: true });
       try {
@@ -804,6 +819,55 @@ async function run() {
             document.body.dataset.mapContext = 'focus';
           });
           await captureMaybe(states, mobilePage, '11-mobile-selected-card-map-trail');
+        }
+
+        if (wantsState('21-mobile-route-trace-visible')) {
+          await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }));
+          await waitForReady(mobilePage);
+          const firstResult = mobilePage.locator('.search-result-item').first();
+          if (await firstResult.count()) {
+            await firstResult.click({ timeout: 5000 }).catch(() => {});
+          }
+          await mobilePage.waitForTimeout(600);
+          await mobilePage.evaluate(() => {
+            const state = window.state || {};
+            if (typeof window.switchView === 'function') {
+              window.switchView('galaxy', { skipUrlSync: true, silentHandoff: true });
+            }
+            if (state.currentView !== 'galaxy') {
+              state.currentView = 'galaxy';
+            }
+            const seedIndex =
+              Number.isFinite(state.navState?.focusedIndex) ? state.navState.focusedIndex :
+              Number.isFinite(state.focusedNode) ? state.focusedNode :
+              Number.isFinite(state.currentSearchSummary?.anchorIndex) ? state.currentSearchSummary.anchorIndex :
+              519;
+            if (typeof window.setTrailFromSeed === 'function' && Number.isFinite(seedIndex)) {
+              window.setTrailFromSeed(seedIndex);
+            }
+            if (document.body?.dataset) {
+              document.body.dataset.activeView = 'galaxy';
+              document.body.dataset.routeMotion = 'focus';
+            }
+            if (typeof window.setRouteChoreographyPhase === 'function') {
+              window.setRouteChoreographyPhase('focus', { reason: 'visual-audit-route-trace' });
+            } else if (typeof window.refreshRouteTraceOverlay === 'function') {
+              window.refreshRouteTraceOverlay({ reason: 'visual-audit-route-trace' });
+            }
+            if (typeof window.updateRouteTraceOverlayPositions === 'function') {
+              window.updateRouteTraceOverlayPositions(performance.now());
+            }
+          });
+          await mobilePage.waitForFunction(() => {
+            const diagnostics = window.state?.routeTraceDiagnostics;
+            return Boolean(
+              diagnostics?.active &&
+              diagnostics.edgeCount > 0 &&
+              diagnostics.segmentCount > 0 &&
+              window.state?.routeTraceLines
+            );
+          }, undefined, { timeout: 8000 }).catch(() => {});
+          await captureMaybe(states, mobilePage, '21-mobile-route-trace-visible');
         }
 
         if (wantsState('17-mobile-thread-inspector')) {
@@ -1027,6 +1091,7 @@ async function run() {
     loadingOverlayDiagnostics: data.loadingOverlayDiagnostics,
     compassRailDiagnostics: data.compassRailDiagnostics,
     modeGridDiagnostics: data.modeGridDiagnostics,
+    routeTraceDiagnostics: data.routeTraceDiagnostics,
     sceneLuminance: data.sceneLuminance,
   }));
 
@@ -1241,6 +1306,37 @@ async function run() {
       } else if (targetBox) {
         fail('17-mobile-thread-inspector', `thread-inspector:${label}-touch-target`, `${label} button is ${Math.round(targetBox.width)}x${Math.round(targetBox.height)}px`);
       }
+    }
+  }
+
+  if (shouldAssert('21-mobile-route-trace-visible')) {
+    const routeState = requireState('21-mobile-route-trace-visible');
+    const diagnostics = routeState?.routeTraceDiagnostics || {};
+
+    if (diagnostics.active === true) {
+      pass('21-mobile-route-trace-visible', 'route-trace:diagnostics-active');
+    } else {
+      fail('21-mobile-route-trace-visible', 'route-trace:diagnostics-active', `routeTraceDiagnostics.active=${diagnostics.active}; reason=${diagnostics.reason || 'none'}`);
+    }
+    if ((diagnostics.edgeCount || 0) > 0) {
+      pass('21-mobile-route-trace-visible', 'route-trace:edge-count');
+    } else {
+      fail('21-mobile-route-trace-visible', 'route-trace:edge-count', `edgeCount=${diagnostics.edgeCount || 0}`);
+    }
+    if ((diagnostics.segmentCount || diagnostics.lineSegmentCount || 0) > 0) {
+      pass('21-mobile-route-trace-visible', 'route-trace:segment-count');
+    } else {
+      fail('21-mobile-route-trace-visible', 'route-trace:segment-count', `segmentCount=${diagnostics.segmentCount || 0}, lineSegmentCount=${diagnostics.lineSegmentCount || 0}`);
+    }
+    if (diagnostics.linePresent === true) {
+      pass('21-mobile-route-trace-visible', 'route-trace:line-present');
+    } else {
+      fail('21-mobile-route-trace-visible', 'route-trace:line-present', 'state.routeTraceLines is not present');
+    }
+    if (routeState?.bodyDataset?.routeMotion && routeState.bodyDataset.routeMotion !== 'inactive') {
+      pass('21-mobile-route-trace-visible', 'route-trace:route-motion-active');
+    } else {
+      fail('21-mobile-route-trace-visible', 'route-trace:route-motion-active', `routeMotion=${routeState?.bodyDataset?.routeMotion || ''}`);
     }
   }
 
