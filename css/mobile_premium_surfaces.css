@@ -954,6 +954,7 @@ html body.is-active #selected-details.active {
     }
 
     html body.is-active[data-panel-surface^="map-"] .search-container .search-results.active {
+        box-sizing: border-box;
         max-height: min(22dvh, 180px);
     }
 

@@ -58,6 +58,7 @@ html body .search-container {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .semantic-lane-pill {

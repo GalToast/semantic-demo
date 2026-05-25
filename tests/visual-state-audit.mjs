@@ -1602,6 +1602,19 @@ async function run() {
     } else {
       pass('11-mobile-selected-card-map-trail', 'mobile-map-trail:strip-viewtoggle-overlap');
     }
+    const searchContainer = box(mobileTrailState, '.search-container');
+    const searchResults = box(mobileTrailState, '#search-results');
+    if (isRendered(searchContainer) && isRendered(searchResults)) {
+      if (searchResults.y + searchResults.height > searchContainer.y + searchContainer.height + 1) {
+        fail(
+          '11-mobile-selected-card-map-trail',
+          'mobile-map-trail:search-results-inside-container',
+          '#search-results extends outside .search-container',
+        );
+      } else {
+        pass('11-mobile-selected-card-map-trail', 'mobile-map-trail:search-results-inside-container');
+      }
+    }
   }
 
   // ---- Desktop selected-card + map-trail state assertions ----

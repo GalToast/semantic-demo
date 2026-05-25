@@ -221,7 +221,39 @@ function testInfoPanelToggleBinding() {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 3: resize listener wiring (bindPanelControls)
+// TEST 3: btn-panel intentional suppression in focus-search (CSS contract)
+// ---------------------------------------------------------------------------
+
+function testBtnPanelFocusSearchSuppression() {
+  console.log('\n[TEST] btn-panel intentional suppression in focus-search (CSS contract)');
+
+  const JOURNEY_ACTIVE_CSS_PATH = path.join(SEMDEMO_ROOT, 'css', 'journey_active.css');
+  const LAYOUT_BASE_CSS_PATH = path.join(SEMDEMO_ROOT, 'css', 'layout_base.css');
+
+  const journeyActiveCss = fs.readFileSync(JOURNEY_ACTIVE_CSS_PATH, 'utf-8');
+  const layoutBaseCss = fs.readFileSync(LAYOUT_BASE_CSS_PATH, 'utf-8');
+
+  // journey_active.css must contain a rule that hides .panel-toggle in focus-search
+  // Rule spans multi-line selector list, so use [\s\S] to match across newlines
+  const journeyActiveRule = /body\[data-panel-surface\s*=\s*["']focus-search["']\][\s\S]*?\.panel-toggle[\s\S]*?\{[^}]*display\s*:\s*none/i;
+  assert(journeyActiveRule.test(journeyActiveCss),
+    'journey_active.css: no rule hiding .panel-toggle (btn-panel) in focus-search (expected: body[data-panel-surface="focus-search"] .panel-toggle { display: none; })');
+
+  // journey_active.css must also set visibility:hidden and pointer-events:none in the same rule
+  const journeyActiveFullRule = /body\[data-panel-surface\s*=\s*["']focus-search["']\][\s\S]*?\.panel-toggle[\s\S]*?\{[^}]*(?:visibility\s*:\s*hidden|pointer-events\s*:\s*none)/i;
+  assert(journeyActiveFullRule.test(journeyActiveCss),
+    'journey_active.css: .panel-toggle focus-search rule missing visibility:hidden or pointer-events:none');
+
+  // layout_base.css must contain a supplementary rule for focus-search .panel-toggle
+  const layoutBaseRule = /body\[data-panel-surface\s*=\s*["']focus-search["']\][\s\S]*?\.panel-toggle[\s\S]*?\{[^}]*pointer-events\s*:\s*none/i;
+  assert(layoutBaseRule.test(layoutBaseCss),
+    'layout_base.css: no supplementary rule hiding .panel-toggle (btn-panel) pointer-events in focus-search');
+
+  console.log('  OK btn-panel intentionally suppressed in focus-search via CSS (journey_active.css + layout_base.css)');
+}
+
+// ---------------------------------------------------------------------------
+// TEST 4: resize listener wiring (bindPanelControls)
 // ---------------------------------------------------------------------------
 
 function testResizeListenerWiring() {
@@ -614,6 +646,7 @@ function main() {
   try {
     testJourneyCompassActionGuard();
     testInfoPanelToggleBinding();
+    testBtnPanelFocusSearchSuppression();
     testResizeListenerWiring();
     testSurpriseLaunchRandomFocus();
     testNoGhostTeardownReferences();

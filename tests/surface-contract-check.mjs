@@ -1143,6 +1143,16 @@ async function assert_field_node(page, ctx) {
     const activeJourney = document.querySelector('.focus-stage-journey.active');
     results.activeJourneyLayout = layoutSnapshot(activeJourney);
 
+    // --- btn-panel (panel toggle) intentionally suppressed in focus-search ---
+    const btnPanel = document.querySelector('#btn-panel');
+    results.btnPanelPresent = btnPanel !== null;
+    if (btnPanel) {
+      const style = getComputedStyle(btnPanel);
+      results.btnPanelDisplay = style.display;
+      results.btnPanelVisibility = style.visibility;
+      results.btnPanelPointerEvents = style.pointerEvents;
+    }
+
     // --- overflow guards ---
     results.overflowX = document.documentElement.scrollWidth > window.innerWidth;
     results.overflowY = document.documentElement.scrollHeight > window.innerHeight;
@@ -1250,6 +1260,28 @@ async function assert_field_node(page, ctx) {
   else ctx.pass('field-node', 'viewport-crowding:overflow-x');
 
   ctx.pass('field-node', info.overflowY ? 'viewport-scroll:overflow-y' : 'viewport-scroll:no-overflow-y');
+
+  // btn-panel is intentionally suppressed in focus-search (CSS: journey_active.css + layout_base.css)
+  if (info.btnPanelPresent) {
+    ctx.pass('field-node', 'dom:btn-panel:present');
+    // In focus-search, panelSurface is forced to 'focus-search' — btn-panel must be unusable
+    if (info.bodyDataset?.panelSurface === 'focus-search') {
+      if (info.btnPanelPointerEvents === 'none') {
+        ctx.pass('field-node', 'visibility:btn-panel:pointer-events-none:focus-search');
+      } else {
+        ctx.fail('field-node', 'visibility:btn-panel:pointer-events-none:focus-search',
+          `expected btn-panel pointer-events:none in focus-search, got "${info.btnPanelPointerEvents || 'not found'}"`);
+      }
+      if (info.btnPanelDisplay === 'none') {
+        ctx.pass('field-node', 'visibility:btn-panel:display-none:focus-search');
+      } else {
+        ctx.fail('field-node', 'visibility:btn-panel:display-none:focus-search',
+          `expected btn-panel display:none in focus-search, got "${info.btnPanelDisplay || 'not found'}"`);
+      }
+    }
+  } else {
+    ctx.pass('field-node', 'dom:btn-panel:not-mounted');
+  }
 
   return info;
 }
