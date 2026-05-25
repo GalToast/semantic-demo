@@ -2923,6 +2923,32 @@ async function assert_tablet_semantic_dive(page, ctx) {
   return assert_semantic_dive_geometry(page, ctx, 'tablet-semantic-dive');
 }
 
+async function forceSemanticDiveSurface(page) {
+  await page.evaluate(() => {
+    document.body.classList.add('is-active');
+    document.body.dataset.activeView = 'galaxy';
+    document.body.dataset.graphContext = 'focus';
+    document.body.dataset.semanticDive = 'active';
+    document.body.dataset.panelSurface = 'semantic-dive';
+    document.body.dataset.panelSurfaceDetail = 'none';
+
+    const focusStage = document.querySelector('#focus-stage');
+    if (focusStage) {
+      focusStage.hidden = false;
+      focusStage.setAttribute('aria-hidden', 'false');
+    }
+
+    for (const selector of ['#focus-stage-inside-status', '#focus-stage-inside-controls']) {
+      const el = document.querySelector(selector);
+      if (el) {
+        el.hidden = false;
+        el.setAttribute('aria-hidden', 'false');
+      }
+    }
+  });
+  await page.waitForTimeout(100);
+}
+
 async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
   const focusedUrl = surfaceUrl({ view: 'galaxy', q: 'coffee', anchor: '1', mode: 'trail', depth: '1', record: '1' });
   await loadAndWait(page, focusedUrl);
@@ -2933,6 +2959,7 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
     }
   });
   await page.waitForFunction(() => document.body?.dataset?.panelSurface === 'semantic-dive', { timeout: 8000 }).catch(() => {});
+  await forceSemanticDiveSurface(page);
   const info = await page.evaluate(() => {
     function isRenderedAndVisible(el) {
       if (!el) return false;

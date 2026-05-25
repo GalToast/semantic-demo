@@ -138,7 +138,7 @@
     html body.is-active[data-panel-surface="semantic-dive"] .focus-stage {
         left: 10px;
         right: 10px;
-        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        bottom: 0;
         width: auto;
         max-width: none;
     }
