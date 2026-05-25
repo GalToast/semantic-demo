@@ -392,7 +392,7 @@ function testJourneyWebglLineShaderOwnership() {
   // Focus semantic lines use LineMaterial; onBeforeCompile must retain the
   // compiled shader handle for custom uniforms, and all update paths must guard it.
   assertContains(webglSrc, 'function buildFocusThreadLineMaterial()', 'buildFocusThreadLineMaterial function exists');
-  assertContains(webglSrc, 'lineMaterial.onBeforeCompile((shader) => {', 'focus semantic line material uses onBeforeCompile');
+  assertContains(webglSrc, 'lineMaterial.onBeforeCompile = (shader) => {', 'focus semantic line material assigns onBeforeCompile callback');
   assertContains(webglSrc, 'lineMaterial.userData.shader = shader;', 'buildFocusThreadLineMaterial assigns shader to lineMaterial.userData.shader');
   assertContains(webglSrc, 'uniform float time;', 'shader declares time uniform');
   assertContains(webglSrc, 'uniform float semanticScore;', 'shader declares semanticScore uniform');

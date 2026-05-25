@@ -66,6 +66,7 @@
     "qa:reduced-motion-transition": "node tests/reduced-motion-transition-contract.mjs",
     "qa:mode-chip": "node tests/mode-chip-state-render-contract.mjs",
     "qa:scene-health": "node tests/three-scene-playtest.mjs",
+    "qa:focus-semantic-line": "npx playwright test tests/focus-semantic-line-contract.spec.js --browser=chromium",
     "qa:adversarial": "npx playwright test tests/polish-adversarial.spec.js --browser=chromium",
     "qa:ui-renderers-seam": "npx playwright test tests/ui-renderers-validation.spec.js --browser=chromium",
     "qa:semantic-guide-fallback": "npx playwright test tests/semantic-guide-fallback-contract.spec.js --browser=chromium",

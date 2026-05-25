@@ -450,7 +450,7 @@ function buildFocusThreadLineMaterial() {
         blending: THREE.AdditiveBlending
     });
 
-    lineMaterial.onBeforeCompile((shader) => {
+    lineMaterial.onBeforeCompile = (shader) => {
         shader.vertexShader = shader.vertexShader.replace(
             'void main() {',
             `attribute float progress;
@@ -527,7 +527,7 @@ function buildFocusThreadLineMaterial() {
         shader.uniforms.reducedMotion = { value: isReducedMotionPreferred() ? 1 : 0 };
 
         lineMaterial.userData.shader = shader;
-    });
+    };
 
     return lineMaterial;
 }
