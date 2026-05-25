@@ -273,6 +273,7 @@ const PINNED_FILES = [
   'window-bridge-gaps-contract.mjs',
   'residual-window-bridge-inventory-contract.mjs',
   'next-explore-candidate-contract.mjs',
+  'ui-renderers-helper-contract.mjs',
   'lifecycle-semantic-guide-residual-bridge-contract.mjs',
   'legend-ui-ownership-contract.mjs',
   'semantic-dive-ui-dewindowing-contract.mjs',

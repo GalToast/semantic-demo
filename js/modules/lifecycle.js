@@ -22,7 +22,7 @@ import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 import { closeLegendPanel, isLegendPanelOpen, openLegendPanel, restoreLegendCollapsedPanel, updateLegendGuideState, closeLegendGuide } from './legend-ui.js';
 export { updateLegendGuideState, closeLegendGuide };
 import { showSemanticThreadsDetail } from './connection-analysis.js';
-import { updateSelectedCardHeading } from './ui-renderers.js';
+import { buildSelectedMatchNarrative, getInterestingBusinessNote, updateSelectedCardHeading } from './ui-renderers.js';
 import { showExperienceToast, syncSearchStatusForFocus } from './ui-feedback.js';
 import { updateUrlState, copyCurrentViewLink } from './url-state.js';
 export { updateUrlState, copyCurrentViewLink };
@@ -707,49 +707,8 @@ if (typeof window !== 'undefined') {
 
     window.setSemanticDiveMode = setSemanticDiveMode;
 
-    window.getInterestingBusinessNote = function (point) {
-        if (!point) return null;
-        if (point.trivia) {
-            const t = point.trivia.trim();
-            // Suppress placeholder values that don't add user value
-            if (t === 'Pending research.' || t === 'Pending research') return null;
-            // Suppress SearXNG-sourced placeholders — implementation detail leaks into UI
-            if (t.includes('SearXNG') || t.includes('Insufficient evidence')) return null;
-            // Suppress verification-system outputs that read like legal/entity确认书
-            if (t.includes('exact entity name') || t.includes('verified official') || t.includes('entity confirmed') || t.includes('Registry-only') || t.includes('FMCSA carrier') || t.includes('USDOT') || t.includes('SAFER snapshot') || t.includes('Texas Comptroller')) return null;
-            // Suppress research-check and third-party lookup outputs
-            if (t.includes('Research check') || t.includes('MapQuest') || t.includes('GoDaddy') || t.includes('WordPress site on Cloudflare') || t.includes('Hotel page is active') || t.includes('Local dirt track') || t.includes('carrier records') || t.includes('carrier lookup') || t.includes('via carrier') || t.includes('via lookup') || t.includes('contact found') || t.includes('Verified phone') || t.includes('Verified email')) return null;
-            // Suppress entity-transition metadata — strings describing brand/chain transitions or legal entity history
-            if (t.includes('formerly ') || t.includes('formerly known') || t.includes('renamed') || t.includes('rebranded as')) return null;
-            // Suppress quasi-internal entity metadata like "National retail chain location" or "A [Brand] brand location"
-            if (t.includes('retail chain location') || t.includes('brand location') || t.includes('chain location')) return null;
-            // Suppress entity operating-as metadata — "operating as", "operated as", "dba", "also known as"
-            if (t.includes('operating as') || t.includes('operated as') || t.includes('dba') || t.includes('also known as') || t.includes('doing business as')) return null;
-            // Suppress disqualification and audit-flag strings — internal QA markers, not user-facing insights
-            if (t.includes('Disqualified') || t.includes('SKIP') || t.includes('DO NOT') || t.includes('REDACTED') || t.includes(' Omits ')) return null;
-            // Suppress NAICS/metadata structure strings — these are data-field artifacts, not useful business insights
-            if (t.includes('NAICS') || t.includes('**Industry**') || t.includes('**Service**') || t.includes('SIC ') || t.includes('SIC:')) return null;
-            // Suppress lead/profile/internal import artifacts — "New lead profile", "directory:" etc.
-            if (t.includes('New lead profile') || t.includes('directory:') || t.includes('from directory') || t.includes('created from')) return null;
-            // Suppress absence/negative-placeholder phrasing — these are implementation details, not useful signals
-            if (t.toLowerCase().startsWith('no ') || t.toLowerCase().startsWith('none') || t.toLowerCase().startsWith('no verifiable') || t.toLowerCase().startsWith('unable to') || t.toLowerCase().startsWith('could not')) return null;
-            // Suppress vague or low-content strings that don't give users an interesting signal
-            if (t.length < 20) return null;
-            // Suppress generic data-field fallbacks that read like field indicators, not business insights
-            if (t === 'Has both email and phone.') return null;
-            if (t === 'Website only — no direct contact on file.') return null;
-            return t;
-        }
-        // Fallback signals are also generic data indicators — suppress them too
-        if (point.email && point.phone) return null;
-        if (point.website && !point.email && !point.phone) return null;
-        return null;
-    };
-    window.buildSelectedMatchNarrative = function (point) {
-        if (!point) return '';
-        if (state.currentSearchSummary?.reason) return state.currentSearchSummary.reason;
-        return '';
-    };
+    window.getInterestingBusinessNote = getInterestingBusinessNote;
+    window.buildSelectedMatchNarrative = buildSelectedMatchNarrative;
 
     window.exploreInsideToNextStop = function () {
         if (state.strandContinuityState?.phase === 'exploring') return;
