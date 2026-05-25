@@ -16,7 +16,7 @@ Named surfaces: `mobile-idle`, `desktop-idle`, `launch-focus`, `search-error`, `
 
 | Script | States | Notes |
 |--------|--------|-------|
-| `qa:surface:all` | all 16 visual states | ~60-90s |
+| `qa:surface:all` | all 22 visual states | ~60-90s |
 | `qa:surface:mobile-idle` | 01-mobile-idle | |
 | `qa:surface:desktop-idle` | 07-desktop-idle | |
 | `qa:surface:focus` | 03-mobile-focus-first-result + 04-mobile-field-node-active | |
@@ -24,8 +24,13 @@ Named surfaces: `mobile-idle`, `desktop-idle`, `launch-focus`, `search-error`, `
 | `qa:surface:map-trail` | 11-mobile-selected-card-map-trail | |
 | `qa:surface:desktop-map-trail` | 11-desktop-selected-card-map-trail | |
 | `qa:surface:reduced-motion` | 12-desktop-reduced-motion | |
+| `qa:surface:info-panel-populated` | 16-desktop-info-panel-populated | |
+| `qa:surface:thread-inspector` | 17-mobile-thread-inspector | |
+| `qa:surface:loading-overlay` | 18-mobile-loading-overlay | |
+| `qa:surface:compass-rail` | 19-mobile-compass-rail | |
+| `qa:surface:mode-grid` | 20-mobile-mode-grid-visible | |
 
-States: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-result`, `04-mobile-field-node-active`, `05-mobile-map`, `06-mobile-filters-open`, `07-desktop-idle`, `08-desktop-search-coffee`, `09-mobile-map-empty-state`, `10-mobile-search-error-state`, `11-mobile-selected-card-map-trail`, `12-desktop-reduced-motion`, `13-desktop-filters-open` (desktop viewport capture only — desktop filters are mobile-only, always display:none in idle), `14-desktop-search-error`, `13-mobile-reduced-motion`, `15-mobile-semantic-dive`.
+States: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-result`, `04-mobile-field-node-active`, `05-mobile-map`, `06-mobile-filters-open`, `07-desktop-idle`, `08-desktop-search-coffee`, `09-mobile-map-empty-state`, `10-mobile-search-error-state`, `11-mobile-selected-card-map-trail`, `11-desktop-selected-card-map-trail`, `12-desktop-reduced-motion`, `13-desktop-filters-open` (desktop viewport capture only — desktop filters are mobile-only, always display:none in idle), `13-mobile-reduced-motion`, `14-desktop-search-error`, `15-mobile-semantic-dive`, `16-desktop-info-panel-populated`, `17-mobile-thread-inspector`, `18-mobile-loading-overlay`, `19-mobile-compass-rail`, `20-mobile-mode-grid-visible`.
 
 ## UI Quality & Motion Scripts
 
