@@ -224,6 +224,9 @@ async function captureState(page, name) {
   if (name === '19-mobile-compass-rail') {
     await applyCompassRailState(page);
   }
+  if (name === '20-mobile-mode-grid-visible') {
+    await applyModeGridVisibleState(page);
+  }
 
   const data = await page.evaluate(() => {
     const selectors = [
@@ -280,6 +283,11 @@ async function captureState(page, name) {
       '.journey-compass-kicker',
       '.journey-compass-title',
       '.journey-compass-actions',
+      '.demo-starters',
+      '.demo-starter-chip',
+      '.mode-chip',
+      '.mode-chip.active',
+      '.mode-name',
       '.view-toggle',
       '#btn-legend',
     ];
@@ -395,6 +403,40 @@ async function captureState(page, name) {
           kickerClipped: textClipped(document.querySelector('.journey-compass-kicker')),
           titleClipped: textClipped(document.querySelector('.journey-compass-title')),
           noteClipped: textClipped(document.querySelector('.journey-compass-note')),
+        };
+      })(),
+      modeGridDiagnostics: (() => {
+        const textClipped = (el) => {
+          if (!el) return false;
+          const style = getComputedStyle(el);
+          if (style.display === 'none' || style.visibility === 'hidden') return false;
+          const rect = el.getBoundingClientRect();
+          return el.scrollWidth > rect.width + 1 || el.scrollHeight > rect.height + 1;
+        };
+        const grid = document.querySelector('#mode-grid');
+        const chips = Array.from(document.querySelectorAll('.mode-chip'));
+        const activeChips = chips.filter((chip) => chip.classList.contains('active'));
+        return {
+          gridOverflow: grid ? grid.scrollWidth > grid.getBoundingClientRect().width + 1 : null,
+          chipsCount: chips.length,
+          visibleChipsCount: chips.filter((chip) => {
+            const style = getComputedStyle(chip);
+            return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0.05;
+          }).length,
+          clippedChipsCount: chips.filter((chip) => textClipped(chip)).length,
+          activeChipsCount: activeChips.length,
+          activeChipAriaPressed: activeChips[0]?.getAttribute('aria-pressed') || null,
+          names: chips.map((chip) => chip.querySelector('.mode-name')?.textContent?.trim() || chip.textContent.trim()),
+          smallTouchTargets: chips
+            .map((chip) => {
+              const rect = chip.getBoundingClientRect();
+              return {
+                text: chip.querySelector('.mode-name')?.textContent?.trim() || chip.textContent.trim(),
+                width: rect.width,
+                height: rect.height,
+              };
+            })
+            .filter((chip) => chip.width < 43.5 || chip.height < 43.5),
         };
       })(),
     };
@@ -572,6 +614,76 @@ async function applyCompassRailState(page) {
   });
 }
 
+async function applyModeGridVisibleState(page) {
+  await page.evaluate(() => {
+    document.body.classList.add('is-active');
+    document.body.dataset.activeView = 'galaxy';
+    document.body.dataset.graphContext = 'overview';
+    document.body.dataset.panelSurface = 'idle';
+    document.body.dataset.focusPanelMode = 'overview';
+    document.body.dataset.threadInspectSurface = 'idle';
+
+    const loadingOverlay = document.querySelector('#loading-overlay');
+    if (loadingOverlay) {
+      loadingOverlay.classList.add('hidden');
+      loadingOverlay.style.display = 'none';
+      loadingOverlay.setAttribute('aria-hidden', 'true');
+    }
+
+    const searchContainer = document.querySelector('.search-container');
+    if (searchContainer) {
+      searchContainer.classList.remove('has-query', 'results-rendered', 'searching', 'search-degraded');
+      searchContainer.style.margin = '0';
+      searchContainer.style.padding = '0';
+    }
+    document.querySelectorAll('#btn-launch, .search-label, .search-input-wrapper, .search-hint, .semantic-lane-assist, .search-trail-cue').forEach((element) => {
+      element.style.display = 'none';
+      element.style.visibility = 'hidden';
+      element.style.opacity = '0';
+      element.setAttribute('aria-hidden', 'true');
+    });
+    const results = document.querySelector('#search-results');
+    if (results) results.classList.remove('active');
+
+    const demoStarters = document.querySelector('#demo-starters');
+    if (demoStarters) {
+      demoStarters.style.display = 'none';
+      demoStarters.style.visibility = 'hidden';
+      demoStarters.style.opacity = '0';
+      demoStarters.setAttribute('aria-hidden', 'true');
+    }
+
+    const infoPanel = document.querySelector('#info-panel');
+    if (infoPanel) {
+      infoPanel.classList.add('active');
+      infoPanel.style.display = 'block';
+      infoPanel.style.visibility = 'visible';
+    }
+
+    const modeGrid = document.querySelector('#mode-grid');
+    if (modeGrid) {
+      modeGrid.style.display = 'grid';
+      modeGrid.style.visibility = 'visible';
+      modeGrid.style.opacity = '1';
+    }
+
+    document.querySelectorAll('.mode-chip').forEach((chip) => {
+      const isDefault = chip.getAttribute('data-mode') === 'default';
+      chip.classList.toggle('active', isDefault);
+      chip.disabled = false;
+      chip.setAttribute('aria-pressed', isDefault ? 'true' : 'false');
+      chip.style.display = 'grid';
+      chip.style.visibility = 'visible';
+      chip.style.opacity = '1';
+    });
+
+    const infoContent = document.querySelector('.info-content');
+    if (infoContent && modeGrid) {
+      infoContent.scrollTop = Math.max(0, modeGrid.offsetTop - infoContent.clientHeight + modeGrid.offsetHeight + 24);
+    }
+  });
+}
+
 async function run() {
   await ensureDir(outDir);
   const states = [];
@@ -590,6 +702,7 @@ async function run() {
       '17-mobile-thread-inspector',
       '18-mobile-loading-overlay',
       '19-mobile-compass-rail',
+      '20-mobile-mode-grid-visible',
     ])) {
       const browser = await chromium.launch({ headless: true });
       try {
@@ -608,6 +721,11 @@ async function run() {
         if (wantsState('19-mobile-compass-rail')) {
           await gotoReady(mobilePage, targetUrl);
           await captureMaybe(states, mobilePage, '19-mobile-compass-rail');
+        }
+
+        if (wantsState('20-mobile-mode-grid-visible')) {
+          await gotoReady(mobilePage, targetUrl);
+          await captureMaybe(states, mobilePage, '20-mobile-mode-grid-visible');
         }
 
         if (wantsAny(['02-mobile-search-coffee', '03-mobile-focus-first-result', '04-mobile-field-node-active'])) {
@@ -908,6 +1026,7 @@ async function run() {
     boxes: data.boxes,
     loadingOverlayDiagnostics: data.loadingOverlayDiagnostics,
     compassRailDiagnostics: data.compassRailDiagnostics,
+    modeGridDiagnostics: data.modeGridDiagnostics,
     sceneLuminance: data.sceneLuminance,
   }));
 
@@ -1261,6 +1380,74 @@ async function run() {
       pass('19-mobile-compass-rail', 'compass-rail:text-mounted');
     } else {
       fail('19-mobile-compass-rail', 'compass-rail:text-mounted', 'compass rail text missing');
+    }
+  }
+
+  if (shouldAssert('20-mobile-mode-grid-visible')) {
+    const modeState = requireState('20-mobile-mode-grid-visible');
+    const grid = requireVisible('20-mobile-mode-grid-visible', 'mode-grid:visible', '#mode-grid');
+    const chip = requireVisible('20-mobile-mode-grid-visible', 'mode-grid:chip-visible', '.mode-chip');
+    const activeChip = requireVisible('20-mobile-mode-grid-visible', 'mode-grid:active-chip-visible', '.mode-chip.active');
+    const name = requireVisible('20-mobile-mode-grid-visible', 'mode-grid:name-visible', '.mode-name');
+
+    const viewport = viewportFor(modeState);
+    if (grid && withinViewport(grid, viewport)) {
+      pass('20-mobile-mode-grid-visible', 'mode-grid:within-viewport');
+    } else if (grid) {
+      fail('20-mobile-mode-grid-visible', 'mode-grid:within-viewport', '#mode-grid extends outside mobile viewport');
+    }
+    if (grid?.centerTopInside || grid?.pointerEvents === 'none') {
+      pass('20-mobile-mode-grid-visible', 'mode-grid:occlusion');
+    } else if (grid) {
+      fail('20-mobile-mode-grid-visible', 'mode-grid:occlusion', `mode grid center is covered by ${grid.topElement || 'nothing'}`);
+    }
+    if (!isVisible(box(modeState, '.demo-starter-chip'))) {
+      pass('20-mobile-mode-grid-visible', 'mode-grid:demo-starters-hidden');
+    } else {
+      fail('20-mobile-mode-grid-visible', 'mode-grid:demo-starters-hidden', 'demo starter chips overlap the visible mode grid');
+    }
+
+    const diagnostics = modeState?.modeGridDiagnostics || {};
+    if ((diagnostics.chipsCount || 0) >= 4) {
+      pass('20-mobile-mode-grid-visible', 'mode-grid:chip-count');
+    } else {
+      fail('20-mobile-mode-grid-visible', 'mode-grid:chip-count', `expected >=4 mode chips, got ${diagnostics.chipsCount || 0}`);
+    }
+    if (diagnostics.visibleChipsCount === diagnostics.chipsCount && diagnostics.chipsCount >= 4) {
+      pass('20-mobile-mode-grid-visible', 'mode-grid:chips-visible');
+    } else {
+      fail('20-mobile-mode-grid-visible', 'mode-grid:chips-visible', `visible ${diagnostics.visibleChipsCount || 0} of ${diagnostics.chipsCount || 0} chips`);
+    }
+    if (!diagnostics.gridOverflow) {
+      pass('20-mobile-mode-grid-visible', 'mode-grid:no-grid-overflow');
+    } else {
+      fail('20-mobile-mode-grid-visible', 'mode-grid:no-grid-overflow', '#mode-grid has horizontal overflow');
+    }
+    if ((diagnostics.clippedChipsCount || 0) === 0) {
+      pass('20-mobile-mode-grid-visible', 'mode-grid:no-chip-clipping');
+    } else {
+      fail('20-mobile-mode-grid-visible', 'mode-grid:no-chip-clipping', `${diagnostics.clippedChipsCount} mode chip labels are clipped`);
+    }
+    if ((diagnostics.activeChipsCount || 0) === 1 && diagnostics.activeChipAriaPressed === 'true') {
+      pass('20-mobile-mode-grid-visible', 'mode-grid:active-chip-state');
+    } else {
+      fail('20-mobile-mode-grid-visible', 'mode-grid:active-chip-state', `active chips=${diagnostics.activeChipsCount || 0}, aria=${diagnostics.activeChipAriaPressed || 'missing'}`);
+    }
+    if ((diagnostics.smallTouchTargets || []).length === 0) {
+      pass('20-mobile-mode-grid-visible', 'mode-grid:touch-targets');
+    } else {
+      fail('20-mobile-mode-grid-visible', 'mode-grid:touch-targets', `small targets: ${diagnostics.smallTouchTargets.map((target) => `${target.text}:${Math.round(target.width)}x${Math.round(target.height)}`).join(', ')}`);
+    }
+    const names = diagnostics.names || [];
+    if (['County View', 'Bloom', 'Bridge', 'Path'].every((expected) => names.includes(expected))) {
+      pass('20-mobile-mode-grid-visible', 'mode-grid:expected-labels');
+    } else {
+      fail('20-mobile-mode-grid-visible', 'mode-grid:expected-labels', `mode labels were ${names.join(', ')}`);
+    }
+    if (chip?.text?.length && activeChip?.text?.includes('County View') && name?.text?.length && names.length >= 4) {
+      pass('20-mobile-mode-grid-visible', 'mode-grid:text-mounted');
+    } else {
+      fail('20-mobile-mode-grid-visible', 'mode-grid:text-mounted', 'mode grid chip labels missing');
     }
   }
 

@@ -27,6 +27,7 @@
     "qa:surface:thread-inspector": "node tests/visual-state-audit.mjs --states=17-mobile-thread-inspector",
     "qa:surface:loading-overlay": "node tests/visual-state-audit.mjs --states=18-mobile-loading-overlay",
     "qa:surface:compass-rail": "node tests/visual-state-audit.mjs --states=19-mobile-compass-rail",
+    "qa:surface:mode-grid": "node tests/visual-state-audit.mjs --states=20-mobile-mode-grid-visible",
     "qa:surface:all": "node tests/visual-state-audit.mjs",
     "qa:contract": "node tests/surface-contract-check.mjs",
     "qa:contract:mobile-idle": "node tests/surface-contract-check.mjs --surface=mobile-idle",

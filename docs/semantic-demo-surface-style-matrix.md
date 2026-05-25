@@ -4,7 +4,7 @@ Date: 2026-05-25
 
 This matrix connects the design tokens in `docs/semantic-demo-design-tokens.md` to the composed app states captured by `tests/visual-state-audit.mjs`. The token sheet defines the primitives; this matrix defines how those primitives should show up across real surfaces.
 
-The current visual audit exposes 21 state ids. This is broader than the older "12-state" shorthand and includes diagnostic desktop/mobile variants such as reduced motion, desktop filters, desktop search error, mobile semantic dive, mobile thread inspector, mobile loading overlay, and mobile compass rail.
+The current visual audit exposes 22 state ids. This is broader than the older "12-state" shorthand and includes diagnostic desktop/mobile variants such as reduced motion, desktop filters, desktop search error, mobile semantic dive, mobile thread inspector, mobile loading overlay, mobile compass rail, and mobile mode grid.
 
 ## Source Of Truth
 
@@ -46,6 +46,7 @@ The current visual audit exposes 21 state ids. This is broader than the older "1
 | `17-mobile-thread-inspector` | Mobile focus thread inspector with representative relationship content. | Focus thread inspector, relationship title/copy/meta, Pin/Follow/Clear actions, focus-stage context. | Glass/elevation, mobile type/action, touch targets, text contrast, spacing. | Inspector must remain inside the mobile viewport, preserve focus-stage bottom anchoring, and keep all actions at least `44px`. | `.focus-thread-inspector` rows in `docs/semantic-demo-focus-stage-css-owner-matrix.md`; `thread-inspector` in `tests/surface-contract-check.mjs`. | `npm run qa:surface:thread-inspector`; `npm run qa:contract:thread-inspector`. |
 | `18-mobile-loading-overlay` | Mobile loading overlay with representative progress and phase state. | Loading overlay, loading shell, kicker/title/note, progress bar, phase chips, loading foot. | Glass/elevation, loading motion, mobile type, status/phase contrast, progress affordance. | Overlay may cover the viewport intentionally, but shell content must fit without horizontal overflow or clipped loading copy. | `#loading-overlay` and `.loading-shell` rows in `css/loading.css`; `loading-overlay` in `tests/surface-contract-check.mjs`. | `npm run qa:surface:loading-overlay`; `npm run qa:contract:loading-overlay`. |
 | `19-mobile-compass-rail` | Mobile overview compass rail with all journey steps visible. | Journey compass, compass rail, overview/search/focus/inside/map step buttons, compass title/note/actions. | Glass/elevation, mobile type/action, touch targets, text contrast, step-state affordances. | Compass and rail must remain inside the mobile viewport, avoid occlusion, avoid rail overflow, and keep all step controls at least `44px`. | `.journey-compass` and `.journey-compass-rail` rows in `docs/semantic-demo-css-authority-map.md`; `compass-rail` in `tests/surface-contract-check.mjs`. | `npm run qa:surface:compass-rail`; `npm run qa:contract:compass-rail`. |
+| `20-mobile-mode-grid-visible` | Mobile overview mode grid isolated with guided demo starters suppressed. | Mode grid, County View/Bloom/Bridge/Path chips, active chip state, mode names. | Glass/elevation, mobile type/action, touch targets, active-state contrast, spacing. | Mode grid must fit inside the mobile viewport without horizontal overflow; chips must stay visible, unclipped, tappable, and free of demo-starter overlap. | `#mode-grid` and `.mode-chip` rows in `css/layout_base.css`, `css/mobile_premium_idle.css`, and `css/strands.css`; `mode-grid` in `tests/surface-contract-check.mjs` proves hidden-in-focus-search counterpart. | `npm run qa:surface:mode-grid`; `npm run qa:contract:mode-grid`. |
 
 ## Coverage Rule
 
@@ -57,7 +58,6 @@ Some surface contracts do not yet have a dedicated visual audit state id. They r
 
 | Surface | Current coverage | Gap |
 |---|---|---|
-| `mode-grid` | `npm run qa:contract:mode-grid` | No dedicated visual audit state row. |
-| `global-spacing` | `npm run qa:contract:global-spacing` | No dedicated visual audit state row. |
+| `global-spacing` | `npm run qa:contract:global-spacing` | Intentional aggregate layout-health contract covering overflow, overlap, panel proportions, touch targets, and text clipping across surfaces; no single screenshot is authoritative. |
 
 If any of these surfaces become a visible design-review target, add a visual audit state or add a second matrix section that maps contract-only surfaces to token families and proof requirements.
