@@ -26,7 +26,7 @@
 | `window.resetExplorationFocus` | lifecycle.js:2494 | app.js:122 | Reset non-functional |
 | `window.resetStateBeforeUrlRestore` | lifecycle.js:2495 | (used internally by lifecycle) | URL restore state bleed |
 | `window.refreshCompositionState` | app.js/lifecycle.js compatibility bridge retained | search-state runtime callers dewindowed 2026-05-25 through `search-lifecycle-adapter.js`; app/lifecycle bridge remains for bootstrap/tests | Temporary test/external compatibility shim |
-| `window.syncSemanticDiveUi` | lifecycle.js compatibility bridge retained 2026-05-25 | Runtime source callers dewindowed 2026-05-25; camera-controls, journey-compass-controller, journey, and thread-inspector import `syncSemanticDiveUi` directly | Retained temporary compatibility shim (tests / external callers only) |
+| `window.syncSemanticDiveUi` | Retired 2026-05-25 | Runtime source callers dewindowed 2026-05-25; camera-controls, journey-compass-controller, journey, and thread-inspector import `syncSemanticDiveUi` directly; reduced-motion tests exercise it through the `setTrailDepth` owner path | No compatibility bridge remains |
 | `window.focusOnPoint` | Retired 2026-05-25 | Runtime source callers dewindowed 2026-05-25; map-state, journey, and thread-inspector import `focusOnPoint` directly from lifecycle.js | No compatibility bridge remains |
 | `window.getInterestingBusinessNote` | lifecycle.js:2507 | journey.js:1212/1453 | Empty card notes |
 | `window.buildSelectedMatchNarrative` | lifecycle.js:2545 | journey.js:1214/1455 | Empty match narrative |
@@ -89,7 +89,7 @@ Semantic lane uses `getWindow()` / `getDocument()` guard pattern internally (lin
 | `window.disposeArrivalHandoffOverlay` | journey-webgl.js compatibility bridge retained | journey.js dewindowed 2026-05-25; thread-inspector wrapper still uses bridge |
 | `window.syncInspectedStrandOverlay` | thread-inspector.js | journey.js:361 |
 | `window.applyLocalNeighborhoodFocus` | journey.js:1006 guard only, NOT assigned | journey.js:1006 |
-| `window.syncSemanticDiveUi` | lifecycle.js compatibility bridge retained 2026-05-25 | Runtime source callers dewindowed; remaining direct references are compatibility/tests only |
+| `window.syncSemanticDiveUi` | Retired 2026-05-25 | Runtime source and reduced-motion test callers dewindowed; no compatibility bridge remains |
 | `window.previewInsideNextThread` | NOT found | journey.js:651 |
 | `window.updateJourneyCompass` | Dewindowed 2026-05-25 | Former guarded callers now use direct named imports/adapters |
 | `window.getSelectedBusinessRoleLabel` | NOT found | journey.js:1421 |

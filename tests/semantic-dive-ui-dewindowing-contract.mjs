@@ -81,8 +81,8 @@ function main() {
   }
 
   assert(
-    /window\.syncSemanticDiveUi\s*=\s*syncSemanticDiveUi/.test(lifecycleSrc),
-    'lifecycle.js retains the temporary window.syncSemanticDiveUi compatibility bridge'
+    !/window\.syncSemanticDiveUi\b/.test(lifecycleSrc),
+    'lifecycle.js must not retain the retired window.syncSemanticDiveUi compatibility bridge'
   );
 
   console.log('\n=================================================================');

@@ -136,7 +136,6 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
       }
       if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
       if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
-      if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
     });
 
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));

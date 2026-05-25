@@ -697,7 +697,6 @@ if (typeof window !== 'undefined') {
     window.resetExplorationFocus = resetExplorationFocus;
     window.resetStateBeforeUrlRestore = resetStateBeforeUrlRestore;
     window.refreshCompositionState = refreshCompositionState;
-    window.syncSemanticDiveUi = syncSemanticDiveUi;
     window.showViewHandoff = showViewHandoff;
     window.hideViewHandoff = hideViewHandoff;
 

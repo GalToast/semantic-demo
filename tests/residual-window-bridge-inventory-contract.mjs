@@ -173,7 +173,7 @@ const KNOWN_FALLBACKS = new Set([
   'updateLegendGuideState', 'updateTraversalUi', 'restoreLegendCollapsedPanel',
   // journey.js guards
   'syncArrivalHandoffOverlay', 'disposeArrivalHandoffOverlay', 'syncInspectedStrandOverlay',
-  'syncSemanticDiveUi', 'updateJourneyCompass',
+  'updateJourneyCompass',
   'previewInsideNextThread', 'applyLocalNeighborhoodFocus', 'setSemanticDiveMode',
   'applyClusterUiAccent', 'getInterestingBusinessNote', 'buildSelectedMatchNarrative',
   'hasColdDegradedSemanticFallback', 'revealSelectedBusinessCard', 'describeThreadLensForPoint',

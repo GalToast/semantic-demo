@@ -289,9 +289,6 @@ async function run() {
     if (typeof window.updateExplorationUi === 'function') {
       window.updateExplorationUi();
     }
-    if (typeof window.syncSemanticDiveUi === 'function') {
-      window.syncSemanticDiveUi();
-    }
   });
 
   await page.waitForTimeout(100);
