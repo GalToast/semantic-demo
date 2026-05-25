@@ -537,11 +537,46 @@ function testFocusOnPointRuntimeCallersDewindowed() {
   console.log('  OK — journey/map-state/thread-inspector use direct focusOnPoint imports; lifecycle bridge is compatibility-only');
 }
 
-// ── TEST 7 — Verify window-bridge-gaps-contract.mjs still passes ─────────────
+// ── TEST 7 — Journey uses direct arrival handoff imports ─────────────────────
+
+function testJourneyArrivalHandoffDewindowed() {
+  console.log('\n[TEST 7] journey.js does not use arrival handoff window bridges');
+
+  const journeySrc = read('journey');
+  const problems = [];
+
+  for (const fn of ['syncArrivalHandoffOverlay', 'disposeArrivalHandoffOverlay']) {
+    if (journeySrc.includes(`window.${fn}`)) {
+      problems.push(`  journey: still references window.${fn}`);
+    }
+    if (!new RegExp(`\\b${fn}\\s*\\(`).test(journeySrc)) {
+      problems.push(`  journey: expected direct ${fn}() call after dewindowing`);
+    }
+  }
+
+  const journeyWebglSrc = read('journeyWebgl');
+  assert(
+    /window\.syncArrivalHandoffOverlay\s*=\s*syncArrivalHandoffOverlay/.test(journeyWebglSrc),
+    'journey-webgl.js should retain the temporary window.syncArrivalHandoffOverlay compatibility bridge'
+  );
+  assert(
+    /window\.disposeArrivalHandoffOverlay\s*=\s*disposeArrivalHandoffOverlay/.test(journeyWebglSrc),
+    'journey-webgl.js should retain the temporary window.disposeArrivalHandoffOverlay compatibility bridge'
+  );
+
+  assert(
+    problems.length === 0,
+    `journey.js must use direct arrival handoff imports, not window bridges:\n${problems.join('\n')}`
+  );
+
+  console.log('  OK — journey.js uses direct arrival handoff calls; journey-webgl bridges are compatibility-only');
+}
+
+// ── TEST 8 — Verify window-bridge-gaps-contract.mjs still passes ─────────────
 // Run the sibling contract to ensure no regressions in the already-dewindowed seams.
 
 function testSiblingContractStillPasses() {
-  console.log('\n[TEST 7] sibling window-bridge-gaps-contract.mjs still passes');
+  console.log('\n[TEST 8] sibling window-bridge-gaps-contract.mjs still passes');
 
   try {
     const result = execFileSync(
@@ -575,6 +610,7 @@ try {
   testExtractionCandidatesDocumented();
   testBareCallBaseline();
   testFocusOnPointRuntimeCallersDewindowed();
+  testJourneyArrivalHandoffDewindowed();
   testSiblingContractStillPasses();
 
   console.log('\n=================================================================');

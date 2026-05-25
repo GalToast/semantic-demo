@@ -370,9 +370,9 @@ export function setStrandContinuityState(phase = 'idle', options = {}) {
         document.body.dataset.strandJourneyReason = state.strandContinuityState.reason;
     }
     if (['exploring', 'arrived'].includes(normalizedPhase)) {
-        if (typeof window.syncArrivalHandoffOverlay === 'function') window.syncArrivalHandoffOverlay();
+        syncArrivalHandoffOverlay();
     } else if (normalizedPhase === 'idle') {
-        if (typeof window.disposeArrivalHandoffOverlay === 'function') window.disposeArrivalHandoffOverlay();
+        disposeArrivalHandoffOverlay();
     }
     return state.strandContinuityState;
 }
