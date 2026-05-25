@@ -90,7 +90,7 @@
     }
 
     html body[data-panel-surface="focus-search"] .journey-compass-action {
-        min-width: 0;
+        min-width: 44px;
         min-height: var(--mobile-touch-min, 44px);
         padding: 0 8px;
         white-space: normal;
