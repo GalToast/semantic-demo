@@ -20,6 +20,7 @@ import {
 } from './lifecycle.js';
 import { updateUrlState } from './url-state.js';
 import { applyPointFilterColors, syncFocusStage } from './journey.js';
+import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 
 // Constants
 
@@ -1173,7 +1174,7 @@ export function focusOnNode(index, options = {}) {
         });
     }
     if (typeof window.updateTraversalUi === 'function') window.updateTraversalUi();
-    if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
+    syncSemanticDiveUi();
     if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
     refreshCompositionState();
     if (!options.skipUrlSync) {

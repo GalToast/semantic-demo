@@ -26,7 +26,7 @@
 | `window.resetExplorationFocus` | lifecycle.js:2494 | app.js:122 | Reset non-functional |
 | `window.resetStateBeforeUrlRestore` | lifecycle.js:2495 | (used internally by lifecycle) | URL restore state bleed |
 | `window.refreshCompositionState` | lifecycle.js:2496 | app.js:124, lifecycle.js:409/729/943 | Composition not refreshed |
-| `window.syncSemanticDiveUi` | lifecycle.js:2497 | journey.js:503/516/652/1077, lifecycle.js:406 | Dive UI stale |
+| `window.syncSemanticDiveUi` | lifecycle.js compatibility bridge retained 2026-05-25 | Runtime source callers dewindowed 2026-05-25; camera-controls, journey-compass-controller, journey, and thread-inspector import `syncSemanticDiveUi` directly | Temporary test/external compatibility shim |
 | `window.getInterestingBusinessNote` | lifecycle.js:2507 | journey.js:1212/1453 | Empty card notes |
 | `window.buildSelectedMatchNarrative` | lifecycle.js:2545 | journey.js:1214/1455 | Empty match narrative |
 | `window.setSemanticDiveMode` (journey.js) | journey.js:3096 (overrides lifecycle.js) | journey.js:61 | Overwrites lifecycle shim |
@@ -88,7 +88,7 @@ Semantic lane uses `getWindow()` / `getDocument()` guard pattern internally (lin
 | `window.disposeArrivalHandoffOverlay` | thread-inspector.js (not found in grep) | journey.js:347 |
 | `window.syncInspectedStrandOverlay` | thread-inspector.js | journey.js:361 |
 | `window.applyLocalNeighborhoodFocus` | journey.js:1006 guard only, NOT assigned | journey.js:1006 |
-| `window.syncSemanticDiveUi` | lifecycle.js:2497 | journey.js:503/516/652/1077 |
+| `window.syncSemanticDiveUi` | lifecycle.js compatibility bridge retained 2026-05-25 | Runtime source callers dewindowed; remaining direct references are compatibility/tests only |
 | `window.previewInsideNextThread` | NOT found | journey.js:651 |
 | `window.updateJourneyCompass` | Dewindowed 2026-05-25 | Former guarded callers now use direct named imports/adapters |
 | `window.getSelectedBusinessRoleLabel` | NOT found | journey.js:1421 |

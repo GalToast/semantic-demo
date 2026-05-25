@@ -27,6 +27,7 @@ import { switchView } from './view-controller.js';
 
 // ui-renderers
 import { updateSelectedCardHeading } from './ui-renderers.js';
+import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 
 export function getJourneyCompassPresentationState(compassState = {}) {
     const phase = compassState.phase || 'overview';
@@ -364,7 +365,7 @@ export function refreshCompositionState() {
             document.body.dataset.panelSurfaceDetail = 'none';
             syncRouteDirectorState('composition-map');
             updateSelectedCardHeading();
-            if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
+            syncSemanticDiveUi();
             updateJourneyCompass();
             if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
             refreshMapMarkers();
@@ -416,7 +417,7 @@ export function refreshCompositionState() {
     syncRouteDirectorState('composition-galaxy');
     updateSelectedCardHeading();
     if (typeof window.updateLegendGuideState === 'function') window.updateLegendGuideState();
-    if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
+    syncSemanticDiveUi();
     updateJourneyCompass();
     if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
     refreshMapMarkers();

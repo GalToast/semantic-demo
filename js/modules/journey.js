@@ -38,6 +38,7 @@ import { setTrailNavState } from './navigation-state.js';
 import { applyLocalNeighborhoodFocus, setFocusPocketMeta } from './focus-pocket.js';
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
 import { showExperienceToast } from './ui-feedback.js';
+import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 import {
     refreshRouteTraceOverlay,
     updateRouteTraceOverlayPositions,
@@ -525,7 +526,7 @@ export function pinThreadNeighbor(index, options = {}) {
         reason: options.reason || 'pin'
     });
     const inspectionState = renderThreadInspection(index, { ...options, surface: 'pinned', pinned: true });
-    if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
+    syncSemanticDiveUi();
     return inspectionState;
 }
 
@@ -538,7 +539,7 @@ export function unpinThreadInspection() {
     state.inspectedThreadIndex = null;
     clearStrandContinuityState('unpin');
     const inspectionState = renderThreadInspection(null, { surface: 'idle', force: true });
-    if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
+    syncSemanticDiveUi();
     return inspectionState;
 }
 
@@ -667,7 +668,7 @@ export function walkThreadNeighbor(index, options = {}) {
             primeNextThreadInspectionAfterWalk(capturedIndex);
             if (state.semanticDiveMode) {
                 if (typeof window.previewInsideNextThread === 'function') window.previewInsideNextThread({ force: true });
-                if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
+                syncSemanticDiveUi();
             }
         }
     }, options.arrivalDelay || 820);

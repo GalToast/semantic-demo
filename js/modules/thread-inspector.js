@@ -9,6 +9,7 @@ import { truncateMicrocopy } from './thread-inspector-text-helpers.js';
 import { focusOnNode } from './camera-controls.js';
 import { dispatchNavTransition, updateJourneyCompass } from './lifecycle.js';
 import { showExperienceToast } from './ui-feedback.js';
+import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 
 // === Internal helpers (deferred to main script via window) ===
 
@@ -20,10 +21,6 @@ function summarizeNeighborReason(candidate, point, focusPoint) {
 function getInsideRelationshipLabel(candidate, point, focusPoint) {
     if (typeof window.getInsideRelationshipLabel === 'function') return window.getInsideRelationshipLabel(candidate, point, focusPoint);
     return 'Related connection';
-}
-
-function syncSemanticDiveUi() {
-    if (typeof window.syncSemanticDiveUi === 'function') window.syncSemanticDiveUi();
 }
 
 function syncFocusStage(point) {

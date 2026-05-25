@@ -20,6 +20,12 @@ import path from 'node:path';
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const SEMANTIC_DIVE_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/semantic-dive-ui.js');
 const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
+const RUNTIME_SYNC_CALLERS = [
+  'js/modules/camera-controls.js',
+  'js/modules/journey-compass-controller.js',
+  'js/modules/journey.js',
+  'js/modules/thread-inspector.js'
+];
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -59,6 +65,24 @@ function main() {
   assert(
     !/import\s+\{[^}]*\bupdateExplorationUi\b[^}]*\}\s+from\s+['"]\.\/semantic-dive-ui\.js['"]/.test(lifecycleSrc),
     'lifecycle.js must NOT import updateExplorationUi from semantic-dive-ui.js (no cycle)'
+  );
+
+  for (const relativePath of RUNTIME_SYNC_CALLERS) {
+    const absolutePath = path.join(SEMDEMO_ROOT, relativePath);
+    const src = fs.readFileSync(absolutePath, 'utf-8');
+    assert(
+      /import\s+\{[^}]*\bsyncSemanticDiveUi\b[^}]*\}\s+from\s+['"]\.\/semantic-dive-ui\.js['"]/.test(src),
+      `${relativePath} must import syncSemanticDiveUi directly from semantic-dive-ui.js`
+    );
+    assert(
+      !src.includes('window.syncSemanticDiveUi'),
+      `${relativePath} must not call window.syncSemanticDiveUi`
+    );
+  }
+
+  assert(
+    /window\.syncSemanticDiveUi\s*=\s*syncSemanticDiveUi/.test(lifecycleSrc),
+    'lifecycle.js retains the temporary window.syncSemanticDiveUi compatibility bridge'
   );
 
   console.log('\n=================================================================');
