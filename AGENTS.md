@@ -116,3 +116,16 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 - Overlapping read scope is fine. Overlapping write scope needs an explicit lead, a file owner, or a serial handoff so patches do not trample each other.
 - Before the main lane stabilizes or commits a high-risk file, verify no worker is still running with write scope over that file. Pause or cancel the worker before local edits continue.
 - Main Codex lane should coordinate, answer worker blockers, review returned diffs, rerun acceptance checks, and synthesize the final decision.
+
+### Worker Prompt Boundary
+
+**Role distinction.** Workers assigned to "diagnose-and-report" must not edit any source files — return the finding with a path reference. Workers assigned to "diagnose-and-fix" must stay inside the explicitly scoped seam; they do not gain license to fix adjacent surface bugs they discover in passing.
+
+**Off-limits write surface (all require explicit lead approval to touch):**
+- CSS mobile cascade — `css/journey_active.css`, `css/journey_steps.css`, `css/strands.css`, `css/progressive_disclosure.css`, `css/mobile_premium_*.css`
+- Journey/UI state writers — `js/modules/journey.js`, `js/modules/lifecycle.js`, `js/modules/ui-renderers.js`
+- App shell — `js/modules/app.js`, `js/state.js`
+- Focus stage — `js/modules/focus-pocket.js`, `js/modules/journey-compass-state.js`
+- Deploy scripts — `deploy.sh`, `deploy.ps1`
+
+**Routing cross-seam findings.** When a worker identifies a bug or fix opportunity outside its seam: stop, document the finding with path and line range, and return `Finds outside scope: <path> — <description>` to the main lane instead of editing the off-seam file. This prevents silent cross-seam corruption and preserves the lead's review gate.

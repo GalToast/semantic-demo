@@ -545,14 +545,16 @@
         bottom: calc(78px + env(safe-area-inset-bottom, 0px));
     }
 
-    /* Map navigation belongs to the map, not over the search/results surface. */
+    /* Map navigation belongs to the open map band, clear of panel chrome and results. */
     html body.is-active[data-panel-surface^="map-"] .controls {
-        top: clamp(250px, 31dvh, 270px);
+        top: clamp(166px, calc(var(--map-panel-top) - 62px), 196px);
         left: 50%;
         right: auto;
         bottom: auto;
         width: min(232px, calc(100vw - 32px));
-        min-height: 52px;
+        height: 54px;
+        min-height: 0;
+        box-sizing: border-box;
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 6px;
