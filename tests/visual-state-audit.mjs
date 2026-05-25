@@ -229,6 +229,7 @@ async function captureState(page, name) {
       '#filters-section',
       '#info-panel',
       '#focus-stage',
+      '.focus-stage-card',
       '.selected-card',
       '.about-card',
       '.selected-empty',
@@ -247,6 +248,13 @@ async function captureState(page, name) {
       '.focus-stage-kicker',
       '.focus-stage-dive-btn',
       '.focus-stage-neighbors',
+      '#focus-thread-inspector',
+      '#focus-thread-inspector-title',
+      '#focus-thread-inspector-copy',
+      '#focus-thread-inspector-meta',
+      '#btn-thread-pin',
+      '#btn-thread-follow',
+      '#btn-thread-clear',
       '#map-container',
       '.map-trail-strip',
       '.map-empty-state',
@@ -261,6 +269,17 @@ async function captureState(page, name) {
       if (!element) return null;
       const rect = element.getBoundingClientRect();
       const style = getComputedStyle(element);
+      const centerX = Math.min(window.innerWidth - 1, Math.max(0, rect.x + rect.width / 2));
+      const centerY = Math.min(window.innerHeight - 1, Math.max(0, rect.y + rect.height / 2));
+      const topElement = rect.width > 0 && rect.height > 0
+        ? document.elementFromPoint(centerX, centerY)
+        : null;
+      const describeElement = (el) => {
+        if (!el) return null;
+        if (el.id) return `#${el.id}`;
+        if (el.classList?.length) return `${el.tagName.toLowerCase()}.${Array.from(el.classList).slice(0, 3).join('.')}`;
+        return el.tagName.toLowerCase();
+      };
       return {
         x: rect.x,
         y: rect.y,
@@ -289,6 +308,8 @@ async function captureState(page, name) {
         animationName: style.animationName,
         animationDuration: style.animationDuration,
         clusterRgb: style.getPropertyValue('--cluster-rgb').trim(),
+        topElement: describeElement(topElement),
+        centerTopInside: topElement ? element.contains(topElement) : false,
         text: (element.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 180),
       };
     };
@@ -394,6 +415,7 @@ async function run() {
       '09-mobile-map-empty-state',
       '10-mobile-search-error-state',
       '11-mobile-selected-card-map-trail',
+      '17-mobile-thread-inspector',
     ])) {
       const browser = await chromium.launch({ headless: true });
       try {
@@ -480,6 +502,64 @@ async function run() {
             document.body.dataset.mapContext = 'focus';
           });
           await captureMaybe(states, mobilePage, '11-mobile-selected-card-map-trail');
+        }
+
+        if (wantsState('17-mobile-thread-inspector')) {
+          await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }));
+          await waitForReady(mobilePage);
+          const firstResult = mobilePage.locator('.search-result-item').first();
+          if (await firstResult.count()) {
+            await firstResult.click({ timeout: 5000 }).catch(() => {});
+          }
+          await mobilePage.waitForTimeout(800);
+          await mobilePage.evaluate(() => {
+            document.body.classList.add('is-active');
+            document.body.dataset.activeView = 'galaxy';
+            document.body.dataset.graphContext = 'focus';
+            document.body.dataset.panelSurface = 'focus';
+            document.body.dataset.threadInspectSurface = 'inspector';
+
+            const focusStage = document.querySelector('#focus-stage');
+            if (focusStage) {
+              focusStage.hidden = false;
+              focusStage.style.display = 'block';
+              focusStage.classList.add('active');
+            }
+
+            const inspector = document.querySelector('#focus-thread-inspector');
+            if (inspector) {
+              inspector.classList.add('active');
+              inspector.setAttribute('aria-hidden', 'false');
+            }
+
+            const titleEl = document.querySelector('#focus-thread-inspector-title');
+            const copyEl = document.querySelector('#focus-thread-inspector-copy');
+            const metaEl = document.querySelector('#focus-thread-inspector-meta');
+            if (titleEl) titleEl.textContent = 'Coffee Shop A -> Nearby Stop B';
+            if (copyEl) copyEl.textContent = 'Both serve morning commuters in the same strip mall.';
+            if (metaEl) metaEl.textContent = 'Semantic relationship: local_semantic_neighbor';
+
+            document.querySelectorAll('#btn-thread-pin, #btn-thread-follow, #btn-thread-clear').forEach((btn) => {
+              btn.disabled = false;
+            });
+            document
+              .querySelectorAll('.focus-stage-kicker, .focus-stage-name, .focus-stage-what, .focus-stage-meta, .focus-stage-badges, .focus-stage-trivia')
+              .forEach((el) => {
+                el.style.display = 'none';
+              });
+
+            const searchContainer = document.querySelector('.search-container');
+            if (searchContainer) {
+              searchContainer.classList.remove('has-query', 'results-rendered', 'searching');
+              searchContainer.style.display = 'none';
+            }
+            const infoPanel = document.querySelector('#info-panel');
+            if (infoPanel) {
+              infoPanel.style.display = 'none';
+            }
+          });
+          await mobilePage.waitForTimeout(300);
+          await captureMaybe(states, mobilePage, '17-mobile-thread-inspector');
         }
 
         await mobilePage.close();
@@ -671,6 +751,7 @@ async function run() {
     a.y + a.height <= b.y + tolerance ||
     b.y + b.height <= a.y + tolerance
   );
+  const touchTargetOk = (b) => b && b.width >= 43.5 && b.height >= 43.5;
   const cssTimeToMs = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
     if (!normalized) return Number.NaN;
@@ -767,6 +848,82 @@ async function run() {
   }
 
   // 09-mobile-map-empty-state assertions now live in the state-verification block
+
+  if (shouldAssert('17-mobile-thread-inspector')) {
+    const inspectorState = requireState('17-mobile-thread-inspector');
+    const focusStage = box(inspectorState, '#focus-stage');
+    const focusStageCard = requireRendered('17-mobile-thread-inspector', 'thread-inspector:focus-stage-card-visible', '.focus-stage-card');
+    const inspector = requireRendered('17-mobile-thread-inspector', 'thread-inspector:panel-visible', '#focus-thread-inspector');
+    const title = requireRendered('17-mobile-thread-inspector', 'thread-inspector:title-visible', '#focus-thread-inspector-title');
+    const copy = requireRendered('17-mobile-thread-inspector', 'thread-inspector:copy-visible', '#focus-thread-inspector-copy');
+    const meta = requireRendered('17-mobile-thread-inspector', 'thread-inspector:meta-visible', '#focus-thread-inspector-meta');
+    const pinBtn = requireRendered('17-mobile-thread-inspector', 'thread-inspector:pin-visible', '#btn-thread-pin');
+    const followBtn = requireRendered('17-mobile-thread-inspector', 'thread-inspector:follow-visible', '#btn-thread-follow');
+    const clearBtn = requireRendered('17-mobile-thread-inspector', 'thread-inspector:clear-visible', '#btn-thread-clear');
+
+    if (inspectorState?.bodyDataset?.threadInspectSurface === 'inspector') {
+      pass('17-mobile-thread-inspector', 'thread-inspector:surface-state');
+    } else {
+      fail('17-mobile-thread-inspector', 'thread-inspector:surface-state', `expected threadInspectSurface "inspector", got "${inspectorState?.bodyDataset?.threadInspectSurface || ''}"`);
+    }
+
+    if (isVisible(focusStage)) {
+      pass('17-mobile-thread-inspector', 'thread-inspector:focus-stage-visible');
+    } else if (focusStage) {
+      fail('17-mobile-thread-inspector', 'thread-inspector:focus-stage-visible', '#focus-stage is not visible');
+    }
+
+    const viewport = viewportFor(inspectorState);
+    if (inspector && withinViewport(inspector, viewport)) {
+      pass('17-mobile-thread-inspector', 'thread-inspector:within-viewport');
+    } else if (inspector) {
+      fail('17-mobile-thread-inspector', 'thread-inspector:within-viewport', '#focus-thread-inspector extends outside mobile viewport');
+    }
+
+    if (focusStage && withinViewport(focusStage, viewport)) {
+      pass('17-mobile-thread-inspector', 'thread-inspector:focus-stage-within-viewport');
+    } else if (focusStage) {
+      fail('17-mobile-thread-inspector', 'thread-inspector:focus-stage-within-viewport', '#focus-stage extends outside mobile viewport');
+    }
+    if (focusStageCard && withinViewport(focusStageCard, viewport)) {
+      pass('17-mobile-thread-inspector', 'thread-inspector:focus-stage-card-within-viewport');
+    } else if (focusStageCard) {
+      fail('17-mobile-thread-inspector', 'thread-inspector:focus-stage-card-within-viewport', '.focus-stage-card extends outside mobile viewport');
+    }
+    if (inspector?.centerTopInside) {
+      pass('17-mobile-thread-inspector', 'thread-inspector:not-occluded');
+    } else if (inspector) {
+      fail('17-mobile-thread-inspector', 'thread-inspector:not-occluded', `inspector center is covered by ${inspector.topElement || 'nothing'}`);
+    }
+
+    if (title?.text?.includes('Coffee Shop A')) {
+      pass('17-mobile-thread-inspector', 'thread-inspector:title-copy');
+    } else {
+      fail('17-mobile-thread-inspector', 'thread-inspector:title-copy', 'thread inspector title does not include expected fixture copy');
+    }
+    if (copy?.text?.includes('morning commuters')) {
+      pass('17-mobile-thread-inspector', 'thread-inspector:body-copy');
+    } else {
+      fail('17-mobile-thread-inspector', 'thread-inspector:body-copy', 'thread inspector body copy does not include expected fixture copy');
+    }
+    if (meta?.text?.includes('local_semantic_neighbor')) {
+      pass('17-mobile-thread-inspector', 'thread-inspector:meta-copy');
+    } else {
+      fail('17-mobile-thread-inspector', 'thread-inspector:meta-copy', 'thread inspector meta does not include expected relationship label');
+    }
+
+    for (const [label, targetBox] of [
+      ['pin', pinBtn],
+      ['follow', followBtn],
+      ['clear', clearBtn],
+    ]) {
+      if (touchTargetOk(targetBox)) {
+        pass('17-mobile-thread-inspector', `thread-inspector:${label}-touch-target`);
+      } else if (targetBox) {
+        fail('17-mobile-thread-inspector', `thread-inspector:${label}-touch-target`, `${label} button is ${Math.round(targetBox.width)}x${Math.round(targetBox.height)}px`);
+      }
+    }
+  }
 
   if (shouldAssert('10-mobile-search-error-state')) {
     for (const selector of [

@@ -24,6 +24,7 @@
     "qa:surface:focus": "node tests/visual-state-audit.mjs --states=03-mobile-focus-first-result,04-mobile-field-node-active",
     "qa:surface:reduced-motion": "node tests/visual-state-audit.mjs --states=12-desktop-reduced-motion",
     "qa:surface:info-panel-populated": "node tests/visual-state-audit.mjs --states=16-desktop-info-panel-populated",
+    "qa:surface:thread-inspector": "node tests/visual-state-audit.mjs --states=17-mobile-thread-inspector",
     "qa:surface:all": "node tests/visual-state-audit.mjs",
     "qa:contract": "node tests/surface-contract-check.mjs",
     "qa:contract:mobile-idle": "node tests/surface-contract-check.mjs --surface=mobile-idle",
