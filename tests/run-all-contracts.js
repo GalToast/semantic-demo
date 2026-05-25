@@ -272,6 +272,7 @@ const PINNED_FILES = [
   'journey-cluster-accent-dewindowing-contract.mjs',
   'window-bridge-gaps-contract.mjs',
   'residual-window-bridge-inventory-contract.mjs',
+  'next-explore-candidate-contract.mjs',
   'lifecycle-semantic-guide-residual-bridge-contract.mjs',
   'legend-ui-ownership-contract.mjs',
   'semantic-dive-ui-dewindowing-contract.mjs',

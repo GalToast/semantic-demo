@@ -138,7 +138,7 @@ state.focusedNode = 4;
 state.navState.focusedIndex = 4;
 state.trailDepth = 2;
 window.getCurrentTrailFocusIndex = () => 4;
-window.getNextExploreCandidateForIndex = (index, options) => {
+window.getNextWalkCandidateForIndex = (index, options) => {
   assert(index === 4, 'next-candidate lookup receives current focus index');
   assert(options.commitNeighborhood === false, 'next-candidate lookup does not commit neighborhood');
   return { index: 8 };
@@ -164,7 +164,7 @@ dom = resetDom();
 state.focusedNode = 4;
 state.navState.focusedIndex = 4;
 state.trailDepth = 2;
-window.getNextExploreCandidateForIndex = () => null;
+window.getNextWalkCandidateForIndex = () => null;
 syncSemanticDiveUi();
 assert(dom.insideStatusCopy.textContent === 'Inside this neighborhood. Pick another match or return to County.', 'active no-candidate copy is stable');
 assert(dom.insideNext.disabled === true, 'next button disabled without candidate');
@@ -176,7 +176,7 @@ state.focusedNode = 4;
 state.navState.focusedIndex = 4;
 state.trailDepth = 2;
 state.strandContinuityState = { phase: 'walking' };
-window.getNextExploreCandidateForIndex = () => ({ index: 8 });
+window.getNextWalkCandidateForIndex = () => ({ index: 8 });
 syncSemanticDiveUi();
 assert(dom.insideNext.disabled === true, 'next button disabled while walking');
 assert(dom.insideNext.getAttribute('aria-busy') === 'true', 'next button busy while walking');
