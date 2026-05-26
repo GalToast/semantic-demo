@@ -2453,8 +2453,6 @@ if (typeof window !== "undefined") {
     window.updateMyceliumThreads = updateMyceliumThreads;
     window.shouldRenderThreads = shouldRenderThreads;
     window.shouldRenderBridgeThreads = shouldRenderBridgeThreads;
-    window.animate = animate;
-    window.deinit = deinit;
     window.__semanticScenePerformanceProbe = getScenePerformanceProbe;
     // Preserve corridor functions from esbuild tree-shaking — called from animation loop via window
     window.__keepCorridorFns = () => { void buildCorridorLineGeometry; void buildCorridorParticleTrail; void updateSearchCorridorAnimation; };

@@ -297,6 +297,7 @@ const PINNED_FILES = [
   'webgl-restore-dewindowing-contract.mjs',
   'three-setup-init-dewindowing-contract.mjs',
   'cancel-animate-dewindowing-contract.mjs',
+  'three-setup-loop-dewindowing-contract.mjs',
   'scene-atmosphere-contract.mjs',
   'motion-state-contract.mjs',
   'demo-state-sync-contract.mjs',
