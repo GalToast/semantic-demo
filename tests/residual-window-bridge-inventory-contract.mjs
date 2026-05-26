@@ -125,7 +125,7 @@ const KNOWN_APP_BOOTSTRAP_EXPORTS = new Set([
   'setMyceliumMode', 'setTrailDepth', 'applyStoryPrompt',
   // camera re-exports
   'focusOnNode', 'animateCameraToNode', 'toggleAutoRotate', 'setFocusTransitionMode',
-  'clearRouteExploration', 'setRouteExplorationState', 'noteSceneInteraction', 'syncOrbitAutoRotate',
+  'clearRouteExploration', 'setRouteExplorationState', 'syncOrbitAutoRotate',
   // map re-exports
   'initMap', 'refreshMapMarkers', 'refreshMapRouteEmbodiment', 'centerMapOnRouteAnchor',
   'getRouteEmbodimentIndices', 'getRouteAnchorIndex', 'getRouteDirectorState', 'syncRouteDirectorState',
@@ -178,7 +178,7 @@ const KNOWN_FALLBACKS = new Set([
   'hasColdDegradedSemanticFallback', 'revealSelectedBusinessCard', 'describeThreadLensForPoint',
   'hydrateLeadContext', 'shouldUseFloatingFocusJourneyOnly', 'isFieldNodeFocusContext',
   'getFocusThreadCurvePoint', 'syncNodeSporeColorsFromPointColors', 'syncSearchStatusForFocus',
-  'releaseFocusCameraAssist', 'noteSceneInteraction', 'walkThreadNeighbor',
+  'walkThreadNeighbor',
   // scene-reveal.js guards
   'clearAutoRotateResumeTimer', 'setAutoRotateSuspended', 'updateCameraViewportOffset',
   // journey-compass-controller.js guards
@@ -200,8 +200,6 @@ const EXTRACTION_CANDIDATES = [
   ['lifecycle', 'restoreLegendCollapsedPanel', 'legend-ui', 'legacy bootstrap compatibility; lifecycle now imports legend-ui directly'],
   ['lifecycle', 'animateCameraToTerrainPrelude', 'camera', 'camera owns prelude animation'],
   ['lifecycle', 'applyMapFlatteningLayout', 'journey', 'journey owns map-flattening layout'],
-  ['journey', 'releaseFocusCameraAssist', 'camera', 'camera owns assist release'],
-  ['journey', 'noteSceneInteraction', 'camera', 'camera owns scene interaction tracking'],
   ['journey', 'syncInspectedStrandOverlay', 'thread-inspector', 'thread-inspector owns overlay sync'],
   ['sceneReveal', 'updateCameraViewportOffset', 'camera', 'camera owns viewport offset'],
   ['threadInspector', 'exploreThreadNeighbor', 'thread-inspector', 'REMOVED direct backward-compat expose; diagnostic access remains on window._ti and contracts assert the direct window assignment stays absent'],
@@ -626,11 +624,42 @@ function testInspectedStrandTopLevelBridgesRetired() {
   console.log('  OK — top-level inspected strand bridges retired; _ti diagnostics remain');
 }
 
-// ── TEST 9 — Verify window-bridge-gaps-contract.mjs still passes ─────────────
+// ── TEST 9 — Camera interaction bridges are retired ────────────────────────
+
+function testCameraInteractionBridgesRetired() {
+  console.log('\n[TEST 9] camera interaction window bridges are retired');
+
+  const appSrc = read('app');
+  const cameraSrc = read('camera');
+  const journeySrc = read('journey');
+
+  for (const fn of ['noteSceneInteraction', 'releaseFocusCameraAssist']) {
+    assert(
+      !appSrc.includes(`window.${fn}`),
+      `app.js must not expose top-level window.${fn}; use camera-controls named imports`
+    );
+    assert(
+      !cameraSrc.includes(`window.${fn}`),
+      `camera-controls.js must not expose top-level window.${fn}`
+    );
+  }
+  assert(
+    cameraSrc.includes('noteSceneInteraction(duration + 1200);'),
+    'camera-controls.js should call noteSceneInteraction directly for search corridor animation'
+  );
+  assert(
+    /import\s+\{[^}]*\bnoteSceneInteraction\b[^}]*\breleaseFocusCameraAssist\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(journeySrc),
+    'journey.js should import camera interaction functions directly from camera-controls.js'
+  );
+
+  console.log('  OK — camera interaction bridges retired; direct imports remain');
+}
+
+// ── TEST 10 — Verify window-bridge-gaps-contract.mjs still passes ────────────
 // Run the sibling contract to ensure no regressions in the already-dewindowed seams.
 
 function testSiblingContractStillPasses() {
-  console.log('\n[TEST 9] sibling window-bridge-gaps-contract.mjs still passes');
+  console.log('\n[TEST 10] sibling window-bridge-gaps-contract.mjs still passes');
 
   try {
     const result = execFileSync(
@@ -666,6 +695,7 @@ try {
   testFocusOnPointRuntimeCallersDewindowed();
   testJourneyArrivalHandoffDewindowed();
   testInspectedStrandTopLevelBridgesRetired();
+  testCameraInteractionBridgesRetired();
   testSiblingContractStillPasses();
 
   console.log('\n=================================================================');

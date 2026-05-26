@@ -88,6 +88,7 @@ const {
   setAutoRotateSuspended,
   scheduleAutoRotateResume,
   clearAutoRotateResumeTimer,
+  noteSceneInteraction,
   syncOrbitAutoRotate,
   isCameraIdleOrbitAllowed,
   setFocusTransitionMode,
@@ -427,6 +428,18 @@ setReducedMotion(false);
 const prefersReducedCameraMotion2 = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
 const duration2 = prefersReducedCameraMotion2 ? 1 : baseDuration;
 assert(duration2 === baseDuration, 'animateCameraToNode: normal motion uses base duration');
+
+// ---------------------------------------------------------------------------
+// TEST: noteSceneInteraction direct owner API
+// ---------------------------------------------------------------------------
+resetState();
+globalThis._now = 250;
+noteSceneInteraction(1234);
+assert(state.autoRotateSuspended === true, 'noteSceneInteraction: suspends auto-rotate');
+assert(state.autoRotateResumeDueAt === 1484, 'noteSceneInteraction: sets resume due time from delay');
+assert(state.autoRotateResumeTimer !== null, 'noteSceneInteraction: schedules resume timer');
+const scheduledResume = timers.get(state.autoRotateResumeTimer);
+assert(scheduledResume?.delay === 1234, 'noteSceneInteraction: schedules timer with requested delay');
 
 // ---------------------------------------------------------------------------
 // Done

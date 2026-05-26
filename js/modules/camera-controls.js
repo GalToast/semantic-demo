@@ -1047,7 +1047,7 @@ export function animateCameraToSearchCorridor(anchorIndex, resultIndices = [], o
             reason: options.reason || 'search-success', anchorIndex, indexCount: routeIndices.length, lastCameraMove: 'search-corridor'
         });
     }
-    if (typeof window.noteSceneInteraction === 'function') window.noteSceneInteraction(duration + 1200);
+    noteSceneInteraction(duration + 1200);
 
     const controlTarget = startTarget.clone().lerp(endTarget, 0.56).add(worldUp.clone().multiplyScalar(0.025));
 
@@ -1219,7 +1219,6 @@ if (typeof window !== 'undefined') {
     window.setAutoRotateSuspended = setAutoRotateSuspended;
     window.clearAutoRotateResumeTimer = clearAutoRotateResumeTimer;
     window.scheduleAutoRotateResume = scheduleAutoRotateResume;
-    window.noteSceneInteraction = noteSceneInteraction;
     window.syncCameraAssistDataset = syncCameraAssistDataset;
     window.isSearchRouteFocusActive = isSearchRouteFocusActive;
     window.setRouteExplorationState = setRouteExplorationState;
@@ -1230,7 +1229,6 @@ if (typeof window !== 'undefined') {
     window.applyFocusOrbitSlack = applyFocusOrbitSlack;
     window.clearFocusOrbitSlack = clearFocusOrbitSlack;
     window.startFocusCameraAssist = startFocusCameraAssist;
-    window.releaseFocusCameraAssist = releaseFocusCameraAssist;
     window.focusCameraAssistIsActive = focusCameraAssistIsActive;
     window.updateAutoRotateSoftResume = updateAutoRotateSoftResume;
     window.animateCameraToTerrainPrelude = animateCameraToTerrainPrelude;

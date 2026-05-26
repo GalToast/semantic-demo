@@ -100,7 +100,6 @@ window.toggleAutoRotate = cameraModule.toggleAutoRotate;
 window.setFocusTransitionMode = cameraModule.setFocusTransitionMode;
 window.clearRouteExploration = cameraModule.clearRouteExploration;
 window.setRouteExplorationState = cameraModule.setRouteExplorationState;
-window.noteSceneInteraction = cameraModule.noteSceneInteraction;
 window.syncOrbitAutoRotate = cameraModule.syncOrbitAutoRotate;
 
 // Explicitly attach map functions
