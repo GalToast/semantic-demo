@@ -52,6 +52,8 @@ function testJourneyWindowShim() {
   assertNotContains(src, 'window.syncFocusStage = syncFocusStage', 'syncFocusStage bridge is retired');
   assert(src.includes('window.setTrailFromSeed = setTrailFromSeed'), 'window.setTrailFromSeed in shim');
   assertNotContains(src, 'window.setSemanticDiveMode = setSemanticDiveMode', 'semantic-dive window owner stays in lifecycle');
+  assertNotContains(src, 'window.updateTraversalUi = updateTraversalUi', 'updateTraversalUi bridge is retired');
+  assertNotContains(src, 'window.getNextWalkCandidateForIndex = getNextWalkCandidateForIndex', 'getNextWalkCandidateForIndex bridge is retired');
   assert(src.includes('window.getSemanticThreadCandidates = getSemanticThreadCandidates'), 'window.getSemanticThreadCandidates in shim');
   assert(src.includes('window.getGeometricThreadCandidates = getGeometricThreadCandidates'), 'window.getGeometricThreadCandidates in shim');
   assert(src.includes('window.getThreadCandidatesForIndex = getThreadCandidatesForIndex'), 'window.getThreadCandidatesForIndex in shim');

@@ -58,5 +58,5 @@ export function onWindowResize() {
     }
 
     if (typeof window.syncClusterSectionState === 'function') window.syncClusterSectionState();
-    if (typeof window.updateTraversalUi === 'function') window.updateTraversalUi();
+    updateTraversalUi();
 }

@@ -63,6 +63,7 @@ globalThis.document = {
 };
 
 const { state } = await import('../js/state.js');
+const { initJourneyLifecycleAdapter } = await import('../js/modules/journey-lifecycle-adapter.js');
 const { syncSemanticDiveUi } = await import('../js/modules/semantic-dive-ui.js');
 
 function resetDom() {
@@ -95,7 +96,7 @@ function resetState() {
   state.navState.focusedIndex = null;
   window.getCurrentTrailFocusIndex = undefined;
   window.getNextExploreCandidateForIndex = undefined;
-  window.getNextWalkCandidateForIndex = undefined;
+  initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: () => null });
 }
 
 resetState();
@@ -138,11 +139,11 @@ state.focusedNode = 4;
 state.navState.focusedIndex = 4;
 state.trailDepth = 2;
 window.getCurrentTrailFocusIndex = () => 4;
-window.getNextWalkCandidateForIndex = (index, options) => {
+initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: (index, options) => {
   assert(index === 4, 'next-candidate lookup receives current focus index');
   assert(options.commitNeighborhood === false, 'next-candidate lookup does not commit neighborhood');
   return { index: 8 };
-};
+} });
 syncSemanticDiveUi();
 assert(document.body.dataset.semanticDive === 'active', 'trail depth 2 activates semantic dive');
 assert(document.body.dataset.journeyPhase === 'inside', 'active dive marks journey phase');
@@ -164,7 +165,7 @@ dom = resetDom();
 state.focusedNode = 4;
 state.navState.focusedIndex = 4;
 state.trailDepth = 2;
-window.getNextWalkCandidateForIndex = () => null;
+initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: () => null });
 syncSemanticDiveUi();
 assert(dom.insideStatusCopy.textContent === 'Inside this neighborhood. Pick another match or return to County.', 'active no-candidate copy is stable');
 assert(dom.insideNext.disabled === true, 'next button disabled without candidate');
@@ -176,7 +177,7 @@ state.focusedNode = 4;
 state.navState.focusedIndex = 4;
 state.trailDepth = 2;
 state.strandContinuityState = { phase: 'walking' };
-window.getNextWalkCandidateForIndex = () => ({ index: 8 });
+initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: () => ({ index: 8 }) });
 syncSemanticDiveUi();
 assert(dom.insideNext.disabled === true, 'next button disabled while walking');
 assert(dom.insideNext.getAttribute('aria-busy') === 'true', 'next button busy while walking');

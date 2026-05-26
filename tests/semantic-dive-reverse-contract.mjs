@@ -41,6 +41,7 @@ globalThis.document = {
 // Imports
 // ---------------------------------------------------------------------------
 const { state } = await import('../js/state.js');
+const { initJourneyLifecycleAdapter } = await import('../js/modules/journey-lifecycle-adapter.js');
 const { syncSemanticDiveUi } = await import('../js/modules/semantic-dive-ui.js');
 
 // ---------------------------------------------------------------------------
@@ -74,7 +75,7 @@ function resetState() {
   document.body.dataset = {};
   window.getCurrentTrailFocusIndex = undefined;
   window.getNextExploreCandidateForIndex = undefined;
-  window.getNextWalkCandidateForIndex = undefined;
+  initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: () => null });
 }
 
 // ---------------------------------------------------------------------------
@@ -91,7 +92,7 @@ state.trailDepth = 2;
 state.currentView = 'galaxy';
 state.semanticDiveMode = true; // simulate user pressed "Step Inside"
 window.getCurrentTrailFocusIndex = () => 4;
-window.getNextExploreCandidateForIndex = () => ({ index: 8 });
+initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: () => ({ index: 8 }) });
 resetDom();
 syncSemanticDiveUi();
 

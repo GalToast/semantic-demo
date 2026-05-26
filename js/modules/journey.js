@@ -2400,13 +2400,11 @@ if (typeof window !== 'undefined') {
     window.updateTrailIndices = updateTrailIndices;
     window.updateSelectedBusiness = updateSelectedBusiness;
     window.applyPointFilterColors = applyPointFilterColors;
-    window.updateTraversalUi = updateTraversalUi;
     window.walkThreadNeighbor = walkThreadNeighbor;
     window.traverseNeighbor = traverseNeighbor;
     window.walkInsideToNextStop = walkInsideToNextStop;
     window.previewInsideNextThread = previewInsideNextThread;
     window.getCurrentTrailFocusIndex = getCurrentTrailFocusIndex;
-    window.getNextWalkCandidateForIndex = getNextWalkCandidateForIndex;
     window.getBoundedNeighborhoodWalkCandidate = getBoundedNeighborhoodWalkCandidate;
     window.isBoundedNeighborhoodActive = isBoundedNeighborhoodActive;
     window.primeBoundedSemanticNeighborhoodForTraversal = primeBoundedSemanticNeighborhoodForTraversal;

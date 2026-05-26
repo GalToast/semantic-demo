@@ -290,6 +290,12 @@ export async function init() {
                 if (typeof journeyModule.previewInsideNextThread === 'function') return journeyModule.previewInsideNextThread(options);
                 return null;
             },
+            getNextWalkCandidateForIndex: (currentIndex, options) => {
+                if (typeof journeyModule.getNextWalkCandidateForIndex === 'function') {
+                    return journeyModule.getNextWalkCandidateForIndex(currentIndex, options);
+                }
+                return null;
+            },
             applyLocalNeighborhoodFocus: (seedIndex) => {
                 if (typeof focusModule.applyLocalNeighborhoodFocus === 'function') focusModule.applyLocalNeighborhoodFocus(seedIndex);
             },

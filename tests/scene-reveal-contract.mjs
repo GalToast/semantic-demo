@@ -205,11 +205,13 @@ checks.push({
 });
 
 // ---------------------------------------------------------------------------
-// Contract 17: onWindowResize calls window.updateTraversalUi
+// Contract 17: onWindowResize calls updateTraversalUi through direct import
 // --------------------------------------------------------------------------
 checks.push({
-  name: 'onWindowResize:calls window.updateTraversalUi()',
-  pass: /window\.updateTraversalUi\s*\(/.test(src),
+  name: 'onWindowResize:calls updateTraversalUi() direct import',
+  pass: /import\s*\{\s*updateTraversalUi\s*\}\s*from\s*['"]\.\/journey\.js['"]/.test(src) &&
+        /function\s+onWindowResize[\s\S]{0,900}?updateTraversalUi\s*\(\s*\)/.test(src) &&
+        !/window\.updateTraversalUi\s*\(/.test(src),
 });
 
 // ---------------------------------------------------------------------------

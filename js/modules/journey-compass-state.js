@@ -2,6 +2,7 @@ import { state } from '../state.js';
 import { formatBusinessName, describeCluster } from '../utils.js';
 import { getRouteEmbodimentIndices } from './map-state.js';
 import { getNextExploreCandidateForIndex } from './journey-thread-model.js';
+import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.js';
 
 export function getFocusedJourneyPoint() {
     if (state.selectedPoint) return state.selectedPoint;
@@ -41,10 +42,7 @@ export function getJourneyCompassState() {
         const focusIndex = Number.isFinite(state.navState?.focusedIndex)
             ? state.navState.focusedIndex
             : state.focusedNode;
-        const getNextWalkCandidate = typeof window.getNextWalkCandidateForIndex === 'function'
-            ? window.getNextWalkCandidateForIndex
-            : null;
-        const nextCandidate = getNextExploreCandidateForIndex(focusIndex, getNextWalkCandidate, {
+        const nextCandidate = getNextExploreCandidateForIndex(focusIndex, getNextWalkCandidateForIndex, {
             requireSemantic: state.currentView === 'galaxy',
             requireOnCanvas: state.currentView === 'galaxy'
         });

@@ -2,7 +2,7 @@ import { state } from '../state.js';
 import { cleanOptionalValue, formatBusinessName, isCompactFocusStageViewport } from '../utils.js';
 import { getNextExploreCandidateForIndex } from './journey-thread-model.js';
 import {summarizeNeighborReason} from './journey.js';
-import {getNextWalkCandidateForIndex} from './journey.js';
+import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.js';
 
 function truncateDiveStatusCopy(text, max = 74) {
     const clean = cleanOptionalValue(text);
@@ -82,11 +82,8 @@ export function syncSemanticDiveUi() {
     const currentFocusIndex = Number.isFinite(state.navState?.focusedIndex)
         ? state.navState.focusedIndex
         : state.focusedNode;
-    const getNextWalkCandidate = typeof window.getNextWalkCandidateForIndex === 'function'
-        ? window.getNextWalkCandidateForIndex
-        : null;
     const nextExploreCandidate = active
-        ? getNextExploreCandidateForIndex(currentFocusIndex, getNextWalkCandidate, {
+        ? getNextExploreCandidateForIndex(currentFocusIndex, getNextWalkCandidateForIndex, {
             requireSemantic: state.currentView === 'galaxy',
             requireOnCanvas: state.currentView === 'galaxy'
         })

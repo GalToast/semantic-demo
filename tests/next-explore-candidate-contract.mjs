@@ -80,8 +80,9 @@ function testCallerWiring() {
     ['semantic-dive-ui', dive, 'currentFocusIndex']
   ]) {
     assertIncludes(source, "import { getNextExploreCandidateForIndex } from './journey-thread-model.js';", `${label} helper import`);
-    assertIncludes(source, `getNextExploreCandidateForIndex(${focusName}, getNextWalkCandidate`, `${label} helper call`);
-    assertIncludes(source, "typeof window.getNextWalkCandidateForIndex === 'function'", `${label} guarded getNextWalk bridge`);
+    assertIncludes(source, "import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.js';", `${label} adapter import`);
+    assertIncludes(source, `getNextExploreCandidateForIndex(${focusName}, getNextWalkCandidateForIndex`, `${label} helper call`);
+    assertNotIncludes(source, 'window.getNextWalkCandidateForIndex', `${label} no getNextWalk window bridge`);
     assertNotIncludes(source, 'window.getNextExploreCandidateForIndex', `${label} no getNextExplore window bridge`);
   }
 }
