@@ -856,6 +856,18 @@ async function assert_focus_pocket(page, ctx) {
       };
     }
 
+    function visibleCardBottomContract(el) {
+      if (!el) return null;
+      const style = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0) return null;
+      const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100;
+      return {
+        bottomInset,
+        flush: Math.abs(bottomInset) <= 1,
+      };
+    }
+
     const results = {};
     // --- focus-stage bottom sheet ---
     const focusStage = document.querySelector('#focus-stage');
@@ -864,6 +876,9 @@ async function assert_focus_pocket(page, ctx) {
       ? focusStage.hidden || getComputedStyle(focusStage).display === 'none'
       : null;
     results.focusStageBottomAnchor = bottomAnchorContract(focusStage);
+    const focusStageCard = document.querySelector('.focus-stage-card');
+    results.focusStageCardPresent = focusStageCard !== null;
+    results.focusStageCardBottomAnchor = visibleCardBottomContract(focusStageCard);
 
     // --- inside-status (pulse + copy) ---
     const insideStatus = document.querySelector('#focus-stage-inside-status, .focus-stage-inside-status');
@@ -919,6 +934,15 @@ async function assert_focus_pocket(page, ctx) {
     ctx.pass('focus-pocket', 'layout:focus-stage-bottom-flush');
   } else {
     ctx.fail('focus-pocket', 'layout:focus-stage-bottom-flush', `focus-stage bottom inset ${info.focusStageBottomAnchor?.bottomInset ?? 'missing'}px`);
+  }
+
+  if (info.focusStageCardPresent) ctx.pass('focus-pocket', 'dom:focus-stage-card');
+  else ctx.fail('focus-pocket', 'dom:focus-stage-card', 'missing .focus-stage-card');
+
+  if (info.focusStageCardBottomAnchor?.flush) {
+    ctx.pass('focus-pocket', 'layout:focus-stage-card-bottom-flush');
+  } else {
+    ctx.fail('focus-pocket', 'layout:focus-stage-card-bottom-flush', `focus-stage-card bottom inset ${info.focusStageCardBottomAnchor?.bottomInset ?? 'missing'}px`);
   }
 
   if (info.insideStatusClipped) ctx.fail('focus-pocket', 'text-clipping:inside-status', 'inside status text is clipped');
@@ -1060,6 +1084,18 @@ async function assert_field_node(page, ctx) {
       };
     }
 
+    function visibleCardBottomContract(el) {
+      if (!el) return null;
+      const style = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0) return null;
+      const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100;
+      return {
+        bottomInset,
+        flush: Math.abs(bottomInset) <= 1,
+      };
+    }
+
     const results = {};
 
     // --- journey-compass (canopy HUD) ---
@@ -1112,6 +1148,7 @@ async function assert_field_node(page, ctx) {
 
     const focusStageCard = document.querySelector('.focus-stage-card');
     results.focusStageCardPresent = focusStageCard !== null;
+    results.focusStageCardBottomAnchor = visibleCardBottomContract(focusStageCard);
     if (focusStageCard) {
       const style = getComputedStyle(focusStageCard);
       results.focusStageCardDisplay = style.display;
@@ -1196,6 +1233,12 @@ async function assert_field_node(page, ctx) {
     ctx.pass('field-node', 'layout:focus-stage-bottom-flush');
   } else {
     ctx.fail('field-node', 'layout:focus-stage-bottom-flush', `focus-stage bottom inset ${info.focusStageBottomAnchor?.bottomInset ?? 'missing'}px`);
+  }
+
+  if (info.focusStageCardBottomAnchor?.flush) {
+    ctx.pass('field-node', 'layout:focus-stage-card-bottom-flush');
+  } else {
+    ctx.fail('field-node', 'layout:focus-stage-card-bottom-flush', `focus-stage-card bottom inset ${info.focusStageCardBottomAnchor?.bottomInset ?? 'missing'}px`);
   }
 
   if (info.focusStageCardClipped) ctx.fail('field-node', 'text-clipping:focus-stage-card', 'focus-stage-card content is clipped');
@@ -3001,6 +3044,18 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
       };
     }
 
+    function visibleCardBottomContract(el) {
+      if (!el) return null;
+      const style = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0) return null;
+      const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100;
+      return {
+        bottomInset,
+        flush: Math.abs(bottomInset) <= 1,
+      };
+    }
+
     const results = {};
 
     const searchContainer = document.querySelector('.search-container');
@@ -3043,6 +3098,8 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
 
     const focusStage = document.querySelector('#focus-stage');
     results.focusStageBottomAnchor = bottomAnchorContract(focusStage);
+    const focusStageCard = document.querySelector('.focus-stage-card');
+    results.focusStageCardBottomAnchor = visibleCardBottomContract(focusStageCard);
 
     const compassTitle = document.querySelector('.journey-compass-title');
     results.compassTitle = titleContract(compassTitle);
@@ -3108,6 +3165,12 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
     ctx.pass(surfaceName, 'layout:focus-stage-bottom-flush');
   } else {
     ctx.fail(surfaceName, 'layout:focus-stage-bottom-flush', `focus-stage bottom inset ${info.focusStageBottomAnchor?.bottomInset ?? 'missing'}px`);
+  }
+
+  if (info.focusStageCardBottomAnchor?.flush) {
+    ctx.pass(surfaceName, 'layout:focus-stage-card-bottom-flush');
+  } else {
+    ctx.fail(surfaceName, 'layout:focus-stage-card-bottom-flush', `focus-stage-card bottom inset ${info.focusStageCardBottomAnchor?.bottomInset ?? 'missing'}px`);
   }
 
   if (info.compassTitle?.clipped) {
