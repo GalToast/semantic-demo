@@ -2443,7 +2443,6 @@ export function animate() {
 
 // Global exposure for compatibility
 if (typeof window !== "undefined") {
-    window.initThreeJS = initThreeJS;
     window.updateCameraViewportOffset = updateCameraViewportOffset;
     window.createPoints = createPoints;
     window.syncNodeSporeColorsFromPointColors = syncNodeSporeColorsFromPointColors;
