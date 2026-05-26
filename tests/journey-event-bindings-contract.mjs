@@ -241,10 +241,12 @@ function testInfoPanelToggleBinding() {
 
   const ebSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
 
-  // setInfoPanelOpen must be defined on window
+  // setInfoPanelOpen must be a named export, not a window bridge
   assertContains(ebSrc,
-    'window.setInfoPanelOpen = function',
-    'setInfoPanelOpen is assigned to window');
+    'export function setInfoPanelOpen',
+    'setInfoPanelOpen is a named export');
+  assert(!ebSrc.includes('window.setInfoPanelOpen'),
+    'event-bindings.js must not expose or call window.setInfoPanelOpen');
 
   // Must toggle .active class on .info-panel
   assertContains(ebSrc,
@@ -330,10 +332,10 @@ function testResizeListenerWiring() {
     'onWindowResize,',
     'initEventListeners destructures onWindowResize');
 
-  // btn-panel must call window.setInfoPanelOpen() (not directly)
+  // btn-panel must call the local named export directly
   assertContains(ebSrc,
-    'window.setInfoPanelOpen()',
-    'btn-panel calls window.setInfoPanelOpen()');
+    'const panelOpen = setInfoPanelOpen();',
+    'btn-panel calls setInfoPanelOpen() directly');
 
   // Compact viewport check in btn-panel handler
   assertContains(ebSrc,

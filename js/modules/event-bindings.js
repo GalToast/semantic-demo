@@ -537,11 +537,6 @@ export function setInfoPanelOpen(open, options = {}) {
         return shouldBeOpen;
     }
 
-    // Ensure panel opens on click, or if closed, resizes
-    window.setInfoPanelOpen = function(open, options = {}) {
-        return setInfoPanelOpen(open, options);
-    };
-
 let _activeResizeHandler = null;
 
 function bindPanelControls(onWindowResize) {
@@ -558,7 +553,7 @@ function bindPanelControls(onWindowResize) {
 
     bindClick('btn-panel', () => {
         window.cancelMicroDemo?.('user-input');
-        const panelOpen = window.setInfoPanelOpen();
+        const panelOpen = setInfoPanelOpen();
         if (isCompactFocusStageViewport() && panelOpen) {
             const legendPanel = document.getElementById('legend-panel');
             const legendToggle = document.getElementById('btn-legend');

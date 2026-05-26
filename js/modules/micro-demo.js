@@ -559,7 +559,7 @@ function _runDemo() {
             detail: { index: demoNode, phase: 'wide_view' }
         }));
         // Slide out info card
-        window.setInfoPanelOpen(false);
+        setInfoPanelOpen(false);
     }, 7200));
 
     // T = 7800ms: Return to overview

@@ -159,7 +159,7 @@ const KNOWN_FALLBACKS = new Set([
   // event-bindings.js guards — intentional cross-module UI bridge pattern
   'copyCurrentViewLink', 'executeJourneyCompassAction',
   'resetExplorationFocus', 'recenterFocusedNode', 'setSemanticDiveMode',
-  'exploreInsideToNextStop', 'returnToCountyView', 'setInfoPanelOpen',
+  'exploreInsideToNextStop', 'returnToCountyView',
   'loadSemanticThreads', 'probeSemanticLane', 'applyStoryPrompt',
   'updateUrlState', 'clearClusterFilter', 'showSemanticThreadsDetail',
   'returnToOverview', 'traverseNeighbor', 'animateCameraToNode', 'zoomMap',
@@ -431,7 +431,7 @@ function testBareCallBaseline() {
   // Modules that are allowed to have unguarded window calls
   // (they are authoritative owners or compatibility layers)
   const ALLOWED_UNGUARDED = new Set([
-    'app', 'lifecycle', 'eventBindings', 'journey', 'camera',
+    'app', 'lifecycle', 'journey', 'camera',
     'demoController', 'journeyCompassCtrl', 'journeyCompassState',
     'clusterFilter', 'focusPocket', 'clusterLabels',
     'viewController', 'navigationState', 'journeyWebgl',
