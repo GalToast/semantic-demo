@@ -74,8 +74,6 @@ export function setupMobileSearchSheetToggle({ isCompactSearchViewport } = {}) {
     if (!searchContainer || !label) return;
     const isCompact = typeof isCompactSearchViewport === 'function' ? isCompactSearchViewport : () => false;
 
-    label.setAttribute('role', 'button');
-    label.setAttribute('tabindex', '0');
     label.setAttribute('aria-controls', 'search-results');
 
     if (!label.dataset.mobileSheetToggleBound) {

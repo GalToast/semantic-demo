@@ -8,31 +8,32 @@ import { initClusterFilterAdapter } from './cluster-filter-adapter.js';
 import { initSearchUiAdapter } from './search-ui-adapter.js';
 import { initSearchLifecycleAdapter } from './search-lifecycle-adapter.js';
 import { initUrlNavigationAdapter } from './url-navigation-adapter.js';
+import { initJourneyLifecycleAdapter } from './journey-lifecycle-adapter.js';
 import * as focusModule from './focus-pocket.js';
 import * as threadModule from './thread-inspector.js';
+import { initThreadInspectorAdapter } from './thread-inspector-adapter.js';
 import { getProjectedNeighborCandidates } from './journey-thread-model.js';
 import * as cameraModule from './camera-controls.js';
+import { initCameraControlsAdapter } from './camera-controls-adapter.js';
 import * as mapModule from './map-state.js';
 import * as weatherModule from './weather.js';
 import * as audioModule from './audio-scape.js';
 import './tooltip.js';
+import { hideLoadingOverlay, setLoadingPhase, startDeferredHydration } from './loading-ui.js';
+import { demoController } from './demo-controller.js';
 import { hideTooltip, positionTooltip, updateTooltipContent } from './tooltip.js';
 import './pathfinding.js';
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
-import { initThreeJS, animate } from '../three-setup.js';
+import * as journeyWebglModule from './journey-webgl.js';
+import { initThreeJS, animate, triggerSearchHeroMoment, triggerCorridorNodeGlow, triggerSearchCorridorAnimation } from '../three-setup.js';
 import * as dataModule from './data-loader.js';
 import { escapeHtml } from '../utils.js';
 import {
-    setLoadingPhase,
-    hideLoadingOverlay,
     startSceneReveal,
     getSceneRevealProgress,
-    startDeferredHydration,
-    initEventListeners,
     setSemanticLaneUiState,
     probeSemanticLane,
     scheduleSemanticLaneMonitor,
-    updateTime,
     setMyceliumMode,
     setTrailDepth,
     setSemanticDiveMode,
@@ -46,98 +47,46 @@ import {
     updateExplorationUi,
     resetNodePositions,
     dispatchNavTransition,
-    recordSemanticLaneSnapshot,
     showExperienceToast,
     syncSearchStatusForFocus,
-    updateJourneyCompass
+    hydrateLeadContext
 } from './lifecycle.js';
+import { updateJourneyCompass } from './journey-compass-controller.js';
 import { switchView } from './view-controller.js';
+import { revealSelectedBusinessCard } from './event-bindings.js';
+import { describeThreadLensForPoint } from './journey.js';
 import { initKeyboardShortcutsHint } from './keyboard-help.js';
 import { applyUrlState, updateUrlState } from './url-state.js';
 import { loadSemanticThreads } from './semantic-threads.js';
 import { initClusterLabels, updateClusterLabels } from './cluster-labels.js';
 import { updateHasQuery } from './event-bindings.js';
 import { findClusterByKeyword } from './cluster-filter.js';
-import { updateSearchTrailCue } from './ui-renderers.js';
+import { buildSelectedMatchNarrative, getInterestingBusinessNote, updateSearchTrailCue } from './ui-renderers.js';
+import { hideSummaryCard } from './lifecycle.js';
+import { setSemanticGuideButtonState } from './semantic-guide.js';
+import { updateSearchStatusMessage } from './search-state.js';
+import { recordSemanticLaneSnapshot } from './semantic-lane.js';
+import { applyPointFilterColors, updateSelectedBusiness, updateTrailIndices } from './journey.js';
+import { initEventListeners } from './event-bindings.js';
+import { updateTime } from '../utils.js';
 
 // Global Exposure for compatibility during transition
+window.__TEST_STATE__ = state;
 window.state = state;
-window.loadData = dataModule.loadData;
-window.loadSemanticThreads = loadSemanticThreads;
-window.applyUrlState = applyUrlState;
-window._ss = searchModule;
-window._fp = focusModule;
-window._cc = cameraModule;
-window._ti = threadModule;
-window._ms = mapModule;
-window._weather = weatherModule;
-window.getFocusThreadCurvePoint = focusModule.getFocusThreadCurvePoint;
-window.getProjectedNeighborCandidates = getProjectedNeighborCandidates;
-window.initAudio = audioModule.initAudio;
 
 // Explicitly attach search functions to window for url-state and lifecycle modules
-window.search = searchModule.search;
-window.applyFilters = searchModule.applyFilters;
-window.getFilteredIndices = searchModule.getFilteredIndices;
-window.normalizeCityForFilter = searchModule.normalizeCityForFilter;
-window.activateSearchGlow = searchModule.activateSearchGlow;
-window.clearSearchGlow = searchModule.clearSearchGlow;
-window.updateSearchStatusMessage = searchModule.updateSearchStatusMessage;
-window.updateSearchTrailCue = updateSearchTrailCue;
-window.clearShortSemanticSearchState = searchModule.clearShortSemanticSearchState;
-window.resetSemanticGuideUi = searchModule.resetSemanticGuideUi;
-window.beginSearchFocusTransition = searchModule.beginSearchFocusTransition;
-window.__semanticSearchCacheProbe = searchModule.getSemanticSearchCacheDiagnostics;
-window.clearSearch = searchModule.clearSearch;
-window.clearSearchPreviewHoverTimer = searchModule.clearSearchPreviewHoverTimer;
-window.clearMobileRouteFieldPeek = searchModule.clearMobileRouteFieldPeek;
-window.isMobileRouteFieldPeekActive = searchModule.isMobileRouteFieldPeekActive;
 
 // Explicitly attach camera helpers used by focus and control contracts
-window.animateCameraToNode = cameraModule.animateCameraToNode;
-window.focusOnNode = cameraModule.focusOnNode;
-window.toggleAutoRotate = cameraModule.toggleAutoRotate;
-window.setFocusTransitionMode = cameraModule.setFocusTransitionMode;
-window.clearRouteExploration = cameraModule.clearRouteExploration;
-window.setRouteExplorationState = cameraModule.setRouteExplorationState;
-window.syncOrbitAutoRotate = cameraModule.syncOrbitAutoRotate;
 
 // Explicitly attach map functions
-window.initMap = mapModule.initMap;
-window.refreshMapMarkers = mapModule.refreshMapMarkers;
-window.refreshMapRouteEmbodiment = mapModule.refreshMapRouteEmbodiment;
-window.centerMapOnRouteAnchor = mapModule.centerMapOnRouteAnchor;
-window.getRouteEmbodimentIndices = mapModule.getRouteEmbodimentIndices;
-window.getRouteAnchorIndex = mapModule.getRouteAnchorIndex;
-window.getRouteDirectorState = mapModule.getRouteDirectorState;
-window.syncRouteDirectorState = mapModule.syncRouteDirectorState;
-window.setTerrainHandoffState = mapModule.setTerrainHandoffState;
 
 // Explicitly attach weather functions used by lifecycle and map handoff code
-window.initWeather = weatherModule.initWeather;
-window.fetchWeather = weatherModule.fetchWeather;
-window.applyWeatherEffects = weatherModule.applyWeatherEffects;
-window.clearWeatherEffects = weatherModule.clearWeatherEffects;
 // updateWeatherStaleness is set directly on window by weather.js on load — no wrapper needed
 
 // Explicitly attach UI accent helper used by journey cards
-window.applyClusterUiAccent = applyClusterUiAccent;
 
 // Explicitly attach lifecycle functions
-window.setMyceliumMode = setMyceliumMode;
-window.setTrailDepth = setTrailDepth;
-window.applyStoryPrompt = applyStoryPrompt;
-window.switchView = switchView;
-window.updateUrlState = updateUrlState;
-window.resetExperienceState = resetExperienceState;
-window.returnToOverview = returnToOverview;
-window.resetExplorationFocus = resetExplorationFocus;
-window.getSceneRevealProgress = getSceneRevealProgress;
-window.refreshCompositionState = refreshCompositionState;
-window.clearClusterFilter = clearClusterFilter;
-window.updateHasQuery = updateHasQuery;
-window.findClusterByKeyword = findClusterByKeyword;
-window.getSelectedBusinessRoleLabel = function (point) {
+const _getSelectedBusinessRoleLabel = function (point) {
     let index = state.points && Array.isArray(state.points) ? state.points.indexOf(point) : -1;
     if (index < 0 && point?.lead_id !== undefined && point?.lead_id !== null) {
         const leadId = String(point.lead_id);
@@ -242,7 +191,7 @@ function clearStartupRecoveryNotice(sourceLabel) {
         assistEl.style.display = 'none';
         assistEl.dataset.state = 'idle';
     }
-    if (typeof window.updateSearchStatusMessage === 'function') window.updateSearchStatusMessage();
+    if (typeof updateSearchStatusMessage === 'function') updateSearchStatusMessage();
 }
 
 // init
@@ -252,11 +201,11 @@ export async function init() {
     let safetyValve = null;
     try {
         if (state.clockTimer) {
-            window.clearInterval(state.clockTimer);
+            clearInterval(state.clockTimer);
             state.clockTimer = null;
         }
         // Cancel any previous RAF loop before re-initializing Three.js
-        if (typeof window.cancelAnimate === 'function') window.cancelAnimate();
+        if (typeof cancelAnimate === 'function') window.cancelAnimate();
         state.loadingOverlayStartedAt = performance.now();
         
         // polish133: safety valve for 10/10 demo stability
@@ -336,6 +285,57 @@ export async function init() {
         // Inject search adapter before applyUrlState runs; breaks the url-state/search-state cycle.
         initUrlSearchAdapter(searchModule);
 
+        initJourneyLifecycleAdapter({
+            previewInsideNextThread: (options) => {
+                if (typeof journeyModule.previewInsideNextThread === 'function') return journeyModule.previewInsideNextThread(options);
+                return null;
+            },
+            applyLocalNeighborhoodFocus: (seedIndex) => {
+                if (typeof focusModule.applyLocalNeighborhoodFocus === 'function') focusModule.applyLocalNeighborhoodFocus(seedIndex);
+            },
+            setSemanticDiveMode: (enabled) => {
+                if (typeof setSemanticDiveMode === 'function') setSemanticDiveMode(enabled);
+            },
+            getInterestingBusinessNote: (point) => {
+                if (typeof getInterestingBusinessNote === 'function') return getInterestingBusinessNote(point);
+                return null;
+            },
+            buildSelectedMatchNarrative: (point) => {
+                if (typeof buildSelectedMatchNarrative === 'function') return buildSelectedMatchNarrative(point);
+                return '';
+            },
+            hasColdDegradedSemanticFallback: () => {
+                return false;
+            },
+            getColdDegradedRouteCopy: () => {
+                return null;
+            },
+            getSelectedBusinessRoleLabel: (point) => {
+                return _getSelectedBusinessRoleLabel(point);
+            },
+            isFieldNodeFocusContext: () => {
+                return false;
+            },
+            revealSelectedBusinessCard: () => {
+                revealSelectedBusinessCard();
+            },
+            describeThreadLensForPoint: (point) => {
+                return describeThreadLensForPoint(point);
+            },
+            hydrateLeadContext: (point, options) => {
+                if (typeof hydrateLeadContext === 'function') return hydrateLeadContext(point, options);
+                return Promise.resolve();
+            },
+            shouldUseFloatingFocusJourneyOnly: () => {
+                return false;
+            },
+            getPreviouslyFocusedFocusStage: () => window._previouslyFocusedFocusStage || null,
+            setPreviouslyFocusedFocusStage: (el) => { window._previouslyFocusedFocusStage = el; },
+            setLastCanvasNodePick: (val) => { window.__lastCanvasNodePick = val; },
+            setLastCanvasNodeHover: (val) => { window.__lastCanvasNodeHover = val; },
+            setLastCanvasNodeFocusPick: (val) => { window.__lastCanvasNodeFocusPick = val; }
+        });
+
         // Inject navigation adapter; avoids url-state calling lifecycle/event-bindings through window.
         initUrlNavigationAdapter({
             focusOnPoint,
@@ -363,6 +363,30 @@ export async function init() {
             updateTooltipContent,
         });
 
+        // Inject thread inspector adapter; decouples thread-inspector from journey and focus-pocket
+        initThreadInspectorAdapter({
+            summarizeNeighborReason: journeyModule.summarizeNeighborReason,
+            getInsideRelationshipLabel: journeyModule.getInsideRelationshipLabel,
+            getCurrentTrailFocusIndex: journeyModule.getCurrentTrailFocusIndex,
+            getFocusThreadCurvePoint: focusModule.getFocusThreadCurvePoint
+        });
+
+        // Inject camera controls adapter
+        initCameraControlsAdapter({
+            showTerrainPreludeOverlay: () => { if (typeof showTerrainPreludeOverlay === 'function') window.showTerrainPreludeOverlay(); },
+            hideTerrainPreludeOverlay: () => { if (typeof hideTerrainPreludeOverlay === 'function') window.hideTerrainPreludeOverlay(); },
+            setRouteChoreographyPhase: journeyWebglModule.setRouteChoreographyPhase,
+            hideTooltip: hideTooltip,
+            clearThreadInspection: threadModule.clearThreadInspection,
+            setTrailFromSeed: journeyModule.setTrailFromSeed,
+            updateTrailIndices: journeyModule.updateTrailIndices,
+            refreshFocusSemanticOverlay: journeyWebglModule.refreshFocusSemanticOverlay,
+            applyLocalNeighborhoodFocus: focusModule.applyLocalNeighborhoodFocus,
+            updateSelectedBusiness: journeyModule.updateSelectedBusiness,
+            updateTraversalUi: journeyModule.updateTraversalUi,
+            updateFocusNeighborRail: journeyModule.updateFocusNeighborRail
+        });
+
         // Inject search lifecycle adapter; avoids search-state calling lifecycle/url-state through window.
         initSearchLifecycleAdapter({
             updateUrlState,
@@ -372,8 +396,23 @@ export async function init() {
             resetNodePositions,
             dispatchNavTransition,
             syncSearchStatusForFocus,
-            updateJourneyCompass,
             refreshCompositionState,
+            clearMobileRouteFieldPeek: searchModule.clearMobileRouteFieldPeekState,
+            clearCompactSearchResultRevealTimers: searchModule.clearCompactSearchResultRevealTimers,
+            clearSearchPreviewHoverTimer: searchModule.clearSearchPreviewHoverTimer,
+            switchView,
+            updateSelectedBusiness: (point) => { if (typeof updateSelectedBusiness === 'function') updateSelectedBusiness(point); },
+            updateTrailIndices: () => { if (typeof updateTrailIndices === 'function') updateTrailIndices(); },
+            applyPointFilterColors: () => { if (typeof applyPointFilterColors === 'function') applyPointFilterColors(); },
+            resetExplorationFocus,
+            setSemanticLaneUiState,
+            clearSearch: searchModule.clearSearch,
+            triggerSearchHeroMoment: (anchorIndex) => { if (typeof triggerSearchHeroMoment === 'function') triggerSearchHeroMoment(anchorIndex); },
+            triggerCorridorNodeGlow: (anchorIndex, resultIndices) => { if (typeof triggerCorridorNodeGlow === 'function') triggerCorridorNodeGlow(anchorIndex, resultIndices); },
+            triggerSearchCorridorAnimation: (anchorIndex, resultIndices) => { if (typeof triggerSearchCorridorAnimation === 'function') triggerSearchCorridorAnimation(anchorIndex, resultIndices); },
+            hideSummaryCard: () => { if (typeof hideSummaryCard === 'function') hideSummaryCard(); },
+            setSemanticGuideButtonState: (btn, s, opts) => { if (typeof setSemanticGuideButtonState === 'function') setSemanticGuideButtonState(btn, s, opts); },
+            scheduleCompactSearchResultReveal: searchModule.scheduleCompactSearchResultReveal,
         });
 
         // Bug sweep 19: await applyUrlState with a catch to prevent total hang
@@ -383,7 +422,7 @@ export async function init() {
             console.error('applyUrlState failed during init:', urlErr);
             showStartupRecoveryNotice('URL state restoration', urlErr);
         }
-        if (state.clockTimer) window.clearInterval(state.clockTimer);
+        if (state.clockTimer) clearInterval(state.clockTimer);
         state.clockTimer = setInterval(updateTime, 1000);
         if (graphicsReady !== false) animate();
 
@@ -393,9 +432,7 @@ export async function init() {
             await hideLoadingOverlay();
             if (safetyValve) clearTimeout(safetyValve);
             startDeferredHydration();
-            if (typeof window.demoController?.init === 'function') {
-                window.demoController.init();
-            }
+            demoController.init();
 
             window.addEventListener('demo-complete', () => {
                 updateJourneyCompass('overview');
@@ -406,10 +443,10 @@ export async function init() {
         if (safetyValve) clearTimeout(safetyValve);
         console.error('Initialization failed:', error);
         if (state.clockTimer) {
-            window.clearInterval(state.clockTimer);
+            clearInterval(state.clockTimer);
             state.clockTimer = null;
         }
-        if (typeof window.cancelAnimate === 'function') window.cancelAnimate();
+        if (typeof cancelAnimate === 'function') window.cancelAnimate();
         const overlay = document.getElementById('loading-overlay');
         if (overlay) {
             overlay.innerHTML = `<div class="loading-shell" role="alert"><div class="loading-kicker">Graph unavailable</div><div class="loading-title">Failed to load county records</div><div class="loading-note">The Semantic Explorer is offline or blocked right now. Refresh after the connection recovers.</div><div class="loading-foot">${escapeHtml(error.message || 'Initialization failed')}</div></div>`;

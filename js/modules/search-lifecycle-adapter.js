@@ -31,40 +31,56 @@ let _syncSearchStatusForFocus = null;
 let _updateJourneyCompass = null;
 let _refreshCompositionState = null;
 
-/**
- * Inject the lifecycle function references. Called once from app.js init.
- *
- * @param {object} deps
- * @param {Function|null} deps.updateUrlState
- * @param {Function|null} deps.setSearchPanelState
- * @param {Function|null} deps.focusOnPoint
- * @param {Function|null} deps.updateExplorationUi
- * @param {Function|null} deps.resetNodePositions
- * @param {Function|null} deps.dispatchNavTransition
- * @param {Function|null} deps.syncSearchStatusForFocus
- * @param {Function|null} deps.updateJourneyCompass
- * @param {Function|null} deps.refreshCompositionState
- */
-export function initSearchLifecycleAdapter({
-    updateUrlState,
-    setSearchPanelState,
-    focusOnPoint,
-    updateExplorationUi,
-    resetNodePositions,
-    dispatchNavTransition,
-    syncSearchStatusForFocus,
-    updateJourneyCompass,
-    refreshCompositionState,
-} = {}) {
-    _updateUrlState = typeof updateUrlState === 'function' ? updateUrlState : null;
-    _setSearchPanelState = typeof setSearchPanelState === 'function' ? setSearchPanelState : null;
-    _focusOnPoint = typeof focusOnPoint === 'function' ? focusOnPoint : null;
-    _updateExplorationUi = typeof updateExplorationUi === 'function' ? updateExplorationUi : null;
-    _resetNodePositions = typeof resetNodePositions === 'function' ? resetNodePositions : null;
-    _dispatchNavTransition = typeof dispatchNavTransition === 'function' ? dispatchNavTransition : null;
-    _syncSearchStatusForFocus = typeof syncSearchStatusForFocus === 'function' ? syncSearchStatusForFocus : null;
-    _updateJourneyCompass = typeof updateJourneyCompass === 'function' ? updateJourneyCompass : null;
-    _refreshCompositionState = typeof refreshCompositionState === 'function' ? refreshCompositionState : null;
+let _clearMobileRouteFieldPeek = null;
+let _clearCompactSearchResultRevealTimers = null;
+let _clearSearchPreviewHoverTimer = null;
+let _settleCompactSearchFocusCard = null;
+let _switchView = null;
+let _updateSelectedBusiness = null;
+let _syncMobileRoutePeek = null;
+let _updateTrailIndices = null;
+let _applyPointFilterColors = null;
+let _refreshHoverSemanticOverlay = null;
+let _resetExplorationFocus = null;
+let _setSemanticLaneUiState = null;
+let _clearSearch = null;
+let _triggerSearchHeroMoment = null;
+let _triggerCorridorNodeGlow = null;
+let _triggerSearchCorridorAnimation = null;
+let _hideSummaryCard = null;
+let _setSemanticGuideButtonState = null;
+let _scheduleCompactSearchResultReveal = null;
+
+export function initSearchLifecycleAdapter(deps = {}) {
+    _updateUrlState = typeof deps.updateUrlState === 'function' ? deps.updateUrlState : null;
+    _setSearchPanelState = typeof deps.setSearchPanelState === 'function' ? deps.setSearchPanelState : null;
+    _focusOnPoint = typeof deps.focusOnPoint === 'function' ? deps.focusOnPoint : null;
+    _updateExplorationUi = typeof deps.updateExplorationUi === 'function' ? deps.updateExplorationUi : null;
+    _resetNodePositions = typeof deps.resetNodePositions === 'function' ? deps.resetNodePositions : null;
+    _dispatchNavTransition = typeof deps.dispatchNavTransition === 'function' ? deps.dispatchNavTransition : null;
+    _syncSearchStatusForFocus = typeof deps.syncSearchStatusForFocus === 'function' ? deps.syncSearchStatusForFocus : null;
+    _updateJourneyCompass = typeof deps.updateJourneyCompass === 'function' ? deps.updateJourneyCompass : null;
+    _refreshCompositionState = typeof deps.refreshCompositionState === 'function' ? deps.refreshCompositionState : null;
+
+    _clearMobileRouteFieldPeek = typeof deps.clearMobileRouteFieldPeek === 'function' ? deps.clearMobileRouteFieldPeek : null;
+    _clearCompactSearchResultRevealTimers = typeof deps.clearCompactSearchResultRevealTimers === 'function' ? deps.clearCompactSearchResultRevealTimers : null;
+    _clearSearchPreviewHoverTimer = typeof deps.clearSearchPreviewHoverTimer === 'function' ? deps.clearSearchPreviewHoverTimer : null;
+    _settleCompactSearchFocusCard = typeof deps.settleCompactSearchFocusCard === 'function' ? deps.settleCompactSearchFocusCard : null;
+    _switchView = typeof deps.switchView === 'function' ? deps.switchView : null;
+    _updateSelectedBusiness = typeof deps.updateSelectedBusiness === 'function' ? deps.updateSelectedBusiness : null;
+    _syncMobileRoutePeek = typeof deps.syncMobileRoutePeek === 'function' ? deps.syncMobileRoutePeek : null;
+    _updateTrailIndices = typeof deps.updateTrailIndices === 'function' ? deps.updateTrailIndices : null;
+    _applyPointFilterColors = typeof deps.applyPointFilterColors === 'function' ? deps.applyPointFilterColors : null;
+    _refreshHoverSemanticOverlay = typeof deps.refreshHoverSemanticOverlay === 'function' ? deps.refreshHoverSemanticOverlay : null;
+    _resetExplorationFocus = typeof deps.resetExplorationFocus === 'function' ? deps.resetExplorationFocus : null;
+    _setSemanticLaneUiState = typeof deps.setSemanticLaneUiState === 'function' ? deps.setSemanticLaneUiState : null;
+    _clearSearch = typeof deps.clearSearch === 'function' ? deps.clearSearch : null;
+    _triggerSearchHeroMoment = typeof deps.triggerSearchHeroMoment === 'function' ? deps.triggerSearchHeroMoment : null;
+    _triggerCorridorNodeGlow = typeof deps.triggerCorridorNodeGlow === 'function' ? deps.triggerCorridorNodeGlow : null;
+    _triggerSearchCorridorAnimation = typeof deps.triggerSearchCorridorAnimation === 'function' ? deps.triggerSearchCorridorAnimation : null;
+    _hideSummaryCard = typeof deps.hideSummaryCard === 'function' ? deps.hideSummaryCard : null;
+    _setSemanticGuideButtonState = typeof deps.setSemanticGuideButtonState === 'function' ? deps.setSemanticGuideButtonState : null;
+    _scheduleCompactSearchResultReveal = typeof deps.scheduleCompactSearchResultReveal === 'function' ? deps.scheduleCompactSearchResultReveal : null;
 }
 
 /**
@@ -179,3 +195,29 @@ export function updateJourneyCompass() {
 export function refreshCompositionState() {
     if (_refreshCompositionState) _refreshCompositionState();
 }
+
+export function clearMobileRouteFieldPeek() { if (_clearMobileRouteFieldPeek) _clearMobileRouteFieldPeek(); }
+export function clearCompactSearchResultRevealTimers() { if (_clearCompactSearchResultRevealTimers) _clearCompactSearchResultRevealTimers(); }
+export function clearSearchPreviewHoverTimer() { if (_clearSearchPreviewHoverTimer) _clearSearchPreviewHoverTimer(); }
+export function settleCompactSearchFocusCard() { if (_settleCompactSearchFocusCard) _settleCompactSearchFocusCard(); }
+export function switchView(view) { if (_switchView) _switchView(view); }
+export function updateSelectedBusiness(point) { if (_updateSelectedBusiness) _updateSelectedBusiness(point); }
+export function syncMobileRoutePeek() { if (_syncMobileRoutePeek) _syncMobileRoutePeek(); }
+export function updateTrailIndices() { if (_updateTrailIndices) _updateTrailIndices(); }
+export function applyPointFilterColors() { if (_applyPointFilterColors) _applyPointFilterColors(); }
+export function refreshHoverSemanticOverlay() { if (_refreshHoverSemanticOverlay) _refreshHoverSemanticOverlay(); }
+export function resetExplorationFocus() { if (_resetExplorationFocus) _resetExplorationFocus(); }
+export function setSemanticLaneUiState(state, options) {
+    if (_setSemanticLaneUiState) {
+        _setSemanticLaneUiState(state, options);
+    } else if (typeof window !== 'undefined' && typeof window.setSemanticLaneUiState === 'function') {
+        window.setSemanticLaneUiState(state, options);
+    }
+}
+export function clearSearch() { if (_clearSearch) _clearSearch(); }
+export function triggerSearchHeroMoment(anchorIndex) { if (_triggerSearchHeroMoment) _triggerSearchHeroMoment(anchorIndex); }
+export function triggerCorridorNodeGlow(anchorIndex, resultIndices) { if (_triggerCorridorNodeGlow) _triggerCorridorNodeGlow(anchorIndex, resultIndices); }
+export function triggerSearchCorridorAnimation(anchorIndex, resultIndices) { if (_triggerSearchCorridorAnimation) _triggerSearchCorridorAnimation(anchorIndex, resultIndices); }
+export function hideSummaryCard() { if (_hideSummaryCard) _hideSummaryCard(); }
+export function setSemanticGuideButtonState(btn, state, opts) { if (_setSemanticGuideButtonState) _setSemanticGuideButtonState(btn, state, opts); }
+export function scheduleCompactSearchResultReveal(el, idx) { if (_scheduleCompactSearchResultReveal) _scheduleCompactSearchResultReveal(el, idx); }
