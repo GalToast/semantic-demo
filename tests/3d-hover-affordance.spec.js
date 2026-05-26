@@ -11,11 +11,11 @@ async function getHoverState(page) {
           distance: window.__TEST_STATE__.stableCanvasHover.distance ?? null
         }
       : null,
-    lastCanvasNodeHover: window.__lastCanvasNodeHover
+    lastCanvasNodeHover: window.__TEST_STATE__?.lastCanvasNodeHover
       ? {
-          index: window.__lastCanvasNodeHover.index,
-          source: window.__lastCanvasNodeHover.source || '',
-          distance: window.__lastCanvasNodeHover.distance ?? null
+          index: window.__TEST_STATE__.lastCanvasNodeHover.index,
+          source: window.__TEST_STATE__.lastCanvasNodeHover.source || '',
+          distance: window.__TEST_STATE__.lastCanvasNodeHover.distance ?? null
         }
       : null,
     canvasCursor: window.__TEST_STATE__?.renderer?.domElement?.style?.cursor ?? '',

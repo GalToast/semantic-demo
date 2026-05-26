@@ -2,6 +2,8 @@
  * adapter layer to decouple journey.js from globals
  */
 
+let previouslyFocusedFocusStage = null;
+
 let adapter = {
     previewInsideNextThread: (options) => {},
     getNextWalkCandidateForIndex: (currentIndex, options) => null,
@@ -19,8 +21,8 @@ let adapter = {
     shouldUseFloatingFocusJourneyOnly: () => false,
     
     // global variables state
-    getPreviouslyFocusedFocusStage: () => null,
-    setPreviouslyFocusedFocusStage: (el) => {},
+    getPreviouslyFocusedFocusStage: () => previouslyFocusedFocusStage,
+    setPreviouslyFocusedFocusStage: (el) => { previouslyFocusedFocusStage = el || null; },
     
     setLastCanvasNodePick: (val) => {},
     setLastCanvasNodeHover: (val) => {},

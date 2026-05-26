@@ -107,22 +107,22 @@ export async function probe(page) {
             distance: window.__TEST_STATE__.stableCanvasHover.distance ?? null
           }
         : null,
-      lastCanvasNodePick: window.__lastCanvasNodePick
+      lastCanvasNodePick: window.__TEST_STATE__?.lastCanvasNodePick
         ? {
-            index: window.__lastCanvasNodePick.index,
-            source: window.__lastCanvasNodePick.source,
-            screenX: window.__lastCanvasNodePick.screenX,
-            screenY: window.__lastCanvasNodePick.screenY,
-            distance: window.__lastCanvasNodePick.distance
+            index: window.__TEST_STATE__.lastCanvasNodePick.index,
+            source: window.__TEST_STATE__.lastCanvasNodePick.source,
+            screenX: window.__TEST_STATE__.lastCanvasNodePick.screenX,
+            screenY: window.__TEST_STATE__.lastCanvasNodePick.screenY,
+            distance: window.__TEST_STATE__.lastCanvasNodePick.distance
           }
         : null,
-      lastCanvasNodeFocusPick: window.__lastCanvasNodeFocusPick
+      lastCanvasNodeFocusPick: window.__TEST_STATE__?.lastCanvasNodeFocusPick
         ? {
-            index: window.__lastCanvasNodeFocusPick.index,
-            source: window.__lastCanvasNodeFocusPick.source,
-            screenX: window.__lastCanvasNodeFocusPick.screenX,
-            screenY: window.__lastCanvasNodeFocusPick.screenY,
-            distance: window.__lastCanvasNodeFocusPick.distance
+            index: window.__TEST_STATE__.lastCanvasNodeFocusPick.index,
+            source: window.__TEST_STATE__.lastCanvasNodeFocusPick.source,
+            screenX: window.__TEST_STATE__.lastCanvasNodeFocusPick.screenX,
+            screenY: window.__TEST_STATE__.lastCanvasNodeFocusPick.screenY,
+            distance: window.__TEST_STATE__.lastCanvasNodeFocusPick.distance
           }
         : null,
       pointCount: window.__TEST_STATE__?.points?.length ?? 0,
@@ -156,22 +156,22 @@ export async function probeScene(page) {
             distance: state.stableCanvasHover.distance ?? null
           }
         : null,
-      lastCanvasNodePick: window.__lastCanvasNodePick
+      lastCanvasNodePick: state.lastCanvasNodePick
         ? {
-            index: window.__lastCanvasNodePick.index,
-            source: window.__lastCanvasNodePick.source,
-            screenX: window.__lastCanvasNodePick.screenX,
-            screenY: window.__lastCanvasNodePick.screenY,
-            distance: window.__lastCanvasNodePick.distance
+            index: state.lastCanvasNodePick.index,
+            source: state.lastCanvasNodePick.source,
+            screenX: state.lastCanvasNodePick.screenX,
+            screenY: state.lastCanvasNodePick.screenY,
+            distance: state.lastCanvasNodePick.distance
           }
         : null,
-      lastCanvasNodeFocusPick: window.__lastCanvasNodeFocusPick
+      lastCanvasNodeFocusPick: state.lastCanvasNodeFocusPick
         ? {
-            index: window.__lastCanvasNodeFocusPick.index,
-            source: window.__lastCanvasNodeFocusPick.source,
-            screenX: window.__lastCanvasNodeFocusPick.screenX,
-            screenY: window.__lastCanvasNodeFocusPick.screenY,
-            distance: window.__lastCanvasNodeFocusPick.distance
+            index: state.lastCanvasNodeFocusPick.index,
+            source: state.lastCanvasNodeFocusPick.source,
+            screenX: state.lastCanvasNodeFocusPick.screenX,
+            screenY: state.lastCanvasNodeFocusPick.screenY,
+            distance: state.lastCanvasNodeFocusPick.distance
           }
         : null,
       cameraPosition: state.camera

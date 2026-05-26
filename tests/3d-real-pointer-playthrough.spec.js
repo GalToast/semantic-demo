@@ -26,29 +26,29 @@ async function getInteractionState(page) {
           distance: window.__TEST_STATE__.stableCanvasHover.distance ?? null
         }
       : null,
-    lastCanvasNodeHover: window.__lastCanvasNodeHover
+    lastCanvasNodeHover: window.__TEST_STATE__?.lastCanvasNodeHover
       ? {
-          index: window.__lastCanvasNodeHover.index,
-          source: window.__lastCanvasNodeHover.source || '',
-          distance: window.__lastCanvasNodeHover.distance ?? null
+          index: window.__TEST_STATE__.lastCanvasNodeHover.index,
+          source: window.__TEST_STATE__.lastCanvasNodeHover.source || '',
+          distance: window.__TEST_STATE__.lastCanvasNodeHover.distance ?? null
         }
       : null,
-    lastCanvasNodePick: window.__lastCanvasNodePick
+    lastCanvasNodePick: window.__TEST_STATE__?.lastCanvasNodePick
       ? {
-          index: window.__lastCanvasNodePick.index,
-          source: window.__lastCanvasNodePick.source || '',
-          screenX: window.__lastCanvasNodePick.screenX,
-          screenY: window.__lastCanvasNodePick.screenY,
-          distance: window.__lastCanvasNodePick.distance ?? null
+          index: window.__TEST_STATE__.lastCanvasNodePick.index,
+          source: window.__TEST_STATE__.lastCanvasNodePick.source || '',
+          screenX: window.__TEST_STATE__.lastCanvasNodePick.screenX,
+          screenY: window.__TEST_STATE__.lastCanvasNodePick.screenY,
+          distance: window.__TEST_STATE__.lastCanvasNodePick.distance ?? null
         }
       : null,
-    lastCanvasNodeFocusPick: window.__lastCanvasNodeFocusPick
+    lastCanvasNodeFocusPick: window.__TEST_STATE__?.lastCanvasNodeFocusPick
       ? {
-          index: window.__lastCanvasNodeFocusPick.index,
-          source: window.__lastCanvasNodeFocusPick.source || '',
-          screenX: window.__lastCanvasNodeFocusPick.screenX,
-          screenY: window.__lastCanvasNodeFocusPick.screenY,
-          distance: window.__lastCanvasNodeFocusPick.distance ?? null
+          index: window.__TEST_STATE__.lastCanvasNodeFocusPick.index,
+          source: window.__TEST_STATE__.lastCanvasNodeFocusPick.source || '',
+          screenX: window.__TEST_STATE__.lastCanvasNodeFocusPick.screenX,
+          screenY: window.__TEST_STATE__.lastCanvasNodeFocusPick.screenY,
+          distance: window.__TEST_STATE__.lastCanvasNodeFocusPick.distance ?? null
         }
       : null,
     canvasCursor: window.__TEST_STATE__?.renderer?.domElement?.style?.cursor ?? '',

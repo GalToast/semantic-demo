@@ -96,8 +96,8 @@ async function probe(page) {
     pointCount: window.__TEST_STATE__?.points?.length ?? 0,
     focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
     navMode: window.__TEST_STATE__?.navState?.mode || '',
-    lastCanvasNodePick: window.__lastCanvasNodePick ?? null,
-    lastCanvasNodeFocusPick: window.__lastCanvasNodeFocusPick ?? null
+    lastCanvasNodePick: window.__TEST_STATE__?.lastCanvasNodePick ?? null,
+    lastCanvasNodeFocusPick: window.__TEST_STATE__?.lastCanvasNodeFocusPick ?? null
   }));
 }
 

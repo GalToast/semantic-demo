@@ -230,8 +230,8 @@ export async function mutate(page, operation, extra = {}) {
         // Compound teardown: clears canvas pick trace vars + focus state.
         // WHY: Test instrumentation (trace vars) + application state must be reset
         //      together to produce a clean slate before assertions.
-        window.__lastCanvasNodePick = null;
-        window.__lastCanvasNodeFocusPick = null;
+        s.lastCanvasNodePick = null;
+        s.lastCanvasNodeFocusPick = null;
         s.focusedNode = null;
         if (s.navState) {
           s.navState.focusedIndex = null;
@@ -262,8 +262,8 @@ export async function mutate(page, operation, extra = {}) {
       case 'clearLastCanvasPicks':
         // Test instrumentation: reset canvas-pick trace flags set by app code.
         // WHY: These are test-only tracking vars, not application state.
-        window.__lastCanvasNodePick = null;
-        window.__lastCanvasNodeFocusPick = null;
+        s.lastCanvasNodePick = null;
+        s.lastCanvasNodeFocusPick = null;
         break;
 
       default:

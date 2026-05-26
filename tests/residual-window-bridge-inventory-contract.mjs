@@ -732,11 +732,50 @@ function testRestoreLegendCollapsedPanelBridgeRetired() {
   console.log('  OK — restoreLegendCollapsedPanel bridge retired; direct imports remain');
 }
 
-// ── TEST 12 — Verify window-bridge-gaps-contract.mjs still passes ────────────
+// ── TEST 12 — Canvas/focus pick globals are retired from window ────────────
+
+function testCanvasPickGlobalsRetiredFromWindow() {
+  console.log('\n[TEST 12] canvas/focus pick globals are retired from window');
+
+  const sourceMods = ['app', 'journey'];
+  const retiredGlobals = [
+    '_previouslyFocusedFocusStage',
+    '__lastCanvasNodePick',
+    '__lastCanvasNodeHover',
+    '__lastCanvasNodeFocusPick',
+  ];
+  const problems = [];
+
+  for (const mod of sourceMods) {
+    const src = read(mod);
+    for (const name of retiredGlobals) {
+      if (src.includes(`window.${name}`)) {
+        problems.push(`${mod}: unexpected window.${name}`);
+      }
+    }
+  }
+
+  const stateSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/state.js'), 'utf-8');
+  for (const name of ['lastCanvasNodePick', 'lastCanvasNodeHover', 'lastCanvasNodeFocusPick']) {
+    assert(
+      stateSrc.includes(`${name}: null`),
+      `state.js should own ${name} diagnostic state`
+    );
+  }
+
+  assert(
+    problems.length === 0,
+    `canvas/focus pick globals should use adapter/state ownership, not window:\n${problems.join('\n')}`
+  );
+
+  console.log('  OK — canvas/focus pick globals retired from window; state diagnostics remain');
+}
+
+// ── TEST 13 — Verify window-bridge-gaps-contract.mjs still passes ────────────
 // Run the sibling contract to ensure no regressions in the already-dewindowed seams.
 
 function testSiblingContractStillPasses() {
-  console.log('\n[TEST 12] sibling window-bridge-gaps-contract.mjs still passes');
+  console.log('\n[TEST 13] sibling window-bridge-gaps-contract.mjs still passes');
 
   try {
     const result = execFileSync(
@@ -775,6 +814,7 @@ try {
   testCameraInteractionBridgesRetired();
   testViewHandoffCameraPreludeBridgeRetired();
   testRestoreLegendCollapsedPanelBridgeRetired();
+  testCanvasPickGlobalsRetiredFromWindow();
   testSiblingContractStillPasses();
 
   console.log('\n=================================================================');

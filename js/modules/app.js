@@ -335,11 +335,9 @@ export async function init() {
             shouldUseFloatingFocusJourneyOnly: () => {
                 return false;
             },
-            getPreviouslyFocusedFocusStage: () => window._previouslyFocusedFocusStage || null,
-            setPreviouslyFocusedFocusStage: (el) => { window._previouslyFocusedFocusStage = el; },
-            setLastCanvasNodePick: (val) => { window.__lastCanvasNodePick = val; },
-            setLastCanvasNodeHover: (val) => { window.__lastCanvasNodeHover = val; },
-            setLastCanvasNodeFocusPick: (val) => { window.__lastCanvasNodeFocusPick = val; }
+            setLastCanvasNodePick: (val) => { state.lastCanvasNodePick = val || null; },
+            setLastCanvasNodeHover: (val) => { state.lastCanvasNodeHover = val || null; },
+            setLastCanvasNodeFocusPick: (val) => { state.lastCanvasNodeFocusPick = val || null; }
         });
 
         // Inject navigation adapter; avoids url-state calling lifecycle/event-bindings through window.

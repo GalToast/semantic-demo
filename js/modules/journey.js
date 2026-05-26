@@ -1948,8 +1948,8 @@ export function ensureCanvasNodeInteractionBindings() {
             ? { ...stable, source: stable.source || 'stable-hover' }
             : findNearestCanvasFieldNode(event);
         if (!candidate) return false;
-        window.__lastCanvasNodePick = candidate;
-        window.__lastCanvasNodeFocusPick = candidate;
+        adapter.setLastCanvasNodePick(candidate);
+        adapter.setLastCanvasNodeFocusPick(candidate);
         event.preventDefault();
         releaseFocusCameraAssist('field-click');
         noteSceneInteraction(state.AUTO_ROTATE_MANUAL_IDLE_MS);
