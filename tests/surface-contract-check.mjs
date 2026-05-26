@@ -2204,6 +2204,22 @@ async function assert_search_chrome(page, ctx) {
       };
     }
 
+    function rectSnapshot(el) {
+      if (!el) return null;
+      const s = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return {
+        display: s.display,
+        visibility: s.visibility,
+        pointerEvents: s.pointerEvents,
+        width: Math.round(r.width * 100) / 100,
+        height: Math.round(r.height * 100) / 100,
+        top: Math.round(r.top * 100) / 100,
+        bottom: Math.round(r.bottom * 100) / 100,
+        visible: s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0,
+      };
+    }
+
     function bottomAnchorContract(el) {
       if (!el) return null;
       const style = getComputedStyle(el);
@@ -2217,9 +2233,13 @@ async function assert_search_chrome(page, ctx) {
     }
 
     const results = {};
+    results.bodyDataset = { ...document.body.dataset };
 
     const searchContainer = document.querySelector('.search-container');
     results.searchContainerPresent = searchContainer !== null;
+    results.searchContainerRect = rectSnapshot(searchContainer);
+    results.searchContainerHasQuery = searchContainer?.classList.contains('has-query') ?? false;
+    results.searchContainerRenderedResults = searchContainer?.classList.contains('results-rendered') ?? false;
 
     const searchInput = document.querySelector('#search-input');
     results.searchInputPresent = searchInput !== null;
@@ -2258,6 +2278,40 @@ async function assert_search_chrome(page, ctx) {
     const searchIcon = document.querySelector('.search-icon');
     results.searchIconPresent = searchIcon !== null;
 
+    const infoPanel = document.querySelector('#info-panel');
+    const infoContent = document.querySelector('#info-panel-content');
+    const infoHeader = document.querySelector('#info-panel .info-header');
+    const activeResults = document.querySelector('#search-results.active');
+    results.infoPanelPresent = infoPanel !== null;
+    results.infoPanelRect = rectSnapshot(infoPanel);
+    results.infoPanelContainsSearch = !!(infoPanel && searchContainer && infoPanel.contains(searchContainer));
+    results.infoContentRect = rectSnapshot(infoContent);
+    results.infoHeaderHidden = infoHeader
+      ? getComputedStyle(infoHeader).display === 'none' || getComputedStyle(infoHeader).visibility === 'hidden'
+      : null;
+    results.activeResultsPresent = activeResults !== null;
+    results.activeResultsInsideSearch = !!(searchContainer && activeResults && searchContainer.contains(activeResults));
+    results.activeResultsRect = rectSnapshot(activeResults);
+
+    results.searchInputInsideSearchContainer = !!(searchContainer && searchInput && searchContainer.contains(searchInput));
+    results.spinnerInsideSearchContainer = !!(searchContainer && spinner && searchContainer.contains(spinner));
+    results.clearBtnInsideSearchContainer = !!(searchContainer && clearBtn && searchContainer.contains(clearBtn));
+    results.searchHintInsideSearchContainer = !!(searchContainer && searchHint && searchContainer.contains(searchHint));
+
+    results.infoPanelPointerEventsNone = infoPanel ? getComputedStyle(infoPanel).pointerEvents === 'none' : false;
+    results.infoPanelDisplayNone = infoPanel ? getComputedStyle(infoPanel).display === 'none' : false;
+    results.infoPanelVisibilityHidden = infoPanel ? getComputedStyle(infoPanel).visibility === 'hidden' : false;
+    results.infoPanelDemoted = results.infoHeaderHidden === true || results.infoPanelPointerEventsNone || results.infoPanelDisplayNone || results.infoPanelVisibilityHidden;
+    if (results.searchContainerRect && results.infoPanelRect) {
+      results.searchContainerBoundedByInfoPanel =
+        results.searchContainerRect.visible &&
+        results.searchContainerRect.pointerEvents !== 'none' &&
+        results.searchContainerRect.top >= results.infoPanelRect.top - 1 &&
+        results.searchContainerRect.bottom <= results.infoPanelRect.bottom + 8;
+    } else {
+      results.searchContainerBoundedByInfoPanel = null;
+    }
+
     results.overflowX = document.documentElement.scrollWidth > window.innerWidth;
     results.overflowY = document.documentElement.scrollHeight > window.innerHeight;
 
@@ -2266,6 +2320,51 @@ async function assert_search_chrome(page, ctx) {
 
   if (info.searchContainerPresent) ctx.pass('search-chrome', 'dom:search-container');
   else ctx.fail('search-chrome', 'dom:search-container', 'missing .search-container');
+
+  if (info.bodyDataset?.panelSurface === 'search') ctx.pass('search-chrome', 'state:panel-surface');
+  else ctx.fail('search-chrome', 'state:panel-surface', `expected search, got ${info.bodyDataset?.panelSurface || 'missing'}`);
+
+  if (info.searchContainerHasQuery) ctx.pass('search-chrome', 'state:search-container:has-query');
+  else ctx.fail('search-chrome', 'state:search-container:has-query', '.search-container missing has-query');
+
+  if (info.searchContainerRenderedResults) ctx.pass('search-chrome', 'state:search-container:results-rendered');
+  else ctx.fail('search-chrome', 'state:search-container:results-rendered', '.search-container missing results-rendered');
+
+  if (info.infoPanelPresent) ctx.pass('search-chrome', 'dom:#info-panel');
+  else ctx.fail('search-chrome', 'dom:#info-panel', 'missing #info-panel');
+
+  if (info.infoPanelContainsSearch) ctx.pass('search-chrome', 'ownership:info-panel-contains-search');
+  else ctx.fail('search-chrome', 'ownership:info-panel-contains-search', '#info-panel should contain .search-container in search mode');
+
+  if (info.infoHeaderHidden) ctx.pass('search-chrome', 'ownership:info-header-hidden');
+  else ctx.fail('search-chrome', 'ownership:info-header-hidden', '#info-panel .info-header should be hidden in search mode');
+
+  if (info.searchContainerBoundedByInfoPanel) {
+    ctx.pass('search-chrome', 'ownership:search-container-bounded-by-info-panel');
+  } else {
+    ctx.fail('search-chrome', 'ownership:search-container-bounded-by-info-panel', `search rect ${JSON.stringify(info.searchContainerRect)} vs info panel ${JSON.stringify(info.infoPanelRect)}`);
+  }
+
+  if (info.activeResultsPresent) ctx.pass('search-chrome', 'dom:search-results-active');
+  else ctx.fail('search-chrome', 'dom:search-results-active', 'missing #search-results.active');
+
+  if (info.activeResultsInsideSearch) ctx.pass('search-chrome', 'ownership:search-results-inside-container');
+  else ctx.fail('search-chrome', 'ownership:search-results-inside-container', '#search-results.active should remain inside .search-container');
+
+  if (info.searchInputInsideSearchContainer) ctx.pass('search-chrome', 'ownership:search-input-inside-container');
+  else ctx.fail('search-chrome', 'ownership:search-input-inside-container', '#search-input should be inside .search-container');
+
+  if (info.spinnerInsideSearchContainer) ctx.pass('search-chrome', 'ownership:search-spinner-inside-container');
+  else ctx.fail('search-chrome', 'ownership:search-spinner-inside-container', '#search-spinner should be inside .search-container');
+
+  if (info.clearBtnInsideSearchContainer) ctx.pass('search-chrome', 'ownership:search-clear-btn-inside-container');
+  else ctx.fail('search-chrome', 'ownership:search-clear-btn-inside-container', '#search-clear-btn should be inside .search-container');
+
+  if (info.searchHintInsideSearchContainer) ctx.pass('search-chrome', 'ownership:search-status-inside-container');
+  else ctx.fail('search-chrome', 'ownership:search-status-inside-container', '#search-status should be inside .search-container');
+
+  if (info.infoPanelDemoted) ctx.pass('search-chrome', 'ownership:info-panel-demoted');
+  else ctx.fail('search-chrome', 'ownership:info-panel-demoted', '#info-panel should be demoted in search mode (hidden, pointer-events:none, or header hidden)');
 
   if (info.searchInputPresent) ctx.pass('search-chrome', 'dom:#search-input');
   else ctx.fail('search-chrome', 'dom:#search-input', 'missing #search-input');
