@@ -51,6 +51,7 @@ const MODULES = {
   viewController: path.join(SEMDEMO_ROOT, 'js/modules/view-controller.js'),
   navigationState: path.join(SEMDEMO_ROOT, 'js/modules/navigation-state.js'),
   journeyWebgl: path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.js'),
+  legendUi: path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.js'),
   threeSetup: path.join(SEMDEMO_ROOT, 'js/three-setup.js'),
 };
 
@@ -170,7 +171,7 @@ const KNOWN_FALLBACKS = new Set([
   'switchView', 'hideTooltip', 'clearSearchPreviewOverlay', 'resetNodePositions',
   'getRouteLayerOrigin', 'setRouteChoreographyPhase',
   'applyMapFlatteningLayout', 'clearRouteExploration', 'animateCameraToSearchCorridor',
-  'updateLegendGuideState', 'updateTraversalUi', 'restoreLegendCollapsedPanel',
+  'updateLegendGuideState', 'updateTraversalUi',
   // journey.js guards
   'syncArrivalHandoffOverlay', 'disposeArrivalHandoffOverlay', 'syncInspectedStrandOverlay',
   'updateJourneyCompass',
@@ -198,7 +199,6 @@ const DEWINDOWED_SEAMS = ['searchState']; // search-state.js is fully dewindowed
 // Format: [callerModule, windowFnName, ownerModule, note]
 
 const EXTRACTION_CANDIDATES = [
-  ['lifecycle', 'restoreLegendCollapsedPanel', 'legend-ui', 'legacy bootstrap compatibility; lifecycle now imports legend-ui directly'],
   ['viewController', 'applyMapFlatteningLayout', 'three-setup', 'three-setup owns map-flattening layout but has browser-only top-level side effects; keep guarded bridge until extracted'],
   ['journey', 'syncInspectedStrandOverlay', 'thread-inspector', 'thread-inspector owns overlay sync'],
   ['sceneReveal', 'updateCameraViewportOffset', 'camera', 'camera owns viewport offset'],
@@ -285,7 +285,7 @@ function testLifecycleNoNewBareCalls() {
   const HIGH_RISK_CALLS = [
     'animateCameraToNode', 'animateCameraToSearchCorridor',
     'setRouteChoreographyPhase', 'syncClusterSectionState', 'updateLegendGuideState',
-    'updateTraversalUi', 'restoreLegendCollapsedPanel',
+    'updateTraversalUi',
     'clearRouteExploration', 'noteSceneInteraction',
   ];
 
@@ -679,11 +679,40 @@ function testViewHandoffCameraPreludeBridgeRetired() {
   console.log('  OK — view handoff camera prelude bridge retired; direct import remains');
 }
 
-// ── TEST 11 — Verify window-bridge-gaps-contract.mjs still passes ────────────
+// ── TEST 11 — Legend collapsed-panel bridge is retired ─────────────────────
+
+function testRestoreLegendCollapsedPanelBridgeRetired() {
+  console.log('\n[TEST 11] restoreLegendCollapsedPanel window bridge is retired');
+
+  const legendUiSrc = read('legendUi');
+  const lifecycleSrc = read('lifecycle');
+  const eventBindingsSrc = read('eventBindings');
+
+  assert(
+    !legendUiSrc.includes('window.restoreLegendCollapsedPanel'),
+    'legend-ui.js must not expose window.restoreLegendCollapsedPanel'
+  );
+  assert(
+    /export function restoreLegendCollapsedPanel/.test(legendUiSrc),
+    'legend-ui.js should keep restoreLegendCollapsedPanel as a named export'
+  );
+  assert(
+    lifecycleSrc.includes('restoreLegendCollapsedPanel') && lifecycleSrc.includes("from './legend-ui.js'"),
+    'lifecycle.js should import restoreLegendCollapsedPanel directly from legend-ui.js'
+  );
+  assert(
+    eventBindingsSrc.includes('restoreLegendCollapsedPanel') && eventBindingsSrc.includes("from './legend-ui.js'"),
+    'event-bindings.js should import restoreLegendCollapsedPanel directly from legend-ui.js'
+  );
+
+  console.log('  OK — restoreLegendCollapsedPanel bridge retired; direct imports remain');
+}
+
+// ── TEST 12 — Verify window-bridge-gaps-contract.mjs still passes ────────────
 // Run the sibling contract to ensure no regressions in the already-dewindowed seams.
 
 function testSiblingContractStillPasses() {
-  console.log('\n[TEST 11] sibling window-bridge-gaps-contract.mjs still passes');
+  console.log('\n[TEST 12] sibling window-bridge-gaps-contract.mjs still passes');
 
   try {
     const result = execFileSync(
@@ -721,6 +750,7 @@ try {
   testInspectedStrandTopLevelBridgesRetired();
   testCameraInteractionBridgesRetired();
   testViewHandoffCameraPreludeBridgeRetired();
+  testRestoreLegendCollapsedPanelBridgeRetired();
   testSiblingContractStillPasses();
 
   console.log('\n=================================================================');

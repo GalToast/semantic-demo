@@ -1,12 +1,12 @@
 /**
  * lifecycle-semantic-guide-residual-bridge-contract.mjs
  *
- * Documents and guards the two residual window bridges between lifecycle.js
+ * Documents and guards the residual window bridge between lifecycle.js
  * and the legend/semantic-guide seam:
  *
  *   Bridge A: window.updateLegendGuideState() — lifecycle-owned, self-call
- *   Bridge B: window.restoreLegendCollapsedPanel() — legacy bootstrap export
- *             owned by legend-ui.js; lifecycle.closeLegendGuide uses a direct import
+ *   Retired: window.restoreLegendCollapsedPanel() — owned by legend-ui.js and
+ *            reached through direct imports.
  *
  * Design:
  *   - Documents intentional residual bridges without failing on them
@@ -93,8 +93,8 @@ function testRestoreLegendCollapsedPanelOwner() {
     'legend-ui.js must export restoreLegendCollapsedPanel'
   );
   assert(
-    legendUiSrc.includes('window.restoreLegendCollapsedPanel = restoreLegendCollapsedPanel'),
-    'legend-ui.js keeps restoreLegendCollapsedPanel as a legacy bootstrap window export'
+    !legendUiSrc.includes('window.restoreLegendCollapsedPanel'),
+    'legend-ui.js must not keep the retired window.restoreLegendCollapsedPanel export'
   );
   assert(
     !eventBindingsSrc.includes('window.restoreLegendCollapsedPanel = restoreLegendCollapsedPanel'),
@@ -199,7 +199,7 @@ console.log('=================================================================')
 console.log('lifecycle-semantic-guide-residual-bridge-contract.mjs');
 console.log('Documents: lifecycle owns updateLegendGuideState, closeLegendGuide');
 console.log('          legend-ui owns restoreLegendCollapsedPanel');
-console.log('          residual window bridges are intentional, not extracted');
+console.log('          restoreLegendCollapsedPanel bridge is retired');
 console.log('=================================================================');
 
 try {
@@ -210,7 +210,7 @@ try {
   testCloseLegendGuideOwnership();
 
   console.log('\n=================================================================');
-  console.log('ALL TESTS PASSED — residual bridges documented and guarded');
+  console.log('ALL TESTS PASSED — residual bridge state documented and guarded');
   console.log('=================================================================');
   process.exit(0);
 } catch (err) {

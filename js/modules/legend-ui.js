@@ -135,7 +135,6 @@ if (typeof window !== 'undefined') {
     window.isLegendPanelOpen = isLegendPanelOpen;
     window.openLegendPanel = openLegendPanel;
     window.closeLegendPanel = closeLegendPanel;
-    window.restoreLegendCollapsedPanel = restoreLegendCollapsedPanel;
     window.updateLegendGuideState = updateLegendGuideState;
     window.closeLegendGuide = closeLegendGuide;
 }
