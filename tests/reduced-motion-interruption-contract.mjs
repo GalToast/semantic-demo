@@ -245,10 +245,8 @@ async function run() {
       s.focusTransitionMode = 'idle';
     }
 
-    // Trigger focus-pocket stage (journey.js focusOnNode side effects)
-    if (typeof window.syncFocusStage === 'function') {
-      window.syncFocusStage(point);
-    }
+    // Reduced-motion proof now exercises public state orchestration only; focus-stage
+    // rendering is covered by direct module callers, not the retired window bridge.
     if (typeof window.refreshCompositionState === 'function') {
       window.refreshCompositionState();
     }
@@ -329,9 +327,6 @@ async function run() {
     }
     if (typeof window.refreshCompositionState === 'function') {
       window.refreshCompositionState();
-    }
-    if (typeof window.syncFocusStage === 'function') {
-      window.syncFocusStage(null);
     }
     if (typeof window.updateExplorationUi === 'function') {
       window.updateExplorationUi();

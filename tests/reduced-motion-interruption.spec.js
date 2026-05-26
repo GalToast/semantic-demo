@@ -93,7 +93,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
         s.focusTransitionMode = 'idle';
       }
 
-      if (typeof window.syncFocusStage === 'function') window.syncFocusStage(point);
+      // Focus-stage sync is owned by direct module callers; the window bridge is retired.
       if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
       if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
     });

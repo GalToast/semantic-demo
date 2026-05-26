@@ -546,6 +546,11 @@ function testJourneyArrivalHandoffDewindowed() {
   const threadInspectorSrc = read('threadInspector');
   const problems = [];
 
+  assert(
+    !journeySrc.includes('window.syncFocusStage'),
+    'journey.js must not retain the retired window.syncFocusStage compatibility bridge'
+  );
+
   for (const fn of ['syncArrivalHandoffOverlay', 'disposeArrivalHandoffOverlay']) {
     if (journeySrc.includes(`window.${fn}`)) {
       problems.push(`  journey: still references window.${fn}`);

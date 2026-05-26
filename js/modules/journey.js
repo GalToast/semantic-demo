@@ -2395,7 +2395,6 @@ export function applyPointFilterColors() {
 
 // Window shim for inline script backward compat:
 if (typeof window !== 'undefined') {
-    window.syncFocusStage = syncFocusStage;
     window.setTrailFromSeed = setTrailFromSeed;
     window.updateTrailIndices = updateTrailIndices;
     window.updateSelectedBusiness = updateSelectedBusiness;

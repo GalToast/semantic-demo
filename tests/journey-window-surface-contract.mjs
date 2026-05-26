@@ -48,7 +48,7 @@ function testJourneyWindowShim() {
   const src = fs.readFileSync(JOURNEY_PATH, 'utf-8');
 
   // The shim block must exist as one contiguous block guarded by typeof window check
-  assert(src.includes('window.syncFocusStage = syncFocusStage'), 'window.syncFocusStage in shim');
+  assertNotContains(src, 'window.syncFocusStage = syncFocusStage', 'syncFocusStage bridge is retired');
   assert(src.includes('window.setTrailFromSeed = setTrailFromSeed'), 'window.setTrailFromSeed in shim');
   assertNotContains(src, 'window.setSemanticDiveMode = setSemanticDiveMode', 'semantic-dive window owner stays in lifecycle');
   assert(src.includes('window.getSemanticThreadCandidates = getSemanticThreadCandidates'), 'window.getSemanticThreadCandidates in shim');

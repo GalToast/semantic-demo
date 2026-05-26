@@ -126,7 +126,7 @@ export function resetExplorationFocus() {
     setTrailDepth(0, { skipUrlSync: true });
     resetNodePositions({ preserveSearch: true });  // clears glow only if preserveSearch=true
     clearSearchGlow();
-    if (typeof window.syncFocusStage === 'function') window.syncFocusStage(null);
+    syncFocusStage(null);
     if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
     if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
 }

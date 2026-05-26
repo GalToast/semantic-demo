@@ -7,7 +7,7 @@
 | `window.state` | app.js:48, lifecycle.js (shared state object) | 30+ call sites across tests and runtime | Crash / TypeError |
 | `window.focusOnNode` | app.js:85 → camera-controls.js | **Direct import callers:** lifecycle.js:79, event-bindings.js:4, search-state.js (dewindowed 2026-05-21 — direct named import from camera-controls.js); **Test callers:** 6 Playwright spec files (unchanged) | Silent no-op (guarded) |
 | `window.returnToOverview` | app.js:121 → lifecycle.js:2493 | event-bindings.js:275, lifecycle.js (internal) | Silent no-op (guarded) |
-| `window.syncFocusStage` | journey.js compatibility bridge retained | Runtime source callers dewindowed except reduced-motion test setup; camera-controls, lifecycle, view-controller, and thread-inspector call `syncFocusStage` through named imports | Temporary test/external compatibility shim |
+| `window.syncFocusStage` | **Retired 2026-05-25** | camera-controls, lifecycle, view-controller, and thread-inspector call `syncFocusStage` through named imports | Removed compatibility shim |
 | `window.syncClusterSectionState` | lifecycle.js:2482 (window shim) | lifecycle.js:1479, scene-reveal.js:56, event-bindings.js:693 | UI state desync |
 | `window.hydrateLeadContext` | lifecycle.js (window shim) | journey.js:1490 | Card not updating |
 | `window.setSemanticDiveMode` | journey.js:3096 (overrides lifecycle.js:2551) | lifecycle.js:940/943, event-bindings.js:61 | Dive mode state desync |
@@ -119,7 +119,7 @@ Semantic lane uses `getWindow()` / `getDocument()` guard pattern internally (lin
 
 2. **`window.focusOnNode`** — Primary navigation action. Runtime modules now use direct named imports; the app-level window bridge remains for Playwright/test compatibility during the transition. Risk of removing the bridge before test migration: focus navigation proof paths silently break.
 
-3. **`window.syncFocusStage`** — Camera-position synchronization. Runtime source callers use named imports, but reduced-motion tests still exercise the compatibility bridge. Risk of removing before test migration: missing focus-stage sync in those proofs.
+3. **`window.syncFocusStage`** — Retired 2026-05-25. Runtime source callers use named imports and reduced-motion tests no longer exercise the compatibility bridge.
 
 4. **`window.setSemanticDiveMode`** — lifecycle.js owns the authoritative implementation (lifecycle.js:2547).
    journey.js exports a backward-compatible delegating alias (journey.js:1082) that calls
@@ -161,14 +161,15 @@ See `tests/bootstrap-window-export-contract.mjs` for the formal contract.
 All runtime callers (event-bindings.js, lifecycle.js, journey.js, journey-compass-controller.js, thread-inspector.js, search-state.js) now use direct named imports from camera-controls.js. app.js window bridge retained for test compatibility during transition.
 
 ### Rank 1 — `window.syncFocusStage` → named imports
-**Risk**: Low for runtime source, medium for tests until reduced-motion setup is migrated.
+**Status**: Completed 2026-05-25.
+**Risk**: Low after reduced-motion setup migration.
 **Former guarded call shape**:
 ```js
 if (typeof window.syncFocusStage === 'function') window.syncFocusStage(point);
 ```
-**Dewindowed approach**: Runtime source callers use named imports. `lifecycle.js` imports and re-exports `syncFocusStage`; `thread-inspector.js` imports it through lifecycle to avoid adding a new direct `thread-inspector -> journey.js` edge.
+**Dewindowed approach**: Runtime source callers use named imports. `lifecycle.js` imports and re-exports `syncFocusStage`; `thread-inspector.js` imports it through lifecycle to avoid adding a new direct `thread-inspector -> journey.js` edge. The `journey.js` window compatibility shim is retired.
 **Files**: lifecycle.js, thread-inspector.js
-**Verification**: `rg -n "window\.syncFocusStage" js/modules` should show only the retained compatibility bridge assignment in `journey.js`.
+**Verification**: `rg -n "window\.syncFocusStage" js/modules tests` should show no runtime/test callers, except source-contract strings that assert absence.
 
 ### Rank 2 — `window.updateExplorationUi` → direct local call in lifecycle.js
 **Risk**: Very low. `updateExplorationUi` is locally defined at lifecycle.js:311.
