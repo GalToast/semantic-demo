@@ -94,7 +94,6 @@ These are invoked via `typeof window.XXX === 'function'` guards. All are **canon
 | `findClusterByKeyword` | 483 | app.js (inline) |
 | `getRouteEmbodimentIndices` | 1125, 1234, 1362, 1433 | map-state.js via app.js |
 | `getRouteLayerOrigin` | 1126, 1226 | intentional no-op guard with `'galaxy'` fallback |
-| `applyMapFlatteningLayout` | 1258, 1297 | three-setup.js |
 | `setTerrainHandoffState` | 1239, 1358, 1368, 1434 | map-state.js via app.js |
 | `setRouteChoreographyPhase` | 1246, 1396, 1424, 1443 | camera-controls.js via app.js |
 | `animateCameraToTerrainPrelude` | 1253 | camera-controls.js via app.js |

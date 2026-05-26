@@ -52,6 +52,7 @@ const MODULES = {
   navigationState: path.join(SEMDEMO_ROOT, 'js/modules/navigation-state.js'),
   journeyWebgl: path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.js'),
   legendUi: path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.js'),
+  mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'js/modules/map-flattening-layout.js'),
   threeSetup: path.join(SEMDEMO_ROOT, 'js/three-setup.js'),
 };
 
@@ -170,7 +171,7 @@ const KNOWN_FALLBACKS = new Set([
   'animateCameraToNode', 'previewInsideNextThread', 'clearThreadInspection',
   'switchView', 'hideTooltip', 'clearSearchPreviewOverlay', 'resetNodePositions',
   'getRouteLayerOrigin', 'setRouteChoreographyPhase',
-  'applyMapFlatteningLayout', 'clearRouteExploration', 'animateCameraToSearchCorridor',
+  'clearRouteExploration', 'animateCameraToSearchCorridor',
   'updateLegendGuideState', 'updateTraversalUi',
   // journey.js guards
   'syncArrivalHandoffOverlay', 'disposeArrivalHandoffOverlay', 'syncInspectedStrandOverlay',
@@ -199,7 +200,6 @@ const DEWINDOWED_SEAMS = ['searchState']; // search-state.js is fully dewindowed
 // Format: [callerModule, windowFnName, ownerModule, note]
 
 const EXTRACTION_CANDIDATES = [
-  ['viewController', 'applyMapFlatteningLayout', 'three-setup', 'three-setup owns map-flattening layout but has browser-only top-level side effects; keep guarded bridge until extracted'],
   ['journey', 'syncInspectedStrandOverlay', 'thread-inspector', 'thread-inspector owns overlay sync'],
   ['sceneReveal', 'updateCameraViewportOffset', 'camera', 'camera owns viewport offset'],
   ['threadInspector', 'exploreThreadNeighbor', 'thread-inspector', 'REMOVED direct backward-compat expose; diagnostic access remains on window._ti and contracts assert the direct window assignment stays absent'],
@@ -658,10 +658,12 @@ function testCameraInteractionBridgesRetired() {
 // ── TEST 10 — View handoff camera prelude bridge is retired ────────────────
 
 function testViewHandoffCameraPreludeBridgeRetired() {
-  console.log('\n[TEST 10] view handoff camera prelude window bridge is retired');
+  console.log('\n[TEST 10] view handoff terrain/map flattening bridges are retired');
 
   const viewControllerSrc = read('viewController');
   const cameraSrc = read('camera');
+  const threeSetupSrc = read('threeSetup');
+  const mapFlatteningLayoutSrc = read('mapFlatteningLayout');
 
   assert(
     /import\s+\{[^}]*\banimateCameraToTerrainPrelude\b[^}]*\bfocusOnNode\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(viewControllerSrc),
@@ -675,8 +677,30 @@ function testViewHandoffCameraPreludeBridgeRetired() {
     !cameraSrc.includes('window.animateCameraToTerrainPrelude'),
     'camera-controls.js must not expose the retired window.animateCameraToTerrainPrelude bridge'
   );
+  assert(
+    viewControllerSrc.includes("import { applyMapFlatteningLayout } from './map-flattening-layout.js';"),
+    'view-controller.js should import applyMapFlatteningLayout from the side-effect-free map-flattening-layout owner'
+  );
+  assert(
+    !viewControllerSrc.includes('window.applyMapFlatteningLayout'),
+    'view-controller.js must not call window.applyMapFlatteningLayout'
+  );
+  assert(
+    !threeSetupSrc.includes('window.applyMapFlatteningLayout'),
+    'three-setup.js must not expose the retired window.applyMapFlatteningLayout bridge'
+  );
+  assert(
+    mapFlatteningLayoutSrc.includes("import { state } from '../state.js';") &&
+      /export function applyMapFlatteningLayout/.test(mapFlatteningLayoutSrc),
+    'map-flattening-layout.js should own applyMapFlatteningLayout as a state-only named export'
+  );
+  assert(
+    !/\bwindow\./.test(mapFlatteningLayoutSrc) &&
+      !/typeof\s+window/.test(mapFlatteningLayoutSrc),
+    'map-flattening-layout.js must stay side-effect-free with no window references'
+  );
 
-  console.log('  OK — view handoff camera prelude bridge retired; direct import remains');
+  console.log('  OK — view handoff terrain/map flattening bridges retired; direct imports remain');
 }
 
 // ── TEST 11 — Legend collapsed-panel bridge is retired ─────────────────────

@@ -28,11 +28,12 @@ import {
 } from './modules/mycelium-engine.js';
 import { setSceneRevealDataset } from './modules/scene-reveal.js';
 import { showExperienceToast } from './modules/ui-feedback.js';
+import { applyMapFlatteningLayout } from './modules/map-flattening-layout.js';
 
 // three-setup.js - Three.js state.scene initialization, state.scene management, animation loop
 // Extracted from vector-explorer-polished.html inline script
 
-export { updateMyceliumThreads };
+export { updateMyceliumThreads, applyMapFlatteningLayout };
 
 // RAF handle for cancelation on deinit/re-init
 let _rafId = null;
@@ -1204,37 +1205,6 @@ export function createMycelium() {
     state.scenePerformanceDiagnostics.myceliumCoreSegments = coreConnections.length / 6;
     state.scenePerformanceDiagnostics.myceliumWispySegments = wispyConnections.length / 6;
     state.scenePerformanceDiagnostics.myceliumBridgeSegments = bridgeConnections.length / 6;
-}
-
-export function applyMapFlatteningLayout(enabled) {
-    if (!state.points || !state.originalPositions) return;
-
-    if (enabled) {
-        // 10/10 Polish: Geographic Projection for Map Flattening
-        const bounds = state.overviewBounds;
-        const centerX = bounds.sourceCenter.x;
-        const centerY = bounds.sourceCenter.y;
-
-        state.points.forEach((point, i) => {
-            const rawX = Number.isFinite(point.x) ? point.x : 0;
-            const rawY = Number.isFinite(point.y) ? point.y : 0;
-
-            state.targetPositions[i] = {
-                x: rawX - centerX,
-                y: rawY - centerY,
-                z: -0.15 // Flatten to 2D plane
-            };
-        });
-    } else {
-        // Restore 3D Mycelium
-        state.points.forEach((point, i) => {
-            const orig = state.originalPositions[i];
-            if (orig) {
-                state.targetPositions[i] = { x: orig.x, y: orig.y, z: orig.z };
-            }
-        });
-    }
-    state.nodesAreSettling = true;
 }
 
 // 10/10 Polish: Search Corridor Hero Moment
@@ -2461,7 +2431,6 @@ if (typeof window !== "undefined") {
     window.createPoints = createPoints;
     window.syncNodeSporeColorsFromPointColors = syncNodeSporeColorsFromPointColors;
     window.createMycelium = createMycelium;
-    window.applyMapFlatteningLayout = applyMapFlatteningLayout;
     window.triggerSearchHeroMoment = triggerSearchHeroMoment;
     window.triggerCorridorNodeGlow = triggerCorridorNodeGlow;
     window.triggerSearchCorridorAnimation = triggerSearchCorridorAnimation;

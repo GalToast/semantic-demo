@@ -33,7 +33,7 @@
 | `window.setSemanticDiveMode` (journey.js) | journey.js:3096 (overrides lifecycle.js) | journey.js:61 | Overwrites lifecycle shim |
 | `window.animateCameraToNode` | app.js:84 → camera-controls.js | camera-controls.js:1171 | Animation non-functional |
 | `window.animateCameraToTerrainPrelude` | **Retired 2026-05-25** | view-controller imports terrain prelude directly from camera-controls |
-| `window.applyMapFlatteningLayout` | three-setup compatibility bridge retained | view-controller still uses guarded bridge because three-setup has browser-only top-level side effects and is not safe to import into Node-tested modules yet |
+| `window.applyMapFlatteningLayout` | **Retired 2026-05-25** | view-controller imports `applyMapFlatteningLayout` directly from side-effect-free `map-flattening-layout.js`; three-setup re-exports the named function without a flat window bridge |
 | `window.restoreLegendCollapsedPanel` | **Retired 2026-05-25** | lifecycle and event-bindings import `restoreLegendCollapsedPanel` directly from legend-ui.js |
 | `window.animateCameraToSearchCorridor` | camera-controls.js:1239 | (internal) | — |
 | `window.animateCameraToOverview` | camera-controls.js:1238 | (internal) | — |

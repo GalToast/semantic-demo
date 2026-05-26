@@ -26,6 +26,7 @@ import {
     getViewHandoffModel
 } from './journey-compass-controller.js';
 import { semanticGuideIcon } from './semantic-guide.js';
+import { applyMapFlatteningLayout } from './map-flattening-layout.js';
 
 export function hideViewHandoff() {
     const handoff = document.getElementById('view-handoff');
@@ -100,9 +101,7 @@ export function switchView(view, options = {}) {
         animateCameraToTerrainPrelude({ duration: state.MAP_HANDOFF_PRELUDE_MS || 1200 });
         
         // 10/10 Polish: Flatten Three.js nodes to map coordinates during prelude
-        if (typeof window.applyMapFlatteningLayout === 'function') {
-            window.applyMapFlatteningLayout(true);
-        }
+        applyMapFlatteningLayout(true);
 
         showViewHandoff('map');
         state.viewSwitchPreludeTimer = window.setTimeout(() => {
@@ -139,9 +138,7 @@ export function switchView(view, options = {}) {
         if (typeof window.clearRouteExploration === 'function') window.clearRouteExploration('map-handoff');
     } else if (previousView === 'map' && Number.isFinite(state.navState.focusedIndex)) {
         // 10/10 Polish: Reset map flattening
-        if (typeof window.applyMapFlatteningLayout === 'function') {
-            window.applyMapFlatteningLayout(false);
-        }
+        applyMapFlatteningLayout(false);
         
         // returning to galaxy from map while focused: restore focus pocket camera depth
         if (typeof window.animateCameraToNode === 'function') {
