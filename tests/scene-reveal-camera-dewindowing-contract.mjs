@@ -16,6 +16,7 @@ import { resolve } from 'node:path';
 const CWD = process.cwd();
 const sceneRevealPath = resolve(CWD, 'js/modules/scene-reveal.js');
 const cameraControlsPath = resolve(CWD, 'js/modules/camera-controls.js');
+const threeSetupPath = resolve(CWD, 'js/three-setup.js');
 
 let sceneRevealSrc;
 try {
@@ -81,6 +82,13 @@ try {
   cameraControlsSrc = '';
 }
 
+let threeSetupSrc;
+try {
+  threeSetupSrc = readFileSync(threeSetupPath, 'utf8');
+} catch {
+  threeSetupSrc = '';
+}
+
 checks.push({
   name: 'camera-controls:exports clearAutoRotateResumeTimer',
   pass: cameraControlsSrc.includes('export function clearAutoRotateResumeTimer'),
@@ -89,6 +97,16 @@ checks.push({
 checks.push({
   name: 'camera-controls:exports setAutoRotateSuspended',
   pass: cameraControlsSrc.includes('export function setAutoRotateSuspended'),
+});
+
+checks.push({
+  name: 'three-setup:exports updateCameraViewportOffset',
+  pass: threeSetupSrc.includes('export function updateCameraViewportOffset'),
+});
+
+checks.push({
+  name: 'three-setup:does not expose window.updateCameraViewportOffset',
+  pass: !/window\.updateCameraViewportOffset\s*=/.test(threeSetupSrc),
 });
 
 // ---------------------------------------------------------------------------

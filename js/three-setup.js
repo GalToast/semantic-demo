@@ -2443,7 +2443,6 @@ export function animate() {
 
 // Global exposure for compatibility
 if (typeof window !== "undefined") {
-    window.updateCameraViewportOffset = updateCameraViewportOffset;
     window.createPoints = createPoints;
     window.syncNodeSporeColorsFromPointColors = syncNodeSporeColorsFromPointColors;
     window.createMycelium = createMycelium;
