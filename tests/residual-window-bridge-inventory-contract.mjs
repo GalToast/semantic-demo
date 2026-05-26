@@ -433,7 +433,7 @@ function testBareCallBaseline() {
   const ALLOWED_UNGUARDED = new Set([
     'app', 'lifecycle', 'eventBindings', 'journey', 'camera',
     'demoController', 'journeyCompassCtrl', 'journeyCompassState',
-    'clusterFilter', 'focusPocket', 'clusterLabels', 'audio',
+    'clusterFilter', 'focusPocket', 'clusterLabels',
     'viewController', 'navigationState', 'journeyWebgl',
   ]);
 
@@ -771,11 +771,46 @@ function testCanvasPickGlobalsRetiredFromWindow() {
   console.log('  OK — canvas/focus pick globals retired from window; state diagnostics remain');
 }
 
-// ── TEST 13 — Verify window-bridge-gaps-contract.mjs still passes ────────────
+// ── TEST 13 — Audio globals are retired from window ─────────────────────────
+
+function testAudioGlobalsRetiredFromWindow() {
+  console.log('\n[TEST 13] audio globals are retired from window');
+
+  const audioSrc = read('audio');
+  const threeSetupSrc = read('threeSetup');
+  const retiredGlobals = ['triggerCorridorBloom', 'triggerAudio', 'playAudio'];
+  const problems = [];
+
+  for (const name of retiredGlobals) {
+    if (audioSrc.includes(`window.${name}`)) {
+      problems.push(`audio-scape.js unexpectedly exposes window.${name}`);
+    }
+    if (threeSetupSrc.includes(`window.${name}`)) {
+      problems.push(`three-setup.js unexpectedly calls window.${name}`);
+    }
+  }
+
+  assert(
+    /import\s+\{[^}]*\btriggerCorridorBloom\b[^}]*\}\s+from\s+['"]\.\/modules\/audio-scape\.js['"]/.test(threeSetupSrc),
+    'three-setup.js should import triggerCorridorBloom directly from audio-scape.js'
+  );
+  assert(
+    /triggerCorridorBloom\(\);/.test(threeSetupSrc),
+    'three-setup.js should call triggerCorridorBloom directly for corridor animation audio'
+  );
+  assert(
+    problems.length === 0,
+    `audio globals should use direct imports or stay internal, not window bridges:\n${problems.join('\n')}`
+  );
+
+  console.log('  OK — audio window globals retired; direct corridor bloom import remains');
+}
+
+// ── TEST 14 — Verify window-bridge-gaps-contract.mjs still passes ────────────
 // Run the sibling contract to ensure no regressions in the already-dewindowed seams.
 
 function testSiblingContractStillPasses() {
-  console.log('\n[TEST 13] sibling window-bridge-gaps-contract.mjs still passes');
+  console.log('\n[TEST 14] sibling window-bridge-gaps-contract.mjs still passes');
 
   try {
     const result = execFileSync(
@@ -815,6 +850,7 @@ try {
   testViewHandoffCameraPreludeBridgeRetired();
   testRestoreLegendCollapsedPanelBridgeRetired();
   testCanvasPickGlobalsRetiredFromWindow();
+  testAudioGlobalsRetiredFromWindow();
   testSiblingContractStillPasses();
 
   console.log('\n=================================================================');

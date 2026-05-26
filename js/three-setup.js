@@ -29,6 +29,7 @@ import {
 import { setSceneRevealDataset } from './modules/scene-reveal.js';
 import { showExperienceToast } from './modules/ui-feedback.js';
 import { applyMapFlatteningLayout } from './modules/map-flattening-layout.js';
+import { triggerCorridorBloom } from './modules/audio-scape.js';
 
 // three-setup.js - Three.js state.scene initialization, state.scene management, animation loop
 // Extracted from vector-explorer-polished.html inline script
@@ -1552,7 +1553,7 @@ export function triggerSearchCorridorAnimation(anchorIndex, routeIndices = []) {
         && typeof window.matchMedia === 'function'
         && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) return;
-    if (typeof window.triggerCorridorBloom === 'function') window.triggerCorridorBloom();
+    triggerCorridorBloom();
     if (!state.scene) return;
 
     const lineGeometry = buildCorridorLineGeometry(anchorIndex, routeIndices);

@@ -53,9 +53,9 @@
 | `window.updateHasQuery` | app.js:126 → event-bindings.js | (internal) | Query indicator stale |
 | `window.findClusterByKeyword` | app.js:127 | (internal) | Cluster search broken |
 | `window.initAudio` | app.js:63 → audio-scape.js | (internal) | Audio init broken |
-| `window.triggerCorridorBloom` | audio-scape.js:178 | three-setup.js:1559 | Bloom animation broken |
-| `window.playAudio` | audio-scape.js:179 | (internal) | Audio playback broken |
-| `window.triggerAudio` | audio-scape.js:180 | (internal) | Audio triggers broken |
+| `window.triggerCorridorBloom` | retired | three-setup.js imports `triggerCorridorBloom` directly | Retired 2026-05-26 |
+| `window.playAudio` | retired | no runtime/HTML/test callers found | Retired 2026-05-26 |
+| `window.triggerAudio` | retired | no runtime/HTML/test callers found | Retired 2026-05-26 |
 | `window.applyClusterUiAccent` | app.js:112 | journey.js:1149/1162/1170/1325/1389 | Card accent broken |
 | `window.initWeather` | app.js:105 → weather.js | (internal) | Weather init broken |
 | `window.fetchWeather` | app.js:106 → weather.js | (internal) | Weather fetch broken |

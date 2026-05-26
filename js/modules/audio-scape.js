@@ -174,7 +174,3 @@ export function trigger(name) {
 }
 
 export const play = trigger;
-
-window.triggerCorridorBloom = triggerCorridorBloom;
-window.triggerAudio = trigger;
-window.playAudio = play;
