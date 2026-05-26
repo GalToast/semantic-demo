@@ -142,6 +142,7 @@ import {
 
 export { setLoadingPhase, hideLoadingOverlay, startDeferredHydration, scheduleWeatherHydration };
 export { startSceneReveal, getSceneRevealProgress, onWindowResize };
+export { syncFocusStage };
 export { clearClusterFilter, updateClusterList, getFilteredClusterCounts, applyFilters, syncCityFilterUi, populateCityFilter, syncFilterControls };
 export { updateTime };
 export {

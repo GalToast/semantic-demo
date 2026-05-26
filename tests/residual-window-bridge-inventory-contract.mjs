@@ -564,6 +564,14 @@ function testJourneyArrivalHandoffDewindowed() {
     /import\s+\{[^}]*\bsyncArrivalHandoffOverlay\b[^}]*\bdisposeArrivalHandoffOverlay\b[^}]*\}\s+from\s+['"]\.\/journey-webgl\.js['"]/.test(threadInspectorSrc),
     'thread-inspector.js should import arrival handoff functions directly from journey-webgl.js'
   );
+  assert(
+    /import\s+\{[^}]*\bsyncFocusStage\b[^}]*\}\s+from\s+['"]\.\/lifecycle\.js['"]/.test(threadInspectorSrc),
+    'thread-inspector.js should import syncFocusStage through lifecycle.js instead of the window bridge'
+  );
+  assert(
+    !threadInspectorSrc.includes('window.syncFocusStage'),
+    'thread-inspector.js must not call window.syncFocusStage'
+  );
 
   const journeyWebglSrc = read('journeyWebgl');
   assert(
