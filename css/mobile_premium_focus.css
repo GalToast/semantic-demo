@@ -537,6 +537,7 @@
         left: 0;
         right: 0;
         bottom: 0;
+        box-sizing: border-box;
         width: 100%;
         max-width: 100%;
         padding: 20px 16px calc(14px + env(safe-area-inset-bottom, 0px));

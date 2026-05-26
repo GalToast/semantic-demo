@@ -828,7 +828,8 @@ async function run() {
           await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }));
           await waitForReady(mobilePage);
           const firstResult = mobilePage.locator('.search-result-item').first();
-          if (await firstResult.count()) {
+          await firstResult.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+          if (await firstResult.isVisible().catch(() => false)) {
             await firstResult.click({ timeout: 5000 }).catch(() => {});
           }
           await mobilePage.waitForTimeout(600);
@@ -846,6 +847,9 @@ async function run() {
               Number.isFinite(state.currentSearchSummary?.anchorIndex) ? state.currentSearchSummary.anchorIndex :
               519;
             if (typeof window.setTrailFromSeed === 'function' && Number.isFinite(seedIndex)) {
+              state.focusedNode = seedIndex;
+              state.navState = state.navState || {};
+              state.navState.focusedIndex = seedIndex;
               window.setTrailFromSeed(seedIndex);
             }
             if (document.body?.dataset) {
@@ -933,7 +937,8 @@ async function run() {
             let inspectionState = null;
             if (candidate && inspectThreadNeighbor) {
               inspectionState = inspectThreadNeighbor(candidate.index, { force: true, surface: 'inspector' });
-            } else if (candidate && renderThreadInspection) {
+            }
+            if (candidate && !inspectionState?.active && renderThreadInspection) {
               state.inspectedThreadIndex = candidate.index;
               inspectionState = renderThreadInspection(candidate.index, { force: true, surface: 'inspector' });
             }
