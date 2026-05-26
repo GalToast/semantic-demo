@@ -121,7 +121,7 @@ test.describe('resetExperienceState cleanup regression', () => {
 
     // After reset, no viewSwitchPreludeTimer should be pending
     const timerState = await page.evaluate(() => {
-      return window.state?.viewSwitchPreludeTimer ?? null;
+      return window.__TEST_STATE__?.viewSwitchPreludeTimer ?? null;
     });
 
     // null means cleared; a number (timer ID) means it leaked

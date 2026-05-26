@@ -19,7 +19,7 @@ async function findReachableNodeCoordinate(page) {
     if (state.canvasCursor !== 'pointer' || !Number.isFinite(state.hoverHighlightIndex)) continue;
 
     const stack = await page.evaluate(({ x, y }) => {
-      const canvas = window.state?.renderer?.domElement;
+      const canvas = window.__TEST_STATE__?.renderer?.domElement;
       return document.elementsFromPoint(x, y).map((el, order) => ({
         order,
         isCanvas: el === canvas,
@@ -145,12 +145,12 @@ test.describe('3D overlay hit ownership', () => {
     await openApp(page, { width: 844, height: 390 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.state.pointIndexByLeadId.has(pt.lead_id)) {
-          const node = window.state.semanticNeighborMapByLeadId?.get(pt.lead_id);
+        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
+          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pt.lead_id);
           if (node?.neighbors?.length > 0) return i;
         }
       }
@@ -160,7 +160,7 @@ test.describe('3D overlay hit ownership', () => {
     await page.evaluate(idx => {
       if (typeof window.focusOnNode === 'function') window.focusOnNode(idx);
     }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
     const pocket = await probeFocusPocket(page);
@@ -175,12 +175,12 @@ test.describe('3D overlay hit ownership', () => {
     await openApp(page, { width: 390, height: 844 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.state.pointIndexByLeadId.has(pt.lead_id)) {
-          const node = window.state.semanticNeighborMapByLeadId?.get(pt.lead_id);
+        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
+          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pt.lead_id);
           if (node?.neighbors?.length > 0) return i;
         }
       }
@@ -190,7 +190,7 @@ test.describe('3D overlay hit ownership', () => {
     await page.evaluate(idx => {
       if (typeof window.focusOnNode === 'function') window.focusOnNode(idx);
     }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
     const pocket = await probeFocusPocket(page);
@@ -203,12 +203,12 @@ test.describe('3D overlay hit ownership', () => {
     await openApp(page, { width: 390, height: 844 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.state.pointIndexByLeadId.has(pt.lead_id)) {
-          const node = window.state.semanticNeighborMapByLeadId?.get(pt.lead_id);
+        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
+          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pt.lead_id);
           if (node?.neighbors?.length > 0) return i;
         }
       }
@@ -218,18 +218,18 @@ test.describe('3D overlay hit ownership', () => {
     await page.evaluate(idx => {
       if (typeof window.focusOnNode === 'function') window.focusOnNode(idx);
     }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(1000);
 
     const centers = await overlayCenters(page);
 
     // Get projected screen coordinates of 2-3 focus-neighborhood nodes
     const neighborhoodScreenPoints = await page.evaluate(() => {
-      const nav = window.state?.navState;
+      const nav = window.__TEST_STATE__?.navState;
       if (!nav || nav.mode !== 'focus' || !Number.isFinite(nav.focusedIndex)) return [];
       const anchorIdx = nav.focusedIndex;
-      const pts = window.state.points;
-      const semanticMap = window.state.semanticNeighborMapByLeadId;
+      const pts = window.__TEST_STATE__.points;
+      const semanticMap = window.__TEST_STATE__.semanticNeighborMapByLeadId;
       if (!pts || !semanticMap) return [];
 
       const anchorLeadId = pts[anchorIdx]?.lead_id;
@@ -239,7 +239,7 @@ test.describe('3D overlay hit ownership', () => {
       return allIndices.map(idx => {
         const pt = pts[idx];
         if (!pt) return null;
-        const projected = window.state.renderer?.computeProjectedPoint?.(pt);
+        const projected = window.__TEST_STATE__.renderer?.computeProjectedPoint?.(pt);
         if (!projected) return null;
         return { idx, screenX: projected.x, screenY: projected.y };
       }).filter(Boolean);

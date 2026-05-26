@@ -32,7 +32,7 @@ async function clickValidNode(page) {
 
 async function wheelAtCanvasCenter(page, deltaY) {
   const rect = await page.evaluate(() => {
-    const box = window.state?.renderer?.domElement?.getBoundingClientRect();
+    const box = window.__TEST_STATE__?.renderer?.domElement?.getBoundingClientRect();
     return box ? { left: box.left, top: box.top, width: box.width, height: box.height } : null;
   });
   expect(rect, 'canvas rect must exist for wheel interaction').not.toBeNull();
@@ -43,7 +43,7 @@ async function wheelAtCanvasCenter(page, deltaY) {
 
 async function dragCanvas(page, dx, dy) {
   const rect = await page.evaluate(() => {
-    const box = window.state?.renderer?.domElement?.getBoundingClientRect();
+    const box = window.__TEST_STATE__?.renderer?.domElement?.getBoundingClientRect();
     return box ? { left: box.left, top: box.top, width: box.width, height: box.height } : null;
   });
   expect(rect, 'canvas rect must exist for drag interaction').not.toBeNull();

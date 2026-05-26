@@ -40,7 +40,7 @@ async function waitForServer(proc) {
 async function waitForScene(page) {
     await page.waitForLoadState('domcontentloaded', { timeout: 8000 }).catch(() => {});
     await page.waitForFunction(() => {
-        const state = window.state;
+        const state = window.__TEST_STATE__;
         const canvas = document.querySelector('#canvas-container canvas');
         return Boolean(
             canvas
@@ -149,7 +149,7 @@ async function sceneLuminance(file) {
 
 async function inspectScene(page) {
     return page.evaluate(() => {
-        const state = window.state;
+        const state = window.__TEST_STATE__;
         const canvas = document.querySelector('#canvas-container canvas');
         const rectFor = (selector) => {
             const element = document.querySelector(selector);
@@ -345,17 +345,17 @@ async function main() {
             });
             await page.goto(withParams(params), { waitUntil: 'commit' });
             await waitForScene(page);
-            await page.waitForFunction(() => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length), { timeout: 5000 }).catch(() => {});
+            await page.waitForFunction(() => Boolean(window.__TEST_STATE__?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length), { timeout: 5000 }).catch(() => {});
             if (setup) await setup(page);
             if (process.env.SEMANTIC_SCENE_DIAG_HIDE) {
                 await page.evaluate((hideList) => {
                     const names = new Set(String(hideList).split(',').map((item) => item.trim()).filter(Boolean));
-                    if (names.has('spores') && window.state?.nodeSporeMesh) window.state.nodeSporeMesh.visible = false;
-                    if (names.has('points') && window.state?.pointsMesh) window.state.pointsMesh.visible = false;
-                    if (names.has('manifold') && window.state?.semanticManifold) window.state.semanticManifold.visible = false;
+                    if (names.has('spores') && window.__TEST_STATE__?.nodeSporeMesh) window.__TEST_STATE__.nodeSporeMesh.visible = false;
+                    if (names.has('points') && window.__TEST_STATE__?.pointsMesh) window.__TEST_STATE__.pointsMesh.visible = false;
+                    if (names.has('manifold') && window.__TEST_STATE__?.semanticManifold) window.__TEST_STATE__.semanticManifold.visible = false;
                     if (names.has('focus')) {
                         ['focusHalo', 'focusCore', 'focusLens', 'focusFilaments', 'semanticLensGroup'].forEach((key) => {
-                            if (window.state?.[key]) window.state[key].visible = false;
+                            if (window.__TEST_STATE__?.[key]) window.__TEST_STATE__[key].visible = false;
                         });
                     }
                 }, process.env.SEMANTIC_SCENE_DIAG_HIDE);
@@ -371,12 +371,12 @@ async function main() {
         const idleResult = await runFreshPage('01-mobile-idle-galaxy', { view: 'galaxy' });
         const focusSetup = async (page) => {
             await page.evaluate(() => {
-                const preferred = window.state?.pointIndexByLeadId?.get('519');
+                const preferred = window.__TEST_STATE__?.pointIndexByLeadId?.get('519');
                 let targetIndex = Number.isFinite(preferred) ? preferred : null;
                 if (targetIndex === null) {
-                    for (const [leadId, threadNode] of window.state?.semanticNeighborMapByLeadId || []) {
+                    for (const [leadId, threadNode] of window.__TEST_STATE__?.semanticNeighborMapByLeadId || []) {
                         if (!threadNode?.neighbors?.length) continue;
-                        const candidateIndex = window.state?.pointIndexByLeadId?.get(String(leadId));
+                        const candidateIndex = window.__TEST_STATE__?.pointIndexByLeadId?.get(String(leadId));
                         if (Number.isFinite(candidateIndex)) {
                             targetIndex = candidateIndex;
                             break;

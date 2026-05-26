@@ -55,7 +55,7 @@ async function searchAndFocusFirstResult(page, query = 'coffee') {
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
   }
   await page.locator('.search-result-item').first().click();
-  await page.waitForFunction(() => Number.isFinite(window.state?.focusedNode), { timeout: 15000 });
+  await page.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 15000 });
   await page.waitForTimeout(900);
 }
 
@@ -66,7 +66,7 @@ async function clickStepInside(page) {
   await expect(stepInside).toBeVisible({ timeout: 10000 });
   await stepInside.click();
   await page.waitForFunction(() => (
-    window.state?.trailDepth === 2 &&
+    window.__TEST_STATE__?.trailDepth === 2 &&
     document.body.dataset.semanticDive === 'active'
   ), { timeout: 15000 });
 }
@@ -82,11 +82,11 @@ async function stateProbe(page) {
       trailDepth: document.body.dataset.trailDepth || ''
     },
     state: {
-      currentView: window.state?.currentView || '',
-      focusedNode: window.state?.focusedNode ?? null,
-      trailDepth: window.state?.trailDepth ?? null,
-      semanticDiveMode: window.state?.semanticDiveMode ?? null,
-      navMode: window.state?.navState?.mode || ''
+      currentView: window.__TEST_STATE__?.currentView || '',
+      focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
+      trailDepth: window.__TEST_STATE__?.trailDepth ?? null,
+      semanticDiveMode: window.__TEST_STATE__?.semanticDiveMode ?? null,
+      navMode: window.__TEST_STATE__?.navState?.mode || ''
     }
   }));
 }

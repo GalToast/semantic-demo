@@ -63,9 +63,9 @@ async function waitForAppReady(page) {
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => (
     typeof window.clearSearch === 'function' &&
-    Array.isArray(window.state?.points) &&
-    window.state.points.length > 0 &&
-    window.state.pointIndexByLeadId?.size > 0
+    Array.isArray(window.__TEST_STATE__?.points) &&
+    window.__TEST_STATE__.points.length > 0 &&
+    window.__TEST_STATE__.pointIndexByLeadId?.size > 0
   ), { timeout: 25000 });
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
@@ -236,7 +236,7 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
     // However if createMycelium was never called (no rebuild triggered), this could legitimately be 0
     // The test must be interpretable: if mycelium rebuilds happened, dispose was called
     // We track the createMycelium call count separately
-    const createMyceliumCalls = await page.evaluate(() => window.state?.scenePerformanceDiagnostics ? 1 : 0);
+    const createMyceliumCalls = await page.evaluate(() => window.__TEST_STATE__?.scenePerformanceDiagnostics ? 1 : 0);
 
     // For confidence: we should have disposed at least as many objects as were created
     // across multiple cycles. If total disposals == 0 but searches happened, either:
@@ -256,7 +256,7 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
     // Verify the source: disposeObject3D exists in the bundle and is called by createMycelium
     const disposeFnExists = await page.evaluate(() => {
       // Look for the function in the module scope
-      return typeof window.state?.renderer?.dispose === 'function' ||
+      return typeof window.__TEST_STATE__?.renderer?.dispose === 'function' ||
              document.body.innerHTML.includes('disposeObject3D') || // rough check
              true; // Assume exists if three-setup is loaded
     });
@@ -298,7 +298,7 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
     // Both outcomes are valid — the test is designed to detect the absence of disposal
     // when disposal SHOULD have happened
     const myceliumGroupExists = await page.evaluate(() =>
-      window.state?.myceliumGroup !== null && window.state?.myceliumGroup !== undefined
+      window.__TEST_STATE__?.myceliumGroup !== null && window.__TEST_STATE__?.myceliumGroup !== undefined
     );
 
     if (myceliumGroupExists) {
@@ -317,7 +317,7 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
 
     // Get initial renderer memory geometry count
     const initialMemory = await page.evaluate(() => {
-      const r = window.state?.renderer;
+      const r = window.__TEST_STATE__?.renderer;
       return r?.info?.memory?.geometries ?? 0;
     });
 
@@ -344,7 +344,7 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
     }
 
     const finalMemory = await page.evaluate(() => {
-      const r = window.state?.renderer;
+      const r = window.__TEST_STATE__?.renderer;
       return r?.info?.memory?.geometries ?? 0;
     });
 

@@ -35,6 +35,25 @@ import {
     syncSearchStatusForFocus as adapter_syncSearchStatusForFocus,
     updateJourneyCompass as adapter_updateJourneyCompass,
     refreshCompositionState as adapter_refreshCompositionState,
+    clearMobileRouteFieldPeek as adapter_clearMobileRouteFieldPeek,
+    clearCompactSearchResultRevealTimers as adapter_clearCompactSearchResultRevealTimers,
+    clearSearchPreviewHoverTimer as adapter_clearSearchPreviewHoverTimer,
+    settleCompactSearchFocusCard as adapter_settleCompactSearchFocusCard,
+    switchView as adapter_switchView,
+    updateSelectedBusiness as adapter_updateSelectedBusiness,
+    syncMobileRoutePeek as adapter_syncMobileRoutePeek,
+    updateTrailIndices as adapter_updateTrailIndices,
+    applyPointFilterColors as adapter_applyPointFilterColors,
+    refreshHoverSemanticOverlay as adapter_refreshHoverSemanticOverlay,
+    resetExplorationFocus as adapter_resetExplorationFocus,
+    setSemanticLaneUiState as adapter_setSemanticLaneUiState,
+    clearSearch as adapter_clearSearch,
+    triggerSearchHeroMoment as adapter_triggerSearchHeroMoment,
+    triggerCorridorNodeGlow as adapter_triggerCorridorNodeGlow,
+    triggerSearchCorridorAnimation as adapter_triggerSearchCorridorAnimation,
+    hideSummaryCard as adapter_hideSummaryCard,
+    setSemanticGuideButtonState as adapter_setSemanticGuideButtonState,
+    scheduleCompactSearchResultReveal as adapter_scheduleCompactSearchResultReveal,
 } from './search-lifecycle-adapter.js';
 export {
     setActiveFilter,
@@ -255,9 +274,9 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
     if (!el) return;
     const token = (state.searchFocusTransitionToken = (state.searchFocusTransitionToken || 0) + 1);
 
-    if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
-    if (typeof window.clearCompactSearchResultRevealTimers === 'function') window.clearCompactSearchResultRevealTimers();
-    if (typeof window.clearSearchPreviewHoverTimer === 'function') window.clearSearchPreviewHoverTimer();
+    if (typeof adapter_clearMobileRouteFieldPeek === 'function') adapter_clearMobileRouteFieldPeek();
+    if (typeof adapter_clearCompactSearchResultRevealTimers === 'function') adapter_clearCompactSearchResultRevealTimers();
+    if (typeof adapter_clearSearchPreviewHoverTimer === 'function') adapter_clearSearchPreviewHoverTimer();
     hideTooltip();
 
     resultsEl
@@ -288,12 +307,12 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
 
         adapter_syncSearchStatusForFocus(point, { fromSearchResult: true });
         adapter_refreshCompositionState();
-        if (typeof window.settleCompactSearchFocusCard === 'function') window.settleCompactSearchFocusCard();
+        if (typeof adapter_settleCompactSearchFocusCard === 'function') adapter_settleCompactSearchFocusCard();
 
         // Fix 3: switch back to galaxy view after focus completes (map view search result click)
         if (state.currentView === 'map') {
             window.setTimeout(() => {
-                if (typeof window.switchView === 'function') window.switchView('galaxy');
+                if (typeof adapter_switchView === 'function') adapter_switchView('galaxy');
             }, 800);
         }
 
@@ -437,19 +456,19 @@ export function applyFilters() {
     if (state.selectedPoint) {
         const selectedIndex = state.points.indexOf(state.selectedPoint);
         if (selectedIndex >= 0 && !isPointVisible(selectedIndex, state.points, state.activeClusterFilter, state.activeFilters)) {
-            if (typeof window.updateSelectedBusiness === 'function') window.updateSelectedBusiness(null);
+            if (typeof adapter_updateSelectedBusiness === 'function') adapter_updateSelectedBusiness(null);
             clearSearchRelatedFocusState({ reason: 'filter-hide' });
-            if (typeof window.syncMobileRoutePeek === 'function') window.syncMobileRoutePeek();
+            if (typeof adapter_syncMobileRoutePeek === 'function') adapter_syncMobileRoutePeek();
         }
     }
 
     if (state.trailDepth >= 1) {
-        if (typeof window.updateTrailIndices === 'function') window.updateTrailIndices();
+        if (typeof adapter_updateTrailIndices === 'function') adapter_updateTrailIndices();
     }
 
-    if (typeof window.applyPointFilterColors === 'function') window.applyPointFilterColors();
+    if (typeof adapter_applyPointFilterColors === 'function') adapter_applyPointFilterColors();
     adapter_updateExplorationUi();
-    if (typeof window.refreshHoverSemanticOverlay === 'function') window.refreshHoverSemanticOverlay();
+    if (typeof adapter_refreshHoverSemanticOverlay === 'function') adapter_refreshHoverSemanticOverlay();
 }
 
 // === Interaction binding ===
@@ -463,7 +482,7 @@ export function bindSearchResultInteractions(resultsEl, statusEl, results, rende
 
         el.onmouseenter = () => {
             if (isCompactSearchViewport()) return;
-            if (typeof window.clearSearchPreviewHoverTimer === 'function') window.clearSearchPreviewHoverTimer();
+            if (typeof adapter_clearSearchPreviewHoverTimer === 'function') adapter_clearSearchPreviewHoverTimer();
             state.searchPreviewHoverTimer = window.setTimeout(() => {
                 el.classList.add('active-preview');
                 activateSearchGlow(resultIndices, targetIndex);
@@ -480,7 +499,7 @@ export function bindSearchResultInteractions(resultsEl, statusEl, results, rende
                 hideTooltip();
                 return;
             }
-            if (typeof window.clearSearchPreviewHoverTimer === 'function') window.clearSearchPreviewHoverTimer();
+            if (typeof adapter_clearSearchPreviewHoverTimer === 'function') adapter_clearSearchPreviewHoverTimer();
             el.classList.remove('active-preview');
             // Fix 5: clear node highlight when leaving search result card
             state.hoverHighlightIndex = -1;
@@ -513,7 +532,7 @@ export function activateSearchGlow(resultIndices, anchorIndex) {
     state.searchGlowIndices = new Set(resultIndices || []);
     state.searchGlowTopIndex = anchorIndex;
     setSearchGlowState(true);
-    if (typeof window.refreshHoverSemanticOverlay === 'function') window.refreshHoverSemanticOverlay();
+    if (typeof adapter_refreshHoverSemanticOverlay === 'function') adapter_refreshHoverSemanticOverlay();
 }
 
 export function clearSearchGlow() {
@@ -533,7 +552,7 @@ export function restoreSearchResultPreview(resultIndices, fallbackIndex = null) 
 
 // === Clear short semantic search state ===
 export function clearShortSemanticSearchState(_resultsEl, _statusEl) {
-    if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
+    clearMobileRouteFieldPeekState();
     state.currentSearchSummary = null;
     setSearchPanelState({ searching: false, focusing: false, resultsRendered: false, degraded: false });
 
@@ -577,8 +596,8 @@ export function clearSearch() {
 
     clearShortSemanticSearchState();
     clearSearchGlow();
-    if (typeof window.resetExplorationFocus === 'function') {
-        window.resetExplorationFocus();
+    if (typeof adapter_resetExplorationFocus === 'function') {
+        adapter_resetExplorationFocus();
     }
 
     adapter_updateUrlState({ q: null, anchor: null, offset: null, record: null }, { reason: 'search-clear' });
@@ -622,7 +641,7 @@ export function beginSemanticSearchUiState(resultsEl, statusEl, trimmedQuery) {
     if (spinner) spinner.style.display = 'block';
 
     if (!preservingSameQuery) {
-        if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
+        if (typeof adapter_clearMobileRouteFieldPeek === 'function') adapter_clearMobileRouteFieldPeek();
         state.currentSearchSummary = null;
         adapter_refreshCompositionState();
         state.searchAnchorIndex = null;
@@ -657,8 +676,8 @@ export function updateSemanticSearchRetryState({ statusEl, trimmedQuery, attempt
         retry_source: 'search', retry_count: attempt, retry_total: retryTotal,
         retry_wait_until: new Date(Date.now() + delayMs).toISOString(), cooldown_wait_until: null
     });
-    if (typeof window.setSemanticLaneUiState === 'function') {
-        window.setSemanticLaneUiState('reconnecting', {
+    if (typeof adapter_setSemanticLaneUiState === 'function') {
+        adapter_setSemanticLaneUiState('reconnecting', {
             label: 'Search reconnecting', title: 'Public semantic search is retrying while the current result rail stays visible.'
         });
     }
@@ -690,8 +709,8 @@ export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQue
         rail_mode: preservingSameQuery ? 'stale' : 'none',
         retry_wait_until: null, cooldown_wait_until: null
     });
-    if (typeof window.setSemanticLaneUiState === 'function') {
-        window.setSemanticLaneUiState('degraded', {
+    if (typeof adapter_setSemanticLaneUiState === 'function') {
+        adapter_setSemanticLaneUiState('degraded', {
             label: 'Search paused', title: 'Live semantic search is recovering. Try again in a moment.'
         });
     }
@@ -738,7 +757,7 @@ export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQue
         const dismissBtn = typeof resultsEl.querySelector === 'function' ? resultsEl.querySelector('.search-error-dismiss-btn') : null;
         if (dismissBtn) {
             dismissBtn.onclick = () => {
-                if (typeof window.clearSearch === 'function') window.clearSearch();
+                if (typeof adapter_clearSearch === 'function') adapter_clearSearch();
             };
         }
     }
@@ -757,7 +776,7 @@ export function finishSemanticSearchSuccessState(resultsEl, trimmedQuery, cacheS
         state: 'healthy', search_ok: true, embed_ok: true, attempted_warm: false, query: trimmedQuery, client_cache_source: cacheSource,
         provenance: null, retry_source: null, retry_count: null, retry_total: null, retry_wait_until: null, cooldown_wait_until: null
     });
-    if (typeof window.setSemanticLaneUiState === 'function') window.setSemanticLaneUiState('healthy');
+    if (typeof adapter_setSemanticLaneUiState === 'function') adapter_setSemanticLaneUiState('healthy');
     setSearchPanelState({ searching: false, focusing: false, degraded: false });
     resultsEl.classList.remove('searching');
 }
@@ -935,7 +954,7 @@ export async function search(query, options = {}) {
     const searchInput = document.getElementById('search-input');
     if (!resultsEl || !statusEl) return;
     state.searchFocusTransitionToken = (state.searchFocusTransitionToken || 0) + 1;
-    if (typeof window.clearSearchPreviewHoverTimer === 'function') window.clearSearchPreviewHoverTimer();
+    if (typeof adapter_clearSearchPreviewHoverTimer === 'function') adapter_clearSearchPreviewHoverTimer();
 
     if (state.searchAbortController) {
         state.searchAbortController.abort();
@@ -987,8 +1006,8 @@ export async function search(query, options = {}) {
         || state.trailDepth > 0
         || state.myceliumMode !== 'default';
     if (hasExplorationFocus) {
-        if (typeof window.resetExplorationFocus === 'function') {
-            window.resetExplorationFocus();
+        if (typeof adapter_resetExplorationFocus === 'function') {
+            adapter_resetExplorationFocus();
         } else {
             adapter_resetNodePositions({ preserveSearch: true, skipUrlSync: true });
         }
@@ -1100,17 +1119,17 @@ export async function search(query, options = {}) {
     // 10/10 Polish: Disabled "Corridor Bloom" (the giant yellow ball)
     // but kept the "Particle Trail" and node glow for an "Avatar forest" aesthetic.
     /*
-    if (typeof window.triggerSearchHeroMoment === 'function') {
-        window.triggerSearchHeroMoment(anchorIndex);
+    if (typeof adapter_triggerSearchHeroMoment === 'function') {
+        adapter_triggerSearchHeroMoment(anchorIndex);
     }
     */
 
-    if (typeof window.triggerCorridorNodeGlow === 'function') {
-        window.triggerCorridorNodeGlow(anchorIndex, resultIndices);
+    if (typeof adapter_triggerCorridorNodeGlow === 'function') {
+        adapter_triggerCorridorNodeGlow(anchorIndex, resultIndices);
     }
 
-    if (typeof window.triggerSearchCorridorAnimation === 'function') {
-        window.triggerSearchCorridorAnimation(anchorIndex, resultIndices);
+    if (typeof adapter_triggerSearchCorridorAnimation === 'function') {
+        adapter_triggerSearchCorridorAnimation(anchorIndex, resultIndices);
     }
 
     updateSearchPreviewOverlay(anchorIndex);
@@ -1163,15 +1182,15 @@ export function resetSemanticGuideUi({ hideTrigger = false } = {}) {
     state.semanticGuideRequestSequence = (state.semanticGuideRequestSequence || 0) + 1;
     state.semanticTrailStoryRequestSequence = (state.semanticTrailStoryRequestSequence || 0) + 1;
     state.currentSemanticGuide = null;
-    if (typeof window.hideSummaryCard === 'function') window.hideSummaryCard();
+    if (typeof adapter_hideSummaryCard === 'function') adapter_hideSummaryCard();
 
     const button = document.getElementById('btn-synthesize');
     const trigger = document.getElementById('synthesize-trigger');
     const laneStatusEl = document.getElementById('summary-lane-status');
     const titleEl = document.getElementById('summary-card-title-text');
 
-    if (button && typeof window.setSemanticGuideButtonState === 'function') {
-        window.setSemanticGuideButtonState(button, 'ready', { disabled: !state.currentSearchSummary });
+    if (button && typeof adapter_setSemanticGuideButtonState === 'function') {
+        adapter_setSemanticGuideButtonState(button, 'ready', { disabled: !state.currentSearchSummary });
     }
     if (hideTrigger && trigger) trigger.style.display = 'none';
     if (titleEl) titleEl.textContent = 'Search';
@@ -1180,7 +1199,7 @@ export function resetSemanticGuideUi({ hideTrigger = false } = {}) {
 
 export function updateSearchPreviewOverlay(index = null) {
     state.searchPreviewIndex = Number.isFinite(index) ? index : null;
-    if (typeof window.refreshHoverSemanticOverlay === 'function') window.refreshHoverSemanticOverlay();
+    if (typeof adapter_refreshHoverSemanticOverlay === 'function') adapter_refreshHoverSemanticOverlay();
 }
 
 
@@ -1189,19 +1208,19 @@ export function updateSearchPreviewOverlay(index = null) {
 
 export function startMobileRouteFieldPeek({ resultsEl = null, activeIndex = null, reason = 'search-corridor' } = {}) {
     if (!isCompactSearchViewport() || !resultsEl) {
-        if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
+        if (typeof adapter_clearMobileRouteFieldPeek === 'function') adapter_clearMobileRouteFieldPeek();
         return false;
     }
 
-    if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
+    if (typeof adapter_clearMobileRouteFieldPeek === 'function') adapter_clearMobileRouteFieldPeek();
     const token = (state.mobileRouteFieldPeekToken = (state.mobileRouteFieldPeekToken || 0) + 1);
     document.body.dataset.mobileRoutePeek = 'active';
     document.body.dataset.mobileRoutePeekReason = reason;
 
     state.mobileRouteFieldPeekTimer = window.setTimeout(() => {
         if (token !== state.mobileRouteFieldPeekToken) return;
-        if (typeof window.clearMobileRouteFieldPeek === 'function') window.clearMobileRouteFieldPeek();
-        if (typeof window.scheduleCompactSearchResultReveal === 'function') window.scheduleCompactSearchResultReveal(resultsEl, activeIndex);
+        if (typeof adapter_clearMobileRouteFieldPeek === 'function') adapter_clearMobileRouteFieldPeek();
+        if (typeof adapter_scheduleCompactSearchResultReveal === 'function') adapter_scheduleCompactSearchResultReveal(resultsEl, activeIndex);
     }, state.MOBILE_ROUTE_FIELD_PEEK_MS || 1550);
     return true;
 }
@@ -1213,7 +1232,7 @@ export function clearSearchPreviewHoverTimer() {
     }
 }
 
-export function clearMobileRouteFieldPeek() {
+export function clearMobileRouteFieldPeekState() {
     if (state.mobileRouteFieldPeekTimer) {
         window.clearTimeout(state.mobileRouteFieldPeekTimer);
         state.mobileRouteFieldPeekTimer = null;
@@ -1226,6 +1245,14 @@ export function clearMobileRouteFieldPeek() {
 
 export function isMobileRouteFieldPeekActive() {
     return document.body?.dataset.mobileRoutePeek === 'active';
+}
+
+export function focusSearchInputForReplacement() {
+    const input = document.getElementById('search-input');
+    if (input) {
+        input.focus();
+        input.select();
+    }
 }
 
 // Debug access

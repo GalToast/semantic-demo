@@ -7,21 +7,26 @@ import { getProjectedNeighborCandidates } from './journey-thread-model.js';
 import { normalizeLeadId } from './journey-thread-model.js';
 import { truncateMicrocopy } from './thread-inspector-text-helpers.js';
 import { focusOnNode } from './camera-controls.js';
-import { dispatchNavTransition, updateJourneyCompass, focusOnPoint, syncFocusStage } from './lifecycle.js';
+import { dispatchNavTransition, focusOnPoint, syncFocusStage } from './lifecycle.js';
+import { updateJourneyCompass } from './journey-compass-controller.js';
 import { showExperienceToast } from './ui-feedback.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from './journey-webgl.js';
+import {
+    adapter_summarizeNeighborReason,
+    adapter_getInsideRelationshipLabel,
+    adapter_getCurrentTrailFocusIndex,
+    adapter_getFocusThreadCurvePoint
+} from './thread-inspector-adapter.js';
 
-// === Internal helpers (deferred to main script via window) ===
+// === Internal helpers (deferred to main script via adapter) ===
 
 function summarizeNeighborReason(candidate, point, focusPoint) {
-    if (typeof window.summarizeNeighborReason === 'function') return window.summarizeNeighborReason(candidate, point, focusPoint);
-    return candidate?.reason || 'Semantic relationship';
+    return adapter_summarizeNeighborReason(candidate, point, focusPoint);
 }
 
 function getInsideRelationshipLabel(candidate, point, focusPoint) {
-    if (typeof window.getInsideRelationshipLabel === 'function') return window.getInsideRelationshipLabel(candidate, point, focusPoint);
-    return 'Related connection';
+    return adapter_getInsideRelationshipLabel(candidate, point, focusPoint);
 }
 
 // === Candidate selectors ===
@@ -408,8 +413,8 @@ export function exploreThreadNeighbor(index, options = {}) {
     if (!Number.isFinite(index)) return null;
     const fromIndex = Number.isFinite(options.fromIndex)
         ? options.fromIndex
-        : typeof window.getCurrentTrailFocusIndex === 'function'
-          ? window.getCurrentTrailFocusIndex()
+        : adapter_getCurrentTrailFocusIndex() !== null
+          ? adapter_getCurrentTrailFocusIndex()
           : null;
     const candidate = (state.navState.threadCandidates || []).find((item) => item && item.index === index);
     const targetPoint = (Number.isFinite(index) && index >= 0 && index < state.points.length) ? state.points[index] : null;
@@ -524,12 +529,8 @@ export function writeInspectedStrandPositions(lineObject) {
         for (let segment = 0; segment < state.FOCUS_THREAD_SEGMENTS; segment += 1) {
             const t0 = segment / state.FOCUS_THREAD_SEGMENTS;
             const t1 = (segment + 1) / state.FOCUS_THREAD_SEGMENTS;
-            const p0 = (typeof window.getFocusThreadCurvePoint === 'function')
-                ? window.getFocusThreadCurvePoint(edge, t0)
-                : (console.warn('writeInspectedStrandPositions: getFocusThreadCurvePoint not available, using zero fallback'), new THREE.Vector3());
-            const p1 = (typeof window.getFocusThreadCurvePoint === 'function')
-                ? window.getFocusThreadCurvePoint(edge, t1)
-                : new THREE.Vector3();
+            const p0 = adapter_getFocusThreadCurvePoint(edge, t0) || new THREE.Vector3();
+            const p1 = adapter_getFocusThreadCurvePoint(edge, t1) || new THREE.Vector3();
             positions[offset] = Number.isFinite(p0.x) ? p0.x : 0;
             positions[offset + 1] = Number.isFinite(p0.y) ? p0.y : 0;
             positions[offset + 2] = Number.isFinite(p0.z) ? p0.z : 0;

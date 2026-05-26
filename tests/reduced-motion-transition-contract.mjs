@@ -200,9 +200,9 @@ async function waitForReady(page) {
     return (
       body?.graphicsMode === 'webgl' &&
       canvas &&
-      window.state?.renderer &&
-      window.state?.scene &&
-      window.state?.camera
+      window.__TEST_STATE__?.renderer &&
+      window.__TEST_STATE__?.scene &&
+      window.__TEST_STATE__?.camera
     );
   }, { timeout: 10000 }).catch(() => {});
   await page.waitForTimeout(2200);

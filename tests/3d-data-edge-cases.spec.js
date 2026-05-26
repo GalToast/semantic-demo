@@ -68,11 +68,11 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
   await page.waitForFunction(
     () =>
       typeof window.clearSearch === 'function' &&
-      Array.isArray(window.state?.points) &&
-      window.state.points.length > 0 &&
-      window.state.nodePositions?.length > 0 &&
-      window.state.renderer?.domElement &&
-      window.state.camera,
+      Array.isArray(window.__TEST_STATE__?.points) &&
+      window.__TEST_STATE__.points.length > 0 &&
+      window.__TEST_STATE__.nodePositions?.length > 0 &&
+      window.__TEST_STATE__.renderer?.domElement &&
+      window.__TEST_STATE__.camera,
     { timeout: 25000 }
   );
 
@@ -95,7 +95,7 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
 /** Probe key 3D + selection state fields used across edge-case assertions. */
 function probe(page) {
   return page.evaluate(() => {
-    const s = window.state ?? {};
+    const s = window.__TEST_STATE__ ?? {};
     return {
       pointCount: s.points?.length ?? 0,
       nodePositionsCount: s.nodePositions?.length ?? 0,
@@ -144,8 +144,8 @@ async function corruptToOneNode(page) {
  */
 async function corruptDuplicateLabels(page) {
   return page.evaluate(() => {
-    const points = window.state.points ?? [];
-    const nodePositions = window.state.nodePositions ?? [];
+    const points = window.__TEST_STATE__.points ?? [];
+    const nodePositions = window.__TEST_STATE__.nodePositions ?? [];
     const labelCount = {};
 
     for (let i = 0; i < points.length; i++) {
@@ -321,12 +321,12 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
     }
 
     // Focus first duplicate via canvas position
-    await page.evaluate(idx => { window.state.focusedNode = idx; }, dupA);
+    await page.evaluate(idx => { window.__TEST_STATE__.focusedNode = idx; }, dupA);
     await page.waitForTimeout(300);
-    const focusA = await page.evaluate(() => window.state.focusedNode);
+    const focusA = await page.evaluate(() => window.__TEST_STATE__.focusedNode);
 
     // Switch to second duplicate
-    await page.evaluate(idx => { window.state.focusedNode = idx; }, dupB);
+    await page.evaluate(idx => { window.__TEST_STATE__.focusedNode = idx; }, dupB);
     await page.waitForTimeout(300);
     const focusB = await probe(page);
 
@@ -342,7 +342,7 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
     await corruptMissingPositions(page);
 
     const nullCount = await page.evaluate(() =>
-      window.state.nodePositions.filter(p => p === null).length
+      window.__TEST_STATE__.nodePositions.filter(p => p === null).length
     );
     expect(nullCount).toBeGreaterThan(0); // Verify corruption actually happened
 

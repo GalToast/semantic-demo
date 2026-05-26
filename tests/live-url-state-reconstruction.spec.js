@@ -18,7 +18,7 @@ async function openApp(page) {
  * stateProbe() — captures the three-way sync surface:
  *   URL search params  (parsed from location.href)
  *   body.dataset       (DOM reflection of UI state)
- *   window.state       (canonical JS state)
+ *   window.__TEST_STATE__       (canonical JS state)
  */
 async function stateProbe(page) {
   return page.evaluate(() => {
@@ -41,13 +41,13 @@ async function stateProbe(page) {
         trailDepth: document.body.dataset.trailDepth || ''
       },
       state: {
-        currentView: window.state?.currentView || '',
-        trailDepth: window.state?.trailDepth ?? null,
-        semanticDiveMode: window.state?.semanticDiveMode ?? null,
-        selectedPoint: window.state?.selectedPoint ? String(window.state.selectedPoint.lead_id) : null,
-        currentSearchSummary: window.state?.currentSearchSummary ? {
-          query: window.state.currentSearchSummary.query,
-          anchorIndex: window.state.currentSearchSummary.anchorIndex
+        currentView: window.__TEST_STATE__?.currentView || '',
+        trailDepth: window.__TEST_STATE__?.trailDepth ?? null,
+        semanticDiveMode: window.__TEST_STATE__?.semanticDiveMode ?? null,
+        selectedPoint: window.__TEST_STATE__?.selectedPoint ? String(window.__TEST_STATE__.selectedPoint.lead_id) : null,
+        currentSearchSummary: window.__TEST_STATE__?.currentSearchSummary ? {
+          query: window.__TEST_STATE__.currentSearchSummary.query,
+          anchorIndex: window.__TEST_STATE__.currentSearchSummary.anchorIndex
         } : null
       }
     };
@@ -90,8 +90,8 @@ test.describe('Live URL State Reconstruction', () => {
       document.body.dataset.graphicsMode === 'webgl'
     ), { timeout: 20000 });
     await page.waitForFunction(() => (
-      window.state?.trailDepth === 2 &&
-      window.state?.semanticDiveMode === true &&
+      window.__TEST_STATE__?.trailDepth === 2 &&
+      window.__TEST_STATE__?.semanticDiveMode === true &&
       document.body.dataset.semanticDive === 'active'
     ), { timeout: 15000 });
 
@@ -134,9 +134,9 @@ test.describe('Live URL State Reconstruction', () => {
     await page.goto(urlWithParams);
 
     await page.waitForFunction(() => (
-      window.state?.selectedPoint &&
-      window.state?.trailDepth === 2 &&
-      window.state?.semanticDiveMode === true &&
+      window.__TEST_STATE__?.selectedPoint &&
+      window.__TEST_STATE__?.trailDepth === 2 &&
+      window.__TEST_STATE__?.semanticDiveMode === true &&
       document.body.dataset.semanticDive === 'active'
     ), { timeout: 20000 });
 
@@ -203,7 +203,7 @@ test.describe('Live URL State Reconstruction', () => {
       await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
     }
     await page.locator('.search-result-item').first().click();
-    await page.waitForFunction(() => Number.isFinite(window.state?.focusedNode), { timeout: 15000 });
+    await page.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 15000 });
     await page.waitForTimeout(900);
 
     // Capture the URL after search+focus

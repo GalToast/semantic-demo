@@ -142,10 +142,10 @@ async function waitForReady(page) {
         const ready =
             body?.graphicsMode === 'webgl' &&
             canvas &&
-            window.state?.renderer &&
-            window.state?.scene &&
-            window.state?.camera &&
-            window.state?.pointsMesh?.geometry?.attributes?.position?.count;
+            window.__TEST_STATE__?.renderer &&
+            window.__TEST_STATE__?.scene &&
+            window.__TEST_STATE__?.camera &&
+            window.__TEST_STATE__?.pointsMesh?.geometry?.attributes?.position?.count;
         return !!ready;
     }, { timeout: 12000 }).catch(() => {});
     // Give scene reveal transition time to settle
@@ -255,11 +255,11 @@ async function run() {
                 canvasHeight:   canvas?.height || 0,
                 canvasParentWidth:  canvasContainer?.getBoundingClientRect().width  || 0,
                 canvasParentHeight: canvasContainer?.getBoundingClientRect().height || 0,
-                stateRendererPresent: !!(window.state?.renderer),
-                stateScenePresent:    !!(window.state?.scene),
-                stateCameraPresent:   !!(window.state?.camera),
-                statePointsMeshPresent: !!(window.state?.pointsMesh),
-                pointsCount: window.state?.pointsMesh?.geometry?.attributes?.position?.count || 0,
+                stateRendererPresent: !!(window.__TEST_STATE__?.renderer),
+                stateScenePresent:    !!(window.__TEST_STATE__?.scene),
+                stateCameraPresent:   !!(window.__TEST_STATE__?.camera),
+                statePointsMeshPresent: !!(window.__TEST_STATE__?.pointsMesh),
+                pointsCount: window.__TEST_STATE__?.pointsMesh?.geometry?.attributes?.position?.count || 0,
             };
         });
 

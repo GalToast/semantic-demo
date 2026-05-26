@@ -23,7 +23,7 @@ test.describe('Extraction & De-monolith Contract Verification', () => {
         const note = document.getElementById('loading-note');
         const foot = document.getElementById('loading-foot');
         return {
-          phase: window.state?.loadingPhaseKey ?? 'unknown',
+          phase: window.__TEST_STATE__?.loadingPhaseKey ?? 'unknown',
           overlayHidden: overlay?.hidden,
           overlayInert: overlay?.inert,
           overlayDisplay: overlay ? getComputedStyle(overlay).display : 'N/A',

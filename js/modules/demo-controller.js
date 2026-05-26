@@ -1,6 +1,9 @@
 'use strict';
 
 import { state } from '../state.js';
+import { startMicroDemo } from './micro-demo.js';
+import { resetNodePositions } from './lifecycle.js';
+import { setAutoRotateSuspended } from './camera-controls.js';
 
 /**
  * MoCo Business Mycelium — Demo Controller
@@ -175,16 +178,12 @@ function clearDemoTimers() {
 function resetNodeShaderUniforms() {
   // Reset hover-related uniforms on all nodes
   // The three-setup module exposes resetNodePositions which also restores defaults
-  if (typeof window.resetNodePositions === 'function') {
-    window.resetNodePositions();
-  }
+  resetNodePositions();
 }
 
 function restoreCamera() {
   // Restore overview position and camera
-  if (typeof window.resetNodePositions === 'function') {
-    window.resetNodePositions();
-  }
+  resetNodePositions();
 }
 
 function reEnableOrbitControls() {
@@ -194,9 +193,7 @@ function reEnableOrbitControls() {
 }
 
 function reEnableAutoRotate() {
-  if (typeof window.setAutoRotateSuspended === 'function') {
-    window.setAutoRotateSuspended(false);
-  }
+  setAutoRotateSuspended(false);
 }
 
 function writeStorageSeen() {
@@ -335,9 +332,7 @@ export function start() {
   window.addEventListener('demo-cancelled', _microDemoCancelHandler);
 
   // Delegate to micro-demo if available (it handles its own sessionStorage guard)
-  if (typeof window.startMicroDemo === 'function') {
-    window.startMicroDemo();
-  }
+  startMicroDemo();
 }
 
 /**
@@ -373,10 +368,14 @@ export function isRunning() {
 
 // ── Expose on window ────────────────────────────────────────────────────────
 
-window.demoController = {
+export const demoController = {
   init,
   start,
   cancel,
   complete,
   isRunning
 };
+
+if (typeof window !== 'undefined') {
+    window.demoController = demoController;
+}

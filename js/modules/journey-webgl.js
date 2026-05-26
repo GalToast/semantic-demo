@@ -6,6 +6,8 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { isPointVisible } from '../utils.js';
 
 import { getThreadCandidatesForIndex } from './journey-thread-model.js';
+import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from './journey.js';
+import { getFocusThreadCurvePoint } from './focus-pocket.js';
 
 const ROUTE_TRACE_SEGMENT_STEPS = 7;
 const ARRIVAL_HANDOFF_SEGMENT_STEPS = 9;
@@ -81,36 +83,36 @@ function buildRouteTraceMaterial() {
             uniform float opacity;
             uniform float baseOpacity;
             varying vec3 vColor;
-            
+
             // Simple noise for spore effect
             float hash(float n) { return fract(sin(n) * 43758.5453123); }
-            
+
             void main() {
                 vec3 teal = vec3(0.43, 1.0, 0.91);
                 vec3 gold = vec3(1.0, 0.85, 0.38);
                 vec3 pearl = vec3(0.92, 1.0, 0.96);
-                
+
                 // Mycelium "spore" movement
                 float pulse = sin(time * 3.5 + gl_FragCoord.x * 0.05) * 0.5 + 0.5;
                 float noise = hash(floor(time * 8.0 + gl_FragCoord.y * 0.1));
-                
+
                 // Subtle glow breathing effect
                 float breath = 0.85 + sin(time * 2.8) * 0.15;
-                
+
                 // Warm accent glow pulse
                 float accentPulse = 0.5 + sin(time * 1.5) * 0.3;
-                
+
                 // Mix base color with accent colors
                 vec3 warmColor = mix(teal, gold, vColor.g);
                 vec3 finalColor = mix(vColor, warmColor, 0.42);
-                
+
                 // Add moving "spore" highlights
                 float spore = step(0.97, fract(pulse + noise)) * 0.15;
                 finalColor += pearl * spore;
-                
+
                 finalColor = mix(finalColor, pearl, accentPulse * 0.14);
                 float alpha = baseOpacity * breath * (0.9 + spore * 2.0);
-                
+
                 gl_FragColor = vec4(finalColor, alpha);
             }
         `,
@@ -420,8 +422,8 @@ export function removeFocusSemanticOverlay() {
 }
 
 function getFocusCurvePoint(edge, t) {
-    if (typeof window.getFocusThreadCurvePoint === 'function') {
-        return window.getFocusThreadCurvePoint(edge, t);
+    if (typeof getFocusThreadCurvePoint === 'function') {
+        return getFocusThreadCurvePoint(edge, t);
     }
     const a = state.nodePositions[edge.a];
     const b = state.nodePositions[edge.b];
@@ -538,11 +540,11 @@ function buildFocusThreadLineMaterial() {
 }
 
 function getActiveNextFocusIndex() {
-    const getCurrentTrailFocus = typeof window.getCurrentTrailFocusIndex === 'function'
-        ? window.getCurrentTrailFocusIndex
+    const getCurrentTrailFocus = typeof getCurrentTrailFocusIndex === 'function'
+        ? getCurrentTrailFocusIndex
         : null;
-    const getNextWalkCandidate = typeof window.getNextWalkCandidateForIndex === 'function'
-        ? window.getNextWalkCandidateForIndex
+    const getNextWalkCandidate = typeof getNextWalkCandidateForIndex === 'function'
+        ? getNextWalkCandidateForIndex
         : null;
     const focusedIndex = Number.isFinite(state.navState.focusedIndex)
         ? state.navState.focusedIndex

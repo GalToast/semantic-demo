@@ -5,6 +5,8 @@ import {
     formatBusinessName
 } from '../utils.js';
 import { showExperienceToast, focusOnPoint } from './lifecycle.js';
+import { hideTooltip } from './tooltip.js';
+import { hideViewHandoff } from './view-controller.js';
 
 // js/modules/map-state.js
 
@@ -118,7 +120,7 @@ export async function initMap() {
                 });
 
                 marker.on('mouseover', () => showMapTooltip(point, marker));
-                marker.on('mouseout', () => { if (typeof window.hideTooltip === 'function') window.hideTooltip(); });
+                marker.on('mouseout', () => { if (typeof hideTooltip === 'function') hideTooltip(); });
                 marker.on('click', () => {
                     const routeSet = new Set(getRouteEmbodimentIndices());
                     const searchSet = new Set(state.currentSearchSummary?.resultIndices || []);
@@ -166,7 +168,7 @@ export async function initMap() {
 }
 
 export function showMapTooltip(point, marker) {
-    if (typeof window.hideTooltip === 'function') window.hideTooltip();
+    if (typeof hideTooltip === 'function') hideTooltip();
     // Simplified for now, original uses updateTooltipContent and positionTooltip
     const name = formatBusinessName(point.name);
     marker.bindTooltip(name, { direction: 'top', offset: [0, -5], className: 'glass-medium' }).openTooltip();
@@ -428,8 +430,8 @@ export function setTerrainHandoffState(phase = 'idle', options = {}) {
     document.body.dataset.terrainHandoffTo = state.terrainHandoffState.to;
     document.body.dataset.terrainRouteCount = String(routeCount);
 
-    if (['idle', 'settled'].includes(normalizedPhase) && typeof window.hideViewHandoff === 'function') {
-        window.hideViewHandoff();
+    if (['idle', 'settled'].includes(normalizedPhase) && typeof hideViewHandoff === 'function') {
+        hideViewHandoff();
     }
 
     if (state.terrainHandoffTimer) {

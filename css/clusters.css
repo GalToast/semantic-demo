@@ -842,13 +842,6 @@ body[data-panel-surface="map-focus-search"] .trail-context {
             pointer-events: auto;
         }
 
-        body[data-panel-surface="focus"] .focus-stage-card,
-        body[data-panel-surface="focus-search"] .focus-stage-card {
-            border: var(--glass-border-glow);
-            background: var(--glass-bg-deep);
-            box-shadow: var(--shadow-glass-glow), var(--shadow-glass);
-        }
-
         body[data-trail-state="active"] .focus-stage-journey.active {
             border: var(--glass-border);
             background: rgba(255, 255, 255, 0.05);

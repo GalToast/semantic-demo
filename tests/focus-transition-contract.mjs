@@ -82,8 +82,8 @@ async function waitForAppReady(page) {
   await page.waitForFunction(() => {
     return (
       document.querySelector('#canvas-container canvas') !== null &&
-      window.state !== undefined &&
-      window.state.scene !== undefined
+      window.__TEST_STATE__ !== undefined &&
+      window.__TEST_STATE__.scene !== undefined
     );
   }, { timeout: 12000 }).catch(() => {});
   // Allow initial animations to settle
@@ -119,7 +119,7 @@ async function triggerFocusMode(page) {
 
   // Now check if state has what we need to drive focus mode
   const stateInfo = await page.evaluate(() => {
-    const s = window.state || {};
+    const s = window.__TEST_STATE__ || {};
     const pts = s.points || [];
     const hasPoints = pts.length > 0;
     const firstPoint = hasPoints ? pts[0] : null;
@@ -139,7 +139,7 @@ async function triggerFocusMode(page) {
 async function activateFocusFromState(page) {
   // Set up focus state by manipulating app state directly
   await page.evaluate(() => {
-    const s = window.state;
+    const s = window.__TEST_STATE__;
     if (!s) return;
     // Find a point to focus
     const pts = s.points || [];
@@ -215,7 +215,7 @@ async function auditFocusTransitionPhase(page) {
 
 async function auditNodeGrouping(page) {
   return page.evaluate(() => {
-    const s = window.state || {};
+    const s = window.__TEST_STATE__ || {};
     const failures = [];
     const passes = [];
 
@@ -296,7 +296,7 @@ async function auditNodeGrouping(page) {
 
 async function auditThreadBehavior(page) {
   return page.evaluate(() => {
-    const s = window.state || {};
+    const s = window.__TEST_STATE__ || {};
     const failures = [];
     const passes = [];
 
@@ -355,7 +355,7 @@ async function auditThreadBehavior(page) {
 
 async function auditMyceliumDensity(page) {
   return page.evaluate(() => {
-    const s = window.state || {};
+    const s = window.__TEST_STATE__ || {};
     const failures = [];
     const passes = [];
 

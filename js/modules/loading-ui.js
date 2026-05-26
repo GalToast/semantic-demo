@@ -1,6 +1,10 @@
 import { state } from '../state.js';
 import { restoreFocusTrailState, updateSelectedBusiness } from './journey.js';
 import { SCENE_READY } from './scene-events.js';
+import { loadSemanticThreads } from './semantic-threads.js';
+import { applyFilters } from './search-state.js';
+import { createMycelium } from '../three-setup.js';
+import { initWeather } from './weather.js';
 
 export function setLoadingPhase(phaseKey, overrides = {}) {
     state.loadingPhaseKey = phaseKey;
@@ -66,17 +70,17 @@ export function startDeferredHydration() {
     state.deferredHydrationStarted = true;
 
     const run = async () => {
-        const threadsPromise = typeof window.loadSemanticThreads === 'function'
-            ? window.loadSemanticThreads()
+        const threadsPromise = typeof loadSemanticThreads === 'function'
+            ? loadSemanticThreads()
             : Promise.resolve();
 
         if (typeof window.computeNetworkInsights === 'function') window.computeNetworkInsights();
-        if (typeof window.applyFilters === 'function') window.applyFilters();
+        if (typeof applyFilters === 'function') applyFilters();
         await Promise.allSettled([threadsPromise]);
 
         if (state.pointsMesh) {
-            if (typeof window.createMycelium === 'function') window.createMycelium();
-            if (typeof window.applyFilters === 'function') window.applyFilters();
+            if (typeof createMycelium === 'function') createMycelium();
+            if (typeof applyFilters === 'function') applyFilters();
             if (state.focusedNode !== null && state.focusedNode !== undefined) {
                 const priorMode = state.navState.mode;
                 restoreFocusTrailState(state.focusedNode);
@@ -100,7 +104,7 @@ export function startDeferredHydration() {
 export function scheduleWeatherHydration() {
     if (state.weatherInitialized) return;
     const start = () => {
-        if (typeof window.initWeather === 'function') window.initWeather();
+        if (typeof initWeather === 'function') initWeather();
     };
 
     if ('requestIdleCallback' in window) {

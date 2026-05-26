@@ -104,13 +104,13 @@ async function waitForAppReady(page) {
   await page.waitForFunction(() => Boolean(
     document.querySelector('#canvas-container canvas')
       && document.body.dataset.graphicsMode === 'webgl'
-      && window.state?.renderer
-      && window.state?.scene
-      && window.state?.camera
-      && window.state?.pointsMesh?.geometry?.attributes?.position?.count
-      && window.state?.pointIndexByLeadId?.size
-      && window.state?.semanticThreadsStatus === 'ready'
-      && window.state?.semanticNeighborMapByLeadId?.get('1')?.neighbors?.length
+      && window.__TEST_STATE__?.renderer
+      && window.__TEST_STATE__?.scene
+      && window.__TEST_STATE__?.camera
+      && window.__TEST_STATE__?.pointsMesh?.geometry?.attributes?.position?.count
+      && window.__TEST_STATE__?.pointIndexByLeadId?.size
+      && window.__TEST_STATE__?.semanticThreadsStatus === 'ready'
+      && window.__TEST_STATE__?.semanticNeighborMapByLeadId?.get('1')?.neighbors?.length
   ), undefined, { timeout: 25000 });
   await page.waitForTimeout(1000);
 }
@@ -134,12 +134,12 @@ test.describe('focus semantic Line2 shader ownership', () => {
     });
 
     await page.waitForFunction(() => {
-      const line = window.state?.focusSemanticLines;
+      const line = window.__TEST_STATE__?.focusSemanticLines;
       const shader = line?.material?.userData?.shader;
       return Boolean(
         line
           && typeof line.computeLineDistances === 'function'
-          && window.state?.navState?.threadSource === 'semantic'
+          && window.__TEST_STATE__?.navState?.threadSource === 'semantic'
           && shader?.uniforms?.time
           && shader?.uniforms?.semanticScore
           && shader?.uniforms?.reducedMotion
@@ -148,12 +148,12 @@ test.describe('focus semantic Line2 shader ownership', () => {
     }, undefined, { timeout: 15000 });
 
     const before = await page.evaluate(() => {
-      const line = window.state.focusSemanticLines;
+      const line = window.__TEST_STATE__.focusSemanticLines;
       const shader = line.material.userData.shader;
       const probe = window.__semanticFocusCueProbe();
       return {
-        threadSource: window.state.navState.threadSource,
-        candidateCount: window.state.navState.threadCandidates.length,
+        threadSource: window.__TEST_STATE__.navState.threadSource,
+        candidateCount: window.__TEST_STATE__.navState.threadCandidates.length,
         lineType: line.type,
         hasLineDistances: typeof line.computeLineDistances === 'function',
         segmentCount: line.userData?.segmentCount ?? 0,
@@ -163,13 +163,13 @@ test.describe('focus semantic Line2 shader ownership', () => {
         nextCueSegments: probe.nextCueSegments,
         denseBundleMode: line.userData?.denseBundleMode,
         denseBundleUniform: shader.uniforms.denseBundleMode?.value,
-        hasMyceliumGroup: Boolean(window.state.myceliumGroup),
+        hasMyceliumGroup: Boolean(window.__TEST_STATE__.myceliumGroup),
         parentKind: line.userData?.parentKind,
         semanticScore: shader.uniforms.semanticScore.value,
         reducedMotion: shader.uniforms.reducedMotion.value,
         time: shader.uniforms.time.value,
         materialShaderIsOwnObject: shader === line.material.userData.shader,
-        pointsShaderIsSeparate: shader !== window.state.pointsMaterial?.userData?.shader,
+        pointsShaderIsSeparate: shader !== window.__TEST_STATE__.pointsMaterial?.userData?.shader,
         uniformNames: Object.keys(shader.uniforms || {})
       };
     });
@@ -196,12 +196,12 @@ test.describe('focus semantic Line2 shader ownership', () => {
     );
 
     await page.evaluate(() => {
-      const currentTime = window.state.focusSemanticLines.material.userData.shader.uniforms.time.value;
+      const currentTime = window.__TEST_STATE__.focusSemanticLines.material.userData.shader.uniforms.time.value;
       window.updateFocusSemanticOverlayPositions?.((currentTime + 1.25) * 1000);
     });
 
     const after = await page.evaluate(() => {
-      const shader = window.state.focusSemanticLines.material.userData.shader;
+      const shader = window.__TEST_STATE__.focusSemanticLines.material.userData.shader;
       return {
         time: shader.uniforms.time.value,
         reducedMotion: shader.uniforms.reducedMotion.value
@@ -217,7 +217,7 @@ test.describe('focus semantic Line2 shader ownership', () => {
 
     const visibleScreenshot = await page.screenshot({ fullPage: false });
     await page.evaluate(async () => {
-      window.state.focusSemanticLines.visible = false;
+      window.__TEST_STATE__.focusSemanticLines.visible = false;
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     });
     const hiddenScreenshot = await page.screenshot({ fullPage: false });
@@ -228,18 +228,18 @@ test.describe('focus semantic Line2 shader ownership', () => {
     expect(visualDelta.meanDelta, 'focusSemanticLines should have measurable visual contrast in the scene band').toBeGreaterThan(0.08);
 
     const fallbackParent = await page.evaluate(() => {
-      const originalGroup = window.state.myceliumGroup;
-      const scene = window.state.scene;
+      const originalGroup = window.__TEST_STATE__.myceliumGroup;
+      const scene = window.__TEST_STATE__.scene;
       let result = null;
       try {
-        window.state.myceliumGroup = null;
+        window.__TEST_STATE__.myceliumGroup = null;
         window.refreshFocusSemanticOverlay?.();
-        const line = window.state.focusSemanticLines;
+        const line = window.__TEST_STATE__.focusSemanticLines;
         const builtInScene = Boolean(line && line.parent === scene && scene?.children?.includes(line));
         const parentKind = line?.userData?.parentKind || null;
-        window.state.myceliumGroup = originalGroup;
+        window.__TEST_STATE__.myceliumGroup = originalGroup;
         window.refreshFocusSemanticOverlay?.();
-        const restoredLine = window.state.focusSemanticLines;
+        const restoredLine = window.__TEST_STATE__.focusSemanticLines;
         result = {
           builtInScene,
           parentKind,
@@ -248,7 +248,7 @@ test.describe('focus semantic Line2 shader ownership', () => {
           expectedRestoredParentKind: originalGroup ? 'mycelium' : 'scene'
         };
       } finally {
-        window.state.myceliumGroup = originalGroup;
+        window.__TEST_STATE__.myceliumGroup = originalGroup;
         window.refreshFocusSemanticOverlay?.();
       }
       return result;

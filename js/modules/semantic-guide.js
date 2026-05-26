@@ -2,6 +2,8 @@ import { state } from '../state.js';
 import { escapeHtml } from '../utils.js';
 import { buildSemanticGuideRequestPayload } from './semantic-guide-payload.js';
 import { search, beginSearchFocusTransition } from './search-state.js';
+import {updateLegendGuideState} from './legend-ui.js';
+import {showSemanticThreadsDetail} from './connection-analysis.js';
 
 // === Semantic Guide Summary Card ===
 
@@ -400,7 +402,7 @@ function finishSemanticGuideRequest(controller, button) {
         state.semanticGuideAbortController = null;
     }
     setSemanticGuideButtonState(button, 'refresh', { disabled: false });
-    if (typeof window.updateLegendGuideState === 'function') window.updateLegendGuideState();
+    if (typeof updateLegendGuideState === 'function') updateLegendGuideState();
 }
 
 export async function requestSemanticGuide() {
@@ -414,8 +416,8 @@ export async function requestSemanticGuide() {
         const guide = await fetchSemanticGuide(payload, controller.signal);
         if (!isSemanticGuideRequestCurrent(requestId)) return;
         showSemanticGuideSuccess(guide);
-        if (typeof window.showSemanticThreadsDetail === 'function') {
-            window.showSemanticThreadsDetail();
+        if (typeof showSemanticThreadsDetail === 'function') {
+            showSemanticThreadsDetail();
         }
     } catch (error) {
         if (isSemanticGuideRequestCancelled(requestId, controller)) return;

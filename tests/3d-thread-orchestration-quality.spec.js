@@ -5,7 +5,7 @@
  * continuity / density / opacity / luminance / performance guardrails
  * across overview, focus, and step-inside (semantic-dive) states.
  *
- * Exposed tools (read from window.state):
+ * Exposed tools (read from window.__TEST_STATE__):
  *   myceliumCoreLines      - core thread LineSegments geometry + material.opacity
  *   myceliumWispyLines    - wispy thread LineSegments geometry + material.opacity
  *   myceliumBridgeLines   - bridge thread LineSegments geometry + material.opacity
@@ -51,9 +51,9 @@ async function waitForScene(page) {
       return Boolean(
         canvas
         && document.body.dataset.graphicsMode === 'webgl'
-        && window.state?.renderer
-        && window.state?.scene
-        && window.state?.pointsMesh?.geometry?.attributes?.position?.count
+        && window.__TEST_STATE__?.renderer
+        && window.__TEST_STATE__?.scene
+        && window.__TEST_STATE__?.pointsMesh?.geometry?.attributes?.position?.count
       );
     },
     { timeout: 20000 }
@@ -171,7 +171,7 @@ async function probeThreadSag(page) {
       return Math.sqrt(dx * dx + dy * dy + dz * dz);
     };
 
-    const state = window.state || {};
+    const state = window.__TEST_STATE__ || {};
     const pairs = state.myceliumConnectionPairs || [];
     const coreArr = state.myceliumCoreLines?.geometry?.attributes?.position?.array || [];
 
@@ -223,7 +223,7 @@ async function probeThreadSag(page) {
 // Probe all thread state from the running page
 async function probeThreads(page) {
   return page.evaluate(() => {
-    const state = window.state || {};
+    const state = window.__TEST_STATE__ || {};
     const coreLine = state.myceliumCoreLines;
     const wispyLine = state.myceliumWispyLines;
     const bridgeLine = state.myceliumBridgeLines;
@@ -307,7 +307,7 @@ test.describe('3D thread orchestration quality', () => {
     await waitForScene(p);
     // Secondary geometry confirmation — scoped short to avoid compounding the main waitForScene timeout
     await p.waitForFunction(
-      () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
+      () => Boolean(window.__TEST_STATE__?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
       { timeout: 3000 }
     ).catch(() => {});
 
@@ -351,7 +351,7 @@ test.describe('3D thread orchestration quality', () => {
     await waitForScene(p);
     // Secondary geometry confirmation — scoped short to avoid compounding the main waitForScene timeout
     await p.waitForFunction(
-      () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
+      () => Boolean(window.__TEST_STATE__?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
       { timeout: 3000 }
     ).catch(() => {});
 
@@ -379,7 +379,7 @@ test.describe('3D thread orchestration quality', () => {
     // Secondary geometry confirmation — short timeout avoids compounding the main waitForScene cap.
     // Reduces total per-test elapsed time vs. 5000ms without weakening coverage.
     await p.waitForFunction(
-      () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
+      () => Boolean(window.__TEST_STATE__?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
       { timeout: 2000 }
     ).catch(() => {});
 
@@ -387,12 +387,12 @@ test.describe('3D thread orchestration quality', () => {
     // since the official setTrailDepth(1) call is the subject of this test
     // and we need to isolate the post-focus assertions from the depth-transition.
     const focusResult = await p.evaluate(() => {
-      const preferred = window.state?.pointIndexByLeadId?.get(519) ?? window.state?.pointIndexByLeadId?.get('519');
+      const preferred = window.__TEST_STATE__?.pointIndexByLeadId?.get(519) ?? window.__TEST_STATE__?.pointIndexByLeadId?.get('519');
       let targetIndex = Number.isFinite(preferred) ? preferred : null;
       if (targetIndex === null) {
-        for (const [leadId, threadNode] of window.state?.semanticNeighborMapByLeadId || []) {
+        for (const [leadId, threadNode] of window.__TEST_STATE__?.semanticNeighborMapByLeadId || []) {
           if (!threadNode?.neighbors?.length) continue;
-          const idx = window.state?.pointIndexByLeadId?.get(leadId) ?? window.state?.pointIndexByLeadId?.get(String(leadId));
+          const idx = window.__TEST_STATE__?.pointIndexByLeadId?.get(leadId) ?? window.__TEST_STATE__?.pointIndexByLeadId?.get(String(leadId));
           if (Number.isFinite(idx)) { targetIndex = idx; break; }
         }
       }
@@ -402,14 +402,14 @@ test.describe('3D thread orchestration quality', () => {
       ({ idx }) => window.focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
       { idx: focusResult.targetIndex }
     );
-    await p.waitForFunction(() => Number.isFinite(window.state?.focusedNode), { timeout: 8000 });
+    await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 });
     // Set trailDepth=1 via harness — documents this is fixture setup, not the
     // official setTrailDepth() API being tested (that comes in step-inside).
     await mutate(p, 'setTrailDepth', { trailDepth: 1, navStateMode: 'focus' });
     await mutate(p, 'setFocusedNode', { focusedNode: focusResult.targetIndex });
     // Wait for the semantic lens glow to actually animate in (validates scene has settled)
     await p.waitForFunction(
-      () => (window.state?.semanticLensGlow?.material?.uniforms?.uOpacity?.value ?? 0) > 0.01,
+      () => (window.__TEST_STATE__?.semanticLensGlow?.material?.uniforms?.uOpacity?.value ?? 0) > 0.01,
       { timeout: 8000 }
     ).catch(() => {});
     await p.waitForTimeout(400);
@@ -460,18 +460,18 @@ test.describe('3D thread orchestration quality', () => {
     await waitForScene(p);
     // Secondary geometry confirmation — short timeout avoids compounding the main waitForScene cap.
     await p.waitForFunction(
-      () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
+      () => Boolean(window.__TEST_STATE__?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
       { timeout: 2000 }
     ).catch(() => {});
 
     // Enter focus, then step inside
     await p.evaluate(() => {
-      const preferred = window.state?.pointIndexByLeadId?.get(519) ?? window.state?.pointIndexByLeadId?.get('519');
+      const preferred = window.__TEST_STATE__?.pointIndexByLeadId?.get(519) ?? window.__TEST_STATE__?.pointIndexByLeadId?.get('519');
       let targetIndex = Number.isFinite(preferred) ? preferred : null;
       if (targetIndex === null) {
-        for (const [leadId, threadNode] of window.state?.semanticNeighborMapByLeadId || []) {
+        for (const [leadId, threadNode] of window.__TEST_STATE__?.semanticNeighborMapByLeadId || []) {
           if (!threadNode?.neighbors?.length) continue;
-          const idx = window.state?.pointIndexByLeadId?.get(leadId) ?? window.state?.pointIndexByLeadId?.get(String(leadId));
+          const idx = window.__TEST_STATE__?.pointIndexByLeadId?.get(leadId) ?? window.__TEST_STATE__?.pointIndexByLeadId?.get(String(leadId));
           if (Number.isFinite(idx)) { targetIndex = idx; break; }
         }
       }
@@ -479,7 +479,7 @@ test.describe('3D thread orchestration quality', () => {
       window.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
       window.setTrailDepth?.(1, { skipUrlSync: true });
     });
-    await p.waitForFunction(() => Number.isFinite(window.state?.focusedNode), { timeout: 8000 });
+    await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 });
     await p.waitForTimeout(400);
 
     await p.evaluate(() => {
@@ -487,7 +487,7 @@ test.describe('3D thread orchestration quality', () => {
     });
     // Wait for trailDepth=2 to actually settle (not just a fixed timeout)
     await p.waitForFunction(
-      () => window.state?.trailDepth === 2,
+      () => window.__TEST_STATE__?.trailDepth === 2,
       { timeout: 6000 }
     ).catch(() => {});
     // Brief post-settle stabilization
@@ -522,7 +522,7 @@ test.describe('3D thread orchestration quality', () => {
     await p.goto(withParams({ view: 'galaxy' }), { waitUntil: 'commit' });
     await waitForScene(p);
     await p.waitForFunction(
-      () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
+      () => Boolean(window.__TEST_STATE__?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
       { timeout: 3000 }
     ).catch(() => {});
 
@@ -546,7 +546,7 @@ test.describe('3D thread orchestration quality', () => {
     await p.goto(withParams({ view: 'galaxy' }), { waitUntil: 'commit' });
     await waitForScene(p);
     await p.waitForFunction(
-      () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
+      () => Boolean(window.__TEST_STATE__?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
       { timeout: 3000 }
     ).catch(() => {});
 
@@ -590,7 +590,7 @@ test.describe('3D thread orchestration quality', () => {
     await p.goto(withParams({ view: 'galaxy' }), { waitUntil: 'commit' });
     await waitForScene(p);
     await p.waitForFunction(
-      () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
+      () => Boolean(window.__TEST_STATE__?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
       { timeout: 3000 }
     ).catch(() => {});
 
@@ -635,15 +635,15 @@ test.describe('3D thread orchestration quality', () => {
     await waitForScene(p);
     // Secondary geometry confirmation — short timeout avoids compounding the main waitForScene cap.
     await p.waitForFunction(
-      () => Boolean(window.state?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
+      () => Boolean(window.__TEST_STATE__?.myceliumCoreLines?.geometry?.attributes?.position?.array?.length),
       { timeout: 2000 }
     ).catch(() => {});
 
     // Focus on a node with neighbors (same entryIndex search pattern as other tests)
     const focusResult = await p.evaluate(() => {
-      for (const [leadId, threadNode] of window.state?.semanticNeighborMapByLeadId || []) {
+      for (const [leadId, threadNode] of window.__TEST_STATE__?.semanticNeighborMapByLeadId || []) {
         if (!threadNode?.neighbors?.length) continue;
-        const idx = window.state?.pointIndexByLeadId?.get(leadId) ?? window.state?.pointIndexByLeadId?.get(String(leadId));
+        const idx = window.__TEST_STATE__?.pointIndexByLeadId?.get(leadId) ?? window.__TEST_STATE__?.pointIndexByLeadId?.get(String(leadId));
         if (Number.isFinite(idx)) return { targetIndex: idx };
       }
       return { targetIndex: 0 };
@@ -652,14 +652,14 @@ test.describe('3D thread orchestration quality', () => {
       ({ idx }) => window.focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
       { idx: focusResult.targetIndex }
     );
-    await p.waitForFunction(() => Number.isFinite(window.state?.focusedNode), { timeout: 8000 });
+    await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 });
     // Set trailDepth=1 via harness — documents this is fixture setup, not the
     // official setTrailDepth() API being tested.
     await mutate(p, 'setTrailDepth', { trailDepth: 1, navStateMode: 'focus' });
     await mutate(p, 'setFocusedNode', { focusedNode: focusResult.targetIndex });
     // Wait for the semantic lens glow to actually animate in (validates scene has settled)
     await p.waitForFunction(
-      () => (window.state?.semanticLensGlow?.material?.uniforms?.uOpacity?.value ?? 0) > 0.01,
+      () => (window.__TEST_STATE__?.semanticLensGlow?.material?.uniforms?.uOpacity?.value ?? 0) > 0.01,
       { timeout: 8000 }
     ).catch(() => {});
     await p.waitForTimeout(400);

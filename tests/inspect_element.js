@@ -15,7 +15,7 @@ async function run() {
 
   // Wait for the WebGL scene and app loading
   await page.waitForFunction(() => {
-    const state = window.state;
+    const state = window.__TEST_STATE__;
     const canvas = document.querySelector('#canvas-container canvas');
     if (!canvas || document.body.dataset.graphicsMode !== 'webgl') return false;
     return document.body.classList.contains('is-active');

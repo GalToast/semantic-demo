@@ -54,8 +54,8 @@ async function waitForAppReady(page) {
   await page.waitForFunction(() => (
     typeof window.clearSearch === 'function' &&
     typeof window.refreshCompositionState === 'function' &&
-    Array.isArray(window.state?.points) &&
-    window.state.points.length > 0
+    Array.isArray(window.__TEST_STATE__?.points) &&
+    window.__TEST_STATE__.points.length > 0
   ), { timeout: 20000 });
   await page.waitForTimeout(800);
 }

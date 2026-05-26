@@ -38,6 +38,7 @@ class FakeElement {
   getAttributeNames() { return [...this._attrs.keys()]; }
   appendChild(c) { this.children.push(c); return c; }
   get id() { return this._attrs.get('id') ?? null; }
+  set id(v) { this._attrs.set('id', String(v)); }
   get value() { return this._value ?? ''; }
   set value(v) { this._value = v; }
 }

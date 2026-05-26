@@ -28,13 +28,13 @@ async function waitForReady(page) {
       body?.graphicsMode === 'webgl' &&
       canvas &&
       // eslint-disable-next-line no-undef
-      window.state?.renderer &&
+      window.__TEST_STATE__?.renderer &&
       // eslint-disable-next-line no-undef
-      window.state?.scene &&
+      window.__TEST_STATE__?.scene &&
       // eslint-disable-next-line no-undef
-      window.state?.camera &&
+      window.__TEST_STATE__?.camera &&
       // eslint-disable-next-line no-undef
-      window.state?.pointsMesh?.geometry?.attributes?.position?.count > 0
+      window.__TEST_STATE__?.pointsMesh?.geometry?.attributes?.position?.count > 0
     );
   }, { timeout: 12000 });
   // Give scene-reveal a moment to settle under reduced-motion
@@ -52,7 +52,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
       const body = document.body?.dataset || {};
       const focusStage = document.getElementById('focus-stage');
       // eslint-disable-next-line no-undef
-      const s = window.state || {};
+      const s = window.__TEST_STATE__ || {};
       return {
         searchGlow: body.searchGlow,
         graphContext: body.graphContext,
@@ -72,7 +72,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     // Trigger search & focus simulation
     await page.evaluate(() => {
       // eslint-disable-next-line no-undef
-      const s = window.state;
+      const s = window.__TEST_STATE__;
       s.currentSearchSummary = { query: 'restaurant', anchorIndex: 0, resultIndices: [0, 1, 2, 3] };
       s.searchGlowActive = true;
       s.searchGlowIndices = new Set([0, 1, 2, 3]);
@@ -103,7 +103,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     const afterSearch = await page.evaluate(() => {
       const body = document.body?.dataset || {};
       // eslint-disable-next-line no-undef
-      const s = window.state || {};
+      const s = window.__TEST_STATE__ || {};
       return {
         searchGlow: body.searchGlow,
         graphContext: body.graphContext,
@@ -129,7 +129,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
         window.setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true });
       } else {
         // eslint-disable-next-line no-undef
-        window.state.trailDepth = 2;
+        window.__TEST_STATE__.trailDepth = 2;
       }
       if (typeof window.setMyceliumMode === 'function') {
         window.setMyceliumMode('inside', { skipUrlSync: true });
@@ -143,7 +143,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     const afterFocus = await page.evaluate(() => {
       const body = document.body?.dataset || {};
       // eslint-disable-next-line no-undef
-      const s = window.state || {};
+      const s = window.__TEST_STATE__ || {};
       return {
         trailDepth: s.trailDepth,
         navStateMode: s.navState?.mode,
@@ -176,7 +176,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
       const searchResults = document.getElementById('search-results');
       const searchInput = document.getElementById('search-input');
       // eslint-disable-next-line no-undef
-      const s = window.state || {};
+      const s = window.__TEST_STATE__ || {};
       return {
         searchGlow: body.searchGlow,
         currentSearchSummary: s.currentSearchSummary ? 'present' : null,

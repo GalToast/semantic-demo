@@ -1,9 +1,10 @@
 import { state } from '../state.js';
 import { isCompactFocusStageViewport } from '../utils.js';
-import { syncFilterControls, resetExperienceState, resetExplorationFocus, executeJourneyCompassAction } from './lifecycle.js';
+import { syncFilterControls, resetExperienceState, resetExplorationFocus } from './lifecycle.js';
+import { executeJourneyCompassAction } from './journey-compass-controller.js';
 import { traverseNeighbor, setSemanticDiveMode } from './journey.js';
 import { switchView } from './view-controller.js';
-import { toggleAutoRotate, focusOnNode } from './camera-controls.js';
+import { toggleAutoRotate, focusOnNode, animateCameraToNode } from './camera-controls.js';
 import { handleGalaxyKeydown } from './keyboard-help.js';
 import {
     search,
@@ -20,6 +21,17 @@ import {
 import { closeLegendPanel, openLegendPanel, restoreLegendCollapsedPanel } from './legend-ui.js';
 import { showExperienceToast } from './ui-feedback.js';
 import { requestSemanticGuide } from './semantic-guide.js';
+import { applyLocalNeighborhoodFocus } from './focus-pocket.js';
+import { applyStoryPrompt, clearClusterFilter, probeSemanticLane, returnToOverview } from './lifecycle.js';
+import { applyUrlState } from './url-state.js';
+import { loadSemanticThreads } from './semantic-threads.js';
+import { focusSearchInputForReplacement } from './search-state.js';
+import { zoomMap } from './map-state.js';
+import { copyCurrentViewLink, exploreInsideToNextStop, hideSummaryCard } from './lifecycle.js';
+import { closeLegendGuide } from './legend-ui.js';
+import { syncClusterSectionState } from './cluster-labels.js';
+import { showSemanticThreadsDetail } from './connection-analysis.js';
+import { buildLegend } from './ui-renderers.js';
 
 function bindClick(id, handler, options = {}) {
     const element = document.getElementById(id);
@@ -33,8 +45,8 @@ function bindClick(id, handler, options = {}) {
 function bindViewControls() {
     bindClick('btn-galaxy', () => switchView('galaxy'));
     bindClick('btn-map', () => switchView('map'));
-    bindClick('btn-zoom-in', () => window.zoomCamera?.(0.84));
-    bindClick('btn-zoom-out', () => window.zoomCamera?.(1.18));
+    bindClick('btn-zoom-in', () => zoomCamera(0.84));
+    bindClick('btn-zoom-out', () => zoomCamera(1.18));
     bindClick('btn-reset', () => resetExperienceState());
     bindClick('btn-rotate', () => toggleAutoRotate());
     bindClick('btn-share-view', () => {
@@ -42,8 +54,8 @@ function bindViewControls() {
         if (!btn) return;
         const originalHTML = btn.innerHTML;
         const originalLabel = btn.getAttribute('aria-label') || 'Copy current view link';
-        if (typeof window.copyCurrentViewLink === 'function') {
-            window.copyCurrentViewLink().then(() => {
+        if (typeof copyCurrentViewLink === 'function') {
+            copyCurrentViewLink().then(() => {
                 btn.innerHTML = `<span class="share-toggle-label" aria-hidden="true">Copied</span>`;
                 btn.setAttribute('aria-label', 'Link copied to clipboard');
                 setTimeout(() => {
@@ -67,11 +79,11 @@ function bindFocusControls() {
     bindClick('btn-focus-prev', () => { traverseNeighbor(-1); });
     bindClick('btn-focus-next', () => { traverseNeighbor(1); });
     bindClick('btn-focus-overview', () => { resetExplorationFocus(); });
-    bindClick('btn-focus-center', () => { if (typeof window.recenterFocusedNode === 'function') window.recenterFocusedNode(); });
-    bindClick('btn-focus-expand', () => { if (typeof window.expandNeighborhoodFromCurrentNode === 'function') window.expandNeighborhoodFromCurrentNode(); });
+    bindClick('btn-focus-center', () => { recenterFocusedNode(); });
+    bindClick('btn-focus-expand', () => { expandNeighborhoodFromCurrentNode(); });
     bindClick('btn-focus-dive', () => { setSemanticDiveMode(!state.semanticDiveMode); });
-    bindClick('btn-inside-next', () => { if (typeof window.exploreInsideToNextStop === 'function') window.exploreInsideToNextStop(); }, { optional: true });
-    bindClick('btn-inside-county', () => { if (typeof window.returnToCountyView === 'function') window.returnToCountyView(); }, { optional: true });
+    bindClick('btn-inside-next', () => { if (typeof exploreInsideToNextStop === 'function') exploreInsideToNextStop(); }, { optional: true });
+    bindClick('btn-inside-county', () => { if (typeof returnToCountyView === 'function') returnToCountyView(); }, { optional: true });
     bindClick('btn-journey-primary', (event) =>
         runJourneyCompassAction(event.currentTarget.dataset.journeyAction));
     bindClick('btn-journey-secondary', (event) =>
@@ -115,7 +127,7 @@ function bindFocusControls() {
         // Fallback: trigger the cluster list toggle. Quarantine: avoid routing to
         // random-business unless the shell proves that is the intended control.
         if (state.activeClusterFilter !== null) {
-            if (typeof window.clearClusterFilter === 'function') window.clearClusterFilter();
+            if (typeof clearClusterFilter === 'function') clearClusterFilter();
         } else {
             const clusterList = document.getElementById('cluster-list');
             const firstClusterBtn = clusterList?.querySelector('[data-cluster]');
@@ -238,7 +250,7 @@ function bindSuggestionControls() {
                 if (nearest !== null) focusOnNode(nearest, { fromCanvasNode: true });
             }
         } else if (action === 'report') {
-            if (typeof window.showSemanticThreadsDetail === 'function') window.showSemanticThreadsDetail();
+            if (typeof showSemanticThreadsDetail === 'function') showSemanticThreadsDetail();
         }
     });
 }
@@ -281,7 +293,7 @@ function bindSearchControls() {
         } else if (event.key === 'Escape') {
             event.preventDefault();
             event.stopPropagation();
-            if (typeof window.returnToOverview === 'function') window.returnToOverview();
+            if (typeof returnToOverview === 'function') returnToOverview();
             else clearSearch();
             searchInput.blur();
         }
@@ -309,8 +321,8 @@ function bindSemanticLaneControls(recordSemanticLaneSnapshot, setSemanticLaneUiS
         retryBtn.onclick = () => {
             recordSemanticLaneSnapshot({ state: 'reconnecting', attempted_warm: true });
             setSemanticLaneUiState('reconnecting', { label: 'Manual retry', title: 'Manual search retry is refreshing the background services.' });
-            if (typeof window.loadSemanticThreads === 'function') window.loadSemanticThreads({ reason: 'manual-retry' }).catch(() => {});
-            if (typeof window.probeSemanticLane === 'function') window.probeSemanticLane({ warm: true, reason: 'manual-retry' }).catch(() => {});
+            if (typeof loadSemanticThreads === 'function') loadSemanticThreads({ reason: 'manual-retry' }).catch(() => {});
+            if (typeof probeSemanticLane === 'function') probeSemanticLane({ warm: true, reason: 'manual-retry' }).catch(() => {});
         };
     }
 }
@@ -318,12 +330,12 @@ function bindSemanticLaneControls(recordSemanticLaneSnapshot, setSemanticLaneUiS
 function bindModeAndPromptControls(setMyceliumMode) {
     document.querySelectorAll('[data-mode]').forEach((button) => {
         button.onclick = () => {
-            if (button.dataset.story && typeof window.applyStoryPrompt === 'function') {
+            if (button.dataset.story && typeof applyStoryPrompt === 'function') {
                 if (button.dataset.story === 'trail' && state.focusedNode === null) {
                     showExperienceToast('Trail locked', 'Select a business first.');
                     return;
                 }
-                window.applyStoryPrompt(button.dataset.story);
+                applyStoryPrompt(button.dataset.story);
                 return;
             }
             const mode = button.dataset.mode || 'default';
@@ -341,7 +353,7 @@ function bindModeAndPromptControls(setMyceliumMode) {
             const searchInput = document.getElementById('search-input');
             if (searchInput) {
                 searchInput.value = query;
-                if (typeof window.focusSearchInputForReplacement === 'function') window.focusSearchInputForReplacement();
+                if (typeof focusSearchInputForReplacement === 'function') focusSearchInputForReplacement();
             }
             document.querySelectorAll('[data-demo-query]').forEach((chip) => {
                 chip.classList.remove('active', 'is-loading');
@@ -377,7 +389,7 @@ function bindModeAndPromptControls(setMyceliumMode) {
 
     document.querySelectorAll('[data-story]').forEach((button) => {
         button.onclick = () => {
-            if (typeof window.applyStoryPrompt === 'function') window.applyStoryPrompt(button.dataset.story || '');
+            if (typeof applyStoryPrompt === 'function') applyStoryPrompt(button.dataset.story || '');
         };
     });
 }
@@ -447,45 +459,46 @@ function bindFilterControls(updateUrlState) {
 }
 
 function bindWindowControlFunctions(resetExperienceState, resetNodePositions) {
-    window.revealSelectedBusinessCard = function () {
-        if (typeof window.setInfoPanelOpen === 'function') {
-            window.setInfoPanelOpen(true);
-        }
-    };
+    // Fallback bindings for map-state and navigation buttons are now removed
+}
 
-    window.zoomCamera = function (multiplier) {
-        if (state.currentView === 'map' && typeof window.zoomMap === 'function') {
-            window.zoomMap(multiplier);
-            return;
-        }
-        if (!state.camera || !state.controls) return;
-        const target = state.controls.target;
-        const direction = state.camera.position.clone().sub(target).normalize();
-        const currentDistance = state.camera.position.distanceTo(target);
-        const newDistance = currentDistance * multiplier;
-        const minDist = state.controls.minDistance || state.ORBIT_MIN_DISTANCE_DEFAULT;
-        const maxDist = state.controls.maxDistance || state.ORBIT_MAX_DISTANCE_DEFAULT;
-        const clampedDistance = Math.max(minDist, Math.min(maxDist, newDistance));
-        state.camera.position.copy(target.clone().add(direction.multiplyScalar(clampedDistance)));
-    };
+export function revealSelectedBusinessCard() {
+    setInfoPanelOpen(true);
+}
 
-    window.expandNeighborhoodFromCurrentNode = function () {
-        const index = state.focusedNode;
-        if (!Number.isFinite(index)) return;
-        if (typeof window._fp?.applyLocalNeighborhoodFocus === 'function') window._fp.applyLocalNeighborhoodFocus(index);
-    };
+export function zoomCamera(multiplier) {
+    if (state.currentView === 'map' && typeof zoomMap === 'function') {
+        zoomMap(multiplier);
+        return;
+    }
+    if (!state.camera || !state.controls) return;
+    const target = state.controls.target;
+    const direction = state.camera.position.clone().sub(target).normalize();
+    const currentDistance = state.camera.position.distanceTo(target);
+    const newDistance = currentDistance * multiplier;
+    const minDist = state.controls.minDistance || state.ORBIT_MIN_DISTANCE_DEFAULT;
+    const maxDist = state.controls.maxDistance || state.ORBIT_MAX_DISTANCE_DEFAULT;
+    const clampedDistance = Math.max(minDist, Math.min(maxDist, newDistance));
+    state.camera.position.copy(target.clone().add(direction.multiplyScalar(clampedDistance)));
+}
 
-    window.recenterFocusedNode = function () {
-        const index = state.focusedNode;
-        if (!Number.isFinite(index)) return;
-        if (typeof window.animateCameraToNode === 'function') window.animateCameraToNode(index, { transitionStyle: 'focus' });
-    };
+export function expandNeighborhoodFromCurrentNode() {
+    const index = state.focusedNode;
+    if (!Number.isFinite(index)) return;
+    applyLocalNeighborhoodFocus(index);
+}
 
-    window.returnToCountyView = function () {
-        resetExplorationFocus();
-    };
+export function recenterFocusedNode() {
+    const index = state.focusedNode;
+    if (!Number.isFinite(index)) return;
+    animateCameraToNode(index, { transitionStyle: 'focus' });
+}
 
-    window.setInfoPanelOpen = function (open, options = {}) {
+export function returnToCountyView() {
+    resetExplorationFocus();
+}
+
+export function setInfoPanelOpen(open, options = {}) {
         const panel = document.querySelector('.info-panel');
         if (!panel) return false;
         const isOpen = panel.classList.contains('active');
@@ -522,8 +535,12 @@ function bindWindowControlFunctions(resetExperienceState, resetNodePositions) {
         }
 
         return shouldBeOpen;
+    }
+
+    // Ensure panel opens on click, or if closed, resizes
+    window.setInfoPanelOpen = function(open, options = {}) {
+        return setInfoPanelOpen(open, options);
     };
-}
 
 let _activeResizeHandler = null;
 
@@ -536,7 +553,7 @@ function bindPanelControls(onWindowResize) {
 
     bindClick('info-panel-toggle', () => {
         window.cancelMicroDemo?.('user-input');
-        window.setInfoPanelOpen();
+        setInfoPanelOpen();
     });
 
     bindClick('btn-panel', () => {
@@ -596,7 +613,7 @@ function bindLegendControls() {
         });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && legendPanel?.classList.contains('active')) {
-                if (typeof window.closeLegendGuide === 'function') window.closeLegendGuide({ restoreFocus: true });
+                if (typeof closeLegendGuide === 'function') closeLegendGuide({ restoreFocus: true });
             }
         });
     }
@@ -614,18 +631,18 @@ function bindGlobalEvents() {
             }
         }, true);
         window.addEventListener('keydown', (e) => { handleGalaxyKeydown(e); });
-        window.addEventListener('focus', () => { if (typeof window.handleSemanticLaneWindowFocus === 'function') window.handleSemanticLaneWindowFocus(); });
+        window.addEventListener('focus', () => { if (typeof handleSemanticLaneWindowFocus === 'function') handleSemanticLaneWindowFocus(); });
         window.addEventListener('popstate', (e) => {
-            if (typeof window.applyUrlState === 'function') window.applyUrlState({ fromHistory: true, historyState: e.state }).catch(() => {});
+            if (typeof applyUrlState === 'function') applyUrlState({ fromHistory: true, historyState: e.state }).catch(() => {});
         });
-        document.addEventListener('visibilitychange', () => { if (typeof window.handleSemanticLaneVisibilityChange === 'function') window.handleSemanticLaneVisibilityChange(); });
+        document.addEventListener('visibilitychange', () => { if (typeof handleSemanticLaneVisibilityChange === 'function') handleSemanticLaneVisibilityChange(); });
     }
 }
 
 function bindUtilityButtons() {
     bindClick('btn-close-summary', () => {
-        if (typeof window.hideSummaryCard === 'function') window.hideSummaryCard();
-        if (typeof window.closeLegendGuide === 'function') window.closeLegendGuide();
+        if (typeof hideSummaryCard === 'function') hideSummaryCard();
+        if (typeof closeLegendGuide === 'function') closeLegendGuide();
     });
     bindClick('btn-synthesize', () => { if (typeof requestSemanticGuide === 'function') requestSemanticGuide(); });
     bindClick('btn-prev-node', () => { traverseNeighbor(-1); });
@@ -703,7 +720,7 @@ export function initEventListeners({
     bindPanelControls(onWindowResize);
     bindLegendControls();
 
-    if (typeof window.buildLegend === 'function') window.buildLegend();
-    if (typeof window.syncClusterSectionState === 'function') window.syncClusterSectionState();
+    if (typeof buildLegend === 'function') buildLegend();
+    if (typeof syncClusterSectionState === 'function') syncClusterSectionState();
     scheduleOnboardingHint();
 }

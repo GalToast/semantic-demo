@@ -6,7 +6,7 @@ const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(
 /**
  * Probe the three relevant pieces of state for this race test:
  *   - URL cluster param
- *   - window.state.activeClusterFilter
+ *   - window.__TEST_STATE__.activeClusterFilter
  *   - active cluster-item DOM elements
  */
 async function clusterStateProbe(page) {
@@ -15,7 +15,7 @@ async function clusterStateProbe(page) {
     return {
       url: location.href,
       urlCluster: url.searchParams.get('cluster'),
-      stateCluster: window.state?.activeClusterFilter ?? null,
+      stateCluster: window.__TEST_STATE__?.activeClusterFilter ?? null,
       activeClusterItems: Array.from(document.querySelectorAll('.cluster-item.active')).map(
         el => Number(el.dataset.cluster)
       )
@@ -60,7 +60,7 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
     // State starts with activeClusterFilter = null after init; stamp it to a known stale value.
     const STALE_CLUSTER = 7;
     await page.evaluate((cluster) => {
-      window.state.activeClusterFilter = cluster;
+      window.__TEST_STATE__.activeClusterFilter = cluster;
     }, STALE_CLUSTER);
 
     // Verify pre-condition: stale cluster is set
@@ -81,7 +81,7 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
 
     // Allow applyUrlState to settle (includes deferred path, filter sync, glow activation)
     await page.waitForFunction(() => (
-      window.state?.activeClusterFilter !== null ||
+      window.__TEST_STATE__?.activeClusterFilter !== null ||
       document.querySelector('.cluster-item.active') !== null
     ), { timeout: 15000 });
     await page.waitForTimeout(1500);
@@ -119,7 +119,7 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
       document.body.dataset.graphicsMode === 'webgl'
     ), { timeout: 20000 });
     await page.waitForFunction(() => (
-      window.state?.activeClusterFilter === 5
+      window.__TEST_STATE__?.activeClusterFilter === 5
     ), { timeout: 15000 });
     await page.waitForTimeout(800);
 
@@ -164,7 +164,7 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
       document.body.dataset.graphicsMode === 'webgl'
     ), { timeout: 20000 });
     await page.waitForFunction(() => (
-      window.state?.activeClusterFilter === 2
+      window.__TEST_STATE__?.activeClusterFilter === 2
     ), { timeout: 15000 });
     await page.waitForTimeout(800);
 
@@ -172,7 +172,7 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
     // some other code path set it between reset and restore)
     const STALE_CLUSTER = 9;
     await page.evaluate((cluster) => {
-      window.state.activeClusterFilter = cluster;
+      window.__TEST_STATE__.activeClusterFilter = cluster;
     }, STALE_CLUSTER);
 
     // Trigger applyUrlState with the SAME URL (simulates onpopstate / history nav)

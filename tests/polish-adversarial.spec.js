@@ -23,7 +23,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
         const note = document.getElementById('loading-note');
         const foot = document.getElementById('loading-foot');
         return {
-          phase: window.state?.loadingPhaseKey ?? 'unknown',
+          phase: window.__TEST_STATE__?.loadingPhaseKey ?? 'unknown',
           overlayHidden: overlay?.hidden,
           overlayInert: overlay?.inert,
           overlayDisplay: overlay ? getComputedStyle(overlay).display : 'N/A',
@@ -41,7 +41,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
     // 1. Seed a deterministic search rail. This test verifies the panel
     // visibility contract, not semantic API availability.
     await page.evaluate(() => {
-      const state = window.state;
+      const state = window.__TEST_STATE__;
       const point = state?.points?.[0];
       if (!state || !point) throw new Error('Semantic demo points were not loaded');
 
@@ -84,10 +84,10 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
 
     // 3. Simulate the focused surface state and ensure search context persists.
     await page.evaluate(() => {
-      window.state.focusedNode = 0;
-      window.state.selectedPoint = window.state.points[0];
-      window.state.navState.focusedIndex = 0;
-      window.state.navState.mode = 'focus';
+      window.__TEST_STATE__.focusedNode = 0;
+      window.__TEST_STATE__.selectedPoint = window.__TEST_STATE__.points[0];
+      window.__TEST_STATE__.navState.focusedIndex = 0;
+      window.__TEST_STATE__.navState.mode = 'focus';
       window.refreshCompositionState?.();
     });
     await page.waitForTimeout(1500);
@@ -130,14 +130,14 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
     const demoRunning = await page.evaluate(() => window.demoController.isRunning());
     expect(demoRunning).toBe(false);
 
-    const controlsEnabled = await page.evaluate(() => window.state.controls.enabled);
+    const controlsEnabled = await page.evaluate(() => window.__TEST_STATE__.controls.enabled);
     expect(controlsEnabled).toBe(true);
   });
 
   test('Weather Fallback & Staleness UI', async ({ page }) => {
     // 1. Force a weather failure state in the app
     await page.evaluate(() => {
-      window.state.lastSuccessfulFetch = Date.now() - (5 * 60000); // 5 mins ago
+      window.__TEST_STATE__.lastSuccessfulFetch = Date.now() - (5 * 60000); // 5 mins ago
       // Manually trigger fallback to simulate a failed refresh
       // Since it's private, we'll just check if the UI reacts to the state
       const desc = document.getElementById('weather-desc');

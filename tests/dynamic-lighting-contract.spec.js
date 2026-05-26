@@ -64,9 +64,9 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
     typeof window.clearSearch === 'function' &&
     typeof window.setSemanticDiveMode === 'function' &&
     typeof window.refreshCompositionState === 'function' &&
-    Array.isArray(window.state?.points) &&
-    window.state.points.length > 0 &&
-    window.state.pointIndexByLeadId?.size > 0
+    Array.isArray(window.__TEST_STATE__?.points) &&
+    window.__TEST_STATE__.points.length > 0 &&
+    window.__TEST_STATE__.pointIndexByLeadId?.size > 0
   ), { timeout: 20000 });
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
@@ -79,11 +79,11 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
   }, { timeout: 20000 });
   await page.waitForTimeout(1200);
   await page.evaluate(() => {
-    if (!window.state?.myceliumCoreLines && typeof window.createMycelium === 'function') {
+    if (!window.__TEST_STATE__?.myceliumCoreLines && typeof window.createMycelium === 'function') {
       window.createMycelium();
     }
   });
-  await page.waitForFunction(() => Boolean(window.state?.myceliumCoreLines?.material), { timeout: 10000 });
+  await page.waitForFunction(() => Boolean(window.__TEST_STATE__?.myceliumCoreLines?.material), { timeout: 10000 });
 }
 
 async function performSearch(page, query = 'coffee') {
@@ -105,7 +105,7 @@ async function performSearch(page, query = 'coffee') {
 /** Probe the opacity values from the Three.js material objects. */
 async function probeOpacities(page) {
   return page.evaluate(() => {
-    const state = window.state || {};
+    const state = window.__TEST_STATE__ || {};
     const coreMat  = state.myceliumCoreLines?.material;
     const wispyMat = state.myceliumWispyLines?.material;
     const bridgeMat = state.myceliumBridgeLines?.material;
@@ -172,7 +172,7 @@ test.describe('dynamic-lighting: mycelium opacity responds to focus state', () =
 
     // Wait for focusedNode to become non-null
     await page.waitForFunction(
-      () => window.state?.focusedNode !== null && window.state?.focusedNode !== undefined,
+      () => window.__TEST_STATE__?.focusedNode !== null && window.__TEST_STATE__?.focusedNode !== undefined,
       { timeout: 15000 }
     );
 
@@ -201,7 +201,7 @@ test.describe('dynamic-lighting: mycelium opacity responds to focus state', () =
     await performSearch(page);
     await page.locator('.search-result-item').first().click();
     await page.waitForFunction(
-      () => window.state?.focusedNode !== null && window.state?.focusedNode !== undefined,
+      () => window.__TEST_STATE__?.focusedNode !== null && window.__TEST_STATE__?.focusedNode !== undefined,
       { timeout: 15000 }
     );
 
@@ -217,7 +217,7 @@ test.describe('dynamic-lighting: mycelium opacity responds to focus state', () =
 
     // Wait for focusedNode to be cleared
     await page.waitForFunction(
-      () => window.state?.focusedNode === null || window.state?.focusedNode === undefined,
+      () => window.__TEST_STATE__?.focusedNode === null || window.__TEST_STATE__?.focusedNode === undefined,
       { timeout: 10000 }
     );
 

@@ -1,4 +1,4 @@
-(function () {
+import { state } from './js/state.js';
     const LEAFLET_CSS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
     const LEAFLET_JS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
     const COLORS = [
@@ -75,7 +75,6 @@
     }
 
     function visiblePoints() {
-        const state = window.state || {};
         const points = Array.isArray(state.points) ? state.points : [];
         const activeFilters = state.activeFilters || {};
         return points.filter((point) => {
@@ -103,7 +102,6 @@
     }
 
     async function initMap() {
-        const state = window.state || {};
         const container = document.getElementById('map-container');
         if (!container) throw new Error('Map container is missing');
 
@@ -189,4 +187,3 @@
                 if (typeof window.resetExperienceState === 'function') window.resetExperienceState();
             }
         };
-})();

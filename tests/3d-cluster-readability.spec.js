@@ -30,12 +30,12 @@ const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
 async function waitForGalaxyReady(page) {
   await page.waitForFunction(() => {
     return (
-      typeof window.state === 'object' &&
-      window.state !== null &&
-      Array.isArray(window.state.points) &&
-      window.state.points.length > 0 &&
-      window.state.pointIndexByLeadId instanceof Map &&
-      window.state.pointIndexByLeadId.size > 0
+      typeof window.__TEST_STATE__ === 'object' &&
+      window.__TEST_STATE__ !== null &&
+      Array.isArray(window.__TEST_STATE__.points) &&
+      window.__TEST_STATE__.points.length > 0 &&
+      window.__TEST_STATE__.pointIndexByLeadId instanceof Map &&
+      window.__TEST_STATE__.pointIndexByLeadId.size > 0
     );
   }, { timeout: 20000 });
 
@@ -51,7 +51,7 @@ async function waitForGalaxyReady(page) {
 /** Derive cluster counts from state.points (filters out null clusters). */
 async function getClusterCounts(page) {
   return page.evaluate(() => {
-    const points = window.state?.points;
+    const points = window.__TEST_STATE__?.points;
     if (!Array.isArray(points)) return null;
     const counts = new Map();
     points.forEach(p => {
@@ -196,7 +196,7 @@ async function detectLabelOcclusion(page) {
 
 async function enterFocusMode(page) {
   const focusedIndex = await page.evaluate(() => {
-    const points = window.state?.points ?? [];
+    const points = window.__TEST_STATE__?.points ?? [];
     const index = points.findIndex(point => Number.isFinite(point?.cluster));
     if (index >= 0 && typeof window.focusOnNode === 'function') {
       window.focusOnNode(index, { fromCanvasNode: true });
@@ -204,7 +204,7 @@ async function enterFocusMode(page) {
     return index;
   });
   expect(focusedIndex, 'focusable clustered point must exist').toBeGreaterThanOrEqual(0);
-  await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+  await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
   await page.waitForTimeout(1200);
 }
 
@@ -492,8 +492,8 @@ test.describe('3D cluster readability', () => {
 
     // Point count and cluster data must remain valid
     const state = await page.evaluate(() => ({
-      pointCount: window.state?.points?.length ?? 0,
-      navMode: window.state?.navState?.mode ?? ''
+      pointCount: window.__TEST_STATE__?.points?.length ?? 0,
+      navMode: window.__TEST_STATE__?.navState?.mode ?? ''
     }));
     expect(state.pointCount, 'point count must be preserved through transition').toBeGreaterThan(0);
     expect(state.navMode, 'nav mode must be focus').toBe('focus');
@@ -516,8 +516,8 @@ test.describe('3D cluster readability', () => {
     expect(focusProbes.visible, 'mobile focus should suppress overview cluster labels').toBeLessThan(overviewProbes.visible);
 
     const state = await page.evaluate(() => ({
-      pointCount: window.state?.points?.length ?? 0,
-      navMode: window.state?.navState?.mode ?? ''
+      pointCount: window.__TEST_STATE__?.points?.length ?? 0,
+      navMode: window.__TEST_STATE__?.navState?.mode ?? ''
     }));
     expect(state.pointCount, 'mobile point count must survive transition').toBeGreaterThan(0);
     expect(state.navMode, 'mobile nav mode must be focus').toBe('focus');
@@ -539,8 +539,8 @@ test.describe('3D cluster readability', () => {
     expect(focusProbes.visible, 'short-landscape focus should suppress overview cluster labels').toBeLessThan(overviewProbes.visible);
 
     const state = await page.evaluate(() => ({
-      pointCount: window.state?.points?.length ?? 0,
-      navMode: window.state?.navState?.mode ?? ''
+      pointCount: window.__TEST_STATE__?.points?.length ?? 0,
+      navMode: window.__TEST_STATE__?.navState?.mode ?? ''
     }));
     expect(state.pointCount, 'short-landscape point count must survive transition').toBeGreaterThan(0);
     expect(state.navMode, 'short-landscape nav mode should be focus after focusOnNode').toBe('focus');

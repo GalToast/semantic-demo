@@ -35,11 +35,11 @@ async function openAppHiDPI(browser, viewport = { width: 1440, height: 900 }, { 
   await page.waitForFunction(() => (
     typeof window.clearSearch === 'function' &&
     typeof window.focusOnNode === 'function' &&
-    Array.isArray(window.state?.points) &&
-    window.state.points.length > 0 &&
-    window.state?.renderer?.domElement &&
-    window.state?.camera &&
-    window.state?.pointsMesh
+    Array.isArray(window.__TEST_STATE__?.points) &&
+    window.__TEST_STATE__.points.length > 0 &&
+    window.__TEST_STATE__?.renderer?.domElement &&
+    window.__TEST_STATE__?.camera &&
+    window.__TEST_STATE__?.pointsMesh
   ), { timeout: 20000 });
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
@@ -57,7 +57,7 @@ async function openAppHiDPI(browser, viewport = { width: 1440, height: 900 }, { 
       window.resetExplorationFocus();
     }
   });
-  await page.waitForFunction(() => window.state?.navState?.mode === 'overview', { timeout: 10000 });
+  await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'overview', { timeout: 10000 });
   await page.waitForTimeout(900);
 
   return { page, context };
@@ -103,10 +103,10 @@ async function clickResolvedNodeHiDPI(page) {
  */
 async function probeLabelLegibilityHiDPI(page) {
   return page.evaluate(() => {
-    const focusedNode = window.state?.focusedNode;
+    const focusedNode = window.__TEST_STATE__?.focusedNode;
     if (focusedNode === null || focusedNode === undefined) return { ok: false, reason: 'no-focused-node' };
 
-    const point = window.state?.points?.[focusedNode];
+    const point = window.__TEST_STATE__?.points?.[focusedNode];
     if (!point) return { ok: false, reason: 'point-missing' };
 
     // Check label text is present and non-trivial
@@ -120,8 +120,8 @@ async function probeLabelLegibilityHiDPI(page) {
 
     // At DPR=2, font rendering is sharper — verify the focused node index
     // itself is stored (proof the label is tied to the right node identity)
-    const focusedIndex = window.state?.navState?.focusedIndex;
-    const pointCount = window.state?.points?.length ?? 0;
+    const focusedIndex = window.__TEST_STATE__?.navState?.focusedIndex;
+    const pointCount = window.__TEST_STATE__?.points?.length ?? 0;
     const indexValid = Number.isFinite(focusedIndex) && focusedIndex >= 0 && focusedIndex < pointCount;
 
     return {
@@ -293,7 +293,7 @@ test.describe('3D HiDPI click accuracy (deviceScaleFactor=2)', () => {
       ({ page, context } = await openAppHiDPI(browser, { width: 1440, height: 900 }));
 
       const diag = await page.evaluate(() => {
-        const canvas = window.state?.renderer?.domElement;
+        const canvas = window.__TEST_STATE__?.renderer?.domElement;
         if (!canvas) return null;
         const rect = canvas.getBoundingClientRect();
         return {

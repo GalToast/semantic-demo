@@ -8,7 +8,12 @@ import * as THREE from 'three';
 import { easeInOutSine } from '../utils.js';
 import { animateCameraToNode } from './camera-controls.js';
 import { applyLocalNeighborhoodFocus, clearFocusPocketIndices, clearFocusPocketMeta } from './focus-pocket.js';
-import { updateJourneyCompass, refreshCompositionState, updateExplorationUi } from './lifecycle.js';
+import { refreshCompositionState, updateExplorationUi, resetNodePositions } from './lifecycle.js';
+import { updateJourneyCompass } from './journey-compass-controller.js';
+import { setAutoRotateSuspended } from './camera-controls.js';
+import { updateSelectedBusiness, applyPointFilterColors } from './journey.js';
+import { setInfoPanelOpen } from './event-bindings.js';
+import { demoController } from './demo-controller.js';
 
 // === Constants ===
 const SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1';
@@ -61,9 +66,9 @@ function _isAppReadyForDemo() {
 }
 
 function _notifyDemoUnableToStart() {
-    if (window.demoController?.isRunning?.()) {
-        window.demoController.cancel();
-        return;
+    // If demo controller is actively managing a demo (e.g., initial 10s grace period)
+    if (demoController.isRunning()) {
+        demoController.cancel();
     }
     window.dispatchEvent(new CustomEvent('demo-cancelled'));
 }
@@ -362,17 +367,11 @@ function __demoReset() {
 
     if (state.controls) state.controls.enabled = true;
 
-    if (typeof window.updateSelectedBusiness === 'function') {
-        window.updateSelectedBusiness(null);
-    }
-    if (typeof window.applyPointFilterColors === 'function') {
-        window.applyPointFilterColors();
-    }
+    updateSelectedBusiness(null);
+    applyPointFilterColors();
     refreshCompositionState();
     updateJourneyCompass();
-    if (typeof window.setInfoPanelOpen === 'function') {
-        window.setInfoPanelOpen(true);
-    }
+    setInfoPanelOpen(true);
 }
 
 /**
@@ -389,15 +388,12 @@ function __demoFocusSetup(demoNode) {
     state.navState.focusedIndex = demoNode;
     state.navState.walkHistoryIndices = [demoNode];
 
-    if (typeof window.updateSelectedBusiness === 'function') {
-        window.updateSelectedBusiness(point, { revealCard: true });
-    }
-    if (typeof window.applyPointFilterColors === 'function') {
-        window.applyPointFilterColors();
-    }
+    updateSelectedBusiness(point, { revealCard: true });
+    applyPointFilterColors();
     updateExplorationUi();
     updateJourneyCompass('focus');
     refreshCompositionState();
+    resetNodePositions();
     if (typeof applyLocalNeighborhoodFocus === 'function') {
         applyLocalNeighborhoodFocus(demoNode);
     }
@@ -414,13 +410,13 @@ function _resetAppState() {
  * Check whether the micro-demo should run on this page load.
  * Returns false if sessionStorage flag is already set.
  */
-window.shouldRunMicroDemo = function () {
+export function shouldRunMicroDemo() {
     const params = new URLSearchParams(window.location.search);
     const forceDemo = params.get('demo') === 'force';
     if (!forceDemo && sessionStorage.getItem(SESSION_STORAGE_KEY)) return false;
     if (!_isAppReadyForDemo()) return false;
     return true;
-};
+}
 
 let _startRetryCount = 0;
 const MAX_START_RETRIES = 100; // ~15 seconds of polling at 150ms
@@ -429,7 +425,7 @@ const MAX_START_RETRIES = 100; // ~15 seconds of polling at 150ms
  * Start the micro-demo if conditions are right.
  * Sets sessionStorage flag immediately to prevent double-fires.
  */
-window.startMicroDemo = function () {
+export function startMicroDemo() {
     if (_demoPhase !== PHASE.IDLE) return;
     const params = new URLSearchParams(window.location.search);
     const forceDemo = params.get('demo') === 'force';
@@ -444,7 +440,7 @@ window.startMicroDemo = function () {
             _startRetryCount++;
             _startRetryTimer = window.setTimeout(() => {
                 _startRetryTimer = null;
-                window.startMicroDemo();
+                startMicroDemo();
             }, 150);
             return;
         }
@@ -472,12 +468,7 @@ function _runDemo() {
     _demoCancelled = false;
     _captureOverviewCameraSnapshot();
 
-    // Suspend auto-rotate for demo duration
-    if (typeof window.setAutoRotateSuspended === 'function') {
-        window.setAutoRotateSuspended(true);
-    }
-
-    // Disable orbit controls during demo
+    setAutoRotateSuspended(false);   // Disable orbit controls during demo
     if (state.controls) state.controls.enabled = false;
 
     // Show veil
@@ -568,9 +559,7 @@ function _runDemo() {
             detail: { index: demoNode, phase: 'wide_view' }
         }));
         // Slide out info card
-        if (typeof window.setInfoPanelOpen === 'function') {
-            window.setInfoPanelOpen(false);
-        }
+        window.setInfoPanelOpen(false);
     }, 7200));
 
     // T = 7800ms: Return to overview
@@ -598,9 +587,7 @@ function _runDemo() {
         _showEndToast();
 
         // Resume auto-rotate
-        if (typeof window.setAutoRotateSuspended === 'function') {
-            window.setAutoRotateSuspended(false);
-        }
+        setAutoRotateSuspended(false);
 
         // Notify demo-controller so it writes localStorage and transitions state
         window.dispatchEvent(new CustomEvent('demo-complete'));
@@ -642,21 +629,20 @@ export function cancelMicroDemo(reason = 'user-input') {
     _showVeil(false);
 
     // Resume auto-rotate
-    if (typeof window.setAutoRotateSuspended === 'function') {
-        window.setAutoRotateSuspended(false);
-    }
+    setAutoRotateSuspended(false);
 
     // Notify demo-controller so it transitions state
     window.dispatchEvent(new CustomEvent('demo-cancelled'));
 }
-window.cancelMicroDemo = cancelMicroDemo;
+
 
 // === CSS keyframe injection ===
-const _cssInjected = () => document.getElementById('micro-demo-styles');
-if (!_cssInjected()) {
-    const style = document.createElement('style');
-    style.id = 'micro-demo-styles';
-    style.textContent = `
+if (typeof document !== 'undefined' && typeof document.getElementById === 'function' && typeof document.createElement === 'function') {
+    const _cssInjected = () => document.getElementById('micro-demo-styles');
+    if (!_cssInjected()) {
+        const style = document.createElement('style');
+        style.id = 'micro-demo-styles';
+        style.textContent = `
 @keyframes microDemoPulse {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.6); opacity: 0.7; }
@@ -670,5 +656,8 @@ if (!_cssInjected()) {
     to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 `;
-    document.head.appendChild(style);
+        if (document.head && typeof document.head.appendChild === 'function') {
+            document.head.appendChild(style);
+        }
+    }
 }

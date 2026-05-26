@@ -1,13 +1,24 @@
 import { state } from '../state.js';
+import { clearSearch, focusSearchInputForReplacement } from './search-state.js';
+import { demoController } from './demo-controller.js';
 import { showExperienceToast } from './ui-feedback.js';
+import { closeLegendGuide } from './legend-ui.js';
+import { hideTooltip } from './tooltip.js';
+import { hideSummaryCard } from './semantic-guide.js';
+import { setInfoPanelOpen, zoomCamera, recenterFocusedNode } from './event-bindings.js';
+import { traverseNeighbor } from './journey.js';
 
 // Injected reset functions are set via initKeyboardResetOwnership() before first keydown.
 // Falls back to window bridge so keyboard-help.js never needs to import lifecycle.js.
 let _returnToOverview = () => {
-    if (typeof window.returnToOverview === 'function') window.returnToOverview();
+    if (typeof window.returnToOverview === 'function') {
+        window.returnToOverview();
+    }
 };
 let _resetExplorationFocus = () => {
-    if (typeof window.resetExplorationFocus === 'function') window.resetExplorationFocus();
+    if (typeof window.resetExplorationFocus === 'function') {
+        window.resetExplorationFocus();
+    }
 };
 
 /**
@@ -203,18 +214,15 @@ export function handleGalaxyKeydown(event) {
     const isControlTarget = isKeyboardControlTarget(event.target);
 
     if (event.key === 'Escape') {
-        // Demo takes priority — cancel it before any other Esc action
-        if (window.demoController?.isRunning?.()) {
-            window.demoController.cancel();
+        // 1) If demo is active, ESC cancels the demo
+        if (demoController.isRunning()) {
+            demoController.cancel();
             return;
         }
-        if (typeof window.closeLegendGuide === 'function') window.closeLegendGuide({ restoreFocus: true });
-        if (typeof window.hideTooltip === 'function') window.hideTooltip();
-        if (typeof window.hideSummaryCard === 'function') window.hideSummaryCard();
-        // Also close/toggle the info panel — escape should close it when open
-        if (typeof window.setInfoPanelOpen === 'function') {
-            window.setInfoPanelOpen(false);
-        }
+        closeLegendGuide({ restoreFocus: true });
+        hideTooltip();
+        hideSummaryCard();
+        setInfoPanelOpen(false);
         const searchInput = document.getElementById('search-input');
         const hasSearchText = Boolean(searchInput?.value?.trim());
         const hasSearchState = Boolean(state.currentSearchSummary || state.searchGlowActive);
@@ -230,11 +238,11 @@ export function handleGalaxyKeydown(event) {
         if (isControlTarget && event.key === 'ArrowUp') return;
         event.preventDefault();
         flashArrowKeyToast();
-        if (typeof window.traverseNeighbor === 'function') window.traverseNeighbor(-1);
+        traverseNeighbor(-1);
     } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
         if (isControlTarget && event.key === 'ArrowDown') return;
         event.preventDefault();
-        if (typeof window.traverseNeighbor === 'function') window.traverseNeighbor(1);
+        traverseNeighbor(1);
     } else if (event.key === 'Home') {
         if (state.currentView === 'galaxy') {
             event.preventDefault();
@@ -243,14 +251,14 @@ export function handleGalaxyKeydown(event) {
     } else if (event.key === 'End' || (event.key === 'c' && !event.ctrlKey && !event.metaKey)) {
         if (state.currentView === 'galaxy') {
             event.preventDefault();
-            if (typeof window.recenterFocusedNode === 'function') window.recenterFocusedNode();
+            recenterFocusedNode();
         }
     }
 
     if (event.key === '=' || event.key === '+') {
-        if (typeof window.zoomCamera === 'function') window.zoomCamera(0.84);
+        zoomCamera(0.84);
     } else if (event.key === '-' || event.key === '_') {
-        if (typeof window.zoomCamera === 'function') window.zoomCamera(1.18);
+        zoomCamera(1.18);
     } else if (event.key === '?' || event.key === '/') {
         event.preventDefault();
         if (typeof showKeyboardShortcutsHint === 'function') {

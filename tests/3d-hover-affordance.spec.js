@@ -3,12 +3,12 @@ import { BASE_URL, setupMockSearch, openApp, isValidNodeIndex, projectedCanvasCa
 
 async function getHoverState(page) {
   return page.evaluate(() => ({
-    hoverHighlightIndex: window.state?.hoverHighlightIndex ?? null,
-    stableCanvasHover: window.state?.stableCanvasHover
+    hoverHighlightIndex: window.__TEST_STATE__?.hoverHighlightIndex ?? null,
+    stableCanvasHover: window.__TEST_STATE__?.stableCanvasHover
       ? {
-          index: window.state.stableCanvasHover.index,
-          source: window.state.stableCanvasHover.source || '',
-          distance: window.state.stableCanvasHover.distance ?? null
+          index: window.__TEST_STATE__.stableCanvasHover.index,
+          source: window.__TEST_STATE__.stableCanvasHover.source || '',
+          distance: window.__TEST_STATE__.stableCanvasHover.distance ?? null
         }
       : null,
     lastCanvasNodeHover: window.__lastCanvasNodeHover
@@ -18,9 +18,9 @@ async function getHoverState(page) {
           distance: window.__lastCanvasNodeHover.distance ?? null
         }
       : null,
-    canvasCursor: window.state?.renderer?.domElement?.style?.cursor ?? '',
-    pointCount: window.state?.points?.length ?? 0,
-    focusedNode: window.state?.focusedNode ?? null
+    canvasCursor: window.__TEST_STATE__?.renderer?.domElement?.style?.cursor ?? '',
+    pointCount: window.__TEST_STATE__?.points?.length ?? 0,
+    focusedNode: window.__TEST_STATE__?.focusedNode ?? null
   }));
 }
 
@@ -128,7 +128,7 @@ test.describe('3D node hover affordance', () => {
     await page.evaluate(() => {
       if (typeof window.focusOnNode === 'function') window.focusOnNode(0);
     });
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
 
     const target = await findHoverableNode(page);
     expect(target, 'focus mode should still allow deterministic hover probing or clean hover clear').not.toBeNull();
@@ -149,7 +149,7 @@ test.describe('3D node hover affordance', () => {
     await page.evaluate((nodeIndex) => {
       if (typeof window.focusOnNode === 'function') window.focusOnNode(nodeIndex);
     }, target.resolvedIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(600);
 
     // Verify we are in focus
@@ -158,7 +158,7 @@ test.describe('3D node hover affordance', () => {
 
     // Press Escape to reset
     await page.keyboard.press('Escape');
-    await page.waitForFunction(() => window.state?.navState?.mode === 'overview', { timeout: 12000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'overview', { timeout: 12000 });
     await page.waitForTimeout(800);
 
     // Hover should be cleared (null or -1) after reset
@@ -209,7 +209,7 @@ test.describe('3D node hover affordance', () => {
     await page.waitForTimeout(40);
     await page.mouse.move(second.screenX, second.screenY, { steps: 1 });
     await page.waitForFunction((expectedIndex) => {
-      const hover = window.state?.hoverHighlightIndex;
+      const hover = window.__TEST_STATE__?.hoverHighlightIndex;
       return hover === expectedIndex;
     }, second.resolvedIndex, { timeout: 20000 });
 

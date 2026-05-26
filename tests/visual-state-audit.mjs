@@ -69,7 +69,7 @@ async function waitForReady(page, label = 'unknown') {
   
   console.log(`[waitForReady:${label}] Waiting for WebGL state...`);
   await page.waitForFunction(() => {
-    const state = window.state;
+    const state = window.__TEST_STATE__;
     const canvas = document.querySelector('#canvas-container canvas');
     if (!canvas) return false;
     const mode = document.body.dataset.graphicsMode;
@@ -440,22 +440,22 @@ async function captureState(page, name) {
         };
       })(),
       routeTraceDiagnostics: (() => {
-        const diagnostics = window.state?.routeTraceDiagnostics || null;
-        const lines = window.state?.routeTraceLines || null;
+        const diagnostics = window.__TEST_STATE__?.routeTraceDiagnostics || null;
+        const lines = window.__TEST_STATE__?.routeTraceLines || null;
         return {
           ...(diagnostics || {}),
           linePresent: !!lines,
           lineSegmentCount: lines?.geometry?.attributes?.position?.count
             ? Math.floor(lines.geometry.attributes.position.count / 2)
             : 0,
-          connectionPairCount: Array.isArray(window.state?.routeTraceConnectionPairs)
-            ? window.state.routeTraceConnectionPairs.length
+          connectionPairCount: Array.isArray(window.__TEST_STATE__?.routeTraceConnectionPairs)
+            ? window.__TEST_STATE__.routeTraceConnectionPairs.length
             : 0,
           motionProbe: window.__routeTraceMotionProbe || null,
         };
       })(),
       inspectedStrandDiagnostics: {
-        ...(window.state?.inspectedStrandDiagnostics || {}),
+        ...(window.__TEST_STATE__?.inspectedStrandDiagnostics || {}),
       },
     };
   });
@@ -833,7 +833,7 @@ async function run() {
           }
           await mobilePage.waitForTimeout(600);
           await mobilePage.evaluate(() => {
-            const state = window.state || {};
+            const state = window.__TEST_STATE__ || {};
             if (typeof window.switchView === 'function') {
               window.switchView('galaxy', { skipUrlSync: true, silentHandoff: true });
             }
@@ -862,18 +862,18 @@ async function run() {
             }
           });
           await mobilePage.waitForFunction(() => {
-            const diagnostics = window.state?.routeTraceDiagnostics;
+            const diagnostics = window.__TEST_STATE__?.routeTraceDiagnostics;
             return Boolean(
               diagnostics?.active &&
               diagnostics.edgeCount > 0 &&
               diagnostics.segmentCount > 0 &&
-              window.state?.routeTraceLines
+              window.__TEST_STATE__?.routeTraceLines
             );
           }, undefined, { timeout: 8000 }).catch(() => {});
           await mobilePage.evaluate(async () => {
-            const t1 = window.state?.routeTraceLines?.material?.uniforms?.time?.value ?? null;
+            const t1 = window.__TEST_STATE__?.routeTraceLines?.material?.uniforms?.time?.value ?? null;
             await new Promise((resolve) => setTimeout(resolve, 300));
-            const t2 = window.state?.routeTraceLines?.material?.uniforms?.time?.value ?? null;
+            const t2 = window.__TEST_STATE__?.routeTraceLines?.material?.uniforms?.time?.value ?? null;
             window.__routeTraceMotionProbe = {
               t1,
               t2,
@@ -892,7 +892,7 @@ async function run() {
           }
           await mobilePage.waitForTimeout(800);
           await mobilePage.evaluate(() => {
-            const state = window.state || {};
+            const state = window.__TEST_STATE__ || {};
             if (typeof window.switchView === 'function') {
               window.switchView('galaxy', { skipUrlSync: true, silentHandoff: true });
             }
@@ -966,7 +966,7 @@ async function run() {
             }
           });
           await mobilePage.waitForFunction(() => {
-            const diagnostics = window.state?.inspectedStrandDiagnostics;
+            const diagnostics = window.__TEST_STATE__?.inspectedStrandDiagnostics;
             return Boolean(
               diagnostics?.active &&
               diagnostics.segmentCount > 0 &&

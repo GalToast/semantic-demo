@@ -31,11 +31,11 @@ async function waitForAppReady(page) {
   await page.waitForFunction(() => (
     typeof window.clearSearch === 'function' &&
     typeof window.focusOnNode === 'function' &&
-    Array.isArray(window.state?.points) &&
-    window.state.points.length > 0 &&
-    window.state?.renderer?.domElement &&
-    window.state?.camera &&
-    window.state?.pointsMesh
+    Array.isArray(window.__TEST_STATE__?.points) &&
+    window.__TEST_STATE__.points.length > 0 &&
+    window.__TEST_STATE__?.renderer?.domElement &&
+    window.__TEST_STATE__?.camera &&
+    window.__TEST_STATE__?.pointsMesh
   ), { timeout: 25000 });
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
@@ -131,7 +131,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     await waitForAppReady(page);
 
     const targetIdx = await page.evaluate(() => {
-      const idx = Math.floor((window.state?.points?.length ?? 0) / 2);
+      const idx = Math.floor((window.__TEST_STATE__?.points?.length ?? 0) / 2);
       if (idx >= 0 && typeof window.focusOnNode === 'function') window.focusOnNode(idx);
       return idx;
     });
@@ -184,7 +184,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     await page.waitForTimeout(500);
     const lost = await page.evaluate(() => ({
       marker: document.body.dataset.webglContextLost || '',
-      rendererGone: window.state?.renderer === null
+      rendererGone: window.__TEST_STATE__?.renderer === null
     }));
     expect(lost.marker, 'context loss should be observable on body dataset').toBe('lost');
     expect(lost.rendererGone, 'context loss must not null out renderer state').toBe(false);
@@ -193,9 +193,9 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     await page.waitForTimeout(1500);
     const after = await page.evaluate(() => ({
       marker: document.body.dataset.webglContextLost || '',
-      hasRenderer: !!window.state?.renderer,
-      hasScene: !!window.state?.scene,
-      pointCount: window.state?.points?.length ?? 0
+      hasRenderer: !!window.__TEST_STATE__?.renderer,
+      hasScene: !!window.__TEST_STATE__?.scene,
+      pointCount: window.__TEST_STATE__?.points?.length ?? 0
     }));
     expect(after.marker, 'context restore should be observable on body dataset').toBe('restored');
     expect(after.hasRenderer, 'renderer must survive context restore').toBe(true);

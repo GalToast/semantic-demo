@@ -158,19 +158,19 @@ async function forceFocusSearch(page) {
     document.body.dataset.panelSurface = 'focus-search';
     document.body.dataset.focusPanelMode = 'search-result';
     document.body.dataset.routeDirector = 'search-corridor';
-    if (window.state) {
-      window.state.currentView = 'galaxy';
-      window.state.focusedNode = Number.isFinite(window.state.focusedNode) ? window.state.focusedNode : 0;
-      window.state.navState = window.state.navState || {};
-      window.state.navState.focusedIndex = Number.isFinite(window.state.navState.focusedIndex)
-        ? window.state.navState.focusedIndex
-        : window.state.focusedNode;
-      window.state.navState.trailNeighborIndices = Array.isArray(window.state.navState.trailNeighborIndices)
-        && window.state.navState.trailNeighborIndices.length
-        ? window.state.navState.trailNeighborIndices
+    if (window.__TEST_STATE__) {
+      window.__TEST_STATE__.currentView = 'galaxy';
+      window.__TEST_STATE__.focusedNode = Number.isFinite(window.__TEST_STATE__.focusedNode) ? window.__TEST_STATE__.focusedNode : 0;
+      window.__TEST_STATE__.navState = window.__TEST_STATE__.navState || {};
+      window.__TEST_STATE__.navState.focusedIndex = Number.isFinite(window.__TEST_STATE__.navState.focusedIndex)
+        ? window.__TEST_STATE__.navState.focusedIndex
+        : window.__TEST_STATE__.focusedNode;
+      window.__TEST_STATE__.navState.trailNeighborIndices = Array.isArray(window.__TEST_STATE__.navState.trailNeighborIndices)
+        && window.__TEST_STATE__.navState.trailNeighborIndices.length
+        ? window.__TEST_STATE__.navState.trailNeighborIndices
         : [1];
-      window.state.navState.walkHistoryIndices = [0, window.state.navState.focusedIndex];
-      window.state.trailDepth = Math.max(1, Number(window.state.trailDepth) || 1);
+      window.__TEST_STATE__.navState.walkHistoryIndices = [0, window.__TEST_STATE__.navState.focusedIndex];
+      window.__TEST_STATE__.trailDepth = Math.max(1, Number(window.__TEST_STATE__.trailDepth) || 1);
     }
 
     // Remove hidden attribute so focus-stage and its buttons render

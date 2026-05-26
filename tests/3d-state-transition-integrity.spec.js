@@ -7,11 +7,11 @@
  *   overview → search → focus → semantic dive → map trail → reset
  *
  * After each transition the following state dimensions must not contradict:
- *   - window.state.focusedNode
- *   - window.state.selectedPoint
- *   - window.state.navState.mode
- *   - window.state.trailDepth
- *   - window.state.semanticDiveMode  (derived: trailDepth === 2)
+ *   - window.__TEST_STATE__.focusedNode
+ *   - window.__TEST_STATE__.selectedPoint
+ *   - window.__TEST_STATE__.navState.mode
+ *   - window.__TEST_STATE__.trailDepth
+ *   - window.__TEST_STATE__.semanticDiveMode  (derived: trailDepth === 2)
  *   - document.body.dataset.panelSurface
  *   - document.body.dataset.graphContext
  *   - document.body.dataset.semanticDive
@@ -48,8 +48,8 @@ const SEARCH_STUB = {
 async function waitForAppReady(page) {
   await page.waitForFunction(() => (
     typeof window.clearSearch === 'function' &&
-    Array.isArray(window.state?.points) &&
-    window.state.points.length > 0
+    Array.isArray(window.__TEST_STATE__?.points) &&
+    window.__TEST_STATE__.points.length > 0
   ), { timeout: 20000 });
 
   await page.waitForFunction(() => {
@@ -94,8 +94,8 @@ async function performMockedSearch(page, query = 'coffee') {
  */
 async function snapshotState(page) {
   return page.evaluate(() => {
-    if (typeof window.state !== 'object' || !window.state) return null;
-    const s = window.state;
+    if (typeof window.__TEST_STATE__ !== 'object' || !window.__TEST_STATE__) return null;
+    const s = window.__TEST_STATE__;
     const body = document.body;
     return {
       // Core state vars
@@ -251,7 +251,7 @@ test.describe('3D semantic state transition integrity', () => {
 
     // Wait for focus mode to be entered
     await page.waitForFunction(
-      () => window.state?.navState?.mode === 'focus',
+      () => window.__TEST_STATE__?.navState?.mode === 'focus',
       { timeout: 15000 }
     );
     await page.waitForTimeout(500); // allow composition state to settle
@@ -283,7 +283,7 @@ test.describe('3D semantic state transition integrity', () => {
     await page.waitForTimeout(800);
     await page.locator('.search-result-item').first().click();
     await page.waitForFunction(
-      () => window.state?.navState?.mode === 'focus',
+      () => window.__TEST_STATE__?.navState?.mode === 'focus',
       { timeout: 15000 }
     );
     await page.waitForTimeout(1000); // settle into focus
@@ -305,7 +305,7 @@ test.describe('3D semantic state transition integrity', () => {
 
     // Wait for dive mode to become active
     await page.waitForFunction(
-      () => window.state?.semanticDiveMode === true,
+      () => window.__TEST_STATE__?.semanticDiveMode === true,
       { timeout: 15000 }
     );
     await page.waitForTimeout(1500); // allow transition + composition settle
@@ -335,7 +335,7 @@ test.describe('3D semantic state transition integrity', () => {
     await page.waitForTimeout(800);
     await page.locator('.search-result-item').first().click();
     await page.waitForFunction(
-      () => window.state?.navState?.mode === 'focus',
+      () => window.__TEST_STATE__?.navState?.mode === 'focus',
       { timeout: 15000 }
     );
     await page.waitForTimeout(1000);
@@ -344,7 +344,7 @@ test.describe('3D semantic state transition integrity', () => {
       if (typeof window.setSemanticDiveMode === 'function') window.setSemanticDiveMode(true);
     });
     await page.waitForFunction(
-      () => window.state?.semanticDiveMode === true,
+      () => window.__TEST_STATE__?.semanticDiveMode === true,
       { timeout: 15000 }
     );
     await page.waitForTimeout(1500);
@@ -367,7 +367,7 @@ test.describe('3D semantic state transition integrity', () => {
     }
 
     await page.waitForFunction(
-      () => window.state?.currentView === 'map',
+      () => window.__TEST_STATE__?.currentView === 'map',
       { timeout: 15000 }
     );
     await page.waitForTimeout(1500);
@@ -401,7 +401,7 @@ test.describe('3D semantic state transition integrity', () => {
     await page.waitForTimeout(800);
     await page.locator('.search-result-item').first().click();
     await page.waitForFunction(
-      () => window.state?.navState?.mode === 'focus',
+      () => window.__TEST_STATE__?.navState?.mode === 'focus',
       { timeout: 15000 }
     );
     await page.waitForTimeout(1000);
@@ -409,7 +409,7 @@ test.describe('3D semantic state transition integrity', () => {
     // Press Escape to reset
     await page.keyboard.press('Escape');
     await page.waitForFunction(
-      () => window.state?.navState?.mode === 'overview',
+      () => window.__TEST_STATE__?.navState?.mode === 'overview',
       { timeout: 15000 }
     );
     await page.waitForTimeout(1000);
@@ -439,7 +439,7 @@ test.describe('3D semantic state transition integrity', () => {
     await page.waitForTimeout(800);
     await page.locator('.search-result-item').first().click();
     await page.waitForFunction(
-      () => window.state?.navState?.mode === 'focus',
+      () => window.__TEST_STATE__?.navState?.mode === 'focus',
       { timeout: 15000 }
     );
     await page.waitForTimeout(1000);
@@ -459,7 +459,7 @@ test.describe('3D semantic state transition integrity', () => {
 
     // Wait for dive mode to be active
     await page.waitForFunction(
-      () => window.state?.semanticDiveMode === true && window.state?.trailDepth === 2,
+      () => window.__TEST_STATE__?.semanticDiveMode === true && window.__TEST_STATE__?.trailDepth === 2,
       { timeout: 15000 }
     );
     await page.waitForTimeout(1500);
@@ -474,7 +474,7 @@ test.describe('3D semantic state transition integrity', () => {
     // Press Escape — the primary assertion path uses real keyboard event
     await page.keyboard.press('Escape');
     await page.waitForFunction(
-      () => window.state?.navState?.mode === 'overview',
+      () => window.__TEST_STATE__?.navState?.mode === 'overview',
       { timeout: 15000 }
     );
     await page.waitForTimeout(1500);
@@ -508,7 +508,7 @@ test.describe('3D semantic state transition integrity', () => {
     await page.waitForTimeout(800);
     await page.locator('.search-result-item').first().click();
     await page.waitForFunction(
-      () => window.state?.navState?.mode === 'focus',
+      () => window.__TEST_STATE__?.navState?.mode === 'focus',
       { timeout: 15000 }
     );
     await page.waitForTimeout(1000);
@@ -517,7 +517,7 @@ test.describe('3D semantic state transition integrity', () => {
       if (typeof window.setSemanticDiveMode === 'function') window.setSemanticDiveMode(true);
     });
     await page.waitForFunction(
-      () => window.state?.semanticDiveMode === true,
+      () => window.__TEST_STATE__?.semanticDiveMode === true,
       { timeout: 15000 }
     );
     await page.waitForTimeout(1500);
@@ -533,7 +533,7 @@ test.describe('3D semantic state transition integrity', () => {
       });
     }
     await page.waitForFunction(
-      () => window.state?.currentView === 'map',
+      () => window.__TEST_STATE__?.currentView === 'map',
       { timeout: 15000 }
     );
     await page.waitForTimeout(1500);
@@ -544,7 +544,7 @@ test.describe('3D semantic state transition integrity', () => {
     // Press Escape to reset back to overview
     await page.keyboard.press('Escape');
     await page.waitForFunction(
-      () => window.state?.navState?.mode === 'overview',
+      () => window.__TEST_STATE__?.navState?.mode === 'overview',
       { timeout: 15000 }
     );
     await page.waitForTimeout(1500);
@@ -582,7 +582,7 @@ test.describe('3D semantic state transition integrity', () => {
     // Step 3: focus
     await page.waitForTimeout(800);
     await page.locator('.search-result-item').first().click();
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(800);
     snap = await snapshotState(page);
     expect(assertInvariants(snap), `Focus invariants: ${assertInvariants(snap).join('; ')}`).toHaveLength(0);
@@ -591,7 +591,7 @@ test.describe('3D semantic state transition integrity', () => {
     await page.evaluate(() => {
       if (typeof window.setSemanticDiveMode === 'function') window.setSemanticDiveMode(true);
     });
-    await page.waitForFunction(() => window.state?.semanticDiveMode === true, { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.semanticDiveMode === true, { timeout: 15000 });
     await page.waitForFunction(() => document.body.dataset.semanticDive === 'active', { timeout: 15000 });
     snap = await snapshotState(page);
     expect(assertInvariants(snap), `Dive invariants: ${assertInvariants(snap).join('; ')}`).toHaveLength(0);
@@ -600,7 +600,7 @@ test.describe('3D semantic state transition integrity', () => {
     await page.evaluate(() => {
       if (typeof window.switchView === 'function') window.switchView('map');
     });
-    await page.waitForFunction(() => window.state?.currentView === 'map', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.currentView === 'map', { timeout: 15000 });
     await page.waitForTimeout(1500);
     snap = await snapshotState(page);
     expect(assertInvariants(snap), `Map trail invariants: ${assertInvariants(snap).join('; ')}`).toHaveLength(0);
@@ -609,7 +609,7 @@ test.describe('3D semantic state transition integrity', () => {
     await page.evaluate(() => {
       if (typeof window.resetExplorationFocus === 'function') window.resetExplorationFocus();
     });
-    await page.waitForFunction(() => window.state?.navState?.mode === 'overview', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'overview', { timeout: 15000 });
     await page.waitForTimeout(1000);
     snap = await snapshotState(page);
     expect(assertInvariants(snap), `Post-reset invariants: ${assertInvariants(snap).join('; ')}`).toHaveLength(0);

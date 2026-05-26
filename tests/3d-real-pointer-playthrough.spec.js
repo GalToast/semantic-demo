@@ -18,12 +18,12 @@ const SHORT_LANDSCAPE = { width: 844, height: 390 };
 
 async function getInteractionState(page) {
   return page.evaluate(() => ({
-    hoverHighlightIndex: window.state?.hoverHighlightIndex ?? null,
-    stableCanvasHover: window.state?.stableCanvasHover
+    hoverHighlightIndex: window.__TEST_STATE__?.hoverHighlightIndex ?? null,
+    stableCanvasHover: window.__TEST_STATE__?.stableCanvasHover
       ? {
-          index: window.state.stableCanvasHover.index,
-          source: window.state.stableCanvasHover.source || '',
-          distance: window.state.stableCanvasHover.distance ?? null
+          index: window.__TEST_STATE__.stableCanvasHover.index,
+          source: window.__TEST_STATE__.stableCanvasHover.source || '',
+          distance: window.__TEST_STATE__.stableCanvasHover.distance ?? null
         }
       : null,
     lastCanvasNodeHover: window.__lastCanvasNodeHover
@@ -51,14 +51,14 @@ async function getInteractionState(page) {
           distance: window.__lastCanvasNodeFocusPick.distance ?? null
         }
       : null,
-    canvasCursor: window.state?.renderer?.domElement?.style?.cursor ?? '',
-    pointCount: window.state?.points?.length ?? 0,
-    focusedNode: window.state?.focusedNode ?? null,
-    navMode: window.state?.navState?.mode ?? '',
-    canvasRect: window.state?.renderer?.domElement
+    canvasCursor: window.__TEST_STATE__?.renderer?.domElement?.style?.cursor ?? '',
+    pointCount: window.__TEST_STATE__?.points?.length ?? 0,
+    focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
+    navMode: window.__TEST_STATE__?.navState?.mode ?? '',
+    canvasRect: window.__TEST_STATE__?.renderer?.domElement
       ? {
-          width: window.state.renderer.domElement.clientWidth,
-          height: window.state.renderer.domElement.clientHeight
+          width: window.__TEST_STATE__.renderer.domElement.clientWidth,
+          height: window.__TEST_STATE__.renderer.domElement.clientHeight
         }
       : null
   }));

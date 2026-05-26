@@ -5,7 +5,7 @@
  *   - Make tests state-owner-aware: snapshot core fields, reset through official
  *     APIs when possible, and only allow direct mutation through named helper
  *     functions with comments explaining fixture setup.
- *   - Avoid direct `window.state.X = Y` calls in test bodies — route them through
+ *   - Avoid direct `window.__TEST_STATE__.X = Y` calls in test bodies — route them through
  *     mutate() so every mutation is named and documented.
  *   - Snapshots are plain frozen objects; they never flow back into real state.
  *
@@ -39,7 +39,7 @@ export const SNAPSHOT_FIELDS = {
    * Focus and trail navigation state.
    * navState fields are snapshot via dedicated sub-object read to avoid
    * picking up stale cross-test contamination from the same top-level
-   * window.state reference.
+   * window.__TEST_STATE__ reference.
    */
   focusTrail: [
     'focusedNode',
@@ -61,7 +61,7 @@ export const SNAPSHOT_FIELDS = {
 };
 
 /**
- * Read the named fields from window.state inside the page.
+ * Read the named fields from window.__TEST_STATE__ inside the page.
  * Returns a plain frozen object snapshot — never a live reference.
  *
  * @param {import('@playwright/test').Page} page
@@ -70,7 +70,7 @@ export const SNAPSHOT_FIELDS = {
  */
 export async function snapshot(page, fields) {
   return page.evaluate((fieldPaths) => {
-    const state = window.state ?? {};
+    const state = window.__TEST_STATE__ ?? {};
     const snap = {};
     for (const path of fieldPaths) {
       const parts = path.split('.');
@@ -142,7 +142,7 @@ export async function snapshot(page, fields) {
  */
 export async function mutate(page, operation, extra = {}) {
   await page.evaluate(({ op, patch }) => {
-    const s = window.state ?? {};
+    const s = window.__TEST_STATE__ ?? {};
 
     switch (op) {
       case 'injectEmptyGraph':
@@ -281,7 +281,7 @@ export async function mutate(page, operation, extra = {}) {
  */
 export async function reset(page, scope = 'exploration') {
   await page.evaluate(({ s }) => {
-    const state = window.state ?? {};
+    const state = window.__TEST_STATE__ ?? {};
     if (s === 'exploration') {
       // Official API — resets focusedNode, trailDepth, navState.mode to overview.
       if (typeof window.resetExplorationFocus === 'function') {

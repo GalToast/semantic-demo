@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
 import { clearAutoRotateResumeTimer, setAutoRotateSuspended } from './camera-controls.js';
+import { updateCameraViewportOffset } from '../three-setup.js';
+import { syncClusterSectionState } from './cluster-labels.js';
+import { updateTraversalUi } from './journey.js';
 
 export function setSceneRevealDataset(active) {
     if (typeof document !== 'undefined' && document.body?.dataset) {

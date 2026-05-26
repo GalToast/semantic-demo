@@ -1,6 +1,7 @@
 import { state } from '../state.js';
-import { closeLegendPanel } from './legend-ui.js';
-import { animateCameraToTerrainPrelude, focusOnNode } from './camera-controls.js';
+import { closeLegendPanel, updateLegendGuideState } from './legend-ui.js';
+import { syncClusterSectionState } from './cluster-labels.js';
+import { animateCameraToTerrainPrelude, focusOnNode, getRouteLayerOrigin, clearRouteExploration, animateCameraToNode, animateCameraToSearchCorridor } from './camera-controls.js';
 import {
     updateSelectedBusiness,
     setTrailFromSeed,
@@ -75,7 +76,7 @@ export function showViewHandoff(view) {
 export function switchView(view, options = {}) {
     invokeClearMobileRouteFieldPeek();
     const previousView = state.currentView;
-    const handoffFrom = options.handoffFrom || (typeof window.getRouteLayerOrigin === 'function' ? window.getRouteLayerOrigin() : 'galaxy');
+    const handoffFrom = options.handoffFrom || getRouteLayerOrigin();
     const shouldPreludeToMap =
         view === 'map' &&
         previousView === 'galaxy' &&
@@ -99,7 +100,7 @@ export function switchView(view, options = {}) {
             indexCount: routeCount
         });
         animateCameraToTerrainPrelude({ duration: state.MAP_HANDOFF_PRELUDE_MS || 1200 });
-        
+
         // 10/10 Polish: Flatten Three.js nodes to map coordinates during prelude
         applyMapFlatteningLayout(true);
 
@@ -116,12 +117,12 @@ export function switchView(view, options = {}) {
         return;
     }
     state.currentView = view;
-    
+
     // 10/10 Polish: Transition Choreography
     document.body.classList.add('view-transitioning');
     document.body.dataset.activeView = view;
     document.body.dataset.cameraAssist = 'arriving';
-    
+
     // Auto-remove transitioning class after animation completes
     window.setTimeout(() => {
         document.body.classList.remove('view-transitioning');
@@ -129,24 +130,22 @@ export function switchView(view, options = {}) {
             document.body.dataset.cameraAssist = 'free';
         }
     }, 1200);
-    
+
     if (view === 'map') {
         hideViewHandoff();
         scheduleMapRouteRefresh();
     }
     if (view !== 'galaxy' && view !== 'map') {
-        if (typeof window.clearRouteExploration === 'function') window.clearRouteExploration('map-handoff');
+        clearRouteExploration('map-handoff');
     } else if (previousView === 'map' && Number.isFinite(state.navState.focusedIndex)) {
         // 10/10 Polish: Reset map flattening
         applyMapFlatteningLayout(false);
-        
+
         // returning to galaxy from map while focused: restore focus pocket camera depth
-        if (typeof window.animateCameraToNode === 'function') {
-            window.animateCameraToNode(state.navState.focusedIndex, { 
-                transitionStyle: state.semanticDiveMode ? 'dive' : 'focus',
-                duration: 1100 
-            });
-        }
+        animateCameraToNode(state.navState.focusedIndex, {
+            transitionStyle: state.semanticDiveMode ? 'dive' : 'focus',
+            duration: 1100
+        });
     }
 
     closeLegendPanel();
@@ -223,15 +222,11 @@ export function switchView(view, options = {}) {
                 anchorIndex,
                 indexCount: state.currentSearchSummary.resultIndices?.length || 0
             });
-            if (typeof window.animateCameraToSearchCorridor === 'function') {
-                window.animateCameraToSearchCorridor(
-                    anchorIndex,
-                    state.currentSearchSummary.resultIndices || [],
-                    {
-                        reason: 'return-to-mycelium'
-                    }
-                );
-            }
+            animateCameraToSearchCorridor(
+                anchorIndex,
+                state.currentSearchSummary.resultIndices || [],
+                { reason: 'return-to-mycelium' }
+            );
             focusOnNode(anchorIndex, {
                 skipUrlSync: true,
                 fromSearchResult: true,
@@ -284,8 +279,12 @@ export function switchView(view, options = {}) {
     if (!options.skipUrlSync) {
         updateUrlState({}, { mode: options.historyMode || 'push', reason: 'view' });
     }
-    if (typeof window.syncClusterSectionState === 'function') window.syncClusterSectionState();
-    if (typeof window.updateLegendGuideState === 'function') window.updateLegendGuideState();
+    syncClusterSectionState();
+    if (typeof window.updateLegendGuideState === 'function') {
+        window.updateLegendGuideState();
+    } else {
+        updateLegendGuideState();
+    }
     syncFocusStage(state.selectedPoint);
     if (!state.selectedPoint) {
         updateSelectedBusiness(null);

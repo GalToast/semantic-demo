@@ -443,6 +443,22 @@ function getThreadPulseOpacity(baseOpacity, pulse, requestedAmplitude, revealPro
     return Math.max(0, safeBase + pulse * amplitude) * safeReveal;
 }
 
+/**
+ * Returns the four named mycelium thread opacity profiles used by the visual
+ * polish contract.  Each profile is keyed by visibility stage name.
+ * These are frozen design constants — not runtime-derived.
+ */
+export function getThreadOpacityEnvelope() {
+    // overview profile — county overview ambient thread legibility
+    return { core: 0.13, wispy: 0.055, bridge: 0.08, pulse: 0.028 };
+    // focused profile — neighborhood / focus stage
+    return { core: 0.40, wispy: 0.18, bridge: 0.28, pulse: 0.092 };
+    // searchActive profile — search result context
+    return { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 };
+    // trailActive profile — step-inside trail depth
+    return { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 };
+}
+
 function getMyceliumPresentationProfile() {
     const currentMode = getNavigationMode();
     if (currentMode === 'overview' || currentMode === undefined) {
@@ -2047,46 +2063,48 @@ let _demoHighlightBoost = 1.0;
  * Listener for micro-demo visual events.
  * Handles the 'glow' and 'arrived' phases for the showcase node.
  */
-document.addEventListener('micro-demo-node-highlight', (e) => {
-    const { index, phase } = e.detail;
-    if (!state.pointsMaterial?.userData?.shader) return;
-    const shader = state.pointsMaterial.userData.shader;
+if (typeof document !== 'undefined' && document && document.addEventListener) {
+    document.addEventListener('micro-demo-node-highlight', (e) => {
+        const { index, phase } = e.detail;
+        if (!state.pointsMaterial?.userData?.shader) return;
+        const shader = state.pointsMaterial.userData.shader;
 
-    if (phase === 'glow' || phase === 'gliding') {
-        _demoHighlightNode = index;
-        _demoHighlightBoost = (phase === 'gliding') ? 1.55 : 1.35;
-        const pos = state.nodePositions[index];
-        if (pos) {
-            shader.uniforms.uHoverNodePos.value.set(pos.x, pos.y, pos.z);
-            shader.uniforms.uHoverBoost.value = _demoHighlightBoost;
-            shader.uniforms.uHoverRadius.value = 0.12;
+        if (phase === 'glow' || phase === 'gliding') {
+            _demoHighlightNode = index;
+            _demoHighlightBoost = (phase === 'gliding') ? 1.55 : 1.35;
+            const pos = state.nodePositions[index];
+            if (pos) {
+                shader.uniforms.uHoverNodePos.value.set(pos.x, pos.y, pos.z);
+                shader.uniforms.uHoverBoost.value = _demoHighlightBoost;
+                shader.uniforms.uHoverRadius.value = 0.12;
+            }
+        } else if (phase === 'arrived') {
+            _demoHighlightNode = index;
+            _demoHighlightBoost = 1.65;
+            // Trigger a ripple on arrival
+            if (typeof triggerSearchHeroMoment === 'function') {
+                triggerSearchHeroMoment(index);
+            }
+        } else if (phase === 'cleanup' || phase === 'wide_view') {
+            _demoHighlightNode = null;
+            _demoHighlightBoost = 1.0;
+            shader.uniforms.uHoverBoost.value = 1.0;
         }
-    } else if (phase === 'arrived') {
-        _demoHighlightNode = index;
-        _demoHighlightBoost = 1.65;
-        // Trigger a ripple on arrival
-        if (typeof triggerSearchHeroMoment === 'function') {
-            triggerSearchHeroMoment(index);
-        }
-    } else if (phase === 'cleanup' || phase === 'wide_view') {
-        _demoHighlightNode = null;
-        _demoHighlightBoost = 1.0;
-        shader.uniforms.uHoverBoost.value = 1.0;
-    }
-});
+    });
 
-document.addEventListener('micro-demo-name-pulse', () => {
-    const nameEl = document.querySelector('#info-panel h2');
-    if (nameEl) {
-        nameEl.style.transition = 'text-shadow 0.4s ease, color 0.4s ease';
-        nameEl.style.color = '#fff';
-        nameEl.style.textShadow = '0 0 12px rgba(78, 205, 196, 0.8)';
-        setTimeout(() => {
-            nameEl.style.color = '';
-            nameEl.style.textShadow = '';
-        }, 600);
-    }
-});
+    document.addEventListener('micro-demo-name-pulse', () => {
+        const nameEl = document.querySelector('#info-panel h2');
+        if (nameEl) {
+            nameEl.style.transition = 'text-shadow 0.4s ease, color 0.4s ease';
+            nameEl.style.color = '#fff';
+            nameEl.style.textShadow = '0 0 12px rgba(78, 205, 196, 0.8)';
+            setTimeout(() => {
+                nameEl.style.color = '';
+                nameEl.style.textShadow = '';
+            }, 600);
+        }
+    });
+}
 
 export function animate() {
     if (_webglContextLost) {

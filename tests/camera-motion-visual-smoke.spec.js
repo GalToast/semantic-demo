@@ -64,14 +64,14 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
   await page.goto(`${BASE_URL}${APP_PATH}`);
   await expect(page.locator('#search-input')).toBeVisible({ timeout: 15000 });
   await expect(page.locator('canvas')).toHaveCount(1, { timeout: 15000 });
-  await page.waitForFunction(() => window.state?.renderer && window.state?.camera && window.state?.controls, null, { timeout: 15000 });
+  await page.waitForFunction(() => window.__TEST_STATE__?.renderer && window.__TEST_STATE__?.camera && window.__TEST_STATE__?.controls, null, { timeout: 15000 });
 
   const initialCamera = await page.evaluate(() => ({
-    camera: window.state.camera.position.toArray(),
-    target: window.state.controls.target.toArray(),
+    camera: window.__TEST_STATE__.camera.position.toArray(),
+    target: window.__TEST_STATE__.controls.target.toArray(),
     canvasCount: document.querySelectorAll('canvas').length,
-    rendererReady: !!window.state.renderer,
-    sceneReady: !!window.state.scene,
+    rendererReady: !!window.__TEST_STATE__.renderer,
+    sceneReady: !!window.__TEST_STATE__.scene,
     webglRenderer: (() => {
       const canvas = document.querySelector('canvas');
       const gl = canvas?.getContext('webgl2') || canvas?.getContext('webgl');
@@ -95,20 +95,20 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
   await page.waitForTimeout(700);
 
   await page.waitForFunction(
-    () => Array.isArray(window.state?.currentSearchSummary?.resultIndices)
-      && window.state.currentSearchSummary.resultIndices.length > 0,
+    () => Array.isArray(window.__TEST_STATE__?.currentSearchSummary?.resultIndices)
+      && window.__TEST_STATE__.currentSearchSummary.resultIndices.length > 0,
     null,
     { timeout: 8000 }
   );
 
   await page.evaluate(({ requireCorridor }) => {
-    const summary = window.state.currentSearchSummary || {};
+    const summary = window.__TEST_STATE__.currentSearchSummary || {};
     const anchorIndex = Number.isFinite(summary.anchorIndex) ? summary.anchorIndex : summary.topIndex;
     const routeIndices = [anchorIndex, ...(summary.resultIndices || [])]
       .filter((index) => Number.isFinite(index));
     if (
       requireCorridor &&
-      !window.state.searchCorridorGroup &&
+      !window.__TEST_STATE__.searchCorridorGroup &&
       routeIndices.length > 1 &&
       typeof window.triggerSearchCorridorAnimation === 'function'
     ) {
@@ -117,18 +117,18 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
   }, { requireCorridor });
   if (requireCorridor) {
     await page.waitForFunction(
-      () => !!window.state?.searchCorridorGroup?.children?.length,
+      () => !!window.__TEST_STATE__?.searchCorridorGroup?.children?.length,
       null,
       { timeout: 5000 }
     );
   }
 
   const corridor = await page.evaluate(() => ({
-    groupReady: !!window.state.searchCorridorGroup,
+    groupReady: !!window.__TEST_STATE__.searchCorridorGroup,
     triggerReady: typeof window.triggerSearchCorridorAnimation === 'function',
-    visible: !!window.state.searchCorridorGroup?.visible,
-    children: window.state.searchCorridorGroup?.children?.length || 0,
-    glowActive: !!window.state.searchGlowActive
+    visible: !!window.__TEST_STATE__.searchCorridorGroup?.visible,
+    children: window.__TEST_STATE__.searchCorridorGroup?.children?.length || 0,
+    glowActive: !!window.__TEST_STATE__.searchGlowActive
   }));
 
   await page.locator('.search-result-item').first().click();
@@ -136,13 +136,13 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
   await page.waitForTimeout(1000);
 
   const focused = await page.evaluate(() => ({
-    camera: window.state.camera.position.toArray(),
-    target: window.state.controls.target.toArray(),
-    focusedNode: window.state.focusedNode,
+    camera: window.__TEST_STATE__.camera.position.toArray(),
+    target: window.__TEST_STATE__.controls.target.toArray(),
+    focusedNode: window.__TEST_STATE__.focusedNode,
     cameraAssist: document.body.dataset.cameraAssist,
     cameraAssistReason: document.body.dataset.cameraAssistReason,
-    focusPocketActive: !!window.state.navState.focusPocketMeta?.active,
-    focusPocketCount: window.state.navState.focusPocketIndices?.length || 0,
+    focusPocketActive: !!window.__TEST_STATE__.navState.focusPocketMeta?.active,
+    focusPocketCount: window.__TEST_STATE__.navState.focusPocketIndices?.length || 0,
     focusTransition: document.body.dataset.focusTransition,
     focusTransitionPhase: document.body.dataset.focusTransitionPhase
   }));
@@ -167,10 +167,10 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
       });
     return {
       semanticDive: document.body.dataset.semanticDive,
-      trailDepth: window.state.trailDepth,
-      anchorBloomIntensity: window.state.anchorBloomLight?.intensity || 0,
-      focusPocketActive: !!window.state.navState.focusPocketMeta?.active,
-      focusPocketCount: window.state.navState.focusPocketIndices?.length || 0,
+      trailDepth: window.__TEST_STATE__.trailDepth,
+      anchorBloomIntensity: window.__TEST_STATE__.anchorBloomLight?.intensity || 0,
+      focusPocketActive: !!window.__TEST_STATE__.navState.focusPocketMeta?.active,
+      focusPocketCount: window.__TEST_STATE__.navState.focusPocketIndices?.length || 0,
       tapTargets: rects
     };
   });
@@ -231,7 +231,7 @@ test.describe('camera and focus-pocket visual smoke', () => {
     expect(reducedEvidence.focused.focusTransitionPhase).toMatch(/arriving|settled/);
     const reducedOrbit = await reduced.evaluate(() => ({
       reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
-      autoRotate: !!window.state.controls?.autoRotate
+      autoRotate: !!window.__TEST_STATE__.controls?.autoRotate
     }));
     expect(reducedOrbit.reduced).toBe(true);
     expect(reducedOrbit.autoRotate).toBe(false);

@@ -80,9 +80,9 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
   test.beforeEach(async ({ page }) => {
     await setupMockSearch(page);
     await page.evaluate(() => {
-      if (window.state) {
-        window.state.viewSwitchPreludeTimer = null;
-        window.state.searchTimeout = null;
+      if (window.__TEST_STATE__) {
+        window.__TEST_STATE__.viewSwitchPreludeTimer = null;
+        window.__TEST_STATE__.searchTimeout = null;
       }
     });
   });
@@ -114,7 +114,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     const resultsAfter = await page.locator('.search-result-item').count();
     expect(resultsAfter, 'Escape must clear search results').toBe(0);
 
-    const navMode = await page.evaluate(() => window.state?.navState?.mode ?? 'unknown');
+    const navMode = await page.evaluate(() => window.__TEST_STATE__?.navState?.mode ?? 'unknown');
     expect(navMode, 'Escape must reset navState.mode to overview').toBe('overview');
 
     // Clear button must be gone
@@ -133,12 +133,12 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     await enterSearchQuery(page, 'cafe');
     await waitForResults(page);
     await page.locator('.search-result-item').first().click();
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus' && window.state?.focusedNode !== null, { timeout: 10000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus' && window.__TEST_STATE__?.focusedNode !== null, { timeout: 10000 });
 
     const focusBefore = await page.evaluate(() => ({
-      navMode: window.state?.navState?.mode ?? 'unknown',
-      focusedNode: window.state?.focusedNode ?? null,
-      trailDepth: window.state?.trailDepth ?? -1
+      navMode: window.__TEST_STATE__?.navState?.mode ?? 'unknown',
+      focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
+      trailDepth: window.__TEST_STATE__?.trailDepth ?? -1
     }));
     expect(focusBefore.navMode).toBe('focus');
     expect(focusBefore.focusedNode).not.toBeNull();
@@ -149,9 +149,9 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
 
     // --- 3. Verify focus state is fully cleared ---
     const focusAfter = await page.evaluate(() => ({
-      navMode: window.state?.navState?.mode ?? 'unknown',
-      focusedNode: window.state?.focusedNode ?? null,
-      trailDepth: window.state?.trailDepth ?? -1
+      navMode: window.__TEST_STATE__?.navState?.mode ?? 'unknown',
+      focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
+      trailDepth: window.__TEST_STATE__?.trailDepth ?? -1
     }));
     expect(focusAfter.navMode, 'Escape must reset mode to overview').toBe('overview');
     expect(focusAfter.focusedNode, 'Escape must clear focusedNode').toBeNull();
@@ -243,7 +243,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     await page.waitForTimeout(1500);
 
     await expect.poll(async () => page.evaluate(() => window.demoController?.isRunning?.() ?? false)).toBe(false);
-    await expect.poll(async () => page.evaluate(() => window.state?.navState?.mode ?? 'unknown')).toBe('overview');
+    await expect.poll(async () => page.evaluate(() => window.__TEST_STATE__?.navState?.mode ?? 'unknown')).toBe('overview');
 
     const demoProof = await page.evaluate(() => window.__demoResetProof);
     expect(demoProof.cancelled, 'Escape during active demo must emit demo-cancelled event').toBe(true);
@@ -283,12 +283,12 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     await enterSearchQuery(page, 'coffee');
     await waitForResults(page);
     await page.locator('.search-result-item').first().click();
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus' && window.state?.focusedNode !== null, { timeout: 10000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus' && window.__TEST_STATE__?.focusedNode !== null, { timeout: 10000 });
 
     // Verify timers exist before reset
     const timersBefore = await page.evaluate(() => ({
-      viewSwitchPreludeTimer: window.state?.viewSwitchPreludeTimer ?? null,
-      searchTimeout: window.state?.searchTimeout ?? null
+      viewSwitchPreludeTimer: window.__TEST_STATE__?.viewSwitchPreludeTimer ?? null,
+      searchTimeout: window.__TEST_STATE__?.searchTimeout ?? null
     }));
     // Both should be null or some timer ID; check they are not stuck.
     expect(timersBefore.viewSwitchPreludeTimer ?? null).toBeNull();
@@ -298,8 +298,8 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     await expect(page.locator('.search-result-item')).toHaveCount(0, { timeout: 10000 });
 
     const timersAfter = await page.evaluate(() => ({
-      viewSwitchPreludeTimer: window.state?.viewSwitchPreludeTimer ?? null,
-      searchTimeout: window.state?.searchTimeout ?? null
+      viewSwitchPreludeTimer: window.__TEST_STATE__?.viewSwitchPreludeTimer ?? null,
+      searchTimeout: window.__TEST_STATE__?.searchTimeout ?? null
     }));
     expect(timersAfter.viewSwitchPreludeTimer, 'viewSwitchPreludeTimer must be null after full Escape reset').toBeNull();
     expect(timersAfter.searchTimeout, 'searchTimeout must be null after full Escape reset').toBeNull();

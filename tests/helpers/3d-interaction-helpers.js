@@ -32,11 +32,11 @@ export async function openApp(page, viewport = { width: 1440, height: 900 }) {
   await page.waitForFunction(() => (
     typeof window.clearSearch === 'function' &&
     typeof window.focusOnNode === 'function' &&
-    Array.isArray(window.state?.points) &&
-    window.state.points.length > 0 &&
-    window.state?.renderer?.domElement &&
-    window.state?.camera &&
-    window.state?.pointsMesh
+    Array.isArray(window.__TEST_STATE__?.points) &&
+    window.__TEST_STATE__.points.length > 0 &&
+    window.__TEST_STATE__?.renderer?.domElement &&
+    window.__TEST_STATE__?.camera &&
+    window.__TEST_STATE__?.pointsMesh
   ), { timeout: 20000 });
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
@@ -54,7 +54,7 @@ export async function openApp(page, viewport = { width: 1440, height: 900 }) {
       window.resetExplorationFocus();
     }
   });
-  await page.waitForFunction(() => window.state?.navState?.mode === 'overview', { timeout: 10000 });
+  await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'overview', { timeout: 10000 });
   await page.waitForTimeout(900);
 }
 
@@ -71,11 +71,11 @@ export async function openAppForTouch(page, viewport = { width: 1440, height: 90
   await page.waitForFunction(() => (
     typeof window.clearSearch === 'function' &&
     typeof window.focusOnNode === 'function' &&
-    Array.isArray(window.state?.points) &&
-    window.state.points.length > 0 &&
-    window.state?.renderer?.domElement &&
-    window.state?.camera &&
-    window.state?.pointsMesh
+    Array.isArray(window.__TEST_STATE__?.points) &&
+    window.__TEST_STATE__.points.length > 0 &&
+    window.__TEST_STATE__?.renderer?.domElement &&
+    window.__TEST_STATE__?.camera &&
+    window.__TEST_STATE__?.pointsMesh
   ), { timeout: 20000 });
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
@@ -91,20 +91,20 @@ export async function openAppForTouch(page, viewport = { width: 1440, height: 90
 
 export async function probe(page) {
   return page.evaluate(() => {
-    const camera = window.state?.camera;
-    const canvas = window.state?.renderer?.domElement;
+    const camera = window.__TEST_STATE__?.camera;
+    const canvas = window.__TEST_STATE__?.renderer?.domElement;
     const canvasRect = canvas?.getBoundingClientRect?.();
     return {
-      focusedNode: window.state?.focusedNode ?? null,
-      navMode: window.state?.navState?.mode || '',
-      hoverHighlightIndex: window.state?.hoverHighlightIndex ?? null,
-      stableCanvasHover: window.state?.stableCanvasHover
+      focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
+      navMode: window.__TEST_STATE__?.navState?.mode || '',
+      hoverHighlightIndex: window.__TEST_STATE__?.hoverHighlightIndex ?? null,
+      stableCanvasHover: window.__TEST_STATE__?.stableCanvasHover
         ? {
-            index: window.state.stableCanvasHover.index,
-            screenX: window.state.stableCanvasHover.screenX,
-            screenY: window.state.stableCanvasHover.screenY,
-            source: window.state.stableCanvasHover.source || '',
-            distance: window.state.stableCanvasHover.distance ?? null
+            index: window.__TEST_STATE__.stableCanvasHover.index,
+            screenX: window.__TEST_STATE__.stableCanvasHover.screenX,
+            screenY: window.__TEST_STATE__.stableCanvasHover.screenY,
+            source: window.__TEST_STATE__.stableCanvasHover.source || '',
+            distance: window.__TEST_STATE__.stableCanvasHover.distance ?? null
           }
         : null,
       lastCanvasNodePick: window.__lastCanvasNodePick
@@ -125,7 +125,7 @@ export async function probe(page) {
             distance: window.__lastCanvasNodeFocusPick.distance
           }
         : null,
-      pointCount: window.state?.points?.length ?? 0,
+      pointCount: window.__TEST_STATE__?.points?.length ?? 0,
       canvasCursor: canvas?.style?.cursor ?? '',
       cameraPosition: camera ? { x: camera.position.x, y: camera.position.y, z: camera.position.z } : null,
       cameraAspect: camera?.aspect ?? null,
@@ -140,7 +140,7 @@ export function isValidNodeIndex(value, pointCount) {
 
 export async function probeScene(page) {
   return page.evaluate(() => {
-    const state = window.state || {};
+    const state = window.__TEST_STATE__ || {};
     return {
       focusedNode: state.focusedNode ?? null,
       navMode: state.navState?.mode || '',
@@ -251,13 +251,13 @@ export async function projectedCanvasCandidates(page, { maxResultsOverride = 8 }
  */
 export async function probeFocusPocket(page) {
   return page.evaluate(() => {
-    const state = window.state?.navState ?? {};
+    const state = window.__TEST_STATE__?.navState ?? {};
     const pocket = state.focusPocketIndices ?? [];
-    const camera = window.state?.camera;
-    const canvas = window.state?.renderer?.domElement;
+    const camera = window.__TEST_STATE__?.camera;
+    const canvas = window.__TEST_STATE__?.renderer?.domElement;
     const rect = canvas?.getBoundingClientRect?.();
-    const nodePositions = window.state?.nodePositions ?? [];
-    const pointsMesh = window.state?.pointsMesh;
+    const nodePositions = window.__TEST_STATE__?.nodePositions ?? [];
+    const pointsMesh = window.__TEST_STATE__?.pointsMesh;
 
     const withScreen = pocket.map(idx => {
       const pos = nodePositions[idx];
@@ -283,7 +283,7 @@ export async function probeFocusPocket(page) {
       focusPocketMeta: state.focusPocketMeta ?? null,
       roles,
       focusedIndex: state.focusedIndex ?? null,
-      focusedNode: window.state?.focusedNode ?? null,
+      focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
     };
   });
 }
@@ -294,7 +294,7 @@ export async function probeFocusPocket(page) {
  */
 export async function readPocketNodeScales(page) {
   return page.evaluate(() => {
-    const state = window.state || {};
+    const state = window.__TEST_STATE__ || {};
     const pocket = state.navState?.focusPocketIndices ?? [];
     const focusedIdx = state.navState?.focusedIndex ?? null;
     const roles = state.navState?.focusPocketRoleByIndex instanceof Map
@@ -349,7 +349,7 @@ export async function readPocketNodeScales(page) {
 
 export async function isReachableScreenCoordinate(page, screenX, screenY) {
   return page.evaluate(({ x, y }) => {
-    const canvas = window.state?.renderer?.domElement;
+    const canvas = window.__TEST_STATE__?.renderer?.domElement;
     if (!canvas) return false;
     const stack = document.elementsFromPoint(x, y);
     if (!stack.includes(canvas)) return false;

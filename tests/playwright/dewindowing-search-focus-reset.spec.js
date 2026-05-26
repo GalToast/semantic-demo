@@ -74,7 +74,7 @@ for (const viewportProfile of VIEWPORTS) {
         inputValue: document.getElementById('search-input')?.value ?? '',
         resultsCount: document.querySelectorAll('.search-result-item').length,
         hasQuery: document.querySelector('.search-container')?.classList.contains('has-query') ?? false,
-        navMode: window.state?.navState?.mode ?? 'unknown',
+        navMode: window.__TEST_STATE__?.navState?.mode ?? 'unknown',
       }));
 
       expect(beforeReset.inputValue).toBe('coffee');
@@ -87,10 +87,10 @@ for (const viewportProfile of VIEWPORTS) {
       const afterReset = await page.evaluate(() => ({
         inputValue: document.getElementById('search-input')?.value ?? '',
         resultsCount: document.querySelectorAll('.search-result-item').length,
-        focusedNode: window.state?.focusedNode ?? null,
-        selectedPoint: window.state?.selectedPoint ?? null,
-        trailDepth: window.state?.trailDepth ?? -1,
-        navMode: window.state?.navState?.mode ?? 'unknown',
+        focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
+        selectedPoint: window.__TEST_STATE__?.selectedPoint ?? null,
+        trailDepth: window.__TEST_STATE__?.trailDepth ?? -1,
+        navMode: window.__TEST_STATE__?.navState?.mode ?? 'unknown',
       }));
 
       expect(afterReset.inputValue, 'Escape must clear search input').toBe('');

@@ -1,9 +1,5 @@
 /* Journey active: focus/search, field-node, compass, and trail state overrides. */
 @media (max-width: 768px) {
-    html body[data-panel-surface="focus-search"] .focus-stage-card::-webkit-scrollbar {
-        display: none;
-    }
-
     html body[data-panel-surface="focus-search"] .focus-stage-name {
         min-width: 0;
         font-size: 13px;
@@ -1211,42 +1207,6 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
         z-index: 90;
     }
 
-    html body[data-panel-surface="focus"] .focus-stage-card,
-    html body[data-panel-surface="focus-search"] .focus-stage-card {
-        display: grid;
-        gap: 6px;
-        max-height: min(32vh, 280px);
-        padding: 20px 16px calc(14px + env(safe-area-inset-bottom, 0px));
-        border-radius: 28px 28px 0 0;
-        border-width: 1px 0 0 0;
-        border-color: rgba(121, 235, 222, 0.28);
-        background:
-            radial-gradient(circle at 50% 0%, rgba(121, 235, 222, 0.14), transparent 42%),
-            linear-gradient(180deg, rgba(8, 18, 25, 0.9), rgba(5, 12, 18, 0.94));
-        box-shadow:
-            0 -14px 38px rgba(0, 0, 0, 0.32),
-            0 0 0 1px rgba(121, 235, 222, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.055);
-        backdrop-filter: blur(18px) saturate(1.12);
-        pointer-events: auto;
-        transform: translateY(0);
-        transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    html body[data-panel-surface="focus"] .focus-stage-card::before,
-    html body[data-panel-surface="focus-search"] .focus-stage-card::before {
-        background:
-            linear-gradient(120deg, rgba(255, 255, 255, 0.07), transparent 24%, transparent 78%, rgba(255, 226, 132, 0.045)),
-            radial-gradient(circle at 50% 105%, rgba(121, 235, 222, 0.055), transparent 52%);
-        opacity: 0.38;
-    }
-
-    /* Do not imply drag-to-dismiss until sheet dragging is wired. */
-    html body[data-panel-surface="focus"] .focus-stage-card::after,
-    html body[data-panel-surface="focus-search"] .focus-stage-card::after {
-        content: none;
-    }
-
     html body[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-card::before {
         opacity: 0.34;
         mask: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
@@ -1260,7 +1220,8 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
         display: none;
     }
 
-    html body[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-journey.active {
+    html body[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-journey.active,
+    html body[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .focus-stage-journey.active {
         display: grid;
         grid-template-columns: minmax(56px, 0.72fr) minmax(0, 1.18fr) minmax(66px, 0.86fr);
         gap: 6px;
@@ -1647,18 +1608,6 @@ body[data-panel-surface="semantic-dive"] .journey-compass {
         border-radius: 999px;
         font-size: var(--font-micro);
         letter-spacing: 0.08em;
-    }
-
-    html body[data-active-view="galaxy"][data-focus-panel-mode="field-node"] .focus-stage-journey.active {
-        display: grid;
-        grid-template-columns: minmax(56px, 0.72fr) minmax(0, 1.18fr) minmax(66px, 0.86fr);
-        gap: 6px;
-        margin: 0;
-        padding: 0;
-        border: 0;
-        background: transparent;
-        box-shadow: none;
-        overflow: visible;
     }
 
     html body[data-active-view="galaxy"][data-focus-panel-mode="field-node"] #btn-focus-prev {

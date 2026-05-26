@@ -252,5 +252,12 @@ export function updateClusterLabels() {
     });
 }
 
+export function syncClusterSectionState() {
+    const clusterSection = document.getElementById('cluster-section');
+    if (clusterSection && window.innerWidth <= 768) {
+        clusterSection.open = false;
+    }
+}
+
 window.initClusterLabels = initClusterLabels;
 window.updateClusterLabels = updateClusterLabels;

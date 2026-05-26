@@ -717,10 +717,14 @@ async function main() {
 
   const { files, mode, groupTimeout, groupName } = resolveFiles();
   const stopOnFirstFail = process.argv.includes('--stop-on-first-fail');
-  const serverLease = groupName ? createServerLease(groupName) : null;
+  // Always scan for .spec.js files in the run list and start the server for them.
+  // Pinned mode has no group context but still carries browser specs that need HTTP.
+  const needsServer = files.some(f => f.endsWith('.spec.js'));
+  const effectiveGroupName = needsServer && !groupName ? 'browser-interaction' : groupName;
+  const serverLease = effectiveGroupName ? createServerLease(effectiveGroupName) : null;
   console.log(`\n=== QA Contract Runner ===`);
   console.log(`Mode: ${mode}`);
-  console.log(`Running ${files.length} contract file(s)\n`);
+  console.log(`Running ${files.length} contract file(s)${needsServer ? ' (browser specs detected — server will start)' : ''}\n`);
   if (stopOnFirstFail) console.log('Stop on first fail: enabled\n');
 
   const runContracts = async () => {

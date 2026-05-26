@@ -271,11 +271,13 @@ html body.is-active #selected-details.active {
 
     html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) #btn-share-view {
         display: none;
+        visibility: hidden;
     }
 
     html body.is-active[data-panel-surface="focus-search"] #mode-grid .mode-chip,
     html body.is-active[data-panel-surface="semantic-dive"] #mode-grid .mode-chip {
         display: none;
+        visibility: hidden;
     }
 
     html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .search-container.has-query .search-error-retry-btn,
@@ -359,6 +361,18 @@ html body.is-active #selected-details.active {
         z-index: 100;
     }
 
+    /* Search/focus-search: search-container is a transparent child of the
+       info-panel glass sheet -- suppress all glass primitives so only the
+       inner .search-input retains its own styling. */
+    html body.is-active[data-panel-surface="search"] .search-container,
+    html body.is-active[data-panel-surface="focus-search"] .search-container {
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        border: 0;
+        box-shadow: none;
+    }
+
     /* 1. IDLE STATE REFINEMENTS */
     html body.is-active[data-panel-surface="idle"] .info-panel {
         left: 0;
@@ -432,6 +446,7 @@ html body.is-active #selected-details.active {
     html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-dive-btn {
         width: calc(100% - 40px);
         margin: 0 20px 14px;
+        min-height: 44px;
         height: 54px;
         border-radius: 16px;
         background: var(--color-primary, #4ecdc4);
@@ -518,7 +533,7 @@ html body.is-active #selected-details.active {
     html body[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass,
     html body[data-focus-panel-mode="field-node"] .journey-compass {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 44px;
+        grid-template-columns: minmax(0, 1fr) minmax(112px, max-content);
         align-items: center;
         gap: 7px;
         height: auto;
@@ -551,9 +566,9 @@ html body.is-active #selected-details.active {
     html body.is-active[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass-actions,
     html body.is-active[data-focus-panel-mode="field-node"] .journey-compass-actions {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(50px, 1fr));
         gap: 6px;
-        min-width: 0;
+        min-width: 112px;
         justify-content: stretch;
     }
 
@@ -986,7 +1001,7 @@ html body.is-active #selected-details.active {
         }
     }
 
-    /* Map marker ↔ search result visual link.
+    /* Map marker â search result visual link.
        Subtle left accent bars echo the marker's glow color in map view,
        making the correspondence legible without extra icons or badges. */
     html body.is-active[data-panel-surface^="map-"] .search-result-item.is-anchor {

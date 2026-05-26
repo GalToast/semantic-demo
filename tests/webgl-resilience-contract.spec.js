@@ -27,10 +27,10 @@ async function waitForAppReady(page) {
   // Wait for scene init — pointsMesh is a reliable scene-ready sentinel
   await page.waitForFunction(() => (
     typeof window.clearSearch === 'function' &&
-    Array.isArray(window.state?.points) &&
-    window.state.points.length > 0 &&
-    window.state.pointIndexByLeadId?.size > 0 &&
-    window.state.renderer !== null
+    Array.isArray(window.__TEST_STATE__?.points) &&
+    window.__TEST_STATE__.points.length > 0 &&
+    window.__TEST_STATE__.pointIndexByLeadId?.size > 0 &&
+    window.__TEST_STATE__.renderer !== null
   ), undefined, { timeout: 25000 });
   // Ensure loading overlay is gone so we know the render loop is active
   await page.waitForFunction(() => {
@@ -48,13 +48,13 @@ async function waitForAppReady(page) {
 // Capture renderer state before context loss
 async function captureRendererState(page) {
   return page.evaluate(() => {
-    const r = window.state?.renderer;
-    const s = window.state?.scene;
+    const r = window.__TEST_STATE__?.renderer;
+    const s = window.__TEST_STATE__?.scene;
     return {
       hasRenderer: r !== null && r !== undefined,
       hasScene: s !== null && s !== undefined,
       rendererInfo: r ? (r.info?.memory?.geometries ?? 'unavailable') : 0,
-      pointCount: window.state?.points?.length ?? 0,
+      pointCount: window.__TEST_STATE__?.points?.length ?? 0,
     };
   });
 }
@@ -129,7 +129,7 @@ test.describe('WebGL Context Loss Resilience', () => {
 
     const lostState = await page.evaluate(() => ({
       datasetLost: document.body.dataset.webglContextLost || '',
-      rendererGone: window.state?.renderer === null,
+      rendererGone: window.__TEST_STATE__?.renderer === null,
     }));
 
     expect(lostState.datasetLost, 'context loss must be reflected on body.dataset').toBe('lost');
@@ -157,8 +157,8 @@ test.describe('WebGL Context Loss Resilience', () => {
     test.setTimeout(60000);
     await waitForAppReady(page);
 
-    const beforePointCount = await page.evaluate(() => window.state?.points?.length ?? 0);
-    const beforeMyceliumPairs = await page.evaluate(() => window.state?.myceliumConnectionPairs?.length ?? 0);
+    const beforePointCount = await page.evaluate(() => window.__TEST_STATE__?.points?.length ?? 0);
+    const beforeMyceliumPairs = await page.evaluate(() => window.__TEST_STATE__?.myceliumConnectionPairs?.length ?? 0);
 
     expect(beforePointCount, 'scene must have points loaded').toBeGreaterThan(0);
 
@@ -184,10 +184,10 @@ test.describe('WebGL Context Loss Resilience', () => {
     await page.waitForTimeout(1500);
 
     // Verify state integrity
-    const afterPointCount = await page.evaluate(() => window.state?.points?.length ?? 0);
-    const afterMyceliumPairs = await page.evaluate(() => window.state?.myceliumConnectionPairs?.length ?? 0);
-    const pointsMeshExists = await page.evaluate(() => window.state?.pointsMesh !== null);
-    const rendererExists = await page.evaluate(() => window.state?.renderer !== null);
+    const afterPointCount = await page.evaluate(() => window.__TEST_STATE__?.points?.length ?? 0);
+    const afterMyceliumPairs = await page.evaluate(() => window.__TEST_STATE__?.myceliumConnectionPairs?.length ?? 0);
+    const pointsMeshExists = await page.evaluate(() => window.__TEST_STATE__?.pointsMesh !== null);
+    const rendererExists = await page.evaluate(() => window.__TEST_STATE__?.renderer !== null);
 
     expect(afterPointCount, 'point data must be preserved after restore').toBe(beforePointCount);
     expect(pointsMeshExists, 'pointsMesh must still exist after restore').toBe(true);
@@ -200,7 +200,7 @@ test.describe('WebGL Context Loss Resilience', () => {
 
     // Record animation loop state before loss
     const rafBefore = await page.evaluate(() => {
-      const r = window.state?.renderer;
+      const r = window.__TEST_STATE__?.renderer;
       return r ? 'active' : 'no-renderer';
     });
 
@@ -224,7 +224,7 @@ test.describe('WebGL Context Loss Resilience', () => {
     await page.waitForTimeout(2000); // Allow render loop to re-establish
 
     const afterRaf = await page.evaluate(() => {
-      const r = window.state?.renderer;
+      const r = window.__TEST_STATE__?.renderer;
       return r ? 'active' : 'no-renderer';
     });
 
@@ -241,7 +241,7 @@ test.describe('WebGL Context Loss Resilience', () => {
 
     // Verify shader exists before loss
     const shaderExistsBefore = await page.evaluate(() => {
-      const mat = window.state?.pointsMaterial;
+      const mat = window.__TEST_STATE__?.pointsMaterial;
       return mat && typeof mat.userData?.shader === 'object' && mat.userData.shader !== null;
     });
     expect(shaderExistsBefore, 'shader must exist before loss test').toBe(true);
@@ -269,7 +269,7 @@ test.describe('WebGL Context Loss Resilience', () => {
 
     // Critical: shader must be a valid object after restore (not null, not undefined)
     const shaderAfterRestore = await page.evaluate(() => {
-      const mat = window.state?.pointsMaterial;
+      const mat = window.__TEST_STATE__?.pointsMaterial;
       if (!mat) return { exists: false, reason: 'pointsMaterial is null' };
       const shader = mat.userData?.shader;
       return {
@@ -289,7 +289,7 @@ test.describe('WebGL Context Loss Resilience', () => {
     await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=map&nodemo=1&q=coffee&anchor=519`, { waitUntil: 'domcontentloaded' });
 
     await page.waitForFunction(() => {
-      const state = window.state;
+      const state = window.__TEST_STATE__;
       return Boolean(
         state?.renderer &&
         state?.scene &&
@@ -300,10 +300,10 @@ test.describe('WebGL Context Loss Resilience', () => {
     }, undefined, { timeout: 12000 });
 
     const mapReady = await page.evaluate(() => ({
-      currentView: window.state?.currentView,
+      currentView: window.__TEST_STATE__?.currentView,
       graphicsMode: document.body.dataset.graphicsMode,
-      pointCount: window.state?.pointsMesh?.geometry?.attributes?.position?.count ?? 0,
-      shaderUniforms: Object.keys(window.state?.pointsMaterial?.userData?.shader?.uniforms || {}),
+      pointCount: window.__TEST_STATE__?.pointsMesh?.geometry?.attributes?.position?.count ?? 0,
+      shaderUniforms: Object.keys(window.__TEST_STATE__?.pointsMaterial?.userData?.shader?.uniforms || {}),
     }));
 
     expect(mapReady.graphicsMode, 'map route should still initialize WebGL graphics mode').toBe('webgl');

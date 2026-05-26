@@ -1,6 +1,8 @@
 import { state } from '../state.js';
 import { cleanOptionalValue, formatBusinessName, isCompactFocusStageViewport } from '../utils.js';
 import { getNextExploreCandidateForIndex } from './journey-thread-model.js';
+import {summarizeNeighborReason} from './journey.js';
+import {getNextWalkCandidateForIndex} from './journey.js';
 
 function truncateDiveStatusCopy(text, max = 74) {
     const clean = cleanOptionalValue(text);
@@ -34,8 +36,8 @@ function getStepInsideConnectionCopy(candidate, focusIndex) {
     const focusPoint = Number.isFinite(focusIndex) ? state.points?.[focusIndex] || null : null;
     const targetName = truncateDiveStatusCopy(formatBusinessName(point.name || 'next stop'), 42);
     const reason =
-        typeof window.summarizeNeighborReason === 'function'
-            ? window.summarizeNeighborReason(candidate, point, focusPoint)
+        typeof summarizeNeighborReason === 'function'
+            ? summarizeNeighborReason(candidate, point, focusPoint)
             : candidate.reason;
     const cue = getShortConnectionCue(reason);
     if (!cue) return `Next: ${targetName}`;

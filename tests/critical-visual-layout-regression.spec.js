@@ -55,7 +55,7 @@ test.describe('Critical Visual Layout Regression', () => {
 
     // Wait for app ready
     await page.waitForFunction(() =>
-      typeof window.focusOnNode === 'function' && Boolean(window.state?.points?.length),
+      typeof window.focusOnNode === 'function' && Boolean(window.__TEST_STATE__?.points?.length),
     { timeout: 30000 });
 
     // Trigger trail/inside state via JS, the state that exposes overlap.
@@ -134,7 +134,7 @@ test.describe('Critical Visual Layout Regression', () => {
     await page.goto(`${BASE_URL}${APP_PATH}?nodemo=1`, { waitUntil: 'domcontentloaded' });
 
     await page.waitForFunction(() =>
-      Boolean(window.state?.points?.length && window.state?.renderer),
+      Boolean(window.__TEST_STATE__?.points?.length && window.__TEST_STATE__?.renderer),
     { timeout: 30000 });
 
     await page.evaluate(() => {
@@ -171,7 +171,7 @@ test.describe('Critical Visual Layout Regression', () => {
     await page.goto(`${BASE_URL}${APP_PATH}?nodemo=1`, { waitUntil: 'domcontentloaded' });
 
     await page.waitForFunction(() =>
-      Boolean(window.state?.renderer && window.state?.pointsMesh),
+      Boolean(window.__TEST_STATE__?.renderer && window.__TEST_STATE__?.pointsMesh),
     { timeout: 30000 });
 
     await page.evaluate(() => {
@@ -180,11 +180,11 @@ test.describe('Critical Visual Layout Regression', () => {
         window.focusOnNode(4200, { fromSearchResult: true });
       }
     });
-    await page.waitForFunction(() => window.state?.focusedNode !== null && window.state?.focusedNode !== undefined, { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.focusedNode !== null && window.__TEST_STATE__?.focusedNode !== undefined, { timeout: 15000 });
     await page.waitForTimeout(1800);
 
     const threadState = await page.evaluate(() => {
-      const state = window.state || {};
+      const state = window.__TEST_STATE__ || {};
       const readLine = (line) => ({
         count: line?.geometry?.attributes?.position?.count || 0,
         opacity: Number(line?.material?.opacity ?? 0),
@@ -216,7 +216,7 @@ test.describe('Critical Visual Layout Regression', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`${BASE_URL}${APP_PATH}?nodemo=1`, { waitUntil: 'domcontentloaded' });
 
-    await page.waitForFunction(() => Boolean(window.state?.renderer), { timeout: 20000 });
+    await page.waitForFunction(() => Boolean(window.__TEST_STATE__?.renderer), { timeout: 20000 });
     await page.waitForTimeout(1000);
 
     // Search entire DOM tree for any element containing "STATIC DEV MODE" text
@@ -273,7 +273,7 @@ test.describe('Critical Visual Layout Regression', () => {
     await page.goto(`${BASE_URL}${APP_PATH}?nodemo=1`, { waitUntil: 'domcontentloaded' });
 
     await page.waitForFunction(() =>
-      Boolean(window.state?.renderer && window.state?.points?.length),
+      Boolean(window.__TEST_STATE__?.renderer && window.__TEST_STATE__?.points?.length),
     { timeout: 30000 });
 
     await page.evaluate(() => {

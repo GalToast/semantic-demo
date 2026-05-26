@@ -55,9 +55,9 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
   test.beforeEach(async ({ page }) => {
     // Reset timers so stale-check doesn't interfere
     await page.evaluate(() => {
-      if (window.state) {
-        window.state.viewSwitchPreludeTimer = null;
-        window.state.searchTimeout = null;
+      if (window.__TEST_STATE__) {
+        window.__TEST_STATE__.viewSwitchPreludeTimer = null;
+        window.__TEST_STATE__.searchTimeout = null;
       }
     });
   });
@@ -96,9 +96,9 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     // Verify focus mode is active
     const focusStateBefore = await page.evaluate(() => ({
-      navMode: window.state?.navState?.mode ?? 'unknown',
-      focusedNode: window.state?.focusedNode ?? null,
-      selectedPoint: window.state?.selectedPoint !== null
+      navMode: window.__TEST_STATE__?.navState?.mode ?? 'unknown',
+      focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
+      selectedPoint: window.__TEST_STATE__?.selectedPoint !== null
     }));
     expect(focusStateBefore.navMode).toBe('focus');
     expect(focusStateBefore.focusedNode).not.toBeNull();
@@ -118,17 +118,17 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     expect(resultsHtml, 'search results must be cleared after Escape').toBe('');
 
     // Nav mode reset to overview
-    const navMode = await page.evaluate(() => window.state?.navState?.mode ?? 'unknown');
+    const navMode = await page.evaluate(() => window.__TEST_STATE__?.navState?.mode ?? 'unknown');
     expect(navMode, 'navState.mode must be reset to overview after Escape').toBe('overview');
 
     // Focus node cleared
-    const focusedNode = await page.evaluate(() => window.state?.focusedNode);
+    const focusedNode = await page.evaluate(() => window.__TEST_STATE__?.focusedNode);
     expect(focusedNode, 'focusedNode must be null after Escape').toBeNull();
 
     // No leaked timers
     const timerState = await page.evaluate(() => ({
-      viewSwitchPreludeTimer: window.state?.viewSwitchPreludeTimer ?? null,
-      searchTimeout: window.state?.searchTimeout ?? null
+      viewSwitchPreludeTimer: window.__TEST_STATE__?.viewSwitchPreludeTimer ?? null,
+      searchTimeout: window.__TEST_STATE__?.searchTimeout ?? null
     }));
     expect(timerState.viewSwitchPreludeTimer, 'viewSwitchPreludeTimer must be null after Escape').toBeNull();
     expect(timerState.searchTimeout, 'searchTimeout must be null after Escape').toBeNull();
@@ -165,10 +165,10 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     expect(inputValue, 'resetExplorationFocus must preserve search input').toBe('coffee');
 
     // But focus should be cleared
-    const navMode = await page.evaluate(() => window.state?.navState?.mode ?? 'unknown');
+    const navMode = await page.evaluate(() => window.__TEST_STATE__?.navState?.mode ?? 'unknown');
     expect(navMode, 'navState.mode must be overview after resetExplorationFocus').toBe('overview');
 
-    const focusedNode = await page.evaluate(() => window.state?.focusedNode);
+    const focusedNode = await page.evaluate(() => window.__TEST_STATE__?.focusedNode);
     expect(focusedNode, 'focusedNode must be null after resetExplorationFocus').toBeNull();
   });
 
@@ -205,7 +205,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     const inputValue = await page.evaluate(() => document.getElementById('search-input')?.value ?? '');
     expect(inputValue, 'returnToOverview must clear search input').toBe('');
 
-    const navMode = await page.evaluate(() => window.state?.navState?.mode ?? 'unknown');
+    const navMode = await page.evaluate(() => window.__TEST_STATE__?.navState?.mode ?? 'unknown');
     expect(navMode).toBe('overview');
 
     const activeView = await page.evaluate(() => document.body.dataset.activeView);
@@ -236,7 +236,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     await page.click('#btn-focus-overview');
     await page.waitForTimeout(1500);
 
-    const navMode = await page.evaluate(() => window.state?.navState?.mode ?? 'unknown');
+    const navMode = await page.evaluate(() => window.__TEST_STATE__?.navState?.mode ?? 'unknown');
     expect(navMode, 'btn-focus-overview must reset mode to overview').toBe('overview');
   });
 });

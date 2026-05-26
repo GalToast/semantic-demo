@@ -41,7 +41,7 @@ test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
     // Setup state so buildSemanticGuideRequestPayload returns a valid payload
     const anchorName = await page.evaluate(() => {
       // eslint-disable-next-line no-undef
-      const s = window.state;
+      const s = window.__TEST_STATE__;
       s.currentSearchSummary = {
         query: 'coffee',
         anchorIndex: 0,
@@ -85,7 +85,7 @@ test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
     // Verify data-lead-id attributes exist and correspond to the results
     const leadIds = await page.evaluate(() => {
       // eslint-disable-next-line no-undef
-      const s = window.state;
+      const s = window.__TEST_STATE__;
       return s.points.slice(0, 3).map(p => String(p.lead_id));
     });
 

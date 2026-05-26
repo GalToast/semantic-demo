@@ -1929,8 +1929,7 @@ html body[data-active-view="map"] .mode-grid .mode-chip.active {
     html body[data-panel-surface="semantic-dive"] .focus-stage-neighbor-list,
     html body[data-panel-surface="focus"] .focus-stage-neighbor-pill,
     html body[data-panel-surface="focus-search"] .focus-stage-neighbor-pill,
-    html body[data-panel-surface="semantic-dive"] .focus-stage-neighbor-pill,
-    html body[data-panel-surface="semantic-dive"] .focus-stage-inside-status {
+    html body[data-panel-surface="semantic-dive"] .focus-stage-neighbor-pill {
         display: none;
     }
 

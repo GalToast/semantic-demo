@@ -33,12 +33,12 @@ const FOCUS_NEIGHBORHOOD_TEST_TIMEOUT_MS = 120000;
 
 async function probeNeighborhood(page) {
   return page.evaluate(() => {
-    const nav = window.state?.navState ?? {};
-    const camera = window.state?.camera;
-    const canvas = window.state?.renderer?.domElement;
+    const nav = window.__TEST_STATE__?.navState ?? {};
+    const camera = window.__TEST_STATE__?.camera;
+    const canvas = window.__TEST_STATE__?.renderer?.domElement;
     const rect = canvas?.getBoundingClientRect?.();
-    const nodePositions = window.state?.nodePositions ?? [];
-    const pointsMesh = window.state?.pointsMesh;
+    const nodePositions = window.__TEST_STATE__?.nodePositions ?? [];
+    const pointsMesh = window.__TEST_STATE__?.pointsMesh;
     const focusedIdx = nav.focusedIndex ?? null;
 
     const pocketRaw = nav.focusPocketIndices ?? [];
@@ -65,7 +65,7 @@ async function probeNeighborhood(page) {
 
     return {
       focusedIndex: focusedIdx,
-      focusedNode: window.state?.focusedNode ?? null,
+      focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
       pocketIndices: pocketRaw,
       neighborIndices,
       projected,
@@ -96,12 +96,12 @@ async function findHoverableNeighbor(page) {
     await page.waitForTimeout(180);
 
     const state = await page.evaluate(() => {
-      const pointCount = window.state?.points?.length ?? 0;
+      const pointCount = window.__TEST_STATE__?.points?.length ?? 0;
       return {
-        hoverHighlightIndex: window.state?.hoverHighlightIndex ?? null,
-        canvasCursor: window.state?.renderer?.domElement?.style?.cursor ?? '',
-        stableCanvasHover: window.state?.stableCanvasHover
-          ? { index: window.state.stableCanvasHover.index }
+        hoverHighlightIndex: window.__TEST_STATE__?.hoverHighlightIndex ?? null,
+        canvasCursor: window.__TEST_STATE__?.renderer?.domElement?.style?.cursor ?? '',
+        stableCanvasHover: window.__TEST_STATE__?.stableCanvasHover
+          ? { index: window.__TEST_STATE__.stableCanvasHover.index }
           : null,
         pointCount
       };
@@ -165,17 +165,17 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 1440, height: 900 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
     await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(600);
 
     const pre = await probe(page);
@@ -200,17 +200,17 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 1440, height: 900 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
     await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(600);
 
     const before = await probe(page);
@@ -245,17 +245,17 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 1440, height: 900 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
     await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(600);
 
     const neighbor = await findHoverableNeighbor(page);
@@ -280,17 +280,17 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 844, height: 390 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
     await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(700);
 
     const snap = await probeNeighborhood(page);
@@ -319,17 +319,17 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 844, height: 390 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
     await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(600);
 
     const pre = await probe(page);
@@ -341,13 +341,13 @@ test.describe('focus-neighborhood interaction', () => {
     expect(neighbor.hoverIndex, `short-landscape hover neighbor must not be anchor (${pre.focusedNode}), got ${neighbor.hoverIndex}`).not.toBe(pre.focusedNode);
 
     const hoverState = await page.evaluate(() => ({
-      hoverHighlightIndex: window.state?.hoverHighlightIndex ?? null,
-      canvasCursor: window.state?.renderer?.domElement?.style?.cursor ?? ''
+      hoverHighlightIndex: window.__TEST_STATE__?.hoverHighlightIndex ?? null,
+      canvasCursor: window.__TEST_STATE__?.renderer?.domElement?.style?.cursor ?? ''
     }));
     // Cursor string is racy; hoverHighlightIndex is the canonical semantic hover signal.
     const hoveredMobile = await page.evaluate(() => {
-      const h = window.state?.hoverHighlightIndex;
-      const p = window.state?.points?.length ?? 0;
+      const h = window.__TEST_STATE__?.hoverHighlightIndex;
+      const p = window.__TEST_STATE__?.points?.length ?? 0;
       return Number.isFinite(h) && h !== null && h >= 0 && h < p;
     });
     expect(hoveredMobile, 'short-landscape: hoverHighlightIndex must be valid after neighbor hover').toBe(true);
@@ -358,11 +358,11 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 844, height: 390 });
 
     await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       let targetIndex = 0;
       if (pts?.length) {
         for (let i = 0; i < Math.min(pts.length, 30); i++) {
-          const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
           if (node?.neighbors?.length > 0) { targetIndex = i; break; }
         }
       }
@@ -419,11 +419,11 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 390, height: 844 });
 
     await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       let targetIndex = 0;
       if (pts?.length) {
         for (let i = 0; i < Math.min(pts.length, 30); i++) {
-          const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
           if (node?.neighbors?.length > 0) { targetIndex = i; break; }
         }
       }
@@ -484,17 +484,17 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 1440, height: 900 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
     await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(700);
 
     const before = await probe(page);
@@ -530,17 +530,17 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 1440, height: 900 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
     await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(700);
 
     const activeEl = await tabToNeighborPill(page);
@@ -586,17 +586,17 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 844, height: 390 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
     await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(700);
 
     const before = await probe(page);
@@ -636,17 +636,17 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 390, height: 844 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
     await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(700);
 
     const neighborCount = await page.evaluate(() =>
@@ -668,17 +668,17 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 390, height: 844 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
     await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(600);
 
     const before = await probe(page);
@@ -720,17 +720,17 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 1024, height: 768 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
     await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(700);
 
     const snap = await probeNeighborhood(page);
@@ -759,17 +759,17 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 1024, height: 768 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
     await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(600);
 
     const pre = await probe(page);
@@ -781,13 +781,13 @@ test.describe('focus-neighborhood interaction', () => {
     expect(neighbor.hoverIndex, `tablet hover neighbor must not be anchor (${pre.focusedNode}), got ${neighbor.hoverIndex}`).not.toBe(pre.focusedNode);
 
     const hoverState = await page.evaluate(() => ({
-      hoverHighlightIndex: window.state?.hoverHighlightIndex ?? null,
-      canvasCursor: window.state?.renderer?.domElement?.style?.cursor ?? ''
+      hoverHighlightIndex: window.__TEST_STATE__?.hoverHighlightIndex ?? null,
+      canvasCursor: window.__TEST_STATE__?.renderer?.domElement?.style?.cursor ?? ''
     }));
     // Cursor string is racy; hoverHighlightIndex is the canonical semantic hover signal.
     const hoveredTablet = await page.evaluate(() => {
-      const h = window.state?.hoverHighlightIndex;
-      const p = window.state?.points?.length ?? 0;
+      const h = window.__TEST_STATE__?.hoverHighlightIndex;
+      const p = window.__TEST_STATE__?.points?.length ?? 0;
       return Number.isFinite(h) && h !== null && h >= 0 && h < p;
     });
     expect(hoveredTablet, 'tablet: hoverHighlightIndex must be valid after neighbor hover').toBe(true);
@@ -798,11 +798,11 @@ test.describe('focus-neighborhood interaction', () => {
     await openApp(page, { width: 1024, height: 768 });
 
     await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       let targetIndex = 0;
       if (pts?.length) {
         for (let i = 0; i < Math.min(pts.length, 30); i++) {
-          const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
           if (node?.neighbors?.length > 0) { targetIndex = i; break; }
         }
       }
@@ -871,11 +871,11 @@ test.describe('focus-neighborhood interaction', () => {
     // the first 30. Entries with richer neighborhood structure give the test more
     // visual options when choosing the best anchor↔neighbor pair.
     const candidateEntryIndices = await page.evaluate(() => {
-      const pts = window.state.points;
+      const pts = window.__TEST_STATE__.points;
       if (!pts || pts.length === 0) return [0];
       const candidates = [];
       for (let i = 0; i < Math.min(pts.length, 60); i++) {
-        const node = window.state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) candidates.push(i);
       }
       return candidates.length ? candidates : [0];
@@ -901,7 +901,7 @@ test.describe('focus-neighborhood interaction', () => {
     outer:
     for (const entryIndex of candidateEntryIndices) {
       await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-      await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+      await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
       await page.waitForTimeout(700);
 
       const snap = await probeNeighborhood(page);
@@ -944,7 +944,7 @@ test.describe('focus-neighborhood interaction', () => {
       outer:
       for (const entryIndex of candidateEntryIndices) {
         await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-        await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+        await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
         await page.waitForTimeout(700);
 
         const snap = await probeNeighborhood(page);
@@ -1006,7 +1006,7 @@ test.describe('focus-neighborhood interaction', () => {
     // WebGL backing-buffer coordinate space before readPixels.
     const visualDistinction = await page.evaluate(
       ({ ax, ay, nx, ny, threshold, radius }) => {
-        const canvas = window.state?.renderer?.domElement;
+        const canvas = window.__TEST_STATE__?.renderer?.domElement;
         if (!canvas) return { error: 'no canvas', deltaR: 0, deltaG: 0, deltaB: 0 };
 
         let ctx;

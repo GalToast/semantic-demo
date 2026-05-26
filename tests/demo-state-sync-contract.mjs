@@ -65,7 +65,7 @@ test('micro-demo.js checks for demo=force parameter in shouldRunMicroDemo and st
 
 test('micro-demo.js uses setInfoPanelOpen(false) at T=7200ms instead of raw slide-in-left manipulation', () => {
   assert(!/classList\.remove\(['"]slide-in-left['"]\)/.test(microDemoSource), 'micro-demo.js must not directly remove slide-in-left class');
-  assert(/window\.setInfoPanelOpen\(\s*false\s*\)/.test(microDemoSource), 'micro-demo.js must call window.setInfoPanelOpen(false) at T=7200ms');
+  assert(/setInfoPanelOpen\(\s*false\s*\)/.test(microDemoSource), 'micro-demo.js must call setInfoPanelOpen(false) at T=7200ms');
 });
 
 test('micro-demo.js calls setInfoPanelOpen(true) via __demoReset (called from _resetAppState)', () => {
@@ -74,9 +74,9 @@ test('micro-demo.js calls setInfoPanelOpen(true) via __demoReset (called from _r
   assert(/function __demoReset\(\)[\s\S]*?setInfoPanelOpen\(\s*true\s*\)/.test(microDemoSource), '__demoReset must call window.setInfoPanelOpen(true)');
 });
 
-test('event-bindings.js defines window.revealSelectedBusinessCard', () => {
-  assert(/window\.revealSelectedBusinessCard\s*=/.test(eventBindingsSource), 'event-bindings.js must define window.revealSelectedBusinessCard');
-  assert(/window\.revealSelectedBusinessCard\s*=\s*function\b[\s\S]*?setInfoPanelOpen\(\s*true\s*\)/.test(eventBindingsSource), 'revealSelectedBusinessCard must call window.setInfoPanelOpen(true)');
+test('event-bindings.js defines revealSelectedBusinessCard', () => {
+  assert(/export\s+function\s+revealSelectedBusinessCard/.test(eventBindingsSource), 'event-bindings.js must export revealSelectedBusinessCard');
+  assert(/revealSelectedBusinessCard\(\)\s*\{[\s\S]*?setInfoPanelOpen\(\s*true\s*\)/.test(eventBindingsSource), 'revealSelectedBusinessCard must call setInfoPanelOpen(true)');
 });
 
 console.log(`\n${'-'.repeat(50)}`);

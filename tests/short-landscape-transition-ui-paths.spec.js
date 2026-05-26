@@ -23,8 +23,8 @@ async function openApp(page) {
   await page.waitForFunction(() => (
     typeof window.clearSearch === 'function' &&
     typeof window.setSemanticDiveMode === 'function' &&
-    Array.isArray(window.state?.points) &&
-    window.state.points.length > 0
+    Array.isArray(window.__TEST_STATE__?.points) &&
+    window.__TEST_STATE__.points.length > 0
   ), { timeout: 20000 });
   await page.waitForTimeout(1000);
 }
@@ -53,7 +53,7 @@ async function clickFirstSearchResult(page) {
   const firstResult = page.locator('.search-result-item').first();
   await expect(firstResult).toBeVisible({ timeout: 10000 });
   await firstResult.click({ force: true });
-  await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+  await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
 }
 
 async function enterSemanticDive(page) {
@@ -64,8 +64,8 @@ async function enterSemanticDive(page) {
     await page.locator('#btn-focus-dive').click({ force: true });
   }
   await page.waitForFunction(() => (
-    window.state?.trailDepth === 2 &&
-    window.state?.semanticDiveMode === true &&
+    window.__TEST_STATE__?.trailDepth === 2 &&
+    window.__TEST_STATE__?.semanticDiveMode === true &&
     document.body.dataset.semanticDive === 'active'
   ), { timeout: 15000 });
 }
@@ -82,12 +82,12 @@ async function probe(page) {
       trailDepth: document.body.dataset.trailDepth || ''
     },
     state: {
-      navMode: window.state?.navState?.mode || '',
-      focusedNode: window.state?.focusedNode ?? null,
-      selectedPoint: window.state?.selectedPoint ?? null,
-      focusedIndex: window.state?.navState?.focusedIndex ?? null,
-      trailDepth: window.state?.trailDepth ?? null,
-      semanticDiveMode: window.state?.semanticDiveMode ?? null
+      navMode: window.__TEST_STATE__?.navState?.mode || '',
+      focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
+      selectedPoint: window.__TEST_STATE__?.selectedPoint ?? null,
+      focusedIndex: window.__TEST_STATE__?.navState?.focusedIndex ?? null,
+      trailDepth: window.__TEST_STATE__?.trailDepth ?? null,
+      semanticDiveMode: window.__TEST_STATE__?.semanticDiveMode ?? null
     }
   }));
 }
@@ -233,8 +233,8 @@ test.describe('short-landscape viewport transitions', () => {
     await clearBtn.click();
 
     await page.waitForFunction(() =>
-      window.state?.navState?.mode === 'overview' &&
-      window.state?.focusedNode === null,
+      window.__TEST_STATE__?.navState?.mode === 'overview' &&
+      window.__TEST_STATE__?.focusedNode === null,
       { timeout: 15000 }
     );
 

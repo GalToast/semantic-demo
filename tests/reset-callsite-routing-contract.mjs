@@ -97,18 +97,28 @@ globalThis.window = {
   updateSearchTrailCue: () => {},
   syncFocusStage: () => {},
   applyFilters: () => {},
+};
+
+let resetStateBeforeUrlRestoreCalls = 0;
+// We must supply the actual mock functions expected by lifecycle
+let injectedMocks = {
   updateExplorationUi: () => {},
   updateSearchStatusMessage: () => {},
-  resetNodePositions: () => {},
+  resetNodePositions: () => {
+      state.navState.mode = 'overview';
+      state.focusedNode = null;
+  },
   updateSelectedBusiness: () => {},
   refreshCompositionState: () => {},
   switchView: () => {},
   updateUrlState: () => {},
   showExperienceToast: () => {},
-  setMyceliumMode: () => {},
-  setTrailDepth: () => {},
+  setMyceliumMode: (m) => { state.myceliumMode = m; },
+  setTrailDepth: (d) => { state.navState.trailDepth = d; },
   applyPointFilterColors: () => {},
+  clearSearch: () => {}
 };
+window.clearSearch = injectedMocks.clearSearch;
 
 globalThis.performance = {
   now: () => { _rafNow += 16; return _rafNow; },
@@ -208,7 +218,7 @@ assert(state.semanticDiveMode === false, 'T1: semanticDiveMode is false after re
 // myceliumMode is cleared by setMyceliumMode('default') in resetExplorationFocus
 assert(state.myceliumMode === 'default', 'T1: myceliumMode is default after returnToCountyView');
 // trailDepth is cleared by setTrailDepth(0) in resetExplorationFocus
-assert(state.trailDepth === 0, 'T1: trailDepth is 0 after returnToCountyView');
+assert(state.navState.trailDepth === 0, 'T1: trailDepth is 0 after returnToCountyView');
 // focusedNode is cleared by resetNodePositions
 assert(state.focusedNode === null, 'T1: focusedNode is null after returnToCountyView');
 // navState.mode is reset to 'overview' by resetNodePositions
@@ -251,7 +261,7 @@ resetExplorationFocus();
 commit();
 
 assert(state.myceliumMode === 'default', 'T3: myceliumMode is default');
-assert(state.trailDepth === 0, 'T3: trailDepth is 0');
+assert(state.navState.trailDepth === 0, 'T3: trailDepth is 0');
 assert(state.semanticDiveMode === false, 'T3: semanticDiveMode is false');
 assert(state.focusedNode === null, 'T3: focusedNode is null');
 assert(state.navState.mode === 'overview', 'T3: navState.mode is overview');

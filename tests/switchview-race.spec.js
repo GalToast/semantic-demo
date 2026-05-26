@@ -56,7 +56,7 @@ test.describe('switchView race condition regression', () => {
     });
     await page.waitForFunction(() => document.body.dataset.activeView === 'map', { timeout: 10000 });
     const mapTimestamp = await page.evaluate(() => {
-      return window.state?.currentView;
+      return window.__TEST_STATE__?.currentView;
     });
 
     // Call switchView('map') again with the same view — must be a no-op (no error)

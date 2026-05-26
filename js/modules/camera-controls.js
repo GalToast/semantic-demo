@@ -15,12 +15,26 @@ import {
     setTrailDepth,
     setMyceliumMode,
     updateExplorationUi,
-    syncSearchStatusForFocus,
-    updateJourneyCompass
+    syncSearchStatusForFocus
 } from './lifecycle.js';
+import { updateJourneyCompass } from './journey-compass-controller.js';
 import { updateUrlState } from './url-state.js';
 import { applyPointFilterColors, syncFocusStage } from './journey.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
+import {
+    adapter_showTerrainPreludeOverlay,
+    adapter_hideTerrainPreludeOverlay,
+    adapter_setRouteChoreographyPhase,
+    adapter_hideTooltip,
+    adapter_clearThreadInspection,
+    adapter_setTrailFromSeed,
+    adapter_updateTrailIndices,
+    adapter_refreshFocusSemanticOverlay,
+    adapter_applyLocalNeighborhoodFocus,
+    adapter_updateSelectedBusiness,
+    adapter_updateTraversalUi,
+    adapter_updateFocusNeighborRail
+} from './camera-controls-adapter.js';
 
 // Constants
 
@@ -321,6 +335,10 @@ export function computeSafeAreaCameraTargetOffset(pocketBounds, canvasRegion, fo
     }
 
     return offset.lengthSq() > 0.000001 ? offset : null;
+}
+
+export function getRouteLayerOrigin() {
+    return 'galaxy';
 }
 
 export function animateCameraToNode(index, options = {}) {
@@ -841,9 +859,7 @@ export function animateCameraToTerrainPrelude(options = {}) {
     const duration = prefersReducedMotion ? 1 : (options.duration || (state.MAP_HANDOFF_PRELUDE_MS || 1200));
 
     // Show "Preparing terrain..." progress overlay during the prelude
-    if (typeof window.showTerrainPreludeOverlay === 'function') {
-        window.showTerrainPreludeOverlay();
-    }
+    adapter_showTerrainPreludeOverlay();
 
     try {
         if (!state.camera || !state.controls) return;
@@ -866,7 +882,7 @@ export function animateCameraToTerrainPrelude(options = {}) {
         const startTime = performance.now();
 
         setFocusTransitionMode('map-prelude', { duration });
-        
+
         // 10/10 Polish: Prevent control jitter during prelude
         const priorControlsEnabled = state.controls.enabled;
         state.controls.enabled = false;
@@ -893,9 +909,7 @@ export function animateCameraToTerrainPrelude(options = {}) {
         console.warn('animateCameraToTerrainPrelude failed:', _err);
     } finally {
         // Remove the prelude overlay when the animation completes (or on error)
-        if (typeof window.hideTerrainPreludeOverlay === 'function') {
-            window.hideTerrainPreludeOverlay();
-        }
+        adapter_hideTerrainPreludeOverlay();
     }
 }
 
@@ -1037,16 +1051,13 @@ export function animateCameraToSearchCorridor(anchorIndex, resultIndices = [], o
     const endTarget = boundsCenter.clone().lerp(anchorVector, targetBias).add(worldUp.clone().multiplyScalar(compact ? 0.018 : 0.028));
     const distance = Math.min(compact ? 2.35 : 1.95, Math.max(compact ? 1.1 : 0.92, routeSpan * (compact ? 4.1 : 3.2) + 0.52));
     const endPos = endTarget.clone().add(currentHeading.clone().multiplyScalar(distance)).add(worldUp.clone().multiplyScalar(compact ? 0.16 : 0.2)).add(rightVector.clone().multiplyScalar(compact ? 0.035 : 0.065));
-
     const duration = options.duration || (compact ? 1180 : 1320);
     const startTime = performance.now();
     const animationToken = (state.routeCameraAnimationToken = (state.routeCameraAnimationToken || 0) + 1);
 
-    if (typeof window.setRouteChoreographyPhase === 'function') {
-        window.setRouteChoreographyPhase('search-corridor', {
-            reason: options.reason || 'search-success', anchorIndex, indexCount: routeIndices.length, lastCameraMove: 'search-corridor'
-        });
-    }
+    adapter_setRouteChoreographyPhase('search-corridor', {
+        reason: options.reason || 'search-success', anchorIndex, indexCount: routeIndices.length, lastCameraMove: 'search-corridor'
+    });
     noteSceneInteraction(duration + 1200);
 
     const controlTarget = startTarget.clone().lerp(endTarget, 0.56).add(worldUp.clone().multiplyScalar(0.025));
@@ -1148,34 +1159,35 @@ export function focusOnNode(index, options = {}) {
         if (clusterSection) clusterSection.open = false;
     }
 
-    if (typeof window.hideTooltip === 'function') window.hideTooltip();
-    if (typeof window.clearThreadInspection === 'function') window.clearThreadInspection({ force: true, preserveJourney: !!options.fromTraversal });
-    if (typeof window.setTrailFromSeed === 'function') window.setTrailFromSeed(index);
-    if (typeof window.updateTrailIndices === 'function') window.updateTrailIndices(index);
-    if (typeof window.refreshFocusSemanticOverlay === 'function') window.refreshFocusSemanticOverlay();
-    if (typeof window._fp?.applyLocalNeighborhoodFocus === 'function') window._fp.applyLocalNeighborhoodFocus(index);
+    adapter_hideTooltip();
+    adapter_clearThreadInspection({ force: true, preserveJourney: !!options.fromTraversal });
+    adapter_setTrailFromSeed(index);
+    adapter_updateTrailIndices(index);
+    adapter_refreshFocusSemanticOverlay();
+    adapter_applyLocalNeighborhoodFocus(index);
+
     applyPointFilterColors();
     updateExplorationUi();
-    if (typeof window.updateSelectedBusiness === 'function') {
-        window.updateSelectedBusiness(point, { revealCard: !!options.revealCard || !!options.fromSearchResult });
-    }
+
+    adapter_updateSelectedBusiness(point, { revealCard: !!options.revealCard || !!options.fromSearchResult });
+
     syncFocusStage(point);
     refreshMapRouteEmbodiment();
-    if (typeof window.clearRouteExploration === 'function') {
-        window.clearRouteExploration(options.fromTraversal ? 'trail-walk' : options.fromCanvasNode ? 'field-node-focus' : 'focus');
-    }
+
+    clearRouteExploration(options.fromTraversal ? 'trail-walk' : options.fromCanvasNode ? 'field-node-focus' : 'focus');
+
     syncSearchStatusForFocus(point, {
         fromTraversal: !!options.fromTraversal,
         fromSearchResult: !!options.fromSearchResult
     });
-    if (typeof window.animateCameraToNode === 'function') {
-        window.animateCameraToNode(index, {
-            transitionStyle: options.fromTraversal ? 'walk' : options.fromSearchResult ? 'search' : 'focus'
-        });
-    }
-    if (typeof window.updateTraversalUi === 'function') window.updateTraversalUi();
+
+    animateCameraToNode(index, {
+        transitionStyle: options.fromTraversal ? 'walk' : options.fromSearchResult ? 'search' : 'focus'
+    });
+
+    adapter_updateTraversalUi();
     syncSemanticDiveUi();
-    if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
+    adapter_updateFocusNeighborRail();
     refreshCompositionState();
     if (!options.skipUrlSync) {
         updateUrlState({ record: point.lead_id || null }, { mode: options.historyMode || 'push', reason: 'focus' });

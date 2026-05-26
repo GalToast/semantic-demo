@@ -153,8 +153,9 @@
     }
 
     html body.is-active[data-panel-surface="idle"] .search-label {
-        min-height: 0;
-        margin-bottom: 6px;
+        min-height: 44px;
+        margin-top: -16px;
+        margin-bottom: -10px;
         gap: 3px;
         color: rgba(218, 236, 234, 0.58);
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
@@ -239,7 +240,7 @@
 
     html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .search-container.has-query .search-error-retry-btn,
     html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .search-container.has-query .search-error-dismiss-btn {
-        min-height: 40px;
+        min-height: 44px;
         padding: 0 14px;
         border-radius: 8px;
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);

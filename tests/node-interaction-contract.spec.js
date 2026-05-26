@@ -44,8 +44,8 @@ async function openApp(page) {
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => (
     typeof window.clearSearch === 'function' &&
-    Array.isArray(window.state?.points) &&
-    window.state.points.length > 0
+    Array.isArray(window.__TEST_STATE__?.points) &&
+    window.__TEST_STATE__.points.length > 0
   ), { timeout: 20000 });
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
@@ -80,12 +80,12 @@ test.describe('node interaction: search result focus transition', () => {
     await expect(page.locator('.search-result-item').first()).toBeVisible({ timeout: 15000 });
 
     await page.locator('.search-result-item').first().click();
-    await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
 
     const result = await page.evaluate(() => ({
-      focusedNode: window.state?.focusedNode ?? null,
+      focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
       panelSurface: document.body.dataset.panelSurface || '',
-      navMode: window.state?.navState?.mode || '',
+      navMode: window.__TEST_STATE__?.navState?.mode || '',
     }));
 
     expect(result.focusedNode, 'focusedNode is set after result click').not.toBeNull();

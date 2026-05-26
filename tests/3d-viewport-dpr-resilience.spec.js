@@ -28,11 +28,11 @@ async function openPage(browser, { width, height, deviceScaleFactor = 1 }) {
 
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => (
-    Array.isArray(window.state?.nodePositions) &&
-    window.state.nodePositions.length > 0 &&
-    window.state?.renderer?.domElement &&
-    window.state?.camera &&
-    window.state?.pointsMesh
+    Array.isArray(window.__TEST_STATE__?.nodePositions) &&
+    window.__TEST_STATE__.nodePositions.length > 0 &&
+    window.__TEST_STATE__?.renderer?.domElement &&
+    window.__TEST_STATE__?.camera &&
+    window.__TEST_STATE__?.pointsMesh
   ), { timeout: 25000 });
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');

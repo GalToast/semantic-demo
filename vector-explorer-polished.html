@@ -25,9 +25,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="semantic-demo.css?v=6323d8fd08fa">
+    <link rel="stylesheet" href="semantic-demo.css?v=4358043a93a2">
     <link rel="stylesheet" href="vector-explorer-pandora.css?v=99a7d5032027">
-    <link rel="stylesheet" href="css/mobile_premium.css?v=be9f1246e76b">
+    <link rel="stylesheet" href="css/mobile_premium.css?v=82b51e949ba5">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>M</text></svg>">
 </head>
 <body>
@@ -139,7 +139,7 @@
         </symbol>
     </svg>
     <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loading-overlay" role="status" aria-live="polite">
+    <div class="loading-overlay" id="loading-overlay" role="status" aria-live="polite" aria-label="Application loading status">
         <div class="loading-shell">
             <div class="loading-spores" aria-hidden="true">
                 <svg class="loading-thread" viewBox="0 0 118 72" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -170,7 +170,7 @@
     <div id="micro-demo-veil" class="micro-demo-veil" aria-hidden="true"></div>
 
     <!-- Weather Overlay -->
-    <div class="weather-overlay" id="weather-overlay">
+    <div class="weather-overlay" id="weather-overlay" aria-hidden="true">
         <div class="sun-rays" id="sun-rays"></div>
         <div class="fog-overlay" id="fog-overlay"></div>
         <div class="rain-container" id="rain-container"></div>
@@ -295,10 +295,10 @@
             </button>
 
             <div class="search-container" role="search">
-                <div class="search-label">
+                <button class="search-label" type="button" aria-label="Toggle search sheet">
                     <span class="search-label-text">Semantic Search</span>
                     <span class="semantic-lane-pill" id="semantic-lane-pill" data-state="checking" title="Checking search readiness.">Search check</span>
-                </div>
+                </button>
                 <div class="search-input-wrapper">
                     <span class="search-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-search"></use></svg></span>
                     <input type="text" class="search-input" id="search-input" placeholder="Search need, service, or clue..." aria-label="Search businesses semantically by need, venue, service, or clue" aria-controls="search-results" aria-describedby="search-status-live" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
@@ -357,7 +357,7 @@
             </div>
 
 
-            <div class="selected-card is-empty" id="selected-card">
+            <div class="selected-card is-empty" id="selected-card" role="region" aria-labelledby="selected-card-title">
                 <div class="vector-cascade-bg" id="vector-cascade-bg" aria-hidden="true"></div>
                 <div class="panel-section-title" id="selected-card-title">Focused Business</div>
                 <div class="selected-empty" id="selected-empty">
@@ -525,8 +525,8 @@
     <button class="legend-toggle" id="btn-legend" type="button" aria-label="Show field guide" aria-expanded="false" aria-pressed="false" aria-controls="legend-panel"><svg class="ui-icon" aria-hidden="true"><use href="#icon-guide"></use></svg></button>
     <button class="share-toggle" id="btn-share-view" type="button" title="Copy current view link" aria-label="Copy current view link"><svg class="ui-icon" aria-hidden="true"><use href="#icon-share"></use></svg><span class="share-toggle-label">Share</span></button>
     <button class="help-toggle" id="btn-keyboard-help" type="button" aria-label="Show shortcuts" aria-expanded="false" aria-controls="keyboard-hint-panel"><svg class="ui-icon" aria-hidden="true"><use href="#icon-help"></use></svg></button>
-    <aside class="legend-panel glass-heavy" id="legend-panel" role="region" aria-labelledby="legend-panel-title-handle" aria-hidden="true"></aside>
-    <div class="experience-reset-toast" id="experience-reset-toast" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true">
+    <aside class="legend-panel glass-heavy" id="legend-panel" role="region" aria-label="Field guide panel" aria-hidden="true"></aside>
+    <div class="experience-reset-toast" id="experience-reset-toast" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true" aria-label="Experience reset notification">
         <strong id="experience-toast-title"></strong>
         <span id="experience-toast-copy"></span>
     </div>
@@ -560,7 +560,7 @@
         }
     }
     </script>
-    <script type="module" src="dist/bundle.js?v=d8e9aa03b823"></script>
+    <script type="module" src="dist/bundle.js?v=0196d0038767"></script>
 
     <div id="semantic-summary-card" class="summary-card hidden glass-heavy" role="region" aria-labelledby="summary-card-title-text" aria-hidden="true" hidden>
         <div class="summary-header">

@@ -94,7 +94,7 @@ test.describe('3D canvas node hit accuracy', () => {
 
     // Find the candidate nearest to any canvas edge
     const canvasRect = await page.evaluate(() => {
-      const c = window.state?.renderer?.domElement;
+      const c = window.__TEST_STATE__?.renderer?.domElement;
       const r = c?.getBoundingClientRect?.();
       return r ? { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height } : null;
     });
@@ -140,7 +140,7 @@ test.describe('3D canvas node hit accuracy', () => {
     expect(candidates.length, 'need at least one hoverable candidate on mobile').toBeGreaterThan(0);
 
     const canvasRect = await page.evaluate(() => {
-      const c = window.state?.renderer?.domElement;
+      const c = window.__TEST_STATE__?.renderer?.domElement;
       const r = c?.getBoundingClientRect?.();
       return r ? { left: r.left, top: r.top, right: r.right, bottom: r.bottom } : null;
     });
@@ -183,7 +183,7 @@ test.describe('3D canvas node hit accuracy', () => {
     expect(candidates.length, 'need at least one candidate in short landscape').toBeGreaterThan(0);
 
     const canvasRect = await page.evaluate(() => {
-      const c = window.state?.renderer?.domElement;
+      const c = window.__TEST_STATE__?.renderer?.domElement;
       const r = c?.getBoundingClientRect?.();
       return r ? { left: r.left, top: r.top, right: r.right, bottom: r.bottom } : null;
     });

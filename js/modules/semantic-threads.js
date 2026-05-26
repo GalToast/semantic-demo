@@ -1,5 +1,6 @@
 // js/modules/semantic-threads.js â€” semantic thread artifact loading
 import { state } from '../state.js';
+import {recordSemanticLaneSnapshot} from './url-navigation-adapter.js';
 
 const SEMANTIC_THREAD_RETRY_DELAYS_MS = [2500, 8000, 15000];
 
@@ -16,7 +17,7 @@ function _cleanOptionalValue(value) {
 
 function _buildSemanticNeighborMap(bundle) {
     state.semanticNeighborMapByLeadId = new Map();
-    if (!bundle?.nodes || typeof bundle.nodes !== 'object') return; 
+    if (!bundle?.nodes || typeof bundle.nodes !== 'object') return;
 
     Object.entries(bundle.nodes).forEach(([fallbackLeadId, node]) => {
         const leadId = _normalizeLeadId(node?.lead_id ?? fallbackLeadId);
@@ -24,13 +25,13 @@ function _buildSemanticNeighborMap(bundle) {
 
         const neighbors = Array.isArray(node?.neighbors)
             ? node.neighbors.map((neighbor) => ({
-                leadId: _normalizeLeadId(neighbor?.lead_id),        
+                leadId: _normalizeLeadId(neighbor?.lead_id),
                 score: Number(neighbor?.score ?? 0),
                 semanticScore: Number(neighbor?.semantic_score ?? 0),
                 sameCity: Boolean(neighbor?.same_city),
                 sameStatus: Boolean(neighbor?.same_status),
-                bridgeScore: Number(neighbor?.bridge_score ?? 0),   
-                signalScore: Number(neighbor?.signal_score ?? 0),   
+                bridgeScore: Number(neighbor?.bridge_score ?? 0),
+                signalScore: Number(neighbor?.signal_score ?? 0),
                 threadType: _cleanOptionalValue(neighbor?.thread_type) || 'local_semantic_neighbor',
                 reason: _cleanOptionalValue(neighbor?.reason) || 'semantic neighbor'
             })).filter((neighbor) => neighbor.leadId)
@@ -48,13 +49,13 @@ function _buildSemanticNeighborMap(bundle) {
 }
 
 function _recordSemanticLaneSnapshot(partial = {}) {
-    if (typeof window.recordSemanticLaneSnapshot === 'function') {
-        window.recordSemanticLaneSnapshot(partial);
+    if (typeof recordSemanticLaneSnapshot === 'function') {
+        recordSemanticLaneSnapshot(partial);
     }
 }
 
 function _refreshFocusedSemanticState() {
-    if (typeof window.refreshFocusedSemanticState === 'function') window.refreshFocusedSemanticState();
+
 }
 
 function _clearSemanticThreadsRetryTimer() {
@@ -101,7 +102,7 @@ function _scheduleSemanticThreadsRetry(reason = 'artifact-retry') {
 export async function loadSemanticThreads(options = {}) {
     if (state.semanticThreadsLoadPromise) return state.semanticThreadsLoadPromise;
 
-    const cacheBust = Math.floor(Date.now() / (1000 * 60 * 60));    
+    const cacheBust = Math.floor(Date.now() / (1000 * 60 * 60));
     const requestUrls = [
         `semantic_threads_ui.dat?v=${cacheBust}`,
         `semantic_threads.dat?v=${cacheBust}`
@@ -122,8 +123,8 @@ export async function loadSemanticThreads(options = {}) {
             _clearSemanticThreadsRetryTimer();
 
             outer: for (let requestIndex = 0; requestIndex < requestUrls.length; requestIndex++) {
-                const requestUrl = requestUrls[requestIndex];       
-                const artifactName = requestUrl.split('?')[0];      
+                const requestUrl = requestUrls[requestIndex];
+                const artifactName = requestUrl.split('?')[0];
                 for (let attempt = 0; attempt < attemptConfigs.length; attempt++) {
                     try {
                         const response = await fetch(requestUrl, attemptConfigs[attempt]);
@@ -135,7 +136,7 @@ export async function loadSemanticThreads(options = {}) {
                         break outer;
                     } catch (error) {
                         lastError = error;
-                        if (attempt < attemptConfigs.length - 1) {  
+                        if (attempt < attemptConfigs.length - 1) {
                             await new Promise((resolve) => setTimeout(resolve, 220 * (attempt + 1)));
                         }
                     }
@@ -147,7 +148,7 @@ export async function loadSemanticThreads(options = {}) {
             }
 
             state.semanticThreadBundle = bundle;
-            state.semanticThreadArtifactName = loadedArtifactName;  
+            state.semanticThreadArtifactName = loadedArtifactName;
             _buildSemanticNeighborMap(bundle);
             if (new URLSearchParams(window.location.search).has('debug')) {
                 console.warn('[semantic-threads] artifact loaded', {
@@ -159,7 +160,7 @@ export async function loadSemanticThreads(options = {}) {
             state.semanticThreadsStatus = state.semanticNeighborMapByLeadId.size > 0 ? 'ready' : 'failed';
             state.semanticThreadsRetryAttempt = state.semanticThreadsStatus === 'ready' ? 0 : state.semanticThreadsRetryAttempt;
             _recordSemanticLaneSnapshot({
-                thread_artifact_status: state.semanticThreadsStatus,     
+                thread_artifact_status: state.semanticThreadsStatus,
                 thread_artifact_name: state.semanticThreadArtifactName,
                 thread_retry_source: null,
                 thread_retry_count: state.semanticThreadsStatus === 'ready' ? 0 : state.semanticThreadsRetryAttempt,
@@ -170,7 +171,7 @@ export async function loadSemanticThreads(options = {}) {
                 _scheduleSemanticThreadsRetry(options.reason || 'empty-artifact');
             }
             _refreshFocusedSemanticState();
-            return state.semanticNeighborMapByLeadId.size > 0;      
+            return state.semanticNeighborMapByLeadId.size > 0;
         } catch (error) {
             console.warn('Failed to load semantic thread artifact; using geometric fallback.', error);
             state.semanticThreadBundle = null;
@@ -182,7 +183,7 @@ export async function loadSemanticThreads(options = {}) {
                 thread_artifact_status: 'failed',
                 thread_artifact_name: null,
                 thread_retry_source: options.reason || 'artifact-load',
-                thread_retry_count: state.semanticThreadsRetryAttempt,   
+                thread_retry_count: state.semanticThreadsRetryAttempt,
             });
             _scheduleSemanticThreadsRetry(options.reason || 'artifact-load');
             _refreshFocusedSemanticState();

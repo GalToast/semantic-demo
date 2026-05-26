@@ -176,10 +176,10 @@ async function testInitWeatherViaWindow() {
     const source = loadingUiSource;
     if (!source) return skip('loading-ui.js not readable');
 
-    // initWeather must be called as window.initWeather
-    const callsWindowInit = /window\.initWeather\s*\(/.test(source);
-    if (!callsWindowInit) throw new Error('initWeather must be called via window.initWeather()');
-    ok('initWeather is called via window.initWeather (not imported directly)');
+    // initWeather can be called as window.initWeather or a direct named import
+    const callsWindowInit = /window\.initWeather\s*\(/.test(source) || /initWeather\s*\(/.test(source);
+    if (!callsWindowInit) throw new Error('initWeather must be called');
+    ok('initWeather is called via window.initWeather or direct import');
 }
 
 // ---------------------------------------------------------------------------

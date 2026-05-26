@@ -17,7 +17,7 @@ import {
 } from './map-state.js';
 
 // search-state
-import { clearShortSemanticSearchState, clearMobileRouteFieldPeek } from './search-state.js';
+import { clearShortSemanticSearchState, clearMobileRouteFieldPeekState } from './search-state.js';
 
 // camera-controls
 import { focusOnNode } from './camera-controls.js';
@@ -28,6 +28,13 @@ import { switchView } from './view-controller.js';
 // ui-renderers
 import { updateSelectedCardHeading } from './ui-renderers.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
+import { setSemanticDiveMode } from './journey-lifecycle-adapter.js';
+import { updateLegendGuideState } from './legend-ui.js';
+import { updateFocusNeighborRail } from './journey.js';
+import { getRouteLayerOrigin } from './camera-controls.js';
+import { refreshRouteTraceOverlay } from './journey-webgl.js';
+import { recenterFocusedNode } from './event-bindings.js';
+import { exploreInsideToNextStop, resetNodePositions, resetExplorationFocus, setTrailDepth } from './lifecycle.js';
 
 export function getJourneyCompassPresentationState(compassState = {}) {
     const phase = compassState.phase || 'overview';
@@ -149,23 +156,23 @@ export function executeJourneyCompassAction(action) {
                         : null;
             if (Number.isFinite(anchorIndex)) {
                 // "Center Anchor" must set trailDepth=1 (via setTrailDepth) so the Trail chip activates
-                if (typeof window.setTrailDepth === 'function') window.setTrailDepth(1, { skipUrlSync: true });
+                if (typeof setTrailDepth === 'function') setTrailDepth(1, { skipUrlSync: true });
                 focusOnNode(anchorIndex, { fromSearchResult: !!state.currentSearchSummary });
-                if (typeof window.recenterFocusedNode === 'function') {
-                    window.recenterFocusedNode();
+                if (typeof recenterFocusedNode === 'function') {
+                    recenterFocusedNode();
                 }
             }
             return;
         }
         case 'enter-inside':
-            if (typeof window.setSemanticDiveMode === 'function') window.setSemanticDiveMode(true);
+            if (typeof setSemanticDiveMode === 'function') setSemanticDiveMode(true);
             return;
         case 'show-trail-panel':
-            if (typeof window.setSemanticDiveMode === 'function') window.setSemanticDiveMode(false);
+            if (typeof setSemanticDiveMode === 'function') setSemanticDiveMode(false);
             return;
         case 'next-stop':
             if (state.strandContinuityState?.phase === 'exploring') return;
-            if (typeof window.exploreInsideToNextStop === 'function') window.exploreInsideToNextStop();
+            if (typeof exploreInsideToNextStop === 'function') exploreInsideToNextStop();
             return;
 
         case 'open-map':
@@ -179,8 +186,12 @@ export function executeJourneyCompassAction(action) {
             // in one unified call — no separate clearSearch() needed here
             if (typeof window.resetExplorationFocus === 'function') {
                 window.resetExplorationFocus();
+            } else if (typeof resetExplorationFocus === 'function') {
+                resetExplorationFocus();
             } else if (typeof window.resetNodePositions === 'function') {
                 window.resetNodePositions();
+            } else if (typeof resetNodePositions === 'function') {
+                resetNodePositions();
             }
             // Also clear the search input so the text is gone on return to overview
             {
@@ -288,11 +299,10 @@ export function getMobileSearchSheetDetail() {
 }
 
 export function invokeClearMobileRouteFieldPeek() {
-    if (typeof window.clearMobileRouteFieldPeek === 'function') {
-        window.clearMobileRouteFieldPeek();
+    if (typeof clearMobileRouteFieldPeekState === 'function') {
+        clearMobileRouteFieldPeekState();
         return;
     }
-    clearMobileRouteFieldPeek();
 }
 
 export function derivePanelSurface({ view, graphContext, mapContext, semanticDive, hasSearchIntent, hasFocus, hasActiveTrailState }) {
@@ -367,11 +377,11 @@ export function refreshCompositionState() {
             updateSelectedCardHeading();
             syncSemanticDiveUi();
             updateJourneyCompass();
-            if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
+            if (typeof updateFocusNeighborRail === 'function') updateFocusNeighborRail();
             refreshMapMarkers();
             refreshMapRouteEmbodiment();
-            if (typeof window.refreshRouteTraceOverlay === 'function') {
-                window.refreshRouteTraceOverlay({ reason: 'composition-map' });
+            if (typeof refreshRouteTraceOverlay === 'function') {
+                refreshRouteTraceOverlay({ reason: 'composition-map' });
             }
             return;
         }
@@ -416,14 +426,14 @@ export function refreshCompositionState() {
     }
     syncRouteDirectorState('composition-galaxy');
     updateSelectedCardHeading();
-    if (typeof window.updateLegendGuideState === 'function') window.updateLegendGuideState();
+    if (typeof updateLegendGuideState === 'function') updateLegendGuideState();
     syncSemanticDiveUi();
     updateJourneyCompass();
-    if (typeof window.updateFocusNeighborRail === 'function') window.updateFocusNeighborRail();
+    if (typeof updateFocusNeighborRail === 'function') updateFocusNeighborRail();
     refreshMapMarkers();
     refreshMapRouteEmbodiment();
-    if (typeof window.refreshRouteTraceOverlay === 'function') {
-        window.refreshRouteTraceOverlay({ reason: 'composition-galaxy' });
+    if (typeof refreshRouteTraceOverlay === 'function') {
+        refreshRouteTraceOverlay({ reason: 'composition-galaxy' });
     }
 }
 
@@ -450,7 +460,7 @@ export function getViewHandoffModel(view) {
 
     if (view === 'map') {
         const routeCount = getRouteEmbodimentIndices().length;
-        const origin = state.terrainHandoffState?.from || (typeof window.getRouteLayerOrigin === 'function' ? window.getRouteLayerOrigin() : 'galaxy');
+        const origin = state.terrainHandoffState?.from || (typeof getRouteLayerOrigin === 'function' ? getRouteLayerOrigin() : 'galaxy');
         if (focusName && hasSearch) {
             return {
                 icon: 'map',

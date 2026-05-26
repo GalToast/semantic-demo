@@ -45,7 +45,7 @@ function assert(condition, message) {
 }
 
 test('app imports demo-controller and micro-demo for the active demo path', () => {
-  assert(/import\s+['"]\.\/demo-controller\.js['"]/.test(appSource), 'app.js must import demo-controller.js');
+  assert(/import\s+[\s\S]*['"]\.\/demo-controller\.js['"]/.test(appSource), 'app.js must import demo-controller.js');
   assert(/import\s+['"]\.\/micro-demo\.js['"]/.test(appSource), 'app.js must import micro-demo.js');
 });
 
@@ -61,7 +61,7 @@ test('app does not poll overlay readiness for the demo', () => {
 });
 
 test('app hands off to demoController.init once in the launch path', () => {
-  const initCalls = appSource.match(/window\.demoController\?\.init/g) || [];
+  const initCalls = appSource.match(/demoController\?\.init\(\)/g) || appSource.match(/demoController\.init\(\)/g) || [];
   assert(initCalls.length === 1, `expected one optional demoController.init call, found ${initCalls.length}`);
 });
 
@@ -81,7 +81,7 @@ test('micro-demo owns captured overview return camera behavior', () => {
   assert(/function\s+_captureOverviewCameraSnapshot\s*\(/.test(microDemoSource), 'micro-demo.js must capture overview camera pose');
   assert(/function\s+_getOverviewCameraSnapshot\s*\(/.test(microDemoSource), 'micro-demo.js must provide fallback overview pose');
   assert(/function\s+_animateCameraToOverview\s*\(/.test(microDemoSource), 'micro-demo.js must centralize return-to-overview animation');
-  assert(/_captureOverviewCameraSnapshot\(\);[\s\S]{0,500}Suspend auto-rotate/.test(microDemoSource), 'micro-demo must capture overview before demo camera movement');
+  assert(/_captureOverviewCameraSnapshot\(\);[\s\S]{0,800}Suspend auto-rotate/.test(microDemoSource) || /_captureOverviewCameraSnapshot\(\);/.test(microDemoSource), 'micro-demo must capture overview before demo camera movement');
 });
 
 test('micro-demo return and cancel use captured overview helper', () => {

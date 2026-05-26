@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import * as adapter from './journey-lifecycle-adapter.js';
 import * as THREE from 'three';
 import {
     describeCluster,
@@ -33,7 +34,7 @@ import {
 } from './ui-renderers.js';
 import { focusOnNode, noteSceneInteraction, releaseFocusCameraAssist } from './camera-controls.js';
 import { syncInspectedStrandOverlay } from './thread-inspector.js';
-import { refreshCompositionState, dispatchNavTransition, NAV_TRANSITION_ACTIONS, updateJourneyCompass, focusOnPoint } from './lifecycle.js';
+import { refreshCompositionState, dispatchNavTransition, NAV_TRANSITION_ACTIONS, focusOnPoint, updateJourneyCompass } from './lifecycle.js';
 import { setTrailNavState } from './navigation-state.js';
 import { applyLocalNeighborhoodFocus, setFocusPocketMeta } from './focus-pocket.js';
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
@@ -131,7 +132,7 @@ const ARRIVAL_HANDOFF_SEGMENT_STEPS = 9;
 // --- Helper Functions ---
 
 function isCondensedFocusStageViewport() {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+    if (typeof window === 'undefined' || typeof matchMedia !== 'function') return false;
     return (
         state.currentView === 'galaxy' &&
         (window.matchMedia('(max-width: 768px) and (max-height: 740px)').matches ||
@@ -665,7 +666,7 @@ export function walkThreadNeighbor(index, options = {}) {
             updateJourneyCompass();
             primeNextThreadInspectionAfterWalk(capturedIndex);
             if (state.semanticDiveMode) {
-                if (typeof window.previewInsideNextThread === 'function') window.previewInsideNextThread({ force: true });
+                previewInsideNextThread({ force: true });
                 syncSemanticDiveUi();
             }
         }
@@ -1020,7 +1021,7 @@ export function primeBoundedSemanticNeighborhoodForTraversal(seedIndex) {
 
     setTrailFromSeed(seedIndex);
     if (state.navState.threadSource !== 'semantic') return false;
-    if (typeof window._fp?.applyLocalNeighborhoodFocus === 'function') window._fp.applyLocalNeighborhoodFocus(seedIndex);
+    adapter.applyLocalNeighborhoodFocus(seedIndex);
     ensureBoundedNeighborhoodFromActivePocket(seedIndex);
     return isBoundedNeighborhoodActive();
 }
@@ -1091,8 +1092,8 @@ export function setSemanticDiveMode(enabled) {
 
     // Delegate to lifecycle's authoritative window wrapper — all canonical state
     // management (semanticDiveMode, navState.mode, trailDepth, camera, URL) lives there.
-    if (typeof window.setSemanticDiveMode === 'function') {
-        window.setSemanticDiveMode(enabled);
+    if (typeof adapter.setSemanticDiveMode === 'function') {
+        adapter.setSemanticDiveMode(enabled);
     } else {
         return false;
     }
@@ -1160,13 +1161,13 @@ export function syncFocusStage(point) {
             stage.removeEventListener('keydown', stage._focusStageKeydownListener);
             stage._focusStageKeydownListener = null;
         }
-        if (window._previouslyFocusedFocusStage) {
+        if (adapter.getPreviouslyFocusedFocusStage()) {
             try {
-                window._previouslyFocusedFocusStage.focus();
+                adapter.getPreviouslyFocusedFocusStage().focus();
             } catch (e) {
                 console.warn('Failed to restore focus stage previous element:', e);
             }
-            window._previouslyFocusedFocusStage = null;
+            adapter.setPreviouslyFocusedFocusStage(null);
         }
     };
 
@@ -1202,7 +1203,7 @@ export function syncFocusStage(point) {
     stage.classList.add('active');
 
     if (!wasActive) {
-        window._previouslyFocusedFocusStage = document.activeElement;
+        adapter.setPreviouslyFocusedFocusStage(document.activeElement);
 
         const keydownHandler = (e) => {
             if (e.key !== 'Tab') return;
@@ -1275,9 +1276,9 @@ export function syncFocusStage(point) {
     }
 
     // 10/10 Polish: Interesting trivia for focus stage
-    if (triviaEl && typeof window.getInterestingBusinessNote === 'function') {
-        const interestingNote = window.getInterestingBusinessNote(effectivePoint);
-        const matchNarrative = typeof window.buildSelectedMatchNarrative === 'function' ? window.buildSelectedMatchNarrative(effectivePoint) : '';
+    if (triviaEl && typeof adapter.getInterestingBusinessNote === 'function') {
+        const interestingNote = adapter.getInterestingBusinessNote(effectivePoint);
+        const matchNarrative = typeof adapter.buildSelectedMatchNarrative === 'function' ? adapter.buildSelectedMatchNarrative(effectivePoint) : '';
         const showTrivia = interestingNote && !matchNarrative.includes(interestingNote);
         triviaEl.textContent = showTrivia ? interestingNote : '';
         if (showTrivia) {
@@ -1316,8 +1317,8 @@ export function syncFocusStage(point) {
         const strandArrivalNote = getStrandArrivalNote(effectivePoint);
         if (strandArrivalNote) {
             noteEl.textContent = strandArrivalNote;
-        } else if (typeof window.hasColdDegradedSemanticFallback === 'function' && window.hasColdDegradedSemanticFallback()) {
-            const copyFn = window.getColdDegradedRouteCopy;
+        } else if (typeof adapter.hasColdDegradedSemanticFallback === 'function' && adapter.hasColdDegradedSemanticFallback()) {
+            const copyFn = adapter.getColdDegradedRouteCopy;
             noteEl.textContent = (copyFn && copyFn())?.focusStageNote || '';
         } else if (state.navState.threadSource === 'semantic') {
             noteEl.textContent = state.currentSearchSummary
@@ -1507,7 +1508,7 @@ export function updateSelectedBusiness(point, options = {}) {
     // ----------------------------------
 
     const roleEl = document.getElementById('selected-role-badge');
-    if (roleEl && typeof window.getSelectedBusinessRoleLabel === 'function') roleEl.textContent = window.getSelectedBusinessRoleLabel(point);
+    if (roleEl && typeof adapter.getSelectedBusinessRoleLabel === 'function') roleEl.textContent = adapter.getSelectedBusinessRoleLabel(point);
     const filedAsEl = document.getElementById('selected-filed-as');
     if (filedAsEl) {
         const raw = namePresentation.raw;
@@ -1539,17 +1540,17 @@ export function updateSelectedBusiness(point, options = {}) {
     const triviaEl = document.getElementById('selected-trivia');
     if (!factsEl) return;
 
-    const interestingNote = typeof window.getInterestingBusinessNote === 'function' ? window.getInterestingBusinessNote(point) : null;
+    const interestingNote = typeof adapter.getInterestingBusinessNote === 'function' ? adapter.getInterestingBusinessNote(point) : null;
     if (triviaEl) {
-        const matchNarrative = typeof window.buildSelectedMatchNarrative === 'function' ? window.buildSelectedMatchNarrative(point) : '';
+        const matchNarrative = typeof adapter.buildSelectedMatchNarrative === 'function' ? adapter.buildSelectedMatchNarrative(point) : '';
         const showTrivia = interestingNote && !matchNarrative.includes(interestingNote);
         triviaEl.textContent = showTrivia ? interestingNote : '';
         triviaEl.style.display = showTrivia ? 'block' : 'none';
     }
 
-    const suppressAutoRevealForFieldNode = options.revealCard !== true && typeof window.isFieldNodeFocusContext === 'function' && window.isFieldNodeFocusContext();
+    const suppressAutoRevealForFieldNode = options.revealCard !== true && typeof adapter.isFieldNodeFocusContext === 'function' && adapter.isFieldNodeFocusContext();
     if (options.revealCard !== false && !suppressAutoRevealForFieldNode) {
-        if (typeof window.revealSelectedBusinessCard === 'function') window.revealSelectedBusinessCard();
+        if (typeof adapter.revealSelectedBusinessCard === 'function') adapter.revealSelectedBusinessCard();
     }
     syncFocusStage(point);
 
@@ -1594,26 +1595,26 @@ export function updateSelectedBusiness(point, options = {}) {
         mapEl.textContent = 'No geocoded point';
     }
 
-    if (threadEl && typeof window.describeThreadLensForPoint === 'function') {
-        threadEl.textContent = window.describeThreadLensForPoint(point);
+    if (threadEl && typeof adapter.describeThreadLensForPoint === 'function') {
+        threadEl.textContent = adapter.describeThreadLensForPoint(point);
     }
 
     updateTraversalUi();
 
     if (!options.skipHydrate && !interestingNote && !point.website && !point.email && !point.phone) {
-        if (typeof window.hydrateLeadContext === 'function') void window.hydrateLeadContext(point, { refreshSelected: true });
+        if (typeof adapter.hydrateLeadContext === 'function') void adapter.hydrateLeadContext(point, { refreshSelected: true });
     }
 }
 
 function hasColdDegradedSemanticFallback() {
-    return typeof window.hasColdDegradedSemanticFallback === 'function'
-        ? window.hasColdDegradedSemanticFallback()
+    return typeof adapter.hasColdDegradedSemanticFallback === 'function'
+        ? adapter.hasColdDegradedSemanticFallback()
         : false;
 }
 
 function shouldUseFloatingFocusJourneyOnly() {
-    return typeof window.shouldUseFloatingFocusJourneyOnly === 'function'
-        ? window.shouldUseFloatingFocusJourneyOnly()
+    return typeof adapter.shouldUseFloatingFocusJourneyOnly === 'function'
+        ? adapter.shouldUseFloatingFocusJourneyOnly()
         : false;
 }
 
@@ -1806,7 +1807,7 @@ function findNearestCanvasFieldNode(event, maxDistance = getCanvasFieldNodeClick
     if (getCanvasNodePickingMode() === 'raycast') {
         const raycastCandidate = findRaycastCanvasFieldNode(event, pointer, maxDistance);
         if (raycastCandidate) {
-            window.__lastCanvasNodePick = raycastCandidate;
+            adapter.setLastCanvasNodePick(raycastCandidate);
             return raycastCandidate;
         }
     }
@@ -1826,7 +1827,7 @@ function findNearestCanvasFieldNode(event, maxDistance = getCanvasFieldNodeClick
     });
 
     const resolved = nearest && nearestDistance <= maxDistance ? nearest : null;
-    window.__lastCanvasNodePick = resolved;
+    adapter.setLastCanvasNodePick(resolved);
     return resolved;
 }
 
@@ -1839,7 +1840,7 @@ function clearCanvasFieldHover(canvas, { force = false } = {}) {
         state.hoverHighlightIndex = -1;
         state.stableCanvasHover = null;
         if (canvas) canvas.style.cursor = '';
-        window.__lastCanvasNodeHover = null;
+        adapter.setLastCanvasNodeHover(null);
     };
     if (force) {
         clear();
@@ -1875,7 +1876,7 @@ function setCanvasFieldHover(candidate, canvas) {
 
     state.hoverHighlightIndex = stableCandidate.index;
     if (canvas) canvas.style.cursor = 'pointer';
-    window.__lastCanvasNodeHover = stableCandidate;
+    adapter.setLastCanvasNodeHover(stableCandidate);
 }
 
 export function ensureCanvasNodeInteractionBindings() {
@@ -1928,8 +1929,8 @@ export function ensureCanvasNodeInteractionBindings() {
         if (!candidate) candidate = getNearestCanvasThreadCandidate(event, 96);
         if (!candidate) return false;
         event.preventDefault();
-        window.__lastCanvasNodePick = candidate;
-        window.__lastCanvasNodeFocusPick = candidate;
+        adapter.setLastCanvasNodePick(candidate);
+        adapter.setLastCanvasNodeFocusPick(candidate);
         walkThreadNeighbor(candidate.index, {
             fromCanvasNode: true,
             surface: 'canvas',
@@ -2005,7 +2006,7 @@ export function ensureCanvasNodeInteractionBindings() {
     }
 }
 
-function updateFocusNeighborRail() {
+export function updateFocusNeighborRail() {
     const rail = document.getElementById('focus-stage-neighbors');
     const list = document.getElementById('focus-stage-neighbor-list');
     const countEl = document.getElementById('focus-stage-neighbor-count');
@@ -2042,9 +2043,9 @@ function updateFocusNeighborRail() {
         const point = (Number.isFinite(candidate.index) && candidate.index >= 0 && candidate.index < state.points.length)
             ? state.points[candidate.index]
             : null;
-        const button = document.createElement('div');
+        const button = document.createElement('button');
         button.className = 'focus-stage-neighbor-pill';
-        button.setAttribute('role', 'button');
+        button.type = 'button';
         button.tabIndex = 0;
         button.dataset.index = String(candidate.index);
         button.dataset.role = state.navState.focusPocketRoleByIndex?.get(candidate.index) || 'trail';
@@ -2380,8 +2381,8 @@ export function applyPointFilterColors() {
     state.pointColorStateVersion += 1;
     state.filterColorVersion = state.filterVersion;
     state.filterColorStateKey = colorStateKey;
-    if (typeof window.syncNodeSporeColorsFromPointColors === 'function') {
-        window.syncNodeSporeColorsFromPointColors();
+    if (typeof syncNodeSporeColorsFromPointColors === 'function') {
+        syncNodeSporeColorsFromPointColors();
     }
     if (state.searchGlowActive && state.searchGlowIndices && state.searchGlowIndices.size > 0) {
         state.searchGlowRenderStateKey = '';
@@ -2433,53 +2434,50 @@ if (typeof window !== 'undefined') {
         candidates: getFocusThreadScreenCandidates(),
         inspector: getThreadInspectionState(),
         strandVisual: { ...(state.inspectedStrandDiagnostics || {}) },
-        focusCue: window.__semanticFocusCueProbe()
+        focusCue: __semanticFocusCueProbe()
     });
+}
 
-    // describeThreadLensForPoint — returns a human-readable description of the
-    // semantic thread neighborhood around a given point by inspecting
-    // state.semanticNeighborMapByLeadId (populated by semantic-threads.js).
-    window.describeThreadLensForPoint = function (point) {
-        if (!point) return 'Waiting for a semantic thread.';
+export function describeThreadLensForPoint(point) {
+    if (!point) return 'Waiting for a semantic thread.';
 
-        const leadId = point.lead_id !== undefined && point.lead_id !== null
-            ? String(point.lead_id).trim()
-            : null;
+    const leadId = point.lead_id !== undefined && point.lead_id !== null
+        ? String(point.lead_id).trim()
+        : null;
 
-        // Look up the semantic neighbor record for this point's lead_id
-        const neighborRecord = leadId && state.semanticNeighborMapByLeadId
-            ? state.semanticNeighborMapByLeadId.get(leadId)
-            : null;
+    // Look up the semantic neighbor record for this point's lead_id
+    const neighborRecord = leadId && state.semanticNeighborMapByLeadId
+        ? state.semanticNeighborMapByLeadId.get(leadId)
+        : null;
 
-        if (!neighborRecord) {
-            // Fallback: describe using mycelium mode and cluster
-            const mode = state.myceliumMode || 'default';
-            const clusterLabel = describeCluster(point.cluster);
-            const LENS_BY_MODE = {
-                bloom: 'Signal-rich — surfaced for businesses with a website plus email or phone',
-                bridge: 'Between neighborhoods — highlighted for businesses linking neighborhoods',
-                trail: 'Connection Trail — focused on semantic neighbors of ' + (point.name ? formatBusinessName(point.name) : 'the focused business'),
-                default: clusterLabel ? clusterLabel + ' neighborhood' : 'County View'
-            };
-            const base = LENS_BY_MODE[mode] || LENS_BY_MODE.default;
-            if (point.status === 'disqualified') return 'Archive layer — ' + base;
-            return base;
-        }
-
-        const neighborCount = Array.isArray(neighborRecord.neighbors) ? neighborRecord.neighbors.length : 0;
+    if (!neighborRecord) {
+        // Fallback: describe using mycelium mode and cluster
+        const mode = state.myceliumMode || 'default';
         const clusterLabel = describeCluster(point.cluster);
+        const LENS_BY_MODE = {
+            bloom: 'Signal-rich — surfaced for businesses with a website plus email or phone',
+            bridge: 'Between neighborhoods — highlighted for businesses linking neighborhoods',
+            trail: 'Connection Trail — focused on semantic neighbors of ' + (point.name ? formatBusinessName(point.name) : 'the focused business'),
+            default: clusterLabel ? clusterLabel + ' neighborhood' : 'County View'
+        };
+        const base = LENS_BY_MODE[mode] || LENS_BY_MODE.default;
+        if (point.status === 'disqualified') return 'Archive layer — ' + base;
+        return base;
+    }
 
-        if (neighborCount === 0) {
-            return 'Isolated node — no semantic connections yet.';
-        }
-        if (neighborCount <= 3) {
-            return 'Sparse node — only ' + neighborCount + ' connection' + (neighborCount === 1 ? '' : 's') + '.';
-        }
-        if (neighborCount >= 20) {
-            const anchorWord = clusterLabel ? clusterLabel : 'County';
-            return 'Strong anchor in ' + anchorWord + ' cluster with ' + neighborCount + ' semantic neighbors.';
-        }
-        // Medium density
-        return 'Connected node — ' + neighborCount + ' semantic neighbors in ' + (clusterLabel || 'local') + ' cluster.';
-    };
+    const neighborCount = Array.isArray(neighborRecord.neighbors) ? neighborRecord.neighbors.length : 0;
+    const clusterLabel = describeCluster(point.cluster);
+
+    if (neighborCount === 0) {
+        return 'Isolated node — no semantic connections yet.';
+    }
+    if (neighborCount <= 3) {
+        return 'Sparse node — only ' + neighborCount + ' connection' + (neighborCount === 1 ? '' : 's') + '.';
+    }
+    if (neighborCount >= 20) {
+        const anchorWord = clusterLabel ? clusterLabel : 'County';
+        return 'Strong anchor in ' + anchorWord + ' cluster with ' + neighborCount + ' semantic neighbors.';
+    }
+    // Medium density
+    return 'Connected node — ' + neighborCount + ' semantic neighbors in ' + (clusterLabel || 'local') + ' cluster.';
 }

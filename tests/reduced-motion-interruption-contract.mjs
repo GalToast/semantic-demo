@@ -79,10 +79,10 @@ async function waitForReady(page) {
     return (
       body?.graphicsMode === 'webgl' &&
       canvas &&
-      window.state?.renderer &&
-      window.state?.scene &&
-      window.state?.camera &&
-      window.state?.pointsMesh?.geometry?.attributes?.position?.count > 0
+      window.__TEST_STATE__?.renderer &&
+      window.__TEST_STATE__?.scene &&
+      window.__TEST_STATE__?.camera &&
+      window.__TEST_STATE__?.pointsMesh?.geometry?.attributes?.position?.count > 0
     );
   }, { timeout: 12000 }).catch(() => {});
   // Give scene-reveal a moment to settle under reduced-motion
@@ -95,7 +95,7 @@ async function executeSearch(page, term) {
 
   // Wait for the search debounce to fire and results to appear
   await page.waitForFunction(
-    () => window.state?.currentSearchSummary?.query != null,
+    () => window.__TEST_STATE__?.currentSearchSummary?.query != null,
     { timeout: 8000 }
   ).catch(() => {});
 
@@ -126,7 +126,7 @@ async function collectState(page) {
     const focusStage = document.getElementById('focus-stage');
     const searchResults = document.getElementById('search-results');
     const searchInput = document.getElementById('search-input');
-    const s = window.state || {};
+    const s = window.__TEST_STATE__ || {};
     return {
       // UI / DOM state
       searchGlow:        body.searchGlow,
@@ -223,7 +223,7 @@ async function run() {
   // activation, graphContext=search, then after result-click: focus context.
   await page.evaluate(() => {
     // Simulate search activation (glow + summary)
-    const s = window.state;
+    const s = window.__TEST_STATE__;
     s.currentSearchSummary = { query: 'restaurant', anchorIndex: 0, resultIndices: [0, 1, 2, 3] };
     s.searchGlowActive = true;
     s.searchGlowIndices = new Set([0, 1, 2, 3]);
@@ -273,13 +273,13 @@ async function run() {
     if (typeof window.setTrailDepth === 'function') {
       window.setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true });
     } else {
-      window.state.trailDepth = 2;
+      window.__TEST_STATE__.trailDepth = 2;
     }
     if (typeof window.setMyceliumMode === 'function') {
       window.setMyceliumMode('inside', { skipUrlSync: true });
     } else {
-      window.state.myceliumMode = 'inside';
-      window.state.navState.mode = 'inside';
+      window.__TEST_STATE__.myceliumMode = 'inside';
+      window.__TEST_STATE__.navState.mode = 'inside';
     }
     if (typeof window.refreshCompositionState === 'function') {
       window.refreshCompositionState();
@@ -308,21 +308,21 @@ async function run() {
     if (typeof window.setTrailDepth === 'function') {
       window.setTrailDepth(0, { skipUrlSync: true });
     } else {
-      window.state.trailDepth = 0;
+      window.__TEST_STATE__.trailDepth = 0;
     }
     if (typeof window.setMyceliumMode === 'function') {
       window.setMyceliumMode('default', { skipUrlSync: true });
     } else {
-      window.state.myceliumMode = 'default';
+      window.__TEST_STATE__.myceliumMode = 'default';
     }
     // Also reset focusedNode to fully return to overview idle — this is what
     // resetNodePositions() does when called without preserveSearch.
     // Use direct state mutation (safe for test) since focusOnNode(-1) is invalid.
-    window.state.focusedNode = null;
-    window.state.selectedPoint = null;
-    window.state.navState.focusedIndex = null;
+    window.__TEST_STATE__.focusedNode = null;
+    window.__TEST_STATE__.selectedPoint = null;
+    window.__TEST_STATE__.navState.focusedIndex = null;
     // Restore camera to overview
-    if (typeof window.animateCameraToNode === 'function' && window.state.navState?.focusedIndex !== null) {
+    if (typeof window.animateCameraToNode === 'function' && window.__TEST_STATE__.navState?.focusedIndex !== null) {
       window.animateCameraToNode(0, { transitionStyle: 'reset', duration: 1 });
     }
     if (typeof window.refreshCompositionState === 'function') {

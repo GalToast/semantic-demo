@@ -10,9 +10,9 @@ async function openApp(page) {
     typeof window.clearSearch === 'function' &&
     typeof window.setSemanticDiveMode === 'function' &&
     typeof window.refreshCompositionState === 'function' &&
-    Array.isArray(window.state?.points) &&
-    window.state.points.length > 0 &&
-    window.state.pointIndexByLeadId?.size > 0
+    Array.isArray(window.__TEST_STATE__?.points) &&
+    window.__TEST_STATE__.points.length > 0 &&
+    window.__TEST_STATE__.pointIndexByLeadId?.size > 0
   ), { timeout: 20000 });
   await page.waitForTimeout(1000);
 }
@@ -28,15 +28,15 @@ async function performSearch(page, query = 'coffee') {
 async function enterFocusFromSearch(page) {
   await performSearch(page);
   await page.locator('.search-result-item').first().click();
-  await page.waitForFunction(() => window.state?.navState?.mode === 'focus', { timeout: 15000 });
+  await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
   await expect(page.locator('#btn-focus-dive')).toBeVisible({ timeout: 10000 });
 }
 
 async function stepInside(page) {
   await page.locator('#btn-focus-dive').click();
   await page.waitForFunction(() => (
-    window.state?.trailDepth === 2 &&
-    window.state?.semanticDiveMode === true &&
+    window.__TEST_STATE__?.trailDepth === 2 &&
+    window.__TEST_STATE__?.semanticDiveMode === true &&
     document.body.dataset.semanticDive === 'active' &&
     document.body.dataset.panelSurface === 'semantic-dive'
   ), { timeout: 15000 });
@@ -53,10 +53,10 @@ async function probe(page) {
       trailDepth: document.body.dataset.trailDepth || ''
     },
     state: {
-      focusedNode: window.state?.focusedNode ?? null,
-      trailDepth: window.state?.trailDepth ?? null,
-      semanticDiveMode: window.state?.semanticDiveMode ?? null,
-      navMode: window.state?.navState?.mode || ''
+      focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
+      trailDepth: window.__TEST_STATE__?.trailDepth ?? null,
+      semanticDiveMode: window.__TEST_STATE__?.semanticDiveMode ?? null,
+      navMode: window.__TEST_STATE__?.navState?.mode || ''
     }
   }));
 }

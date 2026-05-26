@@ -90,7 +90,7 @@ async function main() {
   try {
     await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await page.waitForFunction(() =>
-      window.state
+      window.__TEST_STATE__
       && typeof window.updateExplorationUi === 'function'
       && document.querySelectorAll('#mode-grid .mode-chip').length >= 2,
       { timeout: 20000 }
@@ -152,8 +152,8 @@ async function main() {
   const trailChip = page.locator('.mode-chip[data-mode="trail"]');
   if (await trailChip.count() > 0) {
     await page.evaluate(() => {
-      window.state.trailDepth = 1;
-      window.state.focusedNode = null;
+      window.__TEST_STATE__.trailDepth = 1;
+      window.__TEST_STATE__.focusedNode = null;
       if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
     });
     await page.waitForTimeout(300);
@@ -176,7 +176,7 @@ async function main() {
 
     // Reset state
     await page.evaluate(() => {
-      window.state.trailDepth = 0;
+      window.__TEST_STATE__.trailDepth = 0;
       if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
     });
   } else {
