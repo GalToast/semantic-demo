@@ -59,7 +59,7 @@ import { describeThreadLensForPoint } from './journey.js';
 import { initKeyboardShortcutsHint } from './keyboard-help.js';
 import { applyUrlState, updateUrlState } from './url-state.js';
 import { loadSemanticThreads } from './semantic-threads.js';
-import { initClusterLabels, updateClusterLabels } from './cluster-labels.js';
+import { initClusterLabels } from './cluster-labels.js';
 import { updateHasQuery } from './event-bindings.js';
 import { findClusterByKeyword } from './cluster-filter.js';
 import { buildSelectedMatchNarrative, getInterestingBusinessNote, updateSearchTrailCue } from './ui-renderers.js';
@@ -462,12 +462,7 @@ export async function init() {
 // Global exposure
 if (typeof window !== "undefined") {
     window.init = init;
-    window.initEventListeners = initEventListeners;
     window.applyUrlState = applyUrlState;
-    window.setSemanticLaneUiState = setSemanticLaneUiState;
-    window.probeSemanticLane = probeSemanticLane;
-    window.scheduleSemanticLaneMonitor = scheduleSemanticLaneMonitor;
-    window.updateClusterLabels = updateClusterLabels;
 }
 
 // Auto-start when module loads (ES modules are deferred, DOM is ready)
