@@ -18,6 +18,7 @@ import {
     adapter_getCurrentTrailFocusIndex,
     adapter_getFocusThreadCurvePoint
 } from './thread-inspector-adapter.js';
+import { setInspectedStrandOverlayUpdater } from './inspected-strand-overlay-adapter.js';
 
 // === Internal helpers (deferred to main script via adapter) ===
 
@@ -763,6 +764,8 @@ export function disposeInspectedStrandOverlay() {
         endpointCount: 0
     };
 }
+
+setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay);
 
 // Debug access
 window._ti = {

@@ -30,6 +30,7 @@ import { setSceneRevealDataset } from './modules/scene-reveal.js';
 import { showExperienceToast } from './modules/ui-feedback.js';
 import { applyMapFlatteningLayout } from './modules/map-flattening-layout.js';
 import { triggerCorridorBloom } from './modules/audio-scape.js';
+import { updateInspectedStrandOverlayFrame } from './modules/inspected-strand-overlay-adapter.js';
 
 // three-setup.js - Three.js state.scene initialization, state.scene management, animation loop
 // Extracted from vector-explorer-polished.html inline script
@@ -2409,9 +2410,7 @@ export function animate() {
                     glowUniforms.uSignalScore.value = window.calculateSignalScore(focusedPoint);
                 }
             }
-            if (typeof window.updateInspectedStrandOverlay === 'function') {
-                window.updateInspectedStrandOverlay(frameNow);
-            }
+            updateInspectedStrandOverlayFrame(frameNow);
             if (typeof window.updateRouteTraceOverlayPositions === 'function') {
                 window.updateRouteTraceOverlayPositions(frameNow);
             }

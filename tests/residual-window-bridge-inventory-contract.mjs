@@ -53,6 +53,7 @@ const MODULES = {
   journeyWebgl: path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.js'),
   legendUi: path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.js'),
   mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'js/modules/map-flattening-layout.js'),
+  inspectedStrandOverlayAdapter: path.join(SEMDEMO_ROOT, 'js/modules/inspected-strand-overlay-adapter.js'),
   threeSetup: path.join(SEMDEMO_ROOT, 'js/three-setup.js'),
 };
 
@@ -200,7 +201,6 @@ const DEWINDOWED_SEAMS = ['searchState']; // search-state.js is fully dewindowed
 // Format: [callerModule, windowFnName, ownerModule, note]
 
 const EXTRACTION_CANDIDATES = [
-  ['journey', 'syncInspectedStrandOverlay', 'thread-inspector', 'thread-inspector owns overlay sync'],
   ['sceneReveal', 'updateCameraViewportOffset', 'camera', 'camera owns viewport offset'],
   ['threadInspector', 'exploreThreadNeighbor', 'thread-inspector', 'REMOVED direct backward-compat expose; diagnostic access remains on window._ti and contracts assert the direct window assignment stays absent'],
 ];
@@ -601,6 +601,8 @@ function testInspectedStrandTopLevelBridgesRetired() {
   const appSrc = read('app');
   const threadInspectorSrc = read('threadInspector');
   const journeySrc = read('journey');
+  const threeSetupSrc = read('threeSetup');
+  const adapterSrc = read('inspectedStrandOverlayAdapter');
 
   for (const fn of ['syncInspectedStrandOverlay', 'updateInspectedStrandOverlay', 'disposeInspectedStrandOverlay']) {
     assert(
@@ -619,6 +621,27 @@ function testInspectedStrandTopLevelBridgesRetired() {
   assert(
     !journeySrc.includes('window.syncInspectedStrandOverlay'),
     'journey.js must not call window.syncInspectedStrandOverlay'
+  );
+  assert(
+    threeSetupSrc.includes("import { updateInspectedStrandOverlayFrame } from './modules/inspected-strand-overlay-adapter.js';"),
+    'three-setup.js should import the inspected-strand overlay adapter, not thread-inspector.js'
+  );
+  assert(
+    threeSetupSrc.includes('updateInspectedStrandOverlayFrame(frameNow);'),
+    'three-setup.js should update inspected strand overlay through the adapter'
+  );
+  assert(
+    !threeSetupSrc.includes('window.updateInspectedStrandOverlay'),
+    'three-setup.js must not call window.updateInspectedStrandOverlay'
+  );
+  assert(
+    threadInspectorSrc.includes('setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay);'),
+    'thread-inspector.js should register updateInspectedStrandOverlay with the adapter'
+  );
+  assert(
+    /export function updateInspectedStrandOverlayFrame/.test(adapterSrc)
+      && !/\bwindow\./.test(adapterSrc),
+    'inspected-strand-overlay-adapter.js should be a window-free adapter boundary'
   );
 
   console.log('  OK — top-level inspected strand bridges retired; _ti diagnostics remain');

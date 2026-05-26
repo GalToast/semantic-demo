@@ -90,6 +90,7 @@ Semantic lane uses `getWindow()` / `getDocument()` guard pattern internally (lin
 | `window.syncArrivalHandoffOverlay` | journey-webgl.js compatibility bridge retained | journey.js and thread-inspector.js dewindowed 2026-05-25; bridge remains for external/test callers |
 | `window.disposeArrivalHandoffOverlay` | journey-webgl.js compatibility bridge retained | journey.js and thread-inspector.js dewindowed 2026-05-25; bridge remains for external/test callers |
 | `window.syncInspectedStrandOverlay` | **Retired 2026-05-25** | journey.js imports `syncInspectedStrandOverlay` directly from thread-inspector.js; `window._ti` diagnostic namespace remains |
+| `window.updateInspectedStrandOverlay` | **Retired 2026-05-26** | three-setup.js calls `updateInspectedStrandOverlayFrame` via inspected-strand overlay adapter; `window._ti` diagnostic namespace remains |
 | `window.noteSceneInteraction` / `window.releaseFocusCameraAssist` | **Retired 2026-05-25** | journey.js imports camera interaction functions directly from camera-controls.js; camera-controls uses direct owner calls internally |
 | `window.applyLocalNeighborhoodFocus` | journey.js:1006 guard only, NOT assigned | journey.js:1006 |
 | `window.syncSemanticDiveUi` | Retired 2026-05-25 | Runtime source and reduced-motion test callers dewindowed; no compatibility bridge remains |
