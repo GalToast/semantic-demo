@@ -23,6 +23,7 @@ const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
 const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js');
 const JOURNEY_THREAD_MODEL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-model.js');
 const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-state.js');
+const VISUAL_STATE_AUDIT_PATH = path.join(SEMDEMO_ROOT, 'tests/visual-state-audit.mjs');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -96,6 +97,30 @@ function testThreadInspectorDebugNamespace() {
   assert(!src.includes('window.exploreThreadNeighbor = exploreThreadNeighbor'), 'window.exploreThreadNeighbor direct expose removed');
 
   console.log('  OK thread-inspector window._ti namespace verified');
+}
+
+// ---------------------------------------------------------------------------
+// TEST 2b: visual QA probes use _ti, not direct thread-inspector globals
+// ---------------------------------------------------------------------------
+
+function testVisualAuditUsesThreadInspectorNamespace() {
+  console.log('\n[TEST] visual audit uses window._ti for thread-inspector probes');
+
+  const src = fs.readFileSync(VISUAL_STATE_AUDIT_PATH, 'utf-8');
+
+  // The visual audit uses _ti-first with backward-compat fallback chain.
+  // It is intentional that window.renderThreadInspection appears as the fallback
+  // (not the primary) — this reflects the current migration state where journey.js
+  // still installs the compatibility shim while thread-inspector owns _ti.
+  // The key contract is: _ti is checked FIRST (priority), window is last resort.
+  const tiFirstRender = /window\._ti\?\.renderThreadInspection.*window\.renderThreadInspection/s.test(src);
+  const tiFirstInspect = /window\._ti\?\.inspectThreadNeighbor.*window\.inspectThreadNeighbor/s.test(src);
+  assert(tiFirstRender, 'visual audit renderThreadInspection: _ti checked first, window as fallback');
+  assert(tiFirstInspect, 'visual audit inspectThreadNeighbor: _ti checked first, window as fallback');
+  assertContains(src, 'window._ti?.renderThreadInspection', 'visual audit renderThreadInspection via _ti');
+  assertContains(src, 'window._ti?.inspectThreadNeighbor', 'visual audit inspectThreadNeighbor via _ti');
+
+  console.log('  OK visual audit uses thread-inspector diagnostic namespace');
 }
 
 // ---------------------------------------------------------------------------
@@ -218,6 +243,7 @@ function main() {
   try {
     testJourneyWindowShim();
     testThreadInspectorDebugNamespace();
+    testVisualAuditUsesThreadInspectorNamespace();
     testSearchStateDebugNamespace();
     testJourneyThreadModelChain();
     testSetSemanticDiveModeGate();

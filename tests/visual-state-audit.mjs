@@ -927,12 +927,12 @@ async function run() {
             const candidate = (state.navState?.threadCandidates || [])
               .find((item) => item && Number.isFinite(item.index) && item.index !== seedIndex);
             const renderThreadInspection =
-              typeof window.renderThreadInspection === 'function' ? window.renderThreadInspection :
               typeof window._ti?.renderThreadInspection === 'function' ? window._ti.renderThreadInspection :
+              typeof window.renderThreadInspection === 'function' ? window.renderThreadInspection :
               null;
             const inspectThreadNeighbor =
-              typeof window.inspectThreadNeighbor === 'function' ? window.inspectThreadNeighbor :
               typeof window._ti?.inspectThreadNeighbor === 'function' ? window._ti.inspectThreadNeighbor :
+              typeof window.inspectThreadNeighbor === 'function' ? window.inspectThreadNeighbor :
               null;
             let inspectionState = null;
             if (candidate && inspectThreadNeighbor) {
