@@ -73,9 +73,6 @@ window._ms = mapModule;
 window._weather = weatherModule;
 window.getFocusThreadCurvePoint = focusModule.getFocusThreadCurvePoint;
 window.getProjectedNeighborCandidates = getProjectedNeighborCandidates;
-window.syncInspectedStrandOverlay = threadModule.syncInspectedStrandOverlay;
-window.updateInspectedStrandOverlay = threadModule.updateInspectedStrandOverlay;
-window.disposeInspectedStrandOverlay = threadModule.disposeInspectedStrandOverlay;
 window.initAudio = audioModule.initAudio;
 
 // Explicitly attach search functions to window for url-state and lifecycle modules

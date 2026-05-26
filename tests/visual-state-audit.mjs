@@ -937,8 +937,8 @@ async function run() {
               state.inspectedThreadIndex = candidate.index;
               inspectionState = renderThreadInspection(candidate.index, { force: true, surface: 'inspector' });
             }
-            if (typeof window.updateInspectedStrandOverlay === 'function') {
-              window.updateInspectedStrandOverlay(performance.now());
+            if (typeof window._ti?.updateInspectedStrandOverlay === 'function') {
+              window._ti.updateInspectedStrandOverlay(performance.now());
             }
             window.__visualThreadInspectorProbe = {
               candidateIndex: candidate?.index ?? null,

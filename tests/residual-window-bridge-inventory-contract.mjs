@@ -140,7 +140,6 @@ const KNOWN_APP_BOOTSTRAP_EXPORTS = new Set([
   'clearMobileRouteFieldPeek', 'isMobileRouteFieldPeekActive',
   // thread re-exports
   'loadSemanticThreads', 'getFocusThreadCurvePoint', 'getProjectedNeighborCandidates',
-  'syncInspectedStrandOverlay', 'updateInspectedStrandOverlay', 'disposeInspectedStrandOverlay',
   // lifecycle navigation re-exports
   'switchView', 'updateUrlState', 'resetExperienceState', 'returnToOverview',
   'resetExplorationFocus', 'getSceneRevealProgress', 'refreshCompositionState',
@@ -596,11 +595,42 @@ function testJourneyArrivalHandoffDewindowed() {
   console.log('  OK — journey/thread-inspector use direct arrival handoff calls; journey-webgl bridges are compatibility-only');
 }
 
-// ── TEST 8 — Verify window-bridge-gaps-contract.mjs still passes ─────────────
+// ── TEST 8 — Top-level inspected strand bridges are retired ─────────────────
+
+function testInspectedStrandTopLevelBridgesRetired() {
+  console.log('\n[TEST 8] top-level inspected strand window bridges are retired');
+
+  const appSrc = read('app');
+  const threadInspectorSrc = read('threadInspector');
+  const journeySrc = read('journey');
+
+  for (const fn of ['syncInspectedStrandOverlay', 'updateInspectedStrandOverlay', 'disposeInspectedStrandOverlay']) {
+    assert(
+      !appSrc.includes(`window.${fn}`),
+      `app.js must not expose top-level window.${fn}; use window._ti diagnostics or named imports`
+    );
+    assert(
+      new RegExp(`\\b${fn}\\b`).test(threadInspectorSrc),
+      `thread-inspector.js should keep ${fn} available on the window._ti diagnostic namespace`
+    );
+  }
+  assert(
+    /import\s+\{[^}]*\bsyncInspectedStrandOverlay\b[^}]*\}\s+from\s+['"]\.\/thread-inspector\.js['"]/.test(journeySrc),
+    'journey.js should import syncInspectedStrandOverlay directly from thread-inspector.js'
+  );
+  assert(
+    !journeySrc.includes('window.syncInspectedStrandOverlay'),
+    'journey.js must not call window.syncInspectedStrandOverlay'
+  );
+
+  console.log('  OK — top-level inspected strand bridges retired; _ti diagnostics remain');
+}
+
+// ── TEST 9 — Verify window-bridge-gaps-contract.mjs still passes ─────────────
 // Run the sibling contract to ensure no regressions in the already-dewindowed seams.
 
 function testSiblingContractStillPasses() {
-  console.log('\n[TEST 8] sibling window-bridge-gaps-contract.mjs still passes');
+  console.log('\n[TEST 9] sibling window-bridge-gaps-contract.mjs still passes');
 
   try {
     const result = execFileSync(
@@ -635,6 +665,7 @@ try {
   testBareCallBaseline();
   testFocusOnPointRuntimeCallersDewindowed();
   testJourneyArrivalHandoffDewindowed();
+  testInspectedStrandTopLevelBridgesRetired();
   testSiblingContractStillPasses();
 
   console.log('\n=================================================================');
