@@ -192,8 +192,10 @@ checks.push({
   pass: /document\.body\.classList\.toggle\s*\(\s*['"]is-mobile['"]\s*,\s*isMobile\s*\)/.test(src),
 });
 checks.push({
-  name: 'onWindowResize:calls window.updateCameraViewportOffset when available',
-  pass: /window\.updateCameraViewportOffset\s*===\s*['"]function['"][\s\S]{0,120}?window\.updateCameraViewportOffset\s*\(\s*\)/.test(src),
+  name: 'onWindowResize:calls updateCameraViewportOffset() direct import',
+  pass: /import\s*\{\s*updateCameraViewportOffset\s*\}\s*from\s*['"]\.\.\/three-setup\.js['"]/.test(src) &&
+        /function\s+onWindowResize[\s\S]{0,900}?updateCameraViewportOffset\s*\(\s*\)/.test(src) &&
+        !/window\.updateCameraViewportOffset\s*\(/.test(src),
 });
 
 // ---------------------------------------------------------------------------

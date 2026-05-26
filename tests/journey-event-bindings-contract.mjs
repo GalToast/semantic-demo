@@ -29,6 +29,7 @@ import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js');
+const APP_PATH            = path.join(SEMDEMO_ROOT, 'js/modules/app.js');
 const JOURNEY_PATH        = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
 const LIFECYCLE_PATH      = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
 const JOURNEY_COMPASS_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.js');
@@ -136,6 +137,7 @@ function testJourneyCompassDirectImportWiring() {
 
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
   const ebSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
+  const appSrc = fs.readFileSync(APP_PATH, 'utf-8');
 
   // Verify lifecycle imports and re-exports updateJourneyCompass as a function
   assertMatches(lifecycleSrc,
@@ -316,6 +318,7 @@ function testResizeListenerWiring() {
   console.log('\n[TEST] Resize listener behavior (bindPanelControls)');
 
   const ebSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
+  const appSrc = fs.readFileSync(APP_PATH, 'utf-8');
 
   // bindPanelControls must register window resize listener
   assertContains(ebSrc,
@@ -331,6 +334,14 @@ function testResizeListenerWiring() {
   assertContains(ebSrc,
     'onWindowResize,',
     'initEventListeners destructures onWindowResize');
+  assert(
+    /import\s+\{[^}]*\bonWindowResize\b[^}]*\}\s+from\s+['"]\.\/lifecycle\.js['"]/.test(appSrc),
+    'app.js imports onWindowResize from lifecycle.js'
+  );
+  assert(
+    /initEventListeners\s*\(\s*\{[^}]*\bonWindowResize\b[^}]*\bupdateUrlState\b[^}]*\}\s*\)/.test(appSrc),
+    'app.js passes onWindowResize into initEventListeners'
+  );
 
   // btn-panel must call the local named export directly
   assertContains(ebSrc,

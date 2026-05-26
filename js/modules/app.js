@@ -47,6 +47,7 @@ import {
     updateExplorationUi,
     resetNodePositions,
     dispatchNavTransition,
+    onWindowResize,
     showExperienceToast,
     syncSearchStatusForFocus,
     hydrateLeadContext
@@ -244,7 +245,7 @@ export async function init() {
             // so the fallback notice is visible instead of a frozen spinner.
             hideLoadingOverlay();
         }
-        initEventListeners({ updateUrlState });
+        initEventListeners({ onWindowResize, updateUrlState });
         initKeyboardShortcutsHint();
         if (graphicsReady !== false) initClusterLabels();
         audioModule.initAudio();

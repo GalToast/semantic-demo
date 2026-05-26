@@ -53,9 +53,7 @@ export function onWindowResize() {
     const isMobile = window.innerWidth <= 768;
     document.body.classList.toggle('is-mobile', isMobile);
 
-    if (typeof window.updateCameraViewportOffset === 'function') {
-        window.updateCameraViewportOffset();
-    }
+    updateCameraViewportOffset();
 
     syncClusterSectionState();
     updateTraversalUi();

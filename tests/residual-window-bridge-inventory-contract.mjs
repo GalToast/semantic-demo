@@ -185,7 +185,7 @@ const KNOWN_FALLBACKS = new Set([
   'getFocusThreadCurvePoint', 'syncNodeSporeColorsFromPointColors', 'syncSearchStatusForFocus',
   'walkThreadNeighbor',
   // scene-reveal.js guards
-  'clearAutoRotateResumeTimer', 'setAutoRotateSuspended', 'updateCameraViewportOffset',
+  'clearAutoRotateResumeTimer', 'setAutoRotateSuspended',
   // journey-compass-controller.js guards
   'clearMobileRouteFieldPeek', 'refreshRouteTraceOverlay', 'updateFocusNeighborRail',
 ]);
@@ -202,7 +202,6 @@ const DEWINDOWED_SEAMS = ['searchState']; // search-state.js is fully dewindowed
 // Format: [callerModule, windowFnName, ownerModule, note]
 
 const EXTRACTION_CANDIDATES = [
-  ['sceneReveal', 'updateCameraViewportOffset', 'camera', 'camera owns viewport offset'],
   ['threadInspector', 'exploreThreadNeighbor', 'thread-inspector', 'REMOVED direct backward-compat expose; diagnostic access remains on window._ti and contracts assert the direct window assignment stays absent'],
 ];
 

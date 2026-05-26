@@ -2,9 +2,8 @@
  * scene-reveal-camera-dewindowing-contract.mjs
  *
  * Contract test for scene-reveal.js → camera-controls.js dewindowing.
- * Tests that startSceneReveal uses direct named imports for
- * clearAutoRotateResumeTimer and setAutoRotateSuspended, while
- * updateCameraViewportOffset remains a guarded window call (no cycle).
+ * Tests that scene-reveal uses direct named imports for
+ * clearAutoRotateResumeTimer, setAutoRotateSuspended, and updateCameraViewportOffset.
  *
  * Run from semantic-demo root:
  *   node tests/scene-reveal-camera-dewindowing-contract.mjs
@@ -59,14 +58,17 @@ checks.push({
 });
 
 // ---------------------------------------------------------------------------
-// Contract C: updateCameraViewportOffset remains a guarded window call
-// (camera-controls.js cannot be imported — three-setup.js owns it, cycle would
-// be introduced if scene-reveal imported from three-setup which imports from
-// camera-controls which re-exports back to scene-reveal)
+// Contract C: updateCameraViewportOffset is called through the existing direct import.
 // ---------------------------------------------------------------------------
 checks.push({
-  name: 'onWindowResize:updateCameraViewportOffset stays as guarded window call',
-  pass: /typeof\s+window\.updateCameraViewportOffset\s*===\s*['"]function['"][\s\S]{0,80}?window\.updateCameraViewportOffset\s*\(\s*\)/.test(sceneRevealSrc),
+  name: 'imports:updateCameraViewportOffset from three-setup.js',
+  pass: /import\s+\{\s*updateCameraViewportOffset\s*\}\s+from\s+['"]\.\.\/three-setup\.js['"]/.test(sceneRevealSrc),
+});
+
+checks.push({
+  name: 'onWindowResize:calls updateCameraViewportOffset() directly (no window.)',
+  pass: /^export\s+function\s+onWindowResize[\s\S]{0,700}?updateCameraViewportOffset\s*\(\s*\)/m.test(sceneRevealSrc) &&
+        !/window\.updateCameraViewportOffset/.test(sceneRevealSrc),
 });
 
 // ---------------------------------------------------------------------------
@@ -117,6 +119,6 @@ if (failed > 0) {
   console.error(`${failed} check(s) FAILED`);
   process.exit(1);
 } else {
-  console.log('All checks passed. clearAutoRotateResumeTimer/setAutoRotateSuspended dewindowed; updateCameraViewportOffset remains window-gated (no cycle).');
+  console.log('All checks passed. scene-reveal camera hooks use direct imports.');
   process.exit(0);
 }
