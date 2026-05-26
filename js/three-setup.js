@@ -35,6 +35,7 @@ import {
     updateArrivalHandoffOverlayFrame,
     updateRouteTraceOverlayFrame
 } from './modules/route-arrival-overlay-adapter.js';
+import { restoreWebGLContext } from './modules/webgl-restore-adapter.js';
 
 // three-setup.js - Three.js state.scene initialization, state.scene management, animation loop
 // Extracted from vector-explorer-polished.html inline script
@@ -352,9 +353,7 @@ function bindWebGLContextResilience(renderer) {
         _webglRestoreTimer = window.setTimeout(() => {
             _webglRestoreTimer = null;
             showExperienceToast('Graphics context restored', 'Rebuilding the semantic scene.');
-            if (typeof window.init === 'function') {
-                window.init().catch((err) => console.error('WebGL context restore reinit failed:', err));
-            }
+            restoreWebGLContext().catch((err) => console.error('WebGL context restore reinit failed:', err));
         }, 80);
     }, false);
 }

@@ -15,6 +15,7 @@ import { initThreadInspectorAdapter } from './thread-inspector-adapter.js';
 import { getProjectedNeighborCandidates } from './journey-thread-model.js';
 import * as cameraModule from './camera-controls.js';
 import { initCameraControlsAdapter } from './camera-controls-adapter.js';
+import { setWebGLContextRestoreHandler } from './webgl-restore-adapter.js';
 import * as mapModule from './map-state.js';
 import * as weatherModule from './weather.js';
 import * as audioModule from './audio-scape.js';
@@ -461,9 +462,10 @@ export async function init() {
 
 // Global exposure
 if (typeof window !== "undefined") {
-    window.init = init;
     window.applyUrlState = applyUrlState;
 }
+
+setWebGLContextRestoreHandler(init);
 
 // Auto-start when module loads (ES modules are deferred, DOM is ready)
 init().catch((err) => {

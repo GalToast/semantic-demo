@@ -294,6 +294,7 @@ const PINNED_FILES = [
   'exploration-modes-contract.mjs',
   'scene-reveal-contract.mjs',
   'scene-reveal-camera-dewindowing-contract.mjs',
+  'webgl-restore-dewindowing-contract.mjs',
   'scene-atmosphere-contract.mjs',
   'motion-state-contract.mjs',
   'demo-state-sync-contract.mjs',
