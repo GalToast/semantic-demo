@@ -31,6 +31,10 @@ import { showExperienceToast } from './modules/ui-feedback.js';
 import { applyMapFlatteningLayout } from './modules/map-flattening-layout.js';
 import { triggerCorridorBloom } from './modules/audio-scape.js';
 import { updateInspectedStrandOverlayFrame } from './modules/inspected-strand-overlay-adapter.js';
+import {
+    updateArrivalHandoffOverlayFrame,
+    updateRouteTraceOverlayFrame
+} from './modules/route-arrival-overlay-adapter.js';
 
 // three-setup.js - Three.js state.scene initialization, state.scene management, animation loop
 // Extracted from vector-explorer-polished.html inline script
@@ -2411,12 +2415,8 @@ export function animate() {
                 }
             }
             updateInspectedStrandOverlayFrame(frameNow);
-            if (typeof window.updateRouteTraceOverlayPositions === 'function') {
-                window.updateRouteTraceOverlayPositions(frameNow);
-            }
-            if (typeof window.updateArrivalHandoffOverlay === 'function') {
-                window.updateArrivalHandoffOverlay(frameNow);
-            }
+            updateRouteTraceOverlayFrame(frameNow);
+            updateArrivalHandoffOverlayFrame(frameNow);
             if (typeof window.updateClusterLabels === 'function') {
                 window.updateClusterLabels();
             }

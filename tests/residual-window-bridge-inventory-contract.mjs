@@ -54,6 +54,7 @@ const MODULES = {
   legendUi: path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.js'),
   mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'js/modules/map-flattening-layout.js'),
   inspectedStrandOverlayAdapter: path.join(SEMDEMO_ROOT, 'js/modules/inspected-strand-overlay-adapter.js'),
+  routeArrivalOverlayAdapter: path.join(SEMDEMO_ROOT, 'js/modules/route-arrival-overlay-adapter.js'),
   threeSetup: path.join(SEMDEMO_ROOT, 'js/three-setup.js'),
 };
 
@@ -541,6 +542,8 @@ function testJourneyArrivalHandoffDewindowed() {
 
   const journeySrc = read('journey');
   const threadInspectorSrc = read('threadInspector');
+  const threeSetupSrc = read('threeSetup');
+  const adapterSrc = read('routeArrivalOverlayAdapter');
   const problems = [];
 
   assert(
@@ -583,6 +586,29 @@ function testJourneyArrivalHandoffDewindowed() {
   assert(
     /window\.disposeArrivalHandoffOverlay\s*=\s*disposeArrivalHandoffOverlay/.test(journeyWebglSrc),
     'journey-webgl.js should retain the temporary window.disposeArrivalHandoffOverlay compatibility bridge'
+  );
+  assert(
+    journeyWebglSrc.includes('setRouteArrivalOverlayUpdaters({')
+      && journeyWebglSrc.includes('updateRouteTraceOverlayPositions,')
+      && journeyWebglSrc.includes('updateArrivalHandoffOverlay'),
+    'journey-webgl.js should register route/arrival overlay frame updaters with the adapter'
+  );
+  assert(
+    threeSetupSrc.includes("from './modules/route-arrival-overlay-adapter.js'")
+      && threeSetupSrc.includes('updateRouteTraceOverlayFrame(frameNow);')
+      && threeSetupSrc.includes('updateArrivalHandoffOverlayFrame(frameNow);'),
+    'three-setup.js should update route/arrival overlays through the adapter'
+  );
+  assert(
+    !threeSetupSrc.includes('window.updateRouteTraceOverlayPositions')
+      && !threeSetupSrc.includes('window.updateArrivalHandoffOverlay'),
+    'three-setup.js must not call route/arrival overlay update functions through window'
+  );
+  assert(
+    /export function updateRouteTraceOverlayFrame/.test(adapterSrc)
+      && /export function updateArrivalHandoffOverlayFrame/.test(adapterSrc)
+      && !/\bwindow\./.test(adapterSrc),
+    'route-arrival-overlay-adapter.js should be a window-free adapter boundary'
   );
 
   assert(

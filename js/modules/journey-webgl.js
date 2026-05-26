@@ -8,6 +8,7 @@ import { isPointVisible } from '../utils.js';
 import { getThreadCandidatesForIndex } from './journey-thread-model.js';
 import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from './journey.js';
 import { getFocusThreadCurvePoint } from './focus-pocket.js';
+import { setRouteArrivalOverlayUpdaters } from './route-arrival-overlay-adapter.js';
 
 const ROUTE_TRACE_SEGMENT_STEPS = 7;
 const ARRIVAL_HANDOFF_SEGMENT_STEPS = 9;
@@ -391,6 +392,11 @@ export function updateArrivalHandoffOverlay() {
         opacity
     };
 }
+
+setRouteArrivalOverlayUpdaters({
+    updateRouteTraceOverlayPositions,
+    updateArrivalHandoffOverlay
+});
 
 export function resetFocusThreadDiagnostics(reason = 'inactive') {
     state.focusThreadDiagnostics = {
