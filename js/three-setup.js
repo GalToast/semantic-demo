@@ -2454,7 +2454,6 @@ if (typeof window !== "undefined") {
     window.shouldRenderThreads = shouldRenderThreads;
     window.shouldRenderBridgeThreads = shouldRenderBridgeThreads;
     window.animate = animate;
-    window.cancelAnimate = cancelAnimate;
     window.deinit = deinit;
     window.__semanticScenePerformanceProbe = getScenePerformanceProbe;
     // Preserve corridor functions from esbuild tree-shaking — called from animation loop via window

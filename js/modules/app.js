@@ -26,7 +26,7 @@ import { hideTooltip, positionTooltip, updateTooltipContent } from './tooltip.js
 import './pathfinding.js';
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
 import * as journeyWebglModule from './journey-webgl.js';
-import { initThreeJS, animate, triggerSearchHeroMoment, triggerCorridorNodeGlow, triggerSearchCorridorAnimation } from '../three-setup.js';
+import { initThreeJS, animate, cancelAnimate, triggerSearchHeroMoment, triggerCorridorNodeGlow, triggerSearchCorridorAnimation } from '../three-setup.js';
 import * as dataModule from './data-loader.js';
 import { escapeHtml } from '../utils.js';
 import {
@@ -207,7 +207,7 @@ export async function init() {
             state.clockTimer = null;
         }
         // Cancel any previous RAF loop before re-initializing Three.js
-        if (typeof cancelAnimate === 'function') window.cancelAnimate();
+        cancelAnimate();
         state.loadingOverlayStartedAt = performance.now();
         
         // polish133: safety valve for 10/10 demo stability
@@ -452,7 +452,7 @@ export async function init() {
             clearInterval(state.clockTimer);
             state.clockTimer = null;
         }
-        if (typeof cancelAnimate === 'function') window.cancelAnimate();
+        cancelAnimate();
         const overlay = document.getElementById('loading-overlay');
         if (overlay) {
             overlay.innerHTML = `<div class="loading-shell" role="alert"><div class="loading-kicker">Graph unavailable</div><div class="loading-title">Failed to load county records</div><div class="loading-note">The Semantic Explorer is offline or blocked right now. Refresh after the connection recovers.</div><div class="loading-foot">${escapeHtml(error.message || 'Initialization failed')}</div></div>`;
