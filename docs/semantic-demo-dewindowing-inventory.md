@@ -32,7 +32,8 @@
 | `window.buildSelectedMatchNarrative` | lifecycle.js:2545 | journey.js:1214/1455 | Empty match narrative |
 | `window.setSemanticDiveMode` (journey.js) | journey.js:3096 (overrides lifecycle.js) | journey.js:61 | Overwrites lifecycle shim |
 | `window.animateCameraToNode` | app.js:84 → camera-controls.js | camera-controls.js:1171 | Animation non-functional |
-| `window.animateCameraToTerrainPrelude` | camera-controls.js:1236 | (internal) | — |
+| `window.animateCameraToTerrainPrelude` | **Retired 2026-05-25** | view-controller imports terrain prelude directly from camera-controls |
+| `window.applyMapFlatteningLayout` | three-setup compatibility bridge retained | view-controller still uses guarded bridge because three-setup has browser-only top-level side effects and is not safe to import into Node-tested modules yet |
 | `window.animateCameraToSearchCorridor` | camera-controls.js:1239 | (internal) | — |
 | `window.animateCameraToOverview` | camera-controls.js:1238 | (internal) | — |
 | `window.initThreeJS` | three-setup.js:2439 | (internal bootstrapping) | 3D init broken |

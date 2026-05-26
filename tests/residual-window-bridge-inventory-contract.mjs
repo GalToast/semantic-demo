@@ -51,6 +51,7 @@ const MODULES = {
   viewController: path.join(SEMDEMO_ROOT, 'js/modules/view-controller.js'),
   navigationState: path.join(SEMDEMO_ROOT, 'js/modules/navigation-state.js'),
   journeyWebgl: path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.js'),
+  threeSetup: path.join(SEMDEMO_ROOT, 'js/three-setup.js'),
 };
 
 // ── HELPERS ────────────────────────────────────────────────────────────────
@@ -167,7 +168,7 @@ const KNOWN_FALLBACKS = new Set([
   // lifecycle.js guards
   'animateCameraToNode', 'previewInsideNextThread', 'clearThreadInspection',
   'switchView', 'hideTooltip', 'clearSearchPreviewOverlay', 'resetNodePositions',
-  'getRouteLayerOrigin', 'setRouteChoreographyPhase', 'animateCameraToTerrainPrelude',
+  'getRouteLayerOrigin', 'setRouteChoreographyPhase',
   'applyMapFlatteningLayout', 'clearRouteExploration', 'animateCameraToSearchCorridor',
   'updateLegendGuideState', 'updateTraversalUi', 'restoreLegendCollapsedPanel',
   // journey.js guards
@@ -198,8 +199,7 @@ const DEWINDOWED_SEAMS = ['searchState']; // search-state.js is fully dewindowed
 
 const EXTRACTION_CANDIDATES = [
   ['lifecycle', 'restoreLegendCollapsedPanel', 'legend-ui', 'legacy bootstrap compatibility; lifecycle now imports legend-ui directly'],
-  ['lifecycle', 'animateCameraToTerrainPrelude', 'camera', 'camera owns prelude animation'],
-  ['lifecycle', 'applyMapFlatteningLayout', 'journey', 'journey owns map-flattening layout'],
+  ['viewController', 'applyMapFlatteningLayout', 'three-setup', 'three-setup owns map-flattening layout but has browser-only top-level side effects; keep guarded bridge until extracted'],
   ['journey', 'syncInspectedStrandOverlay', 'thread-inspector', 'thread-inspector owns overlay sync'],
   ['sceneReveal', 'updateCameraViewportOffset', 'camera', 'camera owns viewport offset'],
   ['threadInspector', 'exploreThreadNeighbor', 'thread-inspector', 'REMOVED direct backward-compat expose; diagnostic access remains on window._ti and contracts assert the direct window assignment stays absent'],
@@ -283,9 +283,9 @@ function testLifecycleNoNewBareCalls() {
   // syncClusterSectionState, updateLegendGuideState, updateTraversalUi, etc.
 
   const HIGH_RISK_CALLS = [
-    'animateCameraToNode', 'animateCameraToTerrainPrelude', 'animateCameraToSearchCorridor',
+    'animateCameraToNode', 'animateCameraToSearchCorridor',
     'setRouteChoreographyPhase', 'syncClusterSectionState', 'updateLegendGuideState',
-    'updateTraversalUi', 'restoreLegendCollapsedPanel', 'applyMapFlatteningLayout',
+    'updateTraversalUi', 'restoreLegendCollapsedPanel',
     'clearRouteExploration', 'noteSceneInteraction',
   ];
 
@@ -655,11 +655,35 @@ function testCameraInteractionBridgesRetired() {
   console.log('  OK — camera interaction bridges retired; direct imports remain');
 }
 
-// ── TEST 10 — Verify window-bridge-gaps-contract.mjs still passes ────────────
+// ── TEST 10 — View handoff camera prelude bridge is retired ────────────────
+
+function testViewHandoffCameraPreludeBridgeRetired() {
+  console.log('\n[TEST 10] view handoff camera prelude window bridge is retired');
+
+  const viewControllerSrc = read('viewController');
+  const cameraSrc = read('camera');
+
+  assert(
+    /import\s+\{[^}]*\banimateCameraToTerrainPrelude\b[^}]*\bfocusOnNode\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(viewControllerSrc),
+    'view-controller.js should import animateCameraToTerrainPrelude directly from camera-controls.js'
+  );
+  assert(
+    !viewControllerSrc.includes('window.animateCameraToTerrainPrelude'),
+    'view-controller.js must not call window.animateCameraToTerrainPrelude'
+  );
+  assert(
+    !cameraSrc.includes('window.animateCameraToTerrainPrelude'),
+    'camera-controls.js must not expose the retired window.animateCameraToTerrainPrelude bridge'
+  );
+
+  console.log('  OK — view handoff camera prelude bridge retired; direct import remains');
+}
+
+// ── TEST 11 — Verify window-bridge-gaps-contract.mjs still passes ────────────
 // Run the sibling contract to ensure no regressions in the already-dewindowed seams.
 
 function testSiblingContractStillPasses() {
-  console.log('\n[TEST 10] sibling window-bridge-gaps-contract.mjs still passes');
+  console.log('\n[TEST 11] sibling window-bridge-gaps-contract.mjs still passes');
 
   try {
     const result = execFileSync(
@@ -696,6 +720,7 @@ try {
   testJourneyArrivalHandoffDewindowed();
   testInspectedStrandTopLevelBridgesRetired();
   testCameraInteractionBridgesRetired();
+  testViewHandoffCameraPreludeBridgeRetired();
   testSiblingContractStillPasses();
 
   console.log('\n=================================================================');

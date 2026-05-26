@@ -1,6 +1,6 @@
 import { state } from '../state.js';
 import { closeLegendPanel } from './legend-ui.js';
-import { focusOnNode } from './camera-controls.js';
+import { animateCameraToTerrainPrelude, focusOnNode } from './camera-controls.js';
 import {
     updateSelectedBusiness,
     setTrailFromSeed,
@@ -97,9 +97,7 @@ export function switchView(view, options = {}) {
             anchorIndex: state.currentSearchSummary?.anchorIndex ?? state.navState?.focusedIndex ?? null,
             indexCount: routeCount
         });
-        if (typeof window.animateCameraToTerrainPrelude === 'function') {
-            window.animateCameraToTerrainPrelude({ duration: state.MAP_HANDOFF_PRELUDE_MS || 1200 });
-        }
+        animateCameraToTerrainPrelude({ duration: state.MAP_HANDOFF_PRELUDE_MS || 1200 });
         
         // 10/10 Polish: Flatten Three.js nodes to map coordinates during prelude
         if (typeof window.applyMapFlatteningLayout === 'function') {

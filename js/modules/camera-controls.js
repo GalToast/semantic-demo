@@ -1231,7 +1231,6 @@ if (typeof window !== 'undefined') {
     window.startFocusCameraAssist = startFocusCameraAssist;
     window.focusCameraAssistIsActive = focusCameraAssistIsActive;
     window.updateAutoRotateSoftResume = updateAutoRotateSoftResume;
-    window.animateCameraToTerrainPrelude = animateCameraToTerrainPrelude;
     window.applySemanticCentroidCamera = applySemanticCentroidCamera;
     window.clearInsideCentroid = clearInsideCentroid;
     window.animateCameraToSearchCorridor = animateCameraToSearchCorridor;
