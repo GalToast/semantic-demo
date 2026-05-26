@@ -909,6 +909,9 @@ async function run() {
               Number.isFinite(state.currentSearchSummary?.anchorIndex) ? state.currentSearchSummary.anchorIndex :
               519;
             if (typeof window.setTrailFromSeed === 'function' && Number.isFinite(seedIndex)) {
+              state.focusedNode = seedIndex;
+              state.navState = state.navState || {};
+              state.navState.focusedIndex = seedIndex;
               window.setTrailFromSeed(seedIndex);
             }
 

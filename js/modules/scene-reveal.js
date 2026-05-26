@@ -57,6 +57,6 @@ export function onWindowResize() {
         window.updateCameraViewportOffset();
     }
 
-    if (typeof window.syncClusterSectionState === 'function') window.syncClusterSectionState();
+    syncClusterSectionState();
     updateTraversalUi();
 }

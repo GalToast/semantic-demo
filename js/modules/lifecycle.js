@@ -64,9 +64,6 @@ import {
     restoreLegendCollapsedPanel
 } from './legend-ui.js';
 import {
-    syncClusterSectionState
-} from './cluster-labels.js';
-import {
     showSemanticThreadsDetail
 } from './connection-analysis.js';
 import {
@@ -614,7 +611,6 @@ if (typeof window !== 'undefined') {
     window.probeSemanticLane = probeSemanticLane;
     window.scheduleSemanticLaneMonitor = scheduleSemanticLaneMonitor;
     window.onWindowResize = onWindowResize;
-    window.syncClusterSectionState = syncClusterSectionState;
     window.updateExplorationUi = updateExplorationUi;
     window.setMyceliumMode = setMyceliumMode;
     window.setTrailDepth = setTrailDepth;

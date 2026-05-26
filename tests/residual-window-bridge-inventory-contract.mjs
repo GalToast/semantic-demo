@@ -166,7 +166,7 @@ const KNOWN_FALLBACKS = new Set([
   'expandNeighborhoodFromCurrentNode', 'focusSearchInputForReplacement',
   'handleSemanticLaneWindowFocus', 'applyUrlState', 'handleSemanticLaneVisibilityChange',
   'hideSummaryCard', 'closeLegendGuide', 'buildLegend',
-  'setTrailFromSeed', 'updateTrailIndices', 'syncClusterSectionState',
+  'setTrailFromSeed', 'updateTrailIndices',
   // lifecycle.js guards
   'animateCameraToNode', 'previewInsideNextThread', 'clearThreadInspection',
   'switchView', 'hideTooltip', 'clearSearchPreviewOverlay', 'resetNodePositions',
@@ -280,11 +280,11 @@ function testLifecycleNoNewBareCalls() {
   // Collect all window.fn call-sites that are NOT in the known fallback set
   // and NOT guarded by typeof.
   // Focus on HIGH-RISK cross-module calls: animateCameraTo*, setRouteChoreographyPhase,
-  // syncClusterSectionState, updateLegendGuideState, updateTraversalUi, etc.
+  // updateLegendGuideState, updateTraversalUi, etc.
 
   const HIGH_RISK_CALLS = [
     'animateCameraToNode', 'animateCameraToSearchCorridor',
-    'setRouteChoreographyPhase', 'syncClusterSectionState', 'updateLegendGuideState',
+    'setRouteChoreographyPhase', 'updateLegendGuideState',
     'updateTraversalUi',
     'clearRouteExploration', 'noteSceneInteraction',
   ];

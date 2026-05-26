@@ -197,11 +197,13 @@ checks.push({
 });
 
 // ---------------------------------------------------------------------------
-// Contract 16: onWindowResize calls window.syncClusterSectionState
+// Contract 16: onWindowResize calls syncClusterSectionState through direct import
 // --------------------------------------------------------------------------
 checks.push({
-  name: 'onWindowResize:calls window.syncClusterSectionState()',
-  pass: /window\.syncClusterSectionState\s*\(/.test(src),
+  name: 'onWindowResize:calls syncClusterSectionState() direct import',
+  pass: /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"]\.\/cluster-labels\.js['"]/.test(src) &&
+        /function\s+onWindowResize[\s\S]{0,900}?syncClusterSectionState\s*\(\s*\)/.test(src) &&
+        !/window\.syncClusterSectionState\s*\(/.test(src),
 });
 
 // ---------------------------------------------------------------------------

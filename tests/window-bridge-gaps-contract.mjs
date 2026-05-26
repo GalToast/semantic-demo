@@ -6,7 +6,7 @@
  * intentionally documented as a no-op guard.
  *
  * Gap 1  — getRouteLayerOrigin:  guarded no-op, fallback is 'galaxy'
- * Gap 2  — syncClusterSectionState: resolved (lifecycle.js window shim)
+ * Gap 2  — syncClusterSectionState: resolved (direct module imports)
  * Gap 3a — hydrateLeadContext:   resolved (lifecycle.js window shim)
  * Gap 3b — applySearchGlowVisualState: resolved via alternate call in journey.js
  * Gap 4  — updateSelectedCardHeading: resolved via direct module imports
@@ -103,30 +103,40 @@ function testGap1_getRouteLayerOrigin() {
 }
 
 // ---------------------------------------------------------------------------
-// GAP 2 — syncClusterSectionState: resolved in lifecycle.js window shim
-// Called from lifecycle.js:1479, scene-reveal.js:56, event-bindings.js:693
-// Resolved by installing window.syncClusterSectionState in the lifecycle.js shim
+// GAP 2 — syncClusterSectionState: resolved through direct module imports
+// Direct imports in scene-reveal.js and event-bindings.js remove the lifecycle window shim.
 // ---------------------------------------------------------------------------
 
 function testGap2_syncClusterSectionState() {
-  console.log('\n[TEST] Gap 2 — syncClusterSectionState (RESOLVED in lifecycle.js)');
+  console.log('\n[TEST] Gap 2 — syncClusterSectionState (RESOLVED by direct imports)');
 
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
   const sceneRevealSrc = fs.readFileSync(SCENE_REVEAL_PATH, 'utf-8');
   const eventBindingsSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
 
-  // lifecycle.js MUST assign the window shim
-  assertHasAssignment(lifecycleSrc, 'syncClusterSectionState', 'lifecycle.js', 'Gap 2');
+  assert(
+    !/window\.syncClusterSectionState\s*=/.test(lifecycleSrc),
+    'Gap 2: lifecycle.js must not assign window.syncClusterSectionState after direct-import migration'
+  );
 
-  // All callers must use typeof guards (which now pass)
+  assert(
+    /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"]\.\/cluster-labels\.js['"]/.test(sceneRevealSrc),
+    'Gap 2: scene-reveal.js must import syncClusterSectionState directly'
+  );
+
+  assert(
+    /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"]\.\/cluster-labels\.js['"]/.test(eventBindingsSrc),
+    'Gap 2: event-bindings.js must import syncClusterSectionState directly'
+  );
+
+  // No remaining call site should depend on the retired window bridge.
   assertNoDeadCall(lifecycleSrc, 'syncClusterSectionState', 'lifecycle.js', 'Gap 2');
   assertNoDeadCall(sceneRevealSrc, 'syncClusterSectionState', 'scene-reveal.js', 'Gap 2');
   assertNoDeadCall(eventBindingsSrc, 'syncClusterSectionState', 'event-bindings.js', 'Gap 2');
 
-  // The shim must handle the cluster-section element (either directly or via delegation)
   assert(
-    /cluster-section|syncClusterSectionState/.test(lifecycleSrc),
-    'syncClusterSectionState shim must reference the cluster-section element or delegate to it'
+    /syncClusterSectionState\s*\(\s*\)/.test(sceneRevealSrc),
+    'Gap 2: scene-reveal.js resize path must call syncClusterSectionState directly'
   );
 
   console.log('  OK — syncClusterSectionState: RESOLVED');
