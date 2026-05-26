@@ -141,6 +141,7 @@
         bottom: 0;
         width: auto;
         max-width: none;
+        transform: none;
     }
 
     /* Focus stage card */
