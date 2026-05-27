@@ -821,35 +821,3 @@ body[data-thread-inspect-surface="pinned"] .focus-thread-inspector-kicker::after
     color: rgba(161, 198, 197, 0.58);
     line-height: 1.45;
 }
-
-@media (max-width: 700px) {
-    html body[data-panel-surface="focus"] .focus-stage-card,
-    html body[data-panel-surface="focus-search"] .focus-stage-card,
-    html body[data-panel-surface="focus"] .focus-stage-card,
-    html body[data-panel-surface="focus-search"] .focus-stage-card {
-        max-height: 58vh;
-        overflow-y: auto;
-        border-color: rgba(121, 235, 222, 0.36);
-        box-shadow:
-            0 22px 58px rgba(0, 0, 0, 0.42),
-            0 0 0 1px rgba(121, 235, 222, 0.1);
-    }
-}
-
-@media (max-width: 768px) {
-    html body[data-panel-surface="focus-search"] .focus-stage {
-        width: auto;
-    }
-
-    html body[data-panel-surface="focus-search"] .focus-stage-journey.active {
-        grid-template-columns: 44px minmax(0, 1fr) 44px;
-        gap: 6px;
-        padding: 7px;
-        border-radius: 14px;
-    }
-
-    html body[data-panel-surface="focus-search"] .focus-stage-route,
-    html body[data-panel-surface="focus-search"] .focus-stage-next {
-        display: none;
-    }
-}

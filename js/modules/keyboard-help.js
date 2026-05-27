@@ -9,24 +9,9 @@ import { setInfoPanelOpen, zoomCamera, recenterFocusedNode } from './event-bindi
 import { traverseNeighbor } from './journey.js';
 
 // Injected reset functions are set via initKeyboardResetOwnership() before first keydown.
-// Falls back to window bridge so keyboard-help.js never needs to import lifecycle.js.
-let _returnToOverview = () => {
-    if (typeof window.returnToOverview === 'function') {
-        window.returnToOverview();
-    }
-};
-let _resetExplorationFocus = () => {
-    if (typeof window.resetExplorationFocus === 'function') {
-        window.resetExplorationFocus();
-    }
-};
+let _returnToOverview = () => {};
+let _resetExplorationFocus = () => {};
 
-/**
- * Inject the authoritative reset APIs so keyboard-help.js can call them directly
- * without importing lifecycle.js (which creates a cycle).
- *
- * @param {{ returnToOverview: function, resetExplorationFocus: function }} fns
- */
 export function initKeyboardResetOwnership({ returnToOverview, resetExplorationFocus } = {}) {
     if (typeof returnToOverview === 'function') _returnToOverview = returnToOverview;
     if (typeof resetExplorationFocus === 'function') _resetExplorationFocus = resetExplorationFocus;
@@ -34,6 +19,7 @@ export function initKeyboardResetOwnership({ returnToOverview, resetExplorationF
 
 let _shortcutsPanelArrowToastShown = false;
 let _keyboardShortcutKeyListenerBound = false;
+let _previouslyFocused = null;
 
 export function isKeyboardTextEntryTarget(target) {
     if (!target || typeof target.tagName !== 'string') return false;
@@ -59,8 +45,6 @@ export function isKeyboardControlTarget(target) {
 export function initKeyboardShortcutsHint() {
     // Don't re-create if already in DOM
     if (document.getElementById('keyboard-hint-panel')) return;
-
-    let _previouslyFocused = null;
 
     const panel = document.createElement('div');
     panel.id = 'keyboard-hint-panel';
@@ -93,7 +77,7 @@ export function initKeyboardShortcutsHint() {
         }
         sessionStorage.setItem('kh_dismissed', '1');
         if (_previouslyFocused) {
-            _previouslyFocused.focus();
+            if (typeof _previouslyFocused.focus === 'function') _previouslyFocused.focus();
             _previouslyFocused = null;
         }
         document.removeEventListener('keydown', _onPanelKeydown);

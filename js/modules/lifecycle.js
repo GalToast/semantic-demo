@@ -209,17 +209,32 @@ export function setTrailDepth(depth, options = {}) {
     updateExplorationUi();
 }
 
-export function resetStateBeforeUrlRestore() {
-    state.selectedPoint = null;
+export function clearExplorationFocusSelection() {
     state.focusedNode = null;
+    state.selectedPoint = null;
     state.navState.focusedIndex = null;
+    if (state.trailIndices?.clear) state.trailIndices.clear();
+}
+
+export function resetStateBeforeUrlRestore(options = {}) {
+    clearExplorationFocusSelection();
     state.navState.mode = 'overview';
     state.navState.trailDepth = 0;
     state.currentSearchSummary = null;
     state.currentView = 'galaxy';
     state.trailDepth = 0;
-    state.trailIndices.clear();
     state.myceliumMode = 'default';
+
+    if (options.clearSearchInput) {
+        const input = document.getElementById('search-input');
+        if (input) {
+            input.value = '';
+            if (typeof input.dispatchEvent === 'function') {
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }
+    }
+
     setSearchPanelState({ searching: false, focusing: false, hasQuery: false, resultsRendered: false, degraded: false });
 }
 
@@ -383,13 +398,10 @@ export function returnToOverview() {
 
 export function resetExplorationFocus(options = {}) {
     state.navState.trailDepth = 0;
-    state.navState.focusedIndex = null;
     state.navState.mode = 'overview';
     state.semanticDiveMode = false;
     state.trailDepth = 0;
-    state.focusedNode = null;
-    state.selectedPoint = null;
-    state.trailIndices.clear();
+    clearExplorationFocusSelection();
     state.searchGlowActive = false;
     state.myceliumMode = 'default';
     syncFocusStage(null);
@@ -407,6 +419,7 @@ export function resetExplorationFocus(options = {}) {
 
 export function resetNodePositions(options = {}) {
     // Legacy proxy for resetExplorationFocus
+    clearExplorationFocusSelection();
     resetExplorationFocus(options);
 }
 
@@ -417,7 +430,7 @@ export function resetExperienceState(options = {}) {
     state.searchPreviewIndex = null;
     state.searchGlowActive = false;
     if (state.searchGlowIndices?.clear) state.searchGlowIndices.clear();
-    if (state.trailIndices?.clear) state.trailIndices.clear();
+    clearExplorationFocusSelection();
     const searchInput = document.getElementById('search-input');
     if (searchInput) searchInput.value = '';
     const searchResults = document.getElementById('search-results');
@@ -596,42 +609,6 @@ export function focusOnPoint(point, options = {}) {
 // ── Global exposure for legacy compatibility ──────────────────────────────────
 
 if (typeof window !== 'undefined') {
-    window.setLoadingPhase = setLoadingPhase;
-    window.hideLoadingOverlay = hideLoadingOverlay;
-    window.startSceneReveal = startSceneReveal;
-    window.startDeferredHydration = startDeferredHydration;
-    window.scheduleWeatherHydration = scheduleWeatherHydration;
-    window.setSemanticLaneUiState = setSemanticLaneUiState;
-    window.fetchSemanticLaneHealth = fetchSemanticLaneHealth;
-    window.applySemanticLaneHealthPayload = applySemanticLaneHealthPayload;
-    window.shouldWarmSemanticLane = shouldWarmSemanticLane;
-    window.recordSemanticLaneSnapshot = recordSemanticLaneSnapshot;
-    window.setSemanticLaneOpsMode = setSemanticLaneOpsMode;
-    window.refreshSemanticLaneOpsSummary = refreshSemanticLaneOpsSummary;
-    window.probeSemanticLane = probeSemanticLane;
-    window.scheduleSemanticLaneMonitor = scheduleSemanticLaneMonitor;
-    window.onWindowResize = onWindowResize;
-    window.setMyceliumMode = setMyceliumMode;
-    window.setTrailDepth = setTrailDepth;
-    window.dispatchNavTransition = dispatchNavTransition;
-    window.applyStoryPrompt = applyStoryPrompt;
-    window.initWeather = initWeather;
-    window.hideSummaryCard = hideSummaryCard;
-    window.hydrateLeadContext = hydrateLeadContext;
-    window.copyCurrentViewLink = copyCurrentViewLink;
-    window.returnToOverview = returnToOverview;
-    window.returnToCountyView = resetExplorationFocus;
-    window.resetExplorationFocus = resetExplorationFocus;
-    window.resetStateBeforeUrlRestore = resetStateBeforeUrlRestore;
-    window.refreshCompositionState = refreshCompositionState;
-    window.showViewHandoff = showViewHandoff;
-    window.hideViewHandoff = hideViewHandoff;
-    window.setSemanticDiveMode = setSemanticDiveMode;
-    window.requestSemanticGuide = requestSemanticGuide;
-    window.getInterestingBusinessNote = getInterestingBusinessNote;
-    window.buildSelectedMatchNarrative = buildSelectedMatchNarrative;
-    window.exploreInsideToNextStop = exploreInsideToNextStop;
-
     window.recenterFocusedNode = function () {
         const index = state.focusedNode;
         if (!Number.isFinite(index)) return;

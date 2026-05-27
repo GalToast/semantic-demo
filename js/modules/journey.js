@@ -54,6 +54,19 @@ import {
     setRouteChoreographyPhase
 } from './journey-webgl.js';
 
+let _setTimer = (fn, delay) => typeof setTimeout !== 'undefined' ? setTimeout(fn, delay) : undefined;
+let _clearTimer = (id) => typeof clearTimeout !== 'undefined' ? clearTimeout(id) : undefined;
+
+const timerAdapter = {
+    setTimer: (fn, delay) => _setTimer(fn, delay),
+    clearTimer: (id) => _clearTimer(id)
+};
+
+export function initJourneyTimerAdapter(deps = {}) {
+    if (deps.setTimer) _setTimer = deps.setTimer;
+    if (deps.clearTimer) _clearTimer = deps.clearTimer;
+}
+
 export {
     normalizeLeadId,
     buildSpatialGrid,
@@ -398,7 +411,7 @@ export function renderThreadInspection(index = state.inspectedThreadIndex, optio
             const onPointerEnter = () => {
                 state.threadInspectorPointerInside = true;
                 if (state.canvasThreadInspectionClearTimer) {
-                    window.clearTimeout(state.canvasThreadInspectionClearTimer);
+                    timerAdapter.clearTimer(state.canvasThreadInspectionClearTimer);
                     state.canvasThreadInspectionClearTimer = null;
                 }
             };
@@ -415,7 +428,7 @@ export function renderThreadInspection(index = state.inspectedThreadIndex, optio
         }
     }
     if (inspectionState.active && state.canvasThreadInspectionClearTimer) {
-        window.clearTimeout(state.canvasThreadInspectionClearTimer);
+        timerAdapter.clearTimer(state.canvasThreadInspectionClearTimer);
         state.canvasThreadInspectionClearTimer = null;
     }
     inspector.classList.toggle('active', inspectionState.active);
@@ -516,7 +529,7 @@ export function inspectThreadNeighbor(index, options = {}) {
 export function pinThreadNeighbor(index, options = {}) {
     if (!Number.isFinite(index)) return clearThreadInspection({ force: true });
     if (state.canvasThreadInspectionClearTimer) {
-        window.clearTimeout(state.canvasThreadInspectionClearTimer);
+        timerAdapter.clearTimer(state.canvasThreadInspectionClearTimer);
         state.canvasThreadInspectionClearTimer = null;
     }
     state.pinnedThreadIndex = index;
@@ -533,7 +546,7 @@ export function pinThreadNeighbor(index, options = {}) {
 
 export function unpinThreadInspection() {
     if (state.canvasThreadInspectionClearTimer) {
-        window.clearTimeout(state.canvasThreadInspectionClearTimer);
+        timerAdapter.clearTimer(state.canvasThreadInspectionClearTimer);
         state.canvasThreadInspectionClearTimer = null;
     }
     state.pinnedThreadIndex = null;
@@ -545,8 +558,8 @@ export function unpinThreadInspection() {
 }
 
 export function scheduleCanvasThreadInspectionClear(delay = 1800) {
-    if (state.canvasThreadInspectionClearTimer) window.clearTimeout(state.canvasThreadInspectionClearTimer);
-    state.canvasThreadInspectionClearTimer = window.setTimeout(() => {
+    if (state.canvasThreadInspectionClearTimer) timerAdapter.clearTimer(state.canvasThreadInspectionClearTimer);
+    state.canvasThreadInspectionClearTimer = timerAdapter.setTimer(() => {
         state.canvasThreadInspectionClearTimer = null;
         if (state.threadInspectorPointerInside || state.pinnedThreadIndex !== null) return;
         if (document.body.dataset.threadInspectSurface === 'canvas') {
@@ -557,7 +570,7 @@ export function scheduleCanvasThreadInspectionClear(delay = 1800) {
 
 export function clearThreadInspection(options = {}) {
     if (options.force && state.canvasThreadInspectionClearTimer) {
-        window.clearTimeout(state.canvasThreadInspectionClearTimer);
+        timerAdapter.clearTimer(state.canvasThreadInspectionClearTimer);
         state.canvasThreadInspectionClearTimer = null;
     }
     if (options.force) {
@@ -657,7 +670,7 @@ export function walkThreadNeighbor(index, options = {}) {
     const capturedIndex = index;
     const capturedFromIndex = fromIndex;
     const capturedReason = reason;
-    const arrivalTid = window.setTimeout(() => {
+    const arrivalTid = timerAdapter.setTimer(() => {
         if (!state.points) return;
         if (state.strandContinuityState.phase === 'exploring' && state.strandContinuityState.targetIndex === capturedIndex) {
             setStrandContinuityState('arrived', { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason });
@@ -672,7 +685,7 @@ export function walkThreadNeighbor(index, options = {}) {
         }
     }, options.arrivalDelay || 820);
     state.strandContinuityState.arrivalTimeoutId = arrivalTid;
-    const settleTid = window.setTimeout(() => {
+    const settleTid = timerAdapter.setTimer(() => {
         if (!state.points) return;
         if (state.strandContinuityState.phase === 'arrived' && state.strandContinuityState.targetIndex === capturedIndex) {
             clearStrandContinuityState('arrival-settled');
@@ -1078,7 +1091,7 @@ export function traverseNeighbor(step) {
 
 /**
  * Backward-compatible delegating alias for semantic-dive mode.
- * The authoritative implementation lives in lifecycle.js as window.setSemanticDiveMode.
+ * The authoritative implementation lives in lifecycle.js as setSemanticDiveMode().
  * This export exists so any legacy code that imports journey.setSemanticDiveMode
  * directly still routes through the authoritative lifecycle owner.
  *
@@ -1833,7 +1846,7 @@ function findNearestCanvasFieldNode(event, maxDistance = getCanvasFieldNodeClick
 
 function clearCanvasFieldHover(canvas, { force = false } = {}) {
     if (state.canvasFieldHoverClearTimer) {
-        window.clearTimeout(state.canvasFieldHoverClearTimer);
+        timerAdapter.clearTimer(state.canvasFieldHoverClearTimer);
         state.canvasFieldHoverClearTimer = null;
     }
     const clear = () => {
@@ -1846,7 +1859,7 @@ function clearCanvasFieldHover(canvas, { force = false } = {}) {
         clear();
         return;
     }
-    state.canvasFieldHoverClearTimer = window.setTimeout(clear, CANVAS_FIELD_HOVER_CLEAR_DELAY_MS);
+    state.canvasFieldHoverClearTimer = timerAdapter.setTimer(clear, CANVAS_FIELD_HOVER_CLEAR_DELAY_MS);
 }
 
 function setCanvasFieldHover(candidate, canvas) {
@@ -1855,7 +1868,7 @@ function setCanvasFieldHover(candidate, canvas) {
         return;
     }
     if (state.canvasFieldHoverClearTimer) {
-        window.clearTimeout(state.canvasFieldHoverClearTimer);
+        timerAdapter.clearTimer(state.canvasFieldHoverClearTimer);
         state.canvasFieldHoverClearTimer = null;
     }
 

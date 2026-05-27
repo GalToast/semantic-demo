@@ -6,6 +6,7 @@ import * as searchModule from './search-state.js';
 import { initUrlSearchAdapter } from './url-search-adapter.js';
 import { initClusterFilterAdapter } from './cluster-filter-adapter.js';
 import { initSearchUiAdapter } from './search-ui-adapter.js';
+import { initUiRenderersAdapter } from './ui-renderers.js';
 import { initSearchLifecycleAdapter } from './search-lifecycle-adapter.js';
 import { initUrlNavigationAdapter } from './url-navigation-adapter.js';
 import { initJourneyLifecycleAdapter } from './journey-lifecycle-adapter.js';
@@ -53,7 +54,7 @@ import {
     syncSearchStatusForFocus,
     hydrateLeadContext
 } from './lifecycle.js';
-import { updateJourneyCompass } from './journey-compass-controller.js';
+import { initJourneyCompassAdapter, updateJourneyCompass } from './journey-compass-controller.js';
 import { switchView } from './view-controller.js';
 import { revealSelectedBusinessCard } from './event-bindings.js';
 import { describeThreadLensForPoint } from './journey.js';
@@ -367,6 +368,14 @@ export async function init() {
             hideTooltip,
             positionTooltip,
             updateTooltipContent,
+        });
+
+        initUiRenderersAdapter({
+            switchView,
+        });
+
+        initJourneyCompassAdapter({
+            switchView,
         });
 
         // Inject thread inspector adapter; decouples thread-inspector from journey and focus-pocket

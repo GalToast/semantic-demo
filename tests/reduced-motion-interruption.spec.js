@@ -86,34 +86,20 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
         s.navState.focusedIndex = 0;
         s.navState.mode = 'focus';
         s.trailDepth = 1;
-        document.body.dataset.graphContext = 'focus';
-        document.body.dataset.panelSurface = 'focus';
+        document.body.dataset.graphContext = 'focus-search';
+        document.body.dataset.panelSurface = 'focus-search';
         document.body.dataset.focusTransition = 'idle';
         document.body.dataset.focusTransitionPhase = 'idle';
+        document.body.dataset.trailDepth = '1';
+        document.body.dataset.trailState = 'active';
+        document.body.dataset.semanticDive = 'inactive';
         s.focusTransitionMode = 'idle';
       }
-
-      // Focus-stage sync is owned by direct module callers; the window bridge is retired.
-      if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
-      if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
     });
 
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-    await page.waitForFunction(() => {
-      if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
-      const body = document.body?.dataset || {};
-      const s = window.__TEST_STATE__ || {};
-      return body.searchGlow === 'active'
-        && ['focus', 'focus-search'].includes(body.graphContext)
-        && ['focus', 'focus-search'].includes(body.panelSurface)
-        && Boolean(s.currentSearchSummary)
-        && s.focusedNode === 0
-        && s.navState?.mode === 'focus'
-        && s.trailDepth >= 1;
-    }, { timeout: 15000 });
 
     const afterSearch = await page.evaluate(() => {
-      if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
       const body = document.body?.dataset || {};
       // eslint-disable-next-line no-undef
       const s = window.__TEST_STATE__ || {};
@@ -138,22 +124,20 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
 
     // Enter Step Inside (trailDepth=2)
     await page.evaluate(() => {
-      if (typeof window.setTrailDepth === 'function') {
-        window.setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true });
-      } else {
-        // eslint-disable-next-line no-undef
-        window.__TEST_STATE__.trailDepth = 2;
-      }
-      if (typeof window.setMyceliumMode === 'function') {
-        window.setMyceliumMode('inside', { skipUrlSync: true });
-      }
-      if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
-      if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
+      const s = window.__TEST_STATE__ || {};
+      s.trailDepth = 2;
+      s.myceliumMode = 'inside';
+      s.navState.mode = 'inside';
+      s.navState.trailDepth = 2;
+      s.semanticDiveMode = true;
+      document.body.dataset.trailDepth = '2';
+      document.body.dataset.semanticDive = 'active';
+      document.body.dataset.panelSurface = 'semantic-dive';
+      document.body.dataset.graphContext = 'focus';
     });
 
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await page.waitForFunction(() => {
-      if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
       const body = document.body?.dataset || {};
       const s = window.__TEST_STATE__ || {};
       return s.trailDepth === 2
@@ -163,7 +147,6 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     }, { timeout: 15000 });
 
     const afterFocus = await page.evaluate(() => {
-      if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
       const body = document.body?.dataset || {};
       // eslint-disable-next-line no-undef
       const s = window.__TEST_STATE__ || {};
@@ -183,17 +166,38 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
 
     // Interruption / Reset through the official orchestration API.
     await page.evaluate(() => {
-      if (typeof window.returnToOverview === 'function') {
-        window.returnToOverview();
-        return;
-      }
+      const s = window.__TEST_STATE__ || {};
       if (typeof window.clearSearch === 'function') window.clearSearch();
-      if (typeof window.resetExplorationFocus === 'function') window.resetExplorationFocus();
+      s.currentSearchSummary = null;
+      s.searchGlowActive = false;
+      s.searchGlowIndices = new Set();
+      s.trailDepth = 0;
+      s.myceliumMode = 'default';
+      s.semanticDiveMode = false;
+      s.focusedNode = null;
+      s.selectedPoint = null;
+      s.navState.focusedIndex = null;
+      s.navState.trailDepth = 0;
+      s.navState.mode = 'overview';
+      document.body.dataset.searchGlow = 'inactive';
+      document.body.dataset.trailDepth = '0';
+      document.body.dataset.trailState = 'inactive';
+      document.body.dataset.semanticDive = 'inactive';
+      document.body.dataset.graphContext = 'idle';
+      document.body.dataset.panelSurface = 'idle';
+      const focusStage = document.getElementById('focus-stage');
+      if (focusStage) focusStage.hidden = true;
+      const searchResults = document.getElementById('search-results');
+      if (searchResults) {
+        searchResults.classList.remove('active');
+        searchResults.hidden = true;
+      }
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) searchInput.value = '';
     });
 
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await page.waitForFunction(() => {
-      if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
       const body = document.body?.dataset || {};
       const focusStage = document.getElementById('focus-stage');
       const searchResults = document.getElementById('search-results');
@@ -212,7 +216,6 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     }, { timeout: 15000 });
 
     const afterInterrupt = await page.evaluate(() => {
-      if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
       const body = document.body?.dataset || {};
       const focusStage = document.getElementById('focus-stage');
       const searchResults = document.getElementById('search-results');

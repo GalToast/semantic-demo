@@ -616,4 +616,27 @@
         display: none;
     }
 
+    /* Moved from search.css to satisfy CSS ownership contract */
+    body[data-panel-surface="search"] .journey-compass-rail {
+        display: none;
+    }
+
+    body[data-panel-surface="search"] .journey-compass-title {
+        font-size: 12px;
+    }
+
+    body[data-panel-surface="search"] .share-toggle,
+    body[data-panel-surface="search"] .legend-toggle {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(8px) scale(0.96);
+    }
+
+    body[data-panel-surface="focus-search"] .share-toggle,
+    body[data-panel-surface="focus-search"] .legend-toggle {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(8px) scale(0.96);
+    }
+
 } /* end @media state ownership */

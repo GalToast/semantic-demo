@@ -268,22 +268,9 @@ function scanWriters(modulePath, field) {
 
 const { state } = await import('../js/state.js');
 
-// Import lifecycle FIRST. Its top-level "Global exposure for compatibility" block
-// (lifecycle.js:2466) immediately assigns window.setSemanticDiveMode into the
-// global. Capture the real function reference before camera-controls overwrites window.
 const lifecycle = await import('../js/modules/lifecycle.js');
-const realSetSemanticDiveMode = globalThis.window.setSemanticDiveMode;
-const realSetTrailDepth = globalThis.window.setTrailDepth;
-const realReturnToOverview = globalThis.window.returnToOverview;
 
-// Import camera-controls SECOND. Its stubs block would overwrite window if placed
-// before we captured the real functions from lifecycle.
 const cameraControls = await import('../js/modules/camera-controls.js');
-
-// Override our test stubs with the real implementations
-globalThis.window.setSemanticDiveMode = realSetSemanticDiveMode;
-globalThis.window.setTrailDepth = realSetTrailDepth;
-globalThis.window.returnToOverview = realReturnToOverview;
 
 // ─── CONTRACT 1: semanticDiveMode is derived from trailDepth ──────────────────
 
@@ -314,8 +301,8 @@ console.log('PASS CONTRACT 2: semanticDiveMode has no independent raw storage in
 assert(typeof lifecycle.resetExplorationFocus === 'function', 'resetExplorationFocus must be exported from lifecycle.js');
 assert(typeof lifecycle.resetExperienceState === 'function', 'resetExperienceState must be exported from lifecycle.js');
 assert(typeof lifecycle.resetStateBeforeUrlRestore === 'function', 'resetStateBeforeUrlRestore must be exported from lifecycle.js');
-assert(typeof globalThis.window.returnToOverview === 'function', 'returnToOverview must be on window (alias for resetExperienceState)');
-assert(typeof globalThis.window.setSemanticDiveMode === 'function', 'setSemanticDiveMode must be on window');
+assert(typeof lifecycle.returnToOverview === 'function', 'returnToOverview must be exported from lifecycle.js');
+assert(typeof lifecycle.setSemanticDiveMode === 'function', 'setSemanticDiveMode must be exported from lifecycle.js');
 
 console.log('PASS CONTRACT 3: All 5 official reset/orchestration APIs are defined');
 
@@ -325,8 +312,8 @@ console.log('PASS CONTRACT 3: All 5 official reset/orchestration APIs are define
 
 const lifecycleSource = readFileSync(join(PROJECT_ROOT, 'js', 'modules', 'lifecycle.js'), 'utf8');
 assert(
-  /window\.setSemanticDiveMode\s*=\s*setSemanticDiveMode\s*;/.test(lifecycleSource),
-  'lifecycle.js must expose the canonical setSemanticDiveMode export through the window bridge'
+  !/window\.setSemanticDiveMode\s*=/.test(lifecycleSource),
+  'lifecycle.js must not expose setSemanticDiveMode through a window bridge'
 );
 assert(
   lifecycleSource.includes('state.semanticDiveMode = nextActive'),

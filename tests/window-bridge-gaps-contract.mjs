@@ -2,12 +2,12 @@
  * window-bridge-gaps-contract.mjs
  *
  * Fast Node contract test for lifecycle window bridge gaps.
- * Verifies each gap is either resolved (assigned to window) or
- * intentionally documented as a no-op guard.
+ * Verifies each gap is resolved through direct imports, adapters, or an
+ * intentionally documented no-op guard.
  *
  * Gap 1  — getRouteLayerOrigin:  guarded no-op, fallback is 'galaxy'
  * Gap 2  — syncClusterSectionState: resolved (direct module imports)
- * Gap 3a — hydrateLeadContext:   resolved (lifecycle.js window shim)
+ * Gap 3a — hydrateLeadContext:   resolved (journey lifecycle adapter)
  * Gap 3b — applySearchGlowVisualState: resolved via alternate call in journey.js
  * Gap 4  — updateSelectedCardHeading: resolved via direct module imports
  *
@@ -33,17 +33,6 @@ const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-state.js');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
-}
-
-function assertHasAssignment(src, fn, file, label) {
-  // Look for window.fn = ... where the = is NOT followed by == (guard)
-  // This catches: window.fn = function() { ... } and window.fn = someRef
-  const lines = src.split('\n');
-  const found = lines.some(line => {
-    const t = line.trim();
-    return t.includes(`window.${fn} =`) && !t.includes('===');
-  });
-  assert(found, `${label}: ${file} must assign window.${fn} (e.g., window.${fn} = function(...) { ... })`);
 }
 
 function assertNoDeadCall(src, fn, file, label) {
@@ -143,31 +132,38 @@ function testGap2_syncClusterSectionState() {
 }
 
 // ---------------------------------------------------------------------------
-// GAP 3a — hydrateLeadContext: resolved in lifecycle.js window shim
-// Called from journey.js:1490 only
-// Resolved by installing window.hydrateLeadContext in lifecycle.js shim
+// GAP 3a — hydrateLeadContext: resolved through journey lifecycle adapter
 // ---------------------------------------------------------------------------
 
 function testGap3a_hydrateLeadContext() {
-  console.log('\n[TEST] Gap 3a — hydrateLeadContext (RESOLVED in lifecycle.js)');
+  console.log('\n[TEST] Gap 3a — hydrateLeadContext (RESOLVED by adapter injection)');
 
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
   const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const appSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/app.js'), 'utf-8');
 
-  // lifecycle.js MUST assign the window shim
-  assertHasAssignment(lifecycleSrc, 'hydrateLeadContext', 'lifecycle.js', 'Gap 3a');
-
-  // journey.js call site must be guarded (which now passes)
-  assertNoDeadCall(journeySrc, 'hydrateLeadContext', 'journey.js', 'Gap 3a');
-
-  // The shim must call updateSelectedBusiness (the actual card renderer)
   assert(
-    /hydrateLeadContext[\s\S]*updateSelectedBusiness/.test(lifecycleSrc) ||
-    /updateSelectedBusiness[\s\S]*hydrateLeadContext/.test(lifecycleSrc),
-    'hydrateLeadContext shim must delegate to window.updateSelectedBusiness'
+    /export\s+function\s+hydrateLeadContext\s*\(/.test(lifecycleSrc),
+    'Gap 3a: lifecycle.js must export hydrateLeadContext as the owner API'
+  );
+  assert(
+    !/window\.hydrateLeadContext\s*=/.test(lifecycleSrc),
+    'Gap 3a: lifecycle.js must not reinstall retired window.hydrateLeadContext bridge'
   );
 
-  console.log('  OK — hydrateLeadContext: RESOLVED');
+  // journey.js call site must not depend on the retired window bridge.
+  assertNoDeadCall(journeySrc, 'hydrateLeadContext', 'journey.js', 'Gap 3a');
+  assert(
+    /adapter\.hydrateLeadContext/.test(journeySrc),
+    'Gap 3a: journey.js must call hydrateLeadContext through the lifecycle adapter'
+  );
+
+  assert(
+    /hydrateLeadContext:\s*\(point,\s*options\)\s*=>[\s\S]{0,160}hydrateLeadContext\(point,\s*options\)/.test(appSrc),
+    'Gap 3a: app.js must inject lifecycle.hydrateLeadContext into the journey adapter'
+  );
+
+  console.log('  OK — hydrateLeadContext: RESOLVED by lifecycle adapter');
 }
 
 // ---------------------------------------------------------------------------

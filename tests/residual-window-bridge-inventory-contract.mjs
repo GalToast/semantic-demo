@@ -52,6 +52,8 @@ const MODULES = {
   navigationState: path.join(SEMDEMO_ROOT, 'js/modules/navigation-state.js'),
   journeyWebgl: path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.js'),
   legendUi: path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.js'),
+  keyboardHelp: path.join(SEMDEMO_ROOT, 'js/modules/keyboard-help.js'),
+  uiRenderers: path.join(SEMDEMO_ROOT, 'js/modules/ui-renderers.js'),
   mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'js/modules/map-flattening-layout.js'),
   inspectedStrandOverlayAdapter: path.join(SEMDEMO_ROOT, 'js/modules/inspected-strand-overlay-adapter.js'),
   routeArrivalOverlayAdapter: path.join(SEMDEMO_ROOT, 'js/modules/route-arrival-overlay-adapter.js'),
@@ -854,11 +856,100 @@ function testAudioGlobalsRetiredFromWindow() {
   console.log('  OK — audio window globals retired; direct corridor bloom import remains');
 }
 
-// ── TEST 14 — Verify window-bridge-gaps-contract.mjs still passes ────────────
+// ── TEST 14 — Centroid camera, journey timer, and reset UI bridges retired ─
+
+function testCentroidCameraAndJourneyTimerBridgesRetired() {
+  console.log('\n[TEST 14] centroid camera, journey timer, and reset UI bridges are retired');
+
+  const cameraSrc = read('camera');
+  const threeSetupSrc = read('threeSetup');
+  const journeySrc = read('journey');
+  const journeyCompassSrc = read('journeyCompassCtrl');
+  const keyboardSrc = read('keyboardHelp');
+  const uiRenderersSrc = read('uiRenderers');
+  const appSrc = read('app');
+
+  assert(
+    /export function applySemanticCentroidCamera/.test(cameraSrc),
+    'camera-controls.js should keep applySemanticCentroidCamera as a named export'
+  );
+  assert(
+    !cameraSrc.includes('window.applySemanticCentroidCamera'),
+    'camera-controls.js must not expose window.applySemanticCentroidCamera'
+  );
+  assert(
+    /import\s+\{[^}]*\bapplySemanticCentroidCamera\b[^}]*\}\s+from\s+['"]\.\/modules\/camera-controls\.js['"]/.test(threeSetupSrc),
+    'three-setup.js should import applySemanticCentroidCamera directly from camera-controls.js'
+  );
+  assert(
+    threeSetupSrc.includes('applySemanticCentroidCamera(frameNow);'),
+    'three-setup.js should call applySemanticCentroidCamera directly during the animation loop'
+  );
+  assert(
+    !threeSetupSrc.includes('window.applySemanticCentroidCamera'),
+    'three-setup.js must not call window.applySemanticCentroidCamera'
+  );
+  assert(
+    /export function initJourneyTimerAdapter/.test(journeySrc),
+    'journey.js should expose a timer adapter initializer for tests and non-window environments'
+  );
+  assert(
+    !journeySrc.includes('window.setTimeout') && !journeySrc.includes('window.clearTimeout'),
+    'journey.js must not call timers through window'
+  );
+  assert(
+    journeyCompassSrc.includes('resetExplorationFocus();'),
+    'journey-compass-controller.js should call resetExplorationFocus directly for county overview'
+  );
+  assert(
+    /export function initJourneyCompassAdapter/.test(journeyCompassSrc),
+    'journey-compass-controller.js should expose an adapter initializer for switchView'
+  );
+  assert(
+    !/from\s+['"]\.\/view-controller\.js['"]/.test(journeyCompassSrc),
+    'journey-compass-controller.js should not import view-controller.js directly'
+  );
+  assert(
+    journeyCompassSrc.includes("_switchView('map');") && journeyCompassSrc.includes("_switchView('galaxy');"),
+    'journey-compass-controller.js open-map/open-mycelium actions should use injected switchView adapter'
+  );
+  assert(
+    !journeyCompassSrc.includes('window.resetExplorationFocus') && !journeyCompassSrc.includes('window.resetNodePositions'),
+    'journey-compass-controller.js must not use window reset fallbacks'
+  );
+  assert(
+    /export function initKeyboardResetOwnership/.test(keyboardSrc),
+    'keyboard-help.js should keep reset ownership injection'
+  );
+  assert(
+    !keyboardSrc.includes('typeof window.returnToOverview') && !keyboardSrc.includes('typeof window.resetExplorationFocus'),
+    'keyboard-help.js must not use window reset fallbacks'
+  );
+  assert(
+    /export function initUiRenderersAdapter/.test(uiRenderersSrc),
+    'ui-renderers.js should expose an adapter initializer for switchView'
+  );
+  assert(
+    uiRenderersSrc.includes("_switchView('map');") && !uiRenderersSrc.includes('window.switchView'),
+    'ui-renderers.js selected-card map action should use the injected switchView adapter, not window.switchView'
+  );
+  assert(
+    appSrc.includes('initUiRenderersAdapter({') && appSrc.includes('switchView,'),
+    'app.js should inject switchView into ui-renderers'
+  );
+  assert(
+    appSrc.includes('initJourneyCompassAdapter({'),
+    'app.js should inject switchView into journey-compass-controller'
+  );
+
+  console.log('  OK — centroid camera, journey timers, and reset UI actions use module seams');
+}
+
+// ── TEST 15 — Verify window-bridge-gaps-contract.mjs still passes ────────────
 // Run the sibling contract to ensure no regressions in the already-dewindowed seams.
 
 function testSiblingContractStillPasses() {
-  console.log('\n[TEST 14] sibling window-bridge-gaps-contract.mjs still passes');
+  console.log('\n[TEST 15] sibling window-bridge-gaps-contract.mjs still passes');
 
   try {
     const result = execFileSync(
@@ -899,6 +990,7 @@ try {
   testRestoreLegendCollapsedPanelBridgeRetired();
   testCanvasPickGlobalsRetiredFromWindow();
   testAudioGlobalsRetiredFromWindow();
+  testCentroidCameraAndJourneyTimerBridgesRetired();
   testSiblingContractStillPasses();
 
   console.log('\n=================================================================');

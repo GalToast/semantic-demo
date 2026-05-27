@@ -2,7 +2,7 @@
  * Contract: selected-business narrative helpers live in ui-renderers.
  *
  * Source-only and Node-safe. Proves helper behavior and verifies lifecycle
- * exposes thin window aliases instead of duplicating helper logic.
+ * imports helper owners directly instead of exposing lifecycle window aliases.
  */
 
 import { readFileSync } from 'node:fs';
@@ -58,10 +58,10 @@ function testLifecycleAliasesHelpers() {
   const lifecycle = read(LIFECYCLE);
   assert(
     lifecycle.includes("import { buildSelectedMatchNarrative, getInterestingBusinessNote, updateSelectedCardHeading } from './ui-renderers.js';"),
-    'lifecycle imports helper aliases from ui-renderers'
+    'lifecycle imports helper owners from ui-renderers'
   );
-  assert(lifecycle.includes('window.getInterestingBusinessNote = getInterestingBusinessNote;'), 'interesting note window alias is thin');
-  assert(lifecycle.includes('window.buildSelectedMatchNarrative = buildSelectedMatchNarrative;'), 'narrative window alias is thin');
+  assert(!lifecycle.includes('window.getInterestingBusinessNote = getInterestingBusinessNote;'), 'interesting note window alias is retired');
+  assert(!lifecycle.includes('window.buildSelectedMatchNarrative = buildSelectedMatchNarrative;'), 'narrative window alias is retired');
   assert(!lifecycle.includes('window.getInterestingBusinessNote = function'), 'lifecycle does not duplicate interesting note body');
   assert(!lifecycle.includes('window.buildSelectedMatchNarrative = function'), 'lifecycle does not duplicate narrative body');
 }

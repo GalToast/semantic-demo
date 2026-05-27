@@ -18,6 +18,12 @@ import { getFilteredClusterCounts, setClusterFilter } from './cluster-filter.js'
 
 // ─── PRIVATE HELPERS ────────────────────────────────────────────────────────
 
+let _switchView = () => {};
+
+export function initUiRenderersAdapter({ switchView } = {}) {
+    if (typeof switchView === 'function') _switchView = switchView;
+}
+
 function getSemanticGuideTitle(guide = {}) {
     if (guide.title) return String(guide.title).toUpperCase();
     if (guide.degraded) return 'FAST FALLBACK';
@@ -464,7 +470,7 @@ export function renderSelectedActionRow(point) {
     const btn = document.getElementById('btn-selected-map');
     if (btn) {
         btn.addEventListener('click', () => {
-            if (typeof window.switchView === 'function') window.switchView('map');
+            _switchView('map');
         });
     }
 }

@@ -43,12 +43,14 @@ const selectorBaselines = {
     'progressive_disclosure.css': 2,
     'strands.css': 7,
     'animations.css': 0,
+    'mobile_premium_state.css': 2,
   },
   '.legend-toggle': {
     'controls.css': 1,
     'layout_base.css': 10,
     'journey_active.css': 1,
     'strands.css': 2,
+    'mobile_premium_state.css': 2,
   },
   '.search-results.active': {
     'search.css': 4,
@@ -74,6 +76,7 @@ const selectorBaselines = {
     'mobile_premium_focus.css': 2,
     'mobile_premium_surfaces.css': 9,
     'strands.css': 2,
+    'mobile_premium_state.css': 1,
   },
   '.journey-compass-actions': {
     'journey_active.css': 15,
@@ -90,6 +93,7 @@ const selectorBaselines = {
     'mobile_premium_focus.css': 2,
     'mobile_premium_surfaces.css': 3,
     'strands.css': 2,
+    'mobile_premium_state.css': 1,
   },
   '.journey-compass-action.primary': {
     'animations.css': 2,

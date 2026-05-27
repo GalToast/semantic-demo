@@ -8,7 +8,8 @@ import {
     focusCameraAssistIsActive,
     noteSceneInteraction,
     scheduleAutoRotateResume,
-    updateAutoRotateSoftResume
+    updateAutoRotateSoftResume,
+    applySemanticCentroidCamera
 } from './modules/camera-controls.js';
 import { initMap } from './modules/map-state.js';
 import {
@@ -107,9 +108,7 @@ function showWebGLFallback(container, detail = {}) {
         container.classList.add('hidden');
         state.currentView = 'map';
         initMap();
-        if (typeof window.switchView === 'function') {
-            window.switchView('map', { reason: 'webgl-fallback' });
-        }
+        switchView('map', { reason: 'webgl-fallback' });
     });
 
     showExperienceToast('Graphics fallback active', 'Map view remains available while 3D graphics are unavailable.');
@@ -2400,9 +2399,7 @@ export function animate() {
             updateInteractionVisuals(frameNow, _hasHover ? _hoverIdx : -1, _hasFocus ? _focusIdx : -1);
 
             // Step Inside: shift camera lookAt to semantic centroid of the focus pocket
-            if (typeof window.applySemanticCentroidCamera === 'function') {
-                window.applySemanticCentroidCamera(frameNow);
-            }
+            applySemanticCentroidCamera(frameNow);
 
             // 10/10 Polish: Ensure the lens glow is also updated with time and score
             if (state.semanticLensGlow?.material?.uniforms) {
@@ -2449,4 +2446,6 @@ if (typeof window !== "undefined") {
     window.updateMyceliumThreads = updateMyceliumThreads;
     // Preserve corridor functions from esbuild tree-shaking — called from animation loop via window
     window.__keepCorridorFns = () => { void buildCorridorLineGeometry; void buildCorridorParticleTrail; void updateSearchCorridorAnimation; };
+}
+void buildCorridorParticleTrail; void updateSearchCorridorAnimation; };
 }

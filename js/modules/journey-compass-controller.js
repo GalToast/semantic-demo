@@ -22,9 +22,6 @@ import { clearShortSemanticSearchState, clearMobileRouteFieldPeekState } from '.
 // camera-controls
 import { focusOnNode } from './camera-controls.js';
 
-// view-controller.js - for switchView (needed in executeJourneyCompassAction)
-import { switchView } from './view-controller.js';
-
 // ui-renderers
 import { updateSelectedCardHeading } from './ui-renderers.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
@@ -34,7 +31,13 @@ import { updateFocusNeighborRail } from './journey.js';
 import { getRouteLayerOrigin } from './camera-controls.js';
 import { refreshRouteTraceOverlay } from './journey-webgl.js';
 import { recenterFocusedNode } from './event-bindings.js';
-import { exploreInsideToNextStop, resetNodePositions, resetExplorationFocus, setTrailDepth } from './lifecycle.js';
+import { exploreInsideToNextStop, resetExplorationFocus, setTrailDepth } from './lifecycle.js';
+
+let _switchView = () => {};
+
+export function initJourneyCompassAdapter({ switchView } = {}) {
+    if (typeof switchView === 'function') _switchView = switchView;
+}
 
 export function getJourneyCompassPresentationState(compassState = {}) {
     const phase = compassState.phase || 'overview';
@@ -176,23 +179,15 @@ export function executeJourneyCompassAction(action) {
             return;
 
         case 'open-map':
-            switchView('map');
+            _switchView('map');
             return;
         case 'open-mycelium':
-            switchView('galaxy');
+            _switchView('galaxy');
             return;
         case 'county-overview':
             // resetExplorationFocus() now handles trailDepth, searchGlow, and node positions
             // in one unified call — no separate clearSearch() needed here
-            if (typeof window.resetExplorationFocus === 'function') {
-                window.resetExplorationFocus();
-            } else if (typeof resetExplorationFocus === 'function') {
-                resetExplorationFocus();
-            } else if (typeof window.resetNodePositions === 'function') {
-                window.resetNodePositions();
-            } else if (typeof resetNodePositions === 'function') {
-                resetNodePositions();
-            }
+            resetExplorationFocus();
             // Also clear the search input so the text is gone on return to overview
             {
                 const searchInput = document.getElementById('search-input');

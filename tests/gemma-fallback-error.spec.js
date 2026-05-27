@@ -20,8 +20,7 @@ async function waitForStateReady(page) {
     // eslint-disable-next-line no-undef
     return typeof state !== 'undefined'
       && Array.isArray(state.points)
-      && state.points.length > 0
-      && typeof window.requestSemanticGuide === 'function';
+      && state.points.length > 0;
   }, { timeout: 30000 });
 }
 
@@ -63,10 +62,15 @@ test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
 
     expect(anchorName).not.toBe('');
 
-    // Programmatically invoke window.requestSemanticGuide()
-    await page.evaluate(() => {
-      // eslint-disable-next-line no-undef
-      window.requestSemanticGuide();
+    // Trigger through the bound button; use DOM click so visibility does not matter.
+    await page.evaluate(async () => {
+      const trigger = document.getElementById('synthesize-trigger');
+      if (trigger) {
+        trigger.hidden = false;
+        trigger.classList.remove('hidden');
+        trigger.style.display = 'block';
+      }
+      document.getElementById('btn-synthesize')?.click();
     });
 
     // Small delay to allow async fetch to reject and DOM to update

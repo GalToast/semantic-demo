@@ -219,68 +219,70 @@ assert(
 );
 console.log('PASS CONTRACT 6: currentSearchSummary initializes to null');
 
+const lifecycleApis = await import('../js/modules/lifecycle.js');
+
 // ─── CONTRACT 7: resetExplorationFocus API exists ─────────────────────────────
-// resetExplorationFocus must be a function on window.
+// resetExplorationFocus must be a named lifecycle export.
 
 assert(
-  typeof win.resetExplorationFocus === 'function',
-  'window.resetExplorationFocus must be a function'
+  typeof lifecycleApis.resetExplorationFocus === 'function',
+  'resetExplorationFocus must be exported from lifecycle.js'
 );
-console.log('PASS CONTRACT 7: window.resetExplorationFocus is defined');
+console.log('PASS CONTRACT 7: lifecycle.resetExplorationFocus is defined');
 
 // ─── CONTRACT 8: resetExperienceState API exists ──────────────────────────────
-// resetExperienceState must be a function on window.
+// resetExperienceState must be a named lifecycle export.
 
 assert(
-  typeof win.resetExperienceState === 'function',
-  'window.resetExperienceState must be a function'
+  typeof lifecycleApis.resetExperienceState === 'function',
+  'resetExperienceState must be exported from lifecycle.js'
 );
-console.log('PASS CONTRACT 8: window.resetExperienceState is defined');
+console.log('PASS CONTRACT 8: lifecycle.resetExperienceState is defined');
 
 // ─── CONTRACT 9: returnToOverview API exists ──────────────────────────────────
-// returnToOverview must be a function on window.
+// returnToOverview must be a named lifecycle export.
 
 assert(
-  typeof win.returnToOverview === 'function',
-  'window.returnToOverview must be a function'
+  typeof lifecycleApis.returnToOverview === 'function',
+  'returnToOverview must be exported from lifecycle.js'
 );
-console.log('PASS CONTRACT 9: window.returnToOverview is defined');
+console.log('PASS CONTRACT 9: lifecycle.returnToOverview is defined');
 
 // ─── CONTRACT 10: setSemanticDiveMode API exists ──────────────────────────────
-// setSemanticDiveMode must be a function on window.
+// setSemanticDiveMode must be a named lifecycle export.
 
 assert(
-  typeof win.setSemanticDiveMode === 'function',
-  'window.setSemanticDiveMode must be a function'
+  typeof lifecycleApis.setSemanticDiveMode === 'function',
+  'setSemanticDiveMode must be exported from lifecycle.js'
 );
-console.log('PASS CONTRACT 10: window.setSemanticDiveMode is defined');
+console.log('PASS CONTRACT 10: lifecycle.setSemanticDiveMode is defined');
 
 // ─── CONTRACT 11: setTrailDepth API exists ────────────────────────────────────
-// setTrailDepth must be a function on window.
+// setTrailDepth must be a named lifecycle export.
 
 assert(
-  typeof win.setTrailDepth === 'function',
-  'window.setTrailDepth must be a function'
+  typeof lifecycleApis.setTrailDepth === 'function',
+  'setTrailDepth must be exported from lifecycle.js'
 );
-console.log('PASS CONTRACT 11: window.setTrailDepth is defined');
+console.log('PASS CONTRACT 11: lifecycle.setTrailDepth is defined');
 
 // ─── CONTRACT 12: setMyceliumMode API exists ──────────────────────────────────
-// setMyceliumMode must be a function on window.
+// setMyceliumMode must be a named lifecycle export.
 
 assert(
-  typeof win.setMyceliumMode === 'function',
-  'window.setMyceliumMode must be a function'
+  typeof lifecycleApis.setMyceliumMode === 'function',
+  'setMyceliumMode must be exported from lifecycle.js'
 );
-console.log('PASS CONTRACT 12: window.setMyceliumMode is defined');
+console.log('PASS CONTRACT 12: lifecycle.setMyceliumMode is defined');
 
 // ─── CONTRACT 13: resetNodePositions API exists ───────────────────────────────
-// resetNodePositions must be a function on window.
+// resetNodePositions must be a named lifecycle export.
 
 assert(
-  typeof win.resetNodePositions === 'function',
-  'window.resetNodePositions must be a function'
+  typeof lifecycleApis.resetNodePositions === 'function',
+  'resetNodePositions must be exported from lifecycle.js'
 );
-console.log('PASS CONTRACT 13: window.resetNodePositions is defined');
+console.log('PASS CONTRACT 13: lifecycle.resetNodePositions is defined');
 
 // ─── CONTRACT 14: trailDepth gate for depth=2 ─────────────────────────────────
 // setTrailDepth(2) must reject silent attempts (require fromUserGesture).
@@ -647,11 +649,14 @@ assert(
 );
 console.log('PASS CONTRACT 36: dispatchNavTransition is callable and returns structured result');
 
-assert(
-  typeof win.dispatchNavTransition === 'function',
-  'window.dispatchNavTransition must be installed as the production compatibility bridge'
+const lifecycleSourceForDispatch = await import('node:fs').then(({ readFileSync }) =>
+  readFileSync(new URL('../js/modules/lifecycle.js', import.meta.url), 'utf8')
 );
-console.log('PASS CONTRACT 36b: window.dispatchNavTransition compatibility bridge is installed');
+assert(
+  !/window\.dispatchNavTransition\s*=/.test(lifecycleSourceForDispatch),
+  'window.dispatchNavTransition compatibility bridge must be retired'
+);
+console.log('PASS CONTRACT 36b: window.dispatchNavTransition compatibility bridge is retired');
 
 // ─── CONTRACT 37: dispatchNavTransition('RESET_FOCUS') is handled ───────────────
 // RESET_FOCUS must be handled (delegates to resetExplorationFocus).

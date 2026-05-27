@@ -48,9 +48,6 @@
     html body[data-active-view="galaxy"] .info-panel,
     html body[data-active-view="galaxy"] .focus-stage,
     html body[data-active-view="galaxy"] .focus-stage-card,
-    html body[data-panel-surface="focus"] .focus-stage-card,
-    html body[data-panel-surface="focus-search"] .focus-stage-card,
-    html body[data-panel-surface="semantic-dive"] .focus-stage-card,
     html body[data-active-view="galaxy"] .journey-compass {
         transition: none;
         transition-duration: 0.01ms;

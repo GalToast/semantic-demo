@@ -259,7 +259,7 @@ async function testLifecycleReExports() {
 }
 
 // ---------------------------------------------------------------------------
-// Test: window.bindings in lifecycle.js are preserved
+// Test: loading-ui lifecycle window bindings stay retired
 // ---------------------------------------------------------------------------
 
 async function testWindowBindings() {
@@ -273,11 +273,11 @@ async function testWindowBindings() {
     ];
 
     for (const binding of bindings) {
-        if (!source.includes(binding)) {
-            throw new Error(`lifecycle.js must preserve ${binding} window binding`);
+        if (source.includes(binding)) {
+            throw new Error(`lifecycle.js must not restore retired ${binding} window binding`);
         }
     }
-    ok('lifecycle.js preserves window.setLoadingPhase, window.hideLoadingOverlay, window.startDeferredHydration bindings');
+    ok('lifecycle.js keeps loading-ui window bindings retired');
 }
 
 // ---------------------------------------------------------------------------
