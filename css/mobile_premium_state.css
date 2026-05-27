@@ -396,6 +396,24 @@
         -webkit-line-clamp: unset;
     }
 
+    /* Hide info-panel chrome when search drawer is fully expanded — maximize results space */
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .stats-row,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .stat-caption,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .demo-starters,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] #demo-starters,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .demo-journey-steps,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] #btn-launch,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .surprise-btn,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .stats-row,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .stat-caption,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .demo-starters,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] #demo-starters,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .demo-journey-steps,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] #btn-launch,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .surprise-btn {
+        display: none;
+    }
+
     html body.is-active[data-panel-surface="search"] .search-container.has-query,
     html body.is-active[data-panel-surface="focus-search"] .search-container.has-query {
         display: flex;
@@ -481,13 +499,6 @@
     html body.is-active[data-panel-surface^="map-"] .semantic-lane-assist,
     html body.is-active[data-panel-surface^="map-"] .search-trail-cue {
         display: none; /* specificity already exceeds layout/strands content rules */
-    }
-
-    html body.is-active[data-panel-surface^="map-"] .journey-compass {
-        top: calc(10px + env(safe-area-inset-top, 0px));
-        left: 10px;
-        right: 10px;
-        width: auto;
     }
 
     html body.is-active[data-panel-surface="map-search"] .journey-compass,

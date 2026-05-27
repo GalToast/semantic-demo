@@ -183,7 +183,7 @@ const html = buildSearchResultItemHtml(result, 0, {
   topScore: 0.84,
 });
 
-assert(html.includes('role="button"'), 'search result keeps button-like role');
+assert(!html.includes('role="button"'), 'search result no longer has redundant role=button on native button element');
 assert(html.includes('tabindex="0"'), 'search result remains keyboard focusable');
 assert(html.includes('Anchor'), 'anchor label renders for anchored result');
 assert(html.includes('Search Anchor'), 'strength label renders for top result');

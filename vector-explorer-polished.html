@@ -25,9 +25,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="semantic-demo.css?v=4358043a93a2">
+    <link rel="stylesheet" href="semantic-demo.css?v=de7fbf3a273b">
     <link rel="stylesheet" href="vector-explorer-pandora.css?v=99a7d5032027">
-    <link rel="stylesheet" href="css/mobile_premium.css?v=e6821b197536">
+    <link rel="stylesheet" href="css/mobile_premium.css?v=0eb1d57b05ca">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>M</text></svg>">
 </head>
 <body>
@@ -256,10 +256,12 @@
 
     <!-- Info Panel - collapsible -->
     <aside class="info-panel slide-in-left active" id="info-panel" role="region" aria-labelledby="info-panel-title">
-        <button class="info-header" id="info-panel-toggle" type="button" aria-label="Toggle MoCo Business Mycelium info panel" aria-expanded="true" aria-controls="info-panel">
-            <span id="info-panel-title">MoCo Business Mycelium</span>
-            <span class="info-toggle-icon" id="info-toggle-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-panel"></use></svg></span>
-        </button>
+        <header role="banner">
+            <button class="info-header" id="info-panel-toggle" type="button" aria-label="Toggle MoCo Business Mycelium info panel" aria-expanded="true" aria-controls="info-panel">
+                <span id="info-panel-title">MoCo Business Mycelium</span>
+                <span class="info-toggle-icon" id="info-toggle-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-panel"></use></svg></span>
+            </button>
+        </header>
         <div class="info-content" id="info-panel-content">
             <div class="stats-row">
                 <div class="stat-box">
@@ -327,7 +329,7 @@
                 <div class="search-results glass-light" id="search-results" role="region" aria-label="Search results" aria-live="off" aria-atomic="false"></div>
                 <div class="synthesize-trigger" id="synthesize-trigger" style="display: none">
                     <div class="guide-cta-kicker">Next best move</div>
-                    <button id="btn-synthesize" class="btn-synthesize" type="button">
+                    <button id="btn-synthesize" class="btn-synthesize" type="button" aria-label="Summarize Results">
                         <span class="sparkle"><svg class="ui-icon" aria-hidden="true"><use href="#icon-guide"></use></svg></span>
                         Summarize Results
                     </button>
@@ -492,7 +494,7 @@
                 <span class="focus-stage-inside-status-copy" id="focus-stage-inside-status-copy">Step into this neighborhood to follow related businesses.</span>
             </div>
             <div class="focus-stage-inside-controls" id="focus-stage-inside-controls" aria-hidden="true">
-                <button class="focus-stage-inside-btn" id="btn-inside-next" type="button">Next Stop</button>
+                <button class="focus-stage-inside-btn" id="btn-inside-next" type="button" aria-label="Next Stop">Next Stop</button>
                 <button class="focus-stage-inside-btn secondary" id="btn-inside-county" type="button" aria-label="Exit Step Inside and return to County View">County</button>
             </div>
             <div class="focus-thread-inspector" id="focus-thread-inspector" aria-hidden="true">
@@ -501,12 +503,12 @@
                 <div class="focus-thread-inspector-copy" id="focus-thread-inspector-copy">Click a neighbor below to preview why it belongs here, then pin or follow.</div>
                 <div class="focus-thread-inspector-meta" id="focus-thread-inspector-meta">Preview connection</div>
                 <div class="focus-thread-inspector-actions">
-                    <button class="focus-thread-inspector-btn" id="btn-thread-pin" type="button" disabled>Pin Connection</button>
-                    <button class="focus-thread-inspector-btn primary" id="btn-thread-follow" type="button" disabled>Follow Connection</button>
-                    <button class="focus-thread-inspector-btn secondary" id="btn-thread-clear" type="button" disabled>Clear</button>
+                    <button class="focus-thread-inspector-btn" id="btn-thread-pin" type="button" aria-label="Pin Connection" disabled>Pin Connection</button>
+                    <button class="focus-thread-inspector-btn primary" id="btn-thread-follow" type="button" aria-label="Follow Connection" disabled>Follow Connection</button>
+                    <button class="focus-thread-inspector-btn secondary" id="btn-thread-clear" type="button" aria-label="Clear Connection Preview" disabled>Clear</button>
                 </div>
             </div>
-            <div class="trail-controls" id="trail-controls" aria-label="Connection path controls">
+            <div class="trail-controls" id="trail-controls" role="group" aria-label="Connection path controls">
                 <button class="action-btn" id="btn-prev-node" type="button" aria-label="Go to previous path stop" disabled>Prev Stop</button>
                 <button class="action-btn" id="btn-next-node" type="button" aria-label="Go to next path stop" disabled>Next Stop</button>
             </div>

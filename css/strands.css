@@ -1779,8 +1779,7 @@ html body[data-panel-surface="focus-search"] .controls .control-btn {
         border-radius: 18px;
     }
 
-    html body[data-panel-surface="idle"] .journey-compass-rail,
-    html body[data-panel-surface="idle"] .journey-compass-note {
+    html body[data-panel-surface="idle"] .journey-compass-rail {
         display: none;
     }
 
