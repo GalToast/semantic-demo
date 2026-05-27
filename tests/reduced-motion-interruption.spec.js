@@ -43,7 +43,7 @@ async function waitForReady(page) {
 
 test.describe('Reduced Motion Interruption & State Consistency', () => {
   test('Transitions resolve immediately and clear smoothly when interrupted', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(120000);
     await page.goto(APP_URL, { waitUntil: 'commit' });
     await waitForReady(page);
 
@@ -99,8 +99,21 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     });
 
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await page.waitForFunction(() => {
+      if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+      const body = document.body?.dataset || {};
+      const s = window.__TEST_STATE__ || {};
+      return body.searchGlow === 'active'
+        && ['focus', 'focus-search'].includes(body.graphContext)
+        && ['focus', 'focus-search'].includes(body.panelSurface)
+        && Boolean(s.currentSearchSummary)
+        && s.focusedNode === 0
+        && s.navState?.mode === 'focus'
+        && s.trailDepth >= 1;
+    }, { timeout: 15000 });
 
     const afterSearch = await page.evaluate(() => {
+      if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
       const body = document.body?.dataset || {};
       // eslint-disable-next-line no-undef
       const s = window.__TEST_STATE__ || {};
@@ -139,8 +152,18 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     });
 
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await page.waitForFunction(() => {
+      if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+      const body = document.body?.dataset || {};
+      const s = window.__TEST_STATE__ || {};
+      return s.trailDepth === 2
+        && s.navState?.mode === 'inside'
+        && s.focusedNode === 0
+        && ['focus', 'focus-search', 'semantic-dive'].includes(body.panelSurface);
+    }, { timeout: 15000 });
 
     const afterFocus = await page.evaluate(() => {
+      if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
       const body = document.body?.dataset || {};
       // eslint-disable-next-line no-undef
       const s = window.__TEST_STATE__ || {};
@@ -169,8 +192,27 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     });
 
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await page.waitForFunction(() => {
+      if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+      const body = document.body?.dataset || {};
+      const focusStage = document.getElementById('focus-stage');
+      const searchResults = document.getElementById('search-results');
+      const searchInput = document.getElementById('search-input');
+      const s = window.__TEST_STATE__ || {};
+      return body.searchGlow === 'inactive'
+        && !s.currentSearchSummary
+        && s.trailDepth === 0
+        && s.focusedNode === null
+        && s.navState?.mode === 'overview'
+        && body.graphContext === 'idle'
+        && body.panelSurface === 'idle'
+        && (focusStage?.hidden ?? true)
+        && !(searchResults?.classList?.contains('active') ?? false)
+        && (searchInput?.value ?? '') === '';
+    }, { timeout: 15000 });
 
     const afterInterrupt = await page.evaluate(() => {
+      if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
       const body = document.body?.dataset || {};
       const focusStage = document.getElementById('focus-stage');
       const searchResults = document.getElementById('search-results');

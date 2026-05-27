@@ -611,7 +611,6 @@ if (typeof window !== 'undefined') {
     window.probeSemanticLane = probeSemanticLane;
     window.scheduleSemanticLaneMonitor = scheduleSemanticLaneMonitor;
     window.onWindowResize = onWindowResize;
-    window.updateExplorationUi = updateExplorationUi;
     window.setMyceliumMode = setMyceliumMode;
     window.setTrailDepth = setTrailDepth;
     window.dispatchNavTransition = dispatchNavTransition;

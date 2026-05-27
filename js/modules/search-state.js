@@ -597,7 +597,7 @@ export function clearSearch() {
     clearShortSemanticSearchState();
     clearSearchGlow();
     if (typeof adapter_resetExplorationFocus === 'function') {
-        adapter_resetExplorationFocus();
+        adapter_resetExplorationFocus({ preserveSearch: true, skipUrlSync: true });
     }
 
     adapter_updateUrlState({ q: null, anchor: null, offset: null, record: null }, { reason: 'search-clear' });
@@ -1007,7 +1007,7 @@ export async function search(query, options = {}) {
         || state.myceliumMode !== 'default';
     if (hasExplorationFocus) {
         if (typeof adapter_resetExplorationFocus === 'function') {
-            adapter_resetExplorationFocus();
+            adapter_resetExplorationFocus({ preserveSearch: true, skipUrlSync: true });
         } else {
             adapter_resetNodePositions({ preserveSearch: true, skipUrlSync: true });
         }

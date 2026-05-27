@@ -278,6 +278,7 @@ const PINNED_FILES = [
   'legend-ui-ownership-contract.mjs',
   'semantic-dive-ui-dewindowing-contract.mjs',
   'lifecycle-search-panel-ownership-contract.mjs',
+  'lifecycle-journey-quick-dewindowing-contract.mjs',
   'search-lifecycle-adapter-contract.mjs',
   'view-controller-ownership-contract.mjs',
   'loading-ui-contract.mjs',

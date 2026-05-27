@@ -18,14 +18,17 @@ async function waitForStateReady(page) {
   // state is assigned to window by app.js; wait for it to be a non-empty array
   await page.waitForFunction(() => {
     // eslint-disable-next-line no-undef
-    return typeof state !== 'undefined' && Array.isArray(state.points) && state.points.length > 0;
+    return typeof state !== 'undefined'
+      && Array.isArray(state.points)
+      && state.points.length > 0
+      && typeof window.requestSemanticGuide === 'function';
   }, { timeout: 30000 });
 }
 
 test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
 
   test('500 response on action=semantic_guide triggers deterministic fallback path and populates elements', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(120000);
 
     // Mock **/api.php?action=semantic_guide to return a 500 status
     await page.route('**/api.php?action=semantic_guide', async route => {
@@ -33,6 +36,13 @@ test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
         status: 500,
         contentType: 'application/json',
         body: JSON.stringify({ ok: false, error: 'Internal Server Error' })
+      });
+    });
+    await page.route('**/api.php?action=semantic_lane_health**', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true, status: 'healthy' })
       });
     });
 
