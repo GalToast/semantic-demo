@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:8795';
+const cameraControlsSource = readFileSync('js/modules/camera-controls.js', 'utf8');
 
 test.describe('Extraction & De-monolith Contract Verification', () => {
   
@@ -57,29 +59,22 @@ test.describe('Extraction & De-monolith Contract Verification', () => {
   });
 
   test('Module Seam: Camera Controls', async ({ page }) => {
-    // Verify that functions moved to camera-controls.js are correctly bound to window
-    const globals = await page.evaluate(() => ({
-      animateCameraToSearchCorridor: typeof window.animateCameraToSearchCorridor === 'function',
-      zoomCamera: typeof window.zoomCamera === 'function',
-      animateCameraToNode: typeof window.animateCameraToNode === 'function'
-    }));
-
-    expect(globals.animateCameraToSearchCorridor).toBe(true);
-    expect(globals.zoomCamera).toBe(true);
-    expect(globals.animateCameraToNode).toBe(true);
+    expect(cameraControlsSource).toMatch(/export\s+function\s+animateCameraToSearchCorridor\s*\(/);
+    expect(cameraControlsSource).toMatch(/export\s+function\s+zoomCamera\s*\(/);
+    expect(cameraControlsSource).toMatch(/export\s+function\s+animateCameraToNode\s*\(/);
   });
 
   test('Module Seam: Mycelium Engine', async ({ page }) => {
-    // Verify that functions moved to mycelium-engine.js are correctly bound to window
-    const globals = await page.evaluate(() => ({
-      buildSemanticMyceliumEdges: typeof window.buildSemanticMyceliumEdges === 'function',
-      updateMyceliumThreads: typeof window.updateMyceliumThreads === 'function',
-      initSemanticLens: typeof window.initSemanticLens === 'function'
-    }));
+    const exports = await page.evaluate(async () => {
+      const mycelium = await import('./js/modules/mycelium-engine.js');
+      return {
+        buildSemanticMyceliumEdges: typeof mycelium.buildSemanticMyceliumEdges === 'function',
+        updateMyceliumThreads: typeof mycelium.updateMyceliumThreads === 'function'
+      };
+    });
 
-    // These might not be on window yet, checking if they are exported from modules
-    // Actually, three-setup.js usually exposes them.
-    expect(globals.updateMyceliumThreads).toBe(true);
+    expect(exports.buildSemanticMyceliumEdges).toBe(true);
+    expect(exports.updateMyceliumThreads).toBe(true);
   });
 
   test('Functional Integrity: Search Still Works', async ({ page }) => {

@@ -2440,13 +2440,3 @@ export function animate() {
             renderMs
         });
     }
-
-// Global exposure for compatibility
-if (typeof window !== "undefined") {
-    window.createPoints = createPoints;
-    window.createMycelium = createMycelium;
-    window.triggerSearchCorridorAnimation = triggerSearchCorridorAnimation;
-    window.updateMyceliumThreads = updateMyceliumThreads;
-    // Preserve corridor functions from esbuild tree-shaking — called from animation loop via window
-    window.__keepCorridorFns = () => { void buildCorridorLineGeometry; void buildCorridorParticleTrail; void updateSearchCorridorAnimation; };
-}

@@ -101,20 +101,6 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
     { timeout: 8000 }
   );
 
-  await page.evaluate(({ requireCorridor }) => {
-    const summary = window.__TEST_STATE__.currentSearchSummary || {};
-    const anchorIndex = Number.isFinite(summary.anchorIndex) ? summary.anchorIndex : summary.topIndex;
-    const routeIndices = [anchorIndex, ...(summary.resultIndices || [])]
-      .filter((index) => Number.isFinite(index));
-    if (
-      requireCorridor &&
-      !window.__TEST_STATE__.searchCorridorGroup &&
-      routeIndices.length > 1 &&
-      typeof window.triggerSearchCorridorAnimation === 'function'
-    ) {
-      window.triggerSearchCorridorAnimation(anchorIndex, routeIndices);
-    }
-  }, { requireCorridor });
   if (requireCorridor) {
     await page.waitForFunction(
       () => !!window.__TEST_STATE__?.searchCorridorGroup?.children?.length,
@@ -125,7 +111,6 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
 
   const corridor = await page.evaluate(() => ({
     groupReady: !!window.__TEST_STATE__.searchCorridorGroup,
-    triggerReady: typeof window.triggerSearchCorridorAnimation === 'function',
     visible: !!window.__TEST_STATE__.searchCorridorGroup?.visible,
     children: window.__TEST_STATE__.searchCorridorGroup?.children?.length || 0,
     glowActive: !!window.__TEST_STATE__.searchGlowActive
@@ -193,7 +178,6 @@ test.describe('camera and focus-pocket visual smoke', () => {
       console.log(`GPU smoke WebGL renderer: ${desktopEvidence.initialCamera.webglRenderer}`);
       expect(desktopEvidence.initialCamera.webglRenderer).not.toMatch(/swiftshader|software rasterizer/i);
     }
-    expect(desktopEvidence.corridor.triggerReady).toBe(true);
     expect(desktopEvidence.corridor.groupReady).toBe(true);
     expect(desktopEvidence.corridor.children).toBeGreaterThan(0);
     expect(desktopEvidence.focused.focusedNode).toBeGreaterThanOrEqual(0);

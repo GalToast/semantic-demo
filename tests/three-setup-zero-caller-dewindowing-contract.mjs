@@ -1,7 +1,7 @@
 /**
  * three-setup-zero-caller-dewindowing-contract.mjs
  *
- * Verifies that six window bridges in three-setup.js are retired:
+ * Verifies that three-setup.js window bridges are retired as module seams:
  * - window.syncNodeSporeColorsFromPointColors
  * - window.triggerSearchHeroMoment
  * - window.triggerCorridorNodeGlow
@@ -12,9 +12,12 @@
  * The functions themselves remain as named exports and are still callable
  * internally; only the window exposure is removed.
  *
- * Preserved (must remain on window):
+ * Newly retired in this wave:
  *   window.createPoints, window.createMycelium, window.triggerSearchCorridorAnimation,
- *   window.updateMyceliumThreads, window.__keepCorridorFns, window.THREE
+ *   window.updateMyceliumThreads, window.__keepCorridorFns
+ *
+ * Preserved (must remain on window for legacy Three math/test helpers):
+ *   window.THREE
  *
  * Usage: node tests/three-setup-zero-caller-dewindowing-contract.mjs
  */
@@ -45,16 +48,16 @@ const RETIRED = [
   'window.shouldRenderThreads',
   'window.shouldRenderBridgeThreads',
   'window.__semanticScenePerformanceProbe',
-];
-
-// Preserved bridges must still appear as window.* =
-
-const PRESERVED = [
   'window.createPoints',
   'window.createMycelium',
   'window.triggerSearchCorridorAnimation',
   'window.updateMyceliumThreads',
   'window.__keepCorridorFns',
+];
+
+// Preserved bridges must still appear as window.* =
+
+const PRESERVED = [
   'window.THREE',
 ];
 
@@ -70,6 +73,9 @@ const MUST_REMAIN_EXPORTED = [
   'triggerCorridorNodeGlow',
   'shouldRenderThreads',
   'shouldRenderBridgeThreads',
+  'createPoints',
+  'createMycelium',
+  'triggerSearchCorridorAnimation',
 ];
 
 const MUST_BE_LOCAL = ['getScenePerformanceProbe'];
@@ -118,6 +124,6 @@ if (failed > 0) {
   process.exit(1);
 }
 
-console.log('All checks passed. Six window bridges retired; six preserved bridges intact.');
+console.log('All checks passed. Three setup bridges retired; window.THREE remains preserved.');
 console.log('\n=================================================================');
 process.exit(0);
