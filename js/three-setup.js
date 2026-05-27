@@ -1,5 +1,12 @@
+import { switchView } from './modules/view-controller.js';
+import { updateClusterLabels } from './modules/cluster-labels.js';
+import { updateFocusSemanticOverlayPositions } from './modules/journey-webgl.js';
+import { applyFocusPocketBreathing } from './modules/focus-pocket.js';
+import { getSceneRevealProgress } from './modules/scene-reveal.js';
+import { calculateSignalScore } from './utils.js';
 import * as THREE from 'three';
 window.THREE = THREE;
+
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { state } from './state.js';
@@ -37,7 +44,6 @@ import {
     updateRouteTraceOverlayFrame
 } from './modules/route-arrival-overlay-adapter.js';
 import { restoreWebGLContext } from './modules/webgl-restore-adapter.js';
-import { switchView } from './modules/view-controller.js';
 
 // three-setup.js - Three.js state.scene initialization, state.scene management, animation loop
 // Extracted from vector-explorer-polished.html inline script
@@ -109,7 +115,9 @@ function showWebGLFallback(container, detail = {}) {
         container.classList.add('hidden');
         state.currentView = 'map';
         initMap();
-        switchView('map', { reason: 'webgl-fallback' });
+        if (typeof switchView === 'function') {
+            switchView('map', { reason: 'webgl-fallback' });
+        }
     });
 
     showExperienceToast('Graphics fallback active', 'Map view remains available while 3D graphics are unavailable.');
@@ -2155,7 +2163,7 @@ export function animate() {
         const controlsMs = performance.now() - controlsStart;
 
         const nodeMotionStart = performance.now();
-        const revealProgress = typeof window.getSceneRevealProgress === 'function' ? window.getSceneRevealProgress(frameNow) : 1;
+        const revealProgress = getSceneRevealProgress(frameNow);
         const pointsRevealProgress = easeOutQuint(Math.min(1, Math.max(0, revealProgress / 0.7)));
         const cameraRevealProgress = easeInOutCubic(Math.min(1, Math.max(0, revealProgress)));
 
@@ -2180,17 +2188,15 @@ export function animate() {
                 }
             });
 
-            if (typeof window.applyFocusPocketBreathing === 'function') {
-                if (window.applyFocusPocketBreathing(frameNow, state.nodePositions)) {
-                    state.focusPocketMotionByIndex.forEach((_, idx) => {
-                        setNodeSporeInstanceMatrix(idx);
-                        // Keep hit-proxy aligned with visual spore for focus-pocket nodes during breathing
-                        if (state.nodeSporeHitMesh && state.navState.focusPocketIndices?.includes(idx)) {
-                            setNodeSporeInstanceMatrix(idx, state.nodeSporeHitMesh);
-                        }
-                    });
-                    anyNodeMoved = true;
-                }
+            if (applyFocusPocketBreathing(frameNow, state.nodePositions)) {
+                state.focusPocketMotionByIndex.forEach((_, idx) => {
+                    setNodeSporeInstanceMatrix(idx);
+                    // Keep hit-proxy aligned with visual spore for focus-pocket nodes during breathing
+                    if (state.nodeSporeHitMesh && state.navState.focusPocketIndices?.includes(idx)) {
+                        setNodeSporeInstanceMatrix(idx, state.nodeSporeHitMesh);
+                    }
+                });
+                anyNodeMoved = true;
             }
 
             if (anyNodeMoved) {
@@ -2385,9 +2391,7 @@ export function animate() {
                 }
             }
 
-            if (typeof window.updateFocusSemanticOverlayPositions === 'function') {
-                window.updateFocusSemanticOverlayPositions(frameNow);
-            }
+            updateFocusSemanticOverlayPositions(frameNow);
 
             // 10/10 Polish: Corridor node glow decay (search trail bloom effect)
             updateCorridorNodeGlow(frameNow);
@@ -2407,16 +2411,14 @@ export function animate() {
                 const glowUniforms = state.semanticLensGlow.material.uniforms;
                 glowUniforms.uTime.value = frameNow / 1000;
                 const focusedPoint = (Number.isFinite(state.focusedNode) && state.focusedNode >= 0 && state.focusedNode < state.points.length) ? state.points[state.focusedNode] : null;
-                if (focusedPoint && typeof window.calculateSignalScore === 'function') {
-                    glowUniforms.uSignalScore.value = window.calculateSignalScore(focusedPoint);
+                if (focusedPoint) {
+                    glowUniforms.uSignalScore.value = calculateSignalScore(focusedPoint);
                 }
             }
             updateInspectedStrandOverlayFrame(frameNow);
             updateRouteTraceOverlayFrame(frameNow);
             updateArrivalHandoffOverlayFrame(frameNow);
-            if (typeof window.updateClusterLabels === 'function') {
-                window.updateClusterLabels();
-            }
+            updateClusterLabels();
         } catch (overlayErr) {
             console.warn('overlay update threw:', overlayErr);
         }

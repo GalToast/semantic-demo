@@ -58,7 +58,7 @@ import { initJourneyCompassAdapter, updateJourneyCompass } from './journey-compa
 import { switchView } from './view-controller.js';
 import { revealSelectedBusinessCard } from './event-bindings.js';
 import { describeThreadLensForPoint } from './journey.js';
-import { initKeyboardShortcutsHint } from './keyboard-help.js';
+import { initKeyboardShortcutsHint, initKeyboardResetOwnership } from './keyboard-help.js';
 import { applyUrlState, updateUrlState } from './url-state.js';
 import { loadSemanticThreads } from './semantic-threads.js';
 import { initClusterLabels } from './cluster-labels.js';
@@ -249,6 +249,7 @@ export async function init() {
         }
         initEventListeners({ onWindowResize, updateUrlState });
         initKeyboardShortcutsHint();
+        initKeyboardResetOwnership({ returnToOverview, resetExplorationFocus });
         if (graphicsReady !== false) initClusterLabels();
         audioModule.initAudio();
         setSemanticLaneUiState('checking');

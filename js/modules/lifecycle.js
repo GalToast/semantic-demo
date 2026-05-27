@@ -101,7 +101,6 @@ import {
     getViewHandoffModel,
     getJourneyCompassPresentationState
 } from './journey-compass-controller.js';
-import { initKeyboardResetOwnership } from './keyboard-help.js';
 
 // ── Re-exports ───────────────────────────────────────────────────────────────
 
@@ -563,10 +562,6 @@ function clearClusterFilter() {
 }
 
 export { clearClusterFilter, updateClusterList, getFilteredClusterCounts, applyFilters, syncCityFilterUi, populateCityFilter, syncFilterControls };
-
-export function initEventListeners() {
-    initKeyboardResetOwnership({ returnToOverview, resetExplorationFocus });
-}
 
 /**
  * Global bridge function to resolve the current route origin ('galaxy', 'map', 'inside').

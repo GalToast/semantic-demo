@@ -6,7 +6,7 @@
  * Proves five guarantees:
  *   1. keyboard-help has no typeof window.returnToOverview / resetExplorationFocus
  *   2. inert defaults are module-local (let _returnToOverview = () => {})
- *   3. lifecycle imports and calls initKeyboardResetOwnership with real named functions
+ *   3. app.js injects initKeyboardResetOwnership with real lifecycle functions
  *   4. lifecycle's returnToOverview / resetExplorationFocus are exported function
  *      declarations, not empty stubs
  *   5. keyboard-help calls only _returnToOverview() / _resetExplorationFocus() from
@@ -22,6 +22,7 @@ import path from 'node:path';
 const ROOT = path.resolve(process.cwd());
 const KEYBOARD_HELP_PATH = path.join(ROOT, 'js/modules/keyboard-help.js');
 const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.js');
+const APP_PATH = path.join(ROOT, 'js/modules/app.js');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -29,6 +30,7 @@ function assert(cond, msg) {
 
 const src = fs.readFileSync(KEYBOARD_HELP_PATH, 'utf-8');
 const lifecycle = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
+const appSrc = fs.readFileSync(APP_PATH, 'utf-8');
 
 console.log('=================================================================');
 console.log('keyboard-reset-ownership-contract.mjs (HARDENED post-dewindowing)');
@@ -65,7 +67,6 @@ try {
     src.includes('let _resetExplorationFocus = () => {};'),
     'resetExplorationFocus default must be module-local inert () => {}'
   );
-  // Defaults are not exported or assigned to window
   assert(
     !src.includes('window._returnToOverview'),
     'inert default must not be exposed on window'
@@ -76,21 +77,28 @@ try {
   );
   console.log('  PASS - inert defaults are module-scoped');
 
-  // Contract Point 3: lifecycle imports and calls init with real functions
-  console.log('\n[CONTRACT 3] lifecycle imports and injects real named functions');
+  // Contract Point 3: app.js owns the injection from the real init path
+  console.log('\n[CONTRACT 3] app.js injects real named functions');
   assert(
-    lifecycle.includes("import { initKeyboardResetOwnership } from './keyboard-help.js';"),
-    'lifecycle must import initKeyboardResetOwnership from keyboard-help'
+    appSrc.includes("import { initKeyboardShortcutsHint, initKeyboardResetOwnership } from './keyboard-help.js';"),
+    'app.js must import initKeyboardResetOwnership from keyboard-help'
   );
   assert(
-    lifecycle.includes('initKeyboardResetOwnership({ returnToOverview, resetExplorationFocus });'),
-    'lifecycle must call initKeyboardResetOwnership with real named functions'
+    appSrc.includes('initKeyboardResetOwnership({ returnToOverview, resetExplorationFocus });'),
+    'app.js must call initKeyboardResetOwnership with real named functions from the real init path'
   );
-  console.log('  PASS - injection seam verified');
+  assert(
+    !lifecycle.includes("import { initKeyboardResetOwnership } from './keyboard-help.js';"),
+    'lifecycle must not import initKeyboardResetOwnership; app.js owns the injection'
+  );
+  assert(
+    !/export\s+function\s+initEventListeners\s*\(/.test(lifecycle),
+    'lifecycle must not export a dead initEventListeners keyboard shim'
+  );
+  console.log('  PASS - injection seam verified (app.js is the real init caller)');
 
   // Contract Point 4: lifecycle exports are real function declarations, not stubs
   console.log('\n[CONTRACT 4] lifecycle exports are exported function declarations, not empty stubs');
-  // returnToOverview is a real function body (calls resetExperienceState)
   const returnToOverviewMatch = lifecycle.match(
     /export\s+function\s+returnToOverview\s*\(\s*\)\s*\{[^}]+\}/,
   );
@@ -100,19 +108,16 @@ try {
     !/export\s+function\s+returnToOverview\s*\(\s*\)\s*\{\s*\}/.test(lifecycle),
     'returnToOverview must not be an empty stub'
   );
-  // resetExplorationFocus: find the exported function and verify it has a non-trivial body
-  // by scanning past any outer braces to locate the key statements
+
   const rfStart = lifecycle.indexOf('export function resetExplorationFocus');
   assert(rfStart !== -1, 'resetExplorationFocus must be an exported function declaration');
   const rfAfterDecl = lifecycle.slice(rfStart + 'export function resetExplorationFocus'.length);
-  // Find opening brace of function body
   const rfBodyStart = rfAfterDecl.indexOf('{');
   assert(rfBodyStart !== -1, 'resetExplorationFocus must have a function body');
-  // Extract a generous slice of the body (up to 800 chars) to find key statements
   const rfBodySlice = rfAfterDecl.slice(rfBodyStart + 1, rfBodyStart + 800);
   assert(
     rfBodySlice.includes('state.navState') &&
-    rfBodySlice.includes('clearExplorationFocusSelection') &&
+    rfBodySlice.includes('syncFocusStage') &&
     rfBodySlice.includes('updateUrlState'),
     'resetExplorationFocus must have a non-trivial body (state mutations + URL sync)'
   );
@@ -124,16 +129,13 @@ try {
 
   // Contract Point 5: keyboard-help calls only _ prefixed variants from key handlers
   console.log('\n[CONTRACT 5] keyboard-help calls only _returnToOverview / _resetExplorationFocus from key handlers');
-  // Ensure keyboard-help does NOT import returnToOverview or resetExplorationFocus from lifecycle
   assert(
     !src.includes("from './lifecycle.js'") && !src.includes('from "./lifecycle.js"'),
     'keyboard-help must not import from lifecycle.js (prevents direct coupling)'
   );
-  // Key handler (_onKeydown or handleGalaxyKeydown) calls _returnToOverview, not the unguarded variant
   const keyHandlerSections = src.match(/function\s+handleGalaxyKeydown[\s\S]*?(?=export\s+function\s|\z)/);
   assert(keyHandlerSections, 'keyboard-help must define handleGalaxyKeydown');
   const handlerBody = keyHandlerSections[0];
-  // It should call _returnToOverview() not window.returnToOverview or bare returnToOverview
   assert(
     handlerBody.includes('_returnToOverview('),
     'handleGalaxyKeydown must call _returnToOverview(), not the unguarded variant'
@@ -142,9 +144,6 @@ try {
     handlerBody.includes('_resetExplorationFocus('),
     'handleGalaxyKeydown must call _resetExplorationFocus(), not the unguarded variant'
   );
-  // Must NOT call unprefixed returnToOverview / resetExplorationFocus directly.
-  // Strip the injected helper names first so `_returnToOverview()` does not
-  // satisfy a loose substring match for the bare function call.
   const handlerWithoutInjectedCalls = handlerBody
     .replace(/_returnToOverview\s*\(/g, '')
     .replace(/_resetExplorationFocus\s*\(/g, '');
