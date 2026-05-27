@@ -7,9 +7,9 @@ async function openApp(page) {
   await setupMockSearch(page);
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`);
   await page.waitForFunction(() => (
-    typeof window.setSemanticDiveMode === 'function' &&
-    typeof window.refreshCompositionState === 'function' &&
-    document.body.dataset.graphicsMode === 'webgl'
+    document.body.dataset.graphicsMode === 'webgl' &&
+    Array.isArray(window.__TEST_STATE__?.points) &&
+    window.__TEST_STATE__.points.length > 0
   ), { timeout: 20000 });
   await page.waitForTimeout(1200);
 }
@@ -86,7 +86,6 @@ test.describe('Live URL State Reconstruction', () => {
     await setupMockSearch(page);
     await page.goto(urlWithParams);
     await page.waitForFunction(() => (
-      typeof window.applyUrlState === 'function' &&
       document.body.dataset.graphicsMode === 'webgl'
     ), { timeout: 20000 });
     await page.waitForFunction(() => (
@@ -160,7 +159,7 @@ test.describe('Live URL State Reconstruction', () => {
     const orphanedUrl = `${BASE_URL}/vector-explorer-polished.html?view=galaxy&depth=2&mode=trail`;
     await setupMockSearch(page);
     await page.goto(orphanedUrl);
-    await page.waitForFunction(() => typeof window.applyUrlState === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => document.body.dataset.graphicsMode === 'webgl', { timeout: 20000 });
     await page.waitForTimeout(2000);
 
     const probe = await stateProbe(page);
@@ -219,7 +218,6 @@ test.describe('Live URL State Reconstruction', () => {
     // Step 4: Navigate back via browser back
     await page.goBack();
     await page.waitForFunction(() => (
-      typeof window.applyUrlState === 'function' &&
       document.body.dataset.graphicsMode === 'webgl'
     ), { timeout: 20000 });
     await page.waitForTimeout(3000); // allow full restoration

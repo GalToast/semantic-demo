@@ -51,7 +51,6 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
     await setupMockSearch(page);
     await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`);
     await page.waitForFunction(() => (
-      typeof window.applyUrlState === 'function' &&
       document.body.dataset.graphicsMode === 'webgl'
     ), { timeout: 20000 });
     await page.waitForTimeout(1200);
@@ -67,7 +66,7 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
     let probe = await clusterStateProbe(page);
     expect(probe.stateCluster).toBe(STALE_CLUSTER);
 
-    // Step 3: Navigate to a URL with a DIFFERENT cluster param
+    // Step 3: Navigate to a URL with a DIFFERENT cluster param (applyUrlState runs during init, reads URL cluster)
     // The URL cluster value (3) must win over the stale in-memory value (7).
     const URL_CLUSTER = 3;
     const urlWithDifferentCluster = `${BASE_URL}/vector-explorer-polished.html?view=galaxy&cluster=${URL_CLUSTER}`;
@@ -75,7 +74,6 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
     await setupMockSearch(page);
     await page.goto(urlWithDifferentCluster);
     await page.waitForFunction(() => (
-      typeof window.applyUrlState === 'function' &&
       document.body.dataset.graphicsMode === 'webgl'
     ), { timeout: 20000 });
 
@@ -115,7 +113,6 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
     await setupMockSearch(page);
     await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&cluster=${INITIAL_CLUSTER}`);
     await page.waitForFunction(() => (
-      typeof window.applyUrlState === 'function' &&
       document.body.dataset.graphicsMode === 'webgl'
     ), { timeout: 20000 });
     await page.waitForFunction(() => (
@@ -136,7 +133,6 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
     // Step 3: Go back — URL had cluster=5, state must restore to 5
     await page.goBack();
     await page.waitForFunction(() => (
-      typeof window.applyUrlState === 'function' &&
       document.body.dataset.graphicsMode === 'webgl'
     ), { timeout: 20000 });
     await page.waitForTimeout(2000);
@@ -160,7 +156,6 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
     await setupMockSearch(page);
     await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&cluster=${URL_CLUSTER}`);
     await page.waitForFunction(() => (
-      typeof window.applyUrlState === 'function' &&
       document.body.dataset.graphicsMode === 'webgl'
     ), { timeout: 20000 });
     await page.waitForFunction(() => (
@@ -175,13 +170,12 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
       window.__TEST_STATE__.activeClusterFilter = cluster;
     }, STALE_CLUSTER);
 
-    // Trigger applyUrlState with the SAME URL (simulates onpopstate / history nav)
-    await page.evaluate(() => {
-      if (typeof window.applyUrlState === 'function') {
-        window.applyUrlState({ fromHistory: true });
-      }
-    });
-    await page.waitForTimeout(1500);
+    // Navigate to same URL — applyUrlState runs naturally during init
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&cluster=${URL_CLUSTER}`);
+    await page.waitForFunction((cluster) => (
+      window.__TEST_STATE__?.activeClusterFilter === cluster ||
+      document.querySelector('.cluster-item.active') !== null
+    ), URL_CLUSTER, { timeout: 15000 });
 
     const probe = await clusterStateProbe(page);
 

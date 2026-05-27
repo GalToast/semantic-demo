@@ -470,11 +470,6 @@ export async function init() {
     }
 }
 
-// Global exposure
-if (typeof window !== "undefined") {
-    window.applyUrlState = applyUrlState;
-}
-
 setWebGLContextRestoreHandler(init);
 
 // Auto-start when module loads (ES modules are deferred, DOM is ready)

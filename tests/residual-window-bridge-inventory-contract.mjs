@@ -152,7 +152,7 @@ const KNOWN_APP_BOOTSTRAP_EXPORTS = new Set([
   'resetExplorationFocus', 'getSceneRevealProgress', 'refreshCompositionState',
   'clearClusterFilter', 'updateHasQuery',
   // extras
-  'loadData', 'applyUrlState',
+  'loadData',
 ]);
 
 // ── KNOWN INTENTIONAL FALLBACKS (typeof-guarded, not extraction candidates) ──
