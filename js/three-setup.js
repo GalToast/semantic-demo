@@ -37,6 +37,7 @@ import {
     updateRouteTraceOverlayFrame
 } from './modules/route-arrival-overlay-adapter.js';
 import { restoreWebGLContext } from './modules/webgl-restore-adapter.js';
+import { switchView } from './modules/view-controller.js';
 
 // three-setup.js - Three.js state.scene initialization, state.scene management, animation loop
 // Extracted from vector-explorer-polished.html inline script
@@ -2446,6 +2447,4 @@ if (typeof window !== "undefined") {
     window.updateMyceliumThreads = updateMyceliumThreads;
     // Preserve corridor functions from esbuild tree-shaking — called from animation loop via window
     window.__keepCorridorFns = () => { void buildCorridorLineGeometry; void buildCorridorParticleTrail; void updateSearchCorridorAnimation; };
-}
-void buildCorridorParticleTrail; void updateSearchCorridorAnimation; };
 }
