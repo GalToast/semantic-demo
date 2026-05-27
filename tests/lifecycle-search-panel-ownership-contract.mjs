@@ -8,8 +8,7 @@
  * Ownership rule (source contract):
  *   setSearchPanelState is owned by search-state.js (line 70+).
  *   Any module that needs to call it must import it directly.
- *   The window wrapper (window._ss.setSearchPanelState) is a debug artifact
- *   only — it is NOT a public API surface.
+ *   The retired window._ss debug namespace was not a public API surface.
  *
  * lifecycle.js call site (resetStateBeforeUrlRestore:851 before fix):
  *   Guarded no-op: typeof window.setSearchPanelState === 'function'
@@ -90,8 +89,6 @@ function testLifecycleNoWindowSetSearchPanelStateCall() {
     const t = lines[i].trim();
     const pos = t.indexOf('window.setSearchPanelState');
     if (pos === -1) continue;
-    // Allow window._ss.setSearchPanelState (debug wrapper)
-    if (t.includes('window._ss.setSearchPanelState')) continue;
     // Allow comment references
     if (t.startsWith('//') || t.startsWith('*') || t.startsWith('*')) continue;
     // Check if guarded

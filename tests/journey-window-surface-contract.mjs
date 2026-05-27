@@ -4,7 +4,7 @@
  * Fast Node contract test for the journey/window surface boundary.
  * Protects extraction of journey-thread-model.js by verifying:
  *   1. Key window.* assignments resolve in source (journey.js shim block)
- *   2. Debug namespaces are documented (window._ti, window._ss)
+ *   2. Debug namespaces are documented (window._ti) or retired (window._ss)
  *   3. Delegated journey-thread-model functions are imported/re-exported
  *      through the expected chain
  *
@@ -126,22 +126,18 @@ function testVisualAuditUsesThreadInspectorNamespace() {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 3: search-state debug namespace window._ss documented
+// TEST 3: search-state debug namespace window._ss retired
 // ---------------------------------------------------------------------------
 
 function testSearchStateDebugNamespace() {
-  console.log('\n[TEST] search-state window._ss debug namespace');
+  console.log('\n[TEST] search-state window._ss debug namespace is retired');
 
   const src = fs.readFileSync(SEARCH_STATE_PATH, 'utf-8');
 
-  assert(src.includes('window._ss = {'), 'window._ss namespace exposed');
-  assert(src.includes('tokenizeSearchText,'), 'window._ss.tokenizeSearchText');
-  assert(src.includes('expandSearchIntent,'), 'window._ss.expandSearchIntent');
-  assert(src.includes('countTokenMatches,'), 'window._ss.countTokenMatches');
-  assert(src.includes('getSearchResultStrength,'), 'window._ss.getSearchResultStrength');
-  assert(src.includes('setSearchPanelState,'), 'window._ss.setSearchPanelState');
+  assertNotContains(src, 'window._ss', 'window._ss namespace');
+  assertNotContains(src, '_ss =', '_ss assignment');
 
-  console.log('  OK search-state window._ss namespace verified');
+  console.log('  OK search-state window._ss namespace is retired');
 }
 
 // ---------------------------------------------------------------------------

@@ -125,7 +125,7 @@ function scanWindowRefs(src, filename) {
 // They are NOT extraction candidates — they are intentional compatibility bridges.
 
 const KNOWN_APP_BOOTSTRAP_EXPORTS = new Set([
-  'state', '_ss', '_fp', '_cc', '_ti', '_ms', '_weather',
+  'state', '_fp', '_cc', '_ti', '_ms', '_weather',
   'initAudio', 'applyClusterUiAccent', 'getSelectedBusinessRoleLabel',
   'findClusterByKeyword',
   // lifecycle re-exports (thin aliases)
@@ -226,8 +226,8 @@ function testNoBareCallsInDowindowedSeams() {
     'localStorage', 'sessionStorage', 'fetch', 'XMLHttpRequest',
   ]);
 
-  // Module references exported via app.js bootstrap (window._ss, etc.)
-  const BOOTSTRAP_MODULE_REFS = new Set(['_ss', '_fp', '_cc', '_ti', '_ms', '_weather']);
+  // Module references exported via app.js bootstrap (window._fp, etc.)
+  const BOOTSTRAP_MODULE_REFS = new Set(['_fp', '_cc', '_ti', '_ms', '_weather']);
 
   const lines = src.split('\n');
   const problems = [];
@@ -421,7 +421,7 @@ function testBareCallBaseline() {
     'getComputedStyle', 'document', 'navigator', 'location',
     'localStorage', 'sessionStorage', 'fetch', 'XMLHttpRequest',
     'AudioContext', 'webkitAudioContext',
-    '_ss', '_fp', '_cc', '_ti', '_ms', '_weather', '_cam',
+    '_fp', '_cc', '_ti', '_ms', '_weather', '_cam',
     // Internal state/probes
     '__lastCanvasNodePick', '__lastCanvasNodeHover', '__lastCanvasNodeFocusPick',
     '__semanticJourneyProbe', '__semanticSearchCacheProbe',
