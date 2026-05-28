@@ -55,7 +55,8 @@ test.describe('Critical Visual Layout Regression', () => {
 
     // Wait for app ready
     await page.waitForFunction(() =>
-      typeof window.focusOnNode === 'function' && Boolean(window.__TEST_STATE__?.points?.length),
+      typeof (window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode) === 'function' &&
+      Boolean(window.__TEST_STATE__?.points?.length),
     { timeout: 30000 });
 
     // Trigger trail/inside state via JS, the state that exposes overlap.
@@ -63,17 +64,19 @@ test.describe('Critical Visual Layout Regression', () => {
       // Activate trail mode with depth >= 1 to show journey controls
       document.body.dataset.panelSurface = 'focus';
       document.body.dataset.focusPanelMode = 'focus';
-      if (typeof window.setTrailDepth === 'function') {
-        window.setTrailDepth(1, { skipUrlSync: true });
+      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth;
+      if (typeof setTrailDepth === 'function') {
+        setTrailDepth(1, { skipUrlSync: true });
       }
     });
     await page.waitForTimeout(1200);
 
     // Click a search result to enter focus + trail state
     await page.evaluate(() => {
-      if (typeof window.focusOnNode === 'function') {
+      const focusOnNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
+      if (typeof focusOnNode === 'function') {
         // Focus a node that has trail neighbors. 4200 is historically used in overlap QA.
-        window.focusOnNode(4200, { fromSearchResult: true });
+        focusOnNode(4200, { fromSearchResult: true });
       }
     });
     await page.waitForTimeout(1800);
@@ -176,8 +179,9 @@ test.describe('Critical Visual Layout Regression', () => {
 
     await page.evaluate(() => {
       document.body.dataset.activeView = 'galaxy';
-      if (typeof window.focusOnNode === 'function') {
-        window.focusOnNode(4200, { fromSearchResult: true });
+      const focusOnNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
+      if (typeof focusOnNode === 'function') {
+        focusOnNode(4200, { fromSearchResult: true });
       }
     });
     await page.waitForFunction(() => window.__TEST_STATE__?.focusedNode !== null && window.__TEST_STATE__?.focusedNode !== undefined, { timeout: 15000 });

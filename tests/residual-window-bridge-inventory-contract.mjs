@@ -46,6 +46,9 @@ const MODULES = {
   demoController: path.join(SEMDEMO_ROOT, 'js/modules/demo-controller.js'),
   focusPocket: path.join(SEMDEMO_ROOT, 'js/modules/focus-pocket.js'),
   threadInspector: path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js'),
+  strandContinuity: path.join(SEMDEMO_ROOT, 'js/modules/strand-continuity.js'),
+  journeyThreadSettler: path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-settler.js'),
+  journeyCanvasInteraction: path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-interaction.js'),
   clusterLabels: path.join(SEMDEMO_ROOT, 'js/modules/cluster-labels.js'),
   audio:       path.join(SEMDEMO_ROOT, 'js/modules/audio-scape.js'),
   viewController: path.join(SEMDEMO_ROOT, 'js/modules/view-controller.js'),
@@ -183,7 +186,7 @@ const KNOWN_FALLBACKS = new Set([
   'applyClusterUiAccent', 'getInterestingBusinessNote', 'buildSelectedMatchNarrative',
   'hasColdDegradedSemanticFallback', 'revealSelectedBusinessCard', 'describeThreadLensForPoint',
   'hydrateLeadContext', 'shouldUseFloatingFocusJourneyOnly', 'isFieldNodeFocusContext',
-  'getFocusThreadCurvePoint', 'syncNodeSporeColorsFromPointColors', 'syncSearchStatusForFocus',
+  'getFocusThreadCurvePoint', 'syncSearchStatusForFocus',
   'walkThreadNeighbor',
   // scene-reveal.js guards
   'clearAutoRotateResumeTimer', 'setAutoRotateSuspended',
@@ -510,7 +513,7 @@ function testBareCallBaseline() {
 function testFocusOnPointRuntimeCallersDewindowed() {
   console.log('\n[TEST 6] Runtime callers do not use window.focusOnPoint');
 
-  const callers = ['journey', 'mapState', 'threadInspector'];
+  const callers = ['journeyThreadSettler', 'mapState', 'threadInspector'];
   const problems = [];
 
   for (const mod of callers) {
@@ -534,16 +537,17 @@ function testFocusOnPointRuntimeCallersDewindowed() {
     `Runtime focusOnPoint callers must use direct imports, not the window bridge:\n${problems.join('\n')}`
   );
 
-  console.log('  OK — journey/map-state/thread-inspector use direct focusOnPoint imports; lifecycle bridge is retired');
+  console.log('  OK — journey-thread-settler/map-state/thread-inspector use direct focusOnPoint imports; lifecycle bridge is retired');
 }
 
 // ── TEST 7 — Runtime arrival handoff callers use direct imports ──────────────
 
 function testJourneyArrivalHandoffDewindowed() {
-  console.log('\n[TEST 7] journey/thread-inspector do not use arrival handoff window bridges');
+  console.log('\n[TEST 7] strand continuity does not use arrival handoff window bridges');
 
   const journeySrc = read('journey');
   const threadInspectorSrc = read('threadInspector');
+  const strandContinuitySrc = read('strandContinuity');
   const threeSetupSrc = read('threeSetup');
   const adapterSrc = read('routeArrivalOverlayAdapter');
   const problems = [];
@@ -557,19 +561,27 @@ function testJourneyArrivalHandoffDewindowed() {
     if (journeySrc.includes(`window.${fn}`)) {
       problems.push(`  journey: still references window.${fn}`);
     }
-    if (!new RegExp(`\\b${fn}\\s*\\(`).test(journeySrc)) {
-      problems.push(`  journey: expected direct ${fn}() call after dewindowing`);
-    }
     if (threadInspectorSrc.includes(`window.${fn}`)) {
       problems.push(`  thread-inspector: still references window.${fn}`);
     }
-    if (!new RegExp(`\\b${fn}\\s*\\(`).test(threadInspectorSrc)) {
-      problems.push(`  thread-inspector: expected direct ${fn}() call after dewindowing`);
+    if (strandContinuitySrc.includes(`window.${fn}`)) {
+      problems.push(`  strand-continuity: still references window.${fn}`);
+    }
+    if (!new RegExp(`\\b${fn}\\s*\\(`).test(strandContinuitySrc)) {
+      problems.push(`  strand-continuity: expected direct ${fn}() call after dewindowing`);
     }
   }
   assert(
-    /import\s+\{[^}]*\bsyncArrivalHandoffOverlay\b[^}]*\bdisposeArrivalHandoffOverlay\b[^}]*\}\s+from\s+['"]\.\/journey-webgl\.js['"]/.test(threadInspectorSrc),
-    'thread-inspector.js should import arrival handoff functions directly from journey-webgl.js'
+    /import\s+\{[^}]*\bsyncArrivalHandoffOverlay\b[^}]*\bdisposeArrivalHandoffOverlay\b[^}]*\}\s+from\s+['"]\.\/journey-webgl\.js['"]/.test(strandContinuitySrc),
+    'strand-continuity.js should import arrival handoff functions directly from journey-webgl.js'
+  );
+  assert(
+    journeySrc.includes("from './strand-continuity.js'"),
+    'journey.js should import strand continuity state from the shared owner'
+  );
+  assert(
+    threadInspectorSrc.includes("from './strand-continuity.js'"),
+    'thread-inspector.js should import strand continuity state from the shared owner'
   );
   assert(
     /import\s+\{[^}]*\bsyncFocusStage\b[^}]*\}\s+from\s+['"]\.\/lifecycle\.js['"]/.test(threadInspectorSrc),
@@ -615,10 +627,10 @@ function testJourneyArrivalHandoffDewindowed() {
 
   assert(
     problems.length === 0,
-    `journey.js and thread-inspector.js must use direct arrival handoff imports, not window bridges:\n${problems.join('\n')}`
+    `strand-continuity.js must use direct arrival handoff imports, not window bridges:\n${problems.join('\n')}`
   );
 
-  console.log('  OK — journey/thread-inspector use direct arrival handoff calls; journey-webgl bridges are compatibility-only');
+  console.log('  OK — strand-continuity owns direct arrival handoff calls; journey-webgl bridges are compatibility-only');
 }
 
 // ── TEST 8 — Top-level inspected strand bridges are retired ─────────────────
@@ -629,6 +641,7 @@ function testInspectedStrandTopLevelBridgesRetired() {
   const appSrc = read('app');
   const threadInspectorSrc = read('threadInspector');
   const journeySrc = read('journey');
+  const threadSettlerSrc = read('journeyThreadSettler');
   const threeSetupSrc = read('threeSetup');
   const adapterSrc = read('inspectedStrandOverlayAdapter');
 
@@ -643,12 +656,13 @@ function testInspectedStrandTopLevelBridgesRetired() {
     );
   }
   assert(
-    /import\s+\{[^}]*\bsyncInspectedStrandOverlay\b[^}]*\}\s+from\s+['"]\.\/thread-inspector\.js['"]/.test(journeySrc),
-    'journey.js should import syncInspectedStrandOverlay directly from thread-inspector.js'
+    /import\s+\{[^}]*\bsyncInspectedStrandOverlay\b[^}]*\}\s+from\s+['"]\.\/thread-inspector\.js['"]/.test(threadSettlerSrc),
+    'journey-thread-settler.js should import syncInspectedStrandOverlay directly from thread-inspector.js'
   );
   assert(
-    !journeySrc.includes('window.syncInspectedStrandOverlay'),
-    'journey.js must not call window.syncInspectedStrandOverlay'
+    !journeySrc.includes('window.syncInspectedStrandOverlay') &&
+      !threadSettlerSrc.includes('window.syncInspectedStrandOverlay'),
+    'journey/thread-settler modules must not call window.syncInspectedStrandOverlay'
   );
   assert(
     threeSetupSrc.includes("import { updateInspectedStrandOverlayFrame } from './modules/inspected-strand-overlay-adapter.js';"),
@@ -682,7 +696,7 @@ function testCameraInteractionBridgesRetired() {
 
   const appSrc = read('app');
   const cameraSrc = read('camera');
-  const journeySrc = read('journey');
+  const canvasInteractionSrc = read('journeyCanvasInteraction');
 
   for (const fn of ['noteSceneInteraction', 'releaseFocusCameraAssist']) {
     assert(
@@ -699,8 +713,8 @@ function testCameraInteractionBridgesRetired() {
     'camera-controls.js should call noteSceneInteraction directly for search corridor animation'
   );
   assert(
-    /import\s+\{[^}]*\bnoteSceneInteraction\b[^}]*\breleaseFocusCameraAssist\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(journeySrc),
-    'journey.js should import camera interaction functions directly from camera-controls.js'
+    /import\s+\{[^}]*\bfocusOnNode\b[^}]*\bnoteSceneInteraction\b[^}]*\breleaseFocusCameraAssist\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(canvasInteractionSrc),
+    'journey-canvas-interaction.js should import camera interaction functions directly from camera-controls.js'
   );
 
   console.log('  OK — camera interaction bridges retired; direct imports remain');
@@ -865,6 +879,7 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
   const cameraSrc = read('camera');
   const threeSetupSrc = read('threeSetup');
   const journeySrc = read('journey');
+  const threadSettlerSrc = read('journeyThreadSettler');
   const journeyCompassSrc = read('journeyCompassCtrl');
   const keyboardSrc = read('keyboardHelp');
   const uiRenderersSrc = read('uiRenderers');
@@ -891,12 +906,16 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
     'three-setup.js must not call window.applySemanticCentroidCamera'
   );
   assert(
-    /export function initJourneyTimerAdapter/.test(journeySrc),
-    'journey.js should expose a timer adapter initializer for tests and non-window environments'
+    /export\s+\{[\s\S]*\binitJourneyTimerAdapter\b[\s\S]*\}/.test(journeySrc) &&
+      /export function initJourneyTimerAdapter/.test(threadSettlerSrc),
+    'journey.js should re-export the thread-settler timer adapter initializer for tests and non-window environments'
   );
   assert(
-    !journeySrc.includes('window.setTimeout') && !journeySrc.includes('window.clearTimeout'),
-    'journey.js must not call timers through window'
+    !journeySrc.includes('window.setTimeout') &&
+      !journeySrc.includes('window.clearTimeout') &&
+      !threadSettlerSrc.includes('window.setTimeout') &&
+      !threadSettlerSrc.includes('window.clearTimeout'),
+    'journey/thread-settler modules must not call timers through window'
   );
   assert(
     journeyCompassSrc.includes('resetExplorationFocus();'),

@@ -15,7 +15,13 @@
 | `js/modules/lifecycle.js` | App orchestration, view handoff, window bindings, scene-reveal logic |
 | `js/modules/demo-controller.js` | First-visit trigger + state machine |
 | `js/modules/micro-demo.js` | 9-second guided choreography |
-| `js/modules/journey.js` | Trail state, neighbor calculation, selected-card rendering |
+| `js/modules/journey.js` | Thin journey orchestration layer; delegates extracted journey owners and preserves the public surface |
+| `js/modules/journey-neighborhood.js` | Neighborhood manifest, bounded walk candidates, trail seed, and route index derivation |
+| `js/modules/journey-selected-card.js` | Focus-stage sync, selected-card rendering, and selected business DOM hydration |
+| `js/modules/journey-canvas-interaction.js` | Canvas node hit testing, hover state, pointer bindings, and canvas-to-thread handoff |
+| `js/modules/journey-focus-ui.js` | Focus/traversal DOM UI, neighbor rail rendering, and walk breadcrumb internals |
+| `js/modules/journey-thread-settler.js` | Thread walk traversal, neighbor timers, inspection settle flow, and inside preview state |
+| `js/modules/strand-continuity.js` | Shared strand phase and arrival continuity state for journey and thread inspector |
 | `js/modules/ui-renderers.js` | Window-bound DOM renderers for legend, search rows, and selected-card chrome |
 | `js/modules/search-state.js` | Search engine, query tokenization, result rendering |
 | `js/modules/three-setup.js` | WebGL engine: scene, camera, renderer, shaders, instanced meshes |

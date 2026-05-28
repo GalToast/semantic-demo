@@ -30,6 +30,9 @@
         "trail-review-focus-contract.mjs",
         "pathfinding-contract.mjs",
         "journey-walk-candidate-contract.mjs",
+        "journey-walk-thread-neighbor-timer-contract.mjs",
+        "journey-focus-ui-extraction-contract.mjs",
+        "journey-point-color-contract.mjs",
         "journey-ui-ownership-contract.mjs"
       ]
     },
@@ -113,6 +116,9 @@
         "window-bridge-gaps-contract.mjs",
         "loading-ui-contract.mjs",
         "short-landscape-layout-contract.mjs",
+        "mobile-visual-qa-contract.mjs",
+        "real-route-contract.mjs",
+        "landscape-896x414-audit.spec.js",
         "critical-visual-layout-regression.spec.js"
       ]
     },
@@ -145,6 +151,7 @@
         "weather-lifecycle-contract.mjs",
         "window-bridge-gaps-contract.mjs",
         "residual-window-bridge-inventory-contract.mjs",
+        "app-node-import-contract.mjs",
         "next-explore-candidate-contract.mjs",
         "ui-renderers-helper-contract.mjs",
         "lifecycle-semantic-guide-residual-bridge-contract.mjs",
@@ -153,10 +160,13 @@
         "semantic-dive-active-owner-contract.mjs",
         "state-ownership-contract.mjs",
         "filter-ownership-contract.mjs",
+        "cluster-filter-contract.mjs",
         "cluster-filter-city-filter-side-effect-contract.mjs",
         "keyboard-reset-ownership-contract.mjs",
+        "url-state-bridge-contract.mjs",
         "url-state-search-dewindowing-contract.mjs",
         "cluster-filter-dewindowing-contract.mjs",
+        "search-focus-transition-timer-contract.mjs",
         "search-state-ui-adapter-contract.mjs",
         "search-panel-adapter-contract.mjs",
         "url-state-navigation-dewindowing-contract.mjs",
@@ -168,6 +178,7 @@
         "journey-focus-runtime-state-contract.mjs",
         "journey-strand-continuity-contract.mjs",
         "journey-neighborhood-manifest-contract.mjs",
+        "journey-walk-thread-neighbor-timer-contract.mjs",
         "bootstrap-window-export-contract.mjs",
         "lifecycle-search-panel-ownership-contract.mjs",
         "lifecycle-journey-quick-dewindowing-contract.mjs",
@@ -189,6 +200,7 @@
         "surface-redundancy-contract.mjs",
         "aria-sync-contract.mjs",
         "focus-trap-contract.mjs",
+        "window-global-allowlist-contract.mjs",
         "persistence-contract.mjs",
         "disposal-hygiene-contract.spec.js"
       ]
@@ -220,6 +232,7 @@
         "3d-data-edge-cases.spec.js",
         "3d-focus-neighborhood-geometry.spec.js",
         "3d-focus-neighborhood-interaction.spec.js",
+        "focus-semantic-line-contract.spec.js",
         "3d-rapid-re-selection-contract.spec.js"
       ]
     },
@@ -426,6 +439,9 @@
         "cluster-labels-contract.mjs",
         "journey-thread-inspector-contract.mjs",
         "trail-review-focus-contract.mjs",
+        "journey-walk-thread-neighbor-timer-contract.mjs",
+        "journey-focus-ui-extraction-contract.mjs",
+        "journey-point-color-contract.mjs",
         "journey-ui-ownership-contract.mjs",
         "share-view-clipboard-contract.mjs",
         "keyboard-help-aria-contract.mjs",

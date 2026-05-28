@@ -52,11 +52,11 @@ async function setupNetworkStubs(page) {
 async function waitForAppReady(page) {
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`);
   await page.waitForFunction(() => (
-    typeof window.clearSearch === 'function' &&
-    typeof window.refreshCompositionState === 'function' &&
+    typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function' &&
+    typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
-  ), { timeout: 20000 });
+  ), undefined, { timeout: 20000 });
   await page.waitForTimeout(800);
 }
 
@@ -69,14 +69,15 @@ async function performSearch(page, query = 'coffee') {
     if (!el) return;
     el.value = q;
     el.dispatchEvent(new Event('input', { bubbles: true }));
-    if (typeof window.search === 'function') {
-      await window.search(q, { preferCachedResults: false });
+    const search = window.__APP_ACTIONS__?.search ?? window.search;
+    if (typeof search === 'function') {
+      await search(q, { preferCachedResults: false });
     }
   }, query);
   await page.waitForFunction(() => (
     document.querySelectorAll('.search-result-item').length > 0 ||
     document.getElementById('search-results')?.innerHTML?.includes('search-result-item')
-  ), { timeout: 15000 });
+  ), undefined, { timeout: 15000 });
 }
 
 async function getFocusableElements(page, rootEl) {

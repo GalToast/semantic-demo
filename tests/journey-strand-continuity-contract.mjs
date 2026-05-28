@@ -16,16 +16,17 @@ const { state } = await import('../js/state.js');
 const {
   setStrandContinuityState,
   clearStrandContinuityState,
-  initJourneyTimerAdapter,
-} = await import('../js/modules/journey.js');
+} = await import('../js/modules/strand-continuity.js');
+const journeyModule = await import('../js/modules/journey.js');
+const threadInspectorModule = await import('../js/modules/thread-inspector.js');
 
 const original = { strandContinuityState: state.strandContinuityState };
 
 try {
-  initJourneyTimerAdapter({
-    setTimer: () => 1,
-    clearTimer: () => {},
-  });
+  assert(journeyModule.setStrandContinuityState === setStrandContinuityState, 'journey should re-export the shared strand setter');
+  assert(journeyModule.clearStrandContinuityState === clearStrandContinuityState, 'journey should re-export the shared strand clearer');
+  assert(threadInspectorModule.setStrandContinuityState === setStrandContinuityState, 'thread-inspector should re-export the shared strand setter');
+  assert(threadInspectorModule.clearStrandContinuityState === clearStrandContinuityState, 'thread-inspector should re-export the shared strand clearer');
 
   const exploring = setStrandContinuityState('exploring', {
     targetIndex: 7,

@@ -39,6 +39,18 @@ getThreadCandidatesForIndex(index: number): Candidate[]
 - `journey.js` text helpers `truncateMicrocopy` and `getSharedTrailTopicLabel` now live in `journey-text-helpers.js`
 - `journey.js` re-exports those helpers to preserve its public surface
 - `journey-thread-inspector-contract.mjs` and `journey-window-surface-contract.mjs` guard the helper extraction and shared `normalizeLeadId` import
+- 2026-05-28 journey extraction pass: `journey.js` is now an orchestration/shim module for extracted owners:
+  - `journey-thread-model.js` owns normalized lead IDs plus projected, semantic, and geometric thread candidate derivation.
+  - `journey-text-helpers.js` owns shared journey text helpers such as `truncateMicrocopy` and shared trail labels.
+  - `journey-neighborhood.js` owns bounded neighborhood traversal candidates, manifests, route indices, and trail seed/index updates.
+  - `journey-selected-card.js` owns selected-card/focus-stage rendering and selected business hydration.
+  - `journey-canvas-interaction.js` owns canvas field-node picking, hover diagnostics, and canvas-to-thread inspection handoff.
+  - `journey-focus-ui.js` owns focus/traversal DOM UI, neighbor rail rendering, and the internal walk breadcrumb renderer.
+  - `journey-point-color.js` owns point color factors, point-to-spore color sync, and thread lens descriptions.
+  - `journey-thread-settler.js` owns thread inspection state, pin/unpin/clear behavior, walk/backtrack traversal, semantic-dive inside previews, and injectable journey timer hooks.
+  - `strand-continuity.js` owns shared strand phase and arrival continuity state for journey and thread inspector.
+  - `semantic-lane.js` owns semantic lane snapshots and lane state outside the journey shim.
+- Current size checkpoint after this pass: `journey.js` is 275 lines; extracted owners are `journey-thread-settler.js` 583, `journey-canvas-interaction.js` 454, `journey-selected-card.js` 439, `journey-neighborhood.js` 422, `journey-focus-ui.js` 345, and `journey-point-color.js` 155 lines.
 
 ---
 
@@ -141,7 +153,7 @@ recordSemanticLaneSnapshot(partial?: object): Snapshot
 ## Cross-Cutting Observations
 
 ### Tight Coupling: journey.js <-> lifecycle.js via window.*
-`window.updateJourneyCompass`, `window.showExperienceToast`, runtime `window.syncSemanticDiveUi` callers, runtime `window.focusOnPoint` callers, journey/thread-inspector arrival handoff callers, and search-state `window.refreshCompositionState` callers were dewindowed 2026-05-25; callers now use direct named imports or leaf adapters from their owner modules. The `window.focusOnPoint` and `window.syncSemanticDiveUi` compatibility bridges were retired 2026-05-25. `window.refreshCompositionState` and arrival handoff globals remain as temporary compatibility bridges for tests/external callers. To extract `journey.js` cleanly, the remaining bridge calls must become proper named imports.
+`window.updateJourneyCompass`, `window.showExperienceToast`, runtime `window.syncSemanticDiveUi` callers, runtime `window.focusOnPoint` callers, journey/thread-inspector arrival handoff callers, and search-state `window.refreshCompositionState` callers were dewindowed 2026-05-25; callers now use direct named imports or leaf adapters from their owner modules. As of 2026-05-28, `strand-continuity.js` owns strand phase state plus direct arrival handoff calls for journey and thread-inspector. The `window.focusOnPoint` and `window.syncSemanticDiveUi` compatibility bridges were retired 2026-05-25. `window.refreshCompositionState` and arrival handoff globals remain as temporary compatibility bridges for tests/external callers. To extract `journey.js` cleanly, the remaining bridge calls must become proper named imports.
 
 ### Auto-init Pattern in journey.js (line 66)
 `initJourneyState()` runs on import - a side-effect that prevents journey.js from being a pure module. Moving this to a factory function `createJourneyModule(state)` or requiring callers to invoke `initJourneyState()` first is the extraction prerequisite.

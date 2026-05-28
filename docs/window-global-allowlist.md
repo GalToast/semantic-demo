@@ -66,6 +66,7 @@ Classification: `migration-debt`. These exist but have no desired long-term owne
 | Global | Owner | Notes |
 |---|---|---|
 | `window.focusOnNode` | `js/modules/lifecycle.js` | Legacy focus bridge. Callers migrated to direct imports; bridge kept for test compatibility. |
+| `window.setTrailFromSeed` | `js/modules/journey.js` | Legacy seed bridge. No desired long-term owner; migrates to direct imports. |
 
 ## `_ti` Debug-Probe Planned Contract
 

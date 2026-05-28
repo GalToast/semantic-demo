@@ -28,45 +28,25 @@ import {
 import { switchView, showViewHandoff, hideViewHandoff } from './view-controller.js';
 import {
     updateSelectedBusiness,
-    setTrailFromSeed,
     syncFocusStage,
-    applyPointFilterColors,
-    setRouteChoreographyPhase,
-    updateTraversalUi,
-    clearThreadInspection,
     traverseNeighbor,
-    walkThreadNeighbor
+    walkThreadNeighbor,
+    applyPointFilterColors
 } from './journey.js';
 import {
     applyFilters,
-    getFilteredIndices,
     clearSearchGlow,
     updateSearchStatusMessage,
-    clearSearchPreviewHoverTimer,
     setSearchPanelState,
     clearSearch
 } from './search-state.js';
 import { buildSelectedMatchNarrative, getInterestingBusinessNote, updateSelectedCardHeading } from './ui-renderers.js';
 import {
-    updateSearchTrailCue,
-    buildLegend
+    updateSearchTrailCue
 } from './ui-renderers.js';
 import {
-    focusOnNode,
-    animateCameraToNode
+    focusOnNode
 } from './camera-controls.js';
-import {
-    clearFocusPocketIndices,
-    clearFocusPocketMeta,
-    clearFocusPocketRoleByIndex,
-    clearFocusPocketMotionByIndex,
-    applyLocalNeighborhoodFocus
-} from './focus-pocket.js';
-import {
-    applyWeatherEffects,
-    clearWeatherRefreshTimer,
-    clearWeatherEffects
-} from './weather.js';
 import {
     updateLegendGuideState,
     closeLegendGuide,
@@ -75,18 +55,10 @@ import {
     restoreLegendCollapsedPanel
 } from './legend-ui.js';
 import {
-    showSemanticThreadsDetail
-} from './connection-analysis.js';
-import {
     syncSemanticDiveUi
 } from './semantic-dive-ui.js';
 import {
-    setSemanticGuideButtonState,
-    showSummaryCard,
-    hideSummaryCard as hideSummaryCardImpl,
-    requestSemanticGuide,
-    semanticGuideIcon,
-    getSemanticGuideTitle
+    hideSummaryCard as hideSummaryCardImpl
 } from './semantic-guide.js';
 import {
     showExperienceToast as showExperienceToastImpl,
@@ -158,6 +130,9 @@ export {
     invokeClearMobileRouteFieldPeek,
     updateLegendGuideState,
     closeLegendGuide,
+    closeLegendPanel,
+    openLegendPanel,
+    restoreLegendCollapsedPanel,
     clearSearch,
     clearClusterFilter,
     updateClusterList,
@@ -407,10 +382,10 @@ export function returnToOverview() {
 export function updateExplorationUi() {
     // applyFilters is owned by search-state; calling it from here caused a
     // recursion loop:
-    //   focusNode → updateExplorationUi → applyFilters → refreshCompositionState
-    //   → updateExplorationUi → applyFilters → ... (Maximum call stack exceeded)
-    // applyFilters is already called directly from camera-controls:focusOnNode
-    // (line ~1172), so no product behaviour is lost by removing it from here.
+    //   focusNode -> updateExplorationUi -> applyFilters -> refreshCompositionState
+    //   -> updateExplorationUi -> applyFilters -> ... (Maximum call stack exceeded)
+    // applyFilters is already called directly from camera-controls:focusOnNode,
+    // so no product behavior is lost by removing it from here.
     refreshCompositionState();
 }
 

@@ -79,6 +79,7 @@ Primary source:
 
 - Markup: `vector-explorer-polished.html`, `.focus-stage`, `.focus-stage-card`, `.focus-stage-inside-status`, `.focus-stage-inside-controls`
 - State: `data-panel-surface="focus"`, `data-panel-surface="focus-search"`, `data-panel-surface="semantic-dive"`, and transition-only `data-semantic-dive="transitioning"`
+- JS owner: `js/modules/journey-selected-card.js` owns `syncFocusStage()` and selected-card DOM hydration; `js/modules/journey-focus-ui.js` owns focus/traversal DOM UI and the neighbor rail; `js/modules/journey.js` is now the orchestration/re-export layer for this surface.
 - Current cascade owners: `css/journey_active.css` for active journey/field-node choreography, `css/mobile_premium_focus.css` for final mobile focus-search and semantic-dive composition, and `css/mobile_premium_surfaces.css` for late canopy/bottom-sheet geometry corrections.
 - Supporting legacy/base styles: `css/journey_steps.css`, `css/mobile_base.css`, `css/strands.css`, `css/progressive_disclosure.css`, `css/shell.css`
 

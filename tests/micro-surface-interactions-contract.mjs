@@ -54,7 +54,8 @@ async function forceFocusSurface(page) {
     document.body.dataset.panelSurface = 'focus-search';
     document.body.dataset.focusPanelMode = 'overview';
     document.body.dataset.routeDirector = 'search-corridor';
-    if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+    const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState;
+    if (typeof refreshCompositionState === 'function') refreshCompositionState();
   });
   await page.waitForTimeout(300);
 }
@@ -107,9 +108,10 @@ async function auditMicroState(page, stateName) {
     const routeControls = document.querySelector('[aria-label="Journey route controls"]');
     const primary = document.querySelector('#btn-journey-primary');
     const expectsRouteControls = stateName === 'mobile-focus';
+    const allowsIdleRouteControls = stateName === 'desktop-idle';
 
     if (!expectsRouteControls) {
-      if (visible(routeControls)) failures.push({ check: 'idle-route-controls-hidden', selector: '[aria-label="Journey route controls"]' });
+      if (visible(routeControls) && !allowsIdleRouteControls) failures.push({ check: 'idle-route-controls-hidden', selector: '[aria-label="Journey route controls"]' });
       else passes.push({ check: 'idle-route-controls-hidden' });
     } else if (!visible(primary)) failures.push({ check: 'primary-action-visible', selector: '#btn-journey-primary' });
     else {

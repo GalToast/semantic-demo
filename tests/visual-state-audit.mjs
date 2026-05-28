@@ -5,7 +5,21 @@ import { chromium } from 'playwright';
 import { VISUAL_STATE_ID_SET } from './visual-state-registry.mjs';
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
-process.env.PW_TEST_SCREENSHOT_NO_FONTS_READY = '1';
+const LOCAL_FONT_FIXTURE_CSS = `
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: local('Arial');
+  font-weight: 400 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: local('Consolas');
+  font-weight: 400 800;
+  font-display: swap;
+}
+`;
+const FONT_ASSET_RE = /\.(?:woff2?|ttf)(?:$|\?)/i;
 const cliArgs = process.argv.slice(2).filter((arg) => arg !== '--');
 function stableUrl(url) {
   const next = new URL(url);
@@ -43,19 +57,22 @@ async function createAuditPage(browser, options = {}) {
     console.log(`[Browser Console] [${msg.type()}] ${msg.text()}`);
   });
   page.on('requestfailed', (req) => {
+    const url = req.url();
+    if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com') || FONT_ASSET_RE.test(url)) {
+      return;
+    }
     console.log(`[Request Failed] ${req.url()} - Error: ${req.failure()?.errorText || 'unknown'}`);
   });
   await page.route('**/*', (route) => {
     const url = route.request().url();
-    if (
-      url.includes('fonts.googleapis.com') ||
-      url.includes('fonts.gstatic.com') ||
-      url.endsWith('.woff') ||
-      url.endsWith('.woff2') ||
-      url.endsWith('.ttf')
-    ) {
-      // console.log(`[Aborting Route] ${url}`);
-      route.abort();
+    if (url.includes('fonts.googleapis.com')) {
+      route.fulfill({
+        status: 200,
+        contentType: 'text/css; charset=utf-8',
+        body: LOCAL_FONT_FIXTURE_CSS,
+      });
+    } else if (url.includes('fonts.gstatic.com') || FONT_ASSET_RE.test(url)) {
+      route.fulfill({ status: 204, body: '' });
     } else {
       // console.log(`[Continuing Route] ${url}`);
       route.continue();
@@ -867,7 +884,7 @@ async function run() {
 
         if (wantsState('06-mobile-filters-open')) {
           await gotoReady(mobilePage, targetUrl);
-          await waitForReady(mobilePage);
+          await waitForReady(mobilePage, '06-mobile-filters-open:prepare');
           await mobilePage.locator('#filters-section summary').click({ timeout: 5000 }).catch(() => {});
           await captureMaybe(states, mobilePage, '06-mobile-filters-open');
         }
@@ -880,7 +897,7 @@ async function run() {
 
         if (wantsState('10-mobile-search-error-state')) {
           await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy', q: 'semantic-error-proof' }));
-          await waitForReady(mobilePage);
+          await waitForReady(mobilePage, '10-mobile-search-error-state:prepare');
           await mobilePage.evaluate(() => {
             document.body.dataset.laneState = 'degraded';
             const searchContainer = document.querySelector('.search-container');
@@ -903,7 +920,7 @@ async function run() {
 
         if (wantsState('11-mobile-selected-card-map-trail')) {
           await gotoReady(mobilePage, withParams(targetUrl, { view: 'map', q: 'coffee', anchor: '519' }));
-          await waitForReady(mobilePage);
+          await waitForReady(mobilePage, '11-mobile-selected-card-map-trail:prepare');
           await mobilePage.evaluate(() => {
             document.body.dataset.activeView = 'map';
             document.body.dataset.trailState = 'active';
@@ -914,7 +931,7 @@ async function run() {
 
         if (wantsState('21-mobile-route-trace-visible')) {
           await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }));
-          await waitForReady(mobilePage);
+          await waitForReady(mobilePage, '21-mobile-route-trace-visible:prepare');
           const firstResult = mobilePage.locator('.search-result-item').first();
           await firstResult.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
           if (await firstResult.isVisible().catch(() => false)) {
@@ -977,7 +994,7 @@ async function run() {
 
         if (wantsState('17-mobile-thread-inspector')) {
           await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }));
-          await waitForReady(mobilePage);
+          await waitForReady(mobilePage, '17-mobile-thread-inspector:prepare');
           const firstResult = mobilePage.locator('.search-result-item').first();
           if (await firstResult.count()) {
             await firstResult.click({ timeout: 5000 }).catch(() => {});
@@ -1104,7 +1121,7 @@ async function run() {
 
         if (wantsState('11-desktop-selected-card-map-trail')) {
           await gotoReady(desktopPage, withParams(targetUrl, { view: 'map', q: 'coffee', anchor: '519' }));
-          await waitForReady(desktopPage);
+          await waitForReady(desktopPage, '11-desktop-selected-card-map-trail:prepare');
           await desktopPage.evaluate(() => {
             document.body.dataset.activeView = 'map';
             document.body.dataset.trailState = 'active';
@@ -1115,7 +1132,7 @@ async function run() {
 
         if (wantsState('16-desktop-info-panel-populated')) {
           await gotoReady(desktopPage, targetUrl);
-          await waitForReady(desktopPage);
+          await waitForReady(desktopPage, '16-desktop-info-panel-populated:prepare');
           await applyPopulatedInfoPanelState(desktopPage);
           await desktopPage.waitForTimeout(300);
           await applyPopulatedInfoPanelState(desktopPage);
@@ -1135,14 +1152,14 @@ async function run() {
 
         if (wantsState('13-desktop-filters-open')) {
           await gotoReady(desktopPage, targetUrl);
-          await waitForReady(desktopPage);
+          await waitForReady(desktopPage, '13-desktop-filters-open:prepare');
           await desktopPage.locator('#filters-section summary').click({ timeout: 5000 }).catch(() => {});
           await captureMaybe(states, desktopPage, '13-desktop-filters-open');
         }
 
         if (wantsState('14-desktop-search-error')) {
           await gotoReady(desktopPage, withParams(targetUrl, { view: 'galaxy', q: 'semantic-error-proof' }));
-          await waitForReady(desktopPage);
+          await waitForReady(desktopPage, '14-desktop-search-error:prepare');
           await desktopPage.evaluate(() => {
             document.body.dataset.laneState = 'degraded';
             const searchContainer = document.querySelector('.search-container');

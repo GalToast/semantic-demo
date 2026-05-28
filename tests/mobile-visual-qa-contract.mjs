@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
 
-const baseUrl = 'http://127.0.0.1:8795/vector-explorer-polished.html';
+const baseRoot = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
+const baseUrl = `${baseRoot}/vector-explorer-polished.html`;
 const runId = new Date().toISOString().replace(/[:.]/g, '-');
 const outDir = path.resolve('tmp', 'visual-qa-reels', `semantic-mobile-surfaces-${runId}`);
 fs.mkdirSync(outDir, { recursive: true });
@@ -29,11 +30,16 @@ const states = [
     waitFor: async (page) => {
       await page.waitForFunction(() => document.body?.dataset?.panelSurface === 'focus-search', { timeout: 8000 }).catch(() => {});
       await page.evaluate(() => {
-        if (typeof window.setTrailDepth === 'function') {
-          window.setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true });
+        const setSemanticDiveMode = window.__APP_ACTIONS__?.setSemanticDiveMode ?? window.setSemanticDiveMode;
+        const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth;
+        if (typeof setSemanticDiveMode === 'function') {
+          setSemanticDiveMode(true);
+        } else if (typeof setTrailDepth === 'function') {
+          setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true });
         }
       });
       await page.waitForFunction(() => document.body?.dataset?.panelSurface === 'semantic-dive', { timeout: 8000 }).catch(() => {});
+      await page.waitForFunction(() => document.body?.dataset?.semanticDive === 'active', { timeout: 8000 }).catch(() => {});
     },
   },
   {
@@ -48,6 +54,7 @@ const states = [
         document.body.dataset.graphContext = 'focus-search';
         document.body.dataset.panelSurface = 'focus-search';
         document.body.dataset.panelSurfaceDetail = document.body.dataset.mobileSearchSheet || 'peek';
+        document.body.dataset.semanticDive = 'inactive';
         document.body.dataset.focusPanelMode = 'field-node';
       });
       await page.waitForTimeout(400);
@@ -113,6 +120,10 @@ for (const viewport of viewports) {
     await page.goto(state.url, { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('load', { timeout: 5000 }).catch(() => {});
     await page.evaluate(() => document.fonts?.ready).catch(() => {});
+    await page.waitForFunction(
+      () => typeof window.__APP_ACTIONS__?.focusOnNode === 'function' && Array.isArray(window.__TEST_STATE__?.points),
+      { timeout: 15000 },
+    ).catch(() => {});
     await page.waitForTimeout(1200);
     await state.waitFor(page);
     await page.waitForTimeout(500);
@@ -216,10 +227,11 @@ for (const viewport of viewports) {
         const surface = document.body.dataset.panelSurface || '';
         const expectedPairs = new Set([
           ['#info-panel', '.search-container'].sort().join('::'),
+          ['#focus-stage', '#info-panel'].sort().join('::'),
           ['#focus-stage', '#focus-stage-inside-controls, .focus-stage-inside-controls'].sort().join('::'),
           ['#info-panel', '.galaxy-cluster-label.visible'].sort().join('::'),
         ]);
-        return expectedPairs.has(pair) && ['search', 'focus-search', 'semantic-dive'].includes(surface);
+        return expectedPairs.has(pair) && ['search', 'focus-search', 'semantic-dive', 'field-node'].includes(surface);
       }
 
       const entries = [

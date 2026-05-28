@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { state } from '../state.js';
 // js/modules/thread-inspector.js — thread/strand inspection for semantic demo
 ;
-import { formatBusinessName, stripTerminalPunctuation, cleanOptionalValue, normalizeCityForFilter } from '../utils.js';
+import { formatBusinessName, stripTerminalPunctuation, normalizeCityForFilter } from '../utils.js';
 import { getProjectedNeighborCandidates } from './journey-thread-model.js';
 import { normalizeLeadId } from './journey-thread-model.js';
 import { truncateMicrocopy } from './thread-inspector-text-helpers.js';
@@ -11,7 +11,7 @@ import { dispatchNavTransition, focusOnPoint, syncFocusStage } from './lifecycle
 import { updateJourneyCompass } from './journey-compass-controller.js';
 import { showExperienceToast } from './ui-feedback.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
-import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from './journey-webgl.js';
+import { setStrandContinuityState, clearStrandContinuityState } from './strand-continuity.js';
 import {
     adapter_summarizeNeighborReason,
     adapter_getInsideRelationshipLabel,
@@ -87,40 +87,7 @@ export function getThreadCandidatesForIndex(index) {
     return getGeometricThreadCandidates(index);
 }
 
-// === Strand continuity state ===
-
-export function setStrandContinuityState(phase = 'idle', options = {}) {
-    const normalizedPhase = ['idle', 'preview', 'pinned', 'exploring', 'arrived', 'returning'].includes(phase)
-        ? phase
-        : 'idle';
-    state.strandContinuityState = {
-        phase: normalizedPhase,
-        targetIndex: Number.isFinite(options.targetIndex) ? options.targetIndex : null,
-        fromIndex: Number.isFinite(options.fromIndex) ? options.fromIndex : null,
-        reason: cleanOptionalValue(options.reason) || '',
-        startedAt: performance.now()
-    };
-    if (document.body) {
-        document.body.dataset.strandJourney = normalizedPhase;
-        document.body.dataset.strandJourneyTarget = Number.isFinite(state.strandContinuityState.targetIndex)
-            ? String(state.strandContinuityState.targetIndex)
-            : '';
-        document.body.dataset.strandJourneyFrom = Number.isFinite(state.strandContinuityState.fromIndex)
-            ? String(state.strandContinuityState.fromIndex)
-            : '';
-        document.body.dataset.strandJourneyReason = state.strandContinuityState.reason;
-    }
-    if (['exploring', 'arrived'].includes(normalizedPhase)) {
-        syncArrivalHandoffOverlay();
-    } else if (normalizedPhase === 'idle') {
-        disposeArrivalHandoffOverlay();
-    }
-    return state.strandContinuityState;
-}
-
-export function clearStrandContinuityState(reason = 'clear') {
-    setStrandContinuityState('idle', { reason });
-}
+export { setStrandContinuityState, clearStrandContinuityState };
 
 export function getStrandArrivalNote(point = null) {
     if (state.strandContinuityState.phase !== 'arrived') return '';

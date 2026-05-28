@@ -58,7 +58,6 @@ const liveProduct = new Set([
   'setRouteChoreographyPhase',
   'setStrandContinuityState',
   'setTrailDepth',
-  'setTrailFromSeed',
   'startFocusCameraAssist',
   'summarizeNeighborReason',
   'syncArrivalHandoffOverlay',
@@ -94,6 +93,7 @@ const debugProbe = new Set([
 
 const migrationDebt = new Set([
     'focusOnNode',
+    'setTrailFromSeed',
 ]);
 
 function assert(condition, message) {

@@ -22,6 +22,8 @@ import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
+const JOURNEY_POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-point-color.js');
+const JOURNEY_CANVAS_INTERACTION_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-interaction.js');
 const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js');
 const JOURNEY_THREAD_MODEL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-model.js');
 const JOURNEY_WEBGL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.js');
@@ -110,24 +112,24 @@ function testSemanticDiveModeExitPath() {
 function testApplyPointFilterColorsFactorRanges() {
   console.log('\n[TEST] applyPointFilterColors brightness factor ranges');
 
-  const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const pointColorSrc = fs.readFileSync(JOURNEY_POINT_COLOR_PATH, 'utf-8');
 
   // nodeMinFloor must be 0.65 (applied in pocket mode)
-  assertContains(journeySrc, 'const nodeMinFloor = 0.65', 'nodeMinFloor = 0.65');
-  assertContains(journeySrc, 'Math.max(raw, nodeMinFloor)', 'nodeMinFloor applied via Math.max');
+  assertContains(pointColorSrc, 'const nodeMinFloor = 0.65', 'nodeMinFloor = 0.65');
+  assertContains(pointColorSrc, 'Math.max(raw, nodeMinFloor)', 'nodeMinFloor applied via Math.max');
 
   // Trail mode unvisited factor must be >= 0.08 (not invisible)
-  assertContains(journeySrc, 'isVisited ? 1.18 : (semanticFocus ? 0.24 : 0.18)', 'trail mode unvisited factor >= 0.18');
-  assertContains(journeySrc, 'isVisited ? 1.18 : 0.28', 'trail mode pre-trailIndices unvisited factor');
+  assertContains(pointColorSrc, 'isVisited ? 1.18 : (semanticFocus ? 0.24 : 0.18)', 'trail mode unvisited factor >= 0.18');
+  assertContains(pointColorSrc, 'isVisited ? 1.18 : 0.28', 'trail mode pre-trailIndices unvisited factor');
 
   // Pocket mode non-focusLocalIndices factor must be >= 0.22
-  assertContains(journeySrc, 'isVisited ? 1.28 : (semanticFocus ? 0.32 : 0.22)', 'pocket mode non-focusLocal factor >= 0.22');
+  assertContains(pointColorSrc, 'isVisited ? 1.28 : (semanticFocus ? 0.32 : 0.22)', 'pocket mode non-focusLocal factor >= 0.22');
 
   // Bloom mode dimmed factor must be 0.08 (invisible)
-  assertContains(journeySrc, 'visible ? 1 : 0.08', 'invisible factor is 0.08');
+  assertContains(pointColorSrc, 'visible ? 1 : 0.08', 'invisible factor is 0.08');
 
   // Focus anchor factor must be brightest (> 2.0)
-  assertContains(journeySrc, 'i === state.navState.focusedIndex ? 2.14', 'focus anchor factor 2.14');
+  assertContains(pointColorSrc, 'i === state.navState.focusedIndex ? 2.14', 'focus anchor factor 2.14');
 
   console.log('  OK applyPointFilterColors factor ranges verified');
 }
@@ -171,22 +173,22 @@ function testBuildRouteTraceMaterial() {
 function testGetCanvasNodePickingMode() {
   console.log('\n[TEST] getCanvasNodePickingMode URL override');
 
-  const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const canvasInteractionSrc = fs.readFileSync(JOURNEY_CANVAS_INTERACTION_PATH, 'utf-8');
 
   // Must read URL search params
-  assertContains(journeySrc, 'new URLSearchParams(window.location.search)', 'URLSearchParams used for picking mode');
+  assertContains(canvasInteractionSrc, 'new URLSearchParams(window.location.search)', 'URLSearchParams used for picking mode');
 
   // Must check ?picking= parameter
-  assertContains(journeySrc, "get('picking')", 'get("picking") called on URLSearchParams');
+  assertContains(canvasInteractionSrc, "get('picking')", 'get("picking") called on URLSearchParams');
 
   // Must return 'nearest' when urlMode === 'nearest'
-  assertContains(journeySrc, "urlMode === 'nearest'", 'nearest URL mode check');
-  assertContains(journeySrc, "return urlMode === 'nearest' || datasetMode === 'nearest' ? 'nearest' : 'raycast'", 'fallback to raycast');
+  assertContains(canvasInteractionSrc, "urlMode === 'nearest'", 'nearest URL mode check');
+  assertContains(canvasInteractionSrc, "return urlMode === 'nearest' || datasetMode === 'nearest' ? 'nearest' : 'raycast'", 'fallback to raycast');
 
   // Touch/pen must use 34px radius
-  assertContains(journeySrc, "pointerType === 'touch' || pointerType === 'pen'", 'touch/pen pointer type check');
-  assertContains(journeySrc, "return 34;", 'touch/pen returns 34px');
-  assertContains(journeySrc, "window.matchMedia?.('(pointer: coarse)')?.matches ? 34 : 26", 'coarse pointer uses 34px else 26px');
+  assertContains(canvasInteractionSrc, "pointerType === 'touch' || pointerType === 'pen'", 'touch/pen pointer type check');
+  assertContains(canvasInteractionSrc, "return 34;", 'touch/pen returns 34px');
+  assertContains(canvasInteractionSrc, "window.matchMedia?.('(pointer: coarse)')?.matches ? 34 : 26", 'coarse pointer uses 34px else 26px');
 
   console.log('  OK getCanvasNodePickingMode URL override verified');
 }
@@ -259,6 +261,40 @@ function testThreadInspectorSemanticFirst() {
   assert(normalizeLeadIdNear < importBlockEnd, 'normalizeLeadId is imported from journey-thread-model.js');
 
   console.log('  OK thread-inspector dual candidates strategy verified');
+}
+
+// ---------------------------------------------------------------------------
+// TEST 6.5: Shared strand-continuity owner
+// ---------------------------------------------------------------------------
+
+function testSharedStrandContinuityOwner() {
+  console.log('\n[TEST] Shared strand-continuity owner');
+
+  const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
+  const strandContinuityPath = path.join(SEMDEMO_ROOT, 'js/modules/strand-continuity.js');
+  const strandContinuitySrc = fs.readFileSync(strandContinuityPath, 'utf-8');
+
+  assertContains(strandContinuitySrc, 'export function setStrandContinuityState', 'strand-continuity exports setter');
+  assertContains(strandContinuitySrc, 'export function clearStrandContinuityState', 'strand-continuity exports clearer');
+  assertContains(strandContinuitySrc, "from './journey-webgl.js'", 'strand-continuity owns arrival handoff overlay imports');
+
+  assertContains(
+    journeySrc,
+    "import { setStrandContinuityState, clearStrandContinuityState } from './strand-continuity.js';",
+    'journey imports shared strand-continuity owner'
+  );
+  assertContains(
+    threadInspectorSrc,
+    "import { setStrandContinuityState, clearStrandContinuityState } from './strand-continuity.js';",
+    'thread-inspector imports shared strand-continuity owner'
+  );
+  assertNotContains(journeySrc, 'export function setStrandContinuityState', 'journey local strand setter removed');
+  assertNotContains(journeySrc, 'export function clearStrandContinuityState', 'journey local strand clearer removed');
+  assertNotContains(threadInspectorSrc, 'export function setStrandContinuityState', 'thread-inspector local strand setter removed');
+  assertNotContains(threadInspectorSrc, 'export function clearStrandContinuityState', 'thread-inspector local strand clearer removed');
+
+  console.log('  OK shared strand-continuity owner verified');
 }
 
 // ---------------------------------------------------------------------------
@@ -445,6 +481,7 @@ function main() {
     testBuildRouteTraceMaterial();
     testGetCanvasNodePickingMode();
     testThreadInspectorSemanticFirst();
+    testSharedStrandContinuityOwner();
     testJourneyTextHelpersExtraction();
     testThreadInspectorTextHelpersExtraction();
     testWave60ExploreThreadNeighborSettleBehavior();

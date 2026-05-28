@@ -1066,6 +1066,7 @@ export function animateCameraToSearchCorridor(anchorIndex, resultIndices = [], o
 
     function step(now) {
         if (animationToken !== state.routeCameraAnimationToken || state.navState.focusedIndex !== null || state.currentView !== 'galaxy') return;
+        if (!state.controls?.target || !state.camera?.position) return;
         const t = Math.min((now - startTime) / duration, 1);
         const eased = easeInOutCubic(t);
         state.controls.target.set(

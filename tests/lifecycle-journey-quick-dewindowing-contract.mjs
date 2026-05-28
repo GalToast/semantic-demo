@@ -3,7 +3,7 @@
  *
  * Contract test for Batch 1 quick dewindowing:
  * - Verifies lifecycle.js does NOT assign window.updateExplorationUi
- * - Verifies journey.js guarded syncSearchStatusForFocus call pattern is preserved
+ * - Verifies journey-point-color.js routes search status through the adapter
  *
  * Source-only; no DOM, no Playwright. Runs in Node.
  *
@@ -17,6 +17,7 @@ import path from 'node:path';
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
 const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
+const JOURNEY_POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-point-color.js');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -60,30 +61,29 @@ function testLifecycleNoWindowUpdateExplorationUi() {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 2: journey.js guarded window.syncSearchStatusForFocus call is preserved
+// TEST 2: journey-point-color.js routes search status through adapter
 //
-// Rationale: journey.js applies search glow state by calling
-// window.syncSearchStatusForFocus when searchGlowActive is set.
-// This must remain a guarded call (typeof check) because the function is
-// injected via search-lifecycle-adapter and may not be present in all contexts.
-// A direct import of the lifecycle no-op stub would silently break search glow
-// state propagation; the guarded window call is the correct pattern here.
+// Rationale: point-color applies search glow state by calling the injected
+// search lifecycle adapter. This preserves the decoupled boundary without a
+// raw window bridge or a direct lifecycle import.
 // ---------------------------------------------------------------------------
 
-function testJourneyGuardedSyncSearchStatusForFocus() {
-  console.log('\n[TEST 2] journey.js guarded window.syncSearchStatusForFocus call preserved');
+function testPointColorAdapterSyncSearchStatusForFocus() {
+  console.log('\n[TEST 2] journey-point-color.js routes syncSearchStatusForFocus through adapter');
 
-  const src = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const src = fs.readFileSync(JOURNEY_POINT_COLOR_PATH, 'utf-8');
 
-  // Must have the guard pattern inside the searchGlowActive block
-  const hasGuard = /searchGlowActive[\s\S]{0,300}typeof\s+window\.syncSearchStatusForFocus\s*===\s*['"]function['"]/.test(src);
-  assert(hasGuard, 'journey.js must have typeof guard for window.syncSearchStatusForFocus in searchGlowActive block');
+  assert(
+    /import\s+\{\s*syncSearchStatusForFocus\s*\}\s+from\s+['"]\.\/search-lifecycle-adapter\.js['"]/.test(src),
+    'journey-point-color.js must import syncSearchStatusForFocus from search-lifecycle-adapter.js'
+  );
 
-  // Must call window.syncSearchStatusForFocus (not a local import)
-  const hasCall = /window\.syncSearchStatusForFocus\s*\(/.test(src);
-  assert(hasCall, 'journey.js must call window.syncSearchStatusForFocus');
+  const hasCall = /searchGlowActive[\s\S]{0,500}\bsyncSearchStatusForFocus\s*\(/.test(src);
+  assert(hasCall, 'journey-point-color.js must call adapter syncSearchStatusForFocus in searchGlowActive block');
 
-  console.log('  PASS - guarded window.syncSearchStatusForFocus call preserved');
+  assert(!/window\.syncSearchStatusForFocus\b/.test(src), 'journey-point-color.js must not call window.syncSearchStatusForFocus');
+
+  console.log('  PASS - syncSearchStatusForFocus routed through adapter');
 }
 
 // ---------------------------------------------------------------------------
@@ -105,23 +105,22 @@ function testNoLifecycleJourneyCycle() {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 4: journey.js does NOT import syncSearchStatusForFocus directly from lifecycle
-// (safe boundary: journey uses the window bridge, not a direct import,
-// to allow the search-lifecycle-adapter injection to take precedence)
+// TEST 4: journey-point-color.js does NOT import syncSearchStatusForFocus directly from lifecycle
+// (safe boundary: point-color uses the search lifecycle adapter, not lifecycle)
 // ---------------------------------------------------------------------------
 
-function testJourneyDoesNotDirectImportSyncSearchStatusForFocus() {
-  console.log('\n[TEST 4] journey.js does not directly import syncSearchStatusForFocus from lifecycle');
+function testPointColorDoesNotDirectImportSyncSearchStatusForFocus() {
+  console.log('\n[TEST 4] journey-point-color.js does not directly import syncSearchStatusForFocus from lifecycle');
 
-  const src = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const src = fs.readFileSync(JOURNEY_POINT_COLOR_PATH, 'utf-8');
 
-  // journey.js imports many things from lifecycle (refreshCompositionState, dispatchNavTransition, etc.)
-  // but syncSearchStatusForFocus should NOT be among them; the window bridge is intentional
+  // syncSearchStatusForFocus should NOT be imported from lifecycle; the injected
+  // search-lifecycle-adapter is the decoupled boundary.
   const hasDirectImport = /import\s+\{[^}]*\bsyncSearchStatusForFocus\b[^}]*\}\s+from\s+['"]\.\/lifecycle\.js['"]/.test(src);
   assert(!hasDirectImport,
-    'journey.js must NOT directly import syncSearchStatusForFocus from lifecycle (window bridge is intentional)');
+    'journey-point-color.js must NOT directly import syncSearchStatusForFocus from lifecycle');
 
-  console.log('  PASS - no direct journey to lifecycle syncSearchStatusForFocus import');
+  console.log('  PASS - no direct point-color to lifecycle syncSearchStatusForFocus import');
 }
 
 // ---------------------------------------------------------------------------
@@ -132,9 +131,9 @@ async function run() {
   console.log('=== lifecycle-journey-quick-dewindowing-contract ===');
   try {
     testLifecycleNoWindowUpdateExplorationUi();
-    testJourneyGuardedSyncSearchStatusForFocus();
+    testPointColorAdapterSyncSearchStatusForFocus();
     testNoLifecycleJourneyCycle();
-    testJourneyDoesNotDirectImportSyncSearchStatusForFocus();
+    testPointColorDoesNotDirectImportSyncSearchStatusForFocus();
     console.log('\nAll tests passed.');
     process.exit(0);
   } catch (err) {

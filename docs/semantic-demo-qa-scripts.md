@@ -14,7 +14,7 @@ Named surfaces: `mobile-idle`, `desktop-idle`, `launch-focus`, `search-error`, `
 
 ## Visual Audit Scripts (screenshot-based)
 
-Canonical visual state ids are registered in `tests/visual-state-registry.mjs`; `tests/surface-style-matrix-contract.mjs` verifies the registry, visual audit captures, package aliases, and surface style matrix stay in sync.
+Canonical visual state ids are registered in `tests/visual-state-registry.mjs`; `tests/surface-style-matrix-contract.mjs` verifies the registry, visual audit captures, package aliases, and surface style matrix stay in sync. The visual audit harness fulfills Google Fonts requests with a local CSS fixture so headless runs do not depend on external font fetches.
 
 | Script | States | Notes |
 |--------|--------|-------|
@@ -55,11 +55,11 @@ Runs the pinned ordered contract suite from `tests/run-all-contracts.js`; `tests
 | Script | Group | Contracts |
 |--------|-------|-----------|
 | `test:contract:core` | `core` | semantic-dive-ui-surface, search-state-surface, state-transition, focus-semantic-state-boundary, semantic-lane, connection-analysis, exploration-modes (7 contracts) |
-| `test:contract:navigation` | `navigation` | journey-compass-state, journey-thread-inspector, journey-window-surface, journey-event-bindings, trail-review-focus, pathfinding (6 contracts) |
+| `test:contract:navigation` | `navigation` | journey-compass-state, journey-thread-inspector, thread-inspector-dewindowing, journey-window-surface, journey-cluster-accent-dewindowing, journey-event-bindings, trail-review-focus, pathfinding, journey-walk-candidate, journey-walk-thread-neighbor-timer, journey-ui-ownership (11 contracts) |
 | `test:contract:scene` | `scene` | scene-reveal, scene-atmosphere, three-visual-polish, reduced-motion-transition, reduced-motion-interruption (5 contracts) |
 | `test:contract:smoke` | `smoke` | weather-lifecycle, weather-surface-ownership, camera-auto-rotate-settle, scene-reveal, loading-ui, motion-state (6 contracts, sub-1s total) - fast smoke, no browser needed |
 | `test:contract:mobile-critical` | `mobile-critical` | semantic-dive-ui-surface, search-state-surface, focus-pocket-motion, focus-pocket-composition, micro-demo, demo-init-seam, reset-callsite-routing, demo-camera-retirement, cluster-labels, window-bridge-gaps, loading-ui, short-landscape-layout, critical-visual-layout-regression (13 contracts) |
-| `test:contract:lifecycle` | `lifecycle` | lifecycle-composition, state-transition, focus-semantic-state-boundary, demo-init-seam, reset-callsite-routing, semantic-guide-payload, demo-camera-retirement, demo-state-sync, weather-lifecycle, window-bridge-gaps, residual-window-bridge-inventory, lifecycle-semantic-guide-residual-bridge, legend-ui-ownership, semantic-dive-ui-dewindowing, semantic-dive-active-owner, state-ownership, filter-ownership, cluster-filter-city-filter-side-effect, keyboard-reset-ownership, url-state-search-dewindowing, cluster-filter-dewindowing, search-state-ui-adapter, url-state-navigation-dewindowing, focus-selection-owner, focus-pocket-state-owner, bootstrap-window-export, lifecycle-search-panel-ownership, search-lifecycle-adapter (28 contracts) |
+| `test:contract:lifecycle` | `lifecycle` | lifecycle, state, demo, weather, bridge, dewindowing, cluster/filter, URL/search, focus, journey extraction, bootstrap, and adapter ownership contracts including `journey-neighborhood-manifest-contract.mjs`, `journey-walk-thread-neighbor-timer-contract.mjs`, and `journey-strand-continuity-contract.mjs` (49 contracts) |
 | `test:contract:motion` | `motion` | camera-controls-motion, focus-pocket-motion, motion-state, camera-auto-rotate-settle, semantic-dive-reverse, focus-transition (6 contracts) |
 | `test:contract:browser` | `browser` | focus-stage-render, info-panel-collapsed-render, mode-chip-state-render, weather-widget-render, connection-analysis-render-state, search-peek-expanded-render (6 contracts, 5-20s each) - Playwright browser launch required |
 | `test:contract:render` | `render` | Same contracts as `browser` - backward-compatible alias; prefer `test:contract:browser` for new scripts |

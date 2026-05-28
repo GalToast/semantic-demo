@@ -87,8 +87,8 @@ Semantic lane uses `getWindow()` / `getDocument()` guard pattern internally (lin
 
 | Global | Assigned | Called from |
 |--------|----------|-------------|
-| `window.syncArrivalHandoffOverlay` | journey-webgl.js compatibility bridge retained | journey.js and thread-inspector.js dewindowed 2026-05-25; bridge remains for external/test callers |
-| `window.disposeArrivalHandoffOverlay` | journey-webgl.js compatibility bridge retained | journey.js and thread-inspector.js dewindowed 2026-05-25; bridge remains for external/test callers |
+| `window.syncArrivalHandoffOverlay` | journey-webgl.js compatibility bridge retained | strand-continuity.js owns direct arrival handoff calls as of 2026-05-28; bridge remains for external/test callers |
+| `window.disposeArrivalHandoffOverlay` | journey-webgl.js compatibility bridge retained | strand-continuity.js owns direct arrival handoff calls as of 2026-05-28; bridge remains for external/test callers |
 | `window.updateRouteTraceOverlayPositions` / `window.updateArrivalHandoffOverlay` | journey-webgl.js compatibility bridge retained | three-setup.js dewindowed 2026-05-26 via route-arrival overlay adapter; bridge remains for visual-audit/external callers |
 | `window.updateCameraViewportOffset` | three-setup.js compatibility bridge retained | scene-reveal.js dewindowed 2026-05-26 via direct import; bridge remains for compatibility |
 | `window.syncInspectedStrandOverlay` | **Retired 2026-05-25** | journey.js imports `syncInspectedStrandOverlay` directly from thread-inspector.js; `window._ti` diagnostic namespace remains |

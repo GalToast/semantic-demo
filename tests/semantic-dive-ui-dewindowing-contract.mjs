@@ -23,7 +23,7 @@ const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
 const RUNTIME_SYNC_CALLERS = [
   'js/modules/camera-controls.js',
   'js/modules/journey-compass-controller.js',
-  'js/modules/journey.js',
+  'js/modules/journey-thread-settler.js',
   'js/modules/thread-inspector.js'
 ];
 

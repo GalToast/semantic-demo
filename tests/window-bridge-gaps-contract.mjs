@@ -8,7 +8,7 @@
  * Gap 1  — getRouteLayerOrigin:  guarded no-op, fallback is 'galaxy'
  * Gap 2  — syncClusterSectionState: resolved (direct module imports)
  * Gap 3a — hydrateLeadContext:   resolved (journey lifecycle adapter)
- * Gap 3b — applySearchGlowVisualState: resolved via alternate call in journey.js
+ * Gap 3b — applySearchGlowVisualState: resolved via adapter call in journey-point-color.js
  * Gap 4  — updateSelectedCardHeading: resolved via direct module imports
  *
  * Source-only — no DOM, no Playwright.
@@ -25,6 +25,8 @@ const SEMDEMO_ROOT = path.resolve(process.cwd());
 const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
 const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/view-controller.js');
 const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
+const JOURNEY_POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-point-color.js');
+const JOURNEY_SELECTED_CARD_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-selected-card.js');
 const UI_RENDERERS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/ui-renderers.js');
 const SCENE_REVEAL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.js');
 const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js');
@@ -140,6 +142,7 @@ function testGap3a_hydrateLeadContext() {
 
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
   const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const selectedCardSrc = fs.readFileSync(JOURNEY_SELECTED_CARD_PATH, 'utf-8');
   const appSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/app.js'), 'utf-8');
 
   assert(
@@ -151,11 +154,11 @@ function testGap3a_hydrateLeadContext() {
     'Gap 3a: lifecycle.js must not reinstall retired window.hydrateLeadContext bridge'
   );
 
-  // journey.js call site must not depend on the retired window bridge.
+  // selected-card owner call site must not depend on the retired window bridge.
   assertNoDeadCall(journeySrc, 'hydrateLeadContext', 'journey.js', 'Gap 3a');
   assert(
-    /adapter\.hydrateLeadContext/.test(journeySrc),
-    'Gap 3a: journey.js must call hydrateLeadContext through the lifecycle adapter'
+    /adapter\.hydrateLeadContext/.test(selectedCardSrc),
+    'Gap 3a: journey-selected-card.js must call hydrateLeadContext through the lifecycle adapter'
   );
 
   assert(
@@ -167,26 +170,30 @@ function testGap3a_hydrateLeadContext() {
 }
 
 // ---------------------------------------------------------------------------
-// GAP 3b — applySearchGlowVisualState: resolved via alternate call chain
-// journey.js:3039 guarded call — resolved by calling the already-wired
-// window.syncSearchStatusForFocus instead, which handles search glow state
+// GAP 3b — applySearchGlowVisualState: resolved via alternate call chain.
+// point-color owner calls the already-wired search lifecycle adapter, which
+// handles search glow state without a raw window bridge.
 // ---------------------------------------------------------------------------
 
 function testGap3b_applySearchGlowVisualState() {
-  console.log('\n[TEST] Gap 3b — applySearchGlowVisualState (RESOLVED via alt call)');
+  console.log('\n[TEST] Gap 3b — applySearchGlowVisualState (RESOLVED via adapter alt call)');
 
-  const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const pointColorSrc = fs.readFileSync(JOURNEY_POINT_COLOR_PATH, 'utf-8');
 
   // The old window.applySearchGlowVisualState call must be replaced
-  // with a window.syncSearchStatusForFocus call inside the same guard block
+  // with a syncSearchStatusForFocus adapter call inside the same state block.
   assert(
-    /searchGlowActive[\s\S]{0,200}window\.syncSearchStatusForFocus/.test(journeySrc),
-    'journey.js must call window.syncSearchStatusForFocus in searchGlowActive block'
+    /searchGlowActive[\s\S]{0,500}\bsyncSearchStatusForFocus\s*\(/.test(pointColorSrc),
+    'journey-point-color.js must call adapter syncSearchStatusForFocus in searchGlowActive block'
+  );
+  assert(
+    /import\s+\{\s*syncSearchStatusForFocus\s*\}\s+from\s+['"]\.\/search-lifecycle-adapter\.js['"]/.test(pointColorSrc),
+    'journey-point-color.js must import syncSearchStatusForFocus from search-lifecycle-adapter.js'
   );
 
   // The original guard pattern should NOT appear as a standalone dead call
   // (it's fine if the function name still appears in comments)
-  const lines = journeySrc.split('\n');
+  const lines = pointColorSrc.split('\n');
   let bareApplySearchGlowVisualState = false;
   lines.forEach((line, i) => {
     const pos = line.indexOf('window.applySearchGlowVisualState');
@@ -194,12 +201,12 @@ function testGap3b_applySearchGlowVisualState() {
     const before = line.substring(0, pos);
     if (before.includes('typeof') || before.includes('?.')) return;
     // allow it if it's been replaced with the alt call
-    if (line.includes('window.syncSearchStatusForFocus')) return;
+    if (line.includes('syncSearchStatusForFocus')) return;
     bareApplySearchGlowVisualState = true;
   });
-  assert(!bareApplySearchGlowVisualState, 'journey.js must not have bare window.applySearchGlowVisualState calls');
+  assert(!bareApplySearchGlowVisualState, 'journey-point-color.js must not have bare window.applySearchGlowVisualState calls');
 
-  console.log('  OK — applySearchGlowVisualState: RESOLVED via alternate window.syncSearchStatusForFocus call');
+  console.log('  OK — applySearchGlowVisualState: RESOLVED via alternate adapter syncSearchStatusForFocus call');
 }
 
 // ---------------------------------------------------------------------------
@@ -214,6 +221,7 @@ function testGap4_updateSelectedCardHeading() {
   const uiRendererSrc = fs.readFileSync(UI_RENDERERS_PATH, 'utf-8');
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
   const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const selectedCardSrc = fs.readFileSync(JOURNEY_SELECTED_CARD_PATH, 'utf-8');
 
   assert(
     /export\s+function\s+updateSelectedCardHeading\s*\(/.test(uiRendererSrc),
@@ -224,8 +232,8 @@ function testGap4_updateSelectedCardHeading() {
     'lifecycle.js must import updateSelectedCardHeading from ui-renderers.js'
   );
   assert(
-    /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(journeySrc),
-    'journey.js must import updateSelectedCardHeading from ui-renderers.js'
+    /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(selectedCardSrc),
+    'journey-selected-card.js must import updateSelectedCardHeading from ui-renderers.js'
   );
   assert(
     /selected-card-title/.test(uiRendererSrc),
@@ -233,6 +241,7 @@ function testGap4_updateSelectedCardHeading() {
   );
   assertNoDeadCall(lifecycleSrc, 'updateSelectedCardHeading', 'lifecycle.js', 'Gap 4');
   assertNoDeadCall(journeySrc, 'updateSelectedCardHeading', 'journey.js', 'Gap 4');
+  assertNoDeadCall(selectedCardSrc, 'updateSelectedCardHeading', 'journey-selected-card.js', 'Gap 4');
 
   console.log('  OK — updateSelectedCardHeading: RESOLVED via direct imports');
 }

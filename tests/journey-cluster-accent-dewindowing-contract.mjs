@@ -1,7 +1,7 @@
 /**
  * journey-cluster-accent-dewindowing-contract.mjs
  *
- * Fast Node contract test verifying journey.js uses direct import of
+ * Fast Node contract test verifying selected-card rendering uses direct import of
  * applyClusterUiAccent from cluster-ui-accent.js and has no remaining
  * window.applyClusterUiAccent calls outside the app.js compatibility bridge.
  *
@@ -17,6 +17,7 @@ import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
+const JOURNEY_SELECTED_CARD_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-selected-card.js');
 const CLUSTER_UI_ACCENT_PATH = path.join(SEMDEMO_ROOT, 'js/modules/cluster-ui-accent.js');
 
 function assert(cond, msg) {
@@ -32,17 +33,16 @@ function assertNotHasSubstring(src, needle, label) {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 1: journey.js imports applyClusterUiAccent from cluster-ui-accent.js
+// TEST 1: selected-card owner imports applyClusterUiAccent from cluster-ui-accent.js
 // ---------------------------------------------------------------------------
 
 function testImportExists() {
-  console.log('\n[TEST] journey.js imports applyClusterUiAccent from cluster-ui-accent.js');
+  console.log('\n[TEST] journey-selected-card.js imports applyClusterUiAccent from cluster-ui-accent.js');
 
-  const src = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const src = fs.readFileSync(JOURNEY_SELECTED_CARD_PATH, 'utf-8');
 
-  // The import must exist
   assertHasSubstring(src, "import { applyClusterUiAccent } from './cluster-ui-accent.js';",
-    'journey.js import from cluster-ui-accent');
+    'journey-selected-card.js import from cluster-ui-accent');
 
   console.log('  OK direct import verified');
 }
@@ -69,13 +69,15 @@ function testExportExists() {
 // ---------------------------------------------------------------------------
 
 function testNoWindowCalls() {
-  console.log('\n[TEST] journey.js has no window.applyClusterUiAccent calls');
+  console.log('\n[TEST] journey.js and journey-selected-card.js have no window.applyClusterUiAccent calls');
 
   const src = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const selectedCardSrc = fs.readFileSync(JOURNEY_SELECTED_CARD_PATH, 'utf-8');
 
-  // window.applyClusterUiAccent should appear nowhere in journey.js
   assertNotHasSubstring(src, 'window.applyClusterUiAccent',
     'journey.js must not call window.applyClusterUiAccent');
+  assertNotHasSubstring(selectedCardSrc, 'window.applyClusterUiAccent',
+    'journey-selected-card.js must not call window.applyClusterUiAccent');
 
   console.log('  OK no window.applyClusterUiAccent calls remain');
 }
@@ -85,15 +87,19 @@ function testNoWindowCalls() {
 // ---------------------------------------------------------------------------
 
 function testNoDuplicateLocalDefinition() {
-  console.log('\n[TEST] journey.js does not re-define applyClusterUiAccent locally');
+  console.log('\n[TEST] journey.js and journey-selected-card.js do not re-define applyClusterUiAccent locally');
 
   const src = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const selectedCardSrc = fs.readFileSync(JOURNEY_SELECTED_CARD_PATH, 'utf-8');
 
-  // journey.js must not define its own applyClusterUiAccent
   assertNotHasSubstring(src, 'function applyClusterUiAccent',
     'journey.js must not define local applyClusterUiAccent');
   assertNotHasSubstring(src, 'const applyClusterUiAccent',
     'journey.js must not define const applyClusterUiAccent');
+  assertNotHasSubstring(selectedCardSrc, 'function applyClusterUiAccent',
+    'journey-selected-card.js must not define local applyClusterUiAccent');
+  assertNotHasSubstring(selectedCardSrc, 'const applyClusterUiAccent',
+    'journey-selected-card.js must not define const applyClusterUiAccent');
 
   console.log('  OK no local re-definition found');
 }
@@ -106,7 +112,7 @@ function testNoDuplicateLocalDefinition() {
 function testDirectUsage() {
   console.log('\n[TEST] syncFocusStage and updateSelectedBusiness call applyClusterUiAccent directly');
 
-  const src = fs.readFileSync(JOURNEY_PATH, 'utf-8');
+  const src = fs.readFileSync(JOURNEY_SELECTED_CARD_PATH, 'utf-8');
 
   // Within syncFocusStage (around lines 1132-1180), applyClusterUiAccent must be called directly
   const syncFocusStageMatch = src.match(/export function syncFocusStage[\s\S]{0,2000}/);
@@ -136,7 +142,7 @@ function testDirectUsage() {
 function main() {
   console.log('================================================================');
   console.log('journey-cluster-accent-dewindowing-contract.mjs');
-  console.log('Contract: journey.js uses direct import, no window bridge calls');
+  console.log('Contract: selected-card owner uses direct import, no window bridge calls');
   console.log('================================================================');
 
   try {

@@ -55,11 +55,11 @@ async function setupNetworkStubs(page) {
 async function waitForAppReady(page) {
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`);
   await page.waitForFunction(() => (
-    typeof window.clearSearch === 'function' &&
-    typeof window.refreshCompositionState === 'function' &&
+    typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function' &&
+    typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
-  ), { timeout: 20000 });
+  ), undefined, { timeout: 20000 });
   await page.waitForTimeout(800);
 }
 
@@ -72,14 +72,15 @@ async function performSearch(page, query = 'coffee') {
     if (!el) return;
     el.value = q;
     el.dispatchEvent(new Event('input', { bubbles: true }));
-    if (typeof window.search === 'function') {
-      await window.search(q, { preferCachedResults: false });
+    const search = window.__APP_ACTIONS__?.search ?? window.search;
+    if (typeof search === 'function') {
+      await search(q, { preferCachedResults: false });
     }
   }, query);
   await page.waitForFunction(() => (
     document.querySelectorAll('.search-result-item').length > 0 ||
     document.getElementById('search-results')?.innerHTML?.includes('search-result-item')
-  ), { timeout: 15000 });
+  ), undefined, { timeout: 15000 });
 }
 
 async function expandSearchResults(page) {
@@ -172,10 +173,10 @@ async function test_micro_demo_localStorage_flag() {
     // This lets us control localStorage before demo-controller.init() runs
     await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo`);
     await page.waitForFunction(() => (
-      typeof window.refreshCompositionState === 'function' &&
+      typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function' &&
       Array.isArray(window.__TEST_STATE__?.points) &&
       (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
-    ), { timeout: 20000 });
+    ), undefined, { timeout: 20000 });
     await page.waitForTimeout(500);
 
     // Pre-set the localStorage flag to simulate completed demo
@@ -192,15 +193,22 @@ async function test_micro_demo_localStorage_flag() {
     // Now reload without nodemo — shouldRunMicroDemo() should see both flags
     await page.reload();
     await page.waitForFunction(() => (
-      typeof window.shouldRunMicroDemo === 'function' &&
-      typeof window.refreshCompositionState === 'function'
-    ), { timeout: 20000 });
+      typeof window.demoController?.isRunning === 'function' &&
+      typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function'
+    ), undefined, { timeout: 20000 });
     await page.waitForTimeout(1500);
 
-    // shouldRunMicroDemo() must return false when localStorage flag is set
-    const shouldRun = await page.evaluate(() => window.shouldRunMicroDemo());
-    if (shouldRun !== false) {
-      throw new Error(`moco_mycelium_demo_v1: shouldRunMicroDemo() returned ${shouldRun}, expected false with localStorage flag set`);
+    const demoState = await page.evaluate((key) => ({
+      running: window.demoController?.isRunning?.() === true,
+      active: document.body.dataset.demoActive === 'true',
+      blocker: Boolean(document.getElementById('micro-demo-blocker')),
+      stored: localStorage.getItem(key),
+    }), STORAGE_KEY_DEMO);
+    if (demoState.running || demoState.active || demoState.blocker) {
+      throw new Error(`moco_mycelium_demo_v1: demo started despite localStorage flag: ${JSON.stringify(demoState)}`);
+    }
+    if (!demoState.stored) {
+      throw new Error('moco_mycelium_demo_v1: localStorage completion flag was lost after reload');
     }
 
     console.log('  PASS: moco_mycelium_demo_v1 localStorage — micro-demo respects completion flag across sessions');
@@ -259,9 +267,9 @@ async function test_searchVisibleCount_persistence() {
     // Reload the page
     await page.reload();
     await page.waitForFunction(() => (
-      typeof window.refreshCompositionState === 'function' &&
+      typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function' &&
       window.__TEST_STATE__?.points?.length > 0
-    ), { timeout: 20000 });
+    ), undefined, { timeout: 20000 });
     await page.waitForTimeout(1000);
 
     // Re-run search to restore state (input was cleared on reload)

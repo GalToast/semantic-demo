@@ -22,7 +22,8 @@
 
 import { chromium } from 'playwright';
 
-const TARGET_URL  = 'http://127.0.0.1:8795/vector-explorer-polished.html?view=galaxy&q=coffee&anchor=1&mode=trail&depth=1&record=1';
+const baseRoot = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
+const TARGET_URL = `${baseRoot}/vector-explorer-polished.html?view=galaxy&q=coffee&anchor=1&mode=trail&depth=1&record=1`;
 
 const VIEWPORT = { width: 390, height: 844 };
 const DEVICE_SCALE_FACTOR = 2;
@@ -35,7 +36,16 @@ async function loadAndWait(page, url) {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForLoadState('load', { timeout: 5000 }).catch(() => {});
   await page.evaluate(() => document.fonts?.ready).catch(() => {});
-  await page.waitForTimeout(2200); // real route needs slightly more settle time
+  await page.waitForFunction(() => (
+    document.body?.dataset?.panelSurface === 'focus-search' &&
+    document.body?.classList?.contains('is-active') &&
+    Array.from(document.querySelectorAll('.journey-compass-action.primary')).some((btn) => {
+      const style = getComputedStyle(btn);
+      const rect = btn.getBoundingClientRect();
+      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+    })
+  ), { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(500);
 }
 
 // ---------------------------------------------------------------------------
