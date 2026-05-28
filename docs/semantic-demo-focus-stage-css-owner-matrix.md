@@ -146,6 +146,15 @@ Selectors in play:
 
 Minimum verification: `npm run qa:contract:field-node`
 
+**Journey-compass within field-node:**
+`css/mobile_premium_surfaces.css` owns field-node journey-compass grid layout (79 total selectors, lines 535–648: `[data-focus-panel-mode="field-node"] .journey-compass` with `grid-template-columns`, `[data-focus-panel-mode="field-node"] .journey-compass-copy`, `[data-focus-panel-mode="field-node"] .journey-compass-actions`, `[data-focus-panel-mode="field-node"] .journey-compass-action` action button layout).
+`css/journey_active.css` owns `.journey-compass` base phase/density states (162 selectors, lines 155–327).
+`css/mobile_premium_focus.css` owns field-node mobile focus-search journey-compass overrides (22 selectors).
+`css/strands.css` owns field-node journey-compass action buttons (40 selectors total, field-node subset).
+`css/layout_base.css` owns map-focus/trail journey-compass info-panel overrides (12 selectors).
+Do not add journey-compass geometry to `css/journey_steps.css` — it has no journey-compass selectors and must stay that way.
+Verification: `npm run qa:contract:field-node` + `rg '\.journey-compass' css/mobile_premium_surfaces.css | wc -l` (should report 79)
+
 ---
 
 ### State: `reduced-motion` / `transition`
@@ -286,6 +295,24 @@ After any CSS change:
 npm run build
 git diff --check
 ```
+
+### Journey-Compass Specific Verification
+
+| Touched file | Command | Expected |
+|---|---|---|
+| `css/journey_active.css` journey-compass base | `rg -c '\.journey-compass' css/journey_active.css` | 162 |
+| `css/mobile_premium_surfaces.css` field-node chrome | `rg -c '\.journey-compass' css/mobile_premium_surfaces.css` | 79 |
+| `css/mobile_premium_focus.css` focus-search/dive | `rg -c '\.journey-compass' css/mobile_premium_focus.css` | 22 |
+| `css/strands.css` field-node actions | `rg -c '\.journey-compass' css/strands.css` | 40 |
+| `css/layout_base.css` map-focus/trail | `rg -c '\.journey-compass' css/layout_base.css` | 12 |
+| `css/mobile_base.css` early mobile | `rg -c '\.journey-compass' css/mobile_base.css` | 17 |
+| `css/progressive_disclosure.css` show/hide | `rg -c '\.journey-compass' css/progressive_disclosure.css` | 6 |
+| `css/animations.css` reduced-motion tail | `rg -c '\.journey-compass' css/animations.css` | 7 |
+| `css/mobile_premium_state.css` idle/map-view | `rg -c '\.journey-compass' css/mobile_premium_state.css` | 11 |
+| `css/mobile_premium_chrome.css` drawer polish | `rg -c '\.journey-compass' css/mobile_premium_chrome.css` | 2 |
+| `css/journey_steps.css` | `rg -c '\.journey-compass' css/journey_steps.css` | 0 (must stay 0) |
+
+If `css/journey_steps.css` reports non-zero journey-compass selectors, that is a regression — journey-compass geometry must not be added there.
 
 ---
 

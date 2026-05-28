@@ -85,16 +85,15 @@ window.__TEST_STATE__ = state;
 // Consumers: Playwright specs, visual-audit helpers, manual DevTools probing.
 // Individual window bridges below are phased out; do not add new bare window.*.
 // Classification: debug-probe. See docs/window-global-allowlist.md §__APP_ACTIONS__.
-window.__APP_ACTIONS__ = {
-    search: searchModule.search,
-    clearSearch: searchModule.clearSearch,
-    focusOnNode: cameraModule.focusOnNode,
-    setTrailDepth,
-    setSemanticDiveMode,
-    returnToOverview,
-    resetExplorationFocus,
-    refreshCompositionState,
-};
+window.__APP_ACTIONS__ = {};
+window.__APP_ACTIONS__.search = searchModule.search;
+window.__APP_ACTIONS__.clearSearch = searchModule.clearSearch;
+window.__APP_ACTIONS__.focusOnNode = cameraModule.focusOnNode;
+window.__APP_ACTIONS__.setTrailDepth = setTrailDepth;
+window.__APP_ACTIONS__.setSemanticDiveMode = setSemanticDiveMode;
+window.__APP_ACTIONS__.returnToOverview = returnToOverview;
+window.__APP_ACTIONS__.resetExplorationFocus = resetExplorationFocus;
+window.__APP_ACTIONS__.refreshCompositionState = refreshCompositionState;
 
 
 const _getSelectedBusinessRoleLabel = function (point) {

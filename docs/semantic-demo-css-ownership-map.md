@@ -91,6 +91,41 @@ Rules:
 - Preserve hidden-state behavior for `.focus-stage-journey`, `.focus-stage-neighbors`, `.focus-thread-inspector`, `.trail-controls`, and `.trail-context`; those are state-machine surfaces, not decorative duplicates.
 - Do not consolidate Step Inside vignette or camera-motion selectors without live video proof.
 
+## Journey Compass Ownership
+
+Owner seam: `journey-compass`
+
+The journey-compass cascade is distributed across eight files. Edit the canonical owner first; use supporting files only for late geometry corrections or state-specific polish that must override the canonical owner.
+
+| File | Journey-compass selectors | Role |
+|---|---|---|
+| `css/journey_active.css` | 162 | Journey-compass base, phase/density states, focus/search/inside behavior, map-trail active styling |
+| `css/mobile_premium_surfaces.css` | 79 | Mobile premium chrome (glass geometry, idle/focus-search/semantic-dive field-node grid layout, compact rail), map-search final geometry |
+| `css/strands.css` | 40 | Mobile bottom sheet, route surfaces, journey-compass field-node action buttons |
+| `css/layout_base.css` | 12 | Info panel, map-focus/trail state overrides |
+| `css/mobile_base.css` | 17 | Early mobile journey-compass owner block |
+| `css/mobile_premium_focus.css` | 22 | Mobile focus-search and semantic-dive journey-compass composition |
+| `css/progressive_disclosure.css` | 6 | Show/hide, reduced-motion journey-compass suppression |
+| `css/animations.css` | 7 | Final mobile/reduced-motion override tail, galaxy overview compass |
+| `css/mobile_premium_chrome.css` | 2 | Mobile search drawer chrome journey-compass polish |
+| `css/mobile_premium_state.css` | 11 | Mobile idle, focus-search refinement, map-view state ownership |
+
+**Canonical owners:**
+- `css/journey_active.css` owns `.journey-compass` base styling (lines 155–327), phase/density states (`[data-phase]`, `[data-density]`), and active-view map behavior.
+- `css/mobile_premium_surfaces.css` owns mobile premium chrome: glass positioning (lines 12–39), `.journey-compass-copy`/`.journey-compass-kicker`/`.journey-compass-title`/`.journey-compass-action` typography and layout (lines 41–243), field-node grid layout (lines 535–648), and semantic-dive compact geometry (lines 673–708).
+- `css/mobile_premium_focus.css` owns mobile focus-search and semantic-dive journey-compass overrides.
+- `css/mobile_premium_chrome.css` owns mobile search drawer journey-compass chrome polish.
+- `css/mobile_premium_state.css` owns mobile idle and map-view state journey-compass refinement.
+
+**Supporting roles:**
+- `css/strands.css` owns mobile bottom sheet journey-compass field-node action buttons and route surfaces; do not add new journey-compass geometry here without updating this map.
+- `css/layout_base.css` owns map-focus and map-trail info-panel overrides for journey-compass; those rules must not be moved without verifying map-focus/map-trail contracts.
+- `css/mobile_base.css` owns early mobile journey-compass owner block; treat as legacy, not canonical.
+- `css/progressive_disclosure.css` owns journey-compass show/hide and reduced-motion suppression; not geometry.
+- `css/animations.css` owns final mobile/reduced-motion override tail and galaxy overview compass; not geometry.
+
+**Never add to:** `css/journey_steps.css` — no journey-compass selectors exist there and it must stay that way.
+
 ## Required Proof For Movement Or Dedupe
 
 - `npm run build`

@@ -155,16 +155,34 @@ async function forceFocusSearch(page) {
     document.body.classList.add('is-active');
     document.body.dataset.activeView = 'galaxy';
     document.body.dataset.graphContext = 'focus-search';
+    document.body.dataset.semanticDive = 'inactive';
     document.body.dataset.panelSurface = 'focus-search';
+    document.body.dataset.panelSurfaceDetail = 'peek';
     document.body.dataset.focusPanelMode = 'search-result';
+    document.body.dataset.trailState = 'active';
+    document.body.dataset.trailDepth = '1';
+    document.body.dataset.mobileSearchSheet = 'peek';
+    document.body.dataset.journeyPhase = 'focus';
     document.body.dataset.routeDirector = 'search-corridor';
 
     // Apply state via __APP_STATE__ primary, __TEST_STATE__ fallback.
     // These dataset and state writes are CSS contract fixture setup — acceptable.
     const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+    const byLeadId = s?.pointIndexByLeadId;
+    const rawIndex = byLeadId?.get?.('1') ?? byLeadId?.get?.(1) ?? 0;
+    const focusIndex = Number.isFinite(rawIndex) ? rawIndex : 0;
+    const focusNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
+    const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth;
+    const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState;
+    if (typeof focusNode === 'function') {
+      focusNode(focusIndex, { fromSearchResult: true, skipUrlSync: true });
+    }
+    if (typeof setTrailDepth === 'function') {
+      setTrailDepth(1, { skipUrlSync: true });
+    }
     if (s) {
       s.currentView = 'galaxy';
-      s.focusedNode = Number.isFinite(s.focusedNode) ? s.focusedNode : 0;
+      s.focusedNode = Number.isFinite(s.focusedNode) ? s.focusedNode : focusIndex;
       s.navState = s.navState || {};
       s.navState.focusedIndex = Number.isFinite(s.navState.focusedIndex)
         ? s.navState.focusedIndex
@@ -176,6 +194,19 @@ async function forceFocusSearch(page) {
       s.navState.walkHistoryIndices = [0, s.navState.focusedIndex];
       s.trailDepth = Math.max(1, Number(s.trailDepth) || 1);
     }
+    refreshCompositionState?.();
+    window.updateJourneyCompass?.();
+
+    document.body.dataset.activeView = 'galaxy';
+    document.body.dataset.graphContext = 'focus-search';
+    document.body.dataset.semanticDive = 'inactive';
+    document.body.dataset.panelSurface = 'focus-search';
+    document.body.dataset.panelSurfaceDetail = 'peek';
+    document.body.dataset.focusPanelMode = 'search-result';
+    document.body.dataset.trailState = 'active';
+    document.body.dataset.trailDepth = '1';
+    document.body.dataset.mobileSearchSheet = 'peek';
+    document.body.dataset.journeyPhase = 'focus';
 
     // Stage DOM elements for rendering — these are test-only fixture ops.
     const focusStage = document.querySelector('#focus-stage');

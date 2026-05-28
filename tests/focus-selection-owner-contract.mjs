@@ -1,9 +1,9 @@
 /**
  * focus-selection-owner-contract.mjs
  *
- * Source-level contract proving that lifecycle.js routes all direct writes to
- * focusedNode, selectedPoint, and related navState focus/trail fields through
- * the named owner API clearExplorationFocusSelection().
+ * Source-level contract proving that focus-clear ownership routes through
+ * clearExplorationFocusSelection(). The helper is owned by url-state.js and
+ * re-exported by lifecycle.js for lifecycle/reset call sites.
  *
  * Run:  node tests/focus-selection-owner-contract.mjs
  */
@@ -15,6 +15,10 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SOURCE = fs.readFileSync(
     path.resolve(__dirname, '../js/modules/lifecycle.js'),
+    'utf8'
+);
+const URL_STATE_SOURCE = fs.readFileSync(
+    path.resolve(__dirname, '../js/modules/url-state.js'),
     'utf8'
 );
 
@@ -57,8 +61,8 @@ function assert(condition, message) {
  * Extract the line range of clearExplorationFocusSelection by scanning from the
  * function signature until the brace depth returns to 0.
  */
-function getHelperLineRange() {
-    const lines = SOURCE.split('\n');
+function getHelperLineRange(sourceText = SOURCE) {
+    const lines = sourceText.split('\n');
     let start = -1;
     let end = -1;
 
@@ -111,9 +115,9 @@ function getSetMyceliumModeLineRange() {
  * Find every occurrence of a direct write pattern outside clearExplorationFocusSelection.
  * Returns array of { pattern, line, snippet }
  */
-function findDirectWrites() {
-    const lines = SOURCE.split('\n');
-    const { start: helperStart, end: helperEnd } = getHelperLineRange();
+function findDirectWrites(sourceText = SOURCE) {
+    const lines = sourceText.split('\n');
+    const { start: helperStart, end: helperEnd } = getHelperLineRange(sourceText);
     const { start: mmStart, end: mmEnd } = getSetMyceliumModeLineRange();
     const issues = [];
 
@@ -138,10 +142,14 @@ function findDirectWrites() {
 
 console.log('Verifying clearExplorationFocusSelection is exported...');
 assert(
-    /export\s+function\s+clearExplorationFocusSelection/.test(SOURCE),
-    'clearExplorationFocusSelection is not exported from lifecycle.js'
+    /export\s+function\s+clearExplorationFocusSelection/.test(URL_STATE_SOURCE),
+    'clearExplorationFocusSelection is not exported from url-state.js'
 );
-console.log('  found export function clearExplorationFocusSelection');
+assert(
+    /clearExplorationFocusSelection/.test(SOURCE) && /export\s*\{[\s\S]*clearExplorationFocusSelection/.test(SOURCE),
+    'clearExplorationFocusSelection is not re-exported from lifecycle.js'
+);
+console.log('  found url-state owner export and lifecycle re-export');
 
 console.log('\nScanning for direct writes to protected fields...');
 const issues = findDirectWrites();
@@ -156,9 +164,10 @@ if (issues.length === 0) {
     process.exit(1);
 }
 
-// Verify the helper is called from resetStateBeforeUrlRestore
+// Verify the helper is called from resetStateBeforeUrlRestore, which is owned
+// by url-state.js and re-exported by lifecycle.js.
 console.log('\nVerifying resetStateBeforeUrlRestore routes through clearExplorationFocusSelection...');
-const resetStateMatch = SOURCE.match(/export\s+function\s+resetStateBeforeUrlRestore[\s\S]*?\n}(?=\n|$)/m);
+const resetStateMatch = URL_STATE_SOURCE.match(/export\s+function\s+resetStateBeforeUrlRestore[\s\S]*?\n}(?=\n|$)/m);
 assert(resetStateMatch, 'Could not extract resetStateBeforeUrlRestore body');
 const resetStateBody = resetStateMatch[0];
 assert(

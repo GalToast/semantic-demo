@@ -41,7 +41,7 @@ const selectorBaselines = {
     'journey_active.css': 8,
     'journey_steps.css': 18,
     'mobile_base.css': 1,
-    'mobile_premium_focus.css': 27,
+    'mobile_premium_focus.css': 28,
     'progressive_disclosure.css': 1,
     'strands.css': 5,
   },

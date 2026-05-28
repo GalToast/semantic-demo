@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { inflateSync } from 'node:zlib';
 import { chromium } from 'playwright';
+import { VISUAL_STATE_ID_SET } from './visual-state-registry.mjs';
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
 process.env.PW_TEST_SCREENSHOT_NO_FONTS_READY = '1';
@@ -17,12 +18,20 @@ const statesArg = cliArgs.find((arg) => arg.startsWith('--states='))?.slice('--s
   || process.env.SEMANTIC_VISUAL_AUDIT_STATES
   || '';
 const requestedStates = new Set(statesArg.split(',').map((state) => state.trim()).filter(Boolean));
+const unknownRequestedStates = [...requestedStates].filter((state) => !VISUAL_STATE_ID_SET.has(state));
+if (unknownRequestedStates.length) {
+  console.error(`Unknown visual state id(s): ${unknownRequestedStates.join(', ')}`);
+  console.error('Update tests/visual-state-registry.mjs before adding or renaming visual audit states.');
+  process.exit(1);
+}
 const outRoot = process.env.SEMANTIC_VISUAL_AUDIT_OUT || path.resolve(process.cwd(), 'tmp', 'semantic-ui-visual-audit');
 const runId = new Date().toISOString().replace(/[:.]/g, '-');
 const outDir = path.join(outRoot, runId);
 
 const mobile = { width: 390, height: 844 };
+const mobile320 = { width: 320, height: 740 };
 const desktop = { width: 1440, height: 900 };
+const shortLandscape = { width: 896, height: 414 };
 
 async function ensureDir(dir) {
   await fs.mkdir(dir, { recursive: true });
@@ -487,6 +496,85 @@ function wantsState(name) {
 
 function wantsAny(names) {
   return !requestedStates.size || names.some((name) => requestedStates.has(name));
+}
+
+async function enterFocusFromSearch(page) {
+  await page.waitForFunction(() => {
+    const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return typeof window.__APP_ACTIONS__?.focusOnNode === 'function' && Array.isArray(appState.points) && appState.points.length > 0;
+  }, undefined, { timeout: 20000 }).catch(() => {});
+
+  await page.evaluate(() => {
+    const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const byLeadId = appState.pointIndexByLeadId;
+    const rawIndex = byLeadId?.get?.('1') ?? byLeadId?.get?.(1) ?? 0;
+    const targetIndex = Number.isFinite(rawIndex) ? rawIndex : 0;
+    const focusNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
+    const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth;
+    const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState;
+
+    if (typeof focusNode === 'function') {
+      focusNode(targetIndex, { fromSearchResult: true, skipUrlSync: true });
+    }
+    if (typeof setTrailDepth === 'function') {
+      setTrailDepth(1, { skipUrlSync: true });
+    }
+    refreshCompositionState?.();
+    window.updateJourneyCompass?.();
+  });
+
+  await page.waitForFunction(() => {
+    const mode = (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode;
+    const surface = document.body.dataset.panelSurface;
+    return mode === 'focus' || mode === 'trail' || surface === 'focus' || surface === 'focus-search';
+  }, undefined, { timeout: 15000 }).catch(() => {});
+  await page.waitForFunction(() => {
+    const { cameraAssist, focusTransitionPhase, loadingOverlay, viewHandoffActive } = document.body.dataset;
+    return (
+      viewHandoffActive === 'false' ||
+      focusTransitionPhase === 'settled' ||
+      (cameraAssist === 'free' && loadingOverlay !== 'active')
+    );
+  }, undefined, { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(400);
+}
+
+async function enterSemanticDive(page) {
+  await enterFocusFromSearch(page);
+
+  const diveButton = page.locator('#btn-focus-dive').first();
+  if (await diveButton.isVisible().catch(() => false)) {
+    await diveButton.click({ timeout: 5000 }).catch(() => {});
+  } else {
+    const textButton = page.locator('button:has-text("Step Inside")').first();
+    if (await textButton.isVisible().catch(() => false)) {
+      await textButton.click({ timeout: 5000 }).catch(() => {});
+    }
+  }
+
+  const naturalDive = await page.waitForFunction(() => {
+    const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return appState.semanticDiveMode === true && document.body.dataset.panelSurface === 'semantic-dive';
+  }, undefined, { timeout: 3500 }).then(() => true).catch(() => false);
+
+  if (!naturalDive) {
+    await page.evaluate(() => {
+      const setSemanticDiveMode = window.__APP_ACTIONS__?.setSemanticDiveMode ?? window.setSemanticDiveMode;
+      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth;
+      const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState;
+      if (typeof setSemanticDiveMode === 'function') {
+        setSemanticDiveMode(true);
+      } else if (typeof setTrailDepth === 'function') {
+        setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true });
+      }
+      refreshCompositionState?.();
+      window.updateJourneyCompass?.();
+    });
+  }
+
+  await page.waitForFunction(() => document.body.dataset.panelSurface === 'semantic-dive', undefined, { timeout: 15000 }).catch(() => {});
+  await page.waitForFunction(() => document.body.dataset.semanticDive === 'active', undefined, { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(300);
 }
 
 async function applyPopulatedInfoPanelState(page) {
@@ -1119,25 +1207,47 @@ async function run() {
         }, undefined, { timeout: 8000 }).catch(() => {});
         await divePage.waitForTimeout(2200);
 
-        // Step 1: Click the first search result to establish focus + trailDepth >= 1
-        const firstResult = divePage.locator('.search-result-item').first();
-        if (await firstResult.count()) {
-          await firstResult.click({ timeout: 5000 }).catch(() => {});
-          await divePage.waitForTimeout(600);
-        }
+        await enterSemanticDive(divePage);
 
-        // Step 2: Click the Step Inside button to enter semantic dive mode
-        const diveBtn = divePage.locator('#btn-focus-dive').first();
-        if (await diveBtn.count()) {
-          await diveBtn.click({ timeout: 5000 }).catch(() => {});
-          // Wait for the 'transitioning' → 'active' animation cycle (820ms + buffer)
-          await divePage.waitForTimeout(1100);
-        }
-
-        // Capture the natural dive state
+        // Capture the dive state after the app has reached semantic-dive body state.
         const captured = await captureState(divePage, '15-mobile-semantic-dive');
         if (captured) states.push(captured);
         await divePage.close();
+      } finally {
+        await browser.close();
+      }
+    }
+
+    if (wantsState('22-mobile-semantic-dive-320')) {
+      const browser = await chromium.launch({ headless: true });
+      try {
+        const divePage = await createAuditPage(browser, { viewport: mobile320, deviceScaleFactor: 2, isMobile: true });
+        await divePage.goto(withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }), { waitUntil: 'commit', timeout: 10000 });
+        await divePage.waitForFunction(() => {
+          const canvas = document.querySelector('#canvas-container canvas');
+          return canvas && document.body.dataset.graphicsMode === 'webgl';
+        }, undefined, { timeout: 8000 }).catch(() => {});
+        await divePage.waitForTimeout(2200);
+
+        await enterSemanticDive(divePage);
+
+        const captured = await captureState(divePage, '22-mobile-semantic-dive-320');
+        if (captured) states.push(captured);
+        await divePage.close();
+      } finally {
+        await browser.close();
+      }
+    }
+
+    if (wantsState('23-mobile-short-landscape')) {
+      const browser = await chromium.launch({ headless: true });
+      try {
+        const slPage = await createAuditPage(browser, { viewport: shortLandscape, deviceScaleFactor: 2, isMobile: true });
+        await gotoReady(slPage, withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }));
+
+        await enterFocusFromSearch(slPage);
+        await captureMaybe(states, slPage, '23-mobile-short-landscape');
+        await slPage.close();
       } finally {
         await browser.close();
       }
@@ -1171,10 +1281,13 @@ async function run() {
   const isRendered = (b) => b && b.display !== 'none' && b.visibility !== 'hidden' && Number(b.opacity) > 0.05 && b.pointerEvents !== 'none';
   const isVisible = (b) => b && b.display !== 'none' && b.visibility !== 'hidden' && Number(b.opacity) > 0.05;
   const isMobileState = (state) => state?.name?.includes('-mobile-');
-  const viewportFor = (state) => ({
-    width: state?.name?.includes('-desktop-') ? desktop.width : mobile.width,
-    height: state?.name?.includes('-desktop-') ? desktop.height : mobile.height,
-  });
+  const viewportFor = (state) => {
+    const name = state?.name ?? '';
+    if (name.includes('-desktop-')) return desktop;
+    if (name.includes('-short-landscape')) return shortLandscape;
+    if (name.includes('-semantic-dive-320')) return mobile320;
+    return mobile;
+  };
   const withinViewport = (b, viewport, tolerance = 1) => (
     b.x >= -tolerance &&
     b.y >= -tolerance &&
@@ -2133,6 +2246,91 @@ async function run() {
     const insideControls = box(diveState, '#focus-stage-inside-controls');
     if (isRendered(insideControls)) {
       pass('15-mobile-semantic-dive', 'semantic-dive:inside-controls-visible');
+    }
+  }
+
+  // ---- State diagnostics: mobile-semantic-dive-320 (22-mobile-semantic-dive-320) ----
+  if (shouldAssert('22-mobile-semantic-dive-320')) {
+    const dive320State = requireState('22-mobile-semantic-dive-320');
+    const viewport = viewportFor(dive320State);
+    // Verify no overflow in the 320px narrow viewport
+    if (dive320State.scroll.overflowX > 0) {
+      fail('22-mobile-semantic-dive-320', 'no-overflow-x', `horizontal overflow ${dive320State.scroll.overflowX}px`);
+    } else {
+      pass('22-mobile-semantic-dive-320', 'no-overflow-x');
+    }
+    if (dive320State.scroll.overflowY > 0) {
+      fail('22-mobile-semantic-dive-320', 'no-overflow-y', `vertical overflow ${dive320State.scroll.overflowY}px`);
+    } else {
+      pass('22-mobile-semantic-dive-320', 'no-overflow-y');
+    }
+    if (dive320State.bodyDataset?.panelSurface === 'semantic-dive') {
+      pass('22-mobile-semantic-dive-320', 'semantic-dive-320:panel-surface');
+    } else {
+      fail('22-mobile-semantic-dive-320', 'semantic-dive-320:panel-surface',
+        `expected semantic-dive, got "${dive320State.bodyDataset?.panelSurface || 'missing'}"`);
+    }
+    if (dive320State.bodyDataset?.semanticDive === 'active') {
+      pass('22-mobile-semantic-dive-320', 'semantic-dive-320:semantic-dive-active');
+    } else {
+      fail('22-mobile-semantic-dive-320', 'semantic-dive-320:semantic-dive-active',
+        `expected active, got "${dive320State.bodyDataset?.semanticDive || 'missing'}"`);
+    }
+    // Focus stage must be within the 320px viewport
+    const focusStage = box(dive320State, '#focus-stage');
+    if (focusStage && withinViewport(focusStage, viewport)) {
+      pass('22-mobile-semantic-dive-320', 'semantic-dive-320:focus-stage-within-viewport');
+    } else if (focusStage) {
+      fail('22-mobile-semantic-dive-320', 'semantic-dive-320:focus-stage-within-viewport',
+        `#focus-stage extends outside 320x${viewport.height} viewport`);
+    }
+    if (isRendered(focusStage)) {
+      pass('22-mobile-semantic-dive-320', 'semantic-dive-320:focus-stage-visible');
+    }
+  }
+
+  // ---- State diagnostics: mobile-short-landscape (23-mobile-short-landscape) ----
+  if (shouldAssert('23-mobile-short-landscape')) {
+    const slState = requireState('23-mobile-short-landscape');
+    const slViewport = viewportFor(slState);
+    if (slState.scroll.overflowX > 0) {
+      fail('23-mobile-short-landscape', 'no-overflow-x', `horizontal overflow ${slState.scroll.overflowX}px`);
+    } else {
+      pass('23-mobile-short-landscape', 'no-overflow-x');
+    }
+    if (slState.scroll.overflowY > 0) {
+      fail('23-mobile-short-landscape', 'no-overflow-y', `vertical overflow ${slState.scroll.overflowY}px`);
+    } else {
+      pass('23-mobile-short-landscape', 'no-overflow-y');
+    }
+    if (['focus', 'focus-search'].includes(slState.bodyDataset?.panelSurface)) {
+      pass('23-mobile-short-landscape', 'short-landscape:panel-surface');
+    } else {
+      fail('23-mobile-short-landscape', 'short-landscape:panel-surface',
+        `expected focus/focus-search, got "${slState.bodyDataset?.panelSurface || 'missing'}"`);
+    }
+    // Journey compass must be within short landscape viewport
+    const compass = box(slState, '.journey-compass');
+    if (compass && withinViewport(compass, slViewport)) {
+      pass('23-mobile-short-landscape', 'short-landscape:compass-within-viewport');
+    } else if (compass) {
+      fail('23-mobile-short-landscape', 'short-landscape:compass-within-viewport',
+        `.journey-compass extends outside ${slViewport.width}x${slViewport.height} viewport`);
+    }
+    const focusStage = box(slState, '#focus-stage');
+    if (focusStage && withinViewport(focusStage, slViewport)) {
+      pass('23-mobile-short-landscape', 'short-landscape:focus-stage-within-viewport');
+    } else if (isRendered(focusStage)) {
+      fail('23-mobile-short-landscape', 'short-landscape:focus-stage-within-viewport',
+        `#focus-stage extends outside ${slViewport.width}x${slViewport.height} viewport`);
+    }
+    // Info panel must be within short landscape viewport if rendered
+    const infoPanel = box(slState, '#info-panel');
+    if (infoPanel && withinViewport(infoPanel, slViewport)) {
+      pass('23-mobile-short-landscape', 'short-landscape:info-panel-within-viewport');
+    } else if (isRendered(infoPanel)) {
+      fail('23-mobile-short-landscape', 'short-landscape:info-panel-within-viewport',
+        `#info-panel extends outside ${slViewport.width}x${slViewport.height} viewport`);
     }
   }
 

@@ -29,6 +29,7 @@
         "journey-event-bindings-contract.mjs",
         "trail-review-focus-contract.mjs",
         "pathfinding-contract.mjs",
+        "journey-walk-candidate-contract.mjs",
         "journey-ui-ownership-contract.mjs"
       ]
     },
@@ -161,6 +162,12 @@
         "url-state-navigation-dewindowing-contract.mjs",
         "focus-selection-owner-contract.mjs",
         "focus-pocket-state-owner-contract.mjs",
+        "journey-focus-constellation-viewport-contract.mjs",
+        "journey-focus-pocket-state-contract.mjs",
+        "journey-focus-personality-contract.mjs",
+        "journey-focus-runtime-state-contract.mjs",
+        "journey-strand-continuity-contract.mjs",
+        "journey-neighborhood-manifest-contract.mjs",
         "bootstrap-window-export-contract.mjs",
         "lifecycle-search-panel-ownership-contract.mjs",
         "lifecycle-journey-quick-dewindowing-contract.mjs",

@@ -14,9 +14,11 @@ Named surfaces: `mobile-idle`, `desktop-idle`, `launch-focus`, `search-error`, `
 
 ## Visual Audit Scripts (screenshot-based)
 
+Canonical visual state ids are registered in `tests/visual-state-registry.mjs`; `tests/surface-style-matrix-contract.mjs` verifies the registry, visual audit captures, package aliases, and surface style matrix stay in sync.
+
 | Script | States | Notes |
 |--------|--------|-------|
-| `qa:surface:all` | all 22 visual states | ~60-90s |
+| `qa:surface:all` | all 25 visual states | ~60-90s |
 | `qa:surface:mobile-idle` | 01-mobile-idle | |
 | `qa:surface:desktop-idle` | 07-desktop-idle | |
 | `qa:surface:focus` | 03-mobile-focus-first-result + 04-mobile-field-node-active | |
@@ -29,8 +31,11 @@ Named surfaces: `mobile-idle`, `desktop-idle`, `launch-focus`, `search-error`, `
 | `qa:surface:loading-overlay` | 18-mobile-loading-overlay | |
 | `qa:surface:compass-rail` | 19-mobile-compass-rail | |
 | `qa:surface:mode-grid` | 20-mobile-mode-grid-visible | |
+| `qa:surface:route-trace` | 21-mobile-route-trace-visible | |
+| `qa:surface:semantic-dive-320` | 22-mobile-semantic-dive-320 | narrow 320px semantic-dive geometry |
+| `qa:surface:short-landscape` | 23-mobile-short-landscape | short landscape 896x414 focus-search geometry |
 
-States: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-result`, `04-mobile-field-node-active`, `05-mobile-map`, `06-mobile-filters-open`, `07-desktop-idle`, `08-desktop-search-coffee`, `09-mobile-map-empty-state`, `10-mobile-search-error-state`, `11-mobile-selected-card-map-trail`, `11-desktop-selected-card-map-trail`, `12-desktop-reduced-motion`, `13-desktop-filters-open` (desktop viewport capture only — desktop filters are mobile-only, always display:none in idle), `13-mobile-reduced-motion`, `14-desktop-search-error`, `15-mobile-semantic-dive`, `16-desktop-info-panel-populated`, `17-mobile-thread-inspector`, `18-mobile-loading-overlay`, `19-mobile-compass-rail`, `20-mobile-mode-grid-visible`.
+States: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-result`, `04-mobile-field-node-active`, `05-mobile-map`, `06-mobile-filters-open`, `07-desktop-idle`, `08-desktop-search-coffee`, `09-mobile-map-empty-state`, `10-mobile-search-error-state`, `11-mobile-selected-card-map-trail`, `11-desktop-selected-card-map-trail`, `12-desktop-reduced-motion`, `13-desktop-filters-open` (desktop viewport capture only — desktop filters are mobile-only, always display:none in idle), `13-mobile-reduced-motion`, `14-desktop-search-error`, `15-mobile-semantic-dive`, `16-desktop-info-panel-populated`, `17-mobile-thread-inspector`, `18-mobile-loading-overlay`, `19-mobile-compass-rail`, `20-mobile-mode-grid-visible`, `21-mobile-route-trace-visible`, `22-mobile-semantic-dive-320`, `23-mobile-short-landscape`.
 
 ## UI Quality & Motion Scripts
 

@@ -735,15 +735,34 @@
 } /* end @media focus/dive states */
 
 @media (max-width: 900px) and (max-height: 420px) and (orientation: landscape) {
+    html body.is-active[data-panel-surface="focus"] .info-panel,
+    html body.is-active[data-panel-surface="focus-search"] .info-panel,
+    html body.is-active[data-panel-surface="semantic-dive"] .info-panel {
+        display: none;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    html body.is-active[data-panel-surface="focus"] .focus-stage,
     html body.is-active[data-panel-surface="focus-search"] .focus-stage,
     html body.is-active[data-panel-surface="semantic-dive"] .focus-stage {
         max-height: calc(100dvh - 96px);
+        overflow: hidden;
     }
 
+    html body.is-active[data-panel-surface="focus"] .focus-stage-card,
     html body.is-active[data-panel-surface="focus-search"] .focus-stage-card,
     html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-card {
-        max-height: 100%;
+        color: rgba(249, 254, 255, 0.94);
+        max-height: calc(100dvh - 108px);
         overflow-y: auto;
+    }
+
+    html body.is-active[data-panel-surface="focus"] .focus-stage-what,
+    html body.is-active[data-panel-surface="focus-search"] .focus-stage-what,
+    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-what {
+        color: rgba(225, 245, 243, 0.88);
     }
 
     html body.is-active[data-panel-surface="focus"] .focus-stage-note,
