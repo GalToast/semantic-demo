@@ -247,8 +247,8 @@ async function run() {
 
     // Reduced-motion proof now exercises public state orchestration only; focus-stage
     // rendering is covered by direct module callers, not the retired window bridge.
-    if (typeof window.refreshCompositionState === 'function') {
-      window.refreshCompositionState();
+    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function') {
+      (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState)();
     }
     if (typeof window.updateExplorationUi === 'function') {
       window.updateExplorationUi();
@@ -270,19 +270,19 @@ async function run() {
   // ── Phase 3: Step Inside ───────────────────────────────────────────────────
   // Enter Step Inside (trailDepth=2) via the official setTrailDepth path
   await page.evaluate(() => {
-    if (typeof window.setTrailDepth === 'function') {
-      window.setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true });
+    if (typeof (window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth) === 'function') {
+      (window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth)(2, { fromUserGesture: true, skipUrlSync: true });
     } else {
-      window.__TEST_STATE__.trailDepth = 2;
+      (window.__APP_STATE__ ?? window.__TEST_STATE__).trailDepth = 2;
     }
     if (typeof window.setMyceliumMode === 'function') {
       window.setMyceliumMode('inside', { skipUrlSync: true });
     } else {
-      window.__TEST_STATE__.myceliumMode = 'inside';
-      window.__TEST_STATE__.navState.mode = 'inside';
+      (window.__APP_STATE__ ?? window.__TEST_STATE__).myceliumMode = 'inside';
+      (window.__APP_STATE__ ?? window.__TEST_STATE__).navState.mode = 'inside';
     }
-    if (typeof window.refreshCompositionState === 'function') {
-      window.refreshCompositionState();
+    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function') {
+      (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState)();
     }
     if (typeof window.updateExplorationUi === 'function') {
       window.updateExplorationUi();
@@ -301,32 +301,32 @@ async function run() {
   // ── Phase 4: Interruption — clearSearch() reset ─────────────────────────────
   // Call the real state-reset function (this is what Escape triggers in the live app)
   await page.evaluate(() => {
-    if (typeof window.clearSearch === 'function') {
-      window.clearSearch();
+    if (typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function') {
+      (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch)();
     }
     // Reset trail and navigation state that clearSearch() does not touch
-    if (typeof window.setTrailDepth === 'function') {
-      window.setTrailDepth(0, { skipUrlSync: true });
+    if (typeof (window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth) === 'function') {
+      (window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth)(0, { skipUrlSync: true });
     } else {
-      window.__TEST_STATE__.trailDepth = 0;
+      (window.__APP_STATE__ ?? window.__TEST_STATE__).trailDepth = 0;
     }
     if (typeof window.setMyceliumMode === 'function') {
       window.setMyceliumMode('default', { skipUrlSync: true });
     } else {
-      window.__TEST_STATE__.myceliumMode = 'default';
+      (window.__APP_STATE__ ?? window.__TEST_STATE__).myceliumMode = 'default';
     }
     // Also reset focusedNode to fully return to overview idle — this is what
     // resetNodePositions() does when called without preserveSearch.
     // Use direct state mutation (safe for test) since focusOnNode(-1) is invalid.
-    window.__TEST_STATE__.focusedNode = null;
-    window.__TEST_STATE__.selectedPoint = null;
-    window.__TEST_STATE__.navState.focusedIndex = null;
+    (window.__APP_STATE__ ?? window.__TEST_STATE__).focusedNode = null;
+    (window.__APP_STATE__ ?? window.__TEST_STATE__).selectedPoint = null;
+    (window.__APP_STATE__ ?? window.__TEST_STATE__).navState.focusedIndex = null;
     // Restore camera to overview
-    if (typeof window.animateCameraToNode === 'function' && window.__TEST_STATE__.navState?.focusedIndex !== null) {
+    if (typeof window.animateCameraToNode === 'function' && (window.__APP_STATE__ ?? window.__TEST_STATE__).navState?.focusedIndex !== null) {
       window.animateCameraToNode(0, { transitionStyle: 'reset', duration: 1 });
     }
-    if (typeof window.refreshCompositionState === 'function') {
-      window.refreshCompositionState();
+    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function') {
+      (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState)();
     }
     if (typeof window.updateExplorationUi === 'function') {
       window.updateExplorationUi();

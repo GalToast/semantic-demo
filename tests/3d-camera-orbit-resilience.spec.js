@@ -32,7 +32,8 @@ async function clickValidNode(page) {
 
 async function wheelAtCanvasCenter(page, deltaY) {
   const rect = await page.evaluate(() => {
-    const box = window.__TEST_STATE__?.renderer?.domElement?.getBoundingClientRect();
+    const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const box = appState.renderer?.domElement?.getBoundingClientRect();
     return box ? { left: box.left, top: box.top, width: box.width, height: box.height } : null;
   });
   expect(rect, 'canvas rect must exist for wheel interaction').not.toBeNull();
@@ -41,19 +42,49 @@ async function wheelAtCanvasCenter(page, deltaY) {
   await page.waitForTimeout(600);
 }
 
-async function dragCanvas(page, dx, dy) {
+async function dragCanvas(page, dx, dy, { xRatio = 0.5, yRatio = 0.5 } = {}) {
   const rect = await page.evaluate(() => {
-    const box = window.__TEST_STATE__?.renderer?.domElement?.getBoundingClientRect();
+    const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const box = appState.renderer?.domElement?.getBoundingClientRect();
     return box ? { left: box.left, top: box.top, width: box.width, height: box.height } : null;
   });
   expect(rect, 'canvas rect must exist for drag interaction').not.toBeNull();
-  const x = rect.left + rect.width / 2;
-  const y = rect.top + rect.height / 2;
+  const x = rect.left + rect.width * xRatio;
+  const y = rect.top + rect.height * yRatio;
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x + dx, y + dy, { steps: 3 });
   await page.mouse.up();
   await page.waitForTimeout(700);
+}
+
+async function resetIncidentalFocus(page) {
+  const mode = (await probe(page)).navMode;
+  if (mode !== 'overview') {
+    await page.evaluate(() => {
+      const appState = window.__APP_STATE__ ?? window.__TEST_STATE__;
+      if (!appState) return;
+      appState.focusedNode = null;
+      appState.selectedPoint = null;
+      appState.trailDepth = 0;
+      if (appState.navState) {
+        appState.navState.mode = 'overview';
+        appState.navState.focusedIndex = null;
+        appState.navState.trailSeedIndex = null;
+        appState.navState.trailNeighborIndices = [];
+        appState.navState.focusPocketIndices = [];
+      }
+      document.body.dataset.trailDepth = '0';
+      document.body.dataset.panelSurface = 'idle';
+      document.body.dataset.graphContext = 'overview';
+      document.body.dataset.journeyPhase = 'overview';
+    });
+    await page.waitForFunction(() => {
+      const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      return appState?.navState?.mode === 'overview' && document.body.dataset.panelSurface !== 'focus';
+    }, { timeout: 10000 });
+    await page.waitForTimeout(1200);
+  }
 }
 
 test.describe('3D camera/orbit resilience', () => {
@@ -78,12 +109,14 @@ test.describe('3D camera/orbit resilience', () => {
     await openApp(page, { width: 1440, height: 900 });
 
     await clickValidNode(page);
+    await resetIncidentalFocus(page);
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(1000);
     const mobile = await probe(page);
     expect(Math.abs(mobile.cameraAspect - (mobile.canvasRect.width / mobile.canvasRect.height)), 'mobile camera aspect should match canvas').toBeLessThan(0.05);
     await clickValidNode(page);
+    await resetIncidentalFocus(page);
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.waitForTimeout(1000);
@@ -100,7 +133,8 @@ test.describe('3D camera/orbit resilience', () => {
     expect(before, 'short landscape should start with a hoverable node').not.toBeNull();
 
     await wheelAtCanvasCenter(page, -160);
-    await dragCanvas(page, 90, 20);
+    await dragCanvas(page, 90, 20, { xRatio: 0.12, yRatio: 0.18 });
+    await resetIncidentalFocus(page);
 
     const after = await findClickableNode(page);
     expect(after, 'short landscape should retain a hoverable node after camera gestures').not.toBeNull();

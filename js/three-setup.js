@@ -462,14 +462,12 @@ function getThreadPulseOpacity(baseOpacity, pulse, requestedAmplitude, revealPro
  * These are frozen design constants — not runtime-derived.
  */
 export function getThreadOpacityEnvelope() {
-    // overview profile — county overview ambient thread legibility
-    return { core: 0.13, wispy: 0.055, bridge: 0.08, pulse: 0.028 };
-    // focused profile — neighborhood / focus stage
-    return { core: 0.40, wispy: 0.18, bridge: 0.28, pulse: 0.092 };
-    // searchActive profile — search result context
-    return { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 };
-    // trailActive profile — step-inside trail depth
-    return { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 };
+    return {
+        overview: { core: 0.13, wispy: 0.055, bridge: 0.08, pulse: 0.028 },
+        focused: { core: 0.40, wispy: 0.18, bridge: 0.28, pulse: 0.092 },
+        searchActive: { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 },
+        trailActive: { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
+    };
 }
 
 function getMyceliumPresentationProfile() {

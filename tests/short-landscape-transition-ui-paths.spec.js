@@ -21,10 +21,10 @@ async function openApp(page) {
   await setupMockSearch(page);
   await page.goto(`${BASE_URL}${APP_PATH}?nodemo=1`);
   await page.waitForFunction(() => (
-    typeof window.clearSearch === 'function' &&
-    typeof window.setSemanticDiveMode === 'function' &&
+    typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function' &&
+    typeof (window.__APP_ACTIONS__?.setSemanticDiveMode ?? window.setSemanticDiveMode) === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
-    window.__TEST_STATE__.points.length > 0
+    (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
   ), { timeout: 20000 });
   await page.waitForTimeout(1000);
 }
@@ -41,8 +41,8 @@ async function performSearch(page, query = 'coffee') {
         el.value = q;
         el.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      if (typeof window.search === 'function') {
-        await window.search(q, { preferCachedResults: false });
+      if (typeof (window.__APP_ACTIONS__?.search ?? window.search) === 'function') {
+        await (window.__APP_ACTIONS__?.search ?? window.search)(q, { preferCachedResults: false });
       }
     }, query);
   });

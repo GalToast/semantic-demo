@@ -150,9 +150,6 @@ export function hideTooltip() {
     }, 180);
 }
 
-// Expose to window for backward compatibility with three-setup.js and others
-if (typeof window !== 'undefined') {
-    window.updateTooltipContent = updateTooltipContent;
-    window.positionTooltip = positionTooltip;
-    window.hideTooltip = hideTooltip;
-}
+// Window exports retired 2026-05-28; all consumers migrated to direct imports:
+// updateTooltipContent, positionTooltip, hideTooltip -> search-ui-adapter.js (search-state.js)
+// hideTooltip -> map-state.js, keyboard-help.js

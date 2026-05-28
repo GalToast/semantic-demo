@@ -1,6 +1,7 @@
 // js/modules/camera-controls.js — extracted from monolithic HTML
 import * as THREE from 'three';
 import { state } from '../state.js';
+import { isMobile, getViewportSize, prefersReducedMotion } from './environment.js';
 import {
     easeInOutSine,
     easeInOutCubic,
@@ -121,8 +122,9 @@ export function getFocusTransitionProgress(duration = 640) {
  * Returns { x, y, width, height } in CSS pixel coordinates (relative to viewport).
  */
 export function getCanvasUnobstructedRegion() {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    const vp = getViewportSize();
+    const vw = vp.width;
+    const vh = vp.height;
     const body = document.body;
     const canvasRect = state.renderer?.domElement?.getBoundingClientRect?.() || {
         left: 0,
@@ -444,7 +446,7 @@ export function animateCameraToNode(index, options = {}) {
 
     const personality = state.navState.currentPersonality || { type: 'STANDARD', cameraDuration: 980, cameraArc: 'standard', easing: 'easeInOutCubic' };
     const baseDuration = framing.duration || (transitionStyle === 'dive' ? 1480 : (personality.cameraDuration || 980));
-    const prefersReducedCameraMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
+    const prefersReducedCameraMotion = prefersReducedMotion();
     const duration = prefersReducedCameraMotion ? 1 : baseDuration;
 
     const animationToken = ++state.focusCameraAnimationToken;
@@ -565,7 +567,7 @@ function getRoutePositionBounds(routeIndices = []) {
 }
 
 export function isCameraIdleOrbitAllowed() {
-    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
+    const prefersReduced = prefersReducedMotion();
     return (
         state.autoRotate &&
         !prefersReduced &&
@@ -612,7 +614,7 @@ export function clearAutoRotateResumeTimer() {
 
 export function scheduleAutoRotateResume(delay = state.AUTO_ROTATE_IDLE_MS) {
     clearAutoRotateResumeTimer();
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true) return;
+    if (prefersReducedMotion()) return;
     if (
         !state.autoRotate ||
         state.currentView !== 'galaxy' ||
@@ -708,7 +710,7 @@ export function getFocusOrbitSlackPivot() {
     const focusVector = new THREE.Vector3(focusPosition.x, focusPosition.y, focusPosition.z);
     const routeBounds = getRoutePositionBounds(getRouteEmbodimentIndices());
     const routeCenter = routeBounds?.center?.clone ? routeBounds.center.clone() : focusVector.clone();
-    const compact = window.innerWidth <= 768;
+    const compact = isMobile();
     const pivot = focusVector.clone().lerp(routeCenter, compact ? 0.48 : 0.38);
     const cameraOffset = state.camera.position.clone().sub(state.controls.target);
     const cameraDistance = cameraOffset.length();
@@ -721,7 +723,7 @@ export function getFocusOrbitSlackPivot() {
 
 export function applyFocusOrbitSlack(reason = 'user-control') {
     if (!isSearchRouteFocusActive() || state.semanticDiveMode || !state.camera || !state.controls) return false;
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true) {
+    if (prefersReducedMotion()) {
         return false;
     }
     const nextTarget = getFocusOrbitSlackPivot();
@@ -729,7 +731,7 @@ export function applyFocusOrbitSlack(reason = 'user-control') {
 
     const currentTarget = state.controls.target.clone();
     const targetDelta = nextTarget.sub(currentTarget);
-    const maxShift = window.innerWidth <= 768 ? 0.24 : 0.2;
+    const maxShift = isMobile() ? 0.24 : 0.2;
     if (targetDelta.length() > maxShift) targetDelta.setLength(maxShift);
     if (targetDelta.lengthSq() < 0.000064) return false;
 
@@ -855,8 +857,8 @@ export function updateAutoRotateSoftResume(now = performance.now()) {
 }
 
 export function animateCameraToTerrainPrelude(options = {}) {
-    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
-    const duration = prefersReducedMotion ? 1 : (options.duration || (state.MAP_HANDOFF_PRELUDE_MS || 1200));
+    const reducedMotion = prefersReducedMotion();
+    const duration = reducedMotion ? 1 : (options.duration || (state.MAP_HANDOFF_PRELUDE_MS || 1200));
 
     // Show "Preparing terrain..." progress overlay during the prelude
     adapter_showTerrainPreludeOverlay();
@@ -872,7 +874,7 @@ export function animateCameraToTerrainPrelude(options = {}) {
             .add(heading.multiplyScalar(0.8))
             .add(worldUp.multiplyScalar(0.4));
 
-        if (prefersReducedMotion) {
+        if (reducedMotion) {
             state.camera.position.copy(desiredPos);
             state.controls.update();
             return;
@@ -980,8 +982,8 @@ export function applySemanticCentroidCamera(now = performance.now()) {
     const token = ++_insideCentroidLerpToken;
     const startTarget = state.controls.target.clone();
     const startTime = now;
-    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
-    const duration = prefersReducedMotion ? 1 : 1600; // Snap for reduced motion; otherwise lerp to final lookAt.
+    const reducedMotion = prefersReducedMotion();
+    const duration = reducedMotion ? 1 : 1600; // Snap for reduced motion; otherwise lerp to final lookAt.
 
     function stepCentroid(now) {
         if (token !== _insideCentroidLerpToken) return;
@@ -1016,7 +1018,7 @@ export function animateCameraToSearchCorridor(anchorIndex, resultIndices = [], o
 
     const routeIndices = [...new Set([anchorIndex, ...(resultIndices || [])])]
         .filter((index) => Number.isFinite(index) && index >= 0 && index < state.points.length && isPointVisible(index, state.points, state.activeClusterFilter, state.activeFilters))
-        .slice(0, window.innerWidth <= 768 ? 8 : 12);
+        .slice(0, isMobile() ? 8 : 12);
 
     const vectors = routeIndices
         .map((index) => state.targetPositions[index] || state.nodePositions[index] || state.originalPositions[index])
@@ -1045,7 +1047,7 @@ export function animateCameraToSearchCorridor(anchorIndex, resultIndices = [], o
     if (rightVector.lengthSq() < 0.0001) rightVector.set(1, 0, 0);
     rightVector.normalize();
 
-    const compact = window.innerWidth <= 768;
+    const compact = isMobile();
     const routeSpan = Math.max(radius, 0.14);
     const targetBias = compact ? 0.42 : 0.34;
     const endTarget = boundsCenter.clone().lerp(anchorVector, targetBias).add(worldUp.clone().multiplyScalar(compact ? 0.018 : 0.028));
@@ -1152,7 +1154,7 @@ export function focusOnNode(index, options = {}) {
     }
 
     // 10/10 Polish: Reduce mobile UI density by collapsing secondary sections on focus
-    if (window.innerWidth <= 768) {
+    if (isMobile()) {
         const storySection = document.getElementById('story-section');
         const clusterSection = document.getElementById('cluster-section');
         if (storySection) storySection.open = false;
@@ -1197,7 +1199,7 @@ export function focusOnNode(index, options = {}) {
 }
 
 export function toggleAutoRotate() {
-    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
+    const prefersReduced = prefersReducedMotion();
     if (prefersReduced) {
         state.autoRotate = false;
         if (state.controls) {
@@ -1220,38 +1222,4 @@ export function toggleAutoRotate() {
         rotateBtn.setAttribute('aria-pressed', String(state.controls?.autoRotate === true));
         rotateBtn.removeAttribute('aria-disabled');
     }
-}
-
-// Global exposure for compatibility
-if (typeof window !== 'undefined') {
-    window.syncRuntimeState = syncRuntimeState;
-    window.getRuntimeStateSnapshot = getRuntimeStateSnapshot;
-    window.isCameraIdleOrbitAllowed = isCameraIdleOrbitAllowed;
-    window.syncOrbitAutoRotate = syncOrbitAutoRotate;
-    window.setAutoRotateSuspended = setAutoRotateSuspended;
-    window.clearAutoRotateResumeTimer = clearAutoRotateResumeTimer;
-    window.scheduleAutoRotateResume = scheduleAutoRotateResume;
-    window.syncCameraAssistDataset = syncCameraAssistDataset;
-    window.isSearchRouteFocusActive = isSearchRouteFocusActive;
-    window.setRouteExplorationState = setRouteExplorationState;
-    window.clearRouteExploration = clearRouteExploration;
-    window.markRouteExploration = markRouteExploration;
-    window.shouldMarkRouteExploration = shouldMarkRouteExploration;
-    window.getFocusOrbitSlackPivot = getFocusOrbitSlackPivot;
-    window.applyFocusOrbitSlack = applyFocusOrbitSlack;
-    window.clearFocusOrbitSlack = clearFocusOrbitSlack;
-    window.startFocusCameraAssist = startFocusCameraAssist;
-    window.focusCameraAssistIsActive = focusCameraAssistIsActive;
-    window.updateAutoRotateSoftResume = updateAutoRotateSoftResume;
-    window.clearInsideCentroid = clearInsideCentroid;
-    window.animateCameraToSearchCorridor = animateCameraToSearchCorridor;
-    window.zoomCamera = zoomCamera;
-    window.getCanvasUnobstructedRegion = getCanvasUnobstructedRegion;
-    window.computeFocusPocketScreenBounds = computeFocusPocketScreenBounds;
-    window.computeSafeAreaCameraTargetOffset = computeSafeAreaCameraTargetOffset;
-    window._cam = {
-        getCanvasUnobstructedRegion,
-        computeFocusPocketScreenBounds,
-        computeSafeAreaCameraTargetOffset
-    };
 }

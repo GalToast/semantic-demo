@@ -8,7 +8,7 @@
  *     window.recordSemanticLaneSnapshot / window.updateHasQuery / window.applyStoryPrompt /
  *     window.showExperienceToast / window.setSemanticDiveMode / window.setTrailDepth
  *  2. url-navigation-adapter.js exists and exports init + get adapter + all navigation calls
- *  3. url-state.js imports and uses url-navigation-adapter.js for all navigation calls
+ *  3. url-state.js imports and uses url-navigation-adapter.js for navigation calls
  *  4. url-navigation-adapter.js has no imports that can recreate cycles
  *  5. app.js calls initUrlNavigationAdapter before the first applyUrlState call
  *  6. restoreDepthFromUrlAfterFocus uses adapter applyDeepTrailMode (not direct window calls)
@@ -129,8 +129,12 @@ function testUrlStateUsesAdapter() {
 
   assertContains(src, "from './url-navigation-adapter.js'",
     'url-state.js must import from url-navigation-adapter.js');
-  assertContains(src, 'getUrlNavigationAdapter',
-    'url-state.js must call getUrlNavigationAdapter');
+  assertContains(src, 'adapterUpdateExplorationUi',
+    'url-state.js must use named url-navigation adapter imports');
+  assertContains(src, 'adapterRecordSemanticLaneSnapshot',
+    'url-state.js must use named url-navigation adapter imports');
+  assertContains(src, 'applyDeepTrailMode',
+    'url-state.js must use the deep trail adapter');
 
   console.log('  PASS — url-state.js uses the navigation adapter');
 }

@@ -45,7 +45,7 @@ async function waitForWeatherApi(page) {
 
 async function injectLiveWeather(page) {
     await page.evaluate(() => {
-        window.__TEST_STATE__.weather = {
+        (window.__APP_STATE__ ?? window.__TEST_STATE__).weather = {
             icon: 'rain',
             condition: 'rain',
             description: 'Light rain',
@@ -55,7 +55,7 @@ async function injectLiveWeather(page) {
             windDirection: 135,
             source: 'render-contract'
         };
-        window.__TEST_STATE__.lastSuccessfulFetch = Date.now();
+        (window.__APP_STATE__ ?? window.__TEST_STATE__).lastSuccessfulFetch = Date.now();
         window._weather.updateWeatherUi();
     });
 }
@@ -139,8 +139,8 @@ async function main() {
         assert(/Updated just now|Updated 0 min ago/.test(state.stale || ''), 'live weather should render staleness text', state);
 
         await page.evaluate(() => {
-            window.__TEST_STATE__.weather = null;
-            window.__TEST_STATE__.lastSuccessfulFetch = 0;
+            (window.__APP_STATE__ ?? window.__TEST_STATE__).weather = null;
+            (window.__APP_STATE__ ?? window.__TEST_STATE__).lastSuccessfulFetch = 0;
             window._weather.updateWeatherUi();
         });
         state = await getWidgetState(page);
@@ -152,7 +152,7 @@ async function main() {
 
         await page.evaluate(() => {
             document.body.dataset.panelSurface = 'focus-search';
-            window.__TEST_STATE__.weather = {
+            (window.__APP_STATE__ ?? window.__TEST_STATE__).weather = {
                 icon: 'cloud',
                 condition: 'cloud',
                 description: 'Cloudy',
@@ -193,8 +193,8 @@ async function main() {
         await page.setViewportSize({ width: 1280, height: 800 });
         await page.evaluate(() => {
             document.body.dataset.panelSurface = 'idle';
-            window.__TEST_STATE__.currentView = 'galaxy';
-            window.__TEST_STATE__.weather = {
+            (window.__APP_STATE__ ?? window.__TEST_STATE__).currentView = 'galaxy';
+            (window.__APP_STATE__ ?? window.__TEST_STATE__).weather = {
                 icon: 'rain',
                 condition: 'rain',
                 description: 'Rain',
@@ -209,7 +209,7 @@ async function main() {
         assert(state.overlayActive === false, 'weather overlay should not activate outside map view', state);
 
         await page.evaluate(() => {
-            window.__TEST_STATE__.currentView = 'map';
+            (window.__APP_STATE__ ?? window.__TEST_STATE__).currentView = 'map';
             window._weather.applyWeatherEffects();
         });
         state = await getWidgetState(page);

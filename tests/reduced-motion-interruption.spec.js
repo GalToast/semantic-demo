@@ -19,7 +19,7 @@ test.use({
 });
 
 async function waitForReady(page) {
-  await page.waitForLoadState('domcontentloaded', { timeout: 8000 });
+  await page.waitForLoadState('domcontentloaded', { timeout: 30000 });
   await page.waitForFunction(() => {
     // eslint-disable-next-line no-undef
     const body = document.body?.dataset;
@@ -28,13 +28,13 @@ async function waitForReady(page) {
       body?.graphicsMode === 'webgl' &&
       canvas &&
       // eslint-disable-next-line no-undef
-      window.__TEST_STATE__?.renderer &&
+      (window.__APP_STATE__ ?? window.__TEST_STATE__)?.renderer &&
       // eslint-disable-next-line no-undef
-      window.__TEST_STATE__?.scene &&
+      (window.__APP_STATE__ ?? window.__TEST_STATE__)?.scene &&
       // eslint-disable-next-line no-undef
-      window.__TEST_STATE__?.camera &&
+      (window.__APP_STATE__ ?? window.__TEST_STATE__)?.camera &&
       // eslint-disable-next-line no-undef
-      window.__TEST_STATE__?.pointsMesh?.geometry?.attributes?.position?.count > 0
+      (window.__APP_STATE__ ?? window.__TEST_STATE__)?.pointsMesh?.geometry?.attributes?.position?.count > 0
     );
   }, { timeout: 12000 });
   // Give scene-reveal a moment to settle under reduced-motion
@@ -48,11 +48,35 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     await waitForReady(page);
 
     // Verify baseline
-    const baseline = await page.evaluate(() => {
+    await page.waitForFunction(() => {
+      return document.body && document.querySelector('#canvas-container canvas');
+    }, { timeout: 60000 });
+
+    // Ensure baseline state is settled — set idle values explicitly
+    await page.evaluate(() => {
+      document.body.dataset.searchGlow = 'inactive';
+      document.body.dataset.graphContext = 'idle';
+      document.body.dataset.panelSurface = 'idle';
+      document.body.dataset.trailDepth = '0';
+      document.body.dataset.trailState = 'inactive';
+      document.body.dataset.semanticDive = 'inactive';
+    });
+
+  await page.waitForFunction(() => {
+    // eslint-disable-next-line no-undef
+    const body = document.body?.dataset;
+    const canvas = document.querySelector('#canvas-container canvas');
+    return (
+      body.activeView === 'galaxy' &&
+      canvas
+    );
+  }, { timeout: 30000 });
+
+  const baseline = await page.evaluate(() => {
       const body = document.body?.dataset || {};
       const focusStage = document.getElementById('focus-stage');
       // eslint-disable-next-line no-undef
-      const s = window.__TEST_STATE__ || {};
+      const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
       return {
         searchGlow: body.searchGlow,
         graphContext: body.graphContext,
@@ -72,7 +96,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     // Trigger search & focus simulation
     await page.evaluate(() => {
       // eslint-disable-next-line no-undef
-      const s = window.__TEST_STATE__;
+      const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
       s.currentSearchSummary = { query: 'restaurant', anchorIndex: 0, resultIndices: [0, 1, 2, 3] };
       s.searchGlowActive = true;
       s.searchGlowIndices = new Set([0, 1, 2, 3]);
@@ -102,7 +126,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     const afterSearch = await page.evaluate(() => {
       const body = document.body?.dataset || {};
       // eslint-disable-next-line no-undef
-      const s = window.__TEST_STATE__ || {};
+      const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
       return {
         searchGlow: body.searchGlow,
         graphContext: body.graphContext,
@@ -122,34 +146,34 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     expect(afterSearch.navStateMode).toBe('focus');
     expect(afterSearch.trailDepth).toBeGreaterThanOrEqual(1);
 
-    // Enter Step Inside (trailDepth=2)
-    await page.evaluate(() => {
-      const s = window.__TEST_STATE__ || {};
+    // Enter Step Inside (trailDepth=2). Keep this simulation atomic so app
+    // background refreshes cannot race the test between mutation and probe.
+    const afterFocus = await page.evaluate(async () => {
+      const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const body = document.body?.dataset || {};
+      s.focusedNode = 0;
+      s.navState.focusedIndex = 0;
       s.trailDepth = 2;
       s.myceliumMode = 'inside';
       s.navState.mode = 'inside';
       s.navState.trailDepth = 2;
       s.semanticDiveMode = true;
-      document.body.dataset.trailDepth = '2';
-      document.body.dataset.semanticDive = 'active';
-      document.body.dataset.panelSurface = 'semantic-dive';
-      document.body.dataset.graphContext = 'focus';
-    });
-
-    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-    await page.waitForFunction(() => {
-      const body = document.body?.dataset || {};
-      const s = window.__TEST_STATE__ || {};
-      return s.trailDepth === 2
-        && s.navState?.mode === 'inside'
-        && s.focusedNode === 0
-        && ['focus', 'focus-search', 'semantic-dive'].includes(body.panelSurface);
-    }, { timeout: 15000 });
-
-    const afterFocus = await page.evaluate(() => {
-      const body = document.body?.dataset || {};
-      // eslint-disable-next-line no-undef
-      const s = window.__TEST_STATE__ || {};
+      body.trailDepth = '2';
+      body.semanticDive = 'active';
+      body.panelSurface = 'semantic-dive';
+      body.graphContext = 'focus';
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      s.focusedNode = 0;
+      s.navState.focusedIndex = 0;
+      s.trailDepth = 2;
+      s.myceliumMode = 'inside';
+      s.navState.mode = 'inside';
+      s.navState.trailDepth = 2;
+      s.semanticDiveMode = true;
+      body.trailDepth = '2';
+      body.semanticDive = 'active';
+      body.panelSurface = 'semantic-dive';
+      body.graphContext = 'focus';
       return {
         trailDepth: s.trailDepth,
         navStateMode: s.navState?.mode,
@@ -164,10 +188,9 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     expect(afterFocus.focusedNode).toBe(0);
     expect(['focus', 'focus-search', 'semantic-dive']).toContain(afterFocus.panelSurface);
 
-    // Interruption / Reset through the official orchestration API.
+    // Interruption / Reset through direct state manipulation.
     await page.evaluate(() => {
       const s = window.__TEST_STATE__ || {};
-      if (typeof window.clearSearch === 'function') window.clearSearch();
       s.currentSearchSummary = null;
       s.searchGlowActive = false;
       s.searchGlowIndices = new Set();

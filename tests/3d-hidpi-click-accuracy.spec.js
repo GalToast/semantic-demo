@@ -5,7 +5,9 @@ import {
   probe,
   isValidNodeIndex,
   projectedCanvasCandidates,
-  readPocketNodeScales
+  readPocketNodeScales,
+  probeFocusPoint,
+  probeCanvasBacking
 } from './helpers/3d-interaction-helpers.js';
 
 const HEALTH_OK = {
@@ -32,15 +34,18 @@ async function openAppHiDPI(browser, viewport = { width: 1440, height: 900 }, { 
   );
 
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => (
-    typeof window.clearSearch === 'function' &&
-    typeof window.focusOnNode === 'function' &&
-    Array.isArray(window.__TEST_STATE__?.points) &&
-    window.__TEST_STATE__.points.length > 0 &&
-    window.__TEST_STATE__?.renderer?.domElement &&
-    window.__TEST_STATE__?.camera &&
-    window.__TEST_STATE__?.pointsMesh
-  ), { timeout: 20000 });
+  await page.waitForFunction(() => {
+    const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return (
+      typeof window.clearSearch === 'function' &&
+      typeof window.focusOnNode === 'function' &&
+      Array.isArray(s?.points) &&
+      s.points.length > 0 &&
+      s?.renderer?.domElement &&
+      s?.camera &&
+      s?.pointsMesh
+    );
+  }, { timeout: 20000 });
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
     if (!overlay) return true;
@@ -57,7 +62,10 @@ async function openAppHiDPI(browser, viewport = { width: 1440, height: 900 }, { 
       window.resetExplorationFocus();
     }
   });
-  await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'overview', { timeout: 10000 });
+  await page.waitForFunction(() => {
+    const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return s?.navState?.mode === 'overview';
+  }, { timeout: 10000 });
   await page.waitForTimeout(900);
 
   return { page, context };
@@ -95,46 +103,6 @@ async function clickResolvedNodeHiDPI(page) {
   await page.mouse.click(target.screenX, target.screenY);
   await page.waitForTimeout(700);
   return { target, after: await probe(page) };
-}
-
-/**
- * Verify that a focused node label is readable at DPR=2.
- * Probes the info-panel or focus-stage for non-truncated text content.
- */
-async function probeLabelLegibilityHiDPI(page) {
-  return page.evaluate(() => {
-    const focusedNode = window.__TEST_STATE__?.focusedNode;
-    if (focusedNode === null || focusedNode === undefined) return { ok: false, reason: 'no-focused-node' };
-
-    const point = window.__TEST_STATE__?.points?.[focusedNode];
-    if (!point) return { ok: false, reason: 'point-missing' };
-
-    // Check label text is present and non-trivial
-    const label = point.public_note || point.label || point.name || null;
-    const hasLabel = typeof label === 'string' && label.length > 0;
-
-    // Check info panel text content
-    const infoPanel = document.querySelector('.info-panel') || document.querySelector('.focus-stage-card');
-    const panelText = infoPanel?.textContent?.trim() || '';
-    const panelHasContent = panelText.length > 10;
-
-    // At DPR=2, font rendering is sharper — verify the focused node index
-    // itself is stored (proof the label is tied to the right node identity)
-    const focusedIndex = window.__TEST_STATE__?.navState?.focusedIndex;
-    const pointCount = window.__TEST_STATE__?.points?.length ?? 0;
-    const indexValid = Number.isFinite(focusedIndex) && focusedIndex >= 0 && focusedIndex < pointCount;
-
-    return {
-      ok: true,
-      hasLabel,
-      label: hasLabel ? label.slice(0, 60) : null,
-      panelHasContent,
-      panelTextExcerpt: panelText.slice(0, 80).trim(),
-      focusedIndex,
-      indexValid,
-      devicePixelRatio: window.devicePixelRatio
-    };
-  });
 }
 
 test.describe('3D HiDPI click accuracy (deviceScaleFactor=2)', () => {
@@ -188,7 +156,7 @@ test.describe('3D HiDPI click accuracy (deviceScaleFactor=2)', () => {
       ({ page, context } = await openAppHiDPI(browser, { width: 1440, height: 900 }));
 
       await clickResolvedNodeHiDPI(page);
-      const legibility = await probeLabelLegibilityHiDPI(page);
+      const legibility = await probeFocusPoint(page);
 
       expect(legibility.ok, `label legibility probe must succeed: ${legibility.reason}`).toBe(true);
       expect(legibility.indexValid, 'focused node index must be valid for label association').toBe(true);
@@ -292,18 +260,7 @@ test.describe('3D HiDPI click accuracy (deviceScaleFactor=2)', () => {
     try {
       ({ page, context } = await openAppHiDPI(browser, { width: 1440, height: 900 }));
 
-      const diag = await page.evaluate(() => {
-        const canvas = window.__TEST_STATE__?.renderer?.domElement;
-        if (!canvas) return null;
-        const rect = canvas.getBoundingClientRect();
-        return {
-          cssWidth: rect.width,
-          cssHeight: rect.height,
-          backingWidth: canvas.width,
-          backingHeight: canvas.height,
-          dpr: window.devicePixelRatio
-        };
-      });
+      const diag = await probeCanvasBacking(page);
 
       expect(diag, 'canvas must be present at DPR=2').not.toBeNull();
       expect(Math.abs(diag.dpr - 2), 'devicePixelRatio must be 2').toBeLessThan(0.05);

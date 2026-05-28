@@ -57,6 +57,7 @@ const fakeBody = new FakeElement('body');
 fakeBody.dataset = {};
 
 const win = {
+  location: { search: '', pathname: '/' },
   setInterval: (fn, ms) => setInterval(fn, ms),
   clearInterval: (id) => clearInterval(id),
   setTimeout,
@@ -69,6 +70,11 @@ const win = {
   updateLegendGuideState: () => {},
   switchView: () => {},
   updateUrlState: () => {},
+  history: {
+    state: {},
+    replaceState(s, t, u) { this.state = s; },
+    pushState(s, t, u) { this.state = s; }
+  },
   resetStateBeforeUrlRestore: () => {},
   resetExplorationFocus: () => {},
   resetExperienceState: () => {},
@@ -119,6 +125,7 @@ Object.defineProperty(globalThis, 'crypto', {
 // ─── Import state ─────────────────────────────────────────────────────────────
 
 const { state } = await import('../js/state.js');
+state.currentSearchSummary = null;
 
 // ─── CONTRACT 1: JOURNEY_COMPASS_PHASE_ORDER ─────────────────────────────────
 // The five canonical phases must be defined in the correct order.

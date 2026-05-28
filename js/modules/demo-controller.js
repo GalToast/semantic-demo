@@ -150,11 +150,17 @@ function clearDemoListeners() {
   const canvas = document.querySelector('canvas');
   if (canvas) {
     canvas.removeEventListener('click', onCanvasInteraction);
-    canvas.removeEventListener('touchstart', onCanvasInteraction, { passive: true });
+    canvas.removeEventListener('touchstart', onCanvasInteraction);
   }
   window.removeEventListener('keydown', onKeydown);
   window.removeEventListener('blur', onBlur);
-  clearMicroDemoListeners();
+}
+
+function clearDemoTimers() {
+  if (_demoTimer) {
+    clearTimeout(_demoTimer);
+    _demoTimer = null;
+  }
 }
 
 function clearMicroDemoListeners() {
@@ -168,35 +174,20 @@ function clearMicroDemoListeners() {
   }
 }
 
-function clearDemoTimers() {
-  if (_demoTimer !== null) {
-    clearTimeout(_demoTimer);
-    _demoTimer = null;
-  }
+function reEnableOrbitControls() {
+  if (state.controls) state.controls.enabled = true;
+  setAutoRotateSuspended(false);
 }
 
 function resetNodeShaderUniforms() {
-  // Reset hover-related uniforms on all nodes
-  // The three-setup module exposes resetNodePositions which also restores defaults
   resetNodePositions();
 }
 
 function restoreCamera() {
-  // Restore overview position and camera
-  resetNodePositions();
+  // handled by micro-demo.js internally
 }
 
-function reEnableOrbitControls() {
-  if (state.controls) {
-    state.controls.enabled = true;
-  }
-}
-
-function reEnableAutoRotate() {
-  setAutoRotateSuspended(false);
-}
-
-function writeStorageSeen() {
+function recordCompletion() {
   try {
     const entry = {
       seen: true,
@@ -245,10 +236,28 @@ function attachListeners() {
 function teardown() {
   clearDemoListeners();
   clearDemoTimers();
+  clearMicroDemoListeners();
   resetNodeShaderUniforms();
   restoreCamera();
   reEnableOrbitControls();
-  reEnableAutoRotate();
+}
+
+function isEligible() {
+    try {
+        const osPref = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const devFlag = document.documentElement.dataset.reduceMotion === 'true';
+        if (osPref || devFlag) return false;
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('nodemo')) return false;
+
+        const canvas = document.querySelector('canvas');
+        if (!canvas) return false;
+
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 // ── Public interface ─────────────────────────────────────────────────────────
@@ -284,6 +293,12 @@ export function init() {
 
   setState(State.ELIGIBLE);
 
+  const overlay = document.getElementById('loading-overlay');
+  if (overlay?.classList?.contains('hidden')) {
+    start();
+    return;
+  }
+
   // Async scene-ready guard — resolves when overlay is hidden or on timeout
   waitForSceneReady()
     .then((source) => {
@@ -302,7 +317,12 @@ export function init() {
  * Integrates with micro-demo.js for the 10-second guided interaction.
  */
 export function start() {
-  if (_state !== State.ELIGIBLE) return;
+  if (!isEligible()) {
+      console.warn('[demo] blocked — no WebGL / software renderer');
+      return false;
+  }
+  if (_state !== State.ELIGIBLE) return false;
+
   setState(State.RUNNING);
   _cancelled = false;
   attachListeners();
@@ -333,13 +353,18 @@ export function start() {
 
   // Delegate to micro-demo if available (it handles its own sessionStorage guard)
   startMicroDemo();
+  return true;
 }
 
 /**
  * Immediate cancel — no pause, no resume.
  */
 export function cancel() {
-  if (_state === State.IDLE || _state === State.DONE) return;
+  if (_state === State.IDLE) return;
+  if (_state === State.DONE) {
+    resetNodeShaderUniforms();
+    return;
+  }
   _cancelled = true;
   setState(State.COMPLETING);
   teardown();
@@ -352,21 +377,17 @@ export function cancel() {
  */
 export function complete() {
   if (_state === State.IDLE || _state === State.DONE) return;
+  _cancelled = false;
   setState(State.COMPLETING);
-  writeStorageSeen();
+  recordCompletion();
   teardown();
   setState(State.DONE);
   window.dispatchEvent(new CustomEvent('demo-complete'));
 }
 
-/**
- * External check for running state (e.g., keyboard shortcuts).
- */
 export function isRunning() {
   return _state === State.RUNNING;
 }
-
-// ── Expose on window ────────────────────────────────────────────────────────
 
 export const demoController = {
   init,
@@ -377,5 +398,5 @@ export const demoController = {
 };
 
 if (typeof window !== 'undefined') {
-    window.demoController = demoController;
+  window.demoController = demoController;
 }

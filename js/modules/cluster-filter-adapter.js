@@ -18,6 +18,7 @@
 let _applyFilters = null;
 let _clearSearchGlow = null;
 let _updateUrlState = null;
+let _clearShortSemanticSearchState = null;
 
 /**
  * Inject the function references. Called once from app.js init.
@@ -26,15 +27,17 @@ let _updateUrlState = null;
  * @param {Function} deps.applyFilters
  * @param {Function} deps.clearSearchGlow
  * @param {Function} deps.updateUrlState
+ * @param {Function} deps.clearShortSemanticSearchState
  */
-export function initClusterFilterAdapter({ applyFilters, clearSearchGlow, updateUrlState } = {}) {
+export function initClusterFilterAdapter({ applyFilters, clearSearchGlow, updateUrlState, clearShortSemanticSearchState } = {}) {
     _applyFilters = typeof applyFilters === 'function' ? applyFilters : null;
     _clearSearchGlow = typeof clearSearchGlow === 'function' ? clearSearchGlow : null;
     _updateUrlState = typeof updateUrlState === 'function' ? updateUrlState : null;
+    _clearShortSemanticSearchState = typeof clearShortSemanticSearchState === 'function' ? clearShortSemanticSearchState : null;
 }
 
 /**
- * Returns true when all three dependencies are resolved.
+ * Returns true when all four dependencies are resolved.
  * @returns {boolean}
  */
 export function isClusterFilterAdapterReady() {
@@ -42,6 +45,7 @@ export function isClusterFilterAdapterReady() {
         _applyFilters !== null
         && _clearSearchGlow !== null
         && _updateUrlState !== null
+        && _clearShortSemanticSearchState !== null
     );
 }
 
@@ -70,4 +74,15 @@ export function clearSearchGlow() {
  */
 export function updateUrlState(extra, options) {
     if (_updateUrlState) _updateUrlState(extra, options);
+}
+
+/**
+ * Delegate to the injected short semantic search state clearer.
+ * Safe to call when unready; no-op.
+ *
+ * @param {Element|null} resultsEl
+ * @param {Element|null} statusEl
+ */
+export function clearShortSemanticSearchState(resultsEl, statusEl) {
+    if (_clearShortSemanticSearchState) _clearShortSemanticSearchState(resultsEl, statusEl);
 }

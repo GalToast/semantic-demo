@@ -291,9 +291,10 @@ export function updateWeatherStaleness() {
     el.setAttribute('aria-label', el.textContent);
 }
 
-if (typeof window !== 'undefined') {
-    window.updateWeatherStaleness = updateWeatherStaleness;
-}
+// Window exports retired 2026-05-28 — all consumers migrated to direct imports:
+// updateWeatherStaleness → internal only (weather.js calls it directly)
+// refreshWeatherStalenessIndicator → alias, no consumers
+// clearWeatherRefreshTimer → lifecycle.js direct import (line 67)
 
 export function describeWeatherCode(code) {
     if (code === 0) return { label: 'Clear', icon: 'sun', condition: 'sun' };
@@ -393,7 +394,4 @@ function scheduleLightning() {
     lightningTimer = window.setTimeout(flash, 3000);
 }
 
-if (typeof window !== 'undefined') {
-    window.refreshWeatherStalenessIndicator = updateWeatherStaleness;
-    window.clearWeatherRefreshTimer = clearWeatherRefreshTimer;
-}
+// Window exports retired 2026-05-28

@@ -8,7 +8,7 @@
  *   2. initWeather restarts timers when initialized state is stale.
  *   3. clearWeatherRefreshTimer clears both intervals and resets weatherInitialized.
  *   4. lightning recursion is guarded by a generation token.
- *   5. window weather exports are browser-guarded.
+ *   5. weather timer helpers are no longer exported on window.
  *
  * Usage:
  *   node tests/weather-lifecycle-contract.mjs
@@ -50,15 +50,10 @@ assert.match(
   /const\s+generation\s*=\s*lightningGeneration\s*\+\s*1;[\s\S]*?if\s*\(\s*generation\s*!==\s*lightningGeneration\s*\)\s*return;/,
   'scheduleLightning should prevent stale recursive lightning callbacks from rescheduling'
 );
-assert.match(
+assert.doesNotMatch(
   src,
-  /if\s*\(\s*typeof\s+window\s*!==\s*['"]undefined['"]\s*\)\s*\{[\s\S]*?window\.updateWeatherStaleness\s*=\s*updateWeatherStaleness;/,
-  'updateWeatherStaleness window exposure should be browser-guarded'
-);
-assert.match(
-  src,
-  /if\s*\(\s*typeof\s+window\s*!==\s*['"]undefined['"]\s*\)\s*\{[\s\S]*?window\.refreshWeatherStalenessIndicator\s*=\s*updateWeatherStaleness;[\s\S]*?window\.clearWeatherRefreshTimer\s*=\s*clearWeatherRefreshTimer;/,
-  'bottom weather window exports should be browser-guarded'
+  /window\.(updateWeatherStaleness|refreshWeatherStalenessIndicator|clearWeatherRefreshTimer)\s*=/,
+  'weather timer helpers should not be exported on window'
 );
 
 console.log('weather-lifecycle-contract passed');

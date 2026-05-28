@@ -17,7 +17,7 @@ import {
 } from './map-state.js';
 
 // search-state
-import { clearShortSemanticSearchState, clearMobileRouteFieldPeekState } from './search-state.js';
+import { clearShortSemanticSearchState, clearMobileRouteFieldPeek as clearMobileRouteFieldPeekState } from './search-state.js';
 
 // camera-controls
 import { focusOnNode } from './camera-controls.js';
@@ -243,49 +243,7 @@ export function updateJourneyCompass() {
 }
 
 export function installSemanticJourneyProbe() {
-    window.__semanticJourneyProbe = () => {
-        const compass = document.getElementById('journey-compass');
-        return {
-            phase: compass?.dataset?.phase || document.body.dataset.journeyPhase || null,
-            title: document.getElementById('journey-compass-title')?.textContent?.trim() || '',
-            note: document.getElementById('journey-compass-note')?.textContent?.trim() || '',
-            currentSteps: Array.from(document.querySelectorAll('.journey-compass-step.current')).map((step) => step.dataset.journeyStep),
-            doneSteps: Array.from(document.querySelectorAll('.journey-compass-step.done')).map((step) => step.dataset.journeyStep),
-            routeSteps: Array.from(document.querySelectorAll('.journey-compass-step')).map((step) => step.dataset.journeyStep),
-            graphContext: document.body.dataset.graphContext || null,
-            panelSurface: document.body.dataset.panelSurface || null,
-            panelSurfaceDetail: document.body.dataset.panelSurfaceDetail || null,
-            routeDirector: document.body.dataset.routeDirector || null,
-            routeDirectorReason: document.body.dataset.routeDirectorReason || '',
-            routeExploration: document.body.dataset.routeExploration || 'idle',
-            focusOrigin: document.body.dataset.focusOrigin || '',
-            focusPanelMode: document.body.dataset.focusPanelMode || '',
-            semanticDive: document.body.dataset.semanticDive || null,
-            focusTransition: document.body.dataset.focusTransition || null,
-            focusTransitionPhase: document.body.dataset.focusTransitionPhase || null,
-            cameraAssist: document.body.dataset.cameraAssist || 'free',
-            cameraAssistReason: document.body.dataset.cameraAssistReason || '',
-            journeyCompassDensity: document.body.dataset.journeyCompassDensity || '',
-            journeyCompassCopy: document.body.dataset.journeyCompassCopy || '',
-            journeyNavigationOwner: document.body.dataset.journeyNavigationOwner || '',
-            viewHandoffActive: document.body.dataset.viewHandoffActive || '',
-            cameraSlackState: { ...(state.focusOrbitSlackState || {}) },
-            primaryAction: {
-                label: document.getElementById('btn-journey-primary')?.textContent?.trim() || '',
-                action: document.getElementById('btn-journey-primary')?.dataset?.journeyAction || ''
-            },
-            secondaryAction: {
-                label: document.getElementById('btn-journey-secondary')?.textContent?.trim() || '',
-                action: document.getElementById('btn-journey-secondary')?.dataset?.journeyAction || ''
-            },
-            tertiaryAction: {
-                label: document.getElementById('btn-journey-tertiary')?.textContent?.trim() || '',
-                action: document.getElementById('btn-journey-tertiary')?.dataset?.journeyAction || '',
-                hidden: !!document.getElementById('btn-journey-tertiary')?.hidden
-            },
-            routeEmbodiment: { ...(state.routeTraceDiagnostics || {}) }
-        };
-    };
+    return getJourneyCompassPresentationState();
 }
 
 export function getMobileSearchSheetDetail() {

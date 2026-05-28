@@ -122,19 +122,18 @@ export function closeLegendGuide(options = {}) {
         restoreLegendCollapsedPanel(infoPanel, panelBtn);
     }
     if (options.restoreFocus) {
-        if (window._previouslyFocusedLegend) {
-            window._previouslyFocusedLegend.focus({ preventScroll: true });
+        if (_previouslyFocusedLegend) {
+            _previouslyFocusedLegend.focus({ preventScroll: true });
         } else if (legendToggle) {
             legendToggle.focus({ preventScroll: true });
         }
     }
 }
 
-// ── Window exposure (for bootstrap compatibility) ─────────────────────────────
-if (typeof window !== 'undefined') {
-    window.isLegendPanelOpen = isLegendPanelOpen;
-    window.openLegendPanel = openLegendPanel;
-    window.closeLegendPanel = closeLegendPanel;
-    window.updateLegendGuideState = updateLegendGuideState;
-    window.closeLegendGuide = closeLegendGuide;
-}
+// ── Module-scoped focus scrap (replaces window._previouslyFocusedLegend) ────────
+let _previouslyFocusedLegend = null;
+
+export function setPreviouslyFocusedLegend(el) { _previouslyFocusedLegend = el; }
+export function getPreviouslyFocusedLegend() { return _previouslyFocusedLegend; }
+
+// All legend exports are consumed through direct imports.

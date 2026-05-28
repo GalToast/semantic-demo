@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { BASE_URL, SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch, openApp, probe, projectedCanvasCandidates, probeFocusPocket } from './helpers/3d-interaction-helpers.js';
+import { BASE_URL, SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch, openApp, probe, projectedCanvasCandidates, probeFocusPocket, focusNodeViaApp } from './helpers/3d-interaction-helpers.js';
 import { mutate } from './helpers/state-harness.js';
 
 function isValidNodeIndex(value, pointCount) {
@@ -19,7 +19,8 @@ async function findReachableNodeCoordinate(page) {
     if (state.canvasCursor !== 'pointer' || !Number.isFinite(state.hoverHighlightIndex)) continue;
 
     const stack = await page.evaluate(({ x, y }) => {
-      const canvas = window.__TEST_STATE__?.renderer?.domElement;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const canvas = state.renderer?.domElement;
       return document.elementsFromPoint(x, y).map((el, order) => ({
         order,
         isCanvas: el === canvas,
@@ -145,22 +146,21 @@ test.describe('3D overlay hit ownership', () => {
     await openApp(page, { width: 844, height: 390 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const pts = state.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
-          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pt.lead_id);
+        if (pt && state.pointIndexByLeadId?.has(pt.lead_id)) {
+          const node = state.semanticNeighborMapByLeadId?.get(pt.lead_id);
           if (node?.neighbors?.length > 0) return i;
         }
       }
       return 0;
     });
 
-    await page.evaluate(idx => {
-      if (typeof window.focusOnNode === 'function') window.focusOnNode(idx);
-    }, entryIndex);
-    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
+    if (entryIndex >= 0) await focusNodeViaApp(page, entryIndex);
+    await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
     await page.waitForTimeout(1000);
 
     const pocket = await probeFocusPocket(page);
@@ -175,22 +175,21 @@ test.describe('3D overlay hit ownership', () => {
     await openApp(page, { width: 390, height: 844 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const pts = state.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
-          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pt.lead_id);
+        if (pt && state.pointIndexByLeadId?.has(pt.lead_id)) {
+          const node = state.semanticNeighborMapByLeadId?.get(pt.lead_id);
           if (node?.neighbors?.length > 0) return i;
         }
       }
       return 0;
     });
 
-    await page.evaluate(idx => {
-      if (typeof window.focusOnNode === 'function') window.focusOnNode(idx);
-    }, entryIndex);
-    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
+    if (entryIndex >= 0) await focusNodeViaApp(page, entryIndex);
+    await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
     await page.waitForTimeout(1000);
 
     const pocket = await probeFocusPocket(page);
@@ -203,33 +202,33 @@ test.describe('3D overlay hit ownership', () => {
     await openApp(page, { width: 390, height: 844 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const pts = state.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
-          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pt.lead_id);
+        if (pt && state.pointIndexByLeadId?.has(pt.lead_id)) {
+          const node = state.semanticNeighborMapByLeadId?.get(pt.lead_id);
           if (node?.neighbors?.length > 0) return i;
         }
       }
       return 0;
     });
 
-    await page.evaluate(idx => {
-      if (typeof window.focusOnNode === 'function') window.focusOnNode(idx);
-    }, entryIndex);
-    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
+    if (entryIndex >= 0) await focusNodeViaApp(page, entryIndex);
+    await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
     await page.waitForTimeout(1000);
 
     const centers = await overlayCenters(page);
 
     // Get projected screen coordinates of 2-3 focus-neighborhood nodes
     const neighborhoodScreenPoints = await page.evaluate(() => {
-      const nav = window.__TEST_STATE__?.navState;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const nav = state.navState;
       if (!nav || nav.mode !== 'focus' || !Number.isFinite(nav.focusedIndex)) return [];
       const anchorIdx = nav.focusedIndex;
-      const pts = window.__TEST_STATE__.points;
-      const semanticMap = window.__TEST_STATE__.semanticNeighborMapByLeadId;
+      const pts = state.points;
+      const semanticMap = state.semanticNeighborMapByLeadId;
       if (!pts || !semanticMap) return [];
 
       const anchorLeadId = pts[anchorIdx]?.lead_id;
@@ -239,7 +238,7 @@ test.describe('3D overlay hit ownership', () => {
       return allIndices.map(idx => {
         const pt = pts[idx];
         if (!pt) return null;
-        const projected = window.__TEST_STATE__.renderer?.computeProjectedPoint?.(pt);
+        const projected = state.renderer?.computeProjectedPoint?.(pt);
         if (!projected) return null;
         return { idx, screenX: projected.x, screenY: projected.y };
       }).filter(Boolean);

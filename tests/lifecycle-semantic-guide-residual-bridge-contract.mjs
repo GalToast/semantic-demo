@@ -4,7 +4,7 @@
  * Documents and guards the residual window bridge between lifecycle.js
  * and the legend/semantic-guide seam:
  *
- *   Bridge A: window.updateLegendGuideState() — lifecycle-owned, self-call
+ *   Retired: window.updateLegendGuideState() — callers use direct imports.
  *   Retired: window.restoreLegendCollapsedPanel() — owned by legend-ui.js and
  *            reached through direct imports.
  *
@@ -64,17 +64,17 @@ function testUpdateLegendGuideStateOwner() {
     'semantic-guide.js must NOT define updateLegendGuideState'
   );
 
-  // legend-ui.js must expose it to window
+  // legend-ui.js must not expose it to window.
   assert(
-    legendUiSrc.includes('window.updateLegendGuideState = updateLegendGuideState'),
-    'legend-ui.js exports updateLegendGuideState to window (compatibility bridge)'
+    !legendUiSrc.includes('window.updateLegendGuideState = updateLegendGuideState'),
+    'legend-ui.js does not export updateLegendGuideState to window'
   );
 
-  // The call site in view-controller.switchView must be typeof-guarded
+  // The call site in view-controller.switchView must use the direct import.
   assert(
-    viewControllerSrc.includes('typeof window.updateLegendGuideState === \'function\'') ||
-    viewControllerSrc.includes('typeof window.updateLegendGuideState === "function"'),
-    'view-controller.switchView calls updateLegendGuideState with typeof guard'
+    viewControllerSrc.includes('updateLegendGuideState();') &&
+    !viewControllerSrc.includes('window.updateLegendGuideState'),
+    'view-controller.switchView calls updateLegendGuideState directly'
   );
 
   console.log('  OK — updateLegendGuideState: legend-ui-owned, semantic-guide.js NOT owner');
@@ -164,10 +164,10 @@ function testLifecycleDoesNotImportUpdateLegendGuideStateFromSemanticGuide() {
   console.log('  OK — lifecycle imports semantic-guide functions but NOT updateLegendGuideState');
 }
 
-// ── TEST 5: closeLegendGuide is legend-ui-owned and exports to window ──
+// ── TEST 5: closeLegendGuide is legend-ui-owned and direct-imported ──
 
 function testCloseLegendGuideOwnership() {
-  console.log('\n[TEST 5] closeLegendGuide — owned by legend-ui.js, exported to window');
+  console.log('\n[TEST 5] closeLegendGuide — owned by legend-ui.js, direct import only');
 
   const legendUiSrc = readSrc(LEGEND_UI_PATH);
   const lifecycleSrc = readSrc(LIFECYCLE_PATH);
@@ -178,10 +178,10 @@ function testCloseLegendGuideOwnership() {
     'legend-ui.js must export closeLegendGuide'
   );
 
-  // closeLegendGuide must be exported to window
+  // closeLegendGuide must not be exported to window.
   assert(
-    legendUiSrc.includes('window.closeLegendGuide = closeLegendGuide'),
-    'legend-ui.js exports closeLegendGuide to window (compatibility bridge)'
+    !legendUiSrc.includes('window.closeLegendGuide = closeLegendGuide'),
+    'legend-ui.js does not export closeLegendGuide to window'
   );
 
   // lifecycle.js re-exports it
@@ -190,7 +190,7 @@ function testCloseLegendGuideOwnership() {
     'lifecycle.js re-exports closeLegendGuide for compatibility'
   );
 
-  console.log('  OK — closeLegendGuide: legend-ui-owned, window bridge for bootstrap compat');
+  console.log('  OK — closeLegendGuide: legend-ui-owned, direct import path');
 }
 
 // ── MAIN ────────────────────────────────────────────────────────────────────

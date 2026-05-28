@@ -50,6 +50,7 @@ let _triggerSearchCorridorAnimation = null;
 let _hideSummaryCard = null;
 let _setSemanticGuideButtonState = null;
 let _scheduleCompactSearchResultReveal = null;
+let _scheduleSearchFocusTask = null;
 
 export function initSearchLifecycleAdapter(deps = {}) {
     _updateUrlState = typeof deps.updateUrlState === 'function' ? deps.updateUrlState : null;
@@ -81,6 +82,7 @@ export function initSearchLifecycleAdapter(deps = {}) {
     _hideSummaryCard = typeof deps.hideSummaryCard === 'function' ? deps.hideSummaryCard : null;
     _setSemanticGuideButtonState = typeof deps.setSemanticGuideButtonState === 'function' ? deps.setSemanticGuideButtonState : null;
     _scheduleCompactSearchResultReveal = typeof deps.scheduleCompactSearchResultReveal === 'function' ? deps.scheduleCompactSearchResultReveal : null;
+    _scheduleSearchFocusTask = typeof deps.scheduleSearchFocusTask === 'function' ? deps.scheduleSearchFocusTask : null;
 }
 
 /**
@@ -221,3 +223,7 @@ export function triggerSearchCorridorAnimation(anchorIndex, resultIndices) { if 
 export function hideSummaryCard() { if (_hideSummaryCard) _hideSummaryCard(); }
 export function setSemanticGuideButtonState(btn, state, opts) { if (_setSemanticGuideButtonState) _setSemanticGuideButtonState(btn, state, opts); }
 export function scheduleCompactSearchResultReveal(el, idx) { if (_scheduleCompactSearchResultReveal) _scheduleCompactSearchResultReveal(el, idx); }
+export function scheduleSearchFocusTask(callback, delay = 0) {
+    const scheduler = _scheduleSearchFocusTask || setTimeout;
+    return scheduler(callback, delay);
+}

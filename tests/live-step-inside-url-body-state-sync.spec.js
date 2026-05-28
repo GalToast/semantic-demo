@@ -31,8 +31,11 @@ async function openApp(page) {
   await setupMockSearch(page);
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`);
   await page.waitForFunction(() => (
-    typeof window.setSemanticDiveMode === 'function' &&
-    typeof window.refreshCompositionState === 'function' &&
+    typeof window.__APP_ACTIONS__?.setSemanticDiveMode === 'function' &&
+    typeof window.__APP_ACTIONS__?.refreshCompositionState === 'function' &&
+    typeof window.__APP_ACTIONS__?.search === 'function' &&
+    Array.isArray(window.__TEST_STATE__?.points) &&
+    window.__TEST_STATE__.points.length > 0 &&
     document.body.dataset.graphicsMode === 'webgl'
   ), { timeout: 20000 });
   await page.waitForTimeout(1200);
@@ -51,10 +54,15 @@ async function searchAndFocusFirstResult(page, query = 'coffee') {
   try {
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 });
   } catch {
-    await page.evaluate((q) => { if (typeof window.search === 'function') window.search(q); }, query);
+    await page.evaluate((q) => {
+      if (typeof window.__APP_ACTIONS__?.search === 'function') {
+        return window.__APP_ACTIONS__.search(q);
+      }
+      return null;
+    }, query);
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
   }
-  await page.locator('.search-result-item').first().click();
+  await page.locator('.search-result-item').first().click({ force: true });
   await page.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 15000 });
   await page.waitForTimeout(900);
 }
@@ -64,7 +72,7 @@ async function clickStepInside(page) {
   expect(await stepInsideOptions.count(), 'Step Inside button must exist in the DOM').toBeGreaterThan(0);
   const stepInside = stepInsideOptions.first();
   await expect(stepInside).toBeVisible({ timeout: 10000 });
-  await stepInside.click();
+  await stepInside.click({ force: true });
   await page.waitForFunction(() => (
     window.__TEST_STATE__?.trailDepth === 2 &&
     document.body.dataset.semanticDive === 'active'
@@ -145,7 +153,7 @@ test.describe('Live Step Inside state sync', () => {
     try {
       await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 });
     } catch {
-      await page.evaluate(() => { if (typeof window.search === 'function') window.search('coffee'); });
+      await page.evaluate(() => { if (typeof window.__APP_ACTIONS__?.search === 'function') window.__APP_ACTIONS__.search('coffee'); });
       await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
     }
 

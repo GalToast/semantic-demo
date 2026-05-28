@@ -258,6 +258,3 @@ export function syncClusterSectionState() {
         clusterSection.open = false;
     }
 }
-
-window.initClusterLabels = initClusterLabels;
-window.updateClusterLabels = updateClusterLabels;

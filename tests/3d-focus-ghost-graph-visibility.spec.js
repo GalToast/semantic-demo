@@ -27,7 +27,7 @@
 import { test, expect } from '@playwright/test';
 import {
   BASE_URL, setupMockSearch, openApp,
-  probe, probeFocusPocket, isReachableScreenCoordinate
+  probe, probeFocusPocket, isReachableScreenCoordinate, focusNodeViaApp
 } from './helpers/3d-interaction-helpers.js';
 
 const FOCUS_GHOST_TIMEOUT_MS = 120000;
@@ -36,7 +36,7 @@ const FOCUS_GHOST_TIMEOUT_MS = 120000;
 
 async function probeGhostGraph(page) {
   return page.evaluate(() => {
-    const state = window.__TEST_STATE__ || {};
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     const nav = state.navState || {};
     const camera = state.camera;
     const canvas = state.renderer?.domElement;
@@ -101,7 +101,7 @@ async function probeGhostGraph(page) {
 
 async function probePointsMaterialFocusState(page) {
   return page.evaluate(() => {
-    const state = window.__TEST_STATE__ || {};
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     const pm = state.pointsMaterial || {};
     const pointsMesh = state.pointsMesh;
     const isFocused = Number.isFinite(state.focusedNode);
@@ -149,17 +149,18 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
     await openApp(page, { width: 1440, height: 900 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const pts = (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+        const node = state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 15000 });
+    await focusNodeViaApp(page, entryIndex);
+    await page.waitForFunction(() => Number.isFinite((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).focusedNode), { timeout: 15000 });
     await page.waitForTimeout(800);
 
     const snap = await probePointsMaterialFocusState(page);
@@ -180,17 +181,18 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
 
     // Enter semantic-dive directly: dive twice on a node with neighbors
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const pts = (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+        const node = state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 15000 });
+    await focusNodeViaApp(page, entryIndex);
+    await page.waitForFunction(() => Number.isFinite((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).focusedNode), { timeout: 15000 });
     await page.waitForTimeout(500);
 
     const afterFocus = await probePointsMaterialFocusState(page);
@@ -199,7 +201,7 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
     // Step Inside: production path sets trailDepth=2 with the required gesture gate.
     await page.evaluate(() => { window.setSemanticDiveMode(true); });
     await page.waitForFunction(
-      () => window.__TEST_STATE__?.trailDepth === 2 && window.__TEST_STATE__?.semanticDiveMode === true,
+      () => (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).trailDepth === 2 && (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).semanticDiveMode === true,
       { timeout: 15000 }
     );
     await page.waitForTimeout(800);
@@ -216,17 +218,18 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
     await openApp(page, { width: 1440, height: 900 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const pts = (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+        const node = state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 15000 });
+    await focusNodeViaApp(page, entryIndex);
+    await page.waitForFunction(() => Number.isFinite((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).focusedNode), { timeout: 15000 });
     await page.waitForTimeout(800);
 
     const snap = await probeGhostGraph(page);
@@ -249,17 +252,18 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
     await openApp(page, { width: 1440, height: 900 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const pts = (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+        const node = state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 15000 });
+    await focusNodeViaApp(page, entryIndex);
+    await page.waitForFunction(() => Number.isFinite((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).focusedNode), { timeout: 15000 });
     await page.waitForTimeout(800);
 
     const snap = await probeGhostGraph(page);
@@ -283,17 +287,18 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
     await openApp(page, { width: 1440, height: 900 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const pts = (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+        const node = state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 15000 });
+    await focusNodeViaApp(page, entryIndex);
+    await page.waitForFunction(() => Number.isFinite((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).focusedNode), { timeout: 15000 });
     await page.waitForTimeout(800);
 
     const snap = await probeGhostGraph(page);
@@ -319,17 +324,18 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
     await openApp(page, { width: 844, height: 390 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const pts = (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+        const node = state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 15000 });
+    await focusNodeViaApp(page, entryIndex);
+    await page.waitForFunction(() => Number.isFinite((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).focusedNode), { timeout: 15000 });
     await page.waitForTimeout(800);
 
     const snap = await probeGhostGraph(page);
@@ -350,17 +356,18 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
     await openApp(page, { width: 844, height: 390 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const pts = (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 30); i++) {
-        const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
+        const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+        const node = state.semanticNeighborMapByLeadId?.get(pts[i]?.lead_id);
         if (node?.neighbors?.length > 0) return i;
       }
       return 0;
     });
 
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, entryIndex);
-    await page.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 15000 });
+    await focusNodeViaApp(page, entryIndex);
+    await page.waitForFunction(() => Number.isFinite((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).focusedNode), { timeout: 15000 });
     await page.waitForTimeout(800);
 
     const snap = await probePointsMaterialFocusState(page);

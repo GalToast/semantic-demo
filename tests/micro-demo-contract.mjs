@@ -21,6 +21,9 @@
  *   node tests/run-from-semantic-demo.cjs micro-demo-contract.mjs
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 // ---------------------------------------------------------------------------
 // Minimal DOM/window shim - sufficient to exercise demo-controller guard
 // and state machine logic in Node.
@@ -113,6 +116,7 @@ const FakeDocument = {
   body: new FakeElement('body'),
   documentElement: new FakeElement('html'),
   querySelector: (sel) => sel === 'canvas' ? _fakeCanvas : null,
+  querySelectorAll: () => [],
   getElementById: (id) => {
     if (id === 'loading-overlay') return _persistentOverlay;
     return null;
@@ -152,7 +156,22 @@ globalThis.localStorage = {
 };
 
 globalThis.window = {
-  location: { search: '' },
+  location: { href: 'http://localhost/', pathname: '/', search: '' },
+  history: {
+    state: {},
+    replaceState(state, _title, url) {
+      this.state = state;
+      if (typeof url === 'string') {
+        const next = new URL(url, globalThis.window.location.href);
+        globalThis.window.location.href = next.href;
+        globalThis.window.location.pathname = next.pathname;
+        globalThis.window.location.search = next.search;
+      }
+    },
+    pushState(state, _title, url) {
+      this.replaceState(state, _title, url);
+    }
+  },
   localStorage: {
     getItem: (k) => _localStorage.get(k) ?? null,
     setItem: (k, v) => _localStorage.set(k, String(v)),
@@ -201,6 +220,8 @@ globalThis.window = {
   updateJourneyCompass: () => {},
 };
 
+globalThis.sessionStorage = globalThis.window.sessionStorage;
+
 // ---------------------------------------------------------------------------
 // Test helpers
 // ---------------------------------------------------------------------------
@@ -212,6 +233,23 @@ function assertEqual(actual, expected, message) {
   if (actual !== expected) {
     throw new Error(`FAIL: ${message} - expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
   }
+}
+
+function extractFunctionBody(source, name, { exported = false } = {}) {
+  const prefix = exported ? `export function ${name}` : `function ${name}`;
+  const start = source.indexOf(prefix);
+  if (start < 0) throw new Error(`Could not find ${prefix}`);
+  const open = source.indexOf('{', start);
+  if (open < 0) throw new Error(`Could not find body for ${prefix}`);
+  let depth = 0;
+  for (let i = open; i < source.length; i += 1) {
+    if (source[i] === '{') depth += 1;
+    if (source[i] === '}') {
+      depth -= 1;
+      if (depth === 0) return source.slice(open + 1, i);
+    }
+  }
+  throw new Error(`Could not close body for ${prefix}`);
 }
 
 // Path to demo-controller module
@@ -234,7 +272,10 @@ async function clearState() {
   _dispatchedEvents.length = 0;
   _timerId = 0;
   _clockNow = Date.now();
+  globalThis.window.location.href = 'http://localhost/';
+  globalThis.window.location.pathname = '/';
   globalThis.window.location.search = '';
+  globalThis.window.history.state = {};
   // Remove stale window listeners from previous demo-controller.start() calls
   // (start() registers 'demo-complete'/'demo-cancelled' listeners on window)
   const STALE_EVENTS = ['demo-complete', 'demo-cancelled', 'demo-started'];
@@ -426,6 +467,18 @@ await test('micro-demo bridge listeners are removed after completion and cancel'
   demoController.cancel();
   assertEqual((_listeners.get('demo-complete') || []).length, 0, 'demo-complete listener removed after cancel');
   assertEqual((_listeners.get('demo-cancelled') || []).length, 0, 'demo-cancelled listener removed after cancel');
+});
+
+await test('teardown clears controller timers and micro-demo bridge listeners in source', async () => {
+  const src = readFileSync(resolve(process.cwd(), 'js/modules/demo-controller.js'), 'utf8');
+  const teardownBody = extractFunctionBody(src, 'teardown');
+  assert(/clearDemoListeners\s*\(\s*\)/.test(teardownBody), 'teardown clears controller DOM listeners');
+  assert(/clearDemoTimers\s*\(\s*\)/.test(teardownBody), 'teardown clears controller timers');
+  assert(/clearMicroDemoListeners\s*\(\s*\)/.test(teardownBody), 'teardown clears micro-demo listeners');
+
+  const clearMicroDemoListenersBody = extractFunctionBody(src, 'clearMicroDemoListeners');
+  assert(/removeEventListener\s*\(\s*['"]demo-complete['"]/.test(clearMicroDemoListenersBody), 'demo-complete listener removed');
+  assert(/removeEventListener\s*\(\s*['"]demo-cancelled['"]/.test(clearMicroDemoListenersBody), 'demo-cancelled listener removed');
 });
 
 // Contract 12: sessionStorage key contract

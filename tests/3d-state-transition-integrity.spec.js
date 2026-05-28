@@ -7,11 +7,11 @@
  *   overview → search → focus → semantic dive → map trail → reset
  *
  * After each transition the following state dimensions must not contradict:
- *   - window.__TEST_STATE__.focusedNode
- *   - window.__TEST_STATE__.selectedPoint
- *   - window.__TEST_STATE__.navState.mode
- *   - window.__TEST_STATE__.trailDepth
- *   - window.__TEST_STATE__.semanticDiveMode  (derived: trailDepth === 2)
+ *   - (window.__APP_STATE__ ?? window.__TEST_STATE__).focusedNode
+ *   - (window.__APP_STATE__ ?? window.__TEST_STATE__).selectedPoint
+ *   - (window.__APP_STATE__ ?? window.__TEST_STATE__).navState.mode
+ *   - (window.__APP_STATE__ ?? window.__TEST_STATE__).trailDepth
+ *   - (window.__APP_STATE__ ?? window.__TEST_STATE__).semanticDiveMode  (derived: trailDepth === 2)
  *   - document.body.dataset.panelSurface
  *   - document.body.dataset.graphContext
  *   - document.body.dataset.semanticDive
@@ -49,7 +49,7 @@ async function waitForAppReady(page) {
   await page.waitForFunction(() => (
     typeof window.clearSearch === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
-    window.__TEST_STATE__.points.length > 0
+    (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
   ), { timeout: 20000 });
 
   await page.waitForFunction(() => {

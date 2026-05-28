@@ -5,9 +5,15 @@
  *   - Make tests state-owner-aware: snapshot core fields, reset through official
  *     APIs when possible, and only allow direct mutation through named helper
  *     functions with comments explaining fixture setup.
- *   - Avoid direct `window.__TEST_STATE__.X = Y` calls in test bodies — route them through
- *     mutate() so every mutation is named and documented.
+ *   - Avoid direct `(window.__APP_STATE__ ?? window.__TEST_STATE__).X = Y` / `window.__APP_STATE__.X = Y` calls
+ *     in test bodies — route them through mutate() so every mutation is named.
  *   - Snapshots are plain frozen objects; they never flow back into real state.
+ *
+ * State bucket strategy:
+ *   - Writes: use __APP_STATE__ as primary, __TEST_STATE__ as fallback.
+ *   - Reads in snapshot(): resolve inside the browser context, preferring __APP_STATE__.
+ *   - mutate()/reset() use the same bucket resolution inline.
+ *   - The fallback to __TEST_STATE__ is intentional — product bridge NOT removed.
  *
  * Usage:
  *   import { snapshot, mutate, reset, SNAPSHOT_FIELDS } from './helpers/state-harness.js';
@@ -39,7 +45,7 @@ export const SNAPSHOT_FIELDS = {
    * Focus and trail navigation state.
    * navState fields are snapshot via dedicated sub-object read to avoid
    * picking up stale cross-test contamination from the same top-level
-   * window.__TEST_STATE__ reference.
+   * window reference.
    */
   focusTrail: [
     'focusedNode',
@@ -61,7 +67,7 @@ export const SNAPSHOT_FIELDS = {
 };
 
 /**
- * Read the named fields from window.__TEST_STATE__ inside the page.
+ * Read the named fields from the resolved state bucket inside the page.
  * Returns a plain frozen object snapshot — never a live reference.
  *
  * @param {import('@playwright/test').Page} page
@@ -70,11 +76,11 @@ export const SNAPSHOT_FIELDS = {
  */
 export async function snapshot(page, fields) {
   return page.evaluate((fieldPaths) => {
-    const state = window.__TEST_STATE__ ?? {};
+    const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     const snap = {};
     for (const path of fieldPaths) {
       const parts = path.split('.');
-      let value = state;
+      let value = s;
       for (const part of parts) {
         if (value == null) break;
         value = value[part];
@@ -91,6 +97,10 @@ export async function snapshot(page, fields) {
  * Apply documented state mutations through a named operation.
  * Every call records the operation name and a fixture-setup comment,
  * making the mutation intent self-documenting in test output.
+ *
+ * State bucket: uses __APP_STATE__ as primary, __TEST_STATE__ as fallback.
+ * This helper is the ONLY place direct state writes are allowed — all test-body
+ * mutations must route through here so they are named and searchable.
  *
  * Supported operations (each has an inline comment explaining why direct
  * mutation is acceptable here — generally: test fixture setup before the
@@ -142,7 +152,11 @@ export async function snapshot(page, fields) {
  */
 export async function mutate(page, operation, extra = {}) {
   await page.evaluate(({ op, patch }) => {
-    const s = window.__TEST_STATE__ ?? {};
+    // Resolve bucket: __APP_STATE__ first, then __TEST_STATE__, then empty object
+    /** @type {Record<string,unknown>} */
+    let s = window.__APP_STATE__;
+    if (s == null) s = window.__TEST_STATE__ ?? {};
+    if (s == null) s = {};
 
     switch (op) {
       case 'injectEmptyGraph':
@@ -207,13 +221,22 @@ export async function mutate(page, operation, extra = {}) {
       }
 
       case 'setFocusedNode': {
-        // Test fixture: set focusedNode and navState.focusedIndex together.
+        // Test fixture: set focusedNode, selectedPoint, navState.focusedIndex,
+        // and optionally navState.mode together.
         // Prefer window.focusOnNode() in real test flow; this is for
         // test harnesses that need a known starting point before the
         // official API is exercised.
         const idx = patch.focusedNode;
         s.focusedNode = idx;
         if (s.navState) s.navState.focusedIndex = idx;
+        // Optionally resolve selectedPoint from the current points array
+        if (patch.selectedPointIdx != null && Array.isArray(s.points)) {
+          s.selectedPoint = s.points[patch.selectedPointIdx] ?? null;
+        }
+        // Optionally override navState.mode (e.g. 'focus' for search-focus surface)
+        if (patch.navStateMode && s.navState) {
+          s.navState.mode = patch.navStateMode;
+        }
         break;
       }
 
@@ -252,6 +275,11 @@ export async function mutate(page, operation, extra = {}) {
         break;
       }
 
+      case 'setLastSuccessfulFetch':
+        // Weather fixture: simulate staleness clock without relying on network timing.
+        s.lastSuccessfulFetch = patch.lastSuccessfulFetch ?? Date.now();
+        break;
+
       case 'resetExploration':
         // Official reset API — preferred over direct mutation.
         if (typeof window.resetExplorationFocus === 'function') {
@@ -276,12 +304,18 @@ export async function mutate(page, operation, extra = {}) {
  * Reset state through official APIs when possible.
  * Falls back to direct mutation only when no official API exists for the field.
  *
+ * State bucket: uses __APP_STATE__ as primary, __TEST_STATE__ as fallback.
+ *
  * @param {import('@playwright/test').Page} page
  * @param {'exploration' | 'search' | 'deep'} scope
  */
 export async function reset(page, scope = 'exploration') {
   await page.evaluate(({ s }) => {
-    const state = window.__TEST_STATE__ ?? {};
+    /** @type {Record<string,unknown>} */
+    let state = window.__APP_STATE__;
+    if (state == null) state = window.__TEST_STATE__ ?? {};
+    if (state == null) state = {};
+
     if (s === 'exploration') {
       // Official API — resets focusedNode, trailDepth, navState.mode to overview.
       if (typeof window.resetExplorationFocus === 'function') {

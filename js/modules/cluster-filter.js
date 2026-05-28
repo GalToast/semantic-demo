@@ -1,7 +1,7 @@
 import { state } from '../state.js';
 import { normalizeCityForFilter, describeCluster, escapeHtml } from '../utils.js';
 import { resetActiveFilters, setActiveFilter } from './filter-state.js';
-import { applyFilters, clearSearchGlow, updateUrlState } from './cluster-filter-adapter.js';
+import { applyFilters, clearSearchGlow, updateUrlState, clearShortSemanticSearchState } from './cluster-filter-adapter.js';
 
 function pointMatchesActiveFilters(point) {
     if (!point) return false;
@@ -35,9 +35,7 @@ export function setClusterFilter(cluster) {
     if (state.currentSearchSummary) {
         const resultsEl = document.getElementById('search-results');
         const statusEl = document.getElementById('search-status');
-        if (typeof window.clearShortSemanticSearchState === 'function') {
-            window.clearShortSemanticSearchState(resultsEl, statusEl);
-        }
+        clearShortSemanticSearchState(resultsEl, statusEl);
     }
     state.activeClusterFilter = state.activeClusterFilter === nextCluster ? null : nextCluster;
     state.activeStoryPrompt = null;

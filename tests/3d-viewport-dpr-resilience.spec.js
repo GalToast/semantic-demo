@@ -29,7 +29,7 @@ async function openPage(browser, { width, height, deviceScaleFactor = 1 }) {
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => (
     Array.isArray(window.__TEST_STATE__?.nodePositions) &&
-    window.__TEST_STATE__.nodePositions.length > 0 &&
+    (window.__APP_STATE__ ?? window.__TEST_STATE__).nodePositions.length > 0 &&
     window.__TEST_STATE__?.renderer?.domElement &&
     window.__TEST_STATE__?.camera &&
     window.__TEST_STATE__?.pointsMesh

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { BASE_URL, setupMockSearch, openApp } from './helpers/3d-interaction-helpers.js';
+import { BASE_URL, setupMockSearch, openApp, focusNodeViaApp, midpointIndex } from './helpers/3d-interaction-helpers.js';
 
 const HEALTH_OK = {
   ok: true,
@@ -28,15 +28,18 @@ async function setupNetworkStubs(page) {
 
 async function waitForAppReady(page) {
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => (
-    typeof window.clearSearch === 'function' &&
-    typeof window.focusOnNode === 'function' &&
-    Array.isArray(window.__TEST_STATE__?.points) &&
-    window.__TEST_STATE__.points.length > 0 &&
-    window.__TEST_STATE__?.renderer?.domElement &&
-    window.__TEST_STATE__?.camera &&
-    window.__TEST_STATE__?.pointsMesh
-  ), { timeout: 25000 });
+  await page.waitForFunction(() => {
+    const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return (
+      typeof window.clearSearch === 'function' &&
+      typeof window.focusOnNode === 'function' &&
+      Array.isArray(s?.points) &&
+      s.points.length > 0 &&
+      s?.renderer?.domElement &&
+      s?.camera &&
+      s?.pointsMesh
+    );
+  }, { timeout: 25000 });
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
     if (!overlay) return true;
@@ -57,7 +60,7 @@ async function openReadyApp(page, viewport = { width: 1440, height: 900 }) {
 
 async function probe(page) {
   return page.evaluate(() => {
-    const { state } = window;
+    const state = window.__TEST_STATE__ ?? window.__APP_STATE__ ?? window.state ?? {};
     return {
       hasRenderer: !!state?.renderer,
       hasScene: !!state?.scene,
@@ -130,12 +133,9 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await waitForAppReady(page);
 
-    const targetIdx = await page.evaluate(() => {
-      const idx = Math.floor((window.__TEST_STATE__?.points?.length ?? 0) / 2);
-      if (idx >= 0 && typeof window.focusOnNode === 'function') window.focusOnNode(idx);
-      return idx;
-    });
+    const targetIdx = await midpointIndex(page);
     expect(targetIdx, 'scene should expose at least one focus target').toBeGreaterThanOrEqual(0);
+    if (targetIdx >= 0) await focusNodeViaApp(page, targetIdx);
     await page.waitForTimeout(1200);
 
     const state = await probe(page);
@@ -184,7 +184,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     await page.waitForTimeout(500);
     const lost = await page.evaluate(() => ({
       marker: document.body.dataset.webglContextLost || '',
-      rendererGone: window.__TEST_STATE__?.renderer === null
+      rendererGone: (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).renderer === null
     }));
     expect(lost.marker, 'context loss should be observable on body dataset').toBe('lost');
     expect(lost.rendererGone, 'context loss must not null out renderer state').toBe(false);
@@ -193,13 +193,12 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     await page.waitForTimeout(1500);
     const after = await page.evaluate(() => ({
       marker: document.body.dataset.webglContextLost || '',
-      hasRenderer: !!window.__TEST_STATE__?.renderer,
-      hasScene: !!window.__TEST_STATE__?.scene,
-      pointCount: window.__TEST_STATE__?.points?.length ?? 0
+      pointCount: (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).points?.length ?? 0
     }));
+    const after2 = await probe(page);
     expect(after.marker, 'context restore should be observable on body dataset').toBe('restored');
-    expect(after.hasRenderer, 'renderer must survive context restore').toBe(true);
-    expect(after.hasScene, 'scene must survive context restore').toBe(true);
+    expect(after2.hasRenderer, 'renderer must survive context restore').toBe(true);
+    expect(after2.hasScene, 'scene must survive context restore').toBe(true);
     expect(after.pointCount, 'point data must survive context restore').toBe(before.pointCount);
   });
 
@@ -244,7 +243,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     const pointCount = before.pointCount;
     for (let i = 0; i < 3; i += 1) {
       const idx = Math.floor((pointCount * (i + 1)) / 4);
-      await page.evaluate(targetIdx => window.focusOnNode?.(targetIdx), idx);
+      if (idx >= 0) await focusNodeViaApp(page, idx);
       await page.waitForTimeout(500);
     }
 

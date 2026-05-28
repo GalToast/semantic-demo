@@ -1190,7 +1190,6 @@ export function syncFocusStage(point) {
         stage.hidden = true;
         stage.setAttribute('aria-hidden', 'true');
         cleanupFocusStageTrap();
-        refreshCompositionState();
         return;
     }
 
@@ -1204,7 +1203,6 @@ export function syncFocusStage(point) {
         stage.hidden = true;
         stage.setAttribute('aria-hidden', 'true');
         cleanupFocusStageTrap();
-        refreshCompositionState();
         return;
     }
 
@@ -2314,6 +2312,23 @@ export function updateTraversalUi() {
     updateFocusSemanticOverlayPositions();
 }
 
+const nodeSporeSyncColor = new THREE.Color();
+
+function syncNodeSporeColorsFromPointColors() {
+    if (!state.nodeSporeMesh || !state.pointsMesh?.geometry?.attributes?.color) return;
+    const colors = state.pointsMesh.geometry.attributes.color.array;
+    for (let i = 0; i < state.points.length; i++) {
+        const colorOffset = i * 3;
+        nodeSporeSyncColor.setRGB(
+            Math.min(1, colors[colorOffset] * 1.62),
+            Math.min(1, colors[colorOffset + 1] * 1.62),
+            Math.min(1, colors[colorOffset + 2] * 1.62)
+        );
+        state.nodeSporeMesh.setColorAt(i, nodeSporeSyncColor);
+    }
+    if (state.nodeSporeMesh.instanceColor) state.nodeSporeMesh.instanceColor.needsUpdate = true;
+}
+
 export function applyPointFilterColors() {
     if (!state.pointsMesh || !state.pointBaseColors) return;
     const colorStateKey = [
@@ -2415,17 +2430,7 @@ if (typeof window !== 'undefined') {
     window.applyPointFilterColors = applyPointFilterColors;
     window.walkThreadNeighbor = walkThreadNeighbor;
     window.traverseNeighbor = traverseNeighbor;
-    window.walkInsideToNextStop = walkInsideToNextStop;
-    window.previewInsideNextThread = previewInsideNextThread;
     window.getCurrentTrailFocusIndex = getCurrentTrailFocusIndex;
-    window.getBoundedNeighborhoodWalkCandidate = getBoundedNeighborhoodWalkCandidate;
-    window.isBoundedNeighborhoodActive = isBoundedNeighborhoodActive;
-    window.primeBoundedSemanticNeighborhoodForTraversal = primeBoundedSemanticNeighborhoodForTraversal;
-    window.ensureBoundedNeighborhoodFromActivePocket = ensureBoundedNeighborhoodFromActivePocket;
-    window.getNeighborhoodRouteIndices = getNeighborhoodRouteIndices;
-    window.getNeighborhoodCandidateForIndex = getNeighborhoodCandidateForIndex;
-    window.buildNeighborhoodManifest = buildNeighborhoodManifest;
-    window.getSemanticNeighborRecordBetween = getSemanticNeighborRecordBetween;
     window.getSemanticThreadCandidates = getSemanticThreadCandidates;
     window.getGeometricThreadCandidates = getGeometricThreadCandidates;
     window.getThreadCandidatesForIndex = getThreadCandidatesForIndex;
@@ -2437,16 +2442,6 @@ if (typeof window !== 'undefined') {
     window.pinThreadNeighbor = pinThreadNeighbor;
     window.unpinThreadInspection = unpinThreadInspection;
     window.clearThreadInspection = clearThreadInspection;
-    window.__semanticThreadInspectorProbe = () => getThreadInspectionState();
-    window.__semanticCanvasThreadProbe = () => ({
-        focusedIndex: Number.isFinite(state.navState.focusedIndex) ? state.navState.focusedIndex : null,
-        pinnedIndex: Number.isFinite(state.pinnedThreadIndex) ? state.pinnedThreadIndex : null,
-        inspectedIndex: Number.isFinite(state.inspectedThreadIndex) ? state.inspectedThreadIndex : null,
-        candidates: getFocusThreadScreenCandidates(),
-        inspector: getThreadInspectionState(),
-        strandVisual: { ...(state.inspectedStrandDiagnostics || {}) },
-        focusCue: __semanticFocusCueProbe()
-    });
 }
 
 export function describeThreadLensForPoint(point) {

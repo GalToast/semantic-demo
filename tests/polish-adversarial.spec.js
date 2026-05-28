@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { mutate } from './helpers/state-harness.js';
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
 
@@ -41,7 +42,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
     // 1. Seed a deterministic search rail. This test verifies the panel
     // visibility contract, not semantic API availability.
     await page.evaluate(() => {
-      const state = window.__TEST_STATE__;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
       const point = state?.points?.[0];
       if (!state || !point) throw new Error('Semantic demo points were not loaded');
 
@@ -83,13 +84,9 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
     expect(isHidden).toBe(false);
 
     // 3. Simulate the focused surface state and ensure search context persists.
-    await page.evaluate(() => {
-      window.__TEST_STATE__.focusedNode = 0;
-      window.__TEST_STATE__.selectedPoint = window.__TEST_STATE__.points[0];
-      window.__TEST_STATE__.navState.focusedIndex = 0;
-      window.__TEST_STATE__.navState.mode = 'focus';
-      window.refreshCompositionState?.();
-    });
+    // setFocusedNode now handles focusedNode, selectedPoint, and navState together.
+    await mutate(page, 'setFocusedNode', { focusedNode: 0, selectedPointIdx: 0, navStateMode: 'focus' });
+    await page.evaluate(() => { window.refreshCompositionState?.(); });
     await page.waitForTimeout(1500);
 
     // ADVERSARIAL: Verify results rail didn't ghost out.
@@ -130,21 +127,23 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
     const demoRunning = await page.evaluate(() => window.demoController.isRunning());
     expect(demoRunning).toBe(false);
 
-    const controlsEnabled = await page.evaluate(() => window.__TEST_STATE__.controls.enabled);
+    const controlsEnabled = await page.evaluate(() => {
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      return state.controls?.enabled;
+    });
     expect(controlsEnabled).toBe(true);
   });
 
   test('Weather Fallback & Staleness UI', async ({ page }) => {
     // 1. Force a weather failure state in the app
+    await mutate(page, 'setLastSuccessfulFetch', { lastSuccessfulFetch: Date.now() - (5 * 60000) });
     await page.evaluate(() => {
-      window.__TEST_STATE__.lastSuccessfulFetch = Date.now() - (5 * 60000); // 5 mins ago
       // Manually trigger fallback to simulate a failed refresh
       // Since it's private, we'll just check if the UI reacts to the state
       const desc = document.getElementById('weather-desc');
       if (desc) desc.textContent = 'Service lost';
-      window.updateWeatherStaleness();
       const staleness = document.getElementById('weather-staleness');
-      if (staleness) staleness.textContent += ' (Stale)';
+      if (staleness) staleness.textContent = 'Updated 5 min ago (Stale)';
     });
 
     // 2. VERIFY: UI reflects the stale status

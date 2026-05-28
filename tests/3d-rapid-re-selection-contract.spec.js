@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test';
 import {
   BASE_URL, setupMockSearch, openApp,
-  probe, isValidNodeIndex, isReachableScreenCoordinate
+  probe, isValidNodeIndex, isReachableScreenCoordinate, focusNodeViaApp
 } from './helpers/3d-interaction-helpers.js';
 
 const RAPID_RESELECTION_TIMEOUT_MS = 120000;
@@ -111,7 +111,7 @@ test.describe('rapid re-selection contract', () => {
     expect(pair, 'two switchable nodes must exist on desktop').not.toBeNull();
 
     // Focus A and wait for focus mode to enter
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, pair.nodeA.index);
+    await focusNodeViaApp(page, pair.nodeA.index);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(300); // brief settle only
 
@@ -121,7 +121,7 @@ test.describe('rapid re-selection contract', () => {
     expect(pre.isNanPocket, 'pocket must not contain NaN before switch').toBe(false);
 
     // Immediately focus B — no wait/sleep between the two focusOnNode calls
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, pair.nodeB.index);
+    await focusNodeViaApp(page, pair.nodeB.index);
 
     // Probe at multiple tiny intervals to catch the race window
     const checkpoints = [];
@@ -171,7 +171,7 @@ test.describe('rapid re-selection contract', () => {
     const pair = await findTwoSwitchableNodes(page);
     expect(pair, 'two switchable nodes must exist at short-landscape').not.toBeNull();
 
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, pair.nodeA.index);
+    await focusNodeViaApp(page, pair.nodeA.index);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(300);
 
@@ -179,7 +179,7 @@ test.describe('rapid re-selection contract', () => {
     expect(pre.isNanFocused, 'focusedIndex must not be NaN before switch').toBe(false);
 
     // Rapid B focus — no settle wait
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, pair.nodeB.index);
+    await focusNodeViaApp(page, pair.nodeB.index);
 
     const checkpoints = [];
     for (let t = 0; t < 5; t++) {
@@ -212,13 +212,13 @@ test.describe('rapid re-selection contract', () => {
     const pair = await findTwoSwitchableNodes(page);
     expect(pair).not.toBeNull();
 
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, pair.nodeA.index);
+    await focusNodeViaApp(page, pair.nodeA.index);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(250);
 
     // A → B → A with no settle between
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, pair.nodeB.index);
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, pair.nodeA.index);
+    await focusNodeViaApp(page, pair.nodeB.index);
+    await focusNodeViaApp(page, pair.nodeA.index);
 
     const checkpoints = [];
     for (let t = 0; t < 4; t++) {
@@ -252,7 +252,7 @@ test.describe('rapid re-selection contract', () => {
     expect(pair, 'two switchable nodes must exist').not.toBeNull();
 
     // Focus A via API first so pocket is populated
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, pair.nodeA.index);
+    await focusNodeViaApp(page, pair.nodeA.index);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(300);
 
@@ -309,12 +309,12 @@ test.describe('rapid re-selection contract', () => {
     const pair = await findTwoSwitchableNodes(page);
     expect(pair).not.toBeNull();
 
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, pair.nodeA.index);
+    await focusNodeViaApp(page, pair.nodeA.index);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(200);
 
     // Rapid switch — no settle
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, pair.nodeB.index);
+    await focusNodeViaApp(page, pair.nodeB.index);
     await page.waitForTimeout(400);
 
     const relevantErrors = errors.filter(e =>
@@ -335,14 +335,14 @@ test.describe('rapid re-selection contract', () => {
     const pair = await findTwoSwitchableNodes(page);
     expect(pair, 'two switchable nodes must exist at short-landscape').not.toBeNull();
 
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, pair.nodeA.index);
+    await focusNodeViaApp(page, pair.nodeA.index);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
     await page.waitForTimeout(300);
 
     const pre = await probeFocusState(page);
     expect(pre.pocketSize, 'pocket must have entries before switch').toBeGreaterThan(0);
 
-    await page.evaluate((idx) => { window.focusOnNode(idx); }, pair.nodeB.index);
+    await focusNodeViaApp(page, pair.nodeB.index);
 
     const checkpoints = [];
     for (let t = 0; t < 4; t++) {

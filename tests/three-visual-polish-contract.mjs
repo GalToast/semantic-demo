@@ -49,10 +49,10 @@ includesAll(threeSetup, [
 
 // Thread contrast contract: raised opacities for legibility.
 includesAll(threeSetup, [
-    'return { core: 0.13, wispy: 0.055, bridge: 0.08, pulse: 0.028 };',
-    'return { core: 0.40, wispy: 0.18, bridge: 0.28, pulse: 0.092 };',
-    'return { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 };',
-    'return { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 };'
+    'overview: { core: 0.13, wispy: 0.055, bridge: 0.08, pulse: 0.028 }',
+    'focused: { core: 0.40, wispy: 0.18, bridge: 0.28, pulse: 0.092 }',
+    'searchActive: { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 }',
+    'trailActive: { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 }'
 ], 'mycelium presentation opacity profile');
 
 assert(

@@ -15,13 +15,13 @@ const APP_URL = `${BASE_URL}/vector-explorer-polished.html?nodemo=1`;
 
 async function waitForStateReady(page) {
   await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
-  // state is assigned to window by app.js; wait for it to be a non-empty array
+  // __APP_STATE__ is assigned to window by app.js; wait for it to be a non-empty array
   await page.waitForFunction(() => {
     // eslint-disable-next-line no-undef
-    return typeof state !== 'undefined'
-      && Array.isArray(state.points)
-      && state.points.length > 0;
-  }, { timeout: 30000 });
+    return typeof __APP_STATE__ !== 'undefined'
+      && Array.isArray(__APP_STATE__.points)
+      && __APP_STATE__.points.length > 0;
+  }, { timeout: 60000 });
 }
 
 test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {

@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
-
-const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
+import { BASE_URL, setupMockSearch, probe } from './helpers/3d-interaction-helpers.js';
 
 const HEALTH_OK = {
   ok: true,
@@ -20,13 +19,16 @@ async function openTouchPage(browser, viewport) {
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(HEALTH_OK) })
   );
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => (
-    Array.isArray(window.__TEST_STATE__?.nodePositions) &&
-    window.__TEST_STATE__.nodePositions.length > 0 &&
-    window.__TEST_STATE__?.renderer?.domElement &&
-    window.__TEST_STATE__?.camera &&
-    window.__TEST_STATE__?.pointsMesh
-  ), { timeout: 25000 });
+  await page.waitForFunction(() => {
+    const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return (
+      Array.isArray(s?.nodePositions) &&
+      s.nodePositions.length > 0 &&
+      s?.renderer?.domElement &&
+      s?.camera &&
+      s?.pointsMesh
+    );
+  }, { timeout: 25000 });
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
     if (!overlay) return true;
@@ -42,7 +44,7 @@ async function openTouchPage(browser, viewport) {
 
 async function projectedTouchTargets(page) {
   return page.evaluate(() => {
-    const { state } = window;
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     const canvas = state?.renderer?.domElement;
     if (!canvas || !state?.camera || !state?.pointsMesh || !Array.isArray(state.nodePositions)) return [];
 
@@ -89,20 +91,6 @@ async function projectedTouchTargets(page) {
 
     return targets;
   });
-}
-
-async function probe(page) {
-  return page.evaluate(() => ({
-    pointCount: window.__TEST_STATE__?.points?.length ?? 0,
-    focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
-    navMode: window.__TEST_STATE__?.navState?.mode || '',
-    lastCanvasNodePick: window.__TEST_STATE__?.lastCanvasNodePick ?? null,
-    lastCanvasNodeFocusPick: window.__TEST_STATE__?.lastCanvasNodeFocusPick ?? null
-  }));
-}
-
-function isValidNodeIndex(value, pointCount) {
-  return Number.isFinite(value) && value >= 0 && value < pointCount;
 }
 
 async function tapFirstValidTarget(page) {

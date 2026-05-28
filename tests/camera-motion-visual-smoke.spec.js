@@ -64,21 +64,27 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
   await page.goto(`${BASE_URL}${APP_PATH}`);
   await expect(page.locator('#search-input')).toBeVisible({ timeout: 15000 });
   await expect(page.locator('canvas')).toHaveCount(1, { timeout: 15000 });
-  await page.waitForFunction(() => window.__TEST_STATE__?.renderer && window.__TEST_STATE__?.camera && window.__TEST_STATE__?.controls, null, { timeout: 15000 });
+  await page.waitForFunction(() => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return state.renderer && state.camera && state.controls;
+  }, null, { timeout: 15000 });
 
-  const initialCamera = await page.evaluate(() => ({
-    camera: window.__TEST_STATE__.camera.position.toArray(),
-    target: window.__TEST_STATE__.controls.target.toArray(),
-    canvasCount: document.querySelectorAll('canvas').length,
-    rendererReady: !!window.__TEST_STATE__.renderer,
-    sceneReady: !!window.__TEST_STATE__.scene,
-    webglRenderer: (() => {
-      const canvas = document.querySelector('canvas');
-      const gl = canvas?.getContext('webgl2') || canvas?.getContext('webgl');
-      const debug = gl?.getExtension('WEBGL_debug_renderer_info');
-      return debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl?.getParameter(gl.RENDERER) || 'unknown';
-    })()
-  }));
+  const initialCamera = await page.evaluate(() => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return {
+      camera: state.camera.position.toArray(),
+      target: state.controls.target.toArray(),
+      canvasCount: document.querySelectorAll('canvas').length,
+      rendererReady: !!state.renderer,
+      sceneReady: !!state.scene,
+      webglRenderer: (() => {
+        const canvas = document.querySelector("canvas");
+        const gl = canvas?.getContext("webgl2") || canvas?.getContext("webgl");
+        const debug = gl?.getExtension("WEBGL_debug_renderer_info");
+        return debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl?.getParameter(gl.RENDERER) || "unknown";
+      })()
+    };
+  });
 
   await page.locator('#search-input').fill('coffee');
   await page.evaluate(() => {
@@ -95,42 +101,54 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
   await page.waitForTimeout(700);
 
   await page.waitForFunction(
-    () => Array.isArray(window.__TEST_STATE__?.currentSearchSummary?.resultIndices)
-      && window.__TEST_STATE__.currentSearchSummary.resultIndices.length > 0,
+    () => {
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      return Array.isArray(state.currentSearchSummary?.resultIndices)
+        && state.currentSearchSummary.resultIndices.length > 0;
+    },
     null,
     { timeout: 8000 }
   );
 
   if (requireCorridor) {
     await page.waitForFunction(
-      () => !!window.__TEST_STATE__?.searchCorridorGroup?.children?.length,
+      () => {
+        const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+        return !!state.searchCorridorGroup?.children?.length;
+      },
       null,
       { timeout: 5000 }
     );
   }
 
-  const corridor = await page.evaluate(() => ({
-    groupReady: !!window.__TEST_STATE__.searchCorridorGroup,
-    visible: !!window.__TEST_STATE__.searchCorridorGroup?.visible,
-    children: window.__TEST_STATE__.searchCorridorGroup?.children?.length || 0,
-    glowActive: !!window.__TEST_STATE__.searchGlowActive
-  }));
+  const corridor = await page.evaluate(() => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return {
+      groupReady: !!state.searchCorridorGroup,
+      visible: !!state.searchCorridorGroup?.visible,
+      children: state.searchCorridorGroup?.children?.length || 0,
+      glowActive: !!state.searchGlowActive
+    };
+  });
 
   await page.locator('.search-result-item').first().click();
   await expect(page.locator('#focus-stage')).toBeVisible({ timeout: 15000 });
   await page.waitForTimeout(1000);
 
-  const focused = await page.evaluate(() => ({
-    camera: window.__TEST_STATE__.camera.position.toArray(),
-    target: window.__TEST_STATE__.controls.target.toArray(),
-    focusedNode: window.__TEST_STATE__.focusedNode,
-    cameraAssist: document.body.dataset.cameraAssist,
-    cameraAssistReason: document.body.dataset.cameraAssistReason,
-    focusPocketActive: !!window.__TEST_STATE__.navState.focusPocketMeta?.active,
-    focusPocketCount: window.__TEST_STATE__.navState.focusPocketIndices?.length || 0,
-    focusTransition: document.body.dataset.focusTransition,
-    focusTransitionPhase: document.body.dataset.focusTransitionPhase
-  }));
+  const focused = await page.evaluate(() => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return {
+      camera: state.camera.position.toArray(),
+      target: state.controls.target.toArray(),
+      focusedNode: state.focusedNode,
+      cameraAssist: document.body.dataset.cameraAssist,
+      cameraAssistReason: document.body.dataset.cameraAssistReason,
+      focusPocketActive: !!state.navState.focusPocketMeta?.active,
+      focusPocketCount: state.navState.focusPocketIndices?.length || 0,
+      focusTransition: document.body.dataset.focusTransition,
+      focusTransitionPhase: document.body.dataset.focusTransitionPhase
+    };
+  });
 
   const diveButton = page.locator('#btn-focus-dive');
   await expect(diveButton).toBeVisible({ timeout: 15000 });
@@ -140,6 +158,7 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
   await page.waitForTimeout(300);
 
   const inside = await page.evaluate(() => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     const rects = Array.from(document.querySelectorAll('#btn-focus-dive, #btn-inside-next, #btn-inside-county'))
       .map((el) => {
         const rect = el.getBoundingClientRect();
@@ -152,10 +171,10 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
       });
     return {
       semanticDive: document.body.dataset.semanticDive,
-      trailDepth: window.__TEST_STATE__.trailDepth,
-      anchorBloomIntensity: window.__TEST_STATE__.anchorBloomLight?.intensity || 0,
-      focusPocketActive: !!window.__TEST_STATE__.navState.focusPocketMeta?.active,
-      focusPocketCount: window.__TEST_STATE__.navState.focusPocketIndices?.length || 0,
+      trailDepth: state.trailDepth,
+      anchorBloomIntensity: state.anchorBloomLight?.intensity || 0,
+      focusPocketActive: !!state.navState.focusPocketMeta?.active,
+      focusPocketCount: state.navState.focusPocketIndices?.length || 0,
       tapTargets: rects
     };
   });
@@ -213,10 +232,13 @@ test.describe('camera and focus-pocket visual smoke', () => {
 
     expect(reducedEvidence.inside.semanticDive).toBe('active');
     expect(reducedEvidence.focused.focusTransitionPhase).toMatch(/arriving|settled/);
-    const reducedOrbit = await reduced.evaluate(() => ({
-      reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
-      autoRotate: !!window.__TEST_STATE__.controls?.autoRotate
-    }));
+    const reducedOrbit = await reduced.evaluate(() => {
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      return {
+        reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
+        autoRotate: !!state.controls?.autoRotate
+      };
+    });
     expect(reducedOrbit.reduced).toBe(true);
     expect(reducedOrbit.autoRotate).toBe(false);
     await reduced.close();

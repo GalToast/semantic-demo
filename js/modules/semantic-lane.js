@@ -10,6 +10,14 @@
 import { state } from '../state.js';
 import { detectStaticDevPHP } from '../utils.js';
 
+let legendGuideStateUpdater = null;
+
+export function initSemanticLaneAdapter({ updateLegendGuideState } = {}) {
+    legendGuideStateUpdater = typeof updateLegendGuideState === 'function'
+        ? updateLegendGuideState
+        : null;
+}
+
 function getWindow() {
     return typeof window !== 'undefined' ? window : null;
 }
@@ -120,6 +128,23 @@ export function applySemanticLaneHealthPayload(payload, options = {}) {
     const rawProvenanceDetail = payload?.provenance?.detail || null;
     const provenanceLabel = sanitizeProvenanceLabel(rawProvenanceLabel);
     const provenanceDetail = sanitizeProvenanceDetail(rawProvenanceDetail);
+
+    // Track consecutive warming (degraded) probes for stuck detection
+    if (laneState === 'warming' || laneState === 'degraded') {
+        state.semanticLaneWarmingCounter = (state.semanticLaneWarmingCounter || 0) + 1;
+    } else {
+        state.semanticLaneWarmingCounter = 0;
+    }
+
+    // If warming persists beyond 3 consecutive probes, mark as stuck
+    if (state.semanticLaneWarmingCounter >= 3) {
+        setSemanticLaneUiState('stuck', {
+            label: options.label || provenanceLabel || 'Service Busy',
+            title: options.title || provenanceDetail || 'Semantic search is taking longer than expected. Click to reload.'
+        });
+        return;
+    }
+
     if (laneState === 'healthy') {
         recordSemanticLaneSnapshot({
             retry_source: null,
@@ -257,7 +282,6 @@ export function scheduleSemanticLaneMonitor() {
 }
 
 export function setSemanticLaneUiState(laneState, options = {}) {
-    const win = getWindow();
     const doc = getDocument();
     state.semanticLaneState = laneState;
     const pill = doc?.getElementById?.('semantic-lane-pill') || null;
@@ -281,6 +305,9 @@ export function setSemanticLaneUiState(laneState, options = {}) {
     } else if (laneState === 'unavailable') {
         label = options.label || 'Search: unavailable';
         title = options.title || 'Search is unavailable. Try again in a moment.';
+    } else if (laneState === 'stuck') {
+        label = options.label || 'Service Busy';
+        title = options.title || 'Semantic search is taking longer than expected. Click to reload.';
     }
 
     pill.dataset.state = laneState;
@@ -327,6 +354,13 @@ export function setSemanticLaneUiState(laneState, options = {}) {
             pill.removeAttribute('title');
             pill.removeAttribute('aria-label');
             pill.hidden = true;
+        } else if (laneState === 'stuck') {
+            pill.textContent = label;
+            pill.title = title;
+            pill.setAttribute('aria-label', title);
+            pill.hidden = false;
+            pill.style.display = '';
+            pill.style.cursor = 'pointer';
         } else {
             pill.textContent = label;
             pill.title = title;
@@ -335,7 +369,7 @@ export function setSemanticLaneUiState(laneState, options = {}) {
             pill.style.display = '';
         }
     }
-    if (typeof win?.updateLegendGuideState === 'function') win.updateLegendGuideState();
+    if (legendGuideStateUpdater) legendGuideStateUpdater();
 }
 
 export function recordSemanticLaneSnapshot(partial = {}) {

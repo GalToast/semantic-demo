@@ -225,12 +225,30 @@ function testThreadInspectorSemanticFirst() {
   assertContains(threadInspectorSrc, "import { normalizeLeadId } from './journey-thread-model.js';", 'thread-inspector imports shared normalizeLeadId');
   assertNotContains(threadInspectorSrc, 'function normalizeLeadId(', 'thread-inspector local normalizeLeadId removed');
 
-  // thread-inspector.js must expose functions on window._ti
-  assertContains(threadInspectorSrc, 'window._ti = {', 'window._ti exposed on thread-inspector');
-  assertContains(threadInspectorSrc, 'getSemanticThreadCandidates,', 'window._ti.getSemanticThreadCandidates');
-  assertContains(threadInspectorSrc, 'getGeometricThreadCandidates,', 'window._ti.getGeometricThreadCandidates');
-  assertContains(threadInspectorSrc, 'getThreadCandidatesForIndex,', 'window._ti.getThreadCandidatesForIndex');
-  assertContains(threadInspectorSrc, 'exploreThreadNeighbor', 'window._ti.exploreThreadNeighbor diagnostic access');
+  // thread-inspector.js must expose functions on window._ti (gated behind __DEBUG_PROBES__)
+  const hasGated = threadInspectorSrc.includes('if (window.__DEBUG_PROBES__)');
+  assert(hasGated || threadInspectorSrc.includes('window._ti = {'), 'window._ti exposed on thread-inspector (gated or unconditional)');
+
+  // Locate _ti block regardless of gating for subsequent property checks
+  let tiBlock = '';
+  if (hasGated) {
+    const gatedStart = threadInspectorSrc.indexOf('if (window.__DEBUG_PROBES__)');
+    const tiStart = threadInspectorSrc.indexOf('window._ti = {', gatedStart);
+    assert(tiStart !== -1, 'window._ti = { found inside __DEBUG_PROBES__ gate');
+    const tiEnd = threadInspectorSrc.indexOf('};', tiStart);
+    assert(tiEnd !== -1, '_ti block terminator found');
+    tiBlock = threadInspectorSrc.slice(tiStart, tiEnd + 2);
+  } else {
+    const tiStart = threadInspectorSrc.indexOf('window._ti = {');
+    const tiEnd = threadInspectorSrc.indexOf('};', tiStart);
+    tiBlock = threadInspectorSrc.slice(tiStart, tiEnd + 2);
+  }
+  assert(tiBlock.length > 0, '_ti block extracted');
+
+  assert(tiBlock.includes('getSemanticThreadCandidates,'), 'window._ti.getSemanticThreadCandidates');
+  assert(tiBlock.includes('getGeometricThreadCandidates,'), 'window._ti.getGeometricThreadCandidates');
+  assert(tiBlock.includes('getThreadCandidatesForIndex,'), 'window._ti.getThreadCandidatesForIndex');
+  assert(tiBlock.includes('exploreThreadNeighbor'), 'window._ti.exploreThreadNeighbor diagnostic access');
 
   // Journey imports normalizeLeadId from journey-thread-model
   const importBlockEnd = journeySrc.indexOf("} from './journey-thread-model.js'");

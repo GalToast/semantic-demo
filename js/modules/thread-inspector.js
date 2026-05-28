@@ -767,8 +767,12 @@ export function disposeInspectedStrandOverlay() {
 
 setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay);
 
-// Debug access
-window._ti = {
+// Debug access — gated behind __DEBUG_PROBES__
+// Gate-off: _ti is not created; no bare window function exports escape thread-inspector.
+// Gate-on: all 17 thread-inspection functions available for diagnostics.
+// Defaults to true so gate-on is the default in dev/test; set __DEBUG_PROBES__=false in production.
+if (typeof window.__DEBUG_PROBES__ !== 'undefined' ? window.__DEBUG_PROBES__ : true) {
+  window._ti = {
     getSemanticThreadCandidates,
     getGeometricThreadCandidates,
     getThreadCandidatesForIndex,
@@ -786,10 +790,13 @@ window._ti = {
     syncInspectedStrandOverlay,
     updateInspectedStrandOverlay,
     disposeInspectedStrandOverlay
-};
+  };
+}
 
 // Diagnostic namespace — exploreThreadNeighbor remains accessible via _ti for debugging.
 // The direct window.exploreThreadNeighbor backward-compat bridge has been removed
 // as of Wave70. The active traversal seam is window.walkThreadNeighbor (journey.js).
+// _ti is gated behind window.__DEBUG_PROBES__ — when the gate is off, no bare window
+// function exports escape thread-inspector.js.
 // Contracts assert this state via thread-inspector-dewindowing-contract.mjs.
 // Do not re-add window.exploreThreadNeighbor without updating contracts first.

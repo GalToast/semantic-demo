@@ -280,11 +280,7 @@ export function switchView(view, options = {}) {
         updateUrlState({}, { mode: options.historyMode || 'push', reason: 'view' });
     }
     syncClusterSectionState();
-    if (typeof window.updateLegendGuideState === 'function') {
-        window.updateLegendGuideState();
-    } else {
-        updateLegendGuideState();
-    }
+    updateLegendGuideState();
     syncFocusStage(state.selectedPoint);
     if (!state.selectedPoint) {
         updateSelectedBusiness(null);

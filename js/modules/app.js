@@ -8,6 +8,7 @@ import { initClusterFilterAdapter } from './cluster-filter-adapter.js';
 import { initSearchUiAdapter } from './search-ui-adapter.js';
 import { initUiRenderersAdapter } from './ui-renderers.js';
 import { initSearchLifecycleAdapter } from './search-lifecycle-adapter.js';
+import { initCompositionAdapter } from './composition-adapter.js';
 import { initUrlNavigationAdapter } from './url-navigation-adapter.js';
 import { initJourneyLifecycleAdapter } from './journey-lifecycle-adapter.js';
 import * as focusModule from './focus-pocket.js';
@@ -34,6 +35,7 @@ import {
     startSceneReveal,
     getSceneRevealProgress,
     setSemanticLaneUiState,
+    initSemanticLaneAdapter,
     probeSemanticLane,
     scheduleSemanticLaneMonitor,
     setMyceliumMode,
@@ -67,6 +69,7 @@ import { findClusterByKeyword } from './cluster-filter.js';
 import { buildSelectedMatchNarrative, getInterestingBusinessNote, updateSearchTrailCue } from './ui-renderers.js';
 import { hideSummaryCard } from './lifecycle.js';
 import { setSemanticGuideButtonState } from './semantic-guide.js';
+import { updateLegendGuideState } from './legend-ui.js';
 import { updateSearchStatusMessage } from './search-state.js';
 import { recordSemanticLaneSnapshot } from './semantic-lane.js';
 import { applyPointFilterColors, updateSelectedBusiness, updateTrailIndices } from './journey.js';
@@ -74,21 +77,26 @@ import { initEventListeners } from './event-bindings.js';
 import { updateTime } from '../utils.js';
 
 // Global Exposure for compatibility during transition
+window.__APP_STATE__ = state;
 window.__TEST_STATE__ = state;
-window.state = state;
 
-// Explicitly attach search functions to window for url-state and lifecycle modules
+// ── grouped test / debug action namespace ──────────────────────────────────────
+// All one-off window bridges used by tests and devtools are consolidated here.
+// Consumers: Playwright specs, visual-audit helpers, manual DevTools probing.
+// Individual window bridges below are phased out; do not add new bare window.*.
+// Classification: debug-probe. See docs/window-global-allowlist.md §__APP_ACTIONS__.
+window.__APP_ACTIONS__ = {
+    search: searchModule.search,
+    clearSearch: searchModule.clearSearch,
+    focusOnNode: cameraModule.focusOnNode,
+    setTrailDepth,
+    setSemanticDiveMode,
+    returnToOverview,
+    resetExplorationFocus,
+    refreshCompositionState,
+};
 
-// Explicitly attach camera helpers used by focus and control contracts
 
-// Explicitly attach map functions
-
-// Explicitly attach weather functions used by lifecycle and map handoff code
-// updateWeatherStaleness is set directly on window by weather.js on load — no wrapper needed
-
-// Explicitly attach UI accent helper used by journey cards
-
-// Explicitly attach lifecycle functions
 const _getSelectedBusinessRoleLabel = function (point) {
     let index = state.points && Array.isArray(state.points) ? state.points.indexOf(point) : -1;
     if (index < 0 && point?.lead_id !== undefined && point?.lead_id !== null) {
@@ -250,6 +258,7 @@ export async function init() {
         initEventListeners({ onWindowResize, updateUrlState });
         initKeyboardShortcutsHint();
         initKeyboardResetOwnership({ returnToOverview, resetExplorationFocus });
+        initSemanticLaneAdapter({ updateLegendGuideState });
         if (graphicsReady !== false) initClusterLabels();
         audioModule.initAudio();
         setSemanticLaneUiState('checking');
@@ -356,12 +365,12 @@ export async function init() {
         }, {
             updateHasQuery,
         });
-
         // Inject cluster-filter adapter; breaks the cluster-filter/window/url-state cycle.
         initClusterFilterAdapter({
             applyFilters: searchModule.applyFilters,
             clearSearchGlow: searchModule.clearSearchGlow,
             updateUrlState,
+            clearShortSemanticSearchState: searchModule.clearShortSemanticSearchState,
         });
 
         // Inject search UI adapter; avoids search-state calling tooltip helpers through window.
@@ -378,8 +387,6 @@ export async function init() {
         initJourneyCompassAdapter({
             switchView,
         });
-
-        // Inject thread inspector adapter; decouples thread-inspector from journey and focus-pocket
         initThreadInspectorAdapter({
             summarizeNeighborReason: journeyModule.summarizeNeighborReason,
             getInsideRelationshipLabel: journeyModule.getInsideRelationshipLabel,
@@ -403,6 +410,17 @@ export async function init() {
             updateFocusNeighborRail: journeyModule.updateFocusNeighborRail
         });
 
+        // Inject composition adapter; decouples lifecycle from window for view transitions
+        initCompositionAdapter({
+            syncRouteDirectorState: mapModule.syncRouteDirectorState,
+            updateFocusNeighborRail: journeyModule.updateFocusNeighborRail,
+            refreshMapMarkers: mapModule.refreshMapMarkers,
+            refreshMapRouteEmbodiment: mapModule.refreshMapRouteEmbodiment,
+            refreshRouteTraceOverlay: journeyWebglModule.refreshRouteTraceOverlay,
+            clearMobileRouteFieldPeek: searchModule.clearMobileRouteFieldPeek
+        });
+
+
         // Inject search lifecycle adapter; avoids search-state calling lifecycle/url-state through window.
         initSearchLifecycleAdapter({
             updateUrlState,
@@ -413,7 +431,7 @@ export async function init() {
             dispatchNavTransition,
             syncSearchStatusForFocus,
             refreshCompositionState,
-            clearMobileRouteFieldPeek: searchModule.clearMobileRouteFieldPeekState,
+            clearMobileRouteFieldPeek: searchModule.clearMobileRouteFieldPeek,
             clearCompactSearchResultRevealTimers: searchModule.clearCompactSearchResultRevealTimers,
             clearSearchPreviewHoverTimer: searchModule.clearSearchPreviewHoverTimer,
             switchView,

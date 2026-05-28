@@ -75,11 +75,11 @@ These are defined and assigned inside lifecycle.js (lines 2529–2788).
 | `_openTrailReview()` | DOM-only; no external dependencies |
 | `_closeTrailReview()` | DOM-only with return-focus |
 
-### Internal probe (no corresponding getter exported)
+### Retired internal probe
 
 | window property | Notes |
 |---|---|
-| `__semanticJourneyProbe()` | Installed by `installSemanticJourneyProbe()`; reads DOM dataset and state for diagnostics |
+| `__semanticJourneyProbe()` | Retired 2026-05-28; `installSemanticJourneyProbe()` now returns `getJourneyCompassPresentationState()` directly without assigning to `window`. |
 
 ---
 
@@ -101,7 +101,7 @@ These are invoked via `typeof window.XXX === 'function'` guards. All are **canon
 | `initMap` | 1450 | map-state.js via app.js |
 | `applyWeatherEffects` | 1460 | weather.js via app.js |
 | `clearWeatherEffects` | 1374 | weather.js via app.js |
-| `updateLegendGuideState` | 1091 | event-bindings.js |
+| `updateLegendGuideState` | retired window bridge; direct imports from `legend-ui.js` | legend-ui.js |
 | `syncRouteDirectorState` | 1048, 1089 | map-state.js via app.js |
 | `updateSelectedCardHeading` | 1049, 1090, 1289 | ui-renderers.js |
 | `updateFocusNeighborRail` | 1052, 1094 | journey.js |
@@ -202,7 +202,7 @@ uses only the payload builder from the shared module.
 
 | window property | Defined by | Accessed by |
 |---|---|---|
-| `__semanticJourneyProbe()` | lifecycle.js:926 | external diagnostics |
+| `__semanticJourneyProbe()` | retired 2026-05-28 | replaced by direct `installSemanticJourneyProbe()` return value |
 | `__semanticSearchCacheProbe()` | app.js:72 | external diagnostics |
 | `__semanticThreadInspectorProbe()` | journey.js:3085 | external diagnostics |
 | `__semanticFocusCueProbe()` | journey.js:3086 | external diagnostics |

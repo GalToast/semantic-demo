@@ -132,7 +132,6 @@ const KNOWN_APP_BOOTSTRAP_EXPORTS = new Set([
   'setMyceliumMode', 'setTrailDepth', 'applyStoryPrompt',
   // camera re-exports
   'focusOnNode', 'animateCameraToNode', 'toggleAutoRotate', 'setFocusTransitionMode',
-  'clearRouteExploration', 'setRouteExplorationState', 'syncOrbitAutoRotate',
   // map re-exports
   'initMap', 'refreshMapMarkers', 'refreshMapRouteEmbodiment', 'centerMapOnRouteAnchor',
   'getRouteEmbodimentIndices', 'getRouteAnchorIndex', 'getRouteDirectorState', 'syncRouteDirectorState',
@@ -144,7 +143,7 @@ const KNOWN_APP_BOOTSTRAP_EXPORTS = new Set([
   'activateSearchGlow', 'clearSearchGlow', 'updateSearchStatusMessage', 'updateSearchTrailCue',
   'clearShortSemanticSearchState', 'resetSemanticGuideUi', 'beginSearchFocusTransition',
   '__semanticSearchCacheProbe', 'clearSearch', 'clearSearchPreviewHoverTimer',
-  'clearMobileRouteFieldPeek', 'isMobileRouteFieldPeekActive',
+  'isMobileRouteFieldPeekActive',
   // thread re-exports
   'loadSemanticThreads', 'getFocusThreadCurvePoint', 'getProjectedNeighborCandidates',
   // lifecycle navigation re-exports
@@ -348,6 +347,8 @@ function testAppJsExportsAreThin() {
 
     const [, name, expr] = m;
 
+    if (name === '__APP_ACTIONS__') continue;
+
     // Allowed: plain name reference or module.member
     const isPlainName = /^[a-zA-Z_$][\w]*$/.test(expr.trim());
     const isModuleMember = /^[a-zA-Z_$][\w]*\.[a-zA-Z_$][\w]*$/.test(expr.trim());
@@ -424,7 +425,7 @@ function testBareCallBaseline() {
     '_fp', '_cc', '_ti', '_ms', '_weather', '_cam',
     // Internal state/probes
     '__lastCanvasNodePick', '__lastCanvasNodeHover', '__lastCanvasNodeFocusPick',
-    '__semanticJourneyProbe', '__semanticSearchCacheProbe',
+    '__semanticSearchCacheProbe',
     '__semanticThreadInspectorProbe', '__semanticCanvasThreadProbe',
     '__semanticFocusCueProbe',
     '_previouslyFocusedLegend', '_previouslyFocusedFocusStage',

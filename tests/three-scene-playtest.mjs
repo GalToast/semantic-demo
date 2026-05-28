@@ -350,9 +350,9 @@ async function main() {
             if (process.env.SEMANTIC_SCENE_DIAG_HIDE) {
                 await page.evaluate((hideList) => {
                     const names = new Set(String(hideList).split(',').map((item) => item.trim()).filter(Boolean));
-                    if (names.has('spores') && window.__TEST_STATE__?.nodeSporeMesh) window.__TEST_STATE__.nodeSporeMesh.visible = false;
-                    if (names.has('points') && window.__TEST_STATE__?.pointsMesh) window.__TEST_STATE__.pointsMesh.visible = false;
-                    if (names.has('manifold') && window.__TEST_STATE__?.semanticManifold) window.__TEST_STATE__.semanticManifold.visible = false;
+                    if (names.has('spores') && window.__TEST_STATE__?.nodeSporeMesh) (window.__APP_STATE__ ?? window.__TEST_STATE__).nodeSporeMesh.visible = false;
+                    if (names.has('points') && window.__TEST_STATE__?.pointsMesh) (window.__APP_STATE__ ?? window.__TEST_STATE__).pointsMesh.visible = false;
+                    if (names.has('manifold') && window.__TEST_STATE__?.semanticManifold) (window.__APP_STATE__ ?? window.__TEST_STATE__).semanticManifold.visible = false;
                     if (names.has('focus')) {
                         ['focusHalo', 'focusCore', 'focusLens', 'focusFilaments', 'semanticLensGroup'].forEach((key) => {
                             if (window.__TEST_STATE__?.[key]) window.__TEST_STATE__[key].visible = false;

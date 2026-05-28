@@ -28,9 +28,9 @@ async function waitForAppReady(page) {
   await page.waitForFunction(() => (
     typeof window.clearSearch === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
-    window.__TEST_STATE__.points.length > 0 &&
-    window.__TEST_STATE__.pointIndexByLeadId?.size > 0 &&
-    window.__TEST_STATE__.renderer !== null
+    (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0 &&
+    (window.__APP_STATE__ ?? window.__TEST_STATE__).pointIndexByLeadId?.size > 0 &&
+    (window.__APP_STATE__ ?? window.__TEST_STATE__).renderer !== null
   ), undefined, { timeout: 25000 });
   // Ensure loading overlay is gone so we know the render loop is active
   await page.waitForFunction(() => {

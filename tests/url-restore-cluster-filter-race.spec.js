@@ -6,7 +6,7 @@ const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(
 /**
  * Probe the three relevant pieces of state for this race test:
  *   - URL cluster param
- *   - window.__TEST_STATE__.activeClusterFilter
+ *   - (window.__APP_STATE__ ?? window.__TEST_STATE__).activeClusterFilter
  *   - active cluster-item DOM elements
  */
 async function clusterStateProbe(page) {
@@ -59,7 +59,7 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
     // State starts with activeClusterFilter = null after init; stamp it to a known stale value.
     const STALE_CLUSTER = 7;
     await page.evaluate((cluster) => {
-      window.__TEST_STATE__.activeClusterFilter = cluster;
+      (window.__APP_STATE__ ?? window.__TEST_STATE__).activeClusterFilter = cluster;
     }, STALE_CLUSTER);
 
     // Verify pre-condition: stale cluster is set
@@ -167,7 +167,7 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
     // some other code path set it between reset and restore)
     const STALE_CLUSTER = 9;
     await page.evaluate((cluster) => {
-      window.__TEST_STATE__.activeClusterFilter = cluster;
+      (window.__APP_STATE__ ?? window.__TEST_STATE__).activeClusterFilter = cluster;
     }, STALE_CLUSTER);
 
     // Navigate to same URL — applyUrlState runs naturally during init

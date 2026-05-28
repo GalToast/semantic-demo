@@ -64,8 +64,8 @@ async function waitForAppReady(page) {
   await page.waitForFunction(() => (
     typeof window.clearSearch === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
-    window.__TEST_STATE__.points.length > 0 &&
-    window.__TEST_STATE__.pointIndexByLeadId?.size > 0
+    (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0 &&
+    (window.__APP_STATE__ ?? window.__TEST_STATE__).pointIndexByLeadId?.size > 0
   ), { timeout: 25000 });
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');

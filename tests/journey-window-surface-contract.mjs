@@ -64,7 +64,8 @@ function testJourneyWindowShim() {
   assert(src.includes('window.pinThreadNeighbor = pinThreadNeighbor'), 'window.pinThreadNeighbor in shim');
   assert(src.includes('window.unpinThreadInspection = unpinThreadInspection'), 'window.unpinThreadInspection in shim');
   assert(src.includes('window.clearThreadInspection = clearThreadInspection'), 'window.clearThreadInspection in shim');
-  assert(src.includes('window.__semanticThreadInspectorProbe'), 'window.__semanticThreadInspectorProbe probe in shim');
+  assertNotContains(src, 'window.__semanticThreadInspectorProbe', '__semanticThreadInspectorProbe probe retired from shim');
+  assertNotContains(src, 'window.__semanticCanvasThreadProbe', '__semanticCanvasThreadProbe probe retired from shim');
   assert(src.includes('if (typeof window !== \'undefined\')'), 'typeof window guard present');
 
   console.log('  OK journey.js window shim block verified');
@@ -75,30 +76,49 @@ function testJourneyWindowShim() {
 // ---------------------------------------------------------------------------
 
 function testThreadInspectorDebugNamespace() {
-  console.log('\n[TEST] thread-inspector window._ti debug namespace');
+  console.log('\n[TEST] thread-inspector window._ti debug namespace (gate-aware)');
 
   const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
 
-  assert(src.includes('window._ti = {'), 'window._ti namespace exposed');
-  assert(src.includes('getSemanticThreadCandidates,'), 'window._ti.getSemanticThreadCandidates');
-  assert(src.includes('getGeometricThreadCandidates,'), 'window._ti.getGeometricThreadCandidates');
-  assert(src.includes('getThreadCandidatesForIndex,'), 'window._ti.getThreadCandidatesForIndex');
-  assert(src.includes('setStrandContinuityState,'), 'window._ti.setStrandContinuityState');
-  assert(src.includes('clearStrandContinuityState,'), 'window._ti.clearStrandContinuityState');
-  assert(src.includes('getStrandArrivalNote,'), 'window._ti.getStrandArrivalNote');
-  assert(src.includes('getThreadInspectionState,'), 'window._ti.getThreadInspectionState');
-  assert(src.includes('renderThreadInspection,'), 'window._ti.renderThreadInspection');
-  assert(src.includes('inspectThreadNeighbor,'), 'window._ti.inspectThreadNeighbor');
-  assert(src.includes('pinThreadNeighbor,'), 'window._ti.pinThreadNeighbor');
-  assert(src.includes('unpinThreadInspection,'), 'window._ti.unpinThreadInspection');
-  assert(src.includes('clearThreadInspection,'), 'window._ti.clearThreadInspection');
-  assert(src.includes('exploreThreadNeighbor,'), 'window._ti.exploreThreadNeighbor');
-  assert(src.includes('syncInspectedStrandOverlay,'), 'window._ti.syncInspectedStrandOverlay');
-  assert(src.includes('updateInspectedStrandOverlay,'), 'window._ti.updateInspectedStrandOverlay');
-  assert(src.includes('disposeInspectedStrandOverlay'), 'window._ti.disposeInspectedStrandOverlay');
+  // _ti is gated behind __DEBUG_PROBES__ — accept gated or unconditional pattern
+  const hasGated = src.includes('if (window.__DEBUG_PROBES__)');
+  assert(hasGated || src.includes('window._ti = {'), 'window._ti namespace exists (gated or unconditional)');
+
+  // Locate _ti block regardless of gating
+  let tiBlock = '';
+  if (hasGated) {
+    const gatedStart = src.indexOf('if (window.__DEBUG_PROBES__)');
+    const tiStart = src.indexOf('window._ti = {', gatedStart);
+    assert(tiStart !== -1, 'window._ti = { found inside __DEBUG_PROBES__ gate');
+    const tiEnd = src.indexOf('};', tiStart);
+    assert(tiEnd !== -1, '_ti block terminator found');
+    tiBlock = src.slice(tiStart, tiEnd + 2);
+  } else {
+    const tiStart = src.indexOf('window._ti = {');
+    const tiEnd = src.indexOf('};', tiStart);
+    tiBlock = src.slice(tiStart, tiEnd + 2);
+  }
+  assert(tiBlock.length > 0, '_ti block extracted');
+
+  assert(tiBlock.includes('getSemanticThreadCandidates,'), 'window._ti.getSemanticThreadCandidates');
+  assert(tiBlock.includes('getGeometricThreadCandidates,'), 'window._ti.getGeometricThreadCandidates');
+  assert(tiBlock.includes('getThreadCandidatesForIndex,'), 'window._ti.getThreadCandidatesForIndex');
+  assert(tiBlock.includes('setStrandContinuityState,'), 'window._ti.setStrandContinuityState');
+  assert(tiBlock.includes('clearStrandContinuityState,'), 'window._ti.clearStrandContinuityState');
+  assert(tiBlock.includes('getStrandArrivalNote,'), 'window._ti.getStrandArrivalNote');
+  assert(tiBlock.includes('getThreadInspectionState,'), 'window._ti.getThreadInspectionState');
+  assert(tiBlock.includes('renderThreadInspection,'), 'window._ti.renderThreadInspection');
+  assert(tiBlock.includes('inspectThreadNeighbor,'), 'window._ti.inspectThreadNeighbor');
+  assert(tiBlock.includes('pinThreadNeighbor,'), 'window._ti.pinThreadNeighbor');
+  assert(tiBlock.includes('unpinThreadInspection,'), 'window._ti.unpinThreadInspection');
+  assert(tiBlock.includes('clearThreadInspection,'), 'window._ti.clearThreadInspection');
+  assert(tiBlock.includes('exploreThreadNeighbor,'), 'window._ti.exploreThreadNeighbor');
+  assert(tiBlock.includes('syncInspectedStrandOverlay,'), 'window._ti.syncInspectedStrandOverlay');
+  assert(tiBlock.includes('updateInspectedStrandOverlay,'), 'window._ti.updateInspectedStrandOverlay');
+  assert(tiBlock.includes('disposeInspectedStrandOverlay'), 'window._ti.disposeInspectedStrandOverlay');
   assert(!src.includes('window.exploreThreadNeighbor = exploreThreadNeighbor'), 'window.exploreThreadNeighbor direct expose removed');
 
-  console.log('  OK thread-inspector window._ti namespace verified');
+  console.log('  OK thread-inspector window._ti namespace verified (gate-aware)');
 }
 
 // ---------------------------------------------------------------------------

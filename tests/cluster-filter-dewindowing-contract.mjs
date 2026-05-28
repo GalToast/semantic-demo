@@ -71,7 +71,7 @@ function testClusterFilterImportsAdapter() {
 
     assertContains(
         src,
-        "import { applyFilters, clearSearchGlow, updateUrlState } from './cluster-filter-adapter.js';",
+        "import { applyFilters, clearSearchGlow, updateUrlState, clearShortSemanticSearchState } from './cluster-filter-adapter.js';",
         'cluster-filter imports adapter functions'
     );
 

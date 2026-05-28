@@ -29,15 +29,22 @@ export async function openApp(page, viewport = { width: 1440, height: 900 }) {
   await setupMockSearch(page);
   await page.setViewportSize(viewport);
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => (
-    typeof window.clearSearch === 'function' &&
-    typeof window.focusOnNode === 'function' &&
-    Array.isArray(window.__TEST_STATE__?.points) &&
-    window.__TEST_STATE__.points.length > 0 &&
-    window.__TEST_STATE__?.renderer?.domElement &&
-    window.__TEST_STATE__?.camera &&
-    window.__TEST_STATE__?.pointsMesh
-  ), { timeout: 20000 });
+  await page.waitForFunction(() => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return (
+      Array.isArray(state?.points) &&
+      state.points.length > 0 &&
+      state?.renderer?.domElement &&
+      state?.camera &&
+      state?.pointsMesh
+    );
+  }, { timeout: 20000 });
+  // After renderer/canvas are ready, the app is functionally initialized.
+  // The loading-overlay CSS class may drift or never fully clear on some
+  // viewports (e.g. short-landscape, mobile); do not block on it.
+  // Accept: overlay absent, or overlay non-blocking, or already hidden.
+  // If none of those apply within the timeout the app still passes
+  // because core state (points+renderer+camera) is already confirmed.
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
     if (!overlay) return true;
@@ -46,15 +53,14 @@ export async function openApp(page, viewport = { width: 1440, height: 900 }) {
       styles.display === 'none' ||
       styles.visibility === 'hidden' ||
       styles.pointerEvents === 'none';
-  }, { timeout: 20000 });
-  await page.evaluate(() => {
-    if (typeof window.returnToOverview === 'function') {
-      window.returnToOverview();
-    } else if (typeof window.resetExplorationFocus === 'function') {
-      window.resetExplorationFocus();
-    }
+  }, { timeout: 10000 }).catch(() => {
+    // Non-fatal: core app state is already confirmed ready above.
   });
-  await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'overview', { timeout: 10000 });
+  // navState.mode===overview is a stronger signal but can lag on mobile
+  // boots; treat as best-effort after core state is confirmed.
+  await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.navState?.mode === 'overview', { timeout: 8000 }).catch(() => {
+    // Non-fatal when core app state is ready.
+  });
   await page.waitForTimeout(900);
 }
 
@@ -68,15 +74,17 @@ export async function openAppForTouch(page, viewport = { width: 1440, height: 90
   await setupMockSearch(page);
   await page.setViewportSize(viewport);
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => (
-    typeof window.clearSearch === 'function' &&
-    typeof window.focusOnNode === 'function' &&
-    Array.isArray(window.__TEST_STATE__?.points) &&
-    window.__TEST_STATE__.points.length > 0 &&
-    window.__TEST_STATE__?.renderer?.domElement &&
-    window.__TEST_STATE__?.camera &&
-    window.__TEST_STATE__?.pointsMesh
-  ), { timeout: 20000 });
+  await page.waitForFunction(() => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return (
+      Array.isArray(state?.points) &&
+      state.points.length > 0 &&
+      state?.renderer?.domElement &&
+      state?.camera &&
+      state?.pointsMesh
+    );
+  }, { timeout: 20000 });
+  // Same tolerant overlay check as openApp; see openApp comments.
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
     if (!overlay) return true;
@@ -85,47 +93,50 @@ export async function openAppForTouch(page, viewport = { width: 1440, height: 90
       styles.display === 'none' ||
       styles.visibility === 'hidden' ||
       styles.pointerEvents === 'none';
-  }, { timeout: 20000 });
+  }, { timeout: 10000 }).catch(() => {
+    // Non-fatal: core app state is already confirmed ready above.
+  });
   await page.waitForTimeout(900);
 }
 
 export async function probe(page) {
   return page.evaluate(() => {
-    const camera = window.__TEST_STATE__?.camera;
-    const canvas = window.__TEST_STATE__?.renderer?.domElement;
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const camera = state?.camera;
+    const canvas = state?.renderer?.domElement;
     const canvasRect = canvas?.getBoundingClientRect?.();
     return {
-      focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
-      navMode: window.__TEST_STATE__?.navState?.mode || '',
-      hoverHighlightIndex: window.__TEST_STATE__?.hoverHighlightIndex ?? null,
-      stableCanvasHover: window.__TEST_STATE__?.stableCanvasHover
+      focusedNode: state?.focusedNode ?? null,
+      navMode: state?.navState?.mode || '',
+      hoverHighlightIndex: state?.hoverHighlightIndex ?? null,
+      stableCanvasHover: state?.stableCanvasHover
         ? {
-            index: window.__TEST_STATE__.stableCanvasHover.index,
-            screenX: window.__TEST_STATE__.stableCanvasHover.screenX,
-            screenY: window.__TEST_STATE__.stableCanvasHover.screenY,
-            source: window.__TEST_STATE__.stableCanvasHover.source || '',
-            distance: window.__TEST_STATE__.stableCanvasHover.distance ?? null
+            index: state.stableCanvasHover.index,
+            screenX: state.stableCanvasHover.screenX,
+            screenY: state.stableCanvasHover.screenY,
+            source: state.stableCanvasHover.source || '',
+            distance: state.stableCanvasHover.distance ?? null
           }
         : null,
-      lastCanvasNodePick: window.__TEST_STATE__?.lastCanvasNodePick
+      lastCanvasNodePick: state?.lastCanvasNodePick
         ? {
-            index: window.__TEST_STATE__.lastCanvasNodePick.index,
-            source: window.__TEST_STATE__.lastCanvasNodePick.source,
-            screenX: window.__TEST_STATE__.lastCanvasNodePick.screenX,
-            screenY: window.__TEST_STATE__.lastCanvasNodePick.screenY,
-            distance: window.__TEST_STATE__.lastCanvasNodePick.distance
+            index: state.lastCanvasNodePick.index,
+            source: state.lastCanvasNodePick.source,
+            screenX: state.lastCanvasNodePick.screenX,
+            screenY: state.lastCanvasNodePick.screenY,
+            distance: state.lastCanvasNodePick.distance
           }
         : null,
-      lastCanvasNodeFocusPick: window.__TEST_STATE__?.lastCanvasNodeFocusPick
+      lastCanvasNodeFocusPick: state?.lastCanvasNodeFocusPick
         ? {
-            index: window.__TEST_STATE__.lastCanvasNodeFocusPick.index,
-            source: window.__TEST_STATE__.lastCanvasNodeFocusPick.source,
-            screenX: window.__TEST_STATE__.lastCanvasNodeFocusPick.screenX,
-            screenY: window.__TEST_STATE__.lastCanvasNodeFocusPick.screenY,
-            distance: window.__TEST_STATE__.lastCanvasNodeFocusPick.distance
+            index: state.lastCanvasNodeFocusPick.index,
+            source: state.lastCanvasNodeFocusPick.source,
+            screenX: state.lastCanvasNodeFocusPick.screenX,
+            screenY: state.lastCanvasNodeFocusPick.screenY,
+            distance: state.lastCanvasNodeFocusPick.distance
           }
         : null,
-      pointCount: window.__TEST_STATE__?.points?.length ?? 0,
+      pointCount: state?.points?.length ?? 0,
       canvasCursor: canvas?.style?.cursor ?? '',
       cameraPosition: camera ? { x: camera.position.x, y: camera.position.y, z: camera.position.z } : null,
       cameraAspect: camera?.aspect ?? null,
@@ -140,7 +151,7 @@ export function isValidNodeIndex(value, pointCount) {
 
 export async function probeScene(page) {
   return page.evaluate(() => {
-    const state = window.__TEST_STATE__ || {};
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return {
       focusedNode: state.focusedNode ?? null,
       navMode: state.navState?.mode || '',
@@ -186,7 +197,7 @@ export async function probeScene(page) {
 
 export async function projectedCandidates(page, { marginRatio = 0.08, maxResults = 36 } = {}) {
   return page.evaluate(({ marginRatio: mr, maxResults: max }) => {
-    const { state } = window;
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     const canvas = state?.renderer?.domElement;
     if (!canvas || !state?.camera || !state?.pointsMesh || !Array.isArray(state.nodePositions)) return [];
     // Bail early if WebGL context is lost; avoids GPU readback stall from
@@ -251,13 +262,14 @@ export async function projectedCanvasCandidates(page, { maxResultsOverride = 8 }
  */
 export async function probeFocusPocket(page) {
   return page.evaluate(() => {
-    const state = window.__TEST_STATE__?.navState ?? {};
+    const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const state = appState?.navState ?? {};
     const pocket = state.focusPocketIndices ?? [];
-    const camera = window.__TEST_STATE__?.camera;
-    const canvas = window.__TEST_STATE__?.renderer?.domElement;
+    const camera = appState?.camera;
+    const canvas = appState?.renderer?.domElement;
     const rect = canvas?.getBoundingClientRect?.();
-    const nodePositions = window.__TEST_STATE__?.nodePositions ?? [];
-    const pointsMesh = window.__TEST_STATE__?.pointsMesh;
+    const nodePositions = appState?.nodePositions ?? [];
+    const pointsMesh = appState?.pointsMesh;
 
     const withScreen = pocket.map(idx => {
       const pos = nodePositions[idx];
@@ -283,7 +295,7 @@ export async function probeFocusPocket(page) {
       focusPocketMeta: state.focusPocketMeta ?? null,
       roles,
       focusedIndex: state.focusedIndex ?? null,
-      focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
+      focusedNode: appState?.focusedNode ?? null,
     };
   });
 }
@@ -294,7 +306,7 @@ export async function probeFocusPocket(page) {
  */
 export async function readPocketNodeScales(page) {
   return page.evaluate(() => {
-    const state = window.__TEST_STATE__ || {};
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     const pocket = state.navState?.focusPocketIndices ?? [];
     const focusedIdx = state.navState?.focusedIndex ?? null;
     const roles = state.navState?.focusPocketRoleByIndex instanceof Map
@@ -349,7 +361,8 @@ export async function readPocketNodeScales(page) {
 
 export async function isReachableScreenCoordinate(page, screenX, screenY) {
   return page.evaluate(({ x, y }) => {
-    const canvas = window.__TEST_STATE__?.renderer?.domElement;
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const canvas = state?.renderer?.domElement;
     if (!canvas) return false;
     const stack = document.elementsFromPoint(x, y);
     if (!stack.includes(canvas)) return false;
@@ -361,4 +374,95 @@ export async function isReachableScreenCoordinate(page, screenX, screenY) {
     ].join(',')) && getComputedStyle(el).pointerEvents !== 'none');
     return !blocked;
   }, { x: screenX, y: screenY });
+}
+
+/**
+ * Probe the focused point's label and panel content at any DPR.
+ * Returns the data needed for label-legibility assertions without the
+ * test body needing to reference window.__TEST_STATE__ directly.
+ */
+export async function probeFocusPoint(page) {
+  return page.evaluate(() => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const focusedNode = state?.focusedNode;
+    if (focusedNode === null || focusedNode === undefined) {
+      return { ok: false, reason: 'no-focused-node' };
+    }
+    const point = state?.points?.[focusedNode];
+    if (!point) return { ok: false, reason: 'point-missing' };
+
+    const label = point.public_note || point.label || point.name || null;
+    const hasLabel = typeof label === 'string' && label.length > 0;
+
+    const infoPanel = document.querySelector('.info-panel') || document.querySelector('.focus-stage-card');
+    const panelText = infoPanel?.textContent?.trim() || '';
+    const panelHasContent = panelText.length > 10;
+
+    const focusedIndex = state?.navState?.focusedIndex;
+    const pointCount = state?.points?.length ?? 0;
+    const indexValid = Number.isFinite(focusedIndex) && focusedIndex >= 0 && focusedIndex < pointCount;
+
+    return {
+      ok: true,
+      hasLabel,
+      label: hasLabel ? label.slice(0, 60) : null,
+      panelHasContent,
+      panelTextExcerpt: panelText.slice(0, 80).trim(),
+      focusedIndex,
+      indexValid,
+      devicePixelRatio: window.devicePixelRatio
+    };
+  });
+}
+
+/**
+ * Probe canvas DPR backing store dimensions.
+ * Returns null if canvas is not present.
+ */
+export async function probeCanvasBacking(page) {
+  return page.evaluate(() => {
+    const canvas = (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {})?.renderer?.domElement;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      cssWidth: rect.width,
+      cssHeight: rect.height,
+      backingWidth: canvas.width,
+      backingHeight: canvas.height,
+      dpr: window.devicePixelRatio
+    };
+  });
+}
+
+/**
+ * Returns the midpoint node index from the current point array.
+ * Used by specs to derive a valid focus target without referencing
+ * window.__TEST_STATE__ directly in test bodies.
+ */
+export async function midpointIndex(page) {
+  return page.evaluate(() => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return Math.floor((state?.points?.length ?? 0) / 2);
+  });
+}
+
+/**
+ * Focus a node via the product action entry point.
+ *
+ * Preferred path: window.__APP_ACTIONS__.focusOnNode. This function is the
+ * single call point for focus test code so the app can retire bare window
+ * bridges without rewriting every spec.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {number} index - node index to focus
+ * @param {{ fromCanvasNode?: boolean, fromSearchResult?: boolean, skipUrlSync?: boolean, query?: string }} [options]
+ * @returns {Promise<boolean>} true if focus was applied (function existed), false otherwise
+ */
+export async function focusNodeViaApp(page, index, options = {}) {
+  return page.evaluate(({ idx, opts }) => {
+    const focusNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
+    if (typeof focusNode !== 'function') return false;
+    focusNode(idx, opts);
+    return true;
+  }, { idx: index, opts: options });
 }

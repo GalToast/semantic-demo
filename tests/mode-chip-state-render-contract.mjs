@@ -15,6 +15,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { mutate } from './helpers/state-harness.js';
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
 let targetUrl = process.argv[2] || DEFAULT_URL;
@@ -90,7 +91,7 @@ async function main() {
   try {
     await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await page.waitForFunction(() =>
-      window.__TEST_STATE__
+      (window.__APP_STATE__ ?? window.__TEST_STATE__)
       && typeof window.updateExplorationUi === 'function'
       && document.querySelectorAll('#mode-grid .mode-chip').length >= 2,
       { timeout: 20000 }
@@ -151,11 +152,9 @@ async function main() {
   // Drive trailDepth=1 via state, then call updateExplorationUi if available.
   const trailChip = page.locator('.mode-chip[data-mode="trail"]');
   if (await trailChip.count() > 0) {
-    await page.evaluate(() => {
-      window.__TEST_STATE__.trailDepth = 1;
-      window.__TEST_STATE__.focusedNode = null;
-      if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
-    });
+    // Drive trailDepth=1 via named harness mutation, then call updateExplorationUi.
+    await mutate(page, 'setTrailDepth', { trailDepth: 1 });
+    await page.evaluate(() => { if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi(); });
     await page.waitForTimeout(300);
 
     const isLocked = await trailChip.evaluate((el) => el.classList.contains('is-locked'));
@@ -175,10 +174,8 @@ async function main() {
     }
 
     // Reset state
-    await page.evaluate(() => {
-      window.__TEST_STATE__.trailDepth = 0;
-      if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
-    });
+    await mutate(page, 'clearFocusedNode');
+    await page.evaluate(() => { if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi(); });
   } else {
     fail('Trail chip [data-mode="trail"] not found - cannot test is-locked state');
   }
@@ -217,7 +214,9 @@ async function main() {
   }
 
   // -- 6. Galaxy active view override ----------------------------------------
-  // Switch to galaxy and verify active chip uses the galaxy accent palette.
+  // Switch to galaxy and verify active chip uses the teal galaxy palette.
+  // NOTE: Active-view state bodies are documented as acceptable targets for DOM
+  // dataset manipulation in this CSS contract test — they are not app state.
   await page.evaluate(() => document.body.setAttribute('data-active-view', 'galaxy'));
   await page.waitForTimeout(300);
 

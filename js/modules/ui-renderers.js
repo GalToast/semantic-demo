@@ -5,6 +5,7 @@
  */
 
 import { state } from '../state.js';
+import { getViewportSize } from './environment.js';
 import {
     describeCluster,
     escapeHtml,
@@ -231,7 +232,7 @@ export function revealActiveSearchResultOnCompact(resultsEl, activeRow = null) {
     const contentRect = content.getBoundingClientRect();
     if (!rowRect.width || !rowRect.height || !contentRect.height) return false;
 
-    const targetTop = Math.min(window.innerHeight * 0.52, Math.max(contentRect.top + 16, contentRect.bottom - rowRect.height - 36));
+    const targetTop = Math.min(getViewportSize().height * 0.52, Math.max(contentRect.top + 16, contentRect.bottom - rowRect.height - 36));
     const nextScrollTop = Math.max(0, content.scrollTop + rowRect.top - targetTop);
     content.scrollTo({ top: nextScrollTop, behavior: 'auto' });
     return true;

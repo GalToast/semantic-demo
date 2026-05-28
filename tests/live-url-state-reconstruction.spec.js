@@ -9,7 +9,7 @@ async function openApp(page) {
   await page.waitForFunction(() => (
     document.body.dataset.graphicsMode === 'webgl' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
-    window.__TEST_STATE__.points.length > 0
+    (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
   ), { timeout: 20000 });
   await page.waitForTimeout(1200);
 }
@@ -44,10 +44,10 @@ async function stateProbe(page) {
         currentView: window.__TEST_STATE__?.currentView || '',
         trailDepth: window.__TEST_STATE__?.trailDepth ?? null,
         semanticDiveMode: window.__TEST_STATE__?.semanticDiveMode ?? null,
-        selectedPoint: window.__TEST_STATE__?.selectedPoint ? String(window.__TEST_STATE__.selectedPoint.lead_id) : null,
+        selectedPoint: window.__TEST_STATE__?.selectedPoint ? String((window.__APP_STATE__ ?? window.__TEST_STATE__).selectedPoint.lead_id) : null,
         currentSearchSummary: window.__TEST_STATE__?.currentSearchSummary ? {
-          query: window.__TEST_STATE__.currentSearchSummary.query,
-          anchorIndex: window.__TEST_STATE__.currentSearchSummary.anchorIndex
+          query: (window.__APP_STATE__ ?? window.__TEST_STATE__).currentSearchSummary.query,
+          anchorIndex: (window.__APP_STATE__ ?? window.__TEST_STATE__).currentSearchSummary.anchorIndex
         } : null
       }
     };

@@ -393,7 +393,11 @@ function __demoFocusSetup(demoNode) {
     updateExplorationUi();
     updateJourneyCompass('focus');
     refreshCompositionState();
-    resetNodePositions();
+    if (typeof window !== 'undefined' && typeof window.resetNodePositions === 'function') {
+        window.resetNodePositions();
+    } else {
+        resetNodePositions();
+    }
     if (typeof applyLocalNeighborhoodFocus === 'function') {
         applyLocalNeighborhoodFocus(demoNode);
     }

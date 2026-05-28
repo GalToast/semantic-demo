@@ -18,7 +18,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { probeFocusPocket, isReachableScreenCoordinate } from './helpers/3d-interaction-helpers.js';
+import { probeFocusPocket, isReachableScreenCoordinate, focusNodeViaApp } from './helpers/3d-interaction-helpers.js';
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 
@@ -60,11 +60,11 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
   await page.setViewportSize(viewport);
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => (
-    typeof window.clearSearch === 'function' &&
-    typeof window.focusOnNode === 'function' &&
-    Array.isArray(window.__TEST_STATE__?.points) &&
-    window.__TEST_STATE__.points.length > 0 &&
-    window.__TEST_STATE__.pointIndexByLeadId?.size > 0
+    typeof window.__APP_ACTIONS__?.clearSearch === 'function' &&
+    typeof window.__APP_ACTIONS__?.focusOnNode === 'function' &&
+    Array.isArray(window.__APP_STATE__?.points ?? window.__TEST_STATE__?.points) &&
+    (window.__APP_STATE__?.points ?? window.__TEST_STATE__?.points ?? []).length > 0 &&
+    (window.__APP_STATE__?.pointIndexByLeadId ?? window.__TEST_STATE__?.pointIndexByLeadId)?.size > 0
   ), { timeout: 20000 });
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
@@ -84,6 +84,7 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
 
 async function probe(page) {
   return page.evaluate(() => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     const body = document.body;
     return {
       url: location.href,
@@ -93,21 +94,21 @@ async function probe(page) {
         trailDepth: body.dataset.trailDepth || ''
       },
       state: {
-        mode: window.__TEST_STATE__?.navState?.mode || '',
-        focusedIndex: window.__TEST_STATE__?.navState?.focusedIndex ?? null,
-        focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
-        focusPocketIndices: window.__TEST_STATE__?.navState?.focusPocketIndices
-          ? [...window.__TEST_STATE__.navState.focusPocketIndices]
+        mode: state.navState?.mode || '',
+        focusedIndex: state.navState?.focusedIndex ?? null,
+        focusedNode: state.focusedNode ?? null,
+        focusPocketIndices: state.navState?.focusPocketIndices
+          ? [...state.navState.focusPocketIndices]
           : [],
-        focusPocketMeta: window.__TEST_STATE__?.navState?.focusPocketMeta || null,
-        focusPocketRoleByIndex: window.__TEST_STATE__?.navState?.focusPocketRoleByIndex
-          ? Object.fromEntries(window.__TEST_STATE__.navState.focusPocketRoleByIndex)
+        focusPocketMeta: state.navState?.focusPocketMeta || null,
+        focusPocketRoleByIndex: state.navState?.focusPocketRoleByIndex
+          ? Object.fromEntries(state.navState.focusPocketRoleByIndex)
           : {},
-        threadCandidates: window.__TEST_STATE__?.navState?.threadCandidates
-          ? window.__TEST_STATE__.navState.threadCandidates.slice(0, 10)
+        threadCandidates: state.navState?.threadCandidates
+          ? state.navState.threadCandidates.slice(0, 10)
           : [],
-        threadSource: window.__TEST_STATE__?.navState?.threadSource || '',
-        nodesAreSettling: window.__TEST_STATE__?.nodesAreSettling ?? false
+        threadSource: state.navState?.threadSource || '',
+        nodesAreSettling: state.nodesAreSettling ?? false
       },
       ui: {
         // Focus-stage / thread-inspector panel elements that expose selectable nodes
@@ -121,17 +122,13 @@ async function probe(page) {
 }
 
 // ---------------------------------------------------------------------------
-// Enter focus via window.focusOnNode (deterministic, no click needed)
+// Enter focus through the app action namespace (deterministic, no click needed)
 // ---------------------------------------------------------------------------
 
 async function enterFocusByIndex(page, index) {
-  await page.evaluate((idx) => {
-    if (typeof window.focusOnNode === 'function') {
-      window.focusOnNode(idx);
-    }
-  }, index);
+  await focusNodeViaApp(page, index);
   // Wait for focus mode to settle
-  await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
+  await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode ?? window.__TEST_STATE__?.navState?.mode ?? '' === 'focus', { timeout: 15000 });
   await page.waitForTimeout(800); // allow pocket animation to begin
 }
 
@@ -148,8 +145,9 @@ async function performSearch(page, query = 'coffee') {
     if (!el) return;
     el.value = q;
     el.dispatchEvent(new Event('input', { bubbles: true }));
-    if (typeof window.search === 'function') {
-      await window.search(q, { preferCachedResults: false });
+    const search = window.__APP_ACTIONS__?.search ?? window.search;
+    if (typeof search === 'function') {
+      await search(q, { preferCachedResults: false });
     }
   }, query);
   await expect(page.locator('.search-result-item').first()).toBeVisible({ timeout: 15000 });
@@ -158,7 +156,7 @@ async function performSearch(page, query = 'coffee') {
 async function enterFocusFromSearch(page) {
   await performSearch(page);
   await page.locator('.search-result-item').first().click();
-  await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
+  await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode ?? window.__TEST_STATE__?.navState?.mode ?? '' === 'focus', { timeout: 15000 });
   await page.waitForTimeout(800);
 }
 
@@ -178,14 +176,15 @@ test.describe('focus-pocket node selectability', () => {
 
     // Find an index with actual point data and (ideally) thread candidates
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const pts = state.points;
       if (!pts || pts.length === 0) return 0;
       // Prefer a point that has neighbors in the semantic map
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
+        if (pt && state.pointIndexByLeadId?.has(pt.lead_id)) {
           const leadId = pt.lead_id;
-          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(leadId);
+          const node = state.semanticNeighborMapByLeadId?.get(leadId);
           if (node?.neighbors?.length > 0) return i;
         }
       }
@@ -311,13 +310,14 @@ test.describe('focus-pocket node selectability', () => {
     await openApp(page, { width: 844, height: 390 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const pts = state.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
+        if (pt && state.pointIndexByLeadId?.has(pt.lead_id)) {
           const leadId = pt.lead_id;
-          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(leadId);
+          const node = state.semanticNeighborMapByLeadId?.get(leadId);
           if (node?.neighbors?.length > 0) return i;
         }
       }
@@ -366,13 +366,14 @@ test.describe('focus-pocket node selectability', () => {
     await openApp(page, { width: 1024, height: 768 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const pts = state.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
+        if (pt && state.pointIndexByLeadId?.has(pt.lead_id)) {
           const leadId = pt.lead_id;
-          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(leadId);
+          const node = state.semanticNeighborMapByLeadId?.get(leadId);
           if (node?.neighbors?.length > 0) return i;
         }
       }
@@ -413,12 +414,13 @@ test.describe('focus-pocket node selectability', () => {
     await openApp(page, { width: 1024, height: 768 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const pts = state.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
-          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pt.lead_id);
+        if (pt && state.pointIndexByLeadId?.has(pt.lead_id)) {
+          const node = state.semanticNeighborMapByLeadId?.get(pt.lead_id);
           if (node?.neighbors?.length > 0) return i;
         }
       }
@@ -442,13 +444,14 @@ test.describe('focus-pocket node selectability', () => {
     await openApp(page, { width: 844, height: 390 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const pts = state.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
+        if (pt && state.pointIndexByLeadId?.has(pt.lead_id)) {
           const leadId = pt.lead_id;
-          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(leadId);
+          const node = state.semanticNeighborMapByLeadId?.get(leadId);
           if (node?.neighbors?.length > 0) return i;
         }
       }
@@ -486,13 +489,14 @@ test.describe('focus-pocket node selectability', () => {
     await openApp(page, { width: 1440, height: 900 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const pts = state.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
+        if (pt && state.pointIndexByLeadId?.has(pt.lead_id)) {
           const leadId = pt.lead_id;
-          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(leadId);
+          const node = state.semanticNeighborMapByLeadId?.get(leadId);
           if (node?.neighbors?.length > 0) return i;
         }
       }
@@ -527,12 +531,13 @@ test.describe('focus-pocket node selectability', () => {
     await openApp(page, { width: 1440, height: 900 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const pts = state.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
-          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pt.lead_id);
+        if (pt && state.pointIndexByLeadId?.has(pt.lead_id)) {
+          const node = state.semanticNeighborMapByLeadId?.get(pt.lead_id);
           if (node?.neighbors?.length > 0) return i;
         }
       }
@@ -563,12 +568,13 @@ test.describe('focus-pocket node selectability', () => {
     await openApp(page, { width: 1024, height: 768 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const pts = state.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
-          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pt.lead_id);
+        if (pt && state.pointIndexByLeadId?.has(pt.lead_id)) {
+          const node = state.semanticNeighborMapByLeadId?.get(pt.lead_id);
           if (node?.neighbors?.length > 0) return i;
         }
       }
@@ -588,12 +594,13 @@ test.describe('focus-pocket node selectability', () => {
     await openApp(page, { width: 844, height: 390 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const pts = state.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
-          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pt.lead_id);
+        if (pt && state.pointIndexByLeadId?.has(pt.lead_id)) {
+          const node = state.semanticNeighborMapByLeadId?.get(pt.lead_id);
           if (node?.neighbors?.length > 0) return i;
         }
       }
@@ -613,12 +620,13 @@ test.describe('focus-pocket node selectability', () => {
     await openApp(page, { width: 390, height: 844 });
 
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const pts = state.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
-          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(pt.lead_id);
+        if (pt && state.pointIndexByLeadId?.has(pt.lead_id)) {
+          const node = state.semanticNeighborMapByLeadId?.get(pt.lead_id);
           if (node?.neighbors?.length > 0) return i;
         }
       }
@@ -643,13 +651,14 @@ test.describe('focus-pocket node selectability', () => {
 
     // Enter focus first
     const entryIndex = await page.evaluate(() => {
-      const pts = window.__TEST_STATE__.points;
+      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const pts = state.points;
       if (!pts || pts.length === 0) return 0;
       for (let i = 0; i < Math.min(pts.length, 20); i++) {
         const pt = pts[i];
-        if (pt && window.__TEST_STATE__.pointIndexByLeadId.has(pt.lead_id)) {
+        if (pt && state.pointIndexByLeadId?.has(pt.lead_id)) {
           const leadId = pt.lead_id;
-          const node = window.__TEST_STATE__.semanticNeighborMapByLeadId?.get(leadId);
+          const node = state.semanticNeighborMapByLeadId?.get(leadId);
           if (node?.neighbors?.length > 0) return i;
         }
       }
@@ -665,17 +674,18 @@ test.describe('focus-pocket node selectability', () => {
     if (diveBtnVisible) {
       await diveBtn.click();
       await page.waitForFunction(() => (
-        window.__TEST_STATE__?.trailDepth === 2 ||
+        (window.__APP_STATE__?.trailDepth ?? window.__TEST_STATE__?.trailDepth ?? null) === 2 ||
         document.body.dataset.trailDepth === '2' ||
         document.body.dataset.semanticDive === 'active'
       ), { timeout: 15000 });
     } else {
       // Force trailDepth=2 programmatically if button is not present (semantic-dive mode)
       await page.evaluate(() => {
-        window.__TEST_STATE__.trailDepth = 2;
+        (window.__APP_STATE__ ?? window.__TEST_STATE__).trailDepth = 2;
         // Re-trigger neighborhood focus to rebuild pocket with DEEP_DIVE personality
-        if (typeof window.focusOnNode === 'function') {
-          window.focusOnNode(window.__TEST_STATE__.navState.focusedIndex);
+        const focusNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
+        if (typeof focusNode === 'function') {
+          focusNode((window.__APP_STATE__ ?? window.__TEST_STATE__).navState.focusedIndex);
         }
       });
       await page.waitForTimeout(1000);

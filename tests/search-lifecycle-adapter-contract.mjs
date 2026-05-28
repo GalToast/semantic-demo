@@ -14,7 +14,7 @@
  *  3. search-lifecycle-adapter.js has no imports that can recreate cycles
  *     (no search-state, no lifecycle, no url-state, no tooltip, no cluster-filter)
  *  4. app.js calls initSearchLifecycleAdapter with all 9 function refs before any search runs
- *  5. search-state.js imports all 9 lifecycle functions from the adapter
+ *  5. search-state.js imports lifecycle functions it uses from the adapter
  *  6. The adapter is a proper leaf — all 5 window call groups in search-state.js
  *     are replaced by direct adapter calls
  *  7. search-state.js routes navState.mode/focusedIndex clears through adapter_dispatchNavTransition
@@ -212,11 +212,11 @@ function testAppInjectsAdapterWithLifecycleRefs() {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 5: search-state.js imports all 9 lifecycle functions from the adapter
+// TEST 5: search-state.js imports lifecycle functions it uses from the adapter
 // ---------------------------------------------------------------------------
 
 function testSearchStateImportsFromAdapter() {
-  console.log('\n[TEST 5] search-state.js imports all 9 lifecycle functions from the adapter');
+  console.log('\n[TEST 5] search-state.js imports used lifecycle functions from the adapter');
 
   const src = readFileSync(SEARCH_STATE_PATH, 'utf-8');
 
@@ -231,9 +231,6 @@ function testSearchStateImportsFromAdapter() {
 
   assertContains(src, 'adapter_focusOnPoint',
     'search-state.js must import focusOnPoint as adapter_focusOnPoint from adapter');
-
-  assertContains(src, 'adapter_updateExplorationUi',
-    'search-state.js must import updateExplorationUi as adapter_updateExplorationUi from adapter');
 
   assertContains(src, 'adapter_resetNodePositions',
     'search-state.js must import resetNodePositions as adapter_resetNodePositions from adapter');
@@ -250,7 +247,7 @@ function testSearchStateImportsFromAdapter() {
   assertContains(src, 'adapter_refreshCompositionState',
     'search-state.js must import refreshCompositionState as adapter_refreshCompositionState from adapter');
 
-  console.log('  PASS — search-state.js imports all 9 lifecycle functions from adapter');
+  console.log('  PASS — search-state.js imports used lifecycle functions from adapter');
 }
 
 // ---------------------------------------------------------------------------
@@ -266,7 +263,6 @@ function testAllWindowCallSitesReplaced() {
   const updateUrlStateCalls = (src.match(/\badapter_updateUrlState\s*\(/g) || []).length;
   const setSearchPanelStateCalls = (src.match(/\badapter_setSearchPanelState\s*\(/g) || []).length;
   const focusOnPointCalls = (src.match(/\badapter_focusOnPoint\s*\(/g) || []).length;
-  const updateExplorationUiCalls = (src.match(/\badapter_updateExplorationUi\s*\(/g) || []).length;
   const resetNodePositionsCalls = (src.match(/\badapter_resetNodePositions\s*\(/g) || []).length;
   const syncSearchStatusForFocusCalls = (src.match(/\badapter_syncSearchStatusForFocus\s*\(/g) || []).length;
   const updateJourneyCompassCalls = (src.match(/\badapter_updateJourneyCompass\s*\(/g) || []).length;
@@ -278,8 +274,6 @@ function testAllWindowCallSitesReplaced() {
     `Expected at least 5 adapter_setSearchPanelState calls, found ${setSearchPanelStateCalls}`);
   assert(focusOnPointCalls >= 1,
     `Expected at least 1 adapter_focusOnPoint call, found ${focusOnPointCalls}`);
-  assert(updateExplorationUiCalls >= 1,
-    `Expected at least 1 adapter_updateExplorationUi call, found ${updateExplorationUiCalls}`);
   assert(resetNodePositionsCalls >= 1,
     `Expected at least 1 adapter_resetNodePositions call, found ${resetNodePositionsCalls}`);
   assert(syncSearchStatusForFocusCalls >= 1,
@@ -316,7 +310,7 @@ function testAllWindowCallSitesReplaced() {
   assert(windowRefreshCompositionState === 0,
     `Expected 0 window.refreshCompositionState calls, found ${windowRefreshCompositionState}`);
 
-  console.log(`  PASS — adapter calls: ${updateUrlStateCalls}× updateUrlState, ${setSearchPanelStateCalls}× setSearchPanelState, ${focusOnPointCalls}× focusOnPoint, ${updateExplorationUiCalls}× updateExplorationUi, ${resetNodePositionsCalls}× resetNodePositions, ${syncSearchStatusForFocusCalls}× syncSearchStatusForFocus, ${updateJourneyCompassCalls}× updateJourneyCompass, ${refreshCompositionStateCalls}× refreshCompositionState; 0 window.* equivalents`);
+  console.log(`  PASS — adapter calls: ${updateUrlStateCalls}× updateUrlState, ${setSearchPanelStateCalls}× setSearchPanelState, ${focusOnPointCalls}× focusOnPoint, ${resetNodePositionsCalls}× resetNodePositions, ${syncSearchStatusForFocusCalls}× syncSearchStatusForFocus, ${updateJourneyCompassCalls}× updateJourneyCompass, ${refreshCompositionStateCalls}× refreshCompositionState; 0 window.* equivalents`);
 }
 
 // ---------------------------------------------------------------------------

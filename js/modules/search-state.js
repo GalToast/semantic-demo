@@ -29,7 +29,6 @@ import {
     updateUrlState as adapter_updateUrlState,
     setSearchPanelState as adapter_setSearchPanelState,
     focusOnPoint as adapter_focusOnPoint,
-    updateExplorationUi as adapter_updateExplorationUi,
     resetNodePositions as adapter_resetNodePositions,
     dispatchNavTransition as adapter_dispatchNavTransition,
     syncSearchStatusForFocus as adapter_syncSearchStatusForFocus,
@@ -54,6 +53,7 @@ import {
     hideSummaryCard as adapter_hideSummaryCard,
     setSemanticGuideButtonState as adapter_setSemanticGuideButtonState,
     scheduleCompactSearchResultReveal as adapter_scheduleCompactSearchResultReveal,
+    scheduleSearchFocusTask as adapter_scheduleSearchFocusTask,
 } from './search-lifecycle-adapter.js';
 export {
     setActiveFilter,
@@ -294,7 +294,7 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
     adapter_setSearchPanelState({ focusing: true });
 
     const focusDelayMs = isCompactSearchViewport() ? 40 : 120;
-    window.setTimeout(() => {
+    adapter_scheduleSearchFocusTask(() => {
         if (token !== state.searchFocusTransitionToken) return;
         if (state.currentView === 'map' && pointHasGeocode(point)) {
             adapter_focusOnPoint(point, { fromSearchResult: true });
@@ -311,12 +311,12 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
 
         // Fix 3: switch back to galaxy view after focus completes (map view search result click)
         if (state.currentView === 'map') {
-            window.setTimeout(() => {
+            adapter_scheduleSearchFocusTask(() => {
                 if (typeof adapter_switchView === 'function') adapter_switchView('galaxy');
             }, 800);
         }
 
-        window.setTimeout(() => {
+        adapter_scheduleSearchFocusTask(() => {
             if (token !== state.searchFocusTransitionToken) return;
             adapter_setSearchPanelState({ focusing: false });
         }, 260);
@@ -467,7 +467,7 @@ export function applyFilters() {
     }
 
     if (typeof adapter_applyPointFilterColors === 'function') adapter_applyPointFilterColors();
-    adapter_updateExplorationUi();
+    adapter_refreshCompositionState();
     if (typeof adapter_refreshHoverSemanticOverlay === 'function') adapter_refreshHoverSemanticOverlay();
 }
 
@@ -552,7 +552,7 @@ export function restoreSearchResultPreview(resultIndices, fallbackIndex = null) 
 
 // === Clear short semantic search state ===
 export function clearShortSemanticSearchState(_resultsEl, _statusEl) {
-    clearMobileRouteFieldPeekState();
+    clearMobileRouteFieldPeek();
     state.currentSearchSummary = null;
     setSearchPanelState({ searching: false, focusing: false, resultsRendered: false, degraded: false });
 
@@ -567,7 +567,7 @@ export function clearShortSemanticSearchState(_resultsEl, _statusEl) {
  * 10/10 Polish: Comprehensive Search Clearing
  * Resets all search-related state, UI elements, and classes.
  */
-export function clearSearch() {
+export function clearSearch(options = {}) {
     const searchInput = document.getElementById('search-input');
     const searchContainer = document.querySelector('.search-container');
     const resultsEl = document.getElementById('search-results');
@@ -582,7 +582,12 @@ export function clearSearch() {
     }
     stopSearchVectorScramble();
 
-    if (searchInput) searchInput.value = '';
+    if (searchInput) {
+        searchInput.value = '';
+        if (typeof searchInput.dispatchEvent === 'function') {
+            searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
     if (searchContainer) setSearchPanelState({ searching: false, focusing: false, hasQuery: false, resultsRendered: false, degraded: false });
     if (resultsEl) {
         resultsEl.innerHTML = '';
@@ -594,16 +599,23 @@ export function clearSearch() {
         statusEl.classList.remove('active', 'search-status-compact');
     }
 
-    clearShortSemanticSearchState();
+    if (!options.preserveSearch) {
+        state.currentSearchSummary = null;
+    }
+    clearMobileRouteFieldPeek();
     clearSearchGlow();
-    if (typeof adapter_resetExplorationFocus === 'function') {
+
+    if (!options.skipResetFocus && typeof adapter_resetExplorationFocus === 'function') {
         adapter_resetExplorationFocus({ preserveSearch: true, skipUrlSync: true });
     }
 
-    adapter_updateUrlState({ q: null, anchor: null, offset: null, record: null }, { reason: 'search-clear' });
-    adapter_updateJourneyCompass();
-};
-
+    if (typeof adapter_updateUrlState === 'function') {
+        adapter_updateUrlState({ q: null, anchor: null, offset: null, record: null }, { reason: 'search-clear' });
+    }
+    if (typeof adapter_updateJourneyCompass === 'function') {
+        adapter_updateJourneyCompass();
+    }
+}
 // === Search result state map ===
 
 export function mapSemanticSearchServiceResult(row) {
@@ -1232,7 +1244,7 @@ export function clearSearchPreviewHoverTimer() {
     }
 }
 
-export function clearMobileRouteFieldPeekState() {
+export function clearMobileRouteFieldPeek() {
     if (state.mobileRouteFieldPeekTimer) {
         window.clearTimeout(state.mobileRouteFieldPeekTimer);
         state.mobileRouteFieldPeekTimer = null;

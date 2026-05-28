@@ -145,6 +145,7 @@ window.refreshCompositionState = function() {
 };
 initSearchLifecycleAdapter({
   refreshCompositionState: window.refreshCompositionState,
+  setSemanticLaneUiState: window.setSemanticLaneUiState,
 });
 
 state.points = [

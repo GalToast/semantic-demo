@@ -1,12 +1,11 @@
 import { state } from '../state.js';
-import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, syncFilterControls, resetStateBeforeUrlRestore, setMyceliumMode } from './lifecycle.js';
+import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, syncFilterControls, setMyceliumMode } from './lifecycle.js';
 import { switchView } from './view-controller.js';
 import { setSemanticLaneOpsMode, refreshSemanticLaneOpsSummary } from './semantic-lane.js';
 import { isPointVisible, formatBusinessName, escapeHtml } from '../utils.js';
 import { restoreActiveFiltersFromUrl, restoreActiveClusterFilterFromUrl } from './filter-state.js';
 import { getUrlSearchAdapter } from './url-search-adapter.js';
 import {
-    getUrlNavigationAdapter,
     focusOnPoint as adapterFocusOnPoint,
     updateExplorationUi as adapterUpdateExplorationUi,
     recordSemanticLaneSnapshot as adapterRecordSemanticLaneSnapshot,
@@ -38,32 +37,65 @@ async function applyUrlStateFromDeferred() {
     const query = searchParams.get('q');
     const offset = Number(searchParams.get('offset') || 0);
     const anchorLeadId = searchParams.get('anchor');
+    restoreActiveClusterFilterFromUrl(searchParams);
     if (query) {
         const adapter = getUrlSearchAdapter();
         if (typeof adapter?.search === 'function') {
-            await adapter.search(query, {
-                restoreAnchorLeadId: anchorLeadId || searchParams.get('record') || searchParams.get('lead') || null,
-                preferCachedResults: true,
-                offset
-            });
+            try {
+                await adapter.search(query, {
+                    restoreAnchorLeadId: anchorLeadId || searchParams.get('record') || searchParams.get('lead') || null,
+                    preferCachedResults: true,
+                    offset
+                });
+            } catch (err) {
+                console.warn('Deferred URL state restore failed:', err);
+                if (typeof adapterShowExperienceToast === 'function') {
+                    adapterShowExperienceToast('Restore failed', 'Could not restore search from link.');
+                }
+            }
         }
     }
-    const record = searchParams.get('record') || searchParams.get('lead');
-    if (record) {
-        const target = state.points.find((point) => String(point.lead_id) === record);
-        if (target && isPointVisible(state.points.indexOf(target), state.points, state.activeClusterFilter, state.activeFilters)) {
-            if (typeof adapterFocusOnPoint === 'function') adapterFocusOnPoint(target, { skipUrlSync: true });
-            restoreDepthFromUrlAfterFocus(searchParams);
+
+    if (state.selectedPoint || Number.isFinite(state.focusedNode)) {
+        restoreDepthFromUrlAfterFocus(searchParams);
+    }
+
+    restoreRecordFocusFromParams(searchParams, { fromHistory: false, deferred: true });
+}
+
+export function clearExplorationFocusSelection() {
+    state.focusedNode = null;
+    state.selectedPoint = null;
+    state.navState.focusedIndex = null;
+    if (state.trailIndices?.clear) state.trailIndices.clear();
+}
+
+export function resetStateBeforeUrlRestore(options = {}) {
+    clearExplorationFocusSelection();
+    state.navState.mode = 'overview';
+    state.navState.trailDepth = 0;
+    state.currentSearchSummary = null;
+    state.currentView = 'galaxy';
+    state.trailDepth = 0;
+    state.myceliumMode = 'default';
+
+    if (options.clearSearchInput) {
+        const input = document.getElementById('search-input');
+        if (input) {
+            input.value = '';
+            if (typeof input.dispatchEvent === 'function') {
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
         }
     }
 }
-
 
 export async function applyUrlState(options = {}) {
     const restoreToken = ++state.urlStateRestoreToken;
     const priorRestoringBrowserHistory = state.restoringBrowserHistory;
     state.applyingUrlState = true;
     state.restoringBrowserHistory = !!options.fromHistory;
+
     const params = new URLSearchParams(window.location.search);
     const historyRecord =
         options.historyState?.params?.record || options.historyState?.params?.lead || null;
@@ -149,82 +181,45 @@ export async function applyUrlState(options = {}) {
                 if (state._deferredUrlStateHandler) {
                     document.removeEventListener('semantic-data-loaded', state._deferredUrlStateHandler);
                 }
-                const retryHandler = () => {
-                    if (!state._deferredUrlState || state.points?.length === 0) return;
-                    document.removeEventListener('semantic-data-loaded', retryHandler);
-                    applyUrlStateFromDeferred();
+                state._deferredUrlStateHandler = () => {
+                    if (restoreToken === state.urlStateRestoreToken && state.points?.length > 0) {
+                        applyUrlStateFromDeferred();
+                    }
                 };
-                state._deferredUrlStateHandler = retryHandler;
-                document.addEventListener('semantic-data-loaded', retryHandler, { once: true });
+                document.addEventListener('semantic-data-loaded', state._deferredUrlStateHandler, { once: true });
                 state.applyingUrlState = false;
                 return;
+            } else {
+                const adapter = getUrlSearchAdapter();
+                if (typeof adapter?.search === 'function') {
+                    await adapter.search(query, {
+                        restoreAnchorLeadId: anchorLeadId || params.get('record') || params.get('lead') || null,
+                        preferCachedResults: true,
+                        offset
+                    });
+                }
             }
-            const searchAdapter = getUrlSearchAdapter();
-            if (typeof searchAdapter?.search === 'function') {
-                await searchAdapter.search(query, {
-                    restoreAnchorLeadId: anchorLeadId || params.get('record') || params.get('lead') || null,
-                    preferCachedResults: true,
-                    offset
-                });
-            }
-            if (restoreToken !== state.urlStateRestoreToken) return;
         }
 
         const record = params.get('record') || params.get('lead');
         if (record) {
             if (!state.points || !Array.isArray(state.points) || state.points.length === 0) {
-                // Data not yet available — record focus deferred until data loads
+                state._deferredUrlState = { params: Object.fromEntries(params.entries()), timestamp: Date.now() };
+                if (state._deferredUrlStateHandler) {
+                    document.removeEventListener('semantic-data-loaded', state._deferredUrlStateHandler);
+                }
+                state._deferredUrlStateHandler = () => {
+                    if (restoreToken === state.urlStateRestoreToken && state.points?.length > 0) {
+                        applyUrlStateFromDeferred();
+                    }
+                };
+                document.addEventListener('semantic-data-loaded', state._deferredUrlStateHandler, { once: true });
+                state.applyingUrlState = false;
                 return;
             }
-            const target = state.points.find((point) => String(point.lead_id) === record);
-            if (!target) {
-                if (typeof adapterShowExperienceToast === 'function') {
-                    adapterShowExperienceToast('Record not found', `No record matching '${escapeHtml(record)}' was found in the dataset.`);
-                }
-                return;
-            }
-            if (isPointVisible(state.points.indexOf(target), state.points, state.activeClusterFilter, state.activeFilters)) {
-                if (typeof adapterFocusOnPoint === 'function') adapterFocusOnPoint(target, { skipUrlSync: true });
-                restoreDepthFromUrlAfterFocus(params);
-                if (!options.fromHistory) {
-                    setTimeout(() => {
-                        if (typeof adapterShowExperienceToast === 'function') {
-                            adapterShowExperienceToast(
-                                'View restored',
-                                `${formatBusinessName(target.name)} focused from link.`
-                            );
-                        }
-                    }, 1000);
-                }
-                if (options.fromHistory && target) {
-                    if (query && state.currentSearchSummary) {
-                        const searchAdapter = getUrlSearchAdapter();
-                        if (typeof searchAdapter?.syncSearchStatusForFocus === 'function') searchAdapter.syncSearchStatusForFocus(target);
-                    } else {
-                        const statusEl = document.getElementById('search-status');
-                        if (statusEl) {
-                            const pointName = formatBusinessName(target.name);
-                            statusEl.textContent = `${pointName} restored. Use Prev / Next to explore nearby businesses.`;
-                            const searchAdapter = getUrlSearchAdapter();
-                            if (typeof searchAdapter?.updateSearchTrailCue === 'function') {
-                                searchAdapter.updateSearchTrailCue({
-                                    beat: 'focus',
-                                    kicker: 'Trail restored',
-                                    title: `${pointName} focused from link`,
-                                    note: 'History state restored. Use Prev / Next to explore, or search from here.'
-                                });
-                            }
-                        }
-                    }
-                }
-                if (query && !state.currentSearchSummary) {
-                    const searchAdapter = getUrlSearchAdapter();
-                    if (typeof searchAdapter?.updateSearchStatusMessage === 'function' && typeof searchAdapter?.getFilteredIndices === 'function') {
-                        const indices = searchAdapter.getFilteredIndices();
-                        searchAdapter.updateSearchStatusMessage(Array.isArray(indices) ? indices.length : 0);
-                    }
-                }
-            }
+            restoreRecordFocusFromParams(params, options);
+        } else if (state.selectedPoint || Number.isFinite(state.focusedNode)) {
+            restoreDepthFromUrlAfterFocus(params);
         }
 
         const story = params.get('story');
@@ -234,7 +229,7 @@ export async function applyUrlState(options = {}) {
                 refreshSemanticLaneOpsSummary().catch(err => console.error('refreshSemanticLaneOpsSummary failed:', err));
             }
             if (!options.fromHistory) {
-                updateUrlState({}, { reason: 'apply-url-story' });
+                updateUrlState({}, { reason: 'apply-url-story', force: true });
             }
             return;
         }
@@ -243,7 +238,7 @@ export async function applyUrlState(options = {}) {
             refreshSemanticLaneOpsSummary().catch(err => console.error('refreshSemanticLaneOpsSummary failed:', err));
         }
         if (!options.fromHistory) {
-            updateUrlState({}, { reason: 'apply-url' });
+            updateUrlState({}, { reason: 'apply-url', force: true });
         }
     } finally {
         if (restoreToken === state.urlStateRestoreToken) {
@@ -254,16 +249,16 @@ export async function applyUrlState(options = {}) {
 }
 
 export function updateUrlState(extra = {}, options = {}) {
+    if (state.applyingUrlState && !options.force) return;
     if (state.restoringBrowserHistory) return;
     if (typeof window === 'undefined' || !window.location || !window.history) return;
 
     const params = new URLSearchParams(window.location.search);
-
     params.set('view', state.currentView);
     if (state.semanticLaneOpsMode) params.set('ops', '1');
     else params.delete('ops');
 
-    const query = (document.getElementById('search-input')?.value || '').trim();
+    const query = (document.getElementById('search-input')?.value || state.currentSearchSummary?.query || '').trim();
     if (query) params.set('q', query);
     else params.delete('q');
 
@@ -331,6 +326,69 @@ export function updateUrlState(extra = {}, options = {}) {
     } catch (err) {
         if (err.name !== 'SecurityError') console.warn('updateUrlState history call failed:', err);
     }
+}
+
+function restoreRecordFocusFromParams(params, options = {}) {
+    const record = params.get('record') || params.get('lead');
+    if (!record || !state.points || !Array.isArray(state.points) || state.points.length === 0) return false;
+
+    const target = state.points.find((point) => String(point.lead_id) === record);
+    if (!target) {
+        if (typeof adapterShowExperienceToast === 'function') {
+            adapterShowExperienceToast('Record not found', `No record matching '${escapeHtml(record)}' was found in the dataset.`);
+        }
+        return false;
+    }
+
+    if (!isPointVisible(state.points.indexOf(target), state.points, state.activeClusterFilter, state.activeFilters)) {
+        return false;
+    }
+
+    if (typeof adapterFocusOnPoint === 'function') adapterFocusOnPoint(target, { skipUrlSync: true });
+    restoreDepthFromUrlAfterFocus(params);
+
+    if (!options.fromHistory && !options.deferred) {
+        setTimeout(() => {
+            if (typeof adapterShowExperienceToast === 'function') {
+                adapterShowExperienceToast(
+                    'View restored',
+                    `${formatBusinessName(target.name)} focused from link.`
+                );
+            }
+        }, 1000);
+    }
+
+    if (options.fromHistory && target) {
+        const query = params.get('q');
+        const searchAdapter = getUrlSearchAdapter();
+        if (query && state.currentSearchSummary) {
+            if (typeof searchAdapter?.syncSearchStatusForFocus === 'function') searchAdapter.syncSearchStatusForFocus(target);
+        } else {
+            const statusEl = document.getElementById('search-status');
+            if (statusEl) {
+                const pointName = formatBusinessName(target.name);
+                statusEl.textContent = `${pointName} restored. Use Prev / Next to explore nearby businesses.`;
+                if (typeof searchAdapter?.updateSearchTrailCue === 'function') {
+                    searchAdapter.updateSearchTrailCue({
+                        beat: 'focus',
+                        kicker: 'Trail restored',
+                        title: `${pointName} focused from link`,
+                        note: 'History state restored. Use Prev / Next to explore, or search from here.'
+                    });
+                }
+            }
+        }
+    }
+
+    if (params.get('q') && !state.currentSearchSummary) {
+        const searchAdapter = getUrlSearchAdapter();
+        if (typeof searchAdapter?.updateSearchStatusMessage === 'function' && typeof searchAdapter?.getFilteredIndices === 'function') {
+            const indices = searchAdapter.getFilteredIndices();
+            searchAdapter.updateSearchStatusMessage(Array.isArray(indices) ? indices.length : 0);
+        }
+    }
+
+    return true;
 }
 
 export async function copyCurrentViewLink() {

@@ -273,7 +273,9 @@ elementsById.set('search-input', new FakeElement('input'));
 commitTransition('map-trail');
 
 assert(ds('activeView') === 'map',       'map-trail: activeView is map');
-assert(ds('graphContext') === 'idle',   'map-trail: graphContext is idle (map mode)');
+// graphContext is NOT forced to 'idle' in map mode when focus/search are active
+// When focus + search intent are present → focus-search (same as galaxy behavior)
+assert(ds('graphContext') === 'focus-search', 'map-trail: graphContext is focus-search (focus + search in map mode)');
 assert(ds('mapContext') === 'focus-search', 'map-trail: mapContext is focus-search (focus + search intent)');
 assert(ds('panelSurface') === 'map-focus-search', 'map-trail: panelSurface is map-focus-search');
 assert(ds('semanticDive') === 'inactive','map-trail: semanticDive is inactive (map view)');
@@ -391,8 +393,9 @@ commitTransition('map-semantic-dive');
 
 assert(ds('semanticDive') === 'inactive', 'map-semantic-dive: semanticDive is inactive (map view overrides)');
 assert(ds('activeView') === 'map',        'map-semantic-dive: activeView is map');
-// In map mode, hasFocus (focusedNode) + hasSearchIntent → mapContext=focus-search
+// In map mode, hasFocus (focusedNode) + hasSearchIntent → mapContext=focus-search, graphContext=focus-search
 assert(ds('mapContext') === 'focus-search', 'map-semantic-dive: mapContext is focus-search (focus + search)');
+assert(ds('graphContext') === 'focus-search', 'map-semantic-dive: graphContext is focus-search (focus + search)');
 console.log('  PASS: map view overrides semantic-dive\n');
 
 // PHASE 5b: focus -> map-trail direct (no semantic-dive, direct galaxy->map handoff)
@@ -416,6 +419,7 @@ commitTransition('map-trail-direct');
 
 assert(ds('activeView') === 'map',       'focus->map: activeView is map');
 assert(ds('mapContext') === 'focus-search', 'focus->map: mapContext is focus-search (focus + search)');
+assert(ds('graphContext') === 'focus-search', 'focus->map: graphContext is focus-search (focus + search)');
 assert(ds('panelSurface') === 'map-focus-search', 'focus->map: panelSurface is map-focus-search');
 assert(ds('semanticDive') === 'inactive','focus->map: semanticDive is inactive');
 assert(ds('trailState') === 'active',    'focus->map: trailState is active');

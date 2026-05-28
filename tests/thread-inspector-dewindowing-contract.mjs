@@ -41,10 +41,27 @@ function assertNotContains(haystack, needle, label) {
   assert(!found, `${label}: source should NOT contain "${needle}", but it was found`);
 }
 
-// Returns the window._ti block content for direct inspection
+// Returns the window._ti block content for direct inspection.
+// Handles both gated and unconditional patterns:
+//   if (window.__DEBUG_PROBES__) { window._ti = { ... }; }  (gated — new)
+//   window._ti = { ... };                                  (unconditional — legacy)
 function getWindowTiBlock(src) {
+  // Try gated pattern first (new)
+  const gatedStart = src.indexOf('if (window.__DEBUG_PROBES__)');
+  if (gatedStart !== -1) {
+    const tiStart = src.indexOf('window._ti = {', gatedStart);
+    if (tiStart !== -1) {
+      const braceDepth = { depth: 0, started: false };
+      for (let i = tiStart + 'window._ti = {'.length; i < src.length; i++) {
+        const ch = src[i];
+        if (ch === '{') { braceDepth.depth++; braceDepth.started = true; }
+        else if (ch === '}') { braceDepth.depth--; if (braceDepth.started && braceDepth.depth === 0) return src.slice(tiStart, i + 1); }
+      }
+    }
+  }
+  // Fallback: unconditional pattern (legacy)
   const tiStart = src.indexOf('window._ti = {');
-  assert(tiStart !== -1, 'window._ti = { block found');
+  assert(tiStart !== -1, 'window._ti = { block found (gated or unconditional)');
   const tiEnd = src.indexOf('};', tiStart);
   return src.slice(tiStart, tiEnd + 2);
 }
@@ -61,13 +78,13 @@ function testExploreThreadNeighborDirectAssignmentRemoved() {
   assertNotContains(src, 'window.exploreThreadNeighbor = exploreThreadNeighbor',
     'window.exploreThreadNeighbor direct assignment removed');
 
-  // window._ti.exploreThreadNeighbor (diagnostic access) MUST exist
+  // window._ti.exploreThreadNeighbor (diagnostic access) MUST exist (inside __DEBUG_PROBES__ gate)
   const tiBlock = getWindowTiBlock(src);
   assert(tiBlock.includes('exploreThreadNeighbor'),
     '_ti.exploreThreadNeighbor diagnostic access remains');
 
   // A comment documenting the Wave70 removal must exist near end of file
-  const last300 = src.slice(Math.max(0, src.length - 400));
+  const last300 = src.slice(Math.max(0, src.length - 450));
   const hasWave70Comment = /Wave70|diagnostic|removed|window\._ti/.test(last300);
   assert(hasWave70Comment, 'Wave70 removal comment present at end of file');
 

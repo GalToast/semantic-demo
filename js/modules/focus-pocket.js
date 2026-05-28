@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
+import { isMobile, getViewportSize, prefersReducedMotion } from './environment.js';
 // js/modules/focus-pocket.js — extracted from monolithic HTML
 ;
 import { describeCluster, normalizeCityForFilter } from '../utils.js';
@@ -200,8 +201,9 @@ export function getNeighborhoodPersonality(index) {
 }
 
 export function getFocusConstellationViewportProfile() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const vp = getViewportSize();
+    const w = vp.width;
+    const h = vp.height;
     const compact = w <= 768;
     const short = h <= 540;
     if (compact && short)
@@ -973,13 +975,9 @@ export function applyLocalNeighborhoodFocus(index) {
 
 // === Focus pocket breathing ===
 
-function isReducedMotionPreferred() {
-    return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
-}
-
 export function applyFocusPocketBreathing(now, positions) {
     if (!state.navState.focusPocketMeta?.active || !state.focusPocketMotionByIndex.size || !positions) return false;
-    if (isReducedMotionPreferred()) return false;
+    if (prefersReducedMotion()) return false;
     const age = now - state.focusPocketTransitionStartedAt;
     const anchorIndex = Number.isFinite(state.navState.focusedIndex) ? state.navState.focusedIndex : null;
     const anchor =
@@ -1140,20 +1138,22 @@ export function getRuntimeStateSnapshot() {
     };
 }
 
-// Debug access
-window._fp = {
-    syncRuntimeState,
-    getRuntimeStateSnapshot,
-    getFocusConstellationMotif,
-    getNeighborhoodPersonality,
-    getFocusConstellationPlacement,
-    getFocusConstellationViewportProfile,
-    getFocusBeaconDeclutterProfile,
-    getDeclutteredFocusBeaconIndices,
-    getFocusViewBasis,
-    getFocusThreadCurvePoint,
-    buildFocusedPocketStagedPositions,
-    buildFocusedSemanticPocket,
-    applyLocalNeighborhoodFocus,
-    applyFocusPocketBreathing
-};
+// Debug access — gated behind __DEBUG_PROBES__ (default true in dev/test; false in production)
+if (typeof window.__DEBUG_PROBES__ !== 'undefined' ? window.__DEBUG_PROBES__ : true) {
+    window._fp = {
+        syncRuntimeState,
+        getRuntimeStateSnapshot,
+        getFocusConstellationMotif,
+        getNeighborhoodPersonality,
+        getFocusConstellationPlacement,
+        getFocusConstellationViewportProfile,
+        getFocusBeaconDeclutterProfile,
+        getDeclutteredFocusBeaconIndices,
+        getFocusViewBasis,
+        getFocusThreadCurvePoint,
+        buildFocusedPocketStagedPositions,
+        buildFocusedSemanticPocket,
+        applyLocalNeighborhoodFocus,
+        applyFocusPocketBreathing
+    };
+}

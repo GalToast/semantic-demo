@@ -18,7 +18,7 @@ import {
     toggleActiveFilterSignal,
     resetActiveFilters
 } from './filter-state.js';
-import { closeLegendPanel, openLegendPanel, restoreLegendCollapsedPanel } from './legend-ui.js';
+import { closeLegendPanel, openLegendPanel, restoreLegendCollapsedPanel, setPreviouslyFocusedLegend, getPreviouslyFocusedLegend } from './legend-ui.js';
 import { showExperienceToast } from './ui-feedback.js';
 import { requestSemanticGuide } from './semantic-guide.js';
 import { applyLocalNeighborhoodFocus } from './focus-pocket.js';
@@ -32,6 +32,8 @@ import { closeLegendGuide } from './legend-ui.js';
 import { syncClusterSectionState } from './cluster-labels.js';
 import { showSemanticThreadsDetail } from './connection-analysis.js';
 import { buildLegend } from './ui-renderers.js';
+
+let _previouslyFocusedInfoPanel = null;
 
 function bindClick(id, handler, options = {}) {
     const element = document.getElementById(id);
@@ -513,7 +515,7 @@ export function setInfoPanelOpen(open, options = {}) {
         const infoPanelToggle = document.getElementById('info-panel-toggle');
         const panelBtn = document.getElementById('btn-panel');
         if (shouldBeOpen && restoreFocus) {
-            window._previouslyFocusedInfoPanel = document.activeElement || infoPanelToggle || panelBtn;
+            _previouslyFocusedInfoPanel = document.activeElement || infoPanelToggle || panelBtn;
         }
 
         panel.classList.toggle('active', shouldBeOpen);
@@ -530,13 +532,13 @@ export function setInfoPanelOpen(open, options = {}) {
         if (infoPanelToggle) infoPanelToggle.setAttribute('aria-expanded', String(shouldBeOpen));
 
         if (!shouldBeOpen && restoreFocus) {
-            const prevFocus = window._previouslyFocusedInfoPanel || infoPanelToggle || panelBtn;
+            const prevFocus = _previouslyFocusedInfoPanel || infoPanelToggle || panelBtn;
             if (prevFocus && typeof prevFocus.focus === 'function') {
                 prevFocus.focus({ preventScroll: true });
             }
-            window._previouslyFocusedInfoPanel = null;
+            _previouslyFocusedInfoPanel = null;
         } else if (!shouldBeOpen) {
-            window._previouslyFocusedInfoPanel = null;
+            _previouslyFocusedInfoPanel = null;
         }
 
         return shouldBeOpen;
@@ -581,7 +583,7 @@ function bindLegendControls() {
         legendToggle.onclick = () => {
             const isOpening = !legendPanel.classList.contains('active');
             if (isOpening) {
-                window._previouslyFocusedLegend = document.activeElement || legendToggle;
+                setPreviouslyFocusedLegend(document.activeElement || legendToggle);
                 openLegendPanel();
                 if (isCompactFocusStageViewport()) {
                     if (infoPanel?.classList.contains('active')) {
@@ -604,7 +606,7 @@ function bindLegendControls() {
         document.addEventListener('pointerdown', (e) => {
             if (!legendPanel?.classList.contains('active')) return;
             if (legendPanel.contains(e.target) || legendToggle?.contains(e.target)) return;
-            const prevFocus = window._previouslyFocusedLegend || legendToggle;
+            const prevFocus = (getPreviouslyFocusedLegend() || legendToggle);
             closeLegendPanel();
             restoreLegendCollapsedPanel(infoPanel, panelBtn);
             if (prevFocus && typeof prevFocus.focus === 'function') {
@@ -617,6 +619,17 @@ function bindLegendControls() {
             }
         });
     }
+}
+
+function handleSemanticLaneWindowFocus() {
+    if (typeof probeSemanticLane !== 'function') return;
+    probeSemanticLane({ warm: true, reason: 'focus' }).catch(() => {});
+}
+
+function handleSemanticLaneVisibilityChange() {
+    if (document.visibilityState !== 'visible') return;
+    if (typeof probeSemanticLane !== 'function') return;
+    probeSemanticLane({ warm: true, reason: 'visibility' }).catch(() => {});
 }
 
 function bindGlobalEvents() {

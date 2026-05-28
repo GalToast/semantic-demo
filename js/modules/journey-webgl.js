@@ -826,6 +826,19 @@ export function updateFocusSemanticOverlayPositions(now = performance.now()) {
     }
 }
 
+export function getSemanticFocusCueProbeSnapshot() {
+    return {
+        visible: !!state.focusSemanticLines && !!state.focusThreadDiagnostics?.active,
+        threadSource: state.navState.threadSource || null,
+        focusedIndex: Number.isFinite(state.navState.focusedIndex) ? state.navState.focusedIndex : null,
+        nextIndex: Number.isFinite(state.focusSemanticLines?.userData?.nextIndex) ? state.focusSemanticLines.userData.nextIndex : null,
+        lineNextIndex: Number.isFinite(state.focusSemanticLines?.userData?.nextIndex) ? state.focusSemanticLines.userData.nextIndex : null,
+        nextCueSegments: state.focusSemanticLines?.userData?.nextCueSegments || state.focusThreadDiagnostics?.nextCueSegments || 0,
+        focusThreadSegments: getLineSegmentCount(state.focusSemanticLines),
+        threadDiagnostics: { ...(state.focusThreadDiagnostics || {}) }
+    };
+}
+
 // Window exposures for inline scripts and compatibility
 if (typeof window !== 'undefined') {
     window.refreshFocusSemanticOverlay = refreshFocusSemanticOverlay;
@@ -836,14 +849,7 @@ if (typeof window !== 'undefined') {
     window.updateArrivalHandoffOverlay = updateArrivalHandoffOverlay;
     window.disposeArrivalHandoffOverlay = disposeArrivalHandoffOverlay;
     window.setRouteChoreographyPhase = setRouteChoreographyPhase;
-    window.__semanticFocusCueProbe = () => ({
-        visible: !!state.focusSemanticLines && !!state.focusThreadDiagnostics?.active,
-        threadSource: state.navState.threadSource || null,
-        focusedIndex: Number.isFinite(state.navState.focusedIndex) ? state.navState.focusedIndex : null,
-        nextIndex: Number.isFinite(state.focusSemanticLines?.userData?.nextIndex) ? state.focusSemanticLines.userData.nextIndex : null,
-        lineNextIndex: Number.isFinite(state.focusSemanticLines?.userData?.nextIndex) ? state.focusSemanticLines.userData.nextIndex : null,
-        nextCueSegments: state.focusSemanticLines?.userData?.nextCueSegments || state.focusThreadDiagnostics?.nextCueSegments || 0,
-        focusThreadSegments: getLineSegmentCount(state.focusSemanticLines),
-        threadDiagnostics: { ...(state.focusThreadDiagnostics || {}) }
-    });
+    if (typeof window.__DEBUG_PROBES__ !== 'undefined' ? window.__DEBUG_PROBES__ : true) {
+        window.__semanticFocusCueProbe = getSemanticFocusCueProbeSnapshot;
+    }
 }

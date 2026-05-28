@@ -66,13 +66,17 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
   });
 
   await page.waitForFunction(
-    () =>
-      typeof window.clearSearch === 'function' &&
-      Array.isArray(window.__TEST_STATE__?.points) &&
-      window.__TEST_STATE__.points.length > 0 &&
-      window.__TEST_STATE__.nodePositions?.length > 0 &&
-      window.__TEST_STATE__.renderer?.domElement &&
-      window.__TEST_STATE__.camera,
+    () => {
+      const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      return (
+        typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function' &&
+        Array.isArray(s.points) &&
+        s.points.length > 0 &&
+        s.nodePositions?.length > 0 &&
+        s.renderer?.domElement &&
+        s.camera
+      );
+    },
     { timeout: 25000 }
   );
 
@@ -95,7 +99,7 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
 /** Probe key 3D + selection state fields used across edge-case assertions. */
 function probe(page) {
   return page.evaluate(() => {
-    const s = window.__TEST_STATE__ ?? {};
+    const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return {
       pointCount: s.points?.length ?? 0,
       nodePositionsCount: s.nodePositions?.length ?? 0,
@@ -144,8 +148,8 @@ async function corruptToOneNode(page) {
  */
 async function corruptDuplicateLabels(page) {
   return page.evaluate(() => {
-    const points = window.__TEST_STATE__.points ?? [];
-    const nodePositions = window.__TEST_STATE__.nodePositions ?? [];
+    const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const points = s.points ?? [];
     const labelCount = {};
 
     for (let i = 0; i < points.length; i++) {
@@ -204,8 +208,8 @@ async function abortInFlightSearch(page) {
 
   // Start search without awaiting — fire-and-forget
   await page.evaluate(() => {
-    if (typeof window.search === 'function') {
-      window.search('coffee', { preferCachedResults: false });
+    if (typeof (window.__APP_ACTIONS__?.search ?? window.search) === 'function') {
+      (window.__APP_ACTIONS__?.search ?? window.search)('coffee', { preferCachedResults: false });
     }
   });
   // Give the request a moment to be dispatched
@@ -213,8 +217,8 @@ async function abortInFlightSearch(page) {
 
   // Abort via clearSearch (the user-cancels flow)
   await page.evaluate(() => {
-    if (typeof window.clearSearch === 'function') {
-      window.clearSearch();
+    if (typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function') {
+      (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch)();
     }
   });
   await page.waitForTimeout(400);
@@ -253,8 +257,8 @@ async function slowSearchResponse(page) {
   await input.focus();
   await input.fill('latte');
   await page.evaluate(() => {
-    if (typeof window.search === 'function') {
-      window.search('latte', { preferCachedResults: false });
+    if (typeof (window.__APP_ACTIONS__?.search ?? window.search) === 'function') {
+      (window.__APP_ACTIONS__?.search ?? window.search)('latte', { preferCachedResults: false });
     }
   });
   // Wait just long enough for the UI to react to the in-flight state
@@ -321,12 +325,15 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
     }
 
     // Focus first duplicate via canvas position
-    await page.evaluate(idx => { window.__TEST_STATE__.focusedNode = idx; }, dupA);
+    await mutate(page, 'setFocusedNode', { focusedNode: dupA });
     await page.waitForTimeout(300);
-    const focusA = await page.evaluate(() => window.__TEST_STATE__.focusedNode);
+    const focusA = await page.evaluate(() => {
+      const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      return s.focusedNode;
+    });
 
     // Switch to second duplicate
-    await page.evaluate(idx => { window.__TEST_STATE__.focusedNode = idx; }, dupB);
+    await mutate(page, 'setFocusedNode', { focusedNode: dupB });
     await page.waitForTimeout(300);
     const focusB = await probe(page);
 
@@ -342,7 +349,7 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
     await corruptMissingPositions(page);
 
     const nullCount = await page.evaluate(() =>
-      window.__TEST_STATE__.nodePositions.filter(p => p === null).length
+      (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).nodePositions.filter(p => p === null).length
     );
     expect(nullCount).toBeGreaterThan(0); // Verify corruption actually happened
 
@@ -388,8 +395,8 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
     await input.focus();
     await input.fill('coffee');
     await page.evaluate(() => {
-      if (typeof window.search === 'function') {
-        window.search('coffee', { preferCachedResults: true });
+      if (typeof (window.__APP_ACTIONS__?.search ?? window.search) === 'function') {
+        (window.__APP_ACTIONS__?.search ?? window.search)('coffee', { preferCachedResults: true });
       }
     });
     await page.waitForTimeout(1500);
@@ -407,7 +414,7 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
 
     // First: do a valid search so we have results
     await page.evaluate(() => {
-      if (typeof window.search === 'function') window.search('coffee', { preferCachedResults: false });
+      if (typeof (window.__APP_ACTIONS__?.search ?? window.search) === 'function') (window.__APP_ACTIONS__?.search ?? window.search)('coffee', { preferCachedResults: false });
     });
     await page.waitForSelector('.search-result-item', { timeout: 15000 });
 

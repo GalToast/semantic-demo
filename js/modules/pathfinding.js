@@ -82,8 +82,3 @@ function reconstructPath(cameFrom, currentId) {
     }
     return totalPath;
 }
-
-// Expose on window for experimentation
-if (typeof window !== 'undefined') {
-    window._findSemanticPath = findSemanticPath;
-}

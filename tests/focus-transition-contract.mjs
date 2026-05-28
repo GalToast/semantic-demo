@@ -83,7 +83,7 @@ async function waitForAppReady(page) {
     return (
       document.querySelector('#canvas-container canvas') !== null &&
       window.__TEST_STATE__ !== undefined &&
-      window.__TEST_STATE__.scene !== undefined
+      (window.__APP_STATE__ ?? window.__TEST_STATE__).scene !== undefined
     );
   }, { timeout: 12000 }).catch(() => {});
   // Allow initial animations to settle

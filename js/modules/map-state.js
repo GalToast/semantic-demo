@@ -508,5 +508,3 @@ export function zoomMap(multiplier) {
         state.map.zoomOut();
     }
 }
-
-window.zoomMap = zoomMap;

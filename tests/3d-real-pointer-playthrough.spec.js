@@ -21,34 +21,34 @@ async function getInteractionState(page) {
     hoverHighlightIndex: window.__TEST_STATE__?.hoverHighlightIndex ?? null,
     stableCanvasHover: window.__TEST_STATE__?.stableCanvasHover
       ? {
-          index: window.__TEST_STATE__.stableCanvasHover.index,
-          source: window.__TEST_STATE__.stableCanvasHover.source || '',
-          distance: window.__TEST_STATE__.stableCanvasHover.distance ?? null
+          index: (window.__APP_STATE__ ?? window.__TEST_STATE__).stableCanvasHover.index,
+          source: (window.__APP_STATE__ ?? window.__TEST_STATE__).stableCanvasHover.source || '',
+          distance: (window.__APP_STATE__ ?? window.__TEST_STATE__).stableCanvasHover.distance ?? null
         }
       : null,
     lastCanvasNodeHover: window.__TEST_STATE__?.lastCanvasNodeHover
       ? {
-          index: window.__TEST_STATE__.lastCanvasNodeHover.index,
-          source: window.__TEST_STATE__.lastCanvasNodeHover.source || '',
-          distance: window.__TEST_STATE__.lastCanvasNodeHover.distance ?? null
+          index: (window.__APP_STATE__ ?? window.__TEST_STATE__).lastCanvasNodeHover.index,
+          source: (window.__APP_STATE__ ?? window.__TEST_STATE__).lastCanvasNodeHover.source || '',
+          distance: (window.__APP_STATE__ ?? window.__TEST_STATE__).lastCanvasNodeHover.distance ?? null
         }
       : null,
     lastCanvasNodePick: window.__TEST_STATE__?.lastCanvasNodePick
       ? {
-          index: window.__TEST_STATE__.lastCanvasNodePick.index,
-          source: window.__TEST_STATE__.lastCanvasNodePick.source || '',
-          screenX: window.__TEST_STATE__.lastCanvasNodePick.screenX,
-          screenY: window.__TEST_STATE__.lastCanvasNodePick.screenY,
-          distance: window.__TEST_STATE__.lastCanvasNodePick.distance ?? null
+          index: (window.__APP_STATE__ ?? window.__TEST_STATE__).lastCanvasNodePick.index,
+          source: (window.__APP_STATE__ ?? window.__TEST_STATE__).lastCanvasNodePick.source || '',
+          screenX: (window.__APP_STATE__ ?? window.__TEST_STATE__).lastCanvasNodePick.screenX,
+          screenY: (window.__APP_STATE__ ?? window.__TEST_STATE__).lastCanvasNodePick.screenY,
+          distance: (window.__APP_STATE__ ?? window.__TEST_STATE__).lastCanvasNodePick.distance ?? null
         }
       : null,
     lastCanvasNodeFocusPick: window.__TEST_STATE__?.lastCanvasNodeFocusPick
       ? {
-          index: window.__TEST_STATE__.lastCanvasNodeFocusPick.index,
-          source: window.__TEST_STATE__.lastCanvasNodeFocusPick.source || '',
-          screenX: window.__TEST_STATE__.lastCanvasNodeFocusPick.screenX,
-          screenY: window.__TEST_STATE__.lastCanvasNodeFocusPick.screenY,
-          distance: window.__TEST_STATE__.lastCanvasNodeFocusPick.distance ?? null
+          index: (window.__APP_STATE__ ?? window.__TEST_STATE__).lastCanvasNodeFocusPick.index,
+          source: (window.__APP_STATE__ ?? window.__TEST_STATE__).lastCanvasNodeFocusPick.source || '',
+          screenX: (window.__APP_STATE__ ?? window.__TEST_STATE__).lastCanvasNodeFocusPick.screenX,
+          screenY: (window.__APP_STATE__ ?? window.__TEST_STATE__).lastCanvasNodeFocusPick.screenY,
+          distance: (window.__APP_STATE__ ?? window.__TEST_STATE__).lastCanvasNodeFocusPick.distance ?? null
         }
       : null,
     canvasCursor: window.__TEST_STATE__?.renderer?.domElement?.style?.cursor ?? '',
@@ -57,8 +57,8 @@ async function getInteractionState(page) {
     navMode: window.__TEST_STATE__?.navState?.mode ?? '',
     canvasRect: window.__TEST_STATE__?.renderer?.domElement
       ? {
-          width: window.__TEST_STATE__.renderer.domElement.clientWidth,
-          height: window.__TEST_STATE__.renderer.domElement.clientHeight
+          width: (window.__APP_STATE__ ?? window.__TEST_STATE__).renderer.domElement.clientWidth,
+          height: (window.__APP_STATE__ ?? window.__TEST_STATE__).renderer.domElement.clientHeight
         }
       : null
   }));

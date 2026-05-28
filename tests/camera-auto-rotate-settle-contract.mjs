@@ -76,7 +76,7 @@ console.log('  OK clearAutoRotateResumeTimer reset contract is intact');
 
 console.log('\n[TEST] scheduleAutoRotateResume blocks on all idle-orbit gates');
 [
-  "window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true",
+  'prefersReducedMotion()',
   '!state.autoRotate',
   "state.currentView !== 'galaxy'",
   'state.focusedNode !== null',
