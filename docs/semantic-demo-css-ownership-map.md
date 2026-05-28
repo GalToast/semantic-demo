@@ -1,7 +1,7 @@
 # Semantic Demo CSS Ownership Map
 
 Status: active
-Updated: 2026-05-19
+Updated: 2026-05-28
 
 ## Purpose
 
@@ -10,6 +10,17 @@ Updated: 2026-05-19
 Use this map to find the module that owns a UI surface before changing mobile layout, density, stacking, or state behavior. Do not re-add moved rules to `semantic-demo.css`.
 
 The module order below is the cascade order. The first reconstruction preserved the original monolithic stylesheet as contiguous ranges, so moving rules between modules is a behavior change unless the cascade is re-verified.
+
+## Current Recommendation
+
+Treat CSS state ownership as the next cleanup seam. Do not move visual rules yet unless a surface has a failing contract or a specific visual bug. The useful work now is to keep state docs and contracts aligned with the actual cascade so later visual edits land in the right module.
+
+Priority:
+
+1. Keep `data-panel-surface` as the primary panel/sheet state gate.
+2. Keep `data-panel-surface-detail` as the CSS-facing search drawer detail gate.
+3. Keep route/camera choreography attributes (`data-route-director`, `data-mobile-route-peek`, `data-terrain-handoff`, `data-camera-assist`, `data-route-motion`) narrow and transient.
+4. Avoid adding new selectors to broad modules (`css/progressive_disclosure.css`, `css/strands.css`, `css/mobile_base.css`) unless the ownership map is updated in the same change.
 
 ## Module Map
 
@@ -48,13 +59,16 @@ Primary source:
 
 - Markup: `vector-explorer-polished.html`, `.search-container`, `#synthesize-trigger`, `#search-results`
 - State: `js/modules/search-state.js`, `setSearchPanelState()`, `renderSearchResultItems()`
-- Current cascade owner: `css/mobile_base.css`, section `CSS OWNER: mobile-search-results`
-- Supporting styles: `css/search.css`, `css/layout_base.css`, `css/progressive_disclosure.css`, `css/strands.css`
+- Current cascade owners: `css/search.css` for shared search/result primitives, `css/mobile_premium_chrome.css` for final mobile drawer/chrome polish, `css/mobile_premium_state.css` for `peek`/`expanded` state layout, and `css/mobile_premium_surfaces.css` for late geometry corrections.
+- Supporting legacy/base styles: `css/mobile_base.css`, `css/layout_base.css`, `css/progressive_disclosure.css`, `css/strands.css`
 
 Rules:
 
-- Edit the labeled owner block in `css/mobile_base.css` first for mobile search/result drawer layout, density, count, expanded-results, result-card polish, route-peek suppression, and summary CTA mobile behavior.
-- Use supporting modules only when changing shared/base behavior. Do not add another late mobile override in an unrelated module until the owner block cannot safely express the state.
+- Edit `css/search.css` first for shared result-card semantics and desktop/mobile primitive styling.
+- Edit `css/mobile_premium_state.css` first for `data-panel-surface-detail="peek"` or `"expanded"` behavior.
+- Edit `css/mobile_premium_chrome.css` first for mobile search drawer chrome, controls, and polish.
+- Use `css/mobile_premium_surfaces.css` only for late geometry corrections that must load after state/chrome rules.
+- Treat `css/mobile_base.css`, `css/progressive_disclosure.css`, and `css/strands.css` as legacy/supporting surfaces for this seam; avoid new overrides there unless a contract or visual proof requires it.
 - Preserve these state contracts: `.has-query`, `.results-rendered`, `.has-expanded-results`, `#search-results.active`, `#search-results.is-expanded`, `data-mobile-route-peek`, `data-panel-surface="search"`, `data-panel-surface="focus-search"`, `data-active-view="map"`, and transition-only `data-semantic-dive`.
 
 ## Mobile Focus And Step Inside
@@ -65,12 +79,15 @@ Primary source:
 
 - Markup: `vector-explorer-polished.html`, `.focus-stage`, `.focus-stage-card`, `.focus-stage-inside-status`, `.focus-stage-inside-controls`
 - State: `data-panel-surface="focus"`, `data-panel-surface="focus-search"`, `data-panel-surface="semantic-dive"`, and transition-only `data-semantic-dive="transitioning"`
-- Current cascade owner: `css/mobile_base.css`, section `CSS OWNER: mobile-focus-stepinside`
-- Supporting styles: `css/journey_steps.css`, `css/strands.css`, `css/progressive_disclosure.css`, `css/shell.css`
+- Current cascade owners: `css/journey_active.css` for active journey/field-node choreography, `css/mobile_premium_focus.css` for final mobile focus-search and semantic-dive composition, and `css/mobile_premium_surfaces.css` for late canopy/bottom-sheet geometry corrections.
+- Supporting legacy/base styles: `css/journey_steps.css`, `css/mobile_base.css`, `css/strands.css`, `css/progressive_disclosure.css`, `css/shell.css`
 
 Rules:
 
-- Edit the labeled owner block in `css/mobile_base.css` first for mobile Step Inside HUD layout, readable focused-business title, inside status row, and inside control buttons.
+- Edit `css/journey_active.css` first for field-node/route choreography and journey-compass state behavior.
+- Edit `css/mobile_premium_focus.css` first for mobile focus-search or semantic-dive composition.
+- Edit `css/mobile_premium_surfaces.css` only for late loaded geometry correction after focus/state rules.
+- Treat `css/mobile_base.css`, `css/progressive_disclosure.css`, and `css/strands.css` as supporting legacy surfaces; do not add new focus HUD ownership there without updating this map.
 - Preserve hidden-state behavior for `.focus-stage-journey`, `.focus-stage-neighbors`, `.focus-thread-inspector`, `.trail-controls`, and `.trail-context`; those are state-machine surfaces, not decorative duplicates.
 - Do not consolidate Step Inside vignette or camera-motion selectors without live video proof.
 
@@ -92,7 +109,7 @@ Phase 1: root stylesheet modularization is active. `semantic-demo.css` imports t
 
 Phase 2: reduce duplicate mobile rules inside `css/mobile_base.css`, `css/progressive_disclosure.css`, and adjacent supporting modules one selector family at a time:
 
-- `.search-results.active` — owned across `css/search.css` (4), `css/layout_base.css` (2), `css/journey_active.css` (1), `css/progressive_disclosure.css` (3), `css/strands.css` (13), `css/mobile_premium_chrome.css` (7), `css/mobile_premium_state.css` (6), `css/mobile_premium_surfaces.css` (1). The baseline count is tracked in `tests/css-ownership-check.mjs`; any new definition beyond these owners will trigger a violation.
+- `.search-results.active` — owned across `css/search.css` (3), `css/layout_base.css` (2), `css/journey_active.css` (1), `css/progressive_disclosure.css` (3), `css/strands.css` (8), `css/mobile_premium_chrome.css` (7), `css/mobile_premium_state.css` (6), `css/mobile_premium_surfaces.css` (1), `css/animations.css` (1). The baseline count is tracked in `tests/css-ownership-check.mjs`; any new definition beyond these owners will trigger a violation.
 
 - `#search-results.active`
 - `.search-results-count`

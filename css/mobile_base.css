@@ -50,13 +50,6 @@
         margin-bottom: 4px;
     }
 
-    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-title {
-        font-size: 16px;
-        font-weight: 800;
-        margin-top: 0;
-        letter-spacing: -0.01em;
-    }
-
     html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-rail {
         display: none;
     }

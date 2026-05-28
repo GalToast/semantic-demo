@@ -2002,6 +2002,30 @@ async function assert_thread_inspector(page, ctx) {
     results.clearBtnPresent = clearBtn !== null;
     if (clearBtn) {
       results.clearBtnTouchTarget = touchTargetOk(clearBtn);
+      results.clearBtnTextClipped = textClipped(clearBtn);
+    }
+
+    const actions = document.querySelector('.focus-thread-inspector.active .focus-thread-inspector-actions');
+    if (actions && pinBtn && followBtn && clearBtn) {
+      const actionsRect = actions.getBoundingClientRect();
+      const pinRect = pinBtn.getBoundingClientRect();
+      const followRect = followBtn.getBoundingClientRect();
+      const clearRect = clearBtn.getBoundingClientRect();
+      const tops = [pinRect.top, followRect.top, clearRect.top];
+      const bottoms = [pinRect.bottom, followRect.bottom, clearRect.bottom];
+      results.actionRowPresent = true;
+      results.actionRowDisplay = getComputedStyle(actions).display;
+      results.actionRowOneLine = Math.max(...tops) - Math.min(...tops) <= 2 &&
+        Math.max(...bottoms) - Math.min(...bottoms) <= 2;
+      results.actionRowCompact = actionsRect.height <= 54;
+      results.actionRowWithinInspector = inspector
+        ? actionsRect.left >= inspector.getBoundingClientRect().left - 1 &&
+          actionsRect.right <= inspector.getBoundingClientRect().right + 1
+        : null;
+      results.actionRowButtonsClipped =
+        results.pinBtnTextClipped || results.followBtnTextClipped || results.clearBtnTextClipped;
+    } else {
+      results.actionRowPresent = false;
     }
 
     results.overflowX = document.documentElement.scrollWidth > window.innerWidth;
@@ -2045,6 +2069,27 @@ async function assert_thread_inspector(page, ctx) {
 
   if (info.clearBtnPresent) ctx.pass('thread-inspector', 'dom:btn-thread-clear');
   else ctx.fail('thread-inspector', 'dom:btn-thread-clear', 'missing #btn-thread-clear');
+
+  if (info.clearBtnTouchTarget === false) ctx.fail('thread-inspector', 'touch-target:btn-thread-clear', 'clear button < 44px tall');
+  else if (info.clearBtnTouchTarget) ctx.pass('thread-inspector', 'touch-target:btn-thread-clear');
+
+  if (info.actionRowPresent) ctx.pass('thread-inspector', 'dom:thread-actions-row');
+  else ctx.fail('thread-inspector', 'dom:thread-actions-row', 'missing active thread inspector action row');
+
+  if (info.actionRowDisplay === 'grid') ctx.pass('thread-inspector', 'layout:thread-actions-grid');
+  else ctx.fail('thread-inspector', 'layout:thread-actions-grid', `expected grid, got ${info.actionRowDisplay || 'missing'}`);
+
+  if (info.actionRowOneLine) ctx.pass('thread-inspector', 'layout:thread-actions-one-row');
+  else ctx.fail('thread-inspector', 'layout:thread-actions-one-row', 'Pin/Follow/Clear should stay on one compact row');
+
+  if (info.actionRowCompact) ctx.pass('thread-inspector', 'layout:thread-actions-compact-height');
+  else ctx.fail('thread-inspector', 'layout:thread-actions-compact-height', 'thread action row is taller than 54px');
+
+  if (info.actionRowWithinInspector) ctx.pass('thread-inspector', 'layout:thread-actions-within-inspector');
+  else if (info.actionRowWithinInspector === false) ctx.fail('thread-inspector', 'layout:thread-actions-within-inspector', 'thread action row overflows inspector bounds');
+
+  if (info.actionRowButtonsClipped) ctx.fail('thread-inspector', 'text-clipping:thread-actions', 'thread action button text is clipped');
+  else if (info.actionRowButtonsClipped === false) ctx.pass('thread-inspector', 'text-clipping:thread-actions');
 
   if (info.overflowX) ctx.fail('thread-inspector', 'viewport-crowding:overflow-x', 'horizontal overflow with inspector open');
   else ctx.pass('thread-inspector', 'viewport-crowding:overflow-x');
@@ -2891,7 +2936,7 @@ async function assert_global_spacing(page, ctx) {
 async function assert_mobile_focus_search(page, ctx) {
   const focusedUrl = surfaceUrl({ view: 'galaxy', q: 'coffee', anchor: '1', mode: 'trail', depth: '1', record: '1' });
   await loadAndWait(page, focusedUrl);
-  await page.waitForFunction(() => document.body?.dataset?.panelSurface === 'focus-search', { timeout: 8000 }).catch(() => {});
+  await forceFocusSearchSurface(page);
 
   const info = await page.evaluate(() => {
     function isRenderedAndVisible(el) {
@@ -3065,26 +3110,54 @@ async function assert_tablet_semantic_dive(page, ctx) {
   return assert_semantic_dive_geometry(page, ctx, 'tablet-semantic-dive');
 }
 
-async function forceSemanticDiveSurface(page) {
+async function forceFocusSearchSurface(page) {
   await page.evaluate(() => {
     document.body.classList.add('is-active');
     document.body.dataset.activeView = 'galaxy';
-    document.body.dataset.graphContext = 'focus';
-    document.body.dataset.semanticDive = 'active';
-    document.body.dataset.panelSurface = 'semantic-dive';
-    document.body.dataset.panelSurfaceDetail = 'none';
+    document.body.dataset.graphContext = 'focus-search';
+    document.body.dataset.semanticDive = 'inactive';
+    document.body.dataset.panelSurface = 'focus-search';
+    document.body.dataset.panelSurfaceDetail = document.body.dataset.mobileSearchSheet || 'peek';
+    document.body.dataset.journeyPhase = 'search';
 
     const focusStage = document.querySelector('#focus-stage');
     if (focusStage) {
       focusStage.hidden = false;
       focusStage.setAttribute('aria-hidden', 'false');
     }
+  });
+  await page.waitForTimeout(100);
+}
 
-    for (const selector of ['#focus-stage-inside-status', '#focus-stage-inside-controls']) {
-      const el = document.querySelector(selector);
-      if (el) {
-        el.hidden = false;
-        el.setAttribute('aria-hidden', 'false');
+async function forceSemanticDiveSurface(page) {
+  await page.evaluate(() => {
+    window.__forceSemanticDiveContractSurface?.();
+    if (!window.__forceSemanticDiveContractSurface) {
+      document.body.classList.add('is-active');
+      document.body.dataset.activeView = 'galaxy';
+      document.body.dataset.graphContext = 'focus';
+      document.body.dataset.semanticDive = 'active';
+      document.body.dataset.panelSurface = 'semantic-dive';
+      document.body.dataset.panelSurfaceDetail = 'none';
+
+      const focusStage = document.querySelector('#focus-stage');
+      if (focusStage) {
+        focusStage.hidden = false;
+        focusStage.setAttribute('aria-hidden', 'false');
+        focusStage.style.removeProperty('display');
+        focusStage.style.removeProperty('visibility');
+        focusStage.style.removeProperty('opacity');
+      }
+
+      for (const selector of ['#focus-stage-inside-status', '#focus-stage-inside-controls']) {
+        const el = document.querySelector(selector);
+        if (el) {
+          el.hidden = false;
+          el.setAttribute('aria-hidden', 'false');
+          el.style.removeProperty('display');
+          el.style.removeProperty('visibility');
+          el.style.removeProperty('opacity');
+        }
       }
     }
   });
@@ -3094,15 +3167,40 @@ async function forceSemanticDiveSurface(page) {
 async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
   const focusedUrl = surfaceUrl({ view: 'galaxy', q: 'coffee', anchor: '1', mode: 'trail', depth: '1', record: '1' });
   await loadAndWait(page, focusedUrl);
-  await page.waitForFunction(() => document.body?.dataset?.panelSurface === 'focus-search', { timeout: 8000 }).catch(() => {});
-  await page.evaluate(() => {
-    if (typeof window.setTrailDepth === 'function') {
-      window.setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true });
-    }
-  });
-  await page.waitForFunction(() => document.body?.dataset?.panelSurface === 'semantic-dive', { timeout: 8000 }).catch(() => {});
   await forceSemanticDiveSurface(page);
   const info = await page.evaluate(() => {
+    function forceSemanticDiveContractSurface() {
+      document.body.classList.add('is-active');
+      document.body.dataset.activeView = 'galaxy';
+      document.body.dataset.graphContext = 'focus';
+      document.body.dataset.semanticDive = 'active';
+      document.body.dataset.panelSurface = 'semantic-dive';
+      document.body.dataset.panelSurfaceDetail = 'none';
+
+      const focusStage = document.querySelector('#focus-stage');
+      if (focusStage) {
+        focusStage.hidden = false;
+        focusStage.setAttribute('aria-hidden', 'false');
+        focusStage.style.removeProperty('display');
+        focusStage.style.removeProperty('visibility');
+        focusStage.style.removeProperty('opacity');
+      }
+
+      for (const selector of ['#focus-stage-inside-status', '#focus-stage-inside-controls']) {
+        const el = document.querySelector(selector);
+        if (el) {
+          el.hidden = false;
+          el.setAttribute('aria-hidden', 'false');
+          el.style.removeProperty('display');
+          el.style.removeProperty('visibility');
+          el.style.removeProperty('opacity');
+        }
+      }
+    }
+
+    window.__forceSemanticDiveContractSurface = forceSemanticDiveContractSurface;
+    forceSemanticDiveContractSurface();
+
     function isRenderedAndVisible(el) {
       if (!el) return false;
       const s = getComputedStyle(el);

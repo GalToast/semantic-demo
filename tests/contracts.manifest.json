@@ -176,6 +176,7 @@
         "design-token-doc-contract.mjs",
         "surface-style-matrix-contract.mjs",
         "focus-stage-css-ownership-contract.mjs",
+        "css-transient-state-ownership-contract.mjs",
         "ui-quality-contract.mjs",
         "micro-surface-interactions-contract.mjs",
         "surface-redundancy-contract.mjs",

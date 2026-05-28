@@ -449,7 +449,7 @@ async function captureState(page, name) {
             ? Math.floor(lines.geometry.attributes.position.count / 2)
             : 0,
           connectionPairCount: Array.isArray(window.__TEST_STATE__?.routeTraceConnectionPairs)
-            ? window.__TEST_STATE__.routeTraceConnectionPairs.length
+            ? (window.__APP_STATE__ ?? window.__TEST_STATE__).routeTraceConnectionPairs.length
             : 0,
           motionProbe: window.__routeTraceMotionProbe || null,
         };
@@ -765,7 +765,7 @@ async function run() {
               document.body.dataset.graphContext = 'focus-search';
               document.body.dataset.activeView = 'galaxy';
               document.body.dataset.fieldStepSync = 'active';
-              if (typeof window.refreshCompositionState === 'function') window.refreshCompositionState();
+              if (typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function') (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState)();
             });
             await mobilePage.waitForTimeout(300);
             await captureMaybe(states, mobilePage, '04-mobile-field-node-active');
@@ -927,32 +927,39 @@ async function run() {
               focusStage.classList.add('active');
             }
 
+            const debugProbesEnabled = (typeof window.__DEBUG_PROBES__ === 'undefined' ? true : window.__DEBUG_PROBES__);
+
             const candidate = (state.navState?.threadCandidates || [])
               .find((item) => item && Number.isFinite(item.index) && item.index !== seedIndex);
-            const renderThreadInspection =
-              typeof window._ti?.renderThreadInspection === 'function' ? window._ti.renderThreadInspection :
-              typeof window.renderThreadInspection === 'function' ? window.renderThreadInspection :
-              null;
-            const inspectThreadNeighbor =
-              typeof window._ti?.inspectThreadNeighbor === 'function' ? window._ti.inspectThreadNeighbor :
-              typeof window.inspectThreadNeighbor === 'function' ? window.inspectThreadNeighbor :
-              null;
-            let inspectionState = null;
-            if (candidate && inspectThreadNeighbor) {
-              inspectionState = inspectThreadNeighbor(candidate.index, { force: true, surface: 'inspector' });
-            }
-            if (candidate && !inspectionState?.active && renderThreadInspection) {
+
+            if (debugProbesEnabled && candidate) {
               state.inspectedThreadIndex = candidate.index;
-              inspectionState = renderThreadInspection(candidate.index, { force: true, surface: 'inspector' });
+              const renderThreadInspection =
+                typeof window._ti?.renderThreadInspection === 'function' ? window._ti.renderThreadInspection :
+                typeof window.renderThreadInspection === 'function' ? window.renderThreadInspection :
+                null;
+              const inspectThreadNeighbor =
+                typeof window._ti?.inspectThreadNeighbor === 'function' ? window._ti.inspectThreadNeighbor :
+                typeof window.inspectThreadNeighbor === 'function' ? window.inspectThreadNeighbor :
+                null;
+              let inspectionState = null;
+              if (inspectThreadNeighbor) {
+                inspectionState = inspectThreadNeighbor(candidate.index, { force: true, surface: 'inspector' });
+              }
+              if (!inspectionState?.active && renderThreadInspection) {
+                inspectionState = renderThreadInspection(candidate.index, { force: true, surface: 'inspector' });
+              }
+              if (typeof window._ti?.updateInspectedStrandOverlay === 'function') {
+                window._ti.updateInspectedStrandOverlay(performance.now());
+              }
+              window.__visualThreadInspectorProbe = {
+                candidateIndex: candidate.index,
+                active: !!inspectionState?.active,
+                diagnostics: { ...(state.inspectedStrandDiagnostics || {}) },
+              };
+            } else if (!debugProbesEnabled) {
+              console.warn('[visual-state-audit] __DEBUG_PROBES__ is false; skipping _ti-dependent thread-inspector calls');
             }
-            if (typeof window._ti?.updateInspectedStrandOverlay === 'function') {
-              window._ti.updateInspectedStrandOverlay(performance.now());
-            }
-            window.__visualThreadInspectorProbe = {
-              candidateIndex: candidate?.index ?? null,
-              active: !!inspectionState?.active,
-              diagnostics: { ...(state.inspectedStrandDiagnostics || {}) },
-            };
 
             document.querySelectorAll('#btn-thread-pin, #btn-thread-follow, #btn-thread-clear').forEach((btn) => {
               btn.disabled = false;

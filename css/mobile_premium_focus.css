@@ -260,6 +260,22 @@
         border-radius: 8px;
     }
 
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-journey.active {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) 44px;
+        align-items: center;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .focus-stage-journey-btn {
+        width: 44px;
+        min-width: 44px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
     /* ----------------------------------------------------------------
        5. Focus stage — dive button + neighbors
        ---------------------------------------------------------------- */
@@ -345,7 +361,7 @@
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-note,
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-actions,
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-what,
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-journey.active {
+    html body.is-active[data-panel-surface="focus"]:not([data-panel-surface^="map-"]) #focus-stage .focus-stage-journey.active {
         display: none;
     }
 
@@ -389,10 +405,13 @@
 
     html body.is-active[data-panel-surface="focus-search"] .focus-stage-name,
     html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-name {
+        flex: 0 0 auto;
+        min-height: 16px;
         font-size: 13px;
-        line-height: 1.05;
+        line-height: 1.18;
         letter-spacing: 0;
         color: rgba(249, 255, 252, 0.96);
+        overflow: visible;
     }
 
     html body.is-active[data-panel-surface="focus-search"] .focus-stage-what,
@@ -402,12 +421,29 @@
         color: rgba(238, 248, 244, 0.92);
     }
 
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-what {
+        margin: 0 20px 18px;
+        font-size: 14px;
+        line-height: 1.18;
+        color: rgba(255, 255, 255, 0.7);
+        display: block;
+        height: auto;
+        min-height: 18px;
+        max-height: none;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     /* ----------------------------------------------------------------
        7. Focus stage — dive / inside state
           data-panel-surface="semantic-dive" hides non-essential elements
           and restyles the journey block.
        ---------------------------------------------------------------- */
     html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-status {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 7px;
         position: relative;
         min-height: 32px;
         padding: 7px 12px;
@@ -606,6 +642,15 @@
     html body.is-active[data-panel-surface="focus"] .focus-stage-card,
     html body.is-active[data-panel-surface="focus-search"] .focus-stage-card {
         max-height: min(46dvh, 400px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html body .focus-stage-card,
+        html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card,
+        html body[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card {
+            transition: none;
+            animation-name: none;
+        }
     }
 
     /* ----------------------------------------------------------------

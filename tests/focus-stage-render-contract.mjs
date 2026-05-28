@@ -158,22 +158,26 @@ async function forceFocusSearch(page) {
     document.body.dataset.panelSurface = 'focus-search';
     document.body.dataset.focusPanelMode = 'search-result';
     document.body.dataset.routeDirector = 'search-corridor';
-    if (window.__TEST_STATE__) {
-      window.__TEST_STATE__.currentView = 'galaxy';
-      window.__TEST_STATE__.focusedNode = Number.isFinite(window.__TEST_STATE__.focusedNode) ? window.__TEST_STATE__.focusedNode : 0;
-      window.__TEST_STATE__.navState = window.__TEST_STATE__.navState || {};
-      window.__TEST_STATE__.navState.focusedIndex = Number.isFinite(window.__TEST_STATE__.navState.focusedIndex)
-        ? window.__TEST_STATE__.navState.focusedIndex
-        : window.__TEST_STATE__.focusedNode;
-      window.__TEST_STATE__.navState.trailNeighborIndices = Array.isArray(window.__TEST_STATE__.navState.trailNeighborIndices)
-        && window.__TEST_STATE__.navState.trailNeighborIndices.length
-        ? window.__TEST_STATE__.navState.trailNeighborIndices
+
+    // Apply state via __APP_STATE__ primary, __TEST_STATE__ fallback.
+    // These dataset and state writes are CSS contract fixture setup — acceptable.
+    const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+    if (s) {
+      s.currentView = 'galaxy';
+      s.focusedNode = Number.isFinite(s.focusedNode) ? s.focusedNode : 0;
+      s.navState = s.navState || {};
+      s.navState.focusedIndex = Number.isFinite(s.navState.focusedIndex)
+        ? s.navState.focusedIndex
+        : s.focusedNode;
+      s.navState.trailNeighborIndices = Array.isArray(s.navState.trailNeighborIndices)
+        && s.navState.trailNeighborIndices.length
+        ? s.navState.trailNeighborIndices
         : [1];
-      window.__TEST_STATE__.navState.walkHistoryIndices = [0, window.__TEST_STATE__.navState.focusedIndex];
-      window.__TEST_STATE__.trailDepth = Math.max(1, Number(window.__TEST_STATE__.trailDepth) || 1);
+      s.navState.walkHistoryIndices = [0, s.navState.focusedIndex];
+      s.trailDepth = Math.max(1, Number(s.trailDepth) || 1);
     }
 
-    // Remove hidden attribute so focus-stage and its buttons render
+    // Stage DOM elements for rendering — these are test-only fixture ops.
     const focusStage = document.querySelector('#focus-stage');
     if (focusStage) {
       focusStage.hidden = false;
@@ -187,32 +191,18 @@ async function forceFocusSearch(page) {
       journey.classList.add('active');
     }
     const diveBtn = document.querySelector('#btn-focus-dive');
-    if (diveBtn) {
-      diveBtn.hidden = false;
-      diveBtn.removeAttribute('hidden');
-      diveBtn.inert = false;
-    }
+    if (diveBtn) { diveBtn.hidden = false; diveBtn.removeAttribute('hidden'); diveBtn.inert = false; }
     const prevBtn = document.querySelector('#btn-focus-prev');
-    if (prevBtn) {
-      prevBtn.hidden = false;
-      prevBtn.removeAttribute('hidden');
-      prevBtn.inert = false;
-      prevBtn.disabled = false;
-      prevBtn.setAttribute('aria-disabled', 'false');
-    }
+    if (prevBtn) { prevBtn.hidden = false; prevBtn.removeAttribute('hidden'); prevBtn.inert = false; prevBtn.disabled = false; prevBtn.setAttribute('aria-disabled', 'false'); }
     const nextBtn = document.querySelector('#btn-focus-next');
-    if (nextBtn) {
-      nextBtn.hidden = false;
-      nextBtn.removeAttribute('hidden');
-      nextBtn.inert = false;
-      nextBtn.disabled = false;
-      nextBtn.setAttribute('aria-disabled', 'false');
-    }
+    if (nextBtn) { nextBtn.hidden = false; nextBtn.removeAttribute('hidden'); nextBtn.inert = false; nextBtn.disabled = false; nextBtn.setAttribute('aria-disabled', 'false'); }
   });
   await applyFixture();
   await page.waitForTimeout(300);
   await applyFixture();
   await page.waitForTimeout(50);
+  await applyFixture();
+  await waitForTouchTargets(page, ['btn-focus-dive', 'btn-focus-prev', 'btn-focus-next']);
 }
 
 async function forceSemanticDive(page) {
@@ -255,6 +245,19 @@ async function forceSemanticDive(page) {
   await page.waitForTimeout(300);
   await applyFixture();
   await page.waitForTimeout(50);
+  await applyFixture();
+  await waitForTouchTargets(page, ['btn-inside-next', 'btn-inside-county']);
+}
+
+async function waitForTouchTargets(page, ids) {
+  await page.waitForFunction((targetIds) => targetIds.every((id) => {
+    const el = document.getElementById(id);
+    if (!el) return false;
+    const style = getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width >= 43.5 && rect.height >= 43.5;
+  }), ids, { timeout: 1500 }).catch(() => {});
 }
 
 // ---------------------------------------------------------------------------

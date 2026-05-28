@@ -1,8 +1,8 @@
 # Semantic Demo Focus-Stage CSS Ownership Matrix
 
 Status: active
-Updated: 2026-05-20
-Purpose: Reduce the 676 focus-stage CSS matches across 11 files into a state-by-state owner map and a safe migration sequence.
+Updated: 2026-05-28
+Purpose: Reduce the 464 current focus-stage CSS matches across 12 files into a state-by-state owner map and a safe migration sequence.
 
 ---
 
@@ -10,17 +10,25 @@ Purpose: Reduce the 676 focus-stage CSS matches across 11 files into a state-by-
 
 | File | focus-stage matches | Role |
 |---|---|---|
-| `css/progressive_disclosure.css` | 173 | Legacy visibility/show-hide; late cascade |
-| `css/journey_active.css` | 111 | Active journey, field-node, route surfaces |
-| `css/strands.css` | 102 | Mobile bottom sheet, mobile chrome, route surfaces |
-| `css/journey_steps.css` | 91 | Step Inside, active-trail, state-machine surfaces |
-| `css/mobile_premium_focus.css` | 55 | Mobile focus-search and semantic-dive composition |
+| `css/mobile_premium_focus.css` | 143 | Mobile focus-search and semantic-dive composition; terminal mobile focus-stage-card reduced-motion ownership |
+| `css/journey_steps.css` | 85 | Step Inside, active-trail, state-machine surfaces |
+| `css/journey_active.css` | 82 | Active journey, field-node, route surfaces |
 | `css/clusters.css` | 54 | Selected-card focus/map accent; focus-stage card base |
-| `css/mobile_premium_surfaces.css` | 50 | Mobile bottom-sheet geometry corrections |
-| `css/animations.css` | 35 | Short-landscape/mobile override tail; reduced-motion |
+| `css/mobile_premium_surfaces.css` | 35 | Mobile bottom-sheet geometry corrections |
+| `css/progressive_disclosure.css` | 23 | Legacy visibility/show-hide; late cascade |
+| `css/strands.css` | 22 | Mobile bottom sheet, mobile chrome, route surfaces |
+| `css/animations.css` | 11 | Short-landscape/mobile override tail; reduced-motion |
 | `css/controls.css` | 2 | View toggle, journey btn primitives |
 | `css/mobile_base.css` | 2 | Mobile focus/stepinside owner block |
 | `css/layout_base.css` | 1 | Info panel state overrides; map-focus/trail state |
+| `css/search.css` | 1 | Search-state edge selector |
+
+2026-05-28 guardrail pass:
+- `tests/css-ownership-check.mjs` now ratchets `.focus-stage-card` per-file selector counts.
+- `tests/focus-stage-css-ownership-contract.mjs` now ratchets `strands.css` to its current focus-stage-card and journey-compass counts and blocks new unregistered geometry-owner files.
+- First consolidation target completed: terminal mobile reduced-motion `.focus-stage-card` selectors moved from `mobile_premium_surfaces.css` to `mobile_premium_focus.css`. Do not create a new `css/focus_stage.css` until the focus/mobile contracts stay green after this smaller move.
+- Second consolidation target completed: terminal mobile focus-search `.focus-stage-what`, `.focus-stage-journey.active`, and `.focus-stage-journey-btn` rules moved from `mobile_premium_surfaces.css` to `mobile_premium_focus.css`.
+- Third consolidation target completed: redundant semantic-dive `.focus-stage-kicker`, `.focus-stage-actions`, and `.focus-stage-dive-btn` suppression removed from `mobile_premium_surfaces.css`; `mobile_premium_focus.css` remains the state-specific owner. Trail-control suppression stayed in surfaces pending a separate protected-exception pass.
 
 ---
 
@@ -79,18 +87,20 @@ Minimum verification: `npm run qa:surface:focus` (state: `15-mobile-semantic-div
 
 ---
 
-### State: `map-focus` / `map-focus-search` (activeView="map" + graphContext="focus/focus-search")
+### State: `map-focus` / `map-focus-search` (activeView="map" + panelSurface="map-focus/map-focus-search")
 
 Primary owner: `css/clusters.css` — selected-card map-focus accent and trail-context overrides.
 Support: `css/layout_base.css` — info-panel override for map-focus, compass visibility.
 Legacy/dupe risk: `css/progressive_disclosure.css` (show/hide), `css/journey_steps.css` (focus-stage route dots).
+
+Note: `data-graph-context` was removed from the CSS cascade (2026-05-28). All map-focus and map-focus-search rules now use `data-panel-surface="map-focus"` and `data-panel-surface="map-focus-search"` directly. The `data-graph-context` attribute is no longer used by any CSS rule.
 
 Selectors in play:
 - `body[data-panel-surface="map-focus"] .selected-card`
 - `body[data-panel-surface="map-focus-search"] .selected-card`
 - `body[data-panel-surface="map-focus"] .trail-controls`
 - `body[data-panel-surface="map-focus-search"] .trail-context`
-- `body[data-active-view="map"][data-graph-context="focus"] .journey-compass`
+- `body[data-active-view="map"][data-panel-surface="map-focus"] .journey-compass`
 
 Minimum verification: `npm run qa:contract:map-trail` + `npm run qa:surface:map-trail`
 
@@ -227,6 +237,36 @@ These violations exist in the baseline before any wave-2 surgery. They are track
 **Resolution plan:**
 - `strands.css` +1 over baseline: one duplicate at lines 836–841 is a `body[data-panel-surface="focus"]:has(.search-container.has-query)` / `focus-search`:has / `semantic-dive`:has block that may be removable if the `:has()` variant is redundant with the plain variant already at lines 687–688. **Status: OPEN — requires live proof before removal.** Filed as adjacent unsealed work.
 - `animations.css` +2 over baseline: `html body[data-panel-surface="focus"] .search-results.active` / `focus-search` rules at lines 26–27. **Status: RESOLVED 2026-05-20 — baseline updated to `animations.css: 2` in `tests/css-ownership-check.mjs`.** These are properly owned by animations.css as reduced-motion-adjacent focus/search visibility overrides.
+
+---
+
+## Transient `data-semantic-dive="transitioning"` Guardrail
+
+Added: 2026-05-28
+
+`data-semantic-dive="transitioning"` is a time-boxed transition flag (set during the semantic-dive enter/exit animation window). It may own transient animation overrides but **NOT stable geometry** on focus-stage elements.
+
+**Allowed under transitioning:** transient visual overrides only — `opacity`, `transform`, `pointer-events`, `backdrop-filter`, `transition`, `animation`.
+
+**Forbidden under transitioning:** stable layout/geometry properties — `width`, `height`, `position`, `top`, `left`, `right`, `bottom`, `margin`, `padding`, `border`, `display`, `z-index`, `flex`, `grid`, `float`, `clear`, `overflow`.
+
+**Rationale:** A transition flag that sets stable geometry would permanently affect panel dimensions after the transition ends — causing layout shift, clip, or occlusion that no other state would correct.
+
+**Known compliant use:**
+```css
+/* animations.css — galaxy+transitioning window: restore full opacity during shake animation */
+html body[data-active-view="galaxy"][data-semantic-dive="transitioning"] .focus-stage-card {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    transition: none;
+    backdrop-filter: none;
+}
+```
+
+**Files that must never gain transitioning+stable-geometry combos:** all CSS files under the contract.
+
+**Contract test:** `node tests/focus-stage-css-ownership-contract.mjs` — `transient transitioning-geometry guard: passed`
 
 ---
 

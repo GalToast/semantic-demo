@@ -4,13 +4,13 @@
 
 | Script | Surfaces tested | Viewport |
 |--------|----------------|----------|
-| `qa:contract:all` | all 17 surfaces | mixed |
+| `qa:contract:all` | all 21 surfaces | mixed |
 | `qa:contract:mobile-critical` | mobile-idle, search-chrome, focus-pocket, map-trail, controls, field-node, compass-rail, global-spacing, mobile-semantic-dive-320 | 390x844 mobile + 320px semantic-dive geometry |
 | `qa:contract:mobile-chrome` | search-chrome | 390x844 mobile |
 | `qa:contract:phase-a` | info-panel-empty, compass-rail, loading-overlay, mode-grid | mixed |
 | `qa:contract:phase-b` | filters, thread-inspector, controls, search-chrome, info-panel-populated | mixed |
 
-Named surfaces: `mobile-idle`, `desktop-idle`, `launch-focus`, `search-error`, `map-trail`, `focus-pocket`, `field-node`, `info-panel-empty`, `compass-rail`, `loading-overlay`, `mode-grid`, `filters`, `thread-inspector`, `controls`, `search-chrome`, `info-panel-populated`, `global-spacing`.
+Named surfaces: `mobile-idle`, `desktop-idle`, `launch-focus`, `search-error`, `map-trail`, `focus-pocket`, `field-node`, `info-panel-empty`, `compass-rail`, `loading-overlay`, `mode-grid`, `filters`, `thread-inspector`, `controls`, `search-chrome`, `info-panel-populated`, `global-spacing`, `mobile-focus-search`, `mobile-semantic-dive`, `mobile-semantic-dive-320`, `tablet-semantic-dive`.
 
 ## Visual Audit Scripts (screenshot-based)
 
@@ -58,7 +58,7 @@ Runs the pinned ordered contract suite from `tests/run-all-contracts.js`; `tests
 | `test:contract:motion` | `motion` | camera-controls-motion, focus-pocket-motion, motion-state, camera-auto-rotate-settle, semantic-dive-reverse, focus-transition (6 contracts) |
 | `test:contract:browser` | `browser` | focus-stage-render, info-panel-collapsed-render, mode-chip-state-render, weather-widget-render, connection-analysis-render-state, search-peek-expanded-render (6 contracts, 5-20s each) - Playwright browser launch required |
 | `test:contract:render` | `render` | Same contracts as `browser` - backward-compatible alias; prefer `test:contract:browser` for new scripts |
-| `test:contract:quality` | `quality` | css-manifest-contract, focus-stage-css-ownership-contract, ui-quality-contract, micro-surface-interactions, surface-redundancy, aria-sync-contract, focus-trap-contract, persistence-contract, disposal-hygiene-contract.spec.js (9 contracts; may write tmp reports and fails on UI quality regressions) |
+| `test:contract:quality` | `quality` | css-manifest-contract, focus-stage-css-ownership-contract, css-transient-state-ownership-contract, ui-quality-contract, micro-surface-interactions, surface-redundancy, aria-sync-contract, focus-trap-contract, persistence-contract, disposal-hygiene-contract.spec.js (10 contracts; may write tmp reports and fails on UI quality regressions) |
 | `test:contract:full` | `full` | All pinned contracts in manifest-defined order |
 | `test:contract:phase-a` | phase-a surfaces | info-panel-empty, compass-rail, loading-overlay, mode-grid |
 | `test:contract:phase-b` | phase-b surfaces | filters, thread-inspector, controls, search-chrome, info-panel-populated |

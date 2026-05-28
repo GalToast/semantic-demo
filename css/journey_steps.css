@@ -749,14 +749,24 @@ body[data-thread-inspect-surface="pinned"] .focus-thread-inspector-kicker::after
 }
 
 @media (max-width: 768px) {
-    .focus-thread-inspector-actions {
+    .focus-thread-inspector.active .focus-thread-inspector-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(56px, 0.64fr);
+        align-items: stretch;
         gap: 8px;
     }
 
-    .focus-thread-inspector-btn {
+    .focus-thread-inspector.active .focus-thread-inspector-btn {
         min-height: var(--mobile-touch-min);
-        padding: 8px 11px;
-        font-size: 9px;
+        width: 100%;
+        padding: 0 8px;
+        border-radius: 12px;
+        font-size: 8.25px;
+        line-height: 1;
+        letter-spacing: 0.045em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 

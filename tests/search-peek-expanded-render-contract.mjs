@@ -174,12 +174,21 @@ async function assertPeekMode(page, ctx) {
 
     const firstItemDisplay = firstItem ? getComputedStyle(firstItem).display : null;
     const firstItemRect = firstItem?.getBoundingClientRect();
+    const resultsStyle = results ? getComputedStyle(results) : null;
+    const resultsRect = results?.getBoundingClientRect();
     const firstItemClipped = textClipped(firstRank) || textClipped(firstName);
     const countDisplay = countEl ? getComputedStyle(countEl).display : null;
     const countClipped = textClipped(countEl);
 
     return {
+      panelSurface: document.body.dataset.panelSurface,
+      panelSurfaceDetail: document.body.dataset.panelSurfaceDetail,
       resultsPresent: results !== null,
+      resultsHeight: resultsRect?.height ?? null,
+      resultsComputedHeight: resultsStyle?.height ?? null,
+      resultsMinHeight: resultsStyle?.minHeight ?? null,
+      resultsMaxHeight: resultsStyle?.maxHeight ?? null,
+      resultsFlexBasis: resultsStyle?.flexBasis ?? null,
       firstItemDisplay,
       firstItemHeight: firstItemRect?.height,
       firstItemClipped,
@@ -198,6 +207,42 @@ async function assertPeekMode(page, ctx) {
 
   if (info.resultsPresent) ctx.pass('peek', 'dom:search-results');
   else { ctx.fail('peek', 'dom:search-results', 'missing #search-results'); return info; }
+
+  if (info.panelSurface === 'search' && info.panelSurfaceDetail === 'peek') {
+    ctx.pass('peek', 'state:panel-surface-detail');
+  } else {
+    ctx.fail('peek', 'state:panel-surface-detail', `expected search/peek, got ${info.panelSurface || 'missing'}/${info.panelSurfaceDetail || 'missing'}`);
+  }
+
+  if (info.resultsHeight >= 87.5) {
+    ctx.pass('peek', 'layout:results-height-88px');
+  } else {
+    ctx.fail(
+      'peek',
+      'layout:results-height-88px',
+      `#search-results.active height ${info.resultsHeight}px; expected >= 88px so legacy 62px max-height cannot win`
+    );
+  }
+
+  if (info.resultsMinHeight === '88px' && info.resultsMaxHeight === '88px') {
+    ctx.pass('peek', 'layout:results-min-max-height-88px');
+  } else {
+    ctx.fail(
+      'peek',
+      'layout:results-min-max-height-88px',
+      `computed min/max height ${info.resultsMinHeight}/${info.resultsMaxHeight}; expected 88px/88px`
+    );
+  }
+
+  if (info.resultsFlexBasis === '88px') {
+    ctx.pass('peek', 'layout:results-flex-basis-88px');
+  } else {
+    ctx.fail(
+      'peek',
+      'layout:results-flex-basis-88px',
+      `computed flex-basis ${info.resultsFlexBasis}; expected 88px`
+    );
+  }
 
   if (info.firstItemDisplay !== 'none') ctx.pass('peek', 'visibility:first-result-display-not-none');
   else ctx.fail('peek', 'visibility:first-result-display-not-none', 'first result has display:none');

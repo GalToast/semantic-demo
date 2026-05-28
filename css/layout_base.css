@@ -620,7 +620,8 @@ body:has(.info-panel.active) .panel-toggle {
 
     body[data-panel-surface="focus-search"] .panel-toggle,
     body[data-panel-surface="focus-search"] .share-toggle,
-    body[data-panel-surface="focus-search"] .legend-toggle {
+    body[data-panel-surface="focus-search"] .legend-toggle,
+    body[data-panel-surface="focus-search"] .controls {
         opacity: 0;
         pointer-events: none;
         transform: translateY(8px) scale(0.96);
@@ -644,8 +645,8 @@ body:has(.info-panel.active) .panel-toggle {
         color: rgba(246, 247, 232, 1);
         cursor: pointer;
         transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-        font-family: inherit;
-        font-size: inherit;
+        font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
+        font-size: 12px;
         text-align: left;
     }
 

@@ -38,7 +38,8 @@
  *   clusters.css             — display:none (non-dive default only)
  *
  * FORBIDDEN (always):
- *   - strands.css owning .journey-compass or .focus-stage-card geometry
+ *   - new files owning .journey-compass or .focus-stage-card geometry without
+ *     being added to the current owner registry
  *   - !important in any focus-stage or journey-compass block
  *
  * Usage:
@@ -110,13 +111,36 @@ function hasImportant(cssText, selectorSpec) {
   );
 }
 
-// ─── Forwards-only check ───────────────────────────────────────────────────
-// Accepts the current baseline as-is. Only flags:
-//   1. strands.css owning .journey-compass or .focus-stage-card (always forbidden)
-//   2. !important in any focus-stage or journey-compass block
-//   3. Future duplicate ownership in known non-canonical files. No current
-//      field-node duplicate is asserted here; wave18 verified the earlier
-//      audit claim was a false positive.
+// ─── Transient-data-semantic-dive guard ──────────────────────────────────
+// data-semantic-dive="transitioning" is a time-boxed transition flag.
+// It may own transient animation overrides (opacity, transform, pointer-events,
+// backdrop-filter) but NOT stable geometry (width, height, position, margin,
+// padding, border, display, z-index) on .focus-stage-card, .focus-stage,
+// .focus-stage-kicker, .focus-stage-name, .journey-compass, or .focus-stage-route.
+//
+// Known compliant use (animations.css):
+//   html body[data-active-view="galaxy"][data-semantic-dive="transitioning"] .focus-stage-card { opacity: 1; transform: none; pointer-events: auto; }
+// This is transient reset during the galaxy+transitioning animation window — OK.
+// Any block targeting a stable focus-stage geometry state under transitioning is FORBIDDEN.
+const TRANSIENT_TRANSITIONING_SELECTORS = [
+  '.focus-stage-card',
+  '.focus-stage',
+  '.focus-stage-kicker',
+  '.focus-stage-name',
+  '.journey-compass',
+  '.focus-stage-route',
+];
+
+/**
+ * Check that a block's body does not contain stable geometry properties.
+ * Transient animation overrides (opacity, transform, pointer-events, backdrop-filter,
+ * transition, animation) are allowed; stable layout properties are not.
+ */
+const STABLE_GEOMETRY_RE = /\b(?:width|height|position|top|left|right|bottom|margin|padding|border|display|z-index|flex|grid|float|clear|overflow)\s*:/;
+
+function hasStableGeometry(block) {
+  return STABLE_GEOMETRY_RE.test(block.body);
+}
 
 // Files that must not gain new ownership in certain geometry directly.
 // These are intentionally baseline-tolerant: current counts are accepted,
@@ -125,12 +149,51 @@ const FORWARD_ONLY_LIMITS = [
   {
     file: 'strands.css',
     limits: {
-      '.journey-compass': 110,
-      '.focus-stage-card': 28,
+      '.journey-compass': 40,
+      '.focus-stage-card': 5,
     },
     message: 'strands.css must not gain new journey-compass or focus-stage-card geometry',
   },
+  {
+    file: 'mobile_premium_surfaces.css',
+    limits: {
+      '.journey-compass': 80,
+      '.focus-stage-route': 3,
+      '.focus-stage-kicker': 1,
+      '.focus-stage-actions': 1,
+      '.focus-stage-dive-btn': 8,
+    },
+    message: 'mobile_premium_surfaces.css must keep shrinking focus-stage ownership',
+  },
 ];
+
+const REGISTERED_GEOMETRY_OWNERS = {
+  '.focus-stage-card': new Set([
+    'animations.css',
+    'clusters.css',
+    'journey_active.css',
+    'journey_steps.css',
+    'mobile_base.css',
+    'mobile_premium_focus.css',
+    'progressive_disclosure.css',
+    'strands.css',
+  ]),
+  '.journey-compass': new Set([
+    'animations.css',
+    'clusters.css',
+    'journey_active.css',
+    'journey_steps.css',
+    'layout_base.css',
+    'mobile_base.css',
+    'mobile_premium_chrome.css',
+    'mobile_premium_focus.css',
+    'mobile_premium_state.css',
+    'mobile_premium_surfaces.css',
+    'progressive_disclosure.css',
+    'search.css',
+    'strands.css',
+  ]),
+};
 
 // ─── Run checks ────────────────────────────────────────────────────────────
 
@@ -169,7 +232,35 @@ for (const file of cssFiles) {
     }
   }
 
-  // Reserved for future exact-duplicate checks once a canonical owner is proven.
+  // 3. Check new files do not start owning stable focus-card/compass geometry.
+  for (const [selector, registeredOwners] of Object.entries(REGISTERED_GEOMETRY_OWNERS)) {
+    if (registeredOwners.has(file)) continue;
+    const geometryBlocks = matchingBlocks(content, [selector]).filter(hasStableGeometry);
+    if (geometryBlocks.length) {
+      violations.push(
+        `${file} adds stable geometry for ${selector} without registration in focus-stage-css-ownership-contract`
+      );
+    }
+  }
+
+  // 4. Check transient data-semantic-dive="transitioning" does not own stable geometry.
+  // Only transient animation overrides (opacity, transform, pointer-events) are allowed.
+  for (const sel of TRANSIENT_TRANSITIONING_SELECTORS) {
+    const blocks = selectorRuleBlocks(content).filter(
+      (block) =>
+        block.prelude.includes('data-semantic-dive="transitioning"') &&
+        block.prelude.includes(sel)
+    );
+    for (const block of blocks) {
+      if (hasStableGeometry(block)) {
+        const snippet = block.prelude.slice(0, 60);
+        violations.push(
+          `${file} uses data-semantic-dive="transitioning" with stable geometry on ${sel} — ` +
+          `transient flag may not own position/size/layout. prelude: "${snippet}..."`
+        );
+      }
+    }
+  }
 }
 
 // ─── Report ─────────────────────────────────────────────────────────────────
@@ -186,4 +277,5 @@ if (violations.length) {
 console.log('focus-stage-css-ownership-contract OK');
 console.log('  - !important enforcement: passed');
 console.log('  - forbidden geometry ownership: passed');
+console.log('  - transient transitioning-geometry guard: passed');
 console.log('  - proven canonical-owner checks: passed');

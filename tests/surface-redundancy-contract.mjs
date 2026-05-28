@@ -85,7 +85,7 @@ const registry = [
   {
     primitive: 'focus-stage-card',
     selector: '.focus-stage-card',
-    terminalOwner: 'css/mobile_premium_surfaces.css',
+    terminalOwner: 'css/mobile_premium_focus.css',
     allowedOwners: [
       'css/mobile_base.css',
       'css/journey_steps.css',

@@ -8,6 +8,16 @@
         overflow: hidden;
     }
 
+    html body.is-active[data-panel-surface="focus"] #canvas-container,
+    html body.is-active[data-panel-surface="focus-search"] #canvas-container {
+        pointer-events: none;
+    }
+
+    html body.is-active[data-panel-surface="focus"] .journey-compass,
+    html body.is-active[data-panel-surface="focus-search"] .journey-compass {
+        pointer-events: auto;
+    }
+
     html body.is-active[data-panel-surface="idle"] #canvas-container::before {
         opacity: 0.92;
         background:
@@ -309,7 +319,9 @@
 
     html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-container.has-query,
     html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-container.has-query {
-        height: auto;
+        height: calc(100% - 10px);
+        max-height: calc(100% - 10px);
+        overflow: hidden;
     }
 
     html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results.active,
@@ -609,6 +621,9 @@
 
     html body.is-active[data-panel-surface="idle"] #btn-launch {
         display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
     }
     html body.is-active[data-panel-surface="search"] #btn-launch,
     html body.is-active[data-panel-surface="focus-search"] #btn-launch,
