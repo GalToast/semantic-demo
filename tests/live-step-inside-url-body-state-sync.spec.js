@@ -116,14 +116,14 @@ test.describe('Live Step Inside state sync', () => {
     await searchAndFocusFirstResult(page);
     await clickStepInside(page);
 
-    const mapAction = page.locator('#btn-journey-secondary[data-journey-action="open-map"]');
-    await expect(mapAction, 'Map journey action must exist in the DOM').toHaveCount(1, { timeout: 10000 });
-    await expect(mapAction).toBeVisible({ timeout: 10000 });
-    const box = await mapAction.boundingBox();
+    const mapRoute = page.locator('.journey-compass-step[data-journey-step="map"]');
+    await expect(mapRoute, 'Map journey route must exist in the DOM').toHaveCount(1, { timeout: 10000 });
+    await expect(mapRoute).toBeVisible({ timeout: 10000 });
+    const box = await mapRoute.boundingBox();
     expect(box?.width || 0).toBeGreaterThanOrEqual(44);
     expect(box?.height || 0).toBeGreaterThanOrEqual(44);
 
-    await mapAction.click();
+    await mapRoute.click();
     await page.waitForFunction(() => document.body.dataset.activeView === 'map', { timeout: 15000 });
     await expect(page.locator('#map-container, .leaflet-container').first()).toBeVisible();
   });

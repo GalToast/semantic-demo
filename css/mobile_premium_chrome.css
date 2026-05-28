@@ -219,3 +219,17 @@
     }
 
 } /* end @media chrome polish */
+
+/* ----------------------------------------------------------------
+   Short-landscape: clear overflow at mobile-landscape widths such as
+   896x414, which are wider than the standard max-width:768 mobile gate.
+   ---------------------------------------------------------------- */
+@media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
+    html body.is-active[data-panel-surface][data-panel-surface] .search-container.search-container,
+    html body.is-active[data-panel-surface="search"] .journey-compass.journey-compass,
+    html body.is-active[data-panel-surface="map-trail"] .journey-compass.journey-compass {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+}

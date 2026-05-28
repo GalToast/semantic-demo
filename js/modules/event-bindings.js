@@ -278,6 +278,11 @@ function bindSearchControls() {
         // Onboarding hint intentionally left unimplemented; quarantine per repair goals.
         clearTimeout(state.searchTimeout);
         updateHasQuery();
+        if (!String(query || '').trim()) {
+            state.searchTimeout = null;
+            search(query);
+            return;
+        }
         state.searchTimeout = setTimeout(() => { search(query); }, 300);
     };
     if (searchInput._onInputHandler) searchInput.removeEventListener('input', searchInput._onInputHandler);
