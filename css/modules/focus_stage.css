@@ -523,6 +523,59 @@ body[data-trail-state="active"] .focus-stage-neighbor-pill {
 
 /* ── 5. Responsive Overrides ─────────────────────────────────────────────── */
 
+@media (min-width: 769px) {
+    html body[data-panel-surface="focus"] .focus-stage,
+    html body[data-panel-surface="focus-search"] .focus-stage,
+    html body[data-panel-surface="semantic-dive"] .focus-stage {
+        top: 96px;
+        right: 16px;
+        bottom: 14px;
+        left: auto;
+        width: clamp(320px, 27vw, 392px);
+        min-width: 0;
+        display: flex;
+        align-items: stretch;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-card,
+    html body[data-panel-surface="focus-search"] .focus-stage-card,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card {
+        width: 100%;
+        max-height: 100%;
+        padding: 16px 16px 18px;
+        border-radius: 8px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(121, 235, 222, 0.34) transparent;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-name,
+    html body[data-panel-surface="focus-search"] .focus-stage-name,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-name {
+        font-size: 18px;
+        line-height: 1.05;
+        letter-spacing: 0;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-journey.active,
+    html body[data-panel-surface="focus-search"] .focus-stage-journey.active,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-journey.active {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr) 56px;
+        align-items: stretch;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-journey-btn,
+    html body[data-panel-surface="focus-search"] .focus-stage-journey-btn,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-journey-btn {
+        min-width: 56px;
+        min-height: 52px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+}
+
 @media (max-width: 380px) {
     html body[data-panel-surface="focus-search"] .focus-stage-card {
         max-height: min(45vh, 342px);

@@ -513,6 +513,12 @@
         display: none; /* specificity already exceeds layout/strands content rules */
     }
 
+    html body.is-active[data-panel-surface^="map-"] .info-header {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     html body.is-active[data-panel-surface="map-search"] .journey-compass,
     html body.is-active[data-panel-surface="map-idle"] .journey-compass,
     html body.is-active[data-panel-surface="map-focus"] .journey-compass,

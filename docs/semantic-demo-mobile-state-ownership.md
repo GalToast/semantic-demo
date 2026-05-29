@@ -85,8 +85,9 @@ Mobile map-trail is owned by the map surface, not by the legacy selected-card pa
 - `.map-trail-strip` is visible
 - `.selected-card` remains hidden on mobile map-trail
 - `.search-container` sits below `.map-trail-strip`
+- `.info-header` is suppressed for mobile `map-*` surfaces so the compact `.controls` dock can occupy the open map band above the lower sheet
 
-Edit map trail strip chrome in `css/mobile_premium_chrome.css` and map/search sheet geometry in `css/mobile_premium_state.css` or `css/mobile_premium_surfaces.css`. Do not re-enable `.selected-card` for mobile map-trail unless the contract and this ownership note are intentionally changed together.
+Edit map trail strip chrome in `css/mobile_premium_chrome.css` and map/search sheet geometry in `css/mobile_premium_state.css` or `css/mobile_premium_surfaces.css`. Do not re-enable `.selected-card` or `.info-header` for mobile map surfaces unless the contract and this ownership note are intentionally changed together.
 
 ## Ambiguity Notes
 

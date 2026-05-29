@@ -452,75 +452,6 @@
 
 
 
-        @media (max-width: 768px) {
-            body[data-panel-surface="focus-search"] .focus-stage {
-                left: 12px;
-                right: 12px;
-                bottom: calc(70px + env(safe-area-inset-bottom, 0px));
-                width: auto;
-                z-index: 130;
-            }
-
-            body[data-panel-surface="focus-search"] .focus-stage-card {
-                padding: 8px 9px;
-                border-radius: 14px;
-                max-height: none;
-                overflow-y: auto;
-    overflow-x: hidden;
-            }
-
-            body[data-panel-surface="focus-search"] .focus-stage-kicker,
-            body[data-panel-surface="focus-search"] .focus-stage-what,
-            body[data-panel-surface="focus-search"] .focus-stage-note,
-            body[data-panel-surface="focus-search"] .focus-stage-actions,
-            body[data-panel-surface="focus-search"] .focus-stage-neighbors {
-                display: none;
-            }
-
-            body[data-panel-surface="focus-search"] .focus-stage-name {
-                margin-bottom: 0;
-                font-size: 12px;
-                line-height: 1.1;
-                white-space: nowrap;
-                overflow-y: auto;
-    overflow-x: hidden;
-                text-overflow: ellipsis;
-            }
-
-            body[data-panel-surface="focus-search"] .focus-stage-journey.active {
-                display: grid;
-                grid-template-columns: 44px minmax(0, 1fr) 44px;
-                align-items: center;
-                gap: 6px;
-                margin-top: 6px;
-                padding-top: 6px;
-            }
-
-            body[data-panel-surface="focus-search"] .focus-stage-journey-meta {
-                grid-column: auto;
-                order: 0;
-            }
-
-            body[data-panel-surface="focus-search"] .focus-stage-journey-kicker {
-                font-size: 7px;
-                letter-spacing: 0.58px;
-            }
-
-            body[data-panel-surface="focus-search"] .focus-stage-journey-progress {
-                margin-top: 1px;
-                font-size: 9px;
-                line-height: 1.14;
-                -webkit-line-clamp: 1;
-            }
-
-            body[data-panel-surface="focus-search"] .focus-stage-journey-btn {
-                min-width: 44px;
-                min-height: 44px;
-                padding: 0;
-                border-radius: 11px;
-                font-size: 9px;
-            }
-        }
 
         html body[data-panel-surface="semantic-dive"] #search-results.active,
         html body[data-panel-surface="semantic-dive"] .info-panel,
@@ -530,56 +461,6 @@
             visibility: hidden;
             pointer-events: none;
             transform: translateY(18px) scale(0.985);
-        }
-        /* polish208: mobile cockpit thumb targets without expanding the field overlay. */
-        @media (max-width: 768px) {
-            html body[data-active-view="galaxy"] .journey-compass-action {
-                min-height: 45px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                padding: 0 14px;
-                touch-action: manipulation;
-            }
-
-            html body[data-active-view="galaxy"] .journey-compass-action[hidden] {
-                display: none;
-            }
-
-            html body[data-panel-surface="focus-search"] .journey-compass-actions {
-                gap: 8px;
-            }
-
-            html body[data-panel-surface="focus-search"] .journey-compass-action {
-                min-height: 45px;
-                font-size: 7.5px;
-            }
-
-            html body[data-panel-surface="focus-search"] .focus-stage-journey.active {
-                grid-template-columns: minmax(0, 1fr) minmax(56px, 0.22fr);
-                gap: 7px;
-            }
-
-            html body[data-active-view="galaxy"] .focus-stage-neighbor-list {
-                display: grid;
-                grid-template-columns: minmax(0, 1fr);
-                overflow-x: hidden;
-                padding-bottom: 0;
-            }
-
-            html body[data-active-view="galaxy"] .focus-stage-neighbor-pill {
-                width: 100%;
-                min-width: 0;
-                max-width: 100%;
-            }
-
-            html body[data-panel-surface="focus-search"] #btn-focus-next,
-            html body[data-panel-surface="focus-search"] #btn-focus-prev {
-                min-width: 56px;
-                min-height: 48px;
-                touch-action: manipulation;
-            }
-
         }
 
 @media (prefers-reduced-motion: reduce) {
@@ -926,24 +807,6 @@ body[data-panel-surface="semantic-dive"]::after {
         display: none;
     }
 
-    html body[data-active-view="galaxy"] .focus-stage-neighbor-list,
-    html body[data-panel-surface="focus"] .focus-stage-neighbor-list,
-    html body[data-panel-surface="focus-search"] .focus-stage-neighbor-list {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        grid-auto-flow: row;
-        grid-auto-columns: auto;
-        overflow-x: hidden;
-        padding-bottom: 0;
-    }
-
-    html body[data-active-view="galaxy"] .focus-stage-neighbor-pill,
-    html body[data-panel-surface="focus"] .focus-stage-neighbor-pill,
-    html body[data-panel-surface="focus-search"] .focus-stage-neighbor-pill {
-        width: 100%;
-        min-width: 0;
-        max-width: 100%;
-    }
 }
 
 /* === feature889: sidebar progressive disclosure by journey stage ===
