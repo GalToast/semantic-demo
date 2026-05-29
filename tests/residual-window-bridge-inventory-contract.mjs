@@ -60,7 +60,7 @@ const MODULES = {
   mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'js/modules/map-flattening-layout.js'),
   inspectedStrandOverlayAdapter: path.join(SEMDEMO_ROOT, 'js/modules/inspected-strand-overlay-adapter.js'),
   routeArrivalOverlayAdapter: path.join(SEMDEMO_ROOT, 'js/modules/route-arrival-overlay-adapter.js'),
-  threeSetup: path.join(SEMDEMO_ROOT, 'js/three-setup.js'),
+  threeSetup: path.join(SEMDEMO_ROOT, 'js/modules/three-engine.js'),
 };
 
 // ── HELPERS ────────────────────────────────────────────────────────────────
@@ -608,15 +608,15 @@ function testJourneyArrivalHandoffDewindowed() {
     'journey-webgl.js should register route/arrival overlay frame updaters with the adapter'
   );
   assert(
-    threeSetupSrc.includes("from './modules/route-arrival-overlay-adapter.js'")
+    threeSetupSrc.includes("from './route-arrival-overlay-adapter.js'")
       && threeSetupSrc.includes('updateRouteTraceOverlayFrame(frameNow);')
       && threeSetupSrc.includes('updateArrivalHandoffOverlayFrame(frameNow);'),
-    'three-setup.js should update route/arrival overlays through the adapter'
+    'three-engine.js should update route/arrival overlays through the adapter'
   );
   assert(
     !threeSetupSrc.includes('window.updateRouteTraceOverlayPositions')
       && !threeSetupSrc.includes('window.updateArrivalHandoffOverlay'),
-    'three-setup.js must not call route/arrival overlay update functions through window'
+    'three-engine.js must not call route/arrival overlay update functions through window'
   );
   assert(
     /export function updateRouteTraceOverlayFrame/.test(adapterSrc)
@@ -665,16 +665,16 @@ function testInspectedStrandTopLevelBridgesRetired() {
     'journey/thread-settler modules must not call window.syncInspectedStrandOverlay'
   );
   assert(
-    threeSetupSrc.includes("import { updateInspectedStrandOverlayFrame } from './modules/inspected-strand-overlay-adapter.js';"),
-    'three-setup.js should import the inspected-strand overlay adapter, not thread-inspector.js'
+    threeSetupSrc.includes("import { updateInspectedStrandOverlayFrame } from './inspected-strand-overlay-adapter.js';"),
+    'three-engine.js should import the inspected-strand overlay adapter, not thread-inspector.js'
   );
   assert(
     threeSetupSrc.includes('updateInspectedStrandOverlayFrame(frameNow);'),
-    'three-setup.js should update inspected strand overlay through the adapter'
+    'three-engine.js should update inspected strand overlay through the adapter'
   );
   assert(
     !threeSetupSrc.includes('window.updateInspectedStrandOverlay'),
-    'three-setup.js must not call window.updateInspectedStrandOverlay'
+    'three-engine.js must not call window.updateInspectedStrandOverlay'
   );
   assert(
     threadInspectorSrc.includes('setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay);'),
@@ -752,7 +752,7 @@ function testViewHandoffCameraPreludeBridgeRetired() {
   );
   assert(
     !threeSetupSrc.includes('window.applyMapFlatteningLayout'),
-    'three-setup.js must not expose the retired window.applyMapFlatteningLayout bridge'
+    'three-engine.js must not expose the retired window.applyMapFlatteningLayout bridge'
   );
   assert(
     mapFlatteningLayoutSrc.includes("import { state } from '../state.js';") &&
@@ -851,17 +851,17 @@ function testAudioGlobalsRetiredFromWindow() {
       problems.push(`audio-scape.js unexpectedly exposes window.${name}`);
     }
     if (threeSetupSrc.includes(`window.${name}`)) {
-      problems.push(`three-setup.js unexpectedly calls window.${name}`);
+      problems.push(`three-engine.js unexpectedly calls window.${name}`);
     }
   }
 
   assert(
-    /import\s+\{[^}]*\btriggerCorridorBloom\b[^}]*\}\s+from\s+['"]\.\/modules\/audio-scape\.js['"]/.test(threeSetupSrc),
-    'three-setup.js should import triggerCorridorBloom directly from audio-scape.js'
+    /import\s+\{[^}]*\btriggerCorridorBloom\b[^}]*\}\s+from\s+['"]\.\/audio-scape\.js['"]/.test(threeSetupSrc),
+    'three-engine.js should import triggerCorridorBloom directly from audio-scape.js'
   );
   assert(
     /triggerCorridorBloom\(\);/.test(threeSetupSrc),
-    'three-setup.js should call triggerCorridorBloom directly for corridor animation audio'
+    'three-engine.js should call triggerCorridorBloom directly for corridor animation audio'
   );
   assert(
     problems.length === 0,
@@ -894,16 +894,16 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
     'camera-controls.js must not expose window.applySemanticCentroidCamera'
   );
   assert(
-    /import\s+\{[^}]*\bapplySemanticCentroidCamera\b[^}]*\}\s+from\s+['"]\.\/modules\/camera-controls\.js['"]/.test(threeSetupSrc),
-    'three-setup.js should import applySemanticCentroidCamera directly from camera-controls.js'
+    /import\s+\{[^}]*\bapplySemanticCentroidCamera\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(threeSetupSrc),
+    'three-engine.js should import applySemanticCentroidCamera directly from camera-controls.js'
   );
   assert(
     threeSetupSrc.includes('applySemanticCentroidCamera(frameNow);'),
-    'three-setup.js should call applySemanticCentroidCamera directly during the animation loop'
+    'three-engine.js should call applySemanticCentroidCamera directly during the animation loop'
   );
   assert(
     !threeSetupSrc.includes('window.applySemanticCentroidCamera'),
-    'three-setup.js must not call window.applySemanticCentroidCamera'
+    'three-engine.js must not call window.applySemanticCentroidCamera'
   );
   assert(
     /export\s+\{[\s\S]*\binitJourneyTimerAdapter\b[\s\S]*\}/.test(journeySrc) &&

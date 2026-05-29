@@ -3,7 +3,7 @@ import { restoreFocusTrailState, updateSelectedBusiness } from './journey.js';
 import { SCENE_READY } from './scene-events.js';
 import { loadSemanticThreads } from './semantic-threads.js';
 import { applyFilters } from './search-state.js';
-import { createMycelium } from '../three-setup.js';
+import { createMycelium } from './three-geometry-builder.js';
 import { initWeather } from './weather.js';
 
 export function setLoadingPhase(phaseKey, overrides = {}) {

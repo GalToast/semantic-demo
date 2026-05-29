@@ -16,7 +16,7 @@ import { resolve } from 'node:path';
 const CWD = process.cwd();
 const sceneRevealPath = resolve(CWD, 'js/modules/scene-reveal.js');
 const cameraControlsPath = resolve(CWD, 'js/modules/camera-controls.js');
-const threeSetupPath = resolve(CWD, 'js/three-setup.js');
+const threeSetupPath = resolve(CWD, 'js/modules/three-engine.js');
 
 let sceneRevealSrc;
 try {
@@ -62,8 +62,8 @@ checks.push({
 // Contract C: updateCameraViewportOffset is called through the existing direct import.
 // ---------------------------------------------------------------------------
 checks.push({
-  name: 'imports:updateCameraViewportOffset from three-setup.js',
-  pass: /import\s+\{\s*updateCameraViewportOffset\s*\}\s+from\s+['"]\.\.\/three-setup\.js['"]/.test(sceneRevealSrc),
+  name: 'imports:updateCameraViewportOffset from three-engine.js',
+  pass: /import\s+\{\s*updateCameraViewportOffset\s*\}\s+from\s+['"]\.\/three-engine\.js['"]/.test(sceneRevealSrc),
 });
 
 checks.push({

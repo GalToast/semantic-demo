@@ -1,15 +1,17 @@
-import { switchView } from './modules/view-controller.js';
-import { updateClusterLabels } from './modules/cluster-labels.js';
-import { updateFocusSemanticOverlayPositions } from './modules/journey-webgl.js';
-import { applyFocusPocketBreathing } from './modules/focus-pocket.js';
-import { getSceneRevealProgress } from './modules/scene-reveal.js';
-import { calculateSignalScore } from './utils.js';
+import { switchView } from './view-controller.js';
+import { updateClusterLabels } from './cluster-labels.js';
+import { updateFocusSemanticOverlayPositions } from './journey-webgl.js';
+import { applyFocusPocketBreathing } from './focus-pocket.js';
+import { getSceneRevealProgress } from './scene-reveal.js';
+import { calculateSignalScore } from '../utils.js';
 import * as THREE from 'three';
-window.THREE = THREE;
+if (typeof window !== 'undefined') {
+    window.THREE = THREE;
+}
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
-import { state } from './state.js';
+import { state } from '../state.js';
 import {
     releaseFocusCameraAssist,
     focusCameraAssistIsActive,
@@ -17,8 +19,8 @@ import {
     scheduleAutoRotateResume,
     updateAutoRotateSoftResume,
     applySemanticCentroidCamera
-} from './modules/camera-controls.js';
-import { initMap } from './modules/map-state.js';
+} from './camera-controls.js';
+import { initMap } from './map-state.js';
 import {
     easeInOutCubic,
     easeOutQuint,
@@ -27,23 +29,24 @@ import {
     createSporeTexture,
     createFocusRingTexture,
     createFocusNextCueTexture
-} from './utils.js';
+} from '../utils.js';
 import {
     buildGeometricMyceliumEdges,
     buildSemanticMyceliumEdges,
     pushBezierLinePair,
     updateMyceliumThreads
-} from './modules/mycelium-engine.js';
-import { setSceneRevealDataset } from './modules/scene-reveal.js';
-import { showExperienceToast } from './modules/ui-feedback.js';
-import { applyMapFlatteningLayout } from './modules/map-flattening-layout.js';
-import { triggerCorridorBloom } from './modules/audio-scape.js';
-import { updateInspectedStrandOverlayFrame } from './modules/inspected-strand-overlay-adapter.js';
+} from './mycelium-engine.js';
+import { setSceneRevealDataset } from './scene-reveal.js';
+import { showExperienceToast } from './ui-feedback.js';
+import { applyMapFlatteningLayout } from './map-flattening-layout.js';
+import { triggerCorridorBloom } from './audio-scape.js';
+import { updateInspectedStrandOverlayFrame } from './inspected-strand-overlay-adapter.js';
 import {
     updateArrivalHandoffOverlayFrame,
     updateRouteTraceOverlayFrame
-} from './modules/route-arrival-overlay-adapter.js';
-import { restoreWebGLContext } from './modules/webgl-restore-adapter.js';
+} from './route-arrival-overlay-adapter.js';
+import { restoreWebGLContext } from './webgl-restore-adapter.js';
+import { ResourceTracker } from './resource-tracker.js';
 
 // three-setup.js - Three.js state.scene initialization, state.scene management, animation loop
 // Extracted from vector-explorer-polished.html inline script
@@ -405,14 +408,9 @@ function getPointBoundsCenter(points) {
 
 function disposeObject3D(object) {
     if (!object) return;
-    object.traverse?.((child) => {
-        child.geometry?.dispose?.();
-        if (Array.isArray(child.material)) {
-            child.material.forEach((material) => material?.dispose?.());
-        } else {
-            child.material?.dispose?.();
-        }
-    });
+    const tracker = new ResourceTracker();
+    tracker.track(object);
+    tracker.dispose();
 }
 
 
@@ -1673,10 +1671,7 @@ export function updateSearchCorridorAnimation(frameNow) {
 export function disposeSearchCorridorAnimation() {
     if (state.searchCorridorGroup) {
         state.scene.remove(state.searchCorridorGroup);
-        state.searchCorridorGroup.traverse((child) => {
-            if (child.geometry) child.geometry.dispose();
-            if (child.material) child.material.dispose();
-        });
+        disposeObject3D(state.searchCorridorGroup);
         state.searchCorridorGroup = null;
     }
     _corridorAnimState = null;

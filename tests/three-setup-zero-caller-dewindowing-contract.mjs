@@ -1,7 +1,7 @@
 /**
  * three-setup-zero-caller-dewindowing-contract.mjs
  *
- * Verifies that three-setup.js window bridges are retired as module seams:
+ * Verifies that three-engine.js window bridges are retired as module seams:
  * - window.syncNodeSporeColorsFromPointColors
  * - window.triggerSearchHeroMoment
  * - window.triggerCorridorNodeGlow
@@ -26,7 +26,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const threeSetupPath = resolve(CWD, 'js/three-setup.js');
+const threeSetupPath = resolve(CWD, 'js/modules/three-engine.js');
 
 function read(path, label) {
   try {
@@ -37,7 +37,7 @@ function read(path, label) {
   }
 }
 
-const src = read(threeSetupPath, 'js/three-setup.js');
+const src = read(threeSetupPath, 'js/modules/three-engine.js');
 
 // Retired bridges must not appear as window.* =
 

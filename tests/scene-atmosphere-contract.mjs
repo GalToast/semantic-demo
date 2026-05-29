@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const src = readFileSync(resolve(CWD, 'js/three-setup.js'), 'utf8');
+const src = readFileSync(resolve(CWD, 'js/modules/three-engine.js'), 'utf8');
 const shellCss = readFileSync(resolve(CWD, 'css/shell.css'), 'utf8');
 
 const checks = [

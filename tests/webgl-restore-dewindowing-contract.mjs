@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
 
 const CWD = process.cwd();
 const appPath = resolve(CWD, 'js/modules/app.js');
-const threeSetupPath = resolve(CWD, 'js/three-setup.js');
+const threeSetupPath = resolve(CWD, 'js/modules/three-engine.js');
 const adapterPath = resolve(CWD, 'js/modules/webgl-restore-adapter.js');
 
 function read(path, label) {
@@ -23,7 +23,7 @@ function read(path, label) {
 }
 
 const appSrc = read(appPath, 'js/modules/app.js');
-const threeSetupSrc = read(threeSetupPath, 'js/three-setup.js');
+const threeSetupSrc = read(threeSetupPath, 'js/modules/three-engine.js');
 const adapterSrc = read(adapterPath, 'js/modules/webgl-restore-adapter.js');
 
 const checks = [
@@ -49,7 +49,7 @@ const checks = [
   },
   {
     name: 'three-setup imports restoreWebGLContext',
-    pass: /import\s+\{\s*restoreWebGLContext\s*\}\s+from\s+['"]\.\/modules\/webgl-restore-adapter\.js['"]/.test(threeSetupSrc),
+    pass: /import\s+\{\s*restoreWebGLContext\s*\}\s+from\s+['"]\.\/webgl-restore-adapter\.js['"]/.test(threeSetupSrc),
   },
   {
     name: 'webglcontextrestored path calls restoreWebGLContext',

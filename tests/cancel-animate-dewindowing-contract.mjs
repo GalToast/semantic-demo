@@ -1,7 +1,7 @@
 /**
  * cancel-animate-dewindowing-contract.mjs
  *
- * Guards app.js animation cancellation so it uses the three-setup module export,
+ * Guards app.js animation cancellation so it uses the three-engine module export,
  * not the legacy window.cancelAnimate bridge.
  */
 
@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
 
 const CWD = process.cwd();
 const appPath = resolve(CWD, 'js/modules/app.js');
-const threeSetupPath = resolve(CWD, 'js/three-setup.js');
+const threeSetupPath = resolve(CWD, 'js/modules/three-engine.js');
 
 function read(path, label) {
   try {
@@ -22,16 +22,16 @@ function read(path, label) {
 }
 
 const appSrc = read(appPath, 'js/modules/app.js');
-const threeSetupSrc = read(threeSetupPath, 'js/three-setup.js');
+const threeSetupSrc = read(threeSetupPath, 'js/modules/three-engine.js');
 
 const checks = [
   {
-    name: 'three-setup exports cancelAnimate',
+    name: 'three-engine exports cancelAnimate',
     pass: /export\s+function\s+cancelAnimate\s*\(/.test(threeSetupSrc),
   },
   {
-    name: 'app imports cancelAnimate from three-setup',
-    pass: /import\s+\{[^}]*\bcancelAnimate\b[^}]*\}\s+from\s+['"]\.\.\/three-setup\.js['"]/.test(appSrc),
+    name: 'app imports cancelAnimate from three-engine',
+    pass: /import\s+\{[^}]*\bcancelAnimate\b[^}]*\}\s+from\s+['"]\.\/three-engine\.js['"]/.test(appSrc),
   },
   {
     name: 'app calls cancelAnimate directly before reinit',
@@ -46,7 +46,7 @@ const checks = [
     pass: !/window\.cancelAnimate\b/.test(appSrc),
   },
   {
-    name: 'three-setup does not expose window.cancelAnimate',
+    name: 'three-engine does not expose window.cancelAnimate',
     pass: !/window\.cancelAnimate\s*=/.test(threeSetupSrc),
   },
 ];

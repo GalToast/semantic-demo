@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
 
 const CWD = process.cwd();
 const appPath = resolve(CWD, 'js/modules/app.js');
-const threeSetupPath = resolve(CWD, 'js/three-setup.js');
+const threeSetupPath = resolve(CWD, 'js/modules/three-engine.js');
 
 function read(path, label) {
   try {
@@ -22,20 +22,20 @@ function read(path, label) {
 }
 
 const appSrc = read(appPath, 'js/modules/app.js');
-const threeSetupSrc = read(threeSetupPath, 'js/three-setup.js');
+const threeSetupSrc = read(threeSetupPath, 'js/modules/three-engine.js');
 
 const checks = [
   {
-    name: 'three-setup exports animate',
+    name: 'three-engine exports animate',
     pass: /export\s+function\s+animate\s*\(/.test(threeSetupSrc),
   },
   {
-    name: 'three-setup exports deinit',
+    name: 'three-engine exports deinit',
     pass: /export\s+function\s+deinit\s*\(/.test(threeSetupSrc),
   },
   {
-    name: 'app imports animate from three-setup',
-    pass: /import\s+\{[^}]*\banimate\b[^}]*\}\s+from\s+['"]\.\.\/three-setup\.js['"]/.test(appSrc),
+    name: 'app imports animate from three-engine',
+    pass: /import\s+\{[^}]*\banimate\b[^}]*\}\s+from\s+['"]\.\/three-engine\.js['"]/.test(appSrc),
   },
   {
     name: 'app calls animate directly after graphics init',
@@ -46,11 +46,11 @@ const checks = [
     pass: !/window\.animate\b/.test(appSrc),
   },
   {
-    name: 'three-setup does not expose window.animate',
+    name: 'three-engine does not expose window.animate',
     pass: !/window\.animate\s*=/.test(threeSetupSrc),
   },
   {
-    name: 'three-setup does not expose window.deinit',
+    name: 'three-engine does not expose window.deinit',
     pass: !/window\.deinit\s*=/.test(threeSetupSrc),
   },
 ];

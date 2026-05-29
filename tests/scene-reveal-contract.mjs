@@ -193,7 +193,7 @@ checks.push({
 });
 checks.push({
   name: 'onWindowResize:calls updateCameraViewportOffset() direct import',
-  pass: /import\s*\{\s*updateCameraViewportOffset\s*\}\s*from\s*['"]\.\.\/three-setup\.js['"]/.test(src) &&
+  pass: /import\s*\{\s*updateCameraViewportOffset\s*\}\s*from\s*['"]\.\/three-engine\.js['"]/.test(src) &&
         /function\s+onWindowResize[\s\S]{0,900}?updateCameraViewportOffset\s*\(\s*\)/.test(src) &&
         !/window\.updateCameraViewportOffset\s*\(/.test(src),
 });

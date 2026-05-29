@@ -5,7 +5,7 @@
  * state), the opacity of mycelium LineSegments materials increases from their
  * overview-mode values to their focus-mode values.
  *
- * From js/three-setup.js, getMyceliumPresentationProfile():
+ * From js/modules/three-engine.js, getMyceliumPresentationProfile():
  *   - overview mode:   { core: 0.07, wispy: 0.026, bridge: 0.045, pulse: 0.018 }
  *   - focused mode:    { core: 0.28,  wispy: 0.11,  bridge: 0.18,  pulse: 0.075 }
  *

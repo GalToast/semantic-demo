@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
 import { clearAutoRotateResumeTimer, setAutoRotateSuspended } from './camera-controls.js';
-import { updateCameraViewportOffset } from '../three-setup.js';
+import { updateCameraViewportOffset } from './three-engine.js';
 import { syncClusterSectionState } from './cluster-labels.js';
 import { updateTraversalUi } from './journey.js';
 import { getViewportSize, prefersReducedMotion, isMobileViewport } from './environment.js';

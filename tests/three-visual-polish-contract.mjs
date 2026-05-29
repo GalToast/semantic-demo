@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
-const threeSetupPath = path.join(repoRoot, 'js', 'three-setup.js');
+const threeSetupPath = path.join(repoRoot, 'js', 'modules', 'three-engine.js');
 const threeSetup = fs.readFileSync(threeSetupPath, 'utf8');
 const myceliumEnginePath = path.join(repoRoot, 'js', 'modules', 'mycelium-engine.js');
 const myceliumEngine = fs.readFileSync(myceliumEnginePath, 'utf8');

@@ -313,7 +313,7 @@ export async function readPocketNodeScales(page) {
       ? Object.fromEntries(state.navState.focusPocketRoleByIndex)
       : {};
 
-    // Mirror the private getNodeSporeScale formula in three-setup.js.
+    // Mirror the private getNodeSporeScale formula in three-engine.js.
     // Keep these constants synchronized with that shader scale helper.
     // Formula: BASE * (0.86 + seed(index, 2.7) * 0.48) * emphasis
     // emphasis: anchor=2.15, primary=1.74, support=1.42, other=0.62

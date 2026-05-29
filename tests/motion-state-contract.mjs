@@ -13,7 +13,7 @@ const source = {
   search: readFileSync(resolve(root, 'js/modules/search-state.js'), 'utf8'),
   searchAdapter: readFileSync(resolve(root, 'js/modules/search-panel-adapter.js'), 'utf8'),
   sceneReveal: readFileSync(resolve(root, 'js/modules/scene-reveal.js'), 'utf8'),
-  threeSetup: readFileSync(resolve(root, 'js/three-setup.js'), 'utf8'),
+  threeSetup: readFileSync(resolve(root, 'js/modules/three-engine.js'), 'utf8'),
   journey: readFileSync(resolve(root, 'js/modules/journey.js'), 'utf8'),
   journeyWebgl: readFileSync(resolve(root, 'js/modules/journey-webgl.js'), 'utf8'),
   lifecycle: readFileSync(resolve(root, 'js/modules/lifecycle.js'), 'utf8'),
@@ -43,7 +43,7 @@ const checks = [
   },
   {
     name: 'renderer completion clears scene reveal DOM state',
-    pass: /import\s+\{\s*setSceneRevealDataset\s*\}\s+from\s+['"]\.\/modules\/scene-reveal\.js['"]/.test(source.threeSetup)
+    pass: /import\s+\{\s*setSceneRevealDataset\s*\}\s+from\s+['"]\.\/scene-reveal\.js['"]/.test(source.threeSetup)
       && /revealProgress\s*>=\s*1[\s\S]*?state\.sceneRevealActive\s*=\s*false[\s\S]*?setSceneRevealDataset\s*\(\s*false\s*\)/.test(source.threeSetup),
   },
   {
@@ -72,4 +72,3 @@ for (const check of checks) {
 const passed = checks.length - failed;
 console.log(`motion-state-contract results: ${passed}/${checks.length} passed`);
 if (failed) process.exit(1);
-
