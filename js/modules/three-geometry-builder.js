@@ -1,12 +1,8 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
-import {
-    getThreadCategoryColor,
-    computeOverviewScatterOffsets,
-    createSporeTexture,
-    createFocusRingTexture,
-    createFocusNextCueTexture
-} from '../utils.js';
+import { getThreadCategoryColor } from './utils/ui-presentation.js';
+import { computeOverviewScatterOffsets } from './utils/geo-data.js';
+import { createSporeTexture, createFocusRingTexture, createFocusNextCueTexture } from './utils/three-textures.js';
 import {
     buildGeometricMyceliumEdges,
     buildSemanticMyceliumEdges,

@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { normalizeCityForFilter } from '../utils.js';
+import { normalizeCityForFilter } from './utils/geo-data.js';
 
 /**
  * search-filter-core.js

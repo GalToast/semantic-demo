@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { detectStaticDevPHP } from '../utils.js';
+import { detectStaticDevPHP } from './utils/ui-presentation.js';
 import * as idb from './idb-service.js';
 
 const SEMANTIC_SEARCH_RETRY_DELAYS_MS = [900, 1800];

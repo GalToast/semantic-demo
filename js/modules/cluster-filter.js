@@ -1,5 +1,7 @@
 import { state } from '../state.js';
-import { normalizeCityForFilter, describeCluster, escapeHtml } from '../utils.js';
+import { normalizeCityForFilter } from './utils/geo-data.js';
+import { describeCluster } from './utils/ui-presentation.js';
+import { escapeHtml } from './utils/dom-formatters.js';
 import { resetActiveFilters, setActiveFilter } from './filter-state.js';
 import { applyFilters, clearSearchGlow, updateUrlState, clearShortSemanticSearchState } from './cluster-filter-adapter.js';
 

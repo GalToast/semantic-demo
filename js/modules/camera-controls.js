@@ -2,13 +2,7 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
 import { isMobile, getViewportSize, prefersReducedMotion } from './environment.js';
-import {
-    easeInOutSine,
-    easeInOutCubic,
-    quadraticBezierComponent,
-    easeOutBack,
-    easeOutQuint
-} from '../utils.js';
+import { easeInOutSine, easeInOutCubic, quadraticBezierComponent, easeOutBack, easeOutQuint } from './utils/math-easing.js';
 import { refreshMapRouteEmbodiment } from './map-state.js';
 import {
     refreshCompositionState,

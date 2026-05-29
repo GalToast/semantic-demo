@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { isCompactFocusStageViewport } from '../utils.js';
+import { isCompactFocusStageViewport } from './utils/ui-presentation.js';
 import { syncFilterControls, resetExperienceState, resetExplorationFocus } from './lifecycle.js';
 import { executeJourneyCompassAction } from './journey-compass-controller.js';
 import { traverseNeighbor, setSemanticDiveMode } from './journey.js';

@@ -3,7 +3,8 @@ import { state } from '../state.js';
 import { getViewportSize, prefersReducedMotion } from './environment.js';
 // js/modules/focus-pocket.js — extracted from monolithic HTML
 ;
-import { describeCluster, normalizeCityForFilter } from '../utils.js';
+import { describeCluster } from './utils/ui-presentation.js';
+import { normalizeCityForFilter } from './utils/geo-data.js';
 import { getSemanticThreadCandidates } from './thread-inspector.js';
 
 // === Pure geometry/easing utilities ===

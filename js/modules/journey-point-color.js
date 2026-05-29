@@ -1,10 +1,8 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
-import {
-    describeCluster,
-    formatBusinessName,
-    isPointVisible,
-} from '../utils.js';
+import { describeCluster } from './utils/ui-presentation.js';
+import { formatBusinessName } from './utils/dom-formatters.js';
+import { isPointVisible } from './utils/geo-data.js';
 import { syncSearchStatusForFocus } from './search-lifecycle-adapter.js';
 
 const nodeSporeSyncColor = new THREE.Color();

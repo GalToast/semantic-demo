@@ -8,7 +8,7 @@
  * All window/document accesses are guarded with typeof checks.
  */
 import { state } from '../state.js';
-import { detectStaticDevPHP } from '../utils.js';
+import { detectStaticDevPHP } from './utils/ui-presentation.js';
 import { updateSemanticLaneState } from './state-mutators.js';
 
 let legendGuideStateUpdater = null;

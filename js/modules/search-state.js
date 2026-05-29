@@ -1,9 +1,7 @@
 import { state } from '../state.js';
-import {
-    formatBusinessName,
-    isCompactSearchViewport,
-    pointHasGeocode
-} from '../utils.js';
+import { formatBusinessName } from './utils/dom-formatters.js';
+import { isCompactSearchViewport } from './utils/ui-presentation.js';
+import { pointHasGeocode } from './utils/geo-data.js';
 import {
     fetchSemanticSearchResults,
     getSemanticSearchCacheDiagnostics

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
-import { isPointVisible } from '../utils.js';
+import { isPointVisible } from './utils/geo-data.js';
 
 import { getThreadCandidatesForIndex } from './journey-thread-model.js';
 import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from './journey.js';

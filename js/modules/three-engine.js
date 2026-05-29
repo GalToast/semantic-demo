@@ -3,7 +3,7 @@ import { updateClusterLabels } from './cluster-labels.js';
 import { updateFocusSemanticOverlayPositions } from './journey-webgl.js';
 import { applyFocusPocketBreathing } from './focus-pocket.js';
 import { getSceneRevealProgress } from './scene-reveal.js';
-import { calculateSignalScore } from '../utils.js';
+import { calculateSignalScore } from './utils/geo-data.js';
 import * as THREE from 'three';
 if (typeof window !== 'undefined') {
     window.THREE = THREE;
@@ -21,15 +21,10 @@ import {
     applySemanticCentroidCamera
 } from './camera-controls.js';
 import { initMap } from './map-state.js';
-import {
-    easeInOutCubic,
-    easeOutQuint,
-    getThreadCategoryColor,
-    computeOverviewScatterOffsets,
-    createSporeTexture,
-    createFocusRingTexture,
-    createFocusNextCueTexture
-} from '../utils.js';
+import { easeInOutCubic, easeOutQuint } from './utils/math-easing.js';
+import { getThreadCategoryColor } from './utils/ui-presentation.js';
+import { computeOverviewScatterOffsets } from './utils/geo-data.js';
+import { createSporeTexture, createFocusRingTexture, createFocusNextCueTexture } from './utils/three-textures.js';
 import {
     buildGeometricMyceliumEdges,
     buildSemanticMyceliumEdges,

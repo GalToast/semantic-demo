@@ -1,14 +1,8 @@
 import { state } from '../state.js';
 import { getViewportSize } from './environment.js';
-import {
-    describeCluster,
-    escapeHtml,
-    formatBusinessName,
-    highlightMatch,
-    sanitizePublicFacingNote,
-    cleanPublicNoteText,
-    isCompactSearchViewport
-} from '../utils.js';
+import { describeCluster, isCompactSearchViewport } from './utils/ui-presentation.js';
+import { escapeHtml, formatBusinessName, sanitizePublicFacingNote, cleanPublicNoteText } from './utils/dom-formatters.js';
+import { highlightMatch } from './utils/geo-data.js';
 
 /**
  * search-result-renderer.js

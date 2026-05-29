@@ -1,5 +1,6 @@
 import { state } from '../state.js';
-import { escapeHtml, describeCluster } from '../utils.js';
+import { escapeHtml } from './utils/dom-formatters.js';
+import { describeCluster } from './utils/ui-presentation.js';
 import { getSemanticGuideTitle } from './semantic-guide.js';
 import { getFilteredClusterCounts, setClusterFilter } from './cluster-filter.js';
 

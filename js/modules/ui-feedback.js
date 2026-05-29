@@ -6,11 +6,8 @@
  */
 
 import { state } from '../state.js';
-import {
-    isCompactMapViewport,
-    isCompactSearchViewport,
-    formatBusinessName
-} from '../utils.js';
+import { isCompactMapViewport, isCompactSearchViewport } from './utils/ui-presentation.js';
+import { formatBusinessName } from './utils/dom-formatters.js';
 import { setActiveSearchResultRow } from './ui-renderers.js';
 import { updateSearchTrailCue } from './ui-renderers.js';
 

@@ -1,9 +1,6 @@
 import { state } from '../state.js';
-import {
-    escapeHtml,
-    describeCluster,
-    isCompactSearchViewport
-} from '../utils.js';
+import { escapeHtml } from './utils/dom-formatters.js';
+import { describeCluster, isCompactSearchViewport } from './utils/ui-presentation.js';
 import {
     hideTooltip
 } from './search-ui-adapter.js';

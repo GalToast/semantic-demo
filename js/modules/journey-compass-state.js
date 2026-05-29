@@ -1,5 +1,6 @@
 import { state } from '../state.js';
-import { formatBusinessName, describeCluster } from '../utils.js';
+import { formatBusinessName } from './utils/dom-formatters.js';
+import { describeCluster } from './utils/ui-presentation.js';
 import { getRouteEmbodimentIndices } from './map-state.js';
 import { getNextExploreCandidateForIndex } from './journey-thread-model.js';
 import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.js';

@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { escapeHtml } from '../utils.js';
+import { escapeHtml } from './utils/dom-formatters.js';
 import { buildSemanticGuideRequestPayload } from './semantic-guide-payload.js';
 import { search, beginSearchFocusTransition } from './search-state.js';
 import {updateLegendGuideState} from './legend-ui.js';

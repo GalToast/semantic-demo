@@ -2,7 +2,8 @@ import { state } from '../state.js';
 import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, syncFilterControls, setMyceliumMode } from './lifecycle.js';
 import { switchView } from './view-controller.js';
 import { setSemanticLaneOpsMode, refreshSemanticLaneOpsSummary } from './semantic-lane.js';
-import { isPointVisible, formatBusinessName, escapeHtml } from '../utils.js';
+import { isPointVisible } from './utils/geo-data.js';
+import { formatBusinessName, escapeHtml } from './utils/dom-formatters.js';
 import { restoreActiveFiltersFromUrl, restoreActiveClusterFilterFromUrl } from './filter-state.js';
 import { getUrlSearchAdapter } from './url-search-adapter.js';
 import {

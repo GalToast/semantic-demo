@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
 import * as adapter from './journey-lifecycle-adapter.js';
-import { isPointVisible } from '../utils.js';
+import { isPointVisible } from './utils/geo-data.js';
 import { focusOnNode, noteSceneInteraction, releaseFocusCameraAssist } from './camera-controls.js';
 import { getSemanticThreadDisplayLimit } from './journey-neighborhood.js';
 import { hasCoarsePointer } from './environment.js';

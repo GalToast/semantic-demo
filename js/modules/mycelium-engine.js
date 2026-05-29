@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 import { state } from '../state.js';
-import { getThreadCategoryColor } from '../utils.js';
+import { getThreadCategoryColor } from './utils/ui-presentation.js';
 
 function pairKey(a, b) {
     return a < b ? `${a}:${b}` : `${b}:${a}`;

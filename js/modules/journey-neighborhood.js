@@ -1,8 +1,6 @@
 import { state } from '../state.js';
-import {
-    isCompactFocusStageViewport,
-    isPointVisible
-} from '../utils.js';
+import { isCompactFocusStageViewport } from './utils/ui-presentation.js';
+import { isPointVisible } from './utils/geo-data.js';
 import {
     normalizeLeadId,
     getSemanticThreadCandidates,

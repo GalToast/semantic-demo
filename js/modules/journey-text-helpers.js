@@ -2,9 +2,9 @@
  * journey-text-helpers.js
  *
  * Pure string / label transformers extracted from journey.js.
- * No state, no DOM, no THREE; only utility imports from ../utils.js.
+ * No state, no DOM, no THREE; only focused utility imports.
  */
-import { cleanOptionalValue } from '../utils.js';
+import { cleanOptionalValue } from './utils/dom-formatters.js';
 
 export function truncateMicrocopy(text, max = 74) {
     const clean = cleanOptionalValue(text);

@@ -1,13 +1,7 @@
 import { state } from '../state.js';
 import * as adapter from './journey-lifecycle-adapter.js';
-import {
-    describeCluster,
-    sanitizePublicFacingNote,
-    getBusinessNamePresentation,
-    escapeHtml,
-    getPublicRecordStatusLabel,
-    updateDocumentMeta
-} from '../utils.js';
+import { describeCluster, updateDocumentMeta } from './utils/ui-presentation.js';
+import { sanitizePublicFacingNote, getBusinessNamePresentation, escapeHtml, getPublicRecordStatusLabel } from './utils/dom-formatters.js';
 import {
     renderSignalBadges,
     updateSelectedCardHeading,

@@ -1,6 +1,6 @@
 /**
  * utils-contract.mjs
- * Node/static contract test for changed functions in utils.js.
+ * Node/static contract test for changed formatter functions.
  *
  * Tests the four changed functions without browser dependencies.
  * Run: node tests/utils-contract.mjs  (from semantic-demo root)
@@ -15,12 +15,12 @@ import {
 } from '../js/utils.js';
 
 const CWD = process.cwd();
-const utilsPath = resolve(CWD, 'js/utils.js');
+const formatterPath = resolve(CWD, 'js/modules/utils/dom-formatters.js');
 
 // --------------------------------------------------------------------------
 // Load and parse source
 // --------------------------------------------------------------------------
-const src = readFileSync(utilsPath, 'utf8');
+const src = readFileSync(formatterPath, 'utf8');
 
 // --------------------------------------------------------------------------
 // Tests

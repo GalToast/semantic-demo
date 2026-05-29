@@ -28,7 +28,7 @@ import * as journeyWebglModule from './journey-webgl.js';
 import { initThreeJS, animate, cancelAnimate } from './three-engine.js';
 import { triggerSearchHeroMoment, triggerCorridorNodeGlow, triggerSearchCorridorAnimation } from './three-animations.js';
 import * as dataModule from './data-loader.js';
-import { escapeHtml } from '../utils.js';
+import { escapeHtml } from './utils/dom-formatters.js';
 import {
     startSceneReveal,
     setSemanticLaneUiState,
@@ -73,7 +73,7 @@ import { updateSearchStatusMessage } from './search-state.js';
 import { recordSemanticLaneSnapshot } from './semantic-lane.js';
 import { applyPointFilterColors, updateSelectedBusiness, updateTrailIndices } from './journey.js';
 import { initEventListeners } from './event-bindings.js';
-import { updateTime } from '../utils.js';
+import { updateTime } from './utils/ui-presentation.js';
 import { initBridgeRegistry } from './bridge-registry.js';
 import { initSearchCache } from './semantic-search-api-cache.js';
 

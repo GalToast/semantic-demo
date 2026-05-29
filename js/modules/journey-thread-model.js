@@ -1,7 +1,5 @@
 import { state } from '../state.js';
-import {
-    normalizeCityForFilter
-} from '../utils.js';
+import { normalizeCityForFilter } from './utils/geo-data.js';
 
 export function normalizeLeadId(value) {
     if (value === null || value === undefined || value === '') return null;

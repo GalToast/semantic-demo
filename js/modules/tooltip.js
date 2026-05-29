@@ -1,9 +1,5 @@
-import {
-    formatBusinessName,
-    describeCluster,
-    cleanPublicNoteText,
-    sanitizePublicFacingNote
-} from '../utils.js';
+import { formatBusinessName, cleanPublicNoteText, sanitizePublicFacingNote } from './utils/dom-formatters.js';
+import { describeCluster } from './utils/ui-presentation.js';
 import { getViewportSize } from './environment.js';
 
 let tooltipRevealFrame = null;

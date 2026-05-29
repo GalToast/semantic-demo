@@ -1,12 +1,8 @@
 import { state } from '../state.js';
 import * as adapter from './journey-lifecycle-adapter.js';
-import {
-    formatBusinessName,
-    escapeHtml,
-    cleanOptionalValue,
-    isCompactFocusStageViewport,
-    isPointVisible,
-} from '../utils.js';
+import { formatBusinessName, escapeHtml, cleanOptionalValue } from './utils/dom-formatters.js';
+import { isCompactFocusStageViewport } from './utils/ui-presentation.js';
+import { isPointVisible } from './utils/geo-data.js';
 import { truncateMicrocopy } from './journey-text-helpers.js';
 import { setStrandContinuityState } from './strand-continuity.js';
 import {

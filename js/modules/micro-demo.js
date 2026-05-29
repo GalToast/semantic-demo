@@ -5,7 +5,7 @@
 
 import { state } from '../state.js';
 import * as THREE from 'three';
-import { easeInOutSine } from '../utils.js';
+import { easeInOutSine } from './utils/math-easing.js';
 import { animateCameraToNode } from './camera-controls.js';
 import { applyLocalNeighborhoodFocus, clearFocusPocketIndices, clearFocusPocketMeta } from './focus-pocket.js';
 import { refreshCompositionState, updateExplorationUi, resetNodePositions } from './lifecycle.js';

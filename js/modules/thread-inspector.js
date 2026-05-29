@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { state } from '../state.js';
 // js/modules/thread-inspector.js — thread/strand inspection for semantic demo
 ;
-import { formatBusinessName, stripTerminalPunctuation, normalizeCityForFilter } from '../utils.js';
+import { formatBusinessName, stripTerminalPunctuation } from './utils/dom-formatters.js';
+import { normalizeCityForFilter } from './utils/geo-data.js';
 import { getProjectedNeighborCandidates } from './journey-thread-model.js';
 import { normalizeLeadId } from './journey-thread-model.js';
 import { truncateMicrocopy } from './thread-inspector-text-helpers.js';

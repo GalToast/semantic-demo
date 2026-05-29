@@ -1,10 +1,6 @@
 import { state } from '../state.js';
-import {
-    formatBusinessName,
-    cleanOptionalValue,
-    stripTerminalPunctuation,
-    normalizeCityForFilter,
-} from '../utils.js';
+import { formatBusinessName, cleanOptionalValue, stripTerminalPunctuation } from './utils/dom-formatters.js';
+import { normalizeCityForFilter } from './utils/geo-data.js';
 import { focusOnNode } from './camera-controls.js';
 import { dispatchNavTransition, focusOnPoint, updateJourneyCompass } from './lifecycle.js';
 import { syncInspectedStrandOverlay } from './thread-inspector.js';

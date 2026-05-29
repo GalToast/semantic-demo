@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { cleanOptionalValue } from '../utils.js';
+import { cleanOptionalValue } from './utils/dom-formatters.js';
 import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from './journey-webgl.js';
 
 const STRAND_CONTINUITY_PHASES = new Set(['idle', 'preview', 'pinned', 'exploring', 'arrived', 'returning']);

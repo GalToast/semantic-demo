@@ -2,7 +2,7 @@
 import { state } from '../state.js';
 
 // utils
-import { formatBusinessName, cleanPublicNoteText } from '../utils.js';
+import { formatBusinessName, cleanPublicNoteText } from './utils/dom-formatters.js';
 
 // journey-compass-state
 import { getFocusedJourneyPoint, getJourneyCompassState } from './journey-compass-state.js';

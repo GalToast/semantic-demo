@@ -1,9 +1,6 @@
 import { state } from '../state.js';
-import { 
-    pointHasGeocode, 
-    isPointVisible, 
-    formatBusinessName
-} from '../utils.js';
+import { pointHasGeocode, isPointVisible } from './utils/geo-data.js';
+import { formatBusinessName } from './utils/dom-formatters.js';
 import { showExperienceToast, focusOnPoint } from './lifecycle.js';
 import { hideTooltip } from './tooltip.js';
 import { hideViewHandoff } from './view-controller.js';

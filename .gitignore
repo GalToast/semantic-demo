@@ -37,3 +37,5 @@ tests/wave*-diag.spec.js
 # Local OS/editor noise
 .DS_Store
 Thumbs.db
+__pycache__/
+*.pyc

@@ -1,9 +1,6 @@
 import { state } from '../state.js';
-import {
-    sanitizePublicFacingNote,
-    cleanPublicNoteText,
-    isPointVisible
-} from '../utils.js';
+import { sanitizePublicFacingNote, cleanPublicNoteText } from './utils/dom-formatters.js';
+import { isPointVisible } from './utils/geo-data.js';
 
 /**
  * search-mapper.js

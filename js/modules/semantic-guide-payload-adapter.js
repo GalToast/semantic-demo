@@ -4,12 +4,8 @@
 // relative to the global state object.
 
 import { state } from '../state.js';
-import {
-    formatBusinessName,
-    cleanPublicNoteText,
-    describeCluster,
-    getPublicRecordStatusLabel
-} from '../utils.js';
+import { formatBusinessName, cleanPublicNoteText, getPublicRecordStatusLabel } from './utils/dom-formatters.js';
+import { describeCluster } from './utils/ui-presentation.js';
 
 export { formatBusinessName };
 
