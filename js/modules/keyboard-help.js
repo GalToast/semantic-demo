@@ -213,6 +213,7 @@ export function handleGalaxyKeydown(event) {
         if (hasSearchText || hasSearchState || hasFocusState) {
             event.preventDefault();
             _returnToOverview();
+            document.getElementById('search-input')?.focus({ preventScroll: true });
         }
         return;
     }

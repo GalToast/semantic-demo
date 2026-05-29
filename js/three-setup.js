@@ -535,7 +535,9 @@ export function initThreeJS() {
     container.querySelectorAll('canvas').forEach((canvas) => {
         if (canvas !== state.renderer.domElement) canvas.remove();
     });
-    state.renderer.domElement.setAttribute('aria-label', 'Semantic business visualization of Montgomery County businesses');
+    state.renderer.domElement.setAttribute('aria-label', 'Semantic business visualization of Montgomery County businesses. Use arrow keys to navigate.');
+    state.renderer.domElement.setAttribute('tabindex', '0');
+    state.renderer.domElement.setAttribute('role', 'application');
     bindWebGLContextResilience(state.renderer);
     container.appendChild(state.renderer.domElement);
 
