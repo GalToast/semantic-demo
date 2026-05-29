@@ -362,10 +362,11 @@ body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .lea
     align-items: center;
     gap: 10px;
     padding: 28px 36px;
-    background: var(--color-surface-panel);
-    border: 1px solid var(--color-primary-soft);
+    background: var(--color-surface-glass);
+    border: var(--glass-border);
     border-radius: var(--radius-large);
-    backdrop-filter: blur(6px);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
     text-align: center;
     pointer-events: none;
 }

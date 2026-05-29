@@ -77,6 +77,32 @@ html body[data-panel-surface="focus"] .journey-compass-note {
     min-width: 282px;
 }
 
+.journey-compass-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.journey-compass-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    min-width: 60px;
+    padding: 0 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+    color: rgba(255, 255, 255, 0.8);
+    font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
 .journey-compass-step {
     position: relative;
     display: grid;

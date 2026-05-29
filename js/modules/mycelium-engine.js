@@ -127,6 +127,14 @@ export function buildSemanticMyceliumEdges() {
     const corePairs = [];
     const wispyPairs = [];
     const bridgePairs = [];
+
+    // Strict connection caps to prevent the "ball of yarn" effect
+    const MAX_CORE_PER_NODE = 4;
+    const MAX_WISPY_PER_NODE = 5;
+    const MAX_BRIDGE_PER_NODE = 2;
+
+    const coreCountByNode = new Map();
+    const wispyCountByNode = new Map();
     const bridgeCountByNode = new Map();
 
     state.points.forEach((point, index) => {
@@ -140,7 +148,6 @@ export function buildSemanticMyceliumEdges() {
             if (candidateIndex === undefined || candidateIndex === index) return;
             const key = pairKey(index, candidateIndex);
             if (seenPairs.has(key)) return;
-            seenPairs.add(key);
 
             const semanticScore = Number.isFinite(neighbor.semanticScore) ? neighbor.semanticScore : 0;
             const bridgeScore = Number.isFinite(neighbor.bridgeScore) ? neighbor.bridgeScore : 0;
@@ -152,17 +159,30 @@ export function buildSemanticMyceliumEdges() {
                 if (!isBridgeLike) return;
                 const aCount = bridgeCountByNode.get(index) || 0;
                 const bCount = bridgeCountByNode.get(candidateIndex) || 0;
-                if (aCount >= 2 || bCount >= 2) return;
+                if (aCount >= MAX_BRIDGE_PER_NODE || bCount >= MAX_BRIDGE_PER_NODE) return;
                 bridgeCountByNode.set(index, aCount + 1);
                 bridgeCountByNode.set(candidateIndex, bCount + 1);
                 bridgePairs.push({ a: index, b: candidateIndex });
+                seenPairs.add(key);
                 return;
             }
 
             if (semanticScore >= 0.62 || (semanticScore >= 0.56 && sameCity)) {
+                const aCount = coreCountByNode.get(index) || 0;
+                const bCount = coreCountByNode.get(candidateIndex) || 0;
+                if (aCount >= MAX_CORE_PER_NODE || bCount >= MAX_CORE_PER_NODE) return;
+                coreCountByNode.set(index, aCount + 1);
+                coreCountByNode.set(candidateIndex, bCount + 1);
                 corePairs.push({ a: index, b: candidateIndex });
+                seenPairs.add(key);
             } else if (semanticScore >= 0.42 || sameCity) {
+                const aCount = wispyCountByNode.get(index) || 0;
+                const bCount = wispyCountByNode.get(candidateIndex) || 0;
+                if (aCount >= MAX_WISPY_PER_NODE || bCount >= MAX_WISPY_PER_NODE) return;
+                wispyCountByNode.set(index, aCount + 1);
+                wispyCountByNode.set(candidateIndex, bCount + 1);
                 wispyPairs.push({ a: index, b: candidateIndex });
+                seenPairs.add(key);
             }
         });
     });

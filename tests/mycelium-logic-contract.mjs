@@ -6,10 +6,13 @@
  * Coverage:
  *   1. Intra-cluster neighbors with semanticScore >= 0.62       → corePairs
  *   2. Intra-cluster neighbors with semanticScore 0.42–0.61    → wispyPairs
- *   3. Cross-cluster neighbors with bridgeScore >= 0.62        → bridgePairs (max 2 per node)
+ *   3. Cross-cluster neighbors with bridgeScore >= 0.62        → bridgePairs
  *   4. Cross-cluster neighbors with threadType including 'bridge' → bridgePairs
  *   5. Returns null when semanticNeighborMapByLeadId is empty
- *   6. Pair key deduplication (no duplicate pairs)
+ *   6. Bridge pair cap (max 2 per node)
+ *   7. Core pair cap (max 4 per node)
+ *   8. Wispy pair cap (max 5 per node)
+ *   9. Pair key deduplication (no duplicate pairs)
  *
  * Runs in Node with no Playwright, no DOM dependency.
  * Follows the style of connection-analysis-contract.mjs.
@@ -484,7 +487,125 @@ async function testBridgePairMaxPerNode() {
 }
 
 // ---------------------------------------------------------------------------
-// Test 7: Pair key deduplication — no duplicate pairs in output
+// Test 7: Core pair max 4 per node
+// ---------------------------------------------------------------------------
+
+async function testCorePairMaxPerNode() {
+  console.log('\n[TEST] Core pairs: max 4 core pairs per node');
+
+  resetState();
+
+  state.points = Array.from({ length: 7 }, (_, index) => ({
+    lead_id: `LI_${String(index + 1).padStart(3, '0')}`,
+    cluster: 1,
+  }));
+
+  state.nodePositions = state.points.map((_, index) => ({ x: index * 0.02, y: 0, z: 0 }));
+  state.pointIndexByLeadId = new Map(state.points.map((point, index) => [point.lead_id, index]));
+  state.semanticNeighborMapByLeadId = new Map([
+    [
+      'LI_001',
+      {
+        neighbors: state.points.slice(1).map((point) => ({
+          leadId: point.lead_id,
+          semanticScore: 0.82,
+          bridgeScore: 0,
+          sameCity: false,
+          threadType: 'intra-thread',
+        }))
+      }
+    ],
+    ...state.points.slice(1).map((point) => [
+      point.lead_id,
+      {
+        neighbors: [
+          {
+            leadId: 'LI_001',
+            semanticScore: 0.82,
+            bridgeScore: 0,
+            sameCity: false,
+            threadType: 'intra-thread',
+          }
+        ]
+      }
+    ]),
+  ]);
+
+  const engineUrl = pathToFileURL(ENGINE_PATH).href;
+  const { buildSemanticMyceliumEdges } = await import(engineUrl);
+
+  const result = buildSemanticMyceliumEdges();
+
+  assert(result !== null, 'result must not be null when core pairs exist');
+
+  const corePairsWithNode0 = result.corePairs.filter(p => p.a === 0 || p.b === 0);
+  assert(corePairsWithNode0.length <= 4,
+    `node 0 should have at most 4 core pairs, got: ${corePairsWithNode0.length} (${JSON.stringify(result.corePairs)})`);
+
+  console.log(`  OK core pairs for node 0 capped at ${corePairsWithNode0.length} (max 4)`);
+}
+
+// ---------------------------------------------------------------------------
+// Test 8: Wispy pair max 5 per node
+// ---------------------------------------------------------------------------
+
+async function testWispyPairMaxPerNode() {
+  console.log('\n[TEST] Wispy pairs: max 5 wispy pairs per node');
+
+  resetState();
+
+  state.points = Array.from({ length: 8 }, (_, index) => ({
+    lead_id: `LI_${String(index + 1).padStart(3, '0')}`,
+    cluster: 1,
+  }));
+
+  state.nodePositions = state.points.map((_, index) => ({ x: index * 0.02, y: 0, z: 0 }));
+  state.pointIndexByLeadId = new Map(state.points.map((point, index) => [point.lead_id, index]));
+  state.semanticNeighborMapByLeadId = new Map([
+    [
+      'LI_001',
+      {
+        neighbors: state.points.slice(1).map((point) => ({
+          leadId: point.lead_id,
+          semanticScore: 0.5,
+          bridgeScore: 0,
+          sameCity: false,
+          threadType: 'intra-thread',
+        }))
+      }
+    ],
+    ...state.points.slice(1).map((point) => [
+      point.lead_id,
+      {
+        neighbors: [
+          {
+            leadId: 'LI_001',
+            semanticScore: 0.5,
+            bridgeScore: 0,
+            sameCity: false,
+            threadType: 'intra-thread',
+          }
+        ]
+      }
+    ]),
+  ]);
+
+  const engineUrl = pathToFileURL(ENGINE_PATH).href;
+  const { buildSemanticMyceliumEdges } = await import(engineUrl);
+
+  const result = buildSemanticMyceliumEdges();
+
+  assert(result !== null, 'result must not be null when wispy pairs exist');
+
+  const wispyPairsWithNode0 = result.wispyPairs.filter(p => p.a === 0 || p.b === 0);
+  assert(wispyPairsWithNode0.length <= 5,
+    `node 0 should have at most 5 wispy pairs, got: ${wispyPairsWithNode0.length} (${JSON.stringify(result.wispyPairs)})`);
+
+  console.log(`  OK wispy pairs for node 0 capped at ${wispyPairsWithNode0.length} (max 5)`);
+}
+
+// ---------------------------------------------------------------------------
+// Test 9: Pair key deduplication — no duplicate pairs in output
 // ---------------------------------------------------------------------------
 
 async function testPairKeyDeduplication() {
@@ -590,6 +711,8 @@ async function main() {
     await testBridgePairsByThreadType();
     await testReturnsNullOnEmpty();
     await testBridgePairMaxPerNode();
+    await testCorePairMaxPerNode();
+    await testWispyPairMaxPerNode();
     await testPairKeyDeduplication();
     await testCrossClusterIgnored();
 

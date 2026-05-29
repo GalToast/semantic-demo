@@ -5,6 +5,10 @@
 */
 
 /* Glassmorphism System */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
 :root {
     /* Mycelium Glass System - Unified UI Core */
     --glass-blur: 20px;

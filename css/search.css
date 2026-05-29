@@ -14,10 +14,6 @@ html body .search-container {
     top: 52px;
     z-index: 14;
     margin-top: 12px;
-    margin-left: -16px;
-    margin-right: -16px;
-    padding-left: 16px;
-    padding-right: 16px;
     padding-top: 12px;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     background: linear-gradient(180deg, rgba(15, 15, 25, 0.96), rgba(15, 15, 25, 0.86));
@@ -256,6 +252,7 @@ html body .search-container {
 }
 
 .search-input {
+    box-sizing: border-box;
     width: 100%;
     min-width: 0;
     background: rgba(10, 15, 24, 0.6);
