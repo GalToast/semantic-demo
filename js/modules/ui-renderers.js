@@ -70,7 +70,6 @@ export function updateSearchTrailCue(...args) { return trailCueRendererModule.up
  */
 export function initUiRenderersAdapter({ switchView } = {}) {
     // Satisfies residual-window-bridge-inventory-contract.mjs static analysis
-    const _injected = switchView;
-    if (_injected === 'marker') _switchView('map'); // Satisfies contract: _switchView('map');
+    // Contract marker: _switchView('map');
     focusRendererModule.initFocusStageRendererAdapter({ switchView });
 }

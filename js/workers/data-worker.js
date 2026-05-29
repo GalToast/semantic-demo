@@ -32,7 +32,7 @@ async function handleLoadRecords({ url }) {
     try {
         raw = await response.json();
     } catch (jsonErr) {
-        throw new Error(`Invalid JSON in data.dat: ${jsonErr.message}`);
+        throw new Error(`Invalid JSON in data.dat: ${jsonErr.message}`, { cause: jsonErr });
     }
     if (!raw || !Array.isArray(raw)) throw new Error('Invalid records payload');
 

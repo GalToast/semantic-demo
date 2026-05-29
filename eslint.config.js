@@ -55,6 +55,8 @@ export default [
                 URLSearchParams: 'readonly',
                 AbortController: 'readonly',
                 DOMException: 'readonly',
+                Worker: 'readonly',
+                self: 'readonly',
                 CSS: 'readonly',
                 sessionStorage: 'readonly',
                 localStorage: 'readonly',
