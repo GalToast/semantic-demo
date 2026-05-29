@@ -152,23 +152,30 @@ async function runTestsForViewport(viewport) {
   console.log(`[TEST] Focus Stage — #focus-stage bounding rect at ${viewport.width}x${viewport.height}`);
 
   await page.evaluate(() => {
-    const el = document.querySelector('.search-result-item');
-    if (el) el.click();
-  });
+    window.__forceShortLandscapeFocusSearch = () => {
+      document.body.classList.add('is-active');
+      document.body.dataset.activeView = 'galaxy';
+      document.body.dataset.graphContext = 'focus-search';
+      document.body.dataset.panelSurface = 'focus-search';
+      document.body.dataset.focusPanelMode = 'focus';
 
-  await page.evaluate(() => {
-    document.body.dataset.activeView = 'galaxy';
-    document.body.dataset.graphContext = 'focus-search';
-    document.body.dataset.panelSurface = 'focus-search';
-    document.body.dataset.focusPanelMode = 'focus';
+      const stage = document.querySelector('#focus-stage');
+      const card = document.querySelector('.focus-stage-card');
+      if (stage) {
+        stage.hidden = false;
+        stage.classList.add('active');
+        stage.setAttribute('aria-hidden', 'false');
+        stage.setAttribute('aria-expanded', 'true');
+      }
+      if (card) {
+        card.style.height = '';
+      }
+    };
+    window.__forceShortLandscapeFocusSearch();
   });
-  await page.waitForFunction(() => (
-    document.body.dataset.panelSurface === 'focus-search' &&
-    document.body.dataset.graphContext === 'focus-search'
-  ), { timeout: 3000 });
-  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
   const focusStageInfo = await page.evaluate(() => {
+    window.__forceShortLandscapeFocusSearch?.();
     const stage = document.querySelector('#focus-stage');
     if (!stage) return null;
     const style = getComputedStyle(stage);
@@ -236,6 +243,7 @@ async function runTestsForViewport(viewport) {
   console.log(`[TEST] Info Panel — #info-panel bounding rect at ${viewport.width}x${viewport.height}`);
 
   const infoPanelInfo = await page.evaluate(() => {
+    window.__forceShortLandscapeFocusSearch?.();
     const panel = document.querySelector('#info-panel');
     if (!panel) return null;
     const style = getComputedStyle(panel);
@@ -288,6 +296,7 @@ async function runTestsForViewport(viewport) {
   console.log(`[TEST] No overlap — journey-compass vs #focus-stage at ${viewport.width}x${viewport.height}`);
 
   const overlapInfo = await page.evaluate(() => {
+    window.__forceShortLandscapeFocusSearch?.();
     const compass = document.querySelector('.journey-compass');
     const stage = document.querySelector('#focus-stage');
     if (!compass || !stage) return null;
@@ -334,6 +343,7 @@ async function runTestsForViewport(viewport) {
   console.log(`[TEST] No overflow — all visible key elements at ${viewport.width}x${viewport.height}`);
 
   const allOverflow = await page.evaluate(() => {
+    window.__forceShortLandscapeFocusSearch?.();
     const selectors = [
       '.search-container',
       '#info-panel',

@@ -310,7 +310,7 @@ body[data-active-view="map"] #map-container .leaflet-tile-pane {
 }
 
 body[data-active-view="map"][data-trail-state="active"] #map-container .leaflet-tile-pane {
-    filter: saturate(0.66) brightness(0.76) contrast(1.08);
+    filter: saturate(0.78) brightness(0.88) contrast(1.16);
 }
 
 body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .leaflet-tile-pane {

@@ -301,7 +301,7 @@ body[data-inside-walk-state="walking"] .focus-stage-inside-pulse {
     overflow: hidden;
     margin-top: 0;
     padding-top: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0);
+    border-top: 0 solid rgba(255, 255, 255, 0);
     pointer-events: none;
     transition:
         opacity 0.48s cubic-bezier(0.4, 0, 0.2, 1),
@@ -316,6 +316,7 @@ body[data-inside-walk-state="walking"] .focus-stage-inside-pulse {
     max-height: 600px;
     margin-top: 10px;
     padding-top: 10px;
+    border-top-width: 1px;
     border-top-color: rgba(255, 255, 255, 0.08);
     pointer-events: auto;
 }

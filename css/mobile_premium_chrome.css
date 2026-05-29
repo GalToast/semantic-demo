@@ -225,6 +225,15 @@
    896x414, which are wider than the standard max-width:768 mobile gate.
    ---------------------------------------------------------------- */
 @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
+    html body.is-active .journey-compass {
+        left: 16px;
+        right: 16px;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        transform: none;
+    }
+
     html body.is-active[data-panel-surface="idle"] .info-panel {
         top: 80px;
         bottom: auto;
