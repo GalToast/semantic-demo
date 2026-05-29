@@ -544,14 +544,20 @@ async function enterFocusFromSearch(page) {
   await page.evaluate(() => {
     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     const byLeadId = appState.pointIndexByLeadId;
-    const rawIndex = byLeadId?.get?.('1') ?? byLeadId?.get?.(1) ?? 0;
-    const targetIndex = Number.isFinite(rawIndex) ? rawIndex : 0;
+    const summaryAnchor = appState.currentSearchSummary?.anchorIndex;
+    const leadIndex = byLeadId?.get?.('1') ?? byLeadId?.get?.(1) ?? byLeadId?.['1'] ?? byLeadId?.[1];
+    const rawIndex = Number.isFinite(summaryAnchor) ? summaryAnchor : leadIndex;
+    const targetIndex = Number.isFinite(Number(rawIndex)) ? Number(rawIndex) : 0;
     const focusNode = window.__APP_ACTIONS__?.focusOnNode;
     const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
     const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
 
+    let focused = false;
     if (typeof focusNode === 'function') {
-      focusNode(targetIndex, { fromSearchResult: true, skipUrlSync: true });
+      focused = focusNode(targetIndex, { fromSearchResult: true, skipUrlSync: true }) === true;
+    }
+    if (!focused) {
+      throw new Error(`visual audit could not focus search result index ${targetIndex}`);
     }
     if (typeof setTrailDepth === 'function') {
       setTrailDepth(1, { skipUrlSync: true });
@@ -564,7 +570,7 @@ async function enterFocusFromSearch(page) {
     const mode = (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode;
     const surface = document.body.dataset.panelSurface;
     return mode === 'focus' || mode === 'trail' || surface === 'focus' || surface === 'focus-search';
-  }, undefined, { timeout: 15000 }).catch(() => {});
+  }, undefined, { timeout: 15000 });
   await page.waitForFunction(() => {
     const { cameraAssist, focusTransitionPhase, loadingOverlay, viewHandoffActive } = document.body.dataset;
     return (
@@ -1347,6 +1353,7 @@ async function run() {
         const slPage = await createAuditPage(browser, { viewport: shortLandscape, deviceScaleFactor: 2, isMobile: true });
         await gotoReady(slPage, withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }));
 
+        await waitForReady(slPage, '23-mobile-short-landscape:prepare');
         await enterFocusFromSearch(slPage);
         await captureMaybe(states, slPage, '23-mobile-short-landscape');
         await slPage.close();
