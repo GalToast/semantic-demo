@@ -10,6 +10,7 @@ import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from './journ
 import { getFocusThreadCurvePoint } from './focus-pocket.js';
 import { setRouteArrivalOverlayUpdaters } from './route-arrival-overlay-adapter.js';
 import { prefersReducedMotion } from './environment.js';
+import { CLUSTER_COLORS, FOCUS_SEMANTIC_COLORS, ROUTE_TRACE_COLORS } from './design-tokens.js';
 
 const ROUTE_TRACE_SEGMENT_STEPS = 7;
 const ARRIVAL_HANDOFF_SEGMENT_STEPS = 9;
@@ -189,8 +190,8 @@ export function refreshRouteTraceOverlay(options = {}) {
         return;
     }
 
-    const routeColor = new THREE.Color(0x4ecdc4);
-    const cueColor = new THREE.Color(0xffdf6e);
+    const routeColor = new THREE.Color(ROUTE_TRACE_COLORS.route);
+    const cueColor = new THREE.Color(ROUTE_TRACE_COLORS.cue);
     const positions = [];
     const colors = [];
     let edgeCount = 0;
@@ -294,7 +295,7 @@ function buildArrivalHandoffOverlay(fromIndex, targetIndex) {
     group.userData = { fromIndex, targetIndex };
     const positions = [];
     const colors = [];
-    const color = new THREE.Color(0xffdf6e);
+    const color = new THREE.Color(ROUTE_TRACE_COLORS.cue);
     [-1, 0, 1, 2].forEach((side) => {
         pushArcSegments(positions, colors, fromIndex, targetIndex, color, {
             steps: ARRIVAL_HANDOFF_SEGMENT_STEPS,
@@ -632,8 +633,8 @@ export function refreshFocusSemanticOverlay() {
     const semanticScore = [];
     const localEdgeKeys = new Set();
     const pocketSet = new Set(state.navState.focusPocketIndices || []);
-    const focusColor = new THREE.Color(state.COLORS[focusCluster % state.COLORS.length]).lerp(new THREE.Color(0xffd66b), 0.42);
-    const cueColor = new THREE.Color(0xffe27a);
+    const focusColor = new THREE.Color(CLUSTER_COLORS[focusCluster % CLUSTER_COLORS.length]).lerp(new THREE.Color(FOCUS_SEMANTIC_COLORS.focusLerp), 0.42);
+    const cueColor = new THREE.Color(FOCUS_SEMANTIC_COLORS.cue);
     let nextCueSegments = 0;
     let directEdgeCount = 0;
     let supportEdgeCount = 0;
@@ -651,8 +652,8 @@ export function refreshFocusSemanticOverlay() {
         const isNextEdge = Number.isFinite(nextFocusIndex)
             && ((a === focusIndex && b === nextFocusIndex) || (b === focusIndex && a === nextFocusIndex));
         const candidateCluster = state.points[b]?.cluster ?? focusCluster;
-        const candidateColor = new THREE.Color(state.COLORS[candidateCluster % state.COLORS.length]).lerp(
-            isNextEdge ? cueColor : new THREE.Color(0x56d8d1),
+        const candidateColor = new THREE.Color(CLUSTER_COLORS[candidateCluster % CLUSTER_COLORS.length]).lerp(
+            isNextEdge ? cueColor : new THREE.Color(FOCUS_SEMANTIC_COLORS.candidate),
             isNextEdge ? 0.58 : 0.24
         );
         const edge = {

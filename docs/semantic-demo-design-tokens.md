@@ -7,11 +7,14 @@ This is the human-readable token sheet for the Semantic Explorer demo. The canon
 ## Source Of Truth
 
 - `css/base.css` owns the root token values.
+- `js/modules/design-tokens.js` owns JS/WebGL mirrors such as scene fog, thread tint, corridor shader colors, and the legacy cluster palette.
 - `semantic-demo.css` is only an import shell. Do not treat it as selector or token authority.
 - Surface ownership remains documented in `docs/semantic-demo-css-authority-map.md`.
 - Visual acceptance criteria remain documented in `docs/semantic-demo-ui-quality-rubric.md`.
 
 When a token value changes, update `css/base.css` first and update this sheet in the same change if the design meaning changes.
+
+Do not inject CSS custom properties from JavaScript. CSS root tokens stay in `css/base.css`; JS tokens should preserve existing runtime values unless a visual change is intentional and verified.
 
 ## Color
 

@@ -3,6 +3,7 @@ import { state } from '../state.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { triggerCorridorBloom } from './audio-scape.js';
 import { prefersReducedMotion } from './environment.js';
+import { CORRIDOR_TRAIL_SHADER_COLORS } from './design-tokens.js';
 
 // 10/10 Polish: Search Corridor Hero Moment
 export function triggerSearchHeroMoment(anchorIndex) {
@@ -303,8 +304,8 @@ function buildCorridorParticleTrail(anchorIndex, routeIndices) {
                 float dist = length(uv);
                 if (dist > 0.5) discard;
                 float alpha = (1.0 - dist * 2.0) * vAlpha * 0.34 * uFadeOpacity;
-                vec3 teal = vec3(0.43, 1.0, 0.91);
-                vec3 ember = vec3(0.74, 0.86, 0.68);
+                vec3 teal = vec3(${CORRIDOR_TRAIL_SHADER_COLORS.teal});
+                vec3 ember = vec3(${CORRIDOR_TRAIL_SHADER_COLORS.ember});
                 vec3 color = mix(teal, ember, vProgress);
                 gl_FragColor = vec4(color, alpha);
             }

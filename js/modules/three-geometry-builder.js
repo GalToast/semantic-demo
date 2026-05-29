@@ -12,6 +12,7 @@ import {
     buildSemanticMyceliumEdges,
     pushBezierLinePair
 } from './mycelium-engine.js';
+import { SCENE_PALETTE } from './design-tokens.js';
 
 export const MYCELIUM_FIELD_SCALE = Object.freeze({
     x: 2.8,
@@ -20,7 +21,7 @@ export const MYCELIUM_FIELD_SCALE = Object.freeze({
 });
 
 export const SCENE_ATMOSPHERE = Object.freeze({
-    fogColor: 0x070a12,
+    fogColor: SCENE_PALETTE.fog,
     fogDensity: 0.0034,
     clearAlpha: 1,
     toneExposure: 0.92,
@@ -29,14 +30,14 @@ export const SCENE_ATMOSPHERE = Object.freeze({
 });
 
 const NODE_SPORE_BASE_RADIUS = 0.0019;
-const NODE_SPORE_COLOR_LIFT = new THREE.Color(0xbffdf4);
+const NODE_SPORE_COLOR_LIFT = new THREE.Color(SCENE_PALETTE.sporeLift);
 const _nodeSporeObject = new THREE.Object3D();
 const _nodeSporeColor = new THREE.Color();
 const FOCUS_WISP_COUNT = 18;
 const FOCUS_WISP_SEGMENTS = 18;
 const FOCUS_MOTE_COUNT = 46;
 const FOCUS_PETAL_COUNT = 26;
-export const THREAD_TINT_COLOR = 0x4ecdc4;
+export const THREAD_TINT_COLOR = SCENE_PALETTE.threadTint;
 
 function getNavigationMode() {
     return state.navState?.mode ?? state.navState?.currentMode;

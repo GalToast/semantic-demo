@@ -1,5 +1,6 @@
 // state.js — single source of truth for all global variables in the semantic demo
 // All module files should: import { state } from './state.js'
+import { CLUSTER_COLORS } from './modules/design-tokens.js';
 
 export const _rawState = {
     // ==== SCENE / THREE.JS ====
@@ -118,12 +119,7 @@ export const _rawState = {
     LEAFLET_JS_URL: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
 
     // ==== COLORS / CLUSTER NAMES ====
-    COLORS: [
-        '#4ecdc4', '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff8c42', '#a66cff', '#ff6b9d',
-        '#45b7d1', '#96ceb4', '#ffeaa7', '#74b9ff', '#fd79a8', '#00b894', '#e17055', '#a29bfe',
-        '#fdcb6e', '#e84393', '#00cec9', '#6c5ce7', '#fab1a0', '#81ecec', '#55efc4', '#ffeaa7',
-        '#dfe6e9', '#ff7675', '#fd79a8', '#00b894', '#e17055'
-    ],
+    COLORS: CLUSTER_COLORS,
     CLUSTER_NAMES: [
         'General Business', 'Professional Services', 'Food & Hospitality', 'Construction & Trades',
         'Retail & Shops', 'Beauty & Wellness', 'Real Estate & Property', 'Industrial & Logistics',

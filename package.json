@@ -12,7 +12,7 @@
     "check:manifest": "node tests/css-manifest-contract.mjs",
     "check:cache": "node tests/cache-buster-check.js",
     "check:ownership": "node tests/css-ownership-check.mjs && node tests/focus-stage-css-ownership-contract.mjs && node tests/css-transient-state-ownership-contract.mjs",
-    "check:tokens": "node tests/design-token-doc-contract.mjs",
+    "check:tokens": "node tests/design-token-doc-contract.mjs && node tests/js-design-token-contract.mjs",
     "check:surface-styles": "node tests/surface-style-matrix-contract.mjs",
     "qa:visual": "node tests/visual-state-audit.mjs",
     "qa:surface": "node tests/visual-state-audit.mjs",

@@ -46,6 +46,7 @@ import {
     updateRouteTraceOverlayFrame
 } from './route-arrival-overlay-adapter.js';
 import { restoreWebGLContext } from './webgl-restore-adapter.js';
+import { SCENE_PALETTE } from './design-tokens.js';
 import { ResourceTracker } from './resource-tracker.js';
 import { setCurrentView } from './state-mutators.js';
 
@@ -134,7 +135,7 @@ const MYCELIUM_FIELD_SCALE = Object.freeze({
 });
 
 const SCENE_ATMOSPHERE = Object.freeze({
-    fogColor: 0x070a12,
+    fogColor: SCENE_PALETTE.fog,
     fogDensity: 0.0034,
     clearAlpha: 1,
     toneExposure: 0.92,
@@ -143,7 +144,7 @@ const SCENE_ATMOSPHERE = Object.freeze({
 });
 
 const NODE_SPORE_BASE_RADIUS = 0.0019;
-const NODE_SPORE_COLOR_LIFT = new THREE.Color(0xbffdf4);
+const NODE_SPORE_COLOR_LIFT = new THREE.Color(SCENE_PALETTE.sporeLift);
 const _nodeSporeObject = new THREE.Object3D();
 const _nodeSporeColor = new THREE.Color();
 const FOCUS_WISP_COUNT = 18;
@@ -152,7 +153,7 @@ const FOCUS_MOTE_COUNT = 46;
 const FOCUS_PETAL_COUNT = 26;
 
 // Constants used in animation
-const THREAD_TINT_COLOR = 0x4ecdc4;
+const THREAD_TINT_COLOR = SCENE_PALETTE.threadTint;
 
 function getNavigationMode() {
     return state.navState?.mode ?? state.navState?.currentMode;
