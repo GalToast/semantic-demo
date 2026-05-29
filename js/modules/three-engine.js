@@ -47,6 +47,7 @@ import {
 } from './route-arrival-overlay-adapter.js';
 import { restoreWebGLContext } from './webgl-restore-adapter.js';
 import { ResourceTracker } from './resource-tracker.js';
+import { setCurrentView } from './state-mutators.js';
 
 // three-setup.js - Three.js state.scene initialization, state.scene management, animation loop
 // Extracted from vector-explorer-polished.html inline script
@@ -116,7 +117,7 @@ function showWebGLFallback(container, detail = {}) {
         document.body.dataset.activeView = 'map';
         document.getElementById('map-container')?.classList.add('active');
         container.classList.add('hidden');
-        state.currentView = 'map';
+        setCurrentView('map');
         initMap();
         if (typeof switchView === 'function') {
             switchView('map', { reason: 'webgl-fallback' });

@@ -36,7 +36,7 @@ test.describe('resetExperienceState cleanup regression', () => {
     test.setTimeout(30000);
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof window.resetExperienceState === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof window.__APP_ACTIONS__?.resetExperienceState === 'function', { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     // Establish map view state so reset has something meaningful to do
@@ -47,7 +47,7 @@ test.describe('resetExperienceState cleanup regression', () => {
 
     // Trigger reset — must complete without hanging
     await page.evaluate(() => {
-      window.resetExperienceState();
+      window.__APP_ACTIONS__.resetExperienceState();
     });
 
     // Must return to galaxy view within 15s (generous — real cleanup is ~1.2s)
@@ -73,7 +73,7 @@ test.describe('resetExperienceState cleanup regression', () => {
     });
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof window.resetExperienceState === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof window.__APP_ACTIONS__?.resetExperienceState === 'function', { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     // Perform a search so there's state to clear
@@ -85,7 +85,7 @@ test.describe('resetExperienceState cleanup regression', () => {
 
     // Reset
     await page.evaluate(() => {
-      window.resetExperienceState();
+      window.__APP_ACTIONS__.resetExperienceState();
     });
     await page.waitForFunction(
       () => document.body.dataset.activeView === 'galaxy',
@@ -106,7 +106,7 @@ test.describe('resetExperienceState cleanup regression', () => {
     test.setTimeout(30000);
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof window.resetExperienceState === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof window.__APP_ACTIONS__?.resetExperienceState === 'function', { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     // Set up a prelude scenario: switch to map with prelude (to start the timer)
@@ -117,7 +117,7 @@ test.describe('resetExperienceState cleanup regression', () => {
     await page.waitForTimeout(100); // let the prelude timer start
 
     await page.evaluate(() => {
-      window.resetExperienceState();
+      window.__APP_ACTIONS__.resetExperienceState();
     });
 
     // After reset, no viewSwitchPreludeTimer should be pending

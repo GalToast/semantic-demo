@@ -14,6 +14,7 @@ import {
     showExperienceToast as adapterShowExperienceToast,
     applyDeepTrailMode,
 } from './url-navigation-adapter.js';
+import { setCurrentView } from './state-mutators.js';
 
 // === URL State ===
 
@@ -75,7 +76,7 @@ export function resetStateBeforeUrlRestore(options = {}) {
     state.navState.mode = 'overview';
     state.navState.trailDepth = 0;
     state.currentSearchSummary = null;
-    state.currentView = 'galaxy';
+    setCurrentView('galaxy');
     state.trailDepth = 0;
     state.myceliumMode = 'default';
 

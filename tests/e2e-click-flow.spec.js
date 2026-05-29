@@ -69,8 +69,8 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
 
   // 6. Reset
   await page.evaluate(() => {
-    if (typeof window.resetExperienceState === 'function') {
-      window.resetExperienceState();
+    if (typeof window.__APP_ACTIONS__?.resetExperienceState === 'function') {
+      window.__APP_ACTIONS__.resetExperienceState();
     }
   });
   await page.waitForTimeout(2000);

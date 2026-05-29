@@ -9,6 +9,7 @@
  */
 import { state } from '../state.js';
 import { detectStaticDevPHP } from '../utils.js';
+import { updateSemanticLaneState } from './state-mutators.js';
 
 let legendGuideStateUpdater = null;
 
@@ -283,7 +284,7 @@ export function scheduleSemanticLaneMonitor() {
 
 export function setSemanticLaneUiState(laneState, options = {}) {
     const doc = getDocument();
-    state.semanticLaneState = laneState;
+    updateSemanticLaneState(laneState);
     const pill = doc?.getElementById?.('semantic-lane-pill') || null;
     const container = doc?.querySelector?.('.search-container') || null;
     if (container) {

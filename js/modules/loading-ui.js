@@ -4,10 +4,11 @@ import { SCENE_READY } from './scene-events.js';
 import { loadSemanticThreads } from './semantic-threads.js';
 import { applyFilters } from './search-state.js';
 import { createMycelium } from './three-geometry-builder.js';
+import { updateLoadingPhaseKey } from './state-mutators.js';
 import { initWeather } from './weather.js';
 
 export function setLoadingPhase(phaseKey, overrides = {}) {
-    state.loadingPhaseKey = phaseKey;
+    updateLoadingPhaseKey(phaseKey);
     const phase = state.LOADING_PHASE_META[phaseKey] || state.LOADING_PHASE_META.records;
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {

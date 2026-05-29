@@ -288,6 +288,7 @@ const PINNED_FILES = [
   'loading-ui-contract.mjs',
   'exploration-data-contract.mjs',
   'state-ownership-contract.mjs',
+  'state-mutator-ownership-contract.mjs',
   'filter-ownership-contract.mjs',
   'cluster-filter-city-filter-side-effect-contract.mjs',
   'keyboard-reset-ownership-contract.mjs',

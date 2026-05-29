@@ -87,6 +87,7 @@ const debugProbe = new Set([
   '__semanticCanvasThreadProbe',
   '__semanticFocusCueProbe',
   '__semanticThreadInspectorProbe',
+  '_getSelectedBusinessRoleLabel',
   '_ti',
 ]);
 

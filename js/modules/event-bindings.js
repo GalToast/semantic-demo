@@ -34,6 +34,14 @@ import { showSemanticThreadsDetail } from './connection-analysis.js';
 import { buildLegend } from './ui-renderers.js';
 
 let _previouslyFocusedInfoPanel = null;
+let _globalEventController = new AbortController();
+
+export function disposeEventListeners() {
+    _globalEventController.abort();
+    _globalEventController = new AbortController();
+    state.registeredEvents.clear();
+    state.eventListenersInitialized = false;
+}
 
 function bindClick(id, handler, options = {}) {
     const element = document.getElementById(id);
@@ -634,6 +642,7 @@ function handleSemanticLaneVisibilityChange() {
 function bindGlobalEvents() {
     if (!state.registeredEvents.has('global-interaction')) {
         state.registeredEvents.add('global-interaction');
+        const opts = { signal: _globalEventController.signal };
         document.addEventListener('keydown', (e) => {
             const button = e.target instanceof HTMLButtonElement ? e.target : null;
             if (button && !button.disabled && (e.key === ' ' || e.code === 'Space')) {
@@ -641,13 +650,13 @@ function bindGlobalEvents() {
                 e.stopPropagation();
                 button.click();
             }
-        }, true);
-        window.addEventListener('keydown', (e) => { handleGalaxyKeydown(e); });
-        window.addEventListener('focus', () => { if (typeof handleSemanticLaneWindowFocus === 'function') handleSemanticLaneWindowFocus(); });
+        }, { capture: true, signal: _globalEventController.signal });
+        window.addEventListener('keydown', (e) => { handleGalaxyKeydown(e); }, opts);
+        window.addEventListener('focus', () => { if (typeof handleSemanticLaneWindowFocus === 'function') handleSemanticLaneWindowFocus(); }, opts);
         window.addEventListener('popstate', (e) => {
             if (typeof applyUrlState === 'function') applyUrlState({ fromHistory: true, historyState: e.state }).catch(() => {});
-        });
-        document.addEventListener('visibilitychange', () => { if (typeof handleSemanticLaneVisibilityChange === 'function') handleSemanticLaneVisibilityChange(); });
+        }, opts);
+        document.addEventListener('visibilitychange', () => { if (typeof handleSemanticLaneVisibilityChange === 'function') handleSemanticLaneVisibilityChange(); }, opts);
     }
 }
 

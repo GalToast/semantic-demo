@@ -56,6 +56,7 @@ export function initBridgeRegistry(actions = {}) {
         setTrailDepth: actions.setTrailDepth,
         setSemanticDiveMode: actions.setSemanticDiveMode,
         returnToOverview: actions.returnToOverview,
+        resetExperienceState: actions.resetExperienceState,
         resetExplorationFocus: actions.resetExplorationFocus,
         refreshCompositionState: actions.refreshCompositionState
     };

@@ -1,7 +1,7 @@
 // state.js — single source of truth for all global variables in the semantic demo
 // All module files should: import { state } from './state.js'
 
-export const state = {
+export const _rawState = {
     // ==== SCENE / THREE.JS ====
     points: [],
     map: null,
@@ -394,12 +394,45 @@ export const state = {
     deferredHydrationStarted: false
 };
 
+let _isMutating = false;
+
+export function withStateMutation(fn) {
+    const prev = _isMutating;
+    _isMutating = true;
+    try {
+        return fn();
+    } finally {
+        _isMutating = prev;
+    }
+}
+
+const CRITICAL_KEYS = new Set([
+    'currentView',
+    'navState',
+    'semanticLaneState',
+    'loadingPhaseKey',
+    'semanticThreadsStatus'
+]);
+
+export const state = new Proxy(_rawState, {
+    set(target, prop, value) {
+        if (CRITICAL_KEYS.has(prop) && !_isMutating) {
+            console.warn(`[State Warning] Direct mutation of critical property '${prop}' without withStateMutation() helper.`);
+        }
+        target[prop] = value;
+        return true;
+    },
+    get(target, prop) {
+        return target[prop];
+    }
+});
+
 // backward-compat getter: semanticDiveMode is now derived from trailDepth
-Object.defineProperty(state, 'semanticDiveMode', {
-    get: () => state.trailDepth === 2,
+Object.defineProperty(_rawState, 'semanticDiveMode', {
+    get: () => _rawState.trailDepth === 2,
     set: (val) => {
-        if (val === true) state.trailDepth = 2;
-        else state.trailDepth = 0;
+        if (val === true) _rawState.trailDepth = 2;
+        else _rawState.trailDepth = 0;
     },
     configurable: true,
     enumerable: true

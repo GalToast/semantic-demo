@@ -28,6 +28,7 @@ import {
 } from './journey-compass-controller.js';
 import { semanticGuideIcon } from './semantic-guide.js';
 import { applyMapFlatteningLayout } from './map-flattening-layout.js';
+import { setCurrentView } from './state-mutators.js';
 
 export function hideViewHandoff() {
     const handoff = document.getElementById('view-handoff');
@@ -116,7 +117,7 @@ export function switchView(view, options = {}) {
         }, state.MAP_HANDOFF_PRELUDE_MS || 1200);
         return;
     }
-    state.currentView = view;
+    setCurrentView(view);
 
     // 10/10 Polish: Transition Choreography
     document.body.classList.add('view-transitioning');

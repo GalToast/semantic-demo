@@ -34,8 +34,8 @@ export async function openApp(page, viewport) {
   await setupMockSearch(page);
   await openAppPage(page, viewport);
   await page.waitForFunction(() => {
-    const clearSearch = (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch);
-    const setSemanticDiveMode = (window.__APP_ACTIONS__?.setSemanticDiveMode ?? window.setSemanticDiveMode);
+    const clearSearch = window.__APP_ACTIONS__?.clearSearch;
+    const setSemanticDiveMode = window.__APP_ACTIONS__?.setSemanticDiveMode;
     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return typeof clearSearch === 'function' &&
       typeof setSemanticDiveMode === 'function' &&

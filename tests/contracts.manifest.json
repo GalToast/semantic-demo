@@ -167,6 +167,7 @@
         "semantic-dive-ui-dewindowing-contract.mjs",
         "semantic-dive-active-owner-contract.mjs",
         "state-ownership-contract.mjs",
+        "state-mutator-ownership-contract.mjs",
         "filter-ownership-contract.mjs",
         "cluster-filter-contract.mjs",
         "cluster-filter-city-filter-side-effect-contract.mjs",

@@ -39,6 +39,7 @@ import {
     setSemanticDiveMode,
     applyStoryPrompt,
     returnToOverview,
+    resetExperienceState,
     resetExplorationFocus,
     refreshCompositionState,
     focusOnPoint,
@@ -345,6 +346,7 @@ export async function init() {
             setTrailDepth,
             setSemanticDiveMode,
             returnToOverview,
+            resetExperienceState,
             resetExplorationFocus,
             refreshCompositionState
         });

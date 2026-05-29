@@ -1,6 +1,7 @@
 // js/modules/semantic-threads.js — semantic thread artifact loading
 import { state } from '../state.js';
 import { recordSemanticLaneSnapshot } from './url-navigation-adapter.js';
+import { updateSemanticThreadsStatus } from './state-mutators.js';
 
 const SEMANTIC_THREAD_RETRY_DELAYS_MS = [2500, 8000, 15000];
 
@@ -130,7 +131,7 @@ function _scheduleSemanticThreadsRetry(reason = 'artifact-retry') {
     const MAX_RETRIES = 5;
     if (state.semanticThreadsRetryAttempt >= MAX_RETRIES) {
         console.warn(`loadSemanticThreads: max retries (${MAX_RETRIES}) reached, giving up`);
-        state.semanticThreadsStatus = 'failed';
+        updateSemanticThreadsStatus('failed');
         return;
     }
     const delayMs = SEMANTIC_THREAD_RETRY_DELAYS_MS[Math.min(Number.isFinite(state.semanticThreadsRetryAttempt) ? state.semanticThreadsRetryAttempt : 0, SEMANTIC_THREAD_RETRY_DELAYS_MS.length - 1)] || 15000;
@@ -166,7 +167,7 @@ export async function loadSemanticThreads(options = {}) {
         { cache: 'no-store' },
     ];
 
-    state.semanticThreadsStatus = 'loading';
+    updateSemanticThreadsStatus('loading');
     state.semanticThreadsLoadPromise = (async () => {
         try {
             _clearSemanticThreadsRetryTimer();
@@ -223,7 +224,7 @@ export async function loadSemanticThreads(options = {}) {
             state.semanticThreadBundle = null;
             state.semanticThreadArtifactName = null;
             state.semanticNeighborMapByLeadId = new Map();
-            state.semanticThreadsStatus = 'failed';
+            updateSemanticThreadsStatus('failed');
             state.semanticThreadsLoadPromise = null;
             _recordSemanticLaneSnapshot({
                 thread_artifact_status: 'failed',
@@ -247,7 +248,7 @@ function finalizeThreadLoad() {
             records: state.semanticNeighborMapByLeadId.size
         });
     }
-    state.semanticThreadsStatus = state.semanticNeighborMapByLeadId.size > 0 ? 'ready' : 'failed';
+    updateSemanticThreadsStatus(state.semanticNeighborMapByLeadId.size > 0 ? 'ready' : 'failed');
     state.semanticThreadsRetryAttempt = state.semanticThreadsStatus === 'ready' ? 0 : state.semanticThreadsRetryAttempt;
     _recordSemanticLaneSnapshot({
         thread_artifact_status: state.semanticThreadsStatus,

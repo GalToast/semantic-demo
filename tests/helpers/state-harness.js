@@ -351,8 +351,8 @@ export async function reset(page, scope = 'exploration') {
       }
     } else if (s === 'deep') {
       // Full reset: exploration + search + view.
-      if (typeof window.resetExperienceState === 'function') {
-        window.resetExperienceState();
+      if (typeof window.__APP_ACTIONS__?.resetExperienceState === 'function') {
+        window.__APP_ACTIONS__.resetExperienceState();
       } else if (typeof window.__APP_ACTIONS__?.resetExplorationFocus === 'function') {
         window.__APP_ACTIONS__.resetExplorationFocus();
       }
