@@ -109,12 +109,13 @@ html body.is-active #selected-details.active {
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         font-size: 13px;
         font-weight: 800;
-        line-height: 1;
+        line-height: normal;
         letter-spacing: -0.015em;
         color: #fff;
         white-space: normal;
         overflow: visible;
         text-overflow: clip;
+        padding-bottom: 2px;
     }
 
     html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass-title,
@@ -129,6 +130,8 @@ html body.is-active #selected-details.active {
         flex-direction: row;
         gap: 8px;
         align-items: center;
+        flex: 0 0 auto;
+        width: auto;
         padding-left: 14px;
     }
 
@@ -266,10 +269,11 @@ html body.is-active #selected-details.active {
     html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) .journey-compass-title {
         min-width: 0;
         font-size: 11.5px;
-        line-height: 1.15;
+        line-height: normal;
         white-space: normal;
         overflow: visible;
         text-overflow: clip;
+        padding-bottom: 2px;
     }
 
     html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) #btn-share-view {
@@ -641,10 +645,11 @@ html body.is-active #selected-details.active {
     html body.is-active[data-panel-surface="search"][data-focus-panel-mode="field-node"] .journey-compass .journey-compass-title,
     html body.is-active[data-focus-panel-mode="field-node"] .journey-compass .journey-compass-title {
         font-size: 12px;
-        line-height: 1.2;
+        line-height: normal;
         white-space: normal;
         overflow: visible;
         text-overflow: clip;
+        padding-bottom: 2px;
         width: 100%;
     }
 
@@ -746,10 +751,11 @@ html body.is-active #selected-details.active {
 
     html body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]):not([data-panel-surface^="map-"]) .journey-compass:is(.glass-heavy, [data-density="compact"]) .journey-compass-title {
         font-size: 12px;
-        line-height: 1.2;
+        line-height: normal;
         white-space: normal;
         overflow: visible;
         text-overflow: clip;
+        padding-bottom: 2px;
         width: 100%;
     }
 

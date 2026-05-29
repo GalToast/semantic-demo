@@ -33,6 +33,7 @@ describe('data-loader', () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.unstubAllGlobals();
     });
 
     describe('Data Mapping', () => {
@@ -71,6 +72,65 @@ describe('data-loader', () => {
             // Check index mapping
             expect(state.pointIndexByLeadId.get('lead_1')).toBe(0);
             expect(state.pointIndexByLeadId.get('lead_2')).toBe(1);
+        });
+
+        it('should accept normalized point payloads from the data worker', async () => {
+            const workerPoints = [{
+                x: 4,
+                y: 5,
+                z: 6,
+                cluster: 'Worker Cluster',
+                name: 'Worker Name',
+                what: 'Worker loaded record',
+                city: 'Conroe',
+                lead_id: 'worker_1',
+                lat: 30.1,
+                lng: -95.2,
+                website: null,
+                email: null,
+                phone: null,
+                trivia: null,
+                status: 'active'
+            }];
+
+            class FakeWorker {
+                constructor(url) {
+                    this.url = url;
+                    this.listeners = new Set();
+                }
+
+                addEventListener(type, handler) {
+                    if (type === 'message') this.listeners.add(handler);
+                }
+
+                removeEventListener(type, handler) {
+                    if (type === 'message') this.listeners.delete(handler);
+                }
+
+                postMessage(message) {
+                    if (message.type !== 'LOAD_RECORDS') return;
+                    queueMicrotask(() => {
+                        this.listeners.forEach((handler) => handler({
+                            data: {
+                                type: 'LOAD_RECORDS_SUCCESS',
+                                payload: {
+                                    points: workerPoints,
+                                    pointIndexByLeadId: { worker_1: 0 }
+                                }
+                            }
+                        }));
+                    });
+                }
+            }
+
+            vi.stubGlobal('Worker', FakeWorker);
+            global.fetch = vi.fn();
+
+            await loadData();
+
+            expect(global.fetch).not.toHaveBeenCalled();
+            expect(state.points).toEqual(workerPoints);
+            expect(state.pointIndexByLeadId.get('worker_1')).toBe(0);
         });
     });
 

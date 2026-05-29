@@ -102,11 +102,19 @@
 .focus-stage-journey-btn,
 .btn-synthesize,
 .suggestion-btn,
-.share-toggle,
+.share-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .close-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    margin: -10px;
 }
 
 .trail-btn,

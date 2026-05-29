@@ -1,43 +1,108 @@
-import { state } from '../state.js'
+import { state } from '../state.js';
 import { updateClusterList, populateCityFilter } from './cluster-filter.js';
 import { buildLegend } from './ui-renderers.js';
 import { applyFilters } from './search-state.js';
 
+let _dataWorker = null;
+
+function buildAssetUrl(path) {
+    if (typeof window === 'undefined') return path;
+    return new URL(path, window.location.href).href;
+}
+
+function getWorker() {
+    if (typeof Worker === 'undefined') {
+        _dataWorker = null;
+        return null;
+    }
+    if (_dataWorker) return _dataWorker;
+
+    try {
+        _dataWorker = new Worker('js/workers/data-worker.js');
+        return _dataWorker;
+    } catch (err) {
+        console.warn('Web Worker instantiation failed, using main-thread fallback.', err);
+        return null;
+    }
+}
+
+/**
+ * Promise-based wrapper for worker communication.
+ */
+function callWorker(type, payload) {
+    return new Promise((resolve, reject) => {
+        const worker = getWorker();
+        if (!worker) {
+            reject(new Error('Worker unavailable'));
+            return;
+        }
+
+        const handler = (event) => {
+            const { type: resType, payload: resPayload } = event.data;
+            if (resType === `${type}_SUCCESS`) {
+                worker.removeEventListener('message', handler);
+                resolve(resPayload);
+            } else if (resType === 'ERROR') {
+                worker.removeEventListener('message', handler);
+                _dataWorker = null;
+                reject(new Error(resPayload?.message || 'Worker failed'));
+            }
+        };
+
+        worker.addEventListener('message', handler);
+        worker.postMessage({ type, payload });
+    });
+}
+
 export async function loadData() {
-    let raw
-    let lastError
-    state.dataLoadAttempt = (state.dataLoadAttempt || 0) + 1
-    const maxAttempts = 3
+    let lastError;
+    state.dataLoadAttempt = (state.dataLoadAttempt || 0) + 1;
+    const maxAttempts = 3;
+    const dataUrl = buildAssetUrl(`data.dat?v=6&t=${Date.now()}`);
+
+    // 1. Attempt Worker-Based Loading
+    const worker = getWorker();
+    if (worker) {
+        try {
+            const { points, pointIndexByLeadId } = await callWorker('LOAD_RECORDS', { url: dataUrl });
+            state.points = points;
+            state.pointIndexByLeadId = new Map(Object.entries(pointIndexByLeadId));
+            finalizeLoading();
+            return;
+        } catch (err) {
+            console.warn('Worker-based data loading failed, falling back to main thread.', err);
+            _dataWorker = null;
+            lastError = err;
+        }
+    }
+
+    // 2. Main-Thread Fallback
+    let raw;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
-            const response = await fetch(`data.dat?v=6&t=${Date.now()}`)
-            if (!response.ok) throw new Error(`Failed to fetch data: ${response.status}`)
+            const response = await fetch(dataUrl);
+            if (!response.ok) throw new Error(`Failed to fetch data: ${response.status}`);
             try {
-                raw = await response.json()
+                raw = await response.json();
             } catch (jsonErr) {
-                Object.defineProperty(jsonErr, 'correlationId', {
-                    value: crypto.randomUUID(),
-                    writable: false,
-                    configurable: true
-                })
-                throw new Error(`Invalid JSON in data.dat: ${jsonErr.message}`, { cause: jsonErr })
+                throw new Error(`Invalid JSON in data.dat: ${jsonErr.message}`, { cause: jsonErr });
             }
-            break
+            break;
         } catch (err) {
-            lastError = err
-            const retryCount = attempt
-            if (retryCount < maxAttempts && state.dataLoadAttempt < maxAttempts) {
-                await new Promise((r) => setTimeout(r, 500 * attempt))
+            lastError = err;
+            if (attempt < maxAttempts) {
+                await new Promise((r) => setTimeout(r, 500 * attempt));
             }
         }
     }
+
     if (!raw || !Array.isArray(raw)) {
-        state.points = []
-        state.pointIndexByLeadId = new Map()
-        state.projectedNeighborGrid = null
-        state.projectedNeighborCache = new Map()
-        const detail = lastError?.message ? ` Last error: ${lastError.message}` : ''
-        throw new Error(`Unable to load county records after ${maxAttempts} attempts.${detail}`)
+        state.points = [];
+        state.pointIndexByLeadId = new Map();
+        state.projectedNeighborGrid = null;
+        state.projectedNeighborCache = new Map();
+        const detail = lastError?.message ? ` Last error: ${lastError.message}` : '';
+        throw new Error(`Unable to load county records after ${maxAttempts} attempts.${detail}`);
     }
 
     state.points = raw.map((p) => ({
@@ -56,36 +121,41 @@ export async function loadData() {
         phone: p.length > 12 ? cleanOptionalValue(p[12]) : null,
         trivia: p.length > 13 ? cleanOptionalValue(p[13]) : null,
         status: p.length > 14 ? cleanOptionalValue(p[14]) || 'active' : 'active'
-    }))
+    }));
 
-    state.pointIndexByLeadId = new Map()
+    state.pointIndexByLeadId = new Map();
     state.points.forEach((point, index) => {
         if (point.lead_id !== null && point.lead_id !== undefined && point.lead_id !== '') {
-            state.pointIndexByLeadId.set(String(point.lead_id), index)
+            state.pointIndexByLeadId.set(String(point.lead_id), index);
         }
-    })
-    state.projectedNeighborGrid = null
-    state.projectedNeighborCache = new Map()
+    });
 
-    const totalCountEl = document.getElementById('total-count')
-    if (totalCountEl) totalCountEl.textContent = state.points.length.toLocaleString()
+    finalizeLoading();
+}
+
+function finalizeLoading() {
+    state.projectedNeighborGrid = null;
+    state.projectedNeighborCache = new Map();
+
+    const totalCountEl = document.getElementById('total-count');
+    if (totalCountEl) totalCountEl.textContent = state.points.length.toLocaleString();
 
     try {
-        if (typeof updateClusterList === 'function') updateClusterList()
-        if (typeof buildLegend === 'function') buildLegend()
-        if (typeof populateCityFilter === 'function') populateCityFilter()
-        if (typeof applyFilters === 'function') applyFilters()
+        if (typeof updateClusterList === 'function') updateClusterList();
+        if (typeof buildLegend === 'function') buildLegend();
+        if (typeof populateCityFilter === 'function') populateCityFilter();
+        if (typeof applyFilters === 'function') applyFilters();
     } catch (err) {
-        console.warn('Post-load UI refresh failed:', err)
+        console.warn('Post-load UI refresh failed:', err);
     }
 }
 
 function cleanOptionalValue(value) {
-    if (value === undefined || value === null || value === '' || value === 'NULL') return null
-    return value
+    if (value === undefined || value === null || value === '' || value === 'NULL') return null;
+    return value;
 }
 
 function parseFiniteNumber(value) {
-    const num = parseFloat(value)
-    return Number.isFinite(num) ? num : null
+    const num = parseFloat(value);
+    return Number.isFinite(num) ? num : null;
 }

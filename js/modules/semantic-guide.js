@@ -405,6 +405,11 @@ function finishSemanticGuideRequest(controller, button) {
     if (typeof updateLegendGuideState === 'function') updateLegendGuideState();
 }
 
+function ensureSemanticGuideCorrelationId(error) {
+    if (!error || Object.prototype.hasOwnProperty.call(error, 'correlationId')) return;
+    Object.defineProperty(error, 'correlationId', { value: crypto.randomUUID(), writable: false, configurable: true });
+}
+
 export async function requestSemanticGuide() {
     const payload = buildSemanticGuideRequestPayload();
     const button = document.getElementById('btn-synthesize');
@@ -421,7 +426,7 @@ export async function requestSemanticGuide() {
         }
     } catch (error) {
         if (isSemanticGuideRequestCancelled(requestId, controller)) return;
-        Object.defineProperty(error, 'correlationId', { value: crypto.randomUUID(), writable: false, configurable: true });
+        ensureSemanticGuideCorrelationId(error);
         showSemanticGuideFailure(payload, error);
     } finally {
         finishSemanticGuideRequest(controller, button);

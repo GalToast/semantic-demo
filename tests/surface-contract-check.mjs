@@ -360,10 +360,16 @@ async function assert_launch_focus(page, ctx) {
   const focusedUrl = `${positionalUrl}${base}view=galaxy&q=coffee&anchor=519`;
   await loadAndWait(page, focusedUrl);
 
+  await page.waitForSelector('.search-result-item', { timeout: 5000 }).catch(() => {});
   await page.evaluate(() => {
     const el = document.querySelector('.search-result-item');
     if (el) el.click();
   });
+  await page.waitForFunction(() => {
+    const context = document.body?.dataset?.graphContext || '';
+    const panel = document.body?.dataset?.panelSurface || '';
+    return context.includes('focus') || panel.includes('focus');
+  }, { timeout: 5000 }).catch(() => {});
   await page.waitForTimeout(500);
 
   const info = await page.evaluate(() => {
@@ -403,7 +409,12 @@ async function assert_launch_focus(page, ctx) {
       results.focusStageVisible = style.display !== 'none' && style.visibility !== 'hidden';
     }
 
-    const diveBtn = document.querySelector('.focus-stage-dive-btn, .dive-btn');
+    const diveBtnCandidates = Array.from(document.querySelectorAll('.focus-stage-dive-btn, .dive-btn'));
+    const diveBtn = diveBtnCandidates.find((btn) => {
+      const rect = btn.getBoundingClientRect();
+      const style = getComputedStyle(btn);
+      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+    }) || diveBtnCandidates[0] || null;
     if (diveBtn) {
       const rect = diveBtn.getBoundingClientRect();
       const style = getComputedStyle(diveBtn);
@@ -433,7 +444,7 @@ async function assert_launch_focus(page, ctx) {
   if (info.focusStageBlocksViewport) ctx.fail('launch-focus', 'overlay:focus-stage', 'focus stage covers too much of the viewport');
   else if (info.focusStageBlocksViewport === false) ctx.pass('launch-focus', 'overlay:focus-stage');
 
-  if (info.diveBtnTouchTarget === false) ctx.fail('launch-focus', 'touch-target:dive-button', 'dive button < 44px tall');
+  if (info.diveBtnTouchTarget === false) ctx.fail('launch-focus', 'touch-target:dive-button', `dive button < 44px tall (w:${info.diveBtnRect?.width}, h:${info.diveBtnRect?.height}, vis:${info.diveBtnVisible})`);
   else if (info.diveBtnTouchTarget) ctx.pass('launch-focus', 'touch-target:dive-button');
   else if (info.diveBtnVisible === false) ctx.pass('launch-focus', 'touch-target:dive-button:hidden');
 
@@ -562,6 +573,12 @@ async function assert_search_error(page, ctx) {
 
     const compassTitle = document.querySelector('.journey-compass-title');
     results.compassTitleClipped = compassTitle ? textClipped(compassTitle) : null;
+    if (compassTitle) {
+      const rect = compassTitle.getBoundingClientRect();
+      results.compassTitleScrollWidth = compassTitle.scrollWidth;
+      results.compassTitleScrollHeight = compassTitle.scrollHeight;
+      results.compassTitleRect = { width: rect.width, height: rect.height };
+    }
     const compass = document.querySelector('.journey-compass');
     if (compass) {
       const compassRect = compass.getBoundingClientRect();
@@ -600,7 +617,7 @@ async function assert_search_error(page, ctx) {
   if (info.dismissBtnTouchTarget === false) ctx.fail('search-error', 'touch-target:dismiss-button', 'dismiss button < 44px tall');
   else if (info.dismissBtnTouchTarget) ctx.pass('search-error', 'touch-target:dismiss-button');
 
-  if (info.compassTitleClipped) ctx.fail('search-error', 'text-clipping:compass-title', 'search compass title is clipped');
+  if (info.compassTitleClipped) ctx.fail('search-error', 'text-clipping:compass-title', `search compass title is clipped (sw:${info.compassTitleScrollWidth}, sh:${info.compassTitleScrollHeight}, w:${info.compassTitleRect?.width}, h:${info.compassTitleRect?.height})`);
   else if (info.compassTitleClipped === false) ctx.pass('search-error', 'text-clipping:compass-title');
 
   if (info.compassWithinViewport === false) ctx.fail('search-error', 'layout:compass-width', 'search compass extends outside viewport');
@@ -2260,6 +2277,10 @@ async function assert_search_chrome(page, ctx) {
         clipped: el.scrollWidth > r.width + 2 || el.scrollHeight > r.height + 2,
         whiteSpace: s.whiteSpace,
         textOverflow: s.textOverflow,
+        scrollWidth: el.scrollWidth,
+        scrollHeight: el.scrollHeight,
+        rectWidth: r.width,
+        rectHeight: r.height,
       };
     }
 
@@ -2313,7 +2334,15 @@ async function assert_search_chrome(page, ctx) {
     results.searchLabelClipped = searchLabel ? textClipped(searchLabel) : null;
 
     const compassTitle = document.querySelector('.journey-compass-title');
-    results.compassTitle = titleContract(compassTitle);
+    const compassCopy = document.querySelector('.journey-compass-copy');
+    const compass = document.querySelector('.journey-compass');
+
+    results.compassDump = {
+      compass: rectSnapshot(compass),
+      compassCopy: rectSnapshot(compassCopy),
+      title: titleContract(compassTitle),
+    };
+    results.compassTitle = results.compassDump.title;
 
     const lanePill = document.querySelector('#semantic-lane-pill');
     results.lanePillPresent = lanePill !== null;
@@ -2443,9 +2472,9 @@ async function assert_search_chrome(page, ctx) {
   if (info.searchLabelClipped) ctx.fail('search-chrome', 'text-clipping:search-label', 'search label text is clipped');
   else if (info.searchLabelClipped === false) ctx.pass('search-chrome', 'text-clipping:search-label');
 
-  if (info.compassTitle?.clipped) {
-    ctx.fail('search-chrome', 'text-clipping:compass-title', 'search compass title is clipped');
-  } else if (info.compassTitle) {
+  if (info.compassTitle?.clipped === true) {
+    ctx.fail('search-chrome', 'text-clipping:compass-title', `search compass title is clipped (sw:${info.compassTitle?.scrollWidth}, sh:${info.compassTitle?.scrollHeight}, w:${info.compassTitle?.rectWidth}, h:${info.compassTitle?.rectHeight})`);
+  } else if (info.compassTitle?.clipped === false) {
     ctx.pass('search-chrome', 'text-clipping:compass-title');
   } else {
     ctx.fail('search-chrome', 'dom:journey-compass-title', 'missing .journey-compass-title');
@@ -2987,6 +3016,10 @@ async function assert_mobile_focus_search(page, ctx) {
       const r = el.getBoundingClientRect();
       return {
         clipped: el.scrollWidth > r.width + 2 || el.scrollHeight > r.height + 2,
+        scrollWidth: el.scrollWidth,
+        scrollHeight: el.scrollHeight,
+        rectWidth: Math.round(r.width * 100) / 100,
+        rectHeight: Math.round(r.height * 100) / 100,
         whiteSpace: s.whiteSpace,
         textOverflow: s.textOverflow,
       };

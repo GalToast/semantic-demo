@@ -20,7 +20,8 @@ async function waitForStateReady(page) {
     // eslint-disable-next-line no-undef
     return typeof __APP_STATE__ !== 'undefined'
       && Array.isArray(__APP_STATE__.points)
-      && __APP_STATE__.points.length > 0;
+      && __APP_STATE__.points.length > 0
+      && __APP_STATE__.eventListenersInitialized === true;
   }, { timeout: 60000 });
 }
 
@@ -49,8 +50,7 @@ test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
 
     // Setup state so buildSemanticGuideRequestPayload returns a valid payload
     const anchorName = await page.evaluate(() => {
-      // eslint-disable-next-line no-undef
-      const s = window.__TEST_STATE__;
+      const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
       s.currentSearchSummary = {
         query: 'coffee',
         anchorIndex: 0,
@@ -64,13 +64,22 @@ test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
 
     // Trigger through the bound button; use DOM click so visibility does not matter.
     await page.evaluate(async () => {
+      const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+      s.currentSearchSummary = {
+        query: 'coffee',
+        anchorIndex: 0,
+        resultIndices: [0, 1, 2, 3]
+      };
+      s.currentView = 'list';
       const trigger = document.getElementById('synthesize-trigger');
       if (trigger) {
         trigger.hidden = false;
         trigger.classList.remove('hidden');
         trigger.style.display = 'block';
       }
-      document.getElementById('btn-synthesize')?.click();
+      const button = document.getElementById('btn-synthesize');
+      if (button) button.disabled = false;
+      button?.onclick?.(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
     });
 
     // Small delay to allow async fetch to reject and DOM to update
@@ -98,8 +107,7 @@ test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
 
     // Verify data-lead-id attributes exist and correspond to the results
     const leadIds = await page.evaluate(() => {
-      // eslint-disable-next-line no-undef
-      const s = window.__TEST_STATE__;
+      const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
       return s.points.slice(0, 3).map(p => String(p.lead_id));
     });
 

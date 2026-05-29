@@ -1,5 +1,6 @@
 import { state } from '../state.js';
 import { detectStaticDevPHP } from '../utils.js';
+import * as idb from './idb-service.js';
 
 const SEMANTIC_SEARCH_RETRY_DELAYS_MS = [900, 1800];
 const SEMANTIC_SEARCH_CACHE_MAX_ENTRIES = 8;
@@ -16,6 +17,26 @@ if (!state.semanticSearchCacheDiagnostics) {
         lastSource: null,
         lastAgeMs: null
     };
+}
+
+export async function initSearchCache() {
+    try {
+        const dbEntries = await idb.entries();
+        const now = Date.now();
+        for (const [key, entry] of dbEntries) {
+            if (!entry || typeof entry.storedAt !== 'number') continue;
+            const ageMs = now - entry.storedAt;
+            if (ageMs > SEMANTIC_SEARCH_CACHE_TTL_MS) {
+                // Expired, remove from IDB
+                idb.remove(key).catch(err => console.warn('[idb-service] cleanup failed:', err));
+            } else {
+                // Valid, load into memory
+                state.semanticSearchResultCache.set(key, entry);
+            }
+        }
+    } catch (err) {
+        console.warn('[semantic-search-api-cache] Failed to initialize IDB cache:', err);
+    }
 }
 
 function isRetryableSemanticSearchError(error) {
@@ -86,7 +107,7 @@ function markSemanticSearchCache(source, key, entry = null) {
     state.semanticSearchCacheDiagnostics.lastSource = source;
     state.semanticSearchCacheDiagnostics.lastKey = key || null;
     state.semanticSearchCacheDiagnostics.lastAgeMs = entry
-        ? Math.max(0, Math.round(performance.now() - entry.storedAt))
+        ? Math.max(0, Math.round(Date.now() - entry.storedAt))
         : null;
 }
 
@@ -101,16 +122,22 @@ export function getCachedSemanticSearchPayload(query) {
         return null;
     }
 
-    const ageMs = performance.now() - entry.storedAt;
+    const now = Date.now();
+    const ageMs = now - entry.storedAt;
     if (ageMs > SEMANTIC_SEARCH_CACHE_TTL_MS) {
         state.semanticSearchResultCache.delete(key);
+        idb.remove(key).catch(err => console.warn('[idb-service] eviction failed:', err));
+
         state.semanticSearchCacheDiagnostics.evictions += 1;
         state.semanticSearchCacheDiagnostics.misses += 1;
         markSemanticSearchCache('expired', key, entry);
         return null;
     }
 
-    entry.lastAccessedAt = performance.now();
+    entry.lastAccessedAt = now;
+    // Asynchronously update IDB lastAccessedAt
+    idb.set(key, entry).catch(err => console.warn('[idb-service] access update failed:', err));
+
     state.semanticSearchCacheDiagnostics.hits += 1;
     markSemanticSearchCache('hit', key, entry);
 
@@ -130,20 +157,26 @@ export function storeSemanticSearchPayload(query, payload) {
         return; // treat as cache miss — will fetch fresh
     }
 
-    state.semanticSearchResultCache.set(key, {
-        storedAt: performance.now(),
-        lastAccessedAt: performance.now(),
+    const now = Date.now();
+    const entry = {
+        storedAt: now,
+        lastAccessedAt: now,
         payload: cloneSemanticSearchPayload(payload)
-    });
+    };
+
+    state.semanticSearchResultCache.set(key, entry);
+    // Asynchronously mirror to IDB
+    idb.set(key, entry).catch(err => console.warn('[idb-service] store failed:', err));
+
     state.semanticSearchCacheDiagnostics.stores += 1;
     markSemanticSearchCache('store', key);
 
     while (state.semanticSearchResultCache.size > SEMANTIC_SEARCH_CACHE_MAX_ENTRIES) {
         // First, proactively remove all expired entries
-        for (const key of state.semanticSearchResultCache.keys()) {
-            const entry = state.semanticSearchResultCache.get(key);
-            if (entry && (performance.now() - entry.storedAt > SEMANTIC_SEARCH_CACHE_TTL_MS)) {
-                state.semanticSearchResultCache.delete(key);
+        for (const [k, e] of state.semanticSearchResultCache.entries()) {
+            if (e && (now - e.storedAt > SEMANTIC_SEARCH_CACHE_TTL_MS)) {
+                state.semanticSearchResultCache.delete(k);
+                idb.remove(k).catch(err => console.warn('[idb-service] eviction failed:', err));
                 state.semanticSearchCacheDiagnostics.evictions += 1;
             }
         }
@@ -151,15 +184,15 @@ export function storeSemanticSearchPayload(query, payload) {
         if (state.semanticSearchResultCache.size > SEMANTIC_SEARCH_CACHE_MAX_ENTRIES) {
             let oldestKey = null;
             let oldestTime = Infinity;
-            for (const key of state.semanticSearchResultCache.keys()) {
-                const entry = state.semanticSearchResultCache.get(key);
-                if (entry && Number.isFinite(entry.lastAccessedAt) && entry.lastAccessedAt < oldestTime) {
-                    oldestTime = entry.lastAccessedAt;
-                    oldestKey = key;
+            for (const [k, e] of state.semanticSearchResultCache.entries()) {
+                if (e && Number.isFinite(e.lastAccessedAt) && e.lastAccessedAt < oldestTime) {
+                    oldestTime = e.lastAccessedAt;
+                    oldestKey = k;
                 }
             }
             if (!oldestKey) break;
             state.semanticSearchResultCache.delete(oldestKey);
+            idb.remove(oldestKey).catch(err => console.warn('[idb-service] eviction failed:', err));
             state.semanticSearchCacheDiagnostics.evictions += 1;
         }
     }

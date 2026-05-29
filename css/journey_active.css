@@ -52,7 +52,7 @@
     margin-top: 2px;
     font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
     font-size: var(--mobile-type-title, 18px);
-    line-height: 0.98;
+    line-height: 1.15;
     color: rgba(249, 254, 253, 0.96);
 }
 

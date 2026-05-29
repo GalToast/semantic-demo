@@ -2305,7 +2305,7 @@ export function animate() {
         const basePulseSpeed = prefersReduced ? 0.0 : 0.015;
         const windSpeed = state.weather?.wind_speed_10m ?? 8.0; // Default to gentle breeze
         const pulseIncrement = basePulseSpeed * (0.6 + (windSpeed / 15.0));
-        state.pulsePhase += pulseIncrement;
+        state.pulsePhase = (state.pulsePhase + pulseIncrement) % (Math.PI * 2);
 
         const threadRevealProgress = easeOutQuint(Math.min(1.0, Math.max(0.0, (pointsRevealProgress - 0.25) / 0.5)));
         const graphProfile = getMyceliumPresentationProfile();

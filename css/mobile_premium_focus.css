@@ -400,6 +400,7 @@
         min-height: 44px;
         height: 44px;
         margin-bottom: 4px;
+        flex-shrink: 0;
     }
 
     html body.is-active[data-panel-surface="focus"]:not([data-panel-surface^="map-"]) #focus-stage .focus-stage-dive-btn {

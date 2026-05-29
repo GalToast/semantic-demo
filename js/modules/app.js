@@ -73,6 +73,7 @@ import { applyPointFilterColors, updateSelectedBusiness, updateTrailIndices } fr
 import { initEventListeners } from './event-bindings.js';
 import { updateTime } from '../utils.js';
 import { initBridgeRegistry } from './bridge-registry.js';
+import { initSearchCache } from './semantic-search-api-cache.js';
 
 // ── Startup Recovery UI ──────────────────────────────────────────────────────
 
@@ -346,6 +347,8 @@ export async function init() {
             resetExplorationFocus,
             refreshCompositionState
         });
+
+        await initSearchCache();
 
         try {
             await applyUrlState();
