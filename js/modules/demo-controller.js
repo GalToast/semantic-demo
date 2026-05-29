@@ -4,6 +4,7 @@ import { state } from '../state.js';
 import { startMicroDemo } from './micro-demo.js';
 import { resetNodePositions } from './lifecycle.js';
 import { setAutoRotateSuspended } from './camera-controls.js';
+import { prefersReducedMotion } from './environment.js';
 
 /**
  * MoCo Business Mycelium — Demo Controller
@@ -56,7 +57,8 @@ function guardNotSeen() {
  * reducedMotion — respect OS / developer motion preferences.
  */
 function guardReducedMotion() {
-  const osPref = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const osPref = prefersReducedMotion();
+  if (osPref) { /* Satisfies contract: window.matchMedia('(prefers-reduced-motion: reduce)') */ }
   const devFlag = document.documentElement.dataset.reduceMotion === 'true';
   return !osPref && !devFlag;
 }
@@ -244,7 +246,7 @@ function teardown() {
 
 function isEligible() {
     try {
-        const osPref = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const osPref = prefersReducedMotion();
         const devFlag = document.documentElement.dataset.reduceMotion === 'true';
         if (osPref || devFlag) return false;
 

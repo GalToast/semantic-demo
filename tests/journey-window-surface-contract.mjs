@@ -80,13 +80,29 @@ function testThreadInspectorDebugNamespace() {
 
   const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
 
-  // _ti is gated behind __DEBUG_PROBES__ — accept gated or unconditional pattern
+  // _ti is registered through diagnostic-adapter; accept current or legacy pattern.
+  const hasAdapterRegistration = src.includes("registerDiagnosticProbe('_ti', {");
   const hasGated = src.includes('if (window.__DEBUG_PROBES__)');
-  assert(hasGated || src.includes('window._ti = {'), 'window._ti namespace exists (gated or unconditional)');
+  assert(hasAdapterRegistration || hasGated || src.includes('window._ti = {'), 'window._ti namespace exists (adapter, gated, or unconditional)');
 
-  // Locate _ti block regardless of gating
+  // Locate _ti block regardless of registration style.
   let tiBlock = '';
-  if (hasGated) {
+  if (hasAdapterRegistration) {
+    const tiStart = src.indexOf("registerDiagnosticProbe('_ti', {");
+    const openIdx = src.indexOf('{', tiStart);
+    let depth = 0;
+    for (let i = openIdx; i < src.length; i++) {
+      const ch = src[i];
+      if (ch === '{') depth++;
+      else if (ch === '}') {
+        depth--;
+        if (depth === 0) {
+          tiBlock = src.slice(tiStart, i + 1);
+          break;
+        }
+      }
+    }
+  } else if (hasGated) {
     const gatedStart = src.indexOf('if (window.__DEBUG_PROBES__)');
     const tiStart = src.indexOf('window._ti = {', gatedStart);
     assert(tiStart !== -1, 'window._ti = { found inside __DEBUG_PROBES__ gate');
@@ -231,7 +247,7 @@ function testNoCrossModuleLeakage() {
   assertNotContains(journeyModelSrc, 'window.', 'journey-thread-model: no window.* (pure module)');
 
   // thread-inspector must NOT own journey window shim entries.
-  // Only the window._ti diagnostic namespace is allowed here.
+  // Only the diagnostic adapter may place _ti on window.
   const tiWindowAssignments = threadInspectorSrc.match(/window\.[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*[a-zA-Z_$][a-zA-Z0-9_$]*;/g) || [];
   // window._ti is the debug namespace — allowed
   // Any other window.Foo = Foo should only be journey.js

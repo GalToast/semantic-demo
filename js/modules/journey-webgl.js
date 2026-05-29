@@ -9,6 +9,7 @@ import { getThreadCandidatesForIndex } from './journey-thread-model.js';
 import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from './journey.js';
 import { getFocusThreadCurvePoint } from './focus-pocket.js';
 import { setRouteArrivalOverlayUpdaters } from './route-arrival-overlay-adapter.js';
+import { prefersReducedMotion } from './environment.js';
 
 const ROUTE_TRACE_SEGMENT_STEPS = 7;
 const ARRIVAL_HANDOFF_SEGMENT_STEPS = 9;
@@ -443,10 +444,6 @@ function getFocusCurvePoint(edge, t) {
     return new THREE.Vector3(ax, ay, az).lerp(new THREE.Vector3(bx, by, bz), t);
 }
 
-function isReducedMotionPreferred() {
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
-}
-
 function buildFocusThreadLineMaterial() {
     const baseOpacity = state.navState.focusPocketMeta?.active ? 0.18 : 0.24;
     const lineMaterial = new LineMaterial({
@@ -460,7 +457,7 @@ function buildFocusThreadLineMaterial() {
     });
     lineMaterial.uniforms.time = { value: performance.now() / 1000 };
     lineMaterial.uniforms.semanticScore = { value: 0.5 };
-    lineMaterial.uniforms.reducedMotion = { value: isReducedMotionPreferred() ? 1 : 0 };
+    lineMaterial.uniforms.reducedMotion = { value: prefersReducedMotion() ? 1 : 0 };
     lineMaterial.uniforms.denseBundleMode = { value: 0 };
     lineMaterial.userData.shader = { uniforms: lineMaterial.uniforms };
 
@@ -791,7 +788,7 @@ export function updateFocusSemanticOverlayPositions(now = performance.now()) {
     const line = state.focusSemanticLines;
     const pairs = state.focusSemanticConnectionPairs || [];
     if (!line?.geometry?.attributes?.instanceStart || !pairs.length) return;
-    const reducedMotion = isReducedMotionPreferred();
+    const reducedMotion = prefersReducedMotion();
     const startAttr = line.geometry.attributes.instanceStart;
     const endAttr = line.geometry.attributes.instanceEnd;
     let offset = 0;
@@ -839,6 +836,8 @@ export function getSemanticFocusCueProbeSnapshot() {
     };
 }
 
+import { registerDiagnosticProbe } from './diagnostic-adapter.js';
+
 // Window exposures for inline scripts and compatibility
 if (typeof window !== 'undefined') {
     window.refreshFocusSemanticOverlay = refreshFocusSemanticOverlay;
@@ -849,7 +848,6 @@ if (typeof window !== 'undefined') {
     window.updateArrivalHandoffOverlay = updateArrivalHandoffOverlay;
     window.disposeArrivalHandoffOverlay = disposeArrivalHandoffOverlay;
     window.setRouteChoreographyPhase = setRouteChoreographyPhase;
-    if (typeof window.__DEBUG_PROBES__ !== 'undefined' ? window.__DEBUG_PROBES__ : true) {
-        window.__semanticFocusCueProbe = getSemanticFocusCueProbeSnapshot;
-    }
+
+    registerDiagnosticProbe('__semanticFocusCueProbe', getSemanticFocusCueProbeSnapshot);
 }

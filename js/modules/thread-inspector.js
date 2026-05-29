@@ -732,14 +732,12 @@ export function disposeInspectedStrandOverlay() {
     };
 }
 
+import { registerDiagnosticProbe } from './diagnostic-adapter.js';
+
 setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay);
 
-// Debug access — gated behind __DEBUG_PROBES__
-// Gate-off: _ti is not created; no bare window function exports escape thread-inspector.
-// Gate-on: all 17 thread-inspection functions available for diagnostics.
-// Defaults to true so gate-on is the default in dev/test; set __DEBUG_PROBES__=false in production.
-if (typeof window.__DEBUG_PROBES__ !== 'undefined' ? window.__DEBUG_PROBES__ : true) {
-  window._ti = {
+// Debug access — registered via diagnostic-adapter
+registerDiagnosticProbe('_ti', {
     getSemanticThreadCandidates,
     getGeometricThreadCandidates,
     getThreadCandidatesForIndex,
@@ -757,8 +755,7 @@ if (typeof window.__DEBUG_PROBES__ !== 'undefined' ? window.__DEBUG_PROBES__ : t
     syncInspectedStrandOverlay,
     updateInspectedStrandOverlay,
     disposeInspectedStrandOverlay
-  };
-}
+});
 
 // Diagnostic namespace — exploreThreadNeighbor remains accessible via _ti for debugging.
 // The direct window.exploreThreadNeighbor backward-compat bridge has been removed

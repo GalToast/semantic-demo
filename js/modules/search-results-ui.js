@@ -43,6 +43,7 @@ import {
     scheduleCompactSearchResultReveal as adapter_scheduleCompactSearchResultReveal,
     scheduleSearchFocusTask as adapter_scheduleSearchFocusTask,
 } from './search-lifecycle-adapter.js';
+import { isMobileViewport } from './environment.js';
 
 /**
  * search-results-ui.js
@@ -386,7 +387,7 @@ export function startSearchVectorScramble() {
 
     const chars = '0123456789ABCDEF<>[]|{}#*@';
     const generateVector = () => {
-        const length = window.innerWidth <= 768 ? 6 : 10;
+        const length = isMobileViewport() ? 6 : 10;
         const parts = Array.from({ length }, () => (Math.random() * 2 - 1).toFixed(3));
         const noise = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
         return `[${parts.join(', ')}] ${noise}`;

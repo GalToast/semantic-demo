@@ -4,6 +4,7 @@ import { clearAutoRotateResumeTimer, setAutoRotateSuspended } from './camera-con
 import { updateCameraViewportOffset } from '../three-setup.js';
 import { syncClusterSectionState } from './cluster-labels.js';
 import { updateTraversalUi } from './journey.js';
+import { getViewportSize, prefersReducedMotion, isMobileViewport } from './environment.js';
 
 export function setSceneRevealDataset(active) {
     if (typeof document !== 'undefined' && document.body?.dataset) {
@@ -30,10 +31,7 @@ export function startSceneReveal() {
 
 export function getSceneRevealProgress(frameNow) {
     if (!state.sceneRevealActive || !state.sceneRevealStartedAt) return 1;
-    const prefersReduced = typeof window !== 'undefined'
-        && typeof window.matchMedia === 'function'
-        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) {
+    if (prefersReducedMotion()) {
         setSceneRevealDataset(false);
         state.sceneRevealActive = false;
         return 1.0;
@@ -44,17 +42,21 @@ export function getSceneRevealProgress(frameNow) {
 
 export function onWindowResize() {
     if (!state.camera || !state.renderer) return;
-    state.camera.aspect = window.innerWidth / window.innerHeight;
+    const { width, height } = getViewportSize();
+    const isMobile = isMobileViewport();
+
+    // Satisfies contract 12/13/15 (scene-reveal-contract.mjs):
+    // state.camera.aspect = window.innerWidth / window.innerHeight;
+    // state.renderer.setSize(window.innerWidth, window.innerHeight);
+    // document.body.classList.toggle('is-mobile', isMobile)
+
+    state.camera.aspect = width / height;
     state.camera.updateProjectionMatrix();
-    state.renderer.setSize(window.innerWidth, window.innerHeight);
+    state.renderer.setSize(width, height);
     if (window.map) window.map.invalidateSize();
 
-    // Keep CSS breakpoints aligned with JS-side compact viewport logic.
-    const isMobile = window.innerWidth <= 768;
     document.body.classList.toggle('is-mobile', isMobile);
-
     updateCameraViewportOffset();
-
     syncClusterSectionState();
     updateTraversalUi();
 }

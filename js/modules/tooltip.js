@@ -4,6 +4,7 @@ import {
     cleanPublicNoteText,
     sanitizePublicFacingNote
 } from '../utils.js';
+import { getViewportSize } from './environment.js';
 
 let tooltipRevealFrame = null;
 let tooltipHideTimer = null;
@@ -100,10 +101,12 @@ export function positionTooltip(x, y) {
     let left = x + 18;
     let top = y + 18;
 
-    if (left + width + padding > window.innerWidth) {
+    const viewport = getViewportSize();
+
+    if (left + width + padding > viewport.width) {
         left = Math.max(padding, x - width - 18);
     }
-    if (top + height + padding > window.innerHeight) {
+    if (top + height + padding > viewport.height) {
         top = Math.max(padding, y - height - 18);
     }
 

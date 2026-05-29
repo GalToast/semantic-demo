@@ -11,6 +11,7 @@ import {
 } from './journey-thread-model.js';
 import { setTrailNavState } from './navigation-state.js';
 import { setFocusPocketMeta } from './focus-pocket.js';
+import { isCompactLandscape, isUltraCompactPortrait } from './environment.js';
 
 const neighborhoodAdapter = {
     isThreadCandidateVisibleOnCanvas: () => true,
@@ -31,12 +32,7 @@ export function initJourneyNeighborhoodAdapter(deps = {}) {
 }
 
 function isCondensedFocusStageViewport() {
-    if (typeof window === 'undefined' || typeof matchMedia !== 'function') return false;
-    return (
-        state.currentView === 'galaxy' &&
-        (window.matchMedia('(max-width: 768px) and (max-height: 740px)').matches ||
-            window.matchMedia('(max-width: 430px) and (min-height: 741px) and (max-height: 860px)').matches)
-    );
+    return state.currentView === 'galaxy' && (isCompactLandscape() || isUltraCompactPortrait());
 }
 
 export function getSemanticThreadDisplayLimit() {

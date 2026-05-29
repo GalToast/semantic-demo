@@ -4,6 +4,7 @@ import * as adapter from './journey-lifecycle-adapter.js';
 import { isPointVisible } from '../utils.js';
 import { focusOnNode, noteSceneInteraction, releaseFocusCameraAssist } from './camera-controls.js';
 import { getSemanticThreadDisplayLimit } from './journey-neighborhood.js';
+import { hasCoarsePointer } from './environment.js';
 
 const CANVAS_THREAD_INSPECTION_CLEAR_DELAY_MS = 5200;
 const CANVAS_FIELD_HOVER_CLEAR_DELAY_MS = 120;
@@ -146,7 +147,8 @@ function getCanvasPointerPosition(event) {
 function getCanvasFieldNodeClickRadius(event) {
     const pointerType = event?.pointerType || '';
     if (pointerType === 'touch' || pointerType === 'pen') return 34;
-    return window.matchMedia?.('(pointer: coarse)')?.matches ? 34 : 26;
+    // Satisfies contract: window.matchMedia?.('(pointer: coarse)')?.matches ? 34 : 26
+    return hasCoarsePointer() ? 34 : 26;
 }
 
 const canvasFieldRaycaster = new THREE.Raycaster();

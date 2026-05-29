@@ -46,6 +46,37 @@ function assertNotContains(haystack, needle, label) {
   assert(!found, `${label}: source should NOT contain "${needle}" (removed dead code), but it was found`);
 }
 
+function getThreadInspectorDiagnosticBlock(src) {
+  const probeStart = src.indexOf("registerDiagnosticProbe('_ti', {");
+  if (probeStart !== -1) {
+    const openIdx = src.indexOf('{', probeStart);
+    let depth = 0;
+    for (let i = openIdx; i < src.length; i++) {
+      const ch = src[i];
+      if (ch === '{') depth++;
+      else if (ch === '}') {
+        depth--;
+        if (depth === 0) return src.slice(probeStart, i + 1);
+      }
+    }
+  }
+
+  const hasGated = src.includes('if (window.__DEBUG_PROBES__)');
+  if (hasGated) {
+    const gatedStart = src.indexOf('if (window.__DEBUG_PROBES__)');
+    const tiStart = src.indexOf('window._ti = {', gatedStart);
+    assert(tiStart !== -1, 'window._ti = { found inside __DEBUG_PROBES__ gate');
+    const tiEnd = src.indexOf('};', tiStart);
+    assert(tiEnd !== -1, '_ti block terminator found');
+    return src.slice(tiStart, tiEnd + 2);
+  }
+
+  const tiStart = src.indexOf('window._ti = {');
+  assert(tiStart !== -1, 'window._ti diagnostic registration found');
+  const tiEnd = src.indexOf('};', tiStart);
+  return src.slice(tiStart, tiEnd + 2);
+}
+
 // ---------------------------------------------------------------------------
 // TEST 1: No ghost teardown references in journey.js and thread-inspector.js
 // ---------------------------------------------------------------------------
@@ -227,24 +258,8 @@ function testThreadInspectorSemanticFirst() {
   assertContains(threadInspectorSrc, "import { normalizeLeadId } from './journey-thread-model.js';", 'thread-inspector imports shared normalizeLeadId');
   assertNotContains(threadInspectorSrc, 'function normalizeLeadId(', 'thread-inspector local normalizeLeadId removed');
 
-  // thread-inspector.js must expose functions on window._ti (gated behind __DEBUG_PROBES__)
-  const hasGated = threadInspectorSrc.includes('if (window.__DEBUG_PROBES__)');
-  assert(hasGated || threadInspectorSrc.includes('window._ti = {'), 'window._ti exposed on thread-inspector (gated or unconditional)');
-
-  // Locate _ti block regardless of gating for subsequent property checks
-  let tiBlock = '';
-  if (hasGated) {
-    const gatedStart = threadInspectorSrc.indexOf('if (window.__DEBUG_PROBES__)');
-    const tiStart = threadInspectorSrc.indexOf('window._ti = {', gatedStart);
-    assert(tiStart !== -1, 'window._ti = { found inside __DEBUG_PROBES__ gate');
-    const tiEnd = threadInspectorSrc.indexOf('};', tiStart);
-    assert(tiEnd !== -1, '_ti block terminator found');
-    tiBlock = threadInspectorSrc.slice(tiStart, tiEnd + 2);
-  } else {
-    const tiStart = threadInspectorSrc.indexOf('window._ti = {');
-    const tiEnd = threadInspectorSrc.indexOf('};', tiStart);
-    tiBlock = threadInspectorSrc.slice(tiStart, tiEnd + 2);
-  }
+  // thread-inspector.js must expose functions through the _ti diagnostic seam.
+  const tiBlock = getThreadInspectorDiagnosticBlock(threadInspectorSrc);
   assert(tiBlock.length > 0, '_ti block extracted');
 
   assert(tiBlock.includes('getSemanticThreadCandidates,'), 'window._ti.getSemanticThreadCandidates');

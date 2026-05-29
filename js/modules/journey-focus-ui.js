@@ -29,14 +29,10 @@ import {
     removeFocusSemanticOverlay,
     resetFocusThreadDiagnostics
 } from './journey-webgl.js';
+import { isCompactLandscape, isUltraCompactPortrait } from './environment.js';
 
 export function isCondensedFocusStageViewport() {
-    if (typeof window === 'undefined' || typeof matchMedia !== 'function') return false;
-    return (
-        state.currentView === 'galaxy' &&
-        (window.matchMedia('(max-width: 768px) and (max-height: 740px)').matches ||
-            window.matchMedia('(max-width: 430px) and (min-height: 741px) and (max-height: 860px)').matches)
-    );
+    return state.currentView === 'galaxy' && (isCompactLandscape() || isUltraCompactPortrait());
 }
 
 export function hasColdDegradedSemanticFallback() {

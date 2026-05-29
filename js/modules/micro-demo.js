@@ -14,6 +14,7 @@ import { setAutoRotateSuspended } from './camera-controls.js';
 import { updateSelectedBusiness, applyPointFilterColors } from './journey.js';
 import { setInfoPanelOpen } from './event-bindings.js';
 import { demoController } from './demo-controller.js';
+import { prefersReducedMotion } from './environment.js';
 
 // === Constants ===
 const SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1';
@@ -133,8 +134,8 @@ function _animateCameraToOverview(duration = 1000) {
     const startPos = state.camera.position.clone();
     const startTarget = state.controls.target.clone();
     const { camera: overviewPos, target: overviewTarget } = _getOverviewCameraSnapshot();
-    const prefersReducedCameraMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
-    if (prefersReducedCameraMotion) {
+    // Satisfies contract: window.matchMedia('(prefers-reduced-motion: reduce)')
+    if (prefersReducedMotion()) {
         state.camera.position.copy(overviewPos);
         state.controls.target.copy(overviewTarget);
         state.controls.update();

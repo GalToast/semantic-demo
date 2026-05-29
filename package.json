@@ -129,7 +129,9 @@
     "test:contract:full": "node tests/run-all-contracts.js --group=full",
     "test:contract:phase-a": "node tests/surface-contract-check.mjs --surfaces=info-panel-empty,compass-rail,loading-overlay,mode-grid",
     "test:contract:phase-b": "node tests/surface-contract-check.mjs --surfaces=filters,thread-inspector,controls,search-chrome,info-panel-populated",
-    "test:all": "npm run test:fast && npm run test:contract && npm run test:e2e:click-flow",
+    "test:all": "npm run test:fast && npm run test:unit && npm run test:contract && npm run test:e2e:click-flow",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
     "test:help": "node -e \"console.log('npm run test       - fast static checks (shell, manifest, cache, ownership, tokens, surface styles)\\nnpm run test:fast   - alias for test\\nnpm run test:contract - Node contracts for semantic-dive-ui, search-state, camera-controls, focus-pocket, journey/event-bindings, micro-demo, cluster-labels, journey/thread-inspector\\nnpm run test:all   - fast + contract + e2e click flow\\n')\"",
     "deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1",
     "deploy:dryrun": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1 -DryRun",
@@ -147,8 +149,10 @@
     "esbuild": "^0.28.0",
     "eslint": "^10.4.0",
     "eslint-config-prettier": "^10.1.8",
+    "jsdom": "^29.1.1",
     "playwright": "^1.60.0",
     "prettier": "^3.8.3",
-    "three": "^0.184.0"
+    "three": "^0.184.0",
+    "vitest": "^4.1.7"
   }
 }

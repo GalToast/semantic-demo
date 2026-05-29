@@ -41,11 +41,25 @@ function assertNotContains(haystack, needle, label) {
   assert(!found, `${label}: source should NOT contain "${needle}", but it was found`);
 }
 
-// Returns the window._ti block content for direct inspection.
-// Handles both gated and unconditional patterns:
-//   if (window.__DEBUG_PROBES__) { window._ti = { ... }; }  (gated — new)
-//   window._ti = { ... };                                  (unconditional — legacy)
+// Returns the _ti diagnostic registration content for direct inspection.
+// Handles both current and legacy patterns:
+//   registerDiagnosticProbe('_ti', { ... });                (current)
+//   if (window.__DEBUG_PROBES__) { window._ti = { ... }; }  (legacy gated)
+//   window._ti = { ... };                                  (legacy unconditional)
 function getWindowTiBlock(src) {
+  const probeStart = src.indexOf("registerDiagnosticProbe('_ti', {");
+  if (probeStart !== -1) {
+    const openIdx = src.indexOf('{', probeStart);
+    let depth = 0;
+    for (let i = openIdx; i < src.length; i++) {
+      const ch = src[i];
+      if (ch === '{') depth++;
+      else if (ch === '}') {
+        depth--;
+        if (depth === 0) return src.slice(probeStart, i + 1);
+      }
+    }
+  }
   // Try gated pattern first (new)
   const gatedStart = src.indexOf('if (window.__DEBUG_PROBES__)');
   if (gatedStart !== -1) {
@@ -99,7 +113,10 @@ function testWindowTiDebugNamespace() {
 
   const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
 
-  assert(src.includes('window._ti = {'), 'window._ti namespace exposed');
+  assert(
+    src.includes("registerDiagnosticProbe('_ti', {") || src.includes('window._ti = {'),
+    'window._ti namespace exposed through diagnostic adapter or legacy assignment'
+  );
 
   const tiBlock = getWindowTiBlock(src);
 
@@ -128,7 +145,7 @@ function testWindowTiDebugNamespace() {
     const isLast = fn === lastFn;
     assert(
       isLast
-        ? (tiBlock.includes(fn) && tiBlock.includes('};'))
+        ? tiBlock.includes(fn)
         : (tiBlock.includes(fn + ',') || tiBlock.includes(fn + '\n')),
       `window._ti contains ${fn}`
     );
