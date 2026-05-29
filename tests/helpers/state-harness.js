@@ -94,6 +94,16 @@ export async function snapshot(page, fields) {
 }
 
 /**
+ * Read a single state value from the resolved window state object.
+ * Uses __APP_STATE__ as primary and __TEST_STATE__ as fallback.
+ * Useful for tests that need one field without hardcoding window globals.
+ */
+export async function stateField(page, path) {
+  const snap = await snapshot(page, [path]);
+  return snap[path];
+}
+
+/**
  * Apply documented state mutations through a named operation.
  * Every call records the operation name and a fixture-setup comment,
  * making the mutation intent self-documenting in test output.

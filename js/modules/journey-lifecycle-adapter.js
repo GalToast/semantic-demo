@@ -5,28 +5,28 @@
 let previouslyFocusedFocusStage = null;
 
 let adapter = {
-    previewInsideNextThread: (options) => {},
-    getNextWalkCandidateForIndex: (currentIndex, options) => null,
-    applyLocalNeighborhoodFocus: (seedIndex) => {},
-    setSemanticDiveMode: (enabled) => {},
-    getInterestingBusinessNote: (point) => null,
-    buildSelectedMatchNarrative: (point) => '',
+    previewInsideNextThread: (_options) => {},
+    getNextWalkCandidateForIndex: (_currentIndex, _options) => null,
+    applyLocalNeighborhoodFocus: (_seedIndex) => {},
+    setSemanticDiveMode: (_enabled) => {},
+    getInterestingBusinessNote: (_point) => null,
+    buildSelectedMatchNarrative: (_point) => '',
     hasColdDegradedSemanticFallback: () => false,
     getColdDegradedRouteCopy: () => '',
-    getSelectedBusinessRoleLabel: (point) => '',
+    getSelectedBusinessRoleLabel: (_point) => '',
     isFieldNodeFocusContext: () => false,
     revealSelectedBusinessCard: () => {},
-    describeThreadLensForPoint: (point) => '',
-    hydrateLeadContext: (point, options) => Promise.resolve(),
+    describeThreadLensForPoint: (_point) => '',
+    hydrateLeadContext: (_point, _options) => Promise.resolve(),
     shouldUseFloatingFocusJourneyOnly: () => false,
     
     // global variables state
     getPreviouslyFocusedFocusStage: () => previouslyFocusedFocusStage,
     setPreviouslyFocusedFocusStage: (el) => { previouslyFocusedFocusStage = el || null; },
     
-    setLastCanvasNodePick: (val) => {},
-    setLastCanvasNodeHover: (val) => {},
-    setLastCanvasNodeFocusPick: (val) => {}
+    setLastCanvasNodePick: (_val) => {},
+    setLastCanvasNodeHover: (_val) => {},
+    setLastCanvasNodeFocusPick: (_val) => {}
 };
 
 export function initJourneyLifecycleAdapter(deps) {

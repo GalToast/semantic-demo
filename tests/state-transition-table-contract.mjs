@@ -90,7 +90,6 @@ const win = {
   setSemanticLaneOpsMode: () => {},
   syncSemanticDiveUi: () => {},
   animateCameraToNode: () => {},
-  _fp: { applyLocalNeighborhoodFocus: () => {} },
   previewInsideNextThread: () => {},
   clearThreadInspection: () => {},
   focusOnNode: () => {},

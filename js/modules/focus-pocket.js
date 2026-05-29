@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
-import { isMobile, getViewportSize, prefersReducedMotion } from './environment.js';
+import { getViewportSize, prefersReducedMotion } from './environment.js';
 // js/modules/focus-pocket.js — extracted from monolithic HTML
 ;
 import { describeCluster, normalizeCityForFilter } from '../utils.js';
@@ -1135,25 +1135,5 @@ export function getRuntimeStateSnapshot() {
         focusPocketTransitionStartedAt: state.focusPocketTransitionStartedAt,
         nodesAreSettling: state.nodesAreSettling,
         autoRotate: state.autoRotate
-    };
-}
-
-// Debug access — gated behind __DEBUG_PROBES__ (default true in dev/test; false in production)
-if (typeof window.__DEBUG_PROBES__ !== 'undefined' ? window.__DEBUG_PROBES__ : true) {
-    window._fp = {
-        syncRuntimeState,
-        getRuntimeStateSnapshot,
-        getFocusConstellationMotif,
-        getNeighborhoodPersonality,
-        getFocusConstellationPlacement,
-        getFocusConstellationViewportProfile,
-        getFocusBeaconDeclutterProfile,
-        getDeclutteredFocusBeaconIndices,
-        getFocusViewBasis,
-        getFocusThreadCurvePoint,
-        buildFocusedPocketStagedPositions,
-        buildFocusedSemanticPocket,
-        applyLocalNeighborhoodFocus,
-        applyFocusPocketBreathing
     };
 }

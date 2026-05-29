@@ -399,7 +399,7 @@ test.describe('3D thread orchestration quality', () => {
       return { targetIndex: targetIndex ?? 0 };
     });
     await p.evaluate(
-      ({ idx }) => window.focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
+      ({ idx }) => window.__APP_ACTIONS__?.focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
       { idx: focusResult.targetIndex }
     );
     await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 });
@@ -476,7 +476,7 @@ test.describe('3D thread orchestration quality', () => {
         }
       }
       if (targetIndex === null) targetIndex = 0;
-      window.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
+      window.__APP_ACTIONS__?.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
       window.setTrailDepth?.(1, { skipUrlSync: true });
     });
     await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 });
@@ -649,7 +649,7 @@ test.describe('3D thread orchestration quality', () => {
       return { targetIndex: 0 };
     });
     await p.evaluate(
-      ({ idx }) => window.focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
+      ({ idx }) => window.__APP_ACTIONS__?.focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
       { idx: focusResult.targetIndex }
     );
     await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 });

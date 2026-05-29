@@ -50,7 +50,7 @@ function testJourneyWindowShim() {
 
   // The shim block must exist as one contiguous block guarded by typeof window check
   assertNotContains(src, 'window.syncFocusStage = syncFocusStage', 'syncFocusStage bridge is retired');
-  assert(src.includes('window.setTrailFromSeed = setTrailFromSeed'), 'window.setTrailFromSeed in shim');
+  assert(!/window\.setTrailFromSeed\s*=/.test(src), 'setTrailFromSeed bridge is retired');
   assertNotContains(src, 'window.setSemanticDiveMode = setSemanticDiveMode', 'semantic-dive window owner stays in lifecycle');
   assertNotContains(src, 'window.updateTraversalUi = updateTraversalUi', 'updateTraversalUi bridge is retired');
   assertNotContains(src, 'window.getNextWalkCandidateForIndex = getNextWalkCandidateForIndex', 'getNextWalkCandidateForIndex bridge is retired');

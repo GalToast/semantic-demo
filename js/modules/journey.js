@@ -254,7 +254,6 @@ export function restoreFocusTrailState(priorFocused = state.focusedNode) {
 }
 // Window shim for inline script backward compat:
 if (typeof window !== 'undefined') {
-    window.setTrailFromSeed = setTrailFromSeed;
     window.updateTrailIndices = updateTrailIndices;
     window.updateSelectedBusiness = updateSelectedBusiness;
     window.applyPointFilterColors = applyPointFilterColors;

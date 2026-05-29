@@ -70,12 +70,16 @@ function testAppActionsNamespace() {
   const appSrc = read(APP_PATH);
 
   assert(/window\.__APP_ACTIONS__\s*=\s*\{/.test(appSrc), 'app.js should assign window.__APP_ACTIONS__ namespace');
-  const keys = ['search','clearSearch','focusOnNode','setTrailDepth','setSemanticDiveMode','returnToOverview','resetExplorationFocus','refreshCompositionState'];
+  const keys = ['search','clearSearch','focusOnNode','setTrailFromSeed','setTrailDepth','setSemanticDiveMode','returnToOverview','resetExplorationFocus','refreshCompositionState'];
   for (const key of keys) {
     const objectLiteralKey = new RegExp(`${key}(?::|\\s*[,}])`).test(appSrc);
     const propertyAssignment = new RegExp(`window\\.__APP_ACTIONS__\\.${key}\\s*=`).test(appSrc);
     assert(objectLiteralKey || propertyAssignment, `__APP_ACTIONS__ should contain key: ${key}`);
   }
+  assert(
+    /window\.__APP_ACTIONS__\.setTrailFromSeed\s*=\s*journeyModule\.setTrailFromSeed\s*;/.test(appSrc),
+    '__APP_ACTIONS__.setTrailFromSeed should bind journeyModule.setTrailFromSeed'
+  );
   console.log('  PASS — __APP_ACTIONS__ namespace verified');
 }
   function testRecenterBridgeRetired() {

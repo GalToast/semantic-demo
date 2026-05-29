@@ -128,7 +128,7 @@ function scanWindowRefs(src, filename) {
 // They are NOT extraction candidates — they are intentional compatibility bridges.
 
 const KNOWN_APP_BOOTSTRAP_EXPORTS = new Set([
-  'state', '_fp', '_cc', '_ti', '_ms', '_weather',
+  'state', '_cc', '_ti', '_ms', '_weather',
   'initAudio', 'applyClusterUiAccent', 'getSelectedBusinessRoleLabel',
   'findClusterByKeyword',
   // lifecycle re-exports (thin aliases)
@@ -172,7 +172,7 @@ const KNOWN_FALLBACKS = new Set([
   'expandNeighborhoodFromCurrentNode', 'focusSearchInputForReplacement',
   'handleSemanticLaneWindowFocus', 'applyUrlState', 'handleSemanticLaneVisibilityChange',
   'hideSummaryCard', 'closeLegendGuide', 'buildLegend',
-  'setTrailFromSeed', 'updateTrailIndices',
+  'updateTrailIndices',
   // lifecycle.js guards
   'animateCameraToNode', 'previewInsideNextThread', 'clearThreadInspection',
   'switchView', 'hideTooltip', 'clearSearchPreviewOverlay', 'resetNodePositions',
@@ -228,8 +228,8 @@ function testNoBareCallsInDowindowedSeams() {
     'localStorage', 'sessionStorage', 'fetch', 'XMLHttpRequest',
   ]);
 
-  // Module references exported via app.js bootstrap (window._fp, etc.)
-  const BOOTSTRAP_MODULE_REFS = new Set(['_fp', '_cc', '_ti', '_ms', '_weather']);
+  // Module references exported via app.js bootstrap (window._cc, etc.)
+  const BOOTSTRAP_MODULE_REFS = new Set(['_cc', '_ti', '_ms', '_weather']);
 
   const lines = src.split('\n');
   const problems = [];
@@ -425,7 +425,7 @@ function testBareCallBaseline() {
     'getComputedStyle', 'document', 'navigator', 'location',
     'localStorage', 'sessionStorage', 'fetch', 'XMLHttpRequest',
     'AudioContext', 'webkitAudioContext',
-    '_fp', '_cc', '_ti', '_ms', '_weather', '_cam',
+    '_cc', '_ti', '_ms', '_weather', '_cam',
     // Internal state/probes
     '__lastCanvasNodePick', '__lastCanvasNodeHover', '__lastCanvasNodeFocusPick',
     '__semanticSearchCacheProbe',

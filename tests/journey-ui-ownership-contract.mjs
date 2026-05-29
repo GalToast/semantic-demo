@@ -342,12 +342,11 @@ function testNoSearchLaneCompassWindowExports() {
     // Match: window.something = ... (assignment to window)
     const pattern = new RegExp(`${prop.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*=`);
 
-    // But allow window._fp.something (existing internal bridge)
     const lines = src.split('\n');
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (line.startsWith('//') || line.startsWith('*')) continue;
-      if (pattern.test(line) && !line.includes('window._fp.')) {
+      if (pattern.test(line)) {
         violations.push(`line ${i + 1}: ${line}`);
       }
     }

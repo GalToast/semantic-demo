@@ -193,7 +193,6 @@ globalThis.window = {
   fetchSemanticLaneOpsSummary: () => Promise.resolve(null),
   renderSemanticLaneOpsSummary: () => {},
   animateCameraToNode: () => {},
-  _fp: { applyLocalNeighborhoodFocus: () => {} },
   previewInsideNextThread: () => {},
   clearThreadInspection: () => {},
   syncFilterControls: () => {},

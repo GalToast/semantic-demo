@@ -22,12 +22,12 @@ avoid the global entirely.
 
 ## `__APP_ACTIONS__` Namespace
 
-Classification: `debug-probe`.
-Introduced: 2026-05-28. Replaces one-off window bridges as the single classified entry point for test/debug action access.
+Classification: `live-product`.
+Introduced: 2026-05-28. Replaces one-off window bridges as the single classified compatibility entry point for app action access.
 
 **Owner:** `js/modules/app.js`
 
-**Purpose:** Consolidates all one-off `window.*` bridges used by Playwright specs, visual-audit helpers, and manual DevTools probing into a single explicitly classified namespace. Eliminates migration-debt bare globals like `window.focusOnNode` in favor of `window.__APP_ACTIONS__.focusOnNode`.
+**Purpose:** Consolidates one-off `window.*` action bridges into a single explicitly classified namespace. It is the compatibility owner for Playwright specs, visual-audit helpers, manual DevTools probing, and external callers still crossing the app boundary through `window`. Retired migration-debt bare globals like `window.focusOnNode` and `window.setTrailFromSeed` now route through `window.__APP_ACTIONS__`.
 
 **Namespace contract:**
 
@@ -36,13 +36,14 @@ Introduced: 2026-05-28. Replaces one-off window bridges as the single classified
 | `search` | `search-state.js` | Search entry point for test specs |
 | `clearSearch` | `search-state.js` | Search reset for test specs |
 | `focusOnNode` | `camera-controls.js` | Primary focus navigation action |
+| `setTrailFromSeed` | `journey.js` | Seeded trail setup for route/focus tests |
 | `setTrailDepth` | `lifecycle.js` | Trail depth control |
 | `setSemanticDiveMode` | `lifecycle.js` | Dive mode toggle |
 | `returnToOverview` | `lifecycle.js` | Overview reset |
 | `resetExplorationFocus` | `lifecycle.js` | Exploration state reset |
 | `refreshCompositionState` | `lifecycle.js` | Composition refresh |
 
-Migration: `window.focusOnNode` remains on the migration-debt allowlist until test consumers are updated. The namespace is the intended target — bare globals will be removed once all tests migrate.
+Migration: `window.focusOnNode` and `window.setTrailFromSeed` are retired as bare globals. The namespace is the intended target for test/dev harness calls.
 
 ## Debug-Probe Globals
 
@@ -53,7 +54,6 @@ Classification: `debug-probe`. These are devtools, Playwright, or visual-audit i
 | `window.__APP_STATE__` | `js/modules/app.js` | **Primary app state hook.** Preferred neutral state surface for runtime inspection. |
 | `window.__TEST_STATE__` | `js/modules/app.js` | **Legacy test bridge fallback.** Preserved for existing Playwright tests. Migrate consumers to `__APP_STATE__`. |
 | `window._ti` | `js/modules/thread-inspector.js` | **Debug-probe inspection namespace.** 17 thread-inspection functions. Not a product API. |
-| `window._fp` | `js/modules/focus-pocket.js` | Debug probe, gated behind `window.__DEBUG_PROBES__`. |
 | `window.__semanticCanvasThreadProbe` | — | Debug probe. **Retired from journey.js shim 2026-05-28.** |
 | `window.__semanticFocusCueProbe` | — | Debug probe (exposed via journey-webgl.js). |
 | `window.__semanticJourneyProbe` | — | Debug probe. **Retired 2026-05-28.** |
@@ -65,8 +65,7 @@ Classification: `migration-debt`. These exist but have no desired long-term owne
 
 | Global | Owner | Notes |
 |---|---|---|
-| `window.focusOnNode` | `js/modules/lifecycle.js` | Legacy focus bridge. Callers migrated to direct imports; bridge kept for test compatibility. |
-| `window.setTrailFromSeed` | `js/modules/journey.js` | Legacy seed bridge. No desired long-term owner; migrates to direct imports. |
+| _none_ | — | Migration-debt bare globals are currently retired. |
 
 ## `_ti` Debug-Probe Planned Contract
 
@@ -101,10 +100,9 @@ Classification: `migration-debt`. These exist but have no desired long-term owne
 2. ✅ **Gate `window._ti` assignment** — `if (typeof window.__DEBUG_PROBES__ !== 'undefined' ? window.__DEBUG_PROBES__ : true) { window._ti = { ... }; }` in thread-inspector.js (step 2 complete).
    - Gate-off: `_ti` is not created; no bare window function exports escape thread-inspector.js.
    - Gate-on (default): all 17 thread-inspection functions available for diagnostics.
-   - Both `_fp` (focus-pocket.js) and `_ti` (thread-inspector.js) use the same guard pattern with default `true`.
+   - `_ti` uses the same `window.__DEBUG_PROBES__` default-on guard pattern.
 
 3. ✅ **Gate `window._ti` assignment with default-on** — refined guard to `typeof window.__DEBUG_PROBES__ !== 'undefined' ? window.__DEBUG_PROBES__ : true` so gate-on is the default in dev/test environments where __DEBUG_PROBES__ is often unset.
-   - `focus-pocket.js` line 1142 and `thread-inspector.js` line 773 now use identical guard patterns.
    - Source contracts are gate-aware and pass regardless of whether the gate is on or off.
 
 4. **Verify contract** — run `node tests/thread-inspector-dewindowing-contract.mjs tests/journey-window-surface-contract.mjs tests/journey-thread-inspector-contract.mjs` with gate both on and off; both must pass.
@@ -140,7 +138,7 @@ Retire them in this order:
 
 1. Add a shared debug-probe gate, for example `window.__DEBUG_PROBES__` plus
    localhost/test defaults.
-2. Gate `_fp`, `_ti`, and `__semantic*Probe`
+2. Gate `_ti` and `__semantic*Probe`
    surfaces behind that gate.
 3. Update tests that intentionally need probes to enable the gate before module
    import.
@@ -156,7 +154,7 @@ no `js/` readers of `window.state`; the dependency is test-harness related.
 
 **2026-05-27 — `window.state` retired.** Neutral replacements established:
 
-- `window.__APP_STATE__` — the preferred neutral state hook (debug-probe)
+- `window.__APP_STATE__` — the preferred neutral state hook
 - `window.__TEST_STATE__` — preserved for existing Playwright tests
 
 Next: migrate Playwright helpers/specs from `window.__TEST_STATE__` to `__APP_STATE__`
@@ -179,6 +177,7 @@ then retire `window.__TEST_STATE__` once all consumers use the replacement.
 | `window.clearRouteExploration` | 2026-05-28 | Direct `clearRouteExploration` import from `camera-controls.js` — still a named export |
 | `window.markRouteExploration` | 2026-05-28 | Direct `markRouteExploration` import from `camera-controls.js` — still a named export |
 | `window.shouldMarkRouteExploration` | 2026-05-28 | Direct `shouldMarkRouteExploration` import from `camera-controls.js` — still a named export |
+| `window._fp` | 2026-05-28 | Retired by removing focus-pocket debug namespace after no module/runtime consumers were found. |
 | `window.clearMobileRouteFieldPeek` | 2026-05-28 | Injected adapter calls from `composition-adapter.js` and `search-lifecycle-adapter.js` |
 | `window.getBoundedNeighborhoodWalkCandidate` | 2026-05-28 | Internal journey.js calls only |
 | `window.isBoundedNeighborhoodActive` | 2026-05-28 | Internal journey.js calls only |
@@ -195,6 +194,7 @@ then retire `window.__TEST_STATE__` once all consumers use the replacement.
 | `window._previouslyFocusedLegend` | 2026-05-28 | Module-scoped `_previouslyFocusedLegend` in `legend-ui.js` via `setPreviouslyFocusedLegend()`/`getPreviouslyFocusedLegend()` |
 | `window.updateLegendGuideState` | 2026-05-28 | Direct `updateLegendGuideState` imports from `legend-ui.js` |
 | `window.__semanticJourneyProbe` | 2026-05-28 | Retired unused journey compass debug probe; `installSemanticJourneyProbe()` now returns presentation state |
+| `window.setTrailFromSeed` | 2026-05-28 | Direct imports and `window.__APP_ACTIONS__.setTrailFromSeed` for test/dev harnesses |
 
 ## Running The Ratchet
 
@@ -203,4 +203,4 @@ node tests/window-global-allowlist-contract.mjs
 ```
 
 Expected output includes counts for `live-product`, `debug-probe`, and
-`migration-debt`. The important failure mode is an `unknown` assignment.
+`migration-debt` (currently `0`). The important failure mode is an `unknown` assignment.

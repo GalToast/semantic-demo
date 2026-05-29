@@ -384,7 +384,7 @@ async function main() {
                     }
                 }
                 if (targetIndex === null) targetIndex = 0;
-                window.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
+                window.__APP_ACTIONS__?.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
                 window.setTrailDepth?.(1, { skipUrlSync: true });
             });
             await page.waitForTimeout(1600);

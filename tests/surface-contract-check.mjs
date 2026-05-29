@@ -2107,11 +2107,25 @@ async function assert_thread_inspector(page, ctx) {
 // ---------------------------------------------------------------------------
 
 async function assert_controls(page, ctx) {
-  await loadAndWait(page, positionalUrl);
+  await loadAndWait(page, surfaceUrl({ nodemo: '1' }));
 
+  await page.waitForFunction(() => document.body?.dataset?.sceneReady === 'true', { timeout: 5000 }).catch(() => {});
   await page.evaluate(() => {
     document.body.dataset.activeView = 'map';
   });
+  await page.waitForFunction(() => {
+    document.body.dataset.activeView = 'map';
+    const sized = (el) => {
+      if (!el) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.width >= 43.5 && rect.height >= 43.5;
+    };
+    const viewButtons = Array.from(document.querySelectorAll('.view-toggle button'));
+    return document.body?.dataset?.activeView === 'map'
+      && viewButtons.length >= 2
+      && viewButtons.every(sized)
+      && sized(document.querySelector('#btn-journey-primary'));
+  }, { timeout: 6000 }).catch(() => {});
   await page.waitForTimeout(300);
 
   const info = await page.evaluate(() => {

@@ -12,8 +12,6 @@ import {
 } from '../utils.js';
 import {
     fetchSemanticSearchResults,
-    getCachedSemanticSearchPayload,
-    storeSemanticSearchPayload,
     getSemanticSearchCacheDiagnostics
 } from './semantic-search-api-cache.js';
 export { getSemanticSearchCacheDiagnostics };
@@ -47,7 +45,6 @@ import {
     resetExplorationFocus as adapter_resetExplorationFocus,
     setSemanticLaneUiState as adapter_setSemanticLaneUiState,
     clearSearch as adapter_clearSearch,
-    triggerSearchHeroMoment as adapter_triggerSearchHeroMoment,
     triggerCorridorNodeGlow as adapter_triggerCorridorNodeGlow,
     triggerSearchCorridorAnimation as adapter_triggerSearchCorridorAnimation,
     hideSummaryCard as adapter_hideSummaryCard,
@@ -1128,14 +1125,6 @@ export async function search(query, options = {}) {
     recordSemanticLaneSnapshot({ rail_mode: 'live', anchor_lead_id: anchorResult?.point?.lead_id ?? null, requested_anchor_lead_id: requestedAnchorLeadId });
     activateSearchGlow(resultIndices, anchorIndex);
     
-    // 10/10 Polish: Disabled "Corridor Bloom" (the giant yellow ball)
-    // but kept the "Particle Trail" and node glow for an "Avatar forest" aesthetic.
-    /*
-    if (typeof adapter_triggerSearchHeroMoment === 'function') {
-        adapter_triggerSearchHeroMoment(anchorIndex);
-    }
-    */
-
     if (typeof adapter_triggerCorridorNodeGlow === 'function') {
         adapter_triggerCorridorNodeGlow(anchorIndex, resultIndices);
     }

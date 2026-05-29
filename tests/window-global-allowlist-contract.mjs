@@ -13,6 +13,7 @@ const ROOT = path.resolve(process.cwd());
 const JS_ROOT = path.join(ROOT, 'js');
 
 const liveProduct = new Set([
+  '__APP_ACTIONS__',
   'THREE',
   'animateCameraToSearchCorridor',
   'applyFocusOrbitSlack',
@@ -81,20 +82,15 @@ const liveProduct = new Set([
 ]);
 
 const debugProbe = new Set([
-  '__APP_ACTIONS__',
   '__APP_STATE__',
   '__TEST_STATE__',
   '__semanticCanvasThreadProbe',
   '__semanticFocusCueProbe',
   '__semanticThreadInspectorProbe',
-  '_fp',
   '_ti',
 ]);
 
-const migrationDebt = new Set([
-    'focusOnNode',
-    'setTrailFromSeed',
-]);
+const migrationDebt = new Set([]);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);

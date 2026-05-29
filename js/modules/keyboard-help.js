@@ -1,5 +1,4 @@
 import { state } from '../state.js';
-import { clearSearch, focusSearchInputForReplacement } from './search-state.js';
 import { demoController } from './demo-controller.js';
 import { showExperienceToast } from './ui-feedback.js';
 import { closeLegendGuide } from './legend-ui.js';

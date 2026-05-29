@@ -296,21 +296,6 @@ function getNodeSporeColor(index, factor = 1) {
         .multiplyScalar(THREE.MathUtils.clamp(factor, 0.04, 2.6));
 }
 
-export function syncNodeSporeColorsFromPointColors() {
-    if (!state.nodeSporeMesh || !state.pointsMesh?.geometry?.attributes?.color) return;
-    const colors = state.pointsMesh.geometry.attributes.color.array;
-    for (let i = 0; i < state.points.length; i += 1) {
-        const colorOffset = i * 3;
-        _nodeSporeColor.setRGB(
-            colors[colorOffset] ?? 0.35,
-            colors[colorOffset + 1] ?? 0.75,
-            colors[colorOffset + 2] ?? 0.72
-        ).lerp(NODE_SPORE_COLOR_LIFT, 0.08);
-        state.nodeSporeMesh.setColorAt(i, _nodeSporeColor);
-    }
-    if (state.nodeSporeMesh.instanceColor) state.nodeSporeMesh.instanceColor.needsUpdate = true;
-}
-
 function sampleScenePerformance(frameMs, timings = {}) {
     const diagnostics = state.scenePerformanceDiagnostics;
     diagnostics.active = !!(state.renderer && state.scene && state.camera && state.currentView === 'galaxy');
@@ -330,6 +315,7 @@ function sampleScenePerformance(frameMs, timings = {}) {
     diagnostics.renderables = getSceneRenderableDiagnostics();
 }
 
+// eslint-disable-next-line no-unused-vars -- retained as a local contract guard for retired window.__semanticScenePerformanceProbe.
 function getScenePerformanceProbe() {
     return {
         ...state.scenePerformanceDiagnostics,

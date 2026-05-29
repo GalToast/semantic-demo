@@ -951,11 +951,12 @@ async function run() {
               Number.isFinite(state.focusedNode) ? state.focusedNode :
               Number.isFinite(state.currentSearchSummary?.anchorIndex) ? state.currentSearchSummary.anchorIndex :
               519;
-            if (typeof window.setTrailFromSeed === 'function' && Number.isFinite(seedIndex)) {
+            const setTrailFromSeed = window.__APP_ACTIONS__?.setTrailFromSeed;
+            if (typeof setTrailFromSeed === 'function' && Number.isFinite(seedIndex)) {
               state.focusedNode = seedIndex;
               state.navState = state.navState || {};
               state.navState.focusedIndex = seedIndex;
-              window.setTrailFromSeed(seedIndex);
+              setTrailFromSeed(seedIndex);
             }
             if (document.body?.dataset) {
               document.body.dataset.activeView = 'galaxy';
@@ -1013,11 +1014,12 @@ async function run() {
               Number.isFinite(state.focusedNode) ? state.focusedNode :
               Number.isFinite(state.currentSearchSummary?.anchorIndex) ? state.currentSearchSummary.anchorIndex :
               519;
-            if (typeof window.setTrailFromSeed === 'function' && Number.isFinite(seedIndex)) {
+            const setTrailFromSeed = window.__APP_ACTIONS__?.setTrailFromSeed;
+            if (typeof setTrailFromSeed === 'function' && Number.isFinite(seedIndex)) {
               state.focusedNode = seedIndex;
               state.navState = state.navState || {};
               state.navState.focusedIndex = seedIndex;
-              window.setTrailFromSeed(seedIndex);
+              setTrailFromSeed(seedIndex);
             }
 
             document.body.classList.add('is-active');

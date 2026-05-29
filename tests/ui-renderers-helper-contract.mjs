@@ -57,9 +57,11 @@ function testSelectedMatchNarrative() {
 function testLifecycleAliasesHelpers() {
   const lifecycle = read(LIFECYCLE);
   assert(
-    lifecycle.includes("import { buildSelectedMatchNarrative, getInterestingBusinessNote, updateSelectedCardHeading } from './ui-renderers.js';"),
-    'lifecycle imports helper owners from ui-renderers'
+    lifecycle.includes("import { updateSelectedCardHeading } from './ui-renderers.js';"),
+    'lifecycle imports only the ui-renderers helper it still uses'
   );
+  assert(!lifecycle.includes('buildSelectedMatchNarrative'), 'lifecycle no longer imports or owns selected-match narrative helper');
+  assert(!lifecycle.includes('getInterestingBusinessNote'), 'lifecycle no longer imports or owns interesting-note helper');
   assert(!lifecycle.includes('window.getInterestingBusinessNote = getInterestingBusinessNote;'), 'interesting note window alias is retired');
   assert(!lifecycle.includes('window.buildSelectedMatchNarrative = buildSelectedMatchNarrative;'), 'narrative window alias is retired');
   assert(!lifecycle.includes('window.getInterestingBusinessNote = function'), 'lifecycle does not duplicate interesting note body');

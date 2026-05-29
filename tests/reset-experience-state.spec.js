@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { stateField } from './helpers/state-harness.js';
 
 /**
  * Regression test: resetExperienceState must complete within a reasonable timeout and
@@ -120,9 +121,7 @@ test.describe('resetExperienceState cleanup regression', () => {
     });
 
     // After reset, no viewSwitchPreludeTimer should be pending
-    const timerState = await page.evaluate(() => {
-      return window.__TEST_STATE__?.viewSwitchPreludeTimer ?? null;
-    });
+    const timerState = await stateField(page, 'viewSwitchPreludeTimer');
 
     // null means cleared; a number (timer ID) means it leaked
     expect(timerState, 'viewSwitchPreludeTimer must be null after reset — no leaked timers').toBeNull();

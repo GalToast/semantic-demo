@@ -14,39 +14,32 @@ import { initJourneyLifecycleAdapter } from './journey-lifecycle-adapter.js';
 import * as focusModule from './focus-pocket.js';
 import * as threadModule from './thread-inspector.js';
 import { initThreadInspectorAdapter } from './thread-inspector-adapter.js';
-import { getProjectedNeighborCandidates } from './journey-thread-model.js';
 import * as cameraModule from './camera-controls.js';
 import { initCameraControlsAdapter } from './camera-controls-adapter.js';
 import { setWebGLContextRestoreHandler } from './webgl-restore-adapter.js';
 import * as mapModule from './map-state.js';
-import * as weatherModule from './weather.js';
 import * as audioModule from './audio-scape.js';
 import './tooltip.js';
 import { hideLoadingOverlay, setLoadingPhase, startDeferredHydration } from './loading-ui.js';
 import { demoController } from './demo-controller.js';
 import { hideTooltip, positionTooltip, updateTooltipContent } from './tooltip.js';
 import './pathfinding.js';
-import { applyClusterUiAccent } from './cluster-ui-accent.js';
 import * as journeyWebglModule from './journey-webgl.js';
 import { initThreeJS, animate, cancelAnimate, triggerSearchHeroMoment, triggerCorridorNodeGlow, triggerSearchCorridorAnimation } from '../three-setup.js';
 import * as dataModule from './data-loader.js';
 import { escapeHtml } from '../utils.js';
 import {
     startSceneReveal,
-    getSceneRevealProgress,
     setSemanticLaneUiState,
     initSemanticLaneAdapter,
     probeSemanticLane,
     scheduleSemanticLaneMonitor,
-    setMyceliumMode,
     setTrailDepth,
     setSemanticDiveMode,
     applyStoryPrompt,
-    resetExperienceState,
     returnToOverview,
     resetExplorationFocus,
     refreshCompositionState,
-    clearClusterFilter,
     focusOnPoint,
     updateExplorationUi,
     resetNodePositions,
@@ -65,8 +58,7 @@ import { applyUrlState, updateUrlState } from './url-state.js';
 import { loadSemanticThreads } from './semantic-threads.js';
 import { initClusterLabels } from './cluster-labels.js';
 import { updateHasQuery } from './event-bindings.js';
-import { findClusterByKeyword } from './cluster-filter.js';
-import { buildSelectedMatchNarrative, getInterestingBusinessNote, updateSearchTrailCue } from './ui-renderers.js';
+import { buildSelectedMatchNarrative, getInterestingBusinessNote } from './ui-renderers.js';
 import { hideSummaryCard } from './lifecycle.js';
 import { setSemanticGuideButtonState } from './semantic-guide.js';
 import { updateLegendGuideState } from './legend-ui.js';
@@ -84,11 +76,12 @@ window.__TEST_STATE__ = state;
 // All one-off window bridges used by tests and devtools are consolidated here.
 // Consumers: Playwright specs, visual-audit helpers, manual DevTools probing.
 // Individual window bridges below are phased out; do not add new bare window.*.
-// Classification: debug-probe. See docs/window-global-allowlist.md §__APP_ACTIONS__.
+// Classification: live-product. See docs/window-global-allowlist.md §__APP_ACTIONS__.
 window.__APP_ACTIONS__ = {};
 window.__APP_ACTIONS__.search = searchModule.search;
 window.__APP_ACTIONS__.clearSearch = searchModule.clearSearch;
 window.__APP_ACTIONS__.focusOnNode = cameraModule.focusOnNode;
+window.__APP_ACTIONS__.setTrailFromSeed = journeyModule.setTrailFromSeed;
 window.__APP_ACTIONS__.setTrailDepth = setTrailDepth;
 window.__APP_ACTIONS__.setSemanticDiveMode = setSemanticDiveMode;
 window.__APP_ACTIONS__.returnToOverview = returnToOverview;

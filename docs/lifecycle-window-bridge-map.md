@@ -67,7 +67,7 @@ These are defined and assigned inside lifecycle.js (lines 2529–2788).
 |---|---|
 | `getInterestingBusinessNote(point)` | Filters trivia; suppresses placeholder QA strings |
 | `buildSelectedMatchNarrative(point)` | Returns `currentSearchSummary.reason` or `''` |
-| `setSemanticDiveMode(enabled)` | Syncs `state.semanticDiveMode`; calls `window.setTrailDepth`, `window._fp.applyLocalNeighborhoodFocus`, `window.animateCameraToNode`, `window.previewInsideNextThread` |
+| `setSemanticDiveMode(enabled)` | Syncs `state.semanticDiveMode`; delegates trail depth through the lifecycle-owned `setTrailDepth()` helper and refreshes exploration UI. |
 | `exploreInsideToNextStop()` | Guards `strandContinuityState.phase`; delegates to `walkThreadNeighbor` or `traverseNeighbor` |
 | `recenterFocusedNode()` | Shortcut: calls `window.animateCameraToNode` with `transitionStyle:'focus'` |
 | `returnToCountyView()` | Resets `semanticDiveMode`; calls `window.resetNodePositions` |
@@ -93,7 +93,7 @@ These are invoked via `typeof window.XXX === 'function'` guards. All are **canon
 |---|---|---|
 | `findClusterByKeyword` | 483 | app.js (inline) |
 | `getRouteEmbodimentIndices` | 1125, 1234, 1362, 1433 | map-state.js via app.js |
-| `getRouteLayerOrigin` | 1126, 1226 | intentional no-op guard with `'galaxy'` fallback |
+| `getRouteLayerOrigin` | retired 2026-05-28 | camera-controls.js direct import via view-controller/journey-compass-controller |
 | `setTerrainHandoffState` | 1239, 1358, 1368, 1434 | map-state.js via app.js |
 | `setRouteChoreographyPhase` | 1246, 1396, 1424, 1443 | camera-controls.js via app.js |
 | `animateCameraToTerrainPrelude` | 1253 | camera-controls.js via app.js |
@@ -117,7 +117,7 @@ These are invoked via `typeof window.XXX === 'function'` guards. All are **canon
 | `getFilteredIndices` | 709 | search-state.js via app.js |
 | `applyFilters` | 496, 706 | search-state.js via app.js |
 | `updateSelectedBusiness` | 704, 2138 | journey.js |
-| `setTrailFromSeed` | 1387, 1420, 2132 | journey.js |
+| `setTrailFromSeed` | retired 2026-05-28 | Direct imports and `window.__APP_ACTIONS__.setTrailFromSeed` for test/dev harnesses |
 | `updateTrailIndices` | 2133, 524 (search-state) | journey.js |
 | `refreshFocusSemanticOverlay` | 2134, 89 (loading-ui) | journey.js |
 | `clearThreadInspection` | 2131, 2653 | journey.js |
@@ -228,7 +228,7 @@ uses only the payload builder from the shared module.
 
 | window property | Decision | Rationale |
 |---|---|---|
-| `getRouteLayerOrigin` | **Document as intentional no-op** (lines 1127, 1227) | The `'galaxy'` fallback is architecturally correct — the caller (`getViewHandoffModel`) only reads the `from` field for cosmetic strings. A correct implementation would require tracking `previousView` origin across all view transitions, which is out-of-scope for this seam. The no-op guard is safe because the fallback is hardcoded `'galaxy'` in the same call site. |
+| `getRouteLayerOrigin` | **Retired from lifecycle.js** | Route-layer origin is now owned by `camera-controls.js`; `view-controller.js` and `journey-compass-controller.js` import it directly. |
 
 ---
 
@@ -253,6 +253,6 @@ grep 'window.updateSelectedCardHeading =' js/modules/ui-renderers.js
 
 ## Top bridge risks
 
-1. **`getRouteLayerOrigin` — intentional no-op guard**: lifecycle.js falls back to `'galaxy'`, so terrain handoff copy is stable but not origin-specific. This is low risk today and should only be revisited if the product needs precise previous-view handoff language.
+1. **`getRouteLayerOrigin` — lifecycle export retired**: route-layer origin is owned by `camera-controls.js`. Revisit only if the product needs more precise previous-view handoff language than the current camera owner provides.
 
 2. **Window bridge surface area**: lifecycle/journey still coordinate through several guarded `window.*` bridges. The resolved gaps are covered by `tests/window-bridge-gaps-contract.mjs`; new bridges should be added to the contract or moved to direct imports during de-windowing seams.

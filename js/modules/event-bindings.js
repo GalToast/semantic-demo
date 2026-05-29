@@ -465,7 +465,7 @@ function bindFilterControls(updateUrlState) {
     }
 }
 
-function bindWindowControlFunctions(resetExperienceState, resetNodePositions) {
+function bindWindowControlFunctions() {
     // Fallback bindings for map-state and navigation buttons are now removed
 }
 
@@ -563,7 +563,6 @@ function bindPanelControls(onWindowResize) {
         const panelOpen = setInfoPanelOpen();
         if (isCompactFocusStageViewport() && panelOpen) {
             const legendPanel = document.getElementById('legend-panel');
-            const legendToggle = document.getElementById('btn-legend');
             if (legendPanel?.classList.contains('active')) {
                 closeLegendPanel();
             }
@@ -711,8 +710,6 @@ function scheduleOnboardingHint() {
 export function initEventListeners({
     onWindowResize,
     recordSemanticLaneSnapshot,
-    resetExperienceState,
-    resetNodePositions,
     setMyceliumMode,
     setSemanticLaneUiState,
     updateUrlState,
@@ -720,7 +717,7 @@ export function initEventListeners({
     if (state.eventListenersInitialized) return;
     state.eventListenersInitialized = true;
 
-    bindWindowControlFunctions(resetExperienceState, resetNodePositions);
+    bindWindowControlFunctions();
     bindViewControls();
     bindFocusControls();
     bindSuggestionControls();

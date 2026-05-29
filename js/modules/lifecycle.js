@@ -40,10 +40,7 @@ import {
     setSearchPanelState,
     clearSearch
 } from './search-state.js';
-import { buildSelectedMatchNarrative, getInterestingBusinessNote, updateSelectedCardHeading } from './ui-renderers.js';
-import {
-    updateSearchTrailCue
-} from './ui-renderers.js';
+import { updateSelectedCardHeading } from './ui-renderers.js';
 import {
     focusOnNode
 } from './camera-controls.js';
@@ -540,10 +537,6 @@ export function setSemanticLaneUiState(laneState, options = {}) {
     }
 }
 
-export function initWeather() {
-    // Weather hydration is owned by weather.js; retained as a lifecycle compatibility export.
-}
-
 export function syncSearchStatusForFocus(point, options = {}) {
     syncSearchStatusForFocusImpl(point, options);
 }
@@ -560,10 +553,6 @@ export function hydrateLeadContext(point) {
     if (!point) return;
     syncFocusStage(point);
     updateSelectedBusiness(point, { revealCard: true });
-}
-
-export function getRouteLayerOrigin() {
-    return 'galaxy';
 }
 
 export function exploreInsideToNextStop() {

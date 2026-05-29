@@ -9,8 +9,8 @@
  * - window.shouldRenderBridgeThreads
  * - window.__semanticScenePerformanceProbe
  *
- * The functions themselves remain as named exports and are still callable
- * internally; only the window exposure is removed.
+ * Window exposure is removed; functions only remain exported when another
+ * module seam still owns a live caller.
  *
  * Newly retired in this wave:
  *   window.createPoints, window.createMycelium, window.triggerSearchCorridorAnimation,
@@ -61,14 +61,12 @@ const PRESERVED = [
   'window.THREE',
 ];
 
-// Functions must remain exported.
-// These are internal-callable; removing the window exposure does NOT remove
-// the function definition or named export.
+// Functions with live module seams must remain exported.
+// Removing window exposure does not automatically preserve a dead export.
 
 // getScenePerformanceProbe is a local (non-exported) function; it was only
 // bridged via window.__semanticScenePerformanceProbe which is now retired.
 const MUST_REMAIN_EXPORTED = [
-  'syncNodeSporeColorsFromPointColors',
   'triggerSearchHeroMoment',
   'triggerCorridorNodeGlow',
   'shouldRenderThreads',

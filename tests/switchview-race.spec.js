@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { stateField } from './helpers/state-harness.js';
 
 /**
  * Regression test: switchView must not allow a stale prelude timer to override
@@ -20,17 +21,17 @@ test.describe('switchView race condition regression', () => {
     const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:9876').replace(/\/$/, '');
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof window.switchView === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => !!document.getElementById('btn-map') && !!document.getElementById('btn-galaxy'), { timeout: 20000 });
 
-    // Switch to map (with prelude skipped so we don't wait 1200ms)
+    // Switch to map through the UI button, which exercises the same underlying view handoff path.
     await page.evaluate(() => {
-      window.switchView('map', { skipTerrainPrelude: true, skipUrlSync: true });
+      document.getElementById('btn-map')?.click();
     });
     await page.waitForFunction(() => document.body.dataset.activeView === 'map', { timeout: 10000 });
 
     // Rapidly switch back to galaxy — before any prelude timer could fire
     await page.evaluate(() => {
-      window.switchView('galaxy', { skipUrlSync: true, silentHandoff: true });
+      document.getElementById('btn-galaxy')?.click();
     });
 
     // The body dataset must reflect galaxy, not be overridden by a stale map prelude
@@ -48,20 +49,18 @@ test.describe('switchView race condition regression', () => {
     const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:9876').replace(/\/$/, '');
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof window.switchView === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => !!document.getElementById('btn-map') && !!document.getElementById('btn-galaxy'), { timeout: 20000 });
 
     // Establish map as current view
     await page.evaluate(() => {
-      window.switchView('map', { skipTerrainPrelude: true, skipUrlSync: true });
+      document.getElementById('btn-map')?.click();
     });
     await page.waitForFunction(() => document.body.dataset.activeView === 'map', { timeout: 10000 });
-    const mapTimestamp = await page.evaluate(() => {
-      return window.__TEST_STATE__?.currentView;
-    });
+    expect(await stateField(page, 'currentView'), 'test state bridge should reflect map view').toBe('map');
 
-    // Call switchView('map') again with the same view — must be a no-op (no error)
+    // Click the same control again with the same view selected — should be a no-op.
     await page.evaluate(() => {
-      window.switchView('map', { skipTerrainPrelude: true, skipUrlSync: true });
+      document.getElementById('btn-map')?.click();
     });
 
     // Must still be map with no errors thrown

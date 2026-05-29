@@ -2,7 +2,7 @@
  * node-interaction-contract.spec.js
  *
  * Contract test proving that clicking a search result item transitions the app
- * into focus mode with the expected state and body surface.
+ * into a focused search route with the expected state and body surface.
  *
  * Run through the manifest runner or directly:
  *   node tests/run-all-contracts.js --group=scene
@@ -10,6 +10,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { snapshot, stateField } from './helpers/state-harness.js';
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 
@@ -42,11 +43,11 @@ async function openApp(page) {
   await setupMockSearch(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => (
-    typeof window.clearSearch === 'function' &&
-    Array.isArray(window.__TEST_STATE__?.points) &&
-    (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
-  ), { timeout: 20000 });
+  await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.search ?? window.search) === 'function', { timeout: 20000 });
+  await expect.poll(async () => {
+    const points = await stateField(page, 'points');
+    return Array.isArray(points) ? points.length : -1;
+  }, { timeout: 20000 }).toBeGreaterThan(0);
   await page.waitForFunction(() => {
     const overlay = document.getElementById('loading-overlay');
     if (!overlay) return true;
@@ -60,7 +61,7 @@ async function openApp(page) {
 }
 
 test.describe('node interaction: search result focus transition', () => {
-  test('clicking a search result enters focus mode', async ({ page }) => {
+  test('clicking a search result enters focused search route state', async ({ page }) => {
     test.setTimeout(60000);
 
     await openApp(page);
@@ -73,23 +74,21 @@ test.describe('node interaction: search result focus transition', () => {
       if (!el) return;
       el.value = 'coffee';
       el.dispatchEvent(new Event('input', { bubbles: true }));
-      if (typeof window.search === 'function') {
-        await window.search('coffee', { preferCachedResults: false });
+      const search = window.__APP_ACTIONS__?.search ?? window.search;
+      if (typeof search === 'function') {
+        await search('coffee', { preferCachedResults: false });
       }
     });
     await expect(page.locator('.search-result-item').first()).toBeVisible({ timeout: 15000 });
 
     await page.locator('.search-result-item').first().click();
-    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
+    await expect.poll(async () => stateField(page, 'focusedNode'), { timeout: 15000 }).not.toBeNull();
 
-    const result = await page.evaluate(() => ({
-      focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
-      panelSurface: document.body.dataset.panelSurface || '',
-      navMode: window.__TEST_STATE__?.navState?.mode || '',
-    }));
+    const result = await snapshot(page, ['focusedNode', 'navState.mode']);
+    const panelSurface = await page.evaluate(() => document.body.dataset.panelSurface || '');
 
     expect(result.focusedNode, 'focusedNode is set after result click').not.toBeNull();
-    expect(['focus', 'focus-search'], 'body dataset panel surface').toContain(result.panelSurface);
-    expect(result.navMode, 'navState mode').toBe('focus');
+    expect(['focus', 'focus-search'], 'body dataset panel surface').toContain(panelSurface);
+    expect(['focus', 'trail'], 'navState mode').toContain(result['navState.mode']);
   });
 });

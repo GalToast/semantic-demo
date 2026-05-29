@@ -132,8 +132,17 @@ test.describe('focus semantic Line2 shader ownership', () => {
 
     await focusNodeViaApp(page, 0, { fromSearchResult: true, skipUrlSync: true });
     await page.evaluate(() => {
-      window.setTrailDepth?.(1, { skipUrlSync: true });
-      window.setTrailFromSeed?.(0);
+      const actions = window.__APP_ACTIONS__;
+      const setTrailDepth = actions?.setTrailDepth ?? window.setTrailDepth;
+      const setTrailFromSeed = actions?.setTrailFromSeed;
+      if (typeof setTrailDepth !== 'function') {
+        throw new Error('__APP_ACTIONS__.setTrailDepth missing');
+      }
+      if (typeof setTrailFromSeed !== 'function') {
+        throw new Error('__APP_ACTIONS__.setTrailFromSeed missing');
+      }
+      setTrailDepth(1, { skipUrlSync: true });
+      setTrailFromSeed(0);
       window.refreshFocusSemanticOverlay?.();
     });
 

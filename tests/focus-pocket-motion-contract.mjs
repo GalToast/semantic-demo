@@ -15,7 +15,7 @@
 
 // ---------------------------------------------------------------------------
 // Tiny Node shim – MUST be established before any module imports that may
-// trigger top-level window._ti / window._fp references
+// trigger top-level debug probe references
 // ---------------------------------------------------------------------------
 
 let _clockNow = 0;
@@ -57,8 +57,8 @@ class FakeElement {
 }
 
 const fakeDoc = new FakeElement('document');
-// Provide minimal window BEFORE module imports so top-level window._ti / window._fp
-// assignments in thread-inspector.js and focus-pocket.js don't ReferenceError
+// Provide minimal window BEFORE module imports so gated probe assignments
+// in collaborating modules don't ReferenceError.
 globalThis.document = fakeDoc;
 globalThis.window = {
   innerWidth:  1440,
