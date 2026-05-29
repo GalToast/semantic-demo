@@ -247,8 +247,8 @@ async function run() {
 
     // Reduced-motion proof now exercises public state orchestration only; focus-stage
     // rendering is covered by direct module callers, not the retired window bridge.
-    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function') {
-      (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState)();
+    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function') {
+      (window.__APP_ACTIONS__?.refreshCompositionState)();
     }
     if (typeof window.updateExplorationUi === 'function') {
       window.updateExplorationUi();
@@ -270,8 +270,8 @@ async function run() {
   // ── Phase 3: Step Inside ───────────────────────────────────────────────────
   // Enter Step Inside (trailDepth=2) via the official setTrailDepth path
   await page.evaluate(() => {
-    if (typeof (window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth) === 'function') {
-      (window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth)(2, { fromUserGesture: true, skipUrlSync: true });
+    if (typeof (window.__APP_ACTIONS__?.setTrailDepth) === 'function') {
+      (window.__APP_ACTIONS__?.setTrailDepth)(2, { fromUserGesture: true, skipUrlSync: true });
     } else {
       (window.__APP_STATE__ ?? window.__TEST_STATE__).trailDepth = 2;
     }
@@ -281,8 +281,8 @@ async function run() {
       (window.__APP_STATE__ ?? window.__TEST_STATE__).myceliumMode = 'inside';
       (window.__APP_STATE__ ?? window.__TEST_STATE__).navState.mode = 'inside';
     }
-    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function') {
-      (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState)();
+    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function') {
+      (window.__APP_ACTIONS__?.refreshCompositionState)();
     }
     if (typeof window.updateExplorationUi === 'function') {
       window.updateExplorationUi();
@@ -301,12 +301,12 @@ async function run() {
   // ── Phase 4: Interruption — clearSearch() reset ─────────────────────────────
   // Call the real state-reset function (this is what Escape triggers in the live app)
   await page.evaluate(() => {
-    if (typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function') {
-      (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch)();
+    if (typeof (window.__APP_ACTIONS__?.clearSearch) === 'function') {
+      (window.__APP_ACTIONS__?.clearSearch)();
     }
     // Reset trail and navigation state that clearSearch() does not touch
-    if (typeof (window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth) === 'function') {
-      (window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth)(0, { skipUrlSync: true });
+    if (typeof (window.__APP_ACTIONS__?.setTrailDepth) === 'function') {
+      (window.__APP_ACTIONS__?.setTrailDepth)(0, { skipUrlSync: true });
     } else {
       (window.__APP_STATE__ ?? window.__TEST_STATE__).trailDepth = 0;
     }
@@ -325,8 +325,8 @@ async function run() {
     if (typeof window.animateCameraToNode === 'function' && (window.__APP_STATE__ ?? window.__TEST_STATE__).navState?.focusedIndex !== null) {
       window.animateCameraToNode(0, { transitionStyle: 'reset', duration: 1 });
     }
-    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function') {
-      (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState)();
+    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function') {
+      (window.__APP_ACTIONS__?.refreshCompositionState)();
     }
     if (typeof window.updateExplorationUi === 'function') {
       window.updateExplorationUi();

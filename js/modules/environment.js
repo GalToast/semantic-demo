@@ -27,8 +27,18 @@ export function getViewportSize() {
 /**
  * Returns true when the viewport width is at or below the mobile breakpoint.
  */
-export function isMobile() {
+export function isMobileViewport() {
     return typeof window !== 'undefined' && window.innerWidth <= 768;
+}
+
+// Backward compatibility alias for isMobileViewport
+export const isMobile = isMobileViewport;
+
+/**
+ * Returns true when the focus-stage UI should use the compact (mobile) layout.
+ */
+export function isCompactFocusStage() {
+    return isMobileViewport();
 }
 
 /**
@@ -36,6 +46,33 @@ export function isMobile() {
  */
 export function prefersReducedMotion() {
     return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
+}
+
+/**
+ * Returns true when the current device has a coarse pointer (e.g. touch).
+ */
+export function hasCoarsePointer() {
+    return typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)')?.matches === true;
+}
+
+/**
+ * Returns true for the "compact landscape" layout variant (common on small mobile).
+ * Logic: (max-width: 768px) and (max-height: 740px)
+ */
+export function isCompactLandscape() {
+    if (typeof window === 'undefined') return false;
+    const { width, height } = getViewportSize();
+    return width <= 768 && height <= 740;
+}
+
+/**
+ * Returns true for the "ultra-compact" layout variant (very narrow mobile).
+ * Logic: (max-width: 430px) and (min-height: 741px) and (max-height: 860px)
+ */
+export function isUltraCompactPortrait() {
+    if (typeof window === 'undefined') return false;
+    const { width, height } = getViewportSize();
+    return width <= 430 && height >= 741 && height <= 860;
 }
 
 /**

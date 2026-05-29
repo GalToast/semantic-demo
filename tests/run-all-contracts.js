@@ -52,6 +52,7 @@ const FAILURE_CONTEXT_LINES = 8;
 const SERVER_GROUPS = new Set([
   'scene',
   'browser-interaction',
+  'short-landscape',
   'live-url',
   'extraction',
   'quality',

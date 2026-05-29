@@ -1,7 +1,7 @@
 # Semantic Demo Mobile State Ownership Matrix
 
 Status: active
-Updated: 2026-05-28
+Updated: 2026-05-29
 
 ## Purpose
 
@@ -26,6 +26,21 @@ Maps which `data-*` body attribute owns which visual surface. Use this to determ
 
 ## Key Compound State Interactions
 
+## Short-Landscape Viewport Taxonomy
+
+Short-landscape QA intentionally uses multiple landscape mobile widths. Do not collapse these into one viewport unless the corresponding CSS breakpoint and QA intent are changed together.
+
+| Tier | Viewport(s) | Purpose | Current Gate |
+|---|---:|---|---|
+| Constrained layout edge | `667x375`, `768x380` | Proves cramped landscape panel/chrome geometry does not overflow and focus cards leave canvas breathing room. These sizes exercise the fragile `max-height: 380px`/`max-width: 768px` CSS edge. | `npm run qa:short-landscape` |
+| Transition behavior edge | `667x375` | Proves overview -> search -> clear -> focus -> semantic-dive -> reset behavior still works at the tightest short-landscape size. Kept outside the default gate because it is slower. | `npm run qa:short-landscape:transition` |
+| Visual screenshot sweep | `896x414` | Captures a common large-phone landscape screenshot for visual inspection and screenshot diff evidence. This is a visual QA viewport, not the tightest layout contract. | `npm run qa:surface:short-landscape` |
+| 3D interaction short-landscape | `844x390` | Proves focus-pocket, hit testing, thread, and pointer behavior in the interaction specs. This size is close to large-phone landscape while preserving enough canvas for 3D assertions. | targeted `3d-*` Playwright specs |
+
+Release/checkpoint short-landscape proof should run `npm run qa:short-landscape:release`. Full launch visual proof should additionally run `npm run qa:surface:short-landscape` or `npm run qa:surface:all`.
+
+At `896x414`, `css/mobile_premium_focus.css` owns compact focus-stage suppression for nonessential `.focus-stage-meta` and `.focus-stage-badges` rows so the primary name, short description, and Step Inside action remain inside the viewport.
+
 ### `data-panel-surface` + `data-focus-panel-mode="field-node"`
 
 ```css
@@ -49,6 +64,8 @@ document.body.dataset.panelSurfaceDetail = context === 'search' || context === '
     : 'none';
 ```
 
+In `focus-search` + `peek`, the search sheet is a compact context tray. The selected business details belong to `#focus-stage`, so the mobile peek tray intentionally hides `#search-results.active` to avoid a competing result stack above the focus card. Expanded search states still own full result browsing.
+
 ### `data-active-view` + `data-route-director`
 
 `data-route-director="search-focus"` gates `.focus-stage-dive-btn` only when `data-active-view="galaxy"`. In map view the dive button is suppressed by `data-active-view="map"` rules regardless of route-director.
@@ -57,6 +74,19 @@ document.body.dataset.panelSurfaceDetail = context === 'search' || context === '
 /* journey_active.css:1070 */
 body[data-active-view="galaxy"][data-route-director="search-focus"] .focus-stage-dive-btn { ... }
 ```
+
+### Mobile Map-Trail Ownership
+
+Mobile map-trail is owned by the map surface, not by the legacy selected-card panel. The visual contract expects:
+
+- `data-active-view="map"`
+- `data-panel-surface` starts with `map-`
+- `data-journey-navigation-owner="map-trail-strip"`
+- `.map-trail-strip` is visible
+- `.selected-card` remains hidden on mobile map-trail
+- `.search-container` sits below `.map-trail-strip`
+
+Edit map trail strip chrome in `css/mobile_premium_chrome.css` and map/search sheet geometry in `css/mobile_premium_state.css` or `css/mobile_premium_surfaces.css`. Do not re-enable `.selected-card` for mobile map-trail unless the contract and this ownership note are intentionally changed together.
 
 ## Ambiguity Notes
 

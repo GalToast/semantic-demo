@@ -69,7 +69,7 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
     () => {
       const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
       return (
-        typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function' &&
+        typeof (window.__APP_ACTIONS__?.clearSearch) === 'function' &&
         Array.isArray(s.points) &&
         s.points.length > 0 &&
         s.nodePositions?.length > 0 &&
@@ -208,8 +208,8 @@ async function abortInFlightSearch(page) {
 
   // Start search without awaiting — fire-and-forget
   await page.evaluate(() => {
-    if (typeof (window.__APP_ACTIONS__?.search ?? window.search) === 'function') {
-      (window.__APP_ACTIONS__?.search ?? window.search)('coffee', { preferCachedResults: false });
+    if (typeof (window.__APP_ACTIONS__?.search) === 'function') {
+      (window.__APP_ACTIONS__?.search)('coffee', { preferCachedResults: false });
     }
   });
   // Give the request a moment to be dispatched
@@ -217,8 +217,8 @@ async function abortInFlightSearch(page) {
 
   // Abort via clearSearch (the user-cancels flow)
   await page.evaluate(() => {
-    if (typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function') {
-      (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch)();
+    if (typeof (window.__APP_ACTIONS__?.clearSearch) === 'function') {
+      (window.__APP_ACTIONS__?.clearSearch)();
     }
   });
   await page.waitForTimeout(400);
@@ -257,8 +257,8 @@ async function slowSearchResponse(page) {
   await input.focus();
   await input.fill('latte');
   await page.evaluate(() => {
-    if (typeof (window.__APP_ACTIONS__?.search ?? window.search) === 'function') {
-      (window.__APP_ACTIONS__?.search ?? window.search)('latte', { preferCachedResults: false });
+    if (typeof (window.__APP_ACTIONS__?.search) === 'function') {
+      (window.__APP_ACTIONS__?.search)('latte', { preferCachedResults: false });
     }
   });
   // Wait just long enough for the UI to react to the in-flight state
@@ -395,8 +395,8 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
     await input.focus();
     await input.fill('coffee');
     await page.evaluate(() => {
-      if (typeof (window.__APP_ACTIONS__?.search ?? window.search) === 'function') {
-        (window.__APP_ACTIONS__?.search ?? window.search)('coffee', { preferCachedResults: true });
+      if (typeof (window.__APP_ACTIONS__?.search) === 'function') {
+        (window.__APP_ACTIONS__?.search)('coffee', { preferCachedResults: true });
       }
     });
     await page.waitForTimeout(1500);
@@ -414,7 +414,7 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
 
     // First: do a valid search so we have results
     await page.evaluate(() => {
-      if (typeof (window.__APP_ACTIONS__?.search ?? window.search) === 'function') (window.__APP_ACTIONS__?.search ?? window.search)('coffee', { preferCachedResults: false });
+      if (typeof (window.__APP_ACTIONS__?.search) === 'function') (window.__APP_ACTIONS__?.search)('coffee', { preferCachedResults: false });
     });
     await page.waitForSelector('.search-result-item', { timeout: 15000 });
 

@@ -121,7 +121,7 @@ async function forceFieldNode(page) {
     document.body.dataset.panelSurface = 'focus-search';
     document.body.dataset.focusPanelMode = 'field-node';
     document.body.dataset.fieldStepSync = 'active';
-    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function') (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState)();
+    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function') (window.__APP_ACTIONS__?.refreshCompositionState)();
   });
   await page.waitForTimeout(350);
 }

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mutate } from './helpers/state-harness.js';
+import { mutate, stateField } from './helpers/state-harness.js';
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
 
@@ -24,7 +24,6 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
         const note = document.getElementById('loading-note');
         const foot = document.getElementById('loading-foot');
         return {
-          phase: window.__TEST_STATE__?.loadingPhaseKey ?? 'unknown',
           overlayHidden: overlay?.hidden,
           overlayInert: overlay?.inert,
           overlayDisplay: overlay ? getComputedStyle(overlay).display : 'N/A',
@@ -33,6 +32,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
           bodyLoadingPhase: document.body?.dataset?.loadingPhase
         };
       });
+      info.phase = await stateField(page, 'loadingPhaseKey') ?? 'unknown';
       console.error('TIMEOUT DIAGNOSTIC:', JSON.stringify({ consoleErrors, pageErrors, ...info }, null, 2));
       throw e;
     }
@@ -42,7 +42,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
     // 1. Seed a deterministic search rail. This test verifies the panel
     // visibility contract, not semantic API availability.
     await page.evaluate(() => {
-      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      const state = window.__APP_STATE__ ?? {};
       const point = state?.points?.[0];
       if (!state || !point) throw new Error('Semantic demo points were not loaded');
 
@@ -73,7 +73,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
       `;
       resultsEl.classList.add('active');
       window.setSearchPanelState?.({ hasQuery: true, resultsRendered: true, searching: false, focusing: false, degraded: false });
-      window.refreshCompositionState?.();
+      window.__APP_ACTIONS__?.refreshCompositionState?.();
     });
 
     // 2. Verify results are visible AND hidden attribute is removed
@@ -86,7 +86,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
     // 3. Simulate the focused surface state and ensure search context persists.
     // setFocusedNode now handles focusedNode, selectedPoint, and navState together.
     await mutate(page, 'setFocusedNode', { focusedNode: 0, selectedPointIdx: 0, navStateMode: 'focus' });
-    await page.evaluate(() => { window.refreshCompositionState?.(); });
+    await page.evaluate(() => { window.__APP_ACTIONS__?.refreshCompositionState?.(); });
     await page.waitForTimeout(1500);
 
     // ADVERSARIAL: Verify results rail didn't ghost out.
@@ -127,10 +127,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
     const demoRunning = await page.evaluate(() => window.demoController.isRunning());
     expect(demoRunning).toBe(false);
 
-    const controlsEnabled = await page.evaluate(() => {
-      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-      return state.controls?.enabled;
-    });
+    const controlsEnabled = await stateField(page, 'controls.enabled');
     expect(controlsEnabled).toBe(true);
   });
 

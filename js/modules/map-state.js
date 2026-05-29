@@ -7,6 +7,7 @@ import {
 import { showExperienceToast, focusOnPoint } from './lifecycle.js';
 import { hideTooltip } from './tooltip.js';
 import { hideViewHandoff } from './view-controller.js';
+import { isMobileViewport } from './environment.js';
 
 // js/modules/map-state.js
 
@@ -178,7 +179,7 @@ export function getMapRoutePoints() {
     return getRouteEmbodimentIndices()
         .map((index) => ({ index, point: state.points[index] }))
         .filter(({ point }) => pointHasGeocode(point))
-        .slice(0, window.innerWidth <= 768 ? 7 : 10);
+        .slice(0, isMobileViewport() ? 7 : 10);
 }
 
 export function refreshMapRouteEmbodiment() {
@@ -287,7 +288,7 @@ export function centerMapOnRouteAnchor() {
         state.map.fitBounds(bounds.pad(0.42), {
             animate: true,
             maxZoom: 13,
-            paddingTopLeft: [22, window.innerWidth <= 768 ? 250 : 96],
+            paddingTopLeft: [22, isMobileViewport() ? 250 : 96],
             paddingBottomRight: [22, 120]
         });
     } else {
@@ -482,7 +483,7 @@ export function getRouteEmbodimentIndices() {
         pushIndex(state.focusedNode);
         (state.navState.trailNeighborIndices || []).slice(0, 4).forEach(pushIndex);
     }
-    return ordered.slice(0, window.innerWidth <= 768 ? 8 : 12);
+    return ordered.slice(0, isMobileViewport() ? 8 : 12);
 }
 
 export function getRouteAnchorIndex(routeIndices) {

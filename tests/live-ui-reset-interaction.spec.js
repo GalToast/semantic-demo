@@ -7,8 +7,8 @@ async function openApp(page) {
   await setupMockSearch(page);
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?nodemo=1`);
   await page.waitForFunction(() => (
-    typeof window.clearSearch === 'function' &&
-    typeof window.setSemanticDiveMode === 'function' &&
+    typeof window.__APP_ACTIONS__?.clearSearch === 'function' &&
+    typeof window.__APP_ACTIONS__?.setSemanticDiveMode === 'function' &&
     typeof window.refreshCompositionState === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0 &&

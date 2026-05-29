@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { SNAPSHOT_FIELDS, snapshot, stateField } from '../helpers/state-harness.js';
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 
@@ -65,7 +66,7 @@ for (const viewportProfile of VIEWPORTS) {
 
       await setupMockSearch(page);
       await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-      await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function', { timeout: 20000 });
+      await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
 
       await enterSearchQuery(page, 'coffee');
       await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
@@ -74,8 +75,8 @@ for (const viewportProfile of VIEWPORTS) {
         inputValue: document.getElementById('search-input')?.value ?? '',
         resultsCount: document.querySelectorAll('.search-result-item').length,
         hasQuery: document.querySelector('.search-container')?.classList.contains('has-query') ?? false,
-        navMode: window.__TEST_STATE__?.navState?.mode ?? 'unknown',
       }));
+      beforeReset.navMode = await stateField(page, 'navState.mode') ?? 'unknown';
 
       expect(beforeReset.inputValue).toBe('coffee');
       expect(beforeReset.resultsCount).toBeGreaterThan(0);
@@ -87,11 +88,14 @@ for (const viewportProfile of VIEWPORTS) {
       const afterReset = await page.evaluate(() => ({
         inputValue: document.getElementById('search-input')?.value ?? '',
         resultsCount: document.querySelectorAll('.search-result-item').length,
-        focusedNode: window.__TEST_STATE__?.focusedNode ?? null,
-        selectedPoint: window.__TEST_STATE__?.selectedPoint ?? null,
-        trailDepth: window.__TEST_STATE__?.trailDepth ?? -1,
-        navMode: window.__TEST_STATE__?.navState?.mode ?? 'unknown',
       }));
+      const afterState = await snapshot(page, SNAPSHOT_FIELDS.focusTrail);
+      Object.assign(afterReset, {
+        focusedNode: afterState.focusedNode ?? null,
+        selectedPoint: afterState.selectedPoint ?? null,
+        trailDepth: afterState.trailDepth ?? -1,
+        navMode: afterState['navState.mode'] ?? 'unknown',
+      });
 
       expect(afterReset.inputValue, 'Escape must clear search input').toBe('');
       expect(afterReset.resultsCount, 'Escape must clear rendered search results').toBe(0);

@@ -26,7 +26,7 @@ async function waitForAppReady(page) {
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
   // Wait for scene init — pointsMesh is a reliable scene-ready sentinel
   await page.waitForFunction(() => (
-    typeof window.clearSearch === 'function' &&
+    typeof window.__APP_ACTIONS__?.clearSearch === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0 &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).pointIndexByLeadId?.size > 0 &&

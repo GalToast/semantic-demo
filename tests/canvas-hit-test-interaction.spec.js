@@ -89,7 +89,7 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
 async function performSearch(page, query = 'coffee') {
   await prepareSearchInput(page, query);
   await page.evaluate(async (q) => {
-    const search = window.__APP_ACTIONS__?.search ?? window.search;
+    const search = window.__APP_ACTIONS__?.search;
     if (typeof search === 'function') {
       await search(q, { preferCachedResults: false });
     }
@@ -120,9 +120,9 @@ async function enterFocusFromSearch(page) {
     return appState?.pointIndexByLeadId?.get?.('1') ?? appState?.pointIndexByLeadId?.get?.(1) ?? 0;
   });
   await page.evaluate((index) => {
-    const focusNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
-    const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth;
-    const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState;
+    const focusNode = window.__APP_ACTIONS__?.focusOnNode;
+    const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
+    const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
     if (typeof focusNode === 'function') {
       focusNode(index, { fromSearchResult: true, skipUrlSync: true });
     }
@@ -342,7 +342,7 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
     });
     await page.evaluate((idx) => {
       const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-      const focusNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
+      const focusNode = window.__APP_ACTIONS__?.focusOnNode;
       if (typeof focusNode === 'function') {
         focusNode(idx, { fromSearchResult: true, skipUrlSync: true, query: 'coffee' });
       }
@@ -406,7 +406,7 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
     });
     await page.evaluate((idx) => {
       const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-      const focusNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
+      const focusNode = window.__APP_ACTIONS__?.focusOnNode;
       if (typeof focusNode === 'function') {
         focusNode(idx, { fromSearchResult: true, skipUrlSync: true, query: 'coffee' });
       }

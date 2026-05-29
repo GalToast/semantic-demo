@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
+import { isMobileViewport, getViewportSize } from './environment.js';
 
 let _labelElements = new Map();
 let _clusterCentroids = new Map();
@@ -147,12 +148,13 @@ export function updateClusterLabels() {
         return;
     }
 
-    const widthHalf = window.innerWidth / 2;
-    const heightHalf = window.innerHeight / 2;
+    const { width, height } = getViewportSize();
+    const widthHalf = width / 2;
+    const heightHalf = height / 2;
     const cameraPos = state.camera.position;
     const mode = getLabelMode();
     const activeCluster = getActiveCluster();
-    const isMobile = window.innerWidth <= 720;
+    const isMobile = isMobileViewport();
     const budget = LABEL_BUDGETS[mode]?.[isMobile ? 'mobile' : 'desktop'] || 4;
     const candidates = [];
 
@@ -254,7 +256,7 @@ export function updateClusterLabels() {
 
 export function syncClusterSectionState() {
     const clusterSection = document.getElementById('cluster-section');
-    if (clusterSection && window.innerWidth <= 768) {
+    if (clusterSection && isMobileViewport()) {
         clusterSection.open = false;
     }
 }

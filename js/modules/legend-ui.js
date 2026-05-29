@@ -1,6 +1,7 @@
 import { state } from '../state.js';
-import { escapeHtml } from '../utils.js';
+import { escapeHtml, describeCluster } from '../utils.js';
 import { getSemanticGuideTitle } from './semantic-guide.js';
+import { getFilteredClusterCounts, setClusterFilter } from './cluster-filter.js';
 
 // ── Viewport helper ──────────────────────────────────────────────────────────
 
@@ -62,16 +63,10 @@ export function closeLegendPanel() {
 }
 
 // ── Compact focus-stage restore (cross-module bridge) ─────────────────────────
-// Previously a local closure in event-bindings.js bindLegendControls().
-// Now extracted here so lifecycle.closeLegendGuide can call it via direct import
-// instead of a window-bridge typeof guard.
 
 /**
  * Restores the info panel after the legend is closed in compact focus-stage view.
  * Safe to call when not in compact mode — early-returns.
- *
- * @param {Element|null} infoPanel - .info-panel element (passed by caller)
- * @param {Element|null} panelBtn - #btn-panel element (passed by caller)
  */
 export function restoreLegendCollapsedPanel(infoPanel, panelBtn) {
     if (!isCompactFocusStage()) return;
@@ -81,33 +76,73 @@ export function restoreLegendCollapsedPanel(infoPanel, panelBtn) {
     if (panelBtn) panelBtn.setAttribute('aria-expanded', 'true');
 }
 
-// ── Legend Guide UI Controls ──────────────────────────────────────────────────
+// ── Legend Core & Guide UI Controls ───────────────────────────────────────────
 
-export function updateLegendGuideState() {
+export function buildLegend() {
     const legendPanel = document.getElementById('legend-panel');
     if (!legendPanel) return;
+
+    const counts = getFilteredClusterCounts();
+    const rows = Array.from(counts.entries())
+        .filter(([, count]) => count > 0)
+        .sort((a, b) => b[1] - a[1] || a[0] - b[0]);
+
     const guide = state.currentSemanticGuide;
-    if (!guide) {
-        if (isLegendPanelOpen()) closeLegendPanel();
-        legendPanel.innerHTML = '';
-        return;
-    }
-    // Auto-open the legend panel when guide data is available
-    if (!legendPanel.classList.contains('active')) openLegendPanel();
-    const kicker = guide.laneStatus || 'Field Guide';
-    const title = getSemanticGuideTitle(guide);
-    const note = guide.text || '';
-    const next = guide.nextLabel || '';
+    const guideTitle = guide ? getSemanticGuideTitle(guide) : 'Read the scene';
+    const guideNote = guide?.text || 'Neighborhood colors group records by shared language, trade, civic role, and business texture.';
+    const activeCluster = state.activeClusterFilter;
+
     legendPanel.innerHTML = `
         <div class="legend-guide">
             <div class="legend-guide-head">
-                <span class="legend-guide-kicker">${escapeHtml(kicker)}</span>
+                <span class="legend-guide-kicker">${escapeHtml(guide?.laneStatus || 'Field Guide')}</span>
+                <span class="legend-state-badge">${activeCluster === null ? 'County overview' : 'Filtered neighborhood'}</span>
             </div>
-            <div class="legend-guide-title">${escapeHtml(title)}</div>
-            ${note ? `<div class="legend-guide-note">${escapeHtml(note)}</div>` : ''}
-            ${next ? `<div class="legend-guide-next">${escapeHtml(next)}</div>` : ''}
+            <div class="legend-guide-title">${escapeHtml(guideTitle)}</div>
+            <div class="legend-guide-note">${escapeHtml(guideNote)}</div>
+            ${guide?.nextLabel ? `<div class="legend-guide-next">${escapeHtml(guide.nextLabel)}</div>` : ''}
+        </div>
+        <div class="legend-lens-truth">
+            <span class="legend-lens-truth-mark" aria-hidden="true"></span>
+            <span>Glowing lines show semantic relationships; the constellation shape is staged for readability.</span>
+        </div>
+        <div class="legend-divider"></div>
+        <div class="legend-section-title">Neighborhood palette</div>
+        <div class="legend-subtitle">Semantic neighborhoods group businesses by shared language, trade, civic role &amp; business texture</div>
+        <div class="legend-list" id="legend-list">
+            ${rows.map(([cluster, count]) => {
+                const active = activeCluster !== null && activeCluster === cluster;
+                const color = state.COLORS[cluster % state.COLORS.length] || '#4ecdc4';
+                return `
+                    <button class="legend-item${active ? ' active' : ''}" type="button" data-legend-cluster="${cluster}" aria-pressed="${String(active)}">
+                        <span class="legend-dot" style="background:${escapeHtml(color)}"></span>
+                        <span class="legend-copy">
+                            <span class="legend-label">${escapeHtml(describeCluster(cluster))}</span>
+                            <span class="legend-meta">${active ? '<span class="legend-pill filter">filter</span>' : ''}</span>
+                        </span>
+                        <span class="legend-count">${count.toLocaleString()}</span>
+                    </button>
+                `;
+            }).join('') || '<div class="legend-guide-note">No neighborhoods match the current filters.</div>'}
         </div>
     `;
+
+    legendPanel.querySelectorAll('[data-legend-cluster]').forEach((item) => {
+        item.addEventListener('click', () => setClusterFilter(Number(item.dataset.legendCluster)));
+    });
+}
+
+export function updateLegendGuideState() {
+    const guide = state.currentSemanticGuide;
+    if (!guide) {
+        if (isLegendPanelOpen()) closeLegendPanel();
+        const legendPanel = document.getElementById('legend-panel');
+        if (legendPanel) legendPanel.innerHTML = '';
+        return;
+    }
+    // Auto-open the legend panel when guide data is available
+    if (!isLegendPanelOpen()) openLegendPanel();
+    buildLegend();
 }
 
 export function closeLegendGuide(options = {}) {
@@ -135,5 +170,3 @@ let _previouslyFocusedLegend = null;
 
 export function setPreviouslyFocusedLegend(el) { _previouslyFocusedLegend = el; }
 export function getPreviouslyFocusedLegend() { return _previouslyFocusedLegend; }
-
-// All legend exports are consumed through direct imports.

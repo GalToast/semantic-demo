@@ -198,7 +198,7 @@ test.describe('Live URL State Reconstruction', () => {
     try {
       await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 });
     } catch {
-      await page.evaluate(() => { if (typeof window.search === 'function') window.search('coffee'); });
+      await page.evaluate(() => { if (typeof window.__APP_ACTIONS__?.search === 'function') window.__APP_ACTIONS__.search('coffee'); });
       await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
     }
     await page.locator('.search-result-item').first().click();

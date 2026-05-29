@@ -14,10 +14,13 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(process.cwd());
 const APP_PATH = path.join(ROOT, 'js/modules/app.js');
 const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.js');
+const TESTS_DIR = path.join(ROOT, 'tests');
+const THIS_FILE = fileURLToPath(import.meta.url);
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -25,6 +28,20 @@ function assert(cond, msg) {
 
 function read(file) {
   return fs.readFileSync(file, 'utf-8');
+}
+
+function walk(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) return walk(fullPath);
+    return fullPath;
+  });
+}
+
+function stripComments(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
 }
 
 const FORBIDDEN_SHIMS = [
@@ -41,6 +58,18 @@ const FORBIDDEN_SHIMS = [
   'dispatchNavTransition',
   'updateUrlState',
   'switchView'
+];
+
+const APP_ACTION_KEYS = [
+  'search',
+  'clearSearch',
+  'focusOnNode',
+  'setTrailFromSeed',
+  'setTrailDepth',
+  'setSemanticDiveMode',
+  'returnToOverview',
+  'resetExplorationFocus',
+  'refreshCompositionState',
 ];
 
 function testNoForbiddenShims() {
@@ -70,8 +99,7 @@ function testAppActionsNamespace() {
   const appSrc = read(APP_PATH);
 
   assert(/window\.__APP_ACTIONS__\s*=\s*\{/.test(appSrc), 'app.js should assign window.__APP_ACTIONS__ namespace');
-  const keys = ['search','clearSearch','focusOnNode','setTrailFromSeed','setTrailDepth','setSemanticDiveMode','returnToOverview','resetExplorationFocus','refreshCompositionState'];
-  for (const key of keys) {
+  for (const key of APP_ACTION_KEYS) {
     const objectLiteralKey = new RegExp(`${key}(?::|\\s*[,}])`).test(appSrc);
     const propertyAssignment = new RegExp(`window\\.__APP_ACTIONS__\\.${key}\\s*=`).test(appSrc);
     assert(objectLiteralKey || propertyAssignment, `__APP_ACTIONS__ should contain key: ${key}`);
@@ -81,6 +109,34 @@ function testAppActionsNamespace() {
     '__APP_ACTIONS__.setTrailFromSeed should bind journeyModule.setTrailFromSeed'
   );
   console.log('  PASS — __APP_ACTIONS__ namespace verified');
+}
+
+function testNoBareAppActionTestCalls() {
+  console.log('\n[TEST 5] No bare window app-action test invocations');
+
+  const scanned = walk(TESTS_DIR)
+    .filter((file) => /\.(?:mjs|js)$/.test(file))
+    .filter((file) => path.resolve(file) !== THIS_FILE);
+  const offenders = [];
+  const keys = APP_ACTION_KEYS.join('|');
+  const bareCallPattern = new RegExp(`window\\.(${keys})\\s*(?:\\?\\.)?\\s*\\(`);
+  const fallbackPattern = new RegExp(`\\?\\?\\s*window\\.(${keys})\\b`);
+
+  for (const file of scanned) {
+    const src = stripComments(read(file));
+    const lines = src.split(/\r?\n/);
+    lines.forEach((line, index) => {
+      if (bareCallPattern.test(line) || fallbackPattern.test(line)) {
+        offenders.push(`${path.relative(ROOT, file)}:${index + 1}: ${line.trim()}`);
+      }
+    });
+  }
+
+  assert(
+    offenders.length === 0,
+    `test callers must use window.__APP_ACTIONS__ for app actions; offenders:\n${offenders.join('\n')}`
+  );
+  console.log('  PASS — test app-action calls use __APP_ACTIONS__');
 }
   function testRecenterBridgeRetired() {
   console.log('\n[TEST 3] Verifying recenterFocusedNode bridge is retired from lifecycle.js');
@@ -102,6 +158,7 @@ try {
   testLegitimateHooks();
   testRecenterBridgeRetired();
   testAppActionsNamespace();
+  testNoBareAppActionTestCalls();
 
   console.log('\n=================================================================');
   console.log('ALL DEWINDOWING RULES PASSED');

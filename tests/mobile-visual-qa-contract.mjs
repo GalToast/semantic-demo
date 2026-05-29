@@ -30,8 +30,8 @@ const states = [
     waitFor: async (page) => {
       await page.waitForFunction(() => document.body?.dataset?.panelSurface === 'focus-search', { timeout: 8000 }).catch(() => {});
       await page.evaluate(() => {
-        const setSemanticDiveMode = window.__APP_ACTIONS__?.setSemanticDiveMode ?? window.setSemanticDiveMode;
-        const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth;
+        const setSemanticDiveMode = window.__APP_ACTIONS__?.setSemanticDiveMode;
+        const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
         if (typeof setSemanticDiveMode === 'function') {
           setSemanticDiveMode(true);
         } else if (typeof setTrailDepth === 'function') {

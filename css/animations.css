@@ -22,13 +22,6 @@
     html body .launch-btn,
     html body .legend-panel,
     html body .legend-item,
-    html body .focus-stage,
-    html body .focus-stage-card,
-    html body .focus-stage-action-btn,
-    html body .focus-stage-dive-btn,
-    html body .focus-stage-inside-btn,
-    html body[data-panel-surface="semantic-dive"] #btn-inside-next.focus-stage-inside-btn[aria-busy="true"],
-    html body .focus-stage-neighbor-pill,
     html body .search-container,
     html body .search-input-wrapper,
     html body .search-input,
@@ -46,20 +39,9 @@
 
 @media (max-width: 768px) and (prefers-reduced-motion: reduce) {
     html body[data-active-view="galaxy"] .info-panel,
-    html body[data-active-view="galaxy"] .focus-stage,
-    html body[data-active-view="galaxy"] .focus-stage-card,
     html body[data-active-view="galaxy"] .journey-compass {
         transition: none;
         transition-duration: 0.01ms;
-    }
-
-    html body[data-active-view="galaxy"][data-semantic-dive="transitioning"] .focus-stage-card {
-        opacity: 1;
-        pointer-events: auto;
-        transform: none;
-        transition: none;
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
     }
 }
 
@@ -96,37 +78,5 @@
         transition-duration: 0.01ms;
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    body[data-semantic-dive="transitioning"] #canvas-container {
-        filter: none;
-        transform: none;
-        transition: none;
-    }
-
-    body.searching .search-spinner,
-    .search-results.searching .search-spinner-overlay,
-    #search-spinner,
-    .search-glow,
-    .journey-compass-action.primary[data-journey-action="center-anchor"]::after,
-    .journey-compass-action.primary[data-journey-action="next-stop"]::after {
-        animation: none;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .selected-card,
-    .vector-cascade-line {
-        transition-duration: 0.01ms;
-        animation-duration: 0.01ms;
-        animation-iteration-count: 1;
-    }
-}
-
-@media (min-width: 769px) and (prefers-reduced-motion: reduce) {
-    html body[data-panel-surface="semantic-dive"] #btn-inside-next.focus-stage-inside-btn[aria-busy="true"] {
-        animation: none;
     }
 }

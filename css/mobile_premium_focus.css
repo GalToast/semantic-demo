@@ -266,6 +266,26 @@
         align-items: center;
     }
 
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) #btn-focus-prev,
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) #btn-focus-next {
+        color: transparent;
+        font-size: 0;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) #btn-focus-prev::before {
+        content: "‹";
+        color: rgba(230, 250, 247, 0.9);
+        font-size: 22px;
+        line-height: 1;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) #btn-focus-next::before {
+        content: "›";
+        color: rgba(230, 250, 247, 0.9);
+        font-size: 22px;
+        line-height: 1;
+    }
+
     html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .focus-stage-journey-btn {
         width: 44px;
         min-width: 44px;
@@ -360,6 +380,7 @@
 
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-note,
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-actions,
+    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) #focus-stage .trail-controls,
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-what,
     html body.is-active[data-panel-surface="focus"]:not([data-panel-surface^="map-"]) #focus-stage .focus-stage-journey.active {
         display: none;
@@ -799,6 +820,10 @@
 
     html body.is-active[data-panel-surface="focus"] .focus-stage-note,
     html body.is-active[data-panel-surface="focus-search"] .focus-stage-note,
+    html body.is-active[data-panel-surface="focus"] .focus-stage-meta,
+    html body.is-active[data-panel-surface="focus-search"] .focus-stage-meta,
+    html body.is-active[data-panel-surface="focus"] .focus-stage-badges,
+    html body.is-active[data-panel-surface="focus-search"] .focus-stage-badges,
     html body.is-active[data-panel-surface="focus"] .focus-stage-trivia,
     html body.is-active[data-panel-surface="focus-search"] .focus-stage-trivia,
     html body.is-active[data-panel-surface="focus"] .focus-thread-inspector,
@@ -812,6 +837,13 @@
     html body.is-active[data-panel-surface="focus"] .focus-stage-journey.active,
     html body.is-active[data-panel-surface="focus-search"] .focus-stage-journey.active {
         display: none;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"] .info-panel {
+        display: none;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
     }
 
     html body.is-active:not([data-panel-surface^="map-"])[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] #focus-stage .focus-stage-actions {

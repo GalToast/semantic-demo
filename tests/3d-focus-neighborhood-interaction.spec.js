@@ -366,8 +366,8 @@ test.describe('focus-neighborhood interaction', () => {
           if (node?.neighbors?.length > 0) { targetIndex = i; break; }
         }
       }
-      const focusNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
-      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth;
+      const focusNode = window.__APP_ACTIONS__?.focusOnNode;
+      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
       focusNode?.(targetIndex, { skipUrlSync: true });
       setTrailDepth?.(1, { skipUrlSync: true });
     });
@@ -429,8 +429,8 @@ test.describe('focus-neighborhood interaction', () => {
           if (node?.neighbors?.length > 0) { targetIndex = i; break; }
         }
       }
-      const focusNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
-      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth;
+      const focusNode = window.__APP_ACTIONS__?.focusOnNode;
+      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
       focusNode?.(targetIndex, { skipUrlSync: true });
       setTrailDepth?.(1, { skipUrlSync: true });
     });
@@ -810,8 +810,8 @@ test.describe('focus-neighborhood interaction', () => {
           if (node?.neighbors?.length > 0) { targetIndex = i; break; }
         }
       }
-      const focusNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
-      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth;
+      const focusNode = window.__APP_ACTIONS__?.focusOnNode;
+      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
       focusNode?.(targetIndex, { skipUrlSync: true });
       setTrailDepth?.(1, { skipUrlSync: true });
     });

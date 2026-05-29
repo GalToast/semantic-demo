@@ -52,8 +52,8 @@ async function setupNetworkStubs(page) {
 async function waitForAppReady(page) {
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`);
   await page.waitForFunction(() => (
-    typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function' &&
-    typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function' &&
+    typeof (window.__APP_ACTIONS__?.clearSearch) === 'function' &&
+    typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
   ), undefined, { timeout: 20000 });
@@ -69,7 +69,7 @@ async function performSearch(page, query = 'coffee') {
     if (!el) return;
     el.value = q;
     el.dispatchEvent(new Event('input', { bubbles: true }));
-    const search = window.__APP_ACTIONS__?.search ?? window.search;
+    const search = window.__APP_ACTIONS__?.search;
     if (typeof search === 'function') {
       await search(q, { preferCachedResults: false });
     }

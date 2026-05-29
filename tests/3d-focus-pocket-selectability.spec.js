@@ -145,7 +145,7 @@ async function performSearch(page, query = 'coffee') {
     if (!el) return;
     el.value = q;
     el.dispatchEvent(new Event('input', { bubbles: true }));
-    const search = window.__APP_ACTIONS__?.search ?? window.search;
+    const search = window.__APP_ACTIONS__?.search;
     if (typeof search === 'function') {
       await search(q, { preferCachedResults: false });
     }
@@ -683,7 +683,7 @@ test.describe('focus-pocket node selectability', () => {
       await page.evaluate(() => {
         (window.__APP_STATE__ ?? window.__TEST_STATE__).trailDepth = 2;
         // Re-trigger neighborhood focus to rebuild pocket with DEEP_DIVE personality
-        const focusNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
+        const focusNode = window.__APP_ACTIONS__?.focusOnNode;
         if (typeof focusNode === 'function') {
           focusNode((window.__APP_STATE__ ?? window.__TEST_STATE__).navState.focusedIndex);
         }

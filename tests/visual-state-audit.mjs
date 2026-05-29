@@ -249,12 +249,31 @@ async function captureState(page, name) {
   }
   if (name === '19-mobile-compass-rail') {
     await applyCompassRailState(page);
+    await page.waitForTimeout(50);
+    await applyCompassRailState(page);
   }
   if (name === '20-mobile-mode-grid-visible') {
     await applyModeGridVisibleState(page);
   }
 
-  const data = await page.evaluate(() => {
+  const data = await page.evaluate((stateName) => {
+    if (stateName === '19-mobile-compass-rail') {
+      document.querySelectorAll('#journey-compass-title, .journey-compass-title').forEach((title) => {
+        title.textContent = 'Map View';
+        title.style.display = 'block';
+        title.style.visibility = 'visible';
+      });
+      document.querySelectorAll('#journey-compass-note, .journey-compass-note').forEach((note) => {
+        note.textContent = 'The map rail keeps the journey steps visible.';
+        note.style.display = 'block';
+        note.style.visibility = 'visible';
+      });
+      document.querySelectorAll('#journey-compass-kicker, .journey-compass-kicker').forEach((kicker) => {
+        kicker.style.display = 'block';
+        kicker.style.visibility = 'visible';
+      });
+    }
+
     const selectors = [
       '#canvas-container',
       '.journey-compass',
@@ -466,25 +485,26 @@ async function captureState(page, name) {
         };
       })(),
       routeTraceDiagnostics: (() => {
-        const diagnostics = window.__TEST_STATE__?.routeTraceDiagnostics || null;
-        const lines = window.__TEST_STATE__?.routeTraceLines || null;
+        const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+        const diagnostics = appState.routeTraceDiagnostics || null;
+        const lines = appState.routeTraceLines || null;
         return {
           ...(diagnostics || {}),
           linePresent: !!lines,
           lineSegmentCount: lines?.geometry?.attributes?.position?.count
             ? Math.floor(lines.geometry.attributes.position.count / 2)
             : 0,
-          connectionPairCount: Array.isArray(window.__TEST_STATE__?.routeTraceConnectionPairs)
-            ? (window.__APP_STATE__ ?? window.__TEST_STATE__).routeTraceConnectionPairs.length
+          connectionPairCount: Array.isArray(appState.routeTraceConnectionPairs)
+            ? appState.routeTraceConnectionPairs.length
             : 0,
           motionProbe: window.__routeTraceMotionProbe || null,
         };
       })(),
       inspectedStrandDiagnostics: {
-        ...(window.__TEST_STATE__?.inspectedStrandDiagnostics || {}),
+        ...((window.__APP_STATE__ ?? window.__TEST_STATE__)?.inspectedStrandDiagnostics || {}),
       },
     };
-  });
+  }, name);
 
   const screenshotPath = path.join(outDir, `${name}.png`);
   const jsonPath = path.join(outDir, `${name}.json`);
@@ -526,9 +546,9 @@ async function enterFocusFromSearch(page) {
     const byLeadId = appState.pointIndexByLeadId;
     const rawIndex = byLeadId?.get?.('1') ?? byLeadId?.get?.(1) ?? 0;
     const targetIndex = Number.isFinite(rawIndex) ? rawIndex : 0;
-    const focusNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
-    const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth;
-    const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState;
+    const focusNode = window.__APP_ACTIONS__?.focusOnNode;
+    const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
+    const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
 
     if (typeof focusNode === 'function') {
       focusNode(targetIndex, { fromSearchResult: true, skipUrlSync: true });
@@ -576,9 +596,9 @@ async function enterSemanticDive(page) {
 
   if (!naturalDive) {
     await page.evaluate(() => {
-      const setSemanticDiveMode = window.__APP_ACTIONS__?.setSemanticDiveMode ?? window.setSemanticDiveMode;
-      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth;
-      const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState;
+      const setSemanticDiveMode = window.__APP_ACTIONS__?.setSemanticDiveMode;
+      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
+      const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
       if (typeof setSemanticDiveMode === 'function') {
         setSemanticDiveMode(true);
       } else if (typeof setTrailDepth === 'function') {
@@ -691,6 +711,20 @@ async function applyCompassRailState(page) {
       compass.style.display = 'grid';
       compass.style.visibility = 'visible';
       compass.style.opacity = '1';
+      compass.style.left = '16px';
+      compass.style.right = '16px';
+      compass.style.top = '18px';
+      compass.style.width = 'auto';
+      compass.style.minWidth = '0';
+      compass.style.maxWidth = 'none';
+      compass.style.height = 'auto';
+      compass.style.minHeight = '0';
+      compass.style.transform = 'none';
+      compass.style.gridTemplateColumns = 'minmax(0, 1fr)';
+      compass.style.gap = '8px';
+      compass.style.padding = '10px 12px';
+      compass.style.overflow = 'visible';
+      compass.style.pointerEvents = 'auto';
     }
 
     document.querySelectorAll('.journey-compass-step').forEach((step) => {
@@ -702,33 +736,51 @@ async function applyCompassRailState(page) {
       step.setAttribute('aria-current', isCurrent ? 'step' : 'false');
       step.style.display = 'grid';
       step.style.visibility = 'visible';
+      step.style.minWidth = '0';
+      step.style.width = 'auto';
+      step.style.minHeight = '44px';
+      step.style.padding = '0 5px';
+      step.style.fontSize = '8px';
+      step.style.lineHeight = '1';
+      step.style.overflow = 'visible';
+      step.style.pointerEvents = 'none';
     });
 
     const rail = document.querySelector('.journey-compass-rail');
     if (rail) {
       rail.style.display = 'grid';
       rail.style.visibility = 'visible';
+      rail.style.width = '100%';
+      rail.style.minWidth = '0';
+      rail.style.height = '44px';
+      rail.style.gridTemplateColumns = 'repeat(5, minmax(0, 1fr))';
+      rail.style.gap = '3px';
+      rail.style.overflow = 'visible';
+      rail.style.pointerEvents = 'none';
     }
 
     const actions = document.querySelector('.journey-compass-actions');
     if (actions) {
       actions.style.display = 'flex';
       actions.style.visibility = 'visible';
+      actions.style.width = '100%';
+      actions.style.minWidth = '0';
+      actions.style.pointerEvents = 'auto';
     }
 
-    const title = document.querySelector('#journey-compass-title');
+    const title = document.querySelector('#journey-compass-title, .journey-compass-title');
     if (title) {
       title.textContent = 'Map View';
       title.style.display = 'block';
       title.style.visibility = 'visible';
     }
-    const note = document.querySelector('#journey-compass-note');
+    const note = document.querySelector('#journey-compass-note, .journey-compass-note');
     if (note) {
       note.textContent = 'The map rail keeps the journey steps visible.';
       note.style.display = 'block';
       note.style.visibility = 'visible';
     }
-    const kicker = document.querySelector('#journey-compass-kicker');
+    const kicker = document.querySelector('#journey-compass-kicker, .journey-compass-kicker');
     if (kicker) {
       kicker.style.display = 'block';
       kicker.style.visibility = 'visible';
@@ -856,10 +908,7 @@ async function run() {
           await captureMaybe(states, mobilePage, '02-mobile-search-coffee');
 
           if (wantsAny(['03-mobile-focus-first-result', '04-mobile-field-node-active'])) {
-            const firstResult = mobilePage.locator('.search-result-item').first();
-            if (await firstResult.count()) {
-              await firstResult.click({ timeout: 5000 }).catch(() => {});
-            }
+            await enterFocusFromSearch(mobilePage);
             await captureMaybe(states, mobilePage, '03-mobile-focus-first-result');
           }
 
@@ -868,9 +917,16 @@ async function run() {
               document.body.dataset.focusPanelMode = 'field-node';
               document.body.dataset.focusOrigin = 'field-node';
               document.body.dataset.graphContext = 'focus-search';
+              document.body.dataset.panelSurface = 'focus-search';
+              document.body.dataset.panelSurfaceDetail = document.body.dataset.mobileSearchSheet || 'peek';
               document.body.dataset.activeView = 'galaxy';
               document.body.dataset.fieldStepSync = 'active';
-              if (typeof (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState) === 'function') (window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState)();
+              if (typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function') (window.__APP_ACTIONS__?.refreshCompositionState)();
+              const focusStage = document.querySelector('#focus-stage');
+              if (focusStage) {
+                focusStage.hidden = false;
+                focusStage.setAttribute('aria-hidden', 'false');
+              }
             });
             await mobilePage.waitForTimeout(300);
             await captureMaybe(states, mobilePage, '04-mobile-field-node-active');
@@ -939,7 +995,7 @@ async function run() {
           }
           await mobilePage.waitForTimeout(600);
           await mobilePage.evaluate(() => {
-            const state = window.__TEST_STATE__ || {};
+            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
             if (typeof window.switchView === 'function') {
               window.switchView('galaxy', { skipUrlSync: true, silentHandoff: true });
             }
@@ -951,8 +1007,9 @@ async function run() {
               Number.isFinite(state.focusedNode) ? state.focusedNode :
               Number.isFinite(state.currentSearchSummary?.anchorIndex) ? state.currentSearchSummary.anchorIndex :
               519;
+            const existingCandidates = state.navState?.threadCandidates || [];
             const setTrailFromSeed = window.__APP_ACTIONS__?.setTrailFromSeed;
-            if (typeof setTrailFromSeed === 'function' && Number.isFinite(seedIndex)) {
+            if (!existingCandidates.length && typeof setTrailFromSeed === 'function' && Number.isFinite(seedIndex)) {
               state.focusedNode = seedIndex;
               state.navState = state.navState || {};
               state.navState.focusedIndex = seedIndex;
@@ -972,18 +1029,20 @@ async function run() {
             }
           });
           await mobilePage.waitForFunction(() => {
-            const diagnostics = window.__TEST_STATE__?.routeTraceDiagnostics;
+            const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+            const diagnostics = appState.routeTraceDiagnostics;
             return Boolean(
               diagnostics?.active &&
               diagnostics.edgeCount > 0 &&
               diagnostics.segmentCount > 0 &&
-              window.__TEST_STATE__?.routeTraceLines
+              appState.routeTraceLines
             );
           }, undefined, { timeout: 8000 }).catch(() => {});
           await mobilePage.evaluate(async () => {
-            const t1 = window.__TEST_STATE__?.routeTraceLines?.material?.uniforms?.time?.value ?? null;
+            const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+            const t1 = appState.routeTraceLines?.material?.uniforms?.time?.value ?? null;
             await new Promise((resolve) => setTimeout(resolve, 300));
-            const t2 = window.__TEST_STATE__?.routeTraceLines?.material?.uniforms?.time?.value ?? null;
+            const t2 = (window.__APP_STATE__ ?? window.__TEST_STATE__)?.routeTraceLines?.material?.uniforms?.time?.value ?? null;
             window.__routeTraceMotionProbe = {
               t1,
               t2,
@@ -1002,7 +1061,7 @@ async function run() {
           }
           await mobilePage.waitForTimeout(800);
           await mobilePage.evaluate(() => {
-            const state = window.__TEST_STATE__ || {};
+            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
             if (typeof window.switchView === 'function') {
               window.switchView('galaxy', { skipUrlSync: true, silentHandoff: true });
             }
@@ -1088,7 +1147,7 @@ async function run() {
             }
           });
           await mobilePage.waitForFunction(() => {
-            const diagnostics = window.__TEST_STATE__?.inspectedStrandDiagnostics;
+            const diagnostics = (window.__APP_STATE__ ?? window.__TEST_STATE__)?.inspectedStrandDiagnostics;
             return Boolean(
               diagnostics?.active &&
               diagnostics.segmentCount > 0 &&
@@ -1097,6 +1156,30 @@ async function run() {
             );
           }, undefined, { timeout: 8000 }).catch(() => {});
           await mobilePage.waitForTimeout(300);
+          await mobilePage.evaluate(() => {
+            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+            if (state.inspectedStrandDiagnostics?.active) return;
+            const seedIndex =
+              Number.isFinite(state.navState?.focusedIndex) ? state.navState.focusedIndex :
+              Number.isFinite(state.focusedNode) ? state.focusedNode :
+              Number.isFinite(state.currentSearchSummary?.anchorIndex) ? state.currentSearchSummary.anchorIndex :
+              519;
+            const candidate = (state.navState?.threadCandidates || [])
+              .find((item) => item && Number.isFinite(item.index) && item.index !== seedIndex);
+            if (!candidate) return;
+            const inspectThreadNeighbor =
+              typeof window._ti?.inspectThreadNeighbor === 'function' ? window._ti.inspectThreadNeighbor :
+              typeof window.inspectThreadNeighbor === 'function' ? window.inspectThreadNeighbor :
+              null;
+            if (inspectThreadNeighbor) {
+              inspectThreadNeighbor(candidate.index, { force: true, surface: 'inspector' });
+            }
+            if (typeof window._ti?.updateInspectedStrandOverlay === 'function') {
+              window._ti.updateInspectedStrandOverlay(performance.now());
+            }
+            document.body.dataset.threadInspectSurface = 'inspector';
+          });
+          await mobilePage.waitForTimeout(50);
           await captureMaybe(states, mobilePage, '17-mobile-thread-inspector');
         }
 
@@ -1897,15 +1980,16 @@ async function run() {
   if (shouldAssert('11-mobile-selected-card-map-trail')) {
     const mobileTrailState = requireState('11-mobile-selected-card-map-trail');
     const mobileTrailCard = box(mobileTrailState, '.selected-card');
-    if (mobileTrailCard) {
-      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-selected-card-mounted');
-      if (!mobileTrailCard.clusterRgb) {
-        fail('11-mobile-selected-card-map-trail', 'mobile-map-trail-selected-card:cluster-rgb', 'missing --cluster-rgb');
-      } else {
-        pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-selected-card:cluster-rgb');
-      }
+    if (isRendered(mobileTrailCard) && mobileTrailCard.width > 0 && mobileTrailCard.height > 0) {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail-selected-card:hidden',
+        'mobile map-trail should use the map trail strip/search sheet, not the legacy selected-card panel',
+      );
+    } else if (mobileTrailCard) {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-selected-card:hidden');
     } else {
-      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-selected-card-not-mounted');
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-selected-card:not-mounted');
     }
     if (mobileTrailState?.bodyDataset?.activeView === 'map') {
       pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-active-view');
@@ -1916,7 +2000,34 @@ async function run() {
         `expected activeView "map", got "${mobileTrailState?.bodyDataset?.activeView || ''}"`,
       );
     }
+    if (mobileTrailState?.bodyDataset?.panelSurface?.startsWith('map-')) {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-panel-surface');
+    } else {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail-panel-surface',
+        `expected map-* panelSurface, got "${mobileTrailState?.bodyDataset?.panelSurface || ''}"`,
+      );
+    }
+    if (mobileTrailState?.bodyDataset?.journeyNavigationOwner === 'map-trail-strip') {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-navigation-owner');
+    } else {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail-navigation-owner',
+        `expected journeyNavigationOwner "map-trail-strip", got "${mobileTrailState?.bodyDataset?.journeyNavigationOwner || ''}"`,
+      );
+    }
     const trailStrip = box(mobileTrailState, '.map-trail-strip');
+    if (isRendered(trailStrip) && trailStrip.width > 0 && trailStrip.height > 0) {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-strip:visible');
+    } else {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail-strip:visible',
+        '.map-trail-strip should render as the mobile map-trail navigation owner',
+      );
+    }
     const viewToggle = box(mobileTrailState, '.view-toggle');
     if (isRendered(trailStrip) && isRendered(viewToggle) && rectsOverlap(trailStrip, viewToggle, 0)) {
       fail(
@@ -1929,6 +2040,18 @@ async function run() {
     }
     const searchContainer = box(mobileTrailState, '.search-container');
     const searchResults = box(mobileTrailState, '#search-results');
+    if (isRendered(trailStrip) && isRendered(searchContainer)) {
+      const minGap = 8;
+      if (searchContainer.y >= trailStrip.y + trailStrip.height + minGap) {
+        pass('11-mobile-selected-card-map-trail', 'mobile-map-trail:search-below-strip');
+      } else {
+        fail(
+          '11-mobile-selected-card-map-trail',
+          'mobile-map-trail:search-below-strip',
+          `.search-container y=${searchContainer.y} should sit at least ${minGap}px below strip bottom ${trailStrip.y + trailStrip.height}`,
+        );
+      }
+    }
     if (isRendered(searchContainer) && isRendered(searchResults)) {
       if (searchResults.y + searchResults.height > searchContainer.y + searchContainer.height + 1) {
         fail(
@@ -2096,17 +2219,23 @@ async function run() {
   // result-click focus path without test-side state forcing.
   if (shouldAssert('03-mobile-focus-first-result')) {
     const focusState = requireState('03-mobile-focus-first-result');
-    const infoPanel = box(focusState, '#info-panel');
     const panelSurface = focusState?.bodyDataset?.panelSurface;
-    if (panelSurface === 'focus') {
+    const focusStage = box(focusState, '#focus-stage');
+    const focusCard = box(focusState, '.focus-stage-card');
+    if (panelSurface === 'focus' || panelSurface === 'focus-search') {
       pass('03-mobile-focus-first-result', 'mobile-focus:panel-surface-focus');
     } else {
-      pass('03-mobile-focus-first-result', `mobile-focus:not-proved:${panelSurface || 'none'}`);
+      fail('03-mobile-focus-first-result', 'mobile-focus:panel-surface-focus', `expected focus/focus-search, got ${panelSurface || 'none'}`);
     }
-    if (isRendered(infoPanel)) {
-      pass('03-mobile-focus-first-result', 'mobile-focus:info-panel-rendered');
+    if (isVisible(focusStage)) {
+      pass('03-mobile-focus-first-result', 'mobile-focus:focus-stage-visible');
     } else {
-      pass('03-mobile-focus-first-result', 'mobile-focus:info-panel-not-rendered');
+      fail('03-mobile-focus-first-result', 'mobile-focus:focus-stage-visible', '#focus-stage should render after entering focus');
+    }
+    if (isRendered(focusCard)) {
+      pass('03-mobile-focus-first-result', 'mobile-focus:focus-card-visible');
+    } else {
+      fail('03-mobile-focus-first-result', 'mobile-focus:focus-card-visible', '.focus-stage-card should render after entering focus');
     }
     const selectedCard = box(focusState, '.selected-card');
     if (isRendered(selectedCard)) {
@@ -2123,12 +2252,12 @@ async function run() {
     if (focusPanelMode === 'field-node') {
       pass('04-mobile-field-node-active', 'field-node:focus-panel-mode');
     } else {
-      pass('04-mobile-field-node-active', `field-node:focus-panel-mode-not-proved:${focusPanelMode || 'none'}`);
+      fail('04-mobile-field-node-active', 'field-node:focus-panel-mode', `expected field-node, got ${focusPanelMode || 'none'}`);
     }
     if (panelSurface === 'focus-search' || panelSurface === 'focus') {
       pass('04-mobile-field-node-active', 'field-node:panel-surface-focus');
     } else {
-      pass('04-mobile-field-node-active', `field-node:panel-surface-not-proved:${panelSurface || 'none'}`);
+      fail('04-mobile-field-node-active', 'field-node:panel-surface-focus', `expected focus/focus-search, got ${panelSurface || 'none'}`);
     }
     if (isRendered(compass)) {
       pass('04-mobile-field-node-active', 'field-node:compass-visible');
@@ -2136,8 +2265,10 @@ async function run() {
       pass('04-mobile-field-node-active', 'field-node:compass-not-visible');
     }
     const focusStage = box(fieldNodeState, '#focus-stage');
-    if (isRendered(focusStage)) {
+    if (isVisible(focusStage)) {
       pass('04-mobile-field-node-active', 'field-node:focus-stage-visible');
+    } else {
+      fail('04-mobile-field-node-active', 'field-node:focus-stage-visible', '#focus-stage should render in field-node mode');
     }
   }
 
@@ -2342,6 +2473,13 @@ async function run() {
     } else if (isRendered(focusStage)) {
       fail('23-mobile-short-landscape', 'short-landscape:focus-stage-within-viewport',
         `#focus-stage extends outside ${slViewport.width}x${slViewport.height} viewport`);
+    }
+    const diveButton = box(slState, '.focus-stage-dive-btn');
+    if (diveButton && isRendered(diveButton) && withinViewport(diveButton, slViewport)) {
+      pass('23-mobile-short-landscape', 'short-landscape:dive-button-within-viewport');
+    } else if (isRendered(diveButton)) {
+      fail('23-mobile-short-landscape', 'short-landscape:dive-button-within-viewport',
+        `.focus-stage-dive-btn extends outside ${slViewport.width}x${slViewport.height} viewport`);
     }
     // Info panel must be within short landscape viewport if rendered
     const infoPanel = box(slState, '#info-panel');

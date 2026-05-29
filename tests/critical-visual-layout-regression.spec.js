@@ -55,7 +55,7 @@ test.describe('Critical Visual Layout Regression', () => {
 
     // Wait for app ready
     await page.waitForFunction(() =>
-      typeof (window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode) === 'function' &&
+      typeof (window.__APP_ACTIONS__?.focusOnNode) === 'function' &&
       Boolean(window.__TEST_STATE__?.points?.length),
     { timeout: 30000 });
 
@@ -64,7 +64,7 @@ test.describe('Critical Visual Layout Regression', () => {
       // Activate trail mode with depth >= 1 to show journey controls
       document.body.dataset.panelSurface = 'focus';
       document.body.dataset.focusPanelMode = 'focus';
-      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth;
+      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
       if (typeof setTrailDepth === 'function') {
         setTrailDepth(1, { skipUrlSync: true });
       }
@@ -73,7 +73,7 @@ test.describe('Critical Visual Layout Regression', () => {
 
     // Click a search result to enter focus + trail state
     await page.evaluate(() => {
-      const focusOnNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
+      const focusOnNode = window.__APP_ACTIONS__?.focusOnNode;
       if (typeof focusOnNode === 'function') {
         // Focus a node that has trail neighbors. 4200 is historically used in overlap QA.
         focusOnNode(4200, { fromSearchResult: true });
@@ -179,7 +179,7 @@ test.describe('Critical Visual Layout Regression', () => {
 
     await page.evaluate(() => {
       document.body.dataset.activeView = 'galaxy';
-      const focusOnNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
+      const focusOnNode = window.__APP_ACTIONS__?.focusOnNode;
       if (typeof focusOnNode === 'function') {
         focusOnNode(4200, { fromSearchResult: true });
       }

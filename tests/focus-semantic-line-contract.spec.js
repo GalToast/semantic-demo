@@ -133,7 +133,7 @@ test.describe('focus semantic Line2 shader ownership', () => {
     await focusNodeViaApp(page, 0, { fromSearchResult: true, skipUrlSync: true });
     await page.evaluate(() => {
       const actions = window.__APP_ACTIONS__;
-      const setTrailDepth = actions?.setTrailDepth ?? window.setTrailDepth;
+      const setTrailDepth = actions?.setTrailDepth;
       const setTrailFromSeed = actions?.setTrailFromSeed;
       if (typeof setTrailDepth !== 'function') {
         throw new Error('__APP_ACTIONS__.setTrailDepth missing');

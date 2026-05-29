@@ -79,6 +79,14 @@
         "gemma-fallback-error.spec.js"
       ]
     },
+    "short-landscape": {
+      "description": "Short-landscape deterministic proof - constrained layout plus interactive transition behavior. Visual screenshot proof remains qa:surface:short-landscape.",
+      "contracts": [
+        "short-landscape-layout-contract.mjs",
+        "short-landscape-contract.spec.js",
+        "short-landscape-transition-ui-paths.spec.js"
+      ]
+    },
     "render": {
       "description": "Backward-compatible alias for browser-backed render contracts. Prefer the browser group for new scripts.",
       "contracts": [

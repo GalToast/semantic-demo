@@ -14,13 +14,16 @@
  * visible/rendered state.
  *
  * Run: node tests/short-landscape-layout-contract.mjs
- * (Requires dev server running on http://127.0.0.1:8795)
+ * Starts a local static server unless TEST_BASE_URL is provided.
  */
 
 import { chromium } from 'playwright';
+import { spawn } from 'node:child_process';
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
 const APP_PATH = '/vector-explorer-polished.html';
+const SERVER_PORT = 8795;
+let server = null;
 
 const VIEWPORTS = [
   { width: 667, height: 375 },
@@ -31,6 +34,52 @@ const VIEWPORTS = [
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
+}
+
+async function isServerReady() {
+  try {
+    const response = await fetch(`${BASE_URL}${APP_PATH}`, { method: 'HEAD' });
+    return response.ok || response.status === 405;
+  } catch {
+    return false;
+  }
+}
+
+async function startStaticServer() {
+  if (process.env.TEST_BASE_URL || await isServerReady()) return null;
+
+  const proc = spawn('python', ['-m', 'http.server', String(SERVER_PORT), '--bind', '127.0.0.1'], {
+    cwd: process.cwd(),
+    stdio: 'ignore',
+  });
+
+  const started = Date.now();
+  while (Date.now() - started < 10000) {
+    if (proc.exitCode !== null) {
+      throw new Error(`static server exited early with code ${proc.exitCode}`);
+    }
+    if (await isServerReady()) return proc;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  proc.kill();
+  throw new Error(`static server failed to respond on ${BASE_URL} within 10000ms`);
+}
+
+async function gotoApp(page) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      await page.goto(`${BASE_URL}${APP_PATH}`, { waitUntil: 'domcontentloaded' });
+      return;
+    } catch (error) {
+      const isLocalRefused = !process.env.TEST_BASE_URL &&
+        String(error?.message || error).includes('ERR_CONNECTION_REFUSED');
+      if (!isLocalRefused || attempt === 1) {
+        throw error;
+      }
+      server = await startStaticServer();
+    }
+  }
 }
 
 async function runTestsForViewport(viewport) {
@@ -44,13 +93,20 @@ async function runTestsForViewport(viewport) {
 
   console.log(`Viewport: ${viewport.width}x${viewport.height} (short landscape)\n`);
 
-  await page.goto(`${BASE_URL}${APP_PATH}`, { waitUntil: 'domcontentloaded' });
-  await page.waitForLoadState('load');
-  await page.waitForTimeout(2000);
+  await gotoApp(page);
+  await page.waitForFunction(() => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return Array.isArray(state.points) &&
+      state.points.length > 0 &&
+      state.renderer?.domElement &&
+      state.camera &&
+      state.pointsMesh;
+  }, { timeout: 12000 });
 
   await page.evaluate(() => {
     document.body.classList.add('is-active');
   });
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
   // ── Test 1: Canopy HUD (journey-compass) stays within viewport ─────────────────
   console.log(`[TEST] Canopy HUD — journey-compass bounding rect at ${viewport.width}x${viewport.height}`);
@@ -99,7 +155,6 @@ async function runTestsForViewport(viewport) {
     const el = document.querySelector('.search-result-item');
     if (el) el.click();
   });
-  await page.waitForTimeout(1200);
 
   await page.evaluate(() => {
     document.body.dataset.activeView = 'galaxy';
@@ -107,7 +162,11 @@ async function runTestsForViewport(viewport) {
     document.body.dataset.panelSurface = 'focus-search';
     document.body.dataset.focusPanelMode = 'focus';
   });
-  await page.waitForTimeout(600);
+  await page.waitForFunction(() => (
+    document.body.dataset.panelSurface === 'focus-search' &&
+    document.body.dataset.graphContext === 'focus-search'
+  ), { timeout: 3000 });
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
   const focusStageInfo = await page.evaluate(() => {
     const stage = document.querySelector('#focus-stage');
@@ -318,8 +377,17 @@ async function runTestsForViewport(viewport) {
 
 console.log('\n=== Short Landscape Layout Contract ===\n');
 
-for (const vp of VIEWPORTS) {
-  await runTestsForViewport(vp);
-}
+server = await startStaticServer();
 
-console.log('All short landscape layout contracts passed.');
+try {
+  for (const vp of VIEWPORTS) {
+    await runTestsForViewport(vp);
+  }
+
+  console.log('All short landscape layout contracts passed.');
+} finally {
+  if (server && server.exitCode === null) {
+    server.kill();
+    await new Promise((resolve) => server.once('exit', resolve));
+  }
+}

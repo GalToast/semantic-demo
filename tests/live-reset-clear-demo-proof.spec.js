@@ -64,7 +64,7 @@ async function waitForResults(page, timeout = 15000) {
   try {
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 });
   } catch {
-    await page.evaluate((q) => { if (typeof (window.__APP_ACTIONS__?.search ?? window.search) === 'function') (window.__APP_ACTIONS__?.search ?? window.search)(q); }, 'coffee');
+    await page.evaluate((q) => { if (typeof (window.__APP_ACTIONS__?.search) === 'function') (window.__APP_ACTIONS__?.search)(q); }, 'coffee');
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: timeout });
   }
 }
@@ -97,7 +97,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     test.setTimeout(60000);
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     // --- 1. Establish search state with results ---
@@ -132,7 +132,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     test.setTimeout(60000);
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     // --- 1. Search -> click result to enter focus state ---
@@ -176,7 +176,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     test.setTimeout(45000);
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     await enterSearchQuery(page, 'espresso');
@@ -192,7 +192,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     test.setTimeout(45000);
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     await enterSearchQuery(page, 'coffee');
@@ -208,7 +208,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     test.setTimeout(45000);
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     await enterSearchQuery(page, 'coffee');
@@ -266,7 +266,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     test.setTimeout(45000);
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch ?? window.clearSearch) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     await enterSearchQuery(page, 'cafe');
@@ -286,7 +286,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     test.setTimeout(90000);
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus ?? window.resetExplorationFocus) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus) === 'function', { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     // Enter focus state

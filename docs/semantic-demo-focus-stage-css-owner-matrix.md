@@ -1,8 +1,8 @@
 # Semantic Demo Focus-Stage CSS Ownership Matrix
 
 Status: active
-Updated: 2026-05-28
-Purpose: Reduce the 464 current focus-stage CSS matches across 12 files into a state-by-state owner map and a safe migration sequence.
+Updated: 2026-05-29
+Purpose: Reduce the 419 current focus-stage CSS matches across 11 files into a state-by-state owner map and a safe migration sequence.
 
 ---
 
@@ -10,25 +10,28 @@ Purpose: Reduce the 464 current focus-stage CSS matches across 12 files into a s
 
 | File | focus-stage matches | Role |
 |---|---|---|
-| `css/mobile_premium_focus.css` | 143 | Mobile focus-search and semantic-dive composition; terminal mobile focus-stage-card reduced-motion ownership |
-| `css/journey_steps.css` | 85 | Step Inside, active-trail, state-machine surfaces |
-| `css/journey_active.css` | 82 | Active journey, field-node, route surfaces |
-| `css/clusters.css` | 54 | Selected-card focus/map accent; focus-stage card base |
-| `css/mobile_premium_surfaces.css` | 35 | Mobile bottom-sheet geometry corrections |
-| `css/progressive_disclosure.css` | 23 | Legacy visibility/show-hide; late cascade |
+| `css/mobile_premium_focus.css` | 159 | Mobile focus-search and semantic-dive composition; terminal mobile focus-stage-card reduced-motion ownership |
+| `css/journey_steps.css` | 87 | Step Inside, active-trail, state-machine surfaces |
+| `css/modules/focus_stage.css` | 73 | Focus-stage component module linked directly from the app shell |
+| `css/mobile_premium_surfaces.css` | 45 | Mobile bottom-sheet geometry corrections |
+| `css/progressive_disclosure.css` | 26 | Legacy visibility/show-hide; late cascade |
 | `css/strands.css` | 22 | Mobile bottom sheet, mobile chrome, route surfaces |
-| `css/animations.css` | 11 | Short-landscape/mobile override tail; reduced-motion |
 | `css/controls.css` | 2 | View toggle, journey btn primitives |
 | `css/mobile_base.css` | 2 | Mobile focus/stepinside owner block |
+| `css/base.css` | 1 | Base focus-stage primitive |
 | `css/layout_base.css` | 1 | Info panel state overrides; map-focus/trail state |
 | `css/search.css` | 1 | Search-state edge selector |
 
 2026-05-28 guardrail pass:
 - `tests/css-ownership-check.mjs` now ratchets `.focus-stage-card` per-file selector counts.
 - `tests/focus-stage-css-ownership-contract.mjs` now ratchets `strands.css` to its current focus-stage-card and journey-compass counts and blocks new unregistered geometry-owner files.
-- First consolidation target completed: terminal mobile reduced-motion `.focus-stage-card` selectors moved from `mobile_premium_surfaces.css` to `mobile_premium_focus.css`. Do not create a new `css/focus_stage.css` until the focus/mobile contracts stay green after this smaller move.
+- First consolidation target completed: terminal mobile reduced-motion `.focus-stage-card` selectors moved from `mobile_premium_surfaces.css` to `mobile_premium_focus.css`.
 - Second consolidation target completed: terminal mobile focus-search `.focus-stage-what`, `.focus-stage-journey.active`, and `.focus-stage-journey-btn` rules moved from `mobile_premium_surfaces.css` to `mobile_premium_focus.css`.
 - Third consolidation target completed: redundant semantic-dive `.focus-stage-kicker`, `.focus-stage-actions`, and `.focus-stage-dive-btn` suppression removed from `mobile_premium_surfaces.css`; `mobile_premium_focus.css` remains the state-specific owner. Trail-control suppression stayed in surfaces pending a separate protected-exception pass.
+
+2026-05-29 component-module pass:
+- `css/modules/focus_stage.css` is now the app-shell linked component module for focus-stage base styling.
+- The older blocked target was `css/focus_stage.css`; do not introduce that root-level file. Continue routing focus-stage consolidation through `css/modules/focus_stage.css` and keep the focus/mobile/short-landscape contracts green.
 
 ---
 

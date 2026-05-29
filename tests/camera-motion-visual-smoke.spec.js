@@ -88,7 +88,7 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
 
   await page.locator('#search-input').fill('coffee');
   await page.evaluate(() => {
-    if (typeof window.search === 'function') return window.search('coffee');
+    if (typeof window.__APP_ACTIONS__?.search === 'function') return window.__APP_ACTIONS__.search('coffee');
     document.querySelector('#search-input')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     return null;
   });

@@ -171,9 +171,9 @@ async function forceFocusSearch(page) {
     const byLeadId = s?.pointIndexByLeadId;
     const rawIndex = byLeadId?.get?.('1') ?? byLeadId?.get?.(1) ?? 0;
     const focusIndex = Number.isFinite(rawIndex) ? rawIndex : 0;
-    const focusNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
-    const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth ?? window.setTrailDepth;
-    const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState;
+    const focusNode = window.__APP_ACTIONS__?.focusOnNode;
+    const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
+    const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
     if (typeof focusNode === 'function') {
       focusNode(focusIndex, { fromSearchResult: true, skipUrlSync: true });
     }

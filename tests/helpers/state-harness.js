@@ -152,7 +152,7 @@ export async function stateField(page, path) {
  *          setTrailDepth() gate is the subject under test.
  *
  *   'resetExploration'
- *     Calls window.resetExplorationFocus() then waits 500 ms.
+ *     Calls window.__APP_ACTIONS__.resetExplorationFocus() then waits 500 ms.
  *     WHY: Official reset API — use this instead of direct mutation wherever
  *          the official path exists and is sufficient.
  *
@@ -233,7 +233,7 @@ export async function mutate(page, operation, extra = {}) {
       case 'setFocusedNode': {
         // Test fixture: set focusedNode, selectedPoint, navState.focusedIndex,
         // and optionally navState.mode together.
-        // Prefer window.focusOnNode() in real test flow; this is for
+        // Prefer window.__APP_ACTIONS__.focusOnNode() in real test flow; this is for
         // test harnesses that need a known starting point before the
         // official API is exercised.
         const idx = patch.focusedNode;
@@ -274,7 +274,7 @@ export async function mutate(page, operation, extra = {}) {
 
       case 'setTrailDepth': {
         // Test fixture: set trailDepth and navState.mode together.
-        // Prefer window.setTrailDepth() in real test flow; this is for
+        // Prefer window.__APP_ACTIONS__.setTrailDepth() in real test flow; this is for
         // test harnesses that need to simulate depth state before the
         // official API gate is exercised.
         const depth = patch.trailDepth ?? s.trailDepth;
@@ -292,8 +292,8 @@ export async function mutate(page, operation, extra = {}) {
 
       case 'resetExploration':
         // Official reset API — preferred over direct mutation.
-        if (typeof window.resetExplorationFocus === 'function') {
-          window.resetExplorationFocus();
+        if (typeof window.__APP_ACTIONS__?.resetExplorationFocus === 'function') {
+          window.__APP_ACTIONS__.resetExplorationFocus();
         }
         break;
 
@@ -328,8 +328,8 @@ export async function reset(page, scope = 'exploration') {
 
     if (s === 'exploration') {
       // Official API — resets focusedNode, trailDepth, navState.mode to overview.
-      if (typeof window.resetExplorationFocus === 'function') {
-        window.resetExplorationFocus();
+      if (typeof window.__APP_ACTIONS__?.resetExplorationFocus === 'function') {
+        window.__APP_ACTIONS__.resetExplorationFocus();
       } else {
         // Fallback: direct teardown when the official API is not available.
         state.focusedNode = null;
@@ -344,8 +344,8 @@ export async function reset(page, scope = 'exploration') {
       }
     } else if (s === 'search') {
       // Official API — clears search summary and input state.
-      if (typeof window.clearSearch === 'function') {
-        window.clearSearch();
+      if (typeof window.__APP_ACTIONS__?.clearSearch === 'function') {
+        window.__APP_ACTIONS__.clearSearch();
       } else {
         state.currentSearchSummary = null;
       }
@@ -353,8 +353,8 @@ export async function reset(page, scope = 'exploration') {
       // Full reset: exploration + search + view.
       if (typeof window.resetExperienceState === 'function') {
         window.resetExperienceState();
-      } else if (typeof window.resetExplorationFocus === 'function') {
-        window.resetExplorationFocus();
+      } else if (typeof window.__APP_ACTIONS__?.resetExplorationFocus === 'function') {
+        window.__APP_ACTIONS__.resetExplorationFocus();
       }
       state.currentView = 'galaxy';
       state.currentSearchSummary = null;

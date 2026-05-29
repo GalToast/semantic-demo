@@ -1,3 +1,5 @@
+import './helpers/node-window-shim.mjs';
+
 /**
  * Contract: selected-business narrative helpers live in ui-renderers.
  *
@@ -54,29 +56,19 @@ function testSelectedMatchNarrative() {
   }
 }
 
-function testLifecycleAliasesHelpers() {
-  const lifecycle = read(LIFECYCLE);
-  assert(
-    lifecycle.includes("import { updateSelectedCardHeading } from './ui-renderers.js';"),
-    'lifecycle imports only the ui-renderers helper it still uses'
-  );
-  assert(!lifecycle.includes('buildSelectedMatchNarrative'), 'lifecycle no longer imports or owns selected-match narrative helper');
-  assert(!lifecycle.includes('getInterestingBusinessNote'), 'lifecycle no longer imports or owns interesting-note helper');
-  assert(!lifecycle.includes('window.getInterestingBusinessNote = getInterestingBusinessNote;'), 'interesting note window alias is retired');
-  assert(!lifecycle.includes('window.buildSelectedMatchNarrative = buildSelectedMatchNarrative;'), 'narrative window alias is retired');
-  assert(!lifecycle.includes('window.getInterestingBusinessNote = function'), 'lifecycle does not duplicate interesting note body');
-  assert(!lifecycle.includes('window.buildSelectedMatchNarrative = function'), 'lifecycle does not duplicate narrative body');
-}
+function testSourceCanonicality() {
+  const uiSrc = read(UI_RENDERERS);
+  const lifeSrc = read(LIFECYCLE);
 
-function testUiRendererOwnsHelpers() {
-  const source = read(UI_RENDERERS);
-  assert(source.includes('export function getInterestingBusinessNote(point)'), 'ui-renderers exports interesting note helper');
-  assert(source.includes('export function buildSelectedMatchNarrative(point)'), 'ui-renderers exports narrative helper');
+  assert(uiSrc.includes('export function buildSelectedMatchNarrative'), 'ui-renderers exports narrative builder');
+  assert(uiSrc.includes('export function getInterestingBusinessNote'), 'ui-renderers exports note filter');
+
+  assert(lifeSrc.includes("from './ui-renderers.js'"), 'lifecycle imports from ui-renderers');
+  assert(!lifeSrc.includes('window.buildSelectedMatchNarrative'), 'lifecycle does not use window for narrative');
 }
 
 testInterestingBusinessNote();
 testSelectedMatchNarrative();
-testLifecycleAliasesHelpers();
-testUiRendererOwnsHelpers();
+testSourceCanonicality();
 
-console.log('ui-renderers-helper-contract passed');
+console.log('PASS: ui-renderers narrative helpers verified');

@@ -385,14 +385,14 @@ async function main() {
                 }
                 if (targetIndex === null) targetIndex = 0;
                 window.__APP_ACTIONS__?.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
-                window.setTrailDepth?.(1, { skipUrlSync: true });
+                window.__APP_ACTIONS__?.setTrailDepth?.(1, { skipUrlSync: true });
             });
             await page.waitForTimeout(1600);
         };
         const focusedResult = await runFreshPage('02-mobile-focused-node', { view: 'galaxy', q: 'coffee', anchor: '519' }, focusSetup);
         const insideResult = await runFreshPage('03-mobile-step-inside', { view: 'galaxy', q: 'coffee', anchor: '519' }, async (page) => {
             await focusSetup(page);
-            await page.evaluate(() => window.setTrailDepth?.(2, { fromUserGesture: true }));
+            await page.evaluate(() => window.__APP_ACTIONS__?.setTrailDepth?.(2, { fromUserGesture: true }));
             await page.waitForTimeout(1200);
         });
         const mapResult = await runFreshPage('04-mobile-map', { view: 'map', q: 'coffee', anchor: '519' });

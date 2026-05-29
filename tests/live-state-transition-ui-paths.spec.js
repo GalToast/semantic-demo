@@ -7,8 +7,8 @@ async function openApp(page) {
   await setupMockSearch(page);
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?nodemo=1`);
   await page.waitForFunction(() => (
-    typeof window.clearSearch === 'function' &&
-    typeof window.setSemanticDiveMode === 'function' &&
+    typeof window.__APP_ACTIONS__?.clearSearch === 'function' &&
+    typeof window.__APP_ACTIONS__?.setSemanticDiveMode === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
   ), { timeout: 20000 });
@@ -28,8 +28,8 @@ async function performSearch(page, query = 'coffee') {
         el.value = q;
         el.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      if (typeof window.search === 'function') {
-        await window.search(q, { preferCachedResults: false });
+      if (typeof window.__APP_ACTIONS__?.search === 'function') {
+        await window.__APP_ACTIONS__.search(q, { preferCachedResults: false });
       }
     }, query);
   });
@@ -315,7 +315,7 @@ test('desktop search → clear-search-btn resets from pre-focus state', async ({
 // input still carries the query. The clear-search handler (which the button
 // triggers) calls clearSearch() → resetExplorationFocus() which resets
 // navState.mode to 'overview' and clears focusedNode/selectedPoint.
-// This test calls window.clearSearch() directly (same handler the button
+// This test calls window.__APP_ACTIONS__.clearSearch() directly (same handler the button
 // fires) and verifies the in-focus-to-overview reset path.
 test('desktop: clear-search resets from in-focus mode (not just pre-focus)', async ({ page }) => {
   test.setTimeout(60000);
@@ -335,7 +335,7 @@ test('desktop: clear-search resets from in-focus mode (not just pre-focus)', asy
   // The #search-clear-btn is hidden in focus mode (results panel replaced by
   // focus detail panel, so .search-container.has-query is not set). Call
   // clearSearch() directly — same handler the button triggers.
-  await page.evaluate(() => window.clearSearch());
+  await page.evaluate(() => window.__APP_ACTIONS__.clearSearch());
 
   await page.waitForFunction(() =>
     window.__TEST_STATE__?.navState?.mode === 'overview' &&

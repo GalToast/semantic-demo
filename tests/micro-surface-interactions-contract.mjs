@@ -54,7 +54,7 @@ async function forceFocusSurface(page) {
     document.body.dataset.panelSurface = 'focus-search';
     document.body.dataset.focusPanelMode = 'overview';
     document.body.dataset.routeDirector = 'search-corridor';
-    const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState ?? window.refreshCompositionState;
+    const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
     if (typeof refreshCompositionState === 'function') refreshCompositionState();
   });
   await page.waitForTimeout(300);

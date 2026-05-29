@@ -477,13 +477,13 @@ test.describe('3D thread orchestration quality', () => {
       }
       if (targetIndex === null) targetIndex = 0;
       window.__APP_ACTIONS__?.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
-      window.setTrailDepth?.(1, { skipUrlSync: true });
+      window.__APP_ACTIONS__?.setTrailDepth?.(1, { skipUrlSync: true });
     });
     await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 });
     await p.waitForTimeout(400);
 
     await p.evaluate(() => {
-      window.setTrailDepth?.(2, { fromUserGesture: true });
+      window.__APP_ACTIONS__?.setTrailDepth?.(2, { fromUserGesture: true });
     });
     // Wait for trailDepth=2 to actually settle (not just a fixed timeout)
     await p.waitForFunction(

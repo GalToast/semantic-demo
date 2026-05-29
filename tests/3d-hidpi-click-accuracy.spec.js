@@ -37,8 +37,8 @@ async function openAppHiDPI(browser, viewport = { width: 1440, height: 900 }, { 
   await page.waitForFunction(() => {
     const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return (
-      typeof window.clearSearch === 'function' &&
-      typeof (window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode) === 'function' &&
+      typeof window.__APP_ACTIONS__?.clearSearch === 'function' &&
+      typeof (window.__APP_ACTIONS__?.focusOnNode) === 'function' &&
       Array.isArray(s?.points) &&
       s.points.length > 0 &&
       s?.renderer?.domElement &&
@@ -56,10 +56,10 @@ async function openAppHiDPI(browser, viewport = { width: 1440, height: 900 }, { 
       styles.pointerEvents === 'none';
   }, { timeout: 20000 });
   await page.evaluate(() => {
-    if (typeof window.returnToOverview === 'function') {
-      window.returnToOverview();
-    } else if (typeof window.resetExplorationFocus === 'function') {
-      window.resetExplorationFocus();
+    if (typeof window.__APP_ACTIONS__?.returnToOverview === 'function') {
+      window.__APP_ACTIONS__.returnToOverview();
+    } else if (typeof window.__APP_ACTIONS__?.resetExplorationFocus === 'function') {
+      window.__APP_ACTIONS__.resetExplorationFocus();
     }
   });
   await page.waitForFunction(() => {

@@ -460,7 +460,7 @@ export async function midpointIndex(page) {
  */
 export async function focusNodeViaApp(page, index, options = {}) {
   return page.evaluate(({ idx, opts }) => {
-    const focusNode = window.__APP_ACTIONS__?.focusOnNode ?? window.focusOnNode;
+    const focusNode = window.__APP_ACTIONS__?.focusOnNode;
     if (typeof focusNode !== 'function') return false;
     focusNode(idx, opts);
     return true;

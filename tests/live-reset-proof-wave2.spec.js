@@ -42,8 +42,8 @@ async function performMockedSearch(page, query = 'coffee') {
     return;
   } catch {
     await page.evaluate((searchQuery) => {
-      if (typeof (window.__APP_ACTIONS__?.search ?? window.search) === 'function') {
-        (window.__APP_ACTIONS__?.search ?? window.search)(searchQuery);
+      if (typeof (window.__APP_ACTIONS__?.search) === 'function') {
+        (window.__APP_ACTIONS__?.search)(searchQuery);
       }
     }, query);
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
@@ -74,7 +74,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     });
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus ?? window.resetExplorationFocus) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus) === 'function', { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     // --- 1. Perform search ---
@@ -145,7 +145,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     });
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus ?? window.resetExplorationFocus) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus) === 'function', { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     // Enter focus state via search click
@@ -156,7 +156,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     // Call resetExplorationFocus directly (preserves search per its contract)
     await page.evaluate(() => {
-      (window.__APP_ACTIONS__?.resetExplorationFocus ?? window.resetExplorationFocus)();
+      (window.__APP_ACTIONS__?.resetExplorationFocus)();
     });
     await page.waitForTimeout(1000);
 
@@ -183,7 +183,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     });
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.returnToOverview ?? window.returnToOverview) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.returnToOverview) === 'function', { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     // Establish search + focus state
@@ -194,7 +194,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     // returnToOverview = full reset (clears search too)
     await page.evaluate(() => {
-      (window.__APP_ACTIONS__?.returnToOverview ?? window.returnToOverview)();
+      (window.__APP_ACTIONS__?.returnToOverview)();
     });
     await page.waitForFunction(
       () => document.body.dataset.activeView === 'galaxy',
@@ -223,7 +223,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     });
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
-    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus ?? window.resetExplorationFocus) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus) === 'function', { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     // Enter focus state

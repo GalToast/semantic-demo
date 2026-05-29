@@ -37,6 +37,7 @@ npm run test:contract      # structural JS/DOM contract tests (~20 test files)
 npm run serve              # local static server on 127.0.0.1:8795
 npm run qa:contract:all    # fast DOM/layout assertions (17 surfaces, ~5-10s)
 npm run qa:surface:all     # visual screenshot audit (22 states, ~60-90s)
+npm run qa:short-landscape:release # constrained layout + transition behavior proof
 ```
 
 ## Recent Architectural Changes
@@ -60,6 +61,13 @@ The JavaScript is modularized and bundled using `esbuild`.
 
 ### Audit & Verification
 The visual audit runner is `tests/visual-state-audit.mjs`. It captures screenshots and layout snapshots for named UI states.
+
+Short-landscape QA has three intentional viewport buckets:
+- `667x375` / `768x380` for constrained layout contracts (`npm run qa:short-landscape`)
+- `667x375` for interactive transition behavior (`npm run qa:short-landscape:transition`)
+- `896x414` for the screenshot visual state (`npm run qa:surface:short-landscape`)
+
+Use `npm run qa:short-landscape:release` when a short-landscape change needs both deterministic layout and transition coverage.
 
 ## Surface Contract Check (DOM/layout assertions)
 
