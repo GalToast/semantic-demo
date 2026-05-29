@@ -12,6 +12,9 @@
 |---|---|
 | `js/modules/app.js` | Main entry; imports all modules |
 | `js/state.js` | Single source of truth for all global state |
+| `js/modules/bridge-registry.js` | Legacy global action/state compatibility registry |
+| `js/modules/diagnostic-adapter.js` | Central gate for debug/devtool probes such as `_ti` |
+| `js/modules/environment.js` | Shared viewport, pointer, DPR, and reduced-motion helpers |
 | `js/modules/lifecycle.js` | App orchestration, view handoff, window bindings, scene-reveal logic |
 | `js/modules/demo-controller.js` | First-visit trigger + state machine |
 | `js/modules/micro-demo.js` | 9-second guided choreography |
@@ -88,6 +91,7 @@ Use `docs/semantic-demo-css-ownership-map.md` and `docs/semantic-demo-mobile-sta
 npm run build         # esbuild bundle to dist/bundle.js
 npm run lint          # ESLint js/modules/
 npm run test          # shell/cache/CSS ownership checks
+npm run test:unit     # Vitest unit tests under tests/unit/
 npm run test:contract # structural JS/DOM contract tests
 npm run qa:contract:all  # DOM/layout assertions (fast, all surfaces)
 npm run qa:surface:all    # Visual screenshot audit (full suite)
@@ -100,7 +104,7 @@ npm run serve          # static dev server on 127.0.0.1:8795
 `tests/surface-contract-check.mjs` runs fast DOM/layout assertions for named surfaces:
 - `mobile-idle`, `desktop-idle`, `launch-focus`, `search-error`, `map-trail`, `focus-pocket`, `field-node`, `info-panel-empty`, `compass-rail`, `loading-overlay`, `mode-grid`, `filters`, `thread-inspector`, `controls`, `search-chrome`, `info-panel-populated`, `global-spacing`
 
-`tests/visual-state-audit.mjs` captures screenshots for visual QA across 12 named states.
+`tests/visual-state-audit.mjs` captures screenshots for visual QA across the full named surface matrix.
 
 Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-demo-contract.mjs`, `tests/focus-pocket-motion-contract.mjs`, `tests/loading-ui-contract.mjs`, `tests/scene-atmosphere-contract.mjs`, `tests/three-visual-polish-contract.mjs`, `tests/weather-surface-ownership-contract.mjs`, `tests/weather-widget-render-contract.mjs`, `tests/info-panel-collapsed-render-contract.mjs`, `tests/mode-chip-state-render-contract.mjs`, `tests/search-peek-expanded-render-contract.mjs`
 
