@@ -1,9 +1,4 @@
 import { state } from '../state.js';
-import {
-    formatBusinessName,
-    describeCluster,
-    escapeHtml
-} from '../utils.js';
 
 /**
  * focus-stage-renderer.js

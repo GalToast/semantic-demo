@@ -41,7 +41,6 @@ import {
     refreshCompositionState as adapter_refreshCompositionState,
     clearMobileRouteFieldPeek as adapter_clearMobileRouteFieldPeek,
     clearCompactSearchResultRevealTimers as adapter_clearCompactSearchResultRevealTimers,
-    clearSearchPreviewHoverTimer as adapter_clearSearchPreviewHoverTimer,
     settleCompactSearchFocusCard as adapter_settleCompactSearchFocusCard,
     switchView as adapter_switchView,
     resetExplorationFocus as adapter_resetExplorationFocus,

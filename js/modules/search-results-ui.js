@@ -2,9 +2,7 @@ import { state } from '../state.js';
 import {
     escapeHtml,
     describeCluster,
-    formatBusinessName,
-    isCompactSearchViewport,
-    pointHasGeocode
+    isCompactSearchViewport
 } from '../utils.js';
 import {
     hideTooltip
@@ -25,23 +23,14 @@ import {
 import {
     updateUrlState as adapter_updateUrlState,
     setSearchPanelState as adapter_setSearchPanelState,
-    focusOnPoint as adapter_focusOnPoint,
-    dispatchNavTransition as adapter_dispatchNavTransition,
-    syncSearchStatusForFocus as adapter_syncSearchStatusForFocus,
     updateJourneyCompass as adapter_updateJourneyCompass,
     refreshCompositionState as adapter_refreshCompositionState,
-    clearMobileRouteFieldPeek as adapter_clearMobileRouteFieldPeek,
-    clearCompactSearchResultRevealTimers as adapter_clearCompactSearchResultRevealTimers,
-    clearSearchPreviewHoverTimer as adapter_clearSearchPreviewHoverTimer,
-    settleCompactSearchFocusCard as adapter_settleCompactSearchFocusCard,
-    switchView as adapter_switchView,
     refreshHoverSemanticOverlay as adapter_refreshHoverSemanticOverlay,
     setSemanticLaneUiState as adapter_setSemanticLaneUiState,
     resetExplorationFocus as adapter_resetExplorationFocus,
     hideSummaryCard as adapter_hideSummaryCard,
     setSemanticGuideButtonState as adapter_setSemanticGuideButtonState,
-    scheduleCompactSearchResultReveal as adapter_scheduleCompactSearchResultReveal,
-    scheduleSearchFocusTask as adapter_scheduleSearchFocusTask,
+    scheduleCompactSearchResultReveal as adapter_scheduleCompactSearchResultReveal
 } from './search-lifecycle-adapter.js';
 import { isMobileViewport } from './environment.js';
 

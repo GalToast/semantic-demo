@@ -69,19 +69,6 @@ function getMyceliumPresentationProfile() {
     return { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 };
 }
 
-function getLineSegmentCount(line) {
-    const positionCount = line?.geometry?.attributes?.position?.count || 0;
-    return Math.floor(positionCount / 2);
-}
-
-function getGroupLineSegmentCount(group) {
-    let segmentCount = 0;
-    group?.traverse?.((child) => {
-        segmentCount += getLineSegmentCount(child);
-    });
-    return segmentCount;
-}
-
 function seededUnit(index, salt = 0) {
     const x = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453;
     return x - Math.floor(x);

@@ -57,7 +57,7 @@ export function applyFilters() {
     if (!state.points || !Array.isArray(state.points)) return;
 
     let visibleCount = 0;
-    state.points.forEach((point, index) => {
+    state.points.forEach((point) => {
         const isVisible = pointMatchesActiveFilters(point);
         point.visible = isVisible;
         if (isVisible) visibleCount += 1;
