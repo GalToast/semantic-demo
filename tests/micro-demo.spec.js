@@ -35,6 +35,13 @@ async function seedDemoSeen(page) {
 }
 
 test.describe('Micro-demo system', () => {
+  // Headed mode with WebGL is required for these 3D-scene tests: headless Chromium
+  // disables the system GPU and the WebGL canvas renders blank, masking visual
+  // regressions and timing assumptions in the demo choreography. Run with
+  // `npx playwright test tests/micro-demo.spec.js --browser=chromium` (or
+  // `npm run test:microdemo:server`).
+  test.use({ headless: false, launchOptions: { args: ['--use-gl=angle', '--enable-webgl'] } });
+
   test.beforeEach(async ({ page }) => {
     await page.route('**/api.php?action=semantic_lane_health**', async route => {
       await route.fulfill({
@@ -85,7 +92,7 @@ test.describe('Micro-demo system', () => {
     await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1000);
 
-    const isRunning = await page.evaluate(() => window.demoController?.isRunning?.());
+    const isRunning = await page.evaluate(() => window.isMicroDemoRunning?.());
     expect(isRunning).toBe(false);
   });
 
@@ -94,11 +101,11 @@ test.describe('Micro-demo system', () => {
     await page.goto(`${APP_URL}${DEMO_FORCE}`, { waitUntil: 'domcontentloaded' });
 
     await page.waitForFunction(
-      () => window.demoController?.isRunning?.() === true,
+      () => window.isMicroDemoRunning?.() === true,
       { timeout: 8000 }
     );
 
-    const isRunning = await page.evaluate(() => window.demoController?.isRunning?.());
+    const isRunning = await page.evaluate(() => window.isMicroDemoRunning?.());
     expect(isRunning).toBe(true);
   });
 
@@ -106,14 +113,14 @@ test.describe('Micro-demo system', () => {
     await page.goto(`${APP_URL}${DEMO_FORCE}`, { waitUntil: 'domcontentloaded' });
 
     await page.waitForFunction(
-      () => window.demoController?.isRunning?.() === true,
+      () => window.isMicroDemoRunning?.() === true,
       { timeout: 8000 }
     );
 
     await page.evaluate(() => window.cancelMicroDemo?.('user-input'));
 
     await page.waitForFunction(
-      () => window.demoController?.isRunning?.() === false,
+      () => window.isMicroDemoRunning?.() === false,
       { timeout: 3000 }
     );
 

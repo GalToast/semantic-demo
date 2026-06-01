@@ -226,42 +226,6 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
     expect(inputAfter, 'clear button click must empty search input').toBe('');
   });
 
-  test('Escape during active micro-demo cancels demo via demo-controller keydown', async ({ page }) => {
-    test.setTimeout(60000);
-
-    const STORAGE_KEY = 'moco_mycelium_demo_v1';
-    const errors = [];
-    page.on('console', msg => {
-      if (msg.type() === 'error') errors.push(msg.text());
-    });
-
-    await page.addInitScript(({ key }) => {
-      localStorage.removeItem(key);
-      sessionStorage.clear();
-      window.__demoResetProof = { cancelled: false };
-      window.addEventListener('demo-cancelled', () => {
-        window.__demoResetProof.cancelled = true;
-      }, { once: true });
-    }, { key: STORAGE_KEY });
-
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html?demo=force`, { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(() => document.getElementById('micro-demo-pill') !== null, { timeout: 15000 });
-    await expect.poll(async () => page.evaluate(() => window.demoController?.isRunning?.() ?? false)).toBe(true);
-
-    // Press Escape: should cancel demo via demo-controller onKeydown.
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(1500);
-
-    await expect.poll(async () => page.evaluate(() => window.demoController?.isRunning?.() ?? false)).toBe(false);
-    await expect.poll(async () => page.evaluate(() => window.__TEST_STATE__?.navState?.mode ?? 'unknown')).toBe('overview');
-
-    const demoProof = await page.evaluate(() => window.__demoResetProof);
-    expect(demoProof.cancelled, 'Escape during active demo must emit demo-cancelled event').toBe(true);
-
-    const realErrors = errors.filter(e => !e.includes('net::ERR') && !e.includes('Failed to load resource'));
-    expect(realErrors, `Unexpected console errors: ${JSON.stringify(realErrors)}`).toHaveLength(0);
-  });
-
   test('keyboard-operable clear button: Enter key activates it', async ({ page }) => {
     test.setTimeout(45000);
 

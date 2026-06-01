@@ -124,7 +124,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
     
     // 3. VERIFY: Demo should be cancelled and controls restored
     await page.waitForTimeout(1000);
-    const demoRunning = await page.evaluate(() => window.demoController.isRunning());
+    const demoRunning = await page.evaluate(() => window.isMicroDemoRunning());
     expect(demoRunning).toBe(false);
 
     const controlsEnabled = await stateField(page, 'controls.enabled');

@@ -29,7 +29,7 @@ const liveProduct = new Set([
   'closeLegendPanel',
   'computeFocusPocketScreenBounds',
   'computeSafeAreaCameraTargetOffset',
-  'demoController',
+  'cancelMicroDemo',
   'disposeArrivalHandoffOverlay',
   'executeJourneyCompassAction',
   'focusCameraAssistIsActive',
@@ -43,6 +43,7 @@ const liveProduct = new Set([
   'inspectThreadNeighbor',
   'isCameraIdleOrbitAllowed',
   'isLegendPanelOpen',
+  'isMicroDemoRunning',
   'isSearchRouteFocusActive',
   'openLegendPanel',
   'pinThreadNeighbor',
@@ -79,6 +80,7 @@ const liveProduct = new Set([
   'resetExplorationFocus',
   'search',
   'zoomCamera',
+  'withStateMutation'
 ]);
 
 const debugProbe = new Set([

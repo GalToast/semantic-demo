@@ -29,12 +29,26 @@ Introduced: 2026-05-28. Replaces one-off window bridges as the single classified
 
 **Purpose:** Consolidates one-off `window.*` action bridges into a single explicitly classified namespace. It is the compatibility owner for Playwright specs, visual-audit helpers, manual DevTools probing, and external callers still crossing the app boundary through `window`. Retired migration-debt bare globals like `window.focusOnNode` and `window.setTrailFromSeed` now route through `window.__APP_ACTIONS__`.
 
+## Micro-Demo Globals
+
+Classification: `live-product`.
+
+**Owner:** `js/modules/micro-demo.js`
+
+**Purpose:** Replaces the retired `window.demoController` namespace. These two globals are the only remaining surface for first-visit demo eligibility and cancellation now that the dedicated controller module is gone.
+
+| Global | Notes |
+|---|---|
+| `window.isMicroDemoRunning` | Boolean check; replaces `window.demoController.isRunning` for test/dev probes. |
+| `window.cancelMicroDemo` | Cancel an in-progress micro-demo with a reason; replaces `window.demoController.cancel`. |
+
 **Namespace contract:**
 
 | Key | Source | Notes |
 |---|---|---|
 | `search` | `search-state.js` | Search entry point for test specs |
 | `clearSearch` | `search-state.js` | Search reset for test specs |
+| `switchView` | `view-controller.js` | Classified view handoff for test/dev harnesses that need map/galaxy transitions |
 | `focusOnNode` | `camera-controls.js` | Primary focus navigation action |
 | `setTrailFromSeed` | `journey.js` | Seeded trail setup for route/focus tests |
 | `setTrailDepth` | `lifecycle.js` | Trail depth control |
@@ -42,6 +56,12 @@ Introduced: 2026-05-28. Replaces one-off window bridges as the single classified
 | `returnToOverview` | `lifecycle.js` | Overview reset |
 | `resetExplorationFocus` | `lifecycle.js` | Exploration state reset |
 | `refreshCompositionState` | `lifecycle.js` | Composition refresh |
+| `traverseNeighbor` | `journey.js` | Prev/next focus-stage traversal |
+| `inspectThreadNeighbor` | `journey.js` | Thread preview/relationship inspector |
+| `pinThreadNeighbor` | `journey.js` | Pin a relationship for comparison |
+| `unpinThreadInspection` | `journey.js` | Clear pinned relationship state |
+| `clearThreadInspection` | `journey.js` | Clear preview/pin/follow inspector state |
+| `walkThreadNeighbor` | `journey.js` | Follow a semantic connection to the next focused stop |
 
 Migration: `window.focusOnNode` and `window.setTrailFromSeed` are retired as bare globals. The namespace is the intended target for test/dev harness calls.
 
@@ -52,6 +72,7 @@ Classification: `debug-probe`. These are devtools, Playwright, or visual-audit i
 | Global | Owner | Notes |
 |---|---|---|
 | `window.__APP_STATE__` | `js/modules/bridge-registry.js` | **Primary app state hook.** Preferred neutral state surface for runtime inspection. |
+| `window.withStateMutation` | `js/state.js` | **State mutation gate.** Allows testing/DevTools to bypass the critical keys mutation lock. |
 | `window.__TEST_STATE__` | `js/modules/bridge-registry.js` | **Legacy test bridge fallback.** Preserved for existing Playwright tests. Migrate consumers to `__APP_STATE__`. |
 | `window._getSelectedBusinessRoleLabel` | `js/modules/bridge-registry.js` | Compatibility/debug helper for selected-business role labels while older UI/test callers migrate to module/action access. |
 | `window._ti` | `js/modules/thread-inspector.js` | **Debug-probe inspection namespace.** 17 thread-inspection functions. Not a product API. |
@@ -196,6 +217,7 @@ then retire `window.__TEST_STATE__` once all consumers use the replacement.
 | `window.updateLegendGuideState` | 2026-05-28 | Direct `updateLegendGuideState` imports from `legend-ui.js` |
 | `window.__semanticJourneyProbe` | 2026-05-28 | Retired unused journey compass debug probe; `installSemanticJourneyProbe()` now returns presentation state |
 | `window.setTrailFromSeed` | 2026-05-28 | Direct imports and `window.__APP_ACTIONS__.setTrailFromSeed` for test/dev harnesses |
+| `window.demoController` | 2026-06-01 | Module retired. Tests use `window.isMicroDemoRunning` and `window.cancelMicroDemo` from `micro-demo.js`. |
 
 ## Running The Ratchet
 

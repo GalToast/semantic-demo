@@ -16,7 +16,6 @@
 | `js/modules/diagnostic-adapter.js` | Central gate for debug/devtool probes such as `_ti` |
 | `js/modules/environment.js` | Shared viewport, pointer, DPR, and reduced-motion helpers |
 | `js/modules/lifecycle.js` | App orchestration, view handoff, window bindings, scene-reveal logic |
-| `js/modules/demo-controller.js` | First-visit trigger + state machine |
 | `js/modules/micro-demo.js` | 9-second guided choreography |
 | `js/modules/journey.js` | Thin journey orchestration layer; delegates extracted journey owners and preserves the public surface |
 | `js/modules/journey-neighborhood.js` | Neighborhood manifest, bounded walk candidates, trail seed, and route index derivation |
@@ -34,22 +33,12 @@
 | `js/modules/journey-compass-state.js` | Journey compass state machine and action synthesis |
 | `js/modules/loading-ui.js` | Loading overlay, phases, deferred hydration |
 
-## Two Demo Specs (Know Which You're Editing)
-- **SPEC.MYCO-DEMO-CONTROLLER.md** - trigger guard logic, state transitions, storage schema for `demo-controller.js` (historical reference; implementation is current)
+## Demo Spec
 - **MICRO-DEMO-SPEC.md** - camera choreography, timing, node selection for `micro-demo.js` (living spec)
 
-`demo-controller.js` manages "should the demo run?"; `micro-demo.js` manages "what does the demo do?". Both are imported by `app.js`.
+`micro-demo.js` is the sole demo entry point; it owns both the first-visit eligibility guard and the choreography. `app.js` imports it for the launch path.
 
 ## State Machine Reference
-
-### demo-controller.js (`js/modules/demo-controller.js`)
-```
-idle -> eligible -> running -> completing -> done
-                  |
-                  v
-              cancelled -> done
-```
-No paused state. User interaction = immediate cancel.
 
 ### micro-demo.js (`js/modules/micro-demo.js`)
 ```
@@ -70,8 +59,8 @@ idle -> checking -> synthesizing -> active
 Driven by `data-panel-surface` and `data-journey-phase` body attributes. Composes actions from journey, search-state, and lifecycle modules.
 
 ## Storage
-- `localStorage.moco_mycelium_demo_v1` - lifetime per-browser flag (set by demo-controller on completion/cancel)
-- `sessionStorage` - NOT used by current demo-controller (contrast with MICRO-DEMO-SPEC which uses sessionStorage)
+- `localStorage.moco_mycelium_demo_v1` - lifetime per-browser flag (set by micro-demo on completion/cancel)
+- `sessionStorage.moco_mycelium_demo_session_v1` - per-session guard preventing duplicate choreography within an active browsing session
 
 ## CSS Architecture
 CSS is split into ordered modules in `css/`. The root `semantic-demo.css` is an import manifest that loads modules in cascade order. `css/mobile_premium.css` is the mobile override import manifest.

@@ -1,7 +1,6 @@
 import { state } from '../state.js';
 import * as journeyModule from './journey.js';
-import './demo-controller.js';
-import './micro-demo.js';
+import { initMicroDemo } from './micro-demo.js';
 import * as searchModule from './search-state.js';
 import { initUrlSearchAdapter } from './url-search-adapter.js';
 import { initClusterFilterAdapter } from './cluster-filter-adapter.js';
@@ -10,6 +9,7 @@ import { initUiRenderersAdapter } from './ui-renderers.js';
 import { initSearchLifecycleAdapter } from './search-lifecycle-adapter.js';
 import { initCompositionAdapter } from './composition-adapter.js';
 import { initUrlNavigationAdapter } from './url-navigation-adapter.js';
+import { initBridgeRegistry, _getSelectedBusinessRoleLabel } from './bridge-registry.js';
 import { initJourneyLifecycleAdapter } from './journey-lifecycle-adapter.js';
 import * as focusModule from './focus-pocket.js';
 import * as threadModule from './thread-inspector.js';
@@ -20,15 +20,14 @@ import { setWebGLContextRestoreHandler } from './webgl-restore-adapter.js';
 import * as mapModule from './map-state.js';
 import * as audioModule from './audio-scape.js';
 import './tooltip.js';
-import { hideLoadingOverlay, setLoadingPhase, startDeferredHydration } from './loading-ui.js';
-import { demoController } from './demo-controller.js';
-import { hideTooltip, positionTooltip, updateTooltipContent } from './tooltip.js';
+import { hideLoadingOverlay, setLoadingPhase, startDeferredHydration, applyLoadingErrorState } from './loading-ui.js';
+import { positionTooltip, updateTooltipContent, hideTooltip } from './tooltip.js';
 import './pathfinding.js';
 import * as journeyWebglModule from './journey-webgl.js';
 import { initThreeJS, animate, cancelAnimate } from './three-engine.js';
 import { triggerSearchHeroMoment, triggerCorridorNodeGlow, triggerSearchCorridorAnimation } from './three-animations.js';
 import * as dataModule from './data-loader.js';
-import { escapeHtml } from './utils/dom-formatters.js';
+
 import {
     startSceneReveal,
     setSemanticLaneUiState,
@@ -52,7 +51,7 @@ import {
     hydrateLeadContext
 } from './lifecycle.js';
 import { initJourneyCompassAdapter, updateJourneyCompass } from './journey-compass-controller.js';
-import { switchView } from './view-controller.js';
+import { initViewControllerAdapter, switchView } from './view-controller.js';
 import { revealSelectedBusinessCard } from './event-bindings.js';
 import { describeThreadLensForPoint } from './journey.js';
 import { initKeyboardShortcutsHint, initKeyboardResetOwnership } from './keyboard-help.js';
@@ -74,7 +73,6 @@ import { recordSemanticLaneSnapshot } from './semantic-lane.js';
 import { applyPointFilterColors, updateSelectedBusiness, updateTrailIndices } from './journey.js';
 import { initEventListeners } from './event-bindings.js';
 import { updateTime } from './utils/ui-presentation.js';
-import { initBridgeRegistry } from './bridge-registry.js';
 import { initSearchCache } from './semantic-search-api-cache.js';
 
 // ── Startup Recovery UI ──────────────────────────────────────────────────────
@@ -244,8 +242,7 @@ export async function init() {
             hasColdDegradedSemanticFallback: () => false,
             getColdDegradedRouteCopy: () => null,
             getSelectedBusinessRoleLabel: (point) => {
-                // Compatibility for new bridge registry
-                return window._getSelectedBusinessRoleLabel ? window._getSelectedBusinessRoleLabel(point) : 'Record';
+                return _getSelectedBusinessRoleLabel(point);
             },
             isFieldNodeFocusContext: () => false,
             revealSelectedBusinessCard: revealSelectedBusinessCard,
@@ -276,7 +273,7 @@ export async function init() {
             clearShortSemanticSearchState: searchModule.clearShortSemanticSearchState,
         });
 
-        initSearchUiAdapter({ hideTooltip, positionTooltip, updateTooltipContent });
+        initSearchUiAdapter({ positionTooltip, updateTooltipContent, hideTooltip });
         initUiRenderersAdapter({ switchView });
         initJourneyCompassAdapter({ switchView });
         initThreadInspectorAdapter({
@@ -287,10 +284,7 @@ export async function init() {
         });
 
         initCameraControlsAdapter({
-            showTerrainPreludeOverlay: () => { if (typeof showTerrainPreludeOverlay === 'function') window.showTerrainPreludeOverlay(); },
-            hideTerrainPreludeOverlay: () => { if (typeof hideTerrainPreludeOverlay === 'function') window.hideTerrainPreludeOverlay(); },
             setRouteChoreographyPhase: journeyWebglModule.setRouteChoreographyPhase,
-            hideTooltip: hideTooltip,
             clearThreadInspection: threadModule.clearThreadInspection,
             setTrailFromSeed: journeyModule.setTrailFromSeed,
             updateTrailIndices: journeyModule.updateTrailIndices,
@@ -310,6 +304,10 @@ export async function init() {
             clearMobileRouteFieldPeek: searchModule.clearMobileRouteFieldPeek
         });
 
+        initViewControllerAdapter({
+            refreshCompositionState
+        });
+
         initSearchLifecycleAdapter({
             updateUrlState,
             setSearchPanelState: searchModule.setSearchPanelState,
@@ -323,17 +321,17 @@ export async function init() {
             clearCompactSearchResultRevealTimers,
             clearSearchPreviewHoverTimer: searchModule.clearSearchPreviewHoverTimer,
             switchView,
-            updateSelectedBusiness: (point) => { if (typeof updateSelectedBusiness === 'function') updateSelectedBusiness(point); },
-            updateTrailIndices: () => { if (typeof updateTrailIndices === 'function') updateTrailIndices(); },
-            applyPointFilterColors: () => { if (typeof applyPointFilterColors === 'function') applyPointFilterColors(); },
+            updateSelectedBusiness,
+            updateTrailIndices,
+            applyPointFilterColors,
             resetExplorationFocus,
             setSemanticLaneUiState,
             clearSearch: searchModule.clearSearch,
-            triggerSearchHeroMoment: (anchorIndex) => { if (typeof triggerSearchHeroMoment === 'function') triggerSearchHeroMoment(anchorIndex); },
-            triggerCorridorNodeGlow: (anchorIndex, resultIndices) => { if (typeof triggerCorridorNodeGlow === 'function') triggerCorridorNodeGlow(anchorIndex, resultIndices); },
-            triggerSearchCorridorAnimation: (anchorIndex, resultIndices) => { if (typeof triggerSearchCorridorAnimation === 'function') triggerSearchCorridorAnimation(anchorIndex, resultIndices); },
-            hideSummaryCard: () => { if (typeof hideSummaryCard === 'function') hideSummaryCard(); },
-            setSemanticGuideButtonState: (btn, s, opts) => { if (typeof setSemanticGuideButtonState === 'function') setSemanticGuideButtonState(btn, s, opts); },
+            triggerSearchHeroMoment,
+            triggerCorridorNodeGlow,
+            triggerSearchCorridorAnimation,
+            hideSummaryCard,
+            setSemanticGuideButtonState,
             scheduleCompactSearchResultReveal,
         });
 
@@ -341,6 +339,7 @@ export async function init() {
         initBridgeRegistry({
             search: searchModule.search,
             clearSearch: searchModule.clearSearch,
+            switchView,
             focusOnNode: cameraModule.focusOnNode,
             setTrailFromSeed: journeyModule.setTrailFromSeed,
             setTrailDepth,
@@ -348,7 +347,13 @@ export async function init() {
             returnToOverview,
             resetExperienceState,
             resetExplorationFocus,
-            refreshCompositionState
+            refreshCompositionState,
+            traverseNeighbor: journeyModule.traverseNeighbor,
+            inspectThreadNeighbor: journeyModule.inspectThreadNeighbor,
+            pinThreadNeighbor: journeyModule.pinThreadNeighbor,
+            unpinThreadInspection: journeyModule.unpinThreadInspection,
+            clearThreadInspection: journeyModule.clearThreadInspection,
+            walkThreadNeighbor: journeyModule.walkThreadNeighbor
         });
 
         await initSearchCache();
@@ -370,7 +375,7 @@ export async function init() {
             await hideLoadingOverlay();
             if (safetyValve) clearTimeout(safetyValve);
             startDeferredHydration();
-            demoController.init();
+            initMicroDemo();
 
             window.addEventListener('demo-complete', () => {
                 updateJourneyCompass('overview');
@@ -380,10 +385,7 @@ export async function init() {
         if (safetyValve) clearTimeout(safetyValve);
         console.error('Initialization failed:', error);
         cancelAnimate();
-        const overlay = document.getElementById('loading-overlay');
-        if (overlay) {
-            overlay.innerHTML = `<div class="loading-shell" role="alert"><div class="loading-kicker">Graph unavailable</div><div class="loading-title">Failed to load county records</div><div class="loading-note">The Semantic Explorer is offline or blocked right now. Refresh after the connection recovers.</div><div class="loading-foot">${escapeHtml(error.message || 'Initialization failed')}</div></div>`;
-        }
+        applyLoadingErrorState(error);
     }
 }
 

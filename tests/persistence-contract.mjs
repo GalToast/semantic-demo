@@ -169,8 +169,8 @@ async function test_micro_demo_localStorage_flag() {
   try {
     await setupNetworkStubs(page);
 
-    // Step 1: navigate with ?nodemo to bypass demo controller auto-start
-    // This lets us control localStorage before demo-controller.init() runs
+    // Step 1: navigate with ?nodemo to bypass micro-demo auto-start
+    // This lets us control localStorage before initMicroDemo() runs
     await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo`);
     await page.waitForFunction(() => (
       typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function' &&
@@ -193,13 +193,13 @@ async function test_micro_demo_localStorage_flag() {
     // Now reload without nodemo — shouldRunMicroDemo() should see both flags
     await page.reload();
     await page.waitForFunction(() => (
-      typeof window.demoController?.isRunning === 'function' &&
+      typeof window.isMicroDemoRunning === 'function' &&
       typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function'
     ), undefined, { timeout: 20000 });
     await page.waitForTimeout(1500);
 
     const demoState = await page.evaluate((key) => ({
-      running: window.demoController?.isRunning?.() === true,
+      running: window.isMicroDemoRunning?.() === true,
       active: document.body.dataset.demoActive === 'true',
       blocker: Boolean(document.getElementById('micro-demo-blocker')),
       stored: localStorage.getItem(key),

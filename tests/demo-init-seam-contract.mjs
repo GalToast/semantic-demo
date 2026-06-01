@@ -3,10 +3,9 @@
  *
  * Keeps app.js from re-owning demo node selection or readiness polling.
  * The current path is:
- *   app.js imports demo-controller.js and micro-demo.js
- *   app.js calls demoController.init() once after launch
- *   demo-controller.js owns readiness guards
- *   micro-demo.js owns showcase node selection
+ *   app.js imports micro-demo.js
+ *   app.js calls initMicroDemo() once during the launch path
+ *   micro-demo.js owns readiness guards and showcase node selection
  */
 
 import fs from 'node:fs';
@@ -15,7 +14,6 @@ import path from 'node:path';
 const ROOT = process.cwd();
 const appSource = fs.readFileSync(path.join(ROOT, 'js/modules/app.js'), 'utf8');
 const microDemoSource = fs.readFileSync(path.join(ROOT, 'js/modules/micro-demo.js'), 'utf8');
-const demoControllerSource = fs.readFileSync(path.join(ROOT, 'js/modules/demo-controller.js'), 'utf8');
 
 let passed = 0;
 let failed = 0;
@@ -44,9 +42,8 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-test('app imports demo-controller and micro-demo for the active demo path', () => {
-  assert(/import\s+[\s\S]*['"]\.\/demo-controller\.js['"]/.test(appSource), 'app.js must import demo-controller.js');
-  assert(/import\s+['"]\.\/micro-demo\.js['"]/.test(appSource), 'app.js must import micro-demo.js');
+test('app imports micro-demo for the active demo path', () => {
+  assert(/import\s+.*?['"]\.\/micro-demo\.js['"]/.test(appSource), 'app.js must import micro-demo.js');
 });
 
 test('app does not own showcase pool selection', () => {
@@ -57,17 +54,16 @@ test('app does not own showcase pool selection', () => {
 
 test('app does not poll overlay readiness for the demo', () => {
   assert(!/pollForOverlayHidden/.test(appSource), 'app.js must not define pollForOverlayHidden');
-  assert(!/setInterval\(\s*\(\)\s*=>[\s\S]{0,600}demoController\.init/.test(appSource), 'app.js must not interval-poll before demoController.init');
 });
 
-test('app hands off to demoController.init once in the launch path', () => {
-  const initCalls = appSource.match(/demoController\?\.init\(\)/g) || appSource.match(/demoController\.init\(\)/g) || [];
-  assert(initCalls.length === 1, `expected one optional demoController.init call, found ${initCalls.length}`);
+test('app hands off to initMicroDemo once in the launch path', () => {
+  const initCalls = appSource.match(/initMicroDemo\(\)/g) || [];
+  assert(initCalls.length === 1, `expected one initMicroDemo call, found ${initCalls.length}`);
 });
 
-test('demo-controller owns scene readiness', () => {
-  assert(/function\s+waitForSceneReady\s*\(/.test(demoControllerSource), 'demo-controller.js must define waitForSceneReady');
-  assert(/loading-overlay/.test(demoControllerSource), 'demo-controller readiness must check the loading overlay');
+test('micro-demo owns scene readiness', () => {
+  assert(/function\s+_isAppReadyForDemo\s*\(/.test(microDemoSource), 'micro-demo.js must define _isAppReadyForDemo');
+  assert(/loading-overlay/.test(microDemoSource), 'micro-demo readiness must check the loading overlay');
 });
 
 test('micro-demo owns the active showcase pool', () => {
