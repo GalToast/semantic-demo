@@ -21,21 +21,23 @@ import { truncateMicrocopy, getSharedTrailTopicLabel } from './journey-text-help
 import { setStrandContinuityState, clearStrandContinuityState } from './strand-continuity.js';
 import {
     initJourneyTimerAdapter,
-    getStrandArrivalNote,
-    getInsideRelationshipLabel,
-    getThreadInspectionState,
     summarizeNeighborReason,
-    renderThreadInspection,
-    inspectThreadNeighbor,
-    pinThreadNeighbor,
-    unpinThreadInspection,
-    scheduleCanvasThreadInspectionClear,
-    clearThreadInspection,
+    getInsideRelationshipLabel,
     walkThreadNeighbor,
     traverseNeighbor,
     walkInsideToNextStop,
     previewInsideNextThread
 } from './journey-thread-settler.js';
+import {
+    getStrandArrivalNote,
+    getThreadInspectionState,
+    renderThreadInspection,
+    inspectThreadNeighbor,
+    pinThreadNeighbor,
+    unpinThreadInspection,
+    scheduleCanvasThreadInspectionClear,
+    clearThreadInspection
+} from './thread-inspector.js';
 import {
     initJourneyNeighborhoodAdapter,
     getSemanticThreadDisplayLimit,
@@ -252,20 +254,13 @@ export function restoreFocusTrailState(priorFocused = state.focusedNode) {
     syncFocusStage(priorPoint || state.selectedPoint || null);
     updateTraversalUi();
 }
-// Window shim for inline script backward compat:
+
 if (typeof window !== 'undefined') {
-    window.updateTrailIndices = updateTrailIndices;
-    window.updateSelectedBusiness = updateSelectedBusiness;
-    window.applyPointFilterColors = applyPointFilterColors;
-    window.walkThreadNeighbor = walkThreadNeighbor;
-    window.traverseNeighbor = traverseNeighbor;
-    window.getCurrentTrailFocusIndex = getCurrentTrailFocusIndex;
     window.getSemanticThreadCandidates = getSemanticThreadCandidates;
     window.getGeometricThreadCandidates = getGeometricThreadCandidates;
     window.getThreadCandidatesForIndex = getThreadCandidatesForIndex;
     window.summarizeNeighborReason = summarizeNeighborReason;
     window.setStrandContinuityState = setStrandContinuityState;
-    window.clearStrandContinuityState = clearStrandContinuityState;
     window.renderThreadInspection = renderThreadInspection;
     window.inspectThreadNeighbor = inspectThreadNeighbor;
     window.pinThreadNeighbor = pinThreadNeighbor;

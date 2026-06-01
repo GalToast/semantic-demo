@@ -1,5 +1,6 @@
 // state
 import { state } from '../state.js';
+import { syncSemanticDiveUi } from './semantic-dive-ui.js'; // eslint-disable-line no-unused-vars
 
 // utils
 import { formatBusinessName, cleanPublicNoteText } from './utils/dom-formatters.js';
@@ -9,7 +10,6 @@ import { getFocusedJourneyPoint, getJourneyCompassState } from './journey-compas
 
 // map-state
 import {
-    refreshMapMarkers,
     refreshMapRouteEmbodiment,
     centerMapOnRouteAnchor,
     getRouteEmbodimentIndices,
@@ -17,19 +17,15 @@ import {
 } from './map-state.js';
 
 // search-state
-import { clearShortSemanticSearchState, clearMobileRouteFieldPeek as clearMobileRouteFieldPeekState } from './search-state.js';
+import { clearMobileRouteFieldPeek as clearMobileRouteFieldPeekState } from './search-state.js';
 
 // camera-controls
 import { focusOnNode } from './camera-controls.js';
 
 // ui-renderers
-import { updateSelectedCardHeading } from './ui-renderers.js';
-import { syncSemanticDiveUi } from './semantic-dive-ui.js';
+
 import { setSemanticDiveMode } from './journey-lifecycle-adapter.js';
-import { updateLegendGuideState } from './legend-ui.js';
-import { updateFocusNeighborRail } from './journey.js';
 import { getRouteLayerOrigin } from './camera-controls.js';
-import { refreshRouteTraceOverlay } from './journey-webgl.js';
 import { recenterFocusedNode } from './event-bindings.js';
 import { exploreInsideToNextStop, resetExplorationFocus, setTrailDepth } from './lifecycle.js';
 
@@ -85,7 +81,7 @@ export function syncJourneyCompassActions(compassState = {}) {
     ];
     buttons.forEach(([button, action, role]) => {
         if (!button) return;
-        button.textContent = action?.label || (role === 'primary' ? 'Search' : 'Map');
+        button.textContent = action?.label || (role === 'primary' ? 'Search' : (role === 'secondary' ? 'Map' : ''));
         button.dataset.journeyAction = action?.action || '';
         const disabled = !action?.action || (action.action === 'next-stop' && state.strandContinuityState?.phase === 'exploring');
         button.disabled = disabled || suppressInsideDiveActions;
@@ -159,7 +155,7 @@ export function executeJourneyCompassAction(action) {
                         : null;
             if (Number.isFinite(anchorIndex)) {
                 // "Center Anchor" must set trailDepth=1 (via setTrailDepth) so the Trail chip activates
-                if (typeof setTrailDepth === 'function') setTrailDepth(1, { skipUrlSync: true });
+                if (typeof setTrailDepth === 'function') setTrailDepth(1, { fromUserGesture: true, skipUrlSync: true });
                 focusOnNode(anchorIndex, { fromSearchResult: !!state.currentSearchSummary });
                 if (typeof recenterFocusedNode === 'function') {
                     recenterFocusedNode();
@@ -185,15 +181,9 @@ export function executeJourneyCompassAction(action) {
             _switchView('galaxy');
             return;
         case 'county-overview':
-            // resetExplorationFocus() now handles trailDepth, searchGlow, and node positions
-            // in one unified call — no separate clearSearch() needed here
-            resetExplorationFocus();
-            // Also clear the search input so the text is gone on return to overview
-            {
-                const searchInput = document.getElementById('search-input');
-                if (searchInput) searchInput.value = '';
-                clearShortSemanticSearchState();
-            }
+            // County overview is a calm reset surface; do not preserve the
+            // search corridor or the map keeps competing search chrome alive.
+            resetExplorationFocus({ preserveSearch: false });
             return;
         default:
             return;
@@ -246,147 +236,10 @@ export function installSemanticJourneyProbe() {
     return getJourneyCompassPresentationState();
 }
 
-export function getMobileSearchSheetDetail() {
-    if (!document.body?.dataset?.mobileSearchSheet) return 'none';
-    return document.body.dataset.mobileSearchSheet === 'expanded' ? 'expanded' : 'peek';
-}
-
 export function invokeClearMobileRouteFieldPeek() {
     if (typeof clearMobileRouteFieldPeekState === 'function') {
         clearMobileRouteFieldPeekState();
         return;
-    }
-}
-
-export function derivePanelSurface({ view, graphContext, mapContext, semanticDive, hasSearchIntent, hasFocus, hasActiveTrailState }) {
-    if (view !== 'galaxy') {
-        if (mapContext === 'focus-search') return 'map-focus-search';
-        if (mapContext === 'focus') return 'map-focus';
-        if (mapContext === 'search') return 'map-search';
-        if (hasActiveTrailState) return 'map-trail';
-        return 'map-idle';
-    }
-    if (semanticDive === 'active' || semanticDive === 'transitioning') return 'semantic-dive';
-    if (graphContext === 'focus-search') return 'focus-search';
-    if (graphContext === 'focus') return 'focus';
-    if (graphContext === 'search') return 'search';
-    if (hasSearchIntent) return hasFocus ? 'focus-search' : 'search';
-    return 'idle';
-}
-
-export function refreshCompositionState() {
-    document.body.dataset.activeView = state.currentView || 'galaxy';
-    const hasFocusedTrailRecord = Boolean(state.selectedPoint)
-        || state.focusedNode !== null && state.focusedNode !== undefined
-        || state.navState?.focusedIndex !== null && state.navState?.focusedIndex !== undefined;
-    const hasSearch = !!state.currentSearchSummary;
-    const searchInputValue = String(document.getElementById('search-input')?.value || '').trim();
-    const hasSearchIntent = hasSearch
-        || searchInputValue.length >= 2
-        || document.querySelector('.search-container.has-query .search-results.active');
-    const hasActiveTrailState = state.currentView === 'map'
-        ? hasSearchIntent || hasFocusedTrailRecord
-        : hasFocusedTrailRecord && (state.navState.mode === 'trail' || hasSearchIntent);
-    document.body.dataset.trailState = hasActiveTrailState ? 'active' : 'inactive';
-    if (hasSearch || hasFocusedTrailRecord) {
-        // Clear transient processing and onboarding feedback once the user is in a live route.
-        document.querySelectorAll('.search-result-item.is-processing').forEach((el) => el.classList.remove('is-processing'));
-
-        const hint = document.getElementById('onboarding-hint');
-        if (hint) {
-            hint.classList.remove('visible');
-            hint.setAttribute('aria-hidden', 'true');
-            hint._dismissedThisSession = true;
-            if (hint._autoHideTimer) clearTimeout(hint._autoHideTimer);
-        }
-
-        // Non-galaxy path: exit after cleanup, before galaxy-specific dataset writes.
-        // Galaxy view must continue to the dataset-sync block below (Step Inside needs
-        // graphContext, semanticDive, mapContext, panelSurface updated on body.dataset).
-        if (state.currentView !== 'galaxy') {
-            let mapContext = 'idle';
-            const hasMapFocus = !!state.selectedPoint || state.focusedNode !== null && state.focusedNode !== undefined;
-            if (hasMapFocus && hasSearchIntent) {
-                mapContext = 'focus-search';
-            } else if (hasMapFocus) {
-                mapContext = 'focus';
-            } else if (hasSearchIntent) {
-                mapContext = 'search';
-            }
-            document.body.dataset.mapContext = mapContext;
-            document.body.dataset.graphContext = 'idle';
-            document.body.dataset.semanticDive = 'inactive';
-            document.body.dataset.panelSurface = derivePanelSurface({
-                view: state.currentView,
-                graphContext: 'idle',
-                mapContext,
-                semanticDive: 'inactive',
-                hasSearchIntent,
-                hasFocus: hasMapFocus,
-                hasActiveTrailState
-            });
-            document.body.dataset.panelSurfaceDetail = 'none';
-            syncRouteDirectorState('composition-map');
-            updateSelectedCardHeading();
-            syncSemanticDiveUi();
-            updateJourneyCompass();
-            if (typeof updateFocusNeighborRail === 'function') updateFocusNeighborRail();
-            refreshMapMarkers();
-            refreshMapRouteEmbodiment();
-            if (typeof refreshRouteTraceOverlay === 'function') {
-                refreshRouteTraceOverlay({ reason: 'composition-map' });
-            }
-            return;
-        }
-    }
-
-    document.body.dataset.mapContext = 'idle';
-    const hasFocus = Boolean(state.selectedPoint)
-        || state.focusedNode !== null && state.focusedNode !== undefined
-        || state.navState?.focusedIndex !== null && state.navState?.focusedIndex !== undefined;
-    const semanticDive = state.semanticDiveMode && hasFocus
-        ? (document.body.dataset.semanticDive === 'transitioning' ? 'transitioning' : 'active')
-        : 'inactive';
-    document.body.dataset.semanticDive = semanticDive;
-    let context = 'idle';
-    if (hasFocus && hasSearchIntent) {
-        context = 'focus-search';
-    } else if (hasFocus) {
-        context = 'focus';
-    } else if (hasSearchIntent) {
-        context = 'search';
-    }
-    // When semantic dive is active, suppress focus-search to let panelSurface
-    // derive as 'semantic-dive' (semantic-dive takes priority over search context).
-    if (semanticDive === 'active' || semanticDive === 'transitioning') {
-        context = hasFocus ? 'focus' : 'idle';
-    }
-    document.body.dataset.graphContext = context;
-    document.body.dataset.panelSurface = derivePanelSurface({
-        view: state.currentView,
-        graphContext: context,
-        mapContext: 'idle',
-        semanticDive,
-        hasSearchIntent,
-        hasFocus,
-        hasActiveTrailState
-    });
-    document.body.dataset.panelSurfaceDetail = context === 'search' || context === 'focus-search'
-        ? getMobileSearchSheetDetail()
-        : 'none';
-    if (context !== 'idle') {
-        invokeClearMobileRouteFieldPeek();
-    }
-    syncRouteDirectorState('composition-galaxy');
-    updateSelectedCardHeading();
-    if (typeof updateLegendGuideState === 'function') updateLegendGuideState();
-    syncSemanticDiveUi();
-    updateJourneyCompass();
-    if (typeof updateFocusNeighborRail === 'function') updateFocusNeighborRail();
-    refreshMapMarkers();
-    refreshMapRouteEmbodiment();
-    if (typeof refreshRouteTraceOverlay === 'function') {
-        refreshRouteTraceOverlay({ reason: 'composition-galaxy' });
     }
 }
 

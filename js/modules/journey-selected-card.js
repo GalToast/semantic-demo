@@ -8,6 +8,7 @@ import {
     renderSelectedMetaStrip,
     renderSelectedMatchPanel,
     renderSelectedActionRow,
+    syncSelectedCardContentVariant,
 } from './ui-renderers.js';
 import { refreshCompositionState } from './lifecycle.js';
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
@@ -64,7 +65,6 @@ export function syncFocusStage(point) {
 
     if (point === null) {
         applyClusterUiAccent(stageCard, null);
-        stage.classList.remove('active');
         stage.hidden = true;
         stage.setAttribute('aria-hidden', 'true');
         cleanupFocusStageTrap();
@@ -77,19 +77,17 @@ export function syncFocusStage(point) {
 
     if (!effectivePoint || state.currentView !== 'galaxy' || state.focusedNode === null) {
         applyClusterUiAccent(stageCard, null);
-        stage.classList.remove('active');
         stage.hidden = true;
         stage.setAttribute('aria-hidden', 'true');
         cleanupFocusStageTrap();
         return;
     }
 
-    const wasActive = stage.classList.contains('active') && !stage.hidden;
+    const wasActive = !stage.hidden;
 
     applyClusterUiAccent(stageCard, effectivePoint);
     stage.hidden = false;
     stage.setAttribute('aria-hidden', 'false');
-    stage.classList.add('active');
 
     if (!wasActive) {
         adapter.setPreviouslyFocusedFocusStage(document.activeElement);
@@ -214,7 +212,6 @@ export function syncFocusStage(point) {
         }
     }
 
-    stage.classList.add('active');
     stage.hidden = false;
     stage.setAttribute('aria-hidden', 'false');
     const onboardingHint = document.getElementById('onboarding-hint');
@@ -238,17 +235,17 @@ export function updateSelectedBusiness(point, options = {}) {
     if (!point) {
         if (cardEl) cardEl.style.opacity = '0';
         setTimeout(() => {
-            emptyEl.classList.add('active');
-            detailsEl.classList.remove('active');
-            emptyEl.style.display = 'block';
-            detailsEl.style.display = 'none';
             if (cardEl) cardEl.style.opacity = '1';
         }, 180);
+        emptyEl.style.display = '';
+        detailsEl.style.display = 'none';
+        detailsEl.classList.remove('active');
         if (cardEl) applyClusterUiAccent(cardEl, null);
         if (cardEl) cardEl.classList.add('is-empty');
         if (typeof renderSelectedMetaStrip === 'function') renderSelectedMetaStrip(null);
         if (typeof renderSelectedMatchPanel === 'function') renderSelectedMatchPanel(null);
         if (typeof renderSelectedActionRow === 'function') renderSelectedActionRow(null);
+        if (typeof syncSelectedCardContentVariant === 'function') syncSelectedCardContentVariant(null);
         const roleEl = document.getElementById('selected-role-badge');
         if (roleEl) roleEl.textContent = COPY.selectedEmptyRole;
         const nameEl = document.getElementById('selected-name');
@@ -293,21 +290,15 @@ export function updateSelectedBusiness(point, options = {}) {
     const cardWasEmpty = cardEl && cardEl.classList.contains('is-empty');
     if (cardWasEmpty) {
         cardEl.style.opacity = '0';
-        emptyEl.classList.remove('active');
-        detailsEl.classList.add('active');
-        emptyEl.style.display = 'none';
-        detailsEl.style.display = 'block';
         setTimeout(() => {
             cardEl.style.opacity = '1';
         }, 180);
-    } else {
-        emptyEl.classList.remove('active');
-        detailsEl.classList.add('active');
-        emptyEl.style.display = 'none';
-        detailsEl.style.display = 'block';
     }
     if (cardEl) applyClusterUiAccent(cardEl, point);
     if (cardEl) cardEl.classList.remove('is-empty');
+    emptyEl.style.display = 'none';
+    detailsEl.style.display = 'block';
+    detailsEl.classList.add('active');
 
     const cascadeBg = document.getElementById('vector-cascade-bg');
     if (cascadeBg) {
@@ -358,6 +349,7 @@ export function updateSelectedBusiness(point, options = {}) {
     if (typeof renderSelectedMetaStrip === 'function') renderSelectedMetaStrip(point);
     if (typeof renderSelectedMatchPanel === 'function') renderSelectedMatchPanel(point);
     if (typeof renderSelectedActionRow === 'function') renderSelectedActionRow(point);
+    if (typeof syncSelectedCardContentVariant === 'function') syncSelectedCardContentVariant(point);
 
     const factsEl = document.getElementById('selected-facts');
     const themeEl = document.getElementById('selected-theme');

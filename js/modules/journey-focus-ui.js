@@ -7,11 +7,13 @@ import { truncateMicrocopy } from './journey-text-helpers.js';
 import { setStrandContinuityState } from './strand-continuity.js';
 import {
     summarizeNeighborReason,
-    inspectThreadNeighbor,
-    pinThreadNeighbor,
-    clearThreadInspection,
     walkThreadNeighbor
 } from './journey-thread-settler.js';
+import {
+    inspectThreadNeighbor,
+    pinThreadNeighbor,
+    clearThreadInspection
+} from './thread-inspector.js';
 import {
     getCurrentTrailFocusIndex,
     getNextWalkCandidateForIndex
@@ -26,9 +28,16 @@ import {
     resetFocusThreadDiagnostics
 } from './journey-webgl.js';
 import { isCompactLandscape, isUltraCompactPortrait } from './environment.js';
+import { getRelationshipRoleLabel, normalizeRelationshipRole } from './relationship-roles.js';
 
 export function isCondensedFocusStageViewport() {
     return state.currentView === 'galaxy' && (isCompactLandscape() || isUltraCompactPortrait());
+}
+
+function supportsHoverPreview() {
+    return typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
 
 export function hasColdDegradedSemanticFallback() {
@@ -60,7 +69,7 @@ export function updateFocusNeighborRail() {
     const candidates = (state.navState.threadCandidates || [])
         .filter((candidate) => candidate && candidate.index !== state.navState.focusedIndex)
         .filter((candidate) => isPointVisible(candidate.index, state.points, null, state.activeFilters))
-        .slice(0, isCondensedFocusStageViewport() ? 3 : (isCompactFocusStageViewport() ? 4 : 5));
+        .slice(0, isCondensedFocusStageViewport() ? 2 : (isCompactFocusStageViewport() ? 4 : 5));
 
     if (!candidates.length) {
         rail.classList.remove('active');
@@ -86,20 +95,24 @@ export function updateFocusNeighborRail() {
         button.tabIndex = 0;
         button.dataset.index = String(candidate.index);
         button.dataset.role = state.navState.focusPocketRoleByIndex?.get(candidate.index) || 'trail';
+        const relationshipRole = normalizeRelationshipRole(candidate.relationshipRole);
+        button.dataset.relationshipRole = relationshipRole;
         button.dataset.reason = candidate.reason || 'semantic neighbor';
         const name = formatBusinessName(point?.name || 'Nearby business');
         const city = cleanOptionalValue(point?.city) || 'Montgomery County';
         const focusIdx = state.navState.focusedIndex;
         const focusPoint = (Number.isFinite(focusIdx) && focusIdx >= 0 && focusIdx < state.points.length) ? state.points[focusIdx] : null;
         const reason = summarizeNeighborReason(candidate, point, focusPoint);
+        const relationshipLabel = getRelationshipRoleLabel(relationshipRole, 'rail');
+        const relationshipTitle = getRelationshipRoleLabel(relationshipRole, 'title');
         const reasonLabel = isCompactFocusStageViewport()
             ? truncateMicrocopy(reason, 58)
             : `${truncateMicrocopy(reason, 72)} | ${city}`;
-        button.setAttribute('aria-label', `Explore ${name}: ${reason}. Use the inner buttons to inspect or pin this connection without following.`);
+        button.setAttribute('aria-label', `Explore ${name}: ${relationshipTitle}. ${reason}. Use the inner buttons to inspect or pin this connection without following.`);
         button.innerHTML = `
             <span class="focus-stage-neighbor-index">${String(order + 1).padStart(2, '0')}</span>
             <span class="focus-stage-neighbor-copy">
-                <span class="focus-stage-neighbor-name">${escapeHtml(name)}</span>
+                <span class="focus-stage-neighbor-name">${escapeHtml(name)} <span class="focus-stage-neighbor-role">${escapeHtml(relationshipLabel)}</span></span>
                 <span class="focus-stage-neighbor-reason">${escapeHtml(reasonLabel)}</span>
             </span>
             <span class="focus-stage-neighbor-actions" aria-label="Strand actions">
@@ -110,33 +123,86 @@ export function updateFocusNeighborRail() {
         list.appendChild(button);
     });
 
+    let hoverIntentTimer = null;
+    const cancelHoverIntent = () => {
+        if (hoverIntentTimer) {
+            clearTimeout(hoverIntentTimer);
+            hoverIntentTimer = null;
+        }
+    };
+
     list.querySelectorAll('[data-index]').forEach((button) => {
-        const inspectIndex = () => {
-            const nextIndex = Number(button.dataset.index);
-            if (!Number.isFinite(nextIndex)) return;
-            inspectThreadNeighbor(nextIndex);
+        const scheduleInspect = () => {
+            cancelHoverIntent();
+            hoverIntentTimer = setTimeout(() => {
+                const nextIndex = Number(button.dataset.index);
+                if (!Number.isFinite(nextIndex)) return;
+                inspectThreadNeighbor(nextIndex);
+            }, 80);
         };
+
         const walkToIndex = () => {
+            cancelHoverIntent();
             const nextIndex = Number(button.dataset.index);
             if (!Number.isFinite(nextIndex)) return;
             walkThreadNeighbor(nextIndex, { surface: 'rail', reason: button.dataset.reason || 'nearby business relationship' });
         };
-        button.onmouseenter = inspectIndex;
-        button.onfocus = inspectIndex;
-        button.onmouseleave = () => clearThreadInspection();
+        const inspectIndex = () => {
+            cancelHoverIntent();
+            const nextIndex = Number(button.dataset.index);
+            if (!Number.isFinite(nextIndex)) return;
+            setStrandContinuityState('preview', {
+                targetIndex: nextIndex,
+                fromIndex: state.navState.focusedIndex,
+                reason: 'rail-inspect'
+            });
+            inspectThreadNeighbor(nextIndex, { force: true, surface: 'rail' });
+        };
+
+        button.addEventListener('mouseenter', scheduleInspect);
+        button.addEventListener('focus', scheduleInspect);
+        button.addEventListener('pointerup', (event) => {
+            if (supportsHoverPreview()) return;
+            if (event.target?.closest?.('[data-neighbor-action]')) return;
+            inspectIndex();
+        });
+
+        button.addEventListener('mouseleave', () => {
+            cancelHoverIntent();
+            if (!supportsHoverPreview()) return;
+            clearThreadInspection();
+        });
+
+        button.addEventListener('blur', () => {
+            cancelHoverIntent();
+            if (!supportsHoverPreview()) return;
+            clearThreadInspection();
+        });
+
         button.onclick = (event) => {
             if (event.target?.closest?.('[data-neighbor-action]')) return;
+            if (!supportsHoverPreview()) {
+                inspectIndex();
+                return;
+            }
             walkToIndex();
         };
+
         button.onkeydown = (event) => {
             if (event.target?.closest?.('[data-neighbor-action]')) return;
             if (event.key !== 'Enter' && event.key !== ' ') return;
             event.preventDefault();
+            if (!supportsHoverPreview()) {
+                inspectIndex();
+                return;
+            }
             walkToIndex();
         };
+
         button.querySelectorAll('[data-neighbor-action]').forEach((actionButton) => {
-            actionButton.onfocus = inspectIndex;
+            actionButton.addEventListener('focus', scheduleInspect);
             actionButton.onclick = (event) => {
+
                 event.preventDefault();
                 event.stopPropagation();
                 const nextIndex = Number(button.dataset.index);

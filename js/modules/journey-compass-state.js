@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { getInterestingBusinessNote } from './ui-renderers.js';
 import { formatBusinessName } from './utils/dom-formatters.js';
 import { describeCluster } from './utils/ui-presentation.js';
 import { getRouteEmbodimentIndices } from './map-state.js';
@@ -26,6 +27,7 @@ export function getJourneyCompassState() {
 
     if (state.currentView === 'map') {
         const routeCount = getRouteEmbodimentIndices().length;
+        const isCountyMapOverview = !hasFocus && !hasSearch && Number(state.trailDepth || 0) === 0;
         return {
             phase: 'map',
             kicker: routeCount > 1 ? 'Map | Terrain Bridge' : 'Map | Physical Distance',
@@ -34,7 +36,7 @@ export function getJourneyCompassState() {
                 ? 'The connection trail is now projected onto physical streets. Return to Mycelium to lift back into the living network.'
                 : 'This is the geography layer: physical proximity after semantic similarity.',
             primaryAction: { label: 'Return to Mycelium', action: 'open-mycelium' },
-            secondaryAction: { label: 'County Reset', action: 'county-overview' },
+            secondaryAction: isCountyMapOverview ? null : { label: 'County Reset', action: 'county-overview' },
             tertiaryAction: { label: 'Search', action: 'focus-search' }
         };
     }
@@ -66,19 +68,25 @@ export function getJourneyCompassState() {
     }
 
     if (hasFocus || isFocusing) {
-        const walkHistoryLength = (state.navState?.explorationHistoryIndices || []).length;
-        const walkDepth = Math.max(0, (state.navState?.explorationHistoryIndices || []).length - 1);
+        const walkHistory = Array.isArray(state.navState?.walkHistoryIndices)
+            ? state.navState.walkHistoryIndices
+            : (state.navState?.explorationHistoryIndices || []);
+        const walkHistoryLength = walkHistory.length;
+        const walkDepth = Math.max(0, walkHistory.length - 1);
         const isSearchFocus = !!state.currentSearchSummary && walkDepth === 0;
         const isSearchAnchor = state.currentSearchSummary && Number.isFinite(state.currentSearchSummary.anchorIndex) && state.focusedNode === state.currentSearchSummary.anchorIndex;
+        const isTrailStop = walkDepth > 0 || (state.navState?.mode === 'trail' && state.trailDepth >= 1 && !isSearchAnchor);
         const clusterName = focusedPoint ? describeCluster(focusedPoint.cluster) : 'Focus';
 
-        const primaryAction = isSearchAnchor
+        const primaryAction = isSearchAnchor || isTrailStop
             ? { label: 'Step Inside', action: 'enter-inside' }
             : { label: 'Center Anchor', action: 'center-anchor', hint: 'Return to search starting point' };
 
         const secondaryAction = isSearchAnchor
             ? { label: 'Map', action: 'open-map' }
-            : { label: 'Step Inside', action: 'enter-inside' };
+            : isTrailStop
+                ? { label: 'Center Anchor', action: 'center-anchor', hint: 'Return to search starting point' }
+                : { label: 'Step Inside', action: 'enter-inside' };
 
         return {
             phase: 'focus',
@@ -119,7 +127,7 @@ export function getJourneyCompassState() {
     if (!isSemanticDegraded && state.points?.length > 0) {
         const randomIdx = Math.floor(Math.random() * state.points.length);
         const randomPoint = state.points[randomIdx];
-        const snippet = typeof window.getInterestingBusinessNote === 'function' ? window.getInterestingBusinessNote(randomPoint) : null;
+        const snippet = getInterestingBusinessNote ? getInterestingBusinessNote(randomPoint) : null;
         if (snippet) {
             idleNote = `Discover: ${snippet}`;
             isDiscovery = true;

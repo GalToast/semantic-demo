@@ -11,23 +11,30 @@ import { setTrailNavState } from './navigation-state.js';
 import { setFocusPocketMeta } from './focus-pocket.js';
 import { isCompactLandscape, isUltraCompactPortrait } from './environment.js';
 
-const neighborhoodAdapter = {
+export function initJourneyNeighborhoodAdapter(deps = {}) {
+    if (!initJourneyNeighborhoodAdapter.adapter) {
+        initJourneyNeighborhoodAdapter.adapter = {
+            isThreadCandidateVisibleOnCanvas: () => true,
+            setTrailFromSeed: () => {},
+            applyLocalNeighborhoodFocus: () => {}
+        };
+    }
+    const adapter = initJourneyNeighborhoodAdapter.adapter;
+    if (typeof deps.isThreadCandidateVisibleOnCanvas === 'function') {
+        adapter.isThreadCandidateVisibleOnCanvas = deps.isThreadCandidateVisibleOnCanvas;
+    }
+    if (typeof deps.setTrailFromSeed === 'function') {
+        adapter.setTrailFromSeed = deps.setTrailFromSeed;
+    }
+    if (typeof deps.applyLocalNeighborhoodFocus === 'function') {
+        adapter.applyLocalNeighborhoodFocus = deps.applyLocalNeighborhoodFocus;
+    }
+}
+initJourneyNeighborhoodAdapter.adapter = {
     isThreadCandidateVisibleOnCanvas: () => true,
     setTrailFromSeed: () => {},
     applyLocalNeighborhoodFocus: () => {}
 };
-
-export function initJourneyNeighborhoodAdapter(deps = {}) {
-    if (typeof deps.isThreadCandidateVisibleOnCanvas === 'function') {
-        neighborhoodAdapter.isThreadCandidateVisibleOnCanvas = deps.isThreadCandidateVisibleOnCanvas;
-    }
-    if (typeof deps.setTrailFromSeed === 'function') {
-        neighborhoodAdapter.setTrailFromSeed = deps.setTrailFromSeed;
-    }
-    if (typeof deps.applyLocalNeighborhoodFocus === 'function') {
-        neighborhoodAdapter.applyLocalNeighborhoodFocus = deps.applyLocalNeighborhoodFocus;
-    }
-}
 
 function isCondensedFocusStageViewport() {
     return state.currentView === 'galaxy' && (isCompactLandscape() || isUltraCompactPortrait());
@@ -290,7 +297,7 @@ export function getNextWalkCandidateForIndex(currentIndex, options = {}) {
         ? candidates.filter((candidate) => candidate?.source === 'semantic')
         : candidates;
     const visibleCandidatePool = requireOnCanvas
-        ? candidatePool.filter((candidate) => neighborhoodAdapter.isThreadCandidateVisibleOnCanvas(candidate.index))
+        ? candidatePool.filter((candidate) => initJourneyNeighborhoodAdapter.adapter.isThreadCandidateVisibleOnCanvas(candidate.index))
         : candidatePool;
     const nextCandidate =
         visibleCandidatePool.find((candidate) => !historySet.has(candidate.index)) ||
@@ -381,9 +388,9 @@ export function primeBoundedSemanticNeighborhoodForTraversal(seedIndex) {
     ensureBoundedNeighborhoodFromActivePocket(seedIndex);
     if (isBoundedNeighborhoodActive()) return true;
 
-    neighborhoodAdapter.setTrailFromSeed(seedIndex);
+    initJourneyNeighborhoodAdapter.adapter.setTrailFromSeed(seedIndex);
     if (state.navState.threadSource !== 'semantic') return false;
-    neighborhoodAdapter.applyLocalNeighborhoodFocus(seedIndex);
+    initJourneyNeighborhoodAdapter.adapter.applyLocalNeighborhoodFocus(seedIndex);
     ensureBoundedNeighborhoodFromActivePocket(seedIndex);
     return isBoundedNeighborhoodActive();
 }
