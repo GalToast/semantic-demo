@@ -1,7 +1,7 @@
 # Semantic Demo Focus-Stage CSS Ownership Matrix
 
 Status: active
-Updated: 2026-05-29
+Updated: 2026-06-01
 Purpose: Reduce the 419 current focus-stage CSS matches across 11 files into a state-by-state owner map and a safe migration sequence.
 
 ---
@@ -10,10 +10,10 @@ Purpose: Reduce the 419 current focus-stage CSS matches across 11 files into a s
 
 | File | focus-stage matches | Role |
 |---|---|---|
-| `css/mobile_premium_focus.css` | 159 | Mobile focus-search and semantic-dive composition; terminal mobile focus-stage-card reduced-motion ownership |
+| `css/mobile_premium_focus.css` | 205 | Mobile focus-search and semantic-dive composition; terminal mobile focus-stage-card reduced-motion ownership; mobile focus-stage action/button primitives |
 | `css/journey_steps.css` | 87 | Step Inside, active-trail, state-machine surfaces |
 | `css/modules/focus_stage.css` | 73 | Focus-stage component module linked directly from the app shell |
-| `css/mobile_premium_surfaces.css` | 45 | Mobile bottom-sheet geometry corrections |
+| `css/mobile_premium_surfaces.css` | 38 | Mobile bottom-sheet geometry corrections; no longer owns focus-stage action/button primitives |
 | `css/progressive_disclosure.css` | 26 | Legacy visibility/show-hide; late cascade |
 | `css/strands.css` | 22 | Mobile bottom sheet, mobile chrome, route surfaces |
 | `css/controls.css` | 2 | View toggle, journey btn primitives |
@@ -32,6 +32,16 @@ Purpose: Reduce the 419 current focus-stage CSS matches across 11 files into a s
 2026-05-29 component-module pass:
 - `css/modules/focus_stage.css` is now the app-shell linked component module for focus-stage base styling.
 - The older blocked target was `css/focus_stage.css`; do not introduce that root-level file. Continue routing focus-stage consolidation through `css/modules/focus_stage.css` and keep the focus/mobile/short-landscape contracts green.
+
+2026-06-01 mobile action primitive pass:
+- Mobile focus-stage action/button primitives moved from `css/mobile_premium_surfaces.css` to `css/mobile_premium_focus.css`.
+- `tests/focus-stage-css-ownership-contract.mjs` now guards against reintroducing `.focus-stage-action-btn`, `.focus-thread-inspector-btn`, `.focus-stage-journey-btn`, or `.action-btn` primitive ownership in `mobile_premium_surfaces.css`.
+- `css/mobile_premium_surfaces.css` still contains field-node journey-compass layout and idle/search backstops; those are separate seams.
+
+2026-06-01 journey-compass focus/dive refinement pass:
+- Focus-search / semantic-dive `.journey-compass.glass-heavy`, compact `[data-density="compact"]`, compact rail, and title wrapping rules moved from `css/mobile_premium_surfaces.css` to `css/mobile_premium_focus.css`.
+- `tests/css-ownership-check.mjs` now ratchets the moved selector counts: focus owns the extra focus/dive selectors, surfaces is reduced.
+- `tests/focus-stage-css-ownership-contract.mjs` now blocks those focus/dive compass fragments from returning to `mobile_premium_surfaces.css`.
 
 ---
 
@@ -150,13 +160,13 @@ Selectors in play:
 Minimum verification: `npm run qa:contract:field-node`
 
 **Journey-compass within field-node:**
-`css/mobile_premium_surfaces.css` owns field-node journey-compass grid layout (79 total selectors, lines 535–648: `[data-focus-panel-mode="field-node"] .journey-compass` with `grid-template-columns`, `[data-focus-panel-mode="field-node"] .journey-compass-copy`, `[data-focus-panel-mode="field-node"] .journey-compass-actions`, `[data-focus-panel-mode="field-node"] .journey-compass-action` action button layout).
+`css/mobile_premium_surfaces.css` owns field-node journey-compass grid layout and shared idle/search backstops (62 current raw `journey-compass` matches after the focus/dive refinement pass). It still owns `[data-focus-panel-mode="field-node"] .journey-compass` with `grid-template-columns`, `[data-focus-panel-mode="field-node"] .journey-compass-copy`, `[data-focus-panel-mode="field-node"] .journey-compass-actions`, and `[data-focus-panel-mode="field-node"] .journey-compass-action` action button layout.
 `css/journey_active.css` owns `.journey-compass` base phase/density states (162 selectors, lines 155–327).
-`css/mobile_premium_focus.css` owns field-node mobile focus-search journey-compass overrides (22 selectors).
+`css/mobile_premium_focus.css` owns field-node mobile focus-search glass-heavy refinements plus focus-search/semantic-dive compact journey-compass overrides (42 current raw `journey-compass` matches).
 `css/strands.css` owns field-node journey-compass action buttons (40 selectors total, field-node subset).
 `css/layout_base.css` owns map-focus/trail journey-compass info-panel overrides (12 selectors).
 Do not add journey-compass geometry to `css/journey_steps.css` — it has no journey-compass selectors and must stay that way.
-Verification: `npm run qa:contract:field-node` + `rg '\.journey-compass' css/mobile_premium_surfaces.css | wc -l` (should report 79)
+Verification: `npm run qa:contract:field-node` + `rg -c 'journey-compass' css/mobile_premium_surfaces.css` (should report 62)
 
 ---
 
@@ -188,14 +198,14 @@ The sequence is ordered by cascade depth and risk. Shallow/utility selectors fir
 **Verification:** `npm run qa:contract:launch-focus` + `npm run qa:surface:focus`
 **Risk:** Low. Base geometry rarely changes.
 
-### Slice 2 — `.focus-stage-card` and kicker/name (Low risk — well-scoped selectors)
+### Slice 2 — `.focus-stage-card` and kicker/name (DONE 2026-06-01)
 
 **Files affected:** `css/clusters.css` (canonical base), `css/mobile_premium_focus.css` (mobile override), `css/mobile_premium_surfaces.css` (geometry corrections).
 **Action:** Confirm `css/clusters.css` owns `.focus-stage-card` base; confirm `css/mobile_premium_focus.css` owns mobile-specific overrides. Remove duplicate definitions from `css/mobile_premium_surfaces.css` if they are identical overrides.
 **Verification:** `npm run qa:contract:focus-pocket`
 **Risk:** Low. Mobile-specific overrides are isolated to `mobile_premium_focus.css`.
 
-### Slice 3 — `field-node` canopy HUD (Medium risk — crosses mobile/desktop, active journey)
+### Slice 3 — `field-node` canopy HUD (DONE 2026-06-01)
 
 **Files affected:** `css/journey_active.css` (canonical), `css/mobile_premium_focus.css` (mobile comp), `css/strands.css` (bottom sheet), `css/journey_steps.css` (state machine).
 **Action:** Confirm `css/journey_active.css` owns `.journey-compass` field-node canopy HUD, `.focus-stage-journey.active`, `.focus-stage-journey-meta`, `.focus-stage-actions`. Move any duplicate `.focus-stage-actions` from `css/strands.css` into `css/journey_active.css`. Do not touch `css/journey_steps.css` state-machine selectors without live video proof.
@@ -247,7 +257,7 @@ These violations exist in the baseline before any wave-2 surgery. They are track
 | `.search-results.active` | `animations.css` | 0 | 2 | Not an owner. Owned by `search.css`, `layout_base.css`, `journey_active.css`, `progressive_disclosure.css`, `strands.css`, `mobile_premium_chrome.css`, `mobile_premium_state.css`, `mobile_premium_surfaces.css` |
 
 **Resolution plan:**
-- `strands.css` +1 over baseline: one duplicate at lines 836–841 is a `body[data-panel-surface="focus"]:has(.search-container.has-query)` / `focus-search`:has / `semantic-dive`:has block that may be removable if the `:has()` variant is redundant with the plain variant already at lines 687–688. **Status: OPEN — requires live proof before removal.** Filed as adjacent unsealed work.
+- `strands.css` duplicate focus info-content `:has(.search-container.has-query)` selector arms: **Status: RESOLVED 2026-06-01.** The redundant `focus`, `focus-search`, and `semantic-dive` `:has()` selector arms were removed because the same declaration block is already owned by plain `data-panel-surface` selectors. `tests/css-ownership-check.mjs` now forbids reintroducing those exact selector arms.
 - `animations.css` +2 over baseline: `html body[data-panel-surface="focus"] .search-results.active` / `focus-search` rules at lines 26–27. **Status: RESOLVED 2026-05-20 — baseline updated to `animations.css: 2` in `tests/css-ownership-check.mjs`.** These are properly owned by animations.css as reduced-motion-adjacent focus/search visibility overrides.
 
 ---
@@ -304,8 +314,8 @@ git diff --check
 | Touched file | Command | Expected |
 |---|---|---|
 | `css/journey_active.css` journey-compass base | `rg -c '\.journey-compass' css/journey_active.css` | 162 |
-| `css/mobile_premium_surfaces.css` field-node chrome | `rg -c '\.journey-compass' css/mobile_premium_surfaces.css` | 79 |
-| `css/mobile_premium_focus.css` focus-search/dive | `rg -c '\.journey-compass' css/mobile_premium_focus.css` | 22 |
+| `css/mobile_premium_surfaces.css` field-node chrome | `rg -c 'journey-compass' css/mobile_premium_surfaces.css` | 62 |
+| `css/mobile_premium_focus.css` focus-search/dive | `rg -c 'journey-compass' css/mobile_premium_focus.css` | 42 |
 | `css/strands.css` field-node actions | `rg -c '\.journey-compass' css/strands.css` | 40 |
 | `css/layout_base.css` map-focus/trail | `rg -c '\.journey-compass' css/layout_base.css` | 12 |
 | `css/mobile_base.css` early mobile | `rg -c '\.journey-compass' css/mobile_base.css` | 17 |

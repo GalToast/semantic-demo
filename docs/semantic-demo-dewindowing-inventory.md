@@ -178,14 +178,13 @@ if (typeof window.syncFocusStage === 'function') window.syncFocusStage(point);
 **Verification**: `rg -n "window\.syncFocusStage" js/modules tests` should show no runtime/test callers, except source-contract strings that assert absence.
 
 ### Rank 2 — `window.updateExplorationUi` → direct local call in lifecycle.js
-**Risk**: Very low. `updateExplorationUi` is locally defined at lifecycle.js:311.
-**Call sites** (lifecycle.js: 441, 456, 672):
-```js
-if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi();
-```
-**Dewindowed approach**: Replace with direct `updateExplorationUi()` calls — function is already locally defined and exported.
-**Files**: lifecycle.js (3 replacements)
-**Verification**: `rg -n "window\.updateExplorationUi" js/modules/lifecycle.js` → expect 0 hits
+**Status**: Completed 2026-05-26.
+**Dewindowed approach**: Replaced with direct `updateExplorationUi()` calls within `lifecycle.js`.
+
+### Rank 3 — `journey.js` bare global removal
+**Status**: Completed 2026-06-01.
+**Dewindowed approach**: Removed the `if (typeof window !== 'undefined')` block exporting 17 functions as bare globals. Test/dev harnesses now use the consolidated `window.__APP_ACTIONS__` registry provided by `bridge-registry.js`.
+**Files**: journey.js
 
 ### focusOnPoint — COMPLETED (2026-05-25)
 `focusOnPoint` runtime callers migrated to direct named imports from `lifecycle.js`:

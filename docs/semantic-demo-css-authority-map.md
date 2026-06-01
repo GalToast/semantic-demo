@@ -1,7 +1,7 @@
 # Semantic Demo CSS Authority Map
 
 Date: 2026-05-17
-Updated: 2026-05-19
+Updated: 2026-06-01
 
 ## Compass Ownership Contract
 
@@ -29,7 +29,7 @@ Run: `npm run qa:surface-redundancy` — or `RATCHET=1 npm run qa:surface-redund
 | `.galaxy-cluster-label` | `css/clusters.css` for defensive DOM label styling; WebGL sprites are rendered by `js/modules/cluster-labels.js` | `css/clusters.css` mobile constraints | n/a | Treat DOM cluster label CSS as defensive compatibility. Do not add new cluster label systems without checking the WebGL sprite path. | WebGL sprite proof plus `07-desktop-idle` |
 | `.selected-card` / `.about-card` | `css/clusters.css` for base and focus/map accent styling | `css/progressive_disclosure.css` for mobile state visibility and selected-card reduced-motion duration | `css/mobile_premium.css` hides idle mobile selected card | Keep the base and active selected-card package in `css/clusters.css`; `css/search.css`, `css/journey_steps.css`, and `css/mobile_base.css` should not reintroduce selected-card styling. | `07-desktop-idle`, `08-desktop-search-coffee`, `12-desktop-reduced-motion`, selected-card computed coverage |
 | `.map-trail-strip` / map chrome | `css/shell.css` | `css/strands.css` | `css/mobile_premium.css`, `css/animations.css` | Map chrome is distributed. Do not consolidate from one file without a full `rg` sweep. | `05-mobile-map`, direct `?view=map&q=coffee&anchor=519` |
-| Mobile final overrides | n/a | n/a | `css/mobile_premium.css` import shell loading `css/mobile_premium_focus.css`, `css/mobile_premium_chrome.css`, `css/mobile_premium_state.css`, `css/mobile_premium_idle.css`, and `css/mobile_premium_surfaces.css` | Keep scoped to mobile/state selectors; avoid `!important`; verify desktop is untouched. | All mobile states plus `07-desktop-idle` |
+| Mobile final overrides | n/a | n/a | `css/mobile_premium.css` import shell loading `css/mobile_premium_focus.css`, `css/mobile_premium_chrome.css`, `css/mobile_premium_state.css`, `css/mobile_premium_idle.css`, `css/mobile_premium_map_summary.css`, and `css/mobile_premium_surfaces.css` | Keep scoped to mobile/state selectors; avoid `!important`; verify desktop is untouched. | All mobile states plus `07-desktop-idle` |
 
 ### Journey Compass Title/Action Subownership
 

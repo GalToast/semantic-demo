@@ -315,7 +315,7 @@ currentView: 'galaxy'  // 'galaxy' | 'map'
 
 - `switchView('map')` → sets `currentView = 'map'`
 - `switchView('galaxy')` → sets `currentView = 'galaxy'`
-- `switchView()` also updates `body.dataset.activeView`
+- `switchView()` owns `body.dataset.activeView`; `refreshCompositionState()` mirrors it from `state.currentView`
 
 ### `currentSearchSummary` — Search Result Container
 **File:** `js/state.js` line 173
@@ -339,7 +339,7 @@ JOURNEY_COMPASS_PHASE_ORDER: ['overview', 'search', 'focus', 'inside', 'map']
 
 - `map` in compass order represents the map view phase, not `navState.mode === 'map'`
 - The compass renders `inside` / `map` steps based on `currentView === 'map'`, not `navState.mode`
-- `body.dataset.journeyPhase` is set from `getJourneyCompassState().phase` (from `journey-compass-state.js`)
+- `body.dataset.journeyPhase` is set by `journey-compass-controller.js` from `getJourneyCompassState().phase`; semantic-dive UI may mark active dives as `inside`
 
 ---
 

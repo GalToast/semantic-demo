@@ -37,10 +37,10 @@ contract tests. Distinguishes **verified code behavior** from **proposed desired
 | `window.focusOnNode(index, opts)` | `js/modules/app.js:85` | Sets `focusedNode`, `navState.focusedIndex`, `navState.mode='focus'`, calls `refreshCompositionState()` |
 | `window.setTrailDepth(depth, opts)` | `js/modules/app.js:116` | Sets `trailDepth` with guard: only depth 2 may be entered via user gesture |
 | `window.setSemanticDiveMode(enabled)` | `js/modules/app.js:118` | Setter for `semanticDiveMode`; syncs `navState.mode='trail'`, calls `setTrailDepth(nextActive?2:1)` then `refreshCompositionState()` |
-| `window.switchView(view, opts)` | `js/modules/app.js:118` | Sets `state.currentView`, calls `refreshCompositionState()` |
+| `window.switchView(view, opts)` | `js/modules/app.js:118` | Sets `state.currentView`, owns `body.dataset.activeView`, calls `refreshCompositionState()` |
 | `window.resetExplorationFocus()` | `js/modules/app.js:122` | Clears focus/trail but preserves search; calls `setTrailDepth(0)`, `refreshCompositionState()` |
 | `window.refreshCompositionState()` | `js/modules/app.js:124` | Canonical DOM/dataset synchroniser — called after every state mutation |
-| `window.syncSemanticDiveUi()` | `js/modules/lifecycle.js:2495` | Syncs dive button, `dataset.semanticDive`, `dataset.insideWalkState`; **calls `updateExplorationUi()`** |
+| `window.syncSemanticDiveUi()` | `js/modules/semantic-dive-ui.js` | Syncs dive button, `dataset.semanticDive`, and `dataset.insideWalkState`; **calls `updateExplorationUi()`** |
 
 ---
 

@@ -146,8 +146,20 @@ Policy: motion should clarify state change and respect reduced-motion preference
 | `--landscape-search-results-max-height` | `min(250px, calc(100dvh - 390px))` | Short-landscape search results |
 | `--landscape-weather-widget-height` | `62px` | Short-landscape weather widget |
 | `--landscape-focus-stage-card-max-height` | `min(72vh, 282px)` | Short-landscape focus card |
+| `--z-underlay` | `-1` | Decorative or scene-adjacent content below base UI |
+| `--z-base` | `1` | Base UI layer |
+| `--z-content` | `5` | Primary content above the base layer |
+| `--z-chrome` | `10` | Standard app chrome |
+| `--z-chrome-elevated` | `14` | Raised chrome controls |
+| `--z-panels` | `50` | Standard panel layer |
+| `--z-panels-elevated` | `90` | Raised or transient panel layer |
 | `--z-overlay` | `100` | Overlay stacking baseline |
-| `--z-modal` | `190` | Modal stacking baseline |
+| `--z-overlay-elevated` | `150` | Raised overlay layer |
+| `--z-tooltips` | `200` | Tooltip layer above overlays |
+| `--z-modal` | `400` | Modal stacking baseline |
+| `--z-blocker` | `1000` | Blocking interaction shield |
+| `--z-toast` | `1200` | Toast and urgent feedback layer |
+| `--z-max` | `9999` | Last-resort diagnostic or emergency layer |
 
 Policy: docked bottom panel shells should be flush to the viewport bottom. Safe-area comfort should be handled with internal padding or content insets, not by detaching the shell with an exterior bottom gutter.
 

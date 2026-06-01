@@ -1,7 +1,15 @@
 # mobile_premium_surfaces.css - Rule-by-Rule Shrink / Migration Plan
 
 ## Files Changed
-None (this is a plan document only).
+2026-06-01: `map-focus-search` selected summary presentation moved to
+`css/mobile_premium_map_summary.css`; `css/mobile_premium_surfaces.css` now keeps
+only drawer geometry and suppression backstops for that state.
+
+2026-06-01: mobile search/focus-search `data-panel-surface-detail="peek"` /
+`"expanded"` layout and compact result presentation moved to
+`css/mobile_premium_state.css`. `tests/search-sheet-css-ownership-contract.mjs`
+now guards against reintroducing search-sheet detail ownership in
+`css/mobile_premium_surfaces.css`.
 
 ## Verification
 ```
@@ -16,15 +24,17 @@ rg -c "!important" css/mobile_premium_surfaces.css css/strands.css
 
 The codebase has a multi-layer mobile CSS architecture. `mobile_premium_surfaces.css` is
 documented as the "late harmonizer" - a single `@media (max-width: 768px)` block that
-owns shared mobile app chrome, sheet chrome, focus-stage surface normalization, and
-search-sheet layout while older modules migrate. It is loaded last.
+owns shared mobile app chrome and focus-stage surface normalization while older modules
+migrate. Search-sheet `peek`/`expanded` detail layout now belongs to
+`mobile_premium_state.css`; the late harmonizer must not read `data-panel-surface-detail`.
 
 ```
 Load order inside mobile_premium.css:
   mobile_premium_focus.css     - focus/dive composition
   mobile_premium_chrome.css    - search drawer, filters, map controls polish
-  mobile_premium_state.css     - state ownership layer (idle, focus-search, map)
+  mobile_premium_state.css     - state ownership layer (idle, search/focus-search detail, map)
   mobile_premium_idle.css      - idle-only :has() cleanup
+  mobile_premium_map_summary.css - map-focus-search selected summary presentation
   mobile_premium_surfaces.css  - LATE HARMONIZER (this file, ~596 lines)
 ```
 
@@ -38,7 +48,7 @@ that other files cannot cleanly own due to selector complexity or cascade positi
 
 | Lines | Rule | Rationale |
 |-------|------|-----------|
-| 7-10 | `#selected-details.active { display: block; opacity: 1; }` | Generic panel activation. Short enough to stay. |
+| 7-10 | `#selected-details.active:not([hidden]) { display: block; opacity: 1; }` | Generic panel activation that preserves renderer-owned hidden states such as the map summary variant. Short enough to stay. |
 | 13-39 | `.journey-compass` glass base | Defines core glass morphology (backdrop, border, shadow, flex layout). Used as-is by field-node grid variants. |
 | 41-49 | `.journey-compass-copy` | Column layout for compass text cell. Kept near compass base. |
 | 51-61 | `.journey-compass-copy::after` | Technical separator pseudo-element. |
@@ -72,9 +82,9 @@ concerns, not harmonizer concerns.
 | 483-485 | `data-panel-surface="search/focus-search" .info-panel { max-height }` | Search panel height. chrome.css already has search drawer styling. |
 | 488-491 | `search/focus-search .info-content { padding, height }` | Search content spacing. Belongs in chrome. |
 | 493-502 | `search/focus-search .info-header`, `.stat-caption` hide | Hiding header elements in search mode. Chrome concern. |
-| 504-515 | `search/focus-search"][data-panel-surface-detail="peek"] .info-panel` height overrides | Peek mode info-panel geometry. Chrome concern. |
-| 516-575 | All `peek` search-result-item overrides | chrome.css already styles search-results. These `!important` peek-mode overrides should migrate there. |
-| 577-595 | `"expanded" .info-panel`, search-results layout | Expanded search mode geometry. Belongs in chrome. |
+| ~~504-515~~ | ~~`search/focus-search"][data-panel-surface-detail="peek"] .info-panel` height overrides~~ | **Resolved 2026-06-01:** detail-state geometry lives in `mobile_premium_state.css`. |
+| ~~516-575~~ | ~~All `peek` search-result-item overrides~~ | **Resolved 2026-06-01:** compact result presentation lives in `mobile_premium_state.css`. |
+| ~~577-595~~ | ~~`"expanded" .info-panel`, search-results layout~~ | **Resolved 2026-06-01:** expanded geometry lives in `mobile_premium_state.css`. |
 
 ---
 
@@ -291,12 +301,11 @@ Reports:
 
 ## Risks or Unresolved Issues
 
-1. **Search peek/expanded !important cascade:** chrome.css defines base search drawer styles.
-   surfaces.css uses `!important` to override them for peek/expanded states. If chrome.css
-   is modified, surfaces.css rules will still win due to `!important`. The risk is that
-   when these rules migrate to chrome.css, a specificity arms race could develop again.
-   **Mitigation:** Migrate both base AND peek/expanded rules together to chrome.css so they
-   are co-located and the peek/expanded rules naturally override the base via cascade.
+1. **Search peek/expanded detail-state cascade:** **Resolved 2026-06-01.**
+   `mobile_premium_state.css` now owns the `data-panel-surface-detail="peek"` /
+   `"expanded"` geometry and compact result presentation. `mobile_premium_chrome.css`
+   keeps baseline result chrome, and `mobile_premium_surfaces.css` is guarded from
+   reintroducing detail-state selectors.
 
 2. **Group F (sheet chrome transition):** The strands.css reduced-motion blanket override
    (`transition-duration: 0.01ms !important`) conflicts with the sheet chrome transform
