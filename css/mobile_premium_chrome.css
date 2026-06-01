@@ -23,7 +23,7 @@
     html body.is-active[data-panel-surface="idle"] .rail-section[open] summary {
         position: sticky;
         top: 0;
-        z-index: 2;
+        z-index: var(--z-base);
         border-bottom: 1px solid rgba(255, 255, 255, 0.055);
         background:
             linear-gradient(180deg, rgba(10, 18, 25, 0.96), rgba(8, 14, 20, 0.9));
@@ -181,6 +181,32 @@
         white-space: normal;
     }
 
+    html body.is-active[data-panel-surface^="map-"] .controls,
+    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .controls {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    html body.is-active:is([data-panel-surface="map-focus-search"], [data-panel-surface="map-trail"], [data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"], [data-panel-surface="search"]) :is(
+        .panel-toggle,
+        #btn-legend,
+        #btn-share-view,
+        #btn-keyboard-help,
+        .time-display
+    ),
+    html body.is-active[data-journey-navigation-owner="map-trail-strip"] :is(
+        .panel-toggle,
+        #btn-legend,
+        #btn-share-view,
+        #btn-keyboard-help,
+        .time-display
+    ) {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     /* ----------------------------------------------------------------
        D. Map trail strip — tighter vertical gap from search, reduced
           elevation to reduce panel competition on small screens.
@@ -191,9 +217,14 @@
         top: calc(78px + env(safe-area-inset-top, 0px));
         width: auto;
         transform: none;
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr) 58px 44px 60px;
+        grid-auto-flow: column;
+        grid-auto-rows: 44px;
+        align-items: center;
+        gap: 4px;
         border-radius: 8px;
-        padding: 6px 8px 6px 10px;
+        min-height: 0;
+        padding: 6px 8px;
         background:
             linear-gradient(180deg, rgba(8, 21, 25, 0.88), rgba(4, 10, 14, 0.8)),
             radial-gradient(circle at 82% 0%, rgba(255, 226, 132, 0.1), transparent 42%);
@@ -202,15 +233,73 @@
             0 10px 28px rgba(0, 0, 0, 0.22);
     }
 
+    html body.is-active[data-panel-surface^="map-"] .map-strip-title {
+        position: static;
+        inset: auto;
+        z-index: auto;
+        align-self: center;
+        display: block;
+        width: auto;
+        max-width: 100%;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        color: rgba(235, 250, 247, 0.92);
+        font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: 0;
+        text-transform: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        opacity: 1;
+        transform: none;
+        transition: none;
+        pointer-events: none;
+    }
+
     html body.is-active[data-panel-surface^="map-"] .map-trail-strip .trail-strip-btn {
-        min-width: 54px;
+        width: 100%;
+        min-width: 0;
         min-height: 44px;
+        padding: 0 6px;
         border-radius: 8px;
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         font-size: 10px;
         font-weight: 700;
         letter-spacing: 0;
         text-transform: none;
+        background: rgba(10, 54, 55, 0.76);
+        border-color: rgba(121, 235, 222, 0.18);
+        color: rgba(229, 249, 246, 0.88);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+    }
+
+    html body.is-active[data-panel-surface^="map-"] .map-trail-strip .trail-strip-btn[data-journey-action="focus-search"] {
+        background:
+            linear-gradient(180deg, rgba(255, 226, 132, 0.24), rgba(111, 82, 22, 0.22)),
+            rgba(10, 54, 55, 0.72);
+        border-color: rgba(255, 226, 132, 0.42);
+        color: rgba(255, 250, 226, 0.96);
+        font-weight: 800;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            0 8px 18px rgba(0, 0, 0, 0.14);
+    }
+
+    html body.is-active[data-panel-surface^="map-"] .map-trail-strip .trail-strip-btn[data-journey-action="county-overview"] {
+        background: rgba(255, 255, 255, 0.035);
+        border-color: rgba(255, 255, 255, 0.09);
+        color: rgba(211, 229, 226, 0.76);
+        font-size: 9px;
+        box-shadow: none;
     }
 
     html body.is-active[data-panel-surface^="map-"] .map-strip-kicker {
@@ -226,7 +315,7 @@
    ---------------------------------------------------------------- */
 @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
     html body.is-active .journey-compass {
-        left: 16px;
+        left: 376px;
         right: 16px;
         width: auto;
         min-width: 0;
@@ -274,8 +363,23 @@
     }
 
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .search-container.search-container,
-    html body.is-active[data-panel-surface="search"] .journey-compass.journey-compass,
-    html body.is-active[data-panel-surface="map-trail"] .journey-compass.journey-compass {
+    html body.is-active[data-panel-surface="search"] .journey-compass.journey-compass {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .journey-compass-note {
+        display: none;
+        visibility: hidden;
+    }
+
+    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .controls,
+    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .panel-toggle,
+    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) #btn-share-view,
+    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) #btn-legend,
+    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) #btn-keyboard-help,
+    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .time-display {
         display: none;
         visibility: hidden;
         pointer-events: none;

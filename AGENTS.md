@@ -91,6 +91,7 @@ Key modules:
 - `css/mobile_premium_state.css` - mobile idle, focus-search, map-view state ownership
 - `css/mobile_premium_surfaces.css` - bottom-sheet, surface geometry corrections
 - `css/mobile_premium_focus.css` - mobile focus-search and semantic-dive composition
+- `css/mobile_premium_map_summary.css` - mobile map-focus-search selected map summary presentation (dedicated; not in late drawer geometry)
 - `css/progressive_disclosure.css` - graph-context/dive show/hide behavior, search empty-state
 
 Use `docs/semantic-demo-css-ownership-map.md` and `docs/semantic-demo-mobile-state-ownership.md` to find the owning module before editing.
