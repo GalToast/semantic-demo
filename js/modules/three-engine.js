@@ -377,23 +377,24 @@ export function cancelAnimate() {
         window.clearTimeout(_webglRestoreTimer);
         _webglRestoreTimer = null;
     }
+    const contextWasLost = _webglContextLost;
     _webglContextLost = false;
     const renderer = state.renderer;
     const scene = state.scene;
     const camera = state.camera;
-    if (renderer && scene && camera) {
+    if (!contextWasLost && renderer && scene && camera) {
         try { renderer.render(scene, camera); } catch (_) { /* context already gone */ }
     }
     state.scene = null;
     state.camera = null;
     state.controls = null;
+    disposeObject3D(scene);
     if (renderer) {
         renderer.dispose();
         const canvas = renderer.domElement;
         if (canvas?.parentNode) canvas.parentNode.removeChild(canvas);
     }
     state.renderer = null;
-    disposeObject3D(scene);
     state.pointsMesh = null;
     state.pointsMaterial = null;
     state.nodeSporeMesh = null;
