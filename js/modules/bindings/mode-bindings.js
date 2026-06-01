@@ -1,0 +1,71 @@
+import { state } from '../../state.js';
+import { applyStoryPrompt } from '../lifecycle.js';
+import { focusSearchInputForReplacement, search } from '../search-state.js';
+import { showExperienceToast } from '../ui-feedback.js';
+
+export function bindModeAndPromptControls(setMyceliumMode) {
+    document.querySelectorAll('[data-mode]').forEach((button) => {
+        button.onclick = () => {
+            if (button.dataset.story && typeof applyStoryPrompt === 'function') {
+                if (button.dataset.story === 'trail' && state.focusedNode === null) {
+                    showExperienceToast('Trail locked', 'Select a business first.');
+                    return;
+                }
+                applyStoryPrompt(button.dataset.story);
+                return;
+            }
+            const mode = button.dataset.mode || 'default';
+            if (mode === 'trail' && state.focusedNode === null) {
+                showExperienceToast('Trail locked', 'Select a business first.');
+                return;
+            }
+            setMyceliumMode(mode);
+        };
+    });
+
+    document.querySelectorAll('[data-demo-query]').forEach((button) => {
+        button.onclick = () => {
+            const query = button.dataset.demoQuery || '';
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.value = query;
+                if (typeof focusSearchInputForReplacement === 'function') focusSearchInputForReplacement();
+            }
+            document.querySelectorAll('[data-demo-query]').forEach((chip) => {
+                chip.classList.remove('active', 'is-loading');
+                chip.removeAttribute('aria-disabled');
+            });
+            button.classList.add('is-loading');
+            button.setAttribute('aria-disabled', 'true');
+            const originalText = button.textContent.trim();
+            button.textContent = 'Finding...';
+
+            const cueEl = document.getElementById('search-trail-cue');
+            if (cueEl) {
+                cueEl.hidden = false;
+                cueEl.classList.add('active');
+                cueEl.querySelectorAll('.search-trail-cue-step').forEach((el) => {
+                    el.classList.toggle('active', el.dataset.cueStage === 'query');
+                });
+            }
+
+            let restoreTimer = setTimeout(() => {
+                button.classList.remove('is-loading');
+                button.removeAttribute('aria-disabled');
+                button.textContent = originalText;
+            }, 4000);
+
+            const wrappedSearch = (...args) => {
+                clearTimeout(restoreTimer);
+                return search(...args);
+            };
+            wrappedSearch(query);
+        };
+    });
+
+    document.querySelectorAll('[data-story]').forEach((button) => {
+        button.onclick = () => {
+            if (typeof applyStoryPrompt === 'function') applyStoryPrompt(button.dataset.story || '');
+        };
+    });
+}

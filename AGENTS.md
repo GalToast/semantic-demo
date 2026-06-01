@@ -48,7 +48,8 @@
 | `js/modules/camera-framing-utils.js` | Canvas unobstructed region, focus-pocket screen bounds, safe-area target offset |
 | `js/modules/camera-orbit-slack.js` | Search-route focus active, focus orbit slack pivot and apply/clear |
 | `js/modules/focus-pocket.js` | Focus pocket node layout and animation |
-| `js/modules/event-bindings.js` | Centralized DOM event listeners |
+| `js/modules/event-bindings.js` | Thin orchestrator: imports each `bindings/` module and dispatches its `bind*` function via `initEventListeners` |
+| `js/modules/bindings/` | Per-surface DOM event listeners (filter, journey, legend, mode, panel, search, view, etc.) — replaces the monolithic event-bindings.js with focused per-feature modules |
 | `js/modules/journey-compass-state.js` | Journey compass state machine and action synthesis |
 | `js/modules/loading-ui.js` | Loading overlay, phases, deferred hydration |
 
