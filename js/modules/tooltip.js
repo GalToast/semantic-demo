@@ -1,6 +1,7 @@
 import { formatBusinessName, cleanPublicNoteText, sanitizePublicFacingNote } from './utils/dom-formatters.js';
 import { describeCluster } from './utils/ui-presentation.js';
 import { getViewportSize } from './environment.js';
+import { subscribe, EVENTS } from './event-bus.js';
 
 let tooltipRevealFrame = null;
 let tooltipHideTimer = null;
@@ -148,6 +149,10 @@ export function hideTooltip() {
         }
     }, 180);
 }
+
+// Event Bus Subscriptions
+subscribe(EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip);
+subscribe(EVENTS.CAMERA_MOVED, hideTooltip);
 
 // Window exports retired 2026-05-28; all consumers migrated to direct imports:
 // updateTooltipContent, positionTooltip, hideTooltip -> search-ui-adapter.js (search-state.js)

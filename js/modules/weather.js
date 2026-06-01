@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { subscribe, EVENTS } from './event-bus.js';
 
 const WEATHER_REFRESH_MS = 5 * 60 * 1000;
 const DEFAULT_WEATHER_COORDS = { latitude: 30.3119, longitude: -95.4561 };
@@ -393,5 +394,12 @@ function scheduleLightning() {
     };
     lightningTimer = window.setTimeout(flash, 3000);
 }
+
+// Event Bus Subscriptions
+subscribe(EVENTS.VIEW_CHANGED, ({ view }) => {
+    if (view !== 'map') {
+        clearWeatherEffects();
+    }
+});
 
 // Window exports retired 2026-05-28

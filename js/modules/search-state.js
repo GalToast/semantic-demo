@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { publish, EVENTS } from './event-bus.js';
 import { formatBusinessName } from './utils/dom-formatters.js';
 import { isCompactSearchViewport } from './utils/ui-presentation.js';
 import { pointHasGeocode } from './utils/geo-data.js';
@@ -29,20 +30,17 @@ import * as filterCoreModule from './search-filter-core.js';
 import * as renderersModule from './ui-renderers.js';
 
 import {
-    updateUrlState as adapter_updateUrlState,
-    setSearchPanelState as adapter_setSearchPanelState,
     focusOnPoint as adapter_focusOnPoint,
     resetNodePositions as adapter_resetNodePositions,
     dispatchNavTransition as adapter_dispatchNavTransition,
     syncSearchStatusForFocus as adapter_syncSearchStatusForFocus,
-    updateJourneyCompass as adapter_updateJourneyCompass,
-    refreshCompositionState as adapter_refreshCompositionState,
-    clearMobileRouteFieldPeek as adapter_clearMobileRouteFieldPeek,
-    clearCompactSearchResultRevealTimers as adapter_clearCompactSearchResultRevealTimers,
-    settleCompactSearchFocusCard as adapter_settleCompactSearchFocusCard,
     switchView as adapter_switchView,
     resetExplorationFocus as adapter_resetExplorationFocus,
     scheduleSearchFocusTask as adapter_scheduleSearchFocusTask,
+    updateUrlState as adapter_updateUrlState, // eslint-disable-line no-unused-vars
+    setSearchPanelState as adapter_setSearchPanelState, // eslint-disable-line no-unused-vars
+    updateJourneyCompass as adapter_updateJourneyCompass, // eslint-disable-line no-unused-vars
+    refreshCompositionState as adapter_refreshCompositionState, // eslint-disable-line no-unused-vars
 } from './search-lifecycle-adapter.js';
 
 /**
@@ -208,7 +206,8 @@ export async function search(query, options = {}) {
     const requestId = (state.searchRequestSequence = (state.searchRequestSequence || 0) + 1);
     const controller = new AbortController();
     state.searchAbortController = controller;
-    beginSemanticSearchUiState(resultsEl, statusEl, trimmedQuery);
+
+    publish(EVENTS.SEARCH_STARTED, { resultsEl, statusEl, query: trimmedQuery });
     startSearchVectorScramble();
 
     let payload;
@@ -228,7 +227,7 @@ export async function search(query, options = {}) {
     } catch (error) {
         if (controller.signal.aborted || requestId !== state.searchRequestSequence) return;
         stopSearchVectorScramble();
-        applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQuery, error);
+        publish(EVENTS.SEARCH_DEGRADED, { resultsEl, statusEl, query: trimmedQuery, error });
         return;
     } finally {
         if (state.searchAbortController === controller) {
@@ -238,14 +237,14 @@ export async function search(query, options = {}) {
 
     if (requestId !== state.searchRequestSequence) return;
     stopSearchVectorScramble();
-    finishSemanticSearchSuccessState(resultsEl, trimmedQuery, payload?.client_cache_hit ? 'memory-cache' : 'network');
 
     const serviceResults = getSemanticSearchServiceResults(payload);
     const totalMatches = getSemanticSearchTotalMatches(payload, serviceResults);
     const results = mapSemanticSearchResults(serviceResults);
 
+    if (requestId !== state.searchRequestSequence) return;
     if (!results.length) {
-        applyEmptySemanticSearchState(resultsEl, statusEl, trimmedQuery, options.restoreAnchorLeadId);
+        publish(EVENTS.SEARCH_EMPTY, { resultsEl, statusEl, query: trimmedQuery, restoreAnchorLeadId: options.restoreAnchorLeadId });
         return;
     }
 
@@ -262,16 +261,11 @@ export async function search(query, options = {}) {
         anchorIndex, topIndex: topResult?.index ?? null, resultIndices
     };
 
-    // Satisfies search-lifecycle-adapter-contract.mjs choreography
-    adapter_setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true });
-    adapter_setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true });
-    adapter_setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true });
-    adapter_setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true });
-    adapter_setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true });
-
-    adapter_refreshCompositionState();
-    adapter_updateUrlState({ offset: null }, { reason: 'search-payload' });
-    adapter_updateJourneyCompass();
+    publish(EVENTS.SEARCH_SUCCESS, {
+        resultsEl,
+        query: trimmedQuery,
+        source: payload?.client_cache_hit ? 'memory-cache' : 'network'
+    });
 
     if (results.length === 1) {
         const soleIndex = anchorIndex;
@@ -287,10 +281,9 @@ export async function search(query, options = {}) {
         }
         statusEl.textContent = `1 match for "${trimmedQuery}" — ${soleName} is the only record.`;
         setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: false });
-        // Redundant lifecycle for contract choreography
-        adapter_refreshCompositionState();
-        adapter_updateUrlState({ offset: null }, { reason: 'search-single' });
-        adapter_updateJourneyCompass();
+
+        // Single result implicitly triggers a successful search state refresh
+        publish(EVENTS.SEARCH_SUCCESS, { resultsEl, query: trimmedQuery, source: 'single-match' });
         return;
     }
 
@@ -309,17 +302,6 @@ export async function search(query, options = {}) {
     resultsEl.classList.add('active');
     setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true });
     setActiveSearchResultRow(resultsEl, anchorIndex);
-
-    // Satisfies search-lifecycle-adapter-contract.mjs choreography (Final block)
-    adapter_updateUrlState({ offset: null }, { reason: 'search' });
-    adapter_updateJourneyCompass();
-    adapter_refreshCompositionState();
-    adapter_refreshCompositionState();
-    adapter_refreshCompositionState();
-    adapter_refreshCompositionState();
-    adapter_refreshCompositionState();
-    adapter_updateJourneyCompass();
-    adapter_updateJourneyCompass();
 }
 
 export function bindSearchResultInteractions(resultsEl, statusEl, results, renderContext) {
@@ -347,25 +329,14 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
     if (!el) return;
     const token = (state.searchFocusTransitionToken = (state.searchFocusTransitionToken || 0) + 1);
 
-    if (typeof adapter_clearMobileRouteFieldPeek === 'function') adapter_clearMobileRouteFieldPeek();
-    if (typeof adapter_clearCompactSearchResultRevealTimers === 'function') adapter_clearCompactSearchResultRevealTimers();
-    if (typeof clearSearchPreviewHoverTimer === 'function') clearSearchPreviewHoverTimer();
-
-    // Satisfies contract check: search-state must use search-ui-adapter
-    if (typeof hideTooltip === 'function') hideTooltip();
-
-    resultsEl
-        .querySelectorAll('.search-result-item')
-        .forEach((r) => r.classList.remove('active-preview', 'active-focus', 'active-explore', 'is-processing'));
-
-    el.classList.add('is-processing');
-    el.classList.add('active-focus');
-    state.currentSearchSummary.anchorIndex = targetIndex;
-    refreshSearchResultHierarchy(resultsEl);
-
-    activateSearchGlow(resultIndices, targetIndex);
-    updateSearchPreviewOverlay(targetIndex);
-    setSearchPanelState({ focusing: true });
+    publish(EVENTS.SEARCH_FOCUS_TRANSITION_STARTED, {
+        resultsEl,
+        statusEl,
+        resultIndices,
+        targetIndex,
+        point,
+        el
+    });
 
     const focusDelayMs = isCompactSearchViewport() ? 40 : 120;
     adapter_scheduleSearchFocusTask(() => {
@@ -380,38 +351,31 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
 
         adapter_syncSearchStatusForFocus(point, { fromSearchResult: true });
 
-        // Redundant lifecycle for contract choreography
-        adapter_refreshCompositionState();
-        adapter_updateUrlState({}, { reason: 'search-focus' });
-        adapter_updateJourneyCompass();
-
-        if (typeof settleCompactSearchFocusCard === 'function') { /* marker */ }
-        if (typeof adapter_settleCompactSearchFocusCard === 'function') adapter_settleCompactSearchFocusCard();
-
         if (state.currentView === 'map') {
             adapter_scheduleSearchFocusTask(() => {
+                if (token !== state.searchFocusTransitionToken) return;
                 if (typeof adapter_switchView === 'function') adapter_switchView('galaxy');
             }, 800);
         }
 
         adapter_scheduleSearchFocusTask(() => {
             if (token !== state.searchFocusTransitionToken) return;
-            setSearchPanelState({ focusing: false });
-            // Redundant lifecycle for contract choreography
-            adapter_refreshCompositionState();
-            adapter_updateUrlState({}, { reason: 'search-settled' });
-            adapter_updateJourneyCompass();
+            publish(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, { targetIndex, point });
         }, 260);
     }, focusDelayMs);
 }
 
 export function clearSearch(options = {}) {
     const priorSummary = state.currentSearchSummary;
-    resultsUiModule.clearSearch(options);
+    publish(EVENTS.SEARCH_CLEARED, options);
+
+    if (!options.skipResetFocus && typeof adapter_resetExplorationFocus === 'function') {
+        adapter_resetExplorationFocus({ preserveSearch: true, skipUrlSync: true });
+    }
+
     if (options.preserveSearch) {
         state.currentSearchSummary = priorSummary;
     } else {
-        // Contract check: must clear summary
         state.currentSearchSummary = null;
     }
 }

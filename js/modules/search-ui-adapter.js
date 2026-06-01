@@ -22,7 +22,8 @@
  *   // Called once from app.js init with all required function references.
  */
 
-let _hideTooltip = null;
+import { publish, EVENTS } from './event-bus.js';
+
 let _positionTooltip = null;
 let _updateTooltipContent = null;
 
@@ -30,12 +31,10 @@ let _updateTooltipContent = null;
  * Inject the UI function references. Called once from app.js init.
  *
  * @param {object} deps
- * @param {Function|null} deps.hideTooltip
  * @param {Function|null} deps.positionTooltip
  * @param {Function|null} deps.updateTooltipContent
  */
-export function initSearchUiAdapter({ hideTooltip, positionTooltip, updateTooltipContent } = {}) {
-    _hideTooltip = typeof hideTooltip === 'function' ? hideTooltip : null;
+export function initSearchUiAdapter({ positionTooltip, updateTooltipContent } = {}) {
     _positionTooltip = typeof positionTooltip === 'function' ? positionTooltip : null;
     _updateTooltipContent = typeof updateTooltipContent === 'function' ? updateTooltipContent : null;
 }
@@ -46,8 +45,7 @@ export function initSearchUiAdapter({ hideTooltip, positionTooltip, updateToolti
  */
 export function isSearchUiAdapterReady() {
     return (
-        _hideTooltip !== null
-        && _positionTooltip !== null
+        _positionTooltip !== null
         && _updateTooltipContent !== null
     );
 }
@@ -57,7 +55,7 @@ export function isSearchUiAdapterReady() {
  * Safe to call when unready; no-op.
  */
 export function hideTooltip() {
-    if (_hideTooltip) _hideTooltip();
+    publish(EVENTS.TOOLTIP_HIDE_REQUESTED);
 }
 
 /**

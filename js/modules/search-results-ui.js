@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { subscribe, EVENTS } from './event-bus.js';
 import { escapeHtml } from './utils/dom-formatters.js';
 import { describeCluster, isCompactSearchViewport } from './utils/ui-presentation.js';
 import {
@@ -27,7 +28,9 @@ import {
     resetExplorationFocus as adapter_resetExplorationFocus,
     hideSummaryCard as adapter_hideSummaryCard,
     setSemanticGuideButtonState as adapter_setSemanticGuideButtonState,
-    scheduleCompactSearchResultReveal as adapter_scheduleCompactSearchResultReveal
+    scheduleCompactSearchResultReveal as adapter_scheduleCompactSearchResultReveal,
+    clearMobileRouteFieldPeek as adapter_clearMobileRouteFieldPeek,
+    clearCompactSearchResultRevealTimers as adapter_clearCompactSearchResultRevealTimers
 } from './search-lifecycle-adapter.js';
 import { isMobileViewport } from './environment.js';
 
@@ -106,7 +109,7 @@ export function renderSearchResultItems(resultsEl, results, renderContext, statu
         btn.textContent = `Show ${remaining} more results`;
         btn.onclick = () => {
             const nextVisibleCount = results.length;
-            const previousScrollTop = resultsEl.scrollTop;
+            const firstNewIndex = visibleCount;
             btn.setAttribute('aria-expanded', 'true');
             try { sessionStorage.setItem('searchVisibleCount', String(nextVisibleCount)); } catch (err) { console.warn('[search-state] searchVisibleCount persistence failed:', err); }
             adapter_updateUrlState({ offset: null }, { reason: 'search-more' });
@@ -120,13 +123,17 @@ export function renderSearchResultItems(resultsEl, results, renderContext, statu
             refreshSearchResultHierarchy(resultsEl);
             const activeIndex = state.currentSearchSummary?.anchorIndex ?? renderContext.anchorIndex ?? renderContext.topIndex;
             if (Number.isFinite(activeIndex)) setActiveSearchResultRow(resultsEl, activeIndex, { reveal: false });
-            resultsEl.scrollTop = previousScrollTop;
+            
             if (typeof window.requestAnimationFrame === 'function') {
                 window.requestAnimationFrame(() => {
-                    resultsEl.scrollTop = previousScrollTop;
+                    const firstNewItem = resultsEl.querySelector(`[data-index="${results[firstNewIndex]?.index}"]`);
+                    if (firstNewItem) {
+                        firstNewItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
                 });
             }
         };
+
         resultsEl.appendChild(btn);
     }
     resultsEl.scrollTop = 0;
@@ -145,14 +152,20 @@ export function beginSemanticSearchUiState(resultsEl, statusEl, trimmedQuery) {
         adapter_refreshCompositionState();
         state.searchAnchorIndex = null;
         state.searchPreviewIndex = null;
-        resultsEl.innerHTML = `
-            <div class="search-loading">
-                <div class="search-loading-spinner"></div>
-                <div class="search-loading-text">Searching...</div>
-            </div>
-        `;
+        
+        resultsEl.classList.add('is-searching-skeleton');
+        resultsEl.setAttribute('aria-busy', 'true');
+        resultsEl.scrollTop = 0;
+        
+        if (resultsEl.children.length === 0) {
+            resultsEl.innerHTML = `
+                <div class="search-loading">
+                    <div class="search-loading-spinner"></div>
+                    <div class="search-loading-text">Searching...</div>
+                </div>
+            `;
+        }
         resultsEl.hidden = false;
-        resultsEl.classList.add('active');
         clearSearchGlow();
     }
     setSearchPanelState({ searching: true, focusing: false, hasQuery: true, resultsRendered: false, degraded: false });
@@ -185,7 +198,14 @@ export function updateSemanticSearchRetryState({ statusEl, trimmedQuery, attempt
 }
 
 export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQuery, _error) {
+    if (typeof adapter_clearMobileRouteFieldPeek === 'function') adapter_clearMobileRouteFieldPeek();
+    if (typeof adapter_clearCompactSearchResultRevealTimers === 'function') adapter_clearCompactSearchResultRevealTimers();
+    if (typeof clearSearchPreviewHoverTimer === 'function') clearSearchPreviewHoverTimer();
+
     resultsEl.classList.remove('searching');
+    resultsEl.classList.remove('is-searching-skeleton');
+    resultsEl.setAttribute('aria-busy', 'false');
+    resultsEl.classList.add('active');
 
     const spinner = document.getElementById('search-spinner');
     if (spinner) spinner.style.display = 'none';
@@ -196,7 +216,6 @@ export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQue
     if (!preservingSameQuery) {
         state.currentSearchSummary = null;
         adapter_refreshCompositionState();
-        resultsEl.classList.remove('active');
         clearSearchGlow();
     }
 
@@ -215,7 +234,7 @@ export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQue
         ? `Search is still getting ready for "${trimmedQuery}". Keeping the last ${state.currentSearchSummary && state.currentSearchSummary.visibleMatches} matches visible.`
         : `Search paused for "${trimmedQuery}". Try again in a moment.`;
     statusEl.hidden = false;
-    statusEl.classList.add('active', 'search-status-compact');
+    statusEl.classList.add('search-status-compact');
 
     const escapedQuery = escapeHtml(trimmedQuery);
     if (preservingSameQuery) {
@@ -262,7 +281,6 @@ export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQue
         }
     }
     resultsEl.hidden = false;
-    resultsEl.classList.add('active');
     adapter_updateUrlState({}, { reason: 'search-degraded' });
     resetSemanticGuideUi({ hideTrigger: true });
 }
@@ -278,6 +296,8 @@ export function finishSemanticSearchSuccessState(resultsEl, trimmedQuery, cacheS
     if (typeof adapter_setSemanticLaneUiState === 'function') adapter_setSemanticLaneUiState('healthy');
     setSearchPanelState({ searching: false, focusing: false, degraded: false });
     resultsEl.classList.remove('searching');
+    resultsEl.classList.remove('is-searching-skeleton');
+    resultsEl.setAttribute('aria-busy', 'false');
 }
 
 export function applyEmptySemanticSearchState(resultsEl, statusEl, trimmedQuery, requestedAnchorLeadId) {
@@ -337,8 +357,9 @@ export function applyEmptySemanticSearchState(resultsEl, statusEl, trimmedQuery,
     });
 
     resultsEl.hidden = false;
-    resultsEl.classList.add('active');
     resultsEl.classList.remove('searching');
+    resultsEl.classList.remove('is-searching-skeleton');
+    resultsEl.setAttribute('aria-busy', 'false');
     clearSearchGlow();
     statusEl.textContent = `No matching records found for "${trimmedQuery}".`;
     updateSearchTrailCue({
@@ -445,14 +466,25 @@ export function clearShortSemanticSearchState(_resultsEl, _statusEl) {
     if (spinner) spinner.style.display = 'none';
     if (_resultsEl) {
         _resultsEl.innerHTML = '';
-        _resultsEl.classList.remove('active', 'searching');
+        _resultsEl.classList.remove('searching');
     }
+    if (_statusEl) {
+        _statusEl.textContent = 'Search 8,406 MoCo businesses semantically by need, venue, service, or clue.';
+        _statusEl.hidden = false;
+        _statusEl.classList.remove('search-status-compact');
+    }
+    const liveEl = document.getElementById('search-status-live');
+    if (liveEl) liveEl.textContent = '';
     clearSearchGlow();
 }
 
 export function clearSearch(options = {}) {
     const resultsEl = document.getElementById('search-results');
     const statusEl = document.getElementById('search-status');
+    if (!options.preserveSearch) {
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.value = '';
+    }
     clearShortSemanticSearchState(resultsEl, statusEl);
 
     if (!options.skipResetFocus && typeof adapter_resetExplorationFocus === 'function') {
@@ -538,3 +570,55 @@ export function focusSearchInputForReplacement() {
         input.select();
     }
 }
+
+// Event Bus Subscriptions
+subscribe(EVENTS.SEARCH_STARTED, ({ resultsEl, statusEl, query }) => {
+    beginSemanticSearchUiState(resultsEl, statusEl, query);
+});
+
+subscribe(EVENTS.SEARCH_SUCCESS, ({ resultsEl, query, source }) => {
+    finishSemanticSearchSuccessState(resultsEl, query, source);
+});
+
+subscribe(EVENTS.SEARCH_EMPTY, ({ resultsEl, statusEl, query, restoreAnchorLeadId }) => {
+    applyEmptySemanticSearchState(resultsEl, statusEl, query, restoreAnchorLeadId);
+});
+
+subscribe(EVENTS.SEARCH_DEGRADED, ({ resultsEl, statusEl, query, error }) => {
+    applySemanticSearchDegradedState(resultsEl, statusEl, query, error);
+});
+
+subscribe(EVENTS.SEARCH_CLEARED, (options = {}) => {
+    if (typeof clearSearchPreviewHoverTimer === 'function') clearSearchPreviewHoverTimer();
+    if (!options.preserveSearch) {
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.value = '';
+    }
+    const resultsEl = document.getElementById('search-results');
+    const statusEl = document.getElementById('search-status');
+    clearShortSemanticSearchState(resultsEl, statusEl);
+});
+
+subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_STARTED, ({ resultsEl, resultIndices, targetIndex, el }) => {
+    if (typeof adapter_clearMobileRouteFieldPeek === 'function') adapter_clearMobileRouteFieldPeek();
+    if (typeof adapter_clearCompactSearchResultRevealTimers === 'function') adapter_clearCompactSearchResultRevealTimers();
+    if (typeof clearSearchPreviewHoverTimer === 'function') clearSearchPreviewHoverTimer();
+    if (typeof hideTooltip === 'function') hideTooltip();
+
+    resultsEl
+        .querySelectorAll('.search-result-item')
+        .forEach((r) => r.classList.remove('active-preview', 'active-focus', 'active-explore', 'is-processing'));
+
+    if (el) {
+        el.classList.add('is-processing');
+        el.classList.add('active-focus');
+    }
+    refreshSearchResultHierarchy(resultsEl);
+    activateSearchGlow(resultIndices, targetIndex);
+    updateSearchPreviewOverlay(targetIndex);
+    setSearchPanelState({ focusing: true });
+});
+
+subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, () => {
+    setSearchPanelState({ focusing: false });
+});

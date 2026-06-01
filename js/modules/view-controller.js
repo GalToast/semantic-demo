@@ -1,7 +1,6 @@
 import { state } from '../state.js';
-import { closeLegendPanel, updateLegendGuideState } from './legend-ui.js';
-import { syncClusterSectionState } from './cluster-labels.js';
-import { animateCameraToTerrainPrelude, focusOnNode, getRouteLayerOrigin, clearRouteExploration, animateCameraToNode, animateCameraToSearchCorridor } from './camera-controls.js';
+import { publish, EVENTS } from './event-bus.js';
+import { animateCameraToTerrainPrelude, focusOnNode, getRouteLayerOrigin, clearRouteExploration, animateCameraToNode, animateCameraToSearchCorridor, setCameraAssistChoreography } from './camera-controls.js';
 import {
     updateSelectedBusiness,
     setTrailFromSeed,
@@ -10,7 +9,6 @@ import {
 } from './journey.js';
 import {
     clearWeatherRefreshTimer,
-    clearWeatherEffects,
     applyWeatherEffects
 } from './weather.js';
 import { scheduleWeatherHydration } from './loading-ui.js';
@@ -22,13 +20,20 @@ import {
 } from './map-state.js';
 import {
     invokeClearMobileRouteFieldPeek,
-    refreshCompositionState,
     scheduleMapRouteRefresh,
     getViewHandoffModel
 } from './journey-compass-controller.js';
 import { semanticGuideIcon } from './semantic-guide.js';
 import { applyMapFlatteningLayout } from './map-flattening-layout.js';
 import { setCurrentView } from './state-mutators.js';
+
+let _refreshCompositionState = () => {};
+
+export function initViewControllerAdapter({ refreshCompositionState } = {}) {
+    if (typeof refreshCompositionState === 'function') {
+        _refreshCompositionState = refreshCompositionState;
+    }
+}
 
 export function hideViewHandoff() {
     const handoff = document.getElementById('view-handoff');
@@ -74,10 +79,28 @@ export function showViewHandoff(view) {
     }, 2200);
 }
 
+function shouldShowViewHandoff(view, options = {}) {
+    if (options.silentHandoff) return false;
+    if (
+        view === 'map' &&
+        document.body?.dataset?.panelSurface === 'map-focus-search' &&
+        document.body?.dataset?.journeyNavigationOwner === 'map-trail-strip'
+    ) {
+        return false;
+    }
+    return true;
+}
+
 export function switchView(view, options = {}) {
     invokeClearMobileRouteFieldPeek();
     const previousView = state.currentView;
     const handoffFrom = options.handoffFrom || getRouteLayerOrigin();
+
+    if (state.viewSwitchPreludeTimer) {
+        window.clearTimeout(state.viewSwitchPreludeTimer);
+        state.viewSwitchPreludeTimer = null;
+    }
+
     const shouldPreludeToMap =
         view === 'map' &&
         previousView === 'galaxy' &&
@@ -86,10 +109,6 @@ export function switchView(view, options = {}) {
         !options.silentHandoff;
     if (shouldPreludeToMap) {
         const routeCount = getRouteEmbodimentIndices().length;
-        if (state.viewSwitchPreludeTimer) {
-            window.clearTimeout(state.viewSwitchPreludeTimer);
-            state.viewSwitchPreludeTimer = null;
-        }
         setTerrainHandoffState('flattening', {
             from: handoffFrom,
             to: 'map',
@@ -122,13 +141,17 @@ export function switchView(view, options = {}) {
     // 10/10 Polish: Transition Choreography
     document.body.classList.add('view-transitioning');
     document.body.dataset.activeView = view;
-    document.body.dataset.cameraAssist = 'arriving';
+    setCameraAssistChoreography('arriving', 'view-handoff');
 
     // Auto-remove transitioning class after animation completes
     window.setTimeout(() => {
+        if (state.currentView !== view) return; // Guard against rapid switching
         document.body.classList.remove('view-transitioning');
-        if (document.body.dataset.cameraAssist === 'arriving') {
-            document.body.dataset.cameraAssist = 'free';
+        if (
+            document.body.dataset.cameraAssist === 'arriving' &&
+            document.body.dataset.cameraAssistReason === 'view-handoff'
+        ) {
+            setCameraAssistChoreography('free', 'view-handoff-complete');
         }
     }, 1200);
 
@@ -138,18 +161,18 @@ export function switchView(view, options = {}) {
     }
     if (view !== 'galaxy' && view !== 'map') {
         clearRouteExploration('map-handoff');
-    } else if (previousView === 'map' && Number.isFinite(state.navState.focusedIndex)) {
-        // 10/10 Polish: Reset map flattening
+    } else if (view !== 'map') {
+        // 10/10 Polish: Reset map flattening unconditionally if leaving map or aborting prelude
         applyMapFlatteningLayout(false);
 
         // returning to galaxy from map while focused: restore focus pocket camera depth
-        animateCameraToNode(state.navState.focusedIndex, {
-            transitionStyle: state.semanticDiveMode ? 'dive' : 'focus',
-            duration: 1100
-        });
+        if (previousView === 'map' && Number.isFinite(state.navState.focusedIndex)) {
+            animateCameraToNode(state.navState.focusedIndex, {
+                transitionStyle: state.semanticDiveMode ? 'dive' : 'focus',
+                duration: 1100
+            });
+        }
     }
-
-    closeLegendPanel();
 
     const btnGalaxy = document.getElementById('btn-galaxy');
     const btnMap = document.getElementById('btn-map');
@@ -200,8 +223,6 @@ export function switchView(view, options = {}) {
         }
         if (canvasContainer) canvasContainer.classList.remove('hidden');
         if (mapContainer) mapContainer.classList.remove('active');
-        clearWeatherEffects();
-        document.getElementById('weather-overlay')?.classList.remove('active');
         if (state.selectedPoint) {
             const selectedIndex = state.points.indexOf(state.selectedPoint);
             if (selectedIndex >= 0) {
@@ -280,14 +301,17 @@ export function switchView(view, options = {}) {
     if (!options.skipUrlSync) {
         updateUrlState({}, { mode: options.historyMode || 'push', reason: 'view' });
     }
-    syncClusterSectionState();
-    updateLegendGuideState();
+
+    publish(EVENTS.VIEW_CHANGED, { view, previousView });
+
     syncFocusStage(state.selectedPoint);
     if (!state.selectedPoint) {
         updateSelectedBusiness(null);
     }
-    refreshCompositionState();
-    if (!options.silentHandoff) {
+    _refreshCompositionState();
+    if (shouldShowViewHandoff(view, options)) {
         showViewHandoff(view);
+    } else if (view === 'map') {
+        hideViewHandoff();
     }
 }

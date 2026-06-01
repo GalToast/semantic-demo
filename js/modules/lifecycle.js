@@ -1,5 +1,6 @@
 // js/modules/lifecycle.js — Semantic Demo Lifecycle & Global State Bridge
 import { state } from '../state.js';
+import { publish, subscribe, EVENTS } from './event-bus.js';
 import {
     syncRouteDirectorState as adapter_syncRouteDirectorState,
     updateFocusNeighborRail as adapter_updateFocusNeighborRail,
@@ -20,7 +21,6 @@ import {
     onWindowResize
 } from './scene-reveal.js';
 import {
-    updateUrlState,
     copyCurrentViewLink,
     resetStateBeforeUrlRestore,
     clearExplorationFocusSelection
@@ -40,7 +40,7 @@ import {
     setSearchPanelState,
     clearSearch
 } from './search-state.js';
-import { updateSelectedCardHeading } from './ui-renderers.js';
+import { updateSelectedCardHeading, renderSelectedMatchPanel, syncSelectedCardContentVariant } from './ui-renderers.js';
 import {
     focusOnNode
 } from './camera-controls.js';
@@ -75,7 +75,9 @@ import {
 } from './semantic-lane.js';
 import {
     dispatchNavTransition as dispatchNavTransitionImpl,
-    NAV_TRANSITION_ACTIONS as NAV_TRANSITION_ACTIONS_IMPL
+    NAV_TRANSITION_ACTIONS as NAV_TRANSITION_ACTIONS_IMPL,
+    clearNavigationFocusState,
+    clearTrailThreadState
 } from './navigation-state.js';
 import { getFocusedJourneyPoint, getJourneyCompassState } from './journey-compass-state.js';
 import {
@@ -107,7 +109,6 @@ export {
     startSceneReveal,
     startDeferredHydration,
     scheduleWeatherHydration,
-    updateUrlState,
     copyCurrentViewLink,
     resetStateBeforeUrlRestore,
     clearExplorationFocusSelection,
@@ -191,7 +192,7 @@ export function setMyceliumMode(mode, options = {}) {
     }
     applyPointFilterColors();
     if (!options.skipUrlSync) {
-        updateUrlState({}, { reason: 'mode' });
+        publish(EVENTS.VIEW_CHANGED, { myceliumMode: mode });
     }
     updateExplorationUi();
 }
@@ -199,15 +200,20 @@ export function setMyceliumMode(mode, options = {}) {
 export function setTrailDepth(depth, options = {}) {
     const prevDepth = Number(state.trailDepth || 0);
     const nextDepth = Number.isFinite(Number(depth)) ? Number(depth) : 0;
-    if (nextDepth === 2 && prevDepth < 2 && !options.fromUserGesture) {
+    const enteringSemanticDive = nextDepth === 2 && prevDepth < 2;
+    const leavingSemanticDive = prevDepth >= 2 && nextDepth < 2;
+    if (enteringSemanticDive && !options.fromUserGesture) {
+        return;
+    }
+    if (leavingSemanticDive && !options.fromUserGesture && !options.allowDiveExit) {
         return;
     }
     state.trailDepth = nextDepth;
     state.navState.trailDepth = nextDepth;
     if (nextDepth >= 2) state.navState.mode = 'inside';
-    else if (nextDepth > 0) state.navState.mode = 'trail';
+    else if (nextDepth > 0 && state.navState.mode !== 'focus') state.navState.mode = 'trail';
     if (!options.skipUrlSync) {
-        updateUrlState({ depth: nextDepth > 0 ? nextDepth : null }, { mode: 'replace', reason: 'trail-depth' });
+        publish(EVENTS.EXPLORATION_DEPTH_CHANGED, { depth: nextDepth });
     }
     updateExplorationUi();
 }
@@ -245,6 +251,18 @@ function hasSearchIntent() {
     return hasSearch
         || searchInputValue.length >= 2
         || Boolean(document.querySelector('.search-container.has-query .search-results.active'));
+}
+
+function syncSharedCompositionUi(reason) {
+    adapter_syncRouteDirectorState(reason);
+    updateSelectedCardHeading();
+    syncSelectedCardContentVariant(state.selectedPoint || null);
+    syncSemanticDiveUi();
+    updateJourneyCompass();
+    adapter_updateFocusNeighborRail();
+    adapter_refreshMapMarkers();
+    adapter_refreshMapRouteEmbodiment();
+    adapter_refreshRouteTraceOverlay({ reason });
 }
 
 export function refreshCompositionState() {
@@ -301,15 +319,9 @@ export function refreshCompositionState() {
             });
             document.body.dataset.panelSurfaceDetail = 'none';
 
-            adapter_syncRouteDirectorState('composition-map');
-            updateSelectedCardHeading();
-            syncSemanticDiveUi();
-            updateJourneyCompass();
-            adapter_updateFocusNeighborRail();
-
-            adapter_refreshMapMarkers();
-            adapter_refreshMapRouteEmbodiment();
-            adapter_refreshRouteTraceOverlay({ reason: 'composition-map' });
+            syncSharedCompositionUi('composition-map');
+            renderSelectedMatchPanel(state.selectedPoint || null);
+            syncSelectedCardContentVariant(state.selectedPoint || null);
             return;
         }
     }
@@ -345,23 +357,22 @@ export function refreshCompositionState() {
         adapter_clearMobileRouteFieldPeek();
     }
 
-    adapter_syncRouteDirectorState('composition-galaxy');
-    updateSelectedCardHeading();
     if (typeof updateLegendGuideState === 'function') updateLegendGuideState();
-    syncSemanticDiveUi();
-    updateJourneyCompass();
-    adapter_updateFocusNeighborRail();
-    adapter_refreshMapMarkers();
-    adapter_refreshMapRouteEmbodiment();
-    adapter_refreshRouteTraceOverlay({ reason: 'composition-galaxy' });
+    syncSharedCompositionUi('composition-galaxy');
 }
 
 export function setSemanticDiveMode(enabled) {
     const nextActive = !!enabled;
     state.semanticDiveMode = nextActive;
     if (nextActive) {
+        if (document.body) document.body.dataset.semanticDive = 'transitioning';
         setTrailDepth(2, { fromUserGesture: true });
         state.navState.mode = 'trail';
+        window.setTimeout(() => {
+            if (state.semanticDiveMode && document.body?.dataset.semanticDive === 'transitioning') {
+                document.body.dataset.semanticDive = 'active';
+            }
+        }, 820);
     } else {
         setTrailDepth(1, { allowDiveExit: true, skipUrlSync: true });
     }
@@ -392,6 +403,8 @@ export function resetExplorationFocus(options = { preserveSearch: true }) {
     state.semanticDiveMode = false;
     state.trailDepth = 0;
     clearExplorationFocusSelection();
+    clearNavigationFocusState();
+    clearTrailThreadState();
     state.searchGlowActive = false;
     state.myceliumMode = 'default';
     syncFocusStage(null);
@@ -404,7 +417,7 @@ export function resetExplorationFocus(options = { preserveSearch: true }) {
     }
 
     if (!options.skipUrlSync) {
-        updateUrlState({ q: null, record: null, anchor: null, depth: null }, { mode: 'push', reason: 'reset' });
+        publish(EVENTS.STATE_RESET, { reason: 'manual-reset', options });
     }
 
     updateExplorationUi();
@@ -423,7 +436,6 @@ export function resetExperienceState(options = {}) {
     state.searchPreviewIndex = null;
     state.searchGlowActive = false;
     if (state.searchGlowIndices?.clear) state.searchGlowIndices.clear();
-    clearExplorationFocusSelection();
     const searchInput = document.getElementById('search-input');
     if (searchInput) searchInput.value = '';
     const searchResults = document.getElementById('search-results');
@@ -435,11 +447,11 @@ export function resetExperienceState(options = {}) {
     clearSearchGlow();
     updateSearchStatusMessage();
     refreshCompositionState();
+    publish(EVENTS.STATE_RESET, { reason: 'manual-reset' });
 }
 
 let _trailReviewReturnFocus = null;
-
-export function showExploreTrailReview(summary) {
+export function showExploreTrailReview(_summary) {
     const overlay = document.getElementById('trail-review-overlay');
     if (overlay) {
         overlay.setAttribute('aria-hidden', 'false');
@@ -451,6 +463,39 @@ export function showExploreTrailReview(summary) {
             closeBtn.focus();
         }
     }
+}
+
+// Event Bus Subscriptions
+subscribe(EVENTS.SEARCH_SUCCESS, () => {
+    refreshCompositionState();
+    updateJourneyCompass();
+});
+
+subscribe(EVENTS.SEARCH_EMPTY, () => {
+    refreshCompositionState();
+    updateJourneyCompass();
+});
+
+subscribe(EVENTS.SEARCH_STARTED, () => {
+    refreshCompositionState();
+});
+
+subscribe(EVENTS.SEARCH_CLEARED, () => {
+    refreshCompositionState();
+    updateJourneyCompass();
+});
+
+subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_STARTED, () => {
+    refreshCompositionState();
+    updateJourneyCompass();
+});
+
+subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, () => {
+    refreshCompositionState();
+    updateJourneyCompass();
+});
+
+export function activateSearchGlow(summary) {
     state.currentSearchSummary = summary;
     state.searchGlowActive = true;
     if (summary.resultIndices) {
@@ -579,7 +624,7 @@ export function focusOnPoint(point, options = {}) {
     if (pointIndex >= 0) return focusOnNode(pointIndex, options);
     updateSelectedBusiness(point, options);
     if (!options.skipUrlSync) {
-        updateUrlState({ record: point.lead_id || null }, { mode: options.historyMode || 'push', reason: 'focus' });
+        publish(EVENTS.CAMERA_NODE_FOCUSED, { point, options });
     }
     return true;
 }

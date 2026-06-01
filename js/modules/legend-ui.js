@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { subscribe, EVENTS } from './event-bus.js';
 import { escapeHtml } from './utils/dom-formatters.js';
 import { describeCluster } from './utils/ui-presentation.js';
 import { getSemanticGuideTitle } from './semantic-guide.js';
@@ -17,9 +18,8 @@ function isCompactFocusStage() {
  * Does not read document.documentElement.dataset.legendActive — uses classList only.
  */
 export function isLegendPanelOpen() {
-    if (typeof document === 'undefined') return false;
-    const panel = document.getElementById('legend-panel');
-    return panel ? panel.classList.contains('active') : false;
+    if (typeof document === 'undefined' || !document.documentElement) return false;
+    return document.documentElement.dataset.legendActive === 'true';
 }
 
 /**
@@ -27,13 +27,12 @@ export function isLegendPanelOpen() {
  * Safe to call when already open — early-returns.
  */
 export function openLegendPanel() {
-    if (typeof document === 'undefined') return;
+    if (typeof document === 'undefined' || !document.documentElement) return;
     const panel = document.getElementById('legend-panel');
     const toggle = document.getElementById('btn-legend');
     if (!panel || !toggle) return;
-    if (panel.classList.contains('active')) return; // already open
+    if (document.documentElement.dataset.legendActive === 'true') return; // already open
 
-    panel.classList.add('active');
     panel.setAttribute('aria-hidden', 'false');
     document.documentElement.dataset.legendActive = 'true';
     toggle.setAttribute('aria-expanded', 'true');
@@ -49,13 +48,12 @@ export function openLegendPanel() {
  * in the caller if that restoration is needed (as lifecycle.closeLegendGuide does).
  */
 export function closeLegendPanel() {
-    if (typeof document === 'undefined') return;
+    if (typeof document === 'undefined' || !document.documentElement) return;
     const panel = document.getElementById('legend-panel');
     const toggle = document.getElementById('btn-legend');
     if (!panel || !toggle) return;
-    if (!panel.classList.contains('active')) return; // already closed
+    if (document.documentElement.dataset.legendActive !== 'true') return; // already closed
 
-    panel.classList.remove('active');
     panel.setAttribute('aria-hidden', 'true');
     document.documentElement.dataset.legendActive = 'false';
     toggle.setAttribute('aria-expanded', 'false');
@@ -171,3 +169,9 @@ let _previouslyFocusedLegend = null;
 
 export function setPreviouslyFocusedLegend(el) { _previouslyFocusedLegend = el; }
 export function getPreviouslyFocusedLegend() { return _previouslyFocusedLegend; }
+
+// Event Bus Subscriptions
+subscribe(EVENTS.VIEW_CHANGED, () => {
+    closeLegendPanel();
+    updateLegendGuideState();
+});

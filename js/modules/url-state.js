@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { subscribe, EVENTS } from './event-bus.js';
 import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, syncFilterControls, setMyceliumMode } from './lifecycle.js';
 import { switchView } from './view-controller.js';
 import { setSemanticLaneOpsMode, refreshSemanticLaneOpsSummary } from './semantic-lane.js';
@@ -439,3 +440,45 @@ export async function copyCurrentViewLink() {
     if (typeof adapterShowExperienceToast === 'function') adapterShowExperienceToast('View link copied', 'Link copied to clipboard.');
     return href;
 }
+
+// Event Bus Subscriptions
+subscribe(EVENTS.SEARCH_SUCCESS, () => {
+    updateUrlState({ offset: null }, { reason: 'search-payload' });
+});
+
+subscribe(EVENTS.SEARCH_EMPTY, () => {
+    updateUrlState({ offset: null }, { reason: 'search' });
+});
+
+subscribe(EVENTS.SEARCH_CLEARED, () => {
+    updateUrlState({ q: null, offset: null }, { reason: 'search-clear' });
+});
+
+subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_STARTED, () => {
+    updateUrlState({}, { reason: 'search-focus' });
+});
+
+subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, () => {
+    updateUrlState({}, { reason: 'search-settled' });
+});
+
+subscribe(EVENTS.VIEW_CHANGED, () => {
+    updateUrlState({}, { reason: 'mode' });
+});
+
+subscribe(EVENTS.EXPLORATION_DEPTH_CHANGED, ({ depth }) => {
+    updateUrlState({ depth: depth > 0 ? depth : null }, { mode: 'replace', reason: 'trail-depth' });
+});
+
+subscribe(EVENTS.STATE_RESET, ({ options }) => {
+    if (!options?.skipUrlSync) {
+        updateUrlState({ q: null, record: null, anchor: null, depth: null }, { mode: 'push', reason: 'reset' });
+    }
+});
+
+subscribe(EVENTS.CAMERA_NODE_FOCUSED, ({ point, options }) => {
+    if (!options?.skipUrlSync) {
+        updateUrlState({ record: point?.lead_id || null }, { mode: options?.historyMode || 'push', reason: 'focus' });
+    }
+});
+
