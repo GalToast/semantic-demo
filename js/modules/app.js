@@ -25,7 +25,7 @@ import { positionTooltip, updateTooltipContent, hideTooltip } from './tooltip.js
 import './pathfinding.js';
 import * as journeyWebglModule from './journey-webgl.js';
 import { initThreeJS, animate, cancelAnimate } from './three-engine.js';
-import { triggerSearchHeroMoment, triggerCorridorNodeGlow, triggerSearchCorridorAnimation } from './three-animations.js';
+import { triggerSearchHeroMoment, triggerCorridorNodeGlow, triggerSearchCorridorAnimation } from './three-search-animations.js';
 import * as dataModule from './data-loader.js';
 
 import {

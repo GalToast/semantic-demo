@@ -10,7 +10,7 @@ import { state } from '../state.js';
 /**
  * Internal helper for determining business role labels in the action namespace.
  */
-function _getSelectedBusinessRoleLabel(point) {
+export function _getSelectedBusinessRoleLabel(point) {
     let index = state.points && Array.isArray(state.points) ? state.points.indexOf(point) : -1;
     if (index < 0 && point?.lead_id !== undefined && point?.lead_id !== null) {
         const leadId = String(point.lead_id);
@@ -51,6 +51,7 @@ export function initBridgeRegistry(actions = {}) {
     window.__APP_ACTIONS__ = {
         search: actions.search,
         clearSearch: actions.clearSearch,
+        switchView: actions.switchView,
         focusOnNode: actions.focusOnNode,
         setTrailFromSeed: actions.setTrailFromSeed,
         setTrailDepth: actions.setTrailDepth,
@@ -58,7 +59,13 @@ export function initBridgeRegistry(actions = {}) {
         returnToOverview: actions.returnToOverview,
         resetExperienceState: actions.resetExperienceState,
         resetExplorationFocus: actions.resetExplorationFocus,
-        refreshCompositionState: actions.refreshCompositionState
+        refreshCompositionState: actions.refreshCompositionState,
+        traverseNeighbor: actions.traverseNeighbor,
+        inspectThreadNeighbor: actions.inspectThreadNeighbor,
+        pinThreadNeighbor: actions.pinThreadNeighbor,
+        unpinThreadInspection: actions.unpinThreadInspection,
+        clearThreadInspection: actions.clearThreadInspection,
+        walkThreadNeighbor: actions.walkThreadNeighbor
     };
 
     // 3. Export internal helper to window if needed for compatibility
