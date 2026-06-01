@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { demoController } from './demo-controller.js';
+import { cancelMicroDemo } from './micro-demo.js';
 import { showExperienceToast } from './ui-feedback.js';
 import { closeLegendGuide } from './legend-ui.js';
 import { hideTooltip } from './tooltip.js';
@@ -17,7 +17,6 @@ export function initKeyboardResetOwnership({ returnToOverview, resetExplorationF
 }
 
 let _shortcutsPanelArrowToastShown = false;
-let _keyboardShortcutKeyListenerBound = false;
 let _previouslyFocused = null;
 
 export function isKeyboardTextEntryTarget(target) {
@@ -146,17 +145,6 @@ export function initKeyboardShortcutsHint() {
         });
     }
 
-    if (!_keyboardShortcutKeyListenerBound) {
-        _keyboardShortcutKeyListenerBound = true;
-        document.addEventListener('keydown', (event) => {
-            const isShortcutKey = event.key === '?' || (event.key === '/' && event.shiftKey);
-            if (!isShortcutKey) return;
-            if (isKeyboardTextEntryTarget(event.target)) return;
-            event.preventDefault();
-            event.stopPropagation();
-            openPanel(document.getElementById('btn-keyboard-help'));
-        });
-    }
 }
 
 export function showKeyboardShortcutsHint() {
@@ -198,8 +186,8 @@ export function handleGalaxyKeydown(event) {
 
     if (event.key === 'Escape') {
         // 1) If demo is active, ESC cancels the demo
-        if (demoController.isRunning()) {
-            demoController.cancel();
+        if (document.body.dataset.demoActive === 'true') {
+            cancelMicroDemo('escape-key');
             return;
         }
         closeLegendGuide({ restoreFocus: true });

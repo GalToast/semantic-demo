@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 
 export const NAV_TRANSITION_ACTIONS = Object.freeze({
     FOCUS_NODE: 'FOCUS_NODE',
@@ -27,12 +27,14 @@ export function initNavigationState(deps) {
  * Use this from lifecycle reset helpers when dispatching RESET_FOCUS would recurse.
  */
 export function clearNavigationFocusState() {
-    state.navState.focusedIndex = null;
-    state.navState.trailSeedIndex = null;
-    state.navState.trailNeighborIndices = [];
-    state.navState.trailCursor = -1;
-    state.navState.explorationHistoryIndices = [];
-    state.navState.lastTraversalReason = null;
+    withStateMutation(() => {
+        state.navState.focusedIndex = null;
+        state.navState.trailSeedIndex = null;
+        state.navState.trailNeighborIndices = [];
+        state.navState.trailCursor = -1;
+        state.navState.explorationHistoryIndices = [];
+        state.navState.lastTraversalReason = null;
+    });
 }
 
 /**
@@ -41,12 +43,14 @@ export function clearNavigationFocusState() {
  * state.navState.threadCandidates = [] and related fields.
  */
 export function clearTrailThreadState() {
-    state.navState.threadCandidates = [];
-    state.navState.threadReasonByIndex = new Map();
-    state.navState.threadSource = null;
-    state.navState.trailNeighborIndices = [];
-    state.navState.trailCursor = -1;
-    state.navState.trailSeedIndex = null;
+    withStateMutation(() => {
+        state.navState.threadCandidates = [];
+        state.navState.threadReasonByIndex = new Map();
+        state.navState.threadSource = null;
+        state.navState.trailNeighborIndices = [];
+        state.navState.trailCursor = -1;
+        state.navState.trailSeedIndex = null;
+    });
 }
 
 /**
@@ -73,12 +77,14 @@ export function setTrailNavState(seedIndex, opts = {}) {
         neighborIndices = [],
         cursor = 0
     } = opts;
-    state.navState.trailSeedIndex = seedIndex;
-    state.navState.threadCandidates = candidates;
-    state.navState.threadReasonByIndex = reasonByIndex;
-    state.navState.threadSource = source;
-    state.navState.trailNeighborIndices = neighborIndices;
-    state.navState.trailCursor = cursor;
+    withStateMutation(() => {
+        state.navState.trailSeedIndex = seedIndex;
+        state.navState.threadCandidates = candidates;
+        state.navState.threadReasonByIndex = reasonByIndex;
+        state.navState.threadSource = source;
+        state.navState.trailNeighborIndices = neighborIndices;
+        state.navState.trailCursor = cursor;
+    });
 }
 
 /**

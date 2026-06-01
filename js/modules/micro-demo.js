@@ -13,10 +13,10 @@ import { updateJourneyCompass } from './journey-compass-controller.js';
 import { setAutoRotateSuspended } from './camera-controls.js';
 import { updateSelectedBusiness, applyPointFilterColors } from './journey.js';
 import { setInfoPanelOpen } from './event-bindings.js';
-import { demoController } from './demo-controller.js';
 import { prefersReducedMotion } from './environment.js';
 
 // === Constants ===
+const STORAGE_KEY = 'moco_mycelium_demo_v1';
 const SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1';
 const DEMO_START_DELAY_MS = 25000; // wait for scene reveal, app settle, and data
 
@@ -66,11 +66,58 @@ function _isAppReadyForDemo() {
     );
 }
 
-function _notifyDemoUnableToStart() {
-    // If demo controller is actively managing a demo (e.g., initial 10s grace period)
-    if (demoController.isRunning()) {
-        demoController.cancel();
+function _guardNotSeen() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return true;
+        const stored = JSON.parse(raw);
+        return stored.seen !== true;
+    } catch {
+        return true;
     }
+}
+
+function _guardReducedMotion() {
+    const osPref = prefersReducedMotion();
+    if (osPref) return false;
+    const devFlag = document.documentElement.dataset.reduceMotion === 'true';
+    return !devFlag;
+}
+
+function _guardWebGL() {
+    const canvas = document.querySelector('canvas');
+    if (!canvas) return false;
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    if (!gl) return false;
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    if (!dbg) return true;
+    const renderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+    const softwareRenderers = ['swiftShader', 'llvmpipe', 'Software Rasterizer'];
+    const isSoftware = softwareRenderers.some(r =>
+        renderer.toLowerCase().includes(r.toLowerCase())
+    );
+    return !isSoftware;
+}
+
+function _guardUrlParam() {
+    const params = new URLSearchParams(window.location.search);
+    return !params.has('nodemo');
+}
+
+function _recordCompletion() {
+    try {
+        const entry = {
+            seen: true,
+            seenAt: new Date().toISOString(),
+            version: 1
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(entry));
+    } catch (e) {
+        console.warn('[micro-demo] Could not write localStorage:', e);
+    }
+}
+
+function _notifyDemoUnableToStart() {
     window.dispatchEvent(new CustomEvent('demo-cancelled'));
 }
 
@@ -411,6 +458,20 @@ function _resetAppState() {
 
 // === Public API ===
 
+export function initMicroDemo() {
+    const params = new URLSearchParams(window.location.search);
+    const forceDemo = params.has('demo') && params.get('demo') === 'force';
+
+    if (!forceDemo) {
+        if (!_guardNotSeen())    { console.warn('[demo] blocked — already seen'); return; }
+        if (!_guardReducedMotion()) { console.warn('[demo] blocked — reduced motion'); return; }
+        if (!_guardWebGL())      { console.warn('[demo] blocked — no WebGL / software renderer'); return; }
+        if (!_guardUrlParam())   { console.warn('[demo] blocked — nodemo URL param'); return; }
+    }
+
+    startMicroDemo();
+}
+
 /**
  * Check whether the micro-demo should run on this page load.
  * Returns false if sessionStorage flag is already set.
@@ -594,7 +655,9 @@ function _runDemo() {
         // Resume auto-rotate
         setAutoRotateSuspended(false);
 
-        // Notify demo-controller so it writes localStorage and transitions state
+        _recordCompletion();
+
+        // Notify app shell
         window.dispatchEvent(new CustomEvent('demo-complete'));
     }, 8800));
 }
@@ -636,7 +699,11 @@ export function cancelMicroDemo(reason = 'user-input') {
     // Resume auto-rotate
     setAutoRotateSuspended(false);
 
-    // Notify demo-controller so it transitions state
+    if (reason === 'user-input' || reason === 'escape-key' || reason === 'skip-button') {
+        _recordCompletion();
+    }
+
+    // Notify app shell
     window.dispatchEvent(new CustomEvent('demo-cancelled'));
 }
 
@@ -665,4 +732,13 @@ if (typeof document !== 'undefined' && typeof document.getElementById === 'funct
             document.head.appendChild(style);
         }
     }
+}
+
+export function isMicroDemoRunning() {
+    return _demoPhase !== PHASE.IDLE && _demoPhase !== PHASE.COMPLETE && _demoPhase !== PHASE.CANCELLED;
+}
+
+if (typeof window !== 'undefined') {
+    window.isMicroDemoRunning = isMicroDemoRunning;
+    window.cancelMicroDemo = cancelMicroDemo;
 }
