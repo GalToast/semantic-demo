@@ -56,4 +56,10 @@ assert.doesNotMatch(
   'weather timer helpers should not be exported on window'
 );
 
+assert.match(
+  src,
+  /subscribe\(EVENTS\.VIEW_CHANGED/,
+  'weather.js should subscribe to VIEW_CHANGED event'
+);
+
 console.log('weather-lifecycle-contract passed');

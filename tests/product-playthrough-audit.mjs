@@ -528,6 +528,15 @@ async function waitForSemanticDiveState(page, timeout = 12000) {
   }, null, { timeout });
 }
 
+async function waitForSemanticDiveActive(page, timeout = 12000) {
+  return page.waitForFunction(() => {
+    const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
+    return document.body.dataset.panelSurface === 'semantic-dive' &&
+      document.body.dataset.semanticDive === 'active' &&
+      Number(state.trailDepth || document.body.dataset.trailDepth || 0) >= 2;
+  }, null, { timeout });
+}
+
 async function enterSemanticDive(page) {
   let clicked = false;
   const journeyInsideButton = page.locator('button[data-journey-action="enter-inside"]:visible').first();
@@ -559,6 +568,7 @@ async function enterSemanticDive(page) {
   if (!naturalDive) throw new Error('Timed out entering semantic dive through the visible product route');
 
   await waitForSemanticDiveState(page, 12000);
+  await waitForSemanticDiveActive(page, 12000);
   await waitForPanelSurface(page, 'semantic-dive', 8000);
   await waitForUiSettled(page, 8000);
 }
@@ -569,6 +579,7 @@ async function clickVisibleSemanticDive(page) {
     await journeyInsideButton.click({ timeout: 8000, noWaitAfter: true });
     await markRouteEvidence(page, 'real-click', 'clicked journey compass enter-inside action');
     await waitForSemanticDiveState(page, 8000);
+    await waitForSemanticDiveActive(page, 12000);
     await waitForPanelSurface(page, 'semantic-dive', 8000);
     await waitForUiSettled(page, 8000);
     return;
@@ -579,6 +590,7 @@ async function clickVisibleSemanticDive(page) {
     await focusDive.click({ timeout: 8000, noWaitAfter: true });
     await markRouteEvidence(page, 'real-click', 'clicked #btn-focus-dive');
     await waitForSemanticDiveState(page, 8000);
+    await waitForSemanticDiveActive(page, 12000);
     await waitForPanelSurface(page, 'semantic-dive', 8000);
     await waitForUiSettled(page, 8000);
     return;
@@ -588,6 +600,7 @@ async function clickVisibleSemanticDive(page) {
   await stepInside.click({ timeout: 8000, noWaitAfter: true });
   await markRouteEvidence(page, 'real-click', 'clicked Step Inside button by role');
   await waitForSemanticDiveState(page, 8000);
+  await waitForSemanticDiveActive(page, 12000);
   await waitForPanelSurface(page, 'semantic-dive', 8000);
   await waitForUiSettled(page, 8000);
 }
@@ -732,6 +745,9 @@ async function capture(page, label, artifacts) {
       '.focus-stage-neighbors',
       '.focus-stage-journey.active',
       '#focus-stage-neighbor-list',
+      '#focus-stage-inside-status',
+      '#focus-stage-inside-controls',
+      '#btn-inside-next',
       '#selected-card',
       '#selected-details',
       '#selected-map-summary',
@@ -741,6 +757,7 @@ async function capture(page, label, artifacts) {
       '#selected-map-summary-match',
       '#focus-thread-inspector',
       '#btn-inside-map',
+      '#btn-inside-county',
       '.map-trail-strip',
       '.map-trail-strip .trail-strip-btn[data-journey-action="county-overview"]',
       '.map-trail-strip .trail-strip-btn[data-journey-action="open-mycelium"]',
@@ -766,9 +783,14 @@ async function capture(page, label, artifacts) {
     const journeyActions = ['btn-journey-primary', 'btn-journey-secondary', 'btn-journey-tertiary'].map((id) => {
       const button = document.getElementById(id);
       if (!button) return null;
+      const beforeContent = getComputedStyle(button, '::before').content;
+      const compactLabel = beforeContent && beforeContent !== 'none' && beforeContent !== 'normal'
+        ? beforeContent.replace(/^["']|["']$/g, '')
+        : '';
       return {
         id,
         text: button.textContent.replace(/\s+/g, ' ').trim(),
+        compactLabel,
         action: button.dataset.journeyAction || '',
         disabled: button.disabled || button.getAttribute('aria-disabled') === 'true',
         hidden: button.hidden || button.getAttribute('aria-hidden') === 'true',
@@ -1194,6 +1216,13 @@ function assertProductOwnership(artifacts) {
     else fail('04-mobile-focus-first-result', 'mobile-focus:focus-stage-visible', `#focus-stage should own focus surface, got ${JSON.stringify(focusStage)}`);
     if (!rendered(search)) pass('04-mobile-focus-first-result', 'mobile-focus:search-hidden');
     else fail('04-mobile-focus-first-result', 'mobile-focus:search-hidden', `.search-container should hand off to focus stage, got ${JSON.stringify(search)}`);
+    const primaryAction = (mobileFocus.journeyActions || []).find((action) => action.id === 'btn-journey-primary');
+    if (primaryAction?.action === 'enter-inside' && primaryAction.compactLabel === 'Inside') {
+      pass('04-mobile-focus-first-result', 'mobile-focus:compact-primary-action-label');
+    } else {
+      fail('04-mobile-focus-first-result', 'mobile-focus:compact-primary-action-label',
+        `expected enter-inside to render compact label "Inside", got ${JSON.stringify(primaryAction)}`);
+    }
     const neighborList = rect(mobileFocus, '#focus-stage-neighbor-list');
     const railPills = mobileFocus.railPills || [];
     if (rendered(neighborList) && railPills.length >= 2) {
@@ -1377,6 +1406,8 @@ function assertRealRouteVisual(artifacts) {
   for (const label of ['07-mobile-semantic-dive', '07a-mobile-semantic-dive-320', '07b-short-landscape-semantic-dive']) {
     const diveState = byLabel.get(label);
     const focusStage = diveState?.rects?.['#focus-stage'];
+    const insideStatus = diveState?.rects?.['#focus-stage-inside-status'];
+    const insideControls = diveState?.rects?.['#focus-stage-inside-controls'];
     if (!diveState) continue;
     if (diveState.bodyDataset?.panelSurface === 'semantic-dive' && diveState.bodyDataset?.semanticDive === 'active') {
       pass(label, 'real-route-visual:semantic-dive-state');
@@ -1395,6 +1426,18 @@ function assertRealRouteVisual(artifacts) {
     } else {
       fail(label, 'real-route-visual:semantic-primary-surface-visible',
         `#focus-stage should be visible and mostly in viewport for semantic dive, got ${JSON.stringify(focusStage)}`);
+    }
+    if (rendered(insideStatus) && insideViewport(insideStatus, diveState.viewport, 24)) {
+      pass(label, 'real-route-visual:inside-status-visible');
+    } else {
+      fail(label, 'real-route-visual:inside-status-visible',
+        `#focus-stage-inside-status should be visible in semantic dive, got ${JSON.stringify(insideStatus)}`);
+    }
+    if (rendered(insideControls) && insideViewport(insideControls, diveState.viewport, 24)) {
+      pass(label, 'real-route-visual:inside-controls-visible');
+    } else {
+      fail(label, 'real-route-visual:inside-controls-visible',
+        `#focus-stage-inside-controls should be visible in semantic dive, got ${JSON.stringify(insideControls)}`);
     }
   }
 

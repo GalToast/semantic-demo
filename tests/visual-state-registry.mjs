@@ -24,6 +24,7 @@ export const VISUAL_STATE_IDS = Object.freeze([
   '21-mobile-route-trace-visible',
   '22-mobile-semantic-dive-320',
   '23-mobile-short-landscape',
+  '24-mobile-map-focus-search',
 ]);
 
 export const VISUAL_STATE_ID_SET = new Set(VISUAL_STATE_IDS);

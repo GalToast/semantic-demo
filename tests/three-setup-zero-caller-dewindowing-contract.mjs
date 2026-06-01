@@ -61,11 +61,7 @@ const PRESERVED = [
   'window.THREE',
 ];
 
-// Functions with live module seams must remain exported.
-// Removing window exposure does not automatically preserve a dead export.
-
-// getScenePerformanceProbe is a local (non-exported) function; it was only
-// bridged via window.__semanticScenePerformanceProbe which is now retired.
+// Functions must remain exported (either named export function or in an export { ... } block)
 const MUST_REMAIN_EXPORTED = [
   'triggerSearchHeroMoment',
   'triggerCorridorNodeGlow',
@@ -103,9 +99,11 @@ for (const bridge of PRESERVED) {
   check(`${bridge} still exposed`, new RegExp(pattern).test(src));
 }
 
-console.log('\n=== Functions must remain exported (named export, not window.* =) ===');
+console.log('\n=== Functions must remain exported (named export or re-export block) ===');
 for (const fn of MUST_REMAIN_EXPORTED) {
-  check(`${fn} is export function`, new RegExp(`export\\s+function\\s+${fn}\\s*\\(`).test(src));
+  const isNamedExport = new RegExp(`export\\s+function\\s+${fn}\\s*\\(`).test(src);
+  const isReExported = new RegExp(`export\\s+\\{[\\s\\S]*?\\b${fn}\\b[\\s\\S]*?\\}`).test(src);
+  check(`${fn} is exported`, isNamedExport || isReExported);
   check(`${fn} not on window`, !new RegExp(`window\\.${fn}\\s*=`).test(src));
 }
 

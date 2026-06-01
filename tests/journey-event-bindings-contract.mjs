@@ -72,9 +72,11 @@ function testJourneyCompassActionGuard() {
 
   assertNotContains(ebSrc, "typeof window.executeJourneyCompassAction === 'function'", 'event-bindings no longer uses window guard');
 
-  // 'county-overview' must route through the official reset API
-  assertContains(journeyCompassControllerSrc, 'resetExplorationFocus()', 'county-overview routes through resetExplorationFocus');
-  assertContains(journeyCompassControllerSrc, 'clearShortSemanticSearchState()', 'county-overview clears search state');
+  // 'county-overview' must route through the official reset API while leaving
+  // search state under the map-search surface owner.
+  assert(journeyCompassControllerSrc.includes('resetExplorationFocus({'), 'county-overview routes through resetExplorationFocus');
+  assertNotContains(journeyCompassControllerSrc, 'clearShortSemanticSearchState()', 'county-overview must not clear search state');
+  assertNotContains(journeyCompassControllerSrc, "searchInput.value = ''", 'county-overview must not clear search input');
 
   console.log('  OK executeJourneyCompassAction has correct guards and calls');
 }

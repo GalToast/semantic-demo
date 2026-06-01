@@ -40,7 +40,7 @@ const selectorBaselines = {
     'clusters.css': 4,
     'journey_active.css': 8,
     'journey_steps.css': 18,
-    'mobile_base.css': 1,
+    'mobile_base.css': 0,
     'mobile_premium_focus.css': 28,
     'progressive_disclosure.css': 1,
     'strands.css': 5,
@@ -54,6 +54,7 @@ const selectorBaselines = {
     'strands.css': 7,
     'animations.css': 0,
     'mobile_premium_state.css': 2,
+    'mobile_premium_idle.css': 1,
   },
   '.legend-toggle': {
     'controls.css': 1,
@@ -64,7 +65,7 @@ const selectorBaselines = {
   },
   '.search-results.active': {
     'search.css': 3,
-    'layout_base.css': 2,
+    'layout_base.css': 0,
     'journey_active.css': 1,
     'progressive_disclosure.css': 3,
     'strands.css': 8,
@@ -83,25 +84,23 @@ const selectorBaselines = {
     'layout_base.css': 1,
     'journey_active.css': 14,
     'mobile_base.css': 0,
-    'mobile_premium_focus.css': 2,
-    'mobile_premium_surfaces.css': 9,
+    'mobile_premium_focus.css': 5,
+    'mobile_premium_surfaces.css': 6,
     'strands.css': 2,
     'mobile_premium_state.css': 1,
   },
   '.journey-compass-actions': {
     'journey_active.css': 15,
-    'mobile_base.css': 2,
-    'mobile_premium_focus.css': 3,
-    'mobile_premium_surfaces.css': 7,
+    'mobile_premium_focus.css': 4,
+    'mobile_premium_surfaces.css': 6,
     'progressive_disclosure.css': 1,
     'strands.css': 6,
   },
   '.journey-compass-rail': {
     'layout_base.css': 1,
     'journey_active.css': 15,
-    'mobile_base.css': 2,
-    'mobile_premium_focus.css': 2,
-    'mobile_premium_surfaces.css': 3,
+    'mobile_premium_focus.css': 4,
+    'mobile_premium_surfaces.css': 1,
     'strands.css': 2,
     'mobile_premium_state.css': 1,
   },
@@ -109,8 +108,8 @@ const selectorBaselines = {
     'animations.css': 2,
     'journey_active.css': 4,
     'mobile_base.css': 4,
-    'mobile_premium_focus.css': 2,
-    'mobile_premium_surfaces.css': 4,
+    'mobile_premium_focus.css': 4,
+    'mobile_premium_surfaces.css': 2,
     'search.css': 4,
     'strands.css': 5,
   },
@@ -139,6 +138,62 @@ const bannedSelectorImportantRules = [
     ],
     label: 'focus-search search-results active',
   },
+];
+
+const forbiddenSelectorFragments = [
+  {
+    file: 'strands.css',
+    fragment: 'data-panel-surface="focus"]:has(.search-container.has-query) .info-content',
+    label: 'redundant focus info-content :has(.search-container.has-query) selector',
+  },
+  {
+    file: 'strands.css',
+    fragment: 'data-panel-surface="focus-search"]:has(.search-container.has-query) .info-content',
+    label: 'redundant focus-search info-content :has(.search-container.has-query) selector',
+  },
+  {
+    file: 'strands.css',
+    fragment: 'data-panel-surface="semantic-dive"]:has(.search-container.has-query) .info-content',
+    label: 'redundant semantic-dive info-content :has(.search-container.has-query) selector',
+  },
+  {
+    file: 'layout_base.css',
+    fragment: 'data-panel-surface="search"] .search-results.active',
+    label: 'mobile search results belong to search.css, not layout_base.css',
+  },
+  {
+    file: 'layout_base.css',
+    fragment: 'data-panel-surface="search"] .search-result-item',
+    label: 'mobile search result rows belong to search.css, not layout_base.css',
+  },
+  {
+    file: 'layout_base.css',
+    fragment: 'data-mobile-route-peek="active"][data-panel-surface]:not([data-panel-surface^="map-"]) .search-result-item',
+    label: 'route-peek search result rows belong to search.css, not layout_base.css',
+  },
+];
+
+const mobileBaseJourneyCompassLayoutProperties = [
+  'top:',
+  'left:',
+  'right:',
+  'bottom:',
+  'width:',
+  'min-width:',
+  'max-width:',
+  'height:',
+  'min-height:',
+  'max-height:',
+  'display:',
+  'grid-template',
+  'grid-column',
+  'flex:',
+  'gap:',
+  'padding:',
+  'margin:',
+  'border-radius:',
+  'transform:',
+  'overflow',
 ];
 
 function stripComments(cssText) {
@@ -189,6 +244,18 @@ for (const file of cssFiles) {
   const content = fs.readFileSync(path.join(cssDir, file), 'utf8');
   const uncommentedContent = stripComments(content);
   const ruleBlocks = selectorRuleBlocks(content);
+
+  if (file === 'mobile_base.css') {
+    for (const block of ruleBlocks) {
+      if (!block.prelude.includes('.journey-compass')) continue;
+      const lowerBody = block.body.toLowerCase();
+      const hasLayoutProperty = mobileBaseJourneyCompassLayoutProperties.some((property) => lowerBody.includes(property));
+      if (hasLayoutProperty) {
+        violations.push('mobile_base.css defines journey-compass layout; mobile journey-compass layout belongs to mobile_premium_surfaces.css or mobile_premium_focus.css.');
+      }
+    }
+  }
+
   for (const pattern of globalLegacyPanelStatePatterns) {
     if (uncommentedContent.includes(pattern)) {
       violations.push(`${file} uses legacy panel state ${pattern}; panel ownership must use data-panel-surface.`);
@@ -202,6 +269,12 @@ for (const file of cssFiles) {
       if (matchesSelector && block.body.includes('!important')) {
         violations.push(`${file} uses !important in ${rule.label}; use state-scoped ownership instead.`);
       }
+    }
+  }
+
+  for (const rule of forbiddenSelectorFragments) {
+    if (file === rule.file && uncommentedContent.includes(rule.fragment)) {
+      violations.push(`${file} reintroduced ${rule.label}; use the plain data-panel-surface owner instead.`);
     }
   }
 

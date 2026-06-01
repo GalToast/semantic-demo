@@ -256,7 +256,7 @@ const MODULE_PATHS = {
   'filter-state.js':     join(MODULES_DIR, 'filter-state.js'),
   'search-state.js':     join(MODULES_DIR, 'search-state.js'),
   'cluster-filter.js':    join(MODULES_DIR, 'cluster-filter.js'),
-  'event-bindings.js':   join(MODULES_DIR, 'event-bindings.js'),
+  'event-bindings.js':   join(MODULES_DIR, 'bindings', 'filter-bindings.js'),
   'url-state.js':         join(MODULES_DIR, 'url-state.js'),
   'lifecycle.js':        join(MODULES_DIR, 'lifecycle.js'),
   'camera-controls.js':  join(MODULES_DIR, 'camera-controls.js'),

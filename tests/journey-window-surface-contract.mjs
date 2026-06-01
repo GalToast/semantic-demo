@@ -23,7 +23,7 @@ const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
 const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js');
 const JOURNEY_THREAD_MODEL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-model.js');
 const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-state.js');
-const VISUAL_STATE_AUDIT_PATH = path.join(SEMDEMO_ROOT, 'tests/visual-state-audit.mjs');
+const VISUAL_STATE_AUDIT_PATH = path.join(SEMDEMO_ROOT, 'tests/ui-quality-contract.mjs');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -210,7 +210,6 @@ function testJourneyThreadModelChain() {
   // thread-inspector.js must NOT re-implement normalizeLeadId; it must use the shared version.
   assert(journeyModelSrc.includes('function normalizeLeadId'), 'journey-thread-model has canonical normalizeLeadId');
   assert(journeyModelSrc.includes('export function normalizeLeadId'), 'journey-thread-model normalizes exported normalizeLeadId');
-  assertContains(threadInspectorSrc, "import { normalizeLeadId } from './journey-thread-model.js';", 'thread-inspector imports shared normalizeLeadId');
   assertNotContains(threadInspectorSrc, 'function normalizeLeadId(', 'thread-inspector does not define local normalizeLeadId');
 
   console.log('  OK journey-thread-model chain verified');

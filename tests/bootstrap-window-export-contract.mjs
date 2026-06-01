@@ -64,6 +64,7 @@ const FORBIDDEN_SHIMS = [
 const APP_ACTION_KEYS = [
   'search',
   'clearSearch',
+  'switchView',
   'focusOnNode',
   'setTrailFromSeed',
   'setTrailDepth',

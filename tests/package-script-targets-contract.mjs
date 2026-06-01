@@ -17,6 +17,18 @@ const ALLOWED_UNTRACKED_TARGETS = new Set([
   'tests/search-sheet-css-ownership-contract.mjs',
 ]);
 
+const REQUIRED_SCRIPT_INCLUDES = [
+  {
+    scriptName: 'qa:release-mobile-ownership:headed',
+    fragments: [
+      'npm run qa:surface:map-trail',
+      'npm run qa:surface:map-focus-search:headed',
+      'npm run qa:real-route:visual:headed',
+      'npm run check:script-targets',
+    ],
+  },
+];
+
 function normalizePath(value) {
   return value.replaceAll('\\', '/').replace(/^\.\/+/, '');
 }
@@ -57,6 +69,19 @@ for (const [scriptName, command] of Object.entries(packageJson.scripts || {})) {
     }
     if (tracked && !tracked.has(target) && !ALLOWED_UNTRACKED_TARGETS.has(target)) {
       failures.push(`${scriptName} points at untracked local target not in baseline: ${target}`);
+    }
+  }
+}
+
+for (const { scriptName, fragments } of REQUIRED_SCRIPT_INCLUDES) {
+  const command = packageJson.scripts?.[scriptName];
+  if (!command) {
+    failures.push(`Missing required QA script: ${scriptName}`);
+    continue;
+  }
+  for (const fragment of fragments) {
+    if (!command.includes(fragment)) {
+      failures.push(`${scriptName} must include ${fragment}`);
     }
   }
 }

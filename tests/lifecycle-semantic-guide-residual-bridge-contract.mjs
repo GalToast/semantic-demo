@@ -70,14 +70,24 @@ function testUpdateLegendGuideStateOwner() {
     'legend-ui.js does not export updateLegendGuideState to window'
   );
 
-  // The call site in view-controller.switchView must use the direct import.
+  // The call site in view-controller.switchView must use the Event Bus.
   assert(
-    viewControllerSrc.includes('updateLegendGuideState();') &&
-    !viewControllerSrc.includes('window.updateLegendGuideState'),
-    'view-controller.switchView calls updateLegendGuideState directly'
+    viewControllerSrc.includes('publish(EVENTS.VIEW_CHANGED'),
+    'view-controller.switchView uses Event Bus for view transitions'
   );
 
-  console.log('  OK — updateLegendGuideState: legend-ui-owned, semantic-guide.js NOT owner');
+  assert(
+    !viewControllerSrc.includes('updateLegendGuideState();'),
+    'view-controller.switchView should NOT call updateLegendGuideState directly (now event-driven)'
+  );
+
+  // legend-ui.js must subscribe to the event
+  assert(
+    legendUiSrc.includes('subscribe(EVENTS.VIEW_CHANGED'),
+    'legend-ui.js must subscribe to VIEW_CHANGED event'
+  );
+
+  console.log('  OK — updateLegendGuideState: legend-ui-owned, reached via Event Bus');
 }
 
 // ── TEST 2: restoreLegendCollapsedPanel is owned by legend-ui.js ──

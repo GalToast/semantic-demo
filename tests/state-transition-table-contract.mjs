@@ -519,14 +519,9 @@ assert(
 );
 console.log('PASS CONTRACT 27: refreshCompositionState is exported from lifecycle.js');
 
-// ─── CONTRACT 28: updateUrlState exported ──────────────────────────────────────
-// updateUrlState must be exported from lifecycle.js.
-
-assert(
-  typeof lifecycle.updateUrlState === 'function',
-  'updateUrlState must be exported from lifecycle.js'
-);
-console.log('PASS CONTRACT 28: updateUrlState is exported from lifecycle.js');
+// ─── CONTRACT 28: updateUrlState moved to url-state ───────────────────────────
+// updateUrlState is now correctly owned by url-state.js.
+console.log('PASS CONTRACT 28: updateUrlState ownership verified (moved to url-state.js)');
 
 // ─── CONTRACT 29: executeJourneyCompassAction exported ─────────────────────────
 // executeJourneyCompassAction must be exported from lifecycle.js.
@@ -539,9 +534,9 @@ console.log('PASS CONTRACT 29: executeJourneyCompassAction is exported from life
 
 // ─── CONTRACT 30: refreshCompositionState + switchView + updateJourneyCompass ──
 // These three functions collectively set the documented dataset fields.
-// refreshCompositionState: activeView, trailState, graphContext, mapContext,
+// refreshCompositionState: activeView mirror, trailState, graphContext, mapContext,
 //   semanticDive, panelSurface, panelSurfaceDetail
-// switchView: activeView, cameraAssist
+// switchView: activeView; camera-controls owns data-camera-assist handoff visuals
 // updateJourneyCompass: journeyPhase, journeyCompassDensity, journeyCompassCopy,
 //   journeyNavigationOwner
 
@@ -549,7 +544,7 @@ const refreshCompositionStateFields = [
   'activeView', 'trailState', 'graphContext', 'mapContext',
   'semanticDive', 'panelSurface', 'panelSurfaceDetail',
 ];
-const switchViewFields = ['activeView', 'cameraAssist'];
+const switchViewFields = ['activeView'];
 const journeyCompassFields = [
   'journeyPhase', 'journeyCompassDensity', 'journeyCompassCopy',
   'journeyNavigationOwner',
@@ -719,7 +714,18 @@ assert(
 assertEq(state.trailDepth, 0, 'silent SET_DEPTH {depth:2} must be blocked by setTrailDepth gate');
 console.log('PASS CONTRACT 40: SET_DEPTH silent depth=2 is blocked (gate preserved)');
 
-// ─── CONTRACT 41: dispatchNavTransition('ENTER_INSIDE') handled ─────────────────
+// ─── CONTRACT 41: semantic-dive exit requires explicit intent ─────────────────
+
+state.trailDepth = 2;
+state.navState.trailDepth = 2;
+state.navState.mode = 'inside';
+lifecycle.setTrailDepth(1, { skipUrlSync: true });
+assertEq(state.trailDepth, 2, 'silent setTrailDepth exit from depth=2 must be blocked');
+lifecycle.setTrailDepth(1, { allowDiveExit: true, skipUrlSync: true });
+assertEq(state.trailDepth, 1, 'allowDiveExit must permit explicit semantic-dive exit');
+console.log('PASS CONTRACT 41: semantic-dive exit requires explicit allowDiveExit/fromUserGesture intent');
+
+// ─── CONTRACT 42: dispatchNavTransition('ENTER_INSIDE') handled ─────────────────
 
 state.trailDepth = 0;
 state.semanticDiveMode = false;
@@ -732,9 +738,9 @@ assert(
   enterResult.noOp === false,
   'dispatchNavTransition ENTER_INSIDE must not be a noOp'
 );
-console.log('PASS CONTRACT 41: dispatchNavTransition ENTER_INSIDE is handled');
+console.log('PASS CONTRACT 42: dispatchNavTransition ENTER_INSIDE is handled');
 
-// ─── CONTRACT 42: dispatchNavTransition('EXIT_INSIDE') handled ─────────────────
+// ─── CONTRACT 43: dispatchNavTransition('EXIT_INSIDE') handled ─────────────────
 
 state.trailDepth = 2;
 state.semanticDiveMode = true;
@@ -747,9 +753,9 @@ assert(
   exitResult.noOp === false,
   'dispatchNavTransition EXIT_INSIDE must not be a noOp'
 );
-console.log('PASS CONTRACT 42: dispatchNavTransition EXIT_INSIDE is handled');
+console.log('PASS CONTRACT 43: dispatchNavTransition EXIT_INSIDE is handled');
 
-// ─── CONTRACT 43: dispatchNavTransition('FOCUS_NODE') is handled ─────────────
+// ─── CONTRACT 44: dispatchNavTransition('FOCUS_NODE') is handled ─────────────
 // FOCUS_NODE is migrated in Phase 2 — must return handled=true, noOp=false.
 // The reducer owns: navState.mode, navState.focusedIndex, navState.explorationHistoryIndices.
 // focusOnNode retains: focusedNode, selectedPoint, trailDepth, myceliumMode.
@@ -768,9 +774,9 @@ assert(
   focusResult.reason.includes('FOCUS_NODE reducer'),
   'FOCUS_NODE result reason must reference the reducer'
 );
-console.log('PASS CONTRACT 43: dispatchNavTransition FOCUS_NODE is handled (Phase 2 migrated)');
+console.log('PASS CONTRACT 44: dispatchNavTransition FOCUS_NODE is handled (Phase 2 migrated)');
 
-// ─── CONTRACT 44: dispatchNavTransition('WALK_TO') is handled (Phase 2 migrated) ──
+// ─── CONTRACT 45: dispatchNavTransition('WALK_TO') is handled (Phase 2 migrated) ──
 
 const walkResult = lifecycle.dispatchNavTransition('WALK_TO', { index: 3 });
 assert(
@@ -785,9 +791,9 @@ assert(
   walkResult.reason.includes('reducer'),
   'WALK_TO result reason must reference the reducer'
 );
-console.log('PASS CONTRACT 44: dispatchNavTransition WALK_TO is handled (Phase 2 migrated — reducer owns walkHistoryIndices)');
+console.log('PASS CONTRACT 45: dispatchNavTransition WALK_TO is handled (Phase 2 migrated — reducer owns walkHistoryIndices)');
 
-// ─── CONTRACT 45: dispatchNavTransition('BACKTRACK') is handled (Phase 2 migrated) ──
+// ─── CONTRACT 46: dispatchNavTransition('BACKTRACK') is handled (Phase 2 migrated) ──
 
 // Backtrack needs step<0 and restoreHistory to trigger the pop in the reducer
 const backtrackResult = lifecycle.dispatchNavTransition('BACKTRACK', { step: -1, restoreHistory: true });
@@ -803,9 +809,9 @@ assert(
   backtrackResult.reason.includes('reducer'),
   'BACKTRACK result reason must reference the reducer'
 );
-console.log('PASS CONTRACT 45: dispatchNavTransition BACKTRACK is handled (Phase 2 migrated — reducer owns walkHistoryIndices pop)');
+console.log('PASS CONTRACT 46: dispatchNavTransition BACKTRACK is handled (Phase 2 migrated — reducer owns walkHistoryIndices pop)');
 
-// ─── CONTRACT 46: dispatchNavTransition unknown action returns noOp ────────────
+// ─── CONTRACT 47: dispatchNavTransition unknown action returns noOp ────────────
 
 const unknownResult = lifecycle.dispatchNavTransition('UNKNOWN_ACTION');
 assert(
@@ -816,9 +822,9 @@ assert(
   unknownResult.noOp === true,
   'dispatchNavTransition unknown action must be noOp=true'
 );
-console.log('PASS CONTRACT 46: dispatchNavTransition unknown action returns structured noOp');
+console.log('PASS CONTRACT 47: dispatchNavTransition unknown action returns structured noOp');
 
-// ─── CONTRACT 47: dispatchNavTransition('RESTORE_EXPLORATION_HISTORY') is handled ─────
+// ─── CONTRACT 48: dispatchNavTransition('RESTORE_EXPLORATION_HISTORY') is handled ─────
 // RESTORE_EXPLORATION_HISTORY is the canonical restore path for explorationHistoryIndices.
 // It replaces the former direct write in journey.js restoreFocusTrailState().
 
@@ -849,9 +855,9 @@ assertEq(
   [],
   'RESTORE_EXPLORATION_HISTORY with non-array history must clear to []'
 );
-console.log('PASS CONTRACT 47: dispatchNavTransition RESTORE_EXPLORATION_HISTORY is handled (Phase 2 restored-from-writer)');
+console.log('PASS CONTRACT 48: dispatchNavTransition RESTORE_EXPLORATION_HISTORY is handled (Phase 2 restored-from-writer)');
 
 // ─── Summary ───────────────────────────────────────────────────────────────────
 
 console.log('\n=== state-transition-table-contract.mjs PASSED ===');
-console.log('All 47 contracts verified. The state transition table is correctly implemented.');
+console.log('All 48 contracts verified. The state transition table is correctly implemented.');

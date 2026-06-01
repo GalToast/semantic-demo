@@ -285,7 +285,7 @@ async function testGetAnchorPointViaAdapter() {
 async function testPayloadHelpersHonorExplicitSummary() {
   console.log('\n[RUNTIME] payload helpers — honor explicit summary arguments');
 
-  const { state } = await import('../js/state.js');
+  const { state, withStateMutation } = await import('../js/state.js');
   const {
     getSemanticGuidePayloadResults,
     getSemanticGuideAnchorPoint
@@ -295,12 +295,14 @@ async function testPayloadHelpersHonorExplicitSummary() {
   const originalSummary = state.currentSearchSummary;
   const originalContextMap = state.semanticResultContextByLeadId;
 
-  state.points = [
-    { lead_id: 'LI_001', name: 'Global Summary Biz', city: 'Austin', cluster: 1, status: 'active', what: 'Global' },
-    { lead_id: 'LI_002', name: 'Explicit Summary Biz', city: 'Boston', cluster: 2, status: 'active', what: 'Explicit' },
-  ];
-  state.semanticResultContextByLeadId = new Map();
-  state.currentSearchSummary = { query: 'global', resultIndices: [0], anchorIndex: 0 };
+  withStateMutation(() => {
+    state.points = [
+      { lead_id: 'LI_001', name: 'Global Summary Biz', city: 'Austin', cluster: 1, status: 'active', what: 'Global' },
+      { lead_id: 'LI_002', name: 'Explicit Summary Biz', city: 'Boston', cluster: 2, status: 'active', what: 'Explicit' },
+    ];
+    state.semanticResultContextByLeadId = new Map();
+    state.currentSearchSummary = { query: 'global', resultIndices: [0], anchorIndex: 0 };
+  });
 
   const explicitSummary = { query: 'explicit', resultIndices: [1], anchorIndex: 1 };
   const results = getSemanticGuidePayloadResults(explicitSummary);
@@ -310,9 +312,11 @@ async function testPayloadHelpersHonorExplicitSummary() {
   assert(results[0].lead_id === 'LI_002', 'explicit summary result index is honored');
   assert(anchor?.lead_id === 'LI_002', 'explicit summary anchor index is honored');
 
-  state.points = originalPoints;
-  state.currentSearchSummary = originalSummary;
-  state.semanticResultContextByLeadId = originalContextMap;
+  withStateMutation(() => {
+    state.points = originalPoints;
+    state.currentSearchSummary = originalSummary;
+    state.semanticResultContextByLeadId = originalContextMap;
+  });
 
   console.log('  OK payload helpers honor explicit summary arguments');
 }
@@ -324,23 +328,27 @@ async function testPayloadHelpersHonorExplicitSummary() {
 async function testSearchContextSnapshotReturnsCurrentState() {
   console.log('\n[RUNTIME] getSearchContextSnapshot — returns current state values');
 
-  const { state } = await import('../js/state.js');
+  const { state, withStateMutation } = await import('../js/state.js');
   const { getSearchContextSnapshot } = await import('../js/modules/semantic-guide-payload-adapter.js');
 
   // Set up state
   const originalSummary = state.currentSearchSummary;
   const originalView = state.currentView;
 
-  state.currentSearchSummary = { query: 'test search', resultIndices: [0, 1] };
-  state.currentView = 'galaxy';
+  withStateMutation(() => {
+    state.currentSearchSummary = { query: 'test search', resultIndices: [0, 1] };
+    state.currentView = 'galaxy';
+  });
 
   const snap = getSearchContextSnapshot();
   assert(snap.currentSearchSummary === state.currentSearchSummary, 'snapshot reflects currentSearchSummary');
   assert(snap.currentView === state.currentView, 'snapshot reflects currentView');
 
   // Restore
-  state.currentSearchSummary = originalSummary;
-  state.currentView = originalView;
+  withStateMutation(() => {
+    state.currentSearchSummary = originalSummary;
+    state.currentView = originalView;
+  });
 
   console.log('  OK getSearchContextSnapshot returns current state values');
 }

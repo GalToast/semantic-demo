@@ -362,7 +362,7 @@ test.describe('3D semantic state transition integrity', () => {
       await mapBtn.click();
     } else {
       await page.evaluate(() => {
-        if (typeof window.switchView === 'function') window.switchView('map');
+        window.__APP_ACTIONS__?.switchView?.('map');
       });
     }
 
@@ -529,7 +529,7 @@ test.describe('3D semantic state transition integrity', () => {
       await mapBtn.click();
     } else {
       await page.evaluate(() => {
-        if (typeof window.switchView === 'function') window.switchView('map');
+        window.__APP_ACTIONS__?.switchView?.('map');
       });
     }
     await page.waitForFunction(
@@ -598,7 +598,7 @@ test.describe('3D semantic state transition integrity', () => {
 
     // Step 5: map trail
     await page.evaluate(() => {
-      if (typeof window.switchView === 'function') window.switchView('map');
+      window.__APP_ACTIONS__?.switchView?.('map');
     });
     await page.waitForFunction(() => window.__TEST_STATE__?.currentView === 'map', { timeout: 15000 });
     await page.waitForTimeout(1500);

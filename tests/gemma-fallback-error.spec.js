@@ -50,27 +50,31 @@ test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
 
     // Setup state so buildSemanticGuideRequestPayload returns a valid payload
     const anchorName = await page.evaluate(() => {
-      const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
-      s.currentSearchSummary = {
-        query: 'coffee',
-        anchorIndex: 0,
-        resultIndices: [0, 1, 2, 3]
-      };
-      s.currentView = 'list';
-      return s.points[0]?.name || '';
+      return window.withStateMutation(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        s.currentSearchSummary = {
+          query: 'coffee',
+          anchorIndex: 0,
+          resultIndices: [0, 1, 2, 3]
+        };
+        s.currentView = 'list';
+        return s.points[0]?.name || '';
+      });
     });
 
     expect(anchorName).not.toBe('');
 
     // Trigger through the bound button; use DOM click so visibility does not matter.
     await page.evaluate(async () => {
-      const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
-      s.currentSearchSummary = {
-        query: 'coffee',
-        anchorIndex: 0,
-        resultIndices: [0, 1, 2, 3]
-      };
-      s.currentView = 'list';
+      window.withStateMutation(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        s.currentSearchSummary = {
+          query: 'coffee',
+          anchorIndex: 0,
+          resultIndices: [0, 1, 2, 3]
+        };
+        s.currentView = 'list';
+      });
       const trigger = document.getElementById('synthesize-trigger');
       if (trigger) {
         trigger.hidden = false;

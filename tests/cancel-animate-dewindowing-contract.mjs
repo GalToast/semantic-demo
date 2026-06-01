@@ -49,6 +49,14 @@ const checks = [
     name: 'three-engine does not expose window.cancelAnimate',
     pass: !/window\.cancelAnimate\s*=/.test(threeSetupSrc),
   },
+  {
+    name: 'cancelAnimate preserves context-lost state before render guard',
+    pass: /const\s+contextWasLost\s*=\s*_webglContextLost[\s\S]{0,160}?if\s*\(\s*!contextWasLost\s*&&\s*renderer\s*&&\s*scene\s*&&\s*camera\s*\)/.test(threeSetupSrc),
+  },
+  {
+    name: 'cancelAnimate disposes scene resources before renderer disposal',
+    pass: /disposeObject3D\s*\(\s*scene\s*\)[\s\S]{0,160}?renderer\.dispose\s*\(\s*\)/.test(threeSetupSrc),
+  },
 ];
 
 let passed = 0;

@@ -119,7 +119,7 @@ function ds(key) {
 
 // ── Import modules ─────────────────────────────────────────────────────────────
 
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 
 // We call refreshCompositionState() directly — it lives in lifecycle.js and is
 // exported as a named export.
@@ -137,22 +137,24 @@ assert(typeof refreshCompositionState === 'function', 'refreshCompositionState i
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function resetState() {
-  // Deep-reset state to a clean overview baseline
-  state.currentView = 'galaxy';
-  state.focusedNode = null;
-  state.selectedPoint = null;
-  state.navState.focusedIndex = null;
-  state.navState.mode = 'overview';
-  state.navState.trailCursor = -1;
-  state.navState.trailSeedIndex = null;
-  state.navState.trailNeighborIndices = [];
-  state.navState.walkHistoryIndices = [];
-  state.navState.threadCandidates = [];
-  state.trailDepth = 0;
-  state.semanticDiveMode = false;
-  state.currentSearchSummary = null;
-  state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false };
-  state.trailIndices.clear();
+  withStateMutation(() => {
+    // Deep-reset state to a clean overview baseline
+    state.currentView = 'galaxy';
+    state.focusedNode = null;
+    state.selectedPoint = null;
+    state.navState.focusedIndex = null;
+    state.navState.mode = 'overview';
+    state.navState.trailCursor = -1;
+    state.navState.trailSeedIndex = null;
+    state.navState.trailNeighborIndices = [];
+    state.navState.walkHistoryIndices = [];
+    state.navState.threadCandidates = [];
+    state.trailDepth = 0;
+    state.semanticDiveMode = false;
+    state.currentSearchSummary = null;
+    state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false };
+    state.trailIndices.clear();
+  });
   fakeBody.dataset = {};
   _rafQueue = [];
 }
@@ -187,7 +189,9 @@ console.log('  PASS: overview state is correct\n');
 // ── PHASE 2: search ───────────────────────────────────────────────────────────
 console.log('[PHASE] search');
 resetState();
-state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+withStateMutation(() => {
+  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+});
 // Simulate search input present so hasSearchIntent is true
 const searchInput = new FakeElement('input');
 searchInput.value = 'coffee';
@@ -211,9 +215,11 @@ console.log('  PASS: search state is correct\n');
 // We test the combined case (normal user flow: search → click result).
 console.log('[PHASE] focus');
 resetState();
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+withStateMutation(() => {
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+});
 elementsById.set('search-input', new FakeElement('input'));
 commitTransition('focus');
 
@@ -238,11 +244,13 @@ console.log('  PASS: focus (with search) state is correct\n');
 // since navState.mode is not 'trail' and hasSearchIntent is false.
 console.log('[PHASE] semantic-dive');
 resetState();
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.trailDepth = 2;
-// semanticDiveMode getter derives from trailDepth, so trailDepth=2 → semanticDiveMode=true
-state.currentSearchSummary = null; // isolate the inside-walk; no search context
+withStateMutation(() => {
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.trailDepth = 2;
+  // semanticDiveMode getter derives from trailDepth, so trailDepth=2 → semanticDiveMode=true
+  state.currentSearchSummary = null; // isolate the inside-walk; no search context
+});
 commitTransition('semantic-dive');
 
 assert(ds('activeView') === 'galaxy',   'semantic-dive: activeView is galaxy');
@@ -264,11 +272,13 @@ console.log('  PASS: semantic-dive state is correct (trailState inactive — tra
 // ── PHASE 5: map-trail ────────────────────────────────────────────────────────
 console.log('[PHASE] map-trail');
 resetState();
-state.currentView = 'map';
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
-state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+withStateMutation(() => {
+  state.currentView = 'map';
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
+  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+});
 elementsById.set('search-input', new FakeElement('input'));
 commitTransition('map-trail');
 
@@ -287,10 +297,12 @@ console.log('  PASS: map-trail state is correct\n');
 console.log('[PHASE] reset');
 resetState();
 // Simulate a pre-reset state: focus + search active
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
-state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+withStateMutation(() => {
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
+  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+});
 elementsById.set('search-input', new FakeElement('input'));
 commitTransition('pre-reset');
 
@@ -329,9 +341,11 @@ console.log('  PASS: reset state is correct\n');
 // Edge: focus with no search → graphContext=focus (not focus-search)
 console.log('[EDGE] focus without search');
 resetState();
-state.focusedNode = 7;
-state.navState.focusedIndex = 7;
-state.currentSearchSummary = null; // no search summary
+withStateMutation(() => {
+  state.focusedNode = 7;
+  state.navState.focusedIndex = 7;
+  state.currentSearchSummary = null; // no search summary
+});
 commitTransition('focus-no-search');
 
 assert(ds('graphContext') === 'focus', 'focus-no-search: graphContext is focus');
@@ -342,7 +356,9 @@ console.log('  PASS: focus without search is correct\n');
 // 1 char is below threshold → hasSearchIntent=false → idle
 console.log('[EDGE] search intent with single-char input (below threshold)');
 resetState();
-state.currentSearchSummary = null; // no active search
+withStateMutation(() => {
+  state.currentSearchSummary = null; // no active search
+});
 const shortInput = new FakeElement('input');
 shortInput.value = 'c'; // 1 char, below threshold
 elementsById.set('search-input', shortInput);
@@ -355,8 +371,10 @@ console.log('  PASS: single-char input (below threshold) correctly stays idle\n'
 // Edge: map view with search but no focus → map-search
 console.log('[EDGE] map with search but no focus');
 resetState();
-state.currentView = 'map';
-state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+withStateMutation(() => {
+  state.currentView = 'map';
+  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+});
 elementsById.set('search-input', new FakeElement('input'));
 commitTransition('map-search');
 
@@ -368,10 +386,12 @@ console.log('  PASS: map with search but no focus is correct\n');
 // Edge: map view with both search and focus → map-focus-search
 console.log('[EDGE] map with search AND focus');
 resetState();
-state.currentView = 'map';
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+withStateMutation(() => {
+  state.currentView = 'map';
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+});
 elementsById.set('search-input', new FakeElement('input'));
 commitTransition('map-focus-search');
 
@@ -383,11 +403,13 @@ console.log('  PASS: map with search and focus is correct\n');
 // lifecycle.js:1070-1101 handles map-mode branch; semanticDive is forced to 'inactive'
 console.log('[EDGE] semantic-dive on map view is overridden');
 resetState();
-state.currentView = 'map';
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.trailDepth = 2;
-state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+withStateMutation(() => {
+  state.currentView = 'map';
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.trailDepth = 2;
+  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+});
 elementsById.set('search-input', new FakeElement('input'));
 commitTransition('map-semantic-dive');
 
@@ -404,17 +426,21 @@ console.log('  PASS: map view overrides semantic-dive\n');
 // This covers the focus -> map-trail direct boundary gap.
 console.log('[PHASE] focus -> map-trail direct');
 resetState();
-state.currentView = 'galaxy';
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
-state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-state.trailDepth = 1; // trail active but not yet at dive depth
+withStateMutation(() => {
+  state.currentView = 'galaxy';
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
+  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+  state.trailDepth = 1; // trail active but not yet at dive depth
+});
 elementsById.set('search-input', new FakeElement('input'));
 commitTransition('focus-pre-map');
 
 // Switch to map directly - no semantic-dive intermediate state
-state.currentView = 'map';
+withStateMutation(() => {
+  state.currentView = 'map';
+});
 commitTransition('map-trail-direct');
 
 assert(ds('activeView') === 'map',       'focus->map: activeView is map');
@@ -432,13 +458,15 @@ console.log('  PASS: focus -> map-trail direct transition is correct\n');
 // This covers the reset -> overview UI return boundary gap.
 console.log('[PHASE] reset -> overview UI return');
 resetState();
-state.currentView = 'galaxy';
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
-state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-state.trailDepth = 2;
-state.semanticDiveMode = true; // deep dive state
+withStateMutation(() => {
+  state.currentView = 'galaxy';
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
+  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+  state.trailDepth = 2;
+  state.semanticDiveMode = true; // deep dive state
+});
 elementsById.set('search-input', new FakeElement('input'));
 commitTransition('pre-reset-deep');
 

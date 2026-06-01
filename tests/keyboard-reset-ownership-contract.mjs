@@ -118,8 +118,8 @@ try {
   assert(
     rfBodySlice.includes('state.navState') &&
     rfBodySlice.includes('syncFocusStage') &&
-    rfBodySlice.includes('updateUrlState'),
-    'resetExplorationFocus must have a non-trivial body (state mutations + URL sync)'
+    rfBodySlice.includes('publish'),
+    'resetExplorationFocus must have a non-trivial body (state mutations + event publication)'
   );
   assert(
     !/export\s+function\s+resetExplorationFocus\s*\([^)]*\)\s*\{\s*\}/.test(lifecycle),

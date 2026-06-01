@@ -251,37 +251,19 @@ function testSearchStateImportsFromAdapter() {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 6: All 5 window call groups in search-state.js are replaced by adapter calls
+// TEST 6: All lifecycle call groups in search-state.js use the Event Bus
 // ---------------------------------------------------------------------------
 
-function testAllWindowCallSitesReplaced() {
-  console.log('\n[TEST 6] All window call sites in search-state.js are replaced by adapter calls');
+function testAllLifecycleCallSitesUseEventBus() {
+  console.log('\n[TEST 6] All lifecycle call sites in search-state.js use the Event Bus');
 
   const src = readFileSync(SEARCH_STATE_PATH, 'utf-8');
 
-  // Count direct calls to adapter functions
-  const updateUrlStateCalls = (src.match(/\badapter_updateUrlState\s*\(/g) || []).length;
-  const setSearchPanelStateCalls = (src.match(/\badapter_setSearchPanelState\s*\(/g) || []).length;
-  const focusOnPointCalls = (src.match(/\badapter_focusOnPoint\s*\(/g) || []).length;
-  const resetNodePositionsCalls = (src.match(/\badapter_resetNodePositions\s*\(/g) || []).length;
-  const syncSearchStatusForFocusCalls = (src.match(/\badapter_syncSearchStatusForFocus\s*\(/g) || []).length;
-  const updateJourneyCompassCalls = (src.match(/\badapter_updateJourneyCompass\s*\(/g) || []).length;
-  const refreshCompositionStateCalls = (src.match(/\badapter_refreshCompositionState\s*\(/g) || []).length;
-
-  assert(updateUrlStateCalls >= 4,
-    `Expected at least 4 adapter_updateUrlState calls, found ${updateUrlStateCalls}`);
-  assert(setSearchPanelStateCalls >= 5,
-    `Expected at least 5 adapter_setSearchPanelState calls, found ${setSearchPanelStateCalls}`);
-  assert(focusOnPointCalls >= 1,
-    `Expected at least 1 adapter_focusOnPoint call, found ${focusOnPointCalls}`);
-  assert(resetNodePositionsCalls >= 1,
-    `Expected at least 1 adapter_resetNodePositions call, found ${resetNodePositionsCalls}`);
-  assert(syncSearchStatusForFocusCalls >= 1,
-    `Expected at least 1 adapter_syncSearchStatusForFocus call, found ${syncSearchStatusForFocusCalls}`);
-  assert(updateJourneyCompassCalls >= 3,
-    `Expected at least 3 adapter_updateJourneyCompass calls, found ${updateJourneyCompassCalls}`);
-  assert(refreshCompositionStateCalls >= 7,
-    `Expected at least 7 adapter_refreshCompositionState calls, found ${refreshCompositionStateCalls}`);
+  // Count publications
+  const publishCalls = (src.match(/\bpublish\s*\(\s*EVENTS\.SEARCH_/g) || []).length;
+  
+  assert(publishCalls >= 5,
+    `Expected at least 5 publish(EVENTS.SEARCH_...) calls, found ${publishCalls}`);
 
   // Count the window.* calls that should be gone
   const windowUpdateUrl = (src.match(/window\.updateUrlState\b/g) || []).length;
@@ -293,24 +275,16 @@ function testAllWindowCallSitesReplaced() {
   const windowUpdateJourneyCompass = (src.match(/window\.updateJourneyCompass\b/g) || []).length;
   const windowRefreshCompositionState = (src.match(/window\.refreshCompositionState\b/g) || []).length;
 
-  assert(windowUpdateUrl === 0,
-    `Expected 0 window.updateUrlState calls, found ${windowUpdateUrl}`);
-  assert(windowSetSearchPanel === 0,
-    `Expected 0 window.setSearchPanelState calls, found ${windowSetSearchPanel}`);
-  assert(windowFocusOnPoint === 0,
-    `Expected 0 window.focusOnPoint calls, found ${windowFocusOnPoint}`);
-  assert(windowUpdateExploration === 0,
-    `Expected 0 window.updateExplorationUi calls, found ${windowUpdateExploration}`);
-  assert(windowResetNode === 0,
-    `Expected 0 window.resetNodePositions calls, found ${windowResetNode}`);
-  assert(windowSyncSearchStatus === 0,
-    `Expected 0 window.syncSearchStatusForFocus calls, found ${windowSyncSearchStatus}`);
-  assert(windowUpdateJourneyCompass === 0,
-    `Expected 0 window.updateJourneyCompass calls, found ${windowUpdateJourneyCompass}`);
-  assert(windowRefreshCompositionState === 0,
-    `Expected 0 window.refreshCompositionState calls, found ${windowRefreshCompositionState}`);
+  assert(windowUpdateUrl === 0, `Expected 0 window.updateUrlState calls, found ${windowUpdateUrl}`);
+  assert(windowSetSearchPanel === 0, `Expected 0 window.setSearchPanelState calls, found ${windowSetSearchPanel}`);
+  assert(windowFocusOnPoint === 0, `Expected 0 window.focusOnPoint calls, found ${windowFocusOnPoint}`);
+  assert(windowUpdateExploration === 0, `Expected 0 window.updateExplorationUi calls, found ${windowUpdateExploration}`);
+  assert(windowResetNode === 0, `Expected 0 window.resetNodePositions calls, found ${windowResetNode}`);
+  assert(windowSyncSearchStatus === 0, `Expected 0 window.syncSearchStatusForFocus calls, found ${windowSyncSearchStatus}`);
+  assert(windowUpdateJourneyCompass === 0, `Expected 0 window.updateJourneyCompass calls, found ${windowUpdateJourneyCompass}`);
+  assert(windowRefreshCompositionState === 0, `Expected 0 window.refreshCompositionState calls, found ${windowRefreshCompositionState}`);
 
-  console.log(`  PASS — adapter calls: ${updateUrlStateCalls}× updateUrlState, ${setSearchPanelStateCalls}× setSearchPanelState, ${focusOnPointCalls}× focusOnPoint, ${resetNodePositionsCalls}× resetNodePositions, ${syncSearchStatusForFocusCalls}× syncSearchStatusForFocus, ${updateJourneyCompassCalls}× updateJourneyCompass, ${refreshCompositionStateCalls}× refreshCompositionState; 0 window.* equivalents`);
+  console.log(`  PASS — search-state.js is event-driven (${publishCalls} publications); 0 window.* equivalents`);
 }
 
 // ---------------------------------------------------------------------------
@@ -362,43 +336,19 @@ function testSyncSearchStatusForFocusRouting() {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 9: search-state.js routes updateJourneyCompass through the adapter
+// TEST 9: search-state.js publishes search events to decouple compass/composition
 // ---------------------------------------------------------------------------
 
-function testUpdateJourneyCompassRouting() {
-  console.log('\n[TEST 9] search-state.js routes updateJourneyCompass through the adapter');
+function testSearchEventDecoupling() {
+  console.log('\n[TEST 9] search-state.js publishes search events to decouple compass/composition');
 
   const src = readFileSync(SEARCH_STATE_PATH, 'utf-8');
 
-  const adapterCalls = (src.match(/\badapter_updateJourneyCompass\s*\(/g) || []).length;
-  assert(adapterCalls >= 3,
-    `Expected at least 3 adapter_updateJourneyCompass calls, found ${adapterCalls}`);
+  assert(src.includes('publish(EVENTS.SEARCH_SUCCESS'), 'search-state publishes SEARCH_SUCCESS');
+  assert(src.includes('publish(EVENTS.SEARCH_EMPTY'), 'search-state publishes SEARCH_EMPTY');
+  assert(src.includes('publish(EVENTS.SEARCH_CLEARED'), 'search-state publishes SEARCH_CLEARED');
 
-  const windowCalls = (src.match(/window\.updateJourneyCompass\b/g) || []).length;
-  assert(windowCalls === 0,
-    `Expected 0 window.updateJourneyCompass calls, found ${windowCalls}`);
-
-  console.log(`  PASS — updateJourneyCompass routed through adapter (${adapterCalls} calls), 0 window.* equivalents`);
-}
-
-// ---------------------------------------------------------------------------
-// TEST 10: search-state.js routes refreshCompositionState through the adapter
-// ---------------------------------------------------------------------------
-
-function testRefreshCompositionStateRouting() {
-  console.log('\n[TEST 10] search-state.js routes refreshCompositionState through the adapter');
-
-  const src = readFileSync(SEARCH_STATE_PATH, 'utf-8');
-
-  const adapterCalls = (src.match(/\badapter_refreshCompositionState\s*\(/g) || []).length;
-  assert(adapterCalls >= 7,
-    `Expected at least 7 adapter_refreshCompositionState calls, found ${adapterCalls}`);
-
-  const windowCalls = (src.match(/window\.refreshCompositionState\b/g) || []).length;
-  assert(windowCalls === 0,
-    `Expected 0 window.refreshCompositionState calls, found ${windowCalls}`);
-
-  console.log(`  PASS — refreshCompositionState routed through adapter (${adapterCalls} calls), 0 window.* equivalents`);
+  console.log('  PASS — search-state.js uses Event Bus for UI decoupling');
 }
 
 // ---------------------------------------------------------------------------
@@ -411,11 +361,10 @@ const tests = [
   testAdapterDoesNotImportCycleParticipants,
   testAppInjectsAdapterWithLifecycleRefs,
   testSearchStateImportsFromAdapter,
-  testAllWindowCallSitesReplaced,
+  testAllLifecycleCallSitesUseEventBus,
   testNavStateRoutingThroughAdapter,
   testSyncSearchStatusForFocusRouting,
-  testUpdateJourneyCompassRouting,
-  testRefreshCompositionStateRouting,
+  testSearchEventDecoupling,
 ];
 
 let passed = 0;

@@ -1,21 +1,21 @@
 /**
  * 3d-focus-ghost-graph-visibility.spec.js
  *
- * Whole-graph / ghost point cloud visibility during focus mode.
+ * Whole-graph / context point cloud visibility during focus mode.
  *
  * Confirms that graph nodes outside the focus pocket:
  *  1. Remain spatially present (projected to finite screen coordinates)
- *  2. Are collectively visible as a ghost layer (opacity ≈ 0.06, size ≈ 0.44)
+ *  2. Are collectively visible as a traversal context layer
  *  3. Are distinguished from pocket nodes (which use the large spore mesh)
  *
  * Success criteria
  * ───────────────
- *  1. In focus mode, pointsMaterial.opacity ≈ POINTS_MATERIAL_BASE_OPACITY * 0.06
- *  2. In focus mode, pointsMaterial.size is reduced (scaled by 0.44)
+ *  1. In focus mode, pointsMaterial.opacity ≈ base scene opacity * 0.24
+ *  2. In focus mode, pointsMaterial.size is reduced but still legible (scaled by 0.62)
  *  3. Out-of-pocket nodes project to finite in-canvas screen coordinates
  *  4. Out-of-pocket nodes are NOT in focusPocketIndices
  *  5. Node spore meshes (larger) are distinct from point cloud (smaller) — visual layering confirmed
- *  6. Semantic-dive (trailDepth ≥ 2) suppresses the point cloud entirely (opacity ≈ 0)
+ *  6. Semantic-dive (trailDepth ≥ 2) keeps a quieter context layer visible
  *
  * Desktop (1440×900) and short-landscape (844×390) are both covered.
  *
@@ -31,11 +31,18 @@ import {
 } from './helpers/3d-interaction-helpers.js';
 
 const FOCUS_GHOST_TIMEOUT_MS = 120000;
+const POINTS_MATERIAL_BASE_OPACITY = 0.82; // from state.js
+const SCENE_POINT_OPACITY_SCALE = 0.82; // from SCENE_ATMOSPHERE.pointOpacityScale
+const FOCUS_CONTEXT_OPACITY_SCALE = 0.24;
+const SEMANTIC_DIVE_CONTEXT_OPACITY_SCALE = 0.16;
+const FOCUS_CONTEXT_SIZE_SCALE = 0.62;
+const SEMANTIC_DIVE_CONTEXT_SIZE_SCALE = 0.52;
+const POINTS_MATERIAL_BASE_SIZE = 0.0175;
 
 // ─── Probe: full-graph projected nodes (outside focus pocket) ─────────────────
 
 async function probeGhostGraph(page) {
-  return page.evaluate(() => {
+  return page.evaluate(({ baseOpacity, sceneOpacityScale, focusOpacityScale }) => {
     const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     const nav = state.navState || {};
     const camera = state.camera;
@@ -48,8 +55,6 @@ async function probeGhostGraph(page) {
 
     // Always include the anchor in the pocket set for out-of-pocket checks
     if (Number.isFinite(focusedIdx)) pocketSet.add(focusedIdx);
-
-    const POINTS_MATERIAL_BASE_OPACITY = 0.82; // from state.js
 
     // Sample every 8th node to keep the readback bounded
     const step = Math.max(1, Math.floor(nodePositions.length / 80));
@@ -88,37 +93,36 @@ async function probeGhostGraph(page) {
       outOfPocketInCanvasSample: inCanvasProjected.slice(0, 6),
       pointsMaterialOpacity: pointsMaterial.opacity ?? null,
       pointsMaterialSize: pointsMaterial.size ?? null,
-      pointsMaterialBaseOpacity: POINTS_MATERIAL_BASE_OPACITY,
-      expectedOpacity: POINTS_MATERIAL_BASE_OPACITY * 0.06,
+      pointsMaterialBaseOpacity: baseOpacity,
+      expectedOpacity: baseOpacity * sceneOpacityScale * focusOpacityScale,
       pointsMeshVisible: pointsMesh_?.visible ?? null,
       nodeSporeMeshVisible: state.nodeSporeMesh?.visible ?? null,
       nodeSporeMeshCount: state.nodeSporeMesh?.count ?? 0,
     };
+  }, {
+    baseOpacity: POINTS_MATERIAL_BASE_OPACITY,
+    sceneOpacityScale: SCENE_POINT_OPACITY_SCALE,
+    focusOpacityScale: FOCUS_CONTEXT_OPACITY_SCALE
   });
 }
 
 // ─── Probe: pointsMaterial opacity and size scale ─────────────────────────────
 
 async function probePointsMaterialFocusState(page) {
-  return page.evaluate(() => {
+  return page.evaluate((config) => {
     const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     const pm = state.pointsMaterial || {};
     const pointsMesh = state.pointsMesh;
     const isFocused = Number.isFinite(state.focusedNode);
     const trailDepth = state.trailDepth ?? 0; // top-level state, not navState sub-property
-    const POINTS_MATERIAL_BASE_OPACITY = 0.82; // hardcoded match to state.js
-
-    // Expected ghost opacity in focus mode (trailDepth 1): BASE * 0.06
-    // Expected ghost opacity in semantic-dive (trailDepth 2+): 0
+    // Focus preserves enough graph context for direct traversal.
     const expectedOpacity = isFocused
-      ? (trailDepth >= 2 ? 0.0 : POINTS_MATERIAL_BASE_OPACITY * 0.06)
-      : POINTS_MATERIAL_BASE_OPACITY;
+      ? config.baseOpacity * config.sceneOpacityScale * (trailDepth >= 2 ? config.semanticDiveOpacityScale : config.focusOpacityScale)
+      : config.baseOpacity * config.sceneOpacityScale;
 
-    // Expected size: BASE * 1.52 * pointsSizeScale
-    // BASE = 0.0175 (state.js); 1.52 = (1.06 + revealProgress(1) * 0.46)
-    // pointsSizeScale = 0.44 in focus mode, 1.0 in overview
-    const POINTS_MATERIAL_BASE_SIZE = 0.0175;
-    const expectedSize = isFocused ? POINTS_MATERIAL_BASE_SIZE * 1.52 * 0.44 : POINTS_MATERIAL_BASE_SIZE * 1.52;
+    const expectedSize = isFocused
+      ? config.baseSize * 1.52 * (trailDepth >= 2 ? config.semanticDiveSizeScale : config.focusSizeScale)
+      : config.baseSize * 1.52;
 
     return {
       isFocused,
@@ -130,6 +134,14 @@ async function probePointsMaterialFocusState(page) {
       pointsMeshVisible: pointsMesh?.visible ?? null,
       nodeSporeMeshVisible: state.nodeSporeMesh?.visible ?? null,
     };
+  }, {
+    baseOpacity: POINTS_MATERIAL_BASE_OPACITY,
+    sceneOpacityScale: SCENE_POINT_OPACITY_SCALE,
+    focusOpacityScale: FOCUS_CONTEXT_OPACITY_SCALE,
+    semanticDiveOpacityScale: SEMANTIC_DIVE_CONTEXT_OPACITY_SCALE,
+    focusSizeScale: FOCUS_CONTEXT_SIZE_SCALE,
+    semanticDiveSizeScale: SEMANTIC_DIVE_CONTEXT_SIZE_SCALE,
+    baseSize: POINTS_MATERIAL_BASE_SIZE
   });
 }
 
@@ -144,7 +156,7 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
 
   // ── Material opacity ────────────────────────────────────────────────────────
 
-  test('desktop: whole-graph point cloud is ghosted (opacity ≈ 6% of base) during focus mode', async ({ page }) => {
+  test('desktop: whole-graph point cloud remains legible during focus mode', async ({ page }) => {
     test.setTimeout(FOCUS_GHOST_TIMEOUT_MS);
     await openApp(page, { width: 1440, height: 900 });
 
@@ -175,7 +187,7 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
     ).toBe(true);
   });
 
-  test('desktop: whole-graph point cloud is fully suppressed (opacity ≈ 0) in semantic-dive mode', async ({ page }) => {
+  test('desktop: whole-graph point cloud remains visible in semantic-dive mode', async ({ page }) => {
     test.setTimeout(FOCUS_GHOST_TIMEOUT_MS);
     await openApp(page, { width: 1440, height: 900 });
 
@@ -208,7 +220,9 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
     const afterDive2 = await probePointsMaterialFocusState(page);
     expect(afterDive2.trailDepth, 'after second dive trailDepth should be 2').toBe(2);
     expect(afterDive2.currentOpacity, 'currentOpacity must be set').not.toBeNull();
-    expect(afterDive2.currentOpacity, 'point cloud must be fully suppressed in semantic-dive').toBeLessThan(0.01);
+    expect(afterDive2.pointsMeshVisible, 'point cloud remains available in semantic-dive').toBe(true);
+    expect(afterDive2.currentOpacity, 'point cloud remains visible but quieter in semantic-dive').toBeGreaterThan(0.08);
+    expect(afterDive2.currentOpacity, 'semantic-dive context should stay below focus context').toBeLessThan(0.14);
   });
 
   // ── Projected presence of out-of-pocket nodes ───────────────────────────────
@@ -234,7 +248,7 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
 
     const snap = await probeGhostGraph(page);
 
-    expect(snap.mode, 'must be in focus mode').toBe('focus');
+    expect(['focus', 'trail'], 'focused traversal should be in focus/trail mode').toContain(snap.mode);
     expect(snap.pocketSize, 'pocket must have at least 1 node').toBeGreaterThan(0);
     expect(snap.outOfPocketSampled, 'must have sampled out-of-pocket nodes').toBeGreaterThan(0);
     expect(snap.outOfPocketInCanvasCount, 'at least some out-of-pocket nodes must project into the canvas').toBeGreaterThan(0);
@@ -340,11 +354,11 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
 
     const snap = await probeGhostGraph(page);
 
-    expect(snap.mode, 'short-landscape must be in focus mode').toBe('focus');
+    expect(['focus', 'trail'], 'short-landscape focused traversal should be in focus/trail mode').toContain(snap.mode);
     expect(snap.pocketSize, 'pocket must have at least 1 node at short-landscape').toBeGreaterThan(0);
     expect(snap.outOfPocketInCanvasCount, 'at least some out-of-pocket nodes must be in canvas at short-landscape').toBeGreaterThan(0);
 
-    // Ghost opacity still applies at short-landscape
+    // Context opacity still applies at short-landscape
     const err = opacityErrorPercent(snap.pointsMaterialOpacity, snap.expectedOpacity || 0);
     expect(err < 30, // looser tolerance for smaller viewport
       `short-landscape: pointsMaterial opacity (${snap.pointsMaterialOpacity?.toFixed(4)}) should be ≈ ${(snap.expectedOpacity || 0).toFixed(4)}`
@@ -374,7 +388,7 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
 
     expect(snap.isFocused, 'short-landscape must be in focused state').toBe(true);
     expect(snap.currentSize, 'pointsMaterial.size must be set').not.toBeNull();
-    // In focus mode: BASE * 1.52 * 0.44 ≈ 0.0117 at full revealProgress
+    // In focus mode, point size is reduced but remains large enough to read as graph context.
     expect(snap.currentSize, 'short-landscape pointsMaterial.size must be reduced in focus mode').toBeLessThan(0.04);
   });
 

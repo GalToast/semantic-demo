@@ -58,14 +58,16 @@ Object.defineProperty(globalThis, 'navigator', {
 });
 
 // Now safe to import modules
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 const { setSemanticDiveMode, refreshCompositionState } = await import('../js/modules/lifecycle.js');
 
 function resetState() {
-  state.semanticDiveMode = false;
-  state.trailDepth = 0;
-  state.currentView = 'galaxy';
-  state.navState.mode = 'overview';
+  withStateMutation(() => {
+    state.semanticDiveMode = false;
+    state.trailDepth = 0;
+    state.currentView = 'galaxy';
+    state.navState.mode = 'overview';
+  });
   document.body.dataset = {};
 }
 
@@ -84,7 +86,9 @@ try {
   assert(state.trailDepth === 2, 'state.trailDepth is 2');
   assert(state.navState.mode === 'trail' || state.navState.mode === 'inside', 'navState.mode updated');
   // refreshCompositionState requires a focus record to set semanticDive='active'
-  state.focusedNode = 1;
+  withStateMutation(() => {
+    state.focusedNode = 1;
+  });
   refreshCompositionState();
   assert(document.body.dataset.semanticDive === 'active', 'body dataset reflects active dive');
   console.log('  PASS — Enter sync confirmed');

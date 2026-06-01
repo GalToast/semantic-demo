@@ -127,7 +127,7 @@ function assertEq(actual, expected, label) {
 
 // ── Import real modules ───────────────────────────────────────────────────────
 
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 
 let refreshCompositionState;
 let resetStateBeforeUrlRestore;
@@ -147,6 +147,11 @@ assert(typeof resetStateBeforeUrlRestore === 'function', 'resetStateBeforeUrlRes
 
 function ds(k)   { return fakeBody.dataset[k]; }
 function commit(){ refreshCompositionState(); }
+function setCurrentViewForTest(view) {
+  withStateMutation(() => {
+    state.currentView = view;
+  });
+}
 
 // Snapshot the dataset fields that refreshCompositionState writes
 const COMPOSITION_FIELDS = [
@@ -159,7 +164,7 @@ function snapshotDataset() {
 }
 
 function resetState() {
-  state.currentView = 'galaxy';
+  setCurrentViewForTest('galaxy');
   state.focusedNode = null;
   state.selectedPoint = null;
   state.navState.focusedIndex = null;
@@ -271,7 +276,7 @@ console.log('[INVARIANT 2] reset must clear focus tuple and return dataset to id
 // ── 2A: Reset from deep state (semantic-dive) ─────────────────────────────────
 console.log('[TEST] 2A — reset from deep state returns to idle');
 resetState();
-state.currentView = 'galaxy';
+setCurrentViewForTest('galaxy');
 setFocusViaSelectedPoint(4);
 state.trailDepth = 2;
 setSearchIntent();
@@ -315,7 +320,7 @@ console.log('  PASS: focus-only reset clears focus tuple and returns idle\n');
 // ── 2C: Reset must not leave stale mapContext on galaxy view ───────────────────
 console.log('[TEST] 2C — reset must not leave stale mapContext');
 resetState();
-state.currentView = 'map'; // simulate prior map state
+setCurrentViewForTest('map'); // simulate prior map state
 setFocusViaSelectedPoint(3);
 setSearchIntent();
 commit();
@@ -323,7 +328,7 @@ assertEq(ds('activeView'), 'map', '2C: pre — activeView is map');
 
 // Reset back to galaxy
 resetStateBeforeUrlRestore({ clearSearchInput: true });
-state.currentView = 'galaxy'; // manually restore galaxy (resetStateBeforeUrlRestore doesn't change currentView)
+setCurrentViewForTest('galaxy'); // manually restore galaxy (resetStateBeforeUrlRestore doesn't change currentView)
 commit();
 
 assertEq(ds('activeView'), 'galaxy', '2C: activeView restored to galaxy');
@@ -339,7 +344,7 @@ console.log('[INVARIANT 3] map view forces semanticDive=inactive regardless of t
 // ── 3A: map + semanticDiveMode (contradiction should be neutralized) ───────────
 console.log('[TEST] 3A — map view overrides semanticDive to inactive');
 resetState();
-state.currentView = 'map';
+setCurrentViewForTest('map');
 setFocusViaSelectedPoint(4);
 state.trailDepth = 2; // would set semanticDiveMode=true
 setSearchIntent();
@@ -354,7 +359,7 @@ console.log('  PASS: map view overrides semantic-dive invariants\n');
 // ── 3B: map + focusedNode only (no search) ───────────────────────────────────
 console.log('[TEST] 3B — map view with focus but no search');
 resetState();
-state.currentView = 'map';
+setCurrentViewForTest('map');
 setFocusViaSelectedPoint(5);
 state.currentSearchSummary = null;
 elementsById.delete('search-input');
@@ -371,7 +376,7 @@ console.log('  PASS: map view with focus-only works correctly\n');
 // force semanticDive='inactive' without throwing.
 console.log('[TEST] 3C — exiting semantic-dive into map view (real user flow)');
 resetState();
-state.currentView = 'galaxy';
+setCurrentViewForTest('galaxy');
 setFocusViaSelectedPoint(4);
 state.trailDepth = 2;
 setSearchIntent();
@@ -379,7 +384,7 @@ commit();
 assertEq(ds('semanticDive'), 'active', '3C: pre — semanticDive is active before switch');
 
 // Simulate switchView('map') — which sets currentView='map' then calls refreshCompositionState
-state.currentView = 'map';
+setCurrentViewForTest('map');
 commit();
 
 assertEq(ds('activeView'), 'map', '3C: activeView is map');
@@ -496,7 +501,7 @@ const MAP_STATES = [
 console.log('[TEST] 5B — all map states produce exactly one panelSurface');
 for (const s of MAP_STATES) {
   resetState();
-  state.currentView = 'map';
+  setCurrentViewForTest('map');
   if (s.hasMapFocus) setFocusViaSelectedPoint(2);
   if (s.hasSearch) setSearchIntent();
   commit();
@@ -539,7 +544,7 @@ const CANONICAL_STATES = [
 console.log('[TEST] 6A — all composition fields present in every canonical state');
 for (const s of CANONICAL_STATES) {
   resetState();
-  state.currentView = s.currentView;
+  setCurrentViewForTest(s.currentView);
   s.setup();
   commit();
   const snap = snapshotDataset();

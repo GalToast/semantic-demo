@@ -59,10 +59,17 @@ async function moveUntilHoverClears(page) {
   let lastState = null;
   for (const [x, y] of points) {
     await page.mouse.move(x, y, { steps: 1 });
-    await page.waitForTimeout(220);
-    lastState = await getHoverState(page);
-    const cleared = lastState.hoverHighlightIndex === -1 || lastState.hoverHighlightIndex === null;
-    if (cleared && lastState.canvasCursor !== 'pointer') return lastState;
+    try {
+      await page.waitForFunction(() => {
+        const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+        const cleared = state.hoverHighlightIndex === -1 || state.hoverHighlightIndex === null;
+        const cursor = state.renderer?.domElement?.style?.cursor ?? '';
+        return cleared && cursor !== 'pointer';
+      }, { timeout: 800 });
+      return await getHoverState(page);
+    } catch (e) {
+      lastState = await getHoverState(page);
+    }
   }
   return lastState;
 }

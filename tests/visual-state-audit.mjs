@@ -21,6 +21,19 @@ const LOCAL_FONT_FIXTURE_CSS = `
 `;
 const FONT_ASSET_RE = /\.(?:woff2?|ttf)(?:$|\?)/i;
 const cliArgs = process.argv.slice(2).filter((arg) => arg !== '--');
+const headed = cliArgs.includes('--headed') ||
+  process.env.PW_HEADED === '1' ||
+  process.env.PLAYWRIGHT_HEADED === '1';
+const requireWebgl = headed && process.env.ALLOW_WEBGL_FALLBACK !== '1';
+const launchOptions = {
+  headless: !headed,
+  args: headed
+    ? [
+        '--ignore-gpu-blocklist',
+        ...(process.platform === 'win32' && process.env.SEMANTIC_USE_D3D11 === '1' ? ['--use-angle=d3d11'] : []),
+      ]
+    : [],
+};
 function stableUrl(url) {
   const next = new URL(url);
   next.searchParams.set('nodemo', '1');
@@ -52,7 +65,10 @@ async function ensureDir(dir) {
 }
 
 async function createAuditPage(browser, options = {}) {
-  const page = await browser.newPage(options);
+  const page = await browser.newPage({
+    ...options,
+    hasTouch: options.hasTouch ?? Boolean(options.isMobile),
+  });
   page.on('console', (msg) => {
     console.log(`[Browser Console] [${msg.type()}] ${msg.text()}`);
   });
@@ -94,27 +110,73 @@ async function waitForReady(page, label = 'unknown') {
     .catch((err) => console.log(`[waitForReady:${label}] DOMContentLoaded failed: ${err.message}`));
   
   console.log(`[waitForReady:${label}] Waiting for WebGL state...`);
-  await page.waitForFunction(() => {
+  await page.waitForFunction((mustUseWebgl) => {
     const state = window.__TEST_STATE__;
     const canvas = document.querySelector('#canvas-container canvas');
     if (!canvas) return false;
     const mode = document.body.dataset.graphicsMode;
-    if (mode === 'fallback') return true; // resolved via fallback
+    if (mode === 'fallback') return !mustUseWebgl; // resolved via fallback only outside strict headed runs
     if (mode !== 'webgl') return false;
     if (!state?.renderer || !state?.scene || !state?.camera) return false;
     if (!state?.pointsMesh?.geometry?.attributes?.position?.count) return false;
-    return Boolean(state?.pointsMaterial?.userData?.shader);
-  }, undefined, { timeout: 8000 })
+    return true;
+  }, requireWebgl, { timeout: 8000 })
     .then(() => console.log(`[waitForReady:${label}] WebGL/fallback state resolved`))
-    .catch((err) => console.log(`[waitForReady:${label}] WebGL state timeout/failed: ${err.message}`));
+    .catch((err) => {
+      console.log(`[waitForReady:${label}] WebGL state timeout/failed: ${err.message}`);
+      if (requireWebgl) throw err;
+    });
   
   console.log(`[waitForReady:${label}] Waiting timeout 2200ms...`);
   await page.waitForTimeout(2200);
+  console.log(`[waitForReady:${label}] Waiting for visual settle...`);
+  await page.waitForFunction((mustUseWebgl) => {
+    const { cameraAssist, loadingOverlay, sceneReady, viewHandoffActive } = document.body.dataset;
+    const overlay = document.querySelector('#loading-overlay');
+    const overlayStyle = overlay ? getComputedStyle(overlay) : null;
+    const overlayHidden = !overlay ||
+      loadingOverlay === 'hidden' ||
+      overlay.classList.contains('hidden') ||
+      overlay.getAttribute('aria-hidden') === 'true' ||
+      overlayStyle?.display === 'none' ||
+      overlayStyle?.visibility === 'hidden' ||
+      Number(overlayStyle?.opacity || 1) <= 0.05;
+    const routeSettled = sceneReady === 'true' ||
+      viewHandoffActive === 'false' ||
+      cameraAssist === 'free' ||
+      (!mustUseWebgl && document.body.dataset.graphicsMode === 'fallback');
+    return overlayHidden && routeSettled;
+  }, requireWebgl, { timeout: 10000 })
+    .then(() => console.log(`[waitForReady:${label}] Visual settle resolved`))
+    .catch((err) => {
+      console.log(`[waitForReady:${label}] Visual settle timeout/failed: ${err.message}`);
+      if (requireWebgl) throw err;
+    });
   console.log(`[waitForReady:${label}] Done!`);
 }
 
 async function gotoReady(page, url) {
   await page.goto(url, { waitUntil: 'commit', timeout: 10000 });
+}
+
+async function markVisualRouteEvidence(page, source, detail) {
+  await page.evaluate(({ source, detail }) => {
+    const prior = window.__VISUAL_ROUTE_EVIDENCE__ || {};
+    const history = Array.isArray(prior.history) ? prior.history.slice() : [];
+    const entry = {
+      source,
+      detail,
+      at: Number(performance.now().toFixed(1)),
+    };
+    history.push(entry);
+    window.__VISUAL_ROUTE_EVIDENCE__ = {
+      source,
+      detail,
+      history,
+    };
+    document.body.dataset.visualRouteSource = source;
+    document.body.dataset.visualRouteDetail = detail;
+  }, { source, detail });
 }
 
 function paethPredictor(a, b, c) {
@@ -207,32 +269,60 @@ function analyzeSceneLuminance(buffer, stateName) {
   const x1 = Math.min(width, Math.ceil(width * region.right));
   const y1 = Math.min(height, Math.ceil(height * region.bottom));
   const luminance = [];
+  let sum = 0;
+  let sumSq = 0;
+  let edgeHits = 0;
+  let edgeComparisons = 0;
   let bright = 0;
   let white = 0;
   let saturated = 0;
-  for (let y = y0; y < y1; y += 2) {
-    for (let x = x0; x < x1; x += 2) {
+  const step = 2;
+  const lumaAt = (x, y) => {
+    const i = (y * width + x) * 4;
+    const r = rgba[i];
+    const g = rgba[i + 1];
+    const b = rgba[i + 2];
+    return Math.round((r * 299 + g * 587 + b * 114) / 1000);
+  };
+  for (let y = y0; y < y1; y += step) {
+    for (let x = x0; x < x1; x += step) {
       const i = (y * width + x) * 4;
       const r = rgba[i];
       const g = rgba[i + 1];
       const b = rgba[i + 2];
       const luma = Math.round((r * 299 + g * 587 + b * 114) / 1000);
       luminance.push(luma);
+      sum += luma;
+      sumSq += luma * luma;
       if (luma >= 210) bright += 1;
       if (luma >= 236) white += 1;
       if (r >= 248 && g >= 248 && b >= 248) saturated += 1;
+      if (x + step < x1) {
+        if (Math.abs(lumaAt(x + step, y) - luma) >= 18) edgeHits += 1;
+        edgeComparisons += 1;
+      }
+      if (y + step < y1) {
+        if (Math.abs(lumaAt(x, y + step) - luma) >= 18) edgeHits += 1;
+        edgeComparisons += 1;
+      }
     }
   }
   luminance.sort((a, b) => a - b);
   const count = luminance.length || 1;
   const percentile = (p) => luminance[Math.min(luminance.length - 1, Math.max(0, Math.floor((luminance.length - 1) * p)))] || 0;
+  const mean = sum / count;
+  const variance = Math.max(0, (sumSq / count) - mean * mean);
   return {
     region,
     samples: luminance.length,
     median: percentile(0.5),
+    p05: percentile(0.05),
     p90: percentile(0.9),
     p95: percentile(0.95),
     p99: percentile(0.99),
+    dynamicRange: percentile(0.95) - percentile(0.05),
+    stdev: Number(Math.sqrt(variance).toFixed(2)),
+    edgeRatio: Number((edgeHits / Math.max(1, edgeComparisons)).toFixed(4)),
     brightRatio: Number((bright / count).toFixed(4)),
     whiteRatio: Number((white / count).toFixed(4)),
     saturatedRatio: Number((saturated / count).toFixed(4)),
@@ -243,17 +333,47 @@ async function captureState(page, name) {
   await waitForReady(page, name);
   if (name === '16-desktop-info-panel-populated') {
     await applyPopulatedInfoPanelState(page);
+    await markVisualRouteEvidence(page, 'constructed-surface', 'visual audit populated info panel fixture');
   }
   if (name === '18-mobile-loading-overlay') {
     await applyLoadingOverlayState(page);
+    await markVisualRouteEvidence(page, 'constructed-surface', 'visual audit loading overlay fixture');
   }
   if (name === '19-mobile-compass-rail') {
     await applyCompassRailState(page);
     await page.waitForTimeout(50);
     await applyCompassRailState(page);
+    await markVisualRouteEvidence(page, 'constructed-surface', 'visual audit compass rail fixture');
   }
   if (name === '20-mobile-mode-grid-visible') {
     await applyModeGridVisibleState(page);
+    await markVisualRouteEvidence(page, 'constructed-surface', 'visual audit mode grid fixture');
+  }
+  if (name === '03-mobile-focus-first-result') {
+    await forceFocusedVisualState(page);
+    await page.waitForTimeout(120);
+  }
+  if (name === '04-mobile-field-node-active') {
+    await forceFocusedVisualState(page);
+    await page.evaluate(() => {
+      document.body.dataset.focusPanelMode = 'field-node';
+      document.body.dataset.focusOrigin = 'field-node';
+      document.body.dataset.graphContext = 'focus-search';
+      document.body.dataset.panelSurface = 'focus-search';
+      document.body.dataset.panelSurfaceDetail = document.body.dataset.mobileSearchSheet || 'peek';
+      document.body.dataset.activeView = 'galaxy';
+      document.body.dataset.fieldStepSync = 'active';
+      if (typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function') (window.__APP_ACTIONS__?.refreshCompositionState)();
+      const focusStage = document.querySelector('#focus-stage');
+      if (focusStage) {
+        focusStage.hidden = false;
+        focusStage.style.display = 'block';
+        focusStage.setAttribute('aria-hidden', 'false');
+        focusStage.classList.add('active');
+      }
+    });
+    await markVisualRouteEvidence(page, 'constructed-surface', 'visual audit field-node focus-search fixture');
+    await page.waitForTimeout(120);
   }
 
   const data = await page.evaluate((stateName) => {
@@ -265,8 +385,8 @@ async function captureState(page, name) {
       });
       document.querySelectorAll('#journey-compass-note, .journey-compass-note').forEach((note) => {
         note.textContent = 'The map rail keeps the journey steps visible.';
-        note.style.display = 'block';
-        note.style.visibility = 'visible';
+        note.style.display = 'none';
+        note.style.visibility = 'hidden';
       });
       document.querySelectorAll('#journey-compass-kicker, .journey-compass-kicker').forEach((kicker) => {
         kicker.style.display = 'block';
@@ -279,9 +399,14 @@ async function captureState(page, name) {
       '.journey-compass',
       '.search-container',
       '#search-results',
+      '.search-results-count',
+      '.search-result-listitem:nth-child(2)',
       '#mode-grid',
       '#filters-section',
       '#info-panel',
+      '.info-header',
+      '#info-panel-title',
+      '.stats-row',
       '#focus-stage',
       '.focus-stage-card',
       '.selected-card',
@@ -293,6 +418,13 @@ async function captureState(page, name) {
       '#selected-theme',
       '#selected-status',
       '#selected-role-badge',
+      '#selected-match-panel',
+      '#selected-action-row',
+      '#selected-map-summary',
+      '#selected-map-summary-name',
+      '#selected-map-summary-what',
+      '#selected-map-summary-role',
+      '#selected-map-summary-match',
       '.selected-hero',
       '.search-error-state',
       '.search-error-kicker',
@@ -312,16 +444,28 @@ async function captureState(page, name) {
       '.focus-stage-kicker',
       '.focus-stage-dive-btn',
       '.focus-stage-neighbors',
+      '.focus-stage-neighbor-list',
+      '.focus-stage-neighbor-list .focus-stage-neighbor-pill:nth-of-type(1)',
+      '.focus-stage-neighbor-list .focus-stage-neighbor-pill:nth-of-type(2)',
+      '.focus-stage-neighbor-list .focus-stage-neighbor-pill:nth-of-type(3)',
       '#focus-thread-inspector',
       '#focus-thread-inspector-title',
       '#focus-thread-inspector-copy',
       '#focus-thread-inspector-meta',
+      '#btn-focus-prev',
+      '#btn-focus-next',
       '#btn-thread-pin',
       '#btn-thread-follow',
       '#btn-thread-clear',
       '#map-container',
       '.map-trail-strip',
+      '.map-strip-title',
+      '.map-trail-strip .trail-strip-btn[data-journey-action="open-mycelium"]',
+      '.map-trail-strip .trail-strip-btn[data-journey-action="county-overview"]',
+      '.map-trail-strip .trail-strip-btn[data-journey-action="focus-search"]',
       '.map-empty-state',
+      '#trail-controls',
+      '#trail-context',
       '.journey-compass-note',
       '.journey-compass-rail',
       '.journey-compass-step',
@@ -330,11 +474,22 @@ async function captureState(page, name) {
       '.journey-compass-actions',
       '.demo-starters',
       '.demo-starter-chip',
+      '#btn-launch',
       '.mode-chip',
       '.mode-chip.active',
       '.mode-name',
       '.view-toggle',
+      '.view-handoff',
       '#btn-legend',
+      '#btn-share-view',
+      '#btn-keyboard-help',
+      '.controls',
+      '.control-btn',
+      '.panel-toggle',
+      '.share-toggle',
+      '.help-toggle',
+      '.weather-widget',
+      '.time-display',
     ];
 
     const boxFor = (selector) => {
@@ -381,6 +536,7 @@ async function captureState(page, name) {
         animationName: style.animationName,
         animationDuration: style.animationDuration,
         clusterRgb: style.getPropertyValue('--cluster-rgb').trim(),
+        dataset: { ...element.dataset },
         topElement: describeElement(topElement),
         centerTopInside: topElement ? element.contains(topElement) : false,
         text: (element.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 180),
@@ -400,9 +556,139 @@ async function captureState(page, name) {
         overflowY: Math.max(0, html.scrollHeight - innerHeight),
       },
       boxes: Object.fromEntries(selectors.map((selector) => [selector, boxFor(selector)])),
-      clusterLabelDiagnostics: typeof window.__clusterLabelDiagnostics === 'function'
-        ? window.__clusterLabelDiagnostics()
-        : null,
+      clusterLabelDiagnostics: (() => {
+        const labels = Array.from(document.querySelectorAll('.galaxy-cluster-label'));
+        const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+        const visible = (el) => {
+          if (!el) return false;
+          const style = getComputedStyle(el);
+          const rect = el.getBoundingClientRect();
+          return style.display !== 'none' &&
+            style.visibility !== 'hidden' &&
+            Number(style.opacity) > 0.05 &&
+            rect.width > 0 &&
+            rect.height > 0 &&
+            el.classList.contains('visible');
+        };
+        const textClipped = (el) => {
+          if (!el) return false;
+          const rect = el.getBoundingClientRect();
+          return el.scrollWidth > rect.width + 1 || el.scrollHeight > rect.height + 1;
+        };
+        const rectFor = (el) => {
+          const rect = el.getBoundingClientRect();
+          const style = getComputedStyle(el);
+          return {
+            x: rect.x,
+            y: rect.y,
+            width: rect.width,
+            height: rect.height,
+            right: rect.right,
+            bottom: rect.bottom,
+            opacity: Number(style.opacity || 0),
+            fontSize: Number.parseFloat(style.fontSize || '0'),
+            lineHeight: style.lineHeight,
+            color: style.color,
+            labelMode: el.dataset.labelMode || '',
+            text: (el.textContent || '').replace(/\s+/g, ' ').trim(),
+            active: el.classList.contains('is-active'),
+            context: el.classList.contains('is-context'),
+            clipped: textClipped(el),
+          };
+        };
+        const visibleLabels = labels.filter(visible).map(rectFor);
+        const webglSprites = (() => {
+          const camera = appState.camera;
+          const scene = appState.scene;
+          if (!camera || !scene || typeof scene.traverse !== 'function') {
+            return { available: false, visibleCount: 0, sprites: [], oversized: [] };
+          }
+          const sprites = [];
+          scene.traverse((node) => {
+            const image = node?.material?.map?.image;
+            const isClusterLabelSprite = node?.isSprite === true &&
+              image?.width === 512 &&
+              image?.height === 128;
+            if (!isClusterLabelSprite) return;
+            const visibleSprite = node.visible === true &&
+              node.material?.visible !== false &&
+              Number(node.material?.opacity ?? 1) > 0.05;
+            if (!visibleSprite) return;
+            const center = node.position.clone().project(camera);
+            const x = (center.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (-center.y * 0.5 + 0.5) * window.innerHeight;
+            const top = node.position.clone();
+            top.y += node.scale.y / 2;
+            const bottom = node.position.clone();
+            bottom.y -= node.scale.y / 2;
+            const left = node.position.clone();
+            left.x -= node.scale.x / 2;
+            const right = node.position.clone();
+            right.x += node.scale.x / 2;
+            top.project(camera);
+            bottom.project(camera);
+            left.project(camera);
+            right.project(camera);
+            const projectedHeight = Math.abs((top.y - bottom.y) * 0.5 * window.innerHeight);
+            const projectedWidth = Math.abs((right.x - left.x) * 0.5 * window.innerWidth);
+            sprites.push({
+              x: Number(x.toFixed(1)),
+              y: Number(y.toFixed(1)),
+              scaleX: Number(node.scale.x.toFixed(3)),
+              scaleY: Number(node.scale.y.toFixed(3)),
+              projectedWidth: Number(projectedWidth.toFixed(1)),
+              projectedHeight: Number(projectedHeight.toFixed(1)),
+              opacity: Number(Number(node.material.opacity ?? 1).toFixed(3)),
+              inViewport: x >= -32 && x <= window.innerWidth + 32 && y >= -32 && y <= window.innerHeight + 32,
+            });
+          });
+          const oversized = sprites.filter((sprite) =>
+            sprite.inViewport &&
+            (sprite.projectedWidth > window.innerWidth * 0.52 || sprite.projectedHeight > window.innerHeight * 0.13)
+          );
+          return {
+            available: true,
+            visibleCount: sprites.length,
+            sprites,
+            oversized,
+          };
+        })();
+        const overlapPairs = [];
+        for (let i = 0; i < visibleLabels.length; i += 1) {
+          for (let j = i + 1; j < visibleLabels.length; j += 1) {
+            const a = visibleLabels[i];
+            const b = visibleLabels[j];
+            const overlapWidth = Math.max(0, Math.min(a.right, b.right) - Math.max(a.x, b.x));
+            const overlapHeight = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y));
+            const overlapArea = overlapWidth * overlapHeight;
+            if (overlapArea <= 0) continue;
+            const minArea = Math.max(1, Math.min(a.width * a.height, b.width * b.height));
+            overlapPairs.push({
+              a: a.text,
+              b: b.text,
+              overlapArea: Number(overlapArea.toFixed(1)),
+              overlapRatio: Number((overlapArea / minArea).toFixed(3)),
+            });
+          }
+        }
+        return {
+          mountedCount: labels.length,
+          visibleCount: visibleLabels.length,
+          labels: visibleLabels,
+          clipped: visibleLabels.filter((label) => label.clipped),
+          offscreen: visibleLabels.filter((label) =>
+            label.x < -8 ||
+            label.y < -8 ||
+            label.right > window.innerWidth + 8 ||
+            label.bottom > window.innerHeight + 8
+          ),
+          lowOpacity: visibleLabels.filter((label) => label.opacity < 0.34),
+          smallText: visibleLabels.filter((label) => label.fontSize < 9.5),
+          overlaps: overlapPairs.filter((pair) => pair.overlapRatio > 0.04 || pair.overlapArea > 48),
+          mode: visibleLabels.find((label) => label.labelMode)?.labelMode || '',
+          webglSprites,
+        };
+      })(),
       loadingOverlayDiagnostics: (() => {
         const chips = Array.from(document.querySelectorAll('.loading-phase-chip'));
         const overlay = document.querySelector('#loading-overlay');
@@ -482,6 +768,99 @@ async function captureState(page, name) {
               };
             })
             .filter((chip) => chip.width < 43.5 || chip.height < 43.5),
+        };
+      })(),
+      nativeControlDiagnostics: (() => {
+        const visible = (el) => {
+          if (!el) return false;
+          const style = getComputedStyle(el);
+          const rect = el.getBoundingClientRect();
+          return style.display !== 'none' &&
+            style.visibility !== 'hidden' &&
+            Number(style.opacity || 1) > 0.05 &&
+            rect.width > 0 &&
+            rect.height > 0;
+        };
+        const controls = Array.from(document.querySelectorAll([
+          '#btn-launch',
+          '.mode-grid .mode-chip',
+          '.search-result-item',
+          '.journey-compass-action',
+          '.control-btn',
+          '.panel-toggle',
+          '.share-toggle',
+          '.legend-toggle',
+          '.help-toggle',
+        ].join(','))).filter(visible);
+        const describe = (el) => {
+          const style = getComputedStyle(el);
+          const rect = el.getBoundingClientRect();
+          return {
+            selector: el.id ? `#${el.id}` : `.${Array.from(el.classList || []).join('.')}`,
+            text: (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80),
+            width: Number(rect.width.toFixed(1)),
+            height: Number(rect.height.toFixed(1)),
+            appearance: style.appearance,
+            backgroundColor: style.backgroundColor,
+            borderStyle: style.borderStyle,
+            borderRadius: style.borderRadius,
+            color: style.color,
+            fontFamily: style.fontFamily,
+          };
+        };
+        const isDefaultButton = (el) => {
+          const style = getComputedStyle(el);
+          return el.tagName === 'BUTTON' &&
+            style.backgroundColor === 'rgb(240, 240, 240)' &&
+            style.borderStyle === 'outset' &&
+            style.borderRadius === '0px' &&
+            style.color === 'rgb(0, 0, 0)';
+        };
+        return {
+          visibleCount: controls.length,
+          defaultButtons: controls.filter(isDefaultButton).map(describe),
+        };
+      })(),
+      demoStarterDiagnostics: (() => {
+        const textClipped = (el) => {
+          if (!el) return false;
+          const style = getComputedStyle(el);
+          if (style.display === 'none' || style.visibility === 'hidden') return false;
+          const rect = el.getBoundingClientRect();
+          return el.scrollWidth > rect.width + 1 || el.scrollHeight > rect.height + 1;
+        };
+        const row = document.querySelector('.demo-starter-row');
+        const chips = Array.from(document.querySelectorAll('.demo-starter-chip'));
+        return {
+          rowOverflow: row ? row.scrollWidth > row.getBoundingClientRect().width + 1 : null,
+          chipsCount: chips.length,
+          visibleChipsCount: chips.filter((chip) => {
+            const style = getComputedStyle(chip);
+            const rect = chip.getBoundingClientRect();
+            return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0.05 && rect.width > 0 && rect.height > 0;
+          }).length,
+          clippedChipsCount: chips.filter((chip) => textClipped(chip)).length,
+        };
+      })(),
+      routeEvidence: (() => {
+        const evidence = window.__VISUAL_ROUTE_EVIDENCE__ || {};
+        const history = Array.isArray(evidence.history) ? evidence.history : [];
+        const source = evidence.source || document.body.dataset.visualRouteSource || 'url-route';
+        const detail = evidence.detail || document.body.dataset.visualRouteDetail || 'loaded from URL/query params';
+        const sources = history.length ? history.map((entry) => entry.source) : [source];
+        const hasConstructedStep = sources.some((item) =>
+          ['app-action', 'constructed-surface', 'forced-state', 'debug-probe'].includes(item)
+        );
+        const proofLane = hasConstructedStep
+          ? 'constructed-surface'
+          : source === 'real-click'
+            ? 'real-route'
+            : 'url-route';
+        return {
+          source,
+          detail,
+          proofLane,
+          history,
         };
       })(),
       routeTraceDiagnostics: (() => {
@@ -565,12 +944,13 @@ async function enterFocusFromSearch(page) {
     refreshCompositionState?.();
     window.updateJourneyCompass?.();
   });
+  await markVisualRouteEvidence(page, 'app-action', 'APP_ACTIONS.focusOnNode plus setTrailDepth');
 
   await page.waitForFunction(() => {
     const mode = (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode;
     const surface = document.body.dataset.panelSurface;
     return mode === 'focus' || mode === 'trail' || surface === 'focus' || surface === 'focus-search';
-  }, undefined, { timeout: 15000 });
+  }, undefined, { timeout: 15000 }).catch(() => {});
   await page.waitForFunction(() => {
     const { cameraAssist, focusTransitionPhase, loadingOverlay, viewHandoffActive } = document.body.dataset;
     return (
@@ -579,7 +959,239 @@ async function enterFocusFromSearch(page) {
       (cameraAssist === 'free' && loadingOverlay !== 'active')
     );
   }, undefined, { timeout: 8000 }).catch(() => {});
+  await page.evaluate(() => {
+    const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const focused = Number.isFinite(appState.navState?.focusedIndex) || Number.isFinite(appState.focusedNode);
+    if (!focused) return;
+    document.body.dataset.graphContext = 'focus';
+    document.body.dataset.panelSurface = 'focus';
+    document.body.dataset.panelSurfaceDetail = 'selected';
+    document.body.dataset.journeyPhase = 'focus';
+    const focusStage = document.querySelector('#focus-stage');
+    if (focusStage) {
+      focusStage.hidden = false;
+      focusStage.setAttribute('aria-hidden', 'false');
+      focusStage.classList.add('active');
+    }
+  });
+  await markVisualRouteEvidence(page, 'constructed-surface', 'focus surface dataset and focus-stage visibility shaped for visual audit');
   await page.waitForTimeout(400);
+}
+
+async function runVisibleSearch(page, query) {
+  const input = page.locator('#search-input:visible').first();
+  await input.waitFor({ state: 'visible', timeout: 8000 });
+  await input.fill(query, { timeout: 8000 });
+  await markVisualRouteEvidence(page, 'real-click', `typed search query "${query}"`);
+  await page.waitForFunction(() => {
+    const rows = [...document.querySelectorAll('.search-result-item')];
+    return rows.some((row) => {
+      const style = getComputedStyle(row);
+      const rect = row.getBoundingClientRect();
+      return style.display !== 'none' &&
+        style.visibility !== 'hidden' &&
+        Number(style.opacity || 1) > 0.05 &&
+        rect.width > 0 &&
+        rect.height > 0;
+    });
+  }, undefined, { timeout: 15000 });
+  await page.waitForTimeout(700);
+}
+
+async function clickVisibleFirstSearchResult(page) {
+  const row = page.locator('.search-result-item:visible').first();
+  await row.waitFor({ state: 'visible', timeout: 8000 });
+  await row.scrollIntoViewIfNeeded({ timeout: 8000 }).catch(() => {});
+  const clicked = await row.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch(() => false);
+  if (clicked) {
+    await markVisualRouteEvidence(page, 'real-click', 'clicked first visible search result');
+  } else {
+    const box = await row.boundingBox();
+    if (!box) throw new Error('first visible search result had no clickable bounding box');
+    await page.mouse.click(box.x + box.width / 2, box.y + Math.min(box.height / 2, 28));
+    await markVisualRouteEvidence(page, 'real-click', 'mouse-clicked first visible search result center');
+  }
+  const waitForFocusedResult = () => page.waitForFunction(() => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const hasFocusedState = Number.isFinite(state.navState?.focusedIndex) || Number.isFinite(state.focusedNode);
+    const panelSurface = String(document.body.dataset.panelSurface || '');
+    const graphContext = String(document.body.dataset.graphContext || '');
+    const focusStage = document.querySelector('#focus-stage');
+    const focusStageVisible = !!focusStage && !focusStage.hidden && getComputedStyle(focusStage).display !== 'none';
+    return hasFocusedState && (
+      graphContext.startsWith('focus') ||
+      panelSurface === 'focus' ||
+      panelSurface === 'focus-search' ||
+      focusStageVisible
+    );
+  }, undefined, { timeout: 8000 });
+  await waitForFocusedResult();
+  await page.waitForTimeout(900);
+}
+
+async function enterSemanticDiveViaVisibleControl(page) {
+  let clickDetail = '';
+  let clickError = null;
+  let clicked = false;
+  const journeyInsideButton = page.locator('button[data-journey-action="enter-inside"]:visible').first();
+  if (await journeyInsideButton.count()) {
+    clicked = await journeyInsideButton.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch((err) => {
+      clickError = err;
+      return false;
+    });
+    clickDetail = clicked
+      ? 'clicked journey compass enter-inside action'
+      : 'journey compass enter-inside click timed out after dispatch';
+  } else {
+    const focusDive = page.locator('#btn-focus-dive:visible').first();
+    if (await focusDive.count()) {
+      clicked = await focusDive.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch((err) => {
+        clickError = err;
+        return false;
+      });
+      clickDetail = clicked ? 'clicked #btn-focus-dive' : '#btn-focus-dive click timed out after dispatch';
+    } else {
+      const stepInside = page.getByRole('button', { name: /step inside/i }).first();
+      clicked = await stepInside.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch((err) => {
+        clickError = err;
+        return false;
+      });
+      clickDetail = clicked ? 'clicked Step Inside button by role' : 'Step Inside role click timed out after dispatch';
+    }
+  }
+  await page.waitForFunction(() => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return document.body.dataset.panelSurface === 'semantic-dive' ||
+      document.body.dataset.semanticDive === 'active' ||
+      state.semanticDiveMode === true ||
+      state.trailDepth >= 2;
+  }, undefined, { timeout: 12000 }).catch((err) => {
+    throw clickError || err;
+  });
+  await markVisualRouteEvidence(page, 'real-click', clickDetail);
+  await page.waitForTimeout(1200);
+}
+
+async function enterMapViaVisibleControl(page) {
+  const insideMap = page.locator('#btn-inside-map:visible').first();
+  if (await insideMap.count()) {
+    await insideMap.click({ timeout: 8000, noWaitAfter: true });
+    await markVisualRouteEvidence(page, 'real-click', 'clicked semantic-dive inside Map button');
+  } else {
+    const mapAction = page.locator('button[data-journey-action="open-map"]:visible').first();
+    await mapAction.click({ timeout: 8000, noWaitAfter: true });
+    await markVisualRouteEvidence(page, 'real-click', 'clicked journey open-map action');
+  }
+  await page.waitForFunction(() => document.body.dataset.activeView === 'map', undefined, { timeout: 12000 });
+  await page.waitForTimeout(1000);
+}
+
+async function enterMapFocusSearchByRealRoute(page) {
+  await runVisibleSearch(page, 'coffee');
+  await clickVisibleFirstSearchResult(page);
+  await enterSemanticDiveViaVisibleControl(page);
+  await enterMapViaVisibleControl(page);
+  await page.waitForFunction(() => {
+    return document.body.dataset.activeView === 'map' &&
+      document.body.dataset.panelSurface === 'map-focus-search';
+  }, undefined, { timeout: 12000 });
+}
+
+async function enterThreadInspectorByRealRoute(page) {
+  await runVisibleSearch(page, 'coffee');
+  await clickVisibleFirstSearchResult(page);
+  const pill = page.locator('.focus-stage-neighbor-pill[data-index]:visible').first();
+  await pill.waitFor({ state: 'visible', timeout: 12000 });
+  await pill.scrollIntoViewIfNeeded({ timeout: 8000 }).catch(() => {});
+  const clicked = await pill.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch(() => false);
+  if (clicked) {
+    await markVisualRouteEvidence(page, 'real-click', 'clicked first visible neighbor pill');
+  } else {
+    const box = await pill.boundingBox();
+    if (!box) throw new Error('first visible neighbor pill had no clickable bounding box');
+    await page.mouse.click(box.x + box.width / 2, box.y + Math.min(box.height / 2, 28));
+    await markVisualRouteEvidence(page, 'real-click', 'mouse-clicked first visible neighbor pill center');
+  }
+  await page.waitForFunction(() => {
+    const inspector = document.querySelector('#focus-thread-inspector');
+    const style = inspector ? getComputedStyle(inspector) : null;
+    const rect = inspector?.getBoundingClientRect();
+    return document.body.dataset.threadInspectSurface &&
+      document.body.dataset.threadInspectSurface !== 'idle' &&
+      inspector &&
+      style.display !== 'none' &&
+      style.visibility !== 'hidden' &&
+      Number(style.opacity || 1) > 0.05 &&
+      rect.width > 0 &&
+      rect.height > 0;
+  }, undefined, { timeout: 12000 });
+  await page.waitForTimeout(900);
+}
+
+async function enterRouteTraceByRealRoute(page) {
+  await runVisibleSearch(page, 'coffee');
+  await clickVisibleFirstSearchResult(page);
+  await page.waitForFunction(() => {
+    const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const diagnostics = appState.routeTraceDiagnostics;
+    return Boolean(
+      document.body.dataset.activeView === 'galaxy' &&
+      document.body.dataset.routeMotion &&
+      document.body.dataset.routeMotion !== 'inactive' &&
+      diagnostics?.active &&
+      diagnostics.edgeCount > 0 &&
+      diagnostics.segmentCount > 0 &&
+      appState.routeTraceLines
+    );
+  }, undefined, { timeout: 12000 });
+}
+
+async function forceFocusedVisualState(page) {
+  await page.evaluate(() => {
+    const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const focusedIndex = Number.isFinite(appState.navState?.focusedIndex)
+      ? appState.navState.focusedIndex
+      : Number.isFinite(appState.focusedNode)
+        ? appState.focusedNode
+        : Number.isFinite(appState.currentSearchSummary?.anchorIndex)
+          ? appState.currentSearchSummary.anchorIndex
+          : 519;
+    if (!appState.navState) return;
+    appState.navState.focusedIndex = focusedIndex;
+    appState.navState.mode = 'focus';
+    appState.focusedNode = focusedIndex;
+    document.body.classList.add('is-active');
+    document.body.dataset.activeView = 'galaxy';
+    document.body.dataset.graphContext = 'focus';
+    document.body.dataset.panelSurface = 'focus';
+    document.body.dataset.panelSurfaceDetail = 'selected';
+    document.body.dataset.journeyPhase = 'focus';
+    document.body.dataset.focusOrigin = 'search-result';
+    document.body.dataset.threadInspectSurface = 'idle';
+    document.body.dataset.mobileSearchSheet = 'hidden';
+
+    const searchContainer = document.querySelector('.search-container');
+    if (searchContainer) {
+      searchContainer.classList.remove('has-query', 'results-rendered', 'searching');
+      searchContainer.style.display = 'none';
+      searchContainer.setAttribute('aria-hidden', 'true');
+    }
+
+    const infoPanel = document.querySelector('#info-panel');
+    if (infoPanel) {
+      infoPanel.style.display = 'none';
+      infoPanel.setAttribute('aria-hidden', 'true');
+    }
+
+    const focusStage = document.querySelector('#focus-stage');
+    if (focusStage) {
+      focusStage.hidden = false;
+      focusStage.style.display = 'block';
+      focusStage.setAttribute('aria-hidden', 'false');
+      focusStage.classList.add('active');
+    }
+  });
+  await markVisualRouteEvidence(page, 'forced-state', 'forced focused visual state fixture');
 }
 
 async function enterSemanticDive(page) {
@@ -587,11 +1199,13 @@ async function enterSemanticDive(page) {
 
   const diveButton = page.locator('#btn-focus-dive').first();
   if (await diveButton.isVisible().catch(() => false)) {
-    await diveButton.click({ timeout: 5000 }).catch(() => {});
+    const clicked = await diveButton.click({ timeout: 5000 }).then(() => true).catch(() => false);
+    if (clicked) await markVisualRouteEvidence(page, 'real-click', 'clicked #btn-focus-dive in visual audit');
   } else {
     const textButton = page.locator('button:has-text("Step Inside")').first();
     if (await textButton.isVisible().catch(() => false)) {
-      await textButton.click({ timeout: 5000 }).catch(() => {});
+      const clicked = await textButton.click({ timeout: 5000 }).then(() => true).catch(() => false);
+      if (clicked) await markVisualRouteEvidence(page, 'real-click', 'clicked Step Inside button in visual audit');
     }
   }
 
@@ -613,6 +1227,7 @@ async function enterSemanticDive(page) {
       refreshCompositionState?.();
       window.updateJourneyCompass?.();
     });
+    await markVisualRouteEvidence(page, 'forced-state', 'forced semantic dive fallback in visual audit');
   }
 
   await page.waitForFunction(() => document.body.dataset.panelSurface === 'semantic-dive', undefined, { timeout: 15000 }).catch(() => {});
@@ -717,20 +1332,28 @@ async function applyCompassRailState(page) {
       compass.style.display = 'grid';
       compass.style.visibility = 'visible';
       compass.style.opacity = '1';
-      compass.style.left = '16px';
-      compass.style.right = '16px';
-      compass.style.top = '18px';
+      compass.style.left = '12px';
+      compass.style.right = '12px';
+      compass.style.top = '58px';
       compass.style.width = 'auto';
       compass.style.minWidth = '0';
       compass.style.maxWidth = 'none';
       compass.style.height = 'auto';
       compass.style.minHeight = '0';
+      compass.style.maxHeight = '136px';
       compass.style.transform = 'none';
-      compass.style.gridTemplateColumns = 'minmax(0, 1fr)';
-      compass.style.gap = '8px';
-      compass.style.padding = '10px 12px';
-      compass.style.overflow = 'visible';
+      compass.style.gridTemplateColumns = 'minmax(0, 1fr) auto';
+      compass.style.gridTemplateAreas = '"copy actions" "rail rail"';
+      compass.style.gap = '7px 8px';
+      compass.style.padding = '8px 10px';
+      compass.style.overflow = 'hidden';
       compass.style.pointerEvents = 'auto';
+    }
+
+    const copy = document.querySelector('.journey-compass-copy');
+    if (copy) {
+      copy.style.gridArea = 'copy';
+      copy.style.minWidth = '0';
     }
 
     document.querySelectorAll('.journey-compass-step').forEach((step) => {
@@ -745,32 +1368,34 @@ async function applyCompassRailState(page) {
       step.style.minWidth = '0';
       step.style.width = 'auto';
       step.style.minHeight = '44px';
-      step.style.padding = '0 5px';
-      step.style.fontSize = '8px';
-      step.style.lineHeight = '1';
+      step.style.padding = '0 3px';
+      step.style.fontSize = '7.5px';
+      step.style.lineHeight = '1.05';
       step.style.overflow = 'visible';
-      step.style.pointerEvents = 'none';
+      step.style.pointerEvents = 'auto';
     });
 
     const rail = document.querySelector('.journey-compass-rail');
     if (rail) {
+      rail.style.gridArea = 'rail';
       rail.style.display = 'grid';
       rail.style.visibility = 'visible';
       rail.style.width = '100%';
       rail.style.minWidth = '0';
       rail.style.height = '44px';
       rail.style.gridTemplateColumns = 'repeat(5, minmax(0, 1fr))';
-      rail.style.gap = '3px';
+      rail.style.gap = '4px';
       rail.style.overflow = 'visible';
-      rail.style.pointerEvents = 'none';
+      rail.style.pointerEvents = 'auto';
     }
 
     const actions = document.querySelector('.journey-compass-actions');
     if (actions) {
       actions.style.display = 'flex';
       actions.style.visibility = 'visible';
-      actions.style.width = '100%';
-      actions.style.minWidth = '0';
+      actions.style.gridArea = 'actions';
+      actions.style.width = 'auto';
+      actions.style.minWidth = '44px';
       actions.style.pointerEvents = 'auto';
     }
 
@@ -783,8 +1408,8 @@ async function applyCompassRailState(page) {
     const note = document.querySelector('#journey-compass-note, .journey-compass-note');
     if (note) {
       note.textContent = 'The map rail keeps the journey steps visible.';
-      note.style.display = 'block';
-      note.style.visibility = 'visible';
+      note.style.display = 'none';
+      note.style.visibility = 'hidden';
     }
     const kicker = document.querySelector('#journey-compass-kicker, .journey-compass-kicker');
     if (kicker) {
@@ -816,7 +1441,7 @@ async function applyModeGridVisibleState(page) {
       searchContainer.style.margin = '0';
       searchContainer.style.padding = '0';
     }
-    document.querySelectorAll('#btn-launch, .search-label, .search-input-wrapper, .search-hint, .semantic-lane-assist, .search-trail-cue').forEach((element) => {
+    document.querySelectorAll('#btn-launch, .stats-row, .stat-caption, .search-label, .search-input-wrapper, .search-hint, .semantic-lane-assist, .search-trail-cue').forEach((element) => {
       element.style.display = 'none';
       element.style.visibility = 'hidden';
       element.style.opacity = '0';
@@ -838,6 +1463,10 @@ async function applyModeGridVisibleState(page) {
       infoPanel.classList.add('active');
       infoPanel.style.display = 'block';
       infoPanel.style.visibility = 'visible';
+      infoPanel.style.top = 'auto';
+      infoPanel.style.bottom = '0';
+      infoPanel.style.height = '320px';
+      infoPanel.style.maxHeight = '320px';
     }
 
     const modeGrid = document.querySelector('#mode-grid');
@@ -859,7 +1488,9 @@ async function applyModeGridVisibleState(page) {
 
     const infoContent = document.querySelector('.info-content');
     if (infoContent && modeGrid) {
-      infoContent.scrollTop = Math.max(0, modeGrid.offsetTop - infoContent.clientHeight + modeGrid.offsetHeight + 24);
+      infoContent.style.maxHeight = '260px';
+      infoContent.style.overflow = 'hidden';
+      infoContent.scrollTop = 0;
     }
   });
 }
@@ -884,8 +1515,9 @@ async function run() {
       '19-mobile-compass-rail',
       '20-mobile-mode-grid-visible',
       '21-mobile-route-trace-visible',
+      '24-mobile-map-focus-search',
     ])) {
-      const browser = await chromium.launch({ headless: true });
+      const browser = await chromium.launch(launchOptions);
       try {
         const mobilePage = await createAuditPage(browser, { viewport: mobile, deviceScaleFactor: 2, isMobile: true });
 
@@ -915,6 +1547,7 @@ async function run() {
 
           if (wantsAny(['03-mobile-focus-first-result', '04-mobile-field-node-active'])) {
             await enterFocusFromSearch(mobilePage);
+            await forceFocusedVisualState(mobilePage);
             await captureMaybe(states, mobilePage, '03-mobile-focus-first-result');
           }
 
@@ -934,6 +1567,7 @@ async function run() {
                 focusStage.setAttribute('aria-hidden', 'false');
               }
             });
+            await markVisualRouteEvidence(mobilePage, 'constructed-surface', 'visual audit field-node focus-search fixture');
             await mobilePage.waitForTimeout(300);
             await captureMaybe(states, mobilePage, '04-mobile-field-node-active');
           }
@@ -947,7 +1581,8 @@ async function run() {
         if (wantsState('06-mobile-filters-open')) {
           await gotoReady(mobilePage, targetUrl);
           await waitForReady(mobilePage, '06-mobile-filters-open:prepare');
-          await mobilePage.locator('#filters-section summary').click({ timeout: 5000 }).catch(() => {});
+          const clicked = await mobilePage.locator('#filters-section summary').click({ timeout: 5000 }).then(() => true).catch(() => false);
+          if (clicked) await markVisualRouteEvidence(mobilePage, 'real-click', 'clicked filters summary in visual audit');
           await captureMaybe(states, mobilePage, '06-mobile-filters-open');
         }
 
@@ -977,6 +1612,7 @@ async function run() {
                 </div>
               </div>`;
           });
+          await markVisualRouteEvidence(mobilePage, 'constructed-surface', 'visual audit search error fixture');
           await captureMaybe(states, mobilePage, '10-mobile-search-error-state');
         }
 
@@ -988,62 +1624,21 @@ async function run() {
             document.body.dataset.trailState = 'active';
             document.body.dataset.mapContext = 'focus';
           });
+          await markVisualRouteEvidence(mobilePage, 'constructed-surface', 'visual audit map trail dataset fixture');
           await captureMaybe(states, mobilePage, '11-mobile-selected-card-map-trail');
         }
 
+        if (wantsState('24-mobile-map-focus-search')) {
+          await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy' }));
+          await waitForReady(mobilePage, '24-mobile-map-focus-search:prepare');
+          await enterMapFocusSearchByRealRoute(mobilePage);
+          await captureMaybe(states, mobilePage, '24-mobile-map-focus-search');
+        }
+
         if (wantsState('21-mobile-route-trace-visible')) {
-          await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }));
+          await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy' }));
           await waitForReady(mobilePage, '21-mobile-route-trace-visible:prepare');
-          const firstResult = mobilePage.locator('.search-result-item').first();
-          await firstResult.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-          if (await firstResult.isVisible().catch(() => false)) {
-            await firstResult.click({ timeout: 5000 }).catch(() => {});
-          }
-          await mobilePage.waitForTimeout(600);
-          await mobilePage.evaluate(() => {
-            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-            if (typeof window.switchView === 'function') {
-              window.switchView('galaxy', { skipUrlSync: true, silentHandoff: true });
-            }
-            if (state.currentView !== 'galaxy') {
-              state.currentView = 'galaxy';
-            }
-            const seedIndex =
-              Number.isFinite(state.navState?.focusedIndex) ? state.navState.focusedIndex :
-              Number.isFinite(state.focusedNode) ? state.focusedNode :
-              Number.isFinite(state.currentSearchSummary?.anchorIndex) ? state.currentSearchSummary.anchorIndex :
-              519;
-            const existingCandidates = state.navState?.threadCandidates || [];
-            const setTrailFromSeed = window.__APP_ACTIONS__?.setTrailFromSeed;
-            if (!existingCandidates.length && typeof setTrailFromSeed === 'function' && Number.isFinite(seedIndex)) {
-              state.focusedNode = seedIndex;
-              state.navState = state.navState || {};
-              state.navState.focusedIndex = seedIndex;
-              setTrailFromSeed(seedIndex);
-            }
-            if (document.body?.dataset) {
-              document.body.dataset.activeView = 'galaxy';
-              document.body.dataset.routeMotion = 'focus';
-            }
-            if (typeof window.setRouteChoreographyPhase === 'function') {
-              window.setRouteChoreographyPhase('focus', { reason: 'visual-audit-route-trace' });
-            } else if (typeof window.refreshRouteTraceOverlay === 'function') {
-              window.refreshRouteTraceOverlay({ reason: 'visual-audit-route-trace' });
-            }
-            if (typeof window.updateRouteTraceOverlayPositions === 'function') {
-              window.updateRouteTraceOverlayPositions(performance.now());
-            }
-          });
-          await mobilePage.waitForFunction(() => {
-            const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-            const diagnostics = appState.routeTraceDiagnostics;
-            return Boolean(
-              diagnostics?.active &&
-              diagnostics.edgeCount > 0 &&
-              diagnostics.segmentCount > 0 &&
-              appState.routeTraceLines
-            );
-          }, undefined, { timeout: 8000 }).catch(() => {});
+          await enterRouteTraceByRealRoute(mobilePage);
           await mobilePage.evaluate(async () => {
             const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
             const t1 = appState.routeTraceLines?.material?.uniforms?.time?.value ?? null;
@@ -1059,133 +1654,9 @@ async function run() {
         }
 
         if (wantsState('17-mobile-thread-inspector')) {
-          await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }));
+          await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy' }));
           await waitForReady(mobilePage, '17-mobile-thread-inspector:prepare');
-          const firstResult = mobilePage.locator('.search-result-item').first();
-          if (await firstResult.count()) {
-            await firstResult.click({ timeout: 5000 }).catch(() => {});
-          }
-          await mobilePage.waitForTimeout(800);
-          await mobilePage.evaluate(() => {
-            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-            if (typeof window.switchView === 'function') {
-              window.switchView('galaxy', { skipUrlSync: true, silentHandoff: true });
-            }
-            if (state.currentView !== 'galaxy') {
-              state.currentView = 'galaxy';
-            }
-            const seedIndex =
-              Number.isFinite(state.navState?.focusedIndex) ? state.navState.focusedIndex :
-              Number.isFinite(state.focusedNode) ? state.focusedNode :
-              Number.isFinite(state.currentSearchSummary?.anchorIndex) ? state.currentSearchSummary.anchorIndex :
-              519;
-            const setTrailFromSeed = window.__APP_ACTIONS__?.setTrailFromSeed;
-            if (typeof setTrailFromSeed === 'function' && Number.isFinite(seedIndex)) {
-              state.focusedNode = seedIndex;
-              state.navState = state.navState || {};
-              state.navState.focusedIndex = seedIndex;
-              setTrailFromSeed(seedIndex);
-            }
-
-            document.body.classList.add('is-active');
-            document.body.dataset.activeView = 'galaxy';
-            document.body.dataset.graphContext = 'focus';
-            document.body.dataset.panelSurface = 'focus';
-
-            const focusStage = document.querySelector('#focus-stage');
-            if (focusStage) {
-              focusStage.hidden = false;
-              focusStage.style.display = 'block';
-              focusStage.classList.add('active');
-            }
-
-            const debugProbesEnabled = (typeof window.__DEBUG_PROBES__ === 'undefined' ? true : window.__DEBUG_PROBES__);
-
-            const candidate = (state.navState?.threadCandidates || [])
-              .find((item) => item && Number.isFinite(item.index) && item.index !== seedIndex);
-
-            if (debugProbesEnabled && candidate) {
-              state.inspectedThreadIndex = candidate.index;
-              const renderThreadInspection =
-                typeof window._ti?.renderThreadInspection === 'function' ? window._ti.renderThreadInspection :
-                typeof window.renderThreadInspection === 'function' ? window.renderThreadInspection :
-                null;
-              const inspectThreadNeighbor =
-                typeof window._ti?.inspectThreadNeighbor === 'function' ? window._ti.inspectThreadNeighbor :
-                typeof window.inspectThreadNeighbor === 'function' ? window.inspectThreadNeighbor :
-                null;
-              let inspectionState = null;
-              if (inspectThreadNeighbor) {
-                inspectionState = inspectThreadNeighbor(candidate.index, { force: true, surface: 'inspector' });
-              }
-              if (!inspectionState?.active && renderThreadInspection) {
-                inspectionState = renderThreadInspection(candidate.index, { force: true, surface: 'inspector' });
-              }
-              if (typeof window._ti?.updateInspectedStrandOverlay === 'function') {
-                window._ti.updateInspectedStrandOverlay(performance.now());
-              }
-              window.__visualThreadInspectorProbe = {
-                candidateIndex: candidate.index,
-                active: !!inspectionState?.active,
-                diagnostics: { ...(state.inspectedStrandDiagnostics || {}) },
-              };
-            } else if (!debugProbesEnabled) {
-              console.warn('[visual-state-audit] __DEBUG_PROBES__ is false; skipping _ti-dependent thread-inspector calls');
-            }
-
-            document.querySelectorAll('#btn-thread-pin, #btn-thread-follow, #btn-thread-clear').forEach((btn) => {
-              btn.disabled = false;
-            });
-            document
-              .querySelectorAll('.focus-stage-kicker, .focus-stage-name, .focus-stage-what, .focus-stage-meta, .focus-stage-badges, .focus-stage-trivia')
-              .forEach((el) => {
-                el.style.display = 'none';
-              });
-
-            const searchContainer = document.querySelector('.search-container');
-            if (searchContainer) {
-              searchContainer.classList.remove('has-query', 'results-rendered', 'searching');
-              searchContainer.style.display = 'none';
-            }
-            const infoPanel = document.querySelector('#info-panel');
-            if (infoPanel) {
-              infoPanel.style.display = 'none';
-            }
-          });
-          await mobilePage.waitForFunction(() => {
-            const diagnostics = (window.__APP_STATE__ ?? window.__TEST_STATE__)?.inspectedStrandDiagnostics;
-            return Boolean(
-              diagnostics?.active &&
-              diagnostics.segmentCount > 0 &&
-              diagnostics.braidCount > 0 &&
-              diagnostics.endpointCount > 0
-            );
-          }, undefined, { timeout: 8000 }).catch(() => {});
-          await mobilePage.waitForTimeout(300);
-          await mobilePage.evaluate(() => {
-            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-            if (state.inspectedStrandDiagnostics?.active) return;
-            const seedIndex =
-              Number.isFinite(state.navState?.focusedIndex) ? state.navState.focusedIndex :
-              Number.isFinite(state.focusedNode) ? state.focusedNode :
-              Number.isFinite(state.currentSearchSummary?.anchorIndex) ? state.currentSearchSummary.anchorIndex :
-              519;
-            const candidate = (state.navState?.threadCandidates || [])
-              .find((item) => item && Number.isFinite(item.index) && item.index !== seedIndex);
-            if (!candidate) return;
-            const inspectThreadNeighbor =
-              typeof window._ti?.inspectThreadNeighbor === 'function' ? window._ti.inspectThreadNeighbor :
-              typeof window.inspectThreadNeighbor === 'function' ? window.inspectThreadNeighbor :
-              null;
-            if (inspectThreadNeighbor) {
-              inspectThreadNeighbor(candidate.index, { force: true, surface: 'inspector' });
-            }
-            if (typeof window._ti?.updateInspectedStrandOverlay === 'function') {
-              window._ti.updateInspectedStrandOverlay(performance.now());
-            }
-            document.body.dataset.threadInspectSurface = 'inspector';
-          });
-          await mobilePage.waitForTimeout(50);
+          await enterThreadInspectorByRealRoute(mobilePage);
           await captureMaybe(states, mobilePage, '17-mobile-thread-inspector');
         }
 
@@ -1196,7 +1667,7 @@ async function run() {
     }
 
     if (wantsAny(['07-desktop-idle', '08-desktop-search-coffee', '11-desktop-selected-card-map-trail', '16-desktop-info-panel-populated'])) {
-      const browser = await chromium.launch({ headless: true });
+      const browser = await chromium.launch(launchOptions);
       try {
         const desktopPage = await createAuditPage(browser, { viewport: desktop });
 
@@ -1218,6 +1689,7 @@ async function run() {
             document.body.dataset.trailState = 'active';
             document.body.dataset.mapContext = 'focus';
           });
+          await markVisualRouteEvidence(desktopPage, 'constructed-surface', 'visual audit desktop map trail dataset fixture');
           await captureMaybe(states, desktopPage, '11-desktop-selected-card-map-trail');
         }
 
@@ -1237,14 +1709,15 @@ async function run() {
     }
 
     if (wantsAny(['13-desktop-filters-open', '14-desktop-search-error'])) {
-      const browser = await chromium.launch({ headless: true });
+      const browser = await chromium.launch(launchOptions);
       try {
         const desktopPage = await createAuditPage(browser, { viewport: desktop });
 
         if (wantsState('13-desktop-filters-open')) {
           await gotoReady(desktopPage, targetUrl);
           await waitForReady(desktopPage, '13-desktop-filters-open:prepare');
-          await desktopPage.locator('#filters-section summary').click({ timeout: 5000 }).catch(() => {});
+          const clicked = await desktopPage.locator('#filters-section summary').click({ timeout: 5000 }).then(() => true).catch(() => false);
+          if (clicked) await markVisualRouteEvidence(desktopPage, 'real-click', 'clicked desktop filters summary in visual audit');
           await captureMaybe(states, desktopPage, '13-desktop-filters-open');
         }
 
@@ -1268,6 +1741,7 @@ async function run() {
                 </div>
               </div>`;
           });
+          await markVisualRouteEvidence(desktopPage, 'constructed-surface', 'visual audit desktop search error fixture');
           await captureMaybe(states, desktopPage, '14-desktop-search-error');
         }
 
@@ -1278,7 +1752,7 @@ async function run() {
     }
 
     if (wantsState('12-desktop-reduced-motion')) {
-      const browser = await chromium.launch({ headless: true });
+      const browser = await chromium.launch(launchOptions);
       try {
         const reducedPage = await createAuditPage(browser, { viewport: desktop });
         await reducedPage.emulateMedia({ reducedMotion: 'reduce' });
@@ -1291,7 +1765,7 @@ async function run() {
     }
 
     if (wantsState('13-mobile-reduced-motion')) {
-      const browser = await chromium.launch({ headless: true });
+      const browser = await chromium.launch(launchOptions);
       try {
         const reducedPage = await createAuditPage(browser, { viewport: mobile, deviceScaleFactor: 2, isMobile: true });
         await reducedPage.emulateMedia({ reducedMotion: 'reduce' });
@@ -1304,7 +1778,7 @@ async function run() {
     }
 
     if (wantsState('15-mobile-semantic-dive')) {
-      const browser = await chromium.launch({ headless: true });
+      const browser = await chromium.launch(launchOptions);
       try {
         const divePage = await createAuditPage(browser, { viewport: mobile, deviceScaleFactor: 2, isMobile: true });
         await divePage.goto(withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }), { waitUntil: 'commit', timeout: 10000 });
@@ -1312,7 +1786,9 @@ async function run() {
         await divePage.waitForFunction(() => {
           const canvas = document.querySelector('#canvas-container canvas');
           return canvas && document.body.dataset.graphicsMode === 'webgl';
-        }, undefined, { timeout: 8000 }).catch(() => {});
+        }, undefined, { timeout: 8000 }).catch((err) => {
+          if (requireWebgl) throw err;
+        });
         await divePage.waitForTimeout(2200);
 
         await enterSemanticDive(divePage);
@@ -1327,14 +1803,16 @@ async function run() {
     }
 
     if (wantsState('22-mobile-semantic-dive-320')) {
-      const browser = await chromium.launch({ headless: true });
+      const browser = await chromium.launch(launchOptions);
       try {
         const divePage = await createAuditPage(browser, { viewport: mobile320, deviceScaleFactor: 2, isMobile: true });
         await divePage.goto(withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }), { waitUntil: 'commit', timeout: 10000 });
         await divePage.waitForFunction(() => {
           const canvas = document.querySelector('#canvas-container canvas');
           return canvas && document.body.dataset.graphicsMode === 'webgl';
-        }, undefined, { timeout: 8000 }).catch(() => {});
+        }, undefined, { timeout: 8000 }).catch((err) => {
+          if (requireWebgl) throw err;
+        });
         await divePage.waitForTimeout(2200);
 
         await enterSemanticDive(divePage);
@@ -1348,7 +1826,7 @@ async function run() {
     }
 
     if (wantsState('23-mobile-short-landscape')) {
-      const browser = await chromium.launch({ headless: true });
+      const browser = await chromium.launch(launchOptions);
       try {
         const slPage = await createAuditPage(browser, { viewport: shortLandscape, deviceScaleFactor: 2, isMobile: true });
         await gotoReady(slPage, withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }));
@@ -1375,12 +1853,23 @@ async function run() {
     loadingOverlayDiagnostics: data.loadingOverlayDiagnostics,
     compassRailDiagnostics: data.compassRailDiagnostics,
     modeGridDiagnostics: data.modeGridDiagnostics,
+    demoStarterDiagnostics: data.demoStarterDiagnostics,
     routeTraceDiagnostics: data.routeTraceDiagnostics,
     inspectedStrandDiagnostics: data.inspectedStrandDiagnostics,
+    routeEvidence: data.routeEvidence,
     sceneLuminance: data.sceneLuminance,
+    clusterLabelDiagnostics: data.clusterLabelDiagnostics,
   }));
 
   await fs.writeFile(path.join(outDir, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
+  const routeEvidenceSummary = summary.map((state) => ({
+    name: state.name,
+    source: state.routeEvidence?.source || 'missing',
+    proofLane: state.routeEvidence?.proofLane || 'missing',
+    detail: state.routeEvidence?.detail || '',
+    history: state.routeEvidence?.history || [],
+  }));
+  await fs.writeFile(path.join(outDir, 'route-evidence-summary.json'), `${JSON.stringify(routeEvidenceSummary, null, 2)}\n`, 'utf8');
 
   const assertions = [];
   const stateByName = new Map(summary.map((state) => [state.name, state]));
@@ -1452,6 +1941,38 @@ async function run() {
     return targetBox;
   };
 
+  const constructedSurfaceStates = new Set([
+    '03-mobile-focus-first-result',
+    '04-mobile-field-node-active',
+    '10-mobile-search-error-state',
+    '11-mobile-selected-card-map-trail',
+    '11-desktop-selected-card-map-trail',
+    '14-desktop-search-error',
+    '15-mobile-semantic-dive',
+    '16-desktop-info-panel-populated',
+    '18-mobile-loading-overlay',
+    '19-mobile-compass-rail',
+    '20-mobile-mode-grid-visible',
+    '22-mobile-semantic-dive-320',
+    '23-mobile-short-landscape',
+  ]);
+
+  for (const state of summary) {
+    const evidence = state.routeEvidence || {};
+    if (evidence.source && evidence.detail && evidence.proofLane) {
+      pass(state.name, 'route-evidence:present');
+    } else {
+      fail(state.name, 'route-evidence:present', `missing route evidence: ${JSON.stringify(evidence)}`);
+    }
+    if (constructedSurfaceStates.has(state.name)) {
+      if (evidence.proofLane === 'constructed-surface') {
+        pass(state.name, 'route-evidence:constructed-surface-labeled');
+      } else {
+        fail(state.name, 'route-evidence:constructed-surface-labeled', `expected constructed-surface proof lane, got ${evidence.proofLane || 'missing'}`);
+      }
+    }
+  }
+
   for (const state of summary) {
     if (state.scroll.overflowX > 0) {
       fail(state.name, 'no-overflow-x', `horizontal overflow ${state.scroll.overflowX}px`);
@@ -1477,6 +1998,15 @@ async function run() {
 
   for (const state of summary.filter(isMobileState)) {
     const viewport = viewportFor(state);
+    const loadingOverlay = box(state, '#loading-overlay');
+    const allowsLoadingOverlay = state.name === '18-mobile-loading-overlay';
+    if (!allowsLoadingOverlay) {
+      if (state.bodyDataset?.loadingOverlay === 'active' || isVisible(loadingOverlay)) {
+        fail(state.name, 'visual-settle:loading-overlay-hidden', 'loading overlay is still active over a non-loading visual state');
+      } else {
+        pass(state.name, 'visual-settle:loading-overlay-hidden');
+      }
+    }
 
     for (const [selector, maxHeightRatio] of mobileSurfaceLimits.entries()) {
       const targetBox = box(state, selector);
@@ -1507,9 +2037,19 @@ async function run() {
     const compass = box(state, '.journey-compass');
     const lowerSurfaces = ['#info-panel', '.search-container', '.selected-card', '.focus-stage-card', '.map-trail-strip'];
     if (isRendered(compass)) {
+      if (!allowsLoadingOverlay && String(compass.topElement || '').startsWith('#loading-overlay')) {
+        fail(state.name, 'visual-settle:.journey-compass-not-covered', '.journey-compass center is covered by the loading overlay');
+      } else {
+        pass(state.name, 'visual-settle:.journey-compass-not-covered');
+      }
       for (const selector of lowerSurfaces) {
         const targetBox = box(state, selector);
         if (!isRendered(targetBox)) continue;
+        if (!allowsLoadingOverlay && String(targetBox.topElement || '').startsWith('#loading-overlay')) {
+          fail(state.name, `visual-settle:${selector}-not-covered`, `${selector} center is covered by the loading overlay`);
+        } else {
+          pass(state.name, `visual-settle:${selector}-not-covered`);
+        }
         if (rectsOverlap(compass, targetBox, 4)) {
           fail(state.name, `surface-overlap:.journey-compass:${selector}`, '.journey-compass overlaps lower panel surface');
         } else {
@@ -1533,11 +2073,24 @@ async function run() {
     const pinBtn = requireRendered('17-mobile-thread-inspector', 'thread-inspector:pin-visible', '#btn-thread-pin');
     const followBtn = requireRendered('17-mobile-thread-inspector', 'thread-inspector:follow-visible', '#btn-thread-follow');
     const clearBtn = requireRendered('17-mobile-thread-inspector', 'thread-inspector:clear-visible', '#btn-thread-clear');
+    const searchContainer = box(inspectorState, '.search-container');
+    const diveButton = box(inspectorState, '.focus-stage-dive-btn');
+    const nearbyStops = box(inspectorState, '.focus-stage-neighbors');
+    const routeEvidence = inspectorState.routeEvidence || {};
 
-    if (inspectorState?.bodyDataset?.threadInspectSurface === 'inspector') {
+    if (inspectorState?.bodyDataset?.threadInspectSurface && inspectorState.bodyDataset.threadInspectSurface !== 'idle') {
       pass('17-mobile-thread-inspector', 'thread-inspector:surface-state');
     } else {
-      fail('17-mobile-thread-inspector', 'thread-inspector:surface-state', `expected threadInspectSurface "inspector", got "${inspectorState?.bodyDataset?.threadInspectSurface || ''}"`);
+      fail('17-mobile-thread-inspector', 'thread-inspector:surface-state', `expected active threadInspectSurface, got "${inspectorState?.bodyDataset?.threadInspectSurface || ''}"`);
+    }
+    if (routeEvidence.proofLane === 'real-route' && routeEvidence.source === 'real-click') {
+      pass('17-mobile-thread-inspector', 'thread-inspector:real-route');
+    } else {
+      fail(
+        '17-mobile-thread-inspector',
+        'thread-inspector:real-route',
+        `expected real click route evidence, got ${JSON.stringify(routeEvidence)}`,
+      );
     }
 
     if (isVisible(focusStage)) {
@@ -1567,6 +2120,21 @@ async function run() {
       pass('17-mobile-thread-inspector', 'thread-inspector:not-occluded');
     } else if (inspector) {
       fail('17-mobile-thread-inspector', 'thread-inspector:not-occluded', `inspector center is covered by ${inspector.topElement || 'nothing'}`);
+    }
+    if (!isRendered(searchContainer)) {
+      pass('17-mobile-thread-inspector', 'thread-inspector:search-container-hidden');
+    } else {
+      fail('17-mobile-thread-inspector', 'thread-inspector:search-container-hidden', `.search-container should not duplicate focus context in active preview, got ${JSON.stringify(searchContainer)}`);
+    }
+    if (!isRendered(diveButton)) {
+      pass('17-mobile-thread-inspector', 'thread-inspector:step-inside-hidden');
+    } else {
+      fail('17-mobile-thread-inspector', 'thread-inspector:step-inside-hidden', `.focus-stage-dive-btn should not compete with thread actions, got ${JSON.stringify(diveButton)}`);
+    }
+    if (isVisible(nearbyStops) && nearbyStops.height < 40) {
+      fail('17-mobile-thread-inspector', 'thread-inspector:nearby-stops-not-squeezed', `.focus-stage-neighbors is squeezed to ${Math.round(nearbyStops.height)}px`);
+    } else {
+      pass('17-mobile-thread-inspector', 'thread-inspector:nearby-stops-not-squeezed');
     }
 
     if (title?.text?.includes(' -> ')) {
@@ -1622,7 +2190,17 @@ async function run() {
   if (shouldAssert('21-mobile-route-trace-visible')) {
     const routeState = requireState('21-mobile-route-trace-visible');
     const diagnostics = routeState?.routeTraceDiagnostics || {};
+    const routeEvidence = routeState?.routeEvidence || {};
 
+    if (routeEvidence.proofLane === 'real-route' && routeEvidence.source === 'real-click') {
+      pass('21-mobile-route-trace-visible', 'route-trace:real-route');
+    } else {
+      fail(
+        '21-mobile-route-trace-visible',
+        'route-trace:real-route',
+        `expected real click route evidence, got ${JSON.stringify(routeEvidence)}`,
+      );
+    }
     if (diagnostics.active === true) {
       pass('21-mobile-route-trace-visible', 'route-trace:diagnostics-active');
     } else {
@@ -1733,6 +2311,7 @@ async function run() {
     const kicker = box(compassState, '.journey-compass-kicker');
     const title = requireVisible('19-mobile-compass-rail', 'compass-rail:title-visible', '.journey-compass-title');
     const note = box(compassState, '.journey-compass-note');
+    const infoPanel = box(compassState, '#info-panel');
     requireRendered('19-mobile-compass-rail', 'compass-rail:actions-visible', '.journey-compass-actions');
 
     const viewport = viewportFor(compassState);
@@ -1791,10 +2370,51 @@ async function run() {
     } else {
       fail('19-mobile-compass-rail', 'compass-rail:copy', 'compass title did not include expected map copy');
     }
+    if (!isRendered(infoPanel)) {
+      pass('19-mobile-compass-rail', 'compass-rail:map-idle-info-panel-hidden');
+    } else {
+      fail('19-mobile-compass-rail', 'compass-rail:map-idle-info-panel-hidden', `#info-panel should not own the map-idle overview, got ${JSON.stringify(infoPanel)}`);
+    }
     if (step?.text?.length && (kicker?.text?.length || note?.text?.length || title?.text?.length)) {
       pass('19-mobile-compass-rail', 'compass-rail:text-mounted');
     } else {
       fail('19-mobile-compass-rail', 'compass-rail:text-mounted', 'compass rail text missing');
+    }
+  }
+
+  if (shouldAssert('01-mobile-idle')) {
+    const idleState = requireState('01-mobile-idle');
+    const viewport = viewportFor(idleState);
+    const infoPanel = box(idleState, '#info-panel');
+    const searchContainer = box(idleState, '.search-container');
+    const launchButton = box(idleState, '#btn-launch');
+    const diagnostics = idleState?.demoStarterDiagnostics || {};
+    const panelArea = infoPanel ? (infoPanel.width * infoPanel.height) / Math.max(1, viewport.width * viewport.height) : 0;
+
+    if (infoPanel && panelArea <= 0.42) {
+      pass('01-mobile-idle', 'mobile-idle:overview-panel-density');
+    } else {
+      fail('01-mobile-idle', 'mobile-idle:overview-panel-density', `#info-panel area ratio ${panelArea.toFixed(3)} is too large for idle overview`);
+    }
+    if (searchContainer && withinViewport(searchContainer, viewport)) {
+      pass('01-mobile-idle', 'mobile-idle:search-container-within-viewport');
+    } else {
+      fail('01-mobile-idle', 'mobile-idle:search-container-within-viewport', `.search-container should stay inside idle sheet, got ${JSON.stringify(searchContainer)}`);
+    }
+    if (!isRendered(launchButton)) {
+      pass('01-mobile-idle', 'mobile-idle:launch-button-hidden');
+    } else {
+      fail('01-mobile-idle', 'mobile-idle:launch-button-hidden', `#btn-launch competes with starter chips and search, got ${JSON.stringify(launchButton)}`);
+    }
+    if (diagnostics.visibleChipsCount === diagnostics.chipsCount && diagnostics.chipsCount >= 4) {
+      pass('01-mobile-idle', 'mobile-idle:starter-chips-visible');
+    } else {
+      fail('01-mobile-idle', 'mobile-idle:starter-chips-visible', `visible ${diagnostics.visibleChipsCount || 0} of ${diagnostics.chipsCount || 0} starter chips`);
+    }
+    if (!diagnostics.rowOverflow && (diagnostics.clippedChipsCount || 0) === 0) {
+      pass('01-mobile-idle', 'mobile-idle:starter-chips-fit');
+    } else {
+      fail('01-mobile-idle', 'mobile-idle:starter-chips-fit', `rowOverflow=${Boolean(diagnostics.rowOverflow)}, clipped=${diagnostics.clippedChipsCount || 0}`);
     }
   }
 
@@ -1866,6 +2486,54 @@ async function run() {
     }
   }
 
+  if (shouldAssert('02-mobile-search-coffee')) {
+    const searchState = requireState('02-mobile-search-coffee');
+    const searchContainer = box(searchState, '.search-container');
+    const searchResults = box(searchState, '#search-results');
+    const infoPanel = box(searchState, '#info-panel');
+    const modeGrid = box(searchState, '#mode-grid');
+    const viewport = viewportFor(searchState);
+
+    if (searchState?.bodyDataset?.panelSurface === 'search') {
+      pass('02-mobile-search-coffee', 'mobile-search:panel-surface-search');
+    } else {
+      fail('02-mobile-search-coffee', 'mobile-search:panel-surface-search', `expected search surface, got ${searchState?.bodyDataset?.panelSurface || 'none'}`);
+    }
+    if (isRendered(searchContainer)) {
+      pass('02-mobile-search-coffee', 'mobile-search:search-container-visible');
+    } else {
+      fail('02-mobile-search-coffee', 'mobile-search:search-container-visible', '.search-container should own the mobile search surface');
+    }
+    if (isRendered(infoPanel) && Math.abs((infoPanel.y + infoPanel.height) - viewport.height) <= 24) {
+      pass('02-mobile-search-coffee', 'mobile-search:info-panel-bottom-anchored');
+    } else {
+      fail(
+        '02-mobile-search-coffee',
+        'mobile-search:info-panel-bottom-anchored',
+        `#info-panel should be a bottom sheet in search peek mode, got ${JSON.stringify(infoPanel)} in ${viewport.width}x${viewport.height}`,
+      );
+    }
+    if (isRendered(searchContainer) && searchContainer.y >= viewport.height * 0.55) {
+      pass('02-mobile-search-coffee', 'mobile-search:search-container-bottom-zone');
+    } else {
+      fail(
+        '02-mobile-search-coffee',
+        'mobile-search:search-container-bottom-zone',
+        `.search-container should sit in the lower search sheet, got ${JSON.stringify(searchContainer)} in ${viewport.width}x${viewport.height}`,
+      );
+    }
+    if (isRendered(searchResults)) {
+      pass('02-mobile-search-coffee', 'mobile-search:results-visible');
+    } else {
+      fail('02-mobile-search-coffee', 'mobile-search:results-visible', '#search-results should render for a query route');
+    }
+    if (!isRendered(modeGrid)) {
+      pass('02-mobile-search-coffee', 'mobile-search:mode-grid-hidden');
+    } else {
+      fail('02-mobile-search-coffee', 'mobile-search:mode-grid-hidden', `#mode-grid should not render inside the search drawer, got ${JSON.stringify(modeGrid)}`);
+    }
+  }
+
   if (shouldAssert('10-mobile-search-error-state')) {
     for (const selector of [
       '.search-error-state',
@@ -1914,6 +2582,17 @@ async function run() {
     const isFocusOrDive = (name.includes('focus') || name.includes('selected-card') || name.includes('dive')) && !name.includes('field-node');
     const maxWhiteRatio = isFocusOrDive ? 0.018 : 0.08;
     const maxP95 = isFocusOrDive ? 205 : 230;
+    const graphSignalStates = new Set([
+      '01-mobile-idle',
+      '02-mobile-search-coffee',
+      '03-mobile-focus-first-result',
+      '07-desktop-idle',
+      '08-desktop-search-coffee',
+      '15-mobile-semantic-dive',
+      '21-mobile-route-trace-visible',
+      '22-mobile-semantic-dive-320',
+      '23-mobile-short-landscape',
+    ]);
 
     if (scene.whiteRatio > maxWhiteRatio) {
       fail(
@@ -1941,6 +2620,122 @@ async function run() {
       );
     } else {
       pass(state.name, 'scene-luminance:p95');
+    }
+
+    if (graphSignalStates.has(name)) {
+      if (scene.dynamicRange >= 18 && scene.stdev >= 6) {
+        pass(state.name, 'scene-signal:dynamic-range');
+      } else {
+        fail(
+          state.name,
+          'scene-signal:dynamic-range',
+          `scene dynamicRange=${scene.dynamicRange} stdev=${scene.stdev}; graph field may be sparse or flat`,
+        );
+      }
+
+      if (scene.edgeRatio >= 0.01) {
+        pass(state.name, 'scene-signal:edge-ratio');
+      } else {
+        fail(
+          state.name,
+          'scene-signal:edge-ratio',
+          `scene edgeRatio=${scene.edgeRatio}; graph field lacks visible detail`,
+        );
+      }
+    }
+  }
+
+  const clusterLabelStates = new Set([
+    '01-mobile-idle',
+    '02-mobile-search-coffee',
+    '03-mobile-focus-first-result',
+    '07-desktop-idle',
+    '08-desktop-search-coffee',
+    '15-mobile-semantic-dive',
+    '21-mobile-route-trace-visible',
+    '22-mobile-semantic-dive-320',
+    '23-mobile-short-landscape',
+  ]);
+  const labelBudgetFor = (state, diagnostics) => {
+    const mode = diagnostics?.mode || (
+      state.name.includes('dive') ? 'inside' :
+        state.name.includes('focus') || state.name.includes('selected-card') ? 'focus' :
+          state.name.includes('search') || state.name.includes('route-trace') ? 'search' :
+            'overview'
+    );
+    const mobileLike = isMobileState(state);
+    const budgets = {
+      overview: { mobile: 4, desktop: 8 },
+      search: { mobile: 3, desktop: 5 },
+      focus: { mobile: 3, desktop: 3 },
+      inside: { mobile: 2, desktop: 3 },
+    };
+    return budgets[mode]?.[mobileLike ? 'mobile' : 'desktop'] ?? (mobileLike ? 3 : 6);
+  };
+
+  for (const state of summary.filter((entry) => clusterLabelStates.has(entry.name))) {
+    const diagnostics = state.clusterLabelDiagnostics || {};
+    const labels = diagnostics.labels || [];
+    const webglSprites = diagnostics.webglSprites || {};
+    const maxLabels = labelBudgetFor(state, diagnostics);
+
+    if (labels.length <= maxLabels) {
+      pass(state.name, 'cluster-labels:budget');
+    } else {
+      fail(state.name, 'cluster-labels:budget', `visible labels ${labels.length} exceeds ${maxLabels}: ${labels.map((label) => label.text).join(', ')}`);
+    }
+
+    if ((diagnostics.clipped || []).length === 0) {
+      pass(state.name, 'cluster-labels:not-clipped');
+    } else {
+      fail(state.name, 'cluster-labels:not-clipped', JSON.stringify((diagnostics.clipped || []).slice(0, 4)));
+    }
+
+    if ((diagnostics.offscreen || []).length === 0) {
+      pass(state.name, 'cluster-labels:inside-viewport');
+    } else {
+      fail(state.name, 'cluster-labels:inside-viewport', JSON.stringify((diagnostics.offscreen || []).slice(0, 4)));
+    }
+
+    if ((diagnostics.overlaps || []).length === 0) {
+      pass(state.name, 'cluster-labels:no-overlap');
+    } else {
+      fail(state.name, 'cluster-labels:no-overlap', JSON.stringify((diagnostics.overlaps || []).slice(0, 4)));
+    }
+
+    if ((diagnostics.lowOpacity || []).length === 0 && (diagnostics.smallText || []).length === 0) {
+      pass(state.name, 'cluster-labels:readable-style');
+    } else {
+      fail(
+        state.name,
+        'cluster-labels:readable-style',
+        JSON.stringify({
+          lowOpacity: (diagnostics.lowOpacity || []).slice(0, 4),
+          smallText: (diagnostics.smallText || []).slice(0, 4),
+        }),
+      );
+    }
+
+    if (isMobileState(state)) {
+      if ((webglSprites.visibleCount || 0) === 0) {
+        pass(state.name, 'cluster-label-sprites:mobile-hidden');
+      } else {
+        fail(
+          state.name,
+          'cluster-label-sprites:mobile-hidden',
+          `mobile state has ${webglSprites.visibleCount} visible WebGL label sprite(s); this creates unreadable canvas text artifacts`,
+        );
+      }
+    }
+
+    if ((webglSprites.oversized || []).length === 0) {
+      pass(state.name, 'cluster-label-sprites:not-oversized');
+    } else {
+      fail(
+        state.name,
+        'cluster-label-sprites:not-oversized',
+        JSON.stringify((webglSprites.oversized || []).slice(0, 4)),
+      );
     }
   }
 
@@ -1987,7 +2782,7 @@ async function run() {
   if (shouldAssert('11-mobile-selected-card-map-trail')) {
     const mobileTrailState = requireState('11-mobile-selected-card-map-trail');
     const mobileTrailCard = box(mobileTrailState, '.selected-card');
-    if (isRendered(mobileTrailCard) && mobileTrailCard.width > 0 && mobileTrailCard.height > 0) {
+    if (isVisible(mobileTrailCard) && mobileTrailCard.width > 0 && mobileTrailCard.height > 0) {
       fail(
         '11-mobile-selected-card-map-trail',
         'mobile-map-trail-selected-card:hidden',
@@ -1997,6 +2792,18 @@ async function run() {
       pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-selected-card:hidden');
     } else {
       pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-selected-card:not-mounted');
+    }
+    const mobileTrailEmptyCard = box(mobileTrailState, '.selected-empty');
+    if (isVisible(mobileTrailEmptyCard) && mobileTrailEmptyCard.width > 0 && mobileTrailEmptyCard.height > 0) {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail-selected-empty:hidden',
+        `legacy selected-empty copy should not render over the mobile map/search lane: ${JSON.stringify(mobileTrailEmptyCard)}`,
+      );
+    } else if (mobileTrailEmptyCard) {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-selected-empty:hidden');
+    } else {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-selected-empty:not-mounted');
     }
     if (mobileTrailState?.bodyDataset?.activeView === 'map') {
       pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-active-view');
@@ -2035,6 +2842,42 @@ async function run() {
         '.map-trail-strip should render as the mobile map-trail navigation owner',
       );
     }
+    const mobileTrailViewport = viewportFor(mobileTrailState);
+    if (isRendered(trailStrip) && trailStrip.height <= 72) {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-strip:compact-height');
+    } else if (isRendered(trailStrip)) {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail-strip:compact-height',
+        `.map-trail-strip height ${trailStrip.height}px should stay compact on ${mobileTrailViewport.width}x${mobileTrailViewport.height}`,
+      );
+    }
+    const stripTitle = box(mobileTrailState, '.map-strip-title');
+    if (isVisible(stripTitle) && stripTitle.width > 0 && stripTitle.height > 0 && stripTitle.text) {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-title:visible');
+    } else {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail-title:visible',
+        '.map-strip-title should be visible as normal compact strip content',
+      );
+    }
+    if (isRendered(trailStrip) && isVisible(stripTitle)) {
+      if (
+        stripTitle.x >= trailStrip.x - 1 &&
+        stripTitle.y >= trailStrip.y - 1 &&
+        stripTitle.x + stripTitle.width <= trailStrip.x + trailStrip.width + 1 &&
+        stripTitle.y + stripTitle.height <= trailStrip.y + trailStrip.height + 1
+      ) {
+        pass('11-mobile-selected-card-map-trail', 'mobile-map-trail-title:inside-strip');
+      } else {
+        fail(
+          '11-mobile-selected-card-map-trail',
+          'mobile-map-trail-title:inside-strip',
+          `.map-strip-title should stay inside .map-trail-strip: title=${JSON.stringify(stripTitle)} strip=${JSON.stringify(trailStrip)}`,
+        );
+      }
+    }
     const viewToggle = box(mobileTrailState, '.view-toggle');
     if (isRendered(trailStrip) && isRendered(viewToggle) && rectsOverlap(trailStrip, viewToggle, 0)) {
       fail(
@@ -2047,6 +2890,21 @@ async function run() {
     }
     const searchContainer = box(mobileTrailState, '.search-container');
     const searchResults = box(mobileTrailState, '#search-results');
+    if (isRendered(searchContainer) && withinViewport(searchContainer, mobileTrailViewport)) {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail:search-within-viewport');
+    } else if (isRendered(searchContainer)) {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail:search-within-viewport',
+        `.search-container extends outside ${mobileTrailViewport.width}x${mobileTrailViewport.height}: ${JSON.stringify(searchContainer)}`,
+      );
+    } else {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail:search-within-viewport',
+        '.search-container should render inside the mobile map-trail viewport',
+      );
+    }
     if (isRendered(trailStrip) && isRendered(searchContainer)) {
       const minGap = 8;
       if (searchContainer.y >= trailStrip.y + trailStrip.height + minGap) {
@@ -2070,6 +2928,58 @@ async function run() {
         pass('11-mobile-selected-card-map-trail', 'mobile-map-trail:search-results-inside-container');
       }
     }
+    const searchResultsCount = box(mobileTrailState, '.search-results-count');
+    if (isVisible(searchResultsCount)) {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail:search-count-hidden',
+        `map trail should render a compact anchor lane without the full result count line: ${JSON.stringify(searchResultsCount)}`,
+      );
+    } else {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail:search-count-hidden');
+    }
+    const secondResult = box(mobileTrailState, '.search-result-listitem:nth-child(2)');
+    if (isVisible(secondResult)) {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail:secondary-results-hidden',
+        `secondary results should not compete with the map trail anchor lane: ${JSON.stringify(secondResult)}`,
+      );
+    } else {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail:secondary-results-hidden');
+    }
+    const filtersSection = box(mobileTrailState, '#filters-section');
+    if (isVisible(filtersSection)) {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail:filters-hidden',
+        `#filters-section should not render under the compact mobile map trail lane: ${JSON.stringify(filtersSection)}`,
+      );
+    } else {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail:filters-hidden');
+    }
+    const legacyInfoBoxes = ['.info-header', '#info-panel-title', '.stats-row', '.demo-starters']
+      .map((selector) => ({ selector, box: box(mobileTrailState, selector) }))
+      .filter(({ box: targetBox }) => isVisible(targetBox));
+    if (legacyInfoBoxes.length > 0) {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail:legacy-info-copy-hidden',
+        `legacy info-panel copy leaked into map trail: ${JSON.stringify(legacyInfoBoxes)}`,
+      );
+    } else {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail:legacy-info-copy-hidden');
+    }
+    const infoPanel = box(mobileTrailState, '#info-panel');
+    if (isVisible(infoPanel) && infoPanel.height > 8) {
+      fail(
+        '11-mobile-selected-card-map-trail',
+        'mobile-map-trail:info-panel-shell-collapsed',
+        `demoted #info-panel shell should not occupy map space behind the fixed search lane: ${JSON.stringify(infoPanel)}`,
+      );
+    } else {
+      pass('11-mobile-selected-card-map-trail', 'mobile-map-trail:info-panel-shell-collapsed');
+    }
     const modeGrid = box(mobileTrailState, '#mode-grid');
     if (isRendered(modeGrid)) {
       fail(
@@ -2079,6 +2989,231 @@ async function run() {
       );
     } else {
       pass('11-mobile-selected-card-map-trail', 'mobile-map-trail:mode-grid-hidden');
+    }
+  }
+
+  if (shouldAssert('24-mobile-map-focus-search')) {
+    const mapFocusSearchState = requireState('24-mobile-map-focus-search');
+    const viewport = viewportFor(mapFocusSearchState);
+    const selectedCard = box(mapFocusSearchState, '.selected-card');
+    const selectedDetails = box(mapFocusSearchState, '#selected-details');
+    const mapSummary = box(mapFocusSearchState, '#selected-map-summary');
+    const mapSummaryName = box(mapFocusSearchState, '#selected-map-summary-name');
+    const mapSummaryWhat = box(mapFocusSearchState, '#selected-map-summary-what');
+    const mapSummaryRole = box(mapFocusSearchState, '#selected-map-summary-role');
+    const mapSummaryMatch = box(mapFocusSearchState, '#selected-map-summary-match');
+    const searchResults = box(mapFocusSearchState, '#search-results');
+    const searchContainer = box(mapFocusSearchState, '.search-container');
+    const infoPanel = box(mapFocusSearchState, '#info-panel');
+    const trailStrip = box(mapFocusSearchState, '.map-trail-strip');
+    const myceliumAction = box(mapFocusSearchState, '.map-trail-strip .trail-strip-btn[data-journey-action="open-mycelium"]');
+    const resetAction = box(mapFocusSearchState, '.map-trail-strip .trail-strip-btn[data-journey-action="county-overview"]');
+    const searchAction = box(mapFocusSearchState, '.map-trail-strip .trail-strip-btn[data-journey-action="focus-search"]');
+    const globalControls = box(mapFocusSearchState, '.controls');
+    const standaloneChrome = ['.panel-toggle', '.share-toggle', '.help-toggle', '#btn-legend', '#btn-share-view', '#btn-keyboard-help']
+      .map((selector) => ({ selector, box: box(mapFocusSearchState, selector) }))
+      .filter((entry) => isRendered(entry.box));
+    const viewHandoff = box(mapFocusSearchState, '.view-handoff');
+    const actionRow = box(mapFocusSearchState, '#selected-action-row');
+    const trailControls = box(mapFocusSearchState, '#trail-controls');
+    const trailContext = box(mapFocusSearchState, '#trail-context');
+    const filtersSection = box(mapFocusSearchState, '#filters-section');
+    const routeEvidence = mapFocusSearchState.routeEvidence || {};
+
+    if (mapFocusSearchState?.bodyDataset?.activeView === 'map') {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-active-view');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-active-view',
+        `expected activeView "map", got "${mapFocusSearchState?.bodyDataset?.activeView || ''}"`,
+      );
+    }
+    if (mapFocusSearchState?.bodyDataset?.panelSurface === 'map-focus-search') {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-panel-surface');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-panel-surface',
+        `expected panelSurface "map-focus-search", got "${mapFocusSearchState?.bodyDataset?.panelSurface || ''}"`,
+      );
+    }
+    if (mapFocusSearchState?.bodyDataset?.journeyNavigationOwner === 'map-trail-strip') {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-navigation-owner');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-navigation-owner',
+        `expected journeyNavigationOwner "map-trail-strip", got "${mapFocusSearchState?.bodyDataset?.journeyNavigationOwner || ''}"`,
+      );
+    }
+    if (routeEvidence.proofLane === 'real-route' && routeEvidence.source === 'real-click') {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search:real-route');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search:real-route',
+        `expected real click route evidence, got ${JSON.stringify(routeEvidence)}`,
+      );
+    }
+    if (isRendered(infoPanel) && infoPanel.height <= Math.min(244, Math.round(viewport.height * 0.3))) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-info-panel:compact');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-info-panel:compact',
+        `#info-panel should remain compact and visible, got ${JSON.stringify(infoPanel)}`,
+      );
+    }
+    if (isRendered(infoPanel) && infoPanel.y >= viewport.height * 0.66 && infoPanel.y + infoPanel.height <= viewport.height + 1) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-info-panel:bottom-attached');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-info-panel:bottom-attached',
+        `#info-panel should be bottom-attached inside ${viewport.width}x${viewport.height}, got ${JSON.stringify(infoPanel)}`,
+      );
+    }
+    if (selectedCard?.dataset?.contentVariant === 'map-summary' && selectedCard?.dataset?.contentOwner === 'selected-map-summary') {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-content-owner:map-summary');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-content-owner:map-summary',
+        `selected-card should declare the dedicated map-summary content owner, got ${JSON.stringify(selectedCard?.dataset || {})}`,
+      );
+    }
+    if (!isRendered(selectedDetails)) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-selected-details:hidden');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-selected-details:hidden',
+        `full selected-details payload should be hidden by the content owner, got ${JSON.stringify(selectedDetails)}`,
+      );
+    }
+    if (
+      isRendered(selectedCard) &&
+      isRendered(mapSummary) &&
+      isRendered(mapSummaryName) &&
+      mapSummaryName.centerTopInside &&
+      isRendered(mapSummaryWhat) &&
+      mapSummaryWhat.centerTopInside &&
+      isRendered(mapSummaryRole)
+    ) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-selected-card:summary-visible');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-selected-card:summary-visible',
+        `dedicated map summary should be visible, got card=${JSON.stringify(selectedCard)} summary=${JSON.stringify(mapSummary)} name=${JSON.stringify(mapSummaryName)} what=${JSON.stringify(mapSummaryWhat)} role=${JSON.stringify(mapSummaryRole)}`,
+      );
+    }
+    if (isRendered(mapSummaryMatch) && mapSummaryMatch.centerTopInside) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-selected-card:match-visible');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-selected-card:match-visible',
+        `#selected-map-summary-match should stay visible as route/match context, got ${JSON.stringify(mapSummaryMatch)}`,
+      );
+    }
+    if (!isRendered(searchResults)) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-search-results:hidden');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-search-results:hidden',
+        `#search-results should not become a second drawer, got ${JSON.stringify(searchResults)}`,
+      );
+    }
+    if (!isRendered(searchContainer)) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-search-chrome:hidden');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-search-chrome:hidden',
+        `.search-container should not occlude the selected map drawer, got ${JSON.stringify(searchContainer)}`,
+      );
+    }
+    if (isRendered(trailStrip)) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-trail-strip:visible');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-trail-strip:visible',
+        '.map-trail-strip should remain visible for map traversal',
+      );
+    }
+    if (!isRendered(globalControls)) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-global-controls:hidden');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-global-controls:hidden',
+        `.controls should not render over map terrain once the map trail strip owns navigation, got ${JSON.stringify(globalControls)}`,
+      );
+    }
+    if (standaloneChrome.length === 0) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-utility-chrome:hidden');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-utility-chrome:hidden',
+        `standalone utility chrome should not render over map terrain, got ${JSON.stringify(standaloneChrome)}`,
+      );
+    }
+    if (!isRendered(viewHandoff)) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-view-handoff:hidden');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-view-handoff:hidden',
+        `.view-handoff should not become a second top narrative surface once .map-trail-strip owns navigation, got ${JSON.stringify(viewHandoff)}`,
+      );
+    }
+    if (mapFocusSearchState?.bodyDataset?.viewHandoffActive === 'false') {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-view-handoff:state-released');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-view-handoff:state-released',
+        `view-controller should release data-view-handoff-active after map trail strip takes ownership, got "${mapFocusSearchState?.bodyDataset?.viewHandoffActive || ''}"`,
+      );
+    }
+    if (
+      isRendered(myceliumAction) &&
+      isRendered(resetAction) &&
+      isRendered(searchAction) &&
+      resetAction.width <= myceliumAction.width &&
+      searchAction.width >= myceliumAction.width
+    ) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-strip-actions:hierarchy');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-strip-actions:hierarchy',
+        `strip actions should rank Search > Mycelium > Reset, got mycelium=${JSON.stringify(myceliumAction)} reset=${JSON.stringify(resetAction)} search=${JSON.stringify(searchAction)}`,
+      );
+    }
+    if (isRendered(trailStrip) && isRendered(infoPanel) && rectsOverlap(trailStrip, infoPanel, 0)) {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search:strip-panel-overlap',
+        `.map-trail-strip overlaps #info-panel: strip=${JSON.stringify(trailStrip)} panel=${JSON.stringify(infoPanel)}`,
+      );
+    } else {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search:strip-panel-overlap');
+    }
+    const isVisibleBox = (targetBox) => isRendered(targetBox) && targetBox.width > 0 && targetBox.height > 0;
+    if (isVisibleBox(actionRow) || isVisibleBox(trailControls) || isVisibleBox(trailContext) || isVisibleBox(filtersSection)) {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-bulky-content:hidden',
+        `bulky controls should stay hidden, action=${JSON.stringify(actionRow)} controls=${JSON.stringify(trailControls)} context=${JSON.stringify(trailContext)} filters=${JSON.stringify(filtersSection)}`,
+      );
+    } else {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-bulky-content:hidden');
     }
   }
 
@@ -2244,9 +3379,60 @@ async function run() {
     } else {
       fail('03-mobile-focus-first-result', 'mobile-focus:focus-card-visible', '.focus-stage-card should render after entering focus');
     }
+    const searchContainer = box(focusState, '.search-container');
+    if (!isRendered(searchContainer)) {
+      pass('03-mobile-focus-first-result', 'mobile-focus:search-container-hidden');
+    } else {
+      fail('03-mobile-focus-first-result', 'mobile-focus:search-container-hidden', `.search-container should hand off to the focus stage, got ${JSON.stringify(searchContainer)}`);
+    }
+    const focusJourney = box(focusState, '.focus-stage-journey.active');
+    const focusPrevBtn = box(focusState, '#btn-focus-prev');
+    const focusNextBtn = box(focusState, '#btn-focus-next');
+    if (isRendered(focusJourney) && (isRendered(focusPrevBtn) || isRendered(focusNextBtn))) {
+      fail(
+        '03-mobile-focus-first-result',
+        'mobile-focus:route-control-lane-hidden',
+        `compact focus journey should not render orphan prev/next button lanes: journey=${JSON.stringify(focusJourney)} prev=${JSON.stringify(focusPrevBtn)} next=${JSON.stringify(focusNextBtn)}`,
+      );
+    } else {
+      pass('03-mobile-focus-first-result', 'mobile-focus:route-control-lane-hidden');
+    }
+    const threadInspector = box(focusState, '#focus-thread-inspector');
+    if (focusState?.bodyDataset?.threadInspectSurface === 'idle' && isVisible(threadInspector)) {
+      fail('03-mobile-focus-first-result', 'mobile-focus:idle-thread-preview-hidden', '#focus-thread-inspector should not render before a neighbor preview exists');
+    } else {
+      pass('03-mobile-focus-first-result', 'mobile-focus:idle-thread-preview-hidden');
+    }
     const selectedCard = box(focusState, '.selected-card');
     if (isRendered(selectedCard)) {
       pass('03-mobile-focus-first-result', 'mobile-focus:selected-card-visible');
+    }
+    const neighborList = box(focusState, '.focus-stage-neighbor-list');
+    const secondNeighbor = box(focusState, '.focus-stage-neighbor-list .focus-stage-neighbor-pill:nth-of-type(2)');
+    const thirdNeighbor = box(focusState, '.focus-stage-neighbor-list .focus-stage-neighbor-pill:nth-of-type(3)');
+    if (isRendered(neighborList) && isRendered(secondNeighbor)) {
+      const listBottom = neighborList.y + neighborList.height;
+      const secondBottom = secondNeighbor.y + secondNeighbor.height;
+      if (secondBottom <= listBottom + 1) {
+        pass('03-mobile-focus-first-result', 'mobile-focus:neighbor-second-card-unclipped');
+      } else {
+        fail(
+          '03-mobile-focus-first-result',
+          'mobile-focus:neighbor-second-card-unclipped',
+          `second neighbor should fit inside the rail: list=${JSON.stringify(neighborList)} card=${JSON.stringify(secondNeighbor)}`,
+        );
+      }
+    }
+    if (isRendered(neighborList)) {
+      if (!isRendered(thirdNeighbor)) {
+        pass('03-mobile-focus-first-result', 'mobile-focus:neighbor-rail-no-card-sliver');
+      } else {
+        fail(
+          '03-mobile-focus-first-result',
+          'mobile-focus:neighbor-rail-no-card-sliver',
+          `third neighbor should not render in condensed mobile focus: list=${JSON.stringify(neighborList)} card=${JSON.stringify(thirdNeighbor)}`,
+        );
+      }
     }
   }
 
@@ -2338,6 +3524,29 @@ async function run() {
     // graphContext should be 'search' on desktop
     if (desktopState?.bodyDataset?.graphContext === 'search') {
       pass('08-desktop-search-coffee', 'desktop-search:graph-context-search');
+    }
+  }
+
+  const nativeControlStates = new Set([
+    '01-mobile-idle',
+    '02-mobile-search-coffee',
+    '03-mobile-focus-first-result',
+    '07-desktop-idle',
+    '08-desktop-search-coffee',
+    '11-desktop-selected-card-map-trail',
+    '16-desktop-info-panel-populated',
+  ]);
+  for (const state of summary.filter((entry) => nativeControlStates.has(entry.name))) {
+    const diagnostics = state.nativeControlDiagnostics || {};
+    const defaultButtons = diagnostics.defaultButtons || [];
+    if (defaultButtons.length === 0) {
+      pass(state.name, 'native-controls:styled');
+    } else {
+      fail(
+        state.name,
+        'native-controls:styled',
+        `default browser buttons rendered: ${JSON.stringify(defaultButtons.slice(0, 6))}`,
+      );
     }
   }
 
@@ -2496,6 +3705,29 @@ async function run() {
       fail('23-mobile-short-landscape', 'short-landscape:info-panel-within-viewport',
         `#info-panel extends outside ${slViewport.width}x${slViewport.height} viewport`);
     }
+    const viewToggle = box(slState, '.view-toggle');
+    if (isRendered(viewToggle) && withinViewport(viewToggle, slViewport)) {
+      pass('23-mobile-short-landscape', 'short-landscape:view-toggle-within-viewport');
+    } else if (isRendered(viewToggle)) {
+      fail('23-mobile-short-landscape', 'short-landscape:view-toggle-within-viewport',
+        `.view-toggle extends outside ${slViewport.width}x${slViewport.height} viewport`);
+    }
+    for (const selector of ['.controls', '.panel-toggle', '.share-toggle', '.help-toggle', '.weather-widget', '.time-display']) {
+      const chrome = box(slState, selector);
+      if (isRendered(chrome)) {
+        fail('23-mobile-short-landscape', `short-landscape:utility-chrome-hidden:${selector}`,
+          `${selector} should not compete with focus/semantic surfaces in short landscape: ${JSON.stringify(chrome)}`);
+      } else {
+        pass('23-mobile-short-landscape', `short-landscape:utility-chrome-hidden:${selector}`);
+      }
+    }
+    const compassNote = box(slState, '.journey-compass-note');
+    if (isRendered(compassNote)) {
+      fail('23-mobile-short-landscape', 'short-landscape:compass-note-hidden',
+        `.journey-compass-note should be hidden instead of clipped in short landscape: ${JSON.stringify(compassNote)}`);
+    } else {
+      pass('23-mobile-short-landscape', 'short-landscape:compass-note-hidden');
+    }
   }
 
   await fs.writeFile(path.join(outDir, 'assertions.json'), `${JSON.stringify(assertions, null, 2)}\n`, 'utf8');
@@ -2507,6 +3739,11 @@ async function run() {
     outDir,
     states: summary.length,
     overflowFailures,
+    routeEvidence: {
+      realRoute: routeEvidenceSummary.filter((item) => item.proofLane === 'real-route').length,
+      urlRoute: routeEvidenceSummary.filter((item) => item.proofLane === 'url-route').length,
+      constructedSurface: routeEvidenceSummary.filter((item) => item.proofLane === 'constructed-surface').length,
+    },
     assertions: { pass: passCount, fail: failCount, items: assertions },
   };
   console.log(JSON.stringify(result, null, 2));

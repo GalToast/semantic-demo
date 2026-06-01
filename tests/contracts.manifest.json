@@ -277,7 +277,7 @@
       ]
     },
     "3d-focus-ghost-graph-visibility": {
-      "description": "Whole-graph ghost point cloud visibility during focus mode: opacity, size, projected presence, and spore-vs-point-cloud layering. Requires a running dev server on port 8795.",
+      "description": "Whole-graph context point cloud visibility during focus mode: opacity, size, projected presence, and spore-vs-point-cloud layering. Requires a running dev server on port 8795.",
       "timeout": 300000,
       "contracts": [
         "3d-focus-ghost-graph-visibility.spec.js"
@@ -294,7 +294,8 @@
       "description": "Focus neighborhood interaction: hover, click, and state integrity through neighbor interaction sequences. Requires a running dev server on port 8795.",
       "timeout": 300000,
       "contracts": [
-        "3d-focus-neighborhood-interaction.spec.js"
+        "3d-focus-neighborhood-interaction.spec.js",
+        "semantic-role-traversal.spec.js"
       ]
     },
     "3d-focus-pocket-geometry": {

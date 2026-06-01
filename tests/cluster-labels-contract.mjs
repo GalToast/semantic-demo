@@ -126,15 +126,9 @@ checks.push({
 });
 
 // --------------------------------------------------------------------------
-// 3. window.__clusterLabelDiagnostics absence in visual-state-audit.mjs
-//    is safe - it gracefully falls back to null
+// 3. Removed visual-state-audit:graceful null fallback
+//    (visual-state-audit.mjs no longer references __clusterLabelDiagnostics)
 // --------------------------------------------------------------------------
-const auditSrc = readFileSync(resolve(CWD, 'tests/visual-state-audit.mjs'), 'utf8');
-checks.push({
-  name: 'visual-state-audit:graceful null fallback',
-  pass: auditSrc.includes('typeof window.__clusterLabelDiagnostics === \'function\'') &&
-        auditSrc.includes('null'),
-});
 
 // --------------------------------------------------------------------------
 // 4. No remaining references to the removed diagnostic surface anywhere

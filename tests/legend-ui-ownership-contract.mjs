@@ -19,7 +19,7 @@ const SEMDEMO_ROOT = path.resolve(process.cwd());
 const LEGEND_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.js');
 const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
 const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/view-controller.js');
-const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js');
+const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/bindings/legend-bindings.js');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -90,7 +90,7 @@ function testEventBindingsImportsFromLegendUi() {
   const src = readSrc(EVENT_BINDINGS_PATH);
 
   assert(
-    src.includes("from './legend-ui.js'"),
+    src.includes("from './legend-ui.js'") || src.includes("from '../legend-ui.js'"),
     'event-bindings.js imports from legend-ui.js'
   );
   assert(
@@ -158,28 +158,26 @@ function testCloseLegendGuideUsesAdapter() {
   console.log('  OK — closeLegendGuide delegates to closeLegendPanel');
 }
 
-// ── TEST 7: lifecycle.switchView uses closeLegendPanel for legend cleanup ─────────────────
+// ── TEST 7: view-controller.switchView uses Event Bus for decoupling ─────────────────
 
-function testSwitchViewUsesCloseLegendPanel() {
-  console.log('\n[TEST 7] view-controller.switchView uses closeLegendPanel from legend-ui');
+function testSwitchViewUsesEventBus() {
+  console.log('\n[TEST 7] view-controller.switchView uses Event Bus instead of direct UI calls');
 
   const viewControllerSrc = readSrc(VIEW_CONTROLLER_PATH);
 
-  // switchView should call closeLegendPanel() (not do direct DOM manipulation)
-  // in the section that closes the legend panel when switching views
-  const switchMatch = viewControllerSrc.match(/export function switchView[\s\S]*?const btnGalaxy/m);
-  assert(switchMatch, 'view-controller.js defines switchView');
-
-  // The legend cleanup block should call closeLegendPanel
-  // After our edit, it should use closeLegendPanel()
-  const legendBlock = switchMatch[0].match(/closeLegendPanel\(\)[\s\S]*?const btnGalaxy/);
-  assert(legendBlock, 'switchView calls closeLegendPanel() for legend cleanup');
+  // switchView should call publish(EVENTS.VIEW_CHANGED, ...)
   assert(
-    !legendBlock[0].includes('classList.remove'),
-    'switchView legend cleanup does not use direct DOM manipulation'
+    viewControllerSrc.includes('publish(EVENTS.VIEW_CHANGED'),
+    'switchView must publish VIEW_CHANGED event'
   );
 
-  console.log('  OK — switchView uses closeLegendPanel for legend cleanup');
+  // It should NOT call closeLegendPanel directly anymore
+  assert(
+    !viewControllerSrc.includes('closeLegendPanel()'),
+    'switchView should NOT call closeLegendPanel() directly (now event-driven)'
+  );
+
+  console.log('  OK — switchView uses Event Bus for UI decoupling');
 }
 
 // ── TEST 8: updateLegendGuideState uses openLegendPanel/closeLegendPanel ────────
@@ -201,6 +199,21 @@ function testUpdateLegendGuideStateUsesAdapter() {
   console.log('  OK — updateLegendGuideState uses openLegendPanel/closeLegendPanel');
 }
 
+// ── TEST 9: legend-ui.js subscribes to VIEW_CHANGED ───────────────────────────
+
+function testLegendUiSubscribesToViewChanged() {
+  console.log('\n[TEST 9] legend-ui.js subscribes to VIEW_CHANGED event');
+
+  const src = readSrc(LEGEND_UI_PATH);
+
+  assert(
+    src.includes('subscribe(EVENTS.VIEW_CHANGED'),
+    'legend-ui.js must subscribe to VIEW_CHANGED'
+  );
+
+  console.log('  OK — legend-ui.js subscribes to Event Bus');
+}
+
 // ── MAIN ────────────────────────────────────────────────────────────────────
 
 console.log('=================================================================');
@@ -217,8 +230,9 @@ try {
   testEventBindingsImportsFromLegendUi();
   testNoNewImportCycle();
   testCloseLegendGuideUsesAdapter();
-  testSwitchViewUsesCloseLegendPanel();
+  testSwitchViewUsesEventBus();
   testUpdateLegendGuideStateUsesAdapter();
+  testLegendUiSubscribesToViewChanged();
 
   console.log('\n=================================================================');
   console.log('ALL TESTS PASSED — legend-ui adapter ownership verified');

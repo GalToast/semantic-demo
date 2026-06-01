@@ -90,19 +90,22 @@ globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame.bind(gl
 // modules run their top-level browser debug exports.
 // ---------------------------------------------------------------------------
 
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 const {
   getFocusConstellationViewportProfile,
   getFocusConstellationPlacement,
   getFocusConstellationMotif,
   getNeighborhoodPersonality,
-  buildFocusedPocketStagedPositions,
-  buildFocusedSemanticPocket,
   applyFocusPocketBreathing,
   getFocusThreadCurvePoint,
   syncRuntimeState,
   getRuntimeStateSnapshot
 } = await import('../js/modules/focus-pocket.js');
+
+const {
+  buildFocusedPocketStagedPositions,
+  buildFocusedSemanticPocket
+} = await import('../js/modules/focus-pocket-geometry.js');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -138,25 +141,27 @@ function setupMinimalState(pointsCount = 12) {
   const tpos = pts.map((p) => ({ x: p.x, y: p.y, z: p.z }));
   const npos = pts.map((p) => ({ x: p.x, y: p.y, z: p.z }));
 
-  state.points           = pts;
-  state.originalPositions = orig;
-  state.targetPositions  = tpos;
-  state.nodePositions    = npos;
-  state.recentArrangements = [];
-  state.trailDepth = 0;
-  state.navState.focusedIndex = 0;
-  state.navState.currentPersonality = null;
-  state.navState.focusPocketMeta = null;
-  state.navState.focusPocketIndices = [];
-  state.navState.focusPocketRoleByIndex = new Map();
-  state.navState.threadCandidates = [];
-  state.navState.threadSource = 'semantic';
-  state.focusPocketMotionByIndex = new Map();
-  state.focusPocketAnimationFrameId = undefined;
-  state.focusPocketTransitionStartedAt = 0;
-  state.nodesAreSettling = false;
-  state.camera = null;
-  state.navState.focusPocketAnimationFrameId = undefined;
+  withStateMutation(() => {
+    state.points           = pts;
+    state.originalPositions = orig;
+    state.targetPositions  = tpos;
+    state.nodePositions    = npos;
+    state.recentArrangements = [];
+    state.trailDepth = 0;
+    state.navState.focusedIndex = 0;
+    state.navState.currentPersonality = null;
+    state.navState.focusPocketMeta = null;
+    state.navState.focusPocketIndices = [];
+    state.navState.focusPocketRoleByIndex = new Map();
+    state.navState.threadCandidates = [];
+    state.navState.threadSource = 'semantic';
+    state.focusPocketMotionByIndex = new Map();
+    state.focusPocketAnimationFrameId = undefined;
+    state.focusPocketTransitionStartedAt = 0;
+    state.nodesAreSettling = false;
+    state.camera = null;
+    state.navState.focusPocketAnimationFrameId = undefined;
+  });
 
   return { pts, orig, tpos, npos };
 }
@@ -400,8 +405,10 @@ function testReducedMotionBreathing() {
   _matchMediaCalls = [];
   _prefersReducedMotion = false;
 
-  state.navState.focusedIndex = 0;
-  state.navState.focusPocketMeta = { active: true };
+  withStateMutation(() => {
+    state.navState.focusedIndex = 0;
+    state.navState.focusPocketMeta = { active: true };
+  });
   state.focusPocketMotionByIndex = new Map([
     [0, { role: 'anchor', delay: 0, duration: 800, speed: 0.42, breatheAmp: 0.0022, phase: 0 }],
     [1, { role: 'primary', delay: 52, duration: 980, speed: 0.24, breatheAmp: 0.0024, phase: 1.2 }],

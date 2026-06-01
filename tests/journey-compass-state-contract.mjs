@@ -11,25 +11,27 @@ globalThis.window = {
   getRouteEmbodimentIndices: () => [],
 };
 
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 const {
   getFocusedJourneyPoint,
   getJourneyCompassState,
 } = await import('../js/modules/journey-compass-state.js');
 
 function resetState() {
-  state.currentView = 'galaxy';
-  state.currentSearchSummary = null;
-  state.selectedPoint = null;
-  state.focusedNode = null;
-  state.points = [];
-  state.semanticDiveMode = false;
-  state.semanticLaneSnapshot = { state: 'degraded' };
-  state.navState = {
-    ...(state.navState || {}),
-    focusedIndex: null,
-    explorationHistoryIndices: [],
-  };
+  withStateMutation(() => {
+    state.currentView = 'galaxy';
+    state.currentSearchSummary = null;
+    state.selectedPoint = null;
+    state.focusedNode = null;
+    state.points = [];
+    state.semanticDiveMode = false;
+    state.semanticLaneSnapshot = { state: 'degraded' };
+    state.navState = {
+      ...(state.navState || {}),
+      focusedIndex: null,
+      explorationHistoryIndices: [],
+    };
+  });
   globalThis.__searchContainer = null;
 }
 
@@ -49,9 +51,11 @@ assert.equal(getFocusedJourneyPoint(), null, 'no focus returns null');
 
 const selectedPoint = { name: 'Selected Business', cluster: 2 };
 const indexedPoint = { name: 'Indexed Business', cluster: 4 };
-state.points = [indexedPoint];
-state.focusedNode = 0;
-state.selectedPoint = selectedPoint;
+withStateMutation(() => {
+  state.points = [indexedPoint];
+  state.focusedNode = 0;
+  state.selectedPoint = selectedPoint;
+});
 assert.equal(getFocusedJourneyPoint(), selectedPoint, 'selectedPoint wins over focusedNode');
 
 resetState();
@@ -60,20 +64,26 @@ assert.equal(compassState.phase, 'overview', 'empty state is overview phase');
 assert.equal(typeof compassState.discovery, 'boolean', 'overview exposes discovery boolean');
 assert.equal(compassState.primaryAction?.action, 'focus-search', 'overview primary action focuses search');
 
-state.currentSearchSummary = { query: 'roof repair', anchorIndex: 0 };
+withStateMutation(() => {
+  state.currentSearchSummary = { query: 'roof repair', anchorIndex: 0 };
+});
 globalThis.__searchContainer = fakeSearchContainer();
 compassState = getJourneyCompassState();
 assert.equal(compassState.phase, 'search', 'search summary without focus is search phase');
 assert.equal(compassState.primaryAction?.action, 'center-anchor', 'search phase can center anchor');
 
-state.points = [{ name: 'Anchor Business', cluster: 1 }];
-state.focusedNode = 0;
-state.navState.focusedIndex = 0;
+withStateMutation(() => {
+  state.points = [{ name: 'Anchor Business', cluster: 1 }];
+  state.focusedNode = 0;
+  state.navState.focusedIndex = 0;
+});
 compassState = getJourneyCompassState();
 assert.equal(compassState.phase, 'focus', 'focused point is focus phase');
 assert.equal(compassState.secondaryAction?.action, 'open-map', 'search anchor focus exposes map action');
 
-state.currentView = 'map';
+withStateMutation(() => {
+  state.currentView = 'map';
+});
 compassState = getJourneyCompassState();
 assert.equal(compassState.phase, 'map', 'map view wins phase priority');
 assert.equal(compassState.primaryAction?.action, 'open-mycelium', 'map primary action returns to mycelium');

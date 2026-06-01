@@ -204,13 +204,13 @@ test.describe('Critical Visual Layout Regression', () => {
 
     expect(threadState.graphicsMode, 'scene should run in WebGL mode for thread contract').toBe('webgl');
     expect(threadState.core.count, 'core thread geometry should be populated').toBeGreaterThan(0);
-    expect(threadState.core.opacity, 'core thread opacity should be legible').toBeGreaterThanOrEqual(0.24);
-    expect(threadState.core.opacity, 'core thread opacity should not flood the scene').toBeLessThanOrEqual(0.55);
+    expect(threadState.core.opacity, 'core thread opacity should remain visible as background context').toBeGreaterThanOrEqual(0.12);
+    expect(threadState.core.opacity, 'core thread opacity should not flood the focused scene').toBeLessThanOrEqual(0.24);
     if (threadState.wispy.count > 0) {
-      expect(threadState.wispy.opacity, 'wispy thread opacity should be legible when rendered').toBeGreaterThanOrEqual(0.10);
+      expect(threadState.wispy.opacity, 'wispy thread opacity should remain visible as background context').toBeGreaterThanOrEqual(0.035);
     }
     if (threadState.bridge.count > 0) {
-      expect(threadState.bridge.opacity, 'bridge thread opacity should be legible when rendered').toBeGreaterThanOrEqual(0.15);
+      expect(threadState.bridge.opacity, 'bridge thread opacity should remain visible as background context').toBeGreaterThanOrEqual(0.055);
     }
   });
 

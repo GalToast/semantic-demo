@@ -14,8 +14,8 @@
  *   semanticLensGlow      - glow material: uniforms.uOpacity.value
  *   focusedNode           - non-null when a node is focused
  *   trailDepth            - 0=overview, 1=focus, 2+=step-inside
- *   pointsMesh           - global point cloud (suppressed in focus/step-inside)
- *   pointsMesh.visible   - should be false in focus/step-inside
+ *   pointsMesh           - global point cloud (legible context in focus/step-inside)
+ *   pointsMesh.visible   - should remain true in focus/step-inside
  *   renderer             - Three.js WebGLRenderer
  *   scene                - Three.js Scene
  *   scenePerformanceDiagnostics - { active } flag
@@ -369,9 +369,9 @@ test.describe('3D thread orchestration quality', () => {
   });
 
   // -------------------------------------------------------------------------
-  // Focus state — point cloud suppressed, lens visible, threads elevated
+  // Focus state — point cloud context, lens visible, threads elevated
   // -------------------------------------------------------------------------
-  test('focus: global point cloud suppressed, lens visible, threads elevated', async ({ page }) => {
+  test('focus: global point cloud remains legible, lens visible, threads elevated', async ({ page }) => {
     test.setTimeout(HEAVY_VISUAL_TEST_TIMEOUT_MS);
     const p = page;
     await p.goto(withParams({ view: 'galaxy', q: 'coffee', anchor: '519' }), { waitUntil: 'commit' });
@@ -422,10 +422,10 @@ test.describe('3D thread orchestration quality', () => {
     expect(probe.focusedNode, 'focusedNode must be set').not.toBeNull();
     expect(probe.focusedNode, 'focusedNode must be non-negative').toBeGreaterThanOrEqual(0);
 
-    // Ghost graph: point cloud is visible at low opacity (subliminal context), not fully suppressed
+    // Context graph: point cloud is visible enough for traversal, not isolated away.
     const pointsOpacity = probe.pointsMeshOpacity ?? 0;
-    expect(pointsOpacity > 0 && pointsOpacity < 0.10,
-      `pointsMesh must be ghosted (not suppressed) in focus mode, got opacity=${pointsOpacity}`
+    expect(pointsOpacity > 0.10 && pointsOpacity < 0.26,
+      `pointsMesh must remain legible but subdued in focus mode, got opacity=${pointsOpacity}`
     ).toBe(true);
 
     // Semantic lens visible

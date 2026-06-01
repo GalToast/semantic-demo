@@ -58,6 +58,35 @@ function testViewControllerExportsAllThree() {
 }
 
 // ---------------------------------------------------------------------------
+// TEST 1b - map-focus-search route ownership releases view handoff state
+// ---------------------------------------------------------------------------
+
+function testMapTrailSuppressesViewHandoff() {
+  console.log('\n[TEST] map-focus-search map trail suppresses view handoff');
+
+  const src = fs.readFileSync(VIEW_CONTROLLER_PATH, 'utf-8');
+
+  assert(
+    /function\s+shouldShowViewHandoff\s*\(/.test(src),
+    'view-controller.js must centralize view handoff visibility in shouldShowViewHandoff'
+  );
+  assert(
+    /panelSurface\s*===\s*['"]map-focus-search['"]/.test(src),
+    'view-controller.js must recognize map-focus-search as a handoff suppression surface'
+  );
+  assert(
+    /journeyNavigationOwner\s*===\s*['"]map-trail-strip['"]/.test(src),
+    'view-controller.js must suppress handoff once map-trail-strip owns navigation'
+  );
+  assert(
+    /else\s+if\s*\(\s*view\s*===\s*['"]map['"]\s*\)\s*\{\s*hideViewHandoff\s*\(\s*\)/s.test(src),
+    'switchView must actively clear handoff state when map handoff is suppressed'
+  );
+
+  console.log('  OK - map trail ownership releases view handoff state');
+}
+
+// ---------------------------------------------------------------------------
 // TEST 2 - lifecycle.js must import switchView, showViewHandoff,
 //          hideViewHandoff from view-controller.js (direct named import)
 // ---------------------------------------------------------------------------
@@ -210,6 +239,7 @@ function main() {
 
   try {
     testViewControllerExportsAllThree();
+    testMapTrailSuppressesViewHandoff();
     testLifecycleImportsFromViewController();
     testLifecycleReExportsAllThree();
     testLifecycleHasNoImplementation();

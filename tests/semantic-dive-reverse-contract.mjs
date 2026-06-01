@@ -40,7 +40,7 @@ globalThis.document = {
 // ---------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 const { initJourneyLifecycleAdapter } = await import('../js/modules/journey-lifecycle-adapter.js');
 const { syncSemanticDiveUi } = await import('../js/modules/semantic-dive-ui.js');
 
@@ -65,13 +65,15 @@ function resetDom() {
 }
 
 function resetState() {
-  state.focusedNode = null;
-  state.currentView = 'galaxy';
-  state.trailDepth = 0;
-  state.strandContinuityState = { phase: 'idle' };
-  state.navState.focusedIndex = null;
-  state.navState.explorationHistoryIndices = [];
-  state.semanticDiveMode = false;
+  withStateMutation(() => {
+    state.focusedNode = null;
+    state.currentView = 'galaxy';
+    state.trailDepth = 0;
+    state.strandContinuityState = { phase: 'idle' };
+    state.navState.focusedIndex = null;
+    state.navState.explorationHistoryIndices = [];
+    state.semanticDiveMode = false;
+  });
   document.body.dataset = {};
   window.getCurrentTrailFocusIndex = undefined;
   window.getNextExploreCandidateForIndex = undefined;
@@ -86,11 +88,13 @@ resetDom();
 resetState();
 
 // Enter dive mode with focus first (trailDepth 2)
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.trailDepth = 2;
-state.currentView = 'galaxy';
-state.semanticDiveMode = true; // simulate user pressed "Step Inside"
+withStateMutation(() => {
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.trailDepth = 2;
+  state.currentView = 'galaxy';
+  state.semanticDiveMode = true; // simulate user pressed "Step Inside"
+});
 window.getCurrentTrailFocusIndex = () => 4;
 initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: () => ({ index: 8 }) });
 resetDom();
@@ -100,7 +104,9 @@ assert(state.semanticDiveMode === true, 'dive active with focus and trailDepth 2
 assert(document.body.dataset.semanticDive === 'active', 'body.dataset.semanticDive is active');
 
 // Now simulate user navigates to map (e.g. via btn-inside-county equivalent)
-state.currentView = 'map';
+withStateMutation(() => {
+  state.currentView = 'map';
+});
 resetDom();
 syncSemanticDiveUi();
 
@@ -109,11 +115,13 @@ assert(state.semanticDiveMode === true, 'map view preserves semanticDiveMode sta
 assert(document.body.dataset.semanticDive === 'inactive', 'map forces dive inactive');
 
 // Preserve trailDepth but clear focus (user went back to county view)
-state.trailDepth = 2; // stays high
-state.focusedNode = null;
-state.navState.focusedIndex = null;
-state.semanticDiveMode = false;
-state.currentView = 'galaxy';
+withStateMutation(() => {
+  state.trailDepth = 2; // stays high
+  state.focusedNode = null;
+  state.navState.focusedIndex = null;
+  state.semanticDiveMode = false;
+  state.currentView = 'galaxy';
+});
 resetDom();
 syncSemanticDiveUi();
 
@@ -126,9 +134,11 @@ assert(state.semanticDiveMode === false, 'semanticDiveMode stays false — no au
 resetDom();
 resetState();
 
-state.trailDepth = 10; // artificially high trail depth
-state.focusedNode = null;
-state.currentView = 'galaxy';
+withStateMutation(() => {
+  state.trailDepth = 10; // artificially high trail depth
+  state.focusedNode = null;
+  state.currentView = 'galaxy';
+});
 syncSemanticDiveUi();
 
 assert(document.body.dataset.semanticDive === 'inactive', 'high trailDepth without focus is inactive');
@@ -140,14 +150,18 @@ assert(state.semanticDiveMode === false, 'semanticDiveMode stays false without f
 resetDom();
 resetState();
 
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.trailDepth = 2;
-state.currentView = 'galaxy';
-state.semanticDiveMode = true;
+withStateMutation(() => {
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.trailDepth = 2;
+  state.currentView = 'galaxy';
+  state.semanticDiveMode = true;
+});
 
 // Switch to map while dive is active
-state.currentView = 'map';
+withStateMutation(() => {
+  state.currentView = 'map';
+});
 resetDom();
 syncSemanticDiveUi();
 
@@ -161,9 +175,11 @@ assert(document.body.dataset.semanticDive === 'inactive', 'map forces dataset di
 resetDom();
 resetState();
 
-state.currentView = 'galaxy';
-state.focusedNode = null; // no focus
-state.semanticDiveMode = true; // stale mode
+withStateMutation(() => {
+  state.currentView = 'galaxy';
+  state.focusedNode = null; // no focus
+  state.semanticDiveMode = true; // stale mode
+});
 syncSemanticDiveUi();
 
 assert(state.semanticDiveMode === true, 'syncSemanticDiveUi does not mutate state.semanticDiveMode');
@@ -175,13 +191,17 @@ assert(document.body.dataset.semanticDive === 'inactive', 'no-focus galaxy datas
 resetDom();
 resetState();
 
-state.currentView = 'map';
-state.focusedNode = null;
-state.trailDepth = 5;
-state.semanticDiveMode = false;
+withStateMutation(() => {
+  state.currentView = 'map';
+  state.focusedNode = null;
+  state.trailDepth = 5;
+  state.semanticDiveMode = false;
+});
 
 // Transition map -> galaxy without focus
-state.currentView = 'galaxy';
+withStateMutation(() => {
+  state.currentView = 'galaxy';
+});
 syncSemanticDiveUi();
 
 assert(document.body.dataset.semanticDive === 'inactive', 'map->galaxy without focus stays inactive');

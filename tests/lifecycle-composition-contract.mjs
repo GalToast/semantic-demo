@@ -89,7 +89,7 @@ elementsById.set('semantic-lane-assist', laneAssist);
 elementsById.set('semantic-lane-assist-copy', new FakeElement('div'));
 elementsById.set('semantic-lane-assist-meta', new FakeElement('div'));
 
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 
 // Pre-init dependencies to avoid module-load crashes on uninitialized adapter refs
 const { initCompositionAdapter } = await import('../js/modules/composition-adapter.js');
@@ -102,13 +102,15 @@ const {
   setSemanticLaneUiState,
 } = await import('../js/modules/lifecycle.js');
 
-state.currentView = 'galaxy';
-state.currentSearchSummary = null;
-state.selectedPoint = { name: '1475 LAS Cuevas, LLC' };
-state.focusedNode = null;
-state.navState.mode = 'trail';
-state.navState.focusedIndex = 12;
-state.semanticDiveMode = false;
+withStateMutation(() => {
+  state.currentView = 'galaxy';
+  state.currentSearchSummary = null;
+  state.selectedPoint = { name: '1475 LAS Cuevas, LLC' };
+  state.focusedNode = null;
+  state.navState.mode = 'trail';
+  state.navState.focusedIndex = 12;
+  state.semanticDiveMode = false;
+});
 
 refreshCompositionState();
 

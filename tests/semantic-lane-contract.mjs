@@ -7,7 +7,7 @@
  * using direct module calls and state verification.
  */
 
-import { state } from '../js/state.js';
+import { state, withStateMutation } from '../js/state.js';
 import * as lane from '../js/modules/semantic-lane.js';
 
 function assert(condition, message) {
@@ -30,8 +30,10 @@ globalThis.document = {
 };
 
 function resetState() {
-  state.semanticLaneState = 'checking';
-  state.currentSearchSummary = null;
+  withStateMutation(() => {
+    state.semanticLaneState = 'checking';
+    state.currentSearchSummary = null;
+  });
   document.visibilityState = 'visible';
   elementsById.clear();
 }
@@ -52,14 +54,18 @@ try {
   resetState();
   console.log('\n[TEST 2] Visibility suppression for health probes');
   document.visibilityState = 'hidden';
-  state.currentSearchSummary = { query: 'coffee', resultIndices: [0] };
+  withStateMutation(() => {
+    state.currentSearchSummary = { query: 'coffee', resultIndices: [0] };
+  });
   assert(lane.shouldWarmSemanticLane('interval') === false, 'hidden document suppresses warm');
   console.log('  PASS — Visibility suppression confirmed');
 
   // TEST 3: Active search state triggers interval warm probes
   resetState();
   console.log('\n[TEST 3] Active search state triggers interval warm probes');
-  state.currentSearchSummary = { query: 'coffee', resultIndices: [0] };
+  withStateMutation(() => {
+    state.currentSearchSummary = { query: 'coffee', resultIndices: [0] };
+  });
   assert(lane.shouldWarmSemanticLane('interval') === true, 'active search summary triggers warm');
   resetState();
   elementsById.set('search-input', { value: 'ab' });

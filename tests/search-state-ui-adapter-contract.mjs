@@ -185,21 +185,24 @@ function testAppInjectsAdapterWithTooltipRefs() {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 6: All 7 tooltip call sites in search-state.js use the adapter
+// TEST 6: Tooltip hide requests use the Event Bus
 // ---------------------------------------------------------------------------
 
-function testAllTooltipCallSitesReplaced() {
-  console.log('\n[TEST 6] All tooltip call sites in search-state.js use the adapter');
+function testTooltipHideUsesEventBus() {
+  console.log('\n[TEST 6] Tooltip hide requests in search-state.js use the Event Bus');
 
   const src = readFileSync(SEARCH_STATE_PATH, 'utf-8');
 
-  // Count direct calls to adapter functions
-  const hideTooltipCalls = (src.match(/\bhideTooltip\s*\(/g) || []).length;
+  // Must call publish(EVENTS.TOOLTIP_HIDE_REQUESTED) or equivalent
+  assert(
+    src.includes('publish(EVENTS.SEARCH_FOCUS_TRANSITION_STARTED'),
+    'search-state must publish transition start (which triggers hide)'
+  );
+
+  // Count direct adapter calls for remaining tooltip functions
   const positionTooltipCalls = (src.match(/\bpositionTooltip\s*\(/g) || []).length;
   const updateTooltipCalls = (src.match(/\bupdateTooltipContent\s*\(/g) || []).length;
 
-  assert(hideTooltipCalls > 0,
-    `Expected at least 1 hideTooltip call, found ${hideTooltipCalls}`);
   assert(positionTooltipCalls > 0,
     `Expected at least 1 positionTooltip call, found ${positionTooltipCalls}`);
   assert(updateTooltipCalls > 0,
@@ -210,14 +213,11 @@ function testAllTooltipCallSitesReplaced() {
   const windowPositionTooltip = (src.match(/window\.positionTooltip/g) || []).length;
   const windowUpdateTooltip = (src.match(/window\.updateTooltipContent/g) || []).length;
 
-  assert(windowHideTooltip === 0,
-    `Expected 0 window.hideTooltip calls, found ${windowHideTooltip}`);
-  assert(windowPositionTooltip === 0,
-    `Expected 0 window.positionTooltip calls, found ${windowPositionTooltip}`);
-  assert(windowUpdateTooltip === 0,
-    `Expected 0 window.updateTooltipContent calls, found ${windowUpdateTooltip}`);
+  assert(windowHideTooltip === 0, `Expected 0 window.hideTooltip calls, found ${windowHideTooltip}`);
+  assert(windowPositionTooltip === 0, `Expected 0 window.positionTooltip calls, found ${windowPositionTooltip}`);
+  assert(windowUpdateTooltip === 0, `Expected 0 window.updateTooltipContent calls, found ${windowUpdateTooltip}`);
 
-  console.log(`  PASS — found ${hideTooltipCalls} hideTooltip, ${positionTooltipCalls} positionTooltip, ${updateTooltipCalls} updateTooltipContent; 0 window.* equivalents`);
+  console.log(`  PASS — event-driven hide; ${positionTooltipCalls} positionTooltip, ${updateTooltipCalls} updateTooltipContent; 0 window.* equivalents`);
 }
 
 // ---------------------------------------------------------------------------
@@ -254,7 +254,7 @@ const tests = [
   testAdapterExistsAndExports,
   testAdapterDoesNotImportCycleParticipants,
   testAppInjectsAdapterWithTooltipRefs,
-  testAllTooltipCallSitesReplaced,
+  testTooltipHideUsesEventBus,
   testSearchStateImportsFromAdapter,
 ];
 

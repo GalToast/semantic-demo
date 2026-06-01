@@ -7,7 +7,7 @@
  *
  * From js/modules/three-engine.js, getMyceliumPresentationProfile():
  *   - overview mode:   { core: 0.07, wispy: 0.026, bridge: 0.045, pulse: 0.018 }
- *   - focused mode:    { core: 0.28,  wispy: 0.11,  bridge: 0.18,  pulse: 0.075 }
+ *   - focused mode:    { core: 0.14,  wispy: 0.045, bridge: 0.07,  pulse: 0.006 }
  *
  * Test approach:
  *   1. Open the app with mock API stubs, wait for ready
@@ -120,7 +120,7 @@ function availableOpacityEntries(opacities) {
 }
 
 const OVERVIEW_TARGETS = { core: 0.07, wispy: 0.026, bridge: 0.045 };
-const FOCUS_TARGETS = { core: 0.28, wispy: 0.11, bridge: 0.18 };
+const FOCUS_TARGETS = { core: 0.14, wispy: 0.045, bridge: 0.07 };
 
 // ---------------------------------------------------------------------------
 // Dynamic lighting suite

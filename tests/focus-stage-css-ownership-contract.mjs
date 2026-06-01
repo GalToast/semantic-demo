@@ -19,7 +19,7 @@
  *   journey_steps.css       — transition-phase variants only
  *   strands.css             — galaxy/legacy state variants only
  *   progressive_disclosure.css — panel-overlay variants
- *   mobile_base.css         — generic mobile base
+ *   mobile_base.css         — no focus-stage-card ownership
  *
  * .journey-compass (base unconditional)
  *   journey_active.css      — base fixed-position, z-index:95, grid
@@ -157,7 +157,7 @@ const FORWARD_ONLY_LIMITS = [
   {
     file: 'mobile_premium_surfaces.css',
     limits: {
-      '.journey-compass': 80,
+      '.journey-compass': 62,
       '.focus-stage-route': 3,
       '.focus-stage-kicker': 1,
       '.focus-stage-actions': 1,
@@ -173,7 +173,6 @@ const REGISTERED_GEOMETRY_OWNERS = {
     'clusters.css',
     'journey_active.css',
     'journey_steps.css',
-    'mobile_base.css',
     'mobile_premium_focus.css',
     'progressive_disclosure.css',
     'strands.css',
@@ -195,6 +194,30 @@ const REGISTERED_GEOMETRY_OWNERS = {
   ]),
 };
 
+const FOCUS_ACTION_PRIMITIVE_GUARD = {
+  canonicalFile: 'mobile_premium_focus.css',
+  formerLateFile: 'mobile_premium_surfaces.css',
+  forbiddenLateSelectors: [
+    '.focus-stage-action-btn',
+    '.focus-thread-inspector-btn',
+    '.focus-stage-journey-btn {',
+    '.action-btn,',
+  ],
+};
+
+const FOCUS_COMPASS_STATE_REFINEMENT_GUARD = {
+  canonicalFile: 'mobile_premium_focus.css',
+  formerLateFile: 'mobile_premium_surfaces.css',
+  ownerMarker: 'Focus/dive journey compass state refinements',
+  forbiddenLateFragments: [
+    '.journey-compass.glass-heavy',
+    'data-panel-surface="semantic-dive"]:not([data-panel-surface^="map-"]) .journey-compass[data-density="compact"]',
+    'data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass-action.primary',
+    'data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass-title',
+    'data-panel-surface="semantic-dive"]:not([data-panel-surface^="map-"]) .journey-compass-title',
+  ],
+};
+
 // ─── Run checks ────────────────────────────────────────────────────────────
 
 const cssDir = path.resolve(root, 'css');
@@ -202,6 +225,36 @@ const cssFiles = fs.readdirSync(cssDir).filter((f) => f.endsWith('.css')).sort()
 
 const violations = [];
 const warnings = [];
+
+const focusPrimitiveOwner = read(`css/${FOCUS_ACTION_PRIMITIVE_GUARD.canonicalFile}`);
+if (!focusPrimitiveOwner.includes('Focus stage action/button primitives')) {
+  violations.push(`${FOCUS_ACTION_PRIMITIVE_GUARD.canonicalFile} must document and own focus-stage action/button primitives`);
+}
+
+const formerLateOwner = read(`css/${FOCUS_ACTION_PRIMITIVE_GUARD.formerLateFile}`);
+for (const selector of FOCUS_ACTION_PRIMITIVE_GUARD.forbiddenLateSelectors) {
+  if (formerLateOwner.includes(selector)) {
+    violations.push(
+      `${FOCUS_ACTION_PRIMITIVE_GUARD.formerLateFile} must not reintroduce focus action primitive selector ${selector}`
+    );
+  }
+}
+
+const focusCompassOwner = read(`css/${FOCUS_COMPASS_STATE_REFINEMENT_GUARD.canonicalFile}`);
+if (!focusCompassOwner.includes(FOCUS_COMPASS_STATE_REFINEMENT_GUARD.ownerMarker)) {
+  violations.push(
+    `${FOCUS_COMPASS_STATE_REFINEMENT_GUARD.canonicalFile} must document and own focus/dive journey-compass state refinements`
+  );
+}
+
+const formerCompassOwner = read(`css/${FOCUS_COMPASS_STATE_REFINEMENT_GUARD.formerLateFile}`);
+for (const fragment of FOCUS_COMPASS_STATE_REFINEMENT_GUARD.forbiddenLateFragments) {
+  if (formerCompassOwner.includes(fragment)) {
+    violations.push(
+      `${FOCUS_COMPASS_STATE_REFINEMENT_GUARD.formerLateFile} must not reintroduce focus/dive journey-compass state fragment ${fragment}`
+    );
+  }
+}
 
 for (const file of cssFiles) {
   const content = read(`css/${file}`);

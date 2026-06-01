@@ -248,15 +248,15 @@ async function inspectScene(page) {
                 infoPanel: rectFor('#info-panel'),
                 infoHeader: rectFor('#info-panel .info-header'),
                 journeyCompass: rectFor('#journey-compass'),
+                mapTrailStrip: rectFor('.map-trail-strip'),
                 searchContainer: rectFor('.search-container'),
                 controls: rectFor('.controls'),
                 mapContainer: rectFor('#map-container'),
                 mapAttribution: rectFor('#map-container .leaflet-control-attribution'),
                 launchButton: rectFor('#btn-launch'),
                 synthesizeTrigger: rectFor('#synthesize-trigger'),
-                mapControlsPanelOverlap: intersects(rectFor('#info-panel'), rectFor('.controls')),
-                mapControlsHeaderOverlap: intersects(rectFor('#info-panel .info-header'), rectFor('.controls')),
-                mapControlsCompassOverlap: intersects(rectFor('#journey-compass'), rectFor('.controls')),
+                mapStripSearchOverlap: intersects(rectFor('.map-trail-strip'), rectFor('.search-container')),
+                mapStripPanelOverlap: intersects(rectFor('.map-trail-strip'), rectFor('#info-panel')),
                 mapSearchControlsOverlap: intersects(rectFor('.search-container'), rectFor('.controls'))
             },
             elementsAtSceneCenter: document.elementsFromPoint(window.innerWidth / 2, window.innerHeight * 0.46)
@@ -416,7 +416,7 @@ async function main() {
         assert(idleResult.luminance.whiteRatio <= 0.08, `idle scene white pixel ratio is too high: ${idleResult.luminance.whiteRatio}`, failures);
         assert(idle.coreContinuity.checked > 0 && idle.coreContinuity.matched === idle.coreContinuity.checked, 'mycelium core thread segments should be continuous paired vertices', failures);
         assert(focused.focusedNode !== null && focused.focusedNode >= 0, 'focused playtest should establish a focused node', failures);
-        assert(focused.pointsMeshVisible === false, 'focused playtest should suppress the global point cloud so the pocket owns the scene', failures);
+        assert(focused.pointsMeshVisible === true, 'focused playtest should keep the global point cloud visible for graph traversal', failures);
         assert(focused.semanticLensVisible, 'semantic lens should become visible on focused node', failures);
         assert(focused.semanticLensGlowOpacity > 0.01, `semantic lens glow opacity too low: ${focused.semanticLensGlowOpacity}`, failures);
         assert(focused.semanticLensSpokeAlphaNonZero === 0, 'focused mode should keep semantic lens spokes hidden so pocket threads own relationship cues', failures);
@@ -428,17 +428,13 @@ async function main() {
         assert(insideResult.luminance.p95 <= 205, `inside scene p95 luminance is washed out: ${insideResult.luminance.p95}`, failures);
         assert(insideResult.luminance.whiteRatio <= 0.018, `inside scene white pixel ratio is too high: ${insideResult.luminance.whiteRatio}`, failures);
         assert(map.activeView === 'map' || map.graphContext === 'map', 'map playtest should enter map context', failures);
-        assert(map.layout?.mapSearchControlsOverlap === false, 'map controls should not overlap the mobile map search surface', failures);
-        assert(map.layout?.mapControlsPanelOverlap === false, 'map controls should not overlap the map info panel chrome', failures);
-        assert(map.layout?.mapControlsHeaderOverlap === false, 'map controls should not overlap the map info panel header', failures);
-        assert(map.layout?.mapControlsCompassOverlap === false, 'map controls should not overlap the upper map compass/actions', failures);
         assert(map.layout?.searchContainer?.right >= 360, `map search surface should use the mobile width instead of reserving a rail gutter: right=${map.layout?.searchContainer?.right}`, failures);
-        assert(map.layout?.controls?.top >= 164 && map.layout?.controls?.top <= 206, `map controls should sit in the open map band above the panel: top=${map.layout?.controls?.top}`, failures);
-        assert(map.layout?.controls?.height <= 58, `map controls should be a compact horizontal dock, not a vertical rail: height=${map.layout?.controls?.height}`, failures);
-        assert(map.layout?.controls?.width <= 260, `map controls dock should stay compact: width=${map.layout?.controls?.width}`, failures);
-        assert(!map.layout?.controls || !map.layout?.journeyCompass || !isVisibleLayoutBox(map.layout.journeyCompass) || map.layout.controls.top >= map.layout.journeyCompass.bottom + 8, `map controls should clear the upper map compass/actions: controls.top=${map.layout?.controls?.top} vs journeyCompass.bottom=${map.layout?.journeyCompass?.bottom}`, failures);
-        assert(!map.layout?.controls || !map.layout?.infoPanel || map.layout.controls.bottom <= map.layout.infoPanel.top - 8, `map controls should clear the lower panel chrome: controls.bottom=${map.layout?.controls?.bottom} vs infoPanel.top=${map.layout?.infoPanel?.top}`, failures);
-        assert(!map.layout?.controls || !map.layout?.searchContainer || map.layout.controls.bottom <= map.layout.searchContainer.top - 8, 'map controls should not cover lower panel content', failures);
+        assert(isVisibleLayoutBox(map.layout?.mapTrailStrip), 'map strip should own map actions on mobile map surface', failures);
+        assert(map.layout?.mapTrailStrip?.height <= 124, `map strip should stay compact: height=${map.layout?.mapTrailStrip?.height}`, failures);
+        assert(map.layout?.mapStripSearchOverlap === false, 'map strip should not overlap the mobile map search surface', failures);
+        assert(map.layout?.mapStripPanelOverlap === false, 'map strip should not overlap the map info panel shell', failures);
+        assert(!isVisibleLayoutBox(map.layout?.controls), 'global canvas controls should stay suppressed while map strip owns mobile map actions', failures);
+        assert(!map.layout?.mapTrailStrip || !map.layout?.searchContainer || map.layout.searchContainer.top >= map.layout.mapTrailStrip.bottom + 8, `map search should sit below the map strip: search.top=${map.layout?.searchContainer?.top} vs strip.bottom=${map.layout?.mapTrailStrip?.bottom}`, failures);
         assert(!map.layout?.launchButton || map.layout.launchButton.display === 'none', 'map-search should suppress the bulky Surprise Me CTA', failures);
         assert(!map.layout?.synthesizeTrigger || map.layout.synthesizeTrigger.display === 'none' || !isVisibleLayoutBox(map.layout.synthesizeTrigger), 'map-search should suppress the bulky summarize CTA', failures);
 
@@ -446,18 +442,15 @@ async function main() {
         // map-search is the variant where search has an active query and results are open
         // on the map surface. We validate the controls/results/accordion stacking order.
         assert(mapSearch.layout?.searchContainer?.right >= 360, `map-search surface should use full mobile width: right=${mapSearch.layout?.searchContainer?.right}`, failures);
-        assert(mapSearch.layout?.mapSearchControlsOverlap === false, 'map-search controls must not overlap search/results surface', failures);
-        assert(mapSearch.layout?.mapControlsPanelOverlap === false, 'map-search controls must not overlap map info panel chrome', failures);
-        assert(mapSearch.layout?.mapControlsHeaderOverlap === false, 'map-search controls must not overlap map info panel header', failures);
-        assert(mapSearch.layout?.mapControlsCompassOverlap === false, 'map-search controls must not overlap upper map compass/actions', failures);
-        assert(!mapSearch.layout?.journeyCompass || !isVisibleLayoutBox(mapSearch.layout.journeyCompass) || mapSearch.layout?.controls?.top >= mapSearch.layout.journeyCompass.bottom + 8, `map-search controls should clear upper map compass/actions: controls.top=${mapSearch.layout?.controls?.top} vs journeyCompass.bottom=${mapSearch.layout?.journeyCompass?.bottom}`, failures);
-        assert(mapSearch.layout?.controls?.bottom <= (mapSearch.layout?.infoPanel?.top ?? Infinity) - 8, `map-search controls should clear lower panel chrome: controls.bottom=${mapSearch.layout?.controls?.bottom} vs infoPanel.top=${mapSearch.layout?.infoPanel?.top}`, failures);
-        assert(mapSearch.layout?.controls?.bottom <= (mapSearch.layout?.searchContainer?.top ?? Infinity) - 8, `map-search controls should be above the search surface: controls.bottom=${mapSearch.layout?.controls?.bottom} vs searchContainer.top=${mapSearch.layout?.searchContainer?.top}`, failures);
-        assert(mapSearch.layout?.controls?.height <= 58, `map-search controls should be a compact horizontal dock: height=${mapSearch.layout?.controls?.height}`, failures);
-        assert(mapSearch.layout?.controls?.width <= 260, `map-search controls dock should stay compact: width=${mapSearch.layout?.controls?.width}`, failures);
+        assert(isVisibleLayoutBox(mapSearch.layout?.mapTrailStrip), 'map-search strip should own map actions', failures);
+        assert(mapSearch.layout?.mapTrailStrip?.height <= 124, `map-search strip should stay compact: height=${mapSearch.layout?.mapTrailStrip?.height}`, failures);
+        assert(mapSearch.layout?.mapStripSearchOverlap === false, 'map-search strip must not overlap search/results surface', failures);
+        assert(mapSearch.layout?.mapStripPanelOverlap === false, 'map-search strip must not overlap map info panel shell', failures);
+        assert(!isVisibleLayoutBox(mapSearch.layout?.controls), 'map-search should suppress global canvas controls while map strip owns actions', failures);
+        assert(!mapSearch.layout?.mapTrailStrip || !mapSearch.layout?.searchContainer || mapSearch.layout.searchContainer.top >= mapSearch.layout.mapTrailStrip.bottom + 8, `map-search search should sit below the map strip: search.top=${mapSearch.layout?.searchContainer?.top} vs strip.bottom=${mapSearch.layout?.mapTrailStrip?.bottom}`, failures);
         // search results should not clip below the lower accordion band
         assert(!mapSearch.layout?.searchContainer || mapSearch.layout.searchContainer.display !== 'none', 'map-search search container must be visible', failures);
-        assert(mapSearch.layout?.searchContainer?.top >= 40, `map-search search container should sit below controls: top=${mapSearch.layout?.searchContainer?.top}`, failures);
+        assert(mapSearch.layout?.searchContainer?.top >= 40, `map-search search container should sit below top chrome: top=${mapSearch.layout?.searchContainer?.top}`, failures);
 
         const consoleSummary = summarizeConsoleMessages(consoleMessages);
         assert(consoleSummary.unexpected.length === 0, `unexpected console messages: ${JSON.stringify(consoleSummary.unexpected.slice(0, 5))}`, failures);

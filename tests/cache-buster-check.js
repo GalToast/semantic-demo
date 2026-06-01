@@ -1,6 +1,8 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import * as esbuild from 'esbuild';
 
 const root = process.cwd();
 const fix = process.argv.includes('--fix');
@@ -22,6 +24,12 @@ const requiredAssets = [
 
 const failures = [];
 
+function reportFailuresAndExit() {
+  console.error('Semantic demo cache-buster check failed:');
+  for (const failure of failures) console.error(`- ${failure}`);
+  process.exit(1);
+}
+
 function shaPrefix(relativePath) {
   const buffer = fs.readFileSync(path.join(root, relativePath));
   return crypto.createHash('sha256').update(buffer).digest('hex').slice(0, 12);
@@ -42,6 +50,46 @@ function toPosixPath(value) {
 function resolveCssImport(ownerPath, reference) {
   const ownerDir = path.posix.dirname(toPosixPath(ownerPath));
   return path.posix.normalize(path.posix.join(ownerDir === '.' ? '' : ownerDir, reference));
+}
+
+async function verifyBundleFresh() {
+  const currentBundlePath = path.join(root, 'dist/bundle.js');
+  if (!fs.existsSync(currentBundlePath)) {
+    failures.push('dist/bundle.js is missing; run npm run build');
+    return;
+  }
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'semantic-bundle-check-'));
+  const tmpBundlePath = path.join(tmpDir, 'bundle.js');
+
+  try {
+    await esbuild.build({
+      entryPoints: [path.join(root, 'js/modules/app.js')],
+      bundle: true,
+      minify: true,
+      keepNames: true,
+      outfile: tmpBundlePath,
+      target: 'es2020',
+      format: 'esm',
+      external: ['three', 'three/*'],
+      logLevel: 'silent',
+    });
+
+    const current = fs.readFileSync(currentBundlePath);
+    const generated = fs.readFileSync(tmpBundlePath);
+    if (!current.equals(generated)) {
+      const currentHash = crypto.createHash('sha256').update(current).digest('hex').slice(0, 12);
+      const generatedHash = crypto.createHash('sha256').update(generated).digest('hex').slice(0, 12);
+      failures.push(
+        `dist/bundle.js is stale relative to js/modules/app.js and its imports; ` +
+        `expected build hash ${generatedHash}, found ${currentHash}. Run npm run build, then npm run refresh:cache.`,
+      );
+    }
+  } catch (error) {
+    failures.push(`dist/bundle.js freshness build failed: ${error?.message || String(error)}`);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 }
 
 function refreshCssImports(relativePath, seen = new Set()) {
@@ -86,6 +134,9 @@ function refreshCssImports(relativePath, seen = new Set()) {
     console.log(`Updated ${relativePath} import cache busters.`);
   }
 }
+
+await verifyBundleFresh();
+if (failures.length) reportFailuresAndExit();
 
 let shellHtml = fs.readFileSync(shellPath, 'utf8');
 let nextHtml = shellHtml;
@@ -151,9 +202,7 @@ if (fix && nextHtml !== shellHtml) {
 }
 
 if (failures.length) {
-  console.error('Semantic demo cache-buster check failed:');
-  for (const failure of failures) console.error(`- ${failure}`);
-  process.exit(1);
+  reportFailuresAndExit();
 }
 
 console.log('Semantic demo cache-buster check OK.');

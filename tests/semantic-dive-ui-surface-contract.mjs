@@ -62,7 +62,7 @@ globalThis.document = {
   querySelectorAll: () => [],
 };
 
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 const { initJourneyLifecycleAdapter } = await import('../js/modules/journey-lifecycle-adapter.js');
 const { syncSemanticDiveUi } = await import('../js/modules/semantic-dive-ui.js');
 
@@ -89,11 +89,13 @@ function resetDom() {
 }
 
 function resetState() {
-  state.focusedNode = null;
-  state.currentView = 'galaxy';
-  state.trailDepth = 0;
-  state.strandContinuityState = { phase: 'idle' };
-  state.navState.focusedIndex = null;
+  withStateMutation(() => {
+    state.focusedNode = null;
+    state.currentView = 'galaxy';
+    state.trailDepth = 0;
+    state.strandContinuityState = { phase: 'idle' };
+    state.navState.focusedIndex = null;
+  });
   window.getCurrentTrailFocusIndex = undefined;
   window.getNextExploreCandidateForIndex = undefined;
   initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: () => null });
@@ -120,9 +122,11 @@ assert(dom.diveButton.disabled === true, 'dive button disabled without focus');
 
 resetState();
 dom = resetDom();
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.trailDepth = 1;
+withStateMutation(() => {
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.trailDepth = 1;
+});
 syncSemanticDiveUi();
 assert(document.body.dataset.semanticDive === 'inactive', 'focused pre-dive state remains inactive');
 assert(dom.diveButton.hidden === false, 'dive button appears after first trail step');
@@ -135,9 +139,11 @@ assert(dom.insideCounty.disabled === false, 'county button is enabled when a nod
 
 resetState();
 dom = resetDom();
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.trailDepth = 2;
+withStateMutation(() => {
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.trailDepth = 2;
+});
 window.getCurrentTrailFocusIndex = () => 4;
 initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: (index, options) => {
   assert(index === 4, 'next-candidate lookup receives current focus index');
@@ -162,9 +168,11 @@ assert(dom.diveCopy.textContent === 'Use Next Stop to continue or County to exit
 
 resetState();
 dom = resetDom();
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.trailDepth = 2;
+withStateMutation(() => {
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.trailDepth = 2;
+});
 initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: () => null });
 syncSemanticDiveUi();
 assert(dom.insideStatusCopy.textContent === 'Inside this neighborhood. Pick another match or return to County.', 'active no-candidate copy is stable');
@@ -173,10 +181,12 @@ assert(dom.insideNext.textContent === 'Trail Complete', 'next button no-candidat
 
 resetState();
 dom = resetDom();
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.trailDepth = 2;
-state.strandContinuityState = { phase: 'walking' };
+withStateMutation(() => {
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.trailDepth = 2;
+  state.strandContinuityState = { phase: 'walking' };
+});
 initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: () => ({ index: 8 }) });
 syncSemanticDiveUi();
 assert(dom.insideNext.disabled === true, 'next button disabled while walking');
@@ -185,10 +195,12 @@ assert(dom.insideNext.textContent === 'Following...', 'walking state copy is sta
 
 resetState();
 dom = resetDom();
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.trailDepth = 2;
-state.currentView = 'map';
+withStateMutation(() => {
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.trailDepth = 2;
+  state.currentView = 'map';
+});
 syncSemanticDiveUi();
 assert(document.body.dataset.semanticDive === 'inactive', 'map view forces semantic dive inactive');
 assert(state.semanticDiveMode === true, 'map view preserves semanticDiveMode for return-to-galaxy resume');

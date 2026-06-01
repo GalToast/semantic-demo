@@ -41,7 +41,7 @@ test.describe('resetExperienceState cleanup regression', () => {
 
     // Establish map view state so reset has something meaningful to do
     await page.evaluate(() => {
-      window.switchView?.('map', { skipTerrainPrelude: true, skipUrlSync: true });
+      window.__APP_ACTIONS__?.switchView?.('map', { skipTerrainPrelude: true, skipUrlSync: true });
     });
     await page.waitForFunction(() => document.body.dataset.activeView === 'map', { timeout: 10000 });
 
@@ -112,7 +112,7 @@ test.describe('resetExperienceState cleanup regression', () => {
     // Set up a prelude scenario: switch to map with prelude (to start the timer)
     // Then immediately reset — the timer must be cancelled by switchView('galaxy')
     await page.evaluate(() => {
-      window.switchView?.('map', { skipTerrainPrelude: false, skipUrlSync: true });
+      window.__APP_ACTIONS__?.switchView?.('map', { skipTerrainPrelude: false, skipUrlSync: true });
     });
     await page.waitForTimeout(100); // let the prelude timer start
 

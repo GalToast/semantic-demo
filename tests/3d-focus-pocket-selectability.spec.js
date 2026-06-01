@@ -128,7 +128,7 @@ async function probe(page) {
 async function enterFocusByIndex(page, index) {
   await focusNodeViaApp(page, index);
   // Wait for focus mode to settle
-  await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode ?? window.__TEST_STATE__?.navState?.mode ?? '' === 'focus', { timeout: 15000 });
+  await page.waitForFunction(() => (window.__APP_STATE__?.navState?.mode ?? window.__TEST_STATE__?.navState?.mode ?? '') === 'focus', { timeout: 15000 });
   await page.waitForTimeout(800); // allow pocket animation to begin
 }
 
@@ -156,7 +156,7 @@ async function performSearch(page, query = 'coffee') {
 async function enterFocusFromSearch(page) {
   await performSearch(page);
   await page.locator('.search-result-item').first().click();
-  await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode ?? window.__TEST_STATE__?.navState?.mode ?? '' === 'focus', { timeout: 15000 });
+  await page.waitForFunction(() => (window.__APP_STATE__?.navState?.mode ?? window.__TEST_STATE__?.navState?.mode ?? '') === 'focus', { timeout: 15000 });
   await page.waitForTimeout(800);
 }
 
@@ -240,9 +240,8 @@ test.describe('focus-pocket node selectability', () => {
     const hasPocketBadge = snap.ui.pocketCountBadge > 0;
     const hasAnyRelationshipUI = hasThreadInspectorUI || hasFocusStageUI || hasNodeDetailUI || hasPocketBadge;
 
-    // If the global point cloud is intentionally hidden in focus mode, the
-    // thread-inspector/relationship panel is the required alternative path.
-    // Assert that at least one relationship UI is visible.
+    // The global point cloud remains visible in focus mode; relationship UI is
+    // still required as an explicit, deterministic navigation path.
     expect(hasAnyRelationshipUI,
       `At least one relationship UI (thread-inspector/focus-stage/node-detail/pocket-badge) must be visible. ` +
       `Got: thread=${snap.ui.threadInspectorItems}, focusStage=${snap.ui.focusStageActions}, ` +

@@ -21,6 +21,7 @@ describe('semantic-search-api-cache', () => {
             lastAgeMs: null
         };
         vi.useFakeTimers();
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
 
     afterEach(() => {

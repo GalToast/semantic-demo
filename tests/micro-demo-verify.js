@@ -59,7 +59,7 @@ async function waitForAppReady(page, url) {
   }
   // Wait for app globals to be registered
   await page.waitForFunction(
-    () => typeof window.demoController === 'object' &&
+    () => typeof window.isMicroDemoRunning === 'function' &&
            typeof window.cancelMicroDemo === 'function',
     { timeout: 15000 }
   );
@@ -87,7 +87,7 @@ async function runTests() {
     console.log('Test 1: App page is reachable and globals are registered');
     try {
       await waitForAppReady(page, `${BASE_URL}${PATH}`);
-      assert(true, 'App responds and demoController + cancelMicroDemo globals exist');
+      assert(true, 'App responds and isMicroDemoRunning + cancelMicroDemo globals exist');
     } catch (err) {
       assert(false, `App not ready: ${err.message}`);
       await browser.close();
@@ -109,8 +109,8 @@ async function runTests() {
       { timeout: 30000 }
     );
 
-    const isRunning = await page.evaluate(() => window.demoController?.isRunning?.());
-    assert(isRunning === true, 'demoController.isRunning() === true during demo');
+    const isRunning = await page.evaluate(() => window.isMicroDemoRunning?.());
+    assert(isRunning === true, 'isMicroDemoRunning() === true during demo');
 
     // Demo should set a localStorage seen flag after completion
     await page.waitForFunction(
@@ -215,8 +215,8 @@ async function runTests() {
     await page.goto(`${BASE_URL}${PATH}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
     await page.waitForTimeout(1500);
 
-    const isRunningRepeat = await page.evaluate(() => window.demoController?.isRunning?.());
-    assert(isRunningRepeat === false, 'demoController.isRunning() === false on repeat visit');
+    const isRunningRepeat = await page.evaluate(() => window.isMicroDemoRunning?.());
+    assert(isRunningRepeat === false, 'isMicroDemoRunning() === false on repeat visit');
 
     // sessionStorage should NOT be set (demo was blocked)
     const sessionSet = await page.evaluate(() => sessionStorage.getItem('moco_mycelium_demo_session_v1'));
@@ -228,11 +228,11 @@ async function runTests() {
     await page.goto(`${BASE_URL}${PATH}${DEMO_FORCE}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
     await page.waitForFunction(
-      () => window.demoController?.isRunning?.() === true,
+      () => window.isMicroDemoRunning?.() === true,
       { timeout: 30000 }
     );
-    const isRunningForce = await page.evaluate(() => window.demoController.isRunning());
-    assert(isRunningForce === true, 'demoController.isRunning() === true with demo=force despite seen flag');
+    const isRunningForce = await page.evaluate(() => window.isMicroDemoRunning());
+    assert(isRunningForce === true, 'isMicroDemoRunning() === true with demo=force despite seen flag');
 
     // Wait for sessionStorage
     await page.waitForFunction(
@@ -248,7 +248,7 @@ async function runTests() {
     await page.goto(`${BASE_URL}${PATH}${DEMO_FORCE}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
     await page.waitForFunction(
-      () => window.demoController?.isRunning?.() === true,
+      () => window.isMicroDemoRunning?.() === true,
       { timeout: 30000 }
     );
 
@@ -256,11 +256,11 @@ async function runTests() {
     await page.evaluate(() => window.cancelMicroDemo('user-input'));
 
     await page.waitForFunction(
-      () => window.demoController?.isRunning?.() === false,
+      () => window.isMicroDemoRunning?.() === false,
       { timeout: 5000 }
     );
-    const isRunningAfterCancel = await page.evaluate(() => window.demoController.isRunning());
-    assert(isRunningAfterCancel === false, 'demoController.isRunning() === false after cancelMicroDemo');
+    const isRunningAfterCancel = await page.evaluate(() => window.isMicroDemoRunning());
+    assert(isRunningAfterCancel === false, 'isMicroDemoRunning() === false after cancelMicroDemo');
 
     const titleAfterCancel = await page.title();
     assert(titleAfterCancel.includes('MoCo Business Mycelium'), `Title after cancel: "${titleAfterCancel}"`);
@@ -284,8 +284,8 @@ async function runTests() {
     await page.goto(`${BASE_URL}${PATH}${DEMO_NODEMO}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
     await page.waitForTimeout(2000);
 
-    const isRunningNodemo = await page.evaluate(() => window.demoController?.isRunning?.());
-    assert(isRunningNodemo === false, 'demoController.isRunning() === false when nodemo param is set');
+    const isRunningNodemo = await page.evaluate(() => window.isMicroDemoRunning?.());
+    assert(isRunningNodemo === false, 'isMicroDemoRunning() === false when nodemo param is set');
 
     const sessionNodemo = await page.evaluate(() => sessionStorage.getItem('moco_mycelium_demo_session_v1'));
     assert(sessionNodemo === null, 'sessionStorage key is NOT set when nodemo param is set');
@@ -310,9 +310,9 @@ async function runTests() {
     await page.waitForTimeout(1000);
 
     // Only one demo should be registered; check that isRunning is stable
-    const isRunningStable = await page.evaluate(() => window.demoController?.isRunning?.());
+    const isRunningStable = await page.evaluate(() => window.isMicroDemoRunning?.());
     // sessionStorage blocks re-entry; isRunning should reflect the single instance
-    assert(isRunningStable !== undefined, 'demoController.isRunning() is accessible after reload');
+    assert(isRunningStable !== undefined, 'isMicroDemoRunning() is accessible after reload');
 
     // ── Test 9: Console error noise filter is not blanketing real errors ───
     console.log('\nTest 9: Console error filter does not hide actual app errors');

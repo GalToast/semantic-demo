@@ -36,9 +36,12 @@ const desktop = { width: 1440, height: 900, deviceScaleFactor: 1, isMobile: fals
 
 const states = [
   { name: 'mobile-idle', viewport: mobile, params: { view: 'galaxy' } },
+  { name: 'mobile-search', viewport: mobile, params: { view: 'galaxy', q: 'coffee', anchor: '1' } },
   { name: 'mobile-search-error', viewport: mobile, params: { view: 'galaxy', q: 'semantic-error-proof' }, setup: forceSearchError },
   { name: 'mobile-focus', viewport: mobile, params: { view: 'galaxy', q: 'coffee', anchor: '519' } },
   { name: 'mobile-field-node', viewport: mobile, params: { view: 'galaxy', q: 'coffee', anchor: '519' }, setup: forceFieldNode },
+  { name: 'mobile-thread-preview', viewport: mobile, params: { view: 'galaxy', q: 'coffee', anchor: '519' }, setup: forceThreadPreview },
+  { name: 'mobile-semantic-dive', viewport: mobile, params: { view: 'galaxy', q: 'coffee', anchor: '1', mode: 'trail', depth: '2', record: '1' } },
   { name: 'desktop-idle', viewport: desktop, params: { view: 'galaxy' } },
 ];
 
@@ -87,7 +90,24 @@ async function waitForReady(page) {
   await page.waitForLoadState('load', { timeout: 7000 }).catch(() => {});
   await page.evaluate(() => document.fonts?.ready).catch(() => {});
   await page.waitForFunction(() => document.body?.dataset?.graphicsMode, { timeout: 7000 }).catch(() => {});
-  await page.waitForTimeout(900);
+  await page.waitForFunction(() => {
+    const { cameraAssist, loadingOverlay, sceneReady, viewHandoffActive } = document.body.dataset;
+    const overlay = document.querySelector('#loading-overlay');
+    const overlayStyle = overlay ? getComputedStyle(overlay) : null;
+    const overlayHidden = !overlay ||
+      loadingOverlay === 'hidden' ||
+      overlay.classList.contains('hidden') ||
+      overlay.getAttribute('aria-hidden') === 'true' ||
+      overlayStyle?.display === 'none' ||
+      overlayStyle?.visibility === 'hidden' ||
+      Number(overlayStyle?.opacity || 1) <= 0.05;
+    const routeSettled = sceneReady === 'true' ||
+      viewHandoffActive === 'false' ||
+      cameraAssist === 'free' ||
+      document.body.dataset.graphicsMode === 'fallback';
+    return overlayHidden && routeSettled;
+  }, { timeout: 10000 }).catch(() => {});
+  await page.waitForTimeout(300);
 }
 
 async function forceSearchError(page) {
@@ -122,6 +142,79 @@ async function forceFieldNode(page) {
     document.body.dataset.focusPanelMode = 'field-node';
     document.body.dataset.fieldStepSync = 'active';
     if (typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function') (window.__APP_ACTIONS__?.refreshCompositionState)();
+  });
+  await page.waitForTimeout(350);
+}
+
+async function forceThreadPreview(page) {
+  const firstResult = page.locator('.search-result-item').first();
+  if (await firstResult.count()) {
+    await firstResult.click({ timeout: 5000 }).catch(() => {});
+  }
+  await page.waitForTimeout(600);
+  await page.evaluate(() => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    if (typeof window.__APP_ACTIONS__?.switchView === 'function') {
+      window.__APP_ACTIONS__.switchView('galaxy', { skipUrlSync: true, silentHandoff: true });
+    }
+    if (state.currentView !== 'galaxy') state.currentView = 'galaxy';
+
+    const seedIndex =
+      Number.isFinite(state.navState?.focusedIndex) ? state.navState.focusedIndex :
+      Number.isFinite(state.focusedNode) ? state.focusedNode :
+      Number.isFinite(state.currentSearchSummary?.anchorIndex) ? state.currentSearchSummary.anchorIndex :
+      519;
+    if (Number.isFinite(seedIndex)) state.focusedNode = seedIndex;
+    if (state.navState && Number.isFinite(seedIndex)) {
+      state.navState.focusedIndex = seedIndex;
+      if (typeof window.__APP_ACTIONS__?.setTrailFromSeed === 'function') {
+        window.__APP_ACTIONS__.setTrailFromSeed(seedIndex);
+      }
+    }
+
+    const candidate = (state.navState?.threadCandidates || [])
+      .find((item) => item && Number.isFinite(item.index) && item.index !== seedIndex && item.relationshipRole) ||
+      (state.navState?.threadCandidates || [])
+        .find((item) => item && Number.isFinite(item.index) && item.index !== seedIndex);
+    if (candidate && !candidate.relationshipRole) {
+      candidate.relationshipRole = 'upstream';
+      candidate.relationshipAxis = candidate.relationshipAxis || 'ui_quality_support_fixture';
+      candidate.roleReason = candidate.roleReason || 'support or infrastructure signal';
+      candidate.source = candidate.source || 'semantic';
+    }
+
+    const inspectThreadNeighbor =
+      typeof window._ti?.inspectThreadNeighbor === 'function' ? window._ti.inspectThreadNeighbor :
+      typeof window.inspectThreadNeighbor === 'function' ? window.inspectThreadNeighbor :
+      null;
+    const renderThreadInspection =
+      typeof window._ti?.renderThreadInspection === 'function' ? window._ti.renderThreadInspection :
+      typeof window.renderThreadInspection === 'function' ? window.renderThreadInspection :
+      null;
+    if (candidate && inspectThreadNeighbor) {
+      inspectThreadNeighbor(candidate.index, { force: true, surface: 'inspector' });
+    } else if (candidate && renderThreadInspection) {
+      renderThreadInspection(candidate.index, { force: true, surface: 'inspector' });
+    }
+
+    document.body.classList.add('is-active');
+    document.body.dataset.activeView = 'galaxy';
+    document.body.dataset.graphContext = 'focus';
+    document.body.dataset.panelSurface = document.body.dataset.panelSurface === 'focus-search' ? 'focus-search' : 'focus';
+    document.body.dataset.threadInspectSurface = 'inspector';
+    if (typeof window.__APP_ACTIONS__?.refreshCompositionState === 'function') {
+      window.__APP_ACTIONS__.refreshCompositionState();
+    }
+
+    const focusStage = document.querySelector('#focus-stage');
+    if (focusStage) {
+      focusStage.hidden = false;
+      focusStage.setAttribute('aria-hidden', 'false');
+      focusStage.classList.add('active');
+    }
+    document.querySelectorAll('#btn-thread-pin, #btn-thread-follow, #btn-thread-clear').forEach((btn) => {
+      btn.disabled = false;
+    });
   });
   await page.waitForTimeout(350);
 }
@@ -195,6 +288,26 @@ async function auditState(page, name) {
       return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, right: rect.right, bottom: rect.bottom };
     }
 
+    function visibleChrome(selector) {
+      const el = document.querySelector(selector);
+      if (!visible(el)) return null;
+      const rect = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      return {
+        selector,
+        x: Number(rect.x.toFixed(1)),
+        y: Number(rect.y.toFixed(1)),
+        width: Number(rect.width.toFixed(1)),
+        height: Number(rect.height.toFixed(1)),
+        right: Number(rect.right.toFixed(1)),
+        bottom: Number(rect.bottom.toFixed(1)),
+        areaRatio: Number(((rect.width * rect.height) / (viewport.width * viewport.height)).toFixed(3)),
+        pointerEvents: style.pointerEvents,
+        opacity: Number(style.opacity || 1),
+        zIndex: style.zIndex,
+      };
+    }
+
     function clipped(el) {
       if (!visible(el)) return false;
       if (parseFloat(getComputedStyle(el).fontSize || '0') === 0) return false;
@@ -208,6 +321,34 @@ async function auditState(page, name) {
 
     function overlaps(a, b, tolerance = 3) {
       return !(a.right <= b.x + tolerance || b.right <= a.x + tolerance || a.bottom <= b.y + tolerance || b.bottom <= a.y + tolerance);
+    }
+
+    const visibleCompassActions = Array.from(document.querySelectorAll('.journey-compass-action')).filter(visible);
+    for (const action of visibleCompassActions) {
+      const rect = action.getBoundingClientRect();
+      const label = (action.innerText || action.textContent || action.getAttribute('aria-label') || '').trim();
+      if (action.hidden || action.hasAttribute('hidden') || !action.dataset.journeyAction) {
+        failures.push({
+          check: 'composition:journey-action-hidden-rendered',
+          selector: action.id ? `#${action.id}` : '.journey-compass-action',
+          state: name,
+          label,
+          action: action.dataset.journeyAction || '',
+          rect: {
+            x: Number(rect.x.toFixed(1)),
+            y: Number(rect.y.toFixed(1)),
+            width: Number(rect.width.toFixed(1)),
+            height: Number(rect.height.toFixed(1)),
+          },
+        });
+      } else if (!label) {
+        failures.push({
+          check: 'composition:journey-action-blank-label',
+          selector: action.id ? `#${action.id}` : '.journey-compass-action',
+          state: name,
+          action: action.dataset.journeyAction || '',
+        });
+      }
     }
 
     for (const selector of selectors.criticalText) {
@@ -253,6 +394,131 @@ async function auditState(page, name) {
     if (name.includes('search') || name.includes('focus') || name.includes('field-node')) {
       const share = rectFor('.share-toggle');
       if (share && selectors.isMobile) failures.push({ check: 'state-leak', selector: '.share-toggle', state: name });
+    }
+
+    const visibleChromeSurfaces = selectors.chrome
+      .map((selector) => visibleChrome(selector))
+      .filter(Boolean);
+    passes.push({ check: 'composition:visible-chrome', inspected: visibleChromeSurfaces.length, surfaces: visibleChromeSurfaces });
+
+    if (selectors.isMobile) {
+      const controls = visibleChromeSurfaces.find((surface) => surface.selector === '.controls');
+      const activeView = document.body.dataset.activeView || '';
+      const panelSurface = document.body.dataset.panelSurface || '';
+      const tallRail = controls && controls.pointerEvents !== 'none' && controls.height > 120 && controls.width >= 44;
+      if (activeView === 'galaxy' && panelSurface && !panelSurface.startsWith('map-') && tallRail) {
+        failures.push({
+          check: 'composition:controls-rail-prominent',
+          selector: '.controls',
+          state: name,
+          rect: controls,
+        });
+      }
+
+      const share = rectFor('.share-toggle');
+      const searchContainer = rectFor('.search-container');
+      const modeGrid = rectFor('#mode-grid');
+      if (panelSurface === 'search' && modeGrid) {
+        failures.push({
+          check: 'composition:search-mode-grid-visible',
+          selector: '#mode-grid',
+          state: name,
+          rect: modeGrid,
+        });
+      }
+
+      if ((panelSurface === 'focus' || panelSurface === 'focus-search') && searchContainer) {
+        failures.push({
+          check: 'composition:focus-search-bar-visible',
+          selector: '.search-container',
+          state: name,
+          rect: searchContainer,
+        });
+      }
+
+      if (panelSurface === 'idle' && share && searchContainer && overlaps(share, searchContainer, 0)) {
+        failures.push({
+          check: 'composition:idle-share-overlaps-search',
+          selector: '.share-toggle',
+          state: name,
+          rect: share,
+        });
+      }
+
+      const threadInspectSurface = document.body.dataset.threadInspectSurface || '';
+      const threadInspector = visibleChrome('#focus-thread-inspector');
+      if ((panelSurface === 'focus' || panelSurface === 'focus-search') && threadInspectSurface === 'idle' && threadInspector) {
+        failures.push({
+          check: 'composition:focus-idle-thread-preview-visible',
+          selector: '#focus-thread-inspector',
+          state: name,
+          rect: threadInspector,
+        });
+      }
+
+      const diveButton = visibleChrome('.focus-stage-dive-btn');
+      if ((panelSurface === 'focus' || panelSurface === 'focus-search') && threadInspectSurface && threadInspectSurface !== 'idle' && diveButton) {
+        failures.push({
+          check: 'composition:preview-step-inside-visible',
+          selector: '.focus-stage-dive-btn',
+          state: name,
+          rect: diveButton,
+        });
+      }
+
+      const nearbyStops = visibleChrome('.focus-stage-neighbors');
+      if ((panelSurface === 'focus' || panelSurface === 'focus-search') && threadInspectSurface && threadInspectSurface !== 'idle' && nearbyStops && nearbyStops.height < 40) {
+        failures.push({
+          check: 'composition:preview-nearby-stops-squeezed',
+          selector: '.focus-stage-neighbors',
+          state: name,
+          rect: nearbyStops,
+        });
+      }
+
+      const infoPanel = visibleChromeSurfaces.find((surface) => surface.selector === '#info-panel');
+      if (panelSurface === 'semantic-dive' && infoPanel && infoPanel.height > 48) {
+        failures.push({
+          check: 'composition:semantic-dive-info-panel-slab',
+          selector: '#info-panel',
+          state: name,
+          rect: infoPanel,
+        });
+      }
+
+      const compass = visibleChromeSurfaces.find((surface) => surface.selector === '.journey-compass');
+      if (panelSurface === 'semantic-dive' && compass && compass.height > 80) {
+        failures.push({
+          check: 'composition:semantic-dive-compass-too-tall',
+          selector: '.journey-compass',
+          state: name,
+          rect: compass,
+        });
+      }
+
+      const focusStageCard = visibleChromeSurfaces.find((surface) => surface.selector === '.focus-stage-card');
+      if (panelSurface === 'semantic-dive' && focusStageCard && focusStageCard.height > 205) {
+        failures.push({
+          check: 'composition:semantic-dive-bottom-hud-too-tall',
+          selector: '.focus-stage-card',
+          state: name,
+          rect: focusStageCard,
+        });
+      }
+
+      if (panelSurface === 'semantic-dive') {
+        for (const selector of ['.journey-compass-rail', '.journey-compass-actions']) {
+          const navCluster = visibleChrome(selector);
+          if (navCluster) {
+            failures.push({
+              check: 'composition:semantic-dive-compass-nav-visible',
+              selector,
+              state: name,
+              rect: navCluster,
+            });
+          }
+        }
+      }
     }
 
     const overflowX = document.documentElement.scrollWidth > window.innerWidth;

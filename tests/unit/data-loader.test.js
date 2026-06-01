@@ -56,7 +56,7 @@ describe('data-loader', () => {
 
             // Check full row
             const p1 = state.points[0];
-            expect(p1.x).toBe(1.5);
+            expect(state.rawPositionsBuffer[0]).toBe(1.5);
             expect(p1.name).toBe('Test Name');
             expect(p1.what).toBe('Test What');
             expect(p1.status).toBe('active');
@@ -93,6 +93,9 @@ describe('data-loader', () => {
                 status: 'active'
             }];
 
+            const workerPositions = new Float32Array([4, 5, 6]);
+            const workerClusters = new Uint16Array([1]);
+
             class FakeWorker {
                 constructor(url) {
                     this.url = url;
@@ -115,7 +118,9 @@ describe('data-loader', () => {
                                 type: 'LOAD_RECORDS_SUCCESS',
                                 payload: {
                                     points: workerPoints,
-                                    pointIndexByLeadId: { worker_1: 0 }
+                                    pointIndexByLeadId: { worker_1: 0 },
+                                    positionsBuffer: workerPositions,
+                                    clustersBuffer: workerClusters
                                 }
                             }
                         }));

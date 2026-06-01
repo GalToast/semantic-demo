@@ -224,8 +224,9 @@ await test('STORY_DESCRIPTIONS is exported and non-empty', () => {
 await test('setTrailDepth source has explicit fromUserGesture gate for depth=2', async () => {
   const { readFileSync } = await import('node:fs');
   const src = readFileSync('js/modules/lifecycle.js', 'utf8');
-  // Gate: if (nextDepth === 2 && prevDepth < 2 && !options.fromUserGesture) { return; }
-  const hasGate = /if\s*\(\s*nextDepth\s*===\s*2\s*&&\s*prevDepth\s*<\s*2\s*&&\s*!options\.fromUserGesture\s*\)\s*\{[\s\S]*?return/.test(src);
+  // Gate: enteringSemanticDive is derived from nextDepth/prevDepth and requires fromUserGesture.
+  const hasGate = /const\s+enteringSemanticDive\s*=\s*nextDepth\s*===\s*2\s*&&\s*prevDepth\s*<\s*2/.test(src)
+    && /if\s*\(\s*enteringSemanticDive\s*&&\s*!options\.fromUserGesture\s*\)\s*\{[\s\S]*?return/.test(src);
   assert(hasGate, 'setTrailDepth has explicit gesture gate for depth=2 escalation');
 });
 
@@ -300,14 +301,14 @@ await test('setMyceliumMode(\'inside\') source calls direct setTrailDepth(2, { f
   assert(!/window\.setTrailDepth\s*\(/.test(setMyceliumModeBody), 'setMyceliumMode avoids the window.setTrailDepth bridge');
 });
 
-// Contract 10: setMyceliumMode calls direct updateUrlState (with reason: 'mode')
-await test('setMyceliumMode source calls direct updateUrlState with reason: \'mode\'', async () => {
+// Contract 10: setMyceliumMode publishes VIEW_CHANGED event
+await test('setMyceliumMode source publishes VIEW_CHANGED event', async () => {
   const { readFileSync } = await import('node:fs');
   const src = readFileSync('js/modules/lifecycle.js', 'utf8');
   const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
-  const hasUrlSync = /(?<!window\.)updateUrlState\s*\(\s*\{\}\s*,\s*\{\s*reason:\s*['"]mode['"]\s*\}\s*\)/.test(setMyceliumModeBody);
-  assert(hasUrlSync, 'setMyceliumMode calls direct updateUrlState with reason: mode');
-  assert(!/window\.updateUrlState\s*\(/.test(setMyceliumModeBody), 'setMyceliumMode avoids the window.updateUrlState bridge');
+  const hasEventPublish = /publish\s*\(\s*EVENTS\.VIEW_CHANGED\s*,\s*\{[\s\S]*?myceliumMode:\s*mode\s*\}\s*\)/.test(setMyceliumModeBody);
+  assert(hasEventPublish, 'setMyceliumMode publishes VIEW_CHANGED event');
+  assert(!/updateUrlState\s*\(/.test(setMyceliumModeBody), 'setMyceliumMode avoids direct updateUrlState call');
 });
 
 // Contract 11: applyStoryPrompt refreshes filter controls and reapplies filters

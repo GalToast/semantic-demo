@@ -4,8 +4,20 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
+const appPath = path.join(repoRoot, 'js', 'modules', 'app.js');
+const app = fs.readFileSync(appPath, 'utf8');
 const threeSetupPath = path.join(repoRoot, 'js', 'modules', 'three-engine.js');
 const threeSetup = fs.readFileSync(threeSetupPath, 'utf8');
+const nodeManagerPath = path.join(repoRoot, 'js', 'modules', 'three-node-manager.js');
+const nodeManager = fs.readFileSync(nodeManagerPath, 'utf8');
+const threadManagerPath = path.join(repoRoot, 'js', 'modules', 'three-thread-manager.js');
+const threadManager = fs.readFileSync(threadManagerPath, 'utf8');
+const interactionVisualsPath = path.join(repoRoot, 'js', 'modules', 'three-interaction-visuals.js');
+const interactionVisuals = fs.readFileSync(interactionVisualsPath, 'utf8');
+const searchAnimationsPath = path.join(repoRoot, 'js', 'modules', 'three-search-animations.js');
+const searchAnimations = fs.readFileSync(searchAnimationsPath, 'utf8');
+const legacyAnimationsPath = path.join(repoRoot, 'js', 'modules', 'three-animations.js');
+const legacyAnimations = fs.readFileSync(legacyAnimationsPath, 'utf8');
 const myceliumEnginePath = path.join(repoRoot, 'js', 'modules', 'mycelium-engine.js');
 const myceliumEngine = fs.readFileSync(myceliumEnginePath, 'utf8');
 
@@ -41,27 +53,40 @@ includesAll(pushBezierSource, [
     'colorTarget.push(start.r, start.g, start.b, end.r, end.g, end.b)'
 ], 'pushBezierLinePair continuous LineSegments emission');
 
-includesAll(threeSetup, [
+includesAll(threadManager, [
     'semanticEdges ? 0.38 : 0.28',
     'semanticEdges ? 0.22 : 0.16',
     'semanticEdges ? 0.32 : 0.24'
 ], 'mycelium semantic/color fade coefficients');
 
-// Thread contrast contract: raised opacities for legibility.
-includesAll(threeSetup, [
+assert(
+    app.includes("from './three-search-animations.js'")
+    && !app.includes("from './three-animations.js'"),
+    'app.js should inject search animation dependencies from canonical three-search-animations.js'
+);
+assert(
+    legacyAnimations.includes("from './three-search-animations.js'")
+    && !/function\s+triggerSearchHeroMoment\b/.test(legacyAnimations)
+    && !/function\s+triggerSearchCorridorAnimation\b/.test(legacyAnimations)
+    && !/new\s+THREE\./.test(legacyAnimations),
+    'three-animations.js should remain a re-export shim; search animation ownership lives in three-search-animations.js'
+);
+
+// Thread contrast contract: focus keeps global threads as background context.
+includesAll(threadManager, [
     'overview: { core: 0.13, wispy: 0.055, bridge: 0.08, pulse: 0.028 }',
-    'focused: { core: 0.40, wispy: 0.18, bridge: 0.28, pulse: 0.092 }',
+    'focused: { core: 0.14, wispy: 0.045, bridge: 0.07, pulse: 0.006 }',
     'searchActive: { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 }',
     'trailActive: { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 }'
 ], 'mycelium presentation opacity profile');
 
 assert(
-    threeSetup.includes('const targetOpacity = hasFocus ? (isInside ? 0.48 : 0.36) : 0;'),
+    interactionVisuals.includes('const targetOpacity = hasFocus ? (isInside ? 0.48 : 0.36) : 0;'),
     'selected node filament opacity should be visible enough to read as a halo'
 );
 assert(
-    threeSetup.includes('const auraTargetOpacity = hasFocus ? (isInside ? 0.26 : 0.18) : 0.0;')
-    && threeSetup.includes('const auraScale = isInside ? 0.13 : 0.11;'),
+    interactionVisuals.includes('const auraTargetOpacity = hasFocus ? (isInside ? 0.18 : 0.135) : 0.0;')
+    && interactionVisuals.includes('const auraScale = isInside ? 0.088 : 0.082;'),
     'focus halo should stay restrained so it does not wash out the selected-node scene'
 );
 
@@ -77,7 +102,7 @@ includesAll(updateThreadsSource, [
     'verts.push(samples[i], samples[i + 1])'
 ], 'animated mycelium thread continuity');
 
-const semanticLensSource = threeSetup.match(/function getSemanticLensNeighborIndices[\s\S]*?\/\/ 3\. Handle Semantic Lens/)?.[0] || '';
+const semanticLensSource = interactionVisuals.match(/function getSemanticLensNeighborIndices[\s\S]*?\/\/ 4\. Step Inside anchor bloom light/)?.[0] || '';
 includesAll(semanticLensSource, [
     'state.semanticNeighborMapByLeadId.get(leadId)',
     'state.pointIndexByLeadId.get(String(neighbor.leadId))',

@@ -26,6 +26,7 @@ export async function setupMockSearch(page) {
 }
 
 export async function openApp(page, viewport = { width: 1440, height: 900 }) {
+  page.on('console', msg => console.log('BROWSER:', msg.text()));
   await setupMockSearch(page);
   await page.setViewportSize(viewport);
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });

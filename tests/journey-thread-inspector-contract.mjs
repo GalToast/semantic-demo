@@ -27,6 +27,8 @@ const JOURNEY_CANVAS_INTERACTION_PATH = path.join(SEMDEMO_ROOT, 'js/modules/jour
 const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js');
 const JOURNEY_THREAD_MODEL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-model.js');
 const JOURNEY_WEBGL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.js');
+const JOURNEY_ROUTE_TRACE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-route-trace.js');
+const JOURNEY_SEMANTIC_OVERLAY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-semantic-overlay.js');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -172,7 +174,7 @@ function testApplyPointFilterColorsFactorRanges() {
 function testBuildRouteTraceMaterial() {
   console.log('\n[TEST] buildRouteTraceMaterial shader material');
 
-  const webglSrc = fs.readFileSync(JOURNEY_WEBGL_PATH, 'utf-8');
+  const webglSrc = fs.readFileSync(JOURNEY_ROUTE_TRACE_PATH, 'utf-8');
 
   // Must return THREE.ShaderMaterial
   assertContains(webglSrc, 'return new THREE.ShaderMaterial({', 'buildRouteTraceMaterial returns ShaderMaterial');
@@ -236,17 +238,14 @@ function testThreadInspectorSemanticFirst() {
   const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
 
   // Both files must have getSemanticThreadCandidates
-  assertContains(threadInspectorSrc, 'export function getSemanticThreadCandidates', 'thread-inspector exports getSemanticThreadCandidates');
+  assert(threadInspectorSrc.includes('getSemanticThreadCandidates'), 'thread-inspector re-exports getSemanticThreadCandidates');
   assertContains(journeyModelSrc, 'export function getSemanticThreadCandidates', 'journey-thread-model exports getSemanticThreadCandidates');
 
   // Both must have getThreadCandidatesForIndex
-  assertContains(threadInspectorSrc, 'export function getThreadCandidatesForIndex', 'thread-inspector exports getThreadCandidatesForIndex');
+  assert(threadInspectorSrc.includes('getThreadCandidatesForIndex'), 'thread-inspector re-exports getThreadCandidatesForIndex');
   assertContains(journeyModelSrc, 'export function getThreadCandidatesForIndex', 'journey-thread-model exports getThreadCandidatesForIndex');
 
   // getThreadCandidatesForIndex must use semantic-first: return semantic if length > 0
-  assertContains(threadInspectorSrc,
-    'if (semanticCandidates.length) return semanticCandidates;',
-    'thread-inspector: semantic-first strategy');
   assertContains(journeyModelSrc,
     'if (semanticCandidates.length) return semanticCandidates;',
     'journey-thread-model: semantic-first strategy');
@@ -254,9 +253,10 @@ function testThreadInspectorSemanticFirst() {
   // journey.js must import from journey-thread-model.js, not thread-inspector.js
   assertContains(journeySrc, "from './journey-thread-model.js'", 'journey.js imports from journey-thread-model.js');
 
-  // thread-inspector.js must use the shared normalizeLeadId to avoid lookup drift.
-  assertContains(threadInspectorSrc, "import { normalizeLeadId } from './journey-thread-model.js';", 'thread-inspector imports shared normalizeLeadId');
-  assertNotContains(threadInspectorSrc, 'function normalizeLeadId(', 'thread-inspector local normalizeLeadId removed');
+  // thread-inspector.js must NOT re-implement normalizeLeadId; it must use the shared version.
+  assert(journeyModelSrc.includes('function normalizeLeadId'), 'journey-thread-model has canonical normalizeLeadId');
+  assert(journeyModelSrc.includes('export function normalizeLeadId'), 'journey-thread-model normalizes exported normalizeLeadId');
+  assertNotContains(threadInspectorSrc, 'function normalizeLeadId(', 'thread-inspector does not define local normalizeLeadId');
 
   // thread-inspector.js must expose functions through the _ti diagnostic seam.
   const tiBlock = getThreadInspectorDiagnosticBlock(threadInspectorSrc);
@@ -450,7 +450,8 @@ function testThreadInspectorTextHelpersExtraction() {
 function testJourneyWebglLineShaderOwnership() {
   console.log('\n[TEST] journey WebGL line shader ownership');
 
-  const webglSrc = fs.readFileSync(JOURNEY_WEBGL_PATH, 'utf-8');
+  const webglSrc = fs.readFileSync(JOURNEY_ROUTE_TRACE_PATH, 'utf-8');
+  const webglSemanticSrc = fs.readFileSync(JOURNEY_SEMANTIC_OVERLAY_PATH, 'utf-8');
 
   // Route trace uses a plain ShaderMaterial with direct uniforms. It should
   // not depend on LineMaterial's late onBeforeCompile userData.shader path.
@@ -460,21 +461,21 @@ function testJourneyWebglLineShaderOwnership() {
 
   // Focus semantic lines use LineMaterial; onBeforeCompile must retain the
   // compiled shader handle for custom uniforms, and all update paths must guard it.
-  assertContains(webglSrc, 'function buildFocusThreadLineMaterial()', 'buildFocusThreadLineMaterial function exists');
-  assertContains(webglSrc, 'lineMaterial.onBeforeCompile = (shader) => {', 'focus semantic line material assigns onBeforeCompile callback');
-  assertContains(webglSrc, 'lineMaterial.userData.shader = shader;', 'buildFocusThreadLineMaterial assigns shader to lineMaterial.userData.shader');
-  assertContains(webglSrc, 'uniform float time;', 'shader declares time uniform');
-  assertContains(webglSrc, 'uniform float semanticScore;', 'shader declares semanticScore uniform');
-  assertContains(webglSrc, 'uniform float reducedMotion;', 'shader declares reducedMotion uniform');
-  assertContains(webglSrc, 'varying float vProgress;', 'shader declares vProgress varying');
-  assertContains(webglSrc, 'varying float vCue;', 'shader declares vCue varying');
-  assertContains(webglSrc, 'varying float vPriority;', 'shader declares vPriority varying');
-  assertContains(webglSrc, 'varying float vLane;', 'shader declares vLane varying');
+  assertContains(webglSemanticSrc, 'function buildFocusThreadLineMaterial()', 'buildFocusThreadLineMaterial function exists');
+  assertContains(webglSemanticSrc, 'lineMaterial.onBeforeCompile = (shader) => {', 'focus semantic line material assigns onBeforeCompile callback');
+  assertContains(webglSemanticSrc, 'lineMaterial.userData.shader = shader;', 'buildFocusThreadLineMaterial assigns shader to lineMaterial.userData.shader');
+  assertContains(webglSemanticSrc, 'uniform float time;', 'shader declares time uniform');
+  assertContains(webglSemanticSrc, 'uniform float semanticScore;', 'shader declares semanticScore uniform');
+  assertContains(webglSemanticSrc, 'uniform float reducedMotion;', 'shader declares reducedMotion uniform');
+  assertContains(webglSemanticSrc, 'varying float vProgress;', 'shader declares vProgress varying');
+  assertContains(webglSemanticSrc, 'varying float vCue;', 'shader declares vCue varying');
+  assertContains(webglSemanticSrc, 'varying float vPriority;', 'shader declares vPriority varying');
+  assertContains(webglSemanticSrc, 'varying float vLane;', 'shader declares vLane varying');
 
-  assertContains(webglSrc, 'if (lineMaterial.userData?.shader)', 'refreshFocusSemanticOverlay guards lineMaterial.userData?.shader');
-  assertContains(webglSrc, 'lineMaterial.userData.shader.uniforms.semanticScore.value = avgSemanticScore', 'semanticScore uniform set via guarded access');
-  assertContains(webglSrc, 'if (line.material?.userData?.shader)', 'updateFocusSemanticOverlayPositions guards line.material.userData.shader');
-  assertContains(webglSrc, 'if (!reducedMotion && line.material?.uniforms?.time)', 'updateFocusSemanticOverlayPositions keeps direct-uniform fallback');
+  assertContains(webglSemanticSrc, 'if (lineMaterial.userData?.shader)', 'refreshFocusSemanticOverlay guards lineMaterial.userData?.shader');
+  assertContains(webglSemanticSrc, 'lineMaterial.userData.shader.uniforms.semanticScore.value = avgSemanticScore', 'semanticScore uniform set via guarded access');
+  assertContains(webglSemanticSrc, 'if (line.material?.userData?.shader)', 'updateFocusSemanticOverlayPositions guards line.material.userData.shader');
+  assertContains(webglSemanticSrc, 'if (!reducedMotion && line.material?.uniforms?.time)', 'updateFocusSemanticOverlayPositions keeps direct-uniform fallback');
 
   console.log('  OK journey WebGL line shader ownership verified');
 }

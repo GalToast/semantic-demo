@@ -144,13 +144,13 @@ function testNoRethrowOnClipboardFailure() {
 // ---------------------------------------------------------------------------
 
 function testShareButtonLabelReset() {
-  console.log('\n[TEST] event-bindings.js resets share button label on copy success');
+  console.log('\n[TEST] view-bindings.js resets share button label on copy success');
 
-  const EVB_PATH = resolve(CWD, 'js/modules/event-bindings.js');
+  const EVB_PATH = resolve(CWD, 'js/modules/bindings/view-bindings.js');
   const evbSrc = readFileSync(EVB_PATH, 'utf-8');
 
   assertContains(evbSrc, "btn.setAttribute('aria-label', 'Link copied to clipboard')",
-    'event-bindings sets aria-label to Link copied to clipboard on success');
+    'view-bindings sets aria-label to Link copied to clipboard on success');
 }
 
 // ---------------------------------------------------------------------------

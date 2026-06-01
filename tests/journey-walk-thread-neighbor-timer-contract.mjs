@@ -84,8 +84,8 @@ assert(
   arrivalBlock.includes("setStrandContinuityState('arrived'") &&
     arrivalBlock.includes('syncFocusStage(pointAtArrival || state.selectedPoint || null)') &&
     arrivalBlock.includes('updateJourneyCompass()') &&
-    arrivalBlock.includes('primeNextThreadInspectionAfterWalk(capturedIndex)'),
-  'arrival timer should move to arrived and refresh the focus-stage/compass/next-thread handoff'
+    arrivalBlock.includes('clearThreadInspection({ force: true, preserveJourney: true })'),
+  'arrival timer should move to arrived, refresh the focus-stage/compass, and release the preview inspector'
 );
 assert(
   arrivalBlock.includes('if (state.semanticDiveMode)') &&

@@ -36,14 +36,13 @@ const MODULES = {
   journey:     path.join(SEMDEMO_ROOT, 'js/modules/journey.js'),
   camera:      path.join(SEMDEMO_ROOT, 'js/modules/camera-controls.js'),
   searchState: path.join(SEMDEMO_ROOT, 'js/modules/search-state.js'),
-  eventBindings: path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js'),
+  eventBindings: path.join(SEMDEMO_ROOT, 'js/modules/bindings/legend-bindings.js'),
   sceneReveal: path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.js'),
   app:         path.join(SEMDEMO_ROOT, 'js/modules/app.js'),
   mapState:    path.join(SEMDEMO_ROOT, 'js/modules/map-state.js'),
   clusterFilter: path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.js'),
   journeyCompassCtrl: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.js'),
   journeyCompassState: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-state.js'),
-  demoController: path.join(SEMDEMO_ROOT, 'js/modules/demo-controller.js'),
   focusPocket: path.join(SEMDEMO_ROOT, 'js/modules/focus-pocket.js'),
   threadInspector: path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js'),
   strandContinuity: path.join(SEMDEMO_ROOT, 'js/modules/strand-continuity.js'),
@@ -61,6 +60,8 @@ const MODULES = {
   inspectedStrandOverlayAdapter: path.join(SEMDEMO_ROOT, 'js/modules/inspected-strand-overlay-adapter.js'),
   routeArrivalOverlayAdapter: path.join(SEMDEMO_ROOT, 'js/modules/route-arrival-overlay-adapter.js'),
   threeSetup: path.join(SEMDEMO_ROOT, 'js/modules/three-engine.js'),
+  threeSearchAnimations: path.join(SEMDEMO_ROOT, 'js/modules/three-search-animations.js'),
+  threeInteractionVisuals: path.join(SEMDEMO_ROOT, 'js/modules/three-interaction-visuals.js'),
 };
 
 // ── HELPERS ────────────────────────────────────────────────────────────────
@@ -438,7 +439,7 @@ function testBareCallBaseline() {
   // (they are authoritative owners or compatibility layers)
   const ALLOWED_UNGUARDED = new Set([
     'app', 'lifecycle', 'journey', 'camera',
-    'demoController', 'journeyCompassCtrl', 'journeyCompassState',
+    'journeyCompassCtrl', 'journeyCompassState',
     'clusterFilter', 'focusPocket', 'clusterLabels',
     'viewController', 'navigationState', 'journeyWebgl',
   ]);
@@ -790,7 +791,7 @@ function testRestoreLegendCollapsedPanelBridgeRetired() {
     'lifecycle.js should import restoreLegendCollapsedPanel directly from legend-ui.js'
   );
   assert(
-    eventBindingsSrc.includes('restoreLegendCollapsedPanel') && eventBindingsSrc.includes("from './legend-ui.js'"),
+    eventBindingsSrc.includes('restoreLegendCollapsedPanel') && (eventBindingsSrc.includes("from './legend-ui.js'") || eventBindingsSrc.includes("from '../legend-ui.js'")),
     'event-bindings.js should import restoreLegendCollapsedPanel directly from legend-ui.js'
   );
 
@@ -855,13 +856,15 @@ function testAudioGlobalsRetiredFromWindow() {
     }
   }
 
+  const searchAnimationsSrc = read('threeSearchAnimations');
+
   assert(
-    /import\s+\{[^}]*\btriggerCorridorBloom\b[^}]*\}\s+from\s+['"]\.\/audio-scape\.js['"]/.test(threeSetupSrc),
-    'three-engine.js should import triggerCorridorBloom directly from audio-scape.js'
+    /import\s+\{[^}]*\btriggerCorridorBloom\b[^}]*\}\s+from\s+['"]\.\/audio-scape\.js['"]/.test(searchAnimationsSrc),
+    'three-search-animations.js should import triggerCorridorBloom directly from audio-scape.js'
   );
   assert(
-    /triggerCorridorBloom\(\);/.test(threeSetupSrc),
-    'three-engine.js should call triggerCorridorBloom directly for corridor animation audio'
+    /triggerCorridorBloom\(\);/.test(searchAnimationsSrc),
+    'three-search-animations.js should call triggerCorridorBloom directly for corridor animation audio'
   );
   assert(
     problems.length === 0,
@@ -918,7 +921,7 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
     'journey/thread-settler modules must not call timers through window'
   );
   assert(
-    journeyCompassSrc.includes('resetExplorationFocus();'),
+    journeyCompassSrc.includes('resetExplorationFocus({'),
     'journey-compass-controller.js should call resetExplorationFocus directly for county overview'
   );
   assert(

@@ -75,6 +75,7 @@ assertImportShell('css/mobile_premium.css', [
   'mobile_premium_chrome.css',
   'mobile_premium_state.css',
   'mobile_premium_idle.css',
+  'mobile_premium_map_summary.css',
   'mobile_premium_surfaces.css',
 ]);
 

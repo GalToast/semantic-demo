@@ -108,7 +108,7 @@ function ds(key) {
   return fakeBody.dataset[key];
 }
 
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 
 let refreshCompositionState;
 try {
@@ -123,21 +123,23 @@ assert(typeof refreshCompositionState === 'function', 'refreshCompositionState i
 // ── Reset helper ───────────────────────────────────────────────────────────────
 
 function resetState() {
-  state.currentView = 'galaxy';
-  state.focusedNode = null;
-  state.selectedPoint = null;
-  state.navState.focusedIndex = null;
-  state.navState.mode = 'overview';
-  state.navState.trailCursor = -1;
-  state.navState.trailSeedIndex = null;
-  state.navState.trailNeighborIndices = [];
-  state.navState.walkHistoryIndices = [];
-  state.navState.threadCandidates = [];
-  state.trailDepth = 0;
-  state.semanticDiveMode = false;
-  state.currentSearchSummary = null;
-  state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false };
-  state.trailIndices.clear();
+  withStateMutation(() => {
+    state.currentView = 'galaxy';
+    state.focusedNode = null;
+    state.selectedPoint = null;
+    state.navState.focusedIndex = null;
+    state.navState.mode = 'overview';
+    state.navState.trailCursor = -1;
+    state.navState.trailSeedIndex = null;
+    state.navState.trailNeighborIndices = [];
+    state.navState.walkHistoryIndices = [];
+    state.navState.threadCandidates = [];
+    state.trailDepth = 0;
+    state.semanticDiveMode = false;
+    state.currentSearchSummary = null;
+    state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false };
+    state.trailIndices.clear();
+  });
   fakeBody.dataset = {};
   _rafNow = 0;
 }
@@ -154,9 +156,11 @@ console.log('\n=== Focus-Semantic State Boundary Contract ===\n');
 // BOUNDARY 1: focus -> semantic-dive (trailDepth threshold)
 console.log('[BOUNDARY 1] focus -> semantic-dive');
 resetState();
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+withStateMutation(() => {
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+});
 elementsById.set('search-input', new FakeElement('input'));
 commit('focus-state');
 
@@ -182,11 +186,13 @@ console.log('  PASS: semantic-dive boundary transition correct\n');
 // BOUNDARY 2: semantic-dive -> map-trail (view switch)
 console.log('[BOUNDARY 2] semantic-dive -> map-trail');
 resetState();
-state.currentView = 'map';
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
-state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+withStateMutation(() => {
+  state.currentView = 'map';
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
+  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+});
 elementsById.set('search-input', new FakeElement('input'));
 commit('map-trail-state');
 
@@ -203,26 +209,32 @@ console.log('  PASS: map-trail state is correct\n');
 // This covers the map-trail -> semantic-dive boundary gap identified in the state machine.
 console.log('[BOUNDARY 2b] map-trail -> galaxy (semantic-dive reactivation)');
 // Set up semantic-dive state first (trailDepth=2, focusedNode, galaxy view)
-state.currentView = 'galaxy';
-state.trailDepth = 2;
-state.currentSearchSummary = null;
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-// Ensure semanticDiveMode is set (the getter setter will set trailDepth=2 when true)
-state.semanticDiveMode = true;
+withStateMutation(() => {
+  state.currentView = 'galaxy';
+  state.trailDepth = 2;
+  state.currentSearchSummary = null;
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  // Ensure semanticDiveMode is set (the getter setter will set trailDepth=2 when true)
+  state.semanticDiveMode = true;
+});
 commit('semantic-dive-active');
 assert(ds('semanticDive') === 'active', 'BOUNDARY 2b pre: semanticDive is active in galaxy with trailDepth=2');
 
 // Now switch to map view - semanticDive must be forced inactive
-state.currentView = 'map';
+withStateMutation(() => {
+  state.currentView = 'map';
+});
 commit('map-forces-inactive');
 assert(ds('activeView') === 'map', 'BOUNDARY 2b: activeView is map');
 assert(ds('semanticDive') === 'inactive', 'BOUNDARY 2b: map view forces semanticDive inactive');
 
 // Return to galaxy - semanticDive must reactivate when trailDepth=2 and focusedNode is set
-state.currentView = 'galaxy';
-state.trailDepth = 2; // preserve trailDepth
-state.semanticDiveMode = true; // restore (setter will set trailDepth=2)
+withStateMutation(() => {
+  state.currentView = 'galaxy';
+  state.trailDepth = 2; // preserve trailDepth
+  state.semanticDiveMode = true; // restore (setter will set trailDepth=2)
+});
 commit('galaxy-reactivates');
 assert(ds('activeView') === 'galaxy', 'BOUNDARY 2b: activeView is galaxy on return');
 assert(ds('semanticDive') === 'active', 'BOUNDARY 2b: semanticDive re-activates on galaxy return with trailDepth=2');
@@ -232,12 +244,14 @@ console.log('  PASS: map-trail -> galaxy semantic-dive reactivation is correct\n
 // BOUNDARY 3: map-trail -> reset (resetStateBeforeUrlRestore)
 console.log('[BOUNDARY 3] map-trail -> reset');
 resetState();
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
-state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-state.trailDepth = 2;
-state.semanticDiveMode = true;
+withStateMutation(() => {
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
+  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+  state.trailDepth = 2;
+  state.semanticDiveMode = true;
+});
 elementsById.set('search-input', new FakeElement('input'));
 commit('pre-reset');
 
@@ -259,10 +273,12 @@ console.log('  PASS: reset boundary transition correct\n');
 // EDGE: focusedNode null during semantic-dive should not occur but guard
 console.log('[EDGE] semantic-dive with no focusedNode');
 resetState();
-state.focusedNode = null;
-state.navState.focusedIndex = null;
-state.trailDepth = 2;
-state.currentSearchSummary = null;
+withStateMutation(() => {
+  state.focusedNode = null;
+  state.navState.focusedIndex = null;
+  state.trailDepth = 2;
+  state.currentSearchSummary = null;
+});
 commit('semantic-dive-no-focus');
 
 assert(ds('graphContext') === 'idle', 'semantic-dive-no-focus: graphContext is idle (no focus)');
@@ -272,14 +288,18 @@ console.log('  PASS: no-focusedNode during semantic-dive guards correctly\n');
 // EDGE: selectedPoint persists after focus exit, cleared only in reset
 console.log('[EDGE] selectedPoint persists after focus exit');
 resetState();
-state.focusedNode = 4;
-state.navState.focusedIndex = 4;
-state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
-state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+withStateMutation(() => {
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
+  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
+});
 elementsById.set('search-input', new FakeElement('input'));
 // Exit focus by clearing focusedNode but keep selectedPoint + search context
-state.focusedNode = null;
-state.navState.focusedIndex = null;
+withStateMutation(() => {
+  state.focusedNode = null;
+  state.navState.focusedIndex = null;
+});
 commit('focus-exit');
 
 assert(state.selectedPoint !== null, 'focus-exit: selectedPoint persists after focusNode cleared');

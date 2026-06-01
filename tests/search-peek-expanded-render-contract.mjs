@@ -147,7 +147,8 @@ async function installSearchFixture(page, detail = 'peek') {
 //               .search-result-meta, .search-result-context,
 //               .search-result-bar, .search-result-badges
 //               (all via display:none)
-//   peek clips: non-first .search-result-item via overflow:hidden + height:48px
+//   peek hides: non-first .search-result-listitem so the collapsed sheet
+//               exposes one clean anchor row without clipped row slivers
 // ---------------------------------------------------------------------------
 
 async function assertPeekMode(page, ctx) {
@@ -181,6 +182,7 @@ async function assertPeekMode(page, ctx) {
     const countClipped = textClipped(countEl);
 
     return {
+      bodyClasses: Array.from(document.body.classList),
       panelSurface: document.body.dataset.panelSurface,
       panelSurfaceDetail: document.body.dataset.panelSurfaceDetail,
       resultsPresent: results !== null,
@@ -267,11 +269,12 @@ async function assertPeekMode(page, ctx) {
   if (info.barDisplay === 'none') ctx.pass('peek', 'visibility:result-bar-hidden-in-peek');
   else ctx.fail('peek', 'visibility:result-bar-hidden-in-peek', `.search-result-bar display="${info.barDisplay}" should be "none"`);
 
-  // Non-first items clipped via overflow:hidden (not display:none)
-  // They remain display:block but are clipped to 48px height
-  const allNonFirstOverflowHidden = info.nonFirstOverflow.every(o => o === 'hidden');
-  if (allNonFirstOverflowHidden) ctx.pass('peek', 'visibility:non-first-results-clipped-in-peek', 'non-first items overflow:hidden (clipped, not hidden)');
-  else ctx.fail('peek', 'visibility:non-first-results-clipped-in-peek', `non-first items overflow: [${info.nonFirstOverflow.join(', ')}]`);
+  const allNonFirstHidden = info.nonFirstDisplays.every(display => display === 'none');
+  if (allNonFirstHidden) ctx.pass('peek', 'visibility:non-first-results-hidden-in-peek', 'non-first items are hidden in collapsed peek mode');
+  else {
+    const details = info.nonFirstDisplays.map((display, i) => `${display} (overflow: ${info.nonFirstOverflow[i]})`).join(', ');
+    ctx.fail('peek', 'visibility:non-first-results-hidden-in-peek', `non-first item displays: [${details}], body classes: [${info.bodyClasses.join(', ')}]`);
+  }
 
   if (!info.overflowX) ctx.pass('peek', 'layout:no-overflow-x');
   else ctx.fail('peek', 'layout:overflow-x', 'horizontal overflow in peek mode');

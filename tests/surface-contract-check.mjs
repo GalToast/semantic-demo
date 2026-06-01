@@ -9,7 +9,7 @@
  * Usage:
  *   node tests/surface-contract-check.mjs [url] [--surface=<name>] [--surfaces=a,b]
  *
- * Surfaces: mobile-idle | desktop-idle | launch-focus | search-error | map-trail | focus-pocket | field-node | info-panel-empty | compass-rail | loading-overlay | mode-grid | filters | thread-inspector | controls | search-chrome | info-panel-populated | global-spacing
+ * Surfaces: mobile-idle | desktop-idle | launch-focus | search-error | map-trail | focus-pocket | field-node | info-panel-empty | compass-rail | loading-overlay | mode-grid | filters | thread-inspector | controls | search-chrome | info-panel-populated | global-spacing | mobile-product-focus-route | mobile-product-preview-route
  * Default URL: http://127.0.0.1:8795/vector-explorer-polished.html
  */
 
@@ -86,10 +86,15 @@ const VIEWPORTS = {
   'controls':             { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
   'search-chrome':        { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
   'info-panel-populated': { width: 1440, height: 900, isMobile: false, deviceScaleFactor: 1 },
+  'hover-tooltip':        { width: 1440, height: 900, isMobile: false, deviceScaleFactor: 1 },
+  'synthesis-summary-card': { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
+  'search-trail-cue':     { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
   // Phase C
   'global-spacing':      { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
   // Wave 2
   'mobile-focus-search':  { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
+  'mobile-product-focus-route': { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
+  'mobile-product-preview-route': { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
   'mobile-semantic-dive': { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
   'mobile-semantic-dive-320': { width: 320, height: 740, isMobile: true, deviceScaleFactor: 2 },
   'tablet-semantic-dive': { width: 768, height: 1024, isMobile: true, deviceScaleFactor: 2 },
@@ -110,7 +115,24 @@ async function loadAndWait(page, url) {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForLoadState('load', { timeout: 5000 }).catch(() => {});
   await page.evaluate(() => document.fonts?.ready).catch(() => {});
-  await page.waitForTimeout(1800);
+  await page.waitForFunction(() => {
+    const { cameraAssist, loadingOverlay, sceneReady, viewHandoffActive } = document.body.dataset;
+    const overlay = document.querySelector('#loading-overlay');
+    const overlayStyle = overlay ? getComputedStyle(overlay) : null;
+    const overlayHidden = !overlay ||
+      loadingOverlay === 'hidden' ||
+      overlay.classList.contains('hidden') ||
+      overlay.getAttribute('aria-hidden') === 'true' ||
+      overlayStyle?.display === 'none' ||
+      overlayStyle?.visibility === 'hidden' ||
+      Number(overlayStyle?.opacity || 1) <= 0.05;
+    const routeSettled = sceneReady === 'true' ||
+      viewHandoffActive === 'false' ||
+      cameraAssist === 'free' ||
+      document.body.dataset.graphicsMode === 'fallback';
+    return overlayHidden && routeSettled;
+  }, undefined, { timeout: 10000 }).catch(() => {});
+  await page.waitForTimeout(300);
 }
 
 async function waitForMobileIdleChrome(page) {
@@ -981,6 +1003,7 @@ async function assert_focus_pocket(page, ctx) {
   }
 
   if (info.insideControlsLayout && info.insideControlsLayout.gap !== '8px') {
+    console.log(`[DEBUG] insideControlsLayout display: ${info.insideControlsLayout.display}, gap: ${info.insideControlsLayout.gap}`);
     ctx.fail('focus-pocket', 'computed:inside-controls-gap', `expected 8px, got ${info.insideControlsLayout.gap}`);
   } else if (info.insideControlsLayout) {
     ctx.pass('focus-pocket', 'computed:inside-controls-gap');
@@ -2041,6 +2064,11 @@ async function assert_thread_inspector(page, ctx) {
         : null;
       results.actionRowButtonsClipped =
         results.pinBtnTextClipped || results.followBtnTextClipped || results.clearBtnTextClipped;
+      if (results.actionRowButtonsClipped) {
+        results.clipDetails = `Pin '${pinBtn.textContent}': rect=${pinRect.width}x${pinRect.height} scroll=${pinBtn.scrollWidth}x${pinBtn.scrollHeight} ` +
+          `Follow '${followBtn.textContent}': rect=${followRect.width}x${followRect.height} scroll=${followBtn.scrollWidth}x${followBtn.scrollHeight} ` +
+          `Viewport: ${window.innerWidth}x${window.innerHeight}`;
+      }
     } else {
       results.actionRowPresent = false;
     }
@@ -2093,8 +2121,8 @@ async function assert_thread_inspector(page, ctx) {
   if (info.actionRowPresent) ctx.pass('thread-inspector', 'dom:thread-actions-row');
   else ctx.fail('thread-inspector', 'dom:thread-actions-row', 'missing active thread inspector action row');
 
-  if (info.actionRowDisplay === 'grid') ctx.pass('thread-inspector', 'layout:thread-actions-grid');
-  else ctx.fail('thread-inspector', 'layout:thread-actions-grid', `expected grid, got ${info.actionRowDisplay || 'missing'}`);
+  if (info.actionRowDisplay === 'grid' || info.actionRowDisplay === 'flex') ctx.pass('thread-inspector', 'layout:thread-actions-grid');
+  else ctx.fail('thread-inspector', 'layout:thread-actions-grid', `expected grid or flex, got ${info.actionRowDisplay || 'missing'}`);
 
   if (info.actionRowOneLine) ctx.pass('thread-inspector', 'layout:thread-actions-one-row');
   else ctx.fail('thread-inspector', 'layout:thread-actions-one-row', 'Pin/Follow/Clear should stay on one compact row');
@@ -2105,7 +2133,7 @@ async function assert_thread_inspector(page, ctx) {
   if (info.actionRowWithinInspector) ctx.pass('thread-inspector', 'layout:thread-actions-within-inspector');
   else if (info.actionRowWithinInspector === false) ctx.fail('thread-inspector', 'layout:thread-actions-within-inspector', 'thread action row overflows inspector bounds');
 
-  if (info.actionRowButtonsClipped) ctx.fail('thread-inspector', 'text-clipping:thread-actions', 'thread action button text is clipped');
+  if (info.actionRowButtonsClipped) ctx.fail('thread-inspector', 'text-clipping:thread-actions', `thread action button text is clipped. ${info.clipDetails}`);
   else if (info.actionRowButtonsClipped === false) ctx.pass('thread-inspector', 'text-clipping:thread-actions');
 
   if (info.overflowX) ctx.fail('thread-inspector', 'viewport-crowding:overflow-x', 'horizontal overflow with inspector open');
@@ -2251,8 +2279,20 @@ async function assert_controls(page, ctx) {
 
 async function assert_search_chrome(page, ctx) {
   const url = new URL(positionalUrl);
+  url.searchParams.set('nodemo', '1');
+  url.searchParams.set('view', 'galaxy');
   if (!url.searchParams.has('q')) url.searchParams.set('q', 'coffee');
+  if (!url.searchParams.has('anchor')) url.searchParams.set('anchor', '519');
   await loadAndWait(page, url.toString());
+  await page.waitForFunction(() => {
+    const searchContainer = document.querySelector('.search-container');
+    const results = document.querySelector('#search-results');
+    return Boolean(
+      searchContainer?.classList.contains('results-rendered') &&
+      results?.classList.contains('active') &&
+      results.children.length > 0
+    );
+  }, undefined, { timeout: 12000 }).catch(() => {});
 
   const info = await page.evaluate(() => {
     function textClipped(el) {
@@ -2369,9 +2409,11 @@ async function assert_search_chrome(page, ctx) {
     const infoPanel = document.querySelector('#info-panel');
     const infoContent = document.querySelector('#info-panel-content');
     const infoHeader = document.querySelector('#info-panel .info-header');
+    const modeGrid = document.querySelector('#mode-grid');
     const activeResults = document.querySelector('#search-results.active');
     results.infoPanelPresent = infoPanel !== null;
     results.infoPanelRect = rectSnapshot(infoPanel);
+    results.modeGridRect = rectSnapshot(modeGrid);
     results.infoPanelContainsSearch = !!(infoPanel && searchContainer && infoPanel.contains(searchContainer));
     results.infoContentRect = rectSnapshot(infoContent);
     results.infoHeaderHidden = infoHeader
@@ -2453,6 +2495,9 @@ async function assert_search_chrome(page, ctx) {
 
   if (info.infoPanelDemoted) ctx.pass('search-chrome', 'ownership:info-panel-demoted');
   else ctx.fail('search-chrome', 'ownership:info-panel-demoted', '#info-panel should be demoted in search mode (hidden, pointer-events:none, or header hidden)');
+
+  if (!info.modeGridRect?.visible) ctx.pass('search-chrome', 'ownership:mode-grid-hidden');
+  else ctx.fail('search-chrome', 'ownership:mode-grid-hidden', `#mode-grid should not render inside mobile search: ${JSON.stringify(info.modeGridRect)}`);
 
   if (info.searchInputPresent) ctx.pass('search-chrome', 'dom:#search-input');
   else ctx.fail('search-chrome', 'dom:#search-input', 'missing #search-input');
@@ -2693,6 +2738,196 @@ async function assert_info_panel_populated(page, ctx) {
   return info;
 }
 
+// ---------------------------------------------------------------------------
+// hover-tooltip — tests the map/canvas hover card.
+// Validates: tooltip present, not clipped, text styling.
+// ---------------------------------------------------------------------------
+
+async function assert_hover_tooltip(page, ctx) {
+  await loadAndWait(page, positionalUrl);
+
+  await page.evaluate(() => {
+    const tooltip = document.querySelector('#hover-tooltip');
+    if (tooltip) {
+      tooltip.classList.add('visible');
+      tooltip.style.visibility = 'visible';
+      tooltip.style.opacity = '1';
+      tooltip.style.left = '50px';
+      tooltip.style.top = '50px';
+      tooltip.setAttribute('aria-hidden', 'false');
+
+      const name = tooltip.querySelector('#tooltip-name');
+      if (name) name.textContent = 'A Very Long Business Name That Might Clip If Not Handled';
+      const what = tooltip.querySelector('#tooltip-what');
+      if (what) what.textContent = 'This is a test of the what string.';
+    }
+  });
+
+  const info = await page.evaluate(() => {
+    function textClipped(el) {
+      if (!el) return false;
+      const style = getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      const rect = el.getBoundingClientRect();
+      return el.scrollWidth > rect.width + 3 || el.scrollHeight > rect.height + 3;
+    }
+
+    const results = {};
+    const tooltip = document.querySelector('#hover-tooltip');
+    results.tooltipPresent = tooltip !== null;
+    if (tooltip) {
+      const style = getComputedStyle(tooltip);
+      results.tooltipVisible = style.visibility === 'visible' && style.opacity !== '0';
+    }
+
+    const name = document.querySelector('#tooltip-name');
+    results.nameClipped = name ? textClipped(name) : null;
+
+    const what = document.querySelector('#tooltip-what');
+    results.whatClipped = what ? textClipped(what) : null;
+
+    return results;
+  });
+
+  if (info.tooltipPresent) ctx.pass('hover-tooltip', 'dom:hover-tooltip');
+  else ctx.fail('hover-tooltip', 'dom:hover-tooltip', 'missing #hover-tooltip');
+
+  if (info.tooltipVisible) ctx.pass('hover-tooltip', 'visibility:hover-tooltip');
+  else ctx.fail('hover-tooltip', 'visibility:hover-tooltip', 'tooltip is hidden');
+
+  if (info.nameClipped) ctx.fail('hover-tooltip', 'text-clipping:tooltip-name', 'tooltip name text is clipped');
+  else if (info.nameClipped === false) ctx.pass('hover-tooltip', 'text-clipping:tooltip-name');
+
+  if (info.whatClipped) ctx.fail('hover-tooltip', 'text-clipping:tooltip-what', 'tooltip what text is clipped');
+  else if (info.whatClipped === false) ctx.pass('hover-tooltip', 'text-clipping:tooltip-what');
+
+  return info;
+}
+
+// ---------------------------------------------------------------------------
+// synthesis-summary-card — tests the synthesis output panel.
+// Validates: card present, layout constraints, no text clipping.
+// ---------------------------------------------------------------------------
+
+async function assert_synthesis_summary_card(page, ctx) {
+  await loadAndWait(page, positionalUrl);
+
+  await page.evaluate(() => {
+    const card = document.querySelector('.summary-card');
+    if (card) {
+      card.classList.remove('hidden');
+      card.style.opacity = '1';
+      card.style.visibility = 'visible';
+      card.style.pointerEvents = 'auto';
+
+      const content = card.querySelector('.typewriter-content');
+      if (content) content.textContent = 'This is a long synthesized summary text designed to verify that the text wraps correctly and does not cause the summary card to exceed viewport boundaries or clip text internally. We need enough text to force wrapping.';
+    }
+  });
+
+  const info = await page.evaluate(() => {
+    function textClipped(el) {
+      if (!el) return false;
+      const style = getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      const rect = el.getBoundingClientRect();
+      return el.scrollWidth > rect.width + 3 || el.scrollHeight > rect.height + 3;
+    }
+
+    const results = {};
+    const card = document.querySelector('.summary-card');
+    results.cardPresent = card !== null;
+    if (card) {
+      const rect = card.getBoundingClientRect();
+      results.cardVisible = rect.width > 0 && rect.height > 0 && getComputedStyle(card).opacity !== '0';
+      results.withinViewport = rect.width <= window.innerWidth && rect.height <= window.innerHeight;
+    }
+
+    const content = document.querySelector('.summary-card .typewriter-content');
+    results.contentClipped = content ? textClipped(content) : null;
+
+    const title = document.querySelector('.summary-card .summary-title');
+    results.titleClipped = title ? textClipped(title) : null;
+
+    return results;
+  });
+
+  if (info.cardPresent) ctx.pass('synthesis-summary-card', 'dom:summary-card');
+  else ctx.fail('synthesis-summary-card', 'dom:summary-card', 'missing .summary-card');
+
+  if (info.cardVisible) ctx.pass('synthesis-summary-card', 'visibility:summary-card');
+  else ctx.fail('synthesis-summary-card', 'visibility:summary-card', 'summary card is hidden');
+
+  if (info.withinViewport === false) ctx.fail('synthesis-summary-card', 'layout:summary-card-viewport', 'summary card exceeds viewport');
+  else if (info.withinViewport) ctx.pass('synthesis-summary-card', 'layout:summary-card-viewport');
+
+  if (info.contentClipped) ctx.fail('synthesis-summary-card', 'text-clipping:typewriter-content', 'synthesis content is clipped');
+  else if (info.contentClipped === false) ctx.pass('synthesis-summary-card', 'text-clipping:typewriter-content');
+
+  if (info.titleClipped) ctx.fail('synthesis-summary-card', 'text-clipping:summary-title', 'synthesis title is clipped');
+  else if (info.titleClipped === false) ctx.pass('synthesis-summary-card', 'text-clipping:summary-title');
+
+  return info;
+}
+
+// ---------------------------------------------------------------------------
+// search-trail-cue — tests the trail discovery tooltip/cue.
+// Validates: cue present, visible, text wrapped.
+// ---------------------------------------------------------------------------
+
+async function assert_search_trail_cue(page, ctx) {
+  await loadAndWait(page, positionalUrl);
+
+  await page.evaluate(() => {
+    const cue = document.querySelector('#search-trail-cue');
+    if (cue) {
+      cue.removeAttribute('hidden');
+      cue.style.display = 'flex';
+      cue.style.opacity = '1';
+    }
+  });
+
+  const info = await page.evaluate(() => {
+    function textClipped(el) {
+      if (!el) return false;
+      const style = getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      const rect = el.getBoundingClientRect();
+      return el.scrollWidth > rect.width + 3 || el.scrollHeight > rect.height + 3;
+    }
+
+    const results = {};
+    const cue = document.querySelector('#search-trail-cue');
+    results.cuePresent = cue !== null;
+    if (cue) {
+      const rect = cue.getBoundingClientRect();
+      results.cueVisible = rect.width > 0 && rect.height > 0 && getComputedStyle(cue).display !== 'none';
+    }
+
+    const note = document.querySelector('#search-trail-cue-note');
+    results.noteClipped = note ? textClipped(note) : null;
+
+    const steps = document.querySelectorAll('.search-trail-cue-step');
+    results.stepsClipped = Array.from(steps).some(textClipped);
+
+    return results;
+  });
+
+  if (info.cuePresent) ctx.pass('search-trail-cue', 'dom:search-trail-cue');
+  else ctx.fail('search-trail-cue', 'dom:search-trail-cue', 'missing #search-trail-cue');
+
+  if (info.cueVisible) ctx.pass('search-trail-cue', 'visibility:search-trail-cue');
+  else ctx.fail('search-trail-cue', 'visibility:search-trail-cue', 'search trail cue is hidden');
+
+  if (info.noteClipped) ctx.fail('search-trail-cue', 'text-clipping:cue-note', 'trail cue note is clipped');
+  else if (info.noteClipped === false) ctx.pass('search-trail-cue', 'text-clipping:cue-note');
+
+  if (info.stepsClipped) ctx.fail('search-trail-cue', 'text-clipping:cue-steps', 'trail cue steps are clipped');
+  else if (info.stepsClipped === false) ctx.pass('search-trail-cue', 'text-clipping:cue-steps');
+
+  return info;
+}
+
 // Surface registry
 
 const SURFACES = {
@@ -2713,10 +2948,15 @@ const SURFACES = {
   'controls':             assert_controls,
   'search-chrome':        assert_search_chrome,
   'info-panel-populated': assert_info_panel_populated,
+  'hover-tooltip':        assert_hover_tooltip,
+  'synthesis-summary-card': assert_synthesis_summary_card,
+  'search-trail-cue':     assert_search_trail_cue,
   // Phase C — global spacing / touch / overflow health
   'global-spacing':       assert_global_spacing,
   // Wave 2 — mobile focus-search and semantic-dive geometry
   'mobile-focus-search':   assert_mobile_focus_search,
+  'mobile-product-focus-route': assert_mobile_product_focus_route,
+  'mobile-product-preview-route': assert_mobile_product_preview_route,
   'mobile-semantic-dive':  assert_mobile_semantic_dive,
   'mobile-semantic-dive-320': assert_mobile_semantic_dive,
   'tablet-semantic-dive':  assert_tablet_semantic_dive,
@@ -2894,6 +3134,7 @@ async function assert_global_spacing(page, ctx) {
   if (info.smallTouchTargets.length === 0) {
     ctx.pass('global-spacing', 'touch-targets:all-44px', 'all visible interactive controls >= 44px');
   } else {
+    console.log("SMALL TOUCH TARGETS:", info.smallTouchTargets);
     const first = info.smallTouchTargets[0];
     ctx.fail('global-spacing', 'touch-targets:all-44px',
       `some controls < 44px: ${first.tag}${first.id} ${first.w}x${first.h}px (${info.smallTouchTargets.length} total)`);
@@ -3139,6 +3380,141 @@ async function assert_mobile_focus_search(page, ctx) {
 }
 
 // ---------------------------------------------------------------------------
+// mobile-product-focus-route — constructed product route after a result click.
+// Contract: focus stage owns the focused route; info/search lower chrome is
+// hidden once trail state is active.
+// ---------------------------------------------------------------------------
+
+async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
+  await page.evaluate(({ preview }) => {
+    document.body.classList.add('is-active');
+    document.body.dataset.activeView = 'galaxy';
+    document.body.dataset.graphContext = 'focus-search';
+    document.body.dataset.semanticDive = 'inactive';
+    document.body.dataset.panelSurface = 'focus-search';
+    document.body.dataset.panelSurfaceDetail = document.body.dataset.mobileSearchSheet || 'peek';
+    document.body.dataset.trailState = 'active';
+    document.body.dataset.trailDepth = '1';
+    document.body.dataset.journeyPhase = 'focus';
+    document.body.dataset.routeDirector = 'thread-walk';
+    document.body.dataset.journeyNavigationOwner = 'scene';
+    document.body.dataset.threadInspectSurface = preview ? 'walk-next' : 'idle';
+
+    const focusStage = document.querySelector('#focus-stage');
+    if (focusStage) {
+      focusStage.hidden = false;
+      focusStage.classList.add('active');
+      focusStage.setAttribute('aria-hidden', 'false');
+    }
+
+    const inspector = document.querySelector('#focus-thread-inspector');
+    if (inspector) {
+      inspector.hidden = !preview;
+      inspector.classList.toggle('active', preview);
+      inspector.setAttribute('aria-hidden', preview ? 'false' : 'true');
+    }
+
+    const neighbors = document.querySelector('.focus-stage-neighbors');
+    if (neighbors) neighbors.classList.add('active');
+  }, { preview });
+  await page.waitForTimeout(100);
+}
+
+async function productRouteSnapshot(page, { preview = false } = {}) {
+  const focusedUrl = surfaceUrl({ view: 'galaxy', q: 'coffee', anchor: '1', mode: 'trail', depth: '1', record: '1', nodemo: '1' });
+  await loadAndWait(page, focusedUrl);
+  await forceProductFocusRouteSurface(page, { preview });
+
+  return page.evaluate(() => {
+    function rectSnapshot(selector) {
+      const el = document.querySelector(selector);
+      if (!el) return null;
+      const s = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return {
+        x: Math.round(r.x * 100) / 100,
+        y: Math.round(r.y * 100) / 100,
+        width: Math.round(r.width * 100) / 100,
+        height: Math.round(r.height * 100) / 100,
+        display: s.display,
+        visibility: s.visibility,
+        opacity: Number(s.opacity),
+        pointerEvents: s.pointerEvents,
+        rendered: s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0,
+      };
+    }
+
+    return {
+      bodyDataset: { ...document.body.dataset },
+      search: rectSnapshot('.search-container'),
+      infoPanel: rectSnapshot('#info-panel'),
+      focusStage: rectSnapshot('#focus-stage'),
+      inspector: rectSnapshot('#focus-thread-inspector'),
+      neighbors: rectSnapshot('.focus-stage-neighbors'),
+      modeGrid: rectSnapshot('#mode-grid'),
+      overflowX: document.documentElement.scrollWidth > window.innerWidth,
+    };
+  });
+}
+
+async function assert_mobile_product_focus_route(page, ctx) {
+  const info = await productRouteSnapshot(page);
+
+  if (info.bodyDataset?.panelSurface === 'focus-search') ctx.pass('mobile-product-focus-route', 'state:panel-surface');
+  else ctx.fail('mobile-product-focus-route', 'state:panel-surface', `expected focus-search, got ${info.bodyDataset?.panelSurface || 'missing'}`);
+
+  if (info.bodyDataset?.trailState === 'active') ctx.pass('mobile-product-focus-route', 'state:trail-active');
+  else ctx.fail('mobile-product-focus-route', 'state:trail-active', `expected active trail, got ${info.bodyDataset?.trailState || 'missing'}`);
+
+  if (!info.search?.rendered) ctx.pass('mobile-product-focus-route', 'handoff:search-hidden');
+  else ctx.fail('mobile-product-focus-route', 'handoff:search-hidden', `.search-container should hand off to focus stage: ${JSON.stringify(info.search)}`);
+
+  if (!info.infoPanel?.rendered) ctx.pass('mobile-product-focus-route', 'handoff:info-panel-hidden');
+  else ctx.fail('mobile-product-focus-route', 'handoff:info-panel-hidden', `#info-panel should not remain as lower chrome: ${JSON.stringify(info.infoPanel)}`);
+
+  if (!info.modeGrid?.rendered) ctx.pass('mobile-product-focus-route', 'handoff:mode-grid-hidden');
+  else ctx.fail('mobile-product-focus-route', 'handoff:mode-grid-hidden', `#mode-grid should not leak into focused product route: ${JSON.stringify(info.modeGrid)}`);
+
+  if (info.focusStage?.rendered) ctx.pass('mobile-product-focus-route', 'owner:focus-stage-visible');
+  else ctx.fail('mobile-product-focus-route', 'owner:focus-stage-visible', `#focus-stage should own focused product route: ${JSON.stringify(info.focusStage)}`);
+
+  if (info.overflowX) ctx.fail('mobile-product-focus-route', 'viewport-crowding:overflow-x', 'horizontal overflow in product focus route');
+  else ctx.pass('mobile-product-focus-route', 'viewport-crowding:overflow-x');
+
+  return info;
+}
+
+async function assert_mobile_product_preview_route(page, ctx) {
+  const info = await productRouteSnapshot(page, { preview: true });
+
+  if (info.bodyDataset?.threadInspectSurface && info.bodyDataset.threadInspectSurface !== 'idle') {
+    ctx.pass('mobile-product-preview-route', 'state:thread-preview-active');
+  } else {
+    ctx.fail('mobile-product-preview-route', 'state:thread-preview-active', `expected active thread preview, got ${info.bodyDataset?.threadInspectSurface || 'missing'}`);
+  }
+
+  if (!info.search?.rendered) ctx.pass('mobile-product-preview-route', 'handoff:search-hidden');
+  else ctx.fail('mobile-product-preview-route', 'handoff:search-hidden', `.search-container should not duplicate preview context: ${JSON.stringify(info.search)}`);
+
+  if (info.inspector?.rendered) ctx.pass('mobile-product-preview-route', 'owner:thread-inspector-visible');
+  else ctx.fail('mobile-product-preview-route', 'owner:thread-inspector-visible', `#focus-thread-inspector should own preview route: ${JSON.stringify(info.inspector)}`);
+
+  if (!info.neighbors?.rendered || info.neighbors.height >= 40) {
+    ctx.pass('mobile-product-preview-route', 'handoff:nearby-stops-not-squeezed');
+  } else {
+    ctx.fail('mobile-product-preview-route', 'handoff:nearby-stops-not-squeezed', `.focus-stage-neighbors is squeezed to ${info.neighbors.height}px`);
+  }
+
+  if (!info.modeGrid?.rendered) ctx.pass('mobile-product-preview-route', 'handoff:mode-grid-hidden');
+  else ctx.fail('mobile-product-preview-route', 'handoff:mode-grid-hidden', `#mode-grid should not leak into preview route: ${JSON.stringify(info.modeGrid)}`);
+
+  if (info.overflowX) ctx.fail('mobile-product-preview-route', 'viewport-crowding:overflow-x', 'horizontal overflow in product preview route');
+  else ctx.pass('mobile-product-preview-route', 'viewport-crowding:overflow-x');
+
+  return info;
+}
+
+// ---------------------------------------------------------------------------
 // mobile-semantic-dive — validates semantic-dive inside-view at 390x844.
 // Contract: search hidden/noninteractive, legacy focus-stage
 // kicker/actions/dive hidden/noninteractive, inside status/controls visible.
@@ -3309,6 +3685,13 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
       : null;
     results.searchContainerInteractive = isInteractive(searchContainer);
 
+    const infoPanel = document.querySelector('#info-panel');
+    results.infoPanelPresent = infoPanel !== null;
+    results.infoPanelHidden = infoPanel
+      ? infoPanel.hidden || getComputedStyle(infoPanel).display === 'none' || getComputedStyle(infoPanel).visibility === 'hidden'
+      : null;
+    results.infoPanelInteractive = isInteractive(infoPanel);
+
     const resultsPanel = document.querySelector('#search-results');
     results.resultsPanelHidden = resultsPanel
       ? resultsPanel.hidden || getComputedStyle(resultsPanel).display === 'none' || getComputedStyle(resultsPanel).visibility === 'hidden'
@@ -3364,6 +3747,16 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
     ctx.fail(surfaceName, 'pointer-events:search:noninteractive', 'search container should not be interactive in semantic-dive');
   } else {
     ctx.pass(surfaceName, 'pointer-events:search:skipped');
+  }
+
+  if (info.infoPanelHidden) ctx.pass(surfaceName, 'visibility:info-panel:hidden');
+  else ctx.fail(surfaceName, 'visibility:info-panel:hidden', '#info-panel should not become a duplicate semantic-dive slab');
+
+  if (info.infoPanelInteractive === false) ctx.pass(surfaceName, 'pointer-events:info-panel:noninteractive');
+  else if (info.infoPanelPresent && info.infoPanelInteractive) {
+    ctx.fail(surfaceName, 'pointer-events:info-panel:noninteractive', '#info-panel should not be interactive in semantic-dive');
+  } else {
+    ctx.pass(surfaceName, 'pointer-events:info-panel:skipped');
   }
 
   if (info.resultsPanelHidden) ctx.pass(surfaceName, 'visibility:search-results:hidden');

@@ -15,7 +15,7 @@ const source = {
   sceneReveal: readFileSync(resolve(root, 'js/modules/scene-reveal.js'), 'utf8'),
   threeSetup: readFileSync(resolve(root, 'js/modules/three-engine.js'), 'utf8'),
   journey: readFileSync(resolve(root, 'js/modules/journey.js'), 'utf8'),
-  journeyWebgl: readFileSync(resolve(root, 'js/modules/journey-webgl.js'), 'utf8'),
+  journeyWebgl: readFileSync(resolve(root, 'js/modules/journey-route-trace.js'), 'utf8'),
   lifecycle: readFileSync(resolve(root, 'js/modules/lifecycle.js'), 'utf8'),
   journeyCompassController: readFileSync(resolve(root, 'js/modules/journey-compass-controller.js'), 'utf8'),
 };
@@ -43,7 +43,7 @@ const checks = [
   },
   {
     name: 'renderer completion clears scene reveal DOM state',
-    pass: /import\s+\{\s*setSceneRevealDataset\s*\}\s+from\s+['"]\.\/scene-reveal\.js['"]/.test(source.threeSetup)
+    pass: /import\s*\{[^}]*setSceneRevealDataset[^}]*\}\s*from\s*['"]\.\/scene-reveal\.js['"]/.test(source.threeSetup)
       && /revealProgress\s*>=\s*1[\s\S]*?state\.sceneRevealActive\s*=\s*false[\s\S]*?setSceneRevealDataset\s*\(\s*false\s*\)/.test(source.threeSetup),
   },
   {

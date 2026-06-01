@@ -93,10 +93,13 @@ const {
     getFocusConstellationViewportProfile,
     getFocusConstellationPlacement,
     getFocusConstellationMotif,
-    getNeighborhoodPersonality,
+    getNeighborhoodPersonality
+} = await import('../js/modules/focus-pocket.js');
+
+const {
     buildFocusedPocketStagedPositions,
     buildFocusedSemanticPocket
-} = await import('../js/modules/focus-pocket.js');
+} = await import('../js/modules/focus-pocket-geometry.js');
 
 // ---------------------------------------------------------------------------
 // Assertion helpers
