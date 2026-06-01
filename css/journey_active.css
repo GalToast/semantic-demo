@@ -103,6 +103,13 @@ html body[data-panel-surface="focus"] .journey-compass-note {
     text-transform: uppercase;
 }
 
+.journey-compass-action[hidden],
+.journey-compass-action[aria-hidden="true"] {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+}
+
 .journey-compass-step {
     position: relative;
     display: grid;
@@ -125,6 +132,23 @@ html body[data-panel-surface="focus"] .journey-compass-note {
 
 .journey-compass-step::-webkit-scrollbar {
     display: none;
+}
+
+@media (min-width: 769px) {
+    html body[data-active-view="galaxy"] .journey-compass-rail {
+        grid-template-columns: repeat(5, minmax(58px, max-content));
+        justify-content: start;
+        width: max-content;
+        max-width: 100%;
+    }
+
+    html body[data-active-view="galaxy"] .journey-compass-step {
+        min-width: 58px;
+        padding: 0 9px;
+        overflow: visible;
+        font-size: 8px;
+        letter-spacing: 0.045em;
+    }
 }
 
 /* polish184: mobile focus cockpit hierarchy after the field-first search beat. */
@@ -228,4 +252,43 @@ html body[data-panel-surface="focus"] .journey-compass-note {
         font-size: 9.5px;
         font-weight: 700;
     }
+}
+
+html body[data-panel-surface="focus"] .focus-stage-journey.active,
+html body[data-panel-surface="focus-search"] .focus-stage-journey.active {
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr) 64px;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid rgba(121, 235, 222, 0.2);
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at 50% 10%, rgba(121, 235, 222, 0.16), transparent 58%),
+        linear-gradient(180deg, rgba(10, 31, 37, 0.58), rgba(5, 13, 19, 0.34));
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        0 0 0 1px rgba(78, 205, 196, 0.08);
+    transition:
+        opacity 0.34s ease,
+        transform 0.34s ease,
+        border-color 0.34s ease;
+}
+
+html body[data-panel-surface="focus"] .focus-stage-journey-meta,
+html body[data-panel-surface="focus-search"] .focus-stage-journey-meta {
+    padding: 7px 10px 8px;
+    border-radius: 15px;
+    text-align: left;
+    background:
+        linear-gradient(180deg, rgba(4, 18, 24, 0.62), rgba(5, 12, 18, 0.36));
+    border: 1px solid rgba(121, 235, 222, 0.11);
+}
+
+.focus-stage-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 10px;
 }

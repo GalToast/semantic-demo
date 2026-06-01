@@ -13,7 +13,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 9999;
+    z-index: var(--z-max);
     overflow: hidden;
     transition: opacity 0.82s ease, visibility 0s linear 0s;
     visibility: visible;

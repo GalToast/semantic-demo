@@ -451,9 +451,6 @@
 
     html body[data-panel-surface="focus"] .info-content,
     html body[data-panel-surface="focus-search"] .info-content,
-    html body[data-panel-surface="focus"]:has(.search-container.has-query) .info-content,
-    html body[data-panel-surface="focus-search"]:has(.search-container.has-query) .info-content,
-    html body[data-panel-surface="semantic-dive"]:has(.search-container.has-query) .info-content,
     html body[data-panel-surface="semantic-dive"] .info-content {
         max-height: min(14vh, 112px);
         padding: 8px 10px;
@@ -815,14 +812,8 @@
 }
 
 /* SD-143: In mobile map trail state, the compact in-map strip owns navigation.
-   Keep the full journey compass out of the hit-test and visual stack. */
+   Full journey-compass suppression lives in mobile_premium_state.css. */
 @media (max-width: 768px) {
-    html body[data-panel-surface="map-trail"] .journey-compass {
-        display: none;
-        opacity: 0;
-        pointer-events: none;
-    }
-
     html body[data-panel-surface="map-trail"] .map-trail-strip {
         top: calc(86px + env(safe-area-inset-top, 0px));
         left: 12px;

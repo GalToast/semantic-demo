@@ -14,8 +14,8 @@
     --glass-blur: 20px;
     --glass-blur-heavy: 28px;
 
-    --glass-bg: linear-gradient(165deg, rgba(8, 18, 30, 0.72) 0%, rgba(3, 7, 12, 0.88) 100%);
-    --glass-bg-deep: linear-gradient(180deg, rgba(6, 13, 20, 0.90) 0%, rgba(2, 5, 8, 0.96) 100%);
+    --glass-bg: linear-gradient(165deg, rgba(16, 28, 48, 0.45) 0%, rgba(8, 15, 26, 0.65) 100%);
+    --glass-bg-deep: linear-gradient(180deg, rgba(12, 22, 34, 0.55) 0%, rgba(6, 12, 18, 0.75) 100%);
     --glass-bg-accent: radial-gradient(circle at 100% 0%, rgba(82, 229, 215, 0.20), transparent 60%);
 
     --glass-border: 1px solid rgba(255, 255, 255, 0.075);
@@ -77,8 +77,22 @@
     --radius-card: 16px;
     --radius-large: 20px;
     --radius-pill: 999px;
+
+    /* Layering Manifest (Z-Index) */
+    --z-underlay: -1;
+    --z-base: 1;
+    --z-content: 5;
+    --z-chrome: 10;
+    --z-chrome-elevated: 14;
+    --z-panels: 50;
+    --z-panels-elevated: 90;
     --z-overlay: 100;
-    --z-modal: 190;
+    --z-overlay-elevated: 150;
+    --z-tooltips: 200;
+    --z-modal: 400;
+    --z-blocker: 1000;
+    --z-toast: 1200;
+    --z-max: 9999;
 
     /* Shared panel elevation and glass treatment */
     --shadow-card: 0 12px 40px rgba(0, 0, 0, 0.32);
@@ -134,13 +148,13 @@ body {
     background: #000;
     color: #fff;
     padding: 8px 16px;
-    z-index: 9999;
+    z-index: var(--z-max);
     text-decoration: none;
     font-weight: 700;
 }
 .skip-link:focus {
     top: 0;
-    z-index: 999999;
+    z-index: var(--z-max);
 }
 
 /* Screen-reader-only utility — accessible hiding without removing from DOM */
@@ -165,4 +179,12 @@ textarea:focus-visible,
 [tabindex]:not([tabindex="-1"]):focus-visible {
     outline: 2px solid var(--color-primary-ring);
     outline-offset: 2px;
+}
+
+/* Global Micro-Animations — click feedback */
+button:active,
+a:active,
+[role="button"]:active,
+.interactive-element:active {
+    transform: scale(0.98);
 }

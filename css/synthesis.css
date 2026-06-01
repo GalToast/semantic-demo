@@ -10,7 +10,7 @@
     border: var(--glass-border);
     border-radius: var(--glass-radius-panel);
     padding: 0;
-    z-index: 1000;
+    z-index: var(--z-blocker);
     box-shadow: var(--shadow-glass);
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
 }
@@ -93,7 +93,7 @@
     width: 18px;
     height: 18px;
     filter: drop-shadow(0 0 8px var(--color-primary-soft));
-    z-index: 1;
+    z-index: var(--z-base);
 }
 
 .pulse-dot {
@@ -352,7 +352,7 @@
 
 .synthesize-trigger > * {
     position: relative;
-    z-index: 1;
+    z-index: var(--z-base);
 }
 
 .guide-cta-kicker {
@@ -437,7 +437,7 @@
     width: 15px;
     height: 15px;
     filter: drop-shadow(0 0 7px var(--color-primary-soft));
-    z-index: 1;
+    z-index: var(--z-base);
 }
 
 .guide-cta-note {

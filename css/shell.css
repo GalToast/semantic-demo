@@ -8,7 +8,7 @@
     transition: opacity 0.4s ease;
 }
 #canvas-container {
-    z-index: 1;
+    z-index: var(--z-base);
     overflow-y: auto;
     overflow-x: hidden;
     isolation: isolate;
@@ -24,7 +24,7 @@
     position: absolute;
     left: clamp(18px, 6vw, 76px);
     top: 50%;
-    z-index: 14;
+    z-index: var(--z-chrome-elevated);
     display: grid;
     gap: 12px;
     width: min(360px, calc(100vw - 36px));
@@ -89,7 +89,7 @@ body[data-semantic-dive="transitioning"] #canvas-container {
 #canvas-container.hidden { opacity: 0; pointer-events: none; }
 
 body[data-graphics-mode="fallback"] #canvas-container {
-    z-index: 1201;
+    z-index: var(--z-toast);
 }
 
 #canvas-container::before,
@@ -102,14 +102,19 @@ body[data-graphics-mode="fallback"] #canvas-container {
     transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
+body[data-graphics-mode="fallback"] #canvas-container::before,
+body[data-graphics-mode="fallback"] #canvas-container::after {
+    display: none;
+}
+
 #canvas-container::before {
-    z-index: 2;
+    z-index: var(--z-base);
     background:
         radial-gradient(circle at 50% 50%, rgba(5, 12, 18, 0) 0%, rgba(5, 12, 18, 0.08) 22%, rgba(5, 10, 16, 0.38) 62%, rgba(4, 7, 11, 0.72) 100%);
 }
 
 #canvas-container::after {
-    z-index: 3;
+    z-index: var(--z-base);
     background:
         linear-gradient(90deg, rgba(6, 9, 13, 0.74) 0%, rgba(6, 9, 13, 0.48) 16%, rgba(6, 9, 13, 0.12) 32%, rgba(6, 9, 13, 0) 48%),
         radial-gradient(circle at 82% 78%, rgba(5, 18, 23, 0.82) 0%, rgba(5, 18, 23, 0.36) 28%, rgba(5, 18, 23, 0.08) 50%, transparent 66%);
@@ -230,7 +235,7 @@ body[data-trail-depth="2"] #canvas-container::after {
 }
 
 #map-container {
-    z-index: 2;
+    z-index: var(--z-base);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.4s ease;
@@ -260,13 +265,13 @@ body[data-trail-depth="2"] #canvas-container::after {
 }
 
 #map-container::before {
-    z-index: 420;
+    z-index: var(--z-modal);
     background:
         radial-gradient(circle at 55% 48%, rgba(255, 224, 133, 0.08) 0%, rgba(17, 27, 36, 0.04) 22%, rgba(5, 10, 15, 0.54) 70%, rgba(4, 7, 10, 0.82) 100%);
 }
 
 #map-container::after {
-    z-index: 421;
+    z-index: var(--z-modal);
     background:
         linear-gradient(90deg, rgba(6, 9, 13, 0.8) 0%, rgba(6, 9, 13, 0.54) 18%, rgba(6, 9, 13, 0.16) 34%, rgba(6, 9, 13, 0) 48%),
         radial-gradient(circle at 74% 30%, rgba(110, 220, 209, 0.18) 0%, rgba(110, 220, 209, 0.08) 20%, transparent 44%);
@@ -356,7 +361,7 @@ body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .lea
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 800;
+    z-index: var(--z-blocker);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -566,7 +571,7 @@ body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .lea
 .biofield-atmosphere {
     position: fixed;
     inset: 0;
-    z-index: 4;
+    z-index: var(--z-base);
     pointer-events: none;
     overflow: hidden;
     opacity: 0.62;
@@ -728,3 +733,4 @@ body[data-trail-state="active"] .biofield-orb {
     0% { opacity: 0.08; filter: blur(0.4px) drop-shadow(0 0 7px rgba(121, 235, 222, 0.06)); }
     100% { opacity: 0.18; filter: blur(0.2px) drop-shadow(0 0 12px rgba(121, 235, 222, 0.1)); }
 }
+

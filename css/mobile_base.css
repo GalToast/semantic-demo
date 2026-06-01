@@ -1,96 +1,5 @@
-/* Mobile base: unified mobile journey compass layout. */
-@media (max-width: 768px) {
-    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass {
-        top: calc(72px + env(safe-area-inset-top, 0px));
-        grid-template-columns: 1fr;
-        padding: 14px;
-        gap: 12px;
-        min-height: 0;
-        max-height: 45vh;
-        overflow-y: auto;
-        overflow-x: hidden;
-        border-radius: 20px;
-        backdrop-filter: blur(20px);
-        opacity: 1;
-        display: grid;
-        scrollbar-width: none;
-    }
-
-    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-actions {
-        display: flex;
-        gap: 8px;
-        width: 100%;
-        grid-column: 1;
-        margin-top: 4px;
-    }
-
-    body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-action[hidden] {
-        display: none;
-    }
-
-    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-action {
-        width: 100%;
-        min-height: 48px;
-        font-size: 14px;
-        font-weight: 700;
-        border-radius: 12px;
-        padding: 0 16px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        letter-spacing: 0.02em;
-        touch-action: manipulation;
-    }
-
-    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-note {
-        display: block;
-        -webkit-line-clamp: none;
-        font-size: 12px;
-        line-height: 1.4;
-        margin-bottom: 4px;
-    }
-
-    html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-rail {
-        display: none;
-    }
-}
-
-/* UX-001/UX-014: in mobile focus-search, reduce the compass to actions so the cockpit owns the screen. */
-@media (max-width: 768px) {
-    html body[data-panel-surface="focus-search"] .journey-compass {
-        top: calc(10px + env(safe-area-inset-top, 0px));
-        left: 10px;
-        right: 10px;
-        width: auto;
-        min-width: 0;
-        grid-template-columns: minmax(0, 1fr);
-        gap: 0;
-        padding: 8px;
-        border-radius: 16px;
-        transform: none;
-    }
-
-    html body[data-panel-surface="focus-search"] .journey-compass-copy,
-    html body[data-panel-surface="focus-search"] .journey-compass-rail {
-        display: none;
-    }
-
-    html body[data-panel-surface="focus-search"] .journey-compass-actions {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-        gap: 7px;
-        width: 100%;
-    }
-
-    html body[data-panel-surface="focus-search"] .journey-compass-action {
-        min-width: 44px;
-        min-height: var(--mobile-touch-min, 44px);
-        padding: 0 8px;
-        white-space: normal;
-        text-align: center;
-        line-height: 1.12;
-    }
-}
+/* Mobile journey-compass layout moved to css/mobile_premium_surfaces.css and
+   css/mobile_premium_focus.css. Keep this file limited to base/mobile atoms. */
 
 .surprise-btn:not(.disabled):not(.is-loading):hover {
     animation: pulse-cyan-glow 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
@@ -142,7 +51,7 @@
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 14px 16px;
-    z-index: 50;
+    z-index: var(--z-panels);
     font-size: 12px;
     line-height: 1.6;
     transition: transform 0.3s ease, opacity 0.3s ease;
@@ -181,7 +90,7 @@ html body[data-panel-surface] .controls {
     bottom: 16px;
     display: flex;
     gap: 8px;
-    z-index: 100;
+    z-index: var(--z-overlay);
 }
 
 html body[data-panel-surface] .control-btn {
@@ -233,7 +142,7 @@ html body[data-panel-surface] .control-btn {
     position: fixed;
     right: 16px;
     bottom: 68px;
-    z-index: 101;
+    z-index: var(--z-overlay);
     max-width: min(280px, calc(100vw - 32px));
     padding: 11px 14px;
     border-radius: 16px;
@@ -271,7 +180,7 @@ html body[data-panel-surface] .control-btn {
     bottom: 26px;
     font-size: 12px;
     color: rgba(255, 255, 255, 0.4);
-    z-index: 100;
+    z-index: var(--z-overlay);
 }
 
 /* Animations */
@@ -297,7 +206,7 @@ html body[data-panel-surface] .control-btn {
 .selected-highlight {
     position: fixed;
     pointer-events: none;
-    z-index: 999;
+    z-index: var(--z-blocker);
     border: 2px solid #4ecdc4;
     border-radius: 8px;
     animation: selectPulse 2s ease-in-out infinite;
@@ -313,7 +222,7 @@ html body[data-panel-surface] .control-btn {
     position: fixed;
     left: 16px;
     bottom: 16px;
-    z-index: 100;
+    z-index: var(--z-overlay);
     width: var(--mobile-touch-min, 44px);
     height: var(--mobile-touch-min, 44px);
     min-width: var(--mobile-touch-min, 44px);
@@ -352,7 +261,7 @@ html body[data-panel-surface] .control-btn {
     bottom: 50%;
     left: 50%;
     transform: translate(-50%, 50%);
-    z-index: 200;
+    z-index: var(--z-tooltips);
     text-align: center;
     pointer-events: none;
     opacity: 0;
@@ -399,7 +308,7 @@ body[data-active-view="map"] .onboarding-hint {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    z-index: 2000;
+    z-index: var(--z-toast);
     display: none;
     background: rgba(8, 10, 18, 0.88);
     border: 1px solid rgba(255,255,255,0.12);
@@ -553,7 +462,6 @@ body[data-active-view="map"] .onboarding-hint {
     .hover-tooltip,
     .search-clear-btn,
     .demo-starter-chip,
-    .focus-stage-card,
     .journey-compass,
     .journey-compass-action,
     .search-trail-cue,
@@ -589,7 +497,7 @@ body[data-active-view="map"] .onboarding-hint {
         -webkit-backdrop-filter: blur(var(--glass-blur));
         border: var(--glass-border-glow);
         box-shadow: var(--shadow-glass);
-        z-index: 1000;
+        z-index: var(--z-blocker);
     }
 
     html body[data-panel-surface] .controls .control-btn {

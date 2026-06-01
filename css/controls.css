@@ -22,11 +22,11 @@
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: var(--space-1);
+    gap: 8px;
     background: var(--glass-bg);
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
-    padding: var(--space-1);
+    padding: 6px;
     border-radius: var(--glass-radius-pill);
     z-index: var(--z-overlay);
     border: var(--glass-border);
@@ -61,7 +61,7 @@
     background: radial-gradient(circle at center, rgba(255,255,255,0.1), transparent 70%);
     opacity: 0;
     transition: opacity 0.3s ease;
-    z-index: -1;
+    z-index: var(--z-underlay);
 }
 
 .view-toggle button:hover {
@@ -106,6 +106,53 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+}
+
+.control-btn,
+.panel-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass-bg);
+    border: var(--glass-border);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    color: var(--color-text-secondary);
+    border-radius: var(--glass-radius-action);
+    cursor: pointer;
+    transition: var(--transition-premium, all 0.25s cubic-bezier(0.19, 1, 0.22, 1));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.control-btn:hover,
+.control-btn:focus-visible,
+.panel-toggle:hover,
+.panel-toggle:focus-visible {
+    border-color: rgba(var(--color-primary-rgb), 0.3);
+    background: var(--glass-bg-accent, rgba(15, 20, 30, 0.72));
+    color: var(--color-text-primary);
+    transform: translateY(-1.5px);
+    box-shadow: var(--shadow-glass-glow), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.control-btn:active,
+.panel-toggle:active {
+    transform: scale(0.96) translateY(0);
+}
+
+.controls {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: var(--z-overlay);
+}
+
+.control-btn {
+    width: 44px;
+    height: 44px;
 }
 
 .close-icon {

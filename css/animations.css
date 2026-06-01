@@ -46,28 +46,28 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    #search-input,
-    #search-input.search-input,
-    .filter-chip,
-    .loading-phase-chip,
-    .loading-phase-chip.is-active,
-    .loading-phase-chip.is-complete,
-    #city-filter,
-    #city-filter.filter-select,
-    .filter-select,
-    .filter-clear-btn,
-    .search-results,
-    .search-results.active,
-    .search-results.searching,
-    .search-results.focusing,
-    .search-results .search-result-item,
-    .search-container .search-input-wrapper,
-    .search-container .search-results,
-    .search-container .search-input {
-        transition-duration: 0.01ms !important;
-        animation-duration: 0.01ms !important;
-        transition: none !important;
-        animation: none !important;
+    html body #search-input,
+    html body #search-input.search-input,
+    html body .filter-chip,
+    html body .loading-phase-chip,
+    html body .loading-phase-chip.is-active,
+    html body .loading-phase-chip.is-complete,
+    html body #city-filter,
+    html body #city-filter.filter-select,
+    html body .filter-select,
+    html body .filter-clear-btn,
+    html body .search-results,
+    html body .search-results.active,
+    html body .search-results.searching,
+    html body .search-results.focusing,
+    html body .search-results .search-result-item,
+    html body .search-container .search-input-wrapper,
+    html body .search-container .search-results,
+    html body .search-container .search-input {
+        transition-duration: 0.01ms;
+        animation-duration: 0.01ms;
+        transition: none;
+        animation: none;
     }
 }
 
@@ -76,6 +76,34 @@
     html body[data-active-view="galaxy"] .journey-compass[data-density="compact"] {
         transition: none;
         transition-duration: 0.01ms;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html body .focus-stage,
+    html body .focus-stage-card,
+    html body .focus-stage-action-btn,
+    html body .focus-stage-dive-btn,
+    html body .focus-stage-inside-btn,
+    html body[data-panel-surface="semantic-dive"] #btn-inside-next.focus-stage-inside-btn[aria-busy="true"],
+    html body .focus-stage-neighbor-pill {
+        animation: none;
+        transition: none;
+    }
+
+    html body[data-active-view="galaxy"] .focus-stage,
+    html body[data-active-view="galaxy"] .focus-stage-card {
+        transition: none;
+        transition-duration: 0.01ms;
+    }
+
+    html body[data-active-view="galaxy"][data-semantic-dive="transitioning"] .focus-stage-card {
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+        transition: none;
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
     }

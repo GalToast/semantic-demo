@@ -193,37 +193,37 @@
 
 
 
-            body[data-active-view="map"] .selected-card {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-card {
                 margin-bottom: 10px;
                 padding: 10px 11px 11px;
                 border-radius: 13px;
             }
 
-            body[data-active-view="map"] .selected-card .panel-section-title {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-card .panel-section-title {
                 gap: 5px;
                 margin-bottom: 6px;
                 font-size: 9px;
                 letter-spacing: 0.42px;
             }
 
-            body[data-active-view="map"] .selected-card h3 {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-card h3 {
                 font-size: 15px;
                 line-height: 1.08;
                 margin-bottom: 3px;
             }
 
-            body[data-active-view="map"] .selected-hero {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-hero {
                 gap: 7px;
             }
 
-            body[data-active-view="map"] .selected-role-badge {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-role-badge {
                 max-width: 82px;
                 padding: 5px 6px;
                 font-size: 8px;
                 letter-spacing: 0.08em;
             }
 
-            body[data-active-view="map"] .selected-filed-as {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-filed-as {
                 margin-top: 4px;
                 font-size: 9px;
                 line-height: 1.28;
@@ -234,7 +234,7 @@
     overflow-x: hidden;
             }
 
-            body[data-active-view="map"] .selected-subtitle {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-subtitle {
                 font-size: 10px;
                 line-height: 1.28;
                 display: -webkit-box;
@@ -244,30 +244,30 @@
     overflow-x: hidden;
             }
 
-            body[data-active-view="map"] .selected-meta-strip,
-            body[data-active-view="map"] .selected-action-row {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-meta-strip,
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-action-row {
                 gap: 4px;
                 margin-top: 7px;
                 flex-wrap: wrap;
             }
 
-            body[data-active-view="map"] .selected-meta-chip {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-meta-chip {
                 padding: 4px 6px;
                 font-size: 8px;
             }
 
-            body[data-active-view="map"] .selected-match-panel {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-match-panel {
                 margin-top: 8px;
                 padding: 8px 9px;
                 border-radius: 10px;
             }
 
-            body[data-active-view="map"] .selected-match-label {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-match-label {
                 font-size: 8px;
                 margin-bottom: 3px;
             }
 
-            body[data-active-view="map"] .selected-match-copy {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-match-copy {
                 font-size: 10px;
                 line-height: 1.32;
                 display: -webkit-box;
@@ -277,25 +277,25 @@
     overflow-x: hidden;
             }
 
-            body[data-active-view="map"] .selected-action {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-action {
                 flex-basis: calc(50% - 4px);
                 padding: 7px 8px;
                 font-size: 10px;
                 border-radius: 9px;
             }
 
-            body[data-active-view="map"] .badge-row {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .badge-row {
                 gap: 4px;
                 margin-top: 6px;
             }
 
-            body[data-active-view="map"] .signal-badge {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .signal-badge {
                 padding: 3px 7px;
                 font-size: 8px;
                 letter-spacing: 0.14px;
             }
 
-            body[data-active-view="map"] .selected-trivia {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-trivia {
                 margin-top: 7px;
                 font-size: 10px;
                 line-height: 1.32;
@@ -306,12 +306,12 @@
     overflow-x: hidden;
             }
 
-            body[data-active-view="map"] .selected-grid {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-grid {
                 gap: 6px;
                 margin-top: 8px;
             }
 
-            body[data-active-view="map"] .selected-item {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-item {
                 padding-top: 6px;
                 display: grid;
                 grid-template-columns: minmax(74px, 86px) minmax(0, 1fr);
@@ -320,15 +320,15 @@
                 padding: 7px 8px;
             }
 
-            body[data-active-view="map"] .selected-item-label {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-item-label {
                 margin-bottom: 0;
                 font-size: 9px;
                 line-height: 1.14;
                 letter-spacing: 0.4px;
             }
 
-            body[data-active-view="map"] .selected-item-value,
-            body[data-active-view="map"] .selected-item-value a {
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-item-value,
+            body[data-active-view="map"]:not([data-panel-surface="map-focus-search"]) .selected-item-value a {
                 font-size: 10px;
                 line-height: 1.28;
             }
@@ -479,7 +479,6 @@
                 .info-panel,
                 .info-panel.collapsed,
                 .loading-overlay,
-                .focus-stage,
                 .selected-card,
                 .demo-starters {
                     transition-duration: 0.01ms;
@@ -840,7 +839,9 @@ body[data-panel-surface="idle"] #cluster-section {
 body[data-panel-surface="search"] .demo-starters,
 body[data-panel-surface="search"] .exploration-card,
 body[data-panel-surface="search"] .selected-card.is-empty,
-body[data-panel-surface="search"] .selected-card:not(.is-empty) {
+body[data-panel-surface="search"] .selected-card:not(.is-empty),
+body[data-panel-surface="search"] .focus-stage,
+body[data-panel-surface="search"] .focus-thread-inspector {
     display: none;
 }
 

@@ -10,7 +10,7 @@
     box-shadow: var(--shadow-glass);
 
     pointer-events: none;
-    z-index: 180;
+    z-index: var(--z-tooltips);
     visibility: hidden;
     opacity: 0;
     transform: translateY(8px) scale(0.985);
@@ -66,13 +66,14 @@
 }
 
 .hover-tooltip .business-what {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.6);
     font-size: 12px;
     margin-bottom: 6px;
+    font-weight: 500;
 }
 
 .hover-tooltip .business-trivia {
-    color: rgba(255, 255, 255, 0.75);
+    color: rgba(255, 255, 255, 0.85);
     font-size: 12px;
     margin-bottom: 0;
     line-height: 1.55;
@@ -168,7 +169,7 @@
         radial-gradient(circle, rgba(255, 222, 143, 0.16) 0%, rgba(255, 222, 143, 0.02) 62%, transparent 74%);
     box-shadow: 0 0 0 1px rgba(255, 244, 214, 0.03), 0 0 26px rgba(255, 205, 112, 0.12);
     pointer-events: none;
-    z-index: 179;
+    z-index: var(--z-tooltips);
     display: none;
     opacity: 0;
     transform: translate(-50%, -50%) scale(0.9);
