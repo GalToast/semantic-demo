@@ -23,7 +23,19 @@
 | `js/modules/journey-canvas-interaction.js` | Canvas node hit testing, hover state, pointer bindings, and canvas-to-thread handoff |
 | `js/modules/journey-focus-ui.js` | Focus/traversal DOM UI, neighbor rail rendering, and walk breadcrumb internals |
 | `js/modules/journey-thread-settler.js` | Thread walk traversal, neighbor timers, inspection settle flow, and inside preview state |
+| `js/modules/journey-thread-model.js` | Thread state model and trail seed derivation shared across journey and thread inspector |
+| `js/modules/journey-webgl.js` | Journey-side WebGL overlay orchestration (delegates to extracted modules below) |
+| `js/modules/journey-arrival-handoff.js` | Camera handoff overlay for journey thread arrival (orchestrates arrival frame lifecycle) |
+| `js/modules/journey-route-trace.js` | Route trace overlay rendering and frame updates for trail visualization |
+| `js/modules/journey-semantic-overlay.js` | Semantic-overlay (manifold + lens) rendering tied to journey focus state |
+| `js/modules/journey-webgl-utils.js` | Shared WebGL utilities for journey overlays (texture lookups, geometry helpers) |
+| `js/modules/relationship-roles.js` | Shared relationship role normalization used by journey, thread inspector, and semantic threads |
 | `js/modules/strand-continuity.js` | Shared strand phase and arrival continuity state for journey and thread inspector |
+| `js/modules/thread-inspector.js` | Inspecting connections: pulsing, score-reactive WebGL lines between nodes when exploring semantic neighborhoods |
+| `js/modules/thread-inspector-webgl.js` | WebGL line geometry and shader setup for the thread inspector (extracted from monolithic inspector) |
+| `js/modules/focus-pocket.js` | Focus pocket node layout and animation (delegates to extracted geometry/personality modules) |
+| `js/modules/focus-pocket-geometry.js` | Focus pocket constellation geometry, seeded placement, screen-bounds, thread curve points |
+| `js/modules/focus-pocket-personality.js` | Per-focus personality variants (rotation/scale seeds, neighborhood shape) driving focus pocket variation |
 | `js/modules/ui-renderers.js` | Window-bound DOM renderers for legend, search rows, and selected-card chrome |
 | `js/modules/search-state.js` | Search engine, query tokenization, result rendering |
 | `js/modules/three-engine.js` | WebGL engine: scene, camera, renderer, shaders, instanced meshes |

@@ -1,5 +1,6 @@
 import { state } from '../state.js';
 import { normalizeCityForFilter } from './utils/geo-data.js';
+import { normalizeRelationshipRole } from './relationship-roles.js';
 
 export function normalizeLeadId(value) {
     if (value === null || value === undefined || value === '') return null;
@@ -130,6 +131,9 @@ export function getSemanticThreadCandidates(index) {
                 bridgeScore: Number.isFinite(neighbor.bridgeScore) ? neighbor.bridgeScore : 0,
                 signalScore: Number.isFinite(neighbor.signalScore) ? neighbor.signalScore : 0,
                 threadType: neighbor.threadType || 'local_semantic_neighbor',
+                relationshipRole: normalizeRelationshipRole(neighbor.relationshipRole),
+                relationshipAxis: neighbor.relationshipAxis || '',
+                roleReason: neighbor.roleReason || '',
                 reason: neighbor.reason || 'semantic neighbor',
                 source: 'semantic'
             };
@@ -139,7 +143,7 @@ export function getSemanticThreadCandidates(index) {
 
 export function getGeometricThreadCandidates(index) {
     if (!Number.isFinite(index) || index < 0 || index >= state.points.length) return [];
-    const selfCity = state.points[index]?.city;
+    const selfCity = normalizeCityForFilter(state.points[index]?.city);
     const selfStatus = state.points[index]?.status || 'active';
     return getProjectedNeighborCandidates(index).map((candidateIndex) => ({
         index: candidateIndex,
