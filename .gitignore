@@ -18,6 +18,7 @@ decompose-and-delegate/
 .semantic-demo-last-backup.txt
 backups/
 output/
+ops/
 
 # One-off diagnostic test probes
 tests/debug-*.mjs
