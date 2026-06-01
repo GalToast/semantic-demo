@@ -25,10 +25,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="semantic-demo.css?v=b9bed911a3dc">
+    <link rel="stylesheet" href="semantic-demo.css?v=43813cacdbb5">
     <link rel="stylesheet" href="vector-explorer-pandora.css?v=99a7d5032027">
-    <link rel="stylesheet" href="css/mobile_premium.css?v=05ec338b9988">
-    <link rel="stylesheet" href="css/modules/focus_stage.css?v=c8513425cda8">
+    <link rel="stylesheet" href="css/mobile_premium.css?v=137c18725c19">
+    <link rel="stylesheet" href="css/modules/focus_stage.css?v=56a654972514">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>M</text></svg>">
 </head>
 <body>
@@ -262,103 +262,108 @@
             <span class="info-toggle-icon" id="info-toggle-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-panel"></use></svg></span>
         </button>
         <div class="info-content" id="info-panel-content">
-            <div class="stats-row">
-                <div class="stat-box">
-                    <div class="stat-number" id="total-count">8,406</div>
-                    <div class="stat-label">Businesses</div>
+            <div class="info-panel-surface info-panel-surface-overview" data-surface-owner="idle-overview" data-ownership-lane="surface content">
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-number" id="total-count">8,406</div>
+                        <div class="stat-label">Businesses</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="city-count">12</div>
+                        <div class="stat-label">Cities</div>
+                    </div>
                 </div>
-                <div class="stat-box">
-                    <div class="stat-number" id="city-count">12</div>
-                    <div class="stat-label">Cities</div>
-                </div>
-            </div>
-            <div class="stat-caption">Montgomery County records in the semantic field</div>
+                <div class="stat-caption">Montgomery County records in the semantic field</div>
 
-            <div class="demo-starters" id="demo-starters" aria-label="Guided demo searches">
-                <div class="demo-starters-kicker">First time here?</div>
-                <div class="demo-starters-copy">Choose a starting need. The view will light an anchor, then suggest related nearby businesses.</div>
-                <div class="demo-journey-steps" aria-hidden="true">
-                    <span><b>1</b> Choose</span>
-                    <span><b>2</b> Guide</span>
-                    <span><b>3</b> Explore</span>
+                <div class="demo-starters" id="demo-starters" aria-label="Guided demo searches">
+                    <div class="demo-starters-kicker">First time here?</div>
+                    <div class="demo-starters-copy">Choose a starting need. The view will light an anchor, then suggest related nearby businesses.</div>
+                    <div class="demo-journey-steps" aria-hidden="true">
+                        <span><b>1</b> Choose</span>
+                        <span><b>2</b> Guide</span>
+                        <span><b>3</b> Explore</span>
+                    </div>
+                    <div class="demo-starter-row">
+                        <button class="demo-starter-chip" type="button" data-demo-query="coffee" aria-label="Start demo search for coffee">Coffee</button>
+                        <button class="demo-starter-chip" type="button" data-demo-query="roof repair" aria-label="Start demo search for roof repair">Roof repair</button>
+                        <button class="demo-starter-chip" type="button" data-demo-query="childcare" aria-label="Start demo search for childcare">Childcare</button>
+                        <button class="demo-starter-chip" type="button" data-demo-query="dog friendly" aria-label="Start demo search for dog friendly businesses">Dog friendly</button>
+                    </div>
                 </div>
-                <div class="demo-starter-row">
-                    <button class="demo-starter-chip" type="button" data-demo-query="coffee" aria-label="Start demo search for coffee">Coffee</button>
-                    <button class="demo-starter-chip" type="button" data-demo-query="roof repair" aria-label="Start demo search for roof repair">Roof repair</button>
-                    <button class="demo-starter-chip" type="button" data-demo-query="childcare" aria-label="Start demo search for childcare">Childcare</button>
-                    <button class="demo-starter-chip" type="button" data-demo-query="dog friendly" aria-label="Start demo search for dog friendly businesses">Dog friendly</button>
-                </div>
-            </div>
 
-            <button class="launch-btn" id="btn-launch" type="button" title="Launch directly into focus mode with a random business">
-                <svg class="ui-icon" aria-hidden="true"><use href="#icon-mycelium"></use></svg>
-                Surprise Me
-            </button>
-
-            <div class="search-container" role="search">
-                <button class="search-label" type="button" aria-label="Toggle search sheet">
-                    <span class="search-label-text">Semantic Search</span>
-                    <span class="semantic-lane-pill" id="semantic-lane-pill" data-state="checking" title="Checking search readiness."></span>
+                <button class="launch-btn" id="btn-launch" type="button" title="Launch directly into focus mode with a random business">
+                    <svg class="ui-icon" aria-hidden="true"><use href="#icon-mycelium"></use></svg>
+                    Surprise Me
                 </button>
-                <div class="search-input-wrapper">
-                    <span class="search-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-search"></use></svg></span>
-                    <input type="text" class="search-input" id="search-input" placeholder="Search need, service, or clue..." aria-label="Search businesses semantically by need, venue, service, or clue" aria-controls="search-results" aria-describedby="search-status-live" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-                    <div class="search-spinner" id="search-spinner" aria-hidden="true"></div>
-                    <button class="search-clear-btn" id="search-clear-btn" type="button" aria-label="Clear search">
-                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg>
-                    </button>
-                </div>
-                <div class="search-hint" id="search-status" hidden></div>
-                <div class="semantic-lane-assist" id="semantic-lane-assist" data-state="idle" hidden role="region" aria-label="Search status detail" aria-live="polite">
-                    <div class="semantic-lane-assist-row">
-                        <span class="semantic-lane-assist-copy" id="semantic-lane-assist-copy">Search readiness is checking in the background.</span>
-                    </div>
-                    <div class="semantic-lane-assist-meta" id="semantic-lane-assist-meta"></div>
-                </div>
-                <div class="search-trail-cue" id="search-trail-cue" hidden role="status" aria-live="polite">
-                    <div class="search-trail-cue-kicker" id="search-trail-cue-kicker">Connection cue</div>
-                    <div class="search-trail-cue-title" id="search-trail-cue-title">Search opens a trail.</div>
-                    <div class="search-trail-cue-stage" aria-hidden="true">
-                        <span class="search-trail-cue-step" data-cue-stage="query">Query</span>
-                        <span class="search-trail-cue-step" data-cue-stage="anchor">Anchor</span>
-                        <span class="search-trail-cue-step" data-cue-stage="walk">Explore</span>
-                    </div>
-                    <div class="search-trail-cue-note" id="search-trail-cue-note">The first strong match becomes the anchor; from there you can center it and explore the neighborhood.</div>
-                </div>
-                <div class="search-results glass-light" id="search-results" role="region" aria-label="Search results" aria-live="off" aria-atomic="false"></div>
-                <div class="synthesize-trigger" id="synthesize-trigger" style="display: none">
-                    <div class="guide-cta-kicker">Next best move</div>
-                    <button id="btn-synthesize" class="btn-synthesize" type="button">
-                        <span class="sparkle"><svg class="ui-icon" aria-hidden="true"><use href="#icon-guide"></use></svg></span>
-                        Summarize Results
-                    </button>
-                    <div class="guide-cta-note">
-                        Summarize the anchor and suggest three nearby stops from this result stack.
-                    </div>
-                </div>
-
-                <div class="mode-grid" id="mode-grid">
-                    <button class="mode-chip active" type="button" data-mode="default" aria-pressed="true" title="County View — keeps the whole county visible so you can choose where to wander next.">
-                        <span class="mode-name">County View</span>
-                        <span class="sr-only">keeps the whole county visible so you can choose where to wander next.</span>
-                    </button>
-                    <button class="mode-chip" type="button" data-mode="bloom" data-story="signal-rich" aria-pressed="false" title="Bloom — surface businesses with a website plus email or phone.">
-                        <span class="mode-name">Bloom</span>
-                        <span class="sr-only">Surface businesses with a website plus email or phone.</span>
-                    </button>
-                    <button class="mode-chip" type="button" data-mode="bridge" data-story="bridge-businesses" aria-pressed="false" title="Bridge — highlight businesses linking different industry and city clusters.">
-                        <span class="mode-name">Bridge</span>
-                        <span class="sr-only">Highlight businesses linking different industry and city clusters.</span>
-                    </button>
-                    <button class="mode-chip" type="button" data-mode="trail" aria-pressed="false" title="Connection Path — explore related businesses around one focused record. A path forms as you move.">
-                        <span class="mode-name">Path</span>
-                        <span class="sr-only">Explore related businesses around one focused record. A connection path forms as you move.</span>
-                    </button>
-                </div>
             </div>
 
+            <section class="info-panel-surface info-panel-surface-search" data-surface-owner="search-results" data-ownership-lane="surface interaction content" aria-label="Search surface">
+                <div class="search-container" role="search">
+                    <button class="search-label" type="button" aria-label="Toggle search sheet">
+                        <span class="search-label-text">Semantic Search</span>
+                        <span class="semantic-lane-pill" id="semantic-lane-pill" data-state="checking" title="Checking search readiness."></span>
+                    </button>
+                    <div class="search-input-wrapper">
+                        <span class="search-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-search"></use></svg></span>
+                        <input type="text" class="search-input" id="search-input" placeholder="Search need, service, or clue..." aria-label="Search businesses semantically by need, venue, service, or clue" aria-controls="search-results" aria-describedby="search-status-live" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                        <div class="search-spinner" id="search-spinner" aria-hidden="true"></div>
+                        <button class="search-clear-btn" id="search-clear-btn" type="button" aria-label="Clear search">
+                            <svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg>
+                        </button>
+                    </div>
+                    <div class="search-hint" id="search-status" hidden></div>
+                    <div class="semantic-lane-assist" id="semantic-lane-assist" data-state="idle" hidden role="region" aria-label="Search status detail" aria-live="polite">
+                        <div class="semantic-lane-assist-row">
+                            <span class="semantic-lane-assist-copy" id="semantic-lane-assist-copy">Search readiness is checking in the background.</span>
+                        </div>
+                        <div class="semantic-lane-assist-meta" id="semantic-lane-assist-meta"></div>
+                    </div>
+                    <div class="search-trail-cue" id="search-trail-cue" hidden role="status" aria-live="polite">
+                        <div class="search-trail-cue-kicker" id="search-trail-cue-kicker">Connection cue</div>
+                        <div class="search-trail-cue-title" id="search-trail-cue-title">Search opens a trail.</div>
+                        <div class="search-trail-cue-stage" aria-hidden="true">
+                            <span class="search-trail-cue-step" data-cue-stage="query">Query</span>
+                            <span class="search-trail-cue-step" data-cue-stage="anchor">Anchor</span>
+                            <span class="search-trail-cue-step" data-cue-stage="walk">Explore</span>
+                        </div>
+                        <div class="search-trail-cue-note" id="search-trail-cue-note">The first strong match becomes the anchor; from there you can center it and explore the neighborhood.</div>
+                    </div>
+                    <div class="search-results glass-light" id="search-results" role="region" aria-label="Search results" aria-live="off" aria-atomic="false"></div>
+                    <div class="synthesize-trigger" id="synthesize-trigger" style="display: none">
+                        <div class="guide-cta-kicker">Next best move</div>
+                        <button id="btn-synthesize" class="btn-synthesize" type="button">
+                            <span class="sparkle"><svg class="ui-icon" aria-hidden="true"><use href="#icon-guide"></use></svg></span>
+                            Summarize Results
+                        </button>
+                        <div class="guide-cta-note">
+                            Summarize the anchor and suggest three nearby stops from this result stack.
+                        </div>
+                    </div>
 
-            <div class="selected-card is-empty" id="selected-card" role="region" aria-labelledby="selected-card-title">
+                    <div class="mode-grid" id="mode-grid">
+                        <button class="mode-chip active" type="button" data-mode="default" aria-pressed="true" title="County View — keeps the whole county visible so you can choose where to wander next.">
+                            <span class="mode-name">County View</span>
+                            <span class="sr-only">keeps the whole county visible so you can choose where to wander next.</span>
+                        </button>
+                        <button class="mode-chip" type="button" data-mode="bloom" data-story="signal-rich" aria-pressed="false" title="Bloom — surface businesses with a website plus email or phone.">
+                            <span class="mode-name">Bloom</span>
+                            <span class="sr-only">Surface businesses with a website plus email or phone.</span>
+                        </button>
+                        <button class="mode-chip" type="button" data-mode="bridge" data-story="bridge-businesses" aria-pressed="false" title="Bridge — highlight businesses linking different industry and city clusters.">
+                            <span class="mode-name">Bridge</span>
+                            <span class="sr-only">Highlight businesses linking different industry and city clusters.</span>
+                        </button>
+                        <button class="mode-chip" type="button" data-mode="trail" aria-pressed="false" title="Connection Path — explore related businesses around one focused record. A path forms as you move.">
+                            <span class="mode-name">Path</span>
+                            <span class="sr-only">Explore related businesses around one focused record. A connection path forms as you move.</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+
+            <section class="info-panel-surface info-panel-surface-selection" data-surface-owner="selected-business" data-ownership-lane="surface content" aria-label="Selected business surface">
+                <div class="selected-card is-empty" id="selected-card" role="region" aria-labelledby="selected-card-title">
                 <div class="vector-cascade-bg" id="vector-cascade-bg" aria-hidden="true"></div>
                 <div class="panel-section-title" id="selected-card-title">Focused Business</div>
                 <div class="selected-empty" id="selected-empty">
@@ -407,43 +412,60 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <details class="rail-section cluster-section" id="cluster-section">
-                <summary>
-                    <span class="summary-text">
-                        <span class="summary-title">Semantic Neighborhoods</span>
-                    </span>
-                </summary>
-                <div class="rail-section-body">
-                    <ul class="cluster-list" id="cluster-list" role="group" aria-label="Semantic neighborhood filters"></ul>
-                </div>
-            </details>
-            
-            <details class="rail-section" id="filters-section">
-                <summary>
-                    <span class="summary-text">
-                        <span class="summary-title">Filters</span>
-                    </span>
-                    <span class="filter-preview" id="filter-preview" hidden>All clear</span>
-                </summary>
-                <div class="rail-section-body">
-                    <div class="filter-toolbar" aria-label="Dataset filters">
-                        <div class="filter-row" id="status-filter-row">
-                            <button class="filter-chip active" type="button" data-status-filter="all" aria-pressed="true">All Records</button>
-                            <button class="filter-chip" type="button" data-status-filter="active" aria-pressed="false">Active</button>
+                <div class="selected-map-summary" id="selected-map-summary" hidden aria-hidden="true">
+                    <div class="selected-map-summary-head">
+                        <div class="selected-map-summary-main">
+                            <div class="selected-map-summary-kicker" id="selected-map-summary-kicker">Map trail match</div>
+                            <h3 id="selected-map-summary-name">Business Name</h3>
+                            <div class="selected-map-summary-what" id="selected-map-summary-what">Montgomery County business record</div>
                         </div>
-                        <div class="filter-row" id="signal-filter-row">
-                            <button class="filter-chip" type="button" data-signal-filter="website" aria-pressed="false">Has Website</button>
-                            <button class="filter-chip" type="button" data-signal-filter="email" aria-pressed="false">Has Email</button>
-                        </div>
-                        <select class="filter-select" id="city-filter" aria-label="Filter by city">
-                            <option value="all">All Cities</option>
-                        </select>
-                        <button class="filter-clear-btn" id="filter-clear-btn" type="button" disabled aria-disabled="true">Clear filters</button>
+                        <div class="selected-map-summary-role" id="selected-map-summary-role">Trail match</div>
+                    </div>
+                    <div class="selected-map-summary-match" id="selected-map-summary-match">
+                        <div class="selected-map-summary-match-label">Why this record</div>
+                        <div class="selected-map-summary-match-copy" id="selected-map-summary-match-copy"></div>
                     </div>
                 </div>
-            </details>
+                </div>
+            </section>
+
+            <section class="info-panel-surface info-panel-surface-discovery" data-surface-owner="discovery-filters" data-ownership-lane="surface interaction content" aria-label="Discovery filters surface">
+                <details class="rail-section cluster-section" id="cluster-section">
+                    <summary>
+                        <span class="summary-text">
+                            <span class="summary-title">Semantic Neighborhoods</span>
+                        </span>
+                    </summary>
+                    <div class="rail-section-body">
+                        <ul class="cluster-list" id="cluster-list" role="group" aria-label="Semantic neighborhood filters"></ul>
+                    </div>
+                </details>
+
+                <details class="rail-section" id="filters-section">
+                    <summary>
+                        <span class="summary-text">
+                            <span class="summary-title">Filters</span>
+                        </span>
+                        <span class="filter-preview" id="filter-preview" hidden>All clear</span>
+                    </summary>
+                    <div class="rail-section-body">
+                        <div class="filter-toolbar" aria-label="Dataset filters">
+                            <div class="filter-row" id="status-filter-row">
+                                <button class="filter-chip active" type="button" data-status-filter="all" aria-pressed="true">All Records</button>
+                                <button class="filter-chip" type="button" data-status-filter="active" aria-pressed="false">Active</button>
+                            </div>
+                            <div class="filter-row" id="signal-filter-row">
+                                <button class="filter-chip" type="button" data-signal-filter="website" aria-pressed="false">Has Website</button>
+                                <button class="filter-chip" type="button" data-signal-filter="email" aria-pressed="false">Has Email</button>
+                            </div>
+                            <select class="filter-select" id="city-filter" aria-label="Filter by city">
+                                <option value="all">All Cities</option>
+                            </select>
+                            <button class="filter-clear-btn" id="filter-clear-btn" type="button" disabled aria-disabled="true">Clear filters</button>
+                        </div>
+                    </div>
+                </details>
+            </section>
         </div>
     </aside>
 
@@ -494,6 +516,7 @@
             </div>
             <div class="focus-stage-inside-controls" id="focus-stage-inside-controls" aria-hidden="true">
                 <button class="focus-stage-inside-btn" id="btn-inside-next" type="button">Next Stop</button>
+                <button class="focus-stage-inside-btn secondary" id="btn-inside-map" type="button" aria-label="Project this trail onto the map">Map</button>
                 <button class="focus-stage-inside-btn secondary" id="btn-inside-county" type="button" aria-label="Exit Step Inside and return to County View">County</button>
             </div>
             <div class="focus-thread-inspector" id="focus-thread-inspector" aria-hidden="true">
@@ -502,8 +525,8 @@
                 <div class="focus-thread-inspector-copy" id="focus-thread-inspector-copy">Click a neighbor below to preview why it belongs here, then pin or follow.</div>
                 <div class="focus-thread-inspector-meta" id="focus-thread-inspector-meta">Preview connection</div>
                 <div class="focus-thread-inspector-actions">
-                    <button class="focus-thread-inspector-btn" id="btn-thread-pin" type="button" disabled>Pin Connection</button>
-                    <button class="focus-thread-inspector-btn primary" id="btn-thread-follow" type="button" disabled>Follow Connection</button>
+                    <button class="focus-thread-inspector-btn" id="btn-thread-pin" type="button" disabled>Pin</button>
+                    <button class="focus-thread-inspector-btn primary" id="btn-thread-follow" type="button" disabled>Follow</button>
                     <button class="focus-thread-inspector-btn secondary" id="btn-thread-clear" type="button" disabled>Clear</button>
                 </div>
             </div>
@@ -561,7 +584,7 @@
         }
     }
     </script>
-    <script type="module" src="dist/bundle.js?v=0f1476eb4242"></script>
+    <script type="module" src="dist/bundle.js?v=c5820c0ab59d"></script>
 
     <div id="semantic-summary-card" class="summary-card hidden glass-heavy" role="region" aria-labelledby="summary-card-title-text" aria-hidden="true" hidden>
         <div class="summary-header">
