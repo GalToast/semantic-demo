@@ -26,8 +26,15 @@
 | `js/modules/strand-continuity.js` | Shared strand phase and arrival continuity state for journey and thread inspector |
 | `js/modules/ui-renderers.js` | Window-bound DOM renderers for legend, search rows, and selected-card chrome |
 | `js/modules/search-state.js` | Search engine, query tokenization, result rendering |
-| `js/modules/three-setup.js` | WebGL engine: scene, camera, renderer, shaders, instanced meshes |
+| `js/modules/three-engine.js` | WebGL engine: scene, camera, renderer, shaders, instanced meshes |
+| `js/modules/three-node-manager.js` | Node/spore instancing, per-node spore scales, points buffer lifecycle |
+| `js/modules/three-thread-manager.js` | Mycelium/thread line geometry, pulse opacity, presentation profile |
+| `js/modules/three-interaction-visuals.js` | Semantic manifold + lens overlays, interaction-driven uniforms |
+| `js/modules/three-search-animations.js` | Hero moment, corridor glow, search corridor animation lifecycle |
+| `js/modules/utils/seeded-random.js` | GLSL-portable `seededUnit(index, salt)` for deterministic per-node variation |
 | `js/modules/camera-controls.js` | Camera choreography: transitions, auto-rotation, orbit slack |
+| `js/modules/camera-framing-utils.js` | Canvas unobstructed region, focus-pocket screen bounds, safe-area target offset |
+| `js/modules/camera-orbit-slack.js` | Search-route focus active, focus orbit slack pivot and apply/clear |
 | `js/modules/focus-pocket.js` | Focus pocket node layout and animation |
 | `js/modules/event-bindings.js` | Centralized DOM event listeners |
 | `js/modules/journey-compass-state.js` | Journey compass state machine and action synthesis |
