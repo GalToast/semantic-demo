@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import { updateClusterList, populateCityFilter } from './cluster-filter.js';
 import { buildLegend } from './ui-renderers.js';
 import { applyFilters } from './search-state.js';
@@ -64,9 +64,13 @@ export async function loadData() {
     const worker = getWorker();
     if (worker) {
         try {
-            const { points, pointIndexByLeadId } = await callWorker('LOAD_RECORDS', { url: dataUrl });
-            state.points = points;
-            state.pointIndexByLeadId = new Map(Object.entries(pointIndexByLeadId));
+            const { points, pointIndexByLeadId, positionsBuffer, clustersBuffer } = await callWorker('LOAD_RECORDS', { url: dataUrl });
+            withStateMutation(() => {
+                state.points = points;
+                state.pointIndexByLeadId = new Map(Object.entries(pointIndexByLeadId));
+                state.rawPositionsBuffer = positionsBuffer;
+                state.rawClustersBuffer = clustersBuffer;
+            });
             finalizeLoading();
             return;
         } catch (err) {
@@ -97,37 +101,59 @@ export async function loadData() {
     }
 
     if (!raw || !Array.isArray(raw)) {
-        state.points = [];
-        state.pointIndexByLeadId = new Map();
-        state.projectedNeighborGrid = null;
-        state.projectedNeighborCache = new Map();
+        withStateMutation(() => {
+            state.points = [];
+            state.pointIndexByLeadId = new Map();
+            state.projectedNeighborGrid = null;
+            state.projectedNeighborCache = new Map();
+            state.rawPositionsBuffer = null;
+            state.rawClustersBuffer = null;
+        });
         const detail = lastError?.message ? ` Last error: ${lastError.message}` : '';
         throw new Error(`Unable to load county records after ${maxAttempts} attempts.${detail}`);
     }
 
-    state.points = raw.map((p) => ({
-        x: p.length > 0 ? parseFiniteNumber(p[0]) : null,
-        y: p.length > 1 ? parseFiniteNumber(p[1]) : null,
-        z: p.length > 2 ? parseFiniteNumber(p[2]) : null,
-        cluster: p.length > 3 ? p[3] : null,
-        name: p.length > 4 ? cleanOptionalValue(p[4]) : null,
-        what: p.length > 5 ? cleanOptionalValue(p[5]) || 'Montgomery County business' : 'Montgomery County business',
-        city: p.length > 6 ? cleanOptionalValue(p[6]) || 'Montgomery County' : 'Montgomery County',
-        lead_id: p.length > 7 ? p[7] : null,
-        lat: p.length > 8 ? parseFiniteNumber(p[8]) : null,
-        lng: p.length > 9 ? parseFiniteNumber(p[9]) : null,
-        website: p.length > 10 ? cleanOptionalValue(p[10]) : null,
-        email: p.length > 11 ? cleanOptionalValue(p[11]) : null,
-        phone: p.length > 12 ? cleanOptionalValue(p[12]) : null,
-        trivia: p.length > 13 ? cleanOptionalValue(p[13]) : null,
-        status: p.length > 14 ? cleanOptionalValue(p[14]) || 'active' : 'active'
-    }));
+    const count = raw.length;
+    const positionsBuffer = new Float32Array(count * 3);
+    const clustersBuffer = new Uint16Array(count);
 
-    state.pointIndexByLeadId = new Map();
-    state.points.forEach((point, index) => {
-        if (point.lead_id !== null && point.lead_id !== undefined && point.lead_id !== '') {
-            state.pointIndexByLeadId.set(String(point.lead_id), index);
-        }
+    const points = raw.map((p, i) => {
+        const x = p.length > 0 ? parseFiniteNumber(p[0]) : 0;
+        const y = p.length > 1 ? parseFiniteNumber(p[1]) : 0;
+        const z = p.length > 2 ? parseFiniteNumber(p[2]) : 0;
+        const cluster = p.length > 3 ? (parseInt(p[3], 10) || 0) : 0;
+
+        positionsBuffer[i * 3] = x;
+        positionsBuffer[i * 3 + 1] = y;
+        positionsBuffer[i * 3 + 2] = z;
+        clustersBuffer[i] = cluster;
+
+        return {
+            cluster,
+            name: p.length > 4 ? cleanOptionalValue(p[4]) : null,
+            what: p.length > 5 ? cleanOptionalValue(p[5]) || 'Montgomery County business' : 'Montgomery County business',
+            city: p.length > 6 ? cleanOptionalValue(p[6]) || 'Montgomery County' : 'Montgomery County',
+            lead_id: p.length > 7 ? p[7] : null,
+            lat: p.length > 8 ? parseFiniteNumber(p[8]) : null,
+            lng: p.length > 9 ? parseFiniteNumber(p[9]) : null,
+            website: p.length > 10 ? cleanOptionalValue(p[10]) : null,
+            email: p.length > 11 ? cleanOptionalValue(p[11]) : null,
+            phone: p.length > 12 ? cleanOptionalValue(p[12]) : null,
+            trivia: p.length > 13 ? cleanOptionalValue(p[13]) : null,
+            status: p.length > 14 ? cleanOptionalValue(p[14]) || 'active' : 'active'
+        };
+    });
+
+    withStateMutation(() => {
+        state.points = points;
+        state.rawPositionsBuffer = positionsBuffer;
+        state.rawClustersBuffer = clustersBuffer;
+        state.pointIndexByLeadId = new Map();
+        state.points.forEach((point, index) => {
+            if (point.lead_id !== null && point.lead_id !== undefined && point.lead_id !== '') {
+                state.pointIndexByLeadId.set(String(point.lead_id), index);
+            }
+        });
     });
 
     finalizeLoading();

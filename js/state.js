@@ -19,6 +19,8 @@ export const _rawState = {
     nodeSporeMesh: null,
     nodeSporeHitMesh: null,
     nodeSporeMaterial: null,
+    rawPositionsBuffer: null,
+    rawClustersBuffer: null,
     myceliumLines: null,
     myceliumGroup: null,
     myceliumCoreLines: null,
@@ -42,6 +44,9 @@ export const _rawState = {
     // ==== SEMANTIC THREAD ARTIFACT ====
     semanticThreadBundle: null,
     semanticThreadArtifactName: null,
+    semanticSpaceLayoutManifest: null,
+    semanticSpaceLayoutStatus: 'idle',
+    semanticSpaceLayoutError: null,
     semanticNeighborMapByLeadId: new Map(),
     semanticThreadsLoadPromise: null,
     semanticThreadsStatus: 'idle',
@@ -401,19 +406,24 @@ export function withStateMutation(fn) {
         _isMutating = prev;
     }
 }
+if (typeof window !== 'undefined') {
+    window.withStateMutation = withStateMutation;
+}
 
 const CRITICAL_KEYS = new Set([
     'currentView',
     'navState',
     'semanticLaneState',
     'loadingPhaseKey',
-    'semanticThreadsStatus'
+    'semanticThreadsStatus',
+    'rawPositionsBuffer',
+    'rawClustersBuffer'
 ]);
 
 export const state = new Proxy(_rawState, {
     set(target, prop, value) {
         if (CRITICAL_KEYS.has(prop) && !_isMutating) {
-            console.warn(`[State Warning] Direct mutation of critical property '${prop}' without withStateMutation() helper.`);
+            throw new Error(`[State Error] Illegal direct mutation of critical property '${prop}'. You must use withStateMutation() to modify core state.`);
         }
         target[prop] = value;
         return true;

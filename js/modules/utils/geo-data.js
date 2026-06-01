@@ -6,6 +6,7 @@
  */
 
 import * as THREE from 'three';
+import { state } from '../../state.js';
 import { cleanOptionalValue, escapeHtml } from './dom-formatters.js';
 
 export function pointHasGeocode(point) {
@@ -133,17 +134,39 @@ export function computeOverviewScatterOffsets(sourcePoints, threshold = 0.055) {
     const cellKey = (x, y, z) =>
         `${Math.floor(x / cellSize)},${Math.floor(y / cellSize)},${Math.floor(z / cellSize)}`;
 
+    const hasRawBuffer = state.rawPositionsBuffer && state.rawPositionsBuffer.length >= sourcePoints.length * 3;
+    const getPosition = (index) => {
+        const point = sourcePoints[index] || {};
+        if (hasRawBuffer) {
+            return {
+                x: state.rawPositionsBuffer[index * 3],
+                y: state.rawPositionsBuffer[index * 3 + 1],
+                z: state.rawPositionsBuffer[index * 3 + 2]
+            };
+        }
+        return {
+            x: Number.isFinite(point.x) ? point.x : 0,
+            y: Number.isFinite(point.y) ? point.y : 0,
+            z: Number.isFinite(point.z) ? point.z : 0
+        };
+    };
+
     sourcePoints.forEach((point, index) => {
-        const key = cellKey(point.x, point.y, point.z);
+        const { x, y, z } = getPosition(index);
+        const key = cellKey(x, y, z);
         if (!grid.has(key)) grid.set(key, []);
         grid.get(key).push(index);
     });
 
     for (let i = 0; i < sourcePoints.length; i++) {
-        const point = sourcePoints[i];
-        const cx = Math.floor(point.x / cellSize);
-        const cy = Math.floor(point.y / cellSize);
-        const cz = Math.floor(point.z / cellSize);
+        const point = getPosition(i);
+        const px = point.x;
+        const py = point.y;
+        const pz = point.z;
+
+        const cx = Math.floor(px / cellSize);
+        const cy = Math.floor(py / cellSize);
+        const cz = Math.floor(pz / cellSize);
         for (let dx = -1; dx <= 1; dx++) {
             for (let dy = -1; dy <= 1; dy++) {
                 for (let dz = -1; dz <= 1; dz++) {
@@ -151,10 +174,10 @@ export function computeOverviewScatterOffsets(sourcePoints, threshold = 0.055) {
                     if (!bucket) continue;
                     for (const otherIndex of bucket) {
                         if (otherIndex <= i) continue;
-                        const other = sourcePoints[otherIndex];
-                        const ddx = point.x - other.x;
-                        const ddy = point.y - other.y;
-                        const ddz = point.z - other.z;
+                        const other = getPosition(otherIndex);
+                        const ddx = px - other.x;
+                        const ddy = py - other.y;
+                        const ddz = pz - other.z;
                         if (Math.hypot(ddx, ddy, ddz) <= threshold) {
                             unite(i, otherIndex);
                         }
@@ -179,9 +202,10 @@ export function computeOverviewScatterOffsets(sourcePoints, threshold = 0.055) {
 
         const centroid = new THREE.Vector3();
         group.forEach((index) => {
-            centroid.x += sourcePoints[index].x;
-            centroid.y += sourcePoints[index].y;
-            centroid.z += sourcePoints[index].z;
+            const position = getPosition(index);
+            centroid.x += position.x;
+            centroid.y += position.y;
+            centroid.z += position.z;
         });
         centroid.multiplyScalar(1 / group.length);
 

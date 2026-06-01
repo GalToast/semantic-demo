@@ -151,6 +151,64 @@ export function compilePointMaterialForReadiness() {
     }
 }
 
+function createPointShaderUniforms() {
+    return {
+        uGlowIntensity: { value: 0.0 },
+        uRippleTime: { value: -1000.0 },
+        uRippleCenter: { value: new THREE.Vector3(0, 0, 0) },
+        uHoverNodePos: { value: new THREE.Vector3(0, 0, 0) },
+        uHoverBoost: { value: 1.0 },
+        uHoverRadius: { value: 0.12 },
+        uRevealProgress: { value: 1.0 }
+    };
+}
+
+function installPointMaterialShader(material) {
+    const uniforms = createPointShaderUniforms();
+    material.userData.shader = { uniforms };
+    material.onBeforeCompile = (shader) => {
+        Object.assign(shader.uniforms, uniforms);
+        shader.vertexShader = shader.vertexShader
+            .replace(
+                '#include <common>',
+                `#include <common>
+uniform float uRippleTime;
+uniform vec3 uRippleCenter;
+uniform vec3 uHoverNodePos;
+uniform float uHoverBoost;
+uniform float uHoverRadius;
+uniform float uRevealProgress;
+varying float vSemanticPointBoost;`
+            )
+            .replace(
+                '#include <begin_vertex>',
+                `#include <begin_vertex>
+float semanticHoverDistance = distance(position, uHoverNodePos);
+float semanticHoverMask = 1.0 - smoothstep(0.0, uHoverRadius, semanticHoverDistance);
+float semanticRippleMask = max(0.0, 1.0 - abs((uRippleTime - distance(position, uRippleCenter) * 2.0)) * 2.5);
+vSemanticPointBoost = max(0.08, uRevealProgress) * max(0.55, mix(1.0, uHoverBoost, semanticHoverMask) + semanticRippleMask * 0.38);`
+            )
+            .replace(
+                'gl_PointSize = size;',
+                'gl_PointSize = size * vSemanticPointBoost;'
+            );
+        shader.fragmentShader = shader.fragmentShader
+            .replace(
+                '#include <common>',
+                `#include <common>
+uniform float uGlowIntensity;
+uniform float uRevealProgress;
+varying float vSemanticPointBoost;`
+            )
+            .replace(
+                'outgoingLight = diffuseColor.rgb;',
+                `diffuseColor.a *= clamp(uRevealProgress * clamp(vSemanticPointBoost, 0.55, 1.85), 0.0, 1.0);
+outgoingLight = diffuseColor.rgb + vec3(0.18, 0.62, 0.56) * uGlowIntensity * 0.12;`
+            );
+        material.userData.shader = shader;
+    };
+}
+
 // ── Public API ──────────────────────────────────────────────────────────────
 
 export function createNodeSporeLayer() {
@@ -283,6 +341,7 @@ export function createPoints() {
         depthWrite: false,
         blending: THREE.NormalBlending
     });
+    installPointMaterialShader(state.pointsMaterial);
 
     const pointsMesh = new THREE.Points(geometry, state.pointsMaterial);
     pointsMesh.name = 'points-instanced-field';
