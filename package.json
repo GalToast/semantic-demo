@@ -20,6 +20,7 @@
     "qa:surface": "node tests/visual-state-audit.mjs --headed",
     "qa:surface:mobile-idle": "node tests/visual-state-audit.mjs --states=01-mobile-idle --headed",
     "qa:surface:desktop-idle": "node tests/visual-state-audit.mjs --states=07-desktop-idle --headed",
+    "qa:desktop-critical": "node tests/visual-state-audit.mjs --states=07-desktop-idle,08-desktop-search-coffee,11-desktop-selected-card-map-trail,12-desktop-reduced-motion,13-desktop-filters-open,14-desktop-search-error,16-desktop-info-panel-populated --headed && npm run qa:contract:desktop-idle && npm run qa:contract:info-panel-populated",
     "qa:surface:search-error": "node tests/visual-state-audit.mjs --states=10-mobile-search-error-state --headed",
     "qa:surface:search-no-results": "node tests/visual-state-audit.mjs --states=25-mobile-search-no-results --headed",
     "qa:surface:map-trail": "node tests/visual-state-audit.mjs --states=11-mobile-selected-card-map-trail --headed",

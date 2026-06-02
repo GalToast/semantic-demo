@@ -21,6 +21,7 @@ Visual audit artifacts now include `routeEvidence` in each state JSON plus `rout
 | Script | States | Notes |
 |--------|--------|-------|
 | `qa:surface:all` | all 26 visual states | ~60-90s |
+| `qa:desktop-critical` | 07-desktop-idle, 08-desktop-search-coffee, 11-desktop-selected-card-map-trail, 12-desktop-reduced-motion, 13-desktop-filters-open, 14-desktop-search-error, 16-desktop-info-panel-populated + headed desktop-idle/info-panel-populated contracts | headed desktop release smoke |
 | `qa:surface:mobile-idle` | 01-mobile-idle | |
 | `qa:surface:desktop-idle` | 07-desktop-idle | |
 | `qa:surface:focus` | 03-mobile-focus-first-result + 04-mobile-field-node-active | |
