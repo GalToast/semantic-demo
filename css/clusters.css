@@ -292,8 +292,8 @@ html body[data-panel-surface="map-focus-search"] .selected-role-badge {
 }
 
 @media (max-width: 768px) {
-    html body[data-panel-surface="focus"] .selected-card,
-    html body[data-panel-surface="focus-search"] .selected-card {
+    body[data-panel-surface="focus"] .selected-card,
+    body[data-panel-surface="focus-search"] .selected-card {
         bottom: 12px;
         left: 12px;
         right: 12px;

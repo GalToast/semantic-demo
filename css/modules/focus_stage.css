@@ -602,6 +602,12 @@ body[data-trail-state="active"] .focus-stage-neighbor-pill {
         scrollbar-color: rgba(121, 235, 222, 0.34) transparent;
     }
 
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) :is(.share-toggle, .legend-toggle, .help-toggle, .controls) {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     html body[data-panel-surface="focus"] .focus-stage-card::-webkit-scrollbar,
     html body[data-panel-surface="focus-search"] .focus-stage-card::-webkit-scrollbar,
     html body[data-panel-surface="semantic-dive"] .focus-stage-card::-webkit-scrollbar {
@@ -626,7 +632,7 @@ body[data-trail-state="active"] .focus-stage-neighbor-pill {
     html body[data-panel-surface="focus-search"] .focus-stage-name,
     html body[data-panel-surface="semantic-dive"] .focus-stage-name {
         font-size: 18px;
-        line-height: 1.05;
+        line-height: 1.12;
         letter-spacing: 0;
         display: block;
         font-weight: 700;
@@ -650,6 +656,89 @@ body[data-trail-state="active"] .focus-stage-neighbor-pill {
         align-items: center;
         justify-content: center;
         padding: 0;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-actions {
+        gap: 6px;
+        margin-top: 8px;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-action-btn {
+        min-height: 30px;
+        padding: 7px 8px;
+        border-radius: 9px;
+        background: linear-gradient(180deg, rgb(var(--cluster-rgb) / 0.1), rgb(var(--cluster-rgb) / 0.045));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+        color: rgba(229, 246, 244, 0.78);
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-dive-btn {
+        margin-top: 8px;
+        min-height: 42px;
+        padding: 10px 14px;
+        border-radius: 12px;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-journey.active {
+        grid-template-columns: 42px minmax(0, 1fr) 48px;
+        gap: 8px;
+        margin-top: 10px;
+        padding: 8px;
+        border-radius: 14px;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-journey-btn {
+        min-width: 42px;
+        min-height: 44px;
+        border-radius: 11px;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-journey-meta {
+        padding: 6px 8px 7px;
+        border-radius: 12px;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-route {
+        margin: 5px 0 4px;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-next {
+        margin-top: 3px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbors.active {
+        margin-top: 10px;
+        padding-top: 10px;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-list {
+        gap: 6px;
+        margin-top: 7px;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-main {
+        padding: 7px 8px;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-index {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-actions {
+        gap: 5px;
+        padding-right: 8px;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-action {
+        min-height: 34px;
+        padding: 0 10px;
+        border-radius: 11px;
     }
 
     html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"])[data-thread-inspect-surface="idle"] #focus-stage .focus-thread-inspector,

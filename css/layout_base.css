@@ -589,7 +589,7 @@ body:has(.info-panel.active) .panel-toggle {
         -webkit-line-clamp: 1;
     }
 
-    html body[data-mobile-route-peek="active"][data-panel-surface]:not([data-panel-surface^="map-"]) .search-container #synthesize-trigger {
+    body[data-mobile-route-peek="active"][data-panel-surface]:not([data-panel-surface^="map-"]) .search-container #synthesize-trigger {
         display: none;
     }
 
@@ -665,11 +665,11 @@ body:has(.info-panel.active) .panel-toggle {
     body[data-panel-surface="focus-search"] .info-panel .info-header,
     body[data-panel-surface="focus-search"] .info-panel #story-section,
     body[data-panel-surface="focus-search"] .info-panel #cluster-section,
-    html body[data-panel-surface="focus-search"] .info-panel .exploration-card,
-    html body[data-panel-surface="focus-search"] .info-panel .mode-grid,
-    html body[data-panel-surface="focus-search"] .info-panel .semantic-lane-assist,
-    html body[data-panel-surface="focus-search"] .info-panel .search-trail-cue,
-    html body[data-panel-surface="focus-search"] .info-panel .synthesize-trigger {
+    body[data-panel-surface="focus-search"] .info-panel .exploration-card,
+    body[data-panel-surface="focus-search"] .info-panel .mode-grid,
+    body[data-panel-surface="focus-search"] .info-panel .semantic-lane-assist,
+    body[data-panel-surface="focus-search"] .info-panel .search-trail-cue,
+    body[data-panel-surface="focus-search"] .info-panel .synthesize-trigger {
         display: none;
         visibility: hidden;
     }
@@ -795,7 +795,7 @@ body:has(.info-panel.active) .panel-toggle {
     }
 
     /* trail-context is hidden in ALL map view states, so it belongs here with proper specificity. */
-    html body[data-panel-surface^="map-"] .trail-context {
+    body[data-panel-surface^="map-"] .trail-context {
         display: none;
         max-height: 0;
         margin: 0;
@@ -953,7 +953,7 @@ body:has(.info-panel.active) .panel-toggle {
     body[data-panel-surface="map-trail"] .surprise-btn,
     body[data-panel-surface="map-trail"] .launch-btn,
     /* Bug 825: exploration-card bleeds into map view — hide it in plain map view (no trail) */
-    html body[data-panel-surface^="map-"] .exploration-card {
+    body[data-panel-surface^="map-"] .exploration-card {
         display: none;
     }
 

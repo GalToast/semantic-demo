@@ -5,7 +5,7 @@
 
 /* 1. SHARED MOBILE BASE (Applied to all is-active states) */
 @media (max-width: 640px) {
-    html body.is-active #canvas-container {
+    body.is-active #canvas-container {
         position: fixed;
         top: 0;
         left: 0;
@@ -17,14 +17,14 @@
         scrollbar-width: none;
     }
 
-    html body.is-active #canvas-container::-webkit-scrollbar {
+    body.is-active #canvas-container::-webkit-scrollbar {
         width: 0;
         height: 0;
         display: none;
     }
 
     /* Primary sheet base styling */
-    html body.is-active .info-panel {
+    body.is-active .info-panel {
         position: fixed;
         bottom: 0;
         left: 0;
@@ -43,30 +43,30 @@
     }
 
     /* 2. IDLE STATE */
-    html body.is-active[data-panel-surface="idle"] .info-panel {
+    body.is-active[data-panel-surface="idle"] .info-panel {
         display: block;
         transform: translate3d(0, 0, 0);
         opacity: 1;
         max-height: 55dvh;
     }
 
-    html body.is-active[data-panel-surface="idle"] .info-content {
+    body.is-active[data-panel-surface="idle"] .info-content {
         padding: 20px 16px 32px;
         max-height: 48dvh;
         overflow-y: auto;
     }
 
-    html body.is-active[data-panel-surface="idle"]:has(.search-container.has-query) .demo-starters {
+    body.is-active[data-panel-surface="idle"]:has(.search-container.has-query) .demo-starters {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="idle"] .stats-row {
+    body.is-active[data-panel-surface="idle"] .stats-row {
         margin-bottom: 24px;
         display: flex;
         gap: 12px;
     }
 
-    html body.is-active[data-panel-surface="idle"] .stat-box {
+    body.is-active[data-panel-surface="idle"] .stat-box {
         flex: 1;
         padding: 12px;
         background: rgba(255, 255, 255, 0.03);
@@ -75,17 +75,17 @@
         text-align: center;
     }
 
-    html body.is-active:has(.search-container.has-query) .demo-starter-row {
+    body.is-active:has(.search-container.has-query) .demo-starter-row {
         display: none;
     }
 
-    html body.is-active:has(.search-container.has-query) .demo-starter-chip {
+    body.is-active:has(.search-container.has-query) .demo-starter-chip {
         display: none;
     }
 
     /* 3. SEARCH & FOCUS-SEARCH COMMON (Mobile) */
-    html body.is-active[data-panel-surface="search"] .info-panel,
-    html body.is-active[data-panel-surface="focus-search"] .info-panel {
+    body.is-active[data-panel-surface="search"] .info-panel,
+    body.is-active[data-panel-surface="focus-search"] .info-panel {
         display: block;
         top: auto;
         bottom: 0;
@@ -93,8 +93,8 @@
         opacity: 1;
     }
 
-    html body.is-active[data-panel-surface="search"] .info-panel,
-    html body.is-active[data-panel-surface="focus-search"] .info-panel {
+    body.is-active[data-panel-surface="search"] .info-panel,
+    body.is-active[data-panel-surface="focus-search"] .info-panel {
         background:
             linear-gradient(180deg, rgba(7, 17, 23, 0.98), rgba(3, 8, 13, 0.96)),
             radial-gradient(circle at 100% 0%, rgba(255, 226, 132, 0.1), transparent 40%);
@@ -106,30 +106,30 @@
     /* ----------------------------------------------------------------
        4. Search and focus-search sheet geometry
        ---------------------------------------------------------------- */
-    html body.is-active[data-panel-surface="search"] .info-panel {
+    body.is-active[data-panel-surface="search"] .info-panel {
         max-height: min(57dvh, 480px);
     }
 
-    html body.is-active[data-panel-surface="search"] .info-content {
+    body.is-active[data-panel-surface="search"] .info-content {
         padding: 16px;
         height: 100%;
     }
 
-    html body[data-panel-surface="search"]:not([data-panel-surface-detail]) #info-panel.info-panel,
-    html body[data-panel-surface="search"][data-panel-surface-detail="none"] #info-panel.info-panel {
+    body[data-panel-surface="search"]:not([data-panel-surface-detail]) #info-panel.info-panel,
+    body[data-panel-surface="search"][data-panel-surface-detail="none"] #info-panel.info-panel {
         height: min(57dvh, 480px);
         max-height: min(57dvh, 480px);
     }
 
-    html body[data-panel-surface="search"]:not([data-panel-surface-detail]) #info-panel .info-content,
-    html body[data-panel-surface="search"][data-panel-surface-detail="none"] #info-panel .info-content {
+    body[data-panel-surface="search"]:not([data-panel-surface-detail]) #info-panel .info-content,
+    body[data-panel-surface="search"][data-panel-surface-detail="none"] #info-panel .info-content {
         height: 100%;
         min-height: 0;
         overflow: hidden;
     }
 
-    html body[data-panel-surface="search"]:not([data-panel-surface-detail]) .search-container.has-query,
-    html body[data-panel-surface="search"][data-panel-surface-detail="none"] .search-container.has-query {
+    body[data-panel-surface="search"]:not([data-panel-surface-detail]) .search-container.has-query,
+    body[data-panel-surface="search"][data-panel-surface-detail="none"] .search-container.has-query {
         display: flex;
         flex-direction: column;
         height: 100%;
@@ -137,8 +137,8 @@
         overflow: hidden;
     }
 
-    html body[data-panel-surface="search"]:not([data-panel-surface-detail]) .search-container.has-query #search-results.active,
-    html body[data-panel-surface="search"][data-panel-surface-detail="none"] .search-container.has-query #search-results.active {
+    body[data-panel-surface="search"]:not([data-panel-surface-detail]) .search-container.has-query #search-results.active,
+    body[data-panel-surface="search"][data-panel-surface-detail="none"] .search-container.has-query #search-results.active {
         flex: 1 1 auto;
         min-height: 0;
         max-height: none;
@@ -146,14 +146,14 @@
         overflow-x: hidden;
     }
 
-    html body.is-active[data-panel-surface="search"] .info-header,
-    html body.is-active[data-panel-surface="focus-search"] .info-header,
-    html body.is-active[data-panel-surface="search"] .stat-caption,
-    html body.is-active[data-panel-surface="focus-search"] .stat-caption {
+    body.is-active[data-panel-surface="search"] .info-header,
+    body.is-active[data-panel-surface="focus-search"] .info-header,
+    body.is-active[data-panel-surface="search"] .stat-caption,
+    body.is-active[data-panel-surface="focus-search"] .stat-caption {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .info-panel {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .info-panel {
         top: auto;
         bottom: 0;
         height: calc(202px + env(safe-area-inset-bottom, 0px));
@@ -161,18 +161,18 @@
         max-height: calc(202px + env(safe-area-inset-bottom, 0px));
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] #info-panel.info-panel {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] #info-panel.info-panel {
         top: auto;
         bottom: 0;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .info-content {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .info-content {
         overflow: hidden;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] #cluster-section,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] #filters-section,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .rail-section {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] #cluster-section,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] #filters-section,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .rail-section {
         display: none;
         visibility: hidden;
         height: 0;
@@ -180,18 +180,18 @@
         pointer-events: none;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-container.has-query {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-container.has-query {
         height: calc(100% - 10px);
         max-height: calc(100% - 10px);
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results.active {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results.active {
         flex-basis: 88px;
         min-height: 88px;
         max-height: 88px;
     }
 
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .info-panel {
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .info-panel {
         left: 10px;
         right: 10px;
         width: auto;
@@ -209,48 +209,48 @@
             inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
 
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .info-panel::before {
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .info-panel::before {
         width: 28px;
         height: 3px;
         opacity: 0.55;
     }
 
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .info-content {
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .info-content {
         padding: 9px 10px 8px;
     }
 
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-container.has-query {
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-container.has-query {
         height: 76px;
         max-height: 76px;
         overflow: hidden;
     }
 
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-container #search-results.active {
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-container #search-results.active {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results-count,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-results-count,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-what,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-what,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-meta,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-meta,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-cluster,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-cluster,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-context,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-context,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-bar,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-bar,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-badges,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-badges {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results-count,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-results-count,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-what,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-what,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-meta,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-meta,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-cluster,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-cluster,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-context,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-context,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-bar,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-bar,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-badges,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-badges {
         display: none;
         visibility: hidden;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-listitem:not(:first-child),
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-listitem:not(:first-child),
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-listitem:not(:first-child) .search-result-item,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-listitem:not(:first-child) .search-result-item {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-listitem:not(:first-child),
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-listitem:not(:first-child),
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-listitem:not(:first-child) .search-result-item,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-listitem:not(:first-child) .search-result-item {
         display: none;
         visibility: hidden;
         height: 0;
@@ -258,18 +258,18 @@
         pointer-events: none;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-listitem,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-listitem,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-item,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-item {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-listitem,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-listitem,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-item,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-item {
         width: 100%;
         max-width: 100%;
         min-width: 0;
         box-sizing: border-box;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-item,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-item {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-item,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-item {
         display: flex;
         align-items: center;
         min-height: 64px;
@@ -283,8 +283,8 @@
             0 10px 22px rgba(0, 0, 0, 0.18);
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-row,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-row {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-row,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-row {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
         align-items: center;
@@ -292,8 +292,8 @@
         width: 100%;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-rank,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-rank {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-rank,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-rank {
         color: rgba(255, 229, 135, 0.94);
         font-size: 10px;
         font-weight: 800;
@@ -302,8 +302,8 @@
         white-space: nowrap;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-name,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-name {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-result-name,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-result-name {
         color: rgba(247, 255, 253, 0.98);
         text-align: left;
         font-size: 14px;
@@ -317,22 +317,22 @@
     /* Search peek exposes one clean anchor row. Expanded mode owns the full
        result list; clipped secondary-row slivers are a visual regression. */
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results.active:has(.search-error-state),
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-results.active:has(.search-error-state) {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results.active:has(.search-error-state),
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-results.active:has(.search-error-state) {
         padding: 8px 10px;
         overflow-y: hidden;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-state,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-state {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-state,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-state {
         align-items: stretch;
         gap: 4px;
         padding: 0;
         text-align: left;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-kicker,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-kicker {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-kicker,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-kicker {
         align-self: flex-start;
         min-height: 18px;
         padding: 3px 8px;
@@ -340,8 +340,8 @@
         letter-spacing: 0.12em;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-text,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-text {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-text,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-text {
         max-width: none;
         margin: 0;
         font-size: 11px;
@@ -351,75 +351,75 @@
         text-overflow: ellipsis;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-actions,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-actions {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-actions,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-actions {
         justify-content: flex-start;
         flex-wrap: nowrap;
         gap: 8px;
         margin-top: 3px;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-retry-btn,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-dismiss-btn,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-retry-btn,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-dismiss-btn {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-retry-btn,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-dismiss-btn,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-retry-btn,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-dismiss-btn {
         padding: 0 14px;
         font-size: 12px;
     }
 
-    html body.is-active[data-panel-surface="search"] .search-error-retry-btn,
-    html body.is-active[data-panel-surface="search"] .search-error-dismiss-btn,
-    html body.is-active[data-panel-surface="focus-search"] .search-error-retry-btn,
-    html body.is-active[data-panel-surface="focus-search"] .search-error-dismiss-btn {
+    body.is-active[data-panel-surface="search"] .search-error-retry-btn,
+    body.is-active[data-panel-surface="search"] .search-error-dismiss-btn,
+    body.is-active[data-panel-surface="focus-search"] .search-error-retry-btn,
+    body.is-active[data-panel-surface="focus-search"] .search-error-dismiss-btn {
         display: inline-flex;
         min-height: 44px;
         align-items: center;
         justify-content: center;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .info-panel,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .info-panel {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .info-panel,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .info-panel {
         height: 100dvh;
         max-height: 100dvh;
         border-radius: 0;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .journey-compass {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .journey-compass {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .info-content,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .info-content {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .info-content,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .info-content {
         height: calc(100dvh - 20px);
         padding-top: calc(20px + env(safe-area-inset-top, 0px));
     }
 
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .stat-row,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .stat-row,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .stat-caption,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .stat-caption,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .demo-starters,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .demo-starters,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] #demo-starters,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] #demo-starters,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .demo-journey-steps,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .demo-journey-steps,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] #btn-launch,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] #btn-launch,
-    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .surprise-btn,
-    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .surprise-btn {
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .stat-row,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .stat-row,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .stat-caption,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .stat-caption,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .demo-starters,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .demo-starters,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] #demo-starters,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] #demo-starters,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .demo-journey-steps,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .demo-journey-steps,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] #btn-launch,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] #btn-launch,
+    body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .surprise-btn,
+    body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .surprise-btn {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="search"] .search-container.has-query {
+    body.is-active[data-panel-surface="search"] .search-container.has-query {
         display: flex;
         flex-direction: column;
         height: 100%;
     }
 
-    html body.is-active[data-panel-surface="search"] .search-results.active {
+    body.is-active[data-panel-surface="search"] .search-results.active {
         flex: 1 1 auto;
         overflow-y: auto;
         margin-top: 10px;
@@ -435,14 +435,14 @@
     /* ----------------------------------------------------------------
        6. Map view - hide non-map chrome + compass
        ---------------------------------------------------------------- */
-    html body.is-active[data-panel-surface^="map-"] .time-display {
+    body.is-active[data-panel-surface^="map-"] .time-display {
         display: none;
     }
 
-    html body[data-panel-surface="map-trail"] .view-toggle,
-    html body[data-panel-surface="map-trail"] .journey-compass,
-    html body[data-journey-navigation-owner="map-trail-strip"] .view-toggle,
-    html body[data-journey-navigation-owner="map-trail-strip"] .journey-compass {
+    body[data-panel-surface="map-trail"] .view-toggle,
+    body[data-panel-surface="map-trail"] .journey-compass,
+    body[data-journey-navigation-owner="map-trail-strip"] .view-toggle,
+    body[data-journey-navigation-owner="map-trail-strip"] .journey-compass {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -450,7 +450,7 @@
 
     /* SD-143: Restore mobile search in Map mode. layout_base sets top/bottom/left/right
        positioning for map panels; this block handles visibility/display overrides. */
-    html body.is-active[data-panel-surface^="map-"] .info-panel {
+    body.is-active[data-panel-surface^="map-"] .info-panel {
         display: block; /* selector specificity already exceeds layout_base:761 */
         visibility: visible; /* no competing visibility rule in layout/strands */
         pointer-events: none;
@@ -461,7 +461,7 @@
         opacity: 1; /* overrides layout_base collapsed state through normal cascade */
     }
 
-    html body.is-active[data-panel-surface^="map-"] .search-container {
+    body.is-active[data-panel-surface^="map-"] .search-container {
         position: absolute;
         display: block; /* selector specificity already exceeds layout_base:455-485 */
         visibility: visible; /* no competing visibility rule in layout/strands */
@@ -481,13 +481,13 @@
         border: var(--glass-border-glow);
     }
 
-    html body.is-active[data-panel-surface^="map-"] .search-container .search-results.active {
+    body.is-active[data-panel-surface^="map-"] .search-container .search-results.active {
         max-height: min(24dvh, 220px);
         overflow-y: auto;
     }
 
-    html body.is-active[data-panel-surface="map-search"] .search-result-item,
-    html body.is-active[data-panel-surface="map-search"] .search-result-item.top-result {
+    body.is-active[data-panel-surface="map-search"] .search-result-item,
+    body.is-active[data-panel-surface="map-search"] .search-result-item.top-result {
         display: block;
         width: 100%;
         min-height: 0;
@@ -499,8 +499,8 @@
         text-align: left;
     }
 
-    html body.is-active[data-panel-surface="map-search"] .search-result-list,
-    html body.is-active[data-panel-surface="map-search"] .search-result-listitem {
+    body.is-active[data-panel-surface="map-search"] .search-result-list,
+    body.is-active[data-panel-surface="map-search"] .search-result-listitem {
         display: block;
         width: 100%;
         min-width: 0;
@@ -509,47 +509,47 @@
         list-style: none;
     }
 
-    html body.is-active[data-panel-surface="map-search"] .search-result-row {
+    body.is-active[data-panel-surface="map-search"] .search-result-row {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
         gap: 4px 8px;
     }
 
-    html body.is-active[data-panel-surface="map-search"] .search-result-name,
-    html body.is-active[data-panel-surface="map-search"] .search-result-title {
+    body.is-active[data-panel-surface="map-search"] .search-result-name,
+    body.is-active[data-panel-surface="map-search"] .search-result-title {
         color: rgba(245, 255, 252, 0.96);
         font-size: 14px;
         line-height: 1.12;
     }
 
-    html body.is-active[data-panel-surface="map-search"] .search-result-what,
-    html body.is-active[data-panel-surface="map-search"] .search-result-meta,
-    html body.is-active[data-panel-surface="map-search"] .search-result-type,
-    html body.is-active[data-panel-surface="map-search"] .search-result-location {
+    body.is-active[data-panel-surface="map-search"] .search-result-what,
+    body.is-active[data-panel-surface="map-search"] .search-result-meta,
+    body.is-active[data-panel-surface="map-search"] .search-result-type,
+    body.is-active[data-panel-surface="map-search"] .search-result-location {
         color: rgba(211, 228, 224, 0.76);
         font-size: 12px;
         line-height: 1.22;
     }
 
-    html body.is-active[data-panel-surface="map-search"] .search-result-badges,
-    html body.is-active[data-panel-surface="map-search"] .search-result-actions {
+    body.is-active[data-panel-surface="map-search"] .search-result-badges,
+    body.is-active[data-panel-surface="map-search"] .search-result-actions {
         color: rgba(164, 236, 227, 0.78);
     }
 
-    html body.is-active[data-panel-surface="map-focus-search"] .search-container {
+    body.is-active[data-panel-surface="map-focus-search"] .search-container {
         height: 52px;
         max-height: 52px;
     }
 
-    html body.is-active[data-panel-surface="map-focus-search"] .search-container #search-results.active {
+    body.is-active[data-panel-surface="map-focus-search"] .search-container #search-results.active {
         display: none;
     }
 
     /* ----------------------------------------------------------------
        7. Map IDLE
        ---------------------------------------------------------------- */
-    html body[data-panel-surface="map-idle"] .journey-compass {
+    body[data-panel-surface="map-idle"] .journey-compass {
         top: calc(58px + env(safe-area-inset-top, 0px));
         left: 12px;
         right: 12px;
@@ -572,17 +572,17 @@
         border-radius: 18px;
     }
 
-    html body[data-panel-surface="map-idle"] .journey-compass-copy {
+    body[data-panel-surface="map-idle"] .journey-compass-copy {
         grid-area: copy;
         min-width: 0;
     }
 
-    html body[data-panel-surface="map-idle"] .journey-compass-kicker {
+    body[data-panel-surface="map-idle"] .journey-compass-kicker {
         font-size: 8px;
         line-height: 1;
     }
 
-    html body[data-panel-surface="map-idle"] .journey-compass-title {
+    body[data-panel-surface="map-idle"] .journey-compass-title {
         max-width: 100%;
         font-size: 13px;
         line-height: 1.1;
@@ -591,11 +591,11 @@
         text-overflow: ellipsis;
     }
 
-    html body[data-panel-surface="map-idle"] .journey-compass-note {
+    body[data-panel-surface="map-idle"] .journey-compass-note {
         display: none;
     }
 
-    html body[data-panel-surface="map-idle"] [aria-label="Journey route controls"] {
+    body[data-panel-surface="map-idle"] [aria-label="Journey route controls"] {
         grid-area: actions;
         display: flex;
         justify-content: flex-end;
@@ -603,7 +603,7 @@
         min-width: 44px;
     }
 
-    html body[data-panel-surface="map-idle"] .journey-compass-action {
+    body[data-panel-surface="map-idle"] .journey-compass-action {
         min-width: 44px;
         min-height: 44px;
         height: 44px;
@@ -612,7 +612,7 @@
         letter-spacing: 0;
     }
 
-    html body[data-panel-surface="map-idle"] .journey-compass-action::before {
+    body[data-panel-surface="map-idle"] .journey-compass-action::before {
         font-size: 10px;
         line-height: 1;
         letter-spacing: 0;
@@ -620,7 +620,7 @@
         white-space: nowrap;
     }
 
-    html body[data-panel-surface="map-idle"] .journey-compass-rail {
+    body[data-panel-surface="map-idle"] .journey-compass-rail {
         grid-area: rail;
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -632,7 +632,7 @@
         pointer-events: auto;
     }
 
-    html body[data-panel-surface="map-idle"] .journey-compass-step {
+    body[data-panel-surface="map-idle"] .journey-compass-step {
         min-width: 0;
         min-height: 44px;
         padding: 0 3px;
@@ -644,8 +644,8 @@
         text-overflow: clip;
     }
 
-    html body.is-active[data-panel-surface="map-idle"] .info-panel,
-    html body.is-active[data-panel-surface="map-idle"] .search-container {
+    body.is-active[data-panel-surface="map-idle"] .info-panel,
+    body.is-active[data-panel-surface="map-idle"] .search-container {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -656,15 +656,15 @@
     /* ----------------------------------------------------------------
        8. FAB / Launch Button behavior
        ---------------------------------------------------------------- */
-    html body.is-active:has(.search-container.has-query) #btn-launch {
+    body.is-active:has(.search-container.has-query) #btn-launch {
         display: none;
     }
 
     /* ----------------------------------------------------------------
        9. Map Navigation Priority
        ---------------------------------------------------------------- */
-    html body.is-active[data-journey-navigation-owner="map-trail-strip"] .view-toggle,
-    html body.is-active[data-journey-navigation-owner="map-trail-strip"] .journey-compass {
+    body.is-active[data-journey-navigation-owner="map-trail-strip"] .view-toggle,
+    body.is-active[data-journey-navigation-owner="map-trail-strip"] .journey-compass {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -674,10 +674,10 @@
 /* Map-trail state owns the full compass suppression outside the narrow
    baseline media gate; the compact map strip owns navigation instead. */
 @media (min-width: 641px) and (max-width: 768px) {
-    html body[data-panel-surface="map-trail"] .view-toggle,
-    html body[data-panel-surface="map-trail"] .journey-compass,
-    html body[data-journey-navigation-owner="map-trail-strip"] .view-toggle,
-    html body[data-journey-navigation-owner="map-trail-strip"] .journey-compass {
+    body[data-panel-surface="map-trail"] .view-toggle,
+    body[data-panel-surface="map-trail"] .journey-compass,
+    body[data-journey-navigation-owner="map-trail-strip"] .view-toggle,
+    body[data-journey-navigation-owner="map-trail-strip"] .journey-compass {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -685,7 +685,7 @@
 }
 
 @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
-    html body.is-active[data-panel-surface="map-trail"] .journey-compass {
+    body.is-active[data-panel-surface="map-trail"] .journey-compass {
         display: none;
         visibility: hidden;
         pointer-events: none;

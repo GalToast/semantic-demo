@@ -249,22 +249,22 @@ html body[data-panel-surface]:not([data-panel-surface^="map-"])[data-focus-trans
     }
 
     /* Broaden coverage per #950: major state animations */
-    html body[data-panel-surface]:not([data-panel-surface^="map-"])[data-focus-transition-phase="arriving"] .focus-stage-card,
-    html body[data-panel-surface]:not([data-panel-surface^="map-"])[data-focus-transition-phase="arriving"] .focus-stage-journey.active,
-    html body[data-panel-surface]:not([data-panel-surface^="map-"])[data-focus-transition-phase="arriving"] .focus-stage-neighbors.active {
+    body[data-panel-surface]:not([data-panel-surface^="map-"])[data-focus-transition-phase="arriving"] .focus-stage-card,
+    body[data-panel-surface]:not([data-panel-surface^="map-"])[data-focus-transition-phase="arriving"] .focus-stage-journey.active,
+    body[data-panel-surface]:not([data-panel-surface^="map-"])[data-focus-transition-phase="arriving"] .focus-stage-neighbors.active {
         transform: none;
         opacity: 1;
         animation: none;
     }
 
-    html body[data-panel-surface]:not([data-panel-surface^="map-"])[data-focus-transition-phase="arriving"] .focus-stage-route-line,
+    body[data-panel-surface]:not([data-panel-surface^="map-"])[data-focus-transition-phase="arriving"] .focus-stage-route-line,
     .focus-stage-route[data-state="walking"] .focus-stage-route-line {
         animation: none;
     }
 
     /* Additional major state transitions */
-    html body[data-panel-surface="focus"] .focus-stage-card,
-    html body[data-panel-surface="focus-search"] .focus-stage-card {
+    body[data-panel-surface="focus"] .focus-stage-card,
+    body[data-panel-surface="focus-search"] .focus-stage-card {
         transition: none;
     }
 

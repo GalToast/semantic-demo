@@ -5,11 +5,11 @@
    ================================================================ */
 
 @media (max-width: 768px) {
-    html body.is-active[data-panel-surface="map-focus-search"] #selected-map-summary[hidden] {
+    body.is-active[data-panel-surface="map-focus-search"] #selected-map-summary[hidden] {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="map-focus-search"] #selected-map-summary.selected-map-summary:not([hidden]) {
+    body.is-active[data-panel-surface="map-focus-search"] #selected-map-summary.selected-map-summary:not([hidden]) {
         display: flex;
         min-height: 0;
         flex-direction: column;
@@ -17,7 +17,7 @@
         pointer-events: auto;
     }
 
-    html body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-head {
+    body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-head {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
@@ -26,14 +26,14 @@
         border-bottom: 1px solid rgba(255, 255, 255, 0.09);
     }
 
-    html body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-main {
+    body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-main {
         min-width: 0;
         display: flex;
         flex-direction: column;
         gap: 2px;
     }
 
-    html body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-kicker {
+    body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-kicker {
         color: rgba(255, 226, 132, 0.78);
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         font-size: 9px;
@@ -43,7 +43,7 @@
         text-transform: uppercase;
     }
 
-    html body.is-active[data-panel-surface="map-focus-search"] #selected-map-summary-name {
+    body.is-active[data-panel-surface="map-focus-search"] #selected-map-summary-name {
         margin: 0;
         color: rgba(240, 255, 252, 0.98);
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
@@ -56,7 +56,7 @@
         overflow: hidden;
     }
 
-    html body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-what {
+    body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-what {
         color: rgba(207, 225, 222, 0.82);
         font-size: 11px;
         line-height: 1.25;
@@ -66,7 +66,7 @@
         overflow: hidden;
     }
 
-    html body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-role {
+    body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-role {
         max-width: 86px;
         padding: 4px 6px;
         border: 1px solid rgba(121, 235, 222, 0.22);
@@ -85,7 +85,7 @@
         text-overflow: ellipsis;
     }
 
-    html body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-match {
+    body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-match {
         padding: 8px 9px;
         max-height: 64px;
         border-radius: 10px;
@@ -94,7 +94,7 @@
         overflow: hidden;
     }
 
-    html body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-match-label {
+    body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-match-label {
         margin-bottom: 3px;
         color: rgba(255, 226, 132, 0.72);
         font-size: 8px;
@@ -102,7 +102,7 @@
         letter-spacing: 0.08em;
     }
 
-    html body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-match-copy {
+    body.is-active[data-panel-surface="map-focus-search"] .selected-map-summary-match-copy {
         display: -webkit-box;
         color: rgba(230, 243, 240, 0.86);
         font-size: 10px;

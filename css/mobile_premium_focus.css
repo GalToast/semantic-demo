@@ -9,8 +9,8 @@
     /* ----------------------------------------------------------------
        1. Scroll / overflow baseline
        ---------------------------------------------------------------- */
-    html body.is-active[data-panel-surface="focus-search"],
-    html body.is-active[data-panel-surface="semantic-dive"] {
+    body.is-active[data-panel-surface="focus-search"],
+    body.is-active[data-panel-surface="semantic-dive"] {
         overflow: hidden;
     }
 
@@ -18,8 +18,8 @@
        2. Journey compass — core layout
           Shared across focus-search and dive states.
        ---------------------------------------------------------------- */
-    html body.is-active[data-panel-surface="focus-search"] .journey-compass,
-    html body.is-active[data-panel-surface="semantic-dive"] .journey-compass {
+    body.is-active[data-panel-surface="focus-search"] .journey-compass,
+    body.is-active[data-panel-surface="semantic-dive"] .journey-compass {
         display: grid;
         top: calc(10px + env(safe-area-inset-top, 0px));
         left: 10px;
@@ -46,30 +46,30 @@
     }
 
     /* Pseudo-element glow baseline */
-    html body.is-active[data-panel-surface="focus-search"] .journey-compass::before,
-    html body.is-active[data-panel-surface="semantic-dive"] .journey-compass::before {
+    body.is-active[data-panel-surface="focus-search"] .journey-compass::before,
+    body.is-active[data-panel-surface="semantic-dive"] .journey-compass::before {
         opacity: 0.24;
     }
 
     /* Hidden sub-elements (kick, note, rail) */
-    html body.is-active[data-panel-surface="focus-search"] .journey-compass-kicker,
-    html body.is-active[data-panel-surface="semantic-dive"] .journey-compass-kicker,
-    html body.is-active[data-panel-surface="focus-search"] .journey-compass-note,
-    html body.is-active[data-panel-surface="semantic-dive"] .journey-compass-note,
-    html body.is-active[data-panel-surface="focus-search"] .journey-compass-rail,
-    html body.is-active[data-panel-surface="semantic-dive"] .journey-compass-rail {
+    body.is-active[data-panel-surface="focus-search"] .journey-compass-kicker,
+    body.is-active[data-panel-surface="semantic-dive"] .journey-compass-kicker,
+    body.is-active[data-panel-surface="focus-search"] .journey-compass-note,
+    body.is-active[data-panel-surface="semantic-dive"] .journey-compass-note,
+    body.is-active[data-panel-surface="focus-search"] .journey-compass-rail,
+    body.is-active[data-panel-surface="semantic-dive"] .journey-compass-rail {
         display: none;
     }
 
     /* Flex cell reset */
-    html body.is-active[data-panel-surface="focus-search"] .journey-compass-copy,
-    html body.is-active[data-panel-surface="semantic-dive"] .journey-compass-copy {
+    body.is-active[data-panel-surface="focus-search"] .journey-compass-copy,
+    body.is-active[data-panel-surface="semantic-dive"] .journey-compass-copy {
         min-width: 0;
     }
 
     /* Compass title */
-    html body.is-active[data-panel-surface="focus-search"] .journey-compass-title,
-    html body.is-active[data-panel-surface="semantic-dive"] .journey-compass-title {
+    body.is-active[data-panel-surface="focus-search"] .journey-compass-title,
+    body.is-active[data-panel-surface="semantic-dive"] .journey-compass-title {
         margin: 0;
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         font-size: 13px;
@@ -83,16 +83,16 @@
     }
 
     /* Focus/dive journey compass state refinements */
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass-title,
-    html body.is-active[data-panel-surface="semantic-dive"]:not([data-panel-surface^="map-"]) .journey-compass-title {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass-title,
+    body.is-active[data-panel-surface="semantic-dive"]:not([data-panel-surface^="map-"]) .journey-compass-title {
         white-space: normal;
         overflow: visible;
         text-overflow: clip;
     }
 
     /* Compass actions cell */
-    html body.is-active[data-panel-surface="focus-search"] .journey-compass-actions,
-    html body.is-active[data-panel-surface="semantic-dive"] .journey-compass-actions {
+    body.is-active[data-panel-surface="focus-search"] .journey-compass-actions,
+    body.is-active[data-panel-surface="semantic-dive"] .journey-compass-actions {
         grid-column: auto;
         justify-content: flex-end;
         gap: 6px;
@@ -101,10 +101,10 @@
     }
 
     /* Compass action buttons (shared) */
-    html body.is-active[data-panel-surface="focus-search"] .journey-compass-action,
-    html body.is-active[data-panel-surface="semantic-dive"] .journey-compass-action,
-    html body.is-active[data-panel-surface="focus-search"] .journey-compass-action.primary,
-    html body.is-active[data-panel-surface="semantic-dive"] .journey-compass-action.primary {
+    body.is-active[data-panel-surface="focus-search"] .journey-compass-action,
+    body.is-active[data-panel-surface="semantic-dive"] .journey-compass-action,
+    body.is-active[data-panel-surface="focus-search"] .journey-compass-action.primary,
+    body.is-active[data-panel-surface="semantic-dive"] .journey-compass-action.primary {
         flex: 0 0 auto;
         min-width: 88px;
         min-height: 44px;
@@ -122,23 +122,23 @@
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .journey-compass-action:not(.primary) {
+    body.is-active[data-panel-surface="semantic-dive"] .journey-compass-action:not(.primary) {
         display: none;
     }
 
     /* Inside mode owns actions from the focus-stage card, not the compass. */
-    html body.is-active[data-panel-surface="semantic-dive"] .journey-compass-actions {
+    body.is-active[data-panel-surface="semantic-dive"] .journey-compass-actions {
         display: none;
     }
 
-    html body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) #mode-grid,
-    html body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .mode-grid {
+    body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) #mode-grid,
+    body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .mode-grid {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass.glass-heavy {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass.glass-heavy {
         display: flex;
         flex-direction: row;
         align-items: center;
@@ -147,13 +147,13 @@
         overflow: visible;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass.glass-heavy .journey-compass-copy {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass.glass-heavy .journey-compass-copy {
         flex: 1 1 auto;
         width: auto;
         min-width: 0;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass.glass-heavy .journey-compass-actions {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass.glass-heavy .journey-compass-actions {
         display: grid;
         flex: 0 0 58px;
         width: 44px;
@@ -163,7 +163,7 @@
         justify-content: stretch;
     }
 
-    html body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="search"]):not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-action {
+    body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="search"]):not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-action {
         width: auto;
         min-width: 44px;
         height: 44px;
@@ -175,7 +175,7 @@
         overflow: hidden;
     }
 
-    html body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="search"]):not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-action::before {
+    body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="search"]):not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] .journey-compass-action::before {
         font-size: 10.5px;
         line-height: 1;
         letter-spacing: 0.02em;
@@ -183,7 +183,7 @@
         white-space: nowrap;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass.glass-heavy {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass.glass-heavy {
         display: flex;
         flex-direction: row;
         align-items: center;
@@ -192,14 +192,14 @@
         overflow: visible;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass.glass-heavy .journey-compass-copy {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass.glass-heavy .journey-compass-copy {
         flex: 1 1 auto;
         width: auto;
         min-width: 0;
         padding-right: 50px;
     }
 
-    html body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]):not([data-panel-surface^="map-"]) .journey-compass:is(.glass-heavy, [data-density="compact"]) .journey-compass-title {
+    body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]):not([data-panel-surface^="map-"]) .journey-compass:is(.glass-heavy, [data-density="compact"]) .journey-compass-title {
         font-size: 12px;
         line-height: normal;
         white-space: normal;
@@ -209,12 +209,12 @@
         width: 100%;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass.glass-heavy .journey-compass-rail {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass.glass-heavy .journey-compass-rail {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass-action.primary,
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass.glass-heavy .journey-compass-action.primary {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass-action.primary,
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass.glass-heavy .journey-compass-action.primary {
         flex-basis: 58px;
         min-width: 58px;
         min-height: 44px;
@@ -270,9 +270,9 @@
     /* ----------------------------------------------------------------
        3. Focus stage — shared layout
        ---------------------------------------------------------------- */
-    html body.is-active[data-panel-surface="focus"] .focus-stage,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage {
+    body.is-active[data-panel-surface="focus"] .focus-stage,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage {
         left: 10px;
         right: 10px;
         bottom: 0;
@@ -283,9 +283,9 @@
     }
 
     /* Focus stage card */
-    html body.is-active[data-panel-surface="focus"] .focus-stage-card,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-card,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-card {
+    body.is-active[data-panel-surface="focus"] .focus-stage-card,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-card,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-card {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         align-content: start;
@@ -303,7 +303,7 @@
         backdrop-filter: blur(18px) saturate(1.1);
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-card {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-card {
         border-color: rgba(255, 210, 77, 0.3);
         background:
             radial-gradient(circle at 16% 0%, rgba(255, 210, 77, 0.1), transparent 36%),
@@ -316,8 +316,8 @@
     }
 
     /* Focus stage card — top bar pseudo-element */
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-card::before,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-card::before {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-card::before,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-card::before {
         top: 8px;
         width: 32px;
         height: 3px;
@@ -339,7 +339,7 @@
         cursor: pointer;
     }
 
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-action-btn {
+    body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-action-btn {
         min-height: 44px;
         height: 44px;
         border-radius: 10px;
@@ -365,7 +365,7 @@
         background: rgba(255, 255, 255, 0.1);
     }
 
-    html body.is-active[data-panel-surface]:not([data-panel-surface="semantic-dive"]):not([data-panel-surface^="map-"]) .focus-stage-dive-btn {
+    body.is-active[data-panel-surface]:not([data-panel-surface="semantic-dive"]):not([data-panel-surface^="map-"]) .focus-stage-dive-btn {
         width: calc(100% - 32px);
         margin: 0 16px 12px;
         min-height: 44px;
@@ -383,11 +383,11 @@
         box-shadow: 0 8px 18px rgba(78, 205, 196, 0.18);
     }
 
-    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) .focus-stage-dive-btn {
+    body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) .focus-stage-dive-btn {
         display: none;
     }
 
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-thread-inspector-btn {
+    body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-thread-inspector-btn {
         min-height: 44px;
         height: 44px;
         display: inline-flex;
@@ -419,18 +419,18 @@
     }
 
     /* Focus stage — content order */
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-name,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-name {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-name,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-name {
         order: 10;
     }
 
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-badges,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-badges {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-badges,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-badges {
         order: 20;
     }
 
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-trivia,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-trivia {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-trivia,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-trivia {
         order: 30;
         max-height: 42px;
         overflow: hidden;
@@ -439,7 +439,7 @@
     /* ----------------------------------------------------------------
        4. Focus stage — focus-search journey block
        ---------------------------------------------------------------- */
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-journey.active {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-journey.active {
         order: 40;
         display: grid;
         grid-template-columns: minmax(0, 1fr) 44px;
@@ -456,27 +456,27 @@
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-journey-meta {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-journey-meta {
         min-width: 0;
         padding: 0;
     }
 
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-journey-kicker {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-journey-kicker {
         margin-bottom: 3px;
         font-size: 8px;
         letter-spacing: 0.08em;
         color: rgba(255, 226, 132, 0.74);
     }
 
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-route {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-route {
         grid-template-columns: 7px minmax(52px, 1fr) 7px;
         gap: 7px;
     }
 
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-journey-progress,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-next,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey-progress,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-next {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-journey-progress,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-next,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey-progress,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-next {
         font-size: 8.5px;
         line-height: 1.05;
         white-space: nowrap;
@@ -484,7 +484,7 @@
         text-overflow: ellipsis;
     }
 
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-journey-btn {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-journey-btn {
         width: 44px;
         height: 44px;
         min-width: 44px;
@@ -492,7 +492,7 @@
         border-radius: 8px;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-journey.active {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-journey.active {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         align-items: center;
@@ -505,18 +505,18 @@
         overflow: hidden;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-journey-meta {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-journey-meta {
         min-width: 0;
         padding: 0;
         border: 0;
         background: transparent;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-journey-kicker {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-journey-kicker {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-journey-progress {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-journey-progress {
         display: block;
         max-width: 100%;
         color: rgba(231, 246, 244, 0.82);
@@ -527,7 +527,7 @@
         text-overflow: ellipsis;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-next {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-next {
         display: block;
         max-width: 100%;
         margin-top: 3px;
@@ -539,12 +539,12 @@
         text-overflow: ellipsis;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) #btn-focus-prev,
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) #btn-focus-next {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) #btn-focus-prev,
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) #btn-focus-next {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .focus-stage-journey-btn {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .focus-stage-journey-btn {
         width: 44px;
         min-width: 44px;
         min-height: 44px;
@@ -557,7 +557,7 @@
     /* ----------------------------------------------------------------
        5. Focus stage — dive button + neighbors
        ---------------------------------------------------------------- */
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-dive-btn {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-dive-btn {
         order: 50;
         position: relative;
         left: auto;
@@ -576,7 +576,7 @@
         color: rgba(249, 255, 252, 0.94);
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbors.active {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbors.active {
         order: 54;
         display: block;
         margin: 4px 0 0;
@@ -584,7 +584,7 @@
         border-top: 1px solid rgba(121, 235, 222, 0.12);
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-header {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-header {
         display: flex;
         align-items: baseline;
         justify-content: space-between;
@@ -592,7 +592,7 @@
         margin-bottom: 5px;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-list {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-list {
         display: grid;
         gap: 6px;
         max-height: 102px;
@@ -600,36 +600,36 @@
         scrollbar-width: none;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-list::-webkit-scrollbar {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-list::-webkit-scrollbar {
         width: 0;
         height: 0;
         display: none;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-pill {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-pill {
         display: flex;
         min-height: 48px;
         border-radius: 10px;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-main {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-main {
         min-width: 0;
         padding: 6px 7px;
         grid-template-columns: 24px minmax(0, 1fr);
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-index {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-index {
         width: 22px;
         height: 22px;
         border-radius: 8px;
         font-size: 8px;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-actions {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-actions {
         display: none;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-pocket {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-pocket {
         display: flex;
         flex-direction: column;
         align-content: stretch;
@@ -637,42 +637,42 @@
         overflow-y: auto;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-note,
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-actions,
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) #focus-stage .trail-controls,
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-what,
-    html body.is-active[data-panel-surface="focus"]:not([data-panel-surface^="map-"]) #focus-stage .focus-stage-journey.active {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-note,
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-actions,
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) #focus-stage .trail-controls,
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-what,
+    body.is-active[data-panel-surface="focus"]:not([data-panel-surface^="map-"]) #focus-stage .focus-stage-journey.active {
         display: none;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"])[data-thread-inspect-surface="idle"]:not([data-panel-surface^="map-"]) #focus-stage .focus-thread-inspector,
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-thread-inspector[aria-hidden="true"]:not(.active) {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"])[data-thread-inspect-surface="idle"]:not([data-panel-surface^="map-"]) #focus-stage .focus-thread-inspector,
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-thread-inspector[aria-hidden="true"]:not(.active) {
         display: none;
     }
 
-    html body.is-active:is([data-panel-surface="focus-search"]):not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] #focus-stage .focus-stage-actions {
+    body.is-active:is([data-panel-surface="focus-search"]):not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] #focus-stage .focus-stage-actions {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
     }
 
-    html body.is-active:is([data-panel-surface="focus-search"]):not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] #focus-stage .focus-stage-card {
+    body.is-active:is([data-panel-surface="focus-search"]):not([data-panel-surface^="map-"])[data-focus-panel-mode="field-node"] #focus-stage .focus-stage-card {
         overflow: visible;
     }
 
-    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-kicker,
-    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-name,
-    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-filed,
-    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-what,
-    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-meta,
-    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-note,
-    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-dive-btn,
-    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-neighbors,
-    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] #trail-controls {
+    body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-kicker,
+    body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-name,
+    body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-filed,
+    body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-what,
+    body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-meta,
+    body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-note,
+    body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-dive-btn,
+    body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-neighbors,
+    body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] #trail-controls {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-journey.active {
+    body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-journey.active {
         display: flex;
         gap: 12px;
         margin: 0 10px 12px;
@@ -680,24 +680,24 @@
         width: auto;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-dive-btn {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-dive-btn {
         min-height: 44px;
         height: 44px;
         margin-bottom: 4px;
         flex-shrink: 0;
     }
 
-    html body.is-active[data-panel-surface="focus"]:not([data-panel-surface^="map-"]) #focus-stage .focus-stage-dive-btn {
+    body.is-active[data-panel-surface="focus"]:not([data-panel-surface^="map-"]) #focus-stage .focus-stage-dive-btn {
         display: none;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"])[data-thread-inspect-surface]:not([data-thread-inspect-surface="idle"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-dive-btn {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"])[data-thread-inspect-surface]:not([data-thread-inspect-surface="idle"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-dive-btn {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-neighbors.active {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage .focus-stage-neighbors.active {
         display: block;
         flex: 0 1 auto;
         max-height: 158px;
@@ -707,15 +707,15 @@
     /* ----------------------------------------------------------------
        6. Focus stage — shared typography
        ---------------------------------------------------------------- */
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-kicker,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-kicker {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-kicker,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-kicker {
         font-size: 8.5px;
         line-height: 1;
         letter-spacing: 0.08em;
     }
 
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-name,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-name {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-name,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-name {
         flex: 0 0 auto;
         min-height: 16px;
         font-size: 13px;
@@ -724,13 +724,13 @@
         overflow: visible;
     }
 
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-what,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-what {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-what,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-what {
         font-size: 15px;
         line-height: 1.18;
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-what {
+    body.is-active[data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]):not([data-focus-panel-mode="field-node"]) .focus-stage-what {
         margin: 0 20px 18px;
         font-size: 14px;
         line-height: 1.18;
@@ -751,7 +751,7 @@
           Semantic-dive inside HUD density owner: keep status/control
           compactness here, not in late surface backstops.
        ---------------------------------------------------------------- */
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-status {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-status {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
         align-items: center;
@@ -766,7 +766,7 @@
         box-shadow: none;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-status-copy {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-status-copy {
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         font-size: 10.5px;
         font-weight: 700;
@@ -775,7 +775,7 @@
         color: rgba(230, 244, 238, 0.86);
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-status::before {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-status::before {
         content: '';
         position: absolute;
         top: 50%;
@@ -789,7 +789,7 @@
         animation: insideStatusPulse 2.4s ease-in-out infinite;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-controls {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-controls {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 8px;
@@ -797,7 +797,7 @@
         order: 38;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-btn {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-btn {
         height: 44px;
         min-height: 44px;
         border-radius: 8px;
@@ -810,31 +810,31 @@
     }
 
     /* Premium focus owns focus-search meta suppression; semantic-dive hides meta with the main-stage content below. */
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-filed,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-meta,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-badges,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-trivia,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-filed {
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-filed,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-meta,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-badges,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-trivia,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-filed {
         display: none;
     }
 
     /* Hide main-stage content in dive state */
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-name,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-what,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-meta,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-badges,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-trivia,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-note,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-kicker,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-actions,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-dive-btn,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-neighbors {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-name,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-what,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-meta,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-badges,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-trivia,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-note,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-kicker,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-actions,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-dive-btn,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-neighbors {
         display: none;
     }
 
     /* Restyled journey block in dive state */
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey.active {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey.active {
         order: 46;
         grid-template-columns: minmax(0, 1fr);
         min-height: 46px;
@@ -847,30 +847,30 @@
         box-shadow: none;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey-btn {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey-btn {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey-meta {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey-meta {
         padding: 0;
         border-radius: 0;
         background: transparent;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey-kicker {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey-kicker {
         margin-bottom: 3px;
         font-size: 7.8px;
         letter-spacing: 0.08em;
         color: rgba(255, 226, 132, 0.8);
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-route {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-route {
         grid-template-columns: 7px minmax(0, 1fr) 7px;
         gap: 7px;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey-progress,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-next {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey-progress,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-next {
         font-size: 8.5px;
         line-height: 1.08;
         white-space: nowrap;
@@ -881,24 +881,24 @@
     /* ----------------------------------------------------------------
        8. Focus stage - suppress journey in combined states
        ---------------------------------------------------------------- */
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey.active {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey.active {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage-auxiliary-surfaces {
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage-auxiliary-surfaces {
         display: grid;
         gap: 6px;
         margin: 0;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage-auxiliary-surfaces > :not(#focus-stage-inside-status):not(#focus-stage-inside-controls) {
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage-auxiliary-surfaces > :not(#focus-stage-inside-status):not(#focus-stage-inside-controls) {
         display: none;
     }
 
     /* ----------------------------------------------------------------
        9. Relocated focus-stage-card mobile overrides
        ---------------------------------------------------------------- */
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage.focus-stage {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage.focus-stage {
         display: block;
         visibility: visible;
         opacity: 1;
@@ -906,7 +906,7 @@
         transform: translateY(0);
     }
 
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card {
+    body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card {
         display: grid;
         gap: 6px;
         left: 0;
@@ -934,12 +934,12 @@
         pointer-events: auto;
     }
 
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card * {
+    body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card * {
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         box-sizing: border-box;
     }
 
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card::before {
+    body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card::before {
         content: "";
         position: absolute;
         inset: 0;
@@ -952,7 +952,7 @@
         z-index: var(--z-underlay);
     }
 
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card::after {
+    body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-card::after {
         content: "";
         position: absolute;
         top: 8px;
@@ -965,8 +965,8 @@
         z-index: var(--z-overlay);
     }
 
-    html body.is-active[data-panel-surface="focus"] .focus-stage-card,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-card {
+    body.is-active[data-panel-surface="focus"] .focus-stage-card,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-card {
         max-height: min(46dvh, 400px);
     }
 
@@ -1032,19 +1032,19 @@
         }
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-focus-panel-mode="field-node"]) #focus-stage.focus-stage {
+    body.is-active[data-panel-surface="focus-search"]:not([data-focus-panel-mode="field-node"]) #focus-stage.focus-stage {
         bottom: max(8px, env(safe-area-inset-bottom, 0px));
         max-height: calc(100dvh - 112px);
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-focus-panel-mode="field-node"]) .focus-stage-card {
+    body.is-active[data-panel-surface="focus-search"]:not([data-focus-panel-mode="field-node"]) .focus-stage-card {
         border-radius: 24px;
         border-left: var(--glass-border);
         border-right: var(--glass-border);
         border-bottom: var(--glass-border);
     }
 
-    html body.is-active[data-panel-surface="focus-search"]:not([data-focus-panel-mode="field-node"]) #focus-stage .focus-pocket {
+    body.is-active[data-panel-surface="focus-search"]:not([data-focus-panel-mode="field-node"]) #focus-stage .focus-pocket {
         max-height: min(42.5dvh, 360px);
     }
 
@@ -1078,7 +1078,7 @@
 } /* end @media focus/dive states */
 
 @media (max-width: 900px) and (max-height: 420px) and (orientation: landscape) {
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .journey-compass[data-density="compact"] {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .journey-compass[data-density="compact"] {
         --journey-compact-rail-display: none;
         max-height: 64px;
         overflow: hidden;
@@ -1086,11 +1086,11 @@
         grid-template-columns: minmax(0, 1fr);
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .journey-compass[data-density="compact"] > :not(.journey-compass-copy) {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .journey-compass[data-density="compact"] > :not(.journey-compass-copy) {
         display: none;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .journey-compass[data-density="compact"] #journey-compass-title {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .journey-compass[data-density="compact"] #journey-compass-title {
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
@@ -1099,19 +1099,19 @@
         text-overflow: clip;
     }
 
-    html body.is-active[data-panel-surface="focus"] .info-panel,
-    html body.is-active[data-panel-surface="focus-search"] .info-panel,
-    html body.is-active[data-panel-surface="semantic-dive"] .info-panel {
+    body.is-active[data-panel-surface="focus"] .info-panel,
+    body.is-active[data-panel-surface="focus-search"] .info-panel,
+    body.is-active[data-panel-surface="semantic-dive"] .info-panel {
         display: none;
         visibility: hidden;
         opacity: 0;
         pointer-events: none;
     }
 
-    html body.is-active[data-panel-surface="focus"] .focus-stage,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage,
-    html body.is-active #focus-stage.active {
+    body.is-active[data-panel-surface="focus"] .focus-stage,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage,
+    body.is-active #focus-stage.active {
         left: 10px;
         right: 10px;
         top: auto;
@@ -1121,7 +1121,7 @@
         overflow: hidden;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage.focus-stage {
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]):not([data-panel-surface^="map-"]) #focus-stage.focus-stage {
         display: block;
         visibility: visible;
         opacity: 1;
@@ -1129,10 +1129,10 @@
         transform: translateY(0);
     }
 
-    html body.is-active[data-panel-surface="focus"] .focus-stage-card,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-card,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-card,
-    html body.is-active #focus-stage.active .focus-stage-card {
+    body.is-active[data-panel-surface="focus"] .focus-stage-card,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-card,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-card,
+    body.is-active #focus-stage.active .focus-stage-card {
         box-sizing: border-box;
         color: rgba(249, 254, 255, 0.94);
         display: var(--short-landscape-focus-card-display, block);
@@ -1147,65 +1147,65 @@
         border-radius: 20px;
     }
 
-    html body.is-active[data-panel-surface="focus-search"] #focus-stage.focus-stage {
+    body.is-active[data-panel-surface="focus-search"] #focus-stage.focus-stage {
         bottom: max(6px, env(safe-area-inset-bottom, 0px));
     }
 
-    html body.is-active[data-panel-surface="focus"] .focus-stage-what,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-what,
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-what {
+    body.is-active[data-panel-surface="focus"] .focus-stage-what,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-what,
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-what {
         color: rgba(225, 245, 243, 0.88);
     }
 
-    html body.is-active[data-panel-surface="focus"] .focus-stage-note,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-note,
-    html body.is-active[data-panel-surface="focus"] .focus-stage-meta,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-meta,
-    html body.is-active[data-panel-surface="focus"] .focus-stage-badges,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-badges,
-    html body.is-active[data-panel-surface="focus"] .focus-stage-trivia,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-trivia,
-    html body.is-active[data-panel-surface="focus"] .focus-thread-inspector,
-    html body.is-active[data-panel-surface="focus-search"] .focus-thread-inspector,
-    html body.is-active[data-panel-surface="focus"] #trail-controls,
-    html body.is-active[data-panel-surface="focus-search"] #trail-controls,
-    html body.is-active[data-panel-surface="focus"] .trail-controls,
-    html body.is-active[data-panel-surface="focus-search"] .trail-controls,
-    html body.is-active[data-panel-surface="focus"]:not([data-focus-panel-mode="field-node"]) .focus-stage-actions,
-    html body.is-active[data-panel-surface="focus-search"]:not([data-focus-panel-mode="field-node"]) .focus-stage-actions,
-    html body.is-active[data-panel-surface="focus"] .focus-stage-journey.active,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-journey.active {
+    body.is-active[data-panel-surface="focus"] .focus-stage-note,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-note,
+    body.is-active[data-panel-surface="focus"] .focus-stage-meta,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-meta,
+    body.is-active[data-panel-surface="focus"] .focus-stage-badges,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-badges,
+    body.is-active[data-panel-surface="focus"] .focus-stage-trivia,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-trivia,
+    body.is-active[data-panel-surface="focus"] .focus-thread-inspector,
+    body.is-active[data-panel-surface="focus-search"] .focus-thread-inspector,
+    body.is-active[data-panel-surface="focus"] #trail-controls,
+    body.is-active[data-panel-surface="focus-search"] #trail-controls,
+    body.is-active[data-panel-surface="focus"] .trail-controls,
+    body.is-active[data-panel-surface="focus-search"] .trail-controls,
+    body.is-active[data-panel-surface="focus"]:not([data-focus-panel-mode="field-node"]) .focus-stage-actions,
+    body.is-active[data-panel-surface="focus-search"]:not([data-focus-panel-mode="field-node"]) .focus-stage-actions,
+    body.is-active[data-panel-surface="focus"] .focus-stage-journey.active,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-journey.active {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="focus"] .focus-thread-inspector.active,
-    html body.is-active[data-panel-surface="focus-search"] .focus-thread-inspector.active {
+    body.is-active[data-panel-surface="focus"] .focus-thread-inspector.active,
+    body.is-active[data-panel-surface="focus-search"] .focus-thread-inspector.active {
         display: grid;
     }
 
-    html body.is-active[data-panel-surface="focus"][data-thread-inspect-surface="idle"] .focus-thread-inspector,
-    html body.is-active[data-panel-surface="focus-search"][data-thread-inspect-surface="idle"] .focus-thread-inspector,
-    html body[data-panel-surface="focus"][data-thread-inspect-surface="idle"] .focus-thread-inspector,
-    html body[data-panel-surface="focus-search"][data-thread-inspect-surface="idle"] .focus-thread-inspector,
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-thread-inspector[aria-hidden="true"]:not(.active) {
+    body.is-active[data-panel-surface="focus"][data-thread-inspect-surface="idle"] .focus-thread-inspector,
+    body.is-active[data-panel-surface="focus-search"][data-thread-inspect-surface="idle"] .focus-thread-inspector,
+    body[data-panel-surface="focus"][data-thread-inspect-surface="idle"] .focus-thread-inspector,
+    body[data-panel-surface="focus-search"][data-thread-inspect-surface="idle"] .focus-thread-inspector,
+    body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-thread-inspector[aria-hidden="true"]:not(.active) {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="focus-search"] .info-panel {
+    body.is-active[data-panel-surface="focus-search"] .info-panel {
         display: none;
         visibility: hidden;
         opacity: 0;
         pointer-events: none;
     }
 
-    html body.is-active:not([data-panel-surface^="map-"])[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] #focus-stage .focus-stage-actions {
+    body.is-active:not([data-panel-surface^="map-"])[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] #focus-stage .focus-stage-actions {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
     }
 
-    html body.is-active[data-panel-surface="focus"] .focus-stage-neighbors.active,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-neighbors.active {
+    body.is-active[data-panel-surface="focus"] .focus-stage-neighbors.active,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-neighbors.active {
         display: none;
         margin-top: 6px;
         padding-top: 6px;
@@ -1216,20 +1216,20 @@
         scrollbar-width: none;
     }
 
-    html body.is-active[data-panel-surface="focus"] .focus-stage-neighbors.active::-webkit-scrollbar,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-neighbors.active::-webkit-scrollbar {
+    body.is-active[data-panel-surface="focus"] .focus-stage-neighbors.active::-webkit-scrollbar,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-neighbors.active::-webkit-scrollbar {
         width: 0;
         height: 0;
         display: none;
     }
 
-    html body.is-active[data-panel-surface="focus"] .focus-stage-neighbors.active .focus-stage-neighbor-header,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-neighbors.active .focus-stage-neighbor-header {
+    body.is-active[data-panel-surface="focus"] .focus-stage-neighbors.active .focus-stage-neighbor-header,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-neighbors.active .focus-stage-neighbor-header {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="focus"] .focus-stage-neighbor-list,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-neighbor-list {
+    body.is-active[data-panel-surface="focus"] .focus-stage-neighbor-list,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-neighbor-list {
         display: grid;
         grid-auto-flow: column;
         grid-auto-columns: minmax(220px, 58vw);
@@ -1239,22 +1239,22 @@
         overflow: visible;
     }
 
-    html body.is-active[data-panel-surface="focus"] .focus-stage-neighbor-pill,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-neighbor-pill {
+    body.is-active[data-panel-surface="focus"] .focus-stage-neighbor-pill,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-neighbor-pill {
         min-height: 44px;
     }
 
-    html body.is-active[data-panel-surface="focus"] .focus-stage-neighbor-main,
-    html body.is-active[data-panel-surface="focus-search"] .focus-stage-neighbor-main {
+    body.is-active[data-panel-surface="focus"] .focus-stage-neighbor-main,
+    body.is-active[data-panel-surface="focus-search"] .focus-stage-neighbor-main {
         padding-block: 6px;
     }
 
-    html body.is-active:not([data-panel-surface="semantic-dive"]) .focus-stage-inside-status,
-    html body.is-active:not([data-panel-surface="semantic-dive"]) .focus-stage-inside-controls {
+    body.is-active:not([data-panel-surface="semantic-dive"]) .focus-stage-inside-status,
+    body.is-active:not([data-panel-surface="semantic-dive"]) .focus-stage-inside-controls {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-controls {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-controls {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         grid-column: 2;
@@ -1263,11 +1263,11 @@
         margin: 6px 0 0;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] #btn-inside-next.focus-stage-inside-btn:not([hidden]) {
+    body.is-active[data-panel-surface="semantic-dive"] #btn-inside-next.focus-stage-inside-btn:not([hidden]) {
         grid-column: 1 / -1;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-btn {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-btn {
         box-sizing: border-box;
         min-height: 44px;
         height: 44px;
@@ -1277,8 +1277,8 @@
         padding: 0 8px;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage.focus-stage.active,
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage.focus-stage {
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage.focus-stage.active,
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage.focus-stage {
         display: block;
         visibility: visible;
         opacity: 1;
@@ -1294,7 +1294,7 @@
         --short-landscape-focus-card-padding: 12px 16px;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-status {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-status {
         display: grid;
         grid-column: 1;
         min-height: 30px;
@@ -1302,7 +1302,7 @@
         padding: 5px 10px;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-status-copy {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-inside-status-copy {
         display: block;
         font-size: 9.5px;
         line-height: 1.15;
@@ -1313,24 +1313,24 @@
         text-overflow: ellipsis;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-name,
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-what,
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-meta,
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-badges,
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-trivia,
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-note,
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-kicker,
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-actions,
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-dive-btn,
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-journey,
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-neighbors,
-    html body.is-active[data-panel-surface="semantic-dive"] #focus-thread-inspector {
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-name,
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-what,
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-meta,
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-badges,
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-trivia,
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-note,
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-kicker,
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-actions,
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-dive-btn,
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-journey,
+    body.is-active[data-panel-surface="semantic-dive"] #focus-stage .focus-stage-neighbors,
+    body.is-active[data-panel-surface="semantic-dive"] #focus-thread-inspector {
         display: none;
     }
 
-    html body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey-btn,
-    html body.is-active[data-panel-surface="semantic-dive"] #trail-controls,
-    html body.is-active[data-panel-surface="semantic-dive"] .trail-controls {
+    body.is-active[data-panel-surface="semantic-dive"] .focus-stage-journey-btn,
+    body.is-active[data-panel-surface="semantic-dive"] #trail-controls,
+    body.is-active[data-panel-surface="semantic-dive"] .trail-controls {
         display: none;
     }
 }

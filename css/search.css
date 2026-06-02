@@ -1506,7 +1506,7 @@ body[data-panel-surface="map-focus-search"] .exploration-card:hover,
         padding: 7px 8px;
     }
 
-    html body[data-mobile-route-peek="active"][data-panel-surface]:not([data-panel-surface^="map-"]) .search-container #synthesize-trigger {
+    body[data-mobile-route-peek="active"][data-panel-surface]:not([data-panel-surface^="map-"]) .search-container #synthesize-trigger {
         display: none;
     }
 }
@@ -1628,11 +1628,11 @@ body[data-panel-surface="map-focus-search"] .exploration-card:hover,
     body[data-panel-surface="focus-search"] .info-panel .info-header,
     body[data-panel-surface="focus-search"] .info-panel #story-section,
     body[data-panel-surface="focus-search"] .info-panel #cluster-section,
-    html body[data-panel-surface="focus-search"] .info-panel .exploration-card,
-    html body[data-panel-surface="focus-search"] .info-panel .mode-grid,
-    html body[data-panel-surface="focus-search"] .info-panel .semantic-lane-assist,
-    html body[data-panel-surface="focus-search"] .info-panel .search-trail-cue,
-    html body[data-panel-surface="focus-search"] .info-panel .synthesize-trigger {
+    body[data-panel-surface="focus-search"] .info-panel .exploration-card,
+    body[data-panel-surface="focus-search"] .info-panel .mode-grid,
+    body[data-panel-surface="focus-search"] .info-panel .semantic-lane-assist,
+    body[data-panel-surface="focus-search"] .info-panel .search-trail-cue,
+    body[data-panel-surface="focus-search"] .info-panel .synthesize-trigger {
         display: none;
         visibility: hidden;
     }
