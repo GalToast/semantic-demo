@@ -218,6 +218,11 @@ const FOCUS_COMPASS_STATE_REFINEMENT_GUARD = {
   ],
 };
 
+const MOBILE_COMPASS_TRANSITION_GUARD = {
+  file: 'mobile_premium_surfaces.css',
+  selectors: ['.journey-compass', '.journey-compass-action'],
+};
+
 // ─── Run checks ────────────────────────────────────────────────────────────
 
 const cssDir = path.resolve(root, 'css');
@@ -252,6 +257,18 @@ for (const fragment of FOCUS_COMPASS_STATE_REFINEMENT_GUARD.forbiddenLateFragmen
   if (formerCompassOwner.includes(fragment)) {
     violations.push(
       `${FOCUS_COMPASS_STATE_REFINEMENT_GUARD.formerLateFile} must not reintroduce focus/dive journey-compass state fragment ${fragment}`
+    );
+  }
+}
+
+const mobileCompassTransitionOwner = read(`css/${MOBILE_COMPASS_TRANSITION_GUARD.file}`);
+for (const selector of MOBILE_COMPASS_TRANSITION_GUARD.selectors) {
+  const transitionAllBlocks = matchingBlocks(mobileCompassTransitionOwner, [selector])
+    .filter((block) => /\btransition\s*:\s*all\b/i.test(block.body));
+  if (transitionAllBlocks.length) {
+    violations.push(
+      `${MOBILE_COMPASS_TRANSITION_GUARD.file} must not use transition: all on ${selector}; ` +
+      'mobile compass transitions must name paint/compositor properties so route geometry does not animate.'
     );
   }
 }

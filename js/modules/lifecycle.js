@@ -441,7 +441,12 @@ export function resetExperienceState(options = {}) {
     const searchResults = document.getElementById('search-results');
     if (searchResults) {
         searchResults.classList.remove('active');
-        searchResults.hidden = true;
+        // 10/10 Polish: Defer hidden until transition finishes
+        setTimeout(() => {
+            if (!searchResults.classList.contains('active')) {
+                searchResults.hidden = true;
+            }
+        }, 450);
     }
     setSearchPanelState({ searching: false, focusing: false, hasQuery: false, resultsRendered: false, degraded: false });
     clearSearchGlow();

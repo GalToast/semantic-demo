@@ -145,9 +145,9 @@
     }
 
     html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results.active {
-        flex-basis: 88px;
-        min-height: 88px;
-        max-height: 88px;
+        flex-basis: 140px;
+        min-height: 140px;
+        max-height: max(140px, calc(40dvh - 120px));
     }
 
     html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .info-panel {
