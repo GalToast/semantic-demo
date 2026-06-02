@@ -20,7 +20,6 @@ import {
 } from './ui-renderers.js';
 import {
     updateUrlState as adapter_updateUrlState,
-    setSearchPanelState as adapter_setSearchPanelState,
     updateJourneyCompass as adapter_updateJourneyCompass,
     refreshCompositionState as adapter_refreshCompositionState,
     refreshHoverSemanticOverlay as adapter_refreshHoverSemanticOverlay,
@@ -357,18 +356,25 @@ export function applyEmptySemanticSearchState(resultsEl, statusEl, trimmedQuery,
     });
 
     resultsEl.hidden = false;
+    resultsEl.classList.add('active');
     resultsEl.classList.remove('searching');
     resultsEl.classList.remove('is-searching-skeleton');
     resultsEl.setAttribute('aria-busy', 'false');
+    const spinner = document.getElementById('search-spinner');
+    if (spinner) spinner.style.display = 'none';
+    setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true, degraded: false });
     clearSearchGlow();
-    statusEl.textContent = `No matching records found for "${trimmedQuery}".`;
+    const statusText = `No matching records found for "${trimmedQuery}".`;
+    statusEl.textContent = statusText;
+    const liveEl = document.getElementById('search-status-live');
+    if (liveEl) liveEl.textContent = statusText;
+
     updateSearchTrailCue({
         beat: 'query', kicker: 'No results trail', title: `No results trail for "${trimmedQuery}"`,
         note: 'Try a concrete service, place type, or business need.', immediate: true
     });
     adapter_updateUrlState({}, { reason: 'search-empty' });
     resetSemanticGuideUi({ hideTrigger: true });
-    adapter_setSearchPanelState({ resultsRendered: false });
 }
 
 export function stopSearchVectorScramble() {
@@ -466,7 +472,10 @@ export function clearShortSemanticSearchState(_resultsEl, _statusEl) {
     if (spinner) spinner.style.display = 'none';
     if (_resultsEl) {
         _resultsEl.innerHTML = '';
+        _resultsEl.classList.remove('active');
         _resultsEl.classList.remove('searching');
+        _resultsEl.classList.remove('is-searching-skeleton');
+        _resultsEl.setAttribute('aria-busy', 'false');
     }
     if (_statusEl) {
         _statusEl.textContent = 'Search 8,406 MoCo businesses semantically by need, venue, service, or clue.';

@@ -279,6 +279,17 @@
     font-family: var(--font-body, 'Nunito Sans', system-ui, sans-serif);
     font-size: 10.5px;
     line-height: 1.25;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.2s ease, opacity 0.2s ease;
+}
+
+.mode-grid .mode-chip:hover .mode-caption,
+.mode-grid .mode-chip:focus-visible .mode-caption,
+.mode-grid .mode-chip.active .mode-caption {
+    max-height: 4em;
+    opacity: 1;
 }
 
 body[data-panel-surface="focus"] .info-panel,
@@ -651,6 +662,7 @@ body:has(.info-panel.active) .panel-toggle {
     body[data-panel-surface="search"] .legend-toggle {
         opacity: 0;
         pointer-events: none;
+        visibility: hidden;
         transform: translateY(8px) scale(0.96);
     }
 
@@ -679,6 +691,7 @@ body:has(.info-panel.active) .panel-toggle {
     body[data-panel-surface="focus-search"] .controls {
         opacity: 0;
         pointer-events: none;
+        visibility: hidden;
         transform: translateY(8px) scale(0.96);
     }
 
@@ -884,7 +897,7 @@ body:has(.info-panel.active) .panel-toggle {
         padding: 12px;
         background: linear-gradient(180deg, rgba(10, 14, 22, 0.94), rgba(7, 10, 18, 0.92));
         box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
-        z-index: 1000;
+        z-index: var(--z-overlay);
     }
 
     body[data-panel-surface^="map-"] .journey-compass {
@@ -893,7 +906,7 @@ body:has(.info-panel.active) .panel-toggle {
         left: 10px;
         right: 10px;
         width: calc(100% - 20px);
-        z-index: 1001;
+        z-index: calc(var(--z-overlay) + 1);
     }
 
     /* #925: Hide journey compass in map mode when map-specific navigation is active */

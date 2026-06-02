@@ -414,7 +414,7 @@ html body .search-container {
 
 .search-input:focus,
 .search-input:focus-visible {
-    outline: none;
+    outline: 2px solid transparent;
     border: var(--glass-border-glow);
     background: rgba(12, 22, 28, 0.82);
     box-shadow:

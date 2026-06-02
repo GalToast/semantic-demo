@@ -30,7 +30,7 @@
 }
 
 .filter-select:focus-visible {
-    outline: none;
+    outline: 2px solid transparent;
     border-color: rgba(78, 205, 196, 0.5);
     box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.15);
 }

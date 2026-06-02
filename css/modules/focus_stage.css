@@ -15,7 +15,7 @@
 
 .focus-stage {
     position: fixed;
-    z-index: 1000;
+    z-index: var(--z-overlay);
     pointer-events: none;
 }
 

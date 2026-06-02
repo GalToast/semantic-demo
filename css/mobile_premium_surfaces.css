@@ -538,6 +538,35 @@ html body.is-active #selected-details.active:not([hidden]) {
         animation-duration: 0s;
     }
 
+    /* Search sheet content must stay inside the fixed mobile drawer. The
+       results region, not the hidden-overflow drawer shell, owns scrolling. */
+    html body.is-active[data-panel-surface="search"] #info-panel.info-panel {
+        height: min(57dvh, 480px);
+        max-height: min(57dvh, 480px);
+    }
+
+    html body.is-active[data-panel-surface="search"] #info-panel .info-content {
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    html body.is-active[data-panel-surface="search"] .search-container.has-query {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    html body.is-active[data-panel-surface="search"] .search-container.has-query #search-results.active {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
     /* focus-search vertical space guard: constrain search results panel height so it
        cannot crowd the focus-stage below. At 390x844 the info/search sheet and
        focus-stage share the viewport; without this cap the results can expand and
@@ -704,7 +733,7 @@ html body.is-active #selected-details.active:not([hidden]) {
         visibility: visible;
         overflow: hidden;
         pointer-events: auto;
-        z-index: 1002;
+        z-index: calc(var(--z-overlay) + 2);
         border-color: rgba(121, 235, 222, 0.28);
         border-radius: 14px 14px 0 0;
         background:

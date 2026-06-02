@@ -49,13 +49,23 @@ export function setInfoPanelOpen(open, options = {}) {
 }
 
 let _activeResizeHandler = null;
+let _resizeRafId = null;
 
 export function bindPanelControls(onWindowResize) {
     if (_activeResizeHandler) {
         window.removeEventListener('resize', _activeResizeHandler);
     }
-    _activeResizeHandler = onWindowResize;
-    window.addEventListener('resize', onWindowResize);
+
+    // Debounce the resize handler with requestAnimationFrame to prevent layout thrashing
+    _activeResizeHandler = () => {
+        if (_resizeRafId) return;
+        _resizeRafId = window.requestAnimationFrame(() => {
+            _resizeRafId = null;
+            onWindowResize();
+        });
+    };
+
+    window.addEventListener('resize', _activeResizeHandler);
 
     bindClick('info-panel-toggle', () => {
         cancelMicroDemo('user-input');
