@@ -48,6 +48,7 @@ export function initJourneySelectedCard(deps = {}) {
     subscribeKeyed('journey-selected-card:filter-changed', EVENTS.FILTER_CHANGED, sync);
     subscribeKeyed('journey-selected-card:view-changed', EVENTS.VIEW_CHANGED, sync);
     subscribeKeyed('journey-selected-card:state-reset', EVENTS.STATE_RESET, sync);
+    subscribeKeyed('journey-selected-card:composition-updated', EVENTS.COMPOSITION_UPDATED, sync);
     subscribeKeyed('journey-selected-card:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync);
     subscribeKeyed('journey-selected-card:search-focus-transition-settled', EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, sync);
 }

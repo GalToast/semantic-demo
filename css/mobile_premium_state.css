@@ -176,9 +176,9 @@
     }
 
     html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results.active {
-        flex-basis: 140px;
-        min-height: 140px;
-        max-height: max(140px, calc(40dvh - 120px));
+        flex-basis: clamp(96px, 12dvh, 112px);
+        min-height: clamp(96px, 12dvh, 112px);
+        max-height: clamp(96px, 12dvh, 112px);
     }
 
     html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .info-panel {

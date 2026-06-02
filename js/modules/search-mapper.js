@@ -36,8 +36,15 @@ export function mapSemanticSearchServiceResult(row) {
     const pointIndex = state.pointIndexByLeadId.get(String(row.lead_id));
     if (pointIndex === undefined) return null;
     if (!(Number.isFinite(pointIndex) && pointIndex >= 0 && pointIndex < state.points.length)) return null;
-    const point = state.points[pointIndex];
-    if (!point || !isPointVisible(pointIndex, state.points, state.activeClusterFilter, state.activeFilters)) return null;
+    const sourcePoint = state.points[pointIndex];
+    if (!sourcePoint || !isPointVisible(pointIndex, state.points, state.activeClusterFilter, state.activeFilters)) return null;
+
+    // Prefer row-level name when present (e.g. mock fallback data) so the display name reflects
+    // the original "1845 Solutions" rather than a slug stored in data.dat. We shallow-copy the
+    // point to avoid mutating the global state.
+    const point = (row.name && row.name !== sourcePoint.name)
+        ? { ...sourcePoint, name: row.name }
+        : sourcePoint;
 
     return {
         point,

@@ -85,6 +85,18 @@ describe('search-mapper', () => {
             expect(mapped.address).toBe('An address');
         });
 
+        it('uses row-level display names without mutating global point state', () => {
+            const row = {
+                lead_id: '101',
+                name: '1845 Solutions',
+                score: 0.95
+            };
+            const mapped = mapSemanticSearchServiceResult(row);
+            expect(mapped).not.toBeNull();
+            expect(mapped.point.name).toBe('1845 Solutions');
+            expect(state.points[0].name).toBe('Alpha Corp');
+        });
+
         it('returns null if point is not in pointIndexByLeadId', () => {
             const row = { lead_id: '999', score: 0.95 };
             expect(mapSemanticSearchServiceResult(row)).toBeNull();

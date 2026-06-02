@@ -42,6 +42,7 @@ export function initJourneyCompassAdapter({ switchView } = {}) {
     subscribeKeyed('journey-compass:filter-changed', EVENTS.FILTER_CHANGED, sync);
     subscribeKeyed('journey-compass:view-changed', EVENTS.VIEW_CHANGED, sync);
     subscribeKeyed('journey-compass:state-reset', EVENTS.STATE_RESET, sync);
+    subscribeKeyed('journey-compass:composition-updated', EVENTS.COMPOSITION_UPDATED, sync);
     subscribeKeyed('journey-compass:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync);
 }
 

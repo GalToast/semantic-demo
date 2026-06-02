@@ -125,6 +125,10 @@ checks.push({
     pass: getBusinessNamePresentation('123456_acme-llc').display === 'Acme LLC'
 });
 checks.push({
+    name: 'getBusinessNamePresentation: legitimate leading-number business name preserved',
+    pass: getBusinessNamePresentation('1845 Solutions').display === '1845 Solutions'
+});
+checks.push({
     name: 'getBusinessNamePresentation: unknown on null input',
     pass: getBusinessNamePresentation(null).display === 'Unknown business'
 });

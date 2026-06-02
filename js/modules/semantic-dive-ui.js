@@ -55,6 +55,7 @@ export function initSemanticDiveUiSubscriptions() {
     subscribeKeyed('semantic-dive-ui:filter-changed', EVENTS.FILTER_CHANGED, sync);
     subscribeKeyed('semantic-dive-ui:view-changed', EVENTS.VIEW_CHANGED, sync);
     subscribeKeyed('semantic-dive-ui:state-reset', EVENTS.STATE_RESET, sync);
+    subscribeKeyed('semantic-dive-ui:composition-updated', EVENTS.COMPOSITION_UPDATED, sync);
     subscribeKeyed('semantic-dive-ui:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync);
     subscribeKeyed('semantic-dive-ui:search-focus-transition-settled', EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, sync);
 }

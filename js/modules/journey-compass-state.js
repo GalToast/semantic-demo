@@ -104,14 +104,23 @@ export function getJourneyCompassState() {
     }
 
     if (hasSearch) {
+        const summary = state.currentSearchSummary;
+        const resultCount = summary?.resultIndices?.length ?? 0;
+        const hasNoResults = !isSearching && summary && resultCount === 0;
         return {
             phase: 'search',
             kicker: isSearching ? 'Searching the Field' : `Search | ${queryLabel}`,
-            title: isSearching ? `Finding ${queryLabel}...` : `${queryLabel} opened a trail`,
-            note: state.currentSearchSummary
-                ? 'The first strong match is the anchor. Center any record to enter its local neighborhood.'
-                : 'Looking for semantic anchors before gathering the trail around your query.',
-            primaryAction: Number.isFinite(state.currentSearchSummary?.anchorIndex)
+            title: isSearching
+                ? `Finding ${queryLabel}...`
+                : hasNoResults
+                    ? `No results for ${queryLabel}`
+                    : `${queryLabel} opened a trail`,
+            note: isSearching
+                ? 'Looking for semantic anchors before gathering the trail around your query.'
+                : hasNoResults
+                    ? 'Try a broader term or one of the suggested high-signal categories below.'
+                    : 'The first strong match is the anchor. Center any record to enter its local neighborhood.',
+            primaryAction: Number.isFinite(summary?.anchorIndex)
                 ? { label: 'Center on anchor', action: 'center-anchor' }
                 : { label: 'Search', action: 'focus-search' },
             secondaryAction: { label: 'Map', action: 'open-map' },

@@ -29,7 +29,13 @@ const HTML_PATH = path.join(ROOT, 'vector-explorer-polished.html');
 const FOCUS_RENDERER_PATH = path.join(ROOT, 'js/modules/focus-stage-renderer.js');
 const UI_RENDERERS_PATH = path.join(ROOT, 'js/modules/ui-renderers.js');
 const JOURNEY_SELECTED_CARD_PATH = path.join(ROOT, 'js/modules/journey-selected-card.js');
+const JOURNEY_FOCUS_UI_PATH = path.join(ROOT, 'js/modules/journey-focus-ui.js');
+const JOURNEY_COMPASS_PATH = path.join(ROOT, 'js/modules/journey-compass-controller.js');
+const JOURNEY_ROUTE_TRACE_PATH = path.join(ROOT, 'js/modules/journey-route-trace.js');
 const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.js');
+const EVENT_BUS_PATH = path.join(ROOT, 'js/modules/event-bus.js');
+const MAP_STATE_PATH = path.join(ROOT, 'js/modules/map-state.js');
+const SEMANTIC_DIVE_UI_PATH = path.join(ROOT, 'js/modules/semantic-dive-ui.js');
 const MOBILE_PREMIUM_PATH = path.join(ROOT, 'css/mobile_premium.css');
 const MAP_SUMMARY_CSS_PATH = path.join(ROOT, 'css/mobile_premium_map_summary.css');
 const MOBILE_SURFACES_PATH = path.join(ROOT, 'css/mobile_premium_surfaces.css');
@@ -140,6 +146,7 @@ function testRenderPathCallsVariantSync() {
   const uiSrc = read(UI_RENDERERS_PATH);
   const selectedSrc = read(JOURNEY_SELECTED_CARD_PATH);
   const lifecycleSrc = read(LIFECYCLE_PATH);
+  const eventBusSrc = read(EVENT_BUS_PATH);
 
   assert(
     /export\s+function\s+syncSelectedCardContentVariant\s*\(/.test(uiSrc),
@@ -152,15 +159,30 @@ function testRenderPathCallsVariantSync() {
   );
 
   assert(
-    /function\s+syncSharedCompositionUi\s*\([^)]*\)\s*{[\s\S]*syncSelectedCardContentVariant\s*\(\s*state\.selectedPoint\s*\|\|\s*null\s*\)/.test(lifecycleSrc) &&
-      /function\s+syncSharedCompositionUi\s*\([^)]*\)\s*{[\s\S]*syncFocusStage\s*\(\s*state\.selectedPoint\s*\|\|\s*null\s*\)/.test(lifecycleSrc),
-    'lifecycle.js must refresh the selected-card content variant after panelSurface changes'
+    /COMPOSITION_UPDATED:\s*['"]COMPOSITION_UPDATED['"]/.test(eventBusSrc),
+    'event-bus.js must expose COMPOSITION_UPDATED for composition state fanout'
   );
   assert(
-    /import\s*{\s*updateSelectedCardHeading\s*,\s*syncSelectedCardContentVariant\s*}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(lifecycleSrc) &&
-      /import\s*{\s*syncSemanticDiveUi\s*}\s*from\s*['"]\.\/semantic-dive-ui\.js['"]/.test(lifecycleSrc),
-    'lifecycle.js must import the UI sync functions it calls during composition refresh'
+    /function\s+syncSharedCompositionUi\s*\([^)]*\)\s*{[\s\S]*publish\s*\(\s*EVENTS\.COMPOSITION_UPDATED\s*\)/.test(lifecycleSrc),
+    'lifecycle.js must publish COMPOSITION_UPDATED after panelSurface changes'
   );
+
+  const compositionSubscribers = [
+    [JOURNEY_SELECTED_CARD_PATH, 'journey-selected-card'],
+    [JOURNEY_FOCUS_UI_PATH, 'focus-neighbor-rail'],
+    [JOURNEY_COMPASS_PATH, 'journey-compass'],
+    [JOURNEY_ROUTE_TRACE_PATH, 'route-trace'],
+    [MAP_STATE_PATH, 'map-state'],
+    [SEMANTIC_DIVE_UI_PATH, 'semantic-dive-ui'],
+  ];
+
+  for (const [filePath, keyPrefix] of compositionSubscribers) {
+    const src = read(filePath);
+    assert(
+      new RegExp(`subscribeKeyed\\s*\\(\\s*['"]${keyPrefix}:composition-updated['"]\\s*,\\s*EVENTS\\.COMPOSITION_UPDATED`).test(src),
+      `${path.basename(filePath)} must subscribe to COMPOSITION_UPDATED so panelSurface composition changes cannot leave stale UI`
+    );
+  }
 
   console.log('  OK - render and composition paths keep content variant synchronized');
 }

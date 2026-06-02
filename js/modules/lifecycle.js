@@ -2,12 +2,7 @@
 import { state } from '../state.js';
 import { publish, subscribe, EVENTS } from './event-bus.js';
 import {
-    clearMobileRouteFieldPeek as adapter_clearMobileRouteFieldPeek,
-    syncRouteDirectorState as adapter_syncRouteDirectorState,
-    updateFocusNeighborRail as adapter_updateFocusNeighborRail,
-    refreshMapMarkers as adapter_refreshMapMarkers,
-    refreshMapRouteEmbodiment as adapter_refreshMapRouteEmbodiment,
-    refreshRouteTraceOverlay as adapter_refreshRouteTraceOverlay
+    clearMobileRouteFieldPeek as adapter_clearMobileRouteFieldPeek
 } from './composition-adapter.js';
 import {
     setLoadingPhase,
@@ -40,7 +35,6 @@ import {
     setSearchPanelState,
     clearSearch
 } from './search-state.js';
-import { updateSelectedCardHeading, syncSelectedCardContentVariant } from './ui-renderers.js';
 import {
     focusOnNode
 } from './camera-controls.js';
@@ -51,9 +45,6 @@ import {
     openLegendPanel,
     restoreLegendCollapsedPanel
 } from './legend-ui.js';
-import {
-    syncSemanticDiveUi
-} from './semantic-dive-ui.js';
 import {
     hideSummaryCard as hideSummaryCardImpl
 } from './semantic-guide.js';
@@ -253,17 +244,9 @@ function hasSearchIntent() {
         || Boolean(document.querySelector('.search-container.has-query .search-results.active'));
 }
 
-function syncSharedCompositionUi(reason) {
-    adapter_syncRouteDirectorState(reason);
-    updateSelectedCardHeading();
-    syncSelectedCardContentVariant(state.selectedPoint || null);
-    syncFocusStage(state.selectedPoint || null);
-    syncSemanticDiveUi();
-    updateJourneyCompass();
-    adapter_updateFocusNeighborRail();
-    adapter_refreshMapMarkers();
-    adapter_refreshMapRouteEmbodiment();
-    adapter_refreshRouteTraceOverlay({ reason });
+function syncSharedCompositionUi() {
+    // Composition components are now synchronized via Event Bus subscriptions.
+    publish(EVENTS.COMPOSITION_UPDATED);
 }
 
 export function refreshCompositionState() {

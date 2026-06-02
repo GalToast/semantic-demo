@@ -133,7 +133,6 @@ export function initKeyboardShortcutsHint() {
     // Wire "?" toolbar button if it exists
     const helpBtn = document.getElementById('btn-keyboard-help');
     if (helpBtn) {
-        // console.log('[keyboard-help] Binding click listener to #btn-keyboard-help');
         helpBtn.setAttribute('aria-controls', 'keyboard-hint-panel');
         helpBtn.setAttribute('aria-expanded', 'false');
         helpBtn.setAttribute('aria-pressed', 'false');
@@ -142,17 +141,13 @@ export function initKeyboardShortcutsHint() {
         helpBtn.onclick = null;
 
         helpBtn.addEventListener('click', () => {
-            // console.log('[keyboard-help] Help button clicked, current visible:', panel.classList.contains('visible'));
             if (panel.classList.contains('visible')) {
                 closePanel();
             } else {
                 openPanel(document.activeElement || helpBtn);
             }
         }, { capture: true });
-    } else {
-        // console.warn('[keyboard-help] #btn-keyboard-help not found in DOM during init');
     }
-
 }
 
 export function showKeyboardShortcutsHint() {

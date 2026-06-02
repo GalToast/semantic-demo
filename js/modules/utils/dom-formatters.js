@@ -66,7 +66,6 @@ export function getBusinessNamePresentation(name) {
         .trim()
         .replace(/^Lead\s+Profile:\s*/i, '');
     raw = raw.replace(/^\d{3,6}[-_]+/, '');
-    raw = raw.replace(/^\d{1,3}\s+(?=[A-Za-z])/, '');
     if (!raw) {
         return { display: 'Unknown business', raw: null, showRaw: false };
     }

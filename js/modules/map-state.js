@@ -72,6 +72,7 @@ export function initMapStateSubscriptions() {
     subscribeKeyed('map-state:view-changed', EVENTS.VIEW_CHANGED, sync);
     subscribeKeyed('map-state:state-reset', EVENTS.STATE_RESET, sync);
     subscribeKeyed('map-state:filter-changed', EVENTS.FILTER_CHANGED, sync);
+    subscribeKeyed('map-state:composition-updated', EVENTS.COMPOSITION_UPDATED, sync);
     subscribeKeyed('map-state:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync);
 }
 

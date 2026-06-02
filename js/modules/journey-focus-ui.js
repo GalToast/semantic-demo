@@ -62,6 +62,7 @@ export function initFocusNeighborRailSubscriptions() {
     subscribeKeyed('focus-neighbor-rail:filter-changed', EVENTS.FILTER_CHANGED, sync);
     subscribeKeyed('focus-neighbor-rail:view-changed', EVENTS.VIEW_CHANGED, sync);
     subscribeKeyed('focus-neighbor-rail:state-reset', EVENTS.STATE_RESET, sync);
+    subscribeKeyed('focus-neighbor-rail:composition-updated', EVENTS.COMPOSITION_UPDATED, sync);
     subscribeKeyed('focus-neighbor-rail:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync);
 }
 

@@ -97,6 +97,16 @@ describe('journey-compass-state', () => {
             expect(compassState.title).toContain('test');
         });
 
+        it('should return no-results search copy when a completed search has no matches', () => {
+            withStateMutation(() => {
+                state.currentSearchSummary = { query: 'void search', resultIndices: [] };
+            });
+            const compassState = journeyCompassState.getJourneyCompassState();
+            expect(compassState.phase).toBe('search');
+            expect(compassState.title).toBe('No results for "void search"');
+            expect(compassState.note).toContain('broader term');
+        });
+
         it('should return focus state when hasFocus', () => {
             state.focusedNode = 0;
             const compassState = journeyCompassState.getJourneyCompassState();

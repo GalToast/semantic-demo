@@ -262,9 +262,9 @@ export async function fetchSemanticSearchResults(query, signal, options = {}) {
 
                 const isExplicitEmpty = /^(none|empty|xj9k2l|nil|void|error)$/i.test(trimmedQuery);
                 const mockResults = isExplicitEmpty ? [] : [
-                    { lead_id: "1", score: 0.98, provenance: "Mock", thread_type: "Search match" },
-                    { lead_id: "2", score: 0.92, provenance: "Mock", thread_type: "Search match" },
-                    { lead_id: "3", score: 0.85, provenance: "Mock", thread_type: "Search match" }
+                    { lead_id: "1", name: "1845 Solutions", score: 0.98, provenance: "Mock", thread_type: "Search match" },
+                    { lead_id: "2", name: "Hampton Inn And Suites", score: 0.92, provenance: "Mock", thread_type: "Search match" },
+                    { lead_id: "3", name: "Northern Tool And Equipment", score: 0.85, provenance: "Mock", thread_type: "Search match" }
                 ];
 
                 payload = {
