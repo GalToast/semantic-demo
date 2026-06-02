@@ -25,10 +25,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="semantic-demo.css?v=ea9e2c00ef92">
+    <link rel="stylesheet" href="semantic-demo.css?v=d08894a63bea">
     <link rel="stylesheet" href="vector-explorer-pandora.css?v=99a7d5032027">
-    <link rel="stylesheet" href="css/mobile_premium.css?v=83167949492c">
-    <link rel="stylesheet" href="css/modules/focus_stage.css?v=2098d36653e2">
+    <link rel="stylesheet" href="css/mobile_premium.css?v=6395e110d5ba">
+    <link rel="stylesheet" href="css/modules/focus_stage.css?v=2fb618eeaf75">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>M</text></svg>">
 </head>
 <body>
@@ -503,38 +503,6 @@
                 </div>
                 <button class="focus-stage-journey-btn" id="btn-focus-next" type="button" aria-label="Next path stop"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg></button>
             </div>
-            <div class="focus-stage-neighbors" id="focus-stage-neighbors" aria-live="off">
-                <div class="focus-stage-neighbor-header">
-                    <div class="focus-stage-neighbor-kicker">Nearby Stops</div>
-                    <div class="focus-stage-neighbor-count" id="focus-stage-neighbor-count">0 visible neighbors</div>
-                </div>
-                <div class="focus-stage-neighbor-list" id="focus-stage-neighbor-list"></div>
-            </div>
-            <div class="focus-stage-inside-status" id="focus-stage-inside-status" role="status" aria-live="polite" aria-atomic="false" aria-hidden="true">
-                <span class="focus-stage-inside-pulse" aria-hidden="true"></span>
-                <span class="focus-stage-inside-status-copy" id="focus-stage-inside-status-copy">Step into this neighborhood to follow related businesses.</span>
-            </div>
-            <div class="focus-stage-inside-controls" id="focus-stage-inside-controls" aria-hidden="true">
-                <button class="focus-stage-inside-btn" id="btn-inside-next" type="button">Next Stop</button>
-                <button class="focus-stage-inside-btn secondary" id="btn-inside-map" type="button" aria-label="Project this trail onto the map">Map</button>
-                <button class="focus-stage-inside-btn secondary" id="btn-inside-county" type="button" aria-label="Exit Step Inside and return to County View">County</button>
-            </div>
-            <div class="focus-thread-inspector" id="focus-thread-inspector" aria-hidden="true">
-                <div class="focus-thread-inspector-kicker">Connection Preview</div>
-                <div class="focus-thread-inspector-title" id="focus-thread-inspector-title">Select a nearby stop</div>
-                <div class="focus-thread-inspector-copy" id="focus-thread-inspector-copy">Click a neighbor below to preview why it belongs here, then pin or follow.</div>
-                <div class="focus-thread-inspector-meta" id="focus-thread-inspector-meta">Preview connection</div>
-                <div class="focus-thread-inspector-actions">
-                    <button class="focus-thread-inspector-btn" id="btn-thread-pin" type="button" disabled>Pin</button>
-                    <button class="focus-thread-inspector-btn primary" id="btn-thread-follow" type="button" disabled>Follow</button>
-                    <button class="focus-thread-inspector-btn secondary" id="btn-thread-clear" type="button" disabled>Clear</button>
-                </div>
-            </div>
-            <div class="trail-controls" id="trail-controls" aria-label="Connection path controls">
-                <button class="action-btn" id="btn-prev-node" type="button" aria-label="Go to previous path stop" disabled>Prev Stop</button>
-                <button class="action-btn" id="btn-next-node" type="button" aria-label="Go to next path stop" disabled>Next Stop</button>
-            </div>
-            <div class="trail-context" id="trail-context"></div>
         </div>
     </section>
     
@@ -584,7 +552,7 @@
         }
     }
     </script>
-    <script type="module" src="dist/bundle.js?v=e3a087e8704e"></script>
+    <script type="module" src="dist/bundle.js?v=7efc2778c2e2"></script>
 
     <div id="semantic-summary-card" class="summary-card hidden glass-heavy" role="region" aria-labelledby="summary-card-title-text" aria-hidden="true" hidden>
         <div class="summary-header">
@@ -615,7 +583,7 @@
     <div class="trail-review-overlay" id="trail-review-overlay" role="dialog" aria-modal="false" aria-labelledby="trail-review-title" hidden aria-hidden="true">
         <div class="trail-review-header">
             <h3 id="trail-review-title">Semantic Connection Path</h3>
-            <button class="trail-review-close" type="button" aria-label="Close trail review" onclick="window._closeTrailReview()">×</button>
+            <button class="trail-review-close" id="btn-close-trail-review" type="button" aria-label="Close trail review">×</button>
         </div>
         <div class="trail-review-content" id="trail-review-list"></div>
     </div>

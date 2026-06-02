@@ -320,7 +320,12 @@ export function setSemanticLaneUiState(laneState, options = {}) {
         const focusOwnsRail = doc?.body?.dataset?.graphContext === 'focus-search'
             || doc?.body?.dataset?.graphContext === 'focus'
             || hasFocusedRecord;
-        if (laneState === 'healthy' || focusOwnsRail) {
+        const hasVisibleResults = Boolean(state.currentSearchSummary);
+        // Hide the assist card once results are visible: the pill at the top of
+        // the search surface already communicates the degraded lane state, and
+        // stacking the inline card above results paints over the first result
+        // row on narrow viewports.
+        if (laneState === 'healthy' || focusOwnsRail || hasVisibleResults) {
             assistEl.hidden = true;
             assistEl.style.display = 'none';
             assistEl.dataset.state = 'idle';
@@ -330,16 +335,11 @@ export function setSemanticLaneUiState(laneState, options = {}) {
             assistEl.dataset.state = 'degraded';
             const assistCopyEl = doc?.getElementById?.('semantic-lane-assist-copy') || null;
             const assistMetaEl = doc?.getElementById?.('semantic-lane-assist-meta') || null;
-            const hasVisibleResults = Boolean(state.currentSearchSummary);
             if (assistCopyEl) {
-                assistCopyEl.textContent = hasVisibleResults
-                    ? 'Results are showing while the live readiness check recovers in the background.'
-                    : 'Semantic search readiness is temporarily unavailable. The visualization remains available while recovery checks continue in the background.';
+                assistCopyEl.textContent = 'Semantic search readiness is temporarily unavailable. The visualization remains available while recovery checks continue in the background.';
             }
             if (assistMetaEl) {
-                assistMetaEl.textContent = hasVisibleResults
-                    ? 'Results available; background readiness check is degraded.'
-                    : 'Offline or blocked request detected just now.';
+                assistMetaEl.textContent = 'Offline or blocked request detected just now.';
             }
         }
     }
