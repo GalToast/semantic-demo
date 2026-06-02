@@ -47,4 +47,26 @@ export class ResourceTracker {
         }
         this.resources.clear();
     }
+
+    /**
+     * Dispose a single object and all of its GPU resources, without keeping
+     * a tracker instance around. Use for one-off teardowns; for repeated
+     * tracking across a lifecycle, instantiate a ResourceTracker instead.
+     * @param {THREE.Object3D} object
+     */
+    static disposeOne(resource) {
+        if (!resource) return;
+        const tracker = new ResourceTracker();
+        tracker.track(resource);
+        tracker.dispose();
+    }
+}
+
+/**
+ * Convenience export for one-off disposal. Equivalent to
+ * `ResourceTracker.disposeOne(object)`.
+ * @param {THREE.Object3D} object
+ */
+export function disposeObject3D(object) {
+    ResourceTracker.disposeOne(object);
 }

@@ -53,11 +53,10 @@ export function renderSelectedMatchPanel(...args) {
     return focusRendererModule.renderSelectedMatchPanel(...args);
 }
 export function renderSelectedActionRow(...args) {
-    // Satisfies window-bridge-gaps-contract.mjs static analysis
-    if (typeof document !== 'undefined') {
-        const _marker = document.getElementById('selected-action-row');
-    }
     return focusRendererModule.renderSelectedActionRow(...args);
+}
+export function syncSelectedCardContentVariant(...args) {
+    return focusRendererModule.syncSelectedCardContentVariant(...args);
 }
 export function getInterestingBusinessNote(...args) { return focusRendererModule.getInterestingBusinessNote(...args); }
 export function buildSelectedMatchNarrative(...args) { return focusRendererModule.buildSelectedMatchNarrative(...args); }

@@ -4,6 +4,333 @@ description: Semantic demo deployed bundles v112-v125 to mccullough.cloud
 type: project
 ---
 
+# Deploy Status (2026-06-01)
+
+## Bug Sweep 26 (2026-06-01) — Direct audit of uncommitted diff
+
+**Scope:** Read-only audit of 27 uncommitted-modified files (8 JS modules + 1 worker + 3 CSS + tests + data). Lint baseline clean (0 errors). Visual screenshot pass skipped — http server died, chrome-devtools MCP has a stuck prior session.
+
+**Fix status (2026-06-01, this pass):**
+- ✅ **Bug 1 (CRITICAL) FIXED** — `map-flattening-layout.js` now reads `state.rawPositionsBuffer` when available
+- ✅ **Bug 2 (MEDIUM) FIXED** — `loading-ui.js` imports `escapeHtml` from `dom-formatters.js`
+- ✅ **Bug 3 (MEDIUM) FIXED** — `ui-renderers.js` `_marker` dead code removed (and the sister block in `renderSelectedActionRow`)
+- ✅ **Regression test ADDED** — `tests/map-flattening-raw-buffer-contract.mjs` (7/7 checks pass); wired into `contracts.manifest.json` under the `smoke` group
+- 🟡 **Bug 4 (MEDIUM) RECLASSIFIED** — NOT a bug; aligns with the documented `hasFocusedTrailRecord = selectedPoint OR focusedNode !== null OR focusedIndex !== null` model. Same pattern as `keyboard-help.js:200`. Leaving as-is.
+- 🟡 **Bug 5 (LOW) RECLASSIFIED — ALREADY FIXED** — `state.dataLoadAttempt` guard is already in `data-loader.js:149` (added in commit `cc2c576` alongside the buffer refactor). The fix I suggested in this report is redundant.
+- 🟡 **Bug 6 (LOW) RECLASSIFIED** — design debt, not a live bug. The new `setSurfaceHidden` and the existing `is-empty` class toggling in `journey-selected-card.js` produce the same result via different mechanisms; both compose correctly because inline `style.display` wins over CSS rules.
+- 🟡 **Bug 7 (LOW) RECLASSIFIED — ALREADY CLEANER** — The current diff is a *cleanup*, not a regression: the new code replaces `aria-hidden + inert` with `hidden + inert` (no triple toggle). My initial Finding #7 was based on a misread of the diff.
+- 🟢 Bugs 8–14 left in report for follow-up; not blocking
+
+**Verification after fixes:**
+- `npm run lint` — 0 errors
+- `node tests/map-flattening-raw-buffer-contract.mjs` — 7/7 PASS (new)
+- `node tests/map-focus-search-content-owner-contract.mjs` — ALL TESTS PASSED (6/6 assertions)
+- `node tests/window-bridge-gaps-contract.mjs` — ALL TESTS PASSED (5 gaps, including the contracts that the removed `_marker` was claimed to satisfy)
+- `npm run build` — succeeded, `dist/bundle.js` 446.0kb (was 454.4kb; ~8kb lighter after dead-code removal)
+- **Visual pass (playwright 1440x900 + 390x844, local):**
+  - Map view shows correct county geography (Lehigh River outline visible) with 8,406 points distributed across bounds — Bug #1 fix verified ✅
+  - Galaxy view, desktop search "coffee", mobile search "coffee" all render correctly — no regressions
+
+**Live deploy (2026-06-01, ~20:06 UTC):**
+- `npm run deploy:dryrun` — plan verified, no real changes
+- `npm run deploy` — succeeded (exit 0)
+  - `dist/bundle.js` 471129 → 456624 bytes on server
+  - Cache buster `?v=008846ec3429` (CSS + JS) live
+  - Backup at `backups/deploy-20260601-200609/`
+- **Live URL re-verified (playwright 1440x900):** map view shows the correct Montgomery County outline with the Lehigh River and 8,406 distributed points. Fix is live in production. ✅
+
+**Follow-up verification (2026-06-01, post-deploy):**
+- ✅ **Bug 8 (opacity tuning, ui-presentation.js) — VISUALLY VERIFIED** — Coffee → focus anchor → step inside all render with appropriate point density and a clear anchor halo. The dimmer focus/inside values hold up: the anchor stands out, surrounding context is visible but subordinate. No regression.
+- ✅ **Bug 9 (map-idle toolbar+compass, mobile_premium_chrome.css) — VISUALLY VERIFIED** — `?view=map&nodemo=1` on both 390x844 and 1440x900 shows no journey-compass and no toolbar/legend/field-guide buttons in the map-idle state. The new `data-panel-surface="map-idle"` rule correctly extends the hide-list to that surface. Clean.
+- ✅ **Bug 10 (disposeObject3D) — REFACTORED** — moved the implementation onto a `ResourceTracker.disposeOne(object)` static method; the `disposeObject3D` free function now delegates to it. More honest about scope: tracker-style lifecycle vs. one-off teardown are now visibly distinct API shapes. All three call sites unchanged (still call `disposeObject3D`).
+
+**Files modified this sweep:**
+- `js/modules/map-flattening-layout.js` (Bug 1 fix)
+- `js/modules/loading-ui.js` (Bug 2 fix)
+- `js/modules/ui-renderers.js` (Bug 3 fix in two functions)
+- `js/modules/resource-tracker.js` (Bug 10 refactor: static method)
+- `tests/map-flattening-raw-buffer-contract.mjs` (new regression test, 7 checks)
+- `tests/contracts.manifest.json` (wired new test into the `smoke` group)
+- `dist/bundle.js` (rebuilt, 447.6kb after refactor)
+
+**Final state:**
+- 3 real bugs fixed (#1, #2, #3)
+- 1 refactor applied (#10)
+- 1 regression test added (7/7 PASS, wired into smoke group)
+- 4 findings reclassified as not-bugs after re-reading the code (#4, #5, #6, #7)
+- 3 findings visually verified post-deploy (#8, #9, and #1 itself)
+- Live URL re-verified at https://mccullough.cloud/semantic-demo/vector-explorer-polished.html
+- 0 lint errors, 0 console errors in any of the verified views
+
+**"Should it be wired in?" check (Fred's prompt):**
+- `_marker` in `ui-renderers.js` was suspected dead. **Verified dead** by reading both contracts: `window-bridge-gaps-contract.mjs` only checks for `getRouteLayerOrigin`, `syncClusterSectionState`, `hydrateLeadContext`, `applySearchGlowVisualState`, `updateSelectedCardHeading`, `focusOnNode` — none related to `syncSelectedCardContentVariant` or `selected-map-summary`. `map-focus-search-content-owner-contract.mjs:145-146` only checks for function declaration + re-export, no DOM access. The comment "Satisfies window-bridge-gaps-contract.mjs static analysis" is incorrect — the contract doesn't require this. Removed.
+- The pattern was duplicated in `renderSelectedActionRow` (looked for `#selected-action-row`); same comment, same dead. Removed in the same fix.
+
+### Bug 1 (CRITICAL) — Map view stacks all 8,406 points at origin ✅ FIXED
+
+**File:** `js/modules/map-flattening-layout.js:11-13, 22-26`
+
+The recent `data-worker.js` refactor (commit `cc2c576`, "chore: add raw position/cluster buffers to 3D engine state") **stopped emitting `x`, `y`, `z` on point objects** — the positions are now in `state.rawPositionsBuffer` (Float32Array) instead. Three consumers were correctly refactored:
+- `data-loader.js:67-72` writes `state.rawPositionsBuffer`
+- `three-node-manager.js:289-305` has a `hasRawBuffers` branch that reads from the buffer
+- `geo-data.js:137-152` has a `hasRawBuffer` branch in `getPosition()`
+
+**`map-flattening-layout.js` was missed.** It still read `point.x, point.y` directly. With `point.x === undefined` for every record, `Number.isFinite(undefined)` was `false`, so `rawX = 0`. **Every point's `targetPosition` collapsed to `(-centerX, -centerY, -0.15)`.** In map view, all 8,406 nodes stacked at one point at the county center, z=−0.15. No labels, no neighborhood separation, no spatial reads.
+
+`view-controller.js:125` calls `applyMapFlatteningLayout(true)` when entering map view, and `:166` calls `(false)` to restore from `state.originalPositions[i]` — so exiting map view fixed itself. Damage was only during map view.
+
+**Fix applied:** Mirrored the `geo-data.js` pattern. `map-flattening-layout.js` now reads `state.rawPositionsBuffer[i*3]` / `[i*3+1]` when the buffer is available, falls back to `point.x`/`point.y` otherwise.
+
+**Verification path (still owed):** Visual screenshot at `?view=map&nodemo=1` — all nodes should distribute across county bounds, not stack at one point. Worth adding a unit test that asserts `state.targetPositions` has non-zero variance after `applyMapFlatteningLayout(true)`.
+
+---
+
+### Bug 2 (MEDIUM) — `applyLoadingErrorState` re-implements `escapeHtml` instead of importing ✅ FIXED
+
+**File:** `js/modules/loading-ui.js:118-145`
+
+The new `applyLoadingErrorState` function defined a local `escape` helper that duplicated `escapeHtml` from `./utils/dom-formatters.js`. The misleading comment "Fallback to escapeHtml if not provided globally or locally" implied it tried the global first — it didn't, it always used the local. Risk: future changes to `escapeHtml` (e.g., adding a new entity, hardening against template-injection edge cases) wouldn't propagate here. The original XSS pattern in `app.js:280` was specifically hardened to use `escapeHtml` for this reason (per `DEPLOY_STATUS.md` Bug Sweep 18).
+
+**Fix applied:** Added `import { escapeHtml } from './utils/dom-formatters.js';` and replaced `escape(...)` with `escapeHtml(...)` in the template literal. Removed the local `escape` definition and the misleading comment.
+
+---
+
+### Bug 3 (MEDIUM) — Useless `_marker` dead code in `ui-renderers.js` re-exports ✅ FIXED (with sister block)
+
+**File:** `js/modules/ui-renderers.js` (original lines 55-67)
+
+```js
+export function renderSelectedActionRow(...args) {
+    // Satisfies window-bridge-gaps-contract.mjs static analysis
+    if (typeof document !== 'undefined') {
+        const _marker = document.getElementById('selected-action-row');
+    }
+    return focusRendererModule.renderSelectedActionRow(...args);
+}
+export function syncSelectedCardContentVariant(...args) {
+    // Satisfies window-bridge-gaps-contract.mjs static analysis
+    if (typeof document !== 'undefined') {
+        const _marker = document.getElementById('selected-map-summary');
+    }
+    return focusRendererModule.syncSelectedCardContentVariant(...args);
+}
+```
+The `_marker` was assigned but never used in both functions. The comment was wrong on both counts:
+
+- `window-bridge-gaps-contract.mjs` only checks for: `getRouteLayerOrigin`, `syncClusterSectionState`, `hydrateLeadContext`, `applySearchGlowVisualState`, `updateSelectedCardHeading`, `focusOnNode`. None related to `syncSelectedCardContentVariant`, `renderSelectedActionRow`, or their target elements.
+- `map-focus-search-content-owner-contract.mjs:145-146` only checks that the function is **declared and re-exported** — no DOM access required.
+
+**Fred's check: "if the code is dead, let's make sure we check if it should be wired in."** Verified against both contracts. Neither requires the DOM read. The pattern was a copy-paste of an apparently-comforting no-op block. Should not be wired in.
+
+**Fix applied:** Removed both `if` blocks in `renderSelectedActionRow` and `syncSelectedCardContentVariant`. Both functions are now clean delegations:
+```js
+export function renderSelectedActionRow(...args) {
+    return focusRendererModule.renderSelectedActionRow(...args);
+}
+export function syncSelectedCardContentVariant(...args) {
+    return focusRendererModule.syncSelectedCardContentVariant(...args);
+}
+```
+
+---
+
+### Bug 4 (MEDIUM) — `syncSemanticDiveUi` `hasFocus` widened 🟡 RECLASSIFIED — NOT A BUG
+
+**File:** `js/modules/semantic-dive-ui.js:48-50`
+
+Old:
+```js
+const hasFocus = state.focusedNode !== null && state.focusedNode !== undefined;
+```
+New:
+```js
+const hasFocus = state.focusedNode !== null && state.focusedNode !== undefined
+    || Number.isFinite(state.navState?.focusedIndex);
+```
+
+**Reclassified after re-reading the state model.** The documented contract at `docs/semantic-demo-state-transition-table.md:363` says:
+> `hasFocusedTrailRecord = selectedPoint OR focusedNode !== null OR focusedIndex !== null`
+
+And `js/modules/keyboard-help.js:200` already uses the same `||` pattern:
+```js
+const hasFocusState = state.focusedNode !== null || state.navState?.focusedIndex !== null;
+```
+
+The new `semantic-dive-ui.js` code is **aligning `hasFocus` with the documented state model** — `focusedIndex` is supposed to be a valid signal. Using `Number.isFinite(...)` is even stricter than `keyboard-help.js`'s `!== null` (good). Leaving as-is.
+
+**No action required.** If we want to reduce future divergence, the cleanup is to make `state.focusedNode` a derived getter from `state.navState.focusedIndex` so the two can't diverge. Out of scope for this sweep.
+
+---
+
+### Bug 5 (LOW) — `data-loader.js` main-thread fallback has no requestId cancellation
+
+**File:** `js/modules/data-loader.js:84-145`
+
+The worker path (data-worker.js) now correctly cancels stale requests via `_activeRequestId` guards. The fallback path (data-loader.js:84-145) has no equivalent — if `loadData()` is called rapidly twice in a row, both fetches complete and the second `withStateMutation` wins, but the first may overwrite after if its JSON parse is slower. Race risk is low (loadData is only called once at startup) but real.
+
+**Fix:** Increment `state.dataLoadAttempt` (already done at line 59) and check it before committing the fallback's `withStateMutation`:
+```js
+withStateMutation(() => {
+    if (state.dataLoadAttempt !== attemptNumber) return;  // stale
+    state.points = points;
+    ...
+});
+```
+
+---
+
+### Bug 6 (LOW) — `setSurfaceHidden` doesn't toggle `.is-empty` class on `.selected-card` 🟡 RECLASSIFIED — DESIGN DEBT, NOT A BUG
+
+**File:** `js/modules/focus-stage-renderer.js:170-179`
+
+The new `syncSelectedCardContentVariant` uses `el.hidden = true/false` + inline `el.style.display` to show/hide `#selected-empty` and `#selected-details`. The HTML at `vector-explorer-polished.html:366` has `<div class="selected-card is-empty">`, and the CSS at `css/clusters.css:113-134` uses `.selected-card.is-empty` to show/hide `.selected-empty` vs `.selected-details`.
+
+**Reclassified after re-checking the systems.** Two mechanisms now coexist:
+- `journey-selected-card.js:244, 290, 298` toggles `.is-empty` on the **parent** `#selected-card`
+- `focus-stage-renderer.js:170-179` toggles `hidden` + inline `style.display` on the **children** `#selected-empty` / `#selected-details`
+
+**They compose correctly** because the renderer writes inline `style.display`, which always wins over the CSS rules at `clusters.css:113-134`. The CSS rules are now redundant but harmless. Today: no live bug.
+
+**No action required.** Cleanup if/when someone wants to remove the `.is-empty` class entirely: delete the CSS rules in `clusters.css:113-134` and remove the `is-empty` toggles in `journey-selected-card.js`, since the renderer's hidden-attribute pattern is the new source of truth.
+
+---
+
+### Bug 7 (LOW) — Redundant `hidden` + `aria-hidden` + `inert` triple-toggle
+
+**File:** `js/modules/semantic-dive-ui.js:97-108`
+
+```js
+if (insideControls) {
+    insideControls.hidden = !active;
+    insideControls.setAttribute('aria-hidden', active ? 'false' : 'true');
+    insideControls.inert = !active;
+}
+```
+The HTML `hidden` attribute already removes the element from the accessibility tree. `inert` already handles pointer-events and focus. The `aria-hidden` attribute is redundant noise — it should match what `hidden` already implies.
+
+**Fix:** Pick one. `inert` + `hidden` is the modern minimum. Drop `aria-hidden`.
+
+---
+
+### Bug 8 (LOW) — `ui-presentation.js` opacity/scale tuning needs visual verification
+
+**File:** `js/modules/utils/ui-presentation.js:158-198`
+
+All opacity and point-size values for `focus` and `inside` graph profiles were reduced (e.g., `coreOpacity: 0.026 → 0.018`, `wispyOpacity: 0.0022 → 0.0016`, `focusSemanticOpacity: 0.52 → 0.4`, `pointSizeScale: 0.92 → 0.76`). This is a tuning pass — could make the focus and inside surfaces too dim, or could be exactly the right move after the recent mycelium density reduction (commit `e699bdf`).
+
+**Verification:** Screenshot at `?view=galaxy&nodemo=1` then focus on a node and dive. Compare density/visibility vs the prior deploy.
+
+---
+
+### Bug 9 (LOW) — `mobile_premium_chrome.css` adds `map-idle` to hide-list and new compass rule
+
+**File:** `css/mobile_premium_chrome.css:188-200`
+
+Two changes in the same hunk:
+1. New rule hides `.journey-compass[data-density="hidden"]` for any `data-panel-surface^="map-"` surface (was previously only covered for some specific map-* states).
+2. The broader `:is()` hide-list for `.panel-toggle`, `#btn-legend`, etc. now includes `[data-panel-surface="map-idle"]`.
+
+Both look intentional — extending map-idle to the toolbar-hide contract and adding a defensive compass rule. Worth a visual check on the map-idle state to confirm toolbar buttons and compass are not flashing through during state transitions.
+
+**Verification:** Screenshot at `?view=map&nodemo=1` (no selection) — confirm toolbar + compass are hidden, not just during transitions.
+
+---
+
+### Bug 10 (LOW) — `disposeObject3D` allocates a new `ResourceTracker` per call
+
+**File:** `js/modules/resource-tracker.js:56-61`
+
+```js
+export function disposeObject3D(object) {
+    if (!object) return;
+    const tracker = new ResourceTracker();
+    tracker.track(object);
+    tracker.dispose();
+}
+```
+Allocates a `Set` + closure every call. Called only in 3 places (`three-engine.js:391`, `three-thread-manager.js:131`, `three-search-animations.js:441`) so cost is negligible. `ResourceTracker.track()` correctly recurses into `object.children`, `object.geometry`, and `object.material` (including `map`/`alphaMap`/`envMap`/`normalMap` textures), so disposal is correct.
+
+**Fix:** None needed, but a `tracker.disposeOne(object)` static helper would be more honest about scope.
+
+---
+
+### Bug 11 (LOW) — `loading-ui.js` import path updated correctly, no regression
+
+**File:** `js/modules/loading-ui.js:6`
+
+The diff updates `import { createMycelium } from './three-geometry-builder.js';` → `'./three-thread-manager.js'`. Verified: `three-thread-manager.js:8` imports `disposeObject3D` and `three-thread-manager.js:131` calls it, matching the contract test at `tests/disposal-hygiene-contract.spec.js`. ✅
+
+---
+
+### Bug 12 (LOW) — `camera-controls-adapter.js` cleanup is correct
+
+**File:** `js/modules/camera-controls-adapter.js`
+
+Removed `_hideTooltip` and `adapter_hideTooltip`. The new home is `search-ui-adapter.js` (used by `search-state.js:16`). No callers of the old export remain. Verified ✅.
+
+---
+
+### Bug 13 (LOW) — `thread-inspector.js` import removal is correct
+
+**File:** `js/modules/thread-inspector.js`
+
+Removed `import * as THREE from 'three';` and `adapter_getFocusThreadCurvePoint` from the adapter import. Verified: file has no remaining `THREE.` references; `adapter_getFocusThreadCurvePoint` is still imported by `thread-inspector-webgl.js:3` from `thread-inspector-adapter.js:35` directly. The dep injection chain `app.js:283` → `thread-inspector-adapter.js:17` is intact. ✅
+
+---
+
+### Bug 14 (LOW) — `data-worker.js` transferable buffer pattern correct
+
+**File:** `js/workers/data-worker.js:18-22`
+
+The new code transfers `positionsBuffer.buffer` and `clustersBuffer.buffer` to the main thread, eliminating cloning overhead. After transfer, the worker-side typed arrays are detached (length 0) — but since `result.positionsBuffer` is no longer used after the postMessage, this is safe. The `_activeRequestId` cancellation guards all post-await checkpoints. ✅
+
+**Adjacent seam:** The `points` array (regular JS array of point objects, no x/y/z) is still cloned via structured clone. If bundle size is the concern, the `name/what/city/...` fields could be moved to a parallel typed array later.
+
+---
+
+## Bug Sweep 25 (2026-06-01)
+
+### Bug (HIGH) — Desktop search-result cards ballooned to 700+px tall
+
+After typing any query ("coffee", "plumber", etc.) on **desktop (1440x900)**, each `.search-result-item` card rendered at **~742-860px tall** instead of the intended 64-80px. The 4 huge black icons visible in the sidebar were actually the 4 SVG badges (website/email/phone) inside one blown-up card, each stretched to ~210x210 px. Cards persisted at this height in focus state — the search results list never collapsed. On **mobile (390x844)** the same cards rendered at the intended 64px height, so the bug was desktop-specific.
+
+**Root cause:** `js/modules/search-result-renderer.js:54` emits each badge icon as `<svg class="search-result-badge-icon" viewBox="0 0 24 24" ...>` with **no explicit `width`/`height` attributes and no CSS sizing rule**. In modern Chromium, an SVG with a `viewBox` but no intrinsic dimensions stretches to fill its parent's available width and uses the viewBox aspect ratio to compute height. With `viewBox="0 0 24 24"` (1:1) and a parent block ~210px wide, the SVG landed at ~210x210. Three such badges stacked inside `.search-result-badges` produced a ~640px-tall container, which pushed the card to ~742px.
+
+The 72/64/52px min-height rules already in the codebase (strands.css:210, strands.css:734, search.css:1356) were floors — they could not have caused the runaway height.
+
+Mobile worked by accident: in peek state the badges are hidden via `display: none` (mobile_premium_state.css:185-186), so the SVG is never rendered.
+
+**Fix:** Added a single CSS rule pinning `.search-result-badge-icon` to `14px x 14px` in `css/search.css` (the file that already owns `.search-result-item` styling). This is the minimum surgical change — no JS, no SVG-attribute changes, no surrounding-layout refactor.
+
+```css
+/* css/search.css — added after line 9 (focus-search active-focus rule) */
+.search-result-badge-icon {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    flex: 0 0 auto;
+}
+```
+
+**Verified (playwright, 1440x900, fresh page load → search "coffee", `panelSurfaceDetail: none`):**
+- Before: cards 225×742, 264×860, 273×625 px (SVG 218×218)
+- After:  cards 225×119, 264×119, 273×119 px (SVG 14×14)
+
+**Verified (mobile 390x844, peek state):** card 358×64, badges `display: none`, layout unchanged.
+
+**Regressions checked:**
+- `npm run lint` — 0 errors (1 pre-existing unrelated warning in `cluster-labels.js:148`)
+- `npm run qa:contract:search-chrome` — 31/31 pass
+- `npm run qa:contract:all` — 241/241 pass across 19 surfaces, 0 overflow failures
+- Bundle rebuilt via `npm run build` (454.4kb)
+- Cache busters refreshed via `npm run refresh:cache` (CSS `?v=6c314d5a84ae`, JS `?v=323911e12b7c`)
+
+**Files changed:** `css/search.css`
+
+**Screenshot:** `tmp/ui-pass/04b-desktop-search-FIXED.png` — cards now compact, icons render as small dots, layout clean.
+
+---
+
 # Deploy Status (2026-05-12)
 
 ## Canonical Deploy Path
@@ -166,6 +493,48 @@ dist/bundle.js: 384.5kb ESM minified (2026-05-12 12:44)
 - Loading note now reads: "8,406 Montgomery County business records woven into a living semantic field. An exploratory portrait — not an official directory." (adds trust context early)
 
 **Files changed:** `semantic-demo.css` (has-query rules), `vector-explorer-polished.html` (content, details attr, loading note), `js/modules/journey.js` (COPY strings)
+
+---
+
+## Bug Sweep 25 (2026-06-01) — Mobile search peek hides 2 of 3 result cards
+
+### Bug (HIGH) — Non-first search results hidden in mobile peek
+
+On mobile (390×844), searching "coffee" produced the count line "3 shown · 3 found" but only 1 of 3 result cards was actually visible. `getBoundingClientRect` on a fresh mobile load:
+- `search-result-0` (anchor "1845 Solutions"): y=293, h=64, visibility: visible
+- `search-result-1` ("2 Hampton Inn And Suites"): y=0, h=0, **visibility: hidden**
+- `search-result-2` ("3 Northern Tool And Equipment"): y=0, h=0, **visibility: hidden**
+
+The count line advertises a result count the user can't see. The user can only click the anchor.
+
+**Root cause:** `css/mobile_premium_state.css` (lines 256–261 in the pre-fix version) contained a peek-state rule that set `display: none; visibility: hidden; pointer-events: none;` on `.search-result-listitem:not(:first-child)` for both `[data-panel-surface="search"]` and `[data-panel-surface="focus-search"]` peek states. This contradicted the contract-test expectation in `tests/search-peek-expanded-render-contract.mjs:271-278` ("non-first items overflow:hidden (clipped, not hidden)") AND the upstream `.search-result-listitem` peek rules in the same file (lines 191–198) that explicitly intend to render non-first results as 48px `display: block; overflow: hidden;` rows. The contract test had been passing because it only inspects the inner button's `overflow` — not the parent listitem's `display` — masking the regression.
+
+**Fix:** Removed the redundant `.search-result-listitem:not(:first-child)` peek-hide block from `css/mobile_premium_state.css`. The 191-198 `display: block; height: 48px; overflow: hidden;` rules now take effect, so non-first results render as 48px-tall clipped rows that fit inside the 88px peek results area. The user sees the anchor fully plus a sliver of the second row — visually honest with the "3 found" count. The focus-search surface is unaffected: focus-search peek hides the entire `#search-results.active` via line 169-171, so the removed listitem rule was redundant there.
+
+**Files changed:** `css/mobile_premium_state.css` (removed 6 lines, added 3-line comment in their place)
+
+**Verification:**
+- Rects after fix on 390×844 / `q=coffee`:
+  - `search-result-0`: y=293, h=64, listitem=64px, visibility:visible (anchor)
+  - `search-result-1`: y=357, h=64, listitem=48px overflow:hidden, visibility:visible (clipped sliver)
+  - `search-result-2`: y=405, h=64, listitem=48px overflow:hidden, visibility:visible (clipped sliver)
+- Screenshot: `tmp/ui-pass/04c-mobile-search-FIXED.png` (anchor + 2nd row sliver visible)
+- `tests/search-peek-expanded-render-contract.mjs`: 30/30 PASS (unchanged)
+- `tests/surface-contract-check.mjs --surfaces=mobile-idle,search-chrome,mobile-product-focus-route,mobile-product-preview-route,focus-pocket,map-trail,controls,field-node,compass-rail,global-spacing,mobile-semantic-dive-320`: 157/157 PASS
+- `tests/surface-contract-check.mjs --surface=search-chrome`: 31/31 PASS
+- `npm run lint`: 0 errors (1 pre-existing warning in `js/modules/cluster-labels.js:148`)
+- `npm run build`: bundle rebuilt to `dist/bundle.js`
+- `npm run refresh:cache`: cache busters refreshed in `vector-explorer-polished.html`
+
+**Coordination notes:**
+- The desktop `.search-result-item` card-height fix is owned by a separate subagent and runs in a different CSS lane (`layout_base.css` / `search.css` desktop context). I limited my changes to `mobile_premium_state.css` peek-state rules only.
+- The post-edit comment block ("Search peek exposes one clean anchor row. Expanded mode owns the full result list; clipped secondary-row slivers are a visual regression.") was added by an external edit during this session. It expresses an *aspirational* design intent that contradicts both the live behavior (which now shows slivers) and the contract test (which expects slivers). Resolving this design tension is outside the scope of "minimum fix" — flagging for follow-up.
+
+**Adjacent seams noticed but not fixed:**
+- `css/mobile_premium_surfaces.css:937-943` has a similar `display: none; visibility: hidden; pointer-events: none;` rule on `.search-result-listitem:not(:first-child)` for `map-trail` / `map-search[trail-state=active]` surfaces. Not part of the standard search surface — out of scope.
+- The peek state hides the count line (`.search-results-count` `display: none` per line 173) so the "3 found" count isn't visible to the user. If the count is to become visible in peek, that's a separate decision per the bug spec.
+
+**Unresolved:** Tension between the new "clipped slivers are a regression" comment and the live behavior + contract test. Recommend a follow-up decision: (a) accept clipped slivers as honest peek affordance, or (b) restore non-first hiding AND update the contract test to expect `display: none` on non-first listitems.
 
 ---
 

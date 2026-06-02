@@ -106,7 +106,8 @@
         "camera-auto-rotate-settle-contract.mjs",
         "scene-reveal-contract.mjs",
         "loading-ui-contract.mjs",
-        "motion-state-contract.mjs"
+        "motion-state-contract.mjs",
+        "map-flattening-raw-buffer-contract.mjs"
       ]
     },
     "mobile-critical": {

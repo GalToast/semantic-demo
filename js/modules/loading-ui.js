@@ -3,9 +3,10 @@ import { restoreFocusTrailState, updateSelectedBusiness } from './journey.js';
 import { SCENE_READY } from './scene-events.js';
 import { loadSemanticThreads } from './semantic-threads.js';
 import { applyFilters } from './search-state.js';
-import { createMycelium } from './three-geometry-builder.js';
+import { createMycelium } from './three-thread-manager.js';
 import { updateLoadingPhaseKey } from './state-mutators.js';
 import { initWeather } from './weather.js';
+import { escapeHtml } from './utils/dom-formatters.js';
 
 export function setLoadingPhase(phaseKey, overrides = {}) {
     updateLoadingPhaseKey(phaseKey);
@@ -113,4 +114,23 @@ export function scheduleWeatherHydration() {
     } else {
         setTimeout(start, 300);
     }
+}
+
+export function applyLoadingErrorState(error) {
+    const overlay = document.getElementById('loading-overlay');
+    if (!overlay) return;
+
+    overlay.innerHTML = `
+        <div class="loading-shell" role="alert">
+            <div class="loading-kicker">Graph unavailable</div>
+            <div class="loading-title">Failed to load county records</div>
+            <div class="loading-note">The Semantic Explorer is offline or blocked right now. Refresh after the connection recovers.</div>
+            <div class="loading-foot">${escapeHtml(error?.message || 'Initialization failed')}</div>
+        </div>
+    `;
+    overlay.hidden = false;
+    overlay.inert = false;
+    overlay.removeAttribute('aria-hidden');
+    overlay.classList.remove('hidden', 'launching');
+    overlay.dataset.loadingState = 'error';
 }
