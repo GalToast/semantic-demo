@@ -109,7 +109,9 @@
 }
 
 .control-btn,
-.panel-toggle {
+.panel-toggle,
+.legend-toggle,
+.share-toggle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -127,7 +129,11 @@
 .control-btn:hover,
 .control-btn:focus-visible,
 .panel-toggle:hover,
-.panel-toggle:focus-visible {
+.panel-toggle:focus-visible,
+.legend-toggle:hover,
+.legend-toggle:focus-visible,
+.share-toggle:hover,
+.share-toggle:focus-visible {
     border-color: rgba(var(--color-primary-rgb), 0.3);
     background: var(--glass-bg-accent, rgba(15, 20, 30, 0.72));
     color: var(--color-text-primary);
