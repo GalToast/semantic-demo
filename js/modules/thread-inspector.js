@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import { state } from '../state.js';
 // js/modules/thread-inspector.js — thread/strand inspection for semantic demo
 ;
@@ -18,14 +17,15 @@ import {
     updateInspectedStrandOverlay,
     disposeInspectedStrandOverlay
 } from './thread-inspector-webgl.js';
-import { setStrandContinuityState, clearStrandContinuityState, getStrandArrivalNote } from './strand-continuity.js';
+import { setStrandContinuityState, clearStrandContinuityState } from './strand-continuity.js';
+import { getStrandArrivalNote } from './strand-continuity.js';
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from './relationship-roles.js';
 import {
     adapter_summarizeNeighborReason,
     adapter_getInsideRelationshipLabel,
-    adapter_getCurrentTrailFocusIndex,
-    adapter_getFocusThreadCurvePoint
+    adapter_getCurrentTrailFocusIndex
 } from './thread-inspector-adapter.js';
+import { truncateMicrocopy } from './thread-inspector-text-helpers.js';
 import { setInspectedStrandOverlayUpdater } from './inspected-strand-overlay-adapter.js';
 
 // === Internal helpers (deferred to main script via adapter) ===
@@ -50,6 +50,7 @@ export {
 };
 
 export { setStrandContinuityState, clearStrandContinuityState, getStrandArrivalNote };
+export { syncInspectedStrandOverlay, updateInspectedStrandOverlay, disposeInspectedStrandOverlay };
 
 // === Thread inspection ===
 
@@ -88,7 +89,7 @@ export function getThreadInspectionState(index = state.inspectedThreadIndex, opt
     const cleanReason = stripTerminalPunctuation(reason);
     const displayReason =
         active && reason.includes('...') ? getInsideRelationshipLabel(candidate, point, focusPoint) : cleanReason;
-    const copy = active
+    const rawCopy = active
         ? journeyPhase === 'exploring'
             ? `${displayReason}. Following this connection into the next neighborhood.`
             : journeyPhase === 'arrived'
@@ -97,6 +98,7 @@ export function getThreadInspectionState(index = state.inspectedThreadIndex, opt
                 ? `${displayReason}. This connection is pinned for comparison; follow it, keep it pinned, or clear it.`
                 : `${displayReason}. Preview the relationship, pin it for comparison, or follow it to the next stop.`
         : 'Click a neighbor below to preview why it belongs here, then pin or follow.';
+    const copy = truncateMicrocopy(rawCopy, 220);
     const meta = active
         ? `${relationshipTitle || 'Connection'} | ${source} | ${journeyPhase} connection`
         : 'Preview connection';

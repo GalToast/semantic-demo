@@ -57,7 +57,20 @@ vi.mock('../../js/modules/ui-renderers.js', () => ({
     getInterestingBusinessNote: vi.fn(),
     scheduleCompactSearchResultReveal: vi.fn()
 }));
-vi.mock('../../js/modules/search-lifecycle-adapter.js', () => ({ initSearchLifecycleAdapter: vi.fn() }));
+vi.mock('../../js/modules/search-lifecycle-adapter.js', () => ({
+    initSearchLifecycleAdapter: vi.fn(),
+    updateUrlState: vi.fn(),
+    setSearchPanelState: vi.fn(),
+    focusOnPoint: vi.fn(),
+    resetNodePositions: vi.fn(),
+    dispatchNavTransition: vi.fn(),
+    syncSearchStatusForFocus: vi.fn(),
+    updateJourneyCompass: vi.fn(),
+    refreshCompositionState: vi.fn(),
+    switchView: vi.fn(),
+    resetExplorationFocus: vi.fn(),
+    scheduleSearchFocusTask: vi.fn()
+}));
 vi.mock('../../js/modules/composition-adapter.js', () => ({ initCompositionAdapter: vi.fn() }));
 vi.mock('../../js/modules/url-navigation-adapter.js', () => ({ initUrlNavigationAdapter: vi.fn() }));
 vi.mock('../../js/modules/journey-lifecycle-adapter.js', () => ({ initJourneyLifecycleAdapter: vi.fn(), applyLocalNeighborhoodFocus: vi.fn() }));

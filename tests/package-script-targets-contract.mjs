@@ -11,11 +11,7 @@ import { execFileSync } from 'node:child_process';
 
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
-const ALLOWED_UNTRACKED_TARGETS = new Set([
-  'tests/info-panel-surface-ownership-contract.mjs',
-  'tests/map-focus-search-content-owner-contract.mjs',
-  'tests/search-sheet-css-ownership-contract.mjs',
-]);
+const ALLOWED_UNTRACKED_TARGETS = new Set();
 
 const REQUIRED_SCRIPT_INCLUDES = [
   {

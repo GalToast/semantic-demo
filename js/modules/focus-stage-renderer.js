@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { getBusinessNamePresentation, sanitizePublicFacingNote } from './utils/dom-formatters.js';
 
 /**
  * focus-stage-renderer.js
@@ -75,7 +76,8 @@ export function renderSelectedMatchPanel(point) {
     const panelEl = document.getElementById('selected-match-panel');
     const copyEl = document.getElementById('selected-match-copy');
     if (!panelEl || !copyEl) return;
-    if (state.currentView === 'map') { panelEl.style.display = 'none'; return; }
+    const panelSurface = document.body?.dataset?.panelSurface || '';
+    if (state.currentView === 'map' && panelSurface !== 'map-focus-search') { panelEl.style.display = 'none'; return; }
     if (!point) return;
     if (state.currentSearchSummary?.anchorIndex !== undefined) {
         const idx = state.points.indexOf(point);
@@ -85,11 +87,19 @@ export function renderSelectedMatchPanel(point) {
         } else if ((state.currentSearchSummary.resultIndices || []).includes(idx)) {
             panelEl.style.display = '';
             copyEl.textContent = 'This record appeared in the semantic search results as a nearby connection.';
+        } else if (panelSurface === 'map-focus-search') {
+            panelEl.style.display = '';
+            copyEl.textContent = 'This record is connected to the current semantic search trail.';
         } else {
             panelEl.style.display = 'none';
         }
     } else {
-        panelEl.style.display = 'none';
+        if (panelSurface === 'map-focus-search') {
+            panelEl.style.display = '';
+            copyEl.textContent = 'This record is connected to the current semantic search trail.';
+        } else {
+            panelEl.style.display = 'none';
+        }
     }
 }
 
@@ -106,6 +116,84 @@ export function renderSelectedActionRow(point) {
             _switchView('map');
         });
     }
+}
+
+function setSurfaceHidden(el, hidden) {
+    if (!el) return;
+    if (hidden) {
+        el.hidden = true;
+        el.setAttribute('aria-hidden', 'true');
+        el.style.display = 'none';
+    } else {
+        el.hidden = false;
+        el.setAttribute('aria-hidden', 'false');
+        el.style.display = '';
+    }
+}
+
+function getSelectedMapSummaryRole(point) {
+    if (!point || !Array.isArray(state.points)) return 'Trail match';
+    const idx = state.points.indexOf(point);
+    const summary = state.currentSearchSummary || {};
+    if (Number.isFinite(summary.anchorIndex) && idx === summary.anchorIndex) return 'Search anchor';
+    if (Array.isArray(summary.resultIndices) && summary.resultIndices.includes(idx)) return 'Related match';
+    return 'Trail match';
+}
+
+function getSelectedMapSummaryCopy(point) {
+    if (!point || !Array.isArray(state.points)) return 'This record is connected to the current semantic search trail.';
+    const idx = state.points.indexOf(point);
+    const summary = state.currentSearchSummary || {};
+    if (Number.isFinite(summary.anchorIndex) && idx === summary.anchorIndex) {
+        return 'This record anchors the current semantic trail on the county map.';
+    }
+    if (Array.isArray(summary.resultIndices) && summary.resultIndices.includes(idx)) {
+        return 'This record appeared as a nearby semantic match in the current trail.';
+    }
+    return 'This record is connected to the current semantic search trail.';
+}
+
+export function syncSelectedCardContentVariant(point = null) {
+    const cardEl = document.getElementById('selected-card');
+    const emptyEl = document.getElementById('selected-empty');
+    const detailsEl = document.getElementById('selected-details');
+    const titleEl = document.getElementById('selected-card-title');
+    const summaryEl = document.getElementById('selected-map-summary');
+    const surface = document.body?.dataset?.panelSurface || '';
+    const isMapSummary = Boolean(point) && state.currentView === 'map' && surface === 'map-focus-search';
+
+    if (cardEl) {
+        cardEl.dataset.contentVariant = isMapSummary ? 'map-summary' : (point ? 'detail' : 'empty');
+        cardEl.dataset.contentOwner = isMapSummary ? 'selected-map-summary' : 'selected-detail-card';
+    }
+
+    setSurfaceHidden(summaryEl, !isMapSummary);
+    setSurfaceHidden(titleEl, isMapSummary);
+
+    if (point) {
+        setSurfaceHidden(detailsEl, isMapSummary);
+        if (emptyEl) setSurfaceHidden(emptyEl, true);
+    } else {
+        setSurfaceHidden(detailsEl, true);
+        if (emptyEl) setSurfaceHidden(emptyEl, false);
+    }
+
+    if (!isMapSummary) {
+        return;
+    }
+
+    const presentation = getBusinessNamePresentation(point.name);
+    const nameEl = document.getElementById('selected-map-summary-name');
+    const whatEl = document.getElementById('selected-map-summary-what');
+    const roleEl = document.getElementById('selected-map-summary-role');
+    const kickerEl = document.getElementById('selected-map-summary-kicker');
+    const matchCopyEl = document.getElementById('selected-map-summary-match-copy');
+
+    if (nameEl) nameEl.textContent = presentation.display;
+    if (whatEl) whatEl.textContent = sanitizePublicFacingNote(point.what) || 'Montgomery County business record';
+    if (roleEl) roleEl.textContent = getSelectedMapSummaryRole(point);
+    if (kickerEl) kickerEl.textContent = 'Map trail match';
+    if (matchCopyEl) matchCopyEl.textContent = getSelectedMapSummaryCopy(point);
 }
 
 /**

@@ -51,7 +51,7 @@ function buildOfficialSiteSnippet(note, point) {
 function buildSearchContactBadge(type, label, iconPath) {
     return `
         <span class="search-result-badge ${type}" title="${label}" aria-label="${label}">
-            <svg class="search-result-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <svg class="search-result-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 ${iconPath}
             </svg>
         </span>

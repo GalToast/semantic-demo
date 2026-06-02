@@ -43,5 +43,9 @@ export function scheduleOnboardingHint() {
         }
     }, 7500);
     resetOnboardingIdleTimer();
-    ['mousemove', 'keydown', 'click'].forEach(evt => document.addEventListener(evt, resetOnboardingIdleTimer, { passive: true }));
+
+    if (!state.registeredEvents.has('onboarding-interaction')) {
+        state.registeredEvents.add('onboarding-interaction');
+        ['mousemove', 'keydown', 'click'].forEach(evt => document.addEventListener(evt, resetOnboardingIdleTimer, { passive: true }));
+    }
 }

@@ -75,6 +75,14 @@ export function updateTime() {
     const h12 = h % 12 || 12;
     const mStr = m < 10 ? '0' + m : m;
     el.textContent = `${h12}:${mStr} ${ampm}`;
+
+    if (el.style.visibility === 'hidden') {
+        if (document.fonts.status === 'loaded') {
+            el.style.visibility = 'visible';
+        } else {
+            document.fonts.ready.then(() => { el.style.visibility = 'visible'; });
+        }
+    }
 }
 
 export function getThreadPulseOpacity(baseOpacity, pulse, requestedAmplitude, revealProgress = 1) {

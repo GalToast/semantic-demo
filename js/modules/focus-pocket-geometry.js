@@ -331,24 +331,31 @@ export function applyRelationshipRolePlacementBias(placement, relationshipRole, 
     const role = String(relationshipRole || '').trim();
     if (!role) return placement;
 
-    if (role === 'sibling' || role === 'variant') {
+    if (role === 'core_peer' || role === 'sibling' || role === 'variant') {
         placement.radius *= 0.76;
         placement.zOffset += 0.012;
         placement.angle += (order % 2 === 0 ? -1 : 1) * 0.06;
-    } else if (role === 'competitor') {
+    } else if (role === 'same_market' || role === 'competitor') {
         placement.radius *= 1.14;
         placement.zOffset -= 0.024;
         placement.angle += Math.PI * (group === 'primary' ? 0.1 : 0.05);
-    } else if (role === 'supplier' || role === 'vendor') {
+    } else if (role === 'upstream' || role === 'supplier' || role === 'vendor') {
         placement.zOffset -= 0.048;
         placement.radius *= 1.06;
-    } else if (role === 'customer' || role === 'client') {
+    } else if (role === 'downstream' || role === 'customer' || role === 'client') {
         placement.zOffset += 0.038;
         placement.radius *= 0.92;
         placement.angle += 0.18;
-    } else if (role === 'partner' || role === 'affiliate') {
+    } else if (role === 'complement' || role === 'partner' || role === 'affiliate') {
         placement.radius *= 0.88;
         placement.angle -= 0.12;
+    } else if (role === 'geo_echo') {
+        placement.radius *= 1.08;
+        placement.zOffset -= 0.012;
+        placement.angle += (order % 2 === 0 ? -1 : 1) * 0.1;
+    } else if (role === 'bridge') {
+        placement.radius *= 1.18;
+        placement.zOffset += group === 'primary' ? 0.018 : 0.008;
     } else if (role === 'investor' || role === 'parent') {
         placement.zOffset += 0.06;
         placement.radius *= 0.84;
@@ -493,6 +500,7 @@ export function buildFocusedPocketStagedPositions(index, pocketEntries) {
             viewportProfile,
             personality
         ) };
+        applyRelationshipRolePlacementBias(placement, safeEntry.relationshipRole, order, group);
         const relationSeed = seededUnit(index, entry.index, order, total, score);
         const relationSwing = isPrimary ? 0.18 : isHalo ? 0.16 : 0.24;
         placement.angle += (relationSeed - 0.5) * relationSwing;
@@ -561,6 +569,9 @@ export function buildFocusedPocketStagedPositions(index, pocketEntries) {
         const origin = state.nodePositions[entry.index] || state.originalPositions[entry.index] || finalVector;
         motion.set(entry.index, {
             role: isPrimary ? 'primary' : isHalo ? 'halo' : 'support',
+            relationshipRole: safeEntry.relationshipRole || '',
+            relationshipAxis: safeEntry.relationshipAxis || '',
+            roleReason: safeEntry.roleReason || '',
             motif: motif.key,
             delay: baseDelay * personality.staggerMult,
             duration: baseDuration * (personality.cameraDuration / 980),
@@ -599,6 +610,9 @@ export function buildFocusedSemanticPocket(index) {
             index: candidate.index,
             kind: 'primary',
             score: candidate.semanticScore || candidate.score || 0,
+            relationshipRole: candidate.relationshipRole || '',
+            relationshipAxis: candidate.relationshipAxis || '',
+            roleReason: candidate.roleReason || '',
             sameCity: normalizeCityForFilter(state.points[candidate.index]?.city) === focusCity,
             reason: candidate.reason || 'semantic neighbor'
         });
@@ -608,10 +622,13 @@ export function buildFocusedSemanticPocket(index) {
     primaryCandidates.slice(0, viewportProfile.supportSeedLimit).forEach((candidate) => {
         getSemanticCandidateSlice(candidate.index, viewportProfile.supportNeighborLimit).forEach((support) => {
             if (support.index === index || pocketEntries.has(support.index)) return;
-            const current = supportScores.get(support.index) || { count: 0, score: 0, sameCity: 0 };
+            const current = supportScores.get(support.index) || { count: 0, score: 0, sameCity: 0, relationshipRole: '', relationshipAxis: '', roleReason: '' };
             current.count += 1;
             current.score += support.semanticScore || support.score || 0;
             if (normalizeCityForFilter(state.points[support.index]?.city) === focusCity) current.sameCity += 1;
+            if (!current.relationshipRole && support.relationshipRole) current.relationshipRole = support.relationshipRole;
+            if (!current.relationshipAxis && support.relationshipAxis) current.relationshipAxis = support.relationshipAxis;
+            if (!current.roleReason && support.roleReason) current.roleReason = support.roleReason;
             supportScores.set(support.index, current);
         });
     });
@@ -625,6 +642,9 @@ export function buildFocusedSemanticPocket(index) {
                 index: supportIndex,
                 kind: 'support',
                 score: entry.score / Math.max(entry.count, 1),
+                relationshipRole: entry.relationshipRole || '',
+                relationshipAxis: entry.relationshipAxis || '',
+                roleReason: entry.roleReason || '',
                 sameCity: entry.sameCity > 0,
                 reason: 'local semantic support'
             });
@@ -638,6 +658,9 @@ export function buildFocusedSemanticPocket(index) {
                 index: candidate.index,
                 kind: 'halo',
                 score: (candidate.semanticScore || candidate.score || 0) * 0.86,
+                relationshipRole: candidate.relationshipRole || '',
+                relationshipAxis: candidate.relationshipAxis || '',
+                roleReason: candidate.roleReason || '',
                 sameCity: normalizeCityForFilter(state.points[candidate.index]?.city) === focusCity,
                 reason: 'outer semantic echo'
             });

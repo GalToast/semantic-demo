@@ -542,6 +542,49 @@ async function captureState(page, name) {
         text: (element.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 180),
       };
     };
+    const compactLabelFor = (element) => {
+      const beforeContent = getComputedStyle(element, '::before').content;
+      return beforeContent && beforeContent !== 'none' && beforeContent !== 'normal'
+        ? beforeContent.replace(/^["']|["']$/g, '')
+        : '';
+    };
+    const actionRectFor = (element) => {
+      if (!element) return null;
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return {
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+        right: rect.right,
+        bottom: rect.bottom,
+        display: style.display,
+        visibility: style.visibility,
+        opacity: style.opacity,
+        pointerEvents: style.pointerEvents,
+      };
+    };
+    const journeyActions = ['btn-journey-primary', 'btn-journey-secondary', 'btn-journey-tertiary'].map((id) => {
+      const button = document.getElementById(id);
+      if (!button) return null;
+      return {
+        id,
+        text: button.textContent.replace(/\s+/g, ' ').trim(),
+        compactLabel: compactLabelFor(button),
+        action: button.dataset.journeyAction || '',
+        disabled: button.disabled || button.getAttribute('aria-disabled') === 'true',
+        hidden: button.hidden || button.getAttribute('aria-hidden') === 'true',
+        rect: actionRectFor(button),
+      };
+    }).filter(Boolean);
+    const mapTrailActions = [...document.querySelectorAll('.map-trail-strip .trail-strip-btn')].map((button) => ({
+      text: button.textContent.replace(/\s+/g, ' ').trim(),
+      action: button.dataset.journeyAction || '',
+      disabled: button.disabled || button.getAttribute('aria-disabled') === 'true',
+      hidden: button.hidden || button.getAttribute('aria-hidden') === 'true',
+      rect: actionRectFor(button),
+    }));
 
     const html = document.documentElement;
     return {
@@ -556,6 +599,8 @@ async function captureState(page, name) {
         overflowY: Math.max(0, html.scrollHeight - innerHeight),
       },
       boxes: Object.fromEntries(selectors.map((selector) => [selector, boxFor(selector)])),
+      journeyActions,
+      mapTrailActions,
       clusterLabelDiagnostics: (() => {
         const labels = Array.from(document.querySelectorAll('.galaxy-cluster-label'));
         const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
@@ -1850,6 +1895,8 @@ async function run() {
     bodyDataset: data.bodyDataset,
     scroll: data.scroll,
     boxes: data.boxes,
+    journeyActions: data.journeyActions,
+    mapTrailActions: data.mapTrailActions,
     loadingOverlayDiagnostics: data.loadingOverlayDiagnostics,
     compassRailDiagnostics: data.compassRailDiagnostics,
     modeGridDiagnostics: data.modeGridDiagnostics,
@@ -1899,6 +1946,28 @@ async function run() {
     b.y + b.height <= a.y + tolerance
   );
   const touchTargetOk = (b) => b && b.width >= 43.5 && b.height >= 43.5;
+  const expectedCompactJourneyLabel = (action) => ({
+    'center-anchor': 'Center',
+    'next-stop': 'Next',
+    'open-map': 'Map',
+    'search-field': 'Search',
+    'focus-search': 'Search',
+    'enter-inside': 'Inside',
+    'open-mycelium': 'Mycelium',
+    'county-overview': 'County',
+    'show-trail-panel': 'Trail',
+  })[action] || '';
+  const expectedMapTrailLabel = (action) => ({
+    'open-mycelium': 'Mycelium',
+    'county-overview': 'Reset',
+    'focus-search': 'Search',
+  })[action] || '';
+  const isRenderedAction = (action) => (
+    action?.action &&
+    isRendered(action.rect) &&
+    !action.hidden &&
+    !action.disabled
+  );
   const cssTimeToMs = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
     if (!normalized) return Number.NaN;
@@ -1969,6 +2038,42 @@ async function run() {
         pass(state.name, 'route-evidence:constructed-surface-labeled');
       } else {
         fail(state.name, 'route-evidence:constructed-surface-labeled', `expected constructed-surface proof lane, got ${evidence.proofLane || 'missing'}`);
+      }
+    }
+  }
+
+  for (const state of summary) {
+    const visibleCompactActions = (state.journeyActions || []).filter((action) =>
+      isRenderedAction(action) && action.compactLabel
+    );
+    const compactMismatches = visibleCompactActions
+      .map((action) => ({
+        id: action.id,
+        action: action.action,
+        text: action.text,
+        compactLabel: action.compactLabel,
+        expected: expectedCompactJourneyLabel(action.action),
+      }))
+      .filter((action) => action.expected && action.compactLabel !== action.expected);
+    if (compactMismatches.length === 0) {
+      pass(state.name, 'compact-actions:semantic-labels');
+    } else {
+      fail(state.name, 'compact-actions:semantic-labels', JSON.stringify(compactMismatches));
+    }
+
+    const visibleMapActions = (state.mapTrailActions || []).filter(isRenderedAction);
+    if (visibleMapActions.length > 0) {
+      const mapMismatches = visibleMapActions
+        .map((action) => ({
+          action: action.action,
+          text: action.text,
+          expected: expectedMapTrailLabel(action.action),
+        }))
+        .filter((action) => action.expected && action.text !== action.expected);
+      if (mapMismatches.length === 0) {
+        pass(state.name, 'map-strip-actions:semantic-labels');
+      } else {
+        fail(state.name, 'map-strip-actions:semantic-labels', JSON.stringify(mapMismatches));
       }
     }
   }
@@ -3492,6 +3597,11 @@ async function run() {
     const emptyState = requireState('09-mobile-map-empty-state');
     const mapContainer = box(emptyState, '#map-container');
     const emptyBox = box(emptyState, '.map-empty-state');
+    const viewToggle = box(emptyState, '.view-toggle');
+    const compass = box(emptyState, '.journey-compass');
+    const utilityChrome = ['.panel-toggle', '.share-toggle', '.help-toggle', '#btn-legend', '#btn-share-view', '#btn-keyboard-help', '.controls']
+      .map((selector) => ({ selector, box: box(emptyState, selector) }))
+      .filter((entry) => isRendered(entry.box));
     if (isRendered(mapContainer)) {
       pass('09-mobile-map-empty-state', 'map-empty:map-container-visible');
     }
@@ -3500,9 +3610,33 @@ async function run() {
     } else {
       pass('09-mobile-map-empty-state', 'map-empty:empty-state-not-rendered');
     }
+    if (isVisible(emptyBox) && emptyBox.height <= 236 && emptyBox.width <= Math.min(300, viewportFor(emptyState).width - 48)) {
+      pass('09-mobile-map-empty-state', 'map-empty:compact-card-proportion');
+    } else if (isVisible(emptyBox)) {
+      fail('09-mobile-map-empty-state', 'map-empty:compact-card-proportion', `.map-empty-state should stay compact, got ${JSON.stringify(emptyBox)}`);
+    }
+    if (isRendered(viewToggle) && withinViewport(viewToggle, viewportFor(emptyState))) {
+      pass('09-mobile-map-empty-state', 'map-empty:view-toggle-within-viewport');
+    } else if (isRendered(viewToggle)) {
+      fail('09-mobile-map-empty-state', 'map-empty:view-toggle-within-viewport', `.view-toggle should stay inside map-idle viewport, got ${JSON.stringify(viewToggle)}`);
+    }
     const activeView = emptyState?.bodyDataset?.activeView;
     if (activeView === 'map') {
       pass('09-mobile-map-empty-state', 'map-empty:active-view-map');
+    }
+    if (emptyState?.bodyDataset?.panelSurface === 'map-idle' && emptyState?.bodyDataset?.journeyCompassDensity === 'hidden') {
+      if (!isRendered(compass)) {
+        pass('09-mobile-map-empty-state', 'map-empty:hidden-density-compass-suppressed');
+      } else {
+        fail('09-mobile-map-empty-state', 'map-empty:hidden-density-compass-suppressed', `density=hidden should suppress .journey-compass, got ${JSON.stringify(compass)}`);
+      }
+    }
+    if (emptyState?.bodyDataset?.panelSurface === 'map-idle') {
+      if (utilityChrome.length === 0) {
+        pass('09-mobile-map-empty-state', 'map-empty:utility-chrome-suppressed');
+      } else {
+        fail('09-mobile-map-empty-state', 'map-empty:utility-chrome-suppressed', `map-idle should not show standalone utility chrome: ${JSON.stringify(utilityChrome)}`);
+      }
     }
   }
 
@@ -3531,6 +3665,7 @@ async function run() {
     '01-mobile-idle',
     '02-mobile-search-coffee',
     '03-mobile-focus-first-result',
+    '09-mobile-map-empty-state',
     '07-desktop-idle',
     '08-desktop-search-coffee',
     '11-desktop-selected-card-map-trail',

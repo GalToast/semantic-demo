@@ -2,7 +2,7 @@
 
 Status: active
 Updated: 2026-06-01
-Purpose: Reduce the 419 current focus-stage CSS matches across 11 files into a state-by-state owner map and a safe migration sequence.
+Purpose: Reduce the 437 current focus-stage CSS matches across 11 files into a state-by-state owner map and a safe migration sequence.
 
 ---
 
@@ -10,17 +10,17 @@ Purpose: Reduce the 419 current focus-stage CSS matches across 11 files into a s
 
 | File | focus-stage matches | Role |
 |---|---|---|
-| `css/mobile_premium_focus.css` | 205 | Mobile focus-search and semantic-dive composition; terminal mobile focus-stage-card reduced-motion ownership; mobile focus-stage action/button primitives |
-| `css/journey_steps.css` | 87 | Step Inside, active-trail, state-machine surfaces |
-| `css/modules/focus_stage.css` | 73 | Focus-stage component module linked directly from the app shell |
-| `css/mobile_premium_surfaces.css` | 38 | Mobile bottom-sheet geometry corrections; no longer owns focus-stage action/button primitives |
-| `css/progressive_disclosure.css` | 26 | Legacy visibility/show-hide; late cascade |
-| `css/strands.css` | 22 | Mobile bottom sheet, mobile chrome, route surfaces |
+| `css/mobile_premium_focus.css` | 222 | Mobile focus-search, semantic-dive, and active field-node mobile composition; terminal mobile focus-stage-card reduced-motion ownership; mobile focus-stage action/button primitives |
+| `css/modules/focus_stage.css` | 83 | Focus-stage component module linked directly from the app shell |
+| `css/journey_steps.css` | 80 | Step Inside, active-trail, state-machine surfaces |
+| `css/mobile_premium_surfaces.css` | 24 | Mobile bottom-sheet geometry corrections and non-active field-node backstops; no longer owns focus-stage action/button primitives |
+| `css/animations.css` | 10 | Motion/reduced-motion focus-stage tail rules |
+| `css/journey_active.css` | 5 | Active journey focus-stage coupling |
+| `css/strands.css` | 5 | Mobile bottom sheet, mobile chrome, route surfaces |
+| `css/progressive_disclosure.css` | 4 | Legacy visibility/show-hide; late cascade |
 | `css/controls.css` | 2 | View toggle, journey btn primitives |
-| `css/mobile_base.css` | 2 | Mobile focus/stepinside owner block |
+| `css/mobile_base.css` | 1 | Mobile focus/stepinside owner block |
 | `css/base.css` | 1 | Base focus-stage primitive |
-| `css/layout_base.css` | 1 | Info panel state overrides; map-focus/trail state |
-| `css/search.css` | 1 | Search-state edge selector |
 
 2026-05-28 guardrail pass:
 - `tests/css-ownership-check.mjs` now ratchets `.focus-stage-card` per-file selector counts.
@@ -36,7 +36,7 @@ Purpose: Reduce the 419 current focus-stage CSS matches across 11 files into a s
 2026-06-01 mobile action primitive pass:
 - Mobile focus-stage action/button primitives moved from `css/mobile_premium_surfaces.css` to `css/mobile_premium_focus.css`.
 - `tests/focus-stage-css-ownership-contract.mjs` now guards against reintroducing `.focus-stage-action-btn`, `.focus-thread-inspector-btn`, `.focus-stage-journey-btn`, or `.action-btn` primitive ownership in `mobile_premium_surfaces.css`.
-- `css/mobile_premium_surfaces.css` still contains field-node journey-compass layout and idle/search backstops; those are separate seams.
+- `css/mobile_premium_focus.css` now owns active mobile field-node journey-compass refinements; `css/mobile_premium_surfaces.css` keeps non-active field-node and idle/search backstops.
 
 2026-06-01 journey-compass focus/dive refinement pass:
 - Focus-search / semantic-dive `.journey-compass.glass-heavy`, compact `[data-density="compact"]`, compact rail, and title wrapping rules moved from `css/mobile_premium_surfaces.css` to `css/mobile_premium_focus.css`.
@@ -160,13 +160,13 @@ Selectors in play:
 Minimum verification: `npm run qa:contract:field-node`
 
 **Journey-compass within field-node:**
-`css/mobile_premium_surfaces.css` owns field-node journey-compass grid layout and shared idle/search backstops (62 current raw `journey-compass` matches after the focus/dive refinement pass). It still owns `[data-focus-panel-mode="field-node"] .journey-compass` with `grid-template-columns`, `[data-focus-panel-mode="field-node"] .journey-compass-copy`, `[data-focus-panel-mode="field-node"] .journey-compass-actions`, and `[data-focus-panel-mode="field-node"] .journey-compass-action` action button layout.
-`css/journey_active.css` owns `.journey-compass` base phase/density states (162 selectors, lines 155–327).
-`css/mobile_premium_focus.css` owns field-node mobile focus-search glass-heavy refinements plus focus-search/semantic-dive compact journey-compass overrides (42 current raw `journey-compass` matches).
-`css/strands.css` owns field-node journey-compass action buttons (40 selectors total, field-node subset).
+`css/mobile_premium_focus.css` owns active mobile field-node journey-compass refinements plus focus-search/semantic-dive compact journey-compass overrides (44 current raw `journey-compass` matches). It owns the active `focus-search` + `field-node` `.journey-compass.glass-heavy`, `.journey-compass-copy`, `.journey-compass-actions`, and `.journey-compass-action` layout.
+`css/mobile_premium_surfaces.css` owns non-active field-node fallbacks plus shared idle/search backstops (52 current raw `journey-compass` matches). It should not regain active field-node `is-active[data-panel-surface="focus-search"]` geometry.
+`css/journey_active.css` owns `.journey-compass` base phase/density states (18 selectors).
+`css/strands.css` owns field-node journey-compass action buttons (39 selectors total, field-node subset).
 `css/layout_base.css` owns map-focus/trail journey-compass info-panel overrides (12 selectors).
 Do not add journey-compass geometry to `css/journey_steps.css` — it has no journey-compass selectors and must stay that way.
-Verification: `npm run qa:contract:field-node` + `rg -c 'journey-compass' css/mobile_premium_surfaces.css` (should report 62)
+Verification: `npm run qa:contract:field-node` + `rg -c 'journey-compass' css/mobile_premium_focus.css` (should report 44) + `rg -c 'journey-compass' css/mobile_premium_surfaces.css` (should report 52)
 
 ---
 
@@ -313,16 +313,16 @@ git diff --check
 
 | Touched file | Command | Expected |
 |---|---|---|
-| `css/journey_active.css` journey-compass base | `rg -c '\.journey-compass' css/journey_active.css` | 162 |
-| `css/mobile_premium_surfaces.css` field-node chrome | `rg -c 'journey-compass' css/mobile_premium_surfaces.css` | 62 |
-| `css/mobile_premium_focus.css` focus-search/dive | `rg -c 'journey-compass' css/mobile_premium_focus.css` | 42 |
-| `css/strands.css` field-node actions | `rg -c '\.journey-compass' css/strands.css` | 40 |
+| `css/journey_active.css` journey-compass base | `rg -c '\.journey-compass' css/journey_active.css` | 18 |
+| `css/mobile_premium_focus.css` active field-node/focus-search/dive | `rg -c 'journey-compass' css/mobile_premium_focus.css` | 44 |
+| `css/mobile_premium_surfaces.css` non-active field-node/backstops | `rg -c 'journey-compass' css/mobile_premium_surfaces.css` | 52 |
+| `css/strands.css` field-node actions | `rg -c '\.journey-compass' css/strands.css` | 39 |
 | `css/layout_base.css` map-focus/trail | `rg -c '\.journey-compass' css/layout_base.css` | 12 |
-| `css/mobile_base.css` early mobile | `rg -c '\.journey-compass' css/mobile_base.css` | 17 |
-| `css/progressive_disclosure.css` show/hide | `rg -c '\.journey-compass' css/progressive_disclosure.css` | 6 |
-| `css/animations.css` reduced-motion tail | `rg -c '\.journey-compass' css/animations.css` | 7 |
-| `css/mobile_premium_state.css` idle/map-view | `rg -c '\.journey-compass' css/mobile_premium_state.css` | 11 |
-| `css/mobile_premium_chrome.css` drawer polish | `rg -c '\.journey-compass' css/mobile_premium_chrome.css` | 2 |
+| `css/mobile_base.css` early mobile | `rg -c '\.journey-compass' css/mobile_base.css` | 6 |
+| `css/progressive_disclosure.css` show/hide | `rg -c '\.journey-compass' css/progressive_disclosure.css` | 2 |
+| `css/animations.css` reduced-motion tail | `rg -c '\.journey-compass' css/animations.css` | 5 |
+| `css/mobile_premium_state.css` idle/map-view | `rg -c '\.journey-compass' css/mobile_premium_state.css` | 15 |
+| `css/mobile_premium_chrome.css` drawer polish | `rg -c '\.journey-compass' css/mobile_premium_chrome.css` | 3 |
 | `css/journey_steps.css` | `rg -c '\.journey-compass' css/journey_steps.css` | 0 (must stay 0) |
 
 If `css/journey_steps.css` reports non-zero journey-compass selectors, that is a regression — journey-compass geometry must not be added there.

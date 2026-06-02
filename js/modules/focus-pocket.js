@@ -225,6 +225,9 @@ export function applyLocalNeighborhoodFocus(index) {
             index: candidate.index,
             kind: 'primary',
             score: candidate.semanticScore || candidate.score || 0.62,
+            relationshipRole: candidate.relationshipRole || '',
+            relationshipAxis: candidate.relationshipAxis || '',
+            roleReason: candidate.roleReason || '',
             sameCity:
                 normalizeCityForFilter(point.city) ===
                 normalizeCityForFilter((Number.isFinite(index) && index >= 0 && index < state.points.length) ? state.points[index]?.city : undefined),

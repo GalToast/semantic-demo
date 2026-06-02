@@ -1,7 +1,5 @@
 // state
 import { state } from '../state.js';
-import { syncSemanticDiveUi } from './semantic-dive-ui.js'; // eslint-disable-line no-unused-vars
-
 // utils
 import { formatBusinessName, cleanPublicNoteText } from './utils/dom-formatters.js';
 
@@ -25,6 +23,7 @@ import { focusOnNode } from './camera-controls.js';
 // ui-renderers
 
 import { setSemanticDiveMode } from './journey-lifecycle-adapter.js';
+import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 import { getRouteLayerOrigin } from './camera-controls.js';
 import { recenterFocusedNode } from './event-bindings.js';
 import { exploreInsideToNextStop, resetExplorationFocus, setTrailDepth } from './lifecycle.js';
@@ -165,9 +164,11 @@ export function executeJourneyCompassAction(action) {
         }
         case 'enter-inside':
             if (typeof setSemanticDiveMode === 'function') setSemanticDiveMode(true);
+            syncSemanticDiveUi();
             return;
         case 'show-trail-panel':
             if (typeof setSemanticDiveMode === 'function') setSemanticDiveMode(false);
+            syncSemanticDiveUi();
             return;
         case 'next-stop':
             if (state.strandContinuityState?.phase === 'exploring') return;

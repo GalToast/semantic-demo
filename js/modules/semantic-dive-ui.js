@@ -46,7 +46,8 @@ function getStepInsideConnectionCopy(candidate, focusIndex) {
 }
 
 export function syncSemanticDiveUi() {
-    const hasFocus = state.focusedNode !== null && state.focusedNode !== undefined;
+    const hasFocus = state.focusedNode !== null && state.focusedNode !== undefined
+        || Number.isFinite(state.navState?.focusedIndex);
     const canDive = state.currentView === 'galaxy' && hasFocus;
     // NOTE: semanticDiveMode is NOT force-cleared here when canDive becomes false.
     // View switches (galaxy -> map) should preserve dive state so the user can
@@ -72,6 +73,7 @@ export function syncSemanticDiveUi() {
     const insideStatus = document.getElementById('focus-stage-inside-status');
     const insideStatusCopy = document.getElementById('focus-stage-inside-status-copy');
     const insideNextButton = document.getElementById('btn-inside-next');
+    const insideMapButton = document.getElementById('btn-inside-map');
     const insideCountyButton = document.getElementById('btn-inside-county');
     const focusKicker = document.getElementById('focus-stage-kicker');
     const journeyCompass = document.getElementById('journey-compass');
@@ -92,9 +94,13 @@ export function syncSemanticDiveUi() {
     const hasNextCandidate = active && Number.isFinite(nextExploreCandidate?.index);
     const hasWalked = (state.navState?.explorationHistoryIndices || []).length > 1;
 
-    if (insideControls) insideControls.setAttribute('aria-hidden', active ? 'false' : 'true');
-    if (insideControls) insideControls.inert = !active;
+    if (insideControls) {
+        insideControls.hidden = !active;
+        insideControls.setAttribute('aria-hidden', active ? 'false' : 'true');
+        insideControls.inert = !active;
+    }
     if (insideStatus) {
+        insideStatus.hidden = !active;
         insideStatus.setAttribute('aria-hidden', active ? 'false' : 'true');
         insideStatus.setAttribute('role', 'status');
         insideStatus.setAttribute('aria-live', 'polite');
@@ -143,6 +149,12 @@ export function syncSemanticDiveUi() {
                   ? 'Go to the next neighborhood stop'
                   : 'Trail complete, no more connections to follow'
         );
+    }
+    if (insideMapButton) {
+        insideMapButton.disabled = !canDive;
+        insideMapButton.setAttribute('aria-disabled', String(!canDive));
+        insideMapButton.setAttribute('aria-label', 'Project this trail onto the map');
+        insideMapButton.textContent = 'Map';
     }
     if (insideCountyButton) {
         insideCountyButton.disabled = !canDive;

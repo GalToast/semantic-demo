@@ -51,6 +51,7 @@ const ignoreRequestFailure = (url) => (
 function classifyConsoleIssue(msg) {
   const text = msg.text();
   if (/GL Driver Message .*ReadPixels/i.test(text)) return 'headless-webgl-readpixels';
+  if (/WebGL:\s+CONTEXT_LOST_WEBGL:.*context lost/i.test(text)) return 'headless-webgl-context-lost';
   if (/Detected raw PHP response\. Assuming static dev server/i.test(text)) return 'expected-static-dev-fallback';
   if (/\[demo\] blocked .*no WebGL \/ software renderer/i.test(text)) return 'headless-demo-webgl-guard';
   if (/error|warn/i.test(msg.type()) || /error|exception|failed/i.test(text)) return 'actionable';
@@ -1164,6 +1165,87 @@ function insideViewport(rect, viewport, tolerance = 1) {
     rect.bottom <= viewport.height + tolerance;
 }
 
+function expectedCompactJourneyLabel(action) {
+  return ({
+    'center-anchor': 'Center',
+    'next-stop': 'Next',
+    'open-map': 'Map',
+    'search-field': 'Search',
+    'focus-search': 'Search',
+    'enter-inside': 'Inside',
+    'open-mycelium': 'Mycelium',
+    'county-overview': 'County',
+    'show-trail-panel': 'Trail',
+  })[action] || '';
+}
+
+function expectedMapTrailLabel(action) {
+  return ({
+    'open-mycelium': 'Mycelium',
+    'county-overview': 'Reset',
+    'focus-search': 'Search',
+  })[action] || '';
+}
+
+function assertCompactJourneyActionLabels(artifacts) {
+  const assertions = [];
+  const pass = (label, check) => assertions.push({ level: 'pass', label, check });
+  const fail = (label, check, msg) => assertions.push({ level: 'fail', label, check, msg });
+
+  for (const { label, state } of artifacts) {
+    const visibleCompactActions = (state?.journeyActions || []).filter((action) =>
+      action?.compactLabel &&
+      action?.action &&
+      rendered(action.rect) &&
+      !action.hidden &&
+      !action.disabled
+    );
+    const mismatches = visibleCompactActions
+      .map((action) => ({
+        id: action.id,
+        action: action.action,
+        text: action.text,
+        compactLabel: action.compactLabel,
+        expected: expectedCompactJourneyLabel(action.action),
+      }))
+      .filter((action) => action.expected && action.compactLabel !== action.expected);
+
+    if (mismatches.length === 0) pass(label, 'compact-actions:semantic-labels');
+    else fail(label, 'compact-actions:semantic-labels', JSON.stringify(mismatches));
+  }
+
+  return assertions;
+}
+
+function assertMapTrailActionLabels(artifacts) {
+  const assertions = [];
+  const pass = (label, check) => assertions.push({ level: 'pass', label, check });
+  const fail = (label, check, msg) => assertions.push({ level: 'fail', label, check, msg });
+
+  for (const { label, state } of artifacts) {
+    const visibleMapActions = (state?.mapTrailActions || []).filter((action) =>
+      action?.action &&
+      rendered(action.rect) &&
+      !action.hidden &&
+      !action.disabled
+    );
+    if (!visibleMapActions.length) continue;
+
+    const mismatches = visibleMapActions
+      .map((action) => ({
+        action: action.action,
+        text: action.text,
+        expected: expectedMapTrailLabel(action.action),
+      }))
+      .filter((action) => action.expected && action.text !== action.expected);
+
+    if (mismatches.length === 0) pass(label, 'map-strip-actions:semantic-labels');
+    else fail(label, 'map-strip-actions:semantic-labels', JSON.stringify(mismatches));
+  }
+
+  return assertions;
+}
+
 function clippedVisibleHeight(container, child) {
   if (!container || !child) return 0;
   return Math.max(
@@ -1352,12 +1434,20 @@ function assertProductOwnership(artifacts) {
   if (mobileReturn) {
     const routeEvidence = mobileReturn.routeEvidence || {};
     const infoPanel = rect(mobileReturn, '#info-panel');
+    const compass = rect(mobileReturn, '#journey-compass');
+    const utilityChrome = ['.panel-toggle', '.share-toggle', '.help-toggle', '#btn-legend', '#btn-share-view', '#btn-keyboard-help']
+      .map((selector) => ({ selector, rect: rect(mobileReturn, selector) }))
+      .filter((entry) => rendered(entry.rect));
     if (mobileReturn.bodyDataset?.trailDepth === '0' || mobileReturn.appState?.trailDepth === 0) pass('09-mobile-return-county', 'mobile-return:trail-depth-reset');
     else fail('09-mobile-return-county', 'mobile-return:trail-depth-reset', `expected trailDepth=0, got body=${mobileReturn.bodyDataset?.trailDepth || 'none'} state=${mobileReturn.appState?.trailDepth}`);
     if (mobileReturn.bodyDataset?.panelSurface === 'map-idle') pass('09-mobile-return-county', 'mobile-return:calm-map-overview-surface');
     else fail('09-mobile-return-county', 'mobile-return:calm-map-overview-surface', `expected map-idle, got ${mobileReturn.bodyDataset?.panelSurface || 'none'}`);
     if (mobileReturn.bodyDataset?.journeyNavigationOwner !== 'map-trail-strip') pass('09-mobile-return-county', 'mobile-return:map-trail-strip-released');
     else fail('09-mobile-return-county', 'mobile-return:map-trail-strip-released', 'map trail strip still owns navigation after county reset');
+    if (!rendered(compass)) pass('09-mobile-return-county', 'mobile-return:hidden-density-compass-suppressed');
+    else fail('09-mobile-return-county', 'mobile-return:hidden-density-compass-suppressed', `map-idle density=hidden should suppress #journey-compass, got ${JSON.stringify(compass)}`);
+    if (utilityChrome.length === 0) pass('09-mobile-return-county', 'mobile-return:utility-chrome-suppressed');
+    else fail('09-mobile-return-county', 'mobile-return:utility-chrome-suppressed', `map-idle should not show standalone utility chrome: ${JSON.stringify(utilityChrome)}`);
     if (!rendered(infoPanel)) pass('09-mobile-return-county', 'mobile-return:info-panel-released');
     else fail('09-mobile-return-county', 'mobile-return:info-panel-released', `#info-panel should not dominate calm map overview, got ${JSON.stringify(infoPanel)}`);
     const actions = enabledVisibleActions(mobileReturn);
@@ -1443,10 +1533,18 @@ function assertRealRouteVisual(artifacts) {
 
   const returnState = byLabel.get('09-mobile-return-county');
   const returnInfoPanel = returnState?.rects?.['#info-panel'];
+  const returnCompass = returnState?.rects?.['#journey-compass'];
+  const returnUtilityChrome = ['.panel-toggle', '.share-toggle', '.help-toggle', '#btn-legend', '#btn-share-view', '#btn-keyboard-help']
+    .map((selector) => ({ selector, rect: returnState?.rects?.[selector] }))
+    .filter((entry) => rendered(entry.rect));
   if (returnState?.bodyDataset?.panelSurface === 'map-idle') pass('09-mobile-return-county', 'real-route-visual:calm-map-overview-surface');
   else fail('09-mobile-return-county', 'real-route-visual:calm-map-overview-surface', `expected map-idle after reset, got ${returnState?.bodyDataset?.panelSurface || 'missing'}`);
   if (returnState?.bodyDataset?.journeyNavigationOwner !== 'map-trail-strip') pass('09-mobile-return-county', 'real-route-visual:map-trail-strip-released');
   else fail('09-mobile-return-county', 'real-route-visual:map-trail-strip-released', 'map trail strip still owns navigation after reset');
+  if (!rendered(returnCompass)) pass('09-mobile-return-county', 'real-route-visual:hidden-density-compass-suppressed');
+  else fail('09-mobile-return-county', 'real-route-visual:hidden-density-compass-suppressed', `map-idle density=hidden should suppress #journey-compass, got ${JSON.stringify(returnCompass)}`);
+  if (returnUtilityChrome.length === 0) pass('09-mobile-return-county', 'real-route-visual:utility-chrome-suppressed');
+  else fail('09-mobile-return-county', 'real-route-visual:utility-chrome-suppressed', `map-idle should not show standalone utility chrome: ${JSON.stringify(returnUtilityChrome)}`);
   if (!rendered(returnInfoPanel)) pass('09-mobile-return-county', 'real-route-visual:info-panel-released');
   else fail('09-mobile-return-county', 'real-route-visual:info-panel-released', `#info-panel should be hidden after county reset, got ${JSON.stringify(returnInfoPanel)}`);
   const returnActions = enabledVisibleActions(returnState || {});
@@ -2064,6 +2162,8 @@ await fs.writeFile(path.join(outDir, 'network-log.json'), `${JSON.stringify(netw
 await fs.writeFile(path.join(outDir, 'ignored-network-log.json'), `${JSON.stringify(ignoredNetworkLog, null, 2)}\n`);
 const productAssertions = [
   ...(REAL_ROUTE_VISUAL ? assertRealRouteVisual(artifacts) : assertProductOwnership(artifacts)),
+  ...assertCompactJourneyActionLabels(artifacts),
+  ...assertMapTrailActionLabels(artifacts),
   ...(VISUAL_ERGONOMICS ? assertVisualErgonomics(artifacts) : []),
 ];
 const productFailures = productAssertions.filter((assertion) => assertion.level === 'fail');

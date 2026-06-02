@@ -370,9 +370,10 @@ export function updateTraversalUi() {
         focusProgressEl.textContent = `Stop ${stepNumber} of ${neighborCount}`;
         if (focusNextEl) {
             focusNextEl.textContent = nextWalkName
-                ? `Next: ${nextWalkName} - ${nextWalkReason.length > 40 ? nextWalkReason.slice(0, 37) + '...' : nextWalkReason}.`
+                ? `Next: ${nextWalkName} - ${nextWalkReason}.`
                 : 'This exploration has no unseen visible stop left in the current slice.';
-
+            if (nextWalkName) focusNextEl.title = focusNextEl.textContent;
+            else focusNextEl.removeAttribute('title');
         }
     } else if (neighborCount === 0 && state.navState.threadSource === 'semantic') {
         contextEl.textContent = `Semantic connections exist around ${currentName}, but none survive the current slice. Broaden the view to see the record-backed relationship.`;
@@ -391,8 +392,10 @@ export function updateTraversalUi() {
             : `Start with ${currentName}, then explore the neighborhood.`;
         if (focusNextEl) {
             focusNextEl.textContent = nextWalkName
-                ? `Next: ${nextWalkName} - ${nextWalkReason.length > 40 ? nextWalkReason.slice(0, 37) + '...' : nextWalkReason}.`
+                ? `Next: ${nextWalkName} - ${nextWalkReason}.`
                 : 'Choose a nearby business to continue the path.';
+            if (nextWalkName) focusNextEl.title = focusNextEl.textContent;
+            else focusNextEl.removeAttribute('title');
         }
     }
 

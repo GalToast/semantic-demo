@@ -962,7 +962,6 @@ html body[data-panel-surface="focus-search"] .controls .control-btn {
     }
 
     html body[data-panel-surface="idle"] .info-content {
-        max-height: calc(100dvh - 300px);
         padding: 13px 16px 16px;
     }
 
@@ -1030,7 +1029,7 @@ html body[data-panel-surface="focus-search"] .controls .control-btn {
         width: min(472px, calc(100vw - 620px));
         min-width: 430px;
         top: 98px;
-        padding: 14px 15px 15px;
+        padding: 14px 24px 15px;
         grid-template-columns: minmax(0, 1fr);
         gap: 9px;
         border-radius: 8px;
@@ -1080,7 +1079,7 @@ html body[data-panel-surface="focus-search"] .controls .control-btn {
         width: min(472px, calc(100vw - 620px));
         min-width: 430px;
         top: 98px;
-        padding: 14px 15px 15px;
+        padding: 14px 24px 15px;
         grid-template-columns: minmax(0, 1fr);
         gap: 9px;
         border-radius: 8px;

@@ -385,6 +385,9 @@ export function cancelAnimate() {
     if (!contextWasLost && renderer && scene && camera) {
         try { renderer.render(scene, camera); } catch (_) { /* context already gone */ }
     }
+    if (state.controls && typeof state.controls.dispose === 'function') {
+        state.controls.dispose();
+    }
     state.scene = null;
     state.camera = null;
     state.controls = null;

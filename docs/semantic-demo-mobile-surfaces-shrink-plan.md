@@ -63,8 +63,8 @@ that other files cannot cleanly own due to selector complexity or cascade positi
 | 144-149 | `.journey-compass-action.primary` | Primary action gradient/border. |
 | 151-155 | `.journey-compass-action:active` | Active press feedback. |
 | 157-160 | `.journey-compass-note/.rail` hide | These elements are hidden by default; harmonizer manages visibility. |
-| **342-379** | `data-focus-panel-mode="field-node"` journey-compass grid | Field-node specific layout (grid-template-columns, gap, min-width). Distinct variant that overrides generic compass in a specific mode. **Keep here.** |
-| **381-407** | `data-panel-surface="idle"` journey-compass grid | Idle-specific compass layout variant. Distinct from field-node. **Keep here.** |
+| **451-522** | non-active `data-focus-panel-mode="field-node"` journey-compass fallback | Non-active/search-settling backstop only. Active mobile field-node journey-compass geometry now belongs in `mobile_premium_focus.css`; do not add `body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"]` geometry back here. |
+| **526-561** | `data-panel-surface="idle"` journey-compass grid | Idle-specific compass layout variant. Distinct from field-node. **Keep here.** |
 | 410-414 | `.focus-stage-route` | Route display. Part of focus stage atom. |
 | 416-426 | `.focus-stage-route-dot` / `.is-current` | Route dots. Part of focus stage atom. |
 | 429-457 | `.focus-stage-neighbors` / neighbor card | Neighbors list. Part of focus stage atom. |

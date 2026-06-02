@@ -38,7 +38,10 @@ export function bindSearchControls() {
     if (searchInput._onInputHandler) searchInput.removeEventListener('input', searchInput._onInputHandler);
     searchInput._onInputHandler = searchInputHandler;
     searchInput.addEventListener('input', searchInputHandler);
-    searchInput.addEventListener('keydown', (event) => {
+    if (searchInput._onKeydownHandler) {
+        searchInput.removeEventListener('keydown', searchInput._onKeydownHandler);
+    }
+    searchInput._onKeydownHandler = (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
             event.stopPropagation();
@@ -52,9 +55,13 @@ export function bindSearchControls() {
             else clearSearch();
             searchInput.blur();
         }
-    });
+    };
+    searchInput.addEventListener('keydown', searchInput._onKeydownHandler);
 
     if (clearBtn) {
+        if (clearBtn._onClickHandler) clearBtn.removeEventListener('click', clearBtn._onClickHandler);
+        if (clearBtn._onKeydownHandler) clearBtn.removeEventListener('keydown', clearBtn._onKeydownHandler);
+
         const activateSearchClear = (event) => {
             event?.preventDefault?.();
             event?.stopPropagation?.();
@@ -63,9 +70,13 @@ export function bindSearchControls() {
             searchInput.focus();
             updateHasQuery();
         };
-        clearBtn.addEventListener('click', activateSearchClear);
-        clearBtn.addEventListener('keydown', (event) => {
+
+        clearBtn._onClickHandler = activateSearchClear;
+        clearBtn._onKeydownHandler = (event) => {
             if (event.key === 'Enter' || event.key === ' ') activateSearchClear(event);
-        });
+        };
+
+        clearBtn.addEventListener('click', clearBtn._onClickHandler);
+        clearBtn.addEventListener('keydown', clearBtn._onKeydownHandler);
     }
 }

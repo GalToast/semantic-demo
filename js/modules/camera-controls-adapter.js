@@ -8,7 +8,6 @@
 let _showTerrainPreludeOverlay = null;
 let _hideTerrainPreludeOverlay = null;
 let _setRouteChoreographyPhase = null;
-let _hideTooltip = null;
 let _clearThreadInspection = null;
 let _setTrailFromSeed = null;
 let _updateTrailIndices = null;
@@ -22,7 +21,6 @@ export function initCameraControlsAdapter(deps = {}) {
     _showTerrainPreludeOverlay = typeof deps.showTerrainPreludeOverlay === 'function' ? deps.showTerrainPreludeOverlay : null;
     _hideTerrainPreludeOverlay = typeof deps.hideTerrainPreludeOverlay === 'function' ? deps.hideTerrainPreludeOverlay : null;
     _setRouteChoreographyPhase = typeof deps.setRouteChoreographyPhase === 'function' ? deps.setRouteChoreographyPhase : null;
-    _hideTooltip = typeof deps.hideTooltip === 'function' ? deps.hideTooltip : null;
     _clearThreadInspection = typeof deps.clearThreadInspection === 'function' ? deps.clearThreadInspection : null;
     _setTrailFromSeed = typeof deps.setTrailFromSeed === 'function' ? deps.setTrailFromSeed : null;
     _updateTrailIndices = typeof deps.updateTrailIndices === 'function' ? deps.updateTrailIndices : null;
@@ -36,7 +34,6 @@ export function initCameraControlsAdapter(deps = {}) {
 export function adapter_showTerrainPreludeOverlay() { if (_showTerrainPreludeOverlay) _showTerrainPreludeOverlay(); }
 export function adapter_hideTerrainPreludeOverlay() { if (_hideTerrainPreludeOverlay) _hideTerrainPreludeOverlay(); }
 export function adapter_setRouteChoreographyPhase(p, m) { if (_setRouteChoreographyPhase) _setRouteChoreographyPhase(p, m); }
-export function adapter_hideTooltip() { if (_hideTooltip) _hideTooltip(); }
 export function adapter_clearThreadInspection(opts) { if (_clearThreadInspection) _clearThreadInspection(opts); }
 export function adapter_setTrailFromSeed(idx) { if (_setTrailFromSeed) _setTrailFromSeed(idx); }
 export function adapter_updateTrailIndices(idx) { if (_updateTrailIndices) _updateTrailIndices(idx); }

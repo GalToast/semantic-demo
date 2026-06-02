@@ -293,6 +293,12 @@
         border-radius: 0;
     }
 
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .journey-compass {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     html body.is-active[data-panel-surface="search"][data-panel-surface-detail="expanded"] .info-content,
     html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="expanded"] .info-content {
         height: calc(100dvh - 20px);

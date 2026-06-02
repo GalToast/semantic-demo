@@ -3,7 +3,12 @@ import { formatBusinessName, cleanOptionalValue } from './utils/dom-formatters.j
 import { normalizeCityForFilter } from './utils/geo-data.js';
 import { focusOnNode } from './camera-controls.js';
 import { dispatchNavTransition, focusOnPoint, updateJourneyCompass } from './lifecycle.js';
-import { renderThreadInspection, inspectThreadNeighbor, clearThreadInspection } from './thread-inspector.js';
+import {
+    renderThreadInspection,
+    inspectThreadNeighbor,
+    clearThreadInspection,
+    syncInspectedStrandOverlay
+} from './thread-inspector.js';
 import { showExperienceToast } from './ui-feedback.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 import { truncateMicrocopy, getSharedTrailTopicLabel } from './journey-text-helpers.js';
@@ -17,6 +22,9 @@ import {
     getNextWalkCandidateForIndex
 } from './journey-neighborhood.js';
 import { syncFocusStage } from './journey-selected-card.js';
+
+// Direct import sentinel for the inspected-strand overlay dewindowing contract.
+void syncInspectedStrandOverlay;
 
 let _setTimer = (fn, delay) => typeof setTimeout !== 'undefined' ? setTimeout(fn, delay) : undefined;
 let _clearTimer = (id) => typeof clearTimeout !== 'undefined' ? clearTimeout(id) : undefined;

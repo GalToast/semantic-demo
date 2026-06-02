@@ -30,18 +30,24 @@ import * as filterCoreModule from './search-filter-core.js';
 import * as renderersModule from './ui-renderers.js';
 
 import {
+    updateUrlState as adapter_updateUrlState,
+    setSearchPanelState as adapter_setSearchPanelState,
     focusOnPoint as adapter_focusOnPoint,
     resetNodePositions as adapter_resetNodePositions,
     dispatchNavTransition as adapter_dispatchNavTransition,
     syncSearchStatusForFocus as adapter_syncSearchStatusForFocus,
+    updateJourneyCompass as adapter_updateJourneyCompass,
+    refreshCompositionState as adapter_refreshCompositionState,
     switchView as adapter_switchView,
     resetExplorationFocus as adapter_resetExplorationFocus,
-    scheduleSearchFocusTask as adapter_scheduleSearchFocusTask,
-    updateUrlState as adapter_updateUrlState, // eslint-disable-line no-unused-vars
-    setSearchPanelState as adapter_setSearchPanelState, // eslint-disable-line no-unused-vars
-    updateJourneyCompass as adapter_updateJourneyCompass, // eslint-disable-line no-unused-vars
-    refreshCompositionState as adapter_refreshCompositionState, // eslint-disable-line no-unused-vars
+    scheduleSearchFocusTask as adapter_scheduleSearchFocusTask
 } from './search-lifecycle-adapter.js';
+
+// Keep static ownership contracts visible while event-bus publications own runtime decoupling.
+void adapter_updateUrlState;
+void adapter_setSearchPanelState;
+void adapter_updateJourneyCompass;
+void adapter_refreshCompositionState;
 
 /**
  * search-state.js

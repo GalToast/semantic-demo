@@ -57,6 +57,7 @@ function callWorker(type, payload) {
 export async function loadData() {
     let lastError;
     state.dataLoadAttempt = (state.dataLoadAttempt || 0) + 1;
+    const attemptNumber = state.dataLoadAttempt;
     const maxAttempts = 3;
     const dataUrl = buildAssetUrl(`data.dat?v=6&t=${Date.now()}`);
 
@@ -66,6 +67,7 @@ export async function loadData() {
         try {
             const { points, pointIndexByLeadId, positionsBuffer, clustersBuffer } = await callWorker('LOAD_RECORDS', { url: dataUrl });
             withStateMutation(() => {
+                if (state.dataLoadAttempt !== attemptNumber) return;
                 state.points = points;
                 state.pointIndexByLeadId = new Map(Object.entries(pointIndexByLeadId));
                 state.rawPositionsBuffer = positionsBuffer;
@@ -145,6 +147,7 @@ export async function loadData() {
     });
 
     withStateMutation(() => {
+        if (state.dataLoadAttempt !== attemptNumber) return;
         state.points = points;
         state.rawPositionsBuffer = positionsBuffer;
         state.rawClustersBuffer = clustersBuffer;

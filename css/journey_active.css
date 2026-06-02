@@ -20,6 +20,13 @@
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+@media (min-width: 769px) {
+    .journey-compass {
+        left: calc(360px + (100vw - 360px) / 2);
+        max-width: calc(100vw - 392px);
+    }
+}
+
 .journey-compass::before {
     content: '';
     position: absolute;
@@ -101,6 +108,7 @@ html body[data-panel-surface="focus"] .journey-compass-note {
     letter-spacing: 0.08em;
     line-height: 1;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .journey-compass-action[hidden],
@@ -119,7 +127,7 @@ html body[data-panel-surface="focus"] .journey-compass-note {
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.06);
     background: rgba(255, 255, 255, 0.035);
-    color: rgba(219, 235, 233, 0.5);
+    color: rgba(255, 255, 255, 0.95);
     font-size: var(--mobile-type-action, 10px);
     line-height: 1.12;
     letter-spacing: 0.08em;
@@ -136,9 +144,9 @@ html body[data-panel-surface="focus"] .journey-compass-note {
 
 @media (min-width: 769px) {
     html body[data-active-view="galaxy"] .journey-compass-rail {
-        grid-template-columns: repeat(5, minmax(58px, max-content));
+        grid-template-columns: repeat(5, minmax(58px, 1fr));
         justify-content: start;
-        width: max-content;
+        width: 100%;
         max-width: 100%;
     }
 

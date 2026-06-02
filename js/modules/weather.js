@@ -265,7 +265,13 @@ function renderWeatherFallback() {
 
 function revealWeatherWidget() {
     const widget = document.querySelector('.weather-widget');
-    if (widget) widget.hidden = false;
+    if (widget) {
+        if (document.fonts.status === 'loaded') {
+            widget.hidden = false;
+        } else {
+            document.fonts.ready.then(() => { widget.hidden = false; });
+        }
+    }
 }
 
 function normalizeWeatherIcon(icon) {

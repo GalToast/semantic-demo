@@ -122,11 +122,11 @@ The journey-compass cascade is distributed across eight files. Edit the canonica
 | File | Journey-compass selectors | Role |
 |---|---|---|
 | `css/journey_active.css` | 162 | Journey-compass base, phase/density states, focus/search/inside behavior, map-trail active styling |
-| `css/mobile_premium_surfaces.css` | 62 | Mobile premium shared non-map compass normalization, idle/search/field-node backstops, map-search final geometry |
+| `css/mobile_premium_surfaces.css` | 54 | Mobile premium shared non-map compass normalization, idle/search/non-active field-node backstops, map-search final geometry |
 | `css/strands.css` | 40 | Mobile bottom sheet, route surfaces, journey-compass field-node action buttons |
 | `css/layout_base.css` | 12 | Info panel, map-focus/trail state overrides |
 | `css/mobile_base.css` | 6 | Reduced-motion support only; no mobile journey-compass layout ownership |
-| `css/mobile_premium_focus.css` | 42 | Mobile focus-search and semantic-dive journey-compass composition, including compact/glass-heavy refinements |
+| `css/mobile_premium_focus.css` | 55 | Mobile focus-search and semantic-dive journey-compass composition, including compact/glass-heavy and active field-node refinements |
 | `css/progressive_disclosure.css` | 6 | Show/hide, reduced-motion journey-compass suppression |
 | `css/animations.css` | 7 | Final mobile/reduced-motion override tail, galaxy overview compass |
 | `css/mobile_premium_chrome.css` | 2 | Mobile search drawer chrome journey-compass polish |
@@ -134,8 +134,8 @@ The journey-compass cascade is distributed across eight files. Edit the canonica
 
 **Canonical owners:**
 - `css/journey_active.css` owns `.journey-compass` base styling (lines 155–327), phase/density states (`[data-phase]`, `[data-density]`), and active-view map behavior.
-- `css/mobile_premium_surfaces.css` owns shared mobile non-map compass normalization: glass positioning, `.journey-compass-copy`/`.journey-compass-kicker`/`.journey-compass-title`/`.journey-compass-action` baseline typography/layout, idle/search sizing, and field-node grid backstops.
-- `css/mobile_premium_focus.css` owns mobile focus-search and semantic-dive journey-compass overrides, including `.journey-compass.glass-heavy`, semantic-dive compact `[data-density="compact"]` layout, compact rail display, and focus/dive title wrapping.
+- `css/mobile_premium_surfaces.css` owns shared mobile non-map compass normalization: glass positioning, `.journey-compass-copy`/`.journey-compass-kicker`/`.journey-compass-title`/`.journey-compass-action` baseline typography/layout, idle/search sizing, and non-active field-node backstops.
+- `css/mobile_premium_focus.css` owns mobile focus-search and semantic-dive journey-compass overrides, including `.journey-compass.glass-heavy`, active field-node canopy/action sizing, semantic-dive compact `[data-density="compact"]` layout, compact rail display, and focus/dive title wrapping.
 - `css/mobile_premium_chrome.css` owns mobile search drawer journey-compass chrome polish.
 - `css/mobile_premium_state.css` owns mobile idle and map-view state journey-compass refinement.
 
@@ -195,8 +195,8 @@ The `.focus-stage` selector family is distributed across **10 CSS files** (410+ 
 |---|---|---|
 | `css/modules/focus_stage.css` | 97 | **Base definitions**: `.focus-stage`, `.focus-stage-card`, `.focus-stage-dive-btn`, `.focus-stage-action-btn`, `.focus-stage-inside-*`, desktop layout, galaxy/map state visibility |
 | `css/journey_steps.css` | 99 | **Neighbor rail**: `.focus-stage-neighbor-*`, `.focus-stage-route-*`, thread inspector buttons, focus-transition-phase arrival animations |
-| `css/mobile_premium_focus.css` | 205 | **Mobile focus/dive composition**: `data-panel-surface="focus"`, `"focus-search"`, `"semantic-dive"` mobile overrides, chip/kicker/actions layout, focus-stage action/button primitives |
-| `css/mobile_premium_surfaces.css` | 38 | **Mobile geometry corrections**: idle state `.info-panel` max-height, neighbor card mobile layout, route dot sizing, and remaining field-node/late backstops |
+| `css/mobile_premium_focus.css` | 217 | **Mobile focus/dive composition**: `data-panel-surface="focus"`, `"focus-search"`, `"semantic-dive"` mobile overrides, chip/kicker/actions layout, active field-node canopy, focus-stage action/button primitives |
+| `css/mobile_premium_surfaces.css` | 18 | **Mobile geometry corrections**: idle state `.info-panel` max-height, neighbor card mobile layout, route dot sizing, and remaining non-active/late backstops |
 | `css/strands.css` | 5 | **Galaxy view**: `data-active-view="galaxy"` visibility for action/dive/inside/neighbor buttons |
 | `css/controls.css` | 2 | **Button primitives**: `.focus-stage-journey-btn` sizing alongside shared control-btn |
 | `css/mobile_base.css` | 1 | **Early mobile**: `.focus-stage-inside-pulse` reduced-motion override only; no `.focus-stage-card` ownership |
@@ -222,6 +222,14 @@ The `.focus-stage` selector family is distributed across **10 CSS files** (410+ 
 - Edit `css/mobile_premium_surfaces.css` only for late geometry corrections that must load after focus/state rules; do not reintroduce focus action primitive ownership there.
 - Do not add new `.focus-stage` selectors to `css/mobile_base.css`, `css/progressive_disclosure.css`, or `css/search.css` — those are legacy/supporting with minimal footprint.
 - Touch target minimum: all `.focus-stage-*-btn` elements must maintain `min-height: 44px` and `flex-shrink: 0` (enforced in `css/modules/focus_stage.css`; verified by `global-spacing` contract).
+
+2026-06-01 compact route-chip pass:
+- Moved non-field-node `focus-search` `.focus-stage-journey.active` compact layout, route progress/next copy, and hidden prev/next controls from `css/mobile_premium_surfaces.css` to `css/mobile_premium_focus.css`.
+- `css/mobile_premium_surfaces.css` now keeps only field-node/late backstops for this family; ordinary focus-search journey chip composition belongs to the focus owner.
+
+2026-06-01 field-node canopy pass:
+- Moved active `focus-search` field-node focus-stage suppression and journey-chip composition into `css/mobile_premium_focus.css`.
+- Active field-node journey-compass action sizing/pseudo-label typography now belongs to `css/mobile_premium_focus.css`; `css/mobile_premium_surfaces.css` keeps non-active fallback/backstop selectors only.
 
 ## Minimal QA Matrix For CSS Edits
 

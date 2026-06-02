@@ -26,6 +26,7 @@ body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .sea
 
 body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-results {
     margin-top: 6px;
+    padding-bottom: 6px;
 }
 
 body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-results-count {
@@ -91,6 +92,9 @@ body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .sea
     font-size: 14px;
     font-weight: 700;
     line-height: 1.08;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-badges {
@@ -102,8 +106,9 @@ body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .sea
 }
 
 body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-what,
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-context,
 body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-meta {
-    color: rgba(218, 232, 230, 0.72);
+    color: rgba(228, 240, 238, 0.85);
     font-size: 11px;
     line-height: 1.28;
 }
@@ -128,6 +133,8 @@ body[data-panel-surface="focus-search"] .search-result-item.active-focus {
     height: 14px;
     display: inline-block;
     flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
 }
 
 /* Alignment fix: ensure search container matches the 16px left rail of the weather widget */
@@ -833,8 +840,11 @@ body.searching .search-container.has-query .search-clear-btn {
 
 .stat-box {
     flex: 1;
-    text-align: center;
-    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 10px;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 10px;
 }
@@ -843,15 +853,17 @@ body.searching .search-container.has-query .search-clear-btn {
     font-family: 'JetBrains Mono', monospace;
     font-size: 24px;
     font-weight: 700;
-    color: #4ecdc4;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.96);
 }
 
 .stat-label {
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.5);
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.85);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-top: 4px;
+    margin-top: 6px;
 }
 
 .stat-caption {

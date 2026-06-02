@@ -5,18 +5,28 @@
  * Prevents main-thread blocking during application loading.
  */
 
+let _activeRequestId = 0;
+
 self.onmessage = async (event) => {
     const { type, payload } = event.data;
+    const requestId = ++_activeRequestId;
 
     try {
         if (type === 'LOAD_RECORDS') {
             const result = await handleLoadRecords(payload);
-            self.postMessage({ type: 'LOAD_RECORDS_SUCCESS', payload: result });
+            if (requestId !== _activeRequestId) return;
+            // Transfer buffers to main thread to eliminate cloning overhead
+            self.postMessage(
+                { type: 'LOAD_RECORDS_SUCCESS', payload: result },
+                [result.positionsBuffer.buffer, result.clustersBuffer.buffer]
+            );
         } else if (type === 'LOAD_THREADS') {
-            const result = await handleLoadThreads(payload);
+            const result = await handleLoadThreads(payload, requestId);
+            if (requestId !== _activeRequestId) return;
             self.postMessage({ type: 'LOAD_THREADS_SUCCESS', payload: result });
         }
     } catch (error) {
+        if (requestId !== _activeRequestId) return;
         self.postMessage({
             type: 'ERROR',
             payload: { message: error.message, stack: error.stack }
@@ -36,23 +46,36 @@ async function handleLoadRecords({ url }) {
     }
     if (!raw || !Array.isArray(raw)) throw new Error('Invalid records payload');
 
-    const points = raw.map((p) => ({
-        x: p.length > 0 ? parseFiniteNumber(p[0]) : null,
-        y: p.length > 1 ? parseFiniteNumber(p[1]) : null,
-        z: p.length > 2 ? parseFiniteNumber(p[2]) : null,
-        cluster: p.length > 3 ? p[3] : null,
-        name: p.length > 4 ? cleanOptionalValue(p[4]) : null,
-        what: p.length > 5 ? cleanOptionalValue(p[5]) || 'Montgomery County business' : 'Montgomery County business',
-        city: p.length > 6 ? cleanOptionalValue(p[6]) || 'Montgomery County' : 'Montgomery County',
-        lead_id: p.length > 7 ? p[7] : null,
-        lat: p.length > 8 ? parseFiniteNumber(p[8]) : null,
-        lng: p.length > 9 ? parseFiniteNumber(p[9]) : null,
-        website: p.length > 10 ? cleanOptionalValue(p[10]) : null,
-        email: p.length > 11 ? cleanOptionalValue(p[11]) : null,
-        phone: p.length > 12 ? cleanOptionalValue(p[12]) : null,
-        trivia: p.length > 13 ? cleanOptionalValue(p[13]) : null,
-        status: p.length > 14 ? cleanOptionalValue(p[14]) || 'active' : 'active'
-    }));
+    const count = raw.length;
+    const positionsBuffer = new Float32Array(count * 3);
+    const clustersBuffer = new Uint16Array(count);
+
+    const points = raw.map((p, i) => {
+        const x = p.length > 0 ? parseFiniteNumber(p[0]) : 0;
+        const y = p.length > 1 ? parseFiniteNumber(p[1]) : 0;
+        const z = p.length > 2 ? parseFiniteNumber(p[2]) : 0;
+        const cluster = p.length > 3 ? (parseInt(p[3], 10) || 0) : 0;
+
+        positionsBuffer[i * 3] = x;
+        positionsBuffer[i * 3 + 1] = y;
+        positionsBuffer[i * 3 + 2] = z;
+        clustersBuffer[i] = cluster;
+
+        return {
+            cluster,
+            name: p.length > 4 ? cleanOptionalValue(p[4]) : null,
+            what: p.length > 5 ? cleanOptionalValue(p[5]) || 'Montgomery County business' : 'Montgomery County business',
+            city: p.length > 6 ? cleanOptionalValue(p[6]) || 'Montgomery County' : 'Montgomery County',
+            lead_id: p.length > 7 ? p[7] : null,
+            lat: p.length > 8 ? parseFiniteNumber(p[8]) : null,
+            lng: p.length > 9 ? parseFiniteNumber(p[9]) : null,
+            website: p.length > 10 ? cleanOptionalValue(p[10]) : null,
+            email: p.length > 11 ? cleanOptionalValue(p[11]) : null,
+            phone: p.length > 12 ? cleanOptionalValue(p[12]) : null,
+            trivia: p.length > 13 ? cleanOptionalValue(p[13]) : null,
+            status: p.length > 14 ? cleanOptionalValue(p[14]) || 'active' : 'active'
+        };
+    });
 
     const pointIndexByLeadId = {};
     points.forEach((point, index) => {
@@ -61,20 +84,22 @@ async function handleLoadRecords({ url }) {
         }
     });
 
-    return { points, pointIndexByLeadId };
+    return { points, pointIndexByLeadId, positionsBuffer, clustersBuffer };
 }
 
-async function handleLoadThreads({ urls, attemptConfigs }) {
+async function handleLoadThreads({ urls, attemptConfigs }, requestId) {
     let bundle = null;
     let loadedArtifactName = null;
     let lastError = null;
 
     outer: for (const url of urls) {
+        if (requestId !== _activeRequestId) return null;
         const artifactName = artifactNameFromUrl(url);
         for (const config of attemptConfigs) {
             try {
                 const response = await fetch(url, config);
                 if (!response.ok) throw new Error(`Thread artifact unavailable (${response.status})`);
+                if (requestId !== _activeRequestId) return null;
                 bundle = await response.json();
                 loadedArtifactName = artifactName;
                 break outer;
@@ -85,6 +110,7 @@ async function handleLoadThreads({ urls, attemptConfigs }) {
         }
     }
 
+    if (requestId !== _activeRequestId) return null;
     if (!bundle) throw lastError || new Error('No thread artifacts could be loaded');
 
     // Transform node map to entries for Map reconstruction on main thread
@@ -104,6 +130,9 @@ async function handleLoadThreads({ urls, attemptConfigs }) {
                     bridgeScore: Number(neighbor?.bridge_score ?? 0),
                     signalScore: Number(neighbor?.signal_score ?? 0),
                     threadType: String(neighbor?.thread_type || '') || 'local_semantic_neighbor',
+                    relationshipRole: String(neighbor?.relationship_role || ''),
+                    relationshipAxis: String(neighbor?.relationship_axis || '') || '',
+                    roleReason: String(neighbor?.role_reason || '') || '',
                     reason: String(neighbor?.reason || '') || 'semantic neighbor'
                 })).filter((neighbor) => neighbor.leadId)
                 : [];
