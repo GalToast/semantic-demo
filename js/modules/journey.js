@@ -171,22 +171,32 @@ export function initJourneyState() {
     state.focusPocketMotionByIndex ??= new Map();
 }
 
-// Auto-init on first import — set up state defaults immediately
-initJourneyState();
-initJourneyNeighborhoodAdapter({
-    isThreadCandidateVisibleOnCanvas,
-    setTrailFromSeed,
-    applyLocalNeighborhoodFocus: adapter.applyLocalNeighborhoodFocus
-});
-initJourneySelectedCardAdapter({
-    getStrandArrivalNote,
-    updateTraversalUi
-});
-initJourneyCanvasInteractionAdapter({
-    summarizeNeighborReason,
-    walkThreadNeighbor,
-    inspectThreadNeighbor,
-    scheduleCanvasThreadInspectionClear
+// Auto-init on first import — set up state defaults immediately.
+//
+// Deferred to a microtask to break the synchronous initialization cycle
+// between journey.js -> journey-selected-card.js -> lifecycle.js -> journey.js.
+// The import graph evaluates top-to-bottom, so the const selectedCardAdapter
+// declaration in journey-selected-card.js hasn't been reached when this
+// module is loaded. queueMicrotask runs after the ESM evaluation cycle
+// completes, by which point every module's top-level declarations are
+// initialized.
+globalThis.queueMicrotask(() => {
+    initJourneyState();
+    initJourneyNeighborhoodAdapter({
+        isThreadCandidateVisibleOnCanvas,
+        setTrailFromSeed,
+        applyLocalNeighborhoodFocus: adapter.applyLocalNeighborhoodFocus
+    });
+    initJourneySelectedCardAdapter({
+        getStrandArrivalNote,
+        updateTraversalUi
+    });
+    initJourneyCanvasInteractionAdapter({
+        summarizeNeighborReason,
+        walkThreadNeighbor,
+        inspectThreadNeighbor,
+        scheduleCanvasThreadInspectionClear
+    });
 });
 
 // --- Helper Functions ---
