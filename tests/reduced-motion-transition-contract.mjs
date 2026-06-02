@@ -210,7 +210,7 @@ async function waitForReady(page) {
 
 async function runBrowserProof(port) {
   const server = await startServer(port);
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
 
   const desktopPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await desktopPage.emulateMedia({ reducedMotion: 'reduce' });

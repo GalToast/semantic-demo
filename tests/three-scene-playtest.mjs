@@ -336,7 +336,7 @@ async function main() {
     let browser;
     try {
         await waitForServer(server);
-        browser = await chromium.launch({ headless: true });
+        browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
         const runFreshPage = async (name, params, setup = null) => {
             const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true });
             const page = await context.newPage();

@@ -17,7 +17,7 @@
  *   5. Cluster counts are derivable from state.points
  *
  * Run: node --check tests/3d-cluster-readability.spec.js
- *      npx playwright test tests/3d-cluster-readability.spec.js
+ *      npx playwright test tests/3d-cluster-readability.spec.js --headed
  */
 
 import { test, expect } from '@playwright/test';

@@ -186,7 +186,7 @@ async function run() {
   let passed = false;
 
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
     const page = await makePage(browser);
 
     const targetUrl = `http://127.0.0.1:${DEFAULT_PORT}/vector-explorer-polished.html`;

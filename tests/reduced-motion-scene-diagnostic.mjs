@@ -204,7 +204,7 @@ async function run() {
         process.exit(1);
     }
 
-    const browser = await chromium.launch({ headless: true });
+    const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
     let passed = false;
     let diagnosticOutput = null;
 

@@ -23,7 +23,7 @@ function withCacheBust(url) {
   return parsed.href;
 }
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
 const page = await browser.newPage({
   viewport: { width: 390, height: 844 },
   deviceScaleFactor: 1,

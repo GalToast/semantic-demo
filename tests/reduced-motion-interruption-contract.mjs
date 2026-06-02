@@ -185,7 +185,7 @@ async function run() {
 
   const { server, port } = await startServer();
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   const context = await browser.newContext({
     viewport: { width: 1440, height: 900 },
     // Emulate reduced-motion so all animation/camera paths collapse to instant

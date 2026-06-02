@@ -5,7 +5,7 @@
  * of the semantic guide synthesis when api.php?action=semantic_guide fails.
  *
  * Run:
- *   npx playwright test tests/gemma-fallback-error.spec.js --browser=chromium
+ *   npx playwright test tests/gemma-fallback-error.spec.js --browser=chromium --headed
  */
 
 import { test, expect } from '@playwright/test';

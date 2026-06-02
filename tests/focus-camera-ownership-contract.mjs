@@ -218,7 +218,7 @@ function assertCameraOwnership(name, snap, {
     `${name}: selected-node halo scale is too large, got ${snap.focusHaloScale}`);
 }
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
 
 try {
   const mobile = await browser.newPage({

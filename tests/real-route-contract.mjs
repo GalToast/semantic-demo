@@ -57,7 +57,7 @@ async function main() {
 
   let browser;
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   } catch (e) {
     console.error('FAIL: browser launch failed:', e.message);
     process.exit(1);

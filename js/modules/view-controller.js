@@ -222,7 +222,7 @@ export function switchView(view, options = {}) {
             setTerrainHandoffState('idle', { from: handoffFrom, to: 'galaxy' });
         }
         if (canvasContainer) canvasContainer.classList.remove('hidden');
-        if (mapContainer) mapContainer.classList.remove('active');
+        if (mapContainer) mapContainer.classList.remove('active', 'arriving');
         if (state.selectedPoint) {
             const selectedIndex = state.points.indexOf(state.selectedPoint);
             if (selectedIndex >= 0) {

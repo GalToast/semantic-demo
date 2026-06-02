@@ -12,7 +12,7 @@
  * Desktop (1440×900) and short-landscape (844×390, mobile) are both covered.
  *
  * Run directly:
- *   npx playwright test tests/3d-focus-pocket-selectability.spec.js --browser=chromium
+ *   npx playwright test tests/3d-focus-pocket-selectability.spec.js --browser=chromium --headed
  * Or via manifest:
  *   node tests/run-all-contracts.js --group=scene
  */

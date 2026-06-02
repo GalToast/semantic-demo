@@ -14,6 +14,15 @@ import { chromium } from 'playwright';
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
 const cliArgs = process.argv.slice(2);
+const headed = !cliArgs.includes('--headless')
+  && process.env.PW_HEADLESS !== '1'
+  && process.env.PLAYWRIGHT_HEADLESS !== '1';
+const launchOptions = {
+  headless: !headed,
+  args: headed
+    ? ['--use-gl=angle', '--enable-webgl', '--no-sandbox']
+    : ['--no-sandbox'],
+};
 function positionalUrl(args) {
   const flagsWithValue = new Set(['--surface', '--state', '--states', '--surfaces']);
   for (let i = 0; i < args.length; i += 1) {
@@ -537,7 +546,7 @@ async function auditState(page, name) {
 }
 
 await fs.promises.mkdir(outDir, { recursive: true });
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch(launchOptions);
 const results = [];
 
 try {

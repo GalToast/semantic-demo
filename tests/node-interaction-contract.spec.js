@@ -6,7 +6,7 @@
  *
  * Run through the manifest runner or directly:
  *   node tests/run-all-contracts.js --group=scene
- *   npx playwright test tests/node-interaction-contract.spec.js --browser=chromium --workers=1
+ *   npx playwright test tests/node-interaction-contract.spec.js --browser=chromium --workers=1 --headed
  */
 
 import { test, expect } from '@playwright/test';

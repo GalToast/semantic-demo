@@ -33,7 +33,7 @@ async function enterMapMode(page) {
  *   css/mobile_premium_state.css  lines 147–183
  *   (owned by SD-143 — not edited by this agent)
  *
- * Run: TEST_BASE_URL=http://127.0.0.1:9876 npx playwright test tests/sd143-map-search-visual.spec.js
+ * Run: TEST_BASE_URL=http://127.0.0.1:9876 npx playwright test tests/sd143-map-search-visual.spec.js --headed
  */
 
 test.describe('SD-143: mobile Map mode search visibility', () => {

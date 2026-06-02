@@ -16,7 +16,7 @@
  * Desktop (1440×900) and short-landscape (844×390) are both covered.
  *
  * Run via:
- *   npx playwright test tests/3d-focus-neighborhood-geometry.spec.js --browser=chromium
+ *   npx playwright test tests/3d-focus-neighborhood-geometry.spec.js --browser=chromium --headed
  * Or via manifest — group: 3d-focus-pocket-geometry
  */
 

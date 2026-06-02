@@ -13,7 +13,7 @@ import { stateField } from './helpers/state-harness.js';
  * timer callback before proceeding), and resetExperienceState calls switchView('galaxy')
  * which properly clears the map terrain state and schedules WebGL cleanup.
  *
- * Run: TEST_BASE_URL=http://127.0.0.1:9876 npx playwright test tests/reset-experience-state.spec.js
+ * Run: TEST_BASE_URL=http://127.0.0.1:9876 npx playwright test tests/reset-experience-state.spec.js --headed
  */
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:9876').replace(/\/$/, '');
 const SEMANTIC_HEALTH_STUB = {

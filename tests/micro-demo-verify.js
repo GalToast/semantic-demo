@@ -71,7 +71,7 @@ async function runTests() {
   console.log(`   Path: ${PATH}`);
   console.log('');
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   const context = await browser.newContext();
   const page = await context.newPage();
   page.setDefaultNavigationTimeout(60000);

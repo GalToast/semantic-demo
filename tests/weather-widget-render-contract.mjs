@@ -123,7 +123,7 @@ async function main() {
     let browser;
     try {
         await waitForServer(server);
-        browser = await chromium.launch({ headless: true });
+        browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
 
         const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
         await waitForWeatherApi(page);

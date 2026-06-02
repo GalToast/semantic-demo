@@ -81,7 +81,7 @@ async function main() {
     const address = server.address();
     targetUrl = `http://127.0.0.1:${address.port}/vector-explorer-polished.html`;
   }
-  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   const context = await browser.newContext();
   const page = await context.newPage();
 

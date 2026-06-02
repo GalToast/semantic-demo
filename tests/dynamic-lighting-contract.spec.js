@@ -16,7 +16,7 @@
  *   4. Wait for state.focusedNode !== null
  *   5. Re-read opacity values and verify they are HIGHER than initial values
  *
- * Run: npx playwright test tests/dynamic-lighting-contract.spec.js
+ * Run: npx playwright test tests/dynamic-lighting-contract.spec.js --headed
  */
 
 import { test, expect } from '@playwright/test';

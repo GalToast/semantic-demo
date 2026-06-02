@@ -11,8 +11,8 @@
  * than screenshot comparison alone.
  *
  * Run:
- *   npx playwright test tests/critical-visual-layout-regression.spec.js
- *   TEST_BASE_URL=http://127.0.0.1:8795 npx playwright test tests/critical-visual-layout-regression.spec.js
+ *   npx playwright test tests/critical-visual-layout-regression.spec.js --headed
+ *   TEST_BASE_URL=http://127.0.0.1:8795 npx playwright test tests/critical-visual-layout-regression.spec.js --headed
  */
 
 import { test, expect } from '@playwright/test';

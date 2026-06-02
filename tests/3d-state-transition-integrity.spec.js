@@ -19,7 +19,7 @@
  *
  * Run:
  *   node --check tests/3d-state-transition-integrity.spec.js
- *   npx playwright test tests/3d-state-transition-integrity.spec.js --browser=chromium
+ *   npx playwright test tests/3d-state-transition-integrity.spec.js --browser=chromium --headed
  */
 
 import { test, expect } from '@playwright/test';

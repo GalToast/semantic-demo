@@ -13,7 +13,7 @@ import { stateField } from './helpers/state-harness.js';
  * Fix: Added `state.currentView !== 'galaxy'` guard inside the timer callback, and a defensive
  * early-return at the top of switchView when the view is already current.
  *
- * Run: TEST_BASE_URL=http://127.0.0.1:9876 npx playwright test tests/switchview-race.spec.js
+ * Run: TEST_BASE_URL=http://127.0.0.1:9876 npx playwright test tests/switchview-race.spec.js --headed
  */
 test.describe('switchView race condition regression', () => {
   test('rapid switchView calls settle without the prelude timer overriding the final view', async ({ page }) => {

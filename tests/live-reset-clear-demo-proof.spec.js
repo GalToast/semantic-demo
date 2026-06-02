@@ -11,7 +11,7 @@ import { test, expect } from '@playwright/test';
  * because the search chrome and focus surfaces change responsively.
  *
  * Run:
- *   npx playwright test tests/live-reset-clear-demo-proof.spec.js --browser=chromium --workers=1
+ *   npx playwright test tests/live-reset-clear-demo-proof.spec.js --browser=chromium --workers=1 --headed
  *   npm run qa:live-reset
  */
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');

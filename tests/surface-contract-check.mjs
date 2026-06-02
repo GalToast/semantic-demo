@@ -23,6 +23,15 @@ const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
 
 const cliArgs = process.argv.slice(2);
 const positionalUrl = cliArgs.find((arg) => !arg.startsWith('--')) || DEFAULT_URL;
+const headed = !cliArgs.includes('--headless')
+  && process.env.PW_HEADLESS !== '1'
+  && process.env.PLAYWRIGHT_HEADLESS !== '1';
+const launchOptions = {
+  headless: !headed,
+  args: headed
+    ? ['--use-gl=angle', '--enable-webgl', '--no-sandbox']
+    : ['--no-sandbox'],
+};
 
 function parseFlags(args) {
   const surfaces = [];
@@ -3864,7 +3873,7 @@ const RUN_TIMEOUT_MS = requestedSurfaces.length
 async function run() {
   await ensureDir(outDir);
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch(launchOptions);
   const allAssertions = [];
   const surfaceResults = [];
 

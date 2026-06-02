@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test';
  *  - No leaked timers after reset
  *
  * Run:
- *   TEST_BASE_URL=http://127.0.0.1:9876 npx playwright test tests/live-reset-proof-wave2.spec.js --browser=chromium
+ *   TEST_BASE_URL=http://127.0.0.1:9876 npx playwright test tests/live-reset-proof-wave2.spec.js --browser=chromium --headed
  */
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 

@@ -117,7 +117,6 @@
         "search-state-surface-contract.mjs",
         "focus-pocket-motion-contract.mjs",
         "focus-pocket-composition-contract.mjs",
-        "micro-demo-contract.mjs",
         "demo-init-seam-contract.mjs",
         "reset-callsite-routing-contract.mjs",
         "demo-camera-retirement-contract.mjs",
@@ -213,6 +212,29 @@
         "window-global-allowlist-contract.mjs",
         "persistence-contract.mjs",
         "disposal-hygiene-contract.spec.js"
+      ]
+    },
+    "supplemental": {
+      "description": "Supplemental non-default contracts that are intentionally owned by the manifest but not part of the pinned full run.",
+      "timeout": 600000,
+      "contracts": [
+        "async-integrity-stress-contract.mjs",
+        "composition-state-owner-contract.mjs",
+        "focus-camera-ownership-contract.mjs",
+        "focus-camera-readability-contract.mjs",
+        "focus-interaction-ownership-contract.mjs",
+        "info-panel-surface-ownership-contract.mjs",
+        "js-design-token-contract.mjs",
+        "live-semantic-roles-contract.mjs",
+        "map-focus-search-content-owner-contract.mjs",
+        "mobile-focus-search-surface-ownership-contract.mjs",
+        "mobile-route-ownership-contract.mjs",
+        "package-script-targets-contract.mjs",
+        "reset-map-interaction-ownership-contract.mjs",
+        "search-sheet-css-ownership-contract.mjs",
+        "semantic-thread-relationship-role-contract.mjs",
+        "ui-perfection-contract.mjs",
+        "reduced-motion-interruption-proof.spec.js"
       ]
     },
     "3d-engine": {
@@ -443,7 +465,6 @@
         "focus-pocket-motion-contract.mjs",
         "focus-pocket-composition-contract.mjs",
         "journey-event-bindings-contract.mjs",
-        "micro-demo-contract.mjs",
         "demo-init-seam-contract.mjs",
         "reset-callsite-routing-contract.mjs",
         "demo-camera-retirement-contract.mjs",
@@ -478,6 +499,7 @@
         "loading-ui-contract.mjs",
         "exploration-data-contract.mjs",
         "state-ownership-contract.mjs",
+        "state-mutator-ownership-contract.mjs",
         "filter-ownership-contract.mjs",
         "cluster-filter-city-filter-side-effect-contract.mjs",
         "keyboard-reset-ownership-contract.mjs",
@@ -516,7 +538,7 @@
       "contracts": [
         "btn-journey-primary-layout.spec.js",
         "camera-motion-visual-smoke.spec.js",
-        "demo-init-seam.spec.js",
+        "demo-init-seam-contract.mjs",
         "micro-demo.spec.js",
         "ui-renderers-validation.spec.js"
       ]

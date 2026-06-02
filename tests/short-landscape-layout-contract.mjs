@@ -83,7 +83,7 @@ async function gotoApp(page) {
 }
 
 async function runTestsForViewport(viewport) {
-  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   const page = await browser.newPage({
     viewport: viewport,
     isMobile: true,

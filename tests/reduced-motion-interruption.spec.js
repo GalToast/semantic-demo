@@ -5,7 +5,7 @@
  * search/focus -> Step Inside -> interruption/recovery.
  *
  * Run:
- *   npx playwright test tests/reduced-motion-interruption.spec.js --browser=chromium
+ *   npx playwright test tests/reduced-motion-interruption.spec.js --browser=chromium --headed
  */
 
 import { test, expect } from '@playwright/test';

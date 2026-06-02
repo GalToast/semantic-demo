@@ -6,7 +6,7 @@
  * responses, timeout, and stale request cancellation.
  *
  * Run:
- *   npx playwright test tests/semantic-guide-fetch-fallback-contract.spec.js --reporter=list
+ *   npx playwright test tests/semantic-guide-fetch-fallback-contract.spec.js --reporter=list --headed
  */
 
 import { test, expect } from '@playwright/test';

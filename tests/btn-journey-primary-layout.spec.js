@@ -20,7 +20,7 @@ import { test, expect } from '@playwright/test';
  *   - text-overflow: ellipsis
  *   - white-space: nowrap
  *
- * Run: TEST_BASE_URL=http://127.0.0.1:9876 npx playwright test tests/btn-journey-primary-layout.spec.js
+ * Run: TEST_BASE_URL=http://127.0.0.1:9876 npx playwright test tests/btn-journey-primary-layout.spec.js --headed
  */
 test.describe('btn-journey-primary mobile overflow regression', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true });

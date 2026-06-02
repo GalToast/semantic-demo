@@ -15,9 +15,9 @@ const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html?view=ga
 const targetUrl = process.env.PRODUCT_QA_URL || DEFAULT_URL;
 const REAL_ROUTE_VISUAL = process.argv.includes('--real-route-visual');
 const VISUAL_ERGONOMICS = process.argv.includes('--visual-ergonomics');
-const HEADED = process.argv.includes('--headed') ||
-  process.env.PW_HEADED === '1' ||
-  process.env.PLAYWRIGHT_HEADED === '1';
+const HEADED = !process.argv.includes('--headless') &&
+  process.env.PW_HEADLESS !== '1' &&
+  process.env.PLAYWRIGHT_HEADLESS !== '1';
 const REQUIRE_WEBGL = HEADED && process.env.ALLOW_WEBGL_FALLBACK !== '1';
 const launchOptions = {
   headless: !HEADED,

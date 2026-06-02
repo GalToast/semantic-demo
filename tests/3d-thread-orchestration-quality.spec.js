@@ -24,7 +24,7 @@
  *   sceneLuminance()      - samples a PNG screenshot, returns { median, p95, whiteRatio }
  *   continuitySample()   - samples paired vertices in a line geometry
  *
- * Run: npx playwright test tests/3d-thread-orchestration-quality.spec.js
+ * Run: npx playwright test tests/3d-thread-orchestration-quality.spec.js --headed
  */
 
 import { test, expect } from '@playwright/test';

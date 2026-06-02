@@ -9,7 +9,7 @@
  * - Camera returns to overview at T=7800ms
  * - Demo completes at T=8800ms
  *
- * Run with: npx playwright test tests/micro-demo.spec.js
+ * Run with: npx playwright test tests/micro-demo.spec.js --headed
  */
 
 import { test, expect } from '@playwright/test';
@@ -38,7 +38,7 @@ test.describe('Micro-demo system', () => {
   // Headed mode with WebGL is required for these 3D-scene tests: headless Chromium
   // disables the system GPU and the WebGL canvas renders blank, masking visual
   // regressions and timing assumptions in the demo choreography. Run with
-  // `npx playwright test tests/micro-demo.spec.js --browser=chromium` (or
+  // `npx playwright test tests/micro-demo.spec.js --browser=chromium --headed` (or
   // `npm run test:microdemo:server`).
   test.use({ headless: false, launchOptions: { args: ['--use-gl=angle', '--enable-webgl'] } });
 

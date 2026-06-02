@@ -336,7 +336,7 @@ async function runMapTransitionScenario(browser) {
   return { map, reset };
 }
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
 
 try {
   const clearButton = await runClearButtonScenario(browser);

@@ -95,7 +95,7 @@ function summarize(result) {
   return checks.map(([name, ok]) => `${ok ? 'PASS' : 'FAIL'} ${name}`).join('; ');
 }
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
 const results = [];
 
 for (const viewport of viewports) {

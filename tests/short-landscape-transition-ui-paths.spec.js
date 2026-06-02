@@ -8,7 +8,7 @@
  * This file covers the interactive state transitions at short-landscape.
  *
  * Run:
- *   npx playwright test tests/short-landscape-transition-ui-paths.spec.js --browser=chromium --workers=1
+ *   npx playwright test tests/short-landscape-transition-ui-paths.spec.js --browser=chromium --workers=1 --headed
  */
 
 import { test, expect } from '@playwright/test';

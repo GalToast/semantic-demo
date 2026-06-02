@@ -79,23 +79,21 @@ export function getJourneyCompassState() {
         const clusterName = focusedPoint ? describeCluster(focusedPoint.cluster) : 'Focus';
 
         const primaryAction = isSearchAnchor || isTrailStop
-            ? { label: 'Step Inside', action: 'enter-inside' }
+            ? { label: 'Map', action: 'open-map' }
             : { label: 'Center Anchor', action: 'center-anchor', hint: 'Return to search starting point' };
 
         const secondaryAction = isSearchAnchor
-            ? { label: 'Map', action: 'open-map' }
+            ? { label: 'County', action: 'county-overview' }
             : isTrailStop
                 ? { label: 'Center Anchor', action: 'center-anchor', hint: 'Return to search starting point' }
-                : { label: 'Step Inside', action: 'enter-inside' };
+                : { label: 'Map', action: 'open-map' };
 
         return {
             phase: 'focus',
             kicker: walkHistoryLength > 1
                 ? `Trail Step ${walkHistoryLength} | ${clusterName}`
                 : (isSearchFocus ? `Search Anchor | ${clusterName}` : `Focus | ${clusterName}`),
-            title: isSearchFocus && focusedName
-                ? `${focusedName} anchors ${queryLabel}`
-                : (focusedName ? `${focusedName} is centered` : 'Centering the focus anchor'),
+            title: focusedName || 'Focus Anchor',
             note: isSearchFocus
                 ? 'This is the search corridor, gathered around its strongest semantic anchor.'
                 : 'A local constellation of related businesses. Hover any glowing connection to see why it exists.',

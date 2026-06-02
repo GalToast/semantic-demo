@@ -56,6 +56,7 @@ const SERVER_GROUPS = new Set([
   'live-url',
   'extraction',
   'quality',
+  'supplemental',
   'mobile-critical',
   '3d-engine',
   '3d-interaction-quality',
@@ -121,7 +122,7 @@ async function findAvailablePort(startPort = 8795, endPort = 8895) {
  * Kill an entire Chromium browser process tree on Windows.
  * Playwright spawns Chromium as a grandchild of the CLI node process, so
  * child.kill() only terminates the CLI - leaked browser processes accumulate
- * across sequential contracts and cause GPU/memory pressure in headless Chrome.
+ * across sequential contracts and cause GPU/memory pressure.
  */
 function closeBrowserTree(pid) {
   if (process.platform !== 'win32') return;
@@ -589,7 +590,7 @@ function runValidation() {
 
 // Playwright test flags for browser-interaction specs.
 const PLAYWRIGHT_CLI = join(PROJECT_ROOT, 'node_modules', '@playwright', 'test', 'cli.js');
-const PLAYWRIGHT_FLAGS = ['--browser=chromium'];
+const PLAYWRIGHT_FLAGS = ['--browser=chromium', '--headed'];
 const CONTRACT_TIMEOUT_MS = Number(process.env.CONTRACT_TIMEOUT_MS || 240000);
 
 function isPlaywrightTestFile(filename, entry) {

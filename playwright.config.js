@@ -19,6 +19,10 @@ export default defineConfig({
   },
   use: {
     baseURL,
+    headless: false,
+    launchOptions: {
+      args: ['--ignore-gpu-blocklist'],
+    },
   },
   webServer,
 });

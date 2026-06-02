@@ -216,7 +216,7 @@ function assertSinglePrimarySurface(snapshot, expectedName) {
     `expected single primary mobile surface ${expectedName}, got ${JSON.stringify(primary)}`);
 }
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
 const page = await browser.newPage({
   viewport: { width: 390, height: 844 },
   deviceScaleFactor: 1,

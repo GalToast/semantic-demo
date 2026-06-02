@@ -9,7 +9,7 @@
  *   - no uncaught errors appear in the console during the race window
  *
  * Run via:
- *   npx playwright test tests/3d-rapid-re-selection-contract.spec.js --browser=chromium
+ *   npx playwright test tests/3d-rapid-re-selection-contract.spec.js --browser=chromium --headed
  * Or via manifest — group: 3d-rapid-re-selection
  */
 

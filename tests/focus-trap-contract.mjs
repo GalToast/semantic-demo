@@ -129,7 +129,7 @@ async function getPanelVisibleState(page) {
 async function main() {
   console.log('\n=== Focus Trap Contract ===\n');
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
 

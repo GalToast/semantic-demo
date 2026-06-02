@@ -8,7 +8,7 @@
  *
  * Requires the static dev server on port 8795:
  *   npm run serve
- *   npx playwright test tests/semantic-role-traversal.spec.js --browser=chromium --workers=1
+ *   npx playwright test tests/semantic-role-traversal.spec.js --browser=chromium --workers=1 --headed
  */
 
 import { test, expect } from '@playwright/test';

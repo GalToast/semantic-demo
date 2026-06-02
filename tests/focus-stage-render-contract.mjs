@@ -93,7 +93,7 @@ async function run() {
   }
 
   console.log('[browser] launching Chromium...');
-  browser = await chromium.launch({ args: ['--no-sandbox'] });
+  browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true });
 
   const errors = [];

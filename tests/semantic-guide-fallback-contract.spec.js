@@ -8,7 +8,7 @@
  * elements (not an empty string).
  *
  * Run:
- *   npx playwright test tests/semantic-guide-fallback-contract.spec.js --reporter=list
+ *   npx playwright test tests/semantic-guide-fallback-contract.spec.js --reporter=list --headed
  */
 
 import { test, expect } from '@playwright/test';

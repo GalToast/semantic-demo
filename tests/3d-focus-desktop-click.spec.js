@@ -15,9 +15,9 @@
  *  4. state remains consistent after neighbor hover+click
  *
  * Run via:
- *   npx playwright test tests/3d-focus-desktop-click.spec.js --browser=chromium
+ *   npx playwright test tests/3d-focus-desktop-click.spec.js --browser=chromium --headed
  * Or via --grep for a single test:
- *   npx playwright test --browser=chromium --grep "desktop: a non-anchor neighbor can be clicked without re-selecting the anchor"
+ *   npx playwright test --browser=chromium --headed --grep "desktop: a non-anchor neighbor can be clicked without re-selecting the anchor"
  */
 
 import { test, expect } from '@playwright/test';

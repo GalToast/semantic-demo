@@ -211,7 +211,7 @@ async function auditReducedMotion(page) {
 }
 
 await fs.promises.mkdir(outDir, { recursive: true });
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
 const results = [];
 
 try {

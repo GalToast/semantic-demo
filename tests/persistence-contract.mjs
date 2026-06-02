@@ -121,7 +121,7 @@ async function getStorageValue(page, storageType, key) {
 // ── Sub-test 1: kh_dismissed persistence ──────────────────────────────────────
 
 async function test_kh_dismissed_persistence() {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
 
@@ -162,7 +162,7 @@ async function test_kh_dismissed_persistence() {
 // ── Sub-test 2: micro-demo localStorage flag ──────────────────────────────────
 
 async function test_micro_demo_localStorage_flag() {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
 
@@ -220,7 +220,7 @@ async function test_micro_demo_localStorage_flag() {
 // ── Sub-test 3: searchVisibleCount persistence ───────────────────────────────
 
 async function test_searchVisibleCount_persistence() {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
 

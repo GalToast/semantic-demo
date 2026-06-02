@@ -21,9 +21,9 @@ const LOCAL_FONT_FIXTURE_CSS = `
 `;
 const FONT_ASSET_RE = /\.(?:woff2?|ttf)(?:$|\?)/i;
 const cliArgs = process.argv.slice(2).filter((arg) => arg !== '--');
-const headed = cliArgs.includes('--headed') ||
-  process.env.PW_HEADED === '1' ||
-  process.env.PLAYWRIGHT_HEADED === '1';
+const headed = !cliArgs.includes('--headless') &&
+  process.env.PW_HEADLESS !== '1' &&
+  process.env.PLAYWRIGHT_HEADLESS !== '1';
 const requireWebgl = headed && process.env.ALLOW_WEBGL_FALLBACK !== '1';
 const launchOptions = {
   headless: !headed,
