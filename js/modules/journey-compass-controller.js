@@ -122,11 +122,15 @@ export function syncMapTrailStrip(compassState = {}, presentationState = {}) {
         if (action.action === 'focus-search') return 'Search';
         return action.label || 'Go';
     };
+    const stripTitle = compassState.title || 'Map trail';
+    const compactStripTitle = stripTitle.replace(/\s+pinned to map$/i, '');
 
     strip.replaceChildren();
     const title = document.createElement('div');
     title.className = 'map-strip-title';
-    title.textContent = compassState.title || 'Map trail';
+    title.textContent = compactStripTitle || stripTitle;
+    title.setAttribute('title', stripTitle);
+    title.setAttribute('aria-label', stripTitle);
     strip.appendChild(title);
     actions.forEach((action) => {
         const button = document.createElement('button');
@@ -141,9 +145,22 @@ export function syncMapTrailStrip(compassState = {}, presentationState = {}) {
 
 export function executeJourneyCompassAction(action) {
     switch (action) {
-        case 'focus-search':
-            document.getElementById('search-input')?.focus();
+        case 'focus-search': {
+            const focusSearchInput = () => window.requestAnimationFrame(() => {
+                document.getElementById('search-input')?.focus();
+            });
+            const isMapFocusSearch = state.currentView === 'map'
+                && document.body?.dataset?.panelSurface === 'map-focus-search';
+
+            if (isMapFocusSearch) {
+                resetExplorationFocus({ preserveSearch: true, skipUrlSync: true });
+                focusSearchInput();
+                return;
+            }
+
+            focusSearchInput();
             return;
+        }
         case 'center-anchor': {
             const anchorIndex = Number.isFinite(state.currentSearchSummary?.anchorIndex)
                 ? state.currentSearchSummary.anchorIndex

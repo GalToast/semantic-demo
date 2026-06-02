@@ -635,6 +635,7 @@ body[data-trail-state="active"] .focus-stage-neighbor-pill {
     html body[data-panel-surface="focus-search"] #info-panel .selected-card,
     html body[data-panel-surface="focus-search"] #info-panel #selected-card,
     html body[data-panel-surface="focus-search"] #info-panel .selected-empty,
+    html body[data-panel-surface="search"] #info-panel .search-container #mode-grid,
     html body[data-panel-surface="focus-search"] #info-panel .search-container .mode-grid,
     html body[data-panel-surface="focus-search"] #info-panel .search-container #mode-grid,
     html body[data-panel-surface="focus-search"] #info-panel #trail-controls,

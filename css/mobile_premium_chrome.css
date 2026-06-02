@@ -274,6 +274,7 @@
         .time-display
     ),
     html body.is-active[data-journey-navigation-owner="map-trail-strip"] :is(
+        .controls,
         .panel-toggle,
         #btn-legend,
         #btn-share-view,
@@ -453,6 +454,7 @@
     }
 
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .panel-toggle,
+    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .controls,
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) #btn-share-view,
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) #btn-legend,
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) #btn-keyboard-help,

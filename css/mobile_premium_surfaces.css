@@ -286,6 +286,20 @@ html body.is-active #selected-details.active:not([hidden]) {
         padding-bottom: 2px;
     }
 
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) .journey-compass {
+        width: auto;
+        min-width: 0;
+        max-width: calc(100vw - 32px);
+    }
+
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) .journey-compass-action[data-journey-action="center-anchor"] {
+        min-width: 88px;
+    }
+
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) .journey-compass-action.primary[data-journey-action="center-anchor"]::after {
+        inset: 0;
+    }
+
     html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) #btn-share-view {
         display: none;
         visibility: hidden;
@@ -432,8 +446,8 @@ html body.is-active #selected-details.active:not([hidden]) {
     }
 
     /* Trail/Journey Navigation (The 'Rough' one) */
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) #trail-controls,
-    html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-journey.active {
+    html body.is-active[data-panel-surface]:not([data-panel-surface="focus-search"]):not([data-panel-surface="semantic-dive"]):not([data-panel-surface^="map-"]) #trail-controls,
+    html body.is-active[data-panel-surface]:not([data-panel-surface="focus-search"]):not([data-panel-surface="semantic-dive"]):not([data-panel-surface^="map-"]) .focus-stage-journey.active {
         display: flex;
         align-items: center;
         gap: 12px;
@@ -787,6 +801,7 @@ html body.is-active #selected-details.active:not([hidden]) {
     html body.is-active[data-panel-surface="map-focus-search"] .info-header,
     html body.is-active[data-panel-surface="map-focus-search"] #info-panel-title,
     html body.is-active[data-panel-surface="map-focus-search"] .stats-row,
+    html body.is-active[data-panel-surface="map-focus-search"] .stat-caption,
     html body.is-active[data-panel-surface="map-focus-search"] .demo-starters,
     html body.is-active[data-panel-surface="map-focus-search"] #filters-section,
     html body.is-active[data-panel-surface="map-focus-search"] #cluster-section,

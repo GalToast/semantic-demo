@@ -108,9 +108,10 @@ body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .sea
 body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-what,
 body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-context,
 body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-meta {
-    color: rgba(228, 240, 238, 0.85);
+    color: rgba(245, 255, 252, 0.95);
     font-size: 11px;
     line-height: 1.28;
+    font-weight: 500;
 }
 
 body[data-panel-surface="focus-search"] .search-results.focusing {
@@ -1552,4 +1553,15 @@ body[data-panel-surface="map-focus-search"] .exploration-card:hover,
         pointer-events: none;
         transform: translateY(8px) scale(0.96);
     }
+}
+
+/* Filter Buttons Hover States */
+.filter-chip:hover {
+    background: rgba(36, 109, 107, 0.4);
+    border-color: rgba(121, 235, 222, 0.3);
+}
+
+.filter-clear-btn:hover:not(:disabled) {
+    color: var(--color-primary);
+    text-decoration: underline;
 }
