@@ -157,14 +157,7 @@
             }
 
             /* Non-map search/focus sheets own the mobile action surface; map states keep map controls. */
-            body[data-active-view="galaxy"]:is(
-                [data-panel-surface="search"],
-                [data-panel-surface="focus"],
-                [data-panel-surface="focus-search"]
-            ) .controls {
-                visibility: hidden;
-                pointer-events: none;
-            }
+            /* Visibility handled by global mobile actions */
 
             .control-btn {
                 width: 44px;
@@ -382,7 +375,7 @@
             body[data-active-view="map"] .panel-toggle {
                 left: -4px;
                 bottom: calc(18px + env(safe-area-inset-bottom, 0px));
-                z-index: 1002;
+                z-index: calc(var(--z-overlay) + 2);
                 width: 44px;
                 height: 40px;
                 border-radius: 0 14px 14px 0;
@@ -438,7 +431,7 @@
 
             body[data-active-view="map"] .panel-toggle {
                 bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-                z-index: 1002;
+                z-index: calc(var(--z-overlay) + 2);
                 width: 40px;
                 height: 36px;
                 border-radius: 0 13px 13px 0;
@@ -527,7 +520,7 @@ body[data-semantic-dive="transitioning"]::before {
     height: 0;
     border-radius: 50%;
     background: radial-gradient(circle, rgba(78, 205, 196, 0.5) 0%, transparent 70%);
-    z-index: 1000;
+    z-index: var(--z-blocker);
     pointer-events: none;
     transform: translate(-50%, -50%);
     animation: sonic-boom 0.82s cubic-bezier(0.1, 0.7, 0.1, 1) forwards;
@@ -566,7 +559,7 @@ body[data-semantic-dive="transitioning"] #canvas-container {
     text-transform: uppercase;
     letter-spacing: 0.08em;
     pointer-events: none;
-    z-index: 1000;
+    z-index: calc(var(--z-overlay) + 2);
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -887,7 +880,7 @@ body[data-panel-surface="semantic-dive"] .launch-btn {
 .trail-review-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1200;
+    z-index: var(--z-toast);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -986,7 +979,7 @@ body[data-panel-surface="semantic-dive"] .launch-btn {
    The .controls rail is at z-index 1000; search-clear-btn must exceed it. */
 @media (max-width: 1024px) {
     .search-container.has-query .search-clear-btn {
-        z-index: 1001;
+        z-index: calc(var(--z-overlay) + 1);
         pointer-events: auto;
     }
 }

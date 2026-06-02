@@ -24,6 +24,9 @@ Do not inject CSS custom properties from JavaScript. CSS root tokens stay in `cs
 | `--color-primary-rgb` | `82, 229, 215` | Alpha-mixed primary effects |
 | `--color-primary-soft` | `rgba(82, 229, 215, 0.2)` | Soft primary fills |
 | `--color-primary-ring` | `rgba(82, 229, 215, 0.8)` | Focus rings and high-confidence active outlines |
+| `--color-primary-tint` | `#79ebde` | Lighter primary tint for elevated accents and softened highlights |
+| `--color-primary-tint-rgb` | `121, 235, 222` | Alpha-mixed lighter primary effects |
+| `--color-primary-tint-soft` | `rgba(121, 235, 222, 0.2)` | Soft lighter-primary fills |
 | `--color-accent` | `#ffdf4c` | Secondary yellow accent, sparingly used |
 | `--color-accent-rgb` | `255, 223, 76` | Alpha-mixed accent effects |
 | `--color-accent-soft` | `rgba(255, 223, 76, 0.1)` | Low-strength accent fills |

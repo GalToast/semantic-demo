@@ -447,8 +447,7 @@
         visibility: hidden;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .panel-toggle,
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .controls,
+    /* Controls handled by global mobile actions */
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .time-display {
         display: none;
         visibility: hidden;

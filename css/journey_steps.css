@@ -8,7 +8,7 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.28s ease, transform 0.28s ease;
-    z-index: 34;
+    z-index: var(--z-panels);
 }
 
 .focus-stage.active {
@@ -105,7 +105,7 @@ html[data-legend-active="true"] .focus-lens-truth {
 html body[data-panel-surface="focus"] .focus-stage,
 html body[data-panel-surface="focus-search"] .focus-stage {
     width: min(392px, calc(100vw - 32px));
-    z-index: 130;
+    z-index: var(--z-overlay);
 }
 
 html body[data-panel-surface="focus"] .focus-stage-card,
@@ -544,7 +544,7 @@ html body[data-panel-surface]:not([data-panel-surface^="map-"])[data-strand-jour
 .focus-thread-inspector {
     display: grid;
     position: relative;
-    z-index: 135;
+    z-index: calc(var(--z-overlay) + 1);
     gap: 5px;
     margin-top: 10px;
     padding: 10px 11px;

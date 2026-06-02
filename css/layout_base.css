@@ -19,7 +19,7 @@
     transform: translateX(calc(-100% - 16px));
     opacity: 0;
     pointer-events: none;
-    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease, box-shadow 0.3s ease;
+    transition: var(--transition-premium);
 }
 
 .info-panel::before {
@@ -511,8 +511,8 @@ body:has(.info-panel.active) .panel-toggle {
 
     body[data-panel-surface]:not([data-panel-surface^="map-"]) .legend-toggle {
         top: calc(10px + env(safe-area-inset-top, 0px));
-        width: 40px;
-        height: 40px;
+        width: var(--mobile-touch-min, 44px);
+        height: var(--mobile-touch-min, 44px);
         border-radius: 13px;
     }
 
@@ -657,14 +657,7 @@ body:has(.info-panel.active) .panel-toggle {
         display: none;
     }
 
-    body[data-panel-surface="search"] .panel-toggle,
-    body[data-panel-surface="search"] .share-toggle,
-    body[data-panel-surface="search"] .legend-toggle {
-        opacity: 0;
-        pointer-events: none;
-        visibility: hidden;
-        transform: translateY(8px) scale(0.96);
-    }
+    /* Action visibility handled by individual module visibility logic */
 
     body[data-panel-surface="focus-search"] .info-panel {
         display: block;
@@ -685,15 +678,7 @@ body:has(.info-panel.active) .panel-toggle {
         visibility: hidden;
     }
 
-    body[data-panel-surface="focus-search"] .panel-toggle,
-    body[data-panel-surface="focus-search"] .share-toggle,
-    body[data-panel-surface="focus-search"] .legend-toggle,
-    body[data-panel-surface="focus-search"] .controls {
-        opacity: 0;
-        pointer-events: none;
-        visibility: hidden;
-        transform: translateY(8px) scale(0.96);
-    }
+    /* Action visibility handled by individual module visibility logic */
 
     body[data-panel-surface="focus-search"][data-thread-inspect-surface="idle"] .focus-thread-inspector {
         opacity: 0;

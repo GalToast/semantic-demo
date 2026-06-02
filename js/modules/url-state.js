@@ -347,7 +347,7 @@ function restoreRecordFocusFromParams(params, options = {}) {
         return false;
     }
 
-    if (typeof adapterFocusOnPoint === 'function') adapterFocusOnPoint(target, { skipUrlSync: true });
+    if (typeof adapterFocusOnPoint === 'function') adapterFocusOnPoint(target, { skipUrlSync: true, revealCard: true });
     restoreDepthFromUrlAfterFocus(params);
 
     if (!options.fromHistory && !options.deferred) {

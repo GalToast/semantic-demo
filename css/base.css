@@ -54,6 +54,9 @@
     --color-primary-rgb: 82, 229, 215;
     --color-primary-soft: rgba(82, 229, 215, 0.2);
     --color-primary-ring: rgba(82, 229, 215, 0.8);
+    --color-primary-tint: #79ebde;
+    --color-primary-tint-rgb: 121, 235, 222;
+    --color-primary-tint-soft: rgba(121, 235, 222, 0.2);
     --color-accent: #ffdf4c;
     --color-accent-rgb: 255, 223, 76;
     --color-accent-soft: rgba(255, 223, 76, 0.1);

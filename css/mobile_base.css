@@ -162,8 +162,9 @@ html body[data-panel-surface] .control-btn {
 }
 
 .experience-reset-toast.active {
-    opacity: 1;
+    opacity: 1 !important;
     transform: translateY(0) scale(1);
+    pointer-events: auto;
 }
 
 .experience-reset-toast strong {

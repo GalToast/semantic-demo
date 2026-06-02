@@ -173,7 +173,11 @@ export function syncFocusStage(point) {
 
     const pageTitle = `Focus: ${presentation.display} | Semantic Explorer`;
     const pageDesc = sanitizePublicFacingNote(effectivePoint.what) || 'Exploring Montgomery County business records through semantic search and visualization.';
-    updateDocumentMeta(pageTitle, pageDesc);
+
+    // 10/10 Polish: Ensure title is updated even during early boot restoration
+    if (document.title !== pageTitle) {
+        updateDocumentMeta(pageTitle, pageDesc);
+    }
 
     if (filedEl) {
         if (presentation.showRaw && presentation.raw) {
