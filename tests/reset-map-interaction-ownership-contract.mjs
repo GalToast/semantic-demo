@@ -16,6 +16,72 @@ function assert(condition, message) {
   if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);
 }
 
+function pickBodyDataset(dataset = {}) {
+  const keys = [
+    'activeView',
+    'panelSurface',
+    'graphContext',
+    'mapContext',
+    'semanticDive',
+    'trailDepth',
+    'viewHandoffActive',
+    'journeyNavigationOwner',
+    'focusPanelMode',
+  ];
+  return Object.fromEntries(keys.map((key) => [key, dataset[key] || '']));
+}
+
+function summarizeBox(box) {
+  if (!box) return null;
+  return {
+    x: box.x,
+    y: box.y,
+    width: box.width,
+    height: box.height,
+    bottom: box.bottom,
+    display: box.display,
+    visibility: box.visibility,
+    pointerEvents: box.pointerEvents,
+    visible: box.visible,
+    dataset: box.dataset || {},
+  };
+}
+
+function summarizeSnapshot(snap) {
+  if (!snap) return null;
+  return {
+    viewport: snap.viewport,
+    currentView: snap.currentView,
+    navMode: snap.navMode,
+    navFocusedIndex: snap.navFocusedIndex,
+    focusedNode: snap.focusedNode,
+    selectedPointName: snap.selectedPointName,
+    trailDepth: snap.trailDepth,
+    semanticDiveMode: snap.semanticDiveMode,
+    searchInputValue: snap.searchInputValue,
+    searchResultsHidden: snap.searchResultsHidden,
+    bodyDataset: pickBodyDataset(snap.bodyDataset),
+    independentDrawers: snap.independentDrawers,
+    boxes: {
+      focusStage: summarizeBox(snap.boxes?.focusStage),
+      searchResults: summarizeBox(snap.boxes?.searchResults),
+      infoPanel: summarizeBox(snap.boxes?.infoPanel),
+      infoContent: summarizeBox(snap.boxes?.infoContent),
+      searchContainer: summarizeBox(snap.boxes?.searchContainer),
+      selectedCard: summarizeBox(snap.boxes?.selectedCard),
+      selectedMapSummary: summarizeBox(snap.boxes?.selectedMapSummary),
+      mapTrailStrip: summarizeBox(snap.boxes?.mapTrailStrip),
+      journeyCompass: summarizeBox(snap.boxes?.journeyCompass),
+    },
+  };
+}
+
+function summarizeScenario(result) {
+  return Object.fromEntries(
+    Object.entries(result).map(([key, value]) => [key, summarizeSnapshot(value)])
+  );
+}
+
 function withCacheBust(url, tag) {
   const parsed = new URL(url);
   parsed.searchParams.set('nodemo', '1');
@@ -149,6 +215,8 @@ function assertOverview(label, snap) {
   assert(snap.bodyDataset.panelSurface === 'idle', `${label}: panelSurface should be idle, got ${snap.bodyDataset.panelSurface}`);
   assert(snap.bodyDataset.graphContext === 'idle', `${label}: graphContext should be idle, got ${snap.bodyDataset.graphContext}`);
   assert(snap.bodyDataset.semanticDive === 'inactive', `${label}: semanticDive dataset should be inactive, got ${snap.bodyDataset.semanticDive}`);
+  assert(snap.bodyDataset.viewHandoffActive !== 'true',
+    `${label}: view handoff should be released, got ${snap.bodyDataset.viewHandoffActive}`);
   assert(String(snap.bodyDataset.trailDepth || '0') === '0', `${label}: body trailDepth should be 0, got ${snap.bodyDataset.trailDepth}`);
   assert(snap.trailDepth === 0, `${label}: state trailDepth should be 0, got ${snap.trailDepth}`);
   assert(snap.semanticDiveMode === false, `${label}: semanticDiveMode should be false`);
@@ -157,6 +225,8 @@ function assertOverview(label, snap) {
   assert(snap.focusedNode === null, `${label}: focusedNode should clear, got ${snap.focusedNode}`);
   assert(snap.selectedPointName === null, `${label}: selectedPoint should clear, got ${snap.selectedPointName}`);
   assert(snap.searchInputValue === '', `${label}: search input should clear, got "${snap.searchInputValue}"`);
+  assert(!['field-node', 'legend-open', 'manual-panel'].includes(snap.bodyDataset.focusPanelMode || ''),
+    `${label}: overview reset should not retain an expanded focus/manual submode, got ${snap.bodyDataset.focusPanelMode}`);
   const staleDrawers = snap.independentDrawers.filter((drawer) => drawer.name !== 'infoPanel');
   assert(staleDrawers.length === 0,
     `${label}: overview should not leave stale focus/search drawers, got ${JSON.stringify(snap.independentDrawers)}`);
@@ -167,6 +237,81 @@ function assertOverview(label, snap) {
     assert(idleInfoPanel.y >= snap.viewport.height * 0.55,
       `${label}: idle info panel should not float mid-screen, got ${JSON.stringify(idleInfoPanel)} in ${JSON.stringify(snap.viewport)}`);
   }
+}
+
+function overviewLayoutErrors(label, snap) {
+  const errors = [];
+  if (snap.currentView !== 'galaxy') errors.push(`${label}: currentView=${snap.currentView}`);
+  if (snap.bodyDataset.activeView !== 'galaxy') errors.push(`${label}: activeView=${snap.bodyDataset.activeView}`);
+  if (snap.bodyDataset.panelSurface !== 'idle') errors.push(`${label}: panelSurface=${snap.bodyDataset.panelSurface}`);
+  if (snap.bodyDataset.graphContext !== 'idle') errors.push(`${label}: graphContext=${snap.bodyDataset.graphContext}`);
+  if (snap.bodyDataset.semanticDive !== 'inactive') errors.push(`${label}: semanticDive=${snap.bodyDataset.semanticDive}`);
+  if (snap.bodyDataset.viewHandoffActive === 'true') errors.push(`${label}: viewHandoffActive=${snap.bodyDataset.viewHandoffActive}`);
+  if (String(snap.bodyDataset.trailDepth || '0') !== '0') errors.push(`${label}: body trailDepth=${snap.bodyDataset.trailDepth}`);
+  if (snap.trailDepth !== 0) errors.push(`${label}: state trailDepth=${snap.trailDepth}`);
+  if (snap.semanticDiveMode !== false) errors.push(`${label}: semanticDiveMode=${snap.semanticDiveMode}`);
+  if (snap.navMode !== 'overview') errors.push(`${label}: navMode=${snap.navMode}`);
+  if (snap.navFocusedIndex !== null) errors.push(`${label}: navFocusedIndex=${snap.navFocusedIndex}`);
+  if (snap.focusedNode !== null) errors.push(`${label}: focusedNode=${snap.focusedNode}`);
+  if (snap.selectedPointName !== null) errors.push(`${label}: selectedPointName=${snap.selectedPointName}`);
+  if (snap.searchInputValue !== '') errors.push(`${label}: searchInputValue="${snap.searchInputValue}"`);
+  if (['field-node', 'legend-open', 'manual-panel'].includes(snap.bodyDataset.focusPanelMode || '')) {
+    errors.push(`${label}: focusPanelMode=${snap.bodyDataset.focusPanelMode}`);
+  }
+
+  const staleDrawers = snap.independentDrawers.filter((drawer) => drawer.name !== 'infoPanel');
+  if (staleDrawers.length) {
+    errors.push(`${label}: stale drawers=${JSON.stringify(staleDrawers)}`);
+  }
+
+  const idleInfoPanel = snap.independentDrawers.find((drawer) => drawer.name === 'infoPanel');
+  if (idleInfoPanel) {
+    if (idleInfoPanel.bottom < snap.viewport.height - 2) {
+      errors.push(`${label}: infoPanel not bottom-attached=${JSON.stringify(idleInfoPanel)}`);
+    }
+    if (idleInfoPanel.y < snap.viewport.height * 0.55) {
+      errors.push(`${label}: infoPanel floating mid-screen=${JSON.stringify(idleInfoPanel)}`);
+    }
+  }
+
+  return errors;
+}
+
+async function waitForOverviewSettled(page, label) {
+  let lastKey = '';
+  let stableCount = 0;
+  let lastSnap = null;
+  let lastErrors = [];
+
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    lastSnap = await snapshot(page);
+    lastErrors = overviewLayoutErrors(label, lastSnap);
+    if (!lastErrors.length) {
+      const panel = lastSnap.independentDrawers.find((drawer) => drawer.name === 'infoPanel') || null;
+      const key = JSON.stringify({
+        panel,
+        currentView: lastSnap.currentView,
+        panelSurface: lastSnap.bodyDataset.panelSurface,
+        graphContext: lastSnap.bodyDataset.graphContext,
+        semanticDive: lastSnap.bodyDataset.semanticDive,
+        viewHandoffActive: lastSnap.bodyDataset.viewHandoffActive || '',
+      });
+      stableCount = key === lastKey ? stableCount + 1 : 1;
+      lastKey = key;
+      if (stableCount >= 2) return lastSnap;
+    } else {
+      stableCount = 0;
+      lastKey = '';
+    }
+    await page.waitForTimeout(120);
+  }
+
+  console.error(JSON.stringify({
+    scenario: `${label}-overview-settle-timeout`,
+    errors: lastErrors,
+    snapshot: summarizeSnapshot(lastSnap),
+  }, null, 2));
+  throw new Error(`${label}: overview reset layout did not settle`);
 }
 
 async function searchAndFocusFirstResult(page) {
@@ -234,8 +379,7 @@ async function runClearButtonScenario(browser) {
     }, null, 2));
     throw error;
   }
-  await page.waitForTimeout(300);
-  const cleared = await snapshot(page);
+  const cleared = await waitForOverviewSettled(page, 'clear button');
   assertOverview('clear button', cleared);
   await page.close();
   return { focused, cleared };
@@ -261,8 +405,7 @@ async function runEscapeDiveScenario(browser) {
       state.semanticDiveMode === false &&
       document.body.dataset.panelSurface === 'idle';
   }, null, { timeout: 15000 });
-  await page.waitForTimeout(300);
-  const reset = await snapshot(page);
+  const reset = await waitForOverviewSettled(page, 'Escape from semantic dive');
   assertOverview('Escape from semantic dive', reset);
   await page.close();
   return { dive, reset };
@@ -344,8 +487,7 @@ async function runMapTransitionScenario(browser) {
       state.semanticDiveMode === false &&
       document.body.dataset.panelSurface === 'idle';
   }, null, { timeout: 15000 });
-  await page.waitForTimeout(300);
-  const reset = await snapshot(page);
+  const reset = await waitForOverviewSettled(page, 'Escape from map transition');
   assertOverview('Escape from map transition', reset);
   await page.close();
   return { map, reset };
@@ -357,7 +499,11 @@ try {
   const clearButton = await runClearButtonScenario(browser);
   const escapeDive = await runEscapeDiveScenario(browser);
   const mapTransition = await runMapTransitionScenario(browser);
-  console.log(JSON.stringify({ clearButton, escapeDive, mapTransition }, null, 2));
+  console.log(JSON.stringify({
+    clearButton: summarizeScenario(clearButton),
+    escapeDive: summarizeScenario(escapeDive),
+    mapTransition: summarizeScenario(mapTransition),
+  }, null, 2));
   console.log('Reset/map interaction ownership contract passed.');
 } finally {
   await Promise.race([
