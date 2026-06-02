@@ -17,9 +17,9 @@ html body.is-active #selected-details.active:not([hidden]) {
         top: calc(18px + env(safe-area-inset-top, 0px));
         width: auto;
         transform: none;
-        height: 52px;
+        height: auto;
         min-height: 52px;
-        padding: 0 8px 0 22px;
+        padding: 6px 8px 6px 22px;
         border-radius: 26px;
         background: rgba(9, 14, 22, 0.72);
         backdrop-filter: blur(48px) saturate(210%) contrast(110%);
@@ -48,9 +48,9 @@ html body.is-active #selected-details.active:not([hidden]) {
         display: flex;
         flex-direction: column;
         justify-content: center;
+        flex: 1 1 auto;
         min-width: 0;
-        flex: 1;
-        padding-right: 18px;
+        padding-right: 14px;
         position: relative;
     }
 

@@ -1261,7 +1261,7 @@
         --short-landscape-focus-card-max-height: min(112px, calc(100dvh - 202px));
         --short-landscape-focus-card-overflow-y: hidden;
         --short-landscape-focus-card-gap: 10px;
-        --short-landscape-focus-card-grid-template-columns: minmax(210px, 0.9fr) minmax(300px, 1.1fr);
+        --short-landscape-focus-card-grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
         --short-landscape-focus-card-align-items: center;
         --short-landscape-focus-card-padding: 12px 16px;
     }

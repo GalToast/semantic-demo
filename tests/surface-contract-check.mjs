@@ -3227,8 +3227,8 @@ async function assert_global_spacing(page, ctx) {
 
 // ---------------------------------------------------------------------------
 // mobile-focus-search — validates the focus-search surface at 390x844.
-// Contract: controls rail hidden/noninteractive, search container visible,
-// search result panel visible, no viewport-wide blocking right rail.
+// Contract: controls rail hidden/noninteractive, search lower chrome handed off
+// to the focus card in compact focus-search, no viewport-wide blocking right rail.
 // ---------------------------------------------------------------------------
 
 async function assert_mobile_focus_search(page, ctx) {
@@ -3334,11 +3334,11 @@ async function assert_mobile_focus_search(page, ctx) {
   else if (info.controlsInteractive) ctx.fail('mobile-focus-search', 'pointer-events:controls-rail:noninteractive', '.controls rail should not be interactive in focus-search');
   else ctx.pass('mobile-focus-search', 'pointer-events:controls-rail:skipped');
 
-  if (info.searchContainerVisible) ctx.pass('mobile-focus-search', 'visibility:search-container');
-  else ctx.fail('mobile-focus-search', 'visibility:search-container', 'search container should be visible in focus-search');
+  if (!info.searchContainerVisible) ctx.pass('mobile-focus-search', 'handoff:search-container:hidden');
+  else ctx.fail('mobile-focus-search', 'handoff:search-container:hidden', 'search container should hand off to the focus stage in focus-search peek');
 
-  if (info.resultsPanelVisible) ctx.pass('mobile-focus-search', 'visibility:search-results-panel');
-  else ctx.fail('mobile-focus-search', 'visibility:search-results-panel', 'search results panel should be visible in focus-search');
+  if (!info.resultsPanelVisible) ctx.pass('mobile-focus-search', 'handoff:search-results-panel:hidden');
+  else ctx.fail('mobile-focus-search', 'handoff:search-results-panel:hidden', 'search results panel should not compete with focus stage in focus-search peek');
 
   if (info.compassTitle?.clipped) {
     ctx.fail('mobile-focus-search', 'text-clipping:compass-title', 'compass title text is clipped');

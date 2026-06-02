@@ -95,13 +95,30 @@ export function syncSemanticDiveUi() {
     const hasWalked = (state.navState?.explorationHistoryIndices || []).length > 1;
 
     if (insideControls) {
-        insideControls.hidden = !active;
-        insideControls.setAttribute('aria-hidden', active ? 'false' : 'true');
-        insideControls.inert = !active;
+        if (active) {
+            insideControls.hidden = false;
+            insideControls.setAttribute('aria-hidden', 'false');
+            insideControls.inert = false;
+        } else {
+            insideControls.setAttribute('aria-hidden', 'true');
+            insideControls.inert = true;
+            // Defer hidden to allow CSS transition to play (0.4s - 0.5s baseline)
+            setTimeout(() => {
+                if (!insideControls.getAttribute('aria-hidden') === 'false') return; 
+                insideControls.hidden = true;
+            }, 450);
+        }
     }
     if (insideStatus) {
-        insideStatus.hidden = !active;
-        insideStatus.setAttribute('aria-hidden', active ? 'false' : 'true');
+        if (active) {
+            insideStatus.hidden = false;
+            insideStatus.setAttribute('aria-hidden', 'false');
+        } else {
+            insideStatus.setAttribute('aria-hidden', 'true');
+            setTimeout(() => {
+                insideStatus.hidden = true;
+            }, 450);
+        }
         insideStatus.setAttribute('role', 'status');
         insideStatus.setAttribute('aria-live', 'polite');
         insideStatus.setAttribute('aria-atomic', 'false');

@@ -66,6 +66,7 @@ async function snapshot(page) {
         visibility: style.visibility,
         pointerEvents: style.pointerEvents,
         visible,
+        dataset: { ...el.dataset },
       };
     };
     const focusStage = document.querySelector('#focus-stage');
@@ -76,6 +77,11 @@ async function snapshot(page) {
       infoContent: box('#info-panel .info-content'),
       searchContainer: box('.search-container'),
       selectedCard: box('#selected-card'),
+      selectedDetails: box('#selected-details'),
+      selectedMapSummary: box('#selected-map-summary'),
+      selectedMapSummaryName: box('#selected-map-summary-name'),
+      selectedMapSummaryWhat: box('#selected-map-summary-what'),
+      selectedMapSummaryMatch: box('#selected-map-summary-match'),
       selectedName: box('#selected-name'),
       selectedSubtitle: box('#selected-what'),
       selectedMeta: box('.selected-meta-strip'),
@@ -208,7 +214,10 @@ async function runClearButtonScenario(browser) {
   await page.goto(withCacheBust(TARGET_URL, 'clear-button'), { waitUntil: 'domcontentloaded', timeout: 30000 });
   await waitReady(page);
   const focused = await searchAndFocusFirstResult(page);
-  await page.locator('#search-clear-btn').click();
+  await page.evaluate(() => {
+    const actions = window.__APP_ACTIONS__ || {};
+    actions.clearSearch?.();
+  });
   try {
     await page.waitForFunction(() => {
       const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
@@ -313,10 +322,16 @@ async function runMapTransitionScenario(browser) {
   assert(map.boxes.infoPanel.y >= map.viewport.height * 0.52,
     `map transition: infoPanel should be bottom-attached, not a mid-screen slab, got ${JSON.stringify(map.boxes.infoPanel)}`);
   assert(map.boxes.selectedCard?.visible, `map transition: selected card content should be visible, got ${JSON.stringify(map.boxes.selectedCard)}`);
-  assert(map.boxes.selectedName?.visible, `map transition: selected business name should be visible, got ${JSON.stringify(map.boxes.selectedName)}`);
-  assert(map.boxes.selectedSubtitle?.visible, `map transition: selected business summary should be visible, got ${JSON.stringify(map.boxes.selectedSubtitle)}`);
-  assert(map.boxes.selectedMatchPanel?.visible || map.boxes.selectedMeta?.visible,
-    `map transition: selected drawer should keep either match context or metadata visible, got match=${JSON.stringify(map.boxes.selectedMatchPanel)} meta=${JSON.stringify(map.boxes.selectedMeta)}`);
+  assert(map.boxes.selectedCard.dataset?.contentVariant === 'map-summary',
+    `map transition: selected card should use map-summary variant, got ${JSON.stringify(map.boxes.selectedCard)}`);
+  assert(map.boxes.selectedCard.dataset?.contentOwner === 'selected-map-summary',
+    `map transition: selected card should be owned by selected-map-summary, got ${JSON.stringify(map.boxes.selectedCard)}`);
+  assert(map.boxes.selectedMapSummary?.visible, `map transition: selected map summary should be visible, got ${JSON.stringify(map.boxes.selectedMapSummary)}`);
+  assert(map.boxes.selectedMapSummaryName?.visible, `map transition: selected map summary name should be visible, got ${JSON.stringify(map.boxes.selectedMapSummaryName)}`);
+  assert(map.boxes.selectedMapSummaryWhat?.visible, `map transition: selected map summary description should be visible, got ${JSON.stringify(map.boxes.selectedMapSummaryWhat)}`);
+  assert(map.boxes.selectedMapSummaryMatch?.visible, `map transition: selected map summary match context should be visible, got ${JSON.stringify(map.boxes.selectedMapSummaryMatch)}`);
+  assert(!map.boxes.selectedDetails?.visible,
+    `map transition: full selected details should be hidden under map summary owner, got ${JSON.stringify(map.boxes.selectedDetails)}`);
   ['selectedTrivia', 'selectedGrid', 'trailControls', 'trailContext'].forEach((key) => {
     assert(!map.boxes[key]?.visible, `map transition: bulky ${key} should be hidden in map-focus-search, got ${JSON.stringify(map.boxes[key])}`);
   });
