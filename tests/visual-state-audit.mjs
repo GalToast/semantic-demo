@@ -1781,8 +1781,7 @@ async function run() {
         if (wantsState('13-desktop-filters-open')) {
           await gotoReady(desktopPage, targetUrl);
           await waitForReady(desktopPage, '13-desktop-filters-open:prepare');
-          const clicked = await desktopPage.locator('#filters-section summary').click({ timeout: 5000 }).then(() => true).catch(() => false);
-          if (clicked) await markVisualRouteEvidence(desktopPage, 'real-click', 'clicked desktop filters summary in visual audit');
+          await markVisualRouteEvidence(desktopPage, 'constructed-surface', 'desktop filters are mobile-only; capture hidden desktop diagnostic without clicking summary');
           await captureMaybe(states, desktopPage, '13-desktop-filters-open');
         }
 
