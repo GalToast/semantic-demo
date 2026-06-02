@@ -474,7 +474,9 @@ export function clearShortSemanticSearchState(_resultsEl, _statusEl) {
         _statusEl.classList.remove('search-status-compact');
     }
     const liveEl = document.getElementById('search-status-live');
-    if (liveEl) liveEl.textContent = '';
+    if (liveEl) {
+        liveEl.textContent = 'Search cleared. Returning to county view.';
+    }
     clearSearchGlow();
 }
 

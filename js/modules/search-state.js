@@ -299,7 +299,11 @@ export async function search(query, options = {}) {
     updateSearchPreviewOverlay(anchorIndex);
 
     const renderContext = {
-        trimmedQuery, topIndex: topResult?.index ?? null, anchorIndex, resultIndices
+        trimmedQuery,
+        topIndex: topResult?.index ?? null,
+        topScore: topResult?.score ?? null,
+        anchorIndex,
+        resultIndices
     };
     renderSearchResultItems(resultsEl, results, renderContext, statusEl);
     bindSearchResultInteractions(resultsEl, statusEl, results, renderContext);

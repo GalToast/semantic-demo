@@ -374,6 +374,8 @@ body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .lea
     -webkit-backdrop-filter: blur(var(--glass-blur));
     text-align: center;
     pointer-events: none;
+    width: min(320px, calc(100vw - 48px));
+    box-sizing: border-box;
 }
 
 .map-empty-state-icon {

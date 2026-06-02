@@ -131,7 +131,8 @@ Policy: mobile interactive targets should be at least `44px` in both dimensions 
 
 | Token | Value | Use |
 |---|---:|---|
-| `--transition-premium` | `all 0.4s cubic-bezier(0.16, 1, 0.3, 1)` | Standard polished UI transitions |
+| `--transition-premium` | explicit opacity/transform/background/border/shadow/color transitions at `0.4s cubic-bezier(0.16, 1, 0.3, 1)` | Standard polished UI transitions |
+| `--transition-premium-fast` | explicit opacity/transform/background/border/shadow/color transitions at `0.25s cubic-bezier(0.16, 1, 0.3, 1)` | Faster polished UI transitions |
 | `--transition-spring` | `all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)` | Spring-like emphasis transitions |
 
 Policy: motion should clarify state change and respect reduced-motion preferences. When judging motion, use video evidence rather than still screenshots alone.
