@@ -153,11 +153,7 @@
 .info-content::-webkit-scrollbar,
 .search-results::-webkit-scrollbar,
 .legend-panel::-webkit-scrollbar,
-.journey-compass::-webkit-scrollbar {
-    width: 6px;
-    height: 0;
-}
-
+.journey-compass::-webkit-scrollbar,
 .info-panel::-webkit-scrollbar {
     width: 6px;
     height: 0;
