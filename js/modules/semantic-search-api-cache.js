@@ -259,7 +259,7 @@ export async function fetchSemanticSearchResults(query, signal, options = {}) {
 
             if (detectStaticDevPHP(responseText) && allowsStaticDevFallback()) {
                 console.warn('[semantic-search-api-cache] Detected raw PHP response. Assuming static dev server. Returning mock results.');
-                
+
                 const isExplicitEmpty = /^(none|empty|xj9k2l|nil|void|error)$/i.test(trimmedQuery);
                 const mockResults = isExplicitEmpty ? [] : [
                     { lead_id: "1", score: 0.98, provenance: "Mock", thread_type: "Search match" },

@@ -124,5 +124,24 @@ describe('semantic-search-api-cache', () => {
             expect(result.is_mock).toBe(true);
             expect(result.dev_mode).toBe('static-php-fallback');
         });
+
+        it('should return no mock results for explicit empty PHP fallback queries', async () => {
+            Object.defineProperty(window, 'location', {
+                value: { hostname: 'localhost', search: '' },
+                writable: true
+            });
+
+            global.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                text: () => Promise.resolve('<?php echo "Raw PHP Code"; ?>')
+            });
+
+            const result = await fetchSemanticSearchResults('xj9k2l');
+
+            expect(result.ok).toBe(true);
+            expect(result.is_mock).toBe(true);
+            expect(result.dev_mode).toBe('static-php-fallback');
+            expect(result.results).toEqual([]);
+        });
     });
 });
