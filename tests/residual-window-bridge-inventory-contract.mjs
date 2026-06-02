@@ -595,12 +595,12 @@ function testJourneyArrivalHandoffDewindowed() {
 
   const journeyWebglSrc = read('journeyWebgl');
   assert(
-    /window\.syncArrivalHandoffOverlay\s*=\s*syncArrivalHandoffOverlay/.test(journeyWebglSrc),
-    'journey-webgl.js should retain the temporary window.syncArrivalHandoffOverlay compatibility bridge'
+    !/window\.syncArrivalHandoffOverlay\s*=/.test(journeyWebglSrc),
+    'journey-webgl.js must not restore the retired window.syncArrivalHandoffOverlay compatibility bridge'
   );
   assert(
-    /window\.disposeArrivalHandoffOverlay\s*=\s*disposeArrivalHandoffOverlay/.test(journeyWebglSrc),
-    'journey-webgl.js should retain the temporary window.disposeArrivalHandoffOverlay compatibility bridge'
+    !/window\.disposeArrivalHandoffOverlay\s*=/.test(journeyWebglSrc),
+    'journey-webgl.js must not restore the retired window.disposeArrivalHandoffOverlay compatibility bridge'
   );
   assert(
     journeyWebglSrc.includes('setRouteArrivalOverlayUpdaters({')
@@ -631,7 +631,7 @@ function testJourneyArrivalHandoffDewindowed() {
     `strand-continuity.js must use direct arrival handoff imports, not window bridges:\n${problems.join('\n')}`
   );
 
-  console.log('  OK — strand-continuity owns direct arrival handoff calls; journey-webgl bridges are compatibility-only');
+  console.log('  OK — strand-continuity owns direct arrival handoff calls; journey-webgl compatibility bridges are retired');
 }
 
 // ── TEST 8 — Top-level inspected strand bridges are retired ─────────────────
@@ -949,16 +949,16 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
     'keyboard-help.js must not use window reset fallbacks'
   );
   assert(
-    /export function initUiRenderersAdapter/.test(uiRenderersSrc),
-    'ui-renderers.js should expose an adapter initializer for switchView'
+    !/export function initUiRenderersAdapter/.test(uiRenderersSrc),
+    'ui-renderers.js should not keep a retired switchView adapter after selected-card action transfer'
   );
   assert(
-    uiRenderersSrc.includes("_switchView('map');") && !uiRenderersSrc.includes('window.switchView'),
-    'ui-renderers.js selected-card map action should use the injected switchView adapter, not window.switchView'
+    !uiRenderersSrc.includes('window.switchView') && !uiRenderersSrc.includes("_switchView('map');"),
+    'ui-renderers.js selected-card map action must not use window.switchView or a retained switchView adapter'
   );
   assert(
-    appSrc.includes('initUiRenderersAdapter({') && appSrc.includes('switchView,'),
-    'app.js should inject switchView into ui-renderers'
+    !appSrc.includes('initUiRenderersAdapter({'),
+    'app.js should not inject the retired ui-renderers switchView adapter'
   );
   assert(
     appSrc.includes('initJourneyCompassAdapter({'),

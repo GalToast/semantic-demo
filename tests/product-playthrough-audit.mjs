@@ -54,6 +54,7 @@ function classifyConsoleIssue(msg) {
   if (/WebGL:\s+CONTEXT_LOST_WEBGL:.*context lost/i.test(text)) return 'headless-webgl-context-lost';
   if (/Detected raw PHP response\. Assuming static dev server/i.test(text)) return 'expected-static-dev-fallback';
   if (/\[demo\] blocked .*no WebGL \/ software renderer/i.test(text)) return 'headless-demo-webgl-guard';
+  if (/\[demo\] blocked .*nodemo URL param/i.test(text)) return 'expected-demo-nodemo-guard';
   if (/error|warn/i.test(msg.type()) || /error|exception|failed/i.test(text)) return 'actionable';
   return 'ignore';
 }
@@ -624,7 +625,6 @@ async function enterMap(page) {
     await page.evaluate(() => {
       const actions = window.__APP_ACTIONS__ || {};
       if (typeof actions.switchView === 'function') actions.switchView('map', { skipUrlSync: true, silentHandoff: true });
-      else if (typeof window.switchView === 'function') window.switchView('map', { skipUrlSync: true, silentHandoff: true });
       else if (typeof actions.setActiveView === 'function') actions.setActiveView('map');
       else if (typeof actions.showMapView === 'function') actions.showMapView();
       else {

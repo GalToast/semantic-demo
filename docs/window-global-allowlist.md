@@ -200,7 +200,7 @@ then retire `window.__TEST_STATE__` once all consumers use the replacement.
 | `window.markRouteExploration` | 2026-05-28 | Direct `markRouteExploration` import from `camera-controls.js` — still a named export |
 | `window.shouldMarkRouteExploration` | 2026-05-28 | Direct `shouldMarkRouteExploration` import from `camera-controls.js` — still a named export |
 | `window._fp` | 2026-05-28 | Retired by removing focus-pocket debug namespace after no module/runtime consumers were found. |
-| `window.clearMobileRouteFieldPeek` | 2026-05-28 | Injected adapter calls from `composition-adapter.js` and `search-lifecycle-adapter.js` |
+| `window.clearMobileRouteFieldPeek` | 2026-05-28 | Direct search-state ownership and event-bus requests; retired `composition-adapter.js` and `search-lifecycle-adapter.js` must not be restored |
 | `window.getBoundedNeighborhoodWalkCandidate` | 2026-05-28 | Internal journey.js calls only |
 | `window.isBoundedNeighborhoodActive` | 2026-05-28 | Internal journey.js calls only |
 | `window.primeBoundedSemanticNeighborhoodForTraversal` | 2026-05-28 | Internal journey.js calls only |

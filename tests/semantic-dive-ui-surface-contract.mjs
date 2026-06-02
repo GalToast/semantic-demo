@@ -75,6 +75,7 @@ function resetDom() {
   elementsById.set('focus-stage-inside-status', new FakeElement('div'));
   elementsById.set('focus-stage-inside-status-copy', new FakeElement('div'));
   elementsById.set('btn-inside-next', new FakeElement('button'));
+  elementsById.set('btn-inside-map', new FakeElement('button'));
   elementsById.set('btn-inside-county', new FakeElement('button'));
   return {
     diveButton: dive.button,
@@ -84,6 +85,7 @@ function resetDom() {
     insideStatus: elementsById.get('focus-stage-inside-status'),
     insideStatusCopy: elementsById.get('focus-stage-inside-status-copy'),
     insideNext: elementsById.get('btn-inside-next'),
+    insideMap: elementsById.get('btn-inside-map'),
     insideCounty: elementsById.get('btn-inside-county'),
   };
 }
@@ -113,7 +115,10 @@ assert(dom.insideStatus.getAttribute('aria-live') === 'polite', 'inside status r
 assert(dom.insideStatusCopy.textContent === 'Step into this neighborhood to follow related businesses.', 'inactive copy is stable');
 assert(dom.insideNext.disabled === true, 'next button disabled without candidate');
 assert(dom.insideNext.textContent === 'Trail Complete', 'next button empty-state copy is stable');
+assert(dom.insideNext.hidden === true, 'next button hidden without candidate');
 assert(dom.insideNext.getAttribute('aria-disabled') === 'true', 'next button aria-disabled without candidate');
+assert(dom.insideMap.disabled === true, 'map button disabled without focus');
+assert(dom.insideMap.textContent === 'Map', 'map button copy is stable');
 assert(dom.insideCounty.disabled === true, 'county button disabled without focus');
 assert(dom.insideCounty.textContent === 'County', 'county button copy is stable');
 assert(dom.diveButton.hidden === true, 'dive button hidden before trail depth');
@@ -156,11 +161,18 @@ assert(document.body.dataset.journeyPhase === 'inside', 'active dive marks journ
 assert(document.body.dataset.insideWalkState === 'idle', 'active dive marks walk state');
 assert(dom.insideControls.getAttribute('aria-hidden') === 'false', 'inside controls visible while active');
 assert(dom.insideControls.inert === false, 'inside controls interactive while active');
+assert(dom.insideControls.hidden === false, 'inside controls hidden attribute cleared while active');
+assert(dom.insideControls.dataset.nextState === 'available', 'inside controls mark next action available');
 assert(dom.insideStatus.getAttribute('aria-hidden') === 'false', 'inside status visible while active');
+assert(dom.insideStatus.hidden === false, 'inside status hidden attribute cleared while active');
 assert(dom.insideStatusCopy.textContent === 'Follow a connection or go back.', 'active next-candidate copy is stable');
 assert(dom.insideNext.disabled === false, 'next button enabled with candidate');
+assert(dom.insideNext.hidden === false, 'next button visible with candidate');
 assert(dom.insideNext.textContent === 'Next Stop', 'next button candidate copy is stable');
 assert(dom.insideNext.getAttribute('aria-busy') === 'false', 'next button not busy at rest');
+assert(dom.insideMap.disabled === false, 'map button enabled while active');
+assert(dom.insideMap.getAttribute('aria-disabled') === 'false', 'map button aria-enabled while active');
+assert(dom.insideMap.getAttribute('aria-label') === 'Project this trail onto the map', 'map button aria-label is stable');
 assert(dom.diveButton.getAttribute('aria-pressed') === 'true', 'dive button marks active state');
 assert(dom.diveButton.getAttribute('aria-label') === 'Inside Neighborhood, use Next Stop to continue or County to exit', 'active aria-label is stable');
 assert(dom.diveLabel.textContent === 'Inside Neighborhood', 'active label is stable');
@@ -175,9 +187,11 @@ withStateMutation(() => {
 });
 initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: () => null });
 syncSemanticDiveUi();
-assert(dom.insideStatusCopy.textContent === 'Inside this neighborhood. Pick another match or return to County.', 'active no-candidate copy is stable');
+assert(dom.insideStatusCopy.textContent === 'No nearby stop is available. Use Map or County.', 'active no-candidate copy is stable');
 assert(dom.insideNext.disabled === true, 'next button disabled without candidate');
 assert(dom.insideNext.textContent === 'Trail Complete', 'next button no-candidate copy is stable');
+assert(dom.insideNext.hidden === true, 'next button hidden when trail is complete');
+assert(dom.insideControls.dataset.nextState === 'complete', 'inside controls mark trail complete');
 
 resetState();
 dom = resetDom();
@@ -190,8 +204,10 @@ withStateMutation(() => {
 initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: () => ({ index: 8 }) });
 syncSemanticDiveUi();
 assert(dom.insideNext.disabled === true, 'next button disabled while walking');
+assert(dom.insideNext.hidden === false, 'next button remains visible while walking');
 assert(dom.insideNext.getAttribute('aria-busy') === 'true', 'next button busy while walking');
 assert(dom.insideNext.textContent === 'Following...', 'walking state copy is stable');
+assert(dom.insideControls.dataset.nextState === 'walking', 'inside controls mark walking state');
 
 resetState();
 dom = resetDom();

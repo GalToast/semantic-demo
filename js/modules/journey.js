@@ -1,36 +1,39 @@
 import { state } from '../state.js';
-import * as adapter from './journey-lifecycle-adapter.js';
+import { subscribe, publish, EVENTS } from './event-bus.js';
 import {
-    isCondensedFocusStageViewport,
-    hasColdDegradedSemanticFallback,
-    shouldUseFloatingFocusJourneyOnly,
-    initFocusNeighborRailSubscriptions,
-    updateFocusNeighborRail,
-    updateTraversalUi,
-} from './journey-focus-ui.js';
-import { applyPointFilterColors, describeThreadLensForPoint } from './journey-point-color.js';
+    resetRouteTraceDiagnostics,
+    removeRouteTraceOverlay,
+    setRouteChoreographyPhase,
+    refreshRouteTraceOverlay,
+    updateRouteTraceOverlayPositions,
+    refreshFocusSemanticOverlay,
+    updateFocusSemanticOverlayPositions,
+    removeFocusSemanticOverlay,
+    resetFocusThreadDiagnostics,
+    syncArrivalHandoffOverlay,
+    updateArrivalHandoffOverlay,
+    disposeArrivalHandoffOverlay
+} from './journey-webgl.js';
 import {
     normalizeLeadId,
     buildSpatialGrid,
     buildProjectedNeighborGrid,
     getProjectedNeighborCandidates,
-    getSemanticThreadCandidates,
     getGeometricThreadCandidates,
+    getSemanticThreadCandidates,
     getThreadCandidatesForIndex
 } from './journey-thread-model.js';
-import { truncateMicrocopy, getSharedTrailTopicLabel } from './journey-text-helpers.js';
-import { setStrandContinuityState, clearStrandContinuityState } from './strand-continuity.js';
 import {
     initJourneyTimerAdapter,
-    summarizeNeighborReason,
+    getStrandArrivalNote,
     getInsideRelationshipLabel,
+    summarizeNeighborReason,
     walkThreadNeighbor,
     traverseNeighbor,
     walkInsideToNextStop,
     previewInsideNextThread
 } from './journey-thread-settler.js';
 import {
-    getStrandArrivalNote,
     getThreadInspectionState,
     renderThreadInspection,
     inspectThreadNeighbor,
@@ -39,6 +42,10 @@ import {
     scheduleCanvasThreadInspectionClear,
     clearThreadInspection
 } from './thread-inspector.js';
+import {
+    setStrandContinuityState,
+    clearStrandContinuityState
+} from './strand-continuity.js';
 import {
     initJourneyNeighborhoodAdapter,
     getSemanticThreadDisplayLimit,
@@ -55,100 +62,52 @@ import {
     setTrailFromSeed,
     updateTrailIndices
 } from './journey-neighborhood.js';
-import { initJourneySelectedCardAdapter, syncFocusStage, updateSelectedBusiness } from './journey-selected-card.js';
+import {
+    initJourneySelectedCardAdapter,
+    updateSelectedBusiness,
+    syncFocusStage
+} from './journey-selected-card.js';
+import {
+    updateSelectedCardHeading,
+    renderSelectedMetaStrip,
+    renderSelectedMatchPanel,
+    renderSelectedActionRow,
+    syncSelectedCardContentVariant
+} from './ui-renderers.js';
+import {
+    isCondensedFocusStageViewport,
+    hasColdDegradedSemanticFallback,
+    updateFocusNeighborRail,
+    updateTraversalUi,
+    initFocusNeighborRailSubscriptions,
+    shouldUseFloatingFocusJourneyOnly
+} from './journey-focus-ui.js';
 import {
     initJourneyCanvasInteractionAdapter,
     isThreadCandidateVisibleOnCanvas,
     ensureCanvasNodeInteractionBindings
 } from './journey-canvas-interaction.js';
-import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from './lifecycle.js';
 import { applyLocalNeighborhoodFocus } from './focus-pocket.js';
-import {
-    refreshRouteTraceOverlay,
-    updateRouteTraceOverlayPositions,
-    syncArrivalHandoffOverlay,
-    updateArrivalHandoffOverlay,
-    disposeArrivalHandoffOverlay,
-    refreshFocusSemanticOverlay,
-    updateFocusSemanticOverlayPositions,
-    removeFocusSemanticOverlay,
-    resetFocusThreadDiagnostics,
-    resetRouteTraceDiagnostics,
-    setRouteChoreographyPhase
-} from './journey-webgl.js';
+import { applyPointFilterColors, describeThreadLensForPoint } from './journey-point-color.js';
+import { truncateMicrocopy, getSharedTrailTopicLabel } from './journey-text-helpers.js';
 
-export {
-    normalizeLeadId,
-    buildSpatialGrid,
-    buildProjectedNeighborGrid,
-    getProjectedNeighborCandidates,
-    getSemanticThreadCandidates,
-    getGeometricThreadCandidates,
-    getThreadCandidatesForIndex,
-    refreshRouteTraceOverlay,
-    updateRouteTraceOverlayPositions,
-    syncArrivalHandoffOverlay,
-    updateArrivalHandoffOverlay,
-    disposeArrivalHandoffOverlay,
-    refreshFocusSemanticOverlay,
-    updateFocusSemanticOverlayPositions,
-    removeFocusSemanticOverlay,
-    resetFocusThreadDiagnostics,
-    resetRouteTraceDiagnostics,
-    setRouteChoreographyPhase
-};
+/**
+ * js/modules/journey.js
+ *
+ * Facade module for the "Semantic Journey" / "Exploration Trail" feature set.
+ * Aggregates model, selection, UI, and animation logic for business-to-business
+ * transitions.
+ */
 
-export {
-    isCondensedFocusStageViewport,
-    hasColdDegradedSemanticFallback,
-    shouldUseFloatingFocusJourneyOnly,
-    initFocusNeighborRailSubscriptions,
-    updateFocusNeighborRail,
-    updateTraversalUi,
-    applyPointFilterColors,
-    describeThreadLensForPoint,
-};
+// Phase 3: Declarative synchronization
+subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload) => {
+    const index = payload.index;
+    if (Number.isFinite(index)) {
+        setTrailFromSeed(index);
+        updateTrailIndices(index);
+    }
+});
 
-export {
-    truncateMicrocopy,
-    getSharedTrailTopicLabel,
-    setStrandContinuityState,
-    clearStrandContinuityState,
-    getSemanticThreadDisplayLimit,
-    getNeighborhoodRouteIndices,
-    isBoundedNeighborhoodActive,
-    getNeighborhoodCandidateForIndex,
-    getSemanticNeighborRecordBetween,
-    buildNeighborhoodManifest,
-    getBoundedNeighborhoodWalkCandidate,
-    getNextWalkCandidateForIndex,
-    getCurrentTrailFocusIndex,
-    ensureBoundedNeighborhoodFromActivePocket,
-    primeBoundedSemanticNeighborhoodForTraversal,
-    setTrailFromSeed,
-    updateTrailIndices,
-    syncFocusStage,
-    updateSelectedBusiness,
-    isThreadCandidateVisibleOnCanvas,
-    ensureCanvasNodeInteractionBindings,
-    initJourneyTimerAdapter,
-    getStrandArrivalNote,
-    getInsideRelationshipLabel,
-    getThreadInspectionState,
-    summarizeNeighborReason,
-    renderThreadInspection,
-    inspectThreadNeighbor,
-    pinThreadNeighbor,
-    unpinThreadInspection,
-    scheduleCanvasThreadInspectionClear,
-    clearThreadInspection,
-    walkThreadNeighbor,
-    traverseNeighbor,
-    walkInsideToNextStop,
-    previewInsideNextThread
-};
-
-// Ensure all state variables used are initialized if they weren't in state.js
 export function initJourneyState() {
     state.trailIndices = state.trailIndices || new Set();
     state.inspectedThreadIndex ??= null;
@@ -173,21 +132,12 @@ export function initJourneyState() {
     state.focusPocketMotionByIndex ??= new Map();
 }
 
-// Auto-init on first import — set up state defaults immediately.
-//
-// Deferred to a microtask to break the synchronous initialization cycle
-// between journey.js -> journey-selected-card.js -> lifecycle.js -> journey.js.
-// The import graph evaluates top-to-bottom, so the const selectedCardAdapter
-// declaration in journey-selected-card.js hasn't been reached when this
-// module is loaded. queueMicrotask runs after the ESM evaluation cycle
-// completes, by which point every module's top-level declarations are
-// initialized.
 globalThis.queueMicrotask(() => {
     initJourneyState();
     initJourneyNeighborhoodAdapter({
         isThreadCandidateVisibleOnCanvas,
         setTrailFromSeed,
-        applyLocalNeighborhoodFocus: adapter.applyLocalNeighborhoodFocus
+        applyLocalNeighborhoodFocus
     });
     initJourneySelectedCardAdapter({
         getStrandArrivalNote,
@@ -201,81 +151,118 @@ globalThis.queueMicrotask(() => {
     });
 });
 
-// --- Helper Functions ---
-
-// --- Bounded Neighborhood Explored ---
-
-/**
- * Backward-compatible delegating alias for semantic-dive mode.
- * The authoritative implementation lives in lifecycle.js as setSemanticDiveMode().
- * This export exists so any legacy code that imports journey.setSemanticDiveMode
- * directly still routes through the authoritative lifecycle owner.
- *
- * Additional side effects not covered by lifecycle:
- * - previewInsideNextThread (enter): pre-loads next candidate for inside-cue UI
- * - clearThreadInspection  (exit):  clears stale thread overlays
- * These are safe to call redundantly (idempotent checks inside each function).
- */
 export function setSemanticDiveMode(enabled) {
     const active = Boolean(enabled);
-
-    // Delegate to lifecycle's authoritative window wrapper — all canonical state
-    // management (semanticDiveMode, navState.mode, trailDepth, camera, URL) lives there.
-    if (typeof adapter.setSemanticDiveMode === 'function') {
-        adapter.setSemanticDiveMode(enabled);
-    } else {
-        return false;
-    }
-
-    // Additional side effects that lifecycle's window wrapper handles via
-    // window.previewInsideNextThread / window.clearThreadInspection.
-    // Calling them here too is safe (each has idempotent guards) and ensures
-    // they run even when the window bridge is absent.
+    publish(EVENTS.DIVE_MODE_REQUESTED, { enabled: active });
     if (active) {
         previewInsideNextThread({ force: true });
+    } else if (document.body.dataset.threadInspectSurface === 'inside-cue') {
+        clearThreadInspection({ force: true, preserveJourney: true });
     } else {
-        if (document.body.dataset.threadInspectSurface === 'inside-cue') {
-            clearThreadInspection({ force: true, preserveJourney: true });
-        } else {
-            clearThreadInspection({ force: true, preserveJourney: false });
-        }
+        clearThreadInspection({ force: true, preserveJourney: false });
     }
     return true;
 }
 
-// --- Original Functions Continued ---
+export function returnToOverview() {
+    publish(EVENTS.OVERVIEW_REQUESTED);
+}
 
-export function restoreFocusTrailState(priorFocused = state.focusedNode) {
+export function resetExplorationFocus() {
+    publish(EVENTS.EXPLORATION_RESET_REQUESTED);
+}
+
+export function setTrailDepth(depth, options = {}) {
+    publish(EVENTS.TRAIL_DEPTH_UPDATE_REQUESTED, { depth, options });
+}
+
+function restoreFocusTrailState(priorFocused = state.focusedNode) {
     if (!Number.isFinite(priorFocused) || priorFocused < 0 || priorFocused >= state.points.length) return;
-
     const priorHistory = [...(state.navState.explorationHistoryIndices || [priorFocused])];
-
     setTrailFromSeed(priorFocused);
-    // explorationHistoryIndices is owned by the FOCUS_NODE reducer in navigation-state.js.
-    // Route the restore through the canonical dispatch to keep the ownership boundary
-    // auditable at the reducer level, matching how RESET_FOCUS clears it explicitly.
-    dispatchNavTransition(NAV_TRANSITION_ACTIONS.RESTORE_EXPLORATION_HISTORY, { history: priorHistory });
-    state.navState.lastTraversalReason = state.navState.lastTraversalReason || null;
 
+    // Using global adapter for dispatchNavTransition for now as it is correctly mapped in lifecycle
+    publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused, point: state.points[priorFocused] });
+
+    state.navState.lastTraversalReason = state.navState.lastTraversalReason || null;
     updateTrailIndices(priorFocused);
     refreshFocusSemanticOverlay();
     applyLocalNeighborhoodFocus(priorFocused);
     applyPointFilterColors();
-
     const priorPoint = state.points[priorFocused] || null;
     syncFocusStage(priorPoint || state.selectedPoint || null);
     updateTraversalUi();
 }
 
-if (typeof window !== 'undefined') {
-    window.getSemanticThreadCandidates = getSemanticThreadCandidates;
-    window.getGeometricThreadCandidates = getGeometricThreadCandidates;
-    window.getThreadCandidatesForIndex = getThreadCandidatesForIndex;
-    window.summarizeNeighborReason = summarizeNeighborReason;
-    window.setStrandContinuityState = setStrandContinuityState;
-    window.renderThreadInspection = renderThreadInspection;
-    window.inspectThreadNeighbor = inspectThreadNeighbor;
-    window.pinThreadNeighbor = pinThreadNeighbor;
-    window.unpinThreadInspection = unpinThreadInspection;
-    window.clearThreadInspection = clearThreadInspection;
-}
+export {
+    normalizeLeadId,
+    buildSpatialGrid,
+    buildProjectedNeighborGrid,
+    getProjectedNeighborCandidates,
+    getGeometricThreadCandidates,
+    getSemanticThreadCandidates,
+    getThreadCandidatesForIndex,
+    resetRouteTraceDiagnostics,
+    removeRouteTraceOverlay,
+    setRouteChoreographyPhase,
+    refreshRouteTraceOverlay,
+    updateRouteTraceOverlayPositions,
+    syncArrivalHandoffOverlay,
+    updateArrivalHandoffOverlay,
+    disposeArrivalHandoffOverlay,
+    refreshFocusSemanticOverlay,
+    updateFocusSemanticOverlayPositions,
+    removeFocusSemanticOverlay,
+    resetFocusThreadDiagnostics,
+    isCondensedFocusStageViewport,
+    hasColdDegradedSemanticFallback,
+    shouldUseFloatingFocusJourneyOnly,
+    initFocusNeighborRailSubscriptions,
+    updateFocusNeighborRail,
+    updateTraversalUi,
+    applyPointFilterColors,
+    describeThreadLensForPoint,
+    truncateMicrocopy,
+    getSharedTrailTopicLabel,
+    setStrandContinuityState,
+    clearStrandContinuityState,
+    initJourneyNeighborhoodAdapter,
+    getSemanticThreadDisplayLimit,
+    getNeighborhoodRouteIndices,
+    isBoundedNeighborhoodActive,
+    getNeighborhoodCandidateForIndex,
+    getSemanticNeighborRecordBetween,
+    buildNeighborhoodManifest,
+    getBoundedNeighborhoodWalkCandidate,
+    getNextWalkCandidateForIndex,
+    getCurrentTrailFocusIndex,
+    ensureBoundedNeighborhoodFromActivePocket,
+    primeBoundedSemanticNeighborhoodForTraversal,
+    setTrailFromSeed,
+    updateTrailIndices,
+    updateSelectedBusiness,
+    syncFocusStage,
+    updateSelectedCardHeading,
+    renderSelectedMetaStrip,
+    renderSelectedMatchPanel,
+    renderSelectedActionRow,
+    syncSelectedCardContentVariant,
+    restoreFocusTrailState,
+    initJourneyTimerAdapter,
+    getStrandArrivalNote,
+    getInsideRelationshipLabel,
+    getThreadInspectionState,
+    summarizeNeighborReason,
+    renderThreadInspection,
+    inspectThreadNeighbor,
+    pinThreadNeighbor,
+    unpinThreadInspection,
+    scheduleCanvasThreadInspectionClear,
+    clearThreadInspection,
+    walkThreadNeighbor,
+    traverseNeighbor,
+    walkInsideToNextStop,
+    previewInsideNextThread,
+    isThreadCandidateVisibleOnCanvas,
+    ensureCanvasNodeInteractionBindings,
+};

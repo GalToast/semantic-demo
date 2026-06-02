@@ -6,6 +6,15 @@ import * as esbuild from 'esbuild';
 
 const root = process.cwd();
 const fix = process.argv.includes('--fix');
+const scopeArg = process.argv.find((arg) => arg.startsWith('--assets='))?.slice('--assets='.length) || '';
+const scopedPaths = new Set(
+  scopeArg
+    .split(',')
+    .map((item) => item.trim().replace(/^\.\//, '').replace(/\\/g, '/'))
+    .filter(Boolean),
+);
+const scopedBundleRelevant = scopedPaths.size === 0 ||
+  [...scopedPaths].some((item) => item === 'dist/bundle.js' || item.startsWith('js/'));
 const shellPath = path.join(root, 'vector-explorer-polished.html');
 const requiredAssets = [
   {
@@ -45,6 +54,10 @@ function escapeRegExp(value) {
 
 function toPosixPath(value) {
   return value.replace(/\\/g, '/');
+}
+
+function normalizeLocalPath(value) {
+  return toPosixPath(value).replace(/^\.\//, '');
 }
 
 function resolveCssImport(ownerPath, reference) {
@@ -92,19 +105,26 @@ async function verifyBundleFresh() {
   }
 }
 
+const cssImpactCache = new Map();
+
 function refreshCssImports(relativePath, seen = new Set()) {
-  if (seen.has(relativePath)) return;
+  relativePath = normalizeLocalPath(relativePath);
+  if (cssImpactCache.has(relativePath)) return cssImpactCache.get(relativePath);
+  if (seen.has(relativePath)) return scopedPaths.has(relativePath);
   seen.add(relativePath);
 
   const absolutePath = path.join(root, relativePath);
   if (!fs.existsSync(absolutePath)) {
     failures.push(`${relativePath} is missing`);
-    return;
+    cssImpactCache.set(relativePath, false);
+    return false;
   }
 
   const css = fs.readFileSync(absolutePath, 'utf8');
   const importPattern = /(@import\s+url\(\s*['"]?)([^'")]+\.css)(?:\?v=([^'")]*))?(['"]?\s*\)\s*;)/g;
   let changed = false;
+  const selfImpacted = scopedPaths.size === 0 || scopedPaths.has(relativePath);
+  let impacted = selfImpacted;
 
   const nextCss = css.replace(importPattern, (full, prefix, reference, current = '', suffix) => {
     if (!isLocalAsset(reference)) return full;
@@ -116,9 +136,15 @@ function refreshCssImports(relativePath, seen = new Set()) {
       return full;
     }
 
-    refreshCssImports(importedPath, seen);
+    const childImpacted = refreshCssImports(importedPath, seen);
+    impacted = impacted || childImpacted;
     const expected = shaPrefix(importedPath);
     if (current === expected) return full;
+    const shouldTouchReference = scopedPaths.size === 0 ||
+      selfImpacted ||
+      childImpacted ||
+      scopedPaths.has(importedPath);
+    if (!shouldTouchReference) return full;
 
     if (fix) {
       changed = true;
@@ -132,11 +158,16 @@ function refreshCssImports(relativePath, seen = new Set()) {
   if (fix && changed) {
     fs.writeFileSync(absolutePath, nextCss);
     console.log(`Updated ${relativePath} import cache busters.`);
+    impacted = true;
   }
+  cssImpactCache.set(relativePath, impacted);
+  return impacted;
 }
 
-await verifyBundleFresh();
-if (failures.length) reportFailuresAndExit();
+if (scopedBundleRelevant) {
+  await verifyBundleFresh();
+  if (failures.length) reportFailuresAndExit();
+}
 
 let shellHtml = fs.readFileSync(shellPath, 'utf8');
 let nextHtml = shellHtml;
@@ -169,9 +200,11 @@ for (const requiredAsset of requiredAssets) {
   }
 }
 
+const impactedShellAssets = new Set();
 for (const asset of assets.values()) {
   if (asset.path.endsWith('.css')) {
-    refreshCssImports(asset.path);
+    const impacted = refreshCssImports(asset.path);
+    if (impacted) impactedShellAssets.add(asset.path);
   }
 }
 
@@ -188,6 +221,11 @@ for (const asset of assets.values()) {
 
   const current = match[2] || '';
   if (current !== expected) {
+    const shouldTouchReference = scopedPaths.size === 0 ||
+      scopedPaths.has(asset.path) ||
+      impactedShellAssets.has(asset.path);
+    if (!shouldTouchReference) continue;
+
     if (fix) {
       nextHtml = nextHtml.replace(pattern, `$1?v=${expected}$3`);
     } else {

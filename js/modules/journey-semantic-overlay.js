@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { subscribe, EVENTS } from './event-bus.js';
 import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
@@ -11,6 +12,11 @@ import { prefersReducedMotion } from './environment.js';
 import { CLUSTER_COLORS, FOCUS_SEMANTIC_COLORS } from './design-tokens.js';
 import { getLineSegmentCount } from './journey-webgl-utils.js';
 import { registerDiagnosticProbe } from './diagnostic-adapter.js';
+
+// Phase 3: Declarative synchronization
+subscribe(EVENTS.CAMERA_NODE_FOCUSED, () => {
+    refreshFocusSemanticOverlay();
+});
 
 export function resetFocusThreadDiagnostics(reason = 'inactive') {
     state.focusThreadDiagnostics = {

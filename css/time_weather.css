@@ -120,36 +120,33 @@
 
 .weather-widget {
     position: fixed;
-    top: calc(18px + env(safe-area-inset-top, 0px));
-    left: 18px;
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    right: calc(110px + env(safe-area-inset-right, 0px));
+    left: auto;
     box-sizing: border-box;
-    inline-size: min(312px, calc(100vw - 36px));
-    min-block-size: var(--landscape-weather-widget-height);
+    inline-size: auto;
+    min-block-size: 0;
     z-index: 100;
-    display: grid;
-    grid-template-columns: 42px minmax(0, 1fr) auto;
+    display: inline-flex;
     align-items: center;
-    column-gap: 12px;
-    padding: 10px 14px;
-    border: 1px solid rgba(121, 235, 222, 0.24);
-    border-radius: 16px;
-    color: rgba(245, 255, 253, 0.94);
-    background:
-        radial-gradient(circle at 16% 12%, rgba(121, 235, 222, 0.18), transparent 35%),
-        radial-gradient(circle at 94% 100%, rgba(255, 226, 132, 0.1), transparent 36%),
-        linear-gradient(145deg, rgba(8, 17, 25, 0.92), rgba(4, 8, 14, 0.86));
-    box-shadow:
-        0 18px 44px rgba(0, 0, 0, 0.34),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 0 30px rgba(82, 229, 215, 0.08);
-    backdrop-filter: blur(18px) saturate(1.18);
-    -webkit-backdrop-filter: blur(18px) saturate(1.18);
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid rgba(121, 235, 222, 0.18);
+    border-radius: 999px;
+    color: rgba(245, 255, 253, 0.84);
+    font-size: 11px;
+    background: rgba(8, 17, 25, 0.72);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(14px) saturate(1.12);
+    -webkit-backdrop-filter: blur(14px) saturate(1.12);
     overflow: hidden;
-    transition:
-        opacity 180ms ease,
-        transform 180ms ease,
-        border-color 180ms ease,
-        box-shadow 180ms ease;
+    transition: opacity 180ms ease, transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.weather-widget .weather-desc,
+.weather-widget .weather-wind,
+.weather-widget .weather-staleness {
+    display: none;
 }
 
 .weather-widget[hidden] {

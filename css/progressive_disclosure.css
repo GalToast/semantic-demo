@@ -80,7 +80,7 @@
             body[data-panel-surface="focus-search"] .selected-card .selected-subtitle,
             body[data-panel-surface="focus"] .trail-context,
             body[data-panel-surface="focus-search"] .trail-context {
-                color: rgba(255, 255, 255, 0.52);
+                color: rgba(255, 255, 255, 0.85);
             }
 
             body[data-panel-surface="focus"] .selected-card,
@@ -835,10 +835,6 @@ body[data-panel-surface="search"] .focus-thread-inspector {
     display: none;
 }
 
-body[data-panel-surface="search"] .rail-section#cluster-section,
-body[data-panel-surface="search"] .rail-section#filters-section {
-    display: none;
-}
 
 /* ── Focus: focused business card and trail controls dominate ─────────────────── */
 

@@ -294,14 +294,12 @@ function testSharedStrandContinuityOwner() {
   assertContains(strandContinuitySrc, 'export function clearStrandContinuityState', 'strand-continuity exports clearer');
   assertContains(strandContinuitySrc, "from './journey-webgl.js'", 'strand-continuity owns arrival handoff overlay imports');
 
-  assertContains(
-    journeySrc,
-    "import { setStrandContinuityState, clearStrandContinuityState } from './strand-continuity.js';",
+  assert(
+    /import\s*\{[\s\S]*\bsetStrandContinuityState\b[\s\S]*\bclearStrandContinuityState\b[\s\S]*\}\s*from\s*['"]\.\/strand-continuity\.js['"]/.test(journeySrc),
     'journey imports shared strand-continuity owner'
   );
-  assertContains(
-    threadInspectorSrc,
-    "import { setStrandContinuityState, clearStrandContinuityState } from './strand-continuity.js';",
+  assert(
+    /import\s*\{[\s\S]*\bsetStrandContinuityState\b[\s\S]*\bclearStrandContinuityState\b[\s\S]*\}\s*from\s*['"]\.\/strand-continuity\.js['"]/.test(threadInspectorSrc),
     'thread-inspector imports shared strand-continuity owner'
   );
   assertNotContains(journeySrc, 'export function setStrandContinuityState', 'journey local strand setter removed');

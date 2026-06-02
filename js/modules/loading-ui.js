@@ -1,5 +1,26 @@
 import { state } from '../state.js';
+import { subscribe, EVENTS } from './event-bus.js';
 import { restoreFocusTrailState, updateSelectedBusiness } from './journey.js';
+
+// Phase 3: Declarative synchronization
+subscribe(EVENTS.TRANSITION_PHASE_CHANGED, (payload) => {
+    if (payload.phase === 'map-prelude') {
+        showTerrainPreludeOverlay();
+    } else if (payload.phase === 'idle') {
+        hideTerrainPreludeOverlay();
+    }
+});
+
+function showTerrainPreludeOverlay() {
+    setLoadingPhase('restore', {
+        note: 'Preparing terrain...',
+        foot: 'Synchronizing semantic space to geographic map.'
+    });
+}
+
+function hideTerrainPreludeOverlay() {
+    hideLoadingOverlay();
+}
 import { SCENE_READY } from './scene-events.js';
 import { loadSemanticThreads } from './semantic-threads.js';
 import { applyFilters } from './search-state.js';

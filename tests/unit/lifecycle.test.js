@@ -32,6 +32,8 @@ vi.mock('../../js/modules/event-bus.js', () => ({
     EVENTS: {
         VIEW_CHANGED: 'VIEW_CHANGED',
         EXPLORATION_DEPTH_CHANGED: 'EXPLORATION_DEPTH_CHANGED',
+        COMPOSITION_UPDATED: 'COMPOSITION_UPDATED',
+        URL_SYNC_REQUESTED: 'URL_SYNC_REQUESTED',
         STATE_RESET: 'STATE_RESET',
         CAMERA_NODE_FOCUSED: 'CAMERA_NODE_FOCUSED'
     }
@@ -88,7 +90,10 @@ describe('lifecycle.js', () => {
 
             setMyceliumMode('trail', { skipUrlSync: true });
 
-            expect(eventBus.publish).not.toHaveBeenCalled();
+            expect(eventBus.publish).not.toHaveBeenCalledWith(
+                eventBus.EVENTS.URL_SYNC_REQUESTED,
+                expect.anything()
+            );
         });
 
         it('should return early if the mode is already active', async () => {

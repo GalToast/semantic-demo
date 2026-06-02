@@ -225,7 +225,7 @@ function _bindInputInterceptor() {
     Object.assign(canvasOverlay.style, {
         position: 'fixed',
         inset: '0',
-        zIndex: '1', // Behind DOM UI, but above 3D canvas
+        zIndex: '9', // Behind DOM UI, but above 3D canvas and Map (z-index 1)
         pointerEvents: 'all',
         cursor: 'default',
         background: 'transparent'
@@ -734,9 +734,4 @@ if (typeof document !== 'undefined' && typeof document.getElementById === 'funct
 
 export function isMicroDemoRunning() {
     return _demoPhase !== PHASE.IDLE && _demoPhase !== PHASE.COMPLETE && _demoPhase !== PHASE.CANCELLED;
-}
-
-if (typeof window !== 'undefined') {
-    window.isMicroDemoRunning = isMicroDemoRunning;
-    window.cancelMicroDemo = cancelMicroDemo;
 }

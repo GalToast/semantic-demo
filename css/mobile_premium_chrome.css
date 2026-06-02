@@ -207,7 +207,8 @@
             0 10px 30px rgba(0, 0, 0, 0.26);
     }
 
-    html body.is-active[data-panel-surface="map-idle"] .view-toggle button {
+    html body.is-active[data-panel-surface="map-idle"] .view-toggle button,
+    html body.is-active[data-panel-surface="idle"] .view-toggle button {
         min-height: 44px;
         padding: 8px 10px;
         border-radius: 8px;
@@ -216,12 +217,37 @@
         letter-spacing: 0;
     }
 
-    html body.is-active[data-panel-surface="map-idle"] .view-toggle button.active {
+    html body.is-active[data-panel-surface="map-idle"] .view-toggle button.active,
+    html body.is-active[data-panel-surface="idle"] .view-toggle button.active {
         background:
             linear-gradient(180deg, rgba(82, 229, 215, 0.18), rgba(56, 174, 166, 0.12));
         box-shadow:
             inset 0 1px 0 rgba(255, 255, 255, 0.08),
             0 0 14px rgba(82, 229, 215, 0.2);
+    }
+
+    html body.is-active[data-panel-surface="idle"] .view-toggle {
+        left: 12px;
+        right: 108px;
+        top: calc(82px + env(safe-area-inset-top, 0px));
+        width: auto;
+        transform: none;
+        padding: 4px;
+        min-height: 46px;
+        gap: 4px;
+        border-radius: 10px;
+        background:
+            linear-gradient(180deg, rgba(8, 19, 24, 0.82), rgba(5, 11, 15, 0.72));
+        border-color: rgba(148, 232, 223, 0.14);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.045),
+            0 10px 30px rgba(0, 0, 0, 0.26);
+    }
+
+    html body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .view-toggle {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
     }
 
     html body.is-active[data-panel-surface="map-idle"] .map-empty-state {
@@ -397,6 +423,47 @@
         opacity: 1;
     }
 
+    html body.is-active[data-panel-surface] #btn-share-view [class~="share-toggle-label"] {
+        display: none;
+    }
+
+    html body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) :is(.share-toggle, .legend-toggle) {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"]:not([data-focus-panel-mode="field-node"]) #btn-keyboard-help {
+        top: calc(24px + env(safe-area-inset-top, 0px));
+        right: 92px;
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background:
+            linear-gradient(180deg, rgba(11, 27, 32, 0.84), rgba(5, 12, 16, 0.76)),
+            radial-gradient(circle at 50% 0%, rgba(82, 229, 215, 0.18), transparent 62%);
+        border: 1px solid rgba(126, 242, 226, 0.24);
+        color: rgba(203, 252, 244, 0.9);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.06),
+            0 10px 22px rgba(0, 0, 0, 0.24);
+        opacity: 0.94;
+        transform: none;
+    }
+
+    html body.is-active[data-panel-surface="focus-search"]:not([data-focus-panel-mode="field-node"]) #btn-keyboard-help .ui-icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    html body.is-active[data-panel-surface="search"] #btn-keyboard-help,
+    html body.is-active[data-panel-surface="semantic-dive"] #btn-keyboard-help,
+    html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] #btn-keyboard-help {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     html body[data-panel-surface] .controls {
         position: fixed;
         bottom: auto;
@@ -430,6 +497,12 @@
         color: var(--color-primary);
     }
 
+    html body.is-active:is([data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .controls {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     .keyboard-hint-panel {
         bottom: auto;
         top: 220px;
@@ -437,6 +510,132 @@
         left: 14px;
         min-width: 0;
         z-index: var(--z-max);
+        font-family: var(--font-body, 'Nunito Sans', sans-serif);
+    }
+
+    html body.is-active[data-panel-surface="focus-search"]:not([data-focus-panel-mode="field-node"]) .keyboard-hint-panel {
+        top: calc(82px + env(safe-area-inset-top, 0px));
+        right: 14px;
+        left: auto;
+        width: min(318px, calc(100vw - 28px));
+        padding: 13px 16px 14px;
+        border-radius: 16px;
+        background:
+            linear-gradient(180deg, rgba(8, 20, 25, 0.94), rgba(5, 12, 16, 0.9)),
+            radial-gradient(circle at 84% 0%, rgba(82, 229, 215, 0.14), transparent 46%);
+        border-color: rgba(126, 242, 226, 0.2);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.06),
+            0 16px 34px rgba(0, 0, 0, 0.32);
+    }
+
+    html body.is-active[data-panel-surface="search"] .keyboard-hint-panel {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .keyboard-hint-panel .kh-title {
+        max-width: calc(100% - 56px);
+        margin: 0 0 12px;
+        font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: 0.1em;
+        color: rgba(126, 242, 226, 0.9);
+        text-transform: uppercase;
+    }
+
+    .keyboard-hint-panel .kh-row {
+        display: grid;
+        grid-template-columns: 78px minmax(0, 1fr);
+        align-items: center;
+        gap: 14px;
+        min-height: 28px;
+        margin: 0 0 7px;
+        font-family: var(--font-body, 'Nunito Sans', sans-serif);
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.15;
+        color: rgba(221, 239, 236, 0.76);
+    }
+
+    .keyboard-hint-panel .kh-row:last-of-type {
+        margin-bottom: 0;
+    }
+
+    .keyboard-hint-panel .kh-keys {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    .keyboard-hint-panel .kh-keys kbd {
+        display: inline-flex;
+        min-width: 42px;
+        min-height: 26px;
+        align-items: center;
+        justify-content: center;
+        padding: 3px 8px;
+        border-radius: 8px;
+        border: 1px solid rgba(221, 239, 236, 0.18);
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.04)),
+            rgba(5, 12, 16, 0.54);
+        color: rgba(246, 255, 252, 0.88);
+        font-family: var(--font-mono, 'JetBrains Mono', monospace);
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: 0;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.07),
+            0 6px 12px rgba(0, 0, 0, 0.14);
+    }
+
+    html body.is-active[data-panel-surface="focus-search"]:not([data-focus-panel-mode="field-node"]) .keyboard-hint-panel::before {
+        content: "";
+        position: absolute;
+        top: -7px;
+        right: 84px;
+        width: 12px;
+        height: 12px;
+        border-top: 1px solid rgba(126, 242, 226, 0.2);
+        border-left: 1px solid rgba(126, 242, 226, 0.2);
+        background: rgba(8, 20, 25, 0.94);
+        transform: rotate(45deg);
+    }
+
+    .keyboard-hint-panel .kh-close {
+        top: 11px;
+        right: 12px;
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0;
+        border: 1px solid rgba(126, 242, 226, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.025);
+        color: rgba(221, 239, 236, 0.62);
+        font-size: 22px;
+        line-height: 1;
+        box-shadow: none;
+    }
+
+    .keyboard-hint-panel .kh-close:hover {
+        border-color: rgba(126, 242, 226, 0.28);
+        background: rgba(82, 229, 215, 0.08);
+        color: rgba(235, 255, 251, 0.9);
+    }
+
+    .keyboard-hint-panel .kh-close:focus-visible {
+        outline: none;
+        border-color: rgba(126, 242, 226, 0.42);
+        background: rgba(82, 229, 215, 0.06);
+        box-shadow: 0 0 0 2px rgba(126, 242, 226, 0.2);
     }
 
     html body[data-panel-surface] .panel-toggle {
@@ -448,9 +647,9 @@
         [data-panel-surface="map-idle"]
     ) :is(
         .controls,
-        .share-toggle,
-        .legend-toggle,
-        .help-toggle,
+        #btn-share-view,
+        #btn-legend,
+        #btn-keyboard-help,
         .panel-toggle,
         .time-display
     ) {
@@ -526,8 +725,18 @@
         visibility: hidden;
     }
 
-    /* Controls handled by global mobile actions */
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .time-display {
+    html body.is-active:is(
+        [data-panel-surface="focus"],
+        [data-panel-surface="focus-search"],
+        [data-panel-surface="semantic-dive"]
+    ) :is(
+        .controls,
+        #btn-share-view,
+        #btn-legend,
+        #btn-keyboard-help,
+        .panel-toggle,
+        .time-display
+    ) {
         display: none;
         visibility: hidden;
         pointer-events: none;

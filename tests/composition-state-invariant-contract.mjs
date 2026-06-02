@@ -164,20 +164,22 @@ function snapshotDataset() {
 }
 
 function resetState() {
-  setCurrentViewForTest('galaxy');
-  state.focusedNode = null;
-  state.selectedPoint = null;
-  state.navState.focusedIndex = null;
-  state.navState.mode = 'overview';
-  state.navState.trailCursor = -1;
-  state.navState.trailSeedIndex = null;
-  state.navState.trailNeighborIndices = [];
-  state.navState.walkHistoryIndices = [];
-  state.navState.threadCandidates = [];
-  state.trailDepth = 0;
-  state.semanticDiveMode = false;
-  state.currentSearchSummary = null;
-  state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false };
+  withStateMutation(() => {
+    state.currentView = 'galaxy';
+    state.focusedNode = null;
+    state.selectedPoint = null;
+    state.navState.focusedIndex = null;
+    state.navState.mode = 'overview';
+    state.navState.trailCursor = -1;
+    state.navState.trailSeedIndex = null;
+    state.navState.trailNeighborIndices = [];
+    state.navState.walkHistoryIndices = [];
+    state.navState.threadCandidates = [];
+    state.trailDepth = 0;
+    state.semanticDiveMode = false;
+    state.currentSearchSummary = null;
+    state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false };
+  });
   state.trailIndices.clear();
   fakeBody.dataset = {};
   _rafQueue = [];
@@ -259,7 +261,6 @@ console.log('  PASS: hasFocus=false forces semanticDive=inactive and panelSurfac
 console.log('[TEST] 1D — valid: semanticDiveMode + focusedNode only (no selectedPoint)');
 resetState();
 state.focusedNode = 7;
-state.navState.focusedIndex = null;
 state.selectedPoint = null;
 state.trailDepth = 2;
 commit();

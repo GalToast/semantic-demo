@@ -79,7 +79,8 @@ withStateMutation(() => {
 });
 compassState = getJourneyCompassState();
 assert.equal(compassState.phase, 'focus', 'focused point is focus phase');
-assert.equal(compassState.secondaryAction?.action, 'open-map', 'search anchor focus exposes map action');
+assert.equal(compassState.primaryAction?.action, 'open-map', 'search anchor focus exposes map as primary action');
+assert.equal(compassState.secondaryAction?.action, 'county-overview', 'search anchor focus exposes county reset as secondary action');
 
 withStateMutation(() => {
   state.currentView = 'map';

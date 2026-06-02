@@ -32,19 +32,6 @@ import { updateUrlState } from './url-state.js';
 import { applyPointFilterColors, syncFocusStage } from './journey.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 import { publish, EVENTS } from './event-bus.js';
-import {
-    adapter_showTerrainPreludeOverlay,
-    adapter_hideTerrainPreludeOverlay,
-    adapter_setRouteChoreographyPhase,
-    adapter_clearThreadInspection,
-    adapter_setTrailFromSeed,
-    adapter_updateTrailIndices,
-    adapter_refreshFocusSemanticOverlay,
-    adapter_applyLocalNeighborhoodFocus,
-    adapter_updateSelectedBusiness,
-    adapter_updateTraversalUi,
-    adapter_updateFocusNeighborRail
-} from './camera-controls-adapter.js';
 
 // Constants
 
@@ -481,7 +468,7 @@ export function animateCameraToTerrainPrelude(options = {}) {
     const duration = reducedMotion ? 1 : (options.duration || (state.MAP_HANDOFF_PRELUDE_MS || 1200));
 
     // Show "Preparing terrain..." progress overlay during the prelude
-    adapter_showTerrainPreludeOverlay();
+    publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'map-prelude', options: { duration } });
 
     try {
         if (!state.camera || !state.controls) return;
@@ -531,7 +518,7 @@ export function animateCameraToTerrainPrelude(options = {}) {
         console.warn('animateCameraToTerrainPrelude failed:', _err);
     } finally {
         // Remove the prelude overlay when the animation completes (or on error)
-        adapter_hideTerrainPreludeOverlay();
+        publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'idle' });
     }
 }
 
@@ -677,8 +664,11 @@ export function animateCameraToSearchCorridor(anchorIndex, resultIndices = [], o
     const startTime = performance.now();
     const animationToken = (state.routeCameraAnimationToken = (state.routeCameraAnimationToken || 0) + 1);
 
-    adapter_setRouteChoreographyPhase('search-corridor', {
-        reason: options.reason || 'search-success', anchorIndex, indexCount: routeIndices.length, lastCameraMove: 'search-corridor'
+    publish(EVENTS.TRANSITION_PHASE_CHANGED, {
+        phase: 'search-corridor',
+        details: {
+            reason: options.reason || 'search-success', anchorIndex, indexCount: routeIndices.length, lastCameraMove: 'search-corridor'
+        }
     });
     noteSceneInteraction(duration + 1200);
 
@@ -782,16 +772,10 @@ export function focusOnNode(index, options = {}) {
     }
 
     publish(EVENTS.CAMERA_MOVED, { reason: 'focus-node', index });
-    adapter_clearThreadInspection({ force: true, preserveJourney: !!options.fromTraversal });
-    adapter_setTrailFromSeed(index);
-    adapter_updateTrailIndices(index);
-    adapter_refreshFocusSemanticOverlay();
-    adapter_applyLocalNeighborhoodFocus(index);
+    publish(EVENTS.CAMERA_NODE_FOCUSED, { index, point, options });
 
     applyPointFilterColors();
     updateExplorationUi();
-
-    adapter_updateSelectedBusiness(point, { revealCard: !!options.revealCard || !!options.fromSearchResult });
 
     syncFocusStage(point);
     refreshMapRouteEmbodiment();
@@ -807,12 +791,10 @@ export function focusOnNode(index, options = {}) {
         transitionStyle: options.fromTraversal ? 'walk' : options.fromSearchResult ? 'search' : 'focus'
     });
 
-    adapter_updateTraversalUi();
     syncSemanticDiveUi();
-    adapter_updateFocusNeighborRail();
     refreshCompositionState();
     if (!options.skipUrlSync) {
-        updateUrlState({ record: point.lead_id || null }, { mode: options.historyMode || 'push', reason: 'focus' });
+        publish(EVENTS.URL_SYNC_REQUESTED, { params: { record: point.lead_id || null }, mode: options.historyMode || 'push', reason: 'focus' });
     }
     updateJourneyCompass();
     return true;

@@ -40,35 +40,33 @@ function assertNotContains(haystack, needle, label) {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 1: journey.js window shim block exists intact
+// TEST 1: journey.js top-level window shim stays retired
 // ---------------------------------------------------------------------------
 
 function testJourneyWindowShim() {
-  console.log('\n[TEST] journey.js window shim block intact');
+  console.log('\n[TEST] journey.js top-level window shim retired');
 
   const src = fs.readFileSync(JOURNEY_PATH, 'utf-8');
 
-  // The shim block must exist as one contiguous block guarded by typeof window check
   assertNotContains(src, 'window.syncFocusStage = syncFocusStage', 'syncFocusStage bridge is retired');
   assert(!/window\.setTrailFromSeed\s*=/.test(src), 'setTrailFromSeed bridge is retired');
   assertNotContains(src, 'window.setSemanticDiveMode = setSemanticDiveMode', 'semantic-dive window owner stays in lifecycle');
   assertNotContains(src, 'window.updateTraversalUi = updateTraversalUi', 'updateTraversalUi bridge is retired');
   assertNotContains(src, 'window.getNextWalkCandidateForIndex = getNextWalkCandidateForIndex', 'getNextWalkCandidateForIndex bridge is retired');
-  assert(src.includes('window.getSemanticThreadCandidates = getSemanticThreadCandidates'), 'window.getSemanticThreadCandidates in shim');
-  assert(src.includes('window.getGeometricThreadCandidates = getGeometricThreadCandidates'), 'window.getGeometricThreadCandidates in shim');
-  assert(src.includes('window.getThreadCandidatesForIndex = getThreadCandidatesForIndex'), 'window.getThreadCandidatesForIndex in shim');
-  assert(src.includes('window.summarizeNeighborReason = summarizeNeighborReason'), 'window.summarizeNeighborReason in shim');
-  assert(src.includes('window.setStrandContinuityState = setStrandContinuityState'), 'window.setStrandContinuityState in shim');
-  assert(src.includes('window.renderThreadInspection = renderThreadInspection'), 'window.renderThreadInspection in shim');
-  assert(src.includes('window.inspectThreadNeighbor = inspectThreadNeighbor'), 'window.inspectThreadNeighbor in shim');
-  assert(src.includes('window.pinThreadNeighbor = pinThreadNeighbor'), 'window.pinThreadNeighbor in shim');
-  assert(src.includes('window.unpinThreadInspection = unpinThreadInspection'), 'window.unpinThreadInspection in shim');
-  assert(src.includes('window.clearThreadInspection = clearThreadInspection'), 'window.clearThreadInspection in shim');
+  assert(!/window\.getSemanticThreadCandidates\s*=/.test(src), 'getSemanticThreadCandidates top-level bridge is retired');
+  assert(!/window\.getGeometricThreadCandidates\s*=/.test(src), 'getGeometricThreadCandidates top-level bridge is retired');
+  assert(!/window\.getThreadCandidatesForIndex\s*=/.test(src), 'getThreadCandidatesForIndex top-level bridge is retired');
+  assert(!/window\.summarizeNeighborReason\s*=/.test(src), 'summarizeNeighborReason top-level bridge is retired');
+  assert(!/window\.setStrandContinuityState\s*=/.test(src), 'setStrandContinuityState top-level bridge is retired');
+  assert(!/window\.renderThreadInspection\s*=/.test(src), 'renderThreadInspection top-level bridge is retired');
+  assert(!/window\.inspectThreadNeighbor\s*=/.test(src), 'inspectThreadNeighbor top-level bridge is retired');
+  assert(!/window\.pinThreadNeighbor\s*=/.test(src), 'pinThreadNeighbor top-level bridge is retired');
+  assert(!/window\.unpinThreadInspection\s*=/.test(src), 'unpinThreadInspection top-level bridge is retired');
+  assert(!/window\.clearThreadInspection\s*=/.test(src), 'clearThreadInspection top-level bridge is retired');
   assertNotContains(src, 'window.__semanticThreadInspectorProbe', '__semanticThreadInspectorProbe probe retired from shim');
   assertNotContains(src, 'window.__semanticCanvasThreadProbe', '__semanticCanvasThreadProbe probe retired from shim');
-  assert(src.includes('if (typeof window !== \'undefined\')'), 'typeof window guard present');
 
-  console.log('  OK journey.js window shim block verified');
+  console.log('  OK journey.js top-level window shim remains retired');
 }
 
 // ---------------------------------------------------------------------------

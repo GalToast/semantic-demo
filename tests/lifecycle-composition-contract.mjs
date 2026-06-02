@@ -56,10 +56,6 @@ const searchIntentEl = new FakeElement('section');
 searchIntentEl.classList.add('search-results', 'active');
 
 globalThis.window = {
-  clearMobileRouteFieldPeekCalls: 0,
-  clearMobileRouteFieldPeek() {
-    this.clearMobileRouteFieldPeekCalls += 1;
-  },
 };
 
 globalThis.document = {
@@ -91,12 +87,6 @@ elementsById.set('semantic-lane-assist-meta', new FakeElement('div'));
 
 const { state, withStateMutation } = await import('../js/state.js');
 
-// Pre-init dependencies to avoid module-load crashes on uninitialized adapter refs
-const { initCompositionAdapter } = await import('../js/modules/composition-adapter.js');
-initCompositionAdapter({
-  clearMobileRouteFieldPeek: () => { globalThis.window.clearMobileRouteFieldPeek(); }
-});
-
 const {
   refreshCompositionState,
   setSemanticLaneUiState,
@@ -111,6 +101,8 @@ withStateMutation(() => {
   state.navState.focusedIndex = 12;
   state.semanticDiveMode = false;
 });
+document.body.dataset.mobileRoutePeek = 'active';
+document.body.dataset.mobileRoutePeekReason = 'contract';
 
 refreshCompositionState();
 
@@ -119,7 +111,8 @@ assert(document.body.dataset.graphContext === 'focus-search', 'focused record pl
 assert(document.body.dataset.panelSurface === 'focus-search', 'focused record plus search intent owns the focus-search panel surface');
 assert(document.body.dataset.trailState === 'active', 'focused record plus search intent marks trail active');
 assert(document.body.dataset.semanticDive === 'inactive', 'semantic dive stays inactive before Step Inside');
-assert(globalThis.window.clearMobileRouteFieldPeekCalls === 1, 'non-idle graph context clears mobile route peek');
+assert(document.body.dataset.mobileRoutePeek === undefined, 'non-idle graph context clears mobile route peek');
+assert(document.body.dataset.mobileRoutePeekReason === undefined, 'non-idle graph context clears mobile route peek reason');
 
 
 setSemanticLaneUiState('degraded', {

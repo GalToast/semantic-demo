@@ -52,10 +52,12 @@ function main() {
   assertContains(pointColorSrc, 'isVisited ? 1.18 : (semanticFocus ? 0.24 : 0.18)', 'trail dim factor preserved');
   assertContains(pointColorSrc, 'isVisited ? 1.28 : (semanticFocus ? 0.32 : 0.22)', 'pocket dim factor preserved');
 
-  assertContains(pointColorSrc, "import { syncSearchStatusForFocus } from './search-lifecycle-adapter.js';", 'search status routes through adapter');
-  assertContains(pointColorSrc, 'syncSearchStatusForFocus(topPoint, { fromSearchResult: true, skipTraversalUiUpdate: true });', 'search glow status call preserved');
+  assertContains(pointColorSrc, "import { publish, EVENTS } from './event-bus.js';", 'search status routes through event bus');
+  assertContains(pointColorSrc, 'publish(EVENTS.SEARCH_STATUS_SYNC_REQUESTED', 'search glow status event publication preserved');
+  assertContains(pointColorSrc, 'options: { fromSearchResult: true, skipTraversalUiUpdate: true }', 'search glow status options preserved');
   assertNotContains(pointColorSrc, 'window.applySearchGlowVisualState', 'retired applySearchGlowVisualState bridge absent');
   assertNotContains(pointColorSrc, 'window.syncSearchStatusForFocus', 'raw search status window bridge absent');
+  assertNotContains(pointColorSrc, 'search-lifecycle-adapter', 'retired search lifecycle adapter absent');
 
   console.log('\nALL TESTS PASSED');
 }

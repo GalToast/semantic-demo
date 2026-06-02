@@ -2,9 +2,6 @@
 import { state } from '../state.js';
 import { publish, subscribe, EVENTS } from './event-bus.js';
 import {
-    clearMobileRouteFieldPeek as adapter_clearMobileRouteFieldPeek
-} from './composition-adapter.js';
-import {
     setLoadingPhase,
     hideLoadingOverlay,
     startDeferredHydration,
@@ -33,7 +30,8 @@ import {
     clearSearchGlow,
     updateSearchStatusMessage,
     setSearchPanelState,
-    clearSearch
+    clearSearch,
+    clearMobileRouteFieldPeek
 } from './search-state.js';
 import {
     focusOnNode
@@ -166,6 +164,23 @@ export const STORY_DESCRIPTIONS = {
     'mapped-food': 'Follow food trails across the county map.',
     'disqualified-ghosts': 'View records that are disqualified but still present in the corpus.'
 };
+
+// Phase 3: Declarative synchronization
+subscribe(EVENTS.DIVE_MODE_REQUESTED, ({ enabled }) => {
+    setSemanticDiveMode(enabled);
+});
+
+subscribe(EVENTS.EXPLORATION_RESET_REQUESTED, (options) => {
+    resetExplorationFocus(options);
+});
+
+subscribe(EVENTS.OVERVIEW_REQUESTED, () => {
+    returnToOverview();
+});
+
+subscribe(EVENTS.TRAIL_DEPTH_UPDATE_REQUESTED, ({ depth, options }) => {
+    setTrailDepth(depth, options);
+});
 
 export function setMyceliumMode(mode, options = {}) {
     if (state.myceliumMode === mode) return;
@@ -336,11 +351,12 @@ export function refreshCompositionState() {
     document.body.dataset.panelSurfaceDetail = context === 'search' || context === 'focus-search'
         ? getMobileSearchSheetDetail()
         : 'none';
+
     if (context !== 'idle') {
-        adapter_clearMobileRouteFieldPeek();
+        clearMobileRouteFieldPeek();
     }
 
-    syncSharedCompositionUi('composition-galaxy');
+    syncSharedCompositionUi();
 }
 
 export function setSemanticDiveMode(enabled) {
@@ -380,6 +396,10 @@ export function updateExplorationUi() {
 }
 
 export function resetExplorationFocus(options = { preserveSearch: true }) {
+    const preservedSearchSummary = options.preserveSearch === false
+        ? null
+        : state.currentSearchSummary;
+
     state.navState.trailDepth = 0;
     state.navState.mode = 'overview';
     state.semanticDiveMode = false;
@@ -401,6 +421,7 @@ export function resetExplorationFocus(options = { preserveSearch: true }) {
         clearSearch(nestedClearOptions);
     } else {
         clearSearch({ ...nestedClearOptions, preserveSearch: true });
+        state.currentSearchSummary = preservedSearchSummary;
     }
 
     if (!options.skipUrlSync) {
@@ -468,6 +489,10 @@ subscribe(EVENTS.SEARCH_SUCCESS, () => {
 subscribe(EVENTS.SEARCH_EMPTY, () => {
     refreshCompositionState();
     updateJourneyCompass();
+});
+
+subscribe(EVENTS.SEARCH_EMPTY, ({ query }) => {
+    recordEmptySearch(query);
 });
 
 export function recordEmptySearch(query) {

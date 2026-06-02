@@ -3,6 +3,11 @@ import { describeCluster } from './utils/ui-presentation.js';
 import { getViewportSize } from './environment.js';
 import { subscribe, EVENTS } from './event-bus.js';
 
+// Phase 3: Declarative synchronization
+subscribe(EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip);
+subscribe(EVENTS.TOOLTIP_POSITION_REQUESTED, ({ x, y }) => positionTooltip(x, y));
+subscribe(EVENTS.TOOLTIP_CONTENT_UPDATE_REQUESTED, ({ point }) => updateTooltipContent(point));
+
 let tooltipRevealFrame = null;
 let tooltipHideTimer = null;
 
@@ -151,9 +156,8 @@ export function hideTooltip() {
 }
 
 // Event Bus Subscriptions
-subscribe(EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip);
 subscribe(EVENTS.CAMERA_MOVED, hideTooltip);
 
 // Window exports retired 2026-05-28; all consumers migrated to direct imports:
-// updateTooltipContent, positionTooltip, hideTooltip -> search-ui-adapter.js (search-state.js)
+// updateTooltipContent, positionTooltip, hideTooltip -> event-bus requests
 // hideTooltip -> map-state.js, keyboard-help.js

@@ -133,6 +133,9 @@ export function initRouteTraceSubscriptions() {
     subscribeKeyed('route-trace:state-reset', EVENTS.STATE_RESET, sync);
     subscribeKeyed('route-trace:filter-changed', EVENTS.FILTER_CHANGED, sync);
     subscribeKeyed('route-trace:composition-updated', EVENTS.COMPOSITION_UPDATED, sync);
+    subscribeKeyed('route-trace:transition-phase-changed', EVENTS.TRANSITION_PHASE_CHANGED, (payload) => {
+        setRouteChoreographyPhase(payload.phase, payload.details || {});
+    });
     subscribeKeyed('route-trace:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync);
 }
 

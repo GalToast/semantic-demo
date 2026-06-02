@@ -22,7 +22,8 @@ vi.mock('../../js/modules/journey-thread-settler.js', () => ({
     pinThreadNeighbor: vi.fn(),
     unpinThreadInspection: vi.fn(),
     clearThreadInspection: vi.fn(),
-    renderThreadInspection: vi.fn()
+    renderThreadInspection: vi.fn(),
+    getStrandArrivalNote: vi.fn()
 }));
 vi.mock('../../js/modules/journey-neighborhood.js', () => ({ 
     initJourneyNeighborhoodAdapter: vi.fn(), 
@@ -33,7 +34,7 @@ vi.mock('../../js/modules/journey-neighborhood.js', () => ({
 vi.mock('../../js/modules/journey-selected-card.js', () => ({ initJourneySelectedCardAdapter: vi.fn(), updateSelectedBusiness: vi.fn(), syncFocusStage: vi.fn() }));
 vi.mock('../../js/modules/journey-canvas-interaction.js', () => ({ initJourneyCanvasInteractionAdapter: vi.fn(), isThreadCandidateVisibleOnCanvas: vi.fn() }));
 vi.mock('../../js/modules/lifecycle.js', () => ({}));
-vi.mock('../../js/modules/focus-pocket.js', () => ({}));
+vi.mock('../../js/modules/focus-pocket.js', () => ({ applyLocalNeighborhoodFocus: vi.fn() }));
 vi.mock('../../js/modules/journey-webgl.js', () => ({}));
 
 describe('journey.js', () => {

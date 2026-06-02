@@ -115,7 +115,7 @@ function assert(cond, msg) {
 
 // ── Import real modules ───────────────────────────────────────────────────────
 
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 
 let refreshCompositionState;
 try {
@@ -129,20 +129,22 @@ assert(typeof refreshCompositionState === 'function', 'refreshCompositionState i
 // ── State reset ──────────────────────────────────────────────────────────────
 
 function resetState() {
-  state.currentView = 'galaxy';
-  state.focusedNode = null;
-  state.selectedPoint = null;
-  state.navState.focusedIndex = null;
-  state.navState.mode = 'overview';
-  state.navState.trailCursor = -1;
-  state.navState.trailSeedIndex = null;
-  state.navState.trailNeighborIndices = [];
-  state.navState.walkHistoryIndices = [];
-  state.navState.threadCandidates = [];
-  state.trailDepth = 0;
-  state.semanticDiveMode = false;
-  state.currentSearchSummary = null;
-  state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false };
+  withStateMutation(() => {
+    state.currentView = 'galaxy';
+    state.focusedNode = null;
+    state.selectedPoint = null;
+    state.navState.focusedIndex = null;
+    state.navState.mode = 'overview';
+    state.navState.trailCursor = -1;
+    state.navState.trailSeedIndex = null;
+    state.navState.trailNeighborIndices = [];
+    state.navState.walkHistoryIndices = [];
+    state.navState.threadCandidates = [];
+    state.trailDepth = 0;
+    state.semanticDiveMode = false;
+    state.currentSearchSummary = null;
+    state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false };
+  });
   state.trailIndices.clear();
   fakeBody.dataset = {};
   _rafQueue = [];
@@ -316,7 +318,9 @@ console.log('  PASS: focus without search — ARIA contract correct\n');
 // EDGE: map view forces semanticDive=inactive
 console.log('[EDGE] map view overrides semantic-dive');
 resetState();
-state.currentView = 'map';
+withStateMutation(() => {
+  state.currentView = 'map';
+});
 state.focusedNode = 4;
 state.navState.focusedIndex = 4;
 state.trailDepth = 2;
@@ -333,7 +337,9 @@ console.log('  PASS: map overrides semantic-dive — ARIA contract correct\n');
 // EDGE: map-focus-search surface
 console.log('[EDGE] map with focus and search');
 resetState();
-state.currentView = 'map';
+withStateMutation(() => {
+  state.currentView = 'map';
+});
 state.focusedNode = 4;
 state.navState.focusedIndex = 4;
 state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };

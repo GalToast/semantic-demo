@@ -4,7 +4,6 @@ import { resolve } from 'node:path';
 
 const cwd = process.cwd();
 const searchStateSrc = readFileSync(resolve(cwd, 'js/modules/search-state.js'), 'utf8');
-const adapterSrc = readFileSync(resolve(cwd, 'js/modules/search-lifecycle-adapter.js'), 'utf8');
 
 function extractFunctionBody(src, functionName) {
     const signature = `export function ${functionName}`;
@@ -28,8 +27,8 @@ function extractFunctionBody(src, functionName) {
 const transitionBody = extractFunctionBody(searchStateSrc, 'beginSearchFocusTransition');
 
 assert(
-    /scheduleSearchFocusTask\s+as\s+adapter_scheduleSearchFocusTask/.test(searchStateSrc),
-    'search-state.js must import scheduleSearchFocusTask through the lifecycle adapter'
+    !/search-lifecycle-adapter/.test(searchStateSrc),
+    'search-state.js must not restore the lifecycle adapter for transition timers'
 );
 
 assert(
@@ -37,7 +36,7 @@ assert(
     'beginSearchFocusTransition must not schedule timers through window.setTimeout'
 );
 
-const scheduledTasks = transitionBody.match(/\badapter_scheduleSearchFocusTask\s*\(/g) || [];
+const scheduledTasks = transitionBody.match(/\bsetTimeout\s*\(/g) || [];
 assert.equal(
     scheduledTasks.length,
     3,
@@ -45,13 +44,12 @@ assert.equal(
 );
 
 assert(
-    /export function scheduleSearchFocusTask\s*\(/.test(adapterSrc),
-    'search-lifecycle-adapter.js must export scheduleSearchFocusTask'
+    /publish\(EVENTS\.SEARCH_FOCUS_REQUESTED/.test(transitionBody),
+    'beginSearchFocusTransition must request focus through the event bus'
 );
-
 assert(
-    !/\bwindow\.setTimeout\b/.test(adapterSrc),
-    'search-lifecycle-adapter.js should use an environment-neutral timer boundary, not window.setTimeout'
+    /publish\(EVENTS\.SEARCH_FOCUS_TRANSITION_SETTLED/.test(transitionBody),
+    'beginSearchFocusTransition must publish settled state through the event bus'
 );
 
 console.log('search-focus-transition-timer-contract.mjs passed');

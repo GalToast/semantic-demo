@@ -2,31 +2,24 @@ import { state } from '../state.js';
 import * as journeyModule from './journey.js';
 import { initMicroDemo } from './micro-demo.js';
 import * as searchModule from './search-state.js';
-import { initUrlSearchAdapter } from './url-search-adapter.js';
 import { initClusterFilterAdapter } from './cluster-filter-adapter.js';
-import { initSearchUiAdapter } from './search-ui-adapter.js';
-import { initUiRenderersAdapter } from './ui-renderers.js';
-import { initSearchLifecycleAdapter } from './search-lifecycle-adapter.js';
-import { initCompositionAdapter } from './composition-adapter.js';
-import { initUrlNavigationAdapter } from './url-navigation-adapter.js';
 import { initBridgeRegistry, _getSelectedBusinessRoleLabel } from './bridge-registry.js';
 import { initJourneyLifecycleAdapter } from './journey-lifecycle-adapter.js';
 import * as focusModule from './focus-pocket.js';
-import * as threadModule from './thread-inspector.js';
 import { initThreadInspectorAdapter } from './thread-inspector-adapter.js';
 import * as cameraModule from './camera-controls.js';
-import { initCameraControlsAdapter } from './camera-controls-adapter.js';
 import { setWebGLContextRestoreHandler } from './webgl-restore-adapter.js';
 import * as mapModule from './map-state.js';
 import * as audioModule from './audio-scape.js';
 import './tooltip.js';
 import { hideLoadingOverlay, setLoadingPhase, startDeferredHydration, applyLoadingErrorState } from './loading-ui.js';
-import { positionTooltip, updateTooltipContent, hideTooltip } from './tooltip.js';
+import { hideTooltip } from './tooltip.js';
 import './pathfinding.js';
 import * as journeyWebglModule from './journey-webgl.js';
 import { initThreeJS, animate, cancelAnimate } from './three-engine.js';
-import { triggerSearchHeroMoment, triggerCorridorNodeGlow, triggerSearchCorridorAnimation } from './three-search-animations.js';
 import * as dataModule from './data-loader.js';
+import { subscribeKeyed, EVENTS } from './event-bus.js';
+import { pointHasGeocode } from './utils/geo-data.js';
 
 import {
     startSceneReveal,
@@ -36,24 +29,21 @@ import {
     scheduleSemanticLaneMonitor,
     setTrailDepth,
     setSemanticDiveMode,
-    applyStoryPrompt,
     returnToOverview,
     resetExperienceState,
     resetExplorationFocus,
     refreshCompositionState,
-    recordEmptySearch,
     focusOnPoint,
-    updateExplorationUi,
-    resetNodePositions,
     dispatchNavTransition,
+    NAV_TRANSITION_ACTIONS,
     onWindowResize,
-    showExperienceToast,
     syncSearchStatusForFocus,
-    hydrateLeadContext
+    hydrateLeadContext,
 } from './lifecycle.js';
 import { initJourneyCompassAdapter, updateJourneyCompass } from './journey-compass-controller.js';
 import { initJourneySelectedCard } from './journey-selected-card.js';
 import { initSemanticDiveUiSubscriptions } from './semantic-dive-ui.js';
+import { ensureFocusStageAuxiliaryDom } from './focus-stage-dom.js';
 import { initViewControllerAdapter, switchView } from './view-controller.js';
 import { revealSelectedBusinessCard } from './event-bindings.js';
 import { describeThreadLensForPoint } from './journey.js';
@@ -61,19 +51,14 @@ import { initKeyboardShortcutsHint, initKeyboardResetOwnership } from './keyboar
 import { applyUrlState, updateUrlState } from './url-state.js';
 import { loadSemanticThreads } from './semantic-threads.js';
 import { initClusterLabels } from './cluster-labels.js';
-import { updateHasQuery } from './event-bindings.js';
 import {
     buildSelectedMatchNarrative,
-    clearCompactSearchResultRevealTimers,
     getInterestingBusinessNote,
-    scheduleCompactSearchResultReveal
 } from './ui-renderers.js';
 import { hideSummaryCard } from './lifecycle.js';
 import { setSemanticGuideButtonState } from './semantic-guide.js';
 import { updateLegendGuideState } from './legend-ui.js';
 import { updateSearchStatusMessage } from './search-state.js';
-import { recordSemanticLaneSnapshot } from './semantic-lane.js';
-import { applyPointFilterColors, updateSelectedBusiness, updateTrailIndices } from './journey.js';
 import { initEventListeners } from './event-bindings.js';
 import { updateTime } from './utils/ui-presentation.js';
 import { initSearchCache } from './semantic-search-api-cache.js';
@@ -198,6 +183,7 @@ export async function init() {
             hideLoadingOverlay();
         }
 
+        ensureFocusStageAuxiliaryDom();
         initEventListeners({ onWindowResize, updateUrlState });
         initKeyboardShortcutsHint();
         initKeyboardResetOwnership({ returnToOverview, resetExplorationFocus });
@@ -233,40 +219,24 @@ export async function init() {
 
         // ── Dependency Injection & Compatibility ──────────────────────────────
 
-        initUrlSearchAdapter(searchModule);
-
         initJourneyLifecycleAdapter({
             previewInsideNextThread: journeyModule.previewInsideNextThread,
             getNextWalkCandidateForIndex: journeyModule.getNextWalkCandidateForIndex,
             applyLocalNeighborhoodFocus: focusModule.applyLocalNeighborhoodFocus,
-            setSemanticDiveMode: setSemanticDiveMode,
-            getInterestingBusinessNote: getInterestingBusinessNote,
-            buildSelectedMatchNarrative: buildSelectedMatchNarrative,
+            setSemanticDiveMode,
+            getInterestingBusinessNote,
+            buildSelectedMatchNarrative,
             hasColdDegradedSemanticFallback: () => false,
             getColdDegradedRouteCopy: () => null,
-            getSelectedBusinessRoleLabel: (point) => {
-                return _getSelectedBusinessRoleLabel(point);
-            },
+            getSelectedBusinessRoleLabel: (point) => _getSelectedBusinessRoleLabel(point),
             isFieldNodeFocusContext: () => false,
-            revealSelectedBusinessCard: revealSelectedBusinessCard,
-            describeThreadLensForPoint: describeThreadLensForPoint,
+            revealSelectedBusinessCard,
+            describeThreadLensForPoint,
             hydrateLeadContext: (point, options) => hydrateLeadContext(point, options),
             shouldUseFloatingFocusJourneyOnly: () => false,
             setLastCanvasNodePick: (val) => { state.lastCanvasNodePick = val || null; },
             setLastCanvasNodeHover: (val) => { state.lastCanvasNodeHover = val || null; },
             setLastCanvasNodeFocusPick: (val) => { state.lastCanvasNodeFocusPick = val || null; }
-        });
-
-        initUrlNavigationAdapter({
-            focusOnPoint,
-            updateExplorationUi,
-            recordSemanticLaneSnapshot,
-            applyStoryPrompt,
-            showExperienceToast,
-            setSemanticDiveMode,
-            setTrailDepth,
-        }, {
-            updateHasQuery,
         });
 
         initClusterFilterAdapter({
@@ -276,8 +246,6 @@ export async function init() {
             clearShortSemanticSearchState: searchModule.clearShortSemanticSearchState,
         });
 
-        initSearchUiAdapter({ positionTooltip, updateTooltipContent, hideTooltip });
-        initUiRenderersAdapter({ switchView });
         initJourneyCompassAdapter({ switchView });
         initJourneySelectedCard({
             getStrandArrivalNote: journeyModule.getStrandArrivalNote,
@@ -294,57 +262,54 @@ export async function init() {
         });
         mapModule.initMapStateSubscriptions();
 
-        initCameraControlsAdapter({
-            setRouteChoreographyPhase: journeyWebglModule.setRouteChoreographyPhase,
-            clearThreadInspection: threadModule.clearThreadInspection,
-            setTrailFromSeed: journeyModule.setTrailFromSeed,
-            updateTrailIndices: journeyModule.updateTrailIndices,
-            refreshFocusSemanticOverlay: journeyWebglModule.refreshFocusSemanticOverlay,
-            applyLocalNeighborhoodFocus: focusModule.applyLocalNeighborhoodFocus,
-            updateSelectedBusiness: journeyModule.updateSelectedBusiness,
-            updateTraversalUi: journeyModule.updateTraversalUi,
-            updateFocusNeighborRail: journeyModule.updateFocusNeighborRail
-        });
-
-        initCompositionAdapter({
-            syncRouteDirectorState: mapModule.syncRouteDirectorState,
-            updateFocusNeighborRail: journeyModule.updateFocusNeighborRail,
-            refreshMapMarkers: mapModule.refreshMapMarkers,
-            refreshMapRouteEmbodiment: mapModule.refreshMapRouteEmbodiment,
-            refreshRouteTraceOverlay: journeyWebglModule.refreshRouteTraceOverlay,
-            clearMobileRouteFieldPeek: searchModule.clearMobileRouteFieldPeek
-        });
-
         initViewControllerAdapter({
             refreshCompositionState
         });
 
-        initSearchLifecycleAdapter({
-            updateUrlState,
-            setSearchPanelState: searchModule.setSearchPanelState,
-            focusOnPoint,
-            updateExplorationUi,
-            resetNodePositions,
-            dispatchNavTransition,
-            syncSearchStatusForFocus,
-            refreshCompositionState,
-            recordEmptySearch,
-            clearMobileRouteFieldPeek: searchModule.clearMobileRouteFieldPeek,
-            clearCompactSearchResultRevealTimers,
-            clearSearchPreviewHoverTimer: searchModule.clearSearchPreviewHoverTimer,
-            switchView,
-            updateSelectedBusiness,
-            updateTrailIndices,
-            applyPointFilterColors,
-            resetExplorationFocus,
-            setSemanticLaneUiState,
-            clearSearch: searchModule.clearSearch,
-            triggerSearchHeroMoment,
-            triggerCorridorNodeGlow,
-            triggerSearchCorridorAnimation,
-            hideSummaryCard,
-            setSemanticGuideButtonState,
-            scheduleCompactSearchResultReveal,
+        // Phase 3: Event Bus Sync
+        subscribeKeyed('app:url-sync-requested', EVENTS.URL_SYNC_REQUESTED, ({ params, reason, mode }) => {
+            updateUrlState(params, { reason, mode });
+        });
+
+        subscribeKeyed('app:search-ui-sync-requested', EVENTS.SEARCH_UI_SYNC_REQUESTED, ({ resultsEl, statusEl, results, renderContext }) => {
+            searchModule.bindSearchResultInteractions(resultsEl, statusEl, results, renderContext);
+        });
+
+        subscribeKeyed('app:search-focus-requested', EVENTS.SEARCH_FOCUS_REQUESTED, ({ point, index }) => {
+            if (state.currentView === 'map' && pointHasGeocode(point)) {
+                 focusOnPoint(point, { fromSearchResult: true });
+            }
+            cameraModule.focusOnNode(index, { fromSearchResult: true, overridePoint: point });
+            syncSearchStatusForFocus(point, { fromSearchResult: true });
+        });
+
+        subscribeKeyed('app:search-state-reset-requested', EVENTS.SEARCH_STATE_RESET_REQUESTED, (options) => {
+            resetExplorationFocus(options);
+        });
+
+        subscribeKeyed('app:search-status-sync-requested', EVENTS.SEARCH_STATUS_SYNC_REQUESTED, ({ point, options }) => {
+            syncSearchStatusForFocus(point, options);
+        });
+
+        subscribeKeyed('app:semantic-lane-state-requested', EVENTS.SEMANTIC_LANE_STATE_REQUESTED, ({ laneState, options }) => {
+            setSemanticLaneUiState(laneState, options);
+        });
+
+        subscribeKeyed('app:exploration-focus-sync', EVENTS.EXPLORATION_FOCUS_SYNC, ({ index }) => {
+             // Sync the camera math node focus without re-triggering URL push
+             dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, { index, skipHistory: true });
+        });
+
+        subscribeKeyed('app:tooltip-hide-requested', EVENTS.TOOLTIP_HIDE_REQUESTED, () => {
+            hideTooltip();
+        });
+
+        subscribeKeyed('app:summary-card-hide-requested', EVENTS.SUMMARY_CARD_HIDE_REQUESTED, () => {
+            hideSummaryCard();
+        });
+
+        subscribeKeyed('app:semantic-guide-button-state-requested', EVENTS.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED, ({ button, mode, options }) => {
+            setSemanticGuideButtonState(button, mode, options);
         });
 
         // Register legacy bridges and actions

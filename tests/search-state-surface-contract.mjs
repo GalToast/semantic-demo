@@ -39,6 +39,7 @@ class FakeElement {
     this.style = {};
     this.textContent = '';
     this.scrollTop = -1;
+    this.onclick = null;
     this._innerHTML = '';
   }
 
@@ -54,6 +55,27 @@ class FakeElement {
   appendChild(child) {
     this.children.push(child);
     return child;
+  }
+
+  insertAdjacentHTML(position, value) {
+    const html = String(value);
+    if (position === 'afterbegin') this._innerHTML = `${html}${this._innerHTML}`;
+    else this._innerHTML = `${this._innerHTML}${html}`;
+  }
+
+  querySelector(selector) {
+    const className = selector
+      .split(/\s+/)
+      .at(-1)
+      ?.replace(/^\./, '');
+    if (!className || !this._innerHTML.includes(className)) return null;
+    const element = new FakeElement('button');
+    element.classList.add(className);
+    return element;
+  }
+
+  remove() {
+    this.removed = true;
   }
 
   setAttribute(name, value) {
@@ -128,7 +150,7 @@ const {
   renderSearchResultItems,
   applySemanticSearchDegradedState,
 } = await import('../js/modules/search-state.js');
-const { initSearchLifecycleAdapter } = await import('../js/modules/search-lifecycle-adapter.js');
+const { subscribe, EVENTS } = await import('../js/modules/event-bus.js');
 
 window.recordSemanticLaneSnapshotCalls = [];
 window.semanticLaneStates = [];
@@ -140,12 +162,11 @@ window.setSemanticLaneUiState = function(...args) {
 };
 
 window.refreshCompositionStateCalls = 0;
-window.refreshCompositionState = function() {
+subscribe(EVENTS.COMPOSITION_UPDATED, () => {
   window.refreshCompositionStateCalls += 1;
-};
-initSearchLifecycleAdapter({
-  refreshCompositionState: window.refreshCompositionState,
-  setSemanticLaneUiState: window.setSemanticLaneUiState,
+});
+subscribe(EVENTS.SEMANTIC_LANE_STATE_REQUESTED, ({ laneState, options }) => {
+  window.semanticLaneStates.push([laneState, options]);
 });
 
 state.points = [
@@ -240,7 +261,8 @@ staleResults.innerHTML = '<div>existing result</div>';
 const staleStatus = new FakeElement('div');
 applySemanticSearchDegradedState(staleResults, staleStatus, 'coffee', new Error('Backend not ready'));
 
-assert(staleResults.innerHTML === '<div>existing result</div>', 'same-query degraded state preserves stale results');
+assert(staleResults.innerHTML.includes('<div>existing result</div>'), 'same-query degraded state preserves stale results');
+assert(staleResults.innerHTML.includes('search-error-inline-retry'), 'same-query degraded state adds inline retry without replacing results');
 assert(staleStatus.textContent.includes('Keeping the last 5 matches visible'), 'same-query degraded copy preserves context');
 
 console.log('search-state surface contract passed');

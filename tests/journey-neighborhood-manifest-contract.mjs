@@ -12,7 +12,7 @@ globalThis.document = {
 globalThis.window = {};
 globalThis.performance = { now: () => 0 };
 
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 const { buildNeighborhoodManifest } = await import('../js/modules/journey.js');
 
 const original = {
@@ -32,41 +32,43 @@ function seedNeighborhood() {
     city: index % 2 === 0 ? 'Conroe' : 'Magnolia',
     status: 'active',
   }));
-  state.points = points;
-  state.pointIndexByLeadId = new Map(points.map((point, index) => [point.lead_id, index]));
-  state.nodePositions = points.map((_, index) => ({ x: index * 0.1, y: index * 0.05, z: index * 0.02 }));
-  state.navState = {
-    ...state.navState,
-    neighborhoodAnchorIndex: 0,
-    neighborhoodIndices: [1, 2, 3],
-    neighborhoodReasonByIndex: new Map([[3, 'regional support route']]),
-    threadCandidates: [
-      { index: 1, score: 0.82, semanticScore: 0.82, source: 'semantic', reason: 'anchor-one' },
-      { index: 2, score: 0.94, semanticScore: 0.94, source: 'semantic', reason: 'anchor-two' },
-      { index: 3, score: 0.76, semanticScore: 0.76, source: 'semantic' },
-    ],
-  };
-  state.semanticNeighborMapByLeadId = new Map([
-    ['lead-0', {
-      neighbors: [
-        { leadId: 'lead-1', score: 0.82, semanticScore: 0.82, sameCity: false, sameStatus: true, threadType: 'fixture', reason: 'anchor-one' },
-        { leadId: 'lead-2', score: 0.94, semanticScore: 0.94, sameCity: true, sameStatus: true, threadType: 'fixture', reason: 'anchor-two' },
-        { leadId: 'lead-3', score: 0.76, semanticScore: 0.76, sameCity: false, sameStatus: true, threadType: 'fixture', reason: 'anchor-three' },
+  withStateMutation(() => {
+    state.points = points;
+    state.pointIndexByLeadId = new Map(points.map((point, index) => [point.lead_id, index]));
+    state.nodePositions = points.map((_, index) => ({ x: index * 0.1, y: index * 0.05, z: index * 0.02 }));
+    state.navState = {
+      ...state.navState,
+      neighborhoodAnchorIndex: 0,
+      neighborhoodIndices: [1, 2, 3],
+      neighborhoodReasonByIndex: new Map([[3, 'regional support route']]),
+      threadCandidates: [
+        { index: 1, score: 0.82, semanticScore: 0.82, source: 'semantic', reason: 'anchor-one' },
+        { index: 2, score: 0.94, semanticScore: 0.94, source: 'semantic', reason: 'anchor-two' },
+        { index: 3, score: 0.76, semanticScore: 0.76, source: 'semantic' },
       ],
-    }],
-    ['lead-1', {
-      neighbors: [
-        { leadId: 'lead-2', score: 0.71, semanticScore: 0.71, reason: 'peer one two' },
-        { leadId: 'lead-3', score: 0.55, semanticScore: 0.55, reason: 'peer one three' },
-      ],
-    }],
-    ['lead-2', {
-      neighbors: [
-        { leadId: 'lead-1', score: 0.71, semanticScore: 0.71, reason: 'peer two one' },
-        { leadId: 'lead-3', score: 0.64, semanticScore: 0.64, reason: 'peer two three' },
-      ],
-    }],
-  ]);
+    };
+    state.semanticNeighborMapByLeadId = new Map([
+      ['lead-0', {
+        neighbors: [
+          { leadId: 'lead-1', score: 0.82, semanticScore: 0.82, sameCity: false, sameStatus: true, threadType: 'fixture', reason: 'anchor-one' },
+          { leadId: 'lead-2', score: 0.94, semanticScore: 0.94, sameCity: true, sameStatus: true, threadType: 'fixture', reason: 'anchor-two' },
+          { leadId: 'lead-3', score: 0.76, semanticScore: 0.76, sameCity: false, sameStatus: true, threadType: 'fixture', reason: 'anchor-three' },
+        ],
+      }],
+      ['lead-1', {
+        neighbors: [
+          { leadId: 'lead-2', score: 0.71, semanticScore: 0.71, reason: 'peer one two' },
+          { leadId: 'lead-3', score: 0.55, semanticScore: 0.55, reason: 'peer one three' },
+        ],
+      }],
+      ['lead-2', {
+        neighbors: [
+          { leadId: 'lead-1', score: 0.71, semanticScore: 0.71, reason: 'peer two one' },
+          { leadId: 'lead-3', score: 0.64, semanticScore: 0.64, reason: 'peer two three' },
+        ],
+      }],
+    ]);
+  });
 }
 
 try {
@@ -92,11 +94,13 @@ try {
 
   assert(buildNeighborhoodManifest(99, [1, 2]) === null, 'invalid anchor should return null');
 } finally {
-  state.points = original.points;
-  state.pointIndexByLeadId = original.pointIndexByLeadId;
-  state.semanticNeighborMapByLeadId = original.semanticNeighborMapByLeadId;
-  state.nodePositions = original.nodePositions;
-  state.navState = original.navState;
+  withStateMutation(() => {
+    state.points = original.points;
+    state.pointIndexByLeadId = original.pointIndexByLeadId;
+    state.semanticNeighborMapByLeadId = original.semanticNeighborMapByLeadId;
+    state.nodePositions = original.nodePositions;
+    state.navState = original.navState;
+  });
 }
 
 console.log('PASS journey-neighborhood-manifest-contract');

@@ -30,6 +30,7 @@ vi.mock('../../js/modules/focus-stage-renderer.js', () => ({
     renderSelectedMetaStrip: vi.fn(),
     renderSelectedMatchPanel: vi.fn(),
     renderSelectedActionRow: vi.fn(),
+    syncSelectedCardContentVariant: vi.fn(),
     getInterestingBusinessNote: vi.fn(),
     buildSelectedMatchNarrative: vi.fn(),
     initFocusStageRendererAdapter: vi.fn()
@@ -62,6 +63,9 @@ describe('ui-renderers shim', () => {
         
         uiRenderers.renderSelectedActionRow('test');
         expect(focusRendererModule.renderSelectedActionRow).toHaveBeenCalledWith('test');
+
+        uiRenderers.syncSelectedCardContentVariant('test');
+        expect(focusRendererModule.syncSelectedCardContentVariant).toHaveBeenCalledWith('test');
     });
 
     it('should delegate trail cue rendering', () => {
@@ -69,9 +73,7 @@ describe('ui-renderers shim', () => {
         expect(trailCueRendererModule.updateSearchTrailCue).toHaveBeenCalledWith('test');
     });
 
-    it('should pass options to initFocusStageRendererAdapter', () => {
-        const switchView = vi.fn();
-        uiRenderers.initUiRenderersAdapter({ switchView });
-        expect(focusRendererModule.initFocusStageRendererAdapter).toHaveBeenCalledWith({ switchView });
+    it('should not expose the retired ui renderers adapter initializer', () => {
+        expect(uiRenderers.initUiRenderersAdapter).toBeUndefined();
     });
 });

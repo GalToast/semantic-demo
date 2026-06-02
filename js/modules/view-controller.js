@@ -299,7 +299,7 @@ export function switchView(view, options = {}) {
     }
 
     if (!options.skipUrlSync) {
-        updateUrlState({}, { mode: options.historyMode || 'push', reason: 'view' });
+        publish(EVENTS.URL_SYNC_REQUESTED, { params: {}, mode: options.historyMode || 'push', reason: 'view' });
     }
 
     publish(EVENTS.VIEW_CHANGED, { view, previousView });

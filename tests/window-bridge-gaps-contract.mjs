@@ -2,13 +2,13 @@
  * window-bridge-gaps-contract.mjs
  *
  * Fast Node contract test for lifecycle window bridge gaps.
- * Verifies each gap is resolved through direct imports, adapters, or an
+ * Verifies each gap is resolved through direct imports, event requests, adapters, or an
  * intentionally documented no-op guard.
  *
  * Gap 1  — getRouteLayerOrigin:  guarded no-op, fallback is 'galaxy'
  * Gap 2  — syncClusterSectionState: resolved (direct module imports)
  * Gap 3a — hydrateLeadContext:   resolved (journey lifecycle adapter)
- * Gap 3b — applySearchGlowVisualState: resolved via adapter call in journey-point-color.js
+ * Gap 3b — applySearchGlowVisualState: resolved via event request in journey-point-color.js
  * Gap 4  — updateSelectedCardHeading: resolved via direct module imports
  *
  * Source-only — no DOM, no Playwright.
@@ -28,10 +28,12 @@ const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
 const JOURNEY_POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-point-color.js');
 const JOURNEY_SELECTED_CARD_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-selected-card.js');
 const UI_RENDERERS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/ui-renderers.js');
+const FOCUS_STAGE_RENDERER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/focus-stage-renderer.js');
 const SCENE_REVEAL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.js');
 const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js');
 const CAMERA_CONTROLS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/camera-controls.js');
 const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-state.js');
+const APP_PATH = path.join(SEMDEMO_ROOT, 'js/modules/app.js');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -171,25 +173,26 @@ function testGap3a_hydrateLeadContext() {
 
 // ---------------------------------------------------------------------------
 // GAP 3b — applySearchGlowVisualState: resolved via alternate call chain.
-// point-color owner calls the already-wired search lifecycle adapter, which
-// handles search glow state without a raw window bridge.
+// point-color owner publishes a search status request, which handles search
+// glow state without a raw window bridge or retired lifecycle adapter.
 // ---------------------------------------------------------------------------
 
 function testGap3b_applySearchGlowVisualState() {
-  console.log('\n[TEST] Gap 3b — applySearchGlowVisualState (RESOLVED via adapter alt call)');
+  console.log('\n[TEST] Gap 3b — applySearchGlowVisualState (RESOLVED via event alt call)');
 
   const pointColorSrc = fs.readFileSync(JOURNEY_POINT_COLOR_PATH, 'utf-8');
 
   // The old window.applySearchGlowVisualState call must be replaced
-  // with a syncSearchStatusForFocus adapter call inside the same state block.
+  // with a SEARCH_STATUS_SYNC_REQUESTED publication inside the same state block.
   assert(
-    /searchGlowActive[\s\S]{0,500}\bsyncSearchStatusForFocus\s*\(/.test(pointColorSrc),
-    'journey-point-color.js must call adapter syncSearchStatusForFocus in searchGlowActive block'
+    /searchGlowActive[\s\S]{0,650}\bpublish\(EVENTS\.SEARCH_STATUS_SYNC_REQUESTED/.test(pointColorSrc),
+    'journey-point-color.js must publish SEARCH_STATUS_SYNC_REQUESTED in searchGlowActive block'
   );
   assert(
-    /import\s+\{\s*syncSearchStatusForFocus\s*\}\s+from\s+['"]\.\/search-lifecycle-adapter\.js['"]/.test(pointColorSrc),
-    'journey-point-color.js must import syncSearchStatusForFocus from search-lifecycle-adapter.js'
+    /import\s+\{\s*publish,\s*EVENTS\s*\}\s+from\s+['"]\.\/event-bus\.js['"]/.test(pointColorSrc),
+    'journey-point-color.js must import publish and EVENTS from event-bus.js'
   );
+  assert(!/search-lifecycle-adapter/.test(pointColorSrc), 'journey-point-color.js must not import retired search lifecycle adapter');
 
   // The original guard pattern should NOT appear as a standalone dead call
   // (it's fine if the function name still appears in comments)
@@ -200,44 +203,60 @@ function testGap3b_applySearchGlowVisualState() {
     if (pos === -1) return;
     const before = line.substring(0, pos);
     if (before.includes('typeof') || before.includes('?.')) return;
-    // allow it if it's been replaced with the alt call
-    if (line.includes('syncSearchStatusForFocus')) return;
     bareApplySearchGlowVisualState = true;
   });
   assert(!bareApplySearchGlowVisualState, 'journey-point-color.js must not have bare window.applySearchGlowVisualState calls');
 
-  console.log('  OK — applySearchGlowVisualState: RESOLVED via alternate adapter syncSearchStatusForFocus call');
+  console.log('  OK — applySearchGlowVisualState: RESOLVED via alternate SEARCH_STATUS_SYNC_REQUESTED publication');
 }
 
 // ---------------------------------------------------------------------------
-// GAP 4 — updateSelectedCardHeading: resolved via direct module imports.
-// Called from lifecycle.js and journey.js to keep selected-card chrome honest
-// across map, focus, and search-result transitions without a window bridge.
+// GAP 4 — updateSelectedCardHeading: resolved through the selected-card renderer
+// owner chain. focus-stage-renderer.js owns the DOM write, ui-renderers.js keeps
+// the compatibility re-export, and journey-selected-card.js/journey.js call the
+// renderer path. lifecycle.js only publishes COMPOSITION_UPDATED.
 // ---------------------------------------------------------------------------
 
 function testGap4_updateSelectedCardHeading() {
   console.log('\n[TEST] Gap 4 — updateSelectedCardHeading (RESOLVED via direct imports)');
 
   const uiRendererSrc = fs.readFileSync(UI_RENDERERS_PATH, 'utf-8');
+  const focusRendererSrc = fs.readFileSync(FOCUS_STAGE_RENDERER_PATH, 'utf-8');
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
   const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
   const selectedCardSrc = fs.readFileSync(JOURNEY_SELECTED_CARD_PATH, 'utf-8');
 
   assert(
-    /export\s+function\s+updateSelectedCardHeading\s*\(/.test(uiRendererSrc),
-    'ui-renderers.js must export updateSelectedCardHeading'
+    /export\s+function\s+updateSelectedCardHeading\s*\(/.test(focusRendererSrc),
+    'focus-stage-renderer.js must export updateSelectedCardHeading as the DOM owner'
   );
   assert(
-    /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(lifecycleSrc),
-    'lifecycle.js must import updateSelectedCardHeading from ui-renderers.js'
+    /selected-card-title/.test(focusRendererSrc),
+    'focus-stage-renderer.js updateSelectedCardHeading must target #selected-card-title'
+  );
+  assert(
+    /export\s+function\s+updateSelectedCardHeading\s*\([^)]*\)\s*\{[\s\S]{0,180}focusRendererModule\.updateSelectedCardHeading/.test(uiRendererSrc),
+    'ui-renderers.js must re-export updateSelectedCardHeading by delegating to focus-stage-renderer.js'
+  );
+  assert(
+    !/selected-card-title/.test(uiRendererSrc),
+    'ui-renderers.js must not keep dummy selected-card-title markers after the focus-stage transfer'
   );
   assert(
     /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(selectedCardSrc),
     'journey-selected-card.js must import updateSelectedCardHeading from ui-renderers.js'
   );
   assert(
-    /selected-card-title/.test(uiRendererSrc),
-    'updateSelectedCardHeading must target #selected-card-title'
+    /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(journeySrc),
+    'journey.js must re-export updateSelectedCardHeading through the ui-renderers selected-card path'
+  );
+  assert(
+    /publish\s*\(\s*EVENTS\.COMPOSITION_UPDATED\s*\)/.test(lifecycleSrc),
+    'lifecycle.js must refresh selected-card heading/content through COMPOSITION_UPDATED fanout, not a direct heading import'
+  );
+  assert(
+    !/import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(lifecycleSrc),
+    'lifecycle.js must not re-own updateSelectedCardHeading after selected-card transfer'
   );
   assertNoDeadCall(lifecycleSrc, 'updateSelectedCardHeading', 'lifecycle.js', 'Gap 4');
   assertNoDeadCall(journeySrc, 'updateSelectedCardHeading', 'journey.js', 'Gap 4');
@@ -248,8 +267,8 @@ function testGap4_updateSelectedCardHeading() {
 
 // ---------------------------------------------------------------------------
 // GAP 5 — focusOnNode: exported from camera-controls.js.
-// event-bindings.js, lifecycle.js, and search-state.js use direct named imports.
-// app.js keeps the window bridge for external/test compatibility.
+// event-bindings.js/lifecycle.js avoid window focus calls. search-state.js now
+// publishes SEARCH_FOCUS_REQUESTED and app.js owns the camera-controls call.
 // ---------------------------------------------------------------------------
 
 function testGap5_focusOnNode() {
@@ -259,6 +278,8 @@ function testGap5_focusOnNode() {
   const eventBindingsSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
   const searchStateSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/search-state.js'), 'utf-8');
+  const appSrc = fs.readFileSync(APP_PATH, 'utf-8');
+  const eventBusSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/event-bus.js'), 'utf-8');
 
   assert(
     /^export\s+function\s+focusOnNode\s*\(/m.test(cameraControlsSrc),
@@ -270,16 +291,27 @@ function testGap5_focusOnNode() {
   assertNoDeadCall(lifecycleSrc, 'focusOnNode', 'lifecycle.js', 'Gap 5');
 
   assert(
-    /import\s+\{[^}]*\bfocusOnNode\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(searchStateSrc),
-    'search-state.js must import focusOnNode directly from camera-controls.js'
+    /SEARCH_FOCUS_REQUESTED:\s*['"]SEARCH_FOCUS_REQUESTED['"]/.test(eventBusSrc),
+    'event-bus.js must expose SEARCH_FOCUS_REQUESTED for search-state focus requests'
+  );
+  assert(
+    /publish\s*\(\s*EVENTS\.SEARCH_FOCUS_REQUESTED\s*,\s*\{[^}]*\bpoint\b[^}]*\bindex\b/.test(searchStateSrc),
+    'search-state.js must publish SEARCH_FOCUS_REQUESTED with point and index'
+  );
+  assert(
+    !/import\s+\{[^}]*\bfocusOnNode\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(searchStateSrc),
+    'search-state.js must not re-own focusOnNode after the event migration'
   );
   assert(
     !/window\.focusOnNode\b/.test(searchStateSrc),
     'search-state.js must not call window.focusOnNode after dewindowing'
   );
+  assert(
+    /subscribeKeyed\s*\(\s*['"]app:search-focus-requested['"]\s*,\s*EVENTS\.SEARCH_FOCUS_REQUESTED[\s\S]{0,320}cameraModule\.focusOnNode\s*\(\s*index\s*,\s*\{\s*fromSearchResult:\s*true\s*\}/.test(appSrc),
+    'app.js must key-subscribe to SEARCH_FOCUS_REQUESTED and call cameraModule.focusOnNode(index, { fromSearchResult: true })'
+  );
 
-  console.log('  OK — focusOnNode: export verified and runtime modules use direct imports');
-  console.log('  OK — search-state.js is dewindowed; app.js keeps the compatibility bridge');
+  console.log('  OK — focusOnNode: export verified and search focus flows through event-owned app camera call');
 }
 
 // ---------------------------------------------------------------------------

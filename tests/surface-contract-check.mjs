@@ -35,13 +35,22 @@ const launchOptions = {
 
 function parseFlags(args) {
   const surfaces = [];
-  for (const arg of args) {
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
     if (arg === '--') continue;
     if (arg.startsWith('--surface=')) {
       surfaces.push(arg.slice('--surface='.length));
     } else if (arg.startsWith('--surfaces=')) {
       const list = arg.slice('--surfaces='.length).split(',').map((s) => s.trim()).filter(Boolean);
       surfaces.push(...list);
+    } else if (arg === '--surface') {
+      if (args[i + 1]) surfaces.push(args[i + 1]);
+      i += 1;
+    } else if (arg === '--surfaces') {
+      if (args[i + 1]) {
+        surfaces.push(...args[i + 1].split(',').map((s) => s.trim()).filter(Boolean));
+      }
+      i += 1;
     }
   }
   return surfaces;
@@ -875,7 +884,9 @@ async function assert_focus_pocket(page, ctx) {
 
     function touchTargetOk(el) {
       if (!el) return null;
+      const style = getComputedStyle(el);
       const r = el.getBoundingClientRect();
+      if (el.hidden || style.display === 'none' || style.visibility === 'hidden' || r.width <= 0 || r.height <= 0) return null;
       return r.width >= 43.5 && r.height >= 43.5;
     }
 
@@ -4044,6 +4055,13 @@ function surfaceUrl(params) {
 }
 
 const SURFACE_LIST = Object.keys(SURFACES);
+const unknownSurfaces = requestedSurfaces.filter((s) => !SURFACE_LIST.includes(s));
+if (unknownSurfaces.length) {
+  console.error(`Unknown surface-contract surface(s): ${unknownSurfaces.join(', ')}`);
+  console.error(`Available surfaces: ${SURFACE_LIST.join(', ')}`);
+  process.exit(1);
+}
+
 const surfacesToRun = requestedSurfaces.length
   ? requestedSurfaces.filter((s) => SURFACE_LIST.includes(s))
   : SURFACE_LIST;

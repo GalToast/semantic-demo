@@ -56,12 +56,14 @@ function resetDom() {
   const status = make('div'); // focus-stage-inside-status
   const statusCopy = make('span'); // focus-stage-inside-status-copy
   const insideNext = make('button'); // btn-inside-next
+  const insideMap = make('button'); // btn-inside-map
   make('button'); // btn-inside-county
   make('div'); // focus-stage-kicker
   make('div'); // journey-compass
   elementsById.set('focus-stage-inside-status', status);
   elementsById.set('focus-stage-inside-status-copy', statusCopy);
   elementsById.set('btn-inside-next', insideNext);
+  elementsById.set('btn-inside-map', insideMap);
 }
 
 function resetState() {

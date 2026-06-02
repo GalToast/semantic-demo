@@ -6,6 +6,84 @@ const SEMANTIC_SEARCH_RETRY_DELAYS_MS = [900, 1800];
 const SEMANTIC_SEARCH_CACHE_MAX_ENTRIES = 8;
 const SEMANTIC_SEARCH_CACHE_TTL_MS = 10 * 60 * 1000;
 
+// TODO(data-regen): data.dat still contains slug-style names like "2-hampton-inn-and-suites"
+// from the initial corpus seed. The catalog below supplies clean, category-appropriate
+// names so the demo reads believably even when search is mocked. Long-term: re-emit
+// data.dat from the LeadOps corpus with clean names.
+const MOCK_CATALOG = {
+    coffee: [
+        { name: 'Third Gen Coffee', city: 'The Woodlands', naics: '722515 - Coffee Shops', website: true, email: true, phone: false },
+        { name: 'Galavants Coffee', city: 'Conroe', naics: '722515 - Coffee Shops', website: true, email: false, phone: true },
+        { name: 'Blue Door Coffee', city: 'Conroe', naics: '722515 - Coffee Shops', website: true, email: true, phone: true },
+        { name: 'Dosey Doe Coffee', city: 'The Woodlands', naics: '722515 - Coffee Shops', website: true, email: false, phone: false },
+        { name: 'Summer Moon Coffee', city: 'Magnolia', naics: '722515 - Coffee Shops', website: true, email: false, phone: true }
+    ],
+    roof: [
+        { name: 'Conroe Roofing Co', city: 'Conroe', naics: '238160 - Roofing Contractors', website: true, email: true, phone: true },
+        { name: 'Pine Valley Roofing', city: 'The Woodlands', naics: '238160 - Roofing Contractors', website: true, email: true, phone: false },
+        { name: 'Lone Star Roofworks', city: 'Montgomery', naics: '238160 - Roofing Contractors', website: true, email: false, phone: true },
+        { name: 'Magnolia Roofing Pros', city: 'Magnolia', naics: '238160 - Roofing Contractors', website: false, email: true, phone: true },
+        { name: 'Shenandoah Roofing', city: 'Shenandoah', naics: '238160 - Roofing Contractors', website: true, email: false, phone: false }
+    ],
+    childcare: [
+        { name: 'Magnolia Montessori Academy', city: 'Magnolia', naics: '624410 - Child Day Care Services', website: true, email: true, phone: true },
+        { name: 'The Woodlands Early Learning', city: 'The Woodlands', naics: '624410 - Child Day Care Services', website: true, email: true, phone: false },
+        { name: 'Conroe Childcare Center', city: 'Conroe', naics: '624410 - Child Day Care Services', website: false, email: true, phone: true },
+        { name: 'Montgomery Little Stars', city: 'Montgomery', naics: '624410 - Child Day Care Services', website: true, email: false, phone: true },
+        { name: 'Spring Branch Kids Academy', city: 'Spring', naics: '624410 - Child Day Care Services', website: true, email: true, phone: true }
+    ],
+    dog: [
+        { name: 'Bark Avenue Grooming', city: 'Conroe', naics: '812910 - Pet Care Services', website: true, email: true, phone: true },
+        { name: 'The Dog House of The Woodlands', city: 'The Woodlands', naics: '812910 - Pet Care Services', website: true, email: true, phone: false },
+        { name: 'Paws & Claws Pet Resort', city: 'Magnolia', naics: '812910 - Pet Care Services', website: true, email: true, phone: true },
+        { name: 'Conroe Pup Park', city: 'Conroe', naics: '812910 - Pet Care Services', website: false, email: true, phone: true },
+        { name: 'Shenandoah Dog Lodge', city: 'Shenandoah', naics: '812910 - Pet Care Services', website: true, email: false, phone: true }
+    ]
+};
+
+const MOCK_QUERY_TERMS = Object.keys(MOCK_CATALOG);
+
+function buildMockCatalogForQuery(query) {
+    const q = (query || '').toLowerCase().trim();
+    let bucket = MOCK_CATALOG.coffee; // safe default
+    let matchedTerm = null;
+    let scoreBase = 0.95;
+    for (const term of MOCK_QUERY_TERMS) {
+        if (q.includes(term)) {
+            bucket = MOCK_CATALOG[term];
+            matchedTerm = term;
+            break;
+        }
+    }
+    if (!matchedTerm) {
+        // Try partial / semantic-ish fallback: look at the first word
+        for (const term of MOCK_QUERY_TERMS) {
+            if (q.startsWith(term) || q.split(/\s+/).some((tok) => tok === term)) {
+                bucket = MOCK_CATALOG[term];
+                matchedTerm = term;
+                scoreBase = 0.85;
+                break;
+            }
+        }
+    }
+    if (!matchedTerm) {
+        // Generic fallback — return one of the catalogs with a reduced score
+        scoreBase = 0.6;
+    }
+    return bucket.map((entry, i) => ({
+        lead_id: `mock-${matchedTerm || 'generic'}-${i + 1}`,
+        name: entry.name,
+        score: Math.max(0.5, scoreBase - i * 0.05),
+        provenance: 'Mock',
+        thread_type: 'Search match',
+        city: entry.city,
+        naics: entry.naics,
+        website: entry.website,
+        email: entry.email,
+        phone: entry.phone
+    }));
+}
+
 if (!state.semanticSearchResultCache) state.semanticSearchResultCache = new Map();
 if (!state.semanticSearchCacheDiagnostics) {
     state.semanticSearchCacheDiagnostics = {
@@ -260,12 +338,14 @@ export async function fetchSemanticSearchResults(query, signal, options = {}) {
             if (detectStaticDevPHP(responseText) && allowsStaticDevFallback()) {
                 console.warn('[semantic-search-api-cache] Detected raw PHP response. Assuming static dev server. Returning mock results.');
 
+                // TODO(data-regen): data.dat still contains a few slug-style names
+                // (e.g. "2-hampton-inn-and-suites") from the initial corpus seed. The catalog
+                // below supplies clean, category-appropriate names so the demo reads believably
+                // before the data pipeline is regenerated. Long-term: re-emit data.dat from the
+                // LeadOps corpus with clean names.
+
                 const isExplicitEmpty = /^(none|empty|xj9k2l|nil|void|error)$/i.test(trimmedQuery);
-                const mockResults = isExplicitEmpty ? [] : [
-                    { lead_id: "1", name: "1845 Solutions", score: 0.98, provenance: "Mock", thread_type: "Search match" },
-                    { lead_id: "2", name: "Hampton Inn And Suites", score: 0.92, provenance: "Mock", thread_type: "Search match" },
-                    { lead_id: "3", name: "Northern Tool And Equipment", score: 0.85, provenance: "Mock", thread_type: "Search match" }
-                ];
+                const mockResults = isExplicitEmpty ? [] : buildMockCatalogForQuery(trimmedQuery);
 
                 payload = {
                     ok: true,

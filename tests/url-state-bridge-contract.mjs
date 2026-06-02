@@ -1,14 +1,15 @@
 /**
  * url-state-bridge-contract.mjs
  *
- * Contract for the URL restore reset bridge.
+ * Contract for URL restore ownership after the injected URL adapters retired.
  *
  * Current compatibility rule:
  * - url-state.js exports resetStateBeforeUrlRestore for URL restore ownership.
  * - lifecycle.js still exports resetStateBeforeUrlRestore for legacy contracts
  *   and call sites until that wider ownership migration is complete.
- * - url-state.js must not directly import search-state.js or re-import the
- *   reset helper from lifecycle.js.
+ * - url-state.js may call canonical search-state exports directly, but must
+ *   not restore the retired URL search/navigation adapters.
+ * - url-state.js must not re-import the reset helper from lifecycle.js.
  */
 
 import { strict as assert } from 'node:assert';
@@ -38,17 +39,28 @@ assert.equal(
     'url-state.js must not import resetStateBeforeUrlRestore from lifecycle.js'
 );
 
-assert.equal(
-    /from\s*['"]\.\/search-state\.js['"]/.test(urlStateSrc),
-    false,
-    'url-state.js must not import search-state.js directly'
-);
-
 assert.match(
     urlStateSrc,
-    /getUrlSearchAdapter\s*\(\)/,
-    'url-state.js must use the injected URL search adapter for search state work'
+    /from\s*['"]\.\/search-state\.js['"]/,
+    'url-state.js must use canonical search-state exports for search restore work'
 );
+
+assert.doesNotMatch(
+    urlStateSrc,
+    /url-search-adapter|url-navigation-adapter|getUrlSearchAdapter|adapter[A-Z_]/,
+    'url-state.js must not restore retired URL adapter seams'
+);
+
+const searchStateImport = urlStateSrc.match(
+    /import\s*\{([\s\S]*?)\}\s*from\s*['"]\.\/search-state\.js['"]/m
+)?.[1] || '';
+['search', 'applyFilters', 'getFilteredIndices', 'activateSearchGlow'].forEach((name) => {
+    assert.match(
+        searchStateImport,
+        new RegExp(`\\b${name}\\b`),
+        `url-state.js must import ${name} directly from search-state.js`
+    );
+});
 
 const deferredRestoreBody = urlStateSrc.match(/async\s+function\s+applyUrlStateFromDeferred\s*\(\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
 assert.match(

@@ -32,7 +32,7 @@ globalThis.performance = globalThis.window.performance;
 globalThis.requestAnimationFrame = globalThis.window.requestAnimationFrame;
 globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame;
 
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 const {
   getFocusPocketIndices,
   setFocusPocketIndices,
@@ -54,8 +54,10 @@ const originalNavState = state.navState;
 const originalMotion = state.focusPocketMotionByIndex;
 
 try {
-  state.navState = { ...originalNavState, focusPocketIndices: null, focusPocketRoleByIndex: null, focusPocketMeta: null };
-  state.focusPocketMotionByIndex = null;
+  withStateMutation(() => {
+    state.navState = { ...originalNavState, focusPocketIndices: null, focusPocketRoleByIndex: null, focusPocketMeta: null };
+    state.focusPocketMotionByIndex = null;
+  });
 
   assertDeepEqual(getFocusPocketIndices(), [], 'indices getter should fall back to empty array');
   setFocusPocketIndices([1, 4, 8]);
@@ -87,8 +89,10 @@ try {
   clearFocusPocketMeta();
   assert(getFocusPocketMeta() === null, 'meta clear should reset to null');
 } finally {
-  state.navState = originalNavState;
-  state.focusPocketMotionByIndex = originalMotion;
+  withStateMutation(() => {
+    state.navState = originalNavState;
+    state.focusPocketMotionByIndex = originalMotion;
+  });
 }
 
 console.log('PASS journey-focus-pocket-state-contract');

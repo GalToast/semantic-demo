@@ -48,6 +48,7 @@ const states = [
   { name: 'mobile-search', viewport: mobile, params: { view: 'galaxy', q: 'coffee', anchor: '1' } },
   { name: 'mobile-search-error', viewport: mobile, params: { view: 'galaxy', q: 'semantic-error-proof' }, setup: forceSearchError },
   { name: 'mobile-focus', viewport: mobile, params: { view: 'galaxy', q: 'coffee', anchor: '519' } },
+  { name: 'mobile-focus-search', viewport: mobile, params: { view: 'galaxy', q: 'coffee', anchor: '519' } },
   { name: 'mobile-field-node', viewport: mobile, params: { view: 'galaxy', q: 'coffee', anchor: '519' }, setup: forceFieldNode },
   { name: 'mobile-thread-preview', viewport: mobile, params: { view: 'galaxy', q: 'coffee', anchor: '519' }, setup: forceThreadPreview },
   { name: 'mobile-semantic-dive', viewport: mobile, params: { view: 'galaxy', q: 'coffee', anchor: '1', mode: 'trail', depth: '2', record: '1' } },
@@ -78,12 +79,14 @@ function requestedStateNames(args) {
 }
 
 const requestedStates = requestedStateNames(cliArgs);
+const availableStateNames = new Set(states.map((state) => state.name));
+const unknownStates = [...requestedStates].filter((name) => !availableStateNames.has(name));
 const statesToRun = requestedStates.size
   ? states.filter((state) => requestedStates.has(state.name))
   : states;
 
-if (requestedStates.size && statesToRun.length === 0) {
-  console.error(`No ui-quality states matched: ${Array.from(requestedStates).join(', ')}`);
+if (unknownStates.length) {
+  console.error(`Unknown ui-quality state(s): ${unknownStates.join(', ')}`);
   console.error(`Available states: ${states.map((state) => state.name).join(', ')}`);
   process.exit(1);
 }
@@ -423,6 +426,14 @@ async function auditState(page, name) {
           rect: controls,
         });
       }
+      if ((panelSurface === 'focus-search' || panelSurface === 'semantic-dive') && controls) {
+        failures.push({
+          check: 'composition:focus-controls-rail-visible',
+          selector: '.controls',
+          state: name,
+          rect: controls,
+        });
+      }
 
       const share = rectFor('.share-toggle');
       const searchContainer = rectFor('.search-container');
@@ -436,6 +447,38 @@ async function auditState(page, name) {
         });
       }
 
+      if (panelSurface === 'search') {
+        const compass = visibleChrome('.journey-compass');
+        const compassCopy = visibleChrome('.journey-compass-copy');
+        const compassActions = visibleChrome('.journey-compass-actions');
+        if (compass && compassCopy && compassCopy.width < Math.min(150, compass.width * 0.42)) {
+          failures.push({
+            check: 'composition:search-compass-copy-squeezed',
+            selector: '.journey-compass-copy',
+            state: name,
+            rect: compassCopy,
+          });
+        }
+        if (compass && compassActions && compassActions.width > Math.min(170, compass.width * 0.48)) {
+          failures.push({
+            check: 'composition:search-compass-actions-dominate',
+            selector: '.journey-compass-actions',
+            state: name,
+            rect: compassActions,
+          });
+        }
+        for (const action of visibleCompassActions) {
+          if (action.dataset.journeyAction && !action.dataset.mobileLabel) {
+            failures.push({
+              check: 'composition:journey-action-missing-mobile-label',
+              selector: action.id ? `#${action.id}` : '.journey-compass-action',
+              state: name,
+              action: action.dataset.journeyAction,
+            });
+          }
+        }
+      }
+
       if ((panelSurface === 'focus' || panelSurface === 'focus-search') && searchContainer) {
         failures.push({
           check: 'composition:focus-search-bar-visible',
@@ -443,6 +486,70 @@ async function auditState(page, name) {
           state: name,
           rect: searchContainer,
         });
+      }
+
+      if ((panelSurface === 'focus-search' || panelSurface === 'semantic-dive') && modeGrid) {
+        failures.push({
+          check: 'composition:focus-mode-grid-visible',
+          selector: '#mode-grid',
+          state: name,
+          rect: modeGrid,
+        });
+      }
+
+      const viewToggle = visibleChrome('.view-toggle');
+      if ((panelSurface === 'focus-search' || panelSurface === 'semantic-dive') && viewToggle) {
+        failures.push({
+          check: 'composition:focus-view-toggle-visible',
+          selector: '.view-toggle',
+          state: name,
+          rect: viewToggle,
+        });
+      }
+
+      if (panelSurface === 'focus-search' || panelSurface === 'semantic-dive') {
+        for (const selector of ['.share-toggle', '.legend-toggle']) {
+          const globalAction = visibleChrome(selector);
+          if (globalAction) {
+            failures.push({
+              check: 'composition:focus-global-action-visible',
+              selector,
+              state: name,
+              rect: globalAction,
+            });
+          }
+        }
+      }
+
+      if (['focus', 'focus-search', 'semantic-dive'].includes(panelSurface)) {
+        const selectedCard = document.querySelector('#selected-card');
+        const selectedDetails = document.querySelector('#selected-details');
+        if (selectedCard?.dataset.contentOwner !== 'focus-stage') {
+          failures.push({
+            check: 'composition:focus-selected-content-owner',
+            selector: '#selected-card',
+            state: name,
+            owner: selectedCard?.dataset.contentOwner || '',
+            variant: selectedCard?.dataset.contentVariant || '',
+          });
+        }
+        if (selectedCard && selectedCard.getAttribute('aria-hidden') !== 'true') {
+          failures.push({
+            check: 'composition:focus-selected-card-aria-hidden',
+            selector: '#selected-card',
+            state: name,
+          });
+        }
+        if (selectedDetails && selectedDetails.getAttribute('aria-hidden') !== 'true') {
+          failures.push({
+            check: 'composition:focus-selected-details-aria-hidden',
+            selector: '#selected-details',
+            state: name,
+            hidden: selectedDetails.hidden,
+            ariaHidden: selectedDetails.getAttribute('aria-hidden'),
+            rect: rectFor('#selected-details'),
+          });
+        }
       }
 
       if (panelSurface === 'idle' && share && searchContainer && overlaps(share, searchContainer, 0)) {
@@ -526,6 +633,15 @@ async function auditState(page, name) {
               rect: navCluster,
             });
           }
+        }
+        const completeNext = document.querySelector('#btn-inside-next');
+        if (completeNext && visible(completeNext) && completeNext.disabled && /trail complete/i.test(completeNext.textContent || '')) {
+          failures.push({
+            check: 'composition:semantic-dive-disabled-complete-action-visible',
+            selector: '#btn-inside-next',
+            state: name,
+            rect: rectFor('#btn-inside-next'),
+          });
         }
       }
     }

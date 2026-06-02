@@ -218,6 +218,17 @@ const FOCUS_COMPASS_STATE_REFINEMENT_GUARD = {
   ],
 };
 
+const SEMANTIC_DIVE_INSIDE_HUD_GUARD = {
+  canonicalFile: 'mobile_premium_focus.css',
+  formerLateFile: 'mobile_premium_surfaces.css',
+  ownerMarker: 'Semantic-dive inside HUD density owner',
+  forbiddenLateFragments: [
+    '.focus-stage-inside-status',
+    '.focus-stage-inside-controls',
+    '.focus-stage-inside-btn',
+  ],
+};
+
 const MOBILE_COMPASS_TRANSITION_GUARD = {
   file: 'mobile_premium_surfaces.css',
   selectors: ['.journey-compass', '.journey-compass-action'],
@@ -257,6 +268,22 @@ for (const fragment of FOCUS_COMPASS_STATE_REFINEMENT_GUARD.forbiddenLateFragmen
   if (formerCompassOwner.includes(fragment)) {
     violations.push(
       `${FOCUS_COMPASS_STATE_REFINEMENT_GUARD.formerLateFile} must not reintroduce focus/dive journey-compass state fragment ${fragment}`
+    );
+  }
+}
+
+const semanticDiveInsideHudOwner = read(`css/${SEMANTIC_DIVE_INSIDE_HUD_GUARD.canonicalFile}`);
+if (!semanticDiveInsideHudOwner.includes(SEMANTIC_DIVE_INSIDE_HUD_GUARD.ownerMarker)) {
+  violations.push(
+    `${SEMANTIC_DIVE_INSIDE_HUD_GUARD.canonicalFile} must document and own semantic-dive inside HUD density`
+  );
+}
+
+const formerSemanticDiveInsideHudOwner = read(`css/${SEMANTIC_DIVE_INSIDE_HUD_GUARD.formerLateFile}`);
+for (const fragment of SEMANTIC_DIVE_INSIDE_HUD_GUARD.forbiddenLateFragments) {
+  if (formerSemanticDiveInsideHudOwner.includes(fragment)) {
+    violations.push(
+      `${SEMANTIC_DIVE_INSIDE_HUD_GUARD.formerLateFile} must not reintroduce semantic-dive inside HUD fragment ${fragment}`
     );
   }
 }

@@ -155,14 +155,25 @@ html body.is-active #selected-details.active:not([hidden]) {
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     }
 
-
-
-
-
     html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-action.primary {
         background: #4ecdc4;
         color: #0d1b2a;
         box-shadow: 0 0 10px rgba(78, 205, 196, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    html body[data-journey-compass-density="compact"]:not([data-panel-surface^="map-"]) .journey-compass-action[data-mobile-label] {
+        font-size: 0;
+        letter-spacing: 0;
+    }
+
+    html body[data-journey-compass-density="compact"]:not([data-panel-surface^="map-"]) .journey-compass-action[data-mobile-label]::before {
+        content: attr(data-mobile-label);
+        font-size: 10.75px;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: 0.02em;
+        text-transform: none;
+        white-space: nowrap;
     }
 
     @media (max-width: 374px) {
@@ -215,17 +226,47 @@ html body.is-active #selected-details.active:not([hidden]) {
     }
 
     html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) .journey-compass {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
         width: auto;
         min-width: 0;
         max-width: calc(100vw - 32px);
+        min-height: 58px;
+        padding: 7px 8px 7px 18px;
+    }
+
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) .journey-compass-copy {
+        padding-right: 10px;
+    }
+
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) .journey-compass-actions {
+        gap: 6px;
+        padding-left: 8px;
+    }
+
+    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) .journey-compass-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 52px;
+        height: 44px;
+        padding-inline: 10px;
+        border-radius: 999px;
     }
 
     html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) .journey-compass-action[data-journey-action="center-anchor"] {
-        min-width: 88px;
+        min-width: 86px;
+        padding-inline: 12px;
+        line-height: 1;
     }
 
     html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) .journey-compass-action.primary[data-journey-action="center-anchor"]::after {
+        content: none;
         inset: 0;
+        box-sizing: border-box;
+        animation: none;
     }
 
     /* Share button visibility handled by global mobile actions in mobile_base.css */
@@ -538,7 +579,7 @@ html body.is-active #selected-details.active:not([hidden]) {
         animation-duration: 0s;
     }
 
-    html body[data-panel-surface="search"] .info-panel-surface-selection {
+    html body:is([data-panel-surface="search"], [data-panel-surface="focus"], [data-panel-surface="focus-search"]) .info-panel-surface-selection {
         display: none;
         visibility: hidden;
         pointer-events: none;

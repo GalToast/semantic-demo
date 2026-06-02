@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { subscribe, EVENTS } from './event-bus.js';
 import { isCompactFocusStageViewport } from './utils/ui-presentation.js';
 import { isPointVisible } from './utils/geo-data.js';
 import {
@@ -10,6 +11,15 @@ import {
 import { setTrailNavState } from './navigation-state.js';
 import { setFocusPocketMeta } from './focus-pocket.js';
 import { isCompactLandscape, isUltraCompactPortrait } from './environment.js';
+
+// Phase 3: Declarative synchronization
+subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload) => {
+    const index = payload.index;
+    if (Number.isFinite(index)) {
+        setTrailFromSeed(index);
+        updateTrailIndices(index);
+    }
+});
 
 export function initJourneyNeighborhoodAdapter(deps = {}) {
     if (!initJourneyNeighborhoodAdapter.adapter) {

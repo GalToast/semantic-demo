@@ -5,6 +5,7 @@ import { isCompactFocusStageViewport } from './utils/ui-presentation.js';
 import { getNextExploreCandidateForIndex } from './journey-thread-model.js';
 import {summarizeNeighborReason} from './journey.js';
 import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.js';
+import { ensureFocusStageAuxiliaryDom } from './focus-stage-dom.js';
 
 function truncateDiveStatusCopy(text, max = 74) {
     const clean = cleanOptionalValue(text);
@@ -61,6 +62,7 @@ export function initSemanticDiveUiSubscriptions() {
 }
 
 export function syncSemanticDiveUi() {
+    ensureFocusStageAuxiliaryDom();
     const hasFocus = state.focusedNode !== null && state.focusedNode !== undefined
         || Number.isFinite(state.navState?.focusedIndex);
     const canDive = state.currentView === 'galaxy' && hasFocus;
@@ -114,12 +116,18 @@ export function syncSemanticDiveUi() {
             insideControls.hidden = false;
             insideControls.setAttribute('aria-hidden', 'false');
             insideControls.inert = false;
+            insideControls.dataset.nextState = isExploring
+                ? 'walking'
+                : hasNextCandidate
+                    ? 'available'
+                    : 'complete';
         } else {
             insideControls.setAttribute('aria-hidden', 'true');
             insideControls.inert = true;
+            insideControls.dataset.nextState = 'inactive';
             // Defer hidden to allow CSS transition to play (0.4s - 0.5s baseline)
             setTimeout(() => {
-                if (!insideControls.getAttribute('aria-hidden') === 'false') return; 
+                if (insideControls.getAttribute('aria-hidden') === 'false') return;
                 insideControls.hidden = true;
             }, 450);
         }
@@ -131,6 +139,7 @@ export function syncSemanticDiveUi() {
         } else {
             insideStatus.setAttribute('aria-hidden', 'true');
             setTimeout(() => {
+                if (insideStatus.getAttribute('aria-hidden') === 'false') return;
                 insideStatus.hidden = true;
             }, 450);
         }
@@ -148,7 +157,7 @@ export function syncSemanticDiveUi() {
                   'Follow a connection or go back.'
                 : hasWalked
                     ? 'All close links are mapped.'
-                    : 'Inside this neighborhood. Pick another match or return to County.'
+                    : 'No nearby stop is available. Use Map or County.'
             : 'Step into this neighborhood to follow related businesses.';
     }
     if (focusKicker) {
@@ -164,6 +173,8 @@ export function syncSemanticDiveUi() {
     }
     if (insideNextButton) {
         const isDisabled = !hasNextCandidate || isExploring;
+        const showNextAction = hasNextCandidate || isExploring;
+        insideNextButton.hidden = !showNextAction;
         insideNextButton.disabled = isDisabled;
         insideNextButton.setAttribute('aria-disabled', String(isDisabled));
         insideNextButton.setAttribute('aria-busy', String(isExploring));
@@ -179,7 +190,7 @@ export function syncSemanticDiveUi() {
                 ? 'Following next stop'
                 : hasNextCandidate
                   ? 'Go to the next neighborhood stop'
-                  : 'Trail complete, no more connections to follow'
+                  : 'Trail complete. Use Map or County.'
         );
     }
     if (insideMapButton) {

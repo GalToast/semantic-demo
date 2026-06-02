@@ -123,6 +123,8 @@ body[data-active-view="map"] .cluster-legend {
     text-align: center;
     gap: 14px;
     padding: 28px 20px 24px;
+    overflow: hidden;
+    max-height: 100%;
 }
 
 /* --- Selected Card Internal Layout & Aesthetics --- */
@@ -189,11 +191,14 @@ body[data-active-view="map"] .cluster-legend {
 .selected-item {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
     gap: 4px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 8px;
     padding: 10px;
+    min-width: 0;
 }
 
 .selected-item-label {
@@ -202,12 +207,18 @@ body[data-active-view="map"] .cluster-legend {
     letter-spacing: 0.05em;
     color: var(--color-text-muted);
     font-weight: 700;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    width: 100%;
 }
 
 .selected-item-value {
     font-size: 13px;
     color: var(--color-text-primary);
     font-weight: 500;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    width: 100%;
 }
 
 /* ── Panel Surface Coordination ─────────────────────────────────────────── */

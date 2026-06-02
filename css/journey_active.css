@@ -95,10 +95,17 @@ html body[data-panel-surface="focus"] .journey-compass-note {
 }
 
 .journey-compass-rail {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(38px, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     gap: 4px;
-    min-width: 282px;
+    min-width: 0;
+}
+.journey-compass-rail::-webkit-scrollbar {
+    display: none;
 }
 
 .journey-compass-actions {
@@ -135,10 +142,20 @@ html body[data-panel-surface="focus"] .journey-compass-note {
     pointer-events: none;
 }
 
+@media (min-width: 769px) {
+    html body.is-active .journey-compass-actions,
+    html body:not(.is-active) .journey-compass-actions {
+        display: none;
+    }
+}
+
 .journey-compass-step {
     position: relative;
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    flex-shrink: 0;
     min-height: 24px;
     padding: 0 7px;
     border-radius: 999px;
@@ -150,9 +167,39 @@ html body[data-panel-surface="focus"] .journey-compass-note {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     white-space: nowrap;
-    overflow-y: auto;
+    overflow-y: hidden;
     overflow-x: hidden;
     transition: color 0.24s ease, background 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
+}
+
+.journey-compass-step:not(.current):not(.done) {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.journey-compass-step.done {
+    color: rgba(121, 235, 222, 0.78);
+    border-color: rgba(121, 235, 222, 0.18);
+    background: rgba(121, 235, 222, 0.045);
+}
+
+.journey-compass-step.current {
+    color: rgba(255, 255, 255, 0.98);
+    border-color: rgba(121, 235, 222, 0.55);
+    background: linear-gradient(180deg, rgba(121, 235, 222, 0.16), rgba(121, 235, 222, 0.06));
+    box-shadow: 0 0 0 1px rgba(121, 235, 222, 0.18), 0 6px 18px rgba(121, 235, 222, 0.08);
+}
+
+.journey-compass-step.current::before {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 2px;
+    border-radius: 1px;
+    background: rgba(121, 235, 222, 0.85);
+    box-shadow: 0 0 8px rgba(121, 235, 222, 0.55);
 }
 
 .journey-compass-step::-webkit-scrollbar {

@@ -4,7 +4,7 @@ import './helpers/node-window-shim.mjs';
  * Contract: selected-business narrative helpers live in ui-renderers.
  *
  * Source-only and Node-safe. Proves helper behavior and verifies lifecycle
- * imports helper owners directly instead of exposing lifecycle window aliases.
+ * keeps helper ownership outside lifecycle window aliases.
  */
 
 import { readFileSync } from 'node:fs';
@@ -17,6 +17,7 @@ import {
 
 const ROOT = process.cwd();
 const UI_RENDERERS = join(ROOT, 'js/modules/ui-renderers.js');
+const FOCUS_STAGE_RENDERER = join(ROOT, 'js/modules/focus-stage-renderer.js');
 const LIFECYCLE = join(ROOT, 'js/modules/lifecycle.js');
 
 function assert(condition, message) {
@@ -58,12 +59,14 @@ function testSelectedMatchNarrative() {
 
 function testSourceCanonicality() {
   const uiSrc = read(UI_RENDERERS);
+  const focusRendererSrc = read(FOCUS_STAGE_RENDERER);
   const lifeSrc = read(LIFECYCLE);
 
   assert(uiSrc.includes('export function buildSelectedMatchNarrative'), 'ui-renderers exports narrative builder');
   assert(uiSrc.includes('export function getInterestingBusinessNote'), 'ui-renderers exports note filter');
+  assert(focusRendererSrc.includes('export function updateSelectedCardHeading'), 'focus-stage-renderer owns selected-card heading DOM writes');
 
-  assert(lifeSrc.includes("from './ui-renderers.js'"), 'lifecycle imports from ui-renderers');
+  assert(!lifeSrc.includes("from './ui-renderers.js'"), 'lifecycle does not import selected-card helpers after focus-stage transfer');
   assert(!lifeSrc.includes('window.buildSelectedMatchNarrative'), 'lifecycle does not use window for narrative');
 }
 

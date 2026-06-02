@@ -146,10 +146,6 @@
         justify-content: center;
     }
 
-    html body[data-active-view="galaxy"] .view-toggle {
-        display: none;
-        pointer-events: none;
-    }
 
     /* SEARCH SHEET ONLY: .search-container owns the sheet geometry.
        #info-panel remains visible as a header/shell but does not
@@ -201,7 +197,9 @@
         overflow-x: hidden;
         padding: 6px;
         border-color: rgba(121, 235, 222, 0.18);
-        background: rgba(5, 10, 16, 0.84);
+        background: rgba(5, 10, 16, 0.95);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
     }
 
     html body[data-panel-surface="search"] .search-result-item,
@@ -407,10 +405,8 @@
         padding-top: 0;
     }
 
-    html body[data-panel-surface="focus"]:not([data-panel-surface="focus-search"]) .info-content,
     html body[data-panel-surface="focus"]:not([data-panel-surface="focus-search"]) .info-header,
     html body[data-panel-surface="focus"]:not([data-panel-surface="focus-search"]) .demo-starters,
-    html body[data-panel-surface="semantic-dive"] .info-content,
     html body[data-panel-surface="semantic-dive"] .info-header,
     html body[data-panel-surface="semantic-dive"] .demo-starters {
         display: none;
@@ -1113,8 +1109,6 @@ html body[data-panel-surface="focus-search"] .controls .control-btn {
     html body[data-panel-surface="search"] .stat-caption,
     html body[data-panel-surface="search"] .launch-btn,
     html body[data-panel-surface="search"] .demo-starters,
-    html body[data-panel-surface="search"] #cluster-section,
-    html body[data-panel-surface="search"] #filters-section,
     html body[data-panel-surface="search"] .semantic-lane-assist,
     html body[data-panel-surface="search"] .search-trail-cue,
     html body[data-panel-surface="search"] .synthesize-trigger,
@@ -1207,19 +1201,19 @@ html body[data-panel-surface="focus-search"] .controls .control-btn {
         overflow: hidden;
     }
 
-    html body[data-panel-surface="focus-search"] .info-header,
-    html body[data-panel-surface="focus-search"] .stats-row,
-    html body[data-panel-surface="focus-search"] .stat-caption,
-    html body[data-panel-surface="focus-search"] .launch-btn,
-    html body[data-panel-surface="focus-search"] .demo-starters,
-    html body[data-panel-surface="focus-search"] #story-section,
-    html body[data-panel-surface="focus-search"] #cluster-section,
-    html body[data-panel-surface="focus-search"] #filters-section,
-    html body[data-panel-surface="focus-search"] .exploration-card,
-    html body[data-panel-surface="focus-search"] .mode-grid,
-    html body[data-panel-surface="focus-search"] .semantic-lane-assist,
-    html body[data-panel-surface="focus-search"] .search-trail-cue,
-    html body[data-panel-surface="focus-search"] .synthesize-trigger {
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .info-header,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .stats-row,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .stat-caption,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .launch-btn,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .demo-starters,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) #story-section,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) #cluster-section,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) #filters-section,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .exploration-card,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .mode-grid,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .semantic-lane-assist,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .search-trail-cue,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .synthesize-trigger {
         display: none;
     }
 

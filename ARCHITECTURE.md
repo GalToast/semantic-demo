@@ -47,3 +47,14 @@ The frontend is broken down into distinct modules to handle the complexity of sy
 2.  **Dataset-Driven CSS:** The application heavily relies on `document.body.dataset` attributes (e.g., `data-active-view`, `data-graph-context`, `data-semantic-dive`) to trigger complex CSS animations and layout shifts without requiring heavy JavaScript DOM manipulation.
 3.  **Graceful Degradation:** If the live Semantic API fails, `lifecycle.js` automatically catches the failure and falls back to deterministic local artifacts, keeping the visual demo alive for users.
 4.  **Handoffs:** The transition between the 3D 'Galaxy' view and the 2D 'Map' view is managed through a carefully choreographed sequence (`switchView` -> `animateCameraToTerrainPrelude`) to maintain spatial context.
+
+## Two Patterns for Module Communication
+
+The app uses two communication mechanisms. Both are intentional; do not "unify" them by deleting one in favor of the other.
+
+- **Event bus (`js/modules/event-bus.js`)** — for cross-cutting notifications where one module publishes an event and many subscribers react. The pattern is `publish(EVENTS.X, payload)` from the producer, and `subscribe(EVENTS.X, handler)` or `subscribeKeyed(...)` from the consumer. The key contract: an event has a stable `EVENTS.X` name and a documented payload shape; subscribers must tolerate the event firing from multiple call sites. Used for: URL sync, search state changes, focus transitions, semantic lane state, tooltip/composition updates.
+
+- **Adapters (`*-adapter.js`)** — for breaking module-to-module circular dependencies. Each adapter holds module-private closure state for dependency functions, injected at app init via `init*Adapter(deps)`. Consumers import the adapter module and call `adapter.foo()` (or destructured `adapter_foo()`); the adapter delegates to the injected implementation with a safe no-op fallback. Used for: thread-inspector ↔ journey, cluster-filter ↔ search/url-state, search-panel ↔ lifecycle, etc. The key contract: a cycle that can't be broken by direct import goes through an adapter.
+
+The `docs/semantic-demo-dewindowing-inventory.md` documents which window globals have been retired; the 6 corresponding adapters were deleted (2026-05) because they only existed to wrap those globals. The 10 remaining adapters are unrelated to dewindowing — they serve the cycle-breaking role above.
+

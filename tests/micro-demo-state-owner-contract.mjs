@@ -90,10 +90,9 @@ test('__demoFocusSetup exists and is called from the T=2400ms timer block', () =
 });
 
 // --- Contract 3: __demoReset clears focusedNode, selectedPoint, navState fields ---
-test('__demoReset resets focusedNode, selectedPoint, navState.mode, and trail/walk fields', () => {
+test('__demoReset resets selectedPoint, derived focus index, navState.mode, and trail/walk fields', () => {
   const body = funcBodies.__demoReset;
   assert(body, '__demoReset body must exist');
-  assert(/\bfocusedNode\s*=\s*null\b/.test(body), '__demoReset must reset focusedNode = null');
   assert(/\bselectedPoint\s*=\s*null\b/.test(body), '__demoReset must reset selectedPoint = null');
   assert(/\bnavState\.mode\s*=\s*['"]overview['"]/.test(body), '__demoReset must set navState.mode = "overview"');
   assert(/\bnavState\.focusedIndex\s*=\s*null\b/.test(body), '__demoReset must reset focusedIndex = null');
@@ -104,10 +103,9 @@ test('__demoReset resets focusedNode, selectedPoint, navState.mode, and trail/wa
 });
 
 // --- Contract 4: __demoFocusSetup sets focusedNode, selectedPoint, navState fields ---
-test('__demoFocusSetup sets focusedNode, selectedPoint, navState.mode, focusedIndex, walkHistoryIndices', () => {
+test('__demoFocusSetup sets selectedPoint, derived focus index, navState.mode, focusedIndex, walkHistoryIndices', () => {
   const body = funcBodies.__demoFocusSetup;
   assert(body, '__demoFocusSetup body must exist');
-  assert(/\bfocusedNode\s*=\s*demoNode\b/.test(body), '__demoFocusSetup must set focusedNode = demoNode');
   assert(/\bselectedPoint\s*=\s*point\b/.test(body), '__demoFocusSetup must set selectedPoint = point');
   assert(/\bnavState\.mode\s*=\s*['"]focus['"]/.test(body), '__demoFocusSetup must set navState.mode = "focus"');
   assert(/\bnavState\.focusedIndex\s*=\s*demoNode\b/.test(body), '__demoFocusSetup must set focusedIndex = demoNode');

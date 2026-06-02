@@ -47,9 +47,7 @@ vi.mock('../../js/modules/lifecycle.js', () => ({
     resetExperienceState: vi.fn()
 }));
 // Stub the rest of the adapters that init() calls to prevent undefined errors
-vi.mock('../../js/modules/url-search-adapter.js', () => ({ initUrlSearchAdapter: vi.fn() }));
 vi.mock('../../js/modules/cluster-filter-adapter.js', () => ({ initClusterFilterAdapter: vi.fn() }));
-vi.mock('../../js/modules/search-ui-adapter.js', () => ({ initSearchUiAdapter: vi.fn() }));
 vi.mock('../../js/modules/ui-renderers.js', () => ({ 
     initUiRenderersAdapter: vi.fn(),
     buildSelectedMatchNarrative: vi.fn(),
@@ -57,25 +55,8 @@ vi.mock('../../js/modules/ui-renderers.js', () => ({
     getInterestingBusinessNote: vi.fn(),
     scheduleCompactSearchResultReveal: vi.fn()
 }));
-vi.mock('../../js/modules/search-lifecycle-adapter.js', () => ({
-    initSearchLifecycleAdapter: vi.fn(),
-    updateUrlState: vi.fn(),
-    setSearchPanelState: vi.fn(),
-    focusOnPoint: vi.fn(),
-    resetNodePositions: vi.fn(),
-    dispatchNavTransition: vi.fn(),
-    syncSearchStatusForFocus: vi.fn(),
-    updateJourneyCompass: vi.fn(),
-    refreshCompositionState: vi.fn(),
-    switchView: vi.fn(),
-    resetExplorationFocus: vi.fn(),
-    scheduleSearchFocusTask: vi.fn()
-}));
-vi.mock('../../js/modules/composition-adapter.js', () => ({ initCompositionAdapter: vi.fn() }));
-vi.mock('../../js/modules/url-navigation-adapter.js', () => ({ initUrlNavigationAdapter: vi.fn() }));
 vi.mock('../../js/modules/journey-lifecycle-adapter.js', () => ({ initJourneyLifecycleAdapter: vi.fn(), applyLocalNeighborhoodFocus: vi.fn() }));
 vi.mock('../../js/modules/thread-inspector-adapter.js', () => ({ initThreadInspectorAdapter: vi.fn() }));
-vi.mock('../../js/modules/camera-controls-adapter.js', () => ({ initCameraControlsAdapter: vi.fn() }));
 vi.mock('../../js/modules/journey-compass-controller.js', () => ({ initJourneyCompassAdapter: vi.fn(), updateJourneyCompass: vi.fn() }));
 vi.mock('../../js/modules/semantic-search-api-cache.js', () => ({ initSearchCache: vi.fn().mockResolvedValue() }));
 vi.mock('../../js/modules/bridge-registry.js', () => ({ initBridgeRegistry: vi.fn() }));

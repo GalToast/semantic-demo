@@ -14,7 +14,7 @@ Named surfaces: `mobile-idle`, `desktop-idle`, `launch-focus`, `search-error`, `
 
 ## Visual Audit Scripts (screenshot-based)
 
-Canonical visual state ids are registered in `tests/visual-state-registry.mjs`; `tests/surface-style-matrix-contract.mjs` verifies the registry, visual audit captures, package aliases, and surface style matrix stay in sync. The visual audit harness fulfills Google Fonts requests with a local CSS fixture so headless runs do not depend on external font fetches.
+Canonical visual state ids are registered in `tests/visual-state-registry.mjs`; `tests/surface-style-matrix-contract.mjs` verifies the registry, visual audit captures, package aliases, and surface style matrix stay in sync. The visual audit harness starts its own local static server for the default `127.0.0.1:8795` target when one is not already reachable, and fulfills Google Fonts requests with a local CSS fixture so headless runs do not depend on external font fetches.
 
 Visual audit artifacts now include `routeEvidence` in each state JSON plus `route-evidence-summary.json` in the run folder. Treat `proofLane: constructed-surface` as layout/surface proof only; it means the state was shaped by URL params, app actions, or fixture DOM/dataset setup. `17-mobile-thread-inspector`, `21-mobile-route-trace-visible`, and `24-mobile-map-focus-search` are intentionally `real-route` visual states: search input, first-result focus, and the relevant visible controls must be used. `11-mobile-selected-card-map-trail` and `11-desktop-selected-card-map-trail` intentionally remain constructed guards for stale/legacy map-trail geometry; the real mobile mapped traversal route resolves through `24-mobile-map-focus-search`. Use `qa:product-playthrough` when the question is whether the broader product route can reach a state through visible interactions. Use `qa:real-route:visual` when the proof must be screenshot evidence from visible clicks only, with no debug-probe or forced-state fallback.
 
@@ -42,7 +42,7 @@ Visual audit artifacts now include `routeEvidence` in each state JSON plus `rout
 | `qa:surface:compass-rail` | 19-mobile-compass-rail | |
 | `qa:surface:mode-grid` | 20-mobile-mode-grid-visible | |
 | `qa:surface:route-trace` | 21-mobile-route-trace-visible | real-click route; asserts route trace lines, diagnostics, route motion, and shader time advance after focusing a search result |
-| `qa:surface:semantic-dive-320` | 22-mobile-semantic-dive-320 | narrow 320px semantic-dive geometry |
+| `qa:surface:semantic-dive-320` | 22-mobile-semantic-dive-320 | real-click route into narrow 320px semantic-dive geometry |
 | `qa:surface:short-landscape` | 23-mobile-short-landscape | short landscape 896x414 focus-search geometry |
 | `qa:product-playthrough` | live mobile/desktop/short-landscape walkthrough | observational product QA; writes screenshots and runtime JSON under `tmp/product-qa/<timestamp>/` |
 | `qa:real-route:visual` | mobile search -> focus -> semantic dive -> 320px/short-landscape dive -> map -> reset | strict visible-interaction screenshot lane; writes artifacts under `tmp/real-route-visual/<timestamp>/` and fails on debug-probe/forced-state evidence |
@@ -60,6 +60,10 @@ States: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-resu
 | `qa:micro-interactions` | `tests/micro-surface-interactions-contract.mjs` — micro-demo choreography, panel transitions |
 | `qa:motion-state` | `tests/motion-state-contract.mjs` — reduced-motion JS state wiring |
 | `qa:reduced-motion-transition` | `tests/reduced-motion-transition-contract.mjs` — canonical reduced-motion owner check + Playwright computed-style proof of transition suppression |
+
+## Cache Busters
+
+`npm run refresh:cache` remains the strict global refresh path for release/checkpoint work. For narrow UI cleanup, `node tests/cache-buster-check.js --fix --assets=css/mobile_premium_focus.css` updates only the requested asset and the ancestor import references needed for that asset to load fresh. `npm run test` still runs the full cache-buster check.
 
 ## Semantic Space Scripts
 
@@ -110,7 +114,7 @@ Runs the pinned ordered contract suite from `tests/run-all-contracts.js`; `tests
 | `test:contract:motion` | `motion` | camera-controls-motion, focus-pocket-motion, motion-state, camera-auto-rotate-settle, semantic-dive-reverse, focus-transition (6 contracts) |
 | `test:contract:browser` | `browser` | focus-stage-render, info-panel-collapsed-render, mode-chip-state-render, weather-widget-render, connection-analysis-render-state, search-peek-expanded-render (6 contracts, 5-20s each) - Playwright browser launch required |
 | `test:contract:render` | `render` | Same contracts as `browser` - backward-compatible alias; prefer `test:contract:browser` for new scripts |
-| `test:contract:quality` | `quality` | css-manifest-contract, focus-stage-css-ownership-contract, css-transient-state-ownership-contract, ui-quality-contract, micro-surface-interactions, surface-redundancy, aria-sync-contract, focus-trap-contract, persistence-contract, disposal-hygiene-contract.spec.js (10 contracts; may write tmp reports and fails on UI quality regressions) |
+| `test:contract:quality` | `quality` | css-manifest-contract, design-token-doc-contract, surface-style-matrix-contract, focus-stage-css-ownership-contract, css-transient-state-ownership-contract, mobile-chrome-ownership-contract, ui-quality-contract, micro-surface-interactions, surface-redundancy, aria-sync-contract, focus-trap-contract, window-global-allowlist-contract, persistence-contract, disposal-hygiene-contract.spec.js (14 contracts; may write tmp reports and fails on UI quality regressions) |
 | `test:contract:full` | `full` | All pinned contracts in manifest-defined order |
 | `test:contract:phase-a` | phase-a surfaces | info-panel-empty, compass-rail, loading-overlay, mode-grid |
 | `test:contract:phase-b` | phase-b surfaces | filters, thread-inspector, controls, search-chrome, info-panel-populated |

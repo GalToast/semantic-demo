@@ -3,6 +3,7 @@ import {
     isNumericOnlySearchQuery,
     resultMatchesNumericSearchQuery,
     mapSemanticSearchServiceResult,
+    mapSemanticSearchResults,
     hydrateSemanticResultContexts
 } from '../../js/modules/search-mapper.js';
 import { state } from '../../js/state.js';
@@ -94,6 +95,20 @@ describe('search-mapper', () => {
             const mapped = mapSemanticSearchServiceResult(row);
             expect(mapped).not.toBeNull();
             expect(mapped.point.name).toBe('1845 Solutions');
+            expect(state.points[0].name).toBe('Alpha Corp');
+        });
+
+        it('maps static-dev mock rows to valid focusable point indices by order', () => {
+            const results = mapSemanticSearchResults([
+                { lead_id: 'mock-coffee-1', name: 'Third Gen Coffee', city: 'The Woodlands', score: 0.95 },
+                { lead_id: 'mock-coffee-2', name: 'Blue Door Coffee', city: 'Conroe', score: 0.9 }
+            ]);
+
+            expect(results).toHaveLength(2);
+            expect(results[0].index).toBe(0);
+            expect(results[1].index).toBe(1);
+            expect(results[0].point.name).toBe('Third Gen Coffee');
+            expect(results[1].point.name).toBe('Blue Door Coffee');
             expect(state.points[0].name).toBe('Alpha Corp');
         });
 

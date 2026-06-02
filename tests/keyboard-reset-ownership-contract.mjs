@@ -114,7 +114,7 @@ try {
   const rfAfterDecl = lifecycle.slice(rfStart + 'export function resetExplorationFocus'.length);
   const rfBodyStart = rfAfterDecl.indexOf('{');
   assert(rfBodyStart !== -1, 'resetExplorationFocus must have a function body');
-  const rfBodySlice = rfAfterDecl.slice(rfBodyStart + 1, rfBodyStart + 800);
+  const rfBodySlice = rfAfterDecl.slice(rfBodyStart + 1, rfBodyStart + 1400);
   assert(
     rfBodySlice.includes('state.navState') &&
     rfBodySlice.includes('syncFocusStage') &&

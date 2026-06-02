@@ -87,12 +87,24 @@ function testRendererOwnsVariantDecision() {
     'syncSelectedCardContentVariant() must gate map summary on currentView=map and panelSurface=map-focus-search'
   );
   assert(
-    /cardEl\.dataset\.contentVariant\s*=\s*isMapSummary\s*\?\s*['"]map-summary['"]/.test(src),
-    '#selected-card must declare data-content-variant="map-summary"'
+    /cardEl\.dataset\.contentVariant\s*=[\s\S]{0,180}isFocusStageOwner\s*\?\s*['"]focus-stage['"][\s\S]{0,120}isMapSummary\s*\?\s*['"]map-summary['"]/.test(src),
+    '#selected-card must declare data-content-variant="focus-stage" before the map-summary fallback'
   );
   assert(
-    /cardEl\.dataset\.contentOwner\s*=\s*isMapSummary\s*\?\s*['"]selected-map-summary['"]/.test(src),
-    '#selected-card must declare data-content-owner="selected-map-summary"'
+    /cardEl\.dataset\.contentOwner\s*=[\s\S]{0,180}isFocusStageOwner\s*\?\s*['"]focus-stage['"][\s\S]{0,120}isMapSummary\s*\?\s*['"]selected-map-summary['"]/.test(src),
+    '#selected-card must declare data-content-owner="focus-stage" before the selected-map-summary fallback'
+  );
+  assert(
+    /function\s+focusStageOwnsSelectedContent\s*\(/.test(src) &&
+      src.includes("'focus'") &&
+      src.includes("'focus-search'") &&
+      src.includes("'semantic-dive'") &&
+      /const\s+isFocusStageOwner\s*=[\s\S]{0,120}focusStageOwnsSelectedContent\s*\(\s*surface\s*\)/.test(src),
+    'renderer must treat focus, focus-search, and semantic-dive as focus-stage selected-content owners'
+  );
+  assert(
+    /if\s*\(\s*isFocusStageOwner\s*\)\s*\{[\s\S]{0,260}setSurfaceHidden\s*\(\s*detailsEl\s*,\s*true\s*\)/.test(src),
+    'renderer must hide #selected-details when the focus stage owns selected content'
   );
   assert(
     /setSurfaceHidden\s*\(\s*detailsEl\s*,\s*isMapSummary\s*\)/.test(src),

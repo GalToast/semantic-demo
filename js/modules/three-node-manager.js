@@ -9,18 +9,18 @@ import { seededUnit } from './utils/seeded-random.js';
 // ── Constants ───────────────────────────────────────────────────────────────
 
 export const MYCELIUM_FIELD_SCALE = Object.freeze({
-    x: 2.8,
-    y: 2.25,
-    z: 3.25
+    x: 3.2,
+    y: 2.6,
+    z: 3.7
 });
 
 export const SCENE_ATMOSPHERE = Object.freeze({
     fogColor: SCENE_PALETTE.fog,
-    fogDensity: 0.0034,
+    fogDensity: 0.0028,
     clearAlpha: 1,
-    toneExposure: 0.92,
-    pointOpacityScale: 0.82,
-    sporeOpacity: 0.22
+    toneExposure: 0.95,
+    pointOpacityScale: 1.0,
+    sporeOpacity: 0.38
 });
 
 const NODE_SPORE_BASE_RADIUS = 0.0019;
@@ -314,7 +314,7 @@ export function createPoints() {
         state.targetPositions.push({x: fx, y: fy, z: fz});
         state.originalPositions.push({x: fx, y: fy, z: fz});
 
-        const color = getThreadCategoryColor(cluster, state.COLORS).lerp(new THREE.Color(THREAD_TINT_COLOR), 0.018);
+        const color = getThreadCategoryColor(cluster, state.COLORS).lerp(new THREE.Color(THREAD_TINT_COLOR), 0.005);
         const radialDepth = Math.sqrt(fx * fx + fy * fy + fz * fz);
         const depthFactor = THREE.MathUtils.clamp(1.16 - radialDepth * 0.14, 0.82, 1.12);
         const colorOffset = i * 3;

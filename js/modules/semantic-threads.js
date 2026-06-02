@@ -1,8 +1,8 @@
 // js/modules/semantic-threads.js — semantic thread artifact loading
 import { state } from '../state.js';
-import { recordSemanticLaneSnapshot } from './url-navigation-adapter.js';
 import { updateSemanticThreadsStatus } from './state-mutators.js';
 import { normalizeRelationshipRole } from './relationship-roles.js';
+import { recordSemanticLaneSnapshot } from './semantic-lane.js';
 
 const SEMANTIC_THREAD_RETRY_DELAYS_MS = [2500, 8000, 15000];
 

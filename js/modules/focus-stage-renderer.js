@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { publish, EVENTS } from './event-bus.js';
 import { getBusinessNamePresentation, sanitizePublicFacingNote } from './utils/dom-formatters.js';
 
 /**
@@ -6,14 +7,6 @@ import { getBusinessNamePresentation, sanitizePublicFacingNote } from './utils/d
  *
  * Dedicated module for rendering components within the "Focus Stage" business detail card.
  */
-
-// ── Viewport helper (private) ──────────────────────────────────────────────────
-
-let _switchView = () => {};
-
-export function initFocusStageRendererAdapter({ switchView } = {}) {
-    if (typeof switchView === 'function') _switchView = switchView;
-}
 
 // ── Renderers ──────────────────────────────────────────────────────────────────
 
@@ -113,7 +106,7 @@ export function renderSelectedActionRow(point) {
     const btn = document.getElementById('btn-selected-map');
     if (btn) {
         btn.addEventListener('click', () => {
-            _switchView('map');
+            publish(EVENTS.VIEW_CHANGE_REQUESTED, { view: 'map' });
         });
     }
 }
@@ -129,6 +122,11 @@ function setSurfaceHidden(el, hidden) {
         el.setAttribute('aria-hidden', 'false');
         el.style.display = '';
     }
+}
+
+function focusStageOwnsSelectedContent(surface) {
+    return state.currentView === 'galaxy'
+        && ['focus', 'focus-search', 'semantic-dive'].includes(surface);
 }
 
 function getSelectedMapSummaryRole(point) {
@@ -161,10 +159,26 @@ export function syncSelectedCardContentVariant(point = null) {
     const summaryEl = document.getElementById('selected-map-summary');
     const surface = document.body?.dataset?.panelSurface || '';
     const isMapSummary = Boolean(point) && state.currentView === 'map' && surface === 'map-focus-search';
+    const isFocusStageOwner = Boolean(point) && focusStageOwnsSelectedContent(surface);
 
     if (cardEl) {
-        cardEl.dataset.contentVariant = isMapSummary ? 'map-summary' : (point ? 'detail' : 'empty');
-        cardEl.dataset.contentOwner = isMapSummary ? 'selected-map-summary' : 'selected-detail-card';
+        cardEl.dataset.contentVariant = isFocusStageOwner ? 'focus-stage' : isMapSummary ? 'map-summary' : (point ? 'detail' : 'empty');
+        cardEl.dataset.contentOwner = isFocusStageOwner ? 'focus-stage' : isMapSummary ? 'selected-map-summary' : 'selected-detail-card';
+        if (isFocusStageOwner) {
+            cardEl.setAttribute('aria-hidden', 'true');
+            cardEl.inert = true;
+        } else {
+            cardEl.removeAttribute('aria-hidden');
+            cardEl.inert = false;
+        }
+    }
+
+    if (isFocusStageOwner) {
+        setSurfaceHidden(summaryEl, true);
+        setSurfaceHidden(titleEl, true);
+        setSurfaceHidden(detailsEl, true);
+        if (emptyEl) setSurfaceHidden(emptyEl, true);
+        return;
     }
 
     setSurfaceHidden(summaryEl, !isMapSummary);
@@ -231,4 +245,8 @@ export function buildSelectedMatchNarrative(point) {
     if (!point) return '';
     if (state.currentSearchSummary?.reason) return state.currentSearchSummary.reason;
     return '';
+}
+
+export function initFocusStageRendererAdapter() {
+    // Legacy adapter retired in Phase 3
 }

@@ -79,6 +79,13 @@ const TARGET_URL = positionalUrl(cliArgs);
 let server = null;
 let browser = null;
 
+function closeServer(serverInstance) {
+  return new Promise((resolve) => {
+    if (!serverInstance) return resolve();
+    serverInstance.close(() => resolve());
+  });
+}
+
 async function run() {
   let serverPort = PORT;
 
@@ -106,7 +113,7 @@ async function run() {
 
   // Load the app
   console.log('[load] navigating...');
-  await page.goto(`${baseUrl}/vector-explorer-polished.html`, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(e => {
+  await page.goto(`${baseUrl}/vector-explorer-polished.html?nodemo=1`, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(e => {
     console.error('[load] navigation error:', e.message);
   });
   await page.waitForLoadState('load', { timeout: 8000 }).catch(() => {});
@@ -129,7 +136,7 @@ async function run() {
   console.log('\n[console errors]', errors.length === 0 ? 'none' : errors.join('; '));
 
   await browser.close();
-  if (server) server.close();
+  await closeServer(server);
 
   const failures = [
     ...focusSearchInfo.failures,
@@ -166,7 +173,7 @@ async function forceFocusSearch(page) {
     document.body.dataset.routeDirector = 'search-corridor';
 
     // Apply state via __APP_STATE__ primary, __TEST_STATE__ fallback.
-    // These dataset and state writes are CSS contract fixture setup — acceptable.
+    // These dataset and state writes are CSS contract fixture setup.
     const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
     const byLeadId = s?.pointIndexByLeadId;
     const rawIndex = byLeadId?.get?.('1') ?? byLeadId?.get?.(1) ?? 0;
@@ -181,18 +188,23 @@ async function forceFocusSearch(page) {
       setTrailDepth(1, { skipUrlSync: true });
     }
     if (s) {
-      s.currentView = 'galaxy';
-      s.focusedNode = Number.isFinite(s.focusedNode) ? s.focusedNode : focusIndex;
-      s.navState = s.navState || {};
-      s.navState.focusedIndex = Number.isFinite(s.navState.focusedIndex)
-        ? s.navState.focusedIndex
-        : s.focusedNode;
-      s.navState.trailNeighborIndices = Array.isArray(s.navState.trailNeighborIndices)
-        && s.navState.trailNeighborIndices.length
-        ? s.navState.trailNeighborIndices
-        : [1];
-      s.navState.walkHistoryIndices = [0, s.navState.focusedIndex];
-      s.trailDepth = Math.max(1, Number(s.trailDepth) || 1);
+      const mutate = typeof window.withStateMutation === 'function'
+        ? window.withStateMutation
+        : (fn) => fn();
+      mutate(() => {
+        s.currentView = 'galaxy';
+        s.focusedNode = Number.isFinite(s.focusedNode) ? s.focusedNode : focusIndex;
+        s.navState = s.navState || {};
+        s.navState.focusedIndex = Number.isFinite(s.navState.focusedIndex)
+          ? s.navState.focusedIndex
+          : s.focusedNode;
+        s.navState.trailNeighborIndices = Array.isArray(s.navState.trailNeighborIndices)
+          && s.navState.trailNeighborIndices.length
+          ? s.navState.trailNeighborIndices
+          : [1];
+        s.navState.walkHistoryIndices = [0, s.navState.focusedIndex];
+        s.trailDepth = Math.max(1, Number(s.trailDepth) || 1);
+      });
     }
     refreshCompositionState?.();
     window.updateJourneyCompass?.();
@@ -233,11 +245,15 @@ async function forceFocusSearch(page) {
   await applyFixture();
   await page.waitForTimeout(50);
   await applyFixture();
-  await waitForTouchTargets(page, ['btn-focus-dive', 'btn-focus-prev', 'btn-focus-next']);
+  await waitForTouchTargets(page, ['btn-focus-dive']);
 }
 
 async function forceSemanticDive(page) {
   const applyFixture = async () => page.evaluate(() => {
+    const actions = window.__APP_ACTIONS__ || {};
+    actions.setSemanticDiveMode?.(true);
+    actions.refreshCompositionState?.();
+
     document.body.classList.add('is-active');
     document.body.dataset.activeView = 'galaxy';
     document.body.dataset.graphContext = document.body.dataset.graphContext || 'focus';
@@ -261,7 +277,7 @@ async function forceSemanticDive(page) {
       insideControls.hidden = false;
       insideControls.setAttribute('aria-hidden', 'false');
     }
-    ['btn-inside-next', 'btn-inside-county'].forEach((id) => {
+    ['btn-inside-next', 'btn-inside-map', 'btn-inside-county'].forEach((id) => {
       const button = document.getElementById(id);
       if (button) {
         button.hidden = false;
@@ -277,7 +293,7 @@ async function forceSemanticDive(page) {
   await applyFixture();
   await page.waitForTimeout(50);
   await applyFixture();
-  await waitForTouchTargets(page, ['btn-inside-next', 'btn-inside-county']);
+  await waitForTouchTargets(page, ['btn-inside-next', 'btn-inside-map', 'btn-inside-county']);
 }
 
 async function waitForTouchTargets(page, ids) {
@@ -363,11 +379,9 @@ async function auditFocusSearch(page) {
       }
     }
 
-    // --- dive/route buttons touch targets ---
+    // --- dive button touch target ---
     const diveBtn = document.querySelector('#btn-focus-dive');
-    const routeNextBtn = document.querySelector('#btn-focus-next');
-    const routePrevBtn = document.querySelector('#btn-focus-prev');
-    for (const [btn, name] of [[diveBtn,'dive'],[routeNextBtn,'route-next'],[routePrevBtn,'route-prev']]) {
+    for (const [btn, name] of [[diveBtn,'dive']]) {
       if (!btn) { fail(`touch:${name} missing`); continue; }
       const style = getComputedStyle(btn);
       if (style.display === 'none' || style.visibility === 'hidden') { fail(`touch:${name} not visible`); continue; }
@@ -377,6 +391,23 @@ async function auditFocusSearch(page) {
       } else {
         pass(`touch-target:${name} ok ${r.width.toFixed(0)}x${r.height.toFixed(0)}px`);
       }
+    }
+
+    // Compact focus-search uses the journey compass and Step Inside affordance;
+    // legacy Prev/Next lanes must not render as orphan controls.
+    const isRendered = (el) => {
+      if (!el) return false;
+      const style = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return style.display !== 'none' && style.visibility !== 'hidden' && r.width > 0 && r.height > 0;
+    };
+    const focusJourney = document.querySelector('.focus-stage-journey.active');
+    const routeNextBtn = document.querySelector('#btn-focus-next');
+    const routePrevBtn = document.querySelector('#btn-focus-prev');
+    if (isRendered(focusJourney) && (isRendered(routeNextBtn) || isRendered(routePrevBtn))) {
+      fail('route-control-lane:hidden compact focus-search should not render orphan Prev/Next controls');
+    } else {
+      pass('route-control-lane:hidden');
     }
 
     // --- compass does not overlap card ---
@@ -428,11 +459,17 @@ async function auditSemanticDive(page) {
 
     // --- inside buttons touch targets ---
     const nextStopBtn = document.querySelector('#btn-inside-next');
+    const mapBtn = document.querySelector('#btn-inside-map');
     const countyBtn = document.querySelector('#btn-inside-county');
-    for (const [btn, name] of [[nextStopBtn,'next-stop'],[countyBtn,'county']]) {
+    for (const [btn, name] of [[nextStopBtn,'next-stop'],[mapBtn,'map'],[countyBtn,'county']]) {
       if (!btn) { fail(`touch:${name} missing`); continue; }
       const style = getComputedStyle(btn);
-      if (style.display === 'none' || style.visibility === 'hidden') { fail(`touch:${name} not visible`); continue; }
+      const hidden = btn.hidden || style.display === 'none' || style.visibility === 'hidden';
+      if (hidden && name === 'next-stop' && btn.textContent.trim() === 'Trail Complete') {
+        pass('touch:next-stop hidden when trail is complete');
+        continue;
+      }
+      if (hidden) { fail(`touch:${name} not visible`); continue; }
       const r = btn.getBoundingClientRect();
       if (r.width < 43.5 || r.height < 43.5) {
         fail(`touch-target:${name} too small ${r.width.toFixed(0)}x${r.height.toFixed(0)}px (min 44px)`);
@@ -528,6 +565,5 @@ async function reportSemanticDive(page, info) {
 run().catch(err => {
   console.error('[fatal]', err.message);
   if (browser) browser.close().catch(() => {});
-  if (server) server.close().catch(() => {});
-  process.exit(1);
+  closeServer(server).finally(() => process.exit(1));
 });

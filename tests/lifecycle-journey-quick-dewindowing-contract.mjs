@@ -3,7 +3,7 @@
  *
  * Contract test for Batch 1 quick dewindowing:
  * - Verifies lifecycle.js does NOT assign window.updateExplorationUi
- * - Verifies journey-point-color.js routes search status through the adapter
+ * - Verifies journey-point-color.js routes search status through the event bus
  *
  * Source-only; no DOM, no Playwright. Runs in Node.
  *
@@ -61,29 +61,30 @@ function testLifecycleNoWindowUpdateExplorationUi() {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 2: journey-point-color.js routes search status through adapter
+// TEST 2: journey-point-color.js routes search status through the event bus
 //
 // Rationale: point-color applies search glow state by calling the injected
-// search lifecycle adapter. This preserves the decoupled boundary without a
-// raw window bridge or a direct lifecycle import.
+// search status event. This preserves the decoupled boundary without a raw
+// window bridge, lifecycle import, or retired lifecycle adapter.
 // ---------------------------------------------------------------------------
 
 function testPointColorAdapterSyncSearchStatusForFocus() {
-  console.log('\n[TEST 2] journey-point-color.js routes syncSearchStatusForFocus through adapter');
+  console.log('\n[TEST 2] journey-point-color.js routes search status through the event bus');
 
   const src = fs.readFileSync(JOURNEY_POINT_COLOR_PATH, 'utf-8');
 
   assert(
-    /import\s+\{\s*syncSearchStatusForFocus\s*\}\s+from\s+['"]\.\/search-lifecycle-adapter\.js['"]/.test(src),
-    'journey-point-color.js must import syncSearchStatusForFocus from search-lifecycle-adapter.js'
+    /import\s+\{\s*publish,\s*EVENTS\s*\}\s+from\s+['"]\.\/event-bus\.js['"]/.test(src),
+    'journey-point-color.js must import publish and EVENTS from event-bus.js'
   );
 
-  const hasCall = /searchGlowActive[\s\S]{0,500}\bsyncSearchStatusForFocus\s*\(/.test(src);
-  assert(hasCall, 'journey-point-color.js must call adapter syncSearchStatusForFocus in searchGlowActive block');
+  const hasPublication = /searchGlowActive[\s\S]{0,650}\bpublish\(EVENTS\.SEARCH_STATUS_SYNC_REQUESTED/.test(src);
+  assert(hasPublication, 'journey-point-color.js must publish SEARCH_STATUS_SYNC_REQUESTED in searchGlowActive block');
 
   assert(!/window\.syncSearchStatusForFocus\b/.test(src), 'journey-point-color.js must not call window.syncSearchStatusForFocus');
+  assert(!/search-lifecycle-adapter/.test(src), 'journey-point-color.js must not import the retired search lifecycle adapter');
 
-  console.log('  PASS - syncSearchStatusForFocus routed through adapter');
+  console.log('  PASS - search status routed through event bus');
 }
 
 // ---------------------------------------------------------------------------
@@ -106,7 +107,7 @@ function testNoLifecycleJourneyCycle() {
 
 // ---------------------------------------------------------------------------
 // TEST 4: journey-point-color.js does NOT import syncSearchStatusForFocus directly from lifecycle
-// (safe boundary: point-color uses the search lifecycle adapter, not lifecycle)
+// (safe boundary: point-color uses an event request, not lifecycle)
 // ---------------------------------------------------------------------------
 
 function testPointColorDoesNotDirectImportSyncSearchStatusForFocus() {
@@ -114,8 +115,8 @@ function testPointColorDoesNotDirectImportSyncSearchStatusForFocus() {
 
   const src = fs.readFileSync(JOURNEY_POINT_COLOR_PATH, 'utf-8');
 
-  // syncSearchStatusForFocus should NOT be imported from lifecycle; the injected
-  // search-lifecycle-adapter is the decoupled boundary.
+  // syncSearchStatusForFocus should NOT be imported from lifecycle; the event
+  // bus request is the decoupled boundary.
   const hasDirectImport = /import\s+\{[^}]*\bsyncSearchStatusForFocus\b[^}]*\}\s+from\s+['"]\.\/lifecycle\.js['"]/.test(src);
   assert(!hasDirectImport,
     'journey-point-color.js must NOT directly import syncSearchStatusForFocus from lifecycle');

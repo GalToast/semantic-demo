@@ -32,19 +32,51 @@ export function resultMatchesNumericSearchQuery(result, query) {
     return contextualDigits.some((v) => v.includes(digits));
 }
 
-export function mapSemanticSearchServiceResult(row) {
-    const pointIndex = state.pointIndexByLeadId.get(String(row.lead_id));
-    if (pointIndex === undefined) return null;
-    if (!(Number.isFinite(pointIndex) && pointIndex >= 0 && pointIndex < state.points.length)) return null;
-    const sourcePoint = state.points[pointIndex];
-    if (!sourcePoint || !isPointVisible(pointIndex, state.points, state.activeClusterFilter, state.activeFilters)) return null;
+function getMockFallbackPointIndex(order = 0) {
+    if (!Array.isArray(state.points) || state.points.length === 0) return null;
+    const visibleIndices = [];
+    state.points.forEach((point, index) => {
+        if (point && isPointVisible(index, state.points, state.activeClusterFilter, state.activeFilters)) {
+            visibleIndices.push(index);
+        }
+    });
+    if (!visibleIndices.length) return null;
+    return visibleIndices[Math.max(0, order) % visibleIndices.length];
+}
 
-    // Prefer row-level name when present (e.g. mock fallback data) so the display name reflects
-    // the original "1845 Solutions" rather than a slug stored in data.dat. We shallow-copy the
-    // point to avoid mutating the global state.
-    const point = (row.name && row.name !== sourcePoint.name)
-        ? { ...sourcePoint, name: row.name }
-        : sourcePoint;
+export function mapSemanticSearchServiceResult(row, order = 0) {
+    // For mock-fallback rows, use the supplied metadata directly so the demo reads believably
+    // even when data.dat has slug-style names. For real rows, look up the hydrated point.
+    const isMockRow = String(row.lead_id || '').startsWith('mock-');
+    let point;
+    let pointIndex;
+
+    if (isMockRow) {
+        pointIndex = Number.isFinite(Number(row.index))
+            ? Number(row.index)
+            : getMockFallbackPointIndex(order);
+        if (!(Number.isFinite(pointIndex) && pointIndex >= 0 && pointIndex < state.points.length)) return null;
+        const sourcePoint = state.points[pointIndex] || {};
+        point = {
+            ...sourcePoint,
+            name: row.name,
+            city: row.city || sourcePoint.city,
+            naics: row.naics || sourcePoint.naics,
+            what: row.naics || sourcePoint.what,
+            website: row.website ?? sourcePoint.website,
+            email: row.email ?? sourcePoint.email,
+            phone: row.phone ?? sourcePoint.phone
+        };
+    } else {
+        pointIndex = state.pointIndexByLeadId.get(String(row.lead_id));
+        if (pointIndex === undefined) return null;
+        if (!(Number.isFinite(pointIndex) && pointIndex >= 0 && pointIndex < state.points.length)) return null;
+        const sourcePoint = state.points[pointIndex];
+        if (!sourcePoint || !isPointVisible(pointIndex, state.points, state.activeClusterFilter, state.activeFilters)) return null;
+        point = (row.name && row.name !== sourcePoint.name)
+            ? { ...sourcePoint, name: row.name }
+            : sourcePoint;
+    }
 
     return {
         point,
@@ -61,7 +93,7 @@ export function mapSemanticSearchServiceResult(row) {
 
 export function mapSemanticSearchResults(serviceResults) {
     return (serviceResults || [])
-        .map(mapSemanticSearchServiceResult)
+        .map((row, order) => mapSemanticSearchServiceResult(row, order))
         .filter(Boolean);
 }
 

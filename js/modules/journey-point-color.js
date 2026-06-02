@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
+import { publish, EVENTS } from './event-bus.js';
 import { describeCluster } from './utils/ui-presentation.js';
 import { formatBusinessName } from './utils/dom-formatters.js';
 import { isPointVisible } from './utils/geo-data.js';
-import { syncSearchStatusForFocus } from './search-lifecycle-adapter.js';
 
 const nodeSporeSyncColor = new THREE.Color();
 
@@ -107,7 +107,10 @@ export function applyPointFilterColors() {
         state.searchGlowRenderStateKey = '';
         const topIndex = state.searchGlowTopIndex ?? (state.searchGlowIndices.values().next().value ?? -1);
         const topPoint = Number.isFinite(topIndex) ? state.points[topIndex] : null;
-        syncSearchStatusForFocus(topPoint, { fromSearchResult: true, skipTraversalUiUpdate: true });
+        publish(EVENTS.SEARCH_STATUS_SYNC_REQUESTED, {
+            point: topPoint,
+            options: { fromSearchResult: true, skipTraversalUiUpdate: true }
+        });
     }
 }
 

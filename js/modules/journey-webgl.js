@@ -39,9 +39,3 @@ setRouteArrivalOverlayUpdaters({
     updateRouteTraceOverlayPositions,
     updateArrivalHandoffOverlay
 });
-
-// Window exposures for inline scripts and compatibility
-if (typeof window !== 'undefined') {
-    window.syncArrivalHandoffOverlay = syncArrivalHandoffOverlay;
-    window.disposeArrivalHandoffOverlay = disposeArrivalHandoffOverlay;
-}

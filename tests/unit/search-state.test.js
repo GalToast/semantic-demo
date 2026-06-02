@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as searchState from '../../js/modules/search-state.js';
-import * as searchLifecycleAdapter from '../../js/modules/search-lifecycle-adapter.js';
+import { subscribe, EVENTS } from '../../js/modules/event-bus.js';
 import { state, withStateMutation } from '../../js/state.js';
 
 // Mock dependencies
@@ -76,40 +76,10 @@ vi.mock('../../js/modules/navigation-state.js', () => ({
     clearTrailThreadState: vi.fn()
 }));
 
-vi.mock('../../js/modules/search-ui-adapter.js', () => ({
-    hideTooltip: vi.fn(),
-    positionTooltip: vi.fn(),
-    updateTooltipContent: vi.fn()
-}));
-
 vi.mock('../../js/modules/search-panel-adapter.js', () => ({
     setSearchContainerState: vi.fn(),
     setSearchGlowState: vi.fn(),
     setupMobileSearchSheetToggle: vi.fn()
-}));
-
-vi.mock('../../js/modules/search-lifecycle-adapter.js', () => ({
-    updateUrlState: vi.fn(),
-    setSearchPanelState: vi.fn(),
-    focusOnPoint: vi.fn(),
-    resetNodePositions: vi.fn(),
-    dispatchNavTransition: vi.fn(),
-    syncSearchStatusForFocus: vi.fn(),
-    updateJourneyCompass: vi.fn(),
-    refreshCompositionState: vi.fn(),
-    recordEmptySearch: vi.fn(),
-    clearMobileRouteFieldPeek: vi.fn(),
-    clearCompactSearchResultRevealTimers: vi.fn(),
-    settleCompactSearchFocusCard: vi.fn(),
-    switchView: vi.fn(),
-    resetExplorationFocus: vi.fn(),
-    scheduleSearchFocusTask: vi.fn((fn, delay) => {
-        if (delay) {
-            setTimeout(fn, delay);
-        } else {
-            fn();
-        }
-    })
 }));
 
 // Mock utils
@@ -176,6 +146,8 @@ describe('search-state orchestration', () => {
     });
 
     it('should clear search related focus state', () => {
+        const resetEvents = [];
+        const unsubscribe = subscribe(EVENTS.STATE_RESET, (payload) => resetEvents.push(payload));
         withStateMutation(() => {
             state.selectedPoint = { id: 1 };
             state.focusedNode = 1;
@@ -184,9 +156,10 @@ describe('search-state orchestration', () => {
         });
         
         searchState.clearSearchRelatedFocusState();
+        unsubscribe();
         
         expect(state.selectedPoint).toBeNull();
-        expect(searchLifecycleAdapter.dispatchNavTransition).toHaveBeenCalledWith('RESET_FOCUS');
+        expect(resetEvents.at(-1)).toMatchObject({ reason: 'filter-invalidate', silent: true });
         expect(state.trailIndices.size).toBe(0);
     });
 });

@@ -63,16 +63,18 @@ export function calculateSignalScore(point) {
 
 export function highlightMatch(text, query) {
     if (!text) return '';
-    if (query === null || query === undefined) return { matched: false, fragments: [] };
-    const idx = text.toLowerCase().indexOf(query.toLowerCase());
-    if (idx === -1) return text;
-    const escapedQuery = escapeHtml(query);
-    const escapedPrefix = escapeHtml(text.substring(0, idx));
-    const escapedSuffix = escapeHtml(text.substring(idx + query.length));
+    const safeText = String(text);
+    const safeQuery = query === null || query === undefined ? '' : String(query);
+    if (!safeQuery) return escapeHtml(safeText);
+    const idx = safeText.toLowerCase().indexOf(safeQuery.toLowerCase());
+    if (idx === -1) return escapeHtml(safeText);
+    const escapedMatch = escapeHtml(safeText.substring(idx, idx + safeQuery.length));
+    const escapedPrefix = escapeHtml(safeText.substring(0, idx));
+    const escapedSuffix = escapeHtml(safeText.substring(idx + safeQuery.length));
     return (
         escapedPrefix +
-        '<mark style="background:rgba(226,244,241,0.12);color:inherit;padding:0 2px;border-radius:2px;box-shadow:inset 0 -1px 0 rgba(121,235,222,0.38)">' +
-        escapedQuery +
+        '<mark class="search-result-match">' +
+        escapedMatch +
         '</mark>' +
         escapedSuffix
     );

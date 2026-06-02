@@ -50,8 +50,20 @@
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.02em;
+    line-height: 1;
     transition: var(--transition-spring);
     overflow: hidden;
+}
+
+.view-toggle button .ui-icon {
+    width: 16px;
+    height: 16px;
+    transform: translateY(1px);
+}
+
+.view-toggle button .icon-label {
+    margin-left: 0; /* Remove double gap since button has gap: 6px */
+    transform: translateY(0.5px);
 }
 
 .view-toggle button::before {

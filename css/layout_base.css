@@ -417,20 +417,20 @@ body:has(.info-panel.active) .panel-toggle {
 .legend-guide-kicker { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(143, 228, 221, 0.72); margin-bottom: 3px; }
 .legend-guide-title { font-family: 'Bricolage Grotesque', sans-serif; font-size: 18px; line-height: 0.96; color: rgba(255,255,255,0.97); }
 .legend-state-badge { border-radius: 999px; padding: 5px 9px; font-size: 10px; line-height: 1; color: rgba(243, 250, 249, 0.88); background: rgba(var(--color-primary-rgb), 0.12); border: 1px solid rgba(var(--color-primary-rgb), 0.24); white-space: nowrap; }
-.legend-guide-note { font-size: 12px; line-height: 1.48; color: rgba(226, 239, 237, 0.76); }
-.legend-guide-next { font-size: 11px; line-height: 1.45; color: rgba(255, 247, 214, 0.76); }
+.legend-guide-note { font-size: 12px; line-height: 1.48; color: rgba(255, 255, 255, 0.95); }
+.legend-guide-next { font-size: 11px; line-height: 1.45; color: rgba(255, 247, 214, 0.95); }
 .legend-lens-truth {
     display: flex;
     align-items: flex-start;
     gap: 8px;
     margin: 6px 0 0;
     padding: 8px 10px;
-    border: 1px solid rgba(82, 229, 215, 0.14);
+    border: 1px solid rgba(82, 229, 215, 0.25);
     border-radius: 12px;
     background:
-        radial-gradient(circle at 8% 45%, rgba(82, 229, 215, 0.12), transparent 32%),
-        linear-gradient(135deg, rgba(255, 217, 122, 0.06), rgba(82, 229, 215, 0.04));
-    color: rgba(222, 241, 240, 0.7);
+        radial-gradient(circle at 8% 45%, rgba(82, 229, 215, 0.15), transparent 32%),
+        linear-gradient(135deg, rgba(255, 217, 122, 0.08), rgba(82, 229, 215, 0.06));
+    color: rgba(255, 255, 255, 0.9);
     font-size: 10.5px;
     line-height: 1.35;
 }
@@ -448,32 +448,32 @@ body:has(.info-panel.active) .panel-toggle {
     inset: 5px 1px auto 1px;
     height: 1px;
     border-radius: 999px;
-    background: linear-gradient(90deg, rgba(255, 226, 132, 0.8), rgba(82, 229, 215, 0.78));
-    box-shadow: 0 0 10px rgba(82, 229, 215, 0.3);
+    background: linear-gradient(90deg, rgba(255, 226, 132, 0.9), rgba(82, 229, 215, 0.9));
+    box-shadow: 0 0 10px rgba(82, 229, 215, 0.4);
     transform-origin: center;
 }
 .legend-lens-truth-mark::before { transform: rotate(-17deg); }
-.legend-lens-truth-mark::after { transform: rotate(18deg); opacity: 0.6; }
+.legend-lens-truth-mark::after { transform: rotate(18deg); opacity: 0.8; }
 .legend-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.legend-chip { border-radius: 999px; padding: 5px 9px; font-size: 10px; line-height: 1; color: rgba(222, 235, 233, 0.72); background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); }
-.legend-chip.lane-healthy { color: rgba(224, 247, 242, 0.84); border-color: rgba(var(--color-primary-rgb), 0.22); background: rgba(var(--color-primary-rgb), 0.1); }
-.legend-chip.lane-reconnecting { color: rgba(255, 240, 191, 0.9); border-color: rgba(255,217,61,0.24); background: rgba(255,217,61,0.12); }
-.legend-chip.lane-degraded { color: rgba(255, 206, 187, 0.92); border-color: rgba(255,125,95,0.24); background: rgba(255,125,95,0.12); }
-.legend-divider { height: 1px; margin: 12px 0 10px; background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)); }
-.legend-section-title { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
+.legend-chip { border-radius: 999px; padding: 5px 9px; font-size: 10px; line-height: 1; color: rgba(255, 255, 255, 0.95); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); }
+.legend-chip.lane-healthy { color: rgba(255, 255, 255, 1); border-color: rgba(var(--color-primary-rgb), 0.3); background: rgba(var(--color-primary-rgb), 0.15); }
+.legend-chip.lane-reconnecting { color: rgba(255, 240, 191, 1); border-color: rgba(255,217,61,0.3); background: rgba(255,217,61,0.15); }
+.legend-chip.lane-degraded { color: rgba(255, 206, 187, 1); border-color: rgba(255,125,95,0.3); background: rgba(255,125,95,0.15); }
+.legend-divider { height: 1px; margin: 12px 0 10px; background: linear-gradient(90deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05)); }
+.legend-section-title { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); margin-bottom: 8px; font-weight: 600; }
 .legend-list { display: grid; gap: 6px; }
-.legend-item { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 10px; font-size: 11px; color: rgba(255,255,255,0.72); background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05); border-radius: 11px; cursor: pointer; text-align: left; transition: var(--transition-premium); }
-.legend-item:hover { transform: translateY(-2px); border-color: rgba(82, 229, 215, 0.24); background: rgba(255,255,255,0.042); box-shadow: var(--shadow-glass-glow); }
-.legend-item.active { border-color: rgba(82, 229, 215, 0.24); background: rgba(var(--color-primary-rgb), 0.08); box-shadow: inset 0 0 0 1px rgba(var(--color-primary-rgb), 0.07); }
+.legend-item { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 10px; font-size: 11px; color: rgba(255, 255, 255, 0.95); background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.08); border-radius: 11px; cursor: pointer; text-align: left; transition: var(--transition-premium); }
+.legend-item:hover { transform: translateY(-2px); border-color: rgba(82, 229, 215, 0.35); background: rgba(255,255,255,0.06); box-shadow: var(--shadow-glass-glow); }
+.legend-item.active { border-color: rgba(82, 229, 215, 0.35); background: rgba(var(--color-primary-rgb), 0.12); box-shadow: inset 0 0 0 1px rgba(var(--color-primary-rgb), 0.1); }
 .legend-item:focus-visible { outline: 2px solid rgba(var(--color-primary-rgb), 0.6); outline-offset: 2px; }
-.legend-item.is-focus-cluster { border-color: rgba(255, 217, 61, 0.18); box-shadow: inset 0 0 0 1px rgba(255,217,61,0.05); }
+.legend-item.is-focus-cluster { border-color: rgba(255, 217, 61, 0.25); box-shadow: inset 0 0 0 1px rgba(255,217,61,0.08); }
 .legend-copy { display: grid; gap: 4px; min-width: 0; }
-.legend-label { font-size: 11px; line-height: 1.25; color: rgba(247,248,255,0.92); }
+.legend-label { font-size: 11px; line-height: 1.25; color: rgba(255, 255, 255, 1); font-weight: 600; }
 .legend-meta { display: flex; flex-wrap: wrap; gap: 5px; min-height: 14px; }
-.legend-pill { border-radius: 999px; padding: 2px 6px; font-size: 9px; line-height: 1; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(236, 243, 242, 0.72); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06); }
-.legend-pill.focus { color: rgba(255,247,214,0.92); background: rgba(255,217,61,0.12); border-color: rgba(255,217,61,0.22); }
-.legend-pill.filter { color: rgba(224,247,242,0.9); background: rgba(var(--color-primary-rgb), 0.12); border-color: rgba(var(--color-primary-rgb), 0.22); }
-.legend-count { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.5); }
+.legend-pill { border-radius: 999px; padding: 2px 6px; font-size: 9px; line-height: 1; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.9); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); }
+.legend-pill.focus { color: rgba(255,247,214,1); background: rgba(255,217,61,0.15); border-color: rgba(255,217,61,0.3); }
+.legend-pill.filter { color: rgba(224,247,242,1); background: rgba(var(--color-primary-rgb), 0.15); border-color: rgba(var(--color-primary-rgb), 0.3); }
+.legend-count { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(255, 255, 255, 0.7); }
 .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(255,255,255,0.025); }
 
 @media (max-width: 768px) {
@@ -516,7 +516,7 @@ body:has(.info-panel.active) .panel-toggle {
         top: calc(58px + env(safe-area-inset-top, 0px));
         right: 12px;
         width: min(236px, calc(100vw - 24px));
-        max-height: min(46vh, 356px);
+        max-height: min(60vh, 480px);
         border-radius: 14px;
         background: linear-gradient(180deg, rgba(10, 14, 22, 0.85), rgba(7, 10, 18, 0.82));
         backdrop-filter: blur(18px);

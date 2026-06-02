@@ -1,4 +1,6 @@
 import fs from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import { inflateSync } from 'node:zlib';
 import { chromium } from 'playwright';
@@ -62,6 +64,106 @@ const shortLandscape = { width: 896, height: 414 };
 
 async function ensureDir(dir) {
   await fs.mkdir(dir, { recursive: true });
+}
+
+function contentTypeFor(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext === '.html') return 'text/html; charset=utf-8';
+  if (ext === '.css') return 'text/css; charset=utf-8';
+  if (ext === '.js' || ext === '.mjs') return 'text/javascript; charset=utf-8';
+  if (ext === '.json') return 'application/json; charset=utf-8';
+  if (ext === '.svg') return 'image/svg+xml; charset=utf-8';
+  if (ext === '.png') return 'image/png';
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+  if (ext === '.webp') return 'image/webp';
+  if (ext === '.dat') return 'application/octet-stream';
+  return 'application/octet-stream';
+}
+
+async function startStaticServer(port) {
+  const root = process.cwd();
+  const server = http.createServer(async (req, res) => {
+    try {
+      const requestUrl = new URL(req.url || '/', `http://127.0.0.1:${port}`);
+      const rawPath = requestUrl.pathname === '/' ? '/vector-explorer-polished.html' : requestUrl.pathname;
+      const decodedPath = decodeURIComponent(rawPath);
+      const relativePath = decodedPath.replace(/^\/+/, '');
+      const filePath = path.resolve(root, relativePath);
+      const staysInsideRoot = filePath === root || filePath.startsWith(`${root}${path.sep}`);
+      if (!staysInsideRoot) {
+        res.writeHead(403, { 'content-type': 'text/plain; charset=utf-8' });
+        res.end('Forbidden');
+        return;
+      }
+
+      const stat = await fs.stat(filePath).catch(() => null);
+      if (!stat?.isFile()) {
+        res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+        res.end('Not found');
+        return;
+      }
+
+      res.writeHead(200, { 'content-type': contentTypeFor(filePath) });
+      if (req.method === 'HEAD') {
+        res.end();
+        return;
+      }
+      createReadStream(filePath).pipe(res);
+    } catch (error) {
+      res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+      res.end(error?.message || String(error));
+    }
+  });
+
+  return new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(port, '127.0.0.1', () => {
+      server.off('error', reject);
+      console.log(`[server] visual audit static server listening on http://127.0.0.1:${port}`);
+      resolve(server);
+    });
+  });
+}
+
+function closeServer(server) {
+  return new Promise((resolve) => {
+    if (!server) return resolve();
+    server.close(() => resolve());
+  });
+}
+
+function isLocalTarget(url) {
+  const parsed = new URL(url);
+  return ['127.0.0.1', 'localhost', '[::1]'].includes(parsed.hostname);
+}
+
+async function preflightTargetServer(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 1500);
+  try {
+    const response = await fetch(url, { method: 'HEAD', signal: controller.signal });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} for ${url}`);
+    }
+    return { ok: true, existing: true };
+  } catch (error) {
+    if (!isLocalTarget(url)) throw error;
+    const causeCode = error?.cause?.code || error?.code;
+    const message = error?.message || String(error);
+    if (
+      causeCode === 'ECONNREFUSED' ||
+      message.includes('ECONNREFUSED') ||
+      message.includes('fetch failed')
+    ) {
+      const parsed = new URL(url);
+      const port = Number(parsed.port || (parsed.protocol === 'https:' ? 443 : 80));
+      const server = await startStaticServer(port);
+      return { ok: true, existing: false, server };
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function createAuditPage(browser, options = {}) {
@@ -1083,35 +1185,72 @@ async function clickVisibleFirstSearchResult(page) {
 }
 
 async function enterSemanticDiveViaVisibleControl(page) {
-  let clickDetail = '';
-  let clickError = null;
-  let clicked = false;
-  const journeyInsideButton = page.locator('button[data-journey-action="enter-inside"]:visible').first();
-  if (await journeyInsideButton.count()) {
-    clicked = await journeyInsideButton.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch((err) => {
-      clickError = err;
-      return false;
-    });
-    clickDetail = clicked
-      ? 'clicked journey compass enter-inside action'
-      : 'journey compass enter-inside click timed out after dispatch';
-  } else {
-    const focusDive = page.locator('#btn-focus-dive:visible').first();
-    if (await focusDive.count()) {
-      clicked = await focusDive.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch((err) => {
-        clickError = err;
-        return false;
-      });
-      clickDetail = clicked ? 'clicked #btn-focus-dive' : '#btn-focus-dive click timed out after dispatch';
-    } else {
-      const stepInside = page.getByRole('button', { name: /step inside/i }).first();
-      clicked = await stepInside.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch((err) => {
-        clickError = err;
-        return false;
-      });
-      clickDetail = clicked ? 'clicked Step Inside button by role' : 'Step Inside role click timed out after dispatch';
+  const visibleEntryCandidate = () => {
+    const isVisibleButton = (element) => {
+      if (!element || element.disabled) return false;
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return style.display !== 'none' &&
+        style.visibility !== 'hidden' &&
+        style.pointerEvents !== 'none' &&
+        Number(style.opacity || 1) > 0.05 &&
+        rect.width > 0 &&
+        rect.height > 0;
+    };
+    const candidates = [
+      ['journey compass enter-inside action', document.querySelector('button[data-journey-action="enter-inside"]')],
+      ['#btn-focus-dive', document.querySelector('#btn-focus-dive')],
+      ['visible Step Inside button', [...document.querySelectorAll('button')]
+        .find((button) => /step inside/i.test(`${button.textContent || ''} ${button.getAttribute('aria-label') || ''}`))],
+    ];
+    for (const [detail, element] of candidates) {
+      if (!isVisibleButton(element)) continue;
+      const rect = element.getBoundingClientRect();
+      return {
+        detail: `clicked ${detail}`,
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      };
     }
-  }
+    return null;
+  };
+  const clickTarget = await page.waitForFunction(visibleEntryCandidate, undefined, { timeout: 12000 })
+    .then((handle) => handle.jsonValue())
+    .catch(async (error) => {
+      const diagnostics = await page.evaluate(() => {
+        const describe = (selector) => {
+          const element = document.querySelector(selector);
+          if (!element) return { selector, missing: true };
+          const style = getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          return {
+            selector,
+            text: element.textContent?.trim(),
+            ariaLabel: element.getAttribute('aria-label'),
+            disabled: Boolean(element.disabled),
+            hidden: Boolean(element.hidden),
+            display: style.display,
+            visibility: style.visibility,
+            opacity: style.opacity,
+            pointerEvents: style.pointerEvents,
+            rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+          };
+        };
+        return {
+          bodyDataset: { ...document.body.dataset },
+          candidates: [
+            describe('button[data-journey-action="enter-inside"]'),
+            describe('#btn-focus-dive'),
+            describe('.focus-stage-dive-btn'),
+            describe('#focus-stage'),
+            describe('.journey-compass'),
+          ],
+        };
+      });
+      throw new Error(`${error.message}; semantic-dive entry diagnostics: ${JSON.stringify(diagnostics)}`);
+    });
+
+  await page.mouse.click(clickTarget.x, clickTarget.y);
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return document.body.dataset.panelSurface === 'semantic-dive' ||
@@ -1119,9 +1258,9 @@ async function enterSemanticDiveViaVisibleControl(page) {
       state.semanticDiveMode === true ||
       state.trailDepth >= 2;
   }, undefined, { timeout: 12000 }).catch((err) => {
-    throw clickError || err;
+    throw err;
   });
-  await markVisualRouteEvidence(page, 'real-click', clickDetail);
+  await markVisualRouteEvidence(page, 'real-click', clickTarget.detail);
   await page.waitForTimeout(1200);
 }
 
@@ -1548,8 +1687,12 @@ async function applyModeGridVisibleState(page) {
 async function run() {
   await ensureDir(outDir);
   const states = [];
+  let ownedServer = null;
 
   try {
+    const preflight = await preflightTargetServer(targetUrl);
+    ownedServer = preflight.server || null;
+
     if (wantsAny([
       '01-mobile-idle',
       '02-mobile-search-coffee',
@@ -1879,7 +2022,9 @@ async function run() {
         });
         await divePage.waitForTimeout(2200);
 
-        await enterSemanticDive(divePage);
+        await runVisibleSearch(divePage, 'coffee');
+        await clickVisibleFirstSearchResult(divePage);
+        await enterSemanticDiveViaVisibleControl(divePage);
 
         const captured = await captureState(divePage, '22-mobile-semantic-dive-320');
         if (captured) states.push(captured);
@@ -1906,6 +2051,8 @@ async function run() {
   } catch (err) {
     console.error('Run failed:', err);
     throw err;
+  } finally {
+    await closeServer(ownedServer);
   }
 
   const summary = states.map(({ name, data }) => ({
@@ -2041,7 +2188,6 @@ async function run() {
     '18-mobile-loading-overlay',
     '19-mobile-compass-rail',
     '20-mobile-mode-grid-visible',
-    '22-mobile-semantic-dive-320',
     '23-mobile-short-landscape',
   ]);
 
@@ -3880,6 +4026,13 @@ async function run() {
     } else {
       fail('22-mobile-semantic-dive-320', 'semantic-dive-320:semantic-dive-active',
         `expected active, got "${dive320State.bodyDataset?.semanticDive || 'missing'}"`);
+    }
+    const routeEvidence = dive320State.routeEvidence || {};
+    if (routeEvidence.proofLane === 'real-route' && routeEvidence.source === 'real-click') {
+      pass('22-mobile-semantic-dive-320', 'semantic-dive-320:real-route');
+    } else {
+      fail('22-mobile-semantic-dive-320', 'semantic-dive-320:real-route',
+        `expected real click route evidence, got ${JSON.stringify(routeEvidence)}`);
     }
     // Focus stage must be within the 320px viewport
     const focusStage = box(dive320State, '#focus-stage');

@@ -81,6 +81,21 @@ export function getJourneyCompassPresentationState(compassState = {}) {
     };
 }
 
+const MOBILE_JOURNEY_ACTION_LABELS = {
+    'focus-search': 'Search',
+    'center-anchor': 'Center',
+    'enter-inside': 'Inside',
+    'show-trail-panel': 'Trail',
+    'next-stop': 'Follow',
+    'open-map': 'Map',
+    'open-mycelium': 'Field',
+    'county-overview': 'County'
+};
+
+function getMobileJourneyActionLabel(action = {}, fallback = '') {
+    return MOBILE_JOURNEY_ACTION_LABELS[action.action] || fallback || action.label || 'Go';
+}
+
 export function syncJourneyCompassActions(compassState = {}) {
     const suppressInsideDiveActions =
         compassState.phase === 'inside' &&
@@ -92,17 +107,26 @@ export function syncJourneyCompassActions(compassState = {}) {
     ];
     buttons.forEach(([button, action, role]) => {
         if (!button) return;
-        button.textContent = action?.label || (role === 'primary' ? 'Search' : (role === 'secondary' ? 'Map' : ''));
+        const fullLabel = action?.label || (role === 'primary' ? 'Search' : (role === 'secondary' ? 'Map' : ''));
+        const mobileLabel = action?.action ? getMobileJourneyActionLabel(action, fullLabel) : '';
+        button.textContent = fullLabel;
+        if (mobileLabel) {
+            button.dataset.mobileLabel = mobileLabel;
+            button.dataset.fullLabel = fullLabel;
+        } else {
+            delete button.dataset.mobileLabel;
+            delete button.dataset.fullLabel;
+        }
         button.dataset.journeyAction = action?.action || '';
         const disabled = !action?.action || (action.action === 'next-stop' && state.strandContinuityState?.phase === 'exploring');
         button.disabled = disabled || suppressInsideDiveActions;
         button.setAttribute('aria-disabled', String(disabled || suppressInsideDiveActions));
         button.hidden = suppressInsideDiveActions || !action?.action;
         if (action?.hint) {
-            button.setAttribute('aria-label', `${button.textContent} — ${action.hint}`);
+            button.setAttribute('aria-label', `${fullLabel} - ${action.hint}`);
             button.setAttribute('title', action.hint);
         } else {
-            button.setAttribute('aria-label', button.textContent);
+            button.setAttribute('aria-label', fullLabel);
             button.removeAttribute('title');
         }
         // aria-expanded on tertiary button reflects its active state: false when hidden (not active), true when visible
@@ -252,13 +276,21 @@ export function updateJourneyCompass() {
 
     const order = state.JOURNEY_COMPASS_PHASE_ORDER || ['overview', 'search', 'focus', 'inside', 'map'];
     const activeOrderIndex = order.indexOf(phase);
+    const stepDescriptions = {
+        overview: 'See the whole county.',
+        search: 'Find and center on a business.',
+        focus: 'Inspect a centered anchor.',
+        inside: 'Explore the neighborhood.',
+        map: 'View the geographic layer.'
+    };
     compass.querySelectorAll('[data-journey-step]').forEach((step) => {
         const stepIndex = order.indexOf(step.dataset.journeyStep);
         const isCurrent = step.dataset.journeyStep === phase;
         step.classList.toggle('current', isCurrent);
         step.classList.toggle('done', activeOrderIndex >= 0 && stepIndex >= 0 && stepIndex < activeOrderIndex);
-        const stepLabel = { overview: 'County overview — see the whole county', search: 'Search — find and center on a business', focus: 'Focus — inspect a centered anchor', inside: 'Inside — explore the neighborhood', map: 'Map — view geographic layer' }[step.dataset.journeyStep] || step.dataset.journeyStep;
-        step.setAttribute('aria-label', `${stepIndex + 1}. ${capitalize(step.dataset.journeyStep)}: ${stepLabel}`);
+        const description = stepDescriptions[step.dataset.journeyStep] || step.dataset.journeyStep;
+        step.setAttribute('aria-label', `${stepIndex + 1}. ${capitalize(step.dataset.journeyStep)}: ${description}`);
+        step.setAttribute('title', description);
     });
 }
 

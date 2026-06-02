@@ -25,8 +25,17 @@ import {
     adapter_getInsideRelationshipLabel,
     adapter_getCurrentTrailFocusIndex
 } from './thread-inspector-adapter.js';
+import { subscribe, EVENTS } from './event-bus.js';
 import { truncateMicrocopy } from './thread-inspector-text-helpers.js';
 import { setInspectedStrandOverlayUpdater } from './inspected-strand-overlay-adapter.js';
+
+// Phase 3: Declarative synchronization
+subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload) => {
+    clearThreadInspection({
+        force: true,
+        preserveJourney: !!payload.options?.fromTraversal
+    });
+});
 
 // === Internal helpers (deferred to main script via adapter) ===
 
