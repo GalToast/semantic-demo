@@ -182,12 +182,6 @@
         white-space: normal;
     }
 
-    html body.is-active[data-panel-surface^="map-"] .controls,
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .controls {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
 
     html body.is-active[data-panel-surface^="map-"] .journey-compass[data-density="hidden"] {
         display: none;
@@ -458,7 +452,6 @@
         visibility: hidden;
     }
 
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .controls,
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .panel-toggle,
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) #btn-share-view,
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) #btn-legend,
