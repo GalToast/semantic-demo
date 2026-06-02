@@ -1,10 +1,10 @@
 /* Search: rail, semantic-lane status, filters, result states, and rail sections. */
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-listitem {
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-listitem {
     width: 100%;
     min-width: 0;
 }
 
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-item {
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-item {
     appearance: none;
     -webkit-appearance: none;
     display: block;
@@ -19,17 +19,18 @@ body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .sea
     color: rgba(239, 250, 248, 0.9);
     font-family: var(--font-body, 'Nunito Sans', system-ui, sans-serif);
     text-align: left;
+    cursor: pointer;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.045),
         0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-results {
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-results {
     margin-top: 6px;
     padding-bottom: 6px;
 }
 
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-results-count {
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-results-count {
     margin: 0 0 6px;
     color: rgba(218, 232, 230, 0.82);
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
@@ -37,9 +38,35 @@ body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .sea
     font-weight: 700;
     line-height: 1.2;
     letter-spacing: 0.02em;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
 }
 
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-list {
+.search-results-count .search-results-count-anchor,
+.search-results-count .search-results-count-shown,
+.search-results-count .search-results-count-all {
+    color: rgba(255, 247, 224, 0.96);
+    text-shadow: 0 0 14px rgba(255, 217, 61, 0.32);
+    letter-spacing: 0.04em;
+}
+
+.search-results-count .search-results-count-divider {
+    color: rgba(121, 235, 222, 0.55);
+    margin: 0 1px;
+}
+
+.search-results-count .search-results-count-hidden,
+.search-results-count .search-results-count-suffix {
+    color: rgba(218, 232, 230, 0.7);
+    font-weight: 600;
+}
+
+.search-results-count .search-results-count-empty {
+    color: rgba(255, 196, 110, 0.86);
+}
+
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-list {
     display: grid;
     gap: 6px;
     margin: 0;
@@ -47,14 +74,14 @@ body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .sea
     list-style: none;
 }
 
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-listitem {
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-listitem {
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-item:hover,
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-item:focus-visible {
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-item:hover,
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-item:focus-visible {
     border-color: rgba(121, 235, 222, 0.34);
     background:
         radial-gradient(circle at 8% 0%, rgba(121, 235, 222, 0.18), transparent 42%),
@@ -62,19 +89,19 @@ body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .sea
     color: rgba(249, 255, 253, 0.96);
 }
 
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-item:focus-visible {
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-item:focus-visible {
     outline: 2px solid rgba(121, 235, 222, 0.48);
     outline-offset: 2px;
 }
 
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-row {
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: start;
     gap: 4px 8px;
 }
 
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-rank {
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-rank {
     grid-column: 1 / -1;
     color: rgba(171, 239, 233, 0.72);
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
@@ -85,7 +112,7 @@ body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .sea
     text-transform: uppercase;
 }
 
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-name {
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-name {
     min-width: 0;
     color: rgba(249, 255, 253, 0.96);
     font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
@@ -97,7 +124,22 @@ body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .sea
     text-overflow: ellipsis;
 }
 
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-badges {
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-name mark {
+    margin-inline: 1px;
+    padding: 0 0.04em 0.03em;
+    border-radius: 0.12em;
+    background:
+        linear-gradient(180deg, rgba(121, 235, 222, 0) 58%, rgba(121, 235, 222, 0.24) 59%, rgba(255, 229, 135, 0.08) 100%);
+    color: inherit;
+    box-shadow:
+        inset 0 -1px 0 rgba(255, 229, 135, 0.5),
+        0 0 14px rgba(121, 235, 222, 0.16);
+    text-shadow: 0 0 12px rgba(121, 235, 222, 0.16);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-badges {
     display: inline-flex;
     align-items: center;
     justify-content: flex-end;
@@ -105,16 +147,16 @@ body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .sea
     color: rgba(160, 229, 222, 0.76);
 }
 
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-what,
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-context,
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-meta {
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-what,
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-context,
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-meta {
     color: rgba(245, 255, 252, 0.95);
     font-size: 11px;
     line-height: 1.28;
     font-weight: 500;
 }
 
-body:is([data-panel-surface="search"], [data-panel-surface="focus-search"]) .search-container.has-query .search-result-what {
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-what {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -128,6 +170,28 @@ body[data-panel-surface="focus-search"] .search-results.focusing {
 
 body[data-panel-surface="focus-search"] .search-result-item.active-focus {
     box-shadow: 0 20px 42px rgba(0,0,0,0.24), 0 0 0 1px rgba(var(--color-primary-rgb), 0.16);
+}
+
+/* Track 2: In focus state, the left list should be a compact trail of just
+   rank + name so it doesn't duplicate the right-side focus card content. The
+   right-side focus card (.focus-stage-card) is a separate DOM subtree, so these
+   selectors only affect the left result list. */
+body[data-panel-surface="focus-search"] .search-container.has-query .search-results .search-result-what,
+body[data-panel-surface="focus-search"] .search-container.has-query .search-results .search-result-context,
+body[data-panel-surface="focus-search"] .search-container.has-query .search-results .search-result-meta,
+body[data-panel-surface="focus-search"] .search-container.has-query .search-results .search-result-bar,
+body[data-panel-surface="focus-search"] .search-container.has-query .search-results .search-result-badges {
+    display: none;
+}
+
+body[data-panel-surface="focus-search"] .search-container.has-query .search-results .search-result-row {
+    padding: 0;
+    grid-template-columns: auto 1fr;
+}
+
+body[data-panel-surface="focus-search"] .search-container.has-query .search-results .search-result-name {
+    font-size: 12px;
+    font-weight: 600;
 }
 
 /* Badge icons (website / email / phone) inside each search-result card:
@@ -1121,7 +1185,12 @@ body[data-panel-surface="map-focus-search"] .exploration-card:hover,
     padding: 10px 11px;
     border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(255, 255, 255, 0.03);
+    background: linear-gradient(180deg, rgba(20, 25, 35, 0.95), rgba(15, 20, 28, 0.95));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 20;
 }
 
 .semantic-lane-assist[hidden] {
@@ -1498,7 +1567,9 @@ body[data-panel-surface="map-focus-search"] .exploration-card:hover,
         overflow-x: hidden;
         padding: 2px;
         border-color: rgba(121, 235, 222, 0.12);
-        background: rgba(5, 10, 16, 0.58);
+        background: rgba(5, 10, 16, 0.95);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
     }
 
     body[data-panel-surface="search"] .search-result-item {

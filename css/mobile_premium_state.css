@@ -170,6 +170,16 @@
         overflow: hidden;
     }
 
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] #cluster-section,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] #filters-section,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .rail-section {
+        display: none;
+        visibility: hidden;
+        height: 0;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
     html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-container.has-query {
         height: calc(100% - 10px);
         max-height: calc(100% - 10px);
@@ -306,6 +316,56 @@
 
     /* Search peek exposes one clean anchor row. Expanded mode owns the full
        result list; clipped secondary-row slivers are a visual regression. */
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-results.active:has(.search-error-state),
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-results.active:has(.search-error-state) {
+        padding: 8px 10px;
+        overflow-y: hidden;
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-state,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-state {
+        align-items: stretch;
+        gap: 4px;
+        padding: 0;
+        text-align: left;
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-kicker,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-kicker {
+        align-self: flex-start;
+        min-height: 18px;
+        padding: 3px 8px;
+        font-size: 8px;
+        letter-spacing: 0.12em;
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-text,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-text {
+        max-width: none;
+        margin: 0;
+        font-size: 11px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-actions,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-actions {
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        gap: 8px;
+        margin-top: 3px;
+    }
+
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-retry-btn,
+    html body.is-active[data-panel-surface="search"][data-panel-surface-detail="peek"] .search-error-dismiss-btn,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-retry-btn,
+    html body.is-active[data-panel-surface="focus-search"][data-panel-surface-detail="peek"] .search-error-dismiss-btn {
+        padding: 0 14px;
+        font-size: 12px;
+    }
 
     html body.is-active[data-panel-surface="search"] .search-error-retry-btn,
     html body.is-active[data-panel-surface="search"] .search-error-dismiss-btn,

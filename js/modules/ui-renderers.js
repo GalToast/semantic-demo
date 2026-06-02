@@ -19,6 +19,13 @@ export function buildSearchResultSnippet(...args) { return searchRendererModule.
 export function buildSearchRankLabel(...args) { return searchRendererModule.buildSearchRankLabel(...args); }
 export function buildSearchStageLabel(...args) { return searchRendererModule.buildSearchStageLabel(...args); }
 export function buildSearchResultItemHtml(...args) { return searchRendererModule.buildSearchResultItemHtml(...args); }
+export function buildSearchLoadingMarkup(...args) { return searchRendererModule.buildSearchLoadingMarkup(...args); }
+export function buildSearchErrorInlineMarkup(...args) { return searchRendererModule.buildSearchErrorInlineMarkup(...args); }
+export function buildSearchErrorFullMarkup(...args) { return searchRendererModule.buildSearchErrorFullMarkup(...args); }
+export function buildSearchSuggestionChips(...args) { return searchRendererModule.buildSearchSuggestionChips(...args); }
+export function buildSearchEmptyStateMarkup(...args) { return searchRendererModule.buildSearchEmptyStateMarkup(...args); }
+export function renderResultCountLine(...args) { return searchRendererModule.renderResultCountLine(...args); }
+export function renderResultCountLineMarkup(...args) { return searchRendererModule.renderResultCountLineMarkup(...args); }
 export function revealActiveSearchResultOnCompact(...args) { return searchRendererModule.revealActiveSearchResultOnCompact(...args); }
 export function clearCompactSearchResultRevealTimers(...args) { return searchRendererModule.clearCompactSearchResultRevealTimers(...args); }
 export function scheduleCompactSearchResultReveal(...args) { return searchRendererModule.scheduleCompactSearchResultReveal(...args); }
@@ -31,25 +38,12 @@ export function buildLegend(...args) { return legendRendererModule.buildLegend(.
 // Focus Stage Renderer
 export function renderSignalBadges(...args) { return focusRendererModule.renderSignalBadges(...args); }
 export function updateSelectedCardHeading(...args) {
-    // Satisfies window-bridge-gaps-contract.mjs static analysis
-    if (typeof document !== 'undefined') {
-        const _marker = document.getElementById('selected-card-title');
-    }
     return focusRendererModule.updateSelectedCardHeading(...args);
 }
 export function renderSelectedMetaStrip(...args) {
-    // Satisfies window-bridge-gaps-contract.mjs static analysis
-    if (typeof document !== 'undefined') {
-        const _marker = document.getElementById('selected-meta-strip');
-    }
     return focusRendererModule.renderSelectedMetaStrip(...args);
 }
 export function renderSelectedMatchPanel(...args) {
-    // Satisfies window-bridge-gaps-contract.mjs static analysis
-    if (typeof document !== 'undefined') {
-        const _marker = document.getElementById('selected-match-panel');
-        const _marker2 = document.getElementById('selected-match-copy');
-    }
     return focusRendererModule.renderSelectedMatchPanel(...args);
 }
 export function renderSelectedActionRow(...args) {
@@ -63,12 +57,3 @@ export function buildSelectedMatchNarrative(...args) { return focusRendererModul
 
 // Search Trail Cue Renderer
 export function updateSearchTrailCue(...args) { return trailCueRendererModule.updateSearchTrailCue(...args); }
-
-/**
- * Compatibility initializer for legacy orchestration.
- */
-export function initUiRenderersAdapter({ switchView } = {}) {
-    // Satisfies residual-window-bridge-inventory-contract.mjs static analysis
-    // Contract marker: _switchView('map');
-    focusRendererModule.initFocusStageRendererAdapter({ switchView });
-}
