@@ -1,5 +1,6 @@
 // state
 import { state } from '../state.js';
+import { subscribeKeyed, EVENTS } from './event-bus.js';
 // utils
 import { formatBusinessName, cleanPublicNoteText } from './utils/dom-formatters.js';
 
@@ -32,6 +33,16 @@ let _switchView = () => {};
 
 export function initJourneyCompassAdapter({ switchView } = {}) {
     if (typeof switchView === 'function') _switchView = switchView;
+
+    // Phase 3: Declarative synchronization
+    const sync = () => updateJourneyCompass();
+    subscribeKeyed('journey-compass:camera-node-focused', EVENTS.CAMERA_NODE_FOCUSED, sync);
+    subscribeKeyed('journey-compass:search-success', EVENTS.SEARCH_SUCCESS, sync);
+    subscribeKeyed('journey-compass:search-cleared', EVENTS.SEARCH_CLEARED, sync);
+    subscribeKeyed('journey-compass:filter-changed', EVENTS.FILTER_CHANGED, sync);
+    subscribeKeyed('journey-compass:view-changed', EVENTS.VIEW_CHANGED, sync);
+    subscribeKeyed('journey-compass:state-reset', EVENTS.STATE_RESET, sync);
+    subscribeKeyed('journey-compass:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync);
 }
 
 export function getJourneyCompassPresentationState(compassState = {}) {

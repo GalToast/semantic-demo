@@ -4,6 +4,7 @@ import {
     isCondensedFocusStageViewport,
     hasColdDegradedSemanticFallback,
     shouldUseFloatingFocusJourneyOnly,
+    initFocusNeighborRailSubscriptions,
     updateFocusNeighborRail,
     updateTraversalUi,
 } from './journey-focus-ui.js';
@@ -101,6 +102,7 @@ export {
     isCondensedFocusStageViewport,
     hasColdDegradedSemanticFallback,
     shouldUseFloatingFocusJourneyOnly,
+    initFocusNeighborRailSubscriptions,
     updateFocusNeighborRail,
     updateTraversalUi,
     applyPointFilterColors,

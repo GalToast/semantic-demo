@@ -396,7 +396,6 @@ function _showEndToast() {
  * All demo-to-overview state writes MUST stay inside this function.
  */
 function __demoReset() {
-    state.focusedNode = null;
     state.selectedPoint = null;
     state.navState.mode = 'overview';
     state.navState.focusedIndex = null;
@@ -430,7 +429,6 @@ function __demoReset() {
  */
 function __demoFocusSetup(demoNode) {
     const point = state.points[demoNode];
-    state.focusedNode = demoNode;
     state.selectedPoint = point;
     state.navState.mode = 'focus';
     state.navState.focusedIndex = demoNode;

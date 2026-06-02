@@ -147,17 +147,19 @@ function testRenderPathCallsVariantSync() {
   );
   assert(
     /syncSelectedCardContentVariant\s*,/.test(selectedSrc) &&
-      /syncSelectedCardContentVariant\s*\(\s*null\s*\)/.test(selectedSrc) &&
       /syncSelectedCardContentVariant\s*\(\s*point\s*\)/.test(selectedSrc),
     'journey-selected-card.js must sync the content variant on empty and populated renders'
   );
+
   assert(
-    /import\s+\{[^}]*syncSelectedCardContentVariant[^}]*\}\s+from\s+['"]\.\/ui-renderers\.js['"]/.test(lifecycleSrc),
-    'lifecycle.js must import syncSelectedCardContentVariant() from ui-renderers.js'
+    /function\s+syncSharedCompositionUi\s*\([^)]*\)\s*{[\s\S]*syncSelectedCardContentVariant\s*\(\s*state\.selectedPoint\s*\|\|\s*null\s*\)/.test(lifecycleSrc) &&
+      /function\s+syncSharedCompositionUi\s*\([^)]*\)\s*{[\s\S]*syncFocusStage\s*\(\s*state\.selectedPoint\s*\|\|\s*null\s*\)/.test(lifecycleSrc),
+    'lifecycle.js must refresh the selected-card content variant after panelSurface changes'
   );
   assert(
-    /renderSelectedMatchPanel\s*\(\s*state\.selectedPoint\s*\|\|\s*null\s*\);\s*syncSelectedCardContentVariant\s*\(\s*state\.selectedPoint\s*\|\|\s*null\s*\);/s.test(lifecycleSrc),
-    'map composition refresh must sync the content variant after panelSurface/match panel updates'
+    /import\s*{\s*updateSelectedCardHeading\s*,\s*syncSelectedCardContentVariant\s*}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(lifecycleSrc) &&
+      /import\s*{\s*syncSemanticDiveUi\s*}\s*from\s*['"]\.\/semantic-dive-ui\.js['"]/.test(lifecycleSrc),
+    'lifecycle.js must import the UI sync functions it calls during composition refresh'
   );
 
   console.log('  OK - render and composition paths keep content variant synchronized');

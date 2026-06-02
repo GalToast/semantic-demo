@@ -77,10 +77,13 @@
 .focus-stage-name {
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 20px;
-    line-height: 0.98;
+    line-height: 1.1;
     letter-spacing: -0.02em;
     color: rgba(255, 255, 255, 0.98);
     margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .focus-stage-filed {
@@ -624,6 +627,7 @@ body[data-trail-state="active"] .focus-stage-neighbor-pill {
         font-size: 18px;
         line-height: 1.05;
         letter-spacing: 0;
+        display: none;
     }
 
     html body[data-panel-surface="focus"] .focus-stage-journey.active,

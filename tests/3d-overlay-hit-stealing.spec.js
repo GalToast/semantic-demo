@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { BASE_URL, SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch, openApp, probe, projectedCanvasCandidates, probeFocusPocket, focusNodeViaApp } from './helpers/3d-interaction-helpers.js';
+import { BASE_URL, SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch, openApp, probe, projectedCandidates, probeFocusPocket, focusNodeViaApp } from './helpers/3d-interaction-helpers.js';
 import { mutate } from './helpers/state-harness.js';
 
 function isValidNodeIndex(value, pointCount) {
@@ -11,45 +11,53 @@ async function clearPickEvidence(page) {
 }
 
 async function findReachableNodeCoordinate(page) {
-  const candidates = await projectedCanvasCandidates(page, { maxResultsOverride: 36 });
-  for (const candidate of candidates) {
-    await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 4 });
-    await page.waitForTimeout(140);
-    const state = await probe(page);
-    if (state.canvasCursor !== 'pointer' || !Number.isFinite(state.hoverHighlightIndex)) continue;
+  const passes = [
+    { marginRatio: 0.08, maxResults: 24 },
+    { marginRatio: 0.05, maxResults: 36 },
+    { marginRatio: 0.03, maxResults: 48 },
+  ];
+  for (const pass of passes) {
+    const candidates = await projectedCandidates(page, pass);
+    for (const candidate of candidates) {
+      await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 4 });
+      await page.waitForTimeout(140);
+      const state = await probe(page);
+      if (state.canvasCursor !== 'pointer' || !Number.isFinite(state.hoverHighlightIndex)) continue;
 
-    const stack = await page.evaluate(({ x, y }) => {
-      const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-      const canvas = state.renderer?.domElement;
-      return document.elementsFromPoint(x, y).map((el, order) => ({
-        order,
-        isCanvas: el === canvas,
-        tag: el.tagName,
-        id: el.id || '',
-        className: typeof el.className === 'string' ? el.className : '',
-        pointerEvents: getComputedStyle(el).pointerEvents,
-        isInteractiveOverlay: !!el.closest?.([
-          'button',
-          'a',
-          'input',
-          'textarea',
-          'select',
-          '.info-panel',
-          '.focus-stage-card',
-          '.summary-card',
-          '.controls',
-          '.view-toggle',
-          '.journey-compass',
-          '.legend-panel',
-          '.weather-widget',
-          '.share-toggle'
-        ].join(','))
-      }));
-    }, { x: candidate.screenX, y: candidate.screenY });
+      const stack = await page.evaluate(({ x, y }) => {
+        const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+        const canvas = state.renderer?.domElement;
+        return document.elementsFromPoint(x, y).map((el, order) => ({
+          order,
+          isCanvas: el === canvas,
+          tag: el.tagName,
+          id: el.id || '',
+          className: typeof el.className === 'string' ? el.className : '',
+          pointerEvents: getComputedStyle(el).pointerEvents,
+          isInteractiveOverlay: !!el.closest?.([
+            'button',
+            'a',
+            'input',
+            'textarea',
+            'select',
+            '.info-panel',
+            '.focus-stage-card',
+            '.summary-card',
+            '.controls',
+            '.view-toggle',
+            '.journey-compass',
+            '.legend-panel',
+            '.weather-widget',
+            '.share-toggle'
+          ].join(','))
+        }));
+      }, { x: candidate.screenX, y: candidate.screenY });
 
-    if (stack.some(item => item.isCanvas) && !stack.some(item => item.isInteractiveOverlay && item.pointerEvents !== 'none')) {
-      return { ...candidate, resolvedIndex: state.hoverHighlightIndex, stack };
+      if (stack.some(item => item.isCanvas) && !stack.some(item => item.isInteractiveOverlay && item.pointerEvents !== 'none')) {
+        return { ...candidate, resolvedIndex: state.hoverHighlightIndex, stack };
+      }
     }
+    await page.waitForTimeout(180);
   }
   return null;
 }

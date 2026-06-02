@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { subscribeKeyed, EVENTS } from './event-bus.js';
 import { cleanOptionalValue, formatBusinessName } from './utils/dom-formatters.js';
 import { isCompactFocusStageViewport } from './utils/ui-presentation.js';
 import { getNextExploreCandidateForIndex } from './journey-thread-model.js';
@@ -43,6 +44,19 @@ function getStepInsideConnectionCopy(candidate, focusIndex) {
     const cue = getShortConnectionCue(reason);
     if (!cue) return `Next: ${targetName}`;
     return `Next: ${targetName} (${cue})`;
+}
+
+export function initSemanticDiveUiSubscriptions() {
+    // Phase 3: Declarative synchronization
+    const sync = () => syncSemanticDiveUi();
+    subscribeKeyed('semantic-dive-ui:camera-node-focused', EVENTS.CAMERA_NODE_FOCUSED, sync);
+    subscribeKeyed('semantic-dive-ui:search-success', EVENTS.SEARCH_SUCCESS, sync);
+    subscribeKeyed('semantic-dive-ui:search-cleared', EVENTS.SEARCH_CLEARED, sync);
+    subscribeKeyed('semantic-dive-ui:filter-changed', EVENTS.FILTER_CHANGED, sync);
+    subscribeKeyed('semantic-dive-ui:view-changed', EVENTS.VIEW_CHANGED, sync);
+    subscribeKeyed('semantic-dive-ui:state-reset', EVENTS.STATE_RESET, sync);
+    subscribeKeyed('semantic-dive-ui:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync);
+    subscribeKeyed('semantic-dive-ui:search-focus-transition-settled', EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, sync);
 }
 
 export function syncSemanticDiveUi() {

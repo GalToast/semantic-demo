@@ -510,6 +510,10 @@ body[data-active-view="galaxy"]::after {
     transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+body[data-active-view="map"]::after {
+    opacity: 0;
+}
+
 /* 10/10 Polish: Semantic Dive 'Sonic Boom' Transition */
 body[data-semantic-dive="transitioning"]::before {
     content: "";

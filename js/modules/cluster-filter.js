@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { publish, EVENTS } from './event-bus.js';
 import { normalizeCityForFilter } from './utils/geo-data.js';
 import { describeCluster } from './utils/ui-presentation.js';
 import { escapeHtml } from './utils/dom-formatters.js';
@@ -44,6 +45,7 @@ export function setClusterFilter(cluster) {
     clearSearchGlow();
     applyFilters();
     updateUrlState({}, { reason: 'cluster-filter' });
+    publish(EVENTS.FILTER_CHANGED, { type: 'cluster', value: state.activeClusterFilter });
 }
 
 export function clearClusterFilter() {

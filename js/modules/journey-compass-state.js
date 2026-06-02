@@ -80,12 +80,12 @@ export function getJourneyCompassState() {
 
         const primaryAction = isSearchAnchor || isTrailStop
             ? { label: 'Map', action: 'open-map' }
-            : { label: 'Center', action: 'center-anchor', hint: 'Return to search starting point' };
+            : { label: 'Center on anchor', action: 'center-anchor', hint: 'Return to search starting point' };
 
         const secondaryAction = isSearchAnchor
             ? { label: 'County', action: 'county-overview' }
             : isTrailStop
-                ? { label: 'Center', action: 'center-anchor', hint: 'Return to search starting point' }
+                ? { label: 'Center on anchor', action: 'center-anchor', hint: 'Return to search starting point' }
                 : { label: 'Map', action: 'open-map' };
 
         return {
@@ -112,7 +112,7 @@ export function getJourneyCompassState() {
                 ? 'The first strong match is the anchor. Center any record to enter its local neighborhood.'
                 : 'Looking for semantic anchors before gathering the trail around your query.',
             primaryAction: Number.isFinite(state.currentSearchSummary?.anchorIndex)
-                ? { label: 'Center', action: 'center-anchor' }
+                ? { label: 'Center on anchor', action: 'center-anchor' }
                 : { label: 'Search', action: 'focus-search' },
             secondaryAction: { label: 'Map', action: 'open-map' },
             tertiaryAction: null

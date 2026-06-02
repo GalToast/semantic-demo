@@ -145,7 +145,6 @@ export const _rawState = {
     nodePositions: [],
     targetPositions: [],
     originalPositions: [],
-    focusedNode: null,
     currentView: 'galaxy',
     autoRotate: true,
     autoRotateSuspended: false,
@@ -433,13 +432,25 @@ export const state = new Proxy(_rawState, {
     }
 });
 
-// backward-compat getter: semanticDiveMode is now derived from trailDepth
-Object.defineProperty(_rawState, 'semanticDiveMode', {
-    get: () => _rawState.trailDepth === 2,
-    set: (val) => {
-        if (val === true) _rawState.trailDepth = 2;
-        else _rawState.trailDepth = 0;
+// Derived properties for state synchronization
+Object.defineProperties(_rawState, {
+    'semanticDiveMode': {
+        get: () => _rawState.trailDepth === 2,
+        set: (val) => {
+            if (val === true) _rawState.trailDepth = 2;
+            else _rawState.trailDepth = 0;
+        },
+        configurable: true,
+        enumerable: true
     },
-    configurable: true,
-    enumerable: true
+    'focusedNode': {
+        get: () => _rawState.navState?.focusedIndex ?? null,
+        set: (val) => {
+            if (_rawState.navState) {
+                _rawState.navState.focusedIndex = val;
+            }
+        },
+        configurable: true,
+        enumerable: true
+    }
 });

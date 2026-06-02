@@ -411,6 +411,7 @@ export function ensureCanvasNodeInteractionBindings() {
             clearCanvasFieldHover(canvas);
             return;
         }
+        noteSceneInteraction(state.AUTO_ROTATE_MANUAL_IDLE_MS);
         if (Number.isFinite(state.navState.focusedIndex)) {
             const candidate = getNearestCanvasThreadCandidate(event);
             if (candidate) {
@@ -444,6 +445,15 @@ export function ensureCanvasNodeInteractionBindings() {
         if (walkCanvasThreadFromPointerEvent(event)) return;
         focusCanvasFieldNodeFromPointerEvent(event);
     });
+    if (document.documentElement.dataset.canvasHoverDocumentClearBound !== 'true') {
+        document.documentElement.dataset.canvasHoverDocumentClearBound = 'true';
+        document.addEventListener('pointermove', (event) => {
+            const activeCanvas = state.renderer?.domElement;
+            if (!activeCanvas || event.target === activeCanvas || activeCanvas.contains(event.target)) return;
+            if (state.hoverHighlightIndex === -1 && !state.stableCanvasHover) return;
+            clearCanvasFieldHover(activeCanvas, { force: true });
+        }, true);
+    }
     if (document.documentElement.dataset.threadCanvasDocumentWalkBound !== 'true') {
         document.documentElement.dataset.threadCanvasDocumentWalkBound = 'true';
         document.addEventListener('pointerup', (event) => {

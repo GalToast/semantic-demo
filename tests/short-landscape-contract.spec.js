@@ -11,11 +11,12 @@ async function elementOverflow(locator) {
     const rect = el.getBoundingClientRect();
     const winWidth = window.innerWidth || document.documentElement.clientWidth;
     const winHeight = window.innerHeight || document.documentElement.clientHeight;
+    const clampSubpixel = (value) => value <= 0.5 ? 0 : value;
     return {
-      right: Math.max(0, rect.right - winWidth),
-      bottom: Math.max(0, rect.bottom - winHeight),
-      left: Math.max(0, -rect.left),
-      top: Math.max(0, -rect.top)
+      right: clampSubpixel(Math.max(0, rect.right - winWidth)),
+      bottom: clampSubpixel(Math.max(0, rect.bottom - winHeight)),
+      left: clampSubpixel(Math.max(0, -rect.left)),
+      top: clampSubpixel(Math.max(0, -rect.top))
     };
   });
 }
@@ -51,6 +52,45 @@ for (const vp of VIEWPORTS) {
         const overflow = await elementOverflow(infoPanel);
         expect(overflow.right, 'info panel should not overflow right edge').toBeLessThanOrEqual(0);
         expect(overflow.bottom, 'info panel should not overflow bottom').toBeLessThanOrEqual(0);
+      });
+
+      await test.step('fixed action chrome stays contained and tappable', async () => {
+        const fixedActions = [
+          { selector: '.share-toggle', visible: false },
+          { selector: '.legend-toggle', visible: true },
+          { selector: '.help-toggle', visible: true }
+        ];
+        for (const { selector, visible } of fixedActions) {
+          const action = page.locator(selector).first();
+          const metrics = await action.evaluate((el) => {
+            const rect = el.getBoundingClientRect();
+            const styles = getComputedStyle(el);
+            return {
+              overflow: {
+                right: Math.max(0, rect.right - (window.innerWidth || document.documentElement.clientWidth)),
+                bottom: Math.max(0, rect.bottom - (window.innerHeight || document.documentElement.clientHeight)),
+                left: Math.max(0, -rect.left),
+                top: Math.max(0, -rect.top)
+              },
+              pointerEvents: styles.pointerEvents,
+              width: rect.width,
+              height: rect.height
+            };
+          });
+          if (!visible) {
+            expect(['none', 'hidden'].includes(metrics.pointerEvents) || metrics.width === 0 || metrics.height === 0,
+              `${selector} should stay suppressed in idle short landscape`).toBe(true);
+            continue;
+          }
+          await expect(action, `${selector} should be visible in short landscape`).toBeVisible({ timeout: 10000 });
+          expect(metrics.overflow.right, `${selector} should not overflow right`).toBeLessThanOrEqual(0.5);
+          expect(metrics.overflow.bottom, `${selector} should not overflow bottom`).toBeLessThanOrEqual(0.5);
+          expect(metrics.overflow.left, `${selector} should not overflow left`).toBeLessThanOrEqual(0.5);
+          expect(metrics.overflow.top, `${selector} should not overflow top`).toBeLessThanOrEqual(0.5);
+          expect(metrics.pointerEvents, `${selector} should remain tappable`).not.toBe('none');
+          expect(metrics.width, `${selector} should retain touch target width`).toBeGreaterThanOrEqual(40);
+          expect(metrics.height, `${selector} should retain touch target height`).toBeGreaterThanOrEqual(40);
+        }
       });
 
       await test.step('no viewport overflow on key elements in focus-search', async () => {

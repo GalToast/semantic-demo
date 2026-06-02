@@ -2,12 +2,12 @@
 import { state } from '../state.js';
 import { publish, subscribe, EVENTS } from './event-bus.js';
 import {
+    clearMobileRouteFieldPeek as adapter_clearMobileRouteFieldPeek,
     syncRouteDirectorState as adapter_syncRouteDirectorState,
     updateFocusNeighborRail as adapter_updateFocusNeighborRail,
     refreshMapMarkers as adapter_refreshMapMarkers,
     refreshMapRouteEmbodiment as adapter_refreshMapRouteEmbodiment,
-    refreshRouteTraceOverlay as adapter_refreshRouteTraceOverlay,
-    clearMobileRouteFieldPeek as adapter_clearMobileRouteFieldPeek
+    refreshRouteTraceOverlay as adapter_refreshRouteTraceOverlay
 } from './composition-adapter.js';
 import {
     setLoadingPhase,
@@ -40,7 +40,7 @@ import {
     setSearchPanelState,
     clearSearch
 } from './search-state.js';
-import { updateSelectedCardHeading, renderSelectedMatchPanel, syncSelectedCardContentVariant } from './ui-renderers.js';
+import { updateSelectedCardHeading, syncSelectedCardContentVariant } from './ui-renderers.js';
 import {
     focusOnNode
 } from './camera-controls.js';
@@ -257,6 +257,7 @@ function syncSharedCompositionUi(reason) {
     adapter_syncRouteDirectorState(reason);
     updateSelectedCardHeading();
     syncSelectedCardContentVariant(state.selectedPoint || null);
+    syncFocusStage(state.selectedPoint || null);
     syncSemanticDiveUi();
     updateJourneyCompass();
     adapter_updateFocusNeighborRail();
@@ -320,8 +321,6 @@ export function refreshCompositionState() {
             document.body.dataset.panelSurfaceDetail = 'none';
 
             syncSharedCompositionUi('composition-map');
-            renderSelectedMatchPanel(state.selectedPoint || null);
-            syncSelectedCardContentVariant(state.selectedPoint || null);
             return;
         }
     }
@@ -357,7 +356,6 @@ export function refreshCompositionState() {
         adapter_clearMobileRouteFieldPeek();
     }
 
-    if (typeof updateLegendGuideState === 'function') updateLegendGuideState();
     syncSharedCompositionUi('composition-galaxy');
 }
 
@@ -409,11 +407,16 @@ export function resetExplorationFocus(options = { preserveSearch: true }) {
     state.myceliumMode = 'default';
     syncFocusStage(null);
 
+    const nestedClearOptions = {
+        skipResetFocus: true,
+        suppressEvent: !!options.skipSearchClearEvent
+    };
+
     if (options.preserveSearch === false) {
         state.currentSearchSummary = null;
-        clearSearch({ skipResetFocus: true });
+        clearSearch(nestedClearOptions);
     } else {
-        clearSearch({ skipResetFocus: true, preserveSearch: true });
+        clearSearch({ ...nestedClearOptions, preserveSearch: true });
     }
 
     if (!options.skipUrlSync) {

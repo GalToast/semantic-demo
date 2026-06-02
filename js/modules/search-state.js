@@ -377,10 +377,9 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
 
 export function clearSearch(options = {}) {
     const priorSummary = state.currentSearchSummary;
-    publish(EVENTS.SEARCH_CLEARED, options);
 
     if (!options.skipResetFocus && typeof adapter_resetExplorationFocus === 'function') {
-        adapter_resetExplorationFocus({ preserveSearch: true, skipUrlSync: true });
+        adapter_resetExplorationFocus({ preserveSearch: true, skipUrlSync: true, skipSearchClearEvent: true });
     }
 
     if (options.preserveSearch) {
@@ -388,11 +387,18 @@ export function clearSearch(options = {}) {
     } else {
         state.currentSearchSummary = null;
     }
+
+    if (!options.suppressEvent) {
+        publish(EVENTS.SEARCH_CLEARED, {
+            ...options,
+            preservedSearch: !!options.preserveSearch,
+            summary: state.currentSearchSummary
+        });
+    }
 }
 
 export function clearSearchRelatedFocusState(context = {}) {
     state.selectedPoint = null;
-    state.focusedNode    = null;
     adapter_dispatchNavTransition('RESET_FOCUS');
     clearTrailThreadState();
     state.trailIndices.clear();

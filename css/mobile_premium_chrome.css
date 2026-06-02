@@ -266,20 +266,6 @@
         color: rgba(218, 232, 229, 0.72);
     }
 
-    html body.is-active:is([data-panel-surface="map-idle"], [data-panel-surface="map-focus-search"], [data-panel-surface="map-trail"], [data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"], [data-panel-surface="search"]) :is(
-        .panel-toggle,
-        .time-display
-    ),
-    html body.is-active[data-journey-navigation-owner="map-trail-strip"] :is(
-        .controls,
-        .panel-toggle,
-        .time-display
-    ) {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
     /* ----------------------------------------------------------------
        D. Map trail strip — tighter vertical gap from search, reduced
           elevation to reduce panel competition on small screens.
@@ -378,6 +364,96 @@
     html body.is-active[data-panel-surface^="map-"] .map-strip-kicker {
         font-size: 9px;
         letter-spacing: 0.08em;
+    }
+
+    /* ----------------------------------------------------------------
+       E. Global mobile actions (Share, Legend, Help, Controls)
+       ---------------------------------------------------------------- */
+    html body.is-active[data-panel-surface] :is(.share-toggle, .help-toggle, .legend-toggle) {
+        position: fixed;
+        right: 14px;
+        width: 44px;
+        height: 44px;
+        z-index: var(--z-toast);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--glass-bg);
+        border: var(--glass-border-glow);
+        border-radius: var(--glass-radius-action);
+        backdrop-filter: blur(var(--glass-blur));
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+    }
+
+    html body.is-active[data-panel-surface] .share-toggle { top: 60px; }
+    html body.is-active[data-panel-surface] .legend-toggle { top: 112px; }
+    html body.is-active[data-panel-surface] .help-toggle { top: 164px; }
+
+    /* Grouped mobile action list visibility */
+    html body.is-active[data-panel-surface] :is(.share-toggle, .help-toggle, .legend-toggle) {
+        pointer-events: auto;
+        display: flex;
+        visibility: visible;
+        opacity: 1;
+    }
+
+    html body[data-panel-surface] .controls {
+        position: fixed;
+        bottom: auto;
+        top: calc(216px + env(safe-area-inset-top, 0px));
+        right: 14px;
+        display: flex;
+        flex-direction: column;
+        width: 60px;
+        height: auto;
+        gap: 8px;
+        padding: 8px;
+        border-radius: var(--glass-radius-panel);
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--glass-blur));
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+        border: var(--glass-border-glow);
+        box-shadow: var(--shadow-glass);
+        z-index: var(--z-blocker);
+    }
+
+    html body[data-panel-surface] .controls .control-btn {
+        width: var(--mobile-touch-min, 44px);
+        height: var(--mobile-touch-min, 44px);
+        min-width: var(--mobile-touch-min, 44px);
+        min-height: var(--mobile-touch-min, 44px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--glass-radius-action);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--color-primary);
+    }
+
+    .keyboard-hint-panel {
+        bottom: auto;
+        top: 220px;
+        right: 14px;
+        left: 14px;
+        min-width: 0;
+        z-index: var(--z-max);
+    }
+
+    html body[data-panel-surface] .panel-toggle {
+        display: none;
+    }
+
+    html body.is-active[data-journey-navigation-owner="map-trail-strip"] :is(
+        .controls,
+        .share-toggle,
+        .legend-toggle,
+        .help-toggle,
+        .panel-toggle,
+        .time-display
+    ) {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
     }
 
 } /* end @media chrome polish */

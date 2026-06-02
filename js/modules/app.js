@@ -51,6 +51,8 @@ import {
     hydrateLeadContext
 } from './lifecycle.js';
 import { initJourneyCompassAdapter, updateJourneyCompass } from './journey-compass-controller.js';
+import { initJourneySelectedCard } from './journey-selected-card.js';
+import { initSemanticDiveUiSubscriptions } from './semantic-dive-ui.js';
 import { initViewControllerAdapter, switchView } from './view-controller.js';
 import { revealSelectedBusinessCard } from './event-bindings.js';
 import { describeThreadLensForPoint } from './journey.js';
@@ -276,12 +278,20 @@ export async function init() {
         initSearchUiAdapter({ positionTooltip, updateTooltipContent, hideTooltip });
         initUiRenderersAdapter({ switchView });
         initJourneyCompassAdapter({ switchView });
+        initJourneySelectedCard({
+            getStrandArrivalNote: journeyModule.getStrandArrivalNote,
+            updateTraversalUi: journeyModule.updateTraversalUi
+        });
+        initSemanticDiveUiSubscriptions();
+        journeyModule.initFocusNeighborRailSubscriptions();
+        journeyWebglModule.initRouteTraceSubscriptions();
         initThreadInspectorAdapter({
             summarizeNeighborReason: journeyModule.summarizeNeighborReason,
             getInsideRelationshipLabel: journeyModule.getInsideRelationshipLabel,
             getCurrentTrailFocusIndex: journeyModule.getCurrentTrailFocusIndex,
             getFocusThreadCurvePoint: focusModule.getFocusThreadCurvePoint
         });
+        mapModule.initMapStateSubscriptions();
 
         initCameraControlsAdapter({
             setRouteChoreographyPhase: journeyWebglModule.setRouteChoreographyPhase,

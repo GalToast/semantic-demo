@@ -46,7 +46,7 @@ Priority:
 | `css/animations.css` | Final short-landscape/mobile override tail from the original cascade. |
 | `css/mobile_premium.css` | Final mobile override import shell only. Keep this as the sole app-shell reference for premium mobile overrides. |
 | `css/mobile_premium_focus.css` | Final mobile focus-search and semantic-dive composition. |
-| `css/mobile_premium_chrome.css` | Final mobile search drawer, filter/chrome, and map-control polish. |
+| `css/mobile_premium_chrome.css` | Final mobile search drawer, filter/chrome, fixed action rail, and map-control polish. |
 | `css/mobile_premium_state.css` | Final mobile idle, focus-search refinement, and map-view state ownership. |
 | `css/mobile_premium_idle.css` | Final narrow idle-state corrections, including mobile idle suppression of global chrome that overlaps the idle drawer/search lane. |
 | `css/mobile_premium_map_summary.css` | Final mobile `map-focus-search` selected map summary presentation. Keeps dedicated summary text/card styling out of late drawer geometry. |
@@ -68,6 +68,7 @@ Rules:
 - Edit `css/search.css` first for shared result-card semantics and desktop/mobile primitive styling.
 - Edit `css/mobile_premium_state.css` first for `data-panel-surface-detail="peek"` or `"expanded"` behavior.
 - Edit `css/mobile_premium_chrome.css` first for mobile search drawer chrome, controls, and state-agnostic polish.
+- `css/mobile_premium_chrome.css` owns late mobile positioning and visibility modifiers for `.share-toggle`, `.legend-toggle`, `.help-toggle`, and the compact `.controls` rail. Use existing z-index tokens and state-scoped selectors; do not use `!important` to force these above other surfaces.
 - Use `css/mobile_premium_surfaces.css` only for generic late geometry/touch-target backstops or map-specific compact result guards; do not add `data-panel-surface-detail` rules there.
 - Treat `css/mobile_base.css`, `css/progressive_disclosure.css`, and `css/strands.css` as legacy/supporting surfaces for this seam; avoid new overrides there unless a contract or visual proof requires it.
 - In `search` + `peek`, render one clean anchor row only; secondary result rows belong to expanded mode and must not appear as clipped slivers inside the collapsed sheet.

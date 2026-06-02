@@ -53,6 +53,7 @@ const selectorBaselines = {
     'progressive_disclosure.css': 2,
     'strands.css': 7,
     'animations.css': 0,
+    'mobile_premium_chrome.css': 4,
     'mobile_premium_state.css': 2,
     'mobile_premium_idle.css': 1,
   },
@@ -61,6 +62,7 @@ const selectorBaselines = {
     'layout_base.css': 10,
     'journey_active.css': 1,
     'strands.css': 2,
+    'mobile_premium_chrome.css': 4,
     'mobile_premium_state.css': 2,
   },
   '.search-results.active': {
@@ -78,6 +80,7 @@ const selectorBaselines = {
     'layout_base.css': 4,
     'journey_active.css': 1,
     'mobile_base.css': 1,
+    'mobile_premium_chrome.css': 4,
     'strands.css': 2,
   },
   '.journey-compass-title': {

@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { subscribeKeyed, EVENTS } from './event-bus.js';
 import * as THREE from 'three';
 import { isPointVisible } from './utils/geo-data.js';
 import { ROUTE_TRACE_COLORS } from './design-tokens.js';
@@ -120,6 +121,18 @@ export function setRouteChoreographyPhase(phase = 'overview', details = {}) {
         document.body.dataset.routeMotion = state.currentView === 'galaxy' ? phase : 'inactive';
     }
     refreshRouteTraceOverlay({ reason: details.reason || phase });
+}
+
+export function initRouteTraceSubscriptions() {
+    // Phase 3: Declarative synchronization
+    const sync = (payload = {}) => refreshRouteTraceOverlay(payload);
+    subscribeKeyed('route-trace:camera-node-focused', EVENTS.CAMERA_NODE_FOCUSED, sync);
+    subscribeKeyed('route-trace:search-success', EVENTS.SEARCH_SUCCESS, sync);
+    subscribeKeyed('route-trace:search-cleared', EVENTS.SEARCH_CLEARED, sync);
+    subscribeKeyed('route-trace:view-changed', EVENTS.VIEW_CHANGED, sync);
+    subscribeKeyed('route-trace:state-reset', EVENTS.STATE_RESET, sync);
+    subscribeKeyed('route-trace:filter-changed', EVENTS.FILTER_CHANGED, sync);
+    subscribeKeyed('route-trace:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync);
 }
 
 export function refreshRouteTraceOverlay(options = {}) {

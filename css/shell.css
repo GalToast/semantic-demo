@@ -178,6 +178,10 @@ body[data-active-view="map"] #canvas-container::after {
     opacity: 0;
 }
 
+body[data-active-view="map"] #canvas-container {
+    opacity: 0.15;
+}
+
 /* polish206: bridge mycelium to terrain before the layer swap. */
 body[data-active-view="galaxy"][data-terrain-handoff="flattening"] #canvas-container {
     opacity: 0.82;

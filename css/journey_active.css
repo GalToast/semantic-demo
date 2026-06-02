@@ -17,6 +17,7 @@
     border: var(--glass-border);
     background: var(--glass-bg);
     box-shadow: var(--shadow-glass);
+    overflow: hidden;
     transition:
         opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
         background 0.3s cubic-bezier(0.16, 1, 0.3, 1),

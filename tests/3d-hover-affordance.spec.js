@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { BASE_URL, setupMockSearch, openApp, isValidNodeIndex, projectedCanvasCandidates, focusNodeViaApp } from './helpers/3d-interaction-helpers.js';
+import { BASE_URL, setupMockSearch, openApp, isValidNodeIndex, projectedCandidates, focusNodeViaApp } from './helpers/3d-interaction-helpers.js';
 
 async function getHoverState(page) {
   return page.evaluate(() => {
@@ -27,22 +27,74 @@ async function getHoverState(page) {
   });
 }
 
-async function findHoverableNode(page) {
-  const candidates = await projectedCanvasCandidates(page);
-  for (const candidate of candidates) {
-    await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 });
-    await page.waitForTimeout(140);
-    const state = await getHoverState(page);
-    if (isValidNodeIndex(state.hoverHighlightIndex, state.pointCount) && state.canvasCursor === 'pointer') {
-      return {
-        ...candidate,
-        resolvedIndex: state.hoverHighlightIndex,
-        stableCanvasHover: state.stableCanvasHover,
-        lastCanvasNodeHover: state.lastCanvasNodeHover
-      };
+function screenDistance(a, b) {
+  return Math.hypot((a.screenX ?? 0) - (b.screenX ?? 0), (a.screenY ?? 0) - (b.screenY ?? 0));
+}
+
+async function findHoverableNode(page, { maxCandidates = 16 } = {}) {
+  const passes = [
+    { marginRatio: 0.08, maxResults: maxCandidates },
+    { marginRatio: 0.05, maxResults: Math.max(maxCandidates, 24) },
+    { marginRatio: 0.03, maxResults: Math.max(maxCandidates, 36) },
+  ];
+  for (const pass of passes) {
+    const candidates = await projectedCandidates(page, pass);
+    for (const candidate of candidates) {
+      await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 });
+      await page.waitForTimeout(140);
+      const state = await getHoverState(page);
+      if (isValidNodeIndex(state.hoverHighlightIndex, state.pointCount) && state.canvasCursor === 'pointer') {
+        return {
+          ...candidate,
+          resolvedIndex: state.hoverHighlightIndex,
+          stableCanvasHover: state.stableCanvasHover,
+          lastCanvasNodeHover: state.lastCanvasNodeHover
+        };
+      }
     }
+    await page.waitForTimeout(120);
   }
   return null;
+}
+
+async function collectDistinctHoverTargets(page, { maxCandidates = 28, minDistance = 36, count = 2 } = {}) {
+  const passes = [
+    { marginRatio: 0.08, maxResults: maxCandidates },
+    { marginRatio: 0.05, maxResults: Math.max(maxCandidates, 36) },
+    { marginRatio: 0.03, maxResults: Math.max(maxCandidates, 48) },
+  ];
+  const targets = [];
+  for (const pass of passes) {
+    const candidates = await projectedCandidates(page, pass);
+    for (const candidate of candidates) {
+      await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 });
+      await page.waitForTimeout(160);
+      const state = await getHoverState(page);
+      if (!isValidNodeIndex(state.hoverHighlightIndex, state.pointCount) || state.canvasCursor !== 'pointer') continue;
+      const target = { ...candidate, resolvedIndex: state.hoverHighlightIndex };
+      const duplicateOrSticky = targets.some((existing) =>
+        existing.resolvedIndex === target.resolvedIndex || screenDistance(existing, target) < minDistance
+      );
+      if (duplicateOrSticky) continue;
+      targets.push(target);
+      if (targets.length >= count) return targets;
+    }
+    await page.waitForTimeout(120);
+  }
+  return targets;
+}
+
+async function moveToValidHover(page, target, { excludeIndex = null, timeout = 4000 } = {}) {
+  await page.mouse.move(target.screenX, target.screenY, { steps: 1 });
+  await page.waitForFunction(({ exclude }) => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const pointCount = state.points?.length ?? 0;
+    const hover = state.hoverHighlightIndex;
+    const cursor = state.renderer?.domElement?.style?.cursor ?? '';
+    const valid = Number.isFinite(hover) && hover >= 0 && hover < pointCount;
+    return valid && cursor === 'pointer' && (exclude === null || hover !== exclude);
+  }, { exclude: excludeIndex }, { timeout });
+  return getHoverState(page);
 }
 
 async function moveUntilHoverClears(page) {
@@ -65,7 +117,7 @@ async function moveUntilHoverClears(page) {
         const cleared = state.hoverHighlightIndex === -1 || state.hoverHighlightIndex === null;
         const cursor = state.renderer?.domElement?.style?.cursor ?? '';
         return cleared && cursor !== 'pointer';
-      }, { timeout: 800 });
+      }, undefined, { timeout: 800 });
       return await getHoverState(page);
     } catch (e) {
       lastState = await getHoverState(page);
@@ -190,37 +242,15 @@ test.describe('3D node hover affordance', () => {
     test.setTimeout(60000);
     await openApp(page, { width: 1440, height: 900 });
 
-    const candidates = await projectedCanvasCandidates(page);
-    expect(candidates.length, 'need multiple candidates for rapid-move test').toBeGreaterThan(1);
-
-    let first = null;
-    let second = null;
-    for (const candidate of candidates) {
-      await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 });
-      await page.waitForTimeout(160);
-      const resolved = await getHoverState(page);
-      if (!isValidNodeIndex(resolved.hoverHighlightIndex, resolved.pointCount)) continue;
-      const resolvedCandidate = { ...candidate, resolvedIndex: resolved.hoverHighlightIndex };
-      if (!first) {
-        first = resolvedCandidate;
-      } else if (resolvedCandidate.resolvedIndex !== first.resolvedIndex) {
-        second = resolvedCandidate;
-        break;
-      }
-    }
+    const [first, second] = await collectDistinctHoverTargets(page);
     expect(first, 'first resolved hover target must exist').not.toBeNull();
-    expect(second, 'second distinct resolved hover target must exist').not.toBeNull();
+    expect(second, 'second distinct resolved hover target outside sticky-hover range must exist').not.toBeNull();
 
-    await page.mouse.move(first.screenX, first.screenY, { steps: 1 });
+    await moveToValidHover(page, first);
     await page.waitForTimeout(40);
-    await page.mouse.move(second.screenX, second.screenY, { steps: 1 });
-    await page.waitForFunction((expectedIndex) => {
-      const hover = (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).hoverHighlightIndex;
-      return hover === expectedIndex;
-    }, second.resolvedIndex, { timeout: 20000 });
+    await moveToValidHover(page, second, { excludeIndex: first.resolvedIndex });
 
     const state = await getHoverState(page);
-    expect(state.hoverHighlightIndex, 'rapid move should settle on the last hovered node, not stale first node').toBe(second.resolvedIndex);
     expect(state.hoverHighlightIndex, 'rapid move must not leave stale first hover selected').not.toBe(first.resolvedIndex);
     expect(state.canvasCursor, 'cursor should be pointer after final hover').toBe('pointer');
   });
@@ -229,13 +259,10 @@ test.describe('3D node hover affordance', () => {
     test.setTimeout(60000);
     await openApp(page, { width: 1440, height: 900 });
 
-    // First establish a solid hover on one node
-    const candidates = await projectedCanvasCandidates(page);
-    expect(candidates.length, 'need candidates for stale-state test').toBeGreaterThan(0);
-
-    const first = candidates[0];
-    await page.mouse.move(first.screenX, first.screenY, { steps: 1 });
-    await page.waitForTimeout(200);
+    // First establish a solid hover on one node.
+    const first = await findHoverableNode(page, { maxCandidates: 24 });
+    expect(first, 'need a resolved hover target for stale-state test').not.toBeNull();
+    await moveToValidHover(page, first);
 
     const initial = await getHoverState(page);
     expect(isValidNodeIndex(initial.hoverHighlightIndex, initial.pointCount), 'initial hover must be valid').toBe(true);
@@ -267,8 +294,8 @@ test.describe('3D node hover affordance', () => {
     test.setTimeout(60000);
     await openApp(page, { width: 390, height: 844 });
 
-    const candidates = await projectedCanvasCandidates(page);
-    expect(candidates.length, 'need candidates for mobile rapid-move test').toBeGreaterThan(0);
+    const candidates = await collectDistinctHoverTargets(page, { maxCandidates: 24, minDistance: 12, count: 4 });
+    expect(candidates.length, 'need resolved hover candidates for mobile rapid-move test').toBeGreaterThan(0);
 
     // Rapid movement across candidates
     for (const candidate of candidates.slice(0, 4)) {

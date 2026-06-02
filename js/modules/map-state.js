@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { subscribeKeyed, EVENTS } from './event-bus.js';
 import { pointHasGeocode, isPointVisible } from './utils/geo-data.js';
 import { formatBusinessName } from './utils/dom-formatters.js';
 import { showExperienceToast, focusOnPoint } from './lifecycle.js';
@@ -55,6 +56,23 @@ export async function loadLeafletAssets() {
     });
 
     return leafletAssetsPromise;
+}
+
+export function initMapStateSubscriptions() {
+    // Phase 3: Declarative synchronization
+    const sync = (payload = {}) => {
+        syncRouteDirectorState(payload.reason || 'state');
+        refreshMapMarkers();
+        refreshMapRouteEmbodiment();
+    };
+
+    subscribeKeyed('map-state:camera-node-focused', EVENTS.CAMERA_NODE_FOCUSED, sync);
+    subscribeKeyed('map-state:search-success', EVENTS.SEARCH_SUCCESS, sync);
+    subscribeKeyed('map-state:search-cleared', EVENTS.SEARCH_CLEARED, sync);
+    subscribeKeyed('map-state:view-changed', EVENTS.VIEW_CHANGED, sync);
+    subscribeKeyed('map-state:state-reset', EVENTS.STATE_RESET, sync);
+    subscribeKeyed('map-state:filter-changed', EVENTS.FILTER_CHANGED, sync);
+    subscribeKeyed('map-state:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync);
 }
 
 export async function initMap() {

@@ -1,4 +1,5 @@
 import { state } from '../../state.js';
+import { publish, EVENTS } from '../event-bus.js';
 import { applyFilters, clearSearchGlow, search } from '../search-state.js';
 import { syncFilterControls } from '../lifecycle.js';
 import { setActiveFilter, toggleActiveFilterSignal, resetActiveFilters } from '../filter-state.js';
@@ -21,6 +22,7 @@ export function bindFilterControls(updateUrlState) {
             applyFilters();
             if (typeof updateUrlState === 'function') updateUrlState({}, { reason: updateReason });
             refreshActiveSearchResults();
+            publish(EVENTS.FILTER_CHANGED, { type: 'general', reason: updateReason });
         }, 150);
     };
 

@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { subscribeKeyed, EVENTS } from './event-bus.js';
 import * as adapter from './journey-lifecycle-adapter.js';
 import { formatBusinessName, escapeHtml, cleanOptionalValue } from './utils/dom-formatters.js';
 import { isCompactFocusStageViewport } from './utils/ui-presentation.js';
@@ -50,6 +51,18 @@ export function shouldUseFloatingFocusJourneyOnly() {
     return typeof adapter.shouldUseFloatingFocusJourneyOnly === 'function'
         ? adapter.shouldUseFloatingFocusJourneyOnly()
         : false;
+}
+
+export function initFocusNeighborRailSubscriptions() {
+    // Phase 3: Declarative synchronization
+    const sync = () => updateFocusNeighborRail();
+    subscribeKeyed('focus-neighbor-rail:camera-node-focused', EVENTS.CAMERA_NODE_FOCUSED, sync);
+    subscribeKeyed('focus-neighbor-rail:search-success', EVENTS.SEARCH_SUCCESS, sync);
+    subscribeKeyed('focus-neighbor-rail:search-cleared', EVENTS.SEARCH_CLEARED, sync);
+    subscribeKeyed('focus-neighbor-rail:filter-changed', EVENTS.FILTER_CHANGED, sync);
+    subscribeKeyed('focus-neighbor-rail:view-changed', EVENTS.VIEW_CHANGED, sync);
+    subscribeKeyed('focus-neighbor-rail:state-reset', EVENTS.STATE_RESET, sync);
+    subscribeKeyed('focus-neighbor-rail:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync);
 }
 
 export function updateFocusNeighborRail() {

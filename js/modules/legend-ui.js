@@ -34,10 +34,13 @@ export function openLegendPanel() {
     if (document.documentElement.dataset.legendActive === 'true') return; // already open
 
     panel.setAttribute('aria-hidden', 'false');
+    panel.classList.add('active');
     document.documentElement.dataset.legendActive = 'true';
     toggle.setAttribute('aria-expanded', 'true');
     toggle.setAttribute('aria-pressed', 'true');
     toggle.setAttribute('aria-label', 'Hide field guide');
+    // Always (re)build so the panel has content even when no semantic guide is active.
+    buildLegend();
 }
 
 /**
@@ -55,6 +58,7 @@ export function closeLegendPanel() {
     if (document.documentElement.dataset.legendActive !== 'true') return; // already closed
 
     panel.setAttribute('aria-hidden', 'true');
+    panel.classList.remove('active');
     document.documentElement.dataset.legendActive = 'false';
     toggle.setAttribute('aria-expanded', 'false');
     toggle.setAttribute('aria-pressed', 'false');
@@ -171,7 +175,15 @@ export function setPreviouslyFocusedLegend(el) { _previouslyFocusedLegend = el; 
 export function getPreviouslyFocusedLegend() { return _previouslyFocusedLegend; }
 
 // Event Bus Subscriptions
+const syncLegend = () => {
+    updateLegendGuideState();
+};
+
 subscribe(EVENTS.VIEW_CHANGED, () => {
     closeLegendPanel();
-    updateLegendGuideState();
+    syncLegend();
 });
+subscribe(EVENTS.FILTER_CHANGED, syncLegend);
+subscribe(EVENTS.STATE_RESET, syncLegend);
+subscribe(EVENTS.SEARCH_SUCCESS, syncLegend);
+subscribe(EVENTS.SEARCH_CLEARED, syncLegend);

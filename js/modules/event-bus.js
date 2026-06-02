@@ -23,6 +23,7 @@ export const EVENTS = Object.freeze({
     // Global State / Lifecycle
     VIEW_CHANGED: 'VIEW_CHANGED',
     STATE_RESET: 'STATE_RESET',
+    FILTER_CHANGED: 'FILTER_CHANGED',
     EXPLORATION_DEPTH_CHANGED: 'EXPLORATION_DEPTH_CHANGED',
     
     // UI Interactions
@@ -31,6 +32,7 @@ export const EVENTS = Object.freeze({
 });
 
 const _subscribers = new Map();
+const _keyedSubscribers = new Map();
 
 /**
  * Subscribe to an application event.
@@ -51,6 +53,36 @@ export function subscribe(eventName, callback) {
     callbacks.add(callback);
 
     return () => callbacks.delete(callback);
+}
+
+/**
+ * Subscribe with a stable ownership key. Reusing the same key replaces the
+ * previous callback, preventing duplicate subscriptions across app re-init or
+ * WebGL context restore.
+ *
+ * @param {string} key - Stable owner/event key.
+ * @param {string} eventName - Key from EVENTS manifest.
+ * @param {Function} callback - Function to execute on publish.
+ * @returns {Function} - Unsubscribe function.
+ */
+export function subscribeKeyed(key, eventName, callback) {
+    if (!key) return subscribe(eventName, callback);
+
+    const existing = _keyedSubscribers.get(key);
+    if (existing && typeof existing.unsubscribe === 'function') {
+        existing.unsubscribe();
+    }
+
+    const unsubscribe = subscribe(eventName, callback);
+    const keyedUnsubscribe = () => {
+        unsubscribe();
+        if (_keyedSubscribers.get(key)?.unsubscribe === keyedUnsubscribe) {
+            _keyedSubscribers.delete(key);
+        }
+    };
+
+    _keyedSubscribers.set(key, { eventName, unsubscribe: keyedUnsubscribe });
+    return keyedUnsubscribe;
 }
 
 /**

@@ -3,7 +3,8 @@ export {
     removeRouteTraceOverlay,
     setRouteChoreographyPhase,
     refreshRouteTraceOverlay,
-    updateRouteTraceOverlayPositions
+    updateRouteTraceOverlayPositions,
+    initRouteTraceSubscriptions
 } from './journey-route-trace.js';
 
 export {

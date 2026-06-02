@@ -1,4 +1,6 @@
 import { state } from '../state.js';
+import { subscribeKeyed, EVENTS } from './event-bus.js';
+import { isPointVisible } from './utils/geo-data.js';
 import * as adapter from './journey-lifecycle-adapter.js';
 import { describeCluster, updateDocumentMeta } from './utils/ui-presentation.js';
 import { sanitizePublicFacingNote, getBusinessNamePresentation, escapeHtml, getPublicRecordStatusLabel } from './utils/dom-formatters.js';
@@ -10,7 +12,6 @@ import {
     renderSelectedActionRow,
     syncSelectedCardContentVariant,
 } from './ui-renderers.js';
-import { refreshCompositionState } from './lifecycle.js';
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
 
 const selectedCardAdapter = {
@@ -32,6 +33,24 @@ const COPY = Object.freeze({
     selectedEmptyWhat: 'What they do',
     selectedEmptyRole: 'Record',
 });
+
+export function initJourneySelectedCard(deps = {}) {
+    initJourneySelectedCardAdapter(deps);
+
+    // Phase 3: Declarative synchronization
+    const sync = () => {
+        updateSelectedBusiness(state.selectedPoint || null, { skipHydrate: true });
+    };
+
+    subscribeKeyed('journey-selected-card:camera-node-focused', EVENTS.CAMERA_NODE_FOCUSED, sync);
+    subscribeKeyed('journey-selected-card:search-success', EVENTS.SEARCH_SUCCESS, sync);
+    subscribeKeyed('journey-selected-card:search-cleared', EVENTS.SEARCH_CLEARED, sync);
+    subscribeKeyed('journey-selected-card:filter-changed', EVENTS.FILTER_CHANGED, sync);
+    subscribeKeyed('journey-selected-card:view-changed', EVENTS.VIEW_CHANGED, sync);
+    subscribeKeyed('journey-selected-card:state-reset', EVENTS.STATE_RESET, sync);
+    subscribeKeyed('journey-selected-card:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync);
+    subscribeKeyed('journey-selected-card:search-focus-transition-settled', EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, sync);
+}
 
 export function initJourneySelectedCardAdapter(deps = {}) {
     if (typeof deps.getStrandArrivalNote === 'function') {
@@ -75,7 +94,14 @@ export function syncFocusStage(point) {
         || state.selectedPoint
         || ((state.focusedNode !== null && state.focusedNode !== undefined && Number.isFinite(state.focusedNode) && state.focusedNode >= 0 && state.focusedNode < state.points.length) ? state.points[state.focusedNode] : null);
 
-    if (!effectivePoint || state.currentView !== 'galaxy' || state.focusedNode === null) {
+    const effectiveIndex = Number.isFinite(state.focusedNode) && state.points[state.focusedNode] === effectivePoint
+        ? state.focusedNode
+        : state.points.indexOf(effectivePoint);
+    const isFilteredOut = Number.isFinite(effectiveIndex)
+        && effectiveIndex >= 0
+        && !isPointVisible(effectiveIndex, state.points, state.activeClusterFilter, state.activeFilters);
+
+    if (!effectivePoint || state.currentView !== 'galaxy' || state.focusedNode === null || isFilteredOut) {
         applyClusterUiAccent(stageCard, null);
         stage.hidden = true;
         stage.setAttribute('aria-hidden', 'true');
@@ -225,7 +251,6 @@ export function syncFocusStage(point) {
         onboardingHint._dismissedThisSession = true;
         if (onboardingHint._autoHideTimer) clearTimeout(onboardingHint._autoHideTimer);
     }
-    refreshCompositionState();
 }
 
 export function updateSelectedBusiness(point, options = {}) {
