@@ -17,13 +17,29 @@
     border: var(--glass-border);
     background: var(--glass-bg);
     box-shadow: var(--shadow-glass);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition:
+        opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @media (min-width: 769px) {
     .journey-compass {
         left: calc(360px + (100vw - 360px) / 2);
         max-width: calc(100vw - 392px);
+    }
+
+    body[data-active-view="galaxy"]:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .journey-compass {
+        --desktop-focus-lane-left: 384px;
+        --desktop-focus-panel-width: clamp(320px, 27vw, 392px);
+        --desktop-focus-lane-gap: 40px;
+        left: var(--desktop-focus-lane-left);
+        right: auto;
+        width: min(520px, calc(100vw - var(--desktop-focus-lane-left) - var(--desktop-focus-panel-width) - var(--desktop-focus-lane-gap)));
+        min-width: 0;
+        max-width: none;
+        transform: none;
     }
 }
 

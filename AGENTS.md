@@ -118,6 +118,13 @@ npm run serve          # static dev server on 127.0.0.1:8795
 
 Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-demo-contract.mjs`, `tests/focus-pocket-motion-contract.mjs`, `tests/loading-ui-contract.mjs`, `tests/scene-atmosphere-contract.mjs`, `tests/three-visual-polish-contract.mjs`, `tests/weather-surface-ownership-contract.mjs`, `tests/weather-widget-render-contract.mjs`, `tests/info-panel-collapsed-render-contract.mjs`, `tests/mode-chip-state-render-contract.mjs`, `tests/search-peek-expanded-render-contract.mjs`
 
+## UI Critic Operating Contract
+- Diagnose before editing: identify the owning surface, winning selector/state writer, and whether transitions, inline style, `!important`, media queries, or late imports control the bug.
+- For every UI fix, capture failing geometry before and passing geometry after; include overlap, clipping, stale hidden-layout elements, z-index/occlusion, and visible screenshot/snapshot evidence when composition matters.
+- Treat repeated narrow CSS fixes on the same surface as an ownership smell. Stop and define or update the layout contract instead of adding another selector.
+- Do not keep unproven CSS. If a rule does not change live computed geometry in DevTools or focused QA, remove it before handoff.
+- Final UI handoffs must state verified checks, unverified surfaces, known unrelated failures, and the next suspicious seam.
+
 ## Debug Flags
 - `?demo=force` - re-trigger demo even if already seen
 - `?nodemo=1` - suppress demo entirely

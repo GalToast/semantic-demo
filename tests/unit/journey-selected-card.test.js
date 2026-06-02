@@ -57,7 +57,7 @@ describe('journey-selected-card', () => {
             <div id="onboarding-hint" class="visible"></div>
             <div id="selected-empty"></div>
             <div id="selected-details"></div>
-            <div id="selected-card" class="is-empty"></div>
+            <div id="selected-card"></div>
             <div id="selected-name"></div>
             <div id="selected-what"></div>
             <div id="selected-role-badge"></div>

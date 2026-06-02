@@ -110,34 +110,19 @@ body[data-active-view="map"] .cluster-legend {
     transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, opacity 0.22s ease, filter 0.22s ease;
 }
 
-.selected-card.is-empty .selected-empty {
+.selected-card.reveal-focus {
+    border-color: rgb(var(--cluster-rgb) / 0.56);
+    box-shadow: 0 0 0 1px rgb(var(--cluster-rgb) / 0.18), 0 18px 34px rgba(6, 18, 24, 0.36);
+}
+
+/* Empty/populated visibility is renderer-owned; this file owns the empty composition. */
+.selected-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
     gap: 14px;
     padding: 28px 20px 24px;
-}
-
-.selected-card.is-empty {
-    display: block;
-}
-
-.selected-card.is-empty .selected-details {
-    display: none;
-}
-
-.selected-card:not(.is-empty) .selected-empty {
-    display: none;
-}
-
-.selected-card:not(.is-empty) .selected-details {
-    display: block;
-}
-
-.selected-card.reveal-focus {
-    border-color: rgb(var(--cluster-rgb) / 0.56);
-    box-shadow: 0 0 0 1px rgb(var(--cluster-rgb) / 0.18), 0 18px 34px rgba(6, 18, 24, 0.36);
 }
 
 /* --- Selected Card Internal Layout & Aesthetics --- */

@@ -86,8 +86,8 @@
 
 .control-btn .ui-icon,
 .panel-toggle .ui-icon,
-.legend-toggle .ui-icon,
-.share-toggle .ui-icon {
+[id="btn-legend"] .ui-icon,
+[id="btn-share-view"] .ui-icon {
     width: 16px;
     height: 16px;
 }
@@ -102,7 +102,7 @@
 .focus-stage-journey-btn,
 .btn-synthesize,
 .suggestion-btn,
-.share-toggle {
+[id="btn-share-view"] {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -110,8 +110,8 @@
 
 .control-btn,
 .panel-toggle,
-.legend-toggle,
-.share-toggle {
+[id="btn-legend"],
+[id="btn-share-view"] {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -130,10 +130,10 @@
 .control-btn:focus-visible,
 .panel-toggle:hover,
 .panel-toggle:focus-visible,
-.legend-toggle:hover,
-.legend-toggle:focus-visible,
-.share-toggle:hover,
-.share-toggle:focus-visible {
+[id="btn-legend"]:hover,
+[id="btn-legend"]:focus-visible,
+[id="btn-share-view"]:hover,
+[id="btn-share-view"]:focus-visible {
     border-color: rgba(var(--color-primary-rgb), 0.3);
     background: var(--glass-bg-accent, rgba(15, 20, 30, 0.72));
     color: var(--color-text-primary);
@@ -174,7 +174,7 @@
 .focus-stage-journey-btn,
 .btn-synthesize,
 .suggestion-btn,
-.share-toggle {
+[id="btn-share-view"] {
     gap: 6px;
 }
 

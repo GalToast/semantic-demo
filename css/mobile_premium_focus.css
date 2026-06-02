@@ -673,7 +673,9 @@
 
     html body.is-active[data-panel-surface="focus-search"][data-focus-panel-mode="field-node"] .focus-stage-journey.active {
         display: flex;
+        gap: 12px;
         margin: 0 10px 12px;
+        padding: 10px 14px;
         width: auto;
     }
 

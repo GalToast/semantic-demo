@@ -1286,9 +1286,6 @@ async function applyPopulatedInfoPanelState(page) {
     document.body.dataset.graphContext = 'focus';
     document.body.dataset.panelSurface = 'focus';
 
-    const selectedCard = document.querySelector('#selected-card');
-    selectedCard?.classList.remove('is-empty');
-
     const selectedDetails = document.querySelector('#selected-details');
     if (selectedDetails) {
       selectedDetails.classList.add('active');

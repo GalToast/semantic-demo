@@ -1402,7 +1402,6 @@ async function assert_info_panel_empty(page, ctx) {
     if (selectedCard) {
       const style = getComputedStyle(selectedCard);
       results.selectedCardDisplay = style.display;
-      results.selectedCardHasEmptyClass = selectedCard.classList.contains('is-empty');
     }
 
     const selectedEmpty = document.querySelector('#selected-empty');
@@ -1442,8 +1441,15 @@ async function assert_info_panel_empty(page, ctx) {
   if (info.selectedCardPresent) ctx.pass('info-panel-empty', 'dom:selected-card');
   else ctx.fail('info-panel-empty', 'dom:selected-card', 'missing #selected-card');
 
-  if (info.selectedCardHasEmptyClass) ctx.pass('info-panel-empty', 'state:selected-card-empty');
-  else ctx.fail('info-panel-empty', 'state:selected-card-empty', 'selected-card missing is-empty class');
+  // Empty-state visibility is governed by the renderer's setSurfaceHidden
+  // calls on #selected-empty / #selected-details. Assert visibility directly
+  // rather than the legacy .is-empty class.
+  if (info.selectedEmptyVisible && info.selectedDetailsHidden) {
+    ctx.pass('info-panel-empty', 'state:selected-card-empty');
+  } else {
+    ctx.fail('info-panel-empty', 'state:selected-card-empty',
+      `expected #selected-empty visible and #selected-details hidden, got emptyVisible=${info.selectedEmptyVisible} detailsHidden=${info.selectedDetailsHidden}`);
+  }
 
   if (info.selectedEmptyVisible) ctx.pass('info-panel-empty', 'visibility:selected-empty');
   else ctx.fail('info-panel-empty', 'visibility:selected-empty', '#selected-empty is not visible');
@@ -2578,7 +2584,8 @@ async function assert_info_panel_populated(page, ctx) {
 
     const selectedCard = document.querySelector('#selected-card');
     if (selectedCard) {
-      selectedCard.classList.remove('is-empty');
+      // Card populated state is now driven by the renderer's
+      // setSurfaceHidden calls. No .is-empty class to remove.
     }
 
     const selectedDetails = document.querySelector('#selected-details');
@@ -2605,8 +2612,6 @@ async function assert_info_panel_populated(page, ctx) {
   await page.waitForTimeout(300);
 
   await page.evaluate(() => {
-    const selectedCard = document.querySelector('#selected-card');
-    selectedCard?.classList.remove('is-empty');
     const selectedDetails = document.querySelector('#selected-details');
     if (selectedDetails) {
       selectedDetails.classList.add('active');
@@ -2646,7 +2651,6 @@ async function assert_info_panel_populated(page, ctx) {
 
     const selectedCard = document.querySelector('#selected-card');
     results.selectedCardPresent = selectedCard !== null;
-    results.selectedCardHasEmptyClass = selectedCard ? selectedCard.classList.contains('is-empty') : null;
     if (selectedCard) {
       const style = getComputedStyle(selectedCard);
       results.selectedCardBlackOnDark = blackOnDark(style.backgroundColor, style.color);
@@ -2691,8 +2695,9 @@ async function assert_info_panel_populated(page, ctx) {
   if (info.selectedCardPresent) ctx.pass('info-panel-populated', 'dom:#selected-card');
   else ctx.fail('info-panel-populated', 'dom:#selected-card', 'missing #selected-card');
 
-  if (!info.selectedCardHasEmptyClass) ctx.pass('info-panel-populated', 'state:#selected-card-populated');
-  else ctx.fail('info-panel-populated', 'state:#selected-card-populated', 'selected-card still has is-empty class');
+  // Populated state: #selected-details is visible.
+  if (info.selectedDetailsVisible) ctx.pass('info-panel-populated', 'state:#selected-card-populated');
+  else ctx.fail('info-panel-populated', 'state:#selected-card-populated', '#selected-details is hidden in populated state');
 
   if (info.selectedCardBlackOnDark) ctx.fail('info-panel-populated', 'black-on-dark:#selected-card', 'black text on dark #selected-card');
   else if (info.selectedCardBlackOnDark === false) ctx.pass('info-panel-populated', 'black-on-dark:#selected-card');

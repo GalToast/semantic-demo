@@ -241,7 +241,6 @@ export function updateSelectedBusiness(point, options = {}) {
         detailsEl.style.display = 'none';
         detailsEl.classList.remove('active');
         if (cardEl) applyClusterUiAccent(cardEl, null);
-        if (cardEl) cardEl.classList.add('is-empty');
         if (typeof renderSelectedMetaStrip === 'function') renderSelectedMetaStrip(null);
         if (typeof renderSelectedMatchPanel === 'function') renderSelectedMatchPanel(null);
         if (typeof renderSelectedActionRow === 'function') renderSelectedActionRow(null);
@@ -287,7 +286,10 @@ export function updateSelectedBusiness(point, options = {}) {
         return;
     }
 
-    const cardWasEmpty = cardEl && cardEl.classList.contains('is-empty');
+    // Detect transition into populated state by reading the rendered
+    // visibility of the details panel (single source of truth for the
+    // card's empty/populated visibility, set by setSurfaceHidden).
+    const cardWasEmpty = detailsEl && window.getComputedStyle(detailsEl).display === 'none';
     if (cardWasEmpty) {
         cardEl.style.opacity = '0';
         setTimeout(() => {
@@ -295,7 +297,6 @@ export function updateSelectedBusiness(point, options = {}) {
         }, 180);
     }
     if (cardEl) applyClusterUiAccent(cardEl, point);
-    if (cardEl) cardEl.classList.remove('is-empty');
     emptyEl.style.display = 'none';
     detailsEl.style.display = 'block';
     detailsEl.classList.add('active');

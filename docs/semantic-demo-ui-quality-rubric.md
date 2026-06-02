@@ -40,4 +40,15 @@ To prevent silent ownership drift, run `RATCHET=1 npm run qa:surface-redundancy`
 - Targeted surface contract passes.
 - Rendered visual/luminance QA passes for the relevant state.
 - No unresolved severe findings from a designer/adversarial pass.
+- Before/after geometry for changed surfaces, including viewport fit and overlap checks.
+- Winning owner evidence for CSS/layout fixes: selector, media query, state attribute, late import, transition, or runtime writer.
 - Screenshots or DOM evidence saved under `tmp/` when visual judgment is involved.
+- Known residual risks and unrelated failures called out explicitly.
+
+## Adversarial Critic Checklist
+
+- Check major surfaces for overlap, clipping, and occlusion, not only viewport overflow.
+- Look for hidden or stale state chrome that still takes layout space.
+- Verify text and controls fit after transitions settle.
+- Confirm the edited rule changes live computed geometry in DevTools before accepting it.
+- Escalate repeated fixes on one surface into a layout ownership update.

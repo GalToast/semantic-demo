@@ -25,10 +25,6 @@
                 display: none;
             }
 
-            body[data-active-view="galaxy"] .selected-card.is-empty {
-                display: none;
-            }
-
             body[data-active-view="galaxy"] .cluster-section summary {
                 align-items: flex-start;
             }
@@ -160,12 +156,12 @@
                 box-shadow: 0 18px 40px rgba(0, 0, 0, 0.26);
             }
 
-            /* Hide .controls in galaxy search/focus-search — these states are
-               dominated by the search sheet; the rail is redundant chrome.
-               Map-* states are excluded via [data-panel-surface^="map-"]
-               which does not match "search" or "focus-search". */
-            body[data-panel-surface="search"] .controls,
-            body[data-panel-surface="focus-search"] .controls {
+            /* Non-map search/focus sheets own the mobile action surface; map states keep map controls. */
+            body[data-active-view="galaxy"]:is(
+                [data-panel-surface="search"],
+                [data-panel-surface="focus"],
+                [data-panel-surface="focus-search"]
+            ) .controls {
                 visibility: hidden;
                 pointer-events: none;
             }
@@ -824,7 +820,6 @@ body[data-panel-surface="semantic-dive"]::after {
 
 /* ── Overview (idle): full sidebar including first-time discovery scaffolding ─── */
 
-body[data-panel-surface="idle"] .selected-card:not(.is-empty),
 body[data-panel-surface="idle"] .search-trail-cue,
 body[data-panel-surface="idle"] .synthesize-trigger,
 body[data-panel-surface="idle"] .search-results.active,
@@ -838,8 +833,6 @@ body[data-panel-surface="idle"] #cluster-section {
 
 body[data-panel-surface="search"] .demo-starters,
 body[data-panel-surface="search"] .exploration-card,
-body[data-panel-surface="search"] .selected-card.is-empty,
-body[data-panel-surface="search"] .selected-card:not(.is-empty),
 body[data-panel-surface="search"] .focus-stage,
 body[data-panel-surface="search"] .focus-thread-inspector {
     display: none;
@@ -858,7 +851,6 @@ body[data-panel-surface="focus"] .search-trail-cue,
 body[data-panel-surface="focus"] .demo-starters,
 body[data-panel-surface="focus"] .exploration-card,
 body[data-panel-surface="focus"] .mode-grid,
-body[data-panel-surface="focus"] .selected-card.is-empty,
 body[data-panel-surface="focus"] .stats-row,
 body[data-panel-surface="focus"] .launch-btn,
 body[data-panel-surface="focus"] .rail-section#cluster-section,
@@ -870,7 +862,6 @@ body[data-panel-surface="focus"] .rail-section#filters-section {
 
 body[data-panel-surface="focus-search"] .demo-starters,
 body[data-panel-surface="focus-search"] .exploration-card,
-body[data-panel-surface="focus-search"] .selected-card.is-empty,
 body[data-panel-surface="focus-search"] .stats-row,
 body[data-panel-surface="focus-search"] .launch-btn,
 body[data-panel-surface="focus-search"] .rail-section#cluster-section,
@@ -885,7 +876,6 @@ body[data-panel-surface="semantic-dive"] .synthesize-trigger,
 body[data-panel-surface="semantic-dive"] .search-trail-cue,
 body[data-panel-surface="semantic-dive"] .demo-starters,
 body[data-panel-surface="semantic-dive"] .exploration-card,
-body[data-panel-surface="semantic-dive"] .selected-card.is-empty,
 body[data-panel-surface="semantic-dive"] .stats-row,
 body[data-panel-surface="semantic-dive"] .rail-section#cluster-section,
 body[data-panel-surface="semantic-dive"] .rail-section#filters-section,
