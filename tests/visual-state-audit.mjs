@@ -399,6 +399,8 @@ async function captureState(page, name) {
       '.journey-compass',
       '.search-container',
       '#search-results',
+      '#search-status',
+      '#search-status-live',
       '.search-results-count',
       '.search-result-listitem:nth-child(2)',
       '#mode-grid',
@@ -430,6 +432,11 @@ async function captureState(page, name) {
       '.search-error-kicker',
       '.search-error-retry-btn',
       '.search-error-dismiss-btn',
+      '.search-empty-state',
+      '.search-empty-title',
+      '.search-empty-note',
+      '.search-empty-discovery',
+      '.search-suggestion-chip',
       '#loading-overlay',
       '.loading-shell',
       '.loading-kicker',
@@ -536,6 +543,7 @@ async function captureState(page, name) {
         animationName: style.animationName,
         animationDuration: style.animationDuration,
         clusterRgb: style.getPropertyValue('--cluster-rgb').trim(),
+        className: element.className || '',
         dataset: { ...element.dataset },
         topElement: describeElement(topElement),
         centerTopInside: topElement ? element.contains(topElement) : false,
@@ -1558,6 +1566,7 @@ async function run() {
       '20-mobile-mode-grid-visible',
       '21-mobile-route-trace-visible',
       '24-mobile-map-focus-search',
+      '25-mobile-search-no-results',
     ])) {
       const browser = await chromium.launch(launchOptions);
       try {
@@ -1656,6 +1665,20 @@ async function run() {
           });
           await markVisualRouteEvidence(mobilePage, 'constructed-surface', 'visual audit search error fixture');
           await captureMaybe(states, mobilePage, '10-mobile-search-error-state');
+        }
+
+        if (wantsState('25-mobile-search-no-results')) {
+          await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy', q: 'xj9k2l' }));
+          await mobilePage.waitForFunction(() => {
+            const status = document.querySelector('#search-status');
+            const results = document.querySelector('#search-results');
+            return Boolean(
+              results?.classList.contains('active') &&
+              document.querySelector('.search-empty-state') &&
+              status?.textContent?.includes('No matching records found for "xj9k2l"')
+            );
+          }, undefined, { timeout: 15000 }).catch(() => {});
+          await captureMaybe(states, mobilePage, '25-mobile-search-no-results');
         }
 
         if (wantsState('11-mobile-selected-card-map-trail')) {
@@ -2644,6 +2667,91 @@ async function run() {
       '.search-error-dismiss-btn',
     ]) {
       requireRendered('10-mobile-search-error-state', `search-error-visible:${selector}`, selector);
+    }
+  }
+
+  if (shouldAssert('25-mobile-search-no-results')) {
+    const noResultsState = requireState('25-mobile-search-no-results');
+    const searchContainer = box(noResultsState, '.search-container');
+    const searchResults = box(noResultsState, '#search-results');
+    const emptyState = box(noResultsState, '.search-empty-state');
+    const emptyTitle = box(noResultsState, '.search-empty-title');
+    const emptyNote = box(noResultsState, '.search-empty-note');
+    const suggestionChip = box(noResultsState, '.search-suggestion-chip');
+    const infoPanel = box(noResultsState, '#info-panel');
+    const shareToggle = box(noResultsState, '.share-toggle');
+    const controls = box(noResultsState, '.controls');
+    const viewport = viewportFor(noResultsState);
+
+    if (noResultsState?.bodyDataset?.panelSurface === 'search') {
+      pass('25-mobile-search-no-results', 'no-results:panel-surface-search');
+    } else {
+      fail('25-mobile-search-no-results', 'no-results:panel-surface-search', `expected search, got ${noResultsState?.bodyDataset?.panelSurface || 'none'}`);
+    }
+    if (isRendered(searchContainer)) {
+      pass('25-mobile-search-no-results', 'no-results:search-container-visible');
+    } else {
+      fail('25-mobile-search-no-results', 'no-results:search-container-visible', '.search-container should render for empty search');
+    }
+    if (searchContainer?.className?.includes('results-rendered')) {
+      pass('25-mobile-search-no-results', 'no-results:container-results-rendered');
+    } else {
+      fail('25-mobile-search-no-results', 'no-results:container-results-rendered', `.search-container should be terminal/results-rendered, got ${searchContainer?.className || 'missing'}`);
+    }
+    if (!searchContainer?.className?.includes('searching')) {
+      pass('25-mobile-search-no-results', 'no-results:container-not-searching');
+    } else {
+      fail('25-mobile-search-no-results', 'no-results:container-not-searching', '.search-container should not keep searching class');
+    }
+    if (searchResults?.className?.includes('active')) {
+      pass('25-mobile-search-no-results', 'no-results:search-results-active');
+    } else {
+      fail('25-mobile-search-no-results', 'no-results:search-results-active', `#search-results should be active, got ${searchResults?.className || 'missing'}`);
+    }
+    if (isRendered(emptyState)) {
+      pass('25-mobile-search-no-results', 'no-results:empty-state-visible');
+    } else {
+      fail('25-mobile-search-no-results', 'no-results:empty-state-visible', '.search-empty-state should be visible');
+    }
+    if (emptyTitle?.text?.trim() === 'No direct matches found') {
+      pass('25-mobile-search-no-results', 'no-results:empty-title-copy');
+    } else {
+      fail('25-mobile-search-no-results', 'no-results:empty-title-copy', `unexpected empty title: ${emptyTitle?.text || 'missing'}`);
+    }
+    if (emptyNote?.text?.trim()?.length > 0) {
+      pass('25-mobile-search-no-results', 'no-results:empty-note-copy');
+    } else {
+      fail('25-mobile-search-no-results', 'no-results:empty-note-copy', 'empty note copy missing');
+    }
+    if (isRendered(suggestionChip)) {
+      pass('25-mobile-search-no-results', 'no-results:suggestion-chip-visible');
+    } else {
+      fail('25-mobile-search-no-results', 'no-results:suggestion-chip-visible', 'expected at least one visible suggestion chip');
+    }
+    if (isRendered(searchResults) && isRendered(infoPanel) && searchResults.y + searchResults.height <= infoPanel.y + infoPanel.height + 1) {
+      pass('25-mobile-search-no-results', 'no-results:results-within-panel');
+    } else {
+      fail('25-mobile-search-no-results', 'no-results:results-within-panel', `search results ${JSON.stringify(searchResults)} vs panel ${JSON.stringify(infoPanel)}`);
+    }
+    if (isRendered(searchResults) && searchResults.overflowY === 'auto') {
+      pass('25-mobile-search-no-results', 'no-results:results-scroll-owner');
+    } else {
+      fail('25-mobile-search-no-results', 'no-results:results-scroll-owner', `#search-results should own overflow-y:auto, got ${JSON.stringify(searchResults)}`);
+    }
+    if (!isRendered(shareToggle)) {
+      pass('25-mobile-search-no-results', 'no-results:share-toggle-hidden');
+    } else {
+      fail('25-mobile-search-no-results', 'no-results:share-toggle-hidden', `.share-toggle should stay hidden, got ${JSON.stringify(shareToggle)}`);
+    }
+    if (!isRendered(controls)) {
+      pass('25-mobile-search-no-results', 'no-results:controls-hidden');
+    } else {
+      fail('25-mobile-search-no-results', 'no-results:controls-hidden', `.controls should stay hidden, got ${JSON.stringify(controls)}`);
+    }
+    if (viewport?.width <= 390 && (noResultsState?.scroll?.overflowX ?? 0) <= 1) {
+      pass('25-mobile-search-no-results', 'no-results:no-horizontal-overflow');
+    } else {
+      fail('25-mobile-search-no-results', 'no-results:no-horizontal-overflow', `viewport overflow: ${JSON.stringify(noResultsState?.scroll)}`);
     }
   }
 

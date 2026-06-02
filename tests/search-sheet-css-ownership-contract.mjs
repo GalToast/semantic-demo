@@ -1,11 +1,11 @@
 /**
  * search-sheet-css-ownership-contract.mjs
  *
- * Source-only ownership contract for mobile search/focus-search peek and
- * expanded sheet layout.
+ * Source-only ownership contract for mobile search/focus-search none, peek,
+ * and expanded sheet layout.
  *
  * Ownership rules:
- *   1. data-panel-surface-detail="peek|expanded" layout belongs to
+ *   1. data-panel-surface-detail="none|peek|expanded" layout belongs to
  *      mobile_premium_state.css.
  *   2. mobile_premium_surfaces.css must not regain search-sheet detail
  *      ownership; it may keep generic geometry backstops and map-specific
@@ -43,7 +43,12 @@ function run() {
   const surfacesSrc = read(SURFACES_PATH);
   const chromeSrc = read(CHROME_PATH);
 
-  console.log('\n[TEST] mobile_premium_state owns peek/expanded search sheet detail');
+  console.log('\n[TEST] mobile_premium_state owns none/peek/expanded search sheet detail');
+  assert(
+    /data-panel-surface-detail="none"\][\s\S]*#search-results\.active/.test(stateSrc) &&
+      /:not\(\[data-panel-surface-detail\]\)[\s\S]*#search-results\.active/.test(stateSrc),
+    'mobile_premium_state.css must own search detail=none and absent-detail results sizing'
+  );
   assert(
     /data-panel-surface="search"\]\[data-panel-surface-detail="peek"\][\s\S]*\.search-results\.active/.test(stateSrc),
     'mobile_premium_state.css must own search peek results sizing'

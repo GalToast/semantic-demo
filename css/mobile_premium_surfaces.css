@@ -538,33 +538,20 @@ html body.is-active #selected-details.active:not([hidden]) {
         animation-duration: 0s;
     }
 
-    /* Search sheet content must stay inside the fixed mobile drawer. The
-       results region, not the hidden-overflow drawer shell, owns scrolling. */
-    html body.is-active[data-panel-surface="search"] #info-panel.info-panel {
-        height: min(57dvh, 480px);
-        max-height: min(57dvh, 480px);
+    html body[data-panel-surface="search"] .info-panel-surface-selection {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
     }
 
-    html body.is-active[data-panel-surface="search"] #info-panel .info-content {
-        height: 100%;
-        min-height: 0;
-        overflow: hidden;
-    }
-
-    html body.is-active[data-panel-surface="search"] .search-container.has-query {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        min-height: 0;
-        overflow: hidden;
-    }
-
-    html body.is-active[data-panel-surface="search"] .search-container.has-query #search-results.active {
-        flex: 1 1 auto;
-        min-height: 0;
-        max-height: none;
-        overflow-y: auto;
-        overflow-x: hidden;
+    html body[data-panel-surface="search"] #btn-panel,
+    html body[data-panel-surface="search"] #btn-share-view,
+    html body[data-panel-surface="search"] #btn-legend,
+    html body[data-panel-surface="search"] .controls {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(8px) scale(0.96);
     }
 
     /* focus-search vertical space guard: constrain search results panel height so it

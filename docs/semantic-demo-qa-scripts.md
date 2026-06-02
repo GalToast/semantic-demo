@@ -5,12 +5,12 @@
 | Script | Surfaces tested | Viewport |
 |--------|----------------|----------|
 | `qa:contract:all` | core surface contract set, including product-route handoff surfaces | mixed |
-| `qa:contract:mobile-critical` | mobile-idle, search-chrome, mobile-product-focus-route, mobile-product-preview-route, focus-pocket, map-trail, controls, field-node, compass-rail, global-spacing, mobile-semantic-dive-320 | 390x844 mobile + 320px semantic-dive geometry |
+| `qa:contract:mobile-critical` | mobile-idle, search-chrome, search-no-results, mobile-product-focus-route, mobile-product-preview-route, focus-pocket, map-trail, controls, field-node, compass-rail, global-spacing, mobile-semantic-dive-320 | 390x844 mobile + 320px semantic-dive geometry |
 | `qa:contract:mobile-chrome` | search-chrome | 390x844 mobile |
 | `qa:contract:phase-a` | info-panel-empty, compass-rail, loading-overlay, mode-grid | mixed |
-| `qa:contract:phase-b` | filters, thread-inspector, controls, search-chrome, info-panel-populated | mixed |
+| `qa:contract:phase-b` | filters, thread-inspector, controls, search-chrome, search-no-results, info-panel-populated | mixed |
 
-Named surfaces: `mobile-idle`, `desktop-idle`, `launch-focus`, `search-error`, `map-trail`, `focus-pocket`, `field-node`, `info-panel-empty`, `compass-rail`, `loading-overlay`, `mode-grid`, `filters`, `thread-inspector`, `controls`, `search-chrome`, `mobile-product-focus-route`, `mobile-product-preview-route`, `info-panel-populated`, `global-spacing`, `mobile-focus-search`, `mobile-semantic-dive`, `mobile-semantic-dive-320`, `tablet-semantic-dive`.
+Named surfaces: `mobile-idle`, `desktop-idle`, `launch-focus`, `search-error`, `search-no-results`, `map-trail`, `focus-pocket`, `field-node`, `info-panel-empty`, `compass-rail`, `loading-overlay`, `mode-grid`, `filters`, `thread-inspector`, `controls`, `search-chrome`, `mobile-product-focus-route`, `mobile-product-preview-route`, `info-panel-populated`, `global-spacing`, `mobile-focus-search`, `mobile-semantic-dive`, `mobile-semantic-dive-320`, `tablet-semantic-dive`.
 
 ## Visual Audit Scripts (screenshot-based)
 
@@ -30,6 +30,7 @@ Visual audit artifacts now include `routeEvidence` in each state JSON plus `rout
 | `qa:interaction-ownership` | mobile focus-stage action ownership | asserts focus/thread preview/pin/clear/follow actions are exposed through `__APP_ACTIONS__` and preserve a single primary focus drawer |
 | `qa:reset-map-ownership` | mobile reset + map transition ownership | asserts search clear, Escape, and semantic-dive-to-map transitions clear stale focus drawers and converge on the expected owning surface |
 | `qa:surface:search-error` | 10-mobile-search-error-state | |
+| `qa:surface:search-no-results` | 25-mobile-search-no-results | empty search result drawer; asserts no stale result cards, terminal search state, live status, and scroll ownership |
 | `qa:surface:map-trail` | 11-mobile-selected-card-map-trail | constructed guard for stale/legacy `map-trail` geometry; real mobile map traversal is covered by `qa:surface:map-focus-search` |
 | `qa:surface:map-focus-search` | 24-mobile-map-focus-search | real-click route; asserts selected map drawer remains visible and unoccluded while search/results/filters stay suppressed |
 | `qa:surface:desktop-map-trail` | 11-desktop-selected-card-map-trail | constructed guard for desktop map-trail chrome/card overlap |
@@ -46,7 +47,7 @@ Visual audit artifacts now include `routeEvidence` in each state JSON plus `rout
 | `qa:real-route:visual` | mobile search -> focus -> semantic dive -> 320px/short-landscape dive -> map -> reset | strict visible-interaction screenshot lane; writes artifacts under `tmp/real-route-visual/<timestamp>/` and fails on debug-probe/forced-state evidence |
 | `qa:route-ergonomics` | same strict real route as `qa:real-route:visual` | adds visible UI ergonomics assertions for critical text clipping, blank visible labels, severe tap targets, primary-surface overlap, horizontal overflow, oversized mobile surfaces, semantic-dive primary-surface visibility across 390px, 320px, and short-landscape captures, and screenshot pixel-quality checks for blank/washed-out/flat screens and low-signal primary surfaces. Also writes advisory `design-score-report.json` and `.md` with non-blocking warnings for hierarchy, density, CTA competition, and scene/UI balance. Artifacts go under `tmp/real-route-ergonomics/<timestamp>/` |
 
-States: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-result`, `04-mobile-field-node-active`, `05-mobile-map`, `06-mobile-filters-open`, `07-desktop-idle`, `08-desktop-search-coffee`, `09-mobile-map-empty-state`, `10-mobile-search-error-state`, `11-mobile-selected-card-map-trail`, `11-desktop-selected-card-map-trail`, `12-desktop-reduced-motion`, `13-desktop-filters-open` (desktop viewport capture only — desktop filters are mobile-only, always display:none in idle), `13-mobile-reduced-motion`, `14-desktop-search-error`, `15-mobile-semantic-dive`, `16-desktop-info-panel-populated`, `17-mobile-thread-inspector`, `18-mobile-loading-overlay`, `19-mobile-compass-rail`, `20-mobile-mode-grid-visible`, `21-mobile-route-trace-visible`, `22-mobile-semantic-dive-320`, `23-mobile-short-landscape`, `24-mobile-map-focus-search`.
+States: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-result`, `04-mobile-field-node-active`, `05-mobile-map`, `06-mobile-filters-open`, `07-desktop-idle`, `08-desktop-search-coffee`, `09-mobile-map-empty-state`, `10-mobile-search-error-state`, `11-mobile-selected-card-map-trail`, `11-desktop-selected-card-map-trail`, `12-desktop-reduced-motion`, `13-desktop-filters-open` (desktop viewport capture only — desktop filters are mobile-only, always display:none in idle), `13-mobile-reduced-motion`, `14-desktop-search-error`, `15-mobile-semantic-dive`, `16-desktop-info-panel-populated`, `17-mobile-thread-inspector`, `18-mobile-loading-overlay`, `19-mobile-compass-rail`, `20-mobile-mode-grid-visible`, `21-mobile-route-trace-visible`, `22-mobile-semantic-dive-320`, `23-mobile-short-landscape`, `24-mobile-map-focus-search`, `25-mobile-search-no-results`.
 
 ## UI Quality & Motion Scripts
 

@@ -115,6 +115,37 @@
         height: 100%;
     }
 
+    html body[data-panel-surface="search"]:not([data-panel-surface-detail]) #info-panel.info-panel,
+    html body[data-panel-surface="search"][data-panel-surface-detail="none"] #info-panel.info-panel {
+        height: min(57dvh, 480px);
+        max-height: min(57dvh, 480px);
+    }
+
+    html body[data-panel-surface="search"]:not([data-panel-surface-detail]) #info-panel .info-content,
+    html body[data-panel-surface="search"][data-panel-surface-detail="none"] #info-panel .info-content {
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="search"]:not([data-panel-surface-detail]) .search-container.has-query,
+    html body[data-panel-surface="search"][data-panel-surface-detail="none"] .search-container.has-query {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    html body[data-panel-surface="search"]:not([data-panel-surface-detail]) .search-container.has-query #search-results.active,
+    html body[data-panel-surface="search"][data-panel-surface-detail="none"] .search-container.has-query #search-results.active {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
     html body.is-active[data-panel-surface="search"] .info-header,
     html body.is-active[data-panel-surface="focus-search"] .info-header,
     html body.is-active[data-panel-surface="search"] .stat-caption,

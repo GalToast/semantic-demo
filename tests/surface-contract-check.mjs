@@ -9,7 +9,7 @@
  * Usage:
  *   node tests/surface-contract-check.mjs [url] [--surface=<name>] [--surfaces=a,b]
  *
- * Surfaces: mobile-idle | desktop-idle | launch-focus | search-error | map-trail | focus-pocket | field-node | info-panel-empty | compass-rail | loading-overlay | mode-grid | filters | thread-inspector | controls | search-chrome | info-panel-populated | global-spacing | mobile-product-focus-route | mobile-product-preview-route
+ * Surfaces: mobile-idle | desktop-idle | launch-focus | search-error | search-no-results | map-trail | focus-pocket | field-node | info-panel-empty | compass-rail | loading-overlay | mode-grid | filters | thread-inspector | controls | search-chrome | info-panel-populated | global-spacing | mobile-product-focus-route | mobile-product-preview-route
  * Default URL: http://127.0.0.1:8795/vector-explorer-polished.html
  */
 
@@ -82,6 +82,7 @@ const VIEWPORTS = {
   'desktop-idle':  { width: 1440, height: 900, isMobile: false, deviceScaleFactor: 1 },
   'launch-focus':  { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
   'search-error':  { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
+  'search-no-results': { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
   'map-trail':     { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
   'focus-pocket':  { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
   'field-node':    { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
@@ -2425,10 +2426,14 @@ async function assert_search_chrome(page, ctx) {
     const infoContent = document.querySelector('#info-panel-content');
     const infoHeader = document.querySelector('#info-panel .info-header');
     const modeGrid = document.querySelector('#mode-grid');
+    const selectionSurface = document.querySelector('.info-panel-surface-selection');
+    const selectedCard = document.querySelector('#selected-card');
     const activeResults = document.querySelector('#search-results.active');
     results.infoPanelPresent = infoPanel !== null;
     results.infoPanelRect = rectSnapshot(infoPanel);
     results.modeGridRect = rectSnapshot(modeGrid);
+    results.selectionSurfaceRect = rectSnapshot(selectionSurface);
+    results.selectedCardRect = rectSnapshot(selectedCard);
     results.infoPanelContainsSearch = !!(infoPanel && searchContainer && infoPanel.contains(searchContainer));
     results.infoContentRect = rectSnapshot(infoContent);
     results.infoHeaderHidden = infoHeader
@@ -2447,6 +2452,7 @@ async function assert_search_chrome(page, ctx) {
     results.infoPanelDisplayNone = infoPanel ? getComputedStyle(infoPanel).display === 'none' : false;
     results.infoPanelVisibilityHidden = infoPanel ? getComputedStyle(infoPanel).visibility === 'hidden' : false;
     results.infoPanelDemoted = results.infoHeaderHidden === true || results.infoPanelPointerEventsNone || results.infoPanelDisplayNone || results.infoPanelVisibilityHidden;
+    results.selectedBusinessOwnerSuppressed = !results.selectionSurfaceRect?.visible && !results.selectedCardRect?.visible;
     if (results.searchContainerRect && results.infoPanelRect) {
       results.searchContainerBoundedByInfoPanel =
         results.searchContainerRect.visible &&
@@ -2514,6 +2520,9 @@ async function assert_search_chrome(page, ctx) {
   if (!info.modeGridRect?.visible) ctx.pass('search-chrome', 'ownership:mode-grid-hidden');
   else ctx.fail('search-chrome', 'ownership:mode-grid-hidden', `#mode-grid should not render inside mobile search: ${JSON.stringify(info.modeGridRect)}`);
 
+  if (info.selectedBusinessOwnerSuppressed) ctx.pass('search-chrome', 'ownership:selected-business-suppressed');
+  else ctx.fail('search-chrome', 'ownership:selected-business-suppressed', `selected-business surface should not render under search drawer: owner ${JSON.stringify(info.selectionSurfaceRect)} card ${JSON.stringify(info.selectedCardRect)}`);
+
   if (info.searchInputPresent) ctx.pass('search-chrome', 'dom:#search-input');
   else ctx.fail('search-chrome', 'dom:#search-input', 'missing #search-input');
 
@@ -2571,6 +2580,181 @@ async function assert_search_chrome(page, ctx) {
   else ctx.pass('search-chrome', 'viewport-crowding:overflow-x');
 
   ctx.pass('search-chrome', info.overflowY ? 'viewport-scroll:overflow-y' : 'viewport-scroll:no-overflow-y');
+
+  return info;
+}
+
+// ---------------------------------------------------------------------------
+// search-no-results — tests the zero-result semantic search terminal state.
+// Surface triggers: explicit static fallback empty query route.
+// Validates: empty renderer visible, no stale result rows, results region active
+// and scrollable inside the mobile sheet, spinner/searching state cleared, live
+// region status updated, and utility chrome suppressed.
+// ---------------------------------------------------------------------------
+
+async function assert_search_no_results(page, ctx) {
+  const query = 'xj9k2l';
+  const url = new URL(positionalUrl);
+  url.searchParams.set('nodemo', '1');
+  url.searchParams.set('view', 'galaxy');
+  url.searchParams.set('q', query);
+  url.searchParams.delete('anchor');
+  await loadAndWait(page, url.toString());
+  await page.waitForFunction((expectedQuery) => {
+    const status = document.querySelector('#search-status');
+    const results = document.querySelector('#search-results');
+    return Boolean(
+      results?.classList.contains('active') &&
+      document.querySelector('.search-empty-state') &&
+      status?.textContent?.includes(`No matching records found for "${expectedQuery}"`)
+    );
+  }, query, { timeout: 15000 }).catch(() => {});
+
+  const info = await page.evaluate((expectedQuery) => {
+    function visible(el) {
+      if (!el) return false;
+      const style = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 &&
+        style.display !== 'none' &&
+        style.visibility !== 'hidden' &&
+        Number(style.opacity || 1) > 0.01;
+    }
+
+    function rectSnapshot(el) {
+      if (!el) return null;
+      const style = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      return {
+        display: style.display,
+        visibility: style.visibility,
+        opacity: style.opacity,
+        pointerEvents: style.pointerEvents,
+        overflowY: style.overflowY,
+        width: Math.round(rect.width * 100) / 100,
+        height: Math.round(rect.height * 100) / 100,
+        top: Math.round(rect.top * 100) / 100,
+        bottom: Math.round(rect.bottom * 100) / 100,
+        visible: visible(el),
+        clientHeight: el.clientHeight,
+        scrollHeight: el.scrollHeight,
+        className: el.className || '',
+      };
+    }
+
+    const resultsEl = document.querySelector('#search-results');
+    const initialTop = resultsEl?.scrollTop ?? 0;
+    resultsEl?.scrollTo(0, 9999);
+    const scrolledTop = resultsEl?.scrollTop ?? 0;
+    resultsEl?.scrollTo(0, initialTop);
+
+    const infoPanel = document.querySelector('#info-panel');
+    const searchContainer = document.querySelector('.search-container');
+    const emptyState = document.querySelector('.search-empty-state');
+    const spinner = document.querySelector('#search-spinner');
+    const shareToggle = document.querySelector('.share-toggle');
+    const controls = document.querySelector('.controls');
+    const selectionSurface = document.querySelector('.info-panel-surface-selection');
+    const selectedCard = document.querySelector('#selected-card');
+    const resultRows = [...document.querySelectorAll('#search-results .search-result-item, #search-results .search-result-listitem, #search-results [data-result-index]')];
+
+    const resultsRect = rectSnapshot(resultsEl);
+    const panelRect = rectSnapshot(infoPanel);
+    const spinnerStyle = spinner ? getComputedStyle(spinner) : null;
+    const visibleRows = resultRows.filter(visible).map((el) => (el.textContent || '').trim().slice(0, 80));
+    const suggestionChips = [...document.querySelectorAll('.search-suggestion-chip')].filter(visible);
+
+    return {
+      bodyDataset: { ...document.body.dataset },
+      searchStatus: document.querySelector('#search-status')?.textContent?.trim() || '',
+      liveStatus: document.querySelector('#search-status-live')?.textContent?.trim() || '',
+      searchContainerRect: rectSnapshot(searchContainer),
+      searchContainerHasQuery: searchContainer?.classList.contains('has-query') ?? false,
+      searchContainerSearching: searchContainer?.classList.contains('searching') ?? false,
+      searchContainerResultsRendered: searchContainer?.classList.contains('results-rendered') ?? false,
+      resultsRect,
+      panelRect,
+      resultsActive: resultsEl?.classList.contains('active') ?? false,
+      resultWithinPanel: Boolean(resultsRect && panelRect && resultsRect.bottom <= panelRect.bottom + 1),
+      resultsScrollable: Boolean(resultsEl && resultsEl.scrollHeight > resultsEl.clientHeight && scrolledTop > initialTop),
+      emptyStateVisible: visible(emptyState),
+      emptyTitle: document.querySelector('.search-empty-title')?.textContent?.trim() || '',
+      emptyNote: document.querySelector('.search-empty-note')?.textContent?.trim() || '',
+      suggestionChipCount: suggestionChips.length,
+      visibleRows,
+      spinnerPresent: spinner !== null,
+      spinnerHidden: !spinner || spinnerStyle.display === 'none' || spinnerStyle.visibility === 'hidden' || Number(spinnerStyle.opacity || 1) < 0.01,
+      spinnerDisplay: spinnerStyle?.display || null,
+      selectionSurfaceVisible: visible(selectionSurface),
+      selectedCardVisible: visible(selectedCard),
+      selectionSurfaceRect: rectSnapshot(selectionSurface),
+      selectedCardRect: rectSnapshot(selectedCard),
+      shareToggleVisible: visible(shareToggle),
+      controlsVisible: visible(controls),
+      overflowX: document.documentElement.scrollWidth > window.innerWidth || document.body.scrollWidth > window.innerWidth,
+      expectedQuery,
+    };
+  }, query);
+
+  if (info.bodyDataset?.panelSurface === 'search') ctx.pass('search-no-results', 'state:panel-surface');
+  else ctx.fail('search-no-results', 'state:panel-surface', `expected search, got ${info.bodyDataset?.panelSurface || 'missing'}`);
+
+  if (info.searchContainerHasQuery) ctx.pass('search-no-results', 'state:search-container:has-query');
+  else ctx.fail('search-no-results', 'state:search-container:has-query', '.search-container missing has-query');
+
+  if (info.searchContainerResultsRendered) ctx.pass('search-no-results', 'state:search-container:results-rendered');
+  else ctx.fail('search-no-results', 'state:search-container:results-rendered', '.search-container missing results-rendered');
+
+  if (!info.searchContainerSearching) ctx.pass('search-no-results', 'state:search-container:not-searching');
+  else ctx.fail('search-no-results', 'state:search-container:not-searching', '.search-container still has searching class');
+
+  if (info.resultsActive) ctx.pass('search-no-results', 'dom:search-results-active');
+  else ctx.fail('search-no-results', 'dom:search-results-active', '#search-results should be active for empty results');
+
+  if (info.emptyStateVisible) ctx.pass('search-no-results', 'visibility:empty-state');
+  else ctx.fail('search-no-results', 'visibility:empty-state', '.search-empty-state is not visible');
+
+  if (info.emptyTitle === 'No direct matches found') ctx.pass('search-no-results', 'copy:empty-title');
+  else ctx.fail('search-no-results', 'copy:empty-title', `unexpected title "${info.emptyTitle}"`);
+
+  if (info.emptyNote.length > 0) ctx.pass('search-no-results', 'copy:empty-note');
+  else ctx.fail('search-no-results', 'copy:empty-note', 'empty-state note is missing');
+
+  if (info.suggestionChipCount >= 1) ctx.pass('search-no-results', 'dom:suggestion-chips');
+  else ctx.fail('search-no-results', 'dom:suggestion-chips', 'expected at least one search suggestion chip');
+
+  if (info.visibleRows.length === 0) ctx.pass('search-no-results', 'dom:no-stale-result-rows');
+  else ctx.fail('search-no-results', 'dom:no-stale-result-rows', `stale visible rows: ${JSON.stringify(info.visibleRows)}`);
+
+  if (info.searchStatus.includes(`No matching records found for "${query}"`)) ctx.pass('search-no-results', 'copy:search-status');
+  else ctx.fail('search-no-results', 'copy:search-status', `unexpected #search-status "${info.searchStatus}"`);
+
+  if (info.liveStatus.includes(`No matching records found for "${query}"`)) ctx.pass('search-no-results', 'a11y:live-status');
+  else ctx.fail('search-no-results', 'a11y:live-status', `unexpected live status "${info.liveStatus}"`);
+
+  if (info.spinnerPresent) ctx.pass('search-no-results', 'dom:search-spinner');
+  else ctx.fail('search-no-results', 'dom:search-spinner', 'missing #search-spinner');
+
+  if (info.spinnerHidden) ctx.pass('search-no-results', 'state:spinner-hidden');
+  else ctx.fail('search-no-results', 'state:spinner-hidden', `spinner display is ${info.spinnerDisplay || 'unknown'}`);
+
+  if (info.resultWithinPanel) ctx.pass('search-no-results', 'layout:results-within-panel');
+  else ctx.fail('search-no-results', 'layout:results-within-panel', `results ${JSON.stringify(info.resultsRect)} vs panel ${JSON.stringify(info.panelRect)}`);
+
+  if (!info.selectionSurfaceVisible && !info.selectedCardVisible) ctx.pass('search-no-results', 'ownership:selected-business-suppressed');
+  else ctx.fail('search-no-results', 'ownership:selected-business-suppressed', `selected-business surface should not render under no-results drawer: owner ${JSON.stringify(info.selectionSurfaceRect)} card ${JSON.stringify(info.selectedCardRect)}`);
+
+  if (info.resultsScrollable) ctx.pass('search-no-results', 'layout:results-scroll-owner');
+  else ctx.fail('search-no-results', 'layout:results-scroll-owner', `#search-results should be scrollable, got ${JSON.stringify(info.resultsRect)}`);
+
+  if (!info.shareToggleVisible) ctx.pass('search-no-results', 'visibility:share-toggle:hidden');
+  else ctx.fail('search-no-results', 'visibility:share-toggle:hidden', 'share toggle should not overlap search no-results drawer');
+
+  if (!info.controlsVisible) ctx.pass('search-no-results', 'visibility:controls:hidden');
+  else ctx.fail('search-no-results', 'visibility:controls:hidden', 'controls rail should not overlap search no-results drawer');
+
+  if (info.overflowX) ctx.fail('search-no-results', 'viewport-crowding:overflow-x', 'horizontal overflow in no-results search');
+  else ctx.pass('search-no-results', 'viewport-crowding:overflow-x');
 
   return info;
 }
@@ -2949,6 +3133,7 @@ const SURFACES = {
   'desktop-idle':      assert_desktop_idle,
   'launch-focus':      assert_launch_focus,
   'search-error':      assert_search_error,
+  'search-no-results': assert_search_no_results,
   'map-trail':         assert_map_trail,
   'focus-pocket':      assert_focus_pocket,
   'field-node':        assert_field_node,
