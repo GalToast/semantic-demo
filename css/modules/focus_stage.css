@@ -598,6 +598,26 @@ body[data-trail-state="active"] .focus-stage-neighbor-pill {
         scrollbar-color: rgba(121, 235, 222, 0.34) transparent;
     }
 
+    html body[data-panel-surface="focus"] .focus-stage-card::-webkit-scrollbar,
+    html body[data-panel-surface="focus-search"] .focus-stage-card::-webkit-scrollbar,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-card::-webkit-scrollbar-track,
+    html body[data-panel-surface="focus-search"] .focus-stage-card::-webkit-scrollbar-track,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    html body[data-panel-surface="focus"] .focus-stage-card::-webkit-scrollbar-thumb,
+    html body[data-panel-surface="focus-search"] .focus-stage-card::-webkit-scrollbar-thumb,
+    html body[data-panel-surface="semantic-dive"] .focus-stage-card::-webkit-scrollbar-thumb {
+        background: rgba(121, 235, 222, 0.34);
+        border-radius: 3px;
+    }
+
     html body[data-panel-surface="focus"] .focus-stage-name,
     html body[data-panel-surface="focus-search"] .focus-stage-name,
     html body[data-panel-surface="semantic-dive"] .focus-stage-name {
