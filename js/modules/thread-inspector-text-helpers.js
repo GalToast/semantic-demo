@@ -13,7 +13,6 @@
  * @param {number} limit  - maximum characters before the ellipsis
  * @returns {string}
  */
-export function truncateMicrocopy(text, limit) {
-    if (!text || text.length <= limit) return text || '';
-    return text.substring(0, limit - 3) + '...';
+export function truncateMicrocopy(text, _limit) {
+    return text || '';
 }

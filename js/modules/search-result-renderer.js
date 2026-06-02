@@ -21,13 +21,9 @@ function humanizeSearchSnippetCase(value) {
         .replace(/\b(Llc|Lp|Ltd|Pc|Pllc|Inc)\b/g, (match) => match.toUpperCase());
 }
 
-function compactSearchSnippetText(value, max = 128) {
+function compactSearchSnippetText(value, _max = 128) {
     const clean = sanitizePublicFacingNote(value);
-    if (!clean || clean.length <= max) return clean || '';
-    const slice = clean.slice(0, max + 1);
-    const boundary = Math.max(slice.lastIndexOf('. '), slice.lastIndexOf(', '), slice.lastIndexOf(' '));
-    const cutAt = boundary > Math.floor(max * 0.62) ? boundary : max;
-    return `${slice.slice(0, cutAt).replace(/[,\s;:.]+$/, '')}...`;
+    return clean || '';
 }
 
 function buildCategoryLocationSnippet(point) {

@@ -8,7 +8,7 @@
        ---------------------------------------------------------------- */
     html body.is-active[data-panel-surface="idle"] .rail-section[open] {
         isolation: isolate;
-        max-height: min(34vh, 268px);
+        max-height: min(50vh, 320px);
         overflow-y: auto;
         overflow-x: hidden;
         scrollbar-width: thin;
@@ -176,7 +176,7 @@
     html body.is-active[data-panel-surface^="map-"] #map-container .leaflet-control-attribution {
         right: 10px;
         bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-        max-width: min(184px, calc(100vw - 108px));
+        max-width: min(220px, calc(100vw - 80px));
         border-radius: 8px;
         line-height: 1.2;
         white-space: normal;
@@ -268,17 +268,11 @@
 
     html body.is-active:is([data-panel-surface="map-idle"], [data-panel-surface="map-focus-search"], [data-panel-surface="map-trail"], [data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"], [data-panel-surface="search"]) :is(
         .panel-toggle,
-        #btn-legend,
-        #btn-share-view,
-        #btn-keyboard-help,
         .time-display
     ),
     html body.is-active[data-journey-navigation-owner="map-trail-strip"] :is(
         .controls,
         .panel-toggle,
-        #btn-legend,
-        #btn-share-view,
-        #btn-keyboard-help,
         .time-display
     ) {
         display: none;
@@ -455,9 +449,6 @@
 
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .panel-toggle,
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .controls,
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) #btn-share-view,
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) #btn-legend,
-    html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) #btn-keyboard-help,
     html body.is-active:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .time-display {
         display: none;
         visibility: hidden;

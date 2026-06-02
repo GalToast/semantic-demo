@@ -484,8 +484,7 @@ html body[data-panel-surface]:not([data-panel-surface^="map-"])[data-strand-jour
 }
 
 .focus-stage-neighbor-name {
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     color: rgba(248, 253, 254, 0.92);
@@ -494,8 +493,7 @@ html body[data-panel-surface]:not([data-panel-surface^="map-"])[data-strand-jour
 }
 
 .focus-stage-neighbor-reason {
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     color: rgba(202, 228, 226, 0.6);
@@ -796,6 +794,10 @@ body[data-thread-inspect-surface="pinned"] .focus-thread-inspector-kicker::after
     color: rgba(211, 236, 234, 0.72);
     font-size: 9.5px;
     line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .focus-thread-inspector-meta {

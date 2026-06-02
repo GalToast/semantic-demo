@@ -7,39 +7,29 @@ vi.mock('../../js/modules/utils/dom-formatters.js', () => ({
 
 describe('journey-text-helpers', () => {
     describe('truncateMicrocopy', () => {
-        it('returns empty string for null/undefined/empty', () => {
+        it('returns empty string for null/undefined/empty/dash', () => {
             expect(truncateMicrocopy(null)).toBe('');
             expect(truncateMicrocopy(undefined)).toBe('');
             expect(truncateMicrocopy('')).toBe('');
+            expect(truncateMicrocopy('-')).toBe('');
         });
 
-        it('returns text unchanged when under max length', () => {
-            expect(truncateMicrocopy('short text')).toBe('short text');
+        it('returns sanitized text unchanged regardless of length', () => {
+            const longText = 'This is a very long piece of text that goes well beyond the default seventy-four character maximum limit and would have been truncated by the previous implementation';
+            expect(truncateMicrocopy(longText)).toBe(longText);
+            expect(truncateMicrocopy(longText, 20)).toBe(longText);
+            expect(truncateMicrocopy(longText, 30)).toBe(longText);
         });
 
-        it('truncates long text with ellipsis', () => {
-            const longText = 'This is a very long piece of text that goes well beyond the default seventy-four character maximum limit';
+        it('trims leading/trailing whitespace via cleanOptionalValue', () => {
+            expect(truncateMicrocopy('  padded text  ')).toBe('padded text');
+        });
+
+        it('does not insert ellipsis anywhere (CSS does the visual clipping now)', () => {
+            const longText = 'a'.repeat(500);
             const result = truncateMicrocopy(longText);
-            expect(result.endsWith('...')).toBe(true);
-            expect(result.length).toBeLessThanOrEqual(78); // max + '...'
-        });
-
-        it('respects custom max length', () => {
-            const text = 'Some text that is medium length and needs truncation at a specific point';
-            const result = truncateMicrocopy(text, 20);
-            expect(result.endsWith('...')).toBe(true);
-            expect(result.length).toBeLessThanOrEqual(24);
-        });
-
-        it('cuts at word boundary when possible', () => {
-            const text = 'word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12 word13 word14';
-            const result = truncateMicrocopy(text, 30);
-            expect(result.endsWith('...')).toBe(true);
-            // The text before "..." should be complete words separated by spaces
-            const beforeEllipsis = result.replace('...', '');
-            const words = beforeEllipsis.split(' ');
-            // Each piece between spaces should be a full "wordN" token
-            words.forEach(w => expect(w).toMatch(/^word\d+$/));
+            expect(result).not.toContain('...');
+            expect(result).not.toContain('…');
         });
     });
 

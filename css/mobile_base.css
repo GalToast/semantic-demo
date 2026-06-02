@@ -309,7 +309,7 @@ body[data-active-view="map"] .onboarding-hint {
     bottom: 24px;
     right: 24px;
     z-index: var(--z-toast);
-    display: none;
+    visibility: hidden;
     background: rgba(8, 10, 18, 0.88);
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 12px;
@@ -317,14 +317,15 @@ body[data-active-view="map"] .onboarding-hint {
     min-width: 220px;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.25s ease, visibility 0s linear 0.25s;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
 }
 .keyboard-hint-panel.visible {
-    display: block;
+    visibility: visible;
     opacity: 1;
     pointer-events: auto;
+    transition: opacity 0.25s ease, visibility 0s linear 0s;
 }
 .kh-title {
     font-size: 12px;
@@ -514,12 +515,22 @@ body[data-active-view="map"] .onboarding-hint {
     }
 
     .share-toggle {
-        right: 62px;
+        right: 14px;
         top: 60px;
     }
 
     .help-toggle {
-        right: 148px;
+        right: 14px;
+        top: 164px;
+    }
+
+    .keyboard-hint-panel {
+        bottom: auto;
+        top: 220px;
+        right: 14px;
+        left: 14px;
+        min-width: 0;
+        z-index: var(--z-max);
     }
 
     html body[data-panel-surface] .panel-toggle {

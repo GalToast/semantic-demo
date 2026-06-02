@@ -41,7 +41,7 @@ html body.is-active #selected-details.active:not([hidden]) {
             box-shadow 0.7s cubic-bezier(0.16, 1, 0.3, 1),
             backdrop-filter 0.7s cubic-bezier(0.16, 1, 0.3, 1),
             -webkit-backdrop-filter 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-        z-index: 1000;
+        z-index: var(--z-panels-elevated);
     }
 
     html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-copy {
@@ -168,11 +168,11 @@ html body.is-active #selected-details.active:not([hidden]) {
     @media (max-width: 374px) {
         html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass,
         html body.is-active[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass {
-            padding: 0 6px 0 16px;
+            padding: 0 12px 0 16px;
         }
 
         html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-copy {
-            padding-right: 12px;
+            padding-right: 8px;
         }
 
         html body[data-panel-surface]:not([data-panel-surface^="map-"]) .journey-compass-actions {
@@ -228,10 +228,7 @@ html body.is-active #selected-details.active:not([hidden]) {
         inset: 0;
     }
 
-    html body.is-active[data-panel-surface="search"]:not([data-panel-surface^="map-"]) #btn-share-view {
-        display: none;
-        visibility: hidden;
-    }
+    /* Share button visibility handled by global mobile actions in mobile_base.css */
 
     html body.is-active[data-panel-surface="focus-search"] #mode-grid .mode-chip,
     html body.is-active[data-panel-surface="semantic-dive"] #mode-grid .mode-chip {

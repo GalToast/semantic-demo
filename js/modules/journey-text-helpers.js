@@ -6,13 +6,9 @@
  */
 import { cleanOptionalValue } from './utils/dom-formatters.js';
 
-export function truncateMicrocopy(text, max = 74) {
+export function truncateMicrocopy(text, _max = 74) {
     const clean = cleanOptionalValue(text);
-    if (!clean || clean.length <= max) return clean || '';
-    const slice = clean.slice(0, max + 1);
-    const boundary = Math.max(slice.lastIndexOf(', '), slice.lastIndexOf('; '), slice.lastIndexOf(' '));
-    const cutAt = boundary > Math.floor(max * 0.62) ? boundary : max;
-    return `${slice.slice(0, cutAt).replace(/[,\s;:.]+$/, '')}...`;
+    return clean || '';
 }
 
 export function getSharedTrailTopicLabel(point = null, focusPoint = null) {
