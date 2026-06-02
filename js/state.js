@@ -175,6 +175,7 @@ export const _rawState = {
     searchTimeout: null,
     searchAbortController: null,
     currentSearchSummary: null,
+    currentEmptyQuery: null,
     applyingUrlState: false,
     restoringBrowserHistory: false,
     urlStateRestoreToken: 0,

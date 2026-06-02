@@ -64,6 +64,7 @@ import {
     setSemanticLaneOpsMode,
     refreshSemanticLaneOpsSummary
 } from './semantic-lane.js';
+import { clearAllTimers } from './utils/timer-utils.js';
 import {
     dispatchNavTransition as dispatchNavTransitionImpl,
     NAV_TRANSITION_ACTIONS as NAV_TRANSITION_ACTIONS_IMPL,
@@ -417,7 +418,9 @@ export function resetNodePositions(options = {}) {
 
 export function resetExperienceState(options = {}) {
     resetExplorationFocus(options);
+    clearAllTimers();
     state.currentSearchSummary = null;
+    state.currentEmptyQuery = null;
     state.searchAnchorIndex = null;
     state.searchPreviewIndex = null;
     state.searchGlowActive = false;
@@ -467,6 +470,11 @@ subscribe(EVENTS.SEARCH_EMPTY, () => {
     updateJourneyCompass();
 });
 
+export function recordEmptySearch(query) {
+    state.currentEmptyQuery = query;
+    state.currentSearchSummary = null;
+}
+
 subscribe(EVENTS.SEARCH_STARTED, () => {
     refreshCompositionState();
 });
@@ -488,6 +496,7 @@ subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, () => {
 
 export function activateSearchGlow(summary) {
     state.currentSearchSummary = summary;
+    state.currentEmptyQuery = null;
     state.searchGlowActive = true;
     if (summary.resultIndices) {
         state.searchGlowIndices = new Set(summary.resultIndices);

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as searchState from '../../js/modules/search-state.js';
+import * as searchLifecycleAdapter from '../../js/modules/search-lifecycle-adapter.js';
 import { state, withStateMutation } from '../../js/state.js';
 
 // Mock dependencies
@@ -96,6 +97,7 @@ vi.mock('../../js/modules/search-lifecycle-adapter.js', () => ({
     syncSearchStatusForFocus: vi.fn(),
     updateJourneyCompass: vi.fn(),
     refreshCompositionState: vi.fn(),
+    recordEmptySearch: vi.fn(),
     clearMobileRouteFieldPeek: vi.fn(),
     clearCompactSearchResultRevealTimers: vi.fn(),
     settleCompactSearchFocusCard: vi.fn(),
@@ -184,7 +186,7 @@ describe('search-state orchestration', () => {
         searchState.clearSearchRelatedFocusState();
         
         expect(state.selectedPoint).toBeNull();
-        expect(state.focusedNode).toBeNull();
+        expect(searchLifecycleAdapter.dispatchNavTransition).toHaveBeenCalledWith('RESET_FOCUS');
         expect(state.trailIndices.size).toBe(0);
     });
 });

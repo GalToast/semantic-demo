@@ -9,7 +9,7 @@ async function openApp(page) {
   await page.waitForFunction(() => (
     typeof window.__APP_ACTIONS__?.clearSearch === 'function' &&
     typeof window.__APP_ACTIONS__?.setSemanticDiveMode === 'function' &&
-    typeof window.refreshCompositionState === 'function' &&
+    typeof window.__APP_ACTIONS__?.refreshCompositionState === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0 &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).pointIndexByLeadId?.size > 0

@@ -54,9 +54,9 @@ export function updateSelectedCardHeading(point = null) {
 export function renderSelectedMetaStrip(point) {
     const el = document.getElementById('selected-meta-strip');
     if (!el) return;
-    if (state.currentView === 'map') { el.style.display = 'none'; return; }
-    if (!point) { el.textContent = ''; el.style.display = 'none'; return; }
-    el.style.display = '';
+    if (state.currentView === 'map') { el.hidden = true; return; }
+    if (!point) { el.textContent = ''; el.hidden = true; return; }
+    el.hidden = false;
     const rawCity = point.city ? point.city.trim() : null;
     const rawStatus = point.status ? point.status.trim() : null;
     const cityPart = rawCity === '-' || rawCity === '' ? null : rawCity;
@@ -77,28 +77,28 @@ export function renderSelectedMatchPanel(point) {
     const copyEl = document.getElementById('selected-match-copy');
     if (!panelEl || !copyEl) return;
     const panelSurface = document.body?.dataset?.panelSurface || '';
-    if (state.currentView === 'map' && panelSurface !== 'map-focus-search') { panelEl.style.display = 'none'; return; }
+    if (state.currentView === 'map' && panelSurface !== 'map-focus-search') { panelEl.hidden = true; return; }
     if (!point) return;
     if (state.currentSearchSummary?.anchorIndex !== undefined) {
         const idx = state.points.indexOf(point);
         if (idx === state.currentSearchSummary.anchorIndex) {
-            panelEl.style.display = '';
+            panelEl.hidden = false;
             copyEl.textContent = 'This record is the semantic search anchor - the starting point for the current connection trail.';
         } else if ((state.currentSearchSummary.resultIndices || []).includes(idx)) {
-            panelEl.style.display = '';
+            panelEl.hidden = false;
             copyEl.textContent = 'This record appeared in the semantic search results as a nearby connection.';
         } else if (panelSurface === 'map-focus-search') {
-            panelEl.style.display = '';
+            panelEl.hidden = false;
             copyEl.textContent = 'This record is connected to the current semantic search trail.';
         } else {
-            panelEl.style.display = 'none';
+            panelEl.hidden = true;
         }
     } else {
         if (panelSurface === 'map-focus-search') {
-            panelEl.style.display = '';
+            panelEl.hidden = false;
             copyEl.textContent = 'This record is connected to the current semantic search trail.';
         } else {
-            panelEl.style.display = 'none';
+            panelEl.hidden = true;
         }
     }
 }
@@ -106,9 +106,9 @@ export function renderSelectedMatchPanel(point) {
 export function renderSelectedActionRow(point) {
     const el = document.getElementById('selected-action-row');
     if (!el) return;
-    if (state.currentView === 'map') { el.style.display = 'none'; return; }
+    if (state.currentView === 'map') { el.hidden = true; return; }
     if (!point) return;
-    el.style.display = '';
+    el.hidden = false;
     el.innerHTML = '<button class="action-btn" id="btn-selected-map" type="button">View on Map</button>';
     const btn = document.getElementById('btn-selected-map');
     if (btn) {

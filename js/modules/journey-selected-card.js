@@ -168,7 +168,7 @@ export function syncFocusStage(point) {
 
     if (badgesEl && typeof renderSignalBadges === 'function') {
         badgesEl.innerHTML = renderSignalBadges(effectivePoint);
-        badgesEl.style.display = badgesEl.innerHTML ? '' : 'none';
+        badgesEl.hidden = !badgesEl.innerHTML;
     }
 
     const focusSensitivityEl = document.getElementById('focus-stage-sensitivity');
@@ -183,7 +183,7 @@ export function syncFocusStage(point) {
             });
         }
         focusSensitivityEl.innerHTML = sensitivityBadges.join('');
-        focusSensitivityEl.style.display = sensitivityBadges.length ? '' : 'none';
+        focusSensitivityEl.hidden = !sensitivityBadges.length;
     }
 
     if (triviaEl && typeof adapter.getInterestingBusinessNote === 'function') {

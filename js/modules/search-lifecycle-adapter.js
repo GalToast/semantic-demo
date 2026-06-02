@@ -30,6 +30,7 @@ let _dispatchNavTransition = null;
 let _syncSearchStatusForFocus = null;
 let _updateJourneyCompass = null;
 let _refreshCompositionState = null;
+let _recordEmptySearch = null;
 
 let _clearMobileRouteFieldPeek = null;
 let _clearCompactSearchResultRevealTimers = null;
@@ -62,6 +63,7 @@ export function initSearchLifecycleAdapter(deps = {}) {
     _syncSearchStatusForFocus = typeof deps.syncSearchStatusForFocus === 'function' ? deps.syncSearchStatusForFocus : null;
     _updateJourneyCompass = typeof deps.updateJourneyCompass === 'function' ? deps.updateJourneyCompass : null;
     _refreshCompositionState = typeof deps.refreshCompositionState === 'function' ? deps.refreshCompositionState : null;
+    _recordEmptySearch = typeof deps.recordEmptySearch === 'function' ? deps.recordEmptySearch : null;
 
     _clearMobileRouteFieldPeek = typeof deps.clearMobileRouteFieldPeek === 'function' ? deps.clearMobileRouteFieldPeek : null;
     _clearCompactSearchResultRevealTimers = typeof deps.clearCompactSearchResultRevealTimers === 'function' ? deps.clearCompactSearchResultRevealTimers : null;
@@ -196,6 +198,16 @@ export function updateJourneyCompass() {
  */
 export function refreshCompositionState() {
     if (_refreshCompositionState) _refreshCompositionState();
+}
+
+/**
+ * Delegate to the injected empty-search recorder.
+ * Safe to call when unready; no-op.
+ *
+ * @param {string} query
+ */
+export function recordEmptySearch(query) {
+    if (_recordEmptySearch) _recordEmptySearch(query);
 }
 
 export function clearMobileRouteFieldPeek() { if (_clearMobileRouteFieldPeek) _clearMobileRouteFieldPeek(); }

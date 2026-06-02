@@ -38,6 +38,7 @@ import {
     syncSearchStatusForFocus as adapter_syncSearchStatusForFocus,
     updateJourneyCompass as adapter_updateJourneyCompass,
     refreshCompositionState as adapter_refreshCompositionState,
+    recordEmptySearch as adapter_recordEmptySearch,
     switchView as adapter_switchView,
     resetExplorationFocus as adapter_resetExplorationFocus,
     scheduleSearchFocusTask as adapter_scheduleSearchFocusTask
@@ -69,6 +70,7 @@ export function resultMatchesNumericSearchQuery(...args) { return mapperModule.r
 export function mapSemanticSearchServiceResult(...args) { return mapperModule.mapSemanticSearchServiceResult(...args); }
 export function mapSemanticSearchResults(...args) { return mapperModule.mapSemanticSearchResults(...args); }
 export function hydrateSemanticResultContexts(...args) { return mapperModule.hydrateSemanticResultContexts(...args); }
+export function recordEmptySearch(...args) { return adapter_recordEmptySearch(...args); }
 
 export function setSearchPanelState(options = {}) {
     // Satisfies search-panel-adapter-contract.mjs static analysis
@@ -250,6 +252,9 @@ export async function search(query, options = {}) {
 
     if (requestId !== state.searchRequestSequence) return;
     if (!results.length) {
+        if (typeof adapter_recordEmptySearch === 'function') {
+            adapter_recordEmptySearch(trimmedQuery);
+        }
         publish(EVENTS.SEARCH_EMPTY, { resultsEl, statusEl, query: trimmedQuery, restoreAnchorLeadId: options.restoreAnchorLeadId });
         return;
     }

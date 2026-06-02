@@ -128,6 +128,20 @@ export function getJourneyCompassState() {
         };
     }
 
+    // Empty search (no results, no active summary) — surface the empty state in the header too
+    if (state.currentEmptyQuery) {
+        const label = `"${state.currentEmptyQuery}"`;
+        return {
+            phase: 'search',
+            kicker: `Search | ${label}`,
+            title: `No results for ${label}`,
+            note: 'Try a broader term or one of the suggested high-signal categories below.',
+            primaryAction: { label: 'Search', action: 'focus-search' },
+            secondaryAction: { label: 'Map', action: 'open-map' },
+            tertiaryAction: null
+        };
+    }
+
     let idleNote = 'Start wide, then search by need or clue to open one trail through the network.';
     let isDiscovery = false;
     const isSemanticDegraded = state.semanticLaneSnapshot?.state === 'degraded';

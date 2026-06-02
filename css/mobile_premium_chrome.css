@@ -443,7 +443,10 @@
         display: none;
     }
 
-    html body.is-active[data-journey-navigation-owner="map-trail-strip"] :is(
+    html body.is-active:is(
+        [data-journey-navigation-owner="map-trail-strip"],
+        [data-panel-surface="map-idle"]
+    ) :is(
         .controls,
         .share-toggle,
         .legend-toggle,

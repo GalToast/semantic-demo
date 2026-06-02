@@ -143,7 +143,7 @@ export function beginSemanticSearchUiState(resultsEl, statusEl, trimmedQuery) {
     hideTooltip();
 
     const spinner = document.getElementById('search-spinner');
-    if (spinner) spinner.style.display = 'block';
+    if (spinner) spinner.hidden = false;
 
     if (!preservingSameQuery) {
         clearMobileRouteFieldPeek();

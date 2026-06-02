@@ -130,6 +130,9 @@ function testAdapterExistsAndExports() {
   assertContains(adapterSrc, 'export function refreshCompositionState',
     'search-lifecycle-adapter.js must export refreshCompositionState');
 
+  assertContains(adapterSrc, 'export function recordEmptySearch',
+    'search-lifecycle-adapter.js must export recordEmptySearch');
+
   console.log('  PASS — adapter exists and exports all required functions');
 }
 
@@ -161,11 +164,11 @@ function testAdapterDoesNotImportCycleParticipants() {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 4: app.js calls initSearchLifecycleAdapter with all 9 function refs
+// TEST 4: app.js calls initSearchLifecycleAdapter with all 10 function refs
 // ---------------------------------------------------------------------------
 
 function testAppInjectsAdapterWithLifecycleRefs() {
-  console.log('\n[TEST 4] app.js calls initSearchLifecycleAdapter with all 9 function refs');
+  console.log('\n[TEST 4] app.js calls initSearchLifecycleAdapter with all 10 function refs');
 
   const src = readFileSync(APP_PATH, 'utf-8');
 
@@ -199,16 +202,20 @@ function testAppInjectsAdapterWithLifecycleRefs() {
   assertContains(src, 'refreshCompositionState',
     'app.js must pass refreshCompositionState to initSearchLifecycleAdapter');
 
+  assertContains(src, 'recordEmptySearch',
+    'app.js must pass recordEmptySearch to initSearchLifecycleAdapter');
+
   // Verify updateUrlState is imported from url-state.js
   assertContains(src, "from './url-state.js'",
     'app.js must import updateUrlState from url-state.js');
 
   // Verify focusOnPoint, updateExplorationUi, resetNodePositions, dispatchNavTransition,
-  // syncSearchStatusForFocus, updateJourneyCompass, and refreshCompositionState are from lifecycle
+  // syncSearchStatusForFocus, updateJourneyCompass, refreshCompositionState, and
+  // recordEmptySearch are from lifecycle.
   assertContains(src, "from './lifecycle.js'",
     'app.js must import lifecycle functions from lifecycle.js');
 
-  console.log('  PASS — app.js injects adapter with all 9 function refs');
+  console.log('  PASS — app.js injects adapter with all 10 function refs');
 }
 
 // ---------------------------------------------------------------------------
@@ -246,6 +253,9 @@ function testSearchStateImportsFromAdapter() {
 
   assertContains(src, 'adapter_refreshCompositionState',
     'search-state.js must import refreshCompositionState as adapter_refreshCompositionState from adapter');
+
+  assertContains(src, 'adapter_recordEmptySearch',
+    'search-state.js must import recordEmptySearch as adapter_recordEmptySearch from adapter');
 
   console.log('  PASS — search-state.js imports used lifecycle functions from adapter');
 }
