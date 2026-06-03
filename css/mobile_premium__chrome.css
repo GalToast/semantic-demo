@@ -716,6 +716,11 @@
         overflow: hidden;
     }
 
+    body.is-active[data-panel-surface='idle'] .info-content {
+        display: flex;
+        flex-direction: column;
+    }
+
     body.is-active[data-panel-surface='idle'] .search-container {
         order: -1;
         position: sticky;
@@ -726,6 +731,11 @@
         -webkit-backdrop-filter: blur(24px) saturate(180%);
         margin: 0;
         transform: none;
+    }
+
+    body.is-active[data-panel-surface='idle'] .stats-row,
+    body.is-active[data-panel-surface='idle'] .demo-starters {
+        order: 1;
     }
 
     body.is-active[data-panel-surface='idle'] .stats-row,
