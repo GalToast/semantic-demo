@@ -3,6 +3,8 @@
 Status: active
 Updated: 2026-06-03
 
+> **Note (2026-06-03):** As of this update, the mobile premium is **un-collapsed** back into the 7-file split (`css/mobile_premium__*.css`). Pass notes earlier in this doc that describe a "2026-06-02 collapse into `css/mobile_premium.css`" are stale; the single-file `css/mobile_premium.css` is not part of the current cascade. The references to `css/mobile_premium.css` in the rows below (e.g. line 122, 131, 147, 163, 167, 240-244) are residual stale text from the 2026-06-02 collapse step; treat them as the relevant split file from the list at line 18.
+
 ## Purpose
 
 `semantic-demo.css` is now an import sheet. It should stay small and only load the real CSS modules under `css/`.
@@ -91,7 +93,7 @@ Rules:
 - Preserve hidden-state behavior for `.focus-stage-journey`, `.focus-stage-neighbors`, `.focus-thread-inspector`, `.trail-controls`, and `.trail-context`; those are state-machine surfaces, not decorative duplicates.
 - Do not consolidate Step Inside vignette or camera-motion selectors without live video proof.
 - Product-route handoff leaks are guarded by `mobile-product-focus-route` and `mobile-product-preview-route` in `tests/surface-contract-check.mjs`: focused result routes must hide lower search/info chrome, keep `#mode-grid` suppressed, and make `#focus-stage` or `#focus-thread-inspector` the owning mobile surface.
-- Known watchpoint: legacy map selected-card accents still exist in `css/progressive_disclosure.css` and `css/clusters.css`. Treat them as supporting/base rules until a focused map visual or contract proves they should move; the late mobile owner is now the appropriate section inside `css/mobile_premium.css`.
+- Known watchpoint: legacy map selected-card accents still exist in `css/progressive_disclosure.css` and `css/clusters.css`. Treat them as supporting/base rules until a focused map visual or contract proves they should move; the late mobile owner is now the appropriate file in the `css/mobile_premium__*.css` split (typically `surfaces.css` for late geometry, `map.css` for map-specific overrides).
 
 ## Mobile Map Focus Search Summary
 
@@ -119,7 +121,7 @@ The journey-compass cascade is distributed across base/supporting files plus the
 | File | Journey-compass selectors | Role |
 |---|---|---|
 | `css/journey_active.css` | 162 | Journey-compass base, phase/density states, focus/search/inside behavior, map-trail active styling |
-| `css/mobile_premium.css` | 135 | Collapsed mobile premium compass owner: focus/dive, chrome, state-machine, idle, map, and surface correction sections |
+| `css/mobile_premium__*.css` (7 files, see Module Map) | 135 | Split mobile premium compass owner: focus/dive (`focus-dive.css`), chrome (`chrome.css`), state-machine (`state.css`), idle (`idle.css`), map (`map.css`), surface correction (`surfaces.css`), narrow viewport (`narrow.css`) |
 | `css/strands.css` | 40 | Mobile bottom sheet, route surfaces, journey-compass field-node action buttons |
 | `css/layout_base.css` | 12 | Info panel, map-focus/trail state overrides |
 | `css/mobile_base.css` | 6 | Reduced-motion support only; no mobile journey-compass layout ownership |
@@ -128,7 +130,7 @@ The journey-compass cascade is distributed across base/supporting files plus the
 
 **Canonical owners:**
 - `css/journey_active.css` owns `.journey-compass` base styling (lines 155–327), phase/density states (`[data-phase]`, `[data-density]`), and active-view map behavior.
-- `css/mobile_premium.css` owns final mobile compass normalization and variants: focus-search, semantic-dive, search drawer chrome, idle, map-view, and non-active field-node backstops. Keep edits in the named section matching the state.
+- The 7 split files `css/mobile_premium__*.css` own final mobile compass normalization and variants: focus/dive (`focus-dive.css`), chrome (`chrome.css`), state-machine (`state.css`), idle (`idle.css`), map (`map.css`), surface correction (`surfaces.css`), narrow viewport (`narrow.css`). Edit the named file matching the state.
 
 **Supporting roles:**
 - `css/strands.css` owns mobile bottom sheet journey-compass field-node action buttons and route surfaces; do not add new journey-compass geometry here without updating this map.
@@ -143,8 +145,8 @@ The journey-compass cascade is distributed across base/supporting files plus the
 - Moved focus-search / semantic-dive journey-compass compact and glass-heavy state refinements from `css/mobile_premium_surfaces.css` to `css/mobile_premium_focus.css`.
 - `tests/focus-stage-css-ownership-contract.mjs` now blocks those state refinements from returning to the late surfaces file.
 
-2026-06-03 mobile collapse pass:
-- The split mobile premium files are retired. `tests/focus-stage-css-ownership-contract.mjs` and `tests/surface-redundancy-contract.mjs` now register `css/mobile_premium.css` as the final mobile owner.
+2026-06-03 mobile split (un-collapse) pass:
+- The collapsed `css/mobile_premium.css` is retired; the 7-file split (`css/mobile_premium__*.css`) is the current edit target. `tests/focus-stage-css-ownership-contract.mjs` and `tests/surface-redundancy-contract.mjs` were updated to register the split files.
 
 ## Required Proof For Movement Or Dedupe
 
@@ -160,11 +162,11 @@ When moving a rule between modules, verify that `semantic-demo.css` import order
 
 ## Current Cleanup Phase
 
-Phase 1: root stylesheet modularization is active. `semantic-demo.css` imports the base modules and the app shell loads `css/mobile_premium.css` directly as the collapsed final mobile owner.
+Phase 1: root stylesheet modularization is active. `semantic-demo.css` imports the base modules and the app shell loads the 7 split `css/mobile_premium__*.css` files directly as the final mobile owner.
 
 Phase 2: reduce duplicate mobile rules inside `css/mobile_base.css`, `css/progressive_disclosure.css`, and adjacent supporting modules one selector family at a time:
 
-- `.search-results.active` — owned across `css/search.css` (3), `css/journey_active.css` (1), `css/progressive_disclosure.css` (3), `css/strands.css` (8), `css/mobile_premium.css` (13), and `css/animations.css` (1). `css/layout_base.css` is no longer a search-result owner. The baseline count is tracked in `tests/css-ownership-check.mjs`; any new definition beyond these owners will trigger a violation.
+- `.search-results.active` — owned across `css/search.css` (3), `css/journey_active.css` (1), `css/progressive_disclosure.css` (3), `css/strands.css` (8), the `css/mobile_premium__*.css` split (13 total, primarily `state.css` + `surfaces.css`), and `css/animations.css` (1). `css/layout_base.css` is no longer a search-result owner. The baseline count is tracked in `tests/css-ownership-check.mjs`; any new definition beyond these owners will trigger a violation.
 
 - `#search-results.active`
 - `.search-results-count`
@@ -225,8 +227,8 @@ The `.focus-stage` selector family is distributed across **10 CSS files** (410+ 
 - Moved active `focus-search` field-node focus-stage suppression and journey-chip composition into `css/mobile_premium_focus.css`.
 - Active field-node journey-compass action sizing/pseudo-label typography now belongs to `css/mobile_premium_focus.css`; `css/mobile_premium_surfaces.css` keeps non-active fallback/backstop selectors only.
 
-2026-06-03 mobile collapse pass:
-- The prior split-file notes above describe historical movement. The active edit target for those owners is now the corresponding named section inside `css/mobile_premium.css`.
+2026-06-03 mobile split (un-collapse) pass:
+- The prior 2026-06-02 collapse notes above describe historical movement. The active edit target for those owners is the corresponding named file in the 7-file `css/mobile_premium__*.css` split.
 
 ## Minimal QA Matrix For CSS Edits
 
@@ -237,10 +239,10 @@ Run the smallest proof that exercises the surface you touched before reaching fo
 | `css/base.css`, `css/layout_base.css`, `css/clusters.css` selected-card/base card work | `npm run qa:contract:desktop-idle` and `npm run qa:contract:mobile-idle` |
 | `css/search.css` search rail, results, filters, rail sections | `npm run qa:contract:mobile-idle`; add `npm run qa:contract:search-error` for error/retry states |
 | `css/journey_steps.css`, `css/journey_active.css` focus-stage or journey controls | `npm run qa:contract:launch-focus`, `npm run qa:contract:focus-pocket`, and `npm run qa:contract:field-node` for field-node blocks |
-| `css/mobile_premium.css` focus/dive section | `npm run qa:surface:focus` and `npm run qa:contract:focus-pocket` |
-| `css/mobile_premium.css` map trail strip/chrome work | `npm run qa:contract:map-trail` and `npm run qa:surface:map-trail` |
-| `css/mobile_premium.css`, `css/mobile_base.css`, `css/strands.css` mobile state layout | `npm run qa:contract:mobile-idle` plus the touched state-specific surface |
-| `semantic-demo.css` or `css/mobile_premium.css` import/hash edits | `npm run check:shell` and `npm run check:cache` when the JS bundle hash is intentionally current |
-| `css/mobile_premium.css` map summary section | `npm run qa:surface:map-focus-search` and `node tests/map-focus-search-content-owner-contract.mjs` |
+| `css/mobile_premium__focus-dive.css` | `npm run qa:surface:focus` and `npm run qa:contract:focus-pocket` |
+| `css/mobile_premium__map.css` (map trail strip/chrome) | `npm run qa:contract:map-trail` and `npm run qa:surface:map-trail` |
+| The `css/mobile_premium__*.css` split (state, chrome, idle, surfaces), `css/mobile_base.css`, `css/strands.css` mobile state layout | `npm run qa:contract:mobile-idle` plus the touched state-specific surface |
+| `semantic-demo.css` or any `css/mobile_premium__*.css` import/hash edits | `npm run check:shell` and `npm run check:cache` when the JS bundle hash is intentionally current |
+| `css/mobile_premium__map.css` (map summary section) | `npm run qa:surface:map-focus-search` and `node tests/map-focus-search-content-owner-contract.mjs` |
 
 Known gaps that still need dedicated small checks: loading overlay, hover tooltip, synthesis summary card, mode-chip locked/waiting states, search-trail cue, and short-landscape layout. Weather widget ownership is covered by `tests/weather-surface-ownership-contract.mjs`.
