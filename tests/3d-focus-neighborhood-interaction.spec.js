@@ -904,7 +904,6 @@ test.describe('focus-neighborhood interaction', () => {
     let bestScore = -1;
 
     // ── Pass 1: strict (anchor inCanvas+reachable AND ≥1 neighbor inCanvas+reachable) ──
-    outer:
     for (const entryIndex of candidateEntryIndices) {
       await focusNodeViaApp(page, entryIndex);
       await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });

@@ -175,4 +175,11 @@ export default [
             'no-unsafe-optional-chaining': 'warn'
         }
     }
+    // NOTE: tests/micro-demo-verify.js has 43 false-positive no-undef
+    // errors at wrong line numbers due to an ESLint v10 shebang-handling
+    // bug. The flat-config per-file rule override (no-undef: 'off') does
+    // NOT resolve it. Options: (a) live with the 43 false positives,
+    // (b) remove the shebang, (c) downgrade to ESLint v9, (d) patch
+    // ESLint itself. Investigated in commit 5f9bd0c; see follow-up note
+    // in AGENTS.md.
 ];
