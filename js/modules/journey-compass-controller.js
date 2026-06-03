@@ -266,7 +266,11 @@ export function updateJourneyCompass() {
     const title = document.getElementById('journey-compass-title');
     const note = document.getElementById('journey-compass-note');
     if (kicker) kicker.textContent = compassState.kicker || 'Journey';
-    if (title) title.textContent = compassState.title || 'County overview';
+    // The title is intentionally empty in focus/inside phases — the right
+    // focus panel shows the business name prominently. Don't fall back to
+    // a default like "County overview" in those states. The CSS hides the
+    // title element when it's empty.
+    if (title) title.textContent = compassState.title || (phase === 'focus' || phase === 'inside' ? '' : 'County overview');
     if (note) {
         note.textContent = compassState.note || 'Search to open one semantic trail.';
         note.classList.toggle('discovery-active', !!compassState.discovery);

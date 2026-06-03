@@ -55,10 +55,13 @@ export function getJourneyCompassState() {
         return {
             phase: 'inside',
             kicker: `Neighborhood | ${clusterName}`,
-            title: focusedName ? `Inside ${focusedName}'s cluster` : 'Inside the local neighborhood',
+            // The right focus panel already shows the business name prominently;
+            // leave the top header title empty so the journey status isn't a
+            // duplicate of the panel content.
+            title: '',
             note: nextPoint
                 ? `Next stop: "${formatBusinessName(nextPoint.name || 'the next linked stop')}".`
-                : 'You have explored all immediate connections. Explore the neighbors or return to County View.',
+                : 'Pick another match or return to County.',
             primaryAction: nextPoint
                 ? { label: 'Follow Connection', action: 'next-stop' }
                 : { label: 'End of Trail', action: 'show-trail-panel' },
@@ -93,7 +96,9 @@ export function getJourneyCompassState() {
             kicker: walkHistoryLength > 1
                 ? `Trail Step ${walkHistoryLength} | ${clusterName}`
                 : (isSearchFocus ? `Search Anchor | ${clusterName}` : `Focus | ${clusterName}`),
-            title: focusedName || 'Focus Anchor',
+            // The right focus panel shows the business name prominently;
+            // leave the top header title empty so the journey status isn't a duplicate.
+            title: '',
             note: isSearchFocus
                 ? 'This is the search corridor, gathered around its strongest semantic anchor.'
                 : 'A local constellation of related businesses. Hover any glowing connection to see why it exists.',

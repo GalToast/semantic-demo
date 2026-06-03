@@ -663,13 +663,42 @@ body[data-trail-state="active"] .focus-stage-neighbor-pill {
         margin-top: 8px;
     }
 
-    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-action-btn {
+    /* County (back) is the only action button; the three view adjustments
+       (Recenter, Expand, Show Trail) are quiet text links in a sub-row. */
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) #btn-focus-overview {
         min-height: 30px;
-        padding: 7px 8px;
+        padding: 7px 10px;
         border-radius: 9px;
-        background: linear-gradient(180deg, rgb(var(--cluster-rgb) / 0.1), rgb(var(--cluster-rgb) / 0.045));
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
-        color: rgba(229, 246, 244, 0.78);
+        background: linear-gradient(180deg, rgb(var(--cluster-rgb) / 0.16), rgb(var(--cluster-rgb) / 0.08));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+        color: rgba(229, 246, 244, 0.9);
+        flex: 0 0 auto;
+        min-width: 96px;
+    }
+
+    /* Subtle secondary actions: a row of text links under the back button. */
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) #btn-focus-center,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) #btn-focus-expand,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) #btn-focus-path {
+        flex: 0 0 auto;
+        min-height: 24px;
+        padding: 4px 8px;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        color: rgba(176, 207, 200, 0.62);
+        font-weight: 500;
+        font-size: 10.5px;
+        letter-spacing: 0.02em;
+        text-transform: none;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) #btn-focus-center:hover,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) #btn-focus-expand:hover,
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) #btn-focus-path:hover {
+        color: rgba(229, 246, 244, 0.95);
+        background: rgba(121, 235, 222, 0.06);
+        border-radius: 6px;
     }
 
     html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-dive-btn {

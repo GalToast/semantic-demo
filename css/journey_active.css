@@ -101,6 +101,13 @@
     color: rgba(249, 254, 253, 0.96);
 }
 
+/* In focus and dive states, the right panel shows the business name
+   prominently. Hide the top-header title when it's empty so the
+   journey status doesn't leave a gap. */
+.journey-compass-title:empty {
+    display: none;
+}
+
 .journey-compass-note {
     margin-top: 3px;
     max-width: 48ch;
