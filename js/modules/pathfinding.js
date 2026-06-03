@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { debugWarn } from './diagnostic-adapter.js';
 
 /**
  * Phase 3: Semantic Pathfinding Prototype
@@ -8,7 +9,7 @@ import { state } from '../state.js';
 
 export function findSemanticPath(startLeadId, targetLeadId) {
     if (!state.semanticNeighborMapByLeadId || !state.pointIndexByLeadId) {
-        console.warn('[pathfinding] Required data maps not loaded.');
+        debugWarn('[pathfinding] Required data maps not loaded.');
         return null;
     }
 
@@ -16,7 +17,7 @@ export function findSemanticPath(startLeadId, targetLeadId) {
     const targetIdx = state.pointIndexByLeadId.get(String(targetLeadId));
 
     if (startIdx === undefined || targetIdx === undefined) {
-        console.warn('[pathfinding] Start or target lead ID not found in points list.', { startLeadId, targetLeadId });
+        debugWarn('[pathfinding] Start or target lead ID not found in points list.', { startLeadId, targetLeadId });
         return null;
     }
 
@@ -31,7 +32,7 @@ export function findSemanticPath(startLeadId, targetLeadId) {
     while (openSet.length > 0) {
         iterations++;
         if (iterations > maxIterations) {
-            console.warn('[pathfinding] Max iterations reached.');
+            debugWarn('[pathfinding] Max iterations reached.');
             return null;
         }
 
@@ -62,7 +63,7 @@ export function findSemanticPath(startLeadId, targetLeadId) {
         }
     }
 
-    console.warn('[pathfinding] No path found between', startLeadId, 'and', targetLeadId);
+    debugWarn('[pathfinding] No path found between', startLeadId, 'and', targetLeadId);
     return null;
 }
 

@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { easeInOutSine } from './utils/math-easing.js';
 import { animateCameraToNode } from './camera-controls.js';
 import { applyLocalNeighborhoodFocus, clearFocusPocketIndices, clearFocusPocketMeta } from './focus-pocket.js';
+import { debugWarn } from './diagnostic-adapter.js';
 import { refreshCompositionState, updateExplorationUi, resetNodePositions } from './lifecycle.js';
 import { updateJourneyCompass } from './journey-compass-controller.js';
 import { setAutoRotateSuspended } from './camera-controls.js';
@@ -113,7 +114,7 @@ function _recordCompletion() {
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(entry));
     } catch (e) {
-        console.warn('[micro-demo] Could not write localStorage:', e);
+        debugWarn('[micro-demo] Could not write localStorage:', e);
     }
 }
 
@@ -461,10 +462,10 @@ export function initMicroDemo() {
     const forceDemo = params.has('demo') && params.get('demo') === 'force';
 
     if (!forceDemo) {
-        if (!_guardNotSeen())    { console.warn('[demo] blocked — already seen'); return; }
-        if (!_guardReducedMotion()) { console.warn('[demo] blocked — reduced motion'); return; }
-        if (!_guardWebGL())      { console.warn('[demo] blocked — no WebGL / software renderer'); return; }
-        if (!_guardUrlParam())   { console.warn('[demo] blocked — nodemo URL param'); return; }
+        if (!_guardNotSeen())    { debugWarn('[demo] blocked — already seen'); return; }
+        if (!_guardReducedMotion()) { debugWarn('[demo] blocked — reduced motion'); return; }
+        if (!_guardWebGL())      { debugWarn('[demo] blocked — no WebGL / software renderer'); return; }
+        if (!_guardUrlParam())   { debugWarn('[demo] blocked — nodemo URL param'); return; }
     }
 
     startMicroDemo();

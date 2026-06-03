@@ -31,3 +31,13 @@ export function registerDiagnosticProbe(key, probe) {
 
     window[key] = probe;
 }
+
+/**
+ * Conditional warning logger — only emits to console.warn when debug is enabled.
+ * Use for verbose/repetitive warnings that clutter production consoles.
+ * Keep bare console.warn for critical error recovery paths.
+ */
+export function debugWarn(...args) {
+    if (!isDebugProbesEnabled()) return;
+    console.warn(...args);
+}

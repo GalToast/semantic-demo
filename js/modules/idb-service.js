@@ -5,6 +5,8 @@
  * Used for caching semantic search payloads across sessions.
  */
 
+import { debugWarn } from './diagnostic-adapter.js';
+
 const DB_NAME = 'SemanticExplorerDB';
 const STORE_NAME = 'SearchCache';
 const DB_VERSION = 1;
@@ -25,7 +27,7 @@ export function initDB() {
             const request = window.indexedDB.open(DB_NAME, DB_VERSION);
 
             request.onerror = (event) => {
-                console.warn('[idb-service] Database error:', event.target.error);
+                debugWarn('[idb-service] Database error:', event.target.error);
                 reject(event.target.error);
             };
 

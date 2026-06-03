@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { debugWarn } from './diagnostic-adapter.js';
 
 /**
  * Phase 3: Generative Audio Scape (Reactive)
@@ -49,10 +50,10 @@ function startAudioContext() {
         
         mainOsc.start();
 
-        console.warn('[audio] Reactive scape initialized.');
+        debugWarn('[audio] Reactive scape initialized.');
         requestAnimationFrame(updateAudio);
     } catch (e) {
-        console.warn('[audio] Web Audio API initialization failed.', e);
+        debugWarn('[audio] Web Audio API initialization failed.', e);
     }
 }
 

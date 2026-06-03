@@ -5,6 +5,8 @@
  * Replaces the fragile 'adapter_' pattern with typed, event-driven intent.
  */
 
+import { debugWarn } from './diagnostic-adapter.js';
+
 export const EVENTS = Object.freeze({
     // Camera / Navigation
     CAMERA_MOVED: 'CAMERA_MOVED',
@@ -61,7 +63,7 @@ const _keyedSubscribers = new Map();
  */
 export function subscribe(eventName, callback) {
     if (!EVENTS[eventName]) {
-        console.warn(`[EventBus] Unknown event name: ${eventName}`);
+        debugWarn(`[EventBus] Unknown event name: ${eventName}`);
     }
 
     if (!_subscribers.has(eventName)) {
@@ -111,7 +113,7 @@ export function subscribeKeyed(key, eventName, callback) {
  */
 export function publish(eventName, payload = {}) {
     if (!EVENTS[eventName]) {
-        console.warn(`[EventBus] Unknown event name published: ${eventName}`);
+        debugWarn(`[EventBus] Unknown event name published: ${eventName}`);
         return;
     }
 
