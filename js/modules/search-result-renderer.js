@@ -280,7 +280,7 @@ export function buildSearchResultItemHtml(result, order, renderContext) {
 
     return `
         <div class="search-result-listitem" role="listitem">
-        <button class="${cardClasses}" id="search-result-${Number(result.index)}" data-index="${Number(result.index)}" data-order="${order}" data-is-mock="${result.isMock ? 'true' : 'false'}" type="button" tabindex="0"
+        <button class="${cardClasses}" id="search-result-${Number(result.index)}" data-index="${Number(result.index)}" data-order="${order}" type="button" tabindex="0"
             aria-label="${escapeHtml(`Focus ${formatBusinessName(result.point.name)}. ${rankLabel}. ${snippetText} ${contextText}.`)}"
             style="animation-delay:${Math.min(order * 32, 224)}ms">
             <div class="search-result-row">
