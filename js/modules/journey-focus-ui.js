@@ -104,7 +104,7 @@ export function updateFocusNeighborRail() {
             ? state.points[candidate.index]
             : null;
         const button = document.createElement('button');
-        button.className = 'focus-stage-neighbor-pill';
+        button.className = 'focus-stage-neighbor-pill' + (order === 0 ? ' is-next-stop' : '');
         button.type = 'button';
         button.tabIndex = 0;
         button.dataset.index = String(candidate.index);
@@ -124,12 +124,19 @@ export function updateFocusNeighborRail() {
             : `${truncateMicrocopy(reason, 72)} | ${city}`;
         // Use the role title directly — it's already warm and the
         // roleLabel for "Anchors the trail" reads as a complete phrase
-        // without needing an article.
-        button.setAttribute('aria-label', `Explore ${name}: ${relationshipTitle}.`);
+        // without needing an article. The article-prefix form
+        // ("a Anchors the trail") breaks grammar for verb-phrase titles.
+        const ariaLabel = order === 0
+            ? `Next stop: ${name}. ${relationshipTitle}.`
+            : `Explore ${name}: ${relationshipTitle}.`;
+        button.setAttribute('aria-label', ariaLabel);
+        const nextStopBadge = order === 0
+            ? '<span class="focus-stage-neighbor-next-stop-badge">Next stop</span>'
+            : '';
         button.innerHTML = `
             <span class="focus-stage-neighbor-index">${String(order + 1).padStart(2, '0')}</span>
             <span class="focus-stage-neighbor-copy">
-                <span class="focus-stage-neighbor-name">${escapeHtml(name)} <span class="focus-stage-neighbor-role">${escapeHtml(relationshipLabel)}</span></span>
+                <span class="focus-stage-neighbor-name">${escapeHtml(name)} <span class="focus-stage-neighbor-role">${escapeHtml(relationshipLabel)}</span>${nextStopBadge}</span>
                 <span class="focus-stage-neighbor-reason">${escapeHtml(reasonLabel)}</span>
             </span>
             <span class="focus-stage-neighbor-actions" aria-label="Strand actions">

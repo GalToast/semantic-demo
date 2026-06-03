@@ -397,6 +397,46 @@ body[data-inside-walk-state="walking"] .focus-stage-inside-pulse {
     transform: translateY(-1px);
 }
 
+/* The first card is the highest-scored neighbor — the most likely next
+   action. Promote it to a primary CTA so the eye lands there first.
+   Matches (0,0,4,2) specificity from journey_steps.css role-color rules
+   so the teal CTA wins over the per-role border tint. */
+html body[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-neighbor-pill.is-next-stop {
+    background:
+        linear-gradient(180deg, rgba(121, 235, 222, 0.20), rgba(121, 235, 222, 0.08));
+    border-color: rgba(121, 235, 222, 0.55);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 10px 26px rgba(0, 0, 0, 0.22),
+        0 0 0 1px rgba(121, 235, 222, 0.22);
+    padding: 12px 14px;
+}
+
+html body[data-panel-surface]:not([data-panel-surface^="map-"]) .focus-stage-neighbor-pill.is-next-stop:hover {
+    background:
+        linear-gradient(180deg, rgba(121, 235, 222, 0.28), rgba(121, 235, 222, 0.12));
+    border-color: rgba(121, 235, 222, 0.7);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 12px 30px rgba(0, 0, 0, 0.26),
+        0 0 0 1px rgba(121, 235, 222, 0.3);
+}
+
+.focus-stage-neighbor-next-stop-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(121, 235, 222, 0.22);
+    border: 1px solid rgba(121, 235, 222, 0.42);
+    color: rgba(229, 246, 244, 0.95);
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
 /* 2.4 Journey & Trail Controls */
 .focus-stage-journey {
     display: flex;
@@ -760,14 +800,50 @@ body[data-trail-state="active"] .focus-stage-neighbor-pill {
     }
 
     html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-actions {
-        gap: 5px;
-        padding-right: 8px;
+        gap: 2px;
+        padding-right: 4px;
     }
 
+    /* Inspect/Pin are power-user features. Demote to quiet icon-style
+       buttons so the whole card remains the primary "focus this neighbor"
+       action. Still accessible to AT and keyboard users. */
     html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-action {
-        min-height: 34px;
-        padding: 0 10px;
-        border-radius: 11px;
+        min-height: 26px;
+        padding: 0 8px;
+        border-radius: 8px;
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        background: transparent;
+        border: 1px solid transparent;
+        box-shadow: none;
+        color: rgba(176, 207, 200, 0.62);
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-action:hover {
+        background: rgba(121, 235, 222, 0.06);
+        border-color: rgba(121, 235, 222, 0.18);
+        color: rgba(229, 246, 244, 0.95);
+    }
+
+    /* Pin keeps the primary treatment because it confirms selection,
+       but at a quieter level than the parent card. */
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-action.primary {
+        background: transparent;
+        color: rgba(176, 207, 200, 0.78);
+        border-color: rgba(121, 235, 222, 0.22);
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"]) .focus-stage-neighbor-action.primary:hover {
+        background: rgba(121, 235, 222, 0.1);
+        border-color: rgba(121, 235, 222, 0.4);
+        color: rgba(229, 246, 244, 0.98);
+    }
+
+    /* On the next-stop card, the Inspect/Pin pair keeps the same quiet
+       treatment; the next-stop badge is the visual lead, not the actions. */
+    .focus-stage-neighbor-pill.is-next-stop .focus-stage-neighbor-action {
+        color: rgba(229, 246, 244, 0.78);
     }
 
     html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"])[data-thread-inspect-surface="idle"] #focus-stage .focus-thread-inspector,
@@ -787,6 +863,51 @@ body[data-trail-state="active"] .focus-stage-neighbor-pill {
     html body[data-panel-surface="focus-search"] #info-panel .trail-controls,
     html body[data-panel-surface="focus-search"] #info-panel #trail-context,
     html body[data-panel-surface="focus-search"] #info-panel .trail-context {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .journey-compass[data-density="compact"] {
+        left: 50%;
+        right: auto;
+        width: min(248px, calc(100vw - 32px));
+        max-width: calc(100vw - 32px);
+        transform: translateX(-50%);
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .journey-compass[data-density="compact"] #journey-compass-title {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .journey-compass[data-density="compact"] #journey-compass-kicker {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) :is(
+        .share-toggle,
+        .legend-toggle,
+        .help-toggle,
+        .controls,
+        #btn-share-view,
+        #btn-legend,
+        #btn-keyboard-help,
+        .panel-toggle,
+        .time-display
+    ) {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    html body:is([data-panel-surface="focus"], [data-panel-surface="focus-search"], [data-panel-surface="semantic-dive"]) .journey-compass .journey-compass-note {
         display: none;
         visibility: hidden;
         pointer-events: none;
