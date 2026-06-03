@@ -1,6 +1,5 @@
 /* Animations: prefers-reduced-motion overrides. */
 
-
 @media (prefers-reduced-motion: reduce) {
     body #loading-overlay,
     body #loading-overlay *,
@@ -34,12 +33,11 @@
     }
 }
 
-
 /* Relocated prefers-reduced-motion rules (Slice 6) */
 
 @media (max-width: 768px) and (prefers-reduced-motion: reduce) {
-    body[data-active-view="galaxy"] .info-panel,
-    body[data-active-view="galaxy"] .journey-compass {
+    body[data-active-view='galaxy'] .info-panel,
+    body[data-active-view='galaxy'] .journey-compass {
         transition: none;
         transition-duration: 0.01ms;
     }
@@ -72,8 +70,8 @@
 }
 
 @media (max-width: 768px) and (prefers-reduced-motion: reduce) {
-    body[data-active-view="galaxy"] .journey-compass[data-phase="overview"],
-    body[data-active-view="galaxy"] .journey-compass[data-density="compact"] {
+    body[data-active-view='galaxy'] .journey-compass[data-phase='overview'],
+    body[data-active-view='galaxy'] .journey-compass[data-density='compact'] {
         transition: none;
         transition-duration: 0.01ms;
         backdrop-filter: none;
@@ -87,19 +85,19 @@
     body .focus-stage-action-btn,
     body .focus-stage-dive-btn,
     body .focus-stage-inside-btn,
-    body[data-panel-surface="semantic-dive"] #btn-inside-next.focus-stage-inside-btn[aria-busy="true"],
+    body[data-panel-surface='semantic-dive'] #btn-inside-next.focus-stage-inside-btn[aria-busy='true'],
     body .focus-stage-neighbor-pill {
         animation: none;
         transition: none;
     }
 
-    body[data-active-view="galaxy"] .focus-stage,
-    body[data-active-view="galaxy"] .focus-stage-card {
+    body[data-active-view='galaxy'] .focus-stage,
+    body[data-active-view='galaxy'] .focus-stage-card {
         transition: none;
         transition-duration: 0.01ms;
     }
 
-    body[data-active-view="galaxy"][data-semantic-dive="transitioning"] .focus-stage-card {
+    body[data-active-view='galaxy'][data-semantic-dive='transitioning'] .focus-stage-card {
         opacity: 1;
         pointer-events: auto;
         transform: none;

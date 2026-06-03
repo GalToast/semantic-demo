@@ -21,10 +21,18 @@
 }
 
 @keyframes fadeInOut {
-    0%   { opacity: 0; }
-    20%  { opacity: 1; }
-    80%  { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
 }
 
 .demo-tag-dot {
@@ -39,8 +47,15 @@
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 0.5; transform: scale(0.8); }
-    50%       { opacity: 1;   transform: scale(1.2); }
+    0%,
+    100% {
+        opacity: 0.5;
+        transform: scale(0.8);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
 }
 
 /* Demo End Toast (appears at T=8800ms after demo completes) */
@@ -71,8 +86,14 @@
 }
 
 @keyframes slideUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .demo-toast-glyph {
@@ -110,6 +131,6 @@
 }
 
 /* Hide view toggle switcher when micro-demo is active to prevent overlapping with the demo progress pill */
-body[data-demo-active="true"] .view-toggle {
+body[data-demo-active='true'] .view-toggle {
     display: none;
 }

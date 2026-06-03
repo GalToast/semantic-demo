@@ -146,7 +146,9 @@ export const _rawState = {
     targetPositions: [],
     originalPositions: [],
     currentView: 'galaxy',
-    autoRotate: true,
+    // Default auto-rotate off so first-time visitors aren't disoriented by
+    // motion on first load. Users can opt in via the canvas control rail.
+    autoRotate: false,
     autoRotateSuspended: false,
     weather: null,
     weatherInitialized: false,

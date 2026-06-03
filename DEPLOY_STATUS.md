@@ -1180,3 +1180,110 @@ JS `.click()` works because it fires the event in the DOM regardless of layout/v
 
 ### Decision #35 — Bridge button click bug (CLOSED)
 Fix implemented and verified. Decision resolved.
+
+## Session 2026-06-02 / 2026-06-03 — UI Audit Cleanup + Structural Refactor
+
+**Scope:** Four task-driven cleanups prompted by a visual UI audit (idle header copy, result-card jargon, token-system coverage, oversized mobile-premium owner). Plus a follow-up that surfaced and fixed a pre-existing bug in the idle-state panel header.
+
+### Task (b) — User-language pass on result list labels
+
+**What:** Replaced the result-card jargon (`Search Anchor` / `High Synergy` / `Strong Signal` / `Related Link` / `Broad Match` / `Same theme` / `Related match`) with a single plain-English confidence scale. Also dropped the second chip per card — the "stage" chip (Same theme / Related match) was redundant with the category line right above it, leaving one chip per card that means what it says.
+
+**Scale:** `Best match` / `Strong match` / `Good match` / `Related` / `Broader match`. The order=0 case (anchor) is still the same.
+
+**Files:**
+- `js/modules/search-result-renderer.js` — `getSearchResultStrengthLabel` returns the new scale; `buildSearchResultItemHtml` no longer renders the stage chip.
+- `tests/search-state-surface-contract.mjs` — assertions updated.
+- `tests/search-peek-expanded-render-contract.mjs` — fixture HTML mirrors the single-chip structure.
+
+**Verified:** 5 cards in coffee search render with `Best match` / `Strong match` ×2 / `Good match` ×2. Compass/breadcrumb surface (`SEARCH ANCHOR | FOOD & HOSPITALITY`) intentionally unchanged.
+
+### Task (d) — `style="display: none"` → `hidden` attribute migration
+
+**What:** Replaced all 8 inline `style="display: none"` initial states in `vector-explorer-polished.html` with the `hidden` attribute. Updated JS to use `el.hidden = true/false` instead of `el.style.display = 'block'/'none'` for those same elements.
+
+**Files:**
+- `vector-explorer-polished.html` — 8 elements (synthesize-trigger, selected-details, selected-filed-as, selected-match-panel, selected-action-row, contact-phone, contact-email, contact-web).
+- `js/modules/journey-selected-card.js` — 5 lines switched.
+- `js/modules/search-results-ui.js` — 1 line.
+- `js/modules/tooltip.js` — 3 lines.
+- `js/modules/focus-stage-renderer.js` — `setSurfaceHidden` helper simplified (removed redundant dual-write).
+- `css/tooltips.css` — `.hover-tooltip .contact-row` updated to `:not([hidden])` so the class doesn't override the UA `[hidden]` rule.
+- `tests/unit/journey-selected-card.test.js` — assertions updated to check `hidden` instead of `style.display`.
+
+**Verified:** All 8 elements toggle correctly via `hidden`; computed `display: none` for hidden, `display: flex` for contact rows when shown. Unit tests: 9/9 pass.
+
+### Task (a) — Token system phase 1: exact-match sweep
+
+**What:** Added 2 new border tokens to `css/base.css` (`--color-border-faint: rgba(255, 255, 255, 0.04)` and `--color-border-strong: rgba(255, 255, 255, 0.14)`) to complete the existing intensity scale. Swept **120 exact-match literals** to `var(--…)` references across 17 CSS files (everything except `base.css`). The existing token system was already declared (`--color-primary`, `--color-text-*`, `--color-surface-*`, etc.) — the CSS just wasn't using it.
+
+**Token count by usage (top 10):** `--color-border-subtle` 37, `--color-border-faint` 27, `--color-border-muted` 19, `--color-primary-tint-soft` 12, `--color-border-strong` 5, `--color-text-strong` 6, etc.
+
+**Files:** `css/base.css` (token additions), 17 other CSS files (literal replacements), `dist/bundle.js` rebuilt.
+
+**Phase 2 (deliberately deferred):** ~1,300 non-exact literals (e.g., `rgba(255,255,255,0.05)`, `0.06`, `0.075`) remain. Rounding these to the nearest existing token would create sub-pixel visual drift; the project's existing pattern `rgba(var(--color-primary-rgb), 0.5)` already handles dynamic-alpha use cases. Reopen only if a theming switch is on the roadmap.
+
+**Verified:** Tokens resolve correctly. Visual parity confirmed. `search-state-surface-contract.mjs` passes.
+
+### Task (c) — Split `mobile_premium.css` by state
+
+**What:** Deleted the 4,192-line `css/mobile_premium.css` and split it into 7 per-state files. Cascade order preserved exactly. `vector-explorer-polished.html` now loads the 7 split files via 7 `<link>` tags in the same order.
+
+**New files (cascade order, line counts):**
+| File | Lines |
+|---|---:|
+| `mobile_premium__focus-dive.css` | 1,520 |
+| `mobile_premium__chrome.css` | 746 |
+| `mobile_premium__state.css` | 750 |
+| `mobile_premium__idle.css` | 100 |
+| `mobile_premium__map.css` | 111 |
+| `mobile_premium__surfaces.css` | 1,057 |
+| `mobile_premium__narrow.css` | 53 |
+| **Total** | **4,337** (delta is cascade notes added to files 2–7) |
+
+**Files:** `vector-explorer-polished.html` (1 `<link>` → 7), `tests/css-ownership-check.mjs`, `tests/css-manifest-contract.mjs`, `tests/focus-stage-css-ownership-contract.mjs`, `tests/mobile-chrome-ownership-contract.mjs`, `tests/search-sheet-css-ownership-contract.mjs`, `tests/map-focus-search-content-owner-contract.mjs`, `tests/surface-redundancy-contract.mjs`, `tests/weather-surface-ownership-contract.mjs` — all updated to read all 7 files (or accept any of them as the new terminal owner / ownership lane).
+
+**Verified:** All 8 contract tests pass. Visual parity confirmed at 1440×900, 390×844, and 320×700 (the narrow viewport picks up `mobile_premium__narrow.css`). Cascade order preserved — no selector-count drift.
+
+### Tier 2 follow-up — Idle header bug
+
+**What:** While triaging the "Focused Business" claim from the original audit, found a real pre-existing bug: `focus-stage-renderer.js:35` had a comment claiming "the header must not claim Focused Business" but the ternary's else-branch returned exactly that string. The intended "Selection" label was never actually used.
+
+**Files:** `js/modules/focus-stage-renderer.js:35` (line 35 fix), `vector-explorer-polished.html:374` (HTML default to "Selection" for the brief moment before JS runs).
+
+**Verified:** Idle panel now shows "Selection". When the user focuses on a spore, the title transitions to the correct label ("Search Anchor" / "Related Match" / "Focused Business" as appropriate).
+
+### Tier 2 follow-up — MOCK pill color
+
+**What:** The MOCK chip on mock-data results used the same amber as the primary "Step Inside" CTA — both read as the same affordance. Changed the MOCK pill to a cool gray with transparent fill and subtle border so it signals "not real data" without competing with the CTA.
+
+**File:** `css/search.css:300` (`.search-result-mock-pill` rule).
+
+**Verified:** MOCK pill is now `rgba(255, 255, 255, 0.6)` text with `var(--color-border-muted)` border, transparent background. Visually distinct from the amber CTA.
+
+### Tier 2 follow-up — Inspect/Pin tap targets
+
+**What:** `.focus-stage-neighbor-action` buttons (Inspect / Pin on Nearby Stops rows) were 26px tall — below the iOS (44pt) and Android (48pt) tap-target floors. Raised to 32px (Android minimum, reasonable for secondary actions) with vertical padding for breathing room. Visual register preserved via the transparent fill and muted color, not by being small.
+
+**File:** `css/modules/focus_stage.css:810` (`.focus-stage-neighbor-action` rule).
+
+**Verified:** Tap targets now 32×62px (Inspect) and 32×39px (Pin). No visual regression.
+
+### Tier 3 — Triaged pre-existing modifications (NOT authored in this session)
+
+The following files were modified in the working tree at session start by other agents or earlier sessions. They are real improvements; surface here so the next session knows whose WIP this is:
+
+- `js/modules/camera-controls.js` — `state.autoRotate` vs `state.controls?.autoRotate` bug fix.
+- `js/modules/legend-ui.js` — Don't wipe the legend panel's innerHTML on every guide-state change (caused flash).
+- `js/modules/lifecycle.js` — Refactored to use the new `getPanelSurfaceDetailFromMobileSheet` helper.
+- `js/modules/search-panel-adapter.js` — Added `getPanelSurfaceDetailFromMobileSheet` + `syncPanelSurfaceDetailFromMobileSheet` helpers.
+- `js/modules/semantic-lane.js` — Throttled the static-dev fallback warning to once per session.
+- `js/state.js` — Default `autoRotate` to `false` so first-time visitors aren't disoriented by motion on first load.
+- `docs/semantic-demo-design-tokens.md` — Token doc updated.
+
+Untracked noise (recommend `.gitignore`): `semantic-explorer-*.txt` and `semantic-explorer-*.md` are diagnostic snapshots from previous audit sessions.
+
+### Not yet committed
+
+All of the above (4 tasks + 3 follow-ups) are unstaged. Run `git status` to see the full file list. Ready for the commit-and-deploy step when you are.
+

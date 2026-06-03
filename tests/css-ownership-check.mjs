@@ -12,9 +12,9 @@ import path from 'node:path';
 
 const cssDir = path.resolve(process.cwd(), 'css');
 
-// mobile_premium.css is the active collapsed mobile owner. The old
-// mobile_premium_* split files were retired during the 2026-06-02 collapse,
-// so the baseline now ratchets the selectors that used to be spread there.
+// The app shell loads the double-underscore mobile premium split directly.
+// Keep this baseline aligned with vector-explorer-polished.html so selector
+// counts describe the loaded cascade instead of the deleted collapsed file.
 const selectorBaselines = {
   '.close-icon': {
     'controls.css': 1,
@@ -35,7 +35,8 @@ const selectorBaselines = {
   '.focus-stage-route': {
     'journey_steps.css': 14,
     'journey_active.css': 5,
-    'mobile_premium.css': 5,
+    'mobile_premium__focus-dive.css': 2,
+    'mobile_premium__surfaces.css': 3,
   },
   '.focus-stage-card': {
     'animations.css': 3,
@@ -43,7 +44,7 @@ const selectorBaselines = {
     'journey_active.css': 8,
     'journey_steps.css': 18,
     'mobile_base.css': 0,
-    'mobile_premium.css': 28,
+    'mobile_premium__focus-dive.css': 28,
     'progressive_disclosure.css': 1,
     'strands.css': 5,
   },
@@ -55,14 +56,16 @@ const selectorBaselines = {
     'progressive_disclosure.css': 2,
     'strands.css': 7,
     'animations.css': 0,
-    'mobile_premium.css': 6,
+    'mobile_premium__chrome.css': 5,
+    'mobile_premium__idle.css': 1,
   },
   '.legend-toggle': {
     'controls.css': 1,
     'layout_base.css': 10,
     'journey_active.css': 1,
     'strands.css': 2,
-    'mobile_premium.css': 5,
+    'mobile_base.css': 1,
+    'mobile_premium__chrome.css': 5,
   },
   '.search-results.active': {
     'search.css': 4,
@@ -70,40 +73,49 @@ const selectorBaselines = {
     'journey_active.css': 1,
     'progressive_disclosure.css': 3,
     'strands.css': 8,
-    'mobile_premium.css': 13,
+    'mobile_premium__chrome.css': 7,
+    'mobile_premium__state.css': 5,
+    'mobile_premium__surfaces.css': 1,
     'animations.css': 1,
   },
   '.help-toggle': {
     'layout_base.css': 4,
     'journey_active.css': 1,
     'mobile_base.css': 1,
-    'mobile_premium.css': 4,
+    'mobile_premium__chrome.css': 4,
     'strands.css': 2,
   },
   '.journey-compass-title': {
     'layout_base.css': 1,
     'journey_active.css': 14,
     'mobile_base.css': 0,
-    'mobile_premium.css': 10,
+    'mobile_premium__focus-dive.css': 5,
+    'mobile_premium__state.css': 1,
+    'mobile_premium__surfaces.css': 4,
     'strands.css': 2,
   },
   '.journey-compass-actions': {
     'journey_active.css': 15,
-    'mobile_premium.css': 11,
+    'mobile_premium__focus-dive.css': 4,
+    'mobile_premium__narrow.css': 1,
+    'mobile_premium__surfaces.css': 6,
     'progressive_disclosure.css': 1,
     'strands.css': 6,
   },
   '.journey-compass-rail': {
     'layout_base.css': 1,
     'journey_active.css': 15,
-    'mobile_premium.css': 6,
+    'mobile_premium__focus-dive.css': 4,
+    'mobile_premium__state.css': 1,
+    'mobile_premium__surfaces.css': 1,
     'strands.css': 2,
   },
   '.journey-compass-action.primary': {
     'animations.css': 2,
     'journey_active.css': 4,
     'mobile_base.css': 4,
-    'mobile_premium.css': 6,
+    'mobile_premium__focus-dive.css': 4,
+    'mobile_premium__surfaces.css': 2,
     'search.css': 4,
     'strands.css': 5,
   },

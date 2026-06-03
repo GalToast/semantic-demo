@@ -139,8 +139,12 @@ export function updateLegendGuideState() {
     const guide = state.currentSemanticGuide;
     if (!guide) {
         if (isLegendPanelOpen()) closeLegendPanel();
-        const legendPanel = document.getElementById('legend-panel');
-        if (legendPanel) legendPanel.innerHTML = '';
+        // Don't wipe innerHTML here. This function is called from many event
+        // subscribers (VIEW_CHANGED, FILTER_CHANGED, STATE_RESET, SEARCH_*);
+        // wiping the panel makes the field guide's content flash in and out
+        // when the user opens it. buildLegend() always replaces the content
+        // when the panel is next opened, so an empty state at the path
+        // level is fine.
         return;
     }
     // Auto-open the legend panel when guide data is available

@@ -59,9 +59,9 @@ for (const marker of [
   '.weather-desc',
   '.weather-wind',
   '.weather-staleness',
-  'body[data-panel-surface^="map-"] .weather-widget',
-  'body[data-panel-surface="focus-search"] .weather-widget',
-  'body[data-panel-surface="semantic-dive"] .weather-widget',
+  "body[data-panel-surface^='map-'] .weather-widget",
+  "body[data-panel-surface='focus-search'] .weather-widget",
+  "body[data-panel-surface='semantic-dive'] .weather-widget",
   '@media (max-width: 768px)'
 ]) {
   assert.ok(timeWeatherCss.includes(marker), `time_weather.css should contain canonical weather marker: ${marker}`);
@@ -73,11 +73,21 @@ assert.doesNotMatch(
   'time_weather.css should not own generic app-control button or icon layout'
 );
 
+const MOBILE_PREMIUM_SPLIT = [
+  'css/mobile_premium__focus-dive.css',
+  'css/mobile_premium__chrome.css',
+  'css/mobile_premium__state.css',
+  'css/mobile_premium__idle.css',
+  'css/mobile_premium__map.css',
+  'css/mobile_premium__surfaces.css',
+  'css/mobile_premium__narrow.css',
+];
+
 const forbiddenWeatherOwners = [
   'css/strands.css',
   'css/journey_active.css',
   'css/layout_base.css',
-  'css/mobile_premium.css'
+  ...MOBILE_PREMIUM_SPLIT,
 ];
 
 for (const relativePath of forbiddenWeatherOwners) {

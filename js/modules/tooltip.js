@@ -51,7 +51,7 @@ export function updateTooltipContent(point) {
 
     let anyContact = false;
     if (phoneRow) {
-        phoneRow.style.display = hasPhone ? 'flex' : 'none';
+        phoneRow.hidden = !hasPhone;
         if (hasPhone) {
             const link = phoneRow.querySelector('a');
             if (link) link.textContent = point.phone;
@@ -59,7 +59,7 @@ export function updateTooltipContent(point) {
         }
     }
     if (emailRow) {
-        emailRow.style.display = hasEmail ? 'flex' : 'none';
+        emailRow.hidden = !hasEmail;
         if (hasEmail) {
             const link = emailRow.querySelector('a');
             if (link) link.textContent = point.email;
@@ -67,7 +67,7 @@ export function updateTooltipContent(point) {
         }
     }
     if (webRow) {
-        webRow.style.display = hasWebsite ? 'flex' : 'none';
+        webRow.hidden = !hasWebsite;
         if (hasWebsite) {
             const link = webRow.querySelector('a');
             if (link) {

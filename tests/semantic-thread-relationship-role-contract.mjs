@@ -84,14 +84,16 @@ const roleCopySource = fs.readFileSync(path.join(ROOT, 'js/modules/relationship-
 for (const role of VALID_ROLES) {
   assert(roleCopySource.includes(`${role}:`), `relationship-roles.js must define UI copy for ${role}`);
   assert(
-    focusStageCss.includes(`data-relationship-role="${role}"`),
+    focusStageCss.includes(`data-relationship-role="${role}"`) ||
+      focusStageCss.includes(`data-relationship-role='${role}'`),
     `css/journey_steps.css must define a visual role treatment for ${role}`
   );
 }
 
 assert(roleCopySource.includes(`${UI_FALLBACK_ROLE}:`) || roleCopySource.includes(`[UNCLASSIFIED_RELATIONSHIP_ROLE]`),
   'relationship-roles.js must define explicit unclassified UI fallback copy');
-assert(focusStageCss.includes(`data-relationship-role="${UI_FALLBACK_ROLE}"`),
+assert(focusStageCss.includes(`data-relationship-role="${UI_FALLBACK_ROLE}"`) ||
+  focusStageCss.includes(`data-relationship-role='${UI_FALLBACK_ROLE}'`),
   'css/journey_steps.css must style unclassified role fallback distinctly');
 assert(!/return\s+['"]bridge['"]/.test(roleCopySource),
   'relationship role normalization must not silently coerce missing/unknown roles to bridge');

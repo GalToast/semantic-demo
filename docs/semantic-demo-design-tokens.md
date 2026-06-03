@@ -1,6 +1,6 @@
 # Semantic Demo Design Tokens
 
-Date: 2026-05-25
+Date: 2026-06-03
 
 This is the human-readable token sheet for the Semantic Explorer demo. The canonical implementation source is `css/base.css`; this document names the system, explains intended use, and records design policy that should not have to be rediscovered in CSS.
 
@@ -27,6 +27,8 @@ Do not inject CSS custom properties from JavaScript. CSS root tokens stay in `cs
 | `--color-primary-tint` | `#79ebde` | Lighter primary tint for elevated accents and softened highlights |
 | `--color-primary-tint-rgb` | `121, 235, 222` | Alpha-mixed lighter primary effects |
 | `--color-primary-tint-soft` | `rgba(121, 235, 222, 0.2)` | Soft lighter-primary fills |
+| `--color-primary-alt` | `#4ecdc4` | Alternate primary cyan used by legacy accent surfaces |
+| `--color-primary-alt-rgb` | `78, 205, 196` | Alpha-mixed alternate primary effects |
 | `--color-accent` | `#ffdf4c` | Secondary yellow accent, sparingly used |
 | `--color-accent-rgb` | `255, 223, 76` | Alpha-mixed accent effects |
 | `--color-accent-soft` | `rgba(255, 223, 76, 0.1)` | Low-strength accent fills |
@@ -150,6 +152,9 @@ Policy: motion should clarify state change and respect reduced-motion preference
 | `--landscape-search-results-max-height` | `min(250px, calc(100dvh - 390px))` | Short-landscape search results |
 | `--landscape-weather-widget-height` | `62px` | Short-landscape weather widget |
 | `--landscape-focus-stage-card-max-height` | `min(72vh, 282px)` | Short-landscape focus card |
+| `--top-chrome-mobile` | `82px` | Mobile top chrome vertical offset |
+| `--compass-top` | `78px` | Default mobile journey compass top position |
+| `--view-toggle-right-mobile` | `108px` | Mobile view-toggle right offset near top chrome |
 | `--z-underlay` | `-1` | Decorative or scene-adjacent content below base UI |
 | `--z-base` | `1` | Base UI layer |
 | `--z-content` | `5` | Primary content above the base layer |

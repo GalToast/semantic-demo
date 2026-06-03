@@ -155,13 +155,26 @@ const FORWARD_ONLY_LIMITS = [
   },
 ];
 
+const MOBILE_PREMIUM_SPLIT = [
+  'mobile_premium__focus-dive.css',
+  'mobile_premium__chrome.css',
+  'mobile_premium__state.css',
+  'mobile_premium__idle.css',
+  'mobile_premium__map.css',
+  'mobile_premium__surfaces.css',
+  'mobile_premium__narrow.css',
+];
+function readMobilePremium() {
+  return MOBILE_PREMIUM_SPLIT.map((f) => read(`css/${f}`)).join('\n');
+}
+
 const REGISTERED_GEOMETRY_OWNERS = {
   '.focus-stage-card': new Set([
     'animations.css',
     'clusters.css',
     'journey_active.css',
     'journey_steps.css',
-    'mobile_premium.css',
+    ...MOBILE_PREMIUM_SPLIT,
     'progressive_disclosure.css',
     'strands.css',
   ]),
@@ -172,7 +185,7 @@ const REGISTERED_GEOMETRY_OWNERS = {
     'journey_steps.css',
     'layout_base.css',
     'mobile_base.css',
-    'mobile_premium.css',
+    ...MOBILE_PREMIUM_SPLIT,
     'progressive_disclosure.css',
     'search.css',
     'strands.css',
@@ -180,21 +193,22 @@ const REGISTERED_GEOMETRY_OWNERS = {
 };
 
 const FOCUS_ACTION_PRIMITIVE_GUARD = {
-  canonicalFile: 'mobile_premium.css',
+  canonicalFile: 'mobile_premium split (focus-dive.css)',
+  ownerMarker: 'Focus stage action/button primitives',
 };
 
 const FOCUS_COMPASS_STATE_REFINEMENT_GUARD = {
-  canonicalFile: 'mobile_premium.css',
+  canonicalFile: 'mobile_premium split (focus-dive.css)',
   ownerMarker: 'Focus/dive journey compass state refinements',
 };
 
 const SEMANTIC_DIVE_INSIDE_HUD_GUARD = {
-  canonicalFile: 'mobile_premium.css',
+  canonicalFile: 'mobile_premium split (focus-dive.css)',
   ownerMarker: 'Semantic-dive inside HUD density owner',
 };
 
 const MOBILE_COMPASS_TRANSITION_GUARD = {
-  file: 'mobile_premium.css',
+  file: 'mobile_premium split (focus-dive.css)',
   selectors: ['.journey-compass', '.journey-compass-action'],
 };
 
@@ -206,26 +220,26 @@ const cssFiles = fs.readdirSync(cssDir).filter((f) => f.endsWith('.css')).sort()
 const violations = [];
 const warnings = [];
 
-const focusPrimitiveOwner = read(`css/${FOCUS_ACTION_PRIMITIVE_GUARD.canonicalFile}`);
+const focusPrimitiveOwner = readMobilePremium();
 if (!focusPrimitiveOwner.includes('Focus stage action/button primitives')) {
   violations.push(`${FOCUS_ACTION_PRIMITIVE_GUARD.canonicalFile} must document and own focus-stage action/button primitives`);
 }
 
-const focusCompassOwner = read(`css/${FOCUS_COMPASS_STATE_REFINEMENT_GUARD.canonicalFile}`);
+const focusCompassOwner = readMobilePremium();
 if (!focusCompassOwner.includes(FOCUS_COMPASS_STATE_REFINEMENT_GUARD.ownerMarker)) {
   violations.push(
     `${FOCUS_COMPASS_STATE_REFINEMENT_GUARD.canonicalFile} must document and own focus/dive journey-compass state refinements`
   );
 }
 
-const semanticDiveInsideHudOwner = read(`css/${SEMANTIC_DIVE_INSIDE_HUD_GUARD.canonicalFile}`);
+const semanticDiveInsideHudOwner = readMobilePremium();
 if (!semanticDiveInsideHudOwner.includes(SEMANTIC_DIVE_INSIDE_HUD_GUARD.ownerMarker)) {
   violations.push(
     `${SEMANTIC_DIVE_INSIDE_HUD_GUARD.canonicalFile} must document and own semantic-dive inside HUD density`
   );
 }
 
-const mobileCompassTransitionOwner = read(`css/${MOBILE_COMPASS_TRANSITION_GUARD.file}`);
+const mobileCompassTransitionOwner = readMobilePremium();
 for (const selector of MOBILE_COMPASS_TRANSITION_GUARD.selectors) {
   const transitionAllBlocks = matchingBlocks(mobileCompassTransitionOwner, [selector])
     .filter((block) => /\btransition\s*:\s*all\b/i.test(block.body));

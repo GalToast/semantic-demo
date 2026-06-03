@@ -271,7 +271,7 @@ export function updateSelectedBusiness(point, options = {}) {
             if (cardEl) cardEl.style.opacity = '1';
         }, 180);
         emptyEl.style.display = '';
-        detailsEl.style.display = 'none';
+        detailsEl.hidden = true;
         detailsEl.classList.remove('active');
         if (cardEl) applyClusterUiAccent(cardEl, null);
         if (typeof renderSelectedMetaStrip === 'function') renderSelectedMetaStrip(null);
@@ -310,7 +310,7 @@ export function updateSelectedBusiness(point, options = {}) {
         }
         const filedAsEl = document.getElementById('selected-filed-as');
         if (filedAsEl) {
-            filedAsEl.style.display = 'none';
+            filedAsEl.hidden = true;
             filedAsEl.textContent = '';
         }
         syncFocusStage(null);
@@ -331,7 +331,7 @@ export function updateSelectedBusiness(point, options = {}) {
     }
     if (cardEl) applyClusterUiAccent(cardEl, point);
     emptyEl.style.display = 'none';
-    detailsEl.style.display = 'block';
+    detailsEl.hidden = false;
     detailsEl.classList.add('active');
 
     const cascadeBg = document.getElementById('vector-cascade-bg');
@@ -368,9 +368,9 @@ export function updateSelectedBusiness(point, options = {}) {
         const isEmptyRaw = !raw || raw === '-' || raw.trim() === '';
         if (namePresentation.showRaw && !isEmptyRaw) {
             filedAsEl.textContent = COPY.selectedFiledAs(raw);
-            filedAsEl.style.display = 'block';
+            filedAsEl.hidden = false;
         } else {
-            filedAsEl.style.display = 'none';
+            filedAsEl.hidden = true;
             filedAsEl.textContent = '';
         }
     }

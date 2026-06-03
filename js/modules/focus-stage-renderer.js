@@ -32,7 +32,7 @@ export function updateSelectedCardHeading(point = null) {
     const resultIndices = Array.isArray(summary.resultIndices) ? summary.resultIndices : [];
 
     if (!activePoint) {
-        titleEl.textContent = state.currentView === 'map' ? 'Map Selection' : 'Focused Business';
+        titleEl.textContent = state.currentView === 'map' ? 'Map Selection' : 'Selection';
     } else if (Number.isFinite(summary.anchorIndex) && activeIndex === summary.anchorIndex) {
         titleEl.textContent = 'Search Anchor';
     } else if (resultIndices.includes(activeIndex)) {

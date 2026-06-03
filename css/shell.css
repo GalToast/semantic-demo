@@ -1,5 +1,6 @@
 /* Shell: canvas/map containers, handoff effects, map empty state, and trail strip. */
-#canvas-container, #map-container {
+#canvas-container,
+#map-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -81,14 +82,17 @@
 
 /* 10/10 Polish: Sonic Boom transition for neighborhood dive */
 /* #950: Reduced intensity for motion subtraction */
-body[data-semantic-dive="transitioning"] #canvas-container {
+body[data-semantic-dive='transitioning'] #canvas-container {
     filter: blur(8px) saturate(1.2) brightness(1.08);
     transform: scale(1.04);
     pointer-events: none;
 }
-#canvas-container.hidden { opacity: 0; pointer-events: none; }
+#canvas-container.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
 
-body[data-graphics-mode="fallback"] #canvas-container {
+body[data-graphics-mode='fallback'] #canvas-container {
     z-index: var(--z-toast);
 }
 
@@ -99,142 +103,242 @@ body[data-graphics-mode="fallback"] #canvas-container {
     inset: 0;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.35s ease, transform 0.35s ease;
+    transition:
+        opacity 0.35s ease,
+        transform 0.35s ease;
 }
 
-body[data-graphics-mode="fallback"] #canvas-container::before,
-body[data-graphics-mode="fallback"] #canvas-container::after {
+body[data-graphics-mode='fallback'] #canvas-container::before,
+body[data-graphics-mode='fallback'] #canvas-container::after {
     display: none;
 }
 
 #canvas-container::before {
     z-index: var(--z-base);
-    background:
-        radial-gradient(circle at 50% 50%, rgba(5, 12, 18, 0) 0%, rgba(5, 12, 18, 0.08) 22%, rgba(5, 10, 16, 0.38) 62%, rgba(4, 7, 11, 0.72) 100%);
+    background: radial-gradient(
+        circle at 50% 50%,
+        rgba(5, 12, 18, 0) 0%,
+        rgba(5, 12, 18, 0.08) 22%,
+        rgba(5, 10, 16, 0.38) 62%,
+        rgba(4, 7, 11, 0.72) 100%
+    );
 }
 
 #canvas-container::after {
     z-index: var(--z-base);
     background:
-        linear-gradient(90deg, rgba(6, 9, 13, 0.74) 0%, rgba(6, 9, 13, 0.48) 16%, rgba(6, 9, 13, 0.12) 32%, rgba(6, 9, 13, 0) 48%),
-        radial-gradient(circle at 82% 78%, rgba(5, 18, 23, 0.82) 0%, rgba(5, 18, 23, 0.36) 28%, rgba(5, 18, 23, 0.08) 50%, transparent 66%);
+        linear-gradient(
+            90deg,
+            rgba(6, 9, 13, 0.74) 0%,
+            rgba(6, 9, 13, 0.48) 16%,
+            rgba(6, 9, 13, 0.12) 32%,
+            rgba(6, 9, 13, 0) 48%
+        ),
+        radial-gradient(
+            circle at 82% 78%,
+            rgba(5, 18, 23, 0.82) 0%,
+            rgba(5, 18, 23, 0.36) 28%,
+            rgba(5, 18, 23, 0.08) 50%,
+            transparent 66%
+        );
     transform: scale(1.02);
 }
 
-body[data-panel-surface="search"] #canvas-container::before {
+body[data-panel-surface='search'] #canvas-container::before {
     opacity: 0.24;
 }
 
-body[data-panel-surface="search"] #canvas-container::after {
+body[data-panel-surface='search'] #canvas-container::after {
     opacity: 0.42;
 }
 
-body[data-route-motion="search-corridor"] #canvas-container::before {
+body[data-route-motion='search-corridor'] #canvas-container::before {
     opacity: 0.22;
     background:
-        radial-gradient(circle at 52% 50%, rgba(5, 12, 18, 0) 0%, rgba(5, 12, 18, 0.02) 22%, rgba(4, 10, 15, 0.22) 58%, rgba(3, 6, 10, 0.62) 100%),
-        radial-gradient(circle at 52% 50%, rgba(121, 235, 222, 0.06) 0%, rgba(121, 235, 222, 0.022) 38%, transparent 68%);
+        radial-gradient(
+            circle at 52% 50%,
+            rgba(5, 12, 18, 0) 0%,
+            rgba(5, 12, 18, 0.02) 22%,
+            rgba(4, 10, 15, 0.22) 58%,
+            rgba(3, 6, 10, 0.62) 100%
+        ),
+        radial-gradient(
+            circle at 52% 50%,
+            rgba(121, 235, 222, 0.06) 0%,
+            rgba(121, 235, 222, 0.022) 38%,
+            transparent 68%
+        );
 }
 
-body[data-route-motion="search-corridor"] #canvas-container::after {
+body[data-route-motion='search-corridor'] #canvas-container::after {
     opacity: 0.32;
     transform: scale(1.018) rotate(0.001deg);
     background:
         radial-gradient(circle at 52% 50%, rgba(4, 7, 11, 0) 0%, rgba(4, 7, 11, 0.08) 36%, rgba(4, 7, 11, 0) 62%),
-        radial-gradient(circle at 52% 50%, rgba(121, 235, 222, 0.045) 0%, rgba(121, 235, 222, 0.014) 44%, transparent 72%);
+        radial-gradient(
+            circle at 52% 50%,
+            rgba(121, 235, 222, 0.045) 0%,
+            rgba(121, 235, 222, 0.014) 44%,
+            transparent 72%
+        );
 }
 
-body[data-mobile-route-peek="active"][data-route-motion="search-corridor"] #canvas-container::before {
+body[data-mobile-route-peek='active'][data-route-motion='search-corridor'] #canvas-container::before {
     opacity: 0.14;
 }
 
-body[data-mobile-route-peek="active"][data-route-motion="search-corridor"] #canvas-container::after {
+body[data-mobile-route-peek='active'][data-route-motion='search-corridor'] #canvas-container::after {
     opacity: 0.22;
 }
 
-body[data-panel-surface="focus"] #canvas-container::before {
+body[data-panel-surface='focus'] #canvas-container::before {
     opacity: 0.24;
 }
 
-body[data-panel-surface="focus"] #canvas-container::after {
+body[data-panel-surface='focus'] #canvas-container::after {
     opacity: 0.38;
 }
 
-body[data-panel-surface="focus-search"] #canvas-container::before {
+body[data-panel-surface='focus-search'] #canvas-container::before {
     opacity: 0.34;
-    background:
-        radial-gradient(circle at 51% 50%, rgba(5, 12, 18, 0) 0%, rgba(5, 12, 18, 0.015) 20%, rgba(5, 10, 16, 0.24) 58%, rgba(3, 6, 10, 0.74) 100%);
+    background: radial-gradient(
+        circle at 51% 50%,
+        rgba(5, 12, 18, 0) 0%,
+        rgba(5, 12, 18, 0.015) 20%,
+        rgba(5, 10, 16, 0.24) 58%,
+        rgba(3, 6, 10, 0.74) 100%
+    );
 }
 
-body[data-panel-surface="focus-search"] #canvas-container::after {
+body[data-panel-surface='focus-search'] #canvas-container::after {
     opacity: 0.46;
     background:
-        linear-gradient(90deg, rgba(4, 7, 11, 0.72) 0%, rgba(4, 7, 11, 0.42) 17%, rgba(4, 7, 11, 0.08) 35%, rgba(4, 7, 11, 0) 50%, rgba(4, 7, 11, 0.08) 66%, rgba(4, 7, 11, 0.46) 100%),
-        radial-gradient(circle at 49% 52%, rgba(72, 219, 207, 0.012) 0%, rgba(72, 219, 207, 0.028) 22%, rgba(5, 18, 23, 0.22) 48%, transparent 70%);
+        linear-gradient(
+            90deg,
+            rgba(4, 7, 11, 0.72) 0%,
+            rgba(4, 7, 11, 0.42) 17%,
+            rgba(4, 7, 11, 0.08) 35%,
+            rgba(4, 7, 11, 0) 50%,
+            rgba(4, 7, 11, 0.08) 66%,
+            rgba(4, 7, 11, 0.46) 100%
+        ),
+        radial-gradient(
+            circle at 49% 52%,
+            rgba(72, 219, 207, 0.012) 0%,
+            rgba(72, 219, 207, 0.028) 22%,
+            rgba(5, 18, 23, 0.22) 48%,
+            transparent 70%
+        );
 }
 
-body[data-active-view="map"] #canvas-container::before,
-body[data-active-view="map"] #canvas-container::after {
+body[data-active-view='map'] #canvas-container::before,
+body[data-active-view='map'] #canvas-container::after {
     opacity: 0;
 }
 
-body[data-active-view="map"] #canvas-container {
+body[data-active-view='map'] #canvas-container {
     opacity: 0.15;
 }
 
 /* polish206: bridge mycelium to terrain before the layer swap. */
-body[data-active-view="galaxy"][data-terrain-handoff="flattening"] #canvas-container {
+body[data-active-view='galaxy'][data-terrain-handoff='flattening'] #canvas-container {
     opacity: 0.82;
     transform: translateZ(0) scale(0.965);
 }
 
-body[data-active-view="galaxy"][data-terrain-handoff="flattening"] #canvas-container::before {
+body[data-active-view='galaxy'][data-terrain-handoff='flattening'] #canvas-container::before {
     opacity: 0.76;
     transform: scale(0.99);
     background:
-        radial-gradient(circle at 50% 50%, rgba(5, 12, 18, 0.08) 0%, rgba(5, 12, 18, 0.26) 28%, rgba(5, 10, 15, 0.58) 70%, rgba(4, 7, 11, 0.9) 100%),
+        radial-gradient(
+            circle at 50% 50%,
+            rgba(5, 12, 18, 0.08) 0%,
+            rgba(5, 12, 18, 0.26) 28%,
+            rgba(5, 10, 15, 0.58) 70%,
+            rgba(4, 7, 11, 0.9) 100%
+        ),
         linear-gradient(180deg, rgba(121, 235, 222, 0.06), rgba(255, 226, 132, 0.08));
 }
 
-body[data-active-view="galaxy"][data-terrain-handoff="flattening"] #canvas-container::after {
+body[data-active-view='galaxy'][data-terrain-handoff='flattening'] #canvas-container::after {
     opacity: 0.84;
     transform: scale(1);
     background:
-        linear-gradient(90deg, rgba(4, 7, 11, 0.78) 0%, rgba(4, 7, 11, 0.38) 22%, rgba(4, 7, 11, 0.05) 48%, rgba(4, 7, 11, 0.42) 100%),
+        linear-gradient(
+            90deg,
+            rgba(4, 7, 11, 0.78) 0%,
+            rgba(4, 7, 11, 0.38) 22%,
+            rgba(4, 7, 11, 0.05) 48%,
+            rgba(4, 7, 11, 0.42) 100%
+        ),
         linear-gradient(180deg, rgba(121, 235, 222, 0.09), rgba(255, 226, 132, 0.14)),
         radial-gradient(ellipse at 50% 54%, rgba(255, 226, 132, 0.16) 0%, rgba(121, 235, 222, 0.1) 34%, transparent 62%);
 }
 
-body[data-route-motion="terrain-prelude"] .biofield-atmosphere {
+body[data-route-motion='terrain-prelude'] .biofield-atmosphere {
     opacity: 0.78;
 }
 
-body[data-route-motion="inside-pocket"] #canvas-container::before {
+body[data-route-motion='inside-pocket'] #canvas-container::before {
     opacity: 0.72;
-    background:
-        radial-gradient(circle at 50% 50%, rgba(5, 12, 18, 0) 0%, rgba(5, 12, 18, 0.12) 22%, rgba(4, 10, 15, 0.52) 62%, rgba(3, 6, 10, 0.88) 100%);
+    background: radial-gradient(
+        circle at 50% 50%,
+        rgba(5, 12, 18, 0) 0%,
+        rgba(5, 12, 18, 0.12) 22%,
+        rgba(4, 10, 15, 0.52) 62%,
+        rgba(3, 6, 10, 0.88) 100%
+    );
 }
 
-body[data-route-motion="inside-pocket"] #canvas-container::after {
+body[data-route-motion='inside-pocket'] #canvas-container::after {
     opacity: 0.88;
     background:
-        linear-gradient(90deg, rgba(6, 9, 13, 0.82) 0%, rgba(6, 9, 13, 0.56) 16%, rgba(6, 9, 13, 0.2) 32%, rgba(6, 9, 13, 0) 48%),
-        radial-gradient(circle at 82% 78%, rgba(5, 18, 23, 0.92) 0%, rgba(5, 18, 23, 0.52) 28%, rgba(5, 18, 23, 0.16) 50%, transparent 66%);
+        linear-gradient(
+            90deg,
+            rgba(6, 9, 13, 0.82) 0%,
+            rgba(6, 9, 13, 0.56) 16%,
+            rgba(6, 9, 13, 0.2) 32%,
+            rgba(6, 9, 13, 0) 48%
+        ),
+        radial-gradient(
+            circle at 82% 78%,
+            rgba(5, 18, 23, 0.92) 0%,
+            rgba(5, 18, 23, 0.52) 28%,
+            rgba(5, 18, 23, 0.16) 50%,
+            transparent 66%
+        );
 }
 
 /* Step Inside atmospheric vignette — trailDepth 2 makes the scene feel pocket-contained */
 /* Reduced intensity for #950 motion subtraction */
-body[data-trail-depth="2"] #canvas-container::before {
+body[data-trail-depth='2'] #canvas-container::before {
     opacity: 0.38;
-    background:
-        radial-gradient(circle at 50% 50%, rgba(5, 12, 18, 0) 0%, rgba(5, 12, 18, 0.06) 22%, rgba(4, 10, 15, 0.32) 62%, rgba(3, 6, 10, 0.62) 100%);
+    background: radial-gradient(
+        circle at 50% 50%,
+        rgba(5, 12, 18, 0) 0%,
+        rgba(5, 12, 18, 0.06) 22%,
+        rgba(4, 10, 15, 0.32) 62%,
+        rgba(3, 6, 10, 0.62) 100%
+    );
 }
 
-body[data-trail-depth="2"] #canvas-container::after {
+body[data-trail-depth='2'] #canvas-container::after {
     opacity: 0.52;
     background:
-        linear-gradient(90deg, rgba(6, 9, 13, 0.58) 0%, rgba(6, 9, 13, 0.36) 16%, rgba(6, 9, 13, 0.1) 32%, rgba(6, 9, 13, 0) 48%),
-        linear-gradient(270deg, rgba(6, 9, 13, 0.58) 0%, rgba(6, 9, 13, 0.36) 16%, rgba(6, 9, 13, 0.1) 32%, rgba(6, 9, 13, 0) 48%),
+        linear-gradient(
+            90deg,
+            rgba(6, 9, 13, 0.58) 0%,
+            rgba(6, 9, 13, 0.36) 16%,
+            rgba(6, 9, 13, 0.1) 32%,
+            rgba(6, 9, 13, 0) 48%
+        ),
+        linear-gradient(
+            270deg,
+            rgba(6, 9, 13, 0.58) 0%,
+            rgba(6, 9, 13, 0.36) 16%,
+            rgba(6, 9, 13, 0.1) 32%,
+            rgba(6, 9, 13, 0) 48%
+        ),
         radial-gradient(circle at 50% 50%, rgba(5, 18, 23, 0.28) 0%, rgba(5, 18, 23, 0.12) 38%, transparent 66%);
 }
 
@@ -245,8 +349,12 @@ body[data-trail-depth="2"] #canvas-container::after {
     transition: opacity 0.4s ease;
     overflow: hidden;
     isolation: isolate;
-    background:
-        radial-gradient(circle at 50% 44%, rgba(23, 34, 44, 0.42) 0%, rgba(7, 11, 16, 0.82) 76%, rgba(5, 7, 11, 0.94) 100%);
+    background: radial-gradient(
+        circle at 50% 44%,
+        rgba(23, 34, 44, 0.42) 0%,
+        rgba(7, 11, 16, 0.82) 76%,
+        rgba(5, 7, 11, 0.94) 100%
+    );
 }
 
 #map-container:not(.active) * {
@@ -265,64 +373,77 @@ body[data-trail-depth="2"] #canvas-container::after {
     inset: 0;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.35s ease, transform 0.35s ease;
+    transition:
+        opacity 0.35s ease,
+        transform 0.35s ease;
 }
 
 #map-container::before {
     z-index: var(--z-modal);
-    background:
-        radial-gradient(circle at 55% 48%, rgba(255, 224, 133, 0.08) 0%, rgba(17, 27, 36, 0.04) 22%, rgba(5, 10, 15, 0.54) 70%, rgba(4, 7, 10, 0.82) 100%);
+    background: radial-gradient(
+        circle at 55% 48%,
+        rgba(255, 224, 133, 0.08) 0%,
+        rgba(17, 27, 36, 0.04) 22%,
+        rgba(5, 10, 15, 0.54) 70%,
+        rgba(4, 7, 10, 0.82) 100%
+    );
 }
 
 #map-container::after {
     z-index: var(--z-modal);
     background:
-        linear-gradient(90deg, rgba(6, 9, 13, 0.8) 0%, rgba(6, 9, 13, 0.54) 18%, rgba(6, 9, 13, 0.16) 34%, rgba(6, 9, 13, 0) 48%),
+        linear-gradient(
+            90deg,
+            rgba(6, 9, 13, 0.8) 0%,
+            rgba(6, 9, 13, 0.54) 18%,
+            rgba(6, 9, 13, 0.16) 34%,
+            rgba(6, 9, 13, 0) 48%
+        ),
         radial-gradient(circle at 74% 30%, rgba(110, 220, 209, 0.18) 0%, rgba(110, 220, 209, 0.08) 20%, transparent 44%);
     transform: scale(1.02);
 }
 
-body[data-active-view="map"] #map-container::before {
+body[data-active-view='map'] #map-container::before {
     opacity: 0.46;
 }
 
-body[data-active-view="map"] #map-container::after {
+body[data-active-view='map'] #map-container::after {
     opacity: 0.42;
 }
 
-body[data-active-view="map"][data-trail-state="active"] #map-container::before {
+body[data-active-view='map'][data-trail-state='active'] #map-container::before {
     opacity: 0.58;
 }
 
-body[data-active-view="map"][data-trail-state="active"] #map-container::after {
+body[data-active-view='map'][data-trail-state='active'] #map-container::after {
     opacity: 0.54;
 }
 
-body[data-active-view="map"][data-terrain-handoff="landing"] #map-container::before {
+body[data-active-view='map'][data-terrain-handoff='landing'] #map-container::before {
     opacity: 0.76;
     animation: terrainBridgeVeil 1.8s ease-out both;
 }
 
-body[data-active-view="map"][data-terrain-handoff="landing"] #map-container::after {
+body[data-active-view='map'][data-terrain-handoff='landing'] #map-container::after {
     opacity: 0.72;
     transform: scale(1);
     animation: terrainBridgeHalo 1.8s ease-out both;
 }
 
-body[data-active-view="map"][data-terrain-handoff="settled"][data-trail-state="active"] #map-container::after {
+body[data-active-view='map'][data-terrain-handoff='settled'][data-trail-state='active'] #map-container::after {
     opacity: 0.6;
 }
 
-body[data-active-view="map"] #map-container .leaflet-tile-pane {
+body[data-active-view='map'] #map-container .leaflet-tile-pane {
     filter: saturate(0.74) brightness(0.82) contrast(1.05);
     transition: filter 0.35s ease;
 }
 
-body[data-active-view="map"][data-trail-state="active"] #map-container .leaflet-tile-pane {
+body[data-active-view='map'][data-trail-state='active'] #map-container .leaflet-tile-pane {
     filter: saturate(0.78) brightness(0.88) contrast(1.16);
 }
 
-body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .leaflet-tile-pane {
+body[data-active-view='map'][data-terrain-handoff='landing'] #map-container .leaflet-tile-pane {
     filter: saturate(0.86) brightness(0.68) contrast(1.12);
 }
 
@@ -440,7 +561,9 @@ body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .lea
     font-size: 11px;
     font-family: inherit;
     cursor: pointer;
-    transition: background 0.18s ease, border-color 0.18s ease;
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease;
 }
 
 .map-strip-copy {
@@ -487,7 +610,13 @@ body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .lea
 }
 
 #map-container .leaflet-interactive {
-    transition: fill-opacity 0.24s ease, opacity 0.24s ease, stroke-opacity 0.24s ease, stroke-width 0.24s ease, r 0.24s ease, filter 0.24s ease;
+    transition:
+        fill-opacity 0.24s ease,
+        opacity 0.24s ease,
+        stroke-opacity 0.24s ease,
+        stroke-width 0.24s ease,
+        r 0.24s ease,
+        filter 0.24s ease;
 }
 
 #map-container .leaflet-interactive.map-marker-secondary {
@@ -533,45 +662,87 @@ body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .lea
     animation-duration: 2.4s;
 }
 
-body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .leaflet-interactive.semantic-map-route-line {
+body[data-active-view='map'][data-terrain-handoff='landing']
+    #map-container
+    .leaflet-interactive.semantic-map-route-line {
     filter: drop-shadow(0 0 16px rgba(255, 226, 132, 0.38)) drop-shadow(0 0 34px rgba(121, 235, 222, 0.28));
     animation-duration: 1.55s;
 }
 
-body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .leaflet-interactive.semantic-map-route-line-aura {
+body[data-active-view='map'][data-terrain-handoff='landing']
+    #map-container
+    .leaflet-interactive.semantic-map-route-line-aura {
     filter: blur(1.4px) drop-shadow(0 0 26px rgba(121, 235, 222, 0.28));
 }
 
-body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .leaflet-interactive.semantic-map-route-pulse {
+body[data-active-view='map'][data-terrain-handoff='landing']
+    #map-container
+    .leaflet-interactive.semantic-map-route-pulse {
     animation-duration: 1.65s;
 }
 
 @keyframes semanticMapRouteCurrent {
-    0% { stroke-dashoffset: 0; opacity: 0.48; }
-    45% { opacity: 0.82; }
-    100% { stroke-dashoffset: -30; opacity: 0.5; }
+    0% {
+        stroke-dashoffset: 0;
+        opacity: 0.48;
+    }
+    45% {
+        opacity: 0.82;
+    }
+    100% {
+        stroke-dashoffset: -30;
+        opacity: 0.5;
+    }
 }
 
 @keyframes semanticMapRouteAura {
-    0%, 100% { opacity: 0.06; }
-    50% { opacity: 0.18; }
+    0%,
+    100% {
+        opacity: 0.06;
+    }
+    50% {
+        opacity: 0.18;
+    }
 }
 
 @keyframes semanticMapPulse {
-    0%, 100% { opacity: 0.2; transform: scale(0.92); }
-    50% { opacity: 0.62; transform: scale(1.08); }
+    0%,
+    100% {
+        opacity: 0.2;
+        transform: scale(0.92);
+    }
+    50% {
+        opacity: 0.62;
+        transform: scale(1.08);
+    }
 }
 
 @keyframes terrainBridgeVeil {
-    0% { opacity: 0.22; transform: scale(1.04); }
-    42% { opacity: 0.82; }
-    100% { opacity: 0.58; transform: scale(1); }
+    0% {
+        opacity: 0.22;
+        transform: scale(1.04);
+    }
+    42% {
+        opacity: 0.82;
+    }
+    100% {
+        opacity: 0.58;
+        transform: scale(1);
+    }
 }
 
 @keyframes terrainBridgeHalo {
-    0% { opacity: 0.18; transform: scale(1.08); }
-    48% { opacity: 0.78; }
-    100% { opacity: 0.54; transform: scale(1); }
+    0% {
+        opacity: 0.18;
+        transform: scale(1.08);
+    }
+    48% {
+        opacity: 0.78;
+    }
+    100% {
+        opacity: 0.54;
+        transform: scale(1);
+    }
 }
 
 .biofield-atmosphere {
@@ -604,8 +775,14 @@ body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .lea
 }
 
 .biofield-atmosphere::after {
-    background:
-        conic-gradient(from 140deg at 52% 50%, transparent 0 18%, rgba(121, 235, 222, 0.08) 25%, transparent 34% 62%, rgba(255, 225, 139, 0.055) 72%, transparent 82% 100%);
+    background: conic-gradient(
+        from 140deg at 52% 50%,
+        transparent 0 18%,
+        rgba(121, 235, 222, 0.08) 25%,
+        transparent 34% 62%,
+        rgba(255, 225, 139, 0.055) 72%,
+        transparent 82% 100%
+    );
     opacity: 0.34;
     filter: blur(18px);
     animation-duration: 38s;
@@ -623,8 +800,15 @@ body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .lea
 .biofield-orb {
     width: var(--orb-size, 9px);
     height: var(--orb-size, 9px);
-    background: radial-gradient(circle, rgba(235, 255, 250, 0.92) 0 18%, rgba(121, 235, 222, 0.52) 19% 42%, transparent 72%);
-    box-shadow: 0 0 18px rgba(121, 235, 222, 0.22), 0 0 42px rgba(78, 205, 196, 0.1);
+    background: radial-gradient(
+        circle,
+        rgba(235, 255, 250, 0.92) 0 18%,
+        rgba(121, 235, 222, 0.52) 19% 42%,
+        transparent 72%
+    );
+    box-shadow:
+        0 0 18px rgba(121, 235, 222, 0.22),
+        0 0 42px rgba(78, 205, 196, 0.1);
     opacity: 0.72;
     animation: biofield-spore-float 18s ease-in-out infinite;
 }
@@ -673,19 +857,19 @@ body[data-active-view="map"][data-terrain-handoff="landing"] #map-container .lea
     animation-delay: -8s;
 }
 
-body[data-active-view="map"] .biofield-atmosphere {
+body[data-active-view='map'] .biofield-atmosphere {
     opacity: 0.42;
 }
 
-body[data-trail-state="active"] .biofield-atmosphere,
-body[data-panel-surface="focus"] .biofield-atmosphere,
-body[data-panel-surface="focus-search"] .biofield-atmosphere {
+body[data-trail-state='active'] .biofield-atmosphere,
+body[data-panel-surface='focus'] .biofield-atmosphere,
+body[data-panel-surface='focus-search'] .biofield-atmosphere {
     opacity: 0.18;
     mix-blend-mode: normal;
 }
 
-body[data-panel-surface="focus"] .biofield-atmosphere::before,
-body[data-panel-surface="focus-search"] .biofield-atmosphere::before {
+body[data-panel-surface='focus'] .biofield-atmosphere::before,
+body[data-panel-surface='focus-search'] .biofield-atmosphere::before {
     background:
         radial-gradient(circle at 20% 70%, rgba(53, 179, 168, 0.045), transparent 24%),
         radial-gradient(circle at 72% 18%, rgba(74, 201, 193, 0.035), transparent 22%),
@@ -694,49 +878,76 @@ body[data-panel-surface="focus-search"] .biofield-atmosphere::before {
     opacity: 0.34;
 }
 
-body[data-panel-surface="focus"] .biofield-atmosphere::after,
-body[data-panel-surface="focus-search"] .biofield-atmosphere::after {
-    background:
-        conic-gradient(from 140deg at 52% 50%, transparent 0 20%, rgba(55, 181, 170, 0.026) 27%, transparent 36% 64%, rgba(146, 116, 45, 0.018) 72%, transparent 82% 100%);
+body[data-panel-surface='focus'] .biofield-atmosphere::after,
+body[data-panel-surface='focus-search'] .biofield-atmosphere::after {
+    background: conic-gradient(
+        from 140deg at 52% 50%,
+        transparent 0 20%,
+        rgba(55, 181, 170, 0.026) 27%,
+        transparent 36% 64%,
+        rgba(146, 116, 45, 0.018) 72%,
+        transparent 82% 100%
+    );
     filter: blur(24px);
     opacity: 0.2;
 }
 
-body[data-route-motion="search-corridor"] .biofield-atmosphere {
+body[data-route-motion='search-corridor'] .biofield-atmosphere {
     opacity: 0.9;
 }
 
-body[data-route-motion="terrain-landing"] .biofield-atmosphere {
+body[data-route-motion='terrain-landing'] .biofield-atmosphere {
     opacity: 0.5;
 }
 
-body[data-route-motion="inside-pocket"] .biofield-thread {
+body[data-route-motion='inside-pocket'] .biofield-thread {
     opacity: 0.48;
 }
 
 /* #950: Suppress/reduce biofield orbs in focus/trail/search-focus states */
-body[data-panel-surface="focus"] .biofield-orb,
-body[data-panel-surface="focus-search"] .biofield-orb,
-body[data-panel-surface="search"] .biofield-orb,
-body[data-trail-state="active"] .biofield-orb {
+body[data-panel-surface='focus'] .biofield-orb,
+body[data-panel-surface='focus-search'] .biofield-orb,
+body[data-panel-surface='search'] .biofield-orb,
+body[data-trail-state='active'] .biofield-orb {
     opacity: 0.025;
     animation: none;
 }
 
 @keyframes biofield-drift {
-    0% { transform: translate3d(-1.5%, 0.5%, 0) scale(1); }
-    50% { transform: translate3d(1.2%, -1%, 0) scale(1.035); }
-    100% { transform: translate3d(0.8%, 1.3%, 0) scale(1.02); }
+    0% {
+        transform: translate3d(-1.5%, 0.5%, 0) scale(1);
+    }
+    50% {
+        transform: translate3d(1.2%, -1%, 0) scale(1.035);
+    }
+    100% {
+        transform: translate3d(0.8%, 1.3%, 0) scale(1.02);
+    }
 }
 
 @keyframes biofield-spore-float {
-    0%, 100% { transform: translate3d(0, 0, 0) scale(0.92); opacity: 0.48; }
-    42% { transform: translate3d(18px, -26px, 0) scale(1.12); opacity: 0.82; }
-    68% { transform: translate3d(-10px, -44px, 0) scale(0.98); opacity: 0.62; }
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(0.92);
+        opacity: 0.48;
+    }
+    42% {
+        transform: translate3d(18px, -26px, 0) scale(1.12);
+        opacity: 0.82;
+    }
+    68% {
+        transform: translate3d(-10px, -44px, 0) scale(0.98);
+        opacity: 0.62;
+    }
 }
 
 @keyframes biofield-thread-breathe {
-    0% { opacity: 0.08; filter: blur(0.4px) drop-shadow(0 0 7px rgba(121, 235, 222, 0.06)); }
-    100% { opacity: 0.18; filter: blur(0.2px) drop-shadow(0 0 12px rgba(121, 235, 222, 0.1)); }
+    0% {
+        opacity: 0.08;
+        filter: blur(0.4px) drop-shadow(0 0 7px rgba(121, 235, 222, 0.06));
+    }
+    100% {
+        opacity: 0.18;
+        filter: blur(0.2px) drop-shadow(0 0 12px rgba(121, 235, 222, 0.1));
+    }
 }
-

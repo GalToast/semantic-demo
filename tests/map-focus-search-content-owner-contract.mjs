@@ -13,9 +13,9 @@
  *   4. #selected-map-summary remains read-only; map actions stay owned by the
  *      map trail strip.
  *   5. lifecycle.js refreshes the content variant after panelSurface changes.
- *   6. The collapsed mobile_premium.css MAP SUMMARY section styles the
- *      dedicated summary nodes.
- *   7. mobile_premium.css must not reintroduce map-focus-search styling for
+ *   6. The mobile premium split MAP SUMMARY section styles the dedicated
+ *      summary nodes.
+ *   7. Mobile premium CSS must not reintroduce map-focus-search styling for
  *      old selected-card detail internals.
  *
  * Usage:
@@ -37,10 +37,20 @@ const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.js');
 const EVENT_BUS_PATH = path.join(ROOT, 'js/modules/event-bus.js');
 const MAP_STATE_PATH = path.join(ROOT, 'js/modules/map-state.js');
 const SEMANTIC_DIVE_UI_PATH = path.join(ROOT, 'js/modules/semantic-dive-ui.js');
-const MOBILE_PREMIUM_PATH = path.join(ROOT, 'css/mobile_premium.css');
+const MOBILE_PREMIUM_SPLIT = [
+  'mobile_premium__focus-dive.css',
+  'mobile_premium__chrome.css',
+  'mobile_premium__state.css',
+  'mobile_premium__idle.css',
+  'mobile_premium__map.css',
+  'mobile_premium__surfaces.css',
+  'mobile_premium__narrow.css',
+];
+const MOBILE_PREMIUM_PATH = MOBILE_PREMIUM_SPLIT.map((file) => path.join(ROOT, `css/${file}`));
 const PROGRESSIVE_DISCLOSURE_PATH = path.join(ROOT, 'css/progressive_disclosure.css');
 
 function read(filePath) {
+  if (Array.isArray(filePath)) return filePath.map(read).join('\n');
   return fs.readFileSync(filePath, 'utf8');
 }
 
@@ -199,24 +209,24 @@ function testRenderPathCallsVariantSync() {
 }
 
 function testCssOwnsSummaryStyleOnly() {
-  console.log('\n[TEST] collapsed mobile_premium MAP SUMMARY section owns summary styling');
+  console.log('\n[TEST] mobile premium split MAP SUMMARY section owns summary styling');
   const mobilePremiumSrc = read(MOBILE_PREMIUM_PATH);
 
   assert(
     /\/\*\s*─── MAP SUMMARY/.test(mobilePremiumSrc),
-    'mobile_premium.css must keep a named MAP SUMMARY section'
+    'mobile premium split must keep a named MAP SUMMARY section'
   );
   assert(
     /#selected-details\.active:not\(\[hidden\]\)/.test(mobilePremiumSrc),
     'generic #selected-details.active rule must preserve [hidden] ownership'
   );
   assert(
-    /data-panel-surface="map-focus-search"[\s\S]*#selected-map-summary\.selected-map-summary:not\(\[hidden\]\)/.test(mobilePremiumSrc),
-    'mobile_premium.css MAP SUMMARY section must style the dedicated #selected-map-summary surface'
+    /data-panel-surface=['"]map-focus-search['"][\s\S]*#selected-map-summary\.selected-map-summary:not\(\[hidden\]\)/.test(mobilePremiumSrc),
+    'mobile premium split MAP SUMMARY section must style the dedicated #selected-map-summary surface'
   );
   assert(
-    /data-panel-surface="map-focus-search"[\s\S]*\.selected-map-summary-match/.test(mobilePremiumSrc),
-    'mobile_premium.css MAP SUMMARY section must style the dedicated summary content, not only the wrapper'
+    /data-panel-surface=['"]map-focus-search['"][\s\S]*\.selected-map-summary-match/.test(mobilePremiumSrc),
+    'mobile premium split MAP SUMMARY section must style the dedicated summary content, not only the wrapper'
   );
 
   const forbiddenLegacyInternals = [
@@ -232,11 +242,11 @@ function testCssOwnsSummaryStyleOnly() {
 
   for (const selector of forbiddenLegacyInternals) {
     const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const before = new RegExp(`data-panel-surface="map-focus-search"[^{}]*${escapedSelector}`);
-    const after = new RegExp(`${escapedSelector}[^{}]*data-panel-surface="map-focus-search"`);
+    const before = new RegExp(`data-panel-surface=['"]map-focus-search['"][^{}]*${escapedSelector}`);
+    const after = new RegExp(`${escapedSelector}[^{}]*data-panel-surface=['"]map-focus-search['"]`);
     assert(
       !before.test(mobilePremiumSrc) && !after.test(mobilePremiumSrc),
-      `mobile_premium.css must not add map-focus-search rules for old detail internal ${selector}`
+      `mobile premium split must not add map-focus-search rules for old detail internal ${selector}`
     );
   }
 
@@ -266,7 +276,7 @@ function testProgressiveDisclosureDoesNotTargetMapSummaryState() {
 
   for (const selector of oldSelectedSelectors) {
     const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const unsafe = new RegExp(`body\\[data-active-view="map"\\](?!:not\\(\\[data-panel-surface="map-focus-search"\\]\\))\\s+${escapedSelector.replace(/\\ /g, '\\s+')}`);
+    const unsafe = new RegExp(`body\\[data-active-view=['"]map['"]\\](?!:not\\(\\[data-panel-surface=['"]map-focus-search['"]\\]\\))\\s+${escapedSelector.replace(/\\ /g, '\\s+')}`);
     assert(
       !unsafe.test(src),
       `progressive_disclosure.css must not apply broad map selected-card rule to map-focus-search for ${selector}`
@@ -274,7 +284,7 @@ function testProgressiveDisclosureDoesNotTargetMapSummaryState() {
   }
 
   assert(
-    /body\[data-active-view="map"\]:not\(\[data-panel-surface="map-focus-search"\]\)\s+\.selected-card/.test(src),
+    /body\[data-active-view=['"]map['"]\]:not\(\[data-panel-surface=['"]map-focus-search['"]\]\)\s+\.selected-card/.test(src),
     'progressive_disclosure.css should explicitly exclude map-focus-search from old map selected-card rules'
   );
 

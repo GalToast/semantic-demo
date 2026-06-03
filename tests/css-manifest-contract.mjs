@@ -58,24 +58,17 @@ function assertCollapsedMobileOwner(relativePath) {
   if (imports.length) {
     failures.push(`${relativePath} is collapsed; remove active @import rules: ${JSON.stringify(imports)}`);
   }
-
-  const requiredFragments = [
-    'Single source for mobile premium overrides',
-    'body[data-panel-surface="idle"]',
-    'body.is-active[data-panel-surface="search"]',
-    'body.is-active[data-panel-surface="focus-search"]',
-    'body.is-active[data-panel-surface="semantic-dive"]',
-    'body.is-active[data-panel-surface^="map-"]',
-    '#selected-map-summary.selected-map-summary:not([hidden])',
-    '.focus-stage-card',
-  ];
-
-  for (const fragment of requiredFragments) {
-    if (!css.includes(fragment)) {
-      failures.push(`${relativePath} must keep collapsed mobile owner fragment ${JSON.stringify(fragment)}`);
-    }
-  }
 }
+
+const requiredFragments = [
+  'data-panel-surface="idle"',
+  'data-panel-surface="search"',
+  "data-panel-surface='focus-search'",
+  'data-panel-surface="semantic-dive"',
+  'data-panel-surface^="map-"',
+  '#selected-map-summary.selected-map-summary:not([hidden])',
+  '.focus-stage-card',
+];
 
 assertImportShell('semantic-demo.css', [
   'css/base.css',
@@ -97,14 +90,46 @@ assertImportShell('semantic-demo.css', [
   'css/animations.css',
 ]);
 
-assertCollapsedMobileOwner('css/mobile_premium.css');
+const MOBILE_PREMIUM_SPLIT = [
+  'css/mobile_premium__focus-dive.css',
+  'css/mobile_premium__chrome.css',
+  'css/mobile_premium__state.css',
+  'css/mobile_premium__idle.css',
+  'css/mobile_premium__map.css',
+  'css/mobile_premium__surfaces.css',
+  'css/mobile_premium__narrow.css',
+];
+
+for (const file of MOBILE_PREMIUM_SPLIT) {
+  const css = read(file);
+  if (!css) {
+    failures.push(`${file} must exist (split of mobile_premium.css on 2026-06-03)`);
+    continue;
+  }
+  const lines = activeLines(css);
+  const imports = lines.filter((line) => line.startsWith('@import url('));
+  if (imports.length) {
+    failures.push(`${file} is collapsed; remove active @import rules: ${JSON.stringify(imports)}`);
+  }
+}
+
+const combinedMobilePremium = MOBILE_PREMIUM_SPLIT.map(read).join('\n');
+for (const fragment of requiredFragments) {
+  if (!combinedMobilePremium.includes(fragment)) {
+    failures.push(`mobile_premium split must keep fragment ${JSON.stringify(fragment)} across the 7 files`);
+  }
+}
 
 const shellHtml = read('vector-explorer-polished.html');
 if (!shellHtml.includes('semantic-demo.css')) {
   failures.push('vector-explorer-polished.html must reference semantic-demo.css');
 }
-if (!shellHtml.includes('css/mobile_premium.css')) {
-  failures.push('vector-explorer-polished.html must reference css/mobile_premium.css');
+let loadedSplits = 0;
+for (const file of MOBILE_PREMIUM_SPLIT) {
+  if (shellHtml.includes(file)) loadedSplits++;
+}
+if (loadedSplits < MOBILE_PREMIUM_SPLIT.length) {
+  failures.push(`vector-explorer-polished.html must reference all ${MOBILE_PREMIUM_SPLIT.length} mobile_premium split files; found ${loadedSplits}`);
 }
 
 if (failures.length) {
@@ -113,4 +138,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('CSS manifest contract passed: semantic-demo.css is an import shell; mobile_premium.css is the collapsed mobile owner.');
+console.log('CSS manifest contract passed: semantic-demo.css is an import shell; mobile_premium split is the collapsed mobile owner.');

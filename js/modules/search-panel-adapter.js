@@ -41,10 +41,25 @@ export function setSearchGlowState(active) {
     document.body.dataset.searchGlow = active ? 'active' : 'inactive';
 }
 
+export function getPanelSurfaceDetailFromMobileSheet(context = document.body?.dataset?.panelSurface) {
+    if (!document.body?.dataset) return 'none';
+    const hasSheetState = Boolean(document.body.dataset.mobileSearchSheet);
+    return hasSheetState && (context === 'search' || context === 'focus-search')
+        ? (document.body.dataset.mobileSearchSheet === 'expanded' ? 'expanded' : 'peek')
+        : 'none';
+}
+
+export function syncPanelSurfaceDetailFromMobileSheet(context = document.body?.dataset?.panelSurface) {
+    if (!document.body?.dataset) return 'none';
+    const detail = getPanelSurfaceDetailFromMobileSheet(context);
+    document.body.dataset.panelSurfaceDetail = detail;
+    return detail;
+}
+
 export function setMobileSearchSheetMode(mode = 'peek', { userInitiated = false } = {}) {
     const safeMode = mode === 'expanded' ? 'expanded' : 'peek';
     document.body.dataset.mobileSearchSheet = safeMode;
-    document.body.dataset.panelSurfaceDetail = safeMode;
+    syncPanelSurfaceDetailFromMobileSheet(document.body.dataset.panelSurface || 'search');
     if (userInitiated) document.body.dataset.mobileSearchSheetUser = 'true';
 
     if (safeMode === 'peek') {
@@ -63,9 +78,7 @@ export function clearMobileSearchSheetState() {
     if (!document.body?.dataset) return;
     delete document.body.dataset.mobileSearchSheet;
     delete document.body.dataset.mobileSearchSheetUser;
-    if (document.body.dataset.panelSurface === 'search' || document.body.dataset.panelSurface === 'focus-search') {
-        document.body.dataset.panelSurfaceDetail = 'none';
-    }
+    syncPanelSurfaceDetailFromMobileSheet();
 }
 
 export function setupMobileSearchSheetToggle({ isCompactSearchViewport } = {}) {

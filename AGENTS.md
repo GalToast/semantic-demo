@@ -83,12 +83,13 @@ Driven by `data-panel-surface` and `data-journey-phase` body attributes. Compose
 - `sessionStorage.moco_mycelium_demo_session_v1` - per-session guard preventing duplicate choreography within an active browsing session
 
 ## CSS Architecture
-CSS is split into ordered modules in `css/`. The root `semantic-demo.css` is an import manifest that loads modules in cascade order. `css/mobile_premium.css` is the collapsed final mobile override owner.
+CSS is split into ordered modules in `css/`. The root `semantic-demo.css` is an import manifest that loads modules in cascade order. The final premium mobile owner is the ordered split loaded directly by the app shell:
+`css/mobile_premium__focus-dive.css`, `css/mobile_premium__chrome.css`, `css/mobile_premium__state.css`, `css/mobile_premium__idle.css`, `css/mobile_premium__map.css`, `css/mobile_premium__surfaces.css`, and `css/mobile_premium__narrow.css`.
 
 Key modules:
 - `css/layout_base.css` - info panel, legend, mode chips, broad layout
 - `css/journey_active.css` - active journey, field-node, route, mobile focus cockpit
-- `css/mobile_premium.css` - collapsed mobile final owner: state-machine, chrome, focus/dive, idle, map summary, and surface corrections
+- `css/mobile_premium__*.css` - split mobile final owner: focus/dive, chrome, state-machine, idle, map summary, surface corrections, and narrow viewport corrections
 - `css/progressive_disclosure.css` - graph-context/dive show/hide behavior, search empty-state
 
 Use `docs/semantic-demo-css-ownership-map.md` and `docs/semantic-demo-mobile-state-ownership.md` to find the owning module before editing.
@@ -130,7 +131,7 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 ## Edit Safety
 - Keep edits inside the assigned slice; do not opportunistically reformat or clean unrelated files.
 - Treat `js/state.js`, `js/modules/app.js`, `js/modules/journey.js`, `js/modules/lifecycle.js`, and deploy scripts as high-risk surfaces that need explicit ownership and targeted tests.
-- CSS is split into ordered modules in `css/`; the root `semantic-demo.css` and `css/mobile_premium.css` are import manifests.
+- CSS is split into ordered modules in `css/`; `semantic-demo.css` is an import manifest, while the `css/mobile_premium__*.css` files are loaded directly by `vector-explorer-polished.html`.
 - Do not move the app root until `deploy.sh` and `deploy.ps1` no longer depend on the sibling `../js/scanner.js` path.
 - **CSS state ownership**: Use `docs/semantic-demo-mobile-state-ownership.md` and `docs/semantic-demo-css-ownership-map.md` to trace which `data-*` attribute and CSS module owns a visual surface before editing.
 - **No `!important` in CSS**: Every `!important` is a signal of unresolved specificity conflict. Surface-level `!important` declarations are documented in `docs/semantic-demo-css-ownership-next-pass.md`.

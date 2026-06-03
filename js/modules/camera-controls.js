@@ -826,7 +826,11 @@ export function toggleAutoRotate() {
     }
     const rotateBtn = document.getElementById('btn-rotate')
     if (rotateBtn) {
-        rotateBtn.setAttribute('aria-pressed', String(state.controls?.autoRotate === true))
+        // Reflect state.autoRotate directly — state.controls?.autoRotate is the
+        // THREE OrbitControls' flag, which can be false even when state.autoRotate
+        // is true (e.g., when the toggle fires before the orbit controls finish
+        // initializing, or while autoRotateSuspended is briefly true).
+        rotateBtn.setAttribute('aria-pressed', String(state.autoRotate === true))
         rotateBtn.removeAttribute('aria-disabled')
     }
 }

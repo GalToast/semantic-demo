@@ -1,0 +1,58 @@
+/* Part of the mobile_premium cascade — see mobile_premium__focus-dive.css for the cascade header. */
+
+/* ─── NARROW VIEWPORT (≤ 360px) ─────────────────────
+   Below 360 (small Android, iPhone SE 1st gen, foldable inner displays)
+   we tighten the search chrome so the 47-char "Montgomery County records
+   in the semantic field" caption and the focus-state toast don't bleed
+   past the viewport. Touch targets stay ≥ 36px per the 480 block. */
+@media (max-width: 360px) {
+    .stat-caption {
+        font-size: 8px;
+        letter-spacing: 0.04em;
+        line-height: 1.4;
+        padding: 0 8px;
+        white-space: normal;
+    }
+
+    .map-trail-strip {
+        padding: 8px 10px;
+        gap: 8px;
+    }
+
+    .map-strip-title {
+        max-width: 38vw;
+    }
+
+    .info-panel-surface {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    /* Focus compass at 320: the existing 374 block keeps copy + actions
+       in a row, but the action row (Center, Map) needs ~152px and the
+       compass pill is only 288px wide. We match the 374-block selector
+       shape so specificity outranks it. */
+    html body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass[data-density='compact'] {
+        min-height: 78px;
+        padding: 8px 10px 9px 12px;
+        gap: 8px;
+    }
+
+    html
+        body[data-panel-surface]:not([data-panel-surface^='map-'])
+        .journey-compass[data-density='compact']
+        .journey-compass-copy {
+        min-width: 0;
+        flex: 1 1 0;
+        padding-right: 4px;
+    }
+
+    html
+        body[data-panel-surface]:not([data-panel-surface^='map-'])
+        .journey-compass[data-density='compact']
+        .journey-compass-actions {
+        flex: 0 0 auto;
+    }
+}
+
+/* end mobile_premium.css */

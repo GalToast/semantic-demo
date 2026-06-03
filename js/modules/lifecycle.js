@@ -34,6 +34,9 @@ import {
     clearMobileRouteFieldPeek
 } from './search-state.js';
 import {
+    getPanelSurfaceDetailFromMobileSheet
+} from './search-panel-adapter.js';
+import {
     focusOnNode
 } from './camera-controls.js';
 import {
@@ -226,8 +229,7 @@ export function setTrailDepth(depth, options = {}) {
 }
 
 export function getMobileSearchSheetDetail() {
-    if (!document.body?.dataset?.mobileSearchSheet) return 'none';
-    return document.body.dataset.mobileSearchSheet === 'expanded' ? 'expanded' : 'peek';
+    return getPanelSurfaceDetailFromMobileSheet();
 }
 
 export function derivePanelSurface({ view, graphContext, mapContext, semanticDive, hasSearchIntent, hasFocus, hasActiveTrailState }) {
@@ -317,7 +319,7 @@ export function refreshCompositionState() {
                 hasFocus: hasMapFocus,
                 hasActiveTrailState
             });
-            document.body.dataset.panelSurfaceDetail = 'none';
+            document.body.dataset.panelSurfaceDetail = getPanelSurfaceDetailFromMobileSheet(document.body.dataset.panelSurface);
 
             syncSharedCompositionUi('composition-map');
             return;
@@ -348,9 +350,7 @@ export function refreshCompositionState() {
         hasFocus: hasFocusRecord,
         hasActiveTrailState
     });
-    document.body.dataset.panelSurfaceDetail = context === 'search' || context === 'focus-search'
-        ? getMobileSearchSheetDetail()
-        : 'none';
+    document.body.dataset.panelSurfaceDetail = getPanelSurfaceDetailFromMobileSheet(context);
 
     if (context !== 'idle') {
         clearMobileRouteFieldPeek();

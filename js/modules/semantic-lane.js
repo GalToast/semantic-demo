@@ -12,6 +12,7 @@ import { detectStaticDevPHP } from './utils/ui-presentation.js';
 import { updateSemanticLaneState } from './state-mutators.js';
 
 let legendGuideStateUpdater = null;
+let staticDevFallbackWarningShown = false;
 
 export function initSemanticLaneAdapter({ updateLegendGuideState } = {}) {
     legendGuideStateUpdater = typeof updateLegendGuideState === 'function'
@@ -49,7 +50,10 @@ export async function fetchSemanticLaneHealth({ warm = false, signal = null } = 
     let payload;
 
     if (detectStaticDevPHP(responseText) && allowsStaticDevFallback()) {
-        console.warn('[semantic-lane] Detected raw PHP response. Assuming static dev server. Returning mock healthy state.');
+        if (!staticDevFallbackWarningShown) {
+            console.warn('[semantic-lane] Detected raw PHP response. Assuming static dev server. Returning mock healthy state.');
+            staticDevFallbackWarningShown = true;
+        }
         payload = {
             ok: true,
             state: 'healthy',
@@ -79,6 +83,12 @@ export async function fetchSemanticLaneHealth({ warm = false, signal = null } = 
     }
 
     return payload;
+}
+
+function isStaticDevLaneFallbackActive() {
+    return allowsStaticDevFallback()
+        && state.semanticLaneSnapshot?.is_mock === true
+        && state.semanticLaneSnapshot?.provenance?.label === 'Static Dev Mode';
 }
 
 /**
@@ -275,6 +285,7 @@ export function scheduleSemanticLaneMonitor() {
     }
 
     state.semanticLaneMonitorTimer = typeof win?.setInterval === 'function' ? win.setInterval(() => {
+        if (isStaticDevLaneFallbackActive()) return;
         probeSemanticLane({
             warm: shouldWarmSemanticLane('interval'),
             reason: 'interval'

@@ -5,7 +5,9 @@
 */
 
 /* Glassmorphism System */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
 }
 
@@ -16,7 +18,7 @@
 
     --glass-bg: linear-gradient(165deg, rgba(16, 28, 48, 0.45) 0%, rgba(8, 15, 26, 0.65) 100%);
     --glass-bg-deep: linear-gradient(180deg, rgba(12, 22, 34, 0.55) 0%, rgba(6, 12, 18, 0.75) 100%);
-    --glass-bg-accent: radial-gradient(circle at 100% 0%, rgba(82, 229, 215, 0.20), transparent 60%);
+    --glass-bg-accent: radial-gradient(circle at 100% 0%, rgba(82, 229, 215, 0.2), transparent 60%);
 
     --glass-border: 1px solid rgba(255, 255, 255, 0.075);
     --glass-border-glow: 1px solid rgba(82, 229, 215, 0.35);
@@ -28,7 +30,7 @@
     --glass-radius-pill: 999px;
 
     --shadow-glass: 0 24px 64px rgba(0, 0, 0, 0.54), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    --shadow-glass-glow: 0 16px 48px rgba(82, 229, 215, 0.20), 0 0 24px rgba(82, 229, 215, 0.08);
+    --shadow-glass-glow: 0 16px 48px rgba(82, 229, 215, 0.2), 0 0 24px rgba(82, 229, 215, 0.08);
     --shadow-premium-glow: 0 20px 56px rgba(82, 229, 215, 0.25), 0 0 30px rgba(82, 229, 215, 0.12);
 
     --font-display: 'Bricolage Grotesque', sans-serif;
@@ -107,11 +109,17 @@
     --panel-glass-border: rgba(255, 255, 255, 0.14);
 
     --line-tight: 1.15;
-    --line-normal: 1.40;
+    --line-normal: 1.4;
     --line-relaxed: 1.58;
 
-    --transition-premium: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    --transition-premium-fast: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-premium:
+        opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+        background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-premium-fast:
+        opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+        background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     --transition-spring: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     --glass-blur-light: 10px;
     --glass-blur-medium: 20px;
@@ -125,6 +133,11 @@
     --landscape-search-results-max-height: min(250px, calc(100dvh - 390px));
     --landscape-weather-widget-height: 62px;
     --landscape-focus-stage-card-max-height: min(72vh, 282px);
+
+    /* UI Positioning Tokens */
+    --top-chrome-mobile: 82px;
+    --compass-top: 78px;
+    --view-toggle-right-mobile: 108px;
 }
 
 html {
@@ -186,7 +199,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
-[tabindex]:not([tabindex="-1"]):focus-visible {
+[tabindex]:not([tabindex='-1']):focus-visible {
     outline: 2px solid var(--color-primary-ring);
     outline-offset: 2px;
 }
@@ -194,7 +207,7 @@ textarea:focus-visible,
 /* Global Micro-Animations — click feedback */
 button:active,
 a:active,
-[role="button"]:active,
+[role='button']:active,
 .interactive-element:active {
     transform: scale(0.98);
 }
