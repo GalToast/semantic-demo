@@ -629,7 +629,7 @@ body[data-panel-surface="semantic-dive"]::after {
     justify-content: center;
     background: rgba(78, 205, 196, 0.06);
     border-radius: 50%;
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
 }
 
 .search-empty-icon {
@@ -746,7 +746,7 @@ body[data-panel-surface="semantic-dive"]::after {
 .search-result-item.is-processing {
     animation: processing-pulse 0.8s infinite alternate;
     pointer-events: none;
-    border-color: #4ecdc4;
+    border-color: var(--color-primary-alt);
 }
 
 @keyframes processing-pulse {
@@ -760,9 +760,9 @@ body[data-panel-surface="semantic-dive"]::after {
 }
 
 /* Redundant block removed — mobile journey-compass layout now owned by
-   css/mobile_premium_surfaces.css (cascade load order: layout_base →
-   mobile_base → mobile_premium_*; mobile_premium_surfaces provides the
-   shared non-map .journey-compass rule that this block duplicated).
+   the SURFACES section in css/mobile_premium.css (cascade load order:
+   layout_base → mobile_base → mobile_premium.css; the collapsed mobile
+   owner provides the shared non-map .journey-compass rule this block duplicated).
    focus-search overrides remain at pcss:1243+ below. */
 
 /* micro-demo: full-screen overlay veil */
