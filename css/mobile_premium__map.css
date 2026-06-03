@@ -2,6 +2,14 @@
 
 /* ─── MAP SUMMARY ──────────────────────────────────── */
 @media (max-width: 768px) {
+    /* The map-summary content owner is the visible state; the [hidden]
+       attribute on #selected-card or its descendants keeps the card
+       hidden, so opacity:1 here is the declarative replacement for the
+       legacy JS-side inline-style writer. */
+    body.is-active[data-panel-surface='map-focus-search'] #selected-card[data-content-owner='selected-map-summary'] {
+        opacity: 1;
+    }
+
     body.is-active[data-panel-surface='map-focus-search'] #selected-map-summary[hidden] {
         display: none;
     }
@@ -66,10 +74,10 @@
     body.is-active[data-panel-surface='map-focus-search'] .selected-map-summary-role {
         max-width: 86px;
         padding: 4px 6px;
-        border: 1px solid rgba(121, 235, 222, 0.22);
+        border: 1px solid rgba(var(--color-primary-tint-rgb), 0.22);
         border-radius: 999px;
-        color: rgba(121, 235, 222, 0.9);
-        background: rgba(121, 235, 222, 0.06);
+        color: rgba(var(--color-primary-tint-rgb), 0.9);
+        background: rgba(var(--color-primary-tint-rgb), 0.06);
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         font-size: 8px;
         font-weight: 800;
@@ -86,8 +94,8 @@
         padding: 8px 9px;
         max-height: 64px;
         border-radius: 10px;
-        background: rgba(121, 235, 222, 0.06);
-        border: 1px solid rgba(121, 235, 222, 0.16);
+        background: rgba(var(--color-primary-tint-rgb), 0.06);
+        border: 1px solid rgba(var(--color-primary-tint-rgb), 0.16);
         overflow: hidden;
     }
 

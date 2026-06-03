@@ -1,7 +1,7 @@
 /* Part of the mobile_premium cascade — see mobile_premium__focus-dive.css for the cascade header. */
 
 /* ─── SURFACES (panel-specific) ───────────────────── */
-html body.is-active #selected-details.active:not([hidden]) {
+body.is-active #selected-details.active:not([hidden]) {
     display: block;
     opacity: 1;
 }
@@ -21,12 +21,12 @@ html body.is-active #selected-details.active:not([hidden]) {
         background: rgba(9, 14, 22, 0.72);
         backdrop-filter: blur(48px) saturate(210%) contrast(110%);
         -webkit-backdrop-filter: blur(48px) saturate(210%) contrast(110%);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        border: 1px solid var(--glass-reflection-glow);
         box-shadow:
-            0 1px 0 rgba(255, 255, 255, 0.18) inset,
+            0 1px 0 var(--glass-reflection-glow) inset,
             0 4px 12px rgba(0, 0, 0, 0.25),
-            0 18px 48px rgba(0, 0, 0, 0.5),
-            0 0 0 1px rgba(78, 205, 196, 0.04);
+            0 18px 48px var(--shadow-penumbra),
+            0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.04);
         display: flex;
         flex-direction: row;
         align-items: center;
@@ -60,7 +60,7 @@ html body.is-active #selected-details.active:not([hidden]) {
         transform: translateY(-50%);
         width: 1px;
         height: 22px;
-        background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.15), transparent);
+        background: linear-gradient(to bottom, transparent, var(--glass-reflection-glow), transparent);
     }
 
     body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-kicker {
@@ -85,14 +85,14 @@ html body.is-active #selected-details.active:not([hidden]) {
         height: 5px;
         border-radius: 50%;
         background: var(--color-primary-alt);
-        box-shadow: 0 0 10px rgba(78, 205, 196, 0.8);
+        box-shadow: 0 0 10px rgba(var(--color-primary-alt-rgb), 0.8);
         transition:
             background-color 0.4s ease,
             box-shadow 0.4s ease;
     }
 
     body.searching .journey-compass-kicker::before {
-        background: #ffd93d;
+        background: var(--color-accent);
         box-shadow: 0 0 12px rgba(255, 217, 61, 0.9);
         animation: statusPulseRapid 0.6s ease-in-out infinite;
     }
@@ -149,8 +149,8 @@ html body.is-active #selected-details.active:not([hidden]) {
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(180deg, var(--glass-reflection), var(--glass-reflection-fade));
+        border: 1px solid var(--color-border-muted);
         color: rgba(255, 255, 255, 0.8);
         transition:
             background-color 0.3s cubic-bezier(0.23, 1, 0.32, 1),
@@ -158,15 +158,15 @@ html body.is-active #selected-details.active:not([hidden]) {
             color 0.3s cubic-bezier(0.23, 1, 0.32, 1),
             box-shadow 0.3s cubic-bezier(0.23, 1, 0.32, 1),
             transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 2px 6px var(--shadow-antumbra);
     }
 
     body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-action.primary {
         background: var(--color-primary-alt);
         color: #0d1b2a;
         box-shadow:
-            0 0 10px rgba(78, 205, 196, 0.3),
-            0 2px 6px rgba(0, 0, 0, 0.2);
+            0 0 10px rgba(var(--color-primary-alt-rgb), 0.3),
+            0 2px 6px var(--shadow-antumbra);
     }
 
     body[data-journey-compass-density='compact']:not([data-panel-surface^='map-'])
@@ -187,34 +187,34 @@ html body.is-active #selected-details.active:not([hidden]) {
     }
 
     @media (max-width: 374px) {
-        html body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass,
-        html body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass {
+        body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass,
+        body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass {
             padding: 0 12px 0 16px;
         }
 
-        html body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-copy {
+        body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-copy {
             padding-right: 8px;
         }
 
-        html body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-actions {
+        body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-actions {
             padding-left: 8px;
             gap: 4px;
         }
 
-        html body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-action {
+        body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-action {
             min-width: 48px;
             padding: 0 10px;
         }
 
-        html body.is-active[data-panel-surface='focus'] .info-panel {
+        body.is-active[data-panel-surface='focus'] .info-panel {
             height: clamp(340px, 48dvh, 380px);
         }
     }
 
     body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-action:active {
         transform: scale(0.9);
-        background: rgba(255, 255, 255, 0.15);
-        border-color: rgba(255, 255, 255, 0.2);
+        background: var(--glass-reflection-glow);
+        border-color: var(--glass-reflection-glow);
     }
 
     body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-note {
@@ -450,8 +450,8 @@ html body.is-active #selected-details.active:not([hidden]) {
         margin: 0 20px 18px;
         padding: 10px 14px;
         border-radius: 16px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--glass-reflection-fade);
+        border: 1px solid var(--glass-reflection-muted);
         height: auto;
     }
 
@@ -645,12 +645,12 @@ html body.is-active #selected-details.active:not([hidden]) {
     }
 
     @media (min-width: 641px) {
-        html body.is-active[data-panel-surface='focus-search'] .search-container {
+        body.is-active[data-panel-surface='focus-search'] .search-container {
             max-height: min(34dvh, 340px);
             overflow-y: auto;
         }
 
-        html body.is-active[data-panel-surface='focus-search'] .search-container #search-results.active {
+        body.is-active[data-panel-surface='focus-search'] .search-container #search-results.active {
             max-height: min(30dvh, 320px);
             overflow-y: auto;
         }
@@ -667,7 +667,7 @@ html body.is-active #selected-details.active:not([hidden]) {
         width: 6px;
         height: 6px;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.2);
+        background: var(--glass-reflection-glow);
     }
 
     .focus-stage-route-dot.is-current {
@@ -698,13 +698,13 @@ html body.is-active #selected-details.active:not([hidden]) {
         padding: 12px 14px;
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.025);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--glass-reflection-muted);
         display: flex;
         align-items: center;
         gap: 12px;
         min-width: 0;
         overflow: hidden;
-        color: rgba(255, 255, 255, 0.85);
+        color: var(--color-text-secondary);
         font-size: 13px;
     }
 
@@ -800,14 +800,14 @@ html body.is-active #selected-details.active:not([hidden]) {
         overflow: hidden;
         pointer-events: auto;
         z-index: calc(var(--z-overlay) + 2);
-        border-color: rgba(121, 235, 222, 0.28);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.28);
         border-radius: 14px 14px 0 0;
         background:
             linear-gradient(180deg, rgba(8, 21, 25, 0.96), rgba(5, 12, 16, 0.94)),
             radial-gradient(circle at 88% 0%, rgba(255, 226, 132, 0.12), transparent 36%);
         box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.06),
-            0 -16px 38px rgba(0, 0, 0, 0.34);
+            inset 0 1px 0 var(--glass-reflection-muted),
+            0 -16px 38px var(--shadow-penumbra);
     }
 
     body.is-active[data-panel-surface='map-focus-search'] #info-panel .info-content {
@@ -842,6 +842,7 @@ html body.is-active #selected-details.active:not([hidden]) {
         inset: auto;
         display: block;
         visibility: visible;
+        opacity: 1;
         width: 100%;
         max-width: 100%;
         max-height: 100%;
@@ -1010,12 +1011,12 @@ html body.is-active #selected-details.active:not([hidden]) {
     }
 
     @media (prefers-reduced-motion: reduce) {
-        html body .info-panel,
-        html body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel,
-        html body[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel,
-        html body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass,
-        html body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-action,
-        html body[data-panel-surface]:not([data-panel-surface^='map-']) .search-container {
+        body .info-panel,
+        body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel,
+        body[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel,
+        body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass,
+        body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-action,
+        body[data-panel-surface]:not([data-panel-surface^='map-']) .search-container {
             transition: none;
             animation-name: none;
         }
@@ -1028,7 +1029,7 @@ html body.is-active #selected-details.active:not([hidden]) {
         border-left: 3px solid rgba(255, 226, 122, 0.72);
         box-shadow:
             inset 3px 0 0 rgba(255, 226, 122, 0.72),
-            inset 0 1px 0 rgba(255, 255, 255, 0.04),
+            inset 0 1px 0 var(--glass-reflection-soft),
             0 12px 30px rgba(20, 24, 12, 0.18);
     }
     body.is-active[data-panel-surface^='map-'] .search-result-item.is-anchor .search-result-rank {
@@ -1039,7 +1040,7 @@ html body.is-active #selected-details.active:not([hidden]) {
         box-shadow: 0 0 0 5px rgba(255, 226, 122, 0.12);
     }
     body.is-active[data-panel-surface^='map-'] .search-result-item.top-result {
-        border-left: 3px solid rgba(78, 205, 196, 0.6);
+        border-left: 3px solid rgba(var(--color-primary-alt-rgb), 0.6);
     }
     body.is-active[data-panel-surface^='map-'] .search-result-item.top-result .search-result-rank {
         color: rgba(150, 223, 216, 0.88);
@@ -1048,10 +1049,10 @@ html body.is-active #selected-details.active:not([hidden]) {
         background: currentColor;
     }
     body.is-active[data-panel-surface^='map-'] .search-result-item.active-focus {
-        border-left: 3px solid rgba(78, 205, 196, 0.8);
+        border-left: 3px solid rgba(var(--color-primary-alt-rgb), 0.8);
         box-shadow:
-            inset 3px 0 0 rgba(78, 205, 196, 0.8),
-            0 20px 44px rgba(0, 0, 0, 0.24),
-            0 0 0 1px rgba(78, 205, 196, 0.18);
+            inset 3px 0 0 rgba(var(--color-primary-alt-rgb), 0.8),
+            0 20px 44px var(--shadow-penumbra),
+            0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.18);
     }
 }

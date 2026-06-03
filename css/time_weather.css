@@ -50,7 +50,7 @@
     position: absolute;
     width: 8px;
     height: 8px;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, transparent 70%);
+    background: radial-gradient(circle, var(--color-text-primary) 0%, transparent 70%);
     border-radius: 50%;
     animation: snow-fall linear infinite;
 }
@@ -127,7 +127,7 @@
     background: white;
     opacity: 0;
     pointer-events: none;
-    z-index: 10;
+    z-index: var(--z-chrome);
 }
 
 .lightning-flash.flash {
@@ -165,14 +165,14 @@
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
-    border: 1px solid rgba(121, 235, 222, 0.18);
+    border: 1px solid rgba(var(--color-primary-tint-rgb), 0.18);
     border-radius: 999px;
     color: rgba(245, 255, 253, 0.84);
     font-size: 11px;
     background: rgba(8, 17, 25, 0.72);
     box-shadow:
-        0 4px 14px rgba(0, 0, 0, 0.24),
-        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        0 4px 14px var(--shadow-penumbra),
+        inset 0 1px 0 var(--glass-reflection-soft);
     backdrop-filter: blur(14px) saturate(1.12);
     -webkit-backdrop-filter: blur(14px) saturate(1.12);
     overflow: hidden;
@@ -198,7 +198,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+    background: linear-gradient(90deg, transparent, var(--glass-reflection), transparent);
     opacity: 0.32;
     transform: translateX(-62%);
     pointer-events: none;
@@ -207,11 +207,11 @@
 .weather-widget:hover,
 .weather-widget:focus-within {
     transform: translateY(-1px);
-    border-color: rgba(82, 229, 215, 0.45);
+    border-color: rgba(var(--color-primary-rgb), 0.45);
     box-shadow:
-        0 22px 54px rgba(0, 0, 0, 0.38),
-        inset 0 1px 0 rgba(255, 255, 255, 0.12),
-        0 0 38px rgba(82, 229, 215, 0.14);
+        0 22px 54px var(--shadow-penumbra),
+        inset 0 1px 0 var(--glass-reflection-strong),
+        0 0 38px rgba(var(--color-primary-rgb), 0.14);
 }
 
 .weather-icon {
@@ -223,12 +223,12 @@
     flex: 0 0 40px;
     border-radius: 45% 55% 52% 48% / 55% 44% 56% 45%;
     background:
-        radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.2), transparent 22%),
-        radial-gradient(circle at 56% 68%, rgba(121, 235, 222, 0.22), transparent 46%),
-        linear-gradient(145deg, rgba(121, 235, 222, 0.08), rgba(255, 225, 139, 0.06));
+        radial-gradient(circle at 32% 24%, var(--glass-reflection-glow), transparent 22%),
+        radial-gradient(circle at 56% 68%, rgba(var(--color-primary-tint-rgb), 0.22), transparent 46%),
+        linear-gradient(145deg, rgba(var(--color-primary-tint-rgb), 0.08), rgba(255, 225, 139, 0.06));
     box-shadow:
-        inset 0 0 18px rgba(121, 235, 222, 0.14),
-        0 0 24px rgba(121, 235, 222, 0.12);
+        inset 0 0 18px rgba(var(--color-primary-tint-rgb), 0.14),
+        0 0 24px rgba(var(--color-primary-tint-rgb), 0.12);
 }
 
 .weather-icon::before,
@@ -236,7 +236,7 @@
     content: '';
     position: absolute;
     inset: 4px;
-    border: 1px solid rgba(121, 235, 222, 0.14);
+    border: 1px solid rgba(var(--color-primary-tint-rgb), 0.14);
     border-radius: inherit;
     transform: rotate(12deg);
     pointer-events: none;
@@ -256,8 +256,8 @@
     position: absolute;
     width: 42px;
     height: 42px;
-    color: rgba(121, 235, 222, 0.34);
-    filter: drop-shadow(0 0 10px rgba(121, 235, 222, 0.22));
+    color: rgba(var(--color-primary-tint-rgb), 0.34);
+    filter: drop-shadow(0 0 10px rgba(var(--color-primary-tint-rgb), 0.22));
     animation: weatherSeedPulse 5.6s ease-in-out infinite;
 }
 
@@ -332,10 +332,10 @@
     min-inline-size: 54px;
     min-block-size: 32px;
     padding: 0 8px;
-    border: 1px solid rgba(121, 235, 222, 0.14);
+    border: 1px solid rgba(var(--color-primary-tint-rgb), 0.14);
     border-radius: 999px;
-    color: rgba(255, 255, 255, 0.95);
-    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-text-primary);
+    background: var(--glass-reflection-muted);
     font-size: 11px;
     font-weight: 800;
     white-space: nowrap;
@@ -364,12 +364,12 @@
     right: 16px;
     top: 16px;
     background:
-        radial-gradient(circle at 90% 10%, rgba(82, 229, 215, 0.18), transparent 45%),
+        radial-gradient(circle at 90% 10%, rgba(var(--color-primary-rgb), 0.18), transparent 45%),
         linear-gradient(145deg, rgba(12, 20, 30, 0.94), rgba(6, 10, 16, 0.88));
     color: var(--color-text-strong);
     border-radius: 14px;
     padding: 11px 18px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--glass-reflection-strong);
     font-family: var(--font-mono);
     font-size: 13px;
     letter-spacing: 0.04em;
@@ -379,7 +379,7 @@
     gap: 10px;
     box-shadow:
         var(--shadow-glass),
-        0 0 28px rgba(82, 229, 215, 0.04);
+        0 0 28px rgba(var(--color-primary-rgb), 0.04);
     transition: var(--transition-premium);
 }
 
@@ -387,7 +387,7 @@
     border-color: var(--color-primary);
     box-shadow:
         var(--shadow-glass),
-        0 0 32px rgba(82, 229, 215, 0.15);
+        0 0 32px rgba(var(--color-primary-rgb), 0.15);
     transform: translateY(-1px);
 }
 

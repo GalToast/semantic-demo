@@ -58,8 +58,8 @@ body[data-active-view='map'] .cluster-legend {
     gap: 12px;
     padding: 8px 12px;
     border-radius: var(--glass-radius-card);
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--glass-reflection-fade);
+    border: 1px solid var(--glass-reflection-muted);
     cursor: pointer;
     transition:
         background-color 0.2s ease,
@@ -68,12 +68,12 @@ body[data-active-view='map'] .cluster-legend {
 }
 
 .cluster-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: var(--glass-reflection);
+    border-color: var(--glass-reflection-glow);
 }
 
 .cluster-item.active {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--glass-reflection-strong);
     border-color: var(--color-accent);
 }
 
@@ -105,13 +105,13 @@ body[data-active-view='map'] .cluster-legend {
     margin-bottom: 14px;
     padding: 12px;
     background:
-        radial-gradient(circle at top right, rgb(var(--cluster-rgb) / 0.08), transparent 34%), rgba(255, 255, 255, 0.03);
+        radial-gradient(circle at top right, rgb(var(--cluster-rgb) / 0.08), transparent 34%), var(--glass-reflection-fade);
     border: 1px solid rgb(var(--cluster-rgb) / 0.14);
     border-radius: 12px;
     overflow-y: auto;
     overflow-x: hidden;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.03),
+        inset 0 1px 0 var(--glass-reflection-fade),
         0 0 0 1px rgb(var(--cluster-rgb) / 0.04);
     transition:
         transform 0.22s ease,
@@ -154,7 +154,7 @@ body[data-active-view='map'] .cluster-legend {
     align-items: flex-start;
     gap: 12px;
     margin-bottom: 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--glass-reflection);
     padding-bottom: 16px;
 }
 
@@ -191,8 +191,8 @@ body[data-active-view='map'] .cluster-legend {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-radius: var(--glass-radius-pill);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--glass-reflection-muted);
+    border: 1px solid var(--color-border-muted);
 }
 
 .selected-grid {
@@ -208,8 +208,8 @@ body[data-active-view='map'] .cluster-legend {
     align-items: flex-start;
     justify-content: flex-start;
     gap: 4px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: var(--glass-reflection-fade);
+    border: 1px solid var(--glass-reflection-soft);
     border-radius: 8px;
     padding: 10px;
     min-width: 0;
@@ -278,28 +278,28 @@ body[data-panel-surface='map-focus-search'] .selected-card {
 }
 
 /* Standard desktop cards */
-html body[data-panel-surface='focus'] .selected-card,
-html body[data-panel-surface='focus-search'] .selected-card,
-html body[data-panel-surface='map-focus'] .selected-card,
-html body[data-panel-surface='map-focus-search'] .selected-card {
+body[data-panel-surface='focus'] .selected-card,
+body[data-panel-surface='focus-search'] .selected-card,
+body[data-panel-surface='map-focus'] .selected-card,
+body[data-panel-surface='map-focus-search'] .selected-card {
     background: var(--glass-bg-deep);
     border: var(--glass-border);
     backdrop-filter: blur(var(--glass-blur-deep));
     -webkit-backdrop-filter: blur(var(--glass-blur-deep));
 }
 
-html body[data-panel-surface='focus'] .selected-card h3,
-html body[data-panel-surface='focus-search'] .selected-card h3,
-html body[data-panel-surface='map-focus'] .selected-card h3,
-html body[data-panel-surface='map-focus-search'] .selected-card h3 {
+body[data-panel-surface='focus'] .selected-card h3,
+body[data-panel-surface='focus-search'] .selected-card h3,
+body[data-panel-surface='map-focus'] .selected-card h3,
+body[data-panel-surface='map-focus-search'] .selected-card h3 {
     font-family: 'Bricolage Grotesque', sans-serif;
     color: var(--color-text-primary);
 }
 
-html body[data-panel-surface='focus'] .selected-role-badge,
-html body[data-panel-surface='focus-search'] .selected-role-badge,
-html body[data-panel-surface='map-focus'] .selected-role-badge,
-html body[data-panel-surface='map-focus-search'] .selected-role-badge {
+body[data-panel-surface='focus'] .selected-role-badge,
+body[data-panel-surface='focus-search'] .selected-role-badge,
+body[data-panel-surface='map-focus'] .selected-role-badge,
+body[data-panel-surface='map-focus-search'] .selected-role-badge {
     background: rgb(var(--cluster-rgb) / 0.15);
     color: rgb(var(--cluster-rgb));
     border: 1px solid rgb(var(--cluster-rgb) / 0.3);
@@ -343,12 +343,12 @@ body[data-panel-surface='map-focus'] .trail-controls,
 body[data-panel-surface='map-focus-search'] .trail-controls {
     margin-top: 12px;
     padding: 10px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--glass-reflection-soft);
 }
 
 body[data-panel-surface='map-focus'] .trail-context,
 body[data-panel-surface='map-focus-search'] .trail-context {
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--glass-reflection);
 }
 
 .exploration-card {
@@ -386,7 +386,7 @@ body[data-panel-surface='map-focus-search'] .trail-context {
     padding: 6px 14px;
     border-radius: 20px;
     background: rgba(12, 18, 24, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-reflection);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     color: rgba(255, 255, 255, 0.88);
@@ -406,7 +406,7 @@ body[data-panel-surface='map-focus-search'] .trail-context {
 }
 
 .galaxy-cluster-label.is-active {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--glass-reflection-strong);
     border-color: rgba(255, 255, 255, 0.3);
     color: #fff;
     z-index: calc(var(--z-overlay) + 1);

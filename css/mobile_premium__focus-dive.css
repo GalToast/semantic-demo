@@ -56,8 +56,8 @@
             linear-gradient(180deg, rgba(8, 20, 25, 0.78), rgba(4, 10, 14, 0.7)),
             radial-gradient(circle at 88% 0%, rgba(255, 220, 118, 0.1), transparent 42%);
         box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.055),
-            0 12px 34px rgba(0, 0, 0, 0.32);
+            inset 0 1px 0 var(--glass-reflection-muted),
+            0 12px 34px var(--shadow-penumbra);
         backdrop-filter: blur(18px) saturate(1.12);
         transform: none;
         opacity: 0.96;
@@ -138,7 +138,7 @@
         color: rgba(246, 239, 204, 0.92);
         background: linear-gradient(180deg, rgba(255, 223, 132, 0.14), rgba(9, 18, 22, 0.58)), rgba(9, 20, 24, 0.64);
         border-color: rgba(255, 226, 132, 0.26);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
+        box-shadow: inset 0 1px 0 var(--glass-reflection-muted);
     }
 
     body.is-active[data-panel-surface='semantic-dive'] .journey-compass-action:not(.primary) {
@@ -267,8 +267,7 @@
     }
 
     @media (max-width: 480px) {
-        html
-            body.is-active[data-panel-surface='semantic-dive']:not([data-panel-surface^='map-'])
+        body.is-active[data-panel-surface='semantic-dive']:not([data-panel-surface^='map-'])
             .journey-compass[data-density='compact'] {
             height: auto;
             min-height: 78px;
@@ -281,8 +280,7 @@
             pointer-events: auto;
         }
 
-        html
-            body.is-active[data-panel-surface='semantic-dive']:not([data-panel-surface^='map-'])
+        body.is-active[data-panel-surface='semantic-dive']:not([data-panel-surface^='map-'])
             .journey-compass[data-density='compact']
             .journey-compass-copy {
             flex: 0 0 auto;
@@ -290,15 +288,13 @@
             padding-right: 0;
         }
 
-        html
-            body.is-active[data-panel-surface='semantic-dive']:not([data-panel-surface^='map-'])
+        body.is-active[data-panel-surface='semantic-dive']:not([data-panel-surface^='map-'])
             .journey-compass[data-density='compact']
             .journey-compass-copy::after {
             display: none;
         }
 
-        html
-            body.is-active[data-panel-surface='semantic-dive']:not([data-panel-surface^='map-'])
+        body.is-active[data-panel-surface='semantic-dive']:not([data-panel-surface^='map-'])
             .journey-compass[data-density='compact']
             .journey-compass-rail {
             display: none;
@@ -310,8 +306,7 @@
             z-index: 2;
         }
 
-        html
-            body.is-active[data-panel-surface='semantic-dive']:not([data-panel-surface^='map-'])
+        body.is-active[data-panel-surface='semantic-dive']:not([data-panel-surface^='map-'])
             .journey-compass[data-density='compact']
             .journey-compass-step {
             min-width: 0;
@@ -356,10 +351,10 @@
         border-color: rgba(143, 229, 218, 0.18);
         background:
             linear-gradient(180deg, rgba(7, 22, 27, 0.86), rgba(4, 11, 15, 0.78)),
-            radial-gradient(circle at 16% 0%, rgba(121, 235, 222, 0.1), transparent 36%);
+            radial-gradient(circle at 16% 0%, rgba(var(--color-primary-tint-rgb), 0.1), transparent 36%);
         box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.05),
-            0 -10px 34px rgba(0, 0, 0, 0.28);
+            inset 0 1px 0 var(--glass-reflection-muted),
+            0 -10px 34px var(--shadow-penumbra);
         backdrop-filter: blur(18px) saturate(1.1);
     }
 
@@ -368,10 +363,10 @@
         background:
             radial-gradient(circle at 16% 0%, rgba(255, 210, 77, 0.1), transparent 36%),
             linear-gradient(180deg, rgba(18, 19, 15, 0.88), rgba(4, 11, 15, 0.78)),
-            radial-gradient(circle at 84% 110%, rgba(121, 235, 222, 0.08), transparent 34%);
+            radial-gradient(circle at 84% 110%, rgba(var(--color-primary-tint-rgb), 0.08), transparent 34%);
         box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.06),
-            0 -10px 34px rgba(0, 0, 0, 0.28),
+            inset 0 1px 0 var(--glass-reflection-muted),
+            0 -10px 34px var(--shadow-penumbra),
             0 0 22px rgba(255, 210, 77, 0.08);
     }
 
@@ -403,7 +398,7 @@
         min-height: 44px;
         height: 44px;
         border-radius: 10px;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.028));
+        background: linear-gradient(180deg, var(--glass-reflection-muted), rgba(255, 255, 255, 0.028));
         border: 1px solid rgba(160, 232, 220, 0.14);
         color: #fff;
         font-size: 10.5px;
@@ -421,7 +416,7 @@
 
     .focus-stage-action-btn:active {
         transform: scale(0.96);
-        background: rgba(255, 255, 255, 0.1);
+        background: var(--color-border-muted);
     }
 
     body.is-active[data-panel-surface]:not([data-panel-surface='semantic-dive']):not([data-panel-surface^='map-'])
@@ -440,7 +435,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 8px 18px rgba(78, 205, 196, 0.18);
+        box-shadow: 0 8px 18px rgba(var(--color-primary-alt-rgb), 0.18);
     }
 
     body.is-active[data-panel-surface='search']:not([data-panel-surface^='map-']) .focus-stage-dive-btn {
@@ -469,8 +464,8 @@
         width: 44px;
         height: 44px;
         border-radius: 12px;
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: var(--glass-reflection-muted);
+        border: 1px solid var(--glass-reflection-strong);
         color: #fff;
         display: flex;
         align-items: center;
@@ -513,11 +508,11 @@
         margin-top: 1px;
         padding: 6px 7px 6px 12px;
         border-radius: 8px;
-        border-color: rgba(121, 235, 222, 0.2);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.2);
         background:
             linear-gradient(180deg, rgba(8, 30, 33, 0.78), rgba(4, 13, 17, 0.72)),
             radial-gradient(circle at 0% 50%, rgba(255, 226, 132, 0.12), transparent 45%);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        box-shadow: inset 0 1px 0 var(--glass-reflection-muted);
     }
 
     body.is-active[data-panel-surface='focus-search'] .focus-stage-journey-meta {
@@ -666,7 +661,7 @@
         display: block;
         margin: 0;
         padding: 5px 0 0;
-        border-top: 1px solid rgba(121, 235, 222, 0.12);
+        border-top: 1px solid rgba(var(--color-primary-tint-rgb), 0.12);
     }
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .focus-stage-neighbor-header {
@@ -683,6 +678,23 @@
         max-height: 88px;
         overflow-y: auto;
         scrollbar-width: none;
+    }
+
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node'])
+        .focus-stage-neighbor-count {
+        display: none;
+    }
+
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node'])
+        .focus-stage-neighbor-list {
+        max-height: 54px;
+        overflow: hidden;
+    }
+
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node'])
+        .focus-stage-neighbor-list
+        > :nth-child(n + 2) {
+        display: none;
     }
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
@@ -928,7 +940,7 @@
         background: rgba(255, 210, 77, 0.72);
         box-shadow:
             0 0 10px rgba(255, 210, 77, 0.38),
-            0 0 4px rgba(121, 235, 222, 0.28);
+            0 0 4px rgba(var(--color-primary-tint-rgb), 0.28);
         animation: insideStatusPulse 2.4s ease-in-out infinite;
     }
 
@@ -983,10 +995,10 @@
         min-height: 46px;
         margin-top: 5px;
         padding: 7px 12px;
-        border-color: rgba(121, 235, 222, 0.14);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.14);
         background:
             linear-gradient(180deg, rgba(9, 25, 29, 0.56), rgba(4, 12, 16, 0.46)),
-            radial-gradient(circle at 100% 50%, rgba(121, 235, 222, 0.08), transparent 44%);
+            radial-gradient(circle at 100% 50%, rgba(var(--color-primary-tint-rgb), 0.08), transparent 44%);
         box-shadow: none;
     }
 
@@ -1099,7 +1111,7 @@
                 transparent 78%,
                 rgba(255, 226, 132, 0.045)
             ),
-            radial-gradient(circle at 50% 105%, rgba(121, 235, 222, 0.055), transparent 52%);
+            radial-gradient(circle at 50% 105%, rgba(var(--color-primary-tint-rgb), 0.055), transparent 52%);
         opacity: 0.38;
         pointer-events: none;
         border-radius: inherit;
@@ -1115,7 +1127,7 @@
         width: 36px;
         height: 4px;
         border-radius: 2px;
-        background: rgba(255, 255, 255, 0.15);
+        background: var(--glass-reflection-glow);
         z-index: var(--z-overlay);
     }
 
@@ -1156,9 +1168,9 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-        html body .focus-stage-card,
-        html body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-card,
-        html body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-card {
+        body .focus-stage-card,
+        body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-card,
+        body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-card {
             transition: none;
             animation-name: none;
         }
@@ -1168,20 +1180,20 @@
        10. Narrow portrait: bottom-sheet card with internal scroll
        ---------------------------------------------------------------- */
     @media (max-width: 390px) {
-        html body.is-active[data-panel-surface='focus-search'] .focus-stage,
-        html body.is-active[data-panel-surface='semantic-dive'] .focus-stage {
+        body.is-active[data-panel-surface='focus-search'] .focus-stage,
+        body.is-active[data-panel-surface='semantic-dive'] .focus-stage {
             bottom: 0;
         }
 
-        html body.is-active[data-panel-surface='focus-search'] .focus-stage-card,
-        html body.is-active[data-panel-surface='semantic-dive'] .focus-stage-card {
+        body.is-active[data-panel-surface='focus-search'] .focus-stage-card,
+        body.is-active[data-panel-surface='semantic-dive'] .focus-stage-card {
             max-height: min(38dvh, 310px);
             overflow-y: auto;
             padding: 11px 9px 9px;
             border-radius: 20px 20px 0 0;
         }
 
-        html body.is-active[data-panel-surface='focus-search'] .focus-stage-journey.active {
+        body.is-active[data-panel-surface='focus-search'] .focus-stage-journey.active {
             min-height: 52px;
             max-height: 68px;
             overflow-y: auto;
@@ -1190,7 +1202,7 @@
             border-radius: 7px;
         }
 
-        html body.is-active[data-panel-surface='focus-search'] .focus-stage-journey-btn {
+        body.is-active[data-panel-surface='focus-search'] .focus-stage-journey-btn {
             width: 44px;
             min-width: 44px;
             min-height: 44px;
@@ -1198,7 +1210,7 @@
             border-radius: 7px;
         }
 
-        html body.is-active[data-panel-surface='focus-search'] .focus-stage-dive-btn {
+        body.is-active[data-panel-surface='focus-search'] .focus-stage-dive-btn {
             min-height: 44px;
             height: 44px;
             margin: 0 auto 10px;
@@ -1207,12 +1219,12 @@
             font-size: 11px;
         }
 
-        html body.is-active[data-panel-surface='semantic-dive'] .focus-stage-card {
+        body.is-active[data-panel-surface='semantic-dive'] .focus-stage-card {
             max-height: min(24dvh, 205px);
             overflow-y: hidden;
         }
 
-        html body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-controls {
+        body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-controls {
             overflow-y: auto;
         }
     }
@@ -1246,24 +1258,24 @@
        the safe-area inset and a 6px visual breathing gap.
        ---------------------------------------------------------------- */
     @media (max-width: 900px) and (max-height: 420px) {
-        html body.is-active[data-panel-surface='focus-search'] .focus-stage,
-        html body.is-active[data-panel-surface='semantic-dive'] .focus-stage {
+        body.is-active[data-panel-surface='focus-search'] .focus-stage,
+        body.is-active[data-panel-surface='semantic-dive'] .focus-stage {
             max-height: calc(100dvh - 96px);
         }
 
-        html body.is-active[data-panel-surface='focus-search'] .focus-stage-card,
-        html body.is-active[data-panel-surface='semantic-dive'] .focus-stage-card {
+        body.is-active[data-panel-surface='focus-search'] .focus-stage-card,
+        body.is-active[data-panel-surface='semantic-dive'] .focus-stage-card {
             max-height: 100%;
             overflow-y: auto;
         }
 
-        html body.is-active[data-panel-surface='focus-search'] .focus-stage-note,
-        html body.is-active[data-panel-surface='focus-search'] .focus-stage-actions,
-        html body.is-active[data-panel-surface='focus-search'] .focus-stage-journey.active {
+        body.is-active[data-panel-surface='focus-search'] .focus-stage-note,
+        body.is-active[data-panel-surface='focus-search'] .focus-stage-actions,
+        body.is-active[data-panel-surface='focus-search'] .focus-stage-journey.active {
             display: none;
         }
 
-        html body.is-active[data-panel-surface='focus-search'] .focus-stage-neighbor-list {
+        body.is-active[data-panel-surface='focus-search'] .focus-stage-neighbor-list {
             max-height: 118px;
         }
     }
@@ -1396,7 +1408,9 @@
         display: grid;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-thread-inspect-surface='idle'])
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-thread-inspect-surface='idle']
+        )
         .focus-thread-inspector.active
         .focus-thread-inspector-copy {
         display: none;
@@ -1596,13 +1610,13 @@
         padding: 18px 14px calc(10px + env(safe-area-inset-bottom, 0px));
         border-radius: 22px 22px 0 0;
         border-width: 1px 0 0 0;
-        border-color: rgba(121, 235, 222, 0.2);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.2);
         background:
-            radial-gradient(circle at 50% 0%, rgba(121, 235, 222, 0.12), transparent 44%),
+            radial-gradient(circle at 50% 0%, rgba(var(--color-primary-tint-rgb), 0.12), transparent 44%),
             linear-gradient(180deg, rgba(8, 18, 25, 0.82), rgba(5, 12, 18, 0.9));
         box-shadow:
-            0 -8px 30px rgba(0, 0, 0, 0.28),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            0 -8px 30px var(--shadow-penumbra),
+            inset 0 1px 0 var(--glass-reflection-muted);
         backdrop-filter: blur(18px) saturate(1.12);
         pointer-events: auto;
         max-height: 196px;
@@ -1619,11 +1633,11 @@
         width: 34px;
         height: 3px;
         border-radius: 2px;
-        background: rgba(255, 255, 255, 0.12);
+        background: var(--glass-reflection-strong);
         box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.1);
     }
 
-    html body.is-active[data-panel-surface='semantic-dive'] .focus-stage-journey.active {
+    body.is-active[data-panel-surface='semantic-dive'] .focus-stage-journey.active {
         min-height: 42px;
         margin-top: 6px;
         padding: 6px 10px;
@@ -1633,27 +1647,29 @@
     }
 
     /* Inside control buttons — warm amber gradient on Next Stop */
-    html body.is-active[data-panel-surface='semantic-dive'] #btn-inside-next.focus-stage-inside-btn {
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-next.focus-stage-inside-btn {
         border-color: rgba(255, 210, 77, 0.32);
         background:
             radial-gradient(circle at 50% 0%, rgba(255, 210, 77, 0.18), transparent 55%),
             linear-gradient(180deg, rgba(42, 32, 10, 0.38), rgba(12, 18, 24, 0.42));
         box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.04),
-            0 4px 14px rgba(0, 0, 0, 0.14);
+            inset 0 1px 0 var(--glass-reflection-soft),
+            0 4px 14px var(--shadow-antumbra);
         color: rgba(255, 235, 180, 0.96);
     }
 
     /* County button: subtle exit-style treatment when inside mode active */
-    html body.is-active[data-panel-surface='semantic-dive'] #btn-inside-map.focus-stage-inside-btn,
-    html body.is-active[data-panel-surface='semantic-dive'] #btn-inside-county.focus-stage-inside-btn {
-        border-color: rgba(121, 235, 222, 0.22);
-        background: radial-gradient(circle at 50% 0%, rgba(121, 235, 222, 0.1), transparent 55%), rgba(5, 16, 21, 0.32);
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-map.focus-stage-inside-btn,
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-county.focus-stage-inside-btn {
+        border-color: rgba(var(--color-primary-tint-rgb), 0.22);
+        background:
+            radial-gradient(circle at 50% 0%, rgba(var(--color-primary-tint-rgb), 0.1), transparent 55%),
+            rgba(5, 16, 21, 0.32);
         color: rgba(199, 238, 235, 0.82);
     }
 
     /* Disabled state: Next Stop muted amber (trail complete) */
-    html body.is-active[data-panel-surface='semantic-dive'] #btn-inside-next.focus-stage-inside-btn:disabled {
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-next.focus-stage-inside-btn:disabled {
         border-color: rgba(255, 210, 77, 0.14);
         background: rgba(255, 210, 77, 0.06);
         color: rgba(255, 210, 77, 0.38);
@@ -1662,18 +1678,18 @@
     }
 
     /* Disabled state: County button muted but still legible */
-    html body.is-active[data-panel-surface='semantic-dive'] #btn-inside-map.focus-stage-inside-btn:disabled,
-    html body.is-active[data-panel-surface='semantic-dive'] #btn-inside-county.focus-stage-inside-btn:disabled {
-        border-color: rgba(121, 235, 222, 0.1);
-        background: rgba(121, 235, 222, 0.04);
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-map.focus-stage-inside-btn:disabled,
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-county.focus-stage-inside-btn:disabled {
+        border-color: rgba(var(--color-primary-tint-rgb), 0.1);
+        background: rgba(var(--color-primary-tint-rgb), 0.04);
         color: rgba(199, 238, 235, 0.36);
         box-shadow: none;
         pointer-events: none;
     }
 
     /* Mobile focus chip overrides */
-    html body.is-active[data-panel-surface='focus'] .focus-stage-chip,
-    html body.is-active[data-panel-surface='focus-search'] .focus-stage-chip {
+    body.is-active[data-panel-surface='focus'] .focus-stage-chip,
+    body.is-active[data-panel-surface='focus-search'] .focus-stage-chip {
         padding: 3px 6px;
         font-size: 7px;
         letter-spacing: 0.3px;
@@ -1693,7 +1709,7 @@
 
     /* Respect reduced motion */
     @media (prefers-reduced-motion: reduce) {
-        html body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-status::before {
+        body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-status::before {
             animation: none;
         }
     }

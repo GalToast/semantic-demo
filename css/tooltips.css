@@ -56,8 +56,8 @@
 
 .hover-tooltip .card-header {
     padding: 14px 16px;
-    background: rgba(255, 255, 255, 0.03);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--glass-reflection-fade);
+    border-bottom: 1px solid var(--glass-reflection-muted);
 }
 
 .hover-tooltip .business-name {
@@ -76,7 +76,7 @@
 }
 
 .hover-tooltip .business-trivia {
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--color-text-secondary);
     font-size: 12px;
     margin-bottom: 0;
     line-height: 1.55;
@@ -127,25 +127,25 @@
 
 .hover-tooltip .business-cluster span {
     display: inline-block;
-    background: linear-gradient(135deg, rgba(78, 205, 196, 0.3), rgba(69, 183, 209, 0.2));
+    background: linear-gradient(135deg, rgba(var(--color-primary-alt-rgb), 0.3), rgba(69, 183, 209, 0.2));
     color: #fff;
     padding: 4px 10px;
     border-radius: 20px;
     font-size: 11px;
     font-weight: 600;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--color-border-muted);
 }
 
 .hover-tooltip.ambiguous {
     border-color: rgba(255, 221, 153, 0.16);
     box-shadow:
-        0 20px 48px rgba(0, 0, 0, 0.34),
+        0 20px 48px var(--shadow-penumbra),
         0 0 0 1px rgba(255, 221, 153, 0.06);
 }
 
 .hover-tooltip.ambiguous .card-header {
     background:
-        radial-gradient(circle at top right, rgba(255, 214, 122, 0.12), transparent 42%), rgba(255, 255, 255, 0.03);
+        radial-gradient(circle at top right, rgba(255, 214, 122, 0.12), transparent 42%), var(--glass-reflection-fade);
 }
 
 .hover-tooltip.ambiguous .business-name {

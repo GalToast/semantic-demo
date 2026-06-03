@@ -30,16 +30,16 @@
 
     /* Focus compass at 320: the existing 374 block keeps copy + actions
        in a row, but the action row (Center, Map) needs ~152px and the
-       compass pill is only 288px wide. We match the 374-block selector
-       shape so specificity outranks it. */
-    html body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass[data-density='compact'] {
+       compass pill is only 288px wide. The `[data-density='compact']`
+       attribute selector outranks the 374-block in source order so the
+       narrow overrides win at this width. */
+    body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass[data-density='compact'] {
         min-height: 78px;
         padding: 8px 10px 9px 12px;
         gap: 8px;
     }
 
-    html
-        body[data-panel-surface]:not([data-panel-surface^='map-'])
+    body[data-panel-surface]:not([data-panel-surface^='map-'])
         .journey-compass[data-density='compact']
         .journey-compass-copy {
         min-width: 0;
@@ -47,8 +47,7 @@
         padding-right: 4px;
     }
 
-    html
-        body[data-panel-surface]:not([data-panel-surface^='map-'])
+    body[data-panel-surface]:not([data-panel-surface^='map-'])
         .journey-compass[data-density='compact']
         .journey-compass-actions {
         flex: 0 0 auto;

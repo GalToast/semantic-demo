@@ -109,8 +109,8 @@
     }
 
     .mode-grid .mode-chip {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(255, 255, 255, 0.14);
+        background: var(--glass-reflection);
+        border-color: var(--glass-reflection-strong);
     }
 
     .map-trail-strip .trail-strip-btn {
@@ -190,7 +190,7 @@
         overflow-y: auto;
         overflow-x: hidden;
         padding: 6px;
-        border-color: rgba(121, 235, 222, 0.18);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.18);
         background: rgba(5, 10, 16, 0.95);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
@@ -702,7 +702,7 @@
         padding: 5px;
         overflow-y: auto;
         overflow-x: hidden;
-        border-color: rgba(121, 235, 222, 0.18);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.18);
         background: rgba(5, 10, 16, 0.72);
     }
 
@@ -834,8 +834,8 @@
 
 /* SD-150: keep the global reset dock physically reachable while a focused
    business card occupies the bottom-right command area. */
-html body[data-panel-surface='focus'] .controls,
-html body[data-panel-surface='focus-search'] .controls {
+body[data-panel-surface='focus'] .controls,
+body[data-panel-surface='focus-search'] .controls {
     right: calc(min(392px, calc(100vw - 32px)) + 28px);
     bottom: 16px;
     z-index: var(--z-overlay-elevated);
@@ -845,8 +845,8 @@ html body[data-panel-surface='focus-search'] .controls {
     transform: none;
 }
 
-html body[data-panel-surface='focus'] .controls .control-btn,
-html body[data-panel-surface='focus-search'] .controls .control-btn {
+body[data-panel-surface='focus'] .controls .control-btn,
+body[data-panel-surface='focus-search'] .controls .control-btn {
     position: relative;
     z-index: 1;
     pointer-events: auto;
@@ -928,13 +928,13 @@ html body[data-panel-surface='focus-search'] .controls .control-btn {
         top: 116px;
         max-height: calc(100dvh - 236px);
         border-radius: 8px;
-        border-color: rgba(121, 235, 222, 0.14);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.14);
         background:
-            radial-gradient(circle at 100% 0%, rgba(121, 235, 222, 0.07), transparent 32%),
+            radial-gradient(circle at 100% 0%, rgba(var(--color-primary-tint-rgb), 0.07), transparent 32%),
             linear-gradient(180deg, rgba(6, 15, 20, 0.88), rgba(4, 9, 14, 0.82));
         box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.045),
-            0 16px 36px rgba(0, 0, 0, 0.24);
+            inset 0 1px 0 var(--glass-reflection-soft),
+            0 16px 36px var(--shadow-penumbra);
     }
 
     body[data-panel-surface='idle'] .info-header {
@@ -1001,7 +1001,7 @@ html body[data-panel-surface='focus-search'] .controls .control-btn {
     }
 
     body[data-active-view='galaxy'] .journey-compass[data-phase='overview'] .journey-compass-kicker {
-        color: rgba(121, 235, 222, 0.7);
+        color: rgba(var(--color-primary-tint-rgb), 0.7);
         font-size: 10px;
         letter-spacing: 0.2em;
     }
@@ -1014,13 +1014,13 @@ html body[data-panel-surface='focus-search'] .controls .control-btn {
         grid-template-columns: minmax(0, 1fr);
         gap: 9px;
         border-radius: 8px;
-        border-color: rgba(121, 235, 222, 0.12);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.12);
         background:
-            radial-gradient(circle at 70% 8%, rgba(121, 235, 222, 0.08), transparent 34%),
+            radial-gradient(circle at 70% 8%, rgba(var(--color-primary-tint-rgb), 0.08), transparent 34%),
             linear-gradient(180deg, rgba(7, 17, 23, 0.8), rgba(4, 9, 14, 0.7));
         box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.055),
-            0 18px 44px rgba(0, 0, 0, 0.22);
+            inset 0 1px 0 var(--glass-reflection-muted),
+            0 18px 44px var(--shadow-antumbra);
     }
 
     body[data-panel-surface='idle'] .journey-compass[data-phase='overview'] .journey-compass-copy {
@@ -1041,7 +1041,7 @@ html body[data-panel-surface='focus-search'] .controls .control-btn {
 
     body[data-active-view='galaxy'] .journey-compass[data-phase='overview'] .journey-compass-rail {
         padding: 4px;
-        border: 1px solid rgba(255, 255, 255, 0.055);
+        border: 1px solid var(--glass-reflection-muted);
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.028);
     }
@@ -1176,7 +1176,7 @@ html body[data-panel-surface='focus-search'] .controls .control-btn {
         padding: 6px;
         overflow-y: auto;
         overflow-x: hidden;
-        border-color: rgba(121, 235, 222, 0.18);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.18);
         background: rgba(5, 10, 16, 0.82);
     }
 
@@ -1208,9 +1208,9 @@ html body[data-panel-surface='focus-search'] .controls .control-btn {
     }
 
     body[data-active-view='galaxy'] .journey-compass-action.primary {
-        border-color: rgba(78, 205, 196, 0.46);
+        border-color: rgba(var(--color-primary-alt-rgb), 0.46);
         background:
-            radial-gradient(circle at 18% 0%, rgba(121, 235, 222, 0.2), transparent 58%),
+            radial-gradient(circle at 18% 0%, rgba(var(--color-primary-tint-rgb), 0.2), transparent 58%),
             linear-gradient(180deg, rgba(12, 45, 49, 0.36), rgba(5, 13, 18, 0.34));
         color: rgba(213, 255, 250, 0.94);
     }
@@ -1220,8 +1220,8 @@ html body[data-panel-surface='focus-search'] .controls .control-btn {
     }
 
     body[data-active-view='galaxy'] .mode-grid .mode-chip.active {
-        border-color: rgba(78, 205, 196, 0.55);
-        background: rgba(78, 205, 196, 0.16);
+        border-color: rgba(var(--color-primary-alt-rgb), 0.55);
+        background: rgba(var(--color-primary-alt-rgb), 0.16);
         color: rgba(201, 255, 248, 0.98);
     }
 
@@ -1283,13 +1283,13 @@ html body[data-panel-surface='focus-search'] .controls .control-btn {
         height: min(480px, calc(100dvh - 138px));
         max-height: 480px;
         border-radius: 8px;
-        border-color: rgba(121, 235, 222, 0.16);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.16);
         background:
-            radial-gradient(circle at 100% 0%, rgba(121, 235, 222, 0.09), transparent 32%),
+            radial-gradient(circle at 100% 0%, rgba(var(--color-primary-tint-rgb), 0.09), transparent 32%),
             linear-gradient(180deg, rgba(6, 16, 20, 0.9), rgba(4, 9, 14, 0.84));
         box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.05),
-            0 16px 40px rgba(0, 0, 0, 0.26);
+            inset 0 1px 0 var(--glass-reflection-muted),
+            0 16px 40px var(--shadow-penumbra);
     }
 
     body[data-panel-surface='idle'] .info-header {
@@ -1312,9 +1312,10 @@ html body[data-panel-surface='focus-search'] .controls .control-btn {
         margin: 0;
         padding: 12px;
         border-radius: 8px;
-        border: 1px solid rgba(121, 235, 222, 0.15);
+        border: 1px solid rgba(var(--color-primary-tint-rgb), 0.15);
         background:
-            radial-gradient(circle at 100% 0%, rgba(121, 235, 222, 0.09), transparent 40%), rgba(255, 255, 255, 0.025);
+            radial-gradient(circle at 100% 0%, rgba(var(--color-primary-tint-rgb), 0.09), transparent 40%),
+            rgba(255, 255, 255, 0.025);
     }
 
     body[data-panel-surface='idle'] .search-label {
@@ -1329,7 +1330,7 @@ html body[data-panel-surface='focus-search'] .controls .control-btn {
 
     body[data-panel-surface='idle'] .search-input-wrapper {
         min-height: 44px;
-        border-color: rgba(121, 235, 222, 0.15);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.15);
         background: rgba(4, 10, 15, 0.78);
     }
 
@@ -1375,7 +1376,7 @@ html body[data-panel-surface='focus-search'] .controls .control-btn {
         min-height: 42px;
         padding: 0 10px;
         border-radius: 8px;
-        border-color: rgba(121, 235, 222, 0.16);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.16);
         background: rgba(255, 255, 255, 0.028);
         color: rgba(237, 250, 248, 0.9);
         font-size: 11px;
@@ -1428,14 +1429,14 @@ html body[data-panel-surface='focus-search'] .controls .control-btn {
         0%,
         100% {
             box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.04),
-                0 4px 14px rgba(0, 0, 0, 0.14),
+                inset 0 1px 0 var(--glass-reflection-soft),
+                0 4px 14px var(--shadow-antumbra),
                 0 0 0 rgba(255, 210, 77, 0);
         }
         50% {
             box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.05),
-                0 5px 16px rgba(0, 0, 0, 0.16),
+                inset 0 1px 0 var(--glass-reflection-muted),
+                0 5px 16px var(--shadow-antumbra),
                 0 0 18px rgba(255, 210, 77, 0.16);
         }
     }
@@ -1508,7 +1509,7 @@ html body[data-panel-surface='focus-search'] .controls .control-btn {
 }
 
 /* Mode chip state variants must survive legacy cluster/strand styling at every viewport. */
-html body .mode-grid .mode-chip.is-waiting {
+body .mode-grid .mode-chip.is-waiting {
     opacity: 0.75;
     border-style: solid;
     border-color: rgba(255, 176, 30, 0.5);
@@ -1517,22 +1518,22 @@ html body .mode-grid .mode-chip.is-waiting {
     box-shadow: 0 0 0 1px rgba(255, 176, 30, 0.15);
 }
 
-html body .mode-grid .mode-chip.is-locked {
-    border-color: rgba(82, 229, 215, 0.55);
-    background: rgba(82, 229, 215, 0.18);
+body .mode-grid .mode-chip.is-locked {
+    border-color: rgba(var(--color-primary-rgb), 0.55);
+    background: rgba(var(--color-primary-rgb), 0.18);
     color: rgba(201, 255, 248, 0.98);
     box-shadow:
-        0 0 0 1px rgba(82, 229, 215, 0.25),
-        0 0 12px rgba(82, 229, 215, 0.15);
+        0 0 0 1px rgba(var(--color-primary-rgb), 0.25),
+        0 0 12px rgba(var(--color-primary-rgb), 0.15);
 }
 
-html body .mode-grid .mode-chip:disabled {
+body .mode-grid .mode-chip:disabled {
     cursor: not-allowed;
     opacity: 0.45;
     pointer-events: none;
 }
 
-html body[data-active-view='map'] .mode-grid .mode-chip.active {
+body[data-active-view='map'] .mode-grid .mode-chip.active {
     border-color: rgba(120, 200, 255, 0.4);
     background: rgba(120, 200, 255, 0.15);
     color: rgba(30, 130, 220, 1);
@@ -1575,7 +1576,7 @@ html body[data-active-view='map'] .mode-grid .mode-chip.active {
         background: linear-gradient(135deg, rgba(10, 31, 34, 0.9), rgba(5, 12, 18, 0.82)), rgba(6, 12, 18, 0.88);
         box-shadow:
             0 16px 38px rgba(0, 0, 0, 0.35),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            inset 0 1px 0 var(--glass-reflection-muted);
         backdrop-filter: blur(18px);
         -webkit-backdrop-filter: blur(18px);
         transform: none;
@@ -1623,6 +1624,6 @@ html body[data-active-view='map'] .mode-grid .mode-chip.active {
         color: rgba(255, 235, 168, 0.9);
         border-color: rgba(255, 226, 132, 0.22);
         background:
-            linear-gradient(180deg, rgba(255, 226, 132, 0.14), rgba(255, 226, 132, 0.05)), rgba(255, 255, 255, 0.035);
+            linear-gradient(180deg, rgba(255, 226, 132, 0.14), rgba(255, 226, 132, 0.05)), var(--glass-reflection-fade);
     }
 }

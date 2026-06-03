@@ -52,16 +52,16 @@
     body[data-panel-surface='focus'] .info-panel,
     body[data-panel-surface='focus-search'] .info-panel {
         background:
-            radial-gradient(circle at top left, rgba(78, 205, 196, 0.04), transparent 24%),
+            radial-gradient(circle at top left, rgba(var(--color-primary-alt-rgb), 0.04), transparent 24%),
             linear-gradient(180deg, rgba(11, 13, 20, 0.78), rgba(7, 9, 15, 0.72));
-        border-color: rgba(121, 235, 222, 0.08);
-        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.08);
+        box-shadow: 0 18px 44px var(--shadow-penumbra);
     }
 
     body[data-panel-surface='focus'] .info-header,
     body[data-panel-surface='focus-search'] .info-header {
         background: rgba(255, 255, 255, 0.018);
-        border-bottom-color: rgba(255, 255, 255, 0.035);
+        border-bottom-color: var(--glass-reflection-fade);
     }
 
     body[data-panel-surface='focus'] .selected-card,
@@ -81,7 +81,7 @@
     body[data-panel-surface='focus-search'] .selected-card .selected-subtitle,
     body[data-panel-surface='focus'] .trail-context,
     body[data-panel-surface='focus-search'] .trail-context {
-        color: rgba(255, 255, 255, 0.85);
+        color: var(--color-text-secondary);
     }
 
     body[data-panel-surface='focus'] .selected-card,
@@ -151,9 +151,9 @@
         padding: 8px;
         border-radius: 18px;
         background: rgba(8, 11, 18, 0.78);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--glass-reflection);
         backdrop-filter: blur(18px);
-        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.26);
+        box-shadow: 0 18px 40px var(--shadow-penumbra);
     }
 
     /* Non-map search/focus sheets own the mobile action surface; map states keep map controls. */
@@ -177,7 +177,7 @@
         height: 44px;
         border-radius: 14px;
         backdrop-filter: blur(18px);
-        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24);
+        box-shadow: 0 18px 40px var(--shadow-penumbra);
     }
 
     body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-card {
@@ -355,8 +355,8 @@
         padding: 5px;
         border-radius: 17px;
         background: linear-gradient(180deg, rgba(10, 14, 22, 0.94), rgba(6, 9, 16, 0.92));
-        border-color: rgba(121, 235, 222, 0.12);
-        box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.12);
+        box-shadow: 0 18px 34px var(--shadow-penumbra);
     }
 
     body[data-active-view='map'] .control-btn {
@@ -378,8 +378,8 @@
         height: 40px;
         border-radius: 0 14px 14px 0;
         background: linear-gradient(180deg, rgba(10, 14, 22, 0.94), rgba(6, 9, 16, 0.92));
-        border-color: rgba(121, 235, 222, 0.1);
-        box-shadow: 0 18px 34px rgba(0, 0, 0, 0.24);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.1);
+        box-shadow: 0 18px 34px var(--shadow-penumbra);
     }
 }
 
@@ -433,10 +433,10 @@
     }
 }
 
-html body[data-panel-surface='semantic-dive'] #search-results.active,
-html body[data-panel-surface='semantic-dive'] .info-panel,
-html body[data-panel-surface='semantic-dive'] .semantic-lane-rail,
-html body[data-panel-surface='semantic-dive'] .selected-card {
+body[data-panel-surface='semantic-dive'] #search-results.active,
+body[data-panel-surface='semantic-dive'] .info-panel,
+body[data-panel-surface='semantic-dive'] .semantic-lane-rail,
+body[data-panel-surface='semantic-dive'] .selected-card {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -516,7 +516,7 @@ body[data-semantic-dive='transitioning']::before {
     width: 0;
     height: 0;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(78, 205, 196, 0.5) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(var(--color-primary-alt-rgb), 0.5) 0%, transparent 70%);
     z-index: var(--z-blocker);
     pointer-events: none;
     transform: translate(-50%, -50%);
@@ -568,7 +568,7 @@ body[data-semantic-dive='transitioning'] #canvas-container {
     transform: translateX(-50%);
     background: rgba(20, 25, 35, 0.85);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(121, 235, 222, 0.3);
+    border: 1px solid rgba(var(--color-primary-tint-rgb), 0.3);
     color: #79ebde;
     padding: 6px 14px;
     border-radius: 100px;
@@ -589,7 +589,7 @@ body[data-route-director='map-trail'] .map-strip-title {
 /* 10/10 Polish: Camera Assist Visibility (SD-013 P1) */
 body[data-camera-assist='arriving'] #map-container::before {
     opacity: 1;
-    background: radial-gradient(circle, rgba(121, 235, 222, 0.12) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(var(--color-primary-tint-rgb), 0.12) 0%, transparent 70%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -624,13 +624,13 @@ body[data-panel-surface='semantic-dive']::after {
 
 @keyframes pulse-cyan-glow {
     0% {
-        box-shadow: 0 0 0 0 rgba(78, 205, 196, 0.4);
+        box-shadow: 0 0 0 0 rgba(var(--color-primary-alt-rgb), 0.4);
     }
     70% {
-        box-shadow: 0 0 0 14px rgba(78, 205, 196, 0);
+        box-shadow: 0 0 0 14px rgba(var(--color-primary-alt-rgb), 0);
     }
     100% {
-        box-shadow: 0 0 0 0 rgba(78, 205, 196, 0);
+        box-shadow: 0 0 0 0 rgba(var(--color-primary-alt-rgb), 0);
     }
 }
 
@@ -643,10 +643,10 @@ body[data-panel-surface='semantic-dive']::after {
     gap: 14px;
     padding: clamp(24px, 5vh, 40px) clamp(16px, 4vw, 24px);
     text-align: center;
-    background: radial-gradient(circle at center, rgba(78, 205, 196, 0.04) 0%, transparent 70%);
+    background: radial-gradient(circle at center, rgba(var(--color-primary-alt-rgb), 0.04) 0%, transparent 70%);
     border-radius: 20px;
     margin: 12px 0;
-    border: 1px solid rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-reflection-fade);
 }
 
 .search-empty-icon-wrap {
@@ -656,7 +656,7 @@ body[data-panel-surface='semantic-dive']::after {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(78, 205, 196, 0.06);
+    background: rgba(var(--color-primary-alt-rgb), 0.06);
     border-radius: 50%;
     color: var(--color-primary-alt);
 }
@@ -693,8 +693,8 @@ body[data-panel-surface='semantic-dive']::after {
 }
 
 .search-suggestion-chip {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--glass-reflection-muted);
+    border: 1px solid var(--glass-reflection);
     color: rgba(255, 255, 255, 0.8);
     padding: 6px 12px;
     border-radius: 100px;
@@ -709,15 +709,15 @@ body[data-panel-surface='semantic-dive']::after {
 }
 
 .search-suggestion-chip:hover {
-    background: rgba(78, 205, 196, 0.15);
-    border-color: rgba(78, 205, 196, 0.4);
+    background: rgba(var(--color-primary-alt-rgb), 0.15);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.4);
     color: #fff;
     transform: translateY(-1px);
 }
 
 .search-empty-discovery {
     padding-top: 24px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid var(--glass-reflection-muted);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -757,8 +757,8 @@ body[data-panel-surface='semantic-dive']::after {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     background: rgba(20, 25, 35, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--color-border-muted);
+    box-shadow: 0 8px 32px var(--shadow-antumbra);
     transition:
         background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
         border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
@@ -767,18 +767,18 @@ body[data-panel-surface='semantic-dive']::after {
 
 .search-input-wrapper:focus-within {
     background: rgba(25, 30, 45, 0.85);
-    border-color: rgba(78, 205, 196, 0.5);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.5);
     box-shadow:
-        0 0 0 4px rgba(78, 205, 196, 0.05),
-        0 12px 40px rgba(0, 0, 0, 0.4);
+        0 0 0 4px rgba(var(--color-primary-alt-rgb), 0.05),
+        0 12px 40px var(--shadow-penumbra);
 }
 
 /* 10/10 Polish: Search Spinner Integration */
 /* 10/10 Polish: Search Result Processing Juice */
 .search-result-item.active-focus {
-    background: linear-gradient(180deg, rgba(78, 205, 196, 0.2), rgba(20, 31, 36, 0.95));
-    border-color: rgba(78, 205, 196, 0.5);
-    box-shadow: 0 0 20px rgba(78, 205, 196, 0.15);
+    background: linear-gradient(180deg, rgba(var(--color-primary-alt-rgb), 0.2), rgba(20, 31, 36, 0.95));
+    border-color: rgba(var(--color-primary-alt-rgb), 0.5);
+    box-shadow: 0 0 20px rgba(var(--color-primary-alt-rgb), 0.15);
 }
 
 .search-result-item.is-processing {
@@ -789,11 +789,11 @@ body[data-panel-surface='semantic-dive']::after {
 
 @keyframes processing-pulse {
     0% {
-        background: rgba(78, 205, 196, 0.1);
+        background: rgba(var(--color-primary-alt-rgb), 0.1);
         opacity: 0.8;
     }
     100% {
-        background: rgba(78, 205, 196, 0.3);
+        background: rgba(var(--color-primary-alt-rgb), 0.3);
         opacity: 1;
     }
 }
@@ -817,7 +817,7 @@ body[data-panel-surface='semantic-dive']::after {
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.4s ease;
-    background: rgba(0, 0, 0, 0.55);
+    background: var(--shadow-umbra);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -957,7 +957,7 @@ body[data-panel-surface='semantic-dive'] .launch-btn {
     padding: 18px 20px 0;
     border-radius: 8px 8px 0 0;
     background: rgba(13, 18, 30, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--glass-reflection-strong);
     border-bottom: 0;
 }
 
@@ -972,8 +972,8 @@ body[data-panel-surface='semantic-dive'] .launch-btn {
     width: 36px;
     height: 36px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-reflection-strong);
+    background: var(--glass-reflection);
     color: #f8fafc;
     font-size: 1.35rem;
     line-height: 1;
@@ -986,7 +986,7 @@ body[data-panel-surface='semantic-dive'] .launch-btn {
     padding: 16px 20px 20px;
     border-radius: 0 0 8px 8px;
     background: rgba(13, 18, 30, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--glass-reflection-strong);
     border-top: 0;
     color: #e5e7eb;
 }

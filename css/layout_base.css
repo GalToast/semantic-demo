@@ -45,7 +45,7 @@
     width: 100%;
     padding: 18px 20px;
     flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--glass-reflection-fade);
     font-family: var(--font-display);
     font-weight: 700;
     font-size: 16px;
@@ -60,7 +60,7 @@
 }
 
 .info-header:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--glass-reflection-soft);
 }
 
 .info-header > span:first-child {
@@ -81,25 +81,28 @@
     height: 28px;
     border-radius: 999px;
     background:
-        radial-gradient(circle at 35% 25%, rgba(82, 229, 215, 0.18), transparent 48%), rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(82, 229, 215, 0.22);
+        radial-gradient(circle at 35% 25%, rgba(var(--color-primary-rgb), 0.18), transparent 48%),
+        var(--glass-reflection-muted);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.22);
     color: rgba(226, 255, 250, 0.82);
     font-size: 16px;
     line-height: 1;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.05),
-        0 0 18px rgba(82, 229, 215, 0.08);
+        inset 0 1px 0 var(--glass-reflection-muted),
+        0 0 18px rgba(var(--color-primary-rgb), 0.08);
     transition: var(--transition-premium);
 }
 
 .info-toggle-icon:hover {
-    background: radial-gradient(circle at 35% 25%, rgba(82, 229, 215, 0.3), transparent 48%), rgba(255, 255, 255, 0.1);
+    background:
+        radial-gradient(circle at 35% 25%, rgba(var(--color-primary-rgb), 0.3), transparent 48%),
+        var(--color-border-muted);
     border-color: var(--color-primary);
     color: rgba(226, 255, 250, 1);
     transform: scale(1.08);
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 0 24px rgba(82, 229, 215, 0.22);
+        inset 0 1px 0 var(--glass-reflection),
+        0 0 24px rgba(var(--color-primary-rgb), 0.22);
 }
 
 .info-toggle-icon:focus-visible {
@@ -148,7 +151,7 @@
 .legend-panel,
 .journey-compass {
     scrollbar-width: thin;
-    scrollbar-color: rgba(82, 229, 215, 0.25) transparent;
+    scrollbar-color: rgba(var(--color-primary-rgb), 0.25) transparent;
 }
 
 .info-content::-webkit-scrollbar,
@@ -173,7 +176,7 @@
 .legend-panel::-webkit-scrollbar-thumb,
 .journey-compass::-webkit-scrollbar-thumb,
 .info-panel::-webkit-scrollbar-thumb {
-    background: rgba(82, 229, 215, 0.28);
+    background: rgba(var(--color-primary-rgb), 0.28);
     border-radius: 999px;
     border: 1px solid transparent;
     background-clip: padding-box;
@@ -183,15 +186,15 @@
 .mode-grid .mode-chip {
     appearance: none;
     -webkit-appearance: none;
-    border: 1px solid rgba(121, 235, 222, 0.15);
+    border: 1px solid rgba(var(--color-primary-tint-rgb), 0.15);
     background:
-        radial-gradient(circle at 15% 0%, rgba(121, 235, 222, 0.12), transparent 48%),
+        radial-gradient(circle at 15% 0%, rgba(var(--color-primary-tint-rgb), 0.12), transparent 48%),
         linear-gradient(180deg, rgba(16, 28, 35, 0.72), rgba(7, 13, 19, 0.78));
     color: rgba(237, 250, 248, 0.88);
     font-family: var(--font-display, 'Bricolage Grotesque', system-ui, sans-serif);
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.05),
-        0 10px 22px rgba(0, 0, 0, 0.16);
+        inset 0 1px 0 var(--glass-reflection-muted),
+        0 10px 22px var(--shadow-antumbra);
     transition:
         transform 0.2s ease,
         background 0.2s ease,
@@ -201,9 +204,9 @@
 .launch-btn:hover,
 .mode-grid .mode-chip:hover {
     background:
-        radial-gradient(circle at 15% 0%, rgba(121, 235, 222, 0.18), transparent 48%),
+        radial-gradient(circle at 15% 0%, rgba(var(--color-primary-tint-rgb), 0.18), transparent 48%),
         linear-gradient(180deg, rgba(20, 35, 42, 0.8), rgba(10, 18, 25, 0.85));
-    border-color: rgba(121, 235, 222, 0.25);
+    border-color: rgba(var(--color-primary-tint-rgb), 0.25);
 }
 
 .launch-btn {
@@ -247,9 +250,9 @@
 
 .launch-btn:hover,
 .mode-grid .mode-chip:hover {
-    border-color: rgba(121, 235, 222, 0.32);
+    border-color: rgba(var(--color-primary-tint-rgb), 0.32);
     background:
-        radial-gradient(circle at 15% 0%, rgba(121, 235, 222, 0.2), transparent 50%),
+        radial-gradient(circle at 15% 0%, rgba(var(--color-primary-tint-rgb), 0.2), transparent 50%),
         linear-gradient(180deg, rgba(18, 37, 43, 0.82), rgba(7, 15, 22, 0.88));
     color: rgba(249, 255, 253, 0.96);
     transform: translateY(-1px);
@@ -257,14 +260,14 @@
 
 .launch-btn:focus-visible,
 .mode-grid .mode-chip:focus-visible {
-    outline: 2px solid rgba(121, 235, 222, 0.54);
+    outline: 2px solid rgba(var(--color-primary-tint-rgb), 0.54);
     outline-offset: 2px;
 }
 
 .mode-grid .mode-chip.active {
-    border-color: rgba(121, 235, 222, 0.42);
+    border-color: rgba(var(--color-primary-tint-rgb), 0.42);
     background:
-        radial-gradient(circle at 15% 0%, rgba(121, 235, 222, 0.24), transparent 50%),
+        radial-gradient(circle at 15% 0%, rgba(var(--color-primary-tint-rgb), 0.24), transparent 50%),
         linear-gradient(180deg, rgba(17, 45, 48, 0.82), rgba(7, 17, 22, 0.9));
     color: rgba(219, 255, 251, 0.96);
 }
@@ -300,13 +303,13 @@
 
 body[data-panel-surface='focus'] .info-panel,
 body[data-panel-surface='focus-search'] .info-panel {
-    border-color: rgba(121, 235, 222, 0.14);
-    box-shadow: 0 26px 64px rgba(0, 0, 0, 0.32);
+    border-color: rgba(var(--color-primary-tint-rgb), 0.14);
+    box-shadow: 0 26px 64px var(--shadow-penumbra);
 }
 
 body[data-panel-surface^='map-'] .info-panel {
     border-color: rgba(124, 228, 219, 0.14);
-    box-shadow: 0 28px 68px rgba(0, 0, 0, 0.34);
+    box-shadow: 0 28px 68px var(--shadow-penumbra);
 }
 
 .info-panel.collapsed {
@@ -334,7 +337,7 @@ body:has(.info-panel.active) .panel-toggle {
 .legend-toggle,
 .help-toggle {
     position: fixed;
-    z-index: 100;
+    z-index: var(--z-overlay);
     width: 44px;
     height: 44px;
     border-radius: var(--glass-radius-action);
@@ -376,7 +379,7 @@ body:has(.info-panel.active) .panel-toggle {
 .share-toggle:hover,
 .legend-toggle:hover,
 .help-toggle:hover {
-    background: rgba(82, 229, 215, 0.12);
+    background: rgba(var(--color-primary-rgb), 0.12);
     border: var(--glass-border-glow);
     box-shadow: var(--shadow-glass-glow), var(--shadow-glass);
     transform: translateY(-2px);
@@ -387,7 +390,7 @@ body:has(.info-panel.active) .panel-toggle {
     position: fixed;
     right: 16px;
     top: 104px;
-    z-index: 100;
+    z-index: var(--z-overlay);
     width: min(258px, calc(100vw - 24px));
     max-height: min(64vh, 456px);
     overflow-y: auto;
@@ -442,7 +445,7 @@ body:has(.info-panel.active) .panel-toggle {
     padding: 12px;
     border-radius: 13px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.018));
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--glass-reflection-muted);
 }
 .legend-guide-head {
     display: flex;
@@ -476,7 +479,7 @@ body:has(.info-panel.active) .panel-toggle {
 .legend-guide-note {
     font-size: 12px;
     line-height: 1.48;
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--color-text-primary);
 }
 .legend-guide-next {
     font-size: 11px;
@@ -489,12 +492,12 @@ body:has(.info-panel.active) .panel-toggle {
     gap: 8px;
     margin: 6px 0 0;
     padding: 8px 10px;
-    border: 1px solid rgba(82, 229, 215, 0.25);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.25);
     border-radius: 12px;
     background:
-        radial-gradient(circle at 8% 45%, rgba(82, 229, 215, 0.15), transparent 32%),
-        linear-gradient(135deg, rgba(255, 217, 122, 0.08), rgba(82, 229, 215, 0.06));
-    color: rgba(255, 255, 255, 0.9);
+        radial-gradient(circle at 8% 45%, rgba(var(--color-primary-rgb), 0.15), transparent 32%),
+        linear-gradient(135deg, rgba(255, 217, 122, 0.08), rgba(var(--color-primary-rgb), 0.06));
+    color: var(--color-text-primary);
     font-size: 10.5px;
     line-height: 1.35;
 }
@@ -512,8 +515,8 @@ body:has(.info-panel.active) .panel-toggle {
     inset: 5px 1px auto 1px;
     height: 1px;
     border-radius: 999px;
-    background: linear-gradient(90deg, rgba(255, 226, 132, 0.9), rgba(82, 229, 215, 0.9));
-    box-shadow: 0 0 10px rgba(82, 229, 215, 0.4);
+    background: linear-gradient(90deg, rgba(255, 226, 132, 0.9), rgba(var(--color-primary-rgb), 0.9));
+    box-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.4);
     transform-origin: center;
 }
 .legend-lens-truth-mark::before {
@@ -533,9 +536,9 @@ body:has(.info-panel.active) .panel-toggle {
     padding: 5px 9px;
     font-size: 10px;
     line-height: 1;
-    color: rgba(255, 255, 255, 0.95);
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+    background: var(--glass-reflection-muted);
+    border: 1px solid var(--color-border-muted);
 }
 .legend-chip.lane-healthy {
     color: rgba(255, 255, 255, 1);
@@ -555,7 +558,7 @@ body:has(.info-panel.active) .panel-toggle {
 .legend-divider {
     height: 1px;
     margin: 12px 0 10px;
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+    background: linear-gradient(90deg, var(--glass-reflection-glow), var(--glass-reflection-muted));
 }
 .legend-section-title {
     font-size: 10px;
@@ -577,9 +580,9 @@ body:has(.info-panel.active) .panel-toggle {
     gap: 10px;
     padding: 9px 10px;
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.95);
-    background: rgba(255, 255, 255, 0.035);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--color-text-primary);
+    background: var(--glass-reflection-fade);
+    border: 1px solid var(--glass-reflection);
     border-radius: 11px;
     cursor: pointer;
     text-align: left;
@@ -587,12 +590,12 @@ body:has(.info-panel.active) .panel-toggle {
 }
 .legend-item:hover {
     transform: translateY(-2px);
-    border-color: rgba(82, 229, 215, 0.35);
-    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(var(--color-primary-rgb), 0.35);
+    background: var(--glass-reflection-muted);
     box-shadow: var(--shadow-glass-glow);
 }
 .legend-item.active {
-    border-color: rgba(82, 229, 215, 0.35);
+    border-color: rgba(var(--color-primary-rgb), 0.35);
     background: rgba(var(--color-primary-rgb), 0.12);
     box-shadow: inset 0 0 0 1px rgba(var(--color-primary-rgb), 0.1);
 }
@@ -628,9 +631,9 @@ body:has(.info-panel.active) .panel-toggle {
     line-height: 1;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--color-text-primary);
+    background: var(--glass-reflection);
+    border: 1px solid var(--glass-reflection-strong);
 }
 .legend-pill.focus {
     color: rgba(255, 247, 214, 1);
@@ -700,8 +703,8 @@ body:has(.info-panel.active) .panel-toggle {
         background: linear-gradient(180deg, rgba(10, 14, 22, 0.85), rgba(7, 10, 18, 0.82));
         backdrop-filter: blur(18px);
         -webkit-backdrop-filter: blur(18px);
-        border-color: rgba(121, 235, 222, 0.12);
-        box-shadow: 0 18px 34px rgba(0, 0, 0, 0.3);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.12);
+        box-shadow: 0 18px 34px var(--shadow-penumbra);
     }
 
     body[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel {
@@ -714,13 +717,13 @@ body:has(.info-panel.active) .panel-toggle {
         border-radius: 18px;
         opacity: 0.82;
         transform: translateY(0) scale(0.972);
-        border-color: rgba(121, 235, 222, 0.22);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.22);
         background:
-            radial-gradient(circle at 12% 0%, rgba(121, 235, 222, 0.16), transparent 38%),
+            radial-gradient(circle at 12% 0%, rgba(var(--color-primary-tint-rgb), 0.16), transparent 38%),
             linear-gradient(180deg, rgba(5, 14, 21, 0.82), rgba(4, 8, 14, 0.76));
         box-shadow:
-            0 18px 44px rgba(0, 0, 0, 0.3),
-            0 0 0 1px rgba(121, 235, 222, 0.055);
+            0 18px 44px var(--shadow-penumbra),
+            0 0 0 1px rgba(var(--color-primary-tint-rgb), 0.055);
         backdrop-filter: blur(18px) saturate(1.16);
         -webkit-backdrop-filter: blur(18px) saturate(1.16);
     }
@@ -761,8 +764,8 @@ body:has(.info-panel.active) .panel-toggle {
     body[data-mobile-route-peek='active'][data-panel-surface]:not([data-panel-surface^='map-']) .search-trail-cue {
         margin-top: 6px;
         padding: 7px 9px;
-        background: rgba(121, 235, 222, 0.055);
-        border-color: rgba(121, 235, 222, 0.12);
+        background: rgba(var(--color-primary-tint-rgb), 0.055);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.12);
     }
 
     body[data-mobile-route-peek='active'][data-panel-surface]:not([data-panel-surface^='map-']) .search-trail-cue-note {
@@ -870,9 +873,9 @@ body:has(.info-panel.active) .panel-toggle {
         align-items: flex-start;
         gap: 2px;
         padding: 8px 12px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid var(--color-border-muted);
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--glass-reflection-muted);
         color: rgba(246, 247, 232, 1);
         cursor: pointer;
         transition:
@@ -885,8 +888,8 @@ body:has(.info-panel.active) .panel-toggle {
     }
 
     .mode-grid .mode-chip:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.2);
+        background: var(--color-border-muted);
+        border-color: var(--glass-reflection-glow);
         color: rgba(246, 247, 232, 1);
     }
 
@@ -915,12 +918,12 @@ body:has(.info-panel.active) .panel-toggle {
        trailDepth >= 1 means Trail is enabled and actively guiding the user.
        It should feel visually locked-in, not just technically active. */
     .mode-grid .mode-chip.is-locked {
-        background: rgba(82, 229, 215, 0.18);
-        border-color: rgba(82, 229, 215, 0.55);
+        background: rgba(var(--color-primary-rgb), 0.18);
+        border-color: rgba(var(--color-primary-rgb), 0.55);
         color: rgba(201, 255, 248, 0.98);
         box-shadow:
-            0 0 0 1px rgba(82, 229, 215, 0.25),
-            0 0 12px rgba(82, 229, 215, 0.15);
+            0 0 0 1px rgba(var(--color-primary-rgb), 0.25),
+            0 0 12px rgba(var(--color-primary-rgb), 0.15);
     }
 
     .mode-grid .mode-chip.is-locked .mode-name {
@@ -935,12 +938,12 @@ body:has(.info-panel.active) .panel-toggle {
 
     /* Story chip active state (mirrors inline style in vector-explorer-polished.html) */
     .story-chip.active {
-        background: rgba(82, 229, 215, 0.18);
-        border-color: rgba(82, 229, 215, 0.55);
+        background: rgba(var(--color-primary-rgb), 0.18);
+        border-color: rgba(var(--color-primary-rgb), 0.55);
         color: rgba(201, 255, 248, 0.98);
         box-shadow:
-            0 0 0 1px rgba(82, 229, 215, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            0 0 0 1px rgba(var(--color-primary-rgb), 0.2),
+            inset 0 1px 0 var(--glass-reflection-muted);
     }
 
     /* Mode chip text hierarchy */
@@ -1030,8 +1033,8 @@ body:has(.info-panel.active) .panel-toggle {
         border-radius: 13px;
         font-size: 16px;
         background: linear-gradient(180deg, rgba(11, 16, 24, 0.94), rgba(7, 11, 18, 0.9));
-        border-color: rgba(121, 235, 222, 0.14);
-        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.14);
+        box-shadow: 0 14px 28px var(--shadow-penumbra);
     }
 
     body[data-panel-surface^='map-'] .legend-panel {
@@ -1042,8 +1045,8 @@ body:has(.info-panel.active) .panel-toggle {
         max-height: 38vh;
         border-radius: 14px;
         background: linear-gradient(180deg, rgba(10, 14, 22, 0.96), rgba(7, 10, 18, 0.94));
-        border-color: rgba(121, 235, 222, 0.12);
-        box-shadow: 0 18px 34px rgba(0, 0, 0, 0.3);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.12);
+        box-shadow: 0 18px 34px var(--shadow-penumbra);
         transform-origin: bottom right;
     }
 }
@@ -1066,7 +1069,7 @@ body:has(.info-panel.active) .panel-toggle {
         border-radius: 20px 20px 0 0;
         padding: 12px;
         background: linear-gradient(180deg, rgba(10, 14, 22, 0.94), rgba(7, 10, 18, 0.92));
-        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 -10px 40px var(--shadow-penumbra);
         z-index: var(--z-overlay);
     }
 
@@ -1117,14 +1120,14 @@ body:has(.info-panel.active) .panel-toggle {
         bottom: var(--map-panel-bottom);
         width: auto;
         border-radius: 22px;
-        border-color: rgba(121, 235, 222, 0.32);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.32);
         background:
-            radial-gradient(circle at 12% 0%, rgba(121, 235, 222, 0.18), transparent 42%),
+            radial-gradient(circle at 12% 0%, rgba(var(--color-primary-tint-rgb), 0.18), transparent 42%),
             radial-gradient(circle at 100% 100%, rgba(255, 226, 132, 0.12), transparent 36%),
             linear-gradient(180deg, rgba(6, 16, 22, 0.88), rgba(4, 8, 14, 0.82));
         box-shadow:
-            0 26px 64px rgba(0, 0, 0, 0.42),
-            0 0 0 1px rgba(121, 235, 222, 0.08);
+            0 26px 64px var(--shadow-penumbra),
+            0 0 0 1px rgba(var(--color-primary-tint-rgb), 0.08);
         backdrop-filter: blur(22px) saturate(1.25);
         -webkit-backdrop-filter: blur(22px) saturate(1.25);
     }
@@ -1156,8 +1159,8 @@ body:has(.info-panel.active) .panel-toggle {
             linear-gradient(135deg, rgba(255, 226, 132, 0.13), transparent 31%),
             radial-gradient(circle at 94% 0%, rgb(var(--cluster-rgb) / 0.2), transparent 36%),
             linear-gradient(180deg, rgba(8, 20, 26, 0.94), rgba(4, 9, 15, 0.88));
-        border-color: rgba(121, 235, 222, 0.42);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        border-color: rgba(var(--color-primary-tint-rgb), 0.42);
+        box-shadow: inset 0 1px 0 var(--glass-reflection-muted);
     }
 
     body[data-panel-surface='map-trail'] .selected-card .panel-section-title {
@@ -1175,8 +1178,8 @@ body:has(.info-panel.active) .panel-toggle {
         width: 22px;
         height: 1px;
         border-radius: 999px;
-        background: linear-gradient(90deg, rgba(255, 226, 132, 0.92), rgba(121, 235, 222, 0.72));
-        box-shadow: 0 0 14px rgba(121, 235, 222, 0.28);
+        background: linear-gradient(90deg, rgba(255, 226, 132, 0.92), rgba(var(--color-primary-tint-rgb), 0.72));
+        box-shadow: 0 0 14px rgba(var(--color-primary-tint-rgb), 0.28);
     }
 
     body[data-panel-surface='map-trail'] .selected-hero {

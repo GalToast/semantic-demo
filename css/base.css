@@ -20,30 +20,31 @@
     --glass-bg-deep: linear-gradient(180deg, rgba(12, 22, 34, 0.55) 0%, rgba(6, 12, 18, 0.75) 100%);
     --glass-bg-accent: radial-gradient(circle at 100% 0%, rgba(82, 229, 215, 0.2), transparent 60%);
 
-    --glass-border: 1px solid rgba(255, 255, 255, 0.075);
+    --glass-border: 1px solid var(--glass-reflection);
     --glass-border-glow: 1px solid rgba(82, 229, 215, 0.35);
-    --glass-border-muted: 1px solid rgba(255, 255, 255, 0.04);
+    --glass-border-muted: 1px solid var(--glass-reflection-soft);
 
     --glass-radius-panel: 18px;
     --glass-radius-card: 14px;
     --glass-radius-action: 10px;
     --glass-radius-pill: 999px;
 
+    /* Semantic Color Tokens — defined before the shadow tokens below so
+       the file's visual order matches lazy custom-property resolution. */
+    --glass-reflection: var(--glass-reflection);
+    --glass-reflection-fade: var(--glass-reflection-fade);
+    --glass-reflection-glow: var(--glass-reflection-glow);
+    --glass-reflection-soft: var(--glass-reflection-soft);
+    --glass-reflection-strong: var(--glass-reflection-strong);
+    --glass-reflection-muted: var(--glass-reflection-muted);
+
+    --shadow-umbra: var(--shadow-umbra);
+    --shadow-penumbra: var(--shadow-penumbra);
+    --shadow-antumbra: var(--shadow-antumbra);
+
     --shadow-glass: 0 24px 64px var(--shadow-umbra), inset 0 1px 0 var(--glass-reflection);
     --shadow-glass-glow: 0 16px 48px rgba(82, 229, 215, 0.2), 0 0 24px var(--glass-reflection);
     --shadow-premium-glow: 0 20px 56px rgba(82, 229, 215, 0.25), 0 0 30px rgba(82, 229, 215, 0.12);
-
-    /* Semantic Color Tokens */
-    --glass-reflection: rgba(255, 255, 255, 0.08);
-    --glass-reflection-fade: rgba(255, 255, 255, 0.03);
-    --glass-reflection-glow: rgba(255, 255, 255, 0.15);
-    --glass-reflection-soft: rgba(255, 255, 255, 0.04);
-    --glass-reflection-strong: rgba(255, 255, 255, 0.12);
-    --glass-reflection-muted: rgba(255, 255, 255, 0.05);
-
-    --shadow-umbra: rgba(0, 0, 0, 0.54);
-    --shadow-penumbra: rgba(0, 0, 0, 0.24);
-    --shadow-antumbra: rgba(0, 0, 0, 0.12);
 
     --font-display: 'Bricolage Grotesque', sans-serif;
     --font-body: 'Nunito Sans', sans-serif;
@@ -80,11 +81,11 @@
     --color-surface-glass: rgba(15, 18, 28, 0.88);
     --color-surface-panel: rgba(12, 17, 26, 0.93);
     --color-border-subtle: var(--glass-reflection);
-    --color-border-muted: rgba(255, 255, 255, 0.1);
-    --color-text-strong: rgba(255, 255, 255, 0.98);
-    --color-text-primary: rgba(255, 255, 255, 0.94);
-    --color-text-secondary: rgba(255, 255, 255, 0.78);
-    --color-text-muted: rgba(255, 255, 255, 0.58);
+    --color-border-muted: var(--color-border-muted);
+    --color-text-strong: var(--color-text-strong);
+    --color-text-primary: var(--color-text-primary);
+    --color-text-secondary: var(--color-text-secondary);
+    --color-text-muted: var(--color-text-muted);
 
     /* Status colors — used by semantic lane, error states, info chips */
     --status-success: #8ff7d0;
@@ -120,11 +121,11 @@
     --z-max: 9999;
 
     /* Shared panel elevation and glass treatment */
-    --shadow-card: 0 12px 40px rgba(0, 0, 0, 0.32);
+    --shadow-card: 0 12px 40px var(--shadow-penumbra);
     --shadow-panel: var(--shadow-glass);
     --shadow-focus-ring: 0 0 0 3px rgba(82, 229, 215, 0.38);
     --panel-glass-bg: var(--glass-bg);
-    --panel-glass-border: rgba(255, 255, 255, 0.14);
+    --panel-glass-border: var(--glass-reflection-strong);
 
     --line-tight: 1.15;
     --line-normal: 1.4;
@@ -176,7 +177,7 @@ body {
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
     font-family: var(--font-body, 'Nunito Sans', system-ui, sans-serif);
-    color: var(--color-text-primary, rgba(255, 255, 255, 0.94));
+    color: var(--color-text-primary, var(--color-text-primary));
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
