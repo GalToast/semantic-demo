@@ -77,11 +77,7 @@ const forbiddenWeatherOwners = [
   'css/strands.css',
   'css/journey_active.css',
   'css/layout_base.css',
-  'css/mobile_premium_state.css',
-  'css/mobile_premium_idle.css',
-  'css/mobile_premium_focus.css',
-  'css/mobile_premium_chrome.css',
-  'css/mobile_premium_surfaces.css'
+  'css/mobile_premium.css'
 ];
 
 for (const relativePath of forbiddenWeatherOwners) {

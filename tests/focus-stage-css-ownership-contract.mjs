@@ -14,7 +14,7 @@
  * .focus-stage-card
  *   clusters.css           — desktop base glass panel
  *   journey_active.css      — desktop focus/focus-search overrides
- *   mobile_premium_focus.css — mobile is-active premium overrides
+ *   mobile_premium.css       — collapsed mobile is-active premium overrides
  *   animations.css          — short-landscape overrides only
  *   journey_steps.css       — transition-phase variants only
  *   strands.css             — galaxy/legacy state variants only
@@ -26,15 +26,14 @@
  *   layout_base.css         — scrollbar styling only
  *
  * .journey-compass (mobile is-active premium)
- *   mobile_premium_focus.css — mobile is-active override
+ *   mobile_premium.css       — collapsed mobile is-active override
  *   mobile_base.css         — generic mobile base
  *
  * .journey-compass (field-node compact)
- *   mobile_premium_focus.css — canonical owner (is-active field-node)
- *   mobile_premium_surfaces.css — non-is-active field-node variants
+ *   mobile_premium.css       — canonical mobile owner
  *
  * .focus-stage-inside-controls
- *   mobile_premium_focus.css — display:grid (semantic-dive canonical)
+ *   mobile_premium.css       — display:grid (semantic-dive canonical)
  *   clusters.css             — display:none (non-dive default only)
  *
  * FORBIDDEN (always):
@@ -154,17 +153,6 @@ const FORWARD_ONLY_LIMITS = [
     },
     message: 'strands.css must not gain new journey-compass or focus-stage-card geometry',
   },
-  {
-    file: 'mobile_premium_surfaces.css',
-    limits: {
-      '.journey-compass': 62,
-      '.focus-stage-route': 3,
-      '.focus-stage-kicker': 1,
-      '.focus-stage-actions': 1,
-      '.focus-stage-dive-btn': 8,
-    },
-    message: 'mobile_premium_surfaces.css must keep shrinking focus-stage ownership',
-  },
 ];
 
 const REGISTERED_GEOMETRY_OWNERS = {
@@ -173,7 +161,7 @@ const REGISTERED_GEOMETRY_OWNERS = {
     'clusters.css',
     'journey_active.css',
     'journey_steps.css',
-    'mobile_premium_focus.css',
+    'mobile_premium.css',
     'progressive_disclosure.css',
     'strands.css',
   ]),
@@ -184,10 +172,7 @@ const REGISTERED_GEOMETRY_OWNERS = {
     'journey_steps.css',
     'layout_base.css',
     'mobile_base.css',
-    'mobile_premium_chrome.css',
-    'mobile_premium_focus.css',
-    'mobile_premium_state.css',
-    'mobile_premium_surfaces.css',
+    'mobile_premium.css',
     'progressive_disclosure.css',
     'search.css',
     'strands.css',
@@ -195,42 +180,21 @@ const REGISTERED_GEOMETRY_OWNERS = {
 };
 
 const FOCUS_ACTION_PRIMITIVE_GUARD = {
-  canonicalFile: 'mobile_premium_focus.css',
-  formerLateFile: 'mobile_premium_surfaces.css',
-  forbiddenLateSelectors: [
-    '.focus-stage-action-btn',
-    '.focus-thread-inspector-btn',
-    '.focus-stage-journey-btn {',
-    '.action-btn,',
-  ],
+  canonicalFile: 'mobile_premium.css',
 };
 
 const FOCUS_COMPASS_STATE_REFINEMENT_GUARD = {
-  canonicalFile: 'mobile_premium_focus.css',
-  formerLateFile: 'mobile_premium_surfaces.css',
+  canonicalFile: 'mobile_premium.css',
   ownerMarker: 'Focus/dive journey compass state refinements',
-  forbiddenLateFragments: [
-    '.journey-compass.glass-heavy',
-    'data-panel-surface="semantic-dive"]:not([data-panel-surface^="map-"]) .journey-compass[data-density="compact"]',
-    'data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass-action.primary',
-    'data-panel-surface="focus-search"]:not([data-panel-surface^="map-"]) .journey-compass-title',
-    'data-panel-surface="semantic-dive"]:not([data-panel-surface^="map-"]) .journey-compass-title',
-  ],
 };
 
 const SEMANTIC_DIVE_INSIDE_HUD_GUARD = {
-  canonicalFile: 'mobile_premium_focus.css',
-  formerLateFile: 'mobile_premium_surfaces.css',
+  canonicalFile: 'mobile_premium.css',
   ownerMarker: 'Semantic-dive inside HUD density owner',
-  forbiddenLateFragments: [
-    '.focus-stage-inside-status',
-    '.focus-stage-inside-controls',
-    '.focus-stage-inside-btn',
-  ],
 };
 
 const MOBILE_COMPASS_TRANSITION_GUARD = {
-  file: 'mobile_premium_surfaces.css',
+  file: 'mobile_premium.css',
   selectors: ['.journey-compass', '.journey-compass-action'],
 };
 
@@ -247,15 +211,6 @@ if (!focusPrimitiveOwner.includes('Focus stage action/button primitives')) {
   violations.push(`${FOCUS_ACTION_PRIMITIVE_GUARD.canonicalFile} must document and own focus-stage action/button primitives`);
 }
 
-const formerLateOwner = read(`css/${FOCUS_ACTION_PRIMITIVE_GUARD.formerLateFile}`);
-for (const selector of FOCUS_ACTION_PRIMITIVE_GUARD.forbiddenLateSelectors) {
-  if (formerLateOwner.includes(selector)) {
-    violations.push(
-      `${FOCUS_ACTION_PRIMITIVE_GUARD.formerLateFile} must not reintroduce focus action primitive selector ${selector}`
-    );
-  }
-}
-
 const focusCompassOwner = read(`css/${FOCUS_COMPASS_STATE_REFINEMENT_GUARD.canonicalFile}`);
 if (!focusCompassOwner.includes(FOCUS_COMPASS_STATE_REFINEMENT_GUARD.ownerMarker)) {
   violations.push(
@@ -263,29 +218,11 @@ if (!focusCompassOwner.includes(FOCUS_COMPASS_STATE_REFINEMENT_GUARD.ownerMarker
   );
 }
 
-const formerCompassOwner = read(`css/${FOCUS_COMPASS_STATE_REFINEMENT_GUARD.formerLateFile}`);
-for (const fragment of FOCUS_COMPASS_STATE_REFINEMENT_GUARD.forbiddenLateFragments) {
-  if (formerCompassOwner.includes(fragment)) {
-    violations.push(
-      `${FOCUS_COMPASS_STATE_REFINEMENT_GUARD.formerLateFile} must not reintroduce focus/dive journey-compass state fragment ${fragment}`
-    );
-  }
-}
-
 const semanticDiveInsideHudOwner = read(`css/${SEMANTIC_DIVE_INSIDE_HUD_GUARD.canonicalFile}`);
 if (!semanticDiveInsideHudOwner.includes(SEMANTIC_DIVE_INSIDE_HUD_GUARD.ownerMarker)) {
   violations.push(
     `${SEMANTIC_DIVE_INSIDE_HUD_GUARD.canonicalFile} must document and own semantic-dive inside HUD density`
   );
-}
-
-const formerSemanticDiveInsideHudOwner = read(`css/${SEMANTIC_DIVE_INSIDE_HUD_GUARD.formerLateFile}`);
-for (const fragment of SEMANTIC_DIVE_INSIDE_HUD_GUARD.forbiddenLateFragments) {
-  if (formerSemanticDiveInsideHudOwner.includes(fragment)) {
-    violations.push(
-      `${SEMANTIC_DIVE_INSIDE_HUD_GUARD.formerLateFile} must not reintroduce semantic-dive inside HUD fragment ${fragment}`
-    );
-  }
 }
 
 const mobileCompassTransitionOwner = read(`css/${MOBILE_COMPASS_TRANSITION_GUARD.file}`);

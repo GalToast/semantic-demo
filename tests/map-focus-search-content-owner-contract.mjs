@@ -13,9 +13,10 @@
  *   4. #selected-map-summary remains read-only; map actions stay owned by the
  *      map trail strip.
  *   5. lifecycle.js refreshes the content variant after panelSurface changes.
- *   6. mobile_premium_map_summary.css styles the dedicated summary nodes.
- *   7. mobile_premium_surfaces.css keeps drawer geometry/backstops and does
- *      not reintroduce summary or old detail-internal ownership.
+ *   6. The collapsed mobile_premium.css MAP SUMMARY section styles the
+ *      dedicated summary nodes.
+ *   7. mobile_premium.css must not reintroduce map-focus-search styling for
+ *      old selected-card detail internals.
  *
  * Usage:
  *   node tests/map-focus-search-content-owner-contract.mjs
@@ -37,8 +38,6 @@ const EVENT_BUS_PATH = path.join(ROOT, 'js/modules/event-bus.js');
 const MAP_STATE_PATH = path.join(ROOT, 'js/modules/map-state.js');
 const SEMANTIC_DIVE_UI_PATH = path.join(ROOT, 'js/modules/semantic-dive-ui.js');
 const MOBILE_PREMIUM_PATH = path.join(ROOT, 'css/mobile_premium.css');
-const MAP_SUMMARY_CSS_PATH = path.join(ROOT, 'css/mobile_premium_map_summary.css');
-const MOBILE_SURFACES_PATH = path.join(ROOT, 'css/mobile_premium_surfaces.css');
 const PROGRESSIVE_DISCLOSURE_PATH = path.join(ROOT, 'css/progressive_disclosure.css');
 
 function read(filePath) {
@@ -200,27 +199,24 @@ function testRenderPathCallsVariantSync() {
 }
 
 function testCssOwnsSummaryStyleOnly() {
-  console.log('\n[TEST] mobile_premium_map_summary owns summary styling');
-  const manifestSrc = read(MOBILE_PREMIUM_PATH);
-  const summarySrc = read(MAP_SUMMARY_CSS_PATH);
-  const surfacesSrc = read(MOBILE_SURFACES_PATH);
+  console.log('\n[TEST] collapsed mobile_premium MAP SUMMARY section owns summary styling');
+  const mobilePremiumSrc = read(MOBILE_PREMIUM_PATH);
 
   assert(
-    /@import\s+url\("\.\/mobile_premium_map_summary\.css\?v=[^"]+"\);/.test(manifestSrc),
-    'mobile_premium.css must import mobile_premium_map_summary.css'
+    /\/\*\s*─── MAP SUMMARY/.test(mobilePremiumSrc),
+    'mobile_premium.css must keep a named MAP SUMMARY section'
   );
-
   assert(
-    /#selected-details\.active:not\(\[hidden\]\)/.test(surfacesSrc),
+    /#selected-details\.active:not\(\[hidden\]\)/.test(mobilePremiumSrc),
     'generic #selected-details.active rule must preserve [hidden] ownership'
   );
   assert(
-    /data-panel-surface="map-focus-search"[\s\S]*#selected-map-summary\.selected-map-summary:not\(\[hidden\]\)/.test(summarySrc),
-    'mobile_premium_map_summary.css must style the dedicated #selected-map-summary surface'
+    /data-panel-surface="map-focus-search"[\s\S]*#selected-map-summary\.selected-map-summary:not\(\[hidden\]\)/.test(mobilePremiumSrc),
+    'mobile_premium.css MAP SUMMARY section must style the dedicated #selected-map-summary surface'
   );
   assert(
-    !/selected-map-summary/.test(surfacesSrc),
-    'mobile_premium_surfaces.css must not own selected-map-summary styling'
+    /data-panel-surface="map-focus-search"[\s\S]*\.selected-map-summary-match/.test(mobilePremiumSrc),
+    'mobile_premium.css MAP SUMMARY section must style the dedicated summary content, not only the wrapper'
   );
 
   const forbiddenLegacyInternals = [
@@ -239,12 +235,12 @@ function testCssOwnsSummaryStyleOnly() {
     const before = new RegExp(`data-panel-surface="map-focus-search"[^{}]*${escapedSelector}`);
     const after = new RegExp(`${escapedSelector}[^{}]*data-panel-surface="map-focus-search"`);
     assert(
-      !before.test(surfacesSrc) && !after.test(surfacesSrc),
-      `mobile_premium_surfaces.css must not add map-focus-search rules for old detail internal ${selector}`
+      !before.test(mobilePremiumSrc) && !after.test(mobilePremiumSrc),
+      `mobile_premium.css must not add map-focus-search rules for old detail internal ${selector}`
     );
   }
 
-  console.log('  OK - summary styling is isolated from late surface geometry');
+  console.log('  OK - summary styling is isolated from old selected-card internals');
 }
 
 function testProgressiveDisclosureDoesNotTargetMapSummaryState() {

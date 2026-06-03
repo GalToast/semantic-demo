@@ -42,14 +42,14 @@ function importPaths(cssPath) {
 
 const cascade = [
   ...importPaths('semantic-demo.css'),
-  ...importPaths('css/mobile_premium.css'),
+  'css/mobile_premium.css',
 ];
 
 const registry = [
   {
     primitive: 'journey-compass',
     selector: '.journey-compass',
-    terminalOwner: 'css/mobile_premium_surfaces.css',
+    terminalOwner: 'css/mobile_premium.css',
     baselineOwnerCount: 11,
     allowedOwners: [
       'css/layout_base.css',
@@ -60,16 +60,13 @@ const registry = [
       'css/progressive_disclosure.css',
       'css/strands.css',
       'css/animations.css',
-      'css/mobile_premium_focus.css',
-      'css/mobile_premium_chrome.css',
-      'css/mobile_premium_state.css',
-      'css/mobile_premium_surfaces.css',
+      'css/mobile_premium.css',
     ],
   },
   {
     primitive: 'search-container',
     selector: '.search-container',
-    terminalOwner: 'css/mobile_premium_surfaces.css',
+    terminalOwner: 'css/mobile_premium.css',
     allowedOwners: [
       'css/search.css',
       'css/layout_base.css',
@@ -78,29 +75,27 @@ const registry = [
       'css/progressive_disclosure.css',
       'css/strands.css',
       'css/animations.css',
-      'css/mobile_premium_chrome.css',
-      'css/mobile_premium_state.css',
-      'css/mobile_premium_surfaces.css',
+      'css/mobile_premium.css',
     ],
   },
   {
     primitive: 'focus-stage-card',
     selector: '.focus-stage-card',
-    terminalOwner: 'css/mobile_premium_focus.css',
+    terminalOwner: 'css/mobile_premium.css',
     baselineOwnerCount: 4,
     allowedOwners: [
       'css/journey_steps.css',
       'css/animations.css',
-      'css/mobile_premium_focus.css',
+      'css/mobile_premium.css',
     ],
   },
   {
     primitive: 'map-trail-compass-hide',
     selector: 'data-panel-surface="map-trail"] .journey-compass',
-    terminalOwner: 'css/mobile_premium_state.css',
+    terminalOwner: 'css/mobile_premium.css',
     baselineOwnerCount: 3,
     allowedOwners: [
-      'css/mobile_premium_state.css',
+      'css/mobile_premium.css',
     ],
   },
 ];

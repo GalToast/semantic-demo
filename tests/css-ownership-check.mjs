@@ -12,6 +12,9 @@ import path from 'node:path';
 
 const cssDir = path.resolve(process.cwd(), 'css');
 
+// mobile_premium.css is the active collapsed mobile owner. The old
+// mobile_premium_* split files were retired during the 2026-06-02 collapse,
+// so the baseline now ratchets the selectors that used to be spread there.
 const selectorBaselines = {
   '.close-icon': {
     'controls.css': 1,
@@ -32,8 +35,7 @@ const selectorBaselines = {
   '.focus-stage-route': {
     'journey_steps.css': 14,
     'journey_active.css': 5,
-    'mobile_premium_focus.css': 2,
-    'mobile_premium_surfaces.css': 3,
+    'mobile_premium.css': 5,
   },
   '.focus-stage-card': {
     'animations.css': 3,
@@ -41,7 +43,7 @@ const selectorBaselines = {
     'journey_active.css': 8,
     'journey_steps.css': 18,
     'mobile_base.css': 0,
-    'mobile_premium_focus.css': 28,
+    'mobile_premium.css': 28,
     'progressive_disclosure.css': 1,
     'strands.css': 5,
   },
@@ -53,66 +55,55 @@ const selectorBaselines = {
     'progressive_disclosure.css': 2,
     'strands.css': 7,
     'animations.css': 0,
-    'mobile_premium_chrome.css': 4,
-    'mobile_premium_state.css': 2,
-    'mobile_premium_idle.css': 1,
+    'mobile_premium.css': 6,
   },
   '.legend-toggle': {
     'controls.css': 1,
     'layout_base.css': 10,
     'journey_active.css': 1,
     'strands.css': 2,
-    'mobile_premium_chrome.css': 4,
-    'mobile_premium_state.css': 2,
+    'mobile_premium.css': 5,
   },
   '.search-results.active': {
-    'search.css': 3,
+    'search.css': 4,
     'layout_base.css': 0,
     'journey_active.css': 1,
     'progressive_disclosure.css': 3,
     'strands.css': 8,
-    'mobile_premium_chrome.css': 7,
-    'mobile_premium_state.css': 6,
-    'mobile_premium_surfaces.css': 1,
+    'mobile_premium.css': 13,
     'animations.css': 1,
   },
   '.help-toggle': {
     'layout_base.css': 4,
     'journey_active.css': 1,
     'mobile_base.css': 1,
-    'mobile_premium_chrome.css': 4,
+    'mobile_premium.css': 4,
     'strands.css': 2,
   },
   '.journey-compass-title': {
     'layout_base.css': 1,
     'journey_active.css': 14,
     'mobile_base.css': 0,
-    'mobile_premium_focus.css': 5,
-    'mobile_premium_surfaces.css': 6,
+    'mobile_premium.css': 10,
     'strands.css': 2,
-    'mobile_premium_state.css': 1,
   },
   '.journey-compass-actions': {
     'journey_active.css': 15,
-    'mobile_premium_focus.css': 4,
-    'mobile_premium_surfaces.css': 6,
+    'mobile_premium.css': 11,
     'progressive_disclosure.css': 1,
     'strands.css': 6,
   },
   '.journey-compass-rail': {
     'layout_base.css': 1,
     'journey_active.css': 15,
-    'mobile_premium_focus.css': 4,
-    'mobile_premium_surfaces.css': 1,
+    'mobile_premium.css': 6,
     'strands.css': 2,
-    'mobile_premium_state.css': 1,
   },
   '.journey-compass-action.primary': {
     'animations.css': 2,
     'journey_active.css': 4,
     'mobile_base.css': 4,
-    'mobile_premium_focus.css': 4,
-    'mobile_premium_surfaces.css': 2,
+    'mobile_premium.css': 6,
     'search.css': 4,
     'strands.css': 5,
   },
@@ -254,7 +245,7 @@ for (const file of cssFiles) {
       const lowerBody = block.body.toLowerCase();
       const hasLayoutProperty = mobileBaseJourneyCompassLayoutProperties.some((property) => lowerBody.includes(property));
       if (hasLayoutProperty) {
-        violations.push('mobile_base.css defines journey-compass layout; mobile journey-compass layout belongs to mobile_premium_surfaces.css or mobile_premium_focus.css.');
+        violations.push('mobile_base.css defines journey-compass layout; mobile journey-compass layout belongs to css/mobile_premium.css.');
       }
     }
   }

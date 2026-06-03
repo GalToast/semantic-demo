@@ -50,6 +50,33 @@ function assertImportShell(relativePath, expectedImports) {
   }
 }
 
+function assertCollapsedMobileOwner(relativePath) {
+  const css = read(relativePath);
+  const lines = activeLines(css);
+  const imports = lines.filter((line) => line.startsWith('@import url('));
+
+  if (imports.length) {
+    failures.push(`${relativePath} is collapsed; remove active @import rules: ${JSON.stringify(imports)}`);
+  }
+
+  const requiredFragments = [
+    'Single source for mobile premium overrides',
+    'body[data-panel-surface="idle"]',
+    'body.is-active[data-panel-surface="search"]',
+    'body.is-active[data-panel-surface="focus-search"]',
+    'body.is-active[data-panel-surface="semantic-dive"]',
+    'body.is-active[data-panel-surface^="map-"]',
+    '#selected-map-summary.selected-map-summary:not([hidden])',
+    '.focus-stage-card',
+  ];
+
+  for (const fragment of requiredFragments) {
+    if (!css.includes(fragment)) {
+      failures.push(`${relativePath} must keep collapsed mobile owner fragment ${JSON.stringify(fragment)}`);
+    }
+  }
+}
+
 assertImportShell('semantic-demo.css', [
   'css/base.css',
   'css/loading.css',
@@ -70,14 +97,7 @@ assertImportShell('semantic-demo.css', [
   'css/animations.css',
 ]);
 
-assertImportShell('css/mobile_premium.css', [
-  'mobile_premium_focus.css',
-  'mobile_premium_chrome.css',
-  'mobile_premium_state.css',
-  'mobile_premium_idle.css',
-  'mobile_premium_map_summary.css',
-  'mobile_premium_surfaces.css',
-]);
+assertCollapsedMobileOwner('css/mobile_premium.css');
 
 const shellHtml = read('vector-explorer-polished.html');
 if (!shellHtml.includes('semantic-demo.css')) {
@@ -93,4 +113,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('CSS manifest contract passed: semantic-demo.css and mobile_premium.css are import shells.');
+console.log('CSS manifest contract passed: semantic-demo.css is an import shell; mobile_premium.css is the collapsed mobile owner.');
