@@ -135,6 +135,24 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 - **CSS state ownership**: Use `docs/semantic-demo-mobile-state-ownership.md` and `docs/semantic-demo-css-ownership-map.md` to trace which `data-*` attribute and CSS module owns a visual surface before editing.
 - **No `!important` in CSS**: Every `!important` is a signal of unresolved specificity conflict. Surface-level `!important` declarations are documented in `docs/semantic-demo-css-ownership-next-pass.md`.
 
+## MCP Recovery
+
+**Symptom:** `mcp__chrome-devtools__*` or `mcp__playwright__*` tool calls return `No such tool available`. `claude mcp list` reports both as ✓ Connected.
+
+**Diagnosis:** Claude Code's tool catalog is stale even though the MCP node processes are alive at the OS level. The MCP node connection has wedged in a way that the tool catalog snapshot inside Claude Code does not refresh.
+
+**Recovery:**
+1. Run `npm run mcp:recover` (or `pwsh -NoProfile -File scripts/mcp-recover.ps1`). This:
+   - Kills stale chrome.exe processes tied to the MCP profiles
+   - Removes chrome's `Singleton{Lock,Cookie,Socket}` lock files
+   - Sets `CLAUDE_MCP_FORCE_CLEAN_START=1` for the next Playwright launch
+2. **Restart Claude Code** (Ctrl+C, then re-launch). The MCP node process is owned by Claude Code and is only respawned on a fresh Claude Code start.
+3. The first browser-automation tool call after restart spawns a fresh chrome against the cleaned profile dir.
+
+**Why no recovery without Claude Code restart:** Claude Code owns the MCP node process lifecycle. `claude mcp` subcommands (add/remove/list/get) are for configuration only — there is no `restart` or `reconnect` subcommand. Killing the MCP node process externally does not trigger a respawn; Claude Code's tool catalog is built at startup and is not refreshed mid-session. The 30-second recovery path is the floor.
+
+**Multi-session caveat:** If multiple Claude Code/Codex sessions share the machine, each has its own MCP node process. `npm run mcp:recover` cleans the shared chrome state, which is what you want — but the Claude Code restart is per-session, not global.
+
 ## Delegated Team Pattern
 - Prefer end-to-end seam owners for substantial work: each worker should diagnose, edit, run focused verification, and return changed paths plus risks.
 - Workers do not all need isolated product seams. It is valid to build a small team with distinct roles such as implementer, adversarial reviewer, visual designer, test author, documentation mapper, or release/checkpoint planner.

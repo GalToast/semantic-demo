@@ -9,6 +9,7 @@
     "lint:fix": "eslint js/ js/modules/ --ext .js --fix",
     "lint:tests": "eslint tests/ --no-warn-ignored",
     "lint:all": "npm run lint && npm run lint:tests",
+    "mcp:recover": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mcp-recover.ps1",
     "format": "prettier --write \"js/**/*.{js,css}\"",
     "check:shell": "node tests/shell-contract-check.js",
     "check:manifest": "node tests/css-manifest-contract.mjs && node tests/package-script-targets-contract.mjs",
