@@ -4,6 +4,40 @@ body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [dat
     min-width: 0;
 }
 
+/* Exquisite scrollbar + scroll-edge fade hint for the result list.
+   Overrides the subtle 0.28 alpha thumb from layout_base.css and
+   adds a soft fade at the bottom so users see there is more below. */
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-results {
+    scrollbar-color: rgba(82, 229, 215, 0.55) transparent;
+}
+
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-results::-webkit-scrollbar-thumb {
+    background: rgba(82, 229, 215, 0.55);
+}
+
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-results::-webkit-scrollbar-thumb:hover {
+    background: rgba(82, 229, 215, 0.9);
+}
+
+/* Sticky fade at the bottom of the scrollable list — gives users a
+   hint that more results exist below without obscuring content.
+   Uses position: sticky on a pseudo-element so it follows the viewport
+   bottom regardless of scroll position. Safe to layer over any
+   background-image already set by mobile_premium.css. */
+body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-results.active::after {
+    content: '';
+    position: sticky;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: block;
+    height: 32px;
+    margin: -32px 0 0;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(5, 10, 16, 0) 0%, rgba(5, 10, 16, 0.92) 100%);
+    z-index: 2;
+}
+
 body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-item {
     appearance: none;
     -webkit-appearance: none;
@@ -137,6 +171,28 @@ body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [dat
     text-shadow: 0 0 12px rgba(121, 235, 222, 0.16);
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
+}
+
+/* Mock-data pill: surfaces the static-dev fallback to anyone running the
+   app against the bundled demo dataset. Only attached when result.isMock
+   is true, which is set by semantic-search-api-cache.js mock builders.
+   Restrained — a tag, not a banner. */
+.search-result-mock-pill {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 5px 2px;
+    border: 1px solid rgba(255, 200, 100, 0.4);
+    border-radius: 3px;
+    color: rgba(255, 200, 100, 0.88);
+    background: rgba(255, 200, 100, 0.06);
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    vertical-align: 2px;
+    white-space: nowrap;
 }
 
 body:is([data-panel-surface="search"], [data-panel-surface="focus-search"], [data-panel-surface="map-search"], [data-panel-surface="map-focus-search"]) .search-container.has-query .search-result-badges {
@@ -953,6 +1009,12 @@ body.searching .search-container.has-query .search-clear-btn {
     letter-spacing: 0.06em;
     text-align: center;
     text-transform: uppercase;
+    /* Default: no wrap, single line. Tighter breakpoints (mobile_premium.css
+       @media (max-width: 360px)) allow wrap and reduce tracking so the
+       47-char "Montgomery County records in the semantic field" caption
+       doesn't bleed past a 320px viewport. */
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 /* cascadeFade keyframes for animated vector lines */

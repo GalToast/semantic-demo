@@ -82,6 +82,8 @@
         padding: 8px 10px;
     }
 
+}
+
 
 
 /* SD-122: Reduced-motion override for filter/search surfaces
@@ -799,7 +801,7 @@
 }
 
 /* SD-143: In mobile map trail state, the compact in-map strip owns navigation.
-   Full journey-compass suppression lives in mobile_premium_state.css. */
+   Full journey-compass suppression lives in css/mobile_premium.css. */
 @media (max-width: 768px) {
     body[data-panel-surface="map-trail"] .map-trail-strip {
         top: calc(86px + env(safe-area-inset-top, 0px));
@@ -1098,35 +1100,74 @@ html body[data-panel-surface="focus-search"] .controls .control-btn {
     }
 
     body[data-panel-surface="search"] .info-content {
+        display: flex;
+        flex-direction: column;
         height: 100%;
         max-height: calc(100dvh - 204px);
-        padding: 14px 16px 16px;
-        overflow-y: auto;
+        min-height: 0;
+        padding: 10px 12px 12px;
+        overflow-y: hidden;
         overflow-x: hidden;
     }
 
+    body[data-panel-surface="search"] .info-header,
     body[data-panel-surface="search"] .stats-row,
     body[data-panel-surface="search"] .stat-caption,
+    body[data-panel-surface="search"] #story-section,
+    body[data-panel-surface="search"] #cluster-section,
+    body[data-panel-surface="search"] #filters-section,
+    body[data-panel-surface="search"] .rail-section,
     body[data-panel-surface="search"] .launch-btn,
     body[data-panel-surface="search"] .demo-starters,
+    body[data-panel-surface="search"] .demo-journey-steps,
     body[data-panel-surface="search"] .semantic-lane-assist,
+    body[data-panel-surface="search"] .semantic-lane-pill,
     body[data-panel-surface="search"] .search-trail-cue,
     body[data-panel-surface="search"] .synthesize-trigger,
+    body[data-panel-surface="search"] #synthesize-trigger,
+    body[data-panel-surface="search"] .search-hint,
+    body[data-panel-surface="search"] .surprise-btn,
+    body[data-panel-surface="search"] .exploration-card,
+    body[data-panel-surface="search"] .selected-card,
+    body[data-panel-surface="search"] #selected-card,
+    body[data-panel-surface="search"] .selected-empty,
     body[data-panel-surface="search"] .mode-grid {
         display: none;
     }
 
     body[data-panel-surface="search"] .search-container.has-query {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        position: relative;
+        top: auto;
+        min-height: 0;
+        height: 100%;
         margin: 0;
         padding: 0;
         border: 0;
         background: transparent;
     }
 
+    body[data-panel-surface="search"] .search-label {
+        flex: 0 0 auto;
+        margin: 0 0 6px;
+    }
+
+    body[data-panel-surface="search"] .search-input-wrapper {
+        flex: 0 0 44px;
+        min-height: 44px;
+        margin: 0 0 8px;
+    }
+
     body[data-panel-surface="search"] .search-results.active {
-        max-height: var(--landscape-search-results-max-height);
-        margin-top: 10px;
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        margin-top: 0;
         padding: 6px;
+        overflow-y: auto;
+        overflow-x: hidden;
         border-color: rgba(121, 235, 222, 0.18);
         background: rgba(5, 10, 16, 0.82);
     }
