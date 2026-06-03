@@ -24,6 +24,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { MOBILE_PREMIUM_PATHS, MOBILE_PREMIUM_SPLIT } from './_fixtures/mobile-premium-split.mjs';
 
 const ROOT = path.resolve(process.cwd());
 const HTML_PATH = path.join(ROOT, 'vector-explorer-polished.html');
@@ -37,16 +38,7 @@ const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.js');
 const EVENT_BUS_PATH = path.join(ROOT, 'js/modules/event-bus.js');
 const MAP_STATE_PATH = path.join(ROOT, 'js/modules/map-state.js');
 const SEMANTIC_DIVE_UI_PATH = path.join(ROOT, 'js/modules/semantic-dive-ui.js');
-const MOBILE_PREMIUM_SPLIT = [
-  'mobile_premium__focus-dive.css',
-  'mobile_premium__chrome.css',
-  'mobile_premium__state.css',
-  'mobile_premium__idle.css',
-  'mobile_premium__map.css',
-  'mobile_premium__surfaces.css',
-  'mobile_premium__narrow.css',
-];
-const MOBILE_PREMIUM_PATH = MOBILE_PREMIUM_SPLIT.map((file) => path.join(ROOT, `css/${file}`));
+const MOBILE_PREMIUM_PATH = MOBILE_PREMIUM_PATHS;
 const PROGRESSIVE_DISCLOSURE_PATH = path.join(ROOT, 'css/progressive_disclosure.css');
 
 function read(filePath) {

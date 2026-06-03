@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { MOBILE_PREMIUM_SPLIT } from './_fixtures/mobile-premium-split.mjs';
 
 const root = process.cwd();
 
@@ -90,26 +91,17 @@ assertImportShell('semantic-demo.css', [
   'css/animations.css',
 ]);
 
-const MOBILE_PREMIUM_SPLIT = [
-  'css/mobile_premium__focus-dive.css',
-  'css/mobile_premium__chrome.css',
-  'css/mobile_premium__state.css',
-  'css/mobile_premium__idle.css',
-  'css/mobile_premium__map.css',
-  'css/mobile_premium__surfaces.css',
-  'css/mobile_premium__narrow.css',
-];
-
 for (const file of MOBILE_PREMIUM_SPLIT) {
-  const css = read(file);
+  const filePath = `css/${file}`;
+  const css = read(filePath);
   if (!css) {
-    failures.push(`${file} must exist (split of mobile_premium.css on 2026-06-03)`);
+    failures.push(`${filePath} must exist (split of mobile_premium.css on 2026-06-03)`);
     continue;
   }
   const lines = activeLines(css);
   const imports = lines.filter((line) => line.startsWith('@import url('));
   if (imports.length) {
-    failures.push(`${file} is collapsed; remove active @import rules: ${JSON.stringify(imports)}`);
+    failures.push(`${filePath} is collapsed; remove active @import rules: ${JSON.stringify(imports)}`);
   }
 }
 

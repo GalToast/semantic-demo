@@ -427,7 +427,8 @@ body[data-active-view='map'] .canvas-color-legend {
 @media (max-width: 768px) {
     .canvas-color-legend {
         left: 12px;
-        bottom: calc(140px + env(safe-area-inset-bottom, 0px));
+        top: calc(78px + env(safe-area-inset-top, 0px));
+        bottom: auto;
         font-size: 9px;
         padding: 8px 10px;
     }
