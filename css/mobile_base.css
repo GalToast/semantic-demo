@@ -1,5 +1,6 @@
-/* Mobile journey-compass layout moved to css/mobile_premium.css. Keep this
-   file limited to base/mobile atoms and reduced-motion support. */
+/* Mobile journey-compass layout moved to the css/mobile_premium__*.css split
+   (state.css, focus-dive.css). Keep this file limited to base/mobile atoms
+   and reduced-motion support. */
 
 .surprise-btn:not(.disabled):not(.is-loading):hover {
     animation: pulse-cyan-glow 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;

@@ -88,7 +88,7 @@ NEEDS FIX (real UI bugs):
 
 3. **Share toggle visibility leak (search-error):** The share toggle is visible and overlapping the mobile search drawer in error state. This suggests a z-index or visibility rule that should be suppressed when the search drawer is active is not being applied in the error surface.
 
-4. **Mode chips visibility (mode-grid):** `display: none` on the grid container but `visibility: true` on individual chips indicates a CSS cascade conflict. Chips may have an explicit `visibility: visible` rule overriding the parent's display state. Check for chip-specific visibility overrides in `mobile_premium.css` or inline styles.
+4. **Mode chips visibility (mode-grid):** `display: none` on the grid container but `visibility: true` on individual chips indicates a CSS cascade conflict. Chips may have an explicit `visibility: visible` rule overriding the parent's display state. Check for chip-specific visibility overrides in the `css/mobile_premium__*.css` split (likely `state.css` or `chrome.css`) or inline styles.
 
 5. **Dive button touch target (launch-focus):** The dive button on the launch-focus surface is below 44px. This may be a deliberate small-design button (entry point into semantic dive) or an oversight. If deliberate, the contract assertion may need a waiver; if oversight, needs CSS padding/height fix.
 
@@ -100,8 +100,8 @@ NEEDS FIX (real UI bugs):
 
 - `tests/surface-contract-check.mjs` - test harness
 - `tmp/surface-contract-check/2026-05-19T05-14-20-671Z/` - raw JSON artifacts
-- `css/mobile_premium.css` - likely location of mode-grid visibility conflict
-- `css/mobile_premium.css` - likely location of touch target / clipping issues
+- `css/mobile_premium__*.css` (state/chrome) - likely location of mode-grid visibility conflict
+- `css/mobile_premium__*.css` (focus-dive/surfaces) - likely location of touch target / clipping issues
 - `vector-explorer-polished.html` - target page
 
 ---

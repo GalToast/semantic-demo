@@ -1,6 +1,6 @@
 # mobile_premium_surfaces.css - Rule-by-Rule Shrink / Migration Plan
 
-Status: historical/superseded. As of 2026-06-02, the mobile premium split files were collapsed into `css/mobile_premium.css`. Keep this document only as a record of the pre-collapse migration plan; current edits belong in the matching named section inside `css/mobile_premium.css`.
+Status: historical/superseded (twice). First 2026-06-02 (collapse into `css/mobile_premium.css`), then 2026-06-03 (un-collapse into the 7-file `css/mobile_premium__*.css` split). Keep this document only as a record of the pre-collapse migration plan; current edits belong in the matching file of the current 7-file split.
 
 ## Files Changed
 2026-06-01: `map-focus-search` selected summary presentation moved to

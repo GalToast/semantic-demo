@@ -101,3 +101,12 @@ export function getPanelSurface() {
 export function isMapSummarySurface() {
     return getPanelSurface() === 'map-focus-search';
 }
+
+/**
+ * Returns true when the mobile semantic-dive surface is the active panel.
+ * Pairs with `isMapSummarySurface()` for the two mobile traversal surfaces
+ * the focus-stage / journey-compass controllers gate on.
+ */
+export function isSemanticDiveSurface() {
+    return getPanelSurface() === 'semantic-dive';
+}

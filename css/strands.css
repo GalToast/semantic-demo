@@ -790,7 +790,7 @@
 }
 
 /* SD-143: In mobile map trail state, the compact in-map strip owns navigation.
-   Full journey-compass suppression lives in css/mobile_premium.css. */
+   Full journey-compass suppression lives in css/mobile_premium__state.css. */
 @media (max-width: 768px) {
     body[data-panel-surface='map-trail'] .map-trail-strip {
         top: calc(86px + env(safe-area-inset-top, 0px));

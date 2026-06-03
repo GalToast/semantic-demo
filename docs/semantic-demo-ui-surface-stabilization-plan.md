@@ -39,7 +39,7 @@ Likely files:
 
 - `css/controls.css`
 - `css/progressive_disclosure.css`
-- `css/mobile_premium.css`
+- The `css/mobile_premium__*.css` split (chrome.css, state.css, focus-dive.css for surface-specific overrides)
 
 Acceptance proof:
 
@@ -69,7 +69,7 @@ Likely files:
 - `css/search.css`
 - `css/progressive_disclosure.css`
 - `css/strands.css`
-- `css/mobile_premium.css`
+- The `css/mobile_premium__*.css` split (focus-dive.css, surfaces.css, state.css)
 
 Acceptance proof:
 
@@ -102,7 +102,7 @@ Likely files:
 - `js/modules/journey.js`
 - `css/journey_active.css`
 - `css/progressive_disclosure.css`
-- `css/mobile_premium.css`
+- The `css/mobile_premium__*.css` split (state.css, focus-dive.css)
 
 Acceptance proof:
 
@@ -117,7 +117,7 @@ Goal: assign canonical geometry owners for search, focus-search, and semantic-di
 
 Observed evidence:
 
-- Focus/search/dive selectors still exist across `journey_active.css`, `progressive_disclosure.css`, `strands.css`, and the collapsed `mobile_premium.css`.
+- Focus/search/dive selectors still exist across `journey_active.css`, `progressive_disclosure.css`, `strands.css`, and the `css/mobile_premium__*.css` split.
 - `body.is-active` is present at runtime, but the effective winning rules still vary by specificity and order.
 - `docs/semantic-demo-css-ownership-map.md` and `docs/semantic-demo-mobile-state-ownership.md` identify the intended direction but the live UI shows unresolved overlap.
 

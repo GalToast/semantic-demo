@@ -40,7 +40,7 @@ Short-landscape QA intentionally uses multiple landscape mobile widths. Do not c
 
 Release/checkpoint short-landscape proof should run `npm run qa:short-landscape:release`. Full launch visual proof should additionally run `npm run qa:surface:short-landscape` or `npm run qa:surface:all`.
 
-At `896x414`, `css/mobile_premium.css` owns compact focus-stage suppression for nonessential `.focus-stage-meta` and `.focus-stage-badges` rows so the primary name, short description, and Step Inside action remain inside the viewport. Its chrome section owns the competing chrome lane at the same breakpoint: focus/semantic states hide canvas utility controls, share/help/panel toggles, weather/time widgets, and clipped compass note copy while preserving the view toggle.
+At `896x414`, `css/mobile_premium__focus-dive.css` owns compact focus-stage suppression for nonessential `.focus-stage-meta` and `.focus-stage-badges` rows so the primary name, short description, and Step Inside action remain inside the viewport. `css/mobile_premium__chrome.css` owns the competing chrome lane at the same breakpoint: focus/semantic states hide canvas utility controls, share/help/panel toggles, weather/time widgets, and clipped compass note copy while preserving the view toggle.
 
 ### `data-panel-surface` + `data-focus-panel-mode="field-node"`
 
@@ -100,7 +100,7 @@ Mobile map-trail is owned by the map surface, not by the legacy selected-card pa
 
 `map-trail` itself is a constructed visual guard, not the expected steady-state result of the visible mobile product route. When the route has a focused business and search context, composition resolves to `map-focus-search`; when it has neither, it resolves to `map-idle`. Keep `11-mobile-selected-card-map-trail` as a regression guard for stale/legacy trail geometry, and use `24-mobile-map-focus-search` for real-click proof of the active mobile map traversal surface.
 
-Edit map trail strip chrome and map/search sheet geometry in the matching MAP / STATE-MACHINE / SURFACES sections of `css/mobile_premium.css`. Do not re-enable `.selected-card`, `.selected-empty`, or `.info-header` for mobile map surfaces unless the contract and this ownership note are intentionally changed together.
+Edit map trail strip chrome and map/search sheet geometry in the matching sections of the `css/mobile_premium__*.css` split: `css/mobile_premium__map.css` for map chrome and trail strip, `css/mobile_premium__state.css` for state-machine visibility, `css/mobile_premium__surfaces.css` for late geometry corrections. Do not re-enable `.selected-card`, `.selected-empty`, or `.info-header` for mobile map surfaces unless the contract and this ownership note are intentionally changed together.
 
 ### Mobile Map-Focus-Search Ownership
 
@@ -160,14 +160,14 @@ Search continuation belongs to the visible Search affordance, not to county rese
 | `data-mobile-route-peek` is transient | This attribute compresses mobile chrome during route preview. New layout rules should still be scoped by `data-panel-surface`; do not let route-peek become a second primary panel owner. |
 | `data-semantic-dive` vs `data-panel-surface="semantic-dive"` | `data-semantic-dive` is for transition/canvas choreography. Stable semantic-dive panel layout belongs to `data-panel-surface="semantic-dive"`. |
 | `data-terrain-handoff` and `data-camera-assist` are choreography signals | Keep these attributes limited to map/camera effects. They should not own general panel visibility or drawer geometry. |
-| Legacy focus fragments (`.focus-stage-filed`, `.focus-stage-meta`, `.focus-stage-badges`, `.focus-stage-trivia`) | `css/mobile_premium.css` owns suppression for `focus-search` and `semantic-dive` states plus cascade-last geometry/suppression backstops for non-focus mobile states. Keep edits in the matching named section. |
+| Legacy focus fragments (`.focus-stage-filed`, `.focus-stage-meta`, `.focus-stage-badges`, `.focus-stage-trivia`) | `css/mobile_premium__focus-dive.css` owns suppression for `focus-search` and `semantic-dive` states; `css/mobile_premium__surfaces.css` owns cascade-last geometry/suppression backstops for non-focus mobile states. Keep edits in the matching named file. |
 
 ## Migration Rules
 
-1. **Adding a new panel state** -> add to `data-panel-surface` values; write CSS in `css/layout_base.css` (base) or the matching section of `css/mobile_premium.css` (mobile). Never add a new standalone `data-*` attribute without updating this document.
+1. **Adding a new panel state** -> add to `data-panel-surface` values; write CSS in `css/layout_base.css` (base) or the matching file of the `css/mobile_premium__*.css` split (mobile). Never add a new standalone `data-*` attribute without updating this document.
 2. **Adding a new journey phase** -> update journey compass state/action synthesis and let `js/modules/journey-compass-controller.js` write `document.body.dataset.journeyPhase`. If CSS needs to respond, add a corresponding `.journey-compass[data-phase="..."]` rule - not a body attribute rule.
 3. **Changing mobile search drawer behavior** -> edit `setMobileSearchSheetMode()` in `js/modules/search-panel-adapter.js`. The composition mirror in `lifecycle.js` should not need changes.
-4. **Changing focus HUD density** -> edit `css/journey_active.css` for legacy field-node choreography and the `FOCUS / DIVE STATES` or `SURFACES` section in `css/mobile_premium.css` for active mobile focus-search/semantic-dive composition and fallback backstops. Do not invent a new `data-focus-panel-mode` value without a corresponding JS writer and contract update.
+4. **Changing focus HUD density** -> edit `css/journey_active.css` for legacy field-node choreography and `css/mobile_premium__focus-dive.css` (focus/dive composition) or `css/mobile_premium__surfaces.css` (fallback backstops) for active mobile focus-search/semantic-dive. Do not invent a new `data-focus-panel-mode` value without a corresponding JS writer and contract update.
 5. **Adding route/camera choreography CSS** -> prefer `css/shell.css` for canvas/map effects and `css/journey_active.css` for journey-compass effects. Do not add panel layout rules under `data-terrain-handoff`, `data-camera-assist`, or `data-mobile-route-peek`.
 
 ## Composition State Writer Ownership

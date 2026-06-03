@@ -3,7 +3,7 @@ import { state } from '../state.js';
 import { subscribeKeyed, EVENTS } from './event-bus.js';
 // utils
 import { formatBusinessName, cleanPublicNoteText } from './utils/dom-formatters.js';
-import { isMapSummarySurface } from './environment.js';
+import { isMapSummarySurface, isSemanticDiveSurface } from './environment.js';
 
 // journey-compass-state
 import { getFocusedJourneyPoint, getJourneyCompassState } from './journey-compass-state.js';
@@ -99,8 +99,7 @@ function getMobileJourneyActionLabel(action = {}, fallback = '') {
 
 export function syncJourneyCompassActions(compassState = {}) {
     const suppressInsideDiveActions =
-        compassState.phase === 'inside' &&
-        document.body?.dataset?.panelSurface === 'semantic-dive';
+        compassState.phase === 'inside' && isSemanticDiveSurface();
     const buttons = [
         [document.getElementById('btn-journey-primary'), compassState.primaryAction, 'primary'],
         [document.getElementById('btn-journey-secondary'), compassState.secondaryAction, 'secondary'],

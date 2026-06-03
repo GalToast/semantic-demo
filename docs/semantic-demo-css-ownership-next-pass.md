@@ -4,7 +4,7 @@
 **Task:** Analysis only - no CSS edits
 **Output:** `docs/semantic-demo-css-ownership-next-pass.md`
 
-**Status:** Historical/superseded by the 2026-06-02 mobile premium collapse. Split-file names below describe the pre-collapse cascade; current edits belong in the matching named section inside `css/mobile_premium.css`.
+**Status:** Historical/superseded twice. First by the 2026-06-02 mobile premium collapse into `css/mobile_premium.css`, then by the 2026-06-03 un-collapse back into the 7-file `css/mobile_premium__*.css` split. Split-file names below describe the pre-2026-06-02 cascade; current edits belong in the matching file of the current 7-file split.
 
 ---
 

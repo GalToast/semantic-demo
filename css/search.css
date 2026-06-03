@@ -51,7 +51,7 @@ body:is(
    hint that more results exist below without obscuring content.
    Uses position: sticky on a pseudo-element so it follows the viewport
    bottom regardless of scroll position. Safe to layer over any
-   background-image already set by mobile_premium.css. */
+   background-image already set by css/mobile_premium__chrome.css. */
 body:is(
         [data-panel-surface='search'],
         [data-panel-surface='focus-search'],
@@ -1546,7 +1546,7 @@ body.searching .search-container.has-query .search-clear-btn {
     letter-spacing: 0.06em;
     text-align: center;
     text-transform: uppercase;
-    /* Default: no wrap, single line. Tighter breakpoints (mobile_premium.css
+    /* Default: no wrap, single line. Tighter breakpoints (css/mobile_premium__narrow.css
        @media (max-width: 360px)) allow wrap and reduce tracking so the
        47-char "Montgomery County records in the semantic field" caption
        doesn't bleed past a 320px viewport. */

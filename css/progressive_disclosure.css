@@ -804,8 +804,8 @@ body[data-panel-surface='semantic-dive']::after {
 }
 
 /* Redundant block removed — mobile journey-compass layout now owned by
-   the SURFACES section in css/mobile_premium.css (cascade load order:
-   layout_base → mobile_base → mobile_premium.css; the collapsed mobile
+   the SURFACES section in css/mobile_premium__surfaces.css (cascade load order:
+   layout_base → mobile_base → mobile_premium__*.css; the split mobile
    owner provides the shared non-map .journey-compass rule this block duplicated).
    focus-search overrides remain at pcss:1243+ below. */
 

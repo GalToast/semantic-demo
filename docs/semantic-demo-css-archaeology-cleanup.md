@@ -1,6 +1,6 @@
 # CSS Archaeology Cleanup Roadmap
 
-Status: historical/superseded. As of 2026-06-02, the mobile premium split files were collapsed into `css/mobile_premium.css`; split-file references below describe the pre-collapse cascade and should not be used as current edit targets.
+Status: historical/superseded (twice). First: 2026-06-02, the mobile premium split files were collapsed into `css/mobile_premium.css`. Then: 2026-06-03, the collapse was reversed and the cascade was un-collapsed into the 7-file `css/mobile_premium__*.css` split. The pre-collapse references below describe the pre-2026-06-02 split cascade; treat them as the relevant file in the current 7-file split.
 
 ## Session
 - Date: 2026-05-19
