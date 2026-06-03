@@ -1,5 +1,5 @@
-/* Mobile journey-compass layout moved to css/mobile_premium_surfaces.css and
-   css/mobile_premium_focus.css. Keep this file limited to base/mobile atoms. */
+/* Mobile journey-compass layout moved to css/mobile_premium.css. Keep this
+   file limited to base/mobile atoms and reduced-motion support. */
 
 .surprise-btn:not(.disabled):not(.is-loading):hover {
     animation: pulse-cyan-glow 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
@@ -71,7 +71,7 @@
 }
 
 .help-box strong {
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
 }
 
 .help-box em {
@@ -160,8 +160,10 @@ html body[data-panel-surface] .control-btn {
     transition: opacity 0.22s ease, transform 0.22s ease;
 }
 
+/* Selector order, not !important: `.active` is two-class specificity,
+   outranking the single-class base rule without needing the cascade escape. */
 .experience-reset-toast.active {
-    opacity: 1 !important;
+    opacity: 1;
     transform: translateY(0) scale(1);
     pointer-events: auto;
 }
@@ -207,7 +209,7 @@ html body[data-panel-surface] .control-btn {
     position: fixed;
     pointer-events: none;
     z-index: var(--z-blocker);
-    border: 2px solid #4ecdc4;
+    border: 2px solid var(--color-primary-alt);
     border-radius: 8px;
     animation: selectPulse 2s ease-in-out infinite;
 }

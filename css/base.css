@@ -57,6 +57,8 @@
     --color-primary-tint: #79ebde;
     --color-primary-tint-rgb: 121, 235, 222;
     --color-primary-tint-soft: rgba(121, 235, 222, 0.2);
+    --color-primary-alt: #4ecdc4;
+    --color-primary-alt-rgb: 78, 205, 196;
     --color-accent: #ffdf4c;
     --color-accent-rgb: 255, 223, 76;
     --color-accent-soft: rgba(255, 223, 76, 0.1);
@@ -142,6 +144,10 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+    font-family: var(--font-body, 'Nunito Sans', system-ui, sans-serif);
+    color: var(--color-text-primary, rgba(255, 255, 255, 0.94));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Skip Link — accessibility */

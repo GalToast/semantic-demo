@@ -415,7 +415,10 @@ body[data-panel-surface="map-focus-search"] .trail-context {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    /* Selector order, not !important: this rule is later in source order
+       than the base `.galaxy-cluster-label` rule (line 363) and shares its
+       specificity, so it wins the cascade. strands.css uses the same pattern. */
     .galaxy-cluster-label {
-        transition: none !important;
+        transition: none;
     }
 }

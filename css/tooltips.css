@@ -92,7 +92,7 @@
 }
 
 .hover-tooltip .contact-row a {
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     text-decoration: none;
     transition: color 0.2s;
 }
