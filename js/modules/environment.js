@@ -83,3 +83,21 @@ export function getDevicePixelRatio() {
         ? window.devicePixelRatio
         : 1;
 }
+
+/**
+ * Returns the current value of `data-panel-surface` on `<body>`, or `''` when
+ * the dataset is unavailable (SSR, tests without a DOM).
+ */
+export function getPanelSurface() {
+    if (typeof document === 'undefined') return '';
+    return document.body?.dataset?.panelSurface || '';
+}
+
+/**
+ * Returns true when the mobile map-focus-search surface is the active panel
+ * — the state that owns the dedicated `#selected-map-summary` content
+ * variant and the map trail strip.
+ */
+export function isMapSummarySurface() {
+    return getPanelSurface() === 'map-focus-search';
+}

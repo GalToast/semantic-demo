@@ -45,10 +45,7 @@ export function getJourneyCompassState() {
         const focusIndex = Number.isFinite(state.navState?.focusedIndex)
             ? state.navState.focusedIndex
             : state.focusedNode;
-        const nextCandidate = getNextExploreCandidateForIndex(focusIndex, getNextWalkCandidateForIndex, {
-            requireSemantic: state.currentView === 'galaxy',
-            requireOnCanvas: state.currentView === 'galaxy'
-        });
+        const nextCandidate = getNextExploreCandidateForIndex(focusIndex, getNextWalkCandidateForIndex);
         const nextPoint = nextCandidate ? state.points[nextCandidate.index] : null;
         const clusterName = focusedPoint ? describeCluster(focusedPoint.cluster) : 'Neighborhood';
 
@@ -100,7 +97,7 @@ export function getJourneyCompassState() {
             // leave the top header title empty so the journey status isn't a duplicate.
             title: '',
             note: isSearchFocus
-                ? 'This is the search corridor, gathered around its strongest semantic anchor.'
+                ? 'The strongest semantic match for this search.'
                 : 'A local constellation of related businesses. Hover any glowing connection to see why it exists.',
             primaryAction: primaryAction,
             secondaryAction: secondaryAction,

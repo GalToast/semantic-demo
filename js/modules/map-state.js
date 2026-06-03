@@ -301,14 +301,17 @@ export function centerMapOnRouteAnchor() {
     const routeLatLngs = routePoints.map(({ point }) => [point.lat, point.lng]);
     if (routeLatLngs.length >= 2) {
         const bounds = window.L.latLngBounds(routeLatLngs);
+        // maxZoom 13 left the cluster too small (Willis → Conroe → Cleveland
+        // spans ~30 miles; 42% padding on top of that pulls the camera way
+        // back). 15 keeps the trail legible while still showing the anchor.
         state.map.fitBounds(bounds.pad(0.42), {
             animate: true,
-            maxZoom: 13,
+            maxZoom: 15,
             paddingTopLeft: [22, isMobileViewport() ? 250 : 96],
             paddingBottomRight: [22, 120]
         });
     } else {
-        state.map.setView([focusPoint.lat, focusPoint.lng], 14, { animate: true });
+        state.map.setView([focusPoint.lat, focusPoint.lng], 15, { animate: true });
     }
     return true;
 }

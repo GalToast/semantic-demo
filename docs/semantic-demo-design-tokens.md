@@ -56,10 +56,17 @@ Policy: avoid one-note color expansion. New UI should not become only cyan-on-sl
 | `--glass-border` | `1px solid rgba(255, 255, 255, 0.075)` | Standard glass border |
 | `--glass-border-glow` | `1px solid rgba(82, 229, 215, 0.35)` | Active or high-emphasis border |
 | `--glass-border-muted` | `1px solid rgba(255, 255, 255, 0.04)` | Quiet separators |
+| `--glass-reflection` | `rgba(255, 255, 255, 0.08)` | Standard inset glass highlight |
+| `--glass-reflection-soft` | `rgba(255, 255, 255, 0.04)` | Soft inset glass highlight |
+| `--glass-reflection-strong` | `rgba(255, 255, 255, 0.12)` | Strong inset glass highlight |
+| `--glass-reflection-muted` | `rgba(255, 255, 255, 0.05)` | Muted glass highlight and border support |
 | `--glass-blur-light` | `10px` | Light backdrop blur |
 | `--glass-blur` / `--glass-blur-medium` | `20px` | Standard backdrop blur |
 | `--glass-blur-heavy` | `28px` | Heavy backdrop blur |
 | `--glass-blur-ultra` | `44px` | Modal or high-isolation blur |
+| `--shadow-umbra` | `rgba(0, 0, 0, 0.54)` | Deepest shared shadow layer |
+| `--shadow-penumbra` | `rgba(0, 0, 0, 0.24)` | Middle shared shadow layer |
+| `--shadow-antumbra` | `rgba(0, 0, 0, 0.12)` | Soft outer shared shadow layer |
 | `--shadow-glass` | `0 24px 64px rgba(0, 0, 0, 0.54), inset 0 1px 0 rgba(255, 255, 255, 0.08)` | Standard panel elevation |
 | `--shadow-glass-glow` | `0 16px 48px rgba(82, 229, 215, 0.20), 0 0 24px rgba(82, 229, 215, 0.08)` | Active glass glow |
 | `--shadow-premium-glow` | `0 20px 56px rgba(82, 229, 215, 0.25), 0 0 30px rgba(82, 229, 215, 0.12)` | Strong feature glow |

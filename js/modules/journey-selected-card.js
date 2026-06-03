@@ -13,6 +13,7 @@ import {
     syncSelectedCardContentVariant,
 } from './ui-renderers.js';
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
+import { isMapSummarySurface } from './environment.js';
 
 const selectedCardAdapter = {
     getStrandArrivalNote: () => '',
@@ -268,7 +269,7 @@ export function updateSelectedBusiness(point, options = {}) {
     if (!point) {
         if (cardEl) cardEl.style.opacity = '0';
         setTimeout(() => {
-            if (cardEl) cardEl.style.opacity = '1';
+            if (cardEl && cardEl.style.opacity !== '1') cardEl.style.opacity = '1';
         }, 180);
         emptyEl.style.display = '';
         detailsEl.hidden = true;
@@ -322,11 +323,12 @@ export function updateSelectedBusiness(point, options = {}) {
     // Detect transition into populated state by reading the rendered
     // visibility of the details panel (single source of truth for the
     // card's empty/populated visibility, set by setSurfaceHidden).
+    const mapSummarySurface = isMapSummarySurface();
     const cardWasEmpty = detailsEl && window.getComputedStyle(detailsEl).display === 'none';
-    if (cardWasEmpty) {
+    if (cardWasEmpty && !mapSummarySurface) {
         cardEl.style.opacity = '0';
         setTimeout(() => {
-            cardEl.style.opacity = '1';
+            if (cardEl && cardEl.style.opacity !== '1') cardEl.style.opacity = '1';
         }, 180);
     }
     if (cardEl) applyClusterUiAccent(cardEl, point);

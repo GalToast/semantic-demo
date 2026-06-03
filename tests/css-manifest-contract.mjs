@@ -138,4 +138,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('CSS manifest contract passed: semantic-demo.css is an import shell; mobile_premium split is the collapsed mobile owner.');
+console.log('CSS manifest contract passed: semantic-demo.css is an import shell; mobile_premium split is the loaded mobile owner.');

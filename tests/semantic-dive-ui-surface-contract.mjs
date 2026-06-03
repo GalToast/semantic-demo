@@ -185,9 +185,31 @@ withStateMutation(() => {
   state.navState.focusedIndex = 4;
   state.trailDepth = 2;
 });
+const fallbackCalls = [];
+initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: (index, options) => {
+  fallbackCalls.push({ index, options });
+  return fallbackCalls.length === 1 ? null : { index: 9 };
+} });
+syncSemanticDiveUi();
+assert(fallbackCalls.length === 2, 'next-candidate lookup falls back after strict semantic/on-canvas miss');
+assert(fallbackCalls[0].options.requireSemantic === true, 'first next-candidate lookup is strict semantic');
+assert(fallbackCalls[0].options.requireOnCanvas === true, 'first next-candidate lookup is strict on-canvas');
+assert(fallbackCalls[1].options.requireSemantic === false, 'fallback next-candidate lookup permits non-semantic candidates');
+assert(fallbackCalls[1].options.requireOnCanvas === false, 'fallback next-candidate lookup permits off-canvas candidates');
+assert(dom.insideControls.dataset.nextState === 'available', 'fallback candidate still marks next action available');
+assert(dom.insideStatusCopy.textContent === 'Follow a connection or go back.', 'fallback candidate avoids dead-end copy');
+assert(dom.insideNext.hidden === false, 'next button remains visible with fallback candidate');
+
+resetState();
+dom = resetDom();
+withStateMutation(() => {
+  state.focusedNode = 4;
+  state.navState.focusedIndex = 4;
+  state.trailDepth = 2;
+});
 initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: () => null });
 syncSemanticDiveUi();
-assert(dom.insideStatusCopy.textContent === 'No nearby stop is available. Use Map or County.', 'active no-candidate copy is stable');
+assert(dom.insideStatusCopy.textContent === 'Neighborhood preview is complete. Use Map or County.', 'active no-candidate copy is stable');
 assert(dom.insideNext.disabled === true, 'next button disabled without candidate');
 assert(dom.insideNext.textContent === 'Trail Complete', 'next button no-candidate copy is stable');
 assert(dom.insideNext.hidden === true, 'next button hidden when trail is complete');

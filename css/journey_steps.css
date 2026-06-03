@@ -130,12 +130,6 @@ html[data-legend-active='true'] .focus-lens-truth {
             linear-gradient(180deg, rgba(5, 17, 23, 0.88), rgba(3, 7, 12, 0.94));
         backdrop-filter: blur(var(--glass-blur-ultra));
         -webkit-backdrop-filter: blur(var(--glass-blur-ultra));
-        /* Cap the rail so 5+ neighbor cards don't push the canvas off the
-           visible viewport. Scroll-within-visible keeps every action in
-           arm's reach while the user reads the cards in order. */
-        max-height: calc(100vh - 32px);
-        overflow-y: auto;
-        overscroll-behavior: contain;
         box-shadow:
             0 40px 100px -10px var(--shadow-umbra),
             0 0 0 1px rgba(var(--color-primary-tint-rgb), 0.25),

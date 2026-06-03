@@ -1361,4 +1361,69 @@ The black scale:
 
 Next sweep (if anyone wants it): ~100 white/black literals remain, mostly in low-traffic areas. The further-out the alpha from a scale step, the more drift. Stop here unless a theming use case forces the work.
 
+## Simplify pass (2026-06-03) — visqual critique + code smells sweep
+
+Three review agents (reuse, quality, efficiency) + manual visqual pass on the 11 walkthrough-r6 PNGs. The simplify skill ran a parallel wave, which I then narrowed to direct work per the subagent-cap feedback. Aggregate result: 12 code fixes + 1 visual fix + 1 broken-CSS restoration + 1 regression test.
+
+### Code fixes (12)
+
+**Code reuse / quality:**
+- New `getPanelSurface()` + `isMapSummarySurface()` helpers in `js/modules/environment.js`. Replaced 4 inline `panelSurface === 'map-focus-search'` checks across `focus-stage-renderer.js`, `journey-selected-card.js`, `journey-compass-controller.js`, `view-controller.js`.
+- Removed dead `requireSemantic` / `requireOnCanvas` options from `getNextExploreCandidateForIndex()` call in `journey-compass-state.js:48` — they were footgun defaults that never fired.
+
+**Inline-style cleanup (partial):**
+- Added a declarative CSS rule `#selected-card[data-content-owner='selected-map-summary'] { opacity: 1; }` in `css/mobile_premium__map.css` to replace JS-side `style.opacity = '1'` writes.
+- Removed the inline write in `journey-selected-card.js` for the map-summary case.
+- Kept (with `if (style.opacity !== '1')` no-op guard) the inline write in `focus-stage-renderer.js`'s `syncSelectedCardContentVariant` for the map-summary case — the empty-state path's 180ms `setTimeout(..., '0' → '1')` races with the CSS rule, and inline wins over CSS, so without the explicit re-assert the test caught a 0-opacity state mid-fade. Full elimination needs a class-toggle + `transition: opacity 180ms` refactor (separate work).
+- Added no-op guard `if (cardEl && cardEl.style.opacity !== '1')` in the setTimeout fade-in callback.
+
+**Tests:**
+- Named `OPACITY_VISIBLE_THRESHOLD = 0.95` constant in `tests/ui-quality-contract.mjs` (was a magic 0.95).
+- Replaced copy-banning regex on `no nearby stop is available` with a behavioral contract (checks `#btn-inside-next.disabled` instead of banning a phrase).
+- Captured `rect` once in the neighbor-overlap check (Eff 1: 12 forced reflows → 6).
+- Replaced 4 redundant `visibleChrome()` calls with `visibleChromeSurfaces.find()` lookups (Eff 5).
+- Dropped the two regex pins on `cardEl.style.opacity = '1'` in `tests/map-focus-search-content-owner-contract.mjs` (Agent 2's 4j).
+- Updated the same file's `cardWasEmpty && !isMapSummarySurface` ladder regex to accept the new helper name.
+
+**CSS architecture:**
+- Reordered `:root` in `css/base.css` so the Semantic Color Tokens block precedes the shadow tokens that reference them. The original ordering worked (CSS custom-property resolution is lazy) but misled maintainers — fix puts the file's visual order in line with resolution order.
+- Deleted the WHAT-narrating "Visual separator" comment in `css/journey_steps.css:456-458`.
+- Rewrote misleading "specificity outranks it" comment in `css/mobile_premium__narrow.css:31-34` to mention `[data-density='compact']` as the actual specificity driver.
+
+### Visual fixes (1)
+
+- **Search placeholder clipping on mobile 390**: shortened `vector-explorer-polished.html:314` from `Search need, service, or clue...` (33 chars) to `Search by need or clue…` (24 chars) so it fits without ellipsis.
+
+Other visqual items from the 11 walkthrough PNGs were either already fixed in prior commits (MOCK pill, placeholder compression already in the pipeline) or were not real bugs. I caught and corrected 3 hallucinated findings ("Image 1 of 0", "(Round 4 fix)" annotation, "loud MOCK pills") by re-running `mmx_vision_describe` on the same images — the descriptive text contradicted my pattern-matched guesses. The lesson: built-in vision renders the image but I still need to read the text, not predict it.
+
+### Broken-CSS restoration (1f7456b cascade)
+
+Commit `1f7456b refactor(css): sweep 247 white/black rgba literals to design tokens` correctly converted 247 use sites to `var(--token)` but ALSO rewrote the token *definitions* themselves into self-references in `css/base.css`:
+- `--glass-reflection: var(--glass-reflection)` (should be `rgba(255,255,255,0.08)`)
+- Same pattern for `--glass-reflection-fade/glow/soft/strong/muted`, `--shadow-umbra/penumbra/antumbra`, `--color-border-muted`, `--color-text-strong/primary/secondary/muted`
+
+Every property that pointed at a broken token resolved to undefined. Cascaded to every component. **This was already fixed by commit `957a802` ("fix(tokens): break circular references in :root token declarations") before the simplify session started.** I noticed the broken state at the start of the session and was about to restore values, but `957a802` (authored by Fred, also Co-Authored-By: Claude Opus 4.7) had already shipped the fix.
+
+I confirmed the same self-reference pattern does NOT exist in any other CSS file (grepped all 20). The fix landed correctly in `957a802`; no further action needed in this pass.
+
+### Regression test (new)
+
+`tests/css-self-reference-check.mjs` — scans every CSS file in `css/` for the `--foo: var(--foo)` pattern and fails if any are found. Wired into `npm run check:manifest` and as a standalone `npm run check:no-self-refs`. Prevents the `1f7456b` failure mode from happening again. The script's allowlist is empty: self-referencing custom properties are never valid CSS.
+
+### Verified
+
+- `npm run build` — `dist/bundle.js` rebuilt to 446.7kb, source changes reflected.
+- `npm run check:no-self-refs` — passes.
+- `npm run check:ownership` — passes (the map-focus-search content-owner contract accepts the new helper).
+- `node tests/ui-quality-contract.mjs --headless` — 10/10 states, 185/185 assertions, 0 failures. The `OPACITY_VISIBLE_THRESHOLD` rename + `visibleChromeSurfaces.find()` rewrites + no-op-guarded inline restore all work.
+- `node tests/map-focus-search-content-owner-contract.mjs` — all 6 sub-tests pass after the helper-name regex update.
+
+### Deferred (noted for future)
+
+- Token migration partial rollout (Reuse 1, 3, 4) — 100+ sites still raw rgba across 22 CSS files. Belongs in a dedicated cleanup commit.
+- Full inline-style elimination for map-summary case — needs class-toggle + CSS transition refactor.
+- Test reimplements `rectFor()` shape in `ui-quality-contract.mjs:587-608` (Reuse 11).
+- Right-rail icon column touch-target on tablet/desktop.
+- "Open side panel" discoverability in collapsed info-panel state.
+
 

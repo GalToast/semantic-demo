@@ -52,6 +52,7 @@ const states = [
   { name: 'mobile-field-node', viewport: mobile, params: { view: 'galaxy', q: 'coffee', anchor: '519' }, setup: forceFieldNode },
   { name: 'mobile-thread-preview', viewport: mobile, params: { view: 'galaxy', q: 'coffee', anchor: '519' }, setup: forceThreadPreview },
   { name: 'mobile-semantic-dive', viewport: mobile, params: { view: 'galaxy', q: 'coffee', anchor: '1', mode: 'trail', depth: '2', record: '1' } },
+  { name: 'mobile-map-focus-search', viewport: mobile, params: { view: 'map', q: 'coffee', anchor: '519', depth: '2', record: '519' } },
   { name: 'desktop-idle', viewport: desktop, params: { view: 'galaxy' } },
 ];
 
@@ -292,6 +293,10 @@ async function auditState(page, name) {
         && rect.height > 0
         && inViewport;
     }
+
+    // Below this, a fully-laid-out element is treated as effectively invisible
+    // by the test — leaves headroom for mid-transition opacity ramps.
+    const OPACITY_VISIBLE_THRESHOLD = 0.95;
 
     function rectFor(selector) {
       const el = document.querySelector(selector);
@@ -562,7 +567,7 @@ async function auditState(page, name) {
       }
 
       const threadInspectSurface = document.body.dataset.threadInspectSurface || '';
-      const threadInspector = visibleChrome('#focus-thread-inspector');
+      const threadInspector = visibleChromeSurfaces.find((surface) => surface.selector === '#focus-thread-inspector');
       if ((panelSurface === 'focus' || panelSurface === 'focus-search') && threadInspectSurface === 'idle' && threadInspector) {
         failures.push({
           check: 'composition:focus-idle-thread-preview-visible',
@@ -572,7 +577,7 @@ async function auditState(page, name) {
         });
       }
 
-      const diveButton = visibleChrome('.focus-stage-dive-btn');
+      const diveButton = visibleChromeSurfaces.find((surface) => surface.selector === '.focus-stage-dive-btn');
       if ((panelSurface === 'focus' || panelSurface === 'focus-search') && threadInspectSurface && threadInspectSurface !== 'idle' && diveButton) {
         failures.push({
           check: 'composition:preview-step-inside-visible',
@@ -582,7 +587,34 @@ async function auditState(page, name) {
         });
       }
 
-      const nearbyStops = visibleChrome('.focus-stage-neighbors');
+      if (panelSurface === 'focus-search' && diveButton) {
+        const neighborPills = Array.from(document.querySelectorAll('.focus-stage-neighbor-pill'))
+          .map((pill) => {
+            const rect = pill.getBoundingClientRect();
+            return visible(pill) ? { pill, rect } : null;
+          })
+          .filter(Boolean);
+        for (const { pill, rect } of neighborPills) {
+          if (overlaps(diveButton, rect, 0)) {
+            failures.push({
+              check: 'composition:focus-neighbor-cta-overlap',
+              selector: '.focus-stage-neighbor-pill',
+              state: name,
+              rect: {
+                x: rect.x,
+                y: rect.y,
+                width: rect.width,
+                height: rect.height,
+                right: rect.right,
+                bottom: rect.bottom,
+              },
+              cta: diveButton,
+            });
+          }
+        }
+      }
+
+      const nearbyStops = visibleChromeSurfaces.find((surface) => surface.selector === '.focus-stage-neighbors');
       if ((panelSurface === 'focus' || panelSurface === 'focus-search') && threadInspectSurface && threadInspectSurface !== 'idle' && nearbyStops && nearbyStops.height < 40) {
         failures.push({
           check: 'composition:preview-nearby-stops-squeezed',
@@ -641,6 +673,53 @@ async function auditState(page, name) {
             selector: '#btn-inside-next',
             state: name,
             rect: rectFor('#btn-inside-next'),
+          });
+        }
+        // Assert the dead-end behavior contractually: when the route has
+        // nowhere left to go, the next-action button is disabled. Pinning
+        // a specific phrase (e.g. "no nearby stop is available") would
+        // break the test on any future copy polish for a UI-only reason.
+        const completeBtn = document.querySelector('#btn-inside-next');
+        const insideStatusCopy = document.querySelector('#focus-stage-inside-status-copy');
+        if (
+          insideStatusCopy
+          && /no (more )?(nearby|linked) (stops?|matches?|next) (is )?available/i.test(insideStatusCopy.textContent || '')
+          && completeBtn && !completeBtn.disabled
+        ) {
+          failures.push({
+            check: 'composition:semantic-dive-dead-end-button-enabled',
+            selector: '#btn-inside-next',
+            state: name,
+            text: insideStatusCopy.textContent,
+          });
+        }
+      }
+
+      if (panelSurface === 'map-focus-search') {
+        const selectedCard = document.querySelector('#selected-card');
+        if (!selectedCard || selectedCard.dataset.contentOwner !== 'selected-map-summary') {
+          failures.push({
+            check: 'composition:map-summary-content-owner',
+            selector: '#selected-card',
+            state: name,
+            owner: selectedCard?.dataset.contentOwner || '',
+          });
+        }
+        const selectedCardStyle = selectedCard ? getComputedStyle(selectedCard) : null;
+        if (selectedCardStyle && selectedCardStyle.display !== 'none' && Number(selectedCardStyle.opacity || 1) < OPACITY_VISIBLE_THRESHOLD) {
+          failures.push({
+            check: 'composition:map-summary-invisible-selected-card',
+            selector: '#selected-card',
+            state: name,
+            opacity: selectedCardStyle.opacity,
+          });
+        }
+        const selectedMapSummary = document.querySelector('#selected-map-summary');
+        if (!visible(selectedMapSummary)) {
+          failures.push({
+            check: 'composition:map-summary-hidden',
+            selector: '#selected-map-summary',
+            state: name,
           });
         }
       }

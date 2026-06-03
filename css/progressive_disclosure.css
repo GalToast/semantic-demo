@@ -695,7 +695,7 @@ body[data-panel-surface='semantic-dive']::after {
 .search-suggestion-chip {
     background: var(--glass-reflection-muted);
     border: 1px solid var(--glass-reflection);
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-text-secondary);
     padding: 6px 12px;
     border-radius: 100px;
     font-size: 12px;

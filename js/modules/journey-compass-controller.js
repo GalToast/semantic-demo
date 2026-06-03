@@ -3,6 +3,7 @@ import { state } from '../state.js';
 import { subscribeKeyed, EVENTS } from './event-bus.js';
 // utils
 import { formatBusinessName, cleanPublicNoteText } from './utils/dom-formatters.js';
+import { isMapSummarySurface } from './environment.js';
 
 // journey-compass-state
 import { getFocusedJourneyPoint, getJourneyCompassState } from './journey-compass-state.js';
@@ -185,8 +186,7 @@ export function executeJourneyCompassAction(action) {
             const focusSearchInput = () => window.requestAnimationFrame(() => {
                 document.getElementById('search-input')?.focus();
             });
-            const isMapFocusSearch = state.currentView === 'map'
-                && document.body?.dataset?.panelSurface === 'map-focus-search';
+            const isMapFocusSearch = state.currentView === 'map' && isMapSummarySurface();
 
             if (isMapFocusSearch) {
                 resetExplorationFocus({ preserveSearch: true, skipUrlSync: true });

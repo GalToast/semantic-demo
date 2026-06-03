@@ -149,7 +149,8 @@ describe('journey-selected-card', () => {
             const emptyEl = document.getElementById('selected-empty');
             expect(emptyEl.style.display).toBe('');
             const detailsEl = document.getElementById('selected-details');
-            expect(detailsEl.style.display).toBe('none');
+            expect(detailsEl.hidden).toBe(true);
+            expect(detailsEl.classList.contains('active')).toBe(false);
         });
 
         it('populates card when point is provided', () => {
@@ -158,7 +159,8 @@ describe('journey-selected-card', () => {
             const emptyEl = document.getElementById('selected-empty');
             expect(emptyEl.style.display).toBe('none');
             const detailsEl = document.getElementById('selected-details');
-            expect(detailsEl.style.display).toBe('block');
+            expect(detailsEl.hidden).toBe(false);
+            expect(detailsEl.classList.contains('active')).toBe(true);
         });
 
         it('renders lat/lng in map field', () => {

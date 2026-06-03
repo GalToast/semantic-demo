@@ -15,7 +15,7 @@ The module order below is the cascade order. The first reconstruction preserved 
 
 Treat CSS state ownership as the next cleanup seam. Do not move visual rules yet unless a surface has a failing contract or a specific visual bug. The useful work now is to keep state docs and contracts aligned with the actual cascade so later visual edits land in the right module.
 
-As of 2026-06-02, `css/mobile_premium.css` is the collapsed single source for final premium mobile overrides. The old split files (`mobile_premium_focus.css`, `mobile_premium_chrome.css`, `mobile_premium_state.css`, `mobile_premium_idle.css`, `mobile_premium_map_summary.css`, `mobile_premium_surfaces.css`) are no longer loaded or present in `css/`; treat their names in older notes as section labels inside `mobile_premium.css`, not as edit targets.
+As of 2026-06-03, the final premium mobile owner is the ordered split loaded directly by `vector-explorer-polished.html`: `css/mobile_premium__focus-dive.css`, `css/mobile_premium__chrome.css`, `css/mobile_premium__state.css`, `css/mobile_premium__idle.css`, `css/mobile_premium__map.css`, `css/mobile_premium__surfaces.css`, and `css/mobile_premium__narrow.css`. Do not edit or recreate the deleted collapsed `css/mobile_premium.css` as a shadow owner.
 
 Priority:
 
@@ -46,7 +46,7 @@ Priority:
 | `css/progressive_disclosure.css` | Show/hide behavior for graph-context and dive states, plus search empty-state and search-input glass component authority. |
 | `css/strands.css` | Mobile bottom sheet, mobile chrome ownership, route-specific surfaces, and strand/connection preview surfaces. |
 | `css/animations.css` | Final short-landscape/mobile override tail from the original cascade. |
-| `css/mobile_premium.css` | Collapsed final mobile override owner, loaded directly after the base cascade. Sections cover focus/dive, chrome, state-machine, idle, map summary, and surface corrections. |
+| `css/mobile_premium__*.css` | Split final mobile override owner, loaded directly after the base cascade. Files cover focus/dive, chrome, state-machine, idle, map summary, surface corrections, and narrow viewport corrections. |
 
 ## Mobile Search And Result Drawer
 
@@ -56,16 +56,16 @@ Primary source:
 
 - Markup: `vector-explorer-polished.html`, `.search-container`, `#synthesize-trigger`, `#search-results`
 - State: `js/modules/search-state.js`, `setSearchPanelState()`, `renderSearchResultItems()`
-- Current cascade owners: `css/search.css` for shared search/result primitives and `css/mobile_premium.css` for final mobile drawer/result chrome, `data-panel-surface-detail="peek"` / `"expanded"` layout, and compact result presentation.
+- Current cascade owners: `css/search.css` for shared search/result primitives and `css/mobile_premium__state.css` / `css/mobile_premium__chrome.css` for final mobile drawer/result chrome, `data-panel-surface-detail="peek"` / `"expanded"` layout, and compact result presentation.
 - Supporting legacy/base styles: `css/mobile_base.css`, `css/layout_base.css`, `css/progressive_disclosure.css`, `css/strands.css`
 
 Rules:
 
 - Edit `css/search.css` first for shared result-card semantics and desktop/mobile primitive styling.
-- Edit the `STATE-MACHINE STYLES` section in `css/mobile_premium.css` for `data-panel-surface-detail="peek"` or `"expanded"` behavior.
-- Edit the `CHROME` section in `css/mobile_premium.css` for mobile search drawer chrome, controls, and state-agnostic polish.
-- `css/mobile_premium.css` owns late mobile positioning and visibility modifiers for `.share-toggle`, `.legend-toggle`, `.help-toggle`, and the compact `.controls` rail. Use existing z-index tokens and state-scoped selectors; do not use `!important` to force these above other surfaces.
-- Use the `SURFACES` section in `css/mobile_premium.css` only for generic late geometry/touch-target backstops or map-specific compact result guards.
+- Edit `css/mobile_premium__state.css` for `data-panel-surface-detail="peek"` or `"expanded"` behavior.
+- Edit `css/mobile_premium__chrome.css` for mobile search drawer chrome, controls, and state-agnostic polish.
+- `css/mobile_premium__chrome.css` owns late mobile positioning and visibility modifiers for `.share-toggle`, `.legend-toggle`, `.help-toggle`, and the compact `.controls` rail. Use existing z-index tokens and state-scoped selectors; do not use `!important` to force these above other surfaces.
+- Use `css/mobile_premium__surfaces.css` only for generic late geometry/touch-target backstops or map-specific compact result guards.
 - Treat `css/mobile_base.css`, `css/progressive_disclosure.css`, and `css/strands.css` as legacy/supporting surfaces for this seam; avoid new overrides there unless a contract or visual proof requires it.
 - In `search` + `peek`, render one clean anchor row only; secondary result rows belong to expanded mode and must not appear as clipped slivers inside the collapsed sheet.
 - Preserve these state contracts: `.has-query`, `.results-rendered`, `.has-expanded-results`, `#search-results.active`, `#search-results.is-expanded`, `data-mobile-route-peek`, `data-panel-surface="search"`, `data-panel-surface="focus-search"`, `data-active-view="map"`, and transition-only `data-semantic-dive`.
@@ -79,14 +79,14 @@ Primary source:
 - Markup: `vector-explorer-polished.html`, `.focus-stage`, `.focus-stage-card`, `.focus-stage-inside-status`, `.focus-stage-inside-controls`
 - State: `data-panel-surface="focus"`, `data-panel-surface="focus-search"`, `data-panel-surface="semantic-dive"`, and transition-only `data-semantic-dive="transitioning"`
 - JS owner: `js/modules/journey-selected-card.js` owns `syncFocusStage()` and selected-card DOM hydration; `js/modules/journey-focus-ui.js` owns focus/traversal DOM UI and the neighbor rail; `js/modules/journey.js` is now the orchestration/re-export layer for this surface.
-- Current cascade owners: `css/journey_active.css` for active journey/field-node choreography and `css/mobile_premium.css` for final mobile focus-search, semantic-dive composition, and late canopy/bottom-sheet geometry corrections.
+- Current cascade owners: `css/journey_active.css` for active journey/field-node choreography and `css/mobile_premium__focus-dive.css` / `css/mobile_premium__surfaces.css` for final mobile focus-search, semantic-dive composition, and late canopy/bottom-sheet geometry corrections.
 - Supporting legacy/base styles: `css/journey_steps.css`, `css/mobile_base.css`, `css/strands.css`, `css/progressive_disclosure.css`, `css/shell.css`
 
 Rules:
 
 - Edit `css/journey_active.css` first for field-node/route choreography and journey-compass state behavior.
-- Edit the `FOCUS / DIVE STATES` section in `css/mobile_premium.css` first for mobile focus-search or semantic-dive composition.
-- Edit the `SURFACES` section in `css/mobile_premium.css` only for late loaded geometry correction after focus/state rules.
+- Edit `css/mobile_premium__focus-dive.css` first for mobile focus-search or semantic-dive composition.
+- Edit `css/mobile_premium__surfaces.css` only for late loaded geometry correction after focus/state rules.
 - Treat `css/mobile_base.css`, `css/progressive_disclosure.css`, and `css/strands.css` as supporting legacy surfaces; do not add new focus HUD ownership there without updating this map.
 - Preserve hidden-state behavior for `.focus-stage-journey`, `.focus-stage-neighbors`, `.focus-thread-inspector`, `.trail-controls`, and `.trail-context`; those are state-machine surfaces, not decorative duplicates.
 - Do not consolidate Step Inside vignette or camera-motion selectors without live video proof.
@@ -101,12 +101,12 @@ Primary source:
 
 - Markup: `vector-explorer-polished.html`, `#selected-map-summary`
 - State/content: `js/modules/focus-stage-renderer.js`, `syncSelectedCardContentVariant()`
-- Current cascade owners: `css/mobile_premium.css` for the dedicated map summary presentation, map selected-card visibility, bottom drawer geometry, and suppression backstops.
+- Current cascade owners: `css/mobile_premium__map.css` and `css/mobile_premium__surfaces.css` for the dedicated map summary presentation, map selected-card visibility, bottom drawer geometry, and suppression backstops.
 
 Rules:
 
-- Edit the `MAP SUMMARY` section in `css/mobile_premium.css` first for `#selected-map-summary` text hierarchy, role pill, match copy, and compact summary presentation.
-- Edit the `SURFACES` section in `css/mobile_premium.css` only when the `map-focus-search` bottom drawer geometry, hidden legacy surfaces, or final suppression backstops need to change.
+- Edit `css/mobile_premium__map.css` first for `#selected-map-summary` text hierarchy, role pill, match copy, and compact summary presentation.
+- Edit `css/mobile_premium__surfaces.css` only when the `map-focus-search` bottom drawer geometry, hidden legacy surfaces, or final suppression backstops need to change.
 - Do not style old selected-card internals for `map-focus-search`; the source contract keeps that surface on the dedicated summary subtree.
 - Keep the summary read-only. Map actions remain in `.map-trail-strip`.
 
@@ -188,8 +188,8 @@ The `.focus-stage` selector family is distributed across **10 CSS files** (410+ 
 | File | Selectors | Canonical ownership |
 |---|---|---|
 | `css/modules/focus_stage.css` | 97 | **Base definitions**: `.focus-stage`, `.focus-stage-card`, `.focus-stage-dive-btn`, `.focus-stage-action-btn`, `.focus-stage-inside-*`, desktop layout, galaxy/map state visibility |
-| `css/journey_steps.css` | 99 | **Neighbor rail**: `.focus-stage-neighbor-*`, `.focus-stage-route-*`, thread inspector buttons, focus-transition-phase arrival animations |
-| `css/mobile_premium.css` | 270 | **Collapsed mobile owner**: focus/dive composition, mobile geometry corrections, chip/kicker/actions layout, active field-node canopy, and focus-stage action/button primitives |
+| `css/journey_steps.css` | 99 | **Neighbor rail + desktop focus-card presentation**: `.focus-stage-neighbor-*`, `.focus-stage-route-*`, thread inspector buttons, focus-transition-phase arrival animations, and desktop-gated `.focus-stage-card` presentation |
+| `css/mobile_premium__focus-dive.css` / `css/mobile_premium__surfaces.css` | 270+ | **Final mobile owner**: focus/dive composition, mobile geometry corrections, chip/kicker/actions layout, active field-node canopy, and focus-stage action/button primitives |
 | `css/strands.css` | 5 | **Galaxy view**: `data-active-view="galaxy"` visibility for action/dive/inside/neighbor buttons |
 | `css/controls.css` | 2 | **Button primitives**: `.focus-stage-journey-btn` sizing alongside shared control-btn |
 | `css/mobile_base.css` | 1 | **Early mobile**: `.focus-stage-inside-pulse` reduced-motion override only; no `.focus-stage-card` ownership |
@@ -201,18 +201,19 @@ The `.focus-stage` selector family is distributed across **10 CSS files** (410+ 
 
 - **Base structure & desktop** → `css/modules/focus_stage.css`
 - **Neighbor rail & thread inspector** → `css/journey_steps.css`
-- **Mobile focus/semantic-dive composition** → `css/mobile_premium.css` `FOCUS / DIVE STATES` section
-- **Mobile focus-stage action/button primitives** → `css/mobile_premium.css` `FOCUS / DIVE STATES` section
-- **Mobile geometry corrections (late cascade)** → `css/mobile_premium.css` `SURFACES` section
+- **Desktop focus-card presentation** → `css/journey_steps.css` under `@media (min-width: 769px)`
+- **Mobile focus/semantic-dive composition** → `css/mobile_premium__focus-dive.css`
+- **Mobile focus-stage action/button primitives** → `css/mobile_premium__focus-dive.css`
+- **Mobile geometry corrections (late cascade)** → `css/mobile_premium__surfaces.css`
 - **Galaxy-view visibility** → `css/strands.css`
 
 **Rules:**
 
 - Edit `css/modules/focus_stage.css` first for base styles, hover effects, disabled states, and desktop layout.
-- Edit `css/journey_steps.css` first for neighbor cards, neighbor actions, route line/dots, and thread inspector focus-visible.
-- Edit the `FOCUS / DIVE STATES` section in `css/mobile_premium.css` first for mobile focus-search or semantic-dive overrides.
-- Edit the `FOCUS / DIVE STATES` section in `css/mobile_premium.css` first for `.focus-stage-action-btn`, `.focus-stage-dive-btn`, `.focus-stage-journey-btn`, `.focus-thread-inspector-btn`, and related mobile focus action primitives.
-- Edit the `SURFACES` section in `css/mobile_premium.css` only for late geometry corrections that must load after focus/state rules; do not reintroduce focus action primitive ownership elsewhere.
+- Edit `css/journey_steps.css` first for neighbor cards, neighbor actions, route line/dots, thread inspector focus-visible, and desktop-only focus-card presentation.
+- Edit `css/mobile_premium__focus-dive.css` first for mobile focus-search or semantic-dive overrides.
+- Edit `css/mobile_premium__focus-dive.css` first for `.focus-stage-action-btn`, `.focus-stage-dive-btn`, `.focus-stage-journey-btn`, `.focus-thread-inspector-btn`, and related mobile focus action primitives.
+- Edit `css/mobile_premium__surfaces.css` only for late geometry corrections that must load after focus/state rules; do not reintroduce focus action primitive ownership elsewhere.
 - Do not add new `.focus-stage` selectors to `css/mobile_base.css`, `css/progressive_disclosure.css`, or `css/search.css` — those are legacy/supporting with minimal footprint.
 - Touch target minimum: all `.focus-stage-*-btn` elements must maintain `min-height: 44px` and `flex-shrink: 0` (enforced in `css/modules/focus_stage.css`; verified by `global-spacing` contract).
 

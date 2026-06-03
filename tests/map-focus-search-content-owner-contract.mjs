@@ -92,8 +92,9 @@ function testRendererOwnsVariantDecision() {
   );
   assert(
     /state\.currentView\s*===\s*['"]map['"]/.test(src) &&
-      /surface\s*===\s*['"]map-focus-search['"]/.test(src),
-    'syncSelectedCardContentVariant() must gate map summary on currentView=map and panelSurface=map-focus-search'
+      (/surface\s*===\s*['"]map-focus-search['"]/.test(src) ||
+        /isMapSummarySurface\s*\(\s*\)/.test(src)),
+    'syncSelectedCardContentVariant() must gate map summary on currentView=map and panelSurface=map-focus-search (literal or helper)'
   );
   assert(
     /cardEl\.dataset\.contentVariant\s*=[\s\S]{0,180}isFocusStageOwner\s*\?\s*['"]focus-stage['"][\s\S]{0,120}isMapSummary\s*\?\s*['"]map-summary['"]/.test(src),
@@ -177,6 +178,11 @@ function testRenderPathCallsVariantSync() {
     /syncSelectedCardContentVariant\s*,/.test(selectedSrc) &&
       /syncSelectedCardContentVariant\s*\(\s*point\s*\)/.test(selectedSrc),
     'journey-selected-card.js must sync the content variant on empty and populated renders'
+  );
+  assert(
+    /cardWasEmpty\s*&&\s*!\(?mapSummarySurface\)?/.test(selectedSrc) ||
+      /cardWasEmpty\s*&&\s*!\(?isMapSummarySurface\)?/.test(selectedSrc),
+    'journey-selected-card.js must not run the selected-card fade when map summary owns the card'
   );
 
   assert(

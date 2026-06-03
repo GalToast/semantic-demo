@@ -1,5 +1,6 @@
 import { state } from '../state.js'
 import { publish, EVENTS } from './event-bus.js'
+import { isMapSummarySurface } from './environment.js'
 import {
     animateCameraToTerrainPrelude,
     focusOnNode,
@@ -78,7 +79,7 @@ function shouldShowViewHandoff(view, options = {}) {
     if (options.silentHandoff) return false
     if (
         view === 'map' &&
-        document.body?.dataset?.panelSurface === 'map-focus-search' &&
+        isMapSummarySurface() &&
         document.body?.dataset?.journeyNavigationOwner === 'map-trail-strip'
     ) {
         return false

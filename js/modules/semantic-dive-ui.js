@@ -103,10 +103,7 @@ export function syncSemanticDiveUi() {
         ? state.navState.focusedIndex
         : state.focusedNode;
     const nextExploreCandidate = active
-        ? getNextExploreCandidateForIndex(currentFocusIndex, getNextWalkCandidateForIndex, {
-            requireSemantic: state.currentView === 'galaxy',
-            requireOnCanvas: state.currentView === 'galaxy'
-        })
+        ? getNextExploreCandidateForIndex(currentFocusIndex, getNextWalkCandidateForIndex)
         : null;
     const hasNextCandidate = active && Number.isFinite(nextExploreCandidate?.index);
     const hasWalked = (state.navState?.explorationHistoryIndices || []).length > 1;
@@ -157,7 +154,7 @@ export function syncSemanticDiveUi() {
                   'Follow a connection or go back.'
                 : hasWalked
                     ? 'All close links are mapped.'
-                    : 'No nearby stop is available. Use Map or County.'
+                    : 'Neighborhood preview is complete. Use Map or County.'
             : 'Step into this neighborhood to follow related businesses.';
     }
     if (focusKicker) {

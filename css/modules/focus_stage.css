@@ -425,7 +425,7 @@ body[data-inside-walk-state='walking'] .focus-stage-inside-pulse {
 .focus-stage-neighbor-pill:hover {
     background: var(--glass-reflection);
     border-color: rgba(255, 255, 255, 0.22);
-    color: #fff;
+    color: var(--color-text-strong);
     transform: translateY(-1px);
 }
 
@@ -526,7 +526,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
 .focus-stage-journey-btn:hover:not(:disabled) {
     background: rgba(var(--color-primary-alt-rgb), 0.12);
     border: var(--glass-border-glow);
-    color: #fff;
+    color: var(--color-text-strong);
     transform: translateY(-1px);
 }
 
@@ -864,7 +864,10 @@ body[data-trail-state='active'] .focus-stage-neighbor-pill {
        action. Still accessible to AT and keyboard users. min-height 36
        improves touch target while maintaining quiet visual register. */
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .focus-stage-neighbor-action {
-        min-height: 36px;
+        /* 44px meets the WCAG / Material touch-target minimum. The previous
+           36px was below threshold, and at 320 the inline-flex layout
+           compresses buttons further, so the floor matters even more. */
+        min-height: 44px;
         padding: 6px 12px;
         border-radius: 9px;
         font-size: 9px;

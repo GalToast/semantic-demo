@@ -1,6 +1,7 @@
 import { state } from '../state.js';
 import { publish, EVENTS } from './event-bus.js';
 import { getBusinessNamePresentation, sanitizePublicFacingNote } from './utils/dom-formatters.js';
+import { getPanelSurface, isMapSummarySurface } from './environment.js';
 
 /**
  * focus-stage-renderer.js
@@ -69,8 +70,8 @@ export function renderSelectedMatchPanel(point) {
     const panelEl = document.getElementById('selected-match-panel');
     const copyEl = document.getElementById('selected-match-copy');
     if (!panelEl || !copyEl) return;
-    const panelSurface = document.body?.dataset?.panelSurface || '';
-    if (state.currentView === 'map' && panelSurface !== 'map-focus-search') { panelEl.hidden = true; return; }
+    const panelSurface = getPanelSurface();
+    if (state.currentView === 'map' && !isMapSummarySurface()) { panelEl.hidden = true; return; }
     if (!point) return;
     if (state.currentSearchSummary?.anchorIndex !== undefined) {
         const idx = state.points.indexOf(point);
@@ -80,14 +81,14 @@ export function renderSelectedMatchPanel(point) {
         } else if ((state.currentSearchSummary.resultIndices || []).includes(idx)) {
             panelEl.hidden = false;
             copyEl.textContent = 'This record appeared in the semantic search results as a nearby connection.';
-        } else if (panelSurface === 'map-focus-search') {
+        } else if (isMapSummarySurface()) {
             panelEl.hidden = false;
             copyEl.textContent = 'This record is connected to the current semantic search trail.';
         } else {
             panelEl.hidden = true;
         }
     } else {
-        if (panelSurface === 'map-focus-search') {
+        if (isMapSummarySurface()) {
             panelEl.hidden = false;
             copyEl.textContent = 'This record is connected to the current semantic search trail.';
         } else {
@@ -157,8 +158,8 @@ export function syncSelectedCardContentVariant(point = null) {
     const detailsEl = document.getElementById('selected-details');
     const titleEl = document.getElementById('selected-card-title');
     const summaryEl = document.getElementById('selected-map-summary');
-    const surface = document.body?.dataset?.panelSurface || '';
-    const isMapSummary = Boolean(point) && state.currentView === 'map' && surface === 'map-focus-search';
+    const surface = getPanelSurface();
+    const isMapSummary = Boolean(point) && state.currentView === 'map' && isMapSummarySurface();
     const isFocusStageOwner = Boolean(point) && focusStageOwnsSelectedContent(surface);
 
     if (cardEl) {
@@ -167,6 +168,14 @@ export function syncSelectedCardContentVariant(point = null) {
         if (isFocusStageOwner) {
             cardEl.setAttribute('aria-hidden', 'true');
             cardEl.inert = true;
+        } else if (isMapSummary) {
+            cardEl.removeAttribute('aria-hidden');
+            cardEl.inert = false;
+            // The empty-state path leaves the card at inline opacity:0; the
+            // CSS rule in mobile_premium__map.css sets opacity:1 on the
+            // content-owner, but inline styles win. Re-assert the visible
+            // state here so a mid-fade transition resolves correctly.
+            if (cardEl.style.opacity !== '1') cardEl.style.opacity = '1';
         } else {
             cardEl.removeAttribute('aria-hidden');
             cardEl.inert = false;
