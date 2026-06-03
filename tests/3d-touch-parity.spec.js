@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { BASE_URL, setupMockSearch, probe } from './helpers/3d-interaction-helpers.js';
+import { BASE_URL, setupMockSearch, probe, isValidNodeIndex } from './helpers/3d-interaction-helpers.js';
 
 const HEALTH_OK = {
   ok: true,

@@ -99,26 +99,80 @@ export default [
             ecmaVersion: 2022,
             sourceType: 'module',
             globals: {
+                // Node globals
                 console: 'readonly',
                 process: 'readonly',
                 Buffer: 'readonly',
+                __dirname: 'readonly',
+                global: 'readonly',
+                // Browser globals (used in page.evaluate callbacks and JSDOM)
+                document: 'readonly',
+                window: 'readonly',
+                navigator: 'readonly',
+                location: 'readonly',
+                history: 'readonly',
+                localStorage: 'readonly',
+                sessionStorage: 'readonly',
+                performance: 'readonly',
+                fetch: 'readonly',
+                AbortController: 'readonly',
+                AbortSignal: 'readonly',
+                DOMException: 'readonly',
+                KeyboardEvent: 'readonly',
+                MouseEvent: 'readonly',
+                CustomEvent: 'readonly',
+                Event: 'readonly',
+                NodeFilter: 'readonly',
+                HTMLElement: 'readonly',
+                HTMLCanvasElement: 'readonly',
+                HTMLButtonElement: 'readonly',
+                getComputedStyle: 'readonly',
+                matchMedia: 'readonly',
+                queueMicrotask: 'readonly',
+                innerHeight: 'readonly',
+                innerWidth: 'readonly',
+                scrollX: 'readonly',
+                scrollY: 'readonly',
                 URL: 'readonly',
                 URLSearchParams: 'readonly',
+                Promise: 'readonly',
+                Math: 'readonly',
+                JSON: 'readonly',
                 setTimeout: 'readonly',
                 setInterval: 'readonly',
                 clearTimeout: 'readonly',
                 clearInterval: 'readonly',
-                Promise: 'readonly',
-                document: 'readonly',
-                window: 'readonly',
-                navigator: 'readonly',
-                HTMLElement: 'readonly',
-                Event: 'readonly',
-                CustomEvent: 'readonly',
-                MutationObserver: 'readonly',
                 requestAnimationFrame: 'readonly',
-                cancelAnimationFrame: 'readonly'
+                cancelAnimationFrame: 'readonly',
+                MutationObserver: 'readonly',
+                IntersectionObserver: 'readonly',
+                ResizeObserver: 'readonly',
+                // Project-internal: app exposes these for the visual QA suite
+                __APP_STATE__: 'readonly',
+                // Three.js: exposed at window.THREE in production; test code
+                // that runs in page.evaluate() bodies references it bare
+                THREE: 'readonly',
+                // Playwright fixtures (available in spec files via test runner)
+                browser: 'readonly',
+                server: 'readonly'
             }
+        },
+        rules: {
+            // Tests legitimately import many setup helpers that may not be
+            // used in every test. Downgrade to warn so lint output is
+            // actionable instead of noisy.
+            'no-unused-vars': ['warn', {
+                vars: 'all',
+                args: 'after-used',
+                ignoreRestSiblings: true,
+                varsIgnorePattern: '^_',
+                argsIgnorePattern: '^_',
+                caughtErrorsIgnorePattern: '^_'
+            }],
+            // Regex tests often have intentional escaping; defensive optional
+            // chaining in test setup is also a real pattern. Warn, don't error.
+            'no-useless-escape': 'warn',
+            'no-unsafe-optional-chaining': 'warn'
         }
     }
 ];

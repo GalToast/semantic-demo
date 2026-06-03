@@ -1,104 +1,99 @@
-import { state } from '../state.js';
-import { publish, EVENTS } from './event-bus.js';
-import { animateCameraToTerrainPrelude, focusOnNode, getRouteLayerOrigin, clearRouteExploration, animateCameraToNode, animateCameraToSearchCorridor, setCameraAssistChoreography } from './camera-controls.js';
+import { state } from '../state.js'
+import { publish, EVENTS } from './event-bus.js'
 import {
-    updateSelectedBusiness,
-    setTrailFromSeed,
-    syncFocusStage,
-    setRouteChoreographyPhase
-} from './journey.js';
-import {
-    clearWeatherRefreshTimer,
-    applyWeatherEffects
-} from './weather.js';
-import { scheduleWeatherHydration } from './loading-ui.js';
-import { updateUrlState } from './url-state.js';
-import {
-    initMap,
-    getRouteEmbodimentIndices,
-    setTerrainHandoffState
-} from './map-state.js';
+    animateCameraToTerrainPrelude,
+    focusOnNode,
+    getRouteLayerOrigin,
+    clearRouteExploration,
+    animateCameraToNode,
+    animateCameraToSearchCorridor,
+    setCameraAssistChoreography
+} from './camera-controls.js'
+import { updateSelectedBusiness, setTrailFromSeed, syncFocusStage, setRouteChoreographyPhase } from './journey.js'
+import { clearWeatherRefreshTimer, applyWeatherEffects } from './weather.js'
+import { scheduleWeatherHydration } from './loading-ui.js'
+import { initMap, getRouteEmbodimentIndices, setTerrainHandoffState } from './map-state.js'
 import {
     invokeClearMobileRouteFieldPeek,
     scheduleMapRouteRefresh,
     getViewHandoffModel
-} from './journey-compass-controller.js';
-import { semanticGuideIcon } from './semantic-guide.js';
-import { applyMapFlatteningLayout } from './map-flattening-layout.js';
-import { setCurrentView } from './state-mutators.js';
+} from './journey-compass-controller.js'
+import { semanticGuideIcon } from './semantic-guide.js'
+import { applyMapFlatteningLayout } from './map-flattening-layout.js'
+import { setCurrentView } from './state-mutators.js'
 
-let _refreshCompositionState = () => {};
+let _refreshCompositionState = () => {}
 
 export function initViewControllerAdapter({ refreshCompositionState } = {}) {
     if (typeof refreshCompositionState === 'function') {
-        _refreshCompositionState = refreshCompositionState;
+        _refreshCompositionState = refreshCompositionState
     }
 }
 
 export function hideViewHandoff() {
-    const handoff = document.getElementById('view-handoff');
+    const handoff = document.getElementById('view-handoff')
     if (state.viewHandoffTimer) {
-        window.clearTimeout(state.viewHandoffTimer);
-        state.viewHandoffTimer = null;
+        window.clearTimeout(state.viewHandoffTimer)
+        state.viewHandoffTimer = null
     }
-    document.body.dataset.viewHandoffActive = 'false';
-    if (!handoff) return;
-    handoff.classList.remove('active');
-    handoff.setAttribute('aria-hidden', 'true');
+    document.body.dataset.viewHandoffActive = 'false'
+    if (!handoff) return
+    handoff.classList.remove('active')
+    handoff.setAttribute('aria-hidden', 'true')
 }
 
 export function showViewHandoff(view) {
-    const handoff = document.getElementById('view-handoff');
-    if (!handoff) return;
-    const model = getViewHandoffModel(view);
-    const runeEl = document.getElementById('view-handoff-rune');
-    const kickerEl = document.getElementById('view-handoff-kicker');
-    const titleEl = document.getElementById('view-handoff-title');
-    const noteEl = document.getElementById('view-handoff-note');
+    const handoff = document.getElementById('view-handoff')
+    if (!handoff) return
+    const model = getViewHandoffModel(view)
+    const runeEl = document.getElementById('view-handoff-rune')
+    const kickerEl = document.getElementById('view-handoff-kicker')
+    const titleEl = document.getElementById('view-handoff-title')
+    const noteEl = document.getElementById('view-handoff-note')
 
     if (runeEl) {
-        runeEl.innerHTML = semanticGuideIcon(model.icon, view === 'map' ? 'Map view' : 'Mycelium view');
+        runeEl.innerHTML = semanticGuideIcon(model.icon, view === 'map' ? 'Map view' : 'Mycelium view')
     }
-    if (kickerEl) kickerEl.textContent = model.kicker;
-    if (titleEl) titleEl.textContent = model.title;
-    if (noteEl) noteEl.textContent = model.note;
+    if (kickerEl) kickerEl.textContent = model.kicker
+    if (titleEl) titleEl.textContent = model.title
+    if (noteEl) noteEl.textContent = model.note
 
     if (state.viewHandoffTimer) {
-        window.clearTimeout(state.viewHandoffTimer);
-        state.viewHandoffTimer = null;
+        window.clearTimeout(state.viewHandoffTimer)
+        state.viewHandoffTimer = null
     }
 
-    handoff.setAttribute('aria-hidden', 'false');
-    handoff.classList.add('active');
-    document.body.dataset.viewHandoffActive = 'true';
+    handoff.setAttribute('aria-hidden', 'false')
+    handoff.classList.add('active')
+    document.body.dataset.viewHandoffActive = 'true'
     state.viewHandoffTimer = window.setTimeout(() => {
-        handoff.classList.remove('active');
-        handoff.setAttribute('aria-hidden', 'true');
-        document.body.dataset.viewHandoffActive = 'false';
-        state.viewHandoffTimer = null;
-    }, 2200);
+        handoff.classList.remove('active')
+        handoff.setAttribute('aria-hidden', 'true')
+        document.body.dataset.viewHandoffActive = 'false'
+        state.viewHandoffTimer = null
+    }, 2200)
 }
 
 function shouldShowViewHandoff(view, options = {}) {
-    if (options.silentHandoff) return false;
+    if (options.silentHandoff) return false
     if (
         view === 'map' &&
         document.body?.dataset?.panelSurface === 'map-focus-search' &&
         document.body?.dataset?.journeyNavigationOwner === 'map-trail-strip'
     ) {
-        return false;
+        return false
     }
-    return true;
+    return true
 }
 
 export function switchView(view, options = {}) {
-    invokeClearMobileRouteFieldPeek();
-    const previousView = state.currentView;
-    const handoffFrom = options.handoffFrom || getRouteLayerOrigin();
+    invokeClearMobileRouteFieldPeek()
+    const previousView = state.currentView
+    const handoffFrom = options.handoffFrom || getRouteLayerOrigin()
 
     if (state.viewSwitchPreludeTimer) {
-        window.clearTimeout(state.viewSwitchPreludeTimer);
-        state.viewSwitchPreludeTimer = null;
+        window.clearTimeout(state.viewSwitchPreludeTimer)
+        state.viewSwitchPreludeTimer = null
     }
 
     const shouldPreludeToMap =
@@ -106,106 +101,106 @@ export function switchView(view, options = {}) {
         previousView === 'galaxy' &&
         !options.skipTerrainPrelude &&
         !options.skipUrlSync &&
-        !options.silentHandoff;
+        !options.silentHandoff
     if (shouldPreludeToMap) {
-        const routeCount = getRouteEmbodimentIndices().length;
+        const routeCount = getRouteEmbodimentIndices().length
         setTerrainHandoffState('flattening', {
             from: handoffFrom,
             to: 'map',
             routeCount
-        });
+        })
         setRouteChoreographyPhase('terrain-prelude', {
             reason: 'map-prelude',
             anchorIndex: state.currentSearchSummary?.anchorIndex ?? state.navState?.focusedIndex ?? null,
             indexCount: routeCount
-        });
-        animateCameraToTerrainPrelude({ duration: state.MAP_HANDOFF_PRELUDE_MS || 1200 });
+        })
+        animateCameraToTerrainPrelude({ duration: state.MAP_HANDOFF_PRELUDE_MS || 1200 })
 
         // 10/10 Polish: Flatten Three.js nodes to map coordinates during prelude
-        applyMapFlatteningLayout(true);
+        applyMapFlatteningLayout(true)
 
-        showViewHandoff('map');
+        showViewHandoff('map')
         state.viewSwitchPreludeTimer = window.setTimeout(() => {
-            state.viewSwitchPreludeTimer = null;
-            if (state.currentView !== 'galaxy') return;
+            state.viewSwitchPreludeTimer = null
+            if (state.currentView !== 'galaxy') return
             switchView('map', {
                 ...options,
                 skipTerrainPrelude: true,
                 handoffFrom
-            });
-        }, state.MAP_HANDOFF_PRELUDE_MS || 1200);
-        return;
+            })
+        }, state.MAP_HANDOFF_PRELUDE_MS || 1200)
+        return
     }
-    setCurrentView(view);
+    setCurrentView(view)
 
     // 10/10 Polish: Transition Choreography
-    document.body.classList.add('view-transitioning');
-    document.body.dataset.activeView = view;
-    setCameraAssistChoreography('arriving', 'view-handoff');
+    document.body.classList.add('view-transitioning')
+    document.body.dataset.activeView = view
+    setCameraAssistChoreography('arriving', 'view-handoff')
 
     // Auto-remove transitioning class after animation completes
     window.setTimeout(() => {
-        if (state.currentView !== view) return; // Guard against rapid switching
-        document.body.classList.remove('view-transitioning');
+        if (state.currentView !== view) return // Guard against rapid switching
+        document.body.classList.remove('view-transitioning')
         if (
             document.body.dataset.cameraAssist === 'arriving' &&
             document.body.dataset.cameraAssistReason === 'view-handoff'
         ) {
-            setCameraAssistChoreography('free', 'view-handoff-complete');
+            setCameraAssistChoreography('free', 'view-handoff-complete')
         }
-    }, 1200);
+    }, 1200)
 
     if (view === 'map') {
-        hideViewHandoff();
-        scheduleMapRouteRefresh();
+        hideViewHandoff()
+        scheduleMapRouteRefresh()
     }
     if (view !== 'galaxy' && view !== 'map') {
-        clearRouteExploration('map-handoff');
+        clearRouteExploration('map-handoff')
     } else if (view !== 'map') {
         // 10/10 Polish: Reset map flattening unconditionally if leaving map or aborting prelude
-        applyMapFlatteningLayout(false);
+        applyMapFlatteningLayout(false)
 
         // returning to galaxy from map while focused: restore focus pocket camera depth
         if (previousView === 'map' && Number.isFinite(state.navState.focusedIndex)) {
             animateCameraToNode(state.navState.focusedIndex, {
                 transitionStyle: state.semanticDiveMode ? 'dive' : 'focus',
                 duration: 1100
-            });
+            })
         }
     }
 
-    const btnGalaxy = document.getElementById('btn-galaxy');
-    const btnMap = document.getElementById('btn-map');
+    const btnGalaxy = document.getElementById('btn-galaxy')
+    const btnMap = document.getElementById('btn-map')
     if (btnGalaxy) {
-        btnGalaxy.classList.toggle('active', view === 'galaxy');
-        btnGalaxy.setAttribute('aria-pressed', String(view === 'galaxy'));
+        btnGalaxy.classList.toggle('active', view === 'galaxy')
+        btnGalaxy.setAttribute('aria-pressed', String(view === 'galaxy'))
     }
     if (btnMap) {
-        btnMap.classList.toggle('active', view === 'map');
-        btnMap.setAttribute('aria-pressed', String(view === 'map'));
+        btnMap.classList.toggle('active', view === 'map')
+        btnMap.setAttribute('aria-pressed', String(view === 'map'))
     }
 
-    const canvasContainer = document.getElementById('canvas-container');
-    const mapContainer = document.getElementById('map-container');
+    const canvasContainer = document.getElementById('canvas-container')
+    const mapContainer = document.getElementById('map-container')
     if (state.viewSwitchPreludeTimer) {
-        window.clearTimeout(state.viewSwitchPreludeTimer);
-        state.viewSwitchPreludeTimer = null;
+        window.clearTimeout(state.viewSwitchPreludeTimer)
+        state.viewSwitchPreludeTimer = null
     }
 
     // Clean up orphaned timers when leaving galaxy view
     if (view !== 'galaxy') {
         if (state.clockTimer) {
-            window.clearInterval(state.clockTimer);
-            state.clockTimer = null;
+            window.clearInterval(state.clockTimer)
+            state.clockTimer = null
         }
-        clearWeatherRefreshTimer();
+        clearWeatherRefreshTimer()
         if (state.semanticLaneMonitorTimer) {
-            window.clearInterval(state.semanticLaneMonitorTimer);
-            state.semanticLaneMonitorTimer = null;
+            window.clearInterval(state.semanticLaneMonitorTimer)
+            state.semanticLaneMonitorTimer = null
         }
         if (state.semanticLaneOpsRefreshTimer) {
-            window.clearInterval(state.semanticLaneOpsRefreshTimer);
-            state.semanticLaneOpsRefreshTimer = null;
+            window.clearInterval(state.semanticLaneOpsRefreshTimer)
+            state.semanticLaneOpsRefreshTimer = null
         }
     }
 
@@ -217,101 +212,99 @@ export function switchView(view, options = {}) {
                 routeCount: getRouteEmbodimentIndices().length,
                 settleAfterMs: 1200,
                 settlePhase: 'idle'
-            });
+            })
         } else {
-            setTerrainHandoffState('idle', { from: handoffFrom, to: 'galaxy' });
+            setTerrainHandoffState('idle', { from: handoffFrom, to: 'galaxy' })
         }
-        if (canvasContainer) canvasContainer.classList.remove('hidden');
-        if (mapContainer) mapContainer.classList.remove('active', 'arriving');
+        if (canvasContainer) canvasContainer.classList.remove('hidden')
+        if (mapContainer) mapContainer.classList.remove('active', 'arriving')
         if (state.selectedPoint) {
-            const selectedIndex = state.points.indexOf(state.selectedPoint);
+            const selectedIndex = state.points.indexOf(state.selectedPoint)
             if (selectedIndex >= 0) {
                 focusOnNode(selectedIndex, {
                     skipUrlSync: true,
                     fromSearchResult: !!state.currentSearchSummary,
                     restoreHistory: true,
                     preserveMode: true
-                });
-                setTrailFromSeed(selectedIndex);
+                })
+                setTrailFromSeed(selectedIndex)
             }
         } else if (
             state.currentSearchSummary?.anchorIndex !== null &&
             state.currentSearchSummary?.anchorIndex !== undefined
         ) {
-            const anchorIndex = state.currentSearchSummary.anchorIndex;
+            const anchorIndex = state.currentSearchSummary.anchorIndex
             setRouteChoreographyPhase('search-corridor', {
                 reason: 'return-to-mycelium-search',
                 anchorIndex,
                 indexCount: state.currentSearchSummary.resultIndices?.length || 0
-            });
-            animateCameraToSearchCorridor(
-                anchorIndex,
-                state.currentSearchSummary.resultIndices || [],
-                { reason: 'return-to-mycelium' }
-            );
+            })
+            animateCameraToSearchCorridor(anchorIndex, state.currentSearchSummary.resultIndices || [], {
+                reason: 'return-to-mycelium'
+            })
             focusOnNode(anchorIndex, {
                 skipUrlSync: true,
                 fromSearchResult: true,
                 restoreHistory: true,
                 preserveMode: true
-            });
-            setTrailFromSeed(anchorIndex);
+            })
+            setTrailFromSeed(anchorIndex)
         } else {
             setRouteChoreographyPhase('overview', {
                 reason: 'return-to-mycelium-overview',
                 anchorIndex: null,
                 indexCount: 0
-            });
+            })
         }
     } else {
-        const routeCount = getRouteEmbodimentIndices().length;
+        const routeCount = getRouteEmbodimentIndices().length
         setTerrainHandoffState('landing', {
             from: handoffFrom,
             to: 'map',
             routeCount,
             settleAfterMs: 1800,
             settlePhase: 'settled'
-        });
+        })
         setRouteChoreographyPhase('terrain-landing', {
             reason: 'map-handoff',
             anchorIndex: state.currentSearchSummary?.anchorIndex ?? state.navState?.focusedIndex ?? null,
             indexCount: routeCount
-        });
+        })
         initMap()
             .then(() => {
-                if (state.currentView !== 'map') return;
+                if (state.currentView !== 'map') return
                 if (state.map) {
                     setTimeout(() => {
-                        state.map.invalidateSize();
-                        scheduleMapRouteRefresh();
-                    }, 100);
+                        state.map.invalidateSize()
+                        scheduleMapRouteRefresh()
+                    }, 100)
                 }
-                if (state.weather) applyWeatherEffects();
+                if (state.weather) applyWeatherEffects()
             })
             .catch((error) => {
-                console.error('Map initialization failed:', error);
-            });
+                console.error('Map initialization failed:', error)
+            })
         if (!state.weatherInitialized) {
-            scheduleWeatherHydration();
+            scheduleWeatherHydration()
         }
-        if (canvasContainer) canvasContainer.classList.add('hidden');
-        if (mapContainer) mapContainer.classList.add('active');
+        if (canvasContainer) canvasContainer.classList.add('hidden')
+        if (mapContainer) mapContainer.classList.add('active')
     }
 
     if (!options.skipUrlSync) {
-        publish(EVENTS.URL_SYNC_REQUESTED, { params: {}, mode: options.historyMode || 'push', reason: 'view' });
+        publish(EVENTS.URL_SYNC_REQUESTED, { params: {}, mode: options.historyMode || 'push', reason: 'view' })
     }
 
-    publish(EVENTS.VIEW_CHANGED, { view, previousView });
+    publish(EVENTS.VIEW_CHANGED, { view, previousView })
 
-    syncFocusStage(state.selectedPoint);
+    syncFocusStage(state.selectedPoint)
     if (!state.selectedPoint) {
-        updateSelectedBusiness(null);
+        updateSelectedBusiness(null)
     }
-    _refreshCompositionState();
+    _refreshCompositionState()
     if (shouldShowViewHandoff(view, options)) {
-        showViewHandoff(view);
+        showViewHandoff(view)
     } else if (view === 'map') {
-        hideViewHandoff();
+        hideViewHandoff()
     }
 }

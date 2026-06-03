@@ -5,7 +5,7 @@ export {
     refreshRouteTraceOverlay,
     updateRouteTraceOverlayPositions,
     initRouteTraceSubscriptions
-} from './journey-route-trace.js';
+} from './journey-route-trace.js'
 
 export {
     removeArrivalHandoffOverlay,
@@ -13,7 +13,7 @@ export {
     disposeArrivalHandoffOverlay,
     syncArrivalHandoffOverlay,
     updateArrivalHandoffOverlay
-} from './journey-arrival-handoff.js';
+} from './journey-arrival-handoff.js'
 
 export {
     resetFocusThreadDiagnostics,
@@ -21,21 +21,15 @@ export {
     refreshFocusSemanticOverlay,
     updateFocusSemanticOverlayPositions,
     getSemanticFocusCueProbeSnapshot
-} from './journey-semantic-overlay.js';
+} from './journey-semantic-overlay.js'
 
-import {
-    updateRouteTraceOverlayPositions
-} from './journey-route-trace.js';
+import { updateRouteTraceOverlayPositions } from './journey-route-trace.js'
 
-import {
-    disposeArrivalHandoffOverlay,
-    syncArrivalHandoffOverlay,
-    updateArrivalHandoffOverlay
-} from './journey-arrival-handoff.js';
+import { updateArrivalHandoffOverlay } from './journey-arrival-handoff.js'
 
-import { setRouteArrivalOverlayUpdaters } from './route-arrival-overlay-adapter.js';
+import { setRouteArrivalOverlayUpdaters } from './route-arrival-overlay-adapter.js'
 
 setRouteArrivalOverlayUpdaters({
     updateRouteTraceOverlayPositions,
     updateArrivalHandoffOverlay
-});
+})
