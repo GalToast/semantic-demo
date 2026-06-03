@@ -280,12 +280,12 @@ export function buildSearchResultItemHtml(result, order, renderContext) {
 
     return `
         <div class="search-result-listitem" role="listitem">
-        <button class="${cardClasses}" id="search-result-${Number(result.index)}" data-index="${Number(result.index)}" data-order="${order}" type="button" tabindex="0"
+        <button class="${cardClasses}" id="search-result-${Number(result.index)}" data-index="${Number(result.index)}" data-order="${order}" data-is-mock="${result.isMock ? 'true' : 'false'}" type="button" tabindex="0"
             aria-label="${escapeHtml(`Focus ${formatBusinessName(result.point.name)}. ${rankLabel}. ${snippetText} ${contextText}.`)}"
             style="animation-delay:${Math.min(order * 32, 224)}ms">
             <div class="search-result-row">
                 <div class="search-result-rank">${rankLabel}</div>
-                <div class="search-result-name">${highlightMatch(formatBusinessName(result.point.name), trimmedQuery)}</div>
+                <div class="search-result-name">${highlightMatch(formatBusinessName(result.point.name), trimmedQuery)}${result.isMock ? '<span class="search-result-mock-pill" title="Result from the static-dev mock-data fallback" aria-label="Mock data">Mock</span>' : ''}</div>
                 ${badgesHtml}
             </div>
             <div class="search-result-what">${detailText}</div>
@@ -351,7 +351,20 @@ export function scheduleCompactSearchResultReveal(resultsEl, activeIndex = null)
 export function setActiveSearchResultRow(resultsEl, activeIndex = null, { reveal = true } = {}) {
     if (!resultsEl) return;
     const isCommittedExplore = state.navState.mode === 'trail' && (state.navState.explorationHistoryIndices || []).length > 1;
-    const effectiveIndex = isCommittedExplore && Number.isFinite(state.navState.focusedIndex) ? state.navState.focusedIndex : activeIndex;
+    const summaryResultIndices = Array.isArray(state.currentSearchSummary?.resultIndices)
+        ? state.currentSearchSummary.resultIndices
+        : [];
+    const focusedIndex = Number.isFinite(state.focusedNode)
+        ? state.focusedNode
+        : Number.isFinite(state.navState?.focusedIndex)
+          ? state.navState.focusedIndex
+          : null;
+    const focusIsOutsideSearchTrail = Number.isFinite(focusedIndex)
+        && summaryResultIndices.length > 0
+        && !summaryResultIndices.includes(focusedIndex);
+    const effectiveIndex = focusIsOutsideSearchTrail
+        ? null
+        : isCommittedExplore && Number.isFinite(state.navState.focusedIndex) ? state.navState.focusedIndex : activeIndex;
     const activeKey = effectiveIndex !== null ? String(effectiveIndex) : null;
     let activeRow = null;
 

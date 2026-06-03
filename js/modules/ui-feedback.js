@@ -53,19 +53,51 @@ export function syncSearchStatusForFocus(point, options = {}) {
     const resultsEl = document.getElementById('search-results');
     if (!statusEl || !point || !state.currentSearchSummary) return;
     if (!resultsEl?.classList.contains('active')) return;
+    const pointIndexByLeadId = point?.lead_id !== null && point?.lead_id !== undefined
+        ? state.pointIndexByLeadId?.get?.(String(point.lead_id))
+        : undefined;
+    const pointIndex = Number.isFinite(pointIndexByLeadId)
+        ? pointIndexByLeadId
+        : state.points?.indexOf?.(point);
+    const resultIndices = Array.isArray(state.currentSearchSummary.resultIndices)
+        ? state.currentSearchSummary.resultIndices
+        : [];
+    const pointInResults = Number.isFinite(pointIndex) && resultIndices.includes(pointIndex);
+    const focusedIndex = Number.isFinite(state.focusedNode)
+        ? state.focusedNode
+        : Number.isFinite(state.navState?.focusedIndex)
+          ? state.navState.focusedIndex
+          : null;
+    const focusedPointOutsideResults = Number.isFinite(focusedIndex)
+        && resultIndices.length > 0
+        && !resultIndices.includes(focusedIndex);
     if (typeof setActiveSearchResultRow === 'function') {
         setActiveSearchResultRow(
             resultsEl,
-            options.fromTraversal ? state.navState.focusedIndex : state.currentSearchSummary.anchorIndex
+            focusedPointOutsideResults
+                ? null
+                : options.fromTraversal && pointInResults ? state.navState.focusedIndex : pointInResults ? pointIndex : null
         );
     }
 
-    const pointName = formatBusinessName(point.name);
+    const displayPoint = focusedPointOutsideResults && state.selectedPoint ? state.selectedPoint : point;
+    const pointName = formatBusinessName(displayPoint.name);
     const queryLabel = state.currentSearchSummary.query
         ? `"${state.currentSearchSummary.query}"`
         : 'this connection path';
     const compactMapCopy = isCompactMapViewport();
     const compactGalaxyCopy = isCompactSearchViewport();
+
+    if (focusedPointOutsideResults || !pointInResults) {
+        statusEl.textContent = `${pointName} is focused outside ${queryLabel}. The ranked stack remains available as the current search trail.`;
+        updateSearchTrailCue({
+            beat: 'focus',
+            kicker: 'Focused record',
+            title: `${pointName} is focused`,
+            note: `The ranked stack still shows ${queryLabel}; no result row is marked current because this record is outside that trail.`
+        });
+        return;
+    }
 
     if (options.fromSearchResult) {
         statusEl.textContent = compactMapCopy

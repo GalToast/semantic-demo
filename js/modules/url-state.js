@@ -20,6 +20,7 @@ import {
     applyFilters,
     getFilteredIndices,
     search,
+    setActiveSearchResultRow,
     updateSearchStatusMessage,
     updateSearchTrailCue,
 } from './search-state.js';
@@ -339,7 +340,20 @@ function restoreRecordFocusFromParams(params, options = {}) {
         return false;
     }
 
+    const targetIndex = state.points.indexOf(target);
     focusOnPoint(target, { skipUrlSync: true, revealCard: true });
+    const resultIndices = Array.isArray(state.currentSearchSummary?.resultIndices)
+        ? state.currentSearchSummary.resultIndices
+        : [];
+    const resultsEl = document.getElementById('search-results');
+    if (resultsEl && state.currentSearchSummary) {
+        setActiveSearchResultRow(
+            resultsEl,
+            resultIndices.includes(targetIndex) ? targetIndex : null,
+            { reveal: false }
+        );
+        syncSearchStatusForFocus(target);
+    }
     restoreDepthFromUrlAfterFocus(params);
 
     if (!options.fromHistory && !options.deferred) {

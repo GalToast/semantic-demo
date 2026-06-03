@@ -285,6 +285,7 @@ export async function search(query, options = {}) {
     resultsEl.hidden = false;
     resultsEl.classList.add('active');
     setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true });
+    setupMobileSearchSheetToggle({ isCompactSearchViewport });
     setActiveSearchResultRow(resultsEl, anchorIndex);
 }
 

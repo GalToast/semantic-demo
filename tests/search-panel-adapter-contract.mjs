@@ -72,6 +72,12 @@ function testSearchStateDelegatesPanelDomWrites() {
   assert(!/function\s+setupMobileSearchSheetToggle/.test(searchState), 'search-state.js must not define mobile sheet DOM setup helper');
   assertNotContains(searchState, 'document.body.dataset.mobileSearchSheet =', 'search-state delegates mobile sheet dataset writes');
   assertNotContains(searchState, 'document.body.dataset.panelSurfaceDetail =', 'search-state delegates panel surface detail writes');
+
+  const successPath = searchState.slice(searchState.indexOf('renderSearchResultItems(resultsEl, results'));
+  assert(
+    /setSearchPanelState\(\{\s*searching:\s*false,\s*focusing:\s*false,\s*hasQuery:\s*true,\s*resultsRendered:\s*true\s*\}\);\s*setupMobileSearchSheetToggle\(\{\s*isCompactSearchViewport\s*\}\);/.test(successPath),
+    'successful multi-result search must refresh mobile sheet setup after has-query/results-rendered classes are set'
+  );
 }
 
 function testAdapterIsLeaf() {
