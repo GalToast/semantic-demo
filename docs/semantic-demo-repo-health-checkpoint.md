@@ -2,6 +2,7 @@
 
 **Date:** 2026-05-19
 **Status:** Docs, contracts, cache busters, and mobile-critical surface checks are consistent after the latest cleanup pass.
+**Current note:** Historical checkpoint. As of 2026-06-02, `css/mobile_premium.css` is the collapsed mobile owner, not an import shell.
 
 ---
 

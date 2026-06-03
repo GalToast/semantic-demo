@@ -3939,7 +3939,7 @@ async function run() {
   // Note: Desktop filters are mobile-only. In panelSurface=idle (static demo default),
   // progressive_disclosure.css line 1685 hides #filters-section via body[data-panel-surface="idle"].
   // The filters-open feature only applies on mobile where body.is-active + #filters-section[open]
-  // gets visible positioning from mobile_premium_state.css. On desktop, #filters-section is
+  // gets visible positioning from css/mobile_premium.css. On desktop, #filters-section is
   // always display:none in idle state. This state captures the desktop viewport layout
   // to verify no overflow and that search-container is visible — not to prove filters open.
   if (shouldAssert('13-desktop-filters-open')) {

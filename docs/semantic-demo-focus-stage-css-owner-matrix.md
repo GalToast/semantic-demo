@@ -1,8 +1,8 @@
 # Semantic Demo Focus-Stage CSS Ownership Matrix
 
 Status: active
-Updated: 2026-06-01
-Purpose: Reduce the 437 current focus-stage CSS matches across 11 files into a state-by-state owner map and a safe migration sequence.
+Updated: 2026-06-03
+Purpose: Track focus-stage CSS ownership across base/supporting modules plus the collapsed mobile premium owner, with a state-by-state owner map and safe migration sequence.
 
 ---
 
@@ -10,10 +10,9 @@ Purpose: Reduce the 437 current focus-stage CSS matches across 11 files into a s
 
 | File | focus-stage matches | Role |
 |---|---|---|
-| `css/mobile_premium_focus.css` | 222 | Mobile focus-search, semantic-dive, and active field-node mobile composition; terminal mobile focus-stage-card reduced-motion ownership; mobile focus-stage action/button primitives |
+| `css/mobile_premium.css` | 270 | Collapsed mobile focus-search, semantic-dive, active field-node composition, terminal focus-stage-card reduced-motion ownership, geometry corrections, and mobile focus-stage action/button primitives |
 | `css/modules/focus_stage.css` | 83 | Focus-stage component module linked directly from the app shell |
 | `css/journey_steps.css` | 80 | Step Inside, active-trail, state-machine surfaces |
-| `css/mobile_premium_surfaces.css` | 24 | Mobile bottom-sheet geometry corrections and non-active field-node backstops; no longer owns focus-stage action/button primitives |
 | `css/animations.css` | 10 | Motion/reduced-motion focus-stage tail rules |
 | `css/journey_active.css` | 5 | Active journey focus-stage coupling |
 | `css/strands.css` | 5 | Mobile bottom sheet, mobile chrome, route surfaces |
@@ -22,7 +21,7 @@ Purpose: Reduce the 437 current focus-stage CSS matches across 11 files into a s
 | `css/mobile_base.css` | 1 | Mobile focus/stepinside owner block |
 | `css/base.css` | 1 | Base focus-stage primitive |
 
-2026-05-28 guardrail pass:
+2026-05-28 guardrail pass (pre-collapse historical notes):
 - `tests/css-ownership-check.mjs` now ratchets `.focus-stage-card` per-file selector counts.
 - `tests/focus-stage-css-ownership-contract.mjs` now ratchets `strands.css` to its current focus-stage-card and journey-compass counts and blocks new unregistered geometry-owner files.
 - First consolidation target completed: terminal mobile reduced-motion `.focus-stage-card` selectors moved from `mobile_premium_surfaces.css` to `mobile_premium_focus.css`.
@@ -33,15 +32,19 @@ Purpose: Reduce the 437 current focus-stage CSS matches across 11 files into a s
 - `css/modules/focus_stage.css` is now the app-shell linked component module for focus-stage base styling.
 - The older blocked target was `css/focus_stage.css`; do not introduce that root-level file. Continue routing focus-stage consolidation through `css/modules/focus_stage.css` and keep the focus/mobile/short-landscape contracts green.
 
-2026-06-01 mobile action primitive pass:
+2026-06-01 mobile action primitive pass (pre-collapse historical notes):
 - Mobile focus-stage action/button primitives moved from `css/mobile_premium_surfaces.css` to `css/mobile_premium_focus.css`.
-- `tests/focus-stage-css-ownership-contract.mjs` now guards against reintroducing `.focus-stage-action-btn`, `.focus-thread-inspector-btn`, `.focus-stage-journey-btn`, or `.action-btn` primitive ownership in `mobile_premium_surfaces.css`.
-- `css/mobile_premium_focus.css` now owns active mobile field-node journey-compass refinements; `css/mobile_premium_surfaces.css` keeps non-active field-node and idle/search backstops.
+- At the time, `tests/focus-stage-css-ownership-contract.mjs` guarded against reintroducing `.focus-stage-action-btn`, `.focus-thread-inspector-btn`, `.focus-stage-journey-btn`, or `.action-btn` primitive ownership in `mobile_premium_surfaces.css`.
+- `css/mobile_premium_focus.css` then owned active mobile field-node journey-compass refinements; `css/mobile_premium_surfaces.css` kept non-active field-node and idle/search backstops.
 
-2026-06-01 journey-compass focus/dive refinement pass:
+2026-06-01 journey-compass focus/dive refinement pass (pre-collapse historical notes):
 - Focus-search / semantic-dive `.journey-compass.glass-heavy`, compact `[data-density="compact"]`, compact rail, and title wrapping rules moved from `css/mobile_premium_surfaces.css` to `css/mobile_premium_focus.css`.
 - `tests/css-ownership-check.mjs` now ratchets the moved selector counts: focus owns the extra focus/dive selectors, surfaces is reduced.
-- `tests/focus-stage-css-ownership-contract.mjs` now blocks those focus/dive compass fragments from returning to `mobile_premium_surfaces.css`.
+- At the time, `tests/focus-stage-css-ownership-contract.mjs` blocked those focus/dive compass fragments from returning to `mobile_premium_surfaces.css`.
+
+2026-06-03 mobile premium collapse pass:
+- The split mobile premium files were retired. Current mobile focus-stage edits belong in the matching named section inside `css/mobile_premium.css`; older pass notes above describe pre-collapse file movement.
+- `tests/focus-stage-css-ownership-contract.mjs` now registers `css/mobile_premium.css` as the collapsed mobile focus-stage owner.
 
 ---
 
@@ -51,7 +54,7 @@ Purpose: Reduce the 437 current focus-stage CSS matches across 11 files into a s
 
 Primary owner: `css/journey_steps.css` — focus-stage base geometry, active trail styling.
 Support: `css/clusters.css` (selected-card accent), `css/progressive_disclosure.css` (show/hide), `css/layout_base.css` (info-panel override for focus).
-Legacy/dupe risk: `css/strands.css` (bottom sheet mobile overrides), `css/mobile_premium_focus.css` (mobile composition).
+Legacy/dupe risk: `css/strands.css` (bottom sheet mobile overrides), `css/mobile_premium.css` (mobile composition).
 
 Selectors in play:
 - `.focus-stage`, `#focus-stage`
@@ -67,7 +70,7 @@ Minimum verification: `npm run qa:contract:launch-focus` + `npm run qa:contract:
 
 ### State: `focus-search` (panelSurface="focus-search")
 
-Primary owner: `css/mobile_premium_focus.css` — mobile focus-search composition.
+Primary owner: `css/mobile_premium.css` — mobile focus-search composition.
 Support: `css/journey_active.css` (field-node canopy HUD), `css/strands.css` (bottom sheet), `css/progressive_disclosure.css` (show/hide), `css/clusters.css` (selected-card accent).
 Legacy/dupe risk: `css/journey_steps.css` (state-machine overrides), `css/layout_base.css` (info-panel override).
 
@@ -85,7 +88,7 @@ Minimum verification: `npm run qa:contract:focus-pocket` + `npm run qa:contract:
 
 ### State: `semantic-dive` (panelSurface="semantic-dive" + data-semantic-dive="active")
 
-Primary owner: `css/mobile_premium_focus.css` — semantic-dive mobile composition.
+Primary owner: `css/mobile_premium.css` — semantic-dive mobile composition.
 Support: `css/progressive_disclosure.css` (transition-only data-semantic-dive), `css/journey_active.css` (inside-status, inside-controls).
 Legacy/dupe risk: `css/journey_steps.css` (Step Inside state machine), `css/strands.css` (mobile chrome).
 
@@ -143,7 +146,7 @@ Minimum verification: `npm run qa:contract:map-trail` + `npm run qa:surface:map-
 ### State: `field-node` (focusPanelMode="field-node")
 
 Primary owner: `css/journey_active.css` — field-node compact canopy HUD, walk dock.
-Support: `css/mobile_premium_focus.css` (mobile field-node composition), `css/strands.css` (bottom sheet).
+Support: `css/mobile_premium.css` (mobile field-node composition), `css/strands.css` (bottom sheet).
 Legacy/dupe risk: `css/progressive_disclosure.css` (show/hide), `css/journey_steps.css` (focus-stage state machine).
 
 Selectors in play:
@@ -160,13 +163,12 @@ Selectors in play:
 Minimum verification: `npm run qa:contract:field-node`
 
 **Journey-compass within field-node:**
-`css/mobile_premium_focus.css` owns active mobile field-node journey-compass refinements plus focus-search/semantic-dive compact journey-compass overrides (44 current raw `journey-compass` matches). It owns the active `focus-search` + `field-node` `.journey-compass.glass-heavy`, `.journey-compass-copy`, `.journey-compass-actions`, and `.journey-compass-action` layout.
-`css/mobile_premium_surfaces.css` owns non-active field-node fallbacks plus shared idle/search backstops (52 current raw `journey-compass` matches). It should not regain active field-node `is-active[data-panel-surface="focus-search"]` geometry.
+`css/mobile_premium.css` owns active mobile field-node journey-compass refinements, focus-search/semantic-dive compact journey-compass overrides, non-active field-node fallbacks, and shared idle/search backstops.
 `css/journey_active.css` owns `.journey-compass` base phase/density states (18 selectors).
 `css/strands.css` owns field-node journey-compass action buttons (39 selectors total, field-node subset).
 `css/layout_base.css` owns map-focus/trail journey-compass info-panel overrides (12 selectors).
 Do not add journey-compass geometry to `css/journey_steps.css` — it has no journey-compass selectors and must stay that way.
-Verification: `npm run qa:contract:field-node` + `rg -c 'journey-compass' css/mobile_premium_focus.css` (should report 44) + `rg -c 'journey-compass' css/mobile_premium_surfaces.css` (should report 52)
+Verification: `npm run qa:contract:field-node` + `rg -c 'journey-compass' css/mobile_premium.css`
 
 ---
 
@@ -200,21 +202,21 @@ The sequence is ordered by cascade depth and risk. Shallow/utility selectors fir
 
 ### Slice 2 — `.focus-stage-card` and kicker/name (DONE 2026-06-01)
 
-**Files affected:** `css/clusters.css` (canonical base), `css/mobile_premium_focus.css` (mobile override), `css/mobile_premium_surfaces.css` (geometry corrections).
-**Action:** Confirm `css/clusters.css` owns `.focus-stage-card` base; confirm `css/mobile_premium_focus.css` owns mobile-specific overrides. Remove duplicate definitions from `css/mobile_premium_surfaces.css` if they are identical overrides.
+**Files affected:** `css/clusters.css` (canonical base), `css/mobile_premium.css` (mobile override and geometry corrections).
+**Action:** Confirm `css/clusters.css` owns `.focus-stage-card` base; confirm `css/mobile_premium.css` owns mobile-specific overrides.
 **Verification:** `npm run qa:contract:focus-pocket`
-**Risk:** Low. Mobile-specific overrides are isolated to `mobile_premium_focus.css`.
+**Risk:** Low. Mobile-specific overrides are isolated to `css/mobile_premium.css`.
 
 ### Slice 3 — `field-node` canopy HUD (DONE 2026-06-01)
 
-**Files affected:** `css/journey_active.css` (canonical), `css/mobile_premium_focus.css` (mobile comp), `css/strands.css` (bottom sheet), `css/journey_steps.css` (state machine).
+**Files affected:** `css/journey_active.css` (canonical), `css/mobile_premium.css` (mobile comp), `css/strands.css` (bottom sheet), `css/journey_steps.css` (state machine).
 **Action:** Confirm `css/journey_active.css` owns `.journey-compass` field-node canopy HUD, `.focus-stage-journey.active`, `.focus-stage-journey-meta`, `.focus-stage-actions`. Move any duplicate `.focus-stage-actions` from `css/strands.css` into `css/journey_active.css`. Do not touch `css/journey_steps.css` state-machine selectors without live video proof.
 **Verification:** `npm run qa:contract:field-node`
 **Risk:** Medium. State machine in `journey_steps.css` has implicit ownership — verify before moving.
 
 ### Slice 4 — `semantic-dive` inside-status / inside-controls (Medium risk — active journey state)
 
-**Files affected:** `css/journey_active.css` (canonical), `css/mobile_premium_focus.css` (mobile comp), `css/progressive_disclosure.css` (transition-only data-semantic-dive).
+**Files affected:** `css/journey_active.css` (canonical), `css/mobile_premium.css` (mobile comp), `css/progressive_disclosure.css` (transition-only data-semantic-dive).
 **Action:** Confirm `css/journey_active.css` owns `#focus-stage-inside-status` and `#focus-stage-inside-controls`. Confirm `css/progressive_disclosure.css` only owns transition-only `data-semantic-dive` selectors — those must stay until transitions are de-duplicated in Slice 6. Do not move `data-semantic-dive="transitioning"` selectors yet.
 **Verification:** `npm run qa:surface:focus` (state: `15-mobile-semantic-dive`)
 **Risk:** Medium. `progressive_disclosure.css` may have implicit ownership of non-transition states.
@@ -253,8 +255,8 @@ These violations exist in the baseline before any wave-2 surgery. They are track
 
 | Violation | File | Baseline | Actual | Owner file |
 |---|---|---|---|---|
-| `.search-results.active` | `strands.css` | 13 | 14 | `search.css` (4), `layout_base.css` (2), `journey_active.css` (1), `progressive_disclosure.css` (3), `mobile_premium_chrome.css` (7), `mobile_premium_state.css` (6), `mobile_premium_surfaces.css` (1), **strands.css (14)** |
-| `.search-results.active` | `animations.css` | 0 | 2 | Not an owner. Owned by `search.css`, `layout_base.css`, `journey_active.css`, `progressive_disclosure.css`, `strands.css`, `mobile_premium_chrome.css`, `mobile_premium_state.css`, `mobile_premium_surfaces.css` |
+| `.search-results.active` | `strands.css` | 13 | 14 | `search.css`, `journey_active.css`, `progressive_disclosure.css`, `strands.css`, `mobile_premium.css`, `animations.css` |
+| `.search-results.active` | `animations.css` | 0 | 2 | Not an owner. Owned by `search.css`, `journey_active.css`, `progressive_disclosure.css`, `strands.css`, `mobile_premium.css`, `animations.css` |
 
 **Resolution plan:**
 - `strands.css` duplicate focus info-content `:has(.search-container.has-query)` selector arms: **Status: RESOLVED 2026-06-01.** The redundant `focus`, `focus-search`, and `semantic-dive` `:has()` selector arms were removed because the same declaration block is already owned by plain `data-panel-surface` selectors. `tests/css-ownership-check.mjs` now forbids reintroducing those exact selector arms.
@@ -314,15 +316,12 @@ git diff --check
 | Touched file | Command | Expected |
 |---|---|---|
 | `css/journey_active.css` journey-compass base | `rg -c '\.journey-compass' css/journey_active.css` | 18 |
-| `css/mobile_premium_focus.css` active field-node/focus-search/dive | `rg -c 'journey-compass' css/mobile_premium_focus.css` | 44 |
-| `css/mobile_premium_surfaces.css` non-active field-node/backstops | `rg -c 'journey-compass' css/mobile_premium_surfaces.css` | 52 |
+| `css/mobile_premium.css` collapsed mobile owner | `rg -c 'journey-compass' css/mobile_premium.css` | ratcheted by `tests/css-ownership-check.mjs` |
 | `css/strands.css` field-node actions | `rg -c '\.journey-compass' css/strands.css` | 39 |
 | `css/layout_base.css` map-focus/trail | `rg -c '\.journey-compass' css/layout_base.css` | 12 |
 | `css/mobile_base.css` early mobile | `rg -c '\.journey-compass' css/mobile_base.css` | 6 |
 | `css/progressive_disclosure.css` show/hide | `rg -c '\.journey-compass' css/progressive_disclosure.css` | 2 |
 | `css/animations.css` reduced-motion tail | `rg -c '\.journey-compass' css/animations.css` | 5 |
-| `css/mobile_premium_state.css` idle/map-view | `rg -c '\.journey-compass' css/mobile_premium_state.css` | 15 |
-| `css/mobile_premium_chrome.css` drawer polish | `rg -c '\.journey-compass' css/mobile_premium_chrome.css` | 3 |
 | `css/journey_steps.css` | `rg -c '\.journey-compass' css/journey_steps.css` | 0 (must stay 0) |
 
 If `css/journey_steps.css` reports non-zero journey-compass selectors, that is a regression — journey-compass geometry must not be added there.
@@ -331,8 +330,8 @@ If `css/journey_steps.css` reports non-zero journey-compass selectors, that is a
 
 ## Risks
 
-1. **Cascade dependency**: `css/progressive_disclosure.css` has 173 focus-stage matches — many are show/hide that implicitly depend on later mobile_premium cascade order. Moving selectors before verifying the full mobile cascade can silently break visibility states.
+1. **Cascade dependency**: `css/progressive_disclosure.css` has many focus-stage matches — many are show/hide that implicitly depend on later `css/mobile_premium.css` cascade order. Moving selectors before verifying the full mobile cascade can silently break visibility states.
 2. **State-machine coupling**: `css/journey_steps.css` owns `.focus-stage-journey` state-machine selectors that are coupled to JS state flags (`data-trail-state`, `is-active`). Moving them without live video proof can break the Step Inside flow.
 3. **Semantic-dive transition-only flag**: `data-semantic-dive="transitioning"` in `css/progressive_disclosure.css` is a transition-only attribute guard. Removing it before the transition de-dupe in Slice 6 will break the semantic-dive exit animation.
-4. **Selected-card cascade depth**: `css/clusters.css` owns the base selected-card accent, but `css/layout_base.css` and `css/mobile_premium_focus.css` both override it for specific states. Any re-ordering of these three files in `semantic-demo.css` import order will silently change map-focus/map-trail accent behavior.
+4. **Selected-card cascade depth**: `css/clusters.css` owns the base selected-card accent, but `css/layout_base.css` and `css/mobile_premium.css` both override it for specific states. Any re-ordering of these files in the cascade will silently change map-focus/map-trail accent behavior.
 5. **Active workers**: The three follow-up workers listed above may be touching `css/progressive_disclosure.css`, `css/journey_active.css`, and `css/animations.css` during this migration. Check switchboard before committing slice changes.

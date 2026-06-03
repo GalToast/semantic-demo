@@ -142,7 +142,7 @@ async function installSearchFixture(page, detail = 'peek') {
 // ---------------------------------------------------------------------------
 // Peek mode assertions
 //
-// CSS contract (from mobile_premium_state.css 284–355):
+// CSS contract (from css/mobile_premium.css STATE-MACHINE section):
 //   peek hides: .search-results-count, .search-result-what,
 //               .search-result-meta, .search-result-context,
 //               .search-result-bar, .search-result-badges

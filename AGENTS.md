@@ -83,15 +83,12 @@ Driven by `data-panel-surface` and `data-journey-phase` body attributes. Compose
 - `sessionStorage.moco_mycelium_demo_session_v1` - per-session guard preventing duplicate choreography within an active browsing session
 
 ## CSS Architecture
-CSS is split into ordered modules in `css/`. The root `semantic-demo.css` is an import manifest that loads modules in cascade order. `css/mobile_premium.css` is the mobile override import manifest.
+CSS is split into ordered modules in `css/`. The root `semantic-demo.css` is an import manifest that loads modules in cascade order. `css/mobile_premium.css` is the collapsed final mobile override owner.
 
 Key modules:
 - `css/layout_base.css` - info panel, legend, mode chips, broad layout
 - `css/journey_active.css` - active journey, field-node, route, mobile focus cockpit
-- `css/mobile_premium_state.css` - mobile idle, focus-search, map-view state ownership
-- `css/mobile_premium_surfaces.css` - bottom-sheet, surface geometry corrections
-- `css/mobile_premium_focus.css` - mobile focus-search and semantic-dive composition
-- `css/mobile_premium_map_summary.css` - mobile map-focus-search selected map summary presentation (dedicated; not in late drawer geometry)
+- `css/mobile_premium.css` - collapsed mobile final owner: state-machine, chrome, focus/dive, idle, map summary, and surface corrections
 - `css/progressive_disclosure.css` - graph-context/dive show/hide behavior, search empty-state
 
 Use `docs/semantic-demo-css-ownership-map.md` and `docs/semantic-demo-mobile-state-ownership.md` to find the owning module before editing.

@@ -30,8 +30,7 @@ async function enterMapMode(page) {
  *   5. Search container has map-mode visual treatment (bg, border-radius, shadow)
  *
  * CSS being verified lives in:
- *   css/mobile_premium_state.css  lines 147–183
- *   (owned by SD-143 — not edited by this agent)
+ *   css/mobile_premium.css MAP / STATE-MACHINE sections
  *
  * Run: TEST_BASE_URL=http://127.0.0.1:9876 npx playwright test tests/sd143-map-search-visual.spec.js --headed
  */

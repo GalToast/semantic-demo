@@ -1826,7 +1826,7 @@ async function assert_mode_grid(page, ctx) {
 // display:none in panelSurface=idle (progressive_disclosure.css + strands.css
 // both hide it). The filters-open feature is enabled on mobile via
 // body.is-active[data-panel-surface="idle"] #filters-section[open] rules in
-// mobile_premium_state.css. Desktop filters are not part of the static demo.
+// css/mobile_premium.css. Desktop filters are not part of the static demo.
 // ---------------------------------------------------------------------------
 
 async function assert_filters(page, ctx) {

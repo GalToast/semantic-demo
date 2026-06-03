@@ -4,6 +4,8 @@
 **Task:** Analysis only - no CSS edits
 **Output:** `docs/semantic-demo-css-ownership-next-pass.md`
 
+**Status:** Historical/superseded by the 2026-06-02 mobile premium collapse. Split-file names below describe the pre-collapse cascade; current edits belong in the matching named section inside `css/mobile_premium.css`.
+
 ---
 
 ## Exposed Tools

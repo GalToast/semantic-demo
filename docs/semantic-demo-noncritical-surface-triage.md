@@ -101,7 +101,7 @@ NEEDS FIX (real UI bugs):
 - `tests/surface-contract-check.mjs` - test harness
 - `tmp/surface-contract-check/2026-05-19T05-14-20-671Z/` - raw JSON artifacts
 - `css/mobile_premium.css` - likely location of mode-grid visibility conflict
-- `css/mobile_premium_surfaces.css` - likely location of touch target / clipping issues
+- `css/mobile_premium.css` - likely location of touch target / clipping issues
 - `vector-explorer-polished.html` - target page
 
 ---

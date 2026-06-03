@@ -63,7 +63,7 @@ States: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-resu
 
 ## Cache Busters
 
-`npm run refresh:cache` remains the strict global refresh path for release/checkpoint work. For narrow UI cleanup, `node tests/cache-buster-check.js --fix --assets=css/mobile_premium_focus.css` updates only the requested asset and the ancestor import references needed for that asset to load fresh. `npm run test` still runs the full cache-buster check.
+`npm run refresh:cache` remains the strict global refresh path for release/checkpoint work. For narrow UI cleanup, `node tests/cache-buster-check.js --fix --assets=css/mobile_premium.css` updates only the requested asset and the ancestor references needed for that asset to load fresh. `npm run test` still runs the full cache-buster check.
 
 ## Semantic Space Scripts
 

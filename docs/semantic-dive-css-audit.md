@@ -3,6 +3,7 @@
 Status: complete
 Date: 2026-05-20
 Task: 223 -- Legacy focus & semantic-dive states
+Current note: Historical audit. As of 2026-06-02, the `mobile_premium_focus.css` findings map to the `FOCUS / DIVE STATES` section in `css/mobile_premium.css`.
 
 Purpose: Determine if CSS rules in progressive_disclosure.css and journey_active.css
 are obsolete duplicates of rules already defined in mobile_premium_focus.css.
