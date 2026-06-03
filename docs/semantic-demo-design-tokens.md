@@ -41,6 +41,10 @@ Do not inject CSS custom properties from JavaScript. CSS root tokens stay in `cs
 | `--color-text-primary` | `rgba(255, 255, 255, 0.94)` | Primary body and labels |
 | `--color-text-secondary` | `rgba(255, 255, 255, 0.78)` | Secondary copy |
 | `--color-text-muted` | `rgba(255, 255, 255, 0.58)` | Captions, metadata, disabled-adjacent copy |
+| `--status-success` | `#8ff7d0` | Semantic lane success / healthy state |
+| `--status-warning` | `#ffd66b` | Semantic lane degraded / warning state |
+| `--status-danger` | `#ff6b6b` | Semantic lane failure / error state |
+| `--status-info` | `#bae6fd` | Semantic lane info / neutral update |
 
 Policy: avoid one-note color expansion. New UI should not become only cyan-on-slate; use the accent, neutral contrast, hierarchy, and spacing before adding more glow.
 
@@ -60,6 +64,8 @@ Policy: avoid one-note color expansion. New UI should not become only cyan-on-sl
 | `--glass-reflection-soft` | `rgba(255, 255, 255, 0.04)` | Soft inset glass highlight |
 | `--glass-reflection-strong` | `rgba(255, 255, 255, 0.12)` | Strong inset glass highlight |
 | `--glass-reflection-muted` | `rgba(255, 255, 255, 0.05)` | Muted glass highlight and border support |
+| `--glass-reflection-fade` | `rgba(255, 255, 255, 0.03)` | Faintest glass highlight; for quiet separators and dim borders |
+| `--glass-reflection-glow` | `rgba(255, 255, 255, 0.15)` | Brightest glass highlight; for active hover/elevated borders |
 | `--glass-blur-light` | `10px` | Light backdrop blur |
 | `--glass-blur` / `--glass-blur-medium` | `20px` | Standard backdrop blur |
 | `--glass-blur-heavy` | `28px` | Heavy backdrop blur |

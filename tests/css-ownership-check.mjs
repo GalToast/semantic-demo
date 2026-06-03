@@ -68,7 +68,7 @@ const selectorBaselines = {
     'mobile_premium__chrome.css': 5,
   },
   '.search-results.active': {
-    'search.css': 4,
+    'search.css': 5,
     'layout_base.css': 0,
     'journey_active.css': 1,
     'progressive_disclosure.css': 3,

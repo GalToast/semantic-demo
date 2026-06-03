@@ -93,15 +93,15 @@ var Wc=Object.defineProperty;var a=(e,n)=>Wc(e,"name",{value:n,configurable:!0})
             aria-label="${k(`Focus ${U(e.point.name)}. ${m}. ${g} ${y}.`)}"
             style="animation-delay:${Math.min(n*32,224)}ms">
             <div class="search-result-row">
-                <div class="search-result-rank">${m}</div>
-                <div class="search-result-name">${Kc(U(e.point.name),o)}${e.isMock?'<span class="search-result-mock-pill" title="Result from the static-dev mock-data fallback" aria-label="Mock data">Mock</span>':""}</div>
+                <div class="search-result-eyebrow">
+                    <span class="search-result-rank">${m}</span>
+                    <span class="search-result-strength">${u}</span>
+                </div>
+                <div class="search-result-name">${Kc(U(e.point.name),o)}${e.isMock?' <span class="search-result-mock-pill" title="Result from the static-dev mock-data fallback" aria-label="Mock data">Mock</span>':""}</div>
                 ${b}
             </div>
             <div class="search-result-what">${h}</div>
             <div class="search-result-context">${p}</div>
-            <div class="search-result-meta">
-                <div class="search-result-strength">${u}</div>
-            </div>
             <div class="search-result-bar"><span style="width:${l}%"></span></div>
         </button>
         </div>

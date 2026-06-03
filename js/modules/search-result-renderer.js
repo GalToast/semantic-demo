@@ -284,15 +284,15 @@ export function buildSearchResultItemHtml(result, order, renderContext) {
             aria-label="${escapeHtml(`Focus ${formatBusinessName(result.point.name)}. ${rankLabel}. ${snippetText} ${contextText}.`)}"
             style="animation-delay:${Math.min(order * 32, 224)}ms">
             <div class="search-result-row">
-                <div class="search-result-rank">${rankLabel}</div>
-                <div class="search-result-name">${highlightMatch(formatBusinessName(result.point.name), trimmedQuery)}${result.isMock ? '<span class="search-result-mock-pill" title="Result from the static-dev mock-data fallback" aria-label="Mock data">Mock</span>' : ''}</div>
+                <div class="search-result-eyebrow">
+                    <span class="search-result-rank">${rankLabel}</span>
+                    <span class="search-result-strength">${strengthLabel}</span>
+                </div>
+                <div class="search-result-name">${highlightMatch(formatBusinessName(result.point.name), trimmedQuery)}${result.isMock ? ' <span class="search-result-mock-pill" title="Result from the static-dev mock-data fallback" aria-label="Mock data">Mock</span>' : ''}</div>
                 ${badgesHtml}
             </div>
             <div class="search-result-what">${detailText}</div>
             <div class="search-result-context">${clusterText}</div>
-            <div class="search-result-meta">
-                <div class="search-result-strength">${strengthLabel}</div>
-            </div>
             <div class="search-result-bar"><span style="width:${strength}%"></span></div>
         </button>
         </div>
