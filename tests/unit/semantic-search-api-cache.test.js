@@ -125,6 +125,33 @@ describe('semantic-search-api-cache', () => {
             expect(result.dev_mode).toBe('static-php-fallback');
         });
 
+        it('should back static PHP fallback results with real dataset lead ids when possible', async () => {
+            Object.assign(state, {
+                points: [
+                    { lead_id: 519, name: '519-angel-fire-coffee', what: 'Coffee shop', city: 'Cleveland', website: 'https://example.test' },
+                    { lead_id: 989, name: "BLOOMIN' BREWS COFFEE LLC", what: 'Coffee shop', city: 'Willis', email: 'hello@example.test' },
+                    { lead_id: 1, name: '1845 SOLUTIONS', what: 'Management consulting', city: 'Conroe' }
+                ]
+            });
+            Object.defineProperty(window, 'location', {
+                value: { hostname: 'localhost', search: '' },
+                writable: true
+            });
+
+            global.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                text: () => Promise.resolve('<?php echo "Raw PHP Code"; ?>')
+            });
+
+            const result = await fetchSemanticSearchResults('coffee');
+
+            expect(result.ok).toBe(true);
+            expect(result.is_mock).toBe(true);
+            expect(result.results.map((row) => row.lead_id).sort()).toEqual(['519', '989']);
+            expect(result.results.map((row) => row.name)).toContain('519-angel-fire-coffee');
+            expect(result.results.map((row) => row.lead_id)).not.toContain('1');
+        });
+
         it('should return no mock results for explicit empty PHP fallback queries', async () => {
             Object.defineProperty(window, 'location', {
                 value: { hostname: 'localhost', search: '' },

@@ -32,8 +32,53 @@ export function resultMatchesNumericSearchQuery(result, query) {
     return contextualDigits.some((v) => v.includes(digits));
 }
 
-function getMockFallbackPointIndex(order = 0) {
+function normalizeMockSearchText(value) {
+    return String(value || '')
+        .toLowerCase()
+        .replace(/[_-]+/g, ' ')
+        .replace(/[^a-z0-9\s]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function getMockRowTerms(row) {
+    const text = normalizeMockSearchText([
+        row?.name,
+        row?.naics,
+        row?.public_note,
+        row?.public_detail,
+        row?.city
+    ].filter(Boolean).join(' '));
+    const weakTerms = new Set(['and', 'the', 'llc', 'inc', 'co', 'company', 'shops', 'services', 'local', 'business']);
+    return [...new Set(text.split(/\s+/).filter((term) => term.length >= 3 && !weakTerms.has(term)))];
+}
+
+function scoreMockPointForRow(point, terms) {
+    if (!point || !terms.length) return 0;
+    const text = normalizeMockSearchText([
+        point.name,
+        point.what,
+        point.city,
+        point.naics,
+        point.trivia
+    ].filter(Boolean).join(' '));
+    return terms.reduce((score, term) => score + (text.includes(term) ? 1 : 0), 0);
+}
+
+function getMockFallbackPointIndex(row, order = 0) {
     if (!Array.isArray(state.points) || state.points.length === 0) return null;
+    const terms = getMockRowTerms(row);
+    const hintedIndex = Number(row?.index);
+    if (
+        Number.isFinite(hintedIndex)
+        && hintedIndex >= 0
+        && hintedIndex < state.points.length
+        && isPointVisible(hintedIndex, state.points, state.activeClusterFilter, state.activeFilters)
+        && (!terms.length || scoreMockPointForRow(state.points[hintedIndex], terms) > 0)
+    ) {
+        return hintedIndex;
+    }
+
     const visibleIndices = [];
     state.points.forEach((point, index) => {
         if (point && isPointVisible(index, state.points, state.activeClusterFilter, state.activeFilters)) {
@@ -41,6 +86,16 @@ function getMockFallbackPointIndex(order = 0) {
         }
     });
     if (!visibleIndices.length) return null;
+    const scoredIndices = terms.length
+        ? visibleIndices
+            .map((index) => ({ index, score: scoreMockPointForRow(state.points[index], terms) }))
+            .filter((entry) => entry.score > 0)
+            .sort((a, b) => b.score - a.score || a.index - b.index)
+            .map((entry) => entry.index)
+        : [];
+    if (scoredIndices.length) {
+        return scoredIndices[Math.max(0, order) % scoredIndices.length];
+    }
     return visibleIndices[Math.max(0, order) % visibleIndices.length];
 }
 
@@ -52,21 +107,9 @@ export function mapSemanticSearchServiceResult(row, order = 0) {
     let pointIndex;
 
     if (isMockRow) {
-        pointIndex = Number.isFinite(Number(row.index))
-            ? Number(row.index)
-            : getMockFallbackPointIndex(order);
+        pointIndex = getMockFallbackPointIndex(row, order);
         if (!(Number.isFinite(pointIndex) && pointIndex >= 0 && pointIndex < state.points.length)) return null;
-        const sourcePoint = state.points[pointIndex] || {};
-        point = {
-            ...sourcePoint,
-            name: row.name,
-            city: row.city || sourcePoint.city,
-            naics: row.naics || sourcePoint.naics,
-            what: row.naics || sourcePoint.what,
-            website: row.website ?? sourcePoint.website,
-            email: row.email ?? sourcePoint.email,
-            phone: row.phone ?? sourcePoint.phone
-        };
+        point = state.points[pointIndex];
     } else {
         pointIndex = state.pointIndexByLeadId.get(String(row.lead_id));
         if (pointIndex === undefined) return null;
@@ -88,6 +131,7 @@ export function mapSemanticSearchServiceResult(row, order = 0) {
         publicDetail: sanitizePublicFacingNote(row.public_detail || ''),
         address: cleanPublicNoteText(row.address || ''),
         naics: cleanPublicNoteText(row.naics || ''),
+        isMock: row.isMock === true
     };
 }
 

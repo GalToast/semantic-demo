@@ -1,5 +1,6 @@
 import { state } from '../state.js';
 import { detectStaticDevPHP } from './utils/ui-presentation.js';
+import { debugWarn } from './diagnostic-adapter.js';
 import * as idb from './idb-service.js';
 
 const SEMANTIC_SEARCH_RETRY_DELAYS_MS = [900, 1800];
@@ -43,6 +44,79 @@ const MOCK_CATALOG = {
 
 const MOCK_QUERY_TERMS = Object.keys(MOCK_CATALOG);
 
+const MOCK_QUERY_ALIASES = {
+    coffee: ['coffee', 'cafe', 'espresso', 'latte', 'roaster', 'bakery', 'brew'],
+    roof: ['roof', 'roofing', 'roofer', 'shingle'],
+    childcare: ['childcare', 'child care', 'daycare', 'day care', 'montessori', 'learning'],
+    dog: ['dog', 'pet', 'groom', 'grooming', 'paws', 'kennel']
+};
+
+function normalizeMockSearchText(value) {
+    return String(value || '')
+        .toLowerCase()
+        .replace(/[_-]+/g, ' ')
+        .replace(/[^a-z0-9\s]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function getMockPointSearchText(point) {
+    return normalizeMockSearchText([
+        point?.name,
+        point?.what,
+        point?.city,
+        point?.naics,
+        point?.trivia
+    ].filter(Boolean).join(' '));
+}
+
+function getMockDatasetTerms(query, matchedTerm) {
+    const queryTokens = normalizeMockSearchText(query)
+        .split(/\s+/)
+        .filter((token) => token.length >= 3);
+    const aliases = matchedTerm ? MOCK_QUERY_ALIASES[matchedTerm] || [matchedTerm] : [];
+    return [...new Set([...aliases, ...queryTokens].map(normalizeMockSearchText).filter(Boolean))];
+}
+
+function buildDatasetBackedMockResults(query, matchedTerm, scoreBase) {
+    if (!Array.isArray(state.points) || state.points.length === 0) return [];
+    const terms = getMockDatasetTerms(query, matchedTerm);
+    if (!terms.length) return [];
+
+    return state.points
+        .map((point, index) => {
+            if (!point || point.lead_id === null || point.lead_id === undefined || point.lead_id === '') return null;
+            const text = getMockPointSearchText(point);
+            let score = 0;
+            terms.forEach((term) => {
+                if (!term) return;
+                if (text.includes(term)) score += term === matchedTerm ? 6 : 3;
+            });
+            if (point.website) score += 0.4;
+            if (point.email) score += 0.3;
+            if (point.phone) score += 0.2;
+            if (score <= 0) return null;
+            return { point, index, score };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.score - a.score || a.index - b.index)
+        .slice(0, 5)
+        .map(({ point, score }, i) => ({
+            lead_id: String(point.lead_id),
+            name: point.name,
+            score: Math.max(0.5, scoreBase - i * 0.05 + Math.min(score, 10) * 0.005),
+            provenance: 'Static dev dataset fallback',
+            thread_type: 'Search match',
+            city: point.city,
+            naics: point.naics || point.what,
+            public_note: point.what || '',
+            website: point.website,
+            email: point.email,
+            phone: point.phone,
+            isMock: true
+        }));
+}
+
 function buildMockCatalogForQuery(query) {
     const q = (query || '').toLowerCase().trim();
     let bucket = MOCK_CATALOG.coffee; // safe default
@@ -70,6 +144,9 @@ function buildMockCatalogForQuery(query) {
         // Generic fallback — return one of the catalogs with a reduced score
         scoreBase = 0.6;
     }
+    const datasetResults = buildDatasetBackedMockResults(query, matchedTerm, scoreBase);
+    if (datasetResults.length) return datasetResults;
+
     return bucket.map((entry, i) => ({
         lead_id: `mock-${matchedTerm || 'generic'}-${i + 1}`,
         name: entry.name,
@@ -80,7 +157,8 @@ function buildMockCatalogForQuery(query) {
         naics: entry.naics,
         website: entry.website,
         email: entry.email,
-        phone: entry.phone
+        phone: entry.phone,
+        isMock: true
     }));
 }
 
@@ -106,14 +184,14 @@ export async function initSearchCache() {
             const ageMs = now - entry.storedAt;
             if (ageMs > SEMANTIC_SEARCH_CACHE_TTL_MS) {
                 // Expired, remove from IDB
-                idb.remove(key).catch(err => console.warn('[idb-service] cleanup failed:', err));
+                idb.remove(key).catch(err => debugWarn('[idb-service] cleanup failed:', err));
             } else {
                 // Valid, load into memory
                 state.semanticSearchResultCache.set(key, entry);
             }
         }
     } catch (err) {
-        console.warn('[semantic-search-api-cache] Failed to initialize IDB cache:', err);
+        debugWarn('[semantic-search-api-cache] Failed to initialize IDB cache:', err);
     }
 }
 
@@ -204,7 +282,7 @@ export function getCachedSemanticSearchPayload(query) {
     const ageMs = now - entry.storedAt;
     if (ageMs > SEMANTIC_SEARCH_CACHE_TTL_MS) {
         state.semanticSearchResultCache.delete(key);
-        idb.remove(key).catch(err => console.warn('[idb-service] eviction failed:', err));
+        idb.remove(key).catch(err => debugWarn('[idb-service] eviction failed:', err));
 
         state.semanticSearchCacheDiagnostics.evictions += 1;
         state.semanticSearchCacheDiagnostics.misses += 1;
@@ -214,7 +292,7 @@ export function getCachedSemanticSearchPayload(query) {
 
     entry.lastAccessedAt = now;
     // Asynchronously update IDB lastAccessedAt
-    idb.set(key, entry).catch(err => console.warn('[idb-service] access update failed:', err));
+    idb.set(key, entry).catch(err => debugWarn('[idb-service] access update failed:', err));
 
     state.semanticSearchCacheDiagnostics.hits += 1;
     markSemanticSearchCache('hit', key, entry);
@@ -231,7 +309,7 @@ export function storeSemanticSearchPayload(query, payload) {
     const key = getSemanticSearchCacheKey(query);
     if (!key || !payload?.ok || !Array.isArray(payload?.results)) return;
     if (!validatePayloadSchema(payload)) {
-        console.warn('[semantic-search-api-cache] Payload schema validation failed, treating as cache miss');
+        debugWarn('[semantic-search-api-cache] Payload schema validation failed, treating as cache miss');
         return; // treat as cache miss — will fetch fresh
     }
 
@@ -244,7 +322,7 @@ export function storeSemanticSearchPayload(query, payload) {
 
     state.semanticSearchResultCache.set(key, entry);
     // Asynchronously mirror to IDB
-    idb.set(key, entry).catch(err => console.warn('[idb-service] store failed:', err));
+    idb.set(key, entry).catch(err => debugWarn('[idb-service] store failed:', err));
 
     state.semanticSearchCacheDiagnostics.stores += 1;
     markSemanticSearchCache('store', key);
@@ -254,7 +332,7 @@ export function storeSemanticSearchPayload(query, payload) {
         for (const [k, e] of state.semanticSearchResultCache.entries()) {
             if (e && (now - e.storedAt > SEMANTIC_SEARCH_CACHE_TTL_MS)) {
                 state.semanticSearchResultCache.delete(k);
-                idb.remove(k).catch(err => console.warn('[idb-service] eviction failed:', err));
+                idb.remove(k).catch(err => debugWarn('[idb-service] eviction failed:', err));
                 state.semanticSearchCacheDiagnostics.evictions += 1;
             }
         }
@@ -270,7 +348,7 @@ export function storeSemanticSearchPayload(query, payload) {
             }
             if (!oldestKey) break;
             state.semanticSearchResultCache.delete(oldestKey);
-            idb.remove(oldestKey).catch(err => console.warn('[idb-service] eviction failed:', err));
+            idb.remove(oldestKey).catch(err => debugWarn('[idb-service] eviction failed:', err));
             state.semanticSearchCacheDiagnostics.evictions += 1;
         }
     }
@@ -336,7 +414,7 @@ export async function fetchSemanticSearchResults(query, signal, options = {}) {
             let payload;
 
             if (detectStaticDevPHP(responseText) && allowsStaticDevFallback()) {
-                console.warn('[semantic-search-api-cache] Detected raw PHP response. Assuming static dev server. Returning mock results.');
+                debugWarn('[semantic-search-api-cache] Detected raw PHP response. Assuming static dev server. Returning mock results.');
 
                 // TODO(data-regen): data.dat still contains a few slug-style names
                 // (e.g. "2-hampton-inn-and-suites") from the initial corpus seed. The catalog

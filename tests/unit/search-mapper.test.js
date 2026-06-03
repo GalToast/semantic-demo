@@ -98,17 +98,28 @@ describe('search-mapper', () => {
             expect(state.points[0].name).toBe('Alpha Corp');
         });
 
-        it('maps static-dev mock rows to valid focusable point indices by order', () => {
+        it('maps static-dev mock rows to matching real points instead of fake display names', () => {
+            state.points = [
+                { lead_id: 101, name: 'Alpha Corp', what: 'Consulting', lat: 30.1, lng: -95.1 },
+                { lead_id: 102, name: 'Blue Willow Coffee', what: 'Coffee shop', lat: 30.2, lng: -95.2 },
+                { lead_id: 103, name: 'Gamma Inc', what: 'Contractor', lat: 30.3, lng: -95.3 }
+            ];
+            state.pointIndexByLeadId = new Map([
+                ['101', 0],
+                ['102', 1],
+                ['103', 2]
+            ]);
+
             const results = mapSemanticSearchResults([
                 { lead_id: 'mock-coffee-1', name: 'Third Gen Coffee', city: 'The Woodlands', score: 0.95 },
                 { lead_id: 'mock-coffee-2', name: 'Blue Door Coffee', city: 'Conroe', score: 0.9 }
             ]);
 
             expect(results).toHaveLength(2);
-            expect(results[0].index).toBe(0);
+            expect(results[0].index).toBe(1);
             expect(results[1].index).toBe(1);
-            expect(results[0].point.name).toBe('Third Gen Coffee');
-            expect(results[1].point.name).toBe('Blue Door Coffee');
+            expect(results[0].point.name).toBe('Blue Willow Coffee');
+            expect(results[1].point.name).toBe('Blue Willow Coffee');
             expect(state.points[0].name).toBe('Alpha Corp');
         });
 
