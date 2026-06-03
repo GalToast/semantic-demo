@@ -3,66 +3,66 @@ export const UNCLASSIFIED_RELATIONSHIP_ROLE = 'unclassified';
 const RELATIONSHIP_ROLE_COPY = Object.freeze({
     core_peer: {
         rail: 'Peer',
-        title: 'Close peer',
-        inside: 'close peer',
-        reason: 'strong shared-market signal'
+        title: 'Same beat',
+        inside: 'same beat',
+        reason: 'Same trail. Same trade.'
     },
     upstream: {
-        rail: 'Support',
-        title: 'Support provider',
-        inside: 'support provider',
-        reason: 'support or infrastructure signal'
+        rail: 'Anchor',
+        title: 'Anchors the trail',
+        inside: 'anchors the trail',
+        reason: 'Holds up the trail here.'
     },
     downstream: {
         rail: 'Market',
-        title: 'Served market',
-        inside: 'served market',
-        reason: 'demand-side market signal'
+        title: 'Served by trail',
+        inside: 'served by trail',
+        reason: 'The other side of the road.'
     },
     complement: {
         rail: 'Pairs',
-        title: 'Complementary fit',
-        inside: 'complementary fit',
-        reason: 'adjacent customer-journey signal'
+        title: 'Pairs with trail',
+        inside: 'pairs with trail',
+        reason: 'Same journey, different stop.'
     },
     same_market: {
         rail: 'Same lane',
-        title: 'Same market',
-        inside: 'same market',
-        reason: 'shared market signal'
+        title: 'Same lane',
+        inside: 'same lane',
+        reason: 'Same trade. Same town.'
     },
     geo_echo: {
         rail: 'Echo',
-        title: 'Similar elsewhere',
-        inside: 'similar elsewhere',
-        reason: 'same-market signal in another town'
+        title: 'Echo elsewhere',
+        inside: 'echo elsewhere',
+        reason: 'Same trade. Another town.'
     },
     bridge: {
         rail: 'Bridge',
-        title: 'Cross-market bridge',
-        inside: 'cross-market bridge',
-        reason: 'cross-market semantic bridge'
+        title: 'Bridges towns',
+        inside: 'bridges towns',
+        reason: 'Bridges this trail to the next.'
     },
     [UNCLASSIFIED_RELATIONSHIP_ROLE]: {
         rail: 'Unclassified',
-        title: 'Unclassified relationship',
-        inside: 'unclassified relationship',
-        reason: 'missing relationship classification'
+        title: 'Unclassified',
+        inside: 'unclassified',
+        reason: 'No clear thread yet.'
     }
 });
 
 const ROLE_REASON_REWRITES = Object.freeze([
-    [/high-similarity peer in the same business ecosystem/i, 'strong shared-market signal'],
-    [/same market signal with local context/i, 'shared local-market signal'],
-    [/same market signal across different towns/i, 'same-market signal in another town'],
-    [/candidate looks like an input, infrastructure, or support provider/i, 'support or infrastructure signal'],
-    [/candidate looks like a customer, beneficiary, or demand-side market/i, 'demand-side market signal'],
-    [/construction\/trade work points toward property or rural demand/i, 'property or rural demand signal'],
-    [/candidate looks like trade infrastructure for the selected market/i, 'trade infrastructure signal'],
-    [/adjacent sectors that often appear in the same customer journey/i, 'adjacent customer-journey signal'],
-    [/nearby semantic neighbor with adjacent business signals/i, 'adjacent business signal'],
-    [/shared support node in the local semantic neighborhood/i, 'shared local-neighborhood support'],
-    [/cross-market semantic bridge/i, 'cross-market semantic bridge']
+    [/high-similarity peer in the same business ecosystem/i, 'Same trail. Same trade.'],
+    [/same market signal with local context/i, 'Same trade. Same town.'],
+    [/same market signal across different towns/i, 'Same trade. Another town.'],
+    [/candidate looks like an input, infrastructure, or support provider/i, 'Holds up the trail here.'],
+    [/candidate looks like a customer, beneficiary, or demand-side market/i, 'The other side of the road.'],
+    [/construction\/trade work points toward property or rural demand/i, 'Draws the trail outward.'],
+    [/candidate looks like trade infrastructure for the selected market/i, 'Carries the trail forward.'],
+    [/adjacent sectors that often appear in the same customer journey/i, 'Same journey, different stop.'],
+    [/nearby semantic neighbor with adjacent business signals/i, 'Adjacent on the route.'],
+    [/shared support node in the local semantic neighborhood/i, 'Backs up this trail.'],
+    [/cross-market semantic bridge/i, 'Bridges this trail to the next.']
 ]);
 
 export function normalizeRelationshipRole(role) {

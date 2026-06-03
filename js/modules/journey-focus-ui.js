@@ -122,7 +122,10 @@ export function updateFocusNeighborRail() {
         const reasonLabel = isCompactFocusStageViewport()
             ? truncateMicrocopy(reason, 58)
             : `${truncateMicrocopy(reason, 72)} | ${city}`;
-        button.setAttribute('aria-label', `Explore ${name}: ${relationshipTitle}. ${reason}. Use the inner buttons to inspect or pin this connection without following.`);
+        // Use the role title directly — it's already warm and the
+        // roleLabel for "Anchors the trail" reads as a complete phrase
+        // without needing an article.
+        button.setAttribute('aria-label', `Explore ${name}: ${relationshipTitle}.`);
         button.innerHTML = `
             <span class="focus-stage-neighbor-index">${String(order + 1).padStart(2, '0')}</span>
             <span class="focus-stage-neighbor-copy">

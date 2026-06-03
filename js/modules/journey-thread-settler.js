@@ -49,12 +49,12 @@ export function getInsideRelationshipLabel(candidate = {}, point = null, focusPo
             focusPoint &&
             normalizeCityForFilter(point.city) === normalizeCityForFilter(focusPoint.city));
     const sharedTopic = getSharedTrailTopicLabel(point, focusPoint);
-    if (sharedTopic) return sameCity ? `same-city ${sharedTopic}` : sharedTopic;
+    if (sharedTopic) return sameCity ? `On the same ${sharedTopic} trail` : sharedTopic;
     if (candidate.source === 'semantic' || state.navState.threadSource === 'semantic')
         return 'related connection';
-    if (sameCity) return 'same-city connection';
-    if (candidate.sameStatus) return 'matching record layer';
-    return 'nearby connection';
+    if (sameCity) return 'On the same trail';
+    if (candidate.sameStatus) return 'Same trail layer';
+    return 'Nearby connection';
 }
 
 // getThreadInspectionState removed (delegated to thread-inspector.js)
@@ -108,27 +108,25 @@ export function summarizeNeighborReason(candidate = {}, point = null, focusPoint
             return truncateMicrocopy(normalizedReason.charAt(0).toUpperCase() + normalizedReason.slice(1));
         }
 
-        const relationshipPrefix = roleLabel || prefix;
-        const relationshipDetail = roleReason
-            ? `${normalizedReason}; ${roleReason}`
-            : normalizedReason;
-        const narrative = `${relationshipPrefix} grounded in ${relationshipDetail}`;
-        return truncateMicrocopy(narrative.charAt(0).toUpperCase() + narrative.slice(1));
+        // "X grounded in Y" reads as academic; the "X — Y" form repeats the
+        // role. The roleReason (e.g., "Same trail. Same trade.") is already
+        // warm and tactile — use it as the full card copy.
+        return truncateMicrocopy(roleReason.charAt(0).toUpperCase() + roleReason.slice(1));
     }
 
     if (roleLabel) {
-        return truncateMicrocopy(roleReason ? `${roleLabel}: ${roleReason}` : roleLabel);
+        return truncateMicrocopy(roleReason || roleLabel);
     }
 
     const threadType = String(candidate.threadType || '')
         .replace(/_/g, ' ')
         .trim();
 
-    if (sameCity && sharedTopic) return truncateMicrocopy(`Same-city ${sharedTopic} connection`);
-    if (sameCity) return 'Same-city relationship';
-    if (candidate.sameStatus) return 'Matching record layer';
+    if (sameCity && sharedTopic) return truncateMicrocopy(`On the same trail, ${sharedTopic} stop.`);
+    if (sameCity) return 'On the same trail.';
+    if (candidate.sameStatus) return 'Same trail layer.';
     if (threadType) return truncateMicrocopy(threadType.charAt(0).toUpperCase() + threadType.slice(1));
-    return state.navState.threadSource === 'semantic' ? 'Linked stop' : 'Nearby cloud stop';
+    return state.navState.threadSource === 'semantic' ? 'Linked stop' : 'Nearby cloud stop.';
 }
 
 // UI Inspection functions removed (delegated to thread-inspector.js)
