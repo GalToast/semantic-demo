@@ -116,7 +116,7 @@ export function getJourneyCompassState() {
                 ? `Finding ${queryLabel}...`
                 : hasNoResults
                     ? `No results for ${queryLabel}`
-                    : `${queryLabel} opened a trail`,
+                    : `Found ${resultCount} ${resultCount === 1 ? 'spot' : 'spots'} for ${queryLabel}`,
             note: isSearching
                 ? 'Looking for semantic anchors before gathering the trail around your query.'
                 : hasNoResults

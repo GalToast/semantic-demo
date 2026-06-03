@@ -25,14 +25,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="semantic-demo.css?v=6523300aa5b6">
+    <link rel="stylesheet" href="semantic-demo.css?v=a5a2c3d0173c">
     <link rel="stylesheet" href="vector-explorer-pandora.css?v=810fdd9e4f75">
     <link rel="stylesheet" href="css/mobile_premium__focus-dive.css?v=633d92bdbd28">
-    <link rel="stylesheet" href="css/mobile_premium__chrome.css?v=6cfba22dfa40">
+    <link rel="stylesheet" href="css/mobile_premium__chrome.css?v=32bb195160d6">
     <link rel="stylesheet" href="css/mobile_premium__state.css?v=5c0ee1c9ebd8">
     <link rel="stylesheet" href="css/mobile_premium__idle.css?v=4bfce851d662">
     <link rel="stylesheet" href="css/mobile_premium__map.css?v=a7288671c873">
-    <link rel="stylesheet" href="css/mobile_premium__surfaces.css?v=6ecd1d47a372">
+    <link rel="stylesheet" href="css/mobile_premium__surfaces.css?v=3e224f6f20d2">
     <link rel="stylesheet" href="css/mobile_premium__narrow.css?v=df79a9cbe649">
     <link rel="stylesheet" href="css/modules/focus_stage.css?v=caaef88f6b3f">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>M</text></svg>">
@@ -187,6 +187,27 @@
     
     <!-- Canvas Container (Galaxy View) -->
     <main id="main-content"><div id="canvas-container" aria-label="3D mycelium visualization"></div></main>
+
+    <!-- Compact color legend for the 3D scene (anchored to the canvas) -->
+    <div class="canvas-color-legend" id="canvas-color-legend" role="region" aria-label="Network color legend">
+        <div class="canvas-color-legend-title">Network</div>
+        <div class="canvas-color-legend-row">
+            <span class="canvas-color-legend-swatch" style="--swatch-color: #4ecdc4"></span>
+            <span class="canvas-color-legend-label">Anchor</span>
+        </div>
+        <div class="canvas-color-legend-row">
+            <span class="canvas-color-legend-swatch" style="--swatch-color: #ff6b9d"></span>
+            <span class="canvas-color-legend-label">Match</span>
+        </div>
+        <div class="canvas-color-legend-row">
+            <span class="canvas-color-legend-swatch" style="--swatch-color: #a66cff"></span>
+            <span class="canvas-color-legend-label">Cluster</span>
+        </div>
+        <div class="canvas-color-legend-row">
+            <span class="canvas-color-legend-swatch" style="--swatch-color: #ffd93d"></span>
+            <span class="canvas-color-legend-label">Highlight</span>
+        </div>
+    </div>
     
     <!-- Map Container -->
     <div id="map-container" role="region" aria-label="Connection map">
@@ -263,7 +284,7 @@
 
     <!-- Info Panel - collapsible -->
     <aside class="info-panel slide-in-left active" id="info-panel" role="region" aria-labelledby="info-panel-title">
-        <button class="info-header" id="info-panel-toggle" type="button" aria-label="Toggle MoCo Business Mycelium info panel" aria-expanded="true" aria-controls="info-panel">
+        <button class="info-header" id="info-panel-toggle" type="button" aria-label="Toggle info panel" aria-expanded="true" aria-controls="info-panel">
             <span id="info-panel-title">MoCo Business Mycelium</span>
             <span class="info-toggle-icon" id="info-toggle-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-panel"></use></svg></span>
         </button>
@@ -507,29 +528,29 @@
                     <div class="focus-stage-journey-progress" id="focus-stage-progress">Pick a business, then explore its nearby neighbors.</div>
                     <div class="focus-stage-next" id="focus-stage-next">Choose a nearby business to continue the path.</div>
                 </div>
-                <button class="focus-stage-journey-btn" id="btn-focus-next" type="button" aria-label="Next path stop"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg></button>
+                <button class="focus-stage-journey-btn" id="btn-focus-next" type="button" title="Next path stop" aria-label="Next path stop"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg></button>
             </div>
         </div>
     </section>
     
     <div class="controls controls-rail" aria-label="Canvas controls">
         <div class="controls controls-view" role="group" aria-label="Canvas navigation controls">
-            <button class="control-btn" id="btn-zoom-in" type="button" aria-label="Zoom in"><svg class="ui-icon" aria-hidden="true"><use href="#icon-zoom-in"></use></svg></button>
-            <button class="control-btn" id="btn-zoom-out" type="button" aria-label="Zoom out"><svg class="ui-icon" aria-hidden="true"><use href="#icon-zoom-out"></use></svg></button>
-            <button class="control-btn" id="btn-reset" type="button" aria-label="Reset view"><svg class="ui-icon" aria-hidden="true"><use href="#icon-reset"></use></svg></button>
-            <button class="control-btn" id="btn-rotate" type="button" aria-label="Toggle auto-rotate" aria-pressed="false"><svg class="ui-icon" aria-hidden="true"><use href="#icon-rotate"></use></svg></button>
+            <button class="control-btn" id="btn-zoom-in" type="button" title="Zoom in" aria-label="Zoom in"><svg class="ui-icon" aria-hidden="true"><use href="#icon-zoom-in"></use></svg></button>
+            <button class="control-btn" id="btn-zoom-out" type="button" title="Zoom out" aria-label="Zoom out"><svg class="ui-icon" aria-hidden="true"><use href="#icon-zoom-out"></use></svg></button>
+            <button class="control-btn" id="btn-reset" type="button" title="Reset view" aria-label="Reset view"><svg class="ui-icon" aria-hidden="true"><use href="#icon-reset"></use></svg></button>
+            <button class="control-btn" id="btn-rotate" type="button" title="Toggle auto-rotate" aria-label="Toggle auto-rotate" aria-pressed="false"><svg class="ui-icon" aria-hidden="true"><use href="#icon-rotate"></use></svg></button>
         </div>
 
         <div class="controls-divider" aria-hidden="true"></div>
 
         <div class="controls controls-info" role="group" aria-label="Overlays and sharing">
-            <button class="legend-toggle" id="btn-legend" type="button" aria-label="Show field guide" aria-expanded="false" aria-pressed="false" aria-controls="legend-panel"><svg class="ui-icon" aria-hidden="true"><use href="#icon-guide"></use></svg></button>
+            <button class="legend-toggle" id="btn-legend" type="button" title="Show field guide" aria-label="Show field guide" aria-expanded="false" aria-pressed="false" aria-controls="legend-panel"><svg class="ui-icon" aria-hidden="true"><use href="#icon-guide"></use></svg></button>
             <button class="share-toggle" id="btn-share-view" type="button" title="Copy current view link" aria-label="Copy current view link"><svg class="ui-icon" aria-hidden="true"><use href="#icon-share"></use></svg><span class="share-toggle-label">Share</span></button>
-            <button class="help-toggle" id="btn-keyboard-help" type="button" aria-label="Show shortcuts" aria-expanded="false" aria-controls="keyboard-hint-panel"><svg class="ui-icon" aria-hidden="true"><use href="#icon-help"></use></svg></button>
+            <button class="help-toggle" id="btn-keyboard-help" type="button" title="Show shortcuts" aria-label="Show shortcuts" aria-expanded="false" aria-controls="keyboard-hint-panel"><svg class="ui-icon" aria-hidden="true"><use href="#icon-help"></use></svg></button>
         </div>
     </div>
 
-    <button class="panel-toggle" id="btn-panel" type="button" aria-label="Open side panel" aria-expanded="true" aria-controls="info-panel"><svg class="ui-icon" aria-hidden="true"><use href="#icon-panel"></use></svg></button>
+    <button class="panel-toggle" id="btn-panel" type="button" title="Open side panel" aria-label="Open side panel" aria-expanded="true" aria-controls="info-panel"><svg class="ui-icon" aria-hidden="true"><use href="#icon-panel"></use></svg></button>
     <aside class="legend-panel glass-heavy" id="legend-panel" role="region" aria-label="Field guide panel" aria-hidden="true"></aside>
     <div class="experience-reset-toast" id="experience-reset-toast" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true" aria-label="Experience reset notification">
         <strong id="experience-toast-title"></strong>
@@ -565,7 +586,7 @@
         }
     }
     </script>
-    <script type="module" src="dist/bundle.js?v=5c39b02ffd7f"></script>
+    <script type="module" src="dist/bundle.js?v=4f3cd39ae19b"></script>
 
     <div id="semantic-summary-card" class="summary-card hidden glass-heavy" role="region" aria-labelledby="summary-card-title-text" aria-hidden="true" hidden>
         <div class="summary-header">

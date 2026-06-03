@@ -148,6 +148,7 @@ function clearStartupRecoveryNotice(sourceLabel) {
 
 export async function init() {
     let safetyValve = null;
+    let slowProgressTimer = null;
     try {
         if (state.clockTimer) {
             clearInterval(state.clockTimer);
@@ -157,11 +158,22 @@ export async function init() {
         cancelAnimate();
         state.loadingOverlayStartedAt = performance.now();
 
+        // Two-stage safety valve: at 8s surface a visible "still preparing"
+        // message (so the user never sees a silent dismiss); at 15s only then
+        // tear the overlay down and warn. The overlay is never hidden silently.
+        slowProgressTimer = setTimeout(() => {
+            if (document.getElementById('loading-overlay')?.classList.contains('hidden')) return;
+            setLoadingPhase('restore', {
+                note: 'Still preparing the scene…',
+                foot: 'Taking longer than usual. Hold on a moment longer.'
+            });
+        }, 8000);
         safetyValve = setTimeout(() => {
             if (document.getElementById('loading-overlay')?.classList.contains('hidden')) return;
-            console.warn('Init safety valve dismissed a slow loading overlay.');
+            console.warn('Init safety valve dismissed a slow loading overlay after 15s.');
+            if (slowProgressTimer) clearTimeout(slowProgressTimer);
             hideLoadingOverlay();
-        }, 10000);
+        }, 15000);
 
         setLoadingPhase('records');
         await dataModule.loadData();
@@ -351,6 +363,7 @@ export async function init() {
             startSceneReveal();
             await hideLoadingOverlay();
             if (safetyValve) clearTimeout(safetyValve);
+            if (slowProgressTimer) clearTimeout(slowProgressTimer);
             startDeferredHydration();
             initMicroDemo();
 
@@ -360,6 +373,7 @@ export async function init() {
         });
     } catch (error) {
         if (safetyValve) clearTimeout(safetyValve);
+        if (slowProgressTimer) clearTimeout(slowProgressTimer);
         console.error('Initialization failed:', error);
         cancelAnimate();
         applyLoadingErrorState(error);

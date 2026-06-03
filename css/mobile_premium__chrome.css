@@ -717,9 +717,13 @@
     }
 
     body.is-active[data-panel-surface='idle'] .search-container {
-        order: 0;
-        position: relative;
-        top: auto;
+        order: -1;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: var(--surface-overlay, rgba(9, 14, 22, 0.92));
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
         margin: 0;
         transform: none;
     }

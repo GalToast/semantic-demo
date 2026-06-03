@@ -887,6 +887,13 @@ body[data-panel-surface='search'] .focus-thread-inspector {
     display: none;
 }
 
+/* ── Map+Search: results and map mode controls own the rail; no empty card overlay ── */
+
+body[data-panel-surface='map-search'] .selected-card,
+body[data-panel-surface='map-search'] .selected-empty {
+    display: none;
+}
+
 /* ── Focus: focused business card and trail controls dominate ─────────────────── */
 
 body[data-panel-surface='focus'] .search-container:not(.has-query) .search-results.active,

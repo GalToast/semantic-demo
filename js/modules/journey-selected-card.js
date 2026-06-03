@@ -238,12 +238,12 @@ export function syncFocusStage(point) {
             noteEl.textContent = (copyFn && copyFn())?.focusStageNote || '';
         } else if (state.navState.threadSource === 'semantic') {
             noteEl.textContent = state.currentSearchSummary
-                ? 'Connections are live here. The route stays active while this stage keeps the node centered.'
+                ? "You're centered on this business. Related businesses nearby stay highlighted while you look around."
                 : 'Connections are live here. Overview steps back to the county; Refocus Neighborhood re-frames the local field around the selected business.';
         } else if (state.semanticThreadsStatus === 'loading') {
-            noteEl.textContent = 'Connections are still loading, so this stage is using the live cloud for now.';
+            noteEl.textContent = 'Related businesses nearby are still loading, so this view is using the live network for now.';
         } else {
-            noteEl.textContent = 'Connections are not ready here yet, so this stage is using the live cloud as an approximate guide.';
+            noteEl.textContent = 'Related businesses nearby are not ready here yet, so this view is using the live network as an approximate guide.';
         }
     }
 

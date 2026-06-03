@@ -229,7 +229,7 @@ export function syncSemanticDiveUi() {
             ? 'Entering neighborhood...'
             : active
                 ? 'Inside Neighborhood, use Next Stop to continue or County to exit'
-                : 'Step Inside'
+                : 'Step Inside — explore the neighborhood around this business'
     );
     diveButton.setAttribute('aria-busy', String(isTransitioning));
     if (label) label.textContent = isTransitioning ? 'Entering...' : active ? 'Inside Neighborhood' : 'Step Inside';
@@ -238,6 +238,6 @@ export function syncSemanticDiveUi() {
             ? 'Loading nearby connections.'
             : active
             ? 'Use Next Stop to continue or County to exit.'
-            : 'Open the neighborhood around this business.';
+            : 'Explore related businesses in the neighborhood.';
     }
 }

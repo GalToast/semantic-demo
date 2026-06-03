@@ -12,6 +12,14 @@ import { highlightMatch } from './utils/geo-data.js';
 
 // ─── PRIVATE HELPERS ────────────────────────────────────────────────────────
 
+function isStaticDevEnvironment() {
+    if (typeof window === 'undefined' || !window.location) return false;
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1' && host !== '::1' && host !== '0.0.0.0') return false;
+    const params = new URLSearchParams(window.location.search || '');
+    return params.get('staticDev') !== '0';
+}
+
 function humanizeSearchSnippetCase(value) {
     const clean = cleanPublicNoteText(value);
     if (!clean) return '';
@@ -288,7 +296,7 @@ export function buildSearchResultItemHtml(result, order, renderContext) {
                     <span class="search-result-rank">${rankLabel}</span>
                     <span class="search-result-strength">${strengthLabel}</span>
                 </div>
-                <div class="search-result-name">${highlightMatch(formatBusinessName(result.point.name), trimmedQuery)}${result.isMock ? ' <span class="search-result-mock-pill" title="Result from the static-dev mock-data fallback" aria-label="Mock data">Mock</span>' : ''}</div>
+                <div class="search-result-name">${highlightMatch(formatBusinessName(result.point.name), trimmedQuery)}${result.isMock && isStaticDevEnvironment() ? ' <span class="search-result-mock-pill" title="Result from the static-dev mock-data fallback" aria-label="Mock data">Mock</span>' : ''}</div>
                 ${badgesHtml}
             </div>
             <div class="search-result-what">${detailText}</div>

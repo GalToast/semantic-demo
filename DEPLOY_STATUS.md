@@ -1426,4 +1426,44 @@ I confirmed the same self-reference pattern does NOT exist in any other CSS file
 - Right-rail icon column touch-target on tablet/desktop.
 - "Open side panel" discoverability in collapsed info-panel state.
 
+## Linter follow-on (2026-06-03)
+
+The linter ran a third pass after the simplify pass landed and surfaced eight substantive follow-on changes that improve the mobile idle layout, the desktop `map-search` mode chip polish, and a few stale copy strings. All changes pass the simplify-pass verification suite (no self-refs, ownership baselines, content-owner contract, ui-quality contract 10/10/185/0, manifest, tokens, surface-style matrix). Documenting them here so the next session has the full chain.
+
+**Visual / layout:**
+
+- `css/mobile_premium__chrome.css` (mobile idle ≤480) — `.search-container` becomes `order: -1; position: sticky; top: 0; z-index: 5` with a `var(--surface-overlay, rgba(9,14,22,0.92))` background and `backdrop-filter: blur(24px) saturate(180%)`. The mobile-idle search chrome now pins to the top of the panel and reads against a blurred surface when scrolled — the prior `order: 0; position: relative` left it inline and it scrolled with content.
+- `css/mobile_premium__surfaces.css` (mobile ≤390) — `.journey-compass-kicker` is hidden at narrow widths. The kicker line ("Field" / "Trail" labels under the compass title) overran the 320 viewport; hiding it is the narrower-impact fix vs. shrinking the kicker copy.
+- `css/search.css` (desktop ≥769, `map-search` surface) — +175 lines of polish: `.mode-grid` gap + border tint, `.mode-chip` 58px min-height with a 2px primary-tint accent stripe, active state in gold/amber gradient, `[data-mode=default|bloom|bridge|trail]::after` content labels ("County field" / "Signal rich" / "Cross cluster" / "Route walk"), `.rail-section` left accent stripe, summary chevron polish. This is the desktop polish pass for the `map-search` mode chips that previously looked unstyled at 1440.
+- `css/progressive_disclosure.css` (mobile premium) — new `body[data-panel-surface='map-search'] .selected-card, .selected-empty { display: none; }` rule. On `map-search` the results list and map mode controls own the rail; the empty card overlay was redundant.
+
+**Copy polish:**
+
+- `js/modules/journey-compass-state.js` — trail title copy: `${queryLabel} opened a trail` → `Found ${resultCount} ${resultCount === 1 ? 'spot' : 'spots'} for ${queryLabel}`. Replaces vague trail-opened language with the actual result count.
+- `js/modules/journey-selected-card.js` — three note strings rewritten: "Connections are live here..." → "You're centered on this business. Related businesses nearby stay highlighted while you look around." and the loading/fallback variants follow the same plain-English shape.
+- `js/modules/semantic-dive-ui.js` — dive button label: "Step Inside" → "Step Inside — explore the neighborhood around this business". Tooltip: "Open the neighborhood around this business." → "Explore related businesses in the neighborhood." (The plain-English label is the more accessible affordance.)
+
+**Logic:**
+
+- `js/modules/search-result-renderer.js` — adds `isStaticDevEnvironment()` helper. The "Mock" pill on mock-data results now only renders when `window.location.hostname` is `localhost` / `127.0.0.1` / `::1` / `0.0.0.0` AND the URL does not have `?staticDev=0`. Prevents the Mock pill from leaking to the live deploy during local-only fallback runs.
+
+**Build / cache busters:**
+
+- `dist/bundle.js` — rebuilt.
+- `semantic-demo.css` + `vector-explorer-polished.html` — cache-buster version bumps.
+
+**Worktree cleanup (separate):**
+
+- 34 untracked `semantic-explorer-*.{txt,md,json,png,log}` dev artifacts moved from repo root to `tmp/dev-artifacts/` (which is `.gitignore`d). Root is clean.
+- `walkthrough-r6/` (15 files: 14 PNGs + `index.html`) staged as a known-good visual baseline snapshot for the r6 walkthrough — committed separately so it can be diffed against in future audits.
+
+Verified before commit:
+- `npm run check:no-self-refs` ✓
+- `npm run check:manifest` ✓
+- `npm run check:ownership` ✓
+- `npm run check:tokens` ✓ (116 root tokens documented)
+- `npm run check:surface-styles` ✓ (27 visual states)
+- `node tests/map-focus-search-content-owner-contract.mjs` ✓
+- `node tests/ui-quality-contract.mjs --headless` — 10/10 states, 185/185 assertions, 0 failures
+
 
