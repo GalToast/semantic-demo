@@ -31,16 +31,16 @@
 
     /* Semantic Color Tokens — defined before the shadow tokens below so
        the file's visual order matches lazy custom-property resolution. */
-    --glass-reflection: var(--glass-reflection);
-    --glass-reflection-fade: var(--glass-reflection-fade);
-    --glass-reflection-glow: var(--glass-reflection-glow);
-    --glass-reflection-soft: var(--glass-reflection-soft);
-    --glass-reflection-strong: var(--glass-reflection-strong);
-    --glass-reflection-muted: var(--glass-reflection-muted);
+    --glass-reflection: rgba(255, 255, 255, 0.08);
+    --glass-reflection-fade: rgba(255, 255, 255, 0.03);
+    --glass-reflection-glow: rgba(255, 255, 255, 0.15);
+    --glass-reflection-soft: rgba(255, 255, 255, 0.04);
+    --glass-reflection-strong: rgba(255, 255, 255, 0.12);
+    --glass-reflection-muted: rgba(255, 255, 255, 0.05);
 
-    --shadow-umbra: var(--shadow-umbra);
-    --shadow-penumbra: var(--shadow-penumbra);
-    --shadow-antumbra: var(--shadow-antumbra);
+    --shadow-umbra: rgba(0, 0, 0, 0.54);
+    --shadow-penumbra: rgba(0, 0, 0, 0.24);
+    --shadow-antumbra: rgba(0, 0, 0, 0.12);
 
     --shadow-glass: 0 24px 64px var(--shadow-umbra), inset 0 1px 0 var(--glass-reflection);
     --shadow-glass-glow: 0 16px 48px rgba(82, 229, 215, 0.2), 0 0 24px var(--glass-reflection);
@@ -81,11 +81,11 @@
     --color-surface-glass: rgba(15, 18, 28, 0.88);
     --color-surface-panel: rgba(12, 17, 26, 0.93);
     --color-border-subtle: var(--glass-reflection);
-    --color-border-muted: var(--color-border-muted);
-    --color-text-strong: var(--color-text-strong);
-    --color-text-primary: var(--color-text-primary);
-    --color-text-secondary: var(--color-text-secondary);
-    --color-text-muted: var(--color-text-muted);
+    --color-border-muted: rgba(255, 255, 255, 0.1);
+    --color-text-strong: rgba(255, 255, 255, 0.98);
+    --color-text-primary: rgba(255, 255, 255, 0.94);
+    --color-text-secondary: rgba(255, 255, 255, 0.78);
+    --color-text-muted: rgba(255, 255, 255, 0.58);
 
     /* Status colors — used by semantic lane, error states, info chips */
     --status-success: #8ff7d0;
@@ -177,7 +177,7 @@ body {
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
     font-family: var(--font-body, 'Nunito Sans', system-ui, sans-serif);
-    color: var(--color-text-primary, var(--color-text-primary));
+    color: var(--color-text-primary, rgba(255, 255, 255, 0.94));
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
