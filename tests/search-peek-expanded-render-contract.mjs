@@ -71,7 +71,7 @@ const SAMPLE_RESULTS_HTML = `
     </button>
   </div>
   <div class="search-result-listitem" role="listitem">
-    <button class="search-result-item is-secondary" id="search-result-1" data-index="1" data-order="1" type="button" role="button" tabindex="0" aria-label="Focus Coffee Depot. Strong Signal.">
+    <button class="search-result-item is-secondary" id="search-result-1" data-index="1" data-order="1" type="button" role="button" tabindex="0" aria-label="Focus Coffee Depot. Strong match.">
       <div class="search-result-row">
         <div class="search-result-rank">Result 2</div>
         <div class="search-result-name">Coffee Depot</div>
@@ -80,14 +80,13 @@ const SAMPLE_RESULTS_HTML = `
       <div class="search-result-what">Espresso bar in Montgomery.</div>
       <div class="search-result-context">Food &amp; Drink · Montgomery</div>
       <div class="search-result-meta">
-        <div class="search-result-stage">Strong Signal</div>
-        <div class="search-result-strength">Top result</div>
+        <div class="search-result-strength">Strong match</div>
       </div>
       <div class="search-result-bar"><span style="width:88%"></span></div>
     </button>
   </div>
   <div class="search-result-listitem" role="listitem">
-    <button class="search-result-item is-secondary" id="search-result-2" data-index="2" data-order="2" type="button" role="button" tabindex="0" aria-label="Focus Morning Brew. Related Link.">
+    <button class="search-result-item is-secondary" id="search-result-2" data-index="2" data-order="2" type="button" role="button" tabindex="0" aria-label="Focus Morning Brew. Good match.">
       <div class="search-result-row">
         <div class="search-result-rank">Result 3</div>
         <div class="search-result-name">Morning Brew</div>
@@ -96,8 +95,7 @@ const SAMPLE_RESULTS_HTML = `
       <div class="search-result-what">Bistro and coffee spot in The Woodlands.</div>
       <div class="search-result-context">Food &amp; Drink · The Woodlands</div>
       <div class="search-result-meta">
-        <div class="search-result-stage">Related Link</div>
-        <div class="search-result-strength">Top result</div>
+        <div class="search-result-strength">Good match</div>
       </div>
       <div class="search-result-bar"><span style="width:72%"></span></div>
     </button>

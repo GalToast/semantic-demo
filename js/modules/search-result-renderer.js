@@ -169,11 +169,11 @@ export function getSearchResultStrength(result, topScore) {
 }
 
 export function getSearchResultStrengthLabel(order, strength) {
-    if (order === 0) return 'Search Anchor';
-    if (strength >= 90) return 'High Synergy';
-    if (strength >= 75) return 'Strong Signal';
-    if (strength >= 50) return 'Related Link';
-    return 'Broad Match';
+    if (order === 0) return 'Best match';
+    if (strength >= 90) return 'Strong match';
+    if (strength >= 75) return 'Good match';
+    if (strength >= 50) return 'Related';
+    return 'Broader match';
 }
 
 export function getSearchResultCardClasses(order, isAnchor) {
@@ -291,7 +291,6 @@ export function buildSearchResultItemHtml(result, order, renderContext) {
             <div class="search-result-what">${detailText}</div>
             <div class="search-result-context">${clusterText}</div>
             <div class="search-result-meta">
-                <div class="search-result-stage">${buildSearchStageLabel(result.index, topIndex, anchorIndex)}</div>
                 <div class="search-result-strength">${strengthLabel}</div>
             </div>
             <div class="search-result-bar"><span style="width:${strength}%"></span></div>

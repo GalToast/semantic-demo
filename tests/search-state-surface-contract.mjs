@@ -181,8 +181,8 @@ state.currentSearchSummary = null;
 
 assert(getSearchResultStrength({ score: 0.74 }, 1) === 74, 'strength scales against top score');
 assert(getSearchResultStrength({}, 1) === 14, 'missing score has a 14% floor');
-assert(getSearchResultStrengthLabel(0, 100) === 'Search Anchor', 'top result label is anchored');
-assert(getSearchResultStrengthLabel(2, 80) === 'Strong Signal', 'mid-high result label is stable');
+assert(getSearchResultStrengthLabel(0, 100) === 'Best match', 'top result label is anchored');
+assert(getSearchResultStrengthLabel(2, 80) === 'Good match', 'mid-high result label is stable');
 
 const result = {
   index: 1,
@@ -208,7 +208,7 @@ const html = buildSearchResultItemHtml(result, 0, {
 assert(!html.includes('role="button"'), 'search result no longer has redundant role=button on native button element');
 assert(html.includes('tabindex="0"'), 'search result remains keyboard focusable');
 assert(html.includes('Anchor'), 'anchor label renders for anchored result');
-assert(html.includes('Search Anchor'), 'strength label renders for top result');
+assert(html.includes('Best match'), 'strength label renders for top result');
 assert(html.includes('Website available'), 'website badge title renders');
 assert(html.includes('&lt;script&gt;'), 'public note is escaped');
 assert(!html.includes('<script>alert'), 'raw script markup is not injected');
