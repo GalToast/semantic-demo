@@ -92,5 +92,33 @@ export default [
             'no-empty': ['error', { allowEmptyCatch: true }],
             'no-useless-escape': 'error'
         }
+    },
+    {
+        files: ['tests/**/*.js', 'tests/**/*.mjs'],
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: 'module',
+            globals: {
+                console: 'readonly',
+                process: 'readonly',
+                Buffer: 'readonly',
+                URL: 'readonly',
+                URLSearchParams: 'readonly',
+                setTimeout: 'readonly',
+                setInterval: 'readonly',
+                clearTimeout: 'readonly',
+                clearInterval: 'readonly',
+                Promise: 'readonly',
+                document: 'readonly',
+                window: 'readonly',
+                navigator: 'readonly',
+                HTMLElement: 'readonly',
+                Event: 'readonly',
+                CustomEvent: 'readonly',
+                MutationObserver: 'readonly',
+                requestAnimationFrame: 'readonly',
+                cancelAnimationFrame: 'readonly'
+            }
+        }
     }
 ];

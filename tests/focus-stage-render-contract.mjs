@@ -6,7 +6,7 @@
  * Surfaces tested:
  *   1. focus-search  — focus-stage/card present, card inside viewport, no overflow,
  *                      key text not clipped, dive/route buttons are touch targets,
- *                      compass does not overlap card
+ *                      compass/global utility chrome does not overlap card
  *   2. semantic-dive  — inside status/controls present, inside buttons are touch targets,
  *                      journey/neighbor visibility matches semantic-dive state, no overflow
  *
@@ -427,6 +427,53 @@ async function auditFocusSearch(page) {
           pass('compass:no overlap with card');
         }
       }
+    }
+
+    // --- compass behaves as a compact context banner in focus-search ---
+    const compassRail = document.querySelector('.journey-compass-rail');
+    if (isRendered(compassRail)) {
+      const r = compassRail.getBoundingClientRect();
+      fail(`compass-rail:hidden focus-search rail should yield to focus card route controls rect=${JSON.stringify({w:r.width,h:r.height})}`);
+    } else {
+      pass('compass-rail:hidden');
+    }
+
+    const compassCopy = document.querySelector('.journey-compass-copy');
+    if (isRendered(compassCopy)) {
+      const r = compassCopy.getBoundingClientRect();
+      if (r.width < 220) {
+        fail(`compass-copy:usable-width expected >=220px, got ${r.width.toFixed(0)}px`);
+      } else {
+        pass(`compass-copy:usable-width ${r.width.toFixed(0)}px`);
+      }
+    } else {
+      pass('compass-copy:not-rendered');
+    }
+
+    // --- external utility chrome yields to focus card ---
+    const utilitySelectors = ['.share-toggle', '.legend-toggle', '.help-toggle', '.controls'];
+    const blockingUtilityChrome = [];
+    for (const selector of utilitySelectors) {
+      const el = document.querySelector(selector);
+      if (!isRendered(el)) continue;
+      const r = el.getBoundingClientRect();
+      const overlapsCard = !(cardRect.right < r.left || cardRect.left > r.right || cardRect.bottom < r.top || cardRect.top > r.bottom);
+      if (overlapsCard && getComputedStyle(el).pointerEvents !== 'none') {
+        blockingUtilityChrome.push({
+          selector,
+          rect: {
+            l: Math.round(r.left),
+            t: Math.round(r.top),
+            r: Math.round(r.right),
+            b: Math.round(r.bottom),
+          },
+        });
+      }
+    }
+    if (blockingUtilityChrome.length) {
+      fail(`utility-chrome-overlap:focus-card ${JSON.stringify(blockingUtilityChrome)}`);
+    } else {
+      pass('utility-chrome:yields-to-focus-card');
     }
 
     return { failures, passes };
