@@ -108,9 +108,14 @@ export function summarizeNeighborReason(candidate = {}, point = null, focusPoint
             return truncateMicrocopy(normalizedReason.charAt(0).toUpperCase() + normalizedReason.slice(1));
         }
 
-        // "X grounded in Y" reads as academic; the "X — Y" form repeats the
+        if (!roleReason) {
+            const fallbackReason = `${prefix} grounded in ${normalizedReason}`;
+            return truncateMicrocopy(fallbackReason.charAt(0).toUpperCase() + fallbackReason.slice(1));
+        }
+
+        // "X grounded in Y" reads as academic; the "X - Y" form repeats the
         // role. The roleReason (e.g., "Same trail. Same trade.") is already
-        // warm and tactile — use it as the full card copy.
+        // warm and tactile - use it as the full card copy.
         return truncateMicrocopy(roleReason.charAt(0).toUpperCase() + roleReason.slice(1));
     }
 

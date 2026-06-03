@@ -22,7 +22,7 @@ describe('journey-thread-settler', () => {
         });
 
         it('returns fallback if no reason provided', () => {
-            expect(summarizeNeighborReason({})).toBe('Nearby cloud stop');
+            expect(summarizeNeighborReason({})).toBe('Nearby cloud stop.');
 
             withStateMutation(() => {
                 state.navState.threadSource = 'semantic';
@@ -36,18 +36,17 @@ describe('journey-thread-settler', () => {
                 roleReason: 'candidate looks like an input provider',
                 reason: 'close semantic neighbor, strong contact signal'
             });
-            expect(result).toContain('Support provider');
-            expect(result).toContain('input provider');
+            expect(result).toBe('An input provider');
         });
     });
 
     describe('getInsideRelationshipLabel', () => {
         it('uses relationship role labels before generic relationship labels', () => {
-            expect(getInsideRelationshipLabel({ relationshipRole: 'downstream' })).toBe('served market');
+            expect(getInsideRelationshipLabel({ relationshipRole: 'downstream' })).toBe('served by trail');
         });
 
         it('identifies same-city connections', () => {
-            expect(getInsideRelationshipLabel({ sameCity: true })).toBe('same-city connection');
+            expect(getInsideRelationshipLabel({ sameCity: true })).toBe('On the same trail');
         });
 
         it('identifies semantic relationships', () => {
@@ -55,11 +54,11 @@ describe('journey-thread-settler', () => {
         });
 
         it('identifies matching record layers', () => {
-            expect(getInsideRelationshipLabel({ sameStatus: true })).toBe('matching record layer');
+            expect(getInsideRelationshipLabel({ sameStatus: true })).toBe('Same trail layer');
         });
 
         it('defaults to nearby connection', () => {
-            expect(getInsideRelationshipLabel({})).toBe('nearby connection');
+            expect(getInsideRelationshipLabel({})).toBe('Nearby connection');
         });
     });
 });

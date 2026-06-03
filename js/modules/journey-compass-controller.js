@@ -107,7 +107,7 @@ export function syncJourneyCompassActions(compassState = {}) {
     ];
     buttons.forEach(([button, action, role]) => {
         if (!button) return;
-        const fullLabel = action?.label || (role === 'primary' ? 'Search' : (role === 'secondary' ? 'Map' : ''));
+        const fullLabel = action?.label || (role === 'primary' ? 'Search' : (role === 'secondary' ? 'Map' : 'Navigate'));
         const mobileLabel = action?.action ? getMobileJourneyActionLabel(action, fullLabel) : '';
         button.textContent = fullLabel;
         if (mobileLabel) {

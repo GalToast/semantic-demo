@@ -152,7 +152,7 @@ describe('journey-thread-settler', () => {
                 state.navState.threadSource = 'cloud';
             });
             const result = threadSettler.summarizeNeighborReason({}, null, null);
-            expect(result).toBe('Nearby cloud stop');
+            expect(result).toBe('Nearby cloud stop.');
         });
     });
 
