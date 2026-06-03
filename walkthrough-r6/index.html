@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Semantic Explorer — Round 6 walkthrough (11 frames)</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0;
+    background: #071018;
+    color: #d6efe8;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 12px 60px;
+    box-sizing: border-box;
+  }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 6px; }
+  p { font-size: 13px; opacity: 0.7; margin: 0 0 18px; max-width: 720px; text-align: center; }
+  .stage {
+    width: min(1280px, 100%);
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.5);
+  }
+  .stage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .caption {
+    margin-top: 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    max-width: 720px;
+    text-align: center;
+    min-height: 3em;
+  }
+  .caption b { color: #79ebde; }
+  .controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    align-items: center;
+    font-size: 12px;
+    opacity: 0.85;
+  }
+  button {
+    background: rgba(255, 255, 255, 0.06);
+    color: #d6efe8;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  button:hover { background: rgba(255, 255, 255, 0.12); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  .dwell {
+    font-variant-numeric: tabular-nums;
+    min-width: 5em;
+    text-align: right;
+  }
+  .frames {
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    width: min(1280px, 100%);
+  }
+  .frames a {
+    display: block;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    background: rgba(0, 0, 0, 0.4);
+    transition: border-color 0.15s ease;
+  }
+  .frames a:hover { border-color: rgba(121, 235, 222, 0.6); }
+  .frames a.active { border-color: #79ebde; box-shadow: 0 0 0 1px #79ebde; }
+  .frames img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+  .frames figcaption {
+    font-size: 11px;
+    padding: 6px 8px;
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+</head>
+<body>
+  <h1>Semantic Explorer — Round 6 walkthrough</h1>
+  <p>11 frames captured at ~1 fps across desktop, mobile, and overlay states.
+  Click thumbnails to jump; arrow keys or buttons to step; press play for 1 fps auto-advance.</p>
+
+  <div class="stage">
+    <img id="frame" src="01-idle.png" alt="Frame">
+  </div>
+  <div class="caption" id="caption"></div>
+
+  <div class="controls">
+    <button id="prev" type="button">◀ Prev</button>
+    <button id="play" type="button">▶ Play (1 fps)</button>
+    <button id="next" type="button">Next ▶</button>
+    <span class="dwell" id="dwell">01 / 11</span>
+  </div>
+
+  <div class="frames" id="frames"></div>
+
+<script>
+const FRAMES = [
+  { src: "01-idle.png",                      title: "1. Idle — 1440 desktop",                body: "Center title pill, left info panel (Selection header + first-run chipper + Surprise Me), right rail with view + info groups + hidden bottom-left panel toggle." },
+  { src: "02-info-collapsed.png",             title: "2. Info panel collapsed",                body: "Same viewport, info panel hidden — bottom-left 'Open side panel' button reappears as the only way to reopen it." },
+  { src: "03-focus-detail.png",               title: "3. Focus detail — 1440 desktop",         body: "Search anchor on 'coffee' focused. Right rail shows SELECTED MATCH / business card / action buttons (County, Recenter disabled, Expand, Show Trail) / Step Inside / TRAIL / NEARBY STOPS with quiet count and 1px action rail separator." },
+  { src: "04-inside-state.png",               title: "4. Inside state (depth=2)",              body: "ENTERING NEIGHBORHOOD copy. Same action buttons. TRAIL section without the 'Stop 1 of N' because the user hasn't moved yet — round 2 gating holds." },
+  { src: "05-map-search.png",                 title: "5. Map mode + coffee search",            body: "Leaflet map with cluster of dots. SEMANTIC SEARCH bar with MOCK pills on each dev-fallback result row (round 1 2A fix). ANCHOR card on Bloomin' Brews Coffee." },
+  { src: "06-field-guide.png",                title: "6. Field guide open (round 4 fix)",      body: "Right rail shows Read the scene + Neighborhood palette + 20 category buttons. Content persists across toggle (round 4 bug — would wipe after first click — is fixed)." },
+  { src: "07-shortcuts.png",                  title: "7. Keyboard shortcuts",                  body: "Bottom-right overlay lists Arrow / Home / End / + / - / Esc shortcuts." },
+  { src: "08-mobile-390-idle.png",            title: "8. Mobile 390 idle",                     body: "Condensed info panel with bottom search bar. The 47-char stat caption now fits in 320 due to the round 1 1A fix." },
+  { src: "09-mobile-390-focus.png",           title: "9. Mobile 390 focus",                    body: "Top compass pill with TRAIL kicker + action buttons (Center on anchor / Map). SEMANTIC SEARCH / ANCHOR card pinned to bottom. Round 1 1B fix prevents X-clear occlusion." },
+  { src: "10-mobile-320-focus.png",           title: "10. Mobile 320 focus (round 1 fixes)",    body: "Same 390 layout squeezed to 320. Compass copy wraps cleanly; the X-clear is reachable; the stat caption is not bleeding past the viewport." },
+  { src: "11-tablet-768-focus.png",           title: "11. Tablet 768 focus",                    body: "Mid-range breakpoint — info panel + center + right rail all hold without compression." }
+];
+
+const img = document.getElementById("frame");
+const caption = document.getElementById("caption");
+const dwell = document.getElementById("dwell");
+const prevBtn = document.getElementById("prev");
+const nextBtn = document.getElementById("next");
+const playBtn = document.getElementById("play");
+const framesEl = document.getElementById("frames");
+
+let i = 0;
+let playing = false;
+let timer = null;
+
+function show(idx) {
+  i = (idx + FRAMES.length) % FRAMES.length;
+  const f = FRAMES[i];
+  img.src = f.src;
+  caption.innerHTML = `<b>${f.title}</b><br>${f.body}`;
+  dwell.textContent = String(i + 1).padStart(2, "0") + " / " + String(FRAMES.length).padStart(2, "0");
+  for (const a of framesEl.querySelectorAll("a")) a.classList.remove("active");
+  const link = framesEl.querySelector(`[data-i="${i}"]`);
+  if (link) { link.classList.add("active"); link.scrollIntoView({ block: "nearest" }); }
+}
+
+prevBtn.onclick = () => { stop(); show(i - 1); };
+nextBtn.onclick = () => { stop(); show(i + 1); };
+playBtn.onclick = () => (playing ? stop() : play());
+function play() {
+  playing = true;
+  playBtn.textContent = "❚❚ Pause";
+  timer = setInterval(() => show(i + 1), 1000);
+}
+function stop() {
+  if (!playing) return;
+  playing = false;
+  playBtn.textContent = "▶ Play (1 fps)";
+  clearInterval(timer);
+}
+window.onkeydown = (e) => {
+  if (e.key === "ArrowRight") { stop(); show(i + 1); }
+  else if (e.key === "ArrowLeft") { stop(); show(i - 1); }
+  else if (e.key === " ") { e.preventDefault(); playing ? stop() : play(); }
+};
+
+FRAMES.forEach((f, idx) => {
+  const a = document.createElement("a");
+  a.href = "#";
+  a.dataset.i = String(idx);
+  a.onclick = (e) => { e.preventDefault(); stop(); show(idx); };
+  const imgEl = document.createElement("img");
+  imgEl.src = f.src;
+  imgEl.alt = f.title;
+  const cap = document.createElement("figcaption");
+  cap.textContent = String(idx + 1).padStart(2, "0") + " · " + f.title;
+  a.appendChild(imgEl);
+  a.appendChild(cap);
+  framesEl.appendChild(a);
+});
+
+show(0);
+</script>
+</body>
+</html>
