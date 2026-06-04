@@ -60,15 +60,23 @@ export async function loadData() {
     const attemptNumber = state.dataLoadAttempt;
     const maxAttempts = 3;
     const dataUrl = buildAssetUrl(`data.dat?v=6&t=${Date.now()}`);
+    const enrichmentUrl = buildAssetUrl(`scripts/leadEnrichment.public.json?v=1&t=${Date.now()}`);
 
     // 1. Attempt Worker-Based Loading
     const worker = getWorker();
     if (worker) {
         try {
-            const { points, pointIndexByLeadId, positionsBuffer, clustersBuffer } = await callWorker('LOAD_RECORDS', { url: dataUrl });
+            const [{ points, pointIndexByLeadId, positionsBuffer, clustersBuffer }, enrichment] = await Promise.all([
+                callWorker('LOAD_RECORDS', { url: dataUrl }),
+                fetchEnrichment(enrichmentUrl).catch((err) => {
+                    console.warn('Enrichment fetch failed, continuing without it.', err);
+                    return null;
+                })
+            ]);
             withStateMutation(() => {
                 if (state.dataLoadAttempt !== attemptNumber) return;
                 state.points = points;
+                state.leadEnrichment = enrichment;
                 state.pointIndexByLeadId = new Map(Object.entries(pointIndexByLeadId));
                 state.rawPositionsBuffer = positionsBuffer;
                 state.rawClustersBuffer = clustersBuffer;
@@ -83,29 +91,19 @@ export async function loadData() {
     }
 
     // 2. Main-Thread Fallback
-    let raw;
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        try {
-            const response = await fetch(dataUrl);
-            if (!response.ok) throw new Error(`Failed to fetch data: ${response.status}`);
-            try {
-                raw = await response.json();
-            } catch (jsonErr) {
-                throw new Error(`Invalid JSON in data.dat: ${jsonErr.message}`, { cause: jsonErr });
-            }
-            break;
-        } catch (err) {
-            lastError = err;
-            if (attempt < maxAttempts) {
-                await new Promise((r) => setTimeout(r, 500 * attempt));
-            }
-        }
-    }
+    const [raw, enrichment] = await Promise.all([
+        fetchDataWithRetries(dataUrl, maxAttempts),
+        fetchEnrichment(enrichmentUrl).catch((err) => {
+            console.warn('Enrichment fetch failed, continuing without it.', err);
+            return null;
+        })
+    ]);
 
     if (!raw || !Array.isArray(raw)) {
         withStateMutation(() => {
             state.points = [];
             state.pointIndexByLeadId = new Map();
+            state.leadEnrichment = enrichment;
             state.projectedNeighborGrid = null;
             state.projectedNeighborCache = new Map();
             state.rawPositionsBuffer = null;
@@ -153,6 +151,7 @@ export async function loadData() {
     withStateMutation(() => {
         if (state.dataLoadAttempt !== attemptNumber) return;
         state.points = points;
+        state.leadEnrichment = enrichment;
         state.rawPositionsBuffer = positionsBuffer;
         state.rawClustersBuffer = clustersBuffer;
         state.pointIndexByLeadId = new Map();
@@ -164,6 +163,34 @@ export async function loadData() {
     });
 
     finalizeLoading();
+}
+
+async function fetchDataWithRetries(dataUrl, maxAttempts) {
+    let lastError;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            const response = await fetch(dataUrl);
+            if (!response.ok) throw new Error(`Failed to fetch data: ${response.status}`);
+            try {
+                return await response.json();
+            } catch (jsonErr) {
+                throw new Error(`Invalid JSON in data.dat: ${jsonErr.message}`, { cause: jsonErr });
+            }
+        } catch (err) {
+            lastError = err;
+            if (attempt < maxAttempts) {
+                await new Promise((r) => setTimeout(r, 500 * attempt));
+            }
+        }
+    }
+    const detail = lastError?.message ? ` Last error: ${lastError.message}` : '';
+    throw new Error(`Unable to load county records after ${maxAttempts} attempts.${detail}`);
+}
+
+async function fetchEnrichment(url) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch enrichment: ${response.status}`);
+    return response.json();
 }
 
 function finalizeLoading() {

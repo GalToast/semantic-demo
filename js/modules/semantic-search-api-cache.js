@@ -101,14 +101,58 @@ function normalizeMockSearchText(value) {
         .trim();
 }
 
-function getMockPointSearchText(point) {
-    return normalizeMockSearchText([
-        point?.name,
-        point?.what,
-        point?.city,
-        point?.naics,
-        point?.trivia
-    ].filter(Boolean).join(' '));
+/**
+ * Field-weighted scoring. The lead's own one-liner (snapshot) is the
+ * strongest category signal; the lead's analysis paragraph (observations)
+ * is next; the auto-generated business_overview is on par with snapshot.
+ * NAICS-prefix is a strong signal but not dominant — it can be wrong
+ * upstream. Weights are tuned for "childcare" / "coffee" / etc. queries
+ * where the lead's own words matter most.
+ *
+ * Bug Sweep 33: pulls fields from scripts/leadEnrichment.public.json
+ * (state.leadEnrichment[leadId]) in addition to the data.dat point
+ * fields. Records without enrichment fall through to point-only text
+ * matching (backwards-compat).
+ */
+const FIELD_WEIGHTS = Object.freeze({
+    snapshot: 9,
+    business_overview: 9,
+    observations: 7,
+    business_overview_extended: 7,
+    audit_highlights: 5,
+    contact_decision_makers: 5,
+    what: 6,
+    name: 4,
+    naics_prefix: 6,
+    city: 2,
+    address: 2,
+    evidence: 3,
+    snapshot_alt: 9
+});
+
+/**
+ * Build a per-field text map. Returns {fieldName: normalized_text}.
+ * Used so that a hit in `snapshot` scores higher than a hit in `what`.
+ */
+function getMockPointSearchFields(point) {
+    const enrichment = point?.lead_id !== null && point?.lead_id !== undefined
+        ? state.leadEnrichment?.[String(point.lead_id)]
+        : null;
+    return {
+        name: normalizeMockSearchText(point?.name),
+        what: normalizeMockSearchText(point?.what),
+        city: normalizeMockSearchText(point?.city),
+        naics_prefix: point?.naics ? String(point.naics).match(/^(\d{6})/)?.[1] : null,
+        address: normalizeMockSearchText(enrichment?.address || point?.address),
+        snapshot: normalizeMockSearchText(enrichment?.snapshot),
+        snapshot_alt: normalizeMockSearchText(enrichment?.business_overview),
+        business_overview: normalizeMockSearchText(enrichment?.business_overview_extended),
+        business_overview_extended: normalizeMockSearchText(enrichment?.business_overview_extended),
+        observations: normalizeMockSearchText(enrichment?.observations),
+        contact_decision_makers: normalizeMockSearchText(enrichment?.contact_decision_makers),
+        audit_highlights: normalizeMockSearchText(enrichment?.audit_highlights),
+        evidence: normalizeMockSearchText(enrichment?.evidence)
+    };
 }
 
 function getMockDatasetTerms(query, matchedTerm) {
@@ -141,7 +185,7 @@ function buildDatasetBackedMockResults(query, matchedTerm, scoreBase) {
     return state.points
         .map((point, index) => {
             if (!point || point.lead_id === null || point.lead_id === undefined || point.lead_id === '') return null;
-            const text = getMockPointSearchText(point);
+            const fields = getMockPointSearchFields(point);
             let score = 0;
             // Defense in depth for known terms: if the record has a NAICS
             // code on the denylist for this query, exclude it entirely.
@@ -153,30 +197,48 @@ function buildDatasetBackedMockResults(query, matchedTerm, scoreBase) {
             if (naicsDenyList && pNaicsPrefix && naicsDenyList.some((deny) => pNaicsPrefix.startsWith(deny))) {
                 return null;
             }
-            // NAICS-prefix match is the strongest category signal. A
-            // business coded NAICS 624410 is a Child Day Care provider;
-            // NAICS 611512 is a Flight Training provider. The cluster
-            // integer is too coarse to distinguish, but NAICS is exact.
+            // NAICS-prefix match. Strong signal but not dominant — the
+            // lead's own words (snapshot, observations, business_overview)
+            // can override a misclassified NAICS.
             if (naicsPrefix && pNaicsPrefix && pNaicsPrefix.startsWith(naicsPrefix)) {
-                score += 8;
+                score += FIELD_WEIGHTS.naics_prefix;
             }
-            // When the query maps to a known catalog term (e.g. "childcare"),
-            // only count alias matches and the matchedTerm itself; otherwise
-            // a flight school classified as "Education & Childcare" outranks
-            // an actual Montessori academy because "learning" matches
-            // broadly. We require the matchedTerm to appear in the text
-            // (or, in the absence of a matchedTerm, fall back to alias hits).
+            // Field-weighted text matching. The matchedTerm must hit at
+            // least one field; the field that hits determines the weight.
+            // Bug Sweep 33: scoring across multiple corpus fields instead
+            // of just `what`. Records without enrichment fall through to
+            // point-only fields and score lower.
             const strictMode = Boolean(matchedTerm);
-            const matchedTermHit = matchedTerm && text.includes(matchedTerm);
-            if (matchedTermHit) score += 6;
-            if (!strictMode) {
-                terms.forEach((term) => {
-                    if (term && term !== matchedTerm && text.includes(term)) score += 3;
-                });
-            } else if (matchedTermHit) {
-                // Strict mode: only allow the matchedTerm itself.
-                // Aliases are intentionally not scored to keep results
-                // within the requested category.
+            const matchedTermHit = matchedTerm && terms.some((term) =>
+                term && Object.values(fields).some((val) => val && String(val).includes(term))
+            );
+            if (matchedTermHit) {
+                // Find which fields hit and score each by weight
+                for (const [fieldName, fieldText] of Object.entries(fields)) {
+                    if (!fieldText) continue;
+                    if (terms.some((term) => term && fieldText.includes(term))) {
+                        const weight = FIELD_WEIGHTS[fieldName] || 0;
+                        if (strictMode && matchedTerm && !fieldText.includes(matchedTerm)) {
+                            // In strict mode, only the matchedTerm itself scores.
+                            // Aliases are intentionally ignored to keep
+                            // results within the requested category.
+                            continue;
+                        }
+                        score += weight;
+                    }
+                }
+            } else if (!strictMode) {
+                // Generic (non-strict) mode: any alias can score, but only
+                // in the strongest fields (snapshot, business_overview,
+                // observations) so unrelated clusters don't bleed in.
+                for (const [fieldName, fieldText] of Object.entries(fields)) {
+                    if (!fieldText) continue;
+                    const weight = FIELD_WEIGHTS[fieldName] || 0;
+                    if (weight < 5) continue;
+                    if (terms.some((term) => term && fieldText.includes(term))) {
+                        score += weight * 0.5;
+                    }
+                }
             }
             if (point.website) score += 0.4;
             if (point.email) score += 0.3;
@@ -187,20 +249,25 @@ function buildDatasetBackedMockResults(query, matchedTerm, scoreBase) {
         .filter(Boolean)
         .sort((a, b) => b.score - a.score || a.index - b.index)
         .slice(0, 5)
-        .map(({ point, score }, i) => ({
-            lead_id: String(point.lead_id),
-            name: point.name,
-            score: Math.max(0.5, scoreBase - i * 0.05 + Math.min(score, 10) * 0.005),
-            provenance: 'Static dev dataset fallback',
-            thread_type: 'Search match',
-            city: point.city,
-            naics: point.naics || point.what,
-            public_note: point.what || '',
-            website: point.website,
-            email: point.email,
-            phone: point.phone,
-            isMock: true
-        }));
+        .map(({ point, score }, i) => {
+            const enrichment = point.lead_id !== null && point.lead_id !== undefined
+                ? state.leadEnrichment?.[String(point.lead_id)]
+                : null;
+            return {
+                lead_id: String(point.lead_id),
+                name: point.name,
+                score: Math.max(0.5, scoreBase - i * 0.05 + Math.min(score, 30) * 0.003),
+                provenance: 'Static dev dataset fallback',
+                thread_type: 'Search match',
+                city: point.city,
+                naics: point.naics || point.what,
+                public_note: enrichment?.business_overview || point.what || '',
+                website: point.website,
+                email: point.email,
+                phone: point.phone,
+                isMock: true
+            };
+        });
 }
 
 function buildMockCatalogForQuery(query) {

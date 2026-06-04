@@ -15,9 +15,9 @@ export function renderSignalBadges(point) {
     if (state.currentView === 'map') return '';
     if (!point) return '';
     const badges = [];
-    if (point.website) badges.push('<span class="signal-badge meta" title="Website">Website</span>');
-    if (point.email) badges.push('<span class="signal-badge fact" title="Email">Email</span>');
-    if (point.phone) badges.push('<span class="signal-badge ai" title="Phone">Phone</span>');
+    if (point.website) badges.push('<span class="signal-badge meta" title="Website present">Website present</span>');
+    if (point.email) badges.push('<span class="signal-badge fact" title="Email present">Email present</span>');
+    if (point.phone) badges.push('<span class="signal-badge ai" title="Phone present">Phone present</span>');
     return badges.join('');
 }
 
@@ -70,7 +70,6 @@ export function renderSelectedMatchPanel(point) {
     const panelEl = document.getElementById('selected-match-panel');
     const copyEl = document.getElementById('selected-match-copy');
     if (!panelEl || !copyEl) return;
-    const panelSurface = getPanelSurface();
     if (state.currentView === 'map' && !isMapSummarySurface()) { panelEl.hidden = true; return; }
     if (!point) return;
     if (state.currentSearchSummary?.anchorIndex !== undefined) {
@@ -117,12 +116,29 @@ function setSurfaceHidden(el, hidden) {
     if (hidden) {
         el.hidden = true;
         el.setAttribute('aria-hidden', 'true');
-        el.style.display = 'none';
     } else {
         el.hidden = false;
         el.setAttribute('aria-hidden', 'false');
-        el.style.display = '';
     }
+}
+
+function scheduleFrame(callback) {
+    if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(callback);
+        return;
+    }
+    setTimeout(callback, 0);
+}
+
+export function triggerSelectedCardFade(cardEl) {
+    if (!cardEl) return;
+    cardEl.style.setProperty('--selected-card-fade-ms', `${state.SELECTED_CARD_FADE_MS}ms`);
+    cardEl.classList.add('is-fading');
+    scheduleFrame(() => {
+        scheduleFrame(() => {
+            cardEl.classList.remove('is-fading');
+        });
+    });
 }
 
 function focusStageOwnsSelectedContent(surface) {
@@ -158,27 +174,37 @@ export function syncSelectedCardContentVariant(point = null) {
     const detailsEl = document.getElementById('selected-details');
     const titleEl = document.getElementById('selected-card-title');
     const summaryEl = document.getElementById('selected-map-summary');
+    const cascadeEl = document.getElementById('vector-cascade-bg');
     const surface = getPanelSurface();
     const isMapSummary = Boolean(point) && state.currentView === 'map' && isMapSummarySurface();
     const isFocusStageOwner = Boolean(point) && focusStageOwnsSelectedContent(surface);
 
     if (cardEl) {
+        const isEmpty = !point && !isMapSummary;
         cardEl.dataset.contentVariant = isFocusStageOwner ? 'focus-stage' : isMapSummary ? 'map-summary' : (point ? 'detail' : 'empty');
         cardEl.dataset.contentOwner = isFocusStageOwner ? 'focus-stage' : isMapSummary ? 'selected-map-summary' : 'selected-detail-card';
-        if (isFocusStageOwner) {
+        if (isFocusStageOwner || isEmpty) {
+            // Empty / focus-stage variants carry only placeholder H3s ("Business
+            // Name", "Semantic Connection Path"). Inert keeps them out of the
+            // heading outline and tab order until a real point is selected.
             cardEl.setAttribute('aria-hidden', 'true');
             cardEl.inert = true;
         } else if (isMapSummary) {
             cardEl.removeAttribute('aria-hidden');
             cardEl.inert = false;
-            // The empty-state path leaves the card at inline opacity:0; the
-            // CSS rule in mobile_premium__map.css sets opacity:1 on the
-            // content-owner, but inline styles win. Re-assert the visible
-            // state here so a mid-fade transition resolves correctly.
-            if (cardEl.style.opacity !== '1') cardEl.style.opacity = '1';
+            triggerSelectedCardFade(cardEl);
         } else {
             cardEl.removeAttribute('aria-hidden');
             cardEl.inert = false;
+        }
+    }
+
+    if (cascadeEl) {
+        const suppressCascade = isFocusStageOwner || isMapSummary || !point;
+        cascadeEl.hidden = suppressCascade;
+        if (suppressCascade) {
+            cascadeEl.classList.remove('active');
+            cascadeEl.innerHTML = '';
         }
     }
 
@@ -222,24 +248,109 @@ export function syncSelectedCardContentVariant(point = null) {
 /**
  * Filter business trivia, suppressing placeholders and internal metadata.
  */
+export const TRIVIA_BLOCKLIST = Object.freeze({
+    exact: Object.freeze([
+        'Pending research.',
+        'Pending research'
+    ]),
+    equals: Object.freeze([
+        'Has both email and phone.',
+        'Website only — no direct contact on file.'
+    ]),
+    prefixes: Object.freeze([
+        'no ',
+        'none',
+        'no verifiable',
+        'unable to',
+        'could not'
+    ]),
+    substrings: Object.freeze([
+        'SearXNG',
+        'Insufficient evidence',
+        'exact entity name',
+        'verified official',
+        'entity confirmed',
+        'Registry-only',
+        'FMCSA carrier',
+        'USDOT',
+        'SAFER snapshot',
+        'Texas Comptroller',
+        'Research check',
+        'MapQuest',
+        'GoDaddy',
+        'WordPress site on Cloudflare',
+        'Hotel page is active',
+        'Local dirt track',
+        'carrier records',
+        'carrier lookup',
+        'via carrier',
+        'via lookup',
+        'contact found',
+        'Verified phone',
+        'Verified email',
+        'formerly ',
+        'formerly known',
+        'renamed',
+        'rebranded as',
+        'retail chain location',
+        'brand location',
+        'chain location',
+        'operating as',
+        'operated as',
+        'dba',
+        'also known as',
+        'doing business as',
+        'Disqualified',
+        'SKIP',
+        'DO NOT',
+        'REDACTED',
+        ' Omits ',
+        'NAICS',
+        '**Industry**',
+        '**Service**',
+        'SIC ',
+        'SIC:',
+        'New lead profile',
+        'directory:',
+        'from directory',
+        'created from'
+    ]),
+    minLength: 20
+});
+
+export function rejectsTrivia(trivia = '') {
+    const trimmed = String(trivia || '').trim();
+    if (!trimmed) return true;
+    if (TRIVIA_BLOCKLIST.exact.includes(trimmed)) return true;
+    if (TRIVIA_BLOCKLIST.equals.includes(trimmed)) return true;
+    if (trimmed.length < TRIVIA_BLOCKLIST.minLength) return true;
+    const lower = trimmed.toLowerCase();
+    if (TRIVIA_BLOCKLIST.prefixes.some((prefix) => lower.startsWith(prefix))) return true;
+    return TRIVIA_BLOCKLIST.substrings.some((substring) => trimmed.includes(substring));
+}
+
 export function getInterestingBusinessNote(point) {
     if (!point) return null;
+    // Bug Sweep 33: prefer the lead's own one-liner from the enrichment
+    // (snapshot > business_overview > observations) over the database
+    // trivia field, which is often database noise.
+    if (state.leadEnrichment) {
+        const enr = state.leadEnrichment[String(point.lead_id)];
+        if (enr) {
+            const candidates = [
+                enr.snapshot,
+                enr.business_overview_extended,
+                enr.business_overview,
+                enr.observations
+            ];
+            for (const c of candidates) {
+                if (c && !rejectsTrivia(c)) return c.trim();
+            }
+        }
+    }
     if (point.trivia) {
         const t = point.trivia.trim();
-        if (t === 'Pending research.' || t === 'Pending research') return null;
-        if (t.includes('SearXNG') || t.includes('Insufficient evidence')) return null;
-        if (t.includes('exact entity name') || t.includes('verified official') || t.includes('entity confirmed') || t.includes('Registry-only') || t.includes('FMCSA carrier') || t.includes('USDOT') || t.includes('SAFER snapshot') || t.includes('Texas Comptroller')) return null;
-        if (t.includes('Research check') || t.includes('MapQuest') || t.includes('GoDaddy') || t.includes('WordPress site on Cloudflare') || t.includes('Hotel page is active') || t.includes('Local dirt track') || t.includes('carrier records') || t.includes('carrier lookup') || t.includes('via carrier') || t.includes('via lookup') || t.includes('contact found') || t.includes('Verified phone') || t.includes('Verified email')) return null;
-        if (t.includes('formerly ') || t.includes('formerly known') || t.includes('renamed') || t.includes('rebranded as')) return null;
-        if (t.includes('retail chain location') || t.includes('brand location') || t.includes('chain location')) return null;
-        if (t.includes('operating as') || t.includes('operated as') || t.includes('dba') || t.includes('also known as') || t.includes('doing business as')) return null;
-        if (t.includes('Disqualified') || t.includes('SKIP') || t.includes('DO NOT') || t.includes('REDACTED') || t.includes(' Omits ')) return null;
-        if (t.includes('NAICS') || t.includes('**Industry**') || t.includes('**Service**') || t.includes('SIC ') || t.includes('SIC:')) return null;
-        if (t.includes('New lead profile') || t.includes('directory:') || t.includes('from directory') || t.includes('created from')) return null;
-        if (t.toLowerCase().startsWith('no ') || t.toLowerCase().startsWith('none') || t.toLowerCase().startsWith('no verifiable') || t.toLowerCase().startsWith('unable to') || t.toLowerCase().startsWith('could not')) return null;
-        if (t.length < 20) return null;
-        if (t === 'Has both email and phone.') return null;
-        if (t === 'Website only — no direct contact on file.') return null;
+        if (rejectsTrivia(t)) return null;
         return t;
     }
     if (point.email && point.phone) return null;
@@ -254,8 +365,4 @@ export function buildSelectedMatchNarrative(point) {
     if (!point) return '';
     if (state.currentSearchSummary?.reason) return state.currentSearchSummary.reason;
     return '';
-}
-
-export function initFocusStageRendererAdapter() {
-    // Legacy adapter retired in Phase 3
 }

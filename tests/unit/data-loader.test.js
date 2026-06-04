@@ -129,11 +129,18 @@ describe('data-loader', () => {
             }
 
             vi.stubGlobal('Worker', FakeWorker);
-            global.fetch = vi.fn();
+            // Bug Sweep 33: the worker path now also fetches enrichment
+            // in parallel, so global.fetch IS called once (for the
+            // enrichment). The data.dat fetch is done by the worker.
+            global.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({})
+            });
 
             await loadData();
 
-            expect(global.fetch).not.toHaveBeenCalled();
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+            expect(global.fetch.mock.calls[0][0]).toMatch(/leadEnrichment\.public\.json/);
             expect(state.points).toEqual(workerPoints);
             expect(state.pointIndexByLeadId.get('worker_1')).toBe(0);
         });
@@ -152,7 +159,9 @@ describe('data-loader', () => {
             await vi.runAllTimersAsync();
 
             await loadPromise;
-            expect(fetchAttempts).toBe(3);
+            // Bug Sweep 33: 3 retries for data.dat + 1 parallel call
+            // for the enrichment (which is caught and ignored).
+            expect(fetchAttempts).toBe(4);
         });
 
         it('should throw specific error for malformed JSON', async () => {

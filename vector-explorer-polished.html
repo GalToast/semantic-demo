@@ -25,16 +25,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="semantic-demo.css?v=31f12c973932">
+    <link rel="stylesheet" href="semantic-demo.css?v=0aa2ce692c1f">
     <link rel="stylesheet" href="vector-explorer-pandora.css?v=810fdd9e4f75">
-    <link rel="stylesheet" href="css/mobile_premium__focus-dive.css?v=25f131f9dac6">
-    <link rel="stylesheet" href="css/mobile_premium__chrome.css?v=8fa6332a75c3">
-    <link rel="stylesheet" href="css/mobile_premium__state.css?v=5c0ee1c9ebd8">
+    <link rel="stylesheet" href="css/mobile_premium__focus-dive.css?v=ee46eed74fdb">
+    <link rel="stylesheet" href="css/mobile_premium__chrome.css?v=403d0eeaf34a">
+    <link rel="stylesheet" href="css/mobile_premium__state.css?v=f0cc9c29c8dc">
     <link rel="stylesheet" href="css/mobile_premium__idle.css?v=62d0e9eb4d3a">
-    <link rel="stylesheet" href="css/mobile_premium__map.css?v=a7288671c873">
-    <link rel="stylesheet" href="css/mobile_premium__surfaces.css?v=db7cffab44d4">
-    <link rel="stylesheet" href="css/mobile_premium__narrow.css?v=df79a9cbe649">
-    <link rel="stylesheet" href="css/modules/focus_stage.css?v=8e39e667052b">
+    <link rel="stylesheet" href="css/mobile_premium__map.css?v=bb41998e40ae">
+    <link rel="stylesheet" href="css/mobile_premium__surfaces.css?v=450885d6ff22">
+    <link rel="stylesheet" href="css/mobile_premium__narrow.css?v=98dcc0b73811">
+    <link rel="stylesheet" href="css/modules/focus_stage.css?v=1f20a83e22bc">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>M</text></svg>">
 </head>
 <body>
@@ -188,30 +188,17 @@
     <!-- Canvas Container (Galaxy View) -->
     <main id="main-content"><div id="canvas-container" aria-label="3D mycelium visualization"></div></main>
 
-    <!-- Compact color legend for the 3D scene (anchored to the canvas) -->
+    <!-- Compact color legend for the 3D scene (anchored to the canvas).
+         Populated by buildCanvasColorLegend() from state.COLORS + state.CLUSTER_NAMES
+         so the swatches and labels stay in sync with the actual 3D palette. -->
     <div class="canvas-color-legend" id="canvas-color-legend" role="region" aria-label="Network color legend">
         <div class="canvas-color-legend-title">Network</div>
-        <div class="canvas-color-legend-row">
-            <span class="canvas-color-legend-swatch" style="--swatch-color: #4ecdc4"></span>
-            <span class="canvas-color-legend-label">Anchor</span>
-        </div>
-        <div class="canvas-color-legend-row">
-            <span class="canvas-color-legend-swatch" style="--swatch-color: #ff6b9d"></span>
-            <span class="canvas-color-legend-label">Match</span>
-        </div>
-        <div class="canvas-color-legend-row">
-            <span class="canvas-color-legend-swatch" style="--swatch-color: #a66cff"></span>
-            <span class="canvas-color-legend-label">Cluster</span>
-        </div>
-        <div class="canvas-color-legend-row">
-            <span class="canvas-color-legend-swatch" style="--swatch-color: #ffd93d"></span>
-            <span class="canvas-color-legend-label">Highlight</span>
-        </div>
+        <div id="canvas-color-legend-rows"></div>
     </div>
     
     <!-- Map Container -->
-    <div id="map-container" role="region" aria-label="Connection map">
-        <div id="map-trail-strip" class="map-trail-strip" hidden>
+    <div id="map-container">
+        <div id="map-trail-strip" class="map-trail-strip" role="region" aria-label="Connection path" hidden>
             <div class="map-strip-title">Connection Path</div>
         </div>
     </div>
@@ -256,7 +243,7 @@
     <div class="journey-compass glass-heavy" id="journey-compass" role="region" aria-label="Journey status" aria-live="off">
         <div class="journey-compass-copy">
             <div class="journey-compass-kicker" id="journey-compass-kicker">Journey</div>
-            <div class="journey-compass-title" id="journey-compass-title">County View</div>
+            <h1 class="journey-compass-title" id="journey-compass-title">County View</h1>
             <div class="journey-compass-note" id="journey-compass-note">Start wide, then search to open one semantic trail.</div>
         </div>
         <div class="journey-compass-rail">
@@ -285,7 +272,7 @@
     <!-- Info Panel - collapsible -->
     <aside class="info-panel slide-in-left active" id="info-panel" role="region" aria-labelledby="info-panel-title">
         <button class="info-header" id="info-panel-toggle" type="button" aria-label="Toggle info panel" aria-expanded="true" aria-controls="info-panel">
-            <span id="info-panel-title">MoCo Business Mycelium</span>
+            <p class="info-panel-title" id="info-panel-title">MoCo Business Mycelium</p>
             <span class="info-toggle-icon" id="info-toggle-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-panel"></use></svg></span>
         </button>
         <div class="info-content" id="info-panel-content">
@@ -355,7 +342,7 @@
                         </div>
                         <div class="search-trail-cue-note" id="search-trail-cue-note">The first strong match becomes the anchor; from there you can center it and explore the neighborhood.</div>
                     </div>
-                    <div class="search-results glass-light" id="search-results" role="region" aria-label="Search results" aria-live="off" aria-atomic="false"></div>
+                    <div class="search-results glass-light" id="search-results" role="region" aria-label="Search results" aria-live="off" aria-atomic="false" aria-hidden="true"></div>
                     <div class="synthesize-trigger" id="synthesize-trigger" hidden>
                         <div class="guide-cta-kicker">Next best move</div>
                         <button id="btn-synthesize" class="btn-synthesize" type="button">
@@ -586,7 +573,7 @@
         }
     }
     </script>
-    <script type="module" src="dist/bundle.js?v=a06aec88282c"></script>
+    <script type="module" src="dist/bundle.js?v=1e71d8239796"></script>
 
     <div id="semantic-summary-card" class="summary-card hidden glass-heavy" role="region" aria-labelledby="summary-card-title-text" aria-hidden="true" hidden>
         <div class="summary-header">

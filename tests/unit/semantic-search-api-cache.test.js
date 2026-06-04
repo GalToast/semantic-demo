@@ -252,5 +252,65 @@ describe('semantic-search-api-cache', () => {
             expect(result.dev_mode).toBe('static-php-fallback');
             expect(result.results).toEqual([]);
         });
+
+        it('should rank a lead with strong snapshot above one with only a NAICS match (Bug Sweep 33)', async () => {
+            // Regression test for the new field-weighted scoring. Before
+            // the enrichment integration, a record with the right NAICS
+            // outranked a record with the right "story." Now the lead's
+            // own one-liner (snapshot) is the dominant signal.
+            Object.assign(state, {
+                points: [
+                    { lead_id: 1, name: 'Generic Cafe', what: 'Local business', city: 'Conroe', cluster: 6, naics: '722515' },
+                    { lead_id: 2, name: 'Real Coffee Co', what: 'Local business', city: 'Conroe', cluster: 6, naics: '722515' }
+                ],
+                leadEnrichment: {
+                    '1': { snapshot: null, observations: null, business_overview: null },
+                    '2': { snapshot: 'We roast specialty coffee beans for offices in Conroe', observations: null, business_overview: null }
+                }
+            });
+            Object.defineProperty(window, 'location', {
+                value: { hostname: 'localhost', search: '' },
+                writable: true
+            });
+
+            global.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                text: () => Promise.resolve('<?php echo "Raw PHP Code"; ?>')
+            });
+
+            const result = await fetchSemanticSearchResults('coffee');
+            const ids = result.results.map((r) => r.lead_id);
+
+            // Both should surface, but lead 2 (with snapshot) should rank first
+            expect(ids).toContain('1');
+            expect(ids).toContain('2');
+            expect(ids[0]).toBe('2');
+        });
+
+        it('should not require enrichment to find a record (backwards-compat)', async () => {
+            // Records without enrichment (no state.leadEnrichment) should
+            // still match via point fields. Fall-through to point.what
+            // and point.name keeps the legacy catalog working.
+            state.leadEnrichment = null;
+            Object.assign(state, {
+                points: [
+                    { lead_id: 1, name: 'Real Coffee Co', what: 'Coffee shop and roastery', city: 'Conroe', cluster: 6, naics: '722515' }
+                ]
+            });
+            Object.defineProperty(window, 'location', {
+                value: { hostname: 'localhost', search: '' },
+                writable: true
+            });
+
+            global.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                text: () => Promise.resolve('<?php echo "Raw PHP Code"; ?>')
+            });
+
+            const result = await fetchSemanticSearchResults('coffee');
+            expect(result.ok).toBe(true);
+            expect(result.results.length).toBeGreaterThan(0);
+            expect(result.results[0].lead_id).toBe('1');
+        });
     });
 });

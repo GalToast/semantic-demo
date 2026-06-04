@@ -21,6 +21,7 @@ export const _rawState = {
     nodeSporeMaterial: null,
     rawPositionsBuffer: null,
     rawClustersBuffer: null,
+    leadEnrichment: null, // Public enrichment keyed by lead_id, fetched from scripts/leadEnrichment.public.json (Bug Sweep 33)
     myceliumLines: null,
     myceliumGroup: null,
     myceliumCoreLines: null,
@@ -56,11 +57,17 @@ export const _rawState = {
 
     // ==== CONFIGURATION CONSTANTS ====
     MAP_HANDOFF_PRELUDE_MS: 430,
+    VIEW_HANDOFF_OUT_MS: 1200,
+    TERRAIN_LANDING_SETTLE_MS: 1200,
+    TERRAIN_LANDING_SETTLE_LONG_MS: 1800,
+    SHOW_VIEW_HANDOFF_DISMISS_MS: 2200,
+    MAP_TRAIL_REFRESH_LATE_DELAY_MS: 100,
     AUTO_ROTATE_IDLE_MS: 3600,
     AUTO_ROTATE_MANUAL_IDLE_MS: 5200,
     AUTO_ROTATE_SOFT_RESUME_MS: 1800,
     AUTO_ROTATE_BASE_SPEED: 0.34,
     MOBILE_ROUTE_FIELD_PEEK_MS: 1550,
+    SELECTED_CARD_FADE_MS: 180,
     ORBIT_MIN_DISTANCE_DEFAULT: 0.5,
     ORBIT_MIN_DISTANCE_INSIDE: 0.24,
     ORBIT_MAX_DISTANCE_DEFAULT: 5.5,
@@ -178,6 +185,7 @@ export const _rawState = {
     searchAbortController: null,
     currentSearchSummary: null,
     currentEmptyQuery: null,
+    semanticTrailCue: 'idle',
     applyingUrlState: false,
     restoringBrowserHistory: false,
     urlStateRestoreToken: 0,
