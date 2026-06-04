@@ -73,7 +73,11 @@ async function handleLoadRecords({ url }) {
             email: p.length > 11 ? cleanOptionalValue(p[11]) : null,
             phone: p.length > 12 ? cleanOptionalValue(p[12]) : null,
             trivia: p.length > 13 ? cleanOptionalValue(p[13]) : null,
-            status: p.length > 14 ? cleanOptionalValue(p[14]) || 'active' : 'active'
+            status: p.length > 14 ? cleanOptionalValue(p[14]) || 'active' : 'active',
+            // NAICS code (e.g. "624410" or "611512"). Optional column added in
+            // 2026-06-04 by scripts/augment_data.py. Records without a NAICS
+            // fall through to text matching in the search code.
+            naics: p.length > 15 ? cleanOptionalValue(p[15]) : null
         };
     });
 

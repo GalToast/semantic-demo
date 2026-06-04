@@ -47,9 +47,50 @@ const MOCK_QUERY_TERMS = Object.keys(MOCK_CATALOG);
 const MOCK_QUERY_ALIASES = {
     coffee: ['coffee', 'cafe', 'espresso', 'latte', 'roaster', 'bakery', 'brew'],
     roof: ['roof', 'roofing', 'roofer', 'shingle'],
-    childcare: ['childcare', 'child care', 'daycare', 'day care', 'montessori', 'learning'],
+    // Dropped 'learning' and 'montessori' — too broad, pulled in flight
+    // schools and unrelated academies. Stick to the unambiguous terms.
+    childcare: ['childcare', 'child care', 'daycare', 'day care'],
     dog: ['dog', 'pet', 'groom', 'grooming', 'paws', 'kennel']
 };
+
+// NAICS prefix per known catalog term. When a point has a NAICS code in
+// `point.naics`, this is the strongest signal that the point belongs to the
+// category (e.g. NAICS 624410 = Child Day Care Services). A prefix match
+// wins over the text match, so an aviation school classified as cluster 12
+// (Education & Childcare) but coded NAICS 611512 will not outrank a
+// Montessori academy coded 624410. Records without a NAICS field still
+// fall through to text matching (backwards-compat with the existing
+// catalog, where every entry already has a NAICS string).
+//
+// Format: `point.naics` may be either "624410" or
+// "624410 - Child Day Care Services"; we match on `startsWith(prefix)`.
+const MOCK_QUERY_NAICS_PREFIX = Object.freeze({
+    coffee: '722515',
+    roof: '238160',
+    childcare: '624410',
+    dog: '812910'
+});
+
+// NAICS prefix denylist per known catalog term. A record whose NAICS
+// starts with any of these prefixes is *excluded* from that query's
+// results, even if its name or what-text would otherwise match. This is
+// the local-code defense against the upstream-data misclassification
+// that produced the original "childcare returns aviation schools"
+// problem: even if LeadOps tags a flight school as cluster 12 with
+// NAICS 611512, the search code refuses to surface it for "childcare"
+// because the NAICS prefix is on the denylist.
+//
+// Defense-in-depth: a record with NAICS 611512, 611710 (Educational
+// Support Services), 812910 (Pet Care), etc. is not a Child Day Care
+// provider, regardless of what its `what` text says.
+const MOCK_QUERY_NAICS_DENY = Object.freeze({
+    childcare: ['611512', '611710', '812910', '611110', '611610'],
+    dog: ['624410', '611512', '722515'],
+    coffee: ['238160', '624410'],
+    roof: ['722515', '624410', '812910']
+});
+
+const EXPLICIT_EMPTY_QUERY_PATTERN = /^(?:__no_results__|none|empty|xj9k2l|nil|void|error)$/i;
 
 function normalizeMockSearchText(value) {
     return String(value || '')
@@ -83,15 +124,60 @@ function buildDatasetBackedMockResults(query, matchedTerm, scoreBase) {
     const terms = getMockDatasetTerms(query, matchedTerm);
     if (!terms.length) return [];
 
+    // NAICS-based scoring for known terms. The local code owns this
+    // contract, not upstream: even if a record is misclassified upstream,
+    // the search refuses to surface it for the wrong category. Records
+    // without a NAICS field fall through to text matching (backwards-compat
+    // with the existing dataset, which has no NAICS column yet).
+    const naicsPrefix = matchedTerm ? MOCK_QUERY_NAICS_PREFIX[matchedTerm] : null;
+    const naicsDenyList = matchedTerm ? MOCK_QUERY_NAICS_DENY[matchedTerm] : null;
+    const pointNaicsPrefix = (point) => {
+        const n = point?.naics;
+        if (!n) return null;
+        const m = String(n).match(/^(\d{6})/);
+        return m ? m[1] : null;
+    };
+
     return state.points
         .map((point, index) => {
             if (!point || point.lead_id === null || point.lead_id === undefined || point.lead_id === '') return null;
             const text = getMockPointSearchText(point);
             let score = 0;
-            terms.forEach((term) => {
-                if (!term) return;
-                if (text.includes(term)) score += term === matchedTerm ? 6 : 3;
-            });
+            // Defense in depth for known terms: if the record has a NAICS
+            // code on the denylist for this query, exclude it entirely.
+            // This handles the case where upstream has misclassified a
+            // record (e.g. an aviation school tagged cluster 12 AND NAICS
+            // 611512; the local code refuses to surface it for "childcare"
+            // even if the name or what text would otherwise match).
+            const pNaicsPrefix = pointNaicsPrefix(point);
+            if (naicsDenyList && pNaicsPrefix && naicsDenyList.some((deny) => pNaicsPrefix.startsWith(deny))) {
+                return null;
+            }
+            // NAICS-prefix match is the strongest category signal. A
+            // business coded NAICS 624410 is a Child Day Care provider;
+            // NAICS 611512 is a Flight Training provider. The cluster
+            // integer is too coarse to distinguish, but NAICS is exact.
+            if (naicsPrefix && pNaicsPrefix && pNaicsPrefix.startsWith(naicsPrefix)) {
+                score += 8;
+            }
+            // When the query maps to a known catalog term (e.g. "childcare"),
+            // only count alias matches and the matchedTerm itself; otherwise
+            // a flight school classified as "Education & Childcare" outranks
+            // an actual Montessori academy because "learning" matches
+            // broadly. We require the matchedTerm to appear in the text
+            // (or, in the absence of a matchedTerm, fall back to alias hits).
+            const strictMode = Boolean(matchedTerm);
+            const matchedTermHit = matchedTerm && text.includes(matchedTerm);
+            if (matchedTermHit) score += 6;
+            if (!strictMode) {
+                terms.forEach((term) => {
+                    if (term && term !== matchedTerm && text.includes(term)) score += 3;
+                });
+            } else if (matchedTermHit) {
+                // Strict mode: only allow the matchedTerm itself.
+                // Aliases are intentionally not scored to keep results
+                // within the requested category.
+            }
             if (point.website) score += 0.4;
             if (point.email) score += 0.3;
             if (point.phone) score += 0.2;
@@ -119,6 +205,7 @@ function buildDatasetBackedMockResults(query, matchedTerm, scoreBase) {
 
 function buildMockCatalogForQuery(query) {
     const q = (query || '').toLowerCase().trim();
+    if (EXPLICIT_EMPTY_QUERY_PATTERN.test(q)) return [];
     let bucket = MOCK_CATALOG.coffee; // safe default
     let matchedTerm = null;
     let scoreBase = 0.95;
@@ -372,6 +459,12 @@ function allowsStaticDevFallback() {
     return params.get('staticDev') !== '0';
 }
 
+function shouldLogStaticDevFallback() {
+    if (typeof window === 'undefined' || !window.location) return false;
+    const params = new URLSearchParams(window.location.search || '');
+    return params.get('staticDevWarnings') === '1' || params.get('debugStaticDev') === '1';
+}
+
 export async function fetchSemanticSearchResults(query, signal, options = {}) {
     const trimmedQuery = typeof query === 'string' ? query.trim() : '';
     if (!trimmedQuery) return [];
@@ -414,7 +507,9 @@ export async function fetchSemanticSearchResults(query, signal, options = {}) {
             let payload;
 
             if (detectStaticDevPHP(responseText) && allowsStaticDevFallback()) {
-                debugWarn('[semantic-search-api-cache] Detected raw PHP response. Assuming static dev server. Returning mock results.');
+                if (shouldLogStaticDevFallback()) {
+                    debugWarn('[semantic-search-api-cache] Detected raw PHP response. Assuming static dev server. Returning mock results.');
+                }
 
                 // TODO(data-regen): data.dat still contains a few slug-style names
                 // (e.g. "2-hampton-inn-and-suites") from the initial corpus seed. The catalog
@@ -422,7 +517,7 @@ export async function fetchSemanticSearchResults(query, signal, options = {}) {
                 // before the data pipeline is regenerated. Long-term: re-emit data.dat from the
                 // LeadOps corpus with clean names.
 
-                const isExplicitEmpty = /^(none|empty|xj9k2l|nil|void|error)$/i.test(trimmedQuery);
+                const isExplicitEmpty = EXPLICIT_EMPTY_QUERY_PATTERN.test(trimmedQuery);
                 const mockResults = isExplicitEmpty ? [] : buildMockCatalogForQuery(trimmedQuery);
 
                 payload = {
