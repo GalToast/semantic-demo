@@ -297,18 +297,32 @@ export function getNextWalkCandidateForIndex(currentIndex, options = {}) {
         return getBoundedNeighborhoodWalkCandidate(1, currentIndex, { commit: !!options.commitNeighborhood });
     }
     const historySet = new Set(state.navState.walkHistoryIndices || []);
-    const semanticWalkCandidateLimit = getSemanticThreadDisplayLimit();
-    const candidates = getThreadCandidatesForIndex(currentIndex)
-        .filter((candidate) => isPointVisible(candidate.index, state.points, null, state.activeFilters) && candidate.index !== currentIndex)
-        .slice(0, semanticWalkCandidateLimit);
+    // Sort by quality BEFORE filtering by visibility/canvas so the "next
+    // stop" is the highest-quality neighbor in the underlying data, not
+    // the highest-quality neighbor in whatever subset is visible on the
+    // current viewport. Otherwise the same anchor on desktop vs mobile gets
+    // different recommendations.
+    const allCandidates = getThreadCandidatesForIndex(currentIndex)
+        .filter((candidate) => candidate.index !== currentIndex)
+        .sort((a, b) => {
+            const as = a.semanticScore || 0;
+            const bs = b.semanticScore || 0;
+            if (bs !== as) return bs - as;
+            const sa = a.score || 0;
+            const sb = b.score || 0;
+            if (sb !== sa) return sb - sa;
+            return a.index - b.index;
+        });
     const requireSemantic = options.requireSemantic ?? state.currentView === 'galaxy';
     const requireOnCanvas = options.requireOnCanvas ?? state.currentView === 'galaxy';
     const candidatePool = requireSemantic
-        ? candidates.filter((candidate) => candidate?.source === 'semantic')
-        : candidates;
+        ? allCandidates.filter((candidate) => candidate?.source === 'semantic')
+        : allCandidates;
     const visibleCandidatePool = requireOnCanvas
-        ? candidatePool.filter((candidate) => initJourneyNeighborhoodAdapter.adapter.isThreadCandidateVisibleOnCanvas(candidate.index))
-        : candidatePool;
+        ? candidatePool
+            .filter((candidate) => isPointVisible(candidate.index, state.points, null, state.activeFilters))
+            .filter((candidate) => initJourneyNeighborhoodAdapter.adapter.isThreadCandidateVisibleOnCanvas(candidate.index))
+        : candidatePool.filter((candidate) => isPointVisible(candidate.index, state.points, null, state.activeFilters));
     const nextCandidate =
         visibleCandidatePool.find((candidate) => !historySet.has(candidate.index)) ||
         visibleCandidatePool[0] ||
@@ -408,7 +422,25 @@ export function primeBoundedSemanticNeighborhoodForTraversal(seedIndex) {
 export function setTrailFromSeed(seedIndex) {
     const semanticCandidates = getSemanticThreadCandidates(seedIndex);
     const limit = getSemanticThreadDisplayLimit();
-    const candidates = (semanticCandidates.length ? semanticCandidates : getGeometricThreadCandidates(seedIndex))
+    // Sort by quality BEFORE filtering by visibility so the "next stop" is
+    // the highest-quality neighbor in the underlying data, not the highest-
+    // quality neighbor in whatever subset happens to be visible on the
+    // current viewport. Otherwise the same anchor on desktop vs mobile
+    // gets different "next stop" recommendations.
+    const allCandidates = (semanticCandidates.length ? semanticCandidates : getGeometricThreadCandidates(seedIndex))
+        .sort((a, b) => {
+            const as = a.semanticScore || 0;
+            const bs = b.semanticScore || 0;
+            if (bs !== as) return bs - as;
+            const sa = a.score || 0;
+            const sb = b.score || 0;
+            if (sb !== sa) return sb - sa;
+            // Final tiebreaker on index so the "next stop" is fully
+            // deterministic across loads and viewports, even when upstream
+            // neighbor order varies.
+            return a.index - b.index;
+        });
+    const candidates = allCandidates
         .filter((candidate) => isPointVisible(candidate.index, state.points, null, state.activeFilters))
         .slice(0, limit);
     const source = semanticCandidates.length ? 'semantic' : (candidates[0]?.source || 'geometric-fallback');

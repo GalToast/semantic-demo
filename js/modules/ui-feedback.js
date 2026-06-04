@@ -22,7 +22,9 @@ export function showExperienceToast(title, copy) {
     const titleEl = document.getElementById('experience-toast-title');
     const copyEl = document.getElementById('experience-toast-copy');
     toast.setAttribute('aria-hidden', 'false');
-    toast.setAttribute('aria-live', 'assertive');
+    // Polite so the toast doesn't interrupt the user's current screen-reader
+    // speech; "View restored" is a status confirmation, not a critical alert.
+    toast.setAttribute('aria-live', 'polite');
     if (titleEl) titleEl.textContent = title;
     if (copyEl) copyEl.textContent = copy;
     toast.classList.add('active');
