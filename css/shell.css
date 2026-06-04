@@ -375,7 +375,10 @@ body[data-trail-depth='2'] #canvas-container::after {
     position: fixed;
     left: 16px;
     bottom: calc(80px + env(safe-area-inset-bottom, 0px));
-    z-index: var(--z-overlay, 4);
+    /* Lower than the info-panel (z-panels=50) so the legend sits behind
+       search results and selected-card overflow. The legend still rides
+       above the 3D canvas and the right rail of view controls. */
+    z-index: var(--z-chrome-elevated);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -386,11 +389,11 @@ body[data-trail-depth='2'] #canvas-container::after {
     -webkit-backdrop-filter: blur(28px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 10px;
+    font-family: var(--font-sans, 'Nunito Sans', sans-serif);
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.04em;
-    color: rgba(255, 255, 255, 0.78);
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.85);
     pointer-events: none;
     opacity: 0.85;
     transition: opacity 0.3s ease;
@@ -401,12 +404,12 @@ body[data-active-view='map'] .canvas-color-legend {
 }
 
 .canvas-color-legend-title {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.12em;
     color: rgba(255, 255, 255, 0.55);
-    margin-bottom: 2px;
+    margin-bottom: 3px;
 }
 
 .canvas-color-legend-row {
@@ -427,9 +430,9 @@ body[data-active-view='map'] .canvas-color-legend {
 @media (max-width: 768px) {
     .canvas-color-legend {
         left: 12px;
-        top: calc(78px + env(safe-area-inset-top, 0px));
+        top: calc(142px + env(safe-area-inset-top, 0px));
         bottom: auto;
-        font-size: 9px;
+        font-size: 10px;
         padding: 8px 10px;
     }
 }
@@ -592,15 +595,17 @@ body[data-active-view='map'][data-terrain-handoff='landing'] #map-container .lea
 
 /* SD-005: map trail strip — compact trail navigation visible in map view
    when the main .trail-controls are hidden by [data-trail-state="active"] rules.
-   Positioned inside #map-container above the Leaflet tile pane. */
+   Positioned inside #map-container above the Leaflet tile pane.
+   Post-D36 the strip is a single-column title-only surface, so the grid
+   resolves to minmax(0, 1fr) for the .map-strip-title child. */
 .map-trail-strip {
     position: absolute;
     top: 12px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 900;
+    z-index: calc(var(--z-blocker) - 100);
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     align-items: center;
     gap: 8px;
     padding: 7px 14px;
@@ -614,67 +619,6 @@ body[data-active-view='map'][data-terrain-handoff='landing'] #map-container .lea
 
 .map-trail-strip[hidden] {
     display: none;
-}
-
-.map-trail-strip .trail-strip-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    padding: 5px 10px;
-    background: var(--color-primary-soft);
-    border: 1px solid var(--color-primary-soft);
-    border-radius: var(--radius-pill);
-    color: var(--color-text-primary);
-    font-size: 11px;
-    font-family: inherit;
-    cursor: pointer;
-    transition:
-        background 0.18s ease,
-        border-color 0.18s ease;
-}
-
-.map-strip-copy {
-    min-width: 0;
-    display: grid;
-    gap: 2px;
-}
-
-.map-strip-kicker {
-    min-width: 0;
-    color: var(--color-primary);
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    line-height: 1.1;
-    text-transform: uppercase;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.map-strip-actions {
-    display: inline-grid;
-    grid-template-columns: repeat(2, minmax(48px, auto));
-    gap: 6px;
-    align-items: center;
-}
-
-.map-trail-strip .trail-strip-btn:hover:not(:disabled) {
-    background: var(--color-primary-soft);
-    border-color: var(--color-primary-ring);
-}
-
-.map-trail-strip .trail-strip-btn:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-}
-
-.map-trail-strip .trail-strip-position {
-    font-size: 10px;
-    color: var(--color-text-secondary);
-    padding: 0 4px;
-    letter-spacing: 0.3px;
 }
 
 #map-container .leaflet-interactive {
@@ -1027,3 +971,4 @@ body[data-trail-state='active'] .biofield-orb {
         filter: blur(0.2px) drop-shadow(0 0 12px rgba(var(--color-primary-tint-rgb), 0.1));
     }
 }
+

@@ -69,15 +69,19 @@ States: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-resu
 
 | Script | What it checks |
 |--------|---------------|
-| `check:semantic-space` | `tests/semantic-space-audit.mjs` verifies `data.dat` 3D coordinates preserve `semantic_threads_ui.dat` neighbor relationships with edge-distance and neighborhood-preservation thresholds. `tests/semantic-thread-relationship-role-contract.mjs` verifies Focus Constellation role metadata is present and propagated. Included in `npm test`. |
+| `check:semantic-space` | `tests/semantic-space-audit.mjs` verifies `data.dat` 3D coordinates preserve `semantic_threads_ui.dat` neighbor relationships with edge-distance and neighborhood-preservation thresholds, and verifies `data.dat`, `data.dat.gz`, `semantic_threads_ui.dat`, and `semantic_space_layout_manifest.json` all trace back to the same embedding index generation. `tests/semantic-thread-relationship-role-contract.mjs` verifies Focus Constellation role metadata is present and propagated. Included in `npm test`. |
 
-Regenerate the rendered 3D semantic coordinates with `python scripts/rebuild-semantic-space-layout.py`. The script reads the parent-folder Qwen index at `../tmp/public-semantic-search-build/index-motion338b`, preserves the compact `data.dat` row schema, updates only `x/y/z`, writes `data.dat.gz`, and records `semantic_space_layout_manifest.json`.
+Regenerate the rendered 3D semantic coordinates with `python scripts/rebuild-semantic-space-layout.py`. The script reads the parent-folder Qwen index at `../tmp/public-semantic-search-build/index-rich-0.6b-20260604`, preserves the compact `data.dat` row schema, updates only `x/y/z`, writes `data.dat.gz`, and records `semantic_space_layout_manifest.json`.
 
-Regenerate semantic thread payloads from the rich public Qwen index before running `check:semantic-space` after corpus/index changes:
+`scripts/re-embed-corpus.py` writes `scripts/qwen3_embeddings.npy`, `scripts/qwen3_embeddings_meta.json`, and a promoted public index directory. It must not write raw UMAP coordinates into `data.dat`; only `scripts/rebuild-semantic-space-layout.py` owns browser coordinate generation.
+
+After CRM/corpus/index changes, rebuild the public corpus, semantic thread payloads, and rendered coordinates before running `check:semantic-space`:
 
 ```bash
-python ../scripts/maintenance/build_semantic_threads_from_public_index.py --corpus "../tmp/public-semantic-search-build/ask_moco_corpus.from-leadops.jsonl" --index-dir "../tmp/public-semantic-search-build/index-rich-0.6b-20260529" --output "./semantic_threads.dat" --neighbors 24 --candidate-pool 96 --jobs 1
+python ../scripts/maintenance/export_public_semantic_corpus_from_leadops.py --db "../crm.sqlite" --output "../tmp/public-semantic-search-build/ask_moco_corpus.from-leadops.jsonl"
+python ../scripts/maintenance/build_semantic_threads_from_public_index.py --corpus "../tmp/public-semantic-search-build/ask_moco_corpus.from-leadops.jsonl" --index-dir "../tmp/public-semantic-search-build/index-rich-0.6b-20260604" --output "./semantic_threads.dat" --neighbors 24 --candidate-pool 96 --jobs 1
 python ../scripts/maintenance/build_semantic_threads_ui.py "./semantic_threads.dat" "./semantic_threads_ui.dat" --neighbor-limit 12
+python scripts/rebuild-semantic-space-layout.py --index-dir "../tmp/public-semantic-search-build/index-rich-0.6b-20260604"
 ```
 
 `semantic_threads_ui.dat` must preserve `relationship_role`, `relationship_axis`, and `role_reason` per edge. Current role taxonomy: `core_peer`, `upstream`, `downstream`, `complement`, `same_market`, `geo_echo`, `bridge`.

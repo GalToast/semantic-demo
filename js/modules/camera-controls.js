@@ -691,6 +691,44 @@ export function clearInsideCentroid() {
 // AUTO-ROTATE STATE MACHINE
 // -----------------------------------------------------------------------------
 
+/**
+ * Canonical idle/overview camera pose. Used to correct auto-rotate drift after
+ * long idle periods or viewport resizes. Matches the initial camera in
+ * `initThreeJS` (state.camera.position.set(1.5, 1.2, 2.0); camera.lookAt(0,0,0)).
+ */
+export const OVERVIEW_CAMERA_POSE = Object.freeze({
+    position: Object.freeze([1.5, 1.2, 2.0]),
+    target: Object.freeze([0, 0, 0])
+});
+
+/**
+ * Snap the camera + OrbitControls target back to the canonical idle pose.
+ * Guarded so it only fires when the app is actually in overview (no focus,
+ * no selection, no trail depth, no scene reveal). Returns true if a settle
+ * was applied. Does not animate — the goal is a reliable reset, not a
+ * choreographed return. Callers:
+ *   - returnToOverview() in lifecycle.js
+ *   - onWindowResize() in scene-reveal.js (corrects long-idle drift)
+ */
+export function settleCameraToOverviewPose() {
+    if (!state.camera || !state.controls) return false;
+    if (state.sceneRevealActive) return false;
+    if (state.focusedNode !== null) return false;
+    if (state.selectedPoint !== null) return false;
+    if (state.navState?.mode !== 'overview') return false;
+    if (state.trailDepth !== 0) return false;
+
+    const [px, py, pz] = OVERVIEW_CAMERA_POSE.position;
+    const [tx, ty, tz] = OVERVIEW_CAMERA_POSE.target;
+    state.camera.position.set(px, py, pz);
+    state.controls.target.set(tx, ty, tz);
+    state.camera.lookAt(tx, ty, tz);
+    if (typeof state.controls.update === 'function') {
+        state.controls.update();
+    }
+    return true;
+}
+
 export function isCameraIdleOrbitAllowed() {
     const prefersReduced = prefersReducedMotion()
     return (

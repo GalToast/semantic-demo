@@ -2,6 +2,12 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as searchState from '../../js/modules/search-state.js';
 import { subscribe, EVENTS } from '../../js/modules/event-bus.js';
 import { state, withStateMutation } from '../../js/state.js';
+import { fetchSemanticSearchResults } from '../../js/modules/semantic-search-api-cache.js';
+import {
+    getSemanticSearchServiceResults,
+    getSemanticSearchTotalMatches,
+    mapSemanticSearchResults
+} from '../../js/modules/search-mapper.js';
 
 // Mock dependencies
 vi.mock('../../js/modules/search-tokenizer.js', () => ({
@@ -161,5 +167,36 @@ describe('search-state orchestration', () => {
         expect(state.selectedPoint).toBeNull();
         expect(resetEvents.at(-1)).toMatchObject({ reason: 'filter-invalidate', silent: true });
         expect(state.trailIndices.size).toBe(0);
+    });
+
+    it('publishes one success event for a single-result search while still requesting focus', async () => {
+        const successEvents = [];
+        const focusEvents = [];
+        const unsubscribeSuccess = subscribe(EVENTS.SEARCH_SUCCESS, (payload) => successEvents.push(payload));
+        const unsubscribeFocus = subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, (payload) => focusEvents.push(payload));
+        const point = {
+            lead_id: 'lead-1',
+            name: 'Single Result Plumbing',
+            cluster: 1
+        };
+
+        fetchSemanticSearchResults.mockResolvedValue({ client_cache_hit: false });
+        getSemanticSearchServiceResults.mockReturnValue([{ id: 'lead-1' }]);
+        getSemanticSearchTotalMatches.mockReturnValue(1);
+        mapSemanticSearchResults.mockReturnValue([{ index: 7, point }]);
+
+        try {
+            await searchState.search('plumbing');
+        } finally {
+            unsubscribeSuccess();
+            unsubscribeFocus();
+        }
+
+        expect(successEvents).toHaveLength(1);
+        expect(successEvents[0]).toMatchObject({ query: 'plumbing', source: 'network' });
+        expect(focusEvents).toHaveLength(1);
+        expect(focusEvents[0]).toMatchObject({ point, index: 7 });
+        expect(document.getElementById('search-status').textContent)
+            .toContain('1 match for "plumbing"');
     });
 });

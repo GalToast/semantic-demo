@@ -105,7 +105,7 @@ for (const file of MOBILE_PREMIUM_SPLIT) {
   }
 }
 
-const combinedMobilePremium = MOBILE_PREMIUM_SPLIT.map(read).join('\n');
+const combinedMobilePremium = MOBILE_PREMIUM_SPLIT.map((file) => read(`css/${file}`)).join('\n');
 for (const fragment of requiredFragments) {
   if (!combinedMobilePremium.includes(fragment)) {
     failures.push(`mobile_premium split must keep fragment ${JSON.stringify(fragment)} across the 7 files`);

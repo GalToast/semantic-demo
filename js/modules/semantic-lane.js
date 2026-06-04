@@ -10,6 +10,7 @@
 import { state } from '../state.js';
 import { detectStaticDevPHP } from './utils/ui-presentation.js';
 import { updateSemanticLaneState } from './state-mutators.js';
+import { debugWarn } from './diagnostic-adapter.js';
 
 let legendGuideStateUpdater = null;
 let staticDevFallbackWarningShown = false;
@@ -38,6 +39,13 @@ function allowsStaticDevFallback() {
     return params.get('staticDev') !== '0';
 }
 
+function shouldLogStaticDevFallback() {
+    const win = getWindow();
+    if (!win?.location) return false;
+    const params = new URLSearchParams(win.location.search || '');
+    return params.get('staticDevWarnings') === '1' || params.get('debugStaticDev') === '1';
+}
+
 export async function fetchSemanticLaneHealth({ warm = false, signal = null } = {}) {
     const response = await fetch(`api.php?action=semantic_lane_health&warm=${warm ? '1' : '0'}`, {
         method: 'GET',
@@ -51,7 +59,9 @@ export async function fetchSemanticLaneHealth({ warm = false, signal = null } = 
 
     if (detectStaticDevPHP(responseText) && allowsStaticDevFallback()) {
         if (!staticDevFallbackWarningShown) {
-            console.warn('[semantic-lane] Detected raw PHP response. Assuming static dev server. Returning mock healthy state.');
+            if (shouldLogStaticDevFallback()) {
+                debugWarn('[semantic-lane] Detected raw PHP response. Assuming static dev server. Returning mock healthy state.');
+            }
             staticDevFallbackWarningShown = true;
         }
         payload = {
@@ -338,12 +348,12 @@ export function setSemanticLaneUiState(laneState, options = {}) {
         // row on narrow viewports.
         if (laneState === 'healthy' || focusOwnsRail || hasVisibleResults) {
             assistEl.hidden = true;
-            assistEl.style.display = 'none';
             assistEl.dataset.state = 'idle';
+            assistEl.style.display = 'none';
         } else {
             assistEl.hidden = false;
-            assistEl.style.display = '';
             assistEl.dataset.state = 'degraded';
+            assistEl.style.display = '';
             const assistCopyEl = doc?.getElementById?.('semantic-lane-assist-copy') || null;
             const assistMetaEl = doc?.getElementById?.('semantic-lane-assist-meta') || null;
             if (assistCopyEl) {
@@ -359,7 +369,6 @@ export function setSemanticLaneUiState(laneState, options = {}) {
         pill.title = title;
         pill.setAttribute('aria-label', title);
         pill.hidden = false;
-        pill.style.display = '';
     } else {
         if (laneState === 'unavailable') {
             pill.textContent = '';
@@ -371,14 +380,12 @@ export function setSemanticLaneUiState(laneState, options = {}) {
             pill.title = title;
             pill.setAttribute('aria-label', title);
             pill.hidden = false;
-            pill.style.display = '';
             pill.style.cursor = 'pointer';
         } else {
             pill.textContent = label;
             pill.title = title;
             pill.setAttribute('aria-label', title);
             pill.hidden = false;
-            pill.style.display = '';
         }
     }
     if (legendGuideStateUpdater) legendGuideStateUpdater();

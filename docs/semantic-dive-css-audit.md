@@ -118,6 +118,6 @@ UNIQUE, not duplicate.
 
 3. Inside button treatments: btn-inside-next amber gradient and btn-inside-county cyan (journey_active.css:367-401) are unique -- no canonical counterpart.
 
-4. Field-node rules: All field-node rules are unique to journey_active.css per owner matrix. Out-of-scope for deduplication.
+4. Field-node rules: In the pre-split monolithic CSS, field-node rules were unique to journey_active.css. Since the mobile_premium__ split, active field-node selectors have migrated to `css/mobile_premium__focus-dive.css` (44 selectors) and `css/mobile_premium__surfaces.css` (17 selectors). `css/journey_active.css` retains journey-compass base phase/density states but no active field-node selectors.
 
 5. progressive_disclosure.css bare-display rules at 1028-1034 and 1273-1285 are fully superseded. Safe to remove once is-active gating is confirmed in runtime.

@@ -102,10 +102,12 @@ body[data-active-view='map'] .cluster-legend {
 .selected-card {
     position: relative;
     --cluster-rgb: 78 205 196;
+    --selected-card-fade-ms: 180ms;
     margin-bottom: 14px;
     padding: 12px;
     background:
-        radial-gradient(circle at top right, rgb(var(--cluster-rgb) / 0.08), transparent 34%), var(--glass-reflection-fade);
+        radial-gradient(circle at top right, rgb(var(--cluster-rgb) / 0.08), transparent 34%),
+        var(--glass-reflection-fade);
     border: 1px solid rgb(var(--cluster-rgb) / 0.14);
     border-radius: 12px;
     overflow-y: auto;
@@ -118,8 +120,12 @@ body[data-active-view='map'] .cluster-legend {
         border-color 0.22s ease,
         box-shadow 0.22s ease,
         background 0.22s ease,
-        opacity 0.22s ease,
+        opacity var(--selected-card-fade-ms, 180ms) ease,
         filter 0.22s ease;
+}
+
+#selected-card.is-fading {
+    opacity: 0;
 }
 
 .selected-card.reveal-focus {
@@ -424,7 +430,8 @@ body[data-panel-surface='map-focus-search'] .trail-context {
 }
 
 .galaxy-cluster-label[data-label-mode='search'] {
-    /* Optional mode-specific styling */
+    border-color: rgba(255, 226, 122, 0.34);
+    box-shadow: 0 0 18px rgba(255, 226, 122, 0.16);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -229,10 +229,10 @@ export function syncSemanticDiveUi() {
             ? 'Entering neighborhood...'
             : active
                 ? 'Inside Neighborhood, use Next Stop to continue or County to exit'
-                : 'Step Inside — explore the neighborhood around this business'
+                : 'Explore the neighborhood around this business'
     );
     diveButton.setAttribute('aria-busy', String(isTransitioning));
-    if (label) label.textContent = isTransitioning ? 'Entering...' : active ? 'Inside Neighborhood' : 'Step Inside';
+    if (label) label.textContent = isTransitioning ? 'Entering...' : active ? 'Inside Neighborhood' : 'Explore Neighborhood';
     if (copy) {
         copy.textContent = isTransitioning
             ? 'Loading nearby connections.'

@@ -1,11 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as journeyCompassState from '../../js/modules/journey-compass-state.js';
 import { state, withStateMutation } from '../../js/state.js';
-import * as domFormatters from '../../js/modules/utils/dom-formatters.js';
-import * as uiPresentation from '../../js/modules/utils/ui-presentation.js';
-import * as mapState from '../../js/modules/map-state.js';
-import * as journeyThreadModel from '../../js/modules/journey-thread-model.js';
-import * as journeyLifecycleAdapter from '../../js/modules/journey-lifecycle-adapter.js';
 
 vi.mock('../../js/modules/utils/dom-formatters.js', () => ({
     formatBusinessName: vi.fn(n => n)
@@ -28,7 +23,8 @@ vi.mock('../../js/modules/journey-thread-model.js', () => ({
 
 vi.mock('../../js/modules/journey-lifecycle-adapter.js', () => ({
     getNextWalkCandidateForIndex: vi.fn(),
-    applyLocalNeighborhoodFocus: vi.fn()
+    applyLocalNeighborhoodFocus: vi.fn(),
+    getInterestingBusinessNote: vi.fn(() => null)
 }));
 
 describe('journey-compass-state', () => {
@@ -45,6 +41,7 @@ describe('journey-compass-state', () => {
                     { name: 'Point B', cluster: 1 }
                 ],
                 currentSearchSummary: null,
+                semanticTrailCue: 'idle',
                 semanticDiveMode: false,
                 currentView: 'galaxy',
                 semanticLaneSnapshot: { state: 'ready' }
@@ -80,7 +77,7 @@ describe('journey-compass-state', () => {
             const compassState = journeyCompassState.getJourneyCompassState();
             expect(compassState.phase).toBe('overview');
             expect(compassState.title).toBe('The MoCo Mycelium');
-            expect(compassState.primaryAction.action).toBe('focus-search');
+            expect(compassState.primaryAction.action).toBe(journeyCompassState.JOURNEY_ACTIONS.FOCUS_SEARCH);
         });
 
         it('should return map state when currentView is map', () => {
@@ -111,7 +108,8 @@ describe('journey-compass-state', () => {
             state.focusedNode = 0;
             const compassState = journeyCompassState.getJourneyCompassState();
             expect(compassState.phase).toBe('focus');
-            expect(compassState.title).toContain('Point A');
+            expect(compassState.title).toBe('');
+            expect(compassState.kicker).toContain('Test Cluster');
         });
 
         it('should return inside state when insideActive', () => {
@@ -122,7 +120,8 @@ describe('journey-compass-state', () => {
             
             const compassState = journeyCompassState.getJourneyCompassState();
             expect(compassState.phase).toBe('inside');
-            expect(compassState.title).toContain('Inside Point A');
+            expect(compassState.title).toBe('');
+            expect(compassState.kicker).toContain('Test Cluster');
         });
     });
 });

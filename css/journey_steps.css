@@ -569,6 +569,31 @@ body[data-panel-surface]:not([data-panel-surface^='map-'])[data-strand-journey='
     font-weight: 700;
 }
 
+.focus-stage-neighbor-role {
+    margin-left: 6px;
+    font-size: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    color: rgba(var(--color-primary-tint-rgb), 0.7);
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.focus-stage-neighbor-next-stop-badge {
+    margin-left: 8px;
+    font-size: 7.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #14180c;
+    background: rgba(var(--color-primary-tint-rgb), 0.9);
+    padding: 2px 5px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
 .focus-stage-neighbor-reason {
     overflow: hidden;
     text-overflow: ellipsis;

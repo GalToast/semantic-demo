@@ -286,7 +286,6 @@ const PINNED_FILES = [
   'search-lifecycle-adapter-contract.mjs',
   'view-controller-ownership-contract.mjs',
   'loading-ui-contract.mjs',
-  'exploration-data-contract.mjs',
   'state-ownership-contract.mjs',
   'state-mutator-ownership-contract.mjs',
   'filter-ownership-contract.mjs',

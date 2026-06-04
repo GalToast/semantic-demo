@@ -207,6 +207,18 @@
         0 12px 26px var(--shadow-antumbra);
 }
 
+/* Use aria-disabled (not the native disabled attribute) so the title
+   tooltip is still discoverable on hover; click handler no-ops instead. */
+.focus-stage-action-btn[aria-disabled='true'] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: auto;
+}
+
+.focus-stage-action-btn[aria-disabled='true']:hover {
+    transform: none;
+}
+
 .focus-stage-dive-btn {
     width: 100%;
     margin-top: 9px;
@@ -420,6 +432,15 @@ body[data-inside-walk-state='walking'] .focus-stage-inside-pulse {
         color 0.2s ease,
         transform 0.2s ease;
     max-width: 100%;
+    overflow: hidden;
+}
+
+.focus-stage-neighbor-pill > span,
+.focus-stage-neighbor-pill .focus-stage-neighbor-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
 }
 
 .focus-stage-neighbor-pill:hover {
@@ -483,7 +504,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
     overflow: hidden;
     margin-top: 0;
     padding-top: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0);
+    border-top: 0 solid rgba(255, 255, 255, 0);
     pointer-events: none;
     align-items: center;
     justify-content: space-between;
@@ -493,6 +514,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
         max-height 0.48s cubic-bezier(0.4, 0, 0.2, 1),
         margin-top 0.48s cubic-bezier(0.4, 0, 0.2, 1),
         padding-top 0.48s cubic-bezier(0.4, 0, 0.2, 1),
+        border-top-width 0.48s cubic-bezier(0.4, 0, 0.2, 1),
         border-top-color 0.48s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -501,6 +523,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
     max-height: 200px;
     margin-top: 10px;
     padding-top: 10px;
+    border-top-width: 1px;
     border-top-color: var(--glass-reflection);
     pointer-events: auto;
 }
@@ -812,7 +835,7 @@ body[data-trail-state='active'] .focus-stage-neighbor-pill {
     }
 
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .focus-stage-journey-btn {
-        min-width: 42px;
+        min-width: 44px;
         min-height: 44px;
         border-radius: 11px;
     }
@@ -840,8 +863,16 @@ body[data-trail-state='active'] .focus-stage-neighbor-pill {
     }
 
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .focus-stage-neighbor-list {
-        gap: 6px;
+        gap: var(--focus-stage-neighbor-row-gap, 6px);
         margin-top: 7px;
+    }
+
+    body[data-panel-surface]:not([data-panel-surface^='map-']):is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search']
+        )
+        .focus-stage-neighbor-pill.is-next-stop {
+        padding: 8px 12px;
     }
 
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .focus-stage-neighbor-main {
@@ -917,6 +948,32 @@ body[data-trail-state='active'] .focus-stage-neighbor-pill {
         pointer-events: none;
     }
 
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-thread-inspect-surface='idle']
+        )
+        #focus-stage
+        :is(.focus-stage-dive-btn, .focus-stage-neighbors) {
+        display: none;
+        visibility: hidden;
+        max-height: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        pointer-events: none;
+    }
+
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-thread-inspect-surface='idle']
+        )
+        #focus-stage
+        .focus-stage-card {
+        max-height: min(33dvh, 280px);
+        overflow-y: auto;
+    }
+
+    body[data-panel-surface='focus'] #info-panel .selected-card,
+    body[data-panel-surface='focus'] #info-panel #selected-card,
+    body[data-panel-surface='focus'] #info-panel .selected-empty,
     body[data-panel-surface='focus-search'] #info-panel .selected-card,
     body[data-panel-surface='focus-search'] #info-panel #selected-card,
     body[data-panel-surface='focus-search'] #info-panel .selected-empty,
@@ -929,6 +986,33 @@ body[data-trail-state='active'] .focus-stage-neighbor-pill {
     body[data-panel-surface='focus-search'] #info-panel .trail-context {
         display: none;
         visibility: hidden;
+        pointer-events: none;
+    }
+
+    html
+        body.is-active[data-active-view='galaxy']:is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search']
+        ):not([data-thread-inspect-surface='idle'])
+        #focus-stage.focus-stage
+        .focus-stage-card
+        #focus-stage-neighbors.focus-stage-neighbors.active,
+    html
+        body.is-active[data-active-view='galaxy']:is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search']
+        ):not([data-thread-inspect-surface='idle'])
+        #focus-stage.focus-stage
+        .focus-stage-card
+        .focus-stage-dive-btn {
+        display: none;
+        visibility: hidden;
+        max-height: 0;
+        height: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        overflow: hidden;
         pointer-events: none;
     }
 }
@@ -963,18 +1047,34 @@ body[data-trail-state='active'] .focus-stage-neighbor-pill {
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
         :is(
             .share-toggle,
-            .legend-toggle,
-            .help-toggle,
-            .controls,
+            .controls.controls-view,
+            .controls-divider,
             #btn-share-view,
-            #btn-legend,
-            #btn-keyboard-help,
             .panel-toggle,
             .time-display
         ) {
         display: none;
         visibility: hidden;
         pointer-events: none;
+    }
+
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='focus'] .controls.controls-rail.controls,
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='focus'] .controls.controls-info.controls,
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='focus-search'] .controls.controls-rail.controls,
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='focus-search'] .controls.controls-info.controls,
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='semantic-dive'] .controls.controls-rail.controls,
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='semantic-dive'] .controls.controls-info.controls {
+        display: contents;
+        visibility: visible;
+        pointer-events: auto;
+        opacity: 1;
+    }
+
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+        :is(.legend-toggle, .help-toggle, #btn-legend, #btn-keyboard-help) {
+        display: flex;
+        visibility: visible;
+        pointer-events: auto;
     }
 
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])

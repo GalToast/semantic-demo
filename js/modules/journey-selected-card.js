@@ -11,6 +11,7 @@ import {
     renderSelectedMatchPanel,
     renderSelectedActionRow,
     syncSelectedCardContentVariant,
+    triggerSelectedCardFade,
 } from './ui-renderers.js';
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
 import { isMapSummarySurface } from './environment.js';
@@ -267,11 +268,8 @@ export function updateSelectedBusiness(point, options = {}) {
     if (typeof updateSelectedCardHeading === 'function') updateSelectedCardHeading(point || null);
 
     if (!point) {
-        if (cardEl) cardEl.style.opacity = '0';
-        setTimeout(() => {
-            if (cardEl && cardEl.style.opacity !== '1') cardEl.style.opacity = '1';
-        }, 180);
-        emptyEl.style.display = '';
+        triggerSelectedCardFade(cardEl);
+        emptyEl.hidden = false;
         detailsEl.hidden = true;
         detailsEl.classList.remove('active');
         if (cardEl) applyClusterUiAccent(cardEl, null);
@@ -290,12 +288,12 @@ export function updateSelectedBusiness(point, options = {}) {
         const triviaEl = document.getElementById('selected-trivia');
         if (triviaEl) {
             triviaEl.textContent = '';
-            triviaEl.style.display = 'none';
+            triviaEl.hidden = true;
         }
         const factsEl = document.getElementById('selected-facts');
         if (factsEl) factsEl.textContent = COPY.selectedEmptyFacts;
         const sensitivityEl = document.getElementById('selected-sensitivity');
-        if (sensitivityEl) { sensitivityEl.innerHTML = ''; sensitivityEl.style.display = 'none'; }
+        if (sensitivityEl) { sensitivityEl.innerHTML = ''; sensitivityEl.hidden = true; }
         const themeEl = document.getElementById('selected-theme');
         if (themeEl) themeEl.textContent = COPY.selectedEmptyTheme;
         const statusEl = document.getElementById('selected-status');
@@ -307,7 +305,7 @@ export function updateSelectedBusiness(point, options = {}) {
         const trailContextEl = document.getElementById('trail-context');
         if (trailContextEl) {
             trailContextEl.textContent = '';
-            trailContextEl.style.display = 'none';
+            trailContextEl.hidden = true;
         }
         const filedAsEl = document.getElementById('selected-filed-as');
         if (filedAsEl) {
@@ -326,13 +324,10 @@ export function updateSelectedBusiness(point, options = {}) {
     const mapSummarySurface = isMapSummarySurface();
     const cardWasEmpty = detailsEl && window.getComputedStyle(detailsEl).display === 'none';
     if (cardWasEmpty && !mapSummarySurface) {
-        cardEl.style.opacity = '0';
-        setTimeout(() => {
-            if (cardEl && cardEl.style.opacity !== '1') cardEl.style.opacity = '1';
-        }, 180);
+        triggerSelectedCardFade(cardEl);
     }
     if (cardEl) applyClusterUiAccent(cardEl, point);
-    emptyEl.style.display = 'none';
+    emptyEl.hidden = true;
     detailsEl.hidden = false;
     detailsEl.classList.add('active');
 
@@ -401,7 +396,7 @@ export function updateSelectedBusiness(point, options = {}) {
         const matchNarrative = typeof adapter.buildSelectedMatchNarrative === 'function' ? adapter.buildSelectedMatchNarrative(point) : '';
         const showTrivia = interestingNote && !matchNarrative.includes(interestingNote);
         triviaEl.textContent = showTrivia ? interestingNote : '';
-        triviaEl.style.display = showTrivia ? 'block' : 'none';
+        triviaEl.hidden = !showTrivia;
     }
 
     const suppressAutoRevealForFieldNode = options.revealCard !== true && typeof adapter.isFieldNodeFocusContext === 'function' && adapter.isFieldNodeFocusContext();
@@ -437,7 +432,7 @@ export function updateSelectedBusiness(point, options = {}) {
             });
         }
         sensitivityEl.innerHTML = sensitivityBadges.join('');
-        sensitivityEl.style.display = sensitivityBadges.length ? '' : 'none';
+        sensitivityEl.hidden = sensitivityBadges.length === 0;
     }
 
     themeEl.textContent = describeCluster(point.cluster);

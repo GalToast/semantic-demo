@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import { state } from '../state.js';
 import { triggerSearchHeroMoment } from './three-search-animations.js';
 import { calculateSignalScore } from './utils/geo-data.js';
+import {
+    createFocusAnchorIndicator,
+    updateFocusAnchorIndicator
+} from './focus-anchor-indicator.js';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -335,6 +339,11 @@ export function initSemanticLens() {
     anchorBloomLight.name = 'anchorBloomLight';
     state.scene.add(anchorBloomLight);
     state.anchorBloomLight = anchorBloomLight;
+
+    // Size + ring + pulse focus anchor indicator (see focus-anchor-indicator.js
+    // for the cues chosen and the rationale).  Lives in the 3D scene — CSS
+    // class treatment would not reach a Three.js mesh.
+    createFocusAnchorIndicator();
 }
 
 export function updateInteractionVisuals(now, hoveredNode, focusedNode) {
@@ -517,6 +526,11 @@ export function updateInteractionVisuals(now, hoveredNode, focusedNode) {
         }
         state.anchorBloomLight.visible = state.anchorBloomLight.intensity > 0.01;
     }
+
+    // 5. Focus anchor indicator (size + ring + pulse).  Honors
+    //    prefers-reduced-motion inside the module — the pulse is dropped
+    //    and the ring + size alone carry the cue for reduced-motion users.
+    updateFocusAnchorIndicator(now, focusedNode);
 }
 
 // ── Micro-demo Visual Bridge ────────────────────────────────────────────────

@@ -497,7 +497,7 @@ body[data-active-view='galaxy']::after {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 5;
+    z-index: var(--z-content);
     background: radial-gradient(circle at center, transparent 40%, rgba(9, 12, 20, 0.45) 100%);
     opacity: 1;
     transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -813,7 +813,7 @@ body[data-panel-surface='semantic-dive']::after {
 .micro-demo-veil {
     position: fixed;
     inset: 0;
-    z-index: 200;
+    z-index: var(--z-tooltips);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.4s ease;
@@ -885,6 +885,16 @@ body[data-panel-surface='search'] .exploration-card,
 body[data-panel-surface='search'] .focus-stage,
 body[data-panel-surface='search'] .focus-thread-inspector {
     display: none;
+}
+
+/* Desktop-specific cleanups for idle/search */
+@media (min-width: 769px) {
+    body[data-panel-surface='idle'] .selected-card,
+    body[data-panel-surface='idle'] .selected-empty,
+    body[data-panel-surface='search'] .selected-card,
+    body[data-panel-surface='search'] .selected-empty {
+        display: none;
+    }
 }
 
 /* ── Map+Search: results and map mode controls own the rail; no empty card overlay ── */

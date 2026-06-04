@@ -150,6 +150,16 @@
         display: none;
     }
 
+    /* In semantic-dive the focus-stage card owns the neighborhood UI.
+       The top compass title is intentionally empty (per journey-compass-state
+       insideActive), so the pill would render as an empty outlined shell.
+       Hide it entirely on mobile — the focus-stage card is the surface. */
+    body.is-active[data-panel-surface='semantic-dive'] .journey-compass.glass-heavy[data-density='compact'] {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     body.is-active:is([data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) #mode-grid,
     body.is-active:is([data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) .mode-grid {
         display: none;
@@ -276,7 +286,7 @@
             align-items: stretch;
             justify-content: center;
             gap: 5px;
-            z-index: 1300;
+            z-index: calc(var(--z-toast) + 100);
             pointer-events: auto;
         }
 
@@ -303,7 +313,7 @@
             gap: 4px;
             padding: 2px;
             pointer-events: auto;
-            z-index: 2;
+            z-index: calc(var(--z-base) + 1);
         }
 
         body.is-active[data-panel-surface='semantic-dive']:not([data-panel-surface^='map-'])
@@ -674,24 +684,23 @@
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .focus-stage-neighbor-list {
         display: grid;
-        gap: 5px;
-        max-height: 88px;
-        overflow-y: auto;
-        scrollbar-width: none;
+        gap: 6px;
+        max-height: none;
+        overflow-y: visible;
     }
 
-    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node'])
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-focus-panel-mode='field-node'])
         .focus-stage-neighbor-count {
         display: none;
     }
 
-    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node'])
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-focus-panel-mode='field-node'])
         .focus-stage-neighbor-list {
         max-height: 54px;
         overflow: hidden;
     }
 
-    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node'])
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-focus-panel-mode='field-node'])
         .focus-stage-neighbor-list
         > :nth-child(n + 2) {
         display: none;
@@ -706,7 +715,7 @@
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .focus-stage-neighbor-pill {
         display: flex;
-        min-height: 42px;
+        min-height: var(--focus-stage-neighbor-row-min, 44px);
         border-radius: 10px;
     }
 
@@ -850,8 +859,6 @@
         .focus-stage-neighbors.active {
         display: block;
         flex: 0 1 auto;
-        max-height: 158px;
-        overflow-y: auto;
     }
 
     /* ----------------------------------------------------------------
@@ -883,6 +890,7 @@
     body.is-active[data-panel-surface='focus-search']:not([data-panel-surface^='map-']):not(
             [data-focus-panel-mode='field-node']
         )
+        #focus-stage
         .focus-stage-what {
         margin: 0 20px 18px;
         font-size: 14px;
@@ -1229,11 +1237,32 @@
         }
     }
 
-    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node'])
+    /* When trail is idle, focus-stage sits above the info-panel peek sheet */
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node'])[data-trail-state='idle']
+        #focus-stage.focus-stage {
+        bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+        max-height: min(39dvh, 330px);
+        overflow: hidden;
+    }
+
+    /* Field node also needs to clear the info-panel in focus-search idle state */
+    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'][data-trail-state='idle']
+        #focus-stage.focus-stage {
+        bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* When trail is active, info-panel is hidden, so focus-stage returns to bottom */
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node'])[data-trail-state='active']
         #focus-stage.focus-stage {
         bottom: max(12px, env(safe-area-inset-bottom, 0px));
         max-height: min(39dvh, 330px);
         overflow: hidden;
+    }
+
+    /* Field node returns to bottom when trail is active */
+    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'][data-trail-state='active']
+        #focus-stage.focus-stage {
+        bottom: env(safe-area-inset-bottom, 0px);
     }
 
     body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) .focus-stage-card {
@@ -1384,12 +1413,20 @@
 
     body.is-active[data-panel-surface='focus'] .focus-stage-note,
     body.is-active[data-panel-surface='focus-search'] .focus-stage-note,
+    body.is-active[data-panel-surface='focus'] .focus-stage-what,
+    body.is-active[data-panel-surface='focus-search'] .focus-stage-what,
     body.is-active[data-panel-surface='focus'] .focus-stage-meta,
     body.is-active[data-panel-surface='focus-search'] .focus-stage-meta,
     body.is-active[data-panel-surface='focus'] .focus-stage-badges,
     body.is-active[data-panel-surface='focus-search'] .focus-stage-badges,
     body.is-active[data-panel-surface='focus'] .focus-stage-trivia,
     body.is-active[data-panel-surface='focus-search'] .focus-stage-trivia,
+    body.is-active[data-panel-surface='focus']:not([data-focus-panel-mode='field-node']) .focus-stage-journey-meta,
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) .focus-stage-journey-meta,
+    body.is-active[data-panel-surface='focus']:not([data-focus-panel-mode='field-node']) .focus-stage-journey-progress,
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) .focus-stage-journey-progress,
+    body.is-active[data-panel-surface='focus']:not([data-focus-panel-mode='field-node']) .focus-stage-next,
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) .focus-stage-next,
     body.is-active[data-panel-surface='focus'] .focus-thread-inspector,
     body.is-active[data-panel-surface='focus-search'] .focus-thread-inspector,
     body.is-active[data-panel-surface='focus'] #trail-controls,
@@ -1447,12 +1484,11 @@
 
     body.is-active[data-panel-surface='focus'] .focus-stage-neighbors.active,
     body.is-active[data-panel-surface='focus-search'] .focus-stage-neighbors.active {
-        display: none;
-        margin-top: 6px;
-        padding-top: 6px;
-        max-height: 58px;
-        overflow-x: auto;
-        overflow-y: hidden;
+        display: block;
+        margin-top: 0;
+        padding-top: 0;
+        max-height: 54px;
+        overflow: hidden;
         border-top-width: 1px;
         scrollbar-width: none;
     }
@@ -1472,17 +1508,27 @@
     body.is-active[data-panel-surface='focus'] .focus-stage-neighbor-list,
     body.is-active[data-panel-surface='focus-search'] .focus-stage-neighbor-list {
         display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: minmax(220px, 58vw);
-        gap: 7px;
-        max-height: none;
+        grid-auto-flow: row;
+        grid-auto-columns: auto;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 6px;
+        max-height: 54px;
         margin-top: 0;
-        overflow: visible;
+        overflow: hidden;
+        scrollbar-width: none;
+    }
+
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
+        .focus-stage-neighbor-list
+        > :nth-child(n + 2) {
+        display: none;
     }
 
     body.is-active[data-panel-surface='focus'] .focus-stage-neighbor-pill,
     body.is-active[data-panel-surface='focus-search'] .focus-stage-neighbor-pill {
-        min-height: 44px;
+        min-height: 54px;
+        height: 54px;
+        max-height: 54px;
     }
 
     body.is-active[data-panel-surface='focus'] .focus-stage-neighbor-main,

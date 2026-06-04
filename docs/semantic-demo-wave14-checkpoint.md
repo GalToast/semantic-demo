@@ -8,10 +8,12 @@
 ## Completed Tasks
 
 ### 1. CSS Matrix Slice 3 (`field-node` Canopy)
-- **Consolidated HUD:** Ensure `css/journey_active.css` owns the `.journey-compass` field-node canopy HUD and associated journey components.
+- **Consolidated HUD:** Wave 14 intended `css/journey_active.css` to own the `.journey-compass` field-node canopy HUD and associated journey components; see the 2026-06-04 note below for current ownership.
 - **Unified Actions:** Moved `.focus-stage-journey.active`, `.focus-stage-journey-meta`, and `.focus-stage-actions` to `journey_active.css`.
 - **Removed Duplicates:** Cleaned up redundant definitions in `journey_steps.css` and `strands.css`.
 - **Verified:** `npm run qa:contract:field-node` and all other surface contracts pass.
+
+> **2026-06-04 note:** This checkpoint records the Wave 14 field-node consolidation _intent_. Following subsequent QA, the active field-node selectors have migrated to `css/mobile_premium__focus-dive.css` (44 selectors) and `css/mobile_premium__surfaces.css` (17 selectors). `css/journey_active.css` retains journey-compass base phase/density states but now contains **no active field-node selectors**. See `docs/semantic-demo-focus-stage-css-owner-matrix.md` for current ownership.
 
 ### 2. URL State Orchestration Refactor
 - **Event-Driven Decoupling:** Migrated residual URL state logic from `lifecycle.js` to `url-state.js` using the central event bus (`VIEW_CHANGED`, `EXPLORATION_DEPTH_CHANGED`, `STATE_RESET`, `CAMERA_NODE_FOCUSED`).

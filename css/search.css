@@ -70,7 +70,7 @@ body:is(
     margin: -32px 0 0;
     pointer-events: none;
     background: linear-gradient(to bottom, rgba(5, 10, 16, 0) 0%, rgba(5, 10, 16, 0.92) 100%);
-    z-index: 2;
+    z-index: calc(var(--z-base) + 1);
 }
 
 body:is(
@@ -415,7 +415,9 @@ body:is(
     gap: 4px;
     color: rgba(160, 229, 222, 0.52);
     opacity: 0.72;
-    transition: opacity 0.18s ease, color 0.18s ease;
+    transition:
+        opacity 0.18s ease,
+        color 0.18s ease;
 }
 
 body:is(
@@ -558,17 +560,11 @@ body[data-panel-surface='focus-search'] .search-container.has-query .search-resu
 body .search-container {
     position: sticky;
     top: 52px;
-    z-index: 14;
+    z-index: var(--z-chrome-elevated);
     margin-top: 12px;
     padding-top: 12px;
     border-top: 1px solid var(--glass-reflection-muted);
     background: linear-gradient(180deg, rgba(15, 15, 25, 0.96), rgba(15, 15, 25, 0.86));
-}
-
-.search-container .search-label,
-.search-container .search-hint,
-.search-container .search-trail-cue {
-    /* No-op, just keeping the structure */
 }
 
 /* Mode grid inside search container: visually separated from results above */
@@ -609,6 +605,17 @@ body .search-container {
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
+}
+
+/* On the narrowest phones the SEMANTIC SEARCH label and the ● SEARCH
+   READY pill are redundant with the placeholder text and the
+   ready-to-search state already implied by the input being live.
+   Drop them to give the input more room and shrink the panel chrome. */
+@media (max-width: 374px) {
+    .search-label-text,
+    .semantic-lane-pill {
+        display: none;
+    }
 }
 
 .semantic-lane-pill {
@@ -733,7 +740,12 @@ body .search-container {
 .search-trail-cue[data-beat='focusing'] {
     border-color: rgba(255, 226, 122, 0.24);
     background:
-        linear-gradient(125deg, rgba(255, 226, 122, 0.18), var(--glass-reflection-fade) 48%, var(--glass-reflection-fade)),
+        linear-gradient(
+            125deg,
+            rgba(255, 226, 122, 0.18),
+            var(--glass-reflection-fade) 48%,
+            var(--glass-reflection-fade)
+        ),
         linear-gradient(180deg, rgba(18, 20, 24, 0.96), rgba(10, 12, 18, 0.9));
 }
 
@@ -857,7 +869,7 @@ body .search-container {
     border: var(--glass-border-glow);
     background: rgba(12, 22, 28, 0.82);
     box-shadow:
-        0 0 0 4px rgba(var(--color-primary-rgb), 0.12),
+        0 0 24px rgba(var(--color-primary-rgb), 0.16),
         0 14px 34px var(--shadow-penumbra),
         inset 0 2px 4px var(--shadow-penumbra);
 }
@@ -887,7 +899,7 @@ body .search-container {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
-    z-index: 10;
+    z-index: var(--z-chrome);
     text-align: right;
     mask-image: linear-gradient(90deg, transparent, #000 15%);
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%);
@@ -912,7 +924,7 @@ body .search-container {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
-    z-index: 11;
+    z-index: calc(var(--z-chrome) + 1);
 }
 
 body.searching .search-spinner {
@@ -942,7 +954,7 @@ body.searching .search-spinner {
     border: none;
     cursor: pointer;
     color: rgba(var(--color-primary-rgb), 0.7);
-    z-index: 12;
+    z-index: calc(var(--z-chrome) + 2);
     transition: var(--transition-premium);
     line-height: 1;
 }
@@ -1070,7 +1082,7 @@ body.searching .search-container.has-query .search-clear-btn {
     border-radius: 50%;
     opacity: 0;
     pointer-events: none;
-    z-index: 200;
+    z-index: var(--z-tooltips);
     transition: opacity 0.25s ease;
     box-shadow: 0 0 12px rgba(var(--color-primary-rgb), 0.1);
 }
@@ -1086,7 +1098,7 @@ body.searching .search-container.has-query .search-clear-btn {
     background: rgba(10, 14, 24, 0.4);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    z-index: 150;
+    z-index: var(--z-overlay-elevated);
     opacity: 1;
     transition: opacity 0.3s ease;
     border-radius: inherit;
@@ -1095,7 +1107,7 @@ body.searching .search-container.has-query .search-clear-btn {
 .search-results.searching .search-spinner-overlay {
     opacity: 1;
     animation: searchSpin 0.75s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-    z-index: 200;
+    z-index: var(--z-tooltips);
 }
 
 /* polish288b: rail-section base styles — extracted from vector-explorer-polished.html inline style block */
@@ -1200,6 +1212,18 @@ body.searching .search-container.has-query .search-clear-btn {
 }
 
 @media (min-width: 769px) {
+    body[data-panel-surface='search'] .search-results.active {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        margin-top: 0;
+        padding: 6px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        border-color: rgba(var(--color-primary-tint-rgb), 0.18);
+        background: rgba(5, 10, 16, 0.82);
+    }
+
     body[data-panel-surface='map-search'] .search-container .mode-grid {
         gap: 7px;
         margin-top: 8px;
@@ -1239,10 +1263,7 @@ body.searching .search-container.has-query .search-clear-btn {
             linear-gradient(180deg, rgba(16, 32, 38, 0.9), rgba(7, 15, 21, 0.94));
     }
 
-    body[data-panel-surface='map-search'][data-active-view='map']
-        .search-container
-        .mode-grid
-        .mode-chip.active {
+    body[data-panel-surface='map-search'][data-active-view='map'] .search-container .mode-grid .mode-chip.active {
         border-color: rgba(255, 226, 132, 0.34);
         background:
             linear-gradient(90deg, rgba(255, 226, 132, 0.14), transparent 52%),
@@ -1609,6 +1630,14 @@ body[data-panel-surface='focus-search'] .search-container.search-degraded .searc
     display: block;
 }
 
+@media (min-width: 769px) {
+    body[data-panel-surface='focus-search'] .search-container.search-degraded #search-results.active {
+        display: block;
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
 .demo-starters {
     position: relative;
     overflow-y: auto;
@@ -1644,7 +1673,7 @@ body[data-panel-surface='focus-search'] .search-container.search-degraded .searc
 
 .demo-starters > * {
     position: relative;
-    z-index: 1;
+    z-index: var(--z-base);
 }
 
 .demo-starters-kicker {
@@ -1755,6 +1784,8 @@ body[data-panel-surface='focus-search'] .search-container.search-degraded .searc
     transform: translateY(0) scale(0.96);
 }
 
+body[data-panel-surface='idle'] .demo-starters,
+body[data-panel-surface='idle'] .launch-btn,
 body[data-panel-surface='search'] .demo-starters,
 body[data-panel-surface='focus-search'] .demo-starters,
 body[data-panel-surface='map-search'] .demo-starters,
@@ -1807,7 +1838,7 @@ body[data-panel-surface='map-focus-search'] .exploration-card:hover,
     -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 8px 32px var(--shadow-antumbra);
     position: relative;
-    z-index: 20;
+    z-index: calc(var(--z-chrome-elevated) + 6);
 }
 
 .semantic-lane-assist[hidden] {
@@ -1918,7 +1949,7 @@ body[data-panel-surface='map-focus-search'] .exploration-card:hover,
 .search-error-inline-retry {
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: calc(var(--z-base) + 1);
     justify-content: space-between;
     margin: 0 0 8px;
     padding: 10px 11px;
@@ -2138,6 +2169,13 @@ body[data-panel-surface='map-focus-search'] .exploration-card:hover,
     }
 }
 
+@media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
+    body[data-panel-surface='search'] .search-result-item,
+    body[data-panel-surface='search'] .search-result-item:not(:first-child) {
+        min-height: 72px;
+    }
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
    SURFACE-SPECIFIC STYLES (Moved from layout_base.css)
    ────────────────────────────────────────────────────────────────────────── */
@@ -2178,14 +2216,6 @@ body[data-panel-surface='map-focus-search'] .exploration-card:hover,
         padding: 8px 10px 10px;
         overflow-y: auto;
         overflow-x: hidden;
-    }
-
-    body[data-panel-surface='search'] .search-input-wrapper,
-    body[data-panel-surface='search'] .search-hint,
-    body[data-panel-surface='search'] .semantic-lane-pill,
-    body[data-panel-surface='search'] #synthesize-trigger,
-    body[data-panel-surface='search'] .stats-row {
-        /* Search elements are already moved or handled */
     }
 
     body[data-panel-surface='search'] .search-results.active {

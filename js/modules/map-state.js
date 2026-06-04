@@ -170,8 +170,8 @@ export async function initMap() {
 
         const mapContainer = document.getElementById('map-container');
         if (mapContainer) {
-            mapContainer.style.opacity = '1';
-            mapContainer.style.pointerEvents = 'auto';
+            mapContainer.style.opacity = '';
+            mapContainer.style.pointerEvents = '';
         }
     } catch (error) {
         console.warn('initMap failed:', error);

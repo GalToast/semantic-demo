@@ -36,7 +36,11 @@ export function getNodeSporeScale(index) {
     let emphasis = 1;
     if (Number.isFinite(state.focusedNode)) {
         if (index === state.focusedNode) {
-            emphasis = 1.4;
+            // Bumped from 1.4 -> 2.4 so the focused anchor reads as visibly
+            // larger than its neighbors in a dense cloud.  Combined with the
+            // ring halo + gentle pulse from focus-anchor-indicator.js the
+            // user can see at a glance which business the search returned.
+            emphasis = 2.4;
         } else if (state.navState.focusPocketIndices?.includes(index)) {
             const role = state.navState.focusPocketRoleByIndex?.get(index);
             emphasis = role === 'primary' ? 1.3 : 1.15;
@@ -100,24 +104,41 @@ export function getNodeSporeColor(index, factor = 1) {
         .multiplyScalar(THREE.MathUtils.clamp(factor, 0.04, 2.6));
 }
 
-export function getPointBoundsCenter(points) {
+export function getPointBoundsCenter(points, positionBuffer = null) {
     const min = new THREE.Vector3(Infinity, Infinity, Infinity);
     const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
     let count = 0;
 
-    points.forEach((point) => {
-        const x = Number(point?.x);
-        const y = Number(point?.y);
-        const z = Number(point?.z);
-        if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return;
-        min.x = Math.min(min.x, x);
-        min.y = Math.min(min.y, y);
-        min.z = Math.min(min.z, z);
-        max.x = Math.max(max.x, x);
-        max.y = Math.max(max.y, y);
-        max.z = Math.max(max.z, z);
-        count += 1;
-    });
+    if (positionBuffer && positionBuffer.length >= points.length * 3) {
+        const len = points.length;
+        for (let i = 0; i < len; i += 1) {
+            const x = positionBuffer[i * 3];
+            const y = positionBuffer[i * 3 + 1];
+            const z = positionBuffer[i * 3 + 2];
+            if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
+            if (x < min.x) min.x = x;
+            if (y < min.y) min.y = y;
+            if (z < min.z) min.z = z;
+            if (x > max.x) max.x = x;
+            if (y > max.y) max.y = y;
+            if (z > max.z) max.z = z;
+            count += 1;
+        }
+    } else {
+        points.forEach((point) => {
+            const x = Number(point?.x);
+            const y = Number(point?.y);
+            const z = Number(point?.z);
+            if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return;
+            if (x < min.x) min.x = x;
+            if (y < min.y) min.y = y;
+            if (z < min.z) min.z = z;
+            if (x > max.x) max.x = x;
+            if (y > max.y) max.y = y;
+            if (z > max.z) max.z = z;
+            count += 1;
+        });
+    }
 
     if (!count) {
         return {
@@ -271,7 +292,7 @@ export function createPoints() {
     state.pointColorStateVersion += 1;
     state.searchGlowRenderStateKey = '';
     const scatterOffsets = computeOverviewScatterOffsets(state.points);
-    const bounds = getPointBoundsCenter(state.points);
+    const bounds = getPointBoundsCenter(state.points, state.rawPositionsBuffer);
     const renderCenter = bounds.center;
     state.overviewBounds = {
         sourceMin: { x: bounds.min.x, y: bounds.min.y, z: bounds.min.z },
@@ -347,7 +368,51 @@ export function createPoints() {
     pointsMesh.name = 'points-instanced-field';
     pointsMesh.frustumCulled = false;
     state.scene.add(pointsMesh);
+
     state.pointsMesh = pointsMesh;
+    createCountyOutline({ min: bounds.min, max: bounds.max, center: renderCenter });
 
     createNodeSporeLayer();
+}
+
+/**
+ * Draws a 4-segment line at the X-Y plane of the point cloud's bounding box.
+ * This is an approximation of the county outline (which we don't have as
+ * GeoJSON); the actual geographic outline would replace this with the
+ * real boundary polygon. Until then, the bounding box gives the cloud
+ * a clear sense of "where the county is" instead of a free-floating
+ * starfield.
+ */
+function createCountyOutline({ min, max, center }) {
+    if (!state.scene) return;
+    const existing = state.scene.getObjectByName('county-outline');
+    if (existing) {
+        state.scene.remove(existing);
+        existing.geometry?.dispose?.();
+        existing.material?.dispose?.();
+    }
+    if (!min || !max) return;
+    const inset = 0.02;
+    const minX = (min.x - center.x) * MYCELIUM_FIELD_SCALE.x + inset;
+    const maxX = (max.x - center.x) * MYCELIUM_FIELD_SCALE.x - inset;
+    const minY = (min.y - center.y) * MYCELIUM_FIELD_SCALE.y + inset;
+    const maxY = (max.y - center.y) * MYCELIUM_FIELD_SCALE.y - inset;
+    const minZ = (min.z - center.z) * MYCELIUM_FIELD_SCALE.z;
+    const points = [
+        new THREE.Vector3(minX, minY, minZ),
+        new THREE.Vector3(maxX, minY, minZ),
+        new THREE.Vector3(maxX, maxY, minZ),
+        new THREE.Vector3(minX, maxY, minZ),
+        new THREE.Vector3(minX, minY, minZ)
+    ];
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineBasicMaterial({
+        color: 0x4ecdc4,
+        transparent: true,
+        opacity: 0.18,
+        depthWrite: false
+    });
+    const line = new THREE.LineLoop(geometry, material);
+    line.name = 'county-outline';
+    state.scene.add(line);
 }

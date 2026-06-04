@@ -8,8 +8,7 @@
        to the chopped/truncated appearance on ~390x844 viewport.
        The collapsed idle sheet should show only:
        - info-header (tappable strip)
-       - demo-starters (compact chip row)
-       - search-container (input + mode-grid inline)
+       - search-container (input)
        All other children are hidden to avoid stale content visible
        through the scroll mask.
        ---------------------------------------------------------------- */
@@ -27,6 +26,20 @@
         display: none;
         visibility: hidden;
         pointer-events: none;
+    }
+
+    @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
+        body.is-active[data-panel-surface='idle'] :is(.controls.controls-rail, .controls.controls-info) {
+            display: contents;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        body.is-active[data-panel-surface='idle'] :is(.controls.controls-view, .controls-divider) {
+            display: none;
+            visibility: hidden;
+            pointer-events: none;
+        }
     }
 
     body.is-active[data-panel-surface='idle'] .share-toggle {
@@ -66,35 +79,10 @@
     }
 
     body.is-active[data-panel-surface='idle'] .stat-caption,
+    body.is-active[data-panel-surface='idle'] .demo-starters,
     body.is-active[data-panel-surface='idle'] #btn-launch {
         display: none;
         visibility: hidden;
         pointer-events: none;
-    }
-
-    body.is-active[data-panel-surface='idle'] .demo-starters {
-        margin: 0;
-        padding: 0;
-        overflow: visible;
-    }
-
-    body.is-active[data-panel-surface='idle'] .demo-starter-row {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 7px;
-        margin: 0;
-        padding: 0;
-        overflow: visible;
-    }
-
-    body.is-active[data-panel-surface='idle'] .demo-starter-chip {
-        width: 100%;
-        max-width: none;
-        min-width: 0;
-        min-height: 44px;
-        padding: 0 10px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
 }

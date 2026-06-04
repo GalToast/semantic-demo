@@ -760,8 +760,6 @@ async function capture(page, label, artifacts) {
       '#btn-inside-map',
       '#btn-inside-county',
       '.map-trail-strip',
-      '.map-trail-strip .trail-strip-btn[data-journey-action="county-overview"]',
-      '.map-trail-strip .trail-strip-btn[data-journey-action="open-mycelium"]',
       '#journey-compass',
       '#btn-journey-primary',
       '#btn-journey-secondary',
@@ -798,13 +796,30 @@ async function capture(page, label, artifacts) {
         rect: rectFromElement(button),
       };
     }).filter(Boolean);
-    const mapTrailActions = [...document.querySelectorAll('.map-trail-strip .trail-strip-btn')].map((button) => ({
-      text: button.textContent.replace(/\s+/g, ' ').trim(),
-      action: button.dataset.journeyAction || '',
-      disabled: button.disabled || button.getAttribute('aria-disabled') === 'true',
-      hidden: button.hidden || button.getAttribute('aria-hidden') === 'true',
-      rect: rectFromElement(button),
-    }));
+    const mapStrip = (() => {
+      const el = document.querySelector('.map-trail-strip');
+      if (!el) {
+        return { exists: false, childCount: 0, titleCount: 0, buttonCount: 0 };
+      }
+      const titleEl = el.querySelector('.map-strip-title');
+      const buttonEls = el.querySelectorAll('.trail-strip-btn');
+      const result = {
+        exists: true,
+        childCount: el.children.length,
+        childClasses: Array.from(el.children).map((c) => c.className).join('|'),
+        titleCount: titleEl ? 1 : 0,
+        buttonCount: buttonEls.length,
+      };
+      if (titleEl) {
+        const text = (titleEl.textContent || '').replace(/\s+/g, ' ').trim();
+        result.titleText = text;
+        result.titleAttr = titleEl.getAttribute('title') || '';
+        result.ariaLabel = titleEl.getAttribute('aria-label') || '';
+        result.titleScrollWidth = titleEl.scrollWidth;
+        result.titleClientWidth = titleEl.clientWidth;
+      }
+      return result;
+    })();
     const railPills = [...document.querySelectorAll('.focus-stage-neighbor-pill')].slice(0, 10).map((pill) => ({
       text: pill.textContent.replace(/\s+/g, ' ').trim(),
       role: pill.dataset.relationshipRole || '',
@@ -1114,7 +1129,7 @@ async function capture(page, label, artifacts) {
         detail: bodyDataset.productRouteEvidenceDetail || 'initial route load',
       },
       journeyActions,
-      mapTrailActions,
+      mapStrip,
       focusText: document.querySelector('#focus-stage')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 1200) || '',
       inspectorText: document.querySelector('#focus-thread-inspector')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 700) || '',
       searchText: document.querySelector('#search-results')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 1000) || '',
@@ -1179,12 +1194,128 @@ function expectedCompactJourneyLabel(action) {
   })[action] || '';
 }
 
-function expectedMapTrailLabel(action) {
-  return ({
-    'open-mycelium': 'Mycelium',
-    'county-overview': 'Reset',
-    'focus-search': 'Search',
-  })[action] || '';
+/**
+ * Hardened contract for the new map-trail-strip design: the strip is a
+ * passive display surface that shows the focused business name. The
+ * action buttons it used to render were removed in the 2026-06-04
+ * fix batch (D36) because they duplicated the right-panel chip rail.
+ * This assertion codifies the new design and prevents regressions
+ * in either direction (buttons reappearing, or the title getting lost).
+ *
+ * For each artifact state, the strip is expected to:
+ *   1. exist (.map-trail-strip) and be rendered when the trail owns
+ *      navigation (data-journey-navigation-owner='map-trail-strip' and
+ *      currentView==='map'); be hidden otherwise.
+ *   2. contain exactly ONE child element with class .map-strip-title
+ *      and ZERO .trail-strip-btn descendants.
+ *   3. The title has non-empty text matching its title/aria-label.
+ *   4. The title does not overflow the strip (scrollWidth <= clientWidth).
+ *   5. When the strip is rendered, it sits at the top of the viewport
+ *      (y < 200px) and has positive size.
+ */
+function assertMapTrailTitleOnly(artifacts) {
+  const assertions = [];
+  const pass = (label, check) => assertions.push({ level: 'pass', label, check });
+  const fail = (label, check, msg) => assertions.push({ level: 'fail', label, check, msg });
+
+  for (const { label, state } of artifacts) {
+    const navOwner = state.bodyDataset?.journeyNavigationOwner || '';
+    const view = state.bodyDataset?.activeView || '';
+    const shouldBeVisible = navOwner === 'map-trail-strip' && view === 'map';
+    const stripRect = state.rects?.['.map-trail-strip'];
+    const strip = state.mapStrip || { exists: false };
+
+    if (!shouldBeVisible) {
+      // Strip should be hidden in non-trail states.
+      const isHidden = !strip.exists
+        || !stripRect
+        || stripRect.hidden === true
+        || stripRect.display === 'none'
+        || stripRect.width === 0
+        || stripRect.height === 0;
+      if (isHidden) {
+        pass(label, 'map-strip:hidden-when-not-owner');
+      } else {
+        fail(label, 'map-strip:hidden-when-not-owner',
+          `map-trail-strip should be hidden when navOwner="${navOwner}" view="${view}", got rect=${JSON.stringify(stripRect)}`);
+      }
+      continue;
+    }
+
+    // Strip is expected to be visible — run the full contract checks.
+    if (!stripRect || stripRect.width === 0 || stripRect.height === 0) {
+      fail(label, 'map-strip:visible-when-owner',
+        `map-trail-strip should be rendered when navOwner=map-trail-strip view=map, got ${JSON.stringify(stripRect)}`);
+      continue;
+    }
+
+    // Position: must be near the top of the viewport, not pushed off-screen.
+    if (stripRect.y > 200) {
+      fail(label, 'map-strip:top-position',
+        `map-trail-strip should be near the top of the viewport, got y=${stripRect.y}`);
+    } else {
+      pass(label, 'map-strip:top-position');
+    }
+
+    if (!strip.exists) {
+      fail(label, 'map-strip:strip-element-missing',
+        `map-trail-strip rect exists but element could not be queried`);
+      continue;
+    }
+
+    // Zero buttons — the D36 fix removed them; if they reappear, the same
+    // actions would also live in the right-panel chip rail and create duplicates.
+    if (strip.buttonCount === 0) {
+      pass(label, 'map-strip:no-trail-strip-buttons');
+    } else {
+      fail(label, 'map-strip:no-trail-strip-buttons',
+        `map-trail-strip should not contain any .trail-strip-btn (those were removed in D36; same actions live in the right-panel chip rail), got ${strip.buttonCount} buttons`);
+    }
+
+    // Exactly one child, and it must be the title.
+    if (strip.childCount === 1 && strip.titleCount === 1) {
+      pass(label, 'map-strip:exactly-one-title-child');
+    } else {
+      fail(label, 'map-strip:exactly-one-title-child',
+        `map-trail-strip should have exactly one .map-strip-title child, got ${strip.childCount} children, ${strip.titleCount} title(s), childClasses="${strip.childClasses}"`);
+    }
+
+    if (strip.titleCount !== 1) continue;
+
+    // Title text content.
+    if (strip.titleText && strip.titleText.length > 0) {
+      pass(label, 'map-strip:title-has-content');
+    } else {
+      fail(label, 'map-strip:title-has-content',
+        `map-strip-title should have non-empty text content, got "${strip.titleText}"`);
+    }
+
+    // title attribute matches text (for tooltip on hover).
+    if (strip.titleAttr === strip.titleText) {
+      pass(label, 'map-strip:title-attr-matches-text');
+    } else {
+      fail(label, 'map-strip:title-attr-matches-text',
+        `map-strip-title title attribute should match text content, got title="${strip.titleAttr}" text="${strip.titleText}"`);
+    }
+
+    // aria-label matches text (for screen readers).
+    if (strip.ariaLabel === strip.titleText) {
+      pass(label, 'map-strip:aria-label-matches-text');
+    } else {
+      fail(label, 'map-strip:aria-label-matches-text',
+        `map-strip-title aria-label should match text content, got aria-label="${strip.ariaLabel}" text="${strip.titleText}"`);
+    }
+
+    // No text clipping within the title.
+    if (strip.titleScrollWidth <= strip.titleClientWidth + 1) {
+      pass(label, 'map-strip:title-not-clipped');
+    } else {
+      fail(label, 'map-strip:title-not-clipped',
+        `map-strip-title text is clipped: scrollWidth=${strip.titleScrollWidth} clientWidth=${strip.titleClientWidth} text="${strip.titleText}"`);
+    }
+  }
+
+  return assertions;
 }
 
 function assertCompactJourneyActionLabels(artifacts) {
@@ -1212,35 +1343,6 @@ function assertCompactJourneyActionLabels(artifacts) {
 
     if (mismatches.length === 0) pass(label, 'compact-actions:semantic-labels');
     else fail(label, 'compact-actions:semantic-labels', JSON.stringify(mismatches));
-  }
-
-  return assertions;
-}
-
-function assertMapTrailActionLabels(artifacts) {
-  const assertions = [];
-  const pass = (label, check) => assertions.push({ level: 'pass', label, check });
-  const fail = (label, check, msg) => assertions.push({ level: 'fail', label, check, msg });
-
-  for (const { label, state } of artifacts) {
-    const visibleMapActions = (state?.mapTrailActions || []).filter((action) =>
-      action?.action &&
-      rendered(action.rect) &&
-      !action.hidden &&
-      !action.disabled
-    );
-    if (!visibleMapActions.length) continue;
-
-    const mismatches = visibleMapActions
-      .map((action) => ({
-        action: action.action,
-        text: action.text,
-        expected: expectedMapTrailLabel(action.action),
-      }))
-      .filter((action) => action.expected && action.text !== action.expected);
-
-    if (mismatches.length === 0) pass(label, 'map-strip-actions:semantic-labels');
-    else fail(label, 'map-strip-actions:semantic-labels', JSON.stringify(mismatches));
   }
 
   return assertions;
@@ -1645,10 +1747,6 @@ function assertVisualErgonomics(artifacts) {
         .map((selector) => ({ selector, rect: state.rects?.[selector] }))
         .filter((entry) => rendered(entry.rect));
       const viewHandoff = state.rects?.['.view-handoff'];
-      const mapTrailActions = state.mapTrailActions || [];
-      const myceliumAction = mapTrailActions.find((action) => action.action === 'open-mycelium');
-      const resetAction = mapTrailActions.find((action) => action.action === 'county-overview');
-      const searchAction = mapTrailActions.find((action) => action.action === 'focus-search');
       const maxMapCalloutHeight = Math.min(244, Math.round((state.viewport?.height || 0) * 0.3));
       if (rendered(infoPanel) && infoPanel.height <= maxMapCalloutHeight && infoPanel.y >= (state.viewport?.height || 0) * 0.66) {
         pass(label, 'ergonomics:map-focus-callout-compact');
@@ -1698,18 +1796,6 @@ function assertVisualErgonomics(artifacts) {
         fail(label, 'ergonomics:map-focus-view-handoff-state-released',
           `view-controller should release view handoff state after map trail strip owns navigation, got "${state.bodyDataset?.viewHandoffActive || ''}"`);
       }
-      if (
-        myceliumAction?.rect &&
-        resetAction?.rect &&
-        searchAction?.rect &&
-        resetAction.rect.width <= myceliumAction.rect.width &&
-        searchAction.rect.width >= myceliumAction.rect.width
-      ) {
-        pass(label, 'ergonomics:map-strip-action-hierarchy');
-      } else {
-        fail(label, 'ergonomics:map-strip-action-hierarchy',
-          `map strip actions should rank Search > Mycelium > Reset, got ${JSON.stringify(mapTrailActions)}`);
-      }
     }
 
     if (!pixelQuality) {
@@ -1747,7 +1833,6 @@ function assertVisualErgonomics(artifacts) {
 function enabledVisibleActions(state) {
   return [
     ...(state.journeyActions || []),
-    ...(state.mapTrailActions || []),
   ].filter((action) => {
     const rect = action.rect || {};
     return !action.hidden &&
@@ -1829,10 +1914,6 @@ function buildDesignScoreReport(artifacts) {
       const infoPanel = state.rects?.['#info-panel'];
       const globalControls = state.rects?.['.controls'];
       const viewHandoff = state.rects?.['.view-handoff'];
-      const mapTrailActions = state.mapTrailActions || [];
-      const myceliumAction = mapTrailActions.find((action) => action.action === 'open-mycelium');
-      const resetAction = mapTrailActions.find((action) => action.action === 'county-overview');
-      const searchAction = mapTrailActions.find((action) => action.action === 'focus-search');
       const maxMapCalloutHeight = Math.min(244, Math.round((state.viewport?.height || 0) * 0.3));
       if (!rendered(infoPanel) || infoPanel.height > maxMapCalloutHeight || infoPanel.y < (state.viewport?.height || 0) * 0.66) {
         warn('high', 'spatial/content', 'Map focus selected business panel is too large for the terrain route.', {
@@ -1848,17 +1929,6 @@ function buildDesignScoreReport(artifacts) {
       if (rendered(viewHandoff)) {
         warn('medium', 'surface/spatial', 'View handoff competes with map trail navigation.', {
           viewHandoff,
-        });
-      }
-      if (
-        !myceliumAction?.rect ||
-        !resetAction?.rect ||
-        !searchAction?.rect ||
-        resetAction.rect.width > myceliumAction.rect.width ||
-        searchAction.rect.width < myceliumAction.rect.width
-      ) {
-        warn('medium', 'interaction/style', 'Map strip actions do not express primary/secondary/utility hierarchy.', {
-          actions: mapTrailActions,
         });
       }
     }
@@ -2163,7 +2233,7 @@ await fs.writeFile(path.join(outDir, 'ignored-network-log.json'), `${JSON.string
 const productAssertions = [
   ...(REAL_ROUTE_VISUAL ? assertRealRouteVisual(artifacts) : assertProductOwnership(artifacts)),
   ...assertCompactJourneyActionLabels(artifacts),
-  ...assertMapTrailActionLabels(artifacts),
+  ...assertMapTrailTitleOnly(artifacts),
   ...(VISUAL_ERGONOMICS ? assertVisualErgonomics(artifacts) : []),
 ];
 const productFailures = productAssertions.filter((assertion) => assertion.level === 'fail');

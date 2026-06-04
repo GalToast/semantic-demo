@@ -71,7 +71,7 @@ Minimum verification: `npm run qa:contract:launch-focus` + `npm run qa:contract:
 ### State: `focus-search` (panelSurface="focus-search")
 
 Primary owner: `css/mobile_premium__focus-dive.css` — mobile focus-search composition.
-Support: `css/journey_active.css` (field-node canopy HUD), `css/strands.css` (bottom sheet), `css/progressive_disclosure.css` (show/hide), `css/clusters.css` (selected-card accent).
+Support: `css/mobile_premium__focus-dive.css` / `css/mobile_premium__surfaces.css` (active field-node canopy HUD — journey_active.css has no active field-node selectors as of 2026-06-04), `css/strands.css` (bottom sheet), `css/progressive_disclosure.css` (show/hide), `css/clusters.css` (selected-card accent).
 Legacy/dupe risk: `css/journey_steps.css` (state-machine overrides), `css/layout_base.css` (info-panel override).
 
 Selectors in play:
@@ -145,8 +145,8 @@ Minimum verification: `npm run qa:contract:map-trail` + `npm run qa:surface:map-
 
 ### State: `field-node` (focusPanelMode="field-node")
 
-Primary owner: `css/journey_active.css` — field-node compact canopy HUD, walk dock.
-Support: `css/mobile_premium__state.css` (mobile field-node composition), `css/strands.css` (bottom sheet).
+Primary owner: `css/mobile_premium__focus-dive.css` — active mobile field-node compact canopy HUD, walk dock geometry, bottom-anchor fixes, and focus-stage suppression. `css/mobile_premium__surfaces.css` — non-active field-node fallbacks, mobile field-node backstop selectors, and late geometry corrections.
+Support: `css/journey_active.css` — journey-compass base phase/density states only; no active field-node selectors remain there as of 2026-06-04. `css/strands.css` (bottom sheet).
 Legacy/dupe risk: `css/progressive_disclosure.css` (show/hide), `css/journey_steps.css` (focus-stage state machine).
 
 Selectors in play:
@@ -163,8 +163,8 @@ Selectors in play:
 Minimum verification: `npm run qa:contract:field-node`
 
 **Journey-compass within field-node:**
-The `css/mobile_premium__*.css` split owns active mobile field-node journey-compass refinements (primarily `state.css` and `focus-dive.css`), focus-search/semantic-dive compact journey-compass overrides (`focus-dive.css`), non-active field-node fallbacks (`state.css`), and shared idle/search backstops (`idle.css`).
-`css/journey_active.css` owns `.journey-compass` base phase/density states (18 selectors).
+The `css/mobile_premium__*.css` split owns active mobile field-node journey-compass refinements (primarily `focus-dive.css` and `surfaces.css`), focus-search/semantic-dive compact journey-compass overrides (`focus-dive.css`), non-active field-node fallbacks (`surfaces.css`, `state.css`), and shared idle/search backstops (`idle.css`).
+`css/journey_active.css` owns `.journey-compass` base phase/density states (18 selectors) but contains **no active field-node selectors** as of 2026-06-04 — those live in `css/mobile_premium__focus-dive.css` (44 selectors) and `css/mobile_premium__surfaces.css` (17 selectors).
 `css/strands.css` owns field-node journey-compass action buttons (39 selectors total, field-node subset).
 `css/layout_base.css` owns map-focus/trail journey-compass info-panel overrides (12 selectors).
 Do not add journey-compass geometry to `css/journey_steps.css` — it has no journey-compass selectors and must stay that way.
@@ -202,21 +202,21 @@ The sequence is ordered by cascade depth and risk. Shallow/utility selectors fir
 
 ### Slice 2 — `.focus-stage-card` and kicker/name (DONE 2026-06-01)
 
-**Files affected:** `css/clusters.css` (canonical base), `css/mobile_premium.css` (mobile override and geometry corrections).
-**Action:** Confirm `css/clusters.css` owns `.focus-stage-card` base; confirm `css/mobile_premium.css` owns mobile-specific overrides.
+**Files affected:** `css/clusters.css` (canonical base), `css/mobile_premium__*.css` (mobile override and geometry corrections).
+**Action:** Confirm `css/clusters.css` owns `.focus-stage-card` base; confirm `css/mobile_premium__*.css` owns mobile-specific overrides.
 **Verification:** `npm run qa:contract:focus-pocket`
-**Risk:** Low. Mobile-specific overrides are isolated to `css/mobile_premium.css`.
+**Risk:** Low. Mobile-specific overrides are isolated to `css/mobile_premium__*.css`.
 
 ### Slice 3 — `field-node` canopy HUD (DONE 2026-06-01)
 
-**Files affected:** `css/journey_active.css` (canonical), `css/mobile_premium.css` (mobile comp), `css/strands.css` (bottom sheet), `css/journey_steps.css` (state machine).
-**Action:** Confirm `css/journey_active.css` owns `.journey-compass` field-node canopy HUD, `.focus-stage-journey.active`, `.focus-stage-journey-meta`, `.focus-stage-actions`. Move any duplicate `.focus-stage-actions` from `css/strands.css` into `css/journey_active.css`. Do not touch `css/journey_steps.css` state-machine selectors without live video proof.
+**Files affected:** `css/mobile_premium__focus-dive.css` (canonical active field-node), `css/mobile_premium__surfaces.css` (non-active field-node backstops), `css/journey_active.css` (journey-compass base — no active field-node selectors), `css/mobile_premium__*.css` (mobile comp), `css/strands.css` (bottom sheet), `css/journey_steps.css` (state machine).
+**Action:** Confirm `css/mobile_premium__focus-dive.css` owns active mobile field-node `.journey-compass` canopy HUD, walk dock geometry, and focus-stage suppression. Confirm `css/mobile_premium__surfaces.css` owns non-active field-node fallbacks and late geometry corrections. `css/journey_active.css` owns journey-compass base phase/density states but contains **no active field-node selectors** as of 2026-06-04. Do not touch `css/journey_steps.css` state-machine selectors without live video proof.
 **Verification:** `npm run qa:contract:field-node`
 **Risk:** Medium. State machine in `journey_steps.css` has implicit ownership — verify before moving.
 
 ### Slice 4 — `semantic-dive` inside-status / inside-controls (Medium risk — active journey state)
 
-**Files affected:** `css/journey_active.css` (canonical), `css/mobile_premium.css` (mobile comp), `css/progressive_disclosure.css` (transition-only data-semantic-dive).
+**Files affected:** `css/journey_active.css` (canonical), `css/mobile_premium__*.css` (mobile comp), `css/progressive_disclosure.css` (transition-only data-semantic-dive).
 **Action:** Confirm `css/journey_active.css` owns `#focus-stage-inside-status` and `#focus-stage-inside-controls`. Confirm `css/progressive_disclosure.css` only owns transition-only `data-semantic-dive` selectors — those must stay until transitions are de-duplicated in Slice 6. Do not move `data-semantic-dive="transitioning"` selectors yet.
 **Verification:** `npm run qa:surface:focus` (state: `15-mobile-semantic-dive`)
 **Risk:** Medium. `progressive_disclosure.css` may have implicit ownership of non-transition states.
@@ -330,8 +330,8 @@ If `css/journey_steps.css` reports non-zero journey-compass selectors, that is a
 
 ## Risks
 
-1. **Cascade dependency**: `css/progressive_disclosure.css` has many focus-stage matches — many are show/hide that implicitly depend on later `css/mobile_premium.css` cascade order. Moving selectors before verifying the full mobile cascade can silently break visibility states.
+1. **Cascade dependency**: `css/progressive_disclosure.css` has many focus-stage matches — many are show/hide that implicitly depend on later `css/mobile_premium__*.css` cascade order. Moving selectors before verifying the full mobile cascade can silently break visibility states.
 2. **State-machine coupling**: `css/journey_steps.css` owns `.focus-stage-journey` state-machine selectors that are coupled to JS state flags (`data-trail-state`, `is-active`). Moving them without live video proof can break the Step Inside flow.
 3. **Semantic-dive transition-only flag**: `data-semantic-dive="transitioning"` in `css/progressive_disclosure.css` is a transition-only attribute guard. Removing it before the transition de-dupe in Slice 6 will break the semantic-dive exit animation.
-4. **Selected-card cascade depth**: `css/clusters.css` owns the base selected-card accent, but `css/layout_base.css` and `css/mobile_premium.css` both override it for specific states. Any re-ordering of these files in the cascade will silently change map-focus/map-trail accent behavior.
+4. **Selected-card cascade depth**: `css/clusters.css` owns the base selected-card accent, but `css/layout_base.css` and `css/mobile_premium__*.css` both override it for specific states. Any re-ordering of these files in the cascade will silently change map-focus/map-trail accent behavior.
 5. **Active workers**: The three follow-up workers listed above may be touching `css/progressive_disclosure.css`, `css/journey_active.css`, and `css/animations.css` during this migration. Check switchboard before committing slice changes.

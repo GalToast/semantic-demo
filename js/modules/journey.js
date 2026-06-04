@@ -81,7 +81,7 @@ import {
     ensureCanvasNodeInteractionBindings
 } from './journey-canvas-interaction.js'
 import { applyLocalNeighborhoodFocus } from './focus-pocket.js'
-import { applyPointFilterColors, describeThreadLensForPoint } from './journey-point-color.js'
+import { applyPointFilterColors, describeThreadLensForPoint } from './journey-point-color.js';
 import { truncateMicrocopy, getSharedTrailTopicLabel } from './journey-text-helpers.js'
 
 /**
@@ -265,4 +265,4 @@ export {
     previewInsideNextThread,
     isThreadCandidateVisibleOnCanvas,
     ensureCanvasNodeInteractionBindings
-}
+};

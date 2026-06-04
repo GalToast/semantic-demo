@@ -13,7 +13,12 @@ import { showExperienceToast } from './ui-feedback.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 import { truncateMicrocopy, getSharedTrailTopicLabel } from './journey-text-helpers.js';
 import { setStrandContinuityState, clearStrandContinuityState, getStrandArrivalNote } from './strand-continuity.js';
-import { getRelationshipRoleLabel, describeRelationshipRoleReason } from './relationship-roles.js';
+import {
+    getRelationshipRoleCopy,
+    getRelationshipRoleLabel,
+    describeRelationshipRoleReason,
+    UNCLASSIFIED_RELATIONSHIP_ROLE
+} from './relationship-roles.js';
 import {
     getCurrentTrailFocusIndex,
     isBoundedNeighborhoodActive,
@@ -33,6 +38,8 @@ const timerAdapter = {
     setTimer: (fn, delay) => _setTimer(fn, delay),
     clearTimer: (id) => _clearTimer(id)
 };
+
+const PROJECTED_NEIGHBOR_FALLBACK_REASON = 'approximate projected neighbor from the current cloud layout';
 
 export function initJourneyTimerAdapter(deps = {}) {
     if (deps.setTimer) _setTimer = deps.setTimer;
@@ -106,6 +113,10 @@ export function summarizeNeighborReason(candidate = {}, point = null, focusPoint
         const isBoilerplateLayer = /^matching record layer$/i.test(normalizedReason);
         if (isBoilerplateLayer) {
             return truncateMicrocopy(normalizedReason.charAt(0).toUpperCase() + normalizedReason.slice(1));
+        }
+
+        if (!roleReason && normalizedReason === PROJECTED_NEIGHBOR_FALLBACK_REASON) {
+            return getRelationshipRoleCopy(UNCLASSIFIED_RELATIONSHIP_ROLE).reason;
         }
 
         if (!roleReason) {

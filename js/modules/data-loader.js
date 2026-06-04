@@ -193,7 +193,26 @@ async function fetchEnrichment(url) {
     return response.json();
 }
 
+function checkDataBounds(buffer) {
+    if (!buffer || buffer.length === 0) return;
+    // Sample the first 100 points (300 floats) for efficiency
+    const sampleLimit = Math.min(buffer.length, 300);
+    for (let i = 0; i < sampleLimit; i++) {
+        const val = buffer[i];
+        if (val < -0.1 || val > 1.1) {
+            console.warn(
+                `CRITICAL: data.dat positions are out of bounds! Found coordinate ${val}. ` +
+                `The 3D engine expects coordinates to be normalized strictly to [0, 1]. ` +
+                `MYCELIUM_FIELD_SCALE will cause extreme camera scaling and rendering issues. ` +
+                `Please re-run the backend normalization script.`
+            );
+            return; // Warn once
+        }
+    }
+}
+
 function finalizeLoading() {
+    checkDataBounds(state.rawPositionsBuffer);
     state.projectedNeighborGrid = null;
     state.projectedNeighborCache = new Map();
 

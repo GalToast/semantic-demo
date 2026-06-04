@@ -18,18 +18,18 @@
 #
 # After this runs:
 #   1. Restart Claude Code (Ctrl+C, then restart). The MCP node process
-#      is respawned on the new Claude Code launch.
+#      is respawned on the new Claude Code/Codex launch.
 #   2. The first `chrome-devtools` tool call after restart will spawn a
 #      fresh chrome instance against the cleaned profile dir.
 #
 # Exit codes:
-#   0  recovery completed (chrome state cleaned); Claude Code restart still required
+#   0  recovery completed (chrome state cleaned); client restart still required
 #   1  the chrome-devtools launch script wasn't found (script paths may have changed)
 #   2  cleanup reported errors but the worst case is just a stale lock file
 
 $ErrorActionPreference = 'Continue'
 
-$launcherDir = 'C:\Users\HP\.claude\mcp_servers'
+$launcherDir = 'C:\Users\HP\.codex\mcp-runtimes'
 $chromeDevtoolsLauncher = Join-Path $launcherDir 'launch-chrome-devtools-mcp.ps1'
 
 if (-not (Test-Path -LiteralPath $chromeDevtoolsLauncher -ErrorAction SilentlyContinue)) {
@@ -47,9 +47,20 @@ if ($chromeStep -ne 0) {
 
 Write-Host ""
 Write-Host "[recover] Step 2/3: Playwright MCP cleanup" -ForegroundColor Cyan
-Write-Host "[recover] Setting CLAUDE_MCP_FORCE_CLEAN_START=1 for the next Playwright launch" -ForegroundColor Gray
+Write-Host "[recover] Setting force-clean-start env vars for the next Playwright launch" -ForegroundColor Gray
+$legacyPlaywrightRoot = Join-Path $env:LOCALAPPDATA 'ms-playwright'
+if (Test-Path -LiteralPath $legacyPlaywrightRoot -ErrorAction SilentlyContinue) {
+    Get-ChildItem -LiteralPath $legacyPlaywrightRoot -Directory -Filter 'mcp-chrome-*' -ErrorAction SilentlyContinue | ForEach-Object {
+        Get-ChildItem -LiteralPath $_.FullName -Force -Filter 'Singleton*' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+    }
+}
+$env:CODEX_MCP_CLIENT = 'codex'
+$env:CODEX_MCP_FORCE_CLEAN_START = '1'
+$env:CODEX_MCP_PROFILE_SCOPE = 'session'
 $env:CLAUDE_MCP_FORCE_CLEAN_START = '1'
+$env:CLAUDE_MCP_PROFILE_SCOPE = 'session'
 $env:CLAUDE_MCP_DRY_RUN = '1'
+$env:CODEX_MCP_DRY_RUN = '1'
 $playwrightLauncher = Join-Path $launcherDir 'launch-playwright-mcp.ps1'
 if (Test-Path -LiteralPath $playwrightLauncher -ErrorAction SilentlyContinue) {
     # Dry-run the Playwright launch with FORCE_CLEAN_START to verify the
@@ -66,9 +77,9 @@ if (Test-Path -LiteralPath $playwrightLauncher -ErrorAction SilentlyContinue) {
 }
 
 Write-Host ""
-Write-Host "[recover] Step 3/3: Done. Next: restart Claude Code." -ForegroundColor Cyan
-Write-Host "[recover]   1. Press Ctrl+C in the Claude Code terminal" -ForegroundColor Gray
-Write-Host "[recover]   2. Re-launch Claude Code from the project dir" -ForegroundColor Gray
+Write-Host "[recover] Step 3/3: Done. Next: restart Claude Code/Codex." -ForegroundColor Cyan
+Write-Host "[recover]   1. Press Ctrl+C in the Claude Code/Codex terminal" -ForegroundColor Gray
+Write-Host "[recover]   2. Re-launch Claude Code/Codex from the project dir" -ForegroundColor Gray
 Write-Host "[recover]   3. The MCP node processes will respawn automatically" -ForegroundColor Gray
 Write-Host "[recover]   4. Your first chrome-devtools tool call will spawn a fresh chrome" -ForegroundColor Gray
 

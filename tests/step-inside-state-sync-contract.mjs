@@ -32,7 +32,15 @@ Object.defineProperty(globalThis, 'window', {
 
 Object.defineProperty(globalThis, 'document', {
     value: {
-        body: { dataset: {} },
+        body: {
+            dataset: {},
+            classList: {
+                add: () => {},
+                remove: () => {},
+                toggle: () => {},
+                contains: () => false
+            }
+        },
         getElementById: () => null,
         querySelector: () => null,
         querySelectorAll: () => [],

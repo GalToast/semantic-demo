@@ -41,6 +41,30 @@ function supportsHoverPreview() {
         window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
 
+function shouldUseSingleNeighborFocusRail() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+    const surface = document.body?.dataset?.panelSurface;
+    if (surface !== 'focus' && surface !== 'focus-search') return false;
+    if (document.body?.dataset?.focusPanelMode === 'field-node') return false;
+    const threadSurface = document.body?.dataset?.threadInspectSurface;
+    if (threadSurface && threadSurface !== 'idle') return false;
+    return typeof window.matchMedia === 'function' &&
+        window.matchMedia('(max-width: 768px)').matches;
+}
+
+function shouldSuppressSelectedBusinessNeighborRail() {
+    if (typeof document === 'undefined') return false;
+    const surface = document.body?.dataset?.panelSurface;
+    if (surface !== 'focus' && surface !== 'focus-search') return false;
+    if (document.body?.dataset?.focusPanelMode === 'field-node') return false;
+    const threadSurface = document.body?.dataset?.threadInspectSurface;
+    if (threadSurface && threadSurface !== 'idle') return false;
+    const shortLandscapeFocusViewport = typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(max-width: 900px) and (max-height: 420px) and (orientation: landscape)').matches;
+    return state.currentView === 'galaxy' && (isCompactLandscape() || shortLandscapeFocusViewport);
+}
+
 export function hasColdDegradedSemanticFallback() {
     return typeof adapter.hasColdDegradedSemanticFallback === 'function'
         ? adapter.hasColdDegradedSemanticFallback()
@@ -72,6 +96,20 @@ export function updateFocusNeighborRail() {
     const countEl = document.getElementById('focus-stage-neighbor-count');
     if (!rail || !list) return;
 
+    const threadInspectorOwnsSurface = document.body?.dataset?.threadInspectSurface &&
+        document.body.dataset.threadInspectSurface !== 'idle';
+    if (threadInspectorOwnsSurface) {
+        rail.classList.remove('active');
+        rail.hidden = true;
+        rail.setAttribute('aria-hidden', 'true');
+        list.innerHTML = '';
+        if (countEl) countEl.textContent = '0 visible neighbors';
+        return;
+    }
+
+    rail.hidden = false;
+    rail.setAttribute('aria-hidden', 'false');
+
     if (!Number.isFinite(state.navState.focusedIndex) || hasColdDegradedSemanticFallback()) {
         rail.classList.remove('active');
         list.innerHTML = '';
@@ -80,10 +118,22 @@ export function updateFocusNeighborRail() {
         return;
     }
 
+    if (shouldSuppressSelectedBusinessNeighborRail()) {
+        rail.classList.remove('active');
+        rail.hidden = true;
+        rail.setAttribute('aria-hidden', 'true');
+        list.innerHTML = '';
+        if (countEl) countEl.textContent = '0 visible neighbors';
+        return;
+    }
+
+    const candidateLimit = shouldUseSingleNeighborFocusRail()
+        ? 1
+        : (isCondensedFocusStageViewport() ? 2 : (isCompactFocusStageViewport() ? 4 : 5));
     const candidates = (state.navState.threadCandidates || [])
         .filter((candidate) => candidate && candidate.index !== state.navState.focusedIndex)
         .filter((candidate) => isPointVisible(candidate.index, state.points, null, state.activeFilters))
-        .slice(0, isCondensedFocusStageViewport() ? 2 : (isCompactFocusStageViewport() ? 4 : 5));
+        .slice(0, candidateLimit);
 
     if (!candidates.length) {
         rail.classList.remove('active');
@@ -95,7 +145,7 @@ export function updateFocusNeighborRail() {
 
     list.innerHTML = '';
     if (countEl) {
-        const source = state.navState.threadSource === 'semantic' ? 'neighbors' : 'neighbors';
+        const source = candidates.length === 1 ? 'neighbor' : 'neighbors';
         countEl.textContent = `${candidates.length} visible ${source}`;
     }
 
@@ -134,10 +184,12 @@ export function updateFocusNeighborRail() {
             ? '<span class="focus-stage-neighbor-next-stop-badge">Next stop</span>'
             : '';
         button.innerHTML = `
-            <span class="focus-stage-neighbor-index">${String(order + 1).padStart(2, '0')}</span>
-            <span class="focus-stage-neighbor-copy">
-                <span class="focus-stage-neighbor-name">${escapeHtml(name)} <span class="focus-stage-neighbor-role">${escapeHtml(relationshipLabel)}</span>${nextStopBadge}</span>
-                <span class="focus-stage-neighbor-reason">${escapeHtml(reasonLabel)}</span>
+            <span class="focus-stage-neighbor-main">
+                <span class="focus-stage-neighbor-index">${String(order + 1).padStart(2, '0')}</span>
+                <span class="focus-stage-neighbor-copy">
+                    <span class="focus-stage-neighbor-name">${escapeHtml(name)} <span class="focus-stage-neighbor-role">${escapeHtml(relationshipLabel)}</span>${nextStopBadge}</span>
+                    <span class="focus-stage-neighbor-reason">${escapeHtml(reasonLabel)}</span>
+                </span>
             </span>
             <span class="focus-stage-neighbor-actions" aria-label="Strand actions">
                 <button class="focus-stage-neighbor-action" type="button" data-neighbor-action="inspect" aria-label="Inspect connection">Inspect</button>
@@ -325,7 +377,15 @@ export function updateTraversalUi() {
     controlsEl.classList.toggle('active', hasFocus && (state.currentView === 'map' || !shouldUseFloatingFocusJourneyOnly()));
     contextEl.classList.toggle('active', hasFocus);
     focusJourneyEl.classList.toggle('active', hasFocus && state.currentView === 'galaxy');
-    if (focusCenterBtn) focusCenterBtn.disabled = !hasFocus;
+    if (focusCenterBtn) {
+        // Use aria-disabled rather than the native `disabled` attribute so
+        // the tooltip remains hoverable; the click handler in
+        // journey-bindings.js no-ops when no focus is selected.
+        focusCenterBtn.setAttribute('aria-disabled', String(!hasFocus));
+        focusCenterBtn.title = hasFocus
+            ? 'Recenter camera on this business'
+            : 'Select a business to recenter the camera on it';
+    }
     ensureCanvasNodeInteractionBindings();
 
     if (!hasFocus) {

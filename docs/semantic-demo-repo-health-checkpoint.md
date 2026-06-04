@@ -29,7 +29,7 @@
 - `qa-scripts.md` surface list (`mobile-idle, search-chrome, focus-pocket, map-trail, controls, field-node, compass-rail`) exactly matches `package.json` `qa:contract:mobile-critical` script.
 
 **Missing links (not errors, but useful):**
-- `mobile-state-ownership.md` does not cross-reference `css-archaeology-cleanup.md` even though both document `data-focus-panel-mode="field-node"` - the attribute writer (lifecycle.js) and CSS consumer (journey_active.css polish blocks) are in separate docs.
+- `mobile-state-ownership.md` does not cross-reference `css-archaeology-cleanup.md` even though both document `data-focus-panel-mode="field-node"` - the attribute writer (lifecycle.js) and CSS consumer (active field-node selectors now live in `css/mobile_premium__focus-dive.css` / `css/mobile_premium__surfaces.css`, not `journey_active.css` which retains only base states as of 2026-06-04) are in separate docs.
 - `js-demonolith-plan.md` Module C (Journey Compass State Machine) operates on `data-journey-phase` and `data-focus-panel-mode` - these attributes are documented in `mobile-state-ownership.md` but the two docs do not cross-reference.
 
 **No broken links found.** No doc references a file, line, or attribute that doesn't exist.

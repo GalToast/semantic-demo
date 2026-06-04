@@ -111,6 +111,12 @@ export function getThreadInspectionState(index = state.inspectedThreadIndex, opt
     const meta = active
         ? `${relationshipTitle || 'Connection'} | ${source} | ${journeyPhase} connection`
         : 'Preview connection';
+    const rawSurface = pinned ? 'pinned' : (options.surface || document.body.dataset.threadInspectSurface || null);
+    const surface = active && rawSurface && rawSurface !== 'idle'
+        ? rawSurface
+        : active
+            ? 'rail'
+            : rawSurface;
     return {
         active,
         index: active ? candidate.index : null,
@@ -124,7 +130,7 @@ export function getThreadInspectionState(index = state.inspectedThreadIndex, opt
         source,
         pinned,
         journeyPhase,
-        surface: pinned ? 'pinned' : options.surface || document.body.dataset.threadInspectSurface || null,
+        surface,
         title,
         copy,
         meta,
@@ -177,7 +183,7 @@ export function renderThreadInspection(index = state.inspectedThreadIndex, optio
         state.canvasThreadInspectionClearTimer = null;
     }
     inspector.classList.toggle('active', inspectionState.active);
-    inspector.classList.toggle('from-canvas', inspectionState.active && options.surface === 'canvas');
+    inspector.classList.toggle('from-canvas', inspectionState.active && inspectionState.surface === 'canvas');
     inspector.classList.toggle('is-pinned', inspectionState.pinned);
     if (inspectionState.active && inspectionState.relationshipRole) {
         inspector.dataset.relationshipRole = inspectionState.relationshipRole;

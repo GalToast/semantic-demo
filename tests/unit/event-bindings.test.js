@@ -13,7 +13,8 @@ vi.mock('../../js/modules/view-controller.js', () => ({
 vi.mock('../../js/modules/camera-controls.js', () => ({
     toggleAutoRotate: vi.fn(),
     focusOnNode: vi.fn(),
-    animateCameraToNode: vi.fn()
+    animateCameraToNode: vi.fn(),
+    settleCameraToOverviewPose: vi.fn()
 }));
 
 vi.mock('../../js/modules/search-state.js', () => ({

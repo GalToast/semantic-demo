@@ -1,10 +1,26 @@
 import { state } from '../state.js';
-import { getInterestingBusinessNote } from './ui-renderers.js';
+import { getInterestingBusinessNote } from './journey-lifecycle-adapter.js';
 import { formatBusinessName } from './utils/dom-formatters.js';
 import { describeCluster } from './utils/ui-presentation.js';
-import { getRouteEmbodimentIndices } from './map-state.js';
 import { getNextExploreCandidateForIndex } from './journey-thread-model.js';
 import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.js';
+
+let routeEmbodimentReader = () => [];
+
+export function registerRouteEmbodimentReader(fn) {
+    routeEmbodimentReader = fn;
+}
+
+export const JOURNEY_ACTIONS = Object.freeze({
+    FOCUS_SEARCH: 'focus-search',
+    CENTER_ANCHOR: 'center-anchor',
+    ENTER_INSIDE: 'enter-inside',
+    SHOW_TRAIL_PANEL: 'show-trail-panel',
+    NEXT_STOP: 'next-stop',
+    OPEN_MAP: 'open-map',
+    OPEN_MYCELIUM: 'open-mycelium',
+    COUNTY_OVERVIEW: 'county-overview'
+});
 
 export function getFocusedJourneyPoint() {
     if (state.selectedPoint) return state.selectedPoint;
@@ -14,19 +30,18 @@ export function getFocusedJourneyPoint() {
 }
 
 export function getJourneyCompassState() {
-    const searchContainer = document.querySelector('.search-container');
-    const cueBeat = searchContainer?.dataset?.trailBeat || 'idle';
+    const cueBeat = state.semanticTrailCue || 'idle';
     const focusedPoint = getFocusedJourneyPoint();
     const focusedName = focusedPoint ? formatBusinessName(focusedPoint.name || 'this business') : '';
     const queryLabel = state.currentSearchSummary?.query ? `"${state.currentSearchSummary.query}"` : 'semantic search';
-    const isSearching = searchContainer?.classList.contains('searching');
-    const isFocusing = searchContainer?.classList.contains('focusing') || cueBeat === 'focusing';
+    const isSearching = cueBeat === 'searching';
+    const isFocusing = cueBeat === 'focusing';
     const hasSearch = !!state.currentSearchSummary || isSearching;
     const hasFocus = !!focusedPoint;
     const insideActive = state.semanticDiveMode && state.currentView === 'galaxy' && hasFocus;
 
     if (state.currentView === 'map') {
-        const routeCount = getRouteEmbodimentIndices().length;
+        const routeCount = routeEmbodimentReader().length;
         const isCountyMapOverview = !hasFocus && !hasSearch && Number(state.trailDepth || 0) === 0;
         return {
             phase: 'map',
@@ -35,9 +50,9 @@ export function getJourneyCompassState() {
             note: routeCount > 1
                 ? 'The connection trail is now projected onto physical streets. Return to Mycelium to lift back into the living network.'
                 : 'This is the geography layer: physical proximity after semantic similarity.',
-            primaryAction: { label: 'Return to Mycelium', action: 'open-mycelium' },
-            secondaryAction: isCountyMapOverview ? null : { label: 'County Reset', action: 'county-overview' },
-            tertiaryAction: { label: 'Search', action: 'focus-search' }
+            primaryAction: { label: 'Return to Mycelium', action: JOURNEY_ACTIONS.OPEN_MYCELIUM },
+            secondaryAction: isCountyMapOverview ? null : { label: 'County Reset', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW },
+            tertiaryAction: { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH }
         };
     }
 
@@ -60,10 +75,10 @@ export function getJourneyCompassState() {
                 ? `Next stop: "${formatBusinessName(nextPoint.name || 'the next linked stop')}".`
                 : 'Pick another match or return to County.',
             primaryAction: nextPoint
-                ? { label: 'Follow Connection', action: 'next-stop' }
-                : { label: 'End of Trail', action: 'show-trail-panel' },
-            secondaryAction: { label: 'Map', action: 'open-map' },
-            tertiaryAction: { label: 'County View', action: 'county-overview', hint: 'Exit trail' }
+                ? { label: 'Follow Connection', action: JOURNEY_ACTIONS.NEXT_STOP }
+                : { label: 'End of Trail', action: JOURNEY_ACTIONS.SHOW_TRAIL_PANEL },
+            secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
+            tertiaryAction: { label: 'County View', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW, hint: 'Exit trail' }
         };
     }
 
@@ -76,23 +91,29 @@ export function getJourneyCompassState() {
         const isSearchFocus = !!state.currentSearchSummary && walkDepth === 0;
         const isSearchAnchor = state.currentSearchSummary && Number.isFinite(state.currentSearchSummary.anchorIndex) && state.focusedNode === state.currentSearchSummary.anchorIndex;
         const isTrailStop = walkDepth > 0 || (state.navState?.mode === 'trail' && state.trailDepth >= 1 && !isSearchAnchor);
+        const hasAnchor = !!state.currentSearchSummary;
         const clusterName = focusedPoint ? describeCluster(focusedPoint.cluster) : 'Focus';
 
-        const primaryAction = isSearchAnchor || isTrailStop
-            ? { label: 'Map', action: 'open-map' }
-            : { label: 'Center on anchor', action: 'center-anchor', hint: 'Return to search starting point' };
+        let primaryAction, secondaryAction, tertiaryAction = null;
 
-        const secondaryAction = isSearchAnchor
-            ? { label: 'County', action: 'county-overview' }
-            : isTrailStop
-                ? { label: 'Center on anchor', action: 'center-anchor', hint: 'Return to search starting point' }
-                : { label: 'Map', action: 'open-map' };
+        if (isSearchAnchor) {
+            primaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
+            secondaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
+        } else if (isTrailStop && hasAnchor) {
+            primaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
+            secondaryAction = { label: 'Center on anchor', action: JOURNEY_ACTIONS.CENTER_ANCHOR, hint: 'Return to search starting point' };
+            tertiaryAction = { label: 'County View', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW, hint: 'Exit path' };
+        } else {
+            // General focus (not from search or no anchor)
+            primaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
+            secondaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
+        }
 
         return {
             phase: 'focus',
             kicker: walkHistoryLength > 1
                 ? `Trail Step ${walkHistoryLength} | ${clusterName}`
-                : (isSearchFocus ? `Search Anchor | ${clusterName}` : `Focus | ${clusterName}`),
+                : `Focus | ${clusterName}`,
             // The right focus panel shows the business name prominently;
             // leave the top header title empty so the journey status isn't a duplicate.
             title: '',
@@ -101,7 +122,7 @@ export function getJourneyCompassState() {
                 : 'A local constellation of related businesses. Hover any glowing connection to see why it exists.',
             primaryAction: primaryAction,
             secondaryAction: secondaryAction,
-            tertiaryAction: { label: 'County View', action: 'county-overview', hint: 'Exit path' }
+            tertiaryAction: tertiaryAction
         };
     }
 
@@ -123,9 +144,9 @@ export function getJourneyCompassState() {
                     ? 'Try a broader term or one of the suggested high-signal categories below.'
                     : 'The first strong match is the anchor. Center any record to enter its local neighborhood.',
             primaryAction: Number.isFinite(summary?.anchorIndex)
-                ? { label: 'Center on anchor', action: 'center-anchor' }
-                : { label: 'Search', action: 'focus-search' },
-            secondaryAction: { label: 'Map', action: 'open-map' },
+                ? { label: 'Center on anchor', action: JOURNEY_ACTIONS.CENTER_ANCHOR }
+                : { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH },
+            secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
             tertiaryAction: null
         };
     }
@@ -138,8 +159,8 @@ export function getJourneyCompassState() {
             kicker: `Search | ${label}`,
             title: `No results for ${label}`,
             note: 'Try a broader term or one of the suggested high-signal categories below.',
-            primaryAction: { label: 'Search', action: 'focus-search' },
-            secondaryAction: { label: 'Map', action: 'open-map' },
+            primaryAction: { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH },
+            secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
             tertiaryAction: null
         };
     }
@@ -150,7 +171,7 @@ export function getJourneyCompassState() {
     if (!isSemanticDegraded && state.points?.length > 0) {
         const randomIdx = Math.floor(Math.random() * state.points.length);
         const randomPoint = state.points[randomIdx];
-        const snippet = getInterestingBusinessNote ? getInterestingBusinessNote(randomPoint) : null;
+        const snippet = getInterestingBusinessNote(randomPoint);
         if (snippet) {
             idleNote = `Discover: ${snippet}`;
             isDiscovery = true;
@@ -163,8 +184,8 @@ export function getJourneyCompassState() {
         title: 'The MoCo Mycelium',
         note: idleNote,
         discovery: isDiscovery,
-        primaryAction: { label: 'Search', action: 'focus-search' },
-        secondaryAction: { label: 'Map', action: 'open-map' },
+        primaryAction: { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH },
+        secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
         tertiaryAction: null
     };
 }

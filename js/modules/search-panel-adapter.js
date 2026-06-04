@@ -4,6 +4,7 @@
  * Owns search panel container/body visual state so search-state.js can keep
  * search decisions separate from cross-surface DOM flags.
  */
+import { state } from '../state.js';
 
 export function getSearchContainer() {
     return document.querySelector('.search-container');
@@ -33,6 +34,13 @@ export function setSearchContainerState({
     }
     if (typeof degraded === 'boolean') {
         searchContainer.classList.toggle('search-degraded', degraded);
+    }
+
+    if (typeof searching === 'boolean' || typeof focusing === 'boolean') {
+        const currentCue = state.semanticTrailCue || 'idle';
+        const nextSearching = typeof searching === 'boolean' ? searching : currentCue === 'searching';
+        const nextFocusing = typeof focusing === 'boolean' ? focusing : currentCue === 'focusing';
+        state.semanticTrailCue = nextFocusing ? 'focusing' : nextSearching ? 'searching' : 'idle';
     }
 }
 
@@ -90,17 +98,27 @@ export function setupMobileSearchSheetToggle({ isCompactSearchViewport } = {}) {
     label.setAttribute('aria-controls', 'search-results');
 
     if (!label.dataset.mobileSheetToggleBound) {
-        label.addEventListener('click', () => {
+        const focusSearchInput = () => {
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) searchInput.focus();
+        };
+        const toggleSheet = () => {
+            // The toggle's primary job is to put the cursor in the search
+            // field. Focus is unconditional so a fresh page (no query yet)
+            // and any viewport size still hand focus to the input on click.
+            // Sheet expansion is secondary and stays gated on has-query since
+            // there are no results to expand until the user has typed.
+            focusSearchInput();
             if (!isCompact() || !searchContainer.classList.contains('has-query')) return;
-            const nextMode = document.body.dataset.mobileSearchSheet === 'expanded' ? 'peek' : 'expanded';
+            const isOpening = document.body.dataset.mobileSearchSheet !== 'expanded';
+            const nextMode = isOpening ? 'expanded' : 'peek';
             setMobileSearchSheetMode(nextMode, { userInitiated: true });
-        });
+        };
+        label.addEventListener('click', toggleSheet);
         label.addEventListener('keydown', (event) => {
             if (event.key !== 'Enter' && event.key !== ' ') return;
-            if (!isCompact() || !searchContainer.classList.contains('has-query')) return;
             event.preventDefault();
-            const nextMode = document.body.dataset.mobileSearchSheet === 'expanded' ? 'peek' : 'expanded';
-            setMobileSearchSheetMode(nextMode, { userInitiated: true });
+            toggleSheet();
         });
         label.dataset.mobileSheetToggleBound = 'true';
     }

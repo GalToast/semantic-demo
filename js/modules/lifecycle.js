@@ -30,14 +30,13 @@ import {
     clearSearchGlow,
     updateSearchStatusMessage,
     setSearchPanelState,
-    clearSearch,
-    clearMobileRouteFieldPeek
+    clearSearch
 } from './search-state.js';
+import { getPanelSurfaceDetailFromMobileSheet } from './search-panel-adapter.js';
+import { applyCompositionState, derivePanelSurface } from './composition-state.js';
 import {
-    getPanelSurfaceDetailFromMobileSheet
-} from './search-panel-adapter.js';
-import {
-    focusOnNode
+    focusOnNode,
+    settleCameraToOverviewPose
 } from './camera-controls.js';
 import {
     updateLegendGuideState,
@@ -93,6 +92,8 @@ import {
 } from './cluster-filter.js';
 
 // ── Re-exports ───────────────────────────────────────────────────────────────
+
+export { applyCompositionState };
 
 export {
     getSceneRevealProgress,
@@ -232,131 +233,12 @@ export function getMobileSearchSheetDetail() {
     return getPanelSurfaceDetailFromMobileSheet();
 }
 
-export function derivePanelSurface({ view, graphContext, mapContext, semanticDive, hasSearchIntent, hasFocus, hasActiveTrailState }) {
-    if (view !== 'galaxy') {
-        if (mapContext === 'focus-search') return 'map-focus-search';
-        if (mapContext === 'focus') return 'map-focus';
-        if (mapContext === 'search') return 'map-search';
-        if (hasActiveTrailState) return 'map-trail';
-        return 'map-idle';
-    }
-    if (semanticDive === 'active' || semanticDive === 'transitioning') return 'semantic-dive';
-    if (graphContext === 'focus-search') return 'focus-search';
-    if (graphContext === 'focus') return 'focus';
-    if (graphContext === 'search') return 'search';
-    if (hasSearchIntent) return hasFocus ? 'focus-search' : 'search';
-    return 'idle';
-}
-
-function hasFocusedTrailRecord() {
-    return Boolean(state.selectedPoint)
-        || state.focusedNode !== null && state.focusedNode !== undefined
-        || state.navState?.focusedIndex !== null && state.navState?.focusedIndex !== undefined;
-}
-
-function hasSearchIntent() {
-    const hasSearch = !!state.currentSearchSummary;
-    const searchInputValue = String(document.getElementById('search-input')?.value || '').trim();
-    return hasSearch
-        || searchInputValue.length >= 2
-        || Boolean(document.querySelector('.search-container.has-query .search-results.active'));
-}
-
-function syncSharedCompositionUi() {
-    // Composition components are now synchronized via Event Bus subscriptions.
-    publish(EVENTS.COMPOSITION_UPDATED);
-}
+export { derivePanelSurface };
 
 export function refreshCompositionState() {
-    if (!document?.body?.dataset) return;
-
-    const activeView = state.currentView || 'galaxy';
-    const hasFocusRecord = hasFocusedTrailRecord();
-    const searchIntent = hasSearchIntent();
-    const hasActiveTrailState = activeView === 'map'
-        ? searchIntent || hasFocusRecord
-        : hasFocusRecord && (state.navState?.mode === 'trail' || searchIntent);
-
-    document.body.dataset.activeView = activeView;
-    document.body.dataset.searchGlow = state.searchGlowActive ? 'active' : 'inactive';
-    document.body.dataset.trailState = hasActiveTrailState ? 'active' : 'inactive';
-    document.body.dataset.trailDepth = String(state.trailDepth || 0);
-
-    if (state.currentSearchSummary || hasFocusRecord) {
-        // Clear transient processing and onboarding feedback once the user is in a live route.
-        document.querySelectorAll('.search-result-item.is-processing').forEach((el) => el.classList.remove('is-processing'));
-
-        const hint = document.getElementById('onboarding-hint');
-        if (hint) {
-            hint.classList.remove('visible');
-            hint.setAttribute('aria-hidden', 'true');
-            hint._dismissedThisSession = true;
-            if (hint._autoHideTimer) clearTimeout(hint._autoHideTimer);
-        }
-
-        if (activeView !== 'galaxy') {
-            let mapContext = 'idle';
-            const hasMapFocus = Boolean(state.selectedPoint)
-                || state.focusedNode !== null && state.focusedNode !== undefined;
-            if (hasMapFocus && searchIntent) mapContext = 'focus-search';
-            else if (hasMapFocus) mapContext = 'focus';
-            else if (searchIntent) mapContext = 'search';
-
-            let graphContext = 'idle';
-            if (hasFocusRecord && searchIntent) graphContext = 'focus-search';
-            else if (hasFocusRecord) graphContext = 'focus';
-            else if (searchIntent) graphContext = 'search';
-
-            document.body.dataset.mapContext = mapContext;
-            document.body.dataset.graphContext = graphContext;
-            document.body.dataset.semanticDive = 'inactive';
-            document.body.dataset.panelSurface = derivePanelSurface({
-                view: activeView,
-                graphContext,
-                mapContext,
-                semanticDive: 'inactive',
-                hasSearchIntent: searchIntent,
-                hasFocus: hasMapFocus,
-                hasActiveTrailState
-            });
-            document.body.dataset.panelSurfaceDetail = getPanelSurfaceDetailFromMobileSheet(document.body.dataset.panelSurface);
-
-            syncSharedCompositionUi('composition-map');
-            return;
-        }
-    }
-
-    document.body.dataset.mapContext = 'idle';
-    const semanticDive = state.semanticDiveMode && hasFocusRecord
-        ? (document.body.dataset.semanticDive === 'transitioning' ? 'transitioning' : 'active')
-        : 'inactive';
-    document.body.dataset.semanticDive = semanticDive;
-
-    let context = 'idle';
-    if (hasFocusRecord && searchIntent) context = 'focus-search';
-    else if (hasFocusRecord) context = 'focus';
-    else if (searchIntent) context = 'search';
-    if (semanticDive === 'active' || semanticDive === 'transitioning') {
-        context = hasFocusRecord ? 'focus' : 'idle';
-    }
-
-    document.body.dataset.graphContext = context;
-    document.body.dataset.panelSurface = derivePanelSurface({
-        view: activeView,
-        graphContext: context,
-        mapContext: 'idle',
-        semanticDive,
-        hasSearchIntent: searchIntent,
-        hasFocus: hasFocusRecord,
-        hasActiveTrailState
-    });
-    document.body.dataset.panelSurfaceDetail = getPanelSurfaceDetailFromMobileSheet(context);
-
-    if (context !== 'idle') {
-        clearMobileRouteFieldPeek();
-    }
-
-    syncSharedCompositionUi();
+    // Thin wrapper preserved for existing callers; the real work is split into
+    // single-responsibility composers in composition-state.js.
+    applyCompositionState({ state, root: document.body });
 }
 
 export function setSemanticDiveMode(enabled) {
@@ -382,6 +264,7 @@ export function returnToOverview() {
     if (state.currentView !== 'galaxy') {
         switchView('galaxy');
     }
+    settleCameraToOverviewPose();
     updateExplorationUi();
 }
 

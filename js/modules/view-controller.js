@@ -13,6 +13,7 @@ import {
 import { updateSelectedBusiness, setTrailFromSeed, syncFocusStage, setRouteChoreographyPhase } from './journey.js'
 import { clearWeatherRefreshTimer, applyWeatherEffects } from './weather.js'
 import { scheduleWeatherHydration } from './loading-ui.js'
+import { applyCompositionState } from './composition-state.js'
 import { initMap, getRouteEmbodimentIndices, setTerrainHandoffState } from './map-state.js'
 import {
     invokeClearMobileRouteFieldPeek,
@@ -72,7 +73,7 @@ export function showViewHandoff(view) {
         handoff.setAttribute('aria-hidden', 'true')
         document.body.dataset.viewHandoffActive = 'false'
         state.viewHandoffTimer = null
-    }, 2200)
+    }, state.SHOW_VIEW_HANDOFF_DISMISS_MS)
 }
 
 function shouldShowViewHandoff(view, options = {}) {
@@ -115,7 +116,7 @@ export function switchView(view, options = {}) {
             anchorIndex: state.currentSearchSummary?.anchorIndex ?? state.navState?.focusedIndex ?? null,
             indexCount: routeCount
         })
-        animateCameraToTerrainPrelude({ duration: state.MAP_HANDOFF_PRELUDE_MS || 1200 })
+        animateCameraToTerrainPrelude({ duration: state.MAP_HANDOFF_PRELUDE_MS })
 
         // 10/10 Polish: Flatten Three.js nodes to map coordinates during prelude
         applyMapFlatteningLayout(true)
@@ -129,14 +130,14 @@ export function switchView(view, options = {}) {
                 skipTerrainPrelude: true,
                 handoffFrom
             })
-        }, state.MAP_HANDOFF_PRELUDE_MS || 1200)
+        }, state.MAP_HANDOFF_PRELUDE_MS)
         return
     }
     setCurrentView(view)
 
     // 10/10 Polish: Transition Choreography
     document.body.classList.add('view-transitioning')
-    document.body.dataset.activeView = view
+    applyCompositionState({ state, root: document.body })
     setCameraAssistChoreography('arriving', 'view-handoff')
 
     // Auto-remove transitioning class after animation completes
@@ -149,7 +150,7 @@ export function switchView(view, options = {}) {
         ) {
             setCameraAssistChoreography('free', 'view-handoff-complete')
         }
-    }, 1200)
+    }, state.VIEW_HANDOFF_OUT_MS)
 
     if (view === 'map') {
         hideViewHandoff()
@@ -211,7 +212,7 @@ export function switchView(view, options = {}) {
                 from: state.terrainHandoffState?.from || 'map',
                 to: 'galaxy',
                 routeCount: getRouteEmbodimentIndices().length,
-                settleAfterMs: 1200,
+                settleAfterMs: state.TERRAIN_LANDING_SETTLE_MS,
                 settlePhase: 'idle'
             })
         } else {
@@ -263,7 +264,7 @@ export function switchView(view, options = {}) {
             from: handoffFrom,
             to: 'map',
             routeCount,
-            settleAfterMs: 1800,
+            settleAfterMs: state.TERRAIN_LANDING_SETTLE_LONG_MS,
             settlePhase: 'settled'
         })
         setRouteChoreographyPhase('terrain-landing', {

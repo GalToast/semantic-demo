@@ -72,8 +72,8 @@
     }
 
     body.is-active[data-panel-surface='map-focus-search'] .selected-map-summary-role {
-        max-width: 86px;
-        padding: 4px 6px;
+        max-width: 118px;
+        padding: 4px 8px;
         border: 1px solid rgba(var(--color-primary-tint-rgb), 0.22);
         border-radius: 999px;
         color: rgba(var(--color-primary-tint-rgb), 0.9);
@@ -82,7 +82,7 @@
         font-size: 8px;
         font-weight: 800;
         line-height: 1.1;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.04em;
         text-align: center;
         text-transform: uppercase;
         white-space: nowrap;

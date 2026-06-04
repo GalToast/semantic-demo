@@ -29,7 +29,10 @@ import { updateLoadingPhaseKey } from './state-mutators.js';
 import { initWeather } from './weather.js';
 import { escapeHtml } from './utils/dom-formatters.js';
 
+let _hideToken = 0;
+
 export function setLoadingPhase(phaseKey, overrides = {}) {
+    _hideToken++;
     updateLoadingPhaseKey(phaseKey);
     const phase = state.LOADING_PHASE_META[phaseKey] || state.LOADING_PHASE_META.records;
     const overlay = document.getElementById('loading-overlay');
@@ -55,7 +58,7 @@ export function setLoadingPhase(phaseKey, overrides = {}) {
         progressBar.style.width = `${Math.round((overrides.progress ?? phase.progress) * 100)}%`;
     }
 
-    document.querySelectorAll('[data-loading-phase]').forEach((chip) => {
+    document.querySelectorAll('.loading-phase-chip[data-loading-phase]').forEach((chip) => {
         const chipPhase = chip.getAttribute('data-loading-phase');
         const order = ['records', 'scene', 'restore', 'launch'];
         const activeIndex = order.indexOf(phaseKey);

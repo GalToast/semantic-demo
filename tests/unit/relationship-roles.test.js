@@ -39,34 +39,35 @@ describe('relationship-roles', () => {
         it('returns full copy object for known roles', () => {
             const copy = getRelationshipRoleCopy('core_peer');
             expect(copy).toHaveProperty('rail', 'Peer');
-            expect(copy).toHaveProperty('title', 'Close peer');
-            expect(copy).toHaveProperty('inside', 'close peer');
-            expect(copy).toHaveProperty('reason', 'strong shared-market signal');
+            expect(copy).toHaveProperty('title', 'Same beat');
+            expect(copy).toHaveProperty('inside', 'same beat');
+            expect(copy).toHaveProperty('reason', 'Same trail. Same trade.');
         });
 
         it('returns unclassified copy for unknown roles', () => {
             const copy = getRelationshipRoleCopy('unknown_thing');
-            expect(copy.rail).toBe('Unclassified');
-            expect(copy.title).toBe('Unclassified relationship');
+            expect(copy.rail).toBe('Trail neighbor');
+            expect(copy.title).toBe('Unclassified');
         });
     });
 
     describe('getRelationshipRoleLabel', () => {
         it('returns correct surface label', () => {
             expect(getRelationshipRoleLabel('core_peer', 'rail')).toBe('Peer');
-            expect(getRelationshipRoleLabel('core_peer', 'title')).toBe('Close peer');
-            expect(getRelationshipRoleLabel('core_peer', 'inside')).toBe('close peer');
+            expect(getRelationshipRoleLabel('core_peer', 'title')).toBe('Same beat');
+            expect(getRelationshipRoleLabel('core_peer', 'inside')).toBe('same beat');
         });
 
         it('falls back to title for unknown surface', () => {
-            expect(getRelationshipRoleLabel('upstream', 'nonexistent')).toBe('Support provider');
+            expect(getRelationshipRoleLabel('upstream', 'nonexistent')).toBe('Anchors the trail');
         });
 
         it('defaults to title surface', () => {
-            expect(getRelationshipRoleLabel('downstream')).toBe('Served market');
+            expect(getRelationshipRoleLabel('downstream')).toBe('Served by trail');
         });
 
         it('returns all rail labels correctly', () => {
+            expect(getRelationshipRoleLabel('downstream', 'rail')).toBe('Served by');
             expect(getRelationshipRoleLabel('complement', 'rail')).toBe('Pairs');
             expect(getRelationshipRoleLabel('same_market', 'rail')).toBe('Same lane');
             expect(getRelationshipRoleLabel('geo_echo', 'rail')).toBe('Echo');
@@ -76,20 +77,20 @@ describe('relationship-roles', () => {
 
     describe('describeRelationshipRoleReason', () => {
         it('returns default reason when rawReason is empty', () => {
-            expect(describeRelationshipRoleReason('core_peer')).toBe('strong shared-market signal');
-            expect(describeRelationshipRoleReason('upstream', '')).toBe('support or infrastructure signal');
+            expect(describeRelationshipRoleReason('core_peer')).toBe('Same trail. Same trade.');
+            expect(describeRelationshipRoleReason('upstream', '')).toBe('Holds up the trail here.');
         });
 
         it('rewrites known patterns', () => {
             expect(describeRelationshipRoleReason(
                 'core_peer',
                 'high-similarity peer in the same business ecosystem'
-            )).toBe('strong shared-market signal');
+            )).toBe('Same trail. Same trade.');
 
             expect(describeRelationshipRoleReason(
                 'complement',
                 'Adjacent sectors that often appear in the same customer journey'
-            )).toBe('adjacent customer-journey signal');
+            )).toBe('Same journey, different stop.');
         });
 
         it('cleans unknown reasons by stripping prefix', () => {

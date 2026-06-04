@@ -325,6 +325,12 @@ export const _rawState = {
     focusPetalGroup: null,
     focusPetals: [],
     focusFilaments: null,
+    // Focus anchor indicator (size + ring + pulse) — see
+    // js/modules/focus-anchor-indicator.js.  Group holds a static ring
+    // mesh and a soft halo sprite that breathes when motion is allowed.
+    focusAnchorGroup: null,
+    focusAnchorRingMesh: null,
+    focusAnchorHaloSprite: null,
     hoverHalo: null,
     focusBeaconTexture: null,
     focusRingTexture: null,

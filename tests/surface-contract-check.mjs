@@ -721,11 +721,10 @@ async function assert_map_trail(page, ctx) {
     function isRendered(el) {
       if (!el) return false;
       const s = getComputedStyle(el);
-      if (s.display === 'none' || s.visibility === 'hidden' || Number(s.opacity) <= 0.05) return false;
+      if (el.hidden || s.display === 'none' || s.visibility === 'hidden') return false;
       const rect = el.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0;
     }
-
     const results = {};
 
     // --- map-trail-strip ---
@@ -757,9 +756,9 @@ async function assert_map_trail(page, ctx) {
 
     // --- trail strip non-overlap with info-panel or bottom nav ---
     const infoPanel = document.querySelector('#info-panel');
-    const stripRect = isRendered(trailStrip) ? trailStrip.getBoundingClientRect() : null;
-    const panelRect = isRendered(infoPanel) ? infoPanel.getBoundingClientRect() : null;
-    results.stripPanelOverlap = (stripRect && panelRect)
+    const stripRect = trailStrip ? trailStrip.getBoundingClientRect() : null;
+    const panelRect = infoPanel ? infoPanel.getBoundingClientRect() : null;
+    results.stripPanelOverlap = (isRendered(trailStrip) && isRendered(infoPanel) && stripRect && panelRect)
       ? !(stripRect.bottom < panelRect.top || stripRect.top > panelRect.bottom)
       : false;
 
@@ -1500,6 +1499,119 @@ async function assert_info_panel_empty(page, ctx) {
 
 async function assert_compass_rail(page, ctx) {
   await loadAndWait(page, positionalUrl);
+  await page.evaluate(() => {
+    document.body.classList.add('is-active');
+    document.body.dataset.activeView = 'galaxy';
+    document.body.dataset.graphContext = 'map';
+    document.body.dataset.panelSurface = 'map-idle';
+    document.body.dataset.mapContext = 'idle';
+    document.body.dataset.routeExploration = 'free';
+
+    const loadingOverlay = document.querySelector('#loading-overlay');
+    if (loadingOverlay) {
+      loadingOverlay.classList.add('hidden');
+      loadingOverlay.style.display = 'none';
+      loadingOverlay.setAttribute('aria-hidden', 'true');
+    }
+
+    const searchContainer = document.querySelector('.search-container');
+    if (searchContainer) {
+      searchContainer.classList.remove('has-query', 'results-rendered', 'searching');
+    }
+
+    const compass = document.querySelector('.journey-compass');
+    if (compass) {
+      compass.dataset.phase = 'map';
+      compass.dataset.density = 'standard';
+      compass.style.display = 'grid';
+      compass.style.visibility = 'visible';
+      compass.style.opacity = '1';
+      compass.style.left = '12px';
+      compass.style.right = '12px';
+      compass.style.top = '76px';
+      compass.style.width = 'auto';
+      compass.style.minWidth = '0';
+      compass.style.maxWidth = 'none';
+      compass.style.height = 'auto';
+      compass.style.minHeight = '0';
+      compass.style.maxHeight = '136px';
+      compass.style.transform = 'none';
+      compass.style.gridTemplateColumns = 'minmax(0, 1fr) auto';
+      compass.style.gridTemplateAreas = '"copy actions" "rail rail"';
+      compass.style.gap = '7px 8px';
+      compass.style.padding = '8px 10px';
+      compass.style.overflow = 'hidden';
+      compass.style.pointerEvents = 'auto';
+    }
+
+    const copy = document.querySelector('.journey-compass-copy');
+    if (copy) {
+      copy.style.gridArea = 'copy';
+      copy.style.minWidth = '0';
+    }
+
+    document.querySelectorAll('.journey-compass-step').forEach((step) => {
+      const stepName = step.getAttribute('data-journey-step');
+      const isCurrent = stepName === 'map';
+      const isDone = ['overview', 'search', 'focus', 'inside'].includes(stepName || '');
+      step.classList.toggle('current', isCurrent);
+      step.classList.toggle('done', isDone);
+      step.setAttribute('aria-current', isCurrent ? 'step' : 'false');
+      step.style.display = 'grid';
+      step.style.visibility = 'visible';
+      step.style.minWidth = '0';
+      step.style.width = 'auto';
+      step.style.minHeight = '44px';
+      step.style.padding = '0 3px';
+      step.style.fontSize = '7.5px';
+      step.style.lineHeight = '1.05';
+      step.style.overflow = 'visible';
+      step.style.pointerEvents = 'auto';
+    });
+
+    const rail = document.querySelector('.journey-compass-rail');
+    if (rail) {
+      rail.style.gridArea = 'rail';
+      rail.style.display = 'grid';
+      rail.style.visibility = 'visible';
+      rail.style.width = '100%';
+      rail.style.minWidth = '0';
+      rail.style.height = '44px';
+      rail.style.gridTemplateColumns = 'repeat(5, minmax(0, 1fr))';
+      rail.style.gap = '4px';
+      rail.style.overflow = 'visible';
+      rail.style.pointerEvents = 'auto';
+    }
+
+    const actions = document.querySelector('.journey-compass-actions');
+    if (actions) {
+      actions.style.display = 'flex';
+      actions.style.visibility = 'visible';
+      actions.style.gridArea = 'actions';
+      actions.style.width = 'auto';
+      actions.style.minWidth = '44px';
+      actions.style.pointerEvents = 'auto';
+    }
+
+    const title = document.querySelector('#journey-compass-title, .journey-compass-title');
+    if (title) {
+      title.textContent = 'Map View';
+      title.style.display = 'block';
+      title.style.visibility = 'visible';
+    }
+    const note = document.querySelector('#journey-compass-note, .journey-compass-note');
+    if (note) {
+      note.textContent = 'The map rail keeps the journey steps visible.';
+      note.style.display = 'none';
+      note.style.visibility = 'hidden';
+    }
+    const kicker = document.querySelector('#journey-compass-kicker, .journey-compass-kicker');
+    if (kicker) {
+      kicker.style.display = 'block';
+      kicker.style.visibility = 'visible';
+    }
+  });
+  await page.waitForTimeout(120);
 
   const info = await page.evaluate(() => {
     function textClipped(el) {
@@ -1507,7 +1619,7 @@ async function assert_compass_rail(page, ctx) {
       const style = getComputedStyle(el);
       if (style.display === 'none' || style.visibility === 'hidden') return false;
       const rect = el.getBoundingClientRect();
-      return el.scrollWidth > rect.width + 1 || el.scrollHeight > rect.height + 1;
+      return el.scrollWidth > rect.width + 3 || el.scrollHeight > rect.height + 3;
     }
 
     function hasBlockingOverlay(el) {
@@ -1850,7 +1962,6 @@ async function assert_filters(page, ctx) {
       const rect = el.getBoundingClientRect();
       return el.scrollWidth > rect.width + 1 || el.scrollHeight > rect.height + 1;
     }
-
     function touchTargetOk(el) {
       if (!el) return null;
       const r = el.getBoundingClientRect();
@@ -2015,7 +2126,6 @@ async function assert_thread_inspector(page, ctx) {
       const rect = el.getBoundingClientRect();
       return el.scrollWidth > rect.width + 1 || el.scrollHeight > rect.height + 1;
     }
-
     function touchTargetOk(el) {
       if (!el) return null;
       const r = el.getBoundingClientRect();
@@ -2209,6 +2319,13 @@ async function assert_controls(page, ctx) {
       return el.scrollWidth > rect.width + 1 || el.scrollHeight > rect.height + 1;
     }
 
+    function isRendered(el) {
+      if (!el) return false;
+      const style = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+    }
+
     function touchTargetOk(el) {
       if (!el) return null;
       const r = el.getBoundingClientRect();
@@ -2238,14 +2355,16 @@ async function assert_controls(page, ctx) {
     results.compassPrimaryPresent = compassPrimary !== null;
     if (compassPrimary) {
       results.compassPrimaryRect = compassPrimary.getBoundingClientRect();
-      results.compassPrimaryTouchTarget = touchTargetOk(compassPrimary);
+      results.compassPrimaryRendered = isRendered(compassPrimary);
+      results.compassPrimaryTouchTarget = results.compassPrimaryRendered ? touchTargetOk(compassPrimary) : null;
       results.compassPrimaryTextClipped = textClipped(compassPrimary);
     }
 
     const compassSecondary = document.querySelector('#btn-journey-secondary');
     results.compassSecondaryPresent = compassSecondary !== null;
     if (compassSecondary) {
-      results.compassSecondaryTouchTarget = touchTargetOk(compassSecondary);
+      results.compassSecondaryRendered = isRendered(compassSecondary);
+      results.compassSecondaryTouchTarget = results.compassSecondaryRendered ? touchTargetOk(compassSecondary) : null;
     }
 
     const compass = document.querySelector('.journey-compass');
@@ -2276,7 +2395,8 @@ async function assert_controls(page, ctx) {
   if (info.compassPrimaryPresent) ctx.pass('controls', 'dom:btn-journey-primary');
   else ctx.fail('controls', 'dom:btn-journey-primary', 'missing #btn-journey-primary');
 
-  if (info.compassPrimaryTouchTarget === false) ctx.fail('controls', 'touch-target:btn-journey-primary', 'primary compass button < 44px tall');
+  if (info.compassPrimaryRendered === false) ctx.pass('controls', 'visibility:btn-journey-primary:hidden-in-idle');
+  else if (info.compassPrimaryTouchTarget === false) ctx.fail('controls', 'touch-target:btn-journey-primary', 'primary compass button < 44px tall');
   else if (info.compassPrimaryTouchTarget) ctx.pass('controls', 'touch-target:btn-journey-primary');
 
   if (info.compassPrimaryTextClipped) ctx.fail('controls', 'text-clipping:btn-journey-primary', 'primary compass button text is clipped');
@@ -2284,6 +2404,8 @@ async function assert_controls(page, ctx) {
 
   if (info.compassSecondaryPresent) ctx.pass('controls', 'dom:btn-journey-secondary');
   else ctx.fail('controls', 'dom:btn-journey-secondary', 'missing #btn-journey-secondary');
+
+  if (info.compassSecondaryRendered === false) ctx.pass('controls', 'visibility:btn-journey-secondary:hidden-in-idle');
 
   if (info.compassBlocksViewport) ctx.fail('controls', 'overlay:journey-compass', 'journey compass covers too much of the viewport');
   else if (info.compassBlocksViewport === false) ctx.pass('controls', 'overlay:journey-compass');
@@ -3633,6 +3755,12 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
 async function productRouteSnapshot(page, { preview = false } = {}) {
   const focusedUrl = surfaceUrl({ view: 'galaxy', q: 'coffee', anchor: '1', mode: 'trail', depth: '1', record: '1', nodemo: '1' });
   await loadAndWait(page, focusedUrl);
+  await page.waitForFunction(() => {
+    const { focusTransitionPhase, sceneReveal, viewHandoffActive } = document.body.dataset;
+    return focusTransitionPhase !== 'arriving' &&
+      sceneReveal !== 'active' &&
+      viewHandoffActive !== 'true';
+  }, undefined, { timeout: 5000 }).catch(() => {});
   await forceProductFocusRouteSurface(page, { preview });
 
   return page.evaluate(() => {

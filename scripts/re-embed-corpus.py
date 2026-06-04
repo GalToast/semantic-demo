@@ -1,35 +1,36 @@
 #!/usr/bin/env python3
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 re-embed-corpus.py
 
-Re-embeds the leadops corpus with Qwen3-Embedding-0.6B (1024-dim) and
-UMAP-projects to 3D. Updates data.dat in place with new x, y, z
-positions. Saves the 1024-dim embeddings to scripts/qwen3_embeddings.npy
-for future KNN use (Bug Sweep 34 spatial KNN search).
+Re-embeds the leadops corpus with Qwen3-Embedding-0.6B (1024-dim), then
+promotes those embeddings into the public semantic index shape consumed by
+the thread/layout rebuild scripts.
 
 Inputs (read from):
     - scripts/leadEnrichment.public.json  (crm.sqlite-derived enrichment)
-    - data.dat                              (current 3D positions, kept cluster)
+    - data.dat                              (row order + compact public fields)
     - scripts/leadopsLeads.json             (crm leadops_leads table)
     - ../tmp/.../ask_moco_corpus.from-leadops.jsonl  (parent corpus JSONL)
 
 Output (writes):
-    - data.dat                              (rebuilt with new x, y, z)
     - scripts/qwen3_embeddings.npy          (8406 x 1024 float32)
     - scripts/qwen3_embeddings_meta.json    (model name, query instruction)
+    - ../tmp/.../<index-dir>/metadata.json
+    - ../tmp/.../<index-dir>/embeddings.npy
+    - ../tmp/.../<index-dir>/manifest.json
 
 Model: Qwen3-Embedding-0.6B (1024 dim, mean-pool, L2-normalize).
 Hyperparameters: 8406 records at ~340 chars avg → 5-10 min on GPU.
 
-Bug Sweep 33 → 34: this is the re-embed pass that replaces the
-prior 3D positions (which were computed from a thinner corpus).
+Important: this script does not write data.dat coordinates. Rebuild browser
+coordinates with scripts/rebuild-semantic-space-layout.py after regenerating
+semantic_threads.dat and semantic_threads_ui.dat from the promoted index.
 """
 
+import argparse
 import json
 import os
-import sys
 import time
 from pathlib import Path
 
@@ -43,6 +44,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 PARENT_DIR = REPO_ROOT.parent
 SCRIPTS_DIR = REPO_ROOT / 'scripts'
 DATA_DAT = REPO_ROOT / 'data.dat'
+DEFAULT_INDEX_DIR = (
+    PARENT_DIR / 'tmp' / 'public-semantic-search-build' / 'index-rich-0.6b-20260604'
+)
 
 # Qwen3-Embedding-0.6B from the HF cache (already downloaded on this machine)
 MODEL_PATH = Path(
@@ -53,12 +57,30 @@ MODEL_PATH = Path(
 # Match parent's Qwen3 mean-pool + L2-normalize contract
 MAX_TEXT_CHARS = 4000
 BATCH_SIZE = 16
+QUERY_INSTRUCTION = (
+    'Given a Montgomery County business discovery query, retrieve the most relevant '
+    'businesses, venues, and service providers that best satisfy the request.'
+)
+QUERY_FORMAT = 'plain'
 
 # Parent corpus JSONL: same source the existing 1024-dim index used
 PARENT_CORPUS_JSONL = (
     PARENT_DIR / 'tmp' / 'public-semantic-search-build'
     / 'ask_moco_corpus.from-leadops.jsonl'
 )
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Re-embed the enriched LeadOps corpus and promote embeddings into a public semantic index.'
+    )
+    parser.add_argument(
+        '--index-dir',
+        type=Path,
+        default=DEFAULT_INDEX_DIR,
+        help='Output directory for metadata.json, embeddings.npy, and manifest.json.',
+    )
+    return parser.parse_args()
 
 
 def load_enrichment():
@@ -196,22 +218,96 @@ def encode_texts(model, tokenizer, device, texts):
     return np.concatenate(vectors, axis=0) if vectors else np.zeros((0, 0), dtype=np.float32)
 
 
-def umap_project(embeddings, n_components=3, n_neighbors=15, min_dist=0.1):
-    from umap import UMAP
-    print(f'UMAP: {embeddings.shape} -> {n_components}D  (n_neighbors={n_neighbors}, min_dist={min_dist})')
-    reducer = UMAP(
-        n_components=n_components,
-        n_neighbors=n_neighbors,
-        min_dist=min_dist,
-        metric='cosine',
-        random_state=42,
-    )
-    coords = reducer.fit_transform(embeddings)
-    print(f'  Output shape: {coords.shape}, range x={coords[:,0].min():.2f}..{coords[:,0].max():.2f}')
-    return coords
+def clean_text(value):
+    if value is None:
+        return ''
+    return ' '.join(str(value).replace('\r', ' ').replace('\n', ' ').split()).strip()
+
+
+def format_query_for_embedding(query):
+    return clean_text(query)
+
+
+def as_lead_id(value):
+    text = str(value)
+    return int(text) if text.isdigit() else text
+
+
+def build_public_index_metadata(data, enrichment, parent_corpus, crm_leads):
+    metadata = []
+    for row in data:
+        lead_id = str(row[7]) if len(row) > 7 and row[7] is not None else ''
+        parent = parent_corpus.get(lead_id, {})
+        enr = enrichment.get(lead_id, {})
+        crm = crm_leads.get(lead_id, {})
+        search_blob = clean_text(parent.get('search_text')) or clean_text(
+            build_corpus_text(lead_id, enrichment, parent_corpus, crm_leads)
+        )
+        public_note = (
+            clean_text(parent.get('business_overview'))
+            or clean_text(enr.get('business_overview'))
+            or clean_text(enr.get('snapshot'))
+            or clean_text(row[13] if len(row) > 13 else '')
+        )
+        public_detail = clean_text(
+            parent.get('service_offerings')
+            or parent.get('target_customers')
+            or parent.get('differentiators')
+            or enr.get('service_offerings')
+            or enr.get('target_customers')
+            or enr.get('differentiators')
+        )
+        metadata.append(
+            {
+                'lead_id': as_lead_id(lead_id),
+                'name': clean_text(parent.get('name') or crm.get('name') or (row[4] if len(row) > 4 else '')),
+                'city': clean_text(parent.get('city') or crm.get('city') or (row[6] if len(row) > 6 else '')),
+                'status': clean_text(parent.get('status') or crm.get('status') or (row[14] if len(row) > 14 else '')),
+                'address': clean_text(parent.get('address') or enr.get('address') or crm.get('address')),
+                'naics': clean_text(parent.get('naics') or crm.get('naics') or (row[15] if len(row) > 15 else '')),
+                'public_note': public_note,
+                'public_detail': public_detail,
+                'search_blob': search_blob,
+            }
+        )
+    return metadata
+
+
+def write_public_index(index_dir, data, embeddings, embedding_meta, enrichment, parent_corpus, crm_leads):
+    index_dir.mkdir(parents=True, exist_ok=True)
+    metadata = build_public_index_metadata(data, enrichment, parent_corpus, crm_leads)
+    if len(metadata) != embeddings.shape[0]:
+        raise SystemExit(f'Index metadata/embedding mismatch: {len(metadata)} vs {embeddings.shape[0]}')
+
+    metadata_path = index_dir / 'metadata.json'
+    embeddings_path = index_dir / 'embeddings.npy'
+    manifest_path = index_dir / 'manifest.json'
+
+    metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
+    np.save(embeddings_path, embeddings.astype(np.float32))
+
+    manifest = {
+        'ok': True,
+        'corpus_path': str(PARENT_CORPUS_JSONL),
+        'count': len(metadata),
+        'dimensions': int(embeddings.shape[1]) if embeddings.ndim == 2 else 0,
+        'query_instruction': QUERY_INSTRUCTION,
+        'query_format': QUERY_FORMAT,
+        'backend': 'local-reembed',
+        'embed_service_url': None,
+        'model_path': str(MODEL_PATH),
+        'metadata_path': str(metadata_path),
+        'embeddings_path': str(embeddings_path),
+        'query_example': format_query_for_embedding('places to take dogs'),
+        'source_embeddings_meta': embedding_meta,
+        'generated_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+    }
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
+    return manifest
 
 
 def main():
+    args = parse_args()
     print('=== Loading sources ===')
     enrichment = load_enrichment()
     print(f'  enrichment: {len(enrichment)} leads')
@@ -255,7 +351,8 @@ def main():
         'model_path': str(MODEL_PATH),
         'dimensions': int(embeddings.shape[1]),
         'count': int(embeddings.shape[0]),
-        'query_instruction': 'Given a Montgomery County business discovery query, retrieve the most relevant businesses, venues, and service providers that best satisfy the request.',
+        'query_instruction': QUERY_INSTRUCTION,
+        'query_format': QUERY_FORMAT,
         'max_text_chars': MAX_TEXT_CHARS,
         'embedding_input_avg_chars': int(avg_chars),
         'generated_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
@@ -264,26 +361,20 @@ def main():
     meta_path.write_text(json.dumps(meta, indent=2), encoding='utf-8')
     print(f'  Saved: {meta_path}')
 
-    # UMAP project to 3D
-    print('\n=== UMAP projection to 3D ===')
-    coords = umap_project(embeddings)
-
-    # Update data.dat with new x, y, z
-    print(f'\n=== Updating {DATA_DAT} ===')
-    new_data = []
-    for i, p in enumerate(data):
-        row = list(p)
-        # Update x, y, z (columns 0, 1, 2)
-        row[0] = float(coords[i, 0])
-        row[1] = float(coords[i, 1])
-        row[2] = float(coords[i, 2])
-        new_data.append(row)
-    DATA_DAT.write_text(json.dumps(new_data, separators=(',', ':')), encoding='utf-8')
-    print(f'  Wrote {len(new_data)} records with new 3D positions')
-    print(f'  File size: {DATA_DAT.stat().st_size / 1024:.1f} KB')
+    print(f'\n=== Promoting public semantic index: {args.index_dir} ===')
+    manifest = write_public_index(args.index_dir, data, embeddings, meta, enrichment, parent_corpus, crm_leads)
+    print(json.dumps({
+        'ok': True,
+        'index_dir': str(args.index_dir),
+        'count': manifest['count'],
+        'dimensions': manifest['dimensions'],
+    }, indent=2))
 
     print('\n=== Done ===')
-    print('Next: regenerate the bundle (npm run build) and deploy.')
+    print('Next canonical rebuild commands:')
+    print(f'  python ../scripts/maintenance/build_semantic_threads_from_public_index.py --corpus "{PARENT_CORPUS_JSONL}" --index-dir "{args.index_dir}" --output "./semantic_threads.dat" --neighbors 24 --candidate-pool 96 --jobs 1')
+    print('  python ../scripts/maintenance/build_semantic_threads_ui.py "./semantic_threads.dat" "./semantic_threads_ui.dat" --neighbor-limit 12')
+    print(f'  python scripts/rebuild-semantic-space-layout.py --index-dir "{args.index_dir}"')
 
 
 if __name__ == '__main__':

@@ -133,6 +133,9 @@ export function buildLegend() {
     legendPanel.querySelectorAll('[data-legend-cluster]').forEach((item) => {
         item.addEventListener('click', () => setClusterFilter(Number(item.dataset.legendCluster)));
     });
+    // Rebuild the always-visible compact key from current cluster counts so it
+    // tracks the same data the panel shows.
+    buildCanvasColorLegend();
 }
 
 export function updateLegendGuideState() {
@@ -170,6 +173,57 @@ export function closeLegendGuide(options = {}) {
             legendToggle.focus({ preventScroll: true });
         }
     }
+}
+
+// ── Compact canvas-anchored color key ────────────────────────────────────────
+
+/**
+ * Build the small always-visible "Network" color key that hangs off the top-left
+ * of the canvas. The old version had 4 hard-coded swatches (Anchor / Match /
+ * Cluster / Highlight) that did not match the actual 3D palette — the cluster
+ * dots use 30 colors from `state.COLORS` keyed by `state.CLUSTER_NAMES`.
+ *
+ * We pick the 4 most-populated clusters so the key shows what's actually
+ * visible in the cloud. If a cluster has 0 records (data is empty) we fall
+ * back to the first 4 names+colors.
+ */
+export function buildCanvasColorLegend() {
+    const root = document.getElementById('canvas-color-legend-rows');
+    if (!root) return;
+    const counts = getFilteredClusterCounts();
+    const colors = Array.isArray(state.COLORS) ? state.COLORS : [];
+    const names = Array.isArray(state.CLUSTER_NAMES) ? state.CLUSTER_NAMES : [];
+
+    let top = counts && counts.size > 0
+        ? Array.from(counts.entries())
+            .filter(([, count]) => count > 0)
+            .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+            .slice(0, 4)
+            .map(([cluster]) => cluster)
+        : null;
+
+    if (!top || top.length < 4) {
+        // Pad with first-N clusters so we always render 4 rows.
+        const padded = Array.from(new Set([...(top || []), 0, 1, 2, 3])).slice(0, 4);
+        top = padded;
+    }
+
+    root.replaceChildren(
+        ...top.map((cluster) => {
+            const color = colors[cluster % colors.length] || '#4ecdc4';
+            const label = names[cluster] || `Cluster ${cluster}`;
+            const row = document.createElement('div');
+            row.className = 'canvas-color-legend-row';
+            const swatch = document.createElement('span');
+            swatch.className = 'canvas-color-legend-swatch';
+            swatch.style.setProperty('--swatch-color', color);
+            const text = document.createElement('span');
+            text.className = 'canvas-color-legend-label';
+            text.textContent = label;
+            row.append(swatch, text);
+            return row;
+        })
+    );
 }
 
 // ── Module-scoped focus scrap (replaces window._previouslyFocusedLegend) ────────

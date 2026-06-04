@@ -52,6 +52,9 @@ export function renderSelectedActionRow(...args) {
 export function syncSelectedCardContentVariant(...args) {
     return focusRendererModule.syncSelectedCardContentVariant(...args);
 }
+export function triggerSelectedCardFade(...args) {
+    return focusRendererModule.triggerSelectedCardFade(...args);
+}
 export function getInterestingBusinessNote(...args) { return focusRendererModule.getInterestingBusinessNote(...args); }
 export function buildSelectedMatchNarrative(...args) { return focusRendererModule.buildSelectedMatchNarrative(...args); }
 

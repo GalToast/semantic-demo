@@ -4,6 +4,12 @@ import { escapeHtml } from './utils/dom-formatters.js'
 import { describeCluster, isCompactSearchViewport } from './utils/ui-presentation.js'
 import { setSearchContainerState, setupMobileSearchSheetToggle } from './search-panel-adapter.js'
 import { recordSemanticLaneSnapshot } from './semantic-lane.js'
+
+function syncSearchResultsA11y(resultsEl) {
+    if (!resultsEl) return;
+    const hasContent = resultsEl.children.length > 0;
+    resultsEl.setAttribute('aria-hidden', hasContent ? 'false' : 'true');
+}
 import {
     buildSearchResultItemHtml,
     buildSearchLoadingMarkup,
@@ -37,7 +43,8 @@ export function setSearchPanelState(options = {}) {
 
 export function renderSearchResultItems(resultsEl, results, renderContext, statusEl) {
     const INITIAL_SHOW = 5
-    const total = results.length
+    const dedupedResults = dedupeNearDuplicateResults(results)
+    const total = dedupedResults.length
     const savedCount = (() => {
         try {
             return Number.parseInt(sessionStorage.getItem('searchVisibleCount') || '0', 10)
@@ -49,7 +56,7 @@ export function renderSearchResultItems(resultsEl, results, renderContext, statu
         total,
         Math.max(INITIAL_SHOW, Number.isFinite(savedCount) && savedCount > 0 ? savedCount : INITIAL_SHOW)
     )
-    const visible = results.slice(0, visibleCount)
+    const visible = dedupedResults.slice(0, visibleCount)
 
     const setExpandedResultState = (expanded) => {
         const isExpanded = !!expanded && total > INITIAL_SHOW
@@ -70,6 +77,7 @@ export function renderSearchResultItems(resultsEl, results, renderContext, statu
             </div>
         `
         resultsEl.setAttribute('aria-describedby', 'search-results-count')
+        syncSearchResultsA11y(resultsEl)
         if (statusEl) statusEl.textContent = statusText
         const liveEl = document.getElementById('search-status-live')
         if (liveEl) liveEl.textContent = statusText
@@ -91,7 +99,7 @@ export function renderSearchResultItems(resultsEl, results, renderContext, statu
         btn.setAttribute('aria-describedby', 'search-results-count')
         btn.textContent = `Show ${remaining} more results`
         btn.onclick = () => {
-            const nextVisibleCount = results.length
+            const nextVisibleCount = dedupedResults.length
             const firstNewIndex = visibleCount
             btn.setAttribute('aria-expanded', 'true')
             try {
@@ -99,21 +107,69 @@ export function renderSearchResultItems(resultsEl, results, renderContext, statu
             } catch {}
             publish(EVENTS.URL_SYNC_REQUESTED, { params: { offset: null }, reason: 'search-more' })
             setExpandedResultState(true)
-            renderResultsMarkup(results.slice(0, nextVisibleCount), nextVisibleCount)
-            publish(EVENTS.SEARCH_UI_SYNC_REQUESTED, { resultsEl, statusEl, results, renderContext })
+            renderResultsMarkup(dedupedResults.slice(0, nextVisibleCount), nextVisibleCount)
+            publish(EVENTS.SEARCH_UI_SYNC_REQUESTED, { resultsEl, statusEl, results: dedupedResults, renderContext })
             refreshSearchResultHierarchy(resultsEl)
             const activeIndex =
                 state.currentSearchSummary?.anchorIndex ?? renderContext.anchorIndex ?? renderContext.topIndex
             if (Number.isFinite(activeIndex)) setActiveSearchResultRow(resultsEl, activeIndex, { reveal: false })
 
             requestAnimationFrame(() => {
-                const firstNewItem = resultsEl.querySelector(`[data-index="${results[firstNewIndex]?.index}"]`)
+                const firstNewItem = resultsEl.querySelector(`[data-index="${dedupedResults[firstNewIndex]?.index}"]`)
                 if (firstNewItem) firstNewItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
             })
         }
         resultsEl.appendChild(btn)
     }
     resultsEl.scrollTop = 0
+}
+
+// ── Dedupe near-duplicate results ───────────────────────────────────────────
+
+/**
+ * Some records in the dataset are near-duplicates of each other (e.g.
+ * "BLUE Willow Coffee" and "BLUE Willow Coffee LLC") — same business,
+ * different legal suffix. Without dedup, the same neighborhood/business
+ * shows up as two separate results. We collapse these by normalized
+ * name+city, keeping the higher-scored copy.
+ */
+function dedupeNearDuplicateResults(results) {
+    if (!Array.isArray(results) || results.length < 2) return results;
+    const seen = new Map();
+    const out = [];
+    for (const result of results) {
+        if (!result?.point) { out.push(result); continue; }
+        const key = nearDuplicateKey(result.point);
+        if (!key) { out.push(result); continue; }
+        if (seen.has(key)) {
+            const prev = seen.get(key);
+            if ((result.score || 0) > (prev.score || 0)) {
+                const idx = out.indexOf(prev);
+                if (idx >= 0) out[idx] = result;
+                seen.set(key, result);
+            }
+            continue;
+        }
+        seen.set(key, result);
+        out.push(result);
+    }
+    return out;
+}
+
+function nearDuplicateKey(point) {
+    const name = String(point?.name || '')
+        .toLowerCase()
+        .replace(/\b(llc|inc|co|company|lp|pc|pllc|ltd)\b\.?/g, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const city = String(point?.city || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    if (!name) return null;
+    return `${name}::${city}`;
 }
 
 export function beginSemanticSearchUiState(resultsEl, statusEl, trimmedQuery) {
@@ -137,6 +193,7 @@ export function beginSemanticSearchUiState(resultsEl, statusEl, trimmedQuery) {
         if (resultsEl.children.length === 0) {
             resultsEl.innerHTML = buildSearchLoadingMarkup()
         }
+        syncSearchResultsA11y(resultsEl)
         resultsEl.hidden = false
         clearSearchGlow()
     }
@@ -235,6 +292,7 @@ export function applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQue
         }
     } else {
         resultsEl.innerHTML = buildSearchErrorFullMarkup(escapedQuery)
+        syncSearchResultsA11y(resultsEl)
         const retryBtn = resultsEl.querySelector('.search-error-retry-btn')
         const dismissBtn = resultsEl.querySelector('.search-error-dismiss-btn')
         const searchState = resultsEl._searchStateNamespace
@@ -291,6 +349,7 @@ export function applyEmptySemanticSearchState(resultsEl, statusEl, trimmedQuery,
     }
 
     resultsEl.innerHTML = buildSearchEmptyStateMarkup(buildSearchSuggestionChips(suggestions))
+    syncSearchResultsA11y(resultsEl)
     resultsEl.querySelectorAll('.search-suggestion-chip').forEach((btn) => {
         btn.addEventListener('click', () => {
             const term = btn.dataset.suggestion
@@ -430,6 +489,7 @@ export function clearShortSemanticSearchState(_resultsEl, _statusEl) {
         _resultsEl.innerHTML = ''
         _resultsEl.classList.remove('active', 'searching', 'is-searching-skeleton')
         _resultsEl.setAttribute('aria-busy', 'false')
+        syncSearchResultsA11y(_resultsEl)
     }
     if (_statusEl) {
         _statusEl.textContent = 'Type to find businesses by need, place, or trade.'
@@ -441,6 +501,7 @@ export function clearShortSemanticSearchState(_resultsEl, _statusEl) {
         liveEl.textContent = 'Search cleared. Returning to county view.'
     }
     clearSearchGlow()
+    publish(EVENTS.COMPOSITION_UPDATED)
 }
 
 export function clearSearch(options = {}) {
@@ -557,13 +618,15 @@ subscribe(EVENTS.SEARCH_DEGRADED, ({ resultsEl, statusEl, query, error }) => {
 
 subscribe(EVENTS.SEARCH_CLEARED, (options = {}) => {
     clearSearchPreviewHoverTimer()
+    const resultsEl = document.getElementById('search-results')
+    const statusEl = document.getElementById('search-status')
     if (!options.preserveSearch) {
         const input = document.getElementById('search-input')
         if (input) input.value = ''
+        clearShortSemanticSearchState(resultsEl, statusEl)
+    } else {
+        clearSearchGlow()
     }
-    const resultsEl = document.getElementById('search-results')
-    const statusEl = document.getElementById('search-status')
-    clearShortSemanticSearchState(resultsEl, statusEl)
 })
 
 subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_STARTED, ({ resultsEl, resultIndices, targetIndex, el }) => {

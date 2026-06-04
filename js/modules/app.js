@@ -5,6 +5,8 @@ import * as searchModule from './search-state.js';
 import { initClusterFilterAdapter } from './cluster-filter-adapter.js';
 import { initBridgeRegistry, _getSelectedBusinessRoleLabel } from './bridge-registry.js';
 import { initJourneyLifecycleAdapter } from './journey-lifecycle-adapter.js';
+import { setupMobileSearchSheetToggle } from './search-panel-adapter.js';
+import { isCompactSearchViewport } from './utils/ui-presentation.js';
 import * as focusModule from './focus-pocket.js';
 import { initThreadInspectorAdapter } from './thread-inspector-adapter.js';
 import * as cameraModule from './camera-controls.js';
@@ -108,11 +110,9 @@ function showStartupRecoveryNotice(sourceLabel, error) {
 
         if (state.semanticLaneState === 'healthy' || !shouldShowAssist) {
             assistEl.hidden = true;
-            assistEl.style.display = 'none';
             assistEl.dataset.state = 'idle';
         } else {
             assistEl.hidden = false;
-            assistEl.style.display = '';
             assistEl.dataset.state = 'degraded';
         }
     }
@@ -138,7 +138,6 @@ function clearStartupRecoveryNotice(sourceLabel) {
     const assistEl = document.getElementById('semantic-lane-assist');
     if (assistEl) {
         assistEl.hidden = true;
-        assistEl.style.display = 'none';
         assistEl.dataset.state = 'idle';
     }
     if (typeof updateSearchStatusMessage === 'function') updateSearchStatusMessage();
@@ -277,6 +276,12 @@ export async function init() {
         initViewControllerAdapter({
             refreshCompositionState
         });
+
+        // Bind the search-sheet toggle once at startup so clicking the
+        // magnifier on a fresh page (no query yet) still hands focus to the
+        // textbox. The toggle's primary job is focus; sheet expansion is
+        // secondary and only happens after a query exists.
+        setupMobileSearchSheetToggle({ isCompactSearchViewport });
 
         // Phase 3: Event Bus Sync
         subscribeKeyed('app:url-sync-requested', EVENTS.URL_SYNC_REQUESTED, ({ params, reason, mode }) => {

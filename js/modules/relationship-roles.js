@@ -14,10 +14,10 @@ const RELATIONSHIP_ROLE_COPY = Object.freeze({
         reason: 'Holds up the trail here.'
     },
     downstream: {
-        rail: 'Market',
+        rail: 'Served by',
         title: 'Served by trail',
         inside: 'served by trail',
-        reason: 'The other side of the road.'
+        reason: 'Served by this trail.'
     },
     complement: {
         rail: 'Pairs',
@@ -44,7 +44,7 @@ const RELATIONSHIP_ROLE_COPY = Object.freeze({
         reason: 'Bridges this trail to the next.'
     },
     [UNCLASSIFIED_RELATIONSHIP_ROLE]: {
-        rail: 'Unclassified',
+        rail: 'Trail neighbor',
         title: 'Unclassified',
         inside: 'unclassified',
         reason: 'No clear thread yet.'
@@ -56,7 +56,7 @@ const ROLE_REASON_REWRITES = Object.freeze([
     [/same market signal with local context/i, 'Same trade. Same town.'],
     [/same market signal across different towns/i, 'Same trade. Another town.'],
     [/candidate looks like an input, infrastructure, or support provider/i, 'Holds up the trail here.'],
-    [/candidate looks like a customer, beneficiary, or demand-side market/i, 'The other side of the road.'],
+    [/candidate looks like a customer, beneficiary, or demand-side market/i, 'Served by this trail.'],
     [/construction\/trade work points toward property or rural demand/i, 'Draws the trail outward.'],
     [/candidate looks like trade infrastructure for the selected market/i, 'Carries the trail forward.'],
     [/adjacent sectors that often appear in the same customer journey/i, 'Same journey, different stop.'],

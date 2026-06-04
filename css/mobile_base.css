@@ -391,7 +391,9 @@ body[data-active-view='map'] .onboarding-hint {
 .keyboard-hint-panel {
     position: fixed;
     bottom: 24px;
-    right: 24px;
+    /* Clear the right rail (44px button + 16px margin + 20px gap = 80px)
+       so the panel doesn't occlude the help/share/legend/rotate buttons. */
+    right: 80px;
     z-index: var(--z-toast);
     visibility: hidden;
     background: rgba(8, 10, 18, 0.88);

@@ -20,6 +20,13 @@ class FakeClassList {
   contains(name) {
     return this.items.has(name);
   }
+
+  toggle(name, force) {
+    const next = force === undefined ? !this.items.has(name) : !!force;
+    if (next) this.items.add(name);
+    else this.items.delete(name);
+    return next;
+  }
 }
 
 class FakeElement {

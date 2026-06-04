@@ -4,6 +4,7 @@
   "dimensions": 1024,
   "count": 8406,
   "query_instruction": "Given a Montgomery County business discovery query, retrieve the most relevant businesses, venues, and service providers that best satisfy the request.",
+  "query_format": "plain",
   "max_text_chars": 4000,
   "embedding_input_avg_chars": 1009,
   "generated_at": "2026-06-04T05:50:01Z"

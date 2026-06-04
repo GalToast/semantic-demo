@@ -6,7 +6,7 @@ import { formatBusinessName, cleanPublicNoteText } from './utils/dom-formatters.
 import { isMapSummarySurface, isSemanticDiveSurface } from './environment.js';
 
 // journey-compass-state
-import { getFocusedJourneyPoint, getJourneyCompassState } from './journey-compass-state.js';
+import { getFocusedJourneyPoint, getJourneyCompassState, JOURNEY_ACTIONS } from './journey-compass-state.js';
 
 // map-state
 import {
@@ -83,14 +83,14 @@ export function getJourneyCompassPresentationState(compassState = {}) {
 }
 
 const MOBILE_JOURNEY_ACTION_LABELS = {
-    'focus-search': 'Search',
-    'center-anchor': 'Center',
-    'enter-inside': 'Inside',
-    'show-trail-panel': 'Trail',
-    'next-stop': 'Follow',
-    'open-map': 'Map',
-    'open-mycelium': 'Field',
-    'county-overview': 'County'
+    [JOURNEY_ACTIONS.FOCUS_SEARCH]: 'Search',
+    [JOURNEY_ACTIONS.CENTER_ANCHOR]: 'Center',
+    [JOURNEY_ACTIONS.ENTER_INSIDE]: 'Inside',
+    [JOURNEY_ACTIONS.SHOW_TRAIL_PANEL]: 'Trail',
+    [JOURNEY_ACTIONS.NEXT_STOP]: 'Follow',
+    [JOURNEY_ACTIONS.OPEN_MAP]: 'Map',
+    [JOURNEY_ACTIONS.OPEN_MYCELIUM]: 'Field',
+    [JOURNEY_ACTIONS.COUNTY_OVERVIEW]: 'County'
 };
 
 function getMobileJourneyActionLabel(action = {}, fallback = '') {
@@ -118,10 +118,22 @@ export function syncJourneyCompassActions(compassState = {}) {
             delete button.dataset.fullLabel;
         }
         button.dataset.journeyAction = action?.action || '';
-        const disabled = !action?.action || (action.action === 'next-stop' && state.strandContinuityState?.phase === 'exploring');
-        button.disabled = disabled || suppressInsideDiveActions;
+        const disabled = !action?.action || (action.action === JOURNEY_ACTIONS.NEXT_STOP && state.strandContinuityState?.phase === 'exploring');
+        // Use aria-disabled rather than the native `disabled` attribute so
+        // the title tooltip remains hoverable. The HTML5 `hidden` attribute
+        // already removes the element from the a11y tree; we also add
+        // tabindex=-1 to drop it from the tab order for completeness
+        // since some screen readers can still focus hidden elements.
+        button.disabled = false;
         button.setAttribute('aria-disabled', String(disabled || suppressInsideDiveActions));
         button.hidden = suppressInsideDiveActions || !action?.action;
+        if (button.hidden) {
+            button.setAttribute('tabindex', '-1');
+            button.setAttribute('aria-hidden', 'true');
+        } else {
+            button.removeAttribute('tabindex');
+            button.removeAttribute('aria-hidden');
+        }
         if (action?.hint) {
             button.setAttribute('aria-label', `${fullLabel} - ${action.hint}`);
             button.setAttribute('title', action.hint);
@@ -147,17 +159,10 @@ export function syncMapTrailStrip(compassState = {}, presentationState = {}) {
     strip.setAttribute('aria-hidden', String(!shouldShow));
     if (!shouldShow) return;
 
-    const actions = [
-        compassState.primaryAction,
-        compassState.secondaryAction,
-        compassState.tertiaryAction
-    ].filter((action) => action?.action);
-    const shortLabel = (action) => {
-        if (action.action === 'open-mycelium') return 'Mycelium';
-        if (action.action === 'county-overview') return 'Reset';
-        if (action.action === 'focus-search') return 'Search';
-        return action.label || 'Go';
-    };
+    // The map-trail-strip title carries the connection-trail label that
+    // isn't shown anywhere else. The action buttons, however, duplicate
+    // the right-panel chip rail and the global view-toggle — so we render
+    // the title only and let the other surfaces own the controls.
     const stripTitle = compassState.title || 'Map trail';
     const compactStripTitle = stripTitle.replace(/\s+pinned to map$/i, '');
 
@@ -168,20 +173,11 @@ export function syncMapTrailStrip(compassState = {}, presentationState = {}) {
     title.setAttribute('title', stripTitle);
     title.setAttribute('aria-label', stripTitle);
     strip.appendChild(title);
-    actions.forEach((action) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'trail-strip-btn';
-        button.dataset.journeyAction = action.action;
-        button.textContent = shortLabel(action);
-        button.addEventListener('click', () => executeJourneyCompassAction(action.action));
-        strip.appendChild(button);
-    });
 }
 
 export function executeJourneyCompassAction(action) {
     switch (action) {
-        case 'focus-search': {
+        case JOURNEY_ACTIONS.FOCUS_SEARCH: {
             const focusSearchInput = () => window.requestAnimationFrame(() => {
                 document.getElementById('search-input')?.focus();
             });
@@ -196,7 +192,7 @@ export function executeJourneyCompassAction(action) {
             focusSearchInput();
             return;
         }
-        case 'center-anchor': {
+        case JOURNEY_ACTIONS.CENTER_ANCHOR: {
             const anchorIndex = Number.isFinite(state.currentSearchSummary?.anchorIndex)
                 ? state.currentSearchSummary.anchorIndex
                 : Number.isFinite(state.navState?.focusedIndex)
@@ -214,26 +210,26 @@ export function executeJourneyCompassAction(action) {
             }
             return;
         }
-        case 'enter-inside':
+        case JOURNEY_ACTIONS.ENTER_INSIDE:
             if (typeof setSemanticDiveMode === 'function') setSemanticDiveMode(true);
             syncSemanticDiveUi();
             return;
-        case 'show-trail-panel':
+        case JOURNEY_ACTIONS.SHOW_TRAIL_PANEL:
             if (typeof setSemanticDiveMode === 'function') setSemanticDiveMode(false);
             syncSemanticDiveUi();
             return;
-        case 'next-stop':
+        case JOURNEY_ACTIONS.NEXT_STOP:
             if (state.strandContinuityState?.phase === 'exploring') return;
             if (typeof exploreInsideToNextStop === 'function') exploreInsideToNextStop();
             return;
 
-        case 'open-map':
+        case JOURNEY_ACTIONS.OPEN_MAP:
             _switchView('map');
             return;
-        case 'open-mycelium':
+        case JOURNEY_ACTIONS.OPEN_MYCELIUM:
             _switchView('galaxy');
             return;
-        case 'county-overview':
+        case JOURNEY_ACTIONS.COUNTY_OVERVIEW:
             // County overview is a calm reset surface; do not preserve the
             // search corridor or the map keeps competing search chrome alive.
             resetExplorationFocus({ preserveSearch: false });
@@ -268,8 +264,22 @@ export function updateJourneyCompass() {
     // The title is intentionally empty in focus/inside phases — the right
     // focus panel shows the business name prominently. Don't fall back to
     // a default like "County overview" in those states. The CSS hides the
-    // title element when it's empty.
-    if (title) title.textContent = compassState.title || (phase === 'focus' || phase === 'inside' ? '' : 'County overview');
+    // title element when it's empty. To keep the page-level <h1> landmark
+    // available to screen readers in those phases, populate it with a
+    // screen-reader-only description of the focused business and toggle
+    // the .sr-only class so it remains visually hidden.
+    if (title) {
+        const visibleTitle = compassState.title || (phase === 'focus' || phase === 'inside' ? '' : 'County overview');
+        if (visibleTitle) {
+            title.textContent = visibleTitle;
+            title.classList.remove('sr-only');
+        } else {
+            const focusedPoint = getFocusedJourneyPoint();
+            const focusedName = focusedPoint ? formatBusinessName(focusedPoint.name || 'this business') : 'Focused business';
+            title.textContent = `Focused on ${focusedName}`;
+            title.classList.add('sr-only');
+        }
+    }
     if (note) {
         note.textContent = compassState.note || 'Search to open one semantic trail.';
         note.classList.toggle('discovery-active', !!compassState.discovery);
@@ -316,7 +326,7 @@ export function scheduleMapRouteRefresh() {
     };
     refresh();
     window.requestAnimationFrame(() => window.requestAnimationFrame(refresh));
-    [120, 450, (state.MAP_HANDOFF_PRELUDE_MS || 1200) + 100].forEach((delay) => {
+    [120, 450, state.MAP_HANDOFF_PRELUDE_MS + state.MAP_TRAIL_REFRESH_LATE_DELAY_MS].forEach((delay) => {
         window.setTimeout(refresh, delay);
     });
 }

@@ -27,7 +27,8 @@ vi.mock('../../js/modules/ui-renderers.js', () => ({
     renderSelectedMetaStrip: vi.fn(),
     renderSelectedMatchPanel: vi.fn(),
     renderSelectedActionRow: vi.fn(),
-    syncSelectedCardContentVariant: vi.fn()
+    syncSelectedCardContentVariant: vi.fn(),
+    triggerSelectedCardFade: vi.fn()
 }));
 
 vi.mock('../../js/modules/lifecycle.js', () => ({

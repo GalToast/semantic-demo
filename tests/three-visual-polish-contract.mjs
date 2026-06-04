@@ -16,8 +16,6 @@ const interactionVisualsPath = path.join(repoRoot, 'js', 'modules', 'three-inter
 const interactionVisuals = fs.readFileSync(interactionVisualsPath, 'utf8');
 const searchAnimationsPath = path.join(repoRoot, 'js', 'modules', 'three-search-animations.js');
 const searchAnimations = fs.readFileSync(searchAnimationsPath, 'utf8');
-const legacyAnimationsPath = path.join(repoRoot, 'js', 'modules', 'three-animations.js');
-const legacyAnimations = fs.readFileSync(legacyAnimationsPath, 'utf8');
 const myceliumEnginePath = path.join(repoRoot, 'js', 'modules', 'mycelium-engine.js');
 const myceliumEngine = fs.readFileSync(myceliumEnginePath, 'utf8');
 
@@ -63,13 +61,6 @@ assert(
     app.includes("from './three-search-animations.js'")
     && !app.includes("from './three-animations.js'"),
     'app.js should inject search animation dependencies from canonical three-search-animations.js'
-);
-assert(
-    legacyAnimations.includes("from './three-search-animations.js'")
-    && !/function\s+triggerSearchHeroMoment\b/.test(legacyAnimations)
-    && !/function\s+triggerSearchCorridorAnimation\b/.test(legacyAnimations)
-    && !/new\s+THREE\./.test(legacyAnimations),
-    'three-animations.js should remain a re-export shim; search animation ownership lives in three-search-animations.js'
 );
 
 // Thread contrast contract: focus keeps global threads as background context.

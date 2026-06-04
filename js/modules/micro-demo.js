@@ -86,16 +86,21 @@ function _guardReducedMotion() {
 }
 
 function _guardWebGL() {
-    const canvas = document.querySelector('canvas');
-    if (!canvas) return false;
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    // Use the live Three.js renderer when available. The original guard
+    // queried `document.querySelector('canvas')` and called getContext,
+    // which raced against initThreeJS appending the canvas to the DOM and
+    // could resolve the wrong canvas (or none) — leading the demo to
+    // self-block with "no WebGL" even when the renderer was running.
+    const renderer = state.renderer;
+    if (!renderer?.domElement) return false;
+    const gl = renderer.getContext();
     if (!gl) return false;
     const dbg = gl.getExtension('WEBGL_debug_renderer_info');
     if (!dbg) return true;
-    const renderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+    const unmasked = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
     const softwareRenderers = ['swiftShader', 'llvmpipe', 'Software Rasterizer'];
     const isSoftware = softwareRenderers.some(r =>
-        renderer.toLowerCase().includes(r.toLowerCase())
+        String(unmasked).toLowerCase().includes(r.toLowerCase())
     );
     return !isSoftware;
 }
@@ -300,14 +305,14 @@ function _showPill(text) {
     skipBtn.type = 'button';
     skipBtn.setAttribute('aria-label', 'Skip demo');
     Object.assign(skipBtn.style, {
-        background: 'rgba(255, 255, 255, 0.1)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
+        background: 'rgba(78, 205, 196, 0.18)',
+        border: '1px solid rgba(78, 205, 196, 0.45)',
         borderRadius: '9999px',
-        color: '#9ca3af',
-        fontSize: '11px',
-        fontWeight: '500',
+        color: '#d1fae5',
+        fontSize: '12px',
+        fontWeight: '600',
         fontFamily: 'inherit',
-        padding: '2px 10px',
+        padding: '4px 12px',
         cursor: 'pointer',
         marginLeft: '4px',
         transition: 'background 0.15s ease, color 0.15s ease',
@@ -315,18 +320,30 @@ function _showPill(text) {
     });
     skipBtn.textContent = 'Skip';
     skipBtn.addEventListener('mouseenter', () => {
-        skipBtn.style.background = 'rgba(255, 255, 255, 0.2)';
-        skipBtn.style.color = '#e5e7eb';
+        skipBtn.style.background = 'rgba(78, 205, 196, 0.32)';
+        skipBtn.style.color = '#ecfeff';
     });
     skipBtn.addEventListener('mouseleave', () => {
-        skipBtn.style.background = 'rgba(255, 255, 255, 0.1)';
-        skipBtn.style.color = '#9ca3af';
+        skipBtn.style.background = 'rgba(78, 205, 196, 0.18)';
+        skipBtn.style.color = '#d1fae5';
     });
     skipBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         cancelMicroDemo('skip-button');
     });
     pill.appendChild(skipBtn);
+
+    // Auto-dismiss after 10s if the user hasn't interacted.
+    // The pill is meant to be an introduction, not a permanent banner.
+    const autoDismissTimer = window.setTimeout(() => {
+        cancelMicroDemo('auto-dismiss');
+    }, 10000);
+    pill.addEventListener('click', () => {
+        window.clearTimeout(autoDismissTimer);
+    }, { once: true });
+    skipBtn.addEventListener('click', () => {
+        window.clearTimeout(autoDismissTimer);
+    }, { once: true });
 
     document.body.appendChild(pill);
     return pill;
@@ -648,16 +665,8 @@ function _runDemo() {
     _demoTimers.push(window.setTimeout(() => {
         if (_demoCancelled) return;
         _demoPhase = PHASE.COMPLETE;
-        _cleanup();
         _showEndToast();
-
-        // Resume auto-rotate
-        setAutoRotateSuspended(false);
-
-        _recordCompletion();
-
-        // Notify app shell
-        window.dispatchEvent(new CustomEvent('demo-complete'));
+        _endDemo('demo-complete', true);
     }, 8800));
 }
 
@@ -670,6 +679,16 @@ function _cleanup() {
     _demoPhase = PHASE.IDLE;
     _demoNodeIndex = null;
     _demoCancelled = false;
+}
+
+// Symmetric teardown for both the happy-path end and the cancel path. Keeps
+// the auto-rotate resume, completion-record, and shell notification in one
+// place so any new demo state has to be added in exactly one spot.
+function _endDemo(notifyEvent, shouldRecordCompletion) {
+    _cleanup();
+    setAutoRotateSuspended(false);
+    if (shouldRecordCompletion) _recordCompletion();
+    window.dispatchEvent(new CustomEvent(notifyEvent));
 }
 
 /**
@@ -692,18 +711,8 @@ export function cancelMicroDemo(reason = 'user-input') {
         _animateCameraToOverview(800);
     }
 
-    _cleanup();
-    _showVeil(false);
-
-    // Resume auto-rotate
-    setAutoRotateSuspended(false);
-
-    if (reason === 'user-input' || reason === 'escape-key' || reason === 'skip-button') {
-        _recordCompletion();
-    }
-
-    // Notify app shell
-    window.dispatchEvent(new CustomEvent('demo-cancelled'));
+    const shouldRecord = reason === 'user-input' || reason === 'escape-key' || reason === 'skip-button';
+    _endDemo('demo-cancelled', shouldRecord);
 }
 
 

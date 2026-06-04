@@ -12,7 +12,7 @@
  *      map-focus-search, not trimmed after the fact by late CSS.
  *   4. #selected-map-summary remains read-only; map actions stay owned by the
  *      map trail strip.
- *   5. lifecycle.js refreshes the content variant after panelSurface changes.
+ *   5. composition-state.js publishes composition updates after panelSurface changes.
  *   6. The mobile premium split MAP SUMMARY section styles the dedicated
  *      summary nodes.
  *   7. Mobile premium CSS must not reintroduce map-focus-search styling for
@@ -35,6 +35,7 @@ const JOURNEY_FOCUS_UI_PATH = path.join(ROOT, 'js/modules/journey-focus-ui.js');
 const JOURNEY_COMPASS_PATH = path.join(ROOT, 'js/modules/journey-compass-controller.js');
 const JOURNEY_ROUTE_TRACE_PATH = path.join(ROOT, 'js/modules/journey-route-trace.js');
 const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.js');
+const COMPOSITION_STATE_PATH = path.join(ROOT, 'js/modules/composition-state.js');
 const EVENT_BUS_PATH = path.join(ROOT, 'js/modules/event-bus.js');
 const MAP_STATE_PATH = path.join(ROOT, 'js/modules/map-state.js');
 const SEMANTIC_DIVE_UI_PATH = path.join(ROOT, 'js/modules/semantic-dive-ui.js');
@@ -117,8 +118,12 @@ function testRendererOwnsVariantDecision() {
     'renderer must reveal #selected-map-summary only for map summary state'
   );
   assert(
-    /el\.hidden\s*=\s*true[\s\S]*el\.style\.display\s*=\s*['"]none['"]/.test(src),
-    'setSurfaceHidden() must own hidden state and inline display so stale display:block cannot leak'
+    /el\.hidden\s*=\s*true[\s\S]{0,120}el\.setAttribute\s*\(\s*['"]aria-hidden['"]\s*,\s*['"]true['"]\s*\)[\s\S]{0,180}el\.hidden\s*=\s*false[\s\S]{0,120}el\.setAttribute\s*\(\s*['"]aria-hidden['"]\s*,\s*['"]false['"]\s*\)/.test(src),
+    'setSurfaceHidden() must own hidden state and aria-hidden without inline display writes'
+  );
+  assert(
+    !/function\s+setSurfaceHidden\s*\([^)]*\)\s*\{[\s\S]*?style\.display[\s\S]*?\n\}/.test(src),
+    'setSurfaceHidden() must not write inline display; the hidden attribute and CSS own layout visibility'
   );
   assert(
     !/selected-map-summary[\s\S]{0,240}\.innerHTML\s*=/.test(src),
@@ -160,6 +165,7 @@ function testRenderPathCallsVariantSync() {
   const uiSrc = read(UI_RENDERERS_PATH);
   const selectedSrc = read(JOURNEY_SELECTED_CARD_PATH);
   const lifecycleSrc = read(LIFECYCLE_PATH);
+  const compositionStateSrc = read(COMPOSITION_STATE_PATH);
   const eventBusSrc = read(EVENT_BUS_PATH);
 
   assert(
@@ -182,8 +188,13 @@ function testRenderPathCallsVariantSync() {
     'event-bus.js must expose COMPOSITION_UPDATED for composition state fanout'
   );
   assert(
-    /function\s+syncSharedCompositionUi\s*\([^)]*\)\s*{[\s\S]*publish\s*\(\s*EVENTS\.COMPOSITION_UPDATED\s*\)/.test(lifecycleSrc),
-    'lifecycle.js must publish COMPOSITION_UPDATED after panelSurface changes'
+    /applyCompositionState\s*\(\s*{\s*state\s*,\s*root:\s*document\.body\s*}\s*\)/.test(lifecycleSrc),
+    'lifecycle.js must delegate panelSurface composition through applyCompositionState()'
+  );
+  assert(
+    /function\s+syncSharedCompositionUi\s*\([^)]*\)\s*{[\s\S]*publish\s*\(\s*EVENTS\.COMPOSITION_UPDATED\s*\)/.test(compositionStateSrc) &&
+      /export\s+function\s+applyCompositionState\s*\([^)]*\)\s*{[\s\S]*syncSharedCompositionUi\s*\(\s*\)/.test(compositionStateSrc),
+    'composition-state.js must publish COMPOSITION_UPDATED after panelSurface changes'
   );
 
   const compositionSubscribers = [

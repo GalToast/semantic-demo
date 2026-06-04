@@ -54,13 +54,23 @@ function run() {
   );
   console.log('  OK - map-trail-strip and map-idle share one explicit suppression rule');
 
-  console.log('\n[TEST] short landscape focus and dive surfaces suppress standalone utility chrome');
+  console.log('\n[TEST] short landscape focus and dive surfaces preserve essential info chrome');
   assertContains(
     mobilePremiumSrc,
-    /@media\s*\(max-width:\s*900px\)\s*and\s*\(max-height:\s*430px\)\s*and\s*\(orientation:\s*landscape\)[\s\S]*body\.is-active:is\([\s\S]*data-panel-surface=['"]focus['"][\s\S]*data-panel-surface=['"]focus-search['"][\s\S]*data-panel-surface=['"]semantic-dive['"][\s\S]*\)\s+:is\([\s\S]*\.controls[\s\S]*#btn-share-view[\s\S]*#btn-legend[\s\S]*#btn-keyboard-help[\s\S]*\.panel-toggle[\s\S]*\.time-display[\s\S]*\)\s*{[\s\S]*display:\s*none;[\s\S]*visibility:\s*hidden;[\s\S]*pointer-events:\s*none;/,
-    'mobile premium split must suppress utility chrome on focus/dive short-landscape surfaces wider than the standard mobile breakpoint'
+    /@media\s*\(max-width:\s*900px\)\s*and\s*\(max-height:\s*430px\)\s*and\s*\(orientation:\s*landscape\)[\s\S]*body\.is-active:is\([\s\S]*data-panel-surface=['"]focus['"][\s\S]*data-panel-surface=['"]focus-search['"][\s\S]*data-panel-surface=['"]semantic-dive['"][\s\S]*\)\s+:is\([\s\S]*\.share-toggle[\s\S]*\.controls[\s\S]*\.panel-toggle[\s\S]*\.time-display[\s\S]*\)\s*{[\s\S]*display:\s*none;[\s\S]*visibility:\s*hidden;[\s\S]*pointer-events:\s*none;/,
+    'mobile premium split must suppress share/panel/time chrome on focus/dive short-landscape surfaces wider than the standard mobile breakpoint'
   );
-  console.log('  OK - short-landscape focus/dive utility chrome suppression is explicit');
+  assertContains(
+    mobilePremiumSrc,
+    /@media\s*\(max-width:\s*900px\)\s*and\s*\(max-height:\s*430px\)\s*and\s*\(orientation:\s*landscape\)[\s\S]*body\.is-active:is\([\s\S]*data-panel-surface=['"]focus['"][\s\S]*data-panel-surface=['"]focus-search['"][\s\S]*data-panel-surface=['"]semantic-dive['"][\s\S]*\)\s+#btn-share-view\s*{[\s\S]*display:\s*none;[\s\S]*visibility:\s*hidden;[\s\S]*pointer-events:\s*none;/,
+    'mobile premium split must suppress the share button separately so #btn-share-view does not raise .controls specificity'
+  );
+  assertContains(
+    mobilePremiumSrc,
+    /@media\s*\(max-width:\s*900px\)\s*and\s*\(max-height:\s*430px\)\s*and\s*\(orientation:\s*landscape\)[\s\S]*body\.is-active:is\([\s\S]*data-panel-surface=['"]focus['"][\s\S]*data-panel-surface=['"]focus-search['"][\s\S]*data-panel-surface=['"]semantic-dive['"][\s\S]*\)\s+:is\(#btn-legend,\s*#btn-keyboard-help\)\s*{[\s\S]*display:\s*flex;[\s\S]*visibility:\s*visible;[\s\S]*pointer-events:\s*auto;/,
+    'mobile premium split must keep legend/help tappable on focus/dive short-landscape surfaces'
+  );
+  console.log('  OK - short-landscape focus/dive suppresses nonessential chrome and preserves legend/help');
 
   console.log('\n[TEST] idle and search surfaces keep chrome out of compact panels');
   assertContains(

@@ -32,8 +32,7 @@ vi.mock('../../js/modules/focus-stage-renderer.js', () => ({
     renderSelectedActionRow: vi.fn(),
     syncSelectedCardContentVariant: vi.fn(),
     getInterestingBusinessNote: vi.fn(),
-    buildSelectedMatchNarrative: vi.fn(),
-    initFocusStageRendererAdapter: vi.fn()
+    buildSelectedMatchNarrative: vi.fn()
 }));
 
 vi.mock('../../js/modules/search-trail-cue-renderer.js', () => ({

@@ -49,17 +49,7 @@
         display: none;
     }
 
-    body[data-panel-surface='search'] .info-panel {
-        max-height: min(23vh, 178px);
-    }
-
-    body[data-panel-surface='search'] .info-content {
-        max-height: calc(min(23vh, 178px) - 10px);
-        padding: 8px 10px 10px;
-    }
-
     body[data-panel-surface='focus'] .info-panel,
-    body[data-panel-surface='focus-search'] .info-panel,
     body[data-panel-surface='semantic-dive'] .info-panel {
         top: calc(58px + env(safe-area-inset-top, 0px));
         bottom: auto;
@@ -70,17 +60,10 @@
     }
 
     body[data-panel-surface='focus'] .info-panel .info-header,
-    body[data-panel-surface='focus-search'] .info-panel .info-header,
     body[data-panel-surface='semantic-dive'] .info-panel .info-header {
         display: none;
     }
 
-    body[data-panel-surface='focus'] .info-content,
-    body[data-panel-surface='focus-search'] .info-content,
-    body[data-panel-surface='semantic-dive'] .info-content {
-        max-height: min(15vh, 116px);
-        padding: 8px 10px;
-    }
 }
 
 /* SD-122: Reduced-motion override for filter/search surfaces
@@ -102,7 +85,6 @@
     .search-clear-btn,
     #map-container .leaflet-control-zoom.leaflet-bar a,
     .mode-grid .mode-chip,
-    .map-trail-strip .trail-strip-btn,
     .focus-stage-action-btn {
         min-width: 44px;
         min-height: 44px;
@@ -111,11 +93,6 @@
     .mode-grid .mode-chip {
         background: var(--glass-reflection);
         border-color: var(--glass-reflection-strong);
-    }
-
-    .map-trail-strip .trail-strip-btn {
-        justify-content: center;
-        padding: 0 12px;
     }
 }
 
@@ -133,28 +110,6 @@
 }
 
 @media (max-width: 768px) {
-    body[data-panel-surface='map-trail'] .map-trail-strip .trail-strip-btn {
-        min-width: 44px;
-        min-height: 44px;
-        padding: 0 12px;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* SEARCH SHEET ONLY: .search-container owns the sheet geometry.
-       #info-panel remains visible as a header/shell but does not
-       get its own glass bottom-sheet treatment in search states. */
-    body[data-panel-surface='search'] .info-panel,
-    body[data-panel-surface='focus-search'] .info-panel {
-        opacity: 0.97;
-    }
-
-    body[data-panel-surface='search'] .info-content,
-    body[data-panel-surface='focus-search'] .info-content {
-        max-height: calc(min(54vh, 456px) - 42px);
-        padding: 9px 10px calc(10px + env(safe-area-inset-bottom, 0px));
-    }
-
     body:is([data-panel-surface='search'], [data-panel-surface='focus-search']) .stats-row,
     body:is([data-panel-surface='search'], [data-panel-surface='focus-search']) .launch-btn,
     body:is([data-panel-surface='search'], [data-panel-surface='focus-search']) .demo-starters,
@@ -181,40 +136,6 @@
         padding-top: 0;
         border-top: 0;
         background: transparent;
-    }
-
-    body[data-panel-surface='search'] .search-results.active,
-    body[data-active-view='galaxy'] .search-container.has-query .search-results.active {
-        display: block;
-        max-height: min(32vh, 270px);
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 6px;
-        border-color: rgba(var(--color-primary-tint-rgb), 0.18);
-        background: rgba(5, 10, 16, 0.95);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-    }
-
-    body[data-panel-surface='search'] .search-result-item,
-    body[data-active-view='galaxy'] .search-container.has-query .search-result-item {
-        display: block;
-        min-height: 64px;
-        padding: 9px 10px;
-    }
-
-    body[data-panel-surface='search'] .search-result-item:not(:first-child),
-    body[data-active-view='galaxy'] .search-container.has-query .search-result-item:not(:first-child) {
-        display: block;
-    }
-
-    body[data-panel-surface='search'] .search-result-what,
-    body[data-panel-surface='search'] .search-result-meta,
-    body[data-panel-surface='search'] .search-result-bar,
-    body[data-active-view='galaxy'] .search-container.has-query .search-result-what,
-    body[data-active-view='galaxy'] .search-container.has-query .search-result-meta,
-    body[data-active-view='galaxy'] .search-container.has-query .search-result-bar {
-        display: block;
     }
 
     body[data-active-view='galaxy'] .search-container.has-query .search-empty-state {
@@ -316,7 +237,6 @@
     body .search-input,
     body .search-clear-btn,
     body .mode-grid .mode-chip,
-    body .map-trail-strip .trail-strip-btn,
     body #map-container .leaflet-control-zoom.leaflet-bar a {
         min-width: 44px;
         min-height: 44px;
@@ -441,24 +361,6 @@
         overflow-y: auto;
     }
 
-    body[data-panel-surface='focus'] .search-results.active,
-    body[data-panel-surface='focus-search'] .search-results.active,
-    body[data-panel-surface='semantic-dive'] .search-results.active {
-        max-height: min(28vh, 180px);
-        padding: 6px 8px;
-        opacity: 0.94;
-        visibility: visible;
-        pointer-events: auto;
-    }
-
-    body[data-panel-surface='semantic-dive'] .search-container,
-    body[data-panel-surface='semantic-dive'] .search-results.active,
-    body[data-panel-surface='semantic-dive'] #search-results {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
     body[data-panel-surface='focus'] .controls.desktop-only,
     body[data-panel-surface='focus-search'] .controls.desktop-only,
     body[data-panel-surface='semantic-dive'] .controls.desktop-only,
@@ -515,10 +417,10 @@
 }
 
 @media (max-width: 430px) {
-    body[data-panel-surface='focus'] .journey-compass[data-density='compact'] .journey-compass-action:not(.primary),
-    body[data-panel-surface='focus-search']
-        .journey-compass[data-density='compact']
-        .journey-compass-action:not(.primary),
+    /* In semantic-dive the focus-stage card owns the actions, so the
+       compass's secondary/tertiary would duplicate them — hide them.
+       Focus and focus-search still need the secondary "County" button
+       visible in the compass to provide a 2-button exit toggle. */
     body[data-panel-surface='semantic-dive']
         .journey-compass[data-density='compact']
         .journey-compass-action:not(.primary) {
@@ -706,32 +608,6 @@
         background: rgba(5, 10, 16, 0.72);
     }
 
-    body[data-panel-surface='search'] .search-result-item,
-    body[data-panel-surface='search'] .search-result-item:not(:first-child) {
-        display: block;
-        min-height: 72px;
-        padding: 8px 9px;
-    }
-
-    body[data-panel-surface='search'] .search-result-name {
-        font-size: 12px;
-        line-height: 1.15;
-    }
-
-    body[data-panel-surface='search'] .search-result-what {
-        display: -webkit-box;
-        margin-top: 5px;
-        font-size: 10px;
-        line-height: 1.25;
-        -webkit-line-clamp: 1;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    body[data-panel-surface='search'] .search-result-meta,
-    body[data-panel-surface='search'] .search-result-bar {
-        display: none;
-    }
 }
 
 @media (max-width: 768px) {
@@ -820,16 +696,6 @@
         line-height: 1.1;
         transform: none;
     }
-
-    body[data-panel-surface='map-trail'] .map-trail-strip .trail-strip-btn {
-        min-width: 44px;
-        min-height: 44px;
-        padding: 0 12px;
-        flex: 0 0 auto;
-        align-items: center;
-        justify-content: center;
-        font-size: 10px;
-    }
 }
 
 /* SD-150: keep the global reset dock physically reachable while a focused
@@ -848,8 +714,33 @@ body[data-panel-surface='focus-search'] .controls {
 body[data-panel-surface='focus'] .controls .control-btn,
 body[data-panel-surface='focus-search'] .controls .control-btn {
     position: relative;
-    z-index: 1;
+    z-index: var(--z-base);
     pointer-events: auto;
+}
+
+@media (min-width: 769px) and (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='focus'] .controls.controls-rail.controls,
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='focus'] .controls.controls-info.controls,
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='focus-search'] .controls.controls-rail.controls,
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='focus-search'] .controls.controls-info.controls,
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='semantic-dive'] .controls.controls-rail.controls,
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='semantic-dive'] .controls.controls-info.controls {
+        right: auto;
+        bottom: auto;
+        display: contents;
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+    }
+
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='focus'] :is(.controls.controls-view, .controls-divider),
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='focus-search'] :is(.controls.controls-view, .controls-divider),
+    html body.is-active[data-active-view='galaxy'][data-panel-surface='semantic-dive'] :is(.controls.controls-view, .controls-divider) {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
 }
 
 @media (max-width: 768px) {
@@ -1168,18 +1059,6 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
         margin: 0 0 8px;
     }
 
-    body[data-panel-surface='search'] .search-results.active {
-        flex: 1 1 auto;
-        min-height: 0;
-        max-height: none;
-        margin-top: 0;
-        padding: 6px;
-        overflow-y: auto;
-        overflow-x: hidden;
-        border-color: rgba(var(--color-primary-tint-rgb), 0.18);
-        background: rgba(5, 10, 16, 0.82);
-    }
-
     body[data-panel-surface='search'] .search-error-state {
         align-items: flex-start;
         gap: 8px;
@@ -1271,17 +1150,11 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
         background: transparent;
     }
 
-    body[data-panel-surface='focus-search'] .search-container.search-degraded #search-results.active {
-        display: block;
-        opacity: 1;
-        visibility: visible;
-    }
-
     body[data-panel-surface='idle'] .info-panel {
         width: 322px;
         top: 116px;
-        height: min(480px, calc(100dvh - 138px));
-        max-height: 480px;
+        height: auto;
+        max-height: 208px;
         border-radius: 8px;
         border-color: rgba(var(--color-primary-tint-rgb), 0.16);
         background:
@@ -1300,9 +1173,9 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
     body[data-panel-surface='idle'] .info-content {
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        height: 100%;
-        max-height: 420px;
+        gap: 0;
+        height: auto;
+        max-height: 138px;
         padding: 12px 14px 14px;
         overflow: hidden;
     }
@@ -1600,30 +1473,21 @@ body[data-active-view='map'] .mode-grid .mode-chip.active {
         opacity: 1;
         transform: none;
     }
+}
 
-    body[data-panel-surface='map-trail'] .map-strip-kicker {
-        min-width: 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    body[data-panel-surface='map-trail'] .trail-strip-btn {
-        min-width: 48px;
-        min-height: 38px;
-        padding: 0 10px;
-        font-size: 9px;
-        font-weight: 850;
-        letter-spacing: 0.07em;
-        line-height: 1;
-        text-transform: uppercase;
-        white-space: nowrap;
-    }
-
-    body[data-panel-surface='map-trail'] .trail-strip-btn[data-journey-action='county-overview'] {
-        color: rgba(255, 235, 168, 0.9);
-        border-color: rgba(255, 226, 132, 0.22);
-        background:
-            linear-gradient(180deg, rgba(255, 226, 132, 0.14), rgba(255, 226, 132, 0.05)), var(--glass-reflection-fade);
-    }
+/* V8 idle contract: the overview sheet is search-only. Older responsive
+   sizing blocks above describe legacy starter chips, but idle must not
+   render competing entry points in the live cascade. */
+body[data-panel-surface='idle'] .demo-starters,
+body[data-panel-surface='idle'] .launch-btn,
+body[data-panel-surface='idle'] .stats-row,
+body[data-panel-surface='idle'] .stat-caption,
+body[data-panel-surface='idle'] #mode-grid {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+    max-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
 }

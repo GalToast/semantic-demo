@@ -56,7 +56,7 @@ function testClipboardCatchPath() {
     'copyCurrentViewLink has catch block for clipboard error');
 
   // Catch must show toast (not re-throw) so UI stays stable
-  assertContains(src, "adapterShowExperienceToast('Copy unavailable'",
+  assertContains(src, "showExperienceToast('Copy unavailable'",
     'catch block calls showExperienceToast for Copy unavailable');
 
   // Catch must return null — no success value after failure
@@ -75,7 +75,7 @@ function testSuccessPathReturnsHref() {
   assertContains(src, 'state.lastCopiedViewLink = href',
     'success path sets lastCopiedViewLink');
 
-  assertContains(src, "adapterShowExperienceToast('View link copied'",
+  assertContains(src, "showExperienceToast('View link copied'",
     'success path shows View link copied toast');
 
   // Must return href (string), not an object or undefined
@@ -135,7 +135,7 @@ function testNoRethrowOnClipboardFailure() {
     'catch block must not contain an actual throw statement (not just a comment mention)');
   assert(catchBlock.includes('return null'),
     'catch block must return null on failure');
-  assert(catchBlock.includes("adapterShowExperienceToast('Copy unavailable'"),
+  assert(catchBlock.includes("showExperienceToast('Copy unavailable'"),
     'catch block must show toast on failure');
 }
 

@@ -16,7 +16,7 @@ import { openApp } from './helpers/3d-interaction-helpers.js';
 
 const ROLE_CASES = [
   { role: 'upstream', label: 'Support', reasonPattern: /support provider/i },
-  { role: 'downstream', label: 'Market', reasonPattern: /served market/i },
+  { role: 'downstream', label: 'Served by', reasonPattern: /served by this trail/i },
   { role: 'bridge', label: 'Bridge', reasonPattern: /cross-market bridge/i },
 ];
 

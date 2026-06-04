@@ -66,15 +66,16 @@ const selectorBaselines = {
     'strands.css': 2,
     'mobile_base.css': 1,
     'mobile_premium__chrome.css': 5,
+    'mobile_premium__state.css': 2,
   },
   '.search-results.active': {
-    'search.css': 5,
+    'search.css': 6,
     'layout_base.css': 0,
     'journey_active.css': 1,
     'progressive_disclosure.css': 3,
-    'strands.css': 8,
-    'mobile_premium__chrome.css': 7,
-    'mobile_premium__state.css': 5,
+    'strands.css': 1,
+    'mobile_premium__chrome.css': 10,
+    'mobile_premium__state.css': 9,
     'mobile_premium__surfaces.css': 1,
     'animations.css': 1,
   },
@@ -96,6 +97,7 @@ const selectorBaselines = {
   },
   '.journey-compass-actions': {
     'journey_active.css': 15,
+    'mobile_premium__chrome.css': 1,
     'mobile_premium__focus-dive.css': 4,
     'mobile_premium__narrow.css': 1,
     'mobile_premium__surfaces.css': 6,
@@ -106,6 +108,7 @@ const selectorBaselines = {
     'layout_base.css': 1,
     'journey_active.css': 15,
     'mobile_premium__focus-dive.css': 4,
+    'mobile_premium__narrow.css': 6,
     'mobile_premium__state.css': 1,
     'mobile_premium__surfaces.css': 1,
     'strands.css': 2,
@@ -147,6 +150,31 @@ const bannedSelectorImportantRules = [
 ];
 
 const forbiddenSelectorFragments = [
+  {
+    file: 'strands.css',
+    fragment: "body[data-panel-surface='search'] .info-panel {\n        max-height: min(23vh, 178px);",
+    label: 'mobile search info-panel geometry belongs to mobile_premium__state.css, not strands.css',
+  },
+  {
+    file: 'strands.css',
+    fragment: "body[data-panel-surface='search'] .info-content {\n        max-height: calc(min(23vh, 178px) - 10px);",
+    label: 'mobile search info-content geometry belongs to mobile_premium__state.css, not strands.css',
+  },
+  {
+    file: 'strands.css',
+    fragment: "body[data-panel-surface='search'] .info-panel,\n    body[data-panel-surface='focus-search'] .info-panel {\n        opacity: 0.97;",
+    label: 'mobile search/focus-search info-panel opacity belongs to mobile_premium__state.css, not strands.css',
+  },
+  {
+    file: 'strands.css',
+    fragment: "body[data-panel-surface='search'] .info-content,\n    body[data-panel-surface='focus-search'] .info-content {\n        max-height: calc(min(54vh, 456px) - 42px);",
+    label: 'mobile search/focus-search info-content sizing belongs to mobile_premium__state.css, not strands.css',
+  },
+  {
+    file: 'strands.css',
+    fragment: "body[data-panel-surface='focus'] .info-content,\n    body[data-panel-surface='semantic-dive'] .info-content {\n        max-height: min(15vh, 116px);",
+    label: 'dead early focus/semantic info-content block is overridden later in strands.css',
+  },
   {
     file: 'strands.css',
     fragment: 'data-panel-surface="focus"]:has(.search-container.has-query) .info-content',
@@ -220,6 +248,10 @@ function selectorRuleBlocks(cssText) {
     .filter(Boolean);
 }
 
+function hasDeclaration(body) {
+  return /[a-z-]+\s*:/.test(body);
+}
+
 function selectorRulePreludes(cssText) {
   return stripComments(cssText)
     .split('{')
@@ -250,6 +282,12 @@ for (const file of cssFiles) {
   const content = fs.readFileSync(path.join(cssDir, file), 'utf8');
   const uncommentedContent = stripComments(content);
   const ruleBlocks = selectorRuleBlocks(content);
+
+  for (const block of ruleBlocks) {
+    if (!hasDeclaration(block.body)) {
+      violations.push(`${file} has an empty/comment-only CSS rule for "${block.prelude}". Remove the dead selector or add a real declaration.`);
+    }
+  }
 
   if (file === 'mobile_base.css') {
     for (const block of ruleBlocks) {

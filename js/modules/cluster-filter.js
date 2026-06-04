@@ -56,6 +56,7 @@ export function clearClusterFilter() {
 
 export function updateClusterList() {
     const clusterList = document.getElementById('cluster-list');
+    ensureClusterListDelegation();
     if (!clusterList) return;
 
     const counts = getFilteredClusterCounts();
@@ -74,7 +75,6 @@ export function updateClusterList() {
                 <button class="cluster-empty-clear" type="button">Clear filters</button>
             </div>
         `;
-        clusterList.querySelector('.cluster-empty-clear')?.addEventListener('click', clearClusterFilter);
         return;
     }
 
@@ -109,20 +109,35 @@ export function updateClusterList() {
         };
         clusterList.appendChild(toggleBtn);
     }
+}
 
-    clusterList.querySelectorAll('[data-cluster]').forEach((item) => {
-        item.addEventListener('click', (e) => {
-            if (!e?.target || e.target.classList.contains('cluster-clear-btn')) return;
-            setClusterFilter(Number(item.dataset.cluster));
-        });
-    });
+// Event delegation: a single click handler on the cluster list dispatches
+// to the appropriate action based on the clicked element. Avoids attaching
+// listeners to every child on every re-render, which would otherwise
+// require cleanup when the list is rebuilt.
+function handleClusterListClick(event) {
+    const clearBtn = event.target.closest('.cluster-clear-btn');
+    if (clearBtn) {
+        event.stopPropagation();
+        clearClusterFilter();
+        return;
+    }
+    const emptyClear = event.target.closest('.cluster-empty-clear');
+    if (emptyClear) {
+        clearClusterFilter();
+        return;
+    }
+    const clusterItem = event.target.closest('[data-cluster]');
+    if (clusterItem) {
+        setClusterFilter(Number(clusterItem.dataset.cluster));
+    }
+}
 
-    clusterList.querySelectorAll('.cluster-clear-btn').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            clearClusterFilter();
-        });
-    });
+function ensureClusterListDelegation() {
+    const clusterList = document.getElementById('cluster-list');
+    if (!clusterList || clusterList.dataset.delegated === 'true') return;
+    clusterList.addEventListener('click', handleClusterListClick);
+    clusterList.dataset.delegated = 'true';
 }
 
 export { getFilteredClusterCounts };

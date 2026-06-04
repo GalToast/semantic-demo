@@ -61,6 +61,83 @@
         .journey-compass-actions {
         flex: 0 0 auto;
     }
+
+    /* At the narrowest widths the title, kicker, chips, and actions are
+       already hidden by the 374 / 480 / state rules, leaving a 52px-tall
+       empty pill at the top of the canvas. Hide the whole container so
+       the canvas + top-chrome (view toggle, weather, time) get the space.
+       Selector mirrors the surfaces rule's specificity (4,1) so the
+       narrow override wins on source order. */
+    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass,
+    body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass {
+        display: none;
+    }
 }
 
 /* end mobile_premium.css */
+
+/* ─── FOCUS-STATE ESCAPE HATCH ─────────────────────
+   On mobile, the focus/dive state hides the top chrome (view toggle,
+   journey rail, zoom controls, time, weather, info-panel toggle). After
+   focusing on a business the user is trapped: cannot open search, switch
+   views, or escape. This override re-shows the chrome in focus, focus-
+   search, and semantic-dive states so the user always has a way out.
+   Loaded after chrome.css / state.css / surfaces.css / strands.css, so
+   source order wins over the hides.
+   Choice: option (a) — keep chrome visible in focus state — because it is
+   uniform and stateless; option (b) (only show on panel open) would
+   require JS-driven state and would still strand the user in the
+   non-panel-open case.
+   Specificity: selectors mirror the highest-specificity hide rules they
+   are overriding (e.g. `.journey-compass.glass-heavy` matches the
+   focus-dive.css hide for the rail). Source order alone wins when
+   specificity ties. Display values mirror the canonical definitions in
+   controls.css / time_weather.css / layout_base.css so the natural
+   layout is preserved. */
+@media (max-width: 768px) {
+    body.is-active[data-panel-surface='focus'][data-panel-surface='focus'] .view-toggle,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface='focus-search'] .view-toggle,
+    body.is-active[data-panel-surface='semantic-dive'][data-panel-surface='semantic-dive'] .view-toggle {
+        display: flex;
+        visibility: visible;
+        pointer-events: auto;
+        opacity: 1;
+    }
+    body.is-active[data-panel-surface='focus'][data-panel-surface='focus'] .journey-compass.glass-heavy .journey-compass-rail,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface='focus-search'] .journey-compass.glass-heavy .journey-compass-rail,
+    body.is-active[data-panel-surface='semantic-dive'][data-panel-surface='semantic-dive'] .journey-compass.glass-heavy .journey-compass-rail {
+        display: flex;
+        visibility: visible;
+        pointer-events: auto;
+        opacity: 1;
+    }
+    body.is-active[data-panel-surface='focus'][data-panel-surface='focus'] .journey-compass[data-density='compact'] .journey-compass-rail,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface='focus-search'] .journey-compass[data-density='compact'] .journey-compass-rail,
+    body.is-active[data-panel-surface='semantic-dive'][data-panel-surface='semantic-dive'] .journey-compass[data-density='compact'] .journey-compass-rail {
+        display: flex;
+        visibility: visible;
+        pointer-events: auto;
+        opacity: 1;
+    }
+    body.is-active[data-panel-surface='focus'][data-panel-surface='focus'] .controls,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface='focus-search'] .controls,
+    body.is-active[data-panel-surface='semantic-dive'][data-panel-surface='semantic-dive'] .controls {
+        display: flex;
+        visibility: visible;
+        pointer-events: auto;
+        opacity: 1;
+    }
+
+    body.is-active[data-panel-surface='focus'][data-panel-surface='focus'] #info-panel.info-panel {
+        display: block;
+        visibility: visible;
+        pointer-events: auto;
+        opacity: 0.68;
+    }
+    body.is-active[data-panel-surface='focus'][data-panel-surface='focus'] #info-panel.info-panel .info-header {
+        display: flex;
+        visibility: visible;
+        pointer-events: auto;
+        opacity: 1;
+    }
+}

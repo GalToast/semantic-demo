@@ -7,8 +7,8 @@ export function bindFocusTrapObserver() {
                     '.search-container',
                     '#info-panel',
                     '.journey-compass',
-                    '#controls-container',
-                    '#search-drawer-chrome'
+                    '.controls',
+                    '.search-drawer-chrome'
                 ]);
             });
         } else {

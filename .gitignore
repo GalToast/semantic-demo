@@ -54,3 +54,10 @@ scripts/leadopsContacts.json
 scripts/leadopsBusinessFacts.json
 scripts/extract-lead-enrichment.mjs
 .tmp_profile-ids.txt
+
+# Local dev profile
+.opencode/
+.tmp-profile-ids.txt
+
+# QA sweep artifacts
+semantic-sweep-*

@@ -19,8 +19,9 @@
 .view-toggle {
     position: fixed;
     top: var(--space-4);
-    left: 50%;
-    transform: translateX(-50%);
+    left: auto;
+    right: calc(300px + env(safe-area-inset-right, 0px));
+    transform: none;
     display: flex;
     gap: 8px;
     background: var(--glass-bg);
@@ -31,6 +32,16 @@
     z-index: var(--z-overlay);
     border: var(--glass-border);
     box-shadow: var(--shadow-glass);
+}
+
+@media (max-width: 1180px) and (min-width: 769px) {
+    .view-toggle {
+        right: calc(236px + env(safe-area-inset-right, 0px));
+    }
+
+    .view-toggle button {
+        padding-inline: var(--space-3);
+    }
 }
 
 .view-toggle button {

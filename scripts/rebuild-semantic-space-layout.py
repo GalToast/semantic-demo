@@ -13,7 +13,7 @@ import numpy as np
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_INDEX_DIR = ROOT.parent / "tmp" / "public-semantic-search-build" / "index-motion338b"
+DEFAULT_INDEX_DIR = ROOT.parent / "tmp" / "public-semantic-search-build" / "index-rich-0.6b-20260604"
 
 
 def parse_args() -> argparse.Namespace:

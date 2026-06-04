@@ -2,25 +2,14 @@
 // Replaces scattered window.innerWidth, window.innerHeight, matchMedia, and
 // devicePixelRatio calls across the codebase with a single, guarded API.
 
-const _dpr =
-    typeof window !== 'undefined' && window.devicePixelRatio !== undefined
-        ? window.devicePixelRatio
-        : 1;
-
-const _viewport = {
-    width: typeof window !== 'undefined' ? window.innerWidth : 1280,
-    height: typeof window !== 'undefined' ? window.innerHeight : 800,
-    dpr: _dpr
-};
-
 /**
  * Returns the current viewport size as `{ width, height }`.
  * All callers should prefer this rather than reading window directly.
  */
 export function getViewportSize() {
     return {
-        width: typeof window !== 'undefined' ? window.innerWidth : _viewport.width,
-        height: typeof window !== 'undefined' ? window.innerHeight : _viewport.height
+        width: typeof window !== 'undefined' ? window.innerWidth : 1280,
+        height: typeof window !== 'undefined' ? window.innerHeight : 800
     };
 }
 

@@ -154,7 +154,8 @@ async function forceFieldNode(page) {
     document.body.dataset.panelSurface = 'focus-search';
     document.body.dataset.focusPanelMode = 'field-node';
     document.body.dataset.fieldStepSync = 'active';
-    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function') (window.__APP_ACTIONS__?.refreshCompositionState)();
+    const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
+    if (typeof refreshCompositionState === 'function') refreshCompositionState();
   });
   await page.waitForTimeout(350);
 }
@@ -177,7 +178,22 @@ async function forceThreadPreview(page) {
       Number.isFinite(state.focusedNode) ? state.focusedNode :
       Number.isFinite(state.currentSearchSummary?.anchorIndex) ? state.currentSearchSummary.anchorIndex :
       519;
-    if (Number.isFinite(seedIndex)) state.focusedNode = seedIndex;
+
+    document.body.classList.add('is-active');
+    document.body.dataset.activeView = 'galaxy';
+    document.body.dataset.graphContext = 'focus';
+    document.body.dataset.panelSurface = 'focus';
+    document.body.dataset.threadInspectSurface = 'inspector';
+
+    if (Number.isFinite(seedIndex) && typeof window.__APP_ACTIONS__?.focusOnNode === 'function') {
+      window.__APP_ACTIONS__.focusOnNode(seedIndex, {
+        skipUrlSync: true,
+        fromSearchResult: true,
+        preserveMode: true,
+      });
+    } else if (Number.isFinite(seedIndex)) {
+      state.focusedNode = seedIndex;
+    }
     if (state.navState && Number.isFinite(seedIndex)) {
       state.navState.focusedIndex = seedIndex;
       if (typeof window.__APP_ACTIONS__?.setTrailFromSeed === 'function') {
@@ -210,10 +226,9 @@ async function forceThreadPreview(page) {
       renderThreadInspection(candidate.index, { force: true, surface: 'inspector' });
     }
 
-    document.body.classList.add('is-active');
     document.body.dataset.activeView = 'galaxy';
     document.body.dataset.graphContext = 'focus';
-    document.body.dataset.panelSurface = document.body.dataset.panelSurface === 'focus-search' ? 'focus-search' : 'focus';
+    document.body.dataset.panelSurface = 'focus';
     document.body.dataset.threadInspectSurface = 'inspector';
     if (typeof window.__APP_ACTIONS__?.refreshCompositionState === 'function') {
       window.__APP_ACTIONS__.refreshCompositionState();
@@ -229,6 +244,17 @@ async function forceThreadPreview(page) {
       btn.disabled = false;
     });
   });
+  await page.waitForFunction(() => {
+    const card = document.querySelector('#selected-card');
+    const details = document.querySelector('#selected-details');
+    const primary = document.querySelector('#btn-journey-primary');
+    const secondary = document.querySelector('#btn-journey-secondary');
+    return card?.dataset.contentOwner === 'focus-stage'
+      && card.getAttribute('aria-hidden') === 'true'
+      && (!details || details.getAttribute('aria-hidden') === 'true')
+      && (!primary || primary.hidden || primary.dataset.journeyAction)
+      && (!secondary || secondary.hidden || secondary.dataset.journeyAction);
+  }, { timeout: 2000 }).catch(() => {});
   await page.waitForTimeout(350);
 }
 
@@ -264,14 +290,54 @@ function checksForState(name) {
     '#search-results',
     '#focus-stage',
     '.focus-stage-card',
+    '.focus-stage-neighbors',
     '.focus-thread-inspector',
+    '#selected-card',
+    '#selected-details',
+    '.map-trail-strip',
     '.controls',
     '.share-toggle',
+    '.legend-toggle',
+    '.help-toggle',
     '.view-toggle',
+    '.weather-widget',
+    '.time-display',
     '#btn-legend',
+    '#btn-keyboard-help',
+    '.panel-toggle',
   ];
 
-  return { criticalText, interactive, chrome, isMobile: name.startsWith('mobile-') };
+  const collisionSurfaces = [
+    '.journey-compass',
+    '.journey-compass-rail',
+    '.journey-compass-actions',
+    '#info-panel',
+    '.search-container',
+    '#search-results',
+    '#focus-stage',
+    '.focus-stage-card',
+    '.focus-stage-neighbors',
+    '.focus-stage-journey',
+    '.focus-thread-inspector',
+    '#selected-card',
+    '#selected-details',
+    '.map-trail-strip',
+    '.view-toggle',
+    '.weather-widget',
+    '.time-display',
+    '.controls',
+    '.share-toggle',
+    '.legend-toggle',
+    '.help-toggle',
+    '#btn-legend',
+    '#btn-keyboard-help',
+    '.panel-toggle',
+    '#btn-launch',
+    '.demo-starters',
+    '#mode-grid',
+  ];
+
+  return { criticalText, interactive, chrome, collisionSurfaces, isMobile: name.startsWith('mobile-') };
 }
 
 async function auditState(page, name) {
@@ -294,9 +360,16 @@ async function auditState(page, name) {
         && inViewport;
     }
 
-    // Below this, a fully-laid-out element is treated as effectively invisible
-    // by the test — leaves headroom for mid-transition opacity ramps.
-    const OPACITY_VISIBLE_THRESHOLD = 0.95;
+    // Fully laid-out map summary cards must be completely visible; transient
+    // fades are class-owned and should not persist into captured states.
+    const OPACITY_VISIBLE_THRESHOLD = 1.0;
+
+    // Touch-target minimum from docs/semantic-demo-design-tokens.md.
+    // 44px matches the iOS HIG / WCAG 2.5.5 minimum; 0.5px tolerance absorbs
+    // sub-pixel rounding on hi-DPI viewports.
+    const TOUCH_TARGET_MIN_PX = 44;
+    const TOUCH_TARGET_TOLERANCE_PX = 0.5;
+    const TOUCH_TARGET_MIN_WITH_TOLERANCE = TOUCH_TARGET_MIN_PX - TOUCH_TARGET_TOLERANCE_PX;
 
     function rectFor(selector) {
       const el = document.querySelector(selector);
@@ -338,6 +411,93 @@ async function auditState(page, name) {
 
     function overlaps(a, b, tolerance = 3) {
       return !(a.right <= b.x + tolerance || b.right <= a.x + tolerance || a.bottom <= b.y + tolerance || b.bottom <= a.y + tolerance);
+    }
+
+    function intersect(a, b) {
+      const width = Math.max(0, Math.min(a.right, b.right) - Math.max(a.x, b.x));
+      const height = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y));
+      return { width, height, area: width * height };
+    }
+
+    function areaOf(rect) {
+      return Math.max(0, rect.width) * Math.max(0, rect.height);
+    }
+
+    function labelForElement(el, selector) {
+      if (el.id) return `#${el.id}`;
+      const classLabel = typeof el.className === 'string'
+        ? el.className.trim().split(/\s+/).filter(Boolean).slice(0, 3).join('.')
+        : '';
+      return classLabel ? `${selector} (${el.tagName.toLowerCase()}.${classLabel})` : selector;
+    }
+
+    function chromeSurfaceFor(el, selector) {
+      const rect = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      return {
+        el,
+        selector: labelForElement(el, selector),
+        x: Number(rect.x.toFixed(1)),
+        y: Number(rect.y.toFixed(1)),
+        width: Number(rect.width.toFixed(1)),
+        height: Number(rect.height.toFixed(1)),
+        right: Number(rect.right.toFixed(1)),
+        bottom: Number(rect.bottom.toFixed(1)),
+        pointerEvents: style.pointerEvents,
+        opacity: Number(style.opacity || 1),
+        zIndex: style.zIndex,
+      };
+    }
+
+    function serializableSurface(surface) {
+      const { el: _el, ...rest } = surface;
+      return rest;
+    }
+
+    function collectCollisionSurfaces() {
+      const seen = new Set();
+      const surfaces = [];
+      for (const selector of selectors.collisionSurfaces) {
+        for (const el of document.querySelectorAll(selector)) {
+          if (!visible(el) || seen.has(el)) continue;
+          seen.add(el);
+          surfaces.push(chromeSurfaceFor(el, selector));
+        }
+      }
+      return surfaces;
+    }
+
+    function intentionalOverlap(a, b) {
+      if (a.el === b.el) return true;
+      if (a.el.contains(b.el) || b.el.contains(a.el)) return true;
+      if (a.pointerEvents === 'none' || b.pointerEvents === 'none') return true;
+      return false;
+    }
+
+    function genericChromeOverlapFailures() {
+      const surfaces = collectCollisionSurfaces();
+      const overlapFailures = [];
+      for (let i = 0; i < surfaces.length; i += 1) {
+        for (let j = i + 1; j < surfaces.length; j += 1) {
+          const a = surfaces[i];
+          const b = surfaces[j];
+          if (intentionalOverlap(a, b)) continue;
+          const overlap = intersect(a, b);
+          if (overlap.area <= 96) continue;
+          const overlapRatio = overlap.area / Math.max(1, Math.min(areaOf(a), areaOf(b)));
+          if (overlapRatio <= 0.08) continue;
+          overlapFailures.push({
+            check: 'generic-chrome-overlap',
+            state: name,
+            a: serializableSurface(a),
+            b: serializableSurface(b),
+            overlapArea: Number(overlap.area.toFixed(1)),
+            overlapRatio: Number(overlapRatio.toFixed(3)),
+          });
+        }
+      }
+      passes.push({ check: 'generic-chrome-overlap', inspected: surfaces.length });
+      return overlapFailures;
     }
 
     const visibleCompassActions = Array.from(document.querySelectorAll('.journey-compass-action')).filter(visible);
@@ -384,7 +544,7 @@ async function auditState(page, name) {
         const rect = el.getBoundingClientRect();
         const style = getComputedStyle(el);
         const label = el.id || el.className || el.getAttribute('aria-label') || el.textContent?.trim() || el.tagName;
-        if (style.pointerEvents !== 'none' && rect.width < 43.5 || style.pointerEvents !== 'none' && rect.height < 43.5) {
+        if (style.pointerEvents !== 'none' && (rect.width < TOUCH_TARGET_MIN_WITH_TOLERANCE || rect.height < TOUCH_TARGET_MIN_WITH_TOLERANCE)) {
           failures.push({ check: 'touch-target', selector: label, width: Number(rect.width.toFixed(1)), height: Number(rect.height.toFixed(1)) });
         }
       }
@@ -417,6 +577,7 @@ async function auditState(page, name) {
       .map((selector) => visibleChrome(selector))
       .filter(Boolean);
     passes.push({ check: 'composition:visible-chrome', inspected: visibleChromeSurfaces.length, surfaces: visibleChromeSurfaces });
+    failures.push(...genericChromeOverlapFailures());
 
     if (selectors.isMobile) {
       const controls = visibleChromeSurfaces.find((surface) => surface.selector === '.controls');
@@ -500,6 +661,32 @@ async function auditState(page, name) {
           state: name,
           rect: modeGrid,
         });
+      }
+
+      if (panelSurface === 'idle') {
+        const idleOnlySearch = [
+          '#selected-card',
+          '.selected-card',
+          '.selected-empty',
+          '.stats-row',
+          '.stat-caption',
+          '.demo-starters',
+          '#btn-launch',
+          '#mode-grid',
+          '#cluster-section',
+          '#filters-section',
+        ];
+        for (const selector of idleOnlySearch) {
+          const staleSurface = visibleChrome(selector);
+          if (staleSurface) {
+            failures.push({
+              check: 'composition:idle-left-panel-stale-surface',
+              selector,
+              state: name,
+              rect: staleSurface,
+            });
+          }
+        }
       }
 
       const viewToggle = visibleChrome('.view-toggle');
@@ -594,7 +781,7 @@ async function auditState(page, name) {
             return visible(pill) ? { pill, rect } : null;
           })
           .filter(Boolean);
-        for (const { pill, rect } of neighborPills) {
+        for (const { rect } of neighborPills) {
           if (overlaps(diveButton, rect, 0)) {
             failures.push({
               check: 'composition:focus-neighbor-cta-overlap',

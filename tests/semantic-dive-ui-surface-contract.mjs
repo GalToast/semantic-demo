@@ -138,8 +138,8 @@ assert(dom.diveButton.hidden === false, 'dive button appears after first trail s
 assert(dom.diveButton.disabled === false, 'dive button enabled with galaxy focus');
 assert(dom.diveButton.getAttribute('aria-disabled') === 'false', 'dive button aria-enabled with galaxy focus');
 assert(dom.diveButton.getAttribute('aria-pressed') === 'false', 'dive button is not pressed before active mode');
-assert(dom.diveLabel.textContent === 'Step Inside', 'focused label invites Step Inside');
-assert(dom.diveCopy.textContent === 'Open the neighborhood around this business.', 'focused copy is stable');
+assert(dom.diveLabel.textContent === 'Explore Neighborhood', 'focused label invites neighborhood exploration');
+assert(dom.diveCopy.textContent === 'Explore related businesses in the neighborhood.', 'focused copy is stable');
 assert(dom.insideCounty.disabled === false, 'county button is enabled when a node can dive');
 
 resetState();

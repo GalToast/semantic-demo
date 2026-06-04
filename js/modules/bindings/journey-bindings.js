@@ -33,18 +33,30 @@ export function bindFocusControls() {
     bindClick('btn-focus-prev', () => { traverseNeighbor(-1); });
     bindClick('btn-focus-next', () => { traverseNeighbor(1); });
     bindClick('btn-focus-overview', () => { resetExplorationFocus(); });
-    bindClick('btn-focus-center', () => { recenterFocusedNode(); });
+    bindClick('btn-focus-center', (event) => {
+        // The button is rendered with aria-disabled (not the native
+        // disabled attribute) so the title tooltip stays hoverable; the
+        // click is a no-op when there is nothing to recenter onto.
+        if (event?.currentTarget?.getAttribute('aria-disabled') === 'true') return;
+        recenterFocusedNode();
+    });
     bindClick('btn-focus-expand', () => { expandNeighborhoodFromCurrentNode(); });
     bindClick('btn-focus-dive', () => { setSemanticDiveMode(!state.semanticDiveMode); });
     bindClick('btn-inside-next', () => { if (typeof exploreInsideToNextStop === 'function') exploreInsideToNextStop(); }, { optional: true });
     bindClick('btn-inside-map', () => { runJourneyCompassAction('open-map'); }, { optional: true });
     bindClick('btn-inside-county', () => { if (typeof returnToCountyView === 'function') returnToCountyView(); }, { optional: true });
-    bindClick('btn-journey-primary', (event) =>
-        runJourneyCompassAction(event.currentTarget.dataset.journeyAction));
-    bindClick('btn-journey-secondary', (event) =>
-        runJourneyCompassAction(event.currentTarget.dataset.journeyAction));
-    bindClick('btn-journey-tertiary', (event) =>
-        runJourneyCompassAction(event.currentTarget.dataset.journeyAction));
+    bindClick('btn-journey-primary', (event) => {
+        if (event?.currentTarget?.getAttribute('aria-disabled') === 'true') return;
+        runJourneyCompassAction(event.currentTarget.dataset.journeyAction);
+    });
+    bindClick('btn-journey-secondary', (event) => {
+        if (event?.currentTarget?.getAttribute('aria-disabled') === 'true') return;
+        runJourneyCompassAction(event.currentTarget.dataset.journeyAction);
+    });
+    bindClick('btn-journey-tertiary', (event) => {
+        if (event?.currentTarget?.getAttribute('aria-disabled') === 'true') return;
+        runJourneyCompassAction(event.currentTarget.dataset.journeyAction);
+    });
 
     // 10/10 Polish: Thread Inspector stable bindings
     bindClick('btn-thread-pin', () => {

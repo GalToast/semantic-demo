@@ -5,7 +5,15 @@ function makeElement(tagName, { id, className, text, attributes = {}, hidden = f
     if (id) el.id = id;
     if (className) el.className = className;
     if (text) el.textContent = text;
-    if (hidden) el.hidden = true;
+    if (hidden) {
+        el.hidden = true;
+        // Hidden elements should not be reachable by keyboard or
+        // screen readers; CSS-driven display:none elsewhere in the app
+        // also leaves the element in the tab order. Tabindex=-1 plus
+        // aria-hidden=true removes it from both.
+        el.setAttribute('tabindex', '-1');
+        el.setAttribute('aria-hidden', 'true');
+    }
     Object.entries(attributes).forEach(([name, value]) => {
         el.setAttribute(name, value);
     });

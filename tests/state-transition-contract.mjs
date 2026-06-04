@@ -57,11 +57,15 @@ class FakeElement {
 
 const fakeBody = new FakeElement('body');
 const elementsById = new Map();
+let activeResultsIntentEl = null;
 
 globalThis.document = {
   body: fakeBody,
   getElementById: id => elementsById.get(id) || null,
-  querySelector: () => null,
+  querySelector: selector => {
+    if (selector === '.search-container.has-query .search-results.active') return activeResultsIntentEl;
+    return null;
+  },
   querySelectorAll: () => [],
   createElement: tag => new FakeElement(tag),
 };
@@ -156,6 +160,7 @@ function resetState() {
     state.trailIndices.clear();
   });
   fakeBody.dataset = {};
+  activeResultsIntentEl = null;
   _rafQueue = [];
 }
 
@@ -352,7 +357,7 @@ assert(ds('graphContext') === 'focus', 'focus-no-search: graphContext is focus')
 assert(ds('panelSurface') === 'focus','focus-no-search: panelSurface is focus');
 console.log('  PASS: focus without search is correct\n');
 
-// hasSearchIntent = summary OR input>=2 chars OR active results.
+// hasSearchIntent = summary OR input>=2 chars.
 // 1 char is below threshold → hasSearchIntent=false → idle
 console.log('[EDGE] search intent with single-char input (below threshold)');
 resetState();
@@ -367,6 +372,24 @@ commitTransition('short-input');
 assert(ds('graphContext') === 'idle', 'short-input: graphContext is idle (1 char below threshold)');
 assert(ds('panelSurface') === 'idle','short-input: panelSurface is idle');
 console.log('  PASS: single-char input (below threshold) correctly stays idle\n');
+
+// Edge: stale active result DOM without a live query must not resurrect search.
+console.log('[EDGE] stale active results without live query');
+resetState();
+withStateMutation(() => {
+  state.currentSearchSummary = null;
+});
+const emptyInput = new FakeElement('input');
+emptyInput.value = '';
+elementsById.set('search-input', emptyInput);
+const staleResults = new FakeElement('section');
+staleResults.classList.add('search-results', 'active');
+activeResultsIntentEl = staleResults;
+commitTransition('stale-active-results');
+
+assert(ds('graphContext') === 'idle', 'stale-active-results: graphContext is idle without summary or query');
+assert(ds('panelSurface') === 'idle', 'stale-active-results: panelSurface is idle without summary or query');
+console.log('  PASS: stale active results alone do not keep search surface active\n');
 
 // Edge: map view with search but no focus → map-search
 console.log('[EDGE] map with search but no focus');

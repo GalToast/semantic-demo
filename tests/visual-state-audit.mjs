@@ -61,6 +61,23 @@ const mobile = { width: 390, height: 844 };
 const mobile320 = { width: 320, height: 740 };
 const desktop = { width: 1440, height: 900 };
 const shortLandscape = { width: 896, height: 414 };
+const GRAPH_SIGNAL_STATE_IDS = new Set([
+  '01-mobile-idle',
+  '02-mobile-search-coffee',
+  '03-mobile-focus-first-result',
+  '07-desktop-idle',
+  '08-desktop-search-coffee',
+  '15-mobile-semantic-dive',
+  '21-mobile-route-trace-visible',
+  '22-mobile-semantic-dive-320',
+  '23-mobile-short-landscape',
+]);
+const AMBIENT_THREAD_SIGNAL_STATE_IDS = new Set([
+  '01-mobile-idle',
+  '02-mobile-search-coffee',
+  '07-desktop-idle',
+  '08-desktop-search-coffee',
+]);
 
 async function ensureDir(dir) {
   await fs.mkdir(dir, { recursive: true });
@@ -255,6 +272,48 @@ async function waitForReady(page, label = 'unknown') {
       if (requireWebgl) throw err;
     });
   console.log(`[waitForReady:${label}] Done!`);
+}
+
+async function waitForGraphVisualSettle(page, label = 'unknown') {
+  if (!AMBIENT_THREAD_SIGNAL_STATE_IDS.has(label)) return;
+
+  console.log(`[waitForGraphVisualSettle:${label}] Waiting for graph reveal/materials...`);
+  await page.waitForFunction((mustUseWebgl) => {
+    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    if (document.body.dataset.graphicsMode === 'fallback') return !mustUseWebgl;
+    if (!state?.renderer || !state?.scene || !state?.camera) return false;
+
+    const pointCount = state.pointsMesh?.geometry?.attributes?.position?.count || 0;
+    const pointOpacity = Number(state.pointsMaterial?.opacity ?? 0);
+    const sceneRevealInactive = state.sceneRevealActive !== true &&
+      document.body.dataset.sceneReveal !== 'active';
+
+    const segmentCount = (state.scenePerformanceDiagnostics?.myceliumCoreSegments || 0) +
+      (state.scenePerformanceDiagnostics?.myceliumWispySegments || 0) +
+      (state.scenePerformanceDiagnostics?.myceliumBridgeSegments || 0);
+    const threadOpacity = Math.max(
+      Number(state.myceliumCoreLines?.material?.opacity ?? 0),
+      Number(state.myceliumWispyLines?.material?.opacity ?? 0),
+      Number(state.myceliumBridgeLines?.material?.opacity ?? 0),
+    );
+    const threadsReady = (
+      state.myceliumGroup?.visible === true &&
+      segmentCount > 0 &&
+      threadOpacity >= 0.001
+    );
+
+    return sceneRevealInactive &&
+      pointCount > 0 &&
+      pointOpacity >= 0.01 &&
+      threadsReady;
+  }, requireWebgl, { timeout: 8000 })
+    .then(() => console.log(`[waitForGraphVisualSettle:${label}] Graph visual settle resolved`))
+    .catch((err) => {
+      console.log(`[waitForGraphVisualSettle:${label}] Graph visual settle timeout/failed: ${err.message}`);
+      if (requireWebgl) throw err;
+    });
+
+  await page.waitForTimeout(160);
 }
 
 async function gotoReady(page, url) {
@@ -478,6 +537,8 @@ async function captureState(page, name) {
     await page.waitForTimeout(120);
   }
 
+  await waitForGraphVisualSettle(page, name);
+
   const data = await page.evaluate((stateName) => {
     if (stateName === '19-mobile-compass-rail') {
       document.querySelectorAll('#journey-compass-title, .journey-compass-title').forEach((title) => {
@@ -514,6 +575,7 @@ async function captureState(page, name) {
       '#focus-stage',
       '.focus-stage-card',
       '.selected-card',
+      '#vector-cascade-bg',
       '.about-card',
       '.selected-empty',
       '#selected-details',
@@ -589,6 +651,7 @@ async function captureState(page, name) {
       '.mode-name',
       '.view-toggle',
       '.view-handoff',
+      '#canvas-color-legend',
       '#btn-legend',
       '#btn-share-view',
       '#btn-keyboard-help',
@@ -688,13 +751,145 @@ async function captureState(page, name) {
         rect: actionRectFor(button),
       };
     }).filter(Boolean);
-    const mapTrailActions = [...document.querySelectorAll('.map-trail-strip .trail-strip-btn')].map((button) => ({
-      text: button.textContent.replace(/\s+/g, ' ').trim(),
-      action: button.dataset.journeyAction || '',
-      disabled: button.disabled || button.getAttribute('aria-disabled') === 'true',
-      hidden: button.hidden || button.getAttribute('aria-hidden') === 'true',
-      rect: actionRectFor(button),
-    }));
+    const mapStrip = (() => {
+      const el = document.querySelector('.map-trail-strip');
+      if (!el) return { exists: false, childCount: 0, titleCount: 0, buttonCount: 0 };
+      const titleEl = el.querySelector('.map-strip-title');
+      const buttonEls = el.querySelectorAll('.trail-strip-btn');
+      const result = {
+        exists: true,
+        childCount: el.children.length,
+        childClasses: Array.from(el.children).map((c) => c.className).join('|'),
+        titleCount: titleEl ? 1 : 0,
+        buttonCount: buttonEls.length,
+      };
+      if (titleEl) {
+        const text = (titleEl.textContent || '').replace(/\s+/g, ' ').trim();
+        result.titleText = text;
+        result.titleAttr = titleEl.getAttribute('title') || '';
+        result.ariaLabel = titleEl.getAttribute('aria-label') || '';
+        result.titleScrollWidth = titleEl.scrollWidth;
+        result.titleClientWidth = titleEl.clientWidth;
+      }
+      return result;
+    })();
+    const surfaceOverlapDiagnostics = (() => {
+      const surfaceSelectors = [
+        '.journey-compass',
+        '.journey-compass-rail',
+        '.journey-compass-actions',
+        '#info-panel',
+        '.search-container',
+        '#search-results',
+        '#focus-stage',
+        '.focus-stage-card',
+        '.focus-stage-neighbors',
+        '.focus-stage-journey',
+        '#focus-thread-inspector',
+        '#selected-card',
+        '#selected-details',
+        '.map-trail-strip',
+        '#canvas-color-legend',
+        '.view-toggle',
+        '.weather-widget',
+        '.time-display',
+        '.controls',
+        '.share-toggle',
+        '.legend-toggle',
+        '.help-toggle',
+        '#btn-legend',
+        '#btn-keyboard-help',
+        '.panel-toggle',
+        '#btn-launch',
+        '.demo-starters',
+        '#mode-grid',
+      ];
+      const visible = (el) => {
+        if (!el) return false;
+        const style = getComputedStyle(el);
+        const rect = el.getBoundingClientRect();
+        return style.display !== 'none' &&
+          style.visibility !== 'hidden' &&
+          Number(style.opacity || 1) > 0.05 &&
+          rect.width > 0 &&
+          rect.height > 0 &&
+          rect.right > 0 &&
+          rect.bottom > 0 &&
+          rect.x < window.innerWidth &&
+          rect.y < window.innerHeight;
+      };
+      const labelFor = (el, selector) => {
+        if (el.id) return `#${el.id}`;
+        const classLabel = typeof el.className === 'string'
+          ? el.className.trim().split(/\s+/).filter(Boolean).slice(0, 3).join('.')
+          : '';
+        return classLabel ? `${selector} (${el.tagName.toLowerCase()}.${classLabel})` : selector;
+      };
+      const rectFor = (el, selector) => {
+        const rect = el.getBoundingClientRect();
+        const style = getComputedStyle(el);
+        return {
+          el,
+          selector: labelFor(el, selector),
+          x: rect.x,
+          y: rect.y,
+          width: rect.width,
+          height: rect.height,
+          right: rect.right,
+          bottom: rect.bottom,
+          pointerEvents: style.pointerEvents,
+          opacity: style.opacity,
+          zIndex: style.zIndex,
+        };
+      };
+      const serialize = (surface) => ({
+        selector: surface.selector,
+        x: Number(surface.x.toFixed(1)),
+        y: Number(surface.y.toFixed(1)),
+        width: Number(surface.width.toFixed(1)),
+        height: Number(surface.height.toFixed(1)),
+        right: Number(surface.right.toFixed(1)),
+        bottom: Number(surface.bottom.toFixed(1)),
+        pointerEvents: surface.pointerEvents,
+        opacity: surface.opacity,
+        zIndex: surface.zIndex,
+      });
+      const surfaces = [];
+      const seen = new Set();
+      for (const selector of surfaceSelectors) {
+        for (const el of document.querySelectorAll(selector)) {
+          if (seen.has(el) || !visible(el)) continue;
+          seen.add(el);
+          surfaces.push(rectFor(el, selector));
+        }
+      }
+      const unexpected = [];
+      for (let i = 0; i < surfaces.length; i += 1) {
+        for (let j = i + 1; j < surfaces.length; j += 1) {
+          const a = surfaces[i];
+          const b = surfaces[j];
+          if (a.el === b.el || a.el.contains(b.el) || b.el.contains(a.el)) continue;
+          if (a.pointerEvents === 'none' || b.pointerEvents === 'none') continue;
+          const overlapWidth = Math.max(0, Math.min(a.right, b.right) - Math.max(a.x, b.x));
+          const overlapHeight = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y));
+          const overlapArea = overlapWidth * overlapHeight;
+          if (overlapArea <= 256) continue;
+          const minArea = Math.max(1, Math.min(a.width * a.height, b.width * b.height));
+          const overlapRatio = overlapArea / minArea;
+          if (overlapRatio <= 0.1) continue;
+          unexpected.push({
+            a: serialize(a),
+            b: serialize(b),
+            overlapArea: Number(overlapArea.toFixed(1)),
+            overlapRatio: Number(overlapRatio.toFixed(3)),
+          });
+        }
+      }
+      return {
+        inspected: surfaces.length,
+        unexpected,
+      };
+    })();
 
     const html = document.documentElement;
     return {
@@ -710,7 +905,8 @@ async function captureState(page, name) {
       },
       boxes: Object.fromEntries(selectors.map((selector) => [selector, boxFor(selector)])),
       journeyActions,
-      mapTrailActions,
+      mapStrip,
+      surfaceOverlapDiagnostics,
       clusterLabelDiagnostics: (() => {
         const labels = Array.from(document.querySelectorAll('.galaxy-cluster-label'));
         const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
@@ -1074,17 +1270,44 @@ async function enterFocusFromSearch(page) {
     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return typeof window.__APP_ACTIONS__?.focusOnNode === 'function' && Array.isArray(appState.points) && appState.points.length > 0;
   }, undefined, { timeout: 20000 }).catch(() => {});
+  await page.waitForFunction(() => {
+    const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    if (Number.isFinite(appState.currentSearchSummary?.anchorIndex)) return true;
+    const row = [...document.querySelectorAll('.search-result-item')].find((candidate) => {
+      const style = getComputedStyle(candidate);
+      const rect = candidate.getBoundingClientRect();
+      return style.display !== 'none' &&
+        style.visibility !== 'hidden' &&
+        Number(style.opacity || 1) > 0.05 &&
+        rect.width > 0 &&
+        rect.height > 0 &&
+        Number.isFinite(Number(candidate.dataset.index));
+    });
+    return !!row;
+  }, undefined, { timeout: 15000 });
 
   await page.evaluate(() => {
     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-    const byLeadId = appState.pointIndexByLeadId;
     const summaryAnchor = appState.currentSearchSummary?.anchorIndex;
-    const leadIndex = byLeadId?.get?.('1') ?? byLeadId?.get?.(1) ?? byLeadId?.['1'] ?? byLeadId?.[1];
-    const rawIndex = Number.isFinite(summaryAnchor) ? summaryAnchor : leadIndex;
-    const targetIndex = Number.isFinite(Number(rawIndex)) ? Number(rawIndex) : 0;
+    const visibleRow = [...document.querySelectorAll('.search-result-item')].find((candidate) => {
+      const style = getComputedStyle(candidate);
+      const rect = candidate.getBoundingClientRect();
+      return style.display !== 'none' &&
+        style.visibility !== 'hidden' &&
+        Number(style.opacity || 1) > 0.05 &&
+        rect.width > 0 &&
+        rect.height > 0 &&
+        Number.isFinite(Number(candidate.dataset.index));
+    });
+    const rowIndex = Number(visibleRow?.dataset.index);
+    const targetIndex = Number.isFinite(summaryAnchor) ? summaryAnchor : rowIndex;
     const focusNode = window.__APP_ACTIONS__?.focusOnNode;
     const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
     const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
+
+    if (!Number.isFinite(targetIndex)) {
+      throw new Error('visual audit could not resolve a search result index to focus');
+    }
 
     let focused = false;
     if (typeof focusNode === 'function') {
@@ -1341,13 +1564,27 @@ async function enterRouteTraceByRealRoute(page) {
 async function forceFocusedVisualState(page) {
   await page.evaluate(() => {
     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const visibleRow = [...document.querySelectorAll('.search-result-item')].find((candidate) => {
+      const style = getComputedStyle(candidate);
+      const rect = candidate.getBoundingClientRect();
+      return style.display !== 'none' &&
+        style.visibility !== 'hidden' &&
+        Number(style.opacity || 1) > 0.05 &&
+        rect.width > 0 &&
+        rect.height > 0 &&
+        Number.isFinite(Number(candidate.dataset.index));
+    });
+    const rowIndex = Number(visibleRow?.dataset.index);
     const focusedIndex = Number.isFinite(appState.navState?.focusedIndex)
       ? appState.navState.focusedIndex
       : Number.isFinite(appState.focusedNode)
         ? appState.focusedNode
         : Number.isFinite(appState.currentSearchSummary?.anchorIndex)
           ? appState.currentSearchSummary.anchorIndex
-          : 519;
+          : rowIndex;
+    if (!Number.isFinite(focusedIndex)) {
+      throw new Error('visual audit could not resolve a focused search result index');
+    }
     if (!appState.navState) return;
     appState.navState.focusedIndex = focusedIndex;
     appState.navState.mode = 'focus';
@@ -1523,7 +1760,7 @@ async function applyCompassRailState(page) {
       compass.style.opacity = '1';
       compass.style.left = '12px';
       compass.style.right = '12px';
-      compass.style.top = '58px';
+      compass.style.top = '76px';
       compass.style.width = 'auto';
       compass.style.minWidth = '0';
       compass.style.maxWidth = 'none';
@@ -2062,7 +2299,7 @@ async function run() {
     scroll: data.scroll,
     boxes: data.boxes,
     journeyActions: data.journeyActions,
-    mapTrailActions: data.mapTrailActions,
+    mapStrip: data.mapStrip,
     loadingOverlayDiagnostics: data.loadingOverlayDiagnostics,
     compassRailDiagnostics: data.compassRailDiagnostics,
     modeGridDiagnostics: data.modeGridDiagnostics,
@@ -2071,6 +2308,7 @@ async function run() {
     inspectedStrandDiagnostics: data.inspectedStrandDiagnostics,
     routeEvidence: data.routeEvidence,
     sceneLuminance: data.sceneLuminance,
+    surfaceOverlapDiagnostics: data.surfaceOverlapDiagnostics,
     clusterLabelDiagnostics: data.clusterLabelDiagnostics,
   }));
 
@@ -2123,11 +2361,58 @@ async function run() {
     'county-overview': 'County',
     'show-trail-panel': 'Trail',
   })[action] || '';
-  const expectedMapTrailLabel = (action) => ({
-    'open-mycelium': 'Mycelium',
-    'county-overview': 'Reset',
-    'focus-search': 'Search',
-  })[action] || '';
+  const assertMapTrailTitleOnly = (state) => {
+    const strip = state.mapStrip || { exists: false };
+    const navOwner = state.bodyDataset?.journeyNavigationOwner || '';
+    const view = state.bodyDataset?.activeView || '';
+    const shouldBeVisible = navOwner === 'map-trail-strip' && view === 'map';
+    const stripBox = strip.exists ? box(state, '.map-trail-strip') : null;
+
+    if (!shouldBeVisible) {
+      const isHidden = !strip.exists
+        || !stripBox
+        || stripBox.width === 0
+        || stripBox.height === 0;
+      if (isHidden) pass(state.name, 'map-strip:hidden-when-not-owner');
+      else fail(state.name, 'map-strip:hidden-when-not-owner',
+        `map-trail-strip should be hidden when navOwner="${navOwner}" view="${view}", got box=${JSON.stringify(stripBox)}`);
+      return;
+    }
+
+    if (!box || box.width === 0 || box.height === 0) {
+      fail(state.name, 'map-strip:visible-when-owner',
+        `map-trail-strip should be rendered when navOwner=map-trail-strip view=map, got ${JSON.stringify(box)}`);
+      return;
+    }
+
+    if (box.y < 200) pass(state.name, 'map-strip:top-position');
+    else fail(state.name, 'map-strip:top-position', `map-trail-strip y=${box.y} should be < 200`);
+
+    if (strip.buttonCount === 0) pass(state.name, 'map-strip:no-trail-strip-buttons');
+    else fail(state.name, 'map-strip:no-trail-strip-buttons',
+      `map-trail-strip should have 0 .trail-strip-btn (removed in D36), got ${strip.buttonCount}`);
+
+    if (strip.childCount === 1 && strip.titleCount === 1) pass(state.name, 'map-strip:exactly-one-title-child');
+    else fail(state.name, 'map-strip:exactly-one-title-child',
+      `map-trail-strip should have exactly 1 .map-strip-title child, got ${strip.childCount} children, ${strip.titleCount} title(s)`);
+
+    if (strip.titleCount !== 1) return;
+
+    if (strip.titleText && strip.titleText.length > 0) pass(state.name, 'map-strip:title-has-content');
+    else fail(state.name, 'map-strip:title-has-content', `map-strip-title should have non-empty text, got "${strip.titleText}"`);
+
+    if (strip.titleAttr === strip.titleText) pass(state.name, 'map-strip:title-attr-matches-text');
+    else fail(state.name, 'map-strip:title-attr-matches-text',
+      `map-strip-title title attribute should match text, got title="${strip.titleAttr}" text="${strip.titleText}"`);
+
+    if (strip.ariaLabel === strip.titleText) pass(state.name, 'map-strip:aria-label-matches-text');
+    else fail(state.name, 'map-strip:aria-label-matches-text',
+      `map-strip-title aria-label should match text, got aria-label="${strip.ariaLabel}" text="${strip.titleText}"`);
+
+    if (strip.titleScrollWidth <= strip.titleClientWidth + 1) pass(state.name, 'map-strip:title-not-clipped');
+    else fail(state.name, 'map-strip:title-not-clipped',
+      `map-strip-title text is clipped: scrollWidth=${strip.titleScrollWidth} clientWidth=${strip.titleClientWidth} text="${strip.titleText}"`);
+  };
   const isRenderedAction = (action) => (
     action?.action &&
     isRendered(action.rect) &&
@@ -2161,6 +2446,19 @@ async function run() {
     pass(name, check);
     return targetBox;
   };
+  for (const state of summary) {
+    const diagnostics = state.surfaceOverlapDiagnostics || {};
+    const unexpected = diagnostics.unexpected || [];
+    if (unexpected.length === 0) {
+      pass(state.name, 'surface-overlap-matrix:no-unexpected-overlap');
+    } else {
+      fail(
+        state.name,
+        'surface-overlap-matrix:no-unexpected-overlap',
+        JSON.stringify(unexpected.slice(0, 5)),
+      );
+    }
+  }
   const requireVisible = (name, check, selector) => {
     const state = requireState(name);
     const targetBox = box(state, selector);
@@ -2226,21 +2524,7 @@ async function run() {
       fail(state.name, 'compact-actions:semantic-labels', JSON.stringify(compactMismatches));
     }
 
-    const visibleMapActions = (state.mapTrailActions || []).filter(isRenderedAction);
-    if (visibleMapActions.length > 0) {
-      const mapMismatches = visibleMapActions
-        .map((action) => ({
-          action: action.action,
-          text: action.text,
-          expected: expectedMapTrailLabel(action.action),
-        }))
-        .filter((action) => action.expected && action.text !== action.expected);
-      if (mapMismatches.length === 0) {
-        pass(state.name, 'map-strip-actions:semantic-labels');
-      } else {
-        fail(state.name, 'map-strip-actions:semantic-labels', JSON.stringify(mapMismatches));
-      }
-    }
+    assertMapTrailTitleOnly(state);
   }
 
   for (const state of summary) {
@@ -2658,7 +2942,8 @@ async function run() {
     const infoPanel = box(idleState, '#info-panel');
     const searchContainer = box(idleState, '.search-container');
     const launchButton = box(idleState, '#btn-launch');
-    const diagnostics = idleState?.demoStarterDiagnostics || {};
+    const demoStarters = box(idleState, '.demo-starters');
+    const starterChip = box(idleState, '.demo-starter-chip');
     const panelArea = infoPanel ? (infoPanel.width * infoPanel.height) / Math.max(1, viewport.width * viewport.height) : 0;
 
     if (infoPanel && panelArea <= 0.42) {
@@ -2676,15 +2961,10 @@ async function run() {
     } else {
       fail('01-mobile-idle', 'mobile-idle:launch-button-hidden', `#btn-launch competes with starter chips and search, got ${JSON.stringify(launchButton)}`);
     }
-    if (diagnostics.visibleChipsCount === diagnostics.chipsCount && diagnostics.chipsCount >= 4) {
-      pass('01-mobile-idle', 'mobile-idle:starter-chips-visible');
+    if (!isRendered(demoStarters) && !isRendered(starterChip)) {
+      pass('01-mobile-idle', 'mobile-idle:starter-ctas-hidden');
     } else {
-      fail('01-mobile-idle', 'mobile-idle:starter-chips-visible', `visible ${diagnostics.visibleChipsCount || 0} of ${diagnostics.chipsCount || 0} starter chips`);
-    }
-    if (!diagnostics.rowOverflow && (diagnostics.clippedChipsCount || 0) === 0) {
-      pass('01-mobile-idle', 'mobile-idle:starter-chips-fit');
-    } else {
-      fail('01-mobile-idle', 'mobile-idle:starter-chips-fit', `rowOverflow=${Boolean(diagnostics.rowOverflow)}, clipped=${diagnostics.clippedChipsCount || 0}`);
+      fail('01-mobile-idle', 'mobile-idle:starter-ctas-hidden', `starter CTAs should not compete with search, demo=${JSON.stringify(demoStarters)} chip=${JSON.stringify(starterChip)}`);
     }
   }
 
@@ -2902,32 +3182,31 @@ async function run() {
 
   if (shouldAssert('07-desktop-idle')) {
     const desktopState = requireState('07-desktop-idle');
-    const desktopCard = box(desktopState, '.selected-card');
-    if (isRendered(desktopCard)) {
-      pass('07-desktop-idle', 'desktop-selected-card-visible');
-      if (desktopCard.clusterRgb !== '78 205 196') {
-        fail(
-          '07-desktop-idle',
-          'desktop-selected-card:cluster-rgb',
-          `expected "78 205 196", got "${desktopCard.clusterRgb}"`,
-        );
-      } else {
-        pass('07-desktop-idle', 'desktop-selected-card:cluster-rgb');
-      }
-
-      if (desktopCard.borderRadius !== '12px') {
-        fail(
-          '07-desktop-idle',
-          'desktop-selected-card:border-radius',
-          `expected "12px", got "${desktopCard.borderRadius}"`,
-        );
-      } else {
-        pass('07-desktop-idle', 'desktop-selected-card:border-radius');
-      }
-    } else if (desktopCard) {
-      pass('07-desktop-idle', 'desktop-selected-card-idle-hidden');
+    const staleIdleSelectors = [
+      '.selected-card',
+      '.selected-empty',
+      '.stats-row',
+      '.stat-caption',
+      '.demo-starters',
+      '.demo-starter-chip',
+      '#btn-launch',
+      '#mode-grid',
+      '#cluster-section',
+      '#filters-section',
+    ];
+    const staleIdleSurfaces = staleIdleSelectors
+      .map((selector) => ({ selector, targetBox: box(desktopState, selector) }))
+      .filter(({ targetBox }) => isRendered(targetBox));
+    if (staleIdleSurfaces.length === 0) {
+      pass('07-desktop-idle', 'desktop-idle:left-panel-search-only');
     } else {
-      pass('07-desktop-idle', 'desktop-selected-card-not-mounted');
+      for (const { selector, targetBox } of staleIdleSurfaces) {
+        fail(
+          '07-desktop-idle',
+          'desktop-idle:left-panel-search-only',
+          `${selector} should be hidden in desktop idle search-only panel, got ${JSON.stringify(targetBox)}`,
+        );
+      }
     }
   }
 
@@ -2937,18 +3216,6 @@ async function run() {
     const isFocusOrDive = (name.includes('focus') || name.includes('selected-card') || name.includes('dive')) && !name.includes('field-node');
     const maxWhiteRatio = isFocusOrDive ? 0.018 : 0.08;
     const maxP95 = isFocusOrDive ? 205 : 230;
-    const graphSignalStates = new Set([
-      '01-mobile-idle',
-      '02-mobile-search-coffee',
-      '03-mobile-focus-first-result',
-      '07-desktop-idle',
-      '08-desktop-search-coffee',
-      '15-mobile-semantic-dive',
-      '21-mobile-route-trace-visible',
-      '22-mobile-semantic-dive-320',
-      '23-mobile-short-landscape',
-    ]);
-
     if (scene.whiteRatio > maxWhiteRatio) {
       fail(
         state.name,
@@ -2977,7 +3244,7 @@ async function run() {
       pass(state.name, 'scene-luminance:p95');
     }
 
-    if (graphSignalStates.has(name)) {
+    if (GRAPH_SIGNAL_STATE_IDS.has(name)) {
       if (scene.dynamicRange >= 18 && scene.stdev >= 6) {
         pass(state.name, 'scene-signal:dynamic-range');
       } else {
@@ -3351,6 +3618,7 @@ async function run() {
     const mapFocusSearchState = requireState('24-mobile-map-focus-search');
     const viewport = viewportFor(mapFocusSearchState);
     const selectedCard = box(mapFocusSearchState, '.selected-card');
+    const vectorCascade = box(mapFocusSearchState, '#vector-cascade-bg');
     const selectedDetails = box(mapFocusSearchState, '#selected-details');
     const mapSummary = box(mapFocusSearchState, '#selected-map-summary');
     const mapSummaryName = box(mapFocusSearchState, '#selected-map-summary-name');
@@ -3364,6 +3632,7 @@ async function run() {
     const myceliumAction = box(mapFocusSearchState, '.map-trail-strip .trail-strip-btn[data-journey-action="open-mycelium"]');
     const resetAction = box(mapFocusSearchState, '.map-trail-strip .trail-strip-btn[data-journey-action="county-overview"]');
     const searchAction = box(mapFocusSearchState, '.map-trail-strip .trail-strip-btn[data-journey-action="focus-search"]');
+    const mapStripTitle = box(mapFocusSearchState, '.map-trail-strip .map-strip-title');
     const globalControls = box(mapFocusSearchState, '.controls');
     const standaloneChrome = ['.panel-toggle', '.share-toggle', '.help-toggle', '#btn-legend', '#btn-share-view', '#btn-keyboard-help']
       .map((selector) => ({ selector, box: box(mapFocusSearchState, selector) }))
@@ -3445,6 +3714,15 @@ async function run() {
         '24-mobile-map-focus-search',
         'mobile-map-focus-search-selected-details:hidden',
         `full selected-details payload should be hidden by the content owner, got ${JSON.stringify(selectedDetails)}`,
+      );
+    }
+    if (!isRendered(vectorCascade)) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-vector-cascade:hidden');
+    } else {
+      fail(
+        '24-mobile-map-focus-search',
+        'mobile-map-focus-search-vector-cascade:hidden',
+        `map-summary owner must suppress decorative vector text, got ${JSON.stringify(vectorCascade)}`,
       );
     }
     if (
@@ -3537,18 +3815,18 @@ async function run() {
       );
     }
     if (
-      isRendered(myceliumAction) &&
-      isRendered(resetAction) &&
-      isRendered(searchAction) &&
-      resetAction.width <= myceliumAction.width &&
-      searchAction.width >= myceliumAction.width
+      myceliumAction === null &&
+      resetAction === null &&
+      searchAction === null &&
+      isRendered(mapStripTitle)
     ) {
-      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-strip-actions:hierarchy');
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-strip-actions:title-only');
     } else {
+      const buttons = [myceliumAction, resetAction, searchAction].filter((b) => b !== null);
       fail(
         '24-mobile-map-focus-search',
-        'mobile-map-focus-search-strip-actions:hierarchy',
-        `strip actions should rank Search > Mycelium > Reset, got mycelium=${JSON.stringify(myceliumAction)} reset=${JSON.stringify(resetAction)} search=${JSON.stringify(searchAction)}`,
+        'mobile-map-focus-search-strip-actions:title-only',
+        `map-trail-strip should have no .trail-strip-btn (D36) and exactly one .map-strip-title, got ${buttons.length} buttons, title=${JSON.stringify(mapStripTitle)}`,
       );
     }
     if (isRendered(trailStrip) && isRendered(infoPanel) && rectsOverlap(trailStrip, infoPanel, 0)) {
@@ -3759,22 +4037,71 @@ async function run() {
       pass('03-mobile-focus-first-result', 'mobile-focus:idle-thread-preview-hidden');
     }
     const selectedCard = box(focusState, '.selected-card');
-    if (isRendered(selectedCard)) {
-      pass('03-mobile-focus-first-result', 'mobile-focus:selected-card-visible');
+    if (!isRendered(selectedCard)) {
+      pass('03-mobile-focus-first-result', 'mobile-focus:legacy-selected-card-hidden');
+    } else {
+      fail('03-mobile-focus-first-result', 'mobile-focus:legacy-selected-card-hidden', `.selected-card should not compete with #focus-stage on mobile focus, got ${JSON.stringify(selectedCard)}`);
+    }
+    const networkKey = box(focusState, '#canvas-color-legend');
+    if (!isRendered(networkKey)) {
+      pass('03-mobile-focus-first-result', 'mobile-focus:passive-network-key-hidden');
+    } else {
+      fail('03-mobile-focus-first-result', 'mobile-focus:passive-network-key-hidden', `#canvas-color-legend should collapse once focus-stage owns the mobile cockpit, got ${JSON.stringify(networkKey)}`);
+    }
+    const focusWhat = box(focusState, '.focus-stage-what');
+    if (!isRendered(focusWhat)) {
+      pass('03-mobile-focus-first-result', 'mobile-focus:instructional-copy-hidden');
+    } else {
+      fail('03-mobile-focus-first-result', 'mobile-focus:instructional-copy-hidden', `.focus-stage-what should not insert instructional copy into the selected-business cockpit, got ${JSON.stringify(focusWhat)}`);
+    }
+    const instructionalFragments = ['.focus-stage-journey-meta', '#focus-stage-progress', '#focus-stage-next']
+      .map((selector) => box(focusState, selector))
+      .filter(isRendered);
+    if (instructionalFragments.length === 0) {
+      pass('03-mobile-focus-first-result', 'mobile-focus:journey-instructions-hidden');
+    } else {
+      fail('03-mobile-focus-first-result', 'mobile-focus:journey-instructions-hidden', `journey instruction fragments should not compete inside the selected-business cockpit: ${JSON.stringify(instructionalFragments)}`);
+    }
+    const diveButton = box(focusState, '.focus-stage-dive-btn');
+    const firstNeighbor = box(focusState, '.focus-stage-neighbor-list .focus-stage-neighbor-pill:nth-of-type(1)');
+    if (!isRendered(diveButton)) {
+      pass('03-mobile-focus-first-result', 'mobile-focus:primary-action-after-neighbor');
+    } else if (isRendered(firstNeighbor) && diveButton.y >= firstNeighbor.y + firstNeighbor.height - 1) {
+      pass('03-mobile-focus-first-result', 'mobile-focus:primary-action-after-neighbor');
+    } else if (isRendered(diveButton) && !isRendered(firstNeighbor)) {
+      pass('03-mobile-focus-first-result', 'mobile-focus:primary-action-after-neighbor');
+    } else {
+      fail('03-mobile-focus-first-result', 'mobile-focus:primary-action-after-neighbor', `primary action should sit below the neighbor lane when a neighbor is visible: action=${JSON.stringify(diveButton)} neighbor=${JSON.stringify(firstNeighbor)}`);
+    }
+    if (isRendered(diveButton) && isRendered(firstNeighbor)) {
+      if (!rectsOverlap(diveButton, firstNeighbor, 2)) {
+        pass('03-mobile-focus-first-result', 'mobile-focus:primary-action-neighbor-no-overlap');
+      } else {
+        fail('03-mobile-focus-first-result', 'mobile-focus:primary-action-neighbor-no-overlap', `primary action must not overlap the visible neighbor pill: action=${JSON.stringify(diveButton)} neighbor=${JSON.stringify(firstNeighbor)}`);
+      }
     }
     const neighborList = box(focusState, '.focus-stage-neighbor-list');
     const secondNeighbor = box(focusState, '.focus-stage-neighbor-list .focus-stage-neighbor-pill:nth-of-type(2)');
     const thirdNeighbor = box(focusState, '.focus-stage-neighbor-list .focus-stage-neighbor-pill:nth-of-type(3)');
-    if (isRendered(neighborList) && isRendered(secondNeighbor)) {
-      const listBottom = neighborList.y + neighborList.height;
-      const secondBottom = secondNeighbor.y + secondNeighbor.height;
-      if (secondBottom <= listBottom + 1) {
-        pass('03-mobile-focus-first-result', 'mobile-focus:neighbor-second-card-unclipped');
+    const visibleNeighbors = [firstNeighbor, secondNeighbor, thirdNeighbor].filter(isRendered);
+    const overlappingNeighbor = visibleNeighbors.find((neighbor) => isRendered(diveButton) && rectsOverlap(diveButton, neighbor, 2));
+    if (overlappingNeighbor) {
+      fail(
+        '03-mobile-focus-first-result',
+        'mobile-focus:primary-action-any-neighbor-no-overlap',
+        `primary action must not overlap any visible neighbor pill: action=${JSON.stringify(diveButton)} neighbor=${JSON.stringify(overlappingNeighbor)}`,
+      );
+    } else {
+      pass('03-mobile-focus-first-result', 'mobile-focus:primary-action-any-neighbor-no-overlap');
+    }
+    if (isRendered(neighborList)) {
+      if (!isRendered(secondNeighbor)) {
+        pass('03-mobile-focus-first-result', 'mobile-focus:single-next-stop-neighbor');
       } else {
         fail(
           '03-mobile-focus-first-result',
-          'mobile-focus:neighbor-second-card-unclipped',
-          `second neighbor should fit inside the rail: list=${JSON.stringify(neighborList)} card=${JSON.stringify(secondNeighbor)}`,
+          'mobile-focus:single-next-stop-neighbor',
+          `selected-business mobile cockpit should render one next-stop neighbor above the CTA: list=${JSON.stringify(neighborList)} second=${JSON.stringify(secondNeighbor)}`,
         );
       }
     }
@@ -3817,6 +4144,12 @@ async function run() {
       pass('04-mobile-field-node-active', 'field-node:focus-stage-visible');
     } else {
       fail('04-mobile-field-node-active', 'field-node:focus-stage-visible', '#focus-stage should render in field-node mode');
+    }
+    const networkKey = box(fieldNodeState, '#canvas-color-legend');
+    if (!isRendered(networkKey)) {
+      pass('04-mobile-field-node-active', 'field-node:passive-network-key-hidden');
+    } else {
+      fail('04-mobile-field-node-active', 'field-node:passive-network-key-hidden', `#canvas-color-legend should not compete with the field-node cockpit, got ${JSON.stringify(networkKey)}`);
     }
   }
 
@@ -4089,6 +4422,13 @@ async function run() {
       fail('23-mobile-short-landscape', 'short-landscape:dive-button-within-viewport',
         `.focus-stage-dive-btn extends outside ${slViewport.width}x${slViewport.height} viewport`);
     }
+    const neighborRail = box(slState, '.focus-stage-neighbors');
+    if (!isRendered(neighborRail) || withinViewport(neighborRail, slViewport)) {
+      pass('23-mobile-short-landscape', 'short-landscape:neighbor-rail-not-escaping');
+    } else {
+      fail('23-mobile-short-landscape', 'short-landscape:neighbor-rail-not-escaping',
+        `.focus-stage-neighbors extends outside ${slViewport.width}x${slViewport.height} viewport: ${JSON.stringify(neighborRail)}`);
+    }
     // Info panel must be within short landscape viewport if rendered
     const infoPanel = box(slState, '#info-panel');
     if (infoPanel && withinViewport(infoPanel, slViewport)) {
@@ -4104,13 +4444,29 @@ async function run() {
       fail('23-mobile-short-landscape', 'short-landscape:view-toggle-within-viewport',
         `.view-toggle extends outside ${slViewport.width}x${slViewport.height} viewport`);
     }
-    for (const selector of ['.controls', '.panel-toggle', '.share-toggle', '.help-toggle', '.weather-widget', '.time-display']) {
+    for (const selector of ['.controls.controls-view', '.panel-toggle', '.share-toggle', '#btn-share-view', '.weather-widget', '.time-display']) {
       const chrome = box(slState, selector);
       if (isRendered(chrome)) {
         fail('23-mobile-short-landscape', `short-landscape:utility-chrome-hidden:${selector}`,
           `${selector} should not compete with focus/semantic surfaces in short landscape: ${JSON.stringify(chrome)}`);
       } else {
         pass('23-mobile-short-landscape', `short-landscape:utility-chrome-hidden:${selector}`);
+      }
+    }
+    const networkKey = box(slState, '#canvas-color-legend');
+    if (isRendered(networkKey)) {
+      fail('23-mobile-short-landscape', 'short-landscape:network-key-hidden',
+        `#canvas-color-legend should not compete with focus/semantic surfaces in short landscape: ${JSON.stringify(networkKey)}`);
+    } else {
+      pass('23-mobile-short-landscape', 'short-landscape:network-key-hidden');
+    }
+    for (const selector of ['#btn-legend', '#btn-keyboard-help']) {
+      const chrome = box(slState, selector);
+      if (isRendered(chrome) && chrome.width >= 44 && chrome.height >= 44 && withinViewport(chrome, slViewport)) {
+        pass('23-mobile-short-landscape', `short-landscape:utility-chrome-tappable:${selector}`);
+      } else {
+        fail('23-mobile-short-landscape', `short-landscape:utility-chrome-tappable:${selector}`,
+          `${selector} should remain tappable in short landscape, got ${JSON.stringify(chrome)}`);
       }
     }
     const compassNote = box(slState, '.journey-compass-note');

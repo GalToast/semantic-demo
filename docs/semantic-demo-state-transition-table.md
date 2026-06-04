@@ -361,7 +361,7 @@ These combinations should never occur:
 ```
 Galaxy branch (currentView === 'galaxy'):
   hasFocusedTrailRecord = selectedPoint OR focusedNode !== null OR focusedIndex !== null
-  hasSearchIntent = currentSearchSummary OR input.length >= 2 OR active results
+  hasSearchIntent = currentSearchSummary OR input.length >= 2
   hasActiveTrailState = hasFocusedTrailRecord AND (navState.mode === 'trail' OR hasSearchIntent)
 
   semanticDive = semanticDiveMode AND hasFocusedTrailRecord

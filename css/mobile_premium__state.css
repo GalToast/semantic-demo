@@ -7,7 +7,7 @@
         top: 0;
         left: 0;
         width: 100vw;
-        height: 100vh;
+        height: 100dvh;
         z-index: var(--z-base);
         overflow: hidden;
         overscroll-behavior: none;
@@ -132,6 +132,12 @@
         height: 100%;
     }
 
+    body[data-panel-surface='search'] .info-content,
+    body[data-panel-surface='focus-search'] .info-content {
+        max-height: calc(min(54vh, 456px) - 42px);
+        padding: 9px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+    }
+
     body[data-panel-surface='search']:not([data-panel-surface-detail]) #info-panel.info-panel,
     body[data-panel-surface='search'][data-panel-surface-detail='none'] #info-panel.info-panel {
         height: min(57dvh, 480px);
@@ -192,9 +198,12 @@
         overflow: hidden;
     }
 
-    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] #cluster-section,
-    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] #filters-section,
-    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .rail-section {
+    body[data-panel-surface='search'] #cluster-section,
+    body[data-panel-surface='search'] #filters-section,
+    body[data-panel-surface='search'] .rail-section,
+    body[data-panel-surface='focus-search'] #cluster-section,
+    body[data-panel-surface='focus-search'] #filters-section,
+    body[data-panel-surface='focus-search'] .rail-section {
         display: none;
         visibility: hidden;
         height: 0;
@@ -308,6 +317,24 @@
         .search-container
         #search-results.active {
         display: none;
+    }
+
+    body[data-panel-surface='focus'] .search-results.active,
+    body[data-panel-surface='focus-search'] .search-results.active,
+    body[data-panel-surface='semantic-dive'] .search-results.active {
+        max-height: min(28vh, 180px);
+        padding: 6px 8px;
+        opacity: 0.94;
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    body[data-panel-surface='semantic-dive'] .search-container,
+    body[data-panel-surface='semantic-dive'] .search-results.active,
+    body[data-panel-surface='semantic-dive'] #search-results {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
     }
 
     body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-results-count,
@@ -465,22 +492,27 @@
         justify-content: center;
     }
 
-    body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] .info-panel,
-    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .info-panel {
+    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .info-panel,
+    body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .info-panel {
         height: 100dvh;
         max-height: 100dvh;
         border-radius: 0;
     }
 
-    body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] .journey-compass {
+    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .journey-compass,
+    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .legend-panel,
+    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .legend-toggle,
+    body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .legend-panel,
+    body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .legend-toggle {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] .info-content,
-    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .info-content {
+    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .info-content,
+    body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .info-content {
         height: calc(100dvh - 20px);
+        max-height: none;
         padding-top: calc(20px + env(safe-area-inset-top, 0px));
     }
 
@@ -638,7 +670,7 @@
        7. Map IDLE
        ---------------------------------------------------------------- */
     body[data-panel-surface='map-idle'] .journey-compass {
-        top: calc(58px + env(safe-area-inset-top, 0px));
+        top: calc(76px + env(safe-area-inset-top, 0px));
         left: 12px;
         right: 12px;
         width: auto;
@@ -768,6 +800,21 @@
 /* Map-trail state owns the full compass suppression outside the narrow
    baseline media gate; the compact map strip owns navigation instead. */
 @media (min-width: 641px) and (max-width: 768px) {
+    body[data-panel-surface='search'] .info-panel {
+        max-height: min(23vh, 178px);
+        opacity: 0.97;
+    }
+
+    body[data-panel-surface='focus-search'] .info-panel {
+        opacity: 0.97;
+    }
+
+    body[data-panel-surface='search'] .info-content,
+    body[data-panel-surface='focus-search'] .info-content {
+        max-height: calc(min(54vh, 456px) - 42px);
+        padding: 9px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+    }
+
     body[data-panel-surface='map-trail'] .view-toggle,
     body[data-panel-surface='map-trail'] .journey-compass,
     body[data-journey-navigation-owner='map-trail-strip'] .view-toggle,

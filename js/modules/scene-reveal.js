@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
-import { clearAutoRotateResumeTimer, setAutoRotateSuspended } from './camera-controls.js';
+import { clearAutoRotateResumeTimer, setAutoRotateSuspended, settleCameraToOverviewPose } from './camera-controls.js';
 import { updateCameraViewportOffset } from './three-engine.js';
 import { syncClusterSectionState } from './cluster-labels.js';
 import { updateTraversalUi } from './journey.js';
@@ -57,6 +57,7 @@ export function onWindowResize() {
 
     document.body.classList.toggle('is-mobile', isMobile);
     updateCameraViewportOffset();
+    settleCameraToOverviewPose();
     syncClusterSectionState();
     updateTraversalUi();
 }

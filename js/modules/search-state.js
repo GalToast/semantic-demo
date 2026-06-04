@@ -150,8 +150,10 @@ export async function search(query, options = {}) {
                     statusEl.textContent = 'Type to find businesses by need, place, or trade.';
                 }
             }, 2000);
+            clearShortSemanticSearchState(resultsEl, statusEl);
+        } else {
+            clearSearch(options);
         }
-        clearShortSemanticSearchState(resultsEl, statusEl);
         return;
     }
 
@@ -261,9 +263,6 @@ export async function search(query, options = {}) {
         }
         statusEl.textContent = `1 match for "${trimmedQuery}" — ${soleName} is the only record.`;
         setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: false });
-
-        // Single result implicitly triggers a successful search state refresh
-        publish(EVENTS.SEARCH_SUCCESS, { resultsEl, query: trimmedQuery, source: 'single-match' });
         return;
     }
 

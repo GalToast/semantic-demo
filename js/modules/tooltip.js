@@ -112,23 +112,21 @@ export function positionTooltip(x, y) {
         top = Math.max(padding, y - height - 18);
     }
 
+    // Position: only left/top are set inline because the base .hover-tooltip
+    // CSS does not declare them. Animation (opacity/transform/visibility)
+    // stays CSS-owned via the .visible class so the reduced-motion override
+    // at tooltips.css:48 remains authoritative. Writing opacity/transform/
+    // visibility here used to break that override.
     tooltip.style.left = `${left}px`;
     tooltip.style.top = `${top}px`;
 
-    // 10/10 Polish: Handle aria-hidden and visibility
     tooltip.setAttribute('aria-hidden', 'false');
-    tooltip.style.visibility = 'visible';
 
     if (!tooltip.classList.contains('visible')) {
         tooltipRevealFrame = requestAnimationFrame(() => {
             tooltipRevealFrame = null;
             tooltip.classList.add('visible');
-            tooltip.style.opacity = '1';
-            tooltip.style.transform = 'translateY(0) scale(1)';
         });
-    } else {
-        tooltip.style.opacity = '1';
-        tooltip.style.transform = 'translateY(0) scale(1)';
     }
 }
 
@@ -143,16 +141,15 @@ export function hideTooltip() {
 
     tooltip.classList.remove('visible');
     tooltip.setAttribute('aria-hidden', 'true');
-    tooltip.style.opacity = '0';
-    tooltip.style.transform = 'translateY(8px) scale(0.985)';
 
+    // Opacity, transform, and visibility are CSS-owned; removing .visible
+    // drives the fade out via the existing transition. The setTimeout is
+    // retained only to clear the previous handle — it is no longer doing
+    // any inline style writes.
     if (tooltipHideTimer) clearTimeout(tooltipHideTimer);
     tooltipHideTimer = setTimeout(() => {
         tooltipHideTimer = null;
-        if (!tooltip.classList.contains('visible')) {
-            tooltip.style.visibility = 'hidden';
-        }
-    }, 180);
+    }, 200);
 }
 
 // Event Bus Subscriptions

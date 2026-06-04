@@ -58,6 +58,9 @@
 
 `micro-demo.js` is the sole demo entry point; it owns both the first-visit eligibility guard and the choreography. `app.js` imports it for the launch path.
 
+## 3D Network Framing
+The 8,406-point mycelium data lives in `state.rawPositionsBuffer` (Float32Array) in `[0,1]³` unit-cube space (UMAP/PCA projection). `getPointBoundsCenter(points, positionBuffer)` in `js/modules/three-node-manager.js:103` is the canonical bounds reader. It must be called with the raw buffer, not just the points array (the data objects don't carry x/y/z). With the buffer, `state.overviewBounds.renderCenterOffset` correctly centers the network on origin, and `MYCELIUM_FIELD_SCALE = (3.2, 2.6, 3.7)` scales it to fill the camera frustum. Bug history: prior to the fix, the call site passed only `state.points`, so `getPointBoundsCenter` saw count=0 and the network sat at its raw (0.5, 0.5, 0.5) centroid scaled up — visible as the network in the upper-right of the canvas. Always pass the buffer to bounds readers.
+
 ## State Machine Reference
 
 ### micro-demo.js (`js/modules/micro-demo.js`)
@@ -140,19 +143,20 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 
 **Symptom:** `mcp__chrome-devtools__*` or `mcp__playwright__*` tool calls return `No such tool available`. `claude mcp list` reports both as ✓ Connected.
 
-**Diagnosis:** Claude Code's tool catalog is stale even though the MCP node processes are alive at the OS level. The MCP node connection has wedged in a way that the tool catalog snapshot inside Claude Code does not refresh.
+**Diagnosis:** Claude Code's tool catalog is stale even though the MCP node processes are alive at the OS level. The MCP node connection has wedged in a way that the tool catalog snapshot inside Claude Code does not refresh. Browser profile collisions can also present as missing or failing tools when multiple Codex/Claude/subagent sessions reuse the same default Chrome profile.
+
+**Launcher invariant:** Shared launchers under `C:\Users\HP\.codex\mcp-runtimes\` must assign session-scoped, client-tagged browser profiles by default (`playwright-<client>-session-*`, `chrome-devtools-<client>-session-*`) and pass broad MCP flags. Do not switch to persistent profile scope unless intentional shared login state is more important than concurrent subagent safety. Do not auto-open a docked DevTools panel during visual QA; it changes `window.innerWidth` and invalidates viewport/aspect-ratio evidence. DevTools-panel automation is opt-in via `CODEX_MCP_OPEN_DEVTOOLS_PANEL=1` or `CLAUDE_MCP_OPEN_DEVTOOLS_PANEL=1`.
 
 **Recovery:**
 1. Run `npm run mcp:recover` (or `pwsh -NoProfile -File scripts/mcp-recover.ps1`). This:
-   - Kills stale chrome.exe processes tied to the MCP profiles
-   - Removes chrome's `Singleton{Lock,Cookie,Socket}` lock files
-   - Sets `CLAUDE_MCP_FORCE_CLEAN_START=1` for the next Playwright launch
-2. **Restart Claude Code** (Ctrl+C, then re-launch). The MCP node process is owned by Claude Code and is only respawned on a fresh Claude Code start.
+   - Removes Chrome's stale `Singleton{Lock,Cookie,Socket}` lock files tied to MCP profiles
+   - Sets force-clean-start env vars for the next Playwright launch validation
+2. **Restart Claude Code/Codex** (Ctrl+C, then re-launch). The MCP node process is owned by the client and is only respawned on a fresh client start.
 3. The first browser-automation tool call after restart spawns a fresh chrome against the cleaned profile dir.
 
-**Why no recovery without Claude Code restart:** Claude Code owns the MCP node process lifecycle. `claude mcp` subcommands (add/remove/list/get) are for configuration only — there is no `restart` or `reconnect` subcommand. Killing the MCP node process externally does not trigger a respawn; Claude Code's tool catalog is built at startup and is not refreshed mid-session. The 30-second recovery path is the floor.
+**Why no recovery without client restart:** Claude Code/Codex owns the MCP node process lifecycle. `claude mcp` subcommands (add/remove/list/get) are for configuration only — there is no `restart` or `reconnect` subcommand. Killing the MCP node process externally does not trigger a respawn; the tool catalog is built at startup and is not refreshed mid-session. The 30-second recovery path is the floor.
 
-**Multi-session caveat:** If multiple Claude Code/Codex sessions share the machine, each has its own MCP node process. `npm run mcp:recover` cleans the shared chrome state, which is what you want — but the Claude Code restart is per-session, not global.
+**Multi-session caveat:** If multiple Claude Code/Codex/subagent sessions share the machine, each has its own MCP node process and session-scoped browser profile. `npm run mcp:recover` cleans shared stale Chrome state, but the client restart is per-session, not global.
 
 ## Delegated Team Pattern
 - Prefer end-to-end seam owners for substantial work: each worker should diagnose, edit, run focused verification, and return changed paths plus risks.

@@ -32,7 +32,9 @@ function count(source, pattern) {
 }
 
 function datasetAssignmentPattern(field) {
-  return new RegExp(`document\\.body\\.dataset\\.${field}\\s*=(?!=)`, 'g');
+  // Match direct body writes (legacy) and the indirection composers use
+  // (`root.dataset.X` where root defaults to document.body).
+  return new RegExp(`(?:document\\.body|root)\\.dataset\\.${field}\\s*=(?!=)`, 'g');
 }
 
 function listModuleFiles(dir) {
@@ -52,7 +54,8 @@ assert(
   'lifecycle.js must export refreshCompositionState as the composition writer'
 );
 assert(
-  /export function derivePanelSurface\s*\(/.test(lifecycleSrc),
+  /export function derivePanelSurface\s*\(/.test(lifecycleSrc)
+    || /export\s*\{[^}]*\bderivePanelSurface\b[^}]*\}/.test(lifecycleSrc),
   'lifecycle.js must export derivePanelSurface as the panel surface reducer'
 );
 assert(
@@ -62,6 +65,16 @@ assert(
 assert(
   !/export function derivePanelSurface\s*\(/.test(compassSrc),
   'journey-compass-controller.js must not export a duplicate derivePanelSurface'
+);
+assert(
+  /export\s*\{[^}]*\bapplyCompositionState\b[^}]*\}/.test(lifecycleSrc),
+  'lifecycle.js must re-export applyCompositionState from composition-state.js'
+);
+assert(
+  /export function applyCompositionState\s*\(/.test(
+    fs.readFileSync(path.join(root, 'js/modules/composition-state.js'), 'utf8')
+  ),
+  'composition-state.js must own applyCompositionState as the orchestrator'
 );
 
 assert(
@@ -78,14 +91,15 @@ assert(
 );
 
 const allowedDatasetWriters = new Map(Object.entries({
-  activeView: ['js/modules/lifecycle.js', 'js/modules/view-controller.js'],
-  graphContext: ['js/modules/lifecycle.js'],
-  mapContext: ['js/modules/lifecycle.js'],
-  semanticDive: ['js/modules/lifecycle.js', 'js/modules/semantic-dive-ui.js'],
-  panelSurface: ['js/modules/lifecycle.js'],
-  panelSurfaceDetail: ['js/modules/lifecycle.js', 'js/modules/search-panel-adapter.js'],
-  trailState: ['js/modules/lifecycle.js'],
-  trailDepth: ['js/modules/lifecycle.js'],
+  activeView: ['js/modules/lifecycle.js', 'js/modules/view-controller.js', 'js/modules/composition-state.js'],
+  graphContext: ['js/modules/lifecycle.js', 'js/modules/composition-state.js'],
+  mapContext: ['js/modules/lifecycle.js', 'js/modules/composition-state.js'],
+  semanticDive: ['js/modules/lifecycle.js', 'js/modules/semantic-dive-ui.js', 'js/modules/composition-state.js'],
+  panelSurface: ['js/modules/lifecycle.js', 'js/modules/composition-state.js'],
+  panelSurfaceDetail: ['js/modules/lifecycle.js', 'js/modules/search-panel-adapter.js', 'js/modules/composition-state.js'],
+  trailState: ['js/modules/lifecycle.js', 'js/modules/composition-state.js'],
+  trailDepth: ['js/modules/lifecycle.js', 'js/modules/composition-state.js'],
+  searchGlow: ['js/modules/lifecycle.js', 'js/modules/composition-state.js', 'js/modules/search-panel-adapter.js'],
 
   journeyPhase: ['js/modules/journey-compass-controller.js', 'js/modules/semantic-dive-ui.js'],
   journeyCompassDensity: ['js/modules/journey-compass-controller.js'],
@@ -130,14 +144,18 @@ assert(
 );
 
 for (const [field, allowedFiles] of allowedDatasetWriters.entries()) {
-  for (const allowedFile of allowedFiles) {
+  // At least one allowed owner must contain the writer; co-owners that re-export
+  // the composer (e.g. lifecycle.js re-exporting from composition-state.js) are
+  // allowed without needing to contain the literal assignment.
+  const assignmentPattern = datasetAssignmentPattern(field);
+  const ownerWithWriter = allowedFiles.find((allowedFile) => {
     const src = fs.readFileSync(path.join(root, allowedFile), 'utf8');
-    const assignmentPattern = datasetAssignmentPattern(field);
-    assert(
-      count(src, assignmentPattern) > 0,
-      `${allowedFile} should own document.body.dataset.${field}`
-    );
-  }
+    return count(src, assignmentPattern) > 0;
+  });
+  assert(
+    ownerWithWriter,
+    `no allowed owner writes document.body.dataset.${field}; allowed: ${allowedFiles.join(', ')}`
+  );
 }
 
 console.log('Composition state owner contract OK: route/view/camera body dataset writers are scoped to their ownership lanes.');
