@@ -4,6 +4,32 @@ All notable changes to the semantic explorer are documented here. Each entry cor
 
 Format: `[YYYY-MM-DD] — Bundle vN — short description`
 
+## [2026-06-04] — Bundle v132 — Filter + search chrome migrated to Svelte 5 islands
+
+The search input/label/clear/mobile-sheet-toggle and the filter chips/city-select/clear-button moved from vanilla DOM bindings into two Svelte 5 islands. Every ID, class, and data-attr the QA contract keys off is preserved; existing event-bus payload shapes (`FILTER_CHANGED`, `URL_SYNC_REQUESTED` with `{params, reason}`) are unchanged. Committed, not yet deployed.
+
+- **SearchChrome.svelte** owns the search input debounce (300ms, now a `debounceMs` prop), Enter/Escape handling, the clear button, the compact-viewport mobile-sheet toggle, and the `has-query` side-effect on `.search-container`. Replaces the `_onInputHandler`/`_onClickHandler`/`data-mobileSheetToggleBound` stash-on-element pattern with Svelte event syntax + `onDestroy` cleanup.
+- **FilterChrome.svelte** owns the 150ms filter debounce, `aria-pressed`/active state for status + signal chips, the city select, and the clear button. Subscribes to `FILTER_CHANGED` + `URL_SYNC_REQUESTED` to mirror external state. Debounce exposed as `debounceMs` prop.
+- **Island registration** in `js/modules/search-chrome-island.js` and `js/modules/filter-chrome-island.js` follows the existing `search-results-svelte-island.js` pattern. Both add a `dataset.svelteMounted` re-mount guard so re-init is idempotent.
+- **filter-bindings.js** and **search-bindings.js** become thin shims that call the island inits. `event-bindings.js` still imports `updateHasQuery` and `resetSearchControlBindings` from `search-bindings.js` (the latter resets the `initialized` flag for the dispose path). `bindClusterList` click delegation now lives in `filter-chrome-island.js`, sharing the filter-chrome lifecycle.
+- **vector-explorer-polished.html** gains two mount slots (`#search-chrome-slot`, `#filter-chrome-slot`) replacing the static label/input/filter-toolbar markup.
+- **Smells fixed:** `state.searchTimeout` shared between search input and filter debounce (now split); stashed DOM-element handlers; mixed `onclick=` / `addEventListener`; filter logic reaching into `#search-input.value` via DOM; mobile-sheet policy buried in bindings; magic 150/300ms debounces; dead "intentionally left unimplemented" comments.
+- **Dead code removed:** `cluster-filter.js:populateCityFilter` pills/note branches + `syncCityFilterUi` summary/`[data-city-filter]` branches — those elements don't exist in the static HTML or the Svelte templates, so the branches were unreachable. Contract test updated to match.
+- **Plumbing:** `cache-buster-check.js` learned about `*.svelte` so the cache buster hash is computed over Svelte source. `search-bindings.js` exports `resetSearchControlBindings()` so `disposeEventListeners` can reset the `initialized` flag.
+
+**New focused test** — `tests/filter-search-chrome-svelte.spec.js` mounts the page at the QA-contract mobile viewport, opens the filter details, and exercises status-chip toggle, signal-chip toggle, clear button enable/disable, input → `has-query` class, and clear button → input blank + focus. Stable across consecutive runs.
+
+**Verification (all green):**
+- `npm run lint` — 0 errors.
+- `npm run build` — clean, 556.9kb bundle, no Svelte warnings.
+- `npm run qa:contract:search-chrome` — 32/0.
+- `npm run qa:contract:filters` — 11/0.
+- `node tests/search-state-surface-contract.mjs` — pass.
+- `node tests/cluster-filter-contract.mjs` — pass.
+- `node tests/cluster-filter-city-filter-side-effect-contract.mjs` — pass.
+- `npx playwright test tests/filter-search-chrome-svelte.spec.js` — pass (stable across 2 consecutive runs).
+- `npm test` (shell/manifest/cache/ownership/tokens/surface-styles/semantic-space) — all green.
+
 ## [2026-06-04] — Bundle v131 — Search H1 count matches rendered list
 
 Fix from fresh adversarial audit: H1 read "Found 18 spots" while the result list showed 16 (5 visible + 11 paginated). Two near-duplicate records ("BLUE Willow Coffee" / "BLUE Willow Coffee LLC") were collapsed in the renderer's dedup pass but the H1 read the pre-dedup `resultIndices.length`.

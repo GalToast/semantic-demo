@@ -14,6 +14,10 @@ export function bindSearchControls() {
     initSearchChromeSvelteIsland();
 }
 
+export function resetSearchControlBindings() {
+    initialized = false;
+}
+
 export function updateHasQuery() {
     // The has-query class is now driven reactively by the SearchChrome
     // Svelte component via setSearchContainerState. This function is kept

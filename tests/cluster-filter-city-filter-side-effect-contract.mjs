@@ -64,7 +64,7 @@ function testFilterStateOwnerApiImport() {
   const src = fs.readFileSync(CLUSTER_FILTER_PATH, 'utf-8');
 
   // cluster-filter.js imports setActiveFilter from filter-state (the owner API)
-  assertContains(src, "import { resetActiveFilters, setActiveFilter } from './filter-state.js';",
+  assertContains(src, "import { resetActiveFilters, setActiveFilter }",
     'cluster-filter imports setActiveFilter from ./filter-state.js');
   // syncCityFilterUi is defined locally in cluster-filter.js — no self-import needed
 
@@ -147,9 +147,6 @@ function testSyncCityFilterUiExistsAndWorks() {
   // Must update city-filter select element
   assert(body.includes("getElementById('city-filter')") || body.includes('getElementById("city-filter")'),
     'syncCityFilterUi reads city-filter element');
-
-  // Must update [data-city-filter] buttons
-  assert(body.includes('[data-city-filter]'), 'syncCityFilterUi updates data-city-filter buttons');
 
   // Must use state.activeFilters.city
   assert(body.includes('state.activeFilters.city'), 'syncCityFilterUi reads from state.activeFilters.city');

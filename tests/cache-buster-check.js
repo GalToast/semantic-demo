@@ -1,8 +1,10 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import * as esbuild from 'esbuild';
+import { compile } from 'svelte/compiler';
 
 const root = process.cwd();
 const fix = process.argv.includes('--fix');
@@ -32,6 +34,38 @@ const requiredAssets = [
 ];
 
 const failures = [];
+
+/** @type {import('esbuild').Plugin} */
+const sveltePlugin = {
+  name: 'semantic-demo-svelte-cache-check',
+  setup(build) {
+    build.onLoad({ filter: /\.svelte$/ }, async (args) => {
+      const source = await readFile(args.path, 'utf8');
+      const compiled = compile(source, {
+        filename: args.path,
+        generate: 'client',
+        css: 'injected',
+        dev: false,
+      });
+
+      return {
+        contents: compiled.js.code,
+        loader: 'js',
+        resolveDir: path.dirname(args.path),
+        warnings: compiled.warnings.map((warning) => ({
+          text: warning.message,
+          location: warning.start
+            ? {
+                file: args.path,
+                line: warning.start.line,
+                column: warning.start.column,
+              }
+            : undefined,
+        })),
+      };
+    });
+  },
+};
 
 function reportFailuresAndExit() {
   console.error('Semantic demo cache-buster check failed:');
@@ -85,6 +119,7 @@ async function verifyBundleFresh() {
       target: 'es2020',
       format: 'esm',
       external: ['three', 'three/*'],
+      plugins: [sveltePlugin],
       logLevel: 'silent',
     });
 
