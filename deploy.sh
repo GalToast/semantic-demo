@@ -63,7 +63,7 @@ run "scp -P $PORT data.dat '$DOMAIN_TARGET'"
 # The internal enrichment (leadEnrichment.internal.json) stays in the repo
 # and is never deployed — it carries pipeline state that must not reach
 # the public demo.
-run "scp -P $PORT scripts/leadEnrichment.public.json '$DOMAIN_TARGET'scripts/'"
+run "scp -P $PORT scripts/leadEnrichment.public.json ${DOMAIN_TARGET}scripts/leadEnrichment.public.json"
 
 echo "==> Syncing scanner.js to cloudscan/..."
 # scanner.js is the canonical source for /js/scanner.js (cloudscan page)
