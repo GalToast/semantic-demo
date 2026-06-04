@@ -1,45 +1,10 @@
 // @ts-check
 import { mount, unmount } from 'svelte';
 import FilterChrome from './components/FilterChrome.svelte';
-import { setClusterFilter, clearClusterFilter } from './cluster-filter.js';
+import { bindClusterListDelegation } from './cluster-list-delegate.js';
 import { EVENTS, publish } from './event-bus.js';
 
 const FILTER_CHROME_SLOT_ID = 'filter-chrome-slot';
-const CLUSTER_LIST_ID = 'cluster-list';
-
-function bindClusterList() {
-    const clusterList = document.getElementById(CLUSTER_LIST_ID);
-    if (!clusterList) return;
-    if (clusterList.dataset.chromeSvelteBound === 'true') return;
-    clusterList.addEventListener('click', (event) => {
-        const eventTarget = event.target;
-        const target = /** @type {HTMLElement|null} */ (
-            eventTarget && typeof eventTarget === 'object' && 'closest' in eventTarget
-                ? eventTarget
-                : null
-        );
-        if (!target) return;
-        const clearBtn = target.closest('.cluster-clear-btn');
-        if (clearBtn) {
-            event.stopPropagation();
-            clearClusterFilter();
-            return;
-        }
-        const emptyClear = target.closest('.cluster-empty-clear');
-        if (emptyClear) {
-            clearClusterFilter();
-            return;
-        }
-        const clusterItem = target.closest('[data-cluster]');
-        if (clusterItem instanceof HTMLElement) {
-            const clusterIndex = Number(clusterItem.dataset.cluster);
-            if (Number.isFinite(clusterIndex)) {
-                setClusterFilter(clusterIndex);
-            }
-        }
-    });
-    clusterList.dataset.chromeSvelteBound = 'true';
-}
 
 /** @type {WeakMap<Element, Record<string, unknown>>} */
 const mountedChrome = new WeakMap();
@@ -77,12 +42,12 @@ function mountFilterChrome() {
     const slot = document.getElementById(FILTER_CHROME_SLOT_ID);
     if (!slot) return false;
     if (slot.dataset.svelteMounted === 'filter-chrome') {
-        bindClusterList();
+        bindClusterListDelegation();
         return true;
     }
     render(slot, {});
     slot.dataset.svelteMounted = 'filter-chrome';
-    bindClusterList();
+    bindClusterListDelegation();
     return true;
 }
 

@@ -4,9 +4,10 @@
     import { returnToOverview } from '../lifecycle.js';
     import { isCompactSearchViewport } from '../utils/ui-presentation.js';
     import { setMobileSearchSheetMode, setSearchContainerState } from '../search-panel-adapter.js';
+    import { SEARCH_INPUT_DEBOUNCE_MS } from '../chrome-timing.js';
 
     let {
-        debounceMs = 300,
+        debounceMs = SEARCH_INPUT_DEBOUNCE_MS,
         onSearch = null
     } = $props();
 

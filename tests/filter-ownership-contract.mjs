@@ -257,6 +257,8 @@ const MODULE_PATHS = {
   'search-state.js':     join(MODULES_DIR, 'search-state.js'),
   'cluster-filter.js':    join(MODULES_DIR, 'cluster-filter.js'),
   'event-bindings.js':   join(MODULES_DIR, 'bindings', 'filter-bindings.js'),
+  'filter-chrome-island.js': join(MODULES_DIR, 'filter-chrome-island.js'),
+  'filter-chrome.svelte': join(MODULES_DIR, 'components', 'FilterChrome.svelte'),
   'url-state.js':         join(MODULES_DIR, 'url-state.js'),
   'lifecycle.js':        join(MODULES_DIR, 'lifecycle.js'),
   'camera-controls.js':  join(MODULES_DIR, 'camera-controls.js'),
@@ -343,36 +345,58 @@ assert(
 
 console.log('PASS CONTRACT 4: cluster-filter.js does not import search-state.js (no bad cycle)');
 
-// ─── CONTRACT 5: event-bindings.js delegates to filter-state owner APIs ─────────
-// event-bindings must use setActiveFilter/toggleActiveFilterSignal/resetActiveFilters
-// and must not directly assign state.activeFilters.
+// ─── CONTRACT 5: filter chrome delegates to filter-state owner APIs ─────────────
+// The filter chrome's mutation entry point is a 3-file chain:
+//   bindings/filter-bindings.js  — public entry: bindFilterControls (shim)
+//   filter-chrome-island.js      — mounts the Svelte component
+//   components/FilterChrome.svelte — the Svelte component itself
+// At least one file in the chain must import setActiveFilter /
+// toggleActiveFilterSignal / resetActiveFilters from filter-state, AND no
+// file in the chain may write state.activeFilters directly. This
+// supersedes the legacy check that scanned only the shim and grep'd for
+// the API names in `bindFilterControls` (the linter-era shim was
+// importing those names as a satisficer).
 
-const ebImports = scanImports(MODULE_PATHS['event-bindings.js']);
-const ebFilterImports = ebImports.filter(i =>
-  i.from.includes('filter-state') ||
-  i.spec.includes('setActiveFilter') ||
-  i.spec.includes('toggleActiveFilterSignal') ||
-  i.spec.includes('resetActiveFilters')
-);
+const CHROME_CHAIN = [
+  MODULE_PATHS['event-bindings.js'],
+  MODULE_PATHS['filter-chrome-island.js'],
+  MODULE_PATHS['filter-chrome.svelte'],
+];
+
+const FILTER_STATE_API_NAMES = ['setActiveFilter', 'toggleActiveFilterSignal', 'resetActiveFilters'];
+
+// For .js files use the line-based scanImports; for .svelte files the
+// import block is multi-line, so use a substring check.
+function chromeChainImportsFilterStateApi(path) {
+  const source = readFileSync(path, 'utf8');
+  if (path.endsWith('.svelte')) {
+    return FILTER_STATE_API_NAMES.every((name) => source.includes(name))
+      && source.includes("from '../filter-state.js'");
+  }
+  return scanImports(path).some((imp) =>
+    imp.from.includes('filter-state')
+    && FILTER_STATE_API_NAMES.some((name) => imp.spec.includes(name))
+  );
+}
+
+const chainWithImports = CHROME_CHAIN.filter(chromeChainImportsFilterStateApi);
 
 assert(
-  ebFilterImports.length > 0,
-  'event-bindings.js must import filter-state owner APIs (setActiveFilter, toggleActiveFilterSignal, resetActiveFilters)'
+  chainWithImports.length > 0,
+  'filter chrome chain (shim + island + Svelte component) must import filter-state owner APIs (setActiveFilter, toggleActiveFilterSignal, resetActiveFilters) — at least one file in the chain'
 );
 
-// Verify event-bindings bindFilterControls uses setActiveFilter/toggleActiveFilterSignal
-// rather than direct assignment
-const ebSource = readFileSync(MODULE_PATHS['event-bindings.js'], 'utf8');
-const bindFilterSection = ebSource.includes('function bindFilterControls')
-  ? ebSource.slice(ebSource.indexOf('function bindFilterControls'), ebSource.indexOf('function bindWindowControlFunctions'))
-  : '';
-
+// None of the chain may write state.activeFilters directly
+let chainDirectWrites = 0;
+for (const path of CHROME_CHAIN) {
+  chainDirectWrites += scanWriters(path, 'activeFilters').length;
+}
 assert(
-  bindFilterSection.includes('setActiveFilter') || bindFilterSection.includes('toggleActiveFilterSignal') || bindFilterSection.includes('resetActiveFilters'),
-  'bindFilterControls must call filter-state owner APIs (setActiveFilter, toggleActiveFilterSignal, resetActiveFilters)'
+  chainDirectWrites === 0,
+  `filter chrome chain must NOT write state.activeFilters directly — found ${chainDirectWrites} write(s) across shim + island + Svelte component`
 );
 
-console.log('PASS CONTRACT 5: event-bindings.js delegates to filter-state owner APIs');
+console.log(`PASS CONTRACT 5: filter chrome chain delegates to filter-state owner APIs (${chainWithImports.length}/${CHROME_CHAIN.length} files import the owner APIs, 0 direct writes)`);
 
 // ─── CONTRACT 6: url-state.js uses restore APIs from filter-state ───────────────
 // url-state must use restoreActiveFiltersFromUrl and restoreActiveClusterFilterFromUrl,

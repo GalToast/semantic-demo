@@ -25,7 +25,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="semantic-demo.css?v=3d176807f4a8">
+    <link rel="stylesheet" href="semantic-demo.css?v=9229317edf49">
     <link rel="stylesheet" href="vector-explorer-pandora.css?v=810fdd9e4f75">
     <link rel="stylesheet" href="css/mobile_premium__focus-dive.css?v=ee46eed74fdb">
     <link rel="stylesheet" href="css/mobile_premium__chrome.css?v=da7a4d116eb4">
@@ -270,219 +270,7 @@
     </div>
 
     <!-- Info Panel - collapsible -->
-    <aside class="info-panel slide-in-left active" id="info-panel" role="region" aria-labelledby="info-panel-title">
-        <button class="info-header" id="info-panel-toggle" type="button" aria-label="Toggle info panel" aria-expanded="true" aria-controls="info-panel">
-            <p class="info-panel-title" id="info-panel-title">MoCo Business Mycelium</p>
-            <span class="info-toggle-icon" id="info-toggle-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-panel"></use></svg></span>
-        </button>
-        <div class="info-content" id="info-panel-content">
-            <div class="info-panel-surface info-panel-surface-overview" data-surface-owner="idle-overview" data-ownership-lane="surface content">
-                <div class="stats-row">
-                    <div class="stat-box">
-                        <div class="stat-number" id="total-count">8,406</div>
-                        <div class="stat-label">Businesses</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="city-count">12</div>
-                        <div class="stat-label">Cities</div>
-                    </div>
-                </div>
-                <div class="stat-caption">Montgomery County records in the semantic field</div>
-
-                <div class="demo-starters" id="demo-starters" aria-label="Guided demo searches">
-                    <div class="demo-starters-kicker">First time here?</div>
-                    <div class="demo-starters-copy">Choose a starting need. The view will light an anchor, then suggest related nearby businesses.</div>
-                    <div class="demo-journey-steps" aria-hidden="true">
-                        <span><b>1</b> Choose</span>
-                        <span><b>2</b> Guide</span>
-                        <span><b>3</b> Explore</span>
-                    </div>
-                    <div class="demo-starter-row">
-                        <button class="demo-starter-chip" type="button" data-demo-query="coffee" aria-label="Start demo search for coffee">Coffee</button>
-                        <button class="demo-starter-chip" type="button" data-demo-query="roof repair" aria-label="Start demo search for roof repair">Roof repair</button>
-                        <button class="demo-starter-chip" type="button" data-demo-query="childcare" aria-label="Start demo search for childcare">Childcare</button>
-                        <button class="demo-starter-chip" type="button" data-demo-query="dog friendly" aria-label="Start demo search for dog friendly businesses">Dog friendly</button>
-                    </div>
-                </div>
-
-                <button class="launch-btn" id="btn-launch" type="button" title="Launch directly into focus mode with a random business">
-                    <svg class="ui-icon" aria-hidden="true"><use href="#icon-mycelium"></use></svg>
-                    Surprise Me
-                </button>
-            </div>
-
-            <section class="info-panel-surface info-panel-surface-search" data-surface-owner="search-results" data-ownership-lane="surface interaction content" aria-label="Search surface">
-                <div class="search-container" role="search">
-                    <div class="search-chrome-slot" id="search-chrome-slot">
-                        <button class="search-label" type="button" aria-label="Toggle search sheet">
-                            <span class="search-label-text">Semantic Search</span>
-                            <span class="semantic-lane-pill" id="semantic-lane-pill" data-state="checking" title="Checking search readiness."></span>
-                        </button>
-                        <div class="search-input-wrapper">
-                            <span class="search-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-search"></use></svg></span>
-                            <input
-                                type="text"
-                                class="search-input"
-                                id="search-input"
-                                placeholder="Search by need or clue..."
-                                aria-label="Search businesses semantically by need, venue, service, or clue"
-                                aria-controls="search-results"
-                                aria-describedby="search-status-live"
-                                autocomplete="off"
-                                autocorrect="off"
-                                autocapitalize="off"
-                                spellcheck="false"
-                            />
-                            <div class="search-spinner" id="search-spinner" aria-hidden="true"></div>
-                            <button class="search-clear-btn" id="search-clear-btn" type="button" aria-label="Clear search">
-                                <svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="search-hint" id="search-status" hidden></div>
-                    <div class="semantic-lane-assist" id="semantic-lane-assist" data-state="idle" hidden role="region" aria-label="Search status detail" aria-live="polite">
-                        <div class="semantic-lane-assist-row">
-                            <span class="semantic-lane-assist-copy" id="semantic-lane-assist-copy">Search readiness is checking in the background.</span>
-                        </div>
-                        <div class="semantic-lane-assist-meta" id="semantic-lane-assist-meta"></div>
-                    </div>
-                    <div class="search-trail-cue" id="search-trail-cue" hidden role="status" aria-live="polite">
-                        <div class="search-trail-cue-kicker" id="search-trail-cue-kicker">Connection cue</div>
-                        <div class="search-trail-cue-title" id="search-trail-cue-title">Search opens a trail.</div>
-                        <div class="search-trail-cue-stage" aria-hidden="true">
-                            <span class="search-trail-cue-step" data-cue-stage="query">Query</span>
-                            <span class="search-trail-cue-step" data-cue-stage="anchor">Anchor</span>
-                            <span class="search-trail-cue-step" data-cue-stage="walk">Explore</span>
-                        </div>
-                        <div class="search-trail-cue-note" id="search-trail-cue-note">The first strong match becomes the anchor; from there you can center it and explore the neighborhood.</div>
-                    </div>
-                    <div class="search-results glass-light" id="search-results" role="region" aria-label="Search results" aria-live="off" aria-atomic="false" aria-hidden="true"></div>
-                    <div class="synthesize-trigger" id="synthesize-trigger" hidden>
-                        <div class="guide-cta-kicker">Next best move</div>
-                        <button id="btn-synthesize" class="btn-synthesize" type="button">
-                            <span class="sparkle"><svg class="ui-icon" aria-hidden="true"><use href="#icon-guide"></use></svg></span>
-                            Summarize Results
-                        </button>
-                        <div class="guide-cta-note">
-                            Summarize the anchor and suggest three nearby stops from this result stack.
-                        </div>
-                    </div>
-
-                    <div class="mode-grid" id="mode-grid">
-                        <button class="mode-chip active" type="button" data-mode="default" aria-pressed="true" title="County View — keeps the whole county visible so you can choose where to wander next.">
-                            <span class="mode-name">County View</span>
-                            <span class="sr-only">keeps the whole county visible so you can choose where to wander next.</span>
-                        </button>
-                        <button class="mode-chip" type="button" data-mode="bloom" data-story="signal-rich" aria-pressed="false" title="Bloom — surface businesses with a website plus email or phone.">
-                            <span class="mode-name">Bloom</span>
-                            <span class="sr-only">Surface businesses with a website plus email or phone.</span>
-                        </button>
-                        <button class="mode-chip" type="button" data-mode="bridge" data-story="bridge-businesses" aria-pressed="false" title="Bridge — highlight businesses linking different industry and city clusters.">
-                            <span class="mode-name">Bridge</span>
-                            <span class="sr-only">Highlight businesses linking different industry and city clusters.</span>
-                        </button>
-                        <button class="mode-chip" type="button" data-mode="trail" aria-pressed="false" title="Connection Path — explore related businesses around one focused record. A path forms as you move.">
-                            <span class="mode-name">Path</span>
-                            <span class="sr-only">Explore related businesses around one focused record. A connection path forms as you move.</span>
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-
-            <section class="info-panel-surface info-panel-surface-selection" data-surface-owner="selected-business" data-ownership-lane="surface content" aria-label="Selected business surface">
-                <div class="selected-card" id="selected-card" role="region" aria-labelledby="selected-card-title">
-                <div class="vector-cascade-bg" id="vector-cascade-bg" aria-hidden="true"></div>
-                <div class="panel-section-title" id="selected-card-title">Selection</div>
-                <div class="selected-empty" id="selected-empty">
-                    <svg class="selected-empty-icon" aria-hidden="true" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="26" cy="26" r="10" fill="none" stroke="rgba(121,235,222,0.5)" stroke-width="2"/>
-                        <circle cx="26" cy="26" r="4" fill="rgba(121,235,222,0.35)"/>
-                        <circle cx="10" cy="14" r="3.5" fill="rgba(255,226,132,0.25)" stroke="rgba(255,226,132,0.4)" stroke-width="1.2"/>
-                        <circle cx="42" cy="18" r="2.8" fill="rgba(255,226,132,0.2)" stroke="rgba(255,226,132,0.35)" stroke-width="1"/>
-                        <circle cx="38" cy="40" r="4" fill="rgba(121,235,222,0.18)" stroke="rgba(121,235,222,0.35)" stroke-width="1.2"/>
-                        <circle cx="14" cy="38" r="3" fill="rgba(255,226,132,0.2)" stroke="rgba(255,226,132,0.3)" stroke-width="1"/>
-                        <circle cx="44" cy="32" r="2.2" fill="rgba(255,226,132,0.15)" stroke="rgba(255,226,132,0.25)" stroke-width="0.9"/>
-                        <circle cx="8" cy="26" r="2.5" fill="rgba(121,235,222,0.2)" stroke="rgba(121,235,222,0.3)" stroke-width="0.9"/>
-                        <line x1="14" y1="38" x2="26" y2="26" stroke="rgba(121,235,222,0.12)" stroke-width="0.8" stroke-dasharray="2,2"/>
-                        <line x1="44" y1="32" x2="26" y2="26" stroke="rgba(121,235,222,0.1)" stroke-width="0.7" stroke-dasharray="2,2"/>
-                        <line x1="8" y1="26" x2="26" y2="26" stroke="rgba(121,235,222,0.1)" stroke-width="0.7" stroke-dasharray="2,2"/>
-                    </svg>
-                    <div class="selected-empty-copy">
-                        <span class="selected-empty-headline">Explore the county's mycelium</span>
-                        <span class="selected-empty-sub">Click any spore in the mycelium to inspect one business and discover its neighborhood.</span>
-                    </div>
-                </div>
-                <div id="selected-details" hidden>
-                    <div class="selected-hero">
-                        <div class="selected-hero-main">
-                            <h3 id="selected-name">Business Name</h3>
-                            <div class="selected-filed-as" id="selected-filed-as" hidden></div>
-                            <div class="selected-subtitle" id="selected-what">What they do</div>
-                        </div>
-                        <div class="selected-role-badge" id="selected-role-badge">Record</div>
-                    </div>
-                    <div class="selected-meta-strip" id="selected-meta-strip"></div>
-                    <div class="badge-row" id="selected-badges"></div>
-                    <div class="selected-match-panel" id="selected-match-panel" hidden>
-                        <div class="selected-match-label" id="selected-match-label">Why this record</div>
-                        <div class="selected-match-copy" id="selected-match-copy"></div>
-                    </div>
-                    <div class="selected-action-row" id="selected-action-row" hidden></div>
-                    <div class="selected-grid">
-                        <div class="selected-item">
-                            <div class="selected-item-label">Semantic Neighborhood</div>
-                            <div class="selected-item-value" id="selected-theme">Theme</div>
-                        </div>
-                        <div class="selected-item">
-                            <div class="selected-item-label">Record Status</div>
-                            <div class="selected-item-value" id="selected-status">Record status</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="selected-map-summary" id="selected-map-summary" hidden aria-hidden="true">
-                    <div class="selected-map-summary-head">
-                        <div class="selected-map-summary-main">
-                            <div class="selected-map-summary-kicker" id="selected-map-summary-kicker">Map trail match</div>
-                            <h3 id="selected-map-summary-name">Business Name</h3>
-                            <div class="selected-map-summary-what" id="selected-map-summary-what">Montgomery County business record</div>
-                        </div>
-                        <div class="selected-map-summary-role" id="selected-map-summary-role">Trail match</div>
-                    </div>
-                    <div class="selected-map-summary-match" id="selected-map-summary-match">
-                        <div class="selected-map-summary-match-label">Why this record</div>
-                        <div class="selected-map-summary-match-copy" id="selected-map-summary-match-copy"></div>
-                    </div>
-                </div>
-                </div>
-            </section>
-
-            <section class="info-panel-surface info-panel-surface-discovery" data-surface-owner="discovery-filters" data-ownership-lane="surface interaction content" aria-label="Discovery filters surface">
-                <details class="rail-section cluster-section" id="cluster-section">
-                    <summary>
-                        <span class="summary-text">
-                            <span class="summary-title">Semantic Neighborhoods</span>
-                        </span>
-                    </summary>
-                    <div class="rail-section-body">
-                        <ul class="cluster-list" id="cluster-list" role="group" aria-label="Semantic neighborhood filters"></ul>
-                    </div>
-                </details>
-
-                <details class="rail-section" id="filters-section">
-                    <summary>
-                        <span class="summary-text">
-                            <span class="summary-title">Filters</span>
-                        </span>
-                        <span class="filter-preview" id="filter-preview" hidden>All clear</span>
-                    </summary>
-                    <div class="rail-section-body">
-                        <div class="filter-chrome-slot" id="filter-chrome-slot"></div>
-                    </div>
-                </details>
-            </section>
-        </div>
-    </aside>
+    <div id="info-panel-chrome-island"></div>
 
     <section class="focus-stage" id="focus-stage" role="region" aria-labelledby="focus-stage-name" hidden>
         <div class="focus-stage-card focus-pocket" id="focus-pocket" role="region" aria-label="Focus detail panel">
@@ -538,8 +326,7 @@
         </div>
     </div>
 
-    <button class="panel-toggle" id="btn-panel" type="button" title="Open side panel" aria-label="Open side panel" aria-expanded="true" aria-controls="info-panel"><svg class="ui-icon" aria-hidden="true"><use href="#icon-panel"></use></svg></button>
-    <aside class="legend-panel glass-heavy" id="legend-panel" role="region" aria-label="Field guide panel" aria-hidden="true"></aside>
+    <div id="legend-panel-chrome-island"></div>
     <div class="experience-reset-toast" id="experience-reset-toast" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true" aria-label="Experience reset notification">
         <strong id="experience-toast-title"></strong>
         <span id="experience-toast-copy"></span>
@@ -574,7 +361,7 @@
         }
     }
     </script>
-    <script type="module" src="dist/bundle.js?v=f76ac6a47ba7"></script>
+    <script type="module" src="dist/bundle.js?v=dc58f91d528e"></script>
 
     <div id="semantic-summary-card" class="summary-card hidden glass-heavy" role="region" aria-labelledby="summary-card-title-text" aria-hidden="true" hidden>
         <div class="summary-header">
