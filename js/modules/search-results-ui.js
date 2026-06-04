@@ -86,6 +86,13 @@ export function renderSearchResultItems(resultsEl, results, renderContext, statu
 
     setExpandedResultState(visibleCount >= total)
     renderResultsMarkup(visible, visibleCount)
+    // Persist the post-dedup count so the H1 ("Found N spots") matches what
+    // the user sees in the list. The summary's resultIndices array still holds
+    // the pre-dedup set (used for search-glow effects on the mycelium, which
+    // is fine to keep broader than the rendered list).
+    if (state.currentSearchSummary) {
+        state.currentSearchSummary.dedupedResultCount = total;
+    }
     setupMobileSearchSheetToggle({ isCompactSearchViewport })
 
     if (total > visibleCount) {

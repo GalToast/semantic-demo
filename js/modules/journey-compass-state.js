@@ -128,7 +128,10 @@ export function getJourneyCompassState() {
 
     if (hasSearch) {
         const summary = state.currentSearchSummary;
-        const resultCount = summary?.resultIndices?.length ?? 0;
+        // Prefer the post-dedup count (what the user actually sees in the
+        // result list) over the pre-dedup resultIndices array (used for
+        // search-glow effects on the mycelium).
+        const resultCount = summary?.dedupedResultCount ?? summary?.resultIndices?.length ?? 0;
         const hasNoResults = !isSearching && summary && resultCount === 0;
         return {
             phase: 'search',
