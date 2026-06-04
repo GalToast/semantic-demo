@@ -25,16 +25,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="semantic-demo.css?v=fffef79bf01c">
+    <link rel="stylesheet" href="semantic-demo.css?v=3d176807f4a8">
     <link rel="stylesheet" href="vector-explorer-pandora.css?v=810fdd9e4f75">
     <link rel="stylesheet" href="css/mobile_premium__focus-dive.css?v=ee46eed74fdb">
-    <link rel="stylesheet" href="css/mobile_premium__chrome.css?v=6d07f0335a80">
+    <link rel="stylesheet" href="css/mobile_premium__chrome.css?v=da7a4d116eb4">
     <link rel="stylesheet" href="css/mobile_premium__state.css?v=f0cc9c29c8dc">
     <link rel="stylesheet" href="css/mobile_premium__idle.css?v=62d0e9eb4d3a">
-    <link rel="stylesheet" href="css/mobile_premium__map.css?v=bb41998e40ae">
-    <link rel="stylesheet" href="css/mobile_premium__surfaces.css?v=6753ac29983c">
-    <link rel="stylesheet" href="css/mobile_premium__narrow.css?v=f66abf5cb4ee">
-    <link rel="stylesheet" href="css/modules/focus_stage.css?v=1f20a83e22bc">
+    <link rel="stylesheet" href="css/mobile_premium__map.css?v=fce967988dec">
+    <link rel="stylesheet" href="css/mobile_premium__surfaces.css?v=0731186d9ce7">
+    <link rel="stylesheet" href="css/mobile_premium__narrow.css?v=68565fbfec7a">
+    <link rel="stylesheet" href="css/modules/focus_stage.css?v=83b6f301e0ec">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>M</text></svg>">
 </head>
 <body>
@@ -313,17 +313,31 @@
 
             <section class="info-panel-surface info-panel-surface-search" data-surface-owner="search-results" data-ownership-lane="surface interaction content" aria-label="Search surface">
                 <div class="search-container" role="search">
-                    <button class="search-label" type="button" aria-label="Toggle search sheet">
-                        <span class="search-label-text">Semantic Search</span>
-                        <span class="semantic-lane-pill" id="semantic-lane-pill" data-state="checking" title="Checking search readiness."></span>
-                    </button>
-                    <div class="search-input-wrapper">
-                        <span class="search-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-search"></use></svg></span>
-                        <input type="text" class="search-input" id="search-input" placeholder="Search by need or clue…" aria-label="Search businesses semantically by need, venue, service, or clue" aria-controls="search-results" aria-describedby="search-status-live" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-                        <div class="search-spinner" id="search-spinner" aria-hidden="true"></div>
-                        <button class="search-clear-btn" id="search-clear-btn" type="button" aria-label="Clear search">
-                            <svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg>
+                    <div class="search-chrome-slot" id="search-chrome-slot">
+                        <button class="search-label" type="button" aria-label="Toggle search sheet">
+                            <span class="search-label-text">Semantic Search</span>
+                            <span class="semantic-lane-pill" id="semantic-lane-pill" data-state="checking" title="Checking search readiness."></span>
                         </button>
+                        <div class="search-input-wrapper">
+                            <span class="search-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-search"></use></svg></span>
+                            <input
+                                type="text"
+                                class="search-input"
+                                id="search-input"
+                                placeholder="Search by need or clue..."
+                                aria-label="Search businesses semantically by need, venue, service, or clue"
+                                aria-controls="search-results"
+                                aria-describedby="search-status-live"
+                                autocomplete="off"
+                                autocorrect="off"
+                                autocapitalize="off"
+                                spellcheck="false"
+                            />
+                            <div class="search-spinner" id="search-spinner" aria-hidden="true"></div>
+                            <button class="search-clear-btn" id="search-clear-btn" type="button" aria-label="Clear search">
+                                <svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg>
+                            </button>
+                        </div>
                     </div>
                     <div class="search-hint" id="search-status" hidden></div>
                     <div class="semantic-lane-assist" id="semantic-lane-assist" data-state="idle" hidden role="region" aria-label="Search status detail" aria-live="polite">
@@ -463,20 +477,7 @@
                         <span class="filter-preview" id="filter-preview" hidden>All clear</span>
                     </summary>
                     <div class="rail-section-body">
-                        <div class="filter-toolbar" aria-label="Dataset filters">
-                            <div class="filter-row" id="status-filter-row">
-                                <button class="filter-chip active" type="button" data-status-filter="all" aria-pressed="true">All Records</button>
-                                <button class="filter-chip" type="button" data-status-filter="active" aria-pressed="false">Active</button>
-                            </div>
-                            <div class="filter-row" id="signal-filter-row">
-                                <button class="filter-chip" type="button" data-signal-filter="website" aria-pressed="false">Has Website</button>
-                                <button class="filter-chip" type="button" data-signal-filter="email" aria-pressed="false">Has Email</button>
-                            </div>
-                            <select class="filter-select" id="city-filter" aria-label="Filter by city">
-                                <option value="all">All Cities</option>
-                            </select>
-                            <button class="filter-clear-btn" id="filter-clear-btn" type="button" disabled aria-disabled="true">Clear filters</button>
-                        </div>
+                        <div class="filter-chrome-slot" id="filter-chrome-slot"></div>
                     </div>
                 </details>
             </section>
@@ -573,7 +574,7 @@
         }
     }
     </script>
-    <script type="module" src="dist/bundle.js?v=0f5c01486d10"></script>
+    <script type="module" src="dist/bundle.js?v=1c95cedcbb58"></script>
 
     <div id="semantic-summary-card" class="summary-card hidden glass-heavy" role="region" aria-labelledby="summary-card-title-text" aria-hidden="true" hidden>
         <div class="summary-header">

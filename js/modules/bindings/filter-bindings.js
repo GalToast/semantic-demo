@@ -1,70 +1,14 @@
-import { state } from '../../state.js';
-import { publish, EVENTS } from '../event-bus.js';
-import { applyFilters, clearSearchGlow, search } from '../search-state.js';
-import { syncFilterControls } from '../lifecycle.js';
-import { setActiveFilter, toggleActiveFilterSignal, resetActiveFilters } from '../filter-state.js';
+// Filter chrome bindings are now owned by the Svelte FilterChrome island
+// (see js/modules/filter-chrome-island.js). The cluster-list click delegation
+// is also wired up there because it shares the same lifecycle as the chips.
+// This file remains as the public entry point so older imports keep working.
 
-export function bindFilterControls(updateUrlState) {
-    const refreshActiveSearchResults = () => {
-        const searchInput = document.getElementById('search-input');
-        const query = searchInput?.value?.trim() || '';
-        if (!query) return;
-        search(query);
-    };
+import { initFilterChromeSvelteIsland } from '../filter-chrome-island.js';
 
-    const handleFilter = (filterFn, updateReason) => {
-        state.activeStoryPrompt = null;
-        state.filterVersion++;
-        if (typeof syncFilterControls === 'function') syncFilterControls();
-        clearSearchGlow();
-        clearTimeout(state.searchTimeout);
-        state.searchTimeout = setTimeout(() => {
-            applyFilters();
-            if (typeof updateUrlState === 'function') updateUrlState({}, { reason: updateReason });
-            refreshActiveSearchResults();
-            publish(EVENTS.FILTER_CHANGED, { type: 'general', reason: updateReason });
-        }, 150);
-    };
+let initialized = false;
 
-    document.querySelectorAll('[data-status-filter]').forEach((button) => {
-        button.onclick = () => {
-            setActiveFilter('status', button.dataset.statusFilter || 'all');
-            handleFilter(null, 'status-filter');
-        };
-    });
-
-    document.querySelectorAll('[data-signal-filter]').forEach((button) => {
-        button.onclick = () => {
-            const key = button.dataset.signalFilter;
-            toggleActiveFilterSignal(key);
-            handleFilter(null, 'signal-filter');
-        };
-    });
-
-    const cityFilter = document.getElementById('city-filter');
-    if (cityFilter) {
-        cityFilter.onchange = (e) => {
-            setActiveFilter('city', e.target.value || 'all');
-            handleFilter(null, 'city-filter');
-        };
-    }
-
-    const cityFilterPills = document.getElementById('city-filter-pills');
-    if (cityFilterPills) {
-        cityFilterPills.onclick = (e) => {
-            const btn = e.target.closest('[data-city-filter]');
-            if (!btn) return;
-            setActiveFilter('city', btn.dataset.cityFilter || 'all');
-            handleFilter(null, 'city-filter-pill');
-        };
-    }
-
-    const clearFiltersBtn = document.getElementById('filter-clear-btn');
-    if (clearFiltersBtn) {
-        clearFiltersBtn.onclick = () => {
-            resetActiveFilters();
-            if (typeof updateUrlState === 'function') updateUrlState({}, { reason: 'filter-clear' });
-            handleFilter(null, 'filter-clear');
-        };
-    }
+export function bindFilterControls() {
+    if (initialized) return;
+    initialized = true;
+    initFilterChromeSvelteIsland();
 }
