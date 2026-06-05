@@ -113,12 +113,12 @@ const allowedDatasetWriters = new Map(Object.entries({
   terrainHandoffTo: ['js/modules/map-state.js'],
   routeMotion: ['js/modules/journey-route-trace.js'],
 
-  cameraAssist: ['js/modules/camera-controls.js'],
-  cameraAssistReason: ['js/modules/camera-controls.js'],
-  focusTransition: ['js/modules/camera-controls.js', 'js/modules/micro-demo.js'],
-  focusTransitionPhase: ['js/modules/camera-controls.js', 'js/modules/micro-demo.js'],
-  routeExploration: ['js/modules/camera-controls.js'],
-  routeExplorationReason: ['js/modules/camera-controls.js'],
+  cameraAssist: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js'],
+  cameraAssistReason: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js'],
+  focusTransition: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js', 'js/modules/micro-demo.js'],
+  focusTransitionPhase: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js', 'js/modules/micro-demo.js'],
+  routeExploration: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js'],
+  routeExplorationReason: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js'],
   cameraSlack: ['js/modules/camera-orbit-slack.js'],
   cameraSlackReason: ['js/modules/camera-orbit-slack.js'],
 
