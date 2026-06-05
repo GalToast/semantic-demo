@@ -203,27 +203,37 @@ export function walkThreadNeighbor(index, options = {}) {
     const capturedReason = reason;
     const arrivalTid = timerAdapter.setTimer(() => {
         if (!state.points) return;
-        if (state.strandContinuityState.phase === 'exploring' && state.strandContinuityState.targetIndex === capturedIndex) {
-            setStrandContinuityState('arrived', { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason });
-            const pointAtArrival = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < state.points.length) ? state.points[capturedIndex] : null;
-            syncFocusStage(pointAtArrival || state.selectedPoint || null);
-            updateJourneyCompass();
-            if (state.semanticDiveMode) {
-                previewInsideNextThread({ force: true });
-                syncSemanticDiveUi();
-            } else {
-                clearThreadInspection({ force: true, preserveJourney: true });
-            }
+        // Stale-callback guard: verify this timer is still the current one
+        // and the phase/target haven't been superseded by a new walk.
+        if (
+            state.strandContinuityState.arrivalTimeoutId !== arrivalTid ||
+            state.strandContinuityState.phase !== 'exploring' ||
+            state.strandContinuityState.targetIndex !== capturedIndex
+        ) return;
+        setStrandContinuityState('arrived', { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason });
+        const pointAtArrival = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < state.points.length) ? state.points[capturedIndex] : null;
+        syncFocusStage(pointAtArrival || state.selectedPoint || null);
+        updateJourneyCompass();
+        if (state.semanticDiveMode) {
+            previewInsideNextThread({ force: true });
+            syncSemanticDiveUi();
+        } else {
+            clearThreadInspection({ force: true, preserveJourney: true });
         }
     }, options.arrivalDelay || 820);
     state.strandContinuityState.arrivalTimeoutId = arrivalTid;
     const settleTid = timerAdapter.setTimer(() => {
         if (!state.points) return;
-        if (state.strandContinuityState.phase === 'arrived' && state.strandContinuityState.targetIndex === capturedIndex) {
-            clearStrandContinuityState('arrival-settled');
-            const pointAtSettle = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < state.points.length) ? state.points[capturedIndex] : null;
-            syncFocusStage(pointAtSettle || state.selectedPoint || null);
-        }
+        // Stale-callback guard: verify this timer is still the current one
+        // and the phase/target haven't been superseded.
+        if (
+            state.strandContinuityState.settleTimeoutId !== settleTid ||
+            state.strandContinuityState.phase !== 'arrived' ||
+            state.strandContinuityState.targetIndex !== capturedIndex
+        ) return;
+        clearStrandContinuityState('arrival-settled');
+        const pointAtSettle = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < state.points.length) ? state.points[capturedIndex] : null;
+        syncFocusStage(pointAtSettle || state.selectedPoint || null);
     }, options.settleDelay || 5200);
     state.strandContinuityState.settleTimeoutId = settleTid;
     return { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason };

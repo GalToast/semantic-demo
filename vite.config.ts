@@ -32,7 +32,11 @@ export default defineConfig({
         SRC_DIR,
         resolve(__dirname, 'node_modules'),
         resolve(__dirname, 'data.dat'),
-        resolve(__dirname, 'data.dat.gz')
+        resolve(__dirname, 'data.dat.gz'),
+        resolve(__dirname, 'js'),
+        resolve(__dirname, 'semantic_threads_ui.dat'),
+        resolve(__dirname, 'semantic_threads.dat'),
+        resolve(__dirname, 'semantic_space_layout_manifest.json')
       ]
     },
     // Proxy the PHP backend at 127.0.0.1:8795 during coexistence
