@@ -1,15 +1,16 @@
 import { getCurrentSemanticGuide, getActiveClusterFilter, getColors, getClusterNames } from '../state/selectors/index.js';
-import { subscribe, EVENTS } from './event-bus.js';
+import { subscribeKeyed, EVENTS } from './event-bus.js';
 import { escapeHtml } from './utils/dom-formatters.js';
 import { describeCluster } from './utils/ui-presentation.js';
 import { getSemanticGuideTitle } from './semantic-guide.js';
 import { getFilteredClusterCounts, setClusterFilter } from './cluster-filter.js';
 import { setFocusPanelMode, getFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.js';
+import { getViewportSize } from './environment.js';
 
 // ── Viewport helper ──────────────────────────────────────────────────────────
 
 function isCompactFocusStage() {
-    return typeof window !== 'undefined' && window.innerWidth <= 768;
+    return getViewportSize().width <= 768;
 }
 
 // ── Legend panel structural state transitions ─────────────────────────────────
@@ -233,16 +234,27 @@ let _previouslyFocusedLegend = null;
 export function setPreviouslyFocusedLegend(el) { _previouslyFocusedLegend = el; }
 export function getPreviouslyFocusedLegend() { return _previouslyFocusedLegend; }
 
-// Event Bus Subscriptions
+// ── Event Bus Subscriptions ───────────────────────────────────────────────────
 const syncLegend = () => {
     updateLegendGuideState();
 };
 
-subscribe(EVENTS.VIEW_CHANGED, () => {
-    closeLegendPanel();
-    syncLegend();
-});
-subscribe(EVENTS.FILTER_CHANGED, syncLegend);
-subscribe(EVENTS.STATE_RESET, syncLegend);
-subscribe(EVENTS.SEARCH_SUCCESS, syncLegend);
-subscribe(EVENTS.SEARCH_CLEARED, syncLegend);
+/**
+ * Registers all legend event-bus subscriptions.
+ * Must be called once during app init (after DOM is ready).
+ *
+ * TODO: Call from app.js initEventBusSubscriptions() or lifecycle.js init.
+ * Currently the caller is off-limits; add this call when those files are open:
+ *   import { initLegendEventBusSubscriptions } from './legend-ui.js';
+ *   initLegendEventBusSubscriptions();  // inside the caller's init sequence
+ */
+export function initLegendEventBusSubscriptions() {
+    subscribeKeyed('legend:view-changed', EVENTS.VIEW_CHANGED, () => {
+        closeLegendPanel();
+        syncLegend();
+    });
+    subscribeKeyed('legend:filter-changed', EVENTS.FILTER_CHANGED, syncLegend);
+    subscribeKeyed('legend:state-reset', EVENTS.STATE_RESET, syncLegend);
+    subscribeKeyed('legend:search-success', EVENTS.SEARCH_SUCCESS, syncLegend);
+    subscribeKeyed('legend:search-cleared', EVENTS.SEARCH_CLEARED, syncLegend);
+}
