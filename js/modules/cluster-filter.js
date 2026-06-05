@@ -3,11 +3,11 @@ import { publish, EVENTS } from './event-bus.js';
 import { normalizeCityForFilter } from './utils/geo-data.js';
 import { describeCluster } from './utils/ui-presentation.js';
 import { el, setChildren } from './utils/dom-builder.js';
-import { resetActiveFilters, setActiveFilter } from './filter-state.js';
-import { getActiveFilters, getActiveClusterFilter, setActiveClusterFilter } from './filter-state.js';
+import { resetActiveFilters, setActiveFilter, getActiveFilters, getActiveClusterFilter, setActiveClusterFilter, overwriteActiveFilters } from './filter-state.js';
 import { applyFilters, clearSearchGlow, updateUrlState, clearShortSemanticSearchState } from './cluster-filter-adapter.js';
 import { getFilteredClusterCounts } from './search-filter-core.js';
 import { CONFIG } from './config.js';
+import { setMyceliumMode } from './exploration-mode.js';
 
 export function findClusterByKeyword(keyword) {
     const lower = String(keyword || '').toLowerCase();
@@ -197,4 +197,26 @@ export function syncFilterControls() {
         preview.textContent = parts.join(' · ');
         preview.hidden = false;
     }
+}
+
+export function applyStoryPrompt(story, options = {}) {
+    state.activeStoryPrompt = story || null;
+    overwriteActiveFilters({ status: 'all', city: 'all', website: false, email: false, geocoded: false });
+    setActiveClusterFilter(null);
+
+    if (story === 'signal-rich') {
+        setMyceliumMode('bloom', options);
+        overwriteActiveFilters({ ...getActiveFilters(), website: true });
+    } else if (story === 'bridge-businesses') {
+        setMyceliumMode('bridge', options);
+    } else if (story === 'mapped-food') {
+        setMyceliumMode('default', options);
+        overwriteActiveFilters({ ...getActiveFilters(), geocoded: true });
+    } else if (story === 'disqualified-ghosts') {
+        setMyceliumMode('default', options);
+        overwriteActiveFilters({ ...getActiveFilters(), status: 'disqualified' });
+    }
+
+    syncFilterControls();
+    applyFilters();
 }

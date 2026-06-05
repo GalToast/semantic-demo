@@ -89,7 +89,8 @@ import {
     getFilteredClusterCounts,
     syncCityFilterUi,
     populateCityFilter,
-    syncFilterControls
+    syncFilterControls,
+    applyStoryPrompt as applyStoryPromptImpl
 } from './cluster-filter.js';
 import {
     setActiveFilter,
@@ -440,25 +441,7 @@ export function hideExploreTrailReview() {
     refreshCompositionState();
 }
 
-export function applyStoryPrompt(story, options = {}) {
-    state.activeStoryPrompt = story || null;
-    resetActiveFilters();
-    setActiveClusterFilter(null);
-    if (story === 'signal-rich') {
-        setMyceliumMode('bloom', options);
-        setActiveFilter('website', true);
-    } else if (story === 'bridge-businesses') {
-        setMyceliumMode('bridge', options);
-    } else if (story === 'mapped-food') {
-        setMyceliumMode('default', options);
-        setActiveFilter('geocoded', true);
-    } else if (story === 'disqualified-ghosts') {
-        setMyceliumMode('default', options);
-        setActiveFilter('status', 'disqualified');
-    }
-    syncFilterControls();
-    applyFilters();
-}
+export { applyStoryPromptImpl as applyStoryPrompt };
 
 function recomputeBloomIndices() {
     state.bloomIndices = new Set(

@@ -8,6 +8,7 @@ import {
 } from './filter-state.js';
 import { applyFilters } from './search-state.js';
 import { applyCompositionState } from './composition-state.js';
+import { applyStoryPrompt as applyStoryPromptImpl } from './cluster-filter.js';
 
 function refreshCompositionState() {
     applyCompositionState({ state, root: document.body });
@@ -78,26 +79,7 @@ export function setTrailDepth(depth, options = {}) {
     refreshCompositionState();
 }
 
-export function applyStoryPrompt(story, options = {}) {
-    state.activeStoryPrompt = story || null;
-    overwriteActiveFilters({ status: 'all', city: 'all', website: false, email: false, geocoded: false });
-    setActiveClusterFilter(null);
-
-    if (story === 'signal-rich') {
-        setMyceliumMode('bloom', options);
-        overwriteActiveFilters({ ...getActiveFilters(), website: true  });
-    } else if (story === 'bridge-businesses') {
-        setMyceliumMode('bridge', options);
-    } else if (story === 'mapped-food') {
-        setMyceliumMode('default', options);
-        overwriteActiveFilters({ ...getActiveFilters(), geocoded: true  });
-    } else if (story === 'disqualified-ghosts') {
-        setMyceliumMode('default', options);
-        overwriteActiveFilters({ ...getActiveFilters(), status: 'disqualified'  });
-    }
-
-    applyFilters();
-}
+export { applyStoryPromptImpl as applyStoryPrompt };
 
 function recomputeBloomIndices() {
     state.bloomIndices = new Set(
