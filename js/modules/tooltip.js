@@ -1,12 +1,7 @@
 import { formatBusinessName, cleanPublicNoteText, sanitizePublicFacingNote } from './utils/dom-formatters.js';
 import { describeCluster } from './utils/ui-presentation.js';
 import { getViewportSize } from './environment.js';
-import { subscribe, EVENTS } from './event-bus.js';
-
-// Phase 3: Declarative synchronization
-subscribe(EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip);
-subscribe(EVENTS.TOOLTIP_POSITION_REQUESTED, ({ x, y }) => positionTooltip(x, y));
-subscribe(EVENTS.TOOLTIP_CONTENT_UPDATE_REQUESTED, ({ point }) => updateTooltipContent(point));
+import { subscribeKeyed, EVENTS } from './event-bus.js';
 
 let tooltipRevealFrame = null;
 let tooltipHideTimer = null;
@@ -152,8 +147,23 @@ export function hideTooltip() {
     }, 200);
 }
 
-// Event Bus Subscriptions
-subscribe(EVENTS.CAMERA_MOVED, hideTooltip);
+// ── Event Bus Subscriptions ───────────────────────────────────────────────────
+
+/**
+ * Registers all tooltip event-bus subscriptions.
+ * Must be called once during app init (after DOM is ready).
+ *
+ * TODO: Call from app.js initEventBusSubscriptions() or lifecycle.js init.
+ * Currently the caller is off-limits; add this call when those files are open:
+ *   import { initTooltipEventBusSubscriptions } from './tooltip.js';
+ *   initTooltipEventBusSubscriptions();  // inside the caller's init sequence
+ */
+export function initTooltipEventBusSubscriptions() {
+    subscribeKeyed('tooltip:hide-requested', EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip);
+    subscribeKeyed('tooltip:position-requested', EVENTS.TOOLTIP_POSITION_REQUESTED, ({ x, y }) => positionTooltip(x, y));
+    subscribeKeyed('tooltip:content-update-requested', EVENTS.TOOLTIP_CONTENT_UPDATE_REQUESTED, ({ point }) => updateTooltipContent(point));
+    subscribeKeyed('tooltip:camera-moved', EVENTS.CAMERA_MOVED, hideTooltip);
+}
 
 // Window exports retired 2026-05-28; all consumers migrated to direct imports:
 // updateTooltipContent, positionTooltip, hideTooltip -> event-bus requests
