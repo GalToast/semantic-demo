@@ -12,7 +12,10 @@ export function bindUtilityButtons() {
     bindClick('btn-close-trail-review', () => {
         if (typeof hideExploreTrailReview === 'function') hideExploreTrailReview();
     }, { optional: true });
-    bindClick('btn-synthesize', () => { if (typeof requestSemanticGuide === 'function') requestSemanticGuide(); });
+    const handleSynthesize = () => { if (typeof requestSemanticGuide === 'function') requestSemanticGuide(); };
+    const synthesizeButton = document.getElementById('btn-synthesize');
+    if (synthesizeButton) synthesizeButton.onclick = handleSynthesize;
+    bindClick('btn-synthesize', handleSynthesize);
     bindClick('btn-prev-node', () => { traverseNeighbor(-1); });
     bindClick('btn-next-node', () => { traverseNeighbor(1); });
     bindClick('btn-overview', () => { resetExplorationFocus(); }, { optional: true });

@@ -4,8 +4,6 @@
  * Owns search panel container/body visual state so search-state.js can keep
  * search decisions separate from cross-surface DOM flags.
  */
-import { state } from '../state.js';
-
 export function getSearchContainer() {
     return document.querySelector('.search-container');
 }
@@ -34,13 +32,6 @@ export function setSearchContainerState({
     }
     if (typeof degraded === 'boolean') {
         searchContainer.classList.toggle('search-degraded', degraded);
-    }
-
-    if (typeof searching === 'boolean' || typeof focusing === 'boolean') {
-        const currentCue = state.semanticTrailCue || 'idle';
-        const nextSearching = typeof searching === 'boolean' ? searching : currentCue === 'searching';
-        const nextFocusing = typeof focusing === 'boolean' ? focusing : currentCue === 'focusing';
-        state.semanticTrailCue = nextFocusing ? 'focusing' : nextSearching ? 'searching' : 'idle';
     }
 }
 

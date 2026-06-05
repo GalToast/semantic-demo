@@ -90,6 +90,11 @@ import {
     populateCityFilter,
     syncFilterControls
 } from './cluster-filter.js';
+import {
+    setActiveFilter,
+    setActiveClusterFilter,
+    resetActiveFilters
+} from './filter-state.js';
 
 // ── Re-exports ───────────────────────────────────────────────────────────────
 
@@ -235,10 +240,19 @@ export function getMobileSearchSheetDetail() {
 
 export { derivePanelSurface };
 
+export function deriveLifecyclePanelSurfaceContext({ hasSearchIntent = false, hasFocus = false } = {}) {
+    let context = 'idle';
+    if (hasFocus) context = 'focus';
+    if (hasSearchIntent && hasFocus) context = 'focus-search';
+    if (hasSearchIntent) return hasFocus ? 'focus-search' : 'search';
+    return context;
+}
+
 export function refreshCompositionState() {
     // Thin wrapper preserved for existing callers; the real work is split into
     // single-responsibility composers in composition-state.js.
     applyCompositionState({ state, root: document.body });
+    publish(EVENTS.COMPOSITION_UPDATED);
 }
 
 export function setSemanticDiveMode(enabled) {
@@ -430,19 +444,19 @@ export function hideExploreTrailReview() {
 
 export function applyStoryPrompt(story, options = {}) {
     state.activeStoryPrompt = story || null;
-    state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false };
-    state.activeClusterFilter = null;
+    resetActiveFilters();
+    setActiveClusterFilter(null);
     if (story === 'signal-rich') {
         setMyceliumMode('bloom', options);
-        state.activeFilters = { ...state.activeFilters, website: true };
+        setActiveFilter('website', true);
     } else if (story === 'bridge-businesses') {
         setMyceliumMode('bridge', options);
     } else if (story === 'mapped-food') {
         setMyceliumMode('default', options);
-        state.activeFilters = { ...state.activeFilters, geocoded: true };
+        setActiveFilter('geocoded', true);
     } else if (story === 'disqualified-ghosts') {
         setMyceliumMode('default', options);
-        state.activeFilters = { ...state.activeFilters, status: 'disqualified' };
+        setActiveFilter('status', 'disqualified');
     }
     syncFilterControls();
     applyFilters();

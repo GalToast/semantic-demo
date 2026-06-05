@@ -374,6 +374,14 @@ export function initThreeJS() {
     return true;
 }
 
+export function onWindowResize() {
+    if (!state.camera || !state.renderer) return;
+    state.camera.aspect = window.innerWidth / window.innerHeight;
+    state.camera.updateProjectionMatrix();
+    state.renderer.setSize(window.innerWidth, window.innerHeight);
+    updateCameraViewportOffset();
+}
+
 export function cancelAnimate() {
     if (_rafId !== null) {
         window.cancelAnimationFrame(_rafId);
