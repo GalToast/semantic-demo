@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
  * scripts/report-artifact-volume.js
- * Read-only artifact volume reporter.
+ * Artifact volume reporter with safe prune support.
  * Reports sizes for: tmp/, dist/, reports/, test-results/, playwright-report/
- * No destructive operations.
+ * Use --prune-dry-run to preview stale tmp/ candidates.
+ * Use --prune-dry-run --execute --yes to prune confirmed candidates.
  */
 
-import { statSync, readdirSync, existsSync } from 'fs';
+import { statSync, readdirSync, existsSync, rmSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -51,11 +52,7 @@ function readNumberFlag(name) {
 const pruneDir = readFlag('--dir');
 const ageOverrideDays = readNumberFlag('--age');
 const sizeMinMb = readNumberFlag('--size-min') ?? 0;
-
-if (execute) {
-  console.error('--execute is not implemented. This reporter is read-only; use --prune-dry-run to review candidates.');
-  process.exit(2);
-}
+const yesFlag = args.includes('--yes');
 
 function formatBytes(bytes) {
   if (bytes === 0) return '0 B';
@@ -185,12 +182,9 @@ function listTopLevelDirectories(rootDir) {
   }
 }
 
-function runPruneDryRun() {
+function identifyCandidates() {
   const tmpRoot = join(ROOT, 'tmp');
-  if (!existsSync(tmpRoot)) {
-    console.log('tmp/ does not exist. No prune candidates.');
-    return;
-  }
+  if (!existsSync(tmpRoot)) return [];
 
   const targetNames = pruneDir ? [pruneDir.replace(/^tmp[\\/]/, '').replace(/[\\/]+$/, '')] : listTopLevelDirectories(tmpRoot);
   const now = Date.now();
@@ -209,6 +203,7 @@ function runPruneDryRun() {
       candidates.push({
         name,
         path: relative(ROOT, dirPath),
+        fullPath: resolve(dirPath),
         total: stats.total,
         fileCount: stats.fileCount,
         retentionDays,
@@ -219,6 +214,23 @@ function runPruneDryRun() {
   }
 
   candidates.sort((a, b) => b.total - a.total || b.ageDays - a.ageDays);
+  return candidates;
+}
+
+function printCandidatesTable(candidates) {
+  console.log('| Candidate | Files | Size | Age | Threshold | Last modified |');
+  console.log('|-----------|------:|-----:|----:|----------:|---------------|');
+  for (const candidate of candidates) {
+    const lastModified = candidate.newestMtimeMs ? new Date(candidate.newestMtimeMs).toISOString() : 'unknown';
+    console.log(
+      `| \`${candidate.path.replace(/\\/g, '/')}/\` | ${candidate.fileCount} | ${formatBytes(candidate.total)} | ${candidate.ageDays.toFixed(1)}d | ${candidate.retentionDays}d | ${lastModified} |`
+    );
+  }
+}
+
+function runPruneDryRun() {
+  const candidates = identifyCandidates();
+  const minBytes = sizeMinMb * 1024 * 1024;
 
   console.log('=== Artifact Prune Dry Run ===');
   console.log(`Run at: ${new Date().toISOString()}`);
@@ -233,20 +245,64 @@ function runPruneDryRun() {
     return;
   }
 
-  console.log('| Candidate | Files | Size | Age | Threshold | Last modified |');
-  console.log('|-----------|------:|-----:|----:|----------:|---------------|');
-  for (const candidate of candidates) {
-    const lastModified = candidate.newestMtimeMs ? new Date(candidate.newestMtimeMs).toISOString() : 'unknown';
-    console.log(
-      `| \`${candidate.path.replace(/\\/g, '/')}/\` | ${candidate.fileCount} | ${formatBytes(candidate.total)} | ${candidate.ageDays.toFixed(1)}d | ${candidate.retentionDays}d | ${lastModified} |`
-    );
-  }
+  printCandidatesTable(candidates);
 
   const total = candidates.reduce((sum, candidate) => sum + candidate.total, 0);
   const fileCount = candidates.reduce((sum, candidate) => sum + candidate.fileCount, 0);
   console.log('');
   console.log(`Total candidates: ${candidates.length} dirs / ${fileCount} files / ${formatBytes(total)} would be removed.`);
   console.log('Dry-run complete — no files deleted.');
+}
+
+function runExecute() {
+  if (!pruneDryRun) {
+    console.error('Use --prune-dry-run --execute --yes to prune artifacts. Bare --execute is not supported.');
+    process.exit(2);
+  }
+
+  const candidates = identifyCandidates();
+  const minBytes = sizeMinMb * 1024 * 1024;
+  const tmpRoot = join(ROOT, 'tmp');
+
+  console.log('=== Artifact Prune ===');
+  console.log(`Run at: ${new Date().toISOString()}`);
+  console.log(`Scope: ${pruneDir ? `tmp/${pruneDir.replace(/^tmp[\\/]/, '').replace(/[\\/]+$/, '')}/` : 'tmp/*/'}`);
+  console.log(`Age threshold: ${ageOverrideDays === null ? 'policy defaults' : `${ageOverrideDays} day(s)`}`);
+  console.log(`Size minimum: ${formatBytes(minBytes)}`);
+  console.log('');
+
+  if (!candidates.length) {
+    console.log('No prune candidates matched the current filters.');
+    console.log('Nothing to delete.');
+    return;
+  }
+
+  printCandidatesTable(candidates);
+
+  const total = candidates.reduce((sum, candidate) => sum + candidate.total, 0);
+  const fileCount = candidates.reduce((sum, candidate) => sum + candidate.fileCount, 0);
+  console.log('');
+  console.log(`Will remove ${candidates.length} dirs / ${fileCount} files / ${formatBytes(total)}.`);
+
+  if (!yesFlag) {
+    console.error('Use --yes to confirm deletion. Aborting.');
+    process.exit(2);
+  }
+
+  for (const candidate of candidates) {
+    if (!assertWithinRoot(candidate.fullPath, tmpRoot)) {
+      throw new Error(`Refusing to remove path outside tmp/: ${candidate.fullPath}`);
+    }
+    console.log(`  Removing ${candidate.path}/ ...`);
+    rmSync(candidate.fullPath, { recursive: true, force: true });
+  }
+
+  console.log(`\nRemoved ${candidates.length} directories (${fileCount} files, ${formatBytes(total)}).`);
+}
+
+if (execute) {
+  runExecute();
+  process.exit(0);
 }
 
 if (pruneDryRun) {

@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/utils.php';
+
 function serviceHealthy(string $url, int $timeoutSeconds = 2): bool
 {
     $context = stream_context_create([

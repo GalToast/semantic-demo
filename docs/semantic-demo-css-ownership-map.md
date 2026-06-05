@@ -1,9 +1,11 @@
 # Semantic Demo CSS Ownership Map
 
 Status: active
-Updated: 2026-06-03
+Updated: 2026-06-04
 
-> **Note (2026-06-03):** As of this update, the mobile premium is **un-collapsed** back into the 7-file split (`css/mobile_premium__*.css`). Pass notes earlier in this doc that describe a "2026-06-02 collapse into `css/mobile_premium.css`" are stale; the single-file `css/mobile_premium.css` is not part of the current cascade. The references to `css/mobile_premium.css` in the rows below (e.g. line 122, 131, 147, 163, 167, 240-244) are residual stale text from the 2026-06-02 collapse step; treat them as the relevant split file from the list at line 18.
+> **Note (2026-06-04):** As of this update, the mobile premium is **un-collapsed** back into the 7-file split (`css/mobile_premium__*.css`). Pass notes earlier in this doc that describe a "2026-06-02 collapse into `css/mobile_premium.css`" are stale; the single-file `css/mobile_premium.css` is not part of the current cascade. The tables below now use split-file-native names (no `css/mobile_premium.css` references remain as of this update). Any residual "66-06-02 collapse" history text in the section notes is preserved as architectural record but should be treated as historical context, not current edit targets.
+
+> **2026-06-04 audit finding — ZERO `!important` declarations remain in the CSS cascade.** All surfaces.css `!important` declarations have been removed since the 2026-06-03 update. Every doc reference to load-bearing `!important` (surfaces.css lines 188, 268, 488, etc.) is stale. The entire cascade now relies on selector specificity and load order only. This is a significant architectural improvement; do not reintroduce `!important`.
 
 ## Purpose
 
@@ -31,6 +33,7 @@ Priority:
 | Module | Primary Ownership |
 |---|---|
 | `semantic-demo.css` | Import order and cache-busted `@import` URLs only. |
+| `vector-explorer-pandora.css` | Bioluminescent bloom aesthetic (polish305): `.info-panel`/`.focus-stage-card` border-color, breadcrumb chip animation, search-trail-cue accent, secondary text color. Loaded after `semantic-demo.css` but before the mobile premium split — sits mid-cascade as a theme overlay. |
 | `css/base.css` | Root tokens, global visibility helpers, accessibility utilities. |
 | `css/loading.css` | Loading overlay and startup progress surfaces. |
 | `css/tooltips.css` | Hover tooltip/card preview surfaces. |
@@ -120,13 +123,15 @@ The journey-compass cascade is distributed across base/supporting files plus the
 
 | File | Journey-compass selectors | Role |
 |---|---|---|
-| `css/journey_active.css` | 162 | Journey-compass base, phase/density states, focus/search/inside behavior, map-trail active styling |
-| `css/mobile_premium__*.css` (7 files, see Module Map) | 135 | Split mobile premium compass owner: focus/dive (`focus-dive.css`), chrome (`chrome.css`), state-machine (`state.css`), idle (`idle.css`), map (`map.css`), surface correction (`surfaces.css`), narrow viewport (`narrow.css`) |
-| `css/strands.css` | 40 | Mobile bottom sheet, route surfaces, journey-compass field-node action buttons |
+| `css/journey_active.css` | 38 (was 162) | Journey-compass base, phase/density states, focus/search/inside behavior, map-trail active styling |
+| `css/mobile_premium__*.css` (7 files, split below) | 155 (focus-dive 58 + chrome 7 + state 16 + idle 0 + map 0 + surfaces 58 + narrow 16) | Split mobile premium compass owner per file |
+| `css/strands.css` | 39 (was 40) | Mobile bottom sheet, route surfaces, journey-compass field-node action buttons |
 | `css/layout_base.css` | 12 | Info panel, map-focus/trail state overrides |
-| `css/mobile_base.css` | 6 | Reduced-motion support only; no mobile journey-compass layout ownership |
-| `css/progressive_disclosure.css` | 6 | Show/hide, reduced-motion journey-compass suppression |
-| `css/animations.css` | 7 | Final mobile/reduced-motion override tail, galaxy overview compass |
+| `css/mobile_base.css` | 7 (was 6) | Reduced-motion support only; no mobile journey-compass layout ownership |
+| `css/progressive_disclosure.css` | 4 (was 6) | Show/hide, reduced-motion journey-compass suppression |
+| `css/animations.css` | 6 (was 7) | Final mobile/reduced-motion override tail, galaxy overview compass |
+| `css/journey_steps.css` | 0 | Confirmed: no journey-compass selectors (matches Never Add To rule) |
+| `css/modules/focus_stage.css` | 7 | Focus-stage base file (loaded last in link cascade); has journey-compass selectors for search-view hide/show |
 
 **Canonical owners:**
 - `css/journey_active.css` owns `.journey-compass` base styling (lines 155–327), phase/density states (`[data-phase]`, `[data-density]`), and active-view map behavior.
@@ -140,6 +145,8 @@ The journey-compass cascade is distributed across base/supporting files plus the
 - `css/animations.css` owns final mobile/reduced-motion override tail and galaxy overview compass; not geometry.
 
 **Never add to:** `css/journey_steps.css` — no journey-compass selectors exist there and it must stay that way.
+
+**Ownership drift guard:** `css/search.css` has **0 focus-stage selectors** and `css/layout_base.css` has **0 focus-stage selectors**. Both lost their lone `body[data-panel-surface="search"] .focus-stage` rule since the 2026-06-03 update. Do not reintroduce focus-stage selectors into either file. Focus-stage search-state hide is now owned by `css/progressive_disclosure.css` (line 885: `body[data-panel-surface='search'] .focus-stage, #focus-stage`).
 
 2026-06-01 focus/dive refinement pass:
 - Moved focus-search / semantic-dive journey-compass compact and glass-heavy state refinements from `css/mobile_premium_surfaces.css` to `css/mobile_premium_focus.css`.
@@ -189,19 +196,21 @@ The `.focus-stage` selector family is distributed across **10 CSS files** (410+ 
 
 | File | Selectors | Canonical ownership |
 |---|---|---|
-| `css/modules/focus_stage.css` | 97 | **Base definitions**: `.focus-stage`, `.focus-stage-card`, `.focus-stage-dive-btn`, `.focus-stage-action-btn`, `.focus-stage-inside-*`, desktop layout, galaxy/map state visibility |
-| `css/journey_steps.css` | 99 | **Neighbor rail + desktop focus-card presentation**: `.focus-stage-neighbor-*`, `.focus-stage-route-*`, thread inspector buttons, focus-transition-phase arrival animations, and desktop-gated `.focus-stage-card` presentation |
-| `css/mobile_premium__focus-dive.css` / `css/mobile_premium__surfaces.css` | 270+ | **Final mobile owner**: focus/dive composition, mobile geometry corrections, chip/kicker/actions layout, active field-node canopy, and focus-stage action/button primitives |
-| `css/strands.css` | 5 | **Galaxy view**: `data-active-view="galaxy"` visibility for action/dive/inside/neighbor buttons |
+| `css/modules/focus_stage.css` | 119 (was 97) | **Tail-loaded final authority** (loaded last via `<link>` in HTML, NOT through `semantic-demo.css`). `.focus-stage`, `.focus-stage-card`, `.focus-stage-dive-btn`, `.focus-stage-action-btn`, `.focus-stage-inside-*`, desktop layout, galaxy/map state visibility. Despite its name, this is the last file in the cascade, not the base. |
+| `css/journey_steps.css` | 83 (was 99) | **Neighbor rail + desktop focus-card presentation**: `.focus-stage-neighbor-*`, `.focus-stage-route-*`, thread inspector buttons, focus-transition-phase arrival animations, and desktop-gated `.focus-stage-card` presentation |
+| `css/mobile_premium__focus-dive.css` / `css/mobile_premium__surfaces.css` | 250+34=284 (was 270+) | **Mobile owner**: focus/dive composition, mobile geometry corrections, chip/kicker/actions layout, active field-node canopy, and focus-stage action/button primitives |
+| `css/strands.css` | 6 (was 5) | **Galaxy view**: `data-active-view="galaxy"` visibility for action/dive/inside/neighbor buttons |
 | `css/controls.css` | 2 | **Button primitives**: `.focus-stage-journey-btn` sizing alongside shared control-btn |
 | `css/mobile_base.css` | 1 | **Early mobile**: `.focus-stage-inside-pulse` reduced-motion override only; no `.focus-stage-card` ownership |
-| `css/layout_base.css` | 1 | **Search state hide**: `body[data-panel-surface="search"] .focus-stage` |
-| `css/progressive_disclosure.css` | 1 | **Disclosure hide**: `.focus-stage` within graph-context show/hide |
-| `css/search.css` | 1 | **Search state hide**: `body[data-panel-surface="search"] .focus-stage` |
+| `css/layout_base.css` | 0 (was 1) | No `.focus-stage` selectors remain — old rule removed since 2026-06-03 |
+| `css/progressive_disclosure.css` | 4 (was 1) | **Search state hide** (line 885) + `#focus-stage` + comments. No cascading base block remains. |
+| `css/search.css` | 0 (was 1) | **No `.focus-stage` selectors remain** — old rule removed since 2026-06-03 |
+
+> **IMPORTANT: `css/modules/focus_stage.css` load-order reality.** Despite its role as "base structure & desktop", `css/modules/focus_stage.css` is NOT loaded through `semantic-demo.css`. It is loaded as the **last** `<link>` tag in `vector-explorer-polished.html`, after all 7 `css/mobile_premium__*.css` files. This means its rules are the **final/tail authority** in the cascade — not the base. This is a known architectural wrinkle: the "base" file is last. Any edit to `css/modules/focus_stage.css` overrides the mobile premium layer for equally-specific selectors. Do NOT add mobile overrides here unless you intend them to win against everything earlier.
 
 **Canonical owners by sub-surface:**
 
-- **Base structure & desktop** → `css/modules/focus_stage.css`
+- **Tail-loaded final / desktop desktop layout** → `css/modules/focus_stage.css`
 - **Neighbor rail & thread inspector** → `css/journey_steps.css`
 - **Desktop focus-card presentation** → `css/journey_steps.css` under `@media (min-width: 769px)`
 - **Mobile focus/semantic-dive composition** → `css/mobile_premium__focus-dive.css`
@@ -211,7 +220,7 @@ The `.focus-stage` selector family is distributed across **10 CSS files** (410+ 
 
 **Rules:**
 
-- Edit `css/modules/focus_stage.css` first for base styles, hover effects, disabled states, and desktop layout.
+- Edit `css/modules/focus_stage.css` first for base styles, hover effects, disabled states, and desktop layout. **Caveat:** because this file is loaded last in the HTML `<link>` cascade (not through `semantic-demo.css`), its rules are final/tail authority. Keep mobile overrides out of this file; they belong in `css/mobile_premium__*.css`.
 - Edit `css/journey_steps.css` first for neighbor cards, neighbor actions, route line/dots, thread inspector focus-visible, and desktop-only focus-card presentation.
 - Edit `css/mobile_premium__focus-dive.css` first for mobile focus-search or semantic-dive overrides.
 - Edit `css/mobile_premium__focus-dive.css` first for `.focus-stage-action-btn`, `.focus-stage-dive-btn`, `.focus-stage-journey-btn`, `.focus-thread-inspector-btn`, and related mobile focus action primitives.

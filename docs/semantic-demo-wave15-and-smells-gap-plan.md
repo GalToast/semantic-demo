@@ -35,8 +35,8 @@ If anything fails on `master` before WIP, fix it first. The plan assumes a green
 
 **0.2 Inventory in-flight work.** Produce a one-page table from the 30 unpushed commits + ~25 uncommitted modifications, grouped by intent:
 - TypeScript port (7 `.ts` files: `mycelium-engine.ts`, `three-engine.ts`, `three-interaction-visuals.ts`, `three-node-manager.ts`, `three-search-animations.ts`, `three-thread-manager.ts`, `webgl-context.ts` + `tsconfig.json` + `tsconfig.typecheck.json` + `types/`)
-- Svelte migration (`.svelte` files in `js/modules/components/` + unified `app-svelte-island.js` mount + separately slotted search/filter islands + `view-controller-adapter.js`)
-- State-store refactor (`stores.js`, `view-models/`, `composition-state.js`, `state-mutators.js`, `search-panel-adapter.js`, `journey-compass-adapter.js`, `semantic-lane-adapter.js`)
+- Svelte migration (`.svelte` files in `js/modules/components/` + unified `app-svelte-island.js` mount + separately slotted search/filter islands + `view-controller.js`)
+- State-store refactor (`stores.js`, `view-models/`, `composition-state.js`, `state-mutators.js`, `search-panel-adapter.js`, `journey-compass-controller.js`, `semantic-lane.js`)
 - View / search refactors (`view-controller.js` mods, `search-state.js` mods, `search-filter-core.js` mods, `search-results-ui.js` mods, `camera-controls.js` mods, `filter-state.js` mods)
 - CSS ownership polishes (`css/mobile_premium__narrow.css`, `css/mobile_premium__state.css`, `css/shell.css`, `semantic-demo.css`)
 - Build/test infrastructure (`scripts/build-app.mjs`, `eslint.config.js`, `package.json`, `package-lock.json`, `tsconfig.json`, `tsconfig.typecheck.json`; one-off codemod/debug helpers were inspected and removed)
@@ -77,10 +77,10 @@ Read `js/modules/components/App.svelte` and the separately slotted search/filter
 **Safe-zone files:**
 - 9 `.svelte` files in `js/modules/components/`
 - `js/modules/app-svelte-island.js`
-- `js/modules/semantic-lane-adapter.js`
-- `js/modules/journey-compass-adapter.js`
+- `js/modules/semantic-lane.js`
+- `js/modules/journey-compass-controller.js`
 - `js/modules/search-panel-adapter.js`
-- `js/modules/view-controller-adapter.js`
+- `js/modules/view-controller.js`
 
 **Landing order** (smallest first to maximize early signal):
 1. `LegendPanelChrome.svelte` under `App.svelte` — smallest surface, easy to verify.

@@ -8,7 +8,7 @@
  * All window/document accesses are guarded with typeof checks.
  */
 import { state } from '../state.js';
-import { detectStaticDevPHP } from './utils/ui-presentation.js';
+import { detectStaticDevPHP, allowsStaticDevFallback, shouldLogStaticDevFallback } from './utils/ui-presentation.js';
 import { updateSemanticLaneState } from './state-mutators.js';
 import { debugWarn } from './diagnostic-adapter.js';
 
@@ -27,23 +27,6 @@ function getWindow() {
 
 function getDocument() {
     return typeof document !== 'undefined' ? document : null;
-}
-
-function allowsStaticDevFallback() {
-    const win = getWindow();
-    if (!win?.location) return false;
-    const host = win.location.hostname;
-    // Expanded local dev range to include common E2E and container hostnames
-    if (host !== 'localhost' && host !== '127.0.0.1' && host !== '::1' && host !== '0.0.0.0') return false;
-    const params = new URLSearchParams(win.location.search || '');
-    return params.get('staticDev') !== '0';
-}
-
-function shouldLogStaticDevFallback() {
-    const win = getWindow();
-    if (!win?.location) return false;
-    const params = new URLSearchParams(win.location.search || '');
-    return params.get('staticDevWarnings') === '1' || params.get('debugStaticDev') === '1';
 }
 
 export async function fetchSemanticLaneHealth({ warm = false, signal = null } = {}) {

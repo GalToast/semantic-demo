@@ -1,6 +1,21 @@
 # CSS Archaeology Cleanup Roadmap
 
-Status: historical/superseded (twice). First: 2026-06-02, the mobile premium split files were collapsed into `css/mobile_premium.css`. Then: 2026-06-03, the collapse was reversed and the cascade was un-collapsed into the 7-file `css/mobile_premium__*.css` split. The pre-collapse references below describe the pre-2026-06-02 split cascade; treat them as the relevant file in the current 7-file split.
+**Status: ARCHIVED — Superseded ×3.**
+
+1. Superseded by 2026-06-02 mobile premium collapse into `css/mobile_premium.css`.
+2. Superseded again by 2026-06-03 un-collapse into the 7-file `css/mobile_premium__*.css` split.
+3. **Superseded by 2026-06-04 audit — ALL `!important` declarations have been removed from the cascade.** Every action item in this roadmap references `!important` in `mobile_premium_surfaces.css` (lines 188, 268, 488, etc.) or describes conflicts based on `!important` load-bearing patterns. These no longer exist.
+
+**Do not follow this document for current work.** Use `docs/semantic-demo-css-ownership-map.md` (2026-06-04 update) which contains current selector counts, current file ownership, and zero `!important` references. This document is preserved for historical context only; any specific line numbers, file names, or selector conflicts below are stale.
+
+Key items now moot:
+- Priority 1A (info-panel state variants in strands.css): resolved by subsequent cascade evolution
+- Priority 1B (focus-stage/focus-stage-card base dedup): no longer actionable; focus_stage.css is tail-loaded
+- Priority 2D (journey-compass harmonization): selector counts have dropped significantly since this was written
+- Priority 2E (polish208 consolidation): polish208 selector in journey_active.css removed
+- All `!important` debt (Priority 3+): **zero `!important` remain anywhere in the CSS cascade**
+
+What remains useful: the polish### task registry table idea (Priority 1C) is still valid but outside the scope of this audit pass.
 
 ## Session
 - Date: 2026-05-19
@@ -8,6 +23,8 @@ Status: historical/superseded (twice). First: 2026-06-02, the mobile premium spl
 - Verification: `npm run check:ownership` PASS ; `npm run check:manifest` PASS
 
 ---
+
+> **⚠ STALE BODY SECTION.** All line numbers, file names (e.g., `mobile_premium_focus.css` without `__`), `!important` references, and conflict descriptions below are dead as of 2026-06-04. All `!important` declarations have been removed from the cascade. The `mobile_premium.css` single-file import shell no longer exists. Use `docs/semantic-demo-css-ownership-map.md` for current facts.
 
 ## 1. `polish###` Comment Clusters
 
@@ -49,6 +66,8 @@ Status: historical/superseded (twice). First: 2026-06-02, the mobile premium spl
 
 ---
 
+> **⚠ STALE BODY SECTION.** All line numbers, conflict descriptions, and `!important` references below are dead as of 2026-06-04. Do not follow these cleanup actions.
+
 ## 2. Legacy Cascade Layer Map
 
 | File | Role | Cascade position |
@@ -67,6 +86,8 @@ Status: historical/superseded (twice). First: 2026-06-02, the mobile premium spl
 `mobile_premium.css` is confirmed as an import shell by `check:manifest`. The versioned query params (`?v=...`) are cache busters on the @import URLs.
 
 ---
+
+> **⚠ STALE BODY SECTION.** All line numbers and conflict descriptions below are dead as of 2026-06-04. Do not follow these cleanup actions.
 
 ## 3. Duplicate Ownership - Concrete Conflicts
 
@@ -122,6 +143,8 @@ transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
 Comment states: "Retained: strands.css prefers-reduced-motion blanket override requires high precedence". This one is intentional and should not be removed in a blind debt pass. Other remaining `!important` flags in `mobile_premium_surfaces.css` still need scoped review, especially typography and search/peek geometry.
 
 ---
+
+> **⚠ STALE BODY SECTION.** All priority actions, line numbers, and file references below are dead as of 2026-06-04. Do not follow this roadmap.
 
 ## 4. Priority Cleanup Roadmap
 
@@ -180,6 +203,8 @@ Comment states: "Retained: strands.css prefers-reduced-motion blanket override r
 
 ---
 
+> **⚠ STALE BODY SECTION.** All actions, line numbers, and file references below are dead as of 2026-06-04.
+
 ## 5. Summary of Recommended Actions
 
 | # | Action | File(s) | Lines | Type |
@@ -203,6 +228,8 @@ Comment states: "Retained: strands.css prefers-reduced-motion blanket override r
 - **`:has()` in `mobile_premium_idle.css`**: Browser support is now baseline (Chrome 105+, Safari 15.4+, Firefox 121+). No polyfill needed.
 
 ---
+
+> **⚠ STALE BODY SECTION.** All risk descriptions and `!important` references below are dead as of 2026-06-04.
 
 ## 7. Risks and Unresolved Issues
 

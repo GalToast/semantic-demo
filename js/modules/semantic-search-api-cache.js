@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { detectStaticDevPHP } from './utils/ui-presentation.js';
+import { detectStaticDevPHP, allowsStaticDevFallback, shouldLogStaticDevFallback } from './utils/ui-presentation.js';
 import { debugWarn } from './diagnostic-adapter.js';
 import * as idb from './idb-service.js';
 
@@ -514,20 +514,6 @@ export function getSemanticSearchCacheDiagnostics() {
         ttlMs: SEMANTIC_SEARCH_CACHE_TTL_MS,
         maxEntries: SEMANTIC_SEARCH_CACHE_MAX_ENTRIES
     };
-}
-
-function allowsStaticDevFallback() {
-    if (typeof window === 'undefined' || !window.location) return false;
-    const host = window.location.hostname;
-    if (host !== 'localhost' && host !== '127.0.0.1' && host !== '::1') return false;
-    const params = new URLSearchParams(window.location.search || '');
-    return params.get('staticDev') !== '0';
-}
-
-function shouldLogStaticDevFallback() {
-    if (typeof window === 'undefined' || !window.location) return false;
-    const params = new URLSearchParams(window.location.search || '');
-    return params.get('staticDevWarnings') === '1' || params.get('debugStaticDev') === '1';
 }
 
 export async function fetchSemanticSearchResults(query, signal, options = {}) {

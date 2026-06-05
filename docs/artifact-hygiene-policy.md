@@ -83,7 +83,23 @@ node scripts/report-artifact-volume.js --prune-dry-run
 node scripts/report-artifact-volume.js --prune-dry-run --dir semantic-ui-visual-audit --age 30 --size-min 10
 ```
 
-`--dir` limits the scan to one `tmp/<dir>/` subtree, `--age` overrides the policy threshold in days, and `--size-min` hides candidates smaller than the given MB value. This mode is report-only; deletion is intentionally not implemented.
+`--dir` limits the scan to one `tmp/<dir>/` subtree, `--age` overrides the policy threshold in days, and `--size-min` hides candidates smaller than the given MB value.
+
+To actually delete stale artifacts, add the `--execute` flag with `--yes` to confirm:
+
+```bash
+node scripts/report-artifact-volume.js --prune-dry-run --execute --yes
+node scripts/report-artifact-volume.js --prune-dry-run --execute --dir some-dir --age 7 --size-min 1 --yes
+```
+
+The `--yes` flag is required — without it the script prints candidates and exits. Every deletion is guarded by `assertWithinRoot` to prevent removing directories outside the repo's `tmp/`.
+
+Convenience npm scripts:
+
+```bash
+npm run prune:artifacts        # dry-run preview
+npm run prune:artifacts:now    # immediate cleanup (--execute --yes)
+```
 
 ---
 

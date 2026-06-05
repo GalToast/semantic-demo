@@ -45,9 +45,19 @@ const sceneRevealSrc = fs.readFileSync(SCENE_REVEAL_PATH, 'utf8');
 
 assertContains(
   cameraSrc,
-  "export * from './camera-controls-restore.js'",
-  'camera-controls.js facade re-exports camera-controls-restore.js'
+  "import * as restore from './camera-controls-restore.js'",
+  'camera-controls.js facade imports camera-controls-restore.js'
 );
+[
+  'settleCameraToOverviewPose',
+  'toggleAutoRotate',
+  'setAutoRotateSuspended',
+  'clearAutoRotateResumeTimer',
+  'scheduleAutoRotateResume',
+  'updateAutoRotateSoftResume',
+  'isCameraIdleOrbitAllowed',
+  'syncOrbitAutoRotate'
+].forEach((name) => assertContains(cameraSrc, `export function ${name}`, `${name} re-exported in facade`));
 
 const setSuspended = extractFunction(cameraRestoreSrc, 'setAutoRotateSuspended');
 const clearTimer = extractFunction(cameraRestoreSrc, 'clearAutoRotateResumeTimer');

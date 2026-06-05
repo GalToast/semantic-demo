@@ -108,6 +108,8 @@
     "qa:canvas-hit-test": "npx playwright test tests/canvas-hit-test-interaction.spec.js --browser=chromium --headed",
     "qa:search-peek": "node tests/search-peek-expanded-render-contract.mjs",
     "report:artifacts": "node scripts/report-artifact-volume.js",
+    "prune:artifacts": "node scripts/report-artifact-volume.js --prune-dry-run",
+    "prune:artifacts:now": "node scripts/report-artifact-volume.js --prune-dry-run --execute --yes",
     "refresh:cache": "node tests/cache-buster-check.js --fix",
     "build": "node scripts/build-app.mjs",
     "watch": "node scripts/build-app.mjs --watch",

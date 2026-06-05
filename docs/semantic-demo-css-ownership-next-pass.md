@@ -4,9 +4,19 @@
 **Task:** Analysis only - no CSS edits
 **Output:** `docs/semantic-demo-css-ownership-next-pass.md`
 
-**Status:** Historical/superseded twice. First by the 2026-06-02 mobile premium collapse into `css/mobile_premium.css`, then by the 2026-06-03 un-collapse back into the 7-file `css/mobile_premium__*.css` split. Split-file names below describe the pre-2026-06-02 cascade; current edits belong in the matching file of the current 7-file split.
+**Status: ARCHIVED — Superseded ×3.** 
+
+1. Superseded by 2026-06-02 mobile premium collapse into `css/mobile_premium.css`.
+2. Superseded again by 2026-06-03 un-collapse into the 7-file `css/mobile_premium__*.css` split.
+3. **Superseded by 2026-06-04 audit — ALL `!important` declarations have been removed from the cascade.** The entire surfaces.css `!important` dependency map (lines 268, 188, 488, etc.) documented below no longer exists. Every conflict described in this document has been either resolved or rendered moot by cascade evolution.
+
+**Do not follow this document for current work.** Use `docs/semantic-demo-css-ownership-map.md` (2026-06-04 update) which contains current selector counts, current file ownership, and no `!important` references. This document is preserved for historical context only; any specific action items or verification commands below may reference files, lines, or selectors that no longer exist.
+
+File names below that reference the pre-2026-06-02 split (e.g. `mobile_premium_focus.css`, `mobile_premium_state.css` without double underscore) should be treated as their modern equivalents with the `__` naming convention (e.g. `mobile_premium__focus-dive.css`, `mobile_premium__state.css`).
 
 ---
+
+> **⚠ STALE BODY SECTION.** The line numbers, file names, and `!important` dependency descriptions below are dead as of 2026-06-04. All `!important` declarations have been removed from the cascade. Use `docs/semantic-demo-css-ownership-map.md` for current facts.
 
 ## Exposed Tools
 
@@ -163,6 +173,8 @@ The compass/focus-stage hygiene work has three actionable findings:
 
 ---
 
+> **⚠ STALE BODY SECTION.** The `!important` dependency map and wave status below are historical only. All `!important` declarations have been removed as of 2026-06-04. Do not reference these line numbers or verification commands for current work.
+
 ## Wave 6 / Wave 7 Status (2026-05-19)
 
 ### Wave 6 — Completed 2026-05-19
@@ -198,6 +210,8 @@ Cross-file cascade resolution was delegated for `.focus-stage-actions { display:
 - Line 488: `#trail-controls:not(.active)` — task-scoped protected; `mobile_premium_state.css:272` duplicate exists
 
 ---
+
+> **⚠ STALE BODY SECTION.** The `!important` inventory table and verification commands below reference dead line numbers and removed declarations. All `!important` removed as of 2026-06-04.
 
 ### Wave 11 — Completed 2026-05-19 (Docs-only reconciliation)
 
@@ -248,6 +262,8 @@ Cross-file cascade resolution was delegated for `.focus-stage-actions { display:
 
 ---
 
+> **⚠ STALE BODY SECTION.** All `!important` references below are historical. The `!important` was removed from surfaces.css:268 and 317 by 2026-06-04. Do not use these line numbers for current cascade analysis.
+
 ## Wave 9 — Completed 2026-05-19
 
 **Claim:** Active journey mobile surface no longer relies on the `display: flex !important` wall.
@@ -262,6 +278,8 @@ Cross-file cascade resolution was delegated for `.focus-stage-actions { display:
 **Result (corrected post-Wave11):** The `!important` barrier on `.focus-stage-journey.active` was removed. Cascade still works via specificity: surfaces.css:316 `display: flex` wins over `strands.css:1457` `display: grid` because surfaces.css selector has two attribute selectors (`body.is-active[data-panel-surface]:not(...)`) vs. strands.css one (`body[data-panel-surface]`). `semantic-dive` suppression correctly handled by `mobile_premium_focus.css:421` `display: none` (higher specificity, `!important`). The win mechanism is specificity, not `!important` removal.
 
 ---
+
+> **⚠ STALE BODY SECTION.** The `!important` debt inventory and dependency descriptions below are historical. All `!important` removed as of 2026-06-04.
 
 ## Wave 10 — Completed 2026-05-19
 
@@ -310,6 +328,8 @@ Cross-file cascade resolution was delegated for `.focus-stage-actions { display:
 | `display: flex !important` wall on `.focus-stage-journey.active` | **Resolved** — `!important` removed in Wave 9; cascade works via specificity (surfaces.css:316 beats strands.css:1457) | Wave 9, corrected Wave 11 |
 | `.focus-stage-actions` `!important` in surfaces.css:268 | **Still load-bearing** — `strands.css:983` sets bare `flex`; `!important` keeps grid winning | Wave 11 clarification |
 | `strands.css:1320-1321` missing explicit `display: grid` | **Incorrect premise** — strands.css:1320-1321 sets `display: none` (suppress), not flex; no conflict with surfaces.css grid | Wave 11 correction |
+
+> **⚠ STALE BODY SECTION.** Implementation notes below reference old file names (e.g., `mobile_premium_focus.css` without `__`) and pre-cascade-evolution line numbers. Historical context only.
 
 ## Implementation Notes (Wave 4 / Wave 5 Verified)
 

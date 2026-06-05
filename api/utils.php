@@ -24,7 +24,9 @@ if (!function_exists('mb_strtolower')) {
 
 function respond(int $status, array $payload): void
 {
-    http_response_code($status);
+    if (PHP_SAPI !== 'cli') {
+        http_response_code($status);
+    }
     $body = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
     if ($body === false) {
         $body = '{"ok":false,"error":"Failed to encode JSON response"}';
@@ -104,6 +106,15 @@ function requireSameHostReferrer(): void
     if (!in_array($host, $allowedHosts, true)) {
         respond(403, ['error' => 'Access denied']);
     }
+}
+
+function similarityFromCentroid(array $point, array $centroid): float
+{
+    $dx = (float)$point['x'] - $centroid[0];
+    $dy = (float)$point['y'] - $centroid[1];
+    $dz = (float)$point['z'] - $centroid[2];
+    $distance = sqrt($dx * $dx + $dy * $dy + $dz * $dz);
+    return 1.0 / (1.0 + $distance);
 }
 
 function postJson(

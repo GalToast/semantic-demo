@@ -65,6 +65,29 @@ export function detectStaticDevPHP(text) {
     return trimmed.startsWith('<?php') || (trimmed.includes('<?php') && trimmed.indexOf('<?php') < 100);
 }
 
+/**
+ * Whether the app should serve static-dev fallback data instead of
+ * calling the live API. Only active on localhost loopback addresses
+ * unless explicitly disabled via `?staticDev=0`.
+ */
+export function allowsStaticDevFallback() {
+    if (typeof window === 'undefined' || !window.location) return false;
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1' && host !== '::1' && host !== '0.0.0.0') return false;
+    const params = new URLSearchParams(window.location.search || '');
+    return params.get('staticDev') !== '0';
+}
+
+/**
+ * Whether static-dev diagnostic warnings should be logged to the console.
+ * Opt-in via `?staticDevWarnings=1` or `?debugStaticDev=1`.
+ */
+export function shouldLogStaticDevFallback() {
+    if (typeof window === 'undefined' || !window.location) return false;
+    const params = new URLSearchParams(window.location.search || '');
+    return params.get('staticDevWarnings') === '1' || params.get('debugStaticDev') === '1';
+}
+
 export function updateTime() {
     const el = document.getElementById('time-display');
     if (!el) return;
