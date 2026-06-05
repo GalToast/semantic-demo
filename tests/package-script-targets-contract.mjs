@@ -11,10 +11,7 @@ import { execFileSync } from 'node:child_process';
 
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
-const ALLOWED_UNTRACKED_TARGETS = new Set([
-  'tests/config-topology-env-contract.mjs',
-  'tests/ts-js-drift-contract.mjs',
-]);
+const ALLOWED_UNTRACKED_TARGETS = new Set([]);
 
 const REQUIRED_SCRIPT_INCLUDES = [
   {

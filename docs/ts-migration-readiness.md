@@ -6,9 +6,9 @@
 |---|---|
 | Total runtime modules | 144 |
 | TS-only (native) | 0 |
-| Dual (TS+JS shadow) | 117 |
-| JS-only (unconverted) | 27 |
-| TS coverage | 81.3% |
+| Dual (TS+JS shadow) | 144 |
+| JS-only (unconverted) | 0 |
+| TS coverage | 100.0% |
 | TS/JS drift pairs | 0 |
 | Entry imports ready | **44/44** |
 | Entry ready for flip | **YES** |
@@ -84,31 +84,28 @@ The cache-buster freshness contract also builds from `app.ts`, so `npm run test`
 ### Phase 2.5: Port the init body ✅ (DONE)
 The core init orchestration has been ported into `app.ts`. `app.js` is now a compatibility wrapper that preserves the legacy import/export surface for drift checks and older module consumers.
 
-### Phase 2.6: Tighten compatibility wrapper → NEXT
+### Phase 2.6: Tighten compatibility wrapper -> NEXT
 Reduce the `app.js` wrapper once downstream consumers no longer depend on its old import surface. The current wrapper intentionally keeps side-effect parity imports so the drift contract can continue proving the legacy entry graph while TypeScript owns runtime boot.
 
-### Phase 3: Remove JS shadows → FUTURE
+### Phase 3: Remove JS shadows -> FUTURE
 Once TS modules are the runtime source:
 - Delete JS shadow files
 - Remove them from `tsconfig.typecheck.json` explicit includes
-- Update drift contract baseline
+- Update drift contract baseline (`npm run ts-js-drift --update`)
 
-## Remaining JS-only Modules (27)
+**Contract behavior during Phase 3 retirement**: The drift contract already handles TS-only native modules correctly. When a JS shadow is deleted:
+- `computeDrift()` skips TS-only modules (no JS to compare) — no false drift
+- `--progress` reclassifies modules as `tsOnly (native)` — correct tracking
+- Type-only imports (`import type ...`) are already excluded from drift comparison
+- `KNOWN_BASELINE` entries for retired modules appear as "improvements" (optional cleanup)
 
-These are deeper sub-modules. They don't block the entry flip but would complete the migration:
+No source edits to the drift contract or ts-readiness tools are needed for Phase 3.
 
-- `camera-controls-choreography`
-- `cluster-filter`, `cluster-list-delegate`, `cluster-ui-accent`
-- `composition-state`
-- `filter-chrome-island`
-- `focus-anchor-indicator`, `focus-pocket-geometry`, `focus-pocket-personality`
-- `idb-service`
-- `journey-canvas-hit-test`, `journey-canvas-hover`, `journey-canvas-interaction`, `journey-canvas-node-picking`
-- `journey-compass-state`, `journey-focus-ui`, `journey-neighborhood`, `journey-route-trace`, `journey-semantic-overlay`, `journey-thread-settler`
-- `thread-inspector`, `thread-inspector-webgl`
-- `weather`, `weather-ui`
-- `ui-renderers`, `ui-feedback`
-- `view-models/selected-business-view-model`
+## Remaining JS-only Modules
+
+None. All 144 runtime modules now have TypeScript siblings.
+
+The remaining migration work is not conversion; it is retiring the compatibility JS layer once the runtime/import graph can point directly at TypeScript modules.
 
 ## New Commands
 

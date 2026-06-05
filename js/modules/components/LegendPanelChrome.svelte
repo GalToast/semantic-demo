@@ -1,11 +1,17 @@
 <script lang="ts">
-    import { onMount, onDestroy } from 'svelte';
-    import { isLegendPanelOpenStore, isInfoPanelOpenStore } from '../stores.js';
-    import { isCompactFocusStageViewport } from '../utils/ui-presentation.js';
-    import { buildLegend, closeLegendGuide } from '../legend-ui.js';
-    import { getFocusPanelMode, setFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.js';
+  import { onMount, onDestroy } from 'svelte';
+  import { isLegendPanelOpenStore, isInfoPanelOpenStore } from '../stores.js';
+  import { isCompactFocusStageViewport } from '../utils/ui-presentation.js';
+  import { buildLegend, closeLegendGuide } from '../legend-ui.js';
+  import { getFocusPanelMode, setFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.js';
 
-    let previouslyFocusedElement: HTMLElement | null = $state(null);
+  interface Props {
+    children?: import('svelte').Snippet;
+  }
+
+  let { children }: Props = $props();
+
+  let previouslyFocusedElement: HTMLElement | null = $state(null);
 
     function toggleLegend(): void {
         const nextState = !$isLegendPanelOpenStore;
@@ -76,5 +82,5 @@
 </button>
 
 <aside class="legend-panel glass-heavy" class:active={$isLegendPanelOpenStore} id="legend-panel" role="region" aria-label="Field guide panel" aria-hidden={!$isLegendPanelOpenStore}>
-    <slot></slot>
+    {#if children}{@render children()}{/if}
 </aside>

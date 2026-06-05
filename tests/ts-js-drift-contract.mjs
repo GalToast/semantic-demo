@@ -84,12 +84,13 @@ function extractExports(source) {
  */
 function extractSiblingImports(source) {
   const deps = new Set();
+  const runtimeSource = source.replace(/^\s*import\s+type\b[^;]*;?/gm, '');
   const importPatterns = [
     /from\s+['"]\.\/([\w/-]+)(?:\.js)?['"]/g,
     /import\s+['"]\.\/([\w/-]+)(?:\.js)?['"]/g,
   ];
   for (const pattern of importPatterns) {
-    for (const m of source.matchAll(pattern)) {
+    for (const m of runtimeSource.matchAll(pattern)) {
       deps.add(m[1]);
     }
   }

@@ -11,9 +11,40 @@
 import { writable, derived, get } from 'svelte/store';
 import type { DemoState, DemoPhase } from '@lib/types/state';
 
-// ── Valid transitions ─────────────────────────────────────────────────────────
+// ── Constants ────────────────────────────────────────────────────────────────
 
-const DEMO_TRANSITIONS: Record<DemoPhase, DemoPhase[]> = {
+/** Minimum delay before first demo attempt (ms). */
+export const DEMO_START_DELAY_MS = 25_000;
+/** Maximum retry attempts for demo start. */
+export const MAX_START_RETRIES = 100;
+
+/** Hardcoded showcase pool of node indices. */
+const SHOWCASE_POOL: readonly number[] = [50, 707, 1525, 2908, 3899, 4102, 6684, 7938];
+
+// ── Phase timing targets (from AGENTS.md) ────────────────────────────────────
+
+export const DEMO_TIMING = {
+  GLIDING_MS: 1400,
+  ARRIVED_MS: 0,
+  CARD_VISIBLE_MS: 1800,
+  PULLBACK_MS: 1200,
+  WIDE_VIEW_MS: 0,
+  RETURNING_MS: 1000,
+  COMPLETE_MS: 0
+} as const;
+
+/** Total demo duration in ms (sum of active phases). */
+export const DEMO_TOTAL_DURATION_MS =
+  DEMO_TIMING.GLIDING_MS +
+  DEMO_TIMING.ARRIVED_MS +
+  DEMO_TIMING.CARD_VISIBLE_MS +
+  DEMO_TIMING.PULLBACK_MS +
+  DEMO_TIMING.WIDE_VIEW_MS +
+  DEMO_TIMING.RETURNING_MS;
+
+// ── Valid Transitions ────────────────────────────────────────────────────────
+
+const DEMO_TRANSITIONS: Record<DemoPhase, readonly DemoPhase[]> = {
   IDLE: ['GLIDING', 'CANCELLED'],
   GLIDING: ['ARRIVED', 'CANCELLED'],
   ARRIVED: ['CARD_VISIBLE', 'CANCELLED'],
@@ -25,7 +56,7 @@ const DEMO_TRANSITIONS: Record<DemoPhase, DemoPhase[]> = {
   CANCELLED: ['IDLE']
 };
 
-// ── Timer tracking (bug fix) ──────────────────────────────────────────────────
+// ── Timer Tracking (bug fix) ─────────────────────────────────────────────────
 
 const timers = new Map<string, number>();
 
@@ -42,9 +73,7 @@ export function setDemoTimer(purpose: string, ms: number, callback: () => void):
   timers.set(purpose, id);
 }
 
-/**
- * Clear a specific named timer.
- */
+/** Clear a specific named timer. */
 export function clearDemoTimer(purpose: string): void {
   const id = timers.get(purpose);
   if (id !== undefined) {
@@ -53,17 +82,93 @@ export function clearDemoTimer(purpose: string): void {
   }
 }
 
-/**
- * Clear ALL tracked demo timers. Safe to call from any phase transition.
- */
+/** Clear ALL tracked demo timers. Safe to call from any phase transition. */
 export function cancelAllDemoTimers(): void {
-  for (const [purpose, id] of timers) {
+  for (const [, id] of timers) {
     window.clearTimeout(id);
   }
   timers.clear();
 }
 
-// ── Store ─────────────────────────────────────────────────────────────────────
+/** Get the number of active demo timers (diagnostic). */
+export function getActiveDemoTimerCount(): number {
+  return timers.size;
+}
+
+// ── Showcase Pool Helpers ────────────────────────────────────────────────────
+
+/** Get a shuffled copy of the showcase pool. */
+function getShuffledPool(): number[] {
+  return [...SHOWCASE_POOL].sort(() => Math.random() - 0.5);
+}
+
+/**
+ * Find the best demo node from the showcase pool.
+ * Validates: point exists, not disqualified, name has >= 3 chars.
+ * Returns null if no valid node found.
+ */
+export function findDemoNode(
+  points: readonly { status?: string; name?: string }[] | null
+): number | null {
+  if (!points || !points.length) return null;
+
+  const shuffled = getShuffledPool();
+  for (const idx of shuffled) {
+    const point = points[idx];
+    if (!point) continue;
+    if (point.status === 'disqualified') continue;
+    const name = (point.name || '').trim();
+    if (!name || name.length < 3) continue;
+    return idx;
+  }
+
+  // Fallback: scan all points
+  for (let i = 0; i < points.length; i++) {
+    const point = points[i];
+    if (!point) continue;
+    if (point.status === 'disqualified') continue;
+    const name = (point.name || '').trim();
+    if (!name || name.length < 3) continue;
+    return i;
+  }
+
+  return null;
+}
+
+// ── Session/Lifetime Guards ──────────────────────────────────────────────────
+
+/** localStorage key: lifetime per-browser flag. */
+export const DEMO_LIFETIME_KEY = 'moco_mycelium_demo_v1';
+/** sessionStorage key: per-session guard. */
+export const DEMO_SESSION_KEY = 'moco_mycelium_demo_session_v1';
+
+/** Whether the demo has been seen (lifetime). */
+export function hasDemoBeenSeen(): boolean {
+  if (typeof localStorage === 'undefined') return false;
+  return localStorage.getItem(DEMO_LIFETIME_KEY) !== null;
+}
+
+/** Whether the demo was suppressed this session. */
+export function isDemoSuppressedThisSession(): boolean {
+  if (typeof sessionStorage === 'undefined') return false;
+  return sessionStorage.getItem(DEMO_SESSION_KEY) !== null;
+}
+
+/** Mark the demo as completed (lifetime). */
+export function markDemoCompleted(): void {
+  try {
+    localStorage.setItem(DEMO_LIFETIME_KEY, new Date().toISOString());
+  } catch { /* storage full — ignore */ }
+}
+
+/** Mark the demo as skipped for this session. */
+export function markDemoSessionSkipped(reason: string = 'unknown'): void {
+  try {
+    sessionStorage.setItem(DEMO_SESSION_KEY, reason);
+  } catch { /* storage full — ignore */ }
+}
+
+// ── Store ────────────────────────────────────────────────────────────────────
 
 const INITIAL_DEMO: DemoState = {
   phase: 'IDLE',
@@ -74,18 +179,19 @@ const INITIAL_DEMO: DemoState = {
 
 export const demoState = writable<DemoState>({
   ...INITIAL_DEMO,
-  timers // shared reference for the class
+  timers // shared reference
 });
 
-// ── Derived ───────────────────────────────────────────────────────────────────
+// ── Derived ──────────────────────────────────────────────────────────────────
 
 export const demoPhase = derived(demoState, ($d) => $d.phase);
 export const isDemoActive = derived(demoState, ($d) =>
   $d.phase !== 'IDLE' && $d.phase !== 'COMPLETE' && $d.phase !== 'CANCELLED'
 );
 export const demoNodeIndex = derived(demoState, ($d) => $d.selectedNodeIndex);
+export const isDemoRunning = isDemoActive;
 
-// ── Actions ───────────────────────────────────────────────────────────────────
+// ── Actions ──────────────────────────────────────────────────────────────────
 
 /**
  * Transition the demo state machine. Returns true if valid.
@@ -115,7 +221,7 @@ export function transitionDemo(
   demoState.update((s) => ({
     ...s,
     phase: to,
-    startedAt: to === 'IDLE' ? 0 : s.startedAt || performance.now(),
+    startedAt: to === 'IDLE' ? 0 : (s.startedAt || performance.now()),
     selectedNodeIndex: overrides?.selectedNodeIndex ?? s.selectedNodeIndex
   }));
 
@@ -124,6 +230,7 @@ export function transitionDemo(
 
 /**
  * Start the demo from IDLE.
+ * Returns true if started successfully.
  */
 export function startDemo(nodeIndex: number): boolean {
   const current = get(demoState);
@@ -139,20 +246,35 @@ export function startDemo(nodeIndex: number): boolean {
   return transitionDemo('GLIDING');
 }
 
-/**
- * Cancel the demo from any active phase.
- */
+/** Cancel the demo from any active phase. */
 export function cancelDemo(): boolean {
   return transitionDemo('CANCELLED');
 }
 
-/**
- * Reset the demo store to initial state.
- */
+/** Reset the demo store to initial state. */
 export function resetDemo(): void {
   cancelAllDemoTimers();
   demoState.set({ ...INITIAL_DEMO, timers: new Map() });
   if (typeof document !== 'undefined' && document.body) {
     document.body.dataset.demoPhase = 'IDLE';
+    document.body.removeAttribute('data-demo-active');
   }
+}
+
+/**
+ * Check if the demo should run (eligibility).
+ * Checks URL params, session guard, and conditions.
+ */
+export function shouldRunDemo(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  const params = new URLSearchParams(window.location.search);
+  const forceDemo = params.get('demo') === 'force';
+  const suppressDemo = params.get('nodemo') === '1';
+
+  if (suppressDemo) return false;
+  if (!forceDemo && isDemoSuppressedThisSession()) return false;
+  if (!forceDemo && hasDemoBeenSeen()) return false;
+
+  return true;
 }

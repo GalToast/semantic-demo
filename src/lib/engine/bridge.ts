@@ -29,6 +29,194 @@
 
 import type { ActiveFilters } from '@lib/types/state';
 
+// ── Legacy Module Type Contracts ──────────────────────────────────────────────
+//
+// Each interface describes the *subset* of a legacy JS module's exports that
+// the bridge actually calls.  This keeps the bridge decoupled from the full
+// surface area of the engine and provides compile-time safety at call sites.
+// The dynamic import returns the full module; we narrow via typed references.
+
+/** Lifecycle, RAF loop, and renderer management (three-engine.js). */
+interface ThreeEngineModule {
+  initThreeJS(): boolean;
+  deinit(): void;
+  onWindowResize(): void;
+  updateCameraViewportOffset(): void;
+  cancelAnimate(): void;
+  animate(): void;
+  getSceneRenderableDiagnostics(): {
+    active: boolean;
+    fps: number;
+    drawCalls: number;
+    triangles: number;
+    points: number;
+    myceliumCoreSegments: number;
+    myceliumWispySegments: number;
+    myceliumBridgeSegments: number;
+    memory: Record<string, number>;
+  };
+}
+
+/** Camera choreography, orbit, and focus transitions (camera-controls.js). */
+interface CameraControlsModule {
+  focusOnNode(
+    index: number,
+    options?: { duration?: number; reason?: string }
+  ): void;
+  animateCameraToSearchCorridor(
+    anchorIndex: number,
+    resultIndices: number[],
+    options?: { duration?: number; reason?: string }
+  ): void;
+  settleCameraToOverviewPose(): void;
+  zoomCamera(multiplier: number): void;
+  setAutoRotateSuspended(suspended: boolean): void;
+  syncOrbitAutoRotate(): void;
+}
+
+/** Node/spore instancing and point geometry (three-node-manager.js). */
+interface NodeManagerModule {
+  createPoints(): void;
+  setNodeSporeInstanceMatrix(
+    index: number,
+    targetMesh?: unknown,
+    scaleMultiplier?: number
+  ): void;
+  compilePointMaterialForReadiness(): void;
+  disposeNodeVisuals(): void;
+}
+
+/** Mycelium thread lines and opacity profiles (three-thread-manager.js). */
+interface ThreadManagerModule {
+  createMycelium(): void;
+  disposeMycelium(): void;
+  shouldRenderThreads(): boolean;
+  shouldRenderBridgeThreads(): boolean;
+  getThreadPulseOpacity(
+    baseOpacity: number,
+    pulse: number,
+    requestedAmplitude: number,
+    revealProgress?: number
+  ): number;
+  getThreadOpacityEnvelope(): Record<string, { core: number; wispy: number; bridge: number; pulse: number }>;
+  getMyceliumPresentationProfile(): { core: number; wispy: number; bridge: number; pulse: number };
+}
+
+/** Search hero moment, corridor glow, and corridor animation (three-search-animations.js). */
+interface SearchAnimationsModule {
+  triggerSearchHeroMoment(anchorIndex: number): void;
+  triggerCorridorNodeGlow(anchorIndex: number, routeIndices?: number[]): void;
+  updateCorridorNodeGlow(frameNow: number): boolean;
+  triggerSearchCorridorAnimation(anchorIndex: number, routeIndices?: number[]): void;
+  updateSearchCorridorAnimation(frameNow: number): boolean;
+  disposeSearchCorridorAnimation(): void;
+}
+
+/** Semantic manifold, lens overlays, and interaction-driven visuals (three-interaction-visuals.js). */
+interface InteractionVisualsModule {
+  initSemanticManifold(): void;
+  initSemanticLens(): void;
+  updateInteractionVisuals(now: number, hoveredNode: number, focusedNode: number): void;
+  disposeInteractionVisuals(): void;
+}
+
+/** View handoff between galaxy ↔ map (view-controller.js). */
+interface ViewControllerModule {
+  switchView(
+    view: 'galaxy' | 'map',
+    options?: {
+      handoffFrom?: string;
+      skipTerrainPrelude?: boolean;
+      skipUrlSync?: boolean;
+      silentHandoff?: boolean;
+      historyMode?: string;
+      reason?: string;
+    }
+  ): void;
+}
+
+/** Filter ↔ state synchronization (filter-state.js). */
+interface FilterStateModule {
+  overwriteActiveFilters(filters: ActiveFilters): ActiveFilters;
+  getActiveFilters(): ActiveFilters;
+  incrementFilterVersion(): number;
+}
+
+// ── Event Bus Contract ────────────────────────────────────────────────────────
+
+/** Callback shape from js/modules/event-bus.ts subscribe(). */
+type EventCallback = (payload: Record<string, unknown>) => void;
+
+/** Event bus module shape (subscribe + EVENTS manifest). */
+interface EventBusModule {
+  subscribe(eventName: string, callback: EventCallback): () => void;
+  EVENTS: Record<string, string>;
+}
+
+// ── Legacy State Contract ─────────────────────────────────────────────────────
+//
+// Minimal interface covering the state.js singleton properties accessed by the
+// bridge.  The bridge never owns or mutates state shape — it reads and writes
+// specific fields that the legacy RAF loop consumes.
+
+interface LegacyState {
+  // Points / geometry
+  points: Array<{ x: number; y: number; z: number; cluster: number; lead_id?: number | null }> | null;
+  nodePositions: Array<{ x: number; y: number; z: number }> | null;
+  rawPositionsBuffer: Float32Array | null;
+
+  // Camera / renderer (Three.js objects — duck-typed, no imports)
+  camera: { aspect: number; updateProjectionMatrix(): void } | null;
+  renderer: { setSize(w: number, h: number): void; domElement: HTMLCanvasElement } | null;
+  controls: unknown;
+
+  // Focus
+  focusedNode: number | null;
+
+  // Hover
+  hoverHighlightIndex: number;
+
+  // Search glow
+  searchGlowIndices: Set<number>;
+  searchGlowTopIndex: number | null;
+  searchGlowActive: boolean;
+
+  // Thread inspector
+  inspectedThreadIndex: number | null;
+  threadInspectorPointerInside: boolean;
+
+  // View
+  currentView: string;
+
+  // Filters
+  activeFilters: ActiveFilters | null;
+  filterVersion: number;
+  filterColorVersion: number;
+
+  // Mycelium
+  myceliumDirty: boolean;
+
+  // Performance
+  scenePerformanceDiagnostics: {
+    active: boolean;
+    avgFrameMs: number;
+    drawCalls: number;
+    triangles: number;
+    myceliumCoreSegments: number;
+    myceliumWispySegments: number;
+    myceliumBridgeSegments: number;
+    lastFrameAt: number;
+    [key: string]: unknown;
+  };
+
+  // Trail
+  trailDepth: number;
+
+  // Semantic
+  semanticDiveMode: boolean;
+  currentSearchSummary: unknown;
+}
+
 // ── Options ──────────────────────────────────────────────────────────────────
 
 export interface FocusNodeOptions {
@@ -281,16 +469,16 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
   let status: EngineStatus = 'idle';
   let _canvas: HTMLCanvasElement | null = null;
 
-  // Lazy-loaded legacy modules (imported at runtime to avoid top-level side effects)
-  let _threeEngine: any = null;
-  let _cameraControls: any = null;
-  let _nodeManager: any = null;
-  let _threadManager: any = null;
-  let _viewController: any = null;
-  let _filterState: any = null;
+  // Lazy-loaded legacy modules (typed interfaces, runtime is dynamic import → any)
+  let _threeEngine: ThreeEngineModule | null = null;
+  let _cameraControls: CameraControlsModule | null = null;
+  let _nodeManager: NodeManagerModule | null = null;
+  let _threadManager: ThreadManagerModule | null = null;
+  let _viewController: ViewControllerModule | null = null;
+  let _filterState: FilterStateModule | null = null;
 
   // The legacy state singleton (from js/state.js)
-  let _state: any = null;
+  let _state: LegacyState | null = null;
 
   // Event bus unsubscribe handles for cleanup
   let _eventUnsubs: Array<() => void> = [];
@@ -300,13 +488,16 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
   async function loadModules() {
     // Dynamic imports keep the bridge free of side effects at module-evaluation
     // time.  Each legacy module self-registers on the global `state` object.
+    // The `as unknown as T` casts narrow the inferred `any` from JS dynamic
+    // imports to our typed module interfaces — call-site safety is enforced
+    // by the interface contracts above.
     const [
-      threeEngine,
-      cameraControls,
-      nodeManager,
-      threadManager,
-      viewController,
-      filterState,
+      threeEngineRaw,
+      cameraControlsRaw,
+      nodeManagerRaw,
+      threadManagerRaw,
+      viewControllerRaw,
+      filterStateRaw,
       stateModule,
     ] = await Promise.all([
       import('../../../js/modules/three-engine.js'),
@@ -318,24 +509,24 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       import('../../../js/state.js'),
     ]);
 
-    _threeEngine = threeEngine;
-    _cameraControls = cameraControls;
-    _nodeManager = nodeManager;
-    _threadManager = threadManager;
-    _viewController = viewController;
-    _filterState = filterState;
-    _state = stateModule.state;
+    _threeEngine = threeEngineRaw as unknown as ThreeEngineModule;
+    _cameraControls = cameraControlsRaw as unknown as CameraControlsModule;
+    _nodeManager = nodeManagerRaw as unknown as NodeManagerModule;
+    _threadManager = threadManagerRaw as unknown as ThreadManagerModule;
+    _viewController = viewControllerRaw as unknown as ViewControllerModule;
+    _filterState = filterStateRaw as unknown as FilterStateModule;
+    _state = (stateModule as unknown as { state: LegacyState }).state;
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────
 
-  function assertReady(method: string) {
+  function assertReady(method: string): void {
     if (status !== 'ready') {
       throw new Error(`EngineBridge.${method}: engine status is "${status}", expected "ready"`);
     }
   }
 
-  function assertModules(method: string) {
+  function assertModules(method: string): void {
     if (!_threeEngine || !_cameraControls || !_nodeManager || !_threadManager) {
       throw new Error(`EngineBridge.${method}: legacy modules not loaded`);
     }
@@ -348,20 +539,31 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
   // them to the EngineCallbacks bag so the Svelte layer reacts without
   // coupling to the bus internals.
 
-  function bindEventBridge() {
+  function bindEventBridge(): void {
     if (typeof window === 'undefined') return;
 
-    // Lazy-import the event bus at bind time (already loaded via loadModules)
+    // Lazy-import the event bus at bind time (already loaded via loadModules).
     // We subscribe synchronously since the event-bus module is already in the
     // module cache after loadModules().
-    import('../../../js/modules/event-bus.js').then(({ subscribe, EVENTS }) => {
+    import('../../../js/modules/event-bus.js').then((mod) => {
+      const bus = mod as unknown as EventBusModule;
+
+      // Non-null assertions on EVENTS lookups: the manifest is a frozen object
+      // with all keys defined; `noUncheckedIndexedAccess` widens the return type
+      // to `string | undefined` but the keys are provably present at runtime.
+      const evtCameraFocused = bus.EVENTS['CAMERA_NODE_FOCUSED']!;
+      const evtTransitionPhase = bus.EVENTS['TRANSITION_PHASE_CHANGED']!;
+      const evtViewChanged = bus.EVENTS['VIEW_CHANGED']!;
+
       _eventUnsubs.push(
-        subscribe(EVENTS.CAMERA_NODE_FOCUSED, (_payload: Record<string, unknown>) => {
+        bus.subscribe(evtCameraFocused, (payload: Record<string, unknown>) => {
           // The legacy bus fires CAMERA_NODE_FOCUSED with { point, options }.
           // We extract the index from the point's position in the points array.
-          const point = _payload.point as any;
+          const point = payload['point'] as { x: number; y: number; z: number } | undefined;
           if (point && _state?.points) {
-            const index = _state.points.indexOf(point);
+            const index = _state.points.findIndex(
+              (p) => p.x === point.x && p.y === point.y && p.z === point.z
+            );
             if (index >= 0) {
               callbacks.onNodePicked?.(index);
             }
@@ -370,8 +572,8 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       );
 
       _eventUnsubs.push(
-        subscribe(EVENTS.TRANSITION_PHASE_CHANGED, (payload: Record<string, unknown>) => {
-          const phase = payload.phase as string;
+        bus.subscribe(evtTransitionPhase, (payload: Record<string, unknown>) => {
+          const phase = payload['phase'] as string | undefined;
           if (phase === 'arrived' || phase === 'idle') {
             callbacks.onCameraArrived?.();
           }
@@ -379,8 +581,8 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       );
 
       _eventUnsubs.push(
-        subscribe(EVENTS.VIEW_CHANGED, (payload: Record<string, unknown>) => {
-          const view = payload.view as string;
+        bus.subscribe(evtViewChanged, (payload: Record<string, unknown>) => {
+          const view = payload['view'] as string | undefined;
           if (view) {
             callbacks.onViewChanged?.(view);
           }
@@ -388,13 +590,19 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       );
     });
 
-    // scene-ready is a DOM CustomEvent (from loading-ui.js), not on the bus
-    window.addEventListener('scene-ready', (() => {
+    // scene-ready is a DOM CustomEvent (from loading-ui.js), not on the bus.
+    // Store the handler reference so we can remove it on cleanup.
+    const sceneReadyHandler = (): void => {
       callbacks.onLoadingPhase?.('launch', 1);
-    }) as EventListener);
+    };
+    window.addEventListener('scene-ready', sceneReadyHandler as EventListener);
+    _sceneReadyHandler = sceneReadyHandler;
   }
 
-  function unbindEventBridge() {
+  // Stored reference for cleanup (avoids the stale-closure removal problem).
+  let _sceneReadyHandler: (() => void) | null = null;
+
+  function unbindEventBridge(): void {
     // Unsubscribe from event bus
     for (const unsub of _eventUnsubs) {
       try { unsub(); } catch (_) { /* best-effort */ }
@@ -402,19 +610,22 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
     _eventUnsubs = [];
 
     // Remove DOM event listeners
-    window.removeEventListener('scene-ready', (() => {}) as EventListener);
+    if (_sceneReadyHandler) {
+      window.removeEventListener('scene-ready', _sceneReadyHandler as EventListener);
+      _sceneReadyHandler = null;
+    }
   }
 
   // ── Bridge Implementation ───────────────────────────────────────────────
 
   const bridge: EngineBridge = {
-    get status() {
+    get status(): EngineStatus {
       return status;
     },
 
     // ── Lifecycle ────────────────────────────────────────────────────────
 
-    async init(canvas: HTMLCanvasElement) {
+    async init(canvas: HTMLCanvasElement): Promise<void> {
       if (status === 'ready' || status === 'loading') {
         console.warn('EngineBridge.init: already initialized, ignoring');
         return;
@@ -455,7 +666,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
         // After initThreeJS(), state.renderer.domElement is the live canvas.
         // Ensure it fills its container properly.
         if (_state?.renderer?.domElement) {
-          const liveCanvas = _state.renderer.domElement as HTMLCanvasElement;
+          const liveCanvas = _state.renderer.domElement;
           liveCanvas.style.width = '100%';
           liveCanvas.style.height = '100%';
           liveCanvas.style.display = 'block';
@@ -471,7 +682,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       }
     },
 
-    destroy() {
+    destroy(): void {
       if (status === 'destroyed') return;
 
       unbindEventBridge();
@@ -494,7 +705,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
 
     // ── Node Interaction ─────────────────────────────────────────────────
 
-    focusNode(index: number, options: FocusNodeOptions = {}) {
+    focusNode(index: number, options: FocusNodeOptions = {}): void {
       assertReady('focusNode');
       assertModules('focusNode');
 
@@ -504,14 +715,14 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       });
     },
 
-    clearFocus() {
+    clearFocus(): void {
       assertReady('clearFocus');
       assertModules('clearFocus');
 
       _cameraControls!.settleCameraToOverviewPose();
     },
 
-    hoverNode(index: number | null) {
+    hoverNode(index: number | null): void {
       assertReady('hoverNode');
 
       // Hover is driven by setting state.hoverHighlightIndex in the legacy state.
@@ -523,14 +734,16 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
 
     // ── Search ───────────────────────────────────────────────────────────
 
-    setSearchResults(indices: number[]) {
+    setSearchResults(indices: number[]): void {
       assertReady('setSearchResults');
 
       if (!_state) return;
 
       // Clear previous glow set and populate with new results
       _state.searchGlowIndices.clear();
-      indices.forEach((i) => _state.searchGlowIndices.add(i));
+      for (const i of indices) {
+        _state.searchGlowIndices.add(i);
+      }
       _state.searchGlowTopIndex = indices[0] ?? null;
       _state.searchGlowActive = indices.length > 0;
     },
@@ -539,7 +752,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       anchorIndex: number,
       resultIndices: number[],
       options: SearchCorridorOptions = {}
-    ) {
+    ): void {
       assertReady('focusSearchCorridor');
       assertModules('focusSearchCorridor');
 
@@ -552,7 +765,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       });
     },
 
-    clearSearchResults() {
+    clearSearchResults(): void {
       assertReady('clearSearchResults');
 
       if (!_state) return;
@@ -564,7 +777,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
 
     // ── Camera ───────────────────────────────────────────────────────────
 
-    resize(width: number, height: number) {
+    resize(width: number, height: number): void {
       assertReady('resize');
 
       if (!_state?.camera || !_state?.renderer) return;
@@ -575,7 +788,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       _threeEngine?.updateCameraViewportOffset();
     },
 
-    setAutoRotate(enabled: boolean) {
+    setAutoRotate(enabled: boolean): void {
       assertReady('setAutoRotate');
       assertModules('setAutoRotate');
 
@@ -583,14 +796,14 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       _cameraControls!.syncOrbitAutoRotate();
     },
 
-    zoomCamera(multiplier: number) {
+    zoomCamera(multiplier: number): void {
       assertReady('zoomCamera');
       assertModules('zoomCamera');
 
       _cameraControls!.zoomCamera(multiplier);
     },
 
-    settleToOverview() {
+    settleToOverview(): void {
       assertReady('settleToOverview');
       assertModules('settleToOverview');
 
@@ -599,7 +812,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
 
     // ── Filters ──────────────────────────────────────────────────────────
 
-    applyFilters(filters: ActiveFilters, options: FilterOptions = {}) {
+    applyFilters(filters: ActiveFilters, _options: FilterOptions = {}): void {
       assertReady('applyFilters');
 
       if (!_state) return;
@@ -621,16 +834,14 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
 
     // ── View ─────────────────────────────────────────────────────────────
 
-    switchView(view: 'galaxy' | 'map') {
+    switchView(view: 'galaxy' | 'map'): void {
       assertReady('switchView');
 
       if (!_state) return;
 
       // The legacy switchView handles the full handoff animation
       if (_viewController) {
-        (_viewController as {
-          switchView: (view: 'galaxy' | 'map', options?: SwitchViewOptions) => void;
-        }).switchView(view, { reason: 'svelte-switch' });
+        _viewController.switchView(view, { reason: 'svelte-switch' });
       } else {
         // Fallback: direct state mutation (no animation)
         _state.currentView = view;
@@ -656,7 +867,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
         };
       }
 
-      const perf = _state.scenePerformanceDiagnostics ?? {};
+      const perf = _state.scenePerformanceDiagnostics;
       return {
         fps: Math.round(1000 / Math.max(1, perf.avgFrameMs || 0)),
         drawCalls: perf.drawCalls ?? 0,
@@ -667,7 +878,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
           wispy: perf.myceliumWispySegments ?? 0,
           bridge: perf.myceliumBridgeSegments ?? 0,
         },
-        memory: _threeEngine?.getSceneRenderableDiagnostics?.().memory ?? {},
+        memory: _threeEngine?.getSceneRenderableDiagnostics().memory ?? {},
       };
     },
 
@@ -680,12 +891,12 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
     },
 
     getFocusedIndex(): number | null {
-      return Number.isFinite(_state?.focusedNode) ? _state.focusedNode : null;
+      return Number.isFinite(_state?.focusedNode) ? (_state?.focusedNode ?? null) : null;
     },
 
     // ── Thread Inspector ─────────────────────────────────────────────────
 
-    inspectThread(index: number) {
+    inspectThread(index: number): void {
       assertReady('inspectThread');
 
       if (!_state) return;
@@ -694,7 +905,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       _state.threadInspectorPointerInside = true;
     },
 
-    clearThreadInspector() {
+    clearThreadInspector(): void {
       assertReady('clearThreadInspector');
 
       if (!_state) return;

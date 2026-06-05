@@ -14,8 +14,6 @@ export default defineConfig({
   root: SRC_DIR,
   plugins: [
     svelte(),
-    // Enables local HTTPS for testing service workers and secure contexts
-    basicSsl()
   ],
   resolve: {
     alias: {

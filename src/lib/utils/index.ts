@@ -69,3 +69,48 @@ export {
   resetStrandContinuityManager
 } from './strand-continuity';
 export type { StrandContinuityConfig } from './strand-continuity';
+export {
+  pointHasGeocode,
+  normalizeCityForFilter,
+  isPointVisible,
+  calculateSignalScore,
+  highlightMatch,
+  tokenizeSearchText as tokenizeSearchTextLegacy,
+  countTokenMatches as countTokenMatchesLegacy,
+  computeOverviewScatterOffsets
+} from './geo-data';
+export type { ScatterOffset, ActiveFilters, GeoPoint, TokenMatchResult as GeoTokenMatchResult } from './geo-data';
+export {
+  updateDocumentMeta,
+  describeCluster,
+  isCompactFocusStageViewport,
+  isCompactMapViewport,
+  isCompactSearchViewport,
+  detectStaticDevPHP,
+  allowsStaticDevFallback,
+  shouldLogStaticDevFallback,
+  updateTime,
+  getThreadPulseOpacity,
+  getFieldStepSyncLift,
+  getZoomBlend,
+  getGraphPresentationState,
+  getGraphPresentationProfile,
+  getThreadCategoryColor
+} from './ui-presentation';
+export type { GraphPresentationState, GraphPresentationProfile } from './ui-presentation';
+export { DATA_COLUMNS } from './data-schema';
+export type { RawDatum, DataColumnKey } from './data-schema';
+export {
+  normalizeSlugName,
+  mapRawRecordToPoint,
+  extractRawCoordinates,
+} from './data-mapper';
+export type { MappedPoint, RawCoordinates } from './data-mapper';
+export { el, setChildren } from './dom-builder';
+export type { DomChild, DomEventHandler, DomAttributes } from './dom-builder';
+export { FOCUSABLE_SELECTORS, setupFocusTrap, releaseFocusTrap } from './focus-trap';
+export {
+  createSporeTexture,
+  createFocusRingTexture,
+  createFocusNextCueTexture,
+} from './three-textures';

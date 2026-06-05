@@ -26,6 +26,14 @@
   import ThreadInspector from '@components/ThreadInspector.svelte';
   import DemoChoreography from '@components/DemoChoreography.svelte';
   import Controls from '@components/Controls.svelte';
+  import Header from '@components/Header.svelte';
+  import SearchInput from '@components/SearchInput.svelte';
+  import SearchResults from '@components/SearchResults.svelte';
+  import FocusCard from '@components/FocusCard.svelte';
+  import JourneyCanvas from '@components/JourneyCanvas.svelte';
+  import MapSummary from '@components/MapSummary.svelte';
+  import SemanticOverlay from '@components/SemanticOverlay.svelte';
+  import WeatherWidget from '@components/WeatherWidget.svelte';
 
   interface Props {
     /** Force demo to run regardless of eligibility */
@@ -91,7 +99,8 @@
   <!-- Layer 0: WebGL canvas -->
   <Canvas interactive={true} />
 
-  <!-- Layer 30: Semantic overlays (manifold, lens) — rendered by Three.js -->
+  <!-- Layer 30: Semantic overlays (manifold, lens) -->
+  <SemanticOverlay visible={true} />
 
   <!-- Layer 50: Legend panel -->
   <Legend open={false} />
@@ -101,6 +110,22 @@
 
   <!-- Layer 100: Search bar -->
   <SearchBar expanded={false} />
+
+  <!-- New components: SearchInput + SearchResults (complement SearchBar) -->
+  <!-- <SearchInput /> -->
+  <!-- <SearchResults /> -->
+
+  <!-- Header with mode chips -->
+  <Header visible={true} />
+
+  <!-- Focus card for selected business -->
+  <FocusCard visible={false} />
+
+  <!-- Mini-map trail -->
+  <MapSummary visible={false} />
+
+  <!-- Weather widget -->
+  <WeatherWidget visible={true} />
 
   <!-- Layer 200: Journey chrome (breadcrumb, trail indicators) -->
   <JourneyChrome visible={false} />
