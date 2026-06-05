@@ -279,6 +279,34 @@ body[data-panel-surface='focus'] .journey-compass-note {
     pointer-events: none;
 }
 
+/* 10/10 Polish: High-Value Action Beacon */
+.journey-compass-action.primary[data-journey-action='center-anchor'],
+.journey-compass-action.primary[data-journey-action='next-stop'] {
+    position: relative;
+}
+
+.journey-compass-action.primary[data-journey-action='center-anchor']::after,
+.journey-compass-action.primary[data-journey-action='next-stop']::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: inherit;
+    border: 2px solid rgba(255, 214, 107, 0.4);
+    animation: action-beacon 2s cubic-bezier(0.4, 0, 0.2, 1) 3;
+    pointer-events: none;
+}
+
+@keyframes action-beacon {
+    0% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(1.06, 1.12);
+        opacity: 0;
+    }
+}
+
 @media (min-width: 769px) {
     body.is-active .journey-compass-actions,
     body:not(.is-active) .journey-compass-actions {

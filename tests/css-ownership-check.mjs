@@ -120,7 +120,7 @@ const selectorBaselines = {
     'mobile_base.css': 4,
     'mobile_premium__focus-dive.css': 4,
     'mobile_premium__surfaces.css': 2,
-    'search.css': 4,
+    'search.css': 0,
     'strands.css': 5,
   },
 };
