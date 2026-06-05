@@ -1,6 +1,29 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { summarizeNeighborReason, getInsideRelationshipLabel } from '../../js/modules/journey-thread-settler.js';
 import { state, withStateMutation } from '../../js/state.js';
+
+vi.mock('../../js/modules/environment.js', () => ({
+    getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),
+    requestAnimationFrame: vi.fn((cb) => setTimeout(cb, 16)),
+    cancelAnimationFrame: vi.fn((id) => clearTimeout(id)),
+    matchMedia: vi.fn(() => null),
+    getViewportSize: vi.fn(() => ({ width: 1024, height: 768 })),
+    isMobile: vi.fn(() => false),
+    prefersReducedMotion: vi.fn(() => false),
+    hasCoarsePointer: vi.fn(() => false),
+    isCompactLandscape: vi.fn(() => false),
+    isUltraCompactPortrait: vi.fn(() => false),
+    isCompactFocusStage: vi.fn(() => false),
+    getDevicePixelRatio: vi.fn(() => 1),
+    getComputedStyle: vi.fn(() => ({})),
+    getCurrentUrl: vi.fn(() => 'http://localhost/'),
+    getPanelSurface: vi.fn(() => null),
+    isMapSummarySurface: vi.fn(() => false),
+    isSemanticDiveSurface: vi.fn(() => false),
+    isMobileViewport: vi.fn(() => false),
+    getInfoSurface: vi.fn(() => null),
+    getAspectRatio: vi.fn(() => 1.33)
+}));
 
 describe('journey-thread-settler', () => {
     beforeEach(() => {

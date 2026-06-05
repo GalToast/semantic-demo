@@ -8,7 +8,25 @@ import * as THREE from 'three';
 
 vi.mock('../../js/modules/environment.js', () => ({
     getViewportSize: vi.fn(() => ({ width: 1024, height: 768 })),
-    prefersReducedMotion: vi.fn(() => false)
+    prefersReducedMotion: vi.fn(() => false),
+    getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),
+    requestAnimationFrame: vi.fn((cb) => setTimeout(cb, 16)),
+    cancelAnimationFrame: vi.fn((id) => clearTimeout(id)),
+    matchMedia: vi.fn(() => null),
+    getComputedStyle: vi.fn(() => ({})),
+    getCurrentUrl: vi.fn(() => 'http://localhost/'),
+    isMobile: vi.fn(() => false),
+    hasCoarsePointer: vi.fn(() => false),
+    isCompactLandscape: vi.fn(() => false),
+    isUltraCompactPortrait: vi.fn(() => false),
+    isCompactFocusStage: vi.fn(() => false),
+    getDevicePixelRatio: vi.fn(() => 1),
+    getPanelSurface: vi.fn(() => null),
+    isMapSummarySurface: vi.fn(() => false),
+    isSemanticDiveSurface: vi.fn(() => false),
+    isMobileViewport: vi.fn(() => false),
+    getInfoSurface: vi.fn(() => null),
+    getAspectRatio: vi.fn(() => 1.33)
 }));
 
 vi.mock('../../js/modules/thread-inspector.js', () => ({

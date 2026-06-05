@@ -210,9 +210,11 @@ export async function search(query, options = {}) {
                 updateSemanticSearchRetryState({ statusEl, trimmedQuery, attempt, nextAttempt, delayMs, retryTotal });
             }
         });
-    } catch (_error) {
+    } catch (error) {
         if (controller.signal.aborted || requestId !== getSearchRequestSequence()) return;
         stopSearchVectorScramble();
+        publish(EVENTS.SEARCH_DEGRADED, { resultsEl, statusEl, query: trimmedQuery, error });
+        applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQuery, error);
         return;
     } finally {
         if (getSearchAbortController() === controller) {

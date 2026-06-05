@@ -99,3 +99,57 @@ export function isMapSummarySurface() {
 export function isSemanticDiveSurface() {
     return getPanelSurface() === 'semantic-dive';
 }
+
+/**
+ * Safe wrapper for `window.matchMedia`. Returns null in SSR/test environments.
+ * @param {string} query - Media query string, e.g. '(max-width: 768px)'
+ * @returns {MediaQueryList|null}
+ */
+export function matchMedia(query) {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
+    return window.matchMedia(query);
+}
+
+/**
+ * Returns `window.location` when available, otherwise null for SSR/test contexts.
+ */
+export function getLocation() {
+    return typeof window !== 'undefined' ? window.location : null;
+}
+
+/**
+ * Returns the current URL string (`window.location.href`), or empty string for SSR/test.
+ */
+export function getCurrentUrl() {
+    return typeof window !== 'undefined' ? window.location.href : '';
+}
+
+/**
+ * Safe wrapper for `window.getComputedStyle`. Returns null in SSR/test environments.
+ * @param {Element} el
+ * @param {string|null} [pseudo]
+ * @returns {CSSStyleDeclaration|null}
+ */
+export function getComputedStyle(el, pseudo) {
+    if (typeof window === 'undefined' || typeof window.getComputedStyle !== 'function') return null;
+    return pseudo !== undefined ? window.getComputedStyle(el, pseudo) : window.getComputedStyle(el);
+}
+
+/**
+ * Safe wrapper for `window.requestAnimationFrame`. Returns 0 in SSR/test environments.
+ * @param {FrameRequestCallback} callback
+ * @returns {number}
+ */
+export function requestAnimationFrame(callback) {
+    if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') return 0;
+    return window.requestAnimationFrame(callback);
+}
+
+/**
+ * Safe wrapper for `window.cancelAnimationFrame`. No-op in SSR/test environments.
+ * @param {number} id
+ */
+export function cancelAnimationFrame(id) {
+    if (typeof window === 'undefined' || typeof window.cancelAnimationFrame !== 'function') return;
+    window.cancelAnimationFrame(id);
+}

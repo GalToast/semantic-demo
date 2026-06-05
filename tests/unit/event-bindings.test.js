@@ -7,6 +7,29 @@ import * as cameraControls from '../../js/modules/camera-controls.js';
 import * as searchState from '../../js/modules/search-state.js';
 import * as journey from '../../js/modules/journey.js';
 
+vi.mock('../../js/modules/environment.js', () => ({
+    getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),
+    requestAnimationFrame: vi.fn((cb) => setTimeout(cb, 16)),
+    cancelAnimationFrame: vi.fn((id) => clearTimeout(id)),
+    matchMedia: vi.fn(() => null),
+    getViewportSize: vi.fn(() => ({ width: 1024, height: 768 })),
+    isMobile: vi.fn(() => false),
+    prefersReducedMotion: vi.fn(() => false),
+    hasCoarsePointer: vi.fn(() => false),
+    isCompactLandscape: vi.fn(() => false),
+    isUltraCompactPortrait: vi.fn(() => false),
+    isCompactFocusStage: vi.fn(() => false),
+    getDevicePixelRatio: vi.fn(() => 1),
+    getComputedStyle: vi.fn(() => ({})),
+    getCurrentUrl: vi.fn(() => 'http://localhost/'),
+    getPanelSurface: vi.fn(() => null),
+    isMapSummarySurface: vi.fn(() => false),
+    isSemanticDiveSurface: vi.fn(() => false),
+    isMobileViewport: vi.fn(() => false),
+    getInfoSurface: vi.fn(() => null),
+    getAspectRatio: vi.fn(() => 1.33)
+}));
+
 vi.mock('../../js/modules/view-controller.js', () => ({
     switchView: vi.fn()
 }));

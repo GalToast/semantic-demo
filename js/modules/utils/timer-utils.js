@@ -1,10 +1,12 @@
 /**
  * timer-utils.js
- * 
+ *
  * Central registry for application-wide timeouts and intervals.
- * Ensures background tasks are cleanly flushed during state transitions 
+ * Ensures background tasks are cleanly flushed during state transitions
  * to prevent memory leaks and race conditions.
  */
+
+import { requestAnimationFrame, cancelAnimationFrame } from '../environment.js';
 
 const _registry = new Map();
 
@@ -64,4 +66,23 @@ export function setTrackedInterval(key, fn, delay) {
     const id = setInterval(fn, delay);
     registerTimer(key, id, true);
     return id;
+}
+
+/**
+ * Debounce a function using requestAnimationFrame.
+ * Ensures the function only runs once per animation frame,
+ * using the latest provided arguments.
+ *
+ * @param {Function} fn - The function to debounce.
+ * @returns {Function} - The debounced function.
+ */
+export function debounceRAF(fn) {
+    let rafId = null;
+    return (...args) => {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+            rafId = null;
+            fn(...args);
+        });
+    };
 }
