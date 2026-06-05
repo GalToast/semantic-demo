@@ -7,6 +7,19 @@ import { getPanelSurface, isMapSummarySurface } from './environment.js';
  * focus-stage-renderer.js
  *
  * Dedicated module for rendering components within the "Focus Stage" business detail card.
+ *
+ * **DOM ownership boundary (structural slot management only):**
+ * This module manages visibility and metadata attributes on *structural
+ * containers* declared by InfoPanelSelectionSurface.svelte:
+ *   - #selected-card, #selected-empty, #selected-details, #selected-card-title,
+ *     #selected-map-summary, #vector-cascade-bg
+ *
+ * It does NOT write to Svelte-internal child elements owned by
+ * SelectedBusinessDetails.svelte (#selected-name, #selected-what,
+ * #selected-meta-strip, #selected-badges, #selected-facts, #selected-match-panel,
+ * #selected-action-row, the map-button, #selected-theme, #selected-status,
+ * #selected-map, #selected-thread). Those are rendered declaratively by the
+ * Svelte component from the selectedPointStore.
  */
 
 // ── Renderers ──────────────────────────────────────────────────────────────────

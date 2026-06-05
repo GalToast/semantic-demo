@@ -76,13 +76,6 @@
 
 /* end mobile_premium.css */
 
-body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] #search-results.active,
-body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-results.active {
-    flex: 0 0 72px;
-    min-height: 72px;
-    max-height: 72px;
-}
-
 /* ─── FOCUS-STATE ESCAPE HATCH ─────────────────────
    On mobile, the focus/dive state hides the top chrome (view toggle,
    journey rail, zoom controls, time, weather, info-panel toggle). After

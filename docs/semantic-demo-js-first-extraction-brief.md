@@ -52,7 +52,7 @@ state.js (shared global)
     |                          (normalizeCityForFilter)
     |                               ^
     |                               |
-js/modules/cluster-filter.js  utils.js
+js/modules/cluster-filter.js  utils/geo-data.js
     ^        v          v        ^
     |        |          |        |
     |   (init state)  (normalizeCityForFilter)
@@ -66,8 +66,8 @@ lifecycle.js (imports cluster-filter)
 
 ```js
 import { state } from '../state.js';
-import { normalizeCityForFilter } from '../utils.js';
-// normalizeCityForFilter is re-exported from utils.js line 251
+import { normalizeCityForFilter } from './utils/geo-data.js';
+// normalizeCityForFilter is defined in utils/geo-data.js line 26
 // It is a pure string transformation - no state coupling
 ```
 
@@ -140,7 +140,7 @@ The private helpers `pointMatchesActiveFilters`, `getFilteredClusterCounts`, and
 - [ ] Copy lines 88-102 (`clearClusterFilter`) as exported function
 - [ ] Copy lines 104-173 (`updateClusterList`) as exported function
 - [ ] Add `import { state } from '../state.js'` at top
-- [ ] Add `import { normalizeCityForFilter } from '../utils.js'` at top
+- [ ] Add `import { normalizeCityForFilter } from './utils/geo-data.js'` at top
 - [ ] Remove all copied lines from `lifecycle.js`
 
 ### Phase 2:lifecycle.js wiring

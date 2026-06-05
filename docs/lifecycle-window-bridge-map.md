@@ -191,10 +191,9 @@ The live renderer owner for selected-card bridge functions is `js/modules/ui-ren
 | `getSemanticGuideAnchorPoint` | now imports from semantic-guide-payload.js | now imports from semantic-guide-payload.js |
 | `buildSemanticGuideRequestPayload` | now imports from semantic-guide-payload.js | now imports from semantic-guide-payload.js |
 
-The module depends only on `../state.js` and `../utils.js` — no circular import risk.
-Both `lifecycle.js` and `connection-analysis.js` retain their own full `utils.js` imports for
-other utility calls. `connection-analysis.js` drops its direct utils imports since it now
-uses only the payload builder from the shared module.
+The module depends on `./semantic-guide-payload-adapter.js` for state access — no circular import risk.
+`lifecycle.js` imports `./utils/timer-utils.js` (the only remaining utils slice); `connection-analysis.js`
+no longer imports utils directly, using the adapter and payload builder exclusively.
 
 ---
 

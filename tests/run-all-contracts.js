@@ -351,7 +351,7 @@ function discoverUnlistedContracts() {
   // Playwright *.spec.js files that are not helper utilities.
   // These use real browser automation and are discoverable contract entries.
   const allSpec = readdirSync(TESTS_DIR).filter(f => f.endsWith('.spec.js'));
-  const specExclusions = new Set(['inspect_element.js', 'wave62-diag.spec.js']); // not test suites
+  const specExclusions = new Set(); // formerly inspect_element.js, wave62-diag.spec.js — deleted
   const specContracts = allSpec.filter(f => !specExclusions.has(f));
 
   return { mjsContracts, specContracts };

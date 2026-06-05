@@ -1,0 +1,69 @@
+/*
+ * @lib/css/z-layers.css — Svelte-importable z-index CSS custom properties
+ *
+ * Import this in any Svelte component or global CSS file:
+ *   @import '@lib/css/z-layers.css';
+ *
+ * Or use in a <style> block:
+ *   @import './lib/css/z-layers.css';
+ *
+ * Usage in CSS:
+ *   z-index: var(--z-search);
+ *   z-index: var(--z-loading);
+ */
+
+:root {
+  /* ── Z-Index Layer System ──────────────────────────────────────────────── */
+  /* Mirror of src/lib/z-index.ts — keep in sync if adding layers.          */
+
+  /* Base scene */
+  --z-canvas: 0;
+
+  /* Field nodes */
+  --z-field-nodes: 10;
+
+  /* Thread/mycelium lines */
+  --z-threads: 20;
+
+  /* Semantic manifold and lens overlays */
+  --z-overlays: 30;
+
+  /* Legend panel */
+  --z-legend: 50;
+
+  /* Info panel and side panels */
+  --z-panels: 80;
+
+  /* Elevated panels (popovers, dropdowns) */
+  --z-panels-elevated: 90;
+
+  /* Search input and results */
+  --z-search: 100;
+
+  /* Journey chrome (compass, breadcrumb, step indicators) */
+  --z-journey-chrome: 200;
+
+  /* Active journey trail visualization */
+  --z-journey-active: 500;
+
+  /* Focus pocket card */
+  --z-focus-card: 600;
+
+  /* Compass rail */
+  --z-compass: 700;
+
+  /* Camera/interaction controls */
+  --z-controls: 800;
+
+  /* Journey blocking overlay */
+  --z-journey-block: 900;
+
+  /* Generic blocker (modal backdrop) */
+  --z-blocker: 1000;
+
+  /* Journey modal */
+  --z-journey-modal: 2000;
+
+  /* Loading overlay (highest priority) */
+  --z-loading: 3000;
+}

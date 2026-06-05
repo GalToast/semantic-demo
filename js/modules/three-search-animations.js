@@ -1,3 +1,4 @@
+import { webglContext } from './webgl-context.js';
 import * as THREE from 'three';
 import { state } from '../state.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
@@ -212,8 +213,8 @@ function buildCorridorParticleTrail(anchorIndex, routeIndices) {
 // ── Public API ──────────────────────────────────────────────────────────────
 
 export function triggerSearchHeroMoment(anchorIndex) {
-    if (!state.pointsMaterial || !state.pointsMaterial.userData.shader || !state.nodePositions) return;
-    const shader = state.pointsMaterial.userData.shader;
+    if (!webglContext.pointsMaterial || !webglContext.pointsMaterial.userData.shader || !state.nodePositions) return;
+    const shader = webglContext.pointsMaterial.userData.shader;
 
     if (Number.isFinite(anchorIndex) && state.nodePositions[anchorIndex]) {
         const pos = state.nodePositions[anchorIndex];
@@ -231,8 +232,8 @@ export function triggerSearchHeroMoment(anchorIndex) {
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / duration, 1.0);
 
-        if (state.pointsMaterial && state.pointsMaterial.userData.shader) {
-            const currentShader = state.pointsMaterial.userData.shader;
+        if (webglContext.pointsMaterial && webglContext.pointsMaterial.userData.shader) {
+            const currentShader = webglContext.pointsMaterial.userData.shader;
             currentShader.uniforms.uRippleTime.value = progress * 15.0;
 
             const bloom = Math.sin(progress * Math.PI);
@@ -241,9 +242,9 @@ export function triggerSearchHeroMoment(anchorIndex) {
 
         if (progress < 1.0) {
             requestAnimationFrame(animateHero);
-        } else if (state.pointsMaterial && state.pointsMaterial.userData.shader) {
-            state.pointsMaterial.userData.shader.uniforms.uGlowIntensity.value = 0.0;
-            state.pointsMaterial.userData.shader.uniforms.uRippleTime.value = -1000.0;
+        } else if (webglContext.pointsMaterial && webglContext.pointsMaterial.userData.shader) {
+            webglContext.pointsMaterial.userData.shader.uniforms.uGlowIntensity.value = 0.0;
+            webglContext.pointsMaterial.userData.shader.uniforms.uRippleTime.value = -1000.0;
         }
     }
 
@@ -251,8 +252,8 @@ export function triggerSearchHeroMoment(anchorIndex) {
 }
 
 export function triggerCorridorNodeGlow(anchorIndex, routeIndices = []) {
-    if (!state.pointsMaterial?.userData?.shader || !state.nodePositions) return;
-    const shader = state.pointsMaterial.userData.shader;
+    if (!webglContext.pointsMaterial?.userData?.shader || !state.nodePositions) return;
+    const shader = webglContext.pointsMaterial.userData.shader;
     
     // Clear any in-progress glow from a previous call
     for (const k of Object.keys(_corridorGlowNodes)) { delete _corridorGlowNodes[k]; }
@@ -293,8 +294,8 @@ export function triggerCorridorNodeGlow(anchorIndex, routeIndices = []) {
 }
 
 export function updateCorridorNodeGlow(frameNow) {
-    if (!state.pointsMaterial?.userData?.shader) return false;
-    const shader = state.pointsMaterial.userData.shader;
+    if (!webglContext.pointsMaterial?.userData?.shader) return false;
+    const shader = webglContext.pointsMaterial.userData.shader;
     let anyActive = false;
     for (const idx of Object.keys(_corridorGlowNodes)) {
         const key = Number(idx);

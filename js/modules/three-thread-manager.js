@@ -1,3 +1,4 @@
+import { webglContext } from './webgl-context.js';
 import * as THREE from 'three';
 import { state } from '../state.js';
 import {
@@ -123,19 +124,30 @@ export function shouldRenderBridgeThreads() {
     return currentMode === 'bridge';
 }
 
-export function createMycelium() {
-    if (!state.pointsMesh || !state.points?.length || !state.nodePositions?.length) return;
-
+export function disposeMycelium() {
     if (state.myceliumGroup) {
-        state.pointsMesh.remove(state.myceliumGroup);
+        if (state.pointsMesh) state.pointsMesh.remove(state.myceliumGroup);
         disposeObject3D(state.myceliumGroup);
+        state.myceliumGroup = null;
     }
-
-    state.myceliumConnectionPairs = [];
-    state.myceliumDirty = true;
     state.myceliumCoreLines = null;
     state.myceliumWispyLines = null;
     state.myceliumBridgeLines = null;
+    state.myceliumConnectionPairs = [];
+    // Also clean webglContext intermediary used by the TS module
+    webglContext.myceliumGroup = null;
+    webglContext.myceliumCoreLines = null;
+    webglContext.myceliumWispyLines = null;
+    webglContext.myceliumBridgeLines = null;
+    webglContext.myceliumConnectionPairs = [];
+}
+
+export function createMycelium() {
+    if (!state.pointsMesh || !state.points?.length || !state.nodePositions?.length) return;
+
+    disposeMycelium();
+
+    state.myceliumDirty = true;
 
     const clusterMembers = new Map();
     const clusterCentroids = new Map();
@@ -187,6 +199,13 @@ export function createMycelium() {
     state.myceliumCoreLines = createLineSegments(coreConnections, coreColors, profile.core);
     state.myceliumWispyLines = createLineSegments(wispyConnections, wispyColors, profile.wispy);
     state.myceliumBridgeLines = createLineSegments(bridgeConnections, bridgeColors, profile.bridge);
+
+    // Also write to webglContext intermediary used by the TS module
+    webglContext.myceliumGroup = state.myceliumGroup;
+    webglContext.myceliumCoreLines = state.myceliumCoreLines;
+    webglContext.myceliumWispyLines = state.myceliumWispyLines;
+    webglContext.myceliumBridgeLines = state.myceliumBridgeLines;
+    webglContext.myceliumConnectionPairs = state.myceliumConnectionPairs;
 
     if (state.myceliumCoreLines) state.myceliumGroup.add(state.myceliumCoreLines);
     if (state.myceliumWispyLines) state.myceliumGroup.add(state.myceliumWispyLines);

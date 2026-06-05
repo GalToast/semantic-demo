@@ -24,6 +24,8 @@ const SEMDEMO_ROOT = path.resolve(process.cwd());
 const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
 const JOURNEY_POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-point-color.js');
 const JOURNEY_CANVAS_INTERACTION_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-interaction.js');
+const JOURNEY_CANVAS_NODE_PICKING_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-node-picking.js');
+const JOURNEY_CANVAS_HIT_TEST_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-hit-test.js');
 const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js');
 const JOURNEY_THREAD_MODEL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-model.js');
 const JOURNEY_WEBGL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.js');
@@ -206,7 +208,8 @@ function testBuildRouteTraceMaterial() {
 function testGetCanvasNodePickingMode() {
   console.log('\n[TEST] getCanvasNodePickingMode URL override');
 
-  const canvasInteractionSrc = fs.readFileSync(JOURNEY_CANVAS_INTERACTION_PATH, 'utf-8');
+  const canvasInteractionSrc = fs.readFileSync(JOURNEY_CANVAS_NODE_PICKING_PATH, 'utf-8');
+  const canvasHitTestSrc = fs.readFileSync(JOURNEY_CANVAS_HIT_TEST_PATH, 'utf-8');
 
   // Must read URL search params
   assertContains(canvasInteractionSrc, 'new URLSearchParams(window.location.search)', 'URLSearchParams used for picking mode');
@@ -219,9 +222,9 @@ function testGetCanvasNodePickingMode() {
   assertContains(canvasInteractionSrc, "return urlMode === 'nearest' || datasetMode === 'nearest' ? 'nearest' : 'raycast'", 'fallback to raycast');
 
   // Touch/pen must use 34px radius
-  assertContains(canvasInteractionSrc, "pointerType === 'touch' || pointerType === 'pen'", 'touch/pen pointer type check');
-  assertContains(canvasInteractionSrc, "return 34;", 'touch/pen returns 34px');
-  assertContains(canvasInteractionSrc, "window.matchMedia?.('(pointer: coarse)')?.matches ? 34 : 26", 'coarse pointer uses 34px else 26px');
+  assertContains(canvasHitTestSrc, "pointerType === 'touch' || pointerType === 'pen'", 'touch/pen pointer type check');
+  assertContains(canvasHitTestSrc, "return 34;", 'touch/pen returns 34px');
+  assertContains(canvasHitTestSrc, "window.matchMedia?.('(pointer: coarse)')?.matches ? 34 : 26", 'coarse pointer uses 34px else 26px');
 
   console.log('  OK getCanvasNodePickingMode URL override verified');
 }
@@ -426,19 +429,19 @@ function testJourneyTextHelpersExtraction() {
 // ---------------------------------------------------------------------------
 
 function testThreadInspectorTextHelpersExtraction() {
-  console.log('\n[TEST] thread-inspector-text-helpers extraction');
+  console.log('\n[TEST] thread-inspector text helpers extraction (via journey-text-helpers)');
 
   const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
-  const helperSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector-text-helpers.js'), 'utf-8');
+  const helperSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/journey-text-helpers.js'), 'utf-8');
 
-  assertContains(threadInspectorSrc, "from './thread-inspector-text-helpers.js'", 'thread-inspector imports text helpers');
+  assertContains(threadInspectorSrc, "from './journey-text-helpers.js'", 'thread-inspector imports truncateMicrocopy from journey-text-helpers');
   assertNotContains(threadInspectorSrc, 'function truncateMicrocopy(text, limit)', 'thread-inspector inline truncateMicrocopy removed');
-  assertContains(helperSrc, 'export function truncateMicrocopy', 'thread-inspector-text-helpers exports truncateMicrocopy');
-  assertNotContains(helperSrc, 'window.', 'thread-inspector-text-helpers has no window dependency');
-  assertNotContains(helperSrc, 'state.', 'thread-inspector-text-helpers has no state dependency');
-  assertNotContains(helperSrc, 'new THREE', 'thread-inspector-text-helpers has no THREE dependency');
+  assertContains(helperSrc, 'export function truncateMicrocopy', 'journey-text-helpers exports truncateMicrocopy');
+  assertNotContains(helperSrc, 'window.', 'journey-text-helpers has no window dependency');
+  assertNotContains(helperSrc, 'state.', 'journey-text-helpers has no state dependency');
+  assertNotContains(helperSrc, 'new THREE', 'journey-text-helpers has no THREE dependency');
 
-  console.log('  OK thread-inspector-text-helpers extraction verified');
+  console.log('  OK thread-inspector text helpers extraction verified');
 }
 
 // ---------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 // @ts-check
 import { writable } from 'svelte/store';
+import { getViewportSize } from './environment.js';
 
 // ============================================================================
 // SVELTE NATIVE STORES
@@ -13,7 +14,7 @@ import { writable } from 'svelte/store';
 // state.js field.
 
 // Initialize open on desktop, closed on mobile/narrow viewports
-const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
+const isDesktop = getViewportSize().width >= 1024;
 export const isInfoPanelOpenStore = writable(isDesktop);
 export const isLegendPanelOpenStore = writable(false);
 

@@ -77,7 +77,9 @@
         "url-restore-cluster-filter-race.spec.js",
         "canvas-hit-test-interaction.spec.js",
         "reduced-motion-interruption.spec.js",
-        "gemma-fallback-error.spec.js"
+        "gemma-fallback-error.spec.js",
+        "data-boundary-stress.spec.js",
+        "filter-search-chrome-svelte.spec.js"
       ]
     },
     "short-landscape": {
@@ -191,8 +193,7 @@
         "lifecycle-search-panel-ownership-contract.mjs",
         "lifecycle-journey-quick-dewindowing-contract.mjs",
         "search-lifecycle-adapter-contract.mjs",
-        "view-controller-ownership-contract.mjs",
-        "exploration-data-contract.mjs"
+        "view-controller-ownership-contract.mjs"
       ]
     },
     "quality": {
@@ -211,7 +212,12 @@
         "focus-trap-contract.mjs",
         "window-global-allowlist-contract.mjs",
         "persistence-contract.mjs",
-        "disposal-hygiene-contract.spec.js"
+        "disposal-hygiene-contract.spec.js",
+        "search-results-svelte-ownership-contract.mjs",
+        "selected-details-svelte-ownership-contract.mjs",
+        "svelte-chrome-ownership-contract.mjs",
+        "three-resource-lifecycle-contract.mjs",
+        "ts-js-drift-contract.mjs"
       ]
     },
     "supplemental": {
@@ -234,7 +240,9 @@
         "search-sheet-css-ownership-contract.mjs",
         "semantic-thread-relationship-role-contract.mjs",
         "ui-perfection-contract.mjs",
-        "reduced-motion-interruption-proof.spec.js"
+        "reduced-motion-interruption-proof.spec.js",
+        "config-topology-env-contract.mjs",
+        "data-schema-contract.mjs"
       ]
     },
     "3d-engine": {
@@ -497,7 +505,6 @@
         "search-lifecycle-adapter-contract.mjs",
         "view-controller-ownership-contract.mjs",
         "loading-ui-contract.mjs",
-        "exploration-data-contract.mjs",
         "state-ownership-contract.mjs",
         "state-mutator-ownership-contract.mjs",
         "filter-ownership-contract.mjs",
@@ -548,7 +555,7 @@
         "url-restore-cluster-filter-race.spec.js",
         "live-step-inside-url-body-state-sync.spec.js",
         "live-reset-clear-demo-proof.spec.js",
-        "live-reset-proof-wave2.spec.js",
+        "live-reset-proof.spec.js",
         "polish-adversarial.spec.js"
       ]
     },

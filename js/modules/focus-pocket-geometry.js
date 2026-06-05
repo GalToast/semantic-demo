@@ -4,6 +4,7 @@ import { getViewportSize } from './environment.js';
 import { describeCluster } from './utils/ui-presentation.js';
 import { normalizeCityForFilter } from './utils/geo-data.js';
 import { getSemanticCandidateSlice } from './focus-pocket-personality.js';
+import { getFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.js';
 
 // === Pure geometry/easing utilities ===
 
@@ -393,7 +394,7 @@ export function getFocusThreadCurvePoint(edge, t) {
     const upVector = new THREE.Vector3().crossVectors(viewVector, rightVector).normalize();
     const motifBraid = Number.isFinite(edge.motifBraid) ? edge.motifBraid : 0.52;
     const roleLift = edge.role === 'support' ? 0.78 : 1;
-    const isFieldNodeWalk = typeof document !== 'undefined' && document.body && document.body.dataset.focusPanelMode === 'field-node';
+    const isFieldNodeWalk = getFocusPanelMode() === FOCUS_PANEL_MODE.FIELD_NODE;
     const longArc =
         isFieldNodeWalk && edge.role === 'direct' ? THREE.MathUtils.clamp((spanLength - 0.18) / 0.34, 0, 1) : 0;
     const bendCap = isFieldNodeWalk ? 0.17 + longArc * 0.14 : 0.16;

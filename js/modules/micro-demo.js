@@ -1,25 +1,29 @@
 // js/modules/micro-demo.js
-// Micro-demo: 10-second guided first-time interaction
-// Fires once per browser session, shows new users the core interaction loop
-// Spec: MICRO-DEMO-SPEC.md v1.0
+// Micro-demo: thin facade re-exporting public API
+// Extracted from 747-line monolith into focused modules (guards / camera / UI).
 
 import { state } from '../state.js';
-import * as THREE from 'three';
-import { easeInOutSine } from './utils/math-easing.js';
-import { animateCameraToNode } from './camera-controls.js';
+import { animateCameraToNode, setAutoRotateSuspended } from './camera-controls.js';
 import { applyLocalNeighborhoodFocus, clearFocusPocketIndices, clearFocusPocketMeta } from './focus-pocket.js';
 import { debugWarn } from './diagnostic-adapter.js';
 import { refreshCompositionState, updateExplorationUi, resetNodePositions } from './lifecycle.js';
 import { updateJourneyCompass } from './journey-compass-controller.js';
-import { setAutoRotateSuspended } from './camera-controls.js';
 import { updateSelectedBusiness, applyPointFilterColors } from './journey.js';
 import { setInfoPanelOpen } from './bindings/panel-bindings.js';
-import { prefersReducedMotion } from './environment.js';
+import {
+    isAppReadyForDemo, guardNotSeen, guardReducedMotion, guardWebGL, guardUrlParam,
+    recordCompletion, notifyDemoUnableToStart, SESSION_STORAGE_KEY
+} from './micro-demo-guards.js';
+import {
+    captureOverviewCameraSnapshot, animateCameraToOverview
+} from './micro-demo-camera.js';
+import {
+    showVeil, hideVeil, showPill, removePill, showEndToast,
+    bindInputInterceptor, unbindInputInterceptor, injectMicroDemoStyles
+} from './micro-demo-ui.js';
 
 // === Constants ===
-const STORAGE_KEY = 'moco_mycelium_demo_v1';
-const SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1';
-const DEMO_START_DELAY_MS = 25000; // wait for scene reveal, app settle, and data
+const DEMO_START_DELAY_MS = 25000;
 
 // State machine phases
 const PHASE = {
@@ -34,11 +38,8 @@ const PHASE = {
     CANCELLED: 'cancelled'
 };
 
-// Hardcoded showcase pool — indices verified against bundle alignment
-// Criteria: non-generic name, cluster has neighbors, status active
+// Hardcoded showcase pool
 const SHOWCASE_POOL = [50, 707, 1525, 2908, 3899, 4102, 6684, 7938];
-
-// Shuffle pool once at load time
 const _shuffledPool = [...SHOWCASE_POOL].sort(() => Math.random() - 0.5);
 
 // === Demo State ===
@@ -46,99 +47,32 @@ let _demoPhase = PHASE.IDLE;
 let _demoNodeIndex = null;
 let _demoTimers = [];
 let _demoCancelled = false;
-let _inputCleanup = null;
-let _overviewCameraSnapshot = null;
 let _startRetryTimer = null;
 let _startRetryDeadline = 0;
+let _startRetryCount = 0;
+const MAX_START_RETRIES = 100;
 
-// === Helpers ===
+// === Private Helpers ===
 
-function _isAppReadyForDemo() {
-    const overlay = document.getElementById('loading-overlay');
-    return (
-        state.currentView === 'galaxy' &&
-        state.focusedNode === null &&
-        !state.currentSearchSummary &&
-        state.navState.mode === 'overview' &&
-        !state.sceneRevealActive &&
-        Array.isArray(state.points) &&
-        state.points.length > 0 &&
-        overlay && overlay.classList.contains('hidden')
-    );
-}
-
-function _guardNotSeen() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return true;
-        const stored = JSON.parse(raw);
-        return stored.seen !== true;
-    } catch {
-        return true;
+function _clearDemoTimers() {
+    _demoTimers.forEach((t) => window.clearTimeout(t));
+    _demoTimers = [];
+    if (_startRetryTimer !== null) {
+        window.clearTimeout(_startRetryTimer);
+        _startRetryTimer = null;
     }
-}
-
-function _guardReducedMotion() {
-    const osPref = prefersReducedMotion();
-    if (osPref) return false;
-    const devFlag = document.documentElement.dataset.reduceMotion === 'true';
-    return !devFlag;
-}
-
-function _guardWebGL() {
-    // Use the live Three.js renderer when available. The original guard
-    // queried `document.querySelector('canvas')` and called getContext,
-    // which raced against initThreeJS appending the canvas to the DOM and
-    // could resolve the wrong canvas (or none) — leading the demo to
-    // self-block with "no WebGL" even when the renderer was running.
-    const renderer = state.renderer;
-    if (!renderer?.domElement) return false;
-    const gl = renderer.getContext();
-    if (!gl) return false;
-    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
-    if (!dbg) return true;
-    const unmasked = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
-    const softwareRenderers = ['swiftShader', 'llvmpipe', 'Software Rasterizer'];
-    const isSoftware = softwareRenderers.some(r =>
-        String(unmasked).toLowerCase().includes(r.toLowerCase())
-    );
-    return !isSoftware;
-}
-
-function _guardUrlParam() {
-    const params = new URLSearchParams(window.location.search);
-    return !params.has('nodemo');
-}
-
-function _recordCompletion() {
-    try {
-        const entry = {
-            seen: true,
-            seenAt: new Date().toISOString(),
-            version: 1
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(entry));
-    } catch (e) {
-        debugWarn('[micro-demo] Could not write localStorage:', e);
-    }
-}
-
-function _notifyDemoUnableToStart() {
-    window.dispatchEvent(new CustomEvent('demo-cancelled'));
+    _startRetryDeadline = 0;
 }
 
 function _getDemoNode() {
-    // Try shuffled pool first
     for (const idx of _shuffledPool) {
         const point = state.points[idx];
         if (!point) continue;
         if (point.status === 'disqualified') continue;
         const name = (point.name || '').trim();
         if (!name || name.length < 3) continue;
-        // Prefer geocoded nodes for richer card content
         return idx;
     }
-    // Fallback: scan for any valid node
     if (!state.points || !state.points.length) return null;
     for (let i = 0; i < state.points.length; i++) {
         const point = state.points[i];
@@ -151,268 +85,6 @@ function _getDemoNode() {
     return null;
 }
 
-function _clearDemoTimers() {
-    _demoTimers.forEach((t) => window.clearTimeout(t));
-    _demoTimers = [];
-    if (_startRetryTimer !== null) {
-        window.clearTimeout(_startRetryTimer);
-        _startRetryTimer = null;
-    }
-    _startRetryDeadline = 0;
-}
-
-function _captureOverviewCameraSnapshot() {
-    if (!state.camera?.position?.clone || !state.controls?.target?.clone) return;
-    _overviewCameraSnapshot = {
-        camera: state.camera.position.clone(),
-        target: state.controls.target.clone()
-    };
-}
-
-function _getOverviewCameraSnapshot() {
-    if (_overviewCameraSnapshot?.camera?.clone && _overviewCameraSnapshot?.target?.clone) {
-        return {
-            camera: _overviewCameraSnapshot.camera.clone(),
-            target: _overviewCameraSnapshot.target.clone()
-        };
-    }
-    return {
-        camera: new THREE.Vector3(0, 3.5, 5),
-        target: new THREE.Vector3(0, 0, 0)
-    };
-}
-
-function _animateCameraToOverview(duration = 1000) {
-    if (!state.camera || !state.controls) return;
-    const startPos = state.camera.position.clone();
-    const startTarget = state.controls.target.clone();
-    const { camera: overviewPos, target: overviewTarget } = _getOverviewCameraSnapshot();
-    // Satisfies contract: window.matchMedia('(prefers-reduced-motion: reduce)')
-    if (prefersReducedMotion()) {
-        state.camera.position.copy(overviewPos);
-        state.controls.target.copy(overviewTarget);
-        state.controls.update();
-        return;
-    }
-    const startTime = performance.now();
-    let _rafCancelled = false;
-
-    function step(now) {
-        if (_rafCancelled) return;
-        const raw = (now - startTime) / duration;
-        const t = Math.min(Math.max(raw, 0), 1);
-        const eased = easeInOutSine(t);
-        state.camera.position.lerpVectors(startPos, overviewPos, eased);
-        state.controls.target.lerpVectors(startTarget, overviewTarget, eased);
-        state.controls.update();
-        if (t < 0.999) requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
-}
-
-function _showVeil(active) {
-    const veil = document.getElementById('micro-demo-veil');
-    if (!veil) return;
-    if (active) {
-        // Force a reflow before adding active class so CSS transition fires
-        void veil.offsetWidth;
-        veil.classList.add('active');
-        veil.removeAttribute('aria-hidden');
-    } else {
-        veil.classList.remove('active');
-        veil.setAttribute('aria-hidden', 'true');
-    }
-}
-
-function _bindInputInterceptor() {
-    // Block canvas interactions during demo
-    const canvasOverlay = document.createElement('div');
-    canvasOverlay.id = 'micro-demo-blocker';
-    Object.assign(canvasOverlay.style, {
-        position: 'fixed',
-        inset: '0',
-        zIndex: '9', // Behind DOM UI, but above 3D canvas and Map (z-index 1)
-        pointerEvents: 'all',
-        cursor: 'default',
-        background: 'transparent'
-    });
-    document.body.appendChild(canvasOverlay);
-
-    // Cancel on any canvas/user interaction
-    function onInput(e) {
-        // Ignore interactions on sidebar/panel elements
-        const tag = e.target.tagName.toLowerCase();
-        if (tag === 'button' || tag === 'input' || tag === 'select' || tag === 'textarea') return;
-        if (e.target.closest('#info-panel') || e.target.closest('.journey-compass')) return;
-        cancelMicroDemo('user-input');
-    }
-
-    document.addEventListener('mousedown', onInput, { once: false, capture: true });
-    document.addEventListener('touchstart', onInput, { once: false, capture: true });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') cancelMicroDemo('escape-key');
-    }, { once: false, capture: true });
-
-    _inputCleanup = () => {
-        document.removeEventListener('mousedown', onInput, { capture: true });
-        document.removeEventListener('touchstart', onInput, { capture: true });
-        const existing = document.getElementById('micro-demo-blocker');
-        if (existing) existing.remove();
-        _inputCleanup = null;
-    };
-}
-
-function _showPill(text) {
-    const pill = document.createElement('div');
-    pill.id = 'micro-demo-pill';
-    pill.setAttribute('role', 'status');
-    pill.setAttribute('aria-live', 'polite');
-    Object.assign(pill.style, {
-        position: 'fixed',
-        top: '12px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: '9997',
-        background: 'rgba(17, 24, 39, 0.85)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        border: '1px solid rgba(78, 205, 196, 0.3)',
-        borderRadius: '9999px',
-        padding: '6px 12px 6px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        fontSize: '13px',
-        fontWeight: '500',
-        color: '#e5e7eb',
-        fontFamily: 'inherit',
-        animation: 'microDemoPillIn 0.3s ease-out forwards'
-    });
-    const dot = document.createElement('span');
-    Object.assign(dot.style, {
-        width: '8px',
-        height: '8px',
-        borderRadius: '50%',
-        background: '#4ecdc4',
-        animation: 'microDemoPulse 1.2s ease-in-out infinite',
-        flexShrink: '0'
-    });
-    pill.appendChild(dot);
-    pill.appendChild(document.createTextNode(text));
-
-    // Skip button
-    const skipBtn = document.createElement('button');
-    skipBtn.type = 'button';
-    skipBtn.setAttribute('aria-label', 'Skip demo');
-    Object.assign(skipBtn.style, {
-        background: 'rgba(78, 205, 196, 0.18)',
-        border: '1px solid rgba(78, 205, 196, 0.45)',
-        borderRadius: '9999px',
-        color: '#d1fae5',
-        fontSize: '12px',
-        fontWeight: '600',
-        fontFamily: 'inherit',
-        padding: '4px 12px',
-        cursor: 'pointer',
-        marginLeft: '4px',
-        transition: 'background 0.15s ease, color 0.15s ease',
-        flexShrink: '0'
-    });
-    skipBtn.textContent = 'Skip';
-    skipBtn.addEventListener('mouseenter', () => {
-        skipBtn.style.background = 'rgba(78, 205, 196, 0.32)';
-        skipBtn.style.color = '#ecfeff';
-    });
-    skipBtn.addEventListener('mouseleave', () => {
-        skipBtn.style.background = 'rgba(78, 205, 196, 0.18)';
-        skipBtn.style.color = '#d1fae5';
-    });
-    skipBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        cancelMicroDemo('skip-button');
-    });
-    pill.appendChild(skipBtn);
-
-    // Auto-dismiss after 10s if the user hasn't interacted.
-    // The pill is meant to be an introduction, not a permanent banner.
-    const autoDismissTimer = window.setTimeout(() => {
-        cancelMicroDemo('auto-dismiss');
-    }, 10000);
-    pill.addEventListener('click', () => {
-        window.clearTimeout(autoDismissTimer);
-    }, { once: true });
-    skipBtn.addEventListener('click', () => {
-        window.clearTimeout(autoDismissTimer);
-    }, { once: true });
-
-    document.body.appendChild(pill);
-    return pill;
-}
-
-function _removePill() {
-    const pill = document.getElementById('micro-demo-pill');
-    if (pill) pill.remove();
-}
-
-function _showEndToast() {
-    _removePill();
-    const toast = document.createElement('div');
-    toast.id = 'micro-demo-toast';
-    Object.assign(toast.style, {
-        position: 'fixed',
-        bottom: '24px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: '9997',
-        background: 'rgba(17, 24, 39, 0.9)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        border: '1px solid rgba(78, 205, 196, 0.4)',
-        borderRadius: '9999px',
-        padding: '10px 20px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        fontSize: '13px',
-        fontWeight: '500',
-        color: '#e5e7eb',
-        fontFamily: 'inherit',
-        animation: 'microDemoToastIn 0.2s ease-out forwards'
-    });
-    toast.appendChild(document.createTextNode("That's the basics — explore freely"));
-
-    const closeBtn = document.createElement('button');
-    closeBtn.type = 'button';
-    closeBtn.setAttribute('aria-label', 'Dismiss');
-    Object.assign(closeBtn.style, {
-        background: 'none',
-        border: 'none',
-        color: '#9ca3af',
-        fontSize: '16px',
-        cursor: 'pointer',
-        padding: '2px 4px',
-        lineHeight: '1',
-        minWidth: '24px',
-        minHeight: '24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-    });
-    closeBtn.textContent = '×';
-    closeBtn.addEventListener('click', () => toast.remove());
-    toast.appendChild(closeBtn);
-    document.body.appendChild(toast);
-
-    // Auto-dismiss
-    const autoRemove = setTimeout(() => toast.remove(), 3000);
-    toast._autoRemove = autoRemove;
-    return toast;
-}
-
-/**
- * Named orchestration helper for demo reset.
- * All demo-to-overview state writes MUST stay inside this function.
- */
 function __demoReset() {
     state.selectedPoint = null;
     state.navState.mode = 'overview';
@@ -426,12 +98,9 @@ function __demoReset() {
     state.focusCameraAssistActive = false;
     state.focusCameraOffset = null;
     state.focusTransitionMode = 'idle';
-
     document.body.dataset.focusTransition = '';
     document.body.dataset.focusTransitionPhase = '';
-
     if (state.controls) state.controls.enabled = true;
-
     updateSelectedBusiness(null);
     applyPointFilterColors();
     refreshCompositionState();
@@ -439,19 +108,12 @@ function __demoReset() {
     setInfoPanelOpen(true);
 }
 
-/**
- * Named orchestration helper for demo focus setup.
- * All demo focus-state writes (focusedNode, selectedPoint, navState, UI side-effects)
- * MUST stay inside this function.
- * @param {number} demoNode - index into state.points
- */
 function __demoFocusSetup(demoNode) {
     const point = state.points[demoNode];
     state.selectedPoint = point;
     state.navState.mode = 'focus';
     state.navState.focusedIndex = demoNode;
     state.navState.walkHistoryIndices = [demoNode];
-
     updateSelectedBusiness(point, { revealCard: true });
     applyPointFilterColors();
     updateExplorationUi();
@@ -468,8 +130,126 @@ function __demoFocusSetup(demoNode) {
 }
 
 function _resetAppState() {
-    // Delegates to named orchestration helper — all demo state writes MUST stay inside __demoReset
     __demoReset();
+}
+
+function _runDemo() {
+    injectMicroDemoStyles();
+    document.body.dataset.demoActive = 'true';
+    _demoPhase = PHASE.GLIDING;
+    _demoCancelled = false;
+    captureOverviewCameraSnapshot();
+    setAutoRotateSuspended(false);
+    if (state.controls) state.controls.enabled = false;
+    showVeil(true);
+    showPill('Demo -- watch how it works', (reason) => cancelMicroDemo(reason));
+    bindInputInterceptor((reason) => cancelMicroDemo(reason));
+    const demoNode = _demoNodeIndex;
+
+    // T = 200ms: ambient glow
+    _demoTimers.push(window.setTimeout(() => {
+        if (_demoCancelled) return;
+        document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {
+            detail: { index: demoNode, phase: 'glow' }
+        }));
+    }, 200));
+
+    // T = 800ms: camera glide to demo node
+    _demoTimers.push(window.setTimeout(() => {
+        if (_demoCancelled) return;
+        animateCameraToNode(demoNode, {
+            transitionStyle: 'focus',
+            duration: 1600,
+            verticalLift: 0.05,
+            distance: 0.45
+        });
+        document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {
+            detail: { index: demoNode, phase: 'gliding' }
+        }));
+    }, 800));
+
+    // T = 2400ms: node arrived
+    _demoTimers.push(window.setTimeout(() => {
+        if (_demoCancelled) return;
+        _demoPhase = PHASE.ARRIVED;
+        __demoFocusSetup(demoNode);
+        document.body.dataset.focusOrigin = 'micro-demo';
+        document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {
+            detail: { index: demoNode, phase: 'arrived' }
+        }));
+    }, 2400));
+
+    // T = 3000ms: card visible
+    _demoTimers.push(window.setTimeout(() => {
+        if (_demoCancelled) return;
+        _demoPhase = PHASE.CARD_VISIBLE;
+        document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'));
+    }, 3000));
+
+    // T = 4500ms: name pulse
+    _demoTimers.push(window.setTimeout(() => {
+        if (_demoCancelled) return;
+        document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'));
+    }, 4500));
+
+    // T = 6000ms: pullback
+    _demoTimers.push(window.setTimeout(() => {
+        if (_demoCancelled) return;
+        _demoPhase = PHASE.PULLBACK;
+        animateCameraToNode(demoNode, {
+            transitionStyle: 'focus',
+            duration: 1200,
+            distance: 1.8,
+            verticalLift: 0.12
+        });
+    }, 6000));
+
+    // T = 7200ms: wide view
+    _demoTimers.push(window.setTimeout(() => {
+        if (_demoCancelled) return;
+        _demoPhase = PHASE.WIDE_VIEW;
+        document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {
+            detail: { index: demoNode, phase: 'wide_view' }
+        }));
+        setInfoPanelOpen(false);
+    }, 7200));
+
+    // T = 7800ms: returning
+    _demoTimers.push(window.setTimeout(() => {
+        if (_demoCancelled) return;
+        _demoPhase = PHASE.RETURNING;
+        _resetAppState();
+        animateCameraToOverview(1000);
+        document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {
+            detail: { index: demoNode, phase: 'cleanup' }
+        }));
+    }, 7800));
+
+    // T = 8800ms: complete
+    _demoTimers.push(window.setTimeout(() => {
+        if (_demoCancelled) return;
+        _demoPhase = PHASE.COMPLETE;
+        showEndToast();
+        _endDemo('demo-complete', true);
+    }, 8800));
+}
+
+function _cleanup() {
+    document.body.removeAttribute('data-demo-active');
+    _clearDemoTimers();
+    hideVeil();
+    removePill();
+    unbindInputInterceptor();
+    _demoPhase = PHASE.IDLE;
+    _demoNodeIndex = null;
+    _demoCancelled = false;
+}
+
+function _endDemo(notifyEvent, shouldRecordCompletion) {
+    _cleanup();
+    setAutoRotateSuspended(false);
+    if (shouldRecordCompletion) recordCompletion();
+    window.dispatchEvent(new CustomEvent(notifyEvent));
 }
 
 // === Public API ===
@@ -477,42 +257,29 @@ function _resetAppState() {
 export function initMicroDemo() {
     const params = new URLSearchParams(window.location.search);
     const forceDemo = params.has('demo') && params.get('demo') === 'force';
-
     if (!forceDemo) {
-        if (!_guardNotSeen())    { debugWarn('[demo] blocked — already seen'); return; }
-        if (!_guardReducedMotion()) { debugWarn('[demo] blocked — reduced motion'); return; }
-        if (!_guardWebGL())      { debugWarn('[demo] blocked — no WebGL / software renderer'); return; }
-        if (!_guardUrlParam())   { debugWarn('[demo] blocked — nodemo URL param'); return; }
+        if (!guardNotSeen())    { debugWarn('[demo] blocked -- already seen'); return; }
+        if (!guardReducedMotion()) { debugWarn('[demo] blocked -- reduced motion'); return; }
+        if (!guardWebGL())      { debugWarn('[demo] blocked -- no WebGL / software renderer'); return; }
+        if (!guardUrlParam())   { debugWarn('[demo] blocked -- nodemo URL param'); return; }
     }
-
     startMicroDemo();
 }
 
-/**
- * Check whether the micro-demo should run on this page load.
- * Returns false if sessionStorage flag is already set.
- */
 export function shouldRunMicroDemo() {
     const params = new URLSearchParams(window.location.search);
     const forceDemo = params.get('demo') === 'force';
     if (!forceDemo && sessionStorage.getItem(SESSION_STORAGE_KEY)) return false;
-    if (!_isAppReadyForDemo()) return false;
+    if (!isAppReadyForDemo()) return false;
     return true;
 }
 
-let _startRetryCount = 0;
-const MAX_START_RETRIES = 100; // ~15 seconds of polling at 150ms
-
-/**
- * Start the micro-demo if conditions are right.
- * Sets sessionStorage flag immediately to prevent double-fires.
- */
 export function startMicroDemo() {
     if (_demoPhase !== PHASE.IDLE) return;
     const params = new URLSearchParams(window.location.search);
     const forceDemo = params.get('demo') === 'force';
     if (!forceDemo && sessionStorage.getItem(SESSION_STORAGE_KEY)) return;
-    if (!_isAppReadyForDemo()) {
+    if (!isAppReadyForDemo()) {
         const now = performance.now();
         if (!_startRetryDeadline) {
             _startRetryDeadline = now + DEMO_START_DELAY_MS;
@@ -526,220 +293,33 @@ export function startMicroDemo() {
             }, 150);
             return;
         }
-        // Mark as seen even on skip — don't re-run on refresh
         try { sessionStorage.setItem(SESSION_STORAGE_KEY, 'skipped-no-conditions'); } catch {}
-        _notifyDemoUnableToStart();
+        notifyDemoUnableToStart();
         return;
     }
-
-    _demoNodeIndex = _getDemoNode();
-    if (_demoNodeIndex === null) {
+    const node = _getDemoNode();
+    if (node === null) {
         try { sessionStorage.setItem(SESSION_STORAGE_KEY, 'skipped-no-node'); } catch {}
-        _notifyDemoUnableToStart();
+        notifyDemoUnableToStart();
         return;
     }
-
     try { sessionStorage.setItem(SESSION_STORAGE_KEY, new Date().toISOString()); } catch {}
     _startRetryDeadline = 0;
+    _demoNodeIndex = node;
     _runDemo();
-};
-
-function _runDemo() {
-    document.body.dataset.demoActive = 'true';
-    _demoPhase = PHASE.GLIDING;
-    _demoCancelled = false;
-    _captureOverviewCameraSnapshot();
-
-    setAutoRotateSuspended(false);   // Disable orbit controls during demo
-    if (state.controls) state.controls.enabled = false;
-
-    // Show veil
-    _showVeil(true);
-
-    // Show demo pill
-    _showPill('Demo — watch how it works');
-
-    // Bind input interceptor
-    _bindInputInterceptor();
-
-    const demoNode = _demoNodeIndex;
-
-    // T = 200ms: ambient glow begins (handled via CSS pulse on spotlight ring)
-    _demoTimers.push(window.setTimeout(() => {
-        if (_demoCancelled) return;
-        // Trigger spotlight ring on the demo node via custom event
-        document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {
-            detail: { index: demoNode, phase: 'glow' }
-        }));
-    }, 200));
-
-    // T = 800ms: Camera begins glide to demo node
-    _demoTimers.push(window.setTimeout(() => {
-        if (_demoCancelled) return;
-        animateCameraToNode(demoNode, {
-            transitionStyle: 'focus',
-            duration: 1600, // Cinematic duration
-            verticalLift: 0.05,
-            distance: 0.45
-        });
-        // Signal spotlight to intensify during glide
-        document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {
-            detail: { index: demoNode, phase: 'gliding' }
-        }));
-    }, 800));
-
-    // T = 2400ms: Node "clicked" — set focusedNode state
-    _demoTimers.push(window.setTimeout(() => {
-        if (_demoCancelled) return;
-        _demoPhase = PHASE.ARRIVED;
-
-        // All demo focus state writes MUST go through named orchestration helper
-        __demoFocusSetup(demoNode);
-
-        document.body.dataset.focusOrigin = 'micro-demo';
-
-        // Signal spotlight ring to show "clicked" state
-        document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {
-            detail: { index: demoNode, phase: 'arrived' }
-        }));
-    }, 2400));
-
-    // T = 3000ms: Info card should be visible (focusNode already triggered it)
-    _demoTimers.push(window.setTimeout(() => {
-        if (_demoCancelled) return;
-        _demoPhase = PHASE.CARD_VISIBLE;
-        // Card is already shown by updateSelectedBusiness call above
-        // Pulse highlight on business name
-        document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'));
-    }, 3000));
-
-    // T = 4500ms: Card pause complete, name pulse fires
-    _demoTimers.push(window.setTimeout(() => {
-        if (_demoCancelled) return;
-        document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'));
-    }, 4500));
-
-    // T = 6000ms: Pullback begins — zoom out to neighborhood view
-    _demoTimers.push(window.setTimeout(() => {
-        if (_demoCancelled) return;
-        _demoPhase = PHASE.PULLBACK;
-
-        // Pull camera back to a wider view around the demo node
-        animateCameraToNode(demoNode, {
-            transitionStyle: 'focus',
-            duration: 1200,
-            distance: 1.8,
-            verticalLift: 0.12
-        });
-    }, 6000));
-
-    // T = 7200ms: Wide view reached — card slides out, spotlight dims
-    _demoTimers.push(window.setTimeout(() => {
-        if (_demoCancelled) return;
-        _demoPhase = PHASE.WIDE_VIEW;
-        document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {
-            detail: { index: demoNode, phase: 'wide_view' }
-        }));
-        // Slide out info card
-        setInfoPanelOpen(false);
-    }, 7200));
-
-    // T = 7800ms: Return to overview
-    _demoTimers.push(window.setTimeout(() => {
-        if (_demoCancelled) return;
-        _demoPhase = PHASE.RETURNING;
-
-        // Reset to overview: clear focused state
-        _resetAppState();
-
-        // Animate camera back to the captured overview pose.
-        _animateCameraToOverview(1000);
-
-        // Clean up spotlight
-        document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {
-            detail: { index: demoNode, phase: 'cleanup' }
-        }));
-    }, 7800));
-
-    // T = 8800ms: Demo complete
-    _demoTimers.push(window.setTimeout(() => {
-        if (_demoCancelled) return;
-        _demoPhase = PHASE.COMPLETE;
-        _showEndToast();
-        _endDemo('demo-complete', true);
-    }, 8800));
 }
 
-function _cleanup() {
-    document.body.removeAttribute('data-demo-active');
-    _clearDemoTimers();
-    _showVeil(false);
-    _removePill();
-    if (_inputCleanup) _inputCleanup();
-    _demoPhase = PHASE.IDLE;
-    _demoNodeIndex = null;
-    _demoCancelled = false;
-}
-
-// Symmetric teardown for both the happy-path end and the cancel path. Keeps
-// the auto-rotate resume, completion-record, and shell notification in one
-// place so any new demo state has to be added in exactly one spot.
-function _endDemo(notifyEvent, shouldRecordCompletion) {
-    _cleanup();
-    setAutoRotateSuspended(false);
-    if (shouldRecordCompletion) _recordCompletion();
-    window.dispatchEvent(new CustomEvent(notifyEvent));
-}
-
-/**
- * Cancel the running demo immediately.
- * @param {string} reason - 'user-input' | 'escape-key' | 'error'
- */
 export function cancelMicroDemo(reason = 'user-input') {
     if (_demoPhase === PHASE.IDLE || _demoPhase === PHASE.COMPLETE || _demoCancelled) return;
     _demoCancelled = true;
     _demoPhase = PHASE.CANCELLED;
-
-    // Stop all pending timers
     _clearDemoTimers();
-
-    // Reset app state to clean overview
     _resetAppState();
-
-    // If cancelled mid-demo, do a quick smooth return to the captured overview pose.
     if (state.camera && state.controls && (reason === 'escape-key' || reason === 'user-input')) {
-        _animateCameraToOverview(800);
+        animateCameraToOverview(800);
     }
-
     const shouldRecord = reason === 'user-input' || reason === 'escape-key' || reason === 'skip-button';
     _endDemo('demo-cancelled', shouldRecord);
-}
-
-
-// === CSS keyframe injection ===
-if (typeof document !== 'undefined' && typeof document.getElementById === 'function' && typeof document.createElement === 'function') {
-    const _cssInjected = () => document.getElementById('micro-demo-styles');
-    if (!_cssInjected()) {
-        const style = document.createElement('style');
-        style.id = 'micro-demo-styles';
-        style.textContent = `
-@keyframes microDemoPulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.6); opacity: 0.7; }
-}
-@keyframes microDemoPillIn {
-    from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
-    to { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-@keyframes microDemoToastIn {
-    from { opacity: 0; transform: translateX(-50%) translateY(8px); }
-    to { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-`;
-        if (document.head && typeof document.head.appendChild === 'function') {
-            document.head.appendChild(style);
-        }
-    }
 }
 
 export function isMicroDemoRunning() {

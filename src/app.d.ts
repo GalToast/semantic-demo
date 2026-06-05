@@ -1,0 +1,26 @@
+/// <reference types="svelte" />
+
+/**
+ * @/src/app.d.ts — Ambient type declarations for the Svelte project
+ */
+
+// Declare Svelte module for TypeScript
+declare module '*.svelte' {
+  import type { ComponentType } from 'svelte';
+  const component: ComponentType;
+  export default component;
+}
+
+// Declare CSS modules
+declare module '*.css' {
+  const content: string;
+  export default content;
+}
+
+// Window augmentation for app-level globals
+interface Window {
+  /** Debug reference to init timings */
+  __initTimings?: Array<{ step: string; ms: number }>;
+  /** Mutation guard for state.js compatibility */
+  withStateMutation?: <T>(fn: () => T) => T;
+}

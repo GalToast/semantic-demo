@@ -71,9 +71,9 @@ function testClipboardCatchPath() {
 function testSuccessPathReturnsHref() {
   console.log('\n[TEST] success path exists: shows toast and returns href string');
 
-  // After writeText succeeds, lastCopiedViewLink is set and toast shown
-  assertContains(src, 'state.lastCopiedViewLink = href',
-    'success path sets lastCopiedViewLink');
+  // After writeText succeeds, toast shown and href returned (dead lastCopiedViewLink write removed)
+  assertNotContains(src, 'state.lastCopiedViewLink',
+    'success path no longer writes dead lastCopiedViewLink field');
 
   assertContains(src, "showExperienceToast('View link copied'",
     'success path shows View link copied toast');

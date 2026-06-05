@@ -1,12 +1,12 @@
-<script>
+<script lang="ts">
     import { publish, EVENTS } from '../event-bus.js';
 
-    function handleLaunch() {
+    function handleLaunch(): void {
         publish(EVENTS.EXPLORATION_RESET_REQUESTED, { surprise: true });
     }
 
-    function handleDemoStarter(query) {
-        const input = document.getElementById('search-input');
+    function handleDemoStarter(query: string): void {
+        const input = document.getElementById('search-input') as HTMLInputElement | null;
         if (input) {
             input.value = query;
             input.dispatchEvent(new Event('input', { bubbles: true }));

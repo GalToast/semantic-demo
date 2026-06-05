@@ -2,13 +2,39 @@
 # Deploy semantic-demo to mccullough.cloud
 # Usage: ./deploy.sh           — hot run (deploys to live)
 #        ./deploy.sh --dryrun  — prints what would be pushed, no changes
+#
+# All topology values can be overridden via environment variables.
+# See .env.example for the full list.  Defaults preserve backward
+# compatibility with the current mccullough-cloud / Hostinger deploy.
 set -e
 
-DOMAIN_TARGET="mccullough-cloud:/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/"
-SSH_TARGET="mccullough-cloud"
-REMOTE_DIR="/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo"
-REMOTE_ROOT="/home/u741831384/domains/mccullough.cloud/public_html"
-PORT="65002"
+# ---------------------------------------------------------------------------
+# Load .env if present (does not override existing env vars).
+# ---------------------------------------------------------------------------
+if [[ -f .env ]]; then
+  while IFS= read -r line; do
+    # Skip comments and empty lines.
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    # Export only KEY=VALUE (no multi-line, no shell expansion).
+    if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+      key="${BASH_REMATCH[1]}"
+      val="${BASH_REMATCH[2]}"
+      # Only set if not already in the environment.
+      if [[ -z "${!key}" ]]; then
+        export "$key=$val"
+      fi
+    fi
+  done < .env
+fi
+
+# ---------------------------------------------------------------------------
+# Topology — env overrides with backward-compatible defaults.
+# ---------------------------------------------------------------------------
+SSH_TARGET="${DEPLOY_SSH_TARGET:-mccullough-cloud}"
+REMOTE_DIR="${DEPLOY_REMOTE_DIR:-/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo}"
+REMOTE_ROOT="${DEPLOY_REMOTE_ROOT:-/home/u741831384/domains/mccullough.cloud/public_html}"
+PORT="${DEPLOY_PORT:-65002}"
+DOMAIN_TARGET="${DEPLOY_DOMAIN_TARGET:-${SSH_TARGET}:${REMOTE_DIR}/}"
 DRYRUN=false
 if [[ "$1" == "--dryrun" ]]; then
   DRYRUN=true
@@ -98,9 +124,9 @@ echo "==> Syncing scanner.js to cloudscan/..."
 # The cloudscan page is a sibling project, so the file lives at ../js/scanner.js.
 # If it isn't present (e.g., running this script in isolation), skip the sync
 # rather than failing the semantic-demo deploy.
-SCANNER_SRC="../js/scanner.js"
+SCANNER_SRC="${DEPLOY_SCANNER_SOURCE:-../js/scanner.js}"
 if [[ -f "$SCANNER_SRC" ]]; then
-  run "scp -P $PORT $SCANNER_SRC 'mccullough-cloud:/home/u741831384/domains/mccullough.cloud/public_html/js/scanner.js'"
+  run "scp -P $PORT $SCANNER_SRC '${SSH_TARGET}:${REMOTE_ROOT}/js/scanner.js'"
   run "scp -P $PORT $SCANNER_SRC '${DOMAIN_TARGET}js/scanner.js'"
 else
   echo "==> scanner.js not found at $SCANNER_SRC; skipping cloudscan sync (sibling project not present)."

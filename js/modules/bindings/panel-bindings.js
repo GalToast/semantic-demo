@@ -2,6 +2,7 @@ import { bindClick } from './view-bindings.js';
 import { isCompactFocusStageViewport } from '../utils/ui-presentation.js';
 import { closeLegendPanel } from '../legend-ui.js';
 import { cancelMicroDemo } from '../micro-demo.js';
+import { setFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.js';
 
 let _previouslyFocusedInfoPanel = null;
 
@@ -24,7 +25,7 @@ export function setInfoPanelOpen(open, options = {}) {
 
     panel.classList.toggle('active', shouldBeOpen);
     panel.setAttribute('aria-hidden', shouldBeOpen ? 'false' : 'true');
-    document.body.dataset.focusPanelMode = shouldBeOpen ? 'manual-panel' : 'manual-collapsed';
+    setFocusPanelMode(shouldBeOpen ? FOCUS_PANEL_MODE.MANUAL_PANEL : FOCUS_PANEL_MODE.MANUAL_COLLAPSED);
 
     if (panelBtn) {
         panelBtn.classList.toggle('is-collapsed', !shouldBeOpen);

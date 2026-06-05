@@ -1,5 +1,5 @@
-<script>
-    import { onMount, onDestroy } from 'svelte';
+<script lang="ts">
+    import { onDestroy } from 'svelte';
     import { state as appState } from '../../state.js';
     import { activeFiltersStore } from '../stores.js';
     import { publish, EVENTS } from '../event-bus.js';
@@ -13,13 +13,27 @@
     import { normalizeCityForFilter } from '../utils/geo-data.js';
     import { FILTER_DEBOUNCE_MS } from '../chrome-timing.js';
 
+    interface FilterChromeProps {
+        debounceMs?: number;
+        onFiltersChanged?: ((filters: ActiveFilters) => void) | null;
+        requestUrlStateUpdate?: ((reason: string) => void) | null;
+    }
+
+    interface ActiveFilters {
+        status: string;
+        city: string;
+        website: boolean;
+        email: boolean;
+        geocoded: boolean;
+    }
+
     let {
         debounceMs = FILTER_DEBOUNCE_MS,
         onFiltersChanged = null,
         requestUrlStateUpdate = null
-    } = $props();
+    }: FilterChromeProps = $props();
 
-    let debounceTimer = null;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
     const hasAnyFilter = $derived(
         $activeFiltersStore.status !== 'all'
@@ -29,21 +43,21 @@
         || $activeFiltersStore.geocoded
     );
 
-    let cities = $derived(
+    let cities: [string, number][] = $derived(
         Array.from(
-            (appState.points || []).reduce((acc, point) => {
+            ((appState as { points?: Array<{ city?: string }> }).points || []).reduce((acc: Map<string, number>, point: { city?: string }) => {
                 const c = normalizeCityForFilter(point?.city);
                 if (c && c !== 'Other / Unparsed') acc.set(c, (acc.get(c) || 0) + 1);
                 return acc;
-            }, new Map())
-        ).sort((a, b) => a[0].localeCompare(b[0]))
+            }, new Map<string, number>())
+        ).sort((a: [string, number], b: [string, number]) => a[0].localeCompare(b[0]))
     );
 
     $effect(() => {
         const preview = document.getElementById('filter-preview');
         if (preview) {
-            const parts = [];
-            const af = $activeFiltersStore;
+            const parts: string[] = [];
+            const af: ActiveFilters = $activeFiltersStore;
             if (af.status !== 'all') {
                 parts.push(af.status.charAt(0).toUpperCase() + af.status.slice(1));
             }
@@ -61,8 +75,8 @@
         }
     });
 
-    function fireFilter(reason) {
-        appState.activeStoryPrompt = null;
+    function fireFilter(reason: string): void {
+        (appState as { activeStoryPrompt: null }).activeStoryPrompt = null;
         incrementFilterVersion();
         if (typeof clearSearchGlow === 'function') clearSearchGlow();
         if (debounceTimer) clearTimeout(debounceTimer);
@@ -76,28 +90,28 @@
         }, debounceMs);
     }
 
-    function handleStatusClick(event) {
-        const button = event.currentTarget;
+    function handleStatusClick(event: MouseEvent): void {
+        const button = event.currentTarget as HTMLElement;
         const value = button.dataset.statusFilter || 'all';
         setActiveFilter('status', value);
         fireFilter('status-filter');
     }
 
-    function handleSignalClick(event) {
-        const button = event.currentTarget;
+    function handleSignalClick(event: MouseEvent): void {
+        const button = event.currentTarget as HTMLElement;
         const key = button.dataset.signalFilter;
         if (!key) return;
         toggleActiveFilterSignal(key);
         fireFilter('signal-filter');
     }
 
-    function handleCityChange(event) {
-        const value = event.target.value || 'all';
+    function handleCityChange(event: Event): void {
+        const value = (event.target as HTMLSelectElement).value || 'all';
         setActiveFilter('city', value);
         fireFilter('city-filter');
     }
 
-    function handleClearFilters() {
+    function handleClearFilters(): void {
         resetActiveFilters();
         if (typeof requestUrlStateUpdate === 'function') {
             requestUrlStateUpdate('filter-clear');
@@ -105,7 +119,7 @@
         fireFilter('filter-clear');
     }
 
-    onDestroy(() => {
+    onDestroy((): void => {
         if (debounceTimer) clearTimeout(debounceTimer);
     });
 </script>

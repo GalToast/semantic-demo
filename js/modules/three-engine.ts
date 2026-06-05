@@ -188,7 +188,7 @@ export function getSceneRenderableDiagnostics() {
     const resources = getLiveResourceCounts();
     return {
         active: perf.active,
-        fps: Math.round(1000 / Math.max(1, perf.frameMsAverage)),
+        fps: Math.round(1000 / Math.max(1, perf.avgFrameMs || 0)),
         drawCalls: perf.drawCalls,
         triangles: perf.triangles,
         points: state.points?.length || 0,

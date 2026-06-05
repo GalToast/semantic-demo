@@ -1,10 +1,13 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
+import { webglContext } from './webgl-context.js';
 import { SCENE_PALETTE } from './design-tokens.js';
 import { computeOverviewScatterOffsets } from './utils/geo-data.js';
 import { getThreadCategoryColor } from './utils/ui-presentation.js';
 import { createSporeTexture, createFocusRingTexture, createFocusNextCueTexture } from './utils/three-textures.js';
 import { seededUnit } from './utils/seeded-random.js';
+import { CONFIG } from './config.js';
+import { disposeObject3D } from './resource-tracker.js';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -232,6 +235,27 @@ outgoingLight = diffuseColor.rgb + vec3(0.18, 0.62, 0.56) * uGlowIntensity * 0.1
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
+export function disposeNodeVisuals() {
+    if (state.pointsMesh) {
+        disposeObject3D(state.pointsMesh);
+        state.pointsMesh = null;
+    }
+    if (state.nodeSporeMesh) {
+        disposeObject3D(state.nodeSporeMesh);
+        state.nodeSporeMesh = null;
+    }
+    if (state.nodeSporeHitMesh) {
+        disposeObject3D(state.nodeSporeHitMesh);
+        state.nodeSporeHitMesh = null;
+    }
+    // Also clean webglContext intermediary used by the TS module
+    webglContext.pointsMesh = null;
+    webglContext.pointsMaterial = null;
+    webglContext.nodeSporeMesh = null;
+    webglContext.nodeSporeHitMesh = null;
+    webglContext.nodeSporeMaterial = null;
+}
+
 export function createNodeSporeLayer() {
     if (!state.scene || !state.points?.length || !state.nodePositions?.length) return;
     const sporeGeo = new THREE.SphereGeometry(1, 10, 8);
@@ -252,6 +276,8 @@ export function createNodeSporeLayer() {
     sporeMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     state.nodeSporeMesh = sporeMesh;
     state.nodeSporeMaterial = sporeMat;
+    webglContext.nodeSporeMesh = sporeMesh;
+    webglContext.nodeSporeMaterial = sporeMat;
     for (let i = 0; i < state.points.length; i += 1) {
         setNodeSporeInstanceMatrix(i, sporeMesh);
         sporeMesh.setColorAt(i, getNodeSporeColor(i, 1.62));
@@ -276,10 +302,12 @@ export function createNodeSporeLayer() {
     }
     hitMesh.instanceMatrix.needsUpdate = true;
     state.nodeSporeHitMesh = hitMesh;
+    webglContext.nodeSporeHitMesh = hitMesh;
     state.scene.add(hitMesh);
 }
 
 export function createPoints() {
+    disposeNodeVisuals();
     if (!state.points || !state.points.length) return;
     const geometry = new THREE.BufferGeometry();
     const positions = [];
@@ -335,7 +363,7 @@ export function createPoints() {
         state.targetPositions.push({x: fx, y: fy, z: fz});
         state.originalPositions.push({x: fx, y: fy, z: fz});
 
-        const color = getThreadCategoryColor(cluster, state.COLORS).lerp(new THREE.Color(THREAD_TINT_COLOR), 0.005);
+        const color = getThreadCategoryColor(cluster, CONFIG.COLORS).lerp(new THREE.Color(THREAD_TINT_COLOR), 0.005);
         const radialDepth = Math.sqrt(fx * fx + fy * fy + fz * fz);
         const depthFactor = THREE.MathUtils.clamp(1.16 - radialDepth * 0.14, 0.82, 1.12);
         const colorOffset = i * 3;
@@ -354,7 +382,7 @@ export function createPoints() {
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 
     state.pointsMaterial = new THREE.PointsMaterial({
-        size: state.POINTS_MATERIAL_BASE_SIZE,
+        size: CONFIG.POINTS_MATERIAL_BASE_SIZE,
         vertexColors: true,
         transparent: true,
         opacity: SCENE_ATMOSPHERE.pointOpacityScale,
@@ -370,6 +398,8 @@ export function createPoints() {
     state.scene.add(pointsMesh);
 
     state.pointsMesh = pointsMesh;
+    webglContext.pointsMesh = pointsMesh;
+    webglContext.pointsMaterial = state.pointsMaterial;
     createCountyOutline({ min: bounds.min, max: bounds.max, center: renderCenter });
 
     createNodeSporeLayer();
@@ -397,13 +427,13 @@ function createCountyOutline({ min, max, center }) {
     const maxX = (max.x - center.x) * MYCELIUM_FIELD_SCALE.x - inset;
     const minY = (min.y - center.y) * MYCELIUM_FIELD_SCALE.y + inset;
     const maxY = (max.y - center.y) * MYCELIUM_FIELD_SCALE.y - inset;
-    const minZ = (min.z - center.z) * MYCELIUM_FIELD_SCALE.z;
+    const centerZ = 0;
     const points = [
-        new THREE.Vector3(minX, minY, minZ),
-        new THREE.Vector3(maxX, minY, minZ),
-        new THREE.Vector3(maxX, maxY, minZ),
-        new THREE.Vector3(minX, maxY, minZ),
-        new THREE.Vector3(minX, minY, minZ)
+        new THREE.Vector3(minX, minY, centerZ),
+        new THREE.Vector3(maxX, minY, centerZ),
+        new THREE.Vector3(maxX, maxY, centerZ),
+        new THREE.Vector3(minX, maxY, centerZ),
+        new THREE.Vector3(minX, minY, centerZ)
     ];
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     const material = new THREE.LineBasicMaterial({

@@ -100,7 +100,6 @@ export function startDeferredHydration() {
             ? loadSemanticThreads()
             : Promise.resolve();
 
-        if (typeof window.computeNetworkInsights === 'function') window.computeNetworkInsights();
         if (typeof applyFilters === 'function') applyFilters();
         await Promise.allSettled([threadsPromise]);
 

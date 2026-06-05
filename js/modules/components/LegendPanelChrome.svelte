@@ -1,16 +1,17 @@
-<script>
+<script lang="ts">
     import { onMount, onDestroy } from 'svelte';
     import { isLegendPanelOpenStore, isInfoPanelOpenStore } from '../stores.js';
     import { isCompactFocusStageViewport } from '../utils/ui-presentation.js';
     import { buildLegend, closeLegendGuide } from '../legend-ui.js';
+    import { getFocusPanelMode, setFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.js';
 
-    let previouslyFocusedElement = null;
+    let previouslyFocusedElement: HTMLElement | null = $state(null);
 
-    function toggleLegend() {
+    function toggleLegend(): void {
         const nextState = !$isLegendPanelOpenStore;
         
         if (nextState) {
-            previouslyFocusedElement = document.activeElement;
+            previouslyFocusedElement = document.activeElement as HTMLElement | null;
             
             // Need to build the legend when opening
             buildLegend();
@@ -18,34 +19,34 @@
             if (isCompactFocusStageViewport()) {
                 if ($isInfoPanelOpenStore) {
                     $isInfoPanelOpenStore = false;
-                    document.body.dataset.focusPanelMode = 'legend-open';
+                    setFocusPanelMode(FOCUS_PANEL_MODE.LEGEND_OPEN);
                 }
             }
         } else {
             // Restore info panel if compact
-            if (isCompactFocusStageViewport() && document.body.dataset.focusPanelMode === 'legend-open') {
+            if (isCompactFocusStageViewport() && getFocusPanelMode() === FOCUS_PANEL_MODE.LEGEND_OPEN) {
                 $isInfoPanelOpenStore = true;
-                document.body.dataset.focusPanelMode = 'overview';
+                setFocusPanelMode(FOCUS_PANEL_MODE.OVERVIEW);
             }
         }
         
         $isLegendPanelOpenStore = nextState;
     }
 
-    function handlePointerDown(e) {
+    function handlePointerDown(e: PointerEvent): void {
         if (!$isLegendPanelOpenStore) return;
         
         const legendPanel = document.getElementById('legend-panel');
         const legendToggle = document.getElementById('btn-legend');
         
-        if (legendPanel?.contains(e.target) || legendToggle?.contains(e.target)) return;
+        if (legendPanel?.contains(e.target as Node) || legendToggle?.contains(e.target as Node)) return;
         
         const prevFocus = previouslyFocusedElement || legendToggle;
         $isLegendPanelOpenStore = false;
         
-        if (isCompactFocusStageViewport() && document.body.dataset.focusPanelMode === 'legend-open') {
+        if (isCompactFocusStageViewport() && getFocusPanelMode() === FOCUS_PANEL_MODE.LEGEND_OPEN) {
             $isInfoPanelOpenStore = true;
-            document.body.dataset.focusPanelMode = 'overview';
+            setFocusPanelMode(FOCUS_PANEL_MODE.OVERVIEW);
         }
         
         if (prevFocus && typeof prevFocus.focus === 'function') {
@@ -53,18 +54,18 @@
         }
     }
 
-    function handleKeyDown(e) {
+    function handleKeyDown(e: KeyboardEvent): void {
         if (e.key === 'Escape' && $isLegendPanelOpenStore) {
             closeLegendGuide({ restoreFocus: true });
         }
     }
 
-    onMount(() => {
+    onMount((): void => {
         document.addEventListener('pointerdown', handlePointerDown);
         document.addEventListener('keydown', handleKeyDown);
     });
 
-    onDestroy(() => {
+    onDestroy((): void => {
         document.removeEventListener('pointerdown', handlePointerDown);
         document.removeEventListener('keydown', handleKeyDown);
     });

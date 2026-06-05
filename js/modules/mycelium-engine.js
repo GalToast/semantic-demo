@@ -1,8 +1,10 @@
 'use strict';
 
+import { webglContext } from './webgl-context.js';
 import * as THREE from 'three';
 import { state } from '../state.js';
 import { getThreadCategoryColor } from './utils/ui-presentation.js';
+import { CONFIG } from './config.js';
 
 function pairKey(a, b) {
     return a < b ? `${a}:${b}` : `${b}:${a}`;
@@ -199,8 +201,8 @@ export function getBezierControlPoint(a, b, edgeSide = 0, edgeRise = 0) {
     const span = new THREE.Vector3().subVectors(end, start);
     const spanLength = Math.max(span.length(), 0.001);
 
-    const viewVector = state.camera
-        ? new THREE.Vector3().subVectors(state.camera.position, mid).normalize()
+    const viewVector = webglContext.camera
+        ? new THREE.Vector3().subVectors(webglContext.camera.position, mid).normalize()
         : new THREE.Vector3(0.28, 0.2, 1).normalize();
 
     const worldUp = new THREE.Vector3(0, 1, 0);
@@ -230,8 +232,8 @@ export function pushBezierLinePair(target, colorTarget, pair, fade = 1, segments
 
     const control = getBezierControlPoint(a, b, edgeSide, edgeRise);
 
-    const colorA = getThreadCategoryColor(state.points[pair.a]?.cluster || 0, state.COLORS);
-    const colorB = getThreadCategoryColor(state.points[pair.b]?.cluster || 0, state.COLORS);
+    const colorA = getThreadCategoryColor(state.points[pair.a]?.cluster || 0, CONFIG.COLORS);
+    const colorB = getThreadCategoryColor(state.points[pair.b]?.cluster || 0, CONFIG.COLORS);
 
     const samples = [];
     for (let i = 0; i <= segments; i++) {
@@ -267,7 +269,7 @@ export function pushBezierLinePair(target, colorTarget, pair, fade = 1, segments
 // ── updateMyceliumThreads ──────────────────────────────────────────────────
 
 export function updateMyceliumThreads() {
-    if (!state.myceliumConnectionPairs?.length) return;
+    if (!webglContext.myceliumConnectionPairs?.length) return;
 
     // five explicit segment pairs: 10 vertices / 30 floats
     const FLOATS_PER_BEZIER_EDGE = 30;
@@ -286,8 +288,8 @@ export function updateMyceliumThreads() {
         const midZ = (az + bz) * 0.5;
         const spanLength = Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2 + (bz - az) ** 2);
 
-        const viewVec = state.camera
-            ? new THREE.Vector3().subVectors(state.camera.position, new THREE.Vector3(midX, midY, midZ)).normalize()
+        const viewVec = webglContext.camera
+            ? new THREE.Vector3().subVectors(webglContext.camera.position, new THREE.Vector3(midX, midY, midZ)).normalize()
             : new THREE.Vector3(0.28, 0.2, 1).normalize();
         const worldUp = new THREE.Vector3(0, 1, 0);
         const right = new THREE.Vector3().crossVectors(worldUp, viewVec);
@@ -332,7 +334,7 @@ export function updateMyceliumThreads() {
         if (!lines?.geometry?.attributes?.position) return;
         const positions = lines.geometry.attributes.position.array;
         let offset = 0;
-        state.myceliumConnectionPairs.forEach((pair) => {
+        webglContext.myceliumConnectionPairs.forEach((pair) => {
             if (pair.layer !== layer) return;
             if (pair.a >= state.nodePositions.length || pair.b >= state.nodePositions.length) return;
             const a = state.nodePositions[pair.a];
@@ -360,9 +362,9 @@ export function updateMyceliumThreads() {
         lines.geometry.attributes.position.needsUpdate = true;
     };
 
-    updateLayer(state.myceliumCoreLines, 0);
-    updateLayer(state.myceliumWispyLines, 1);
-    updateLayer(state.myceliumBridgeLines, 2);
+    updateLayer(webglContext.myceliumCoreLines, 0);
+    updateLayer(webglContext.myceliumWispyLines, 1);
+    updateLayer(webglContext.myceliumBridgeLines, 2);
 
     state.myceliumDirty = false;
 }

@@ -20,7 +20,10 @@
 | `js/modules/journey.js` | Thin journey orchestration layer; delegates extracted journey owners and preserves the public surface |
 | `js/modules/journey-neighborhood.js` | Neighborhood manifest, bounded walk candidates, trail seed, and route index derivation |
 | `js/modules/journey-selected-card.js` | Focus-stage sync, selected-card rendering, and selected business DOM hydration |
-| `js/modules/journey-canvas-interaction.js` | Canvas node hit testing, hover state, pointer bindings, and canvas-to-thread handoff |
+| `js/modules/journey-canvas-interaction.js` | Thin facade: re-exports from extracted canvas interaction modules + inline event binding orchestrator |
+| `js/modules/journey-canvas-hit-test.js` | Canvas node hit testing, pointer position, thread candidate visibility |
+| `js/modules/journey-canvas-node-picking.js` | Raycaster-based canvas field node picking and candidate comparison |
+| `js/modules/journey-canvas-hover.js` | Canvas field hover state (set/clear) |
 | `js/modules/journey-focus-ui.js` | Focus/traversal DOM UI, neighbor rail rendering, and walk breadcrumb internals |
 | `js/modules/journey-thread-settler.js` | Thread walk traversal, neighbor timers, inspection settle flow, and inside preview state |
 | `js/modules/journey-thread-model.js` | Thread state model and trail seed derivation shared across journey and thread inspector |
@@ -175,5 +178,60 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 - App shell — `js/modules/app.js`, `js/state.js`
 - Focus stage — `js/modules/focus-pocket.js`, `js/modules/journey-compass-state.js`
 - Deploy scripts — `deploy.sh`, `deploy.ps1`
+- **Exception:** During active migration phases, these files may be touched with explicit lead approval to port logic to `src/`.
 
 **Routing cross-seam findings.** When a worker identifies a bug or fix opportunity outside its seam: stop, document the finding with path and line range, and return `Finds outside scope: <path> — <description>` to the main lane instead of editing the off-seam file. This prevents silent cross-seam corruption and preserves the lead's review gate.
+
+## Svelte + TypeScript Migration Scaffold
+
+The Svelte migration lives under `src/`. Vite root is set to `src/` so `npm run dev:svelte` serves the new app directly at `http://localhost:5173/`.
+
+### Quick Commands
+```bash
+npm run dev:svelte   # vite dev server on port 5173
+npm run build:svelte # vite build to dist/svelte/
+npm run check        # svelte-check + tsc
+```
+
+### Scaffold Layout
+| Path | Role |
+|---|---|
+| `src/index.html` | Vite entry (root: src/), has all body data-attrs for CSS coexistence |
+| `src/main.ts` | App mount, URL param init (?demo=force, ?nodemo=1) |
+| `src/App.svelte` | Root component, composes all skeletons, syncs body data-attrs |
+| `src/lib/stores/` | 7 typed Svelte stores replacing state.js slices |
+| `src/lib/types/` | Full TS types (state.ts, business.ts, webgl.ts, events.ts) — no `any` |
+| `src/lib/z-index.ts` | Managed `Z_LAYERS` constant — single source for all z-index values |
+| `src/lib/css/z-layers.css` | CSS custom properties mirroring z-index.ts |
+| `src/lib/utils/strand-continuity.ts` | Bug-fixed strand continuity with Map-based timer tracking |
+| `src/lib/engine/` | Imperative bridge to legacy Three.js engine (dynamic imports) |
+| `src/components/` | 14 skeleton Svelte components with typed props and TODO markers |
+
+### Dev Server Behavior
+With `root: 'src'` in vite.config.ts:
+- `http://localhost:5173/` serves `src/index.html` (Svelte app)
+- `/main.ts` resolves to `src/main.ts` (relative to root)
+- The old root `index.html` (case study redirect) is untouched
+- `/api/*` proxies to `127.0.0.1:8795` for PHP backend coexistence
+
+### Z-Index Layer Architecture
+All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` -> `src/index.html` inline `<style>`. Do NOT hardcode z-index values in component `<style>` blocks — always use `var(--z-*)`.
+
+### Key Migration Principles
+1. **Stores replace state.js slices** — stores are the single source of truth for UI state. Legacy code reads `window.__semanticState` via bridge.ts.
+2. **Skeleton components are migration targets** — each `.svelte` component has a TODO block at the top listing the legacy JS files to port.
+3. **Imperative-only bridge** — `@lib/engine/bridge.ts` calls legacy functions directly. No reactive state, no Three.js types in the bridge.
+4. **CSS coexistence** — body `data-*` attributes are synced from stores via `$effect()` blocks in `App.svelte`, enabling legacy CSS to style Svelte components during phased migration.
+5. **Bugs fixed in transit** — known bugs are resolved as code is ported to Svelte/TS, not patched in-place in the legacy tree.
+
+### Bugsweep Findings (fix during migration, not separately)
+**JS HIGH:** strand-continuity timer-ID drop (fixed in `src/lib/utils/strand-continuity.ts`), three-interaction-visuals un-cleaned listeners, state.js Proxy bypass, three-node-manager texture leak.
+**JS MEDIUM:** micro-demo skip-guard, journey-thread-settler race, search-state tokenization edge case.
+**CSS HIGH:** focus-dive.css dead journey-chip block, narrow.css escape-hatch scope leak.
+**CSS MEDIUM/LOW:** tracked in full bugsweep report (4 medium, 4 low CSS).
+
+### Scaffold Status
+- Dev server runs: `npm run dev:svelte` → `https://localhost:5173/`
+- `svelte-check`: 0 errors in `src/` code (50 errors are all in legacy `js/modules/*.ts` — out of scope for scaffold)
+- 14 components, 8 stores, 4 type modules, z-index system, engine bridge — all in place as stubs
+- `docs/migration-plan.md` — being written by migration-architect worker

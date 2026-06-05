@@ -5,6 +5,7 @@
  */
 
 import * as THREE from 'three';
+import { getFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.js';
 
 export function updateDocumentMeta(title, description) {
     if (typeof document === 'undefined') return;
@@ -134,7 +135,7 @@ export function getZoomBlend(camera, controls) {
 export function getGraphPresentationState(focusedNode, semanticDiveMode, mode, searchGlowActive) {
     if (focusedNode !== null) {
         if (semanticDiveMode) return 'inside';
-        if (typeof document !== 'undefined' && document.body && document.body.dataset.focusPanelMode === 'field-node') return 'field-node';
+        if (getFocusPanelMode() === FOCUS_PANEL_MODE.FIELD_NODE) return 'field-node';
         return mode === 'trail' ? 'trail' : 'focus';
     }
     if (searchGlowActive) return 'search';

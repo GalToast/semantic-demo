@@ -86,6 +86,7 @@ const liveProduct = new Set([
 const debugProbe = new Set([
   '__APP_STATE__',
   '__TEST_STATE__',
+  '__initTimings',
   '__semanticCanvasThreadProbe',
   '__semanticFocusCueProbe',
   '__semanticThreadInspectorProbe',

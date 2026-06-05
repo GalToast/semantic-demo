@@ -9,6 +9,13 @@
     "js/modules/search-chrome-island.js",
     "js/modules/filter-chrome-island.js",
     "js/modules/utils/dom-builder.js",
-    "js/modules/view-models/**/*.js"
+    "js/modules/view-models/**/*.ts",
+    "js/modules/view-models/**/*.js",
+    "js/modules/event-bus.ts",
+    "js/modules/tooltip.ts",
+    "js/modules/keyboard-help.ts",
+    "js/modules/loading-ui.ts",
+    "js/modules/pathfinding.ts",
+    "js/modules/utils/geo-data.ts"
   ]
 }

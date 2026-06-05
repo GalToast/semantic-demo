@@ -1,3 +1,4 @@
+import { webglContext, getLiveResourceCounts } from './webgl-context.js';
 import { switchView } from './view-controller.js';
 import { updateClusterLabels } from './cluster-labels.js';
 import { applyFocusPocketBreathing } from './focus-pocket.js';
@@ -47,8 +48,7 @@ import {
     shouldRenderBridgeThreads,
     getThreadPulseOpacity,
     getThreadOpacityEnvelope,
-    getMyceliumPresentationProfile,
-    getGroupLineSegmentCount
+    getMyceliumPresentationProfile
 } from './three-thread-manager.js';
 
 import {
@@ -66,6 +66,7 @@ import {
     initSemanticLens,
     initSemanticManifold
 } from './three-interaction-visuals.js';
+import { CONFIG } from './config.js';
 
 export {
     updateMyceliumThreads,
@@ -172,19 +173,17 @@ function smoothDiagnosticValue(current, next, sampleCount) {
 }
 
 export function getSceneRenderableDiagnostics() {
-    function getLineSegmentCount(line) {
-        const positionCount = line?.geometry?.attributes?.position?.count || 0;
-        return Math.floor(positionCount / 2);
-    }
+    const perf = state.scenePerformanceDiagnostics;
     return {
-        pointCount: state.pointsMesh?.geometry?.attributes?.position?.count || state.points.length || 0,
-        sporeInstanceCount: state.nodeSporeMesh?.count || 0,
-        myceliumCoreSegments: state.scenePerformanceDiagnostics.myceliumCoreSegments || 0,
-        myceliumWispySegments: state.scenePerformanceDiagnostics.myceliumWispySegments || 0,
-        myceliumBridgeSegments: state.scenePerformanceDiagnostics.myceliumBridgeSegments || 0,
-        focusThreadSegments: state.focusThreadDiagnostics?.segmentCount || 0,
-        routeTraceSegments: state.routeTraceDiagnostics?.segmentCount || getLineSegmentCount(state.routeTraceLines),
-        arrivalHandoffSegments: state.arrivalHandoffDiagnostics?.segmentCount || getGroupLineSegmentCount(state.arrivalHandoffGroup)
+        active: perf.active,
+        fps: Math.round(1000 / Math.max(1, perf.avgFrameMs || 0)),
+        drawCalls: perf.drawCalls,
+        triangles: perf.triangles,
+        points: state.points?.length || 0,
+        myceliumCoreSegments: perf.myceliumCoreSegments,
+        myceliumWispySegments: perf.myceliumWispySegments,
+        myceliumBridgeSegments: perf.myceliumBridgeSegments,
+        memory: getLiveResourceCounts()
     };
 }
 
@@ -274,22 +273,28 @@ export function initThreeJS() {
         return false;
     }
 
-    state.scene = new THREE.Scene();
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(SCENE_ATMOSPHERE.fogColor, SCENE_ATMOSPHERE.fogDensity);
+    webglContext.scene = scene;
+    state.scene = scene;
 
-    // 10/10 Polish: High-Fidelity Atmospheric Depth
-    state.scene.fog = new THREE.FogExp2(SCENE_ATMOSPHERE.fogColor, SCENE_ATMOSPHERE.fogDensity);
-
-    state.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    state.camera.position.set(1.5, 1.2, 2.0);
-    state.camera.lookAt(0, 0, 0);
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(1.5, 1.2, 2.0);
+    camera.lookAt(0, 0, 0);
+    webglContext.camera = camera;
+    state.camera = camera;
 
     // 10/10 Polish: Cinema Lighting Rig
-    state.hemiLight = new THREE.HemisphereLight(0xe8f4ff, 0x080820, 0);
-    state.scene.add(state.hemiLight);
+    const hemiLight = new THREE.HemisphereLight(0xe8f4ff, 0x080820, 0);
+    scene.add(hemiLight);
+    webglContext.hemiLight = hemiLight;
+    state.hemiLight = hemiLight;
 
-    state.dirLight = new THREE.DirectionalLight(0xffffff, 0);
-    state.dirLight.position.set(5, 5, 5);
-    state.scene.add(state.dirLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0);
+    dirLight.position.set(5, 5, 5);
+    scene.add(dirLight);
+    webglContext.dirLight = dirLight;
+    state.dirLight = dirLight;
 
     try {
         state.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: false });
@@ -303,6 +308,7 @@ export function initThreeJS() {
     state.renderer.setClearColor(SCENE_ATMOSPHERE.fogColor, SCENE_ATMOSPHERE.clearAlpha);
     state.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     state.renderer.toneMappingExposure = SCENE_ATMOSPHERE.toneExposure;
+    state.renderer.outputColorSpace = THREE.SRGBColorSpace;
     container.querySelectorAll('canvas').forEach((canvas) => {
         if (canvas !== state.renderer.domElement) canvas.remove();
     });
@@ -311,16 +317,18 @@ export function initThreeJS() {
     state.renderer.domElement.setAttribute('role', 'application');
     bindWebGLContextResilience(state.renderer);
     container.appendChild(state.renderer.domElement);
+    webglContext.renderer = state.renderer;
 
     state.controls = new OrbitControls(state.camera, state.renderer.domElement);
     state.controls.enableDamping = true;
     state.controls.dampingFactor = 0.05;
-    state.controls.rotateSpeed = state.ORBIT_ROTATE_SPEED_DEFAULT;
+    state.controls.rotateSpeed = CONFIG.ORBIT_ROTATE_SPEED_DEFAULT;
     state.controls.zoomSpeed = 1.0;
-    state.controls.minDistance = state.ORBIT_MIN_DISTANCE_DEFAULT;
-    state.controls.maxDistance = state.ORBIT_MAX_DISTANCE_DEFAULT;
+    state.controls.minDistance = CONFIG.ORBIT_MIN_DISTANCE_DEFAULT;
+    state.controls.maxDistance = CONFIG.ORBIT_MAX_DISTANCE_DEFAULT;
     state.controls.enablePan = true;
-    state.controls.panSpeed = state.ORBIT_PAN_SPEED_DEFAULT;
+    state.controls.panSpeed = CONFIG.ORBIT_PAN_SPEED_DEFAULT;
+    webglContext.controls = state.controls;
 
     // Respect user's motion preference at initialization
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
@@ -330,13 +338,13 @@ export function initThreeJS() {
     }
 
     state.controls.autoRotate = state.autoRotate && !state.autoRotateSuspended;
-    state.controls.autoRotateSpeed = state.AUTO_ROTATE_BASE_SPEED;
+    state.controls.autoRotateSpeed = CONFIG.AUTO_ROTATE_BASE_SPEED;
     state.controls.addEventListener('start', () => {
         releaseFocusCameraAssist('user-control');
-        noteSceneInteraction(state.AUTO_ROTATE_MANUAL_IDLE_MS);
+        noteSceneInteraction(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS);
     });
     state.controls.addEventListener('end', () => {
-        scheduleAutoRotateResume(state.AUTO_ROTATE_MANUAL_IDLE_MS);
+        scheduleAutoRotateResume(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS);
     });
 
     // Large semantic atmosphere: a depth cue, not a literal object to inspect.
@@ -420,6 +428,13 @@ export function cancelAnimate() {
     state.nodeSporeMesh = null;
     state.nodeSporeHitMesh = null;
     state.nodeSporeMaterial = null;
+    // Also clean webglContext intermediary used by the TS module
+    webglContext.scene = null;
+    webglContext.camera = null;
+    webglContext.renderer = null;
+    webglContext.controls = null;
+    webglContext.hemiLight = null;
+    webglContext.dirLight = null;
 }
 
 export function deinit() {
@@ -521,7 +536,7 @@ export function animate() {
         const pointsSizeScale = isFocused ? (isSemanticDive ? 0.52 : 0.62) : 1.0;
         state.pointsMesh.visible = pointsOpacityScale > 0;
         state.pointsMaterial.opacity = 0.32 * SCENE_ATMOSPHERE.pointOpacityScale * pointsRevealProgress * pointsOpacityScale;
-        state.pointsMaterial.size = 0.012 * (1.06 + pointsRevealProgress * 0.46) * pointsSizeScale;
+        state.pointsMaterial.size = CONFIG.POINTS_MATERIAL_BASE_SIZE * (1.06 + pointsRevealProgress * 0.46) * pointsSizeScale;
         if (state.pointsMaterial.userData.shader) {
             state.pointsMaterial.userData.shader.uniforms.uRevealProgress.value = pointsRevealProgress;
         }

@@ -113,7 +113,7 @@ async function verifyBundleFresh() {
 
   try {
     await esbuild.build({
-      entryPoints: ['js/modules/app.js'],
+      entryPoints: ['js/modules/app.ts'],
       bundle: true,
       minify: true,
       keepNames: true,
@@ -132,7 +132,7 @@ async function verifyBundleFresh() {
       const currentHash = crypto.createHash('sha256').update(current).digest('hex').slice(0, 12);
       const generatedHash = crypto.createHash('sha256').update(generated).digest('hex').slice(0, 12);
       failures.push(
-        `dist/bundle.js is stale relative to js/modules/app.js and its imports; ` +
+        `dist/bundle.js is stale relative to js/modules/app.ts and its imports; ` +
         `expected build hash ${generatedHash}, found ${currentHash}. Run npm run build, then npm run refresh:cache.`,
       );
     }

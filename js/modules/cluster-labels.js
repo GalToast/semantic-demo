@@ -3,7 +3,7 @@ import { getSemanticDiveMode, getFocusedNode, getCurrentView } from '../state/se
 import { getCurrentSearchSummary, getPoints, getNodePositions } from '../state/selectors/index.js';
 import { getColors, getClusterNames, getCamera } from '../state/selectors/index.js';
 import { subscribe, EVENTS } from './event-bus.js';
-import { isMobileViewport } from './environment.js';
+import { getViewportSize, isMobileViewport } from './environment.js';
 
 let _labelElements = new Map();
 let _clusterCentroids = new Map();
@@ -160,8 +160,9 @@ export function updateClusterLabels() {
     const cameraPos = camera.position;
 
     // Use a projection matrix to map 3D positions to 2D screen space
-    const widthHalf = window.innerWidth / 2;
-    const heightHalf = window.innerHeight / 2;
+    const { width: innerWidth, height: innerHeight } = getViewportSize();
+    const widthHalf = innerWidth / 2;
+    const heightHalf = innerHeight / 2;
 
     _clusterCentroids.forEach((pos, cluster) => {
         const el = _labelElements.get(cluster);

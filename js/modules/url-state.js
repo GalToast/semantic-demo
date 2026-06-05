@@ -428,7 +428,6 @@ export async function copyCurrentViewLink() {
         showExperienceToast('Copy unavailable', 'Could not write to clipboard.');
         return null;
     }
-    state.lastCopiedViewLink = href;
     showExperienceToast('View link copied', 'Link copied to clipboard.');
     return href;
 }

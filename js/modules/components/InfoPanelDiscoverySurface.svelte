@@ -1,8 +1,15 @@
-<script>
+<script lang="ts">
     import { activeFiltersStore } from '../stores.js';
-    import { describeCluster } from '../utils/ui-presentation.js';
 
-    const activeFilters = $derived($activeFiltersStore);
+    interface ActiveFilters {
+        status: string;
+        city: string;
+        website: boolean;
+        email: boolean;
+        geocoded: boolean;
+    }
+
+    const activeFilters = $derived<ActiveFilters>($activeFiltersStore);
     const hasActiveFilters = $derived(
         activeFilters.status !== 'all' || 
         activeFilters.city !== 'all' || 

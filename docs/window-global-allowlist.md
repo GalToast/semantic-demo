@@ -74,6 +74,7 @@ Classification: `debug-probe`. These are devtools, Playwright, or visual-audit i
 | `window.__APP_STATE__` | `js/modules/bridge-registry.js` | **Primary app state hook.** Preferred neutral state surface for runtime inspection. |
 | `window.withStateMutation` | `js/state.js` | **State mutation gate.** Allows testing/DevTools to bypass the critical keys mutation lock. |
 | `window.__TEST_STATE__` | `js/modules/bridge-registry.js` | **Legacy test bridge fallback.** Preserved for existing Playwright tests. Migrate consumers to `__APP_STATE__`. |
+| `window.__initTimings` | `js/modules/app.js` | **Init timing diagnostics.** Exposes the boot-phase timing object for DevTools/perf inspection. |
 | `window._getSelectedBusinessRoleLabel` | `js/modules/bridge-registry.js` | Compatibility/debug helper for selected-business role labels while older UI/test callers migrate to module/action access. |
 | `window._ti` | `js/modules/thread-inspector.js` | **Debug-probe inspection namespace.** 17 thread-inspection functions. Not a product API. |
 | `window.__semanticCanvasThreadProbe` | — | Debug probe. **Retired from journey.js shim 2026-05-28.** |

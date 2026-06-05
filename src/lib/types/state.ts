@@ -1,0 +1,334 @@
+/**
+ * @lib/types/state.ts — Full application state types
+ *
+ * Discriminated unions for state machine phases. NO `any` types.
+ * Mirrors the slices from js/state.js with proper TS narrowing.
+ */
+
+// ── Navigation State ──────────────────────────────────────────────────────────
+
+export type NavMode = 'overview' | 'search' | 'trail' | 'focus' | 'inside';
+
+export type PanelSurface =
+  | 'idle'
+  | 'search'
+  | 'focus'
+  | 'focus-search'
+  | 'map'
+  | 'map-trail'
+  | 'map-focus'
+  | 'map-focus-search'
+  | 'inside'
+  | 'thread-inspect';
+
+export interface NavState {
+  mode: NavMode;
+  surface: PanelSurface;
+  previousSurface: PanelSurface;
+  focusedIndex: number | null;
+  trailSeedIndex: number | null;
+  trailNeighborIndices: readonly number[];
+  trailCursor: number;
+  trailDepth: number;
+  walkHistoryIndices: readonly number[];
+  lastTraversalReason: string | null;
+  threadCandidates: readonly number[];
+  threadReasonByIndex: Map<number, string>;
+  threadSource: string;
+  focusPocketIndices: readonly number[];
+  focusPocketMeta: FocusPocketMeta | null;
+  focusPocketRoleByIndex: Map<number, string>;
+  focusPocketAnimationFrameId: number | null;
+  focusFramingMeta: FocusFramingMeta | null;
+  currentPersonality: string | null;
+  neighborhoodIndices: readonly number[];
+  explorationHistoryIndices: readonly number[];
+}
+
+export interface FocusPocketMeta {
+  motif: string;
+  label: string;
+  directLift: number;
+  supportLift: number;
+  directPriority: number;
+  supportPriority: number;
+  braid: number;
+}
+
+export interface FocusFramingMeta {
+  targetPosition: [number, number, number];
+  targetLookAt: [number, number, number];
+  distance: number;
+}
+
+// ── Search State ──────────────────────────────────────────────────────────────
+
+export type SearchStatus = 'idle' | 'searching' | 'focusing' | 'results' | 'empty' | 'error';
+
+export interface SearchState {
+  query: string;
+  results: readonly SearchResult[];
+  activeResultId: string | null;
+  summary: SearchSummary | null;
+  status: SearchStatus;
+  hasQuery: boolean;
+  resultsRendered: boolean;
+  degraded: boolean;
+}
+
+export interface SearchResult {
+  id: string;
+  name: string;
+  index: number;
+  score: number;
+  category: string;
+  snippet: string;
+}
+
+export interface SearchSummary {
+  query: string;
+  resultCount: number;
+  resultIndices: readonly number[];
+  topScore: number;
+  anchorIndex: number | null;
+  summaryType: 'semantic' | 'text' | 'mixed';
+}
+
+// ── Journey State ─────────────────────────────────────────────────────────────
+
+export type JourneyPhase =
+  | 'idle'
+  | 'overview'
+  | 'search'
+  | 'focus'
+  | 'inside'
+  | 'map'
+  | 'thread-inspect'
+  | 'walking'
+  | 'arriving'
+  | 'settling';
+
+export interface JourneyState {
+  phase: JourneyPhase;
+  trail: readonly TrailStop[];
+  selectedId: string | null;
+  selectedStopIndex: number | null;
+  neighbors: readonly NeighborEntry[];
+  compass: CompassState;
+  walkHistory: readonly WalkHistoryEntry[];
+}
+
+export interface TrailStop {
+  index: number;
+  name: string;
+  reason: string;
+  visitedAt: number | null;
+}
+
+export interface NeighborEntry {
+  index: number;
+  relationshipLabel: string;
+  reason: string;
+  score: number;
+}
+
+export interface WalkHistoryEntry {
+  fromIndex: number;
+  toIndex: number;
+  reason: string;
+  timestamp: number;
+}
+
+// ── Compass State Machine ─────────────────────────────────────────────────────
+
+export type CompassPhase = 'idle' | 'checking' | 'synthesizing' | 'active' | 'interrupted';
+
+export type CompassAction =
+  | 'explore'
+  | 'search'
+  | 'focus'
+  | 'inside'
+  | 'map'
+  | 'reset'
+  | 'trail'
+  | 'none';
+
+export interface CompassState {
+  phase: CompassPhase;
+  currentAction: CompassAction;
+  previousAction: CompassAction;
+  lastTransitionAt: number;
+}
+
+// ── Focus State ───────────────────────────────────────────────────────────────
+
+export type FocusTransitionMode = 'idle' | 'entering' | 'settling' | 'inside' | 'exiting';
+
+export interface FocusState {
+  pocketNodes: readonly FocusPocketNode[];
+  settling: boolean;
+  transitionMode: FocusTransitionMode;
+  transitionStartedAt: number;
+  orbitSlack: FocusOrbitSlackState;
+  threadInspector: ThreadInspectorState;
+  anchorIndicator: FocusAnchorIndicator;
+}
+
+export interface FocusPocketNode {
+  index: number;
+  position: [number, number, number];
+  role: 'direct' | 'support' | 'civic';
+  score: number;
+  label: string;
+  rotationSeed: number;
+  scaleSeed: number;
+}
+
+export interface FocusOrbitSlackState {
+  phase: 'idle' | 'active' | 'settling';
+  reason: string;
+  startedAt: number;
+  targetShift: number;
+  cameraShift: number;
+  distanceBefore: number;
+  distanceAfter: number;
+  maxDistance: number;
+  rotateSpeed: number;
+  panSpeed: number;
+}
+
+export interface ThreadInspectorState {
+  active: boolean;
+  source: string;
+  inspectedIndex: number | null;
+  pinnedIndex: number | null;
+  pointerInside: boolean;
+  segmentCount: number;
+  braidCount: number;
+  endpointCount: number;
+}
+
+export interface FocusAnchorIndicator {
+  active: boolean;
+  position: [number, number, number] | null;
+  pulsePhase: number;
+}
+
+// ── Demo State Machine ────────────────────────────────────────────────────────
+
+export type DemoPhase =
+  | 'IDLE'
+  | 'GLIDING'
+  | 'ARRIVED'
+  | 'CARD_VISIBLE'
+  | 'PULLBACK'
+  | 'WIDE_VIEW'
+  | 'RETURNING'
+  | 'COMPLETE'
+  | 'CANCELLED';
+
+export interface DemoState {
+  phase: DemoPhase;
+  startedAt: number;
+  selectedNodeIndex: number | null;
+  /** Tracked timer IDs — keyed by purpose for safe cleanup (fixes timer-ID drop bug) */
+  timers: Map<string, number>;
+}
+
+// ── Camera State ──────────────────────────────────────────────────────────────
+
+export type CameraTransitionPhase = 'idle' | 'transitioning' | 'arrived';
+
+export interface CameraState {
+  position: [number, number, number];
+  target: [number, number, number];
+  transition: CameraTransition;
+  autoRotate: boolean;
+  autoRotateSuspended: boolean;
+  autoRotateSpeed: number;
+}
+
+export interface CameraTransition {
+  phase: CameraTransitionPhase;
+  token: number;
+  startedAt: number;
+  durationMs: number;
+  from: {
+    position: [number, number, number];
+    target: [number, number, number];
+  };
+  to: {
+    position: [number, number, number];
+    target: [number, number, number];
+  };
+}
+
+// ── Viewport State ────────────────────────────────────────────────────────────
+
+export interface ViewportState {
+  width: number;
+  height: number;
+  dpr: number;
+  reducedMotion: boolean;
+  isCompact: boolean;
+  isMobile: boolean;
+  isLandscape: boolean;
+}
+
+// ── Strand Continuity State ───────────────────────────────────────────────────
+
+export type StrandContinuityPhase =
+  | 'idle'
+  | 'preview'
+  | 'pinned'
+  | 'exploring'
+  | 'arrived'
+  | 'returning';
+
+export interface StrandContinuityState {
+  phase: StrandContinuityPhase;
+  targetIndex: number | null;
+  fromIndex: number | null;
+  reason: string;
+  startedAt: number;
+}
+
+// ── Filter State ──────────────────────────────────────────────────────────────
+
+export interface ActiveFilters {
+  status: string;
+  city: string;
+  website: boolean;
+  email: boolean;
+  geocoded: boolean;
+}
+
+// ── Composition / Panel Surface ───────────────────────────────────────────────
+
+export type ViewName = 'galaxy' | 'map';
+
+// ── Loading State ─────────────────────────────────────────────────────────────
+
+export type LoadingPhase = 'records' | 'scene' | 'restore' | 'launch';
+
+export interface LoadingPhaseMeta {
+  progress: number;
+  note: string;
+  foot: string;
+}
+
+// ── Semantic Lane State ───────────────────────────────────────────────────────
+
+export type SemanticLaneState = 'checking' | 'healthy' | 'degraded' | 'offline';
+
+// ── Derived State Flags ───────────────────────────────────────────────────────
+
+export interface DerivedFlags {
+  semanticDiveMode: boolean;
+  focusedNode: number | null;
+  isOverview: boolean;
+  isExploration: boolean;
+  hasFocus: boolean;
+  hasSearch: boolean;
+  hasTrail: boolean;
+}

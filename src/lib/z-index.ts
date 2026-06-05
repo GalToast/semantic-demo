@@ -1,0 +1,77 @@
+/**
+ * @lib/z-index.ts — Managed z-index layer system
+ *
+ * Single source of truth for all z-index values in the application.
+ * Replaces scattered CSS z-index values that caused overlay-behind-journey-modal,
+ * controls-above-focus-card, and similar z-index bug families.
+ *
+ * Usage in TypeScript:
+ *   import { Z_LAYERS } from '@lib/z-index';
+ *   style.zIndex = Z_LAYERS.search.toString();
+ *
+ * Usage in CSS (via z-layers.css custom properties):
+ *   z-index: var(--z-search);
+ */
+export const Z_LAYERS = {
+  /** Three.js WebGL canvas and base scene */
+  canvas: 0,
+
+  /** Field nodes (point instanced mesh) */
+  fieldNodes: 10,
+
+  /** Thread/mycelium lines */
+  threads: 20,
+
+  /** Semantic manifold and lens overlays */
+  overlays: 30,
+
+  /** Legend panel */
+  legend: 50,
+
+  /** Info panel and side panels */
+  panels: 80,
+
+  /** Elevated panels (popovers, dropdowns) */
+  panelsElevated: 90,
+
+  /** Search input and results */
+  search: 100,
+
+  /** Journey chrome (compass, breadcrumb, step indicators) */
+  journeyChrome: 200,
+
+  /** Active journey trail visualization */
+  journeyActive: 500,
+
+  /** Focus pocket card */
+  focusCard: 600,
+
+  /** Compass rail */
+  compass: 700,
+
+  /** Camera/interaction controls */
+  controls: 800,
+
+  /** Journey blocking overlay (prevents interaction during transitions) */
+  journeyBlock: 900,
+
+  /** Generic blocker (modal backdrop, loading gate) */
+  blocker: 1000,
+
+  /** Journey modal (trail review, etc.) */
+  journeyModal: 2000,
+
+  /** Loading overlay (highest priority — on top of everything) */
+  loading: 3000
+} as const;
+
+/** Z-index layer key type for type-safe access */
+export type ZLayerKey = keyof typeof Z_LAYERS;
+
+/**
+ * Get a z-index value by layer name.
+ * Useful when the layer name is dynamic (e.g., from a config).
+ */
+export function getZIndex(layer: ZLayerKey): number {
+  return Z_LAYERS[layer];
+}

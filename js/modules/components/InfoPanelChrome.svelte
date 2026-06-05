@@ -1,25 +1,26 @@
-<script>
+<script lang="ts">
     import { isInfoPanelOpenStore, isLegendPanelOpenStore, compositionStore } from '../stores.js';
     import { cancelMicroDemo } from '../micro-demo.js';
     import { closeLegendPanel } from '../legend-ui.js';
     import { isCompactFocusStageViewport } from '../utils/ui-presentation.js';
+    import { setFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.js';
 
     import OverviewSurface from './InfoPanelOverviewSurface.svelte';
     import SearchSurface from './InfoPanelSearchSurface.svelte';
     import SelectionSurface from './InfoPanelSelectionSurface.svelte';
     import DiscoverySurface from './InfoPanelDiscoverySurface.svelte';
 
-    let previouslyFocusedElement = null;
+    let previouslyFocusedElement: HTMLElement | null = $state(null);
 
-    const panelSurface = $derived($compositionStore.panelSurface);
+    const panelSurface = $derived<string>($compositionStore.panelSurface);
 
-    function togglePanel() {
+    function togglePanel(): void {
         cancelMicroDemo('user-input');
         
         const nextState = !$isInfoPanelOpenStore;
         
         if (nextState) {
-            previouslyFocusedElement = document.activeElement;
+            previouslyFocusedElement = document.activeElement as HTMLElement | null;
             if (isCompactFocusStageViewport()) {
                 if ($isLegendPanelOpenStore) {
                     closeLegendPanel();
@@ -37,7 +38,7 @@
     }
     
     $effect(() => {
-        document.body.dataset.focusPanelMode = $isInfoPanelOpenStore ? 'manual-panel' : 'manual-collapsed';
+        setFocusPanelMode($isInfoPanelOpenStore ? FOCUS_PANEL_MODE.MANUAL_PANEL : FOCUS_PANEL_MODE.MANUAL_COLLAPSED);
     });
 </script>
 

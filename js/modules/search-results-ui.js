@@ -1,7 +1,6 @@
 import { state } from '../state.js'
-import { publish, subscribe, EVENTS } from './event-bus.js'
-import { escapeHtml } from './utils/dom-formatters.js'
-import { describeCluster, isCompactSearchViewport } from './utils/ui-presentation.js'
+import { publish, EVENTS } from './event-bus.js'
+import { isCompactSearchViewport } from './utils/ui-presentation.js'
 import { setSearchContainerState, setupMobileSearchSheetToggle } from './search-panel-adapter.js'
 import { recordSemanticLaneSnapshot } from './semantic-lane.js'
 import {
@@ -18,11 +17,8 @@ function syncSearchResultsA11y(resultsEl) {
     resultsEl.setAttribute('aria-hidden', hasContent ? 'false' : 'true');
 }
 import {
-    renderResultCountLine,
     updateSearchTrailCue
 } from './ui-renderers.js'
-import { isMobileViewport } from './environment.js'
-import { CONFIG } from './config.js';
 
 /**
  * search-results-ui.js
@@ -86,12 +82,6 @@ export function renderSearchResultItems(resultsEl, results, renderContext, statu
         syncSearchResultsA11y(resultsEl)
     }
 
-    // Legacy support: sync text-only status elements
-    const statusText = renderResultCountLine(total, visibleCount, mode)
-    if (statusEl) statusEl.textContent = statusText
-    const liveEl = document.getElementById('search-status-live')
-    if (liveEl) liveEl.textContent = statusText
-
     if (state.currentSearchSummary) {
         state.currentSearchSummary.dedupedResultCount = total;
     }
@@ -109,7 +99,8 @@ export function applySemanticSearchLoadingState(resultsEl) {
     searchErrorStore.set(null);
 
     if (resultsEl) {
-        resultsEl.classList.add('searching', 'is-searching-skeleton')
+        resultsEl.classList.add('searching')
+        resultsEl.classList.add('is-searching-skeleton')
         resultsEl.setAttribute('aria-busy', 'true')
         resultsEl.scrollTop = 0
         syncSearchResultsA11y(resultsEl)
@@ -151,7 +142,8 @@ export function finishSemanticSearchSuccessState(resultsEl, trimmedQuery, cacheS
     const spinner = document.getElementById('search-spinner')
     if (spinner) spinner.hidden = true
     if (resultsEl) {
-        resultsEl.classList.remove('searching', 'is-searching-skeleton')
+        resultsEl.classList.remove('searching')
+        resultsEl.classList.remove('is-searching-skeleton')
         resultsEl.setAttribute('aria-busy', 'false')
         syncSearchResultsA11y(resultsEl)
     }
@@ -173,17 +165,16 @@ export function clearSearchState(_resultsEl, _statusEl) {
     const spinner = document.getElementById('search-spinner')
     if (spinner) spinner.hidden = true
     if (_resultsEl) {
-        _resultsEl.classList.remove('active', 'searching', 'is-searching-skeleton')
+        _resultsEl.classList.remove('active')
+        _resultsEl.classList.remove('searching')
+        _resultsEl.classList.remove('is-searching-skeleton')
         _resultsEl.setAttribute('aria-busy', 'false')
         syncSearchResultsA11y(_resultsEl)
     }
     if (_statusEl) {
-        _statusEl.textContent = 'Type to find businesses by need, place, or trade.'
-        _statusEl.hidden = false
+        _statusEl.hidden = true
         _statusEl.classList.remove('search-status-compact')
     }
-    const liveEl = document.getElementById('search-status-live')
-    if (liveEl) liveEl.textContent = ''
     updateSearchTrailCue({ stage: 'query' })
     publish(EVENTS.SEARCH_CLEARED)
 }
@@ -218,7 +209,8 @@ export function applyEmptySemanticSearchState(resultsEl, statusEl, trimmedQuery)
     searchErrorStore.set(null);
     isSearchingStore.set(false);
     if (resultsEl) {
-        resultsEl.classList.remove('searching', 'is-searching-skeleton');
+        resultsEl.classList.remove('searching');
+        resultsEl.classList.remove('is-searching-skeleton');
         resultsEl.setAttribute('aria-busy', 'false');
         syncSearchResultsA11y(resultsEl);
     }

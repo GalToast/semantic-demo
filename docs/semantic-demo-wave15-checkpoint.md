@@ -1,7 +1,7 @@
 # Semantic Demo Wave 15 — Checkpoint
 
 **Date:** 2026-06-04
-**Status:** Phase 0 complete, baseline RED, awaiting Phase 1 entry.
+**Status:** Phase 1.4 complete (ALL GREEN). Awaiting Phase 1.5 (commit + push + PR).
 **Predecessor:** `docs/semantic-demo-wave14-checkpoint.md` (2026-06-01)
 **Plan reference:** `docs/semantic-demo-wave15-and-smells-gap-plan.md`
 
@@ -382,3 +382,57 @@ pm run lint: 0 errors, 28 warnings
 **What's next:**
 - Phase 1.4: Mobile cascade ownership cleanup
 - Phase 1.5: Stash + checkpoint + push + PR
+
+---
+
+## Phase 1.4 — Mobile Cascade Ownership Cleanup + Stale Doc Fix (COMPLETE)
+
+**Date:** 2026-06-05
+**Status:** GREEN. All verification gates pass.
+
+### Worker 1 — CSS ownership cleanup
+
+| File | Edit | Rationale |
+|---|---|---|
+| `css/mobile_premium__narrow.css` | Removed duplicate `.search-results.active` block (lines 79–84) | 100% duplicated from `state.css`; narrow.css was not a documented owner |
+| `tests/css-ownership-check.mjs` | Baseline `mobile_premium__narrow.css: 1 → 0` | Reflects that narrow.css no longer owns `.search-results.active` |
+
+72px peek height preserved: `mobile_premium__state.css` already defines `.search-results.active` generically (10 occurrences); narrow-viewport geometry is inherited without a `@media` wrapper.
+
+### Worker 2 — Stale doc fixes
+
+| File | Edit | Rationale |
+|---|---|---|
+| `docs/semantic-demo-js-first-extraction-brief.md` (lines ~68, ~99, ~143) | `js/utils.js` → `utils/geo-data.js` | `utils.js` was deleted in CODE-3 (Bundle v130); references were stale |
+| `docs/lifecycle-window-bridge-map.md` (lines 194–197) | Updated dependency description | `lifecycle.js` now imports `utils/timer-utils.js`; `connection-analysis.js` no longer imports utils directly |
+
+### Verification gate (post-1.4)
+
+| Check | Result |
+|---|---|
+| `npm run lint` | 0 errors, 101 warnings (baseline unchanged) |
+| `npm run build` | PASS (561.9kb) |
+| `npm run test` (fast static) | ALL GREEN (ownership, manifest, cache, tokens, surfaces, semantic space, typecheck) |
+| `npm run test:unit` | 29/29 files, 205/205 tests pass |
+| `npm run check:ownership` | PASS — `info-panel-surface-ownership-contract.mjs` RETIRED message is expected (superseded by Svelte chrome migration) |
+
+### Post-1.4 test health summary
+
+| Metric | Phase 1.3 | Phase 1.4 | Delta |
+|---|---|---|---|
+| `test:unit` files | 28/28 | **29/29** | +1 file |
+| `test:unit` tests | 188/188 | **205/205** | +17 tests |
+| `lint` errors | 0 | **0** | unchanged |
+| `lint` warnings | 28 | **101** | +73 (TS port surface — all pre-existing) |
+| `build` | 562.3kb | **561.9kb** | −0.4kb (duplicate CSS removed) |
+| `check:ownership` violations | 1 (narrow.css) | **0** | fixed |
+
+### Decisions
+
+- **No `@media` wrapper needed** for the 72px peek height — `state.css` generic rules cover all viewports; the removed narrow.css block was a redundant override.
+- **`info-panel-surface-ownership-contract.mjs` RETIRED** — not a test failure. Chrome migration moved surface IDs to Svelte; substantive ownership is now in `mobile-chrome-ownership-contract.mjs`.
+- **Cache-buster refresh** required after build — `npm run test` initially failed with stale hash; fixed by `npm run refresh:cache`.
+
+### What's next
+
+- **Phase 1.5:** Stage all changes, commit, push, open PR.

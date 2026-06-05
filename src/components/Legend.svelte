@@ -1,0 +1,199 @@
+<script lang="ts">
+  import { businessRecords } from '@lib/data-store';
+  import { hasActiveFilters } from '@lib/stores/filter';
+
+  interface Props {
+    open?: boolean;
+  }
+
+  let { open = false }: Props = $props();
+
+  /** 15-entry cluster names matching CLUSTER_NAMES from state.js / InfoPanel.svelte */
+  const CLUSTER_NAMES: string[] = [
+    'Food & Dining',
+    'Professional Services',
+    'Retail & Shopping',
+    'Health & Medical',
+    'Home & Garden',
+    'Automotive',
+    'Education & Childcare',
+    'Entertainment & Events',
+    'Construction & Trades',
+    'Real Estate',
+    'Nonprofit & Civic',
+    'Technology',
+    'Manufacturing & Industrial',
+    'Financial Services',
+    'Agriculture & Land',
+  ];
+
+  const CLUSTER_COLORS: string[] = [
+    '#4ecdc4', '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff',
+    '#ff8c42', '#a66cff', '#ff6b9d', '#45b7d1', '#96ceb4',
+    '#ffeaa7', '#74b9ff', '#fd79a8', '#00b894', '#e17055',
+  ];
+
+  interface ClusterEntry {
+    index: number;
+    name: string;
+    count: number;
+    color: string;
+  }
+
+  let clusterEntries: ClusterEntry[] = $derived.by(() => {
+    const records = $businessRecords;
+    if (!records.length) {
+      return CLUSTER_NAMES.map((name, i) => ({
+        index: i,
+        name,
+        count: 0,
+        color: CLUSTER_COLORS[i] ?? '#888',
+      }));
+    }
+
+    // Count records per cluster index
+    const counts = new Map<number, number>();
+    for (const rec of records) {
+      const idx = rec.cluster;
+      counts.set(idx, (counts.get(idx) ?? 0) + 1);
+    }
+
+    // Build entries for all clusters, filtering out zero-count
+    const entries: ClusterEntry[] = [];
+    for (let i = 0; i < CLUSTER_NAMES.length; i++) {
+      const count = counts.get(i) ?? 0;
+      if (count > 0) {
+        entries.push({
+          index: i,
+          name: CLUSTER_NAMES[i] ?? `Cluster ${i}`,
+          count,
+          color: CLUSTER_COLORS[i] ?? '#888',
+        });
+      }
+    }
+    return entries;
+  });
+
+  let filtered = $derived($hasActiveFilters);
+
+  let activeIds = $state(new Set<string>());
+
+  function toggleCluster(name: string): void {
+    const next = new Set(activeIds);
+    if (next.has(name)) next.delete(name); else next.add(name);
+    activeIds = next;
+  }
+</script>
+
+<aside
+  class="legend"
+  class:open
+  aria-hidden={!open}
+  aria-label="Business category legend"
+  id="legend-panel"
+>
+  <h3 class="legend-title">Categories</h3>
+  {#if filtered}
+    <span class="legend-filtered-badge">filtered</span>
+  {/if}
+  <ul class="legend-list">
+    {#each clusterEntries as entry (entry.name)}
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <li
+        class="legend-item"
+        class:inactive={activeIds.has(entry.name)}
+        onclick={() => toggleCluster(entry.name)}
+        onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleCluster(entry.name); }}
+      >
+        <span
+          class="legend-swatch"
+          style="background-color: {entry.color}"
+        ></span>
+        <span class="legend-label">{entry.name}</span>
+        <span class="legend-count">{entry.count}</span>
+      </li>
+    {/each}
+  </ul>
+</aside>
+
+<style>
+  .legend {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    z-index: var(--z-legend);
+    background: rgba(7, 16, 24, 0.88);
+    backdrop-filter: blur(10px);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    max-height: 60vh;
+    overflow-y: auto;
+    transform: translateX(-120%);
+    transition: transform 0.3s ease;
+  }
+  .legend.open {
+    transform: translateX(0);
+  }
+  .legend-title {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #4ecdc4;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .legend-list {
+    list-style: none;
+    padding: 0;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.15rem 0;
+    font-size: 0.7rem;
+    color: #b0d0d0;
+  }
+  .legend-swatch {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .legend-item.inactive {
+    opacity: 0.35;
+  }
+  .legend-item.inactive .legend-swatch {
+    filter: grayscale(0.8);
+  }
+  .legend-item {
+    cursor: pointer;
+    user-select: none;
+  }
+  .legend-filtered-badge {
+    display: inline-block;
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 0.55rem;
+    color: #ffd93d;
+    background: rgba(255, 217, 61, 0.12);
+    border: 1px solid rgba(255, 217, 61, 0.25);
+    border-radius: 0.25rem;
+    padding: 0.05rem 0.35rem;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .legend-count {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: rgba(176, 208, 208, 0.5);
+    flex-shrink: 0;
+  }
+</style>

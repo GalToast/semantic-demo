@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { selectedPointStore } from '../stores.js';
     import { buildSelectedBusinessProps } from '../view-models/selected-business-view-model.js';
     import {
@@ -15,7 +15,42 @@
     import { describeThreadLensForPoint } from '../journey-point-color.js';
     import { _getSelectedBusinessRoleLabel } from '../bridge-registry.js';
 
-    const selectedDetailsAdapter = {
+    interface BusinessPoint {
+        name?: string;
+        what?: string;
+        cluster?: number;
+        status?: string;
+        city?: string;
+        website?: string;
+        email?: string;
+        phone?: string;
+        lat?: number;
+        lng?: number;
+        weather_sensitive?: boolean;
+        sensitivity_flags?: string[];
+    }
+
+    // Using Record<string, unknown> to match the view model's JSDoc-typed return
+    interface SelectedBusinessProps {
+        name: string;
+        filedAs: string;
+        showFiledAs: boolean;
+        what: string;
+        role: string;
+        theme: string;
+        status: string;
+        trivia: string;
+        showTrivia: boolean;
+        matchNarrative: string;
+        showMatchPanel: boolean;
+        facts: Record<string, unknown>[];
+        sensitivityBadges: Record<string, unknown>[];
+        mapText: string;
+        threadText: string;
+        isPopulated: boolean;
+    }
+
+    const selectedDetailsAdapter: Record<string, (...args: unknown[]) => unknown> = {
         getSelectedBusinessRoleLabel: _getSelectedBusinessRoleLabel,
         getInterestingBusinessNote,
         buildSelectedMatchNarrative,
@@ -23,7 +58,7 @@
     };
 
     const COPY = {
-        selectedFiledAs: (raw) => `Filed as ${raw}`,
+        selectedFiledAs: (raw: string) => `Filed as ${raw}`,
         selectedEmptyName: 'Business Name',
         selectedEmptyWhat: 'What they do',
         selectedEmptyRole: 'Record',
@@ -33,15 +68,20 @@
         selectedEmptyStatus: 'Record status'
     };
 
-    const viewModel = $derived(buildSelectedBusinessProps($selectedPointStore, {}, selectedDetailsAdapter, {
+    // The view model uses JSDoc types; bridge with any cast.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const viewModel = $derived<any>(buildSelectedBusinessProps($selectedPointStore, {}, selectedDetailsAdapter as any, {
         getBusinessNamePresentation,
         sanitizePublicFacingNote,
         describeCluster,
         getPublicRecordStatusLabel,
         COPY
-    }));
+    } as any));
 
-    function handleMapClick() {
+    // Typed accessors for template safety
+    const selectedCity = $derived<string>(String(($selectedPointStore as BusinessPoint)?.city || 'Montgomery County'));
+
+    function handleMapClick(): void {
         publish(EVENTS.VIEW_CHANGE_REQUESTED, { view: 'map' });
     }
 </script>
@@ -59,7 +99,7 @@
 
 <div class="selected-meta-strip" id="selected-meta-strip">
     {#if viewModel.isPopulated}
-        <span class="focus-stage-chip">{$selectedPointStore.city || 'Montgomery County'}</span>
+        <span class="focus-stage-chip">{selectedCity}</span>
         <span class="focus-stage-chip">{viewModel.theme}</span>
         <span class="focus-stage-chip">{viewModel.status}</span>
     {/if}

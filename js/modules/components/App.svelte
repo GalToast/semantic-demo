@@ -1,27 +1,41 @@
-<script>
+<script lang="ts">
     import { onMount } from 'svelte';
     import { compositionStore } from '../stores.js';
     import InfoPanelChrome from './InfoPanelChrome.svelte';
     import LegendPanelChrome from './LegendPanelChrome.svelte';
     import SemanticGuideOverlay from './SemanticGuideOverlay.svelte';
 
-    const activeView = $derived($compositionStore.activeView);
+    interface CompositionState {
+        activeView: string;
+        trailState: string;
+        trailDepth: string;
+        graphContext: string;
+        mapContext: string;
+        semanticDive: string;
+        panelSurface: string;
+        panelSurfaceDetail: string;
+        searchGlow: string;
+        isActive: boolean;
+        [key: string]: string | boolean | undefined;
+    }
+
+    const activeView = $derived<string>($compositionStore.activeView);
     const isMap = $derived(activeView === 'map');
 
-    onMount(() => {
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((m) => {
+    onMount((): (() => void) => {
+        const observer = new MutationObserver((mutations: MutationRecord[]) => {
+            mutations.forEach((m: MutationRecord) => {
                 if (m.type === 'attributes' && m.attributeName?.startsWith('data-')) {
-                    const key = m.attributeName.slice(5).replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+                    const key = m.attributeName.slice(5).replace(/-([a-z])/g, (_g: string, p1: string) => p1.toUpperCase());
                     const value = document.body.dataset[key];
                     if ($compositionStore[key] !== value) {
-                        compositionStore.update(s => ({ ...s, [key]: value }));
+                        compositionStore.update((s: CompositionState) => ({ ...s, [key]: value }));
                     }
                 }
                 if (m.type === 'attributes' && m.attributeName === 'class') {
                     const active = document.body.classList.contains('is-active');
                     if ($compositionStore.isActive !== active) {
-                        compositionStore.update(s => ({ ...s, isActive: active }));
+                        compositionStore.update((s: CompositionState) => ({ ...s, isActive: active }));
                     }
                 }
             });
@@ -29,11 +43,11 @@
 
         observer.observe(document.body, { attributes: true });
         
-        const currentData = { ...document.body.dataset };
-        compositionStore.update(s => {
+        const currentData: Record<string, string | undefined> = { ...document.body.dataset };
+        compositionStore.update((s: CompositionState) => {
             const next = { ...s };
             Object.entries(currentData).forEach(([k, v]) => {
-                next[k] = v;
+                (next as Record<string, unknown>)[k] = v;
             });
             next.isActive = document.body.classList.contains('is-active');
             return next;

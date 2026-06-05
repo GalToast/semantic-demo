@@ -4,12 +4,33 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$Target = "mccullough-cloud:/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/"
-$DomainRoot = "mccullough-cloud:/home/u741831384/domains/mccullough.cloud/public_html/"
-$SshTarget = "mccullough-cloud"
-$RemoteDir = "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo"
-$RemoteRoot = "/home/u741831384/domains/mccullough.cloud/public_html"
-$Port = "65002"
+# ---------------------------------------------------------------------------
+# Load .env if present (does not override existing environment variables).
+# ---------------------------------------------------------------------------
+$envFile = Join-Path $PSScriptRoot ".env"
+if (Test-Path $envFile) {
+    Get-Content $envFile | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -eq '' -or $line.StartsWith('#')) { return }
+        if ($line -match '^([A-Za-z_][A-Za-z0-9_]*)=(.*)$') {
+            $key = $Matches[1]
+            $val = $Matches[2]
+            if (-not [Environment]::GetEnvironmentVariable($key)) {
+                [Environment]::SetEnvironmentVariable($key, $val, "Process")
+            }
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Topology — env overrides with backward-compatible defaults.
+# ---------------------------------------------------------------------------
+$SshTarget  = if ($env:DEPLOY_SSH_TARGET) { $env:DEPLOY_SSH_TARGET } else { "mccullough-cloud" }
+$RemoteDir  = if ($env:DEPLOY_REMOTE_DIR) { $env:DEPLOY_REMOTE_DIR } else { "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo" }
+$RemoteRoot = if ($env:DEPLOY_REMOTE_ROOT) { $env:DEPLOY_REMOTE_ROOT } else { "/home/u741831384/domains/mccullough.cloud/public_html" }
+$Port       = if ($env:DEPLOY_PORT) { $env:DEPLOY_PORT } else { "65002" }
+$Target     = if ($env:DEPLOY_DOMAIN_TARGET) { $env:DEPLOY_DOMAIN_TARGET } else { "${SshTarget}:${RemoteDir}/" }
+$DomainRoot = "${SshTarget}:${RemoteRoot}/"
 $DeployStamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $BackupDir = "$RemoteDir/backups/deploy-$DeployStamp"
 $SemanticArtifacts = @(
@@ -19,7 +40,7 @@ $SemanticArtifacts = @(
     "semantic_threads_ui.dat",
     "semantic_space_layout_manifest.json"
 )
-$ScannerSource = "../js/scanner.js"
+$ScannerSource = if ($env:DEPLOY_SCANNER_SOURCE) { $env:DEPLOY_SCANNER_SOURCE } else { "../js/scanner.js" }
 
 function Invoke-Step {
     param(
@@ -55,7 +76,7 @@ Invoke-Step @("npm", "run", "check:cache")
 Write-Output "==> Creating remote rollback backup: $BackupDir"
 Invoke-Step @(
     "ssh", "-p", $Port, $SshTarget,
-    "mkdir -p '$BackupDir/dist' '$BackupDir/js/workers' '$BackupDir/css' && cp -p '$RemoteDir/dist/bundle.js' '$BackupDir/dist/bundle.js' && cp -p '$RemoteDir/semantic-demo.css' '$BackupDir/semantic-demo.css' && cp -p '$RemoteDir/vector-explorer-pandora.css' '$BackupDir/vector-explorer-pandora.css' && if [ -d '$RemoteDir/css' ]; then cp -p '$RemoteDir/css/'*.css '$BackupDir/css/' 2>/dev/null || true; fi && cp -p '$RemoteDir/vector-explorer-polished.html' '$BackupDir/vector-explorer-polished.html' && cp -p '$RemoteDir/.htaccess' '$BackupDir/.htaccess' && cp -p '$RemoteDir/js/scanner.js' '$BackupDir/js/scanner.js' 2>/dev/null || true && cp -p '$RemoteRoot/js/scanner.js' '$BackupDir/scanner-root.js' 2>/dev/null || true && cp -p '$RemoteDir/js/workers/data-worker.js' '$BackupDir/js/workers/data-worker.js' 2>/dev/null || true && cp -p '$RemoteDir/data.dat' '$BackupDir/data.dat' 2>/dev/null || true && cp -p '$RemoteDir/data.dat.gz' '$BackupDir/data.dat.gz' 2>/dev/null || true && cp -p '$RemoteDir/semantic_threads.dat' '$BackupDir/semantic_threads.dat' 2>/dev/null || true && cp -p '$RemoteDir/semantic_threads_ui.dat' '$BackupDir/semantic_threads_ui.dat' 2>/dev/null || true && cp -p '$RemoteDir/semantic_space_layout_manifest.json' '$BackupDir/semantic_space_layout_manifest.json' 2>/dev/null || true"
+    "mkdir -p '$BackupDir/dist' '$BackupDir/js/workers' '$BackupDir/css' '$BackupDir/scripts' && cp -p '$RemoteDir/dist/bundle.js' '$BackupDir/dist/bundle.js' && cp -p '$RemoteDir/semantic-demo.css' '$BackupDir/semantic-demo.css' && cp -p '$RemoteDir/vector-explorer-pandora.css' '$BackupDir/vector-explorer-pandora.css' && if [ -d '$RemoteDir/css' ]; then cp -p '$RemoteDir/css/'*.css '$BackupDir/css/' 2>/dev/null || true; fi && cp -p '$RemoteDir/vector-explorer-polished.html' '$BackupDir/vector-explorer-polished.html' && cp -p '$RemoteDir/.htaccess' '$BackupDir/.htaccess' && cp -p '$RemoteDir/scripts/leadEnrichment.public.json' '$BackupDir/scripts/leadEnrichment.public.json' 2>/dev/null || true && cp -p '$RemoteDir/js/scanner.js' '$BackupDir/js/scanner.js' 2>/dev/null || true && cp -p '$RemoteRoot/js/scanner.js' '$BackupDir/scanner-root.js' 2>/dev/null || true && cp -p '$RemoteDir/js/workers/data-worker.js' '$BackupDir/js/workers/data-worker.js' 2>/dev/null || true && cp -p '$RemoteDir/data.dat' '$BackupDir/data.dat' 2>/dev/null || true && cp -p '$RemoteDir/data.dat.gz' '$BackupDir/data.dat.gz' 2>/dev/null || true && cp -p '$RemoteDir/semantic_threads.dat' '$BackupDir/semantic_threads.dat' 2>/dev/null || true && cp -p '$RemoteDir/semantic_threads_ui.dat' '$BackupDir/semantic_threads_ui.dat' 2>/dev/null || true && cp -p '$RemoteDir/semantic_space_layout_manifest.json' '$BackupDir/semantic_space_layout_manifest.json' 2>/dev/null || true"
 )
 
 Invoke-Step @("ssh", "-p", $Port, $SshTarget, "mkdir -p '$RemoteDir/dist' '$RemoteDir/js/workers' '$RemoteDir/css'")
@@ -81,6 +102,13 @@ foreach ($Artifact in $SemanticArtifacts) {
 Invoke-Step @("scp", "-P", $Port, "vector-explorer-polished.html", $Target)
 Invoke-Step @("scp", "-P", $Port, ".htaccess", $Target)
 
+# Public enrichment — 13MB JSON keyed by lead_id, generated by
+# scripts/extract-lead-enrichment.mjs. Read by data-loader.js at app init.
+# The internal enrichment (leadEnrichment.internal.json) stays in the repo
+# and is never deployed — it carries pipeline state that must not reach
+# the public demo.
+Invoke-Step @("scp", "-P", $Port, "scripts/leadEnrichment.public.json", "${Target}scripts/leadEnrichment.public.json")
+
 Write-Output "==> Syncing scanner.js to cloudscan/..."
 # scanner.js is the canonical source for /js/scanner.js (cloudscan page)
 # and /semantic-demo/js/scanner.js (semantic demo) - keep in sync.
@@ -102,5 +130,5 @@ if ($DryRun) {
     Write-Output "==> Dry run complete - no files modified."
 } else {
     Write-Output "==> Deploy complete. Rollback backup: $BackupDir"
-    Write-Output "==> Rollback command: ssh -p $Port $SshTarget ""cp -p '$BackupDir/dist/bundle.js' '$RemoteDir/dist/bundle.js' && cp -p '$BackupDir/semantic-demo.css' '$RemoteDir/semantic-demo.css' && cp -p '$BackupDir/vector-explorer-pandora.css' '$RemoteDir/vector-explorer-pandora.css' && if [ -d '$BackupDir/css' ]; then mkdir -p '$RemoteDir/css' && cp -p '$BackupDir/css/'*.css '$RemoteDir/css/' 2>/dev/null || true; fi && mkdir -p '$RemoteDir/js/workers' && cp -p '$BackupDir/js/workers/data-worker.js' '$RemoteDir/js/workers/data-worker.js' 2>/dev/null || true && cp -p '$BackupDir/data.dat' '$RemoteDir/data.dat' 2>/dev/null || true && cp -p '$BackupDir/data.dat.gz' '$RemoteDir/data.dat.gz' 2>/dev/null || true && cp -p '$BackupDir/semantic_threads.dat' '$RemoteDir/semantic_threads.dat' 2>/dev/null || true && cp -p '$BackupDir/semantic_threads_ui.dat' '$RemoteDir/semantic_threads_ui.dat' 2>/dev/null || true && cp -p '$BackupDir/semantic_space_layout_manifest.json' '$RemoteDir/semantic_space_layout_manifest.json' 2>/dev/null || true && cp -p '$BackupDir/vector-explorer-polished.html' '$RemoteDir/vector-explorer-polished.html' && cp -p '$BackupDir/.htaccess' '$RemoteDir/.htaccess' && cp -p '$BackupDir/js/scanner.js' '$RemoteDir/js/scanner.js' 2>/dev/null || true && cp -p '$BackupDir/scanner-root.js' '$RemoteRoot/js/scanner.js' 2>/dev/null || true"""
+    Write-Output "==> Rollback command: ssh -p $Port $SshTarget ""cp -p '$BackupDir/dist/bundle.js' '$RemoteDir/dist/bundle.js' && cp -p '$BackupDir/semantic-demo.css' '$RemoteDir/semantic-demo.css' && cp -p '$BackupDir/vector-explorer-pandora.css' '$RemoteDir/vector-explorer-pandora.css' && if [ -d '$BackupDir/css' ]; then mkdir -p '$RemoteDir/css' && cp -p '$BackupDir/css/'*.css '$RemoteDir/css/' 2>/dev/null || true; fi && mkdir -p '$RemoteDir/js/workers' && cp -p '$BackupDir/js/workers/data-worker.js' '$RemoteDir/js/workers/data-worker.js' 2>/dev/null || true && cp -p '$BackupDir/data.dat' '$RemoteDir/data.dat' 2>/dev/null || true && cp -p '$BackupDir/data.dat.gz' '$RemoteDir/data.dat.gz' 2>/dev/null || true && cp -p '$BackupDir/semantic_threads.dat' '$RemoteDir/semantic_threads.dat' 2>/dev/null || true && cp -p '$BackupDir/semantic_threads_ui.dat' '$RemoteDir/semantic_threads_ui.dat' 2>/dev/null || true && cp -p '$BackupDir/semantic_space_layout_manifest.json' '$RemoteDir/semantic_space_layout_manifest.json' 2>/dev/null || true && mkdir -p '$RemoteDir/scripts' && cp -p '$BackupDir/scripts/leadEnrichment.public.json' '$RemoteDir/scripts/leadEnrichment.public.json' 2>/dev/null || true && cp -p '$BackupDir/vector-explorer-polished.html' '$RemoteDir/vector-explorer-polished.html' && cp -p '$BackupDir/.htaccess' '$RemoteDir/.htaccess' && cp -p '$BackupDir/js/scanner.js' '$RemoteDir/js/scanner.js' 2>/dev/null || true && cp -p '$BackupDir/scanner-root.js' '$RemoteRoot/js/scanner.js' 2>/dev/null || true"""
 }

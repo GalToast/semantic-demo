@@ -76,7 +76,7 @@ const selectorBaselines = {
     'strands.css': 1,
     'mobile_premium__chrome.css': 10,
     'mobile_premium__state.css': 10,
-    'mobile_premium__narrow.css': 1,
+    'mobile_premium__narrow.css': 0,
     'mobile_premium__surfaces.css': 1,
     'animations.css': 1,
   },

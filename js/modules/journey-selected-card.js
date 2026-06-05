@@ -1,3 +1,27 @@
+/**
+ * journey-selected-card.js
+ *
+ * Manages selected business card lifecycle: pushes selection to the Svelte
+ * store, delegates structural slot visibility to focus-stage-renderer, and
+ * orchestrates focus-stage/traversal UI sync.
+ *
+ * **DOM ownership boundary:**
+ * Structural slot visibility (#selected-empty, #selected-details) is delegated
+ * to syncSelectedCardContentVariant in focus-stage-renderer.js — the single
+ * authority for container-level slot orchestration. This module retains:
+ *   - Push to selectedPointStore (Svelte store bridge)
+ *   - #focus-stage visibility + focus-trap management (galaxy focus stage)
+ *   - Page title / document meta updates
+ *   - Onboarding hint dismissal
+ *   - Cascade animation background (#vector-cascade-bg) animation
+ *
+ * Svelte-internal elements (selected-name, selected-what, selected-meta-strip,
+ * selected-badges, selected-facts, selected-match-panel, selected-action-row,
+ * btn-selected-map, selected-theme, selected-status, selected-map,
+ * selected-thread) are rendered declaratively by SelectedBusinessDetails.svelte
+ * and must not be touched here.
+ */
+
 import { getPoints, getSelectedPoint, getFocusedNode, getCurrentView } from '../state/selectors/index.js';
 import { getActiveClusterFilter, getActiveFilters } from '../state/selectors/index.js';
 import { subscribeKeyed, EVENTS } from './event-bus.js';
@@ -10,6 +34,7 @@ import { sanitizePublicFacingNote, getBusinessNamePresentation } from './utils/d
 import {
     triggerSelectedCardFade,
     updateSelectedCardHeading,
+    syncSelectedCardContentVariant,
 } from './ui-renderers.js';
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
 import { isMapSummarySurface } from './environment.js';
@@ -162,26 +187,23 @@ export function syncFocusStage(point) {
 }
 
 export function updateSelectedBusiness(point, options = {}) {
-    const emptyEl = document.getElementById('selected-empty');
-    const detailsEl = document.getElementById('selected-details');
-    const cardEl = document.getElementById('selected-card');
-
-    // Push to Svelte store
+    // Push to Svelte store — Svelte component reacts declaratively
     selectedPointStore.set(point || null);
 
     if (!point) {
-        if (cardEl) triggerSelectedCardFade(cardEl);
-        if (emptyEl) emptyEl.hidden = false;
-        if (detailsEl) {
-            detailsEl.hidden = true;
-            detailsEl.classList.remove('active');
-        }
-        if (cardEl) applyClusterUiAccent(cardEl, null);
+        // Delegate structural container visibility to focus-stage-renderer
+        // (single authority for slot-level orchestration)
+        syncSelectedCardContentVariant(null);
+
         syncFocusStage(null);
         selectedCardAdapter.updateTraversalUi();
         document.title = 'Semantic Explorer | MoCo Business Mycelium';
         return;
     }
+
+    // --- point is non-null below ---
+    const detailsEl = document.getElementById('selected-details');
+    const cardEl = document.getElementById('selected-card');
 
     const mapSummarySurface = isMapSummarySurface();
     const cardWasEmpty = detailsEl && window.getComputedStyle(detailsEl).display === 'none';
@@ -189,14 +211,11 @@ export function updateSelectedBusiness(point, options = {}) {
         if (cardEl) triggerSelectedCardFade(cardEl);
     }
     if (cardEl) applyClusterUiAccent(cardEl, point);
-    if (emptyEl) emptyEl.hidden = true;
-    if (detailsEl) {
-        detailsEl.hidden = false;
-        detailsEl.classList.add('active');
-    }
+    syncSelectedCardContentVariant(point);
+    if (detailsEl && !detailsEl.hidden) detailsEl.classList.add('active');
 
     const cascadeBg = document.getElementById('vector-cascade-bg');
-    if (cascadeBg) {
+    if (cascadeBg && detailsEl && !detailsEl.hidden) {
         cascadeBg.innerHTML = '';
         cascadeBg.classList.remove('active');
         cascadeBg.classList.add('active');

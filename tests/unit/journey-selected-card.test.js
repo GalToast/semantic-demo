@@ -27,12 +27,34 @@ vi.mock('../../js/modules/ui-renderers.js', () => ({
     renderSelectedMetaStrip: vi.fn(),
     renderSelectedMatchPanel: vi.fn(),
     renderSelectedActionRow: vi.fn(),
-    syncSelectedCardContentVariant: vi.fn(),
+    syncSelectedCardContentVariant: vi.fn((point) => {
+        // Simulate the slot-level visibility orchestration for tests
+        const detailsEl = document.getElementById('selected-details');
+        const emptyEl = document.getElementById('selected-empty');
+        const titleEl = document.getElementById('selected-card-title');
+        const summaryEl = document.getElementById('selected-map-summary');
+        const cascadeEl = document.getElementById('vector-cascade-bg');
+        const cardEl = document.getElementById('selected-card');
+        if (detailsEl) detailsEl.hidden = point === null;
+        if (emptyEl) emptyEl.hidden = point !== null;
+        if (titleEl) titleEl.hidden = false;
+        if (summaryEl) summaryEl.hidden = true;
+        if (cascadeEl) cascadeEl.hidden = true;
+        if (cardEl) {
+            cardEl.removeAttribute('aria-hidden');
+            cardEl.inert = false;
+        }
+    }),
     triggerSelectedCardFade: vi.fn()
 }));
 
 vi.mock('../../js/modules/lifecycle.js', () => ({
-    refreshCompositionState: vi.fn()
+    refreshCompositionState: vi.fn(),
+    hydrateLeadContext: vi.fn()
+}));
+
+vi.mock('../../js/modules/event-bindings.js', () => ({
+    revealSelectedBusinessCard: vi.fn()
 }));
 
 vi.mock('../../js/modules/cluster-ui-accent.js', () => ({

@@ -207,7 +207,8 @@ function testLegendUiSubscribesToViewChanged() {
   const src = readSrc(LEGEND_UI_PATH);
 
   assert(
-    src.includes('subscribe(EVENTS.VIEW_CHANGED'),
+    src.includes('subscribe(EVENTS.VIEW_CHANGED')
+      || src.includes('subscribeKeyed(') && src.includes('EVENTS.VIEW_CHANGED'),
     'legend-ui.js must subscribe to VIEW_CHANGED'
   );
 

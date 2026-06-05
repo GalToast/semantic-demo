@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import {
         searchResultsStore,
         searchSummaryStore,
@@ -20,9 +20,62 @@
     import { publish, EVENTS } from '../event-bus.js';
     import { state } from '../../state.js';
 
+    interface SearchResult {
+        index: number | string;
+        point: {
+            name?: string;
+            what?: string;
+            cluster?: number;
+            city?: string;
+            website?: string;
+            email?: string;
+            phone?: string;
+        };
+        score?: number;
+    }
+
+    interface SearchSummary {
+        query?: string;
+        mode?: string;
+        renderContext?: {
+            trimmedQuery: string;
+            topIndex: number | null;
+            anchorIndex: number | null;
+            topScore: number;
+        };
+    }
+
+    interface SearchError {
+        type: string;
+        query?: string;
+    }
+
+    interface SearchResultProps {
+        index: number | string;
+        order: number;
+        strength: number;
+        strengthLabel: string;
+        rankLabel: string;
+        cardClasses: string;
+        snippetText: string;
+        contextText: string;
+        businessName: string;
+    }
+
+    interface HighlightSegment {
+        text: string;
+        match: boolean;
+    }
+
+    interface SearchResultsListProps {
+        onSuggestionClick?: (suggestion: string) => void;
+        onRetry?: () => void;
+        onClear?: () => void;
+    }
+
     let {
-        onSuggestionClick = (suggestion) => {
-            const input = document.getElementById('search-input');
+        onSuggestionClick = (suggestion: string) => {
+            const input = document.getElementById('search-input') as HTMLInputElement | null;
             if (input) {
                 input.value = suggestion;
                 input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -30,18 +83,20 @@
             }
         },
         onRetry = () => {
-            const summary = $searchSummaryStore;
+            const summary: SearchSummary | null = $searchSummaryStore;
             if (summary?.query) {
-                publish(EVENTS.SEARCH_REQUESTED, { query: summary.query, preferCachedResults: false });
+                // SEARCH_REQUESTED is not in the EVENTS manifest (pre-existing gap);
+                // publish as a raw string to preserve runtime behavior.
+                publish('SEARCH_REQUESTED', { query: summary.query, preferCachedResults: false });
             }
         },
         onClear = () => {
             publish(EVENTS.SEARCH_CLEARED);
         }
-    } = $props();
+    }: SearchResultsListProps = $props();
 
-    const resultSlice = $derived($searchResultsStore.slice(0, $searchVisibleCountStore));
-    const total = $derived($searchResultsStore.length);
+    const resultSlice = $derived<SearchResult[]>($searchResultsStore.slice(0, $searchVisibleCountStore));
+    const total = $derived<number>($searchResultsStore.length);
     const remaining = $derived(total - $searchVisibleCountStore);
     const showMore = $derived(total > $searchVisibleCountStore);
     
@@ -55,7 +110,7 @@
     const isEmpty = $derived(!$isSearchingStore && total === 0 && $searchSummaryStore?.query && !$searchErrorStore);
 
     const suggestions = $derived.by(() => {
-        const list = ['Coffee', 'Roof repair', 'Childcare', 'Dog friendly'];
+        const list: string[] = ['Coffee', 'Roof repair', 'Childcare', 'Dog friendly'];
         if ($activeClusterFilterStore !== null) {
             const label = describeCluster($activeClusterFilterStore).toLowerCase();
             if (!list.includes(label)) list.push(label);
@@ -63,7 +118,7 @@
         return list;
     });
 
-    function handleShowMore() {
+    function handleShowMore(): void {
         const nextVisibleCount = total;
         const firstNewIndex = $searchVisibleCountStore;
         
@@ -75,19 +130,19 @@
         publish(EVENTS.URL_SYNC_REQUESTED, { params: { offset: null }, reason: 'search-more' });
         
         requestAnimationFrame(() => {
-            const firstNewItem = document.querySelector(`[data-index="${$searchResultsStore[firstNewIndex]?.index}"]`);
+            const firstNewItem = document.querySelector(`[data-index="${($searchResultsStore as SearchResult[])[firstNewIndex]?.index}"]`);
             if (firstNewItem) firstNewItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
     }
 
-    function handleResultClick(index) {
-        const point = state.points[index];
+    function handleResultClick(index: number | string): void {
+        const point = (state as { points?: unknown[] }).points?.[index as number];
         if (point) {
             publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index });
         }
     }
 
-    function highlightSegments(text, query) {
+    function highlightSegments(text: string | undefined, query: string | undefined): HighlightSegment[] {
         const safeText = String(text || '');
         const safeQuery = query === null || query === undefined ? '' : String(query);
         if (!safeText || !safeQuery) return [{ text: safeText, match: false }];
@@ -99,11 +154,12 @@
             { text: safeText.slice(0, index), match: false },
             { text: safeText.slice(index, index + safeQuery.length), match: true },
             { text: safeText.slice(index + safeQuery.length), match: false }
-        ].filter((segment) => segment.text);
+        ].filter((segment: HighlightSegment) => segment.text);
     }
 
-    function itemModel(result, order) {
-        const props = buildSearchResultProps(result, order, renderContext, {
+    function itemModel(result: SearchResult, order: number): SearchResultProps & { highlight: HighlightSegment[]; animationDelay: string; ariaLabel: string } {
+        // The view model uses JSDoc types; bridge with any casts.
+        const deps = {
             getSearchResultStrength,
             getSearchResultStrengthLabel,
             buildSearchRankLabel,
@@ -111,7 +167,9 @@
             buildSearchResultSnippet,
             describeCluster,
             formatBusinessName
-        });
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const props: any = buildSearchResultProps(result as any, order, renderContext as any, deps as any);
 
         return {
             ...props,

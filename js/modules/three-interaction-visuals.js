@@ -1,11 +1,14 @@
+import { webglContext } from './webgl-context.js';
 import * as THREE from 'three';
 import { state } from '../state.js';
 import { triggerSearchHeroMoment } from './three-search-animations.js';
 import { calculateSignalScore } from './utils/geo-data.js';
 import {
     createFocusAnchorIndicator,
-    updateFocusAnchorIndicator
+    updateFocusAnchorIndicator,
+    disposeFocusAnchorIndicator
 } from './focus-anchor-indicator.js';
+import { disposeObject3D } from './resource-tracker.js';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -156,6 +159,28 @@ function updateSelectedNodeFilaments(worldPos, time, isInside) {
 }
 
 // ── Public API ──────────────────────────────────────────────────────────────
+
+export function disposeInteractionVisuals() {
+    disposeSemanticLens();
+    disposeFocusAnchorIndicator();
+}
+
+export function disposeSemanticLens() {
+    if (state.semanticManifold) {
+        disposeObject3D(state.semanticManifold);
+        state.semanticManifold = null;
+    }
+    if (state.semanticLensGroup) {
+        disposeObject3D(state.semanticLensGroup);
+        state.semanticLensGroup = null;
+    }
+    if (state.focusLens) {
+        disposeObject3D(state.focusLens);
+        state.focusLens = null;
+    }
+    state.semanticLensGlow = null;
+    state.semanticLensSpokes = null;
+}
 
 export function initSemanticManifold() {
     const manifoldGeo = new THREE.CircleGeometry(4, 64);
@@ -347,7 +372,7 @@ export function initSemanticLens() {
 }
 
 export function updateInteractionVisuals(now, hoveredNode, focusedNode) {
-    if (!state.pointsMesh) return;
+    if (!webglContext.pointsMesh) return;
     const time = now / 1000;
 
     const activeNode = Number.isFinite(focusedNode) && focusedNode >= 0 ? focusedNode
@@ -440,7 +465,7 @@ export function updateInteractionVisuals(now, hoveredNode, focusedNode) {
             glowUniforms.uOpacity.value += (targetOpacity - glowUniforms.uOpacity.value) * 0.12;
 
             if (glowUniforms.uSignalScore) {
-                const targetSignal = typeof calculateSignalScore === 'function' ? calculateSignalScore(state, focusIdx) : 0;
+                const targetSignal = typeof calculateSignalScore === 'function' ? calculateSignalScore(state.points?.[focusIdx]) : 0;
                 glowUniforms.uSignalScore.value += (targetSignal - glowUniforms.uSignalScore.value) * 0.12;
             }
 
