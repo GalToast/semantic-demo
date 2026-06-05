@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { subscribe, EVENTS } from './event-bus.js';
+import { getCurrentView, getWeather, getWeatherInitialized } from '../state/selectors/index.js';
 import { weatherStateStore } from './stores.js';
 import {
     applyWeatherEffects as applyWeatherEffectsForWeather,
@@ -23,7 +23,7 @@ let weatherRefreshTimer = null;
 
 export function initWeather() {
     if (typeof window === 'undefined') return;
-    if (state.weatherInitialized && weatherRefreshTimer) return;
+    if (getWeatherInitialized() && weatherRefreshTimer) return;
     clearWeatherRefreshTimer();
     state.weatherInitialized = true;
     fetchWeather();
@@ -46,13 +46,13 @@ export async function fetchWeather() {
         state.lastSuccessfulFetch = Date.now();
 
         weatherStateStore.set({
-            weather: state.weather,
+            weather: getWeather(),
             lastFetch: state.lastSuccessfulFetch,
             fallback: false,
             stalenessMsg: ''
         });
-    } catch (error) {
-        console.warn('Weather unavailable; continuing without live weather effects.', error);
+    } catch (_error) {
+        // Weather is non-critical — continue without live effects
         state.weather = null;
 
         weatherStateStore.set({
@@ -65,12 +65,12 @@ export async function fetchWeather() {
 }
 
 export function updateWeatherUi() {
-    if (!state.weather) {
+    if (!getWeather()) {
         renderWeatherFallback();
         return;
     }
     updateWeatherUiState({
-        weather: state.weather,
+        weather: getWeather(),
         lastFetch: state.lastSuccessfulFetch,
         fallback: false,
         stalenessMsg: ''
@@ -91,7 +91,7 @@ export function updateWeatherStaleness() {
 }
 
 export function applyWeatherEffects() {
-    if (state.currentView !== 'map' || !state.weather) return;
+    if (getCurrentView() !== 'map' || !getWeather()) return;
     applyWeatherEffectsForWeather(state.weather);
 }
 
@@ -223,10 +223,5 @@ export function describeWeatherCode(code) {
     if (code <= 99) return { label: 'Thunderstorm', icon: 'rain', condition: 'storm' };
     return { label: 'Current weather', icon: 'cloud', condition: 'cloud' };
 }
-
-// Event Bus Subscriptions
-subscribe(EVENTS.VIEW_CHANGED, ({ view }) => {
-    // Left empty for compatibility, the weather-ui handles this via compositionStore
-});
 
 // Window exports retired 2026-05-28

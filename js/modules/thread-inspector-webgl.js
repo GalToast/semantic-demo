@@ -1,12 +1,18 @@
 import * as THREE from 'three';
 import { state } from '../state.js';
 import { adapter_getFocusThreadCurvePoint } from './thread-inspector-adapter.js';
+import {
+    getNavState, getFocusConstellationMotifs, getFocusThreadSegments,
+    getInspectedStrandGroup, getNodePositions, getCurrentView, getScene,
+    getFocusRingTexture, getFocusNextCueTexture, getFocusBeaconTexture,
+    getPinnedThreadIndex, getPulsePhase
+} from '../state/selectors/index.js';
 
 export function getInspectedStrandEdge(index, lane = 0) {
-    const focusIndex = Number.isFinite(state.navState.focusedIndex) ? state.navState.focusedIndex : null;
+    const focusIndex = Number.isFinite(getNavState()?.focusedIndex) ? getNavState()?.focusedIndex : null;
     if (focusIndex === null || !Number.isFinite(index) || index === focusIndex) return null;
-    const motifKey = state.navState.focusPocketMeta?.motif || 'market';
-    const motifConfig = { ...(state.FOCUS_CONSTELLATION_MOTIFS[motifKey] || state.FOCUS_CONSTELLATION_MOTIFS.market || {}) };
+    const motifKey = getNavState()?.focusPocketMeta?.motif || 'market';
+    const motifConfig = { ...(getFocusConstellationMotifs()[motifKey] || getFocusConstellationMotifs().market || {}) };
     // Add fallbacks for numeric values:
     const directLift = Number.isFinite(motifConfig.directLift) ? motifConfig.directLift : 0.6;
     const braid = Number.isFinite(motifConfig.braid) ? motifConfig.braid : 0.3;
@@ -38,9 +44,10 @@ export function writeInspectedStrandPositions(lineObject) {
     lanes.forEach((lane) => {
         const edge = getInspectedStrandEdge(targetIndex, lane);
         if (!edge) return;
-        for (let segment = 0; segment < state.FOCUS_THREAD_SEGMENTS; segment += 1) {
-            const t0 = segment / state.FOCUS_THREAD_SEGMENTS;
-            const t1 = (segment + 1) / state.FOCUS_THREAD_SEGMENTS;
+        const focusThreadSegments = getFocusThreadSegments();
+        for (let segment = 0; segment < focusThreadSegments; segment += 1) {
+            const t0 = segment / focusThreadSegments;
+            const t1 = (segment + 1) / focusThreadSegments;
             const p0 = adapter_getFocusThreadCurvePoint(edge, t0) || new THREE.Vector3();
             const p1 = adapter_getFocusThreadCurvePoint(edge, t1) || new THREE.Vector3();
             positions[offset] = Number.isFinite(p0.x) ? p0.x : 0;
@@ -117,12 +124,13 @@ export function createInspectedStrandLine(targetIndex, lanes, aura = false) {
     const positions = [];
     const progress = [];
     const laneValues = [];
-    for (let i = 0; i < lanes.length * state.FOCUS_THREAD_SEGMENTS * 2; i++) {
+    const focusThreadSegments = getFocusThreadSegments();
+    for (let i = 0; i < lanes.length * focusThreadSegments * 2; i++) {
         positions.push(0, 0, 0);
     }
     lanes.forEach((lane) => {
-        for (let segment = 0; segment < state.FOCUS_THREAD_SEGMENTS; segment += 1) {
-            progress.push(segment / state.FOCUS_THREAD_SEGMENTS, (segment + 1) / state.FOCUS_THREAD_SEGMENTS);
+        for (let segment = 0; segment < focusThreadSegments; segment += 1) {
+            progress.push(segment / focusThreadSegments, (segment + 1) / focusThreadSegments);
             laneValues.push(lane, lane);
         }
     });
@@ -137,11 +145,13 @@ export function createInspectedStrandLine(targetIndex, lanes, aura = false) {
 }
 
 export function updateInspectedStrandEndpointSprites() {
-    if (!state.inspectedStrandGroup) return;
-    state.inspectedStrandGroup.children.forEach((child) => {
+    const strandGroup = getInspectedStrandGroup();
+    if (!strandGroup) return;
+    const nodePos = getNodePositions();
+    strandGroup.children.forEach((child) => {
         const endpointIndex = child.userData?.endpointIndex;
-        if (!Number.isFinite(endpointIndex) || !state.nodePositions[endpointIndex]) return;
-        const pos = state.nodePositions[endpointIndex];
+        if (!Number.isFinite(endpointIndex) || !nodePos[endpointIndex]) return;
+        const pos = nodePos[endpointIndex];
         child.position.set(
             Number.isFinite(pos.x) ? pos.x : 0,
             Number.isFinite(pos.y) ? pos.y : 0,
@@ -151,22 +161,26 @@ export function updateInspectedStrandEndpointSprites() {
 }
 
 export function syncInspectedStrandOverlay(inspectionState, options = {}) {
+    const currentView = getCurrentView();
+    const scene = getScene();
+    const nodePos = getNodePositions();
     if (
         !inspectionState?.active ||
-        state.currentView !== 'galaxy' ||
-        !state.scene ||
+        currentView !== 'galaxy' ||
+        !scene ||
         !Number.isFinite(inspectionState.index) ||
         !Number.isFinite(inspectionState.focusedIndex) ||
-        !state.nodePositions[inspectionState.index] ||
-        !state.nodePositions[inspectionState.focusedIndex]
+        !nodePos[inspectionState.index] ||
+        !nodePos[inspectionState.focusedIndex]
     ) {
         disposeInspectedStrandOverlay();
         return;
     }
+    const existingStrandGroup = getInspectedStrandGroup();
     const needsRebuild =
-        !state.inspectedStrandGroup ||
-        state.inspectedStrandGroup.userData?.targetIndex !== inspectionState.index ||
-        state.inspectedStrandGroup.userData?.focusedIndex !== inspectionState.focusedIndex;
+        !existingStrandGroup ||
+        existingStrandGroup.userData?.targetIndex !== inspectionState.index ||
+        existingStrandGroup.userData?.focusedIndex !== inspectionState.focusedIndex;
     if (needsRebuild) {
         disposeInspectedStrandOverlay();
         state.inspectedStrandGroup = new THREE.Group();
@@ -181,7 +195,7 @@ export function syncInspectedStrandOverlay(inspectionState, options = {}) {
         state.inspectedStrandGroup.add(createInspectedStrandLine(inspectionState.index, [0], false));
         [inspectionState.focusedIndex, inspectionState.index].forEach((endpointIndex, order) => {
             const endpointMaterial = new THREE.SpriteMaterial({
-                map: state.focusRingTexture || state.focusNextCueTexture || state.focusBeaconTexture,
+                map: getFocusRingTexture() || getFocusNextCueTexture() || getFocusBeaconTexture(),
                 color: order === 0 ? 0xffe27a : 0x7ce7dd,
                 transparent: true,
                 opacity: order === 0 ? 0.42 : 0.58,
@@ -198,11 +212,12 @@ export function syncInspectedStrandOverlay(inspectionState, options = {}) {
             };
             state.inspectedStrandGroup.add(sprite);
         });
-        state.scene.add(state.inspectedStrandGroup);
+        getScene().add(getInspectedStrandGroup());
     }
-    state.inspectedStrandGroup.userData.source =
-        options.surface || state.inspectedStrandGroup.userData.source || 'rail';
-    state.inspectedStrandGroup.children.forEach((child) => {
+    const strandGroup = getInspectedStrandGroup();
+    strandGroup.userData.source =
+        options.surface || strandGroup.userData.source || 'rail';
+    strandGroup.children.forEach((child) => {
         if (child.isLineSegments) {
             writeInspectedStrandPositions(child);
         }
@@ -211,27 +226,29 @@ export function syncInspectedStrandOverlay(inspectionState, options = {}) {
     state.inspectedStrandDiagnostics = {
         active: true,
         source:
-            state.pinnedThreadIndex === inspectionState.index
+            getPinnedThreadIndex() === inspectionState.index
                 ? 'pinned'
-                : state.inspectedStrandGroup.userData.source || 'rail',
+                : getInspectedStrandGroup().userData.source || 'rail',
         index: inspectionState.index,
         focusedIndex: inspectionState.focusedIndex,
-        segmentCount: state.FOCUS_THREAD_SEGMENTS * 4,
+        segmentCount: getFocusThreadSegments() * 4,
         braidCount: 4,
         endpointCount: 2,
-        pinned: state.pinnedThreadIndex === inspectionState.index
+        pinned: getPinnedThreadIndex() === inspectionState.index
     };
 }
 
 export function updateInspectedStrandOverlay(now = performance.now()) {
-    if (!state.inspectedStrandGroup) return;
-    state.inspectedStrandGroup.children.forEach((child) => {
+    const strandGroup = getInspectedStrandGroup();
+    if (!strandGroup) return;
+    const nodePos = getNodePositions();
+    strandGroup.children.forEach((child) => {
         if (child.isLineSegments) {
             writeInspectedStrandPositions(child);
             if (child.material?.uniforms?.time) child.material.uniforms.time.value = now / 1000;
         } else if (child.isSprite) {
             const endpointIndex = child.userData?.endpointIndex;
-            const pos = Number.isFinite(endpointIndex) ? state.nodePositions[endpointIndex] : null;
+            const pos = Number.isFinite(endpointIndex) ? nodePos[endpointIndex] : null;
             if (!pos) return;
             child.position.set(
                 Number.isFinite(pos.x) ? pos.x : 0,
@@ -239,7 +256,7 @@ export function updateInspectedStrandOverlay(now = performance.now()) {
                 Number.isFinite(pos.z) ? pos.z : 0
             );
             const pulse =
-                1 + Math.sin(state.pulsePhase * (child.userData?.pulseRate || 1.2) + endpointIndex * 0.19) * 0.14;
+                1 + Math.sin(getPulsePhase() * (child.userData?.pulseRate || 1.2) + endpointIndex * 0.19) * 0.14;
             const scale = (child.userData?.baseScale || 0.052) * pulse;
             child.scale.set(scale, scale, 1);
         }
@@ -247,7 +264,8 @@ export function updateInspectedStrandOverlay(now = performance.now()) {
 }
 
 export function disposeInspectedStrandOverlay() {
-    if (!state.inspectedStrandGroup) {
+    const strandGroup = getInspectedStrandGroup();
+    if (!strandGroup) {
         state.inspectedStrandDiagnostics = {
             active: false,
             source: 'none',
@@ -259,8 +277,9 @@ export function disposeInspectedStrandOverlay() {
         };
         return;
     }
-    if (state.scene) state.scene.remove(state.inspectedStrandGroup);
-    state.inspectedStrandGroup.traverse((child) => {
+    const scene = getScene();
+    if (scene) scene.remove(strandGroup);
+    strandGroup.traverse((child) => {
         if (child.geometry) child.geometry.dispose();
         if (child.material) child.material.dispose();
     });

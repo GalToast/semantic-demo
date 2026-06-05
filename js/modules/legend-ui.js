@@ -1,9 +1,10 @@
-import { state } from '../state.js';
+import { getCurrentSemanticGuide, getActiveClusterFilter, getColors, getClusterNames } from '../state/selectors/index.js';
 import { subscribe, EVENTS } from './event-bus.js';
 import { escapeHtml } from './utils/dom-formatters.js';
 import { describeCluster } from './utils/ui-presentation.js';
 import { getSemanticGuideTitle } from './semantic-guide.js';
 import { getFilteredClusterCounts, setClusterFilter } from './cluster-filter.js';
+import { setFocusPanelMode, getFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.js';
 
 // ── Viewport helper ──────────────────────────────────────────────────────────
 
@@ -73,9 +74,9 @@ export function closeLegendPanel() {
  */
 export function restoreLegendCollapsedPanel(infoPanel, panelBtn) {
     if (!isCompactFocusStage()) return;
-    if (document.body.dataset.focusPanelMode !== 'legend-open') return;
+    if (getFocusPanelMode() !== FOCUS_PANEL_MODE.LEGEND_OPEN) return;
     if (infoPanel) infoPanel.classList.add('active');
-    document.body.dataset.focusPanelMode = 'overview';
+    setFocusPanelMode(FOCUS_PANEL_MODE.OVERVIEW);
     if (panelBtn) panelBtn.setAttribute('aria-expanded', 'true');
 }
 
@@ -90,10 +91,10 @@ export function buildLegend() {
         .filter(([, count]) => count > 0)
         .sort((a, b) => b[1] - a[1] || a[0] - b[0]);
 
-    const guide = state.currentSemanticGuide;
+    const guide = getCurrentSemanticGuide();
     const guideTitle = guide ? getSemanticGuideTitle(guide) : 'Read the scene';
     const guideNote = guide?.text || 'Neighborhood colors group records by shared language, trade, civic role, and business texture.';
-    const activeCluster = state.activeClusterFilter;
+    const activeCluster = getActiveClusterFilter();
 
     legendPanel.innerHTML = `
         <div class="legend-guide">
@@ -115,7 +116,7 @@ export function buildLegend() {
         <div class="legend-list" id="legend-list">
             ${rows.map(([cluster, count]) => {
                 const active = activeCluster !== null && activeCluster === cluster;
-                const color = state.COLORS[cluster % state.COLORS.length] || '#4ecdc4';
+                const color = getColors()[cluster % getColors().length] || '#4ecdc4';
                 return `
                     <button class="legend-item${active ? ' active' : ''}" type="button" data-legend-cluster="${cluster}" aria-pressed="${String(active)}">
                         <span class="legend-dot" style="background:${escapeHtml(color)}"></span>
@@ -139,7 +140,7 @@ export function buildLegend() {
 }
 
 export function updateLegendGuideState() {
-    const guide = state.currentSemanticGuide;
+    const guide = getCurrentSemanticGuide();
     if (!guide) {
         if (isLegendPanelOpen()) closeLegendPanel();
         // Don't wipe innerHTML here. This function is called from many event
@@ -191,8 +192,8 @@ export function buildCanvasColorLegend() {
     const root = document.getElementById('canvas-color-legend-rows');
     if (!root) return;
     const counts = getFilteredClusterCounts();
-    const colors = Array.isArray(state.COLORS) ? state.COLORS : [];
-    const names = Array.isArray(state.CLUSTER_NAMES) ? state.CLUSTER_NAMES : [];
+    const colors = Array.isArray(getColors()) ? getColors() : [];
+    const names = Array.isArray(getClusterNames()) ? getClusterNames() : [];
 
     let top = counts && counts.size > 0
         ? Array.from(counts.entries())

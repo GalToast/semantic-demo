@@ -1,4 +1,9 @@
-import { state } from '../state.js';
+import {
+    getSelectedPoint, getFocusedNode, getPoints,
+    getNavState, getCurrentView, getSemanticDiveMode,
+    getCurrentSearchSummary, getTrailDepth, getSemanticTrailCue,
+    getSemanticLaneSnapshot, getCurrentEmptyQuery
+} from '../state/selectors/index.js';
 import { getInterestingBusinessNote } from './journey-lifecycle-adapter.js';
 import { formatBusinessName } from './utils/dom-formatters.js';
 import { describeCluster } from './utils/ui-presentation.js';
@@ -23,26 +28,27 @@ export const JOURNEY_ACTIONS = Object.freeze({
 });
 
 export function getFocusedJourneyPoint() {
-    if (state.selectedPoint) return state.selectedPoint;
-    if (Number.isFinite(state.focusedNode) && state.points) return state.points[state.focusedNode] || null;
-    if (Number.isFinite(state.navState?.focusedIndex) && state.points) return state.points[state.navState.focusedIndex] || null;
+    if (getSelectedPoint()) return getSelectedPoint();
+    if (Number.isFinite(getFocusedNode()) && getPoints()) return getPoints()[getFocusedNode()] || null;
+    if (Number.isFinite(getNavState()?.focusedIndex) && getPoints()) return getPoints()[getNavState().focusedIndex] || null;
     return null;
 }
 
 export function getJourneyCompassState() {
-    const cueBeat = state.semanticTrailCue || 'idle';
+    const cueBeat = getSemanticTrailCue() || 'idle';
     const focusedPoint = getFocusedJourneyPoint();
     const focusedName = focusedPoint ? formatBusinessName(focusedPoint.name || 'this business') : '';
-    const queryLabel = state.currentSearchSummary?.query ? `"${state.currentSearchSummary.query}"` : 'semantic search';
+    const summary = getCurrentSearchSummary();
+    const queryLabel = summary?.query ? `"${summary.query}"` : 'semantic search';
     const isSearching = cueBeat === 'searching';
     const isFocusing = cueBeat === 'focusing';
-    const hasSearch = !!state.currentSearchSummary || isSearching;
+    const hasSearch = !!summary || isSearching;
     const hasFocus = !!focusedPoint;
-    const insideActive = state.semanticDiveMode && state.currentView === 'galaxy' && hasFocus;
+    const insideActive = getSemanticDiveMode() && getCurrentView() === 'galaxy' && hasFocus;
 
-    if (state.currentView === 'map') {
+    if (getCurrentView() === 'map') {
         const routeCount = routeEmbodimentReader().length;
-        const isCountyMapOverview = !hasFocus && !hasSearch && Number(state.trailDepth || 0) === 0;
+        const isCountyMapOverview = !hasFocus && !hasSearch && Number(getTrailDepth() || 0) === 0;
         return {
             phase: 'map',
             kicker: routeCount > 1 ? 'Map | Terrain Bridge' : 'Map | Physical Distance',
@@ -57,11 +63,11 @@ export function getJourneyCompassState() {
     }
 
     if (insideActive) {
-        const focusIndex = Number.isFinite(state.navState?.focusedIndex)
-            ? state.navState.focusedIndex
-            : state.focusedNode;
+        const focusIndex = Number.isFinite(getNavState()?.focusedIndex)
+            ? getNavState().focusedIndex
+            : getFocusedNode();
         const nextCandidate = getNextExploreCandidateForIndex(focusIndex, getNextWalkCandidateForIndex);
-        const nextPoint = nextCandidate ? state.points[nextCandidate.index] : null;
+        const nextPoint = nextCandidate ? getPoints()[nextCandidate.index] : null;
         const clusterName = focusedPoint ? describeCluster(focusedPoint.cluster) : 'Neighborhood';
 
         return {
@@ -83,15 +89,15 @@ export function getJourneyCompassState() {
     }
 
     if (hasFocus || isFocusing) {
-        const walkHistory = Array.isArray(state.navState?.walkHistoryIndices)
-            ? state.navState.walkHistoryIndices
-            : (state.navState?.explorationHistoryIndices || []);
+        const walkHistory = Array.isArray(getNavState()?.walkHistoryIndices)
+            ? getNavState().walkHistoryIndices
+            : (getNavState()?.explorationHistoryIndices || []);
         const walkHistoryLength = walkHistory.length;
         const walkDepth = Math.max(0, walkHistory.length - 1);
-        const isSearchFocus = !!state.currentSearchSummary && walkDepth === 0;
-        const isSearchAnchor = state.currentSearchSummary && Number.isFinite(state.currentSearchSummary.anchorIndex) && state.focusedNode === state.currentSearchSummary.anchorIndex;
-        const isTrailStop = walkDepth > 0 || (state.navState?.mode === 'trail' && state.trailDepth >= 1 && !isSearchAnchor);
-        const hasAnchor = !!state.currentSearchSummary;
+        const isSearchFocus = !!summary && walkDepth === 0;
+        const isSearchAnchor = summary && Number.isFinite(summary.anchorIndex) && getFocusedNode() === summary.anchorIndex;
+        const isTrailStop = walkDepth > 0 || (getNavState()?.mode === 'trail' && getTrailDepth() >= 1 && !isSearchAnchor);
+        const hasAnchor = !!summary;
         const clusterName = focusedPoint ? describeCluster(focusedPoint.cluster) : 'Focus';
 
         let primaryAction, secondaryAction, tertiaryAction = null;
@@ -127,7 +133,6 @@ export function getJourneyCompassState() {
     }
 
     if (hasSearch) {
-        const summary = state.currentSearchSummary;
         // Prefer the post-dedup count (what the user actually sees in the
         // result list) over the pre-dedup resultIndices array (used for
         // search-glow effects on the mycelium).
@@ -155,8 +160,8 @@ export function getJourneyCompassState() {
     }
 
     // Empty search (no results, no active summary) — surface the empty state in the header too
-    if (state.currentEmptyQuery) {
-        const label = `"${state.currentEmptyQuery}"`;
+    if (getCurrentEmptyQuery()) {
+        const label = `"${getCurrentEmptyQuery()}"`;
         return {
             phase: 'search',
             kicker: `Search | ${label}`,
@@ -170,10 +175,10 @@ export function getJourneyCompassState() {
 
     let idleNote = 'Start wide, then search by need or clue to open one trail through the network.';
     let isDiscovery = false;
-    const isSemanticDegraded = state.semanticLaneSnapshot?.state === 'degraded';
-    if (!isSemanticDegraded && state.points?.length > 0) {
-        const randomIdx = Math.floor(Math.random() * state.points.length);
-        const randomPoint = state.points[randomIdx];
+    const isSemanticDegraded = getSemanticLaneSnapshot()?.state === 'degraded';
+    if (!isSemanticDegraded && getPoints()?.length > 0) {
+        const randomIdx = Math.floor(Math.random() * getPoints().length);
+        const randomPoint = getPoints()[randomIdx];
         const snippet = getInterestingBusinessNote(randomPoint);
         if (snippet) {
             idleNote = `Discover: ${snippet}`;

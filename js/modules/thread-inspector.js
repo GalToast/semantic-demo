@@ -1,4 +1,12 @@
 import { state } from '../state.js';
+import {
+    getCurrentView, getNavState, getSelectedPoint,
+    getStrandContinuityState,
+    getPinnedThreadIndex, getInspectedThreadIndex,
+    getThreadInspectorPointerInside,
+    getCanvasThreadInspectionClearTimer,
+    getPoints, getInspectedStrandDiagnostics
+} from '../state/selectors/index.js';
 // js/modules/thread-inspector.js — thread/strand inspection for semantic demo
 ;
 import { formatBusinessName, stripTerminalPunctuation } from './utils/dom-formatters.js';
@@ -8,7 +16,8 @@ import {
     getThreadCandidatesForIndex
 } from './journey-thread-model.js';
 import { focusOnNode } from './camera-controls.js';
-import { dispatchNavTransition, focusOnPoint, syncFocusStage } from './lifecycle.js';
+import { dispatchNavTransition, focusOnPoint } from './lifecycle.js';
+import { syncFocusStage } from './journey.js';
 import { updateJourneyCompass } from './journey-compass-controller.js';
 import { showExperienceToast } from './ui-feedback.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
@@ -63,14 +72,15 @@ export { syncInspectedStrandOverlay, updateInspectedStrandOverlay, disposeInspec
 
 // === Thread inspection ===
 
-export function getThreadInspectionState(index = state.inspectedThreadIndex, options = {}) {
-    if (!state.points || !Array.isArray(state.points) || state.points.length === 0) return null;
-    const focusedIndex = Number.isFinite(state.navState.focusedIndex) ? state.navState.focusedIndex : null;
-    const focusPoint = (focusedIndex !== null && focusedIndex >= 0 && focusedIndex < state.points.length) ? state.points[focusedIndex] : null;
+export function getThreadInspectionState(index = getInspectedThreadIndex(), options = {}) {
+    const pts = getPoints();
+    if (!pts || !Array.isArray(pts) || pts.length === 0) return null;
+    const focusedIndex = Number.isFinite(getNavState()?.focusedIndex) ? getNavState()?.focusedIndex : null;
+    const focusPoint = (focusedIndex !== null && focusedIndex >= 0 && focusedIndex < pts.length) ? pts[focusedIndex] : null;
     const candidate = Number.isFinite(index)
-        ? (state.navState.threadCandidates || []).find((item) => item && item.index === index)
+        ? (getNavState()?.threadCandidates || []).find((item) => item && item.index === index)
         : null;
-    const point = candidate ? state.points[candidate.index] : null;
+    const point = candidate ? pts[candidate.index] : null;
     const active = !!(candidate && point && focusPoint);
     const focusName = focusPoint ? formatBusinessName(focusPoint.name || 'this business') : '';
     const targetName = point ? formatBusinessName(point.name || 'nearby stop') : '';
@@ -79,17 +89,17 @@ export function getThreadInspectionState(index = state.inspectedThreadIndex, opt
     const relationshipTitle = active && relationshipRole
         ? getRelationshipRoleLabel(relationshipRole, 'title')
         : '';
-    const role = active ? (state.navState.focusPocketRoleByIndex instanceof Map ? state.navState.focusPocketRoleByIndex.get(candidate.index) : undefined) || candidate.role || 'trail' : '';
+    const role = active ? (getNavState()?.focusPocketRoleByIndex instanceof Map ? getNavState()?.focusPocketRoleByIndex.get(candidate.index) : undefined) || candidate.role || 'trail' : '';
     const source = active
-        ? candidate.source === 'semantic' || state.navState.threadSource === 'semantic'
+        ? candidate.source === 'semantic' || getNavState()?.threadSource === 'semantic'
             ? 'semantic relationship'
             : 'current cloud fallback'
         : '';
     const title = active ? `${focusName} -> ${targetName}` : 'Select a nearby stop';
-    const pinned = active && state.pinnedThreadIndex === candidate.index;
+    const pinned = active && getPinnedThreadIndex() === candidate.index;
     const journeyPhase =
-        active && state.strandContinuityState.targetIndex === candidate.index
-            ? state.strandContinuityState.phase
+        active && getStrandContinuityState()?.targetIndex === candidate.index
+            ? getStrandContinuityState()?.phase
             : pinned
               ? 'pinned'
               : active
@@ -135,17 +145,17 @@ export function getThreadInspectionState(index = state.inspectedThreadIndex, opt
         copy,
         meta,
         strandVisual: {
-            active: !!state.inspectedStrandDiagnostics.active,
-            source: state.inspectedStrandDiagnostics.source || 'none',
-            segmentCount: state.inspectedStrandDiagnostics.segmentCount || 0,
-            braidCount: state.inspectedStrandDiagnostics.braidCount || 0,
-            endpointCount: state.inspectedStrandDiagnostics.endpointCount || 0
+            active: !!getInspectedStrandDiagnostics()?.active,
+            source: getInspectedStrandDiagnostics()?.source || 'none',
+            segmentCount: getInspectedStrandDiagnostics()?.segmentCount || 0,
+            braidCount: getInspectedStrandDiagnostics()?.braidCount || 0,
+            endpointCount: getInspectedStrandDiagnostics()?.endpointCount || 0
         },
-        threadSource: state.navState.threadSource || null
+        threadSource: getNavState()?.threadSource || null
     };
 }
 
-export function renderThreadInspection(index = state.inspectedThreadIndex, options = {}) {
+export function renderThreadInspection(index = getInspectedThreadIndex(), options = {}) {
     const inspector = document.getElementById('focus-thread-inspector');
     const inspectionState = getThreadInspectionState(index, options);
     syncInspectedStrandOverlay(inspectionState, options);
@@ -164,22 +174,22 @@ export function renderThreadInspection(index = state.inspectedThreadIndex, optio
         inspector.dataset.pointerGuardBound = 'true';
         const pointerEnter = () => {
             state.threadInspectorPointerInside = true;
-            if (state.canvasThreadInspectionClearTimer) {
-                window.clearTimeout(state.canvasThreadInspectionClearTimer);
+            if (getCanvasThreadInspectionClearTimer()) {
+                window.clearTimeout(getCanvasThreadInspectionClearTimer());
                 state.canvasThreadInspectionClearTimer = null;
             }
         };
         const pointerLeave = () => {
             state.threadInspectorPointerInside = false;
-            if (document.body.dataset.threadInspectSurface === 'canvas' && state.pinnedThreadIndex === null) {
+            if (document.body.dataset.threadInspectSurface === 'canvas' && getPinnedThreadIndex() === null) {
                 scheduleCanvasThreadInspectionClear(1800);
             }
         };
         inspector.addEventListener('pointerenter', pointerEnter);
         inspector.addEventListener('pointerleave', pointerLeave);
     }
-    if (inspectionState.active && state.canvasThreadInspectionClearTimer) {
-        window.clearTimeout(state.canvasThreadInspectionClearTimer);
+    if (inspectionState.active && getCanvasThreadInspectionClearTimer()) {
+        window.clearTimeout(getCanvasThreadInspectionClearTimer());
         state.canvasThreadInspectionClearTimer = null;
     }
     inspector.classList.toggle('active', inspectionState.active);
@@ -212,7 +222,7 @@ export function renderThreadInspection(index = state.inspectedThreadIndex, optio
         const followTargetsCurrent =
             inspectionState.active &&
             Number.isFinite(inspectionState.index) &&
-            inspectionState.index === state.navState.focusedIndex;
+            inspectionState.index === getNavState()?.focusedIndex;
         followBtn.disabled = !inspectionState.active || followTargetsCurrent || inspectionState.journeyPhase === 'exploring';
         followBtn.setAttribute('aria-disabled', String(followBtn.disabled));
         followBtn.setAttribute('aria-busy', String(inspectionState.journeyPhase === 'exploring'));
@@ -231,11 +241,11 @@ export function renderThreadInspection(index = state.inspectedThreadIndex, optio
         );
     }
     if (clearBtn) {
-        clearBtn.disabled = !inspectionState.active && state.pinnedThreadIndex === null;
+        clearBtn.disabled = !inspectionState.active && getPinnedThreadIndex() === null;
         clearBtn.setAttribute('aria-disabled', String(clearBtn.disabled));
         clearBtn.setAttribute(
             'aria-label',
-            state.pinnedThreadIndex !== null ? 'Clear pinned connection' : 'Clear connection preview'
+            getPinnedThreadIndex() !== null ? 'Clear pinned connection' : 'Clear connection preview'
         );
     }
     document
@@ -257,31 +267,31 @@ export function renderThreadInspection(index = state.inspectedThreadIndex, optio
 }
 
 export function inspectThreadNeighbor(index, options = {}) {
-    if (state.pinnedThreadIndex !== null && !options.force) {
-        return renderThreadInspection(state.pinnedThreadIndex, { surface: 'pinned', pinned: true });
+    if (getPinnedThreadIndex() !== null && !options.force) {
+        return renderThreadInspection(getPinnedThreadIndex(), { surface: 'pinned', pinned: true });
     }
     state.inspectedThreadIndex = Number.isFinite(index) ? index : null;
-    if (Number.isFinite(state.inspectedThreadIndex) && !options.preserveJourney) {
+    if (Number.isFinite(getInspectedThreadIndex()) && !options.preserveJourney) {
         setStrandContinuityState('preview', {
-            targetIndex: state.inspectedThreadIndex,
-            fromIndex: state.navState.focusedIndex,
+            targetIndex: getInspectedThreadIndex(),
+            fromIndex: getNavState()?.focusedIndex,
             reason: options.surface || 'inspect'
         });
     }
-    return renderThreadInspection(state.inspectedThreadIndex, options);
+    return renderThreadInspection(getInspectedThreadIndex(), options);
 }
 
 export function pinThreadNeighbor(index, options = {}) {
     if (!Number.isFinite(index)) return clearThreadInspection({ force: true });
-    if (state.canvasThreadInspectionClearTimer) {
-        window.clearTimeout(state.canvasThreadInspectionClearTimer);
+    if (getCanvasThreadInspectionClearTimer()) {
+        window.clearTimeout(getCanvasThreadInspectionClearTimer());
         state.canvasThreadInspectionClearTimer = null;
     }
     state.pinnedThreadIndex = index;
     state.inspectedThreadIndex = index;
     setStrandContinuityState('pinned', {
         targetIndex: index,
-        fromIndex: state.navState.focusedIndex,
+        fromIndex: getNavState()?.focusedIndex,
         reason: options.reason || 'pin'
     });
     const inspectionState = renderThreadInspection(index, { ...options, surface: 'pinned', pinned: true });
@@ -290,8 +300,8 @@ export function pinThreadNeighbor(index, options = {}) {
 }
 
 export function unpinThreadInspection() {
-    if (state.canvasThreadInspectionClearTimer) {
-        window.clearTimeout(state.canvasThreadInspectionClearTimer);
+    if (getCanvasThreadInspectionClearTimer()) {
+        window.clearTimeout(getCanvasThreadInspectionClearTimer());
         state.canvasThreadInspectionClearTimer = null;
     }
     state.pinnedThreadIndex = null;
@@ -303,10 +313,10 @@ export function unpinThreadInspection() {
 }
 
 export function scheduleCanvasThreadInspectionClear(delay = 1800) {
-    if (state.canvasThreadInspectionClearTimer) window.clearTimeout(state.canvasThreadInspectionClearTimer);
+    if (getCanvasThreadInspectionClearTimer()) window.clearTimeout(getCanvasThreadInspectionClearTimer());
     state.canvasThreadInspectionClearTimer = window.setTimeout(() => {
         state.canvasThreadInspectionClearTimer = null;
-        if (state.threadInspectorPointerInside || state.pinnedThreadIndex !== null) return;
+        if (getThreadInspectorPointerInside() || getPinnedThreadIndex() !== null) return;
         if (document.body.dataset.threadInspectSurface === 'canvas') {
             clearThreadInspection();
         }
@@ -322,22 +332,22 @@ export function clearThreadInspection(options = {}) {
     }
     clearingThreadInspection = true;
     try {
-    if (options.force && state.canvasThreadInspectionClearTimer) {
-        window.clearTimeout(state.canvasThreadInspectionClearTimer);
+    if (options.force && getCanvasThreadInspectionClearTimer()) {
+        window.clearTimeout(getCanvasThreadInspectionClearTimer());
         state.canvasThreadInspectionClearTimer = null;
     }
     if (options.force) {
         state.pinnedThreadIndex = null;
         state.inspectedThreadIndex = null;
         state.threadInspectorPointerInside = false;
-        syncFocusStage(state.selectedPoint);
+        syncFocusStage(getSelectedPoint());
         syncSemanticDiveUi();
         if (!options.preserveJourney) clearStrandContinuityState('force-clear');
     }
-    if (state.pinnedThreadIndex !== null && !options.force) {
-        return renderThreadInspection(state.pinnedThreadIndex, { surface: 'pinned', pinned: true });
+    if (getPinnedThreadIndex() !== null && !options.force) {
+        return renderThreadInspection(getPinnedThreadIndex(), { surface: 'pinned', pinned: true });
     }
-    if (!options.preserveJourney && state.strandContinuityState.phase === 'preview') {
+    if (!options.preserveJourney && getStrandContinuityState()?.phase === 'preview') {
         clearStrandContinuityState('preview-clear');
     }
     state.inspectedThreadIndex = null;
@@ -349,32 +359,34 @@ export function clearThreadInspection(options = {}) {
 }
 
 export function exploreThreadNeighbor(index, options = {}) {
-    if (!state.points || !Array.isArray(state.points) || state.points.length === 0) return null;
+    const pts = getPoints();
+    if (!pts || !Array.isArray(pts) || pts.length === 0) return null;
     if (!Number.isFinite(index)) return null;
     const fromIndex = Number.isFinite(options.fromIndex)
         ? options.fromIndex
         : adapter_getCurrentTrailFocusIndex() !== null
           ? adapter_getCurrentTrailFocusIndex()
           : null;
-    const candidate = (state.navState.threadCandidates || []).find((item) => item && item.index === index);
-    const targetPoint = (Number.isFinite(index) && index >= 0 && index < state.points.length) ? state.points[index] : null;
+    const candidate = (getNavState()?.threadCandidates || []).find((item) => item && item.index === index);
+    const targetPoint = (Number.isFinite(index) && index >= 0 && index < pts.length) ? pts[index] : null;
     if (!targetPoint) return null;
     const reason =
         summarizeNeighborReason(
             candidate || {},
             targetPoint,
-            (Number.isFinite(fromIndex) && fromIndex >= 0 && fromIndex < state.points.length) ? state.points[fromIndex] : null
+            (Number.isFinite(fromIndex) && fromIndex >= 0 && fromIndex < pts.length) ? pts[fromIndex] : null
         ) ||
         candidate?.reason ||
         options.reason ||
         'nearby business relationship';
-    if (Number.isFinite(state.strandContinuityState.arrivalTimeoutId)) {
-        window.clearTimeout(state.strandContinuityState.arrivalTimeoutId);
-        state.strandContinuityState.arrivalTimeoutId = undefined;
+    const strandState = getStrandContinuityState();
+    if (Number.isFinite(strandState?.arrivalTimeoutId)) {
+        window.clearTimeout(strandState.arrivalTimeoutId);
+        strandState.arrivalTimeoutId = undefined;
     }
-    if (Number.isFinite(state.strandContinuityState.settleTimeoutId)) {
-        window.clearTimeout(state.strandContinuityState.settleTimeoutId);
-        state.strandContinuityState.settleTimeoutId = undefined;
+    if (Number.isFinite(strandState?.settleTimeoutId)) {
+        window.clearTimeout(strandState.settleTimeoutId);
+        strandState.settleTimeoutId = undefined;
     }
     state.pinnedThreadIndex = null;
     state.inspectedThreadIndex = index;
@@ -383,7 +395,7 @@ export function exploreThreadNeighbor(index, options = {}) {
     dispatchNavTransition('WALK_TO', { index, fromIndex, appendHistory: !options.restoreHistory });
     renderThreadInspection(index, { force: true, surface: options.surface || 'explore' });
     state.navState.lastTraversalReason = reason;
-    if (state.currentView === 'map') {
+    if (getCurrentView() === 'map') {
         focusOnPoint(targetPoint, {
             fromTraversal: true,
             appendHistory: !options.restoreHistory,
@@ -408,23 +420,25 @@ export function exploreThreadNeighbor(index, options = {}) {
     const capturedFromIndex = fromIndex;
     const capturedReason = reason;
     const arrivalTid = window.setTimeout(() => {
-        if (state.strandContinuityState.phase === 'exploring' && state.strandContinuityState.targetIndex === capturedIndex) {
+        const s2 = getStrandContinuityState();
+        if (s2?.phase === 'exploring' && s2?.targetIndex === capturedIndex) {
             setStrandContinuityState('arrived', { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason });
-            const pointAtArrival = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < state.points.length) ? state.points[capturedIndex] : null;
-            syncFocusStage(pointAtArrival || state.selectedPoint || null);
+            const pointAtArrival = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < pts.length) ? pts[capturedIndex] : null;
+            syncFocusStage(pointAtArrival || getSelectedPoint() || null);
             updateJourneyCompass();
         }
     }, arrivalDelay);
-    state.strandContinuityState.arrivalTimeoutId = arrivalTid;
+    getStrandContinuityState().arrivalTimeoutId = arrivalTid;
     const settleDelay = options.settleDelay || 5200;
     const settleTid = window.setTimeout(() => {
-        if (state.strandContinuityState.phase === 'arrived' && state.strandContinuityState.targetIndex === capturedIndex) {
+        const s3 = getStrandContinuityState();
+        if (s3?.phase === 'arrived' && s3?.targetIndex === capturedIndex) {
             clearStrandContinuityState('arrival-settled');
-            const pointAtSettle = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < state.points.length) ? state.points[capturedIndex] : null;
-            syncFocusStage(pointAtSettle || state.selectedPoint || null);
+            const pointAtSettle = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < pts.length) ? pts[capturedIndex] : null;
+            syncFocusStage(pointAtSettle || getSelectedPoint() || null);
         }
     }, settleDelay);
-    state.strandContinuityState.settleTimeoutId = settleTid;
+    getStrandContinuityState().settleTimeoutId = settleTid;
     return { targetIndex: index, fromIndex, reason };
 }
 

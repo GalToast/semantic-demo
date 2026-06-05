@@ -1,5 +1,9 @@
 // state
-import { state } from '../state.js';
+import {
+    getStrandContinuityState, getCurrentView, getCurrentSearchSummary,
+    getNavState, getFocusedNode, getTerrainHandoffState,
+    getJourneyCompassPhaseOrder, getMapHandoffPreludeMs, getMapTrailRefreshLateDelayMs
+} from '../state/selectors/index.js';
 import { subscribeKeyed, EVENTS } from './event-bus.js';
 // utils
 import { formatBusinessName, cleanPublicNoteText } from './utils/dom-formatters.js';
@@ -118,7 +122,7 @@ export function syncJourneyCompassActions(compassState = {}) {
             delete button.dataset.fullLabel;
         }
         button.dataset.journeyAction = action?.action || '';
-        const disabled = !action?.action || (action.action === JOURNEY_ACTIONS.NEXT_STOP && state.strandContinuityState?.phase === 'exploring');
+        const disabled = !action?.action || (action.action === JOURNEY_ACTIONS.NEXT_STOP && getStrandContinuityState()?.phase === 'exploring');
         // Use aria-disabled rather than the native `disabled` attribute so
         // the title tooltip remains hoverable. The HTML5 `hidden` attribute
         // already removes the element from the a11y tree; we also add
@@ -152,7 +156,7 @@ export function syncMapTrailStrip(compassState = {}, presentationState = {}) {
     const strip = document.getElementById('map-trail-strip');
     if (!strip) return;
     const shouldShow =
-        state.currentView === 'map' &&
+        getCurrentView() === 'map' &&
         presentationState.navigationOwner === 'map-trail-strip';
 
     strip.hidden = !shouldShow;
@@ -181,7 +185,7 @@ export function executeJourneyCompassAction(action) {
             const focusSearchInput = () => window.requestAnimationFrame(() => {
                 document.getElementById('search-input')?.focus();
             });
-            const isMapFocusSearch = state.currentView === 'map' && isMapSummarySurface();
+            const isMapFocusSearch = getCurrentView() === 'map' && isMapSummarySurface();
 
             if (isMapFocusSearch) {
                 resetExplorationFocus({ preserveSearch: true, skipUrlSync: true });
@@ -193,17 +197,17 @@ export function executeJourneyCompassAction(action) {
             return;
         }
         case JOURNEY_ACTIONS.CENTER_ANCHOR: {
-            const anchorIndex = Number.isFinite(state.currentSearchSummary?.anchorIndex)
-                ? state.currentSearchSummary.anchorIndex
-                : Number.isFinite(state.navState?.focusedIndex)
-                    ? state.navState.focusedIndex
-                    : Number.isFinite(state.focusedNode)
-                        ? state.focusedNode
+            const anchorIndex = Number.isFinite(getCurrentSearchSummary()?.anchorIndex)
+                ? getCurrentSearchSummary().anchorIndex
+                : Number.isFinite(getNavState()?.focusedIndex)
+                    ? getNavState().focusedIndex
+                    : Number.isFinite(getFocusedNode())
+                        ? getFocusedNode()
                         : null;
             if (Number.isFinite(anchorIndex)) {
                 // "Center Anchor" must set trailDepth=1 (via setTrailDepth) so the Trail chip activates
                 if (typeof setTrailDepth === 'function') setTrailDepth(1, { fromUserGesture: true, skipUrlSync: true });
-                focusOnNode(anchorIndex, { fromSearchResult: !!state.currentSearchSummary });
+                focusOnNode(anchorIndex, { fromSearchResult: !!getCurrentSearchSummary() });
                 if (typeof recenterFocusedNode === 'function') {
                     recenterFocusedNode();
                 }
@@ -219,7 +223,7 @@ export function executeJourneyCompassAction(action) {
             syncSemanticDiveUi();
             return;
         case JOURNEY_ACTIONS.NEXT_STOP:
-            if (state.strandContinuityState?.phase === 'exploring') return;
+            if (getStrandContinuityState()?.phase === 'exploring') return;
             if (typeof exploreInsideToNextStop === 'function') exploreInsideToNextStop();
             return;
 
@@ -287,7 +291,7 @@ export function updateJourneyCompass() {
     syncJourneyCompassActions(compassState);
     syncMapTrailStrip(compassState, presentationState);
 
-    const order = state.JOURNEY_COMPASS_PHASE_ORDER || ['overview', 'search', 'focus', 'inside', 'map'];
+    const order = getJourneyCompassPhaseOrder() || ['overview', 'search', 'focus', 'inside', 'map'];
     const activeOrderIndex = order.indexOf(phase);
     const stepDescriptions = {
         overview: 'See the whole county.',
@@ -320,13 +324,13 @@ export function invokeClearMobileRouteFieldPeek() {
 
 export function scheduleMapRouteRefresh() {
     const refresh = () => {
-        if (state.currentView !== 'map') return;
+        if (getCurrentView() !== 'map') return;
         refreshMapRouteEmbodiment();
         centerMapOnRouteAnchor();
     };
     refresh();
     window.requestAnimationFrame(() => window.requestAnimationFrame(refresh));
-    [120, 450, state.MAP_HANDOFF_PRELUDE_MS + state.MAP_TRAIL_REFRESH_LATE_DELAY_MS].forEach((delay) => {
+    [120, 450, getMapHandoffPreludeMs() + getMapTrailRefreshLateDelayMs()].forEach((delay) => {
         window.setTimeout(refresh, delay);
     });
 }
@@ -334,14 +338,14 @@ export function scheduleMapRouteRefresh() {
 export function getViewHandoffModel(view) {
     const focusPoint = getFocusedJourneyPoint();
     const focusName = focusPoint ? formatBusinessName(focusPoint.name || 'this business') : '';
-    const hasSearch = !!state.currentSearchSummary;
+    const hasSearch = !!getCurrentSearchSummary();
     const searchLabel = hasSearch
-        ? cleanPublicNoteText(state.currentSearchSummary.query || state.currentSearchSummary.label || 'current trail')
+        ? cleanPublicNoteText(getCurrentSearchSummary().query || getCurrentSearchSummary().label || 'current trail')
         : '';
 
     if (view === 'map') {
         const routeCount = getRouteEmbodimentIndices().length;
-        const origin = state.terrainHandoffState?.from || (typeof getRouteLayerOrigin === 'function' ? getRouteLayerOrigin() : 'galaxy');
+        const origin = getTerrainHandoffState()?.from || (typeof getRouteLayerOrigin === 'function' ? getRouteLayerOrigin() : 'galaxy');
         if (focusName && hasSearch) {
             return {
                 icon: 'map',

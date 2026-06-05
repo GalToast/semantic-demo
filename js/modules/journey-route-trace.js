@@ -1,4 +1,9 @@
 import { state } from '../state.js';
+import {
+    getCurrentView, getNavState, getPoints, getActiveFilters, getSemanticDiveMode,
+    getCurrentSearchSummary,
+    getMyceliumGroup
+} from '../state/selectors/index.js';
 import { subscribeKeyed, EVENTS } from './event-bus.js';
 import * as THREE from 'three';
 import { isPointVisible } from './utils/geo-data.js';
@@ -11,6 +16,7 @@ import {
     getArcPoint,
     pushArcSegments
 } from './journey-webgl-utils.js';
+import { debounceRAF } from './utils/timer-utils.js';
 
 // ShaderMaterial with glow effect for route trace lines (LineSegments-based overview lines)
 function buildRouteTraceMaterial() {
@@ -98,14 +104,14 @@ export function removeRouteTraceOverlay() {
 function getRouteEmbodimentIndices() {
     const indices = [];
     const push = (index) => {
-        if (!Number.isFinite(index) || index < 0 || index >= state.points.length) return;
+        if (!Number.isFinite(index) || index < 0 || index >= getPoints().length) return;
         if (!indices.includes(index)) indices.push(index);
     };
-    if (Number.isFinite(state.navState.focusedIndex)) push(state.navState.focusedIndex);
-    (state.navState.walkHistoryIndices || []).forEach(push);
-    if (state.currentSearchSummary?.anchorIndex !== undefined) push(state.currentSearchSummary.anchorIndex);
-    (state.currentSearchSummary?.resultIndices || []).slice(0, 7).forEach(push);
-    (state.navState.threadCandidates || []).slice(0, 6).forEach((candidate) => push(candidate?.index));
+    if (Number.isFinite(getNavState().focusedIndex)) push(getNavState().focusedIndex);
+    (getNavState().walkHistoryIndices || []).forEach(push);
+    if (getCurrentSearchSummary()?.anchorIndex !== undefined) push(getCurrentSearchSummary().anchorIndex);
+    (getCurrentSearchSummary()?.resultIndices || []).slice(0, 7).forEach(push);
+    (getNavState().threadCandidates || []).slice(0, 6).forEach((candidate) => push(candidate?.index));
     return indices;
 }
 
@@ -118,7 +124,7 @@ export function setRouteChoreographyPhase(phase = 'overview', details = {}) {
         startedAt: performance.now()
     };
     if (document.body?.dataset) {
-        document.body.dataset.routeMotion = state.currentView === 'galaxy' ? phase : 'inactive';
+        document.body.dataset.routeMotion = getCurrentView() === 'galaxy' ? phase : 'inactive';
     }
     refreshRouteTraceOverlay({ reason: details.reason || phase });
 }
@@ -139,14 +145,14 @@ export function initRouteTraceSubscriptions() {
     subscribeKeyed('route-trace:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync);
 }
 
-export function refreshRouteTraceOverlay(options = {}) {
+function _refreshRouteTraceOverlayRaw(options = {}) {
     removeRouteTraceOverlay();
-    if (!state.myceliumGroup || state.currentView !== 'galaxy') {
+    if (!getMyceliumGroup() || getCurrentView() !== 'galaxy') {
         resetRouteTraceDiagnostics('inactive-view');
         return;
     }
-    const indices = getRouteEmbodimentIndices().filter((index) => isPointVisible(index, state.points, null, state.activeFilters));
-    const anchorIndex = Number.isFinite(state.navState.focusedIndex) ? state.navState.focusedIndex : indices[0];
+    const indices = getRouteEmbodimentIndices().filter((index) => isPointVisible(index, getPoints(), null, getActiveFilters()));
+    const anchorIndex = Number.isFinite(getNavState().focusedIndex) ? getNavState().focusedIndex : indices[0];
     if (!Number.isFinite(anchorIndex) || indices.length < 2) {
         resetRouteTraceDiagnostics(indices.length ? 'single-node' : 'not-built');
         return;
@@ -177,7 +183,7 @@ export function refreshRouteTraceOverlay(options = {}) {
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     const material = buildRouteTraceMaterial();
-    if (state.semanticDiveMode) {
+    if (getSemanticDiveMode()) {
         material.uniforms.baseOpacity.value = 0.34;
         material.uniforms.opacity.value = 0.34;
     }
@@ -230,3 +236,5 @@ export function updateRouteTraceOverlayPositions(now = performance.now()) {
     }
     state.routeTraceDiagnostics.segmentCount = getLineSegmentCount(line);
 }
+
+export const refreshRouteTraceOverlay = debounceRAF(_refreshRouteTraceOverlayRaw);

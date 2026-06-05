@@ -6,6 +6,10 @@
  */
 
 import { state } from '../state.js';
+import {
+    getCurrentSearchSummary, getPointIndexByLeadId, getPoints,
+    getFocusedNode, getNavState, getSelectedPoint
+} from '../state/selectors/index.js';
 import { isCompactMapViewport, isCompactSearchViewport } from './utils/ui-presentation.js';
 import { formatBusinessName } from './utils/dom-formatters.js';
 import { setActiveSearchResultRow } from './ui-renderers.js';
@@ -53,22 +57,22 @@ export function showExperienceToast(title, copy) {
 export function syncSearchStatusForFocus(point, options = {}) {
     const statusEl = document.getElementById('search-status');
     const resultsEl = document.getElementById('search-results');
-    if (!statusEl || !point || !state.currentSearchSummary) return;
+    if (!statusEl || !point || !getCurrentSearchSummary()) return;
     if (!resultsEl?.classList.contains('active')) return;
     const pointIndexByLeadId = point?.lead_id !== null && point?.lead_id !== undefined
-        ? state.pointIndexByLeadId?.get?.(String(point.lead_id))
+        ? getPointIndexByLeadId()?.get?.(String(point.lead_id))
         : undefined;
     const pointIndex = Number.isFinite(pointIndexByLeadId)
         ? pointIndexByLeadId
-        : state.points?.indexOf?.(point);
-    const resultIndices = Array.isArray(state.currentSearchSummary.resultIndices)
-        ? state.currentSearchSummary.resultIndices
+        : getPoints()?.indexOf?.(point);
+    const resultIndices = Array.isArray(getCurrentSearchSummary().resultIndices)
+        ? getCurrentSearchSummary().resultIndices
         : [];
     const pointInResults = Number.isFinite(pointIndex) && resultIndices.includes(pointIndex);
-    const focusedIndex = Number.isFinite(state.focusedNode)
-        ? state.focusedNode
-        : Number.isFinite(state.navState?.focusedIndex)
-          ? state.navState.focusedIndex
+    const focusedIndex = Number.isFinite(getFocusedNode())
+        ? getFocusedNode()
+        : Number.isFinite(getNavState()?.focusedIndex)
+          ? getNavState().focusedIndex
           : null;
     const focusedPointOutsideResults = Number.isFinite(focusedIndex)
         && resultIndices.length > 0
@@ -78,14 +82,14 @@ export function syncSearchStatusForFocus(point, options = {}) {
             resultsEl,
             focusedPointOutsideResults
                 ? null
-                : options.fromTraversal && pointInResults ? state.navState.focusedIndex : pointInResults ? pointIndex : null
+                : options.fromTraversal && pointInResults ? getNavState().focusedIndex : pointInResults ? pointIndex : null
         );
     }
 
-    const displayPoint = focusedPointOutsideResults && state.selectedPoint ? state.selectedPoint : point;
+    const displayPoint = focusedPointOutsideResults && getSelectedPoint() ? getSelectedPoint() : point;
     const pointName = formatBusinessName(displayPoint.name);
-    const queryLabel = state.currentSearchSummary.query
-        ? `"${state.currentSearchSummary.query}"`
+    const queryLabel = getCurrentSearchSummary().query
+        ? `"${getCurrentSearchSummary().query}"`
         : 'this connection path';
     const compactMapCopy = isCompactMapViewport();
     const compactGalaxyCopy = isCompactSearchViewport();

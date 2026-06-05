@@ -1,5 +1,13 @@
 import * as THREE from 'three'
 import { state } from '../state.js'
+import {
+    getCamera, getControls, getNodePositions, getOriginalPositions, getTargetPositions,
+    getNavState, getCurrentView, getSemanticDiveMode, getPoints,
+    getTrailDepth, getMyceliumMode,
+    getActiveClusterFilter, getActiveFilters,
+    getRouteCameraAnimationToken,
+    getMapHandoffPreludeMs, getOrbitMinDistanceDefault, getOrbitMaxDistanceDefault
+} from '../state/selectors/index.js'
 import { isMobile, prefersReducedMotion } from './environment.js'
 import {
     getCanvasUnobstructedRegion,
@@ -34,6 +42,7 @@ import { publish, EVENTS } from './event-bus.js'
 
 import { setFocusTransitionMode, startFocusCameraAssist, clearRouteExploration } from './camera-controls-core.js'
 import { noteSceneInteraction } from './camera-controls-restore.js'
+import { setFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.js'
 
 // -----------------------------------------------------------------------------
 // ANIMATION PRIMITIVES
@@ -53,7 +62,7 @@ export function animateCameraToNode(index, options = {}) {
     const targetPosition = state.nodePositions[index] || state.originalPositions[index]
     if (!targetPosition) return
     const framing = {
-        ...(state.navState.focusFramingMeta || {}),
+        ...(getNavState().focusFramingMeta || {}),
         ...options
     }
     const transitionStyle = framing.transitionStyle || 'focus'
@@ -86,17 +95,17 @@ export function animateCameraToNode(index, options = {}) {
     let heading = currentHeading.clone()
     let stageRightVector = null
     let safeTargetOffset = null
-    const isSemanticPocketFocus = state.navState.threadSource === 'semantic' && state.navState.focusPocketMeta?.active
+    const isSemanticPocketFocus = getNavState().threadSource === 'semantic' && getNavState().focusPocketMeta?.active
 
     // --- SAFE AREA: keep pocket/neighborhood nodes visible and reachable ---
     // When in semantic pocket focus, compute pocket screen bounds and nudge
     // the camera target so off-center neighbors stay within the unobstructed
     // canvas region. This prevents the "parked high/under focus panel" issue
     // where neighbor nodes go off-screen after the camera settles on the anchor.
-    if (isSemanticPocketFocus && state.navState.focusPocketIndices?.length) {
+    if (isSemanticPocketFocus && getNavState().focusPocketIndices?.length) {
         const pocketBounds = computeFocusPocketScreenBounds(
-            state.navState.focusedIndex,
-            state.navState.focusPocketIndices,
+            getNavState().focusedIndex,
+            getNavState().focusPocketIndices,
             state
         )
         if (pocketBounds) {
@@ -110,7 +119,7 @@ export function animateCameraToNode(index, options = {}) {
                 state.controls
             )
             if (safeOffset) {
-                const pocketProfile = state.navState.focusPocketMeta.viewportProfile || {}
+                const pocketProfile = getNavState().focusPocketMeta.viewportProfile || {}
                 const offsetLimit = Number.isFinite(pocketProfile.targetOffsetLimit)
                     ? pocketProfile.targetOffsetLimit
                     : 0.12
@@ -147,7 +156,7 @@ export function animateCameraToNode(index, options = {}) {
             transitionStyle === 'dive-walk') &&
         isSemanticPocketFocus
     ) {
-        const pocketProfile = state.navState.focusPocketMeta.viewportProfile || {}
+        const pocketProfile = getNavState().focusPocketMeta.viewportProfile || {}
         const res = computeOrbitBiasHeading(currentHeading, transitionStyle, pocketProfile)
         heading = res.heading
         stageRightVector = res.stageRightVector
@@ -158,7 +167,7 @@ export function animateCameraToNode(index, options = {}) {
         .add(heading.multiplyScalar(distance))
         .add(new THREE.Vector3(0, verticalLift, 0))
 
-    const personality = state.navState.currentPersonality || {
+    const personality = getNavState().currentPersonality || {
         type: 'STANDARD',
         cameraDuration: 980,
         cameraArc: 'standard',
@@ -287,8 +296,8 @@ export function animateCameraToNode(index, options = {}) {
 }
 
 export function focusOnNode(index, options = {}) {
-    if (!Number.isFinite(index) || index < 0 || !state.points || index >= state.points.length) return false
-    const point = state.points[index]
+    if (!Number.isFinite(index) || index < 0 || !getPoints() || index >= getPoints().length) return false
+    const point = getPoints()[index]
     if (!point) return false
 
     state.selectedPoint = point
@@ -309,12 +318,12 @@ export function focusOnNode(index, options = {}) {
 
     // 10/10 Polish: Automatically enter Trail Depth 1 when focusing a node.
     // This resolves the 'broken feedback loop' where the Trail chip stays inactive despite focusing a business.
-    if (state.trailDepth === 0) {
+    if (getTrailDepth() === 0) {
         setTrailDepth(1, { skipUrlSync: true })
     }
 
     // Keep myceliumMode in sync with navState.mode when entering trail mode from focus
-    if (state.navState.mode === 'trail' && state.myceliumMode !== 'trail') {
+    if (getNavState().mode === 'trail' && getMyceliumMode() !== 'trail') {
         setMyceliumMode('trail', { skipUrlSync: true })
     }
 
@@ -335,7 +344,7 @@ export function focusOnNode(index, options = {}) {
             ? 'trail-walk'
             : 'programmatic'
     if (options.fromCanvasNode) {
-        document.body.dataset.focusPanelMode = 'field-node'
+        setFocusPanelMode(FOCUS_PANEL_MODE.FIELD_NODE)
     }
 
     // 10/10 Polish: Reduce mobile UI density by collapsing secondary sections on focus
@@ -380,8 +389,8 @@ export function focusOnNode(index, options = {}) {
 }
 
 export function animateCameraToSearchCorridor(anchorIndex, resultIndices = [], options = {}) {
-    if (!state.camera || !state.controls || state.currentView !== 'galaxy') return false
-    if (!Number.isFinite(anchorIndex) || state.navState.focusedIndex !== null || state.semanticDiveMode) return false
+    if (!getCamera() || !getControls() || getCurrentView() !== 'galaxy') return false
+    if (!Number.isFinite(anchorIndex) || getNavState().focusedIndex !== null || getSemanticDiveMode()) return false
 
     const isPointVisible = (index, points, clusterFilter) => {
         if (!Number.isFinite(index) || index < 0 || index >= points.length) return false
@@ -399,13 +408,13 @@ export function animateCameraToSearchCorridor(anchorIndex, resultIndices = [], o
             (index) =>
                 Number.isFinite(index) &&
                 index >= 0 &&
-                index < state.points.length &&
-                isPointVisible(index, state.points, state.activeClusterFilter, state.activeFilters)
+                index < getPoints().length &&
+                isPointVisible(index, getPoints(), getActiveClusterFilter(), getActiveFilters())
         )
         .slice(0, isMobile() ? 8 : 12)
 
     const vectors = routeIndices
-        .map((index) => state.targetPositions[index] || state.nodePositions[index] || state.originalPositions[index])
+        .map((index) => getTargetPositions()[index] || getNodePositions()[index] || getOriginalPositions()[index])
         .filter(Boolean)
         .map((pos) => new THREE.Vector3(pos.x, pos.y, pos.z))
     if (!vectors.length) return null
@@ -417,7 +426,7 @@ export function animateCameraToSearchCorridor(anchorIndex, resultIndices = [], o
     const radius = Math.max(0.08, boundsSize.length() * 0.5)
 
     const anchorPosition =
-        state.targetPositions[anchorIndex] || state.nodePositions[anchorIndex] || state.originalPositions[anchorIndex]
+        getTargetPositions()[anchorIndex] || getNodePositions()[anchorIndex] || getOriginalPositions()[anchorIndex]
     if (
         !anchorPosition ||
         !Number.isFinite(anchorPosition.x) ||
@@ -473,9 +482,9 @@ export function animateCameraToSearchCorridor(anchorIndex, resultIndices = [], o
 
     function step(now) {
         if (
-            animationToken !== state.routeCameraAnimationToken ||
-            state.navState.focusedIndex !== null ||
-            state.currentView !== 'galaxy'
+            animationToken !== getRouteCameraAnimationToken() ||
+            getNavState().focusedIndex !== null ||
+            getCurrentView() !== 'galaxy'
         )
             return
         if (!state.controls?.target || !state.camera?.position) return
@@ -495,7 +504,7 @@ export function animateCameraToSearchCorridor(anchorIndex, resultIndices = [], o
 
 export function animateCameraToTerrainPrelude(options = {}) {
     const reducedMotion = prefersReducedMotion()
-    const duration = reducedMotion ? 1 : options.duration || state.MAP_HANDOFF_PRELUDE_MS || 1200
+    const duration = reducedMotion ? 1 : options.duration || getMapHandoffPreludeMs() || 1200
 
     // Show "Preparing terrain..." progress overlay during the prelude
     publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'map-prelude', options: { duration } })
@@ -543,7 +552,7 @@ export function animateCameraToTerrainPrelude(options = {}) {
         }
         requestAnimationFrame(step)
     } catch (_err) {
-        console.warn('animateCameraToTerrainPrelude failed:', _err)
+        console.error('animateCameraToTerrainPrelude failed:', _err)
     } finally {
         // Remove the prelude overlay when the animation completes (or on error)
         publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'idle' })
@@ -552,14 +561,14 @@ export function animateCameraToTerrainPrelude(options = {}) {
 
 export function applySemanticCentroidCamera(now = performance.now()) {
     if (!state.camera || !state.controls) return
-    if (state.trailDepth !== 2) {
+    if (getTrailDepth() !== 2) {
         _insideCentroidTarget = null
         return
     }
-    const indices = state.navState.focusPocketIndices
+    const indices = getNavState().focusPocketIndices
     if (!indices || !indices.length) return
 
-    const anchorIdx = state.navState.focusedIndex
+    const anchorIdx = getNavState().focusedIndex
     const pocketIndices = anchorIdx !== null && anchorIdx !== undefined ? [anchorIdx, ...indices] : indices
 
     // --- Compute pocket centroid (neighbor average around anchor) ---
@@ -569,7 +578,7 @@ export function applySemanticCentroidCamera(now = performance.now()) {
         count = 0
     for (const idx of pocketIndices) {
         // Guardrail: nodePositions is source of truth for camera centroid; targetPositions is compression layer.
-        const pos = state.nodePositions[idx] || state.originalPositions[idx]
+        const pos = getNodePositions()[idx] || getOriginalPositions()[idx]
         if (!pos) continue
         cx += Number.isFinite(pos.x) ? pos.x : 0
         cy += Number.isFinite(pos.y) ? pos.y : 0
@@ -583,7 +592,7 @@ export function applySemanticCentroidCamera(now = performance.now()) {
     // --- Anchor position is the primary lookAt base ---
     const anchorPos =
         anchorIdx !== null && anchorIdx !== undefined
-            ? state.nodePositions[anchorIdx] || state.originalPositions[anchorIdx]
+            ? getNodePositions()[anchorIdx] || getOriginalPositions()[anchorIdx]
             : null
     if (!anchorPos) return
 
@@ -632,16 +641,16 @@ export function applySemanticCentroidCamera(now = performance.now()) {
 }
 
 export function zoomCamera(multiplier) {
-    if (!state.camera || !state.controls) return
-    const target = state.controls.target
+    if (!getCamera() || !getControls()) return
+    const target = getControls().target
     if (!target) return
-    const camPos = state.camera.position
+    const camPos = getCamera().position
     if (!Number.isFinite(camPos.x + camPos.y + camPos.z + target.x + target.y + target.z)) return
     const direction = camPos.clone().sub(target).normalize()
     const currentDistance = camPos.distanceTo(target)
     const newDistance = currentDistance * multiplier
-    const minDist = state.controls.minDistance || state.ORBIT_MIN_DISTANCE_DEFAULT || 0.5
-    const maxDist = state.controls.maxDistance || state.ORBIT_MAX_DISTANCE_DEFAULT || 8.0
+    const minDist = state.controls.minDistance || getOrbitMinDistanceDefault() || 0.5
+    const maxDist = state.controls.maxDistance || getOrbitMaxDistanceDefault() || 8.0
     const clampedDistance = Math.max(minDist, Math.min(maxDist, newDistance))
     state.camera.position.copy(target.clone().add(direction.multiplyScalar(clampedDistance)))
 }
