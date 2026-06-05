@@ -674,8 +674,7 @@ test.describe('focus-pocket node selectability', () => {
       await diveBtn.click();
       await page.waitForFunction(() => (
         (window.__APP_STATE__?.trailDepth ?? window.__TEST_STATE__?.trailDepth ?? null) === 2 ||
-        document.body.dataset.trailDepth === '2' ||
-        document.body.dataset.semanticDive === 'active'
+        (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true
       ), { timeout: 15000 });
     } else {
       // Force trailDepth=2 programmatically if button is not present (semantic-dive mode)

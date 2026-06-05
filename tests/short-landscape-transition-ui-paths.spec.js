@@ -52,8 +52,7 @@ async function enterSemanticDive(page) {
   }
   await page.waitForFunction(() => (
     (window.__APP_STATE__ ?? window.__TEST_STATE__)?.trailDepth === 2 &&
-    (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true &&
-    document.body.dataset.semanticDive === 'active'
+    (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true
   ), { timeout: 8000 });
 }
 

@@ -72,7 +72,7 @@ test.describe('Deep Reduced-Motion Proof', () => {
       // the JS 'transitioning' flag is briefly set.
       // We check for 'active' state.
       await page.waitForFunction(() => (
-        document.body.dataset.semanticDive === 'active'
+        (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true
       ), { timeout: 2000 }); // Should be much faster than 820ms if working correctly? 
       // Actually, the JS timer is 820ms, so it might stay 'transitioning' for 820ms.
       // BUT, in reduced-motion, CSS transition-duration is 0.01ms.

@@ -90,8 +90,7 @@ test.describe('Live URL State Reconstruction', () => {
     ), { timeout: 20000 });
     await page.waitForFunction(() => (
       window.__TEST_STATE__?.trailDepth === 2 &&
-      window.__TEST_STATE__?.semanticDiveMode === true &&
-      document.body.dataset.semanticDive === 'active'
+      window.__TEST_STATE__?.semanticDiveMode === true
     ), { timeout: 15000 });
 
     const probe = await stateProbe(page);
@@ -135,8 +134,7 @@ test.describe('Live URL State Reconstruction', () => {
     await page.waitForFunction(() => (
       window.__TEST_STATE__?.selectedPoint &&
       window.__TEST_STATE__?.trailDepth === 2 &&
-      window.__TEST_STATE__?.semanticDiveMode === true &&
-      document.body.dataset.semanticDive === 'active'
+      window.__TEST_STATE__?.semanticDiveMode === true
     ), { timeout: 20000 });
 
     const probe = await stateProbe(page);

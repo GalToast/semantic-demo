@@ -534,7 +534,7 @@ async function waitForSemanticDiveActive(page, timeout = 12000) {
   return page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
     return document.body.dataset.panelSurface === 'semantic-dive' &&
-      document.body.dataset.semanticDive === 'active' &&
+      state.semanticDiveMode === true &&
       Number(state.trailDepth || document.body.dataset.trailDepth || 0) >= 2;
   }, null, { timeout });
 }

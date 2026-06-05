@@ -153,7 +153,7 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
   const diveButton = page.locator('#btn-focus-dive');
   await expect(diveButton).toBeVisible({ timeout: 15000 });
   await page.evaluate(() => document.querySelector('#btn-focus-dive')?.click());
-  await page.waitForFunction(() => document.body.dataset.semanticDive === 'active', null, { timeout: 8000 })
+  await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true, null, { timeout: 8000 })
     .catch(() => {});
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 

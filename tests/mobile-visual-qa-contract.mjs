@@ -39,7 +39,7 @@ const states = [
         }
       });
       await page.waitForFunction(() => document.body?.dataset?.panelSurface === 'semantic-dive', { timeout: 8000 }).catch(() => {});
-      await page.waitForFunction(() => document.body?.dataset?.semanticDive === 'active', { timeout: 8000 }).catch(() => {});
+      await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true, { timeout: 8000 }).catch(() => {});
     },
   },
   {

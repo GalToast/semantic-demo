@@ -15,10 +15,11 @@ vi.mock('../../js/modules/journey-point-color.js', () => ({
     applyPointFilterColors: vi.fn()
 }));
 vi.mock('../../js/modules/journey.js', () => ({
-    updateSelectedBusiness: vi.fn(),
-    syncFocusStage: vi.fn(),
-    traverseNeighbor: vi.fn(),
-    walkThreadNeighbor: vi.fn()
+  updateSelectedBusiness: vi.fn(),
+  syncFocusStage: vi.fn(),
+  traverseNeighbor: vi.fn(),
+  walkThreadNeighbor: vi.fn(),
+  applyPointFilterColors: vi.fn()
 }));
 
 vi.mock('../../js/modules/url-state.js', () => ({
@@ -74,18 +75,16 @@ describe('lifecycle.js', () => {
     });
 
     describe('setMyceliumMode', () => {
-        it('should correctly set trail mode', async () => {
-            const eventBus = await import('../../js/modules/event-bus.js');
-            const journeyPointColor = await import('../../js/modules/journey-point-color.js');
+  it('should correctly set trail mode', async () => {
+    const eventBus = await import('../../js/modules/event-bus.js');
+    const journey = await import('../../js/modules/journey.js');
 
-            setMyceliumMode('trail');
+    setMyceliumMode('trail');
 
-            expect(state.myceliumMode).toBe('trail');
-            // Assuming setTrailDepth works correctly and mutates state
-            // and the UI updates fire:
-            expect(journeyPointColor.applyPointFilterColors).toHaveBeenCalled();
-            expect(eventBus.publish).toHaveBeenCalledWith(eventBus.EVENTS.VIEW_CHANGED, { myceliumMode: 'trail' });
-        });
+    expect(state.myceliumMode).toBe('trail');
+    expect(journey.applyPointFilterColors).toHaveBeenCalled();
+    expect(eventBus.publish).toHaveBeenCalledWith(eventBus.EVENTS.VIEW_CHANGED, { myceliumMode: 'trail' });
+  });
 
         it('should not sync URL if skipUrlSync option is true', async () => {
             const eventBus = await import('../../js/modules/event-bus.js');

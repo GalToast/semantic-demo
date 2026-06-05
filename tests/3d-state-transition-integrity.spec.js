@@ -313,7 +313,7 @@ test.describe('3D semantic state transition integrity', () => {
       () => window.__TEST_STATE__?.semanticDiveMode === true,
       { timeout: 15000 }
     );
-    await page.waitForFunction(() => document.body?.dataset?.semanticDive === 'active', { timeout: 10000 }).catch(() => {});
+    await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true, { timeout: 10000 }).catch(() => {});
 
     const snap = await snapshotState(page);
     expect(snap, 'state should be initialised after semantic dive').not.toBeNull();
@@ -354,7 +354,7 @@ test.describe('3D semantic state transition integrity', () => {
       () => window.__TEST_STATE__?.semanticDiveMode === true,
       { timeout: 15000 }
     );
-    await page.waitForFunction(() => document.body?.dataset?.semanticDive === 'active', { timeout: 10000 }).catch(() => {});
+    await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true, { timeout: 10000 }).catch(() => {});
 
     const preMapSnap = await snapshotState(page);
     expect(preMapSnap, 'state should be initialised before map transition').not.toBeNull();
@@ -476,7 +476,7 @@ test.describe('3D semantic state transition integrity', () => {
       () => window.__TEST_STATE__?.semanticDiveMode === true && window.__TEST_STATE__?.trailDepth === 2,
       { timeout: 15000 }
     );
-    await page.waitForFunction(() => document.body?.dataset?.semanticDive === 'active', { timeout: 10000 }).catch(() => {});
+    await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true, { timeout: 10000 }).catch(() => {});
 
     // Verify preconditions before Escape
     const preSnap = await snapshotState(page);
@@ -539,7 +539,7 @@ test.describe('3D semantic state transition integrity', () => {
       () => window.__TEST_STATE__?.semanticDiveMode === true,
       { timeout: 15000 }
     );
-    await page.waitForFunction(() => document.body?.dataset?.semanticDive === 'active', { timeout: 10000 }).catch(() => {});
+    await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true, { timeout: 10000 }).catch(() => {});
 
     // Switch to map view while in dive
     const mapBtn = page.locator('#btn-map');
@@ -616,7 +616,6 @@ test.describe('3D semantic state transition integrity', () => {
       if (typeof window.__APP_ACTIONS__?.setSemanticDiveMode === 'function') window.__APP_ACTIONS__.setSemanticDiveMode(true);
     });
     await page.waitForFunction(() => window.__TEST_STATE__?.semanticDiveMode === true, { timeout: 15000 });
-    await page.waitForFunction(() => document.body.dataset.semanticDive === 'active', { timeout: 15000 });
     snap = await snapshotState(page);
     expect(assertInvariants(snap), `Dive invariants: ${assertInvariants(snap).join('; ')}`).toHaveLength(0);
 

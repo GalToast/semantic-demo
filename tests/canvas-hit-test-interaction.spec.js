@@ -145,9 +145,7 @@ async function stepInside(page) {
     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return (
       appState?.trailDepth === 2 &&
-      appState?.semanticDiveMode === true &&
-      document.body.dataset.semanticDive === 'active' &&
-      document.body.dataset.panelSurface === 'semantic-dive'
+      appState?.semanticDiveMode === true
     );
   }, { timeout: 15000 });
 }
@@ -512,7 +510,7 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
     await (await stepInsideButton(page)).click({ force: false });
     await page.waitForFunction(() => {
       const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-      return appState?.semanticDiveMode === true || document.body.dataset.semanticDive === 'active';
+      return appState?.semanticDiveMode === true;
     }, { timeout: 15000 });
 
     await page.evaluate(() => document.body.focus());

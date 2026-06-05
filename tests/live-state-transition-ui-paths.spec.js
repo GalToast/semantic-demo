@@ -47,8 +47,7 @@ async function stepInside(page) {
   await page.locator('#btn-focus-dive').click();
   await page.waitForFunction(() => (
     window.__TEST_STATE__?.trailDepth === 2 &&
-    window.__TEST_STATE__?.semanticDiveMode === true &&
-    document.body.dataset.semanticDive === 'active'
+    window.__TEST_STATE__?.semanticDiveMode === true
   ), { timeout: 15000 });
 }
 

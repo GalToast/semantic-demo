@@ -1660,7 +1660,7 @@ async function enterSemanticDive(page) {
   }
 
   await page.waitForFunction(() => document.body.dataset.panelSurface === 'semantic-dive', undefined, { timeout: 15000 }).catch(() => {});
-  await page.waitForFunction(() => document.body.dataset.semanticDive === 'active', undefined, { timeout: 15000 }).catch(() => {});
+  await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true, undefined, { timeout: 15000 }).catch(() => {});
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 

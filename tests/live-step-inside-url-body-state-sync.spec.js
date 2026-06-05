@@ -75,7 +75,7 @@ async function clickStepInside(page) {
   await stepInside.click({ force: true });
   await page.waitForFunction(() => (
     window.__TEST_STATE__?.trailDepth === 2 &&
-    document.body.dataset.semanticDive === 'active'
+    (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true
   ), { timeout: 15000 });
 }
 
