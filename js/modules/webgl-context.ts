@@ -55,7 +55,7 @@ export const webglContext: WebGLContextState = {
     routeTraceConnectionPairs: [],
     routeTraceRenderStateKey: '',
     inspectedStrandGroup: null
-} as any; // Cast as any for legacy fields that aren't strict yet
+};
 
 /**
  * Returns cheap diagnostic counters for live GPU resources.

@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/utils.php';
 require_once __DIR__ . '/supervisor.php';
-require_once __DIR__ . '/search.php';
 
 function trimGuideText($value, int $maxLength = 240): string
 {

@@ -84,6 +84,7 @@ import {
 import { applyLocalNeighborhoodFocus } from './focus-pocket.js'
 import { applyPointFilterColors, describeThreadLensForPoint } from './journey-point-color.js';
 import { truncateMicrocopy, getSharedTrailTopicLabel } from './journey-text-helpers.js'
+import { setSemanticDiveMode as setSemanticDiveModeImpl } from './lifecycle.js'
 
 /**
  * js/modules/journey.js
@@ -154,8 +155,8 @@ globalThis.queueMicrotask(() => {
 })
 
 export function setSemanticDiveMode(enabled) {
+    setSemanticDiveModeImpl(enabled)
     const active = Boolean(enabled)
-    publish(EVENTS.DIVE_MODE_REQUESTED, { enabled: active })
     if (active) {
         previewInsideNextThread({ force: true })
     } else if (document.body.dataset.threadInspectSurface === 'inside-cue') {
@@ -164,14 +165,6 @@ export function setSemanticDiveMode(enabled) {
         clearThreadInspection({ force: true, preserveJourney: false })
     }
     return true
-}
-
-export function returnToOverview() {
-    publish(EVENTS.OVERVIEW_REQUESTED)
-}
-
-export function resetExplorationFocus() {
-    publish(EVENTS.EXPLORATION_RESET_REQUESTED)
 }
 
 export function setTrailDepth(depth, options = {}) {
