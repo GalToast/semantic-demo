@@ -26,12 +26,12 @@ import { showExperienceToast } from './ui-feedback.js';
 import { applyMapFlatteningLayout } from './map-flattening-layout.js';
 import { restoreWebGLContext } from './webgl-restore-adapter.js';
 import { disposeObject3D } from './resource-tracker.js';
-import { updateInspectedStrandOverlayFrame } from './inspected-strand-overlay-adapter.js';
+import { updateInspectedStrandOverlay } from './thread-inspector.js';
 import { disposeFocusAnchorIndicator } from './focus-anchor-indicator.js';
 import {
-    updateArrivalHandoffOverlayFrame,
-    updateRouteTraceOverlayFrame
-} from './route-arrival-overlay-adapter.js';
+    updateArrivalHandoffOverlay,
+    updateRouteTraceOverlayPositions
+} from './journey-webgl.js';
 
 import {
     createPoints,
@@ -62,6 +62,7 @@ import {
 
 import {
     updateInteractionVisuals,
+    disposeInteractionVisuals,
     initSemanticLens,
     initSemanticManifold
 } from './three-interaction-visuals.js';
@@ -76,6 +77,7 @@ export {
     updateSearchCorridorAnimation,
     disposeSearchCorridorAnimation,
     updateInteractionVisuals,
+    disposeInteractionVisuals,
     initSemanticLens,
     initSemanticManifold,
     shouldRenderThreads,
@@ -169,7 +171,7 @@ function smoothDiagnosticValue(current, next, sampleCount) {
     return current + (next - current) / divisor;
 }
 
-function getSceneRenderableDiagnostics() {
+export function getSceneRenderableDiagnostics() {
     function getLineSegmentCount(line) {
         const positionCount = line?.geometry?.attributes?.position?.count || 0;
         return Math.floor(positionCount / 2);
@@ -585,9 +587,9 @@ export function animate() {
     applySemanticCentroidCamera(frameNow);
 
     try {
-        updateInspectedStrandOverlayFrame(frameNow);
-        updateRouteTraceOverlayFrame(frameNow);
-        updateArrivalHandoffOverlayFrame(frameNow);
+        updateInspectedStrandOverlay(frameNow);
+        updateRouteTraceOverlayPositions(frameNow);
+        updateArrivalHandoffOverlay();
     } catch (overlayErr) {
         console.warn('overlay update threw:', overlayErr);
     }

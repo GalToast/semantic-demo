@@ -35,8 +35,8 @@ import {
     adapter_getCurrentTrailFocusIndex
 } from './thread-inspector-adapter.js';
 import { subscribe, EVENTS } from './event-bus.js';
-import { truncateMicrocopy } from './thread-inspector-text-helpers.js';
-import { setInspectedStrandOverlayUpdater } from './inspected-strand-overlay-adapter.js';
+import { truncateMicrocopy } from './journey-text-helpers.js';
+
 
 // Phase 3: Declarative synchronization
 subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload) => {
@@ -445,8 +445,6 @@ export function exploreThreadNeighbor(index, options = {}) {
 
 
 import { registerDiagnosticProbe } from './diagnostic-adapter.js';
-
-setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay);
 
 // Debug access — registered via diagnostic-adapter
 registerDiagnosticProbe('_ti', {

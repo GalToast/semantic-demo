@@ -28,12 +28,12 @@ import { showExperienceToast } from './ui-feedback.js';
 import { applyMapFlatteningLayout } from './map-flattening-layout.js';
 import { restoreWebGLContext } from './webgl-restore-adapter.js';
 import { disposeObject3D } from './resource-tracker.js';
-import { updateInspectedStrandOverlayFrame } from './inspected-strand-overlay-adapter.js';
+import { updateInspectedStrandOverlay } from './thread-inspector.js';
 import { disposeFocusAnchorIndicator } from './focus-anchor-indicator.js';
 import {
-    updateArrivalHandoffOverlayFrame,
-    updateRouteTraceOverlayFrame
-} from './route-arrival-overlay-adapter.js';
+    updateArrivalHandoffOverlay,
+    updateRouteTraceOverlayPositions
+} from './journey-webgl.js';
 
 import {
     createPoints,
@@ -655,9 +655,9 @@ export function animate() {
     updateInteractionVisuals(frameNow, hoveredNode, focusedNode);
     updateCorridorNodeGlow(frameNow);
     updateSearchCorridorAnimation(frameNow);
-    updateInspectedStrandOverlayFrame(frameNow);
-    updateArrivalHandoffOverlayFrame(frameNow);
-    updateRouteTraceOverlayFrame(frameNow);
+    updateInspectedStrandOverlay(frameNow);
+    updateArrivalHandoffOverlay();
+    updateRouteTraceOverlayPositions(frameNow);
     applyFocusPocketBreathing(frameNow);
 
     if (shouldRenderThreads()) {
