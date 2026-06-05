@@ -4,15 +4,10 @@
 // ── State ↔ Svelte store sync contract ──────────────────────────────────────
 // The following state fields are mirrored to Svelte stores in modules/stores.js.
 // Vanilla JS writers MUST keep state and the store in sync. The canonical
-// sync helpers live in state-mutators.js (for the 3 decorative stores) and
-// filter-state.js (for activeFilters / activeClusterFilter). Do not write
-// these fields from anywhere else without also calling the matching Store.set.
+// sync helpers live in filter-state.js (the canonical owner for both).
 //
 //   state.activeFilters          → activeFiltersStore         (owner: filter-state.js)
 //   state.activeClusterFilter    → activeClusterFilterStore   (owner: filter-state.js)
-//   state.currentView            → currentViewStore           (owner: state-mutators.js)
-//   state.loadingPhaseKey        → loadingPhaseKeyStore       (owner: state-mutators.js)
-//   state.semanticThreadsStatus  → semanticThreadsStatusStore (owner: state-mutators.js)
 //
 // The two panel-toggle stores (isInfoPanelOpenStore, isLegendPanelOpenStore)
 // are owned by the Svelte chrome (InfoPanelChrome, LegendPanelChrome) and

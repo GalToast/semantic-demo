@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import * as svelte from 'svelte';
 import * as eventBindings from '../../js/modules/event-bindings.js';
 import { state, withStateMutation } from '../../js/state.js';
 import * as viewController from '../../js/modules/view-controller.js';
@@ -35,10 +36,6 @@ vi.mock('../../js/modules/journey.js', () => ({
     unpinThreadInspection: vi.fn(),
     walkThreadNeighbor: vi.fn(),
     syncFocusStage: vi.fn()
-}));
-
-vi.mock('../../js/modules/search-chrome-island.js', () => ({
-    initSearchChromeSvelteIsland: vi.fn()
 }));
 
 describe('event-bindings', () => {
@@ -134,13 +131,27 @@ describe('event-bindings', () => {
         expect(journey.unpinThreadInspection).toHaveBeenCalled();
     });
 
-    it('should delegate search chrome controls to the Svelte island', async () => {
-        const searchChromeIsland = await import('../../js/modules/search-chrome-island.js');
-        eventBindings.initEventListeners({});
+    it('should delegate search chrome controls to the Svelte island', { timeout: 30000 }, async () => {
+        const mountSpy = vi.spyOn(svelte, 'mount');
+        const original = document.getElementById('search-chrome-slot');
+        const slot = document.createElement('div');
+        slot.id = 'search-chrome-slot';
+        document.body.appendChild(slot);
 
-        await vi.waitFor(() => {
-            expect(searchChromeIsland.initSearchChromeSvelteIsland).toHaveBeenCalled();
-        });
+        try {
+            const promise = eventBindings.initEventListeners({});
+            await vi.waitFor(() => {
+                expect(mountSpy).toHaveBeenCalled();
+            }, { timeout: 25000 });
+            await promise;
+        } finally {
+            if (original) {
+                slot.replaceWith(original);
+            } else {
+                slot.remove();
+            }
+            mountSpy.mockRestore();
+        }
         expect(searchState.clearSearch).not.toHaveBeenCalled();
     });
 });

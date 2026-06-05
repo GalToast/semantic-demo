@@ -34,7 +34,7 @@ export {
     updateHasQuery
 };
 
-export function initEventListeners({
+export async function initEventListeners({
     onWindowResize,
     recordSemanticLaneSnapshot,
     setMyceliumMode,
@@ -60,4 +60,24 @@ export function initEventListeners({
     if (typeof buildLegend === 'function') buildLegend();
     if (typeof syncClusterSectionState === 'function') syncClusterSectionState();
     scheduleOnboardingHint();
+
+    // Svelte islands are loaded on demand so Node-side test imports of
+    // this module (which never call initEventListeners) don't need a
+    // .svelte loader. In the browser, the islands mount here; the small
+    // extra latency is unobservable because the user is still seeing
+    // the loading overlay.
+    try {
+        const [searchChrome, searchResults, selectedDetails, filterChrome] = await Promise.all([
+            import('./search-chrome-island.js'),
+            import('./search-results-svelte-island.js'),
+            import('./selected-details-svelte-island.js'),
+            import('./filter-chrome-island.js')
+        ]);
+        if (typeof searchChrome?.initSearchChromeSvelteIsland === 'function') searchChrome.initSearchChromeSvelteIsland();
+        if (typeof searchResults?.initSearchResultsSvelteIsland === 'function') searchResults.initSearchResultsSvelteIsland();
+        if (typeof selectedDetails?.initSelectedDetailsSvelteIsland === 'function') selectedDetails.initSelectedDetailsSvelteIsland();
+        if (typeof filterChrome?.initFilterChromeSvelteIsland === 'function') filterChrome.initFilterChromeSvelteIsland();
+    } catch (e) {
+        console.warn('[event-bindings] failed to load svelte islands', e?.message);
+    }
 }

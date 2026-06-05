@@ -3,8 +3,10 @@ import { mount, unmount } from 'svelte';
 import FilterChrome from './components/FilterChrome.svelte';
 import { bindClusterListDelegation } from './cluster-list-delegate.js';
 import { EVENTS, publish } from './event-bus.js';
+import { awaitSlot, MOUNT_FLAG } from './island-mount-helper.js';
 
 const FILTER_CHROME_SLOT_ID = 'filter-chrome-slot';
+const MOUNT_KEY = 'filter-chrome';
 
 /** @type {WeakMap<Element, Record<string, unknown>>} */
 const mountedChrome = new WeakMap();
@@ -41,20 +43,16 @@ function render(target, props) {
 function mountFilterChrome() {
     const slot = document.getElementById(FILTER_CHROME_SLOT_ID);
     if (!slot) return false;
-    if (slot.dataset.svelteMounted === 'filter-chrome') {
+    if (slot.dataset[MOUNT_FLAG] === MOUNT_KEY) {
         bindClusterListDelegation();
         return true;
     }
     render(slot, {});
-    slot.dataset.svelteMounted = 'filter-chrome';
+    slot.dataset[MOUNT_FLAG] = MOUNT_KEY;
     bindClusterListDelegation();
     return true;
 }
 
 export function initFilterChromeSvelteIsland() {
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', mountFilterChrome, { once: true });
-    } else {
-        mountFilterChrome();
-    }
+    awaitSlot(FILTER_CHROME_SLOT_ID, mountFilterChrome);
 }

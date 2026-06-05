@@ -11,6 +11,7 @@ import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const CAMERA_PATH = path.join(SEMDEMO_ROOT, 'js/modules/camera-controls.js');
+const CAMERA_RESTORE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/camera-controls-restore.js');
 const SCENE_REVEAL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.js');
 
 function assert(condition, message) {
@@ -39,11 +40,18 @@ function extractFunction(source, name) {
 }
 
 const cameraSrc = fs.readFileSync(CAMERA_PATH, 'utf8');
+const cameraRestoreSrc = fs.readFileSync(CAMERA_RESTORE_PATH, 'utf8');
 const sceneRevealSrc = fs.readFileSync(SCENE_REVEAL_PATH, 'utf8');
 
-const setSuspended = extractFunction(cameraSrc, 'setAutoRotateSuspended');
-const clearTimer = extractFunction(cameraSrc, 'clearAutoRotateResumeTimer');
-const scheduleResume = extractFunction(cameraSrc, 'scheduleAutoRotateResume');
+assertContains(
+  cameraSrc,
+  "export * from './camera-controls-restore.js'",
+  'camera-controls.js facade re-exports camera-controls-restore.js'
+);
+
+const setSuspended = extractFunction(cameraRestoreSrc, 'setAutoRotateSuspended');
+const clearTimer = extractFunction(cameraRestoreSrc, 'clearAutoRotateResumeTimer');
+const scheduleResume = extractFunction(cameraRestoreSrc, 'scheduleAutoRotateResume');
 const startReveal = extractFunction(sceneRevealSrc, 'startSceneReveal');
 
 console.log('============================================================');

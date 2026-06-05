@@ -79,9 +79,8 @@ async function measureStep(name, fn) {
 
 function logInitTimings() {
     const total = initTimings.reduce((sum, t) => sum + t.ms, 0);
-    console.groupCollapsed(`[init] completed in ${Math.round(total)} ms`);
-    console.table([...initTimings, { step: '— total —', ms: Math.round(total * 10) / 10 }]);
-    console.groupEnd();
+    console.warn(`[init] completed in ${Math.round(total)} ms`);
+    console.warn(JSON.stringify([...initTimings, { step: '— total —', ms: Math.round(total * 10) / 10 }], null, 2));
 }
 
 function setupInitSafetyValves() {
