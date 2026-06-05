@@ -1,19 +1,5 @@
-import { state } from '../state.js';
-import { publish, EVENTS } from './event-bus.js';
-import { applyPointFilterColors } from './journey.js';
-import {
-    getActiveFilters,
-    setActiveClusterFilter,
-    overwriteActiveFilters
-} from './filter-state.js';
-import { applyFilters } from './search-state.js';
-import { applyCompositionState } from './composition-state.js';
-import { applyStoryPrompt as applyStoryPromptImpl } from './cluster-filter.js';
 import { setMyceliumMode as setMyceliumModeImpl, setTrailDepth as setTrailDepthImpl } from './lifecycle.js';
-
-function refreshCompositionState() {
-    applyCompositionState({ state, root: document.body });
-}
+import { applyStoryPrompt as applyStoryPromptImpl } from './cluster-filter.js';
 
 export const MODE_DESCRIPTIONS = {
     default: 'County-wide overview across all visible records.',
@@ -38,26 +24,3 @@ export { setMyceliumModeImpl as setMyceliumMode };
 export { setTrailDepthImpl as setTrailDepth };
 
 export { applyStoryPromptImpl as applyStoryPrompt };
-
-function recomputeBloomIndices() {
-    state.bloomIndices = new Set(
-        (state.points || [])
-            .map((point, index) => ({ point, index }))
-            .filter(({ point }) => point.status === 'active' && point.website)
-            .map(({ index }) => index)
-    );
-    return state.bloomIndices;
-}
-
-function recomputeBridgeIndices() {
-    state.bridgeIndices = new Set(
-        (state.points || [])
-            .map((point, index) => ({ point, index }))
-            .filter(({ point }) => {
-                const text = `${point?.what || ''} ${point?.public_note || ''} ${point?.public_detail || ''}`.toLowerCase();
-                return text.includes('bridge') || text.includes('network') || text.includes('community');
-            })
-            .map(({ index }) => index)
-    );
-    return state.bridgeIndices;
-}

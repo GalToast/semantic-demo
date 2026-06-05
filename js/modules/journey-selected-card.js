@@ -39,7 +39,6 @@ import {
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
 import { isMapSummarySurface } from './environment.js';
 import { selectedPointStore } from './stores.js';
-import { disposeFocusAnchorIndicator } from './focus-anchor-indicator.js';
 
 const selectedCardAdapter = {
     getStrandArrivalNote: () => '',
@@ -92,7 +91,7 @@ export function syncFocusStage(point) {
         if (getPreviouslyFocusedFocusStage()) {
             try {
                 getPreviouslyFocusedFocusStage().focus();
-            } catch (e) {
+            } catch (_e) {
                 // Focus restore failure is non-critical — accessibility degraded
             }
             setPreviouslyFocusedFocusStage(null);

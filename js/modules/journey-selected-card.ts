@@ -44,7 +44,6 @@ import {
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
 import { isMapSummarySurface } from './environment.js';
 import { selectedPointStore } from './stores.js';
-import { disposeFocusAnchorIndicator } from './focus-anchor-indicator.js';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

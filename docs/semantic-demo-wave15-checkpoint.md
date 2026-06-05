@@ -436,3 +436,22 @@ pm run lint: 0 errors, 28 warnings
 ### What's next
 
 - **Phase 1.5:** Stage all changes, commit, push, open PR.
+
+---
+
+## Post-Push Verification (2026-06-05)
+
+### Lint hygiene pass (Phase 1.6)
+
+**Files cleaned:**
+- `js/modules/bindings/filter-bindings.js` — removed 3 dead filter imports
+- `js/modules/lifecycle.js` — removed `applyFilters` and 3 filter-state imports
+- `js/modules/exploration-mode.js` — removed 9 dead imports + 2 dead functions (`recomputeBloomIndices`, `recomputeBridgeIndices`)
+- `js/modules/semantic-guide.js` — removed 2 dead search-state imports
+- `js/modules/journey-selected-card.js` — removed dead `disposeFocusAnchorIndicator` import; renamed catch var to `_e`
+
+**Result:**
+- `npm run lint`: **0 errors, 0 warnings** (was 21 warnings)
+- `npm run test` (fast static): ALL GREEN
+- `npm run test:unit`: 29/29 files, 205/205 tests pass
+
