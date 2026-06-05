@@ -26,7 +26,6 @@ import {
     applyPointFilterColors
 } from './journey.js';
 import {
-    applyFilters,
     clearSearchGlow,
     updateSearchStatusMessage,
     setSearchPanelState,
@@ -92,12 +91,6 @@ import {
     syncFilterControls,
     applyStoryPrompt as applyStoryPromptImpl
 } from './cluster-filter.js';
-import {
-    setActiveFilter,
-    setActiveClusterFilter,
-    resetActiveFilters
-} from './filter-state.js';
-
 // ── Re-exports ───────────────────────────────────────────────────────────────
 
 export { applyCompositionState };

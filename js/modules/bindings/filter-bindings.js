@@ -1,9 +1,3 @@
-import {
-    setActiveFilter,
-    toggleActiveFilterSignal,
-    resetActiveFilters
-} from '../filter-state.js';
-
 let initialized = false;
 
 export async function bindFilterControls() {
