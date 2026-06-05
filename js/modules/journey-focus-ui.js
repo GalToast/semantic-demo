@@ -4,7 +4,6 @@ import {
     getSemanticLaneSnapshot, getSemanticThreadsStatus
 } from '../state/selectors/index.js';
 import { subscribeKeyed, EVENTS } from './event-bus.js';
-import * as adapter from './journey-lifecycle-adapter.js';
 import { formatBusinessName, escapeHtml, cleanOptionalValue } from './utils/dom-formatters.js';
 import { isCompactFocusStageViewport } from './utils/ui-presentation.js';
 import { isPointVisible } from './utils/geo-data.js';
@@ -70,15 +69,11 @@ function shouldSuppressSelectedBusinessNeighborRail() {
 }
 
 export function hasColdDegradedSemanticFallback() {
-    return typeof adapter.hasColdDegradedSemanticFallback === 'function'
-        ? adapter.hasColdDegradedSemanticFallback()
-        : false;
+    return false;
 }
 
 export function shouldUseFloatingFocusJourneyOnly() {
-    return typeof adapter.shouldUseFloatingFocusJourneyOnly === 'function'
-        ? adapter.shouldUseFloatingFocusJourneyOnly()
-        : false;
+    return false;
 }
 
 export function initFocusNeighborRailSubscriptions() {

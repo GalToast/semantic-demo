@@ -28,7 +28,7 @@ import { focusOnNode } from './camera-controls.js';
 
 // ui-renderers
 
-import { setSemanticDiveMode } from './journey-lifecycle-adapter.js';
+import { setSemanticDiveMode } from './journey.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 import { getRouteLayerOrigin } from './camera-controls.js';
 import { recenterFocusedNode } from './bindings/journey-bindings.js';

@@ -10,13 +10,13 @@
     import { publish, EVENTS } from '../event-bus.js';
     import {
         buildSelectedMatchNarrative,
-        describeThreadLensForPoint,
         getInterestingBusinessNote,
-        getSelectedBusinessRoleLabel
-    } from '../journey-lifecycle-adapter.js';
+    } from '../ui-renderers.js';
+    import { describeThreadLensForPoint } from '../journey-point-color.js';
+    import { _getSelectedBusinessRoleLabel } from '../bridge-registry.js';
 
     const selectedDetailsAdapter = {
-        getSelectedBusinessRoleLabel,
+        getSelectedBusinessRoleLabel: _getSelectedBusinessRoleLabel,
         getInterestingBusinessNote,
         buildSelectedMatchNarrative,
         describeThreadLensForPoint

@@ -2,7 +2,9 @@ import { getPoints, getSelectedPoint, getFocusedNode, getCurrentView } from '../
 import { getActiveClusterFilter, getActiveFilters } from '../state/selectors/index.js';
 import { subscribeKeyed, EVENTS } from './event-bus.js';
 import { isPointVisible } from './utils/geo-data.js';
-import * as adapter from './journey-lifecycle-adapter.js';
+import { getPreviouslyFocusedFocusStage, setPreviouslyFocusedFocusStage } from './journey-lifecycle-adapter.js';
+import { revealSelectedBusinessCard } from './event-bindings.js';
+import { hydrateLeadContext } from './lifecycle.js';
 import { updateDocumentMeta } from './utils/ui-presentation.js';
 import { sanitizePublicFacingNote, getBusinessNamePresentation } from './utils/dom-formatters.js';
 import {
@@ -62,13 +64,13 @@ export function syncFocusStage(point) {
             stage.removeEventListener('keydown', stage._focusStageKeydownListener);
             stage._focusStageKeydownListener = null;
         }
-        if (adapter.getPreviouslyFocusedFocusStage()) {
+        if (getPreviouslyFocusedFocusStage()) {
             try {
-                adapter.getPreviouslyFocusedFocusStage().focus();
+                getPreviouslyFocusedFocusStage().focus();
             } catch (e) {
                 // Focus restore failure is non-critical — accessibility degraded
             }
-            adapter.setPreviouslyFocusedFocusStage(null);
+            setPreviouslyFocusedFocusStage(null);
         }
     };
 
@@ -106,7 +108,7 @@ export function syncFocusStage(point) {
     stage.setAttribute('aria-hidden', 'false');
 
     if (!wasActive) {
-        adapter.setPreviouslyFocusedFocusStage(document.activeElement);
+        setPreviouslyFocusedFocusStage(document.activeElement);
 
         const keydownHandler = (e) => {
             if (e.key !== 'Tab') return;
@@ -216,9 +218,9 @@ export function updateSelectedBusiness(point, options = {}) {
     const pageDesc = sanitizePublicFacingNote(point.what) || 'Montgomery County business record details.';
     updateDocumentMeta(pageTitle, pageDesc);
 
-    const suppressAutoRevealForFieldNode = options.revealCard !== true && typeof adapter.isFieldNodeFocusContext === 'function' && adapter.isFieldNodeFocusContext();
+    const suppressAutoRevealForFieldNode = options.revealCard !== true && false;
     if (options.revealCard !== false && !suppressAutoRevealForFieldNode) {
-        if (typeof adapter.revealSelectedBusinessCard === 'function') adapter.revealSelectedBusinessCard();
+        revealSelectedBusinessCard();
     }
     syncFocusStage(point);
 
@@ -228,6 +230,6 @@ export function updateSelectedBusiness(point, options = {}) {
     selectedCardAdapter.updateTraversalUi();
 
     if (!options.skipHydrate && !point.website && !point.email && !point.phone) {
-        if (typeof adapter.hydrateLeadContext === 'function') void adapter.hydrateLeadContext(point, { refreshSelected: true });
+        void hydrateLeadContext(point, { refreshSelected: true });
     }
 }

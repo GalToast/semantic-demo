@@ -8,7 +8,7 @@ import { cleanOptionalValue, formatBusinessName } from './utils/dom-formatters.j
 import { isCompactFocusStageViewport } from './utils/ui-presentation.js';
 import { getNextExploreCandidateForIndex } from './journey-thread-model.js';
 import {summarizeNeighborReason} from './journey.js';
-import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.js';
+import { getNextWalkCandidateForIndex } from './journey-neighborhood.js';
 import { ensureFocusStageAuxiliaryDom } from './focus-stage-dom.js';
 
 function truncateDiveStatusCopy(text, max = 74) {
