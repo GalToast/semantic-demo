@@ -41,7 +41,10 @@ async function findHoverableNode(page, { maxCandidates = 16 } = {}) {
     const candidates = await projectedCandidates(page, pass);
     for (const candidate of candidates) {
       await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 });
-      await page.waitForTimeout(140);
+      await page.waitForFunction(() => {
+        const h = window.__TEST_STATE__?.hoverHighlightIndex;
+        return h !== null && h !== undefined && Number.isFinite(h);
+      }, { timeout: 5000 }).catch(() => {});
       const state = await getHoverState(page);
       if (isValidNodeIndex(state.hoverHighlightIndex, state.pointCount) && state.canvasCursor === 'pointer') {
         return {
@@ -52,7 +55,7 @@ async function findHoverableNode(page, { maxCandidates = 16 } = {}) {
         };
       }
     }
-    await page.waitForTimeout(120);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   }
   return null;
 }
@@ -68,7 +71,10 @@ async function collectDistinctHoverTargets(page, { maxCandidates = 28, minDistan
     const candidates = await projectedCandidates(page, pass);
     for (const candidate of candidates) {
       await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 });
-      await page.waitForTimeout(160);
+      await page.waitForFunction(() => {
+        const h = window.__TEST_STATE__?.hoverHighlightIndex;
+        return h !== null && h !== undefined && Number.isFinite(h);
+      }, { timeout: 5000 }).catch(() => {});
       const state = await getHoverState(page);
       if (!isValidNodeIndex(state.hoverHighlightIndex, state.pointCount) || state.canvasCursor !== 'pointer') continue;
       const target = { ...candidate, resolvedIndex: state.hoverHighlightIndex };
@@ -79,7 +85,7 @@ async function collectDistinctHoverTargets(page, { maxCandidates = 28, minDistan
       targets.push(target);
       if (targets.length >= count) return targets;
     }
-    await page.waitForTimeout(120);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   }
   return targets;
 }
@@ -162,7 +168,10 @@ test.describe('3D node hover affordance', () => {
     const firstState = await getHoverState(page);
 
     await page.mouse.move(first.screenX + 220, first.screenY + 180, { steps: 1 });
-    await page.waitForTimeout(220);
+    await page.waitForFunction(() => {
+        const h = window.__TEST_STATE__?.hoverHighlightIndex;
+        return h !== null && h !== undefined && Number.isFinite(h);
+      }, { timeout: 5000 }).catch(() => {});
     const secondState = await getHoverState(page);
 
     const secondIsValid = isValidNodeIndex(secondState.hoverHighlightIndex, secondState.pointCount);
@@ -208,7 +217,7 @@ test.describe('3D node hover affordance', () => {
     // Enter focus
     await focusNodeViaApp(page, target.resolvedIndex);
     await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
-    await page.waitForTimeout(600);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     // Verify we are in focus
     const focusState = await getHoverState(page);
@@ -217,7 +226,7 @@ test.describe('3D node hover affordance', () => {
     // Press Escape to reset
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'overview'), { timeout: 12000 });
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     // Hover should be cleared (null or -1) after reset
     const afterReset = await getHoverState(page);
@@ -247,7 +256,7 @@ test.describe('3D node hover affordance', () => {
     expect(second, 'second distinct resolved hover target outside sticky-hover range must exist').not.toBeNull();
 
     await moveToValidHover(page, first);
-    await page.waitForTimeout(40);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     await moveToValidHover(page, second, { excludeIndex: first.resolvedIndex });
 
     const state = await getHoverState(page);
@@ -269,7 +278,7 @@ test.describe('3D node hover affordance', () => {
 
     // Rapid-move away — simulates losing hover before state update propagates
     await page.mouse.move(16, 16, { steps: 1 });
-    await page.waitForTimeout(20); // intentionally too short for full hover settle
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {}); // intentionally too short for full hover settle
 
     const mid = await getHoverState(page);
     const midValid = isValidNodeIndex(mid.hoverHighlightIndex, mid.pointCount);
@@ -279,7 +288,7 @@ test.describe('3D node hover affordance', () => {
     expect(midValid || midCleared, `mid-hover must be valid or cleared, got ${mid.hoverHighlightIndex}`).toBe(true);
 
     // Wait for full settle
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const settled = await getHoverState(page);
     const settledCleared = settled.hoverHighlightIndex === -1 || settled.hoverHighlightIndex === null;
@@ -301,7 +310,7 @@ test.describe('3D node hover affordance', () => {
     for (const candidate of candidates.slice(0, 4)) {
       await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 });
     }
-    await page.waitForTimeout(80);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const state = await getHoverState(page);
     const valid = isValidNodeIndex(state.hoverHighlightIndex, state.pointCount);

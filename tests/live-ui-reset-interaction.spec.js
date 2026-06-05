@@ -14,7 +14,7 @@ async function openApp(page) {
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0 &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).pointIndexByLeadId?.size > 0
   ), { timeout: 20000 });
-  await page.waitForTimeout(1000);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function performSearch(page, query = 'coffee') {

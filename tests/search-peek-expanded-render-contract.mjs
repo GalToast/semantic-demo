@@ -418,7 +418,7 @@ async function assertErrorState(page, ctx) {
       if (container) container.classList.add('has-query', 'results-rendered', 'has-expanded-results', 'search-degraded');
     }
   });
-  await page.waitForTimeout(400);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   const info = await page.evaluate(() => {
     function touchTargetInfo(el) {
@@ -537,7 +537,7 @@ async function main() {
 
     console.log('[2/4] Injecting deterministic search results DOM...');
     await installSearchFixture(page, 'peek');
-    await page.waitForTimeout(200);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const itemCount = await page.evaluate(() =>
       document.querySelectorAll('.search-result-item').length
@@ -550,13 +550,13 @@ async function main() {
     } else {
       console.log('[3/4] Testing PEEK mode...');
       await installSearchFixture(page, 'peek');
-      await page.waitForTimeout(300);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
       await assertPeekMode(page, ctx);
       console.log('');
 
       console.log('[4/4] Testing EXPANDED mode...');
       await installSearchFixture(page, 'expanded');
-      await page.waitForTimeout(300);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
       await assertExpandedMode(page, ctx);
       console.log('');
 

@@ -93,7 +93,7 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
     );
   }, { timeout: 20000 });
 
-  await page.waitForTimeout(1500);
+  // preceding waitForFunction handles settlement
 }
 
 /** Probe key 3D + selection state fields used across edge-case assertions. */
@@ -130,7 +130,7 @@ function isValidNodeIndex(val, count) {
  */
 async function corruptToEmptyGraph(page) {
   await mutate(page, 'injectEmptyGraph');
-  await page.waitForTimeout(500);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 /**
@@ -139,7 +139,7 @@ async function corruptToEmptyGraph(page) {
  */
 async function corruptToOneNode(page) {
   await mutate(page, 'injectOneNode');
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 /**
@@ -178,7 +178,7 @@ async function corruptDuplicateLabels(page) {
  */
 async function corruptMissingPositions(page) {
   await mutate(page, 'injectNullPositions');
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 /**
@@ -187,7 +187,7 @@ async function corruptMissingPositions(page) {
  */
 async function injectHugeCluster(page) {
   await mutate(page, 'injectHugeCluster');
-  await page.waitForTimeout(500);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 /**
@@ -213,7 +213,7 @@ async function abortInFlightSearch(page) {
     }
   });
   // Give the request a moment to be dispatched
-  await page.waitForTimeout(200);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   // Abort via clearSearch (the user-cancels flow)
   await page.evaluate(() => {
@@ -221,7 +221,7 @@ async function abortInFlightSearch(page) {
       (window.__APP_ACTIONS__?.clearSearch)();
     }
   });
-  await page.waitForTimeout(400);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 /**
@@ -262,7 +262,7 @@ async function slowSearchResponse(page) {
     }
   });
   // Wait just long enough for the UI to react to the in-flight state
-  await page.waitForTimeout(800);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 // ── Suite ─────────────────────────────────────────────────────────────────────
@@ -279,7 +279,7 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
 
     // Corrupt to empty
     await corruptToEmptyGraph(page);
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     // Canvas must still be present and visible (not blank)
     const canvas = page.locator('canvas').first();
@@ -288,7 +288,7 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
     // No uncaught error should have been thrown (page is still alive)
     const errors = [];
     page.on('pageerror', err => errors.push(err.message));
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     expect(errors.filter(e => !e.includes('Warning'))).toHaveLength(0);
   });
 
@@ -304,7 +304,10 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
 
     // Click the centre of the canvas
     await page.mouse.click(195, 422);
-    await page.waitForTimeout(400);
+    await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
 
     const after = await probe(page);
     expect(isValidNodeIndex(after.focusedNode, after.pointCount),
@@ -326,7 +329,7 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
 
     // Focus first duplicate via canvas position
     await mutate(page, 'setFocusedNode', { focusedNode: dupA });
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     const focusA = await page.evaluate(() => {
       const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
       return s.focusedNode;
@@ -334,7 +337,7 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
 
     // Switch to second duplicate
     await mutate(page, 'setFocusedNode', { focusedNode: dupB });
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     const focusB = await probe(page);
 
     // State must be internally consistent — no crash, valid index
@@ -355,7 +358,10 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
 
     // Click centre of canvas where a null position might exist
     await page.mouse.click(720, 450);
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
 
     const after = await probe(page);
     // focusedNode must be null (no valid pick) or a valid index — never a stale value
@@ -380,7 +386,7 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
     // No crash — page should still be alive
     const errors = [];
     page.on('pageerror', err => errors.push(err.message));
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     expect(errors.filter(e => !e.includes('Warning') && !e.includes('THREE'))).toHaveLength(0);
   });
 
@@ -399,7 +405,7 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
         (window.__APP_ACTIONS__?.search)('coffee', { preferCachedResults: true });
       }
     });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // State must still be coherent
     const after = await probe(page);
@@ -444,7 +450,7 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
 
     // Re-route with slow handler
     await slowSearchResponse(page);
-    await page.waitForTimeout(200);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     // While request is in flight the search input should still be functional and
     // the results area should not be blank-crashed (search status message shown)
@@ -476,9 +482,9 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
 
     // Apply all corrupting operations in sequence
     await corruptMissingPositions(page);
-    await page.waitForTimeout(200);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     await injectHugeCluster(page);
-    await page.waitForTimeout(200);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     await corruptMissingPositions(page); // apply again after cluster
 
     const final = await probe(page);

@@ -78,7 +78,7 @@ test.describe('Data Boundary Stress Tests', () => {
       }
     });
 
-    await page.waitForTimeout(1000); // Wait for UI to render search results
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {}); // Wait for UI to render search results
 
     // Check if any element is overflowing the viewport width
     const hasHorizontalOverflow = await page.evaluate(() => {
@@ -102,7 +102,7 @@ test.describe('Data Boundary Stress Tests', () => {
       }
     });
 
-    await page.waitForTimeout(1000); // Wait for UI to render selected card
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {}); // Wait for UI to render selected card
 
     // Check for overflow in selected card
     const cardOverflow = await page.evaluate(() => {

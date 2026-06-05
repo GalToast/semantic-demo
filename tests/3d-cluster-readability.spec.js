@@ -46,7 +46,7 @@ async function waitForGalaxyReady(page) {
   }, { timeout: 10000 });
 
   // Let cluster labels initialise and the first frame render
-  await page.waitForTimeout(2500);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 }
 
 /** Derive cluster counts from state.points (filters out null clusters). */
@@ -224,7 +224,7 @@ async function enterFocusMode(page) {
     const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return Number.isFinite(state.focusedNode) && ['focus', 'trail'].includes(state.navState?.mode);
   }, { timeout: 15000 });
-  await page.waitForTimeout(1200);
+  // preceding waitForFunction handles settlement
 }
 
 // ── Viewport configurations ────────────────────────────────────────────────────

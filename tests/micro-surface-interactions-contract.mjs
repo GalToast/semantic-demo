@@ -44,7 +44,7 @@ async function waitForReady(page) {
   await page.waitForLoadState('load', { timeout: 7000 }).catch(() => {});
   await page.evaluate(() => document.fonts?.ready).catch(() => {});
   await page.waitForFunction(() => document.body?.dataset?.graphicsMode, { timeout: 7000 }).catch(() => {});
-  await page.waitForTimeout(700);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function forceFocusSurface(page) {
@@ -57,7 +57,7 @@ async function forceFocusSurface(page) {
     const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
     if (typeof refreshCompositionState === 'function') refreshCompositionState();
   });
-  await page.waitForTimeout(300);
+  // state mutation applied synchronously
 }
 
 async function auditMicroState(page, stateName) {

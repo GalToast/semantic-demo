@@ -60,7 +60,7 @@ async function waitForAppReady(page) {
     Array.isArray(window.__TEST_STATE__?.points) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
   ), undefined, { timeout: 20000 });
-  await page.waitForTimeout(800);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function performSearch(page, query = 'coffee') {
@@ -88,7 +88,7 @@ async function expandSearchResults(page) {
   const btnVisible = await showMoreBtn.isVisible().catch(() => false);
   if (btnVisible) {
     await showMoreBtn.click();
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   }
 }
 
@@ -97,7 +97,7 @@ async function openKeyboardHelp(page) {
   const btnVisible = await khBtn.isVisible().catch(() => false);
   if (!btnVisible) return false;
   await khBtn.click();
-  await page.waitForTimeout(400);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   return true;
 }
 
@@ -109,7 +109,7 @@ async function dismissKeyboardHelp(page) {
   } else {
     await closeBtn.click();
   }
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 async function getStorageValue(page, storageType, key) {
@@ -143,7 +143,7 @@ async function test_kh_dismissed_persistence() {
           if (dismissed) {
             // Reload the page
             await page.reload();
-            await page.waitForTimeout(1000);
+            await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
             const panelOnReload = await page.locator('#keyboard-shortcuts, .keyboard-shortcuts, .kh-panel').isVisible().catch(() => false);
             if (panelOnReload) {
               throw new Error('kh_dismissed: keyboard help reappeared after reload despite dismissal flag');
@@ -177,7 +177,7 @@ async function test_micro_demo_localStorage_flag() {
       Array.isArray(window.__TEST_STATE__?.points) &&
       (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
     ), undefined, { timeout: 20000 });
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     // Pre-set the localStorage flag to simulate completed demo
     // localStorage value is a JSON object: { seen: true, timestamp: '...' }
@@ -196,7 +196,7 @@ async function test_micro_demo_localStorage_flag() {
       typeof window.isMicroDemoRunning === 'function' &&
       typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function'
     ), undefined, { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const demoState = await page.evaluate((key) => ({
       running: window.isMicroDemoRunning?.() === true,
@@ -228,15 +228,15 @@ async function test_searchVisibleCount_persistence() {
     await setupNetworkStubs(page);
     await waitForAppReady(page);
     await performSearch(page, 'coffee');
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     // Wait for the "Show more" button to appear
     await page.waitForSelector('.search-show-more-btn', { timeout: 10000 }).catch(() => {});
-    await page.waitForTimeout(300);
+    // element already confirmed visible
 
     // Click "Show more" to expand all results
     await expandSearchResults(page);
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     // Verify sessionStorage has the count set
     const savedCount = await getStorageValue(page, 'sessionStorage', STORAGE_KEY_SEARCH_VISIBLE);
@@ -270,11 +270,11 @@ async function test_searchVisibleCount_persistence() {
       typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function' &&
       window.__TEST_STATE__?.points?.length > 0
     ), undefined, { timeout: 20000 });
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     // Re-run search to restore state (input was cleared on reload)
     await performSearch(page, 'coffee');
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     // After reload + re-search, the "Show more" button should NOT appear with non-zero remaining text
     // because sessionStorage restored searchVisibleCount=total

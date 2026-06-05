@@ -98,7 +98,7 @@ test.describe('focus-neighborhood geometry', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
-    await page.waitForTimeout(600);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const snap = await probeNeighborhood(page);
 
@@ -144,7 +144,7 @@ test.describe('focus-neighborhood geometry', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
-    await page.waitForTimeout(600);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const snap = await probeNeighborhood(page);
 
@@ -178,7 +178,7 @@ test.describe('focus-neighborhood geometry', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
-    await page.waitForTimeout(700);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const snap = await probeNeighborhood(page);
     // Minimum visible separation: desktop can afford a larger gap than short-landscape.
@@ -220,7 +220,7 @@ test.describe('focus-neighborhood geometry', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
-    await page.waitForTimeout(700);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const snap = await probeNeighborhood(page);
     expect(snap.focusedIndex, 'focusedIndex must be set').not.toBeNull();
@@ -287,7 +287,7 @@ test.describe('focus-neighborhood geometry', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
-    await page.waitForTimeout(700);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const snap = await probeNeighborhood(page);
     const MIN_DISTANCE_PX = 22;
@@ -334,7 +334,7 @@ test.describe('focus-neighborhood geometry', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
-    await page.waitForTimeout(700);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const snap = await probeNeighborhood(page);
 
@@ -380,7 +380,7 @@ test.describe('focus-neighborhood geometry', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
-    await page.waitForTimeout(700);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const snap = await probeNeighborhood(page);
     expect(snap.focusedIndex, 'focusedIndex must be set at mobile-portrait').not.toBeNull();
@@ -420,7 +420,7 @@ test.describe('focus-neighborhood geometry', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
-    await page.waitForTimeout(700);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const snap = await probeNeighborhood(page);
     expect(snap.focusedIndex, 'focusedIndex must be set at short-landscape').not.toBeNull();

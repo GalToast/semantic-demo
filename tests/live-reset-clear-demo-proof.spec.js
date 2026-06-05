@@ -98,7 +98,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // --- 1. Establish search state with results ---
     await enterSearchQuery(page, 'coffee');
@@ -133,7 +133,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // --- 1. Search -> click result to enter focus state ---
     await enterSearchQuery(page, 'cafe');
@@ -177,7 +177,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     await enterSearchQuery(page, 'espresso');
     await waitForResults(page);
@@ -193,7 +193,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     await enterSearchQuery(page, 'coffee');
     await waitForResults(page);
@@ -209,7 +209,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     await enterSearchQuery(page, 'coffee');
     await waitForResults(page);
@@ -231,7 +231,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     await enterSearchQuery(page, 'cafe');
     await waitForResults(page);
@@ -251,7 +251,7 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus) === 'function', { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Enter focus state
     await enterSearchQuery(page, 'coffee');

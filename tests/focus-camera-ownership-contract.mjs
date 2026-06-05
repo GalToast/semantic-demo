@@ -65,7 +65,10 @@ async function focusNode(page, index, { dive = false } = {}) {
     return ['focus', 'focus-search'].includes(document.body.dataset.panelSurface);
   }, { targetIndex: index, shouldDive: dive }, { timeout: 15000 });
 
-  await page.waitForTimeout(dive ? 2200 : 1800);
+  await page.waitForFunction(() => {
+    const ps = document.body?.dataset?.panelSurface;
+    return ps && (ps.includes('focus') || ps === 'semantic-dive');
+  }, { timeout: 8000 }).catch(() => {});
 }
 
 async function cameraSnapshot(page) {

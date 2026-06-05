@@ -62,7 +62,10 @@ async function waitForAppReady(page) {
       s.pointerEvents === 'none';
   }, { timeout: 20000 });
 
-  await page.waitForTimeout(1500);
+  await page.waitForFunction(() => {
+    const ps = document.body?.dataset?.panelSurface;
+    return ps === 'idle' || ps === 'overview';
+  }, { timeout: 8000 }).catch(() => {});
 }
 
 /** Perform a mocked semantic search for the given query. */
@@ -245,16 +248,16 @@ test.describe('3D semantic state transition integrity', () => {
     await performMockedSearch(page, 'coffee');
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
 
-    // Wait for any pending search animations
-    await page.waitForTimeout(800);
     await page.locator('.search-result-item').first().click();
 
-    // Wait for focus mode to be entered
     await page.waitForFunction(
       () => window.__TEST_STATE__?.navState?.mode === 'focus',
       { timeout: 15000 }
     );
-    await page.waitForTimeout(500); // allow composition state to settle
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const snap = await snapshotState(page);
     expect(snap, 'state should be initialised after focus').not.toBeNull();
@@ -280,13 +283,15 @@ test.describe('3D semantic state transition integrity', () => {
 
     await performMockedSearch(page, 'coffee');
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
-    await page.waitForTimeout(800);
     await page.locator('.search-result-item').first().click();
     await page.waitForFunction(
       () => window.__TEST_STATE__?.navState?.mode === 'focus',
       { timeout: 15000 }
     );
-    await page.waitForTimeout(1000); // settle into focus
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     // Step Inside: click the dive button
     const diveBtn = page.locator('#btn-focus-dive');
@@ -308,7 +313,7 @@ test.describe('3D semantic state transition integrity', () => {
       () => window.__TEST_STATE__?.semanticDiveMode === true,
       { timeout: 15000 }
     );
-    await page.waitForTimeout(1500); // allow transition + composition settle
+    await page.waitForFunction(() => document.body?.dataset?.semanticDive === 'active', { timeout: 10000 }).catch(() => {});
 
     const snap = await snapshotState(page);
     expect(snap, 'state should be initialised after semantic dive').not.toBeNull();
@@ -332,13 +337,15 @@ test.describe('3D semantic state transition integrity', () => {
     // Enter semantic dive first
     await performMockedSearch(page, 'coffee');
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
-    await page.waitForTimeout(800);
     await page.locator('.search-result-item').first().click();
     await page.waitForFunction(
       () => window.__TEST_STATE__?.navState?.mode === 'focus',
       { timeout: 15000 }
     );
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     await page.evaluate(() => {
       if (typeof window.__APP_ACTIONS__?.setSemanticDiveMode === 'function') window.__APP_ACTIONS__.setSemanticDiveMode(true);
@@ -347,7 +354,7 @@ test.describe('3D semantic state transition integrity', () => {
       () => window.__TEST_STATE__?.semanticDiveMode === true,
       { timeout: 15000 }
     );
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => document.body?.dataset?.semanticDive === 'active', { timeout: 10000 }).catch(() => {});
 
     const preMapSnap = await snapshotState(page);
     expect(preMapSnap, 'state should be initialised before map transition').not.toBeNull();
@@ -370,7 +377,7 @@ test.describe('3D semantic state transition integrity', () => {
       () => window.__TEST_STATE__?.currentView === 'map',
       { timeout: 15000 }
     );
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => document.body?.dataset?.activeView === 'map', { timeout: 10000 }).catch(() => {});
 
     const snap = await snapshotState(page);
     expect(snap, 'state should be initialised in map trail').not.toBeNull();
@@ -398,13 +405,15 @@ test.describe('3D semantic state transition integrity', () => {
     // Enter focus state
     await performMockedSearch(page, 'coffee');
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
-    await page.waitForTimeout(800);
     await page.locator('.search-result-item').first().click();
     await page.waitForFunction(
       () => window.__TEST_STATE__?.navState?.mode === 'focus',
       { timeout: 15000 }
     );
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     // Press Escape to reset
     await page.keyboard.press('Escape');
@@ -412,7 +421,10 @@ test.describe('3D semantic state transition integrity', () => {
       () => window.__TEST_STATE__?.navState?.mode === 'overview',
       { timeout: 15000 }
     );
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps === 'idle' || ps === 'overview';
+    }, { timeout: 8000 }).catch(() => {});
 
     const snap = await snapshotState(page);
     expect(snap, 'state should be initialised after reset').not.toBeNull();
@@ -436,13 +448,15 @@ test.describe('3D semantic state transition integrity', () => {
     // Enter semantic dive (trailDepth=2)
     await performMockedSearch(page, 'coffee');
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
-    await page.waitForTimeout(800);
     await page.locator('.search-result-item').first().click();
     await page.waitForFunction(
       () => window.__TEST_STATE__?.navState?.mode === 'focus',
       { timeout: 15000 }
     );
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     // Step Inside to enter dive mode (trailDepth=2)
     const diveBtn = page.locator('#btn-focus-dive');
@@ -462,7 +476,7 @@ test.describe('3D semantic state transition integrity', () => {
       () => window.__TEST_STATE__?.semanticDiveMode === true && window.__TEST_STATE__?.trailDepth === 2,
       { timeout: 15000 }
     );
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => document.body?.dataset?.semanticDive === 'active', { timeout: 10000 }).catch(() => {});
 
     // Verify preconditions before Escape
     const preSnap = await snapshotState(page);
@@ -477,7 +491,10 @@ test.describe('3D semantic state transition integrity', () => {
       () => window.__TEST_STATE__?.navState?.mode === 'overview',
       { timeout: 15000 }
     );
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps === 'idle' || ps === 'overview';
+    }, { timeout: 8000 }).catch(() => {});
 
     const snap = await snapshotState(page);
     expect(snap, 'state must be initialised after Escape from dive').not.toBeNull();
@@ -505,13 +522,15 @@ test.describe('3D semantic state transition integrity', () => {
     // Enter semantic dive (trailDepth=2)
     await performMockedSearch(page, 'coffee');
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
-    await page.waitForTimeout(800);
     await page.locator('.search-result-item').first().click();
     await page.waitForFunction(
       () => window.__TEST_STATE__?.navState?.mode === 'focus',
       { timeout: 15000 }
     );
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     await page.evaluate(() => {
       if (typeof window.__APP_ACTIONS__?.setSemanticDiveMode === 'function') window.__APP_ACTIONS__.setSemanticDiveMode(true);
@@ -520,7 +539,7 @@ test.describe('3D semantic state transition integrity', () => {
       () => window.__TEST_STATE__?.semanticDiveMode === true,
       { timeout: 15000 }
     );
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => document.body?.dataset?.semanticDive === 'active', { timeout: 10000 }).catch(() => {});
 
     // Switch to map view while in dive
     const mapBtn = page.locator('#btn-map');
@@ -536,7 +555,7 @@ test.describe('3D semantic state transition integrity', () => {
       () => window.__TEST_STATE__?.currentView === 'map',
       { timeout: 15000 }
     );
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => document.body?.dataset?.activeView === 'map', { timeout: 10000 }).catch(() => {});
 
     const preSnap = await snapshotState(page);
     expect(preSnap.activeView, 'pre: activeView must be map before Escape').toBe('map');
@@ -547,7 +566,10 @@ test.describe('3D semantic state transition integrity', () => {
       () => window.__TEST_STATE__?.navState?.mode === 'overview',
       { timeout: 15000 }
     );
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps === 'idle' || ps === 'overview';
+    }, { timeout: 8000 }).catch(() => {});
 
     const snap = await snapshotState(page);
     expect(snap, 'state must be initialised after Escape from map-trail dive').not.toBeNull();
@@ -580,10 +602,12 @@ test.describe('3D semantic state transition integrity', () => {
     expect(assertInvariants(snap), `Search invariants: ${assertInvariants(snap).join('; ')}`).toHaveLength(0);
 
     // Step 3: focus
-    await page.waitForTimeout(800);
     await page.locator('.search-result-item').first().click();
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
     snap = await snapshotState(page);
     expect(assertInvariants(snap), `Focus invariants: ${assertInvariants(snap).join('; ')}`).toHaveLength(0);
 
@@ -601,7 +625,7 @@ test.describe('3D semantic state transition integrity', () => {
       window.__APP_ACTIONS__?.switchView?.('map');
     });
     await page.waitForFunction(() => window.__TEST_STATE__?.currentView === 'map', { timeout: 15000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => document.body?.dataset?.activeView === 'map', { timeout: 10000 }).catch(() => {});
     snap = await snapshotState(page);
     expect(assertInvariants(snap), `Map trail invariants: ${assertInvariants(snap).join('; ')}`).toHaveLength(0);
 
@@ -610,7 +634,10 @@ test.describe('3D semantic state transition integrity', () => {
       if (typeof window.__APP_ACTIONS__?.resetExplorationFocus === 'function') window.__APP_ACTIONS__.resetExplorationFocus();
     });
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'overview', { timeout: 15000 });
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps === 'idle' || ps === 'overview';
+    }, { timeout: 8000 }).catch(() => {});
     snap = await snapshotState(page);
     expect(assertInvariants(snap), `Post-reset invariants: ${assertInvariants(snap).join('; ')}`).toHaveLength(0);
 
@@ -635,7 +662,7 @@ test.describe('3D semantic state transition integrity', () => {
     await page.evaluate(() => {
       if (typeof window.__APP_ACTIONS__?.setSemanticDiveMode === 'function') window.__APP_ACTIONS__.setSemanticDiveMode(true);
     });
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'overview', { timeout: 5000 });
 
     const snap = await snapshotState(page);
     // setSemanticDiveMode(true) when canDive=false is a no-op (canDive requires currentView===galaxy AND hasFocus)

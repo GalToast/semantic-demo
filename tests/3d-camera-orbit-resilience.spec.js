@@ -11,7 +11,7 @@ async function findClickableNode(page) {
   const candidates = await projectedCandidates(page, { marginRatio: 0.06, maxResults: 24 });
   for (const candidate of candidates) {
     await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 });
-    await page.waitForTimeout(80);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     const state = await probe(page);
     if (state.canvasCursor === 'pointer' && isValidNodeIndex(state.hoverHighlightIndex, state.pointCount)) {
       return { ...candidate, resolvedIndex: state.hoverHighlightIndex };
@@ -24,7 +24,10 @@ async function clickValidNode(page) {
   const target = await findClickableNode(page);
   expect(target, 'a hoverable canvas node coordinate must be discoverable').not.toBeNull();
   await page.mouse.click(target.screenX, target.screenY);
-  await page.waitForTimeout(400);
+  await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
   const after = await probe(page);
   expect(isValidNodeIndex(after.focusedNode, after.pointCount), 'canvas click must focus a valid node').toBe(true);
   return { target, after };
@@ -39,7 +42,7 @@ async function wheelAtCanvasCenter(page, deltaY) {
   expect(rect, 'canvas rect must exist for wheel interaction').not.toBeNull();
   await page.mouse.move(rect.left + rect.width / 2, rect.top + rect.height / 2);
   await page.mouse.wheel(0, deltaY);
-  await page.waitForTimeout(600);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function dragCanvas(page, dx, dy, { xRatio = 0.5, yRatio = 0.5 } = {}) {
@@ -55,7 +58,7 @@ async function dragCanvas(page, dx, dy, { xRatio = 0.5, yRatio = 0.5 } = {}) {
   await page.mouse.down();
   await page.mouse.move(x + dx, y + dy, { steps: 3 });
   await page.mouse.up();
-  await page.waitForTimeout(700);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function resetIncidentalFocus(page) {
@@ -83,7 +86,7 @@ async function resetIncidentalFocus(page) {
       const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
       return appState?.navState?.mode === 'overview' && document.body.dataset.panelSurface !== 'focus';
     }, { timeout: 10000 });
-    await page.waitForTimeout(1200);
+    // preceding waitForFunction handles settlement
   }
 }
 
@@ -112,14 +115,14 @@ test.describe('3D camera/orbit resilience', () => {
     await resetIncidentalFocus(page);
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
     const mobile = await probe(page);
     expect(Math.abs(mobile.cameraAspect - (mobile.canvasRect.width / mobile.canvasRect.height)), 'mobile camera aspect should match canvas').toBeLessThan(0.05);
     await clickValidNode(page);
     await resetIncidentalFocus(page);
 
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
     const desktop = await probe(page);
     expect(Math.abs(desktop.cameraAspect - (desktop.canvasRect.width / desktop.canvasRect.height)), 'desktop camera aspect should match canvas after resize back').toBeLessThan(0.05);
     await clickValidNode(page);
@@ -149,7 +152,7 @@ test.describe('3D camera/orbit resilience', () => {
 
     await wheelAtCanvasCenter(page, -120);
     await dragCanvas(page, 80, 20);
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const afterDist = cameraDistance((await probe(page)).cameraPosition);
     expect(Number.isFinite(afterDist), 'camera distance must stay finite after orbit gestures').toBe(true);

@@ -38,7 +38,7 @@ async function waitForReady(page) {
     );
   }, { timeout: 12000 });
   // Give scene-reveal a moment to settle under reduced-motion
-  await page.waitForTimeout(400);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 test.describe('Reduced Motion Interruption & State Consistency', () => {

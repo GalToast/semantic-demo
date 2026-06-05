@@ -59,7 +59,7 @@ async function waitForScene(page) {
     { timeout: 20000 }
   );
   // Stable render settle after geometry appears (1.5s for slow/heavy first render)
-  await page.waitForTimeout(1500);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 }
 
 // PNG RGBA parser — same technique as three-scene-playtest.mjs

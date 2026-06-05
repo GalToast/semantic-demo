@@ -38,7 +38,7 @@ async function openApp(page) {
     window.__TEST_STATE__.points.length > 0 &&
     document.body.dataset.graphicsMode === 'webgl'
   ), { timeout: 20000 });
-  await page.waitForTimeout(1200);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 }
 
 async function searchAndFocusFirstResult(page, query = 'coffee') {
@@ -64,7 +64,7 @@ async function searchAndFocusFirstResult(page, query = 'coffee') {
   }
   await page.locator('.search-result-item').first().click({ force: true });
   await page.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 15000 });
-  await page.waitForTimeout(900);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function clickStepInside(page) {

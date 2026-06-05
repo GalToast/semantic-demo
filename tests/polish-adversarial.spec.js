@@ -87,7 +87,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
     // setFocusedNode now handles focusedNode, selectedPoint, and navState together.
     await mutate(page, 'setFocusedNode', { focusedNode: 0, selectedPointIdx: 0, navStateMode: 'focus' });
     await page.evaluate(() => { window.__APP_ACTIONS__?.refreshCompositionState?.(); });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // ADVERSARIAL: Verify results rail didn't ghost out.
     const focusedRailState = await page.evaluate(() => {
@@ -117,13 +117,13 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
     });
     
     // Give it a moment to begin gliding
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
     
     // 2. INTERRUPT: Click the side panel toggle
     await page.click('#info-panel-toggle');
     
     // 3. VERIFY: Demo should be cancelled and controls restored
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
     const demoRunning = await page.evaluate(() => window.isMicroDemoRunning());
     expect(demoRunning).toBe(false);
 

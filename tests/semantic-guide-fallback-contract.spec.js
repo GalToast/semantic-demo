@@ -64,7 +64,7 @@ test.describe('showSemanticThreadsDetail error fallback', () => {
     });
 
     // Small delay to allow async fetch to complete and DOM to update
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     // #summary-gemma-story must have .hidden removed (becomes visible)
     const storyEl = page.locator('#summary-gemma-story');

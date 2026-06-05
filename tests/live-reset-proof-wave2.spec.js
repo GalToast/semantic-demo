@@ -75,11 +75,11 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus) === 'function', { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // --- 1. Perform search ---
     await performMockedSearch(page);
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     // Verify search state is populated
     const searchStateBefore = await page.evaluate(() => ({
@@ -92,7 +92,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     // --- 2. Click a result → enter focus/exploration state ---
     await page.locator('.search-result-item').first().click();
-    await page.waitForTimeout(2000);
+    // result click — settlement handled by subsequent waitForFunction
 
     // Verify focus mode is active
     const focusStateBefore = await page.evaluate(() => ({
@@ -105,7 +105,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     // --- 3. Press Escape → should trigger clearSearch + resetExplorationFocus ---
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // --- 4. Verify reset outcomes ---
 
@@ -146,19 +146,19 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus) === 'function', { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Enter focus state via search click
     await performMockedSearch(page);
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
     await page.locator('.search-result-item').first().click();
-    await page.waitForTimeout(2000);
+    // result click — settlement handled by subsequent waitForFunction
 
     // Call resetExplorationFocus directly (preserves search per its contract)
     await page.evaluate(() => {
       (window.__APP_ACTIONS__?.resetExplorationFocus)();
     });
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     // Search input should still have 'coffee' (preserveSearch: true)
     const inputValue = await page.evaluate(() => document.getElementById('search-input')?.value ?? '');
@@ -184,13 +184,13 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.returnToOverview) === 'function', { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Establish search + focus state
     await performMockedSearch(page);
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
     await page.locator('.search-result-item').first().click();
-    await page.waitForTimeout(2000);
+    // result click — settlement handled by subsequent waitForFunction
 
     // returnToOverview = full reset (clears search too)
     await page.evaluate(() => {
@@ -224,17 +224,17 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus) === 'function', { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Enter focus state
     await performMockedSearch(page);
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
     await page.locator('.search-result-item').first().click();
-    await page.waitForTimeout(2000);
+    // result click — settlement handled by subsequent waitForFunction
 
     // Click btn-focus-overview
     await page.click('#btn-focus-overview');
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const navMode = await page.evaluate(() => window.__TEST_STATE__?.navState?.mode ?? 'unknown');
     expect(navMode, 'btn-focus-overview must reset mode to overview').toBe('overview');

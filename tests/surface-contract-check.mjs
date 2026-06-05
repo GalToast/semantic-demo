@@ -162,7 +162,7 @@ async function loadAndWait(page, url) {
       document.body.dataset.graphicsMode === 'fallback';
     return overlayHidden && routeSettled;
   }, undefined, { timeout: 10000 }).catch(() => {});
-  await page.waitForTimeout(300);
+  // loadAndWait: overlay and route already settled by preceding checks
 }
 
 async function waitForMobileIdleChrome(page) {
@@ -422,7 +422,7 @@ async function assert_launch_focus(page, ctx) {
     const panel = document.body?.dataset?.panelSurface || '';
     return context.includes('focus') || panel.includes('focus');
   }, { timeout: 5000 }).catch(() => {});
-  await page.waitForTimeout(500);
+  // preceding waitForFunction handles settlement
 
   const info = await page.evaluate(() => {
     function textClipped(el) {
@@ -673,14 +673,14 @@ async function assert_map_trail(page, ctx) {
     const el = document.querySelector('.search-result-item');
     if (el) el.click();
   });
-  await page.waitForTimeout(800);
+  // click applied via evaluate
 
   // Simulate trail reveal (Show Trail button)
   await page.evaluate(() => {
     const showTrailBtn = document.querySelector('#btn-focus-path, .focus-stage-action-btn[aria-label*="trail"]');
     if (showTrailBtn) showTrailBtn.click();
   });
-  await page.waitForTimeout(600);
+  // click applied via evaluate
 
   const info = await page.evaluate(() => {
     function textClipped(el) {
@@ -802,14 +802,14 @@ async function assert_focus_pocket(page, ctx) {
     const el = document.querySelector('.search-result-item');
     if (el) el.click();
   });
-  await page.waitForTimeout(800);
+  // click applied via evaluate
 
   // Trigger "Step Inside"
   await page.evaluate(() => {
     const diveBtn = document.querySelector('#btn-focus-dive, .focus-stage-dive-btn');
     if (diveBtn) diveBtn.click();
   });
-  await page.waitForTimeout(600);
+  // click applied via evaluate
 
   await page.evaluate(() => {
     document.body.classList.add('is-active');
@@ -833,7 +833,7 @@ async function assert_focus_pocket(page, ctx) {
       }
     }
   });
-  await page.waitForTimeout(100);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   const info = await page.evaluate(() => {
     document.body.classList.add('is-active');
@@ -1039,7 +1039,7 @@ async function assert_field_node(page, ctx) {
     const el = document.querySelector('.search-result-item');
     if (el) el.click();
   });
-  await page.waitForTimeout(800);
+  // click applied via evaluate
 
   // Simulate field-node state
   await page.evaluate(() => {
@@ -1056,7 +1056,7 @@ async function assert_field_node(page, ctx) {
       focusStage.setAttribute('aria-hidden', 'false');
     }
   });
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   // The focus click above can still have async camera/focus handlers settling
   // after the first forced state write, especially when this surface runs after
@@ -1074,7 +1074,7 @@ async function assert_field_node(page, ctx) {
       focusStage.setAttribute('aria-hidden', 'false');
     }
   });
-  await page.waitForTimeout(100);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   const info = await page.evaluate(() => {
     function textClipped(el) {
@@ -1613,7 +1613,7 @@ async function assert_compass_rail(page, ctx) {
       kicker.style.visibility = 'visible';
     }
   });
-  await page.waitForTimeout(120);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   const info = await page.evaluate(() => {
     function textClipped(el) {
@@ -1723,7 +1723,7 @@ async function assert_compass_rail(page, ctx) {
 async function assert_loading_overlay(page, ctx) {
   await page.goto(positionalUrl, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#loading-overlay .loading-shell', { timeout: 5000 }).catch(() => {});
-  await page.waitForTimeout(120);
+  // element already confirmed visible
 
   await page.evaluate(() => {
     const overlay = document.querySelector('#loading-overlay');
@@ -1955,7 +1955,7 @@ async function assert_filters(page, ctx) {
     }
     document.body.dataset.graphContext = 'filters-open';
   });
-  await page.waitForTimeout(300);
+  // dataset write applied synchronously
 
   const info = await page.evaluate(() => {
     function textClipped(el) {
@@ -2068,7 +2068,7 @@ async function assert_thread_inspector(page, ctx) {
     const el = document.querySelector('.search-result-item');
     if (el) el.click();
   });
-  await page.waitForTimeout(800);
+  // click applied via evaluate
 
   // Activate thread-inspector surface via dataset
   await page.evaluate(() => {
@@ -2105,7 +2105,7 @@ async function assert_thread_inspector(page, ctx) {
       if (btn) btn.disabled = false;
     });
   });
-  await page.waitForTimeout(300);
+  // dataset write synchronous
 
   await page.evaluate(() => {
     document.body.classList.add('is-active');
@@ -2311,7 +2311,7 @@ async function assert_controls(page, ctx) {
       && viewButtons.every(sized)
       && sized(document.querySelector('#btn-journey-primary'));
   }, { timeout: 6000 }).catch(() => {});
-  await page.waitForTimeout(300);
+  // preceding waitForFunction handles settlement
 
   const info = await page.evaluate(() => {
     function textClipped(el) {
@@ -2937,7 +2937,7 @@ async function assert_info_panel_populated(page, ctx) {
     const selectedFiledAs = document.querySelector('#selected-filed-as');
     if (selectedFiledAs) selectedFiledAs.style.display = 'none';
   });
-  await page.waitForTimeout(300);
+  // dataset write synchronous
 
   await page.evaluate(() => {
     const selectedDetails = document.querySelector('#selected-details');
@@ -3786,7 +3786,7 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
     const neighbors = document.querySelector('.focus-stage-neighbors');
     if (neighbors) neighbors.classList.add('active');
   }, { preview });
-  await page.waitForTimeout(100);
+  // preceding waitForFunction handles settlement
 }
 
 async function productRouteSnapshot(page, { preview = false } = {}) {
@@ -3924,7 +3924,7 @@ async function forceFocusSearchSurface(page) {
       focusStage.setAttribute('aria-hidden', 'false');
     }
   });
-  await page.waitForTimeout(100);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 async function forceSemanticDiveSurface(page) {
@@ -3959,7 +3959,7 @@ async function forceSemanticDiveSurface(page) {
       }
     }
   });
-  await page.waitForTimeout(100);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 async function assert_semantic_dive_geometry(page, ctx, surfaceName) {

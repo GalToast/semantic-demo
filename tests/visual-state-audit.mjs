@@ -247,7 +247,7 @@ async function waitForReady(page, label = 'unknown') {
     });
   
   console.log(`[waitForReady:${label}] Waiting timeout 2200ms...`);
-  await page.waitForTimeout(2200);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
   console.log(`[waitForReady:${label}] Waiting for visual settle...`);
   await page.waitForFunction((mustUseWebgl) => {
     const { cameraAssist, loadingOverlay, sceneReady, viewHandoffActive } = document.body.dataset;
@@ -313,7 +313,7 @@ async function waitForGraphVisualSettle(page, label = 'unknown') {
       if (requireWebgl) throw err;
     });
 
-  await page.waitForTimeout(160);
+  // dataset write synchronous
 }
 
 async function gotoReady(page, url) {
@@ -502,7 +502,7 @@ async function captureState(page, name) {
   }
   if (name === '19-mobile-compass-rail') {
     await applyCompassRailState(page);
-    await page.waitForTimeout(50);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     await applyCompassRailState(page);
     await markVisualRouteEvidence(page, 'constructed-surface', 'visual audit compass rail fixture');
   }
@@ -512,7 +512,7 @@ async function captureState(page, name) {
   }
   if (name === '03-mobile-focus-first-result') {
     await forceFocusedVisualState(page);
-    await page.waitForTimeout(120);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   }
   if (name === '04-mobile-field-node-active') {
     await forceFocusedVisualState(page);
@@ -534,7 +534,7 @@ async function captureState(page, name) {
       }
     });
     await markVisualRouteEvidence(page, 'constructed-surface', 'visual audit field-node focus-search fixture');
-    await page.waitForTimeout(120);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   }
 
   await waitForGraphVisualSettle(page, name);
@@ -1353,7 +1353,7 @@ async function enterFocusFromSearch(page) {
     }
   });
   await markVisualRouteEvidence(page, 'constructed-surface', 'focus surface dataset and focus-stage visibility shaped for visual audit');
-  await page.waitForTimeout(400);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 async function runVisibleSearch(page, query) {
@@ -1373,7 +1373,7 @@ async function runVisibleSearch(page, query) {
         rect.height > 0;
     });
   }, undefined, { timeout: 15000 });
-  await page.waitForTimeout(700);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function clickVisibleFirstSearchResult(page) {
@@ -1404,7 +1404,7 @@ async function clickVisibleFirstSearchResult(page) {
     );
   }, undefined, { timeout: 8000 });
   await waitForFocusedResult();
-  await page.waitForTimeout(900);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function enterSemanticDiveViaVisibleControl(page) {
@@ -1484,7 +1484,7 @@ async function enterSemanticDiveViaVisibleControl(page) {
     throw err;
   });
   await markVisualRouteEvidence(page, 'real-click', clickTarget.detail);
-  await page.waitForTimeout(1200);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 }
 
 async function enterMapViaVisibleControl(page) {
@@ -1498,7 +1498,7 @@ async function enterMapViaVisibleControl(page) {
     await markVisualRouteEvidence(page, 'real-click', 'clicked journey open-map action');
   }
   await page.waitForFunction(() => document.body.dataset.activeView === 'map', undefined, { timeout: 12000 });
-  await page.waitForTimeout(1000);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function enterMapFocusSearchByRealRoute(page) {
@@ -1540,7 +1540,7 @@ async function enterThreadInspectorByRealRoute(page) {
       rect.width > 0 &&
       rect.height > 0;
   }, undefined, { timeout: 12000 });
-  await page.waitForTimeout(900);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function enterRouteTraceByRealRoute(page) {
@@ -1661,7 +1661,7 @@ async function enterSemanticDive(page) {
 
   await page.waitForFunction(() => document.body.dataset.panelSurface === 'semantic-dive', undefined, { timeout: 15000 }).catch(() => {});
   await page.waitForFunction(() => document.body.dataset.semanticDive === 'active', undefined, { timeout: 15000 }).catch(() => {});
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 async function applyPopulatedInfoPanelState(page) {

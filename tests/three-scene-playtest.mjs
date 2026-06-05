@@ -51,7 +51,7 @@ async function waitForScene(page) {
             && state?.pointsMesh?.geometry?.attributes?.position?.count
         );
     }, { timeout: 10000 });
-    await page.waitForTimeout(1200);
+    // preceding waitForFunction handles settlement
 }
 
 async function capture(page, name) {
@@ -359,7 +359,7 @@ async function main() {
                         });
                     }
                 }, process.env.SEMANTIC_SCENE_DIAG_HIDE);
-                await page.waitForTimeout(300);
+                await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
             }
             const screenshot = await capture(page, name);
             const inspection = await inspectScene(page);
@@ -387,18 +387,18 @@ async function main() {
                 window.__APP_ACTIONS__?.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
                 window.__APP_ACTIONS__?.setTrailDepth?.(1, { skipUrlSync: true });
             });
-            await page.waitForTimeout(1600);
+            await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
         };
         const focusedResult = await runFreshPage('02-mobile-focused-node', { view: 'galaxy', q: 'coffee', anchor: '519' }, focusSetup);
         const insideResult = await runFreshPage('03-mobile-step-inside', { view: 'galaxy', q: 'coffee', anchor: '519' }, async (page) => {
             await focusSetup(page);
             await page.evaluate(() => window.__APP_ACTIONS__?.setTrailDepth?.(2, { fromUserGesture: true }));
-            await page.waitForTimeout(1200);
+            await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
         });
         const mapResult = await runFreshPage('04-mobile-map', { view: 'map', q: 'coffee', anchor: '519' });
 
         const mapSearchResult = await runFreshPage('05-mobile-map-search-active', { view: 'map', q: 'coffee', anchor: '519' }, async (page) => {
-            await page.waitForTimeout(1200);
+            await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
         });
 
         const idle = idleResult.inspection;
@@ -411,7 +411,7 @@ async function main() {
         assert(idle.canvas?.width > 300 && idle.canvas?.height > 500, 'idle canvas should fill the mobile scene area', failures);
         assert(idle.pointCount > 100, 'idle scene should render a meaningful node set', failures);
         assert(idle.coreOpacity >= 0.04, `overview core thread opacity too low: ${idle.coreOpacity}`, failures);
-        // Keep this ceiling paired with the overview mycelium presentation profile in js/modules/three-engine.js.
+        // Keep this ceiling paired with the overview mycelium presentation profile in js/modules/three-engine.ts.
         assert(idleResult.luminance.p95 <= 220, `idle scene p95 luminance is over-threaded: ${idleResult.luminance.p95}`, failures);
         assert(idleResult.luminance.whiteRatio <= 0.08, `idle scene white pixel ratio is too high: ${idleResult.luminance.whiteRatio}`, failures);
         assert(idle.coreContinuity.checked > 0 && idle.coreContinuity.matched === idle.coreContinuity.checked, 'mycelium core thread segments should be continuous paired vertices', failures);

@@ -80,7 +80,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
   test('real mouse.move to canvas node flips hoverHighlightIndex at 844x390', async ({ page }) => {
     test.setTimeout(60000);
     await openApp(page, SHORT_LANDSCAPE);
-    await page.waitForTimeout(800);
+    // openApp handles settlement
 
     const initial = await getInteractionState(page);
     expect(initial.pointCount, 'scene must have loaded with points').toBeGreaterThan(0);
@@ -95,7 +95,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
 
     // Real mouse move: no synthetic MouseEvent dispatch.
     await realMouseMoveTo(page, target.screenX, target.screenY);
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const hovered = await getInteractionState(page);
 
@@ -118,7 +118,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
   test('real mouse.move off canvas clears hoverHighlightIndex at 844x390', async ({ page }) => {
     test.setTimeout(60000);
     await openApp(page, SHORT_LANDSCAPE);
-    await page.waitForTimeout(800);
+    // openApp handles settlement
 
     // First find and hover a node
     const candidates = await projectedCandidates(page, { marginRatio: 0.08, maxResults: 12 });
@@ -126,14 +126,14 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
     const target = candidates.sort((a, b) => a.centerDistance - b.centerDistance)[0];
 
     await realMouseMoveTo(page, target.screenX, target.screenY);
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const whileHovering = await getInteractionState(page);
     expect(isValidNodeIndex(whileHovering.hoverHighlightIndex, whileHovering.pointCount)).toBe(true);
 
     // Move off to top-left corner (safe non-canvas area in short landscape)
     await realMouseMoveTo(page, 16, 16);
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const afterMoveOff = await getInteractionState(page);
     const cleared = afterMoveOff.hoverHighlightIndex === null || afterMoveOff.hoverHighlightIndex === -1;
@@ -148,7 +148,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
   test('real mouse.click on a node sets lastCanvasNodePick at 844x390', async ({ page }) => {
     test.setTimeout(60000);
     await openApp(page, SHORT_LANDSCAPE);
-    await page.waitForTimeout(800);
+    // openApp handles settlement
 
     const candidates = await projectedCandidates(page, { marginRatio: 0.08, maxResults: 12 });
     expect(candidates.length).toBeGreaterThan(0);
@@ -156,11 +156,14 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
 
     // Hover first (hover state must be established before reliable click pick)
     await realMouseMoveTo(page, target.screenX, target.screenY);
-    await page.waitForTimeout(350);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     // Real click: not page.dispatchEvent with synthetic MouseEvent.
     await page.mouse.click(target.screenX, target.screenY);
-    await page.waitForTimeout(400);
+    await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
 
     const afterClick = await getInteractionState(page);
 
@@ -182,7 +185,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
   test('real mouse drag on canvas preserves state integrity at 844x390', async ({ page }) => {
     test.setTimeout(60000);
     await openApp(page, SHORT_LANDSCAPE);
-    await page.waitForTimeout(800);
+    // openApp handles settlement
 
     const candidates = await projectedCandidates(page, { marginRatio: 0.08, maxResults: 12 });
     expect(candidates.length).toBeGreaterThan(0);
@@ -190,7 +193,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
 
     // Hover first
     await realMouseMoveTo(page, target.screenX, target.screenY);
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const preDrag = await getInteractionState(page);
     expect(isValidNodeIndex(preDrag.hoverHighlightIndex, preDrag.pointCount)).toBe(true);
@@ -198,11 +201,11 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
     // Small real drag: 40px right, 20px down.
     await page.mouse.move(target.screenX, target.screenY);
     await page.mouse.down();
-    await page.waitForTimeout(50);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     await page.mouse.move(target.screenX + 40, target.screenY + 20, { steps: 5 });
-    await page.waitForTimeout(50);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     await page.mouse.up();
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const postDrag = await getInteractionState(page);
 
@@ -220,7 +223,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
   test('real mouse.wheel on canvas does not corrupt hoverHighlightIndex at 844x390', async ({ page }) => {
     test.setTimeout(60000);
     await openApp(page, SHORT_LANDSCAPE);
-    await page.waitForTimeout(800);
+    // openApp handles settlement
 
     const candidates = await projectedCandidates(page, { marginRatio: 0.08, maxResults: 12 });
     expect(candidates.length).toBeGreaterThan(0);
@@ -228,14 +231,14 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
 
     // Establish hover
     await realMouseMoveTo(page, target.screenX, target.screenY);
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const preWheel = await getInteractionState(page);
     expect(isValidNodeIndex(preWheel.hoverHighlightIndex, preWheel.pointCount)).toBe(true);
 
     // Real wheel: scroll down (negative deltaY).
     await page.mouse.wheel(0, -120);
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const postWheel = await getInteractionState(page);
 
@@ -255,7 +258,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
   test('sequential real-pointer actions maintain coherent state at 844x390', async ({ page }) => {
     test.setTimeout(90000);
     await openApp(page, SHORT_LANDSCAPE);
-    await page.waitForTimeout(800);
+    // openApp handles settlement
 
     const candidates = await projectedCandidates(page, { marginRatio: 0.08, maxResults: 12 });
     expect(candidates.length).toBeGreaterThan(0);
@@ -266,22 +269,25 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
 
     // Step 1: hover t1
     await realMouseMoveTo(page, t1.screenX, t1.screenY);
-    await page.waitForTimeout(350);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     snapshot.push({ step: 'hover-t1', ...await getInteractionState(page) });
 
     // Step 2: click t1
     await page.mouse.click(t1.screenX, t1.screenY);
-    await page.waitForTimeout(400);
+    await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
     snapshot.push({ step: 'click-t1', ...await getInteractionState(page) });
 
     // Step 3: move to t2 (hover t2)
     await realMouseMoveTo(page, t2.screenX, t2.screenY);
-    await page.waitForTimeout(350);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     snapshot.push({ step: 'hover-t2', ...await getInteractionState(page) });
 
     // Step 4: wheel
     await page.mouse.wheel(0, -80);
-    await page.waitForTimeout(400);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     snapshot.push({ step: 'wheel', ...await getInteractionState(page) });
 
     // Assertions: each step's state must be coherent
@@ -316,12 +322,12 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
   test('canvas cursor is pointer only when hovering a valid node at 844x390', async ({ page }) => {
     test.setTimeout(60000);
     await openApp(page, SHORT_LANDSCAPE);
-    await page.waitForTimeout(800);
+    // openApp handles settlement
 
     // When not hovering a node, cursor should not be pointer
     const offCanvasX = 16, offCanvasY = 16;
     await realMouseMoveTo(page, offCanvasX, offCanvasY);
-    await page.waitForTimeout(400);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const offState = await getInteractionState(page);
     expect(offState.canvasCursor, 'cursor should not be pointer when mouse is off canvas').not.toBe('pointer');
@@ -332,7 +338,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
     const target = candidates.sort((a, b) => a.centerDistance - b.centerDistance)[0];
 
     await realMouseMoveTo(page, target.screenX, target.screenY);
-    await page.waitForTimeout(350);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const onState = await getInteractionState(page);
     expect(onState.canvasCursor, 'cursor must be pointer when hovering a valid node').toBe('pointer');

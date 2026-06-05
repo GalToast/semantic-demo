@@ -66,7 +66,7 @@ async function openAppHiDPI(browser, viewport = { width: 1440, height: 900 }, { 
     const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return s?.navState?.mode === 'overview';
   }, { timeout: 10000 });
-  await page.waitForTimeout(900);
+  // preceding waitForFunction handles settlement
 
   return { page, context };
 }
@@ -79,7 +79,10 @@ async function findClickableNodeHiDPI(page) {
   const candidates = await projectedCanvasCandidates(page);
   for (const candidate of candidates) {
     await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 4 });
-    await page.waitForTimeout(150);
+    await page.waitForFunction(() => {
+        const h = window.__TEST_STATE__?.hoverHighlightIndex;
+        return h !== null && h !== undefined && Number.isFinite(h);
+      }, { timeout: 5000 }).catch(() => {});
     const state = await probe(page);
     if (state.canvasCursor === 'pointer' && isValidNodeIndex(state.hoverHighlightIndex, state.pointCount)) {
       return {
@@ -101,7 +104,10 @@ async function clickResolvedNodeHiDPI(page) {
   expect(target, 'a real hoverable canvas node must be discoverable at DPR=2 before click').not.toBeNull();
 
   await page.mouse.click(target.screenX, target.screenY);
-  await page.waitForTimeout(700);
+  await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
   return { target, after: await probe(page) };
 }
 
@@ -186,7 +192,7 @@ test.describe('3D HiDPI click accuracy (deviceScaleFactor=2)', () => {
 
       const target = candidates[0];
       await page.touchscreen.tap(target.screenX, target.screenY);
-      await page.waitForTimeout(700);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
       const after = await probe(page);
       expect(isValidNodeIndex(after.focusedNode, after.pointCount),
@@ -217,7 +223,7 @@ test.describe('3D HiDPI click accuracy (deviceScaleFactor=2)', () => {
 
       const target = candidates[0];
       await page.touchscreen.tap(target.screenX, target.screenY);
-      await page.waitForTimeout(700);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
       const after = await probe(page);
       expect(isValidNodeIndex(after.focusedNode, after.pointCount),
@@ -238,9 +244,15 @@ test.describe('3D HiDPI click accuracy (deviceScaleFactor=2)', () => {
 
       // Click in an empty corner at DPR=2
       await page.mouse.move(18, 18, { steps: 4 });
-      await page.waitForTimeout(300);
+      await page.waitForFunction(() => {
+        const h = window.__TEST_STATE__?.hoverHighlightIndex;
+        return h !== null && h !== undefined && Number.isFinite(h);
+      }, { timeout: 5000 }).catch(() => {});
       await page.mouse.click(18, 18);
-      await page.waitForTimeout(400);
+      await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
 
       const after = await probe(page);
       const noFocus = after.focusedNode === null;

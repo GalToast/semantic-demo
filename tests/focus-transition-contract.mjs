@@ -87,13 +87,13 @@ async function waitForAppReady(page) {
     );
   }, { timeout: 12000 }).catch(() => {});
   // Allow initial animations to settle
-  await page.waitForTimeout(1800);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 }
 
 async function triggerFocusMode(page) {
   // Click somewhere in the canvas to focus a node and trigger focus mode
   // We do this by evaluating against the canvas, triggering a semantic click
-  await page.waitForTimeout(500);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   // Check if there's an existing focused node that we can interact with
   const canvas = page.locator('#canvas-container canvas');
@@ -115,7 +115,7 @@ async function triggerFocusMode(page) {
     }
   });
 
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   // Now check if state has what we need to drive focus mode
   const stateInfo = await page.evaluate(() => {
@@ -158,7 +158,7 @@ async function activateFocusFromState(page) {
       window.setFocusTransitionMode('focus', { duration: 720 });
     }
   });
-  await page.waitForTimeout(100);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 // ---------------------------------------------------------------------------
@@ -487,7 +487,7 @@ async function run() {
   if (!stateInfo.hasPoints || stateInfo.pointCount === 0) {
     console.log('[note] No points loaded via click — activating focus via state...');
     await activateFocusFromState(page);
-    await page.waitForTimeout(400);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   }
 
   let totalFailures = 0;
@@ -495,7 +495,7 @@ async function run() {
   // --- Test 1: Focus Transition Phase Lifecycle ---
   console.log('\n[TEST] Focus Transition Phase Lifecycle');
   await activateFocusFromState(page);
-  await page.waitForTimeout(200);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   const phaseAudit = await auditFocusTransitionPhase(page);
   reportAudit('focusTransitionPhase', phaseAudit);
   if (phaseAudit.finalPhase === 'settled') {

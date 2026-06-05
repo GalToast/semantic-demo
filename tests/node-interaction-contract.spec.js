@@ -57,7 +57,7 @@ async function openApp(page) {
       styles.visibility === 'hidden' ||
       styles.pointerEvents === 'none';
   }, { timeout: 20000 });
-  await page.waitForTimeout(1200);
+  // preceding waitForFunction handles settlement
 }
 
 test.describe('node interaction: search result focus transition', () => {

@@ -76,7 +76,7 @@ async function waitForAppReady(page) {
       styles.visibility === 'hidden' ||
       styles.pointerEvents === 'none';
   }, { timeout: 20000 });
-  await page.waitForTimeout(1500);
+  // preceding waitForFunction handles settlement
 }
 
 // Prepare disposal tracking before the app loads, then apply the patches after
@@ -158,7 +158,7 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
         await search('coffee', { preferCachedResults: false });
       }
     });
-    await page.waitForTimeout(3000); // wait for search results
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {}); // wait for search results
 
     // Record disposal counts after search
     const afterSearchStats = await getDisposalStats(page);
@@ -168,7 +168,7 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
     const resultVisible = await firstResult.isVisible().catch(() => false);
     if (resultVisible) {
       await firstResult.click();
-      await page.waitForTimeout(3000); // wait for focus mode transition + mycelium rebuild
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {}); // wait for focus mode transition + mycelium rebuild
     }
 
     // Capture stats after potential rebuild
@@ -213,14 +213,14 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
           await search(q, { preferCachedResults: false });
         }
       });
-      await page.waitForTimeout(2500);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
       // Trigger a rebuild by entering focus mode
       const result = page.locator('.search-result-item').first();
       const visible = await result.isVisible().catch(() => false);
       if (visible) {
         await result.click();
-        await page.waitForTimeout(2500);
+        await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
       }
     }
 
@@ -280,13 +280,13 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
         await search('cafe', { preferCachedResults: false });
       }
     });
-    await page.waitForTimeout(3000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Enter focus mode to trigger mycelium rebuild
     const result = page.locator('.search-result-item').first();
     if (await result.isVisible().catch(() => false)) {
       await result.click();
-      await page.waitForTimeout(3500);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
     }
 
     const finalStats = await getDisposalStats(page);
@@ -338,12 +338,12 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
           await search(q, { preferCachedResults: false });
         }
       });
-      await page.waitForTimeout(2000);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
       const result = page.locator('.search-result-item').first();
       if (await result.isVisible().catch(() => false)) {
         await result.click();
-        await page.waitForTimeout(2500);
+        await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
       }
     }
 

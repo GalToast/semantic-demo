@@ -91,7 +91,10 @@ async function findHoverableNeighbor(page) {
     if (!reachable) continue;
 
     await page.mouse.move(neighbor.screenX, neighbor.screenY, { steps: 4 });
-    await page.waitForTimeout(180);
+    await page.waitForFunction(() => {
+        const h = window.__TEST_STATE__?.hoverHighlightIndex;
+        return h !== null && h !== undefined && Number.isFinite(h);
+      }, { timeout: 5000 }).catch(() => {});
 
     const state = await page.evaluate(() => {
       const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
@@ -136,7 +139,7 @@ test.describe('focus-neighborhood desktop-click-only lane', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(600);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const pre = await probe(page);
     expect(pre.focusedNode, 'anchor must be focused before neighbor hover test').not.toBeNull();
@@ -170,7 +173,7 @@ test.describe('focus-neighborhood desktop-click-only lane', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(600);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const before = await probe(page);
     const anchorIndex = before.focusedNode;
@@ -179,7 +182,10 @@ test.describe('focus-neighborhood desktop-click-only lane', () => {
     expect(neighbor, 'a hoverable non-anchor neighbor must exist before click test').not.toBeNull();
 
     await page.mouse.click(neighbor.screenX, neighbor.screenY);
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
 
     const after = await probe(page);
 
@@ -216,13 +222,16 @@ test.describe('focus-neighborhood desktop-click-only lane', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(600);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const neighbor = await findHoverableNeighbor(page);
     expect(neighbor, 'hoverable non-anchor neighbor must exist for state consistency test').not.toBeNull();
 
     await page.mouse.click(neighbor.screenX, neighbor.screenY);
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
 
     const after = await probe(page);
 

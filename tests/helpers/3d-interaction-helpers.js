@@ -62,13 +62,21 @@ export async function openApp(page, viewport = { width: 1440, height: 900 }) {
   await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.navState?.mode === 'overview', { timeout: 8000 }).catch(() => {
     // Non-fatal when core app state is ready.
   });
-  await page.waitForTimeout(900);
+  // Wait for the info panel surface to reach idle state instead of a fixed sleep.
+  await page.waitForFunction(() => {
+    const ps = document.body?.dataset?.panelSurface;
+    return ps === 'idle' || ps === 'overview';
+  }, { timeout: 8000 }).catch(() => {});
 }
 
 export async function waitForGalaxyReady(page, viewport = { width: 1440, height: 900 }, { waitMs = 2500 } = {}) {
   await openApp(page, viewport);
   await page.waitForFunction(() => document.body?.dataset?.graphicsMode === 'webgl', { timeout: 10000 });
-  await page.waitForTimeout(waitMs);
+  // Wait for scene to be ready instead of a fixed sleep.
+  await page.waitForFunction(() => {
+    const sceneReady = document.body?.dataset?.sceneReady;
+    return sceneReady === 'true';
+  }, { timeout: waitMs }).catch(() => {});
 }
 
 export async function openAppForTouch(page, viewport = { width: 1440, height: 900 }) {
@@ -97,7 +105,10 @@ export async function openAppForTouch(page, viewport = { width: 1440, height: 90
   }, { timeout: 10000 }).catch(() => {
     // Non-fatal: core app state is already confirmed ready above.
   });
-  await page.waitForTimeout(900);
+  await page.waitForFunction(() => {
+    const ps = document.body?.dataset?.panelSurface;
+    return ps === 'idle' || ps === 'overview';
+  }, { timeout: 8000 }).catch(() => {});
 }
 
 export async function probe(page) {
@@ -314,7 +325,7 @@ export async function readPocketNodeScales(page) {
       ? Object.fromEntries(state.navState.focusPocketRoleByIndex)
       : {};
 
-    // Mirror the private getNodeSporeScale formula in three-engine.js.
+    // Mirror the private getNodeSporeScale formula in three-engine.ts.
     // Keep these constants synchronized with that shader scale helper.
     // Formula: BASE * (0.86 + seed(index, 2.7) * 0.48) * emphasis
     // emphasis: anchor=2.15, primary=1.74, support=1.42, other=0.62

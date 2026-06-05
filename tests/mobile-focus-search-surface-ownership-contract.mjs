@@ -59,7 +59,7 @@ try {
       Number.isFinite(state.navState?.focusedIndex ?? state.focusedNode);
   }, null, { timeout: 12000 });
 
-  await page.waitForTimeout(800);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
   const snap = await page.evaluate(() => {
     const box = (selector) => {

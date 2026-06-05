@@ -49,7 +49,7 @@ async function waitForAppReady(page) {
       styles.visibility === 'hidden' ||
       styles.pointerEvents === 'none';
   }, { timeout: 20000 });
-  await page.waitForTimeout(900);
+  // preceding waitForFunction handles settlement
 }
 
 async function openReadyApp(page, viewport = { width: 1440, height: 900 }) {
@@ -136,7 +136,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     const targetIdx = await midpointIndex(page);
     expect(targetIdx, 'scene should expose at least one focus target').toBeGreaterThanOrEqual(0);
     if (targetIdx >= 0) await focusNodeViaApp(page, targetIdx);
-    await page.waitForTimeout(1200);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const state = await probe(page);
     expect(state.pointCount, 'scene must still have points under reduced motion').toBeGreaterThan(0);
@@ -181,7 +181,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     }
 
     await page.evaluate(() => window.__webglLoseContextExt.loseContext());
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     const lost = await page.evaluate(() => ({
       marker: document.body.dataset.webglContextLost || '',
       rendererGone: (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).renderer === null
@@ -190,7 +190,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     expect(lost.rendererGone, 'context loss must not null out renderer state').toBe(false);
 
     await page.evaluate(() => window.__webglLoseContextExt.restoreContext());
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
     const after = await page.evaluate(() => ({
       marker: document.body.dataset.webglContextLost || '',
       pointCount: (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).points?.length ?? 0
@@ -231,7 +231,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
   test('performance contract: renderer diagnostics are finite and stable through repeated focus', async ({ page }) => {
     test.setTimeout(90000);
     await openReadyApp(page);
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const before = await probe(page);
     expect(before.rendererMemory, 'renderer.info.memory should be exposed').not.toBeNull();
@@ -244,7 +244,10 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     for (let i = 0; i < 3; i += 1) {
       const idx = Math.floor((pointCount * (i + 1)) / 4);
       if (idx >= 0) await focusNodeViaApp(page, idx);
-      await page.waitForTimeout(500);
+      await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
     }
 
     const after = await probe(page);

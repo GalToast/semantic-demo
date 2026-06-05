@@ -173,7 +173,7 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => Number.isFinite((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).focusedNode), { timeout: 15000 });
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const snap = await probePointsMaterialFocusState(page);
 
@@ -205,7 +205,7 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => Number.isFinite((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).focusedNode), { timeout: 15000 });
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const afterFocus = await probePointsMaterialFocusState(page);
     expect(afterFocus.trailDepth, 'focus mode starts at ghost depth').toBe(1);
@@ -216,7 +216,7 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
       () => (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).trailDepth === 2 && (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).semanticDiveMode === true,
       { timeout: 15000 }
     );
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
     const afterDive2 = await probePointsMaterialFocusState(page);
     expect(afterDive2.trailDepth, 'after second dive trailDepth should be 2').toBe(2);
     expect(afterDive2.currentOpacity, 'currentOpacity must be set').not.toBeNull();
@@ -244,7 +244,7 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => Number.isFinite((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).focusedNode), { timeout: 15000 });
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const snap = await probeGhostGraph(page);
 
@@ -278,7 +278,7 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => Number.isFinite((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).focusedNode), { timeout: 15000 });
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const snap = await probeGhostGraph(page);
 
@@ -313,7 +313,7 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => Number.isFinite((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).focusedNode), { timeout: 15000 });
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const snap = await probeGhostGraph(page);
 
@@ -350,7 +350,7 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => Number.isFinite((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).focusedNode), { timeout: 15000 });
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const snap = await probeGhostGraph(page);
 
@@ -382,7 +382,7 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => Number.isFinite((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).focusedNode), { timeout: 15000 });
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const snap = await probePointsMaterialFocusState(page);
 

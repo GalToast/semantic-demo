@@ -38,7 +38,7 @@ async function openTouchPage(browser, viewport) {
       styles.visibility === 'hidden' ||
       styles.pointerEvents === 'none';
   }, { timeout: 20000 });
-  await page.waitForTimeout(900);
+  // preceding waitForFunction handles settlement
   return { page, context };
 }
 
@@ -99,7 +99,7 @@ async function tapFirstValidTarget(page) {
 
   for (const target of targets) {
     await page.touchscreen.tap(target.screenX, target.screenY);
-    await page.waitForTimeout(700);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
     const after = await probe(page);
     if (isValidNodeIndex(after.focusedNode, after.pointCount)) {
       return { target, after };
@@ -134,7 +134,7 @@ test.describe('3D touch parity', () => {
       const { target } = await tapFirstValidTarget(page);
 
       await page.touchscreen.tap(Math.max(12, target.screenX - 160), Math.max(12, target.screenY - 90));
-      await page.waitForTimeout(300);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
       const afterAwayTap = await probe(page);
       const nullOrValid = afterAwayTap.focusedNode === null || isValidNodeIndex(afterAwayTap.focusedNode, afterAwayTap.pointCount);

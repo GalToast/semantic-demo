@@ -113,7 +113,10 @@ test.describe('rapid re-selection contract', () => {
     // Focus A and wait for focus mode to enter
     await focusNodeViaApp(page, pair.nodeA.index);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(300); // brief settle only
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {}); // brief settle only
 
     const pre = await probeFocusState(page);
     expect(pre.focusedNode, 'node A must be focused before rapid switch').not.toBeNull();
@@ -126,7 +129,7 @@ test.describe('rapid re-selection contract', () => {
     // Probe at multiple tiny intervals to catch the race window
     const checkpoints = [];
     for (let t = 0; t < 5; t++) {
-      await page.waitForTimeout(20);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
       const snap = await probeFocusState(page);
       checkpoints.push(snap);
     }
@@ -173,7 +176,10 @@ test.describe('rapid re-selection contract', () => {
 
     await focusNodeViaApp(page, pair.nodeA.index);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const pre = await probeFocusState(page);
     expect(pre.isNanFocused, 'focusedIndex must not be NaN before switch').toBe(false);
@@ -183,7 +189,7 @@ test.describe('rapid re-selection contract', () => {
 
     const checkpoints = [];
     for (let t = 0; t < 5; t++) {
-      await page.waitForTimeout(20);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
       checkpoints.push(await probeFocusState(page));
     }
 
@@ -214,7 +220,10 @@ test.describe('rapid re-selection contract', () => {
 
     await focusNodeViaApp(page, pair.nodeA.index);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(250);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     // A → B → A with no settle between
     await focusNodeViaApp(page, pair.nodeB.index);
@@ -222,7 +231,7 @@ test.describe('rapid re-selection contract', () => {
 
     const checkpoints = [];
     for (let t = 0; t < 4; t++) {
-      await page.waitForTimeout(20);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
       checkpoints.push(await probeFocusState(page));
     }
 
@@ -254,7 +263,10 @@ test.describe('rapid re-selection contract', () => {
     // Focus A via API first so pocket is populated
     await focusNodeViaApp(page, pair.nodeA.index);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const pre = await probeFocusState(page);
     expect(pre.focusedNode, 'node A must be focused before rapid click').not.toBeNull();
@@ -277,7 +289,10 @@ test.describe('rapid re-selection contract', () => {
     // Zero sleep here — the point is the race condition
     await page.mouse.click(pair.nodeB.screenX, pair.nodeB.screenY);
 
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
 
     const final = await probeFocusState(page);
 
@@ -311,11 +326,17 @@ test.describe('rapid re-selection contract', () => {
 
     await focusNodeViaApp(page, pair.nodeA.index);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(200);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     // Rapid switch — no settle
     await focusNodeViaApp(page, pair.nodeB.index);
-    await page.waitForTimeout(400);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const relevantErrors = errors.filter(e =>
       !e.includes('favicon') && !e.includes('net::ERR') && !e.includes('404')
@@ -337,7 +358,10 @@ test.describe('rapid re-selection contract', () => {
 
     await focusNodeViaApp(page, pair.nodeA.index);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const pre = await probeFocusState(page);
     expect(pre.pocketSize, 'pocket must have entries before switch').toBeGreaterThan(0);
@@ -346,7 +370,7 @@ test.describe('rapid re-selection contract', () => {
 
     const checkpoints = [];
     for (let t = 0; t < 4; t++) {
-      await page.waitForTimeout(20);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
       checkpoints.push(await probeFocusState(page));
     }
 

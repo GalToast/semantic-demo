@@ -116,7 +116,7 @@ async function waitForAppReady(page) {
         && state.semanticNeighborMapByLeadId?.get('1')?.neighbors?.length
     );
   }, undefined, { timeout: 90000 });
-  await page.waitForTimeout(1000);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 test.describe('focus semantic Line2 shader ownership', () => {

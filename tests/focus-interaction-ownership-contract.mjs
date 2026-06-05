@@ -183,7 +183,7 @@ try {
     return (state.navState?.focusedIndex ?? state.focusedNode) === index &&
       ['focus', 'focus-search'].includes(document.body.dataset.panelSurface);
   }, FOCUS_INDEX, { timeout: 12000 });
-  await page.waitForTimeout(900);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
   const candidate = await page.evaluate(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
@@ -265,7 +265,7 @@ try {
     return (state.navState?.focusedIndex ?? state.focusedNode) === index &&
       ['focus', 'focus-search'].includes(document.body.dataset.panelSurface);
   }, followCandidate, { timeout: 12000 });
-  await page.waitForTimeout(450);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   const postFollow = await drawerSnapshot(page);
   assert(postFollow.independentDrawers.length === 1 && postFollow.independentDrawers[0].name === 'focusStage',

@@ -83,7 +83,7 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
   await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.navState?.mode === 'overview', { timeout: 8000 }).catch(() => {
     // Non-fatal when core app state is ready.
   });
-  await page.waitForTimeout(900);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function performSearch(page, query = 'coffee') {
@@ -276,7 +276,7 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
 
     await page.evaluate(() => document.body.focus());
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const state = await probe(page);
     expect(state.state.navMode, 'Escape should return navMode to overview').toBe('overview');
@@ -293,7 +293,7 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
 
     await page.evaluate(() => document.body.focus());
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const state = await probe(page);
     expect(state.state.navMode, 'Escape should return navMode to overview on mobile').toBe('overview');
@@ -333,7 +333,7 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
 
     // Enter focus-search state by clicking a search result then focusing
     await performSearch(page, 'coffee');
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     // Trigger focus-search state via search result click + focus
     const focusTarget = await page.evaluate(() => {
@@ -398,7 +398,7 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
 
     // Enter focus-search state
     await performSearch(page, 'coffee');
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const focusTarget = await page.evaluate(() => {
       const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
@@ -517,7 +517,7 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
 
     await page.evaluate(() => document.body.focus());
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const state = await probe(page);
     expect(state.state.navMode, 'Escape should return navMode to overview at short-landscape').toBe('overview');

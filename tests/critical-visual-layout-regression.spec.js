@@ -69,7 +69,7 @@ test.describe('Critical Visual Layout Regression', () => {
         setTrailDepth(1, { skipUrlSync: true });
       }
     });
-    await page.waitForTimeout(1200);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Click a search result to enter focus + trail state
     await page.evaluate(() => {
@@ -79,7 +79,7 @@ test.describe('Critical Visual Layout Regression', () => {
         focusOnNode(4200, { fromSearchResult: true });
       }
     });
-    await page.waitForTimeout(1800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Probe geometry
     const bounds = await page.evaluate(() => {
@@ -144,7 +144,7 @@ test.describe('Critical Visual Layout Regression', () => {
       document.body.classList.add('is-active');
       document.body.dataset.activeView = 'galaxy';
     });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const compassState = await page.evaluate(() => ({
       activeView: document.body.dataset.activeView,
@@ -185,7 +185,7 @@ test.describe('Critical Visual Layout Regression', () => {
       }
     });
     await page.waitForFunction(() => window.__TEST_STATE__?.focusedNode !== null && window.__TEST_STATE__?.focusedNode !== undefined, { timeout: 15000 });
-    await page.waitForTimeout(1800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const threadState = await page.evaluate(() => {
       const state = window.__TEST_STATE__ || {};
@@ -221,7 +221,7 @@ test.describe('Critical Visual Layout Regression', () => {
     await page.goto(`${BASE_URL}${APP_PATH}?nodemo=1`, { waitUntil: 'domcontentloaded' });
 
     await page.waitForFunction(() => Boolean(window.__TEST_STATE__?.renderer), { timeout: 20000 });
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     // Search entire DOM tree for any element containing "STATIC DEV MODE" text
     const devModeElements = await page.evaluate(() => {
@@ -284,7 +284,7 @@ test.describe('Critical Visual Layout Regression', () => {
       document.body.classList.add('is-active');
       document.body.dataset.activeView = 'galaxy';
     });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const overflowResults = await page.evaluate(() => {
       const selectors = [

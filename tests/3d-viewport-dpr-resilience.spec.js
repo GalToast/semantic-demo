@@ -43,7 +43,7 @@ async function openPage(browser, { width, height, deviceScaleFactor = 1 }) {
       styles.visibility === 'hidden' ||
       styles.pointerEvents === 'none';
   }, { timeout: 20000 });
-  await page.waitForTimeout(900);
+  // preceding waitForFunction handles settlement
 
   return { page, context };
 }
@@ -158,7 +158,7 @@ test.describe('3D viewport and DPR resilience', () => {
       assertViewportHealth(before, 'before resize');
 
       await page.setViewportSize({ width: 390, height: 844 });
-      await page.waitForTimeout(900);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
       const after = await probeViewport(page);
       assertViewportHealth(after, 'after resize');

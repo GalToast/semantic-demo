@@ -11,7 +11,7 @@ async function openApp(page) {
     Array.isArray(window.__TEST_STATE__?.points) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
   ), { timeout: 20000 });
-  await page.waitForTimeout(1200);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 }
 
 /**
@@ -160,7 +160,7 @@ test.describe('Live URL State Reconstruction', () => {
     await setupMockSearch(page);
     await page.goto(orphanedUrl);
     await page.waitForFunction(() => document.body.dataset.graphicsMode === 'webgl', { timeout: 20000 });
-    await page.waitForTimeout(2000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const probe = await stateProbe(page);
 
@@ -203,7 +203,7 @@ test.describe('Live URL State Reconstruction', () => {
     }
     await page.locator('.search-result-item').first().click();
     await page.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 15000 });
-    await page.waitForTimeout(900);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     // Capture the URL after search+focus
     const urlAfterFocus = page.url();
@@ -213,14 +213,14 @@ test.describe('Live URL State Reconstruction', () => {
 
     // Step 3: Navigate away (simple back to about:blank equivalent)
     await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`);
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Step 4: Navigate back via browser back
     await page.goBack();
     await page.waitForFunction(() => (
       document.body.dataset.graphicsMode === 'webgl'
     ), { timeout: 20000 });
-    await page.waitForTimeout(3000); // allow full restoration
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {}); // allow full restoration
 
     const probe = await stateProbe(page);
 

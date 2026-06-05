@@ -34,7 +34,7 @@ test('Filter + search chrome (Svelte) preserves the DOM contract and basic inter
 
   await page.goto(`${BASE_URL}${APP_PATH}`);
   await page.waitForSelector('#search-input', { state: 'visible', timeout: 15000 });
-  await page.waitForTimeout(1500);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
   // The filters section is a <details> collapsed by default and hidden via
   // body[data-graph-context] CSS rules. Open it the same way the QA
@@ -44,7 +44,7 @@ test('Filter + search chrome (Svelte) preserves the DOM contract and basic inter
     if (section && typeof section.open === 'boolean') section.open = true;
     document.body.dataset.graphContext = 'filters-open';
   });
-  await page.waitForTimeout(300);
+  // state mutation applied synchronously
 
   // The Svelte islands should have rendered inside the static mount slots.
   // The QA contract's selectors all live inside the chrome, so finding them

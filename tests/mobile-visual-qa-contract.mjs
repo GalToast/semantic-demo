@@ -47,7 +47,7 @@ const states = [
     url: `${baseUrl}?view=galaxy&q=coffee&anchor=519`,
     waitFor: async (page) => {
       await page.evaluate(() => document.querySelector('.search-result-item')?.click());
-      await page.waitForTimeout(800);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
       await page.evaluate(() => {
         document.body.classList.add('is-active');
         document.body.dataset.activeView = 'galaxy';
@@ -57,7 +57,7 @@ const states = [
         document.body.dataset.semanticDive = 'inactive';
         document.body.dataset.focusPanelMode = 'field-node';
       });
-      await page.waitForTimeout(400);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     },
   },
 ];
@@ -124,9 +124,9 @@ for (const viewport of viewports) {
       () => typeof window.__APP_ACTIONS__?.focusOnNode === 'function' && Array.isArray(window.__TEST_STATE__?.points),
       { timeout: 15000 },
     ).catch(() => {});
-    await page.waitForTimeout(1200);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
     await state.waitFor(page);
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const screenshot = path.join(outDir, `${state.name}-${viewport.label}.png`);
     await page.screenshot({ path: screenshot, fullPage: false });

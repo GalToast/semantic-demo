@@ -98,7 +98,7 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
     await page.goto(`${BASE_URL}${APP_PATH}?view=galaxy&q=coffee&anchor=1`);
     await expect(page.locator('.search-result-item').first()).toBeVisible({ timeout: 15000 });
   }
-  await page.waitForTimeout(700);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
   await page.waitForFunction(
     () => {
@@ -133,7 +133,7 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
 
   await page.locator('.search-result-item').first().click();
   await expect(page.locator('#focus-stage')).toBeVisible({ timeout: 15000 });
-  await page.waitForTimeout(1000);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
   const focused = await page.evaluate(() => {
     const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
@@ -155,7 +155,7 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
   await page.evaluate(() => document.querySelector('#btn-focus-dive')?.click());
   await page.waitForFunction(() => document.body.dataset.semanticDive === 'active', null, { timeout: 8000 })
     .catch(() => {});
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   const inside = await page.evaluate(() => {
     const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};

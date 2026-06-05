@@ -45,5 +45,8 @@ export async function openApp(page, viewport) {
       appState.camera &&
       appState.pointsMesh;
   }, { timeout: 20000 });
-  await page.waitForTimeout(1000);
+  await page.waitForFunction(() => {
+    const ps = document.body?.dataset?.panelSurface;
+    return ps === 'idle' || ps === 'overview';
+  }, { timeout: 8000 }).catch(() => {});
 }

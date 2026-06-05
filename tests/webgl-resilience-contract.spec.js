@@ -42,7 +42,7 @@ async function waitForAppReady(page) {
       styles.visibility === 'hidden' ||
       styles.pointerEvents === 'none';
   }, undefined, { timeout: 20000 });
-  await page.waitForTimeout(1500);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 }
 
 // Capture renderer state before context loss
@@ -125,7 +125,7 @@ test.describe('WebGL Context Loss Resilience', () => {
     });
 
     // Allow the event handlers to fire
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const lostState = await page.evaluate(() => ({
       datasetLost: document.body.dataset.webglContextLost || '',
@@ -143,7 +143,7 @@ test.describe('WebGL Context Loss Resilience', () => {
     });
 
     // Allow restoration to propagate
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const afterState = await captureRendererState(page);
     const restoredFlag = await page.evaluate(() => document.body.dataset.webglContextLost || '');
@@ -179,9 +179,9 @@ test.describe('WebGL Context Loss Resilience', () => {
 
     // Lose then restore
     await page.evaluate(() => window.__webglLoseContextExt?.loseContext());
-    await page.waitForTimeout(400);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     await page.evaluate(() => window.__webglLoseContextExt?.restoreContext());
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Verify state integrity
     const afterPointCount = await page.evaluate(() => window.__TEST_STATE__?.points?.length ?? 0);
@@ -219,9 +219,9 @@ test.describe('WebGL Context Loss Resilience', () => {
     if (!extAvailable) { test.skip('WEBGL_lose_context not available'); return; }
 
     await page.evaluate(() => window.__webglLoseContextExt?.loseContext());
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     await page.evaluate(() => window.__webglLoseContextExt?.restoreContext());
-    await page.waitForTimeout(2000); // Allow render loop to re-establish
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {}); // Allow render loop to re-establish
 
     const afterRaf = await page.evaluate(() => {
       const r = window.__TEST_STATE__?.renderer;
@@ -263,9 +263,9 @@ test.describe('WebGL Context Loss Resilience', () => {
 
     // Lose then restore
     await page.evaluate(() => window.__webglLoseContextExt?.loseContext());
-    await page.waitForTimeout(400);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
     await page.evaluate(() => window.__webglLoseContextExt?.restoreContext());
-    await page.waitForTimeout(2000); // Allow restore + reinit to complete
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {}); // Allow restore + reinit to complete
 
     // Critical: shader must be a valid object after restore (not null, not undefined)
     const shaderAfterRestore = await page.evaluate(() => {

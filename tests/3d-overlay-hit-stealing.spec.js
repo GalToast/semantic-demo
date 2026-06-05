@@ -20,7 +20,10 @@ async function findReachableNodeCoordinate(page) {
     const candidates = await projectedCandidates(page, pass);
     for (const candidate of candidates) {
       await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 4 });
-      await page.waitForTimeout(140);
+      await page.waitForFunction(() => {
+        const h = window.__TEST_STATE__?.hoverHighlightIndex;
+        return h !== null && h !== undefined && Number.isFinite(h);
+      }, { timeout: 5000 }).catch(() => {});
       const state = await probe(page);
       if (state.canvasCursor !== 'pointer' || !Number.isFinite(state.hoverHighlightIndex)) continue;
 
@@ -57,7 +60,7 @@ async function findReachableNodeCoordinate(page) {
         return { ...candidate, resolvedIndex: state.hoverHighlightIndex, stack };
       }
     }
-    await page.waitForTimeout(180);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   }
   return null;
 }
@@ -116,7 +119,10 @@ test.describe('3D overlay hit ownership', () => {
 
     for (const center of centers.slice(0, 4)) {
       await page.mouse.click(center.x, center.y);
-      await page.waitForTimeout(160);
+      await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
     }
 
     const after = await probe(page);
@@ -133,7 +139,10 @@ test.describe('3D overlay hit ownership', () => {
     const centers = await overlayCenters(page);
     expect(centers.length, 'mobile overlay surface should be present').toBeGreaterThan(0);
     await page.mouse.click(centers[0].x, centers[0].y);
-    await page.waitForTimeout(200);
+    await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
 
     const after = await probe(page);
     expect(isValidNodeIndex(after.focusedNode, after.pointCount), 'mobile overlay click must leave focusedNode null or valid').toBe(true);
@@ -169,7 +178,7 @@ test.describe('3D overlay hit ownership', () => {
 
     if (entryIndex >= 0) await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const pocket = await probeFocusPocket(page);
     expect(pocket.pocketSize, 'short-landscape pocket must have nodes').toBeGreaterThan(0);
@@ -198,7 +207,7 @@ test.describe('3D overlay hit ownership', () => {
 
     if (entryIndex >= 0) await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const pocket = await probeFocusPocket(page);
     expect(pocket.pocketSize, 'mobile-portrait pocket must be populated').toBeGreaterThan(0);
@@ -225,7 +234,7 @@ test.describe('3D overlay hit ownership', () => {
 
     if (entryIndex >= 0) await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => ((window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).navState?.mode === 'focus'), { timeout: 15000 });
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const centers = await overlayCenters(page);
 
@@ -267,7 +276,10 @@ test.describe('3D overlay hit ownership', () => {
       if (onOverlay) continue;
 
       await page.mouse.click(clickX, clickY);
-      await page.waitForTimeout(200);
+      await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
     }
 
     const after = await probe(page);

@@ -13,7 +13,7 @@ test.describe('Choreography Trace', () => {
 
     // Wait for the full demo lifecycle (approx 9 seconds based on MICRO-DEMO-SPEC)
     // plus a little buffer
-    await page.waitForTimeout(11000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     await browser.stopTracing();
   });

@@ -93,7 +93,10 @@ async function findHoverableNeighbor(page) {
     if (!reachable) continue;
 
     await page.mouse.move(neighbor.screenX, neighbor.screenY, { steps: 4 });
-    await page.waitForTimeout(180);
+    await page.waitForFunction(() => {
+        const h = window.__TEST_STATE__?.hoverHighlightIndex;
+        return h !== null && h !== undefined && Number.isFinite(h);
+      }, { timeout: 5000 }).catch(() => {});
 
     const state = await page.evaluate(() => {
       const pointCount = window.__TEST_STATE__?.points?.length ?? 0;
@@ -121,7 +124,7 @@ async function findHoverableNeighbor(page) {
 async function tabToNeighborPill(page, maxTabs = 80) {
   for (let i = 0; i < maxTabs; i++) {
     await page.keyboard.press('Tab');
-    await page.waitForTimeout(80);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const activeEl = await page.evaluate(() => {
       const el = document.activeElement;
@@ -176,7 +179,10 @@ test.describe('focus-neighborhood interaction', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(600);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const pre = await probe(page);
     expect(pre.focusedNode, 'anchor must be focused before neighbor hover test').not.toBeNull();
@@ -211,7 +217,10 @@ test.describe('focus-neighborhood interaction', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(600);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const before = await probe(page);
     const anchorIndex = before.focusedNode;
@@ -220,7 +229,10 @@ test.describe('focus-neighborhood interaction', () => {
     expect(neighbor, 'a hoverable non-anchor neighbor must exist before click test').not.toBeNull();
 
     await page.mouse.click(neighbor.screenX, neighbor.screenY);
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
 
     const after = await probe(page);
 
@@ -256,13 +268,19 @@ test.describe('focus-neighborhood interaction', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(600);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const neighbor = await findHoverableNeighbor(page);
     expect(neighbor, 'hoverable non-anchor neighbor must exist for state consistency test').not.toBeNull();
 
     await page.mouse.click(neighbor.screenX, neighbor.screenY);
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
 
     const after = await probe(page);
 
@@ -291,7 +309,10 @@ test.describe('focus-neighborhood interaction', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(700);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const snap = await probeNeighborhood(page);
 
@@ -330,7 +351,10 @@ test.describe('focus-neighborhood interaction', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(600);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const pre = await probe(page);
     expect(pre.focusedNode, 'anchor must be focused before neighbor hover test on mobile').not.toBeNull();
@@ -372,7 +396,7 @@ test.describe('focus-neighborhood interaction', () => {
       setTrailDepth?.(1, { skipUrlSync: true });
     });
     await page.waitForFunction(() => ['focus', 'focus-search'].includes(document.body?.dataset?.panelSurface), { timeout: 15000 });
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const metrics = await page.evaluate(() => {
       const rect = (el) => {
@@ -435,7 +459,7 @@ test.describe('focus-neighborhood interaction', () => {
       setTrailDepth?.(1, { skipUrlSync: true });
     });
     await page.waitForFunction(() => ['focus', 'focus-search'].includes(document.body?.dataset?.panelSurface), { timeout: 15000 });
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const metrics = await page.evaluate(() => {
       const rect = (el) => {
@@ -499,7 +523,10 @@ test.describe('focus-neighborhood interaction', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(700);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const before = await probe(page);
     const anchorIndex = before.focusedNode;
@@ -516,7 +543,7 @@ test.describe('focus-neighborhood interaction', () => {
     if (activeEl.cls?.includes('focus-stage-neighbor-pill') && activeEl.dataIndex !== undefined) {
       const neighborIdx = parseInt(activeEl.dataIndex, 10);
       await page.keyboard.press('Enter');
-      await page.waitForTimeout(600);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
       const after = await probe(page);
       // Enter on a neighbor pill should navigate focus to that neighbor
@@ -545,7 +572,10 @@ test.describe('focus-neighborhood interaction', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(700);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const activeEl = await tabToNeighborPill(page);
     const isPillOrAction = (activeEl.cls?.includes('focus-stage-neighbor-pill') ?? false)
@@ -601,7 +631,10 @@ test.describe('focus-neighborhood interaction', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(700);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const before = await probe(page);
     const anchorIndex = before.focusedNode;
@@ -623,7 +656,7 @@ test.describe('focus-neighborhood interaction', () => {
     if (activeEl.cls?.includes('focus-stage-neighbor-pill') && activeEl.dataIndex !== undefined) {
       const neighborIdx = parseInt(activeEl.dataIndex, 10);
       await page.keyboard.press('Enter');
-      await page.waitForTimeout(700);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
       const after = await probe(page);
       const movedToNeighbor = after.focusedNode !== anchorIndex
@@ -651,7 +684,10 @@ test.describe('focus-neighborhood interaction', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(700);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const neighborCount = await page.evaluate(() =>
       document.querySelectorAll('.focus-stage-neighbor-pill').length
@@ -683,7 +719,10 @@ test.describe('focus-neighborhood interaction', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(600);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const before = await probe(page);
     const anchorIndex = before.focusedNode;
@@ -699,7 +738,10 @@ test.describe('focus-neighborhood interaction', () => {
     }
 
     await page.mouse.click(neighbor.screenX, neighbor.screenY);
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => {
+        const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+        return s?.lastCanvasNodePick || s?.focusedNode !== null || s?.navState?.mode;
+      }, { timeout: 5000 }).catch(() => {});
 
     const after = await probe(page);
 
@@ -735,7 +777,10 @@ test.describe('focus-neighborhood interaction', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(700);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const snap = await probeNeighborhood(page);
 
@@ -774,7 +819,10 @@ test.describe('focus-neighborhood interaction', () => {
 
     await focusNodeViaApp(page, entryIndex);
     await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-    await page.waitForTimeout(600);
+    await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
     const pre = await probe(page);
     expect(pre.focusedNode, 'anchor must be focused before neighbor hover test on tablet').not.toBeNull();
@@ -816,7 +864,7 @@ test.describe('focus-neighborhood interaction', () => {
       setTrailDepth?.(1, { skipUrlSync: true });
     });
     await page.waitForFunction(() => ['focus', 'focus-search'].includes(document.body?.dataset?.panelSurface), { timeout: 15000 });
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const metrics = await page.evaluate(() => {
       const rect = (el) => {
@@ -907,7 +955,10 @@ test.describe('focus-neighborhood interaction', () => {
     for (const entryIndex of candidateEntryIndices) {
       await focusNodeViaApp(page, entryIndex);
       await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-      await page.waitForTimeout(700);
+      await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
       const snap = await probeNeighborhood(page);
       const candidateAnchor = snap.projected.find(n => n.idx === snap.focusedIndex);
@@ -950,7 +1001,10 @@ test.describe('focus-neighborhood interaction', () => {
       for (const entryIndex of candidateEntryIndices) {
         await focusNodeViaApp(page, entryIndex);
         await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'focus', { timeout: 15000 });
-        await page.waitForTimeout(700);
+        await page.waitForFunction(() => {
+      const ps = document.body?.dataset?.panelSurface;
+      return ps && ps.includes('focus');
+    }, { timeout: 8000 }).catch(() => {});
 
         const snap = await probeNeighborhood(page);
         const candidateAnchor = snap.projected.find(n => n.idx === snap.focusedIndex);
@@ -986,7 +1040,10 @@ test.describe('focus-neighborhood interaction', () => {
 
     // Move mouse to the anchor to "select" it visually in the render
     await page.mouse.move(anchorProj.screenX, anchorProj.screenY, { steps: 4 });
-    await page.waitForTimeout(350);
+    await page.waitForFunction(() => {
+        const h = window.__TEST_STATE__?.hoverHighlightIndex;
+        return h !== null && h !== undefined && Number.isFinite(h);
+      }, { timeout: 5000 }).catch(() => {});
 
     // Capture screenshot at anchor hover
     const anchorScreenshotPath = `tmp/wave56-3d-visual-proof/anchor-hover-${Date.now()}.png`;
@@ -995,7 +1052,10 @@ test.describe('focus-neighborhood interaction', () => {
 
     // Move to neighbor
     await page.mouse.move(neighborTarget.screenX, neighborTarget.screenY, { steps: 4 });
-    await page.waitForTimeout(350);
+    await page.waitForFunction(() => {
+        const h = window.__TEST_STATE__?.hoverHighlightIndex;
+        return h !== null && h !== undefined && Number.isFinite(h);
+      }, { timeout: 5000 }).catch(() => {});
 
     const neighborScreenshotPath = `tmp/wave56-3d-visual-proof/neighbor-hover-${Date.now()}.png`;
     await page.screenshot({ path: neighborScreenshotPath, fullPage: false });

@@ -294,7 +294,7 @@ async function waitForAppReady(page) {
     }).catch((error) => ({ error: String(error) }));
     throw new Error(`Timed out waiting for app readiness: ${JSON.stringify(diagnostics)}`);
   }
-  await page.waitForTimeout(1200);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
   const semanticReady = await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
     const rows = Number(state.semanticSpaceLayoutManifest?.rows ?? 0);

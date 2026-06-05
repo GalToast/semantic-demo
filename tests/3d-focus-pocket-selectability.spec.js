@@ -75,7 +75,7 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
       styles.visibility === 'hidden' ||
       styles.pointerEvents === 'none';
   }, { timeout: 20000 });
-  await page.waitForTimeout(1200);
+  // preceding waitForFunction handles settlement
 }
 
 // ---------------------------------------------------------------------------
@@ -129,7 +129,7 @@ async function enterFocusByIndex(page, index) {
   await focusNodeViaApp(page, index);
   // Wait for focus mode to settle
   await page.waitForFunction(() => (window.__APP_STATE__?.navState?.mode ?? window.__TEST_STATE__?.navState?.mode ?? '') === 'focus', { timeout: 15000 });
-  await page.waitForTimeout(800); // allow pocket animation to begin
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {}); // allow pocket animation to begin
 }
 
 // ---------------------------------------------------------------------------
@@ -157,7 +157,7 @@ async function enterFocusFromSearch(page) {
   await performSearch(page);
   await page.locator('.search-result-item').first().click();
   await page.waitForFunction(() => (window.__APP_STATE__?.navState?.mode ?? window.__TEST_STATE__?.navState?.mode ?? '') === 'focus', { timeout: 15000 });
-  await page.waitForTimeout(800);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 // ---------------------------------------------------------------------------
@@ -427,7 +427,7 @@ test.describe('focus-pocket node selectability', () => {
     });
 
     await enterFocusByIndex(page, entryIndex);
-    await page.waitForTimeout(1200);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const pocket = await probeFocusPocket(page);
     expect(pocket.pocketSize, 'tablet pocket must have at least 1 node').toBeGreaterThan(0);
@@ -544,7 +544,7 @@ test.describe('focus-pocket node selectability', () => {
     });
 
     await enterFocusByIndex(page, entryIndex);
-    await page.waitForTimeout(1200);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const pocket = await probeFocusPocket(page);
     expect(pocket.pocketSize, 'pocket must have at least 1 node').toBeGreaterThan(0);
@@ -581,7 +581,7 @@ test.describe('focus-pocket node selectability', () => {
     });
 
     await enterFocusByIndex(page, entryIndex);
-    await page.waitForTimeout(1200);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const pocket = await probeFocusPocket(page);
     expect(pocket.pocketSize, 'tablet pocket must be non-empty').toBeGreaterThan(0);
@@ -607,7 +607,7 @@ test.describe('focus-pocket node selectability', () => {
     });
 
     await enterFocusByIndex(page, entryIndex);
-    await page.waitForTimeout(1200);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const pocket = await probeFocusPocket(page);
     expect(pocket.pocketSize, 'short-landscape pocket must be non-empty').toBeGreaterThan(0);
@@ -633,7 +633,7 @@ test.describe('focus-pocket node selectability', () => {
     });
 
     await enterFocusByIndex(page, entryIndex);
-    await page.waitForTimeout(1200);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const pocket = await probeFocusPocket(page);
     expect(pocket.pocketSize, 'mobile-portrait pocket must be non-empty').toBeGreaterThan(0);
@@ -687,7 +687,7 @@ test.describe('focus-pocket node selectability', () => {
           focusNode((window.__APP_STATE__ ?? window.__TEST_STATE__).navState.focusedIndex);
         }
       });
-      await page.waitForTimeout(1000);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
     }
 
     const snap = await probe(page);

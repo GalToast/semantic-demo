@@ -16,7 +16,7 @@ async function enterMapMode(page) {
     null,
     { timeout: 20000 }
   );
-  await page.waitForTimeout(200);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 /**
@@ -46,7 +46,7 @@ test.describe('SD-143: mobile Map mode search visibility', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await expect(page.locator('.search-container')).toBeVisible({ timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
   });
 
   test('search container and input are visible with pointer-events auto in Map mode', async ({ page }) => {

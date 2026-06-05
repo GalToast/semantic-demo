@@ -112,7 +112,7 @@ async function loadAndWait(page, url) {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForLoadState('load', { timeout: 5000 }).catch(() => {});
   await page.evaluate(() => document.fonts?.ready).catch(() => {});
-  await page.waitForTimeout(2500);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 }
 
 // ---------------------------------------------------------------------------
@@ -210,7 +210,7 @@ async function run() {
     });
 
     // Wait for CSS to apply and animations to settle
-    await page.waitForTimeout(600);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     // Capture info-panel state
     const info = await page.evaluate(() => {

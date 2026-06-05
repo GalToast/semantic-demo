@@ -118,7 +118,7 @@ async function run() {
   });
   await page.waitForLoadState('load', { timeout: 8000 }).catch(() => {});
   await page.evaluate(() => document.fonts?.ready).catch(() => {});
-  await page.waitForTimeout(1200);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
   // --- Surface 1: focus-search ---
   console.log('\n[TEST] focus-search surface');
@@ -241,9 +241,9 @@ async function forceFocusSearch(page) {
     if (nextBtn) { nextBtn.hidden = false; nextBtn.removeAttribute('hidden'); nextBtn.inert = false; nextBtn.disabled = false; nextBtn.setAttribute('aria-disabled', 'false'); }
   });
   await applyFixture();
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   await applyFixture();
-  await page.waitForTimeout(50);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   await applyFixture();
   await waitForTouchTargets(page, ['btn-focus-dive']);
 }
@@ -289,9 +289,9 @@ async function forceSemanticDive(page) {
     });
   });
   await applyFixture();
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   await applyFixture();
-  await page.waitForTimeout(50);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   await applyFixture();
   await waitForTouchTargets(page, ['btn-inside-next', 'btn-inside-map', 'btn-inside-county']);
 }

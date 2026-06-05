@@ -149,7 +149,7 @@ async function waitForReady(page) {
         return !!ready;
     }, { timeout: 12000 }).catch(() => {});
     // Give scene reveal transition time to settle
-    await page.waitForTimeout(2500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 }
 
 async function startServer(port) {

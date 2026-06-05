@@ -87,7 +87,7 @@ test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
     });
 
     // Small delay to allow async fetch to reject and DOM to update
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     // Assertions:
     // 1. #semantic-summary-card has .is-synthesizing removed and is not .hidden

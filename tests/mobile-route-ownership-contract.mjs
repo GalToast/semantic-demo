@@ -38,7 +38,7 @@ async function waitForReady(page) {
       state.applyingUrlState === false &&
       loadingHidden;
   }, null, { timeout: 45000 });
-  await page.waitForTimeout(1000);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function boxSnapshot(page) {
@@ -232,7 +232,7 @@ try {
   await page.locator('#search-input').fill(QUERY);
   await page.locator('#search-input').press('Enter');
   await page.waitForFunction(() => document.querySelectorAll('.search-result-item').length > 0, null, { timeout: 15000 });
-  await page.waitForTimeout(700);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
   await clickVisible(page, '.search-result-item', 'first search result');
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
@@ -240,7 +240,7 @@ try {
       String(document.body.dataset.graphContext || '').startsWith('focus') &&
       ['focus', 'focus-search'].includes(document.body.dataset.panelSurface);
   }, null, { timeout: 12000 });
-  await page.waitForTimeout(900);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
   let snap = await boxSnapshot(page);
   assertSinglePrimarySurface(snap, 'focusStage');
@@ -274,7 +274,7 @@ try {
       ['focus', 'focus-search'].includes(document.body.dataset.panelSurface) &&
       document.body.dataset.trailState === 'active';
   }, followTarget, { timeout: 15000 });
-  await page.waitForTimeout(900);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
   snap = await boxSnapshot(page);
   assertSinglePrimarySurface(snap, 'focusStage');
   assert(snap.bodyDataset.focusOrigin === 'trail-walk', `Follow should own trail-walk focus origin: ${snap.bodyDataset.focusOrigin}`);
@@ -287,7 +287,7 @@ try {
       state.semanticDiveMode === true ||
       state.trailDepth >= 2;
   }, null, { timeout: 12000 });
-  await page.waitForTimeout(1200);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
   snap = await boxSnapshot(page);
   assert(snap.bodyDataset.panelSurface === 'semantic-dive', `Step Inside should declare semantic-dive surface: ${snap.bodyDataset.panelSurface}`);
   assert(isRendered(snap.boxes.insideStatus), `inside status content should be visible: ${JSON.stringify(snap.boxes.insideStatus)}`);
@@ -316,7 +316,7 @@ try {
       document.body.dataset.activeView === 'map' &&
       document.body.dataset.panelSurface === 'map-focus-search';
   }, null, { timeout: 15000 });
-  await page.waitForTimeout(1000);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
   snap = await boxSnapshot(page);
   assertSinglePrimarySurface(snap, 'infoPanel');
   assert(isRendered(snap.boxes.mapTrailStrip), `map trail strip should be visible: ${JSON.stringify(snap.boxes.mapTrailStrip)}`);
@@ -353,7 +353,7 @@ try {
       !Number.isFinite(state.navState?.focusedIndex ?? state.focusedNode) &&
       document.querySelector('#search-input')?.value !== query;
   }, QUERY, { timeout: 12000 }).then(() => true).catch(() => false);
-  await page.waitForTimeout(700);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
   snap = await boxSnapshot(page);
   assert(resetSettled, `reset should settle as calm map overview: ${JSON.stringify({ dataset: snap.bodyDataset, appState: snap.appState, search: snap.search }, null, 2)}`);
   assert(snap.bodyDataset.activeView === 'map', `county reset should stay in map view: ${snap.bodyDataset.activeView}`);

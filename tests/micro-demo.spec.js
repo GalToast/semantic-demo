@@ -90,7 +90,7 @@ test.describe('Micro-demo system', () => {
   test('does not fire on repeat visits', async ({ page }) => {
     await seedDemoSeen(page);
     await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     const isRunning = await page.evaluate(() => window.isMicroDemoRunning?.());
     expect(isRunning).toBe(false);

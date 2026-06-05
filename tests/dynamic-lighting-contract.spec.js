@@ -5,7 +5,7 @@
  * state), the opacity of mycelium LineSegments materials increases from their
  * overview-mode values to their focus-mode values.
  *
- * From js/modules/three-engine.js, getMyceliumPresentationProfile():
+ * From js/modules/three-engine.ts, getMyceliumPresentationProfile():
  *   - overview mode:   { core: 0.07, wispy: 0.026, bridge: 0.045, pulse: 0.018 }
  *   - focused mode:    { core: 0.14,  wispy: 0.045, bridge: 0.07,  pulse: 0.006 }
  *
@@ -75,7 +75,7 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
       styles.visibility === 'hidden' ||
       styles.pointerEvents === 'none';
   }, { timeout: 20000 });
-  await page.waitForTimeout(1200);
+  // preceding waitForFunction handles settlement
   await page.waitForFunction(() => Boolean(window.__TEST_STATE__?.myceliumCoreLines?.material), { timeout: 10000 })
     .catch(() => {});
 }
@@ -207,7 +207,7 @@ test.describe('dynamic-lighting: mycelium opacity responds to focus state', () =
     // Clear focusedNode by pressing Escape (returns to overview)
     await page.evaluate(() => document.body.focus());
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     // Wait for focusedNode to be cleared
     await page.waitForFunction(

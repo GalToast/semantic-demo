@@ -45,7 +45,7 @@ async function loadAndWait(page, url) {
       return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
     })
   ), { timeout: 8000 }).catch(() => {});
-  await page.waitForTimeout(500);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 // ---------------------------------------------------------------------------

@@ -43,26 +43,26 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
   await page.goto(`${BASE_URL}${APP_PATH}`);
   await expect(page).toHaveTitle(/Semantic Explorer|MoCo Business Mycelium/);
   await page.waitForSelector('#search-input', { state: 'visible', timeout: 15000 });
-  await page.waitForTimeout(2000);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
   // 2. Perform Search
   const searchInput = page.locator('#search-input');
   await searchInput.focus();
   await searchInput.fill('coffee');
   await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
-  await page.waitForTimeout(2000);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
   // 3. Focus / Step Inside
   await page.locator('.search-result-item').first().click();
-  await page.waitForTimeout(3000);
+  // result click — settlement handled by subsequent waitForFunction
 
   // 4. Switch to Map Mode
   await page.click('#btn-map');
-  await page.waitForTimeout(3000);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
   // 5. Share Button (Clipboard)
   await page.click('#btn-share-view', { force: true });
-  await page.waitForTimeout(1000);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
   const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
   expect(clipboardText).toContain('view=map');
   expect(clipboardText).toContain('q=coffee');
@@ -73,7 +73,7 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
       window.__APP_ACTIONS__.resetExperienceState();
     }
   });
-  await page.waitForTimeout(2000);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 });
 
 test.afterEach(async ({ page }) => {

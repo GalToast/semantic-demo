@@ -86,7 +86,7 @@ async function waitForReady(page) {
     );
   }, { timeout: 12000 }).catch(() => {});
   // Give scene-reveal a moment to settle under reduced-motion
-  await page.waitForTimeout(400);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 async function executeSearch(page, term) {
@@ -103,7 +103,7 @@ async function executeSearch(page, term) {
   await page.focus('#search-input');
   await page.keyboard.press('Enter');
   // Wait for focus state to propagate
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 async function clearSearch(page) {
@@ -116,7 +116,7 @@ async function clearSearch(page) {
   });
   if (focused) {
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   }
 }
 
@@ -255,7 +255,7 @@ async function run() {
     }
   });
 
-  await page.waitForTimeout(100);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   const afterSearch = await collectState(page);
   record('search: searchGlow is active',           afterSearch.searchGlow === 'active', `got ${afterSearch.searchGlow}`);
@@ -289,7 +289,7 @@ async function run() {
     }
   });
 
-  await page.waitForTimeout(100);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   const afterFocus = await collectState(page);
   record('step-inside: trailDepth is 2',          afterFocus.js.trailDepth === 2, `got ${afterFocus.js.trailDepth}`);
@@ -333,7 +333,7 @@ async function run() {
     }
   });
 
-  await page.waitForTimeout(100);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   const afterInterrupt = await collectState(page);
   // core contract: search glow and summary must be fully cleared after interrupt

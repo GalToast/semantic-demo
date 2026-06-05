@@ -205,7 +205,7 @@ async function waitForReady(page) {
       window.__TEST_STATE__?.camera
     );
   }, { timeout: 10000 }).catch(() => {});
-  await page.waitForTimeout(2200);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 }
 
 async function runBrowserProof(port) {

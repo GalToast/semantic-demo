@@ -57,7 +57,7 @@ async function waitForAppReady(page) {
     Array.isArray(window.__TEST_STATE__?.points) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
   ), undefined, { timeout: 20000 });
-  await page.waitForTimeout(800);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function performSearch(page, query = 'coffee') {
@@ -140,7 +140,7 @@ async function main() {
     await setupNetworkStubs(page);
     await waitForAppReady(page);
     await performSearch(page, 'coffee');
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     const panelState = await getPanelVisibleState(page);
     console.log(`  [INFO] panelSurface="${panelState.panelSurface}" semanticDive="${panelState.semanticDive}"`);
@@ -160,7 +160,7 @@ async function main() {
     } else {
       // Focus the first focusable element in search
       await page.locator('#search-input').focus();
-      await page.waitForTimeout(200);
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
       const MAX_TABS = allPanelFocusable.length + 5;
       let canvasLeakDetected = false;
@@ -168,7 +168,7 @@ async function main() {
 
       for (let i = 0; i < MAX_TABS; i++) {
         await page.keyboard.press('Tab');
-        await page.waitForTimeout(50);
+        await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
         const active = await getActiveElementInfo(page);
 

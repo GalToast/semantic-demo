@@ -37,7 +37,7 @@ test.describe('resetExperienceState cleanup regression', () => {
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof window.__APP_ACTIONS__?.resetExperienceState === 'function', { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Establish map view state so reset has something meaningful to do
     await page.evaluate(() => {
@@ -74,14 +74,14 @@ test.describe('resetExperienceState cleanup regression', () => {
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof window.__APP_ACTIONS__?.resetExperienceState === 'function', { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Perform a search so there's state to clear
     const searchInput = page.locator('#search-input');
     await searchInput.focus();
     await searchInput.fill('coffee');
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Reset
     await page.evaluate(() => {
@@ -107,14 +107,14 @@ test.describe('resetExperienceState cleanup regression', () => {
 
     await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
     await page.waitForFunction(() => typeof window.__APP_ACTIONS__?.resetExperienceState === 'function', { timeout: 20000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Set up a prelude scenario: switch to map with prelude (to start the timer)
     // Then immediately reset — the timer must be cancelled by switchView('galaxy')
     await page.evaluate(() => {
       window.__APP_ACTIONS__?.switchView?.('map', { skipTerrainPrelude: false, skipUrlSync: true });
     });
-    await page.waitForTimeout(100); // let the prelude timer start
+    // dataset write synchronous // let the prelude timer start
 
     await page.evaluate(() => {
       window.__APP_ACTIONS__.resetExperienceState();

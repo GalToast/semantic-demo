@@ -29,7 +29,7 @@ async function waitForAppReady(page) {
     (window.__APP_STATE__ || window.__TEST_STATE__)?.pointsMesh
   ), { timeout: 30000 });
   // Wait for initial scene reveal
-  await page.waitForTimeout(1000);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function performSearch(page, query = 'restaurant') {

@@ -303,7 +303,7 @@ async function waitForOverviewSettled(page, label) {
       stableCount = 0;
       lastKey = '';
     }
-    await page.waitForTimeout(120);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
   }
 
   console.error(JSON.stringify({
@@ -324,7 +324,7 @@ async function searchAndFocusFirstResult(page) {
     return (state.navState?.focusedIndex ?? state.focusedNode) !== null &&
       ['focus', 'focus-search'].includes(document.body.dataset.panelSurface);
   }, null, { timeout: 15000 });
-  await page.waitForTimeout(650);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
   const focused = await snapshot(page);
   assert(['focus', 'focus-search'].includes(focused.bodyDataset.panelSurface),
     `search focus should enter a focus surface, got ${focused.bodyDataset.panelSurface}`);
@@ -346,7 +346,7 @@ async function enterSemanticDive(page) {
       state.trailDepth === 2 &&
       document.body.dataset.panelSurface === 'semantic-dive';
   }, null, { timeout: 15000 });
-  await page.waitForTimeout(700);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function runClearButtonScenario(browser) {
@@ -431,7 +431,7 @@ async function runMapTransitionScenario(browser) {
       document.body.dataset.activeView === 'map' &&
       document.body.dataset.panelSurface?.startsWith('map-');
   }, null, { timeout: 20000 });
-  await page.waitForTimeout(1000);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
   const map = await snapshot(page);
   assert(map.currentView === 'map', `map transition: currentView should be map, got ${map.currentView}`);
   assert(map.bodyDataset.activeView === 'map', `map transition: activeView should be map, got ${map.bodyDataset.activeView}`);

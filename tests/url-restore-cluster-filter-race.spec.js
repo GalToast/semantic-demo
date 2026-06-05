@@ -53,7 +53,7 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
     await page.waitForFunction(() => (
       document.body.dataset.graphicsMode === 'webgl'
     ), { timeout: 20000 });
-    await page.waitForTimeout(1200);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Step 2: Simulate a pre-existing cluster filter in state (as if user had clicked a cluster)
     // State starts with activeClusterFilter = null after init; stamp it to a known stale value.
@@ -82,7 +82,7 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
       window.__TEST_STATE__?.activeClusterFilter !== null ||
       document.querySelector('.cluster-item.active') !== null
     ), { timeout: 15000 });
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Step 4: Verify the URL cluster won
     probe = await clusterStateProbe(page);
@@ -118,14 +118,14 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
     await page.waitForFunction(() => (
       window.__TEST_STATE__?.activeClusterFilter === 5
     ), { timeout: 15000 });
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     let probe = await clusterStateProbe(page);
     expect(probe.stateCluster).toBe(5);
 
     // Step 2: Navigate away to a plain URL (no cluster)
     await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`);
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     probe = await clusterStateProbe(page);
     expect(probe.stateCluster).toBeNull();
@@ -135,7 +135,7 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
     await page.waitForFunction(() => (
       document.body.dataset.graphicsMode === 'webgl'
     ), { timeout: 20000 });
-    await page.waitForTimeout(2000);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     probe = await clusterStateProbe(page);
     expect(probe.stateCluster).toBe(5);
@@ -161,7 +161,7 @@ test.describe('activeClusterFilter URL Restoration Race', () => {
     await page.waitForFunction(() => (
       window.__TEST_STATE__?.activeClusterFilter === 2
     ), { timeout: 15000 });
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     // Manually stamp a DIFFERENT cluster into state (simulating a race where
     // some other code path set it between reset and restore)

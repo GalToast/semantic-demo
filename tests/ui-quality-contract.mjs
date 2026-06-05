@@ -120,7 +120,7 @@ async function waitForReady(page) {
       document.body.dataset.graphicsMode === 'fallback';
     return overlayHidden && routeSettled;
   }, { timeout: 10000 }).catch(() => {});
-  await page.waitForTimeout(300);
+  // preceding waitForFunction handles settlement
 }
 
 async function forceSearchError(page) {
@@ -144,7 +144,7 @@ async function forceSearchError(page) {
         </div>
       </div>`;
   });
-  await page.waitForTimeout(250);
+  // state mutation applied synchronously
 }
 
 async function forceFieldNode(page) {
@@ -157,7 +157,7 @@ async function forceFieldNode(page) {
     const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
     if (typeof refreshCompositionState === 'function') refreshCompositionState();
   });
-  await page.waitForTimeout(350);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
 async function forceThreadPreview(page) {
@@ -165,7 +165,7 @@ async function forceThreadPreview(page) {
   if (await firstResult.count()) {
     await firstResult.click({ timeout: 5000 }).catch(() => {});
   }
-  await page.waitForTimeout(600);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
   await page.evaluate(() => {
     const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     if (typeof window.__APP_ACTIONS__?.switchView === 'function') {
@@ -255,7 +255,7 @@ async function forceThreadPreview(page) {
       && (!primary || primary.hidden || primary.dataset.journeyAction)
       && (!secondary || secondary.hidden || secondary.dataset.journeyAction);
   }, { timeout: 2000 }).catch(() => {});
-  await page.waitForTimeout(350);
+  // preceding waitForFunction handles settlement
 }
 
 function checksForState(name) {

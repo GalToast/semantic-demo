@@ -116,7 +116,7 @@ async function main() {
     document.body.removeAttribute('data-mobile-route-peek');
     document.body.removeAttribute('data-mobile-search-sheet');
   });
-  await page.waitForTimeout(300);
+  // state mutation applied synchronously
 
   // -- 1. Mode grid and chips exist ------------------------------------------
   const modeGrid = page.locator('#mode-grid');
@@ -155,7 +155,7 @@ async function main() {
     // Drive trailDepth=1 via named harness mutation, then call updateExplorationUi.
     await mutate(page, 'setTrailDepth', { trailDepth: 1 });
     await page.evaluate(() => { if (typeof window.updateExplorationUi === 'function') window.updateExplorationUi(); });
-    await page.waitForTimeout(300);
+    // state mutation applied synchronously
 
     const isLocked = await trailChip.evaluate((el) => el.classList.contains('is-locked'));
     if (!isLocked) {
@@ -218,7 +218,7 @@ async function main() {
   // NOTE: Active-view state bodies are documented as acceptable targets for DOM
   // dataset manipulation in this CSS contract test — they are not app state.
   await page.evaluate(() => document.body.setAttribute('data-active-view', 'galaxy'));
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   const galaxyActiveChip = page.locator('.mode-chip.active');
   if (await galaxyActiveChip.count() === 0) {
@@ -241,7 +241,7 @@ async function main() {
     document.documentElement.setAttribute('data-active-view', 'map');
   });
   await page.waitForFunction(() => document.body.getAttribute('data-active-view') === 'map');
-  await page.waitForTimeout(100);
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   const mapActiveChip = page.locator('.mode-chip.active');
   if (await mapActiveChip.count() === 0) {
