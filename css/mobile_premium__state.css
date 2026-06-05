@@ -545,6 +545,12 @@
         margin-top: 10px;
     }
 
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-results.active {
+        flex: 0 0 72px;
+        min-height: 72px;
+        max-height: 72px;
+    }
+
     /* ----------------------------------------------------------------
        5. Legacy element suppression
        ---------------------------------------------------------------- */

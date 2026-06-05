@@ -881,9 +881,9 @@ body[data-active-view='map'] .biofield-atmosphere {
     opacity: 0.42;
 }
 
-body[data-trail-state='active'] .biofield-atmosphere,
-body[data-panel-surface='focus'] .biofield-atmosphere,
-body[data-panel-surface='focus-search'] .biofield-atmosphere {
+body[data-trail-state="active"] .biofield-atmosphere,
+body[data-panel-surface="focus"] .biofield-atmosphere,
+body[data-panel-surface="focus-search"] .biofield-atmosphere {
     opacity: 0.18;
     mix-blend-mode: normal;
 }
@@ -925,8 +925,8 @@ body[data-route-motion='inside-pocket'] .biofield-thread {
 }
 
 /* #950: Suppress/reduce biofield orbs in focus/trail/search-focus states */
-body[data-panel-surface='focus'] .biofield-orb,
-body[data-panel-surface='focus-search'] .biofield-orb,
+body[data-panel-surface="focus"] .biofield-orb,
+body[data-panel-surface="focus-search"] .biofield-orb,
 body[data-panel-surface='search'] .biofield-orb,
 body[data-trail-state='active'] .biofield-orb {
     opacity: 0.025;
@@ -971,4 +971,3 @@ body[data-trail-state='active'] .biofield-orb {
         filter: blur(0.2px) drop-shadow(0 0 12px rgba(var(--color-primary-tint-rgb), 0.1));
     }
 }
-
