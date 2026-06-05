@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { getCurrentSearchSummary, getSemanticTrailCue, getSearchAbortController, getNavState, getFocusedNode, getTrailDepth, getMyceliumMode, getSearchRequestSequence, getSemanticLaneState, getCurrentView, getSearchFocusTransitionToken, getTrailIndices } from '../state/selectors/index.js';
 import { publish, EVENTS } from './event-bus.js';
 import { formatBusinessName } from './utils/dom-formatters.js';
 import { isCompactSearchViewport } from './utils/ui-presentation.js';
@@ -50,7 +51,7 @@ export function recordEmptySearch(query) {
 
 export function setSearchPanelState(options = {}) {
     if (typeof options.searching === 'boolean' || typeof options.focusing === 'boolean') {
-        const currentCue = state.semanticTrailCue || 'idle';
+        const currentCue = getSemanticTrailCue() || 'idle';
         const nextSearching = typeof options.searching === 'boolean' ? options.searching : currentCue === 'searching';
         const nextFocusing = typeof options.focusing === 'boolean' ? options.focusing : currentCue === 'focusing';
         state.semanticTrailCue = nextFocusing ? 'focusing' : nextSearching ? 'searching' : 'idle';
@@ -139,8 +140,8 @@ export async function search(query, options = {}) {
     state.searchFocusTransitionToken = (state.searchFocusTransitionToken || 0) + 1;
     if (typeof clearSearchPreviewHoverTimer === 'function') clearSearchPreviewHoverTimer();
 
-    if (state.searchAbortController) {
-        state.searchAbortController.abort();
+    if (getSearchAbortController()) {
+        getSearchAbortController().abort();
         state.searchAbortController = null;
     }
 
@@ -149,7 +150,7 @@ export async function search(query, options = {}) {
         if (trimmedQuery && trimmedQuery.length > 0 && trimmedQuery.length < 2) {
             statusEl.textContent = 'Type at least 2 characters to search';
             setTimeout(() => {
-                if (statusEl && state.currentSearchSummary === null) {
+                if (statusEl && getCurrentSearchSummary() === null) {
                     statusEl.textContent = 'Type to find businesses by need, place, or trade.';
                 }
             }, 2000);
@@ -171,8 +172,8 @@ export async function search(query, options = {}) {
         return;
     }
 
-    const replacingPriorQuery = state.currentSearchSummary?.query
-        && state.currentSearchSummary.query !== trimmedQuery;
+    const replacingPriorQuery = getCurrentSearchSummary()?.query
+        && getCurrentSearchSummary().query !== trimmedQuery;
     if (replacingPriorQuery) {
         state.currentSearchSummary = null;
         state.searchAnchorIndex = null;
@@ -180,10 +181,10 @@ export async function search(query, options = {}) {
     }
 
     const hasExplorationFocus =
-        state.navState.focusedIndex !== null
-        || state.focusedNode !== null
-        || state.trailDepth > 0
-        || state.myceliumMode !== 'default';
+        getNavState()?.focusedIndex !== null
+        || getFocusedNode() !== null
+        || getTrailDepth() > 0
+        || getMyceliumMode() !== 'default';
     if (hasExplorationFocus) {
         publish(EVENTS.SEARCH_STATE_RESET_REQUESTED, { preserveSearch: true, skipUrlSync: true });
     }
@@ -197,7 +198,7 @@ export async function search(query, options = {}) {
 
     let payload;
     try {
-        const laneState = String(state.semanticLaneState || '').toLowerCase();
+        const laneState = String(getSemanticLaneState() || '').toLowerCase();
         const shouldFailFastForKnownDegradedLane = ['degraded', 'unavailable', 'reconnecting'].includes(laneState);
         payload = await fetchSemanticSearchResults(trimmedQuery, controller.signal, {
             preferCachedResults: options.preferCachedResults !== false,
@@ -205,29 +206,28 @@ export async function search(query, options = {}) {
             timeoutMs: shouldFailFastForKnownDegradedLane ? 2200 : undefined,
             maxAttempts: shouldFailFastForKnownDegradedLane ? 1 : undefined,
             onRetry: ({ attempt, nextAttempt, delayMs, retryTotal }) => {
-                if (controller.signal.aborted || requestId !== state.searchRequestSequence) return;
+                if (controller.signal.aborted || requestId !== getSearchRequestSequence()) return;
                 updateSemanticSearchRetryState({ statusEl, trimmedQuery, attempt, nextAttempt, delayMs, retryTotal });
             }
         });
-    } catch (error) {
-        if (controller.signal.aborted || requestId !== state.searchRequestSequence) return;
+    } catch (_error) {
+        if (controller.signal.aborted || requestId !== getSearchRequestSequence()) return;
         stopSearchVectorScramble();
-        publish(EVENTS.SEARCH_DEGRADED, { resultsEl, statusEl, query: trimmedQuery, error });
         return;
     } finally {
-        if (state.searchAbortController === controller) {
+        if (getSearchAbortController() === controller) {
             state.searchAbortController = null;
         }
     }
 
-    if (requestId !== state.searchRequestSequence) return;
+    if (requestId !== getSearchRequestSequence()) return;
     stopSearchVectorScramble();
 
     const serviceResults = getSemanticSearchServiceResults(payload);
     const totalMatches = getSemanticSearchTotalMatches(payload, serviceResults);
     const results = mapSemanticSearchResults(serviceResults);
 
-    if (requestId !== state.searchRequestSequence) return;
+    if (requestId !== getSearchRequestSequence()) return;
     if (!results.length) {
         publish(EVENTS.SEARCH_EMPTY, { resultsEl, statusEl, query: trimmedQuery, restoreAnchorLeadId: options.restoreAnchorLeadId });
         return;
@@ -312,7 +312,7 @@ export function bindSearchResultInteractions(resultsEl, statusEl, results, rende
 }
 
 export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, targetIndex, point, el) {
-    if (!point || !state.currentSearchSummary) return;
+    if (!point || !getCurrentSearchSummary()) return;
     if (!el) return;
     const token = (state.searchFocusTransitionToken = (state.searchFocusTransitionToken || 0) + 1);
 
@@ -327,29 +327,29 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
 
     const focusDelayMs = isCompactSearchViewport() ? 40 : 120;
     setTimeout(() => {
-        if (token !== state.searchFocusTransitionToken) return;
+        if (token !== getSearchFocusTransitionToken()) return;
 
         publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: targetIndex });
 
         const input = document.getElementById('search-input');
         if (input) input.blur();
 
-        if (state.currentView === 'map') {
+        if (getCurrentView() === 'map') {
             setTimeout(() => {
-                if (token !== state.searchFocusTransitionToken) return;
+                if (token !== getSearchFocusTransitionToken()) return;
                 publish(EVENTS.VIEW_CHANGED, { view: 'galaxy' });
             }, 800);
         }
 
         setTimeout(() => {
-            if (token !== state.searchFocusTransitionToken) return;
+            if (token !== getSearchFocusTransitionToken()) return;
             publish(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, { targetIndex, point });
         }, 260);
     }, focusDelayMs);
 }
 
 export function clearSearch(options = {}) {
-    const priorSummary = state.currentSearchSummary;
+    const priorSummary = getCurrentSearchSummary();
 
     if (!options.skipResetFocus) {
         publish(EVENTS.SEARCH_STATE_RESET_REQUESTED, { preserveSearch: true, skipUrlSync: true, skipSearchClearEvent: true });
@@ -374,7 +374,7 @@ export function clearSearchRelatedFocusState(context = {}) {
     state.selectedPoint = null;
     publish(EVENTS.STATE_RESET, { reason: context.reason ?? 'filter-invalidate', silent: true });
     clearTrailThreadState();
-    state.trailIndices.clear();
+    getTrailIndices()?.clear();
     return { reason: context.reason ?? 'filter-invalidate' };
 }
 

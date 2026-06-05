@@ -1,4 +1,5 @@
 import { state } from '../state.js'
+import { getFocusedNode, getPoints, getNavState, getSelectedPoint } from '../state/selectors/index.js'
 import { subscribe, publish, EVENTS } from './event-bus.js'
 import {
     resetRouteTraceDiagnostics,
@@ -177,20 +178,20 @@ export function setTrailDepth(depth, options = {}) {
     publish(EVENTS.TRAIL_DEPTH_UPDATE_REQUESTED, { depth, options })
 }
 
-function restoreFocusTrailState(priorFocused = state.focusedNode) {
-    if (!Number.isFinite(priorFocused) || priorFocused < 0 || priorFocused >= state.points.length) return
+function restoreFocusTrailState(priorFocused = getFocusedNode()) {
+    if (!Number.isFinite(priorFocused) || priorFocused < 0 || priorFocused >= getPoints().length) return
     setTrailFromSeed(priorFocused)
 
     // Using global adapter for dispatchNavTransition for now as it is correctly mapped in lifecycle
-    publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused, point: state.points[priorFocused] })
+    publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused, point: getPoints()[priorFocused] })
 
-    state.navState.lastTraversalReason = state.navState.lastTraversalReason || null
+    state.navState.lastTraversalReason = getNavState()?.lastTraversalReason || null
     updateTrailIndices(priorFocused)
     refreshFocusSemanticOverlay()
     applyLocalNeighborhoodFocus(priorFocused)
     applyPointFilterColors()
-    const priorPoint = state.points[priorFocused] || null
-    syncFocusStage(priorPoint || state.selectedPoint || null)
+    const priorPoint = getPoints()[priorFocused] || null
+    syncFocusStage(priorPoint || getSelectedPoint() || null)
     updateTraversalUi()
 }
 

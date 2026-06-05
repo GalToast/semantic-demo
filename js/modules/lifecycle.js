@@ -81,6 +81,7 @@ import {
     getJourneyCompassPresentationState,
     invokeClearMobileRouteFieldPeek
 } from './journey-compass-controller.js';
+import { getMyceliumMode, getTrailDepth, getNavState, getSemanticDiveMode, getCurrentView, getCurrentSearchSummary, getSearchGlowIndices, getStrandContinuityState, getInspectedThreadIndex, getPoints } from '../state/selectors/index.js';
 
 import {
     clearClusterFilter,
@@ -192,7 +193,7 @@ subscribe(EVENTS.TRAIL_DEPTH_UPDATE_REQUESTED, ({ depth, options }) => {
 });
 
 export function setMyceliumMode(mode, options = {}) {
-    if (state.myceliumMode === mode) return;
+    if (getMyceliumMode() === mode) return;
     state.myceliumMode = mode;
     if (mode === 'bloom') {
         recomputeBloomIndices();
@@ -214,7 +215,7 @@ export function setMyceliumMode(mode, options = {}) {
 }
 
 export function setTrailDepth(depth, options = {}) {
-    const prevDepth = Number(state.trailDepth || 0);
+    const prevDepth = Number(getTrailDepth() || 0);
     const nextDepth = Number.isFinite(Number(depth)) ? Number(depth) : 0;
     const enteringSemanticDive = nextDepth === 2 && prevDepth < 2;
     const leavingSemanticDive = prevDepth >= 2 && nextDepth < 2;
@@ -227,7 +228,7 @@ export function setTrailDepth(depth, options = {}) {
     state.trailDepth = nextDepth;
     state.navState.trailDepth = nextDepth;
     if (nextDepth >= 2) state.navState.mode = 'inside';
-    else if (nextDepth > 0 && state.navState.mode !== 'focus') state.navState.mode = 'trail';
+    else if (nextDepth > 0 && getNavState()?.mode !== 'focus') state.navState.mode = 'trail';
     if (!options.skipUrlSync) {
         publish(EVENTS.EXPLORATION_DEPTH_CHANGED, { depth: nextDepth });
     }
@@ -263,7 +264,7 @@ export function setSemanticDiveMode(enabled) {
         setTrailDepth(2, { fromUserGesture: true });
         state.navState.mode = 'trail';
         window.setTimeout(() => {
-            if (state.semanticDiveMode && document.body?.dataset.semanticDive === 'transitioning') {
+            if (getSemanticDiveMode() && document.body?.dataset.semanticDive === 'transitioning') {
                 document.body.dataset.semanticDive = 'active';
             }
         }, 820);
@@ -275,7 +276,7 @@ export function setSemanticDiveMode(enabled) {
 
 export function returnToOverview() {
     resetExperienceState();
-    if (state.currentView !== 'galaxy') {
+    if (getCurrentView() !== 'galaxy') {
         switchView('galaxy');
     }
     settleCameraToOverviewPose();
@@ -295,7 +296,7 @@ export function updateExplorationUi() {
 export function resetExplorationFocus(options = { preserveSearch: true }) {
     const preservedSearchSummary = options.preserveSearch === false
         ? null
-        : state.currentSearchSummary;
+        : getCurrentSearchSummary();
 
     state.navState.trailDepth = 0;
     state.navState.mode = 'overview';
@@ -342,7 +343,7 @@ export function resetExperienceState(options = {}) {
     state.searchAnchorIndex = null;
     state.searchPreviewIndex = null;
     state.searchGlowActive = false;
-    if (state.searchGlowIndices?.clear) state.searchGlowIndices.clear();
+    if (getSearchGlowIndices()?.clear) getSearchGlowIndices().clear();
     const searchInput = document.getElementById('search-input');
     if (searchInput) searchInput.value = '';
     const searchResults = document.getElementById('search-results');
@@ -383,12 +384,9 @@ subscribe(EVENTS.SEARCH_SUCCESS, () => {
     updateJourneyCompass();
 });
 
-subscribe(EVENTS.SEARCH_EMPTY, () => {
+subscribe(EVENTS.SEARCH_EMPTY, ({ query }) => {
     refreshCompositionState();
     updateJourneyCompass();
-});
-
-subscribe(EVENTS.SEARCH_EMPTY, ({ query }) => {
     recordEmptySearch(query);
 });
 
@@ -438,7 +436,7 @@ export function hideExploreTrailReview() {
     }
     state.currentSearchSummary = null;
     state.searchGlowActive = false;
-    if (state.searchGlowIndices?.clear) state.searchGlowIndices.clear();
+    if (getSearchGlowIndices()?.clear) getSearchGlowIndices().clear();
     refreshCompositionState();
 }
 
@@ -464,7 +462,7 @@ export function applyStoryPrompt(story, options = {}) {
 
 function recomputeBloomIndices() {
     state.bloomIndices = new Set(
-        (state.points || [])
+        (getPoints() || [])
             .map((point, index) => ({ point, index }))
             .filter(({ point }) => point.status === 'active' && point.website)
             .map(({ index }) => index)
@@ -474,7 +472,7 @@ function recomputeBloomIndices() {
 
 function recomputeBridgeIndices() {
     state.bridgeIndices = new Set(
-        (state.points || [])
+        (getPoints() || [])
             .map((point, index) => ({ point, index }))
             .filter(({ point }) => {
                 const text = `${point?.what || ''} ${point?.public_note || ''} ${point?.public_detail || ''}`.toLowerCase();
@@ -523,13 +521,13 @@ export function hydrateLeadContext(point) {
 }
 
 export function exploreInsideToNextStop() {
-    if (state.strandContinuityState?.phase === 'exploring') return;
+    if (getStrandContinuityState()?.phase === 'exploring') return;
     if (
-        state.semanticDiveMode
-        && Number.isFinite(state.inspectedThreadIndex)
+        getSemanticDiveMode()
+        && Number.isFinite(getInspectedThreadIndex())
         && document.body.dataset.threadInspectSurface === 'inside-cue'
     ) {
-        if (typeof walkThreadNeighbor === 'function') walkThreadNeighbor(state.inspectedThreadIndex, { surface: 'inside-cue' });
+        if (typeof walkThreadNeighbor === 'function') walkThreadNeighbor(getInspectedThreadIndex(), { surface: 'inside-cue' });
         return;
     }
     if (typeof traverseNeighbor === 'function') traverseNeighbor(1);
@@ -541,7 +539,7 @@ export function exploreInsideToNextStop() {
  */
 export function focusOnPoint(point, options = {}) {
     if (!point) return false;
-    const pointIndex = state.points.indexOf(point);
+    const pointIndex = getPoints().indexOf(point);
     state.selectedPoint = point;
     if (pointIndex >= 0) return focusOnNode(pointIndex, options);
     updateSelectedBusiness(point, options);

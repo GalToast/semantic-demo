@@ -26,6 +26,8 @@ import {
 } from './search-state.js';
 import { updateHasQuery } from './bindings/search-bindings.js';
 import { setCurrentView } from './state-mutators.js';
+import { getCurrentView, getFocusedNode, getSelectedPoint, getPoints, getMyceliumMode, getActiveClusterFilter, getActiveFilters, getCurrentSearchSummary, getTrailDepth, getActiveStoryPrompt, getApplyingUrlState, getRestoringBrowserHistory, getUrlStateRestoreToken, getSemanticLaneOpsMode, getDeferredUrlStateHandler } from '../state/selectors/index.js';
+import { getLocation } from './environment.js';
 
 // === URL State ===
 
@@ -37,7 +39,7 @@ function getRequestedUrlDepth(params) {
 function restoreDepthFromUrlAfterFocus(params) {
     const requestedDepth = getRequestedUrlDepth(params);
     if (requestedDepth < 2) return false;
-    if (!state.selectedPoint && !Number.isFinite(state.focusedNode)) return false;
+    if (!getSelectedPoint() && !Number.isFinite(getFocusedNode())) return false;
     publish(EVENTS.DIVE_MODE_REQUESTED, { enabled: true });
     return true;
 }
@@ -63,7 +65,7 @@ async function applyUrlStateFromDeferred() {
         }
     }
 
-    if (state.selectedPoint || Number.isFinite(state.focusedNode)) {
+    if (getSelectedPoint() || Number.isFinite(getFocusedNode())) {
         restoreDepthFromUrlAfterFocus(searchParams);
     }
 
@@ -99,18 +101,18 @@ export function resetStateBeforeUrlRestore(options = {}) {
 
 export async function applyUrlState(options = {}) {
     const restoreToken = ++state.urlStateRestoreToken;
-    const priorRestoringBrowserHistory = state.restoringBrowserHistory;
+    const priorRestoringBrowserHistory = getRestoringBrowserHistory();
     state.applyingUrlState = true;
     state.restoringBrowserHistory = !!options.fromHistory;
 
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(getLocation()?.search || '');
     const historyRecord =
         options.historyState?.params?.record || options.historyState?.params?.lead || null;
     const urlRecord = params.get('record') || params.get('lead');
 
     if (options.fromHistory && !urlRecord && historyRecord) {
         params.set('record', historyRecord);
-        const repairedUrl = `${window.location.pathname}?${params.toString()}`;
+        const repairedUrl = `${getLocation()?.pathname || ''}?${params.toString()}`;
         try {
             window.history.replaceState(
                 {
@@ -138,7 +140,7 @@ export async function applyUrlState(options = {}) {
 
         const mode = params.get('mode');
         if (mode && MODE_DESCRIPTIONS && MODE_DESCRIPTIONS[mode]) {
-            if (state.myceliumMode !== null && state.myceliumMode !== undefined) {
+            if (getMyceliumMode() !== null && getMyceliumMode() !== undefined) {
                 setMyceliumMode(mode, { skipUrlSync: true });
             }
         }
@@ -150,14 +152,14 @@ export async function applyUrlState(options = {}) {
         applyFilters();
         publish(EVENTS.COMPOSITION_UPDATED);
 
-        if (state.activeClusterFilter !== null) {
+        if (getActiveClusterFilter() !== null) {
             document.querySelectorAll('.cluster-item').forEach((el) => {
-                el.classList.toggle('active', Number(el.dataset.cluster) === state.activeClusterFilter);
+                el.classList.toggle('active', Number(el.dataset.cluster) === getActiveClusterFilter());
             });
 
-            if (state.points && Array.isArray(state.points)) {
+            if (getPoints() && Array.isArray(getPoints())) {
                 const clusterGlowIndices = getFilteredIndices().filter(
-                    (index) => state.points[index]?.cluster === state.activeClusterFilter
+                    (index) => getPoints()[index]?.cluster === getActiveClusterFilter()
                 );
                 activateSearchGlow(clusterGlowIndices, clusterGlowIndices[0] ?? null);
             }
@@ -175,15 +177,15 @@ export async function applyUrlState(options = {}) {
             const input = document.getElementById('search-input');
             if (input) input.value = query;
             updateHasQuery();
-            if (!state.points || !Array.isArray(state.points) || state.points.length === 0) {
+            if (!getPoints() || !Array.isArray(getPoints()) || getPoints().length === 0) {
                 // Store deferred params for retry once data loads
                 state._deferredUrlState = { params: Object.fromEntries(params.entries()), timestamp: Date.now() };
                 // Listen for the data-loaded event
-                if (state._deferredUrlStateHandler) {
-                    document.removeEventListener('semantic-data-loaded', state._deferredUrlStateHandler);
+                if (getDeferredUrlStateHandler()) {
+                    document.removeEventListener('semantic-data-loaded', getDeferredUrlStateHandler());
                 }
                 state._deferredUrlStateHandler = () => {
-                    if (restoreToken === state.urlStateRestoreToken && state.points?.length > 0) {
+                    if (restoreToken === getUrlStateRestoreToken() && getPoints()?.length > 0) {
                         applyUrlStateFromDeferred();
                     }
                 };
@@ -201,13 +203,13 @@ export async function applyUrlState(options = {}) {
 
         const record = params.get('record') || params.get('lead');
         if (record) {
-            if (!state.points || !Array.isArray(state.points) || state.points.length === 0) {
+            if (!getPoints() || !Array.isArray(getPoints()) || getPoints().length === 0) {
                 state._deferredUrlState = { params: Object.fromEntries(params.entries()), timestamp: Date.now() };
-                if (state._deferredUrlStateHandler) {
-                    document.removeEventListener('semantic-data-loaded', state._deferredUrlStateHandler);
+                if (getDeferredUrlStateHandler()) {
+                    document.removeEventListener('semantic-data-loaded', getDeferredUrlStateHandler());
                 }
                 state._deferredUrlStateHandler = () => {
-                    if (restoreToken === state.urlStateRestoreToken && state.points?.length > 0) {
+                    if (restoreToken === getUrlStateRestoreToken() && getPoints()?.length > 0) {
                         applyUrlStateFromDeferred();
                     }
                 };
@@ -216,14 +218,14 @@ export async function applyUrlState(options = {}) {
                 return;
             }
             restoreRecordFocusFromParams(params, options);
-        } else if (state.selectedPoint || Number.isFinite(state.focusedNode)) {
+        } else if (getSelectedPoint() || Number.isFinite(getFocusedNode())) {
             restoreDepthFromUrlAfterFocus(params);
         }
 
         const story = params.get('story');
         if (story && STORY_DESCRIPTIONS && STORY_DESCRIPTIONS[story]) {
             applyStoryPrompt(story, { skipUrlSync: true });
-            if (state.semanticLaneOpsMode) {
+            if (getSemanticLaneOpsMode()) {
                 refreshSemanticLaneOpsSummary().catch(err => console.error('refreshSemanticLaneOpsSummary failed:', err));
             }
             if (!options.fromHistory) {
@@ -232,14 +234,14 @@ export async function applyUrlState(options = {}) {
             return;
         }
 
-        if (state.semanticLaneOpsMode) {
+        if (getSemanticLaneOpsMode()) {
             refreshSemanticLaneOpsSummary().catch(err => console.error('refreshSemanticLaneOpsSummary failed:', err));
         }
         if (!options.fromHistory) {
             updateUrlState({}, { reason: 'apply-url', force: true });
         }
     } finally {
-        if (restoreToken === state.urlStateRestoreToken) {
+        if (restoreToken === getUrlStateRestoreToken()) {
             state.applyingUrlState = false;
             state.restoringBrowserHistory = priorRestoringBrowserHistory;
         }
@@ -247,24 +249,24 @@ export async function applyUrlState(options = {}) {
 }
 
 export function updateUrlState(extra = {}, options = {}) {
-    if (state.applyingUrlState && !options.force) return;
-    if (state.restoringBrowserHistory) return;
+    if (getApplyingUrlState() && !options.force) return;
+    if (getRestoringBrowserHistory()) return;
     if (typeof window === 'undefined' || !window.location || !window.history) return;
 
-    const params = new URLSearchParams(window.location.search);
-    params.set('view', state.currentView);
-    if (state.semanticLaneOpsMode) params.set('ops', '1');
+    const params = new URLSearchParams(getLocation()?.search || '');
+    params.set('view', getCurrentView());
+    if (getSemanticLaneOpsMode()) params.set('ops', '1');
     else params.delete('ops');
 
-    const query = (document.getElementById('search-input')?.value || state.currentSearchSummary?.query || '').trim();
+    const query = (document.getElementById('search-input')?.value || getCurrentSearchSummary()?.query || '').trim();
     if (query) params.set('q', query);
     else params.delete('q');
 
-    const anchorIndex = state.currentSearchSummary?.anchorIndex;
-    if (!Number.isFinite(anchorIndex) || anchorIndex < 0 || anchorIndex >= state.points?.length) {
+    const anchorIndex = getCurrentSearchSummary()?.anchorIndex;
+    if (!Number.isFinite(anchorIndex) || anchorIndex < 0 || anchorIndex >= getPoints()?.length) {
         params.delete('anchor');
     } else {
-        const anchorLeadId = state.points[anchorIndex]?.lead_id;
+        const anchorLeadId = getPoints()[anchorIndex]?.lead_id;
         if (anchorLeadId !== null && anchorLeadId !== undefined && anchorLeadId !== '') {
             params.set('anchor', String(anchorLeadId));
         } else {
@@ -272,30 +274,30 @@ export function updateUrlState(extra = {}, options = {}) {
         }
     }
 
-    if (state.activeFilters.status !== 'all') params.set('status', state.activeFilters.status);
+    if (getActiveFilters().status !== 'all') params.set('status', getActiveFilters().status);
     else params.delete('status');
 
-    if (state.activeFilters.city !== 'all') params.set('city', state.activeFilters.city);
+    if (getActiveFilters().city !== 'all') params.set('city', getActiveFilters().city);
     else params.delete('city');
 
     ['website', 'email', 'geocoded'].forEach((key) => {
-        if (state.activeFilters[key]) params.set(key, '1');
+        if (getActiveFilters()[key]) params.set(key, '1');
         else params.delete(key);
     });
 
-    if (state.myceliumMode !== 'default') params.set('mode', state.myceliumMode);
+    if (getMyceliumMode() !== 'default') params.set('mode', getMyceliumMode());
     else params.delete('mode');
 
-    if (state.trailDepth > 0) params.set('depth', String(state.trailDepth));
+    if (getTrailDepth() > 0) params.set('depth', String(getTrailDepth()));
     else params.delete('depth');
 
-    if (state.activeStoryPrompt) params.set('story', state.activeStoryPrompt);
+    if (getActiveStoryPrompt()) params.set('story', getActiveStoryPrompt());
     else params.delete('story');
 
-    if (state.activeClusterFilter !== null) params.set('cluster', String(state.activeClusterFilter));
+    if (getActiveClusterFilter() !== null) params.set('cluster', String(getActiveClusterFilter()));
     else params.delete('cluster');
 
-    if (state.selectedPoint?.lead_id) params.set('record', String(state.selectedPoint.lead_id));
+    if (getSelectedPoint()?.lead_id) params.set('record', String(getSelectedPoint().lead_id));
     else params.delete('record');
     params.delete('lead');
 
@@ -304,8 +306,8 @@ export function updateUrlState(extra = {}, options = {}) {
         else params.set(key, String(value));
     });
 
-    const next = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
-    const current = `${window.location.pathname}${window.location.search}`;
+    const next = `${getLocation()?.pathname || ''}${params.toString() ? `?${params.toString()}` : ''}`;
+    const current = `${getLocation()?.pathname || ''}${getLocation()?.search || ''}`;
     const historyState = {
         semanticDemo: true,
         reason: options.reason || 'state',
@@ -318,7 +320,7 @@ export function updateUrlState(extra = {}, options = {}) {
         return;
     }
 
-    const method = options.mode === 'push' && !state.applyingUrlState ? 'pushState' : 'replaceState';
+    const method = options.mode === 'push' && !getApplyingUrlState() ? 'pushState' : 'replaceState';
     try {
         window.history[method](historyState, '', next);
     } catch (err) {
@@ -328,25 +330,25 @@ export function updateUrlState(extra = {}, options = {}) {
 
 function restoreRecordFocusFromParams(params, options = {}) {
     const record = params.get('record') || params.get('lead');
-    if (!record || !state.points || !Array.isArray(state.points) || state.points.length === 0) return false;
+    if (!record || !getPoints() || !Array.isArray(getPoints()) || getPoints().length === 0) return false;
 
-    const target = state.points.find((point) => String(point.lead_id) === record);
+    const target = getPoints().find((point) => String(point.lead_id) === record);
     if (!target) {
         showExperienceToast('Record not found', `No record matching '${escapeHtml(record)}' was found in the dataset.`);
         return false;
     }
 
-    if (!isPointVisible(state.points.indexOf(target), state.points, state.activeClusterFilter, state.activeFilters)) {
+    if (!isPointVisible(getPoints().indexOf(target), getPoints(), getActiveClusterFilter(), getActiveFilters())) {
         return false;
     }
 
-    const targetIndex = state.points.indexOf(target);
+    const targetIndex = getPoints().indexOf(target);
     focusOnPoint(target, { skipUrlSync: true, revealCard: true });
-    const resultIndices = Array.isArray(state.currentSearchSummary?.resultIndices)
-        ? state.currentSearchSummary.resultIndices
+    const resultIndices = Array.isArray(getCurrentSearchSummary()?.resultIndices)
+        ? getCurrentSearchSummary().resultIndices
         : [];
     const resultsEl = document.getElementById('search-results');
-    if (resultsEl && state.currentSearchSummary) {
+    if (resultsEl && getCurrentSearchSummary()) {
         setActiveSearchResultRow(
             resultsEl,
             resultIndices.includes(targetIndex) ? targetIndex : null,
@@ -367,7 +369,7 @@ function restoreRecordFocusFromParams(params, options = {}) {
 
     if (options.fromHistory && target) {
         const query = params.get('q');
-        if (query && state.currentSearchSummary) {
+        if (query && getCurrentSearchSummary()) {
             syncSearchStatusForFocus(target);
         } else {
             const statusEl = document.getElementById('search-status');
@@ -384,7 +386,7 @@ function restoreRecordFocusFromParams(params, options = {}) {
         }
     }
 
-    if (params.get('q') && !state.currentSearchSummary) {
+    if (params.get('q') && !getCurrentSearchSummary()) {
         const indices = getFilteredIndices();
         updateSearchStatusMessage(Array.isArray(indices) ? indices.length : 0);
     }
@@ -395,32 +397,26 @@ function restoreRecordFocusFromParams(params, options = {}) {
 export async function copyCurrentViewLink() {
     let shareUrl;
     try {
-        shareUrl = new URL(window.location.href);
+        shareUrl = new URL(getLocation()?.href || '');
     } catch {
         showExperienceToast('Copy unavailable', 'Could not read the current page URL.');
         return null;
     }
     shareUrl.searchParams.delete('cb');
     shareUrl.searchParams.delete('lead');
-    shareUrl.searchParams.set('view', state.currentView || 'galaxy');
+    shareUrl.searchParams.set('view', getCurrentView() || 'galaxy');
 
-    if (state.selectedPoint?.lead_id) {
-        shareUrl.searchParams.set('record', String(state.selectedPoint.lead_id));
+    if (getSelectedPoint()?.lead_id) {
+        shareUrl.searchParams.set('record', String(getSelectedPoint().lead_id));
     }
-    if (state.myceliumMode && state.myceliumMode !== 'default') {
-        shareUrl.searchParams.set('mode', state.myceliumMode);
+    if (getMyceliumMode() && getMyceliumMode() !== 'default') {
+        shareUrl.searchParams.set('mode', getMyceliumMode());
     }
-    if (state.currentSearchSummary?.query) {
-        shareUrl.searchParams.set('q', state.currentSearchSummary.query);
+    if (getCurrentSearchSummary()?.query) {
+        shareUrl.searchParams.set('q', getCurrentSearchSummary().query);
     }
-    if (state.activeClusterFilter) {
-        shareUrl.searchParams.set('cluster', state.activeClusterFilter);
-    }
-    if (state.activeStoryPrompt) {
-        shareUrl.searchParams.set('story', state.activeStoryPrompt);
-    }
-    if (Number.isFinite(state.currentSearchSummary?.anchorIndex)) {
-        shareUrl.searchParams.set('anchor', state.currentSearchSummary.anchorIndex);
+    if (Number.isFinite(getCurrentSearchSummary()?.anchorIndex)) {
+        shareUrl.searchParams.set('anchor', getCurrentSearchSummary().anchorIndex);
     }
 
     const href = shareUrl.toString();
