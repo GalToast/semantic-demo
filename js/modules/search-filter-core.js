@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { getActiveClusterFilter, setActiveClusterFilter } from './filter-state.js';
 import { normalizeCityForFilter } from './utils/geo-data.js';
 
 /**
@@ -48,6 +49,25 @@ export function getFilteredIndices() {
         }
     });
     return indices;
+}
+
+export function getFilteredClusterCounts() {
+    const counts = new Map();
+    if (!state.points || !Array.isArray(state.points)) return counts;
+
+    const previousCluster = getActiveClusterFilter();
+    setActiveClusterFilter(null);
+    try {
+        state.points.forEach((point) => {
+            if (!pointMatchesActiveFilters(point)) return;
+            const cluster = Number.isFinite(point?.cluster) ? point.cluster : 0;
+            counts.set(cluster, (counts.get(cluster) || 0) + 1);
+        });
+    } finally {
+        setActiveClusterFilter(previousCluster);
+    }
+
+    return counts;
 }
 
 /**

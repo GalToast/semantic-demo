@@ -49,6 +49,12 @@ export function recordEmptySearch(query) {
 }
 
 export function setSearchPanelState(options = {}) {
+    if (typeof options.searching === 'boolean' || typeof options.focusing === 'boolean') {
+        const currentCue = state.semanticTrailCue || 'idle';
+        const nextSearching = typeof options.searching === 'boolean' ? options.searching : currentCue === 'searching';
+        const nextFocusing = typeof options.focusing === 'boolean' ? options.focusing : currentCue === 'focusing';
+        state.semanticTrailCue = nextFocusing ? 'focusing' : nextSearching ? 'searching' : 'idle';
+    }
     // Satisfies search-panel-adapter-contract.mjs static analysis
     setSearchContainerState({ ...options });
     return resultsUiModule.setSearchPanelState(options);
@@ -93,8 +99,6 @@ export function focusSearchInputForReplacement(...args) { return resultsUiModule
 export function updateSearchStatusMessage(...args) { return resultsUiModule.updateSearchStatusMessage(...args); }
 
 export function applyFilters(options = {}) {
-    // Satisfies filter-ownership-contract.mjs static analysis
-    const _guard = state.activeFilters.status || state.activeFilters.city;
     return filterCoreModule.applyFilters(options);
 }
 export function getFilteredIndices(...args) { return filterCoreModule.getFilteredIndices(...args); }
