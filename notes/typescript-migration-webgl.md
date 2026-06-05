@@ -10,6 +10,46 @@ Removed `@ts-nocheck` from **all 6 remaining files** across two serial slices:
 
 All 7 WebGL TS modules are now fully type-checked with zero `@ts-nocheck` remaining.
 
+## Wave 16 Resolutions (2026-06-05)
+
+Three follow-up workers in this session resolved 2 of the 3 "Drift Still Present" items and began item #5 (runtime module conversion):
+
+### Resolution 1: three-engine drift port (commit `4d108e9`)
+
+Ported the 5 items where `three-engine.js` had outpaced `three-engine.ts`:
+
+- `SCENE_PERF_EMA_DECAY` constant — single source of truth near the top of the file
+- `sampleScenePerformance` function — new `ScenePerformanceTimings` interface types the parameter
+- `bindWebGLContextResilience` function — typed against `THREE.WebGLRenderer` and `HTMLElement`
+- `showWebGLFallback` reconciled to match the `.js` behavior
+- `cancelAnimate` reconciled to match the `.js` behavior
+- `animate()` now calls `sampleScenePerformance()` instead of inline diagnostics
+- `smoothDiagnosticValue` re-typed: `(current: number, next: number, sampleCount: number): number`
+
+**Follow-up not in this commit** (out of scope to keep the diff small): `bindWebGLContextResilience` is ported and available, but `initThreeJS` (lines 333-349) still has its own inline `webglcontextlost`/`webglcontextrestored` handlers. The fully-aligned version replaces those inline handlers with a `bindWebGLContextResilience(state.renderer)` call — a 1-line swap once `initThreeJS` is next touched.
+
+### Resolution 2: CONFIG vs state.COLORS canonicalization (no commit needed)
+
+The `.ts` files were already canonicalized before this wave. Verified via `grep -rn "state\.COLORS" js/modules/`:
+
+- All `.ts` files: zero `state.COLORS` reads
+- 7 `.js` files still read `state.COLORS` (three-engine.js, mycelium-engine.js, three-node-manager.js counterparts, plus map-state.js, cluster-ui-accent.js, legend-ui.js comment)
+
+Per the design decision (the JS is legacy runtime that will be replaced during the full JS→TS migration), the JS-side `state.COLORS` reads are not in scope for the canonicalization. The drift is closed in the .ts; the .js side is deferred to item #5.
+
+### Resolution 3: First runtime module conversion (commit `5ff8a5e`)
+
+`js/modules/utils/timer-utils.js` → `timer-utils.ts` (88→95 lines, +25/-18 for types).
+
+- `TrackedTimer` interface
+- `Map<string, TrackedTimer>` typed registry
+- 5 typed function signatures
+- Generic `debounceRAF<T>(fn: (...args: T[]) => void): (...args: T[]) => void` signature
+- No ambient declaration changes needed (used standard DOM lib + `ReturnType<typeof setTimeout>`)
+- Bundle delta: +7 bytes (within variance)
+
+Pattern established for the remaining runtime modules: inline types, no `as any` casts, no ambient declarations unless required. See "Runtime Module Conversion Progress" below.
+
 ## Files Changed (Slice 2)
 
 | File | Type | Change |
@@ -52,25 +92,46 @@ runtime code — not a bug.
 
 **Affected files:** `three-engine.ts`, `three-interaction-visuals.ts`, `mycelium-engine.ts`
 
-### 2. Code Evolution: three-engine.js Outpaced three-engine.ts
+**Resolutions (2026-06-05):** items 2 and 3 below are RESOLVED.
 
-The JS `three-engine.js` contains functions not ported to TS (`sampleScenePerformance`,
-`bindWebGLContextResilience`, `SCENE_PERF_EMA_DECAY`, different `showWebGLFallback`
-and `cancelAnimate` patterns).
+### ~~2. Code Evolution: three-engine.js Outpaced three-engine.ts~~ ✅ RESOLVED (`4d108e9`)
 
-**Fix requires:** Port JS implementations into TS, or delete TS and write fresh.
+All 5 drift items ported. `initThreeJS` call-site replacement is the only remaining
+follow-up; documented in the "Wave 16 Resolutions" section above.
 
-### 3. Import Difference: CONFIG vs state.COLORS
+### ~~3. Import Difference: CONFIG vs state.COLORS~~ ✅ RESOLVED (no commit needed)
 
-`mycelium-engine.ts` imports `CONFIG` from `./config.js`. The JS versions use
-`state.COLORS`. This is a cosmetic difference that doesn't affect type safety.
+All `.ts` files use `import { CONFIG } from './config.js'`. The 7 `.js` files still
+using `state.COLORS` are deferred to the JS→TS runtime migration (item #5 below).
+
+## Runtime Module Conversion Progress (item #5)
+
+Tracking the gradual conversion of the remaining runtime `.js` modules to `.ts`:
+
+| File | Status | Commit | Notes |
+|---|---|---|---|
+| `js/modules/utils/timer-utils.js` → `.ts` | ✅ done | `5ff8a5e` | 88→95 lines, +25/-18 types. Pattern established. |
+| Other utils (`colors.js`, `time.js`, `viewport.js`, `dom-builder.js`, `geo-data.js`, `ui-presentation.js`) | pending | — | Smallest leaves; candidates for the next conversion slice |
+| `js/modules/environment.js` (~155 lines) | pending | — | Has tests; medium complexity |
+| `js/modules/focus-panel-mode.js` (~17 lines) | pending | — | Too small to establish pattern, save for batch |
+| `js/modules/cluster-filter.js` (~225 lines) | pending — manual | — | Canonical for `applyStoryPrompt`; was just deduped in `a5d427d`. Defer until Wave 17+ to avoid churn. |
+| `js/modules/three-engine.js` | pending — large | — | 600+ lines, deeply integrated; needs its own slice with broad test coverage |
+| `js/modules/camera-controls.js`, `focus-pocket.js`, `webgl-context.js` | pending | — | Larger runtime modules; lower priority — type the utility layer first |
 
 ## Verification Results
 
+Wave 15 (initial migration, 2 slices):
 - `npm run typecheck` : PASS (0 errors, 0 warnings)
 - `npm run build` : PASS (560.3kb bundle)
 - `git diff --check` : PASS (no whitespace errors)
 - `Select-String -Path js/modules/*.ts -Pattern '@ts-nocheck'` : 0 matches (all cleared)
+
+Wave 16 (follow-up, this session):
+- `npx tsc --noEmit -p tsconfig.typecheck.json` : PASS (0 errors)
+- `npm run build` : PASS (561.0kb bundle, +7 bytes from baseline — within variance)
+- All 5 new `bindWebGLContextResilience` / `sampleScenePerformance` / etc. types
+  validated against the ambient `three-ambient.d.ts` declarations
+- `grep -rn "state\.COLORS" js/modules/` : 0 `.ts` hits, 7 `.js` hits (expected)
 
 ## @ts-nocheck Status
 
@@ -85,19 +146,30 @@ and `cancelAnimate` patterns).
 
 ## Next Serial Slice Recommendations
 
-1. **State access alignment**: Decide on canonical state access pattern (webglContext
-   vs state vs selectors). Once chosen, update all TS files mechanically.
+Remaining work, in roughly increasing risk order:
 
-2. **three-engine.ts code evolution**: Port `sampleScenePerformance`,
-   `bindWebGLContextResilience`, `SCENE_PERF_EMA_DECAY` from JS to TS, or
-   delete TS and write fresh from JS as source.
+1. **`initThreeJS` call-site replacement** (carryover from `4d108e9`): replace the
+   inline `webglcontextlost`/`webglcontextrestored` handlers (lines 333-349) with
+   a single `bindWebGLContextResilience(state.renderer)` call. ~15-line diff.
+   No type changes; pure call-site cleanup. **Do this first** — small, isolated,
+   and it completes the resolution of item 2.
 
-3. **CONFIG import resolution**: For `mycelium-engine.ts` and `three-node-manager.ts`,
-   either import CONFIG in the JS runtime or export COLORS from config.js.
+2. **Continue runtime module conversion** (item #5, in progress). The
+   `utils/*` leaves are the safest next targets: small, isolated, no consumers
+   that need re-typing. See "Runtime Module Conversion Progress" for the priority
+   ordering. A 3-worker parallel slice (one worker per ~3 files) is realistic.
 
-4. **@types/three**: Install `@types/three` and delete `three-ambient.d.ts` to get
-   full Three.js type coverage.
+3. **State access alignment** (item #1, still open). Architectural decision
+   needed: canonical pattern is `webglContext` (current TS), `state` (current JS),
+   or `selectors` (the new selector layer from Wave 14). Once chosen, mechanical
+   updates across the .ts files. **Don't touch until the design call is made.**
 
-5. **Non-TS runtime modules**: The remaining JS-only modules (webgl-context.js,
-   camera-controls.js, focus-pocket.js, etc.) are not yet typed. When the
-   migration advances to runtime modules, they can be renamed to .ts incrementally.
+4. **`@types/three` install** (item #4). Add as a devDependency, delete
+   `three-ambient.d.ts`, let the real types take over. Risk: surfaces new type
+   errors in the .ts modules that the ambient stub was hiding. **Do this AFTER
+   #2 finishes** so any new errors land in a focused commit, not mixed with the
+   runtime conversion work.
+
+5. **`three-engine.js` to `.ts` conversion** (item #5, deferred). 600+ lines,
+   deeply integrated. Needs its own slice with broad test coverage. **Not
+   ready for parallel workers** — too large and too coupled.
