@@ -455,3 +455,64 @@ pm run lint: 0 errors, 28 warnings
 - `npm run test` (fast static): ALL GREEN
 - `npm run test:unit`: 29/29 files, 205/205 tests pass
 
+---
+
+## Bugsweep HIGH Fixes (2026-06-05)
+
+### Bug #2 — three-interaction-visuals un-cleaned listeners
+**File:** `js/modules/three-interaction-visuals.js`
+**Fix:** Added `_onDemoNodeHighlight`/`_onDemoNamePulse` handler refs; both removed in `disposeInteractionVisuals()`.
+**Commit:** `6c4c272`
+
+### Bug #4 — three-node-manager texture leak
+**File:** `js/modules/three-node-manager.js`
+**Fix:** Added `.dispose()` calls for `focusBeaconTexture`, `focusRingTexture`, `focusNextCueTexture` in `disposeNodeVisuals()`.
+**Commit:** `6c4c272`
+
+### Bug #5 — micro-demo skip-guard race
+**File:** `js/modules/micro-demo.js`
+**Fix:** Added atomic `_startGuardClaimed` flag before retry loop; released on all exit paths.
+**Commit:** `c69c4ba`
+
+### Bug #6 — journey-thread-settler race
+**File:** `js/modules/journey-thread-settler.js`
+**Fix:** Added stale-callback guards using timer ID verification + phase/targetIndex checks in both arrival and settle callbacks.
+**Commit:** `ce44dc2`
+
+### Bug #7 — search-tokenizer Unicode
+**File:** `js/modules/search-tokenizer.js`
+**Fix:** Added NFC normalization + `Intl.Segmenter` word-level segmentation; fallback regex for no-Intl envs.
+**Commit:** `c69c4ba`
+
+### Bug #8 — focus-dive.css dead `.journey-chip`
+**Status:** Already resolved — zero `.journey-chip` selectors exist across entire codebase. No edit needed.
+**Commit:** `6c4c272`
+
+### Bug #9 — narrow CSS escape-hatch scope leak
+**Status:** Already resolved — no `.info-panel .search-result-item` rule exists in any `@media (max-width: 480px)` block.
+**Commit:** `31e0671`
+
+### Bug #3 — state.js Proxy bypass
+**Status:** Deferred to Phase 5 store migration (not fixable in legacy code).
+
+---
+
+## Verification Gate (post-bugsweep)
+
+| Check | Result |
+|---|---|
+| `npm run lint` | 0 errors, 0 warnings |
+| `npm run test` (fast static) | ALL GREEN |
+| `npm run test:unit` | 29/29 files, 205/205 tests pass |
+| `git push origin master` | 5 commits pushed (`6c4c272` → `31e0671`) |
+
+### Commits pushed
+
+| Hash | Description |
+|---|---|
+| `358400d` | chore(wave15): lint hygiene — 0 errors/0 warnings |
+| `6c4c272` | fix(bugsweep): resolve HIGH bugs #2, #4, #8 |
+| `c69c4ba` | fix(bugsweep): resolve Bug #5 (micro-demo race) + #7 (search tokenizer Unicode) |
+| `ce44dc2` | fix(bugsweep): resolve Bug #6 (journey-thread-settler race) |
+| `31e0671` | fix(bugsweep): verify Bug #9 (narrow.css escape-hatch) already resolved |
+
