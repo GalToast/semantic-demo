@@ -1,4 +1,5 @@
-import { state } from '../state.js';
+import { getCurrentView, getSelectedPoint, getPoints, getCurrentSearchSummary } from '../state/selectors/index.js';
+import { getSelectedCardFadeMs, getLeadEnrichment } from '../state/selectors/index.js';
 import { getBusinessNamePresentation, sanitizePublicFacingNote } from './utils/dom-formatters.js';
 import { getPanelSurface, isMapSummarySurface } from './environment.js';
 
@@ -11,7 +12,7 @@ import { getPanelSurface, isMapSummarySurface } from './environment.js';
 // ── Renderers ──────────────────────────────────────────────────────────────────
 
 export function renderSignalBadges(point) {
-    if (state.currentView === 'map') return '';
+    if (getCurrentView() === 'map') return '';
     if (!point) return '';
     const badges = [];
     if (point.website) badges.push('<span class="signal-badge meta" title="Website present">Website present</span>');
@@ -24,20 +25,21 @@ export function updateSelectedCardHeading(point = null) {
     const titleEl = document.getElementById('selected-card-title');
     if (!titleEl) return;
 
-    const activePoint = point || state.selectedPoint || null;
-    const activeIndex = activePoint && Array.isArray(state.points)
-        ? state.points.indexOf(activePoint)
+    const activePoint = point || getSelectedPoint() || null;
+    const points = getPoints();
+    const activeIndex = activePoint && Array.isArray(points)
+        ? points.indexOf(activePoint)
         : -1;
-    const summary = state.currentSearchSummary || {};
+    const summary = getCurrentSearchSummary() || {};
     const resultIndices = Array.isArray(summary.resultIndices) ? summary.resultIndices : [];
 
     if (!activePoint) {
-        titleEl.textContent = state.currentView === 'map' ? 'Map Selection' : 'Selection';
+        titleEl.textContent = getCurrentView() === 'map' ? 'Map Selection' : 'Selection';
     } else if (Number.isFinite(summary.anchorIndex) && activeIndex === summary.anchorIndex) {
         titleEl.textContent = 'Search Anchor';
     } else if (resultIndices.includes(activeIndex)) {
         titleEl.textContent = 'Related Match';
-    } else if (state.currentView === 'map') {
+    } else if (getCurrentView() === 'map') {
         titleEl.textContent = 'Map Selection';
     } else {
         titleEl.textContent = 'Focused Business';
@@ -80,7 +82,7 @@ function scheduleFrame(callback) {
 
 export function triggerSelectedCardFade(cardEl) {
     if (!cardEl) return;
-    cardEl.style.setProperty('--selected-card-fade-ms', `${state.SELECTED_CARD_FADE_MS}ms`);
+    cardEl.style.setProperty('--selected-card-fade-ms', `${getSelectedCardFadeMs()}ms`);
     cardEl.classList.add('is-fading');
     scheduleFrame(() => {
         scheduleFrame(() => {
@@ -90,23 +92,25 @@ export function triggerSelectedCardFade(cardEl) {
 }
 
 function focusStageOwnsSelectedContent(surface) {
-    return state.currentView === 'galaxy'
+    return getCurrentView() === 'galaxy'
         && ['focus', 'focus-search', 'semantic-dive'].includes(surface);
 }
 
 function getSelectedMapSummaryRole(point) {
-    if (!point || !Array.isArray(state.points)) return 'Trail match';
-    const idx = state.points.indexOf(point);
-    const summary = state.currentSearchSummary || {};
+    const points = getPoints();
+    if (!point || !Array.isArray(points)) return 'Trail match';
+    const idx = points.indexOf(point);
+    const summary = getCurrentSearchSummary() || {};
     if (Number.isFinite(summary.anchorIndex) && idx === summary.anchorIndex) return 'Search anchor';
     if (Array.isArray(summary.resultIndices) && summary.resultIndices.includes(idx)) return 'Related match';
     return 'Trail match';
 }
 
 function getSelectedMapSummaryCopy(point) {
-    if (!point || !Array.isArray(state.points)) return 'This record is connected to the current semantic search trail.';
-    const idx = state.points.indexOf(point);
-    const summary = state.currentSearchSummary || {};
+    const points = getPoints();
+    if (!point || !Array.isArray(points)) return 'This record is connected to the current semantic search trail.';
+    const idx = points.indexOf(point);
+    const summary = getCurrentSearchSummary() || {};
     if (Number.isFinite(summary.anchorIndex) && idx === summary.anchorIndex) {
         return 'This record anchors the current semantic trail on the county map.';
     }
@@ -124,7 +128,7 @@ export function syncSelectedCardContentVariant(point = null) {
     const summaryEl = document.getElementById('selected-map-summary');
     const cascadeEl = document.getElementById('vector-cascade-bg');
     const surface = getPanelSurface();
-    const isMapSummary = Boolean(point) && state.currentView === 'map' && isMapSummarySurface();
+    const isMapSummary = Boolean(point) && getCurrentView() === 'map' && isMapSummarySurface();
     const isFocusStageOwner = Boolean(point) && focusStageOwnsSelectedContent(surface);
 
     if (cardEl) {
@@ -282,8 +286,9 @@ export function getInterestingBusinessNote(point) {
     // Bug Sweep 33: prefer the lead's own one-liner from the enrichment
     // (snapshot > business_overview > observations) over the database
     // trivia field, which is often database noise.
-    if (state.leadEnrichment) {
-        const enr = state.leadEnrichment[String(point.lead_id)];
+    const enrichment = getLeadEnrichment();
+    if (enrichment) {
+        const enr = enrichment[String(point.lead_id)];
         if (enr) {
             const candidates = [
                 enr.snapshot,
@@ -311,6 +316,7 @@ export function getInterestingBusinessNote(point) {
  */
 export function buildSelectedMatchNarrative(point) {
     if (!point) return '';
-    if (state.currentSearchSummary?.reason) return state.currentSearchSummary.reason;
+    const summary = getCurrentSearchSummary();
+    if (summary?.reason) return summary.reason;
     return '';
 }

@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { state } from '../state.js';
+import { getSemanticDiveMode, getFocusedNode, getCurrentView } from '../state/selectors/index.js';
+import { getCurrentSearchSummary, getPoints, getNodePositions } from '../state/selectors/index.js';
+import { getColors, getClusterNames, getCamera } from '../state/selectors/index.js';
 import { subscribe, EVENTS } from './event-bus.js';
 import { isMobileViewport } from './environment.js';
 
@@ -9,19 +11,19 @@ let _clusterStats = new Map();
 let _clusterIndices = new Map();
 
 function getLabelMode() {
-    if (state.semanticDiveMode || document.body?.dataset.semanticDive === 'active') return 'inside';
-    if (state.focusedNode !== null && state.focusedNode !== undefined) return 'focus';
-    if (state.currentSearchSummary) return 'search';
+    if (getSemanticDiveMode()) return 'inside';
+    if (getFocusedNode() !== null && getFocusedNode() !== undefined) return 'focus';
+    if (getCurrentSearchSummary()) return 'search';
     return 'overview';
 }
 
 function getActiveCluster() {
-    const focusIndex = Number.isFinite(state.focusedNode)
-        ? state.focusedNode
-        : Number.isFinite(state.currentSearchSummary?.anchorIndex)
-            ? state.currentSearchSummary.anchorIndex
+    const focusIndex = Number.isFinite(getFocusedNode())
+        ? getFocusedNode()
+        : Number.isFinite(getCurrentSearchSummary()?.anchorIndex)
+            ? getCurrentSearchSummary().anchorIndex
             : null;
-    const point = Number.isFinite(focusIndex) ? state.points?.[focusIndex] : null;
+    const point = Number.isFinite(focusIndex) ? getPoints()?.[focusIndex] : null;
     return Number.isFinite(point?.cluster) ? point.cluster : null;
 }
 
@@ -69,7 +71,8 @@ function formatLabelText(text) {
 }
 
 export function initClusterLabels() {
-    if (!state.points || !state.points.length) return;
+    const points = getPoints();
+    if (!points || !points.length) return;
 
     const container = document.getElementById('scene-container');
     if (!container) return;
@@ -79,8 +82,9 @@ export function initClusterLabels() {
     _clusterCentroids.clear();
     _clusterStats.clear();
     _clusterIndices.clear();
-    state.points.forEach((point, i) => {
-        const pos = state.nodePositions[i];
+    const positions = getNodePositions();
+    points.forEach((point, i) => {
+        const pos = positions[i];
         if (!pos) return;
         if (!sums.has(point.cluster)) {
             sums.set(point.cluster, { x: 0, y: 0, z: 0, count: 0 });
@@ -111,8 +115,10 @@ export function initClusterLabels() {
     _labelElements.clear();
 
     _clusterCentroids.forEach((pos, cluster) => {
-        const labelText = state.CLUSTER_NAMES[cluster] || `Cluster ${cluster}`;
-        const color = state.COLORS?.[cluster % state.COLORS.length] || '#ffffff';
+        const clusterNames = getClusterNames();
+        const colors = getColors();
+        const labelText = clusterNames[cluster] || `Cluster ${cluster}`;
+        const color = colors?.[cluster % colors.length] || '#ffffff';
 
         const el = document.createElement('div');
         el.className = 'galaxy-cluster-label';
@@ -133,7 +139,8 @@ export function initClusterLabels() {
 }
 
 export function updateClusterLabels() {
-    if (state.currentView !== 'galaxy' || !_labelElements.size || !state.camera) {
+    const camera = getCamera();
+    if (getCurrentView() !== 'galaxy' || !_labelElements.size || !camera) {
         _labelElements.forEach(el => {
             el.classList.toggle('visible', false);
         });
@@ -150,7 +157,7 @@ export function updateClusterLabels() {
     }
 
     const activeCluster = getActiveCluster();
-    const cameraPos = state.camera.position;
+    const cameraPos = camera.position;
 
     // Use a projection matrix to map 3D positions to 2D screen space
     const widthHalf = window.innerWidth / 2;
@@ -184,7 +191,7 @@ export function updateClusterLabels() {
             const floatOffset = Math.sin(performance.now() * 0.0014 + cluster * 7.0) * 0.015;
             vec.y += floatOffset;
 
-            vec.project(state.camera);
+            vec.project(camera);
 
             // Check if behind camera
             if (vec.z > 1) {

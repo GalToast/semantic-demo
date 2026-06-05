@@ -1,4 +1,5 @@
-import { state } from '../state.js';
+import { getPoints, getSelectedPoint, getFocusedNode, getCurrentView } from '../state/selectors/index.js';
+import { getActiveClusterFilter, getActiveFilters } from '../state/selectors/index.js';
 import { subscribeKeyed, EVENTS } from './event-bus.js';
 import { isPointVisible } from './utils/geo-data.js';
 import * as adapter from './journey-lifecycle-adapter.js';
@@ -23,7 +24,7 @@ export function initJourneySelectedCard(deps = {}) {
 
     // Phase 3: Declarative synchronization
     const sync = () => {
-        updateSelectedBusiness(state.selectedPoint || null, { skipHydrate: true });
+        updateSelectedBusiness(getSelectedPoint() || null, { skipHydrate: true });
     };
 
     subscribeKeyed('journey-selected-card:camera-node-focused', EVENTS.CAMERA_NODE_FOCUSED, sync);
@@ -50,7 +51,8 @@ export function initJourneySelectedCardAdapter(deps = {}) {
 }
 
 export function syncFocusStage(point) {
-    if (!state.points) return;
+    const points = getPoints();
+    if (!points) return;
     const stage = document.getElementById('focus-stage');
     const stageCard = stage?.querySelector('.focus-stage-card');
     if (!stage || !stageCard) return;
@@ -64,7 +66,7 @@ export function syncFocusStage(point) {
             try {
                 adapter.getPreviouslyFocusedFocusStage().focus();
             } catch (e) {
-                console.warn('Failed to restore focus stage previous element:', e);
+                // Focus restore failure is non-critical — accessibility degraded
             }
             adapter.setPreviouslyFocusedFocusStage(null);
         }
@@ -79,17 +81,17 @@ export function syncFocusStage(point) {
     }
 
     const effectivePoint = point
-        || state.selectedPoint
-        || ((state.focusedNode !== null && state.focusedNode !== undefined && Number.isFinite(state.focusedNode) && state.focusedNode >= 0 && state.focusedNode < state.points.length) ? state.points[state.focusedNode] : null);
+        || getSelectedPoint()
+        || ((getFocusedNode() !== null && getFocusedNode() !== undefined && Number.isFinite(getFocusedNode()) && getFocusedNode() >= 0 && getFocusedNode() < points.length) ? points[getFocusedNode()] : null);
 
-    const effectiveIndex = Number.isFinite(state.focusedNode) && state.points[state.focusedNode] === effectivePoint
-        ? state.focusedNode
-        : state.points.indexOf(effectivePoint);
+    const effectiveIndex = Number.isFinite(getFocusedNode()) && points[getFocusedNode()] === effectivePoint
+        ? getFocusedNode()
+        : points.indexOf(effectivePoint);
     const isFilteredOut = Number.isFinite(effectiveIndex)
         && effectiveIndex >= 0
-        && !isPointVisible(effectiveIndex, state.points, state.activeClusterFilter, state.activeFilters);
+        && !isPointVisible(effectiveIndex, points, getActiveClusterFilter(), getActiveFilters());
 
-    if (!effectivePoint || state.currentView !== 'galaxy' || state.focusedNode === null || isFilteredOut) {
+    if (!effectivePoint || getCurrentView() !== 'galaxy' || getFocusedNode() === null || isFilteredOut) {
         applyClusterUiAccent(stageCard, null);
         stage.hidden = true;
         stage.setAttribute('aria-hidden', 'true');

@@ -1,4 +1,5 @@
-import { state } from '../state.js';
+import { getCurrentView, getFocusedNode, getNavState } from '../state/selectors/index.js';
+import { getCurrentSearchSummary, getSearchGlowActive } from '../state/selectors/index.js';
 import { cancelMicroDemo } from './micro-demo.js';
 import { showExperienceToast } from './ui-feedback.js';
 import { closeLegendGuide } from './legend-ui.js';
@@ -201,8 +202,8 @@ export function handleGalaxyKeydown(event) {
         setInfoPanelOpen(false);
         const searchInput = document.getElementById('search-input');
         const hasSearchText = Boolean(searchInput?.value?.trim());
-        const hasSearchState = Boolean(state.currentSearchSummary || state.searchGlowActive);
-        const hasFocusState = state.focusedNode !== null || state.navState?.focusedIndex !== null;
+        const hasSearchState = Boolean(getCurrentSearchSummary() || getSearchGlowActive());
+        const hasFocusState = getFocusedNode() !== null || getNavState()?.focusedIndex !== null;
         if (hasSearchText || hasSearchState || hasFocusState) {
             event.preventDefault();
             _returnToOverview();
@@ -221,12 +222,12 @@ export function handleGalaxyKeydown(event) {
         event.preventDefault();
         traverseNeighbor(1);
     } else if (event.key === 'Home') {
-        if (state.currentView === 'galaxy') {
+        if (getCurrentView() === 'galaxy') {
             event.preventDefault();
             _resetExplorationFocus();
         }
     } else if (event.key === 'End' || (event.key === 'c' && !event.ctrlKey && !event.metaKey)) {
-        if (state.currentView === 'galaxy') {
+        if (getCurrentView() === 'galaxy') {
             event.preventDefault();
             recenterFocusedNode();
         }
