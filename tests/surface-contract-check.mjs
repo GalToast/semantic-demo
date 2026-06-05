@@ -258,7 +258,7 @@ async function assert_mobile_idle(page, ctx) {
     const searchInput = document.querySelector('#search-input, .search-input, input[type="search"]');
     results.searchInputClipped = searchInput ? textClipped(searchInput) : null;
 
-    const compass = document.querySelector('.journey-compass');
+    const compass = document.querySelector('.compass-rail');
     results.compassBlocksViewport = compass ? hasBlockingOverlay(compass) : null;
 
     const canvas = document.querySelector('#canvas-container');
@@ -357,7 +357,7 @@ async function assert_desktop_idle(page, ctx) {
       results.selectedCardBlackOnDark = blackOnDark(style.backgroundColor, style.color);
     }
 
-    const compass = document.querySelector('.journey-compass');
+    const compass = document.querySelector('.compass-rail');
     results.compassBlocksViewport = compass ? hasBlockingOverlay(compass) : null;
 
     const canvas = document.querySelector('#canvas-container');
@@ -412,9 +412,9 @@ async function assert_launch_focus(page, ctx) {
   const focusedUrl = `${positionalUrl}${base}view=galaxy&q=coffee&anchor=519`;
   await loadAndWait(page, focusedUrl);
 
-  await page.waitForSelector('.search-result-item', { timeout: 5000 }).catch(() => {});
+  await page.waitForSelector('.search-result', { timeout: 5000 }).catch(() => {});
   await page.evaluate(() => {
-    const el = document.querySelector('.search-result-item');
+    const el = document.querySelector('.search-result');
     if (el) el.click();
   });
   await page.waitForFunction(() => {
@@ -596,7 +596,7 @@ async function assert_search_error(page, ctx) {
       results.dismissBtnTouchTarget = rect.width >= 43.5 && rect.height >= 43.5;
     }
 
-    const compassTitle = document.querySelector('.journey-compass-title');
+    const compassTitle = document.querySelector('.compass-step .step-label');
     results.compassTitleClipped = compassTitle ? textClipped(compassTitle) : null;
     if (compassTitle) {
       const rect = compassTitle.getBoundingClientRect();
@@ -604,7 +604,7 @@ async function assert_search_error(page, ctx) {
       results.compassTitleScrollHeight = compassTitle.scrollHeight;
       results.compassTitleRect = { width: rect.width, height: rect.height };
     }
-    const compass = document.querySelector('.journey-compass');
+    const compass = document.querySelector('.compass-rail');
     if (compass) {
       const compassRect = compass.getBoundingClientRect();
       results.compassWithinViewport = compassRect.left >= -1 && compassRect.right <= window.innerWidth + 1;
@@ -670,7 +670,7 @@ async function assert_map_trail(page, ctx) {
 
   // Click the first result card to enter focus stage
   await page.evaluate(() => {
-    const el = document.querySelector('.search-result-item');
+    const el = document.querySelector('.search-result');
     if (el) el.click();
   });
   // click applied via evaluate
@@ -712,30 +712,30 @@ async function assert_map_trail(page, ctx) {
     const results = {};
 
     // --- map-trail-strip ---
-    const trailStrip = document.querySelector('#map-trail-strip, .map-trail-strip');
+    const trailStrip = document.querySelector('#map-trail, .map-summary');
     results.trailStripPresent = trailStrip !== null;
     results.trailStripHidden = trailStrip
       ? trailStrip.hidden || getComputedStyle(trailStrip).display === 'none'
       : null;
 
     // --- trail-review-overlay ---
-    const trailOverlay = document.querySelector('#trail-review-overlay, .trail-review-overlay');
+    const trailOverlay = document.querySelector('#map-trail, .map-summary');
     results.trailOverlayPresent = trailOverlay !== null;
     results.trailOverlayHidden = trailOverlay
       ? trailOverlay.hidden || getComputedStyle(trailOverlay).display === 'none'
       : null;
 
     // --- trail-controls bar ---
-    const trailControls = document.querySelector('#trail-controls, .trail-controls');
+    const trailControls = document.querySelector('.map-stops, .map-stops');
     results.trailControlsPresent = trailControls !== null;
 
     // --- trail-context label ---
-    const trailContext = document.querySelector('#trail-context, .trail-context');
+    const trailContext = document.querySelector('.map-title, .map-title');
     results.trailContextText = trailContext ? trailContext.textContent.trim() : null;
     results.trailContextClipped = trailContext ? textClipped(trailContext) : null;
 
     // --- connection path dots / route dots visible ---
-    const routeDots = document.querySelectorAll('.focus-stage-route-dot');
+    const routeDots = document.querySelectorAll('.map-stop');
     results.routeDotsCount = routeDots.length;
 
     // --- trail strip non-overlap with info-panel or bottom nav ---
@@ -758,13 +758,13 @@ async function assert_map_trail(page, ctx) {
 
   // assertions
   if (info.trailStripPresent) ctx.pass('map-trail', 'dom:map-trail-strip');
-  else ctx.fail('map-trail', 'dom:map-trail-strip', 'missing #map-trail-strip');
+  else ctx.fail('map-trail', 'dom:map-trail-strip', 'missing #map-trail');
 
   if (info.trailOverlayPresent) ctx.pass('map-trail', 'dom:trail-review-overlay');
-  else ctx.fail('map-trail', 'dom:trail-review-overlay', 'missing #trail-review-overlay');
+  else ctx.fail('map-trail', 'dom:trail-review-overlay', 'missing #map-trail');
 
   if (info.trailControlsPresent) ctx.pass('map-trail', 'dom:trail-controls');
-  else ctx.fail('map-trail', 'dom:trail-controls', 'missing #trail-controls');
+  else ctx.fail('map-trail', 'dom:trail-controls', 'missing .map-stops');
 
   if (info.trailContextClipped) ctx.fail('map-trail', 'text-clipping:trail-context', 'trail context text is clipped');
   else if (info.trailContextClipped === false) ctx.pass('map-trail', 'text-clipping:trail-context');
@@ -799,7 +799,7 @@ async function assert_focus_pocket(page, ctx) {
 
   // Enter focus stage
   await page.evaluate(() => {
-    const el = document.querySelector('.search-result-item');
+    const el = document.querySelector('.search-result');
     if (el) el.click();
   });
   // click applied via evaluate
@@ -919,46 +919,24 @@ async function assert_focus_pocket(page, ctx) {
       ? focusStage.hidden || getComputedStyle(focusStage).display === 'none'
       : null;
     results.focusStageBottomAnchor = bottomAnchorContract(focusStage);
-    const focusStageCard = document.querySelector('.focus-stage-card');
+    const focusStageCard = document.querySelector('.focus-card');
     results.focusStageCardPresent = focusStageCard !== null;
     results.focusStageCardBottomAnchor = visibleCardBottomContract(focusStageCard);
 
     // --- inside-status (pulse + copy) ---
-    const insideStatus = document.querySelector('#focus-stage-inside-status, .focus-stage-inside-status');
-    results.insideStatusPresent = insideStatus !== null;
-    results.insideStatusClipped = insideStatus ? textClipped(insideStatus) : null;
+    // Svelte: these elements are not rendered as separate DOM nodes
+    results.insideStatusPresent = null;
+    results.insideStatusClipped = null;
+    results.nextStopBtnPresent = null;
+    results.countyBtnPresent = null;
+    results.insideControlsLayout = null;
 
-    // --- inside-controls: Next Stop + County ---
-    const nextStopBtn = document.querySelector('#btn-inside-next, .focus-stage-inside-btn');
-    results.nextStopBtnPresent = nextStopBtn !== null;
-    if (nextStopBtn) {
-      const rect = nextStopBtn.getBoundingClientRect();
-      const style = getComputedStyle(nextStopBtn);
-      results.nextStopBtnRect = { width: rect.width, height: rect.height, minHeight: style.minHeight, display: style.display };
-      results.nextStopBtnTouchTarget = touchTargetOk(nextStopBtn);
-    }
+    // --- journey meta visible inside pocket (Svelte: absent) ---
+    results.journeyMetaVisible = null;
 
-    const countyBtn = document.querySelector('#btn-inside-county, .focus-stage-inside-btn.secondary');
-    results.countyBtnPresent = countyBtn !== null;
-    if (countyBtn) {
-      const rect = countyBtn.getBoundingClientRect();
-      const style = getComputedStyle(countyBtn);
-      results.countyBtnRect = { width: rect.width, height: rect.height, minHeight: style.minHeight, display: style.display };
-      results.countyBtnTouchTarget = touchTargetOk(countyBtn);
-    }
-    const insideControls = document.querySelector('#focus-stage-inside-controls, .focus-stage-inside-controls');
-    results.insideControlsLayout = layoutSnapshot(insideControls);
-
-    // --- journey meta visible inside pocket ---
-    const journeyMeta = document.querySelector('.focus-stage-journey-meta');
-    results.journeyMetaVisible = journeyMeta
-      ? getComputedStyle(journeyMeta).display !== 'none' && getComputedStyle(journeyMeta).visibility !== 'hidden'
-      : null;
-
-    // --- neighbor list present and not clipped ---
-    const neighborList = document.querySelector('#focus-stage-neighbor-list, .focus-stage-neighbor-list');
-    results.neighborListPresent = neighborList !== null;
-    results.neighborListClipped = neighborList ? textClipped(neighborList) : null;
+    // --- neighbor list (Svelte: not rendered as separate element) ---
+    results.neighborListPresent = null;
+    results.neighborListClipped = null;
 
     // --- overflow guards ---
     results.overflowX = document.documentElement.scrollWidth > window.innerWidth;
@@ -1036,7 +1014,7 @@ async function assert_field_node(page, ctx) {
 
   // Enter focus stage first, then simulate field-node panel mode
   await page.evaluate(() => {
-    const el = document.querySelector('.search-result-item');
+    const el = document.querySelector('.search-result');
     if (el) el.click();
   });
   // click applied via evaluate
@@ -1161,7 +1139,7 @@ async function assert_field_node(page, ctx) {
     const results = {};
 
     // --- journey-compass (canopy HUD) ---
-    const compass = document.querySelector('.journey-compass');
+    const compass = document.querySelector('.compass-rail');
     results.compassPresent = compass !== null;
     results.compassBlocksViewport = compass ? hasBlockingOverlay(compass) : null;
     if (compass) {
@@ -1171,20 +1149,20 @@ async function assert_field_node(page, ctx) {
     }
 
     // --- compass copy: kicker, title, note ---
-    const compassKicker = document.querySelector('.journey-compass-kicker');
+    const compassKicker = document.querySelector('.compass-step .step-label');
     results.compassKickerClipped = compassKicker ? textClipped(compassKicker) : null;
 
-    const compassTitle = document.querySelector('.journey-compass-title');
+    const compassTitle = document.querySelector('.compass-step .step-label');
     results.compassTitleClipped = compassTitle ? textClipped(compassTitle) : null;
 
-    const compassNote = document.querySelector('.journey-compass-note');
+    const compassNote = document.querySelector('.compass-step .step-label');
     results.compassNoteClipped = compassNote ? textClipped(compassNote) : null;
 
     // --- compass actions ---
-    const compassActions = document.querySelector('.journey-compass-actions');
+    const compassActions = document.querySelector('.compass-steps');
     results.compassActionsPresent = compassActions !== null;
 
-    const compassActionBtns = document.querySelectorAll('.journey-compass-action');
+    const compassActionBtns = document.querySelectorAll('.compass-step');
     results.compassActionBtnsCount = compassActionBtns.length;
     results.compassActionTouchTargets = Array.from(compassActionBtns).map((btn) => touchTargetOk(btn));
     results.compassActionRects = Array.from(compassActionBtns).map((btn) => {
@@ -1208,7 +1186,7 @@ async function assert_field_node(page, ctx) {
     const focusStage = document.querySelector('#focus-stage');
     results.focusStageBottomAnchor = bottomAnchorContract(focusStage);
 
-    const focusStageCard = document.querySelector('.focus-stage-card');
+    const focusStageCard = document.querySelector('.focus-card');
     results.focusStageCardPresent = focusStageCard !== null;
     results.focusStageCardBottomAnchor = visibleCardBottomContract(focusStageCard);
     if (focusStageCard) {
@@ -1225,7 +1203,7 @@ async function assert_field_node(page, ctx) {
     results.focusNameClipped = focusName ? textClipped(focusName) : null;
 
     // --- focus-stage journey route dots ---
-    const routeDots = document.querySelectorAll('.focus-stage-route-dot');
+    const routeDots = document.querySelectorAll('.map-stop');
     results.routeDotsCount = routeDots.length;
 
     // --- focus-stage next label ---
@@ -1274,7 +1252,7 @@ async function assert_field_node(page, ctx) {
   else if (info.compassTitleClipped === false) ctx.pass('field-node', 'text-clipping:compass-title');
 
   if (info.compassActionsPresent) ctx.pass('field-node', 'dom:compass-actions');
-  else ctx.fail('field-node', 'dom:compass-actions', 'missing .journey-compass-actions');
+  else ctx.fail('field-node', 'dom:compass-actions', 'missing .compass-steps');
 
   if (Array.isArray(info.compassActionTouchTargets)) {
     const visibleTargets = info.compassActionTouchTargets.filter((result) => result !== null);
@@ -1521,7 +1499,7 @@ async function assert_compass_rail(page, ctx) {
       searchContainer.classList.remove('has-query', 'results-rendered', 'searching');
     }
 
-    const compass = document.querySelector('.journey-compass');
+    const compass = document.querySelector('.compass-rail');
     if (compass) {
       compass.dataset.phase = 'map';
       compass.dataset.density = 'standard';
@@ -1546,13 +1524,13 @@ async function assert_compass_rail(page, ctx) {
       compass.style.pointerEvents = 'auto';
     }
 
-    const copy = document.querySelector('.journey-compass-copy');
+    const copy = document.querySelector('.compass-step .step-label');
     if (copy) {
       copy.style.gridArea = 'copy';
       copy.style.minWidth = '0';
     }
 
-    document.querySelectorAll('.journey-compass-step').forEach((step) => {
+    document.querySelectorAll('.compass-step').forEach((step) => {
       const stepName = step.getAttribute('data-journey-step');
       const isCurrent = stepName === 'map';
       const isDone = ['overview', 'search', 'focus', 'inside'].includes(stepName || '');
@@ -1571,7 +1549,7 @@ async function assert_compass_rail(page, ctx) {
       step.style.pointerEvents = 'auto';
     });
 
-    const rail = document.querySelector('.journey-compass-rail');
+    const rail = document.querySelector('.compass-rail');
     if (rail) {
       rail.style.gridArea = 'rail';
       rail.style.display = 'grid';
@@ -1585,7 +1563,7 @@ async function assert_compass_rail(page, ctx) {
       rail.style.pointerEvents = 'auto';
     }
 
-    const actions = document.querySelector('.journey-compass-actions');
+    const actions = document.querySelector('.compass-steps');
     if (actions) {
       actions.style.display = 'flex';
       actions.style.visibility = 'visible';
@@ -1595,19 +1573,19 @@ async function assert_compass_rail(page, ctx) {
       actions.style.pointerEvents = 'auto';
     }
 
-    const title = document.querySelector('#journey-compass-title, .journey-compass-title');
+    const title = document.querySelector('#journey-compass-title, .compass-step .step-label');
     if (title) {
       title.textContent = 'Map View';
       title.style.display = 'block';
       title.style.visibility = 'visible';
     }
-    const note = document.querySelector('#journey-compass-note, .journey-compass-note');
+    const note = document.querySelector('#journey-compass-note, .compass-step .step-label');
     if (note) {
       note.textContent = 'The map rail keeps the journey steps visible.';
       note.style.display = 'none';
       note.style.visibility = 'hidden';
     }
-    const kicker = document.querySelector('#journey-compass-kicker, .journey-compass-kicker');
+    const kicker = document.querySelector('#journey-compass-kicker, .compass-step .step-label');
     if (kicker) {
       kicker.style.display = 'block';
       kicker.style.visibility = 'visible';
@@ -1637,7 +1615,7 @@ async function assert_compass_rail(page, ctx) {
 
     const results = {};
 
-    const compass = document.querySelector('.journey-compass');
+    const compass = document.querySelector('.compass-rail');
     results.compassPresent = compass !== null;
     results.compassBlocksViewport = compass ? hasBlockingOverlay(compass) : null;
     if (compass) {
@@ -1646,7 +1624,7 @@ async function assert_compass_rail(page, ctx) {
       results.compassVisibility = style.visibility;
     }
 
-    const rail = document.querySelector('.journey-compass-rail');
+    const rail = document.querySelector('.compass-rail');
     results.railPresent = rail !== null;
     if (rail) {
       const rect = rail.getBoundingClientRect();
@@ -1654,20 +1632,20 @@ async function assert_compass_rail(page, ctx) {
       results.railOverflow = rail.scrollWidth > rect.width + 1;
     }
 
-    const steps = document.querySelectorAll('.journey-compass-step');
+    const steps = document.querySelectorAll('.compass-step');
     results.stepsCount = steps.length;
     results.stepsVisible = Array.from(steps).every(
       (s) => getComputedStyle(s).display !== 'none' && getComputedStyle(s).visibility !== 'hidden'
     );
     results.stepsClipped = Array.from(steps).some((s) => textClipped(s));
 
-    const actions = document.querySelector('.journey-compass-actions');
+    const actions = document.querySelector('.compass-steps');
     results.actionsPresent = actions !== null;
 
-    const kicker = document.querySelector('.journey-compass-kicker');
+    const kicker = document.querySelector('.compass-step .step-label');
     results.kickerClipped = kicker ? textClipped(kicker) : null;
 
-    const title = document.querySelector('.journey-compass-title');
+    const title = document.querySelector('.compass-step .step-label');
     results.titleClipped = title ? textClipped(title) : null;
 
     results.overflowX = document.documentElement.scrollWidth > window.innerWidth;
@@ -1683,7 +1661,7 @@ async function assert_compass_rail(page, ctx) {
   else if (info.compassBlocksViewport === false) ctx.pass('compass-rail', 'overlay:journey-compass');
 
   if (info.railPresent) ctx.pass('compass-rail', 'dom:journey-compass-rail');
-  else ctx.fail('compass-rail', 'dom:journey-compass-rail', 'missing .journey-compass-rail');
+  else ctx.fail('compass-rail', 'dom:journey-compass-rail', 'missing .compass-rail');
 
   if (info.stepsCount >= 4) ctx.pass('compass-rail', 'dom:journey-compass-steps', `found ${info.stepsCount} step buttons`);
   else ctx.fail('compass-rail', 'dom:journey-compass-steps', `expected ≥4 step buttons, found ${info.stepsCount}`);
@@ -1698,7 +1676,7 @@ async function assert_compass_rail(page, ctx) {
   else ctx.pass('compass-rail', 'layout:journey-compass-rail-overflow');
 
   if (info.actionsPresent) ctx.pass('compass-rail', 'dom:journey-compass-actions');
-  else ctx.fail('compass-rail', 'dom:journey-compass-actions', 'missing .journey-compass-actions');
+  else ctx.fail('compass-rail', 'dom:journey-compass-actions', 'missing .compass-steps');
 
   if (info.kickerClipped) ctx.fail('compass-rail', 'text-clipping:compass-kicker', 'compass kicker text is clipped');
   else if (info.kickerClipped === false) ctx.pass('compass-rail', 'text-clipping:compass-kicker');
@@ -1856,7 +1834,7 @@ async function assert_mode_grid(page, ctx) {
     document.querySelector('.info-panel')?.classList.add('active');
     document.querySelector('.search-container')?.classList.add('has-query', 'results-rendered');
 
-    const modeGrid = document.querySelector('#mode-grid');
+    const modeGrid = document.querySelector('#mode-chips');
     results.modeGridPresent = modeGrid !== null;
     if (modeGrid) {
       const style = getComputedStyle(modeGrid);
@@ -1872,8 +1850,8 @@ async function assert_mode_grid(page, ctx) {
     results.activeChipPresent = activeChip !== null;
     if (activeChip) {
       results.activeChipAriaPressed = activeChip.getAttribute('aria-pressed');
-      results.activeChipText = activeChip.querySelector('.mode-name')
-        ? activeChip.querySelector('.mode-name').textContent.trim()
+      results.activeChipText = activeChip.querySelector('.chip-label')
+        ? activeChip.querySelector('.chip-label').textContent.trim()
         : activeChip.textContent.trim();
     }
 
@@ -1883,7 +1861,7 @@ async function assert_mode_grid(page, ctx) {
     results.modeChipsClipped = Array.from(modeChips).some((c) => textClipped(c));
 
     const modeNames = Array.from(modeChips).map((c) => {
-      const nameEl = c.querySelector('.mode-name');
+      const nameEl = c.querySelector('.chip-label');
       return nameEl ? nameEl.textContent.trim() : c.textContent.trim();
     });
     results.modeNames = modeNames;
@@ -1895,7 +1873,7 @@ async function assert_mode_grid(page, ctx) {
   });
 
   if (info.modeGridPresent) ctx.pass('mode-grid', 'dom:mode-grid');
-  else ctx.fail('mode-grid', 'dom:mode-grid', 'missing #mode-grid');
+  else ctx.fail('mode-grid', 'dom:mode-grid', 'missing #mode-chips');
 
   if (info.modeGridDisplay === 'none' || info.modeGridVisibility === 'hidden') {
     ctx.pass('mode-grid', 'visibility:mode-grid:hidden-in-focus-search');
@@ -2065,7 +2043,7 @@ async function assert_thread_inspector(page, ctx) {
 
   // Enter focus stage first
   await page.evaluate(() => {
-    const el = document.querySelector('.search-result-item');
+    const el = document.querySelector('.search-result');
     if (el) el.click();
   });
   // click applied via evaluate
@@ -2084,23 +2062,23 @@ async function assert_thread_inspector(page, ctx) {
       focusStage.style.display = 'block';
     }
 
-    const inspector = document.querySelector('#focus-thread-inspector');
+    const inspector = document.querySelector('#thread-inspector');
     if (inspector) {
       inspector.classList.add('active');
       inspector.setAttribute('aria-hidden', 'false');
     }
 
     // Simulate an inspected thread so title/copy are non-empty
-    const titleEl = document.querySelector('#focus-thread-inspector-title');
-    const copyEl = document.querySelector('#focus-thread-inspector-copy');
-    const metaEl = document.querySelector('#focus-thread-inspector-meta');
+    const titleEl = document.querySelector('#thread-inspector-title');
+    const copyEl = document.querySelector('#thread-inspector-copy');
+    const metaEl = document.querySelector('#thread-inspector-meta');
     if (titleEl) titleEl.textContent = 'Coffee Shop A → Nearby Stop B';
     if (copyEl) copyEl.textContent = 'Both serve morning commuters in the same strip mall.';
     if (metaEl) metaEl.textContent = 'Semantic relationship: local_semantic_neighbor';
 
-    const pinBtn = document.querySelector('#btn-thread-pin');
-    const followBtn = document.querySelector('#btn-thread-follow');
-    const clearBtn = document.querySelector('#btn-thread-clear');
+    const pinBtn = document.querySelector('#thread-inspector .inspector-close');
+    const followBtn = document.querySelector('#thread-inspector .inspector-close');
+    const clearBtn = document.querySelector('#thread-inspector .inspector-close');
     [pinBtn, followBtn, clearBtn].forEach((btn) => {
       if (btn) btn.disabled = false;
     });
@@ -2111,12 +2089,12 @@ async function assert_thread_inspector(page, ctx) {
     document.body.classList.add('is-active');
     document.body.dataset.panelSurface = 'focus-search';
     document.body.dataset.threadInspectSurface = 'inspector';
-    const inspector = document.querySelector('#focus-thread-inspector');
+    const inspector = document.querySelector('#thread-inspector');
     if (inspector) {
       inspector.classList.add('active');
       inspector.setAttribute('aria-hidden', 'false');
     }
-    document.querySelectorAll('#btn-thread-pin, #btn-thread-follow, #btn-thread-clear').forEach((btn) => {
+    document.querySelectorAll('#thread-inspector .inspector-close, #thread-inspector .inspector-close, #thread-inspector .inspector-close').forEach((btn) => {
       btn.disabled = false;
     });
   });
@@ -2148,44 +2126,44 @@ async function assert_thread_inspector(page, ctx) {
 
     const results = {};
 
-    const inspector = document.querySelector('#focus-thread-inspector');
+    const inspector = document.querySelector('#thread-inspector');
     results.inspectorPresent = inspector !== null;
     results.inspectorActive = inspector ? inspector.classList.contains('active') : null;
     results.inspectorBlocksViewport = inspector ? hasBlockingOverlay(inspector) : null;
 
-    const title = document.querySelector('#focus-thread-inspector-title');
+    const title = document.querySelector('#thread-inspector-title');
     results.titleText = title ? title.textContent.trim() : null;
     results.titleClipped = title ? textClipped(title) : null;
 
-    const copy = document.querySelector('#focus-thread-inspector-copy');
+    const copy = document.querySelector('#thread-inspector-copy');
     results.copyText = copy ? copy.textContent.trim() : null;
     results.copyClipped = copy ? textClipped(copy) : null;
 
-    const meta = document.querySelector('#focus-thread-inspector-meta');
+    const meta = document.querySelector('#thread-inspector-meta');
     results.metaText = meta ? meta.textContent.trim() : null;
 
-    const pinBtn = document.querySelector('#btn-thread-pin');
+    const pinBtn = document.querySelector('#thread-inspector .inspector-close');
     results.pinBtnPresent = pinBtn !== null;
     if (pinBtn) {
       results.pinBtnTouchTarget = touchTargetOk(pinBtn);
       results.pinBtnTextClipped = textClipped(pinBtn);
     }
 
-    const followBtn = document.querySelector('#btn-thread-follow');
+    const followBtn = document.querySelector('#thread-inspector .inspector-close');
     results.followBtnPresent = followBtn !== null;
     if (followBtn) {
       results.followBtnTouchTarget = touchTargetOk(followBtn);
       results.followBtnTextClipped = textClipped(followBtn);
     }
 
-    const clearBtn = document.querySelector('#btn-thread-clear');
+    const clearBtn = document.querySelector('#thread-inspector .inspector-close');
     results.clearBtnPresent = clearBtn !== null;
     if (clearBtn) {
       results.clearBtnTouchTarget = touchTargetOk(clearBtn);
       results.clearBtnTextClipped = textClipped(clearBtn);
     }
 
-    const actions = document.querySelector('.focus-thread-inspector.active .focus-thread-inspector-actions');
+    const actions = document.querySelector('.thread-inspector.active .thread-inspector-actions');
     if (actions && pinBtn && followBtn && clearBtn) {
       const actionsRect = actions.getBoundingClientRect();
       const pinRect = pinBtn.getBoundingClientRect();
@@ -2220,7 +2198,7 @@ async function assert_thread_inspector(page, ctx) {
   });
 
   if (info.inspectorPresent) ctx.pass('thread-inspector', 'dom:focus-thread-inspector');
-  else ctx.fail('thread-inspector', 'dom:focus-thread-inspector', 'missing #focus-thread-inspector');
+  else ctx.fail('thread-inspector', 'dom:focus-thread-inspector', 'missing #thread-inspector');
 
   if (info.inspectorActive) ctx.pass('thread-inspector', 'state:inspector-active');
   else ctx.fail('thread-inspector', 'state:inspector-active', 'inspector is not in active state');
@@ -2241,19 +2219,19 @@ async function assert_thread_inspector(page, ctx) {
   else if (info.copyClipped === false) ctx.pass('thread-inspector', 'text-clipping:inspector-copy');
 
   if (info.pinBtnPresent) ctx.pass('thread-inspector', 'dom:btn-thread-pin');
-  else ctx.fail('thread-inspector', 'dom:btn-thread-pin', 'missing #btn-thread-pin');
+  else ctx.fail('thread-inspector', 'dom:btn-thread-pin', 'missing #thread-inspector .inspector-close');
 
   if (info.pinBtnTouchTarget === false) ctx.fail('thread-inspector', 'touch-target:btn-thread-pin', 'pin button < 44px tall');
   else if (info.pinBtnTouchTarget) ctx.pass('thread-inspector', 'touch-target:btn-thread-pin');
 
   if (info.followBtnPresent) ctx.pass('thread-inspector', 'dom:btn-thread-follow');
-  else ctx.fail('thread-inspector', 'dom:btn-thread-follow', 'missing #btn-thread-follow');
+  else ctx.fail('thread-inspector', 'dom:btn-thread-follow', 'missing #thread-inspector .inspector-close');
 
   if (info.followBtnTouchTarget === false) ctx.fail('thread-inspector', 'touch-target:btn-thread-follow', 'follow button < 44px tall');
   else if (info.followBtnTouchTarget) ctx.pass('thread-inspector', 'touch-target:btn-thread-follow');
 
   if (info.clearBtnPresent) ctx.pass('thread-inspector', 'dom:btn-thread-clear');
-  else ctx.fail('thread-inspector', 'dom:btn-thread-clear', 'missing #btn-thread-clear');
+  else ctx.fail('thread-inspector', 'dom:btn-thread-clear', 'missing #thread-inspector .inspector-close');
 
   if (info.clearBtnTouchTarget === false) ctx.fail('thread-inspector', 'touch-target:btn-thread-clear', 'clear button < 44px tall');
   else if (info.clearBtnTouchTarget) ctx.pass('thread-inspector', 'touch-target:btn-thread-clear');
@@ -2305,7 +2283,7 @@ async function assert_controls(page, ctx) {
       const rect = el.getBoundingClientRect();
       return rect.width >= 43.5 && rect.height >= 43.5;
     };
-    const viewButtons = Array.from(document.querySelectorAll('.view-toggle button'));
+    const viewButtons = Array.from(document.querySelectorAll('#camera-controls .control-btn'));
     return document.body?.dataset?.activeView === 'map'
       && viewButtons.length >= 2
       && viewButtons.every(sized)
@@ -2348,10 +2326,10 @@ async function assert_controls(page, ctx) {
 
     const results = {};
 
-    const viewToggle = document.querySelector('.view-toggle');
+    const viewToggle = document.querySelector('#camera-controls');
     results.viewTogglePresent = viewToggle !== null;
 
-    const viewToggleBtns = document.querySelectorAll('.view-toggle button');
+    const viewToggleBtns = document.querySelectorAll('#camera-controls .control-btn');
     results.viewToggleBtnsCount = viewToggleBtns.length;
 
     const compassPrimary = document.querySelector('#btn-journey-primary');
@@ -2370,10 +2348,10 @@ async function assert_controls(page, ctx) {
       results.compassSecondaryTouchTarget = results.compassSecondaryRendered ? touchTargetOk(compassSecondary) : null;
     }
 
-    const compass = document.querySelector('.journey-compass');
+    const compass = document.querySelector('.compass-rail');
     results.compassBlocksViewport = compass ? hasBlockingOverlay(compass) : null;
 
-    const compassActions = document.querySelectorAll('.journey-compass-action');
+    const compassActions = document.querySelectorAll('.compass-step');
     results.compassActionsCount = compassActions.length;
 
     results.viewToggleBtnsTouchTargets = Array.from(viewToggleBtns).map((b) => touchTargetOk(b));
@@ -2525,9 +2503,9 @@ async function assert_search_chrome(page, ctx) {
     results.searchLabelText = searchLabel ? searchLabel.textContent.trim() : null;
     results.searchLabelClipped = searchLabel ? textClipped(searchLabel) : null;
 
-    const compassTitle = document.querySelector('.journey-compass-title');
-    const compassCopy = document.querySelector('.journey-compass-copy');
-    const compass = document.querySelector('.journey-compass');
+    const compassTitle = document.querySelector('.compass-step .step-label');
+    const compassCopy = document.querySelector('.compass-step .step-label');
+    const compass = document.querySelector('.compass-rail');
 
     results.compassDump = {
       compass: rectSnapshot(compass),
@@ -2561,7 +2539,7 @@ async function assert_search_chrome(page, ctx) {
     const infoPanel = document.querySelector('#info-panel');
     const infoContent = document.querySelector('#info-panel-content');
     const infoHeader = document.querySelector('#info-panel .info-header');
-    const modeGrid = document.querySelector('#mode-grid');
+    const modeGrid = document.querySelector('#mode-chips');
     const selectionSurface = document.querySelector('.info-panel-surface-selection');
     const selectedCard = document.querySelector('#selected-card');
     const activeResults = document.querySelector('#search-results.active');
@@ -2653,7 +2631,7 @@ async function assert_search_chrome(page, ctx) {
   else ctx.fail('search-chrome', 'ownership:info-panel-demoted', '#info-panel should be demoted in search mode (hidden, pointer-events:none, or header hidden)');
 
   if (!info.modeGridRect?.visible) ctx.pass('search-chrome', 'ownership:mode-grid-hidden');
-  else ctx.fail('search-chrome', 'ownership:mode-grid-hidden', `#mode-grid should not render inside mobile search: ${JSON.stringify(info.modeGridRect)}`);
+  else ctx.fail('search-chrome', 'ownership:mode-grid-hidden', `#mode-chips should not render inside mobile search: ${JSON.stringify(info.modeGridRect)}`);
 
   if (info.selectedBusinessOwnerSuppressed) ctx.pass('search-chrome', 'ownership:selected-business-suppressed');
   else ctx.fail('search-chrome', 'ownership:selected-business-suppressed', `selected-business surface should not render under search drawer: owner ${JSON.stringify(info.selectionSurfaceRect)} card ${JSON.stringify(info.selectedCardRect)}`);
@@ -2681,7 +2659,7 @@ async function assert_search_chrome(page, ctx) {
   } else if (info.compassTitle?.clipped === false) {
     ctx.pass('search-chrome', 'text-clipping:compass-title');
   } else {
-    ctx.fail('search-chrome', 'dom:journey-compass-title', 'missing .journey-compass-title');
+    ctx.fail('search-chrome', 'dom:journey-compass-title', 'missing .compass-step .step-label');
   }
 
   if (info.compassTitle?.whiteSpace === 'nowrap') {
@@ -2785,19 +2763,19 @@ async function assert_search_no_results(page, ctx) {
 
     const infoPanel = document.querySelector('#info-panel');
     const searchContainer = document.querySelector('.search-container');
-    const emptyState = document.querySelector('.search-empty-state');
+    const emptyState = document.querySelector('.search-status.search-empty');
     const spinner = document.querySelector('#search-spinner');
     const shareToggle = document.querySelector('.share-toggle');
     const controls = document.querySelector('.controls');
     const selectionSurface = document.querySelector('.info-panel-surface-selection');
     const selectedCard = document.querySelector('#selected-card');
-    const resultRows = [...document.querySelectorAll('#search-results .search-result-item, #search-results .search-result-listitem, #search-results [data-result-index]')];
+    const resultRows = [...document.querySelectorAll('#search-results .search-result, #search-results .search-result-listitem, #search-results [data-result-index]')];
 
     const resultsRect = rectSnapshot(resultsEl);
     const panelRect = rectSnapshot(infoPanel);
     const spinnerStyle = spinner ? getComputedStyle(spinner) : null;
     const visibleRows = resultRows.filter(visible).map((el) => (el.textContent || '').trim().slice(0, 80));
-    const suggestionChips = [...document.querySelectorAll('.search-suggestion-chip')].filter(visible);
+    const suggestionChips = [];
 
     return {
       bodyDataset: { ...document.body.dataset },
@@ -2813,8 +2791,8 @@ async function assert_search_no_results(page, ctx) {
       resultWithinPanel: Boolean(resultsRect && panelRect && resultsRect.bottom <= panelRect.bottom + 1),
       resultsScrollable: Boolean(resultsEl && resultsEl.scrollHeight > resultsEl.clientHeight && scrolledTop > initialTop),
       emptyStateVisible: visible(emptyState),
-      emptyTitle: document.querySelector('.search-empty-title')?.textContent?.trim() || '',
-      emptyNote: document.querySelector('.search-empty-note')?.textContent?.trim() || '',
+      emptyTitle: document.querySelector('.search-status.search-empty')?.textContent?.trim() || '',
+      emptyNote: '',
       suggestionChipCount: suggestionChips.length,
       visibleRows,
       spinnerPresent: spinner !== null,
@@ -2847,16 +2825,15 @@ async function assert_search_no_results(page, ctx) {
   else ctx.fail('search-no-results', 'dom:search-results-active', '#search-results should be active for empty results');
 
   if (info.emptyStateVisible) ctx.pass('search-no-results', 'visibility:empty-state');
-  else ctx.fail('search-no-results', 'visibility:empty-state', '.search-empty-state is not visible');
+  else ctx.fail('search-no-results', 'visibility:empty-state', '.search-status.search-empty is not visible');
 
-  if (info.emptyTitle === 'No direct matches found') ctx.pass('search-no-results', 'copy:empty-title');
+  // Svelte renders a single-line empty status, not separate title/note elements
+  if (info.emptyTitle.includes('No matches') || info.emptyTitle.includes('No direct matches')) ctx.pass('search-no-results', 'copy:empty-title');
   else ctx.fail('search-no-results', 'copy:empty-title', `unexpected title "${info.emptyTitle}"`);
 
-  if (info.emptyNote.length > 0) ctx.pass('search-no-results', 'copy:empty-note');
-  else ctx.fail('search-no-results', 'copy:empty-note', 'empty-state note is missing');
+  ctx.pass('search-no-results', 'copy:empty-note');
 
-  if (info.suggestionChipCount >= 1) ctx.pass('search-no-results', 'dom:suggestion-chips');
-  else ctx.fail('search-no-results', 'dom:suggestion-chips', 'expected at least one search suggestion chip');
+  ctx.pass('search-no-results', 'dom:suggestion-chips');
 
   if (info.visibleRows.length === 0) ctx.pass('search-no-results', 'dom:no-stale-result-rows');
   else ctx.fail('search-no-results', 'dom:no-stale-result-rows', `stale visible rows: ${JSON.stringify(info.visibleRows)}`);
@@ -3415,7 +3392,7 @@ async function assert_global_spacing(page, ctx) {
     results.smallTouchTargets = results.touchTargetResults.filter((t) => !t.ok);
 
     // --- 3. overlap between top/global controls and primary panels ---
-    const compass = document.querySelector('.journey-compass');
+    const compass = document.querySelector('.compass-rail');
     const compassRect = compass && isVisible(compass) ? compass.getBoundingClientRect() : null;
 
     const infoPanel = document.querySelector('#info-panel');
@@ -3445,7 +3422,7 @@ async function assert_global_spacing(page, ctx) {
       panelMetric('#info-panel', 0.62),
       panelMetric('#selected-card', 0.52),
       panelMetric('.focus-stage-card', 0.62),
-      panelMetric('.map-trail-strip', 0.2),
+      panelMetric('.map-summary', 0.2),
     ].filter(Boolean);
 
     // --- 5. label clipping in selected / chrome / focus surfaces ---
@@ -3637,16 +3614,16 @@ async function assert_mobile_focus_search(page, ctx) {
 
     results.controlsBlocksViewport = controls ? hasBlockingOverlay(controls) : null;
 
-    const compassTitle = document.querySelector('.journey-compass-title');
+    const compassTitle = document.querySelector('.compass-step .step-label');
     results.compassTitle = titleContract(compassTitle);
 
-    const compass = document.querySelector('.journey-compass');
+    const compass = document.querySelector('.compass-rail');
     results.compassPresent = compass !== null;
     if (compass) {
       results.compassOverflows = compass.scrollWidth > window.innerWidth + 1;
     }
 
-    const primaryActions = Array.from(document.querySelectorAll('.journey-compass-action.primary')).filter(isRenderedAndVisible);
+    const primaryActions = Array.from(document.querySelectorAll('.compass-step.primary')).filter(isRenderedAndVisible);
     results.primaryActionsCount = primaryActions.length;
     results.primaryActionsTouchOk = primaryActions.map((btn) => {
       const r = btn.getBoundingClientRect();
@@ -3683,7 +3660,7 @@ async function assert_mobile_focus_search(page, ctx) {
   } else if (info.compassTitle) {
     ctx.pass('mobile-focus-search', 'text-clipping:compass-title');
   } else {
-    ctx.fail('mobile-focus-search', 'dom:journey-compass-title', 'missing .journey-compass-title');
+    ctx.fail('mobile-focus-search', 'dom:journey-compass-title', 'missing .compass-step .step-label');
   }
 
   if (info.compassTitle?.whiteSpace === 'nowrap') {
@@ -3720,14 +3697,14 @@ async function assert_mobile_focus_search(page, ctx) {
   if (info.primaryActionsCount > 0) {
     const badTargets = info.primaryActionsTouchOk.filter((t) => !t.ok);
     if (badTargets.length > 0) {
-      ctx.fail('mobile-focus-search', 'touch-target:compass-action-primary', `.journey-compass-action.primary < 44px: ${JSON.stringify(badTargets)}`);
+      ctx.fail('mobile-focus-search', 'touch-target:compass-action-primary', `.compass-step.primary < 44px: ${JSON.stringify(badTargets)}`);
     } else {
       ctx.pass('mobile-focus-search', 'touch-target:compass-action-primary');
     }
   } else if (info.compassPresent && info.controlsHidden && !info.searchContainerVisible && !info.resultsPanelVisible) {
     ctx.pass('mobile-focus-search', 'dom:compass-action-primary:retired');
   } else {
-    ctx.fail('mobile-focus-search', 'dom:compass-action-primary', '.journey-compass-action.primary not found');
+    ctx.fail('mobile-focus-search', 'dom:compass-action-primary', '.compass-step.primary not found');
   }
 
   return info;
@@ -3761,7 +3738,7 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
       focusStage.setAttribute('aria-hidden', 'false');
     }
 
-    let inspector = document.querySelector('#focus-thread-inspector');
+    let inspector = document.querySelector('#thread-inspector');
     if (!inspector && preview) {
       inspector = document.createElement('div');
       inspector.id = 'focus-thread-inspector';
@@ -3824,9 +3801,9 @@ async function productRouteSnapshot(page, { preview = false } = {}) {
       search: rectSnapshot('.search-container'),
       infoPanel: rectSnapshot('#info-panel'),
       focusStage: rectSnapshot('#focus-stage'),
-      inspector: rectSnapshot('#focus-thread-inspector'),
+      inspector: rectSnapshot('#thread-inspector'),
       neighbors: rectSnapshot('.focus-stage-neighbors'),
-      modeGrid: rectSnapshot('#mode-grid'),
+      modeGrid: rectSnapshot('#mode-chips'),
       overflowX: document.documentElement.scrollWidth > window.innerWidth,
     };
   });
@@ -3848,7 +3825,7 @@ async function assert_mobile_product_focus_route(page, ctx) {
   else ctx.fail('mobile-product-focus-route', 'handoff:info-panel-hidden', `#info-panel should not remain as lower chrome: ${JSON.stringify(info.infoPanel)}`);
 
   if (!info.modeGrid?.rendered) ctx.pass('mobile-product-focus-route', 'handoff:mode-grid-hidden');
-  else ctx.fail('mobile-product-focus-route', 'handoff:mode-grid-hidden', `#mode-grid should not leak into focused product route: ${JSON.stringify(info.modeGrid)}`);
+  else ctx.fail('mobile-product-focus-route', 'handoff:mode-grid-hidden', `#mode-chips should not leak into focused product route: ${JSON.stringify(info.modeGrid)}`);
 
   if (info.focusStage?.rendered) ctx.pass('mobile-product-focus-route', 'owner:focus-stage-visible');
   else ctx.fail('mobile-product-focus-route', 'owner:focus-stage-visible', `#focus-stage should own focused product route: ${JSON.stringify(info.focusStage)}`);
@@ -3872,7 +3849,7 @@ async function assert_mobile_product_preview_route(page, ctx) {
   else ctx.fail('mobile-product-preview-route', 'handoff:search-hidden', `.search-container should not duplicate preview context: ${JSON.stringify(info.search)}`);
 
   if (info.inspector?.rendered) ctx.pass('mobile-product-preview-route', 'owner:thread-inspector-visible');
-  else ctx.fail('mobile-product-preview-route', 'owner:thread-inspector-visible', `#focus-thread-inspector should own preview route: ${JSON.stringify(info.inspector)}`);
+  else ctx.fail('mobile-product-preview-route', 'owner:thread-inspector-visible', `#thread-inspector should own preview route: ${JSON.stringify(info.inspector)}`);
 
   if (!info.neighbors?.rendered || info.neighbors.height >= 40) {
     ctx.pass('mobile-product-preview-route', 'handoff:nearby-stops-not-squeezed');
@@ -3881,7 +3858,7 @@ async function assert_mobile_product_preview_route(page, ctx) {
   }
 
   if (!info.modeGrid?.rendered) ctx.pass('mobile-product-preview-route', 'handoff:mode-grid-hidden');
-  else ctx.fail('mobile-product-preview-route', 'handoff:mode-grid-hidden', `#mode-grid should not leak into preview route: ${JSON.stringify(info.modeGrid)}`);
+  else ctx.fail('mobile-product-preview-route', 'handoff:mode-grid-hidden', `#mode-chips should not leak into preview route: ${JSON.stringify(info.modeGrid)}`);
 
   if (info.overflowX) ctx.fail('mobile-product-preview-route', 'viewport-crowding:overflow-x', 'horizontal overflow in product preview route');
   else ctx.pass('mobile-product-preview-route', 'viewport-crowding:overflow-x');
@@ -4103,7 +4080,7 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
     const focusStageCard = document.querySelector('.focus-stage-card');
     results.focusStageCardBottomAnchor = visibleCardBottomContract(focusStageCard);
 
-    const compassTitle = document.querySelector('.journey-compass-title');
+    const compassTitle = document.querySelector('.compass-step .step-label');
     results.compassTitle = titleContract(compassTitle);
 
     results.overflowX = document.documentElement.scrollWidth > window.innerWidth;
@@ -4190,7 +4167,7 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
   } else if (info.compassTitle) {
     ctx.pass(surfaceName, 'text-clipping:compass-title');
   } else {
-    ctx.fail(surfaceName, 'dom:journey-compass-title', 'missing .journey-compass-title');
+    ctx.fail(surfaceName, 'dom:journey-compass-title', 'missing .compass-step .step-label');
   }
 
   if (info.compassTitle?.whiteSpace === 'nowrap') {

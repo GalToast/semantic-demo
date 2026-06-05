@@ -296,6 +296,68 @@ export {
   getCurrentUrl
 } from './viewport';
 
+// ── Test State (visual settle sync for Playwright surface/visual tests) ──────
+
+import { derived } from 'svelte/store';
+import { navStore } from './navigation';
+import { searchStore } from './search';
+import { journeyStore } from './journey';
+import { demoState } from './demo';
+import { viewport } from './viewport';
+import { focusStore } from './focus';
+
+/**
+ * Derived store composing visual state from navigation, search, journey,
+ * demo, and viewport stores into a flat shape matching the legacy
+ * `window.__TEST_STATE__` contract expected by Playwright surface tests.
+ */
+export const testState = derived(
+  [navStore, searchStore, journeyStore, demoState, viewport, focusStore],
+  ([$nav, $search, $journey, $demo, $vp, $focus]) => {
+    // Derive viewMode from nav mode + search activity
+    let viewMode: string;
+    if ($search.status !== 'idle') {
+      viewMode = 'search';
+    } else if ($nav.mode === 'focus') {
+      viewMode = 'focus';
+    } else if ($nav.mode === 'trail') {
+      viewMode = 'trail';
+    } else if ($nav.mode === 'inside') {
+      viewMode = 'inside';
+    } else {
+      viewMode = 'idle';
+    }
+
+    // Surface from viewport breakpoint
+    const surface = $vp.isCompact ? 'mobile' : 'desktop';
+
+    return {
+      // ── User-facing visual state contract ──
+      viewMode,
+      focusedNode: $nav.focusedIndex,
+      searchActive: $search.status !== 'idle',
+      searchQuery: $search.query,
+      journeyPhase: $journey.compass.phase,
+      demoPhase: $demo.phase,
+      loadingPhase: $nav.loadingPhaseKey,
+      surface,
+      reducedMotion: $vp.reducedMotion,
+      compactViewport: $search.isCompactViewport ?? $vp.isCompact,
+
+      // ── Standard legacy aliases for existing test consumers ──
+      navState: {
+        mode: $nav.mode,
+        focusedIndex: $nav.focusedIndex,
+        surface: $nav.surface,
+        currentView: $nav.currentView
+      },
+      semanticDiveMode: $focus.semanticDiveMode,
+      currentView: $nav.currentView,
+      loadingPhaseKey: $nav.loadingPhaseKey
+    };
+  }
+);
+
 // ── Filter ───────────────────────────────────────────────────────────────────
 export {
   filterState,
