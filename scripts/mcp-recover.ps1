@@ -54,6 +54,12 @@ if (Test-Path -LiteralPath $legacyPlaywrightRoot -ErrorAction SilentlyContinue) 
         Get-ChildItem -LiteralPath $_.FullName -Force -Filter 'Singleton*' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
     }
 }
+$profileRoot = Join-Path $launcherDir 'profiles'
+if (Test-Path -LiteralPath $profileRoot -ErrorAction SilentlyContinue) {
+    Get-ChildItem -LiteralPath $profileRoot -Directory -Filter 'playwright-*' -ErrorAction SilentlyContinue | ForEach-Object {
+        Get-ChildItem -LiteralPath $_.FullName -Force -Filter 'Singleton*' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+    }
+}
 $env:CODEX_MCP_CLIENT = 'codex'
 $env:CODEX_MCP_FORCE_CLEAN_START = '1'
 $env:CODEX_MCP_PROFILE_SCOPE = 'session'

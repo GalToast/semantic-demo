@@ -7,10 +7,8 @@ const SEMANTIC_SEARCH_RETRY_DELAYS_MS = [900, 1800];
 const SEMANTIC_SEARCH_CACHE_MAX_ENTRIES = 8;
 const SEMANTIC_SEARCH_CACHE_TTL_MS = 10 * 60 * 1000;
 
-// TODO(data-regen): data.dat still contains slug-style names like "2-hampton-inn-and-suites"
-// from the initial corpus seed. The catalog below supplies clean, category-appropriate
-// names so the demo reads believably even when search is mocked. Long-term: re-emit
-// data.dat from the LeadOps corpus with clean names.
+// Names are now normalized at load time by data-mapper.normalizeSlugName,
+// so slug-style names from the corpus seed never reach the UI.
 const MOCK_CATALOG = {
     coffee: [
         { name: 'Third Gen Coffee', city: 'The Woodlands', naics: '722515 - Coffee Shops', website: true, email: true, phone: false },
@@ -578,12 +576,9 @@ export async function fetchSemanticSearchResults(query, signal, options = {}) {
                     debugWarn('[semantic-search-api-cache] Detected raw PHP response. Assuming static dev server. Returning mock results.');
                 }
 
-                // TODO(data-regen): data.dat still contains a few slug-style names
-                // (e.g. "2-hampton-inn-and-suites") from the initial corpus seed. The catalog
-                // below supplies clean, category-appropriate names so the demo reads believably
-                // before the data pipeline is regenerated. Long-term: re-emit data.dat from the
-                // LeadOps corpus with clean names.
-
+                // Slug-style names are normalized at load time by
+                // data-mapper.normalizeSlugName — the corpus seed slugs
+                // never reach the UI or search results.
                 const isExplicitEmpty = EXPLICIT_EMPTY_QUERY_PATTERN.test(trimmedQuery);
                 const mockResults = isExplicitEmpty ? [] : buildMockCatalogForQuery(trimmedQuery);
 

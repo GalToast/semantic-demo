@@ -1,5 +1,4 @@
 import { state } from '../state.js';
-import { publish, EVENTS } from './event-bus.js';
 import { getBusinessNamePresentation, sanitizePublicFacingNote } from './utils/dom-formatters.js';
 import { getPanelSurface, isMapSummarySurface } from './environment.js';
 
@@ -46,69 +45,18 @@ export function updateSelectedCardHeading(point = null) {
 }
 
 export function renderSelectedMetaStrip(point) {
-    const el = document.getElementById('selected-meta-strip');
-    if (!el) return;
-    if (state.currentView === 'map') { el.hidden = true; return; }
-    if (!point) { el.textContent = ''; el.hidden = true; return; }
-    el.hidden = false;
-    const rawCity = point.city ? point.city.trim() : null;
-    const rawStatus = point.status ? point.status.trim() : null;
-    const cityPart = rawCity === '-' || rawCity === '' ? null : rawCity;
-    const statusPart = rawStatus === '-' || rawStatus === '' ? null : rawStatus;
-    if (cityPart && statusPart) {
-        el.textContent = `${cityPart} — ${statusPart}`;
-    } else if (cityPart) {
-        el.textContent = cityPart;
-    } else if (statusPart) {
-        el.textContent = statusPart;
-    } else {
-        el.textContent = 'Montgomery County';
-    }
+    void point;
+    // Compatibility shim: SelectedBusinessDetails.svelte owns this markup.
 }
 
 export function renderSelectedMatchPanel(point) {
-    const panelEl = document.getElementById('selected-match-panel');
-    const copyEl = document.getElementById('selected-match-copy');
-    if (!panelEl || !copyEl) return;
-    if (state.currentView === 'map' && !isMapSummarySurface()) { panelEl.hidden = true; return; }
-    if (!point) return;
-    if (state.currentSearchSummary?.anchorIndex !== undefined) {
-        const idx = state.points.indexOf(point);
-        if (idx === state.currentSearchSummary.anchorIndex) {
-            panelEl.hidden = false;
-            copyEl.textContent = 'This record is the semantic search anchor - the starting point for the current connection trail.';
-        } else if ((state.currentSearchSummary.resultIndices || []).includes(idx)) {
-            panelEl.hidden = false;
-            copyEl.textContent = 'This record appeared in the semantic search results as a nearby connection.';
-        } else if (isMapSummarySurface()) {
-            panelEl.hidden = false;
-            copyEl.textContent = 'This record is connected to the current semantic search trail.';
-        } else {
-            panelEl.hidden = true;
-        }
-    } else {
-        if (isMapSummarySurface()) {
-            panelEl.hidden = false;
-            copyEl.textContent = 'This record is connected to the current semantic search trail.';
-        } else {
-            panelEl.hidden = true;
-        }
-    }
+    void point;
+    // Compatibility shim: SelectedBusinessDetails.svelte owns this markup.
 }
 
 export function renderSelectedActionRow(point) {
-    const el = document.getElementById('selected-action-row');
-    if (!el) return;
-    if (state.currentView === 'map') { el.hidden = true; return; }
-    if (!point) return;
-    el.hidden = false;
-    el.innerHTML = '<button class="action-btn" id="btn-selected-map" type="button">View on Map</button>';
-    const btn = document.getElementById('btn-selected-map');
-    if (btn) {
-        btn.addEventListener('click', () => {
-            publish(EVENTS.VIEW_CHANGE_REQUESTED, { view: 'map' });
-        });
-    }
+    void point;
+    // Compatibility shim: SelectedBusinessDetails.svelte owns this markup.
 }
 
 function setSurfaceHidden(el, hidden) {

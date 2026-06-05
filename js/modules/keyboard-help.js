@@ -4,7 +4,9 @@ import { showExperienceToast } from './ui-feedback.js';
 import { closeLegendGuide } from './legend-ui.js';
 import { hideTooltip } from './tooltip.js';
 import { hideSummaryCard } from './semantic-guide.js';
-import { setInfoPanelOpen, zoomCamera, recenterFocusedNode } from './event-bindings.js';
+import { setInfoPanelOpen } from './bindings/panel-bindings.js';
+import { zoomCamera } from './bindings/view-bindings.js';
+import { recenterFocusedNode } from './bindings/journey-bindings.js';
 import { traverseNeighbor } from './journey.js';
 
 // Injected reset functions are set via initKeyboardResetOwnership() before first keydown.

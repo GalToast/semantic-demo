@@ -1,31 +1,15 @@
 import { state, withStateMutation } from '../state.js';
-import {
-    currentViewStore,
-    loadingPhaseKeyStore,
-    semanticThreadsStatusStore
-} from './stores.js';
 
-// State-to-store sync helpers (state.js contract; see header).
-// Each helper mirrors the write to the corresponding Svelte store. The store
-// value is cloned for objects to avoid reference aliasing.
-
-function syncCurrentViewStore(view) {
-    currentViewStore.set(view);
-}
-
-function syncLoadingPhaseKeyStore(key) {
-    loadingPhaseKeyStore.set(key);
-}
-
-function syncSemanticThreadsStatusStore(status) {
-    semanticThreadsStatusStore.set(status);
-}
+// State mutators. Each function updates the corresponding state field
+// through withStateMutation() (so the proxy allows direct writes on
+// CRITICAL_KEYS). No store syncs — only activeFilters and
+// activeClusterFilter are mirrored to Svelte stores, and those syncs
+// live in filter-state.js (the canonical owner).
 
 export function setCurrentView(view) {
     withStateMutation(() => {
         state.currentView = view;
     });
-    syncCurrentViewStore(view);
 }
 
 export function setNavState(updates) {
@@ -44,12 +28,10 @@ export function updateLoadingPhaseKey(key) {
     withStateMutation(() => {
         state.loadingPhaseKey = key;
     });
-    syncLoadingPhaseKeyStore(key);
 }
 
 export function updateSemanticThreadsStatus(status) {
     withStateMutation(() => {
         state.semanticThreadsStatus = status;
     });
-    syncSemanticThreadsStatusStore(status);
 }

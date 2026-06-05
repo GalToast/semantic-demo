@@ -126,9 +126,11 @@ describe('semantic-search-api-cache', () => {
         });
 
         it('should back static PHP fallback results with real dataset lead ids when possible', async () => {
+            // Names are set as they would appear after data-mapper.normalizeSlugName
+            // runs at load time — slug-style names are already clean.
             Object.assign(state, {
                 points: [
-                    { lead_id: 519, name: '519-angel-fire-coffee', what: 'Coffee shop', city: 'Cleveland', website: 'https://example.test' },
+                    { lead_id: 519, name: 'Angel Fire Coffee', what: 'Coffee shop', city: 'Cleveland', website: 'https://example.test' },
                     { lead_id: 989, name: "BLOOMIN' BREWS COFFEE LLC", what: 'Coffee shop', city: 'Willis', email: 'hello@example.test' },
                     { lead_id: 1, name: '1845 SOLUTIONS', what: 'Management consulting', city: 'Conroe' }
                 ]
@@ -148,7 +150,7 @@ describe('semantic-search-api-cache', () => {
             expect(result.ok).toBe(true);
             expect(result.is_mock).toBe(true);
             expect(result.results.map((row) => row.lead_id).sort()).toEqual(['519', '989']);
-            expect(result.results.map((row) => row.name)).toContain('519-angel-fire-coffee');
+            expect(result.results.map((row) => row.name)).toContain('Angel Fire Coffee');
             expect(result.results.map((row) => row.lead_id)).not.toContain('1');
         });
 

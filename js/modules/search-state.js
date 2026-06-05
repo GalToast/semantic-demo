@@ -104,7 +104,6 @@ export function applyFilters(options = {}) {
 export function getFilteredIndices(...args) { return filterCoreModule.getFilteredIndices(...args); }
 export function pointMatchesActiveFilters(...args) { return filterCoreModule.pointMatchesActiveFilters(...args); }
 
-export function buildSearchResultItemHtml(...args) { return renderersModule.buildSearchResultItemHtml(...args); }
 export function refreshSearchResultHierarchy(...args) { return renderersModule.refreshSearchResultHierarchy(...args); }
 export function setActiveSearchResultRow(...args) { return renderersModule.setActiveSearchResultRow(...args); }
 export function updateSearchTrailCue(...args) { return renderersModule.updateSearchTrailCue(...args); }

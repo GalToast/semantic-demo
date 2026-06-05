@@ -2,6 +2,7 @@ import { state, withStateMutation } from '../state.js';
 import { updateClusterList, populateCityFilter } from './cluster-filter.js';
 import { buildLegend } from './ui-renderers.js';
 import { applyFilters } from './search-state.js';
+import { normalizeSlugName } from './utils/data-mapper.js';
 
 let _dataWorker = null;
 
@@ -73,9 +74,12 @@ export async function loadData() {
                     return null;
                 })
             ]);
+            // Normalize slug-style names at load time so downstream consumers
+            // (search, journey, info panel) never see raw corpus-seed slugs.
+            const normalizedPoints = points.map(p => ({ ...p, name: normalizeSlugName(p.name) }));
             withStateMutation(() => {
                 if (state.dataLoadAttempt !== attemptNumber) return;
-                state.points = points;
+                state.points = normalizedPoints;
                 state.leadEnrichment = enrichment;
                 state.pointIndexByLeadId = new Map(Object.entries(pointIndexByLeadId));
                 state.rawPositionsBuffer = positionsBuffer;
@@ -130,7 +134,7 @@ export async function loadData() {
 
         return {
             cluster,
-            name: p.length > 4 ? cleanOptionalValue(p[4]) : null,
+            name: p.length > 4 ? normalizeSlugName(cleanOptionalValue(p[4])) : null,
             what: p.length > 5 ? cleanOptionalValue(p[5]) || 'Montgomery County business' : 'Montgomery County business',
             city: p.length > 6 ? cleanOptionalValue(p[6]) || 'Montgomery County' : 'Montgomery County',
             lead_id: p.length > 7 ? p[7] : null,

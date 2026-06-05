@@ -161,8 +161,8 @@ function testAppInitializesAdapter() {
 
     // Must be called before applyUrlState to ensure adapter is ready
     const adapterCallIdx = src.indexOf('initClusterFilterAdapter(');
-    const urlStateCallIdx = src.indexOf('applyUrlState(');
-    assert(adapterCallIdx < urlStateCallIdx, 'initClusterFilterAdapter must be called BEFORE applyUrlState');
+    const urlStateCallIdx = src.indexOf("measureStep('applyUrlState', applyUrlState)");
+    assert(adapterCallIdx !== -1 && urlStateCallIdx !== -1 && adapterCallIdx < urlStateCallIdx, 'initClusterFilterAdapter must be called BEFORE applyUrlState');
 
     console.log('  OK app.js initializes the cluster-filter adapter before applyUrlState');
 }

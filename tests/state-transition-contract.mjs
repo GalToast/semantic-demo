@@ -132,6 +132,7 @@ try {
   const lc = await import('../js/modules/lifecycle.js');
   refreshCompositionState = lc.refreshCompositionState;
 } catch (e) {
+  console.error('LIFECYCLE IMPORT ERROR:', e);
   // lifecycle.js may self-initialize on import; get it via window if not exported
   refreshCompositionState = globalThis.window.refreshCompositionState;
 }

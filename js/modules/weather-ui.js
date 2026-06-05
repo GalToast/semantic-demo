@@ -13,7 +13,7 @@ function canUseWeatherDom() {
 
 // The UI layer subscribes to the stores and reacts purely to state changes
 weatherStateStore.subscribe((state) => {
-    if (typeof document === 'undefined' || !state) return;
+    if (!canUseWeatherDom() || !state) return;
     if (state.fallback) {
         renderWeatherFallback(state);
     } else if (state.weather) {
@@ -22,7 +22,7 @@ weatherStateStore.subscribe((state) => {
 });
 
 compositionStore.subscribe((comp) => {
-    if (typeof document === 'undefined') return;
+    if (!canUseWeatherDom()) return;
     // If the view changes away from map, we clear weather effects.
     if (comp.activeView !== 'map') {
         clearWeatherEffects();
@@ -180,7 +180,7 @@ export function applyWeatherEffects(weather) {
 }
 
 export function clearWeatherEffects() {
-    if (typeof document === 'undefined') return;
+    if (!canUseWeatherDom()) return;
     const overlay = document.getElementById('weather-overlay');
     if (overlay?.classList?.remove) overlay.classList.remove('active');
     clearWeatherEffectNodes();

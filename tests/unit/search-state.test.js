@@ -57,7 +57,6 @@ vi.mock('../../js/modules/search-filter-core.js', () => ({
 }));
 
 vi.mock('../../js/modules/ui-renderers.js', () => ({
-    buildSearchResultItemHtml: vi.fn(),
     refreshSearchResultHierarchy: vi.fn(),
     setActiveSearchResultRow: vi.fn(),
     updateSearchTrailCue: vi.fn(),

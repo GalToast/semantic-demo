@@ -24,7 +24,7 @@ import {
     updateSearchStatusMessage,
     updateSearchTrailCue,
 } from './search-state.js';
-import { updateHasQuery } from './event-bindings.js';
+import { updateHasQuery } from './bindings/search-bindings.js';
 import { setCurrentView } from './state-mutators.js';
 
 // === URL State ===

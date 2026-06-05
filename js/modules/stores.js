@@ -4,7 +4,7 @@ import { writable } from 'svelte/store';
 // ============================================================================
 // SVELTE NATIVE STORES
 // ============================================================================
-// These mirror five fields of the monolithic state object in state.js. Vanilla
+// These mirror two fields of the monolithic state object in state.js. Vanilla
 // JS writers MUST keep state and the store in sync — see the state ↔ store sync
 // contract in state.js for the field/owner map.
 //
@@ -12,19 +12,10 @@ import { writable } from 'svelte/store';
 // For read+write chrome UI (panel toggles), use the stores directly without a
 // state.js field.
 
-/** @type {import('svelte/store').Writable<string>} */
-export const currentViewStore = writable('galaxy');
-
-/** @type {import('svelte/store').Writable<string>} */
-export const semanticThreadsStatusStore = writable('idle');
-
 // Initialize open on desktop, closed on mobile/narrow viewports
 const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
 export const isInfoPanelOpenStore = writable(isDesktop);
 export const isLegendPanelOpenStore = writable(false);
-
-/** @type {import('svelte/store').Writable<string>} */
-export const loadingPhaseKeyStore = writable('records');
 
 /** @type {import('svelte/store').Writable<any>} */
 export const activeFiltersStore = writable({

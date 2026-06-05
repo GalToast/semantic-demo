@@ -75,4 +75,13 @@ describe('buildSelectedBusinessProps', () => {
         expect(props.facts.find(f => f.label === 'test.com')).toBeDefined();
         expect(props.facts.find(f => f.label === 'hello@test.com')).toBeDefined();
     });
+
+    it('exposes match narrative for the Svelte-owned selected details panel', () => {
+        const point = { name: 'Test Corp', cluster: 1 };
+        const props = buildSelectedBusinessProps(point, {}, mockAdapter, mockFormatters);
+
+        expect(props.matchNarrative).toBe('Match narrative');
+        expect(props.showMatchPanel).toBe(true);
+        expect(props.showTrivia).toBe(true);
+    });
 });

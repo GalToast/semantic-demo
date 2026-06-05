@@ -39,7 +39,10 @@ $processes = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
         $_.CommandLine -and (
             $_.CommandLine -like '*chrome-devtools-mcp*' -or
             $_.CommandLine -like '*mcp-playwright-video-wrapper*' -or
+            $_.CommandLine -like '*@playwright/mcp*' -or
+            $_.CommandLine -like '*playwright-mcp*' -or
             $_.CommandLine -like '*playwright-codex*' -or
+            $_.CommandLine -like '*playwright-claude*' -or
             $_.CommandLine -like '*chrome-devtools-isolate*' -or
             $_.CommandLine -like '*chrome-devtools-claude*' -or
             $_.CommandLine -like '*chrome-devtools-codex*'
@@ -53,7 +56,7 @@ $rows = foreach ($proc in $processes) {
         pid = $proc.ProcessId
         name = $proc.Name
         agent = Get-AgentKind -CommandLine $proc.CommandLine -Profile $profile
-        kind = if ($proc.CommandLine -like '*mcp-playwright-video-wrapper*') { 'playwright' } elseif ($proc.CommandLine -like '*chrome-devtools-mcp*') { 'chrome-devtools' } elseif ($proc.Name -eq 'chrome.exe') { 'chrome' } else { 'launcher' }
+        kind = if ($proc.CommandLine -like '*mcp-playwright-video-wrapper*' -or $proc.CommandLine -like '*@playwright/mcp*' -or $proc.CommandLine -like '*playwright-mcp*') { 'playwright' } elseif ($proc.CommandLine -like '*chrome-devtools-mcp*') { 'chrome-devtools' } elseif ($proc.Name -eq 'chrome.exe') { 'chrome' } else { 'launcher' }
         profile = $profile
         commandLine = $proc.CommandLine
     }

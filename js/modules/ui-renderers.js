@@ -21,14 +21,7 @@ export function getSearchResultCardClasses(...args) { return searchRendererModul
 export function buildSearchResultSnippet(...args) { return searchRendererModule.buildSearchResultSnippet(...args); }
 export function buildSearchRankLabel(...args) { return searchRendererModule.buildSearchRankLabel(...args); }
 export function buildSearchStageLabel(...args) { return searchRendererModule.buildSearchStageLabel(...args); }
-export function buildSearchResultItemHtml(...args) { return searchRendererModule.buildSearchResultItemHtml(...args); }
-export function buildSearchLoadingMarkup(...args) { return searchRendererModule.buildSearchLoadingMarkup(...args); }
-export function buildSearchErrorInlineMarkup(...args) { return searchRendererModule.buildSearchErrorInlineMarkup(...args); }
-export function buildSearchErrorFullMarkup(...args) { return searchRendererModule.buildSearchErrorFullMarkup(...args); }
-export function buildSearchSuggestionChips(...args) { return searchRendererModule.buildSearchSuggestionChips(...args); }
-export function buildSearchEmptyStateMarkup(...args) { return searchRendererModule.buildSearchEmptyStateMarkup(...args); }
 export function renderResultCountLine(...args) { return searchRendererModule.renderResultCountLine(...args); }
-export function renderResultCountLineMarkup(...args) { return searchRendererModule.renderResultCountLineMarkup(...args); }
 export function revealActiveSearchResultOnCompact(...args) { return searchRendererModule.revealActiveSearchResultOnCompact(...args); }
 export function clearCompactSearchResultRevealTimers(...args) { return searchRendererModule.clearCompactSearchResultRevealTimers(...args); }
 export function scheduleCompactSearchResultReveal(...args) { return searchRendererModule.scheduleCompactSearchResultReveal(...args); }

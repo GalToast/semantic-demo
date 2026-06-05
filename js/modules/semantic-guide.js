@@ -63,7 +63,7 @@ export function semanticGuideIcon(id, label = '') {
     return `<svg class="ui-icon" aria-hidden="${label ? 'false' : 'true'}"${label ? ` aria-label="${escapeHtml(label)}"` : ''}><use href="#icon-${escapeHtml(id)}"></use></svg>`;
 }
 
-export function setSemanticGuideButtonState(button, mode = 'ready', options = {}) {
+export function setSemanticGuideButtonState(mode = 'ready', options = {}) {
     let currentState;
     semanticGuideStateStore.subscribe(s => currentState = s)();
     semanticGuideStateStore.set({
@@ -219,7 +219,7 @@ async function fetchSemanticGuide(payload, signal) {
     return result;
 }
 
-function startSemanticGuideRequest(button) {
+function startSemanticGuideRequest() {
     if (state.semanticGuideAbortController) {
         state.semanticGuideAbortController.abort();
         state.semanticGuideAbortController = null;
@@ -227,7 +227,7 @@ function startSemanticGuideRequest(button) {
     const requestId = (state.semanticGuideRequestSequence = (state.semanticGuideRequestSequence || 0) + 1);
     const controller = new AbortController();
     state.semanticGuideAbortController = controller;
-    setSemanticGuideButtonState(button, 'loading');
+    setSemanticGuideButtonState('loading');
 
     let currentState;
     semanticGuideStateStore.subscribe(s => currentState = s)();
@@ -237,12 +237,6 @@ function startSemanticGuideRequest(button) {
     });
 
     showSummaryCard(getSemanticGuideLoadingCardConfig());
-
-    semanticGuideStateStore.subscribe(s => currentState = s)();
-    semanticGuideStateStore.set({
-        ...currentState,
-        isSynthesizing: true
-    });
 
     return { requestId, controller };
 }
@@ -270,11 +264,11 @@ function showSemanticGuideFailure(payload, error) {
     showSummaryCard(buildSemanticGuideFallbackCardConfig(fallback));
 }
 
-function finishSemanticGuideRequest(controller, button) {
+function finishSemanticGuideRequest(controller) {
     if (state.semanticGuideAbortController === controller) {
         state.semanticGuideAbortController = null;
     }
-    setSemanticGuideButtonState(button, 'refresh', { disabled: false });
+    setSemanticGuideButtonState('refresh', { disabled: false });
     if (typeof updateLegendGuideState === 'function') updateLegendGuideState();
 }
 
@@ -285,10 +279,9 @@ function ensureSemanticGuideCorrelationId(error) {
 
 export async function requestSemanticGuide() {
     const payload = buildSemanticGuideRequestPayload();
-    const button = document.getElementById('btn-synthesize');
     if (!payload) return;
 
-    const { requestId, controller } = startSemanticGuideRequest(button);
+    const { requestId, controller } = startSemanticGuideRequest();
 
     try {
         const guide = await fetchSemanticGuide(payload, controller.signal);
@@ -302,6 +295,6 @@ export async function requestSemanticGuide() {
         ensureSemanticGuideCorrelationId(error);
         showSemanticGuideFailure(payload, error);
     } finally {
-        finishSemanticGuideRequest(controller, button);
+        finishSemanticGuideRequest(controller);
     }
 }

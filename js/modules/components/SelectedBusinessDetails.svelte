@@ -7,19 +7,19 @@
         getPublicRecordStatusLabel
     } from '../utils/dom-formatters.js';
     import { describeCluster } from '../utils/ui-presentation.js';
-    import { state } from '../../state.js';
     import { publish, EVENTS } from '../event-bus.js';
+    import {
+        buildSelectedMatchNarrative,
+        describeThreadLensForPoint,
+        getInterestingBusinessNote,
+        getSelectedBusinessRoleLabel
+    } from '../journey-lifecycle-adapter.js';
 
-    // Mock adapter for now, will be replaced by direct store access in Phase 3
-    const mockAdapter = {
-        getSelectedBusinessRoleLabel: (point) => {
-            const index = state.points?.indexOf(point);
-            if (index === state.focusedNode) return 'Focused Record';
-            return 'Record';
-        },
-        getInterestingBusinessNote: (point) => point.trivia || '',
-        buildSelectedMatchNarrative: (point) => '',
-        describeThreadLensForPoint: (point) => ''
+    const selectedDetailsAdapter = {
+        getSelectedBusinessRoleLabel,
+        getInterestingBusinessNote,
+        buildSelectedMatchNarrative,
+        describeThreadLensForPoint
     };
 
     const COPY = {
@@ -33,7 +33,7 @@
         selectedEmptyStatus: 'Record status'
     };
 
-    const viewModel = $derived(buildSelectedBusinessProps($selectedPointStore, {}, mockAdapter, {
+    const viewModel = $derived(buildSelectedBusinessProps($selectedPointStore, {}, selectedDetailsAdapter, {
         getBusinessNamePresentation,
         sanitizePublicFacingNote,
         describeCluster,
@@ -98,9 +98,9 @@
     {/each}
 </div>
 
-<div class="selected-match-panel" id="selected-match-panel" hidden>
+<div class="selected-match-panel" id="selected-match-panel" hidden={!viewModel.showMatchPanel}>
     <div class="selected-match-label" id="selected-match-label">Why this record</div>
-    <div class="selected-match-copy" id="selected-match-copy"></div>
+    <div class="selected-match-copy" id="selected-match-copy">{viewModel.matchNarrative}</div>
 </div>
 
 <div class="selected-action-row" id="selected-action-row" hidden={!viewModel.isPopulated}>

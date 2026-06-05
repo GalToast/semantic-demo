@@ -8,7 +8,11 @@
  *
  * Each mirrored field has a single owner:
  *   activeFilters / activeClusterFilter → filter-state.js
- *   currentView / loadingPhaseKey / semanticThreadsStatus → state-mutators.js
+ *
+ * The other state fields (currentView, loadingPhaseKey,
+ * semanticThreadsStatus) are written by state-mutators.js but are NOT
+ * mirrored to Svelte stores — no Svelte component reads them, so the
+ * sync would be dead weight.
  *
  * Run: node tests/state-store-sync-contract.mjs
  * Gate: tests/run-all-contracts.js
@@ -109,21 +113,13 @@ function assert(cond, msg) {
 const { state } = await import('../js/state.js');
 const {
     activeFiltersStore,
-    activeClusterFilterStore,
-    currentViewStore,
-    loadingPhaseKeyStore,
-    semanticThreadsStatusStore
+    activeClusterFilterStore
 } = await import('../js/modules/stores.js');
 const {
     setActiveFilter,
     setActiveClusterFilter,
     resetActiveFilters
 } = await import('../js/modules/filter-state.js');
-const {
-    setCurrentView,
-    updateLoadingPhaseKey,
-    updateSemanticThreadsStatus
-} = await import('../js/modules/state-mutators.js');
 
 // ─── CONTRACT 1: setActiveFilter mirrors state.activeFilters → activeFiltersStore ──
 
@@ -165,45 +161,7 @@ assert(acfNull === null,
 
 console.log('PASS CONTRACT 3: setActiveClusterFilter() syncs activeClusterFilterStore');
 
-// ─── CONTRACT 4: setCurrentView mirrors state.currentView → currentViewStore ──
-
-setCurrentView('map');
-const cvValue = get(currentViewStore);
-assert(cvValue === 'map',
-    `currentViewStore should be 'map' after setCurrentView('map'), got ${cvValue}`);
-assert(state.currentView === 'map',
-    "state.currentView should also be 'map' (sanity check)");
-
-setCurrentView('galaxy');
-assert(get(currentViewStore) === 'galaxy', "currentViewStore should return to 'galaxy'");
-
-console.log('PASS CONTRACT 4: setCurrentView() syncs currentViewStore');
-
-// ─── CONTRACT 5: updateLoadingPhaseKey mirrors state.loadingPhaseKey → loadingPhaseKeyStore ──
-
-updateLoadingPhaseKey('scene');
-const lpValue = get(loadingPhaseKeyStore);
-assert(lpValue === 'scene',
-    `loadingPhaseKeyStore should be 'scene' after updateLoadingPhaseKey('scene'), got ${lpValue}`);
-
-updateLoadingPhaseKey('launch');
-assert(get(loadingPhaseKeyStore) === 'launch', "loadingPhaseKeyStore should be 'launch' after update");
-
-console.log('PASS CONTRACT 5: updateLoadingPhaseKey() syncs loadingPhaseKeyStore');
-
-// ─── CONTRACT 6: updateSemanticThreadsStatus mirrors state.semanticThreadsStatus → semanticThreadsStatusStore ──
-
-updateSemanticThreadsStatus('ready');
-const stsValue = get(semanticThreadsStatusStore);
-assert(stsValue === 'ready',
-    `semanticThreadsStatusStore should be 'ready' after updateSemanticThreadsStatus('ready'), got ${stsValue}`);
-
-updateSemanticThreadsStatus('loading');
-assert(get(semanticThreadsStatusStore) === 'loading', "semanticThreadsStatusStore should be 'loading' after update");
-
-console.log('PASS CONTRACT 6: updateSemanticThreadsStatus() syncs semanticThreadsStatusStore');
-
-// ─── CONTRACT 7: store updates do not alias state (objects are cloned) ────────
+// ─── CONTRACT 4: store updates do not alias state (objects are cloned) ────────
 //
 // If the store held the same object reference as state, mutating one would
 // silently mutate the other. The sync contract clones objects to prevent this.
@@ -220,14 +178,15 @@ console.log('PASS CONTRACT 7: store values are cloned, not aliased to state');
 // ─── Summary ──────────────────────────────────────────────────────────────────
 
 console.log('\n=== state-store-sync-contract.mjs COMPLETE ===');
-console.log('7 contracts verified. State ↔ Svelte store sync is load-bearing.');
+console.log('4 contracts verified. State ↔ Svelte store sync is load-bearing.');
 console.log('');
 console.log('Sync map:');
 console.log('  state.activeFilters         ↔ activeFiltersStore         (filter-state.js)');
 console.log('  state.activeClusterFilter   ↔ activeClusterFilterStore   (filter-state.js)');
-console.log('  state.currentView           ↔ currentViewStore           (state-mutators.js)');
-console.log('  state.loadingPhaseKey       ↔ loadingPhaseKeyStore       (state-mutators.js)');
-console.log('  state.semanticThreadsStatus ↔ semanticThreadsStatusStore (state-mutators.js)');
 console.log('');
 console.log('Panel-toggle stores (isInfoPanelOpen, isLegendPanelOpen) are owned by the');
 console.log('Svelte chrome components and have no state.js counterpart.');
+console.log('');
+console.log('Decorative stores (currentView, loadingPhaseKey, semanticThreadsStatus)');
+console.log('were removed — no Svelte component read them, so the sync was dead weight.');
+console.log('The state writes themselves still happen via state-mutators.js.');

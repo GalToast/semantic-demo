@@ -27,7 +27,7 @@ import { focusOnNode } from './camera-controls.js';
 import { setSemanticDiveMode } from './journey-lifecycle-adapter.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 import { getRouteLayerOrigin } from './camera-controls.js';
-import { recenterFocusedNode } from './event-bindings.js';
+import { recenterFocusedNode } from './bindings/journey-bindings.js';
 import { exploreInsideToNextStop, resetExplorationFocus, setTrailDepth } from './lifecycle.js';
 
 let _switchView = () => {};

@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { DATA_COLUMNS } from '../js/modules/utils/data-schema.js';
-import { mapRawRecordToPoint } from '../js/modules/utils/data-mapper.js';
+import { normalizeSlugName, mapRawRecordToPoint } from '../js/modules/utils/data-mapper.js';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const WORKER_PATH = path.join(SEMDEMO_ROOT, 'js/workers/data-worker.js');
@@ -73,6 +73,52 @@ function testMapperCorrectness() {
 }
 
 // ---------------------------------------------------------------------------
+// TEST 3: Slug Name Normalization (data-regen smell fix)
+// ---------------------------------------------------------------------------
+
+function testSlugNormalization() {
+    console.log('\n[TEST] Slug Name Normalization');
+
+    // Direct normalization tests
+    assert(normalizeSlugName('2-hampton-inn-and-suites') === 'Hampton Inn And Suites',
+        'Should strip numeric prefix and title-case slug');
+    assert(normalizeSlugName('519-angel-fire-coffee') === 'Angel Fire Coffee',
+        'Should handle multi-digit prefix');
+    assert(normalizeSlugName('hampton-inn-and-suites') === 'Hampton Inn And Suites',
+        'Should handle slug without prefix');
+    assert(normalizeSlugName('The Coffee Shop') === 'The Coffee Shop',
+        'Should not modify already-clean name');
+    assert(normalizeSlugName('1845 SOLUTIONS') === '1845 SOLUTIONS',
+        'Should not modify uppercase name with leading digits');
+    assert(normalizeSlugName(null) === null,
+        'Should return null for null input');
+
+    // Mapper integration test
+    const slugRow = [];
+    slugRow[DATA_COLUMNS.X] = 0.5;
+    slugRow[DATA_COLUMNS.Y] = 0.6;
+    slugRow[DATA_COLUMNS.Z] = 0.7;
+    slugRow[DATA_COLUMNS.CLUSTER] = 1;
+    slugRow[DATA_COLUMNS.NAME] = '2-hampton-inn-and-suites';
+    const point = mapRawRecordToPoint(slugRow);
+    assert(point.name === 'Hampton Inn And Suites',
+        'mapRawRecordToPoint should normalize slug names');
+
+    // Clean name through mapper should be unaffected
+    const cleanRow = [];
+    cleanRow[DATA_COLUMNS.X] = 0.5;
+    cleanRow[DATA_COLUMNS.Y] = 0.6;
+    cleanRow[DATA_COLUMNS.Z] = 0.7;
+    cleanRow[DATA_COLUMNS.CLUSTER] = 1;
+    cleanRow[DATA_COLUMNS.NAME] = 'Test Business';
+    const cleanPoint = mapRawRecordToPoint(cleanRow);
+    assert(cleanPoint.name === 'Test Business',
+        'mapRawRecordToPoint should not modify already-clean names');
+
+    console.log('  OK Slug normalization works in mapper and as standalone function');
+}
+
+// ---------------------------------------------------------------------------
 // MAIN
 // ---------------------------------------------------------------------------
 
@@ -85,6 +131,7 @@ function main() {
     try {
         testSchemaConsistency();
         testMapperCorrectness();
+        testSlugNormalization();
 
         console.log('\n============================================================');
         console.log('ALL TESTS PASSED');

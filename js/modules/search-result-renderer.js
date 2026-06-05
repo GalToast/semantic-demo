@@ -1,8 +1,7 @@
 import { state } from '../state.js';
 import { getViewportSize } from './environment.js';
-import { describeCluster, isCompactSearchViewport } from './utils/ui-presentation.js';
-import { escapeHtml, formatBusinessName, sanitizePublicFacingNote, cleanPublicNoteText } from './utils/dom-formatters.js';
-import { highlightMatch } from './utils/geo-data.js';
+import { isCompactSearchViewport } from './utils/ui-presentation.js';
+import { sanitizePublicFacingNote, cleanPublicNoteText } from './utils/dom-formatters.js';
 
 /**
  * search-result-renderer.js
@@ -44,16 +43,6 @@ function buildOfficialSiteSnippet(note, point) {
     return compactSearchSnippetText(note);
 }
 
-function buildSearchContactBadge(type, label, iconPath) {
-    return `
-        <span class="search-result-badge ${type}" title="${label}" aria-label="${label}">
-            <svg class="search-result-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                ${iconPath}
-            </svg>
-        </span>
-    `;
-}
-
 // ─── SEARCH RENDERERS ────────────────────────────────────────────────────────
 
 export function renderResultCountLine(total, currentVisibleCount, mode = 'initial') {
@@ -67,99 +56,6 @@ export function renderResultCountLine(total, currentVisibleCount, mode = 'initia
         return `All ${total} matches`;
     }
     return `${currentVisibleCount} of ${total} · ${hidden} behind`;
-}
-
-export function renderResultCountLineMarkup(total, currentVisibleCount, mode = 'initial') {
-    if (total === 0) {
-        return '<span class="search-results-count-empty">No matches</span>';
-    }
-    if (total === 1) {
-        return '<span class="search-results-count-anchor">1 anchor</span>';
-    }
-    const hidden = total - currentVisibleCount;
-    if (mode === 'peek') {
-        return (
-            '<span class="search-results-count-anchor">Anchor</span>' +
-            '<span class="search-results-count-divider" aria-hidden="true">·</span>' +
-            `<span class="search-results-count-hidden">${hidden} more</span>`
-        );
-    }
-    if (currentVisibleCount >= total) {
-        return (
-            `<span class="search-results-count-all">All ${total}</span>` +
-            '<span class="search-results-count-suffix"> matches</span>'
-        );
-    }
-    return (
-        `<span class="search-results-count-shown">${currentVisibleCount} of ${total}</span>` +
-        '<span class="search-results-count-divider" aria-hidden="true">·</span>' +
-        `<span class="search-results-count-hidden">${hidden} behind</span>`
-    );
-}
-
-export function buildSearchLoadingMarkup() {
-    return `
-        <div class="search-loading">
-            <div class="search-loading-spinner"></div>
-            <div class="search-loading-text">Searching...</div>
-        </div>
-    `;
-}
-
-export function buildSearchErrorInlineMarkup(escapedQuery) {
-    return `
-        <div class="search-error-inline-retry" role="status" aria-live="polite">
-            <span class="search-error-inline-msg">Search is recovering for "<strong>${escapedQuery}</strong>".</span>
-            <button class="search-error-retry-btn compact" type="button" aria-label="Retry search for ${escapedQuery}">Retry</button>
-        </div>
-    `;
-}
-
-export function buildSearchErrorFullMarkup(escapedQuery) {
-    return `
-        <div class="search-error-state" role="status" aria-live="polite">
-            <span class="search-error-kicker">Retry needed</span>
-            <div class="search-error-text">
-                We could not finish "<strong>${escapedQuery}</strong>" just now. Retry the live search or clear it and keep exploring.
-            </div>
-            <div class="search-error-actions">
-                <button class="search-error-retry-btn" type="button" aria-label="Retry search for ${escapedQuery}" data-retry-query="${escapedQuery}">Retry</button>
-                <button class="search-error-dismiss-btn" type="button" aria-label="Clear search and dismiss">Clear</button>
-            </div>
-        </div>
-    `;
-}
-
-export function buildSearchSuggestionChips(suggestions) {
-    return suggestions.slice(0, 6)
-        .map((term) => {
-            const escaped = escapeHtml(term);
-            return `<button class="search-suggestion-chip" data-suggestion="${escaped}" type="button" aria-label="Try search for ${escaped}">${escaped}</button>`;
-        })
-        .join('');
-}
-
-export function buildSearchEmptyStateMarkup(suggestionButtons) {
-    return `
-        <div class="search-empty-state fade-in">
-            <div class="search-empty-icon-wrap">
-                <svg class="search-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <circle cx="11" cy="11" r="7"/>
-                    <path d="M16.5 16.5L21 21"/>
-                    <path d="M7 11h8" stroke-opacity="0.5"/>
-                </svg>
-            </div>
-            <p class="search-empty-title">No direct matches found</p>
-            <p class="search-empty-note">Try a broader term or one of these high-signal categories to open a new trail:</p>
-            <div class="search-empty-suggestions">
-                <div class="search-suggestion-buttons">${suggestionButtons}</div>
-            </div>
-            <div class="search-empty-discovery">
-                <span class="discovery-tag">Pro Tip</span>
-                <span class="discovery-text">The mycelium thrives on semantic relationships. Try searching for a specific trade like "HVAC" or a mood like "cozy".</span>
-            </div>
-        </div>
-    `;
 }
 
 export function getSearchResultStrength(result, topScore) {
@@ -252,51 +148,6 @@ export function buildSearchStageLabel(index, topIndex, anchorIndex = null, explo
     if (!point) return 'Related match';
     if (Number.isFinite(topIndex) && topIndex >= 0 && topIndex < state.points.length && state.points[topIndex]?.cluster === point.cluster) return 'Same theme';
     return 'Related match';
-}
-
-export function buildSearchResultItemHtml(result, order, renderContext) {
-    const { trimmedQuery, topIndex, anchorIndex, topScore } = renderContext;
-    const strength = getSearchResultStrength(result, topScore);
-    const strengthLabel = getSearchResultStrengthLabel(order, strength);
-    const isAnchor = anchorIndex !== null && anchorIndex !== undefined && result.index === anchorIndex;
-    const rankLabel = buildSearchRankLabel({ index: result.index, order, topIndex, anchorIndex });
-    const cardClasses = getSearchResultCardClasses(order, isAnchor);
-    const snippetText = buildSearchResultSnippet(result);
-    const detailText = escapeHtml(snippetText);
-    const contextText = `${describeCluster(result.point.cluster)} · ${result.point.city ? result.point.city.trim() : 'Location unknown'}`;
-    const clusterText = escapeHtml(contextText);
-
-    const badges = [];
-    if (result.point.website) {
-        badges.push(buildSearchContactBadge('website', 'Website available', '<circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a13.5 13.5 0 0 1 0 18"></path><path d="M12 3a13.5 13.5 0 0 0 0 18"></path>'));
-    }
-    if (result.point.email) {
-        badges.push(buildSearchContactBadge('email', 'Email available', '<rect x="3.5" y="5.5" width="17" height="13" rx="2"></rect><path d="m4.5 7 7.5 6 7.5-6"></path>'));
-    }
-    if (result.point.phone) {
-        badges.push(buildSearchContactBadge('phone', 'Phone available', '<path d="M7.5 4.5 10 7 8.4 9.1c1 2.2 2.3 3.5 4.5 4.5L15 12l2.5 2.5-.8 3.1c-.2.7-.9 1.1-1.6 1A12.5 12.5 0 0 1 5.4 8.9c-.1-.7.3-1.4 1-1.6l1.1-.3Z"></path>'));
-    }
-    const badgesHtml = badges.length ? `<div class="search-result-badges">${badges.join('')}</div>` : '';
-
-    return `
-        <div class="search-result-listitem" role="listitem">
-        <button class="${cardClasses}" id="search-result-${Number(result.index)}" data-index="${Number(result.index)}" data-order="${order}" type="button" tabindex="0"
-            aria-label="${escapeHtml(`Focus ${formatBusinessName(result.point.name)}. ${rankLabel}. ${snippetText} ${contextText}.`)}"
-            style="animation-delay:${Math.min(order * 32, 224)}ms">
-            <div class="search-result-row">
-                <div class="search-result-eyebrow">
-                    <span class="search-result-rank">${rankLabel}</span>
-                    <span class="search-result-strength">${strengthLabel}</span>
-                </div>
-                <div class="search-result-name">${highlightMatch(formatBusinessName(result.point.name), trimmedQuery)}</div>
-                ${badgesHtml}
-            </div>
-            <div class="search-result-what">${detailText}</div>
-            <div class="search-result-context">${clusterText}</div>
-            <div class="search-result-bar"><span style="width:${strength}%"></span></div>
-        </button>
-        </div>
-    `;
 }
 
 // ─── DOM UPDATERS ───────────────────────────────────────────────────────────

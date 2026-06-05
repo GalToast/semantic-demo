@@ -12,7 +12,6 @@ vi.mock('../../js/modules/search-result-renderer.js', () => ({
     buildSearchResultSnippet: vi.fn(),
     buildSearchRankLabel: vi.fn(),
     buildSearchStageLabel: vi.fn(),
-    buildSearchResultItemHtml: vi.fn(),
     revealActiveSearchResultOnCompact: vi.fn(),
     clearCompactSearchResultRevealTimers: vi.fn(),
     scheduleCompactSearchResultReveal: vi.fn(),
@@ -47,8 +46,7 @@ describe('ui-renderers shim', () => {
         uiRenderers.getSearchResultStrengthLabel('test');
         expect(searchRendererModule.getSearchResultStrengthLabel).toHaveBeenCalledWith('test');
         
-        uiRenderers.buildSearchResultItemHtml('test');
-        expect(searchRendererModule.buildSearchResultItemHtml).toHaveBeenCalledWith('test');
+        expect(uiRenderers.buildSearchResultItemHtml).toBeUndefined();
     });
 
     it('should delegate legend rendering', () => {

@@ -42,6 +42,8 @@
  * @property {string} status
  * @property {string} trivia
  * @property {boolean} showTrivia
+ * @property {string} matchNarrative
+ * @property {boolean} showMatchPanel
  * @property {Object[]} facts
  * @property {Object[]} sensitivityBadges
  * @property {string} mapText
@@ -77,6 +79,8 @@ export function buildSelectedBusinessProps(point, _options = {}, adapter = {}, f
             status: COPY.selectedEmptyStatus || 'Record status',
             trivia: '',
             showTrivia: false,
+            matchNarrative: '',
+            showMatchPanel: false,
             facts: [],
             sensitivityBadges: [],
             mapText: COPY.selectedEmptyMap || 'No geocoded point yet',
@@ -103,6 +107,7 @@ export function buildSelectedBusinessProps(point, _options = {}, adapter = {}, f
     const interestingNote = (adapter && typeof adapter.getInterestingBusinessNote === 'function') ? adapter.getInterestingBusinessNote(point) : '';
     const matchNarrative = (adapter && typeof adapter.buildSelectedMatchNarrative === 'function') ? adapter.buildSelectedMatchNarrative(point) : '';
     const showTrivia = Boolean(interestingNote && !matchNarrative.includes(interestingNote));
+    const showMatchPanel = Boolean(matchNarrative);
 
     const facts = [];
     if (point.city) facts.push({ type: 'text', value: point.city });
@@ -144,6 +149,8 @@ export function buildSelectedBusinessProps(point, _options = {}, adapter = {}, f
         status,
         trivia: showTrivia ? interestingNote : '',
         showTrivia,
+        matchNarrative,
+        showMatchPanel,
         facts,
         sensitivityBadges,
         mapText,

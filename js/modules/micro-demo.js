@@ -13,7 +13,7 @@ import { refreshCompositionState, updateExplorationUi, resetNodePositions } from
 import { updateJourneyCompass } from './journey-compass-controller.js';
 import { setAutoRotateSuspended } from './camera-controls.js';
 import { updateSelectedBusiness, applyPointFilterColors } from './journey.js';
-import { setInfoPanelOpen } from './event-bindings.js';
+import { setInfoPanelOpen } from './bindings/panel-bindings.js';
 import { prefersReducedMotion } from './environment.js';
 
 // === Constants ===

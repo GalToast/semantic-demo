@@ -47,14 +47,14 @@ test.describe('Extraction & De-monolith Contract Verification', () => {
       return {
         buildLegend: typeof ui.buildLegend === 'function',
         renderSignalBadges: typeof ui.renderSignalBadges === 'function',
-        buildSearchResultItemHtml: typeof ui.buildSearchResultItemHtml === 'function',
+        buildSearchResultItemHtml: typeof ui.buildSearchResultItemHtml,
         setActiveSearchResultRow: typeof ui.setActiveSearchResultRow === 'function'
       };
     });
 
     expect(exports.buildLegend).toBe(true);
     expect(exports.renderSignalBadges).toBe(true);
-    expect(exports.buildSearchResultItemHtml).toBe(true);
+    expect(exports.buildSearchResultItemHtml).toBe('undefined');
     expect(exports.setActiveSearchResultRow).toBe(true);
   });
 
