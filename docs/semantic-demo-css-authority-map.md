@@ -49,6 +49,8 @@ Do not add a new compass title/action selector owner without updating `tests/css
 
 `css/search.css` owns shared and desktop search/result styles. It has **0 focus-stage selectors** and **0 journey-compass selectors** as of 2026-06-04. Do not reintroduce focus-stage or journey-compass selectors into `css/search.css`.
 
+> **2026-06-05 verified:** The 2026-06-05 smell audit flagged `search.css` cross-boundary selectors at lines 977-983 (`.journey-compass-action.primary`), 2186-2195 (`.journey-compass`/`.journey-compass-note`), and 2203-2293 (`.info-panel`). All three groups have already been extracted — `search.css` now contains only comments confirming these rules live in `layout_base.css` (lines 2103, 2108, 2146). The `.mode-grid`/`.mode-chip` selectors at lines 1200-1307 are search-context-scoped (`body[data-panel-surface='map-search'] .search-container .mode-grid`) and correctly belong in `search.css`. No extraction needed.
+
 | Primitive | `css/search.css` authority | Drift risk |
 |---|---|---|
 | `.search-results`, `.search-result-item`, `.search-result-row` | Canonical owner for all result-card semantics, badges, row mechanics, and spinner selectors | Do not reintroduce in `css/clusters.css` or `css/journey_steps.css` |
