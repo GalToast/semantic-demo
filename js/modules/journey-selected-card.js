@@ -28,7 +28,6 @@ import { subscribeKeyed, EVENTS } from './event-bus.js';
 import { isPointVisible } from './utils/geo-data.js';
 import { getPreviouslyFocusedFocusStage, setPreviouslyFocusedFocusStage } from './journey-lifecycle-adapter.js';
 import { revealSelectedBusinessCard } from './event-bindings.js';
-import { hydrateLeadContext } from './lifecycle.js';
 import { updateDocumentMeta } from './utils/ui-presentation.js';
 import { sanitizePublicFacingNote, getBusinessNamePresentation } from './utils/dom-formatters.js';
 import {
@@ -42,7 +41,8 @@ import { selectedPointStore } from './stores.js';
 
 const selectedCardAdapter = {
     getStrandArrivalNote: () => '',
-    updateTraversalUi: () => {}
+    updateTraversalUi: () => {},
+    hydrateLeadContext: () => {}
 };
 
 export function initJourneySelectedCard(deps = {}) {
@@ -73,6 +73,9 @@ export function initJourneySelectedCardAdapter(deps = {}) {
     }
     if (typeof deps.updateTraversalUi === 'function') {
         selectedCardAdapter.updateTraversalUi = deps.updateTraversalUi;
+    }
+    if (typeof deps.hydrateLeadContext === 'function') {
+        selectedCardAdapter.hydrateLeadContext = deps.hydrateLeadContext;
     }
 }
 
@@ -248,6 +251,6 @@ export function updateSelectedBusiness(point, options = {}) {
     selectedCardAdapter.updateTraversalUi();
 
     if (!options.skipHydrate && !point.website && !point.email && !point.phone) {
-        void hydrateLeadContext(point, { refreshSelected: true });
+        void selectedCardAdapter.hydrateLeadContext(point, { refreshSelected: true });
     }
 }

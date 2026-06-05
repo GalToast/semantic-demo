@@ -32,13 +32,29 @@ const SEARCH_INTENT_EXPANSIONS = [
 ];
 
 export function tokenizeSearchText(text) {
+    // Normalize to NFC first so combining characters (e.g. e + ◌́ = é) are
+    // merged with their base code-point.  Without this, the regex fallback
+    // would split "café" (NFD) into "caf" and "e", producing false matches.
+    const input = String(text || '').normalize('NFC').toLowerCase();
+
+    let words;
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+        // Word-level segmentation respects grapheme boundaries, so
+        // multi-code-point characters like "é" (whether NFC or NFD) are
+        // kept as a single token.
+        const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+        words = Array.from(segmenter.segment(input))
+            .filter((s) => s.isWordLike)
+            .map((s) => s.segment);
+    } else {
+        // Fallback for environments without Intl.Segmenter — the NFC
+        // normalization above already prevents most splitting issues.
+        words = input.match(/[a-z0-9]+/g) || [];
+    }
+
     return [
         ...new Set(
-            (
-                String(text || '')
-                    .toLowerCase()
-                    .match(/[a-z0-9]+/g) || []
-            )
+            words
                 .filter(Boolean)
                 .filter((token) => token.length > 1 && !SEARCH_STOP_WORDS.has(token))
         )

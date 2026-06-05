@@ -28,6 +28,15 @@
  */
 
 import type { ActiveFilters } from '@lib/types/state';
+import { get } from 'svelte/store';
+import {
+  isDataReady,
+  businessRecords,
+  positionBuffer,
+  clustersBuffer,
+  leadEnrichment,
+  pointIndexByLeadId,
+} from '@lib/data-store';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 //
@@ -164,6 +173,7 @@ interface LegacyState {
   points: Array<{ x: number; y: number; z: number; cluster: number; lead_id?: number | null }> | null;
   nodePositions: Array<{ x: number; y: number; z: number }> | null;
   rawPositionsBuffer: Float32Array | null;
+  rawClustersBuffer: Uint16Array | null;
 
   // Camera / renderer (Three.js objects — duck-typed, no imports)
   camera: { aspect: number; updateProjectionMatrix(): void } | null;
@@ -215,6 +225,10 @@ interface LegacyState {
   // Semantic
   semanticDiveMode: boolean;
   currentSearchSummary: unknown;
+
+  // Enrichment / lookup
+  leadEnrichment: Record<string, unknown> | null;
+  pointIndexByLeadId: Map<string, number> | null;
 }
 
 // ── Options ──────────────────────────────────────────────────────────────────
@@ -532,6 +546,72 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
     }
   }
 
+  /**
+   * Wait for Svelte data stores to be ready, then populate the legacy
+   * state object with the data so that createPoints() can read from it.
+   *
+   * The legacy engine's createPoints() reads state.points,
+   * state.rawPositionsBuffer, state.rawClustersBuffer, etc.  In the Svelte
+   * app these live in Svelte stores, so we must sync them before calling
+   * initThreeJS().
+   */
+  async function syncDataToLegacyState(): Promise<void> {
+    if (!_state) return;
+
+    // If data is already loaded, sync immediately
+    if (get(isDataReady)) {
+      _syncDataFields();
+      return;
+    }
+
+    // Wait for data to become ready (poll every 200ms, timeout 15s)
+    const start = Date.now();
+    while (!get(isDataReady) && Date.now() - start < 15000) {
+      await new Promise((r) => setTimeout(r, 200));
+    }
+
+    if (!get(isDataReady)) {
+      console.warn('[EngineBridge] syncDataToLegacyState: data not ready after 15s, proceeding anyway');
+    }
+
+    _syncDataFields();
+  }
+
+  function _syncDataFields(): void {
+    if (!_state) return;
+    const records = get(businessRecords);
+    const posBuf = get(positionBuffer);
+    const clustBuf = get(clustersBuffer);
+    const enrichment = get(leadEnrichment);
+    const indexMap = get(pointIndexByLeadId);
+
+    // The legacy state Proxy requires withStateMutation() for critical
+    // properties (rawPositionsBuffer, rawClustersBuffer, etc.)
+    const withMutation = (typeof window !== 'undefined' && (window as any).withStateMutation)
+      ? (window as any).withStateMutation as <T>(fn: () => T) => T
+      : <T>(fn: () => T) => fn();
+
+    withMutation(() => {
+      if (records.length > 0) {
+        _state!.points = records as any[];
+      }
+      if (posBuf) {
+        _state!.rawPositionsBuffer = posBuf;
+      }
+      if (clustBuf) {
+        _state!.rawClustersBuffer = clustBuf;
+      }
+    });
+
+    // Non-critical properties can be set directly
+    if (enrichment) {
+      _state.leadEnrichment = enrichment;
+    }
+    if (indexMap) {
+      _state.pointIndexByLeadId = indexMap;
+    }
+  }
+
   // ── Event Bridge: Wire Legacy Event Bus → Callbacks ─────────────────────
   //
   // The legacy engine uses an internal pub/sub event-bus (event-bus.ts) rather
@@ -652,6 +732,11 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
           container.appendChild(canvas);
         }
 
+        // Sync Svelte data stores into the legacy state singleton so that
+        // createPoints() (called by initThreeJS) can read state.points,
+        // state.rawPositionsBuffer, etc.
+        await syncDataToLegacyState();
+
         // The legacy initThreeJS() creates its own canvas via new THREE.WebGLRenderer()
         // and appends it to #canvas-container.  It also removes any existing canvases
         // in that container (except the renderer's own).  So the Svelte placeholder
@@ -670,6 +755,13 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
           liveCanvas.style.width = '100%';
           liveCanvas.style.height = '100%';
           liveCanvas.style.display = 'block';
+        }
+
+        // Expose legacy state for visual audit tests (waitForReady checks
+        // window.__TEST_STATE__ for renderer/scene/camera/pointsMesh).
+        if (_state) {
+          (window as any).__APP_STATE__ = _state;
+          (window as any).__TEST_STATE__ = _state;
         }
 
         bindEventBridge();

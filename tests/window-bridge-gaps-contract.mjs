@@ -33,7 +33,7 @@ const SCENE_REVEAL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.js');
 const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js');
 const CAMERA_CONTROLS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/camera-controls.js');
 const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-state.js');
-const APP_PATH = path.join(SEMDEMO_ROOT, 'js/modules/app.js');
+const APP_PATH = path.join(SEMDEMO_ROOT, 'js/modules/app.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -145,7 +145,7 @@ function testGap3a_hydrateLeadContext() {
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
   const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
   const selectedCardSrc = fs.readFileSync(JOURNEY_SELECTED_CARD_PATH, 'utf-8');
-  const appSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/app.js'), 'utf-8');
+  const appSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/app.ts'), 'utf-8');
 
   assert(
     /export\s+function\s+hydrateLeadContext\s*\(/.test(lifecycleSrc),
@@ -159,13 +159,13 @@ function testGap3a_hydrateLeadContext() {
   // selected-card owner call site must not depend on the retired window bridge.
   assertNoDeadCall(journeySrc, 'hydrateLeadContext', 'journey.js', 'Gap 3a');
   assert(
-    /adapter\.hydrateLeadContext/.test(selectedCardSrc),
+    /selectedCardAdapter\.hydrateLeadContext/.test(selectedCardSrc),
     'Gap 3a: journey-selected-card.js must call hydrateLeadContext through the lifecycle adapter'
   );
 
   assert(
-    /hydrateLeadContext:\s*\(point,\s*options\)\s*=>[\s\S]{0,160}hydrateLeadContext\(point,\s*options\)/.test(appSrc),
-    'Gap 3a: app.js must inject lifecycle.hydrateLeadContext into the journey adapter'
+    /hydrateLeadContext:\s*\(point(?:\s*:\s*[^,\)]+)?,\s*options(?:\s*:\s*[^,\)]+)?\)\s*=>[\s\S]{0,160}hydrateLeadContext\(point,\s*options\)/.test(appSrc),
+    'Gap 3a: app.ts must inject lifecycle.hydrateLeadContext into the journey adapter'
   );
 
   console.log('  OK — hydrateLeadContext: RESOLVED by lifecycle adapter');
@@ -268,7 +268,7 @@ function testGap4_updateSelectedCardHeading() {
 // ---------------------------------------------------------------------------
 // GAP 5 — focusOnNode: exported from camera-controls.js.
 // event-bindings.js/lifecycle.js avoid window focus calls. search-state.js now
-// publishes SEARCH_FOCUS_REQUESTED and app.js owns the camera-controls call.
+// publishes SEARCH_FOCUS_REQUESTED and app.ts owns the camera-controls call.
 // ---------------------------------------------------------------------------
 
 function testGap5_focusOnNode() {
@@ -308,7 +308,7 @@ function testGap5_focusOnNode() {
   );
   assert(
     /subscribeKeyed\s*\(\s*['"]app:search-focus-requested['"]\s*,\s*EVENTS\.SEARCH_FOCUS_REQUESTED[\s\S]{0,320}cameraModule\.focusOnNode\s*\(\s*index\s*,\s*\{\s*fromSearchResult:\s*true\s*\}/.test(appSrc),
-    'app.js must key-subscribe to SEARCH_FOCUS_REQUESTED and call cameraModule.focusOnNode(index, { fromSearchResult: true })'
+    'app.ts must key-subscribe to SEARCH_FOCUS_REQUESTED and call cameraModule.focusOnNode(index, { fromSearchResult: true })'
   );
 
   console.log('  OK — focusOnNode: export verified and search focus flows through event-owned app camera call');

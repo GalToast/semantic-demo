@@ -26,8 +26,7 @@ import {
     getThreadCandidatesForIndex
 } from './journey-thread-model.js';
 import { focusOnNode } from './camera-controls.js';
-import { dispatchNavTransition, focusOnPoint } from './lifecycle.js';
-import { syncFocusStage } from './journey.js';
+import { dispatchNavTransition, focusOnPoint, syncFocusStage } from './lifecycle.js';
 import { updateJourneyCompass } from './journey-compass-controller.js';
 import { showExperienceToast } from './ui-feedback.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';

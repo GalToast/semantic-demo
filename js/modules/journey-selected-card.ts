@@ -33,7 +33,6 @@ import { subscribeKeyed, EVENTS } from './event-bus.js';
 import { isPointVisible } from './utils/geo-data.js';
 import { getPreviouslyFocusedFocusStage, setPreviouslyFocusedFocusStage } from './journey-lifecycle-adapter.js';
 import { revealSelectedBusinessCard } from './event-bindings.js';
-import { hydrateLeadContext } from './lifecycle.js';
 import { updateDocumentMeta } from './utils/ui-presentation.js';
 import { sanitizePublicFacingNote, getBusinessNamePresentation } from './utils/dom-formatters.js';
 import {
@@ -50,6 +49,7 @@ import { selectedPointStore } from './stores.js';
 interface SelectedCardAdapter {
     getStrandArrivalNote: () => string;
     updateTraversalUi: () => void;
+    hydrateLeadContext: (point: any, options?: Record<string, unknown>) => void;
 }
 
 interface UpdateSelectedBusinessOptions {
@@ -62,7 +62,8 @@ interface UpdateSelectedBusinessOptions {
 
 const selectedCardAdapter: SelectedCardAdapter = {
     getStrandArrivalNote: () => '',
-    updateTraversalUi: () => {}
+    updateTraversalUi: () => {},
+    hydrateLeadContext: () => {}
 };
 
 export function initJourneySelectedCard(deps: Record<string, unknown> = {}): void {
@@ -93,6 +94,9 @@ export function initJourneySelectedCardAdapter(deps: Record<string, unknown> = {
     }
     if (typeof deps.updateTraversalUi === 'function') {
         selectedCardAdapter.updateTraversalUi = deps.updateTraversalUi as () => void;
+    }
+    if (typeof deps.hydrateLeadContext === 'function') {
+        selectedCardAdapter.hydrateLeadContext = deps.hydrateLeadContext as SelectedCardAdapter['hydrateLeadContext'];
     }
 }
 
@@ -268,6 +272,6 @@ export function updateSelectedBusiness(point: any, options: UpdateSelectedBusine
     selectedCardAdapter.updateTraversalUi();
 
     if (!options.skipHydrate && !point.website && !point.email && !point.phone) {
-        void (hydrateLeadContext as any)(point, { refreshSelected: true });
+        void selectedCardAdapter.hydrateLeadContext(point, { refreshSelected: true });
     }
 }
