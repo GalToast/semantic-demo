@@ -29,6 +29,9 @@ export const filterColorVersion = writable(0);
 /** Active cluster filter (null = show all clusters). */
 export const activeClusterFilter = writable<string | null>(null);
 
+/** Alias for compatibility with legacy SearchResultsList. */
+export const activeClusterFilterStore = activeClusterFilter;
+
 /** Active filters — the single source of truth for filter state. */
 export const filterState = writable<ActiveFilters>({ ...INITIAL_FILTERS });
 

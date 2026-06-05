@@ -767,6 +767,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
         bindEventBridge();
 
         status = 'ready';
+        _threeEngine!.animate();
       } catch (err) {
         console.error('EngineBridge.init: initialization failed', err);
         status = 'degraded';

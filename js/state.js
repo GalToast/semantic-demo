@@ -483,3 +483,34 @@ Object.defineProperties(_rawState, {
         enumerable: true
     }
 });
+
+if (typeof window !== 'undefined') {
+    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isDev) {
+        const _warned = new Set();
+        const _track = (obj, path) => {
+            if (!obj || typeof obj !== 'object' || obj instanceof Set || obj instanceof Map) return obj;
+            return new Proxy(obj, {
+                set(t, p, v) {
+                    const k = path + '.' + String(p);
+                    if (!_warned.has(k)) { console.warn('[State Bypass] ' + k + ' — use store .update()'); _warned.add(k); }
+                    t[p] = v; return true;
+                },
+                get(t, p) {
+                    const v = t[p];
+                    if (v && typeof v === 'object' && !(v instanceof Set) && !(v instanceof Map)) return _track(v, path + '.' + String(p));
+                    return v;
+                }
+            });
+        };
+        if (_rawState.navState) _rawState.navState = _track(_rawState.navState, 'state.navState');
+        if (_rawState.strandContinuityState) _rawState.strandContinuityState = _track(_rawState.strandContinuityState, 'state.strandContinuityState');
+        if (_rawState.focusOrbitSlackState) _rawState.focusOrbitSlackState = _track(_rawState.focusOrbitSlackState, 'state.focusOrbitSlackState');
+        if (_rawState.terrainHandoffState) _rawState.terrainHandoffState = _track(_rawState.terrainHandoffState, 'state.terrainHandoffState');
+        if (_rawState.routeExplorationState) _rawState.routeExplorationState = _track(_rawState.routeExplorationState, 'state.routeExplorationState');
+        if (_rawState.routeChoreographyState) _rawState.routeChoreographyState = _track(_rawState.routeChoreographyState, 'state.routeChoreographyState');
+        if (_rawState.inspectedStrandDiagnostics) _rawState.inspectedStrandDiagnostics = _track(_rawState.inspectedStrandDiagnostics, 'state.inspectedStrandDiagnostics');
+        if (_rawState.arrivalHandoffDiagnostics) _rawState.arrivalHandoffDiagnostics = _track(_rawState.arrivalHandoffDiagnostics, 'state.arrivalHandoffDiagnostics');
+        if (_rawState.routeTraceDiagnostics) _rawState.routeTraceDiagnostics = _track(_rawState.routeTraceDiagnostics, 'state.routeTraceDiagnostics');
+    }
+}
