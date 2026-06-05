@@ -4,13 +4,12 @@
 // Svelte component. This file remains as the public entry point so older
 // imports keep working.
 
-import { initSearchChromeSvelteIsland } from '../search-chrome-island.js';
-
 let initialized = false;
 
-export function bindSearchControls() {
+export async function bindSearchControls() {
     if (initialized) return;
     initialized = true;
+    const { initSearchChromeSvelteIsland } = await import('../search-chrome-island.js');
     initSearchChromeSvelteIsland();
 }
 

@@ -37,6 +37,10 @@ vi.mock('../../js/modules/journey.js', () => ({
     syncFocusStage: vi.fn()
 }));
 
+vi.mock('../../js/modules/search-chrome-island.js', () => ({
+    initSearchChromeSvelteIsland: vi.fn()
+}));
+
 describe('event-bindings', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -130,14 +134,13 @@ describe('event-bindings', () => {
         expect(journey.unpinThreadInspection).toHaveBeenCalled();
     });
 
-    it('should handle search input keydown', () => {
+    it('should delegate search chrome controls to the Svelte island', async () => {
+        const searchChromeIsland = await import('../../js/modules/search-chrome-island.js');
         eventBindings.initEventListeners({});
-        const input = document.getElementById('search-input');
-        
-        // Mock clearSearch
-        const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape' });
-        input.dispatchEvent(escapeEvent);
-        
-        expect(searchState.clearSearch).toHaveBeenCalled();
+
+        await vi.waitFor(() => {
+            expect(searchChromeIsland.initSearchChromeSvelteIsland).toHaveBeenCalled();
+        });
+        expect(searchState.clearSearch).not.toHaveBeenCalled();
     });
 });

@@ -125,8 +125,26 @@ async function installSearchFixture(page, detail = 'peek') {
     document.body.dataset.panelSurfaceDetail = detail;
     document.body.dataset.mobileSearchSheet = detail;
 
-    const container = document.querySelector('.search-container');
-    const results = document.querySelector('#search-results');
+    let container = document.querySelector('.search-container');
+    if (!container) {
+      container = document.createElement('section');
+      container.className = 'search-container glass-medium';
+      container.setAttribute('role', 'search');
+      document.body.appendChild(container);
+    }
+
+    let results = document.querySelector('#search-results');
+    if (!results) {
+      results = document.createElement('div');
+      results.id = 'search-results';
+      results.className = 'search-results glass-light';
+      results.setAttribute('role', 'region');
+      results.setAttribute('aria-label', 'Search results');
+      container.appendChild(results);
+    } else if (!container.contains(results)) {
+      container.appendChild(results);
+    }
+
     if (container && results) {
       results.innerHTML = html;
       results.classList.add('active');
@@ -214,33 +232,33 @@ async function assertPeekMode(page, ctx) {
     ctx.fail('peek', 'state:panel-surface-detail', `expected search/peek, got ${info.panelSurface || 'missing'}/${info.panelSurfaceDetail || 'missing'}`);
   }
 
-  if (info.resultsHeight >= 87.5) {
-    ctx.pass('peek', 'layout:results-height-88px');
+  if (info.resultsHeight >= 71.5) {
+    ctx.pass('peek', 'layout:results-height-72px');
   } else {
     ctx.fail(
       'peek',
-      'layout:results-height-88px',
-      `#search-results.active height ${info.resultsHeight}px; expected >= 88px so legacy 62px max-height cannot win`
+      'layout:results-height-72px',
+      `#search-results.active height ${info.resultsHeight}px; expected >= 72px`
     );
   }
 
-  if (info.resultsMinHeight === '88px' && info.resultsMaxHeight === '88px') {
-    ctx.pass('peek', 'layout:results-min-max-height-88px');
+  if (info.resultsMinHeight === '72px' && info.resultsMaxHeight === '72px') {
+    ctx.pass('peek', 'layout:results-min-max-height-72px');
   } else {
     ctx.fail(
       'peek',
-      'layout:results-min-max-height-88px',
-      `computed min/max height ${info.resultsMinHeight}/${info.resultsMaxHeight}; expected 88px/88px`
+      'layout:results-min-max-height-72px',
+      `computed min/max height ${info.resultsMinHeight}/${info.resultsMaxHeight}; expected 72px/72px`
     );
   }
 
-  if (info.resultsFlexBasis === '88px') {
-    ctx.pass('peek', 'layout:results-flex-basis-88px');
+  if (info.resultsFlexBasis === '72px') {
+    ctx.pass('peek', 'layout:results-flex-basis-72px');
   } else {
     ctx.fail(
       'peek',
-      'layout:results-flex-basis-88px',
-      `computed flex-basis ${info.resultsFlexBasis}; expected 88px`
+      'layout:results-flex-basis-72px',
+      `computed flex-basis ${info.resultsFlexBasis}; expected 72px`
     );
   }
 

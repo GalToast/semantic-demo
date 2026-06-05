@@ -186,8 +186,8 @@
 
 .loading-title {
     font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: clamp(28px, 4vw, 36px);
-    line-height: 0.98;
+    font-size: clamp(26px, 4vw, 36px);
+    line-height: 1.08;
     color: var(--color-text-strong);
 }
 

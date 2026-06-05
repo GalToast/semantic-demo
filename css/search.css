@@ -682,6 +682,7 @@ body .search-container {
 
 .search-trail-cue {
     display: grid;
+    flex-direction: column;
     gap: 5px;
     margin-top: 7px;
     padding: 8px 10px;
@@ -2243,9 +2244,9 @@ body[data-panel-surface='map-focus-search'] .exploration-card:hover,
         line-height: 1.1;
     }
 
-    body[data-panel-surface='search'] .search-result-what,
-    body[data-panel-surface='search'] .search-result-meta,
-    body[data-panel-surface='search'] .search-result-bar {
+    body[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-what,
+    body[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-meta,
+    body[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-bar {
         display: none;
     }
 

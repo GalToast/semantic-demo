@@ -60,6 +60,10 @@
     visibility: hidden;
 }
 
+.summary-card[hidden]:not(.hidden) {
+    display: block;
+}
+
 .summary-header {
     padding: 16px 20px;
     border-bottom: 1px solid var(--color-border-subtle);
