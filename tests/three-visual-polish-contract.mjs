@@ -58,8 +58,8 @@ includesAll(threadManager, [
 ], 'mycelium semantic/color fade coefficients');
 
 assert(
-    app.includes("from './three-search-animations.js'")
-    && !app.includes("from './three-animations.js'"),
+    (app.includes("from './three-search-animations.js'") || app.includes("import './three-search-animations.js'"))
+    && !app.includes("from './three-animations.js'") && !app.includes("import './three-animations.js'"),
     'app.js should inject search animation dependencies from canonical three-search-animations.js'
 );
 

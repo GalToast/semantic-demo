@@ -7,6 +7,7 @@
 import { mount, unmount } from 'svelte';
 import App from './App.svelte';
 import { initViewportListeners } from '@lib/stores/viewport';
+import { testState } from '@lib/stores/index';
 
 // ── URL parameter initialization ──────────────────────────────────────────────
 
@@ -34,9 +35,22 @@ const app = mount(App, {
   }
 });
 
-// ── Cleanup on page unload ────────────────────────────────────────────────────
+// ── __TEST_STATE__ sync (visual settle for Playwright surface/visual tests) ──
+
+/**
+ * Subscribe to the derived `testState` store and write to `window.__TEST_STATE__`
+ * on every change. This exposes the same visual-state contract that the legacy
+ * bridge-registry.js provided, enabling surface tests to waitForReady without
+ * timing out.
+ */
+const unsubTestState = testState.subscribe((value) => {
+  (window as any).__TEST_STATE__ = value;
+});
+
+// ── Cleanup on page unload ────────────────────────────────────────────────
 
 window.addEventListener('beforeunload', () => {
+  unsubTestState();
   cleanupViewport();
   unmount(app);
 });

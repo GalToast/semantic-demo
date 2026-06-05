@@ -63,10 +63,19 @@ test('demo-camera.js is absent from active modules', () => {
     assert(!fs.existsSync(p), `stale source still exists: ${p}`);
 });
 
-test('no source file references demo-camera by path or basename', () => {
+test('no source file imports from demo-camera.js specifically', () => {
+    // micro-demo-camera.js is a separate active file — it is NOT the retired demo-camera.js.
+    // Only check that no file imports from 'demo-camera.js' (the retired module).
+    const retiredModule = 'demo-camera.js';
+    const activeModule = 'micro-demo-camera.js';
     for (const file of sourceFiles()) {
         const src = fs.readFileSync(file, 'utf8');
-        assert(!src.includes('demo-camera'), `${path.relative(ROOT, file)} mentions demo-camera`);
+        // Look for imports from the retired module specifically
+        const importMatches = src.match(/(?:import|from)\s*['"][^'"]*demo-camera\.js['"]/g) || [];
+        for (const match of importMatches) {
+            // Exclude references to the active micro-demo-camera.js
+            assert(match.includes(activeModule), `${path.relative(ROOT, file)} imports from retired ${retiredModule}: ${match}`);
+        }
     }
 });
 
@@ -90,10 +99,15 @@ test('app.js does not reference demo-camera', () => {
     assert(!src.includes('demo-camera'), 'app.js mentions demo-camera');
 });
 
-test('micro-demo.js does not import from demo-camera.js', () => {
+test('micro-demo.js does not import from retired demo-camera.js', () => {
     const p = path.join(ROOT, 'js/modules/micro-demo.js');
     const src = fs.readFileSync(p, 'utf8');
-    assert(!src.includes('demo-camera'), 'micro-demo.js imports demo-camera');
+    // micro-demo.js may reference micro-demo-camera.js (active) — that's fine.
+    // It must NOT reference the retired demo-camera.js.
+    const importMatches = src.match(/(?:import|from)\s*['"][^'"]*demo-camera\.js['"]/g) || [];
+    for (const match of importMatches) {
+        assert(match.includes('micro-demo-camera.js'), `micro-demo.js imports from retired demo-camera.js: ${match}`);
+    }
 });
 
 console.log(`\n  ${'-'.repeat(47)}`);
