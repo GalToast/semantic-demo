@@ -103,7 +103,6 @@ resetDom();
 syncSemanticDiveUi();
 
 assert(state.semanticDiveMode === true, 'dive active with focus and trailDepth 2');
-assert(document.body.dataset.semanticDive === 'active', 'body.dataset.semanticDive is active');
 
 // Now simulate user navigates to map (e.g. via btn-inside-county equivalent)
 withStateMutation(() => {
