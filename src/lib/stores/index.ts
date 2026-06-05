@@ -404,3 +404,23 @@ export {
 } from '../data-store';
 
 export type { DataLoadStatus, DataLoadState } from '../data-store';
+
+// ── Derived: selectedPointStore ─────────────────────────────────────────────
+// Combines focusedIndex + businessRecords into the currently selected point.
+// InfoPanel.svelte and focus-card consumers read this store.
+import { businessRecords as _businessRecords } from '../data-store';
+
+/**
+ * The currently selected business record, derived from navStore.focusedIndex
+ * and businessRecords. Returns null when nothing is focused or data isn't loaded.
+ */
+export const selectedPointStore = derived(
+  [navStore, _businessRecords],
+  ([$nav, $records]) => {
+    const idx = $nav.focusedIndex;
+    if (idx == null || idx < 0 || !$records || idx >= $records.length) {
+      return null;
+    }
+    return $records[idx] ?? null;
+  }
+);

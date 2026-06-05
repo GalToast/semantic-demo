@@ -95,6 +95,9 @@ const INITIAL_STORE: SearchStoreState = {
 export const searchStore = writable<SearchStoreState>({ ...INITIAL_STORE });
 export const searchState = searchStore;
 
+/** Visible count of search results (for "Show more" pagination). */
+export const searchVisibleCountStore = writable(10);
+
 // ── Derived ──────────────────────────────────────────────────────────────────
 
 export const hasResults = derived(searchStore, ($s) => $s.results.length > 0);
