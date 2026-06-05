@@ -35,10 +35,12 @@ const MODULES = {
   lifecycle:   path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js'),
   journey:     path.join(SEMDEMO_ROOT, 'js/modules/journey.js'),
   camera:      path.join(SEMDEMO_ROOT, 'js/modules/camera-controls.js'),
+  cameraChoreography: path.join(SEMDEMO_ROOT, 'js/modules/camera-controls-choreography.js'),
   searchState: path.join(SEMDEMO_ROOT, 'js/modules/search-state.js'),
   eventBindings: path.join(SEMDEMO_ROOT, 'js/modules/bindings/legend-bindings.js'),
   sceneReveal: path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.js'),
   app:         path.join(SEMDEMO_ROOT, 'js/modules/app.js'),
+  appRuntime:  path.join(SEMDEMO_ROOT, 'js/modules/app.ts'),
   mapState:    path.join(SEMDEMO_ROOT, 'js/modules/map-state.js'),
   clusterFilter: path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.js'),
   journeyCompassCtrl: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.js'),
@@ -697,6 +699,7 @@ function testCameraInteractionBridgesRetired() {
 
   const appSrc = read('app');
   const cameraSrc = read('camera');
+  const cameraChoreographySrc = read('cameraChoreography');
   const canvasInteractionSrc = read('journeyCanvasInteraction');
 
   for (const fn of ['noteSceneInteraction', 'releaseFocusCameraAssist']) {
@@ -710,8 +713,8 @@ function testCameraInteractionBridgesRetired() {
     );
   }
   assert(
-    cameraSrc.includes('noteSceneInteraction(duration + 1200);'),
-    'camera-controls.js should call noteSceneInteraction directly for search corridor animation'
+    cameraChoreographySrc.includes('noteSceneInteraction(duration + 1200);'),
+    'camera-controls-choreography.js should call noteSceneInteraction directly for search corridor animation'
   );
   assert(
     /import\s+\{[^}]*\bfocusOnNode\b[^}]*\bnoteSceneInteraction\b[^}]*\breleaseFocusCameraAssist\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(canvasInteractionSrc),
@@ -886,7 +889,7 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
   const journeyCompassSrc = read('journeyCompassCtrl');
   const keyboardSrc = read('keyboardHelp');
   const uiRenderersSrc = read('uiRenderers');
-  const appSrc = read('app');
+  const appRuntimeSrc = read('appRuntime');
 
   assert(
     /export function applySemanticCentroidCamera/.test(cameraSrc),
@@ -957,12 +960,12 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
     'ui-renderers.js selected-card map action must not use window.switchView or a retained switchView adapter'
   );
   assert(
-    !appSrc.includes('initUiRenderersAdapter({'),
-    'app.js should not inject the retired ui-renderers switchView adapter'
+    !appRuntimeSrc.includes('initUiRenderersAdapter({'),
+    'app.ts should not inject the retired ui-renderers switchView adapter'
   );
   assert(
-    appSrc.includes('initJourneyCompassAdapter({'),
-    'app.js should inject switchView into journey-compass-controller'
+    appRuntimeSrc.includes('initJourneyCompassAdapter({'),
+    'app.ts should inject switchView into journey-compass-controller'
   );
 
   console.log('  OK — centroid camera, journey timers, and reset UI actions use module seams');

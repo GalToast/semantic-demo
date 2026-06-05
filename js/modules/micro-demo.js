@@ -50,6 +50,7 @@ let _demoCancelled = false;
 let _startRetryTimer = null;
 let _startRetryDeadline = 0;
 let _startRetryCount = 0;
+let _startGuardClaimed = false;          // Atomic re-entry guard for startMicroDemo
 const MAX_START_RETRIES = 100;
 
 // === Private Helpers ===
@@ -278,7 +279,17 @@ export function startMicroDemo() {
     if (_demoPhase !== PHASE.IDLE) return;
     const params = new URLSearchParams(window.location.search);
     const forceDemo = params.get('demo') === 'force';
+
+    // Atomic session guard: check BEFORE any retry loop to prevent double-starts.
+    // If the session key is already set, the demo has run/been skipped — bail out.
     if (!forceDemo && sessionStorage.getItem(SESSION_STORAGE_KEY)) return;
+
+    // Re-entry guard: prevents stacked retry chains when startMicroDemo() is
+    // called rapidly while isAppReadyForDemo() flips between true/false.
+    // Released inside the retry callback before re-entry, and on all exit paths.
+    if (_startGuardClaimed) return;
+    _startGuardClaimed = true;
+
     if (!isAppReadyForDemo()) {
         const now = performance.now();
         if (!_startRetryDeadline) {
@@ -289,14 +300,17 @@ export function startMicroDemo() {
             _startRetryCount++;
             _startRetryTimer = window.setTimeout(() => {
                 _startRetryTimer = null;
+                _startGuardClaimed = false;   // Release before re-entry
                 startMicroDemo();
             }, 150);
-            return;
+            return;                           // Guard stays claimed until callback fires
         }
+        _startGuardClaimed = false;
         try { sessionStorage.setItem(SESSION_STORAGE_KEY, 'skipped-no-conditions'); } catch {}
         notifyDemoUnableToStart();
         return;
     }
+    _startGuardClaimed = false;
     const node = _getDemoNode();
     if (node === null) {
         try { sessionStorage.setItem(SESSION_STORAGE_KEY, 'skipped-no-node'); } catch {}

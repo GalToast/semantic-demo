@@ -31,9 +31,9 @@ import { disposeObject3D } from './resource-tracker.js';
 import { updateInspectedStrandOverlayFrame } from './inspected-strand-overlay-adapter.js';
 import { disposeFocusAnchorIndicator } from './focus-anchor-indicator.js';
 import {
-    updateArrivalHandoffOverlay,
-    updateRouteTraceOverlayPositions
-} from './journey-webgl.js';
+    updateArrivalHandoffOverlayFrame,
+    updateRouteTraceOverlayFrame
+} from './route-arrival-overlay-adapter.js';
 
 import {
     createPoints,
@@ -656,8 +656,8 @@ export function animate() {
     updateCorridorNodeGlow(frameNow);
     updateSearchCorridorAnimation(frameNow);
     updateInspectedStrandOverlayFrame(frameNow);
-    updateArrivalHandoffOverlay();
-    updateRouteTraceOverlayPositions(frameNow);
+    updateArrivalHandoffOverlayFrame(frameNow);
+    updateRouteTraceOverlayFrame(frameNow);
     applyFocusPocketBreathing(frameNow);
 
     if (shouldRenderThreads()) {
