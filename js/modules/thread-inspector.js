@@ -26,6 +26,7 @@ import {
     updateInspectedStrandOverlay,
     disposeInspectedStrandOverlay
 } from './thread-inspector-webgl.js';
+import { setInspectedStrandOverlayUpdater } from './inspected-strand-overlay-adapter.js';
 import { setStrandContinuityState, clearStrandContinuityState } from './strand-continuity.js';
 import { getStrandArrivalNote } from './strand-continuity.js';
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from './relationship-roles.js';
@@ -69,6 +70,8 @@ export {
 
 export { setStrandContinuityState, clearStrandContinuityState, getStrandArrivalNote };
 export { syncInspectedStrandOverlay, updateInspectedStrandOverlay, disposeInspectedStrandOverlay };
+
+setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay);
 
 // === Thread inspection ===
 

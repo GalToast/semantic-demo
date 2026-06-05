@@ -29,8 +29,9 @@ const strict = args.includes('--strict');
 const updateMode = args.includes('--update');
 const progressMode = args.includes('--progress');
 
-// No tolerated TS/JS drift remains. Runtime JS shadows and TS siblings must
-// preserve matching export surfaces and sibling imports.
+// No tolerated TS/JS drift remains. Retired .js shadow stubs are handled as a
+// separate source-state: they must preserve the TS export surface, but their
+// imports are intentionally not compared because the .ts file is canonical.
 const KNOWN_BASELINE = {};
 
 // Helpers
@@ -82,7 +83,7 @@ function extractExports(source) {
 /**
  * Extract import paths that reference sibling modules (./foo.js patterns).
  */
-function extractSiblingImports(source) {
+function extractSiblingImports(source, ownerBase = null) {
   const deps = new Set();
   const runtimeSource = source.replace(/^\s*import\s+type\b[^;]*;?/gm, '');
   const importPatterns = [
@@ -91,10 +92,27 @@ function extractSiblingImports(source) {
   ];
   for (const pattern of importPatterns) {
     for (const m of runtimeSource.matchAll(pattern)) {
-      deps.add(m[1]);
+      if (m[1] !== ownerBase) deps.add(m[1]);
     }
   }
+  // Also match .ts extension imports. Self-reexports from the TS sibling are
+  // compatibility wrappers, not meaningful dependency drift.
+  const tsImportPattern = /from\s+['"]\.\/([\w/-]+)\.ts['"]/g;
+  for (const m of runtimeSource.matchAll(tsImportPattern)) {
+    if (m[1] !== ownerBase) deps.add(m[1]);
+  }
   return [...deps].sort();
+}
+
+function isRetiredShadowStub(base, source) {
+  const uncommented = source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+    .trim();
+  const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(
+    `^export\\s*\\{[\\s\\S]*?\\}\\s*from\\s+['"]\\./${escapedBase}\\.ts['"];?\\s*$`,
+  ).test(uncommented);
 }
 
 /**
@@ -129,8 +147,9 @@ function computeDrift() {
     const tsOnly = tsExports.filter(n => !jsExports.includes(n));
     const jsOnly = jsExports.filter(n => !tsExports.includes(n));
 
-    const tsImports = extractSiblingImports(tsSource);
-    const jsImports = extractSiblingImports(jsSource);
+    const retiredShadowStub = isRetiredShadowStub(base, jsSource);
+    const tsImports = retiredShadowStub ? [] : extractSiblingImports(tsSource, base);
+    const jsImports = retiredShadowStub ? [] : extractSiblingImports(jsSource, base);
 
     const tsOnlyImports = tsImports.filter(d => !jsImports.includes(d));
     const jsOnlyImports = jsImports.filter(d => !tsImports.includes(d));

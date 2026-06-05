@@ -248,12 +248,31 @@ export function disposeNodeVisuals() {
         disposeObject3D(state.nodeSporeHitMesh);
         state.nodeSporeHitMesh = null;
     }
+    // Dispose GPU textures that are re-created on each init cycle.
+    // These are assigned to state in createPoints() but were never
+    // disposed on re-init, leaking canvas-backed CanvasTextures.
+    if (state.focusBeaconTexture) {
+        state.focusBeaconTexture.dispose();
+        state.focusBeaconTexture = null;
+    }
+    if (state.focusRingTexture) {
+        state.focusRingTexture.dispose();
+        state.focusRingTexture = null;
+    }
+    if (state.focusNextCueTexture) {
+        state.focusNextCueTexture.dispose();
+        state.focusNextCueTexture = null;
+    }
+
     // Also clean webglContext intermediary used by the TS module
     webglContext.pointsMesh = null;
     webglContext.pointsMaterial = null;
     webglContext.nodeSporeMesh = null;
     webglContext.nodeSporeHitMesh = null;
     webglContext.nodeSporeMaterial = null;
+    webglContext.focusBeaconTexture = null;
+    webglContext.focusRingTexture = null;
+    webglContext.focusNextCueTexture = null;
 }
 
 export function createNodeSporeLayer() {

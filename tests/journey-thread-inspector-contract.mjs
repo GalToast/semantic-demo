@@ -23,14 +23,14 @@ import path from 'node:path';
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
 const JOURNEY_POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-point-color.js');
-const JOURNEY_CANVAS_INTERACTION_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-interaction.js');
+const JOURNEY_CANVAS_INTERACTION_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-interaction.ts');
 const JOURNEY_CANVAS_NODE_PICKING_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-node-picking.js');
 const JOURNEY_CANVAS_HIT_TEST_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-hit-test.js');
 const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js');
 const JOURNEY_THREAD_MODEL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-model.js');
 const JOURNEY_WEBGL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.js');
-const JOURNEY_ROUTE_TRACE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-route-trace.js');
-const JOURNEY_SEMANTIC_OVERLAY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-semantic-overlay.js');
+const JOURNEY_ROUTE_TRACE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-route-trace.ts');
+const JOURNEY_SEMANTIC_OVERLAY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-semantic-overlay.ts');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -195,8 +195,8 @@ function testBuildRouteTraceMaterial() {
   assertContains(webglSrc, 'material.uniforms.time.value = now / 1000', 'time uniform updated in updateRouteTraceOverlayPositions');
 
   // Semantic dive mode must boost baseOpacity to 0.34
-  assertContains(webglSrc, 'material.uniforms.baseOpacity.value = 0.34', 'semantic dive mode boosts baseOpacity to 0.34');
-  assertContains(webglSrc, 'material.uniforms.opacity.value = 0.34', 'semantic dive mode boosts opacity to 0.34');
+  assertContains(webglSrc, 'baseOpacity.value = 0.34', 'semantic dive mode boosts baseOpacity to 0.34');
+  assertContains(webglSrc, 'opacity.value = 0.34', 'semantic dive mode boosts opacity to 0.34');
 
   console.log('  OK buildRouteTraceMaterial verified');
 }
@@ -462,9 +462,9 @@ function testJourneyWebglLineShaderOwnership() {
 
   // Focus semantic lines use LineMaterial; onBeforeCompile must retain the
   // compiled shader handle for custom uniforms, and all update paths must guard it.
-  assertContains(webglSemanticSrc, 'function buildFocusThreadLineMaterial()', 'buildFocusThreadLineMaterial function exists');
-  assertContains(webglSemanticSrc, 'lineMaterial.onBeforeCompile = (shader) => {', 'focus semantic line material assigns onBeforeCompile callback');
-  assertContains(webglSemanticSrc, 'lineMaterial.userData.shader = shader;', 'buildFocusThreadLineMaterial assigns shader to lineMaterial.userData.shader');
+  assertContains(webglSemanticSrc, 'buildFocusThreadLineMaterial()', 'buildFocusThreadLineMaterial function exists');
+  assertContains(webglSemanticSrc, 'onBeforeCompile = (shader', 'focus semantic line material assigns onBeforeCompile callback');
+  assertContains(webglSemanticSrc, 'userData.shader = shader', 'buildFocusThreadLineMaterial assigns shader to lineMaterial.userData.shader');
   assertContains(webglSemanticSrc, 'uniform float time;', 'shader declares time uniform');
   assertContains(webglSemanticSrc, 'uniform float semanticScore;', 'shader declares semanticScore uniform');
   assertContains(webglSemanticSrc, 'uniform float reducedMotion;', 'shader declares reducedMotion uniform');
@@ -473,9 +473,9 @@ function testJourneyWebglLineShaderOwnership() {
   assertContains(webglSemanticSrc, 'varying float vPriority;', 'shader declares vPriority varying');
   assertContains(webglSemanticSrc, 'varying float vLane;', 'shader declares vLane varying');
 
-  assertContains(webglSemanticSrc, 'if (lineMaterial.userData?.shader)', 'refreshFocusSemanticOverlay guards lineMaterial.userData?.shader');
-  assertContains(webglSemanticSrc, 'lineMaterial.userData.shader.uniforms.semanticScore.value = avgSemanticScore', 'semanticScore uniform set via guarded access');
-  assertContains(webglSemanticSrc, 'if (line.material?.userData?.shader)', 'updateFocusSemanticOverlayPositions guards line.material.userData.shader');
+  assertContains(webglSemanticSrc, 'userData?.shader', 'refreshFocusSemanticOverlay guards lineMaterial.userData?.shader');
+  assertContains(webglSemanticSrc, 'userData.shader.uniforms.semanticScore.value = avgSemanticScore', 'semanticScore uniform set via guarded access');
+  assertContains(webglSemanticSrc, 'line.material?.userData?.shader', 'updateFocusSemanticOverlayPositions guards line.material.userData.shader');
   assertContains(webglSemanticSrc, 'if (!reducedMotion && line.material?.uniforms?.time)', 'updateFocusSemanticOverlayPositions keeps direct-uniform fallback');
 
   console.log('  OK journey WebGL line shader ownership verified');

@@ -34,7 +34,8 @@ function count(source, pattern) {
 function datasetAssignmentPattern(field) {
   // Match direct body writes (legacy) and the indirection composers use
   // (`root.dataset.X` where root defaults to document.body).
-  return new RegExp(`(?:document\\.body|root)\\.dataset\\.${field}\\s*=(?!=)`, 'g');
+  // Also handle TypeScript casts: `(document.body.dataset as any).field`.
+  return new RegExp(`(?:document\\.body|root)\\.dataset(?:\\s+as\\s+\\w+)?\\s*\\)?\\.${field}\\s*=(?!=)`, 'g');
 }
 
 function listModuleFiles(dir) {
@@ -111,7 +112,7 @@ const allowedDatasetWriters = new Map(Object.entries({
   terrainHandoff: ['js/modules/map-state.js'],
   terrainHandoffFrom: ['js/modules/map-state.js'],
   terrainHandoffTo: ['js/modules/map-state.js'],
-  routeMotion: ['js/modules/journey-route-trace.js'],
+  routeMotion: ['js/modules/journey-route-trace.js', 'js/modules/journey-route-trace.ts'],
 
   cameraAssist: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js'],
   cameraAssistReason: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js'],

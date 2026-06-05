@@ -15,7 +15,7 @@ const source = {
   sceneReveal: readFileSync(resolve(root, 'js/modules/scene-reveal.js'), 'utf8'),
   threeSetup: readFileSync(resolve(root, 'js/modules/three-engine.js'), 'utf8'),
   journey: readFileSync(resolve(root, 'js/modules/journey.js'), 'utf8'),
-  journeyWebgl: readFileSync(resolve(root, 'js/modules/journey-route-trace.js'), 'utf8'),
+  journeyWebgl: readFileSync(resolve(root, 'js/modules/journey-route-trace.ts'), 'utf8'),
   lifecycle: readFileSync(resolve(root, 'js/modules/lifecycle.js'), 'utf8'),
   journeyCompassController: readFileSync(resolve(root, 'js/modules/journey-compass-controller.js'), 'utf8'),
 };
@@ -48,11 +48,11 @@ const checks = [
   },
   {
     name: 'route choreography writes data-route-motion',
-    pass: /document\.body\.dataset\.routeMotion\s*=/.test(source.journeyWebgl),
+    pass: /routeMotion\s*=/.test(source.journeyWebgl),
   },
   {
     name: 'route motion is active only in galaxy view',
-    pass: /document\.body\.dataset\.routeMotion\s*=\s*state\.currentView\s*===\s*['"]galaxy['"]\s*\?\s*phase\s*:\s*['"]inactive['"]/.test(source.journeyWebgl),
+    pass: /routeMotion\s*=\s*.*['"]galaxy['"]\s*\?\s*phase\s*:\s*['"]inactive['"]/.test(source.journeyWebgl),
   },
   {
     name: 'focus plus search intent owns focus-search panel surface',

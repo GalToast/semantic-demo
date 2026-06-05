@@ -47,7 +47,7 @@ const MODULES = {
   threadInspector: path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js'),
   strandContinuity: path.join(SEMDEMO_ROOT, 'js/modules/strand-continuity.js'),
   journeyThreadSettler: path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-settler.js'),
-  journeyCanvasInteraction: path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-interaction.js'),
+  journeyCanvasInteraction: path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-interaction.ts'),
   clusterLabels: path.join(SEMDEMO_ROOT, 'js/modules/cluster-labels.js'),
   audio:       path.join(SEMDEMO_ROOT, 'js/modules/audio-scape.js'),
   viewController: path.join(SEMDEMO_ROOT, 'js/modules/view-controller.js'),
