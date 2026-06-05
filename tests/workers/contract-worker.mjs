@@ -7,7 +7,9 @@ function closeBrowserTree(pid) {
   if (process.platform !== 'win32') return;
   try {
     execFileSync('taskkill', ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', timeout: 8000 });
-  } catch { }
+  } catch {
+    // Best-effort cleanup only; the contract runner reports the original failure.
+  }
 }
 
 async function runContract(filename, timeoutMs, baseUrl) {

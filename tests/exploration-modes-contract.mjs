@@ -272,13 +272,18 @@ await test('setMyceliumMode source calls direct applyPointFilterColors and updat
 });
 
 // Contract 7: applyStoryPrompt resets activeFilters and activeClusterFilter
+// Routes through filter-state owner APIs (resetActiveFilters / setActiveClusterFilter),
+// which keep state AND the Svelte store in sync (see state-store-sync-contract.mjs).
 await test('applyStoryPrompt source resets activeFilters and activeClusterFilter', async () => {
   const { readFileSync } = await import('node:fs');
   const src = readFileSync('js/modules/lifecycle.js', 'utf8');
-  const hasFilterReset = /state\.activeFilters\s*=\s*\{[\s\S]*?status:\s*['"]all['"]/.test(src);
-  const hasClusterReset = /state\.activeClusterFilter\s*=\s*null/.test(src);
-  assert(hasFilterReset, 'applyStoryPrompt resets activeFilters to default');
-  assert(hasClusterReset, 'applyStoryPrompt resets activeClusterFilter to null');
+  const applyStoryPromptBody = src.match(/export function applyStoryPrompt\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
+  const hasFilterReset = /resetActiveFilters\s*\(/.test(applyStoryPromptBody)
+    || /state\.activeFilters\s*=\s*\{[\s\S]*?status:\s*['"]all['"]/.test(applyStoryPromptBody);
+  const hasClusterReset = /setActiveClusterFilter\s*\(\s*null\s*\)/.test(applyStoryPromptBody)
+    || /state\.activeClusterFilter\s*=\s*null/.test(applyStoryPromptBody);
+  assert(hasFilterReset, 'applyStoryPrompt resets activeFilters (via resetActiveFilters or direct)');
+  assert(hasClusterReset, 'applyStoryPrompt resets activeClusterFilter (via setActiveClusterFilter(null) or direct)');
 });
 
 // Contract 8: setMyceliumMode('trail') calls the direct trailDepth owner

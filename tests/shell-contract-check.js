@@ -33,6 +33,7 @@ const indexHtml = read(frontDoor);
 const lifecycleSource = read('js/modules/lifecycle.js');
 const connectionAnalysisSource = read('js/modules/connection-analysis.js');
 const connectionAnalysisAdapterSource = read('js/modules/connection-analysis-adapter.js');
+const appSvelteSource = read('js/modules/components/App.svelte');
 const bundleSource = read('dist/bundle.js');
 const deployDoc = read('DEPLOY.md');
 const architectureDoc = read('ARCHITECTURE.md');
@@ -43,7 +44,10 @@ const baseStylesheet = read('css/base.css');
 requireIncludes(canonicalShell, shellHtml, 'semantic-demo.css', 'canonical shell owns the app stylesheet');
 requireIncludes(canonicalShell, shellHtml, 'vector-explorer-pandora.css', 'canonical shell owns the Pandora stylesheet');
 requireIncludes(canonicalShell, shellHtml, 'dist/bundle.js', 'canonical shell owns the bundled app runtime');
-requireIncludes(canonicalShell, shellHtml, 'id="canvas-container"', 'canonical shell owns the WebGL app DOM');
+// Per the chrome migration (Lane 2): the canvas container is rendered by
+// App.svelte at runtime rather than baked into the static HTML. The shell
+// contract is satisfied by the Svelte source owning the ID, not the static HTML.
+requireIncludes('js/modules/components/App.svelte', appSvelteSource, 'id="canvas-container"', 'App.svelte owns the WebGL app DOM');
 requireIncludes('js/modules/connection-analysis.js', connectionAnalysisSource, './connection-analysis-adapter.js', 'connection report must route DOM bindings through the adapter');
 requireIncludes('js/modules/connection-analysis-adapter.js', connectionAnalysisAdapterSource, 'summary-gemma-story', 'connection analysis adapter owns Gemma story DOM bindings');
 requireIncludes('js/modules/connection-analysis.js', connectionAnalysisSource, 'cached_trail_story', 'served runtime source accepts cached trail story artifacts');

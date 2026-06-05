@@ -38,7 +38,7 @@ async function waitForAppReady(page) {
   try {
     await page.waitForSelector('.search-container, #info-panel', { timeout: 15000 });
     return true;
-  } catch (e) {
+  } catch (_e) {
     return false;
   }
 }
@@ -209,7 +209,7 @@ async function main() {
   return { allResults, bugReproduced: anyFailed };
 }
 
-main().then(({ allResults, bugReproduced }) => {
+main().then(({ bugReproduced }) => {
   process.exit(bugReproduced ? 1 : 0);
 }).catch(e => {
   console.error('Unhandled error:', e);

@@ -51,9 +51,9 @@ test.describe('showSemanticThreadsDetail error fallback', () => {
 
     // Ensure state.focusedNode is set so showSemanticThreadsDetail has a valid context
     await page.evaluate(() => {
-      // eslint-disable-next-line no-undef
-      if (state.points && state.points.length > 0) {
-        state.focusedNode = 0;
+      const appState = window.__APP_STATE__ ?? window.__TEST_STATE__;
+      if (appState.points && appState.points.length > 0) {
+        appState.focusedNode = 0;
       }
     });
 

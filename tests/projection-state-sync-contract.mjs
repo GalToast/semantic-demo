@@ -247,6 +247,7 @@ state.navState.focusedIndex = 3;
 director = getRouteDirectorState();
 synced = syncRouteDirectorState('test');
 assert(director === 'node-focus', `expected node-focus, got '${director}'`);
+assert(synced === director, `syncRouteDirectorState should return '${director}', got '${synced}'`);
 assert(ds('routeDirector') === director,
     `routeDirector node-focus: dataset='${ds('routeDirector')}' vs getRouteDirectorState()='${director}'`);
 
@@ -255,6 +256,7 @@ state.currentSearchSummary = { query: 'cafe', visibleMatches: 4 };
 director = getRouteDirectorState();
 synced = syncRouteDirectorState('test');
 assert(director === 'search-focus', `expected search-focus, got '${director}'`);
+assert(synced === director, `syncRouteDirectorState should return '${director}', got '${synced}'`);
 assert(ds('routeDirector') === director,
     `routeDirector search-focus: dataset='${ds('routeDirector')}' vs getRouteDirectorState()='${director}'`);
 
@@ -264,6 +266,7 @@ state.trailDepth = 2;
 director = getRouteDirectorState();
 synced = syncRouteDirectorState('test');
 assert(director === 'inside-pocket', `expected inside-pocket, got '${director}'`);
+assert(synced === director, `syncRouteDirectorState should return '${director}', got '${synced}'`);
 assert(ds('routeDirector') === director,
     `routeDirector inside-pocket: dataset='${ds('routeDirector')}' vs getRouteDirectorState()='${director}'`);
 
@@ -274,6 +277,7 @@ state.selectedPoint = { lead_id: 'x99', name: 'Beta', cluster: 1 };
 director = getRouteDirectorState();
 synced = syncRouteDirectorState('test');
 assert(director === 'map-trail', `expected map-trail, got '${director}'`);
+assert(synced === director, `syncRouteDirectorState should return '${director}', got '${synced}'`);
 assert(ds('routeDirector') === director,
     `routeDirector map-trail: dataset='${ds('routeDirector')}' vs getRouteDirectorState()='${director}'`);
 
@@ -284,6 +288,7 @@ state.navState.focusedIndex = null;
 director = getRouteDirectorState();
 synced = syncRouteDirectorState('test');
 assert(director === 'map-overview', `expected map-overview, got '${director}'`);
+assert(synced === director, `syncRouteDirectorState should return '${director}', got '${synced}'`);
 assert(ds('routeDirector') === director,
     `routeDirector map-overview: dataset='${ds('routeDirector')}' vs getRouteDirectorState()='${director}'`);
 

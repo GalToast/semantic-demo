@@ -321,7 +321,7 @@ async function testPrivateHelpersRemainPrivateWithFakeWindow() {
 
     console.log('  OK private helpers stay private and exported title helper is callable');
   } catch (err) {
-    throw new Error(`synthetic-window import/API-boundary check failed: ${err.message}`);
+    throw new Error(`synthetic-window import/API-boundary check failed: ${err.message}`, { cause: err });
   } finally {
     globalThis.window = origWindow;
     globalThis.document = origDocument;

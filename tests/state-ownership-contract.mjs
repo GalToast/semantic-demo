@@ -623,7 +623,9 @@ for (const field of focusPocketFields) {
       `lifecycle.js:${w.lineno} — '${field}': ${w.text} (type:${w.type})`
     ));
   } catch (e) {
-    if (e.code === 'ENOENT') {}
+    if (e.code === 'ENOENT') {
+      // Missing optional module in this ownership scan is non-fatal.
+    }
     else throw e;
   }
 }

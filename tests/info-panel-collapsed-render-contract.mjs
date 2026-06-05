@@ -183,7 +183,7 @@ async function run() {
   const serverUrl = `http://127.0.0.1:${serverAddr.port}`;
 
   let browser;
-  let passed = false;
+  let passed;
 
   try {
     browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });

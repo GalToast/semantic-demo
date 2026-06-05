@@ -63,8 +63,6 @@ const ALLOWED_BASELINE = {
   // and child elements — these are choreography targets, not stable panels.
   'journey_active.css|data-mobile-route-peek|.journey-compass': true,
   'journey_active.css|data-terrain-handoff|.journey-compass':  true,
-  'journey_active.css|data-route-director|.focus-stage-dive-btn': true,
-
   // journey_steps.css uses data-semantic-dive on #canvas-container — canvas
   // is a choreographed overlay, not a stable panel.
   'journey_steps.css|data-semantic-dive|#canvas-container':  true,

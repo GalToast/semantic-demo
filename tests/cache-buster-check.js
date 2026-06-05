@@ -1,7 +1,6 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import os from 'node:os';
 import path from 'node:path';
 import * as esbuild from 'esbuild';
 import { compile } from 'svelte/compiler';
@@ -94,6 +93,10 @@ function normalizeLocalPath(value) {
   return toPosixPath(value).replace(/^\.\//, '');
 }
 
+function normalizeGeneratedBundleText(text) {
+  return text.replace(/[ \t]+(?=\r?\n)/g, '');
+}
+
 function resolveCssImport(ownerPath, reference) {
   const ownerDir = path.posix.dirname(toPosixPath(ownerPath));
   return path.posix.normalize(path.posix.join(ownerDir === '.' ? '' : ownerDir, reference));
@@ -106,26 +109,26 @@ async function verifyBundleFresh() {
     return;
   }
 
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'semantic-bundle-check-'));
-  const tmpBundlePath = path.join(tmpDir, 'bundle.js');
+  const currentBundle = fs.readFileSync(currentBundlePath);
 
   try {
     await esbuild.build({
-      entryPoints: [path.join(root, 'js/modules/app.js')],
+      entryPoints: ['js/modules/app.js'],
       bundle: true,
       minify: true,
       keepNames: true,
-      outfile: tmpBundlePath,
+      outfile: currentBundlePath,
       target: 'es2020',
       format: 'esm',
       external: ['three', 'three/*'],
       plugins: [sveltePlugin],
+      absWorkingDir: root,
       logLevel: 'silent',
     });
 
-    const current = fs.readFileSync(currentBundlePath);
-    const generated = fs.readFileSync(tmpBundlePath);
-    if (!current.equals(generated)) {
+    const current = normalizeGeneratedBundleText(currentBundle.toString('utf8'));
+    const generated = normalizeGeneratedBundleText(fs.readFileSync(currentBundlePath, 'utf8'));
+    if (current !== generated) {
       const currentHash = crypto.createHash('sha256').update(current).digest('hex').slice(0, 12);
       const generatedHash = crypto.createHash('sha256').update(generated).digest('hex').slice(0, 12);
       failures.push(
@@ -136,7 +139,7 @@ async function verifyBundleFresh() {
   } catch (error) {
     failures.push(`dist/bundle.js freshness build failed: ${error?.message || String(error)}`);
   } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    fs.writeFileSync(currentBundlePath, currentBundle);
   }
 }
 

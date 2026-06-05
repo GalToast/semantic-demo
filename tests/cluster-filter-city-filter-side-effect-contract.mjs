@@ -10,9 +10,19 @@
  *   3. filter-state.js exports setActiveFilter (the owner API) and it accepts 'city' key.
  *   4. syncCityFilterUi exists and is called by populateCityFilter.
  *   5. populateCityFilter does NOT bypass the filter-state owner by writing state.activeFilters.city directly.
+ *   7. syncCityFilterUi BEHAVIORALLY syncs the city-filter <select> value to
+ *      state.activeFilters.city (runtime assertion — replaces the prior
+ *      structural substring check in Test 5 with a true behavioral test that
+ *      would catch a regression like `select.textContent = ...` substitution).
+ *
+ * Per-contract decision (P3 cleanup): Tests 1-4 stay structural — they verify
+ * ownership boundaries that are easy to break with a "harmless" refactor. Test 5
+ * is split: structural export/name check remains, behavioral DOM check moved
+ * to Test 7. Test 6 (URL restore) stays structural — DOM behavior is covered
+ * by the live surface contracts.
  *
  * Runs in Node — no Playwright, no browser, no DOM.
- * Source-only assertions via string search + structural analysis.
+ * Mixed source-only + minimal-runtime assertions.
  *
  * Usage:
  *   node tests/cluster-filter-city-filter-side-effect-contract.mjs
@@ -178,10 +188,63 @@ function testRestoreActiveFiltersFromUrlCityHandling() {
 }
 
 // ---------------------------------------------------------------------------
+// TEST 7: syncCityFilterUi BEHAVIORALLY syncs select.value to state.activeFilters.city
+// ---------------------------------------------------------------------------
+// Replaces the structural substring check in Test 5 with a runtime assertion
+// that the function actually moves the value from state to DOM. This catches
+// silent regressions where a structural check would still pass (e.g., if the
+// implementation switched from select.value to select.textContent).
+
+async function testSyncCityFilterUiBehavior() {
+  console.log('\n[TEST] syncCityFilterUi behaviorally syncs select.value');
+
+  // Capture the real document.getElementById before stubbing, in case other
+  // modules imported it. Then stub with a minimal fake.
+  const realDocument = globalThis.document;
+  let capturedValue = '__unset__';
+  const fakeSelect = {
+    get value() { return capturedValue; },
+    set value(v) { capturedValue = String(v); }
+  };
+  globalThis.document = {
+    getElementById: (id) => (id === 'city-filter' ? fakeSelect : null)
+  };
+
+  try {
+    // Mutate state and call the function
+    const { state } = await import('../js/state.js');
+    const originalCity = state.activeFilters.city;
+    state.activeFilters.city = 'Rockville';
+    try {
+      const { syncCityFilterUi } = await import('../js/modules/cluster-filter.js');
+      syncCityFilterUi();
+      assert(
+        capturedValue === 'Rockville',
+        `syncCityFilterUi should set select.value to 'Rockville', got '${capturedValue}'`
+      );
+
+      // Reverse direction: if state changes again, syncCityFilterUi should update DOM
+      state.activeFilters.city = 'Germantown';
+      syncCityFilterUi();
+      assert(
+        capturedValue === 'Germantown',
+        `syncCityFilterUi should track state changes: select.value should be 'Germantown', got '${capturedValue}'`
+      );
+    } finally {
+      state.activeFilters.city = originalCity;
+    }
+  } finally {
+    globalThis.document = realDocument;
+  }
+
+  console.log('  OK syncCityFilterUi behaviorally syncs select.value to state.activeFilters.city');
+}
+
+// ---------------------------------------------------------------------------
 // MAIN
 // ---------------------------------------------------------------------------
 
-function main() {
+async function main() {
   console.log('============================================================');
   console.log('cluster-filter-city-filter-side-effect-contract.mjs');
   console.log('Contract test: populateCityFilter routing + UI side effects');
@@ -194,6 +257,7 @@ function main() {
     testPopulateCityFilterUiSideEffects();
     testSyncCityFilterUiExistsAndWorks();
     testRestoreActiveFiltersFromUrlCityHandling();
+    await testSyncCityFilterUiBehavior();
 
     console.log('\n============================================================');
     console.log('ALL TESTS PASSED');

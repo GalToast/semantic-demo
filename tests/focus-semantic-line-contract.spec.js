@@ -244,7 +244,7 @@ test.describe('focus semantic Line2 shader ownership', () => {
     const fallbackParent = await page.evaluate(() => {
       const originalGroup = (window.__APP_STATE__ ?? window.__TEST_STATE__).myceliumGroup;
       const scene = (window.__APP_STATE__ ?? window.__TEST_STATE__).scene;
-      let result = null;
+      let result;
       try {
         (window.__APP_STATE__ ?? window.__TEST_STATE__).myceliumGroup = null;
         window.refreshFocusSemanticOverlay?.();

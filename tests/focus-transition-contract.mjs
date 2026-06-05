@@ -443,7 +443,7 @@ async function run() {
 
   const TARGET_URL = positionalUrl(cliArgs);
   let server = null;
-  let browser = null;
+  let browser;
   let serverPort = DEFAULT_PORT;
 
   const useLocalServer = !TARGET_URL || TARGET_URL.includes(`:${DEFAULT_PORT}`);

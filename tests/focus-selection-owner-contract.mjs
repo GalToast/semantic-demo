@@ -63,8 +63,8 @@ function assert(condition, message) {
  */
 function getHelperLineRange(sourceText = SOURCE) {
     const lines = sourceText.split('\n');
-    let start = -1;
-    let end = -1;
+    let start;
+    let end;
 
     for (let i = 0; i < lines.length; i++) {
         if (/export\s+function\s+clearExplorationFocusSelection/.test(lines[i])) {

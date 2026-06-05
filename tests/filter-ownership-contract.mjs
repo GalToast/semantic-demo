@@ -467,10 +467,18 @@ assert(
   `search-state.js must NOT write state.activeFilters — found: ${JSON.stringify(ssActiveFiltersWriters)}`
 );
 
-// Verify search-state reads activeFilters in getFilteredIndices and applyFilters
+// Verify search-state reads activeFilters for filter-aware operations.
+// Reads go through the filter-state owner API (getActiveFilters) and
+// search-filter-core's pointMatchesActiveFilters — the direct state.activeFilters
+// access was removed as dead code.
+const ssReadsActiveFilters =
+  ssSource.includes('state.activeFilters.status') ||
+  ssSource.includes('state.activeFilters.city') ||
+  ssSource.includes('getActiveFilters') ||
+  ssSource.includes('pointMatchesActiveFilters');
 assert(
-  ssSource.includes('state.activeFilters.status') || ssSource.includes('state.activeFilters.city'),
-  'search-state.js must read state.activeFilters for filter-aware operations'
+  ssReadsActiveFilters,
+  'search-state.js must read activeFilters for filter-aware operations (via getActiveFilters / pointMatchesActiveFilters / state.activeFilters)'
 );
 
 // Verify search-state imports filter-state exports (re-export, not writing)
