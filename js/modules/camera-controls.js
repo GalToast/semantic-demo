@@ -503,7 +503,7 @@ export function animateCameraToSearchCorridor(anchorIndex, resultIndices = [], o
             lastCameraMove: 'search-corridor'
         }
     })
-    noteSceneInteraction(duration + 1200)
+    noteSceneInteraction(duration + 1200);
 
     const controlTarget = startTarget.clone().lerp(endTarget, 0.56).add(worldUp.clone().multiplyScalar(0.025))
 

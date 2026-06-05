@@ -11,6 +11,9 @@ import * as trailCueRendererModule from './search-trail-cue-renderer.js';
 
 // ─── RE-EXPORTS ─────────────────────────────────────────────────────────────
 
+import './weather-ui.js';
+import './semantic-guide-ui.js';
+
 // Search Result Renderer
 export function getSearchResultStrength(...args) { return searchRendererModule.getSearchResultStrength(...args); }
 export function getSearchResultStrengthLabel(...args) { return searchRendererModule.getSearchResultStrengthLabel(...args); }

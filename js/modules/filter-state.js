@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { activeClusterFilterStore, activeFiltersStore } from './stores.js';
 
 const FILTER_DEFAULTS = Object.freeze({
     status: 'all',
@@ -19,10 +20,29 @@ function ensureActiveFilters() {
     return state.activeFilters;
 }
 
+function syncActiveFiltersStore() {
+    activeFiltersStore.set({ ...ensureActiveFilters() });
+}
+
+function syncActiveClusterFilterStore() {
+    activeClusterFilterStore.set(getActiveClusterFilter());
+}
+
+export function getActiveFilters() {
+    return ensureActiveFilters();
+}
+
+export function overwriteActiveFilters(nextFilters = {}) {
+    state.activeFilters = { ...FILTER_DEFAULTS, ...nextFilters };
+    syncActiveFiltersStore();
+    return state.activeFilters;
+}
+
 export function setActiveFilter(key, value) {
     if (!FILTER_KEYS.has(key)) return false;
     const filters = ensureActiveFilters();
     filters[key] = value;
+    syncActiveFiltersStore();
     return true;
 }
 
@@ -30,11 +50,28 @@ export function toggleActiveFilterSignal(key) {
     if (!SIGNAL_FILTER_KEYS.has(key)) return false;
     const filters = ensureActiveFilters();
     filters[key] = !filters[key];
+    syncActiveFiltersStore();
     return filters[key];
 }
 
 export function resetActiveFilters() {
     state.activeFilters = { ...FILTER_DEFAULTS };
+    syncActiveFiltersStore();
+}
+
+export function getActiveClusterFilter() {
+    return Number.isFinite(state.activeClusterFilter) ? state.activeClusterFilter : null;
+}
+
+export function setActiveClusterFilter(cluster) {
+    state.activeClusterFilter = Number.isFinite(cluster) ? cluster : null;
+    syncActiveClusterFilterStore();
+    return state.activeClusterFilter;
+}
+
+export function incrementFilterVersion() {
+    state.filterVersion = Number(state.filterVersion || 0) + 1;
+    return state.filterVersion;
 }
 
 export function restoreActiveFiltersFromUrl(params) {
@@ -48,6 +85,7 @@ export function restoreActiveFiltersFromUrl(params) {
 
     const citySelect = document.getElementById('city-filter');
     if (citySelect) citySelect.value = filters.city;
+    syncActiveFiltersStore();
 }
 
 export function restoreActiveClusterFilterFromUrl(params) {
@@ -57,4 +95,5 @@ export function restoreActiveClusterFilterFromUrl(params) {
         Number.isFinite(Number(requestedCluster))
         ? Number(requestedCluster)
         : null;
+    syncActiveClusterFilterStore();
 }

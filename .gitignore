@@ -57,7 +57,11 @@ scripts/extract-lead-enrichment.mjs
 
 # Local dev profile
 .opencode/
+.codex/
 .tmp-profile-ids.txt
+
+# Local file backups
+vector-explorer-polished.html.restored
 
 # QA sweep artifacts
 semantic-sweep-*

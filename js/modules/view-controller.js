@@ -21,7 +21,7 @@ import {
     getViewHandoffModel
 } from './journey-compass-controller.js'
 import { semanticGuideIcon } from './semantic-guide.js'
-import { applyMapFlatteningLayout } from './map-flattening-layout.js'
+import { applyMapFlatteningLayout } from './map-flattening-layout.js';
 import { setCurrentView } from './state-mutators.js'
 
 let _refreshCompositionState = () => {}
@@ -78,6 +78,14 @@ export function showViewHandoff(view) {
 
 function shouldShowViewHandoff(view, options = {}) {
     if (options.silentHandoff) return false
+    const panelSurface = document.body?.dataset?.panelSurface
+    if (
+        view === 'map' &&
+        panelSurface === 'map-focus-search' &&
+        document.body?.dataset?.journeyNavigationOwner === 'map-trail-strip'
+    ) {
+        return false
+    }
     if (
         view === 'map' &&
         isMapSummarySurface() &&

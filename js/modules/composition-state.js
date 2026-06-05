@@ -9,6 +9,7 @@ import { state as _defaultState } from '../state.js';
 import { publish, EVENTS } from './event-bus.js';
 import { getPanelSurfaceDetailFromMobileSheet } from './search-panel-adapter.js';
 import { clearMobileRouteFieldPeek } from './search-state.js';
+import { compositionStore } from './stores.js';
 
 // ── Pure helpers (also imported by lifecycle.js for derivePanelSurface) ──────
 
@@ -138,6 +139,19 @@ export function applyCompositionState({ state: ctxParam, root = document.body } 
     const flags = composeViewFlags(ctx, root);
     const { activeView, hasFocusRecord, searchIntent, hasActiveTrailState } = flags;
 
+    let derivedResult = {
+        activeView,
+        trailState: root.dataset.trailState,
+        trailDepth: root.dataset.trailDepth,
+        searchGlow: root.dataset.searchGlow,
+        graphContext: 'idle',
+        mapContext: 'idle',
+        semanticDive: 'inactive',
+        panelSurface: 'idle',
+        panelSurfaceDetail: 'peek',
+        isActive: false
+    };
+
     // 2. Live-route branch: user has a search summary or a focus record.
     const isLiveRoute = ctx.currentSearchSummary || hasFocusRecord;
     if (isLiveRoute) {
@@ -163,6 +177,15 @@ export function applyCompositionState({ state: ctxParam, root = document.body } 
                 hasActiveTrailState
             });
             composePanelSurface({ root, surface, contextForDetail: root.dataset.panelSurface });
+
+            derivedResult.graphContext = graphContext;
+            derivedResult.mapContext = mapContext;
+            derivedResult.semanticDive = 'inactive';
+            derivedResult.panelSurface = surface;
+            derivedResult.panelSurfaceDetail = root.dataset.panelSurfaceDetail;
+            derivedResult.isActive = root.classList.contains('is-active');
+            compositionStore.set(derivedResult);
+
             syncSharedCompositionUi();
             return;
         }
@@ -178,6 +201,7 @@ export function applyCompositionState({ state: ctxParam, root = document.body } 
         graphContext = hasFocusRecord ? 'focus' : 'idle';
     }
     root.dataset.graphContext = graphContext;
+    composeMobilePeek({ context: graphContext });
     const surface = derivePanelSurface({
         view: activeView,
         graphContext,
@@ -189,5 +213,14 @@ export function applyCompositionState({ state: ctxParam, root = document.body } 
     });
     composePanelSurface({ root, surface, contextForDetail: graphContext });
     composeMobilePeek({ context: graphContext });
+
+    derivedResult.graphContext = graphContext;
+    derivedResult.mapContext = 'idle';
+    derivedResult.semanticDive = semanticDive;
+    derivedResult.panelSurface = surface;
+    derivedResult.panelSurfaceDetail = root.dataset.panelSurfaceDetail;
+    derivedResult.isActive = root.classList.contains('is-active');
+    compositionStore.set(derivedResult);
+
     syncSharedCompositionUi();
 }

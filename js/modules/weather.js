@@ -1,5 +1,13 @@
 import { state } from '../state.js';
 import { subscribe, EVENTS } from './event-bus.js';
+import { weatherStateStore } from './stores.js';
+import {
+    applyWeatherEffects as applyWeatherEffectsForWeather,
+    clearWeatherEffects,
+    renderWeatherFallback as renderWeatherFallbackState,
+    updateWeatherStaleness as updateWeatherStalenessForTimestamp,
+    updateWeatherUi as updateWeatherUiState
+} from './weather-ui.js';
 
 const WEATHER_REFRESH_MS = 5 * 60 * 1000;
 const DEFAULT_WEATHER_COORDS = { latitude: 30.3119, longitude: -95.4561 };
@@ -12,28 +20,20 @@ const OPEN_METEO_CURRENT_FIELDS = [
     'wind_gusts_10m'
 ].join(',');
 let weatherRefreshTimer = null;
-let lightningTimer = null;
-let lightningGeneration = 0;
-let stalenessIntervalId = null;
 
 export function initWeather() {
     if (typeof window === 'undefined') return;
-    if (state.weatherInitialized && weatherRefreshTimer && stalenessIntervalId) return;
+    if (state.weatherInitialized && weatherRefreshTimer) return;
     clearWeatherRefreshTimer();
     state.weatherInitialized = true;
     fetchWeather();
     weatherRefreshTimer = window.setInterval(fetchWeather, WEATHER_REFRESH_MS);
-    stalenessIntervalId = window.setInterval(updateWeatherStaleness, 60000);
 }
 
 export function clearWeatherRefreshTimer() {
     if (weatherRefreshTimer) {
         window.clearInterval(weatherRefreshTimer);
         weatherRefreshTimer = null;
-    }
-    if (stalenessIntervalId) {
-        window.clearInterval(stalenessIntervalId);
-        stalenessIntervalId = null;
     }
     state.weatherInitialized = false;
 }
@@ -45,17 +45,57 @@ export async function fetchWeather() {
         if (!state.weather) throw new Error('weather payload incomplete');
         state.lastSuccessfulFetch = Date.now();
 
-        updateWeatherUi();
-        if (state.currentView === 'map') {
-            applyWeatherEffects();
-        }
+        weatherStateStore.set({
+            weather: state.weather,
+            lastFetch: state.lastSuccessfulFetch,
+            fallback: false,
+            stalenessMsg: ''
+        });
     } catch (error) {
         console.warn('Weather unavailable; continuing without live weather effects.', error);
         state.weather = null;
-        renderWeatherFallback();
-        clearWeatherEffects();
+
+        weatherStateStore.set({
+            weather: null,
+            lastFetch: state.lastSuccessfulFetch || null,
+            fallback: true,
+            stalenessMsg: ''
+        });
     }
 }
+
+export function updateWeatherUi() {
+    if (!state.weather) {
+        renderWeatherFallback();
+        return;
+    }
+    updateWeatherUiState({
+        weather: state.weather,
+        lastFetch: state.lastSuccessfulFetch,
+        fallback: false,
+        stalenessMsg: ''
+    });
+}
+
+export function renderWeatherFallback() {
+    renderWeatherFallbackState({
+        weather: null,
+        lastFetch: state.lastSuccessfulFetch || null,
+        fallback: true,
+        stalenessMsg: ''
+    });
+}
+
+export function updateWeatherStaleness() {
+    updateWeatherStalenessForTimestamp(state.lastSuccessfulFetch || null);
+}
+
+export function applyWeatherEffects() {
+    if (state.currentView !== 'map' || !state.weather) return;
+    applyWeatherEffectsForWeather(state.weather);
+}
+
+export { clearWeatherEffects };
 
 async function fetchWeatherPayload() {
     if (!shouldPreferBackendWeather()) {
@@ -167,141 +207,9 @@ function normalizeWeatherPayload(payload) {
     };
 }
 
-export function updateWeatherUi() {
-    if (!state.weather) {
-        renderWeatherFallback();
-        return;
-    }
-
-    revealWeatherWidget();
-    const icon = normalizeWeatherIcon(state.weather.icon);
-    const condition = state.weather.condition || icon;
-    const desc = state.weather.description || getWeatherDescription(state.weather.code);
-    const weatherIconEl = document.getElementById('weather-icon');
-    const conditionUseEl = weatherIconEl?.querySelector('.weather-condition-icon use');
-    const tempEl = document.getElementById('weather-temp');
-    const descEl = document.getElementById('weather-desc');
-    const windSpeedEl = document.getElementById('wind-speed');
-    const windArrowEl = document.getElementById('wind-arrow');
-
-    if (conditionUseEl) conditionUseEl.setAttribute('href', `#icon-${icon}`);
-    if (weatherIconEl) {
-        weatherIconEl.setAttribute('role', 'img');
-        weatherIconEl.setAttribute('aria-label', desc);
-        weatherIconEl.dataset.condition = condition;
-    }
-    if (tempEl) tempEl.textContent = `${state.weather.temp}F`;
-    if (descEl) descEl.textContent = desc;
-    if (windSpeedEl) windSpeedEl.textContent = `${state.weather.windSpeed} mph`;
-    if (windArrowEl && Number.isFinite(state.weather.windDirection)) {
-        windArrowEl.style.transform = `rotate(${state.weather.windDirection}deg)`;
-    }
-    updateWeatherStaleness();
-}
-
-export function applyWeatherEffects() {
-    if (state.currentView !== 'map' || !state.weather) return;
-
-    const overlay = document.getElementById('weather-overlay');
-    if (!overlay) return;
-
-    overlay.classList.add('active');
-    clearWeatherEffectNodes();
-
-    const condition = state.weather.condition || normalizeWeatherIcon(state.weather.icon);
-    if (condition === 'sun') {
-        showById('sun-rays');
-    }
-    if (condition === 'fog') {
-        showById('fog-overlay');
-    }
-    if (condition === 'rain' || condition === 'storm') {
-        createRain();
-    }
-    if (condition === 'snow') {
-        createSnow();
-    }
-    if (condition === 'storm') {
-        scheduleLightning();
-    }
-}
-
-export function clearWeatherEffects() {
-    const overlay = document.getElementById('weather-overlay');
-    if (overlay) overlay.classList.remove('active');
-    clearWeatherEffectNodes();
-}
-
-function renderWeatherFallback() {
-    revealWeatherWidget();
-    const tempEl = document.getElementById('weather-temp');
-    const descEl = document.getElementById('weather-desc');
-    const windSpeedEl = document.getElementById('wind-speed');
-    const weatherIconEl = document.getElementById('weather-icon');
-    const conditionUseEl = weatherIconEl?.querySelector('.weather-condition-icon use');
-    const stalenessEl = document.getElementById('weather-staleness');
-
-    if (conditionUseEl) conditionUseEl.setAttribute('href', '#icon-cloud');
-    if (weatherIconEl) {
-        weatherIconEl.setAttribute('aria-label', 'Weather unavailable');
-        weatherIconEl.dataset.condition = 'cloud';
-    }
-
-    // 10/10 Polish: Differentiate between total failure and loss of signal
-    if (state.lastSuccessfulFetch) {
-        if (descEl) descEl.textContent = 'Service lost';
-        updateWeatherStaleness();
-        if (stalenessEl) {
-            stalenessEl.textContent += ' (Stale)';
-            stalenessEl.style.color = '#ff9b9b';
-        }
-    } else {
-        if (tempEl) tempEl.textContent = '';
-        if (descEl) descEl.textContent = 'Unavailable';
-        if (windSpeedEl) windSpeedEl.textContent = '-- mph';
-        updateWeatherStaleness();
-    }
-}
-
-function revealWeatherWidget() {
-    const widget = document.querySelector('.weather-widget');
-    if (widget) {
-        if (document.fonts.status === 'loaded') {
-            widget.hidden = false;
-        } else {
-            document.fonts.ready.then(() => { widget.hidden = false; });
-        }
-    }
-}
-
 function normalizeWeatherIcon(icon) {
     return ['sun', 'cloud', 'rain'].includes(icon) ? icon : 'cloud';
 }
-
-export function updateWeatherStaleness() {
-    const el = document.getElementById('weather-staleness');
-    if (!el) return;
-    const ts = state.lastSuccessfulFetch;
-    if (!ts) {
-        el.textContent = '';
-        el.removeAttribute('aria-label');
-        return;
-    }
-    const mins = Math.floor((Date.now() - ts) / 60000);
-    if (mins < 1) {
-        el.textContent = 'Updated just now';
-    } else if (mins === 1) {
-        el.textContent = 'Updated 1 min ago';
-    } else {
-        el.textContent = `Updated ${mins} min ago`;
-    }
-    el.setAttribute('aria-label', el.textContent);
-}
-
-// Window exports retired 2026-05-28 — all consumers migrated to direct imports:
-// updateWeatherStaleness → internal only (weather.js calls it directly)
-// refreshWeatherStalenessIndicator → alias, no consumers
-// clearWeatherRefreshTimer → lifecycle.js direct import (line 67)
 
 export function describeWeatherCode(code) {
     if (code === 0) return { label: 'Clear', icon: 'sun', condition: 'sun' };
@@ -316,96 +224,9 @@ export function describeWeatherCode(code) {
     return { label: 'Current weather', icon: 'cloud', condition: 'cloud' };
 }
 
-function getWeatherDescription(code) {
-    if (code === 0) return 'Clear';
-    if (code <= 3) return 'Partly cloudy';
-    if (code <= 49) return 'Fog';
-    if (code <= 59) return 'Drizzle';
-    if (code <= 69) return 'Rain';
-    if (code <= 79) return 'Snow';
-    if (code <= 82) return 'Rain showers';
-    if (code <= 86) return 'Snow showers';
-    if (code <= 99) return 'Thunderstorm';
-    return 'Current weather';
-}
-
-function showById(id) {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'block';
-}
-
-function clearWeatherEffectNodes() {
-    hideById('sun-rays');
-    hideById('fog-overlay');
-    clearChildren('rain-container');
-    clearChildren('snow-container');
-    lightningGeneration += 1;
-    if (lightningTimer && typeof window !== 'undefined') {
-        window.clearTimeout(lightningTimer);
-        lightningTimer = null;
-    }
-}
-
-function hideById(id) {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-}
-
-function clearChildren(id) {
-    const el = document.getElementById(id);
-    if (el) el.replaceChildren();
-}
-
-function createRain() {
-    const container = document.getElementById('rain-container');
-    if (!container) return;
-    for (let i = 0; i < 80; i += 1) {
-        const drop = document.createElement('div');
-        drop.className = 'rain-drop';
-        drop.style.left = `${Math.random() * 100}%`;
-        drop.style.animationDuration = `${0.5 + Math.random() * 0.5}s`;
-        drop.style.animationDelay = `${Math.random() * 2}s`;
-        container.appendChild(drop);
-    }
-}
-
-function createSnow() {
-    const container = document.getElementById('snow-container');
-    if (!container) return;
-    for (let i = 0; i < 42; i += 1) {
-        const flake = document.createElement('div');
-        flake.className = 'snow-flake';
-        flake.style.left = `${Math.random() * 100}%`;
-        flake.style.animationDuration = `${3 + Math.random() * 4}s`;
-        flake.style.animationDelay = `${Math.random() * 5}s`;
-        flake.style.width = `${4 + Math.random() * 6}px`;
-        flake.style.height = flake.style.width;
-        container.appendChild(flake);
-    }
-}
-
-function scheduleLightning() {
-    if (typeof window === 'undefined') return;
-    const generation = lightningGeneration + 1;
-    lightningGeneration = generation;
-    const flash = () => {
-        if (generation !== lightningGeneration) return;
-        if (state.currentView !== 'map') return;
-        const lightning = document.getElementById('lightning-flash');
-        if (lightning) {
-            lightning.classList.add('flash');
-            window.setTimeout(() => lightning.classList.remove('flash'), 200);
-        }
-        if (generation === lightningGeneration) lightningTimer = window.setTimeout(flash, 5000 + Math.random() * 15000);
-    };
-    lightningTimer = window.setTimeout(flash, 3000);
-}
-
 // Event Bus Subscriptions
 subscribe(EVENTS.VIEW_CHANGED, ({ view }) => {
-    if (view !== 'map') {
-        clearWeatherEffects();
-    }
+    // Left empty for compatibility, the weather-ui handles this via compositionStore
 });
 
 // Window exports retired 2026-05-28

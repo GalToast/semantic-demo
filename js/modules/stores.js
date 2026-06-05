@@ -76,5 +76,23 @@ export const compositionStore = writable({
     isActive: false
 });
 
+// ==== WEATHER STORES ====
 
+/** @type {import('svelte/store').Writable<any|null>} */
+export const weatherStateStore = writable({
+    weather: null,
+    lastFetch: null,
+    fallback: false,
+    stalenessMsg: ''
+});
 
+// ==== SEMANTIC GUIDE STORES ====
+
+/** @type {import('svelte/store').Writable<any>} */
+export const semanticGuideStateStore = writable({
+    isVisible: false,
+    isSynthesizing: false,
+    config: null,
+    typeToken: 0,
+    buttonMode: 'ready'
+});

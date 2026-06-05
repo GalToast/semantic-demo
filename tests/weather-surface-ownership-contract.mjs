@@ -5,7 +5,7 @@
  *
  * Coverage:
  *   1. The app shell has one weather widget and one weather overlay.
- *   2. weather.js reveals the hidden widget when data or fallback copy renders.
+ *   2. weather-ui.js reveals the hidden widget when data or fallback copy renders.
  *   3. time_weather.css owns weather widget visuals and visibility policy.
  *   4. Legacy state/layout stylesheets do not reintroduce weather widget rules.
  *   5. Motion-only weather references stay limited to motion policy files.
@@ -22,7 +22,7 @@ const root = process.cwd();
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
 
 const html = read('vector-explorer-polished.html');
-const weatherJs = read('js/modules/weather.js');
+const weatherUiJs = read('js/modules/weather-ui.js');
 const timeWeatherCss = read('css/time_weather.css');
 
 const widgetMatches = html.match(/class="[^"]*\bweather-widget\b[^"]*"/g) ?? [];
@@ -37,18 +37,18 @@ assert.match(
 );
 
 assert.match(
-  weatherJs,
+  weatherUiJs,
   /function\s+revealWeatherWidget\s*\(\)\s*\{[\s\S]*?document\.querySelector\(['"]\.weather-widget['"]\)[\s\S]*?widget\.hidden\s*=\s*false;/,
-  'weather.js should own a revealWeatherWidget helper that clears the hidden attribute'
+  'weather-ui.js should own a revealWeatherWidget helper that clears the hidden attribute'
 );
 assert.match(
-  weatherJs,
-  /export\s+function\s+updateWeatherUi\s*\(\)\s*\{[\s\S]*?revealWeatherWidget\(\);/,
+  weatherUiJs,
+  /export\s+function\s+updateWeatherUi\s*\([^)]*\)\s*\{[\s\S]*?revealWeatherWidget\(\);/,
   'updateWeatherUi should reveal the widget before rendering live weather state'
 );
 assert.match(
-  weatherJs,
-  /function\s+renderWeatherFallback\s*\(\)\s*\{[\s\S]*?revealWeatherWidget\(\);/,
+  weatherUiJs,
+  /export\s+function\s+renderWeatherFallback\s*\([^)]*\)\s*\{[\s\S]*?revealWeatherWidget\(\);/,
   'renderWeatherFallback should reveal the widget for fallback weather state'
 );
 

@@ -17,19 +17,20 @@ import { updateTime, isCompactSearchViewport } from './utils/ui-presentation.js'
 import { pointHasGeocode } from './utils/geo-data.js';
 import { initJourneyLifecycleAdapter } from './journey-lifecycle-adapter.js';
 import { initClusterFilterAdapter } from './cluster-filter-adapter.js';
-import { initJourneyCompassAdapter } from './journey-compass-controller.js';
+import { initJourneyCompassAdapter, updateJourneyCompass } from './journey-compass-controller.js';
 import { initJourneySelectedCard, initJourneySelectedCardAdapter } from './journey-selected-card.js';
 import { initThreadInspectorAdapter } from './thread-inspector-adapter.js';
 import { initViewControllerAdapter } from './view-controller.js';
 import { initSemanticLaneAdapter } from './semantic-lane.js';
 import { setMyceliumMode, setTrailDepth, applyStoryPrompt } from './exploration-mode.js';
-import { resetExperienceState, returnToOverview, setSemanticDiveMode, updateSelectedBusiness, refreshCompositionState, startDeferredHydration, dispatchNavTransition, NAV_TRANSITION_ACTIONS, syncSearchStatusForFocus, resetExplorationFocus } from './lifecycle.js';
+import { resetExperienceState, returnToOverview, setSemanticDiveMode, updateSelectedBusiness, refreshCompositionState, startDeferredHydration, dispatchNavTransition, NAV_TRANSITION_ACTIONS, syncSearchStatusForFocus, resetExplorationFocus, focusOnPoint, hideSummaryCard } from './lifecycle.js';
 import { loadSemanticThreads } from './semantic-threads.js';
 import { initSearchCache } from './semantic-search-api-cache.js';
 import { applyUrlState, updateUrlState } from './url-state.js';
 import { hideLoadingOverlay, setLoadingPhase, startDeferredHydration as startLoadingHydration, applyLoadingErrorState } from './loading-ui.js';
 import { hideTooltip } from './tooltip.js';
 import './pathfinding.js';
+import { startSceneReveal } from './scene-reveal.js';
 import * as journeyWebglModule from './journey-webgl.js';
 import { setWebGLContextRestoreHandler } from './webgl-restore-adapter.js';
 import { initSemanticDiveUiSubscriptions } from './semantic-dive-ui.js';
@@ -43,7 +44,7 @@ import { setupMobileSearchSheetToggle } from './search-panel-adapter.js';
 import { getInterestingBusinessNote, buildSelectedMatchNarrative } from './journey-lifecycle-adapter.js';
 import { describeThreadLensForPoint } from './journey-point-color.js';
 import { hydrateLeadContext } from './lifecycle.js';
-import { subscribeKeyed, EVENTS } from './event-bus.js';
+import { subscribeKeyed, EVENTS, publish } from './event-bus.js';
 import { requestSemanticGuide } from './semantic-guide.js';
 import { showSemanticThreadsDetail } from './connection-analysis.js';
 import { setSearchPanelState } from './search-results-ui.js';
@@ -51,18 +52,57 @@ import { initAppSvelteIsland } from './app-svelte-island.js';
 
 // ── Application Initialization Helpers ───────────────────────────────────────
 
+// Init-timing instrumentation. Each major step in init() is wrapped in
+// measureStep(); durations are accumulated in initTimings and printed via
+// console.table once init() completes (or in a finally on error). The
+// safety valve at line ~64 reads initTimings to name the slowest step.
+const initTimings = [];
+
+function recordTiming(name, durationMs) {
+    initTimings.push({ step: name, ms: Math.round(durationMs * 10) / 10 });
+    if (typeof state !== 'undefined') {
+        state.initTimings = initTimings;
+    }
+    if (typeof window !== 'undefined') {
+        window.__initTimings = initTimings;
+    }
+}
+
+async function measureStep(name, fn) {
+    const start = performance.now();
+    try {
+        return await fn();
+    } finally {
+        recordTiming(name, performance.now() - start);
+    }
+}
+
+function logInitTimings() {
+    const total = initTimings.reduce((sum, t) => sum + t.ms, 0);
+    console.groupCollapsed(`[init] completed in ${Math.round(total)} ms`);
+    console.table([...initTimings, { step: '— total —', ms: Math.round(total * 10) / 10 }]);
+    console.groupEnd();
+}
+
 function setupInitSafetyValves() {
+    // After the lazy-load fix, blocking init is well under 4 s on a healthy
+    // network. The slow-progress threshold drops from 8 s to 4 s so the
+    // "still preparing" UI surfaces earlier. The 15 s safety valve remains
+    // as a last-resort fallback for genuinely broken networks.
     const slowProgressTimer = setTimeout(() => {
         if (document.getElementById('loading-overlay')?.classList.contains('hidden')) return;
         setLoadingPhase('restore', {
             note: 'Still preparing the scene…',
             foot: 'Taking longer than usual. Hold on a moment longer.'
         });
-    }, 8000);
+    }, 4000);
 
     const safetyValve = setTimeout(() => {
         if (document.getElementById('loading-overlay')?.classList.contains('hidden')) return;
-        console.warn('Init safety valve dismissed a slow loading overlay after 15s.');
+        const slowest = initTimings.reduce((max, t) => (t.ms > max.ms ? t : max), { step: '(none yet)', ms: 0 });
+        console.warn(
+            `Init safety valve dismissed a slow loading overlay after 15s; slowest step: ${slowest.step} (${Math.round(slowest.ms)} ms).`
+        );
         hideLoadingOverlay();
     }, 15000);
 
@@ -84,17 +124,27 @@ function clearStartupRecoveryNotice(title) {
 
 async function initDataLayer() {
     setLoadingPhase('records');
-    await dataModule.loadData();
+    // loadData() is required for the scene (8,406 points). loadSemanticThreads()
+    // is a 41 MB payload that powers relationship-based UI (neighborhood,
+    // journey, dive) but the scene can render without it. Consumers check
+    // state.semanticNeighborMapByLeadId?.size before using it, so missing
+    // threads degrade gracefully. Lazy-loading threads here saves ~3 s
+    // off the critical path on cold init. The threads fetch kicks off
+    // in the background; search/dive features enable when it resolves.
+    await measureStep('dataLayer:loadData', () => dataModule.loadData()).catch((err) => {
+        console.error('loadData failed during init:', err);
+        showStartupRecoveryNotice('County records', err);
+    });
     setLoadingPhase('scene');
-
-    return loadSemanticThreads().then((loaded) => {
-        if (loaded === false) {
+    measureStep('dataLayer:loadSemanticThreads:background', () => loadSemanticThreads()).then((ok) => {
+        if (ok === false) {
             showStartupRecoveryNotice('Semantic relationship data', new Error('Relationship paths are using approximate fallback links.'));
         }
     }).catch((err) => {
-        console.error('loadSemanticThreads failed, falling back to geometric edges', err);
+        console.error('loadSemanticThreads failed, falling back to geometric edges.', err);
         showStartupRecoveryNotice('Semantic relationship data', err);
     });
+    return true;
 }
 
 function initGraphicsAndAudio() {
@@ -253,7 +303,7 @@ function initSvelteUiIslands() {
 // ── Application Initialization ───────────────────────────────────────────────
 
 export async function init() {
-    initSvelteUiIslands();
+    await measureStep('initSvelteUiIslands', initSvelteUiIslands);
     const initContext = setupInitSafetyValves();
     try {
         if (state.clockTimer) {
@@ -264,17 +314,17 @@ export async function init() {
         cancelAnimate();
         state.loadingOverlayStartedAt = performance.now();
 
-        await initDataLayer();
-        const graphicsReady = initGraphicsAndAudio();
-        initCoreUi(graphicsReady);
-        initSemanticLaneChecks();
-        setLoadingPhase('restore');
-        updateTime();
+        await measureStep('initDataLayer', initDataLayer);
+        const graphicsReady = await measureStep('initGraphicsAndAudio', initGraphicsAndAudio);
+        await measureStep('initCoreUi', () => initCoreUi(graphicsReady));
+        await measureStep('initSemanticLaneChecks', initSemanticLaneChecks);
+        await measureStep('setLoadingPhase(restore)', () => setLoadingPhase('restore'));
+        await measureStep('updateTime', updateTime);
 
-        initAdapters();
-        initEventBusSubscriptions();
+        await measureStep('initAdapters', initAdapters);
+        await measureStep('initEventBusSubscriptions', initEventBusSubscriptions);
 
-        initBridgeRegistry({
+        await measureStep('initBridgeRegistry', () => initBridgeRegistry({
             search: searchModule.search,
             clearSearch: searchModule.clearSearch,
             switchView,
@@ -294,12 +344,12 @@ export async function init() {
             walkThreadNeighbor: journeyModule.walkThreadNeighbor,
             requestSemanticGuide,
             showSemanticThreadsDetail
-        });
+        }));
 
-        await initSearchCache();
+        await measureStep('initSearchCache', initSearchCache);
 
         try {
-            await applyUrlState();
+            await measureStep('applyUrlState', applyUrlState);
         } catch (urlErr) {
             console.error('applyUrlState failed during init:', urlErr);
             showStartupRecoveryNotice('URL state restoration', urlErr);
@@ -310,12 +360,15 @@ export async function init() {
         if (graphicsReady !== false) animate();
 
         requestAnimationFrame(async () => {
-            setLoadingPhase('launch');
-            startSceneReveal();
-            await hideLoadingOverlay();
+            const firstPaintStart = performance.now();
+            await measureStep('first-paint:setLoadingPhase(launch)', () => setLoadingPhase('launch'));
+            await measureStep('first-paint:startSceneReveal', () => { startSceneReveal(); });
+            await measureStep('first-paint:hideLoadingOverlay', hideLoadingOverlay);
+            await measureStep('first-paint:startDeferredHydration', startDeferredHydration);
+            await measureStep('first-paint:initMicroDemo', initMicroDemo);
+            recordTiming('first-paint:total', performance.now() - firstPaintStart);
             clearInitSafetyValves(initContext);
-            startDeferredHydration();
-            initMicroDemo();
+            logInitTimings();
 
             window.addEventListener('demo-complete', () => {
                 updateJourneyCompass('overview');
@@ -324,6 +377,8 @@ export async function init() {
     } catch (error) {
         clearInitSafetyValves(initContext);
         console.error('Initialization failed:', error);
+        recordTiming('FAILED', 0);
+        logInitTimings();
         cancelAnimate();
         applyLoadingErrorState(error);
     }
