@@ -67,7 +67,7 @@ Priority:
 | `css/clusters.css` | 444 | Startup notice, search errors, selected-card/about-card base styling, selected-card focus/map accent UI, and trail-context accents. Galaxy cluster labels are now WebGL Sprite-only via `js/modules/cluster-labels.js`; no HTML/CSS label surface remains. |
 | `css/progressive_disclosure.css` | 1053 | Show/hide behavior for graph-context and dive states, plus search empty-state and search-input glass component authority. |
 | `css/strands.css` | 1493 | Mobile bottom sheet, mobile chrome ownership, route-specific surfaces, and strand/connection preview surfaces. |
-| `css/animations.css` | 108 | Final short-landscape/mobile override tail from the original cascade. |
+| `css/animations.css` | 108 | Final short-landscape/mobile override tail from the original cascade. Contains 10 `.focus-stage` reduced-motion overrides (lines 82-108) including galaxy-view variants; canonical owner is `css/strands.css` (off-limits) so these rules cannot be moved. |
 | `css/mobile_premium__*.css` | (7 files) | Split final mobile override owner, loaded directly after the base cascade. Files cover focus/dive (1762), chrome (865), state-machine (840), idle (88), map summary (119), surface corrections (1178), and narrow viewport corrections (150). |
 | `css/modules/focus_stage.css` | 1089 | Tail-loaded final authority for focus-stage. Loaded last via `<link>` in HTML, NOT through `semantic-demo.css`. |
 
