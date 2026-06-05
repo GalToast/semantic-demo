@@ -1,7 +1,6 @@
 import { webglContext, getLiveResourceCounts } from './webgl-context.js';
 import { switchView } from './view-controller.js';
 import { updateClusterLabels } from './cluster-labels.js';
-import { el } from './utils/dom-builder.js';
 import { applyFocusPocketBreathing } from './focus-pocket.js';
 import { getSceneRevealProgress, setSceneRevealDataset } from './scene-reveal.js';
 import * as THREE from 'three';
@@ -38,7 +37,6 @@ import {
 
 import {
     createPoints,
-    disposeNodeVisuals,
     setNodeSporeInstanceMatrix,
     compilePointMaterialForReadiness,
     MYCELIUM_FIELD_SCALE,
@@ -47,7 +45,6 @@ import {
 
 import {
     createMycelium,
-    disposeMycelium,
     shouldRenderThreads,
     shouldRenderBridgeThreads,
     getThreadPulseOpacity,
@@ -102,6 +99,8 @@ let _webglRestoreTimer: number | null = null;
 // EMA decay applied to peak frame/update/render timings so the running max
 // is weighted toward recent samples. A single constant keeps the three
 // sites in lockstep.
+const SCENE_PERF_EMA_DECAY = 0.992;
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function getScenePerformanceProbe() {
@@ -139,49 +138,47 @@ function detectWebGLSupport() {
     }
 }
 
-function showWebGLFallback(container: any, detail: { reason?: string } = {}) {
+function showWebGLFallback(container: HTMLElement, detail: { supported?: boolean; reason?: string } = {}) {
     if (!container) return;
     document.body.dataset.graphicsMode = 'fallback';
     state.scenePerformanceDiagnostics.active = false;
     state.scenePerformanceDiagnostics.reason = detail.reason || 'webgl-unavailable';
-    webglContext.scene = null;
-    webglContext.camera = null;
-    webglContext.renderer = null;
-    webglContext.controls = null;
+    state.scene = null;
+    state.camera = null;
+    state.renderer = null;
+    state.controls = null;
 
-    container.querySelectorAll('canvas').forEach((canvas: HTMLCanvasElement) => canvas.remove());
+    container.querySelectorAll('canvas').forEach((canvas) => canvas.remove());
     const existingNotice = container.querySelector('.webgl-fallback-notice');
     if (existingNotice) existingNotice.remove();
 
-    const notice = el('section', {
-        class: 'webgl-fallback-notice',
-        role: 'status',
-        'aria-live': 'polite'
-    },
-        el('div', { class: 'webgl-fallback-kicker' }, 'Graphics fallback'),
-        el('h2', {}, '3D view is unavailable on this device.'),
-        el('p', {}, 'The county records still load. Use the map view while graphics acceleration is blocked or unavailable.'),
-        el('button', {
-            type: 'button',
-            class: 'webgl-fallback-map',
-            dataset: { webglFallbackMap: true },
-            onclick: () => {
-                if (typeof switchView === 'function') {
-                    switchView('map', { reason: 'webgl-fallback' });
-                    return;
-                }
-                document.getElementById('map-container')?.classList.add('active');
-                container.classList.add('hidden');
-                if (typeof initMap === 'function') initMap();
-            }
-        }, 'Open map view')
-    );
+    const notice = document.createElement('section');
+    notice.className = 'webgl-fallback-notice';
+    notice.setAttribute('role', 'status');
+    notice.setAttribute('aria-live', 'polite');
+    notice.innerHTML = `
+        <div class="webgl-fallback-kicker">Graphics fallback</div>
+        <h2>3D view is unavailable on this device.</h2>
+        <p>The county records still load. Use the map view while graphics acceleration is blocked or unavailable.</p>
+        <button type="button" class="webgl-fallback-map" data-webgl-fallback-map>Open map view</button>
+    `;
     container.appendChild(notice);
+
+    const mapButton = notice.querySelector<HTMLElement>('[data-webgl-fallback-map]');
+    mapButton?.addEventListener('click', () => {
+        if (typeof switchView === 'function') {
+            switchView('map', { reason: 'webgl-fallback' });
+            return;
+        }
+        document.getElementById('map-container')?.classList.add('active');
+        container.classList.add('hidden');
+        if (typeof initMap === 'function') initMap();
+    });
 
     showExperienceToast('Graphics fallback active', 'Map view remains available while 3D graphics are unavailable.');
 }
 
-function smoothDiagnosticValue(current: any, next: any, sampleCount: any) {
+function smoothDiagnosticValue(current: number, next: number, sampleCount: number): number {
     const divisor = Math.max(1, Math.min(sampleCount, 120));
     return (current * (divisor - 1) + next) / divisor;
 }
@@ -200,6 +197,64 @@ export function getSceneRenderableDiagnostics() {
         myceliumBridgeSegments: perf.myceliumBridgeSegments,
         memory: resources
     };
+}
+
+interface ScenePerformanceTimings {
+    controlsMs?: number;
+    nodeMotionMs?: number;
+    threadUpdateMs?: number;
+    glowMs?: number;
+    lensMs?: number;
+    updateMs?: number;
+    renderMs?: number;
+    overlayUpdateMs?: number;
+}
+
+function sampleScenePerformance(frameMs: number, timings: ScenePerformanceTimings = {}) {
+    const diagnostics = state.scenePerformanceDiagnostics;
+    diagnostics.active = !!(state.renderer && state.scene && state.camera && state.currentView === 'galaxy');
+    diagnostics.reason = diagnostics.active ? 'sampling' : 'inactive-view';
+    diagnostics.sampleCount = Math.min(600, (diagnostics.sampleCount || 0) + 1);
+    diagnostics.avgFrameMs = smoothDiagnosticValue(diagnostics.avgFrameMs || 0, frameMs, diagnostics.sampleCount);
+    diagnostics.maxFrameMs = Math.max(frameMs, (diagnostics.maxFrameMs || 0) * SCENE_PERF_EMA_DECAY);
+    diagnostics.avgControlsMs = smoothDiagnosticValue(diagnostics.avgControlsMs || 0, timings.controlsMs || 0, diagnostics.sampleCount);
+    diagnostics.avgNodeMotionMs = smoothDiagnosticValue(diagnostics.avgNodeMotionMs || 0, timings.nodeMotionMs || 0, diagnostics.sampleCount);
+    diagnostics.avgThreadUpdateMs = smoothDiagnosticValue(diagnostics.avgThreadUpdateMs || 0, timings.threadUpdateMs || 0, diagnostics.sampleCount);
+    diagnostics.avgGlowMs = smoothDiagnosticValue(diagnostics.avgGlowMs || 0, timings.glowMs || 0, diagnostics.sampleCount);
+    diagnostics.avgLensMs = smoothDiagnosticValue(diagnostics.avgLensMs || 0, timings.lensMs || 0, diagnostics.sampleCount);
+    diagnostics.avgUpdateMs = smoothDiagnosticValue(diagnostics.avgUpdateMs || 0, timings.updateMs || 0, diagnostics.sampleCount);
+    diagnostics.maxUpdateMs = Math.max(timings.updateMs || 0, (diagnostics.maxUpdateMs || 0) * SCENE_PERF_EMA_DECAY);
+    diagnostics.avgRenderMs = smoothDiagnosticValue(diagnostics.avgRenderMs || 0, timings.renderMs || 0, diagnostics.sampleCount);
+    diagnostics.maxRenderMs = Math.max(timings.renderMs || 0, (diagnostics.maxRenderMs || 0) * SCENE_PERF_EMA_DECAY);
+    diagnostics.renderables = getSceneRenderableDiagnostics();
+}
+
+function bindWebGLContextResilience(renderer: THREE.WebGLRenderer) {
+    const canvas = renderer.domElement;
+    if (!canvas || canvas.dataset.webglContextGuardBound === 'true') return;
+    canvas.dataset.webglContextGuardBound = 'true';
+
+    canvas.addEventListener('webglcontextlost', (event: Event) => {
+        event.preventDefault();
+        _webglContextLost = true;
+        if (_rafId !== null) {
+            window.cancelAnimationFrame(_rafId);
+            _rafId = null;
+        }
+        state.scenePerformanceDiagnostics.reason = 'webgl-context-lost';
+        showExperienceToast('Graphics context paused', 'The scene will restore automatically.');
+    }, false);
+
+    canvas.addEventListener('webglcontextrestored', () => {
+        _webglContextLost = false;
+        state.scenePerformanceDiagnostics.reason = 'webgl-context-restored';
+        if (_webglRestoreTimer) window.clearTimeout(_webglRestoreTimer);
+        _webglRestoreTimer = window.setTimeout(() => {
+            _webglRestoreTimer = null;
+            showExperienceToast('Graphics context restored', 'Rebuilding the semantic scene.');
+            restoreWebGLContext().catch((err: unknown) => console.error('WebGL context restore reinit failed:', err));
+        }, 80);
+    }, false);
 }
 
 export function updateCameraViewportOffset() {
@@ -411,66 +466,43 @@ export function cancelAnimate() {
         window.clearTimeout(_webglRestoreTimer);
         _webglRestoreTimer = null;
     }
-    
     const contextWasLost = _webglContextLost;
-    const renderer = webglContext.renderer;
-    const scene = webglContext.scene;
-    const camera = webglContext.camera;
     _webglContextLost = false;
-
+    const renderer = state.renderer;
+    const scene = state.scene;
+    const camera = state.camera;
     if (!contextWasLost && renderer && scene && camera) {
         try { renderer.render(scene, camera); } catch (_) { /* context already gone */ }
     }
-
-    // Systematic disposal
-    disposeNodeVisuals();
-    disposeMycelium();
-    disposeInteractionVisuals();
-    disposeSearchCorridorAnimation();
-
-    if (webglContext.controls && typeof webglContext.controls.dispose === 'function') {
-        webglContext.controls.dispose();
+    if (state.controls && typeof state.controls.dispose === 'function') {
+        state.controls.dispose();
     }
-    webglContext.scene = null;
-    webglContext.camera = null;
-    webglContext.controls = null;
     state.scene = null;
     state.camera = null;
     state.controls = null;
     disposeObject3D(scene);
     disposeFocusAnchorIndicator();
-
     if (renderer) {
         renderer.dispose();
         const canvas = renderer.domElement;
         if (canvas?.parentNode) canvas.parentNode.removeChild(canvas);
     }
-    webglContext.renderer = null;
-    webglContext.pointsMesh = null;
-    webglContext.pointsMaterial = null;
-    webglContext.nodeSporeMesh = null;
-    webglContext.nodeSporeHitMesh = null;
-    webglContext.nodeSporeMaterial = null;
-    webglContext.myceliumGroup = null;
-    webglContext.myceliumCoreLines = null;
-    webglContext.myceliumWispyLines = null;
-    webglContext.myceliumBridgeLines = null;
-    webglContext.myceliumConnectionPairs = [];
     state.renderer = null;
     state.pointsMesh = null;
     state.pointsMaterial = null;
     state.nodeSporeMesh = null;
     state.nodeSporeHitMesh = null;
     state.nodeSporeMaterial = null;
-    state.myceliumGroup = null;
-    state.myceliumCoreLines = null;
-    state.myceliumWispyLines = null;
-    state.myceliumBridgeLines = null;
-    state.myceliumConnectionPairs = [];
-    state.semanticLensGroup = null;
-    state.semanticLensGlow = null;
-    state.semanticLensSpokes = null;
-    state.semanticManifold = null;
+    // Also clean webglContext intermediary used by the TS module
+    webglContext.scene = null;
+    webglContext.camera = null;
+    webglContext.renderer = null;
+    webglContext.controls = null;
+    webglContext.pointsMesh = null;
+    webglContext.pointsMaterial = null;
+    webglContext.nodeSporeMesh = null;
+    webglContext.nodeSporeHitMesh = null;
+    webglContext.nodeSporeMaterial = null;
 }
 
 export function deinit() {
@@ -501,6 +533,7 @@ export function animate() {
     const sceneFrameMs = state.scenePerformanceDiagnostics.lastFrameAt
         ? Math.min(250, Math.max(0, frameNow - state.scenePerformanceDiagnostics.lastFrameAt))
         : 0;
+    state.scenePerformanceDiagnostics.lastFrameAt = frameNow;
 
     updateAutoRotateSoftResume(frameNow);
     focusCameraAssistIsActive(frameNow);
@@ -645,13 +678,8 @@ export function animate() {
 
     const renderEnd = performance.now();
 
-    const diagnostics = state.scenePerformanceDiagnostics;
-    diagnostics.active = true;
-    diagnostics.reason = 'sampling';
-    diagnostics.sampleCount = Math.min(600, (diagnostics.sampleCount || 0) + 1);
-    diagnostics.avgFrameMs = smoothDiagnosticValue(diagnostics.avgFrameMs || 0, sceneFrameMs, diagnostics.sampleCount);
-    diagnostics.frameMsAverage = diagnostics.avgFrameMs;
-    diagnostics.avgUpdateMs = smoothDiagnosticValue(diagnostics.avgUpdateMs || 0, updateEnd - updateStart, diagnostics.sampleCount);
-    diagnostics.avgRenderMs = smoothDiagnosticValue(diagnostics.avgRenderMs || 0, renderEnd - renderStart, diagnostics.sampleCount);
-    state.scenePerformanceDiagnostics.lastFrameAt = frameNow;
+    sampleScenePerformance(sceneFrameMs, {
+        updateMs: updateEnd - updateStart,
+        renderMs: renderEnd - renderStart
+    });
 }
