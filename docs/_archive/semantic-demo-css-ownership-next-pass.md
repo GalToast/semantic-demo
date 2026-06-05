@@ -1,3 +1,4 @@
+<!-- ARCHIVED 2026-06-05: superseded by semantic-demo-css-ownership-map.md. Do not follow. -->
 # CSS Ownership Inventory: Compass / Focus-Stage Hygiene
 
 **Date:** 2026-05-19

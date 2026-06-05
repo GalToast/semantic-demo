@@ -1,3 +1,4 @@
+<!-- ARCHIVED 2026-06-05: superseded by semantic-demo-css-ownership-map.md. Do not follow. -->
 # CSS Archaeology Cleanup Roadmap
 
 **Status: ARCHIVED — Superseded ×3.**
