@@ -163,6 +163,18 @@ function updateSelectedNodeFilaments(worldPos, time, isInside) {
 export function disposeInteractionVisuals() {
     disposeSemanticLens();
     disposeFocusAnchorIndicator();
+
+    // Remove micro-demo event listeners to prevent handler leaks
+    if (typeof document !== 'undefined' && document && document.removeEventListener) {
+        if (_onDemoNodeHighlight) {
+            document.removeEventListener('micro-demo-node-highlight', _onDemoNodeHighlight);
+            _onDemoNodeHighlight = null;
+        }
+        if (_onDemoNamePulse) {
+            document.removeEventListener('micro-demo-name-pulse', _onDemoNamePulse);
+            _onDemoNamePulse = null;
+        }
+    }
 }
 
 export function disposeSemanticLens() {
@@ -563,8 +575,13 @@ export function updateInteractionVisuals(now, hoveredNode, focusedNode) {
 let _demoHighlightNode = null;
 let _demoHighlightBoost = 1.0;
 
+// Module-level handler references for micro-demo listeners so they can be
+// removed during disposal (Bug #2 – previously leaked at module scope).
+let _onDemoNodeHighlight = null;
+let _onDemoNamePulse = null;
+
 if (typeof document !== 'undefined' && document && document.addEventListener) {
-    document.addEventListener('micro-demo-node-highlight', (e) => {
+    _onDemoNodeHighlight = (e) => {
         const { index, phase } = e.detail;
         if (!state.pointsMaterial?.userData?.shader) return;
         const shader = state.pointsMaterial.userData.shader;
@@ -589,9 +606,9 @@ if (typeof document !== 'undefined' && document && document.addEventListener) {
             _demoHighlightBoost = 1.0;
             shader.uniforms.uHoverBoost.value = 1.0;
         }
-    });
+    };
 
-    document.addEventListener('micro-demo-name-pulse', () => {
+    _onDemoNamePulse = () => {
         const nameEl = document.querySelector('#info-panel h2');
         if (nameEl) {
             nameEl.style.transition = 'text-shadow 0.4s ease, color 0.4s ease';
@@ -602,5 +619,8 @@ if (typeof document !== 'undefined' && document && document.addEventListener) {
                 nameEl.style.textShadow = '';
             }, 600);
         }
-    });
+    };
+
+    document.addEventListener('micro-demo-node-highlight', _onDemoNodeHighlight);
+    document.addEventListener('micro-demo-name-pulse', _onDemoNamePulse);
 }

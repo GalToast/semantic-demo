@@ -28,7 +28,7 @@ import { showExperienceToast } from './ui-feedback.js';
 import { applyMapFlatteningLayout } from './map-flattening-layout.js';
 import { restoreWebGLContext } from './webgl-restore-adapter.js';
 import { disposeObject3D } from './resource-tracker.js';
-import { updateInspectedStrandOverlay } from './thread-inspector.js';
+import { updateInspectedStrandOverlayFrame } from './inspected-strand-overlay-adapter.js';
 import { disposeFocusAnchorIndicator } from './focus-anchor-indicator.js';
 import {
     updateArrivalHandoffOverlay,
@@ -655,7 +655,7 @@ export function animate() {
     updateInteractionVisuals(frameNow, hoveredNode, focusedNode);
     updateCorridorNodeGlow(frameNow);
     updateSearchCorridorAnimation(frameNow);
-    updateInspectedStrandOverlay(frameNow);
+    updateInspectedStrandOverlayFrame(frameNow);
     updateArrivalHandoffOverlay();
     updateRouteTraceOverlayPositions(frameNow);
     applyFocusPocketBreathing(frameNow);
