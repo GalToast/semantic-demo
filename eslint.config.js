@@ -94,7 +94,7 @@ export default [
         }
     },
     {
-        files: ['tests/**/*.js', 'tests/**/*.mjs'],
+        files: ['tests/**/*.js', 'tests/**/*.mjs', 'tests/**/*.cjs'],
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: 'module',
@@ -102,6 +102,7 @@ export default [
                 // Node globals
                 console: 'readonly',
                 process: 'readonly',
+                require: 'readonly',
                 Buffer: 'readonly',
                 __dirname: 'readonly',
                 global: 'readonly',

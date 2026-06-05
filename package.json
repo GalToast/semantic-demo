@@ -109,8 +109,8 @@
     "qa:search-peek": "node tests/search-peek-expanded-render-contract.mjs",
     "report:artifacts": "node scripts/report-artifact-volume.js",
     "refresh:cache": "node tests/cache-buster-check.js --fix",
-    "build": "esbuild js/modules/app.js --bundle --minify --keep-names --outfile=dist/bundle.js --target=es2020 --format=esm --external:three --external:three/*",
-    "watch": "esbuild js/modules/app.js --bundle --outfile=dist/bundle.js --watch --target=es2020 --format=esm --external:three --external:three/*",
+    "build": "node scripts/build-app.mjs",
+    "watch": "node scripts/build-app.mjs --watch",
     "serve": "python -m http.server 8795 --bind 127.0.0.1",
     "test": "npm run check:shell && npm run check:manifest && npm run check:cache && npm run check:ownership && npm run check:tokens && npm run check:surface-styles && npm run check:semantic-space",
     "test:fast": "npm run test",
@@ -179,6 +179,7 @@
     "jsdom": "^29.1.1",
     "playwright": "^1.60.0",
     "prettier": "^3.8.3",
+    "svelte": "^5.56.1",
     "three": "^0.184.0",
     "vitest": "^4.1.7"
   }

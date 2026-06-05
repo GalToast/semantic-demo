@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "types/**/*.d.ts",
+    "scripts/build-app.mjs",
+    "js/modules/**/*.ts",
+    "js/modules/search-results-svelte-island.js",
+    "js/modules/selected-details-svelte-island.js",
+    "js/modules/search-chrome-island.js",
+    "js/modules/filter-chrome-island.js",
+    "js/modules/utils/dom-builder.js",
+    "js/modules/view-models/**/*.js"
+  ]
+}
