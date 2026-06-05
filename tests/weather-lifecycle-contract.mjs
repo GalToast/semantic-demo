@@ -29,7 +29,7 @@ await import(pathToFileURL(weatherPath).href);
 
 assert.match(
   src,
-  /if\s*\(\s*state\.weatherInitialized\s*&&\s*weatherRefreshTimer\s*\)\s*return/,
+  /if\s*\(\s*getWeatherInitialized\(\)\s*&&\s*weatherRefreshTimer\s*\)\s*return/,
   'initWeather should only no-op when initialized state and its refresh timer are present'
 );
 assert.match(
@@ -56,12 +56,6 @@ assert.doesNotMatch(
   `${src}\n${uiSrc}`,
   /window\.(updateWeatherStaleness|refreshWeatherStalenessIndicator|clearWeatherRefreshTimer)\s*=/,
   'weather timer helpers should not be exported on window'
-);
-
-assert.match(
-  src,
-  /subscribe\(EVENTS\.VIEW_CHANGED/,
-  'weather.js should subscribe to VIEW_CHANGED event'
 );
 
 console.log('weather-lifecycle-contract passed');

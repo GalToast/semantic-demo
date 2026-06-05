@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { webglContext } from './webgl-context.js';
 'use strict';
 
@@ -7,6 +6,26 @@ import { state as _state } from '../state.js';
 const state = _state as any;
 import { getThreadCategoryColor } from './utils/ui-presentation.js';
 import { CONFIG } from './config.js';
+
+interface EdgePair {
+    a: number;
+    b: number;
+}
+
+interface NeighborLike {
+    leadId: string | number;
+    semanticScore?: number;
+    bridgeScore?: number;
+    sameCity?: boolean;
+    threadType?: string;
+}
+
+interface PositionedNode {
+    x: number;
+    y: number;
+    z: number;
+    index: number;
+}
 
 function pairKey(a: number, b: number) {
     return a < b ? `${a}:${b}` : `${b}:${a}`;
@@ -21,19 +40,19 @@ function pairKey(a: number, b: number) {
 
 export function buildGeometricMyceliumEdges(clusterMembers: any, clusterCentroids: any) {
     if (!state.points || !Array.isArray(state.points) || state.points.length === 0) return;
-    const corePairs = [];
-    const wispyPairs = [];
-    const bridgePairs = [];
-    const seenPairs = new Set();
+    const corePairs: EdgePair[] = [];
+    const wispyPairs: EdgePair[] = [];
+    const bridgePairs: EdgePair[] = [];
+    const seenPairs = new Set<string>();
     const cellSize = 0.1;
-    const grid = new Map();
+    const grid = new Map<string, number[]>();
 
     for (let i = 0; i < state.points.length; i += 1) {
         const pos = state.nodePositions[i];
         if (!pos) continue;
         const key = `${Math.floor(pos.x / cellSize)},${Math.floor(pos.y / cellSize)},${Math.floor(pos.z / cellSize)}`;
         if (!grid.has(key)) grid.set(key, []);
-        grid.get(key).push(i);
+        grid.get(key)!.push(i);
     }
 
     const coreDist = 0.048;
@@ -71,7 +90,7 @@ export function buildGeometricMyceliumEdges(clusterMembers: any, clusterCentroid
         }
     }
 
-    const seenBridgePairs = new Set();
+    const seenBridgePairs = new Set<string>();
     const clusterKeys = [...clusterMembers.keys()];
     clusterKeys.forEach((clusterA) => {
         const centroidA = clusterCentroids.get(clusterA);
@@ -97,7 +116,7 @@ export function buildGeometricMyceliumEdges(clusterMembers: any, clusterCentroid
             const centroidB = clusterCentroids.get(clusterB);
             const source = (clusterMembers.get(clusterA) || [])
                 .slice()
-                .sort((a, b) => {
+                .sort((a: number, b: number) => {
                     const aPos = state.nodePositions[a];
                     const bPos = state.nodePositions[b];
                     if (!aPos || !bPos) return 0;
@@ -106,7 +125,7 @@ export function buildGeometricMyceliumEdges(clusterMembers: any, clusterCentroid
                 })[0];
             const target = (clusterMembers.get(clusterB) || [])
                 .slice()
-                .sort((a, b) => {
+                .sort((a: number, b: number) => {
                     const aPos = state.nodePositions[a];
                     const bPos = state.nodePositions[b];
                     if (!aPos || !bPos) return 0;
@@ -127,10 +146,10 @@ export function buildGeometricMyceliumEdges(clusterMembers: any, clusterCentroid
 export function buildSemanticMyceliumEdges() {
     if (!state.semanticNeighborMapByLeadId?.size || !state.pointIndexByLeadId?.size) return null;
 
-    const seenPairs = new Set();
-    const corePairs = [];
-    const wispyPairs = [];
-    const bridgePairs = [];
+    const seenPairs = new Set<string>();
+    const corePairs: EdgePair[] = [];
+    const wispyPairs: EdgePair[] = [];
+    const bridgePairs: EdgePair[] = [];
 
     // Strict connection caps to prevent the "ball of yarn" effect
     const MAX_CORE_PER_NODE = 4;
@@ -141,20 +160,20 @@ export function buildSemanticMyceliumEdges() {
     const wispyCountByNode = new Map();
     const bridgeCountByNode = new Map();
 
-    state.points.forEach((point, index) => {
+    state.points.forEach((point: any, index: number) => {
         const leadId = point?.lead_id === null || point?.lead_id === undefined ? '' : String(point.lead_id);
         if (!leadId) return;
         const threadNode = state.semanticNeighborMapByLeadId.get(leadId);
         if (!threadNode?.neighbors?.length) return;
 
-        threadNode.neighbors.forEach((neighbor) => {
+        threadNode.neighbors.forEach((neighbor: NeighborLike) => {
             const candidateIndex = state.pointIndexByLeadId.get(String(neighbor.leadId));
             if (candidateIndex === undefined || candidateIndex === index) return;
             const key = pairKey(index, candidateIndex);
             if (seenPairs.has(key)) return;
 
-            const semanticScore = Number.isFinite(neighbor.semanticScore) ? neighbor.semanticScore : 0;
-            const bridgeScore = Number.isFinite(neighbor.bridgeScore) ? neighbor.bridgeScore : 0;
+            const semanticScore = Number.isFinite(neighbor.semanticScore) ? neighbor.semanticScore as number : 0;
+            const bridgeScore = Number.isFinite(neighbor.bridgeScore) ? neighbor.bridgeScore as number : 0;
             const sameCluster = state.points[index]?.cluster === state.points[candidateIndex]?.cluster;
             const sameCity = Boolean(neighbor.sameCity);
             const isBridgeLike = String(neighbor.threadType || '').toLowerCase().includes('bridge') || bridgeScore >= 0.62;
@@ -224,7 +243,7 @@ export function getBezierControlPoint(a: any, b: any, edgeSide = 0, edgeRise = 0
         .addScaledVector(viewVector, baseSag * 0.14);
 }
 
-export function pushBezierLinePair(target, colorTarget, pair, fade = 1, segments = 5) {
+export function pushBezierLinePair(target: number[], colorTarget: number[], pair: EdgePair, fade = 1, segments = 5) {
     const a = state.nodePositions[pair.a];
     const b = state.nodePositions[pair.b];
     if (!a || !b) return;
@@ -276,7 +295,7 @@ export function updateMyceliumThreads() {
     // five explicit segment pairs: 10 vertices / 30 floats
     const FLOATS_PER_BEZIER_EDGE = 30;
 
-    const getSaggedPoint = (a, b) => {
+    const getSaggedPoint = (a: PositionedNode, b: PositionedNode): Array<{ x: number; y: number; z: number }> | null => {
         if (!a || !b) return null;
         const ax = Number.isFinite(a.x) ? a.x : 0;
         const ay = Number.isFinite(a.y) ? a.y : 0;
@@ -298,7 +317,7 @@ export function updateMyceliumThreads() {
         if (right.lengthSq() < 0.0001) right.set(1, 0, 0);
         right.normalize();
 
-        const verts = [];
+        const verts: Array<{ x: number; y: number; z: number }> = [];
         const edgeSide = ((a.index * 31 + b.index * 17) % 2 === 0) ? 1 : -1;
         const edgeRise = (((a.index + b.index) % 5) - 2) / 2 || 0.3;
         const control = (() => {
@@ -314,7 +333,7 @@ export function updateMyceliumThreads() {
                 .addScaledVector(new THREE.Vector3(0, 1, 0), -(baseSag * 0.7) + riseOffset);
         })();
 
-        const samples = [];
+        const samples: Array<{ x: number; y: number; z: number }> = [];
         const segments = 5;
         for (let i = 0; i <= segments; i++) {
             const t = i / segments;
@@ -332,7 +351,7 @@ export function updateMyceliumThreads() {
         return verts;
     };
 
-    const updateLayer = (lines, layer) => {
+    const updateLayer = (lines: THREE.LineSegments | null, layer: number) => {
         if (!lines?.geometry?.attributes?.position) return;
         const positions = lines.geometry.attributes.position.array;
         let offset = 0;

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { webglContext } from './webgl-context.js';
 import * as THREE from 'three';
 import { state as _state } from '../state.js';
@@ -12,6 +11,13 @@ import { disposeObject3D } from './resource-tracker.js';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
+type EdgePair = { a: number; b: number };
+type MyceliumEdgeSets = {
+    corePairs: EdgePair[];
+    wispyPairs: EdgePair[];
+    bridgePairs: EdgePair[];
+};
+
 function getNavigationMode() {
     return state.navState?.mode ?? state.navState?.currentMode;
 }
@@ -24,7 +30,7 @@ function getLineSegmentCount(line: any) {
 export function getGroupLineSegmentCount(group: any) {
     let total = 0;
     if (group && group.children) {
-        group.children.forEach((child) => {
+        group.children.forEach((child: THREE.Object3D & { isLineSegments?: boolean }) => {
             if (child.isLineSegments) {
                 total += getLineSegmentCount(child);
             }
@@ -147,7 +153,7 @@ export function createMycelium() {
 
     const clusterMembers = new Map();
     const clusterCentroids = new Map();
-    state.points.forEach((point, index) => {
+    state.points.forEach((point: any, index: number) => {
         const pos = state.nodePositions[index];
         if (!pos) return;
         if (!clusterMembers.has(point.cluster)) {
@@ -169,7 +175,8 @@ export function createMycelium() {
     });
 
     const semanticEdges = buildSemanticMyceliumEdges();
-    const edgeSets = semanticEdges || buildGeometricMyceliumEdges(clusterMembers, clusterCentroids);
+    const edgeSets = (semanticEdges || buildGeometricMyceliumEdges(clusterMembers, clusterCentroids)) as MyceliumEdgeSets | undefined;
+    if (!edgeSets) return;
     const coreConnections: any[] = [];
     const coreColors: any[] = [];
     const wispyConnections: any[] = [];
@@ -177,15 +184,15 @@ export function createMycelium() {
     const bridgeConnections: any[] = [];
     const bridgeColors: any[] = [];
 
-    edgeSets.corePairs.forEach((pair) => {
+    edgeSets.corePairs.forEach((pair: EdgePair) => {
         pushBezierLinePair(coreConnections, coreColors, pair, semanticEdges ? 0.38 : 0.28);
         webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 0 });
     });
-    edgeSets.wispyPairs.forEach((pair) => {
+    edgeSets.wispyPairs.forEach((pair: EdgePair) => {
         pushBezierLinePair(wispyConnections, wispyColors, pair, semanticEdges ? 0.22 : 0.16);
         webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 1 });
     });
-    edgeSets.bridgePairs.forEach((pair) => {
+    edgeSets.bridgePairs.forEach((pair: EdgePair) => {
         pushBezierLinePair(bridgeConnections, bridgeColors, pair, semanticEdges ? 0.32 : 0.24);
         webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 2 });
     });

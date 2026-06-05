@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { webglContext, getLiveResourceCounts } from './webgl-context.js';
 import { switchView } from './view-controller.js';
 import { updateClusterLabels } from './cluster-labels.js';
@@ -7,7 +6,7 @@ import { applyFocusPocketBreathing } from './focus-pocket.js';
 import { getSceneRevealProgress, setSceneRevealDataset } from './scene-reveal.js';
 import * as THREE from 'three';
 if (typeof window !== 'undefined') {
-    window.THREE = THREE;
+    (window as any).THREE = THREE;
 }
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -96,9 +95,9 @@ export {
 };
 
 // RAF handle for cancelation on deinit/re-init
-let _rafId = null;
+let _rafId: number | null = null;
 let _webglContextLost = false;
-let _webglRestoreTimer = null;
+let _webglRestoreTimer: number | null = null;
 
 // EMA decay applied to peak frame/update/render timings so the running max
 // is weighted toward recent samples. A single constant keeps the three
@@ -121,9 +120,9 @@ function detectWebGLSupport() {
         antialias: true
     };
     try {
-        const context = canvas.getContext('webgl2', contextAttributes)
+        const context = (canvas.getContext('webgl2', contextAttributes)
             || canvas.getContext('webgl', contextAttributes)
-            || canvas.getContext('experimental-webgl', contextAttributes);
+            || canvas.getContext('experimental-webgl', contextAttributes)) as WebGLRenderingContext | null;
         if (!context) return { supported: false, reason: 'context-unavailable' };
         const debugInfo = context.getExtension?.('WEBGL_debug_renderer_info');
         return {
@@ -135,12 +134,12 @@ function detectWebGLSupport() {
     } catch (error) {
         return {
             supported: false,
-            reason: error?.message || 'context-probe-threw'
+            reason: (error as Error)?.message || 'context-probe-threw'
         };
     }
 }
 
-function showWebGLFallback(container: any, detail = {}) {
+function showWebGLFallback(container: any, detail: { reason?: string } = {}) {
     if (!container) return;
     document.body.dataset.graphicsMode = 'fallback';
     state.scenePerformanceDiagnostics.active = false;
@@ -150,7 +149,7 @@ function showWebGLFallback(container: any, detail = {}) {
     webglContext.renderer = null;
     webglContext.controls = null;
 
-    container.querySelectorAll('canvas').forEach((canvas) => canvas.remove());
+    container.querySelectorAll('canvas').forEach((canvas: HTMLCanvasElement) => canvas.remove());
     const existingNotice = container.querySelector('.webgl-fallback-notice');
     if (existingNotice) existingNotice.remove();
 
@@ -247,7 +246,7 @@ export function initThreeJS() {
     webglContext.camera = camera;
     state.camera = camera;
 
-    let renderer;
+    let renderer: THREE.WebGLRenderer;
     try {
         renderer = new THREE.WebGLRenderer({
             antialias: true,
@@ -257,7 +256,7 @@ export function initThreeJS() {
         });
     } catch (error) {
         console.error('WebGL renderer creation failed; using semantic demo graphics fallback.', error);
-        showWebGLFallback(container, { reason: error?.message || 'renderer-create-failed' });
+        showWebGLFallback(container, { reason: (error as Error)?.message || 'renderer-create-failed' });
         return false;
     }
 
@@ -517,7 +516,7 @@ export function animate() {
     let anyNodeMoved = false;
     if (state.nodePositions && state.targetPositions) {
         const lerpFactor = state.nodesAreSettling ? 0.14 : 0.08;
-        state.nodePositions.forEach((pos, i) => {
+        state.nodePositions.forEach((pos: any, i: number) => {
             const target = state.targetPositions[i];
             if (!target) return;
             const dx = target.x - pos.x;
@@ -533,7 +532,7 @@ export function animate() {
         });
 
         if (applyFocusPocketBreathing(frameNow, state.nodePositions)) {
-            state.focusPocketMotionByIndex.forEach((_, idx) => {
+            state.focusPocketMotionByIndex.forEach((_: any, idx: number) => {
                 setNodeSporeInstanceMatrix(idx);
                 if (webglContext.nodeSporeHitMesh && state.navState.focusPocketIndices?.includes(idx)) {
                     setNodeSporeInstanceMatrix(idx, webglContext.nodeSporeHitMesh);
@@ -629,7 +628,7 @@ export function animate() {
     applyFocusPocketBreathing(frameNow);
 
     if (shouldRenderThreads()) {
-        updateMyceliumThreads(frameNow);
+        updateMyceliumThreads();
     }
     applySemanticCentroidCamera(frameNow);
     updateClusterLabels();

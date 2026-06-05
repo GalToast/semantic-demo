@@ -79,10 +79,10 @@ checks.push({
   pass: /el\.classList\.toggle\(['"]visible['"]/.test(src),
 });
 
-// 1j. initClusterLabels guards on state.points existence
+// 1j. initClusterLabels guards on points existence
 checks.push({
   name: 'guards:state.points before init',
-  pass: /if\s*\(\s*!\s*state\.points\s*\|\|\s*!\s*state\.points\.length\s*\)/.test(src),
+  pass: /if\s*\(\s*!\s*(state\.points|points)\s*\|\|\s*!\s*(state\.points|points)\.length\s*\)/.test(src),
 });
 
 // 1k. initClusterLabels returns early when canvas-container absent

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import * as THREE from 'three';
 import { state as _state } from '../state.js';
 const state = _state as any;
@@ -62,7 +61,7 @@ export function getNodeSporeScale(index: any) {
     return NODE_SPORE_BASE_RADIUS * (0.86 + seededUnit(index, 2.7) * 0.48) * emphasis;
 }
 
-export function setNodeSporeInstanceMatrix(index: any, targetMesh = webglContext.nodeSporeMesh, scaleMultiplier = 1) {
+export function setNodeSporeInstanceMatrix(index: number, targetMesh: THREE.InstancedMesh | null = webglContext.nodeSporeMesh, scaleMultiplier = 1) {
     const pos = state.nodePositions[index];
     if (!targetMesh || !pos) return;
     const base = getNodeSporeScale(index) * scaleMultiplier;
@@ -79,7 +78,8 @@ export function setNodeSporeInstanceMatrix(index: any, targetMesh = webglContext
     );
     _nodeSporeObject.updateMatrix();
     targetMesh.setMatrixAt(index, _nodeSporeObject.matrix);
-    const shouldSyncHitProxy = targetMesh === webglContext.nodeSporeMesh && webglContext.nodeSporeHitMesh && (
+    const hitProxy = webglContext.nodeSporeHitMesh;
+    const shouldSyncHitProxy = targetMesh === webglContext.nodeSporeMesh && hitProxy && (
         index === state.focusedNode ||
         state.navState.focusPocketIndices?.includes(index) ||
         state.navState.trailNeighborIndices?.includes(index)
@@ -89,7 +89,7 @@ export function setNodeSporeInstanceMatrix(index: any, targetMesh = webglContext
         _nodeSporeObject.position.set(pos.x, pos.y, pos.z);
         _nodeSporeObject.scale.set(hitBase, hitBase, hitBase);
         _nodeSporeObject.updateMatrix();
-        webglContext.nodeSporeHitMesh.setMatrixAt(index, _nodeSporeObject.matrix);
+        hitProxy.setMatrixAt(index, _nodeSporeObject.matrix);
     }
 }
 
@@ -105,7 +105,7 @@ export function getNodeSporeColor(index: any, factor = 1) {
         .multiplyScalar(THREE.MathUtils.clamp(factor, 0.04, 2.6));
 }
 
-export function getPointBoundsCenter(points: any, positionBuffer = null) {
+export function getPointBoundsCenter(points: Array<{ x?: number; y?: number; z?: number }>, positionBuffer: Float32Array | null = null) {
     const min = new THREE.Vector3(Infinity, Infinity, Infinity);
     const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
     let count = 0;
@@ -126,7 +126,7 @@ export function getPointBoundsCenter(points: any, positionBuffer = null) {
             count += 1;
         }
     } else {
-        points.forEach((point) => {
+        points.forEach((point: { x?: number; y?: number; z?: number }) => {
             const x = Number(point?.x);
             const y = Number(point?.y);
             const z = Number(point?.z);
@@ -188,7 +188,7 @@ function createPointShaderUniforms() {
 function installPointMaterialShader(material: any) {
     const uniforms = createPointShaderUniforms();
     material.userData.shader = { uniforms };
-    material.onBeforeCompile = (shader) => {
+    material.onBeforeCompile = (shader: any) => {
         Object.assign(shader.uniforms, uniforms);
         shader.vertexShader = shader.vertexShader
             .replace(
@@ -324,17 +324,19 @@ export function createPoints() {
     webglContext.focusRingTexture = createFocusRingTexture(THREE);
     webglContext.focusNextCueTexture = createFocusNextCueTexture(THREE);
 
-    const hasRawBuffers = webglContext.rawPositionsBuffer && webglContext.rawClustersBuffer && webglContext.rawClustersBuffer.length === state.points.length;
+    const rawPositionsBuffer = webglContext.rawPositionsBuffer;
+    const rawClustersBuffer = webglContext.rawClustersBuffer;
+    const hasRawBuffers = rawPositionsBuffer && rawClustersBuffer && rawClustersBuffer.length === state.points.length;
 
-    state.points.forEach((point, i) => {
+    state.points.forEach((point: any, i: number) => {
         const scatter = scatterOffsets[i] || { x: 0, y: 0, z: 0 };
         let px, py, pz, cluster;
 
         if (hasRawBuffers) {
-            px = webglContext.rawPositionsBuffer[i * 3];
-            py = webglContext.rawPositionsBuffer[i * 3 + 1];
-            pz = webglContext.rawPositionsBuffer[i * 3 + 2];
-            cluster = webglContext.rawClustersBuffer[i];
+            px = rawPositionsBuffer[i * 3];
+            py = rawPositionsBuffer[i * 3 + 1];
+            pz = rawPositionsBuffer[i * 3 + 2];
+            cluster = rawClustersBuffer[i];
         } else {
             px = Number.isFinite(point.x) ? point.x : 0;
             py = Number.isFinite(point.y) ? point.y : 0;
@@ -384,7 +386,7 @@ export function createPoints() {
     const pointsMesh = new THREE.Points(geometry, webglContext.pointsMaterial);
     pointsMesh.name = 'points-instanced-field';
     pointsMesh.frustumCulled = false;
-    webglContext.scene.add(pointsMesh);
+    webglContext.scene!.add(pointsMesh);
 
     webglContext.pointsMesh = pointsMesh;
     createCountyOutline({ min: bounds.min, max: bounds.max, center: renderCenter });

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { webglContext } from './webgl-context.js';
 import * as THREE from 'three';
 import { state as _state } from '../state.js';
@@ -26,8 +25,12 @@ function getSemanticLensNeighborIndices(focusedNode: any) {
     const semanticNode = state.semanticNeighborMapByLeadId ? state.semanticNeighborMapByLeadId.get(leadId) : null;
     if (!semanticNode?.neighbors?.length || !state.pointIndexByLeadId?.size) return [];
     return semanticNode.neighbors
-        .map((neighbor) => state.pointIndexByLeadId.get(String(neighbor.leadId)))
-        .filter((index) => Number.isFinite(index) && index !== focusedNode && state.nodePositions?.[index])
+        .map((neighbor: { leadId: string | number }) => state.pointIndexByLeadId.get(String(neighbor.leadId)))
+        .filter((index: number | undefined): index is number => (
+            Number.isFinite(index) &&
+            index !== focusedNode &&
+            Boolean(state.nodePositions?.[index as number])
+        ))
         .slice(0, 12);
 }
 
@@ -244,14 +247,14 @@ export function initSemanticManifold() {
     webglContext.semanticManifold = new THREE.Mesh(manifoldGeo, manifoldMat);
     webglContext.semanticManifold.rotation.x = -Math.PI / 2;
     webglContext.semanticManifold.position.y = -0.8;
-    webglContext.scene.add(webglContext.semanticManifold);
+    webglContext.scene!.add(webglContext.semanticManifold);
 }
 
 export function initSemanticLens() {
     disposeSemanticLens();
     webglContext.semanticLensGroup = new THREE.Group();
     webglContext.semanticLensGroup.visible = false;
-    webglContext.scene.add(webglContext.semanticLensGroup);
+    webglContext.scene!.add(webglContext.semanticLensGroup);
 
     const glowGeo = new THREE.SphereGeometry(0.12, 32, 32);
     const glowMat = new THREE.ShaderMaterial({
@@ -360,12 +363,12 @@ export function initSemanticLens() {
     });
     webglContext.focusLens = new THREE.Mesh(focusLensGeo, focusLensMat);
     webglContext.focusLens.visible = false;
-    webglContext.scene.add(webglContext.focusLens);
+    webglContext.scene!.add(webglContext.focusLens);
 
     // Step Inside bloom: warm point light at anchor node when trailDepth === 2
     const anchorBloomLight = new THREE.PointLight(0xfff4ba, 0, 0.6);
     anchorBloomLight.name = 'anchorBloomLight';
-    webglContext.scene.add(anchorBloomLight);
+    webglContext.scene!.add(anchorBloomLight);
     state.anchorBloomLight = anchorBloomLight;
 
     // Size + ring + pulse focus anchor indicator (see focus-anchor-indicator.js
@@ -468,7 +471,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
             glowUniforms.uOpacity.value += (targetOpacity - glowUniforms.uOpacity.value) * 0.12;
 
             if (glowUniforms.uSignalScore) {
-                const targetSignal = typeof calculateSignalScore === 'function' ? calculateSignalScore(state, focusIdx) : 0;
+                const targetSignal = typeof calculateSignalScore === 'function' ? calculateSignalScore(state.points?.[focusIdx]) : 0;
                 glowUniforms.uSignalScore.value += (targetSignal - glowUniforms.uSignalScore.value) * 0.12;
             }
 
@@ -483,7 +486,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
                 const maxSpokeLength = 0.12;
                 let positionOffset = 0;
                 let alphaOffset = 0;
-                getSemanticLensNeighborIndices(focusIdx).forEach((neighborIndex) => {
+                getSemanticLensNeighborIndices(focusIdx).forEach((neighborIndex: number) => {
                     const neighborPos = state.nodePositions[neighborIndex];
                     const neighborWorld = new THREE.Vector3(neighborPos.x, neighborPos.y, neighborPos.z);
                     if (webglContext.pointsMesh?.localToWorld) webglContext.pointsMesh.localToWorld(neighborWorld);
@@ -550,7 +553,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
         if (hasFocus && state.nodePositions[focusIdx]) {
             const pos = state.nodePositions[focusIdx];
             state.anchorBloomLight.position.set(pos.x, pos.y, pos.z);
-            if (webglContext.pointsMesh?.localToWorld) state.anchorBloomLight.position.applyMatrix4(webglContext.pointsMesh.matrixWorld);
+            if (webglContext.pointsMesh) state.anchorBloomLight.position.applyMatrix4(webglContext.pointsMesh.matrixWorld);
         }
         state.anchorBloomLight.visible = state.anchorBloomLight.intensity > 0.01;
     }
@@ -567,8 +570,8 @@ let _demoHighlightNode = null;
 let _demoHighlightBoost = 1.0;
 
 if (typeof document !== 'undefined' && document && document.addEventListener) {
-    document.addEventListener('micro-demo-node-highlight', (e) => {
-        const { index, phase } = e.detail;
+    document.addEventListener('micro-demo-node-highlight', (e: Event) => {
+        const { index, phase } = (e as CustomEvent).detail;
         if (!webglContext.pointsMaterial?.userData?.shader) return;
         const shader = webglContext.pointsMaterial.userData.shader;
 
@@ -595,7 +598,7 @@ if (typeof document !== 'undefined' && document && document.addEventListener) {
     });
 
     document.addEventListener('micro-demo-name-pulse', () => {
-        const nameEl = document.querySelector('#info-panel h2');
+        const nameEl = document.querySelector('#info-panel h2') as HTMLElement | null;
         if (nameEl) {
             nameEl.style.transition = 'text-shadow 0.4s ease, color 0.4s ease';
             nameEl.style.color = '#fff';

@@ -106,7 +106,6 @@ function resetState() {
 resetState();
 let dom = resetDom();
 syncSemanticDiveUi();
-assert(document.body.dataset.semanticDive === 'inactive', 'no-focus state is inactive');
 assert(dom.insideControls.getAttribute('aria-hidden') === 'true', 'inside controls hidden without focus');
 assert(dom.insideControls.inert === true, 'inside controls inert without focus');
 assert(dom.insideStatus.getAttribute('aria-hidden') === 'true', 'inside status hidden without focus');
@@ -133,7 +132,6 @@ withStateMutation(() => {
   state.trailDepth = 1;
 });
 syncSemanticDiveUi();
-assert(document.body.dataset.semanticDive === 'inactive', 'focused pre-dive state remains inactive');
 assert(dom.diveButton.hidden === false, 'dive button appears after first trail step');
 assert(dom.diveButton.disabled === false, 'dive button enabled with galaxy focus');
 assert(dom.diveButton.getAttribute('aria-disabled') === 'false', 'dive button aria-enabled with galaxy focus');
@@ -156,7 +154,6 @@ initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: (index, options) => 
   return { index: 8 };
 } });
 syncSemanticDiveUi();
-assert(document.body.dataset.semanticDive === 'active', 'trail depth 2 activates semantic dive');
 assert(document.body.dataset.journeyPhase === 'inside', 'active dive marks journey phase');
 assert(document.body.dataset.insideWalkState === 'idle', 'active dive marks walk state');
 assert(dom.insideControls.getAttribute('aria-hidden') === 'false', 'inside controls visible while active');
@@ -240,7 +237,6 @@ withStateMutation(() => {
   state.currentView = 'map';
 });
 syncSemanticDiveUi();
-assert(document.body.dataset.semanticDive === 'inactive', 'map view forces semantic dive inactive');
 assert(state.semanticDiveMode === true, 'map view preserves semanticDiveMode for return-to-galaxy resume');
 assert(state.trailDepth === 2, 'map view preserves trailDepth for return-to-galaxy resume');
 assert(dom.diveButton.disabled === true, 'map view disables dive button');

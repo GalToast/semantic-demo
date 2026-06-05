@@ -233,7 +233,7 @@ await test('setTrailDepth source has explicit fromUserGesture gate for depth=2',
 // Contract 4: applyStoryPrompt sets up signal-rich → bloom mapping
 await test('applyStoryPrompt source maps signal-rich to bloom mode', async () => {
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const src = readFileSync('js/modules/cluster-filter.js', 'utf8');
   // story === 'signal-rich' → setMyceliumMode('bloom', ...)
   const hasSignalRichBloom = /story\s*===\s*['"]signal-rich['"]\s*[\s\S]*?setMyceliumMode\s*\(\s*['"]bloom['"]/.test(src);
   assert(hasSignalRichBloom, 'signal-rich story maps to bloom mode');
@@ -276,13 +276,14 @@ await test('setMyceliumMode source calls direct applyPointFilterColors and updat
 // which keep state AND the Svelte store in sync (see state-store-sync-contract.mjs).
 await test('applyStoryPrompt source resets activeFilters and activeClusterFilter', async () => {
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const src = readFileSync('js/modules/cluster-filter.js', 'utf8');
   const applyStoryPromptBody = src.match(/export function applyStoryPrompt\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
   const hasFilterReset = /resetActiveFilters\s*\(/.test(applyStoryPromptBody)
+    || /overwriteActiveFilters\s*\(/.test(applyStoryPromptBody)
     || /state\.activeFilters\s*=\s*\{[\s\S]*?status:\s*['"]all['"]/.test(applyStoryPromptBody);
   const hasClusterReset = /setActiveClusterFilter\s*\(\s*null\s*\)/.test(applyStoryPromptBody)
     || /state\.activeClusterFilter\s*=\s*null/.test(applyStoryPromptBody);
-  assert(hasFilterReset, 'applyStoryPrompt resets activeFilters (via resetActiveFilters or direct)');
+  assert(hasFilterReset, 'applyStoryPrompt resets activeFilters (via resetActiveFilters, overwriteActiveFilters or direct)');
   assert(hasClusterReset, 'applyStoryPrompt resets activeClusterFilter (via setActiveClusterFilter(null) or direct)');
 });
 
@@ -319,7 +320,7 @@ await test('setMyceliumMode source publishes VIEW_CHANGED event', async () => {
 // Contract 11: applyStoryPrompt refreshes filter controls and reapplies filters
 await test('applyStoryPrompt source refreshes filters after story prompt changes', async () => {
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const src = readFileSync('js/modules/cluster-filter.js', 'utf8');
   const applyStoryPromptBody = src.match(/export function applyStoryPrompt\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
   const hasSyncFilters = /syncFilterControls\s*\(/.test(applyStoryPromptBody);
   const hasApplyFilters = /(?<!window\.)applyFilters\s*\(/.test(applyStoryPromptBody);

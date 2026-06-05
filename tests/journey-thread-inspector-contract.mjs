@@ -321,29 +321,29 @@ function testWave60ExploreThreadNeighborSettleBehavior() {
 
   // exploreThreadNeighbor must clear existing arrivalTimeout before setting phase='exploring'
   assertContains(tiSrc,
-    'if (Number.isFinite(state.strandContinuityState.arrivalTimeoutId))',
+    'if (Number.isFinite(strandState?.arrivalTimeoutId))',
     'exploreThreadNeighbor clears existing arrivalTimeoutId');
   assertContains(tiSrc,
-    'window.clearTimeout(state.strandContinuityState.arrivalTimeoutId)',
+    'window.clearTimeout(strandState.arrivalTimeoutId)',
     'exploreThreadNeighbor calls clearTimeout on arrivalTimeoutId');
   assertContains(tiSrc,
-    'state.strandContinuityState.arrivalTimeoutId = undefined',
+    'strandState.arrivalTimeoutId = undefined',
     'exploreThreadNeighbor nulls arrivalTimeoutId after clear');
 
   // exploreThreadNeighbor must clear existing settleTimeout before setting phase='exploring'
   assertContains(tiSrc,
-    'if (Number.isFinite(state.strandContinuityState.settleTimeoutId))',
+    'if (Number.isFinite(strandState?.settleTimeoutId))',
     'exploreThreadNeighbor clears existing settleTimeoutId');
   assertContains(tiSrc,
-    'window.clearTimeout(state.strandContinuityState.settleTimeoutId)',
+    'window.clearTimeout(strandState.settleTimeoutId)',
     'exploreThreadNeighbor calls clearTimeout on settleTimeoutId');
   assertContains(tiSrc,
-    'state.strandContinuityState.settleTimeoutId = undefined',
+    'strandState.settleTimeoutId = undefined',
     'exploreThreadNeighbor nulls settleTimeoutId after clear');
 
   // Both clear-timeout blocks must appear BEFORE setStrandContinuityState('exploring'...)
-  const arrivalClearIdx = tiSrc.indexOf('if (Number.isFinite(state.strandContinuityState.arrivalTimeoutId))');
-  const settleClearIdx = tiSrc.indexOf('if (Number.isFinite(state.strandContinuityState.settleTimeoutId))');
+  const arrivalClearIdx = tiSrc.indexOf('if (Number.isFinite(strandState?.arrivalTimeoutId))');
+  const settleClearIdx = tiSrc.indexOf('if (Number.isFinite(strandState?.settleTimeoutId))');
   const exploringIdx = tiSrc.indexOf("setStrandContinuityState('exploring'");
   assert(arrivalClearIdx !== -1, 'arrivalTimeoutId clear block found');
   assert(settleClearIdx !== -1, 'settleTimeoutId clear block found');
@@ -353,7 +353,7 @@ function testWave60ExploreThreadNeighborSettleBehavior() {
 
   // exploreThreadNeighbor must schedule a settle-timeout that transitions phase='arrived' -> 'idle'
   assertContains(tiSrc,
-    "state.strandContinuityState.phase === 'arrived'",
+    "s3?.phase === 'arrived'",
     'settle-timeout checks phase === arrived');
   assertContains(tiSrc,
     "clearStrandContinuityState('arrival-settled')",
@@ -365,19 +365,19 @@ function testWave60ExploreThreadNeighborSettleBehavior() {
     'const arrivalTid = window.setTimeout',
     'exploreThreadNeighbor captures arrival timeout id');
   assertContains(tiSrc,
-    'state.strandContinuityState.arrivalTimeoutId = arrivalTid',
+    'getStrandContinuityState().arrivalTimeoutId = arrivalTid',
     'exploreThreadNeighbor stores arrival timeout id for cancellation');
   assertContains(tiSrc,
     'const settleTid = window.setTimeout',
     'exploreThreadNeighbor captures settle timeout id');
   assertContains(tiSrc,
-    'state.strandContinuityState.settleTimeoutId = settleTid',
+    'getStrandContinuityState().settleTimeoutId = settleTid',
     'exploreThreadNeighbor stores settle timeout id for cancellation');
 
   // renderThreadInspection followBtn must guard on followTargetsCurrent
   assertContains(tiSrc, 'const followTargetsCurrent =', 'renderThreadInspection defines followTargetsCurrent');
   assertContains(tiSrc,
-    'inspectionState.index === state.navState.focusedIndex',
+    'inspectionState.index === getNavState()?.focusedIndex',
     'followTargetsCurrent checks index === focusedIndex');
   assertContains(tiSrc,
     'followBtn.disabled = !inspectionState.active || followTargetsCurrent',

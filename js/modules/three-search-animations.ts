@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { webglContext } from './webgl-context.js';
 import * as THREE from 'three';
 import { state as _state } from '../state.js';
@@ -22,7 +21,13 @@ const CORRIDOR_SOFT_TOTAL_DURATION = 2800;
 // ── Private State ───────────────────────────────────────────────────────────
 
 let _corridorGlowToken = 0;
-const _corridorGlowNodes = {};
+type CorridorGlowNodeState = {
+    startedAt: number;
+    fadeStartDelay: number;
+    fadeDuration: number;
+    targetBoost: number;
+};
+const _corridorGlowNodes: Record<number, CorridorGlowNodeState | number | null> = {};
 
 let _corridorAnimState: any = null;
 let _corridorAnimStartTime: any = null;
@@ -50,12 +55,12 @@ function getCorridorPathPoints(anchorPos: any, targetPos: any, segments = 20) {
  * Builds corridor line geometry using LineGeometry for thick strands.
  * Each segment carries a progress value used by the shader to clip un-drawn parts.
  */
-function buildCorridorLineGeometry(anchorIndex: any, routeIndices: any) {
+function buildCorridorLineGeometry(anchorIndex: number, routeIndices: number[]) {
     const anchorPos = state.nodePositions[anchorIndex];
     if (!anchorPos) return null;
 
     const targetIndices = (routeIndices || [])
-        .filter((i) => Number.isFinite(i) && i !== anchorIndex)
+        .filter((i: number) => Number.isFinite(i) && i !== anchorIndex)
         .slice(0, 12);
 
     if (targetIndices.length === 0) return null;
@@ -64,7 +69,7 @@ function buildCorridorLineGeometry(anchorIndex: any, routeIndices: any) {
     const positions: any[] = [];
     const colors: any[] = [];
 
-    targetIndices.forEach((targetIdx) => {
+    targetIndices.forEach((targetIdx: number) => {
         const targetPos = state.nodePositions[targetIdx];
         if (!targetPos) return;
         const pathPoints = getCorridorPathPoints(anchorPos, targetPos, SEGMENTS);
@@ -97,12 +102,12 @@ function buildCorridorLineGeometry(anchorIndex: any, routeIndices: any) {
 /**
  * Builds the particle trail geometry — sparse particles that flow along each corridor path.
  */
-function buildCorridorParticleTrail(anchorIndex: any, routeIndices: any) {
+function buildCorridorParticleTrail(anchorIndex: number, routeIndices: number[]) {
     const anchorPos = state.nodePositions[anchorIndex];
     if (!anchorPos) return null;
 
     const targetIndices = (routeIndices || [])
-        .filter((i) => Number.isFinite(i) && i !== anchorIndex)
+        .filter((i: number) => Number.isFinite(i) && i !== anchorIndex)
         .slice(0, 12);
 
     if (targetIndices.length === 0) return null;
@@ -115,7 +120,7 @@ function buildCorridorParticleTrail(anchorIndex: any, routeIndices: any) {
     const speeds = new Float32Array(PARTICLE_COUNT);
 
     let pIdx = 0;
-    targetIndices.forEach((targetIdx) => {
+    targetIndices.forEach((targetIdx: number) => {
         const targetPos = state.nodePositions[targetIdx];
         if (!targetPos) return;
         const pathPoints = getCorridorPathPoints(anchorPos, targetPos, 24);
@@ -253,14 +258,14 @@ export function triggerSearchHeroMoment(anchorIndex: any) {
     requestAnimationFrame(animateHero);
 }
 
-export function triggerCorridorNodeGlow(anchorIndex: any, routeIndices = []) {
+export function triggerCorridorNodeGlow(anchorIndex: any, routeIndices: number[] = []) {
     if (!webglContext.pointsMaterial?.userData?.shader || !state.nodePositions) return;
     const shader = webglContext.pointsMaterial.userData.shader;
     
     // Clear any in-progress glow from a previous call
-    for (const k of Object.keys(_corridorGlowNodes)) { delete _corridorGlowNodes[k]; }
+    for (const k of Object.keys(_corridorGlowNodes)) { delete _corridorGlowNodes[Number(k)]; }
     
-    const allIndices = [...new Set([anchorIndex, ...(routeIndices || [])])].filter((i) => Number.isFinite(i));
+    const allIndices = [...new Set([anchorIndex, ...(routeIndices || [])])].filter((i: any): i is number => Number.isFinite(i));
     const reduceMotion = typeof window !== 'undefined'
         && typeof window.matchMedia === 'function'
         && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -270,7 +275,7 @@ export function triggerCorridorNodeGlow(anchorIndex: any, routeIndices = []) {
     const fadeDuration = reduceMotion ? CORRIDOR_NODE_REDUCED_FADE_DURATION : CORRIDOR_NODE_FADE_DURATION;
     const token = ++_corridorGlowToken;
 
-    allIndices.forEach((idx, order) => {
+    allIndices.forEach((idx: number, order: number) => {
         const delay = idx === anchorIndex ? 0 : 80 + order * 40;
         setTimeout(() => {
             if (token !== _corridorGlowToken) return;
@@ -324,7 +329,7 @@ export function updateCorridorNodeGlow(frameNow: any) {
     return anyActive;
 }
 
-export function triggerSearchCorridorAnimation(anchorIndex: any, routeIndices = []) {
+export function triggerSearchCorridorAnimation(anchorIndex: any, routeIndices: number[] = []) {
     disposeSearchCorridorAnimation();
     const reduceMotion = typeof window !== 'undefined'
         && typeof window.matchMedia === 'function'
