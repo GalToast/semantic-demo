@@ -7,6 +7,21 @@ Updated: 2026-06-04
 
 > **2026-06-04 audit finding — ZERO `!important` declarations remain in the CSS cascade.** All surfaces.css `!important` declarations have been removed since the 2026-06-03 update. Every doc reference to load-bearing `!important` (surfaces.css lines 188, 268, 488, etc.) is stale. The entire cascade now relies on selector specificity and load order only. This is a significant architectural improvement; do not reintroduce `!important`.
 
+> **Verified 2026-06-05 — Lane C audit refresh.**
+>
+> - **25 CSS files total** (24 in `css/` root + 1 in `css/modules/focus_stage.css`). The file `css/modules/focus_stage.css` DOES exist (1089 lines, 119 `.focus-stage` selectors). The 2026-06-05 smell audit's Smell 1 (load-order inversion) remains valid and is NOT moot.
+> - **ZERO `!important` declarations** across all 25 CSS files. The only `!important` text occurrences are inside CSS comments explaining why `!important` is NOT used (confirmed via `rg -n "!important" css/`).
+> - **7-file mobile premium split** is current and clean:
+>   - `mobile_premium__focus-dive.css` — 1762 lines
+>   - `mobile_premium__surfaces.css` — 1178 lines
+>   - `mobile_premium__state.css` — 840 lines
+>   - `mobile_premium__chrome.css` — 865 lines
+>   - `mobile_premium__narrow.css` — 150 lines
+>   - `mobile_premium__map.css` — 119 lines
+>   - `mobile_premium__idle.css` — 88 lines
+> - **22 ownership contract tests** in `tests/*ownership*contract*.mjs` (audit report said 23; actual count is 22).
+> - **search.css cross-boundary extraction completed.** The audit flagged selectors at lines 977-983 (`.journey-compass-action.primary`), 2186-2195 (`.journey-compass`/`.journey-compass-note`), and 2203-2293 (`.info-panel`) as cross-boundary drift. All three groups have already been extracted — search.css now contains only comments confirming these rules live in `layout_base.css` (lines 2103, 2108, 2146). No further extraction needed.
+
 ## Purpose
 
 `semantic-demo.css` is now an import sheet. It should stay small and only load the real CSS modules under `css/`.
@@ -30,28 +45,31 @@ Priority:
 
 ## Module Map
 
-| Module | Primary Ownership |
-|---|---|
-| `semantic-demo.css` | Import order and cache-busted `@import` URLs only. |
-| `vector-explorer-pandora.css` | Bioluminescent bloom aesthetic (polish305): `.info-panel`/`.focus-stage-card` border-color, breadcrumb chip animation, search-trail-cue accent, secondary text color. Loaded after `semantic-demo.css` but before the mobile premium split — sits mid-cascade as a theme overlay. |
-| `css/base.css` | Root tokens, global visibility helpers, accessibility utilities. |
-| `css/loading.css` | Loading overlay and startup progress surfaces. |
-| `css/tooltips.css` | Hover tooltip/card preview surfaces. |
-| `css/shell.css` | Core app shell, canvas, map container, map trail strip, biofield shell. |
-| `css/time_weather.css` | Weather overlay, weather widget, and time display visibility/visuals. |
-| `css/demo_ui.css` | Demo-specific UI helpers. |
-| `css/synthesis.css` | Synthesis/summary card and guide CTA surfaces. |
-| `css/controls.css` | View toggle, view handoff, shared icon/button primitives, keyboard close button, and adjacent control surfaces. |
-| `css/layout_base.css` | Info panel, legend, mode chips, broad layout rules, map/search/focus supporting states. |
-| `css/search.css` | Shared and desktop search/result styles. |
-| `css/mobile_base.css` | Mobile base atoms and reduced-motion support. It no longer owns journey-compass mobile layout. |
-| `css/journey_steps.css` | Step Inside, trail, journey, focus-stage active-trail styling, and many state-machine surfaces. |
-| `css/journey_active.css` | Active journey, route, and mobile focus cockpit surfaces. (Field-node overrides migrated to `css/mobile_premium__focus-dive.css` / `css/mobile_premium__surfaces.css` as of 2026-06-04 — no active field-node selectors remain in this file.) |
-| `css/clusters.css` | Startup notice, search errors, selected-card/about-card base styling, selected-card focus/map accent UI, and trail-context accents. Galaxy cluster labels are now WebGL Sprite-only via `js/modules/cluster-labels.js`; no HTML/CSS label surface remains. |
-| `css/progressive_disclosure.css` | Show/hide behavior for graph-context and dive states, plus search empty-state and search-input glass component authority. |
-| `css/strands.css` | Mobile bottom sheet, mobile chrome ownership, route-specific surfaces, and strand/connection preview surfaces. |
-| `css/animations.css` | Final short-landscape/mobile override tail from the original cascade. |
-| `css/mobile_premium__*.css` | Split final mobile override owner, loaded directly after the base cascade. Files cover focus/dive, chrome, state-machine, idle, map summary, surface corrections, and narrow viewport corrections. |
+> **Lines column** verified 2026-06-05 via `(Get-Content).Count`. The `semantic-demo.css` import manifest and `vector-explorer-pandora.css` are not counted in the `css/` root set.
+
+| Module | Lines | Primary Ownership |
+|---|---|---|
+| `semantic-demo.css` | — | Import order and cache-busted `@import` URLs only. |
+| `vector-explorer-pandora.css` | — | Bioluminescent bloom aesthetic (polish305): `.info-panel`/`.focus-stage-card` border-color, breadcrumb chip animation, search-trail-cue accent, secondary text color. Loaded after `semantic-demo.css` but before the mobile premium split — sits mid-cascade as a theme overlay. |
+| `css/base.css` | 232 | Root tokens, global visibility helpers, accessibility utilities. |
+| `css/loading.css` | 338 | Loading overlay and startup progress surfaces. |
+| `css/tooltips.css` | 265 | Hover tooltip/card preview surfaces. |
+| `css/shell.css` | 973 | Core app shell, canvas, map container, map trail strip, biofield shell. |
+| `css/time_weather.css` | 505 | Weather overlay, weather widget, and time display visibility/visuals. |
+| `css/demo_ui.css` | 136 | Demo-specific UI helpers. |
+| `css/synthesis.css` | 505 | Synthesis/summary card and guide CTA surfaces. |
+| `css/controls.css` | 417 | View toggle, view handoff, shared icon/button primitives, keyboard close button, and adjacent control surfaces. |
+| `css/layout_base.css` | 1308 | Info panel, legend, mode chips, broad layout rules, map/search/focus supporting states. |
+| `css/search.css` | 2163 | Shared and desktop search/result styles. |
+| `css/mobile_base.css` | 576 | Mobile base atoms and reduced-motion support. It no longer owns journey-compass mobile layout. |
+| `css/journey_steps.css` | 910 | Step Inside, trail, journey, focus-stage active-trail styling, and many state-machine surfaces. |
+| `css/journey_active.css` | 544 | Active journey, route, and mobile focus cockpit surfaces. (Field-node overrides migrated to `css/mobile_premium__focus-dive.css` / `css/mobile_premium__surfaces.css` as of 2026-06-04 — no active field-node selectors remain in this file.) |
+| `css/clusters.css` | 444 | Startup notice, search errors, selected-card/about-card base styling, selected-card focus/map accent UI, and trail-context accents. Galaxy cluster labels are now WebGL Sprite-only via `js/modules/cluster-labels.js`; no HTML/CSS label surface remains. |
+| `css/progressive_disclosure.css` | 1053 | Show/hide behavior for graph-context and dive states, plus search empty-state and search-input glass component authority. |
+| `css/strands.css` | 1493 | Mobile bottom sheet, mobile chrome ownership, route-specific surfaces, and strand/connection preview surfaces. |
+| `css/animations.css` | 108 | Final short-landscape/mobile override tail from the original cascade. |
+| `css/mobile_premium__*.css` | (7 files) | Split final mobile override owner, loaded directly after the base cascade. Files cover focus/dive (1762), chrome (865), state-machine (840), idle (88), map summary (119), surface corrections (1178), and narrow viewport corrections (150). |
+| `css/modules/focus_stage.css` | 1089 | Tail-loaded final authority for focus-stage. Loaded last via `<link>` in HTML, NOT through `semantic-demo.css`. |
 
 ## Mobile Search And Result Drawer
 
