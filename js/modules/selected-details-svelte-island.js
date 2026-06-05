@@ -8,6 +8,7 @@ const MOUNT_KEY = 'selected-details';
 
 const mountedDetails = new WeakMap();
 
+/** @param {Element} target */
 function clear(target) {
     const instance = mountedDetails.get(target);
     if (!instance) return;

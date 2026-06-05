@@ -8,6 +8,7 @@ import { compile } from 'svelte/compiler';
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const watch = process.argv.includes('--watch');
 
+/** @param {string} text */
 function normalizeGeneratedBundleText(text) {
     return text.replace(/[ \t]+(?=\r?\n)/g, '');
 }

@@ -8,6 +8,7 @@ const MOUNT_KEY = 'search-results';
 
 const mountedResults = new WeakMap();
 
+/** @param {Element} target */
 function clear(target) {
     const instance = mountedResults.get(target);
     if (!instance) return;

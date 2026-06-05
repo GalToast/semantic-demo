@@ -8,6 +8,7 @@ const MOUNT_KEY = 'search-chrome';
 
 const mountedChrome = new WeakMap();
 
+/** @param {Element} target */
 function clear(target) {
     const instance = mountedChrome.get(target);
     if (!instance) return;
@@ -15,6 +16,10 @@ function clear(target) {
     mountedChrome.delete(target);
 }
 
+/**
+ * @param {Element} target
+ * @param {Record<string, unknown>} props
+ */
 function render(target, props) {
     clear(target);
     target.replaceChildren();
