@@ -9,6 +9,7 @@ import {
 import { applyFilters } from './search-state.js';
 import { applyCompositionState } from './composition-state.js';
 import { applyStoryPrompt as applyStoryPromptImpl } from './cluster-filter.js';
+import { setMyceliumMode as setMyceliumModeImpl, setTrailDepth as setTrailDepthImpl } from './lifecycle.js';
 
 function refreshCompositionState() {
     applyCompositionState({ state, root: document.body });
@@ -33,51 +34,8 @@ export const STORY_DESCRIPTIONS = {
     'disqualified-ghosts': 'View records that are disqualified but still present in the corpus.'
 };
 
-export function setMyceliumMode(mode, options = {}) {
-    if (state.myceliumMode === mode) return;
-    state.myceliumMode = mode;
-    if (mode === 'bloom') {
-        recomputeBloomIndices();
-    }
-    if (mode === 'bridge') {
-        recomputeBridgeIndices();
-    }
-    if (mode === 'trail') {
-        setTrailDepth(1, { ...options, skipUrlSync: true });
-    }
-    if (mode === 'inside') {
-        setTrailDepth(2, { ...options, fromUserGesture: true, skipUrlSync: true });
-    }
-    applyPointFilterColors();
-    if (!options.skipUrlSync) {
-        publish(EVENTS.VIEW_CHANGED, { myceliumMode: mode });
-    }
-    refreshCompositionState();
-}
-
-export function setTrailDepth(depth, options = {}) {
-    const prevDepth = Number(state.trailDepth || 0);
-    const nextDepth = Number.isFinite(Number(depth)) ? Number(depth) : 0;
-    const enteringSemanticDive = nextDepth === 2 && prevDepth < 2;
-    const leavingSemanticDive = prevDepth >= 2 && nextDepth < 2;
-
-    if (enteringSemanticDive && !options.fromUserGesture) {
-        return;
-    }
-    if (leavingSemanticDive && !options.fromUserGesture && !options.allowDiveExit) {
-        return;
-    }
-
-    state.trailDepth = nextDepth;
-    state.navState.trailDepth = nextDepth;
-    if (nextDepth >= 2) state.navState.mode = 'inside';
-    else if (nextDepth > 0 && state.navState.mode !== 'focus') state.navState.mode = 'trail';
-
-    if (!options.skipUrlSync) {
-        publish(EVENTS.EXPLORATION_DEPTH_CHANGED, { depth: nextDepth });
-    }
-    refreshCompositionState();
-}
+export { setMyceliumModeImpl as setMyceliumMode };
+export { setTrailDepthImpl as setTrailDepth };
 
 export { applyStoryPromptImpl as applyStoryPrompt };
 

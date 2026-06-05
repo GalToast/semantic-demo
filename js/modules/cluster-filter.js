@@ -7,7 +7,7 @@ import { resetActiveFilters, setActiveFilter, getActiveFilters, getActiveCluster
 import { applyFilters, clearSearchGlow, updateUrlState, clearShortSemanticSearchState } from './cluster-filter-adapter.js';
 import { getFilteredClusterCounts } from './search-filter-core.js';
 import { CONFIG } from './config.js';
-import { setMyceliumMode } from './exploration-mode.js';
+import { setMyceliumMode } from './lifecycle.js';
 
 export function findClusterByKeyword(keyword) {
     const lower = String(keyword || '').toLowerCase();
