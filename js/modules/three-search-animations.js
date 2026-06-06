@@ -4,6 +4,7 @@ import { state } from '../state.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { disposeObject3D } from './resource-tracker.js';
 import { triggerCorridorBloom } from './audio-scape.js';
+import { seededUnit } from './utils/seeded-random.js';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -123,7 +124,7 @@ function buildCorridorParticleTrail(anchorIndex, routeIndices) {
 
         for (let p = 0; p < particlesForPath && pIdx < PARTICLE_COUNT; p++, pIdx++) {
             const baseProgress = (p / particlesForPath);
-            const offset = (Math.random() - 0.5) * 0.08;
+            const offset = (seededUnit(pIdx, 0x5EED) - 0.5) * 0.08;
             const segIdx = Math.min(Math.floor(baseProgress * (pathPoints.length - 1)), pathPoints.length - 1);
             const pt = pathPoints[segIdx];
 
@@ -132,9 +133,9 @@ function buildCorridorParticleTrail(anchorIndex, routeIndices) {
             positions[pIdx * 3 + 2] = pt.z + offset;
 
             progressValues[pIdx] = baseProgress;
-            lifetimes[pIdx] = 0.5 + Math.random() * 0.5;
+            lifetimes[pIdx] = 0.5 + seededUnit(pIdx, 0xBEEF) * 0.5;
             segmentOffsets[pIdx] = offset;
-            speeds[pIdx] = 0.3 + Math.random() * 0.7;
+            speeds[pIdx] = 0.3 + seededUnit(pIdx, 0xCAFE) * 0.7;
         }
     });
 
