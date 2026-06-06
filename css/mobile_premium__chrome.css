@@ -400,6 +400,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        pointer-events: auto;
+        visibility: visible;
+        opacity: 1;
         background: var(--glass-bg);
         border: var(--glass-border-glow);
         border-radius: var(--glass-radius-action);
@@ -417,14 +420,6 @@
         top: 164px;
     }
 
-    /* Grouped mobile action list visibility */
-    body.is-active[data-panel-surface] :is(.share-toggle, .help-toggle, .legend-toggle) {
-        pointer-events: auto;
-        display: flex;
-        visibility: visible;
-        opacity: 1;
-    }
-
     body.is-active[data-panel-surface] #btn-share-view [class~='share-toggle-label'] {
         display: none;
     }
@@ -438,12 +433,6 @@
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
         #canvas-color-legend {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body.is-active[data-panel-surface='focus'] #btn-share-view {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -482,7 +471,7 @@
         pointer-events: none;
     }
 
-    body[data-panel-surface] .controls {
+    body.is-active[data-panel-surface] .controls {
         position: fixed;
         bottom: auto;
         top: calc(216px + env(safe-area-inset-top, 0px));
@@ -502,7 +491,7 @@
         z-index: var(--z-blocker);
     }
 
-    body[data-panel-surface] .controls .control-btn {
+    body.is-active[data-panel-surface] .controls .control-btn {
         width: var(--mobile-touch-min, 44px);
         height: var(--mobile-touch-min, 44px);
         min-width: var(--mobile-touch-min, 44px);
@@ -656,7 +645,7 @@
         box-shadow: 0 0 0 2px rgba(126, 242, 226, 0.2);
     }
 
-    body[data-panel-surface] .panel-toggle {
+    body.is-active[data-panel-surface] .panel-toggle {
         display: none;
     }
 
@@ -811,6 +800,17 @@
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
         )
+        #btn-share-view {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    body.is-active:is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
         #canvas-color-legend {
         display: none;
         visibility: hidden;
@@ -839,18 +839,11 @@
     }
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
-        :is(.controls.controls-rail, .controls.controls-info) {
+        .controls.controls-rail {
         display: contents;
         visibility: visible;
         pointer-events: auto;
         opacity: 1;
-    }
-
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
-        :is(.controls.controls-view, .controls-divider) {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
     }
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
