@@ -1,7 +1,7 @@
 import { webglContext } from './webgl-context.js';
 import * as THREE from 'three';
 import { state } from '../state.js';
-import { triggerSearchHeroMoment } from './three-search-animations.js';
+import { triggerSearchHeroMoment, disposeHeroAnimation } from './three-search-animations.js';
 import { calculateSignalScore } from './utils/geo-data.js';
 import {
     createFocusAnchorIndicator,
@@ -163,6 +163,7 @@ function updateSelectedNodeFilaments(worldPos, time, isInside) {
 export function disposeInteractionVisuals() {
     disposeSemanticLens();
     disposeFocusAnchorIndicator();
+    disposeHeroAnimation();
 
     // Remove micro-demo event listeners to prevent handler leaks
     if (typeof document !== 'undefined' && document && document.removeEventListener) {
@@ -178,6 +179,11 @@ export function disposeInteractionVisuals() {
 }
 
 export function disposeSemanticLens() {
+    if (state.anchorBloomLight) {
+        state.scene?.remove(state.anchorBloomLight);
+        state.anchorBloomLight.dispose?.();
+        state.anchorBloomLight = null;
+    }
     if (state.semanticManifold) {
         disposeObject3D(state.semanticManifold);
         state.semanticManifold = null;
@@ -372,6 +378,11 @@ export function initSemanticLens() {
     state.scene.add(state.focusLens);
 
     // Step Inside bloom: warm point light at anchor node when trailDepth === 2
+    if (state.anchorBloomLight) {
+        state.scene.remove(state.anchorBloomLight);
+        state.anchorBloomLight.dispose?.();
+        state.anchorBloomLight = null;
+    }
     const anchorBloomLight = new THREE.PointLight(0xfff4ba, 0, 0.6);
     anchorBloomLight.name = 'anchorBloomLight';
     state.scene.add(anchorBloomLight);
