@@ -790,28 +790,6 @@
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
         )
-        #btn-share-view {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body.is-active:is(
-            [data-panel-surface='focus'],
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='semantic-dive']
-        )
-        #btn-share-view {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body.is-active:is(
-            [data-panel-surface='focus'],
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='semantic-dive']
-        )
         #canvas-color-legend {
         display: none;
         visibility: hidden;

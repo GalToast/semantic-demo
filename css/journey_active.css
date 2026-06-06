@@ -256,7 +256,7 @@ body[data-panel-surface='focus'] .journey-compass-note {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 40px;
+    min-height: 44px;
     min-width: 64px;
     padding: 0 16px;
     border: 1px solid var(--color-border-muted);
