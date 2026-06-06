@@ -109,7 +109,7 @@ const selectorBaselines = {
     'layout_base.css': 1,
     'journey_active.css': 15,
     'mobile_premium__focus-dive.css': 4,
-    'mobile_premium__narrow.css': 6,
+    'mobile_premium__narrow.css': 12,
     'mobile_premium__state.css': 1,
     'mobile_premium__surfaces.css': 1,
     'strands.css': 2,

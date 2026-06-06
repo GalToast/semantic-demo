@@ -136,12 +136,23 @@ if (hasSvelte) {
   });
 
   test('DemoChoreography.svelte owns the demo lifecycle', () => {
-    assert(/import.*startDemo.*from\s+['"]@lib\/stores\/demo['"]/.test(svelteComponentSource),
+    assert(/import[\s\S]*startDemo[\s\S]*from\s+['"]@lib\/stores\/demo['"]/.test(svelteComponentSource),
       'DemoChoreography must import startDemo from demo store');
-    assert(/import.*cancelDemo.*from\s+['"]@lib\/stores\/demo['"]/.test(svelteComponentSource),
+    assert(/import[\s\S]*cancelDemo[\s\S]*from\s+['"]@lib\/stores\/demo['"]/.test(svelteComponentSource),
       'DemoChoreography must import cancelDemo from demo store');
-    assert(/import.*transitionDemo/.test(svelteComponentSource),
+    assert(/import[\s\S]*transitionDemo[\s\S]*from\s+['"]@lib\/stores\/demo['"]/.test(svelteComponentSource),
       'DemoChoreography must import transitionDemo');
+  });
+
+  test('DemoChoreography.svelte uses demo store eligibility and node selection helpers', () => {
+    assert(/import[\s\S]*shouldRunDemo[\s\S]*from\s+['"]@lib\/stores\/demo['"]/.test(svelteComponentSource),
+      'DemoChoreography must import shouldRunDemo from demo store');
+    assert(/import[\s\S]*findDemoNode[\s\S]*from\s+['"]@lib\/stores\/demo['"]/.test(svelteComponentSource),
+      'DemoChoreography must import findDemoNode from demo store');
+    assert(/findDemoNode\(\$businessRecords\)/.test(svelteComponentSource),
+      'DemoChoreography must select a validated node from businessRecords');
+    assert(!/Math\.random\(\)\s*\*\s*8406/.test(svelteComponentSource),
+      'DemoChoreography must not choose random raw node indices');
   });
 
   test('DemoChoreography.svelte cleans up timers on destroy', () => {

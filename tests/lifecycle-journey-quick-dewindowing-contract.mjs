@@ -53,9 +53,12 @@ function testLifecycleNoWindowUpdateExplorationUi() {
   assert(badLines.length === 0,
     `lifecycle.js must NOT assign window.updateExplorationUi:\n${badLines.join('\n')}`);
 
-  // Verify the function is still exported (not removed)
-  assert(/^export\s+function\s+updateExplorationUi\s*\(/m.test(src),
-    'lifecycle.js must still export updateExplorationUi as a named function');
+  // Verify the function is still exported (not removed) — could be re-exported
+  // from lifecycle-modes.js via lifecycle.js grouped re-export
+  const exportAsFunction = /^export\s+function\s+updateExplorationUi\s*\(/m.test(src);
+  const exportAsReexport = /export\s*\{[^}]*\bupdateExplorationUi\b[^}]*\}/.test(src);
+  assert(exportAsFunction || exportAsReexport,
+    'lifecycle.js must still export updateExplorationUi as a named function (direct or re-export)');
 
   console.log('  PASS - no window.updateExplorationUi assignment in lifecycle.js');
 }

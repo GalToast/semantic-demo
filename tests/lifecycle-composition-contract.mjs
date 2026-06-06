@@ -63,6 +63,9 @@ const searchIntentEl = new FakeElement('section');
 searchIntentEl.classList.add('search-results', 'active');
 
 globalThis.window = {
+    location: { hostname: '' },
+    setTimeout: typeof setTimeout !== 'undefined' ? setTimeout : () => 0,
+    clearTimeout: typeof clearTimeout !== 'undefined' ? clearTimeout : () => {},
 };
 
 globalThis.document = {

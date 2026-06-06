@@ -13,11 +13,13 @@ const root = process.cwd();
 const modulesDir = path.join(root, 'js/modules');
 
 const lifecyclePath = path.join(modulesDir, 'lifecycle.js');
+const lifecycleModesPath = path.join(modulesDir, 'lifecycle-modes.js');
 const compassPath = path.join(modulesDir, 'journey-compass-controller.js');
 const cameraPath = path.join(modulesDir, 'camera-controls.js');
 const viewPath = path.join(modulesDir, 'view-controller.js');
 
 const lifecycleSrc = fs.readFileSync(lifecyclePath, 'utf8');
+const lifecycleModesSrc = fs.readFileSync(lifecycleModesPath, 'utf8');
 const compassSrc = fs.readFileSync(compassPath, 'utf8');
 const cameraSrc = fs.readFileSync(cameraPath, 'utf8');
 const viewSrc = fs.readFileSync(viewPath, 'utf8');
@@ -51,8 +53,9 @@ function moduleId(filePath) {
 }
 
 assert(
-  /export function refreshCompositionState\s*\(/.test(lifecycleSrc),
-  'lifecycle.js must export refreshCompositionState as the composition writer'
+  /export function refreshCompositionState\s*\(/.test(lifecycleSrc)
+  || /export function refreshCompositionState\s*\(/.test(lifecycleModesSrc),
+  'lifecycle.js (or lifecycle-modes.js) must export refreshCompositionState as the composition writer'
 );
 assert(
   /export function derivePanelSurface\s*\(/.test(lifecycleSrc)
@@ -95,7 +98,7 @@ const allowedDatasetWriters = new Map(Object.entries({
   activeView: ['js/modules/lifecycle.js', 'js/modules/view-controller.js', 'js/modules/composition-state.js'],
   graphContext: ['js/modules/lifecycle.js', 'js/modules/composition-state.js'],
   mapContext: ['js/modules/lifecycle.js', 'js/modules/composition-state.js'],
-  semanticDive: ['js/modules/lifecycle.js', 'js/modules/semantic-dive-ui.js', 'js/modules/composition-state.js'],
+  semanticDive: ['js/modules/lifecycle.js', 'js/modules/lifecycle-modes.js', 'js/modules/semantic-dive-ui.js', 'js/modules/composition-state.js'],
   panelSurface: ['js/modules/lifecycle.js', 'js/modules/composition-state.js'],
   panelSurfaceDetail: ['js/modules/lifecycle.js', 'js/modules/search-panel-adapter.js', 'js/modules/composition-state.js'],
   trailState: ['js/modules/lifecycle.js', 'js/modules/composition-state.js'],
@@ -116,8 +119,8 @@ const allowedDatasetWriters = new Map(Object.entries({
 
   cameraAssist: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js'],
   cameraAssistReason: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js'],
-  focusTransition: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js', 'js/modules/micro-demo.js'],
-  focusTransitionPhase: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js', 'js/modules/micro-demo.js'],
+  focusTransition: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js', 'js/modules/micro-demo.js', 'js/modules/micro-demo-choreography.js'],
+  focusTransitionPhase: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js', 'js/modules/micro-demo.js', 'js/modules/micro-demo-choreography.js'],
   routeExploration: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js'],
   routeExplorationReason: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js'],
   cameraSlack: ['js/modules/camera-orbit-slack.js'],

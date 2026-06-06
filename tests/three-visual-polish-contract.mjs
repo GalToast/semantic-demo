@@ -14,6 +14,8 @@ const threadManagerPath = path.join(repoRoot, 'js', 'modules', 'three-thread-man
 const threadManager = fs.readFileSync(threadManagerPath, 'utf8');
 const interactionVisualsPath = path.join(repoRoot, 'js', 'modules', 'three-interaction-visuals.js');
 const interactionVisuals = fs.readFileSync(interactionVisualsPath, 'utf8');
+const cameraRestorePath = path.join(repoRoot, 'js', 'modules', 'camera-controls-restore.js');
+const cameraRestore = fs.readFileSync(cameraRestorePath, 'utf8');
 const searchAnimationsPath = path.join(repoRoot, 'js', 'modules', 'three-search-animations.js');
 const searchAnimations = fs.readFileSync(searchAnimationsPath, 'utf8');
 const myceliumEnginePath = path.join(repoRoot, 'js', 'modules', 'mycelium-engine.js');
@@ -70,6 +72,36 @@ includesAll(threadManager, [
     'searchActive: { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 }',
     'trailActive: { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 }'
 ], 'mycelium presentation opacity profile');
+
+const initThreeSource = sectionBetween(
+    threeSetup,
+    'export function initThreeJS()',
+    'export function onWindowResize()'
+);
+includesAll(initThreeSource, [
+    'camera.position.set(2.05, 1.55, 2.75);',
+    'createPoints();',
+    'createMycelium();',
+    'compilePointMaterialForReadiness();'
+], 'three-engine init should build points and mycelium before readiness');
+
+includesAll(cameraRestore, [
+    'position: Object.freeze([2.05, 1.55, 2.75])',
+    'target: Object.freeze([0, 0, 0])'
+], 'overview camera restore pose should match widened overview framing');
+
+const bridgePath = path.join(repoRoot, 'src', 'lib', 'engine', 'bridge.ts');
+const bridge = fs.readFileSync(bridgePath, 'utf8');
+const bridgeInitSource = sectionBetween(
+    bridge,
+    'async init(canvas: HTMLCanvasElement): Promise<void>',
+    'destroy(): void'
+);
+includesAll(bridgeInitSource, [
+    "const success = _threeEngine!.initThreeJS();",
+    "status = 'ready';",
+    '_threeEngine!.animate();'
+], 'Svelte engine bridge should start the legacy RAF loop after init');
 
 assert(
     interactionVisuals.includes('const targetOpacity = hasFocus ? (isInside ? 0.48 : 0.36) : 0;'),

@@ -28,6 +28,7 @@ import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
+const LIFECYCLE_RESET_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle-reset.js');
 const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-state.js');
 const SEARCH_PANEL_ADAPTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-panel-adapter.js');
 const APP_PATH = path.join(SEMDEMO_ROOT, 'js/modules/app.js');
@@ -57,17 +58,25 @@ function testSearchStateExportsSetSearchPanelState() {
 // ---------------------------------------------------------------------------
 
 function testLifecycleImportsSetSearchPanelState() {
-  console.log('\n[TEST] lifecycle.js imports setSearchPanelState from search-state.js');
+  console.log('\n[TEST] lifecycle module imports setSearchPanelState from search-state.js');
 
+  const importPattern = /import\s+\{[^}]*\bsetSearchPanelState\b[^}]*\}\s+from\s+['"]\.\/search-state\.js['"]/;
+
+  // After lifecycle decomposition, the import may live in lifecycle.js (facade)
+  // or in lifecycle-reset.js (the extracted sub-module that actually calls it).
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
+  const lifecycleResetSrc = fs.readFileSync(LIFECYCLE_RESET_PATH, 'utf-8');
 
-  // Must have a direct named import from ./search-state.js
+  const foundInLifecycle = importPattern.test(lifecycleSrc);
+  const foundInLifecycleReset = importPattern.test(lifecycleResetSrc);
+
   assert(
-    /import\s+\{[^}]*\bsetSearchPanelState\b[^}]*\}\s+from\s+['"]\.\/search-state\.js['"]/.test(lifecycleSrc),
-    'lifecycle.js must import setSearchPanelState from "./search-state.js"'
+    foundInLifecycle || foundInLifecycleReset,
+    'lifecycle.js or lifecycle-reset.js must import setSearchPanelState from "./search-state.js"'
   );
 
-  console.log('  OK — lifecycle.js imports setSearchPanelState from ./search-state.js');
+  const location = foundInLifecycle ? 'lifecycle.js' : 'lifecycle-reset.js';
+  console.log(`  OK — ${location} imports setSearchPanelState from ./search-state.js`);
 }
 
 // ---------------------------------------------------------------------------
@@ -116,17 +125,23 @@ function testLifecycleNoWindowSetSearchPanelStateCall() {
 // ---------------------------------------------------------------------------
 
 function testLifecycleCallsSetSearchPanelStateDirectly() {
-  console.log('\n[TEST] lifecycle.js calls setSearchPanelState directly via named import');
+  console.log('\n[TEST] lifecycle module calls setSearchPanelState directly via named import');
+
+  const callPattern = /(?<!window\.)setSearchPanelState\s*\(\s*\{/;
 
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
+  const lifecycleResetSrc = fs.readFileSync(LIFECYCLE_RESET_PATH, 'utf-8');
 
-  // Must call setSearchPanelState(...) directly (not window.setSearchPanelState)
+  const foundInLifecycle = callPattern.test(lifecycleSrc);
+  const foundInLifecycleReset = callPattern.test(lifecycleResetSrc);
+
   assert(
-    /(?<!window\.)setSearchPanelState\s*\(\s*\{/.test(lifecycleSrc),
-    'lifecycle.js must call setSearchPanelState(...) directly (not window.setSearchPanelState)'
+    foundInLifecycle || foundInLifecycleReset,
+    'lifecycle.js or lifecycle-reset.js must call setSearchPanelState(...) directly (not window.setSearchPanelState)'
   );
 
-  console.log('  OK — lifecycle.js calls setSearchPanelState directly');
+  const location = foundInLifecycle ? 'lifecycle.js' : 'lifecycle-reset.js';
+  console.log(`  OK — ${location} calls setSearchPanelState directly`);
 }
 
 // ---------------------------------------------------------------------------

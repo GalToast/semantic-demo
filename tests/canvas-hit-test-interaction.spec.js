@@ -155,6 +155,10 @@ async function stepInsideButton(page) {
   if (await panelButton.isVisible().catch(() => false)) {
     return panelButton;
   }
+  const compassInsideButton = page.locator('[data-journey-action="enter-inside"]').first();
+  if (await compassInsideButton.isVisible().catch(() => false)) {
+    return compassInsideButton;
+  }
   return page.locator('button[aria-label*="Step Inside"], button:has-text("Step Inside")').first();
 }
 
@@ -339,11 +343,17 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
       return appState?.pointIndexByLeadId?.get?.(1) ?? 0;
     });
     await page.evaluate((idx) => {
-      const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
       const focusNode = window.__APP_ACTIONS__?.focusOnNode;
+      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
+      const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
       if (typeof focusNode === 'function') {
         focusNode(idx, { fromSearchResult: true, skipUrlSync: true, query: 'coffee' });
       }
+      if (typeof setTrailDepth === 'function') {
+        setTrailDepth(1, { skipUrlSync: true });
+      }
+      refreshCompositionState?.();
+      window.updateJourneyCompass?.();
     }, focusTarget);
 
     // Wait until focus-search panel surface is active
@@ -403,11 +413,17 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
       return appState?.pointIndexByLeadId?.get?.(1) ?? 0;
     });
     await page.evaluate((idx) => {
-      const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
       const focusNode = window.__APP_ACTIONS__?.focusOnNode;
+      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
+      const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
       if (typeof focusNode === 'function') {
         focusNode(idx, { fromSearchResult: true, skipUrlSync: true, query: 'coffee' });
       }
+      if (typeof setTrailDepth === 'function') {
+        setTrailDepth(1, { skipUrlSync: true });
+      }
+      refreshCompositionState?.();
+      window.updateJourneyCompass?.();
     }, focusTarget);
 
     await page.waitForFunction(() => {
@@ -417,9 +433,17 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
 
     // Locate the Step Inside button and verify it is the topmost element at its center
     const hitResult = await page.evaluate(() => {
-      const diveBtn = document.querySelector('#btn-focus-dive') ||
-        document.querySelector('button[aria-label*="Step Inside"]') ||
-        Array.from(document.querySelectorAll('button')).find(button => button.textContent?.includes('Step Inside'));
+      const candidates = [
+        document.querySelector('#btn-focus-dive'),
+        document.querySelector('[data-journey-action="enter-inside"]'),
+        document.querySelector('button[aria-label*="Step Inside"]'),
+        ...Array.from(document.querySelectorAll('button')).filter(button => button.textContent?.includes('Step Inside'))
+      ].filter(Boolean);
+      const diveBtn = candidates.find((button) => {
+        const rect = button.getBoundingClientRect();
+        const style = getComputedStyle(button);
+        return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+      }) || candidates[0];
       if (!diveBtn) return { diveBtnFound: false };
       const rect = diveBtn.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
@@ -430,7 +454,9 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
       const canvas = document.querySelector('canvas');
       const isTopmostDiveBtn = Boolean(topmost && (
         topmost === diveBtn ||
+        topmost.closest?.('button') === diveBtn ||
         topmost.closest?.('#btn-focus-dive') ||
+        topmost.closest?.('[data-journey-action="enter-inside"]') ||
         topmost.closest?.('button[aria-label*="Step Inside"]')
       ));
       return {
@@ -445,7 +471,10 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
     });
 
     expect(hitResult.diveBtnFound, 'Step Inside button must exist in focus-search state').toBe(true);
-    expect(hitResult.isTopmostDiveBtn, 'Step Inside must be the topmost element at its center; canvas must not intercept').toBe(true);
+    expect(
+      hitResult.isTopmostDiveBtn,
+      `Step Inside must be the topmost element at its center; hit result: ${JSON.stringify(hitResult)}`
+    ).toBe(true);
   });
 
   // ---------------------------------------------------------------------------
