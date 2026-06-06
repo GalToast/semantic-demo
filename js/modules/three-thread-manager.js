@@ -126,7 +126,7 @@ export function shouldRenderBridgeThreads() {
 
 export function disposeMycelium() {
     if (state.myceliumGroup) {
-        if (state.pointsMesh) state.pointsMesh.remove(state.myceliumGroup);
+        state.pointsMesh?.remove(state.myceliumGroup);
         disposeObject3D(state.myceliumGroup);
         state.myceliumGroup = null;
     }

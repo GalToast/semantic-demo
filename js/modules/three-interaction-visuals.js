@@ -196,8 +196,14 @@ export function disposeSemanticLens() {
         disposeObject3D(state.focusLens);
         state.focusLens = null;
     }
-    state.semanticLensGlow = null;
-    state.semanticLensSpokes = null;
+    if (state.semanticLensGlow) {
+        disposeObject3D(state.semanticLensGlow);
+        state.semanticLensGlow = null;
+    }
+    if (state.semanticLensSpokes) {
+        disposeObject3D(state.semanticLensSpokes);
+        state.semanticLensSpokes = null;
+    }
 }
 
 export function initSemanticManifold() {
