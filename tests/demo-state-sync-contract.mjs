@@ -145,6 +145,19 @@ if (hasSvelte) {
       'DemoChoreography must store session skip in sessionStorage');
   });
 
+  test('DemoChoreography.svelte delegates eligibility and storage key ownership to demo store helpers', () => {
+    assert(/shouldRunDemo\(\)/.test(svelteComponentSource),
+      'DemoChoreography must call shouldRunDemo instead of duplicating eligibility checks');
+    assert(/markDemoCompleted\(\)/.test(svelteComponentSource),
+      'DemoChoreography must call markDemoCompleted instead of writing lifetime storage directly');
+    assert(/markDemoSessionSkipped\(/.test(svelteComponentSource),
+      'DemoChoreography must call markDemoSessionSkipped instead of writing session storage directly');
+    assert(!/localStorage\.setItem\(['"]moco_mycelium_demo_v1['"]/.test(svelteComponentSource),
+      'DemoChoreography must not hardcode the lifetime storage key');
+    assert(!/sessionStorage\.setItem\(['"]moco_mycelium_demo_session_v1['"]/.test(svelteComponentSource),
+      'DemoChoreography must not hardcode the session storage key');
+  });
+
   test('demo state is decoupled from window globals', () => {
     assert(!/window\.__demoState/.test(svelteStoreSource),
       'demo.ts must not expose state on window.__demoState');

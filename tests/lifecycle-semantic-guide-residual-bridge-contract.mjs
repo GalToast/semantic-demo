@@ -82,10 +82,11 @@ function testUpdateLegendGuideStateOwner() {
   );
 
   // legend-ui.js must subscribe to the event
-  assert(
-    legendUiSrc.includes('subscribe(EVENTS.VIEW_CHANGED'),
-    'legend-ui.js must subscribe to VIEW_CHANGED event'
-  );
+    assert(
+        legendUiSrc.includes('subscribe(EVENTS.VIEW_CHANGED')
+        || legendUiSrc.includes("subscribeKeyed('legend:view-changed', EVENTS.VIEW_CHANGED"),
+        'legend-ui.js must subscribe to VIEW_CHANGED event (via subscribe or subscribeKeyed)'
+    );
 
   console.log('  OK — updateLegendGuideState: legend-ui-owned, reached via Event Bus');
 }

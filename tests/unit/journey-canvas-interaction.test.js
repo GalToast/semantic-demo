@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as journeyCanvasInteraction from '../../js/modules/journey-canvas-interaction.js';
+import * as journeyCanvasHitTest from '../../js/modules/journey-canvas-hit-test.js';
+import { setNodeSporeInstanceMatrix } from '../../js/modules/three-node-manager.js';
 import { state, withStateMutation } from '../../js/state.js';
 import * as geoData from '../../js/modules/utils/geo-data.js';
 import * as cameraControls from '../../js/modules/camera-controls.js';
@@ -74,6 +76,7 @@ describe('journey-canvas-interaction', () => {
                 targetPositions: [],
                 camera: new THREE.PerspectiveCamera(45, 800/600, 0.1, 1000),
                 renderer: { domElement: mockCanvas },
+                pointsMesh: null,
                 activeFilters: {},
                 hoverHighlightIndex: -1,
                 stableCanvasHover: null
@@ -113,6 +116,51 @@ describe('journey-canvas-interaction', () => {
 
         const result = journeyCanvasInteraction.isThreadCandidateVisibleOnCanvas(0);
         expect(result).toBe(false);
+    });
+
+    it('isThreadCandidateVisibleOnCanvas projects local node positions through pointsMesh world transform', () => {
+        const localToWorld = vi.fn((vector) => vector.set(0, 0, 0));
+        withStateMutation(() => {
+            state.currentView = 'galaxy';
+            state.nodePositions[0] = { x: 1000, y: 0, z: 0 };
+            state.pointsMesh = { localToWorld };
+        });
+
+        expect(journeyCanvasInteraction.isThreadCandidateVisibleOnCanvas(0)).toBe(true);
+        expect(localToWorld).toHaveBeenCalled();
+    });
+
+    it('getNearestCanvasThreadCandidate treats descendants of the canvas as reachable', () => {
+        const canvasOverlay = document.createElement('div');
+        mockCanvas.appendChild(canvasOverlay);
+        document.elementFromPoint = vi.fn(() => canvasOverlay);
+        withStateMutation(() => {
+            state.currentView = 'galaxy';
+            state.navState.focusedIndex = 0;
+            state.navState.threadCandidates = [{ index: 1, source: 'semantic', reason: 'related node' }];
+            state.nodePositions[1] = { x: 0, y: 0, z: 0 };
+        });
+
+        const candidate = journeyCanvasHitTest.getNearestCanvasThreadCandidate({ clientX: 400, clientY: 300 }, 34);
+        expect(candidate?.index).toBe(1);
+    });
+
+    it('syncs the hit proxy matrix for ordinary visual spore updates', () => {
+        const visualMesh = { setMatrixAt: vi.fn() };
+        const hitProxyMesh = { setMatrixAt: vi.fn() };
+        withStateMutation(() => {
+            state.nodePositions = [{ x: 0, y: 0, z: 0 }];
+            state.nodeSporeMesh = visualMesh;
+            state.nodeSporeHitMesh = hitProxyMesh;
+            state.focusedNode = -1;
+            state.navState.focusPocketIndices = [];
+            state.navState.trailNeighborIndices = [];
+        });
+
+        setNodeSporeInstanceMatrix(0, visualMesh);
+
+        expect(visualMesh.setMatrixAt).toHaveBeenCalledWith(0, expect.any(THREE.Matrix4));
+        expect(hitProxyMesh.setMatrixAt).toHaveBeenCalledWith(0, expect.any(THREE.Matrix4));
     });
 
     it('initJourneyCanvasInteractionAdapter sets adapter callbacks', () => {

@@ -1135,7 +1135,7 @@ async function captureState(page, name) {
         const controls = Array.from(document.querySelectorAll([
           '#btn-launch',
           '.mode-grid .mode-chip',
-          '.search-result-item',
+          '.search-result-item, .search-result',
           '.journey-compass-action',
           '.control-btn',
           '.panel-toggle',
@@ -1273,7 +1273,8 @@ async function enterFocusFromSearch(page) {
   await page.waitForFunction(() => {
     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     if (Number.isFinite(appState.currentSearchSummary?.anchorIndex)) return true;
-    const row = [...document.querySelectorAll('.search-result-item')].find((candidate) => {
+    // Match both legacy .search-result-item and Svelte .search-result selectors
+    const row = [...document.querySelectorAll('.search-result-item, .search-result')].find((candidate) => {
       const style = getComputedStyle(candidate);
       const rect = candidate.getBoundingClientRect();
       return style.display !== 'none' &&
@@ -1289,7 +1290,8 @@ async function enterFocusFromSearch(page) {
   await page.evaluate(() => {
     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     const summaryAnchor = appState.currentSearchSummary?.anchorIndex;
-    const visibleRow = [...document.querySelectorAll('.search-result-item')].find((candidate) => {
+    // Match both legacy .search-result-item and Svelte .search-result selectors
+    const visibleRow = [...document.querySelectorAll('.search-result-item, .search-result')].find((candidate) => {
       const style = getComputedStyle(candidate);
       const rect = candidate.getBoundingClientRect();
       return style.display !== 'none' &&
@@ -1362,7 +1364,7 @@ async function runVisibleSearch(page, query) {
   await input.fill(query, { timeout: 8000 });
   await markVisualRouteEvidence(page, 'real-click', `typed search query "${query}"`);
   await page.waitForFunction(() => {
-    const rows = [...document.querySelectorAll('.search-result-item')];
+    const rows = [...document.querySelectorAll('.search-result-item, .search-result')];
     return rows.some((row) => {
       const style = getComputedStyle(row);
       const rect = row.getBoundingClientRect();
@@ -1377,7 +1379,8 @@ async function runVisibleSearch(page, query) {
 }
 
 async function clickVisibleFirstSearchResult(page) {
-  const row = page.locator('.search-result-item:visible').first();
+  // Match both legacy .search-result-item and Svelte .search-result selectors
+  const row = page.locator('.search-result-item:visible, .search-result:visible').first();
   await row.waitFor({ state: 'visible', timeout: 8000 });
   await row.scrollIntoViewIfNeeded({ timeout: 8000 }).catch(() => {});
   const clicked = await row.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch(() => false);
@@ -1564,7 +1567,8 @@ async function enterRouteTraceByRealRoute(page) {
 async function forceFocusedVisualState(page) {
   await page.evaluate(() => {
     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-    const visibleRow = [...document.querySelectorAll('.search-result-item')].find((candidate) => {
+    // Match both legacy .search-result-item and Svelte .search-result selectors
+    const visibleRow = [...document.querySelectorAll('.search-result-item, .search-result')].find((candidate) => {
       const style = getComputedStyle(candidate);
       const rect = candidate.getBoundingClientRect();
       return style.display !== 'none' &&

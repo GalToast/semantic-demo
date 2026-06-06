@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test';
 const LEGACY_PORT = process.env.LEGACY_PORT || 8795;
 const SVELTE_PORT = process.env.SVELTE_PORT || 5173;
 const LEGACY_URL = process.env.LEGACY_URL || `http://127.0.0.1:${LEGACY_PORT}`;
-const SVELTE_URL = process.env.SVELTE_URL || `http://127.0.0.1:${SVELTE_PORT}`;
+const SVELTE_URL = process.env.SVELTE_URL || `http://localhost:${SVELTE_PORT}`;
 
 /** Which server to target — set via TEST_SERVER env var or auto-detect. */
 const TEST_SERVER = process.env.TEST_SERVER || 'svelte'; // 'legacy' | 'svelte'
@@ -113,9 +113,11 @@ async function getDemoPhase(page) {
 
 console.log(`\n  Micro-demo tests targeting: ${TEST_SERVER} server at ${APP_URL}\n`);
 
+// Headed mode with WebGL is required for these 3D-scene tests.
+// Must be top-level — test.use() cannot appear inside test.describe().
+test.use({ headless: false, launchOptions: { args: ['--use-gl=angle', '--enable-webgl'] } });
+
 test.describe(`Micro-demo system (${TEST_SERVER})`, () => {
-  // Headed mode with WebGL is required for these 3D-scene tests.
-  test.use({ headless: false, launchOptions: { args: ['--use-gl=angle', '--enable-webgl'] } });
 
   test.beforeEach(async ({ page }) => {
     // Stub semantic health endpoint
@@ -317,17 +319,19 @@ test.describe(`Micro-demo system (${TEST_SERVER})`, () => {
       expect(phase === 'IDLE' || phase === 'UNKNOWN').toBeTruthy();
     });
 
-    test('session storage guard prevents re-fire', async ({ page }) => {
+    test('demo=force bypasses session storage guard', async ({ page }) => {
       await seedSessionSkipped(page);
       await page.goto(`${APP_URL}${DEMO_FORCE}`, { waitUntil: 'domcontentloaded' });
 
-      // Even with ?demo=force, session guard should suppress
-      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
+      await page.waitForFunction(
+        () => {
+          const phase = document.body?.dataset?.demoPhase;
+          return phase && phase !== 'IDLE';
+        },
+        { timeout: 15000 }
+      );
 
-      // With force + session guard, the demo SHOULD still run (force bypasses session guard)
-      // But without force, session guard should suppress
       const running = await isDemoRunning(page);
-      // demo=force bypasses session guard, so demo should start
       expect(running).toBe(true);
     });
   } else {
