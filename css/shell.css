@@ -603,7 +603,7 @@ body[data-active-view='map'][data-terrain-handoff='landing'] #map-container .lea
     top: 12px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: calc(var(--z-blocker) - 100);
+    z-index: var(--z-blocker-backdrop);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     align-items: center;

@@ -70,7 +70,7 @@ body:is(
     margin: -32px 0 0;
     pointer-events: none;
     background: linear-gradient(to bottom, rgba(5, 10, 16, 0) 0%, rgba(5, 10, 16, 0.92) 100%);
-    z-index: calc(var(--z-base) + 1);
+    z-index: var(--z-base-raised);
 }
 
 body:is(
@@ -573,7 +573,7 @@ body .search-container {
     padding-top: 6px;
     border-top: 1px solid var(--glass-reflection-muted);
     position: relative;
-    z-index: 0;
+    z-index: var(--z-canvas);
 }
 
 .search-label {
@@ -925,7 +925,7 @@ body .search-container {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
-    z-index: calc(var(--z-chrome) + 1);
+    z-index: var(--z-chrome-raised);
 }
 
 body.searching .search-spinner {
@@ -955,7 +955,7 @@ body.searching .search-spinner {
     border: none;
     cursor: pointer;
     color: rgba(var(--color-primary-rgb), 0.7);
-    z-index: calc(var(--z-chrome) + 2);
+    z-index: var(--z-chrome-overlay);
     transition: var(--transition-premium);
     line-height: 1;
 }
@@ -1015,12 +1015,12 @@ body.searching .search-container.has-query .search-clear-btn {
     align-items: center;
     justify-content: center;
     pointer-events: auto;
-    z-index: calc(var(--z-overlay) + 1);
+    z-index: var(--z-overlay-raised);
 }
 
 @media (max-width: 1024px) {
     .search-container.has-query {
-        z-index: calc(var(--z-overlay) + 2);
+        z-index: var(--z-overlay-floating);
     }
 }
 
@@ -1760,7 +1760,7 @@ body[data-panel-surface='map-focus-search'] .exploration-card:hover,
     -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 8px 32px var(--shadow-antumbra);
     position: relative;
-    z-index: calc(var(--z-chrome-elevated) + 6);
+    z-index: var(--z-chrome-popover);
 }
 
 .semantic-lane-assist[hidden] {
@@ -1871,7 +1871,7 @@ body[data-panel-surface='map-focus-search'] .exploration-card:hover,
 .search-error-inline-retry {
     position: sticky;
     top: 0;
-    z-index: calc(var(--z-base) + 1);
+    z-index: var(--z-base-raised);
     justify-content: space-between;
     margin: 0 0 8px;
     padding: 10px 11px;

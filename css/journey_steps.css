@@ -648,7 +648,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-'])[data-strand-journey='
 .focus-thread-inspector {
     display: grid;
     position: relative;
-    z-index: calc(var(--z-overlay) + 1);
+    z-index: var(--z-overlay-raised);
     gap: 5px;
     margin-top: 10px;
     padding: 10px 11px;

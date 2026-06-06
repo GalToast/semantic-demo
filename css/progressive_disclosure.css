@@ -373,7 +373,7 @@
     body[data-active-view='map'] .panel-toggle {
         left: -4px;
         bottom: calc(18px + env(safe-area-inset-bottom, 0px));
-        z-index: calc(var(--z-overlay) + 2);
+        z-index: var(--z-overlay-floating);
         width: 44px;
         height: 40px;
         border-radius: 0 14px 14px 0;
@@ -426,7 +426,7 @@
 
     body[data-active-view='map'] .panel-toggle {
         bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-        z-index: calc(var(--z-overlay) + 2);
+        z-index: var(--z-overlay-floating);
         width: 40px;
         height: 36px;
         border-radius: 0 13px 13px 0;
@@ -577,7 +577,7 @@ body[data-semantic-dive='transitioning'] #canvas-container {
     text-transform: uppercase;
     letter-spacing: 0.08em;
     pointer-events: none;
-    z-index: calc(var(--z-overlay) + 2);
+    z-index: var(--z-overlay-floating);
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -1047,7 +1047,7 @@ body[data-panel-surface='semantic-dive'] .launch-btn {
    The .controls rail is at z-index 1000; search-clear-btn must exceed it. */
 @media (max-width: 1024px) {
     .search-container.has-query .search-clear-btn {
-        z-index: calc(var(--z-overlay) + 1);
+        z-index: var(--z-overlay-raised);
         pointer-events: auto;
     }
 }

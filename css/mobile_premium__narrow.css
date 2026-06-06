@@ -6,7 +6,9 @@
    in the semantic field" caption and the focus-state toast don't bleed
    past the viewport. Touch targets stay ≥ 36px per the 480 block. */
 @media (max-width: 360px) {
-    .stat-caption {
+    /* stat-caption appears across idle/search/focus-search/map states;
+       gate on any active surface to avoid leaking into transition states. */
+    body.is-active[data-panel-surface] .stat-caption {
         font-size: 8px;
         letter-spacing: 0.04em;
         line-height: 1.4;
@@ -14,16 +16,19 @@
         white-space: normal;
     }
 
-    .map-trail-strip {
+    /* map-trail-strip / map-strip-title are map-only elements
+       (see chrome.css:337,359 for the same gate pattern). */
+    body.is-active[data-panel-surface^='map-'] .map-trail-strip {
         padding: 8px 10px;
         gap: 8px;
     }
 
-    .map-strip-title {
+    body.is-active[data-panel-surface^='map-'] .map-strip-title {
         max-width: 38vw;
     }
 
-    .info-panel-surface {
+    /* info-panel-surface is the panel container; gate on any active surface. */
+    body.is-active[data-panel-surface] .info-panel-surface {
         padding-left: 10px;
         padding-right: 10px;
     }
@@ -98,6 +103,93 @@
     body.is-active[data-panel-surface='focus-search'] .view-toggle,
     body.is-active[data-panel-surface='semantic-dive'] .view-toggle {
         display: flex;
+        visibility: visible;
+        pointer-events: auto;
+        opacity: 1;
+    }
+    body.is-active[data-panel-surface='focus'] .journey-compass.glass-heavy .journey-compass-rail,
+    body.is-active[data-panel-surface='focus-search'] .journey-compass.glass-heavy .journey-compass-rail,
+    body.is-active[data-panel-surface='semantic-dive'] .journey-compass.glass-heavy .journey-compass-rail {
+        display: flex;
+        visibility: visible;
+        pointer-events: auto;
+        opacity: 1;
+    }
+    body.is-active[data-panel-surface='focus'] .journey-compass[data-density='compact'] .journey-compass-rail,
+    body.is-active[data-panel-surface='focus-search'] .journey-compass[data-density='compact'] .journey-compass-rail,
+    body.is-active[data-panel-surface='semantic-dive'] .journey-compass[data-density='compact'] .journey-compass-rail {
+        display: flex;
+        visibility: visible;
+        pointer-events: auto;
+        opacity: 1;
+    }
+    body.is-active[data-panel-surface='focus'] .controls,
+    body.is-active[data-panel-surface='focus-search'] .controls,
+    body.is-active[data-panel-surface='semantic-dive'] .controls {
+        display: flex;
+        visibility: visible;
+        pointer-events: auto;
+        opacity: 1;
+    }
+
+    body.is-active[data-panel-surface='focus'] #info-panel.info-panel {
+        display: block;
+        visibility: visible;
+        pointer-events: auto;
+        opacity: 0.68;
+    }
+    body.is-active[data-panel-surface='focus'] #info-panel.info-panel .info-header {
+        display: flex;
+        visibility: visible;
+        pointer-events: auto;
+        opacity: 1;
+    }
+
+    /* ─── INFO-PANEL POINTER-EVENTS (Tablet 641-768px) ─────────────
+       Base .info-panel has pointer-events:none (layout_base.css:21).
+       At ≤640px, mobile_premium__state.css overrides it. At 641-768px,
+       no rule re-enables it, so the canvas intercepts all clicks on
+       the panel and its contents. This block restores pointer-events
+       for active panel surfaces that show the info-panel.
+       See also the short-landscape fix in mobile_premium__chrome.css. */
+    body.is-active[data-panel-surface='idle'] .info-panel,
+    body.is-active[data-panel-surface='search'] .info-panel,
+    body.is-active[data-panel-surface='focus-search'] .info-panel,
+    body.is-active[data-panel-surface='focus'] .info-panel {
+        pointer-events: auto;
+    }
+}
+
+/* ─── LEAST-WIDTH ESCAPE HATCH (≤ 360px) ─────────────
+   Parallel to the 361–768px escape hatch above. At ≤ 360px the
+   narrow block (line 76) hides .journey-compass entirely, which
+   strands focus-state users even more severely — no compass, no
+   view toggle, and no controls. This block re-shows the same
+   chrome for focus/focus-search/semantic-dive states so the
+   escape path is never fully closed.
+   Choice: option (a) — separate ≤360px block — because the narrow
+   and wide logic live in separate @media blocks already; merging
+   them into a single query would conflate the tightening rules
+   (narrow) with the re-show rules (escape hatch).
+   Specificity: the :not([data-panel-surface^='map-']) pseudo-class
+   is added to match the hide rule at line 76 (specificity 0,3,1)
+   so source order wins the tie. */
+@media (max-width: 360px) {
+    body.is-active[data-panel-surface='focus'] .view-toggle,
+    body.is-active[data-panel-surface='focus-search'] .view-toggle,
+    body.is-active[data-panel-surface='semantic-dive'] .view-toggle {
+        display: flex;
+        visibility: visible;
+        pointer-events: auto;
+        opacity: 1;
+    }
+    /* Undo the narrow compass hide (line 76) for focus states.
+       The :not([data-panel-surface^='map-']) matches the hide rule's
+       specificity so source order wins. */
+    body.is-active[data-panel-surface='focus']:not([data-panel-surface^='map-']) .journey-compass,
+    body.is-active[data-panel-surface='focus-search']:not([data-panel-surface^='map-']) .journey-compass,
+    body.is-active[data-panel-surface='semantic-dive']:not([data-panel-surface^='map-']) .journey-compass {
+        display: grid;
         visibility: visible;
         pointer-events: auto;
         opacity: 1;

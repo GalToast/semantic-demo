@@ -907,7 +907,7 @@ body.is-active #selected-details.active:not([hidden]) {
         visibility: visible;
         overflow: hidden;
         pointer-events: auto;
-        z-index: calc(var(--z-overlay) + 2);
+        z-index: var(--z-overlay-floating);
         border-color: rgba(var(--color-primary-tint-rgb), 0.28);
         border-radius: 14px 14px 0 0;
         background:

@@ -25,16 +25,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="semantic-demo.css?v=77f75813f3c8">
-    <link rel="stylesheet" href="vector-explorer-pandora.css?v=810fdd9e4f75">
-    <link rel="stylesheet" href="css/mobile_premium__focus-dive.css?v=ee46eed74fdb">
-    <link rel="stylesheet" href="css/mobile_premium__chrome.css?v=6d07f0335a80">
-    <link rel="stylesheet" href="css/mobile_premium__state.css?v=35e14ea8c118">
+    <link rel="stylesheet" href="semantic-demo.css?v=f59ce733a0ab">
+    <link rel="stylesheet" href="vector-explorer-pandora.css?v=b109ad6e2d57">
+    <link rel="stylesheet" href="css/mobile_premium__focus-dive.css?v=65594c7fdd4c">
+    <link rel="stylesheet" href="css/mobile_premium__chrome.css?v=9e6f22bbc769">
+    <link rel="stylesheet" href="css/mobile_premium__state.css?v=4f4e2406d9bb">
     <link rel="stylesheet" href="css/mobile_premium__idle.css?v=62d0e9eb4d3a">
     <link rel="stylesheet" href="css/mobile_premium__map.css?v=bb41998e40ae">
-    <link rel="stylesheet" href="css/mobile_premium__surfaces.css?v=6753ac29983c">
-    <link rel="stylesheet" href="css/mobile_premium__narrow.css?v=156817d77e4f">
-    <link rel="stylesheet" href="css/modules/focus_stage.css?v=1f20a83e22bc">
+    <link rel="stylesheet" href="css/mobile_premium__surfaces.css?v=f70bc34d9e98">
+    <link rel="stylesheet" href="css/mobile_premium__narrow.css?v=0e7c97ab5e90">
+    <link rel="stylesheet" href="css/modules/focus_stage.css?v=8aa32326c4da">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>M</text></svg>">
 </head>
 <body>
@@ -147,6 +147,25 @@
     </svg>
 
     <div id="app-root"></div>
+    <section
+        id="journey-compass"
+        class="journey-compass"
+        data-phase="overview"
+        data-density="expanded"
+        data-copy="full"
+        data-actions="standard"
+        aria-live="polite"
+    >
+        <div id="journey-compass-kicker" class="journey-compass-kicker"></div>
+        <div id="journey-compass-title" class="journey-compass-title"></div>
+        <div id="journey-compass-note" class="journey-compass-note"></div>
+        <div class="journey-compass-actions">
+            <button id="btn-journey-primary" class="journey-compass-action" type="button"></button>
+            <button id="btn-journey-secondary" class="journey-compass-action" type="button"></button>
+            <button id="btn-journey-tertiary" class="journey-compass-action" type="button"></button>
+        </div>
+        <div id="map-trail-strip" class="map-trail-strip" hidden></div>
+    </section>
     <div class="weather-overlay" id="weather-overlay" aria-hidden="true"></div>
     <div class="weather-widget glass-light" role="region" aria-label="Current Montgomery County weather" hidden></div>
 
@@ -161,6 +180,6 @@
         }
     }
     </script>
-    <script type="module" src="dist/bundle.js?v=39b273ca5b51"></script>
+    <script type="module" src="dist/bundle.js?v=8bb07054dda2"></script>
 </body>
 </html>

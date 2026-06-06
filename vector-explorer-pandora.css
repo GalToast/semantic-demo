@@ -1,5 +1,10 @@
 /* polish305: Bioluminescent Bloom Aesthetic (Avatar: Pandora) */
 
+/* TODO (bug-sweep 2026-06-06): The following selectors (.walk-breadcrumb-chip,
+   .search-trail-cue-step, .search-result-cluster, .resident-meta,
+   .walk-breadcrumb-sep) have no matches in any HTML file. They MAY be created
+   dynamically by JS — verify in js/modules/ before removing. Do not delete yet. */
+
 /* 1. The Breathing Animation (Living Organism) */
 @keyframes bioluminescentBreath {
     0%, 100% { 

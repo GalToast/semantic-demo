@@ -1139,7 +1139,7 @@ body:has(.info-panel.active) .panel-toggle {
         left: 10px;
         right: 10px;
         width: calc(100% - 20px);
-        z-index: calc(var(--z-overlay) + 1);
+        z-index: var(--z-overlay-raised);
     }
 
     /* #925: Hide journey compass in map mode when map-specific navigation is active */
