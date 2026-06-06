@@ -59,7 +59,7 @@
             <OverviewSurface />
         {/if}
         
-        {#if ['search', 'focus-search', 'map-search', 'map-focus-search'].includes(panelSurface)}
+        {#if panelSurface === 'idle' || ['search', 'focus-search', 'map-search', 'map-focus-search'].includes(panelSurface)}
             <SearchSurface />
         {/if}
         
