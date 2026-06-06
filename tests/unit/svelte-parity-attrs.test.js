@@ -127,7 +127,8 @@ describe('PARITY_ATTRIBUTES manifest', () => {
       'navMode',
       'navSurface',
       'filtersActive',
-      'graphContext'
+      'graphContext',
+      'strandJourney'
     ];
     for (const key of required) {
       expect(PARITY_ATTRIBUTE_KEYS.has(key), `manifest must include ${key}`).toBe(true);
@@ -228,6 +229,43 @@ describe('computeParityAttributes', () => {
     navStore.update((s) => ({ ...s, mode: 'overview', currentView: 'galaxy' }));
   });
 
+  it('strandJourney defaults to idle when strandContinuityPhase is unset', () => {
+    const stores = snapshotStores();
+    const map = computeParityAttributes(
+      stores.nav, stores.journey, stores.focus,
+      stores.search, stores.filters, stores.vp
+    );
+    expect(map.strandJourney).toBe('idle');
+  });
+
+  it('strandJourney reflects exploring phase from focus store', () => {
+    focusStore.update((s) => ({ ...s, strandContinuityPhase: 'exploring' }));
+    try {
+      const stores = snapshotStores();
+      const map = computeParityAttributes(
+        stores.nav, stores.journey, stores.focus,
+        stores.search, stores.filters, stores.vp
+      );
+      expect(map.strandJourney).toBe('exploring');
+    } finally {
+      focusStore.update((s) => ({ ...s, strandContinuityPhase: 'idle' }));
+    }
+  });
+
+  it('strandJourney reflects arrived phase from focus store', () => {
+    focusStore.update((s) => ({ ...s, strandContinuityPhase: 'arrived' }));
+    try {
+      const stores = snapshotStores();
+      const map = computeParityAttributes(
+        stores.nav, stores.journey, stores.focus,
+        stores.search, stores.filters, stores.vp
+      );
+      expect(map.strandJourney).toBe('arrived');
+    } finally {
+      focusStore.update((s) => ({ ...s, strandContinuityPhase: 'idle' }));
+    }
+  });
+
   it('focused-node is null (not "null" string) when no index set', () => {
     navStore.update((s) => ({ ...s, focusedIndex: null }));
     const stores = snapshotStores();
@@ -299,6 +337,26 @@ describe('installParityAttributeSync', () => {
       // Reset for cleanup
       navStore.update((s) => ({ ...s, focusedIndex: null, surface: 'idle' }));
       focusStore.update((s) => ({ ...s, semanticDiveMode: false }));
+      cleanup();
+    }
+  });
+
+  it('updates strandJourney when focus store strandContinuityPhase changes', () => {
+    const cleanup = installParityAttributeSync();
+    try {
+      focusStore.update((s) => ({ ...s, strandContinuityPhase: 'exploring' }));
+      let ds = readBodyDataset();
+      expect(ds.strandJourney).toBe('exploring');
+
+      focusStore.update((s) => ({ ...s, strandContinuityPhase: 'arrived' }));
+      ds = readBodyDataset();
+      expect(ds.strandJourney).toBe('arrived');
+
+      focusStore.update((s) => ({ ...s, strandContinuityPhase: 'idle' }));
+      ds = readBodyDataset();
+      expect(ds.strandJourney).toBe('idle');
+    } finally {
+      focusStore.update((s) => ({ ...s, strandContinuityPhase: 'idle' }));
       cleanup();
     }
   });
