@@ -40,7 +40,6 @@
 | File:line | Severity | Category | Description | Fix sketch |
 |---|---|---|---|---|
 | `js/state.js:460-497` | HIGH | proxy | **Proxy bypass via sub-object mutation.** The Proxy `set` trap only intercepts top-level `state.*` assignments. 79+ instances of `state.navState.<prop> = <value>` reach `get` trap (returns raw `_rawState.navState`), then mutate raw object directly — bypassing `CRITICAL_KEYS` guard. | `get()` for `TRACKED_SUB_KEYS` should return nested Proxy (prod scope), or route all `navState` writes through `withStateMutation()`. |
-| `js/state.js:460-497` | HIGH | proxy | **`_rawState` exported.** Any module importing `_rawState` directly bypasses entire Proxy. Currently no external imports, but latent escape hatch. | Rename with enforced lint convention, or wrap in closure exposing only Proxy. |
 | `js/state.js:395-396` | LOW | state | `strandContinuityState` default still declares `arrivalTimeoutId: undefined` / `settleTimeoutId: undefined`. Dead code — strand-continuity.js now uses Map-based `_timers`. | Remove unused fields from default state object. |
 
 ### Cross-references
@@ -95,7 +94,7 @@
 | Bugsweep Findings | `state.js Proxy bypass` | **Confirmed** | 79+ unguarded sub-property writes |
 | Bugsweep Findings | `three-node-manager texture leak` | **Verified fixed** | `_trackedTextures` + `disposeTextures()` in place |
 | Bugsweep Findings | `strand-continuity timer-ID drop` | **Verified fixed** | Map-based `_timers` in strand-continuity.js |
-| Bugsweep Findings | `three-interaction-visuals un-cleaned listeners` | **Partially fixed** | Lines 168-177 handle micro-demo events; anchorBloomLight disposal needed |
+| Bugsweep Findings | `three-interaction-visuals un-cleaned listeners` | **Resolved** | `anchorBloomLight` disposed via `disposeSemanticLens()` chain from `deinit()`; all micro-demo listeners removed via stored handler refs (state.js:586-587) |
 | State Machine Reference | `micro-demo.js` CANCELLED branches from RETURNING only | **Diverged** | CANCELLED can branch from any non-terminal phase |
 | State Machine Reference | `journey-compass-state.js` FSM diagram | **Stale** | Feature never implemented; module is pure derivation |
 | CSS Architecture | Zero `!important` declarations | **Verified** | All resolved as of 2026-06-04 |
@@ -113,12 +112,12 @@ No cross-seam findings were returned from any of the 3 slices. All findings stay
 
 | Worker | Bug IDs addressed | Status |
 |---|---|---|
-| state-proxy | Slice 2: state.js:460-497 (Proxy bypass via sub-object mutation) | Fix pending — nested-Proxy return from `get()` |
-| binding-listeners | Slice 1: legend-bindings.js:36-50, onboarding-bindings.js:49, journey-bindings.js:94-111, panel-bindings.js:69 | Fix pending — wrap listeners in AbortController signal |
-| three-lifecycle | Slice 1: three-search-animations.js:27,220-258 (hero rAF leak) | Fix pending — export disposeHeroAnimation() |
-| dual-timer-pool | Slice 2: journey-thread-settler.js dual timer pool | Fix pending — unify onto strand-continuity's `_timers` Map |
+| state-proxy | Slice 2: state.js:460-497 (Proxy bypass via sub-object mutation) | **Resolved** — nested-Proxy return from `get()` at state.js:530-531 (commit 6d8b065) |
+| binding-listeners | Slice 1: legend-bindings.js:36-50, onboarding-bindings.js:49, journey-bindings.js:94-111, panel-bindings.js:69 | **Resolved** — all 4 bindings use `{ signal }` from `_globalEventController.signal` |
+| three-lifecycle | Slice 1: three-search-animations.js:27,220-258 (hero rAF leak) | **Resolved** — `disposeHeroAnimation()` exported at three-search-animations.js:465, called from `deinit()` chain |
+| dual-timer-pool | Slice 2: journey-thread-settler.js dual timer pool | **Resolved** — unified onto strand-continuity's `_timers` Map via `setTimer()`/`disposeTimers()` (commit ce44dc2) |
 | search-state | Slice 2: no verified finding in slice-2 | Open — no bug confirmed |
-| css-fixes | Slice 3: narrow.css escape-hatch scope leak (lines 96-142) | Fix pending — extend escape-hatch to ≤360px |
+| css-fixes | Slice 3: narrow.css escape-hatch scope leak (lines 96-142) | **Resolved** — ≤360px escape-hatch block added (commit f9ddf6a) |
 
 ---
 
@@ -126,17 +125,15 @@ No cross-seam findings were returned from any of the 3 slices. All findings stay
 
 | Item | Severity | Status | Notes |
 |---|---|---|---|
-| `state.js` Proxy bypass — sub-object mutations | HIGH | Open | 79+ writes across codebase; fix requires nested Proxy or migration to `withStateMutation()` |
-| `state.js` `_rawState` export escape hatch | HIGH | Open | No current imports, but latent risk; lint rule or closure wrapping needed |
-| `micro-demo.js` skip-guard | MEDIUM | Open | No verified finding in slice-2; still listed as open |
-| `search-state.js` tokenization edge case | MEDIUM | Open | No verified finding in slice-2; still listed as open |
-| narrow.css escape-hatch ≤360px gap | MEDIUM | Fix pending | css-fixes worker to extend escape-hatch or add JS affordance |
-| listener leaks in 4 binding modules | HIGH | Fix pending | binding-listeners worker |
-| hero rAF leak in three-search-animations.js | HIGH | Fix pending | three-lifecycle worker |
-| Dual timer pool in journey-thread-settler.js | MEDIUM | Fix pending | dual-timer-pool worker |
-| Focus stage z-index literal (focus_stage.css:53) | LOW | Deferred | Migrate to `var(--z-*)` token |
-| Search z-index literal (search.css:576) | LOW | Deferred | Migrate to `var(--z-*)` token |
-| narrow.css bare class selectors (lines 9-26) | LOW | Deferred | Add `body.is-active` gate |
+| `state.js` Proxy bypass — sub-object mutations | HIGH | **Resolved — verified 2026-06-06** | Nested Proxy in place at state.js:530-531 (`return _makeProdProxy(value, 'state.' + String(prop))`); `withStateMutation()` wrapping recommended for transactional writes (see Option 2 in state-proxy-bypass-analysis) |
+| `state.js` `_rawState` export escape hatch | HIGH | **Resolved — verified 2026-06-06** | state.js:17 is `const _rawState = {` (NO export keyword); no external imports exist; latent risk eliminated |
+| narrow.css escape-hatch ≤360px gap | MEDIUM | **Resolved — verified 2026-06-06** | ≤360px escape-hatch block added at narrow.css:163-234 with `body.is-active[data-panel-surface]` gates |
+| listener leaks in 4 binding modules | HIGH | **Resolved — verified 2026-06-06** | All 4 binding modules (legend, onboarding, journey, panel) use `{ signal }` from `_globalEventController.signal` |
+| hero rAF leak in three-search-animations.js | HIGH | **Resolved — verified 2026-06-06** | `disposeHeroAnimation()` exported at three-search-animations.js:465, cancels `_heroRafId` and clears corridor glow timers |
+| Dual timer pool in journey-thread-settler.js | MEDIUM | **Resolved — verified 2026-06-06** | Unified onto strand-continuity's `_timers` Map; `cancelAllThreadTimers()` calls `disposeTimers()` at journey-thread-settler.js:39-40 |
+| Focus stage z-index literal (focus_stage.css:53) | LOW | **Resolved — verified 2026-06-06** | Now uses `var(--z-field-nodes)` at focus_stage.css:53 |
+| Search z-index literal (search.css:576) | LOW | **Resolved — verified 2026-06-06** | Now uses `var(--z-canvas)` at search.css:576; all 14 z-index declarations use tokens |
+| narrow.css bare class selectors (lines 9-26) | LOW | **Resolved — verified 2026-06-06** | All selectors in ≤360px block now use `body.is-active[data-panel-surface]` gates (commit f9ddf6a) |
 
 ---
 
@@ -169,3 +166,26 @@ Re-add the DOM scaffold init calls to the lifecycle.js facade (or ensure the ext
 - Full report: `reports/contract-audit-triage-2026-06-05.md`
 - HEAD `77f350e` is clean (0/65 failures attributable to it)
 - Untracked WIP files: `lifecycle-modes.js`, `lifecycle-reset.js`, `lifecycle-search-sync.js`, `camera-controls-choreography-{cursor,focus,routes}.js`, `micro-demo-choreography.js`
+
+---
+
+## 9. Documentation Refresh — 2026-06-06
+
+**Generated by subagent:** `ocw_6b8276de-76b9-41b4-9d2c-355cc4ab12f5`
+
+### Summary of changes since 2026-06-05
+
+| Category | Count | Details |
+|---|---|---|
+| Items **resolved** (status → Resolved) | 10 | state.js Proxy bypass (nested Proxy at state.js:530-531), `_rawState` export (const not exported), narrow.css ≤360px escape-hatch, 4 binding listener leaks, hero rAF leak, dual timer pool, focus_stage z-index, search z-index, narrow.css bare class selectors |
+| Items **removed** (no verified bug) | 2 | micro-demo.js skip-guard, search-state.js tokenization edge case |
+| Items **remaining open** in §7 | 0 | Down from 4 |
+| New evidence | 1 | three-interaction-visuals.js: fully fixed — `anchorBloomLight` disposed at line 182-185, micro-demo listeners removed via stored handler refs |
+| New HIGH bug (separate audit) | 1 | focus-pocket.js:202 — missing `return` after semantic pocket success (constellation sweep); fixed in separate commit |
+
+### Verification methodology
+
+- All claims verified against on-disk source files as of 2026-06-06
+- Git log checked: commits `f9ddf6a`, `ce44dc2`, `6d8b065`, `ce6d503`, `1c15eaa` post-date the bugsweep and contain relevant fixes
+- Read-only audit — no files were modified
+- Cross-reference report `reports/bugsweep-cross-reference-2026-06-05.md` had 1 discrepancy: claimed `_rawState` was exported at state.js:17; actual code is `const _rawState = {` (no export)
