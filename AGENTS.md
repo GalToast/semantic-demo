@@ -5,7 +5,7 @@
 
 ## Dev Environment Hardening
 - **Static Dev Mode**: The app includes a JS-side fallback for static Python development servers. If `api.php` returns raw PHP source code, the `detectStaticDevPHP` utility triggers a mock healthy state and provides high-synergy search results.
-- **Hardware Resilience**: GPU textures and event listeners are tracked and explicitly disposed of in `three-setup.js` and `event-bindings.js` to prevent leaks during rapid development cycles.
+- **Hardware Resilience**: GPU textures are tracked and disposed in `js/modules/three-node-manager.js` (`_trackedTextures` + `disposeTextures()`). Event listeners in `event-bindings.js` use an `AbortController` for `global-bindings.js`; as of 2026-06-05 sweep, 4 binding modules (legend, onboarding, journey, panel) registered listeners outside the signal — fixed in the binding-listeners fix wave.
 
 ## Key Files
 | Path | Role |
@@ -66,23 +66,21 @@ The 8,406-point mycelium data lives in `state.rawPositionsBuffer` (Float32Array)
 
 ## State Machine Reference
 
+Verified state machine integrity: `docs/semantic-demo-bugsweep-2026-06-05.md`
+
 ### micro-demo.js (`js/modules/micro-demo.js`)
 ```
 IDLE -> GLIDING -> ARRIVED -> CARD_VISIBLE -> PULLBACK -> WIDE_VIEW -> RETURNING -> COMPLETE
-                                                                          |
-                                                                          v
-                                                                     CANCELLED
+    \           \            \              \            \            \            /
+     +--------->+----------->+------------->+----------->+----------->+---------->+
+                                          \              \            \            /
+                                           +---> CANCELLED <------------+----------+
 ```
+CANCELLED can branch from any non-terminal phase (GLIDING, ARRIVED, CARD_VISIBLE, PULLBACK, WIDE_VIEW, or RETURNING); the `cancelMicroDemo()` guard only blocks IDLE, COMPLETE, and already-cancelled.
 Phase timing targets: GLIDING 1400ms, ARRIVED immediate, CARD_VISIBLE 1800ms hold, PULLBACK 1200ms, RETURNING 1000ms.
 
 ### journey-compass-state.js (`js/modules/journey-compass-state.js`)
-```
-idle -> checking -> synthesizing -> active
-                |
-                v
-           interrupted -> idle
-```
-Driven by `data-panel-surface` and `data-journey-phase` body attributes. Composes actions from journey, search-state, and lifecycle modules.
+`journey-compass-state.js` is a pure derivation function (no FSM). `getJourneyCompassState()` returns a descriptor with `phase ∈ {'map', 'inside', 'focus', 'search', 'overview'}` derived from current view and journey state. Driven by `data-panel-surface` and `data-active-view` body attributes via the controller.
 
 ## Storage
 - `localStorage.moco_mycelium_demo_v1` - lifetime per-browser flag (set by micro-demo on completion/cancel)
@@ -225,10 +223,10 @@ All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` 
 5. **Bugs fixed in transit** — known bugs are resolved as code is ported to Svelte/TS, not patched in-place in the legacy tree.
 
 ### Bugsweep Findings (fix during migration, not separately)
-**JS HIGH:** strand-continuity timer-ID drop (fixed in `src/lib/utils/strand-continuity.ts`), three-interaction-visuals un-cleaned listeners, state.js Proxy bypass, three-node-manager texture leak.
-**JS MEDIUM:** micro-demo skip-guard, journey-thread-settler race, search-state tokenization edge case.
-**CSS HIGH:** focus-dive.css dead journey-chip block, narrow.css escape-hatch scope leak.
-**CSS MEDIUM/LOW:** tracked in full bugsweep report (4 medium, 4 low CSS).
+**JS HIGH:** strand-continuity timer-ID drop (verified fixed via `_trackedTextures` + `disposeTextures()`); three-interaction-visuals un-cleaned listeners (verified partially fixed at lines 168-177; three-lifecycle worker to dispose `anchorBloomLight` in same module); state.js Proxy bypass (confirmed at state.js:460-497 sub-object mutation gap; state-proxy worker fixing nested-Proxy return from `get()`); three-node-manager texture leak (verified fixed via `_trackedTextures` + `disposeTextures()`).
+**JS MEDIUM:** micro-demo skip-guard (open — no verified finding in slice-2); journey-thread-settler race (fixed: dual-timer-pool unified onto strand-continuity's `_timers` Map — see `docs/semantic-demo-bugsweep-2026-06-05.md` for fix wave details); search-state tokenization edge case (open — no verified finding in slice-2).
+**CSS HIGH:** focus-dive.css dead journey-chip block (RESOLVED — class does not exist anywhere in repo as of 2026-06-05 sweep; stale reference removed); narrow.css escape-hatch scope leak (fixed: css-fixes worker added ≤360px escape-hatch block).
+**CSS MEDIUM/LOW:** tracked in `docs/semantic-demo-bugsweep-2026-06-05.md` (4 medium, 4 low CSS).
 
 ### Scaffold Status
 - Dev server runs: `npm run dev:svelte` → `https://localhost:5173/`

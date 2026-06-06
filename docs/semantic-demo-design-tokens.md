@@ -168,19 +168,29 @@ Policy: motion should clarify state change and respect reduced-motion preference
 | `--top-chrome-mobile` | `82px` | Mobile top chrome vertical offset |
 | `--compass-top` | `78px` | Default mobile journey compass top position |
 | `--view-toggle-right-mobile` | `108px` | Mobile view-toggle right offset near top chrome |
+| `--z-canvas` | `0` | Canvas scene layer (baseline for 3D content) |
 | `--z-underlay` | `-1` | Decorative or scene-adjacent content below base UI |
 | `--z-base` | `1` | Base UI layer |
+| `--z-base-raised` | `2` | Raised base UI layer |
 | `--z-content` | `5` | Primary content above the base layer |
+| `--z-field-nodes` | `10` | Canvas field node overlay layer |
 | `--z-chrome` | `10` | Standard app chrome |
-| `--z-chrome-elevated` | `14` | Raised chrome controls |
+| `--z-chrome-raised` | `11` | Raised chrome controls |
+| `--z-chrome-overlay` | `12` | Chrome overlay above raised chrome |
+| `--z-chrome-elevated` | `14` | Elevated chrome controls |
+| `--z-chrome-popover` | `20` | Chrome popover layer (menus, flyouts) |
 | `--z-panels` | `50` | Standard panel layer |
 | `--z-panels-elevated` | `90` | Raised or transient panel layer |
 | `--z-overlay` | `100` | Overlay stacking baseline |
-| `--z-overlay-elevated` | `150` | Raised overlay layer |
+| `--z-overlay-raised` | `101` | Raised overlay layer |
+| `--z-overlay-floating` | `102` | Floating overlay above raised overlays |
+| `--z-overlay-elevated` | `150` | Elevated overlay layer |
 | `--z-tooltips` | `200` | Tooltip layer above overlays |
 | `--z-modal` | `400` | Modal stacking baseline |
+| `--z-blocker-backdrop` | `900` | Blocker backdrop layer |
 | `--z-blocker` | `1000` | Blocking interaction shield |
 | `--z-toast` | `1200` | Toast and urgent feedback layer |
+| `--z-toast-above` | `1300` | Toast layer above standard toasts |
 | `--z-max` | `9999` | Last-resort diagnostic or emergency layer |
 
 Policy: docked bottom panel shells should be flush to the viewport bottom. Safe-area comfort should be handled with internal padding or content insets, not by detaching the shell with an exterior bottom gutter.
