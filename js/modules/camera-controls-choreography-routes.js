@@ -253,7 +253,7 @@ export function applySemanticCentroidCamera(now = performance.now()) {
     state.controls.update()
     if (t < 1) requestAnimationFrame(stepCentroid)
   }
-  if (prefersReducedMotion) {
+  if (prefersReducedMotion()) {
     state.controls.target.copy(lookAtTarget)
     state.controls.update()
   } else {

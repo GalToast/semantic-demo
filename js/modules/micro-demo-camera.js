@@ -7,6 +7,7 @@ import { easeInOutSine } from './utils/math-easing.js';
 import { prefersReducedMotion } from './environment.js';
 
 let _overviewCameraSnapshot = null;
+let _overviewCameraRafId = null;
 
 export function captureOverviewCameraSnapshot() {
     if (!state.camera?.position?.clone || !state.controls?.target?.clone) return;
@@ -42,6 +43,12 @@ export function animateCameraToOverview(duration = 1000) {
         return;
     }
 
+    // Cancel any existing overview camera animation
+    if (_overviewCameraRafId !== null) {
+        window.cancelAnimationFrame(_overviewCameraRafId);
+        _overviewCameraRafId = null;
+    }
+
     const startTime = performance.now();
     let _rafCancelled = false;
 
@@ -53,7 +60,22 @@ export function animateCameraToOverview(duration = 1000) {
         state.camera.position.lerpVectors(startPos, overviewPos, eased);
         state.controls.target.lerpVectors(startTarget, overviewTarget, eased);
         state.controls.update();
-        if (t < 0.999) requestAnimationFrame(step);
+        if (t < 0.999) {
+            _overviewCameraRafId = requestAnimationFrame(step);
+        } else {
+            _overviewCameraRafId = null;
+        }
     }
-    requestAnimationFrame(step);
+    _overviewCameraRafId = requestAnimationFrame(step);
+}
+
+/**
+ * Cancel any in-progress overview camera animation.
+ * Called during micro-demo cleanup to prevent RAF leaks.
+ */
+export function cancelOverviewCameraAnimation() {
+    if (_overviewCameraRafId !== null) {
+        window.cancelAnimationFrame(_overviewCameraRafId);
+        _overviewCameraRafId = null;
+    }
 }

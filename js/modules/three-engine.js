@@ -61,6 +61,10 @@ import {
     disposeSearchCorridorAnimation,
     disposeHeroAnimation
 } from './three-search-animations.js';
+import { disposeAudio } from './audio-scape.js';
+import { disposeEventListeners } from './event-bindings.js';
+import { cancelFocusCameraAnimation } from './camera-controls.js';
+import { cancelLoadingHide } from './loading-ui.js';
 
 import {
     updateInteractionVisuals,
@@ -461,6 +465,8 @@ export function cancelAnimate() {
 
 export function deinit() {
     cancelAnimate();
+    cancelFocusCameraAnimation();
+    cancelLoadingHide();
     disposeHeroAnimation();
     state.sceneRevealActive = false;
     state.sceneRevealCameraStart = null;
@@ -470,6 +476,8 @@ export function deinit() {
     // document listeners) so they don't leak across re-inits.
     disposeNodeVisuals();
     disposeInteractionVisuals();
+    disposeAudio();
+    disposeEventListeners();
 }
 
 export function animate() {

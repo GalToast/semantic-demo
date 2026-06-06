@@ -9,7 +9,7 @@ import { updateJourneyCompass } from './journey-compass-controller.js';
 import { updateSelectedBusiness, applyPointFilterColors } from './journey.js';
 import { setInfoPanelOpen } from './bindings/panel-bindings.js';
 import { recordCompletion } from './micro-demo-guards.js';
-import { captureOverviewCameraSnapshot, animateCameraToOverview } from './micro-demo-camera.js';
+import { captureOverviewCameraSnapshot, animateCameraToOverview, cancelOverviewCameraAnimation } from './micro-demo-camera.js';
 import { showVeil, hideVeil, showPill, removePill, showEndToast, bindInputInterceptor, unbindInputInterceptor, injectMicroDemoStyles } from './micro-demo-ui.js';
 
 export const PHASE = {
@@ -92,6 +92,7 @@ function demoFocusSetup(demoNode) {
 function cleanup() {
   document.body.removeAttribute('data-demo-active');
   clearDemoTimers();
+  cancelOverviewCameraAnimation();
   hideVeil();
   removePill();
   unbindInputInterceptor();

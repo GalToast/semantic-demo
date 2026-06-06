@@ -11,6 +11,7 @@ let audioCtx = null;
 let mainOsc = null;
 let gainNode = null;
 let filterNode = null;
+let _audioRafId = null;
 
 let lastCameraPos = null;
 let currentVelocity = 0;
@@ -51,7 +52,7 @@ function startAudioContext() {
         mainOsc.start();
 
         debugWarn('[audio] Reactive scape initialized.');
-        requestAnimationFrame(updateAudio);
+        _audioRafId = requestAnimationFrame(updateAudio);
     } catch (e) {
         debugWarn('[audio] Web Audio API initialization failed.', e);
     }
@@ -60,7 +61,7 @@ function startAudioContext() {
 function updateAudio() {
     if (!audioCtx || audioCtx.state === 'closed') return;
     if (!state.camera) {
-        requestAnimationFrame(updateAudio);
+        _audioRafId = requestAnimationFrame(updateAudio);
         return;
     }
 
@@ -126,7 +127,7 @@ function updateAudio() {
     gainNode.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.1);
     filterNode.frequency.setTargetAtTime(targetFilter, audioCtx.currentTime, 0.1);
 
-    requestAnimationFrame(updateAudio);
+    _audioRafId = requestAnimationFrame(updateAudio);
 }
 
 export function setAudioMuted(muted) {
@@ -175,3 +176,35 @@ export function trigger(name) {
 }
 
 export const play = trigger;
+
+/**
+ * Dispose audio resources and cancel the RAF loop.
+ * Called during engine deinit to prevent leaks across re-inits.
+ */
+export function disposeAudio() {
+    if (_audioRafId !== null) {
+        window.cancelAnimationFrame(_audioRafId);
+        _audioRafId = null;
+    }
+    if (mainOsc) {
+        try { mainOsc.stop(); } catch (_) {}
+        mainOsc.disconnect();
+        mainOsc = null;
+    }
+    if (filterNode) {
+        filterNode.disconnect();
+        filterNode = null;
+    }
+    if (gainNode) {
+        gainNode.disconnect();
+        gainNode = null;
+    }
+    if (audioCtx && audioCtx.state !== 'closed') {
+        try { audioCtx.close(); } catch (_) {}
+        audioCtx = null;
+    }
+    lastCameraPos = null;
+    currentVelocity = 0;
+    smoothVelocity = 0;
+    debugWarn('[audio] Reactive scape disposed.');
+}

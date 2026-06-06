@@ -26,11 +26,12 @@ vi.mock('../../js/modules/environment.js', () => ({
 }));
 
 vi.mock('../../js/state.js', () => ({
-    state: {
-        myceliumMode: 'default',
-        trailDepth: 0,
-        navState: { trailDepth: 0, mode: 'overview' }
-    }
+  state: {
+    myceliumMode: 'default',
+    trailDepth: 0,
+    navState: { trailDepth: 0, mode: 'overview' }
+  },
+  withStateMutation: (fn) => fn()
 }));
 
 // Mock the internal methods that setMyceliumMode calls

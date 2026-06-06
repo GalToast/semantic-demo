@@ -7,7 +7,7 @@
 // - camera-controls-choreography-routes.js  (Search corridor, terrain, centroid, zoom)
 // =============================================================================
 
-export { animateCameraToNode } from './camera-controls-choreography-focus.js'
+export { animateCameraToNode, cancelFocusCameraAnimation } from './camera-controls-choreography-focus.js'
 export { focusOnNode } from './camera-controls-choreography-cursor.js'
 export {
   animateCameraToSearchCorridor,
