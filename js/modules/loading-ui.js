@@ -30,6 +30,8 @@ import { initWeather } from './weather.js';
 import { escapeHtml } from './utils/dom-formatters.js';
 
 let _hideToken = 0;
+let _loadingHideTimer = null;
+let _loadingHideCancelled = false;
 
 export function setLoadingPhase(phaseKey, overrides = {}) {
     _hideToken++;
@@ -72,14 +74,27 @@ export async function hideLoadingOverlay() {
     const overlay = document.getElementById('loading-overlay');
     if (!overlay) return;
 
+    _loadingHideCancelled = false;
     const remaining = Math.max(0, state.LOADING_MIN_VISIBLE_MS - (performance.now() - state.loadingOverlayStartedAt));
     if (remaining > 0) {
-        await new Promise((resolve) => setTimeout(resolve, remaining));
+        await new Promise((resolve) => {
+            _loadingHideTimer = setTimeout(() => {
+                _loadingHideTimer = null;
+                resolve();
+            }, remaining);
+        });
     }
+    if (_loadingHideCancelled) return;
 
     overlay.dataset.loadingState = 'launching';
     overlay.classList.add('launching');
-    await new Promise((resolve) => setTimeout(resolve, 180));
+    await new Promise((resolve) => {
+        _loadingHideTimer = setTimeout(() => {
+            _loadingHideTimer = null;
+            resolve();
+        }, 180);
+    });
+    if (_loadingHideCancelled) return;
     overlay.classList.add('hidden');
     overlay.dataset.loadingState = 'hidden';
     overlay.setAttribute('aria-hidden', 'true');
@@ -136,6 +151,14 @@ export function scheduleWeatherHydration() {
         window.requestIdleCallback(start, { timeout: 500 });
     } else {
         setTimeout(start, 300);
+    }
+}
+
+export function cancelLoadingHide() {
+    _loadingHideCancelled = true;
+    if (_loadingHideTimer !== null) {
+        clearTimeout(_loadingHideTimer);
+        _loadingHideTimer = null;
     }
 }
 

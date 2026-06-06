@@ -457,24 +457,52 @@ const TRACKED_SUB_KEYS = new Set([
   'scenePerformanceDiagnostics', 'semanticSearchCacheDiagnostics', 'activeFilters'
 ]);
 
-// Production nested Proxy factory: mirrors dev-mode _track but scoped to
-// TRACKED_SUB_KEYS. Skips Set/Map/Date/RegExp (mutations on those are not
-// observable through plain-object Proxies).
+// Helper: derive the top-level key from a dotted path (e.g., "state.navState" -> "navState",
+// "state.navState.focusPocketMeta" -> "navState") so the nested Proxy can check CRITICAL_KEYS.
+function _getTopKey(path) {
+  if (!path || typeof path !== 'string') return '';
+  // path starts with "state." — strip it, then take the first component
+  const stripped = path.startsWith('state.') ? path.slice(6) : path;
+  const dot = stripped.indexOf('.');
+  return dot === -1 ? stripped : stripped.slice(0, dot);
+}
+
+// Production nested Proxy factory: returns a nested Proxy for TRACKED_SUB_KEYS
+// that enforces the same CRITICAL_KEYS guard as the top-level set trap.
+// Sub-objects whose parent key is in CRITICAL_KEYS block mutations outside
+// withStateMutation(). Non-critical sub-objects warn (if _devWarned is active)
+// but allow the write — matching the top-level set trap's permissive behavior
+// for non-critical top-level keys.
+// Skips Set/Map/Date/RegExp (mutations on those are not observable through
+// plain-object Proxies).
 function _makeProdProxy(obj, path) {
   if (!obj || typeof obj !== 'object' || obj instanceof Set || obj instanceof Map
       || obj instanceof Date || obj instanceof RegExp) return obj;
   if (_prodProxyCache?.has(obj)) return _prodProxyCache.get(obj);
+  const topKey = _getTopKey(path);
+  const isCritical = CRITICAL_KEYS.has(topKey);
   const proxy = new Proxy(obj, {
     set(t, p, v, r) {
       if (!_isMutating) {
         const k = path + '.' + String(p);
+        if (isCritical) {
+          // Critical parent: block non-mutating writes to prevent accidental
+          // bypass of the CRITICAL_KEYS guard.
+          if (_devWarned) {
+            if (!_devWarned.has(k)) {
+              console.warn('[State Bypass] ' + k + ' — use withStateMutation() to modify critical sub-state');
+              _devWarned.add(k);
+            }
+          }
+          throw new Error(`[State Error] Illegal direct mutation of critical sub-property '${k}'. You must use withStateMutation() to modify core state.`);
+        }
+        // Non-critical parent: warn in dev mode but allow the write.
         if (_devWarned) {
           if (!_devWarned.has(k)) {
-            console.warn('[State Bypass] ' + k + ' — use withStateMutation() to modify tracked sub-state');
+            console.warn('[State Bypass] ' + k + ' — sub-object mutation detected; consider withStateMutation() for batch writes');
             _devWarned.add(k);
           }
         }
-        throw new Error(`[State Error] Illegal direct mutation of tracked sub-property '${k}'. You must use withStateMutation() to modify core state.`);
       }
       return Reflect.set(t, p, v, r);
     },

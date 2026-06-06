@@ -9,7 +9,7 @@ import * as audioModule from './audio-scape.js';
 // PATCH: Explicit import to satisfy tests/three-visual-polish-contract.mjs
 import * as searchAnimationsModule from './three-search-animations.js';
 import './tooltip.js';
-import { initThreeJS, animate, cancelAnimate, onWindowResize, getSceneRenderableDiagnostics, updateCameraViewportOffset } from './three-engine.js';
+import { initThreeJS, animate, cancelAnimate, deinit, onWindowResize, getSceneRenderableDiagnostics, updateCameraViewportOffset } from './three-engine.js';
 import { initEventListeners, setInfoPanelOpen, revealSelectedBusinessCard } from './event-bindings.js';
 import { initKeyboardShortcutsHint, initKeyboardResetOwnership } from './keyboard-help.js';
 import { initBridgeRegistry, _getSelectedBusinessRoleLabel } from './bridge-registry.js';
@@ -41,7 +41,7 @@ import * as mapModule from './map-state.js';
 import { initClusterLabels } from './cluster-labels.js';
 import { updateLegendGuideState } from './legend-ui.js';
 import { setupMobileSearchSheetToggle } from './search-panel-adapter.js';
-import { getInterestingBusinessNote, buildSelectedMatchNarrative } from './journey-lifecycle-adapter.js';
+import { getInterestingBusinessNote, buildSelectedMatchNarrative } from './focus-stage-renderer.js';
 import { describeThreadLensForPoint } from './journey-point-color.js';
 import { hydrateLeadContext } from './lifecycle.js';
 import { subscribeKeyed, EVENTS, publish } from './event-bus.js';
@@ -335,8 +335,8 @@ export async function init(): Promise<void> {
             clearInterval(appState.clockTimer);
             appState.clockTimer = null;
         }
-        // Cancel any previous RAF loop before re-initializing Three.js.
-        cancelAnimate();
+        // Full teardown before re-initializing (cancels RAF, disposes WebGL, audio, and event listeners).
+        deinit();
         appState.loadingOverlayStartedAt = performance.now();
 
         await measureStep('initDataLayer', initDataLayer);
@@ -404,7 +404,7 @@ export async function init(): Promise<void> {
         console.error('Initialization failed:', error);
         recordTiming('FAILED', 0);
         logInitTimings();
-        cancelAnimate();
+        deinit();
         applyLoadingErrorState(error);
     }
 }

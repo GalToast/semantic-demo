@@ -17,6 +17,10 @@ export function animateCameraToNode(index, options = {}) {
     return choreography.animateCameraToNode(index, options);
 }
 
+export function cancelFocusCameraAnimation() {
+    return choreography.cancelFocusCameraAnimation();
+}
+
 export function focusOnNode(index, options = {}) {
     return choreography.focusOnNode(index, options);
 }

@@ -27,6 +27,15 @@ import { setFocusTransitionMode, startFocusCameraAssist } from './camera-control
 // FOCUS CAMERA ANIMATION — animateCameraToNode
 // -----------------------------------------------------------------------------
 
+let _focusCameraRafId = null;
+
+export function cancelFocusCameraAnimation() {
+    if (_focusCameraRafId !== null) {
+        window.cancelAnimationFrame(_focusCameraRafId);
+        _focusCameraRafId = null;
+    }
+}
+
 export function animateCameraToNode(index, options = {}) {
   if (!state.camera || !state.controls) return
   const targetPosition = state.nodePositions[index] || state.originalPositions[index]
@@ -239,10 +248,10 @@ export function animateCameraToNode(index, options = {}) {
 
     state.controls.update()
     if (t < 1) {
-      requestAnimationFrame(step)
+      _focusCameraRafId = requestAnimationFrame(step)
     } else {
       state.focusCameraOffset = null
     }
   }
-  requestAnimationFrame(step)
+  _focusCameraRafId = requestAnimationFrame(step)
 }
