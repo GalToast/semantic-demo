@@ -56,7 +56,7 @@ export function getFocusPocketIndices() {
 }
 
 export function setFocusPocketIndices(indices) {
-    state.navState.focusPocketIndices = indices;
+    withStateMutation(() => { state.navState.focusPocketIndices = indices; });
 }
 
 export function getFocusPocketRoleByIndex() {
@@ -64,18 +64,20 @@ export function getFocusPocketRoleByIndex() {
 }
 
 export function setFocusPocketRoleByIndex(map) {
-    state.navState.focusPocketRoleByIndex = map;
+    withStateMutation(() => { state.navState.focusPocketRoleByIndex = map; });
 }
 
 export function setFocusPocketRoleForIndex(index, role) {
-    if (!(state.navState.focusPocketRoleByIndex instanceof Map)) {
-        state.navState.focusPocketRoleByIndex = new Map();
-    }
-    state.navState.focusPocketRoleByIndex.set(index, role);
+    withStateMutation(() => {
+        if (!(state.navState.focusPocketRoleByIndex instanceof Map)) {
+            state.navState.focusPocketRoleByIndex = new Map();
+        }
+        state.navState.focusPocketRoleByIndex.set(index, role);
+    });
 }
 
 export function clearFocusPocketRoleByIndex() {
-    state.navState.focusPocketRoleByIndex = new Map();
+    withStateMutation(() => { state.navState.focusPocketRoleByIndex = new Map(); });
 }
 
 export function getFocusPocketMotionByIndex() {
@@ -98,7 +100,7 @@ export function clearFocusPocketMotionByIndex() {
 }
 
 export function clearFocusPocketIndices() {
-    state.navState.focusPocketIndices = [];
+    withStateMutation(() => { state.navState.focusPocketIndices = []; });
 }
 
 export function getFocusPocketMeta() {
@@ -106,11 +108,11 @@ export function getFocusPocketMeta() {
 }
 
 export function setFocusPocketMeta(meta) {
-    state.navState.focusPocketMeta = meta;
+    withStateMutation(() => { state.navState.focusPocketMeta = meta; });
 }
 
 export function clearFocusPocketMeta() {
-    state.navState.focusPocketMeta = null;
+    withStateMutation(() => { state.navState.focusPocketMeta = null; });
 }
 
 // === Apply local neighborhood focus ===
@@ -141,7 +143,7 @@ export function applyLocalNeighborhoodFocus(index) {
 
     // --- POLISH 312: Determine Personality ---
     const personality = getNeighborhoodPersonality(index);
-    state.navState.currentPersonality = personality;
+    withStateMutation(() => { state.navState.currentPersonality = personality; });
     // ------------------------------------------
 
     // Cancel any in-progress pocket animation before starting a new one

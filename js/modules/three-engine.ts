@@ -9,7 +9,7 @@ if (typeof window !== 'undefined') {
 }
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { state as _state } from '../state.js';
+import { state as _state, withStateMutation } from '../state.js';
 const state = _state as any;
 import {
     releaseFocusCameraAssist,
@@ -141,8 +141,10 @@ function detectWebGLSupport() {
 function showWebGLFallback(container: HTMLElement, detail: { supported?: boolean; reason?: string } = {}) {
     if (!container) return;
     document.body.dataset.graphicsMode = 'fallback';
-    state.scenePerformanceDiagnostics.active = false;
-    state.scenePerformanceDiagnostics.reason = detail.reason || 'webgl-unavailable';
+    withStateMutation(() => {
+        state.scenePerformanceDiagnostics.active = false;
+        state.scenePerformanceDiagnostics.reason = detail.reason || 'webgl-unavailable';
+    });
     state.scene = null;
     state.camera = null;
     state.renderer = null;
@@ -241,13 +243,13 @@ function bindWebGLContextResilience(renderer: THREE.WebGLRenderer) {
             window.cancelAnimationFrame(_rafId);
             _rafId = null;
         }
-        state.scenePerformanceDiagnostics.reason = 'webgl-context-lost';
+        withStateMutation(() => { state.scenePerformanceDiagnostics.reason = 'webgl-context-lost'; });
         showExperienceToast('Graphics context paused', 'The scene will restore automatically.');
     }, false);
 
     canvas.addEventListener('webglcontextrestored', () => {
         _webglContextLost = false;
-        state.scenePerformanceDiagnostics.reason = 'webgl-context-restored';
+        withStateMutation(() => { state.scenePerformanceDiagnostics.reason = 'webgl-context-restored'; });
         if (_webglRestoreTimer) window.clearTimeout(_webglRestoreTimer);
         _webglRestoreTimer = window.setTimeout(() => {
             _webglRestoreTimer = null;
@@ -296,7 +298,7 @@ export function initThreeJS() {
     state.scene = scene;
 
     const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
-    camera.position.set(1.5, 1.2, 2.0);
+    camera.position.set(2.05, 1.55, 2.75);
     camera.lookAt(0, 0, 0);
     webglContext.camera = camera;
     state.camera = camera;
@@ -389,9 +391,11 @@ export function initThreeJS() {
     webglContext.dirLight = dirLight;
     state.dirLight = dirLight;
 
-    state.scenePerformanceDiagnostics.active = true;
-    state.scenePerformanceDiagnostics.renderer = support.renderer;
-    state.scenePerformanceDiagnostics.vendor = support.vendor;
+    withStateMutation(() => {
+        state.scenePerformanceDiagnostics.active = true;
+        state.scenePerformanceDiagnostics.renderer = support.renderer;
+        state.scenePerformanceDiagnostics.vendor = support.vendor;
+    });
 
     const glowGeo = new THREE.SphereGeometry(3.15, 32, 16);
     const glowMat = new THREE.MeshBasicMaterial({
@@ -533,7 +537,7 @@ export function animate() {
     const sceneFrameMs = state.scenePerformanceDiagnostics.lastFrameAt
         ? Math.min(250, Math.max(0, frameNow - state.scenePerformanceDiagnostics.lastFrameAt))
         : 0;
-    state.scenePerformanceDiagnostics.lastFrameAt = frameNow;
+    withStateMutation(() => { state.scenePerformanceDiagnostics.lastFrameAt = frameNow; });
 
     updateAutoRotateSoftResume(frameNow);
     focusCameraAssistIsActive(frameNow);
@@ -672,8 +676,10 @@ export function animate() {
     if (webglContext.renderer && webglContext.scene && webglContext.camera) {
         webglContext.renderer.render(webglContext.scene, webglContext.camera);
         
-        state.scenePerformanceDiagnostics.drawCalls = webglContext.renderer.info.render.calls;
-        state.scenePerformanceDiagnostics.triangles = webglContext.renderer.info.render.triangles;
+        withStateMutation(() => {
+            state.scenePerformanceDiagnostics.drawCalls = webglContext.renderer.info.render.calls;
+            state.scenePerformanceDiagnostics.triangles = webglContext.renderer.info.render.triangles;
+        });
     }
 
     const renderEnd = performance.now();

@@ -9,7 +9,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import type { Point } from '../../types/state.js';
 import {
     getCurrentView, getNavState, getSelectedPoint,
@@ -428,7 +428,7 @@ export function exploreThreadNeighbor(index: number, options: ThreadInspectionOp
     setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason });
     dispatchNavTransition('WALK_TO', { index, fromIndex, appendHistory: !options.restoreHistory } as any);
     renderThreadInspection(index, { force: true, surface: options.surface || 'explore' });
-    state.navState.lastTraversalReason = reason;
+    withStateMutation(() => { state.navState.lastTraversalReason = reason; });
     if (getCurrentView() === 'map') {
         focusOnPoint(targetPoint, {
             fromTraversal: true,

@@ -1,12 +1,13 @@
 import { mount } from 'svelte';
 import App from './components/App.svelte';
+import { debugWarn } from './diagnostic-adapter.js';
 
 let appInstance = null;
 
 export function initAppSvelteIsland() {
     const target = document.getElementById('app-root');
     if (!target) {
-        console.warn('Svelte App target #app-root not found; skipping App rendering.');
+        debugWarn('Svelte App target #app-root not found; skipping App rendering.');
         return null;
     }
     if (appInstance) return appInstance;

@@ -30,8 +30,38 @@ const NODE_SPORE_BASE_RADIUS = 0.0019;
 const NODE_SPORE_COLOR_LIFT = new THREE.Color(SCENE_PALETTE.sporeLift);
 const THREAD_TINT_COLOR = SCENE_PALETTE.threadTint;
 
+// Reduced segment counts: at the rendered size (~2 px) the lower-poly
+// spheres read identically to the former 10x8 meshes but save ~60% of
+// triangle throughput on the GPU.
+const SPORE_SEGMENTS_VISIBLE = 6;   // was 10
+const SPORE_SEGMENTS_HIT_PROXY = 4;
+
 const _nodeSporeObject = new THREE.Object3D();
 const _nodeSporeColor = new THREE.Color();
+
+// ── Texture tracking ─────────────────────────────────────────────────────────
+// Canvas-backed CanvasTextures are GPU-heavy resources.  Track every
+// instance created during createPoints() so they can be bulk-disposed
+// on re-init or engine teardown without relying on individual state slots.
+const _trackedTextures = [];
+
+function trackTexture(texture) {
+    if (texture) _trackedTextures.push(texture);
+    return texture;
+}
+
+export function disposeTextures() {
+    for (let i = _trackedTextures.length - 1; i >= 0; i -= 1) {
+        if (_trackedTextures[i] && typeof _trackedTextures[i].dispose === 'function') {
+            _trackedTextures[i].dispose();
+        }
+    }
+    _trackedTextures.length = 0;
+    // Also clear any stale state references
+    if (state.focusBeaconTexture) { state.focusBeaconTexture = null; }
+    if (state.focusRingTexture) { state.focusRingTexture = null; }
+    if (state.focusNextCueTexture) { state.focusNextCueTexture = null; }
+}
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -81,17 +111,15 @@ export function setNodeSporeInstanceMatrix(index, targetMesh = state.nodeSporeMe
     );
     _nodeSporeObject.updateMatrix();
     targetMesh.setMatrixAt(index, _nodeSporeObject.matrix);
-    const shouldSyncHitProxy = targetMesh === state.nodeSporeMesh && state.nodeSporeHitMesh && (
-        index === state.focusedNode ||
-        state.navState.focusPocketIndices?.includes(index) ||
-        state.navState.trailNeighborIndices?.includes(index)
-    );
-    if (shouldSyncHitProxy) {
+
+    const hitProxy = state.nodeSporeHitMesh;
+    if (targetMesh === state.nodeSporeMesh && hitProxy) {
         const hitBase = NODE_SPORE_BASE_RADIUS * (0.86 + seededUnit(index, 2.7) * 0.48) * 1.85;
         _nodeSporeObject.position.set(pos.x, pos.y, pos.z);
+        _nodeSporeObject.rotation.set(0, 0, 0);
         _nodeSporeObject.scale.set(hitBase, hitBase, hitBase);
         _nodeSporeObject.updateMatrix();
-        state.nodeSporeHitMesh.setMatrixAt(index, _nodeSporeObject.matrix);
+        hitProxy.setMatrixAt(index, _nodeSporeObject.matrix);
     }
 }
 
@@ -226,7 +254,11 @@ varying float vSemanticPointBoost;`
             )
             .replace(
                 'outgoingLight = diffuseColor.rgb;',
-                `diffuseColor.a *= clamp(uRevealProgress * clamp(vSemanticPointBoost, 0.55, 1.85), 0.0, 1.0);
+                `// Soft circle mask: eliminates the default square sprite look.
+float _ptDist = length(gl_PointCoord - vec2(0.5));
+float _ptAlpha = 1.0 - smoothstep(0.28, 0.5, _ptDist);
+diffuseColor.a *= _ptAlpha;
+diffuseColor.a *= clamp(uRevealProgress * clamp(vSemanticPointBoost, 0.55, 1.85), 0.0, 1.0);
 outgoingLight = diffuseColor.rgb + vec3(0.18, 0.62, 0.56) * uGlowIntensity * 0.12;`
             );
         material.userData.shader = shader;
@@ -248,21 +280,10 @@ export function disposeNodeVisuals() {
         disposeObject3D(state.nodeSporeHitMesh);
         state.nodeSporeHitMesh = null;
     }
-    // Dispose GPU textures that are re-created on each init cycle.
-    // These are assigned to state in createPoints() but were never
-    // disposed on re-init, leaking canvas-backed CanvasTextures.
-    if (state.focusBeaconTexture) {
-        state.focusBeaconTexture.dispose();
-        state.focusBeaconTexture = null;
-    }
-    if (state.focusRingTexture) {
-        state.focusRingTexture.dispose();
-        state.focusRingTexture = null;
-    }
-    if (state.focusNextCueTexture) {
-        state.focusNextCueTexture.dispose();
-        state.focusNextCueTexture = null;
-    }
+    // Dispose all tracked GPU canvas textures via the array-based
+    // tracker (covers focusBeacon, focusRing, focusNextCue, and any
+    // future textures added via trackTexture()).
+    disposeTextures();
 
     // Also clean webglContext intermediary used by the TS module
     webglContext.pointsMesh = null;
@@ -277,11 +298,11 @@ export function disposeNodeVisuals() {
 
 export function createNodeSporeLayer() {
     if (!state.scene || !state.points?.length || !state.nodePositions?.length) return;
-    const sporeGeo = new THREE.SphereGeometry(1, 10, 8);
+    const sporeGeo = new THREE.SphereGeometry(1, SPORE_SEGMENTS_VISIBLE, SPORE_SEGMENTS_VISIBLE - 1);
     const sporeMat = new THREE.MeshPhongMaterial({
         color: 0xffffff,
-        emissive: 0x16453f,
-        emissiveIntensity: 0.34,
+        emissive: 0x2a8a7a,
+        emissiveIntensity: 0.55,
         shininess: 58,
         transparent: true,
         opacity: SCENE_ATMOSPHERE.sporeOpacity,
@@ -306,22 +327,23 @@ export function createNodeSporeLayer() {
     sporeMesh.visible = true;
     state.scene.add(sporeMesh);
 
+    const hitGeo = new THREE.SphereGeometry(1, SPORE_SEGMENTS_HIT_PROXY, SPORE_SEGMENTS_HIT_PROXY - 1);
     const hitMat = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.0,
+        opacity: 0,
         depthWrite: false
     });
-    const hitMesh = new THREE.InstancedMesh(sporeGeo, hitMat, state.points.length);
+    const hitMesh = new THREE.InstancedMesh(hitGeo, hitMat, state.points.length);
     hitMesh.name = 'node-spore-instanced-hit-proxy';
     hitMesh.frustumCulled = false;
     hitMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    for (let i = 0; i < state.points.length; i += 1) {
-        setNodeSporeInstanceMatrix(i, hitMesh, 2.4);
-    }
-    hitMesh.instanceMatrix.needsUpdate = true;
     state.nodeSporeHitMesh = hitMesh;
     webglContext.nodeSporeHitMesh = hitMesh;
+    for (let i = 0; i < state.points.length; i += 1) {
+        setNodeSporeInstanceMatrix(i, hitMesh, 1.8);
+    }
+    hitMesh.instanceMatrix.needsUpdate = true;
     state.scene.add(hitMesh);
 }
 
@@ -349,10 +371,9 @@ export function createPoints() {
         count: bounds.count
     };
 
-    const sporeTexture = createSporeTexture(THREE);
-    state.focusBeaconTexture = sporeTexture;
-    state.focusRingTexture = createFocusRingTexture(THREE);
-    state.focusNextCueTexture = createFocusNextCueTexture(THREE);
+    state.focusBeaconTexture = trackTexture(createSporeTexture(THREE));
+    state.focusRingTexture = trackTexture(createFocusRingTexture(THREE));
+    state.focusNextCueTexture = trackTexture(createFocusNextCueTexture(THREE));
 
     const hasRawBuffers = state.rawPositionsBuffer && state.rawClustersBuffer && state.rawClustersBuffer.length === state.points.length;
 

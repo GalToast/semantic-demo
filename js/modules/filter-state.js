@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import { activeClusterFilterStore, activeFiltersStore } from './stores.js';
 
 const FILTER_DEFAULTS = Object.freeze({
@@ -41,7 +41,7 @@ export function overwriteActiveFilters(nextFilters = {}) {
 export function setActiveFilter(key, value) {
     if (!FILTER_KEYS.has(key)) return false;
     const filters = ensureActiveFilters();
-    filters[key] = value;
+    withStateMutation(() => { filters[key] = value; });
     syncActiveFiltersStore();
     return true;
 }
@@ -49,7 +49,7 @@ export function setActiveFilter(key, value) {
 export function toggleActiveFilterSignal(key) {
     if (!SIGNAL_FILTER_KEYS.has(key)) return false;
     const filters = ensureActiveFilters();
-    filters[key] = !filters[key];
+    withStateMutation(() => { filters[key] = !filters[key]; });
     syncActiveFiltersStore();
     return filters[key];
 }

@@ -13,6 +13,32 @@ import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from './journ
 
 const STRAND_CONTINUITY_PHASES: Set<string> = new Set(['idle', 'preview', 'pinned', 'exploring', 'arrived', 'returning']);
 
+const _timers: Map<string, number> = new Map();
+
+export function setTimer(key: string, ms: number, callback: () => void): void {
+    clearTimer(key);
+    const id = window.setTimeout(() => {
+        _timers.delete(key);
+        callback();
+    }, ms);
+    _timers.set(key, id);
+}
+
+export function clearTimer(key: string): void {
+    const id = _timers.get(key);
+    if (id !== undefined) {
+        window.clearTimeout(id);
+        _timers.delete(key);
+    }
+}
+
+export function disposeTimers(): void {
+    for (const [, id] of _timers) {
+        window.clearTimeout(id);
+    }
+    _timers.clear();
+}
+
 interface StrandContinuityOptions {
     targetIndex?: number | null;
     fromIndex?: number | null;

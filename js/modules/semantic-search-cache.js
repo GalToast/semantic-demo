@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import { debugWarn } from './diagnostic-adapter.js';
 import * as idb from './idb-service.js';
 
@@ -61,11 +61,13 @@ function validatePayloadSchema(payload) {
 }
 
 function markSemanticSearchCache(source, key, entry = null) {
-    state.semanticSearchCacheDiagnostics.lastSource = source;
-    state.semanticSearchCacheDiagnostics.lastKey = key || null;
-    state.semanticSearchCacheDiagnostics.lastAgeMs = entry
-        ? Math.max(0, Math.round(Date.now() - entry.storedAt))
-        : null;
+    withStateMutation(() => {
+        state.semanticSearchCacheDiagnostics.lastSource = source;
+        state.semanticSearchCacheDiagnostics.lastKey = key || null;
+        state.semanticSearchCacheDiagnostics.lastAgeMs = entry
+            ? Math.max(0, Math.round(Date.now() - entry.storedAt))
+            : null;
+    });
 }
 
 export function getCachedSemanticSearchPayload(query) {

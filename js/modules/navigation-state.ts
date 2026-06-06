@@ -130,47 +130,55 @@ function navTransitionReducer(action: string, payload: Record<string, any> = {})
             } else if (fromTraversal) {
                 nextMode = 'trail';
             }
-            state.navState.mode = nextMode;
-            state.navState.focusedIndex = index;
-            if (nextMode === 'trail' || fromCanvasNode) {
-                state.activeStoryPrompt = null;
-            }
-            if (restoreHistory) {
-                // preserve existing
-            } else if (appendHistory) {
-                const history = [...((state.navState as any).explorationHistoryIndices || [])];
-                if (history[history.length - 1] !== index) history.push(index);
-                (state.navState as any).explorationHistoryIndices = history;
-            } else {
-                (state.navState as any).explorationHistoryIndices = [index];
-            }
+            withStateMutation(() => {
+                state.navState.mode = nextMode;
+                state.navState.focusedIndex = index;
+                if (nextMode === 'trail' || fromCanvasNode) {
+                    state.activeStoryPrompt = null;
+                }
+                if (restoreHistory) {
+                    // preserve existing
+                } else if (appendHistory) {
+                    const history = [...((state.navState as any).explorationHistoryIndices || [])];
+                    if (history[history.length - 1] !== index) history.push(index);
+                    (state.navState as any).explorationHistoryIndices = history;
+                } else {
+                    (state.navState as any).explorationHistoryIndices = [index];
+                }
+            });
             return { action, handled: true, mode: nextMode, noOp: false, reason: 'FOCUS_NODE reducer owns navState.mode, focusedIndex, explorationHistoryIndices' };
         }
         case NAV_TRANSITION_ACTIONS.WALK_TO: {
             const { index, fromIndex, appendHistory, restoreHistoryIndices } = payload;
-            if (Array.isArray(restoreHistoryIndices)) {
-                state.navState.walkHistoryIndices = restoreHistoryIndices.filter((value: any) => Number.isFinite(value));
-            } else if (appendHistory !== false) {
-                const history = [...(state.navState.walkHistoryIndices || [])];
-                if (Number.isFinite(fromIndex) && history[history.length - 1] !== fromIndex) history.push(fromIndex);
-                if (history[history.length - 1] !== index) history.push(index);
-                state.navState.walkHistoryIndices = history;
-            }
-            state.navState.mode = 'trail';
+            withStateMutation(() => {
+                if (Array.isArray(restoreHistoryIndices)) {
+                    state.navState.walkHistoryIndices = restoreHistoryIndices.filter((value: any) => Number.isFinite(value));
+                } else if (appendHistory !== false) {
+                    const history = [...(state.navState.walkHistoryIndices || [])];
+                    if (Number.isFinite(fromIndex) && history[history.length - 1] !== fromIndex) history.push(fromIndex);
+                    if (history[history.length - 1] !== index) history.push(index);
+                    state.navState.walkHistoryIndices = history;
+                }
+                state.navState.mode = 'trail';
+            });
             return { action, handled: true, mode: state.navState.mode, noOp: false, reason: 'WALK_TO reducer owns walkHistoryIndices; delegates traversal to journey.walkThreadNeighbor' };
         }
         case NAV_TRANSITION_ACTIONS.BACKTRACK: {
             const { step, restoreHistory } = payload;
-            if (step < 0 && restoreHistory) {
-                const history = [...(state.navState.walkHistoryIndices || [])];
-                if (history.length > 0) history.pop();
-                state.navState.walkHistoryIndices = history;
-            }
+            withStateMutation(() => {
+                if (step < 0 && restoreHistory) {
+                    const history = [...(state.navState.walkHistoryIndices || [])];
+                    if (history.length > 0) history.pop();
+                    state.navState.walkHistoryIndices = history;
+                }
+            });
             return { action, handled: true, mode: state.navState.mode, noOp: false, reason: 'BACKTRACK reducer owns walkHistoryIndices pop; delegates traversal to journey.traverseNeighbor' };
         }
         case NAV_TRANSITION_ACTIONS.RESTORE_EXPLORATION_HISTORY: {
             const { history } = payload;
-            (state.navState as any).explorationHistoryIndices = Array.isArray(history) ? history : [];
+            withStateMutation(() => {
+                (state.navState as any).explorationHistoryIndices = Array.isArray(history) ? history : [];
+            });
             return { action, handled: true, mode: state.navState.mode, noOp: false, reason: 'RESTORE_EXPLORATION_HISTORY reducer restores explorationHistoryIndices' };
         }
         default: {

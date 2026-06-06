@@ -12,6 +12,12 @@ import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.js';
 
 let routeEmbodimentReader = () => [];
 
+// Idle-note cache: prevents non-deterministic flicker when getJourneyCompassState()
+// is called repeatedly in the overview phase.  The index is re-seeded only when
+// the points array length changes (data mutation) or the cache is cold.
+let _cachedIdleIndex = -1;
+let _cachedIdlePointsLength = 0;
+
 export function registerRouteEmbodimentReader(fn) {
     routeEmbodimentReader = fn;
 }
@@ -103,8 +109,9 @@ export function getJourneyCompassState() {
         let primaryAction, secondaryAction, tertiaryAction = null;
 
         if (isSearchAnchor) {
-            primaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
-            secondaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
+            primaryAction = { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE };
+            secondaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
+            tertiaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
         } else if (isTrailStop && hasAnchor) {
             primaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
             secondaryAction = { label: 'Center on anchor', action: JOURNEY_ACTIONS.CENTER_ANCHOR, hint: 'Return to search starting point' };
@@ -177,8 +184,16 @@ export function getJourneyCompassState() {
     let isDiscovery = false;
     const isSemanticDegraded = getSemanticLaneSnapshot()?.state === 'degraded';
     if (!isSemanticDegraded && getPoints()?.length > 0) {
-        const randomIdx = Math.floor(Math.random() * getPoints().length);
-        const randomPoint = getPoints()[randomIdx];
+        // Deterministic idle pick: re-seed only when the points array length
+        // changes (data mutation) or the cache is cold.  This prevents the
+        // note from flickering on every recomputation while still giving a
+        // fresh discovery on data reload.
+        const pointsLength = getPoints().length;
+        if (_cachedIdleIndex < 0 || _cachedIdlePointsLength !== pointsLength) {
+            _cachedIdleIndex = Math.floor(Math.random() * pointsLength);
+            _cachedIdlePointsLength = pointsLength;
+        }
+        const randomPoint = getPoints()[_cachedIdleIndex];
         const snippet = getInterestingBusinessNote(randomPoint);
         if (snippet) {
             idleNote = `Discover: ${snippet}`;

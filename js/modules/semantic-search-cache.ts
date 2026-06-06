@@ -5,7 +5,7 @@
  * In-memory + IDB cache for semantic search payloads.
  */
 
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import type { SemanticSearchCacheDiagnostics } from '../../types/state.js';
 import { debugWarn } from './diagnostic-adapter.js';
 import * as idb from './idb-service.js';
@@ -88,11 +88,13 @@ function validatePayloadSchema(payload: SearchPayload): boolean {
 }
 
 function markSemanticSearchCache(source: string, key: string, entry: CacheEntry | null = null): void {
-    state.semanticSearchCacheDiagnostics.lastSource = source;
-    state.semanticSearchCacheDiagnostics.lastKey = key || null;
-    state.semanticSearchCacheDiagnostics.lastAgeMs = entry
-        ? Math.max(0, Math.round(Date.now() - entry.storedAt))
-        : null;
+    withStateMutation(() => {
+        state.semanticSearchCacheDiagnostics.lastSource = source;
+        state.semanticSearchCacheDiagnostics.lastKey = key || null;
+        state.semanticSearchCacheDiagnostics.lastAgeMs = entry
+            ? Math.max(0, Math.round(Date.now() - entry.storedAt))
+            : null;
+    });
 }
 
 export function getCachedSemanticSearchPayload(query: string): SearchPayload | null {

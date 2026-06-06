@@ -395,7 +395,7 @@ export async function init(): Promise<void> {
             clearInitSafetyValves(initContext);
             logInitTimings();
 
-            window.addEventListener('demo-complete', () => {
+            document.addEventListener('demo-complete', () => {
                 updateJourneyCompass('overview');
             });
         });

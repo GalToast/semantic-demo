@@ -14,7 +14,7 @@
 // have no state.js counterpart — sync not required.
 import { CLUSTER_COLORS } from './modules/design-tokens.js';
 
-export const _rawState = {
+const _rawState = {
     // ==== SCENE / THREE.JS ====
     points: [],
     map: null,
@@ -391,9 +391,7 @@ export const _rawState = {
         targetIndex: null,
         fromIndex: null,
         reason: '',
-        startedAt: 0,
-        arrivalTimeoutId: undefined,
-        settleTimeoutId: undefined
+        startedAt: 0
     },
     focusOrbitSlackState: {
         phase: 'idle',
@@ -424,6 +422,10 @@ export const _rawState = {
 };
 
 let _isMutating = false;
+let _devWarned = null;
+let _devProxyCache = null;
+let _prodProxyCache = null;
+let _devTrackingActive = false;
 
 export function withStateMutation(fn) {
     const prev = _isMutating;
@@ -448,69 +450,137 @@ const CRITICAL_KEYS = new Set([
     'rawClustersBuffer'
 ]);
 
-export const state = new Proxy(_rawState, {
-    set(target, prop, value) {
-        if (CRITICAL_KEYS.has(prop) && !_isMutating) {
-            throw new Error(`[State Error] Illegal direct mutation of critical property '${prop}'. You must use withStateMutation() to modify core state.`);
-        }
-        target[prop] = value;
-        return true;
-    },
-    get(target, prop) {
-        return target[prop];
-    }
-});
+const TRACKED_SUB_KEYS = new Set([
+  'navState', 'strandContinuityState', 'focusOrbitSlackState',
+  'terrainHandoffState', 'routeExplorationState', 'routeChoreographyState',
+  'inspectedStrandDiagnostics', 'arrivalHandoffDiagnostics', 'routeTraceDiagnostics',
+  'scenePerformanceDiagnostics', 'semanticSearchCacheDiagnostics', 'activeFilters'
+]);
 
-// Derived properties for state synchronization
-Object.defineProperties(_rawState, {
-    'semanticDiveMode': {
-        get: () => _rawState.trailDepth === 2,
-        set: (val) => {
-            if (val === true) _rawState.trailDepth = 2;
-            else _rawState.trailDepth = 0;
-        },
-        configurable: true,
-        enumerable: true
+// Production nested Proxy factory: mirrors dev-mode _track but scoped to
+// TRACKED_SUB_KEYS. Skips Set/Map/Date/RegExp (mutations on those are not
+// observable through plain-object Proxies).
+function _makeProdProxy(obj, path) {
+  if (!obj || typeof obj !== 'object' || obj instanceof Set || obj instanceof Map
+      || obj instanceof Date || obj instanceof RegExp) return obj;
+  if (_prodProxyCache?.has(obj)) return _prodProxyCache.get(obj);
+  const proxy = new Proxy(obj, {
+    set(t, p, v, r) {
+      if (!_isMutating) {
+        const k = path + '.' + String(p);
+        if (_devWarned) {
+          if (!_devWarned.has(k)) {
+            console.warn('[State Bypass] ' + k + ' — use withStateMutation() to modify tracked sub-state');
+            _devWarned.add(k);
+          }
+        }
+        throw new Error(`[State Error] Illegal direct mutation of tracked sub-property '${k}'. You must use withStateMutation() to modify core state.`);
+      }
+      return Reflect.set(t, p, v, r);
     },
-    'focusedNode': {
-        get: () => _rawState.navState?.focusedIndex ?? null,
-        set: (val) => {
-            if (_rawState.navState) {
-                _rawState.navState.focusedIndex = val;
-            }
-        },
-        configurable: true,
-        enumerable: true
+    get(t, p) {
+      const v = t[p];
+      if (v && typeof v === 'object' && !(v instanceof Set) && !(v instanceof Map)
+          && !(v instanceof Date) && !(v instanceof RegExp)) {
+        return _makeProdProxy(v, path + '.' + String(p));
+      }
+      return v;
     }
+  });
+  _prodProxyCache?.set(obj, proxy);
+  return proxy;
+}
+
+export const state = new Proxy(_rawState, {
+  set(target, prop, value, receiver) {
+    if (CRITICAL_KEYS.has(prop) && !_isMutating) {
+      throw new Error(`[State Error] Illegal direct mutation of critical property '${prop}'. You must use withStateMutation() to modify core state.`);
+    }
+    if (TRACKED_SUB_KEYS.has(prop) && !_isMutating && _devWarned) {
+      const k = 'state.' + String(prop);
+      if (!_devWarned.has(k)) {
+        console.warn('[State Bypass] ' + k + ' — wholesale reassignment detected; use store .update()');
+        _devWarned.add(k);
+      }
+    }
+    // Derived properties: route writes through the canonical raw state
+    // properties so all mutations flow through this Proxy trap.
+    if (prop === 'semanticDiveMode') {
+      target.trailDepth = value === true ? 2 : 0;
+      return true;
+    }
+    if (prop === 'focusedNode') {
+      if (target.navState) {
+        target.navState.focusedIndex = value;
+      }
+      return true;
+    }
+    return Reflect.set(target, prop, value, receiver);
+  },
+  get(target, prop) {
+    // Derived property reads: compute from canonical raw state.
+    if (prop === 'semanticDiveMode') {
+      return target.trailDepth === 2;
+    }
+    if (prop === 'focusedNode') {
+      return target.navState?.focusedIndex ?? null;
+    }
+    const value = target[prop];
+    // Production nested Proxy for TRACKED_SUB_KEYS: catches sub-object property
+    // bypass mutations (e.g., state.navState.mode = 'focus' without withStateMutation).
+    // Skipped when dev-mode deep tracking is active (it replaces _rawState entries
+    // with recursive Proxies at init time, avoiding double-Proxying).
+    if (!_devTrackingActive && TRACKED_SUB_KEYS.has(prop) && value && typeof value === 'object') {
+      return _makeProdProxy(value, 'state.' + String(prop));
+    }
+    return value;
+  }
 });
 
 if (typeof window !== 'undefined') {
-    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (isDev) {
-        const _warned = new Set();
-        const _track = (obj, path) => {
-            if (!obj || typeof obj !== 'object' || obj instanceof Set || obj instanceof Map) return obj;
-            return new Proxy(obj, {
-                set(t, p, v) {
-                    const k = path + '.' + String(p);
-                    if (!_warned.has(k)) { console.warn('[State Bypass] ' + k + ' — use store .update()'); _warned.add(k); }
-                    t[p] = v; return true;
-                },
-                get(t, p) {
-                    const v = t[p];
-                    if (v && typeof v === 'object' && !(v instanceof Set) && !(v instanceof Map)) return _track(v, path + '.' + String(p));
-                    return v;
-                }
-            });
-        };
-        if (_rawState.navState) _rawState.navState = _track(_rawState.navState, 'state.navState');
-        if (_rawState.strandContinuityState) _rawState.strandContinuityState = _track(_rawState.strandContinuityState, 'state.strandContinuityState');
-        if (_rawState.focusOrbitSlackState) _rawState.focusOrbitSlackState = _track(_rawState.focusOrbitSlackState, 'state.focusOrbitSlackState');
-        if (_rawState.terrainHandoffState) _rawState.terrainHandoffState = _track(_rawState.terrainHandoffState, 'state.terrainHandoffState');
-        if (_rawState.routeExplorationState) _rawState.routeExplorationState = _track(_rawState.routeExplorationState, 'state.routeExplorationState');
-        if (_rawState.routeChoreographyState) _rawState.routeChoreographyState = _track(_rawState.routeChoreographyState, 'state.routeChoreographyState');
-        if (_rawState.inspectedStrandDiagnostics) _rawState.inspectedStrandDiagnostics = _track(_rawState.inspectedStrandDiagnostics, 'state.inspectedStrandDiagnostics');
-        if (_rawState.arrivalHandoffDiagnostics) _rawState.arrivalHandoffDiagnostics = _track(_rawState.arrivalHandoffDiagnostics, 'state.arrivalHandoffDiagnostics');
-        if (_rawState.routeTraceDiagnostics) _rawState.routeTraceDiagnostics = _track(_rawState.routeTraceDiagnostics, 'state.routeTraceDiagnostics');
-    }
+  // Production nested Proxy requires _devWarned for bypass logging.
+  _devWarned = new Set();
+  _prodProxyCache = new WeakMap();
+  // Deep tracking activates on localhost by default, or via runtime flag for
+  // canary sessions in production: window.__semanticDevTools = { deepTrack: true }.
+  const isDev = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      || window.__semanticDevTools?.deepTrack;
+  if (isDev) {
+    _devTrackingActive = true;
+    _devProxyCache = new WeakMap();
+    let _mapSetWarned = false;
+    const _track = (obj, path) => {
+      if (!obj || typeof obj !== 'object') return obj;
+      // Map/Set: mutations (.set/.delete/.add) are not observable through
+      // plain-object Proxies. Log once per session so devs know the limit.
+      if (obj instanceof Set || obj instanceof Map) {
+        if (!_mapSetWarned) {
+          console.warn('[State] Map/Set instances in TRACKED_SUB_KEYS are not deep-tracked. '
+            + 'Mutations to .set/.delete/.add bypass the Proxy.');
+          _mapSetWarned = true;
+        }
+        return obj;
+      }
+      if (_devProxyCache.has(obj)) return _devProxyCache.get(obj);
+      const proxy = new Proxy(obj, {
+        set(t, p, v) {
+          const k = path + '.' + String(p);
+          if (!_devWarned.has(k)) { console.warn('[State Bypass] ' + k + ' — use store .update()'); _devWarned.add(k); }
+          t[p] = v; return true;
+        },
+        get(t, p) {
+          if (p === '__target__') return t;
+          const v = t[p];
+          if (v && typeof v === 'object' && !(v instanceof Set) && !(v instanceof Map)) return _track(v, path + '.' + String(p));
+          return v;
+        }
+      });
+      _devProxyCache.set(obj, proxy);
+      return proxy;
+    };
+    const _trackSub = (key) => {
+      if (_rawState[key] !== null && _rawState[key] !== undefined) _rawState[key] = _track(_rawState[key], 'state.' + key);
+    };
+    TRACKED_SUB_KEYS.forEach(_trackSub);
+  }
 }

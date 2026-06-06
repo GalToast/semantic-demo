@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import { subscribeKeyed, EVENTS } from './event-bus.js';
 import { pointHasGeocode, isPointVisible } from './utils/geo-data.js';
 import { formatBusinessName } from './utils/dom-formatters.js';
@@ -6,6 +6,7 @@ import { showExperienceToast, focusOnPoint } from './lifecycle.js';
 import { hideTooltip } from './tooltip.js';
 import { hideViewHandoff } from './view-controller.js';
 import { isMobileViewport } from './environment.js';
+import { debugWarn } from './diagnostic-adapter.js';
 
 // js/modules/map-state.js
 
@@ -84,7 +85,7 @@ export async function initMap() {
         try {
             state.map.remove();
         } catch (error) {
-            console.warn('Removing stale map instance failed:', error);
+            debugWarn('Removing stale map instance failed:', error);
         }
         state.map = null;
         state.markersLayer = null;
@@ -116,7 +117,7 @@ export async function initMap() {
                 maxZoom: 19
             }).addTo(state.map);
         } catch (err) {
-            console.warn('tileLayer addTo failed:', err);
+            debugWarn('tileLayer addTo failed:', err);
         }
 
         state.markersLayer = window.L.layerGroup().addTo(state.map);
@@ -200,20 +201,26 @@ export function getMapRoutePoints() {
 
 export function refreshMapRouteEmbodiment() {
     if (!state.map || !state.mapRouteLayer) {
-        state.routeTraceDiagnostics.mapPointCount = 0;
-        state.routeTraceDiagnostics.mapPathActive = false;
+        withStateMutation(() => {
+            state.routeTraceDiagnostics.mapPointCount = 0;
+            state.routeTraceDiagnostics.mapPathActive = false;
+        });
         return;
     }
     state.mapRouteLayer.clearLayers();
     if (state.currentView !== 'map') {
-        state.routeTraceDiagnostics.mapPointCount = 0;
-        state.routeTraceDiagnostics.mapPathActive = false;
+        withStateMutation(() => {
+            state.routeTraceDiagnostics.mapPointCount = 0;
+            state.routeTraceDiagnostics.mapPathActive = false;
+        });
         return;
     }
 
     const routePoints = getMapRoutePoints();
-    state.routeTraceDiagnostics.mapPointCount = routePoints.length;
-    state.routeTraceDiagnostics.mapPathActive = routePoints.length >= 2;
+    withStateMutation(() => {
+        state.routeTraceDiagnostics.mapPointCount = routePoints.length;
+        state.routeTraceDiagnostics.mapPathActive = routePoints.length >= 2;
+    });
     if (!routePoints.length) {
         // SD-001 fix: Do NOT show empty-map message if trail state is active.
         // During terrain prelude (~1200ms) or deferred hydration, getRouteEmbodimentIndices()

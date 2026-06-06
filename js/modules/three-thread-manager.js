@@ -1,6 +1,6 @@
 import { webglContext } from './webgl-context.js';
 import * as THREE from 'three';
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import {
     buildGeometricMyceliumEdges,
     buildSemanticMyceliumEdges,
@@ -41,7 +41,7 @@ function createLineSegments(positions, colors, opacity) {
         transparent: true,
         opacity,
         linewidth: 1,
-        depthWrite: false,
+        depthWrite: true,
         blending: THREE.AdditiveBlending
     }));
 }
@@ -74,7 +74,7 @@ export function getThreadOpacityEnvelope() {
 export function getMyceliumPresentationProfile() {
     const currentMode = getNavigationMode();
     if (currentMode === 'overview' || currentMode === undefined) {
-        return { core: 0.112, wispy: 0.047, bridge: 0.068, pulse: 0.022 };
+        return { core: 0.18, wispy: 0.09, bridge: 0.12, pulse: 0.022 };
     }
     if (state.focusedNode !== null && state.focusedNode !== undefined) {
         return { core: 0.14, wispy: 0.045, bridge: 0.07, pulse: 0.006 };
@@ -213,7 +213,9 @@ export function createMycelium() {
     if (!state.scene) return;
     state.pointsMesh.add(state.myceliumGroup);
 
-    state.scenePerformanceDiagnostics.myceliumCoreSegments = coreConnections.length / 6;
-    state.scenePerformanceDiagnostics.myceliumWispySegments = wispyConnections.length / 6;
-    state.scenePerformanceDiagnostics.myceliumBridgeSegments = bridgeConnections.length / 6;
+    withStateMutation(() => {
+        state.scenePerformanceDiagnostics.myceliumCoreSegments = coreConnections.length / 6;
+        state.scenePerformanceDiagnostics.myceliumWispySegments = wispyConnections.length / 6;
+        state.scenePerformanceDiagnostics.myceliumBridgeSegments = bridgeConnections.length / 6;
+    });
 }

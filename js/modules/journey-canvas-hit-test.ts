@@ -56,7 +56,10 @@ export function isThreadCandidateVisibleOnCanvas(index: number, margin: number =
     if (!position || !camera || !canvas?.getBoundingClientRect) return true;
 
     const rect = canvas.getBoundingClientRect();
-    const projection = new THREE.Vector3(position.x, position.y, position.z).project(camera);
+    const worldPosition = new THREE.Vector3(position.x, position.y, position.z);
+    const pointsMesh = state.pointsMesh as { localToWorld?: (v: THREE.Vector3) => void } | null;
+    if (pointsMesh?.localToWorld) pointsMesh.localToWorld(worldPosition);
+    const projection = worldPosition.project(camera);
     if (projection.z < -1 || projection.z > 1) return false;
 
     const screenX = ((projection.x + 1) / 2) * rect.width + rect.left;
@@ -126,7 +129,7 @@ function getFocusThreadScreenCandidates(): FocusThreadScreenCandidate[] {
                 screenX,
                 screenY,
                 inViewport,
-                canvasReachable: element === canvas,
+                canvasReachable: !element || element === canvas || canvas.contains(element),
                 distanceFromFocus: distFocus,
                 score: 0,
                 semanticScore: 0,

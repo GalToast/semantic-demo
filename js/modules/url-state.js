@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import { subscribe, publish, EVENTS } from './event-bus.js';
 import {
     MODE_DESCRIPTIONS,
@@ -13,6 +13,7 @@ import {
 import { switchView } from './view-controller.js';
 import { recordSemanticLaneSnapshot, setSemanticLaneOpsMode, refreshSemanticLaneOpsSummary } from './semantic-lane.js';
 import { isPointVisible } from './utils/geo-data.js';
+import { debugWarn } from './diagnostic-adapter.js';
 import { formatBusinessName, escapeHtml } from './utils/dom-formatters.js';
 import { restoreActiveFiltersFromUrl, restoreActiveClusterFilterFromUrl } from './filter-state.js';
 import {
@@ -61,7 +62,7 @@ async function applyUrlStateFromDeferred() {
                 offset
             });
         } catch (err) {
-            console.warn('Deferred URL state restore failed:', err);
+            debugWarn('Deferred URL state restore failed:', err);
         }
     }
 
@@ -75,14 +76,16 @@ async function applyUrlStateFromDeferred() {
 export function clearExplorationFocusSelection() {
     state.focusedNode = null;
     state.selectedPoint = null;
-    state.navState.focusedIndex = null;
+    withStateMutation(() => { state.navState.focusedIndex = null; });
     if (state.trailIndices?.clear) state.trailIndices.clear();
 }
 
 export function resetStateBeforeUrlRestore(options = {}) {
     clearExplorationFocusSelection();
-    state.navState.mode = 'overview';
-    state.navState.trailDepth = 0;
+    withStateMutation(() => {
+        state.navState.mode = 'overview';
+        state.navState.trailDepth = 0;
+    });
     state.currentSearchSummary = null;
     setCurrentView('galaxy');
     state.trailDepth = 0;
@@ -124,7 +127,7 @@ export async function applyUrlState(options = {}) {
                 repairedUrl
             );
         } catch (err) {
-            console.warn('url-state replaceState failed:', err);
+            debugWarn('url-state replaceState failed:', err);
         }
     }
 
@@ -324,7 +327,7 @@ export function updateUrlState(extra = {}, options = {}) {
     try {
         window.history[method](historyState, '', next);
     } catch (err) {
-        if (err.name !== 'SecurityError') console.warn('updateUrlState history call failed:', err);
+        if (err.name !== 'SecurityError') debugWarn('updateUrlState history call failed:', err);
     }
 }
 
@@ -424,7 +427,7 @@ export async function copyCurrentViewLink() {
         await navigator.clipboard.writeText(href);
     } catch (err) {
         // Clipboard access can fail with SecurityError or AbortError — do not throw through UI.
-        console.warn('Clipboard write failed:', err);
+        debugWarn('Clipboard write failed:', err);
         showExperienceToast('Copy unavailable', 'Could not write to clipboard.');
         return null;
     }

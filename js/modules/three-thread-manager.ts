@@ -1,6 +1,6 @@
 import { webglContext } from './webgl-context.js';
 import * as THREE from 'three';
-import { state as _state } from '../state.js';
+import { state as _state, withStateMutation } from '../state.js';
 const state = _state as any;
 import {
     buildGeometricMyceliumEdges,
@@ -209,7 +209,9 @@ export function createMycelium() {
     if (!webglContext.scene) return;
     webglContext.pointsMesh.add(webglContext.myceliumGroup);
 
-    state.scenePerformanceDiagnostics.myceliumCoreSegments = coreConnections.length / 6;
-    state.scenePerformanceDiagnostics.myceliumWispySegments = wispyConnections.length / 6;
-    state.scenePerformanceDiagnostics.myceliumBridgeSegments = bridgeConnections.length / 6;
+    withStateMutation(() => {
+        state.scenePerformanceDiagnostics.myceliumCoreSegments = coreConnections.length / 6;
+        state.scenePerformanceDiagnostics.myceliumWispySegments = wispyConnections.length / 6;
+        state.scenePerformanceDiagnostics.myceliumBridgeSegments = bridgeConnections.length / 6;
+    });
 }

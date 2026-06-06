@@ -5,7 +5,7 @@
  * Manages Leaflet map initialization, marker refresh, route embodiment,
  * terrain handoff, and route director state synchronization.
  */
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import { subscribeKeyed, EVENTS } from './event-bus.js';
 import { pointHasGeocode, isPointVisible } from './utils/geo-data.js';
 import { formatBusinessName } from './utils/dom-formatters.js';
@@ -255,20 +255,26 @@ export function getMapRoutePoints(): Array<{ index: number; point: Point }> {
 
 export function refreshMapRouteEmbodiment(): void {
     if (!state.map || !state.mapRouteLayer) {
-        state.routeTraceDiagnostics.mapPointCount = 0;
-        state.routeTraceDiagnostics.mapPathActive = false;
+        withStateMutation(() => {
+            state.routeTraceDiagnostics.mapPointCount = 0;
+            state.routeTraceDiagnostics.mapPathActive = false;
+        });
         return;
     }
     (state.mapRouteLayer as { clearLayers(): void }).clearLayers();
     if (state.currentView !== 'map') {
-        state.routeTraceDiagnostics.mapPointCount = 0;
-        state.routeTraceDiagnostics.mapPathActive = false;
+        withStateMutation(() => {
+            state.routeTraceDiagnostics.mapPointCount = 0;
+            state.routeTraceDiagnostics.mapPathActive = false;
+        });
         return;
     }
 
     const routePoints = getMapRoutePoints();
-    state.routeTraceDiagnostics.mapPointCount = routePoints.length;
-    state.routeTraceDiagnostics.mapPathActive = routePoints.length >= 2;
+    withStateMutation(() => {
+        state.routeTraceDiagnostics.mapPointCount = routePoints.length;
+        state.routeTraceDiagnostics.mapPathActive = routePoints.length >= 2;
+    });
     if (!routePoints.length) {
         // SD-001 fix: Do NOT show empty-map message if trail state is active.
         const trailStateActive = document.body?.dataset?.trailState === 'active';

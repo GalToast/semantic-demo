@@ -178,32 +178,34 @@ function navTransitionReducer(action, payload = {}) {
                 restoreHistory
             } = payload;
 
-            // Compute resulting mode
             let nextMode = 'focus';
-            if (preserveMode && state.navState.mode) {
-                nextMode = state.navState.mode;
-            } else if (fromTraversal) {
-                nextMode = 'trail';
-            }
+            withStateMutation(() => {
+                // Compute resulting mode
+                if (preserveMode && state.navState.mode) {
+                    nextMode = state.navState.mode;
+                } else if (fromTraversal) {
+                    nextMode = 'trail';
+                }
 
-            state.navState.mode = nextMode;
-            state.navState.focusedIndex = index;
+                state.navState.mode = nextMode;
+                state.navState.focusedIndex = index;
 
-            // activeStoryPrompt clearing: mirrors focusOnNode behavior
-            if (nextMode === 'trail' || fromCanvasNode) {
-                state.activeStoryPrompt = null;
-            }
+                // activeStoryPrompt clearing: mirrors focusOnNode behavior
+                if (nextMode === 'trail' || fromCanvasNode) {
+                    state.activeStoryPrompt = null;
+                }
 
-            // explorationHistoryIndices: owned by FOCUS_NODE reducer
-            if (restoreHistory) {
-                // preserve existing
-            } else if (appendHistory) {
-                const history = [...(state.navState.explorationHistoryIndices || [])];
-                if (history[history.length - 1] !== index) history.push(index);
-                state.navState.explorationHistoryIndices = history;
-            } else {
-                state.navState.explorationHistoryIndices = [index];
-            }
+                // explorationHistoryIndices: owned by FOCUS_NODE reducer
+                if (restoreHistory) {
+                    // preserve existing
+                } else if (appendHistory) {
+                    const history = [...(state.navState.explorationHistoryIndices || [])];
+                    if (history[history.length - 1] !== index) history.push(index);
+                    state.navState.explorationHistoryIndices = history;
+                } else {
+                    state.navState.explorationHistoryIndices = [index];
+                }
+            });
 
             return {
                 action,
@@ -216,17 +218,19 @@ function navTransitionReducer(action, payload = {}) {
 
         case NAV_TRANSITION_ACTIONS.WALK_TO: {
             const { index, fromIndex, appendHistory, restoreHistoryIndices } = payload;
-            if (Array.isArray(restoreHistoryIndices)) {
-                state.navState.walkHistoryIndices = restoreHistoryIndices
-                    .filter((value) => Number.isFinite(value));
-            } else if (appendHistory !== false) {
-                // Owner of walkHistoryIndices — canonical push
-                const history = [...(state.navState.walkHistoryIndices || [])];
-                if (Number.isFinite(fromIndex) && history[history.length - 1] !== fromIndex) history.push(fromIndex);
-                if (history[history.length - 1] !== index) history.push(index);
-                state.navState.walkHistoryIndices = history;
-            }
-            state.navState.mode = 'trail';
+            withStateMutation(() => {
+                if (Array.isArray(restoreHistoryIndices)) {
+                    state.navState.walkHistoryIndices = restoreHistoryIndices
+                        .filter((value) => Number.isFinite(value));
+                } else if (appendHistory !== false) {
+                    // Owner of walkHistoryIndices — canonical push
+                    const history = [...(state.navState.walkHistoryIndices || [])];
+                    if (Number.isFinite(fromIndex) && history[history.length - 1] !== fromIndex) history.push(fromIndex);
+                    if (history[history.length - 1] !== index) history.push(index);
+                    state.navState.walkHistoryIndices = history;
+                }
+                state.navState.mode = 'trail';
+            });
             return {
                 action,
                 handled: true,
@@ -238,14 +242,16 @@ function navTransitionReducer(action, payload = {}) {
 
         case NAV_TRANSITION_ACTIONS.BACKTRACK: {
             const { step, restoreHistory } = payload;
-            if (step < 0 && restoreHistory) {
-                // Owner of walkHistoryIndices — canonical pop
-                const history = [...(state.navState.walkHistoryIndices || [])];
-                if (history.length > 0) {
-                    history.pop(); // remove the current position, leaving prior position
+            withStateMutation(() => {
+                if (step < 0 && restoreHistory) {
+                    // Owner of walkHistoryIndices — canonical pop
+                    const history = [...(state.navState.walkHistoryIndices || [])];
+                    if (history.length > 0) {
+                        history.pop(); // remove the current position, leaving prior position
+                    }
+                    state.navState.walkHistoryIndices = history;
                 }
-                state.navState.walkHistoryIndices = history;
-            }
+            });
             return {
                 action,
                 handled: true,
@@ -257,7 +263,9 @@ function navTransitionReducer(action, payload = {}) {
 
         case NAV_TRANSITION_ACTIONS.RESTORE_EXPLORATION_HISTORY: {
             const { history } = payload;
-            state.navState.explorationHistoryIndices = Array.isArray(history) ? history : [];
+            withStateMutation(() => {
+                state.navState.explorationHistoryIndices = Array.isArray(history) ? history : [];
+            });
             return {
                 action,
                 handled: true,
