@@ -6,7 +6,6 @@
  */
 import { mount, unmount } from 'svelte';
 import App from './App.svelte';
-import { initViewportListeners } from '@lib/stores/viewport';
 import { testState } from '@lib/stores/index';
 
 // ── URL parameter initialization ──────────────────────────────────────────────
@@ -22,9 +21,6 @@ function parseUrlParams(): { forceDemo: boolean; noDemo: boolean } {
 // ── Mount ─────────────────────────────────────────────────────────────────────
 
 const { forceDemo, noDemo } = parseUrlParams();
-
-// Initialize viewport listeners (resize, reduced-motion)
-const cleanupViewport = initViewportListeners();
 
 // Mount the Svelte 5 app
 const app = mount(App, {
@@ -51,7 +47,6 @@ const unsubTestState = testState.subscribe((value) => {
 
 window.addEventListener('beforeunload', () => {
   unsubTestState();
-  cleanupViewport();
   unmount(app);
 });
 

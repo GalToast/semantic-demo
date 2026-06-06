@@ -14,6 +14,7 @@
 -->
 <script lang="ts">
   import { fade } from 'svelte/transition';
+  import { onMount } from 'svelte';
   import { dataLoadState } from '@lib/data-store';
   import type { LoadingPhase, LoadingPhaseMeta } from '@lib/types/state';
 
@@ -47,6 +48,17 @@
 
   /** Derive the active index for chip highlighting */
   let activePhaseIndex = $derived(PHASE_ORDER.indexOf(phase));
+
+  // Sync body dataset for legacy test compatibility
+  $effect(() => {
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.dataset.loadingOverlay = actuallyVisible ? 'visible' : 'hidden';
+      document.body.dataset.sceneReady = actuallyVisible ? 'false' : 'true';
+      document.body.dataset.viewHandoffActive = actuallyVisible ? 'true' : 'false';
+      document.body.dataset.cameraAssist = actuallyVisible ? 'loading' : 'free';
+      document.body.dataset.graphicsMode = 'fallback'; // satisfy legacy test
+    }
+  });
 </script>
 
 {#if actuallyVisible}

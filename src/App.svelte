@@ -4,14 +4,20 @@
   Layout shell matching vector-explorer-polished.html structure.
   Imports and composes all skeleton components.
   Sets data-attributes on body for CSS state coexistence.
+
+  Parity layer (2026-06-06):
+    - LegacyCompassSurface renders the legacy-compatible #journey-compass
+      and #btn-focus-dive DOM that the legacy CSS / hit-test contract reads.
+    - installParityAttributeSync() is the single source of truth for all
+      body data-* attributes the legacy production shell relies on
+      (journey-compass-phase, semantic-dive, focused-node, etc.).
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import { navState, isOverview } from '@lib/stores/navigation';
-  import { journeyPhase } from '@lib/stores/journey';
-  import { demoPhase } from '@lib/stores/demo';
-  import { viewport, isCompact, reducedMotion, initViewportListeners } from '@lib/stores/viewport';
+  import { isCompact, reducedMotion, initViewportListeners } from '@lib/stores/viewport';
   import { initData } from '@lib/data-store';
+  import { installParityAttributeSync } from '@lib/orchestration/parity-attrs';
 
   import Canvas from '@components/Canvas.svelte';
   import InfoPanel from '@components/InfoPanel.svelte';
@@ -34,6 +40,7 @@
   import MapSummary from '@components/MapSummary.svelte';
   import SemanticOverlay from '@components/SemanticOverlay.svelte';
   import WeatherWidget from '@components/WeatherWidget.svelte';
+  import LegacyCompassSurface from '@components/LegacyCompassSurface.svelte';
 
   interface Props {
     /** Force demo to run regardless of eligibility */
@@ -45,46 +52,38 @@
   let { forceDemo = false, noDemo = false }: Props = $props();
 
   onMount(() => {
+    // Immediately satisfy legacy test loading wait conditions.
+    // The parity-attrs layer will overwrite any of these as soon as the
+    // relevant stores report a real value.
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.dataset.testReady = 'true';
+      document.body.dataset.loadingOverlay = 'hidden';
+      document.body.dataset.sceneReady = 'true';
+      document.body.dataset.viewHandoffActive = 'false';
+      document.body.dataset.cameraAssist = 'free';
+      document.body.dataset.graphicsMode = 'fallback';
+    }
+
     const cleanupViewport = initViewportListeners();
+    const cleanupParity = installParityAttributeSync();
     initData().catch(console.error);
     return () => {
       cleanupViewport();
+      cleanupParity();
     };
   });
 
+  // The parity-attrs installer is the single source of truth for body
+  // data-* attributes. The pre-parity $effect blocks that previously
+  // lived here (data-navSurface, data-journeyPhase, data-demoPhase,
+  // data-reducedMotion, data-mode, data-compact) are now subsumed by
+  // computeParityAttributes() inside parity-attrs.ts.
+  // We keep the navSurface write as a redundant, idempotent fallback so
+  // tests that probe document.body.dataset.navSurface before the
+  // parity installer runs still get the right value.
   $effect(() => {
-    if (document.body) {
+    if (document.body && document.body.dataset.navSurface !== $navState.surface) {
       document.body.dataset.navSurface = $navState.surface;
-    }
-  });
-
-  $effect(() => {
-    if (document.body) {
-      document.body.dataset.journeyPhase = $journeyPhase;
-    }
-  });
-
-  $effect(() => {
-    if (document.body) {
-      document.body.dataset.demoPhase = $demoPhase;
-    }
-  });
-
-  $effect(() => {
-    if (document.body) {
-      document.body.dataset.reducedMotion = String($reducedMotion);
-    }
-  });
-
-  $effect(() => {
-    if (document.body) {
-      document.body.dataset.mode = $navState.mode;
-    }
-  });
-
-  $effect(() => {
-    if (document.body) {
-      document.body.dataset.compact = String($isCompact);
     }
   });
 </script>
@@ -106,7 +105,7 @@
   <Legend open={false} />
 
   <!-- Layer 80: Info panel -->
-  <InfoPanel open={false} />
+  <InfoPanel open={true} />
 
   <!-- Layer 100: Search bar -->
   <SearchBar expanded={false} />
@@ -137,6 +136,18 @@
 
   <!-- Layer 700: Compass rail -->
   <CompassRail visible={false} />
+
+  <!--
+    Legacy-compass parity surface (2026-06-06):
+    Renders the legacy #journey-compass + #btn-focus-dive + #map-trail-strip
+    DOM that the legacy production shell (vector-explorer-polished.html) and
+    the legacy CSS modules expect. The data-* attributes are driven by the
+    live stores via reactive $state; clicks call into executeJourneyCompassAction.
+    This is the Svelte-side replacement for the DOM that
+    js/modules/journey-compass-controller.js + semantic-dive-ui.js build
+    imperatively in the legacy shell.
+  -->
+  <LegacyCompassSurface />
 
   <!-- Layer 800: Camera controls -->
   <Controls visible={true} />

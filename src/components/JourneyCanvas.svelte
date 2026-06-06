@@ -86,11 +86,13 @@
   id="canvas-container"
   style="z-index: var(--z-canvas)"
 >
+  <!-- svelte-ignore a11y_no_interactive_element_to_noninteractive_role -->
   <canvas
     bind:this={canvasEl}
     class="journey-canvas-el"
     width={$viewportWidth * $dpr}
     height={$viewportHeight * $dpr}
+    role="application"
     aria-label="3D semantic business explorer"
     tabindex={interactive ? 0 : -1}
   ></canvas>

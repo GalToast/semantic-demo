@@ -3,9 +3,23 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { demoState, demoPhase, isDemoActive, startDemo, cancelDemo, transitionDemo, setDemoTimer, cancelAllDemoTimers } from '@lib/stores/demo';
-  import { navState } from '@lib/stores/navigation';
-  import { viewport } from '@lib/stores/viewport';
+  import {
+    demoPhase,
+    isDemoActive,
+    startDemo,
+    cancelDemo,
+    transitionDemo,
+    setDemoTimer,
+    cancelAllDemoTimers,
+    findDemoNode,
+    shouldRunDemo,
+    markDemoCompleted,
+    markDemoSessionSkipped,
+    DEMO_TIMING,
+    DEMO_START_DELAY_MS,
+    MAX_START_RETRIES
+  } from '@lib/stores/demo';
+  import { businessRecords } from '@lib/data-store';
   import type { DemoPhase } from '@lib/types/state';
 
   interface Props {
@@ -16,6 +30,9 @@
   let { force = false, suppress = false }: Props = $props();
 
   let eligible = $state(true);
+
+  const FORCED_START_DELAY_MS = 800;
+  const RETRY_START_DELAY_MS = 250;
 
   const phaseLabels: Record<DemoPhase, string> = {
     IDLE: '',
@@ -29,45 +46,73 @@
     CANCELLED: ''
   };
 
-  onMount(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const forceDemo = urlParams.get('demo') === 'force';
-    const noDemo = urlParams.get('nodemo') === '1';
+  function completeDemo() {
+    transitionDemo('COMPLETE');
+    markDemoCompleted();
+    markDemoSessionSkipped('completed');
+  }
 
-    if (noDemo || suppress) { eligible = false; return; }
+  function dismissDemo() {
+    markDemoSessionSkipped('dismissed');
+    cancelDemo();
+  }
 
-    const hasSeenDemo = localStorage.getItem('moco_mycelium_demo_v1');
-    if (hasSeenDemo && !forceDemo && !force) { eligible = false; return; }
+  function runDemoSequence() {
+    setDemoTimer('gliding', DEMO_TIMING.GLIDING_MS, () => {
+      transitionDemo('ARRIVED');
 
-    setDemoTimer('start-delay', 800, () => {
-      const nodeIndex = Math.floor(Math.random() * 8406);
-      startDemo(nodeIndex);
-
-      setDemoTimer('gliding', 1400, () => {
-        transitionDemo('ARRIVED');
+      setDemoTimer('arrived', DEMO_TIMING.ARRIVED_HOLD_MS, () => {
         transitionDemo('CARD_VISIBLE');
 
-        setDemoTimer('card-visible', 1800, () => {
+        setDemoTimer('card-visible', DEMO_TIMING.CARD_VISIBLE_MS, () => {
           transitionDemo('PULLBACK');
-          transitionDemo('WIDE_VIEW');
 
-          setDemoTimer('wide-view', 1000, () => {
-            transitionDemo('RETURNING');
+          setDemoTimer('pullback', DEMO_TIMING.PULLBACK_MS, () => {
+            transitionDemo('WIDE_VIEW');
 
-            setDemoTimer('returning', 1000, () => {
-              transitionDemo('COMPLETE');
-              localStorage.setItem('moco_mycelium_demo_v1', '1');
-              sessionStorage.setItem('moco_mycelium_demo_session_v1', '1');
+            setDemoTimer('wide-view', DEMO_TIMING.WIDE_VIEW_HOLD_MS, () => {
+              transitionDemo('RETURNING');
+
+              setDemoTimer('returning', DEMO_TIMING.RETURNING_MS, completeDemo);
             });
           });
         });
       });
     });
+  }
+
+  function attemptStart(remainingAttempts = MAX_START_RETRIES) {
+    const nodeIndex = findDemoNode($businessRecords);
+    if (nodeIndex === null) {
+      if (remainingAttempts <= 0) {
+        eligible = false;
+        return;
+      }
+      setDemoTimer('start-retry', RETRY_START_DELAY_MS, () => attemptStart(remainingAttempts - 1));
+      return;
+    }
+
+    if (startDemo(nodeIndex)) {
+      runDemoSequence();
+    }
+  }
+
+  onMount(() => {
+    if (suppress || (!force && !shouldRunDemo())) {
+      eligible = false;
+      return;
+    }
+
+    setDemoTimer('start-delay', force ? FORCED_START_DELAY_MS : DEMO_START_DELAY_MS, () => {
+      attemptStart();
+    });
   });
 
   onDestroy(() => {
     cancelAllDemoTimers();
-    cancelDemo();
+    if ($isDemoActive) {
+      cancelDemo();
+    }
   });
 </script>
 
@@ -78,7 +123,7 @@
     aria-live="polite"
     aria-label="Guided demo"
   >
-    <button class="demo-dismiss" onclick={cancelDemo} aria-label="Dismiss demo">&times;</button>
+    <button class="demo-dismiss" onclick={dismissDemo} aria-label="Dismiss demo">&times;</button>
     <p class="demo-status">{phaseLabels[$demoPhase] ?? $demoPhase}</p>
   </div>
 {/if}

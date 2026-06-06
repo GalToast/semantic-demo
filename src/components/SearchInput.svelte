@@ -174,6 +174,7 @@
       autocapitalize="off"
       spellcheck="false"
       aria-label="Search businesses"
+      aria-controls="search-result-list"
     />
     {#if hasQuery}
       <button class="search-clear" id="search-clear-btn" onclick={handleClear} aria-label="Clear search" type="button">
@@ -268,6 +269,11 @@
     font-family: inherit;
     font-size: 0.875rem;
     min-width: 0;
+  }
+  .search-input:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline-offset: -2px;
+    border-radius: 0.25rem;
   }
   .search-input::placeholder {
     color: rgba(224, 240, 240, 0.35);

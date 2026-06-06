@@ -12,6 +12,7 @@
  */
 import { writable, derived, get } from 'svelte/store';
 import type { NavState, NavMode, PanelSurface } from '@lib/types/state';
+import { testCompatStore } from './test-compat';
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
@@ -177,6 +178,7 @@ export function dispatchNavTransition(
         mode: 'focus',
         focusedIndex: payload.index ?? null,
         previousSurface: s.surface,
+        surface: 'focus',
         explorationHistoryIndices: payload.skipHistory
           ? s.explorationHistoryIndices
           : [...s.explorationHistoryIndices, payload.index!]
@@ -184,6 +186,7 @@ export function dispatchNavTransition(
       // Sync body data attribute
       if (typeof document !== 'undefined' && document.body) {
         document.body.dataset.navMode = 'focus';
+        document.body.dataset.navSurface = 'focus';
         document.body.dataset.focusedNode = String(payload.index);
       }
       return { handled: true };

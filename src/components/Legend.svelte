@@ -104,6 +104,9 @@
         class:inactive={activeIds.has(entry.name)}
         onclick={() => toggleCluster(entry.name)}
         onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleCluster(entry.name); }}
+        role="button"
+        tabindex="0"
+        aria-pressed={activeIds.has(entry.name)}
       >
         <span
           class="legend-swatch"
