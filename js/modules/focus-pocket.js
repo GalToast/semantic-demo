@@ -85,18 +85,20 @@ export function getFocusPocketMotionByIndex() {
 }
 
 export function setFocusPocketMotionByIndex(map) {
-    state.focusPocketMotionByIndex = map;
+  withStateMutation(() => { state.focusPocketMotionByIndex = map; });
 }
 
 export function setFocusPocketMotionForIndex(index, motion) {
+  withStateMutation(() => {
     if (!(state.focusPocketMotionByIndex instanceof Map)) {
-        state.focusPocketMotionByIndex = new Map();
+      state.focusPocketMotionByIndex = new Map();
     }
     state.focusPocketMotionByIndex.set(index, motion);
+  });
 }
 
 export function clearFocusPocketMotionByIndex() {
-    state.focusPocketMotionByIndex = new Map();
+  withStateMutation(() => { state.focusPocketMotionByIndex = new Map(); });
 }
 
 export function clearFocusPocketIndices() {
@@ -146,17 +148,11 @@ export function applyLocalNeighborhoodFocus(index) {
     withStateMutation(() => { state.navState.currentPersonality = personality; });
     // ------------------------------------------
 
-    // Cancel any in-progress pocket animation before starting a new one
-    if (Number.isFinite(state.focusPocketAnimationFrameId)) {
-        cancelAnimationFrame(state.focusPocketAnimationFrameId);
-        state.focusPocketAnimationFrameId = undefined;
-    }
-
-    clearFocusPocketIndices();
+  clearFocusPocketIndices();
     clearFocusPocketMeta();
     clearFocusPocketRoleByIndex();
-    clearFocusPocketMotionByIndex();
-    state.focusPocketTransitionStartedAt = performance.now();
+  clearFocusPocketMotionByIndex();
+  withStateMutation(() => { state.focusPocketTransitionStartedAt = performance.now(); });
 
     if (state.navState.threadSource === 'semantic') {
         const pocket = buildFocusedSemanticPocket(index);
@@ -197,17 +193,22 @@ export function applyLocalNeighborhoodFocus(index) {
                 motif: pocket.meta?.motif || 'market',
                 motifLabel: pocket.meta?.motifLabel || 'semantic constellation'
             });
-            state.nodesAreSettling = true;
-            state.autoRotate = false;
-            // syncAutoRotateButton() — deferred to main script
-        }
+      withStateMutation(() => {
+        state.nodesAreSettling = true;
+        state.autoRotate = false;
+      });
+      // syncAutoRotateButton() — deferred to main script
+      return;
     }
+  }
 
     // Fallback: geometric/thread-candidate path
     const focusPos = state.originalPositions[index];
     if (!focusPos) {
-        state.nodesAreSettling = false;
-        state.autoRotate = true;
+  withStateMutation(() => {
+    state.nodesAreSettling = false;
+    state.autoRotate = true;
+  });
         return;
     }
     const viewportProfile = getFocusConstellationViewportProfile();
@@ -260,10 +261,12 @@ export function applyLocalNeighborhoodFocus(index) {
             haloCount: 0,
             motif: fallbackPocket.motif?.key || 'market',
             motifLabel: fallbackPocket.motif?.label || 'threaded neighborhood',
-            viewportProfile: fallbackPocket.viewportProfile || viewportProfile
-        });
-        state.nodesAreSettling = true;
-        state.autoRotate = false;
+  viewportProfile: fallbackPocket.viewportProfile || viewportProfile
+  });
+  withStateMutation(() => {
+    state.nodesAreSettling = true;
+    state.autoRotate = false;
+  });
         return;
     }
 
@@ -340,8 +343,8 @@ export function applyLocalNeighborhoodFocus(index) {
             y: origY + dy * compression,
             z: origZ + dz * compression
         };
-    }
-    state.nodesAreSettling = true;
+  }
+  withStateMutation(() => { state.nodesAreSettling = true; });
 }
 
 // === Focus pocket breathing ===
