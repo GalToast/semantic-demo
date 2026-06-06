@@ -881,7 +881,6 @@ body[data-panel-surface='idle'] #cluster-section {
 /* ── Search: results dominate; collapse first-time and focus scaffolding ─────── */
 
 body[data-panel-surface='search'] .demo-starters,
-body[data-panel-surface='search'] .exploration-card,
 body[data-panel-surface='search'] .focus-stage,
 body[data-panel-surface='search'] .focus-thread-inspector {
     display: none;
@@ -910,7 +909,6 @@ body[data-panel-surface='focus'] .search-container:not(.has-query) .search-resul
 body[data-panel-surface='focus'] .synthesize-trigger,
 body[data-panel-surface='focus'] .search-trail-cue,
 body[data-panel-surface='focus'] .demo-starters,
-body[data-panel-surface='focus'] .exploration-card,
 body[data-panel-surface='focus'] .mode-grid,
 body[data-panel-surface='focus'] .stats-row,
 body[data-panel-surface='focus'] .launch-btn,
@@ -922,7 +920,6 @@ body[data-panel-surface='focus'] .rail-section#filters-section {
 /* ── Focus+Search: focused business + search results share the panel ──────────── */
 
 body[data-panel-surface='focus-search'] .demo-starters,
-body[data-panel-surface='focus-search'] .exploration-card,
 body[data-panel-surface='focus-search'] .stats-row,
 body[data-panel-surface='focus-search'] .launch-btn,
 body[data-panel-surface='focus-search'] .rail-section#cluster-section,
@@ -936,7 +933,6 @@ body[data-panel-surface='focus-search'] .semantic-lane-ops {
 body[data-panel-surface='semantic-dive'] .synthesize-trigger,
 body[data-panel-surface='semantic-dive'] .search-trail-cue,
 body[data-panel-surface='semantic-dive'] .demo-starters,
-body[data-panel-surface='semantic-dive'] .exploration-card,
 body[data-panel-surface='semantic-dive'] .stats-row,
 body[data-panel-surface='semantic-dive'] .rail-section#cluster-section,
 body[data-panel-surface='semantic-dive'] .rail-section#filters-section,

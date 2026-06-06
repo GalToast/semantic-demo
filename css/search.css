@@ -557,7 +557,8 @@ body[data-panel-surface='focus-search'] .search-container.has-query .search-resu
 }
 
 /* Alignment fix: ensure search container matches the 16px left rail of the weather widget */
-body .search-container {
+body[data-panel-surface='search'] .search-container,
+body[data-panel-surface='focus-search'] .search-container {
     position: sticky;
     top: 52px;
     z-index: var(--z-chrome-elevated);
@@ -848,7 +849,7 @@ body .search-container {
     padding: 12px 12px 12px 38px;
     color: var(--color-text-primary);
     font-family: var(--font-body);
-    font-size: 14px;
+    font-size: 16px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1742,15 +1743,10 @@ body[data-panel-surface='map-focus-search'] .search-container {
         linear-gradient(180deg, rgba(12, 18, 26, 0.98), rgba(11, 14, 23, 0.9));
 }
 
-body[data-panel-surface='search'] .exploration-card,
-body[data-panel-surface='focus-search'] .exploration-card,
-body[data-panel-surface='map-search'] .exploration-card,
-body[data-panel-surface='map-focus-search'] .exploration-card,
-body[data-panel-surface='search'] .exploration-card:hover,
-body[data-panel-surface='focus-search'] .exploration-card:hover,
-body[data-panel-surface='map-search'] .exploration-card:hover,
-body[data-panel-surface='map-focus-search'] .exploration-card:hover,
-.semantic-lane-assist {
+body[data-panel-surface='search'] .semantic-lane-assist,
+body[data-panel-surface='focus-search'] .semantic-lane-assist,
+body[data-panel-surface='map-search'] .semantic-lane-assist,
+body[data-panel-surface='map-focus-search'] .semantic-lane-assist {
     margin-top: 8px;
     padding: 10px 11px;
     border-radius: 10px;
@@ -1763,11 +1759,17 @@ body[data-panel-surface='map-focus-search'] .exploration-card:hover,
     z-index: var(--z-chrome-popover);
 }
 
-.semantic-lane-assist[hidden] {
+body[data-panel-surface='search'] .semantic-lane-assist[hidden],
+body[data-panel-surface='focus-search'] .semantic-lane-assist[hidden],
+body[data-panel-surface='map-search'] .semantic-lane-assist[hidden],
+body[data-panel-surface='map-focus-search'] .semantic-lane-assist[hidden] {
     display: none;
 }
 
-.semantic-lane-assist-copy {
+body[data-panel-surface='search'] .semantic-lane-assist-copy,
+body[data-panel-surface='focus-search'] .semantic-lane-assist-copy,
+body[data-panel-surface='map-search'] .semantic-lane-assist-copy,
+body[data-panel-surface='map-focus-search'] .semantic-lane-assist-copy {
     font-size: 11px;
     line-height: 1.45;
     color: rgba(255, 255, 255, 0.76);
@@ -1776,7 +1778,10 @@ body[data-panel-surface='map-focus-search'] .exploration-card:hover,
     min-width: 0;
 }
 
-.semantic-lane-assist-row {
+body[data-panel-surface='search'] .semantic-lane-assist-row,
+body[data-panel-surface='focus-search'] .semantic-lane-assist-row,
+body[data-panel-surface='map-search'] .semantic-lane-assist-row,
+body[data-panel-surface='map-focus-search'] .semantic-lane-assist-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1784,7 +1789,10 @@ body[data-panel-surface='map-focus-search'] .exploration-card:hover,
     margin-top: 8px;
 }
 
-.semantic-lane-assist-meta {
+body[data-panel-surface='search'] .semantic-lane-assist-meta,
+body[data-panel-surface='focus-search'] .semantic-lane-assist-meta,
+body[data-panel-surface='map-search'] .semantic-lane-assist-meta,
+body[data-panel-surface='map-focus-search'] .semantic-lane-assist-meta {
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
     color: rgba(255, 255, 255, 0.6);

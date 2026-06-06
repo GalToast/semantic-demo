@@ -309,27 +309,6 @@ body[data-panel-surface='map-focus-search'] .trail-context {
     border-top: 1px solid var(--glass-reflection);
 }
 
-.exploration-card {
-    margin-bottom: 14px;
-    padding: 16px;
-    border-radius: var(--glass-radius-panel);
-    background: var(--glass-bg-deep);
-    border: var(--glass-border);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-    box-shadow: var(--shadow-glass);
-}
-
-.exploration-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--glass-bg-accent);
-    opacity: 0.3;
-    pointer-events: none;
-    border-radius: inherit;
-}
-
 /* --- DOM Cluster Labels --- */
 .galaxy-cluster-label {
     position: absolute;
