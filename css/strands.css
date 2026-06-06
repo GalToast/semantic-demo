@@ -492,7 +492,6 @@
     body[data-panel-surface='idle'] .semantic-lane-pill,
     body[data-panel-surface='idle'] .semantic-lane-assist,
     body[data-panel-surface='idle'] .search-hint,
-    body[data-panel-surface='idle'] .exploration-card,
     body[data-panel-surface='idle'] .mode-grid,
     body[data-panel-surface='idle'] .rail-section {
         display: none;
@@ -1026,7 +1025,6 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
     body[data-panel-surface='search'] #synthesize-trigger,
     body[data-panel-surface='search'] .search-hint,
     body[data-panel-surface='search'] .surprise-btn,
-    body[data-panel-surface='search'] .exploration-card,
     body[data-panel-surface='search'] .selected-card,
     body[data-panel-surface='search'] #selected-card,
     body[data-panel-surface='search'] .selected-empty,
@@ -1135,7 +1133,6 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #story-section,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #cluster-section,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #filters-section,
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .exploration-card,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .mode-grid,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .semantic-lane-assist,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .search-trail-cue,

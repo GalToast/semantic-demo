@@ -1,25 +1,28 @@
 /* Layout base: info panel frame, shared scrollbars, and field guide. */
+
+@media (min-width: 769px) {
 .info-panel {
-    position: fixed;
-    left: 16px;
-    top: 80px;
-    bottom: 24px;
-    width: 344px;
-    display: flex;
-    flex-direction: column;
-    border-radius: var(--glass-radius-panel);
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-    border: var(--glass-border);
-    color: var(--color-text-strong);
-    overflow: hidden;
-    z-index: var(--z-panels);
-    box-shadow: var(--shadow-glass);
-    transform: translateX(calc(-100% - 16px));
-    opacity: 0;
-    pointer-events: none;
-    transition: var(--transition-premium);
+position: fixed;
+left: 16px;
+top: 80px;
+bottom: 24px;
+width: 344px;
+display: flex;
+flex-direction: column;
+border-radius: var(--glass-radius-panel);
+background: var(--glass-bg);
+backdrop-filter: blur(var(--glass-blur));
+-webkit-backdrop-filter: blur(var(--glass-blur));
+border: var(--glass-border);
+color: var(--color-text-strong);
+overflow: hidden;
+z-index: var(--z-panels);
+box-shadow: var(--shadow-glass);
+transform: translateX(calc(-100% - 16px));
+opacity: 0;
+pointer-events: none;
+transition: var(--transition-premium);
+}
 }
 
 .info-panel::before {
@@ -446,32 +449,34 @@ body:has(.info-panel.active) .panel-toggle {
     color: var(--color-primary);
 }
 
-.legend-panel {
-    position: fixed;
-    right: 16px;
-    top: 104px;
-    z-index: var(--z-overlay);
-    width: min(258px, calc(100vw - 24px));
-    max-height: min(64vh, 456px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    background: var(--glass-bg-deep);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-    border: var(--glass-border);
-    border-radius: var(--glass-radius-panel);
-    padding: 14px;
-    visibility: hidden;
-    pointer-events: none;
-    opacity: 0;
-    transform: translateY(-8px) scale(0.985);
-    transform-origin: top right;
-    transition:
-        opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-        visibility 0s linear 0.22s;
-    box-shadow: var(--shadow-glass);
+@media (min-width: 769px) {
+    .legend-panel {
+        position: fixed;
+        right: 16px;
+        top: 104px;
+        z-index: var(--z-overlay);
+        width: min(258px, calc(100vw - 24px));
+        max-height: min(64vh, 456px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        background: var(--glass-bg-deep);
+        backdrop-filter: blur(var(--glass-blur));
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+        border: var(--glass-border);
+        border-radius: var(--glass-radius-panel);
+        padding: 14px;
+        visibility: hidden;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(-8px) scale(0.985);
+        transform-origin: top right;
+        transition:
+            opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+            transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+            visibility 0s linear 0.22s;
+        box-shadow: var(--shadow-glass);
+    }
 }
 
 .legend-panel::before {
@@ -910,7 +915,6 @@ body:has(.info-panel.active) .panel-toggle {
     body[data-panel-surface='focus-search'] .info-panel .info-header,
     body[data-panel-surface='focus-search'] .info-panel #story-section,
     body[data-panel-surface='focus-search'] .info-panel #cluster-section,
-    body[data-panel-surface='focus-search'] .info-panel .exploration-card,
     body[data-panel-surface='focus-search'] .info-panel .mode-grid,
     body[data-panel-surface='focus-search'] .info-panel .semantic-lane-assist,
     body[data-panel-surface='focus-search'] .info-panel .search-trail-cue,
@@ -1205,9 +1209,7 @@ body:has(.info-panel.active) .panel-toggle {
 
     body[data-panel-surface="map-trail"] .stats-row,
     body[data-panel-surface="map-trail"] .surprise-btn,
-    body[data-panel-surface="map-trail"] .launch-btn,
-    /* Bug 825: exploration-card bleeds into map view — hide it in plain map view (no trail) */
-    body[data-panel-surface^="map-"] .exploration-card {
+    body[data-panel-surface="map-trail"] .launch-btn {
         display: none;
     }
 
