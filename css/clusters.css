@@ -1,50 +1,9 @@
 /* Clusters/cards: galaxy labels, selected cards, trail controls, and badges. */
 
-/* --- Cluster View Styles --- */
-
-.cluster-overlay {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: var(--z-panels);
-}
-
-/* --- Legend / List --- */
-.cluster-legend {
-    position: fixed;
-    right: 24px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 280px;
-    max-height: 80vh;
-    padding: 20px;
-    background: var(--glass-bg-deep);
-    border: var(--glass-border);
-    border-radius: var(--glass-radius-panel);
-    backdrop-filter: blur(var(--glass-blur-deep));
-    -webkit-backdrop-filter: blur(var(--glass-blur-deep));
-    box-shadow: var(--shadow-glass);
-    pointer-events: auto;
-    overflow-y: auto;
-    z-index: var(--z-overlay);
-    transition:
-        transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-        opacity 0.4s ease;
-}
-
-body[data-active-view='map'] .cluster-legend {
-    display: none;
-}
-
-.cluster-legend-title {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--color-text-primary);
-    margin-bottom: 16px;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-}
+/* Dead selectors removed 2026-06-06 (bug-sweep):
+   .cluster-overlay, .cluster-legend, body[data-active-view='map'] .cluster-legend,
+   .cluster-legend-title, .cluster-dot — superseded by WebGL Sprite-only labels.
+   Verified no JS/TS/HTML/Svelte references remain. */
 
 .cluster-list {
     display: flex;
@@ -75,13 +34,6 @@ body[data-active-view='map'] .cluster-legend {
 .cluster-item.active {
     background: var(--glass-reflection-strong);
     border-color: var(--color-accent);
-}
-
-.cluster-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
 }
 
 .cluster-name {
@@ -415,7 +367,7 @@ body[data-panel-surface='map-focus-search'] .trail-context {
     background: var(--glass-reflection-strong);
     border-color: rgba(255, 255, 255, 0.3);
     color: #fff;
-    z-index: calc(var(--z-overlay) + 1);
+    z-index: var(--z-overlay-raised);
 }
 
 .galaxy-cluster-label.is-context {

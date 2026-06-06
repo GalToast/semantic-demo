@@ -104,21 +104,31 @@
     --radius-large: 20px;
     --radius-pill: 999px;
 
-    /* Layering Manifest (Z-Index) */
-    --z-underlay: -1;
-    --z-base: 1;
-    --z-content: 5;
-    --z-chrome: 10;
-    --z-chrome-elevated: 14;
-    --z-panels: 50;
-    --z-panels-elevated: 90;
-    --z-overlay: 100;
-    --z-overlay-elevated: 150;
-    --z-tooltips: 200;
-    --z-modal: 400;
-    --z-blocker: 1000;
-    --z-toast: 1200;
-    --z-max: 9999;
+ /* Layering Manifest (Z-Index) */
+ --z-canvas: 0;
+ --z-underlay: -1;
+ --z-base: 1;
+ --z-base-raised: 2;
+ --z-content: 5;
+ --z-field-nodes: 10;
+ --z-chrome: 10;
+ --z-chrome-raised: 11;
+ --z-chrome-overlay: 12;
+ --z-chrome-elevated: 14;
+ --z-chrome-popover: 20;
+ --z-panels: 50;
+ --z-panels-elevated: 90;
+ --z-overlay: 100;
+ --z-overlay-raised: 101;
+ --z-overlay-floating: 102;
+ --z-overlay-elevated: 150;
+ --z-tooltips: 200;
+ --z-modal: 400;
+ --z-blocker-backdrop: 900;
+ --z-blocker: 1000;
+ --z-toast: 1200;
+ --z-toast-above: 1300;
+ --z-max: 9999;
 
     /* Shared panel elevation and glass treatment */
     --shadow-card: 0 12px 40px var(--shadow-penumbra);

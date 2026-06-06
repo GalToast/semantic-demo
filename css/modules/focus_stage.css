@@ -50,7 +50,7 @@
 
 .focus-stage-card > * {
     position: relative;
-    z-index: 1;
+    z-index: var(--z-field-nodes);
 }
 
 .focus-stage-card

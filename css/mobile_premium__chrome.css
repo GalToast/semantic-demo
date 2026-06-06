@@ -712,6 +712,7 @@
     body.is-active .info-panel {
         width: 344px;
         max-width: 40vw;
+        pointer-events: auto;
     }
 
     body.is-active[data-panel-surface='idle'] .info-panel {
@@ -854,5 +855,26 @@
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
         #btn-keyboard-help {
         top: calc(164px + env(safe-area-inset-top, 0px));
+    }
+
+    /* ─── INFO-PANEL VISIBILITY (Short Landscape 844x390) ─────────────
+       Multiple CSS sources hide the info-panel for focus/focus-search/
+       semantic-dive at ≤900×420/480 landscape:
+       - focus-dive.css: display:none (≤900×420) — loads BEFORE chrome.css
+       - strands.css: opacity:0, visibility:hidden (≤900×480) — lower specificity
+       This override restores the panel so controls like Step Inside and
+       selected cards are usable. chrome.css loads AFTER focus-dive.css in
+       the cascade (link order 31 vs 30), so equal specificity (0,3,1) wins
+       naturally. strands.css has lower specificity (0,2,1) and loses.
+       No !important needed. Scope: only focus/focus-search/semantic-dive
+       inside this mobile landscape media query. */
+    body.is-active[data-panel-surface='focus'] .info-panel,
+    body.is-active[data-panel-surface='focus-search'] .info-panel,
+    body.is-active[data-panel-surface='semantic-dive'] .info-panel {
+        display: block;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: none;
     }
 }
