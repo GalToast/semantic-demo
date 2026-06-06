@@ -468,6 +468,9 @@ export function disposeHeroAnimation() {
         cancelAnimationFrame(_heroRafId);
         _heroRafId = 0;
     }
+    // Bump token to invalidate any glow timers that may fire between now
+    // and the clear loop below, preventing inner-timer leaks.
+    _corridorGlowToken++;
     for (const id of _corridorGlowTimers) {
         clearTimeout(id);
     }
