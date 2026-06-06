@@ -120,6 +120,8 @@ npm run serve          # static dev server on 127.0.0.1:8795
 
 Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-demo.spec.js`, `tests/focus-pocket-motion-contract.mjs`, `tests/loading-ui-contract.mjs`, `tests/scene-atmosphere-contract.mjs`, `tests/three-visual-polish-contract.mjs`, `tests/weather-surface-ownership-contract.mjs`, `tests/weather-widget-render-contract.mjs`, `tests/info-panel-collapsed-render-contract.mjs`, `tests/mode-chip-state-render-contract.mjs`, `tests/search-peek-expanded-render-contract.mjs`
 
+**Known pre-existing contract failures** — thread-inspector, field-node, search-no-results, compass-rail, focus-pocket, info-panel-empty, mode-grid are under investigation.
+
 ## UI Critic Operating Contract
 - Diagnose before editing: identify the owning surface, winning selector/state writer, and whether transitions, inline style, `!important`, media queries, or late imports control the bug.
 - For every UI fix, capture failing geometry before and passing geometry after; include overlap, clipping, stale hidden-layout elements, z-index/occlusion, and visible screenshot/snapshot evidence when composition matters.
@@ -139,6 +141,13 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 - Do not move the app root until `deploy.sh` and `deploy.ps1` no longer depend on the sibling `../js/scanner.js` path.
 - **CSS state ownership**: Use `docs/semantic-demo-mobile-state-ownership.md` and `docs/semantic-demo-css-ownership-map.md` to trace which `data-*` attribute and CSS module owns a visual surface before editing.
 - **No `!important` in CSS**: Every `!important` is a signal of unresolved specificity conflict. Surface-level `!important` declarations are documented in `docs/semantic-demo-css-ownership-next-pass.md`.
+
+## Durable Code Invariants
+
+- **`withStateMutation()` required for tracked sub-objects** — `_makeProdProxy` throws in production when `!_isMutating`. All mutations to `navState`, `strandContinuityState`, and other `TRACKED_SUB_KEYS` in `state.js` MUST be wrapped in `withStateMutation()`. Failure to do so causes a production throw. Applied to `focus-pocket.js` state writes during the constellation sweep.
+- **Dead CSS selectors are deleted outright** — When grep confirms zero references in any JS/TS/HTML/Svelte file, delete the dead selectors without TODO comments. Established pattern from `clusters.css` and `demo_ui.css` cleanup.
+- **`initSemanticLens()` disposes before reinit** — Both the `.js` and `.ts` paths for `initSemanticLens()` now call `disposeSemanticLens()` first. Any future lens/manifold reinit must keep both paths in sync.
+- **Deterministic geometry via `seededUnit()`** — `Math.random()` in WebGL/geometry code breaks determinism. Use `seededUnit(index, salt)` from `js/modules/utils/seeded-random.js` instead. Applied to `three-search-animations.js` particle trails.
 
 ## MCP Recovery
 
