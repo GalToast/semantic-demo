@@ -74,5 +74,5 @@ export function recordCompletion() {
 }
 
 export function notifyDemoUnableToStart() {
-    window.dispatchEvent(new CustomEvent('demo-cancelled'));
+    document.dispatchEvent(new CustomEvent('demo-cancelled'));
 }

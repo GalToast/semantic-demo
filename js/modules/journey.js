@@ -1,4 +1,4 @@
-import { state } from '../state.js'
+import { state, withStateMutation } from '../state.js'
 import { getFocusedNode, getPoints, getNavState, getSelectedPoint } from '../state/selectors/index.js'
 import { subscribe, publish, EVENTS } from './event-bus.js'
 import {
@@ -178,7 +178,9 @@ function restoreFocusTrailState(priorFocused = getFocusedNode()) {
     // Using global adapter for dispatchNavTransition for now as it is correctly mapped in lifecycle
     publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused, point: getPoints()[priorFocused] })
 
-    state.navState.lastTraversalReason = getNavState()?.lastTraversalReason || null
+    withStateMutation(() => {
+        state.navState.lastTraversalReason = getNavState()?.lastTraversalReason || null;
+    });
     updateTrailIndices(priorFocused)
     refreshFocusSemanticOverlay()
     applyLocalNeighborhoodFocus(priorFocused)

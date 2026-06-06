@@ -132,17 +132,7 @@ export function showPill(text, onSkip) {
 
     pill.appendChild(skipBtn);
 
-    const autoDismissTimer = window.setTimeout(() => {
-        if (onSkip) onSkip('auto-dismiss');
-    }, 10000);
-    pill.addEventListener('click', () => {
-        window.clearTimeout(autoDismissTimer);
-    }, { once: true });
-    skipBtn.addEventListener('click', () => {
-        window.clearTimeout(autoDismissTimer);
-    }, { once: true });
-
-    document.body.appendChild(pill);
+  document.body.appendChild(pill);
     return pill;
 }
 

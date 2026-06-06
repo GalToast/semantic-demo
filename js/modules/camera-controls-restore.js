@@ -8,10 +8,10 @@ import { easeInOutCubic } from './utils/math-easing.js'
 /**
  * Canonical idle/overview camera pose. Used to correct auto-rotate drift after
  * long idle periods or viewport resizes. Matches the initial camera in
- * `initThreeJS` (state.camera.position.set(1.5, 1.2, 2.0); camera.lookAt(0,0,0)).
+ * `initThreeJS` (state.camera.position.set(2.05, 1.55, 2.75); camera.lookAt(0,0,0)).
  */
 export const OVERVIEW_CAMERA_POSE = Object.freeze({
-    position: Object.freeze([1.5, 1.2, 2.0]),
+    position: Object.freeze([2.05, 1.55, 2.75]),
     target: Object.freeze([0, 0, 0])
 });
 

@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import { formatBusinessName, cleanOptionalValue } from './utils/dom-formatters.js';
 import { normalizeCityForFilter } from './utils/geo-data.js';
 import { focusOnNode } from './camera-controls.js';
@@ -12,7 +12,7 @@ import {
 import { showExperienceToast } from './ui-feedback.js';
 import { syncSemanticDiveUi } from './semantic-dive-ui.js';
 import { truncateMicrocopy, getSharedTrailTopicLabel } from './journey-text-helpers.js';
-import { setStrandContinuityState, clearStrandContinuityState, getStrandArrivalNote } from './strand-continuity.js';
+import { setStrandContinuityState, clearStrandContinuityState, getStrandArrivalNote, setTimer, disposeTimers } from './strand-continuity.js';
 import {
     getRelationshipRoleCopy,
     getRelationshipRoleLabel,
@@ -31,20 +31,20 @@ import { syncFocusStage } from './journey-selected-card.js';
 // Direct import sentinel for the inspected-strand overlay dewindowing contract.
 void syncInspectedStrandOverlay;
 
-let _setTimer = (fn, delay) => typeof setTimeout !== 'undefined' ? setTimeout(fn, delay) : undefined;
-let _clearTimer = (id) => typeof clearTimeout !== 'undefined' ? clearTimeout(id) : undefined;
-
-const timerAdapter = {
-    setTimer: (fn, delay) => _setTimer(fn, delay),
-    clearTimer: (id) => _clearTimer(id)
-};
+/**
+ * Cancel ALL tracked timers. Delegates to strand-continuity's unified pool
+ * so timers set by thread-inspector.js (which also uses strand-continuity)
+ * are cleared alongside settler timers.
+ */
+export function cancelAllThreadTimers() {
+    disposeTimers();
+}
 
 const PROJECTED_NEIGHBOR_FALLBACK_REASON = 'approximate projected neighbor from the current cloud layout';
 
-export function initJourneyTimerAdapter(deps = {}) {
-    if (deps.setTimer) _setTimer = deps.setTimer;
-    if (deps.clearTimer) _clearTimer = deps.clearTimer;
-}
+// Kept for backward-compat (re-exported by journey.js, called by tests).
+// No-op: timers are now unified onto strand-continuity's _timers Map.
+export function initJourneyTimerAdapter(_deps = {}) {}
 
 export { getStrandArrivalNote };
 
@@ -152,8 +152,6 @@ export function walkThreadNeighbor(index, options = {}) {
     const fromIndex = Number.isFinite(options.fromIndex) ? options.fromIndex : getCurrentTrailFocusIndex();
     const candidate = (state.navState.threadCandidates || []).find((item) => item && item.index === index);
     const targetPoint = (Number.isFinite(index) && index >= 0 && index < state.points.length) ? state.points[index] : null;
-    const priorArrivalTimeoutId = state.strandContinuityState?.arrivalTimeoutId;
-    const priorSettleTimeoutId = state.strandContinuityState?.settleTimeoutId;
     const reason =
         summarizeNeighborReason(
             candidate || {},
@@ -165,16 +163,19 @@ export function walkThreadNeighbor(index, options = {}) {
         'nearby business relationship';
     state.pinnedThreadIndex = null;
     state.inspectedThreadIndex = index;
+
+    // Clear ALL pending timers from any prior walk before starting a new one.
+    // This is the core fix: the Map tracks timers independently of the state
+    // object, so timers survive setStrandContinuityState() calls that replace
+    // the whole state object.
+    cancelAllThreadTimers();
+
     setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason });
     dispatchNavTransition('WALK_TO', { index, fromIndex, appendHistory: !options.restoreHistory });
-    if (Number.isFinite(priorArrivalTimeoutId)) {
-        timerAdapter.clearTimer(priorArrivalTimeoutId);
-    }
-    if (Number.isFinite(priorSettleTimeoutId)) {
-        timerAdapter.clearTimer(priorSettleTimeoutId);
-    }
     renderThreadInspection(index, { force: true, surface: options.surface || 'walk' });
-    state.navState.lastTraversalReason = reason;
+    withStateMutation(() => {
+        state.navState.lastTraversalReason = reason;
+    });
     const preserveNeighborhood =
         state.currentView === 'galaxy' && isBoundedNeighborhoodActive() && !options.expandNeighborhood;
     if (state.currentView === 'map') {
@@ -201,12 +202,11 @@ export function walkThreadNeighbor(index, options = {}) {
     const capturedIndex = index;
     const capturedFromIndex = fromIndex;
     const capturedReason = reason;
-    const arrivalTid = timerAdapter.setTimer(() => {
+    setTimer('arrival', options.arrivalDelay || 820, () => {
         if (!state.points) return;
-        // Stale-callback guard: verify this timer is still the current one
-        // and the phase/target haven't been superseded by a new walk.
+        // Stale-callback guard: verify the strand is still in the expected phase
+        // and target — a new walk may have superseded this one.
         if (
-            state.strandContinuityState.arrivalTimeoutId !== arrivalTid ||
             state.strandContinuityState.phase !== 'exploring' ||
             state.strandContinuityState.targetIndex !== capturedIndex
         ) return;
@@ -220,22 +220,19 @@ export function walkThreadNeighbor(index, options = {}) {
         } else {
             clearThreadInspection({ force: true, preserveJourney: true });
         }
-    }, options.arrivalDelay || 820);
-    state.strandContinuityState.arrivalTimeoutId = arrivalTid;
-    const settleTid = timerAdapter.setTimer(() => {
+    });
+    setTimer('settle', options.settleDelay || 5200, () => {
         if (!state.points) return;
-        // Stale-callback guard: verify this timer is still the current one
-        // and the phase/target haven't been superseded.
+        // Stale-callback guard: verify the strand is still in the expected phase
+        // and target — a new walk may have superseded this one.
         if (
-            state.strandContinuityState.settleTimeoutId !== settleTid ||
             state.strandContinuityState.phase !== 'arrived' ||
             state.strandContinuityState.targetIndex !== capturedIndex
         ) return;
         clearStrandContinuityState('arrival-settled');
         const pointAtSettle = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < state.points.length) ? state.points[capturedIndex] : null;
         syncFocusStage(pointAtSettle || state.selectedPoint || null);
-    }, options.settleDelay || 5200);
-    state.strandContinuityState.settleTimeoutId = settleTid;
+    });
     return { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason };
 }
 

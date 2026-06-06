@@ -7,7 +7,7 @@ import { prefersReducedMotion } from './environment.js';
 import { easeInOutCubic } from './utils/math-easing.js';
 
 export const OVERVIEW_CAMERA_POSE = Object.freeze({
-    position: Object.freeze([1.5, 1.2, 2.0]) as readonly [number, number, number],
+    position: Object.freeze([2.05, 1.55, 2.75]) as readonly [number, number, number],
     target: Object.freeze([0, 0, 0]) as readonly [number, number, number]
 });
 

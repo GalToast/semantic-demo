@@ -9,7 +9,7 @@ import { isCompactFocusStageViewport } from './utils/ui-presentation.js';
 import { getNextExploreCandidateForIndex } from './journey-thread-model.js';
 import {summarizeNeighborReason} from './journey.js';
 import { getNextWalkCandidateForIndex } from './journey-neighborhood.js';
-import { ensureFocusStageAuxiliaryDom } from './focus-stage-dom.js';
+import { ensureFocusStageAuxiliaryDom, ensureDiveButton } from './focus-stage-dom.js';
 
 function truncateDiveStatusCopy(text, max = 74) {
     const clean = cleanOptionalValue(text);
@@ -67,6 +67,7 @@ export function initSemanticDiveUiSubscriptions() {
 
 export function syncSemanticDiveUi() {
     ensureFocusStageAuxiliaryDom();
+    ensureDiveButton();
     const hasFocus = getFocusedNode() !== null && getFocusedNode() !== undefined
         || Number.isFinite(getNavState()?.focusedIndex);
     const canDive = getCurrentView() === 'galaxy' && hasFocus;

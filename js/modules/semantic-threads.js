@@ -3,6 +3,7 @@ import { state } from '../state.js';
 import { updateSemanticThreadsStatus } from './state-mutators.js';
 import { normalizeRelationshipRole } from './relationship-roles.js';
 import { recordSemanticLaneSnapshot } from './semantic-lane.js';
+import { debugWarn } from './diagnostic-adapter.js';
 
 const SEMANTIC_THREAD_RETRY_DELAYS_MS = [2500, 8000, 15000];
 
@@ -230,7 +231,7 @@ function _scheduleSemanticThreadsRetry(reason = 'artifact-retry') {
     }
     const MAX_RETRIES = 5;
     if (state.semanticThreadsRetryAttempt >= MAX_RETRIES) {
-        console.warn(`loadSemanticThreads: max retries (${MAX_RETRIES}) reached, giving up`);
+        debugWarn(`loadSemanticThreads: max retries (${MAX_RETRIES}) reached, giving up`);
         updateSemanticThreadsStatus('failed');
         return;
     }
@@ -244,7 +245,7 @@ function _scheduleSemanticThreadsRetry(reason = 'artifact-retry') {
     state.semanticThreadsRetryTimer = window.setTimeout(() => {
         state.semanticThreadsRetryTimer = null;
         loadSemanticThreads({ reason }).catch(err => {
-            console.warn('loadSemanticThreads retry failed:', err);
+            debugWarn('loadSemanticThreads retry failed:', err);
         });
     }, delayMs);
 }
@@ -350,7 +351,7 @@ export async function loadSemanticThreads(options = {}) {
 
 function finalizeThreadLoad() {
     if (new URLSearchParams(window.location.search).has('debug')) {
-        console.warn('[semantic-threads] artifact loaded', {
+        debugWarn('[semantic-threads] artifact loaded', {
             artifact: state.semanticThreadArtifactName,
             records: state.semanticNeighborMapByLeadId.size
         });

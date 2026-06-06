@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import { subscribe, EVENTS } from './event-bus.js';
 import { restoreFocusTrailState, updateSelectedBusiness } from './journey.js';
 
@@ -109,7 +109,7 @@ export function startDeferredHydration() {
             if (state.focusedNode !== null && state.focusedNode !== undefined) {
                 const priorMode = state.navState.mode;
                 restoreFocusTrailState(state.focusedNode);
-                state.navState.mode = priorMode;
+                withStateMutation(() => { state.navState.mode = priorMode; });
             }
             if (state.selectedPoint) {
                 updateSelectedBusiness(state.selectedPoint);

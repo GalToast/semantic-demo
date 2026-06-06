@@ -80,39 +80,52 @@ export function clearMobileSearchSheetState() {
     syncPanelSurfaceDetailFromMobileSheet();
 }
 
+let _mobileSheetToggleHandlers = null;
+
+function _cleanupMobileSheetToggle() {
+    if (_mobileSheetToggleHandlers) {
+        const { label, clickHandler, keydownHandler } = _mobileSheetToggleHandlers;
+        if (label) {
+            label.removeEventListener('click', clickHandler);
+            label.removeEventListener('keydown', keydownHandler);
+            delete label.dataset.mobileSheetToggleBound;
+        }
+        _mobileSheetToggleHandlers = null;
+    }
+}
+
 export function setupMobileSearchSheetToggle({ isCompactSearchViewport } = {}) {
     const searchContainer = getSearchContainer();
     const label = searchContainer?.querySelector?.('.search-label');
     if (!searchContainer || !label) return;
     const isCompact = typeof isCompactSearchViewport === 'function' ? isCompactSearchViewport : () => false;
 
+    _cleanupMobileSheetToggle();
+
     label.setAttribute('aria-controls', 'search-results');
 
-    if (!label.dataset.mobileSheetToggleBound) {
-        const focusSearchInput = () => {
-            const searchInput = document.getElementById('search-input');
-            if (searchInput) searchInput.focus();
-        };
-        const toggleSheet = () => {
-            // The toggle's primary job is to put the cursor in the search
-            // field. Focus is unconditional so a fresh page (no query yet)
-            // and any viewport size still hand focus to the input on click.
-            // Sheet expansion is secondary and stays gated on has-query since
-            // there are no results to expand until the user has typed.
-            focusSearchInput();
-            if (!isCompact() || !searchContainer.classList.contains('has-query')) return;
-            const isOpening = document.body.dataset.mobileSearchSheet !== 'expanded';
-            const nextMode = isOpening ? 'expanded' : 'peek';
-            setMobileSearchSheetMode(nextMode, { userInitiated: true });
-        };
-        label.addEventListener('click', toggleSheet);
-        label.addEventListener('keydown', (event) => {
-            if (event.key !== 'Enter' && event.key !== ' ') return;
-            event.preventDefault();
-            toggleSheet();
-        });
-        label.dataset.mobileSheetToggleBound = 'true';
-    }
+    const focusSearchInput = () => {
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.focus();
+    };
+    const toggleSheet = () => {
+        focusSearchInput();
+        if (!isCompact() || !searchContainer.classList.contains('has-query')) return;
+        const isOpening = document.body.dataset.mobileSearchSheet !== 'expanded';
+        const nextMode = isOpening ? 'expanded' : 'peek';
+        setMobileSearchSheetMode(nextMode, { userInitiated: true });
+    };
+    const keydownHandler = (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        toggleSheet();
+    };
+
+    label.addEventListener('click', toggleSheet);
+    label.addEventListener('keydown', keydownHandler);
+    label.dataset.mobileSheetToggleBound = 'true';
+
+    _mobileSheetToggleHandlers = { label, clickHandler: toggleSheet, keydownHandler };
 
     if (isCompact() && searchContainer.classList.contains('has-query')) {
         if (!document.body.dataset.mobileSearchSheetUser) setMobileSearchSheetMode('peek');

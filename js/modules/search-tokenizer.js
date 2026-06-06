@@ -35,7 +35,23 @@ export function tokenizeSearchText(text) {
     // Normalize to NFC first so combining characters (e.g. e + ◌́ = é) are
     // merged with their base code-point.  Without this, the regex fallback
     // would split "café" (NFD) into "caf" and "e", producing false matches.
-    const input = String(text || '').normalize('NFC').toLowerCase();
+    //
+    // Pre-process special chars BEFORE word segmentation so they don't
+    // become part of tokens (e.g., "O'Brien" → "obrien", "AT&T" → "att",
+    // "co-op" → "co op").  This keeps query tokens aligned with field tokens
+    // that won't carry punctuation.
+    const input = String(text || '')
+        .normalize('NFC')
+        .toLowerCase()
+        .replace(/[''\u2019]/g, '')          // strip smart/straight quotes
+        .replace(/[&]/g, ' ')               // ampersand → space
+        .replace(/[/\\]/g, ' ')             // slash/backslash → space
+        .replace(/[-_]+/g, ' ')             // hyphens/underscores → space
+        .replace(/[@#]/g, ' ')              // at/hash → space
+        .replace(/\s+/g, ' ')               // collapse all whitespace
+        .trim();
+
+    if (!input) return [];
 
     let words;
     if (typeof Intl !== 'undefined' && Intl.Segmenter) {

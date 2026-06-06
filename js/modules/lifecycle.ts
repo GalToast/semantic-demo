@@ -4,7 +4,7 @@
  * TypeScript shadow of lifecycle.js.
  * Semantic Demo Lifecycle & Global State Bridge.
  */
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import { publish, subscribe, EVENTS } from './event-bus.js';
 import {
     setLoadingPhase,
@@ -221,9 +221,11 @@ export function setTrailDepth(depth: number, options: any = {}): void {
         return;
     }
     state.trailDepth = nextDepth;
-    state.navState.trailDepth = nextDepth;
-    if (nextDepth >= 2) state.navState.mode = 'inside';
-    else if (nextDepth > 0 && getNavState()?.mode !== 'focus') state.navState.mode = 'trail';
+    withStateMutation(() => {
+        state.navState.trailDepth = nextDepth;
+        if (nextDepth >= 2) state.navState.mode = 'inside';
+        else if (nextDepth > 0 && getNavState()?.mode !== 'focus') state.navState.mode = 'trail';
+    });
     if (!options.skipUrlSync) {
         publish(EVENTS.EXPLORATION_DEPTH_CHANGED, { depth: nextDepth });
     }
@@ -255,7 +257,7 @@ export function setSemanticDiveMode(enabled: boolean): void {
     if (nextActive) {
         if (document.body) document.body.dataset.semanticDive = 'transitioning';
         setTrailDepth(2, { fromUserGesture: true });
-        state.navState.mode = 'trail';
+        withStateMutation(() => { state.navState.mode = 'trail'; });
         window.setTimeout(() => {
             if (getSemanticDiveMode() && document.body?.dataset.semanticDive === 'transitioning') {
                 document.body.dataset.semanticDive = 'active';
@@ -285,8 +287,10 @@ export function resetExplorationFocus(options: any = { preserveSearch: true }): 
         ? null
         : getCurrentSearchSummary();
 
-    state.navState.trailDepth = 0;
-    state.navState.mode = 'overview';
+    withStateMutation(() => {
+        state.navState.trailDepth = 0;
+        state.navState.mode = 'overview';
+    });
     state.semanticDiveMode = false;
     state.trailDepth = 0;
     clearExplorationFocusSelection();

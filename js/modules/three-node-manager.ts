@@ -31,8 +31,30 @@ const NODE_SPORE_BASE_RADIUS = 0.0019;
 const NODE_SPORE_COLOR_LIFT = new THREE.Color(SCENE_PALETTE.sporeLift);
 const THREAD_TINT_COLOR = SCENE_PALETTE.threadTint;
 
+// Reduced segment counts: at the rendered size (~2 px) the lower-poly
+// spheres read identically to the former 10x8 meshes but save ~60% of
+// triangle throughput on the GPU.
+const SPORE_SEGMENTS_VISIBLE = 6;   // was 10
+const SPORE_SEGMENTS_HIT_PROXY = 4; // minimal: hit-proxy is invisible
+
 const _nodeSporeObject = new THREE.Object3D();
 const _nodeSporeColor = new THREE.Color();
+const _trackedTextures: THREE.Texture[] = [];
+
+function trackTexture<T extends THREE.Texture>(texture: T): T {
+    _trackedTextures.push(texture);
+    return texture;
+}
+
+export function disposeTextures(): void {
+    for (let i = _trackedTextures.length - 1; i >= 0; i -= 1) {
+        _trackedTextures[i]?.dispose();
+    }
+    _trackedTextures.length = 0;
+    webglContext.focusBeaconTexture = null;
+    webglContext.focusRingTexture = null;
+    webglContext.focusNextCueTexture = null;
+}
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -79,12 +101,7 @@ export function setNodeSporeInstanceMatrix(index: number, targetMesh: THREE.Inst
     _nodeSporeObject.updateMatrix();
     targetMesh.setMatrixAt(index, _nodeSporeObject.matrix);
     const hitProxy = webglContext.nodeSporeHitMesh;
-    const shouldSyncHitProxy = targetMesh === webglContext.nodeSporeMesh && hitProxy && (
-        index === state.focusedNode ||
-        state.navState.focusPocketIndices?.includes(index) ||
-        state.navState.trailNeighborIndices?.includes(index)
-    );
-    if (shouldSyncHitProxy) {
+    if (targetMesh === webglContext.nodeSporeMesh && hitProxy) {
         const hitBase = NODE_SPORE_BASE_RADIUS * (0.86 + seededUnit(index, 2.7) * 0.48) * 1.85;
         _nodeSporeObject.position.set(pos.x, pos.y, pos.z);
         _nodeSporeObject.scale.set(hitBase, hitBase, hitBase);
@@ -224,7 +241,11 @@ varying float vSemanticPointBoost;`
             )
             .replace(
                 'outgoingLight = diffuseColor.rgb;',
-                `diffuseColor.a *= clamp(uRevealProgress * clamp(vSemanticPointBoost, 0.55, 1.85), 0.0, 1.0);
+                `// Soft circle mask: eliminates the default square sprite look.
+float _ptDist = length(gl_PointCoord - vec2(0.5));
+float _ptAlpha = 1.0 - smoothstep(0.28, 0.5, _ptDist);
+diffuseColor.a *= _ptAlpha;
+diffuseColor.a *= clamp(uRevealProgress * clamp(vSemanticPointBoost, 0.55, 1.85), 0.0, 1.0);
 outgoingLight = diffuseColor.rgb + vec3(0.18, 0.62, 0.56) * uGlowIntensity * 0.12;`
             );
         material.userData.shader = shader;
@@ -246,11 +267,12 @@ export function disposeNodeVisuals() {
         disposeObject3D(webglContext.nodeSporeHitMesh);
         webglContext.nodeSporeHitMesh = null;
     }
+    disposeTextures();
 }
 
 export function createNodeSporeLayer() {
     if (!webglContext.scene || !state.points?.length || !state.nodePositions?.length) return;
-    const sporeGeo = new THREE.SphereGeometry(1, 10, 8);
+    const sporeGeo = new THREE.SphereGeometry(1, SPORE_SEGMENTS_VISIBLE, SPORE_SEGMENTS_VISIBLE - 1);
     const sporeMat = new THREE.MeshPhongMaterial({
         color: 0xffffff,
         emissive: 0x16453f,
@@ -283,12 +305,13 @@ export function createNodeSporeLayer() {
         opacity: 0.0,
         depthWrite: false
     });
-    const hitMesh = new THREE.InstancedMesh(sporeGeo, hitMat, state.points.length);
+    const hitGeo = new THREE.SphereGeometry(1, SPORE_SEGMENTS_HIT_PROXY, SPORE_SEGMENTS_HIT_PROXY - 1);
+    const hitMesh = new THREE.InstancedMesh(hitGeo, hitMat, state.points.length);
     hitMesh.name = 'node-spore-instanced-hit-proxy';
     hitMesh.frustumCulled = false;
     hitMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     for (let i = 0; i < state.points.length; i += 1) {
-        setNodeSporeInstanceMatrix(i, hitMesh, 2.4);
+        setNodeSporeInstanceMatrix(i, hitMesh, 1.8);
     }
     hitMesh.instanceMatrix.needsUpdate = true;
     webglContext.nodeSporeHitMesh = hitMesh;
@@ -319,10 +342,10 @@ export function createPoints() {
         count: bounds.count
     };
 
-    const sporeTexture = createSporeTexture(THREE);
+    const sporeTexture = trackTexture(createSporeTexture(THREE));
     webglContext.focusBeaconTexture = sporeTexture;
-    webglContext.focusRingTexture = createFocusRingTexture(THREE);
-    webglContext.focusNextCueTexture = createFocusNextCueTexture(THREE);
+    webglContext.focusRingTexture = trackTexture(createFocusRingTexture(THREE));
+    webglContext.focusNextCueTexture = trackTexture(createFocusNextCueTexture(THREE));
 
     const rawPositionsBuffer = webglContext.rawPositionsBuffer;
     const rawClustersBuffer = webglContext.rawClustersBuffer;

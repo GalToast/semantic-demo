@@ -3,6 +3,7 @@ import { updateClusterList, populateCityFilter } from './cluster-filter.js';
 import { buildLegend } from './ui-renderers.js';
 import { applyFilters } from './search-state.js';
 import { normalizeSlugName } from './utils/data-mapper.js';
+import { debugWarn } from './diagnostic-adapter.js';
 
 let _dataWorker = null;
 
@@ -70,8 +71,8 @@ export async function loadData() {
             const [{ points, pointIndexByLeadId, positionsBuffer, clustersBuffer }, enrichment] = await Promise.all([
                 callWorker('LOAD_RECORDS', { url: dataUrl }),
                 fetchEnrichment(enrichmentUrl).catch((err) => {
-                    console.warn('Enrichment fetch failed, continuing without it.', err);
-                    return null;
+debugWarn('Enrichment fetch failed, continuing without it.', err);
+      return null;
                 })
             ]);
             // Normalize slug-style names at load time so downstream consumers
@@ -97,8 +98,8 @@ export async function loadData() {
     // 2. Main-Thread Fallback
     const [raw, enrichment] = await Promise.all([
         fetchDataWithRetries(dataUrl, maxAttempts),
-        fetchEnrichment(enrichmentUrl).catch((err) => {
-            console.warn('Enrichment fetch failed, continuing without it.', err);
+    fetchEnrichment(enrichmentUrl).catch((err) => {
+      debugWarn('Enrichment fetch failed, continuing without it.', err);
             return null;
         })
     ]);
@@ -229,7 +230,7 @@ function finalizeLoading() {
         if (typeof populateCityFilter === 'function') populateCityFilter();
         if (typeof applyFilters === 'function') applyFilters();
     } catch (err) {
-        console.warn('Post-load UI refresh failed:', err);
+        debugWarn('Post-load UI refresh failed:', err);
     }
 }
 

@@ -75,7 +75,7 @@ function appendInsideControls(root) {
             id: 'btn-inside-next',
             className: 'focus-stage-inside-btn',
             text: 'Next Stop',
-            attributes: { type: 'button', 'data-journey-action': 'next-stop' }
+            attributes: { type: 'button', 'data-journey-action': 'next-stop', 'aria-label': 'Move to next inside stop' }
         }),
         makeElement('button', {
             id: 'btn-inside-map',
@@ -133,19 +133,19 @@ function appendThreadInspector(root) {
             id: 'btn-thread-pin',
             className: 'focus-thread-inspector-btn',
             text: 'Pin',
-            attributes: { type: 'button', disabled: '' }
+            attributes: { type: 'button', disabled: '', 'aria-label': 'Pin this connection for later review' }
         }),
         makeElement('button', {
             id: 'btn-thread-follow',
             className: 'focus-thread-inspector-btn primary',
             text: 'Follow',
-            attributes: { type: 'button', disabled: '' }
+            attributes: { type: 'button', disabled: '', 'aria-label': 'Follow this connection to the next stop' }
         }),
         makeElement('button', {
             id: 'btn-thread-clear',
             className: 'focus-thread-inspector-btn secondary',
             text: 'Clear',
-            attributes: { type: 'button', disabled: '' }
+            attributes: { type: 'button', disabled: '', 'aria-label': 'Clear connection preview' }
         })
     );
     inspector.appendChild(actions);
@@ -178,6 +178,26 @@ function appendTrailControls(root) {
     );
 }
 
+function appendDiveButton(root) {
+    const diveBtn = makeElement('button', {
+        id: 'btn-focus-dive',
+        className: 'focus-stage-dive-btn',
+        hidden: true,
+        attributes: {
+            type: 'button',
+            'aria-label': 'Explore the neighborhood around this business',
+            'aria-pressed': 'false',
+            'aria-disabled': 'true',
+            tabindex: '-1'
+        }
+    });
+    diveBtn.append(
+        makeElement('span', { className: 'focus-stage-dive-label', text: 'Explore Neighborhood' }),
+        makeElement('span', { className: 'focus-stage-dive-copy', text: 'Explore related businesses in the neighborhood.' })
+    );
+    root.appendChild(diveBtn);
+}
+
 export function ensureFocusStageAuxiliaryDom() {
     if (typeof document === 'undefined' || typeof document.createElement !== 'function') return false;
     const card = document.getElementById('focus-pocket') || document.querySelector?.('.focus-stage-card');
@@ -202,4 +222,45 @@ export function ensureFocusStageAuxiliaryDom() {
     }
 
     return true;
+}
+
+/**
+ * Ensure the dive (Step Inside) button exists in the DOM.
+ * This button is referenced by semantic-dive-ui.js and journey-bindings.js
+ * but may not be inside the auxiliary-surfaces root. It is created as a
+ * child of #focus-pocket, #selected-details, or the info-panel as available.
+ */
+export function ensureDiveButton() {
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') return;
+    const existing = document.getElementById('btn-focus-dive');
+
+    // Prefer the focus-pocket card or its auxiliary surfaces root
+    const card = document.getElementById('focus-pocket')
+        || document.querySelector?.('.focus-stage-card');
+    if (card) {
+        let root = document.getElementById(AUXILIARY_SURFACE_ID);
+        if (!root) {
+            root = makeElement('div', {
+                id: AUXILIARY_SURFACE_ID,
+                className: 'focus-stage-auxiliary-surfaces'
+            });
+            card.appendChild(root);
+        }
+        if (existing) {
+            if (!root.contains(existing)) root.appendChild(existing);
+            return;
+        }
+        appendDiveButton(root);
+        return;
+    }
+
+    if (existing) return;
+
+    // Fallback: create inside #selected-details or #info-panel
+    const target = document.getElementById('selected-details')
+        || document.getElementById('info-panel-content')
+        || document.getElementById('info-panel');
+    if (target) {
+        appendDiveButton(target);
+    }
 }

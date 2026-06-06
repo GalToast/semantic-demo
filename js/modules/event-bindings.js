@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { debugWarn } from './diagnostic-adapter.js';
 import { bindViewControls, zoomCamera } from './bindings/view-bindings.js';
 import { bindFocusControls, expandNeighborhoodFromCurrentNode, recenterFocusedNode, returnToCountyView } from './bindings/journey-bindings.js';
 import { updateHasQuery, bindSearchControls } from './bindings/search-bindings.js';
@@ -78,6 +79,6 @@ export async function initEventListeners({
         if (typeof selectedDetails?.initSelectedDetailsSvelteIsland === 'function') selectedDetails.initSelectedDetailsSvelteIsland();
         if (typeof filterChrome?.initFilterChromeSvelteIsland === 'function') filterChrome.initFilterChromeSvelteIsland();
     } catch (e) {
-        console.warn('[event-bindings] failed to load svelte islands', e?.message);
+        debugWarn('[event-bindings] failed to load svelte islands', e?.message);
     }
 }

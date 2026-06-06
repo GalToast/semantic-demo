@@ -47,6 +47,31 @@ const timerAdapter = {
     clearTimer: (id: ReturnType<typeof setTimeout>) => _clearTimer(id)
 };
 
+const _threadTimers = new Map<string, ReturnType<typeof setTimeout> | undefined>();
+
+function _trackTimer(purpose: string, id: ReturnType<typeof setTimeout> | undefined): void {
+    if (_threadTimers.has(purpose)) {
+        const priorId = _threadTimers.get(purpose);
+        if (priorId !== undefined) timerAdapter.clearTimer(priorId);
+    }
+    _threadTimers.set(purpose, id);
+}
+
+function _clearTrackedTimer(purpose: string): void {
+    if (_threadTimers.has(purpose)) {
+        const id = _threadTimers.get(purpose);
+        if (id !== undefined) timerAdapter.clearTimer(id);
+        _threadTimers.delete(purpose);
+    }
+}
+
+export function cancelAllThreadTimers(): void {
+    for (const [, id] of _threadTimers) {
+        if (id !== undefined) timerAdapter.clearTimer(id);
+    }
+    _threadTimers.clear();
+}
+
 const PROJECTED_NEIGHBOR_FALLBACK_REASON = 'approximate projected neighbor from the current cloud layout';
 
 export function initJourneyTimerAdapter(deps: { setTimer?: typeof _setTimer; clearTimer?: typeof _clearTimer } = {}): void {
@@ -168,8 +193,6 @@ export function walkThreadNeighbor(index: number, options: WalkThreadNeighborOpt
     const fromIndex: number | null = Number.isFinite(options.fromIndex) ? options.fromIndex! : getCurrentTrailFocusIndex();
     const candidate = ((state.navState as any).threadCandidates || []).find((item: any) => item && item.index === index);
     const targetPoint: Point | null = (Number.isFinite(index) && index >= 0 && index < (state.points as any).length) ? (state.points as any)[index] : null;
-    const priorArrivalTimeoutId = (state.strandContinuityState as any)?.arrivalTimeoutId;
-    const priorSettleTimeoutId = (state.strandContinuityState as any)?.settleTimeoutId;
     const reason: string =
         summarizeNeighborReason(
             candidate || {},
@@ -181,14 +204,9 @@ export function walkThreadNeighbor(index: number, options: WalkThreadNeighborOpt
         'nearby business relationship';
     (state as any).pinnedThreadIndex = null;
     (state as any).inspectedThreadIndex = index;
+    cancelAllThreadTimers();
     setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason });
     dispatchNavTransition('WALK_TO', { index, fromIndex, appendHistory: !options.restoreHistory });
-    if (Number.isFinite(priorArrivalTimeoutId)) {
-        timerAdapter.clearTimer(priorArrivalTimeoutId);
-    }
-    if (Number.isFinite(priorSettleTimeoutId)) {
-        timerAdapter.clearTimer(priorSettleTimeoutId);
-    }
     renderThreadInspection(index, { force: true, surface: options.surface || 'walk' });
     (state.navState as any).lastTraversalReason = reason;
     const preserveNeighborhood: boolean =
@@ -220,6 +238,7 @@ export function walkThreadNeighbor(index: number, options: WalkThreadNeighborOpt
     const arrivalTid = timerAdapter.setTimer(() => {
         if (!state.points) return;
         if ((state.strandContinuityState as StrandContinuityState).phase === 'exploring' && (state.strandContinuityState as StrandContinuityState).targetIndex === capturedIndex) {
+            _clearTrackedTimer('arrival');
             setStrandContinuityState('arrived', { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason });
             const pointAtArrival: Point | null = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < (state.points as any).length) ? (state.points as any)[capturedIndex] : null;
             syncFocusStage(pointAtArrival || state.selectedPoint || null);
@@ -232,16 +251,17 @@ export function walkThreadNeighbor(index: number, options: WalkThreadNeighborOpt
             }
         }
     }, options.arrivalDelay || 820);
-    (state.strandContinuityState as any).arrivalTimeoutId = arrivalTid;
+    _trackTimer('arrival', arrivalTid);
     const settleTid = timerAdapter.setTimer(() => {
         if (!state.points) return;
         if ((state.strandContinuityState as StrandContinuityState).phase === 'arrived' && (state.strandContinuityState as StrandContinuityState).targetIndex === capturedIndex) {
+            _clearTrackedTimer('settle');
             clearStrandContinuityState('arrival-settled');
             const pointAtSettle: Point | null = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < (state.points as any).length) ? (state.points as any)[capturedIndex] : null;
             syncFocusStage(pointAtSettle || state.selectedPoint || null);
         }
     }, options.settleDelay || 5200);
-    (state.strandContinuityState as any).settleTimeoutId = settleTid;
+    _trackTimer('settle', settleTid);
     return { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason };
 }
 
