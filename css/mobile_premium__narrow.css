@@ -28,8 +28,8 @@
         padding-right: 10px;
     }
 
-    /* Provide a little more horizontal space for the compass on 320px screens */
-    body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass,
+    /* Provide a little more horizontal space for the compass on 320px screens.
+       Gate on body.is-active to avoid leaking into transition states. */
     body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass {
         left: 10px;
         right: 10px;
@@ -42,13 +42,13 @@
        compass pill is only 288px wide. The `[data-density='compact']`
        attribute selector outranks the 374-block in source order so the
        narrow overrides win at this width. */
-    body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass[data-density='compact'] {
+    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass[data-density='compact'] {
         min-height: 78px;
         padding: 8px 10px 9px 12px;
         gap: 8px;
     }
 
-    body[data-panel-surface]:not([data-panel-surface^='map-'])
+    body.is-active[data-panel-surface]:not([data-panel-surface^='map-'])
         .journey-compass[data-density='compact']
         .journey-compass-copy {
         min-width: 0;
@@ -56,7 +56,7 @@
         padding-right: 4px;
     }
 
-    body[data-panel-surface]:not([data-panel-surface^='map-'])
+    body.is-active[data-panel-surface]:not([data-panel-surface^='map-'])
         .journey-compass[data-density='compact']
         .journey-compass-actions {
         flex: 0 0 auto;
@@ -68,8 +68,7 @@
        the canvas + top-chrome (view toggle, weather, time) get the space.
        Selector mirrors the surfaces rule's specificity (4,1) so the
        narrow override wins on source order. */
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass,
-    body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass {
+    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass {
         display: none;
     }
 }
@@ -94,47 +93,47 @@
    specificity ties. Display values mirror the canonical definitions in
    controls.css / time_weather.css / layout_base.css so the natural
    layout is preserved. */
-@media (max-width: 768px) {
-    body.is-active[data-panel-surface='focus'][data-panel-surface='focus'] .view-toggle,
-    body.is-active[data-panel-surface='focus-search'][data-panel-surface='focus-search'] .view-toggle,
-    body.is-active[data-panel-surface='semantic-dive'][data-panel-surface='semantic-dive'] .view-toggle {
+@media (min-width: 361px) and (max-width: 768px) {
+    body.is-active[data-panel-surface='focus'] .view-toggle,
+    body.is-active[data-panel-surface='focus-search'] .view-toggle,
+    body.is-active[data-panel-surface='semantic-dive'] .view-toggle {
         display: flex;
         visibility: visible;
         pointer-events: auto;
         opacity: 1;
     }
-    body.is-active[data-panel-surface='focus'][data-panel-surface='focus'] .journey-compass.glass-heavy .journey-compass-rail,
-    body.is-active[data-panel-surface='focus-search'][data-panel-surface='focus-search'] .journey-compass.glass-heavy .journey-compass-rail,
-    body.is-active[data-panel-surface='semantic-dive'][data-panel-surface='semantic-dive'] .journey-compass.glass-heavy .journey-compass-rail {
+    body.is-active[data-panel-surface='focus'] .journey-compass.glass-heavy .journey-compass-rail,
+    body.is-active[data-panel-surface='focus-search'] .journey-compass.glass-heavy .journey-compass-rail,
+    body.is-active[data-panel-surface='semantic-dive'] .journey-compass.glass-heavy .journey-compass-rail {
         display: flex;
         visibility: visible;
         pointer-events: auto;
         opacity: 1;
     }
-    body.is-active[data-panel-surface='focus'][data-panel-surface='focus'] .journey-compass[data-density='compact'] .journey-compass-rail,
-    body.is-active[data-panel-surface='focus-search'][data-panel-surface='focus-search'] .journey-compass[data-density='compact'] .journey-compass-rail,
-    body.is-active[data-panel-surface='semantic-dive'][data-panel-surface='semantic-dive'] .journey-compass[data-density='compact'] .journey-compass-rail {
+    body.is-active[data-panel-surface='focus'] .journey-compass[data-density='compact'] .journey-compass-rail,
+    body.is-active[data-panel-surface='focus-search'] .journey-compass[data-density='compact'] .journey-compass-rail,
+    body.is-active[data-panel-surface='semantic-dive'] .journey-compass[data-density='compact'] .journey-compass-rail {
         display: flex;
         visibility: visible;
         pointer-events: auto;
         opacity: 1;
     }
-    body.is-active[data-panel-surface='focus'][data-panel-surface='focus'] .controls,
-    body.is-active[data-panel-surface='focus-search'][data-panel-surface='focus-search'] .controls,
-    body.is-active[data-panel-surface='semantic-dive'][data-panel-surface='semantic-dive'] .controls {
+    body.is-active[data-panel-surface='focus'] .controls,
+    body.is-active[data-panel-surface='focus-search'] .controls,
+    body.is-active[data-panel-surface='semantic-dive'] .controls {
         display: flex;
         visibility: visible;
         pointer-events: auto;
         opacity: 1;
     }
 
-    body.is-active[data-panel-surface='focus'][data-panel-surface='focus'] #info-panel.info-panel {
+    body.is-active[data-panel-surface='focus'] #info-panel.info-panel {
         display: block;
         visibility: visible;
         pointer-events: auto;
         opacity: 0.68;
     }
-    body.is-active[data-panel-surface='focus'][data-panel-surface='focus'] #info-panel.info-panel .info-header {
+    body.is-active[data-panel-surface='focus'] #info-panel.info-panel .info-header {
         display: flex;
         visibility: visible;
         pointer-events: auto;
