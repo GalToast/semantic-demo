@@ -1,4 +1,5 @@
 import { state } from '../../state.js';
+import { _globalEventController } from './global-bindings.js';
 import { bindClick } from './view-bindings.js';
 import { executeJourneyCompassAction } from '../journey-compass-controller.js';
 import { traverseNeighbor, setSemanticDiveMode, pinThreadNeighbor, unpinThreadInspection, walkThreadNeighbor } from '../journey.js';
@@ -23,7 +24,7 @@ export function returnToCountyView() {
     resetExplorationFocus();
 }
 
-export function bindFocusControls() {
+export function bindFocusControls(signal = _globalEventController.signal) {
     const runJourneyCompassAction = (action) => {
         if (action) {
             executeJourneyCompassAction(action);
@@ -41,7 +42,15 @@ export function bindFocusControls() {
         recenterFocusedNode();
     });
     bindClick('btn-focus-expand', () => { expandNeighborhoodFromCurrentNode(); });
-    bindClick('btn-focus-dive', () => { setSemanticDiveMode(!state.semanticDiveMode); });
+    // btn-focus-dive is created asynchronously by ensureDiveButton() from
+    // focus-stage-dom.js, which runs after bindFocusControls. Use delegation
+    // so the handler is bound even when the element doesn't exist yet.
+    document.addEventListener('click', (event) => {
+        const btn = event.target.closest?.('#btn-focus-dive');
+        if (!btn) return;
+        if (btn.getAttribute('aria-disabled') === 'true') return;
+        setSemanticDiveMode(!state.semanticDiveMode);
+    }, { signal, passive: true });
     bindClick('btn-inside-next', () => { if (typeof exploreInsideToNextStop === 'function') exploreInsideToNextStop(); }, { optional: true });
     bindClick('btn-inside-map', () => { runJourneyCompassAction('open-map'); }, { optional: true });
     bindClick('btn-inside-county', () => { if (typeof returnToCountyView === 'function') returnToCountyView(); }, { optional: true });
@@ -98,7 +107,7 @@ export function bindFocusControls() {
             if (action) {
                 executeJourneyCompassAction(action);
             }
-        });
+        }, { signal });
         document.addEventListener('keydown', (event) => {
             if (event.key !== 'Enter' && event.key !== ' ') return;
             const step = event.target.closest?.('.journey-compass-step');
@@ -108,7 +117,7 @@ export function bindFocusControls() {
             if (action) {
                 executeJourneyCompassAction(action);
             }
-        });
+        }, { signal });
         if (document.body) document.body.dataset.journeyCompassStepDelegated = 'true';
     }
 

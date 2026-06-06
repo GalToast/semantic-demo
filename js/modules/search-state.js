@@ -9,6 +9,13 @@ import {
 } from './semantic-search-api-cache.js';
 import { recordSemanticLaneSnapshot } from './semantic-lane.js';
 import { clearTrailThreadState } from './navigation-state.js';
+import {
+    searchResultsStore,
+    searchSummaryStore,
+    isSearchingStore,
+    searchErrorStore,
+    searchVisibleCountStore
+} from './stores.js';
 
 // ── UI Integration ─────────────────────────────────────────────────────
 import {
@@ -120,6 +127,17 @@ export function updateTooltipContent() { /* Managed by UI */ }
 
 export { getSemanticSearchCacheDiagnostics };
 
+// ── Focus Transition Timer Management ───────────────────────────────────────
+// Handles from setTimeout calls in beginSearchFocusTransition.  Cleared on
+// re-entry (new transition cancels in-flight) and in clearSearch() to prevent
+// stale closures from holding DOM / state references after panel teardown.
+const _searchFocusTransitionTimers = [];
+
+function _clearSearchFocusTimers() {
+    _searchFocusTransitionTimers.forEach(clearTimeout);
+    _searchFocusTransitionTimers.length = 0;
+}
+
 // ── Search Orchestration ───────────────────────────────────────────────────
 
 export async function search(query, options = {}) {
@@ -217,6 +235,12 @@ export async function search(query, options = {}) {
         applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQuery, error);
         return;
     } finally {
+        // Guard: only null the controller if it's still the one *we* created.
+        // A concurrent search() call may have already aborted the old controller
+        // (line 145) and assigned a new one (line 194).  Checking identity
+        // against the captured `controller` reference prevents nulling the
+        // new search's controller — this is the sole path that clears
+        // state.searchAbortController after initial assignment.
         if (getSearchAbortController() === controller) {
             state.searchAbortController = null;
         }
@@ -225,72 +249,79 @@ export async function search(query, options = {}) {
     if (requestId !== getSearchRequestSequence()) return;
     stopSearchVectorScramble();
 
-    const serviceResults = getSemanticSearchServiceResults(payload);
-    const totalMatches = getSemanticSearchTotalMatches(payload, serviceResults);
-    const results = mapSemanticSearchResults(serviceResults);
+    try {
+        const serviceResults = getSemanticSearchServiceResults(payload);
+        const totalMatches = getSemanticSearchTotalMatches(payload, serviceResults);
+        const results = mapSemanticSearchResults(serviceResults);
 
-    if (requestId !== getSearchRequestSequence()) return;
-    if (!results.length) {
-        publish(EVENTS.SEARCH_EMPTY, { resultsEl, statusEl, query: trimmedQuery, restoreAnchorLeadId: options.restoreAnchorLeadId });
-        return;
-    }
-
-    const topResult = results[0] || null;
-    const resultIndices = results.map((r) => r.index);
-    const anchorResult = options.restoreAnchorLeadId
-        ? results.find((r) => String(r.point.lead_id) === String(options.restoreAnchorLeadId)) || topResult
-        : topResult;
-    const anchorIndex = anchorResult?.index ?? topResult?.index ?? null;
-    const anchorName = anchorResult ? formatBusinessName(anchorResult.point.name) : null;
-
-    state.currentSearchSummary = {
-        query: trimmedQuery, totalMatches, totalSemanticMatches: totalMatches, visibleMatches: results.length,
-        anchorIndex, topIndex: topResult?.index ?? null, resultIndices
-    };
-
-    publish(EVENTS.SEARCH_SUCCESS, {
-        resultsEl,
-        query: trimmedQuery,
-        source: payload?.client_cache_hit ? 'memory-cache' : 'network'
-    });
-
-    if (results.length === 1) {
-        const soleIndex = anchorIndex;
-        const soleName = anchorName || formatBusinessName(results[0].point.name);
-        updateSearchTrailCue({
-            beat: 'focus', kicker: 'Single result',
-            title: `${soleName} — only match for "${trimmedQuery}"`,
-            note: 'Only one record matches. Click it to inspect, or search again for a broader result.',
-            immediate: isCompactSearchViewport()
-        });
-        if (Number.isFinite(soleIndex)) {
-            publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point: results[0].point, index: soleIndex });
+        if (requestId !== getSearchRequestSequence()) return;
+        if (!results.length) {
+            publish(EVENTS.SEARCH_EMPTY, { resultsEl, statusEl, query: trimmedQuery, restoreAnchorLeadId: options.restoreAnchorLeadId });
+            return;
         }
-        statusEl.textContent = `1 match for "${trimmedQuery}" — ${soleName} is the only record.`;
-        setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: false });
-        return;
+
+        const topResult = results[0] || null;
+        const resultIndices = results.map((r) => r.index);
+        const anchorResult = options.restoreAnchorLeadId
+            ? results.find((r) => String(r.point.lead_id) === String(options.restoreAnchorLeadId)) || topResult
+            : topResult;
+        const anchorIndex = anchorResult?.index ?? topResult?.index ?? null;
+        const anchorName = anchorResult ? formatBusinessName(anchorResult.point.name) : null;
+
+        state.currentSearchSummary = {
+            query: trimmedQuery, totalMatches, totalSemanticMatches: totalMatches, visibleMatches: results.length,
+            anchorIndex, topIndex: topResult?.index ?? null, resultIndices
+        };
+
+        publish(EVENTS.SEARCH_SUCCESS, {
+            resultsEl,
+            query: trimmedQuery,
+            source: payload?.client_cache_hit ? 'memory-cache' : 'network'
+        });
+
+        if (results.length === 1) {
+            const soleIndex = anchorIndex;
+            const soleName = anchorName || formatBusinessName(results[0].point.name);
+            updateSearchTrailCue({
+                beat: 'focus', kicker: 'Single result',
+                title: `${soleName} — only match for "${trimmedQuery}"`,
+                note: 'Only one record matches. Click it to inspect, or search again for a broader result.',
+                immediate: isCompactSearchViewport()
+            });
+            if (Number.isFinite(soleIndex)) {
+                publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point: results[0].point, index: soleIndex });
+            }
+            statusEl.textContent = `1 match for "${trimmedQuery}" — ${soleName} is the only record.`;
+            setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: false });
+            return;
+        }
+
+        resetSemanticGuideUi();
+        recordSemanticLaneSnapshot({ rail_mode: 'live', anchor_lead_id: anchorResult?.point?.lead_id ?? null, requested_anchor_lead_id: options.restoreAnchorLeadId });
+        activateSearchGlow(resultIndices, anchorIndex);
+        updateSearchPreviewOverlay(anchorIndex);
+
+        const renderContext = {
+            trimmedQuery,
+            topIndex: topResult?.index ?? null,
+            topScore: topResult?.score ?? null,
+            anchorIndex,
+            resultIndices
+        };
+        renderSearchResultItems(resultsEl, results, renderContext, statusEl);
+        bindSearchResultInteractions(resultsEl, statusEl, results, renderContext);
+
+        resultsEl.hidden = false;
+        resultsEl.classList.add('active');
+        setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true });
+        setupMobileSearchSheetToggle({ isCompactSearchViewport });
+        setActiveSearchResultRow(resultsEl, anchorIndex);
+    } catch (error) {
+        if (controller.signal.aborted || requestId !== getSearchRequestSequence()) return;
+        stopSearchVectorScramble();
+        publish(EVENTS.SEARCH_DEGRADED, { resultsEl, statusEl, query: trimmedQuery, error });
+        applySemanticSearchDegradedState(resultsEl, statusEl, trimmedQuery, error);
     }
-
-    resetSemanticGuideUi();
-    recordSemanticLaneSnapshot({ rail_mode: 'live', anchor_lead_id: anchorResult?.point?.lead_id ?? null, requested_anchor_lead_id: options.restoreAnchorLeadId });
-    activateSearchGlow(resultIndices, anchorIndex);
-    updateSearchPreviewOverlay(anchorIndex);
-
-    const renderContext = {
-        trimmedQuery,
-        topIndex: topResult?.index ?? null,
-        topScore: topResult?.score ?? null,
-        anchorIndex,
-        resultIndices
-    };
-    renderSearchResultItems(resultsEl, results, renderContext, statusEl);
-    bindSearchResultInteractions(resultsEl, statusEl, results, renderContext);
-
-    resultsEl.hidden = false;
-    resultsEl.classList.add('active');
-    setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true });
-    setupMobileSearchSheetToggle({ isCompactSearchViewport });
-    setActiveSearchResultRow(resultsEl, anchorIndex);
 }
 
 export function bindSearchResultInteractions(resultsEl, statusEl, results, renderContext) {
@@ -316,6 +347,9 @@ export function bindSearchResultInteractions(resultsEl, statusEl, results, rende
 export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, targetIndex, point, el) {
     if (!point || !getCurrentSearchSummary()) return;
     if (!el) return;
+    // Cancel any in-flight focus-transition timers so rapid clicks or
+    // mode changes don't leave stale closures referencing old DOM/state.
+    _clearSearchFocusTimers();
     const token = (state.searchFocusTransitionToken = (state.searchFocusTransitionToken || 0) + 1);
 
     publish(EVENTS.SEARCH_FOCUS_TRANSITION_STARTED, {
@@ -328,7 +362,7 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
     });
 
     const focusDelayMs = isCompactSearchViewport() ? 40 : 120;
-    setTimeout(() => {
+    _searchFocusTransitionTimers.push(setTimeout(() => {
         if (token !== getSearchFocusTransitionToken()) return;
 
         publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: targetIndex });
@@ -337,20 +371,24 @@ export function beginSearchFocusTransition(resultsEl, statusEl, resultIndices, t
         if (input) input.blur();
 
         if (getCurrentView() === 'map') {
-            setTimeout(() => {
+            _searchFocusTransitionTimers.push(setTimeout(() => {
                 if (token !== getSearchFocusTransitionToken()) return;
                 publish(EVENTS.VIEW_CHANGED, { view: 'galaxy' });
-            }, 800);
+            }, 800));
         }
 
-        setTimeout(() => {
+        _searchFocusTransitionTimers.push(setTimeout(() => {
             if (token !== getSearchFocusTransitionToken()) return;
             publish(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, { targetIndex, point });
-        }, 260);
-    }, focusDelayMs);
+        }, 260));
+    }, focusDelayMs));
 }
 
 export function clearSearch(options = {}) {
+    // Cancel any in-flight focus-transition timers so stale closures
+    // (holding resultsEl, statusEl, renderContext, point) can be GC'd.
+    _clearSearchFocusTimers();
+
     const priorSummary = getCurrentSearchSummary();
 
     if (!options.skipResetFocus) {
@@ -361,6 +399,15 @@ export function clearSearch(options = {}) {
         state.currentSearchSummary = priorSummary;
     } else {
         state.currentSearchSummary = null;
+    }
+
+    // Clear Svelte stores so search results are removed from the DOM.
+    if (!options.preserveSearch) {
+        searchResultsStore.set([]);
+        searchSummaryStore.set(null);
+        isSearchingStore.set(false);
+        searchErrorStore.set(null);
+        searchVisibleCountStore.set(5);
     }
 
     if (!options.suppressEvent) {

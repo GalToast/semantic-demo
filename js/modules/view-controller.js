@@ -284,8 +284,15 @@ export function switchView(view, options = {}) {
             .then(() => {
                 if (state.currentView !== 'map') return
                 if (state.map) {
-                    setTimeout(() => {
-                        state.map.invalidateSize()
+                    if (state._mapInvalidateTimer) {
+                        clearTimeout(state._mapInvalidateTimer)
+                        state._mapInvalidateTimer = null
+                    }
+                    state._mapInvalidateTimer = setTimeout(() => {
+                        state._mapInvalidateTimer = null
+                        if (state.map) {
+                            state.map.invalidateSize()
+                        }
                         scheduleMapRouteRefresh()
                     }, 100)
                 }

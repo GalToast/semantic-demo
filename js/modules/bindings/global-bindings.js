@@ -2,6 +2,7 @@ import { state } from '../../state.js';
 import { handleGalaxyKeydown } from '../keyboard-help.js';
 import { handleSemanticLaneWindowFocus, handleSemanticLaneVisibilityChange } from './semantic-lane-bindings.js';
 import { applyUrlState } from '../url-state.js';
+import { disposeFocusTrapBindings } from './focus-trap-bindings.js';
 
 export let _globalEventController = new AbortController();
 
@@ -10,6 +11,8 @@ export function disposeEventListeners() {
     _globalEventController = new AbortController();
     state.registeredEvents.clear();
     state.eventListenersInitialized = false;
+    if (document.body) delete document.body.dataset.journeyCompassStepDelegated;
+    disposeFocusTrapBindings();
 }
 
 export function bindGlobalEvents() {

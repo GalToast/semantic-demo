@@ -1,9 +1,10 @@
 import { state } from '../../state.js';
+import { _globalEventController } from './global-bindings.js';
 import { isCompactFocusStageViewport } from '../utils/ui-presentation.js';
 import { closeLegendPanel, openLegendPanel, restoreLegendCollapsedPanel, setPreviouslyFocusedLegend, getPreviouslyFocusedLegend, closeLegendGuide } from '../legend-ui.js';
 import { setFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.js';
 
-export function bindLegendControls() {
+export function bindLegendControls(signal = _globalEventController.signal) {
     const infoPanel = document.querySelector('.info-panel');
     const panelBtn = document.getElementById('btn-panel');
     const legendPanel = document.getElementById('legend-panel');
@@ -42,11 +43,11 @@ export function bindLegendControls() {
             if (prevFocus && typeof prevFocus.focus === 'function') {
                 prevFocus.focus({ preventScroll: true });
             }
-        });
+        }, { signal });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && legendPanel?.classList.contains('active')) {
                 if (typeof closeLegendGuide === 'function') closeLegendGuide({ restoreFocus: true });
             }
-        });
+        }, { signal });
     }
 }
