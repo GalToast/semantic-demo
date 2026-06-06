@@ -93,6 +93,9 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
   { key: 'semanticDive', description: 'Semantic dive state (inactive|transitioning|active)', source: 'focusStore.semanticDiveMode' },
   { key: 'insideWalkState', description: 'Inside walk state (idle|walking|exploring|...)', source: 'focusStore.strandContinuityPhase' },
 
+  // Strand journey (legacy strand-continuity.js — CSS journey_steps.css reads data-strand-journey)
+  { key: 'strandJourney', description: 'Strand journey phase (idle|preview|pinned|exploring|arrived|returning)', source: 'focusStore.strandContinuityPhase' },
+
   // Journey phase
   { key: 'journeyPhase', description: 'Journey phase lifecycle (idle|overview|search|focus|inside|map|thread-inspect|walking|arriving|settling)', source: 'journeyStore.phase' },
   { key: 'demoPhase', description: 'Demo choreography phase', source: 'demoStore.phase' },
@@ -224,6 +227,7 @@ export function computeParityAttributes(
     semanticDive,
     insideWalkState: focus.strandContinuityPhase || 'idle',
 
+    strandJourney: focus.strandContinuityPhase || 'idle',
     journeyPhase: journey.phase || 'idle',
     demoPhase,
 
