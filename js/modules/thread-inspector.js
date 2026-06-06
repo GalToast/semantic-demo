@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import {
     getCurrentView, getNavState, getSelectedPoint,
     getStrandContinuityState,
@@ -26,7 +26,7 @@ import {
     disposeInspectedStrandOverlay
 } from './thread-inspector-webgl.js';
 import { setInspectedStrandOverlayUpdater } from './inspected-strand-overlay-adapter.js';
-import { setStrandContinuityState, clearStrandContinuityState } from './strand-continuity.js';
+import { setStrandContinuityState, clearStrandContinuityState, setTimer, clearTimer, disposeTimers } from './strand-continuity.js';
 import { getStrandArrivalNote } from './strand-continuity.js';
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from './relationship-roles.js';
 import {
@@ -172,6 +172,14 @@ export function renderThreadInspection(index = getInspectedThreadIndex(), option
         delete inspector._pointerLeaveListener;
         delete inspector.dataset.pointerGuardBound;
     }
+    if (inspector._dblclickListener) {
+        inspector.removeEventListener('dblclick', inspector._dblclickListener);
+        delete inspector._dblclickListener;
+    }
+    if (inspector._keydownListener) {
+        inspector.removeEventListener('keydown', inspector._keydownListener);
+        delete inspector._keydownListener;
+    }
     if (!inspector.dataset.pointerGuardBound) {
         inspector.dataset.pointerGuardBound = 'true';
         const pointerEnter = () => {
@@ -309,6 +317,8 @@ export function unpinThreadInspection() {
     state.pinnedThreadIndex = null;
     state.inspectedThreadIndex = null;
     clearStrandContinuityState('unpin');
+    clearTimer('arrival');
+    clearTimer('settle');
     const inspectionState = renderThreadInspection(null, { surface: 'idle', force: true });
     syncSemanticDiveUi();
     return inspectionState;
@@ -345,12 +355,15 @@ export function clearThreadInspection(options = {}) {
         syncFocusStage(getSelectedPoint());
         syncSemanticDiveUi();
         if (!options.preserveJourney) clearStrandContinuityState('force-clear');
+        disposeTimers();
     }
     if (getPinnedThreadIndex() !== null && !options.force) {
         return renderThreadInspection(getPinnedThreadIndex(), { surface: 'pinned', pinned: true });
     }
     if (!options.preserveJourney && getStrandContinuityState()?.phase === 'preview') {
         clearStrandContinuityState('preview-clear');
+        clearTimer('arrival');
+        clearTimer('settle');
     }
     state.inspectedThreadIndex = null;
     state.threadInspectorPointerInside = false;
@@ -381,22 +394,17 @@ export function exploreThreadNeighbor(index, options = {}) {
         candidate?.reason ||
         options.reason ||
         'nearby business relationship';
-    const strandState = getStrandContinuityState();
-    if (Number.isFinite(strandState?.arrivalTimeoutId)) {
-        window.clearTimeout(strandState.arrivalTimeoutId);
-        strandState.arrivalTimeoutId = undefined;
-    }
-    if (Number.isFinite(strandState?.settleTimeoutId)) {
-        window.clearTimeout(strandState.settleTimeoutId);
-        strandState.settleTimeoutId = undefined;
-    }
+    clearTimer('arrival');
+    clearTimer('settle');
     state.pinnedThreadIndex = null;
     state.inspectedThreadIndex = index;
     setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason });
     // Route through navTransitionReducer for canonical mode='trail' and walkHistoryIndices ownership.
     dispatchNavTransition('WALK_TO', { index, fromIndex, appendHistory: !options.restoreHistory });
     renderThreadInspection(index, { force: true, surface: options.surface || 'explore' });
-    state.navState.lastTraversalReason = reason;
+    withStateMutation(() => {
+        state.navState.lastTraversalReason = reason;
+    });
     if (getCurrentView() === 'map') {
         focusOnPoint(targetPoint, {
             fromTraversal: true,
@@ -421,7 +429,7 @@ export function exploreThreadNeighbor(index, options = {}) {
     const capturedIndex = index;
     const capturedFromIndex = fromIndex;
     const capturedReason = reason;
-    const arrivalTid = window.setTimeout(() => {
+    setTimer('arrival', arrivalDelay, () => {
         const s2 = getStrandContinuityState();
         if (s2?.phase === 'exploring' && s2?.targetIndex === capturedIndex) {
             setStrandContinuityState('arrived', { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason });
@@ -429,50 +437,15 @@ export function exploreThreadNeighbor(index, options = {}) {
             syncFocusStage(pointAtArrival || getSelectedPoint() || null);
             updateJourneyCompass();
         }
-    }, arrivalDelay);
-    getStrandContinuityState().arrivalTimeoutId = arrivalTid;
+    });
     const settleDelay = options.settleDelay || 5200;
-    const settleTid = window.setTimeout(() => {
+    setTimer('settle', settleDelay, () => {
         const s3 = getStrandContinuityState();
         if (s3?.phase === 'arrived' && s3?.targetIndex === capturedIndex) {
             clearStrandContinuityState('arrival-settled');
             const pointAtSettle = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < pts.length) ? pts[capturedIndex] : null;
             syncFocusStage(pointAtSettle || getSelectedPoint() || null);
         }
-    }, settleDelay);
-    getStrandContinuityState().settleTimeoutId = settleTid;
+    });
     return { targetIndex: index, fromIndex, reason };
 }
-
-
-
-import { registerDiagnosticProbe } from './diagnostic-adapter.js';
-
-// Debug access — registered via diagnostic-adapter
-registerDiagnosticProbe('_ti', {
-    getSemanticThreadCandidates,
-    getGeometricThreadCandidates,
-    getThreadCandidatesForIndex,
-    setStrandContinuityState,
-    clearStrandContinuityState,
-    getStrandArrivalNote,
-    getThreadInspectionState,
-    renderThreadInspection,
-    inspectThreadNeighbor,
-    pinThreadNeighbor,
-    unpinThreadInspection,
-    scheduleCanvasThreadInspectionClear,
-    clearThreadInspection,
-    exploreThreadNeighbor,
-    syncInspectedStrandOverlay,
-    updateInspectedStrandOverlay,
-    disposeInspectedStrandOverlay
-});
-
-// Diagnostic namespace — exploreThreadNeighbor remains accessible via _ti for debugging.
-// The direct window.exploreThreadNeighbor backward-compat bridge has been removed
-// as of Wave70. The active traversal seam is window.walkThreadNeighbor (journey.js).
-// _ti is gated behind window.__DEBUG_PROBES__ — when the gate is off, no bare window
-// function exports escape thread-inspector.js.
-// Contracts assert this state via thread-inspector-dewindowing-contract.mjs.
-// Do not re-add window.exploreThreadNeighbor without updating contracts first.

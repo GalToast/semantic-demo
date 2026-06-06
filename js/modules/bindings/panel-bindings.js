@@ -1,4 +1,5 @@
 import { bindClick } from './view-bindings.js';
+import { _globalEventController } from './global-bindings.js';
 import { isCompactFocusStageViewport } from '../utils/ui-presentation.js';
 import { closeLegendPanel } from '../legend-ui.js';
 import { cancelMicroDemo } from '../micro-demo.js';
@@ -52,11 +53,7 @@ export function setInfoPanelOpen(open, options = {}) {
 let _activeResizeHandler = null;
 let _resizeRafId = null;
 
-export function bindPanelControls(onWindowResize) {
-    if (_activeResizeHandler) {
-        window.removeEventListener('resize', _activeResizeHandler);
-    }
-
+export function bindPanelControls(onWindowResize, signal = _globalEventController.signal) {
     // Debounce the resize handler with requestAnimationFrame to prevent layout thrashing
     _activeResizeHandler = () => {
         if (_resizeRafId) return;
@@ -66,7 +63,7 @@ export function bindPanelControls(onWindowResize) {
         });
     };
 
-    window.addEventListener('resize', _activeResizeHandler);
+    window.addEventListener('resize', _activeResizeHandler, { signal });
 
     bindClick('info-panel-toggle', () => {
         cancelMicroDemo('user-input');

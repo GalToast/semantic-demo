@@ -9,7 +9,7 @@ if (typeof window !== 'undefined') {
 }
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import {
     releaseFocusCameraAssist,
     focusCameraAssistIsActive,
@@ -134,8 +134,10 @@ let _webglFallbackClickHandler = null;
 function showWebGLFallback(container, detail = {}) {
     if (!container) return;
     document.body.dataset.graphicsMode = 'fallback';
-    state.scenePerformanceDiagnostics.active = false;
-    state.scenePerformanceDiagnostics.reason = detail.reason || 'webgl-unavailable';
+    withStateMutation(() => {
+        state.scenePerformanceDiagnostics.active = false;
+        state.scenePerformanceDiagnostics.reason = detail.reason || 'webgl-unavailable';
+    });
     state.scene = null;
     state.camera = null;
     state.renderer = null;
@@ -239,13 +241,13 @@ function bindWebGLContextResilience(renderer) {
             window.cancelAnimationFrame(_rafId);
             _rafId = null;
         }
-        state.scenePerformanceDiagnostics.reason = 'webgl-context-lost';
+        withStateMutation(() => { state.scenePerformanceDiagnostics.reason = 'webgl-context-lost'; });
         showExperienceToast('Graphics context paused', 'The scene will restore automatically.');
     }, false);
 
     canvas.addEventListener('webglcontextrestored', () => {
         _webglContextLost = false;
-        state.scenePerformanceDiagnostics.reason = 'webgl-context-restored';
+        withStateMutation(() => { state.scenePerformanceDiagnostics.reason = 'webgl-context-restored'; });
         if (_webglRestoreTimer) window.clearTimeout(_webglRestoreTimer);
         _webglRestoreTimer = window.setTimeout(() => {
             _webglRestoreTimer = null;
@@ -490,7 +492,7 @@ export function animate() {
     const sceneFrameMs = state.scenePerformanceDiagnostics.lastFrameAt
         ? Math.min(250, Math.max(0, frameNow - state.scenePerformanceDiagnostics.lastFrameAt))
         : 0;
-    state.scenePerformanceDiagnostics.lastFrameAt = frameNow;
+    withStateMutation(() => { state.scenePerformanceDiagnostics.lastFrameAt = frameNow; });
     
     updateAutoRotateSoftResume(frameNow);
 

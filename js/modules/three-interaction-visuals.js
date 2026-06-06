@@ -264,7 +264,8 @@ export function initSemanticManifold() {
 }
 
 export function initSemanticLens() {
-    state.semanticLensGroup = new THREE.Group();
+  disposeSemanticLens();
+  state.semanticLensGroup = new THREE.Group();
     state.semanticLensGroup.visible = false;
     state.scene.add(state.semanticLensGroup);
 
