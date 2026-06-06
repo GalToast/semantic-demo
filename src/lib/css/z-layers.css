@@ -58,6 +58,10 @@
   /* Journey blocking overlay */
   --z-journey-block: 900;
 
+  /* Generic blocker backdrop (modal backdrop) — mirrors css/base.css:127 */
+  /* NOTE: Not yet in src/lib/z-index.ts — add blockerBackdrop: 900 there when syncing */
+  --z-blocker-backdrop: 900;
+
   /* Generic blocker (modal backdrop) */
   --z-blocker: 1000;
 

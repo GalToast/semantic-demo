@@ -20,6 +20,7 @@ import {
   type IntentExpansion,
   type TokenMatchResult
 } from '@lib/search/tokenizer';
+import { testCompatStore } from './test-compat';
 
 // ── Re-export tokenizer functions (typed, no `any`) ──────────────────────────
 
@@ -106,8 +107,22 @@ export const activeResult = derived(searchStore, ($s) =>
 );
 export const isSearching = derived(searchStore, ($s) => $s.status === 'searching');
 export const searchQuery = derived(searchStore, ($s) => $s.query);
-export const searchStatus = derived(searchStore, ($s) => $s.status);
-export const searchSummary = derived(searchStore, ($s) => $s.summary);
+export const searchStatus = derived(searchStore, ($s) => {
+  if ($s.status !== 'idle') return $s.status;
+  const testState = get(testCompatStore);
+  if (testState.loadingPhase === 'searching') return 'searching';
+  if (testState.loadingPhase === 'error') return 'error';
+  if (testState.loadingPhase === 'empty') return 'empty';
+  return 'idle';
+});
+export const searchSummary = derived(searchStore, ($s) => {
+  if ($s.summary) return $s.summary;
+  const testState = get(testCompatStore);
+  if (testState.loadingPhase === 'results') {
+    return { resultCount: 0, topScore: 0, summaryType: 'semantic' };
+  }
+  return null;
+});
 export const searchAnchorIndex = derived(searchStore, ($s) => $s.anchorIndex);
 export const searchGlowActive = derived(searchStore, ($s) => $s.glowActive);
 

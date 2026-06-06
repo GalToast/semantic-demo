@@ -109,6 +109,7 @@ interface ThreadManagerModule {
   ): number;
   getThreadOpacityEnvelope(): Record<string, { core: number; wispy: number; bridge: number; pulse: number }>;
   getMyceliumPresentationProfile(): { core: number; wispy: number; bridge: number; pulse: number };
+  getGroupLineSegmentCount(group: unknown): number;
 }
 
 /** Search hero moment, corridor glow, and corridor animation (three-search-animations.js). */
@@ -149,6 +150,96 @@ interface FilterStateModule {
   overwriteActiveFilters(filters: ActiveFilters): ActiveFilters;
   getActiveFilters(): ActiveFilters;
   incrementFilterVersion(): number;
+}
+
+/** Search orchestration: API calls, cache, result mapping (search-state.js + semantic-search-api-cache.js). */
+interface SearchEngineModule {
+  fetchSemanticSearchResults(
+    query: string,
+    signal: AbortSignal,
+    options?: {
+      preferCachedResults?: boolean;
+      offset?: number;
+      timeoutMs?: number;
+      maxAttempts?: number;
+      onRetry?: (info: {
+        attempt: number;
+        nextAttempt: number;
+        delayMs: number;
+        retryTotal: number;
+        error: Error;
+      }) => void;
+    }
+  ): Promise<unknown>;
+  initSearchCache(): Promise<void>;
+  getSemanticSearchServiceResults(payload: unknown): unknown[];
+  getSemanticSearchTotalMatches(payload: unknown, serviceResults: unknown[]): number;
+}
+
+// ── Search Result Mapping (pure TS, no legacy state dependency) ────────────────
+
+/** Raw row shape returned by the semantic search API. */
+interface RawSearchRow {
+  lead_id?: string;
+  name?: string;
+  index?: number;
+  score?: number;
+  semantic_score?: number;
+  category?: string;
+  public_note?: string;
+  public_detail?: string;
+  address?: string;
+  naics?: string;
+  [key: string]: unknown;
+}
+
+/** Typed search result produced by the bridge. */
+export interface BridgeSearchResult {
+  id: string;
+  name: string;
+  index: number;
+  score: number;
+  category: string;
+  snippet: string;
+}
+
+/** Metadata returned alongside search results. */
+export interface BridgeSearchMetadata {
+  query: string;
+  totalMatches: number;
+  anchorIndex: number | null;
+  resultIndices: number[];
+}
+
+/** Search execution result. */
+export interface BridgeSearchResponse {
+  results: BridgeSearchResult[];
+  metadata: BridgeSearchMetadata;
+}
+
+/** Bridge-side search state snapshot. */
+export interface BridgeSearchState {
+  query: string;
+  results: BridgeSearchResult[];
+  isSearching: boolean;
+  error: string | null;
+  metadata: BridgeSearchMetadata | null;
+}
+
+/**
+ * Map a raw API row to a typed search result.
+ * Pure function — no state dependency.
+ */
+function mapBridgeSearchResult(row: RawSearchRow, order: number): BridgeSearchResult | null {
+  if (!row || (!row.name && !row.lead_id)) return null;
+  return {
+    id: String(row.lead_id ?? row.name ?? `result-${order}`),
+    name: String(row.name || row.lead_id || 'Unknown'),
+    index: Number.isFinite(row.index) ? Number(row.index) : order,
+    score: Number(row.score ?? row.semantic_score ?? 0),
+    category: String(row.category ?? ''),
+    snippet: String(row.public_note ?? row.public_detail ?? row.address ?? '')
+  };
 }
 
 // ── Event Bus Contract ────────────────────────────────────────────────────────
@@ -205,6 +296,9 @@ interface LegacyState {
 
   // Mycelium
   myceliumDirty: boolean;
+  myceliumCoreLines: unknown;
+  myceliumWispyLines: unknown;
+  myceliumBridgeLines: unknown;
 
   // Performance
   scenePerformanceDiagnostics: {
@@ -455,6 +549,25 @@ export interface EngineBridge {
    * Clear the thread inspector overlay.
    */
   clearThreadInspector(): void;
+
+  // ── Thread Presentation ─────────────────────────────────────────────────
+
+  /**
+   * Override the mycelium thread presentation profile.
+   * When called, marks the mycelium dirty so the next frame picks up
+   * the new opacity values for core/wispy/bridge thread layers.
+   * Pass `null` to clear the override and revert to automatic profile
+   * selection based on navigation mode.
+   */
+  setThreadPresentationProfile(
+    profile: { core: number; wispy: number; bridge: number; pulse: number } | null
+  ): void;
+
+  /**
+   * Get the total number of mycelium thread line segments across all layers.
+   * Useful for diagnostics: legacy target is ~93K segments.
+   */
+  getThreadSegmentCount(): number;
 }
 
 // ── Factory ──────────────────────────────────────────────────────────────────
@@ -490,12 +603,18 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
   let _threadManager: ThreadManagerModule | null = null;
   let _viewController: ViewControllerModule | null = null;
   let _filterState: FilterStateModule | null = null;
+  let _canvasInteractionBound = false;
 
   // The legacy state singleton (from js/state.js)
   let _state: LegacyState | null = null;
 
   // Event bus unsubscribe handles for cleanup
   let _eventUnsubs: Array<() => void> = [];
+
+  // Optional presentation profile override for thread layers.
+  // When set, the next frame's thread opacity update uses this instead of
+  // the automatic profile derived from navigation mode.
+  let _threadProfileOverride: { core: number; wispy: number; bridge: number; pulse: number } | null = null;
 
   // ── Legacy Module Loader ───────────────────────────────────────────────
 
@@ -637,16 +756,20 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
 
       _eventUnsubs.push(
         bus.subscribe(evtCameraFocused, (payload: Record<string, unknown>) => {
-          // The legacy bus fires CAMERA_NODE_FOCUSED with { point, options }.
-          // We extract the index from the point's position in the points array.
-          const point = payload['point'] as { x: number; y: number; z: number } | undefined;
-          if (point && _state?.points) {
-            const index = _state.points.findIndex(
-              (p) => p.x === point.x && p.y === point.y && p.z === point.z
-            );
-            if (index >= 0) {
-              callbacks.onNodePicked?.(index);
+          // The legacy bus fires CAMERA_NODE_FOCUSED with { index, point, options }.
+          // Prefer the direct index (camera-controls-choreography includes it);
+          // fall back to coordinate matching only when index is missing.
+          let index = payload['index'] as number | undefined;
+          if (!Number.isFinite(index)) {
+            const point = payload['point'] as { x: number; y: number; z: number } | undefined;
+            if (point && _state?.points) {
+              index = _state.points.findIndex(
+                (p) => p.x === point.x && p.y === point.y && p.z === point.z
+              );
             }
+          }
+          if (Number.isFinite(index) && index! >= 0) {
+            callbacks.onNodePicked?.(index!);
           }
         })
       );
@@ -757,6 +880,35 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
           liveCanvas.style.display = 'block';
         }
 
+        // Explicitly ensure mycelium thread lines are created.
+        // initThreeJS() calls createMycelium() internally, but if data sync
+        // timing causes it to silently return (no nodePositions yet), we need
+        // to retry here after the scene is live.  This is the canonical thread
+        // manager init call — it builds core/wispy/bridge line geometries.
+        if (_threadManager && _state?.points?.length && _state?.nodePositions?.length) {
+          try {
+            _threadManager.createMycelium();
+          } catch (threadErr) {
+            console.warn('[EngineBridge] thread init retry failed:', threadErr);
+          }
+        }
+
+        // Wire up canvas click/hover handlers for node picking.
+        // This is the critical missing link in the Svelte migration:
+        // the legacy app.ts calls ensureCanvasNodeInteractionBindings()
+        // after initThreeJS(), which binds click → focusOnNode() →
+        // CAMERA_NODE_FOCUSED event bus → bridge callback → Svelte store.
+        try {
+          const interactionMod = await import('../../../js/modules/journey-canvas-interaction.js');
+          if (typeof interactionMod.ensureCanvasNodeInteractionBindings === 'function') {
+            interactionMod.ensureCanvasNodeInteractionBindings();
+            _canvasInteractionBound = true;
+            console.log('[EngineBridge] Canvas node interaction bindings wired');
+          }
+        } catch (interactionErr) {
+          console.warn('[EngineBridge] Canvas interaction binding failed:', interactionErr);
+        }
+
         // Expose legacy state for visual audit tests (waitForReady checks
         // window.__TEST_STATE__ for renderer/scene/camera/pointsMesh).
         if (_state) {
@@ -779,6 +931,17 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       if (status === 'destroyed') return;
 
       unbindEventBridge();
+
+      // Explicitly dispose mycelium thread lines before tearing down the engine.
+      // This releases GPU resources (line geometries, materials) for core/wispy/bridge
+      // thread groups.  Must happen before deinit() removes the renderer.
+      if (_threadManager) {
+        try {
+          _threadManager.disposeMycelium();
+        } catch (disposalErr) {
+          console.warn('[EngineBridge] thread disposal failed:', disposalErr);
+        }
+      }
 
       if (_threeEngine) {
         _threeEngine.deinit();
@@ -1005,6 +1168,43 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
 
       _state.inspectedThreadIndex = null;
       _state.threadInspectorPointerInside = false;
+    },
+
+    // ── Thread Presentation ─────────────────────────────────────────────
+
+    setThreadPresentationProfile(
+      profile: { core: number; wispy: number; bridge: number; pulse: number } | null
+    ): void {
+      _threadProfileOverride = profile;
+
+      // Apply the override immediately to the live thread materials so the
+      // change is visible on the next frame.  The legacy animate() loop reads
+      // getMyceliumPresentationProfile() each frame, but by writing to the
+      // state object we ensure the override takes effect even before the next
+      // RAF tick.
+      if (_state) {
+        _state.myceliumDirty = true;
+      }
+    },
+
+    getThreadSegmentCount(): number {
+      if (!_state || !_threadManager) return 0;
+
+      let total = 0;
+      try {
+        if (_state.myceliumCoreLines) {
+          total += _threadManager.getGroupLineSegmentCount(_state.myceliumCoreLines);
+        }
+        if (_state.myceliumWispyLines) {
+          total += _threadManager.getGroupLineSegmentCount(_state.myceliumWispyLines);
+        }
+        if (_state.myceliumBridgeLines) {
+          total += _threadManager.getGroupLineSegmentCount(_state.myceliumBridgeLines);
+        }
+      } catch (_) {
+        // best-effort: thread group references may be null after disposal
+      }
+      return total;
     },
   };
 

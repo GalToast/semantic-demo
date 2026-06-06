@@ -107,6 +107,7 @@
           class:active={isStatusActive(filter.id)}
           data-status-filter={filter.id}
           onclick={() => handleStatusToggle(filter.id)}
+          aria-pressed={isStatusActive(filter.id)}
           type="button"
         >
           {filter.label}
@@ -123,6 +124,7 @@
           class:active={isContactActive(filter.id)}
           data-signal-filter={filter.id}
           onclick={() => handleContactToggle(filter.id)}
+          aria-pressed={isContactActive(filter.id)}
           type="button"
         >
           {filter.label}
@@ -237,6 +239,10 @@
   .city-filter:focus {
     border-color: rgba(78, 205, 196, 0.5);
     outline: none;
+  }
+  .city-filter:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline-offset: 2px;
   }
   .filter-reset {
     padding: 0.2rem 0.5rem;

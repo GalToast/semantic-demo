@@ -25,21 +25,21 @@ const SHOWCASE_POOL: readonly number[] = [50, 707, 1525, 2908, 3899, 4102, 6684,
 
 export const DEMO_TIMING = {
   GLIDING_MS: 1400,
-  ARRIVED_MS: 0,
+  ARRIVED_HOLD_MS: 120,
   CARD_VISIBLE_MS: 1800,
   PULLBACK_MS: 1200,
-  WIDE_VIEW_MS: 0,
+  WIDE_VIEW_HOLD_MS: 350,
   RETURNING_MS: 1000,
   COMPLETE_MS: 0
 } as const;
 
-/** Total demo duration in ms (sum of active phases). */
+/** Total demo duration in ms (sum of active phases + holds). */
 export const DEMO_TOTAL_DURATION_MS =
   DEMO_TIMING.GLIDING_MS +
-  DEMO_TIMING.ARRIVED_MS +
+  DEMO_TIMING.ARRIVED_HOLD_MS +
   DEMO_TIMING.CARD_VISIBLE_MS +
   DEMO_TIMING.PULLBACK_MS +
-  DEMO_TIMING.WIDE_VIEW_MS +
+  DEMO_TIMING.WIDE_VIEW_HOLD_MS +
   DEMO_TIMING.RETURNING_MS;
 
 // ── Valid Transitions ────────────────────────────────────────────────────────

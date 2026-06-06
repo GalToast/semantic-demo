@@ -21,3 +21,28 @@ export type {
   FilterOptions,
   SceneDiagnostics,
 } from './bridge';
+
+export {
+  PHASE as DemoChoreographyPhase,
+  getDemoPhase,
+  getDemoNodeIndex,
+  isDemoCancelled,
+  setDemoNodeIndex,
+  clearDemoTimers,
+  resetRetryState,
+  runDemo,
+  cancelChoreography,
+  isMicroDemoRunning,
+} from './demo-choreography';
+
+export {
+  focusOnNode,
+  animateCameraToNode,
+  animateCameraToSearchCorridor,
+  animateCameraToTerrainPrelude,
+  applySemanticCentroidCamera,
+  zoomCamera,
+  clearInsideCentroid,
+} from './camera-choreography';
+
+export type { FocusOnNodeOptions, AnimateCameraToNodeOptions } from './camera-choreography';
