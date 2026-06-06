@@ -36,6 +36,7 @@ import {
 
 import {
     createPoints,
+    disposeNodeVisuals,
     setNodeSporeInstanceMatrix,
     compilePointMaterialForReadiness,
     MYCELIUM_FIELD_SCALE,
@@ -57,7 +58,8 @@ import {
     updateCorridorNodeGlow,
     triggerSearchCorridorAnimation,
     updateSearchCorridorAnimation,
-    disposeSearchCorridorAnimation
+    disposeSearchCorridorAnimation,
+    disposeHeroAnimation
 } from './three-search-animations.js';
 
 import {
@@ -127,6 +129,8 @@ function detectWebGLSupport() {
     }
 }
 
+let _webglFallbackClickHandler = null;
+
 function showWebGLFallback(container, detail = {}) {
     if (!container) return;
     document.body.dataset.graphicsMode = 'fallback';
@@ -139,7 +143,14 @@ function showWebGLFallback(container, detail = {}) {
 
     container.querySelectorAll('canvas').forEach((canvas) => canvas.remove());
     const existingNotice = container.querySelector('.webgl-fallback-notice');
-    if (existingNotice) existingNotice.remove();
+    if (existingNotice) {
+        if (_webglFallbackClickHandler) {
+            const existingButton = existingNotice.querySelector('[data-webgl-fallback-map]');
+            existingButton?.removeEventListener('click', _webglFallbackClickHandler);
+            _webglFallbackClickHandler = null;
+        }
+        existingNotice.remove();
+    }
 
     const notice = document.createElement('section');
     notice.className = 'webgl-fallback-notice';
@@ -154,7 +165,7 @@ function showWebGLFallback(container, detail = {}) {
     container.appendChild(notice);
 
     const mapButton = notice.querySelector('[data-webgl-fallback-map]');
-    mapButton?.addEventListener('click', () => {
+    _webglFallbackClickHandler = () => {
         if (typeof switchView === 'function') {
             switchView('map', { reason: 'webgl-fallback' });
             return;
@@ -162,7 +173,8 @@ function showWebGLFallback(container, detail = {}) {
         document.getElementById('map-container')?.classList.add('active');
         container.classList.add('hidden');
         initMap();
-    });
+    };
+    mapButton?.addEventListener('click', _webglFallbackClickHandler);
 
     showExperienceToast('Graphics fallback active', 'Map view remains available while 3D graphics are unavailable.');
 }
@@ -279,22 +291,28 @@ export function initThreeJS() {
     state.scene = scene;
 
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(1.5, 1.2, 2.0);
+    camera.position.set(2.05, 1.55, 2.75);
     camera.lookAt(0, 0, 0);
     webglContext.camera = camera;
     state.camera = camera;
 
     // 10/10 Polish: Cinema Lighting Rig
-    const hemiLight = new THREE.HemisphereLight(0xe8f4ff, 0x080820, 0);
+    // hemisphere sky/ground ambient at modest intensity so the spore layer's
+    // vertex colors are visible via MeshPhongMaterial diffuse term.
+    const hemiLight = new THREE.HemisphereLight(0xe8f4ff, 0x080820, 0.35);
     scene.add(hemiLight);
     webglContext.hemiLight = hemiLight;
     state.hemiLight = hemiLight;
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0);
-    dirLight.position.set(5, 5, 5);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    dirLight.position.set(-2, 3, 5);
     scene.add(dirLight);
     webglContext.dirLight = dirLight;
     state.dirLight = dirLight;
+
+    const ambientLight = new THREE.AmbientLight(0x1a1510, 0.4);
+    scene.add(ambientLight);
+    webglContext.ambientLight = ambientLight;
 
     try {
         state.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: false });
@@ -350,9 +368,9 @@ export function initThreeJS() {
     // Large semantic atmosphere: a depth cue, not a literal object to inspect.
     const glowGeo = new THREE.SphereGeometry(3.15, 32, 16);
     const glowMat = new THREE.MeshBasicMaterial({
-        color: 0x0d2024,
+        color: 0x2a1f0a,
         transparent: true,
-        opacity: 0.026,
+        opacity: 0.10,
         side: THREE.BackSide
     });
     const glowSphere = new THREE.Mesh(glowGeo, glowMat);
@@ -366,7 +384,7 @@ export function initThreeJS() {
         color: 0x4ecdc4,
         wireframe: true,
         transparent: true,
-        opacity: 0.0045,
+        opacity: 0.015,
         depthWrite: false,
         blending: THREE.AdditiveBlending
     });
@@ -376,6 +394,7 @@ export function initThreeJS() {
     state.scene.add(refSphere);
 
     createPoints();
+    createMycelium();
     compilePointMaterialForReadiness();
     initSemanticLens();
     initSemanticManifold();
@@ -435,13 +454,20 @@ export function cancelAnimate() {
     webglContext.controls = null;
     webglContext.hemiLight = null;
     webglContext.dirLight = null;
+    webglContext.nodeSporeHitMesh = null;
 }
 
 export function deinit() {
     cancelAnimate();
+    disposeHeroAnimation();
     state.sceneRevealActive = false;
     state.sceneRevealCameraStart = null;
     state.sceneRevealCameraEnd = null;
+    // Tear down node visuals (instanced meshes + tracked GPU textures)
+    // and interaction visuals (semantic lens, focus anchor, micro-demo
+    // document listeners) so they don't leak across re-inits.
+    disposeNodeVisuals();
+    disposeInteractionVisuals();
 }
 
 export function animate() {
@@ -501,9 +527,6 @@ export function animate() {
         if (applyFocusPocketBreathing(frameNow, state.nodePositions)) {
             state.focusPocketMotionByIndex.forEach((_, idx) => {
                 setNodeSporeInstanceMatrix(idx);
-                if (state.nodeSporeHitMesh && state.navState.focusPocketIndices?.includes(idx)) {
-                    setNodeSporeInstanceMatrix(idx, state.nodeSporeHitMesh);
-                }
             });
             anyNodeMoved = true;
         }

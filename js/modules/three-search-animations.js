@@ -21,9 +21,11 @@ const CORRIDOR_SOFT_TOTAL_DURATION = 2800;
 
 let _corridorGlowToken = 0;
 const _corridorGlowNodes = {};
+const _corridorGlowTimers = new Set();
 
 let _corridorAnimState = null;
 let _corridorAnimStartTime = null;
+let _heroRafId = 0;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -80,14 +82,14 @@ function buildCorridorLineGeometry(anchorIndex, routeIndices) {
     geometry.setPositions(positions);
     geometry.setColors(colors);
 
-    const segmentCount = targetIndices.length * SEGMENTS;
+    const segmentCount = targetIndices.length * (SEGMENTS + 1);
     const progressArr = new Float32Array(segmentCount);
     for (let i = 0; i < targetIndices.length; i++) {
-        for (let s = 0; s < SEGMENTS; s++) {
-            progressArr[i * SEGMENTS + s] = s / SEGMENTS;
+        for (let s = 0; s <= SEGMENTS; s++) {
+            progressArr[i * (SEGMENTS + 1) + s] = s / SEGMENTS;
         }
     }
-    geometry.setAttribute('instanceProgress', new THREE.InstancedBufferAttribute(progressArr, 1));
+    geometry.setAttribute('progress', new THREE.InstancedBufferAttribute(progressArr, 1));
 
     return geometry;
 }
@@ -216,6 +218,9 @@ export function triggerSearchHeroMoment(anchorIndex) {
     if (!webglContext.pointsMaterial || !webglContext.pointsMaterial.userData.shader || !state.nodePositions) return;
     const shader = webglContext.pointsMaterial.userData.shader;
 
+    cancelAnimationFrame(_heroRafId);
+    _heroRafId = 0;
+
     if (Number.isFinite(anchorIndex) && state.nodePositions[anchorIndex]) {
         const pos = state.nodePositions[anchorIndex];
         shader.uniforms.uRippleCenter.value.set(pos.x, pos.y, pos.z);
@@ -241,14 +246,17 @@ export function triggerSearchHeroMoment(anchorIndex) {
         }
 
         if (progress < 1.0) {
-            requestAnimationFrame(animateHero);
-        } else if (webglContext.pointsMaterial && webglContext.pointsMaterial.userData.shader) {
-            webglContext.pointsMaterial.userData.shader.uniforms.uGlowIntensity.value = 0.0;
-            webglContext.pointsMaterial.userData.shader.uniforms.uRippleTime.value = -1000.0;
+            _heroRafId = requestAnimationFrame(animateHero);
+        } else {
+            _heroRafId = 0;
+            if (webglContext.pointsMaterial && webglContext.pointsMaterial.userData.shader) {
+                webglContext.pointsMaterial.userData.shader.uniforms.uGlowIntensity.value = 0.0;
+                webglContext.pointsMaterial.userData.shader.uniforms.uRippleTime.value = -1000.0;
+            }
         }
     }
 
-    requestAnimationFrame(animateHero);
+    _heroRafId = requestAnimationFrame(animateHero);
 }
 
 export function triggerCorridorNodeGlow(anchorIndex, routeIndices = []) {
@@ -270,7 +278,8 @@ export function triggerCorridorNodeGlow(anchorIndex, routeIndices = []) {
 
     allIndices.forEach((idx, order) => {
         const delay = idx === anchorIndex ? 0 : 80 + order * 40;
-        setTimeout(() => {
+        const outerId = setTimeout(() => {
+            _corridorGlowTimers.delete(outerId);
             if (token !== _corridorGlowToken) return;
             if (!state.nodePositions[idx]) return;
 
@@ -285,11 +294,14 @@ export function triggerCorridorNodeGlow(anchorIndex, routeIndices = []) {
             };
             shader.uniforms.uHoverBoost.value = targetBoost;
 
-            setTimeout(() => {
+            const innerId = setTimeout(() => {
+                _corridorGlowTimers.delete(innerId);
                 if (token !== _corridorGlowToken) return;
                 _corridorGlowNodes[idx] = null;
             }, fadeStartDelay + fadeDuration);
+            _corridorGlowTimers.add(innerId);
         }, delay);
+        _corridorGlowTimers.add(outerId);
     });
 }
 
@@ -444,4 +456,22 @@ export function disposeSearchCorridorAnimation() {
     }
     _corridorAnimState = null;
     _corridorAnimStartTime = null;
+}
+
+/**
+ * Dispose hero-moment rAF and corridor-glow timers.
+ * Called during engine teardown via disposeInteractionVisuals → here.
+ */
+export function disposeHeroAnimation() {
+    if (_heroRafId) {
+        cancelAnimationFrame(_heroRafId);
+        _heroRafId = 0;
+    }
+    for (const id of _corridorGlowTimers) {
+        clearTimeout(id);
+    }
+    _corridorGlowTimers.clear();
+    for (const k of Object.keys(_corridorGlowNodes)) {
+        delete _corridorGlowNodes[k];
+    }
 }
