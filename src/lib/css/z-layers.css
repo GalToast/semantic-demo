@@ -15,9 +15,23 @@
 :root {
   /* ── Z-Index Layer System ──────────────────────────────────────────────── */
   /* Mirror of src/lib/z-index.ts — keep in sync if adding layers.          */
+  /* Reconciled with css/base.css z-index tokens (Layering Manifest).       */
 
-  /* Base scene */
+  /* Base scene and underlay */
   --z-canvas: 0;
+  --z-underlay: -1;
+
+  /* Base content layers */
+  --z-base: 1;
+  --z-base-raised: 2;
+  --z-content: 5;
+
+  /* Chrome (UI furniture) and field nodes */
+  --z-chrome: 10;
+  --z-chrome-raised: 11;
+  --z-chrome-overlay: 12;
+  --z-chrome-elevated: 14;
+  --z-chrome-popover: 20;
 
   /* Field nodes */
   --z-field-nodes: 10;
@@ -32,7 +46,7 @@
   --z-legend: 50;
 
   /* Info panel and side panels */
-  --z-panels: 80;
+  --z-panels: 50;
 
   /* Elevated panels (popovers, dropdowns) */
   --z-panels-elevated: 90;
@@ -40,8 +54,20 @@
   /* Search input and results */
   --z-search: 100;
 
+  /* Generic overlay layers */
+  --z-overlay: 100;
+  --z-overlay-raised: 101;
+  --z-overlay-floating: 102;
+  --z-overlay-elevated: 150;
+
+  /* Tooltips */
+  --z-tooltips: 200;
+
   /* Journey chrome (compass, breadcrumb, step indicators) */
   --z-journey-chrome: 200;
+
+  /* Modals */
+  --z-modal: 400;
 
   /* Active journey trail visualization */
   --z-journey-active: 500;
@@ -65,9 +91,16 @@
   /* Generic blocker (modal backdrop) */
   --z-blocker: 1000;
 
+  /* Toast notifications */
+  --z-toast: 1200;
+  --z-toast-above: 1300;
+
   /* Journey modal */
   --z-journey-modal: 2000;
 
   /* Loading overlay (highest priority) */
   --z-loading: 3000;
+
+  /* Maximum */
+  --z-max: 9999;
 }
