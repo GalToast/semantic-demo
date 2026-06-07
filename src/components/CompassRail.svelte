@@ -16,8 +16,9 @@
     idle → checking → synthesizing → active | interrupted → idle
 -->
 <script lang="ts">
-  import { compassSteps, compassPhase, transitionCompass } from '@lib/stores/compass';
+  import { compassSteps } from '@lib/stores/compass';
   import type { CompassStep } from '@lib/stores/compass';
+  import { compassPhase, transitionCompass } from '@lib/stores/journey';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
 
   interface Props {
@@ -27,6 +28,9 @@
 
   let { visible = false }: Props = $props();
 
+  // Track pending timeouts so they can be cleared on unmount.
+  const pendingTimers: ReturnType<typeof setTimeout>[] = [];
+
   /**
    * Dispatch nav transition + compass state animation for a clicked step.
    *
@@ -35,6 +39,10 @@
    * with ~520ms total animation before returning to idle.
    */
   function handleAction(phase: string): void {
+    // Clear any in-flight animation timers from a prior click.
+    for (const t of pendingTimers) clearTimeout(t);
+    pendingTimers.length = 0;
+
     // 1. Start compass animation
     transitionCompass('checking');
 
@@ -60,15 +68,23 @@
         break;
     }
 
-    // 3. Animate through the state machine
-    setTimeout(() => {
+    // 3. Animate through the state machine (tracked for cleanup)
+    pendingTimers.push(setTimeout(() => {
       transitionCompass('synthesizing');
-      setTimeout(() => {
+      pendingTimers.push(setTimeout(() => {
         transitionCompass('active');
-        setTimeout(() => transitionCompass('idle'), 300);
-      }, 120);
-    }, 100);
+        pendingTimers.push(setTimeout(() => transitionCompass('idle'), 300));
+      }, 120));
+    }, 100));
   }
+
+  // ── Cleanup on unmount ────────────────────────────────────────────────────
+
+  $effect(() => {
+    return () => {
+      for (const t of pendingTimers) clearTimeout(t);
+    };
+  });
 </script>
 
 {#if visible}
@@ -86,7 +102,6 @@
         class="compass-step"
         class:current={step.state === 'current'}
         class:done={step.state === 'done'}
-        ondblclick={null}
         onclick={() => handleAction(step.phase)}
         aria-label="Navigate to {step.phase}"
         aria-current={step.state === 'current' ? 'step' : undefined}

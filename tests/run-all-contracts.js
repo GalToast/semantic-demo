@@ -311,6 +311,7 @@ const PINNED_FILES = [
   'connection-analysis-render-state-contract.mjs',
   'reduced-motion-interruption.spec.js',
   'gemma-fallback-error.spec.js',
+  'selected-card-dom-ownership-contract.mjs',
 ];
 
 function loadManifest() {

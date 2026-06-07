@@ -32,7 +32,7 @@ function getSemanticLensNeighborIndices(focusedNode) {
 function updateSelectedNodeMotes(worldPos, time, isInside) {
     if (!state.focusMoteGroup || !Array.isArray(state.focusMotes)) return;
     const hasFocus = Boolean(worldPos);
-    const targetOpacity = hasFocus ? (isInside ? 0.64 : 0.54) : 0;
+    const targetOpacity = hasFocus ? (isInside ? 0.90 : 0.82) : 0;
     state.focusMoteGroup.visible = hasFocus || state.focusMotes.some((mote) => mote.material.opacity > 0.01);
     if (hasFocus) {
         state.focusMoteGroup.position.copy(worldPos);
@@ -60,7 +60,7 @@ function updateSelectedNodeMotes(worldPos, time, isInside) {
             (data.lift || 0) + verticalDrift,
             Math.sin(curl) * radius * (data.tilt || 0.72) * breath + Math.cos(time * 0.29 + index * 1.6) * 0.004 * wander
         );
-        const moteScale = (data.scale || 0.007) * (1.0 + Math.sin(time * 1.08 + index * 0.7) * 0.24 + Math.sin(time * 0.41 + index) * 0.09);
+        const moteScale = (data.scale || 0.0084) * (1.0 + Math.sin(time * 1.08 + index * 0.7) * 0.24 + Math.sin(time * 0.41 + index) * 0.09);
         mote.scale.set(moteScale, moteScale, 1);
     });
 }
@@ -68,7 +68,7 @@ function updateSelectedNodeMotes(worldPos, time, isInside) {
 function updateSelectedNodePetals(worldPos, time, isInside) {
     if (!state.focusPetalGroup || !Array.isArray(state.focusPetals)) return;
     const hasFocus = Boolean(worldPos);
-    const targetOpacity = hasFocus ? (isInside ? 0.5 : 0.42) : 0;
+    const targetOpacity = hasFocus ? (isInside ? 0.75 : 0.65) : 0;
     state.focusPetalGroup.visible = hasFocus || state.focusPetals.some((petal) => petal.material.opacity > 0.01);
     if (hasFocus) {
         state.focusPetalGroup.position.copy(worldPos);
@@ -106,7 +106,7 @@ function updateSelectedNodeFilaments(worldPos, time, isInside) {
     if (!state.focusFilaments?.geometry?.attributes?.position) return;
     const positions = state.focusFilaments.geometry.attributes.position.array;
     const hasFocus = Boolean(worldPos);
-    const targetOpacity = hasFocus ? (isInside ? 0.48 : 0.36) : 0;
+    const targetOpacity = hasFocus ? (isInside ? 0.62 : 0.50) : 0;
     state.focusFilaments.material.opacity += (targetOpacity - state.focusFilaments.material.opacity) * 0.1;
     state.focusFilaments.visible = state.focusFilaments.material.opacity > 0.01;
     if (!hasFocus) {

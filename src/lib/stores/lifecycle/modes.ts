@@ -12,7 +12,6 @@ import { get } from 'svelte/store';
 import { navStore } from '@lib/stores/navigation';
 import { journeyStore } from '@lib/stores/journey';
 import { focusStore } from '@lib/stores/focus';
-import { searchStore } from '@lib/stores/search';
 import { businessRecords } from '@lib/data-store';
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import type { BusinessRecord } from '@lib/types/business';
@@ -61,21 +60,12 @@ export const STORY_DESCRIPTIONS: Record<string, string> = {
  * Refresh composition state by syncing body data attributes from stores.
  * Replaces legacy applyCompositionState({ state, root: document.body }).
  * Publishes COMPOSITION_UPDATED after sync.
+ *
+ * NOTE: All body data-* attribute writes are owned by the parity layer
+ * (parity-attrs.ts). This function is now a pure event publisher that
+ * triggers downstream subscribers (the parity installer) to recompute.
  */
 export function refreshCompositionState(): void {
-  const $nav = get(navStore);
-  const $search = get(searchStore);
-  const $focus = get(focusStore);
-
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.navMode = $nav.mode;
-    document.body.dataset.panelSurface = $nav.surface;
-    document.body.dataset.viewMode = $nav.currentView;
-    document.body.dataset.searchStatus = $search.status;
-    document.body.dataset.focusTransition = $focus.transitionMode;
-    document.body.dataset.semanticDive = String($focus.semanticDiveMode);
-  }
-
   publish(EVENTS.COMPOSITION_UPDATED);
 }
 
@@ -138,11 +128,13 @@ export function setTrailDepth(
   navStore.update((s) => ({
     ...s,
     trailDepth: nextDepth,
-    mode: nextDepth >= 2
-      ? ('inside' as const)
-      : nextDepth > 0 && s.mode !== 'focus'
-        ? ('trail' as const)
-        : s.mode
+    mode: nextDepth === 0
+      ? ('overview' as const)
+      : nextDepth >= 2
+        ? ('inside' as const)
+        : nextDepth > 0 && s.mode !== 'focus'
+          ? ('trail' as const)
+          : s.mode
   }));
 
   if (!options.skipUrlSync) {
@@ -157,14 +149,14 @@ export function setSemanticDiveMode(enabled: boolean): void {
   focusStore.update((s) => ({ ...s, semanticDiveMode: nextActive }));
 
   if (nextActive) {
-    if (document.body) document.body.dataset.semanticDive = 'transitioning';
+    // body.dataset.semanticDive is owned by parity-attrs.ts (parity layer).
+    // parity-attrs computes 'inactive' | 'transitioning' | 'active' from
+    // focusStore.semanticDiveMode + journeyStore.trailDepth. The 820ms
+    // 'transitioning' visual cue that this setTimeout used to write is
+    // handled by the parity layer when trailDepth >= 2 before semanticDive
+    // flips; the parity installer's snapshot-driven short-circuit keeps
+    // the DOM consistent with the source-of-truth store values.
     setTrailDepth(2, { fromUserGesture: true });
-    window.setTimeout(() => {
-      const $focus = get(focusStore);
-      if ($focus.semanticDiveMode && document.body?.dataset.semanticDive === 'transitioning') {
-        document.body.dataset.semanticDive = 'active';
-      }
-    }, 820);
   } else {
     setTrailDepth(1, { allowDiveExit: true, skipUrlSync: true });
   }

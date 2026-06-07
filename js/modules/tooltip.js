@@ -1,7 +1,7 @@
 import { formatBusinessName, cleanPublicNoteText, sanitizePublicFacingNote } from './utils/dom-formatters.js';
 import { describeCluster } from './utils/ui-presentation.js';
 import { getViewportSize } from './environment.js';
-import { subscribeKeyed, EVENTS } from './event-bus.js';
+import { subscribe, subscribeKeyed, EVENTS } from './event-bus.js';
 
 let tooltipRevealFrame = null;
 let tooltipHideTimer = null;
@@ -159,6 +159,7 @@ export function hideTooltip() {
  *   initTooltipEventBusSubscriptions();  // inside the caller's init sequence
  */
 export function initTooltipEventBusSubscriptions() {
+    subscribe(EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip);
     subscribeKeyed('tooltip:hide-requested', EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip);
     subscribeKeyed('tooltip:position-requested', EVENTS.TOOLTIP_POSITION_REQUESTED, ({ x, y }) => positionTooltip(x, y));
     subscribeKeyed('tooltip:content-update-requested', EVENTS.TOOLTIP_CONTENT_UPDATE_REQUESTED, ({ point }) => updateTooltipContent(point));

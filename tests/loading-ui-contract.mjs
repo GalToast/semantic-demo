@@ -151,8 +151,10 @@ svelteTests.push(async function testSvelteAppRendersLoadingOverlay() {
 svelteTests.push(async function testSvelteLoadingUsesDataLoadStateStore() {
     if (!svelteLoadingSource) return skip('LoadingOverlay.svelte not readable');
     const hasStoreImport = svelteLoadingSource.includes('dataLoadState')
+        || svelteLoadingSource.includes('loadingPhaseStore')
         || svelteLoadingSource.includes('data-store');
     const readsStatus = svelteLoadingSource.includes('dataLoadState')
+        || svelteLoadingSource.includes('loadingPhaseStore')
         || svelteLoadingSource.includes('status');
     if (!hasStoreImport) throw new Error('LoadingOverlay must import from data-store');
     if (!readsStatus) throw new Error('LoadingOverlay must read status from data store');

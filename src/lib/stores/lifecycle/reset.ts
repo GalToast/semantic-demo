@@ -12,7 +12,7 @@ import { get } from 'svelte/store';
 import { navStore } from '@lib/stores/navigation';
 import { journeyStore } from '@lib/stores/journey';
 import { focusStore } from '@lib/stores/focus';
-import { searchStore, clearSearchGlow } from '@lib/stores/search';
+import { searchStore, clearSearchGlow, clearSearchResults } from '@lib/stores/search';
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { clearExplorationFocusSelection } from '@lib/orchestration/url-state';
 import { switchView } from '@lib/orchestration/view-controller';
@@ -57,6 +57,10 @@ export function resetExplorationFocus(
     threadCandidates: [],
     threadReasonByIndex: new Map(),
     threadSource: 'geometric-fallback',
+    // Prevent stale focus-pocket data from ghosting into new sessions.
+    focusPocketIndices: [],
+    focusPocketMeta: null,
+    focusPocketRoleByIndex: new Map(),
   }));
 
   // Reset focus state
@@ -80,18 +84,17 @@ export function resetExplorationFocus(
     threadCandidates: [],
   }));
 
-  // Reset search glow
-  searchStore.update((s) => ({
-    ...s,
-    glowActive: false,
-  }));
+  // Clear search state (results + glow) so ghost glows don't persist after reset.
+  // clearSearchResults wipes results, glowIndices, glowTopIndex, glowActive,
+  // summary, status, and any active result — matching the engine bridge's
+  // clearSearchResults contract.
+  clearSearchResults();
 
   navStore.update((s) => ({ ...s, myceliumMode: 'default' }));
 
-  // Reset search state (matches JS clearSearch with skipResetFocus)
-  if (!preserveSearch) {
-    searchStore.update((s) => ({ ...s, summary: null }));
-  } else if (preservedSearchSummary) {
+  // Restore search summary when preserveSearch is requested (matches JS
+  // clearSearch with skipResetFocus). clearSearchResults cleared it above.
+  if (preserveSearch && preservedSearchSummary) {
     searchStore.update((s) => ({ ...s, summary: preservedSearchSummary }));
   }
 

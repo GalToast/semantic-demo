@@ -9,6 +9,7 @@ import { formatBusinessName } from './utils/dom-formatters.js';
 import { describeCluster } from './utils/ui-presentation.js';
 import { getNextExploreCandidateForIndex } from './journey-thread-model.js';
 import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.js';
+import { seededUnit } from './utils/seeded-random.js';
 
 let routeEmbodimentReader = () => [];
 
@@ -109,9 +110,9 @@ export function getJourneyCompassState() {
         let primaryAction, secondaryAction, tertiaryAction = null;
 
         if (isSearchAnchor) {
-            primaryAction = { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE };
-            secondaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
-            tertiaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
+            primaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
+            secondaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
+            tertiaryAction = { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE };
         } else if (isTrailStop && hasAnchor) {
             primaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
             secondaryAction = { label: 'Center on anchor', action: JOURNEY_ACTIONS.CENTER_ANCHOR, hint: 'Return to search starting point' };
@@ -190,7 +191,7 @@ export function getJourneyCompassState() {
         // fresh discovery on data reload.
         const pointsLength = getPoints().length;
         if (_cachedIdleIndex < 0 || _cachedIdlePointsLength !== pointsLength) {
-            _cachedIdleIndex = Math.floor(Math.random() * pointsLength);
+            _cachedIdleIndex = Math.floor(seededUnit(pointsLength, 42) * pointsLength);
             _cachedIdlePointsLength = pointsLength;
         }
         const randomPoint = getPoints()[_cachedIdleIndex];

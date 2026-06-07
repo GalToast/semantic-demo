@@ -200,19 +200,36 @@ async function fetchEnrichment(url) {
 
 function checkDataBounds(buffer) {
     if (!buffer || buffer.length === 0) return;
-    // Sample the first 100 points (300 floats) for efficiency
-    const sampleLimit = Math.min(buffer.length, 300);
-    for (let i = 0; i < sampleLimit; i++) {
+
+    // Stride-sample the full buffer: check up to 600 floats spread evenly
+    // across the entire positions array so out-of-bounds values at the end
+    // of large datasets are no longer missed.
+    const MAX_SAMPLES = 600;
+    const totalFloats = buffer.length;
+    const step = totalFloats <= MAX_SAMPLES ? 1 : Math.ceil(totalFloats / MAX_SAMPLES);
+    const oobValues = [];
+
+    for (let i = 0; i < totalFloats; i += step) {
         const val = buffer[i];
         if (val < -0.1 || val > 1.1) {
-            console.warn(
-                `CRITICAL: data.dat positions are out of bounds! Found coordinate ${val}. ` +
-                `The 3D engine expects coordinates to be normalized strictly to [0, 1]. ` +
-                `MYCELIUM_FIELD_SCALE will cause extreme camera scaling and rendering issues. ` +
-                `Please re-run the backend normalization script.`
-            );
-            return; // Warn once
+            oobValues.push({ index: i, value: val });
         }
+    }
+
+    if (oobValues.length > 0) {
+        const samples = oobValues.slice(0, 10).map(
+            (o) => `  index ${o.index}: ${o.value}`
+        ).join('\n');
+        const more = oobValues.length > 10
+            ? `\n  ...and ${oobValues.length - 10} more out-of-bounds values.`
+            : '';
+        console.error(
+            `CRITICAL: data.dat positions are out of bounds! ` +
+            `Found ${oobValues.length} value(s) outside [0, 1]:\n${samples}${more}\n` +
+            `The 3D engine expects coordinates to be normalized strictly to [0, 1]. ` +
+            `MYCELIUM_FIELD_SCALE will cause extreme camera scaling and rendering issues. ` +
+            `Please re-run the backend normalization script.`
+        );
     }
 }
 
@@ -234,9 +251,17 @@ function finalizeLoading() {
     }
 }
 
+const NULLISH_SENTINELS = new Set([
+    'unknown', 'not found', 'none', 'none detected', 'n/a', 'null'
+]);
+
 function cleanOptionalValue(value) {
-    if (value === undefined || value === null || value === '' || value === 'NULL') return null;
-    return value;
+    if (value === undefined || value === null || value === '') return null;
+    const text = String(value).trim();
+    if (!text || text === 'NULL' || NULLISH_SENTINELS.has(text.toLowerCase())) {
+        return null;
+    }
+    return text;
 }
 
 function parseFiniteNumber(value) {

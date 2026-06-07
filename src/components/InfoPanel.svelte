@@ -26,8 +26,10 @@
   import type { BusinessRecord } from '@lib/types/business';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, getPublicRecordStatusLabel } from '@lib/utils';
   import { describeCluster } from '@lib/utils';
-  import { buildSelectedMatchNarrative, getInterestingBusinessNote } from '@lib/ui-renderers';
+  import { buildSelectedMatchNarrative as buildSearchMatchNarrative, getInterestingBusinessNote } from '@lib/ui-renderers';
   import { describeThreadLensForPoint } from '@lib/journey-point-color';
+  import { buildSelectedMatchNarrative as buildPointMatchNarrative } from '@lib/orchestration/lifecycle';
+  import { buildSelectedBusinessProps } from '@lib/view-models/selected-business-view-model';
   import { publish, EVENTS } from '@lib/event-bus';
   import { onMount } from 'svelte';
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat';
@@ -112,7 +114,7 @@
   const selectedDetailsAdapter: Record<string, (...args: unknown[]) => unknown> = {
     getSelectedBusinessRoleLabel: () => 'Business',
     getInterestingBusinessNote,
-    buildSelectedMatchNarrative,
+    buildSelectedMatchNarrative: buildPointMatchNarrative,
     describeThreadLensForPoint
   };
 
@@ -259,44 +261,38 @@
 
     const point = $selectedPointStore as BusinessPoint | null;
     if (!point) {
-      // Build from selectedRecord
-      const rawName = point?.name ?? selectedRecord.name ?? '';
-      const name = getBusinessNamePresentation(rawName);
-      const filedAs = point?.name && point.name !== selectedRecord.name ? COPY.selectedFiledAs(point.name) : '';
-      const showFiledAs = Boolean(filedAs);
-      const what = sanitizePublicFacingNote(point?.what ?? selectedRecord.what ?? '');
-      const theme = describeCluster(point?.cluster ?? selectedRecord.cluster);
-      const status = getPublicRecordStatusLabel(point?.status ?? selectedRecord.status ?? 'active');
+      // Fallback: build view-model from selectedRecord (no 3D point available)
+      const rawName = selectedRecord.name ?? '';
+      const namePresentation = getBusinessNamePresentation(rawName);
+      const name = namePresentation.display || COPY.selectedEmptyName;
+      const filedAs = '';
+      const showFiledAs = false;
+      const what = sanitizePublicFacingNote(selectedRecord.what ?? '');
+      const theme = describeCluster(selectedRecord.cluster);
+      const status = getPublicRecordStatusLabel(selectedRecord.status ?? 'active');
       const role = 'Business';
-      const trivia = getInterestingBusinessNote(selectedRecord);
+      const trivia = (getInterestingBusinessNote(selectedRecord) as string) || '';
       const showTrivia = Boolean(trivia);
       const matchNarrative = selectionSource === 'search' && currentActiveResult?.snippet
-        ? buildSelectedMatchNarrative(currentActiveResult.snippet, currentActiveResult.score || 0)
+        ? buildSearchMatchNarrative(currentActiveResult.snippet, currentActiveResult.score || 0)
         : '';
       const showMatchPanel = Boolean(matchNarrative);
       const facts: Record<string, unknown>[] = [];
-      if (point?.website ?? selectedRecord.website) {
-        facts.push({ type: 'link', label: 'Website', href: point?.website ?? selectedRecord.website, isExternal: true });
+      if (selectedRecord.website) {
+        facts.push({ type: 'link', label: 'Website', href: selectedRecord.website, isExternal: true });
       }
-      if (point?.email ?? selectedRecord.email) {
-        facts.push({ type: 'link', label: 'Email', href: `mailto:${point?.email ?? selectedRecord.email}`, isExternal: false });
+      if (selectedRecord.email) {
+        facts.push({ type: 'link', label: 'Email', href: `mailto:${selectedRecord.email}`, isExternal: false });
       }
-      if (point?.phone ?? selectedRecord.phone) {
-        facts.push({ value: `Phone: ${point?.phone ?? selectedRecord.phone}` });
+      if (selectedRecord.phone) {
+        facts.push({ value: `Phone: ${selectedRecord.phone}` });
       }
+      // No point data → sensitivity badges always empty
       const sensitivityBadges: Record<string, unknown>[] = [];
-      if (point?.weather_sensitive) {
-        sensitivityBadges.push({ text: 'Weather Sensitive', class: 'meta' });
-      }
-      if (point?.sensitivity_flags?.length) {
-        point.sensitivity_flags.forEach(flag => {
-          sensitivityBadges.push({ text: flag, class: 'fact' });
-        });
-      }
-      const mapText = point?.lat && point?.lng
-        ? `${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}`
+      const mapText = (selectedRecord.lat != null && selectedRecord.lng != null)
+        ? `${selectedRecord.lat.toFixed(4)}, ${selectedRecord.lng.toFixed(4)}`
         : COPY.selectedEmptyMap;
-      const threadText = point ? describeThreadLensForPoint(point) : '';
+      const threadText = '';
 
       return {
         name,
@@ -318,6 +314,7 @@
       };
     }
 
+    // Point data available — delegate to shared view-model
     return buildSelectedBusinessProps(point, {}, selectedDetailsAdapter as any, {
       getBusinessNamePresentation,
       sanitizePublicFacingNote,

@@ -16,11 +16,13 @@ import type {
   LayoutManifest,
   PositionBufferDescriptor,
 } from '@lib/types/business';
+import type { LoadingPhase } from '@lib/types/state';
 import {
   loadBusinessData,
   loadSemanticThreads,
   loadLayoutManifest,
 } from '@lib/data-loader';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // ── Status Types ──────────────────────────────────────────────────────────────
 
@@ -73,6 +75,41 @@ export const dataLoadState = writable<DataLoadState>({
   threadsLoaded: false,
   error: null,
 });
+
+// ── Loading Phase Store ─────────────────────────────────────────────────────
+
+/**
+ * Four-phase loading progression: records → scene → restore → launch.
+ * The LoadingOverlay and parity-attrs layer read from this store.
+ * Replaces the collapsed 2-state derivation that only had records/launch.
+ */
+export const loadingPhaseStore = writable<LoadingPhase>('records');
+
+/**
+ * Graphics mode: 'webgl' when GPU rendering is available, 'fallback' otherwise.
+ * The engine bridge should set this during init; parity-attrs reads it.
+ */
+export const graphicsModeStore = writable<'webgl' | 'fallback'>('webgl');
+
+/**
+ * Set the loading phase and sync body.dataset for legacy test compat.
+ */
+export function setLoadingPhase(phase: LoadingPhase): void {
+  loadingPhaseStore.set(phase);
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.dataset.loadingPhase = phase;
+  }
+}
+
+/**
+ * Set the graphics mode and sync body.dataset.
+ */
+export function setGraphicsMode(mode: 'webgl' | 'fallback'): void {
+  graphicsModeStore.set(mode);
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.dataset.graphicsMode = mode;
+  }
+}
 
 // ── Derived Stores ────────────────────────────────────────────────────────────
 
@@ -187,6 +224,8 @@ export function resetDataStores(): void {
     threadsLoaded: false,
     error: null,
   });
+  setLoadingPhase('records');
+  setGraphicsMode('webgl');
 }
 
 // ── Orchestration ─────────────────────────────────────────────────────────────
@@ -202,12 +241,13 @@ export function resetDataStores(): void {
 export async function initData(): Promise<void> {
   const current = get(dataLoadState);
   if (current.status === 'loading' || current.status === 'ready') {
-    console.warn('[data-store] initData() called while', current.status);
+    debugWarn('[data-store] initData() called while', current.status);
     return;
   }
 
   setDataLoadStatus('loading');
-  console.log('[data-store] Starting data initialization...');
+  setLoadingPhase('records');
+  debugWarn('[data-store] Starting data initialization...');
 
   try {
     // Load business records (required) and semantic threads (optional) in parallel.
@@ -222,7 +262,8 @@ export async function initData(): Promise<void> {
     // Business records are required
     if (businessResult.status === 'fulfilled') {
       setBusinessData(businessResult.value);
-      console.log('[data-store] Business records loaded.');
+      setLoadingPhase('scene');
+      debugWarn('[data-store] Business records loaded.');
     } else {
       const msg =
         businessResult.reason instanceof Error
@@ -230,6 +271,7 @@ export async function initData(): Promise<void> {
           : String(businessResult.reason);
       console.error('[data-store] Failed to load business records:', msg);
       setDataLoadError(`Business data failed: ${msg}`);
+      setLoadingPhase('launch'); // dismiss overlay on error
       return; // Can't continue without business data
     }
 
@@ -241,28 +283,33 @@ export async function initData(): Promise<void> {
         threadData.layoutManifest = manifestResult.value;
       }
       setSemanticThreadData(threadData);
-      console.log('[data-store] Semantic threads loaded.');
+      setLoadingPhase('restore');
+      debugWarn('[data-store] Semantic threads loaded.');
     } else {
       const msg =
         threadResult.reason instanceof Error
           ? threadResult.reason.message
           : String(threadResult.reason);
-      console.warn(
+      debugWarn(
         '[data-store] Semantic threads failed (geometric fallback):',
         msg
       );
+      setLoadingPhase('restore'); // still progress even without threads
       // Don't error — threads are optional
     }
 
+    // Final phase: launch
+    setLoadingPhase('launch');
     dataLoadState.update((s) => ({
       ...s,
       status: 'ready',
       error: null,
     }));
-    console.log('[data-store] Data initialization complete.');
+    debugWarn('[data-store] Data initialization complete.');
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[data-store] Unexpected error during init:', msg);
     setDataLoadError(msg);
+    setLoadingPhase('launch'); // dismiss overlay on error
   }
 }

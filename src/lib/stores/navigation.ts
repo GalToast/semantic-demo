@@ -10,9 +10,9 @@
  * and all view-handoff state. It is the single source of truth for
  * "where the user is" in the application.
  */
-import { writable, derived, get } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 import type { NavState, NavMode, PanelSurface } from '@lib/types/state';
-import { testCompatStore } from './test-compat';
+import { journeyStore } from './journey';
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
@@ -183,12 +183,7 @@ export function dispatchNavTransition(
           ? s.explorationHistoryIndices
           : [...s.explorationHistoryIndices, payload.index!]
       }));
-      // Sync body data attribute
-      if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.navMode = 'focus';
-        document.body.dataset.navSurface = 'focus';
-        document.body.dataset.focusedNode = String(payload.index);
-      }
+      // Body dataset sync is handled by the parity-attrs layer.
       return { handled: true };
     }
 
@@ -200,12 +195,25 @@ export function dispatchNavTransition(
         trailSeedIndex: null,
         trailDepth: 0,
         trailCursor: -1,
+        trailNeighborIndices: [],
+        walkHistoryIndices: [],
+        lastTraversalReason: null,
+        threadCandidates: [],
+        threadReasonByIndex: new Map(),
+        threadSource: 'geometric-fallback',
         surface: 'idle'
       }));
-      if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.navMode = 'overview';
-        document.body.removeAttribute('data-focused-node');
-      }
+      // Reset journeyStore trail fields to stay consistent with navStore.
+      journeyStore.update((s) => ({
+        ...s,
+        trailDepth: 0,
+        trailSeedIndex: null,
+        trailNeighborIndices: [],
+        trailCursor: -1,
+        walkHistoryIndices: [],
+        threadCandidates: [],
+      }));
+      // Body dataset sync is handled by the parity-attrs layer.
       return { handled: true };
     }
 
@@ -213,14 +221,22 @@ export function dispatchNavTransition(
       if (!payload.surface) {
         return { handled: false, noOp: true, reason: 'no-surface' };
       }
+      // Derive mode from surface for base surfaces that map 1:1 to a NavMode.
+      // Compound surfaces (focus-search, map-focus, etc.) do NOT derive mode.
+      const SURFACE_TO_MODE: Partial<Record<PanelSurface, NavMode>> = {
+        search: 'search',
+        focus: 'focus',
+        inside: 'inside',
+      };
+      const derivedMode = SURFACE_TO_MODE[payload.surface!];
+
       navStore.update((s) => ({
         ...s,
         surface: payload.surface!,
-        previousSurface: s.surface
+        previousSurface: s.surface,
+        ...(derivedMode ? { mode: derivedMode } : {})
       }));
-      if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.navSurface = payload.surface!;
-      }
+      // Body dataset sync is handled by the parity-attrs layer.
       return { handled: true };
     }
 
@@ -232,9 +248,7 @@ export function dispatchNavTransition(
         ...s,
         currentView: payload.view!
       }));
-      if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.viewMode = payload.view!;
-      }
+      // Body dataset sync is handled by the parity-attrs layer.
       return { handled: true };
     }
 
@@ -253,9 +267,7 @@ export function dispatchNavTransition(
 /** Switch between galaxy and map view. */
 export function switchView(view: 'galaxy' | 'map'): void {
   navStore.update((s) => ({ ...s, currentView: view }));
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.viewMode = view;
-  }
+  // Body dataset sync is handled by the parity-attrs layer.
 }
 
 // ── Actions: Focus ───────────────────────────────────────────────────────────
@@ -267,14 +279,7 @@ export function setFocusedIndex(index: number | null): void {
     focusedIndex: index,
     mode: index !== null ? 'focus' : s.mode
   }));
-
-  if (typeof document !== 'undefined' && document.body) {
-    if (index !== null) {
-      document.body.dataset.focusedNode = String(index);
-    } else {
-      document.body.removeAttribute('data-focused-node');
-    }
-  }
+  // Body dataset sync is handled by the parity-attrs layer.
 }
 
 // ── Actions: Mode ────────────────────────────────────────────────────────────
@@ -282,9 +287,7 @@ export function setFocusedIndex(index: number | null): void {
 /** Set the navigation mode. */
 export function setNavMode(mode: NavMode): void {
   navStore.update((s) => ({ ...s, mode }));
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.navMode = mode;
-  }
+  // Body dataset sync is handled by the parity-attrs layer.
 }
 
 /** Set the panel surface. */
@@ -294,9 +297,7 @@ export function setSurface(surface: PanelSurface): void {
     surface,
     previousSurface: s.surface
   }));
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.navSurface = surface;
-  }
+  // Body dataset sync is handled by the parity-attrs layer.
 }
 
 // ── Actions: Auto-Rotate ─────────────────────────────────────────────────────
@@ -321,9 +322,7 @@ export function resumeAutoRotate(): void {
 /** Set the loading phase key. */
 export function setLoadingPhase(phase: string): void {
   navStore.update((s) => ({ ...s, loadingPhaseKey: phase }));
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.loadingPhase = phase;
-  }
+  // Body dataset sync is handled by the parity-attrs layer.
 }
 
 // ── Actions: Scene Reveal ────────────────────────────────────────────────────
@@ -417,10 +416,5 @@ export function updateNavState(mutator: (current: NavStoreState) => Partial<NavS
 /** Reset nav state to initial. */
 export function resetNavState(): void {
   navStore.set({ ...INITIAL_STORE });
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.navMode = 'overview';
-    document.body.dataset.navSurface = 'idle';
-    document.body.removeAttribute('data-focused-node');
-    document.body.dataset.viewMode = 'galaxy';
-  }
+  // Body dataset sync is handled by the parity-attrs layer.
 }

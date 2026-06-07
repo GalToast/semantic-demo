@@ -92,16 +92,16 @@ import {
   MODE_DESCRIPTIONS,
   STORY_DESCRIPTIONS,
   refreshCompositionState,
-  updateExplorationUi,
+  updateExplorationUi as _updateExplorationUiImpl,
   setMyceliumMode,
   setTrailDepth,
-  setSemanticDiveMode
+  setSemanticDiveMode as _setSemanticDiveModeImpl
 } from './lifecycle-modes.js';
 import {
-  resetExplorationFocus,
+  resetExplorationFocus as _resetExplorationFocusImpl,
   resetNodePositions,
   resetExperienceState,
-  returnToOverview
+  returnToOverview as _returnToOverviewImpl
 } from './lifecycle-reset.js';
 import {
   activateSearchGlow,
@@ -159,14 +159,10 @@ export {
   MODE_DESCRIPTIONS,
   STORY_DESCRIPTIONS,
   refreshCompositionState,
-  updateExplorationUi,
   setMyceliumMode,
   setTrailDepth,
-  setSemanticDiveMode,
-  resetExplorationFocus,
   resetNodePositions,
   resetExperienceState,
-  returnToOverview,
   activateSearchGlow,
   recordEmptySearch,
   showExploreTrailReview,
@@ -174,6 +170,36 @@ export {
 };
 
 // ── Thin proxy wrappers ─────────────────────────────────────────────────────
+
+export function updateExplorationUi() {
+  refreshCompositionState();
+}
+
+export function setSemanticDiveMode(enabled) {
+  const nextActive = !!enabled;
+  state.semanticDiveMode = nextActive;
+  if (nextActive) {
+    if (document.body) document.body.dataset.semanticDive = 'transitioning';
+    setTrailDepth(2, { fromUserGesture: true });
+    window.setTimeout(() => {
+      if (getSemanticDiveMode() && document.body?.dataset.semanticDive === 'transitioning') {
+        document.body.dataset.semanticDive = 'active';
+      }
+    }, 820);
+  } else {
+    setTrailDepth(1, { allowDiveExit: true, skipUrlSync: true });
+  }
+  updateExplorationUi();
+}
+
+export function returnToOverview() {
+  _returnToOverviewImpl();
+}
+
+export function resetExplorationFocus(options) {
+  // Handles state.navState, syncFocusStage, and publish via lifecycle-reset.js
+  _resetExplorationFocusImpl(options);
+}
 
 export function dispatchNavTransition(action, payload = {}) {
   if (typeof dispatchNavTransitionImpl === 'function') {
@@ -235,6 +261,7 @@ export function hydrateLeadContext(point) {
   if (!point) return;
   syncFocusStage(point);
   updateSelectedBusiness(point, { revealCard: true });
+  publish(EVENTS.COMPOSITION_UPDATED);
 }
 
 export function exploreInsideToNextStop() {

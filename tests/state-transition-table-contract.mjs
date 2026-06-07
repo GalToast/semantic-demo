@@ -123,7 +123,7 @@ Object.defineProperty(globalThis, 'crypto', {
 
 // ─── Import state ─────────────────────────────────────────────────────────────
 
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 state.currentSearchSummary = null;
 
 // ─── CONTRACT 1: JOURNEY_COMPASS_PHASE_ORDER ─────────────────────────────────
@@ -295,7 +295,7 @@ console.log('PASS CONTRACT 13: lifecycle.resetNodePositions is defined');
 
 // Reset to known state
 state.trailDepth = 0;
-state.navState.mode = 'overview';
+withStateMutation(() => { state.navState.mode = 'overview'; });
 
 // Attempt silent depth=2 escalation — should be silently ignored
 // We test the gate by calling setTrailDepth(2) without fromUserGesture
@@ -717,8 +717,7 @@ console.log('PASS CONTRACT 40: SET_DEPTH silent depth=2 is blocked (gate preserv
 // ─── CONTRACT 41: semantic-dive exit requires explicit intent ─────────────────
 
 state.trailDepth = 2;
-state.navState.trailDepth = 2;
-state.navState.mode = 'inside';
+withStateMutation(() => { state.navState.trailDepth = 2; state.navState.mode = 'inside'; });
 lifecycle.setTrailDepth(1, { skipUrlSync: true });
 assertEq(state.trailDepth, 2, 'silent setTrailDepth exit from depth=2 must be blocked');
 lifecycle.setTrailDepth(1, { allowDiveExit: true, skipUrlSync: true });

@@ -8,6 +8,7 @@ import { state as _state } from '../../state.js';
 const state = _state as any;
 import { switchView } from '../view-controller.js';
 import { toggleAutoRotate } from '../camera-controls.js';
+import { debugWarn } from '../diagnostic-adapter.js';
 import { resetExperienceState, copyCurrentViewLink } from '../lifecycle.js';
 import { showExperienceToast } from '../ui-feedback.js';
 import { zoomMap } from '../map-state.js';
@@ -21,7 +22,7 @@ type EventHandler = (event?: MouseEvent) => void;
 export function bindClick(id: string, handler: EventHandler, options: BindClickOptions = {}): void {
     const element = document.getElementById(id);
     if (!element) {
-        if (!options.optional) console.warn('[event-bindings] button not found:', id);
+        if (!options.optional) debugWarn('[event-bindings] button not found:', id);
         return;
     }
     element.onclick = handler;

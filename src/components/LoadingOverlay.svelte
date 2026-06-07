@@ -2,7 +2,10 @@
   @components/LoadingOverlay.svelte — Loading phases
 
   Mirrors the legacy #loading-overlay DOM structure for contract test compat.
-  Reads from dataLoadState store for data loading progress.
+  Reads from loadingPhaseStore for the 4-phase loading progression
+  (records → scene → restore → launch). Body dataset attrs are owned
+  exclusively by parity-attrs.ts — this component only controls its own
+  DOM structure and visibility.
   Shows kicker, title, note, progress bar, phase chips, and foot text.
 
   Phase chips: records → scene → restore → launch
@@ -14,8 +17,7 @@
 -->
 <script lang="ts">
   import { fade } from 'svelte/transition';
-  import { onMount } from 'svelte';
-  import { dataLoadState } from '@lib/data-store';
+  import { loadingPhaseStore } from '@lib/data-store';
   import type { LoadingPhase, LoadingPhaseMeta } from '@lib/types/state';
 
   interface Props {
@@ -34,12 +36,9 @@
     launch: { progress: 1, note: 'Awake.', foot: 'Threads are live.' }
   };
 
-  let phase = $derived.by((): LoadingPhase => {
-    const status = $dataLoadState?.status;
-    if (status === 'loading') return 'records';
-    if (status === 'ready') return 'launch';
-    return 'records';
-  });
+  // Read directly from the loadingPhase store — the 4-phase progression
+  // (records→scene→restore→launch) is driven by data-store's initData().
+  let phase = $derived($loadingPhaseStore);
 
   let progress = $derived(phaseMeta[phase]?.progress ?? 0);
   let note = $derived(phaseMeta[phase]?.note ?? '');
@@ -49,16 +48,9 @@
   /** Derive the active index for chip highlighting */
   let activePhaseIndex = $derived(PHASE_ORDER.indexOf(phase));
 
-  // Sync body dataset for legacy test compatibility
-  $effect(() => {
-    if (typeof document !== 'undefined' && document.body) {
-      document.body.dataset.loadingOverlay = actuallyVisible ? 'visible' : 'hidden';
-      document.body.dataset.sceneReady = actuallyVisible ? 'false' : 'true';
-      document.body.dataset.viewHandoffActive = actuallyVisible ? 'true' : 'false';
-      document.body.dataset.cameraAssist = actuallyVisible ? 'loading' : 'free';
-      document.body.dataset.graphicsMode = 'fallback'; // satisfy legacy test
-    }
-  });
+  // NOTE: body.dataset attributes (loadingOverlay, sceneReady, viewHandoffActive,
+  // cameraAssist, graphicsMode) are now owned exclusively by parity-attrs.ts.
+  // This component only controls its own DOM structure and visibility.
 </script>
 
 {#if actuallyVisible}

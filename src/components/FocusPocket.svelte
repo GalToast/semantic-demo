@@ -1,15 +1,36 @@
 <!--
   @components/FocusPocket.svelte — Focus pocket constellation
+
+  Self-populating: when a focused index is established, calls
+  applyLocalNeighborhoodFocus() to build the deterministic constellation.
+  Clears pocket nodes when focus is released.
 -->
 <script lang="ts">
-  import { focusState, focusPocketNodes, focusTransitionMode, anchorIndicator, setFocusTransition } from '@lib/stores/focus';
+  import { focusPocketNodes, anchorIndicator, clearPocketNodes } from '@lib/stores/focus';
   import { hasFocus, focusedIndex } from '@lib/stores/navigation';
+  import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket';
 
   interface Props {
     visible?: boolean;
   }
 
   let { visible = false }: Props = $props();
+
+  // Track the last focused index to avoid redundant rebuilds
+  let lastFocusIndex: number | null = null;
+
+  $effect(() => {
+    const idx = $focusedIndex;
+    const focused = $hasFocus;
+
+    if (focused && Number.isFinite(idx) && idx !== null && idx !== lastFocusIndex) {
+      lastFocusIndex = idx;
+      applyLocalNeighborhoodFocus(idx);
+    } else if (!focused && lastFocusIndex !== null) {
+      lastFocusIndex = null;
+      clearPocketNodes();
+    }
+  });
 </script>
 
 {#if visible && $hasFocus}

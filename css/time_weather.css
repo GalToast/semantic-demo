@@ -459,9 +459,9 @@
         opacity: 0.74;
     }
 
-    body.is-active[data-panel-surface='focus'][data-panel-surface='focus'] .weather-widget,
-    body.is-active[data-panel-surface='focus-search'][data-panel-surface='focus-search'] .weather-widget,
-    body.is-active[data-panel-surface='semantic-dive'][data-panel-surface='semantic-dive'] .weather-widget {
+    body.is-active[data-panel-surface='focus'] .weather-widget,
+    body.is-active[data-panel-surface='focus-search'] .weather-widget,
+    body.is-active[data-panel-surface='semantic-dive'] .weather-widget {
         display: inline-flex;
         visibility: visible;
         pointer-events: auto;

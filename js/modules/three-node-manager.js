@@ -23,7 +23,7 @@ export const SCENE_ATMOSPHERE = Object.freeze({
     clearAlpha: 1,
     toneExposure: 0.95,
     pointOpacityScale: 1.0,
-    sporeOpacity: 0.38
+    sporeOpacity: 0.65
 });
 
 const NODE_SPORE_BASE_RADIUS = 0.0019;
@@ -34,10 +34,22 @@ const THREAD_TINT_COLOR = SCENE_PALETTE.threadTint;
 // spheres read identically to the former 10x8 meshes but save ~60% of
 // triangle throughput on the GPU.
 const SPORE_SEGMENTS_VISIBLE = 6;   // was 10
-const SPORE_SEGMENTS_HIT_PROXY = 4;
 
 const _nodeSporeObject = new THREE.Object3D();
 const _nodeSporeColor = new THREE.Color();
+
+// Per-cluster size factor: each cluster ID maps to a deterministic scale
+// multiplier (0.82–1.18) so dense clusters have smaller individual nodes
+// and sparse clusters have larger, more isolated ones.  Derived from
+// seededUnit so the mapping is stable across frames and sessions.
+const _clusterSizeCache = new Map();
+function getClusterSizeFactor(clusterId) {
+    if (_clusterSizeCache.has(clusterId)) return _clusterSizeCache.get(clusterId);
+    // Map cluster ID to a 0.82–1.18 multiplier via seededUnit
+    const factor = 0.82 + seededUnit(clusterId, 42.7) * 0.36;
+    _clusterSizeCache.set(clusterId, factor);
+    return factor;
+}
 
 // ── Texture tracking ─────────────────────────────────────────────────────────
 // Canvas-backed CanvasTextures are GPU-heavy resources.  Track every
@@ -91,7 +103,17 @@ export function getNodeSporeScale(index) {
     if (index === state.hoverHighlightIndex) {
         emphasis = Math.max(emphasis, 1.45);
     }
-    return NODE_SPORE_BASE_RADIUS * (0.86 + seededUnit(index, 2.7) * 0.48) * emphasis;
+    // Per-cluster size variation: dense clusters get slightly smaller nodes,
+    // sparse clusters get larger ones.  Only applied when no focus/hover is
+    // active so emphasis cues are not diluted.
+    let clusterScale = 1;
+    if (emphasis === 1 && state.points?.[index]) {
+        const cluster = state.rawClustersBuffer?.[index] ?? state.points[index].cluster;
+        if (Number.isFinite(cluster)) {
+            clusterScale = getClusterSizeFactor(cluster);
+        }
+    }
+    return NODE_SPORE_BASE_RADIUS * (0.86 + seededUnit(index, 2.7) * 0.48) * emphasis * clusterScale;
 }
 
 export function setNodeSporeInstanceMatrix(index, targetMesh = state.nodeSporeMesh, scaleMultiplier = 1) {
@@ -111,16 +133,6 @@ export function setNodeSporeInstanceMatrix(index, targetMesh = state.nodeSporeMe
     );
     _nodeSporeObject.updateMatrix();
     targetMesh.setMatrixAt(index, _nodeSporeObject.matrix);
-
-    const hitProxy = state.nodeSporeHitMesh;
-    if (targetMesh === state.nodeSporeMesh && hitProxy) {
-        const hitBase = NODE_SPORE_BASE_RADIUS * (0.86 + seededUnit(index, 2.7) * 0.48) * 1.85;
-        _nodeSporeObject.position.set(pos.x, pos.y, pos.z);
-        _nodeSporeObject.rotation.set(0, 0, 0);
-        _nodeSporeObject.scale.set(hitBase, hitBase, hitBase);
-        _nodeSporeObject.updateMatrix();
-        hitProxy.setMatrixAt(index, _nodeSporeObject.matrix);
-    }
 }
 
 export function getNodeSporeColor(index, factor = 1) {
@@ -241,8 +253,8 @@ float semanticRippleMask = max(0.0, 1.0 - abs((uRippleTime - distance(position, 
 vSemanticPointBoost = max(0.08, uRevealProgress) * max(0.55, mix(1.0, uHoverBoost, semanticHoverMask) + semanticRippleMask * 0.38);`
             )
             .replace(
-                'gl_PointSize = size;',
-                'gl_PointSize = size * vSemanticPointBoost;'
+                'gl_PointSize = clamp(size, 1.0, 128.0);',
+                'gl_PointSize = clamp(size * vSemanticPointBoost, 1.0, 128.0);'
             );
         shader.fragmentShader = shader.fragmentShader
             .replace(
@@ -312,7 +324,7 @@ export function createNodeSporeLayer() {
     });
     const sporeMesh = new THREE.InstancedMesh(sporeGeo, sporeMat, state.points.length);
     sporeMesh.name = 'node-spore-instanced-field';
-    sporeMesh.frustumCulled = false;
+    sporeMesh.frustumCulled = true;
     sporeMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     state.nodeSporeMesh = sporeMesh;
     state.nodeSporeMaterial = sporeMat;
@@ -326,25 +338,6 @@ export function createNodeSporeLayer() {
     sporeMesh.instanceMatrix.needsUpdate = true;
     sporeMesh.visible = true;
     state.scene.add(sporeMesh);
-
-    const hitGeo = new THREE.SphereGeometry(1, SPORE_SEGMENTS_HIT_PROXY, SPORE_SEGMENTS_HIT_PROXY - 1);
-    const hitMat = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0,
-        depthWrite: false
-    });
-    const hitMesh = new THREE.InstancedMesh(hitGeo, hitMat, state.points.length);
-    hitMesh.name = 'node-spore-instanced-hit-proxy';
-    hitMesh.frustumCulled = false;
-    hitMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    state.nodeSporeHitMesh = hitMesh;
-    webglContext.nodeSporeHitMesh = hitMesh;
-    for (let i = 0; i < state.points.length; i += 1) {
-        setNodeSporeInstanceMatrix(i, hitMesh, 1.8);
-    }
-    hitMesh.instanceMatrix.needsUpdate = true;
-    state.scene.add(hitMesh);
 }
 
 export function createPoints() {

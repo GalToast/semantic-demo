@@ -104,7 +104,7 @@ includesAll(bridgeInitSource, [
 ], 'Svelte engine bridge should start the legacy RAF loop after init');
 
 assert(
-    interactionVisuals.includes('const targetOpacity = hasFocus ? (isInside ? 0.48 : 0.36) : 0;'),
+    interactionVisuals.includes('const targetOpacity = hasFocus ? (isInside ? 0.62 : 0.50) : 0;'),
     'selected node filament opacity should be visible enough to read as a halo'
 );
 assert(

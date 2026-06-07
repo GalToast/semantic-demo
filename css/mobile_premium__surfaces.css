@@ -64,8 +64,8 @@ body.is-active #selected-details.active:not([hidden]) {
             background-color 0.7s cubic-bezier(0.16, 1, 0.3, 1),
             border-color 0.7s cubic-bezier(0.16, 1, 0.3, 1),
             box-shadow 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-            backdrop-filter 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-            -webkit-backdrop-filter 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+            -webkit-backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         z-index: var(--z-panels-elevated);
     }
 
@@ -347,11 +347,18 @@ body.is-active #selected-details.active:not([hidden]) {
        Consolidated 10/10 High-Fidelity Realignment
        ============================================================ */
 
-    /* Root Sheet Style */
+    /* Root Sheet Style
+       position:fixed is required here to bridge the 641–768px tablet range
+       where layout_base.css (min-width:769px) and mobile_premium__state.css
+       (max-width:640px) both leave the info-panel without an explicit position.
+       The Svelte base uses position:absolute; without this override the panel
+       scrolls with its container instead of anchoring to the viewport. */
     body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel {
+        position: fixed;
         left: 0;
         right: 0;
         bottom: 0;
+        top: auto;
         width: 100%;
         max-width: 100%;
         border-radius: 28px 28px 0 0;
@@ -368,7 +375,16 @@ body.is-active #selected-details.active:not([hidden]) {
         transform: none;
         animation-name: none;
         animation-duration: 0s;
-        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease;
+        /* Include layout properties in the transition so the 768px↔769px
+           breakpoint crossing interpolates width/position instead of snapping. */
+        transition:
+            transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+            background-color 0.4s ease,
+            width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+            left 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+            right 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+            border-radius 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+            max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         z-index: var(--z-panels-elevated);
     }
 

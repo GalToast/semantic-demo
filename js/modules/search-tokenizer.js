@@ -65,7 +65,7 @@ export function tokenizeSearchText(text) {
     } else {
         // Fallback for environments without Intl.Segmenter — the NFC
         // normalization above already prevents most splitting issues.
-        words = input.match(/[a-z0-9]+/g) || [];
+        words = input.match(/[\p{L}0-9]+/gu) || [];
     }
 
     return [

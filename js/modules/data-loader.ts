@@ -9,6 +9,7 @@ import { updateClusterList, populateCityFilter } from './cluster-filter.js';
 import { buildLegend } from './ui-renderers.js';
 import { applyFilters } from './search-state.js';
 import { normalizeSlugName } from './utils/data-mapper.js';
+import { debugWarn } from './diagnostic-adapter.js';
 
 let _dataWorker: Worker | null = null;
 
@@ -204,7 +205,7 @@ function checkDataBounds(buffer: Float32Array | null): void {
     for (let i = 0; i < sampleLimit; i++) {
         const val = buffer[i];
         if (val < -0.1 || val > 1.1) {
-            console.warn(
+            console.error(
                 `CRITICAL: data.dat positions are out of bounds! Found coordinate ${val}. ` +
                 `The 3D engine expects coordinates to be normalized strictly to [0, 1]. ` +
                 `MYCELIUM_FIELD_SCALE will cause extreme camera scaling and rendering issues. ` +

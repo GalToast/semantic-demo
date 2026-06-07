@@ -4,11 +4,12 @@ import { toggleAutoRotate } from '../camera-controls.js';
 import { resetExperienceState, copyCurrentViewLink } from '../lifecycle.js';
 import { showExperienceToast } from '../ui-feedback.js';
 import { zoomMap } from '../map-state.js';
+import { debugWarn } from '../diagnostic-adapter.js';
 
 export function bindClick(id, handler, options = {}) {
     const element = document.getElementById(id);
     if (!element) {
-        if (!options.optional) console.warn('[event-bindings] button not found:', id);
+        if (!options.optional) debugWarn('[event-bindings] button not found:', id);
         return;
     }
     element.onclick = handler;

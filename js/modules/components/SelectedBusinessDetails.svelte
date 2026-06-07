@@ -13,7 +13,7 @@
         getInterestingBusinessNote,
     } from '../ui-renderers.js';
     import { describeThreadLensForPoint } from '../journey-point-color.js';
-    import { _getSelectedBusinessRoleLabel } from '../bridge-registry.js';
+    import { _getSelectedBusinessRoleLabel } from '../role-label.js';
 
     interface BusinessPoint {
         name?: string;

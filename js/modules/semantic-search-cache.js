@@ -39,7 +39,9 @@ export async function initSearchCache() {
 }
 
 function getSemanticSearchCacheKey(query) {
-    return String(query || '').trim().toLowerCase();
+    // NFC-normalize before lowercasing so composed vs decomposed Unicode
+    // (e.g. "café" NFC vs "cafe\u0301" NFD) map to the same cache key.
+    return String(query || '').trim().normalize('NFC').toLowerCase();
 }
 
 function cloneSemanticSearchPayload(payload) {

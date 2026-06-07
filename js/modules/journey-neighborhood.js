@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import {
     getCurrentView, getNavState, getPoints, getActiveFilters, getNodePositions,
     getSemanticNeighborMapByLeadId, getPointIndexByLeadId, getFocusedNode
@@ -282,7 +282,7 @@ export function getBoundedNeighborhoodWalkCandidate(step = 1, currentIndex = sta
     const fromCursor = currentCursor >= 0 ? currentCursor : state.navState.neighborhoodCursor || 0;
     const direction = step < 0 ? -1 : 1;
     const nextCursor = (fromCursor + direction + route.length) % route.length;
-    if (options.commit) state.navState.neighborhoodCursor = nextCursor;
+    if (options.commit) withStateMutation(() => { state.navState.neighborhoodCursor = nextCursor; });
     return getNeighborhoodCandidateForIndex(route[nextCursor]);
 }
 
@@ -352,11 +352,13 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex) {
             });
         }
         if (!state.navState.neighborhoodManifest) {
-            state.navState.neighborhoodManifest = buildNeighborhoodManifest(
-                seedIndex,
-                (state.navState.neighborhoodIndices || []).filter(Number.isFinite),
-                { displayLimit: getSemanticThreadDisplayLimit() }
-            );
+            withStateMutation(() => {
+                state.navState.neighborhoodManifest = buildNeighborhoodManifest(
+                    seedIndex,
+                    (state.navState.neighborhoodIndices || []).filter(Number.isFinite),
+                    { displayLimit: getSemanticThreadDisplayLimit() }
+                );
+            });
         }
         return;
     }
@@ -381,20 +383,22 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex) {
     if (!pocketRoute.length) return;
     const manifest = buildNeighborhoodManifest(seedIndex, pocketRoute, { displayLimit: limit });
     if (!manifest?.candidateIndices?.length) return;
-    state.navState.neighborhoodAnchorIndex = seedIndex;
-    state.navState.neighborhoodIndices = manifest.candidateIndices;
-    state.navState.neighborhoodCursor = 0;
-    state.navState.neighborhoodReasonByIndex = new Map(
-        manifest.candidateIndices.map((candidateIndex) => [
-            candidateIndex,
-            manifest.candidates?.get(candidateIndex)?.reason ||
-            state.navState.threadReasonByIndex?.get(candidateIndex) ||
-                getNeighborhoodCandidateForIndex(candidateIndex)?.reason ||
-                'tied stop in this selected neighborhood'
-        ])
-    );
-    state.navState.neighborhoodSource = 'semantic';
-    state.navState.neighborhoodManifest = manifest;
+    withStateMutation(() => {
+        state.navState.neighborhoodAnchorIndex = seedIndex;
+        state.navState.neighborhoodIndices = manifest.candidateIndices;
+        state.navState.neighborhoodCursor = 0;
+        state.navState.neighborhoodReasonByIndex = new Map(
+            manifest.candidateIndices.map((candidateIndex) => [
+                candidateIndex,
+                manifest.candidates?.get(candidateIndex)?.reason ||
+                state.navState.threadReasonByIndex?.get(candidateIndex) ||
+                    getNeighborhoodCandidateForIndex(candidateIndex)?.reason ||
+                    'tied stop in this selected neighborhood'
+            ])
+        );
+        state.navState.neighborhoodSource = 'semantic';
+        state.navState.neighborhoodManifest = manifest;
+    });
     setFocusPocketMeta({
             ...getNavState().focusPocketMeta,
         boundedLoop: true,

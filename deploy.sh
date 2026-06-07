@@ -122,8 +122,9 @@ echo "==> Syncing scanner.js to cloudscan/..."
 # scanner.js is the canonical source for /js/scanner.js (cloudscan page)
 # and /semantic-demo/js/scanner.js (semantic demo) — keep in sync.
 # The cloudscan page is a sibling project, so the file lives at ../js/scanner.js.
-# If it isn't present (e.g., running this script in isolation), skip the sync
-# rather than failing the semantic-demo deploy.
+# If it isn't present (e.g., running this script in isolation or in a CI
+# environment without the sibling checkout), skip the sync rather than
+# failing the semantic-demo deploy.
 SCANNER_SRC="${DEPLOY_SCANNER_SOURCE:-../js/scanner.js}"
 if [[ -f "$SCANNER_SRC" ]]; then
   run "scp -P $PORT $SCANNER_SRC '${SSH_TARGET}:${REMOTE_ROOT}/js/scanner.js'"

@@ -12,7 +12,7 @@ import { resolve } from 'node:path';
 const CWD = process.cwd();
 const SEARCH_STATE_PATH = resolve(CWD, 'js/modules/search-state.js');
 const SEARCH_RESULTS_UI_PATH = resolve(CWD, 'js/modules/search-results-ui.js');
-const APP_PATH = resolve(CWD, 'js/modules/app.js');
+const APP_PATH = resolve(CWD, 'js/modules/app.ts');
 const TOOLTIP_PATH = resolve(CWD, 'js/modules/tooltip.js');
 
 function assert(condition, message) {

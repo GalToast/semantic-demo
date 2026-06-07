@@ -386,13 +386,15 @@ const _rawState = {
         endpointCount: 0,
         opacity: 0
     },
-    strandContinuityState: {
-        phase: 'idle',
-        targetIndex: null,
-        fromIndex: null,
-        reason: '',
-        startedAt: 0
-    },
+  strandContinuityState: {
+    phase: 'idle',
+    targetIndex: null,
+    fromIndex: null,
+    reason: '',
+    startedAt: 0,
+    arrivalTimeoutId: null,
+    settleTimeoutId: null
+  },
     focusOrbitSlackState: {
         phase: 'idle',
         reason: '',
@@ -571,8 +573,9 @@ if (typeof window !== 'undefined') {
   _prodProxyCache = new WeakMap();
   // Deep tracking activates on localhost by default, or via runtime flag for
   // canary sessions in production: window.__semanticDevTools = { deepTrack: true }.
-  const isDev = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-      || window.__semanticDevTools?.deepTrack;
+const _hostname = window.location?.hostname;
+    const isDev = (_hostname === 'localhost' || _hostname === '127.0.0.1')
+    || window.__semanticDevTools?.deepTrack;
   if (isDev) {
     _devTrackingActive = true;
     _devProxyCache = new WeakMap();

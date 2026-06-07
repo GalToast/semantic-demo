@@ -43,6 +43,12 @@ import { focusStore } from '@lib/stores/focus';
 import { searchStore } from '@lib/stores/search';
 import { filterState } from '@lib/stores/filter';
 import { viewport } from '@lib/stores/viewport';
+import { cameraStore } from '@lib/stores/camera';
+import { demoPhase as demoPhaseStore } from '@lib/stores/demo';
+import {
+  loadingPhaseStore,
+  graphicsModeStore
+} from '@lib/data-store';
 import {
   getJourneyCompassState
 } from './compass-state';
@@ -50,6 +56,7 @@ import {
   getJourneyCompassPresentationState,
   type CompassPresentationState
 } from './compass-controller';
+import type { LoadingPhase } from '@lib/types/state';
 
 // ── Attribute Manifest ──────────────────────────────────────────────────────
 //
@@ -93,6 +100,12 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
   { key: 'semanticDive', description: 'Semantic dive state (inactive|transitioning|active)', source: 'focusStore.semanticDiveMode' },
   { key: 'insideWalkState', description: 'Inside walk state (idle|walking|exploring|...)', source: 'focusStore.strandContinuityPhase' },
 
+  // Focus transition (legacy camera-controls.js / focus.ts)
+  { key: 'focusTransition', description: 'Focus transition mode (idle|entering|settling|inside|exiting)', source: 'focusStore.transitionMode' },
+
+  // Search status (legacy lifecycle-modes.js / search-state.js)
+  { key: 'searchStatus', description: 'Search lifecycle status (idle|searching|focusing|results|empty|error)', source: 'searchStore.status' },
+
   // Strand journey (legacy strand-continuity.js — CSS journey_steps.css reads data-strand-journey)
   { key: 'strandJourney', description: 'Strand journey phase (idle|preview|pinned|exploring|arrived|returning)', source: 'focusStore.strandContinuityPhase' },
 
@@ -109,14 +122,18 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
   { key: 'mobile', description: 'Whether viewport is mobile (alias of compact)', source: 'viewport.isMobile' },
   { key: 'mode', description: 'Current visual mode (overview|focus|inside|map)', source: 'navStore.mode' },
 
-  // Loading / scene readiness
-  { key: 'loadingOverlay', description: 'Loading overlay visibility (hidden|visible)', source: 'derived' },
-  { key: 'loadingPhase', description: 'Loading phase (records|scene|restore|launch)', source: 'derived' },
-  { key: 'sceneReady', description: 'Whether the WebGL scene is ready', source: 'derived' },
-  { key: 'viewHandoffActive', description: 'Whether a view-handoff animation is in progress', source: 'derived' },
-  { key: 'cameraAssist', description: 'Camera assistance state (free|suspended)', source: 'derived' },
-  { key: 'graphicsMode', description: 'Graphics mode (webgl|fallback)', source: 'derived' },
-  { key: 'testReady', description: 'Test readiness flag (true once parity is installed)', source: 'derived' }
+  // Loading / scene readiness (all derived from loadingPhaseStore + graphicsModeStore)
+  { key: 'loadingOverlay', description: 'Loading overlay visibility (hidden|visible)', source: 'loadingPhaseStore' },
+  { key: 'loadingPhase', description: 'Loading phase (records|scene|restore|launch)', source: 'loadingPhaseStore' },
+  { key: 'sceneReady', description: 'Whether the WebGL scene is ready', source: 'loadingPhaseStore' },
+  { key: 'viewHandoffActive', description: 'Whether a view-handoff animation is in progress', source: 'loadingPhaseStore' },
+  { key: 'cameraAssist', description: 'Camera assistance state (free|suspended)', source: 'loadingPhaseStore' },
+  { key: 'graphicsMode', description: 'Graphics mode (webgl|fallback)', source: 'graphicsModeStore' },
+  { key: 'testReady', description: 'Test readiness flag (true once parity is installed)', source: 'derived' },
+
+  // Camera orbit slack (legacy camera-orbit-slack.js / camera.ts)
+  { key: 'cameraSlack', description: 'Camera orbit slack phase (idle|active|settling)', source: 'cameraStore.orbitSlack.phase' },
+  { key: 'cameraSlackReason', description: 'Reason string for the current camera orbit slack phase', source: 'cameraStore.orbitSlack.reason' }
 ] as const;
 
 /**
@@ -145,6 +162,7 @@ type FocusValue = Unwrap<typeof focusStore>;
 type SearchValue = Unwrap<typeof searchStore>;
 type FilterValue = Unwrap<typeof filterState>;
 type ViewportValue = Unwrap<typeof viewport>;
+type CameraValue = Unwrap<typeof cameraStore>;
 
 export function computeParityAttributes(
   nav: NavStoreState,
@@ -152,7 +170,11 @@ export function computeParityAttributes(
   focus: FocusValue,
   search: SearchValue,
   filters: FilterValue,
-  vp: ViewportValue
+  vp: ViewportValue,
+  loadingPhaseValue: LoadingPhase = 'launch',
+  demoPhaseValue: string = 'IDLE',
+  graphicsModeValue: string = 'webgl',
+  camera: CameraValue = get(cameraStore)
 ): ParityAttributeMap {
   const compassState = getJourneyCompassState();
   const presentation: CompassPresentationState = getJourneyCompassPresentationState(compassState);
@@ -194,16 +216,22 @@ export function computeParityAttributes(
   // legacy data-mode attribute that the CSS layer reads.
   const mode = nav.mode;
 
-  // Demo phase: kept here as a placeholder parity hook; the demo store
-  // owns the live value and writes it directly. We only re-emit a safe
-  // default if the body attribute is missing.
-  const demoPhase = document?.body?.dataset?.demoPhase ?? 'IDLE';
+  // Demo phase: read from store (no circular DOM read).
+  const demoPhase = demoPhaseValue;
 
   const filterActive = filters.status !== 'all'
     || filters.city !== ''
     || filters.website
     || filters.email
     || filters.geocoded;
+
+  // Loading / scene readiness — derived from loadingPhase store values.
+  // No circular DOM reads: these come from loadingPhaseStore / graphicsModeStore.
+  const isLoading = loadingPhaseValue !== 'launch';
+  const loadingOverlay = isLoading ? 'visible' : 'hidden';
+  const sceneReady = isLoading ? 'false' : 'true';
+  const viewHandoffActive = isLoading ? 'true' : 'false';
+  const cameraAssist = isLoading ? 'loading' : 'free';
 
   return {
     journeyCompassPhase: nav.mode,
@@ -227,6 +255,9 @@ export function computeParityAttributes(
     semanticDive,
     insideWalkState: focus.strandContinuityPhase || 'idle',
 
+    focusTransition: focus.transitionMode || 'idle',
+    searchStatus: search.status || 'idle',
+
     strandJourney: focus.strandContinuityPhase || 'idle',
     journeyPhase: journey.phase || 'idle',
     demoPhase,
@@ -238,15 +269,19 @@ export function computeParityAttributes(
     mobile: String(vp.isMobile),
     mode,
 
-    // Loading / scene readiness — initial defaults; the loading-ui
-    // module owns the live values and writes them directly to body.
-    loadingOverlay: document?.body?.dataset?.loadingOverlay ?? 'hidden',
-    loadingPhase: document?.body?.dataset?.loadingPhase ?? 'records',
-    sceneReady: document?.body?.dataset?.sceneReady ?? 'false',
-    viewHandoffActive: document?.body?.dataset?.viewHandoffActive ?? 'false',
-    cameraAssist: document?.body?.dataset?.cameraAssist ?? 'free',
-    graphicsMode: document?.body?.dataset?.graphicsMode ?? 'webgl',
-    testReady: 'true'
+    // Loading / scene readiness — derived from loadingPhase store.
+    loadingOverlay,
+    loadingPhase: loadingPhaseValue,
+    sceneReady,
+    viewHandoffActive,
+    cameraAssist,
+    graphicsMode: graphicsModeValue,
+    testReady: 'true',
+
+    // Camera orbit slack (legacy camera-orbit-slack.js).
+    // The camera store is the Svelte-native source of truth.
+    cameraSlack: camera.orbitSlack.phase || 'idle',
+    cameraSlackReason: camera.orbitSlack.reason || null
   };
 }
 
@@ -312,7 +347,11 @@ export function installParityAttributeSync(
       get(focusStore),
       get(searchStore),
       get(filterState),
-      get(viewport)
+      get(viewport),
+      get(loadingPhaseStore),
+      get(demoPhaseStore),
+      get(graphicsModeStore),
+      get(cameraStore)
     );
 
     // Cheap short-circuit: same JSON snapshot means no DOM changes needed.
@@ -329,6 +368,10 @@ export function installParityAttributeSync(
   unsubs.push(searchStore.subscribe(recomputeAndApply));
   unsubs.push(filterState.subscribe(recomputeAndApply));
   unsubs.push(viewport.subscribe(recomputeAndApply));
+  unsubs.push(cameraStore.subscribe(recomputeAndApply));
+  unsubs.push(loadingPhaseStore.subscribe(recomputeAndApply));
+  unsubs.push(demoPhaseStore.subscribe(recomputeAndApply));
+  unsubs.push(graphicsModeStore.subscribe(recomputeAndApply));
 
   if (initialSync) {
     recomputeAndApply();

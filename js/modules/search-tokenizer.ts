@@ -43,8 +43,9 @@ export function tokenizeSearchText(text: unknown): string[] {
         ...new Set(
             (
                 String(text || '')
+                    .normalize('NFC')
                     .toLowerCase()
-                    .match(/[a-z0-9]+/g) || []
+                    .match(/[\p{L}0-9]+/gu) || []
             )
                 .filter(Boolean)
                 .filter((token: string) => token.length > 1 && !SEARCH_STOP_WORDS.has(token))

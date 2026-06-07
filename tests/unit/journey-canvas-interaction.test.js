@@ -145,13 +145,12 @@ describe('journey-canvas-interaction', () => {
         expect(candidate?.index).toBe(1);
     });
 
-    it('syncs the hit proxy matrix for ordinary visual spore updates', () => {
+    it('syncs the visual spore matrix for ordinary visual spore updates', () => {
         const visualMesh = { setMatrixAt: vi.fn() };
-        const hitProxyMesh = { setMatrixAt: vi.fn() };
         withStateMutation(() => {
             state.nodePositions = [{ x: 0, y: 0, z: 0 }];
             state.nodeSporeMesh = visualMesh;
-            state.nodeSporeHitMesh = hitProxyMesh;
+            state.nodeSporeHitMesh = null;
             state.focusedNode = -1;
             state.navState.focusPocketIndices = [];
             state.navState.trailNeighborIndices = [];
@@ -160,7 +159,6 @@ describe('journey-canvas-interaction', () => {
         setNodeSporeInstanceMatrix(0, visualMesh);
 
         expect(visualMesh.setMatrixAt).toHaveBeenCalledWith(0, expect.any(THREE.Matrix4));
-        expect(hitProxyMesh.setMatrixAt).toHaveBeenCalledWith(0, expect.any(THREE.Matrix4));
     });
 
     it('initJourneyCanvasInteractionAdapter sets adapter callbacks', () => {
@@ -178,10 +176,10 @@ describe('journey-canvas-interaction', () => {
             
             journeyCanvasInteraction.ensureCanvasNodeInteractionBindings();
             
-            expect(addEventListenerSpy).toHaveBeenCalledWith('pointermove', expect.any(Function));
-            expect(addEventListenerSpy).toHaveBeenCalledWith('pointerleave', expect.any(Function));
-            expect(addEventListenerSpy).toHaveBeenCalledWith('pointerup', expect.any(Function));
-            expect(addEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function));
+            expect(addEventListenerSpy).toHaveBeenCalledWith('pointermove', expect.any(Function), expect.objectContaining({ signal: expect.any(AbortSignal) }));
+            expect(addEventListenerSpy).toHaveBeenCalledWith('pointerleave', expect.any(Function), expect.objectContaining({ signal: expect.any(AbortSignal) }));
+            expect(addEventListenerSpy).toHaveBeenCalledWith('pointerup', expect.any(Function), expect.objectContaining({ signal: expect.any(AbortSignal) }));
+            expect(addEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function), expect.objectContaining({ signal: expect.any(AbortSignal) }));
             expect(mockCanvas.dataset.threadInteractionBound).toBe('true');
         });
 

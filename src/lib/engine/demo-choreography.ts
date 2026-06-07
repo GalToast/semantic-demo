@@ -166,6 +166,11 @@ async function getLegacyState(): Promise<LegacyState> {
   return (mod as unknown as { state: LegacyState }).state;
 }
 
+async function getWithStateMutation(): Promise<(fn: () => void) => void> {
+  const mod = await import('../../../js/state.js');
+  return (mod as { withStateMutation: (fn: () => void) => void }).withStateMutation;
+}
+
 async function loadCameraControls(): Promise<CameraControlsModule> {
   const mod = await import('../../../js/modules/camera-controls.js');
   return mod as unknown as CameraControlsModule;
@@ -215,20 +220,28 @@ async function loadMicroDemoUi(): Promise<MicroDemoUiModule> {
 // Resets all demo-related state and UI chrome back to overview.
 
 async function demoReset(): Promise<void> {
-  const state = await getLegacyState();
-  const focusPocket = await loadFocusPocket();
-  const lifecycle = await loadLifecycle();
-  const compass = await loadJourneyCompass();
-  const journey = await loadJourney();
-  const panel = await loadPanelBindings();
+  const [state, withMutation, focusPocket, lifecycle, compass, journey, panel] =
+    await Promise.all([
+      getLegacyState(),
+      getWithStateMutation(),
+      loadFocusPocket(),
+      loadLifecycle(),
+      loadJourneyCompass(),
+      loadJourney(),
+      loadPanelBindings(),
+    ]);
 
   state.selectedPoint = null;
-  state.navState.mode = 'overview';
-  state.navState.focusedIndex = null;
-  state.navState.trailSeedIndex = null;
-  state.navState.trailNeighborIndices = [];
-  state.navState.trailCursor = -1;
-  state.navState.walkHistoryIndices = [];
+  // navState is a TRACKED_SUB_KEY; batch mutations under withStateMutation
+  // to avoid the production Proxy throwing on direct sub-property writes.
+  withMutation(() => {
+    state.navState.mode = 'overview';
+    state.navState.focusedIndex = null;
+    state.navState.trailSeedIndex = null;
+    state.navState.trailNeighborIndices = [];
+    state.navState.trailCursor = -1;
+    state.navState.walkHistoryIndices = [];
+  });
 
   focusPocket.clearFocusPocketIndices();
   focusPocket.clearFocusPocketMeta();
@@ -252,17 +265,24 @@ async function demoReset(): Promise<void> {
 // Enters focus mode on the given demo node.
 
 async function demoFocusSetup(demoNode: number): Promise<void> {
-  const state = await getLegacyState();
-  const focusPocket = await loadFocusPocket();
-  const lifecycle = await loadLifecycle();
-  const compass = await loadJourneyCompass();
-  const journey = await loadJourney();
+  const [state, withMutation, focusPocket, lifecycle, compass, journey] =
+    await Promise.all([
+      getLegacyState(),
+      getWithStateMutation(),
+      loadFocusPocket(),
+      loadLifecycle(),
+      loadJourneyCompass(),
+      loadJourney(),
+    ]);
 
   const point = state.points?.[demoNode] ?? null;
   state.selectedPoint = point;
-  state.navState.mode = 'focus';
-  state.navState.focusedIndex = demoNode;
-  state.navState.walkHistoryIndices = [demoNode];
+  // navState is a TRACKED_SUB_KEY; batch mutations under withStateMutation.
+  withMutation(() => {
+    state.navState.mode = 'focus';
+    state.navState.focusedIndex = demoNode;
+    state.navState.walkHistoryIndices = [demoNode];
+  });
 
   journey.updateSelectedBusiness(point, { revealCard: true });
   journey.applyPointFilterColors();

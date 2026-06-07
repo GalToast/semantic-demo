@@ -8,5 +8,6 @@
 export {
     initJourneyCanvasInteractionAdapter,
     isThreadCandidateVisibleOnCanvas,
-    ensureCanvasNodeInteractionBindings
+    ensureCanvasNodeInteractionBindings,
+    removeCanvasNodeInteractionBindings
 } from './journey-canvas-interaction.ts';

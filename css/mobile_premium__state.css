@@ -145,7 +145,8 @@
     body[data-panel-surface='search'] .info-content,
     body[data-panel-surface='focus-search'] .info-content {
         max-height: calc(min(54vh, 456px) - 42px);
-        padding: 9px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+        padding: 9px 10px 10px;
+        margin-bottom: calc(env(safe-area-inset-bottom, 0px));
     }
 
     body[data-panel-surface='search']:not([data-panel-surface-detail]) #info-panel.info-panel,
@@ -523,7 +524,8 @@
     body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .info-content {
         height: calc(100dvh - 20px);
         max-height: none;
-        padding-top: calc(20px + env(safe-area-inset-top, 0px));
+        padding-top: 20px;
+        margin-top: calc(env(safe-area-inset-top, 0px));
     }
 
     body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] .stat-row,
@@ -813,6 +815,32 @@
     }
 }
 
+/* ─── TABLET BRIDGE (641–768px) ─────────────────────
+   Between layout_base.css (min-width:769px) and the phone state machine
+   (max-width:640px), the info-panel needs explicit geometry to avoid
+   falling back to the Svelte scoped position:absolute.
+   These rules narrow the panel toward its desktop side-panel footprint
+   so the 768px↔769px crossing interpolates smoothly via the transition
+   added in mobile_premium__surfaces.css root-sheet-style. */
+@media (min-width: 641px) and (max-width: 768px) {
+    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        max-height: min(52dvh, 440px);
+        border-radius: 28px 28px 0 0;
+    }
+
+    body.is-active[data-panel-surface='idle'] .info-panel {
+        max-height: min(48dvh, 400px);
+    }
+}
+
 /* Map-trail state owns the full compass suppression outside the narrow
    baseline media gate; the compact map strip owns navigation instead. */
 @media (min-width: 641px) and (max-width: 768px) {
@@ -828,7 +856,8 @@
     body[data-panel-surface='search'] .info-content,
     body[data-panel-surface='focus-search'] .info-content {
         max-height: calc(min(54vh, 456px) - 42px);
-        padding: 9px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+        padding: 9px 10px 10px;
+        margin-bottom: calc(env(safe-area-inset-bottom, 0px));
     }
 
     body[data-panel-surface='map-trail'] .view-toggle,

@@ -66,7 +66,7 @@ export function hideViewHandoff(): void {
     clearTimeout(_viewHandoffTimer);
     _viewHandoffTimer = null;
   }
-  document.body.dataset.viewHandoffActive = 'false';
+  // body.dataset.viewHandoffActive is owned by parity-attrs.ts.
   if (!handoff) return;
   handoff.classList.remove('active');
   handoff.setAttribute('aria-hidden', 'true');
@@ -99,12 +99,12 @@ export function showViewHandoff(view: ViewName): void {
 
   handoff.setAttribute('aria-hidden', 'false');
   handoff.classList.add('active');
-  document.body.dataset.viewHandoffActive = 'true';
+  // body.dataset.viewHandoffActive is owned by parity-attrs.ts.
 
   _viewHandoffTimer = setTimeout(() => {
     handoff.classList.remove('active');
     handoff.setAttribute('aria-hidden', 'true');
-    document.body.dataset.viewHandoffActive = 'false';
+    // body.dataset.viewHandoffActive is owned by parity-attrs.ts.
     _viewHandoffTimer = null;
   }, CONFIG.SHOW_VIEW_HANDOFF_DISMISS_MS);
 }
@@ -127,6 +127,11 @@ export function switchView(view: ViewName, options: SwitchViewOptions = {}): voi
   if (_viewSwitchPreludeTimer !== null) {
     clearTimeout(_viewSwitchPreludeTimer);
     _viewSwitchPreludeTimer = null;
+    // Counter-switch detected: the in-flight handoff overlay from the
+    // previous prelude is now stale — cancel it immediately so the
+    // wrong "switching to map" overlay doesn't linger during a
+    // galaxy→galaxy or map→galaxy reverse switch.
+    hideViewHandoff();
   }
 
   // Terrain prelude: galaxy → map with animated flattening
@@ -144,9 +149,7 @@ export function switchView(view: ViewName, options: SwitchViewOptions = {}): voi
 
   // Commit the view switch to the store
   navStore.update((s) => ({ ...s, currentView: view }));
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.viewMode = view;
-  }
+  // body.dataset.viewMode / .activeView are owned by parity-attrs.ts.
 
   // Transition choreography class
   document.body.classList.add('view-transitioning');

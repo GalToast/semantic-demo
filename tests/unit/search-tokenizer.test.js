@@ -23,6 +23,39 @@ describe('search-tokenizer', () => {
         });
     });
 
+    describe('NFC normalization', () => {
+        it('tokenizes accented characters (NFC composed)', () => {
+            // NFC form of "café" — single codepoint U+00E9
+            const nfc = 'caf\u00e9';
+            const tokens = tokenizeSearchText(nfc);
+            expect(tokens).toContain('café');
+        });
+
+        it('tokenizes accented characters (NFD decomposed)', () => {
+            // NFD form of "café" — e + combining acute (two codepoints)
+            const nfd = 'cafe\u0301';
+            const tokens = tokenizeSearchText(nfd);
+            // After NFC normalization, should produce the same token as NFC form
+            expect(tokens).toContain('café');
+        });
+
+        it('NFC and NFD produce identical token sets', () => {
+            const nfc = 'fiancée';
+            const nfd = 'fiance\u0301e'; // decomposed é
+            const tokensNfc = tokenizeSearchText(nfc);
+            const tokensNfd = tokenizeSearchText(nfd);
+            expect(tokensNfc).toEqual(tokensNfd);
+        });
+
+        it('handles mixed script input without crashing', () => {
+            // Should not throw and should extract ASCII portions
+            const tokens = tokenizeSearchText('café latte 123');
+            expect(tokens).toContain('café');
+            expect(tokens).toContain('latte');
+            expect(tokens).toContain('123');
+        });
+    });
+
     describe('expandSearchIntent', () => {
         it('expands known single token aliases (dog)', () => {
             // "dog" should expand to various pet related terms

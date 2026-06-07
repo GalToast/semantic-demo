@@ -54,7 +54,6 @@
   class:results-rendered={showResults}
   class:searching={showLoading}
   class:is-compact={$isCompact}
-  id="search-chrome"
   role="search"
   aria-label="Search businesses in the semantic field"
 >

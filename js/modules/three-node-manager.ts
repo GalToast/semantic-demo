@@ -228,8 +228,8 @@ float semanticRippleMask = max(0.0, 1.0 - abs((uRippleTime - distance(position, 
 vSemanticPointBoost = max(0.08, uRevealProgress) * max(0.55, mix(1.0, uHoverBoost, semanticHoverMask) + semanticRippleMask * 0.38);`
             )
             .replace(
-                'gl_PointSize = size;',
-                'gl_PointSize = size * vSemanticPointBoost;'
+                'gl_PointSize = clamp(size, 1.0, 128.0);',
+                'gl_PointSize = clamp(size * vSemanticPointBoost, 1.0, 128.0);'
             );
         shader.fragmentShader = shader.fragmentShader
             .replace(

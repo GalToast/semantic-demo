@@ -21,6 +21,7 @@ import type {
   NeighborEntry,
   WalkHistoryEntry
 } from '@lib/types/state';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
@@ -160,7 +161,7 @@ export function transitionCompass(
   const from = current.compass.phase;
 
   if (!canTransition(from, to)) {
-    console.warn(`[Compass] Invalid transition: ${from} → ${to}`);
+    debugWarn(`[Compass] Invalid transition: ${from} → ${to}`);
     return false;
   }
 

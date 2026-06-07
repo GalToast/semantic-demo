@@ -8,7 +8,7 @@ import { cleanOptionalValue, formatBusinessName } from './utils/dom-formatters.j
 import { isCompactFocusStageViewport } from './utils/ui-presentation.js';
 import { getNextExploreCandidateForIndex } from './journey-thread-model.js';
 import {summarizeNeighborReason} from './journey.js';
-import { getNextWalkCandidateForIndex } from './journey-neighborhood.js';
+import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.js';
 import { ensureFocusStageAuxiliaryDom, ensureDiveButton } from './focus-stage-dom.js';
 
 function truncateDiveStatusCopy(text, max = 74) {
@@ -98,6 +98,9 @@ export function syncSemanticDiveUi() {
     const isExploring = journeyPhase === 'walking' || journeyPhase === 'exploring';
     if (document.body) {
         document.body.dataset.insideWalkState = active ? (journeyPhase || 'idle') : 'idle';
+    }
+    if (document.body && !active) {
+        document.body.dataset.semanticDive = 'inactive';
     }
     const currentFocusIndex = Number.isFinite(getNavState()?.focusedIndex)
         ? getNavState().focusedIndex

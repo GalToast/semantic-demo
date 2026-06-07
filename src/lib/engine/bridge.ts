@@ -37,6 +37,7 @@ import {
   leadEnrichment,
   pointIndexByLeadId,
 } from '@lib/data-store';
+import { setSearchGlow, clearSearchGlow } from '@lib/stores/search';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 //
@@ -604,6 +605,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
   let _viewController: ViewControllerModule | null = null;
   let _filterState: FilterStateModule | null = null;
   let _canvasInteractionBound = false;
+  let _removeCanvasInteraction: (() => void) | null = null;
 
   // The legacy state singleton (from js/state.js)
   let _state: LegacyState | null = null;
@@ -615,6 +617,15 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
   // When set, the next frame's thread opacity update uses this instead of
   // the automatic profile derived from navigation mode.
   let _threadProfileOverride: { core: number; wispy: number; bridge: number; pulse: number } | null = null;
+
+  // Lazy-acquired withStateMutation wrapper from state.js (via window).
+  // Falls back to direct invocation when the legacy state module is not loaded.
+  let _withMutation: <T>(fn: () => T) => T = (fn) => fn();
+  function _acquireWithMutation(): void {
+    if (typeof window !== 'undefined' && (window as any).withStateMutation) {
+      _withMutation = (window as any).withStateMutation as <T>(fn: () => T) => T;
+    }
+  }
 
   // ── Legacy Module Loader ───────────────────────────────────────────────
 
@@ -649,6 +660,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
     _viewController = viewControllerRaw as unknown as ViewControllerModule;
     _filterState = filterStateRaw as unknown as FilterStateModule;
     _state = (stateModule as unknown as { state: LegacyState }).state;
+    _acquireWithMutation();
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────
@@ -706,11 +718,7 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
 
     // The legacy state Proxy requires withStateMutation() for critical
     // properties (rawPositionsBuffer, rawClustersBuffer, etc.)
-    const withMutation = (typeof window !== 'undefined' && (window as any).withStateMutation)
-      ? (window as any).withStateMutation as <T>(fn: () => T) => T
-      : <T>(fn: () => T) => fn();
-
-    withMutation(() => {
+    _withMutation(() => {
       if (records.length > 0) {
         _state!.points = records as any[];
       }
@@ -738,13 +746,16 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
   // them to the EngineCallbacks bag so the Svelte layer reacts without
   // coupling to the bus internals.
 
-  function bindEventBridge(): void {
+  async function bindEventBridge(): Promise<void> {
     if (typeof window === 'undefined') return;
 
-    // Lazy-import the event bus at bind time (already loaded via loadModules).
-    // We subscribe synchronously since the event-bus module is already in the
-    // module cache after loadModules().
-    import('../../../js/modules/event-bus.js').then((mod) => {
+    // Await the event-bus import so all subscriptions are registered before
+    // init() returns.  Previously this was a fire-and-forget .then() which
+    // raced with destroy() — if destroy() ran before the .then() resolved,
+    // the subscriptions leaked because unbindEventBridge() saw an empty
+    // _eventUnsubs array.
+    try {
+      const mod = await import('../../../js/modules/event-bus.js');
       const bus = mod as unknown as EventBusModule;
 
       // Non-null assertions on EVENTS lookups: the manifest is a frozen object
@@ -791,7 +802,11 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
           }
         })
       );
-    });
+    } catch (busErr) {
+      // Event bus subscription is non-critical — the engine can run without
+      // bridge callbacks.  Log and continue so init() still succeeds.
+      console.warn('[EngineBridge] Event bus subscription failed:', busErr);
+    }
 
     // scene-ready is a DOM CustomEvent (from loading-ui.js), not on the bus.
     // Store the handler reference so we can remove it on cleanup.
@@ -903,6 +918,10 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
           if (typeof interactionMod.ensureCanvasNodeInteractionBindings === 'function') {
             interactionMod.ensureCanvasNodeInteractionBindings();
             _canvasInteractionBound = true;
+            // Store the removal function for cleanup in destroy().
+            if (typeof interactionMod.removeCanvasNodeInteractionBindings === 'function') {
+              _removeCanvasInteraction = interactionMod.removeCanvasNodeInteractionBindings;
+            }
             console.log('[EngineBridge] Canvas node interaction bindings wired');
           }
         } catch (interactionErr) {
@@ -916,12 +935,15 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
           (window as any).__TEST_STATE__ = _state;
         }
 
-        bindEventBridge();
+        await bindEventBridge();
 
         status = 'ready';
         _threeEngine!.animate();
       } catch (err) {
         console.error('EngineBridge.init: initialization failed', err);
+        // Clean up any partially-bound event listeners to prevent stale
+        // subscriptions from leaking when the engine enters degraded mode.
+        unbindEventBridge();
         status = 'degraded';
         callbacks.onGraphicsStateChange?.('fallback');
       }
@@ -931,6 +953,14 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       if (status === 'destroyed') return;
 
       unbindEventBridge();
+
+      // Remove canvas click/hover bindings to prevent listener accumulation
+      // across bridge lifecycle cycles (init → destroy → init).
+      if (_removeCanvasInteraction) {
+        try { _removeCanvasInteraction(); } catch (_) { /* best-effort */ }
+        _removeCanvasInteraction = null;
+      }
+      _canvasInteractionBound = false;
 
       // Explicitly dispose mycelium thread lines before tearing down the engine.
       // This releases GPU resources (line geometries, materials) for core/wispy/bridge
@@ -1002,6 +1032,9 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       }
       _state.searchGlowTopIndex = indices[0] ?? null;
       _state.searchGlowActive = indices.length > 0;
+
+      // Sync Svelte search glow store so UI components see the glow state
+      setSearchGlow(indices, indices[0] ?? null);
     },
 
     focusSearchCorridor(
@@ -1029,6 +1062,9 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
       _state.searchGlowIndices.clear();
       _state.searchGlowTopIndex = null;
       _state.searchGlowActive = false;
+
+      // Sync Svelte search glow store so UI components see the clear
+      clearSearchGlow();
     },
 
     // ── Camera ───────────────────────────────────────────────────────────
@@ -1095,12 +1131,23 @@ export function createEngineBridge(callbacks: EngineCallbacks = {}): EngineBridg
 
       if (!_state) return;
 
+      // Always mirror the requested view onto the legacy state so the
+      // imperative RAF loop in the engine reads the new value immediately,
+      // even when the legacy view-controller is also driving the handoff.
+      // The view-controller's switchView only owns the *animation*; the
+      // currentView field on the legacy state is the source of truth for
+      // the engine's render loop and must not lag behind the Svelte store.
+      // currentView is in CRITICAL_KEYS — must route through withStateMutation.
+      _withMutation(() => {
+        _state!.currentView = view;
+      });
+
       // The legacy switchView handles the full handoff animation
       if (_viewController) {
         _viewController.switchView(view, { reason: 'svelte-switch' });
       } else {
-        // Fallback: direct state mutation (no animation)
-        _state.currentView = view;
+        // Fallback: no view-controller means no animation, so we still
+        // need to notify Svelte that the view changed.
         callbacks.onViewChanged?.(view);
       }
     },

@@ -27,7 +27,7 @@ type CorridorGlowNodeState = {
     fadeDuration: number;
     targetBoost: number;
 };
-const _corridorGlowNodes: Record<number, CorridorGlowNodeState | number | null> = {};
+const _corridorGlowNodes = new Map<number, CorridorGlowNodeState>();
 
 let _corridorAnimState: any = null;
 let _corridorAnimStartTime: any = null;
@@ -187,7 +187,7 @@ function buildCorridorParticleTrail(anchorIndex: number, routeIndices: number[])
                 pos.y += cos(uTime * 2.5 + aOffset * 15.0) * 0.004;
 
                 vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-                gl_PointSize = (1.4 + aSpeed * 0.9) * (300.0 / -mvPosition.z);
+                gl_PointSize = clamp((1.4 + aSpeed * 0.9) * (300.0 / -mvPosition.z), 1.0, 64.0);
                 gl_Position = projectionMatrix * mvPosition;
             }
         `,
@@ -263,7 +263,7 @@ export function triggerCorridorNodeGlow(anchorIndex: any, routeIndices: number[]
     const shader = webglContext.pointsMaterial.userData.shader;
     
     // Clear any in-progress glow from a previous call
-    for (const k of Object.keys(_corridorGlowNodes)) { delete _corridorGlowNodes[Number(k)]; }
+    _corridorGlowNodes.clear();
     
     const allIndices = [...new Set([anchorIndex, ...(routeIndices || [])])].filter((i: any): i is number => Number.isFinite(i));
     const reduceMotion = typeof window !== 'undefined'
@@ -284,17 +284,17 @@ export function triggerCorridorNodeGlow(anchorIndex: any, routeIndices: number[]
             const pos = state.nodePositions[idx];
             shader.uniforms.uHoverNodePos.value.set(pos.x, pos.y, pos.z);
             
-            _corridorGlowNodes[idx] = {
+            _corridorGlowNodes.set(idx, {
                 startedAt: performance.now(),
                 fadeStartDelay,
                 fadeDuration,
                 targetBoost
-            };
+            });
             shader.uniforms.uHoverBoost.value = targetBoost;
 
             setTimeout(() => {
                 if (token !== _corridorGlowToken) return;
-                _corridorGlowNodes[idx] = null;
+                _corridorGlowNodes.delete(idx);
             }, fadeStartDelay + fadeDuration);
         }, delay);
     });
@@ -304,21 +304,18 @@ export function updateCorridorNodeGlow(frameNow: any) {
     if (!webglContext.pointsMaterial?.userData?.shader) return false;
     const shader = webglContext.pointsMaterial.userData.shader;
     let anyActive = false;
-    for (const idx of Object.keys(_corridorGlowNodes)) {
-        const key = Number(idx);
-        const glowState = _corridorGlowNodes[key];
-        if (!glowState) continue;
-        const startedAt = typeof glowState === 'number' ? glowState : glowState.startedAt;
-        const fadeStartDelay = typeof glowState === 'number' ? CORRIDOR_NODE_FADE_DELAY : glowState.fadeStartDelay;
-        const fadeDuration = typeof glowState === 'number' ? CORRIDOR_NODE_FADE_DURATION : glowState.fadeDuration;
-        const targetBoost = typeof glowState === 'number' ? CORRIDOR_NODE_BOOST : glowState.targetBoost;
+    for (const [key, glowState] of _corridorGlowNodes) {
+        const startedAt = glowState.startedAt;
+        const fadeStartDelay = glowState.fadeStartDelay;
+        const fadeDuration = glowState.fadeDuration;
+        const targetBoost = glowState.targetBoost;
         const elapsed = frameNow - startedAt;
         if (elapsed > fadeStartDelay) {
             const fadeProgress = Math.min((elapsed - fadeStartDelay) / fadeDuration, 1);
             const boost = 1.0 + (targetBoost - 1.0) * (1.0 - fadeProgress);
             shader.uniforms.uHoverBoost.value = boost;
             if (fadeProgress >= 1.0) {
-                _corridorGlowNodes[key] = null;
+                _corridorGlowNodes.delete(key);
             } else {
                 anyActive = true;
             }
@@ -369,10 +366,12 @@ export function triggerSearchCorridorAnimation(anchorIndex: any, routeIndices: n
             varying float vProgress;
             varying vec3 vColor;
             uniform float uFadeOpacity;
+            uniform float uDrawProgress;
             uniform float uTime;
 
             void main() {
-                float tipFade = smoothstep(vProgress - 0.08, vProgress + 0.02, vProgress);
+                float fadeStart = max(0.0, uDrawProgress - 0.2);
+                float tipFade = 1.0 - smoothstep(fadeStart, uDrawProgress, vProgress);
                 float alpha = tipFade * 0.38 * uFadeOpacity;
                 float pulse = 0.72 + sin(uTime * 1.8 + vProgress * 8.0) * 0.055;
                 vec3 finalColor = vColor * pulse;

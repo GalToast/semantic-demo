@@ -5,11 +5,12 @@
  *
  * Manages the loading overlay lifecycle: phase transitions, progress updates,
  * deferred hydration, weather init, and error state display.
- * Uses navStore for loading phase state.
+ * Keeps navStore and data-store loading phase state aligned.
  */
 
 import { setLoadingPhase as setNavLoadingPhase } from '@lib/stores/navigation';
-import type { LoadingPhaseMeta } from '@lib/types/state';
+import { setLoadingPhase as setDataLoadingPhase } from '@lib/data-store';
+import type { LoadingPhase, LoadingPhaseMeta } from '@lib/types/state';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,7 @@ export function setLoadingPhase(phaseKey: string, overrides: LoadingOverrides = 
 
   // Update the store
   setNavLoadingPhase(phaseKey);
+  setDataLoadingPhase((PHASE_ORDER.includes(phaseKey) ? phaseKey : 'records') as LoadingPhase);
 
   // Update body data attributes
   if (typeof document !== 'undefined' && document.body) {

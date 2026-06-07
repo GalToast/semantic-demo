@@ -11,6 +11,7 @@
 import { get } from 'svelte/store';
 import { navStore, bumpUrlStateRestoreToken } from '@lib/stores/navigation';
 import type { ViewName } from '@lib/types/state';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -262,7 +263,7 @@ export function updateUrlState(
         window.history.replaceState(historyState, '', next);
       } catch (err) {
         if (err instanceof Error && err.name !== 'SecurityError') {
-          console.warn('updateUrlState replaceState failed:', err);
+          debugWarn('updateUrlState replaceState failed:', err);
         }
       }
     }
@@ -275,7 +276,7 @@ export function updateUrlState(
     window.history[method](historyState, '', next);
   } catch (err) {
     if (err instanceof Error && err.name !== 'SecurityError') {
-      console.warn('updateUrlState history call failed:', err);
+      debugWarn('updateUrlState history call failed:', err);
     }
   }
 }
@@ -308,7 +309,7 @@ export async function copyCurrentViewLink(): Promise<string | null> {
   try {
     await navigator.clipboard.writeText(href);
   } catch (err) {
-    console.warn('Clipboard write failed:', err);
+    debugWarn('Clipboard write failed:', err);
     _showToast('Copy unavailable', 'Could not write to clipboard.');
     return null;
   }

@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(process.cwd());
 const APP_PATH = path.join(ROOT, 'js/modules/app.js');
-const BRIDGE_REGISTRY_PATH = path.join(ROOT, 'js/modules/bridge-registry.js');
+const APP_TS_PATH = path.join(ROOT, 'js/modules/app.ts');
 const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.js');
 const TESTS_DIR = path.join(ROOT, 'tests');
 const THIS_FILE = fileURLToPath(import.meta.url);
@@ -90,30 +90,32 @@ function testNoForbiddenShims() {
 function testLegitimateHooks() {
   console.log('\n[TEST 2] Verifying legitimate test hooks');
   const appSrc = read(APP_PATH);
-  const bridgeSrc = read(BRIDGE_REGISTRY_PATH);
+  const appTsSrc = read(APP_TS_PATH);
 
-  assert(/window\.__APP_STATE__\s*=\s*state/.test(bridgeSrc), 'bridge-registry.js should retain window.__APP_STATE__ hook');
-  assert(/window\.__TEST_STATE__\s*=\s*state/.test(bridgeSrc), 'bridge-registry.js should retain window.__TEST_STATE__ fallback hook');
+  assert(/window\.__APP_STATE__\s*=\s*state/.test(appTsSrc) || /\(window as any\)\.__APP_STATE__\s*=\s*state/.test(appTsSrc), 'app.ts should retain window.__APP_STATE__ hook (inlined from bridge-registry)');
+  assert(/window\.__TEST_STATE__\s*=\s*state/.test(appTsSrc) || /\(window as any\)\.__TEST_STATE__\s*=\s*state/.test(appTsSrc), 'app.ts should retain window.__TEST_STATE__ fallback hook (inlined from bridge-registry)');
   assert(!/window\.state\s*=\s*state/.test(appSrc), 'app.js must not reintroduce retired window.state hook');
-  assert(!/window\.state\s*=\s*state/.test(bridgeSrc), 'bridge-registry.js must not reintroduce retired window.state hook');
+  assert(!/window\.state\s*=\s*state/.test(appTsSrc), 'app.ts must not reintroduce retired window.state hook');
   console.log('  PASS — test hooks confirmed');
 }
 
 function testAppActionsNamespace() {
   console.log('\n[TEST 4] Verifying __APP_ACTIONS__ namespace is assigned');
   const appSrc = read(APP_PATH);
-  const bridgeSrc = read(BRIDGE_REGISTRY_PATH);
+  const appTsSrc = read(APP_TS_PATH);
 
-  assert(/window\.__APP_ACTIONS__\s*=\s*\{/.test(bridgeSrc), 'bridge-registry.js should assign window.__APP_ACTIONS__ namespace');
+  assert(
+    /window\.__APP_ACTIONS__\s*=\s*\{/.test(appTsSrc) || /\(window as any\)\.__APP_ACTIONS__\s*=\s*\{/.test(appTsSrc),
+    'app.ts should assign window.__APP_ACTIONS__ namespace (inlined from bridge-registry)'
+  );
   for (const key of APP_ACTION_KEYS) {
-    const objectLiteralKey = new RegExp(`${key}(?::|\\s*[,}])`).test(bridgeSrc);
-    const propertyAssignment = new RegExp(`window\\.__APP_ACTIONS__\\.${key}\\s*=`).test(bridgeSrc);
+    const objectLiteralKey = new RegExp(`${key}(?::|\\s*[,}])`).test(appTsSrc);
+    const propertyAssignment = new RegExp(`window\\.__APP_ACTIONS__\\.${key}\\s*=`).test(appTsSrc);
     assert(objectLiteralKey || propertyAssignment, `__APP_ACTIONS__ should contain key: ${key}`);
   }
   assert(
-    /setTrailFromSeed:\s*actions\.setTrailFromSeed/.test(bridgeSrc) &&
-      /setTrailFromSeed:\s*journeyModule\.setTrailFromSeed/.test(appSrc),
-    '__APP_ACTIONS__.setTrailFromSeed should bind journeyModule.setTrailFromSeed through bridge-registry actions'
+    /setTrailFromSeed:\s*journeyModule\.setTrailFromSeed/.test(appTsSrc),
+    '__APP_ACTIONS__.setTrailFromSeed should bind journeyModule.setTrailFromSeed'
   );
   console.log('  PASS — __APP_ACTIONS__ namespace verified');
 }

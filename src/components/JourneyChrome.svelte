@@ -77,8 +77,8 @@
   const hasNext = $derived(neighborCount > 0);
 
   const trailContextText = $derived.by(() => {
-    if (!$hasFocus || !$currentPoint) return '';
-    const name = $currentPoint.name || 'this business';
+    if (!$hasFocus || !currentPoint) return '';
+    const name = currentPoint?.name || 'this business';
     const walkLen = $walkHistoryIndices.length;
     const lastReason = ($focusedIndex !== null && $focusedIndex >= 0 && $focusedIndex < $businessRecords.length)
       ? ($businessRecords[$focusedIndex] as BusinessRecord)?.name ?? ''
@@ -151,7 +151,7 @@
 
   function getPointForIndex(idx: number): BusinessRecord | null {
     if (idx < 0 || idx >= $businessRecords.length) return null;
-    return $businessRecords[idx];
+    return ($businessRecords[idx] as BusinessRecord | undefined) ?? null;
   }
 
   function scheduleInspection(idx: number): void {
@@ -204,20 +204,29 @@
     });
   }
 
+  // ── Cleanup on unmount ────────────────────────────────────────────────────
+
+  $effect(() => {
+    return () => {
+      if (hoverTimer) clearTimeout(hoverTimer);
+    };
+  });
+
   // ── Compass status header ─────────────────────────────────────────────────
 
   const compassStatus = $derived.by(() => {
-    const summary = $searchSummary;
-    const queryLabel = summary?.query ? `"${summary.query}"` : 'semantic search';
+    const summary = $searchSummary as ({ query?: string; anchorIndex?: number | null; resultCount?: number } | null);
+    const summaryRec = summary as Record<string, unknown> | null;
+    const queryLabel = summaryRec?.query ? `"${String(summaryRec.query)}"` : 'semantic search';
     const isFocus = $hasFocus;
     const journeyPh = $journeyPhase;
     const insideActive = journeyPh === 'inside' && isFocus;
     const walkLen = $walkHistoryIndices.length;
 
-    const currentPtName = $currentPoint?.name || 'this business';
+    const currentPtName = currentPoint?.name || 'this business';
     const clusterNames = ['Food & Dining', 'Professional Services', 'Retail & Shopping', 'Health & Medical', 'Other'];
-    const clusterIdx = $currentPoint?.cluster ?? -1;
-    const clusterName = clusterIdx >= 0 && clusterIdx < clusterNames.length ? clusterNames[clusterIdx] : 'County';
+    const clusterIdx = currentPoint?.cluster ?? -1;
+    const clusterName = clusterIdx >= 0 && clusterIdx < clusterNames.length ? (clusterNames[clusterIdx] ?? 'County') : 'County';
 
     return buildCompassStatus({
       currentView: 'galaxy',
@@ -246,7 +255,6 @@
 
 {#if visible}
   <div class="journey-chrome" id="journey-chrome" aria-label="Journey navigation">
-    <!-- ├─ Compass Status Header ────────────────────────────────────────────── -->
     <!-- ├─ Compass Status Header ────────────────────────────────────────────── -->
     <div class="journey-header" id="journey-header">
       <span class="journey-kicker">{compassStatus.kicker}</span>
@@ -294,7 +302,7 @@
           class="trail-btn"
           id="btn-prev-node"
           disabled={!canGoBack}
-          aria-disabled={String(!canGoBack)}
+          aria-disabled={!canGoBack}
           title={!canGoBack ? 'No previous stops in this walk history' : 'Previous stop'}
           onclick={goPrev}
         >
@@ -319,7 +327,7 @@
           class="trail-btn"
           id="btn-next-node"
           disabled={!hasNext}
-          aria-disabled={String(!hasNext)}
+          aria-disabled={!hasNext}
           title={!hasNext ? 'No nearby stops to continue to' : 'Next stop'}
           onclick={goNext}
         >
@@ -339,7 +347,7 @@
     <!-- ├─ Neighbor Rail ───────────────────────────────────────────────────── -->
     {#if showNeighborRail}
       <div class="focus-stage-neighbors active" id="focus-stage-neighbors" role="navigation" aria-label="Nearby neighbors">
-        <div class="neighbor-count" id="focus-stage-neighbor-count">{filteredCandidates.length} visible {filteredCandidates.length === 1 ? 'neighbor' : 'neighbors'}</div>
+        <div class="neighbor-count" id="focus-stage-neighbor-count" aria-live="polite">{filteredCandidates.length} visible {filteredCandidates.length === 1 ? 'neighbor' : 'neighbors'}</div>
         <div class="focus-stage-neighbor-list" id="focus-stage-neighbor-list">
           {#each filteredCandidates as idx, i}
             {@const point = getPointForIndex(idx)}
@@ -724,6 +732,16 @@
     .journey-chrome {
       bottom: 3.5rem;
       max-width: 95vw;
+      /* Cap height so the neighbor rail cannot grow upward into the
+         FocusCard zone at the top (top: 3.5rem). Leave 56px + 8px
+         breathing room above and below. */
+      max-height: calc(100dvh - 7.5rem);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+    }
+    .journey-chrome::-webkit-scrollbar {
+      display: none;
     }
     .journey-note {
       max-width: 260px;

@@ -8,6 +8,7 @@ import { state } from '../state.js';
 import { updateSemanticThreadsStatus } from './state-mutators.js';
 import { normalizeRelationshipRole } from './relationship-roles.js';
 import { recordSemanticLaneSnapshot } from './semantic-lane.js';
+import { debugWarn } from './diagnostic-adapter.js';
 
 const SEMANTIC_THREAD_RETRY_DELAYS_MS = [2500, 8000, 15000];
 
@@ -347,7 +348,7 @@ export async function loadSemanticThreads(options: Record<string, any> = {}): Pr
 
 function finalizeThreadLoad(): void {
     if (new URLSearchParams(window.location.search).has('debug')) {
-        console.warn('[semantic-threads] artifact loaded', {
+        debugWarn('[semantic-threads] artifact loaded', {
             artifact: state.semanticThreadArtifactName,
             records: state.semanticNeighborMapByLeadId.size
         });
