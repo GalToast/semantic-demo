@@ -265,7 +265,7 @@ function scanWriters(modulePath, field) {
 
 // ─── Import real modules ──────────────────────────────────────────────────────
 
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 
 const lifecycle = await import('../js/modules/lifecycle.js');
 
@@ -344,7 +344,7 @@ assert(typeof focusOnNode === 'function', 'focusOnNode must be exported from cam
 
 state.points = Array.from({ length: 10 }, (_, i) => ({ lead_id: `lead_${i}`, name: `Node ${i}`, cluster: i % 3 }));
 state.trailDepth = 0;
-state.navState.mode = 'overview';
+withStateMutation(() => { state.navState.mode = 'overview'; });
 state.focusedNode = null;
 state.selectedPoint = null;
 
@@ -366,14 +366,13 @@ state.activeFilters = { status: 'all', city: 'all', website: false, email: false
 
 const isPointVisible = () => false;
 const selectedIndex = state.points.indexOf(state.selectedPoint);
-if (state.selectedPoint && !isPointVisible(selectedIndex, state.points, state.activeClusterFilter, state.activeFilters)) {
-  if (typeof globalThis.window.updateSelectedBusiness === 'function') globalThis.window.updateSelectedBusiness(null);
-  state.selectedPoint = null;
-  state.focusedNode = null;
-  if (typeof globalThis.window.syncMobileRoutePeek === 'function') globalThis.window.syncMobileRoutePeek();
-  state.navState.mode = 'overview';
-  state.navState.focusedIndex = null;
-}
+  if (state.selectedPoint && !isPointVisible(selectedIndex, state.points, state.activeClusterFilter, state.activeFilters)) {
+    if (typeof globalThis.window.updateSelectedBusiness === 'function') globalThis.window.updateSelectedBusiness(null);
+    state.selectedPoint = null;
+    state.focusedNode = null;
+    if (typeof globalThis.window.syncMobileRoutePeek === 'function') globalThis.window.syncMobileRoutePeek();
+    withStateMutation(() => { state.navState.mode = 'overview'; state.navState.focusedIndex = null; });
+  }
 
 assert(state.focusedNode === null, 'search-state must clear focusedNode when selectedPoint becomes invisible');
 assert(state.selectedPoint === null, 'search-state must clear selectedPoint when it becomes invisible');
@@ -384,11 +383,10 @@ console.log('PASS CONTRACT 6: search-state.js clears focusedNode/selectedPoint o
 
 state.focusedNode = 7;
 state.selectedPoint = state.points[7];
-state.navState.focusedIndex = 7;
-state.navState.mode = 'focus';
+withStateMutation(() => { state.navState.focusedIndex = 7; state.navState.mode = 'focus'; });
 state.trailDepth = 1;
 state.currentSearchSummary = { query: 'test', visibleMatches: 3 };
-state.navState.trailCursor = 0;
+withStateMutation(() => { state.navState.trailCursor = 0; });
 
 lifecycle.resetStateBeforeUrlRestore({ clearSearchInput: false });
 
@@ -405,7 +403,7 @@ console.log('PASS CONTRACT 7: lifecycle resetStateBeforeUrlRestore clears all fo
 
 state.focusedNode = 3;
 state.selectedPoint = state.points[3];
-state.navState.mode = 'focus';
+withStateMutation(() => { state.navState.mode = 'focus'; });
 state.trailDepth = 1;
 state.currentSearchSummary = { query: 'preserve me', visibleMatches: 5 };
 
@@ -546,7 +544,7 @@ console.log(`PASS CONTRACT 9: Source scan confirms no non-canonical writers for 
 // ─── CONTRACT 10: semanticDiveMode setter has no side-effects beyond trailDepth ─
 
 state.trailDepth = 0;
-state.navState.mode = 'overview';
+withStateMutation(() => { state.navState.mode = 'overview'; });
 state.focusedNode = null;
 state.selectedPoint = null;
 

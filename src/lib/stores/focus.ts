@@ -377,7 +377,7 @@ export function setSemanticDiveMode(active: boolean): void {
   focusStore.update((s) => ({ ...s, semanticDiveMode: active }));
 
   if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.semanticDive = String(active);
+    document.body.dataset.semanticDive = active ? 'active' : 'inactive';
   }
 }
 
@@ -401,7 +401,7 @@ export function resetFocus(): void {
   focusStore.set({ ...INITIAL_STORE });
   if (typeof document !== 'undefined' && document.body) {
     document.body.dataset.focusTransition = '';
-    document.body.dataset.semanticDive = 'false';
+    document.body.dataset.semanticDive = 'inactive';
     document.body.removeAttribute('data-selected-business');
   }
 }

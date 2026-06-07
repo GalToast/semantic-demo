@@ -114,6 +114,7 @@ Write-Output "==> Syncing scanner.js to cloudscan/..."
 # and /semantic-demo/js/scanner.js (semantic demo) - keep in sync.
 # This makes deploy.ps1 broader than semantic-demo-only changes. If ../js/scanner.js
 # is dirty or unrelated, use a scoped deploy instead of this full script.
+# If the sibling project isn't present (CI, isolated checkout), skip gracefully.
 if (Test-Path $ScannerSource) {
     Invoke-Step @("scp", "-P", $Port, $ScannerSource, "${DomainRoot}js/scanner.js")
     Invoke-Step @("scp", "-P", $Port, $ScannerSource, "${Target}js/scanner.js")

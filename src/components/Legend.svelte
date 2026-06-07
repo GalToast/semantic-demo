@@ -1,6 +1,6 @@
 <script lang="ts">
   import { businessRecords } from '@lib/data-store';
-  import { hasActiveFilters } from '@lib/stores/filter';
+  import { hasActiveFilters, activeClusterFilter, setClusterFilter } from '@lib/stores/filter';
 
   interface Props {
     open?: boolean;
@@ -76,12 +76,9 @@
 
   let filtered = $derived($hasActiveFilters);
 
-  let activeIds = $state(new Set<string>());
-
   function toggleCluster(name: string): void {
-    const next = new Set(activeIds);
-    if (next.has(name)) next.delete(name); else next.add(name);
-    activeIds = next;
+    const next = $activeClusterFilter === name ? null : name;
+    setClusterFilter(next);
   }
 </script>
 
@@ -96,17 +93,14 @@
   {#if filtered}
     <span class="legend-filtered-badge">filtered</span>
   {/if}
-  <ul class="legend-list">
+  <div class="legend-list">
     {#each clusterEntries as entry (entry.name)}
-      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-      <li
+      <button
         class="legend-item"
-        class:inactive={activeIds.has(entry.name)}
+        class:inactive={$activeClusterFilter === entry.name}
         onclick={() => toggleCluster(entry.name)}
-        onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleCluster(entry.name); }}
-        role="button"
-        tabindex="0"
-        aria-pressed={activeIds.has(entry.name)}
+        type="button"
+        aria-pressed={$activeClusterFilter === entry.name}
       >
         <span
           class="legend-swatch"
@@ -114,9 +108,9 @@
         ></span>
         <span class="legend-label">{entry.name}</span>
         <span class="legend-count">{entry.count}</span>
-      </li>
+      </button>
     {/each}
-  </ul>
+  </div>
 </aside>
 
 <style>

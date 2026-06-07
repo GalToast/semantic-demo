@@ -58,6 +58,7 @@ export function tokenizeSearchText(
 	return [
 		...new Set(
 			(String(text || '')
+				.normalize('NFC')
 				.toLowerCase()
 				.match(/[\p{L}0-9]+/gu) || []) as string[]
 		)

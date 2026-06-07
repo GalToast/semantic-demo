@@ -266,7 +266,7 @@ function testPersonalityTypes() {
 
   // EDGE_NODE: degree <= 3
   // Override threadCandidates to be very short
-  state.navState.threadCandidates = [];
+  withStateMutation(() => { state.navState.threadCandidates = []; });
   state.recentArrangements = [];
   const edge = getNeighborhoodPersonality(0);
   // EDGE_NODE needs degree > 0 && degree <= 3 — with empty threadCandidates this
@@ -334,21 +334,31 @@ function testBuildFocusedPocketStagedPositions() {
   console.log('\n[TEST] buildFocusedPocketStagedPositions');
 
   setupMinimalState(12);
-  state.navState.focusedIndex = 0;
+  withStateMutation(() => {
+    state.navState.focusedIndex = 0;
+    state.navState.currentPersonality = {
+      type: 'STANDARD',
+      cameraDuration: 980,
+      cameraArc: 'standard',
+      staggerMult: 1,
+      compressionMult: 1
+    };
+  });
 
-  const pocketEntries = new Map([
-    [1, { index: 1, kind: 'primary', score: 0.88, sameCity: true }],
-    [2, { index: 2, kind: 'primary', score: 0.79, sameCity: false }],
-    [3, { index: 3, kind: 'support', score: 0.65, sameCity: true }],
-    [4, { index: 4, kind: 'halo',    score: 0.55, sameCity: false }],
-  ]);
-  state.navState.currentPersonality = {
-    type: 'STANDARD',
-    cameraDuration: 980,
-    cameraArc: 'standard',
-    staggerMult: 1,
-    compressionMult: 1
-  };
+  const pocketEntries = new Map();
+  for (let i = 1; i < 12; i++) {
+    const kind = i <= 4 ? 'primary' : i <= 8 ? 'support' : 'halo';
+    pocketEntries.set(i, {
+      index: i,
+      kind,
+      score: 0.5 + (i % 3) * 0.15,
+      relationshipRole: '',
+      relationshipAxis: '',
+      roleReason: '',
+      sameCity: i % 2 === 0,
+      reason: 'semantic neighbor'
+    });
+  }
 
   const result = buildFocusedPocketStagedPositions(0, pocketEntries);
 
@@ -538,24 +548,26 @@ function testSyncRuntimeState() {
 // ---------------------------------------------------------------------------
 
 function teardownState() {
-  state.points               = [];
-  state.originalPositions    = [];
-  state.targetPositions      = [];
-  state.nodePositions        = [];
-  state.recentArrangements  = [];
-  state.trailDepth           = 0;
-  state.navState.focusedIndex = null;
-  state.navState.currentPersonality = null;
-  state.navState.focusPocketMeta = null;
-  state.navState.focusPocketIndices = [];
-  state.navState.focusPocketRoleByIndex = new Map();
-  state.navState.threadCandidates = [];
-  state.navState.threadSource = 'semantic';
-  state.focusPocketMotionByIndex = new Map();
+  withStateMutation(() => {
+    state.points               = [];
+    state.originalPositions    = [];
+    state.targetPositions      = [];
+    state.nodePositions        = [];
+    state.recentArrangements  = [];
+    state.trailDepth           = 0;
+    state.navState.focusedIndex = null;
+    state.navState.currentPersonality = null;
+    state.navState.focusPocketMeta = null;
+    state.navState.focusPocketIndices = [];
+    state.navState.focusPocketRoleByIndex = new Map();
+    state.navState.threadCandidates = [];
+    state.navState.threadSource = 'semantic';
+  });
+  state.focusPocketMotionByIndex  = new Map();
   state.focusPocketAnimationFrameId = undefined;
   state.focusPocketTransitionStartedAt = 0;
-  state.nodesAreSettling = false;
-  state.camera = null;
+  state.nodesAreSettling          = false;
+  state.camera                    = null;
 }
 
 // ---------------------------------------------------------------------------

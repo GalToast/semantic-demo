@@ -52,16 +52,13 @@
   let { forceDemo = false, noDemo = false }: Props = $props();
 
   onMount(() => {
-    // Immediately satisfy legacy test loading wait conditions.
-    // The parity-attrs layer will overwrite any of these as soon as the
-    // relevant stores report a real value.
+    // testReady is the only body attr that must be set eagerly — tests
+    // wait for it before proceeding. All other body data-* attrs
+    // (loadingOverlay, sceneReady, viewHandoffActive, cameraAssist,
+    // graphicsMode, demoPhase, navSurface, …) are now owned by
+    // parity-attrs.ts which installs and syncs on the same tick.
     if (typeof document !== 'undefined' && document.body) {
       document.body.dataset.testReady = 'true';
-      document.body.dataset.loadingOverlay = 'hidden';
-      document.body.dataset.sceneReady = 'true';
-      document.body.dataset.viewHandoffActive = 'false';
-      document.body.dataset.cameraAssist = 'free';
-      document.body.dataset.graphicsMode = 'fallback';
     }
 
     const cleanupViewport = initViewportListeners();
@@ -73,19 +70,14 @@
     };
   });
 
-  // The parity-attrs installer is the single source of truth for body
-  // data-* attributes. The pre-parity $effect blocks that previously
-  // lived here (data-navSurface, data-journeyPhase, data-demoPhase,
-  // data-reducedMotion, data-mode, data-compact) are now subsumed by
-  // computeParityAttributes() inside parity-attrs.ts.
-  // We keep the navSurface write as a redundant, idempotent fallback so
-  // tests that probe document.body.dataset.navSurface before the
-  // parity installer runs still get the right value.
-  $effect(() => {
-    if (document.body && document.body.dataset.navSurface !== $navState.surface) {
-      document.body.dataset.navSurface = $navState.surface;
-    }
-  });
+  // The parity-attrs installer is the single source of truth for all body
+  // data-* attributes.  All pre-parity $effect blocks that previously lived
+  // here (data-navSurface, data-journeyPhase, data-demoPhase, data-reducedMotion,
+  // data-mode, data-compact) are now subsumed by computeParityAttributes()
+  // inside parity-attrs.ts — including navSurface and demoPhase.
+  let focusActive = $derived(
+    $navState.mode === 'focus' || $navState.mode === 'inside' || $navState.focusedIndex !== null
+  );
 </script>
 
 <div
@@ -117,22 +109,35 @@
   <!-- Header with mode chips -->
   <Header visible={true} />
 
-  <!-- Focus card for selected business -->
-  <FocusCard visible={false} />
+  <!--
+    #focus-stage — Legacy focus-stage container.
+    Required by contract tests (focus-pocket, field-node, thread-inspector,
+    mobile-product-focus-route all query #focus-stage).
+    Provides the wrapping element that the legacy CSS (mobile_premium__focus-dive.css,
+    focus_stage.css) targets for visibility/positioning of focus UI.
+    Non-positioned wrapper: children use position:absolute relative to the
+    .semantic-explorer root, which is the nearest positioned ancestor.
+  -->
+  <div
+    id="focus-stage"
+    class="focus-stage"
+    class:active={focusActive}
+    aria-hidden={!focusActive ? 'true' : undefined}
+  >
+    <!-- Focus card for selected business -->
+    <FocusCard visible={false} />
+
+    <!-- Layer 200: Journey chrome (breadcrumb, trail indicators) -->
+    <JourneyChrome visible={false} />
+
+    <!-- Layer 500: Active journey visualization — rendered by Three.js -->
+
+    <!-- Layer 600: Focus pocket -->
+    <FocusPocket visible={false} />
+  </div>
 
   <!-- Mini-map trail -->
   <MapSummary visible={false} />
-
-  <!-- Weather widget -->
-  <WeatherWidget visible={true} />
-
-  <!-- Layer 200: Journey chrome (breadcrumb, trail indicators) -->
-  <JourneyChrome visible={false} />
-
-  <!-- Layer 500: Active journey visualization — rendered by Three.js -->
-
-  <!-- Layer 600: Focus pocket -->
-  <FocusPocket visible={false} />
 
   <!-- Layer 700: Compass rail -->
   <CompassRail visible={false} />

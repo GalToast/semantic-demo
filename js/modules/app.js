@@ -21,7 +21,6 @@ import './tooltip.js';
 import './three-engine.js';
 import './event-bindings.js';
 import './keyboard-help.js';
-import './bridge-registry.js';
 import './utils/ui-presentation.js';
 import './utils/geo-data.js';
 import './journey-lifecycle-adapter.js';

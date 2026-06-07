@@ -39,7 +39,7 @@ export function describeThreadLensForPoint(point: BusinessPoint | null | undefin
         const clusterLabel = describeCluster(point.cluster);
         const name = point.name ? `the focused business` : 'this business';
 
-        const base = LENS_BY_MODE[mode] || LENS_BY_MODE.default;
+        const base = LENS_BY_MODE[mode] || 'County View';
         const result = base.replace('{name}', name).replace('{cluster}', clusterLabel || 'County');
         
         if (point.status === 'disqualified') return 'Archive layer — ' + result;

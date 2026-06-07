@@ -19,6 +19,9 @@ export { initJourneyCanvasInteractionAdapter, isThreadCandidateVisibleOnCanvas }
 
 const CANVAS_THREAD_INSPECTION_CLEAR_DELAY_MS: number = 5200;
 
+/** AbortController shared by canvas interaction listeners for clean teardown. */
+let _canvasInteractionAbort: AbortController | null = null;
+
 interface CanvasHoverCandidate {
     index?: number;
     screenX?: number;
@@ -32,6 +35,11 @@ export function ensureCanvasNodeInteractionBindings(): void {
     const canvas = (state.renderer as any)?.domElement as HTMLCanvasElement | undefined;
     if (!canvas || (canvas.dataset as any).threadInteractionBound === 'true') return;
     (canvas.dataset as any).threadInteractionBound = 'true';
+
+    // Create a dedicated AbortController so all listeners can be removed in bulk.
+    _canvasInteractionAbort = new AbortController();
+    const signal = _canvasInteractionAbort.signal;
+
     let suppressNextCanvasClick = false;
 
     const isUiPointerTarget = (target: EventTarget | null): boolean =>
@@ -141,20 +149,20 @@ export function ensureCanvasNodeInteractionBindings(): void {
         }
         const fieldCandidate = findNearestCanvasFieldNode(event, getCanvasFieldNodeClickRadius(event) + 4);
         setCanvasFieldHover(fieldCandidate as any, canvas);
-    });
+    }, { signal });
 
     canvas.addEventListener('pointerleave', () => {
         if ((document.body.dataset as any).threadInspectSurface === 'canvas') {
             canvasInteractionAdapter.scheduleCanvasThreadInspectionClear(CANVAS_THREAD_INSPECTION_CLEAR_DELAY_MS);
         }
         clearCanvasFieldHover(canvas, { force: true });
-    });
+    }, { signal });
 
     canvas.addEventListener('pointerup', (event: PointerEvent) => {
         if (isPrimaryPointerRelease(event) && walkCanvasThreadFromPointerEvent(event)) {
             suppressNextCanvasClick = true;
         }
-    });
+    }, { signal });
 
     canvas.addEventListener('click', (event: MouseEvent) => {
         if (suppressNextCanvasClick) {
@@ -164,7 +172,7 @@ export function ensureCanvasNodeInteractionBindings(): void {
         }
         if (walkCanvasThreadFromPointerEvent(event)) return;
         focusCanvasFieldNodeFromPointerEvent(event);
-    });
+    }, { signal });
 
     if ((document.documentElement.dataset as any).canvasHoverDocumentClearBound !== 'true') {
         (document.documentElement.dataset as any).canvasHoverDocumentClearBound = 'true';
@@ -184,5 +192,22 @@ export function ensureCanvasNodeInteractionBindings(): void {
             if (walkCanvasThreadFromPointerEvent(event)) return;
             focusCanvasFieldNodeFromPointerEvent(event);
         }, true);
+    }
+}
+
+/**
+ * Remove all canvas node interaction bindings added by ensureCanvasNodeInteractionBindings().
+ * Aborts the shared AbortController (which removes all canvas listeners registered with
+ * the signal) and clears the guard flag so the next ensureCanvasNodeInteractionBindings()
+ * call re-binds cleanly.
+ */
+export function removeCanvasNodeInteractionBindings(): void {
+    if (_canvasInteractionAbort) {
+        _canvasInteractionAbort.abort();
+        _canvasInteractionAbort = null;
+    }
+    const canvas = (state.renderer as any)?.domElement as HTMLCanvasElement | undefined;
+    if (canvas) {
+        (canvas.dataset as any).threadInteractionBound = 'false';
     }
 }

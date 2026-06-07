@@ -223,11 +223,11 @@ npm run check        # svelte-check + tsc
 | `DemoChoreography.svelte` | **Complete** | 169 | `micro-demo.js` | Full demo orchestration with store-based SM |
 | `Filters.svelte` | **Complete** | 272 | `filter-state.js` | Status/signal/city filters, clear, count badge |
 | `FocusCard.svelte` | **Complete** | 368 | `journey-selected-card.js`, `ui-renderers.js` | Full business detail card with all contract IDs |
-| `FocusPocket.svelte` | **Partial** | 95 | `focus-pocket.js` | Basic node list rendering, no geometry/animation |
+| `FocusPocket.svelte` | **Complete** | 116 | `focus-pocket.js` | Self-populating constellation via applyLocalNeighborhoodFocus; renders pocket nodes + anchor indicator |
 | `Header.svelte` | **Complete** | 225 | `bindings/mode.js`, `ui-renderers.js` | Mode chips, app title, mode descriptions |
 | `InfoPanel.svelte` | **Complete** | 767 | `journey-selected-card.js`, `ui-renderers.js` | Full info panel with all contract DOM IDs |
 | `JourneyCanvas.svelte` | **Complete** | 123 | `journey-canvas-interaction.js`, `journey-webgl.js` | Engine bridge + journey interaction handling |
-| `JourneyChrome.svelte` | **STUB** | 155 | *(4 TODOs)* | **Only stub component.** Missing trail, breadcrumb, compass, neighbor rail |
+| `JourneyChrome.svelte` | **Complete** | 762 | `journey-focus-ui.js`, `journey-compass-state.js`, `journey-compass-controller.js` | Full compass header, breadcrumb, trail controls, neighbor rail; rendered with `visible={false}` in App.svelte (gated by legacy shell) |
 | `Legend.svelte` | **Complete** | 202 | `legend-ui.js` | Cluster legend with color swatches, toggle |
 | `LoadingOverlay.svelte` | **Complete** | 222 | `loading-ui.js` | Phase chips, progress bar, fade transition |
 | `MapSummary.svelte` | **Complete** | 171 | `journey-route-trace.js`, `journey-neighborhood.js` | Mini-map trail with SVG rendering |
@@ -268,7 +268,7 @@ All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` 
 - Dev server runs: `npm run dev:svelte` → `https://localhost:5173/`
 - `svelte-check`: 0 errors in `src/` code (50 errors are all in legacy `js/modules/*.ts` — out of scope for scaffold)
 - **Islands track:** 12/12 complete (all `js/modules/components/` mounted via helpers)
-- **src/ scaffold:** 17/21 complete, 2 partial (FocusPocket, ThreadInspector), 1 stub (JourneyChrome)
+- **src/ scaffold:** 19/21 complete, 1 partial (ThreadInspector), 1 stub (MapSummary)
 - **Stores+types+orchestration:** 12/12 stores, 4/4 types, 4/4 orchestration, engine/bridge.ts 1212 lines
 - **Architecture risk:** InfoPanel in BOTH tracks (72L island vs 767L src/) — needs dedup
 - `docs/migration-plan.md` — being written by migration-architect worker

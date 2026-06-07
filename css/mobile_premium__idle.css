@@ -50,7 +50,8 @@
 
     body.is-active[data-panel-surface='idle'] .info-content {
         gap: 8px;
-        padding: 14px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+        padding: 14px 16px 18px;
+        margin-bottom: calc(env(safe-area-inset-bottom, 0px));
         overflow: hidden;
     }
 

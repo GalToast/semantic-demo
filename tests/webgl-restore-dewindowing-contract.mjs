@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const appPath = resolve(CWD, 'js/modules/app.js');
+const appPath = resolve(CWD, 'js/modules/app.ts');
 const threeSetupPath = resolve(CWD, 'js/modules/three-engine.js');
 const adapterPath = resolve(CWD, 'js/modules/webgl-restore-adapter.js');
 
@@ -22,7 +22,7 @@ function read(path, label) {
   }
 }
 
-const appSrc = read(appPath, 'js/modules/app.js');
+const appSrc = read(appPath, 'js/modules/app.ts');
 const threeSetupSrc = read(threeSetupPath, 'js/modules/three-engine.js');
 const adapterSrc = read(adapterPath, 'js/modules/webgl-restore-adapter.js');
 

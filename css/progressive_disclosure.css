@@ -1,14 +1,6 @@
 /* Progressive disclosure: legacy state visibility, mobile focus-stage base, view transitions, and search-empty states. */
 /* Mobile Responsive */
 @media (max-width: 768px) {
-    .help-box {
-        display: none;
-    }
-
-    .control-hint {
-        display: none;
-    }
-
     .share-toggle {
         top: auto;
         right: auto;

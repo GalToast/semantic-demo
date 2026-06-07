@@ -11,6 +11,7 @@
  * itself is delegated to the legacy module which handles retry, cache, and abort.
  */
 import type { SearchResult } from '@lib/types/state';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 
@@ -191,7 +192,7 @@ async function loadLegacyModule(): Promise<LegacySearchCacheModule | null> {
 
     return _legacyModule;
   } catch (err) {
-    console.warn('[search-engine] Legacy search module unavailable, using mock fallback:', err);
+    debugWarn('[search-engine] Legacy search module unavailable, using mock fallback:', err);
     _legacyModule = null;
     return null;
   }
@@ -252,7 +253,7 @@ export async function performSearch(
       if (err instanceof DOMException && err.name === 'AbortError') {
         throw err;
       }
-      console.warn('[search-engine] Legacy API failed, falling back to mock:', err);
+      debugWarn('[search-engine] Legacy API failed, falling back to mock:', err);
       // Fall through to mock
     }
   }

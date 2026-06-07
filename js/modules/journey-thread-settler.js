@@ -43,7 +43,7 @@ export function cancelAllThreadTimers() {
 const PROJECTED_NEIGHBOR_FALLBACK_REASON = 'approximate projected neighbor from the current cloud layout';
 
 // Kept for backward-compat (re-exported by journey.js, called by tests).
-// No-op: timers are now unified onto strand-continuity's _timers Map.
+// No-op: timers are unified onto strand-continuity's _timers Map.
 export function initJourneyTimerAdapter(_deps = {}) {}
 
 export { getStrandArrivalNote };
@@ -165,9 +165,9 @@ export function walkThreadNeighbor(index, options = {}) {
     state.inspectedThreadIndex = index;
 
     // Clear ALL pending timers from any prior walk before starting a new one.
-    // This is the core fix: the Map tracks timers independently of the state
-    // object, so timers survive setStrandContinuityState() calls that replace
-    // the whole state object.
+    // The Map tracks timers independently of the state object, so timers
+    // survive setStrandContinuityState() calls that replace the whole state
+    // object.
     cancelAllThreadTimers();
 
     setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason });

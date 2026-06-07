@@ -88,7 +88,7 @@ globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame.bind(gl
 // Module imports
 // ---------------------------------------------------------------------------
 
-const { state } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.js');
 const {
     getFocusConstellationViewportProfile,
     getFocusConstellationPlacement,
@@ -138,42 +138,46 @@ function setupState(pointsCount = 12) {
     const tpos = pts.map((p) => ({ x: p.x, y: p.y, z: p.z }));
     const npos = pts.map((p) => ({ x: p.x, y: p.y, z: p.z }));
 
-    state.points                    = pts;
-    state.originalPositions         = orig;
-    state.targetPositions           = tpos;
-    state.nodePositions             = npos;
-    state.recentArrangements        = [];
-    state.trailDepth                = 0;
-    state.navState.focusedIndex     = 0;
-    state.navState.currentPersonality = null;
-    state.navState.focusPocketMeta  = null;
-    state.navState.focusPocketIndices = [];
-    state.navState.focusPocketRoleByIndex = new Map();
-    state.navState.threadCandidates = [];
-    state.navState.threadSource     = 'semantic';
-    state.focusPocketMotionByIndex  = new Map();
-    state.focusPocketAnimationFrameId = undefined;
-    state.focusPocketTransitionStartedAt = 0;
-    state.nodesAreSettling          = false;
-    state.camera                    = null;
+  withStateMutation(() => {
+  state.points = pts;
+  state.originalPositions = orig;
+  state.targetPositions = tpos;
+  state.nodePositions = npos;
+  state.recentArrangements = [];
+  state.trailDepth = 0;
+  state.navState.focusedIndex = 0;
+  state.navState.currentPersonality = null;
+  state.navState.focusPocketMeta = null;
+  state.navState.focusPocketIndices = [];
+  state.navState.focusPocketRoleByIndex = new Map();
+  state.navState.threadCandidates = [];
+  state.navState.threadSource = 'semantic';
+  state.focusPocketMotionByIndex = new Map();
+  state.focusPocketAnimationFrameId = undefined;
+  state.focusPocketTransitionStartedAt = 0;
+  state.nodesAreSettling = false;
+  state.camera = null;
+  });
 
     return { pts, orig, tpos, npos };
 }
 
 function teardownState() {
-    state.points                    = [];
-    state.originalPositions         = [];
-    state.targetPositions           = [];
-    state.nodePositions             = [];
-    state.recentArrangements        = [];
-    state.trailDepth                = 0;
-    state.navState.focusedIndex     = null;
-    state.navState.currentPersonality = null;
-    state.navState.focusPocketMeta  = null;
-    state.navState.focusPocketIndices = [];
-    state.navState.focusPocketRoleByIndex = new Map();
-    state.navState.threadCandidates = [];
-    state.navState.threadSource     = 'geometric-fallback';
+    withStateMutation(() => {
+        state.points                    = [];
+        state.originalPositions         = [];
+        state.targetPositions           = [];
+        state.nodePositions             = [];
+        state.recentArrangements        = [];
+        state.trailDepth                = 0;
+        state.navState.focusedIndex     = null;
+        state.navState.currentPersonality = null;
+        state.navState.focusPocketMeta  = null;
+        state.navState.focusPocketIndices = [];
+        state.navState.focusPocketRoleByIndex = new Map();
+        state.navState.threadCandidates = [];
+        state.navState.threadSource     = 'geometric-fallback';
+    });
     state.focusPocketMotionByIndex  = new Map();
     state.focusPocketAnimationFrameId = null;
     state.focusPocketTransitionStartedAt = 0;
@@ -399,13 +403,15 @@ function testDeepDiveCompressionFloor() {
     globalThis.window.innerHeight = 900;
 
     // Directly set DEEP_DIVE personality (simulates trailDepth=2 state)
-    // We set threadCandidates non-empty so degree >= threshold is met for DEEP_DIVE
-    state.navState.threadCandidates = state.points.slice(1, 12).map((p) => ({
-        index: p.index,
-        semanticScore: p.semanticScore,
-        score: p.score,
-        reason: 'test candidate'
-    }));
+  // We set threadCandidates non-empty so degree >= threshold is met for DEEP_DIVE
+  withStateMutation(() => {
+  state.navState.threadCandidates = state.points.slice(1, 12).map((p) => ({
+  index: p.index,
+  semanticScore: p.semanticScore,
+  score: p.score,
+  reason: 'test candidate'
+  }));
+  });
 
     state.trailDepth = 2;
     state.recentArrangements = [];
@@ -428,9 +434,9 @@ function testDeepDiveCompressionFloor() {
         });
     }
 
-    state.navState.currentPersonality = personality;
+  withStateMutation(() => { state.navState.currentPersonality = personality; });
 
-    const result = buildFocusedPocketStagedPositions(0, pocketEntries);
+  const result = buildFocusedPocketStagedPositions(0, pocketEntries);
 
     // Anchor position
     const anchorPos = result.positions.get(0);
@@ -546,10 +552,12 @@ function testViewportProfileNodeCountLimits() {
 function testBreathingAmplitudeContract() {
     console.log('\n[TEST] Breathing Amplitude Contract (non-zero, halo-damped)');
 
-    setupState(8);
-    state.navState.focusedIndex = 0;
-    state.navState.focusPocketMeta = { active: true };
-    state.focusPocketTransitionStartedAt = 0;
+  setupState(8);
+  withStateMutation(() => {
+  state.navState.focusedIndex = 0;
+  state.navState.focusPocketMeta = { active: true };
+  });
+  state.focusPocketTransitionStartedAt = 0;
     _clockNow = 500;
 
     state.focusPocketMotionByIndex = new Map([
@@ -625,13 +633,15 @@ function testAllFinitePositionsContract() {
         [2, { index: 2, kind: 'primary', score: Infinity,     sameCity: true  }],
         [3, { index: 3, kind: 'support', score: -Infinity,    sameCity: false }],
         [4, { index: 4, kind: 'halo',    score: 0.55,         sameCity: true  }]
-    ]);
-    state.navState.currentPersonality = {
-        type: 'STANDARD', cameraDuration: 980, cameraArc: 'standard',
-        staggerMult: 1, compressionMult: 1
-    };
+  ]);
+  withStateMutation(() => {
+  state.navState.currentPersonality = {
+  type: 'STANDARD', cameraDuration: 980, cameraArc: 'standard',
+  staggerMult: 1, compressionMult: 1
+  };
+  });
 
-    const result = buildFocusedPocketStagedPositions(0, badPocketEntries);
+  const result = buildFocusedPocketStagedPositions(0, badPocketEntries);
 
     for (const [idx, pos] of result.positions) {
         assert(Number.isFinite(pos.x), `badScore entries: position[${idx}].x should be finite, got ${pos.x}`);
@@ -652,19 +662,23 @@ function testAllFinitePositionsContract() {
 function testRoleAssignmentContract() {
     console.log('\n[TEST] Role Assignment Contract');
 
-    setupState(12);
-    state.navState.focusedIndex = 0;
+  setupState(12);
+  withStateMutation(() => {
+  state.navState.focusedIndex = 0;
+  });
 
-    const pocketEntries = new Map([
-        [1, { index: 1, kind: 'primary', score: 0.88, sameCity: true  }],
-        [2, { index: 2, kind: 'primary', score: 0.79, sameCity: false }],
-        [3, { index: 3, kind: 'support', score: 0.65, sameCity: true  }],
-        [4, { index: 4, kind: 'halo',    score: 0.55, sameCity: false }]
-    ]);
-    state.navState.currentPersonality = {
-        type: 'STANDARD', cameraDuration: 980, cameraArc: 'standard',
-        staggerMult: 1, compressionMult: 1
-    };
+  const pocketEntries = new Map([
+  [1, { index: 1, kind: 'primary', score: 0.88, sameCity: true }],
+  [2, { index: 2, kind: 'primary', score: 0.79, sameCity: false }],
+  [3, { index: 3, kind: 'support', score: 0.65, sameCity: true }],
+  [4, { index: 4, kind: 'halo', score: 0.55, sameCity: false }]
+  ]);
+  withStateMutation(() => {
+  state.navState.currentPersonality = {
+  type: 'STANDARD', cameraDuration: 980, cameraArc: 'standard',
+  staggerMult: 1, compressionMult: 1
+  };
+  });
 
     const result = buildFocusedPocketStagedPositions(0, pocketEntries);
 
@@ -758,13 +772,13 @@ function testPersonalityDiversityGuard() {
 
     // Manually inject recentArrangements with 3 STANDARD entries
     // then check that the 4th call still returns a valid personality (not thrown)
-    state.recentArrangements = ['STANDARD', 'STANDARD', 'STANDARD'];
-    state.navState.threadCandidates = [];
-    state.trailDepth = 0;
+  state.recentArrangements = ['STANDARD', 'STANDARD', 'STANDARD'];
+  withStateMutation(() => { state.navState.threadCandidates = []; });
+  state.trailDepth = 0;
 
-    let blocked = false;
-    for (let i = 0; i < 6; i++) {
-        state.navState.focusedIndex = i;
+  let blocked = false;
+  for (let i = 0; i < 6; i++) {
+  withStateMutation(() => { state.navState.focusedIndex = i; });
         const p = getNeighborhoodPersonality(i);
         // After 3 STANDARD entries, if the candidate would be STANDARD,
         // it should be skipped (but we fall through to another type or STANDARD)

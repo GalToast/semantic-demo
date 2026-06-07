@@ -94,8 +94,11 @@ export function toggleFilter(
         const next = f.status === value ? 'all' : (value as string);
         return { ...f, status: next };
       }
-      case 'city':
-        return { ...f, city: value as string };
+      case 'city': {
+        // Normalize 'all' sentinel from legacy to '' so city='all' is not counted active.
+        const normalized = (value === 'all') ? '' : (value as string);
+        return { ...f, city: normalized };
+      }
       case 'website':
         return { ...f, website: value as boolean };
       case 'email':
@@ -122,7 +125,10 @@ export function toggleFilter(
  * Bumps versions and syncs body attribute.
  */
 export function overwriteActiveFilters(filters: ActiveFilters): void {
-  filterState.set({ ...filters });
+  // Normalize 'all' sentinel from legacy to '' so city='all' is not counted active.
+  const normalized = { ...filters };
+  if (normalized.city === 'all') normalized.city = '';
+  filterState.set(normalized);
   filterVersion.update((v) => v + 1);
   filterColorVersion.update((v) => v + 1);
 

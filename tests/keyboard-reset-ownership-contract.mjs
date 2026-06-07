@@ -22,7 +22,7 @@ import path from 'node:path';
 const ROOT = path.resolve(process.cwd());
 const KEYBOARD_HELP_PATH = path.join(ROOT, 'js/modules/keyboard-help.js');
 const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.js');
-const APP_PATH = path.join(ROOT, 'js/modules/app.js');
+const APP_PATH = path.join(ROOT, 'js/modules/app.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);

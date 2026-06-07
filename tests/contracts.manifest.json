@@ -215,6 +215,7 @@
         "disposal-hygiene-contract.spec.js",
         "search-results-svelte-ownership-contract.mjs",
         "selected-details-svelte-ownership-contract.mjs",
+        "selected-card-dom-ownership-contract.mjs",
         "svelte-chrome-ownership-contract.mjs",
         "three-resource-lifecycle-contract.mjs",
         "ts-js-drift-contract.mjs"
@@ -529,7 +530,8 @@
         "semantic-guide-payload-contract.mjs",
         "connection-analysis-render-state-contract.mjs",
         "reduced-motion-interruption.spec.js",
-        "gemma-fallback-error.spec.js"
+        "gemma-fallback-error.spec.js",
+        "selected-card-dom-ownership-contract.mjs"
       ]
     },
     "projection": {

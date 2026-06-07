@@ -35,7 +35,7 @@ const MODULES = {
   lifecycle:   path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js'),
   journey:     path.join(SEMDEMO_ROOT, 'js/modules/journey.js'),
   camera:      path.join(SEMDEMO_ROOT, 'js/modules/camera-controls.js'),
-  cameraChoreography: path.join(SEMDEMO_ROOT, 'js/modules/camera-controls-choreography.js'),
+  cameraChoreography: path.join(SEMDEMO_ROOT, 'js/modules/camera-controls-choreography-routes.js'),
   searchState: path.join(SEMDEMO_ROOT, 'js/modules/search-state.js'),
   eventBindings: path.join(SEMDEMO_ROOT, 'js/modules/bindings/legend-bindings.js'),
   sceneReveal: path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.js'),

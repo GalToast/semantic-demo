@@ -50,6 +50,7 @@ export function hideExploreTrailReview() {
     if (_trailReviewReturnFocus && typeof _trailReviewReturnFocus.focus === 'function') {
       _trailReviewReturnFocus.focus();
     }
+    _trailReviewReturnFocus = null;
   }
   state.currentSearchSummary = null;
   state.searchGlowActive = false;

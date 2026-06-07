@@ -16,6 +16,7 @@ import type {
   SemanticNeighborDetail,
   LayoutManifest,
 } from '@lib/types/business';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -60,11 +61,19 @@ function buildAssetUrl(path: string): string {
   return new URL(path, window.location.href).href;
 }
 
+const NULLISH_SENTINELS: ReadonlySet<string> = new Set([
+  'unknown', 'not found', 'none', 'none detected', 'n/a', 'null'
+]);
+
 function cleanOptional(value: unknown): string | null {
-  if (value === undefined || value === null || value === '' || value === 'NULL') {
+  if (value === undefined || value === null || value === '') {
     return null;
   }
-  return String(value);
+  const text = String(value).trim();
+  if (!text || text === 'NULL' || NULLISH_SENTINELS.has(text.toLowerCase())) {
+    return null;
+  }
+  return text;
 }
 
 function parseFinite(value: unknown): number | null {
@@ -118,7 +127,7 @@ export async function loadBusinessData(): Promise<BusinessDataResult> {
   const [raw, enrichment] = await Promise.all([
     fetchWithRetries(dataUrl, MAX_BUSINESS_RETRIES),
     fetchEnrichment(enrichmentUrl).catch((err) => {
-      console.warn('[data-loader] Enrichment fetch failed, continuing without it.', err);
+      debugWarn('[data-loader] Enrichment fetch failed, continuing without it.', err);
       return null;
     }),
   ]);
@@ -179,7 +188,7 @@ export async function loadBusinessData(): Promise<BusinessDataResult> {
 
   checkDataBounds(positionsBuffer);
 
-  console.log(
+  debugWarn(
     `[data-loader] Loaded ${count.toLocaleString()} business records, ` +
     `${pointIndexByLeadId.size.toLocaleString()} with lead IDs`
   );
@@ -251,7 +260,7 @@ export async function loadSemanticThreads(): Promise<SemanticThreadDataResult> {
   // Build normalized neighbor map
   const neighborMap = buildSemanticNeighborMap(bundle);
 
-  console.log(
+  debugWarn(
     `[data-loader] Loaded semantic threads: ${artifactName}, ` +
     `${neighborMap.size.toLocaleString()} node entries`
   );
@@ -304,7 +313,7 @@ async function fetchWithRetries(url: string, maxAttempts: number): Promise<unkno
       }
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      console.warn(
+      debugWarn(
         `[data-loader] Fetch attempt ${attempt}/${maxAttempts} failed for ${url}:`,
         lastError.message
       );
@@ -332,16 +341,34 @@ async function fetchEnrichment(url: string): Promise<Record<string, LeadEnrichme
 
 function checkDataBounds(buffer: Float32Array): void {
   if (!buffer || buffer.length === 0) return;
-  const sampleLimit = Math.min(buffer.length, 300);
-  for (let i = 0; i < sampleLimit; i++) {
+
+  // Stride-sample the full buffer: check up to 600 floats spread evenly
+  // across the entire positions array so out-of-bounds values at the end
+  // of large datasets are no longer missed.
+  const MAX_SAMPLES = 600;
+  const totalFloats = buffer.length;
+  const step = totalFloats <= MAX_SAMPLES ? 1 : Math.ceil(totalFloats / MAX_SAMPLES);
+  const oobValues: Array<{ index: number; value: number }> = [];
+
+  for (let i = 0; i < totalFloats; i += step) {
     const val = buffer[i]!;
     if (val < -0.1 || val > 1.1) {
-      console.warn(
-        `[data-loader] Positions out of bounds at index ${i}: ${val}. ` +
-        `Expected [0, 1] range.`
-      );
-      return;
+      oobValues.push({ index: i, value: val });
     }
+  }
+
+  if (oobValues.length > 0) {
+    const samples = oobValues.slice(0, 10).map(
+      (o) => `  index ${o.index}: ${o.value}`
+    ).join('\n');
+    const more = oobValues.length > 10
+      ? `\n  ...and ${oobValues.length - 10} more out-of-bounds values.`
+      : '';
+    debugWarn(
+      `[data-loader] Positions out of bounds: ${oobValues.length} value(s) outside [0, 1]:\n` +
+      `${samples}${more}\n` +
+      `Expected [0, 1] range. MYCELIUM_FIELD_SCALE will cause extreme camera scaling.`
+    );
   }
 }
 

@@ -18,6 +18,11 @@ const CORRIDOR_NODE_REDUCED_FADE_DURATION = 260;
 const CORRIDOR_SOFT_DRAW_DURATION = 950;
 const CORRIDOR_SOFT_TOTAL_DURATION = 2800;
 
+// Persistent anchor glow: after the hero bloom peaks, the anchor node
+// retains a subtle residual glow for visual continuity.
+const ANCHOR_GLOW_PERSIST_MS = 4200;
+const ANCHOR_GLOW_PERSIST_INTENSITY = 0.28;
+
 // ── Private State ───────────────────────────────────────────────────────────
 
 let _corridorGlowToken = 0;
@@ -27,6 +32,13 @@ const _corridorGlowTimers = new Set();
 let _corridorAnimState = null;
 let _corridorAnimStartTime = null;
 let _heroRafId = 0;
+
+// Persistent anchor glow state: tracks the anchor node and remaining
+// lifetime so updateCorridorNodeGlow can sustain a residual glow after
+// the hero bloom peaks.
+let _anchorGlowIndex = -1;
+let _anchorGlowRemaining = 0;
+let _anchorGlowLastFrame = null;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -183,7 +195,7 @@ function buildCorridorParticleTrail(anchorIndex, routeIndices) {
                 pos.y += cos(uTime * 2.5 + aOffset * 15.0) * 0.004;
 
                 vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-                gl_PointSize = (1.4 + aSpeed * 0.9) * (300.0 / -mvPosition.z);
+                gl_PointSize = clamp((1.4 + aSpeed * 0.9) * (300.0 / -mvPosition.z), 1.0, 64.0);
                 gl_Position = projectionMatrix * mvPosition;
             }
         `,
@@ -222,6 +234,11 @@ export function triggerSearchHeroMoment(anchorIndex) {
     cancelAnimationFrame(_heroRafId);
     _heroRafId = 0;
 
+    // Arm persistent anchor glow so the anchor node stays visually distinct
+    // after the bloom peaks.
+    _anchorGlowIndex = Number.isFinite(anchorIndex) ? anchorIndex : -1;
+    _anchorGlowRemaining = ANCHOR_GLOW_PERSIST_MS;
+
     if (Number.isFinite(anchorIndex) && state.nodePositions[anchorIndex]) {
         const pos = state.nodePositions[anchorIndex];
         shader.uniforms.uRippleCenter.value.set(pos.x, pos.y, pos.z);
@@ -251,7 +268,8 @@ export function triggerSearchHeroMoment(anchorIndex) {
         } else {
             _heroRafId = 0;
             if (webglContext.pointsMaterial && webglContext.pointsMaterial.userData.shader) {
-                webglContext.pointsMaterial.userData.shader.uniforms.uGlowIntensity.value = 0.0;
+                // Do NOT reset uGlowIntensity to zero — the persistent anchor
+                // glow in updateCorridorNodeGlow will sustain a residual level.
                 webglContext.pointsMaterial.userData.shader.uniforms.uRippleTime.value = -1000.0;
             }
         }
@@ -332,6 +350,23 @@ export function updateCorridorNodeGlow(frameNow) {
             anyActive = true;
         }
     }
+
+    // Persistent anchor glow: sustain a subtle residual glow on the anchor
+    // node after the hero bloom peaks, decaying over ANCHOR_GLOW_PERSIST_MS.
+    if (_anchorGlowRemaining > 0 && _anchorGlowIndex >= 0 && state.nodePositions?.[_anchorGlowIndex]) {
+        const dt = _anchorGlowLastFrame !== null ? frameNow - _anchorGlowLastFrame : 0;
+        _anchorGlowLastFrame = frameNow;
+        _anchorGlowRemaining = Math.max(0, _anchorGlowRemaining - dt);
+        const fadeRatio = _anchorGlowRemaining / ANCHOR_GLOW_PERSIST_MS;
+        const anchorBoost = 1.0 + ANCHOR_GLOW_PERSIST_INTENSITY * fadeRatio;
+        shader.uniforms.uHoverBoost.value = Math.max(shader.uniforms.uHoverBoost.value, anchorBoost);
+        const pos = state.nodePositions[_anchorGlowIndex];
+        shader.uniforms.uHoverNodePos.value.set(pos.x, pos.y, pos.z);
+        anyActive = true;
+    } else {
+        _anchorGlowLastFrame = frameNow;
+    }
+
     return anyActive;
 }
 
@@ -356,12 +391,14 @@ export function triggerSearchCorridorAnimation(anchorIndex, routeIndices = []) {
         vertexShader: `
             attribute float progress;
             varying float vProgress;
+            varying float vDrawProgress;
             varying vec3 vColor;
             uniform float uDrawProgress;
             uniform float uTime;
 
             void main() {
                 vProgress = progress;
+                vDrawProgress = uDrawProgress;
                 vColor = color;
 
                 vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
@@ -373,12 +410,14 @@ export function triggerSearchCorridorAnimation(anchorIndex, routeIndices = []) {
         `,
         fragmentShader: `
             varying float vProgress;
+            varying float vDrawProgress;
             varying vec3 vColor;
             uniform float uFadeOpacity;
             uniform float uTime;
 
             void main() {
-                float tipFade = smoothstep(vProgress - 0.08, vProgress + 0.02, vProgress);
+                float fadeStart = max(0.0, vDrawProgress - 0.2);
+                float tipFade = 1.0 - smoothstep(fadeStart, vDrawProgress, vProgress);
                 float alpha = tipFade * 0.38 * uFadeOpacity;
                 float pulse = 0.72 + sin(uTime * 1.8 + vProgress * 8.0) * 0.055;
                 vec3 finalColor = vColor * pulse;
@@ -468,6 +507,10 @@ export function disposeHeroAnimation() {
         cancelAnimationFrame(_heroRafId);
         _heroRafId = 0;
     }
+    // Clear persistent anchor glow state on teardown.
+    _anchorGlowIndex = -1;
+    _anchorGlowRemaining = 0;
+    _anchorGlowLastFrame = null;
     // Bump token to invalidate any glow timers that may fire between now
     // and the clear loop below, preventing inner-timer leaks.
     _corridorGlowToken++;

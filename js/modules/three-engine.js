@@ -10,6 +10,7 @@ if (typeof window !== 'undefined') {
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { state, withStateMutation } from '../state.js';
+import { debugWarn } from './diagnostic-adapter.js';
 import {
     releaseFocusCameraAssist,
     focusCameraAssistIsActive,
@@ -471,6 +472,11 @@ export function deinit() {
     state.sceneRevealActive = false;
     state.sceneRevealCameraStart = null;
     state.sceneRevealCameraEnd = null;
+    // Explicitly drop the inspected-strand THREE.Group so GC can reclaim
+    // the group, its children, and any attached GPU resources promptly.
+    if (state.inspectedStrandGroup) {
+        state.inspectedStrandGroup = null;
+    }
     // Tear down node visuals (instanced meshes + tracked GPU textures)
     // and interaction visuals (semantic lens, focus anchor, micro-demo
     // document listeners) so they don't leak across re-inits.
@@ -580,7 +586,8 @@ export function animate() {
     }
     if (state.nodeSporeMaterial) {
         const focusBoost = Number.isFinite(state.focusedNode) ? (state.trailDepth >= 2 ? 0.72 : 0.82) : 1.0;
-        state.nodeSporeMaterial.opacity = SCENE_ATMOSPHERE.sporeOpacity * pointsRevealProgress * focusBoost;
+        const targetSporeOpacity = SCENE_ATMOSPHERE.sporeOpacity * pointsRevealProgress * focusBoost;
+        state.nodeSporeMaterial.opacity += (targetSporeOpacity - state.nodeSporeMaterial.opacity) * 0.12;
     }
     const nodeMotionMs = performance.now() - nodeMotionStart;
 
@@ -600,9 +607,16 @@ export function animate() {
     const graphProfile = getMyceliumPresentationProfile();
 
     if (threadsVisible) {
-        if (state.myceliumCoreLines) state.myceliumCoreLines.material.opacity = getThreadPulseOpacity(graphProfile.core, Math.sin(state.pulsePhase), graphProfile.pulse, threadRevealProgress);
-        if (state.myceliumWispyLines) state.myceliumWispyLines.material.opacity = getThreadPulseOpacity(graphProfile.wispy, Math.sin(state.pulsePhase * 0.7), graphProfile.pulse * 0.36, threadRevealProgress);
-        if (state.myceliumBridgeLines) state.myceliumBridgeLines.material.opacity = getThreadPulseOpacity(graphProfile.bridge, Math.sin(state.pulsePhase * 0.45), graphProfile.pulse * 0.28, threadRevealProgress);
+        // Per-thread breathing: two sine waves with per-layer frequency and
+        // phase offsets give each thread type an organic "living" pulse that
+        // avoids rhythmic synchrony.  The second harmonic adds subtle
+        // asymmetry (like real mycelial growth pulses).
+        const corePulse = Math.sin(state.pulsePhase) + Math.sin(state.pulsePhase * 2.3 + 0.7) * 0.28;
+        const wispyPulse = Math.sin(state.pulsePhase * 0.7) + Math.sin(state.pulsePhase * 1.6 + 1.4) * 0.22;
+        const bridgePulse = Math.sin(state.pulsePhase * 0.45) + Math.sin(state.pulsePhase * 1.1 + 2.1) * 0.18;
+        if (state.myceliumCoreLines) state.myceliumCoreLines.material.opacity = getThreadPulseOpacity(graphProfile.core, corePulse, graphProfile.pulse, threadRevealProgress);
+        if (state.myceliumWispyLines) state.myceliumWispyLines.material.opacity = getThreadPulseOpacity(graphProfile.wispy, wispyPulse, graphProfile.pulse * 0.36, threadRevealProgress);
+        if (state.myceliumBridgeLines) state.myceliumBridgeLines.material.opacity = getThreadPulseOpacity(graphProfile.bridge, bridgePulse, graphProfile.pulse * 0.28, threadRevealProgress);
     } else {
         if (state.myceliumCoreLines) state.myceliumCoreLines.material.opacity = 0;
         if (state.myceliumWispyLines) state.myceliumWispyLines.material.opacity = 0;
@@ -639,7 +653,7 @@ export function animate() {
         updateRouteTraceOverlayFrame(frameNow);
         updateArrivalHandoffOverlayFrame(frameNow);
     } catch (overlayErr) {
-        console.warn('overlay update threw:', overlayErr);
+        debugWarn('overlay update threw:', overlayErr);
     }
 
     updateClusterLabels();

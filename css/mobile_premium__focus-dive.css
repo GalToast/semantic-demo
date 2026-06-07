@@ -746,6 +746,7 @@
         align-content: stretch;
         max-height: calc(100dvh - 120px);
         overflow-y: auto;
+        overscroll-behavior: contain;
     }
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
@@ -804,6 +805,7 @@
         #focus-stage
         .focus-stage-card {
         overflow: visible;
+        overscroll-behavior: contain;
     }
 
     body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-kicker,
@@ -1083,7 +1085,7 @@
         box-sizing: border-box;
         width: 100%;
         max-width: 100%;
-        padding: 20px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+        padding: 20px 16px 14px;
         border-radius: 28px 28px 0 0;
         background: var(--glass-bg);
         backdrop-filter: blur(var(--glass-blur)) saturate(1.12);
@@ -1093,7 +1095,7 @@
         border-left: none;
         border-right: none;
         box-shadow: var(--shadow-glass);
-        margin: 0;
+        margin: 0 0 calc(env(safe-area-inset-bottom, 0px));
         transform: translateY(0);
         animation-name: none;
         animation-duration: 0s;
@@ -1296,6 +1298,7 @@
         body.is-active[data-panel-surface='semantic-dive'] .focus-stage-card {
             max-height: 100%;
             overflow-y: auto;
+            overscroll-behavior: contain;
         }
 
         body.is-active[data-panel-surface='focus-search'] .focus-stage-note,
@@ -1653,7 +1656,8 @@
     body[data-panel-surface='semantic-dive'] .focus-stage-card {
         position: relative;
         box-sizing: border-box;
-        padding: 18px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+        padding: 18px 14px 10px;
+        margin-bottom: calc(env(safe-area-inset-bottom, 0px));
         border-radius: 22px 22px 0 0;
         border-width: 1px 0 0 0;
         border-color: rgba(var(--color-primary-tint-rgb), 0.2);

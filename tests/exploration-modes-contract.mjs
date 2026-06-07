@@ -223,7 +223,7 @@ await test('STORY_DESCRIPTIONS is exported and non-empty', () => {
 // Contract 3b: setTrailDepth source has explicit gate for depth=2 escalation
 await test('setTrailDepth source has explicit fromUserGesture gate for depth=2', async () => {
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
   // Gate: enteringSemanticDive is derived from nextDepth/prevDepth and requires fromUserGesture.
   const hasGate = /const\s+enteringSemanticDive\s*=\s*nextDepth\s*===\s*2\s*&&\s*prevDepth\s*<\s*2/.test(src)
     && /if\s*\(\s*enteringSemanticDive\s*&&\s*!options\.fromUserGesture\s*\)\s*\{[\s\S]*?return/.test(src);
@@ -248,7 +248,7 @@ await test('applyStoryPrompt source maps signal-rich to bloom mode', async () =>
 // Contract 5: setMyceliumMode calls recomputeBloomIndices when mode=bloom
 await test('setMyceliumMode source calls recomputeBloomIndices for bloom mode', async () => {
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
   // if (mode === 'bloom') { recomputeBloomIndices(); }
   const hasBloomRecompute = /if\s*\(\s*mode\s*===\s*['"]bloom['"]\s*\)\s*\{[\s\S]*?recomputeBloomIndices\s*\(\s*\)/.test(src);
   assert(hasBloomRecompute, 'setMyceliumMode calls recomputeBloomIndices for bloom');
@@ -260,7 +260,7 @@ await test('setMyceliumMode source calls recomputeBloomIndices for bloom mode', 
 // Contract 6: setMyceliumMode calls direct owner imports instead of window UI bridges
 await test('setMyceliumMode source calls direct applyPointFilterColors and updateExplorationUi owners', async () => {
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
   const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
   const importsApplyColors = /import\s*\{[\s\S]*?applyPointFilterColors[\s\S]*?\}\s*from\s*['"]\.\/journey\.js['"]/.test(src);
   const hasApplyColors = /(?<!window\.)applyPointFilterColors\s*\(/.test(setMyceliumModeBody);
@@ -290,7 +290,7 @@ await test('applyStoryPrompt source resets activeFilters and activeClusterFilter
 // Contract 8: setMyceliumMode('trail') calls the direct trailDepth owner
 await test('setMyceliumMode(\'trail\') source calls direct setTrailDepth(1, ...)', async () => {
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
   const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
   const hasTrailDepth1 = /mode\s*===\s*['"]trail['"][\s\S]*?(?<!window\.)setTrailDepth\s*\(\s*1\s*,/.test(setMyceliumModeBody);
   assert(hasTrailDepth1, 'setMyceliumMode with trail mode calls direct setTrailDepth(1, ...)');
@@ -300,7 +300,7 @@ await test('setMyceliumMode(\'trail\') source calls direct setTrailDepth(1, ...)
 // Contract 9: setMyceliumMode('inside') calls the direct trailDepth owner
 await test('setMyceliumMode(\'inside\') source calls direct setTrailDepth(2, { fromUserGesture: true })', async () => {
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
   const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
   const hasTrailDepth2 = /mode\s*===\s*['"]inside['"][\s\S]*?(?<!window\.)setTrailDepth\s*\(\s*2\s*,[\s\S]*?fromUserGesture:\s*true/.test(setMyceliumModeBody);
   assert(hasTrailDepth2, 'setMyceliumMode with inside mode calls direct setTrailDepth(2, { fromUserGesture: true })');
@@ -310,7 +310,7 @@ await test('setMyceliumMode(\'inside\') source calls direct setTrailDepth(2, { f
 // Contract 10: setMyceliumMode publishes VIEW_CHANGED event
 await test('setMyceliumMode source publishes VIEW_CHANGED event', async () => {
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
   const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
   const hasEventPublish = /publish\s*\(\s*EVENTS\.VIEW_CHANGED\s*,\s*\{[\s\S]*?myceliumMode:\s*mode\s*\}\s*\)/.test(setMyceliumModeBody);
   assert(hasEventPublish, 'setMyceliumMode publishes VIEW_CHANGED event');
@@ -332,7 +332,7 @@ await test('applyStoryPrompt source refreshes filters after story prompt changes
 // Contract 12: recomputeBloomIndices source exists and references bloomIndices
 await test('recomputeBloomIndices source references state.bloomIndices', async () => {
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
   const hasBloomIndices = /state\.bloomIndices/.test(src);
   assert(hasBloomIndices, 'recomputeBloomIndices references state.bloomIndices');
 });
@@ -340,7 +340,7 @@ await test('recomputeBloomIndices source references state.bloomIndices', async (
 // Contract 13: recomputeBridgeIndices source exists and references bridgeIndices
 await test('recomputeBridgeIndices source references state.bridgeIndices', async () => {
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle.js', 'utf8');
+  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
   const hasBridgeIndices = /state\.bridgeIndices/.test(src);
   assert(hasBridgeIndices, 'recomputeBridgeIndices references state.bridgeIndices');
 });

@@ -12,7 +12,8 @@ import './tooltip.js';
 import { initThreeJS, animate, cancelAnimate, deinit, onWindowResize, getSceneRenderableDiagnostics, updateCameraViewportOffset } from './three-engine.js';
 import { initEventListeners, setInfoPanelOpen, revealSelectedBusinessCard } from './event-bindings.js';
 import { initKeyboardShortcutsHint, initKeyboardResetOwnership } from './keyboard-help.js';
-import { initBridgeRegistry, _getSelectedBusinessRoleLabel } from './bridge-registry.js';
+import { _getSelectedBusinessRoleLabel } from './role-label.js';
+import { debugWarn } from './diagnostic-adapter.js';
 import { updateTime, isCompactSearchViewport } from './utils/ui-presentation.js';
 import { pointHasGeocode } from './utils/geo-data.js';
 import { initJourneyLifecycleAdapter } from './journey-lifecycle-adapter.js';
@@ -102,8 +103,8 @@ async function measureStep<T>(name: string, fn: () => T | Promise<T>): Promise<A
 
 function logInitTimings(): void {
     const total = initTimings.reduce((sum, t) => sum + t.ms, 0);
-    console.warn(`[init] completed in ${Math.round(total)} ms`);
-    console.warn(JSON.stringify([...initTimings, { step: '— total —', ms: Math.round(total * 10) / 10 }], null, 2));
+    debugWarn(`[init] completed in ${Math.round(total)} ms`);
+    debugWarn(JSON.stringify([...initTimings, { step: '— total —', ms: Math.round(total * 10) / 10 }], null, 2));
 }
 
 function setupInitSafetyValves(): InitSafetyContext {
@@ -122,10 +123,10 @@ function setupInitSafetyValves(): InitSafetyContext {
     const safetyValve = setTimeout(() => {
         if (document.getElementById('loading-overlay')?.classList.contains('hidden')) return;
         const slowest = initTimings.reduce((max, t) => (t.ms > max.ms ? t : max), { step: '(none yet)', ms: 0 });
-        console.warn(
-            `Init safety valve dismissed a slow loading overlay after 15s; slowest step: ${slowest.step} (${Math.round(slowest.ms)} ms).`
+        console.error(
+            `Init safety valve: loading overlay stuck after 15s; slowest step: ${slowest.step} (${Math.round(slowest.ms)} ms). Showing error state.`
         );
-        hideLoadingOverlay();
+        applyLoadingErrorState(new Error(`Initialization timed out after 15 seconds. Slowest step: ${slowest.step} (${Math.round(slowest.ms)} ms)`));
     }, 15000);
 
     return { slowProgressTimer, safetyValve };
@@ -335,6 +336,8 @@ export async function init(): Promise<void> {
             clearInterval(appState.clockTimer);
             appState.clockTimer = null;
         }
+        // Cancel any previous RAF loop
+        cancelAnimate();
         // Full teardown before re-initializing (cancels RAF, disposes WebGL, audio, and event listeners).
         deinit();
         appState.loadingOverlayStartedAt = performance.now();
@@ -349,27 +352,34 @@ export async function init(): Promise<void> {
         await measureStep('initAdapters', initAdapters);
         await measureStep('initEventBusSubscriptions', initEventBusSubscriptions);
 
-        await measureStep('initBridgeRegistry', () => initBridgeRegistry({
-            search: searchModule.search,
-            clearSearch: searchModule.clearSearch,
-            switchView,
-            focusOnNode: cameraModule.focusOnNode,
-            setTrailFromSeed: journeyModule.setTrailFromSeed,
-            setTrailDepth,
-            setSemanticDiveMode,
-            returnToOverview,
-            resetExperienceState,
-            resetExplorationFocus,
-            refreshCompositionState,
-            traverseNeighbor: journeyModule.traverseNeighbor,
-            inspectThreadNeighbor: journeyModule.inspectThreadNeighbor,
-            pinThreadNeighbor: journeyModule.pinThreadNeighbor,
-            unpinThreadInspection: journeyModule.unpinThreadInspection,
-            clearThreadInspection: journeyModule.clearThreadInspection,
-            walkThreadNeighbor: journeyModule.walkThreadNeighbor,
-            requestSemanticGuide,
-            showSemanticThreadsDetail
-        }));
+        await measureStep('initBridgeRegistry', () => {
+            // Inline bridge setup (was initBridgeRegistry from bridge-registry.js).
+            // Sets window globals used by Playwright tests and visual-audit harnesses.
+            (window as any).__APP_STATE__ = state;
+            (window as any).__TEST_STATE__ = state;
+            (window as any).__APP_ACTIONS__ = {
+                search: searchModule.search,
+                clearSearch: searchModule.clearSearch,
+                switchView,
+                focusOnNode: cameraModule.focusOnNode,
+                setTrailFromSeed: journeyModule.setTrailFromSeed,
+                setTrailDepth,
+                setSemanticDiveMode,
+                returnToOverview,
+                resetExperienceState,
+                resetExplorationFocus,
+                refreshCompositionState,
+                traverseNeighbor: journeyModule.traverseNeighbor,
+                inspectThreadNeighbor: journeyModule.inspectThreadNeighbor,
+                pinThreadNeighbor: journeyModule.pinThreadNeighbor,
+                unpinThreadInspection: journeyModule.unpinThreadInspection,
+                clearThreadInspection: journeyModule.clearThreadInspection,
+                walkThreadNeighbor: journeyModule.walkThreadNeighbor,
+                requestSemanticGuide,
+                showSemanticThreadsDetail
+            };
+            (window as any)._getSelectedBusinessRoleLabel = _getSelectedBusinessRoleLabel;
+        });
 
         await measureStep('initSearchCache', initSearchCache);
 
@@ -404,6 +414,7 @@ export async function init(): Promise<void> {
         console.error('Initialization failed:', error);
         recordTiming('FAILED', 0);
         logInitTimings();
+        cancelAnimate();
         deinit();
         applyLoadingErrorState(error);
     }

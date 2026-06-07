@@ -37,7 +37,7 @@ export function setSearchPanelState(options = {}) {
 }
 
 export function renderSearchResultItems(resultsEl, results, renderContext, statusEl) {
-    const INITIAL_SHOW = 5
+    const INITIAL_SHOW = 10
     const dedupedResults = dedupeNearDuplicateResults(results)
     const total = dedupedResults.length
     const savedCount = (() => {
@@ -159,7 +159,7 @@ export function clearSearchState(_resultsEl, _statusEl) {
     searchSummaryStore.set(null);
     isSearchingStore.set(false);
     searchErrorStore.set(null);
-    searchVisibleCountStore.set(5);
+    searchVisibleCountStore.set(10);
 
     setSearchPanelState({ searching: false, focusing: false, resultsRendered: false, degraded: false })
     const spinner = document.getElementById('search-spinner')

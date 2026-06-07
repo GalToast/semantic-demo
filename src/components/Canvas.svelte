@@ -3,8 +3,10 @@
   import { viewportWidth, viewportHeight, dpr } from '@lib/stores/viewport';
   import { completeCameraTransition } from '@lib/stores/camera';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
+  import { setGraphicsMode, setLoadingPhase } from '@lib/data-store';
   import { createEngineBridge } from '@lib/engine';
   import type { EngineBridge, EngineCallbacks } from '@lib/engine';
+  import type { LoadingPhase } from '@lib/types/state';
 
   interface Props {
     interactive?: boolean;
@@ -24,8 +26,28 @@
     onCameraArrived: () => {
       completeCameraTransition();
     },
-    onLoadingPhase: (phase) => {
-      if (phase === 'launch') console.log('[Canvas] Scene ready');
+    onNodeHovered: (index) => {
+      // Sync hover index to body dataset for parity; the legacy RAF loop
+      // reads state.hoverHighlightIndex directly from the engine side.
+      if (typeof document !== 'undefined' && document.body) {
+        if (index !== null && index >= 0) {
+          document.body.dataset.hoveredNode = String(index);
+        } else {
+          delete document.body.dataset.hoveredNode;
+        }
+      }
+    },
+    onViewChanged: (view) => {
+      dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, {
+        view: view as 'galaxy' | 'map',
+      });
+    },
+    onLoadingPhase: (phase, progress) => {
+      setLoadingPhase(phase as LoadingPhase);
+      if (phase === 'launch') console.log('[Canvas] Scene ready', progress);
+    },
+    onGraphicsStateChange: (state) => {
+      setGraphicsMode(state === 'fallback' ? 'fallback' : 'webgl');
     },
   };
 

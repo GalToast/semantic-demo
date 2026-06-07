@@ -143,9 +143,6 @@
   class:expanded
   class:has-query={hasQuery}
   class:searching={showLoading}
-  id="search-chrome"
-  role="search"
-  aria-label="Search businesses in the semantic field"
 >
   <!-- Semantic lane pill (health indicator) -->
   <div id="semantic-lane-pill" class="semantic-lane-pill" data-state="healthy">

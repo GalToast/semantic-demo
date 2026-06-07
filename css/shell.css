@@ -12,6 +12,7 @@
     z-index: var(--z-base);
     overflow-y: auto;
     overflow-x: hidden;
+    overscroll-behavior: contain;
     isolation: isolate;
     transform: translateZ(0) scale(1);
     transform-origin: center center;
@@ -19,6 +20,11 @@
         opacity 0.42s ease,
         filter 0.82s cubic-bezier(0.4, 0, 0.2, 1),
         transform 0.82s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Prevent browser page-bounce during Three.js touch interactions. */
+body.is-active {
+    overscroll-behavior: contain;
 }
 
 .webgl-fallback-notice {

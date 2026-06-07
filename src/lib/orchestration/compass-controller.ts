@@ -23,6 +23,7 @@ import {
   isMapSummarySurface,
   isSemanticDiveSurface
 } from '@lib/stores/viewport';
+import { resetExplorationFocus } from '@lib/stores/lifecycle';
 import {
   getJourneyCompassState,
   getFocusedJourneyPoint,
@@ -304,7 +305,9 @@ export function executeJourneyCompassAction(action: string): void {
       return;
 
     case JOURNEY_ACTIONS.COUNTY_OVERVIEW:
-      // County overview resets exploration; do not preserve search
+      // County overview is a calm reset surface; do not preserve the
+      // search corridor or the map keeps competing search chrome alive.
+      resetExplorationFocus({ preserveSearch: false });
       return;
 
     default:
@@ -328,13 +331,10 @@ export function updateJourneyCompass(): void {
   const phase = compassState.phase || 'overview';
   const presentationState = getJourneyCompassPresentationState(compassState);
 
-  // Sync body data attributes
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.journeyPhase = phase;
-    document.body.dataset.journeyCompassDensity = presentationState.density;
-    document.body.dataset.journeyCompassCopy = presentationState.copy;
-    document.body.dataset.journeyNavigationOwner = presentationState.navigationOwner;
-  }
+  // body data-* attribute writes are owned by parity-attrs.ts.
+  // parity-attrs subscribes to navStore/journeyStore/compass-controller
+  // outputs and mirrors journeyPhase / journeyCompass* / journeyNavigationOwner
+  // to <body>. Do not write them here.
 
   compass.dataset.phase = phase;
   compass.dataset.density = presentationState.density;

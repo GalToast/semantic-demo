@@ -26,7 +26,7 @@ import {
     disposeInspectedStrandOverlay
 } from './thread-inspector-webgl.js';
 import { setInspectedStrandOverlayUpdater } from './inspected-strand-overlay-adapter.js';
-import { setStrandContinuityState, clearStrandContinuityState, setTimer, clearTimer, disposeTimers } from './strand-continuity.js';
+import { setStrandContinuityState, clearStrandContinuityState, setTimer, disposeTimers, clearTimer } from './strand-continuity.js';
 import { getStrandArrivalNote } from './strand-continuity.js';
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from './relationship-roles.js';
 import {
@@ -197,6 +197,8 @@ export function renderThreadInspection(index = getInspectedThreadIndex(), option
         };
         inspector.addEventListener('pointerenter', pointerEnter);
         inspector.addEventListener('pointerleave', pointerLeave);
+        inspector._pointerEnterListener = pointerEnter;
+        inspector._pointerLeaveListener = pointerLeave;
     }
     if (inspectionState.active && getCanvasThreadInspectionClearTimer()) {
         window.clearTimeout(getCanvasThreadInspectionClearTimer());
@@ -362,8 +364,10 @@ export function clearThreadInspection(options = {}) {
     }
     if (!options.preserveJourney && getStrandContinuityState()?.phase === 'preview') {
         clearStrandContinuityState('preview-clear');
-        clearTimer('arrival');
-        clearTimer('settle');
+        // Clear ALL pending timers from any prior walk before starting a new one.
+        // Matches walkThreadNeighbor's cancelAllThreadTimers() scope so no stale
+        // arrival/settle callbacks survive a superseded walk.
+        disposeTimers();
     }
     state.inspectedThreadIndex = null;
     state.threadInspectorPointerInside = false;
@@ -394,8 +398,10 @@ export function exploreThreadNeighbor(index, options = {}) {
         candidate?.reason ||
         options.reason ||
         'nearby business relationship';
-    clearTimer('arrival');
-    clearTimer('settle');
+    // Clear ALL pending timers from any prior walk before starting a new one.
+    // Matches walkThreadNeighbor's cancelAllThreadTimers() scope so no stale
+    // arrival/settle callbacks survive a superseded walk.
+    disposeTimers();
     state.pinnedThreadIndex = null;
     state.inspectedThreadIndex = index;
     setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason });

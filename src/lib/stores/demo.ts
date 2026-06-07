@@ -10,6 +10,7 @@
  */
 import { writable, derived, get } from 'svelte/store';
 import type { DemoState, DemoPhase } from '@lib/types/state';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -204,7 +205,7 @@ export function transitionDemo(
   const from = current.phase;
 
   if (!DEMO_TRANSITIONS[from]?.includes(to)) {
-    console.warn(`[Demo] Invalid transition: ${from} → ${to}`);
+    debugWarn(`[Demo] Invalid transition: ${from} → ${to}`);
     return false;
   }
 

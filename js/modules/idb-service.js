@@ -28,6 +28,7 @@ export function initDB() {
 
             request.onerror = (event) => {
                 debugWarn('[idb-service] Database error:', event.target.error);
+                dbPromise = null;
                 reject(event.target.error);
             };
 

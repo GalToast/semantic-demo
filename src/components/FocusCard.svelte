@@ -125,7 +125,7 @@
           </span>
         </div>
 
-        <h2 class="selected-card-name" id="selected-name">{selectedRecord.name}</h2>
+        <h2 class="selected-card-name" id="selected-name" aria-live="polite">{selectedRecord.name}</h2>
 
         {#if selectedRecord.what}
           <p class="selected-card-what" id="selected-what">{selectedRecord.what}</p>
@@ -363,6 +363,11 @@
       top: 3.5rem;
       right: 0.5rem;
       width: min(240px, 60vw);
+      /* Leave room below so the card does not overlap with the
+         JourneyChrome rail at the bottom. */
+      max-height: calc(100dvh - 7rem);
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
   }
 </style>

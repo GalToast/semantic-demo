@@ -157,9 +157,17 @@ async function handleLoadThreads({ urls, attemptConfigs }, requestId) {
 
 // ── UTILS ───────────────────────────────────────────────────────────────────
 
+const NULLISH_SENTINELS = new Set([
+    'unknown', 'not found', 'none', 'none detected', 'n/a', 'null'
+]);
+
 function cleanOptionalValue(value) {
-    if (value === undefined || value === null || value === '' || value === 'NULL') return null;
-    return value;
+    if (value === undefined || value === null || value === '') return null;
+    const text = String(value).trim();
+    if (!text || text === 'NULL' || NULLISH_SENTINELS.has(text.toLowerCase())) {
+        return null;
+    }
+    return text;
 }
 
 function parseFiniteNumber(value) {

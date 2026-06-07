@@ -148,6 +148,11 @@ export interface RouteTraceConfig {
   width: number;
 }
 
+// ── Point Types ─────────────────────────────────────────────────────────────────
+
+/** 3D point in unit cube space [0,1]³ */
+export type Point3D = { x: number; y: number; z: number };
+
 // ── Scene Diagnostics ─────────────────────────────────────────────────────────
 
 export interface ScenePerformanceDiagnostics {

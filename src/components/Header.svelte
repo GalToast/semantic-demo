@@ -60,6 +60,10 @@
     } else if (modeId === 'inside') {
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'inside' });
     } else if (modeId === 'map') {
+      // Map is a view-level switch (galaxy ↔ map), not just a surface change.
+      // SET_VIEW updates currentView; SET_SURFACE sets surface='map' for
+      // isActive('map') which checks $currentSurface.
+      dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'map' });
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map' });
     }
   }

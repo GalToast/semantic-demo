@@ -407,7 +407,7 @@ export function clearSearch(options = {}) {
         searchSummaryStore.set(null);
         isSearchingStore.set(false);
         searchErrorStore.set(null);
-        searchVisibleCountStore.set(5);
+        searchVisibleCountStore.set(10);
     }
 
     if (!options.suppressEvent) {

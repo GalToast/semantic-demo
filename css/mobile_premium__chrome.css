@@ -2,14 +2,7 @@
 
 @media (max-width: 768px) {
     /* ─── CHROME (UI furniture across states) ─────────── */
-    A.
-        Rail
-        sections
-        /
-        filters
-        (idle state)
-        ----------------------------------------------------------------
-        */
+    /* A. Rail sections / filters (idle state) */
         body.is-active[data-panel-surface='idle']
         .rail-section[open] {
         isolation: isolate;
@@ -650,7 +643,13 @@
     }
 
     body.is-active:is([data-journey-navigation-owner='map-trail-strip'], [data-panel-surface='map-idle'])
-        :is(.controls, #btn-share-view, #btn-legend, #btn-keyboard-help, .panel-toggle, .time-display) {
+        :is(.controls, #btn-legend, #btn-keyboard-help, .panel-toggle, .time-display) {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    body.is-active:is([data-journey-navigation-owner='map-trail-strip'], [data-panel-surface='map-idle']) #btn-share-view {
         display: none;
         visibility: hidden;
         pointer-events: none;

@@ -1,0 +1,2 @@
+[runner] Starting surface: search-no-results
+[runner] Finished surface: search-no-results  (35129ms, 12 pass / 8 fail)

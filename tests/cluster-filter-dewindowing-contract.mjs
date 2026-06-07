@@ -29,7 +29,7 @@ import path from 'node:path';
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const CLUSTER_FILTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.js');
 const ADAPTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter-adapter.js');
-const APP_PATH = path.join(SEMDEMO_ROOT, 'js/modules/app.js');
+const APP_PATH = path.join(SEMDEMO_ROOT, 'js/modules/app.ts');
 
 function assert(cond, msg) {
     if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
