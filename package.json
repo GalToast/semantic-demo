@@ -22,7 +22,7 @@
     "check:tokens": "node tests/design-token-doc-contract.mjs && node tests/js-design-token-contract.mjs",
     "check:surface-styles": "node tests/surface-style-matrix-contract.mjs",
     "check:semantic-space": "node tests/semantic-space-audit.mjs && node tests/semantic-thread-relationship-role-contract.mjs",
-    "check:svelte": "svelte-check --workspace src --no-tsconfig --diagnostic-sources svelte,css",
+    "check:svelte": "svelte-check --workspace src --tsconfig tsconfig.json --diagnostic-sources svelte,css",
     "check": "npm run check:svelte && npm run build:svelte",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "ts-readiness": "node scripts/build-app.mjs --ts-readiness",
