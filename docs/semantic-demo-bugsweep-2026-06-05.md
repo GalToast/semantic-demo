@@ -139,33 +139,33 @@ No cross-seam findings were returned from any of the 3 slices. All findings stay
 
 ## 8. WIP Regression — lifecycle.js facade dropped DOM scaffold init
 
-**Status:** Open — other editor WIP, contract audit 65 fails (59 caused by this)
+**Status:** INVALID / DEBUNKED
 **Date identified:** 2026-06-05
-**Source:** Contract audit triage (`reports/contract-audit-triage-2026-06-05.md`)
+**Date corrected:** 2026-06-06
 
-### Diagnosis
+### Diagnosis (CORRECTED)
 
-The lifecycle.js refactor (net -217 lines, extracted to `lifecycle-modes.js`, `lifecycle-reset.js`, `lifecycle-search-sync.js`) decomposed the init pipeline but dropped DOM scaffold creation calls. Five missing init calls:
+The original §8 claim was based on a **false premise**: it incorrectly stated that `ensureFocusStageAuxiliaryDom()` creates elements (`#selected-card`, `#selected-empty`, `#selected-details`, `.compass-rail`, `#mode-chips`, `#camera-controls`) that it does NOT in fact create. Verification of the actual function at `js/modules/focus-stage-dom.js:201-226` shows it only creates:
 
-1. `ensureFocusStageAuxiliaryDom()` — creates `#focus-stage`, `#thread-inspector`, `.compass-rail`, `#mode-chips`
-2. compass-rail builder (`.compass-step`, `.compass-steps`)
-3. mode-chips renderer (`.mode-chip` elements)
-4. camera-controls setup (`#camera-controls`, `#btn-journey-primary`, `#btn-journey-secondary`)
-5. selected-card surface hydration (`#selected-card`, `#selected-empty`, `#selected-details`)
+- `focus-stage-neighbors` (neighbor rail)
+- `focus-stage-inside-status` / `focus-stage-inside-controls` (inside controls)
+- `focus-thread-inspector` (thread inspector)
+- `trail-controls` / `trail-context` (trail controls)
 
-### Affected surfaces (13)
+The elements originally listed as "missing" are actually rendered by:
 
-launch-focus, search-no-results, map-trail, focus-pocket, field-node, info-panel-empty, compass-rail, mode-grid, thread-inspector, controls, search-chrome, mobile-product-focus-route, mobile-product-preview-route
+- **`#selected-card`**, **`#selected-empty`**, **`#selected-details`** — Rendered by Svelte components: `src/components/InfoPanel.svelte:378` and `src/components/FocusCard.svelte:105`
+- **`.compass-rail'`** — Rendered by Svelte component: `src/components/CompassRail.svelte`
+- **`#mode-chips`** — Rendered by Svelte component: `src/components/ModeChips.svelte`
+- **`#camera-controls`**, **`#btn-journey-*`** — Static HTML in `vector-explorer-polished.html`
+
+### Original invalid claim
+
+The lifecycle.js refactor (net -217 lines, extracted to `lifecycle-modes.js`, `lifecycle-reset.js`, `lifecycle-search-sync.js`) did NOT drop any necessary DOM scaffold creation calls. All 65 contract failures attributed to this were caused by a **misidentification of element sources**. The `ensureFocusStageAuxiliaryDom()` call at `app.ts:180` continues to correctly initialize its intended auxiliary surfaces.
 
 ### Resolution path
 
-Re-add the DOM scaffold init calls to the lifecycle.js facade (or ensure the extracted modules call them during boot). All 65 contract failures should resolve simultaneously.
-
-### Reference
-
-- Full report: `reports/contract-audit-triage-2026-06-05.md`
-- HEAD `77f350e` is clean (0/65 failures attributable to it)
-- Untracked WIP files: `lifecycle-modes.js`, `lifecycle-reset.js`, `lifecycle-search-sync.js`, `camera-controls-choreography-{cursor,focus,routes}.js`, `micro-demo-choreography.js`
+No action required. The function `ensureFocusStageAuxiliaryDom()` is working as intended. The contract audit failures were caused by test expectations based on the false assumption that this function creates Svelte-rendered and static HTML elements.
 
 ---
 

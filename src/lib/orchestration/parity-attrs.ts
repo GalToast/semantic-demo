@@ -76,6 +76,7 @@ export interface ParityAttributeDescriptor {
 
 export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
   // Journey compass (legacy #journey-compass + .journey-compass CSS hooks)
+  { key: 'journeyCompass', description: 'Legacy alias for journey compass lifecycle phase', source: 'compass.phase' },
   { key: 'journeyCompassPhase', description: 'Journey compass lifecycle phase (idle|checking|synthesizing|active|interrupted)', source: 'compass.phase' },
   { key: 'journeyCompassDensity', description: 'Compass density (hidden|compact|expanded)', source: 'compass.presentationState' },
   { key: 'journeyCompassCopy', description: 'Compass copy mode (quiet|full)', source: 'compass.presentationState' },
@@ -111,6 +112,7 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
 
   // Journey phase
   { key: 'journeyPhase', description: 'Journey phase lifecycle (idle|overview|search|focus|inside|map|thread-inspect|walking|arriving|settling)', source: 'journeyStore.phase' },
+  { key: 'terrainHandoff', description: 'Terrain handoff phase (idle|prelude|transition|settle)', source: 'journeyStore.terrainHandoffPhase' },
   { key: 'demoPhase', description: 'Demo choreography phase', source: 'demoStore.phase' },
 
   // Filters (legacy filter-state.js)
@@ -234,7 +236,8 @@ export function computeParityAttributes(
   const cameraAssist = isLoading ? 'loading' : 'free';
 
   return {
-    journeyCompassPhase: nav.mode,
+    journeyCompass: journey.compass?.phase ?? 'idle',
+    journeyCompassPhase: journey.compass?.phase ?? 'idle',
     journeyCompassDensity: presentation.density,
     journeyCompassCopy: presentation.copy,
     journeyNavigationOwner: presentation.navigationOwner,
@@ -260,6 +263,7 @@ export function computeParityAttributes(
 
     strandJourney: focus.strandContinuityPhase || 'idle',
     journeyPhase: journey.phase || 'idle',
+    terrainHandoff: journey.terrainHandoffPhase || 'idle',
     demoPhase,
 
     filtersActive: String(filterActive),

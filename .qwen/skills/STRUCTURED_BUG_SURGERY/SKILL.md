@@ -30,7 +30,13 @@ For each bug:
 4. **Check for duplicate subscriptions** — if the user says "audit for duplicate event subscriptions," grep for each event name's `subscribe()` count before changing anything.
 5. **Categorize each bug:** `NEEDS_FIX` (code is wrong), `ALREADY_FIXED` (code is correct, likely a prior pass resolved it), or `MISDIAGNOSED` (the real issue is elsewhere).
 
-**Why:** Applying fixes that are already in place wastes time and risks introducing new bugs. The user's bug report is a hypothesis, not a diagnosis.
+6. **High-level premise check** — Some bugs come from sweep reports with sweeping claims about what code "should" do (e.g., "function X creates elements Y, Z"). These claims may be factually incorrect — the function may never have created those elements. Run a BUGSWEEP_CLAIM_FALSIFICATION_CHECK before fix dispatch:
+   - Trace DOM element ownership: is the element static HTML, Svelte-rendered, or JS-created?
+   - Read the function body — does it actually do what the report claims?
+   - Check whether the "missing" elements exist in a different layer altogether.
+   - If the premise is false, update the bugsweep report and do NOT dispatch a fix for that item.
+
+**Why:** Applying fixes that are already in place wastes time and risks introducing new bugs. The user's bug report is a hypothesis, not a diagnosis. Some hypotheses are wrong at the premise level — not just the file:line reference.
 
 ### Phase 2: Surgical Fix (One Intent Per Edit)
 
@@ -121,3 +127,10 @@ After all bugs are processed, produce a structured summary:
 - **Do not reformat code as part of a fix.** If the fix requires a 3-line block to become a 6-line block, replace the exact 3 lines with the new 6 lines — don't reindent the surrounding function.
 - **Do not "discover and fix" adjacent bugs.** Document them and move on. Scope creep on a surgical sweep turns it into a refactor, which obscures the proof that each original bug was correctly resolved.
 - **Do not skip adversarial review because a fix is "trivial."** The CSS contract check caught a stale `'false'` literal that would have silently broken the parity layer — it seems trivial until it breaks a test at 2 AM.
+
+## Adjacent Skills
+
+- **BUGSWEEP_CLAIM_FALSIFICATION_CHECK** — Run BEFORE this skill when the bug list comes from a sweep report with high-level claims. Verifies the sweep's premises before you start fixing.
+- **PARALLEL_DIAGNOSTIC_BUGSWEEP** — Produces the sweep reports that feed into this skill. Run FIRST to generate the bug list.
+- **DOUBLE_WORKER_VERIFICATION** — When bugs need implementation + audit in parallel, use this instead of serial surgery.
+- **STATE_DESYNC_PARITY_SURGERY** — Specialized sibling for parity/desync bugs discovered during the surgery.

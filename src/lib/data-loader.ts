@@ -17,6 +17,7 @@ import type {
   LayoutManifest,
 } from '@lib/types/business';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
+import { cleanOptionalValue } from '@lib/utils/dom-formatters';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -61,20 +62,7 @@ function buildAssetUrl(path: string): string {
   return new URL(path, window.location.href).href;
 }
 
-const NULLISH_SENTINELS: ReadonlySet<string> = new Set([
-  'unknown', 'not found', 'none', 'none detected', 'n/a', 'null'
-]);
-
-function cleanOptional(value: unknown): string | null {
-  if (value === undefined || value === null || value === '') {
-    return null;
-  }
-  const text = String(value).trim();
-  if (!text || text === 'NULL' || NULLISH_SENTINELS.has(text.toLowerCase())) {
-    return null;
-  }
-  return text;
-}
+const cleanOptional = cleanOptionalValue;
 
 function parseFinite(value: unknown): number | null {
   const num = parseFloat(String(value));

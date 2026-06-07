@@ -10,6 +10,7 @@
  */
 import { writable, derived, get } from 'svelte/store';
 import type { DemoState, DemoPhase } from '@lib/types/state';
+import { seededUnit } from '@lib/utils/seeded-random';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -100,7 +101,12 @@ export function getActiveDemoTimerCount(): number {
 
 /** Get a shuffled copy of the showcase pool. */
 function getShuffledPool(): number[] {
-  return [...SHOWCASE_POOL].sort(() => Math.random() - 0.5);
+  const shuffled = [...SHOWCASE_POOL];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(seededUnit(i, 0xD3A0) * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+  }
+  return shuffled;
 }
 
 /**

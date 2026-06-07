@@ -177,7 +177,7 @@ export function syncJourneyCompassActions(
       (action.action === JOURNEY_ACTIONS.NEXT_STOP &&
         $focus.strandContinuityPhase === 'exploring');
 
-    button.disabled = false;
+    button.disabled = disabled || suppressInsideDiveActions;
     button.setAttribute('aria-disabled', String(disabled || suppressInsideDiveActions));
     button.hidden = suppressInsideDiveActions || !action?.action;
 
