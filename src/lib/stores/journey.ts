@@ -175,22 +175,14 @@ export function transitionCompass(
     }
   }));
 
-  // Update body data attribute for CSS coexistence
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.journeyCompass = to;
-  }
-
   return true;
 }
 
 // ── Journey Phase Actions ────────────────────────────────────────────────────
 
-/** Set the journey phase and sync the body data attribute. */
+/** Set the journey phase; parity-attrs owns body data-* sync. */
 export function setJourneyPhase(phase: JourneyPhase): void {
   journeyStore.update((s) => ({ ...s, phase }));
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.journeyPhase = phase;
-  }
 }
 
 // ── Trail Actions ────────────────────────────────────────────────────────────
@@ -318,10 +310,6 @@ export function setTerrainHandoffPhase(
   phase: JourneyStoreState['terrainHandoffPhase']
 ): void {
   journeyStore.update((s) => ({ ...s, terrainHandoffPhase: phase }));
-
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.terrainHandoff = phase;
-  }
 }
 
 // ── Route Exploration Actions ────────────────────────────────────────────────
@@ -350,9 +338,4 @@ export function setSelectedId(id: string | null): void {
 /** Reset the journey store to initial state. */
 export function resetJourney(): void {
   journeyStore.set({ ...INITIAL_STORE });
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.journeyPhase = 'idle';
-    document.body.dataset.journeyCompass = 'idle';
-    document.body.dataset.terrainHandoff = 'idle';
-  }
 }

@@ -170,7 +170,7 @@ describe('computeParityAttributes', () => {
     expect(map.navMode).toBe('overview');
     expect(map.navSurface).toBe('idle');
     expect(map.panelSurface).toBe('idle');
-    expect(map.journeyCompassPhase).toBe('overview');
+    expect(map.journeyCompassPhase).toBe('idle');
     expect(map.semanticDive).toBe('inactive');
     expect(map.trailState).toBe('inactive');
     expect(map.focusedNode).toBeNull();
@@ -263,7 +263,8 @@ describe('computeParityAttributes', () => {
       const stores = snapshotStores();
       const map = computeParityAttributes(
         stores.nav, stores.journey, stores.focus,
-        stores.search, stores.filters, stores.vp
+        stores.search, stores.filters, stores.vp,
+        stores.loadingPhase, stores.demoPhase, stores.graphicsMode
       );
       expect(map.strandJourney).toBe('exploring');
     } finally {
@@ -277,7 +278,8 @@ describe('computeParityAttributes', () => {
       const stores = snapshotStores();
       const map = computeParityAttributes(
         stores.nav, stores.journey, stores.focus,
-        stores.search, stores.filters, stores.vp
+        stores.search, stores.filters, stores.vp,
+        stores.loadingPhase, stores.demoPhase, stores.graphicsMode
       );
       expect(map.strandJourney).toBe('arrived');
     } finally {
@@ -388,7 +390,7 @@ describe('installParityAttributeSync', () => {
       expect(ds.navMode).toBe('overview');
       expect(ds.navSurface).toBe('idle');
       expect(ds.semanticDive).toBe('inactive');
-      expect(ds.journeyCompassPhase).toBe('overview');
+      expect(ds.journeyCompassPhase).toBe('idle');
     } finally {
       cleanup();
     }
