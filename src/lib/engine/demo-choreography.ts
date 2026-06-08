@@ -162,57 +162,57 @@ export function resetRetryState(): void {
 // ── Internal Helpers ──────────────────────────────────────────────────────────
 
 async function getLegacyState(): Promise<LegacyState> {
-  const mod = await import('../../../js/state.js');
+  const mod = await import('@legacy/state.js');
   return (mod as unknown as { state: LegacyState }).state;
 }
 
 async function getWithStateMutation(): Promise<(fn: () => void) => void> {
-  const mod = await import('../../../js/state.js');
+  const mod = await import('@legacy/state.js');
   return (mod as { withStateMutation: (fn: () => void) => void }).withStateMutation;
 }
 
 async function loadCameraControls(): Promise<CameraControlsModule> {
-  const mod = await import('../../../js/modules/camera-controls.js');
+  const mod = await import('@legacy/modules/camera-controls.js');
   return mod as unknown as CameraControlsModule;
 }
 
 async function loadFocusPocket(): Promise<FocusPocketModule> {
-  const mod = await import('../../../js/modules/focus-pocket.js');
+  const mod = await import('@legacy/modules/focus-pocket.js');
   return mod as unknown as FocusPocketModule;
 }
 
 async function loadLifecycle(): Promise<LifecycleModule> {
-  const mod = await import('../../../js/modules/lifecycle.js');
+  const mod = await import('@legacy/modules/lifecycle.js');
   return mod as unknown as LifecycleModule;
 }
 
 async function loadJourneyCompass(): Promise<JourneyCompassModule> {
-  const mod = await import('../../../js/modules/journey-compass-controller.js');
+  const mod = await import('@legacy/modules/journey-compass-controller.js');
   return mod as unknown as JourneyCompassModule;
 }
 
 async function loadJourney(): Promise<JourneyModule> {
-  const mod = await import('../../../js/modules/journey.js');
+  const mod = await import('@legacy/modules/journey.js');
   return mod as unknown as JourneyModule;
 }
 
 async function loadPanelBindings(): Promise<PanelBindingsModule> {
-  const mod = await import('../../../js/modules/bindings/panel-bindings.js');
+  const mod = await import('@legacy/modules/bindings/panel-bindings.js');
   return mod as unknown as PanelBindingsModule;
 }
 
 async function loadMicroDemoGuards(): Promise<MicroDemoGuardsModule> {
-  const mod = await import('../../../js/modules/micro-demo-guards.js');
+  const mod = await import('@legacy/modules/micro-demo-guards.js');
   return mod as unknown as MicroDemoGuardsModule;
 }
 
 async function loadMicroDemoCamera(): Promise<MicroDemoCameraModule> {
-  const mod = await import('../../../js/modules/micro-demo-camera.js');
+  const mod = await import('@legacy/modules/micro-demo-camera.js');
   return mod as unknown as MicroDemoCameraModule;
 }
 
 async function loadMicroDemoUi(): Promise<MicroDemoUiModule> {
-  const mod = await import('../../../js/modules/micro-demo-ui.js');
+  const mod = await import('@legacy/modules/micro-demo-ui.js');
   return mod as unknown as MicroDemoUiModule;
 }
 

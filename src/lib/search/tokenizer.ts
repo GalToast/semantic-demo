@@ -55,12 +55,24 @@ export function tokenizeSearchText(
 	text: unknown,
 	stopWords: ReadonlySet<string> = SEARCH_STOP_WORDS
 ): string[] {
+	// Pre-process special chars BEFORE word segmentation so they don't
+	// become part of tokens (e.g., "O'Brien" → "obrien", "AT&T" → "att",
+	// "co-op" → "co op").  This keeps query tokens aligned with field tokens
+	// that won't carry punctuation.
+	const input = String(text || '')
+		.normalize('NFC')
+		.toLowerCase()
+		.replace(/[''\u2019]/g, '')          // strip smart/straight quotes
+		.replace(/[&]/g, ' ')               // ampersand → space
+		.replace(/[/\\]/g, ' ')             // slash/backslash → space
+		.replace(/[-_]+/g, ' ')             // hyphens/underscores → space
+		.replace(/[@#]/g, ' ')              // at/hash → space
+		.replace(/\s+/g, ' ')               // collapse all whitespace
+		.trim();
+
 	return [
 		...new Set(
-			(String(text || '')
-				.normalize('NFC')
-				.toLowerCase()
-				.match(/[\p{L}0-9]+/gu) || []) as string[]
+			(input.match(/[\p{L}0-9]+/gu) || []) as string[]
 		)
 	]
 		.filter(Boolean)

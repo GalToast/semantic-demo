@@ -813,15 +813,15 @@ body.is-active #selected-details.active:not([hidden]) {
         pointer-events: none;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='semantic-dive']) #info-panel.info-panel,
-    body.is-active[data-panel-surface='focus-search'][data-trail-state='active'] #info-panel.info-panel {
+    body.is-active.is-svelte-mounted:is([data-panel-surface='focus'], [data-panel-surface='semantic-dive']) #info-panel.info-panel,
+    body.is-active.is-svelte-mounted[data-panel-surface='focus-search'][data-trail-state='active'] #info-panel.info-panel {
         display: none;
         visibility: hidden;
         opacity: 0;
         pointer-events: none;
     }
 
-    body.is-active[data-panel-surface='focus-search'][data-trail-state='active'] .search-container {
+    body.is-active.is-svelte-mounted[data-panel-surface='focus-search'][data-trail-state='active'] .search-container {
         display: none;
         visibility: hidden;
         opacity: 0;

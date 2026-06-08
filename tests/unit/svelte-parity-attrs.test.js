@@ -51,7 +51,7 @@ beforeAll(() => {
 // Use relative paths to avoid needing the @lib path alias in vitest.config.js.
 // The Svelte stores under src/lib/stores/* are real Svelte stores
 // (writable/derived) — they don't require Svelte compilation, so they
-// can be imported from .ts here as long as vite-plugin-svelte is in
+// can be imported from .svelte.ts here as long as vite-plugin-svelte is in
 // the config (it is).
 const {
   PARITY_ATTRIBUTES,
@@ -63,14 +63,14 @@ const {
   resetParityAttributeCache
 } = await import('../../src/lib/orchestration/parity-attrs.ts');
 
-const { navStore } = await import('../../src/lib/stores/navigation.ts');
-const { journeyStore } = await import('../../src/lib/stores/journey.ts');
-const { focusStore } = await import('../../src/lib/stores/focus.ts');
-const { searchStore } = await import('../../src/lib/stores/search.ts');
-const { filterState } = await import('../../src/lib/stores/filter.ts');
-const { viewport } = await import('../../src/lib/stores/viewport.ts');
-const { demoPhase: demoPhaseStore } = await import('../../src/lib/stores/demo.ts');
-const { loadingPhaseStore, graphicsModeStore } = await import('../../src/lib/data-store.ts');
+const { navStore } = await import('../../src/lib/stores/navigation.svelte.ts');
+const { journeyStore } = await import('../../src/lib/stores/journey.svelte.ts');
+const { focusStore } = await import('../../src/lib/stores/focus.svelte.ts');
+const { searchStore } = await import('../../src/lib/stores/search.svelte.ts');
+const { filterState } = await import('../../src/lib/stores/filter.svelte.ts');
+const { viewport } = await import('../../src/lib/stores/viewport.svelte.ts');
+const { demoPhase: demoPhaseStore } = await import('../../src/lib/stores/demo.svelte.ts');
+const { loadingPhaseStore, graphicsModeStore } = await import('../../src/lib/data-store.svelte.ts');
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -336,7 +336,7 @@ describe('computeParityAttributes', () => {
   });
 
   it('cameraSlack mirrors cameraStore.orbitSlack.phase', async () => {
-    const { cameraStore } = await import('../../src/lib/stores/camera.ts');
+    const { cameraStore } = await import('../../src/lib/stores/camera.svelte.ts');
     cameraStore.update((s) => ({ ...s, orbitSlack: { ...s.orbitSlack, phase: 'active' } }));
     try {
       const stores = snapshotStores();

@@ -14,7 +14,7 @@
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { navState, isOverview } from '@lib/stores/navigation';
+  import { navStore, isOverview } from '@lib/stores/navigation';
   import { isCompact, reducedMotion, initViewportListeners } from '@lib/stores/viewport';
   import { initData } from '@lib/data-store';
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs';
@@ -36,7 +36,6 @@
   import SearchInput from '@components/SearchInput.svelte';
   import SearchResults from '@components/SearchResults.svelte';
   import FocusCard from '@components/FocusCard.svelte';
-  import JourneyCanvas from '@components/JourneyCanvas.svelte';
   import MapSummary from '@components/MapSummary.svelte';
   import SemanticOverlay from '@components/SemanticOverlay.svelte';
   import WeatherWidget from '@components/WeatherWidget.svelte';
@@ -76,16 +75,16 @@
   // data-mode, data-compact) are now subsumed by computeParityAttributes()
   // inside parity-attrs.ts — including navSurface and demoPhase.
   let focusActive = $derived(
-    $navState.mode === 'focus' || $navState.mode === 'inside' || $navState.focusedIndex !== null
+    navStore().mode === 'focus' || navStore().mode === 'inside' || navStore().focusedIndex !== null
   );
 </script>
 
 <div
   id="semantic-explorer"
   class="semantic-explorer"
-  class:is-compact={$isCompact}
-  class:reduced-motion={$reducedMotion}
-  class:is-overview={$isOverview}
+  class:is-compact={isCompact()}
+  class:reduced-motion={reducedMotion()}
+  class:is-overview={isOverview()}
 >
   <!-- Layer 0: WebGL canvas -->
   <Canvas interactive={true} />

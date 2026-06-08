@@ -5,7 +5,7 @@
  * Shadow of js/modules/ui-renderers.js + focus-stage-renderer.js
  */
 
-import type { BusinessRecord } from '../types/business';
+import type { BusinessRecord } from './types/business';
 
 /** Blocklist for filtering business trivia. */
 export const TRIVIA_BLOCKLIST = Object.freeze({

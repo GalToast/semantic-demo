@@ -5,8 +5,8 @@
   "main": "eslint.config.js",
   "type": "module",
   "scripts": {
-    "lint": "eslint js/ js/modules/ --ext .js",
-    "lint:fix": "eslint js/ js/modules/ --ext .js --fix",
+    "lint": "eslint js/ js/modules/",
+    "lint:fix": "eslint js/ js/modules/ --fix",
     "lint:tests": "eslint tests/ --no-warn-ignored",
     "lint:all": "npm run lint && npm run lint:tests",
     "mcp:recover": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mcp-recover.ps1",

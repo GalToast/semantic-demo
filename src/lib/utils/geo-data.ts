@@ -89,6 +89,7 @@ export function isPointVisible(
 ): boolean {
 	if (index < 0 || index >= points.length) return false;
 	const point = points[index];
+	if (!point) return false;
 	const pointCluster = Number.isFinite(Number(point.cluster)) ? Number(point.cluster) : 0;
 	if (activeClusterFilter !== null && pointCluster !== activeClusterFilter) return false;
 	if (activeFilters.status !== 'all' && point.status !== activeFilters.status) return false;
@@ -133,13 +134,14 @@ export function highlightMatch(text: unknown, query: unknown): string {
 
 export function tokenizeSearchText(text: unknown, stopWords: Set<string> = new Set()): string[] {
 	return [
-		...new Set(
-			(String(text || '')
-				.toLowerCase()
-				.match(/[a-z0-9]+/g) || []) as string[]
-		)
-			.filter(Boolean)
-			.filter((token) => token.length > 1 && !stopWords.has(token))
+		...[
+			...new Set(
+				(String(text || '')
+					.toLowerCase()
+					.match(/[a-z0-9]+/g) || []) as string[]
+			)
+		].filter(Boolean)
+		.filter((token) => token.length > 1 && !stopWords.has(token))
 	];
 }
 
@@ -183,8 +185,8 @@ export function computeOverviewScatterOffsets(
 	const parent = Array.from({ length: sourcePoints.length }, (_, i) => i);
 	const find = (i: number): number => {
 		while (parent[i] !== i) {
-			parent[i] = parent[parent[i]];
-			i = parent[i];
+			parent[i] = parent[parent[i]!]!;
+			i = parent[i]!;
 		}
 		return i;
 	};
@@ -204,11 +206,11 @@ export function computeOverviewScatterOffsets(
 	const getPosition = (index: number): { x: number; y: number; z: number } => {
 		const point = sourcePoints[index] || ({} as GeoPoint);
 		if (hasRawBuffer && rawPositionsBuffer) {
-			return {
-				x: rawPositionsBuffer[index * 3],
-				y: rawPositionsBuffer[index * 3 + 1],
-				z: rawPositionsBuffer[index * 3 + 2]
-			};
+		return {
+			x: rawPositionsBuffer[index * 3]!,
+			y: rawPositionsBuffer[index * 3 + 1]!,
+			z: rawPositionsBuffer[index * 3 + 2]!
+		};
 		}
 		return {
 			x: Number.isFinite(point.x) ? point.x! : 0,
@@ -289,7 +291,7 @@ export function computeOverviewScatterOffsets(
 		const goldenAngle = Math.PI * (3 - Math.sqrt(5));
 		const maxRadius = Math.min(0.082, 0.016 + Math.sqrt(group.length) * 0.0072);
 		const minRadius = Math.min(maxRadius * 0.58, 0.012 + group.length * 0.00045);
-		const phase = seededUnit(group[0], group.length) * Math.PI * 2;
+		const phase = seededUnit(group[0]!, group.length) * Math.PI * 2;
 		const rawOffsets: { index: number; radial: THREE.Vector3 }[] = [];
 		const groupOffsetCenter = new THREE.Vector3();
 

@@ -1,0 +1,9 @@
+Total messages: 8 (Errors: 0, Warnings: 6)
+Returning 6 messages for level "warning"
+
+[WARNING] [data-store] Starting data initialization... @ http://localhost:5174/@vite/client:524
+[WARNING] [data-loader] Loaded 8,406 business records, 8,406 with lead IDs @ http://localhost:5174/@vite/client:524
+[WARNING] [data-loader] Loaded semantic threads: semantic_threads_ui.dat, 8,406 node entries @ http://localhost:5174/@vite/client:524
+[WARNING] [data-store] Business records loaded. @ http://localhost:5174/@vite/client:524
+[WARNING] [data-store] Semantic threads loaded. @ http://localhost:5174/@vite/client:524
+[WARNING] [data-store] Data initialization complete. @ http://localhost:5174/@vite/client:524

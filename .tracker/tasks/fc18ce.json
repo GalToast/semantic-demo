@@ -1,0 +1,11 @@
+{
+  "title": "Migrate search.svelte.ts to getter pattern",
+  "description": "Convert searchStore, searchState, searchVisibleCountValue from exported $state to private with getter functions. Update all internal references to use _searchStore.",
+  "type": "task",
+  "status": "open",
+  "dependencies": [],
+  "metadata": {
+    "updatedAt": 1780873959910
+  },
+  "id": "fc18ce"
+}

@@ -22,37 +22,27 @@ import type {
 import { normalizeRelationshipRole } from '@lib/utils/relationship-roles';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
-// ── Legacy state singleton (ambient typed) ────────────────────────────────────
-// Imported from the legacy JS tree via @legacy alias.  The ambient declaration
-// in legacy-modules.d.ts provides the `state` export with `any` type.  All
-// mutations to `state` properties are wrapped in withStateMutation() from the
-// extracted TS guard.
+// ── Legacy state singleton ────────────────────────────────────────────────────
+// The state reference is injected by the engine bridge during init via
+// attachLegacyState().  Do NOT import directly from @legacy/state.js —
+// the CJS require fails under Vite's ESM pipeline and creates a second
+// stateProxy instance that diverges from the live one.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _state: any = null;
 
 function getState(): typeof _state {
-  if (!_state) {
-    // Lazy-initialise from the legacy singleton at first use.
-    // At bundle time the Vite @legacy alias resolves to js/.
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      _state = require('@legacy/state.js').state;
-    } catch {
-      // During Vite dev/build the CJS require won't resolve.
-      // The state will be lazily assigned via _attachLegacyState().
-      _state = null;
-    }
-  }
   return _state;
 }
 
 /**
- * Attach the legacy state singleton explicitly (called by the engine bridge
- * during init so the module can access the same state object the Three.js
- * engine reads from).
+ * Attach the legacy state singleton (called by the engine bridge during init).
+ *
+ * Must be called before loadSemanticThreads() so that state.semanticNeighborMapByLeadId
+ * and other tracked properties are written to the SAME state object the Three.js
+ * engine reads from.
  */
-export function attachLegacyState(stateRef: Record<string, unknown>): void {
-  _state = stateRef;
+export function attachLegacyState(stateRef: Record<string, unknown> | unknown): void {
+  _state = stateRef as typeof _state;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────

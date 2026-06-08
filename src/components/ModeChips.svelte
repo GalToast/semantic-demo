@@ -3,7 +3,7 @@
 -->
 <script lang="ts">
   import type { NavMode } from '@lib/types/state';
-  import { currentMode, currentSurface, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
+  import { currentMode, currentSurface, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
 
   interface Props {
     visible?: boolean;
@@ -37,8 +37,8 @@
   ];
 
   function isActive(modeId: NavMode | 'map'): boolean {
-    if (modeId === 'map') return $currentSurface === 'map';
-    return $currentMode === modeId;
+    if (modeId === 'map') return currentSurface() === 'map';
+    return currentMode() === modeId;
   }
 
   function selectMode(modeId: NavMode | 'map'): void {

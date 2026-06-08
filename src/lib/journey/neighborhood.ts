@@ -180,7 +180,7 @@ export function isBoundedNeighborhoodActive(
   if (boundedNeighborhoodActive) return true;
 
   // Derive from journey store state
-  const js = get(journeyStore);
+  const js = journeyStore();
   if (js.trailDepth > 0 && js.walkHistoryIndices.length > 0) return true;
 
   // Check nav state for trail activity
@@ -213,7 +213,7 @@ export function getNeighborhoodCandidateForIndex(
   }
 
   // Check thread candidates in the journey store
-  const js = get(journeyStore);
+  const js = journeyStore();
   if (js.threadCandidates.includes(idx)) {
     const reason = js.threadReasonByIndex.get(idx) ?? 'semantic neighbor';
     return { index: idx, reason, source: js.threadSource };
@@ -242,7 +242,7 @@ export function getNextWalkCandidateForIndex(
   if (!Number.isFinite(currentIndex)) return null;
 
   const idx = currentIndex as number;
-  const js = get(journeyStore);
+  const js = journeyStore();
   const nav = get(navStore);
 
   // Build exclusion set (already visited)
@@ -388,7 +388,7 @@ export function getBoundedNeighborhoodWalkCandidate(
   const idx = (currentIndex ?? boundedNeighborhoodAnchorIndex) as number;
   if (!Number.isFinite(idx)) return null;
 
-  const js = get(journeyStore);
+  const js = journeyStore();
   const visited = new Set<number>([...js.walkHistoryIndices, idx]);
 
   // Walk candidate list from the step offset or from the start
@@ -422,7 +422,7 @@ export function getCurrentTrailFocusIndex(
   if (Number.isFinite(focusedIndex)) return focusedIndex;
 
   // Fall back to the trail seed
-  const js = get(journeyStore);
+  const js = journeyStore();
   return js.trailSeedIndex ?? null;
 }
 

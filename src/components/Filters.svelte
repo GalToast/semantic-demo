@@ -15,7 +15,8 @@
     hasActiveFilters,
     activeFilterCount,
     toggleFilter,
-    resetFilters
+    resetFilters,
+    getFilterState
   } from '@lib/stores/filter';
 
   interface Props {
@@ -44,18 +45,19 @@
 
   /** Check whether a status filter is the currently active one. */
   function isStatusActive(id: string): boolean {
-    return $filterState.status === id;
+    return getFilterState().status === id;
   }
 
   /** Check whether a contact filter is currently on. */
   function isContactActive(id: string): boolean {
+    const fs = getFilterState();
     switch (id) {
       case 'website':
-        return $filterState.website;
+        return fs.website;
       case 'email':
-        return $filterState.email;
+        return fs.email;
       case 'geocoded':
-        return $filterState.geocoded;
+        return fs.geocoded;
       default:
         return false;
     }
@@ -66,15 +68,16 @@
   }
 
   function handleContactToggle(id: string): void {
+    const fs = getFilterState();
     switch (id) {
       case 'website':
-        toggleFilter('website', !$filterState.website);
+        toggleFilter('website', !fs.website);
         break;
       case 'email':
-        toggleFilter('email', !$filterState.email);
+        toggleFilter('email', !fs.email);
         break;
       case 'geocoded':
-        toggleFilter('geocoded', !$filterState.geocoded);
+        toggleFilter('geocoded', !fs.geocoded);
         break;
     }
   }

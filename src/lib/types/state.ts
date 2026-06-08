@@ -43,6 +43,18 @@ export interface NavState {
   currentPersonality: string | null;
   neighborhoodIndices: readonly number[];
   explorationHistoryIndices: readonly number[];
+  // Extended fields used by navigation.svelte.ts
+  currentView: 'galaxy' | 'map';
+  myceliumMode: string;
+  autoRotate: boolean;
+  autoRotateSuspended: boolean;
+  trailDepthFromExploration: number;
+  sceneRevealActive: boolean;
+  sceneRevealStartedAt: number;
+  loadingPhaseKey: string;
+  applyingUrlState: boolean;
+  restoringBrowserHistory: boolean;
+  urlStateRestoreToken: number;
 }
 
 export interface FocusPocketMeta {

@@ -4,6 +4,8 @@
  * Debug utilities shadow of js/modules/diagnostic-adapter.js
  */
 
+/// <reference types="vite/client" />
+
 const DEBUG_ENABLED = import.meta.env.DEV || import.meta.env.VITE_DEBUG === 'true';
 
 export function debugWarn(message: string, ...args: unknown[]): void {

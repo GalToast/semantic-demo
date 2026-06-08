@@ -38,6 +38,7 @@ import {
 import { applyClusterUiAccent } from './cluster-ui-accent.js';
 import { isMapSummarySurface } from './environment.js';
 import { selectedPointStore } from './stores.js';
+import { seededUnit } from './utils/seeded-random.js';
 
 const selectedCardAdapter = {
     getStrandArrivalNote: () => '',
@@ -221,12 +222,12 @@ export function updateSelectedBusiness(point, options = {}) {
         cascadeBg.innerHTML = '';
         cascadeBg.classList.remove('active');
         cascadeBg.classList.add('active');
-        const generateVectorLine = () => Array.from({length: 6}, () => (Math.random() * 2 - 1).toFixed(3)).join('  ');
+        const generateVectorLine = (lineIdx) => Array.from({length: 6}, (_, j) => (seededUnit(lineIdx * 6 + j, 'vector') * 2 - 1).toFixed(3)).join('  ');
         for (let i = 0; i < 8; i++) {
             setTimeout(() => {
                 const line = document.createElement('div');
                 line.className = 'vector-cascade-line';
-                line.textContent = generateVectorLine();
+                line.textContent = generateVectorLine(i);
                 cascadeBg.appendChild(line);
                 setTimeout(() => line.remove(), 3000);
             }, i * 150);

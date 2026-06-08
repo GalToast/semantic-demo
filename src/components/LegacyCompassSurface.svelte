@@ -37,7 +37,6 @@
   import { navStore } from '@lib/stores/navigation';
   import { journeyStore, JOURNEY_COMPASS_PHASE_ORDER } from '@lib/stores/journey';
   import { focusStore } from '@lib/stores/focus';
-  import { searchStore } from '@lib/stores/search';
   import {
     getJourneyCompassState,
     type CompassStateContext
@@ -58,14 +57,8 @@
   let compass: CompassStateContext = $state(getJourneyCompassState());
 
   // Subscribe to all the stores that the legacy updateJourneyCompass()
-  // reacts to. Each subscription recomputes compass.
+  // reacts to. $effect tracks reactive reads automatically.
   $effect(() => {
-    // touch every store so the effect re-runs on any of them
-    void $navStore;
-    void $journeyStore;
-    void $focusStore;
-    void $searchStore;
-
     compass = getJourneyCompassState();
   });
 
@@ -109,24 +102,24 @@
   // Mirrors legacy semantic-dive-ui.js showDiveButton rule:
   //   showDiveButton = getTrailDepth() >= 1 && hasFocus && !active
   let canDive = $derived(
-    $navStore.currentView === 'galaxy'
-      && ($focusStore.semanticDiveMode || $navStore.focusedIndex !== null)
+    navStore().currentView === 'galaxy'
+      && (focusStore().semanticDiveMode || navStore().focusedIndex !== null)
   );
   let showDiveButton = $derived(
-    $journeyStore.trailDepth >= 1
-      && ($navStore.focusedIndex !== null || $focusStore.semanticDiveMode)
-      && !$focusStore.semanticDiveMode
+    journeyStore().trailDepth >= 1
+      && (navStore().focusedIndex !== null || focusStore().semanticDiveMode)
+      && !focusStore().semanticDiveMode
   );
 
   // Suppress dive button inside the inside phase / semantic-dive surface
   let suppressInsideDiveActions = $derived(
-    phase === 'inside' && $focusStore.semanticDiveMode
+    phase === 'inside' && focusStore().semanticDiveMode
   );
 
   // ── Map trail strip ─────────────────────────────────────────────────────
 
   let showMapTrailStrip = $derived(
-    $navStore.currentView === 'map' && navigationOwner === 'map-trail-strip'
+    navStore().currentView === 'map' && navigationOwner === 'map-trail-strip'
   );
 
   // The strip carries the connection-trail label. Action buttons duplicate
@@ -141,7 +134,7 @@
     if (!action?.action) return true;
     if (
       action.action === JOURNEY_ACTIONS.NEXT_STOP
-      && $focusStore.strandContinuityPhase === 'exploring'
+      && focusStore().strandContinuityPhase === 'exploring'
     ) {
       return true;
     }
@@ -305,16 +298,16 @@
   data-journey-action="enter-inside"
   hidden={!showDiveButton}
   aria-hidden={!showDiveButton ? 'true' : 'false'}
-  aria-pressed={$focusStore.semanticDiveMode ? 'true' : 'false'}
+  aria-pressed={focusStore().semanticDiveMode ? 'true' : 'false'}
   aria-disabled={!canDive ? 'true' : 'false'}
   aria-label="Explore the neighborhood around this business"
   onclick={handleStepInside}
 >
   <span class="focus-stage-dive-label">
-    {$focusStore.semanticDiveMode ? 'Inside Neighborhood' : 'Explore Neighborhood'}
+    {focusStore().semanticDiveMode ? 'Inside Neighborhood' : 'Explore Neighborhood'}
   </span>
   <span class="focus-stage-dive-copy">
-    {$focusStore.semanticDiveMode
+    {focusStore().semanticDiveMode
       ? 'Use Next Stop to continue or County to exit.'
       : 'Explore related businesses in the neighborhood.'}
   </span>

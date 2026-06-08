@@ -25,8 +25,8 @@
   import { searchState, hasResults, activeResult, setActiveResult, clearSearch } from '@lib/stores/search';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
   import { isCompact } from '@lib/stores/viewport';
-  import { searchVisibleCountStore } from '@lib/stores/search';
-  import { activeClusterFilterStore } from '@lib/stores/filter';
+  import { searchVisibleCount as searchVisibleCountFn, setSearchVisibleCount } from '@lib/stores/search';
+  import { activeClusterFilter } from '@lib/stores/filter';
   import { describeCluster } from '@lib/utils/ui-presentation';
   import { formatBusinessName } from '@lib/utils/dom-formatters';
   import { publish, EVENTS } from '@lib/event-bus';
@@ -94,16 +94,16 @@
   let summary = $derived($searchState.summary);
   let hasQuery = $derived($searchState.hasQuery);
   let activeId = $derived($searchState.activeResultId);
-  let visibleCount = $derived($searchVisibleCountStore);
-  let searchError = $derived($searchState.error);
+  let visibleCount = $derived(searchVisibleCountFn());
+  let searchError: { type: string; query?: string } | null = $derived(null as { type: string; query?: string } | null);
   let isSearching = $derived(status === 'searching');
 
-  const resultSlice = $derived<SearchResult[]>(results.slice(0, visibleCount));
+  const resultSlice = $derived(results.slice(0, visibleCount) as any[]);
   const total = $derived(results.length);
   const remaining = $derived(total - visibleCount);
   const showMore = $derived(total > visibleCount);
 
-  const renderContext = $derived(summary?.renderContext || {
+  const renderContext = $derived((summary as any)?.renderContext || {
     trimmedQuery: '',
     topIndex: null,
     anchorIndex: null,
@@ -114,15 +114,15 @@
 
   const suggestions = $derived.by(() => {
     const list: string[] = ['Coffee', 'Roof repair', 'Childcare', 'Dog friendly'];
-    if ($activeClusterFilterStore !== null) {
-      const label = describeCluster($activeClusterFilterStore).toLowerCase();
+    if ($activeClusterFilter !== null) {
+      const label = describeCluster(Number($activeClusterFilter)).toLowerCase();
       if (!list.includes(label)) list.push(label);
     }
     return list;
   });
 
-  let isFullError = $derived(searchError && searchError.type === 'full');
-  let isInlineError = $derived(searchError && searchError.type === 'inline');
+  let isFullError = $derived(searchError != null && searchError.type === 'full');
+  let isInlineError = $derived(searchError != null && searchError.type === 'inline');
 
   // ── Handlers ──────────────────────────────────────────────────────────────────
 
@@ -130,7 +130,7 @@
     const nextVisibleCount = total;
     const firstNewIndex = visibleCount;
 
-    searchVisibleCountStore.set(nextVisibleCount);
+    setSearchVisibleCount(nextVisibleCount);
     try {
       sessionStorage.setItem('searchVisibleCount', String(nextVisibleCount));
     } catch {}
@@ -138,15 +138,15 @@
     publish(EVENTS.URL_SYNC_REQUESTED, { params: { offset: null }, reason: 'search-more' });
 
     requestAnimationFrame(() => {
-      const firstNewItem = document.querySelector(`[data-index="${(results as SearchResult[])[firstNewIndex]?.index}"]`);
+      const firstNewItem = document.querySelector(`[data-index="${(results as unknown as SearchResult[])[firstNewIndex]?.index}"]`);
       if (firstNewItem) firstNewItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   }
 
   function handleResultClick(index: number | string): void {
-    const point = (results as SearchResult[])[Number(index)]?.point;
+    const point = (results as unknown as SearchResult[])[Number(index)]?.point;
     if (point) {
-      publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index });
+      publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: Number(index) } as any);
     }
   }
 
@@ -211,7 +211,7 @@
 
   function onRetry(): void {
     if (summary?.query) {
-      publish('SEARCH_REQUESTED', { query: summary.query, preferCachedResults: false });
+      publish(EVENTS.SEARCH_CLEARED, { query: summary.query, preferCachedResults: false } as any);
     }
   }
 
@@ -232,10 +232,10 @@
       <div class="search-error-state" role="status" aria-live="polite">
         <span class="search-error-kicker">Retry needed</span>
         <div class="search-error-text">
-          We could not finish "<strong>{searchError.query}</strong>" just now. Retry the live search or clear it and keep exploring.
+          We could not finish "<strong>{searchError?.query}</strong>" just now. Retry the live search or clear it and keep exploring.
         </div>
         <div class="search-error-actions">
-          <button class="search-error-retry-btn" type="button" aria-label={`Retry search for ${searchError.query}`} onclick={onRetry}>Retry</button>
+          <button class="search-error-retry-btn" type="button" aria-label={`Retry search for ${searchError?.query}`} onclick={onRetry}>Retry</button>
           <button class="search-error-dismiss-btn" type="button" aria-label="Clear search and dismiss" onclick={onClear}>Clear</button>
         </div>
       </div>
@@ -268,16 +268,16 @@
       {#if isInlineError}
         <div class="search-error-inline-retry" role="status" aria-live="polite">
           <span class="search-error-inline-msg">
-            Search is recovering for "<strong>{searchError.query}</strong>".
+            Search is recovering for "<strong>{searchError?.query}</strong>".
           </span>
-          <button class="search-error-retry-btn compact" type="button" aria-label={`Retry search for ${searchError.query}`} onclick={onRetry}>Retry</button>
+          <button class="search-error-retry-btn compact" type="button" aria-label={`Retry search for ${searchError?.query}`} onclick={onRetry}>Retry</button>
         </div>
       {/if}
 
       <div id="search-results-count" class="search-results-count" role="status" aria-live="polite" aria-atomic="true">
         {#if total === 1}
           <span class="search-results-count-anchor">1 anchor</span>
-        {:else if summary?.mode === 'peek'}
+        {:else if (summary as any)?.mode === 'peek'}
           <span class="search-results-count-anchor">Anchor</span>
           <span class="search-results-count-divider" aria-hidden="true">·</span>
           <span class="search-results-count-hidden">{total - visibleCount} more</span>

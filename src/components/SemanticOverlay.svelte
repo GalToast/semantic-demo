@@ -21,10 +21,10 @@
 
   let { visible = false }: Props = $props();
 
-  let isFocused = $derived($hasFocus);
-  let surface = $derived($currentSurface);
-  let threadActive = $derived($threadInspectorActive);
-  let currentIdx = $derived($focusedIndex);
+  let isFocused = $derived(hasFocus());
+  let surface = $derived(currentSurface());
+  let threadActive = $derived(threadInspectorActive());
+  let currentIdx = $derived(focusedIndex());
 
   /** The overlay is active when in focus/inside mode or thread-inspect surface */
   let overlayActive = $derived(
@@ -77,7 +77,7 @@
       </div>
     {/if}
 
-    {#if !$isCompact}
+    {#if !isCompact()}
       <div class="overlay-hint">
         {#if overlayMode === 'manifold'}
           Semantic proximity active

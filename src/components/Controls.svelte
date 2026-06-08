@@ -3,9 +3,8 @@
 -->
 <script lang="ts">
   import { cameraState, setAutoRotate, startCameraTransition, resetCamera } from '@lib/stores/camera';
-  import { navState, isOverview } from '@lib/stores/navigation';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
-  import { viewport, isCompact } from '@lib/stores/viewport';
+  import { isCompact } from '@lib/stores/viewport';
 
   interface Props {
     visible?: boolean;
@@ -14,19 +13,19 @@
   let { visible = true }: Props = $props();
 
   function toggleAutoRotate(): void {
-    setAutoRotate(!$cameraState.autoRotate);
+    setAutoRotate(!cameraState.autoRotate);
   }
 
   function zoomIn(): void {
     startCameraTransition(
-      { position: $cameraState.position, target: $cameraState.target },
+      { position: cameraState.position, target: cameraState.target },
       300
     );
   }
 
   function zoomOut(): void {
     startCameraTransition(
-      { position: $cameraState.position, target: $cameraState.target },
+      { position: cameraState.position, target: cameraState.target },
       300
     );
   }
@@ -45,7 +44,7 @@
 {#if visible}
   <div
     class="controls"
-    class:compact={$isCompact}
+    class:compact={isCompact()}
     id="camera-controls"
     role="toolbar"
     aria-label="Camera controls"
@@ -77,11 +76,11 @@
 
     <button
       class="control-btn"
-      class:active={$cameraState.autoRotate}
+      class:active={cameraState.autoRotate}
       onclick={toggleAutoRotate}
       title="Toggle auto-rotate"
       aria-label="Toggle auto-rotate"
-      aria-pressed={$cameraState.autoRotate}
+      aria-pressed={cameraState.autoRotate}
     >
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 4a8 8 0 1 1-7.4 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>

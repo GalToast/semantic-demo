@@ -6,6 +6,7 @@ import { dirname, resolve } from 'path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const SRC_DIR = resolve(__dirname, 'src')
+const JS_DIR = resolve(__dirname, 'js')
 
 export default defineConfig({
   plugins: [svelte()],
@@ -18,8 +19,18 @@ export default defineConfig({
     alias: {
       '@': SRC_DIR,
       '@lib': resolve(SRC_DIR, 'lib'),
-      '@components': resolve(SRC_DIR, 'components')
-    }
+      '@components': resolve(SRC_DIR, 'components'),
+      // @legacy maps to the project root js/ directory so dynamic imports
+      // like import('@legacy/modules/view-controller.js') resolve correctly
+      // during unit tests.  The ambient type declaration in
+      // src/lib/types/legacy-modules.d.ts provides type safety.
+      '@legacy': JS_DIR
+    },
+    // Resolve .svelte.ts extension so stores like search.svelte.ts can be
+    // imported as @lib/stores/search without the explicit extension.
+    // Required because Vitest's import analysis does not use the Svelte
+    // plugin's built-in .svelte.ts resolution during static analysis.
+    extensions: ['.svelte.ts', '.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
   },
   test: {
     environment: 'jsdom',

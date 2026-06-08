@@ -67,17 +67,28 @@ export async function initEventListeners({
     // .svelte loader. In the browser, the islands mount here; the small
     // extra latency is unobservable because the user is still seeing
     // the loading overlay.
+    //
+    // Some island files may be intentionally absent (orphan slots deleted
+    // in prior sweeps). Those import paths are routed through a variable
+    // so esbuild doesn't try to statically resolve them at build time;
+    // the existing try/catch swallows the runtime failure and we still
+    // call any init hooks the successfully-loaded islands export.
     try {
+        const orphanResultsPath = './search-results-svelte-island.js';
+        const orphanDetailsPath = './selected-details-svelte-island.js';
+        const safeImport = async (path) => {
+            try { return await import(path); } catch { return null; }
+        };
         const [searchChrome, searchResults, selectedDetails, filterChrome] = await Promise.all([
             import('./search-chrome-island.js'),
-            import('./search-results-svelte-island.js'),
-            import('./selected-details-svelte-island.js'),
+            safeImport(orphanResultsPath),
+            safeImport(orphanDetailsPath),
             import('./filter-chrome-island.js')
         ]);
-        if (typeof searchChrome?.initSearchChromeSvelteIsland === 'function') searchChrome.initSearchChromeSvelteIsland();
-        if (typeof searchResults?.initSearchResultsSvelteIsland === 'function') searchResults.initSearchResultsSvelteIsland();
-        if (typeof selectedDetails?.initSelectedDetailsSvelteIsland === 'function') selectedDetails.initSelectedDetailsSvelteIsland();
-        if (typeof filterChrome?.initFilterChromeSvelteIsland === 'function') filterChrome.initFilterChromeSvelteIsland();
+        if (searchChrome && typeof searchChrome.initSearchChromeSvelteIsland === 'function') searchChrome.initSearchChromeSvelteIsland();
+        if (searchResults && typeof searchResults.initSearchResultsSvelteIsland === 'function') searchResults.initSearchResultsSvelteIsland();
+        if (selectedDetails && typeof selectedDetails.initSelectedDetailsSvelteIsland === 'function') selectedDetails.initSelectedDetailsSvelteIsland();
+        if (filterChrome && typeof filterChrome.initFilterChromeSvelteIsland === 'function') filterChrome.initFilterChromeSvelteIsland();
     } catch (e) {
         debugWarn('[event-bindings] failed to load svelte islands', e?.message);
     }

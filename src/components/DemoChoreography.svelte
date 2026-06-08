@@ -19,7 +19,7 @@
     DEMO_START_DELAY_MS,
     MAX_START_RETRIES
   } from '@lib/stores/demo';
-  import { businessRecords } from '@lib/data-store';
+  import { getBusinessRecords } from '@lib/stores';
   import type { DemoPhase } from '@lib/types/state';
 
   interface Props {
@@ -82,7 +82,7 @@
   }
 
   function attemptStart(remainingAttempts = MAX_START_RETRIES) {
-    const nodeIndex = findDemoNode($businessRecords);
+    const nodeIndex = findDemoNode(getBusinessRecords());
     if (nodeIndex === null) {
       if (remainingAttempts <= 0) {
         eligible = false;
@@ -110,13 +110,13 @@
 
   onDestroy(() => {
     cancelAllDemoTimers();
-    if ($isDemoActive) {
+    if (isDemoActive) {
       cancelDemo();
     }
   });
 </script>
 
-{#if eligible && $isDemoActive}
+{#if eligible && isDemoActive}
   <div
     class="demo-choreography"
     id="demo-choreography"

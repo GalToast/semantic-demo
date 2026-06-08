@@ -139,6 +139,7 @@ Watch for these recurring patterns in bugsweep reports:
 | "Refactoring a module drops functionality" | Unless exports changed and callers weren't updated, the functionality still exists | `git diff` the refactored module's export surface |
 | "Missing DOM elements cause all test failures" | Tests may fail for unrelated reasons (stale selectors, timing, pre-existing breakage) | Run tests independently against a known-good commit |
 | "The refactored files are the ONLY ones that changed" | Other changes in the same commit may affect behavior | `git show --stat` to see all modified files in the suspect commit |
+| "File X is orphan/dead code" | Import search can be spoofed by extensions and dynamic/delayed loading (`import()`), relative paths, or effect-only modules. A missing module can break startup; a false negative can break build or runtime | Exhaustively search for the filename across source, templates, and styles, then confirm the build still works before deleting |
 
 ## Why This Matters
 

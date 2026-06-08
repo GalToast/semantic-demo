@@ -1,5 +1,6 @@
 import { weatherStateStore } from './stores.js';
 import { compositionStore } from './stores.js';
+import { seededUnit } from './utils/seeded-random.js';
 
 let lightningTimer = null;
 let lightningGeneration = 0;
@@ -219,9 +220,9 @@ function createRain() {
     for (let i = 0; i < 80; i += 1) {
         const drop = document.createElement('div');
         drop.className = 'rain-drop';
-        drop.style.left = `${Math.random() * 100}%`;
-        drop.style.animationDuration = `${0.5 + Math.random() * 0.5}s`;
-        drop.style.animationDelay = `${Math.random() * 2}s`;
+        drop.style.left = `${seededUnit(i, 0xA111) * 100}%`;
+        drop.style.animationDuration = `${0.5 + seededUnit(i, 0xA112) * 0.5}s`;
+        drop.style.animationDelay = `${seededUnit(i, 0xA113) * 2}s`;
         container.appendChild(drop);
     }
 }
@@ -232,10 +233,10 @@ function createSnow() {
     for (let i = 0; i < 42; i += 1) {
         const flake = document.createElement('div');
         flake.className = 'snow-flake';
-        flake.style.left = `${Math.random() * 100}%`;
-        flake.style.animationDuration = `${3 + Math.random() * 4}s`;
-        flake.style.animationDelay = `${Math.random() * 5}s`;
-        flake.style.width = `${4 + Math.random() * 6}px`;
+        flake.style.left = `${seededUnit(i, 0xBEEF) * 100}%`;
+        flake.style.animationDuration = `${3 + seededUnit(i, 0xCAFE) * 4}s`;
+        flake.style.animationDelay = `${seededUnit(i, 0xDEAD) * 5}s`;
+        flake.style.width = `${4 + seededUnit(i, 0xF00D) * 6}px`;
         flake.style.height = flake.style.width;
         container.appendChild(flake);
     }
@@ -254,7 +255,7 @@ function scheduleLightning() {
             lightning.classList.add('flash');
             window.setTimeout(() => lightning.classList.remove('flash'), 200);
         }
-        if (generation === lightningGeneration) lightningTimer = window.setTimeout(flash, 5000 + Math.random() * 15000);
+        if (generation === lightningGeneration) lightningTimer = window.setTimeout(flash, 5000 + Math.random() * 15000); // intentionally non-deterministic — lightning should feel organic
     };
     lightningTimer = window.setTimeout(flash, 3000);
 }

@@ -10,12 +10,277 @@ import {
     searchErrorStore,
     searchVisibleCountStore
 } from './stores.js'
+import { formatBusinessName } from './utils/dom-formatters.js'
+import {
+    getSearchResultStrength,
+    getSearchResultStrengthLabel,
+    getSearchResultCardClasses,
+    buildSearchResultSnippet,
+    buildSearchRankLabel
+} from './search-result-renderer.js'
 
 function syncSearchResultsA11y(resultsEl) {
     if (!resultsEl) return;
     const hasContent = resultsEl.children.length > 0;
     resultsEl.setAttribute('aria-hidden', hasContent ? 'false' : 'true');
 }
+
+// ── Legacy DOM rendering ───────────────────────────────────────────────────
+//
+// renderSearchResultItems() historically pushed deduped results into Svelte
+// stores and relied on src/components/SearchResults.svelte to materialize
+// the rows. The canonical served shell (vector-explorer-polished.html) only
+// loads dist/bundle.js and never mounts that Svelte root, so the rows never
+// reached the DOM. We now also render the rows directly into #search-results
+// so the legacy shell is self-sufficient. Both paths run so the Svelte
+// future state keeps working when the focus track eventually wires up.
+
+let _lastLegacyRender = null;
+
+function clearLegacySearchResultsDom(resultsEl) {
+    if (!resultsEl) return;
+    if (resultsEl.dataset.legacyResultsSource === 'legacy') {
+        resultsEl.replaceChildren();
+    } else {
+        // Wipe any stale children that aren't ours so a11y + class state is
+        // honest before the next render pass.
+        const own = resultsEl.querySelectorAll('[data-legacy-search-results="1"]');
+        own.forEach((el) => el.remove());
+    }
+    resultsEl.dataset.legacyResultsSource = '';
+    resultsEl.removeAttribute('data-legacy-results-count');
+    resultsEl.removeAttribute('data-legacy-results-anchor');
+    resultsEl.removeAttribute('data-legacy-results-mode');
+}
+
+function buildCountLine({ total, visibleCount, mode }) {
+    const count = document.createElement('div');
+    count.id = 'search-results-count';
+    count.className = 'search-results-count';
+    count.setAttribute('role', 'status');
+    count.setAttribute('aria-live', 'polite');
+    count.setAttribute('aria-atomic', 'true');
+    if (total === 0) return count;
+    if (total === 1) {
+        const anchor = document.createElement('span');
+        anchor.className = 'search-results-count-anchor';
+        anchor.textContent = '1 anchor';
+        count.append(anchor);
+        return count;
+    }
+    if (mode === 'peek') {
+        const anchor = document.createElement('span');
+        anchor.className = 'search-results-count-anchor';
+        anchor.textContent = 'Anchor';
+        count.append(anchor);
+        const divider = document.createElement('span');
+        divider.className = 'search-results-count-divider';
+        divider.setAttribute('aria-hidden', 'true');
+        divider.textContent = '·';
+        count.append(divider);
+        const hidden = document.createElement('span');
+        hidden.className = 'search-results-count-hidden';
+        hidden.textContent = `${total - visibleCount} more`;
+        count.append(hidden);
+        return count;
+    }
+    if (visibleCount >= total) {
+        const all = document.createElement('span');
+        all.className = 'search-results-count-all';
+        all.textContent = `All ${total}`;
+        count.append(all);
+        const suffix = document.createElement('span');
+        suffix.className = 'search-results-count-suffix';
+        suffix.textContent = ' matches';
+        count.append(suffix);
+        return count;
+    }
+    const shown = document.createElement('span');
+    shown.className = 'search-results-count-shown';
+    shown.textContent = `${visibleCount} of ${total}`;
+    count.append(shown);
+    const divider = document.createElement('span');
+    divider.className = 'search-results-count-divider';
+    divider.setAttribute('aria-hidden', 'true');
+    divider.textContent = '·';
+    count.append(divider);
+    const hidden = document.createElement('span');
+    hidden.className = 'search-results-count-hidden';
+    hidden.textContent = `${total - visibleCount} behind`;
+    count.append(hidden);
+    return count;
+}
+
+function buildResultButton({ result, order, topScore, topIndex, anchorIndex, trimmedQuery }) {
+    const index = result.index;
+    const point = result.point || {};
+    const isAnchor = Number.isFinite(anchorIndex) && index === anchorIndex;
+    const classes = getSearchResultCardClasses(order, isAnchor);
+    const strength = getSearchResultStrength(result, topScore);
+    const strengthLabel = getSearchResultStrengthLabel(order, strength);
+    const rank = buildSearchRankLabel({ index, order, topIndex, anchorIndex });
+    const name = formatBusinessName(point.name) || 'Unnamed business';
+    const snippet = buildSearchResultSnippet(result) || '';
+    const context = point.city || '';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = classes;
+    button.dataset.index = String(index);
+    button.dataset.order = String(order);
+    button.dataset.strength = String(strength);
+    button.id = `search-result-${index}`;
+    button.tabIndex = 0;
+    button.setAttribute('aria-label', `Focus ${name}. ${rank}. ${snippet} ${context}.`);
+
+    const row = document.createElement('div');
+    row.className = 'search-result-row';
+
+    const eyebrow = document.createElement('div');
+    eyebrow.className = 'search-result-eyebrow';
+    const rankEl = document.createElement('span');
+    rankEl.className = 'search-result-rank';
+    rankEl.textContent = rank;
+    const strengthEl = document.createElement('span');
+    strengthEl.className = 'search-result-strength';
+    strengthEl.textContent = strengthLabel;
+    eyebrow.append(rankEl, strengthEl);
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'search-result-name';
+    if (trimmedQuery && name.toLowerCase().includes(trimmedQuery.toLowerCase())) {
+        const lower = name.toLowerCase();
+        const matchAt = lower.indexOf(trimmedQuery.toLowerCase());
+        if (matchAt > 0) nameEl.append(document.createTextNode(name.slice(0, matchAt)));
+        const mark = document.createElement('mark');
+        mark.className = 'search-result-match';
+        mark.textContent = name.slice(matchAt, matchAt + trimmedQuery.length);
+        nameEl.append(mark);
+        if (matchAt + trimmedQuery.length < name.length) {
+            nameEl.append(document.createTextNode(name.slice(matchAt + trimmedQuery.length)));
+        }
+    } else {
+        nameEl.textContent = name;
+    }
+
+    row.append(eyebrow, nameEl);
+    button.append(row);
+
+    if (snippet) {
+        const what = document.createElement('div');
+        what.className = 'search-result-what';
+        what.textContent = snippet;
+        button.append(what);
+    }
+    if (context) {
+        const ctx = document.createElement('div');
+        ctx.className = 'search-result-context';
+        ctx.textContent = context;
+        button.append(ctx);
+    }
+
+    const bar = document.createElement('div');
+    bar.className = 'search-result-bar';
+    const fill = document.createElement('span');
+    fill.style.width = `${strength}%`;
+    bar.append(fill);
+    button.append(bar);
+
+    return button;
+}
+
+function renderLegacySearchResultsDom({ resultsEl, dedupedResults, total, visibleCount, mode, renderContext }) {
+    if (!resultsEl) return;
+    if (!total) {
+        clearLegacySearchResultsDom(resultsEl);
+        return;
+    }
+    clearLegacySearchResultsDom(resultsEl);
+    const wrapper = document.createElement('div');
+    wrapper.dataset.legacySearchResults = '1';
+    wrapper.className = 'search-results-wrapper';
+
+    const trimmedQuery = renderContext?.trimmedQuery || '';
+    const topIndex = renderContext?.topIndex ?? null;
+    const anchorIndex = renderContext?.anchorIndex ?? null;
+    const topScore = renderContext?.topScore ?? null;
+
+    wrapper.append(buildCountLine({ total, visibleCount, mode }));
+
+    const list = document.createElement('div');
+    list.id = 'search-result-list';
+    list.className = 'search-result-list';
+    list.setAttribute('role', 'list');
+    list.setAttribute('aria-label', 'Search result businesses');
+
+    const slice = dedupedResults.slice(0, visibleCount);
+    slice.forEach((result, order) => {
+        if (!result || !Number.isFinite(result.index)) return;
+        const item = document.createElement('div');
+        item.className = 'search-result-listitem';
+        item.setAttribute('role', 'listitem');
+        const button = buildResultButton({
+            result,
+            order,
+            topScore,
+            topIndex,
+            anchorIndex,
+            trimmedQuery
+        });
+        item.append(button);
+        list.append(item);
+    });
+    wrapper.append(list);
+
+    if (total > visibleCount) {
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'search-show-more-btn';
+        more.dataset.legacyShowMore = '1';
+        more.setAttribute('aria-label', `Show ${total - visibleCount} more search results`);
+        more.setAttribute('aria-expanded', 'false');
+        more.setAttribute('aria-controls', 'search-result-list');
+        more.setAttribute('aria-describedby', 'search-results-count');
+        more.textContent = `Show ${total - visibleCount} more results`;
+        wrapper.append(more);
+    }
+
+    resultsEl.append(wrapper);
+    resultsEl.dataset.legacyResultsSource = 'legacy';
+    resultsEl.dataset.legacyResultsCount = String(total);
+    resultsEl.dataset.legacyResultsAnchor = String(anchorIndex ?? '');
+    resultsEl.dataset.legacyResultsMode = mode;
+    resultsEl.setAttribute('aria-describedby', 'search-results-count');
+    syncSearchResultsA11y(resultsEl);
+
+    // Cache for the show-more handler. The Svelte-side path does the same
+    // thing via sessionStorage; for the legacy shell we keep the data in
+    // module-local state so a click on the legacy "Show more" button can
+    // re-render without a network round-trip.
+    _lastLegacyRender = { dedupedResults, total, renderContext };
+}
+
+function handleLegacyShowMoreClick(event) {
+    const button = event.target.closest('[data-legacy-show-more="1"]');
+    if (!button || !_lastLegacyRender) return;
+    event.preventDefault();
+    const { dedupedResults, total, renderContext } = _lastLegacyRender;
+    const resultsEl = button.closest('#search-results');
+    if (!resultsEl) return;
+    try {
+        sessionStorage.setItem('searchVisibleCount', String(total));
+    } catch {}
+    searchVisibleCountStore.set(total);
+    renderLegacySearchResultsDom({
+        resultsEl,
+        dedupedResults,
+        total,
+        visibleCount: total,
+        mode: 'expanded',
+        renderContext
+    });
+}
+
 import {
     updateSearchTrailCue
 } from './ui-renderers.js'
@@ -24,7 +289,10 @@ import {
  * search-results-ui.js
  *
  * State management for the search results panel.
- * RENDERING: Fully owned by SearchResultsList.svelte via Svelte stores.
+ * RENDERING: legacy DOM is rendered directly into #search-results so the
+ * served shell (which never mounts the Svelte SearchResults root) still
+ * shows rows. Svelte stores are also updated so the future Svelte focus
+ * track can re-render the same data from the canonical source of truth.
  */
 
 export function setSearchPanelState(options = {}) {
@@ -61,6 +329,10 @@ export function renderSearchResultItems(resultsEl, results, renderContext, statu
         const searchContainer = resultsEl.closest?.('.search-container')
         if (searchContainer) searchContainer.classList.toggle('has-expanded-results', isExpanded)
         resultsEl.classList.add('active');
+        if (!resultsEl._legacyShowMoreBound) {
+            resultsEl.addEventListener('click', handleLegacyShowMoreClick);
+            resultsEl._legacyShowMoreBound = true;
+        }
     }
 
     // Push to Svelte stores
@@ -79,8 +351,20 @@ export function renderSearchResultItems(resultsEl, results, renderContext, statu
 
     if (resultsEl) {
         resultsEl.setAttribute('aria-describedby', 'search-results-count')
-        syncSearchResultsA11y(resultsEl)
     }
+
+    // Legacy DOM render so the served shell (which never mounts the Svelte
+    // SearchResults root) still shows result rows. Mirrors the structure
+    // expected by css/search.css, css/mobile_premium__chrome.css, and the
+    // bindSearchResultInteractions() selector.
+    renderLegacySearchResultsDom({
+        resultsEl,
+        dedupedResults,
+        total,
+        visibleCount,
+        mode,
+        renderContext
+    });
 
     if (state.currentSearchSummary) {
         state.currentSearchSummary.dedupedResultCount = total;
@@ -124,6 +408,7 @@ export function applySemanticSearchErrorState(resultsEl, statusEl, trimmedQuery,
     if (resultsEl) {
         resultsEl.classList.remove('is-searching-skeleton')
         resultsEl.setAttribute('aria-busy', 'false')
+        clearLegacySearchResultsDom(resultsEl)
     }
 
     if (!preservingSameQuery) {
@@ -169,6 +454,7 @@ export function clearSearchState(_resultsEl, _statusEl) {
         _resultsEl.classList.remove('searching')
         _resultsEl.classList.remove('is-searching-skeleton')
         _resultsEl.setAttribute('aria-busy', 'false')
+        clearLegacySearchResultsDom(_resultsEl)
         syncSearchResultsA11y(_resultsEl)
     }
     if (_statusEl) {
@@ -212,6 +498,7 @@ export function applyEmptySemanticSearchState(resultsEl, statusEl, trimmedQuery)
         resultsEl.classList.remove('searching');
         resultsEl.classList.remove('is-searching-skeleton');
         resultsEl.setAttribute('aria-busy', 'false');
+        clearLegacySearchResultsDom(resultsEl);
         syncSearchResultsA11y(resultsEl);
     }
     if (statusEl) {

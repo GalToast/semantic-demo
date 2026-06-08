@@ -2,41 +2,92 @@
   @components/ThreadInspector.svelte — Connection inspector
 -->
 <script lang="ts">
-  import { focusState, threadInspector, threadInspectorActive, clearThreadInspector } from '@lib/stores/focus';
-  import { viewport } from '@lib/stores/viewport';
-  import type { ThreadInspectorState } from '@lib/types/state';
+  import {
+    threadInspector,
+    threadInspectorActive,
+    clearThreadInspector,
+    pinThread,
+    unpinThread
+  } from '@lib/stores/focus.svelte';
 
   interface Props {
     visible?: boolean;
   }
 
   let { visible = false }: Props = $props();
+
+  function handlePin(index: number | null, pinnedIndex: number | null): void {
+    if (index === null || !Number.isFinite(index)) return;
+    if (pinnedIndex === index) unpinThread();
+    else pinThread(index);
+  }
+
+  function handleFollow(event: MouseEvent): void {
+    event.preventDefault();
+  }
 </script>
 
-{#if visible && $threadInspectorActive}
+{#if visible && threadInspectorActive()}
+  {@const inspector = threadInspector()}
+  {@const inspectedIndex = inspector.inspectedIndex}
+  {@const pinned = inspectedIndex !== null && inspector.pinnedIndex === inspectedIndex}
   <div
     class="thread-inspector"
     id="thread-inspector"
     aria-label="Thread connection inspector"
     role="complementary"
   >
-    <div class="inspector-header">
-      <span class="inspector-title">Connection Inspector</span>
-      <button class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector">&times;</button>
-    </div>
-    <div class="inspector-source-row">
-      <span class="inspector-source">Source: {$threadInspector.source}</span>
-    </div>
-    <div class="inspector-stats">
-      <span class="stat">Segments: {$threadInspector.segmentCount}</span>
-      <span class="stat">Braids: {$threadInspector.braidCount}</span>
-      <span class="stat">Endpoints: {$threadInspector.endpointCount}</span>
-    </div>
-    {#if $threadInspector.inspectedIndex !== null}
-      <div class="inspector-detail">
-        <span class="detail-label">Inspecting node #{$threadInspector.inspectedIndex}</span>
+    <section
+      class="focus-thread-inspector active"
+      id="focus-thread-inspector"
+      aria-labelledby="focus-thread-inspector-title"
+    >
+      <div class="inspector-header">
+        <span class="focus-thread-inspector-kicker">Connection Preview</span>
+        <button class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector">&times;</button>
       </div>
-    {/if}
+      <h2 id="focus-thread-inspector-title" class="focus-thread-inspector-title">
+        {inspectedIndex !== null ? `Node ${inspectedIndex} thread` : 'Connection Inspector'}
+      </h2>
+      <p id="focus-thread-inspector-copy" class="focus-thread-inspector-copy">
+        {inspectedIndex !== null
+          ? `Previewing the semantic connection from ${inspector.source || 'focus'} to node ${inspectedIndex}.`
+          : 'Preview why this nearby stop belongs in the current focus path.'}
+      </p>
+      <div id="focus-thread-inspector-meta" class="focus-thread-inspector-meta">
+        <span>{inspector.segmentCount} segments</span>
+        <span>{inspector.braidCount} braids</span>
+        <span>{inspector.endpointCount} endpoints</span>
+      </div>
+      <div class="focus-thread-inspector-actions" aria-label="Thread actions">
+        <button
+          id="btn-thread-pin"
+          type="button"
+          class="thread-action"
+          onclick={() => handlePin(inspectedIndex, inspector.pinnedIndex)}
+          disabled={inspectedIndex === null}
+        >
+          {pinned ? 'Unpin' : 'Pin'}
+        </button>
+        <button
+          id="btn-thread-follow"
+          type="button"
+          class="thread-action"
+          onclick={handleFollow}
+          disabled={inspectedIndex === null}
+        >
+          Follow
+        </button>
+        <button
+          id="btn-thread-clear"
+          type="button"
+          class="thread-action"
+          onclick={clearThreadInspector}
+        >
+          Clear
+        </button>
+      </div>
+    </section>
   </div>
 {/if}
 
@@ -54,17 +105,36 @@
     max-width: 260px;
     pointer-events: auto;
   }
+  .focus-thread-inspector {
+    display: grid;
+    gap: 0.45rem;
+  }
   .inspector-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.4rem;
   }
-  .inspector-title {
+  .focus-thread-inspector-kicker {
     font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 0.75rem;
+    font-size: 0.62rem;
     font-weight: 600;
+    letter-spacing: 0;
     color: #4ecdc4;
+    text-transform: uppercase;
+  }
+  .focus-thread-inspector-title {
+    margin: 0;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.84rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: #e0f0f0;
+  }
+  .focus-thread-inspector-copy {
+    margin: 0;
+    font-size: 0.68rem;
+    line-height: 1.35;
+    color: #b0d0d0;
   }
   .inspector-close {
     background: none;
@@ -79,29 +149,33 @@
   .inspector-close:hover {
     color: #e0f0f0;
   }
-  .inspector-source-row {
-    margin-bottom: 0.3rem;
-  }
-  .inspector-source {
+  .focus-thread-inspector-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 0.6rem;
     color: #6a8a8a;
   }
-  .inspector-stats {
-    display: flex;
-    gap: 0.75rem;
+  .focus-thread-inspector-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+    align-items: stretch;
+    max-height: 54px;
   }
-  .stat {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    color: #b0d0d0;
+  .thread-action {
+    min-height: 44px;
+    border: 1px solid rgba(78, 205, 196, 0.22);
+    border-radius: 0.35rem;
+    background: rgba(78, 205, 196, 0.08);
+    color: #e0f0f0;
+    font: 600 0.64rem/1 'Bricolage Grotesque', sans-serif;
+    cursor: pointer;
   }
-  .inspector-detail {
-    margin-top: 0.4rem;
-    padding-top: 0.3rem;
-    border-top: 1px solid rgba(78, 205, 196, 0.12);
-  }
-  .detail-label {
-    font-size: 0.6rem;
-    color: #4ecdc4;
+  .thread-action:disabled {
+    cursor: default;
+    color: #6a8a8a;
+    background: rgba(255, 255, 255, 0.04);
   }
 </style>

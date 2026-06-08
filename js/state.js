@@ -423,41 +423,28 @@ const _rawState = {
     deferredHydrationStarted: false
 };
 
-let _isMutating = false;
+// Re-export from the TypeScript module (src/lib/state/with-state-mutation.ts).
+export {
+  withStateMutation,
+  CRITICAL_KEYS_SET as CRITICAL_KEYS,
+  TRACKED_SUB_KEYS_SET as TRACKED_SUB_KEYS,
+} from '../src/lib/state/with-state-mutation.ts';
+// Local imports for use in proxy traps (re-exports don't create local bindings).
+import {
+  _isMutatingRef,
+  withStateMutation,
+  CRITICAL_KEYS_SET as CRITICAL_KEYS,
+  TRACKED_SUB_KEYS_SET as TRACKED_SUB_KEYS,
+} from '../src/lib/state/with-state-mutation.ts';
+
 let _devWarned = null;
 let _devProxyCache = null;
 let _prodProxyCache = null;
 let _devTrackingActive = false;
 
-export function withStateMutation(fn) {
-    const prev = _isMutating;
-    _isMutating = true;
-    try {
-        return fn();
-    } finally {
-        _isMutating = prev;
-    }
-}
 if (typeof window !== 'undefined') {
     window.withStateMutation = withStateMutation;
 }
-
-const CRITICAL_KEYS = new Set([
-    'currentView',
-    'navState',
-    'semanticLaneState',
-    'loadingPhaseKey',
-    'semanticThreadsStatus',
-    'rawPositionsBuffer',
-    'rawClustersBuffer'
-]);
-
-const TRACKED_SUB_KEYS = new Set([
-  'navState', 'strandContinuityState', 'focusOrbitSlackState',
-  'terrainHandoffState', 'routeExplorationState', 'routeChoreographyState',
-  'inspectedStrandDiagnostics', 'arrivalHandoffDiagnostics', 'routeTraceDiagnostics',
-  'scenePerformanceDiagnostics', 'semanticSearchCacheDiagnostics', 'activeFilters'
-]);
 
 // Helper: derive the top-level key from a dotted path (e.g., "state.navState" -> "navState",
 // "state.navState.focusPocketMeta" -> "navState") so the nested Proxy can check CRITICAL_KEYS.
@@ -485,7 +472,7 @@ function _makeProdProxy(obj, path) {
   const isCritical = CRITICAL_KEYS.has(topKey);
   const proxy = new Proxy(obj, {
     set(t, p, v, r) {
-      if (!_isMutating) {
+      if (!_isMutatingRef.value) {
         const k = path + '.' + String(p);
         if (isCritical) {
           // Critical parent: block non-mutating writes to prevent accidental
@@ -523,10 +510,10 @@ function _makeProdProxy(obj, path) {
 
 export const state = new Proxy(_rawState, {
   set(target, prop, value, receiver) {
-    if (CRITICAL_KEYS.has(prop) && !_isMutating) {
+    if (CRITICAL_KEYS.has(prop) && !_isMutatingRef.value) {
       throw new Error(`[State Error] Illegal direct mutation of critical property '${prop}'. You must use withStateMutation() to modify core state.`);
     }
-    if (TRACKED_SUB_KEYS.has(prop) && !_isMutating && _devWarned) {
+    if (TRACKED_SUB_KEYS.has(prop) && !_isMutatingRef.value && _devWarned) {
       const k = 'state.' + String(prop);
       if (!_devWarned.has(k)) {
         console.warn('[State Bypass] ' + k + ' — wholesale reassignment detected; use store .update()');

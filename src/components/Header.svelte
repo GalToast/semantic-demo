@@ -46,8 +46,8 @@
   ];
 
   function isActive(modeId: NavMode | 'map'): boolean {
-    if (modeId === 'map') return $currentSurface === 'map';
-    return $currentMode === modeId;
+    if (modeId === 'map') return currentSurface() === 'map';
+    return currentMode() === modeId;
   }
 
   function selectMode(modeId: NavMode | 'map'): void {
@@ -78,12 +78,12 @@
 {#if visible}
   <header
     class="app-header"
-    class:compact={$isCompact}
+    class:compact={isCompact()}
     id="app-header"
   >
     <div class="header-brand">
       <span class="brand-mark">SE</span>
-      {#if !$isCompact}
+      {#if !isCompact()}
         <span class="brand-label">Semantic Explorer</span>
       {/if}
     </div>
@@ -109,7 +109,7 @@
       {/each}
     </div>
 
-    {#if activeDescription && !$isCompact}
+    {#if activeDescription && !isCompact()}
       <span class="header-description">{activeDescription}</span>
     {/if}
   </header>
