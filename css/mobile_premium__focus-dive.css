@@ -1764,3 +1764,20 @@
         }
     }
 }
+
+/* Short-landscape (≤900px wide, ≤430px tall): suppress #btn-share-view
+   via its own ID-scoped rule so the share button is hidden without
+   inflating the .controls selector's specificity. Contract:
+   tests/mobile-chrome-ownership-contract.mjs. */
+@media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
+    body.is-active:is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
+        #btn-share-view {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+}
