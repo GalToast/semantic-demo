@@ -125,6 +125,7 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 ## UI Critic Operating Contract
 - Diagnose before editing: identify the owning surface, winning selector/state writer, and whether transitions, inline style, `!important`, media queries, or late imports control the bug.
 - For every UI fix, capture failing geometry before and passing geometry after; include overlap, clipping, stale hidden-layout elements, z-index/occlusion, and visible screenshot/snapshot evidence when composition matters.
+- When Codex or a worker lacks native vision/audio/generative media capability, NVIDIA NIM multimodal models may be used as a fallback for visual QA, screenshot critique, text-to-speech, image generation, or video generation. Verify the specific NIM model is present and callable before relying on it, and never record API keys in prompts, reports, docs, or memory.
 - Run browser-based tests headed. Static/non-browser checks may stay normal, but Playwright/Chromium tests must use headed mode.
 - Treat repeated narrow CSS fixes on the same surface as an ownership smell. Stop and define or update the layout contract instead of adding another selector.
 - Do not keep unproven CSS. If a rule does not change live computed geometry in DevTools or focused QA, remove it before handoff.
@@ -212,31 +213,32 @@ npm run check        # svelte-check + tsc
 | `src/lib/css/z-layers.css` | CSS custom properties mirroring z-index.ts |
 | `src/lib/utils/strand-continuity.ts` | Bug-fixed strand continuity with Map-based timer tracking |
 | `src/lib/engine/` | Imperative bridge to legacy Three.js engine (dynamic imports) |
-| `src/components/` | 21 skeleton Svelte components with typed props and TODO markers |
+| `src/components/` | Svelte component directory |
 
-### Component Status (src/components/)
+### Component Status (`src/components/`)
+Verified files on disk: 21 components. `JourneyCanvas.svelte` is retired/deleted and not included below.
 | File | Status | Lines | Ported from | Notes |
 |---|---|---|---|---|
-| `Canvas.svelte` | **Complete** | 108 | `three-engine.js` + `camera-controls.js` | Creates engine bridge, manages lifecycle |
-| `CompassRail.svelte` | **Complete** | 171 | `journey-compass-state.js`, `journey-compass-controller.js` | Full compass step rendering with animation SM |
-| `Controls.svelte` | **Complete** | 147 | — | Zoom, auto-rotate, reset, debug overlay |
+| `Canvas.svelte` | **Complete** | 130 | `three-engine.js` + `camera-controls.js` | Creates engine bridge, manages lifecycle |
+| `CompassRail.svelte` | **Complete** | 186 | `journey-compass-state.js`, `journey-compass-controller.js` | Full compass step rendering with animation SM |
+| `Controls.svelte` | **Complete** | 146 | — | Zoom, auto-rotate, reset, debug overlay |
 | `DemoChoreography.svelte` | **Complete** | 169 | `micro-demo.js` | Full demo orchestration with store-based SM |
-| `Filters.svelte` | **Complete** | 272 | `filter-state.js` | Status/signal/city filters, clear, count badge |
-| `FocusCard.svelte` | **Complete** | 368 | `journey-selected-card.js`, `ui-renderers.js` | Full business detail card with all contract IDs |
-| `FocusPocket.svelte` | **Complete** | 116 | `focus-pocket.js` | Self-populating constellation via applyLocalNeighborhoodFocus; renders pocket nodes + anchor indicator |
-| `Header.svelte` | **Complete** | 225 | `bindings/mode.js`, `ui-renderers.js` | Mode chips, app title, mode descriptions |
-| `InfoPanel.svelte` | **Complete** | 767 | `journey-selected-card.js`, `ui-renderers.js` | Full info panel with all contract DOM IDs |
-| `JourneyCanvas.svelte` | **Complete** | 123 | `journey-canvas-interaction.js`, `journey-webgl.js` | Engine bridge + journey interaction handling |
-| `JourneyChrome.svelte` | **Complete** | 762 | `journey-focus-ui.js`, `journey-compass-state.js`, `journey-compass-controller.js` | Full compass header, breadcrumb, trail controls, neighbor rail; rendered with `visible={false}` in App.svelte (gated by legacy shell) |
-| `Legend.svelte` | **Complete** | 202 | `legend-ui.js` | Cluster legend with color swatches, toggle |
-| `LoadingOverlay.svelte` | **Complete** | 222 | `loading-ui.js` | Phase chips, progress bar, fade transition |
-| `MapSummary.svelte` | **Complete** | 171 | `journey-route-trace.js`, `journey-neighborhood.js` | Mini-map trail with SVG rendering |
+| `Filters.svelte` | **Complete** | 275 | `filter-state.js` | Status/signal/city filters, clear, count badge |
+| `FocusCard.svelte` | **Complete** | 373 | `journey-selected-card.js`, `ui-renderers.js` | Full business detail card with all contract IDs |
+| `FocusPocket.svelte` | **Complete** | 117 | `focus-pocket.js` | Self-populating constellation via applyLocalNeighborhoodFocus; renders pocket nodes + anchor indicator |
+| `Header.svelte` | **Complete** | 229 | `bindings/mode.js`, `ui-renderers.js` | Mode chips, app title, mode descriptions |
+| `InfoPanel.svelte` | **Complete** | 764 | `journey-selected-card.js`, `ui-renderers.js` | Single-track (src/ only); full info panel with all contract DOM IDs |
+| `JourneyChrome.svelte` | **Complete** | 780 | `journey-focus-ui.js`, `journey-compass-state.js`, `journey-compass-controller.js` | Full compass header, breadcrumb, trail controls, neighbor rail; rendered with `visible={false}` in App.svelte (gated by legacy shell) |
+| `LegacyCompassSurface.svelte` | **Complete** | 333 | `journey-compass-controller.js`, `semantic-dive-ui.js` | Legacy-compatible journey compass and focus-dive DOM IDs rendered in Svelte |
+| `Legend.svelte` | **Complete** | 196 | `legend-ui.js` | Cluster legend with color swatches, toggle |
+| `LoadingOverlay.svelte` | **Complete** | 214 | `loading-ui.js` | Phase chips, progress bar, fade transition |
+| `MapSummary.svelte` | **Complete** | 170 | `journey-route-trace.js`, `journey-neighborhood.js` | Mini-map trail with SVG rendering |
 | `ModeChips.svelte` | **Complete** | 134 | `bindings/mode.js` | Mode selection buttons with descriptions |
-| `SearchBar.svelte` | **Complete** | 83 | — | Composes SearchInput + SearchResults |
-| `SearchInput.svelte` | **Complete** | *(inferred)* | `search-state.js` | Input with debounce, clear, keyboard handling |
-| `SearchResults.svelte` | **Complete** | *(inferred)* | `search-results-ui.js` | Results list, empty state, pagination |
+| `SearchBar.svelte` | **Complete** | 82 | — | Composes SearchInput + SearchResults |
+| `SearchInput.svelte` | **Complete** | 323 | `search-state.js` | Input with debounce, clear, keyboard handling |
+| `SearchResults.svelte` | **Complete** | 516 | `search-results-ui.js` | Results list, empty state, pagination |
 | `SemanticOverlay.svelte` | **Complete** | 148 | `journey-semantic-overlay.js`, `three-interaction-visuals.js` | Manifold/lens visibility + WebGL delegation |
-| `ThreadInspector.svelte` | **Partial** | 107 | `thread-inspector.js` | Basic overlay UI, no WebGL line integration |
+| `ThreadInspector.svelte` | **Complete** | 181 | `thread-inspector.js` | Overlay UI with WebGL line integration |
 | `WeatherWidget.svelte` | **Complete** | 177 | `weather-widget.js` | Weather fetch, display, icons, forecast |
 
 ### Dev Server Behavior
@@ -255,7 +257,7 @@ All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` 
 3. **Imperative-only bridge** — `@lib/engine/bridge.ts` calls legacy functions directly. No reactive state, no Three.js types in the bridge.
 4. **CSS coexistence** — body `data-*` attributes are synced from stores via `$effect()` blocks in `App.svelte`, enabling legacy CSS to style Svelte components during phased migration.
 5. **Bugs fixed in transit** — known bugs are resolved as code is ported to Svelte/TS, not patched in-place in the legacy tree.
-6. **When both tracks (islands + src/) render the same component, the src/ version is canonical. Islands are migration targets; src/ is the future state.**
+6. **The src/ Svelte track is canonical.** The legacy islands track (`selected-details-svelte-island`, `search-results-svelte-island`, `island-mount-helper`) was deleted in the m3 sweep on 2026-06-07. All rendering now flows through `src/components/`.
 
 ### Bugsweep Findings (fix during migration, not separately)
 **JS HIGH:** ~~strand-continuity timer-ID drop (verified fixed via `_trackedTextures` + `disposeTextures()`); three-interaction-visuals un-cleaned listeners (verified partially fixed at lines 168-177; three-lifecycle worker to dispose `anchorBloomLight` in same module); state.js Proxy bypass (confirmed at state.js:460-497 sub-object mutation gap; state-proxy worker fixing nested-Proxy return from `get()`); three-node-manager texture leak (verified fixed via `_trackedTextures` + `disposeTextures()`).~~ **RESOLVED:** all 4 items fixed — strand-continuity Map-based, three-interaction-visuals fully disposed, state.js nested Proxy at state.js:530-531, three-node-manager textures tracked.
@@ -268,7 +270,7 @@ All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` 
 - Dev server runs: `npm run dev:svelte` → `https://localhost:5173/`
 - `svelte-check`: 0 errors in `src/` code (50 errors are all in legacy `js/modules/*.ts` — out of scope for scaffold)
 - **Islands track:** 12/12 complete (all `js/modules/components/` mounted via helpers)
-- **src/ scaffold:** 19/21 complete, 1 partial (ThreadInspector), 1 stub (MapSummary)
+- **src/ scaffold:** 21/21 complete
 - **Stores+types+orchestration:** 12/12 stores, 4/4 types, 4/4 orchestration, engine/bridge.ts 1212 lines
-- **Architecture risk:** InfoPanel in BOTH tracks (72L island vs 767L src/) — needs dedup
+- **Architecture state:** InfoPanel is single-track (src/ only — 767L). The legacy islands (`selected-details-svelte-island.{ts,js}`, `search-results-svelte-island.{ts,js}`, `island-mount-helper.{ts,js}`) are 100% orphan (zero live references) and were deleted in the m3 sweep on 2026-06-07
 - `docs/migration-plan.md` — being written by migration-architect worker
