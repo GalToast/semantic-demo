@@ -1,5 +1,5 @@
 // js/modules/semantic-threads.js — semantic thread artifact loading
-import { state } from '../state.js';
+import { state, withStateMutation } from '../state.js';
 import { updateSemanticThreadsStatus } from './state-mutators.js';
 import { normalizeRelationshipRole } from './relationship-roles.js';
 import { recordSemanticLaneSnapshot } from './semantic-lane.js';
@@ -102,9 +102,11 @@ function _validateSemanticSpaceLayoutManifest(manifest, bundle, artifactName) {
 async function _guardSemanticSpaceLayout(bundle, artifactName, cacheBust) {
     const manifest = await _loadSemanticSpaceLayoutManifest(cacheBust);
     const summary = _validateSemanticSpaceLayoutManifest(manifest, bundle, artifactName);
-    state.semanticSpaceLayoutManifest = manifest;
-    state.semanticSpaceLayoutStatus = 'ready';
-    state.semanticSpaceLayoutError = null;
+    withStateMutation(() => {
+        state.semanticSpaceLayoutManifest = manifest;
+        state.semanticSpaceLayoutStatus = 'ready';
+        state.semanticSpaceLayoutError = null;
+    });
     _recordSemanticLaneSnapshot({
         semantic_space_layout_status: 'ready',
         semantic_space_layout_rows: summary.rows,
@@ -155,7 +157,9 @@ function _cleanOptionalValue(value) {
 }
 
 function _buildSemanticNeighborMap(bundle) {
-    state.semanticNeighborMapByLeadId = new Map();
+    withStateMutation(() => {
+        state.semanticNeighborMapByLeadId = new Map();
+    });
     if (!bundle?.nodes || typeof bundle.nodes !== 'object') return;
 
     Object.entries(bundle.nodes).forEach(([fallbackLeadId, node]) => {
@@ -218,16 +222,20 @@ function _recordSemanticLaneSnapshot(partial = {}) {
 function _refreshFocusedSemanticState() {}
 
 function _clearSemanticThreadsRetryTimer() {
-    if (state.semanticThreadsRetryTimer) {
-        window.clearTimeout(state.semanticThreadsRetryTimer);
-        state.semanticThreadsRetryTimer = null;
-    }
+    withStateMutation(() => {
+        if (state.semanticThreadsRetryTimer) {
+            window.clearTimeout(state.semanticThreadsRetryTimer);
+            state.semanticThreadsRetryTimer = null;
+        }
+    });
 }
 
 function _scheduleSemanticThreadsRetry(reason = 'artifact-retry') {
     if (state.semanticThreadsStatus === 'ready' || state.semanticThreadsLoadPromise || state.semanticThreadsRetryTimer) return;
     if (typeof state.semanticThreadsRetryAttempt !== 'number') {
-        state.semanticThreadsRetryAttempt = 0;
+        withStateMutation(() => {
+            state.semanticThreadsRetryAttempt = 0;
+        });
     }
     const MAX_RETRIES = 5;
     if (state.semanticThreadsRetryAttempt >= MAX_RETRIES) {
@@ -236,18 +244,22 @@ function _scheduleSemanticThreadsRetry(reason = 'artifact-retry') {
         return;
     }
     const delayMs = SEMANTIC_THREAD_RETRY_DELAYS_MS[Math.min(Number.isFinite(state.semanticThreadsRetryAttempt) ? state.semanticThreadsRetryAttempt : 0, SEMANTIC_THREAD_RETRY_DELAYS_MS.length - 1)] || 15000;
-    state.semanticThreadsRetryAttempt += 1;
     _recordSemanticLaneSnapshot({
         thread_retry_source: reason,
-        thread_retry_count: state.semanticThreadsRetryAttempt,
+        thread_retry_count: state.semanticThreadsRetryAttempt + 1,
         thread_retry_wait_until: new Date(Date.now() + delayMs).toISOString(),
     });
-    state.semanticThreadsRetryTimer = window.setTimeout(() => {
-        state.semanticThreadsRetryTimer = null;
-        loadSemanticThreads({ reason }).catch(err => {
-            debugWarn('loadSemanticThreads retry failed:', err);
-        });
-    }, delayMs);
+    withStateMutation(() => {
+        state.semanticThreadsRetryAttempt += 1;
+        state.semanticThreadsRetryTimer = window.setTimeout(() => {
+            withStateMutation(() => {
+                state.semanticThreadsRetryTimer = null;
+            });
+            loadSemanticThreads({ reason }).catch(err => {
+                debugWarn('loadSemanticThreads retry failed:', err);
+            });
+        }, delayMs);
+    });
 }
 
 /**
@@ -279,9 +291,11 @@ export async function loadSemanticThreads(options = {}) {
                 try {
                     const { neighborEntries, artifactName, bundle } = await callWorker('LOAD_THREADS', { urls: requestUrls, attemptConfigs });
                     await _guardSemanticSpaceLayout(bundle, artifactName, cacheBust);
-                    state.semanticThreadBundle = bundle;
-                    state.semanticThreadArtifactName = artifactName;
-                    state.semanticNeighborMapByLeadId = new Map(_normalizeSemanticNeighborEntries(neighborEntries));
+                    withStateMutation(() => {
+                        state.semanticThreadBundle = bundle;
+                        state.semanticThreadArtifactName = artifactName;
+                        state.semanticNeighborMapByLeadId = new Map(_normalizeSemanticNeighborEntries(neighborEntries));
+                    });
                     finalizeThreadLoad();
                     return true;
                 } catch (err) {
@@ -316,20 +330,24 @@ export async function loadSemanticThreads(options = {}) {
 
             if (!bundle) throw lastError || new Error('semantic thread artifact unavailable');
 
-            state.semanticThreadBundle = bundle;
-            state.semanticThreadArtifactName = loadedArtifactName;
+            withStateMutation(() => {
+                state.semanticThreadBundle = bundle;
+                state.semanticThreadArtifactName = loadedArtifactName;
+            });
             await _guardSemanticSpaceLayout(bundle, loadedArtifactName, cacheBust);
             _buildSemanticNeighborMap(bundle);
             finalizeThreadLoad();
             return state.semanticNeighborMapByLeadId.size > 0;
         } catch (error) {
             console.warn('Failed to load semantic thread artifact; using geometric fallback.', error);
-            state.semanticThreadBundle = null;
-            state.semanticThreadArtifactName = null;
-            state.semanticSpaceLayoutManifest = null;
-            state.semanticSpaceLayoutStatus = 'failed';
-            state.semanticSpaceLayoutError = error?.message || String(error);
-            state.semanticNeighborMapByLeadId = new Map();
+            withStateMutation(() => {
+                state.semanticThreadBundle = null;
+                state.semanticThreadArtifactName = null;
+                state.semanticSpaceLayoutManifest = null;
+                state.semanticSpaceLayoutStatus = 'failed';
+                state.semanticSpaceLayoutError = error?.message || String(error);
+                state.semanticNeighborMapByLeadId = new Map();
+            });
             updateSemanticThreadsStatus('failed');
             state.semanticThreadsLoadPromise = null;
             _recordSemanticLaneSnapshot({
@@ -357,7 +375,6 @@ function finalizeThreadLoad() {
         });
     }
     updateSemanticThreadsStatus(state.semanticNeighborMapByLeadId.size > 0 ? 'ready' : 'failed');
-    state.semanticThreadsRetryAttempt = state.semanticThreadsStatus === 'ready' ? 0 : state.semanticThreadsRetryAttempt;
     _recordSemanticLaneSnapshot({
         thread_artifact_status: state.semanticThreadsStatus,
         thread_artifact_name: state.semanticThreadArtifactName,
@@ -367,8 +384,14 @@ function finalizeThreadLoad() {
         thread_retry_wait_until: null,
     });
     if (state.semanticThreadsStatus !== 'ready') {
-        state.semanticThreadsLoadPromise = null;
+        withStateMutation(() => {
+            state.semanticThreadsLoadPromise = null;
+        });
         _scheduleSemanticThreadsRetry('empty-artifact');
+    } else {
+        withStateMutation(() => {
+            state.semanticThreadsRetryAttempt = 0;
+        });
     }
     _refreshFocusedSemanticState();
 }
