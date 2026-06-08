@@ -1,8 +1,8 @@
 ---
-name: Global Product Quality Sweep
+name: GLOBAL_PRODUCT_QUALITY_SWEEP
 description: Systematic cross-layer audit for Unicode handling, encoding integrity, normalization consistency, and localization readiness in web applications with search, caching, and data ingestion pipelines.
 source: auto-skill
-extracted_at: '2026-06-06T23:15:55.000Z'
+extracted_at: '2026-06-08T06:08:06.000Z'
 ---
 
 # Global Product Quality Sweep — Unicode, Encoding, Normalization, i18n Audit

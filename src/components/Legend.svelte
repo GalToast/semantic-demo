@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { businessRecords } from '@lib/data-store';
+  import { getBusinessRecords } from '@lib/stores';
   import { hasActiveFilters, activeClusterFilter, setClusterFilter } from '@lib/stores/filter';
 
   interface Props {
@@ -41,7 +41,7 @@
   }
 
   let clusterEntries: ClusterEntry[] = $derived.by(() => {
-    const records = $businessRecords;
+    const records = getBusinessRecords();
     if (!records.length) {
       return CLUSTER_NAMES.map((name, i) => ({
         index: i,

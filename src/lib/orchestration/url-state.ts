@@ -10,8 +10,16 @@
 
 import { get } from 'svelte/store';
 import { navStore, bumpUrlStateRestoreToken } from '@lib/stores/navigation';
-import type { ViewName } from '@lib/types/state';
+import type { NavState, ViewName } from '@lib/types/state';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
+
+/**
+ * NavState extended with the legacy `activeStoryPrompt` field that lives in
+ * the runtime state object but is not (yet) declared in the canonical
+ * NavState interface in types/state.ts.  Remove this augmentation once the
+ * upstream type is updated.
+ */
+type NavStateWithStory = NavState & { activeStoryPrompt?: string | null };
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -208,7 +216,7 @@ export function updateUrlState(
 ): void {
   if (typeof window === 'undefined' || !window.location || !window.history) return;
 
-  const $nav = get(navStore);
+  const $nav = get(navStore) as NavStateWithStory;
   if ($nav.applyingUrlState && !options.force) return;
   if ($nav.restoringBrowserHistory) return;
 

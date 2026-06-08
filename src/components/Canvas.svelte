@@ -57,15 +57,15 @@
     try {
       bridge = createEngineBridge(callbacks);
       await bridge.init(canvasEl);
-      bridge.resize($viewportWidth, $viewportHeight);
+      bridge.resize(viewportWidth(), viewportHeight());
     } catch (err) {
       console.error('[Canvas] Engine init failed:', err);
     }
   });
 
   $effect(() => {
-    const w = $viewportWidth;
-    const h = $viewportHeight;
+    const w = viewportWidth();
+    const h = viewportHeight();
     if (bridge?.isReady()) {
       bridge.resize(w, h);
     }
@@ -97,8 +97,8 @@
     <canvas
       bind:this={canvasEl}
       class="semantic-canvas"
-      width={$viewportWidth * $dpr}
-      height={$viewportHeight * $dpr}
+      width={viewportWidth() * dpr()}
+      height={viewportHeight() * dpr()}
       role="application"
       aria-label="3D semantic business explorer"
       tabindex={interactive ? 0 : -1}

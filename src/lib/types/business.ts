@@ -23,6 +23,7 @@ export interface BusinessRecord {
   website: string | null;
   email: string | null;
   phone: string | null;
+  trivia?: string | null;
   lat: number | null;
   lng: number | null;
   geocoded: boolean;

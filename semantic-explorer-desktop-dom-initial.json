@@ -1,0 +1,13 @@
+{
+  "url": "http://localhost:5174/?nodemo=1",
+  "title": "Semantic Explorer | MoCo Business Mycelium",
+  "bodyAttrs": {
+    "data-panel-surface": "idle",
+    "data-journey-phase": "idle"
+  },
+  "inputs": [],
+  "buttons": [],
+  "panels": [],
+  "canvas": [],
+  "errors": null
+}

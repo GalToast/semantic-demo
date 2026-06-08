@@ -34,10 +34,8 @@
 // ── Store Imports (re-exported for consumers) ─────────────────────────────────
 
 import { get } from 'svelte/store';
-import {
-  navStore,
-  type NavStoreState
-} from '@lib/stores/navigation';
+import { navStore } from '@lib/stores/navigation';
+import type { NavState } from '@lib/types/state';
 import { journeyStore } from '@lib/stores/journey';
 import { focusStore } from '@lib/stores/focus';
 import { searchStore } from '@lib/stores/search';
@@ -156,8 +154,12 @@ export interface ParityAttributeMap {
   readonly [key: string]: string | null;
 }
 
-/** Unwrap helper: extract the value type from a Svelte store. */
-type Unwrap<T> = T extends { subscribe: (cb: (val: infer V) => unknown) => unknown } ? V : T;
+/** Unwrap helper: extract the value type from a Svelte store, function store, or plain $state value. */
+type Unwrap<T> = T extends (...args: never[]) => infer V
+  ? V
+  : T extends { subscribe: (cb: (val: infer V) => unknown) => unknown }
+    ? V
+    : T;
 
 type JourneyValue = Unwrap<typeof journeyStore>;
 type FocusValue = Unwrap<typeof focusStore>;
@@ -167,7 +169,7 @@ type ViewportValue = Unwrap<typeof viewport>;
 type CameraValue = Unwrap<typeof cameraStore>;
 
 export function computeParityAttributes(
-  nav: NavStoreState,
+  nav: NavState,
   journey: JourneyValue,
   focus: FocusValue,
   search: SearchValue,
@@ -176,7 +178,7 @@ export function computeParityAttributes(
   loadingPhaseValue: LoadingPhase = 'launch',
   demoPhaseValue: string = 'IDLE',
   graphicsModeValue: string = 'webgl',
-  camera: CameraValue = get(cameraStore)
+  camera: CameraValue = cameraStore as CameraValue
 ): ParityAttributeMap {
   const compassState = getJourneyCompassState();
   const presentation: CompassPresentationState = getJourneyCompassPresentationState(compassState);
@@ -346,16 +348,16 @@ export function installParityAttributeSync(
 
   const recomputeAndApply = (): void => {
     const map = computeParityAttributes(
-      get(navStore),
-      get(journeyStore),
-      get(focusStore),
-      get(searchStore),
+      navStore(),
+      journeyStore(),
+      focusStore(),
+      searchStore,
       get(filterState),
-      get(viewport),
+      viewport(),
       get(loadingPhaseStore),
       get(demoPhaseStore),
       get(graphicsModeStore),
-      get(cameraStore)
+      cameraStore
     );
 
     // Cheap short-circuit: same JSON snapshot means no DOM changes needed.
@@ -366,16 +368,17 @@ export function installParityAttributeSync(
     applyParityAttributes(map);
   };
 
+  // Standard svelte stores (Writable/Readable) — reactive via .subscribe()
   unsubs.push(navStore.subscribe(recomputeAndApply));
   unsubs.push(journeyStore.subscribe(recomputeAndApply));
   unsubs.push(focusStore.subscribe(recomputeAndApply));
   unsubs.push(searchStore.subscribe(recomputeAndApply));
   unsubs.push(filterState.subscribe(recomputeAndApply));
-  unsubs.push(viewport.subscribe(recomputeAndApply));
-  unsubs.push(cameraStore.subscribe(recomputeAndApply));
   unsubs.push(loadingPhaseStore.subscribe(recomputeAndApply));
   unsubs.push(demoPhaseStore.subscribe(recomputeAndApply));
   unsubs.push(graphicsModeStore.subscribe(recomputeAndApply));
+  // Rune-based stores — read imperatively; not subscribable from plain .ts.
+  // The .svelte.ts sibling uses $effect.root() for full reactivity.
 
   if (initialSync) {
     recomputeAndApply();

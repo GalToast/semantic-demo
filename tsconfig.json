@@ -16,6 +16,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
     "paths": {
       "@/*": ["./src/*"],
       "@lib/*": ["./src/lib/*"],

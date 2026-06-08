@@ -14,11 +14,11 @@
       hover preview, next-stop badge, and relationship labels
 -->
 <script lang="ts">
-  import { navState, hasFocus, focusedIndex, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
+  import { hasFocus, focusedIndex, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
   import { walkHistoryIndices, threadCandidates, trailDepth, journeyPhase, threadSource } from '@lib/stores/journey';
   import { buildCompassStatus, JOURNEY_ACTIONS } from '@lib/stores/compass';
-  import { threadInspector, threadInspectorActive, clearThreadInspector, pinThread, updateThreadInspector } from '@lib/stores/focus';
-  import { businessRecords, selectedPointStore } from '@lib/stores';
+  import { threadInspectorActive, clearThreadInspector, pinThread, updateThreadInspector } from '@lib/stores/focus';
+  import { getBusinessRecords, selectedPointStore } from '@lib/stores';
   import { isCompact, isMobile, isCompactLandscape, isUltraCompactPortrait } from '@lib/stores/viewport';
   import { searchSummary, isSearching } from '@lib/stores/search';
   import type { BusinessRecord } from '@lib/types/business';
@@ -33,18 +33,18 @@
   let hoverTimer: ReturnType<typeof setTimeout> | null = $state(null);
   let inspectedIndex = $state<number | null>(null);
 
-  const currentPoint = $derived($selectedPointStore);
+  const currentPoint = $derived(selectedPointStore());
   const currentName = $derived(currentPoint?.name ?? '');
 
   // ── Walk breadcrumb ────────────────────────────────────────────────────────
 
   const dedupedWalkHistory = $derived.by(() => {
-    const indices = $walkHistoryIndices;
+    const indices = walkHistoryIndices();
     const seen = new Set<number>();
     const result: number[] = [];
     for (const idx of indices) {
       if (!Number.isFinite(idx)) continue;
-      if (idx === $focusedIndex && result.length > 0 && result[result.length - 1] === idx) {
+      if (idx === focusedIndex() && result.length > 0 && result[result.length - 1] === idx) {
         continue;
       }
       if (seen.has(idx)) {
@@ -60,42 +60,42 @@
   });
 
   const showBreadcrumb = $derived(
-    $hasFocus && $walkHistoryIndices.length > 1
+    hasFocus() && walkHistoryIndices().length > 1
   );
 
   function walkToBreadcrumbIndex(targetIndex: number, targetOrder: number): void {
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_THREAD, {
-      index: targetIndex,
-      skipHistory: false
+      index: targetIndex
     });
   }
 
   // ── Trail controls ────────────────────────────────────────────────────────
 
-  const canGoBack = $derived($walkHistoryIndices.length > 1);
-  const neighborCount = $derived($threadCandidates.length);
+  const canGoBack = $derived(walkHistoryIndices().length > 1);
+  const neighborCount = $derived(threadCandidates().length);
   const hasNext = $derived(neighborCount > 0);
 
   const trailContextText = $derived.by(() => {
-    if (!$hasFocus || !currentPoint) return '';
+    if (!hasFocus() || !currentPoint) return '';
     const name = currentPoint?.name || 'this business';
-    const walkLen = $walkHistoryIndices.length;
-    const lastReason = ($focusedIndex !== null && $focusedIndex >= 0 && $focusedIndex < $businessRecords.length)
-      ? ($businessRecords[$focusedIndex] as BusinessRecord)?.name ?? ''
+    const walkLen = walkHistoryIndices().length;
+    const focusIdx = focusedIndex();
+    const lastReason = (focusIdx !== null && focusIdx >= 0 && focusIdx < getBusinessRecords().length)
+      ? (getBusinessRecords()[focusIdx] as BusinessRecord)?.name ?? ''
       : '';
-    if ($trailDepth >= 1 && walkLen >= 1) {
-      return `Stop ${walkLen + 1}: ${name}. ${lastReason ? `Source: ${$threadSource}` : ''}`;
+    if (trailDepth() >= 1 && walkLen >= 1) {
+      return `Stop ${walkLen + 1}: ${name}. ${lastReason ? `Source: ${threadSource()}` : ''}`;
     }
-    if (neighborCount === 0 && $threadSource === 'semantic') {
+    if (neighborCount === 0 && threadSource() === 'semantic') {
       return `Semantic connections exist around ${name}, but none survive the current slice.`;
     }
     return `${neighborCount} candidate steps around ${name}.`;
   });
 
   const progressText = $derived.by(() => {
-    if (!$hasFocus) return 'Pick a business, then explore its nearby neighbors.';
-    if ($trailDepth >= 1 && $walkHistoryIndices.length >= 0) {
-      return `Stop ${$walkHistoryIndices.length + 1} of ${neighborCount}`;
+    if (!hasFocus()) return 'Pick a business, then explore its nearby neighbors.';
+    if (trailDepth() >= 1 && walkHistoryIndices().length >= 0) {
+      return `Stop ${walkHistoryIndices().length + 1} of ${neighborCount}`;
     }
     return neighborCount
       ? `${neighborCount} nearby ready`
@@ -103,16 +103,16 @@
   });
 
   const nextStopName = $derived.by(() => {
-    if (!$hasFocus || neighborCount === 0) return null;
-    const first = $threadCandidates[0];
+    if (!hasFocus() || neighborCount === 0) return null;
+    const first = threadCandidates()[0];
     if (first == null || !Number.isFinite(first)) return null;
-    const pt = $businessRecords[first];
+    const pt = getBusinessRecords()[first];
     return pt?.name ?? null;
   });
 
   function goPrev(): void {
-    if (!$hasFocus || !canGoBack) return;
-    const history = $walkHistoryIndices;
+    if (!hasFocus() || !canGoBack) return;
+    const history = walkHistoryIndices();
     if (history.length <= 1) return;
     const prevIdx = history[history.length - 2];
     if (!Number.isFinite(prevIdx)) return;
@@ -120,8 +120,8 @@
   }
 
   function goNext(): void {
-    if (!$hasFocus || !hasNext) return;
-    const first = $threadCandidates[0];
+    if (!hasFocus() || !hasNext) return;
+    const first = threadCandidates()[0];
     if (first == null || !Number.isFinite(first)) return;
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, { index: first });
   }
@@ -129,29 +129,29 @@
   // ── Neighbor rail ─────────────────────────────────────────────────────────
 
   const candidateLimit = $derived.by(() => {
-    if ($isCompact && !$isUltraCompactPortrait) return 1;
-    if ($isCompactLandscape || $isUltraCompactPortrait) return 2;
-    if ($isMobile && $isCompact) return 4;
+    if (isCompact() && !isUltraCompactPortrait()) return 1;
+    if (isCompactLandscape() || isUltraCompactPortrait()) return 2;
+    if (isMobile() && isCompact()) return 4;
     return 5;
   });
 
   const filteredCandidates = $derived.by(() => {
-    const candidates = $threadCandidates;
-    const focusIdx = $focusedIndex;
+    const candidates = threadCandidates();
+    const focusIdx = focusedIndex();
     return candidates
       .filter((c) => c != null && Number.isFinite(c) && c !== focusIdx)
       .slice(0, candidateLimit);
   });
 
   const showNeighborRail = $derived(
-    $hasFocus &&
+    hasFocus() &&
     filteredCandidates.length > 0 &&
-    !$threadInspectorActive
+    !threadInspectorActive()
   );
 
   function getPointForIndex(idx: number): BusinessRecord | null {
-    if (idx < 0 || idx >= $businessRecords.length) return null;
-    return ($businessRecords[idx] as BusinessRecord | undefined) ?? null;
+    if (idx < 0 || idx >= getBusinessRecords().length) return null;
+    return (getBusinessRecords()[idx] as BusinessRecord | undefined) ?? null;
   }
 
   function scheduleInspection(idx: number): void {
@@ -215,13 +215,13 @@
   // ── Compass status header ─────────────────────────────────────────────────
 
   const compassStatus = $derived.by(() => {
-    const summary = $searchSummary as ({ query?: string; anchorIndex?: number | null; resultCount?: number } | null);
+    const summary = searchSummary() as ({ query?: string; anchorIndex?: number | null; resultCount?: number } | null);
     const summaryRec = summary as Record<string, unknown> | null;
     const queryLabel = summaryRec?.query ? `"${String(summaryRec.query)}"` : 'semantic search';
-    const isFocus = $hasFocus;
-    const journeyPh = $journeyPhase;
+    const isFocus = hasFocus();
+    const journeyPh = journeyPhase();
     const insideActive = journeyPh === 'inside' && isFocus;
-    const walkLen = $walkHistoryIndices.length;
+    const walkLen = walkHistoryIndices().length;
 
     const currentPtName = currentPoint?.name || 'this business';
     const clusterNames = ['Food & Dining', 'Professional Services', 'Retail & Shopping', 'Health & Medical', 'Other'];
@@ -232,7 +232,7 @@
       currentView: 'galaxy',
       focusedName: currentPtName,
       queryLabel,
-      isSearching: $isSearching,
+      isSearching: isSearching(),
       isFocusing: false,
       hasSearch: !!summary,
       hasFocus: isFocus,
@@ -240,11 +240,11 @@
       resultCount: summary?.resultCount ?? 0,
       walkDepth: walkLen,
       isSearchFocus: !!summary && walkLen === 0,
-      isSearchAnchor: summary?.anchorIndex != null && $focusedIndex === summary.anchorIndex,
+      isSearchAnchor: summary?.anchorIndex != null && focusedIndex() === summary.anchorIndex,
       isTrailStop: walkLen > 1,
       hasAnchor: !!summary,
       clusterName,
-      routeCount: $walkHistoryIndices.length,
+      routeCount: walkHistoryIndices().length,
       nextPointName: nextStopName,
       idleNote: 'Start wide, then search by need or clue to open one trail through the network.',
       isDiscovery: false,
@@ -267,7 +267,7 @@
     </div>
 
     <!-- ├─ Journey inner container (activation wrapper) ─────────────────────── -->
-    <div class="focus-stage-journey" id="focus-stage-journey" class:active={$hasFocus}>
+    <div class="focus-stage-journey" id="focus-stage-journey" class:active={hasFocus()}>
     <!-- ├─ Walk Breadcrumb ─────────────────────────────────────────────────── -->
     {#if showBreadcrumb}
       <div class="walk-breadcrumb" id="walk-breadcrumb" class:visible={showBreadcrumb} role="navigation" aria-label="Trail history">
@@ -278,7 +278,7 @@
           {/if}
           {@const point = getPointForIndex(idx)}
           {@const name = point?.name ?? 'Stop'}
-          {@const isCurrent = idx === $focusedIndex}
+          {@const isCurrent = idx === focusedIndex()}
           <button
             class="walk-breadcrumb-chip"
             class:current={isCurrent}
@@ -296,7 +296,7 @@
     {/if}
 
     <!-- ├─ Trail Controls ──────────────────────────────────────────────────── -->
-    {#if $hasFocus}
+    {#if hasFocus()}
       <div class="trail-controls" id="trail-controls" role="toolbar" aria-label="Trail navigation">
         <button
           class="trail-btn"
@@ -405,7 +405,7 @@
           {/each}
         </div>
       </div>
-    {:else if $hasFocus && filteredCandidates.length === 0 && !$threadInspectorActive}
+    {:else if hasFocus() && filteredCandidates.length === 0 && !threadInspectorActive()}
       <div class="focus-stage-neighbors" id="focus-stage-neighbors">
         <div class="neighbor-count" id="focus-stage-neighbor-count">0 visible neighbors</div>
         <div class="focus-stage-neighbor-list" id="focus-stage-neighbor-list">

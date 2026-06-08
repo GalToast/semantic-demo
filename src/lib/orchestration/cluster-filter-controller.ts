@@ -62,9 +62,8 @@ export function findClusterByKeyword(keyword: string): number | null {
  */
 export function setClusterFilter(cluster: number | null): void {
   const nextCluster = Number.isFinite(cluster) ? cluster : null;
-  const $search = get(searchStore);
   
-  if ($search.summary) {
+  if (get(searchStore).summary) {
     const resultsEl = document.getElementById("search-results");
     const statusEl = document.getElementById("search-status");
     clearShortSemanticSearchState(resultsEl, statusEl);
@@ -300,15 +299,15 @@ export function applyStoryPrompt(story: string | null, options: Record<string, u
   storeSetClusterFilter(null);
 
   if (story === "signal-rich") {
-    setMyceliumMode("bloom", options);
+    setMyceliumMode("bloom");
     overwriteActiveFilters({ ...get(filterState), website: true });
   } else if (story === "bridge-businesses") {
-    setMyceliumMode("bridge", options);
+    setMyceliumMode("bridge");
   } else if (story === "mapped-food") {
-    setMyceliumMode("default", options);
+    setMyceliumMode("default");
     overwriteActiveFilters({ ...get(filterState), geocoded: true });
   } else if (story === "disqualified-ghosts") {
-    setMyceliumMode("default", options);
+    setMyceliumMode("default");
     overwriteActiveFilters({ ...get(filterState), status: "disqualified" });
   }
 

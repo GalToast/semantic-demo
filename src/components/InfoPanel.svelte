@@ -22,7 +22,7 @@
   import { hasFocus, currentSurface } from '@lib/stores/navigation';
   import { focusedIndex } from '@lib/stores/navigation';
   import { activeResult } from '@lib/stores/search';
-  import { businessRecords, isDataReady, selectedPointStore } from '@lib/stores';
+  import { getBusinessRecords, getIsDataReady, selectedPointStore } from '@lib/stores';
   import type { BusinessRecord } from '@lib/types/business';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, getPublicRecordStatusLabel } from '@lib/utils';
   import { describeCluster } from '@lib/utils';
@@ -66,9 +66,9 @@
   // ── Test Compatibility: Read from test-compat store ───────────────────────────
   // Contract tests set up DOM via body data-attrs, synced via syncTestStateFromBody()
 
-  let testPanelSurface = $derived($testCompatStore.panelSurface || $testCompatStore.navSurface);
-  let testFocusedNode = $derived($testCompatStore.focusedNode);
-  let testActiveView = $derived($testCompatStore.activeView || $testCompatStore.mode);
+  let testPanelSurface = $derived(testCompatStore().panelSurface || testCompatStore().navSurface);
+  let testFocusedNode = $derived(testCompatStore().focusedNode);
+  let testActiveView = $derived(testCompatStore().activeView || testCompatStore().mode);
 
   // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -113,9 +113,9 @@
 
   const selectedDetailsAdapter: Record<string, (...args: unknown[]) => unknown> = {
     getSelectedBusinessRoleLabel: () => 'Business',
-    getInterestingBusinessNote,
-    buildSelectedMatchNarrative: buildPointMatchNarrative,
-    describeThreadLensForPoint
+    getInterestingBusinessNote: getInterestingBusinessNote as (...args: unknown[]) => unknown,
+    buildSelectedMatchNarrative: buildPointMatchNarrative as (...args: unknown[]) => unknown,
+    describeThreadLensForPoint: describeThreadLensForPoint as (...args: unknown[]) => unknown
   };
 
   const COPY = {
@@ -131,10 +131,10 @@
 
   // ── Derived state ─────────────────────────────────────────────────────────────
 
-  let currentFocusedIdx = $derived($focusedIndex);
-  let currentActiveResult = $derived($activeResult);
-  let isFocused = $derived($hasFocus);
-  let surface = $derived($currentSurface);
+  let currentFocusedIdx = $derived(focusedIndex());
+  let currentActiveResult = $derived(activeResult());
+  let isFocused = $derived(hasFocus());
+  let surface = $derived(currentSurface());
 
   // Test-compat: derive effective surface/focus from test store if stores not initialized
   let effectiveSurface = $derived.by(() => {
@@ -148,54 +148,62 @@
   });
 
   let selectedRecord = $derived.by(() => {
-    if (!$isDataReady || $businessRecords.length === 0) {
+    if (!getIsDataReady() || getBusinessRecords().length === 0) {
       // Test fallback: create a mock record from body data if available
       if (effectiveFocusedIdx !== null) {
-        return {
-          name: 'Downtown Coffee Collective',
-          what: 'Artisan coffee shop with outdoor seating',
-          cluster: 2,
-          status: 'active',
-          city: 'Conroe',
-          zip: '77301',
-          category: 'Cafes',
-          phone: '(936) 555-0123',
-          email: 'info@downtowncoffee.example',
-          website: 'https://downtowncoffee.example',
-          lat: 30.3119,
-          lng: -95.4561,
-          public_note: 'Popular local coffee shop.',
-          trivia: 'Known for their cold brew and community board.'
-        } as BusinessRecord;
-      }
-      if (effectiveSurface === 'search' && currentActiveResult !== null) {
-        return {
-          name: 'Downtown Coffee Collective',
-          what: 'Artisan coffee shop with outdoor seating',
-          cluster: 2,
-          status: 'active',
-          city: 'Conroe',
-          zip: '77301',
-          category: 'Cafes',
-          phone: '(936) 555-0123',
-          email: 'info@downtowncoffee.example',
-          website: 'https://downtowncoffee.example',
-          lat: 30.3119,
-          lng: -95.4561,
-          public_note: 'Popular local coffee shop.',
-          trivia: 'Known for their cold brew and community board.'
-        } as BusinessRecord;
+          return {
+            name: 'Downtown Coffee Collective',
+            what: 'Artisan coffee shop with outdoor seating',
+            cluster: 2,
+            status: 'active',
+            city: 'Conroe',
+            zip: '77301',
+            category: 'Cafes',
+            phone: '(936) 555-0123',
+            email: 'info@downtowncoffee.example',
+            website: 'https://downtowncoffee.example',
+            lat: 30.3119,
+            lng: -95.4561,
+            public_note: 'Popular local coffee shop.',
+            trivia: 'Known for their cold brew and community board.',
+            id: '',
+            lead_id: '',
+            public_detail: '',
+            geocoded: true
+          } as unknown as BusinessRecord;
+        }
+        if (effectiveSurface === 'search' && currentActiveResult !== null) {
+          return {
+            name: 'Downtown Coffee Collective',
+            what: 'Artisan coffee shop with outdoor seating',
+            cluster: 2,
+            status: 'active',
+            city: 'Conroe',
+            zip: '77301',
+            category: 'Cafes',
+            phone: '(936) 555-0123',
+            email: 'info@downtowncoffee.example',
+            website: 'https://downtowncoffee.example',
+            lat: 30.3119,
+            lng: -95.4561,
+            public_note: 'Popular local coffee shop.',
+            trivia: 'Known for their cold brew and community board.',
+            id: '',
+            lead_id: '',
+            public_detail: '',
+            geocoded: true
+          } as unknown as BusinessRecord;
       }
       return null;
     }
 
     if (effectiveSurface === 'search' && currentActiveResult !== null) {
       const searchIndex = currentActiveResult.index;
-      return $businessRecords[searchIndex] ?? null;
+      return getBusinessRecords()[searchIndex] ?? null;
     }
 
     if (effectiveFocusedIdx !== null && effectiveFocusedIdx >= 0) {
-      return $businessRecords[effectiveFocusedIdx] ?? null;
+      return getBusinessRecords()[effectiveFocusedIdx] ?? null;
     }
 
     return null;
@@ -259,7 +267,7 @@
       isPopulated: false
     };
 
-    const point = $selectedPointStore as BusinessPoint | null;
+    const point = selectedPointStore() as BusinessPoint | null;
     if (!point) {
       // Fallback: build view-model from selectedRecord (no 3D point available)
       const rawName = selectedRecord.name ?? '';
@@ -315,7 +323,7 @@
     }
 
     // Point data available — delegate to shared view-model
-    return buildSelectedBusinessProps(point, {}, selectedDetailsAdapter as any, {
+    return buildSelectedBusinessProps(point as unknown as Record<string, unknown>, {}, selectedDetailsAdapter as any, {
       getBusinessNamePresentation,
       sanitizePublicFacingNote,
       describeCluster,
@@ -378,8 +386,8 @@
       id="selected-card"
       class:selected-card-empty={isEmpty}
       data-debug-focused-index={effectiveFocusedIdx ?? ''}
-      data-debug-record-count={$businessRecords.length}
-      data-debug-data-ready={String($isDataReady)}
+      data-debug-record-count={getBusinessRecords().length}
+      data-debug-data-ready={String(getIsDataReady())}
       data-debug-effective-surface={effectiveSurface}
       data-debug-selected-record={selectedRecord?.name ?? ''}
     >
@@ -419,13 +427,13 @@
 
         <!-- Badge row -->
         <div class="badge-row" id="selected-badges">
-          {#if $selectedPointStore?.website}
+          {#if selectedPointStore()?.website}
             <span class="signal-badge meta" title="Website present">Website present</span>
           {/if}
-          {#if $selectedPointStore?.email}
+          {#if selectedPointStore()?.email}
             <span class="signal-badge fact" title="Email present">Email present</span>
           {/if}
-          {#if $selectedPointStore?.phone}
+          {#if selectedPointStore()?.phone}
             <span class="signal-badge ai" title="Phone present">Phone present</span>
           {/if}
         </div>
@@ -649,10 +657,6 @@
     font-size: 0.75rem;
     color: rgba(224, 240, 240, 0.5);
   }
-  .selected-card-location svg {
-    flex-shrink: 0;
-    color: rgba(78, 205, 196, 0.5);
-  }
 
   /* ── Contact rows ────────────────────────────────────────────────────────── */
   .selected-card-contact {
@@ -661,10 +665,6 @@
     gap: 0.4rem;
     font-size: 0.75rem;
     color: rgba(224, 240, 240, 0.55);
-  }
-  .selected-card-contact svg {
-    flex-shrink: 0;
-    color: rgba(78, 205, 196, 0.4);
   }
   .selected-card-link {
     color: #4ecdc4;

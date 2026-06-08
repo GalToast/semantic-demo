@@ -15,9 +15,9 @@
     #selected-role-badge
 -->
 <script lang="ts">
-  import { hasFocus, focusedIndex } from '@lib/stores/navigation';
-  import { activeResult } from '@lib/stores/search';
-  import { businessRecords, isDataReady } from '@lib/stores';
+  import { hasFocus, focusedIndex } from '@lib/stores/navigation.svelte';
+  import { activeResult } from '@lib/stores/search.svelte';
+  import { getBusinessRecords, getIsDataReady } from '@lib/stores/index.svelte';
   import type { BusinessRecord } from '@lib/types/business';
 
   interface Props {
@@ -49,21 +49,21 @@
 
   // ── Derived state ─────────────────────────────────────────────────────────────
 
-  let currentFocusedIdx = $derived($focusedIndex);
-  let currentActiveResult = $derived($activeResult);
-  let isFocused = $derived($hasFocus);
+  let currentFocusedIdx = $derived(focusedIndex());
+  let currentActiveResult = $derived(activeResult());
+  let isFocused = $derived(hasFocus());
 
   let selectedRecord = $derived.by((): BusinessRecord | null => {
-    if (!$isDataReady || $businessRecords.length === 0) return null;
+    if (!getIsDataReady() || getBusinessRecords().length === 0) return null;
 
     // Use search result if available
     if (currentActiveResult !== null) {
-      return $businessRecords[currentActiveResult.index] ?? null;
+      return getBusinessRecords()[currentActiveResult.index] ?? null;
     }
 
     // Otherwise use field focus
     if (currentFocusedIdx !== null && currentFocusedIdx >= 0) {
-      return $businessRecords[currentFocusedIdx] ?? null;
+      return getBusinessRecords()[currentFocusedIdx] ?? null;
     }
 
     return null;

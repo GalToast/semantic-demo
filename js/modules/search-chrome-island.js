@@ -29,12 +29,13 @@ function render(target, props) {
 function mountSearchChrome() {
     const slot = document.getElementById(SEARCH_CHROME_SLOT_ID);
     if (!slot) return false;
-    if (slot.dataset[MOUNT_FLAG] === MOUNT_KEY) return true;
+    if (slot.dataset[String(MOUNT_FLAG)] === MOUNT_KEY) return true;
     render(slot, {});
-    slot.dataset[MOUNT_FLAG] = MOUNT_KEY;
+    slot.dataset[String(MOUNT_FLAG)] = MOUNT_KEY;
     return true;
 }
 
 export function initSearchChromeSvelteIsland() {
+    // @ts-ignore — awaitSlot is stubbed as Promise.resolve(); this call is intentionally inert
     awaitSlot(SEARCH_CHROME_SLOT_ID, mountSearchChrome);
 }

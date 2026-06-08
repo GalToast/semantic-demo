@@ -44,6 +44,14 @@ export interface DataLoadState {
 /** Raw business records loaded from data.dat */
 export const businessRecords = writable<readonly BusinessRecord[]>([]);
 
+/** Synchronous snapshot of business records. */
+export function getBusinessRecords(): readonly BusinessRecord[] {
+  let result: readonly BusinessRecord[] = [];
+  const unsub = businessRecords.subscribe((v) => { result = v; });
+  unsub();
+  return result;
+}
+
 /** Float32Array of interleaved [x,y,z] positions in [0,1] unit cube */
 export const positionBuffer = writable<Float32Array | null>(null);
 
@@ -121,6 +129,26 @@ export const isDataReady = derived(dataLoadState, ($s) => $s.status === 'ready')
 
 /** Whether data is currently loading */
 export const isLoading = derived(dataLoadState, ($s) => $s.status === 'loading');
+
+// ── Getter wrappers (match the .svelte.ts API for compatibility) ──────────
+
+export function getPositionBuffer(): Float32Array | null { return get(positionBuffer); }
+export function getClustersBuffer(): Uint16Array | null { return get(clustersBuffer); }
+export function getPointIndexByLeadId(): Map<string, number> { return get(pointIndexByLeadId); }
+export function getLeadEnrichment(): Record<string, import('@lib/types/business').LeadEnrichment> | null { return get(leadEnrichment); }
+export function getSemanticThreadBundle(): SemanticThreadBundle | null { return get(semanticThreadBundle); }
+export function getSemanticThreadArtifactName(): string | null { return get(semanticThreadArtifactName); }
+export function getSemanticNeighborMap(): Map<string, SemanticNeighborEntry> { return get(semanticNeighborMap); }
+export function getLayoutManifest(): LayoutManifest | null { return get(layoutManifest); }
+export function getDataLoadState(): DataLoadState { return get(dataLoadState); }
+export function getLoadingPhaseStore(): LoadingPhase { return get(loadingPhaseStore); }
+export function getGraphicsModeStore(): 'webgl' | 'fallback' { return get(graphicsModeStore); }
+export function getRecordCount(): number { return get(recordCount); }
+export function getIsDataReady(): boolean { return get(isDataReady); }
+export function getIsLoading(): boolean { return get(isLoading); }
+export function getPositionDescriptor(): PositionBufferDescriptor | null { return get(positionDescriptor); }
+export function getThreadEdgeCount(): number { return get(threadEdgeCount); }
+export function getNeighborMapSize(): number { return get(neighborMapSize); }
 
 /** Position buffer as a PositionBufferDescriptor (ready for WebGL) */
 export const positionDescriptor = derived(

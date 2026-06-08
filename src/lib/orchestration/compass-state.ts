@@ -7,11 +7,10 @@
  * Reads from stores (via `get`) and produces a typed CompassStatus
  * describing what the journey compass header should display.
  */
-import { get } from 'svelte/store';
-import { navStore } from '@lib/stores/navigation';
-import { searchStore } from '@lib/stores/search';
-import { journeyStore } from '@lib/stores/journey';
-import { focusStore } from '@lib/stores/focus';
+import { navStore } from '@lib/stores/navigation.svelte';
+import { searchStore } from '@lib/stores/search.svelte';
+import { journeyStore } from '@lib/stores/journey.svelte';
+import { focusStore } from '@lib/stores/focus.svelte';
 import {
   JOURNEY_ACTIONS,
   type CompassStatus,
@@ -51,8 +50,8 @@ export function registerRouteEmbodimentReader(fn: () => readonly number[]): void
 
 /** Get the currently focused business point from store state. */
 export function getFocusedJourneyPoint(): Record<string, unknown> | null {
-  const $nav = get(navStore);
-  const $focus = get(focusStore);
+  const $nav = navStore();
+  const $focus = focusStore();
 
   // Prefer selected business from the focus store
   if ($focus.selectedBusiness) {
@@ -80,10 +79,10 @@ export function getFocusedJourneyPoint(): Record<string, unknown> | null {
  * a CompassStateContext describing what the compass header should show.
  */
 export function getJourneyCompassState(): CompassStateContext {
-  const $nav = get(navStore);
-  const $search = get(searchStore);
-  const $journey = get(journeyStore);
-  const $focus = get(focusStore);
+  const $nav = navStore();
+  const $search = searchStore;
+  const $journey = journeyStore();
+  const $focus = focusStore();
 
   const cueBeat = $search.trailCue || 'idle';
   const focusedPoint = getFocusedJourneyPoint();

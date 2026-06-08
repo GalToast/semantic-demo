@@ -43,16 +43,17 @@ function render(target, props) {
 function mountFilterChrome() {
     const slot = document.getElementById(FILTER_CHROME_SLOT_ID);
     if (!slot) return false;
-    if (slot.dataset[MOUNT_FLAG] === MOUNT_KEY) {
+    if (slot.dataset[String(MOUNT_FLAG)] === MOUNT_KEY) {
         bindClusterListDelegation();
         return true;
     }
     render(slot, {});
-    slot.dataset[MOUNT_FLAG] = MOUNT_KEY;
+    slot.dataset[String(MOUNT_FLAG)] = MOUNT_KEY;
     bindClusterListDelegation();
     return true;
 }
 
 export function initFilterChromeSvelteIsland() {
+    // @ts-ignore — awaitSlot is stubbed as Promise.resolve(); this call is intentionally inert
     awaitSlot(FILTER_CHROME_SLOT_ID, mountFilterChrome);
 }

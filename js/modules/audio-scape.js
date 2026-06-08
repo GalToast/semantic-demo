@@ -146,9 +146,9 @@ export function triggerCorridorBloom() {
         const g = audioCtx.createGain();
 
         osc.type = 'sine';
-        const freqWithRandom = 880 + Math.random() * 440;
+        const freqWithRandom = 880 + Math.random() * 440; // intentionally non-deterministic — audio playback variation
         osc.frequency.setValueAtTime(freqWithRandom, audioCtx.currentTime);
-        const endFreqWithRandom = 1760 + Math.random() * 880;
+        const endFreqWithRandom = 1760 + Math.random() * 880; // intentionally non-deterministic — audio playback variation
         osc.frequency.exponentialRampToValueAtTime(endFreqWithRandom, audioCtx.currentTime + 0.4);
 
         g.gain.setValueAtTime(0, audioCtx.currentTime);

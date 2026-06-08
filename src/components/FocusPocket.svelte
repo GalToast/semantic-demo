@@ -20,8 +20,8 @@
   let lastFocusIndex: number | null = null;
 
   $effect(() => {
-    const idx = $focusedIndex;
-    const focused = $hasFocus;
+    const idx = focusedIndex();
+    const focused = hasFocus();
 
     if (focused && Number.isFinite(idx) && idx !== null && idx !== lastFocusIndex) {
       lastFocusIndex = idx;
@@ -33,9 +33,9 @@
   });
 </script>
 
-{#if visible && $hasFocus}
+{#if visible && hasFocus()}
   <div class="focus-pocket" id="focus-pocket" aria-label="Focus neighborhood">
-    {#each $focusPocketNodes as node (node.index)}
+    {#each focusPocketNodes() as node (node.index)}
       <div
         class="focus-node"
         class:direct={node.role === 'direct'}
@@ -51,10 +51,11 @@
       </div>
     {/each}
 
-    {#if $anchorIndicator.active && $anchorIndicator.position}
+    {#if anchorIndicator().active && anchorIndicator().position}
+      {@const pos = anchorIndicator().position!}
       <div
         class="anchor-indicator"
-        style="left: {(($anchorIndicator.position[0] + 1) / 2) * 100}%; top: {((1 - $anchorIndicator.position[1]) / 2) * 100}%"
+        style="left: {((pos[0] + 1) / 2) * 100}%; top: {((1 - pos[1]) / 2) * 100}%"
         aria-hidden="true"
       ></div>
     {/if}

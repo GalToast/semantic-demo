@@ -23,7 +23,7 @@ import {
   isMapSummarySurface,
   isSemanticDiveSurface
 } from '@lib/stores/viewport';
-import { resetExplorationFocus } from '@lib/stores/lifecycle';
+import { resetExplorationFocus } from '@lib/orchestration/lifecycle';
 import {
   getJourneyCompassState,
   getFocusedJourneyPoint,
@@ -146,7 +146,7 @@ export function syncJourneyCompassActions(
 ): void {
   const suppressInsideDiveActions =
     compassState.phase === 'inside' && isSemanticDiveSurface();
-  const $focus = get(focusStore);
+  const $focus = focusStore();
 
   const buttons: Array<[HTMLButtonElement | null, CompassAction | null | undefined, string]> = [
     [document.getElementById('btn-journey-primary') as HTMLButtonElement | null, compassState.primaryAction, 'primary'],
@@ -290,7 +290,7 @@ export function executeJourneyCompassAction(action: string): void {
       return;
 
     case JOURNEY_ACTIONS.NEXT_STOP: {
-      const $focus = get(focusStore);
+      const $focus = focusStore();
       if ($focus.strandContinuityPhase === 'exploring') return;
       // The engine bridge handles the actual traversal
       return;
@@ -413,10 +413,9 @@ export function getViewHandoffModel(view: string): ViewHandoffModel {
   const focusName = focusPoint
     ? formatBusinessName((focusPoint.name as string) || 'this business')
     : '';
-  const $search = get(searchStore);
-  const hasSearch = !!$search.summary;
+  const hasSearch = !!get(searchStore).summary;
   const searchLabel = hasSearch
-    ? ($search.summary!.query || 'current trail')
+    ? (get(searchStore).summary!.query || 'current trail')
     : '';
 
   if (view === 'map') {
@@ -490,8 +489,8 @@ export function invokeClearMobileRouteFieldPeek(): void {
  */
 export function scheduleMapRouteRefresh(): void {
   const refresh = () => {
-    const $nav = get(navStore);
-    if ($nav.currentView !== 'map') return;
+    const $navRefresh = get(navStore);
+    if ($navRefresh.currentView !== 'map') return;
     // The actual route refresh is handled by the engine bridge
   };
 

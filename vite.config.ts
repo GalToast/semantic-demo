@@ -19,7 +19,8 @@ export default defineConfig({
     alias: {
       '@': SRC_DIR,
       '@lib': resolve(SRC_DIR, 'lib'),
-      '@components': resolve(SRC_DIR, 'components')
+      '@components': resolve(SRC_DIR, 'components'),
+      '@legacy': resolve(__dirname, 'js')
     }
   },
   server: {

@@ -40,9 +40,9 @@
   // (records→scene→restore→launch) is driven by data-store's initData().
   let phase = $derived($loadingPhaseStore);
 
-  let progress = $derived(phaseMeta[phase]?.progress ?? 0);
-  let note = $derived(phaseMeta[phase]?.note ?? '');
-  let foot = $derived(phaseMeta[phase]?.foot ?? '');
+  let progress = $derived(phaseMeta[phase as LoadingPhase]?.progress ?? 0);
+  let note = $derived(phaseMeta[phase as LoadingPhase]?.note ?? '');
+  let foot = $derived(phaseMeta[phase as LoadingPhase]?.foot ?? '');
   let actuallyVisible = $derived(visible && phase !== 'launch');
 
   /** Derive the active index for chip highlighting */

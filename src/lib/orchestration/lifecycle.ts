@@ -15,7 +15,7 @@
 import { get } from "svelte/store";
 import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS, setAutoRotate, suspendAutoRotate, resumeAutoRotate } from "@lib/stores/navigation";
 import { searchStore } from "@lib/stores/search";
-import { focusStore, setSemanticDiveMode as setFocusDiveMode } from "@lib/stores/focus";
+import { focusStore, setSemanticDiveMode as setFocusDiveMode, setSelectedBusiness } from "@lib/stores/focus";
 import { publish, EVENTS } from "@lib/orchestration/event-bus";
 import { getFocusedJourneyPoint, getJourneyCompassState, JOURNEY_ACTIONS } from "@lib/orchestration/compass-state";
 import {
@@ -136,9 +136,9 @@ export function setSemanticDiveModeProxy(enabled: boolean): void {
 
   if (nextActive) {
     if (document.body) document.body.dataset.semanticDive = "transitioning";
-    setTrailDepth(2, { fromUserGesture: true });
+    setTrailDepth(2);
   } else {
-    setTrailDepth(1, { allowDiveExit: true, skipUrlSync: true });
+    setTrailDepth(1);
   }
 
   refreshCompositionState();
@@ -167,20 +167,16 @@ export function focusOnPoint(
 ): boolean {
   if (!point) return false;
 
-  focusStore.update((s) => ({
-    ...s,
-    selectedBusiness: {
-      index: -1, // resolved by engine bridge
-      name: point.name,
-      category: point.category,
-      city: point.city,
-      status: point.status,
-      website: point.website,
-      email: point.email,
-      phone: point.phone,
-      revealedAt: performance.now(),
-    },
-  }));
+  setSelectedBusiness({
+    index: -1, // resolved by engine bridge
+    name: point.name,
+    category: point.category,
+    city: point.city,
+    status: point.status,
+    website: point.website,
+    email: point.email,
+    phone: point.phone,
+  });
 
   if (!options.skipUrlSync) {
     publish(EVENTS.CAMERA_NODE_FOCUSED, { point, options });
@@ -196,7 +192,7 @@ export function focusOnPoint(
  * Called from compass NEXT_STOP action and journey-bindings.
  */
 export function exploreInsideToNextStop(): void {
-  const $focus = get(focusStore);
+  const $focus = focusStore();
   if ($focus.strandContinuityPhase === "exploring") return;
 
   // Engine bridge handles the actual traversal;
@@ -307,7 +303,7 @@ export function requestSemanticGuide(_point: Record<string, unknown> | null): vo
  */
 export function focusOnNode(index: number, _options?: Record<string, unknown>): boolean {
   const result = dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, { index });
-  return result.handled;
+  return result.ok;
 }
 
 /**
@@ -354,8 +350,7 @@ export function getInterestingBusinessNote(point: Record<string, unknown> | null
  * Window bridge function from lifecycle.js.
  */
 export function buildSelectedMatchNarrative(_point: Record<string, unknown> | null): string {
-  const $search = get(searchStore);
-  const summaryReason = ($search.summary as unknown as Record<string, unknown>)?.reason as string | undefined;
+  const summaryReason = (get(searchStore).summary as unknown as Record<string, unknown>)?.reason as string | undefined;
   if (summaryReason) return summaryReason;
   return "";
 }

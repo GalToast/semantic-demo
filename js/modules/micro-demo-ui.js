@@ -41,7 +41,7 @@ export function bindInputInterceptor(onCancel) {
     }
 
     document.addEventListener('mousedown', onInput, { once: false, capture: true });
-    document.addEventListener('touchstart', onInput, { once: false, capture: true });
+    document.addEventListener('touchstart', onInput, { once: false, capture: true, passive: true });
     const onKeydown = (e) => {
         if (e.key === 'Escape' && onCancel) onCancel('escape-key');
     };

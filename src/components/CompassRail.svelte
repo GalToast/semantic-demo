@@ -16,10 +16,10 @@
     idle → checking → synthesizing → active | interrupted → idle
 -->
 <script lang="ts">
-  import { compassSteps } from '@lib/stores/compass';
-  import type { CompassStep } from '@lib/stores/compass';
-  import { compassPhase, transitionCompass } from '@lib/stores/journey';
-  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
+  import { compassSteps } from '@lib/stores/compass.svelte';
+  import type { CompassStep } from '@lib/stores/compass.svelte';
+  import { compassPhase, transitionCompass } from '@lib/stores/journey.svelte';
+  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
 
   interface Props {
     /** Whether the compass rail is visible */
@@ -90,14 +90,14 @@
 {#if visible}
   <div
     class="compass-rail"
-    class:active={$compassPhase === 'active'}
-    class:checking={$compassPhase === 'checking'}
-    class:synthesizing={$compassPhase === 'synthesizing'}
+    class:active={compassPhase() === 'active'}
+    class:checking={compassPhase() === 'checking'}
+    class:synthesizing={compassPhase() === 'synthesizing'}
     id="compass-rail"
     role="navigation"
     aria-label="Journey compass"
   >
-    {#each $compassSteps as step (step.phase)}
+    {#each compassSteps() as step (step.phase)}
       <button
         class="compass-step"
         class:current={step.state === 'current'}

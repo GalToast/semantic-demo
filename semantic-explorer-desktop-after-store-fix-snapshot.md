@@ -1,0 +1,132 @@
+- generic [active] [ref=e1] [box=0,0,1440,1000]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer] [box=0,-1000,179,38]:
+    - /url: "#main-content"
+  - generic [ref=e4] [box=0,0,1440,1000]:
+    - application "Semantic business visualization of Montgomery County businesses. Use arrow keys to navigate." [ref=e168] [box=0,0,1440,1000]
+    - complementary [ref=e7] [box=-208,625,187,359]:
+      - heading [level=3] [ref=e8] [box=-196,637,163,15]: Categories
+      - generic [ref=e9] [box=-196,660,163,312]:
+        - button [ref=e10] [cursor=pointer] [box=-196,660,104,21]:
+          - generic [ref=e12] [box=-179,664,71,13]: Food & Dining
+          - generic [ref=e13] [box=-100,664,6,13]: "0"
+        - button [ref=e14] [cursor=pointer] [box=-196,681,141,21]:
+          - generic [ref=e16] [box=-179,685,108,13]: Professional Services
+          - generic [ref=e17] [box=-63,685,6,13]: "0"
+        - button [ref=e18] [cursor=pointer] [box=-196,702,123,21]:
+          - generic [ref=e20] [box=-179,706,90,13]: Retail & Shopping
+          - generic [ref=e21] [box=-81,706,6,13]: "0"
+        - button [ref=e22] [cursor=pointer] [box=-196,722,118,21]:
+          - generic [ref=e24] [box=-179,726,85,13]: Health & Medical
+          - generic [ref=e25] [box=-86,726,6,13]: "0"
+        - button [ref=e26] [cursor=pointer] [box=-196,743,114,21]:
+          - generic [ref=e28] [box=-179,747,81,13]: Home & Garden
+          - generic [ref=e29] [box=-90,747,6,13]: "0"
+        - button [ref=e30] [cursor=pointer] [box=-196,764,89,21]:
+          - generic [ref=e32] [box=-179,768,56,13]: Automotive
+          - generic [ref=e33] [box=-115,768,6,13]: "0"
+        - button [ref=e34] [cursor=pointer] [box=-196,785,144,21]:
+          - generic [ref=e36] [box=-179,789,111,13]: Education & Childcare
+          - generic [ref=e37] [box=-60,789,6,13]: "0"
+        - button [ref=e38] [cursor=pointer] [box=-196,806,151,21]:
+          - generic [ref=e40] [box=-179,810,118,13]: Entertainment & Events
+          - generic [ref=e41] [box=-53,810,6,13]: "0"
+        - button [ref=e42] [cursor=pointer] [box=-196,826,144,21]:
+          - generic [ref=e44] [box=-179,830,111,13]: Construction & Trades
+          - generic [ref=e45] [box=-60,830,6,13]: "0"
+        - button [ref=e46] [cursor=pointer] [box=-196,847,91,21]:
+          - generic [ref=e48] [box=-179,851,58,13]: Real Estate
+          - generic [ref=e49] [box=-113,851,6,13]: "0"
+        - button [ref=e50] [cursor=pointer] [box=-196,868,116,21]:
+          - generic [ref=e52] [box=-179,872,83,13]: Nonprofit & Civic
+          - generic [ref=e53] [box=-87,872,6,13]: "0"
+        - button [ref=e54] [cursor=pointer] [box=-196,889,90,21]:
+          - generic [ref=e56] [box=-179,893,57,13]: Technology
+          - generic [ref=e57] [box=-114,893,6,13]: "0"
+        - button [ref=e58] [cursor=pointer] [box=-196,910,163,21]:
+          - generic [ref=e60] [box=-179,914,130,13]: Manufacturing & Industrial
+          - generic [ref=e61] [box=-41,914,6,13]: "0"
+        - button [ref=e62] [cursor=pointer] [box=-196,930,124,21]:
+          - generic [ref=e64] [box=-179,934,91,13]: Financial Services
+          - generic [ref=e65] [box=-80,934,6,13]: "0"
+        - button [ref=e66] [cursor=pointer] [box=-196,951,125,21]:
+          - generic [ref=e68] [box=-179,955,92,13]: Agriculture & Land
+          - generic [ref=e69] [box=-79,955,6,13]: "0"
+    - complementary "Business information" [ref=e70] [box=1120,0,320,1000]:
+      - generic [ref=e71] [box=1136,16,288,286]:
+        - heading "Business Details" [level=3] [ref=e73] [box=1136,64,288,15]
+        - generic [ref=e75] [box=1136,91,288,211]:
+          - img [ref=e76] [box=1264,139,32,32]
+          - paragraph [ref=e79] [box=1181,191,199,19]: Select a business to see details.
+          - paragraph [ref=e80] [box=1152,222,256,32]: Click a node in the field or choose a search result.
+    - search "Search businesses in the semantic field" [ref=e81] [box=510,16,420,6]:
+      - generic [ref=e82] [box=510,32,420,78]:
+        - generic [ref=e85] [box=510,54,420,14]: Search
+        - generic [ref=e86] [box=510,73,420,37]:
+          - img [ref=e87] [box=523,83,16,16]
+          - searchbox "Search businesses" [ref=e90] [box=547,82,370,19]
+    - banner [ref=e91] [box=0,0,1440,43]:
+      - generic [ref=e92] [box=16,11,148,21]:
+        - generic [ref=e93] [box=16,11,27,21]: SE
+        - generic [ref=e94] [box=50,14,114,15]: Semantic Explorer
+      - radiogroup "View mode" [ref=e95] [box=180,8,375,26]:
+        - radio "M Overview" [checked] [ref=e96] [cursor=pointer] [box=180,8,77,26]:
+          - generic [ref=e97] [box=188,15,6,13]: M
+          - generic [ref=e98] [box=199,14,49,15]: Overview
+        - radio "S Search" [ref=e99] [cursor=pointer] [box=261,8,62,26]:
+          - generic [ref=e100] [box=269,15,6,13]: S
+          - generic [ref=e101] [box=280,14,34,15]: Search
+        - radio "T Trail" [ref=e102] [cursor=pointer] [box=327,8,50,26]:
+          - generic [ref=e103] [box=336,15,6,13]: T
+          - generic [ref=e104] [box=346,14,22,15]: Trail
+        - radio "F Focus" [ref=e105] [cursor=pointer] [box=381,8,57,26]:
+          - generic [ref=e106] [box=390,15,6,13]: F
+          - generic [ref=e107] [box=400,14,29,15]: Focus
+        - radio "I Inside" [ref=e108] [cursor=pointer] [box=442,8,58,26]:
+          - generic [ref=e109] [box=451,15,6,13]: I
+          - generic [ref=e110] [box=461,14,30,15]: Inside
+        - radio "G Map" [ref=e111] [cursor=pointer] [box=504,8,50,26]:
+          - generic [ref=e112] [box=513,15,6,13]: G
+          - generic [ref=e113] [box=523,14,22,15]: Map
+      - generic [ref=e114] [box=1217,15,207,12]: County-wide overview across all visible records.
+    - generic [ref=e115] [box=0,0,1440,86]:
+      - 'generic "1. overview: See the whole county." [box=0,0,0,0]'
+      - 'generic "2. search: Find and center on a business." [box=0,0,0,0]'
+      - 'generic "3. focus: Inspect a centered anchor." [box=0,0,0,0]'
+      - 'generic "4. inside: Explore the neighborhood." [box=0,0,0,0]'
+      - 'generic "5. map: View the geographic layer." [box=0,0,0,0]'
+      - generic [ref=e116] [box=0,0,1440,22]: Overview | Montgomery County
+      - generic [ref=e117] [box=0,22,1440,22]: The MoCo Mycelium
+      - generic [ref=e118] [box=0,43,1440,22]: Start wide, then search by need or clue to open one trail through the network.
+      - generic [ref=e119] [box=0,65,1440,22]:
+        - button "Search" [ref=e120] [box=0,67,45,19]
+        - button "Map" [ref=e121] [box=50,67,29,19]
+    - toolbar "Camera controls" [ref=e122] [box=1232,941,192,43]:
+      - button "Zoom in" [ref=e123] [cursor=pointer] [box=1237,946,32,32]:
+        - img [ref=e124] [box=1245,954,16,16]
+      - button "Zoom out" [ref=e128] [cursor=pointer] [box=1273,946,32,32]:
+        - img [ref=e129] [box=1281,954,16,16]
+      - button "Reset view" [ref=e132] [cursor=pointer] [box=1309,946,32,32]:
+        - img [ref=e133] [box=1317,954,16,16]
+      - button "Toggle auto-rotate" [ref=e137] [cursor=pointer] [box=1350,946,32,32]:
+        - img [ref=e138] [box=1358,954,16,16]
+      - button "Share link" [ref=e141] [cursor=pointer] [box=1386,946,32,32]:
+        - img [ref=e142] [box=1394,954,16,16]
+    - group "Business filters" [box=720,984,0,0]:
+      - option "All Cities" [selected] [box=0,0,0,0]
+      - option "Conroe" [box=0,0,0,0]
+      - option "The Woodlands" [box=0,0,0,0]
+      - option "Spring" [box=0,0,0,0]
+      - option "Magnolia" [box=0,0,0,0]
+      - option "Montgomery" [box=0,0,0,0]
+    - progressbar "Loading semantic explorer" [ref=e147] [box=0,0,1440,1000]:
+      - generic [ref=e148] [box=587,371,267,257]:
+        - generic [ref=e149] [box=655,387,130,14]: Semantic Explorer
+        - generic [ref=e150] [box=624,414,192,29]: Loading the field
+        - img [ref=e152] [box=696,455,48,48]
+        - paragraph [ref=e159] [box=645,520,151,19]: Gathering records...
+        - generic [ref=e162] [box=603,565,235,19]:
+          - generic [ref=e163] [box=603,565,44,19]: Data
+          - generic [ref=e164] [box=654,565,55,19]: Assets
+          - generic [ref=e165] [box=717,565,62,19]: Restore
+          - generic [ref=e166] [box=787,565,50,19]: Ready
+        - paragraph [ref=e167] [box=634,597,172,16]: County records are arriving first.

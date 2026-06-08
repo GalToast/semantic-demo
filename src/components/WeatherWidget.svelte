@@ -18,9 +18,9 @@
     hasWeather,
     CONDITION_ICONS,
     fetchWeather
-  } from '@lib/stores/weather';
-  import type { WeatherCondition } from '@lib/stores/weather';
-  import { isCompact } from '@lib/stores/viewport';
+  } from '@lib/stores/weather.svelte';
+  import type { WeatherCondition } from '@lib/stores/weather.svelte';
+  import { isCompact } from '@lib/stores/viewport.svelte';
 
   interface Props {
     /** Whether the widget is visible */
@@ -31,12 +31,12 @@
 
   let expanded = $state(false);
 
-  let temperature = $derived($weatherTemperature);
-  let condition = $derived($weatherCondition);
-  let label = $derived($weatherLabel);
-  let forecast = $derived($weatherForecast);
-  let loaded = $derived($hasWeather);
-  let icon = $derived(CONDITION_ICONS[$weatherCondition] ?? '\u2600');
+  let temperature = $derived(weatherTemperature());
+  let condition = $derived(weatherCondition());
+  let label = $derived(weatherLabel());
+  let forecast = $derived(weatherForecast());
+  let loaded = $derived(hasWeather());
+  let icon = $derived(CONDITION_ICONS[weatherCondition()] ?? '\u2600');
 
   onMount(() => {
     fetchWeather().catch(() => {
@@ -53,7 +53,7 @@
   <div
     class="weather-widget"
     class:expanded
-    class:compact={$isCompact}
+    class:compact={isCompact()}
     id="weather-widget"
     aria-label="Weather conditions"
   >

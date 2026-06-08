@@ -27,8 +27,8 @@
 
   // ── Test Compatibility ────────────────────────────────────────────────────────
 
-  let testPanelSurface = $derived($testCompatStore.panelSurface || $testCompatStore.navSurface);
-  let testLoadingPhase = $derived($testCompatStore.loadingPhase);
+  let testPanelSurface = $derived(testCompatStore().panelSurface || testCompatStore().navSurface);
+  let testLoadingPhase = $derived(testCompatStore().loadingPhase);
 
   // Sync test state on mount
   onMount(() => {
@@ -53,7 +53,7 @@
   class:has-query={hasQuery}
   class:results-rendered={showResults}
   class:searching={showLoading}
-  class:is-compact={$isCompact}
+  class:is-compact={isCompact()}
   role="search"
   aria-label="Search businesses in the semantic field"
 >

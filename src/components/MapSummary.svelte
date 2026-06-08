@@ -11,8 +11,7 @@
 <script lang="ts">
   import { journeyTrail } from '@lib/stores/journey';
   import { hasTrail, focusedIndex } from '@lib/stores/navigation';
-  import { businessRecords, isDataReady } from '@lib/stores';
-  import { isCompact } from '@lib/stores/viewport';
+  import { getBusinessRecords, getIsDataReady } from '@lib/stores';
   import type { TrailStop } from '@lib/types/state';
 
   interface Props {
@@ -36,13 +35,13 @@
     return { x, y };
   }
 
-  let trail = $derived($journeyTrail);
-  let showMap = $derived(visible && $hasTrail && trail.length > 0);
-  let currentIdx = $derived($focusedIndex);
+  let trail = $derived(journeyTrail());
+  let showMap = $derived(visible && hasTrail() && trail.length > 0);
+  let currentIdx = $derived(focusedIndex());
 
   function getStopName(idx: number): string {
-    if (!$isDataReady || $businessRecords.length === 0) return `Node ${idx}`;
-    return $businessRecords[idx]?.name ?? `Node ${idx}`;
+    if (!getIsDataReady() || getBusinessRecords().length === 0) return `Node ${idx}`;
+    return getBusinessRecords()[idx]?.name ?? `Node ${idx}`;
   }
 </script>
 

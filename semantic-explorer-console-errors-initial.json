@@ -1,0 +1,6 @@
+Total messages: 3 (Errors: 1, Warnings: 0)
+Returning 1 messages for level "error"
+
+TypeError: Cannot read properties of undefined (reading 'phase')
+    at getTestStateSnapshot (http://localhost:5174/lib/stores/index.svelte.ts:281:38)
+    at http://localhost:5174/lib/stores/index.svelte.ts:296:35

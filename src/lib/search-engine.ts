@@ -184,7 +184,7 @@ async function loadLegacyModule(): Promise<LegacySearchCacheModule | null> {
   _moduleLoadAttempted = true;
 
   try {
-    const mod = await import('../../js/modules/semantic-search-api-cache.js');
+    const mod = await import('@legacy/modules/semantic-search-api-cache.js');
     _legacyModule = mod as unknown as LegacySearchCacheModule;
 
     // Initialize the search cache (loads IDB entries)
