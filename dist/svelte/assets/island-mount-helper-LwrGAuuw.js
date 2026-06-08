@@ -1,0 +1,1 @@
+var e=(e,t)=>typeof document>`u`?!1:typeof t==`function`&&document.getElementById(e)?t():!1;export{e as t};

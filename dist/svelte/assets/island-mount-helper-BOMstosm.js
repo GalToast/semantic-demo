@@ -1,1 +1,0 @@
-var e=`svelteMounted`;function t(e,t){if(typeof document>`u`)return;let n=()=>!!t();if(document.readyState===`loading`){document.addEventListener(`DOMContentLoaded`,()=>{n()||r()},{once:!0});return}if(n())return;r();function r(){let e=new MutationObserver(()=>{n()&&e.disconnect()});e.observe(document.body,{childList:!0,subtree:!0})}}export{t as n,e as t};
