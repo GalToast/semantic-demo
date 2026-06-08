@@ -2383,14 +2383,14 @@ async function run() {
       return;
     }
 
-    if (!box || box.width === 0 || box.height === 0) {
+    if (!stripBox || stripBox.width === 0 || stripBox.height === 0) {
       fail(state.name, 'map-strip:visible-when-owner',
-        `map-trail-strip should be rendered when navOwner=map-trail-strip view=map, got ${JSON.stringify(box)}`);
+        `map-trail-strip should be rendered when navOwner=map-trail-strip view=map, got ${JSON.stringify(stripBox)}`);
       return;
     }
 
-    if (box.y < 200) pass(state.name, 'map-strip:top-position');
-    else fail(state.name, 'map-strip:top-position', `map-trail-strip y=${box.y} should be < 200`);
+    if (stripBox.y < 200) pass(state.name, 'map-strip:top-position');
+    else fail(state.name, 'map-strip:top-position', `map-trail-strip y=${stripBox.y} should be < 200`);
 
     if (strip.buttonCount === 0) pass(state.name, 'map-strip:no-trail-strip-buttons');
     else fail(state.name, 'map-strip:no-trail-strip-buttons',
