@@ -100,7 +100,7 @@ export function ensureCanvasNodeInteractionBindings(): void {
         event.preventDefault();
         (state as any).lastCanvasNodePick = candidate;
         (state as any).lastCanvasNodeFocusPick = candidate;
-        canvasInteractionAdapter.walkThreadNeighbor(candidate.index!, {
+        (canvasInteractionAdapter as any).walkThreadNeighbor(candidate.index!, {
             fromCanvasNode: true,
             surface: 'canvas',
             reason: candidate.reason || 'direct 3D related node'
@@ -141,10 +141,10 @@ export function ensureCanvasNodeInteractionBindings(): void {
             const candidate = getNearestCanvasThreadCandidate(event);
             if (candidate) {
                 setCanvasFieldHover(candidate as any, canvas);
-                canvasInteractionAdapter.inspectThreadNeighbor(candidate.index, { surface: 'canvas' });
+                (canvasInteractionAdapter as any).inspectThreadNeighbor((candidate as any).index, { surface: 'canvas' });
                 return;
             } else if ((document.body.dataset as any).threadInspectSurface === 'canvas') {
-                canvasInteractionAdapter.scheduleCanvasThreadInspectionClear(CANVAS_THREAD_INSPECTION_CLEAR_DELAY_MS);
+                (canvasInteractionAdapter as any).scheduleCanvasThreadInspectionClear(CANVAS_THREAD_INSPECTION_CLEAR_DELAY_MS);
             }
         }
         const fieldCandidate = findNearestCanvasFieldNode(event, getCanvasFieldNodeClickRadius(event) + 4);
@@ -153,7 +153,7 @@ export function ensureCanvasNodeInteractionBindings(): void {
 
     canvas.addEventListener('pointerleave', () => {
         if ((document.body.dataset as any).threadInspectSurface === 'canvas') {
-            canvasInteractionAdapter.scheduleCanvasThreadInspectionClear(CANVAS_THREAD_INSPECTION_CLEAR_DELAY_MS);
+            (canvasInteractionAdapter as any).scheduleCanvasThreadInspectionClear(CANVAS_THREAD_INSPECTION_CLEAR_DELAY_MS);
         }
         clearCanvasFieldHover(canvas, { force: true });
     }, { signal });
