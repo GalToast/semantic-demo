@@ -1,1 +1,0 @@
-function e(){if(typeof window>`u`)return!1;if(window.__DEBUG_PROBES__!==void 0)return!!window.__DEBUG_PROBES__;let e=window.location?.hostname||``;return e?e===`localhost`||e===`127.0.0.1`||e===`::1`:!0}function t(t,n){e()&&(typeof window>`u`||(window[t]=n))}function n(...t){e()&&console.warn(...t)}export{t as n,n as t};
