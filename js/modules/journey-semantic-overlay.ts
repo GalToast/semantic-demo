@@ -227,8 +227,9 @@ export function refreshFocusSemanticOverlay(): void {
         .filter((index: number) => {
             const role = roleByIndex.get(index) || 'trail';
             const budget = roleBudgets[role] ?? roleBudgets.trail;
-            if (roleCounts[role] >= budget) return false;
-            roleCounts[role] += 1;
+            const count = roleCounts[role] ?? 0;
+            if (count >= (budget ?? 0)) return false;
+            roleCounts[role] = count + 1;
             return true;
         });
     const pocketThreadSet = new Set(pocketThreadIndices);
