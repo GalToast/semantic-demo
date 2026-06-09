@@ -127,12 +127,12 @@ function assertEq(actual, expected, label) {
 
 // ── Import real modules ───────────────────────────────────────────────────────
 
-const { state, withStateMutation } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.ts');
 
 let refreshCompositionState;
 let resetStateBeforeUrlRestore;
 try {
-  const lc = await import('../js/modules/lifecycle.js');
+  const lc = await import('../js/modules/lifecycle.ts');
   refreshCompositionState = lc.refreshCompositionState;
   resetStateBeforeUrlRestore = lc.resetStateBeforeUrlRestore;
 } catch (e) {

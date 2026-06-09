@@ -48,22 +48,42 @@ export interface WebGLContextState {
     nodeSporeMesh: THREE.InstancedMesh | null;
     nodeSporeHitMesh: THREE.InstancedMesh | null;
     nodeSporeMaterial: THREE.Material | null;
+    rawPositionsBuffer: Float32Array | null;
+    rawClustersBuffer: Float32Array | null;
+    myceliumLines: THREE.LineSegments | null;
     myceliumGroup: THREE.Group | null;
     myceliumCoreLines: THREE.LineSegments | null;
     myceliumWispyLines: THREE.LineSegments | null;
     myceliumBridgeLines: THREE.LineSegments | null;
-    myceliumConnectionPairs: Array<{a: number, b: number, layer: number}>;
+    focusSemanticLines: THREE.LineSegments | null;
+    focusSemanticConnectionPairs: Array<{a: number, b: number, layer: number}>;
     semanticLensGroup: THREE.Group | null;
     semanticLensGlow: THREE.Mesh | null;
     semanticLensSpokes: THREE.LineSegments | null;
-    semanticManifold: THREE.Mesh | null;
-    rawPositionsBuffer: Float32Array | null;
-    rawClustersBuffer: Float32Array | null;
+    myceliumConnectionPairs: Array<{a: number, b: number, layer: number}>;
+    hemiLight: THREE.HemisphereLight | null;
+    dirLight: THREE.DirectionalLight | null;
+    focusLens: THREE.Mesh | null;
+    focusHalo: THREE.Sprite | null;
+    focusCore: THREE.Mesh | null;
+    focusMoteGroup: THREE.Group | null;
+    focusMotes: THREE.Points[];
+    focusPetalGroup: THREE.Group | null;
+    focusPetals: THREE.Points[];
+    focusFilaments: THREE.LineSegments | null;
+    focusAnchorGroup: THREE.Group | null;
+    focusAnchorRingMesh: THREE.Mesh | null;
+    focusAnchorHaloSprite: THREE.Sprite | null;
+    hoverHalo: THREE.Sprite | null;
     focusBeaconTexture: THREE.Texture | null;
     focusRingTexture: THREE.Texture | null;
     focusNextCueTexture: THREE.Texture | null;
-    hemiLight?: THREE.HemisphereLight | null;
-    dirLight?: THREE.DirectionalLight | null;
+    semanticManifold: THREE.Mesh | null;
+    routeTraceLines: THREE.LineSegments | null;
+    arrivalHandoffGroup: THREE.Group | null;
+    routeTraceConnectionPairs: Array<{a: number, b: number, layer: number}>;
+    routeTraceRenderStateKey: string;
+    inspectedStrandGroup: THREE.Group | null;
     [key: string]: any; // Allow arbitrary dynamic properties from legacy code
 }
 

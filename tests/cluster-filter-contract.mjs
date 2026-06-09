@@ -17,8 +17,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const CLUSTER_FILTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.js');
-const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
+const CLUSTER_FILTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.ts');
+const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts');
 
 function assert(cond, msg) {
     if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -67,7 +67,7 @@ function testClearClusterFilter() {
 // ---------------------------------------------------------------------------
 
 function testClusterFilterExports() {
-    console.log('\n[TEST] API Exports in cluster-filter.js');
+    console.log('\n[TEST] API Exports in cluster-filter.ts');
 
     const src = fs.readFileSync(CLUSTER_FILTER_PATH, 'utf-8');
 
@@ -80,7 +80,7 @@ function testClusterFilterExports() {
     assertContains(src, 'export function populateCityFilter', 'populateCityFilter exported');
     assertContains(src, 'export function syncFilterControls', 'syncFilterControls exported');
 
-    console.log('  OK all required functions exported from cluster-filter.js');
+    console.log('  OK all required functions exported from cluster-filter.ts');
 }
 
 // ---------------------------------------------------------------------------
@@ -93,7 +93,7 @@ function testLifecycleDelegation() {
     const src = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
 
     // Should import from cluster-filter.js
-    assertContains(src, "from './cluster-filter.js';", 'imports from cluster-filter.js');
+    assertContains(src, "from './cluster-filter.ts';", 'imports from cluster-filter.ts');
 
     // Should NOT contain stub definitions
     const stubs = [
@@ -119,7 +119,7 @@ function testLifecycleDelegation() {
         assert(new RegExp(`\\b${name}\\b`).test(src), `lifecycle re-exports ${name}`);
     });
 
-    console.log('  OK lifecycle.js delegates to cluster-filter.js');
+    console.log('  OK lifecycle.js delegates to cluster-filter.ts');
 }
 
 // ---------------------------------------------------------------------------

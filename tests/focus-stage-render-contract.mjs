@@ -44,7 +44,7 @@ function startServer(port) {
         const mimeTypes = {
           '.html': 'text/html',
           '.css': 'text/css',
-          '.js': 'application/javascript',
+          '.ts': 'application/javascript',
         };
         res.writeHead(200, {
           'Content-Type': mimeTypes[ext] || 'application/octet-stream',

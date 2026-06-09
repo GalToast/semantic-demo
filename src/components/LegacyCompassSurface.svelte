@@ -34,6 +34,7 @@
   truth for the parity layer).
 -->
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { navStore } from '@lib/stores/navigation';
   import { journeyStore, JOURNEY_COMPASS_PHASE_ORDER } from '@lib/stores/journey';
   import { focusStore } from '@lib/stores/focus';
@@ -76,6 +77,37 @@
   let copy = $derived(presentation.copy);
   let actionsProfile = $derived(presentation.actions);
   let navigationOwner = $derived(presentation.navigationOwner);
+  let navSurface = $state(navStore().surface);
+  let bodyPanelSurface = $state('');
+
+  function readBodyPanelSurface(): void {
+    if (typeof document !== 'undefined' && document.body) {
+      bodyPanelSurface = document.body.dataset.panelSurface || '';
+    }
+  }
+
+  $effect(() => {
+    const unsub = navStore.subscribe((state) => {
+      navSurface = state.surface;
+    });
+    return unsub;
+  });
+
+  onMount(() => {
+    let reads = 0;
+    readBodyPanelSurface();
+    const observer = new MutationObserver(readBodyPanelSurface);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface'] });
+    const poll = window.setInterval(() => {
+      readBodyPanelSurface();
+      reads += 1;
+      if (reads >= 20) window.clearInterval(poll);
+    }, 50);
+    return () => {
+      window.clearInterval(poll);
+      observer.disconnect();
+    };
+  });
 
   // Step indicators: 5 milestones mapped to data-journey-step elements
   const STEP_DESCRIPTIONS: Record<string, string> = {
@@ -166,8 +198,16 @@
   // ── Title special case ──────────────────────────────────────────────────
   // Legacy: in focus/inside phases the title element is intentionally empty
   // and gets an sr-only "Focused on X" alt text for the h1 landmark.
+  let searchSurface = $derived(
+    navSurface === 'search' ||
+    navSurface === 'focus-search' ||
+    bodyPanelSurface === 'search' ||
+    bodyPanelSurface === 'focus-search'
+  );
   let visibleTitle = $derived(
-    compass.title || (phase === 'focus' || phase === 'inside' ? '' : 'County overview')
+    searchSurface
+      ? (compass.title || 'Search results')
+      : compass.title || (phase === 'focus' || phase === 'inside' ? '' : 'County overview')
   );
   let titleSrOnlyText = $derived(
     visibleTitle ? '' : 'Focused on the current business'
@@ -224,7 +264,7 @@
   <div class="journey-compass-actions">
     <button
       id="btn-journey-primary"
-      class="journey-compass-action"
+      class="journey-compass-action primary"
       type="button"
       data-journey-action={actionKey(compass.primaryAction)}
       hidden={buttonHidden(compass.primaryAction, 'primary')}
@@ -238,7 +278,7 @@
     </button>
     <button
       id="btn-journey-secondary"
-      class="journey-compass-action"
+      class="journey-compass-action secondary"
       type="button"
       data-journey-action={actionKey(compass.secondaryAction)}
       hidden={buttonHidden(compass.secondaryAction, 'secondary')}
@@ -252,7 +292,7 @@
     </button>
     <button
       id="btn-journey-tertiary"
-      class="journey-compass-action"
+      class="journey-compass-action tertiary"
       type="button"
       data-journey-action={actionKey(compass.tertiaryAction)}
       hidden={buttonHidden(compass.tertiaryAction, 'tertiary')}

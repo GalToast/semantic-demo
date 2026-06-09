@@ -1,11 +1,11 @@
-import { webglContext } from './webgl-context.js';
+import { webglContext } from './webgl-context.ts';
 import * as THREE from 'three';
-import { state as _state } from '../state.js';
+import { state as _state } from '../state.ts';
 const state = _state as any;
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
-import { disposeObject3D } from './resource-tracker.js';
-import { triggerCorridorBloom } from './audio-scape.js';
-import { seededUnit } from './utils/seeded-random.js';
+import { disposeObject3D } from './resource-tracker.ts';
+import { triggerCorridorBloom } from './audio-scape.ts';
+import { seededUnit } from './utils/seeded-random.ts';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 

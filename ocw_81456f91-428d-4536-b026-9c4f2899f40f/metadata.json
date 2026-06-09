@@ -1,0 +1,26 @@
+{
+  "worker_id": "ocw_81456f91-428d-4536-b026-9c4f2899f40f",
+  "name": "mimo-svelte-surface-wiring",
+  "status": "completed",
+  "cwd": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer",
+  "backend": "qwen",
+  "requested_model": "opencode-go/mimo-v2.5",
+  "model": "mimo-v2.5",
+  "attempted_models": [
+    "mimo-v2.5"
+  ],
+  "session_id": "a3043ce4-68c9-45b3-9e5f-481105b5a71a",
+  "stdout_path": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer\\ocw_81456f91-428d-4536-b026-9c4f2899f40f\\stdout.log",
+  "stderr_path": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer\\ocw_81456f91-428d-4536-b026-9c4f2899f40f\\stderr.log",
+  "prompt_path": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer\\ocw_81456f91-428d-4536-b026-9c4f2899f40f\\prompt.txt",
+  "metadata_path": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer\\ocw_81456f91-428d-4536-b026-9c4f2899f40f\\metadata.json",
+  "created_at": "2026-06-09T04:25:47.137Z",
+  "updated_at": "2026-06-09T04:36:39.466Z",
+  "pid": 7304,
+  "child_pid": 7304,
+  "exit_code": 0,
+  "signal": null,
+  "last_text_preview": "contract:map-trail` (Svelte dev server) | 3 pass / 4 fail — pre-ex\r\n\u001b[23;80Hxisting (see blockers) |\\n\\n### Remaining blockers\\n1. **map-trail contract (4 fa\r\n\u001b[23;80Hailures)**: Pre-existing. The test tries to establish trail state via UI clicks (\r\n\u001b[23;80H(`.search-result`, `#btn-focus-path`), but the Svelte search→focus→trail pipeline\r\n\u001b[23;80He isn't fully wired yet. `MapSummary` correctly self-gates on `hasTrail() && trai\r\n\u001b[23;80Hil.length > 0` — it will render when stores have trail data.\\n2. **mobile-idle `t\r\n\u001b[23;80Htouch-target:search-container`**: Pre-existing touch-target size issue, not relat\r\n\u001b[23;80Hted to this slice.\\n3. **No new abstractions created**. No stores, components, or\r\n\u001b[23;80Hr files added. Single-file change.\\n\\n### Cross-slice findings\\n- `Finds outside \r\n\u001b[23;80H scope: src/components/MapSummary.svelte — map-trail contract test failures are c\r\n\u001b[23;80Hcaused by the search→focus→trail pipeline not populating journeyStore.trail in th\r\n\u001b[23;80Hhe Svelte app, not by MapSummary visibility wiring.`\",\"usage\":{\"input_tokens\":259\r\n\u001b[23;80H95771,\"output_tokens\":20766,\"cache_read_input_tokens\":2391424,\"total_tokens\":2616\r\n\u001b[23;80H6537},\"permission_denials\":[]}\r\n",
+  "stdout_bytes": 966855,
+  "stderr_bytes": 3307
+}

@@ -108,11 +108,11 @@ function ds(key) {
   return fakeBody.dataset[key];
 }
 
-const { state, withStateMutation } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.ts');
 
 let refreshCompositionState;
 try {
-  const lc = await import('../js/modules/lifecycle.js');
+  const lc = await import('../js/modules/lifecycle.ts');
   refreshCompositionState = lc.refreshCompositionState;
 } catch (e) {
   refreshCompositionState = globalThis.window.refreshCompositionState;
@@ -255,7 +255,7 @@ withStateMutation(() => {
 elementsById.set('search-input', new FakeElement('input'));
 commit('pre-reset');
 
-const { resetStateBeforeUrlRestore } = await import('../js/modules/lifecycle.js');
+const { resetStateBeforeUrlRestore } = await import('../js/modules/lifecycle.ts');
 resetStateBeforeUrlRestore({ clearSearchInput: true });
 commit('post-reset');
 

@@ -20,20 +20,21 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveSource } from './source-path.mjs';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
-const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/view-controller.js');
-const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
-const JOURNEY_POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-point-color.js');
-const JOURNEY_SELECTED_CARD_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-selected-card.js');
-const UI_RENDERERS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/ui-renderers.js');
-const FOCUS_STAGE_RENDERER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/focus-stage-renderer.js');
-const SCENE_REVEAL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.js');
-const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js');
-const CAMERA_CONTROLS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/camera-controls.js');
-const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-state.js');
-const APP_PATH = path.join(SEMDEMO_ROOT, 'js/modules/app.ts');
+const LIFECYCLE_PATH = resolveSource('js/modules/lifecycle.ts', SEMDEMO_ROOT);
+const VIEW_CONTROLLER_PATH = resolveSource('js/modules/view-controller.ts', SEMDEMO_ROOT);
+const JOURNEY_PATH = resolveSource('js/modules/journey.ts', SEMDEMO_ROOT);
+const JOURNEY_POINT_COLOR_PATH = resolveSource('js/modules/journey-point-color.ts', SEMDEMO_ROOT);
+const JOURNEY_SELECTED_CARD_PATH = resolveSource('js/modules/journey-selected-card.ts', SEMDEMO_ROOT);
+const UI_RENDERERS_PATH = resolveSource('js/modules/ui-renderers.ts', SEMDEMO_ROOT);
+const FOCUS_STAGE_RENDERER_PATH = resolveSource('js/modules/focus-stage-renderer.ts', SEMDEMO_ROOT);
+const SCENE_REVEAL_PATH = resolveSource('js/modules/scene-reveal.ts', SEMDEMO_ROOT);
+const EVENT_BINDINGS_PATH = resolveSource('js/modules/event-bindings.ts', SEMDEMO_ROOT);
+const CAMERA_CONTROLS_PATH = resolveSource('js/modules/camera-controls.ts', SEMDEMO_ROOT);
+const SEARCH_STATE_PATH = resolveSource('js/modules/search-state.ts', SEMDEMO_ROOT);
+const APP_PATH = resolveSource('js/modules/app.ts', SEMDEMO_ROOT);
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -123,9 +124,9 @@ function testGap2_syncClusterSectionState() {
   );
 
   // No remaining call site should depend on the retired window bridge.
-  assertNoDeadCall(lifecycleSrc, 'syncClusterSectionState', 'lifecycle.js', 'Gap 2');
-  assertNoDeadCall(sceneRevealSrc, 'syncClusterSectionState', 'scene-reveal.js', 'Gap 2');
-  assertNoDeadCall(eventBindingsSrc, 'syncClusterSectionState', 'event-bindings.js', 'Gap 2');
+  assertNoDeadCall(lifecycleSrc, 'syncClusterSectionState', 'lifecycle.ts', 'Gap 2');
+  assertNoDeadCall(sceneRevealSrc, 'syncClusterSectionState', 'scene-reveal.ts', 'Gap 2');
+  assertNoDeadCall(eventBindingsSrc, 'syncClusterSectionState', 'event-bindings.ts', 'Gap 2');
 
   assert(
     /syncClusterSectionState\s*\(\s*\)/.test(sceneRevealSrc),
@@ -157,7 +158,7 @@ function testGap3a_hydrateLeadContext() {
   );
 
   // selected-card owner call site must not depend on the retired window bridge.
-  assertNoDeadCall(journeySrc, 'hydrateLeadContext', 'journey.js', 'Gap 3a');
+  assertNoDeadCall(journeySrc, 'hydrateLeadContext', 'journey.ts', 'Gap 3a');
   assert(
     /selectedCardAdapter\.hydrateLeadContext/.test(selectedCardSrc),
     'Gap 3a: journey-selected-card.js must call hydrateLeadContext through the lifecycle adapter'
@@ -190,7 +191,7 @@ function testGap3b_applySearchGlowVisualState() {
   );
   assert(
     /import\s+\{\s*publish,\s*EVENTS\s*\}\s+from\s+['"]\.\/event-bus\.js['"]/.test(pointColorSrc),
-    'journey-point-color.js must import publish and EVENTS from event-bus.js'
+    'journey-point-color.js must import publish and EVENTS from event-bus.ts'
   );
   assert(!/search-lifecycle-adapter/.test(pointColorSrc), 'journey-point-color.js must not import retired search lifecycle adapter');
 
@@ -235,8 +236,8 @@ function testGap4_updateSelectedCardHeading() {
     'focus-stage-renderer.js updateSelectedCardHeading must target #selected-card-title'
   );
   assert(
-    /export\s+function\s+updateSelectedCardHeading\s*\([^)]*\)\s*\{[\s\S]{0,180}focusRendererModule\.updateSelectedCardHeading/.test(uiRendererSrc),
-    'ui-renderers.js must re-export updateSelectedCardHeading by delegating to focus-stage-renderer.js'
+    /export\s+function\s+updateSelectedCardHeading\s*\([^)]*\)(?:\s*:\s*\S[^{]*)?\s*\{[\s\S]{0,180}(?:focusRendererModule|focusRenderers)\.updateSelectedCardHeading/.test(uiRendererSrc),
+    'ui-renderers.js must re-export updateSelectedCardHeading by delegating to focus-stage-renderer.ts'
   );
   assert(
     !/selected-card-title/.test(uiRendererSrc),
@@ -244,7 +245,7 @@ function testGap4_updateSelectedCardHeading() {
   );
   assert(
     /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(selectedCardSrc),
-    'journey-selected-card.js must import updateSelectedCardHeading from ui-renderers.js'
+    'journey-selected-card.js must import updateSelectedCardHeading from ui-renderers.ts'
   );
   assert(
     /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(journeySrc),
@@ -258,9 +259,9 @@ function testGap4_updateSelectedCardHeading() {
     !/import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(lifecycleSrc),
     'lifecycle.js must not re-own updateSelectedCardHeading after selected-card transfer'
   );
-  assertNoDeadCall(lifecycleSrc, 'updateSelectedCardHeading', 'lifecycle.js', 'Gap 4');
-  assertNoDeadCall(journeySrc, 'updateSelectedCardHeading', 'journey.js', 'Gap 4');
-  assertNoDeadCall(selectedCardSrc, 'updateSelectedCardHeading', 'journey-selected-card.js', 'Gap 4');
+  assertNoDeadCall(lifecycleSrc, 'updateSelectedCardHeading', 'lifecycle.ts', 'Gap 4');
+  assertNoDeadCall(journeySrc, 'updateSelectedCardHeading', 'journey.ts', 'Gap 4');
+  assertNoDeadCall(selectedCardSrc, 'updateSelectedCardHeading', 'journey-selected-card.ts', 'Gap 4');
 
   console.log('  OK — updateSelectedCardHeading: RESOLVED via direct imports');
 }
@@ -277,9 +278,9 @@ function testGap5_focusOnNode() {
   const cameraControlsSrc = fs.readFileSync(CAMERA_CONTROLS_PATH, 'utf-8');
   const eventBindingsSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
-  const searchStateSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/search-state.js'), 'utf-8');
+  const searchStateSrc = fs.readFileSync(SEARCH_STATE_PATH, 'utf-8');
   const appSrc = fs.readFileSync(APP_PATH, 'utf-8');
-  const eventBusSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/event-bus.js'), 'utf-8');
+  const eventBusSrc = fs.readFileSync(resolveSource('js/modules/event-bus.ts', SEMDEMO_ROOT), 'utf-8');
 
   assert(
     /^export\s+function\s+focusOnNode\s*\(/m.test(cameraControlsSrc),
@@ -287,8 +288,8 @@ function testGap5_focusOnNode() {
   );
 
   // event-bindings.js and lifecycle.js must use direct imports (no window.focusOnNode calls)
-  assertNoDeadCall(eventBindingsSrc, 'focusOnNode', 'event-bindings.js', 'Gap 5');
-  assertNoDeadCall(lifecycleSrc, 'focusOnNode', 'lifecycle.js', 'Gap 5');
+  assertNoDeadCall(eventBindingsSrc, 'focusOnNode', 'event-bindings.ts', 'Gap 5');
+  assertNoDeadCall(lifecycleSrc, 'focusOnNode', 'lifecycle.ts', 'Gap 5');
 
   assert(
     /SEARCH_FOCUS_REQUESTED:\s*['"]SEARCH_FOCUS_REQUESTED['"]/.test(eventBusSrc),

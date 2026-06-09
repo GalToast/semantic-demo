@@ -773,10 +773,7 @@ body.is-active #selected-details.active:not([hidden]) {
         pointer-events: none;
     }
 
-    .focus-stage-filed,
-    .focus-stage-meta,
-    .focus-stage-badges,
-    .focus-stage-trivia {
+    .focus-stage-meta {
         display: none;
     }
 
@@ -806,22 +803,44 @@ body.is-active #selected-details.active:not([hidden]) {
     /* Product-route final guards: once the real mobile route has handed off
        to search, focus, preview, or dive, stale lower-surface chrome must not
        remain as a second drawer. */
-    body.is-active[data-panel-surface='search'] #mode-grid,
-    body.is-active[data-panel-surface='search'] .mode-grid {
+    body.is-active:is([data-panel-surface='search'], [data-panel-surface='focus-search']) #mode-chips,
+    body.is-active:is([data-panel-surface='search'], [data-panel-surface='focus-search']) .mode-chips {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    body.is-active.is-svelte-mounted:is([data-panel-surface='focus'], [data-panel-surface='semantic-dive']) #info-panel.info-panel,
-    body.is-active.is-svelte-mounted[data-panel-surface='focus-search'][data-trail-state='active'] #info-panel.info-panel {
+    body.is-active[data-panel-surface='focus-search'][data-trail-state='active'][data-thread-inspect-surface='walk-next']
+        #thread-inspector.active {
+        display: block;
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    body.is-active[data-panel-surface='focus-search'][data-trail-state='active'][data-thread-inspect-surface='walk-next']
+        #thread-inspector.active
+        .focus-thread-inspector {
+        display: grid;
+        visibility: visible;
+        opacity: 1;
+        max-height: 76px;
+        min-height: 64px;
+        padding: 6px 8px;
+        gap: 3px;
+        overflow: hidden;
+    }
+
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='semantic-dive']) #info-panel.info-panel,
+    body.is-active[data-panel-surface='focus-search'][data-trail-state='active'] #info-panel.info-panel {
         display: none;
         visibility: hidden;
         opacity: 0;
         pointer-events: none;
     }
 
-    body.is-active.is-svelte-mounted[data-panel-surface='focus-search'][data-trail-state='active'] .search-container {
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='semantic-dive']) .search-container,
+    body.is-active[data-panel-surface='focus-search'][data-trail-state='active'] .search-container {
         display: none;
         visibility: hidden;
         opacity: 0;
@@ -859,6 +878,8 @@ body.is-active #selected-details.active:not([hidden]) {
         #focus-stage.focus-stage {
         bottom: max(8px, env(safe-area-inset-bottom, 0px));
         max-height: calc(100dvh - 120px);
+        min-height: 1px;
+        min-width: 1px;
     }
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
@@ -866,8 +887,11 @@ body.is-active #selected-details.active:not([hidden]) {
         )
         #focus-stage
         .focus-thread-inspector.active {
+        display: grid;
+        visibility: visible;
+        opacity: 1;
         max-height: 76px;
-        min-height: 0;
+        min-height: 64px;
         padding: 6px 8px;
         gap: 3px;
         overflow: hidden;

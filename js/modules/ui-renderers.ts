@@ -5,10 +5,10 @@
  * Orchestration shim for building and updating HTML strings and DOM components.
  */
 
-import * as searchRendererModule from './search-result-renderer.js';
-import * as legendRendererModule from './legend-ui.js';
-import * as focusRendererModule from './focus-stage-renderer.js';
-import * as trailCueRendererModule from './search-trail-cue-renderer.js';
+import * as searchRendererModule from './search-result-renderer.ts';
+import * as legendRendererModule from './legend-ui.ts';
+import * as focusRendererModule from './focus-stage-renderer.ts';
+import * as trailCueRendererModule from './search-trail-cue-renderer.ts';
 
 import './weather-ui.js';
 import './semantic-guide-ui.js';

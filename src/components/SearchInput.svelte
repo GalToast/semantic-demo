@@ -13,6 +13,7 @@
     .search-icon, #semantic-lane-pill
 -->
 <script lang="ts">
+  import { onMount } from 'svelte';
   import {
     searchState,
     setSearchQuery,
@@ -47,7 +48,15 @@
 
   let status = $derived($searchState.status);
   let showLoading = $derived(status === 'searching');
+  let showSearchStatus = $derived(status !== 'idle');
   let hasQuery = $derived(queryInput.trim().length > 0);
+
+  $effect(() => {
+    const storeQuery = $searchState.query ?? '';
+    if (queryInput !== storeQuery) {
+      queryInput = storeQuery;
+    }
+  });
 
   // ── Search dispatch ───────────────────────────────────────────────────────────
 
@@ -136,6 +145,14 @@
       if (searchAbortController) searchAbortController.abort();
     };
   });
+
+  onMount(() => {
+    const query = new URLSearchParams(window.location.search || '').get('q')?.trim();
+    if (!query || queryInput || query.length < 2) return;
+    queryInput = query;
+    setSearchQuery(query);
+    dispatchSearch(query);
+  });
 </script>
 
 <div
@@ -183,10 +200,16 @@
   </div>
 
   <!-- Loading state -->
-  {#if showLoading}
+  {#if showSearchStatus}
     <div class="search-status" id="search-status" role="status" aria-live="polite">
-      <span class="search-spinner" id="search-spinner"></span>
-      Searching semantic field...
+      <span class="search-spinner" id="search-spinner" aria-hidden={status !== 'searching'}></span>
+      {status === 'searching'
+        ? 'Searching semantic field...'
+        : status === 'error'
+          ? 'Search is unavailable right now.'
+          : status === 'empty'
+            ? 'No matching businesses found.'
+            : 'Search results loaded.'}
     </div>
   {/if}
 </div>
@@ -259,6 +282,7 @@
 
   .search-input {
     flex: 1;
+    min-height: 44px;
     background: none;
     border: none;
     outline: none;

@@ -15,7 +15,7 @@
  *     (leaf module that breaks the cluster-filter/window/url-state cycle).
  *
  * Usage:
- *   import { initClusterFilterAdapter } from './cluster-filter-adapter.js';
+ *   import { initClusterFilterAdapter } from './cluster-filter-adapter.ts';
  *   // Called once from app.js init, after window bridges are established.
  *
  * **Boundary cast note:**

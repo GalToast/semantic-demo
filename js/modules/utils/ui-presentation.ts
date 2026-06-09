@@ -5,7 +5,7 @@
  */
 
 import * as THREE from 'three';
-import { getFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.js';
+import { getFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.ts';
 
 export function updateDocumentMeta(title: string, description: string): void {
     if (typeof document === 'undefined') return;

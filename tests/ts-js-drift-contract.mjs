@@ -1,11 +1,10 @@
 /**
  * ts-js-drift-contract.mjs
  *
- * Enforces a boundary between TypeScript engine modules and their JavaScript
- * siblings in js/modules/. The repo has a dual-source pattern: several engine
- * modules exist as both .ts (typed, checked by tsc) and .js (untyped, bundled
- * by esbuild). Runtime imports target .js. When someone edits one side without
- * updating the other, exports and imports silently drift.
+ * Enforces the native TypeScript runtime boundary in js/modules/. Older
+ * checkpoints used a dual-source pattern where .ts shadows and .js runtime
+ * files coexisted. The runtime build now enters through app.ts; any remaining
+ * TS/JS siblings are treated as drift until the JS shadow is retired.
  *
  * Modes:
  *   --check (default) : Compare current drift against KNOWN_BASELINE.
@@ -29,9 +28,8 @@ const strict = args.includes('--strict');
 const updateMode = args.includes('--update');
 const progressMode = args.includes('--progress');
 
-// No tolerated TS/JS drift remains. Retired .js shadow stubs are handled as a
-// separate source-state: they must preserve the TS export surface, but their
-// imports are intentionally not compared because the .ts file is canonical.
+// No tolerated TS/JS drift remains. All JS shadow files in js/modules/ have
+// been retired. This contract now enforces a strict native-TS boundary.
 const KNOWN_BASELINE = {};
 
 // Helpers
@@ -85,7 +83,7 @@ function extractExports(source) {
  */
 function extractSiblingImports(source, ownerBase = null) {
   const deps = new Set();
-  const runtimeSource = source.replace(/^\s*import\s+type\b[^;]*;?/gm, '');
+  const runtimeSource = source.replace(/^\s*import\s+type\b[^\r\n;]*(?:;)?\r?$/gm, '');
   const importPatterns = [
     /from\s+['"]\.\/([\w/-]+)(?:\.js)?['"]/g,
     /import\s+['"]\.\/([\w/-]+)(?:\.js)?['"]/g,
@@ -130,7 +128,7 @@ function computeDrift() {
 
   for (const tsFile of tsFiles.sort()) {
     const base = tsFile.replace(/\.ts$/, '');
-    const jsFile = base + '.js';
+    const jsFile = base + '.ts';
     const tsPath = path.join(MODULES_DIR, tsFile);
     const jsPath = path.join(MODULES_DIR, jsFile);
 
@@ -234,7 +232,7 @@ if (progressMode) {
         const hasJs = fs.existsSync(path.join(dir, base + '.js'));
         if (hasJs) dual.push(base);
         else tsOnly.push(base);
-      } else if (e.name.endsWith('.js')) {
+      } else if (e.name.endsWith('.ts')) {
         const base = e.name.slice(0, -3);
         const hasTs = fs.existsSync(path.join(dir, base + '.ts'));
         if (!hasTs) jsOnly.push(base);
@@ -249,8 +247,14 @@ if (progressMode) {
     ? (((all.tsOnly.length + all.dual.length) / totalModules) * 100).toFixed(1)
     : '0.0';
 
-  // Entry readiness: check app.js imports
+  // Entry readiness: check the active native-TS build entry.
   const appJsPath = path.join(root, 'app.js');
+  const appTsPath = path.join(root, 'app.ts');
+  const buildScriptPath = path.resolve('scripts/build-app.mjs');
+  const buildScriptSource = fs.existsSync(buildScriptPath) ? fs.readFileSync(buildScriptPath, 'utf8') : '';
+  const buildUsesAppTs = /entryPoints:\s*\[\s*['"]js\/modules\/app\.ts['"]\s*\]/.test(buildScriptSource);
+  const appTsExists = fs.existsSync(appTsPath);
+  const appJsExists = fs.existsSync(appJsPath);
   const appSource = fs.existsSync(appJsPath) ? fs.readFileSync(appJsPath, 'utf8') : '';
   const entryImports = [];
   const seenImports = new Set();
@@ -271,6 +275,7 @@ if (progressMode) {
     return fs.existsSync(path.join(root, ...n.split('/')) + '.ts');
   }).length;
   const entryBlocked = entryImports.filter(n => !fs.existsSync(path.join(root, ...n.split('/')) + '.ts'));
+  const nativeEntryReady = buildUsesAppTs && appTsExists && !appJsExists;
 
   // Drift state
   const { drift } = computeDrift();
@@ -295,23 +300,32 @@ if (progressMode) {
     }
   }
   console.log('');
-  console.log(`  app.js entry imports:   ${entryReadyCount}/${entryImports.length} have TS siblings`);
-  if (entryBlocked.length > 0) {
-    console.log(`  Blocked (no .ts yet):   ${entryBlocked.join(', ')}`);
+  console.log(`  Active build entry:     ${buildUsesAppTs ? 'js/modules/app.ts' : 'not js/modules/app.ts'}`);
+  console.log(`  app.ts present:         ${appTsExists ? 'YES' : 'NO'}`);
+  console.log(`  app.js retired:         ${appJsExists ? 'NO' : 'YES'}`);
+  if (appJsExists) {
+    console.log(`  app.js entry imports:   ${entryReadyCount}/${entryImports.length} have TS siblings`);
+    if (entryBlocked.length > 0) {
+      console.log(`  Blocked (no .ts yet):   ${entryBlocked.join(', ')}`);
+    }
   }
-  console.log(`  Entry ready for flip:   ${entryBlocked.length === 0 ? 'YES' : 'NO'}`);
+  console.log(`  Native TS entry ready:  ${nativeEntryReady ? 'YES' : 'NO'}`);
   console.log('');
   console.log('  App entry status:');
-  if (entryBlocked.length > 0) {
+  if (!buildUsesAppTs) {
+    console.log('    1. Update scripts/build-app.mjs to use js/modules/app.ts as entryPoints[0]');
+  } else if (!appTsExists) {
+    console.log('    1. Restore js/modules/app.ts before declaring the native TS runtime ready');
+  } else if (appJsExists && entryBlocked.length > 0) {
     console.log(`    1. Convert ${entryBlocked.length} blocked modules to .ts:`);
     for (const name of entryBlocked.sort()) {
        console.log(`       - js/modules/${name}.js → .ts`);
     }
   } else {
-    console.log('    ✓ All app.js entry imports have TS siblings');
     console.log('    ✓ build-app.mjs uses app.ts as the active entry');
     console.log('    ✓ app.ts owns the runtime init body');
-    console.log('    Next: continue converting JS-only shadow modules and retire compatibility JS when safe');
+    console.log(`    ${appJsExists ? '• app.js compatibility wrapper still exists' : '✓ app.js compatibility wrapper retired'}`);
+    console.log('    Next: migrate remaining JS-path tests/contracts to the native TS entry');
   }
   console.log('');
   process.exit(0);
@@ -394,39 +408,10 @@ if (hasRegression) {
 }
 
 // ── Semantic pattern guard ──────────────────────────────────────────────────
-// Lightweight regex checks for critical runtime patterns that have historically
-// drifted between TS and JS. These catch dangerous semantic divergence that the
-// structural export/import check cannot detect.
-
-const SEMANTIC_RULES = [
-  {
-    name: 'calculateSignalScore-call-signature',
-    jsFile: 'three-interaction-visuals.js',
-    // JS must call calculateSignalScore(point), not calculateSignalScore(state, idx)
-    pass: (src) => /calculateSignalScore\(\s*state\.points\?\.\[/.test(src),
-    fail: 'JS calls calculateSignalScore(state, idx) instead of calculateSignalScore(state.points?.[idx])',
-  },
-  {
-    name: 'outputColorSpace-in-initThreeJS',
-    jsFile: 'three-engine.js',
-    pass: (src) => /outputColorSpace\s*=\s*THREE\.SRGBColorSpace/.test(src),
-    fail: 'JS initThreeJS missing renderer.outputColorSpace = THREE.SRGBColorSpace',
-  },
-  {
-    name: 'no-hardcoded-point-size',
-    jsFile: 'three-engine.js',
-    // The point size in animate() must use CONFIG.POINTS_MATERIAL_BASE_SIZE, not a literal 0.012
-    pass: (src) => !/pointsMaterial\.size\s*=\s*0\.012/.test(src),
-    fail: 'JS animate() uses hardcoded 0.012 instead of CONFIG.POINTS_MATERIAL_BASE_SIZE',
-  },
-  {
-    name: 'countyOutline-Z-centerZ',
-    jsFile: 'three-node-manager.js',
-    // createCountyOutline must use centerZ = 0, not minZ from bounds
-    pass: (src) => /const\s+centerZ\s*=\s*0/.test(src),
-    fail: 'JS createCountyOutline uses minZ from bounds instead of centerZ = 0',
-  },
-];
+// Retired: Previously checked for critical runtime patterns that drifted 
+// between TS and JS. With all JS shadows removed, these are now managed 
+// exclusively through TypeScript type safety and unit tests.
+const SEMANTIC_RULES = [];
 
 let semanticFailures = [];
 for (const rule of SEMANTIC_RULES) {

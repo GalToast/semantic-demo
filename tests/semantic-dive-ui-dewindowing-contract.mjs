@@ -18,13 +18,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const SEMANTIC_DIVE_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/semantic-dive-ui.js');
-const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
+const SEMANTIC_DIVE_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/semantic-dive-ui.ts');
+const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts');
 const RUNTIME_SYNC_CALLERS = [
-  'js/modules/camera-controls.js',
-  'js/modules/journey-compass-controller.js',
-  'js/modules/journey-thread-settler.js',
-  'js/modules/thread-inspector.js'
+  'js/modules/camera-controls-choreography-cursor.ts',
+  'js/modules/journey-compass-controller.ts',
+  'js/modules/journey-thread-settler.ts',
+  'js/modules/thread-inspector.ts'
 ];
 
 function assert(cond, msg) {
@@ -71,7 +71,7 @@ function main() {
     const absolutePath = path.join(SEMDEMO_ROOT, relativePath);
     const src = fs.readFileSync(absolutePath, 'utf-8');
     assert(
-      /import\s+\{[^}]*\bsyncSemanticDiveUi\b[^}]*\}\s+from\s+['"]\.\/semantic-dive-ui\.js['"]/.test(src),
+      /import\s+\{[^}]*\bsyncSemanticDiveUi\b[^}]*\}\s+from\s+['"]\.\/semantic-dive-ui(\.ts)?['"]/.test(src),
       `${relativePath} must import syncSemanticDiveUi directly from semantic-dive-ui.js`
     );
     assert(

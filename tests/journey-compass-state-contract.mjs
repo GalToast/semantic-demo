@@ -11,11 +11,11 @@ globalThis.window = {
   getRouteEmbodimentIndices: () => [],
 };
 
-const { state, withStateMutation } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.ts');
 const {
   getFocusedJourneyPoint,
   getJourneyCompassState,
-} = await import('../js/modules/journey-compass-state.js');
+} = await import('../js/modules/journey-compass-state.ts');
 
 function resetState() {
   withStateMutation(() => {
@@ -79,8 +79,8 @@ withStateMutation(() => {
 });
 compassState = getJourneyCompassState();
 assert.equal(compassState.phase, 'focus', 'focused point is focus phase');
-assert.equal(compassState.primaryAction?.action, 'open-map', 'search anchor focus exposes map as primary action');
-assert.equal(compassState.secondaryAction?.action, 'county-overview', 'search anchor focus exposes county reset as secondary action');
+assert.equal(compassState.primaryAction?.action, 'enter-inside', 'search anchor focus exposes enter-inside as primary action');
+assert.equal(compassState.secondaryAction?.action, 'open-map', 'search anchor focus exposes open-map as secondary action');
 
 withStateMutation(() => {
   state.currentView = 'map';

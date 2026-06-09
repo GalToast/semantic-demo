@@ -23,10 +23,10 @@
  * Svelte component from the `selectedPointStore`.
  */
 
-import { getCurrentView, getSelectedPoint, getPoints, getCurrentSearchSummary } from '../state/selectors/index.js';
-import { getSelectedCardFadeMs, getLeadEnrichment } from '../state/selectors/index.js';
-import { getBusinessNamePresentation, sanitizePublicFacingNote } from './utils/dom-formatters.js';
-import { getPanelSurface, isMapSummarySurface } from './environment.js';
+import { getCurrentView, getSelectedPoint, getPoints, getCurrentSearchSummary } from '../state/selectors/index.ts';
+import { getSelectedCardFadeMs, getLeadEnrichment } from '../state/selectors/index.ts';
+import { getBusinessNamePresentation, sanitizePublicFacingNote } from './utils/dom-formatters.ts';
+import { getPanelSurface, isMapSummarySurface } from './environment.ts';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

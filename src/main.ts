@@ -21,24 +21,18 @@ function parseUrlParams(): { forceDemo: boolean; noDemo: boolean } {
 // ── Mount ─────────────────────────────────────────────────────────────────────
 
 const { forceDemo, noDemo } = parseUrlParams();
+const mountTarget = document.getElementById('app') ?? document.getElementById('app-root');
+let app: ReturnType<typeof mount> | undefined;
 
-// Mount the Svelte 5 app
-const app = mount(App, {
-  target: document.getElementById('app')!,
-  props: {
-    forceDemo,
-    noDemo
-  }
-});
+if (mountTarget) {
+  app = mount(App, {
+    target: mountTarget,
+    props: { forceDemo, noDemo }
+  });
+}
 
 // ── __TEST_STATE__ sync (visual settle for Playwright surface/visual tests) ──
 
-/**
- * Subscribe to the derived `testState` store and write to `window.__TEST_STATE__`
- * on every change. This exposes the same visual-state contract that the legacy
- * bridge-registry.js provided, enabling surface tests to waitForReady without
- * timing out.
- */
 const unsubTestState = testState.subscribe((value) => {
   (window as any).__TEST_STATE__ = value;
 });
@@ -47,7 +41,7 @@ const unsubTestState = testState.subscribe((value) => {
 
 window.addEventListener('beforeunload', () => {
   unsubTestState();
-  unmount(app);
+  if (app) unmount(app);
 });
 
 export default app;

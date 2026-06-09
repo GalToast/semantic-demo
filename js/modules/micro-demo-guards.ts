@@ -3,9 +3,9 @@
  * Eligibility guards for the micro-demo.
  */
 
-import { state } from '../state.js';
-import { prefersReducedMotion } from './environment.js';
-import { debugWarn } from './diagnostic-adapter.js';
+import { state } from '../state.ts';
+import { prefersReducedMotion } from './environment.ts';
+import { debugWarn } from './diagnostic-adapter.ts';
 
 export const STORAGE_KEY: string = 'moco_mycelium_demo_v1';
 export const SESSION_STORAGE_KEY: string = 'moco_mycelium_demo_session_v1';

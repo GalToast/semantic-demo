@@ -1,88 +1,85 @@
 /**
- * @lib/demo/guards.ts — Micro-demo eligibility guards
+ * @lib/demo/guards.ts — Eligibility guards for the micro-demo
  *
- * Ported from: js/modules/micro-demo-guards.js
+ * Port of js/modules/micro-demo-guards.js
  *
- * Eligibility guards for the micro-demo. During migration,
- * these are bridge stubs. The actual guard logic lives in
- * the demo store and the legacy runtime.
+ * Checks: app readiness, lifetime guard, reduced motion, WebGL/software renderer, URL param.
  */
+import { get } from 'svelte/store';
+import { state } from '@legacy/state.js';
+import { prefersReducedMotion } from '@lib/utils/environment';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
-import { hasDemoBeenSeen, isDemoSuppressedThisSession, markDemoCompleted } from '@lib/stores/demo';
-
-/** localStorage key for demo lifetime flag. */
 export const STORAGE_KEY = 'moco_mycelium_demo_v1';
-/** sessionStorage key for demo session flag. */
 export const SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1';
 
-/**
- * Check if the app is ready for the demo.
- * Ported from micro-demo-guards.js isAppReadyForDemo().
- */
 export function isAppReadyForDemo(): boolean {
-  return true;
+  const lState = state as Record<string, unknown>;
+  const overlay = document.getElementById('loading-overlay');
+  return (
+    lState.currentView === 'galaxy' &&
+    (lState as unknown as { focusedNode?: unknown }).focusedNode === null &&
+    !(lState as unknown as { currentSearchSummary?: unknown }).currentSearchSummary &&
+    (lState.navState as Record<string, unknown>)?.mode === 'overview' &&
+    !(lState as unknown as { sceneRevealActive?: boolean }).sceneRevealActive &&
+    Array.isArray(lState.points) &&
+    (lState.points as Array<unknown>).length > 0 &&
+    overlay !== null && overlay.classList.contains('hidden')
+  );
 }
 
-/**
- * Guard: demo has not been seen this lifetime.
- * Ported from micro-demo-guards.js guardNotSeen().
- */
 export function guardNotSeen(): boolean {
-  return !hasDemoBeenSeen();
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return true;
+    const stored = JSON.parse(raw) as { seen?: boolean };
+    return stored.seen !== true;
+  } catch {
+    return true;
+  }
 }
 
-/**
- * Guard: device is not in reduced motion mode.
- * Ported from micro-demo-guards.js guardReducedMotion().
- *
- * Returns `true` when motion is safe (i.e. user does NOT prefer reduced motion).
- * Returns `false` when OS-level or dev-flag reduced motion is active.
- */
 export function guardReducedMotion(): boolean {
-  if (typeof window === 'undefined') return true;
-
-  // OS-level prefers-reduced-motion media query
-  const osPrefersReduced =
-    window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
-  if (osPrefersReduced) return false;
-
-  // Dev/test flag on <html data-reduce-motion="true">
-  const devFlag =
-    document.documentElement.dataset.reduceMotion === 'true';
+  const osPref = prefersReducedMotion();
+  if (osPref) return false;
+  const devFlag = document.documentElement.dataset.reduceMotion === 'true';
   return !devFlag;
 }
 
-/**
- * Guard: WebGL is available and software renderer is not being used.
- * Ported from micro-demo-guards.js guardWebGL().
- */
 export function guardWebGL(): boolean {
-  return true;
+  const lState = state as Record<string, unknown>;
+  const renderer = lState.renderer as { domElement?: HTMLCanvasElement; getContext?: () => WebGLRenderingContext | null } | undefined;
+  if (!renderer?.domElement) return false;
+  const gl = renderer.getContext?.();
+  if (!gl) return false;
+  const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+  if (!dbg) return true;
+  const unmasked = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+  const softwareRenderers = ['swiftShader', 'llvmpipe', 'Software Rasterizer'];
+  const isSoftware = softwareRenderers.some((r: string) =>
+    String(unmasked).toLowerCase().includes(r.toLowerCase())
+  );
+  return !isSoftware;
 }
 
-/**
- * Guard: no nodemo URL parameter.
- * Ported from micro-demo-guards.js guardUrlParam().
- */
 export function guardUrlParam(): boolean {
-  if (typeof window === 'undefined') return true;
   const params = new URLSearchParams(window.location.search);
   return !params.has('nodemo');
 }
 
-/**
- * Record demo completion to localStorage.
- * Ported from micro-demo-guards.js recordCompletion().
- */
 export function recordCompletion(): void {
-  markDemoCompleted();
+  try {
+    const entry = {
+      seen: true,
+      seenAt: new Date().toISOString(),
+      version: 1
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entry));
+  } catch (e) {
+    debugWarn('[micro-demo] Could not write localStorage:', e);
+  }
 }
 
-/**
- * Dispatch a cancelled event when the demo cannot start.
- * Ported from micro-demo-guards.js notifyDemoUnableToStart().
- */
 export function notifyDemoUnableToStart(): void {
-  if (typeof document === 'undefined') return;
   document.dispatchEvent(new CustomEvent('demo-cancelled'));
 }

@@ -32,7 +32,7 @@ globalThis.performance = globalThis.window.performance;
 globalThis.requestAnimationFrame = globalThis.window.requestAnimationFrame;
 globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame;
 
-const { state, withStateMutation } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.ts');
 const {
   getFocusPocketIndices,
   setFocusPocketIndices,
@@ -48,7 +48,7 @@ const {
   getFocusPocketMeta,
   setFocusPocketMeta,
   clearFocusPocketMeta,
-} = await import('../js/modules/focus-pocket.js');
+} = await import('../js/modules/focus-pocket.ts');
 
 const originalNavState = state.navState;
 const originalMotion = state.focusPocketMotionByIndex;

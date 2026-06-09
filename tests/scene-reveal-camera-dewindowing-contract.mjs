@@ -14,15 +14,15 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const sceneRevealPath = resolve(CWD, 'js/modules/scene-reveal.js');
-const cameraControlsPath = resolve(CWD, 'js/modules/camera-controls.js');
-const threeSetupPath = resolve(CWD, 'js/modules/three-engine.js');
+const sceneRevealPath = resolve(CWD, 'js/modules/scene-reveal.ts');
+const cameraControlsPath = resolve(CWD, 'js/modules/camera-controls.ts');
+const threeSetupPath = resolve(CWD, 'js/modules/three-engine.ts');
 
 let sceneRevealSrc;
 try {
   sceneRevealSrc = readFileSync(sceneRevealPath, 'utf8');
 } catch {
-  console.error('FAIL: could not read js/modules/scene-reveal.js');
+  console.error('FAIL: could not read js/modules/scene-reveal.ts');
   process.exit(1);
 }
 
@@ -33,12 +33,12 @@ const checks = [];
 // imported directly from camera-controls.js (not via window)
 // ---------------------------------------------------------------------------
 checks.push({
-  name: 'imports:clearAutoRotateResumeTimer from camera-controls.js',
+  name: 'imports:clearAutoRotateResumeTimer from camera-controls.ts',
   pass: /import\s+\{\s*[^}]*clearAutoRotateResumeTimer[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(sceneRevealSrc),
 });
 
 checks.push({
-  name: 'imports:setAutoRotateSuspended from camera-controls.js',
+  name: 'imports:setAutoRotateSuspended from camera-controls.ts',
   pass: /import\s+\{\s*[^}]*setAutoRotateSuspended[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(sceneRevealSrc),
 });
 
@@ -62,7 +62,7 @@ checks.push({
 // Contract C: updateCameraViewportOffset is called through the existing direct import.
 // ---------------------------------------------------------------------------
 checks.push({
-  name: 'imports:updateCameraViewportOffset from three-engine.js',
+  name: 'imports:updateCameraViewportOffset from three-engine.ts',
   pass: /import\s+\{\s*updateCameraViewportOffset\s*\}\s+from\s+['"]\.\/three-engine\.js['"]/.test(sceneRevealSrc),
 });
 
@@ -114,12 +114,12 @@ checks.push({
 // remaining in scene-reveal.js
 // ---------------------------------------------------------------------------
 checks.push({
-  name: 'no residual window.clearAutoRotateResumeTimer in scene-reveal.js',
+  name: 'no residual window.clearAutoRotateResumeTimer in scene-reveal.ts',
   pass: !/window\.clearAutoRotateResumeTimer/.test(sceneRevealSrc),
 });
 
 checks.push({
-  name: 'no residual window.setAutoRotateSuspended in scene-reveal.js',
+  name: 'no residual window.setAutoRotateSuspended in scene-reveal.ts',
   pass: !/window\.setAutoRotateSuspended/.test(sceneRevealSrc),
 });
 

@@ -4,11 +4,11 @@
  * Utility button bindings: close summary, synthesize, prev/next, overview.
  */
 
-import { bindClick } from './view-bindings.js';
-import { hideSummaryCard, resetExplorationFocus, hideExploreTrailReview } from '../lifecycle.js';
-import { closeLegendGuide } from '../legend-ui.js';
-import { requestSemanticGuide } from '../semantic-guide.js';
-import { traverseNeighbor } from '../journey.js';
+import { bindClick } from './view-bindings.ts';
+import { hideSummaryCard, resetExplorationFocus, hideExploreTrailReview } from '../lifecycle.ts';
+import { closeLegendGuide } from '../legend-ui.ts';
+import { requestSemanticGuide } from '../semantic-guide.ts';
+import { traverseNeighbor } from '../journey.ts';
 
 export function bindUtilityButtons(): void {
     bindClick('btn-close-summary', () => {

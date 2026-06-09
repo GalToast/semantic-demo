@@ -10,13 +10,13 @@ import {
     getNavState, getCurrentView, getSemanticDiveMode,
     getCurrentSearchSummary, getTrailDepth, getSemanticTrailCue,
     getSemanticLaneSnapshot, getCurrentEmptyQuery
-} from '../state/selectors/index.js';
-import { getInterestingBusinessNote } from './journey-lifecycle-adapter.js';
-import { formatBusinessName } from './utils/dom-formatters.js';
-import { describeCluster } from './utils/ui-presentation.js';
-import { getNextExploreCandidateForIndex } from './journey-thread-model.js';
-import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.js';
-import { seededUnit } from './utils/seeded-random.js';
+} from '../state/selectors/index.ts';
+import { getInterestingBusinessNote } from './journey-lifecycle-adapter.ts';
+import { formatBusinessName } from './utils/dom-formatters.ts';
+import { describeCluster } from './utils/ui-presentation.ts';
+import { getNextExploreCandidateForIndex } from './journey-thread-model.ts';
+import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.ts';
+import { seededUnit } from './utils/seeded-random.ts';
 import type { Point } from '../../types/state';
 
 let routeEmbodimentReader: () => any[] = () => [];

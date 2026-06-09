@@ -32,21 +32,29 @@ function collectJsFiles(dir) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       files.push(...collectJsFiles(fullPath));
-    } else if (entry.isFile() && entry.name.endsWith('.js')) {
+    } else if (entry.isFile() && entry.name.endsWith('.ts')) {
       files.push(fullPath);
     }
   }
   return files;
 }
 
-const stateSrc = read('js/state.js');
-const mutatorSrc = read('js/modules/state-mutators.js');
+const stateSrc = read('js/state.ts');
+const stateShimSrc = read('js/state.ts');
+const mutatorSrc = read('js/modules/state-mutators.ts');
+const withStateMutationSrc = read('src/lib/state/with-state-mutation.ts');
 
-assert(/export\s+function\s+withStateMutation\s*\(/.test(stateSrc), 'state.js must export withStateMutation()');
-assert(/export\s+const\s+state\s*=\s*new\s+Proxy\s*\(/.test(stateSrc), 'state.js must expose state through a proxy');
+const combinedStateSrc = stateSrc + '\n' + stateShimSrc + '\n' + withStateMutationSrc;
+
+assert(
+  /export\s+function\s+withStateMutation\s*\(/.test(combinedStateSrc) ||
+  /export\s*\{\s*withStateMutation,/.test(combinedStateSrc),
+  'state.js must export withStateMutation()'
+);
+assert(/export\s+const\s+state\s*=\s*new\s+Proxy\s*\(/.test(combinedStateSrc), 'state.js must expose state through a proxy');
 
 for (const field of OWNED_FIELDS) {
-  assert(stateSrc.includes(`'${field}'`), `state.js critical-key set should include ${field}`);
+  assert(combinedStateSrc.includes(`'${field}'`), `state.js critical-key set should include ${field}`);
 }
 
 for (const exportName of EXPECTED_EXPORTS) {
@@ -69,7 +77,7 @@ const directWritePattern = new RegExp(
 
 for (const file of collectJsFiles(MODULES_DIR)) {
   const relative = path.relative(ROOT, file).replace(/\\/g, '/');
-  if (relative === 'js/modules/state-mutators.js') continue;
+  if (relative === 'js/modules/state-mutators.ts') continue;
   const src = fs.readFileSync(file, 'utf8');
   const lines = src.split(/\r?\n/);
   lines.forEach((line, index) => {

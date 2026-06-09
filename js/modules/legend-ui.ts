@@ -8,14 +8,14 @@
 // ── Imports (reference JS siblings for runtime) ────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-import { getCurrentSemanticGuide as _getCurrentSemanticGuide, getActiveClusterFilter as _getActiveClusterFilter, getColors as _getColors, getClusterNames as _getClusterNames } from '../state/selectors/index.js';
-import { subscribeKeyed, EVENTS } from './event-bus.js';
-import { escapeHtml } from './utils/dom-formatters.js';
-import { describeCluster } from './utils/ui-presentation.js';
-import { getSemanticGuideTitle } from './semantic-guide.js';
-import { getFilteredClusterCounts, setClusterFilter } from './cluster-filter.js';
-import { setFocusPanelMode, getFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.js';
-import { getViewportSize } from './environment.js';
+import { getCurrentSemanticGuide as _getCurrentSemanticGuide, getActiveClusterFilter as _getActiveClusterFilter, getColors as _getColors, getClusterNames as _getClusterNames } from '../state/selectors/index.ts';
+import { subscribeKeyed, EVENTS } from './event-bus.ts';
+import { escapeHtml } from './utils/dom-formatters.ts';
+import { describeCluster } from './utils/ui-presentation.ts';
+import { getSemanticGuideTitle } from './semantic-guide.ts';
+import { getFilteredClusterCounts, setClusterFilter } from './cluster-filter.ts';
+import { setFocusPanelMode, getFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.ts';
+import { getViewportSize } from './environment.ts';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -271,7 +271,7 @@ export function setPreviouslyFocusedLegend(el: HTMLElement | null): void { _prev
 export function getPreviouslyFocusedLegend(): HTMLElement | null { return _previouslyFocusedLegend; }
 
 // ── Unused import suppressor ────────────────────────────────────────────────
-// The selector imports from '../state/selectors/index.js' are aliased with _
+// The selector imports from '../state/selectors/index.ts' are aliased with _
 // prefix and used directly in buildLegend/updateLegendGuideState/buildCanvasColorLegend.
 // The _ prefix signals these are untyped boundary imports from a JS-only module.
 
@@ -286,7 +286,7 @@ const syncLegend = (): void => {
  *
  * TODO: Call from app.js initEventBusSubscriptions() or lifecycle.js init.
  * Currently the caller is off-limits; add this call when those files are open:
- *   import { initLegendEventBusSubscriptions } from './legend-ui.js';
+ *   import { initLegendEventBusSubscriptions } from './legend-ui.ts';
  *   initLegendEventBusSubscriptions();  // inside the caller's init sequence
  */
 export function initLegendEventBusSubscriptions(): void {

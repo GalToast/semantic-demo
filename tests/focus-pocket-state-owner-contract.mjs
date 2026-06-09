@@ -8,7 +8,7 @@ import { dirname, join, relative } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MODULES_DIR = join(__dirname, '..', 'js', 'modules');
-const FP_PATH = join(__dirname, '..', 'js', 'modules', 'focus-pocket.js');
+const FP_PATH = join(__dirname, '..', 'js', 'modules', 'focus-pocket.ts');
 
 let failures = 0;
 
@@ -16,7 +16,7 @@ function listJsFiles(dir) {
     return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
         const full = join(dir, entry.name);
         if (entry.isDirectory()) return listJsFiles(full);
-        return entry.isFile() && entry.name.endsWith('.js') ? [full] : [];
+        return entry.isFile() && entry.name.endsWith('.ts') ? [full] : [];
     });
 }
 

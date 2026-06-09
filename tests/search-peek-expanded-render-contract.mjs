@@ -34,7 +34,7 @@ function startServer(port) {
       try {
         const content = readFileSync(file);
         const ct = extname(file) === '.css' ? 'text/css'
-          : extname(file) === '.js' ? 'application/javascript'
+          : extname(file) === '.ts' ? 'application/javascript'
           : 'text/html';
         res.writeHead(200, { 'Content-Type': ct });
         res.end(content);

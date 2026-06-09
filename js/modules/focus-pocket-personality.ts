@@ -2,11 +2,11 @@
 // TypeScript shadow of focus-pocket-personality.js
 // Neighborhood personality derivation for focus pocket layout.
 
-import { state } from '../state.js';
+import { state } from '../state.ts';
 import type { SemanticState } from '../../types/state';
-import { normalizeCityForFilter } from './utils/geo-data.js';
-import { getSemanticThreadCandidates } from './thread-inspector.js';
-import { getFocusConstellationViewportProfile, seededUnit } from './focus-pocket-geometry.js';
+import { normalizeCityForFilter } from './utils/geo-data.ts';
+import { getSemanticThreadCandidates } from './thread-inspector.ts';
+import { getFocusConstellationViewportProfile, seededUnit } from './focus-pocket-geometry.ts';
 
 export interface SemanticCandidate {
     index: number;

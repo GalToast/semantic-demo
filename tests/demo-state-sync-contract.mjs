@@ -16,17 +16,18 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveSource } from './source-path.mjs';
 
 const ROOT = process.cwd();
-const svelteDemoStorePath = path.join(ROOT, 'src/lib/stores/demo.ts');
+const svelteDemoStorePath = path.join(ROOT, 'src/lib/stores/demo.svelte.ts');
 const hasSvelte = fs.existsSync(svelteDemoStorePath);
 
 const microDemoSource = hasSvelte
   ? null
-  : fs.readFileSync(path.join(ROOT, 'js/modules/micro-demo.js'), 'utf8');
+  : fs.readFileSync(resolveSource('js/modules/micro-demo.ts', ROOT), 'utf8');
 const eventBindingsSource = hasSvelte
   ? null
-  : fs.readFileSync(path.join(ROOT, 'js/modules/event-bindings.js'), 'utf8');
+  : fs.readFileSync(resolveSource('js/modules/event-bindings.ts', ROOT), 'utf8');
 const svelteStoreSource = hasSvelte
   ? fs.readFileSync(svelteDemoStorePath, 'utf8')
   : null;

@@ -17,9 +17,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(process.cwd());
-const APP_PATH = path.join(ROOT, 'js/modules/app.js');
+const APP_PATH = path.join(ROOT, 'js/modules/app.ts');
 const APP_TS_PATH = path.join(ROOT, 'js/modules/app.ts');
-const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.js');
+const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.ts');
 const TESTS_DIR = path.join(ROOT, 'tests');
 const THIS_FILE = fileURLToPath(import.meta.url);
 
@@ -76,7 +76,7 @@ const APP_ACTION_KEYS = [
 ];
 
 function testNoForbiddenShims() {
-  console.log('\n[TEST 1] No forbidden window shims in lifecycle.js');
+  console.log('\n[TEST 1] No forbidden window shims in lifecycle.ts');
 
   const lcSrc = read(LIFECYCLE_PATH);
 
@@ -148,7 +148,7 @@ function testNoBareAppActionTestCalls() {
   console.log('  PASS — test app-action calls use __APP_ACTIONS__');
 }
   function testRecenterBridgeRetired() {
-  console.log('\n[TEST 3] Verifying recenterFocusedNode bridge is retired from lifecycle.js');
+  console.log('\n[TEST 3] Verifying recenterFocusedNode bridge is retired from lifecycle.ts');
   const lcSrc = read(LIFECYCLE_PATH);
 
   assert(!/window\.recenterFocusedNode\s*=/.test(lcSrc), 'lifecycle.js must not reintroduce window.recenterFocusedNode bridge');

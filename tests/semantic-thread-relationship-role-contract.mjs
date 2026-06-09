@@ -26,12 +26,12 @@ const VALID_ROLES = new Set([
 const UI_FALLBACK_ROLE = 'unclassified';
 
 const CODE_PROPAGATION_FILES = [
-  'js/workers/data-worker.js',
-  'js/modules/semantic-threads.js',
-  'js/modules/thread-inspector.js',
-  'js/modules/focus-pocket.js',
-  'js/modules/journey-focus-ui.js',
-  'js/modules/journey-thread-settler.js'
+  'js/workers/data-worker.ts',
+  'js/modules/semantic-threads.ts',
+  'js/modules/thread-inspector.ts',
+  'js/modules/focus-pocket.ts',
+  'js/modules/journey-focus-ui.ts',
+  'js/modules/journey-thread-settler.ts'
 ];
 
 function assert(condition, message) {
@@ -80,7 +80,7 @@ for (const relativePath of CODE_PROPAGATION_FILES) {
 }
 
 const focusStageCss = fs.readFileSync(path.join(ROOT, 'css/journey_steps.css'), 'utf8');
-const roleCopySource = fs.readFileSync(path.join(ROOT, 'js/modules/relationship-roles.js'), 'utf8');
+const roleCopySource = fs.readFileSync(path.join(ROOT, 'js/modules/relationship-roles.ts'), 'utf8');
 for (const role of VALID_ROLES) {
   assert(roleCopySource.includes(`${role}:`), `relationship-roles.js must define UI copy for ${role}`);
   assert(
@@ -99,13 +99,13 @@ assert(!/return\s+['"]bridge['"]/.test(roleCopySource),
   'relationship role normalization must not silently coerce missing/unknown roles to bridge');
 
 const bridgeFallbackSearchFiles = [
-  'js/workers/data-worker.js',
-  'js/modules/semantic-threads.js',
-  'js/modules/thread-inspector.js',
-  'js/modules/focus-pocket.js',
-  'js/modules/journey-focus-ui.js',
-  'js/modules/journey-thread-settler.js',
-  'js/modules/journey-thread-model.js'
+  'js/workers/data-worker.ts',
+  'js/modules/semantic-threads.ts',
+  'js/modules/thread-inspector.ts',
+  'js/modules/focus-pocket.ts',
+  'js/modules/journey-focus-ui.ts',
+  'js/modules/journey-thread-settler.ts',
+  'js/modules/journey-thread-model.ts'
 ];
 
 for (const relativePath of bridgeFallbackSearchFiles) {
@@ -114,7 +114,7 @@ for (const relativePath of bridgeFallbackSearchFiles) {
     `${relativePath} must not mask missing relationshipRole as bridge`);
 }
 
-const semanticThreadsSource = fs.readFileSync(path.join(ROOT, 'js/modules/semantic-threads.js'), 'utf8');
+const semanticThreadsSource = fs.readFileSync(path.join(ROOT, 'js/modules/semantic-threads.ts'), 'utf8');
 assert(
   /function _normalizeSemanticNeighborEntries\s*\(/.test(semanticThreadsSource),
   'semantic-threads.js must normalize worker-loaded neighbor entries through the relationship role owner'
@@ -129,24 +129,24 @@ assert(
   'semantic-threads.js must guard ready semantic traversal with the semantic space layout manifest'
 );
 
-const journeyThreadModelSource = fs.readFileSync(path.join(ROOT, 'js/modules/journey-thread-model.js'), 'utf8');
+const journeyThreadModelSource = fs.readFileSync(path.join(ROOT, 'js/modules/journey-thread-model.ts'), 'utf8');
 assert(
   /import\s+\{\s*normalizeRelationshipRole\s*\}\s+from\s+['"]\.\/relationship-roles\.js['"]/.test(journeyThreadModelSource) &&
     /relationshipRole:\s*normalizeRelationshipRole\(neighbor\.relationshipRole\)/.test(journeyThreadModelSource),
   'journey-thread-model.js must own semantic candidate relationship role normalization'
 );
 assert(
-  /const selfCity\s*=\s*normalizeCityForFilter\(state\.points\[index\]\?\.city\)/.test(journeyThreadModelSource),
-  'journey-thread-model.js geometric fallback must compare normalized city values'
+  /const selfCity\s*=\s*normalizeCityForFilter\(.*state\.points\[index\]/.test(journeyThreadModelSource),
+  'journey-thread-model.ts geometric fallback must compare normalized city values'
 );
 
-const threadInspectorSource = fs.readFileSync(path.join(ROOT, 'js/modules/thread-inspector.js'), 'utf8');
+const threadInspectorSource = fs.readFileSync(path.join(ROOT, 'js/modules/thread-inspector.ts'), 'utf8');
 assert(
   /from\s+['"]\.\/journey-thread-model\.js['"]/.test(threadInspectorSource) &&
     /getSemanticThreadCandidates/.test(threadInspectorSource) &&
     /getGeometricThreadCandidates/.test(threadInspectorSource) &&
     /getThreadCandidatesForIndex/.test(threadInspectorSource),
-  'thread-inspector.js must consume thread candidates from journey-thread-model.js'
+  'thread-inspector.js must consume thread candidates from journey-thread-model.ts'
 );
 assert(
   !/export\s+function\s+getSemanticThreadCandidates\s*\(/.test(threadInspectorSource) &&

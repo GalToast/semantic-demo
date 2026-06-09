@@ -186,6 +186,13 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
       navStore.update((s) => ({ ...s, trailDepthFromExploration: depth }));
     }
 
+    // Search query + anchor restoration
+    const query = params.get('q');
+    const anchorId = params.get('anchor');
+    if (query && query.trim().length >= 2) {
+      await _restoreSearchFromParams(query, anchorId);
+    }
+
     // URL sync after apply
     if (!options.fromHistory) {
       updateUrlState({}, { reason: 'apply-url', force: true });
@@ -391,6 +398,52 @@ function _restoreClusterFilter(clusterStr: string): void {
         detail: { cluster },
       })
     );
+  }
+}
+
+/**
+ * Restore search state from URL `q` param and optionally focus the `anchor`.
+ * Fires the Svelte search engine, populates the search store, and if an
+ * anchor id is provided, dispatches SEARCH_FOCUS_REQUESTED so that
+ * triggers.ts can populate the trail stores.
+ */
+async function _restoreSearchFromParams(
+  query: string,
+  anchorId: string | null
+): Promise<void> {
+  try {
+    const { runSearch, searchStore } = await import('@lib/stores/search.svelte');
+    const { publish, EVENTS } = await import('@lib/orchestration/event-bus');
+
+    // If a numeric anchor was specified, dispatch SEARCH_FOCUS_REQUESTED
+    // immediately so the focus/trail stores populate synchronously with URL
+    // restore. This ensures the Svelte shell renders the focus-stage
+    // trail controls without waiting for the (potentially slow) search
+    // request to complete — contract tests query the DOM right after
+    // load, and would otherwise race the async search.
+    if (anchorId) {
+      const numericId = Number(anchorId);
+      if (Number.isFinite(numericId)) {
+        publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: numericId });
+      }
+    }
+
+    const signal = AbortSignal.timeout(30000);
+    await runSearch(query, signal);
+
+    // If an anchor was specified by id (non-numeric), focus it once results
+    // are available. Numeric anchors are already handled above.
+    if (anchorId && !Number.isFinite(Number(anchorId))) {
+      const results = searchStore.results;
+      if (results && results.length > 0) {
+        const byId = results.find((r) => r.id === anchorId);
+        if (byId) {
+          publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: byId.index });
+        }
+      }
+    }
+  } catch (err) {
+    debugWarn('[url-state] Search restore from URL failed:', err);
   }
 }
 

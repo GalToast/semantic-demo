@@ -1,36 +1,36 @@
 import * as THREE from 'three'
-import { state } from '../state.js'
+import { state } from '../state.ts'
 import type { NodePosition, SemanticState, NavState, NavFocusPocketMeta } from '../../types/state'
 import {
   getNavState
-} from '../state/selectors/index.js'
-import { prefersReducedMotion } from './environment.js'
+} from '../state/selectors/index.ts'
+import { prefersReducedMotion } from './environment.ts'
 import {
   type AppStateLike,
   getCanvasUnobstructedRegion,
   computeFocusPocketScreenBounds,
   computeSafeAreaCameraTargetOffset
-} from './camera-framing-utils.js'
+} from './camera-framing-utils.ts'
 import {
   type FramingParams,
   type PocketProfile,
   computeTravelVectorHeading,
   computeOrbitBiasHeading,
   computeCameraArcControlPoints
-} from './camera-math-utils.js'
+} from './camera-math-utils.ts'
 import {
   easeInOutSine,
   easeInOutCubic,
   quadraticBezierComponent,
   easeOutBack,
   easeOutQuint
-} from './utils/math-easing.js'
-import { setFocusTransitionMode, startFocusCameraAssist } from './camera-controls-core.js'
+} from './utils/math-easing.ts'
+import { setFocusTransitionMode, startFocusCameraAssist } from './camera-controls-core.ts'
 import type {
   ChoreographyCamera,
   ChoreographyControls,
   ChoreographyPersonality
-} from './camera-controls-choreography-types.js'
+} from './camera-controls-choreography-types.ts'
 
 interface FocusFramingOptions extends FramingParams {
   transitionStyle?: string

@@ -5,9 +5,9 @@
  * Typed sibling of search-filter-core.js.
  */
 
-import { state } from '../state.js';
-import { getActiveClusterFilter, setActiveClusterFilter } from './filter-state.js';
-import { normalizeCityForFilter } from './utils/geo-data.js';
+import { state } from '../state.ts';
+import { getActiveClusterFilter, setActiveClusterFilter } from './filter-state.ts';
+import { normalizeCityForFilter } from './utils/geo-data.ts';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

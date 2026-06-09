@@ -62,9 +62,9 @@ globalThis.document = {
   querySelectorAll: () => [],
 };
 
-const { state, withStateMutation } = await import('../js/state.js');
-const { initJourneyLifecycleAdapter } = await import('../js/modules/journey-lifecycle-adapter.js');
-const { syncSemanticDiveUi } = await import('../js/modules/semantic-dive-ui.js');
+const { state, withStateMutation } = await import('../js/state.ts');
+const { initJourneyLifecycleAdapter } = await import('../js/modules/journey-lifecycle-adapter.ts');
+const { syncSemanticDiveUi } = await import('../js/modules/semantic-dive-ui.ts');
 
 function resetDom() {
   elementsById.clear();

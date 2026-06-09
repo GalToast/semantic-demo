@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { state } from '../state.js'
+import { state } from '../state.ts'
 import type { ActiveFilters, NodePosition, Point } from '../../types/state'
 import {
   getCamera, getControls, getNodePositions, getOriginalPositions, getTargetPositions,
@@ -8,20 +8,20 @@ import {
   getActiveClusterFilter, getActiveFilters,
   getRouteCameraAnimationToken,
   getMapHandoffPreludeMs, getOrbitMinDistanceDefault, getOrbitMaxDistanceDefault
-} from '../state/selectors/index.js'
-import { isMobile, prefersReducedMotion } from './environment.js'
+} from '../state/selectors/index.ts'
+import { isMobile, prefersReducedMotion } from './environment.ts'
 import {
   easeInOutCubic,
   quadraticBezierComponent
-} from './utils/math-easing.js'
-import { setFocusTransitionMode } from './camera-controls-core.js'
-import { noteSceneInteraction } from './camera-controls-restore.js'
-import { publish, EVENTS } from './event-bus.js'
+} from './utils/math-easing.ts'
+import { setFocusTransitionMode } from './camera-controls-core.ts'
+import { noteSceneInteraction } from './camera-controls-restore.ts'
+import { publish, EVENTS } from './event-bus.ts'
 import type {
   ChoreographyCamera,
   ChoreographyControls,
   ChoreographyPersonality
-} from './camera-controls-choreography-types.js'
+} from './camera-controls-choreography-types.ts'
 
 interface RouteOptions {
   duration?: number

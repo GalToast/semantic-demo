@@ -12,6 +12,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat';
+  import { searchState } from '@lib/stores/search';
   import SearchInput from './SearchInput.svelte';
   import SearchResults from './SearchResults.svelte';
   import { isCompact } from '@lib/stores/viewport';
@@ -21,9 +22,11 @@
   interface Props {
     /** Whether the search bar is visually expanded */
     expanded?: boolean;
+    /** Whether it is rendered inside the info panel sheet */
+    panelContained?: boolean;
   }
 
-  let { expanded = false }: Props = $props();
+  let { expanded = false, panelContained = false }: Props = $props();
 
   // ── Test Compatibility ────────────────────────────────────────────────────────
 
@@ -40,8 +43,9 @@
 
   // ── Derived ───────────────────────────────────────────────────────────────────
 
-  let hasQuery = $derived(false); // driven by SearchInput
-  let showResults = $derived(false); // driven by SearchResults
+  let hasQuery = $derived($searchState.hasQuery || $searchState.query.trim().length > 0);
+  let showResults = $derived($searchState.resultsRendered || $searchState.results.length > 0);
+  let isExpanded = $derived(expanded || hasQuery || showResults);
   let showLoading = $derived(testLoadingPhase === 'searching');
   let isError = $derived(testLoadingPhase === 'error');
   let isEmpty = $derived(testLoadingPhase === 'empty');
@@ -49,15 +53,16 @@
 
 <div
   class="search-container"
-  class:expanded
+  class:expanded={isExpanded}
   class:has-query={hasQuery}
   class:results-rendered={showResults}
   class:searching={showLoading}
   class:is-compact={isCompact()}
+  class:info-panel-contained={panelContained}
   role="search"
   aria-label="Search businesses in the semantic field"
 >
-  <SearchInput />
+  <SearchInput expanded={isExpanded} />
   <SearchResults />
 </div>
 
@@ -70,6 +75,7 @@
     transform: translateX(-50%);
     z-index: var(--z-search, 100);
     width: min(420px, 90vw);
+    min-height: 44px;
     font-family: 'Nunito Sans', system-ui, sans-serif;
   }
   .search-container.is-compact {
@@ -78,5 +84,15 @@
     left: 0;
     transform: none;
     padding: 0.5rem;
+  }
+  .search-container.info-panel-contained {
+    position: sticky;
+    top: 0;
+    left: auto;
+    transform: none;
+    width: 100%;
+    z-index: 2;
+    margin: -2rem -1rem 0;
+    padding: 0 1rem;
   }
 </style>

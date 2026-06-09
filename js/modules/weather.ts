@@ -5,17 +5,17 @@
  * Weather data fetching, normalization, and state management.
  */
 
-import { state } from '../state.js';
+import { state } from '../state.ts';
 import type { Point } from '../../types/state';
-import { getCurrentView, getWeather, getWeatherInitialized } from '../state/selectors/index.js';
-import { weatherStateStore } from './stores.js';
+import { getCurrentView, getWeather, getWeatherInitialized } from '../state/selectors/index.ts';
+import { weatherStateStore } from './stores.ts';
 import {
     applyWeatherEffects as applyWeatherEffectsForWeather,
     clearWeatherEffects,
     renderWeatherFallback as renderWeatherFallbackState,
     updateWeatherStaleness as updateWeatherStalenessForTimestamp,
     updateWeatherUi as updateWeatherUiState
-} from './weather-ui.js';
+} from './weather-ui.ts';
 
 const WEATHER_REFRESH_MS: number = 5 * 60 * 1000;
 const DEFAULT_WEATHER_COORDS = { latitude: 30.3119, longitude: -95.4561 } as const;

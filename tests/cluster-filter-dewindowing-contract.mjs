@@ -27,8 +27,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const CLUSTER_FILTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.js');
-const ADAPTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter-adapter.js');
+const CLUSTER_FILTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.ts');
+const ADAPTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter-adapter.ts');
 const APP_PATH = path.join(SEMDEMO_ROOT, 'js/modules/app.ts');
 
 function assert(cond, msg) {
@@ -46,7 +46,7 @@ function assertNotContains(haystack, needle, label) {
 }
 
 function getFunctionBody(src, fnName) {
-    const fnPattern = new RegExp(`export function ${fnName}\\s*\\([^)]*\\)\\s*\\{`, 's');
+    const fnPattern = new RegExp(`export function ${fnName}\\s*\\([^)]*\\)\\s*(?::\\s*[^})]*)?\\s*\\{`);
     const match = src.match(fnPattern);
     if (!match) return '';
     const start = match.index + match[0].length;
@@ -65,13 +65,13 @@ function getFunctionBody(src, fnName) {
 // ---------------------------------------------------------------------------
 
 function testClusterFilterImportsAdapter() {
-    console.log('\n[TEST] cluster-filter.js imports from cluster-filter-adapter.js');
+    console.log('\n[TEST] cluster-filter.js imports from cluster-filter-adapter.ts');
 
     const src = fs.readFileSync(CLUSTER_FILTER_PATH, 'utf-8');
 
     assertContains(
         src,
-        "import { applyFilters, clearSearchGlow, updateUrlState, clearShortSemanticSearchState } from './cluster-filter-adapter.js';",
+        "import { applyFilters, clearSearchGlow, updateUrlState, clearShortSemanticSearchState } from './cluster-filter-adapter.ts';",
         'cluster-filter imports adapter functions'
     );
 
@@ -156,7 +156,7 @@ function testAppInitializesAdapter() {
 
     const src = fs.readFileSync(APP_PATH, 'utf-8');
 
-    assertContains(src, "import { initClusterFilterAdapter } from './cluster-filter-adapter.js';", 'app.js imports initClusterFilterAdapter');
+    assertContains(src, "import { initClusterFilterAdapter } from './cluster-filter-adapter.ts';", 'app.js imports initClusterFilterAdapter');
     assertContains(src, 'initClusterFilterAdapter(', 'app.js calls initClusterFilterAdapter');
 
     // Must be called before applyUrlState to ensure adapter is ready

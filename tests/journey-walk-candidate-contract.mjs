@@ -12,11 +12,11 @@ globalThis.document = {
 globalThis.window = {};
 globalThis.performance = { now: () => 0 };
 
-const { state, withStateMutation } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.ts');
 const {
   getBoundedNeighborhoodWalkCandidate,
   getNextWalkCandidateForIndex,
-} = await import('../js/modules/journey.js');
+} = await import('../js/modules/journey.ts');
 
 const original = {
   points: state.points,

@@ -265,11 +265,11 @@ function scanWriters(modulePath, field) {
 
 // ─── Import real modules ──────────────────────────────────────────────────────
 
-const { state, withStateMutation } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.ts');
 
-const lifecycle = await import('../js/modules/lifecycle.js');
+const lifecycle = await import('../js/modules/lifecycle.ts');
 
-const cameraControls = await import('../js/modules/camera-controls.js');
+const cameraControls = await import('../js/modules/camera-controls.ts');
 
 // ─── CONTRACT 1: semanticDiveMode is derived from trailDepth ──────────────────
 
@@ -288,20 +288,20 @@ console.log('PASS CONTRACT 1: semanticDiveMode is derived from trailDepth (gette
 
 // ─── CONTRACT 2: semanticDiveMode has no independent storage ───────────────────
 
-const stateJsWrites = scanWriters(join(PROJECT_ROOT, 'js', 'state.js'), 'semanticDiveMode');
+const stateJsWrites = scanWriters(join(PROJECT_ROOT, 'js', 'state.ts'), 'semanticDiveMode');
 assert(
   !stateJsWrites.some(w => w.type === 'assign' && !w.text.includes('Object.defineProperty')),
   `state.js must not have a raw semanticDiveMode field — found: ${JSON.stringify(stateJsWrites)}`
 );
-console.log('PASS CONTRACT 2: semanticDiveMode has no independent raw storage in state.js');
+console.log('PASS CONTRACT 2: semanticDiveMode has no independent raw storage in state.ts');
 
 // ─── CONTRACT 3: Official reset APIs exist and are callable ───────────────────
 
-assert(typeof lifecycle.resetExplorationFocus === 'function', 'resetExplorationFocus must be exported from lifecycle.js');
-assert(typeof lifecycle.resetExperienceState === 'function', 'resetExperienceState must be exported from lifecycle.js');
-assert(typeof lifecycle.resetStateBeforeUrlRestore === 'function', 'resetStateBeforeUrlRestore must be exported from lifecycle.js');
-assert(typeof lifecycle.returnToOverview === 'function', 'returnToOverview must be exported from lifecycle.js');
-assert(typeof lifecycle.setSemanticDiveMode === 'function', 'setSemanticDiveMode must be exported from lifecycle.js');
+assert(typeof lifecycle.resetExplorationFocus === 'function', 'resetExplorationFocus must be exported from lifecycle.ts');
+assert(typeof lifecycle.resetExperienceState === 'function', 'resetExperienceState must be exported from lifecycle.ts');
+assert(typeof lifecycle.resetStateBeforeUrlRestore === 'function', 'resetStateBeforeUrlRestore must be exported from lifecycle.ts');
+assert(typeof lifecycle.returnToOverview === 'function', 'returnToOverview must be exported from lifecycle.ts');
+assert(typeof lifecycle.setSemanticDiveMode === 'function', 'setSemanticDiveMode must be exported from lifecycle.ts');
 
 console.log('PASS CONTRACT 3: All 5 official reset/orchestration APIs are defined');
 
@@ -309,7 +309,7 @@ console.log('PASS CONTRACT 3: All 5 official reset/orchestration APIs are define
 // Runtime behavior is covered by semantic-dive-active-owner-contract.mjs.
 // This contract keeps the ownership boundary source-level and non-brittle.
 
-const lifecycleSource = readFileSync(join(PROJECT_ROOT, 'js', 'modules', 'lifecycle.js'), 'utf8');
+const lifecycleSource = readFileSync(join(PROJECT_ROOT, 'js', 'modules', 'lifecycle.ts'), 'utf8');
 assert(
   !/window\.setSemanticDiveMode\s*=/.test(lifecycleSource),
   'lifecycle.js must not expose setSemanticDiveMode through a window bridge'
@@ -340,7 +340,7 @@ console.log('PASS CONTRACT 4: lifecycle.js owns semantic-dive orchestration brid
 // ─── CONTRACT 5: focusOnNode sets focusedNode, selectedPoint, trailDepth ───────
 
 const focusOnNode = cameraControls.focusOnNode;
-assert(typeof focusOnNode === 'function', 'focusOnNode must be exported from camera-controls.js');
+assert(typeof focusOnNode === 'function', 'focusOnNode must be exported from camera-controls.ts');
 
 state.points = Array.from({ length: 10 }, (_, i) => ({ lead_id: `lead_${i}`, name: `Node ${i}`, cluster: i % 3 }));
 state.trailDepth = 0;
@@ -430,10 +430,10 @@ const CANONICAL_WRITERS = {
   // focusedNode: canonical writers are camera-controls.js (focusOnNode), lifecycle.js
   // (resetNodePositions / resetStateBeforeUrlRestore), search-state.js (clear on filter evict),
   // micro-demo.js (demo focus). Journey.js and event-bindings.js are transitional helpers only.
-  focusedNode:     new Set(['camera-controls.js', 'lifecycle.js', 'search-state.js', 'micro-demo.js']),
-  selectedPoint:   new Set(['camera-controls.js', 'lifecycle.js', 'search-state.js', 'micro-demo.js']),
-  trailDepth:      new Set(['lifecycle.js', 'camera-controls.js', 'micro-demo.js']),
-  activeFilters:   new Set(['filter-state.js', 'lifecycle.js', 'micro-demo.js']),
+  focusedNode:     new Set(['camera-controls.ts', 'lifecycle.ts', 'search-state.ts', 'micro-demo.ts']),
+  selectedPoint:   new Set(['camera-controls.ts', 'lifecycle.ts', 'search-state.ts', 'micro-demo.ts']),
+  trailDepth:      new Set(['lifecycle.ts', 'camera-controls.ts', 'micro-demo.ts']),
+  activeFilters:   new Set(['filter-state.ts', 'lifecycle.ts', 'micro-demo.ts']),
   // navState is a composite object; each sub-field has its own ownership:
   //   navState.mode:            lifecycle.js (setMyceliumMode / setSemanticDiveMode / resetNodePositions /
   //                             dispatchNavTransition), search-state.js (clear),
@@ -457,58 +457,58 @@ const CANONICAL_WRITERS = {
   // navState.explorationHistoryIndices to dispatchNavTransition('FOCUS_NODE', ...) which
   // routes to the navigation-state.js reducer.
   'navState.mode': new Set([
-    'navigation-state.js', 'lifecycle.js', 'search-state.js', 'micro-demo.js', 'loading-ui.js',
+    'navigation-state.ts', 'lifecycle.ts', 'search-state.ts', 'micro-demo.ts', 'loading-ui.ts',
   ]),
   'navState.focusedIndex': new Set([
-    'navigation-state.js', 'lifecycle.js', 'search-state.js', 'micro-demo.js',
+    'navigation-state.ts', 'lifecycle.ts', 'search-state.ts', 'micro-demo.ts',
   ]),
   // navState.explorationHistoryIndices — navigation-state.js reducer/helper is canonical
   // owner for FOCUS_NODE / RESET_FOCUS / RESTORE_EXPLORATION_HISTORY writes.
   // lifecycle.js clearExplorationFocusSelection() must call clearNavigationFocusState()
   // instead of directly assigning this field, because dispatching RESET_FOCUS there
   // would recurse through resetExplorationFocus().
-  'navState.explorationHistoryIndices': new Set(['navigation-state.js']),
+  'navState.explorationHistoryIndices': new Set(['navigation-state.ts']),
   // navState.trailNeighborIndices: navigation-state.js owns the canonical setter/clearer.
   // journey.js calls setTrailNavState(); lifecycle.js and search-state.js clear via
   // clearTrailThreadState(). micro-demo.js is a demo helper.
   'navState.trailNeighborIndices': new Set([
-    'navigation-state.js', 'lifecycle.js', 'journey.js', 'micro-demo.js',
+    'navigation-state.ts', 'lifecycle.ts', 'journey.ts', 'micro-demo.ts',
   ]),
   'navState.trailCursor': new Set([
-    'navigation-state.js', 'lifecycle.js', 'journey.js', 'micro-demo.js',
+    'navigation-state.ts', 'lifecycle.ts', 'journey.ts', 'micro-demo.ts',
   ]),
   // threadCandidates, threadReasonByIndex, threadSource, trailSeedIndex are canonical
   // owned by navigation-state.js. journey.js calls setTrailNavState().
   'navState.trailSeedIndex': new Set([
-    'navigation-state.js', 'lifecycle.js', 'journey.js', 'micro-demo.js',
+    'navigation-state.ts', 'lifecycle.ts', 'journey.ts', 'micro-demo.ts',
   ]),
   'navState.threadCandidates': new Set([
-    'navigation-state.js', 'journey.js',
+    'navigation-state.ts', 'journey.ts',
   ]),
   'navState.threadReasonByIndex': new Set([
-    'navigation-state.js', 'journey.js',
+    'navigation-state.ts', 'journey.ts',
   ]),
   'navState.threadSource': new Set([
-    'navigation-state.js', 'journey.js',
+    'navigation-state.ts', 'journey.ts',
   ]),
   'navState.walkHistoryIndices': new Set([
-    'navigation-state.js', 'lifecycle.js', 'micro-demo.js',
+    'navigation-state.ts', 'lifecycle.ts', 'micro-demo.ts',
   ]),
   // focusPocket* fields are owned exclusively by focus-pocket.js via clearFocusPocketIndices etc.
   // They are mutated internally and must not be written by other modules.
-  'navState.focusPocketIndices':  new Set(['focus-pocket.js']),
-  'navState.focusPocketMeta':      new Set(['focus-pocket.js']),
-  'navState.focusPocketRoleByIndex': new Set(['focus-pocket.js']),
-  'navState.focusPocketAnimationFrameId': new Set(['focus-pocket.js']),
+  'navState.focusPocketIndices':  new Set(['focus-pocket.ts']),
+  'navState.focusPocketMeta':      new Set(['focus-pocket.ts']),
+  'navState.focusPocketRoleByIndex': new Set(['focus-pocket.ts']),
+  'navState.focusPocketAnimationFrameId': new Set(['focus-pocket.ts']),
 };
 
 const MODULES_DIR = join(PROJECT_ROOT, 'js', 'modules');
 const jsModules = [
-  'event-bindings.js', 'journey.js', 'journey-compass-state.js',
-  'map-state.js', 'filter-state.js', 'search-state.js', 'semantic-dive-ui.js',
-  'camera-controls.js', 'lifecycle.js', 'micro-demo.js', 'focus-pocket.js',
-  'journey-compass.js', 'thread-inspector.js', 'loading-ui.js', 'ui-renderers.js',
-  'navigation-state.js',
+  'event-bindings.ts', 'journey.ts', 'journey-compass-state.ts',
+  'map-state.ts', 'filter-state.ts', 'search-state.ts', 'semantic-dive-ui.ts',
+  'camera-controls.ts', 'lifecycle.ts', 'micro-demo.ts', 'focus-pocket.ts',
+  'journey-compass.ts', 'thread-inspector.ts', 'loading-ui.ts', 'ui-renderers.ts',
+  'navigation-state.ts',
 ];
 
 // Fields that MUST NOT have any writer outside their canonical set
@@ -566,7 +566,7 @@ console.log('PASS CONTRACT 10: semanticDiveMode setter has no side-effects beyon
 
 // ─── CONTRACT 11: journey.js does NOT write focus state directly ──────────────
 
-const journeyPath = join(MODULES_DIR, 'journey.js');
+const journeyPath = join(MODULES_DIR, 'journey.ts');
 const journeyWriters = scanWriters(journeyPath, 'focusedNode').concat(scanWriters(journeyPath, 'selectedPoint'));
 assert(
   journeyWriters.length === 0,
@@ -576,7 +576,7 @@ console.log('PASS CONTRACT 11: journey.js does not directly write focusedNode or
 
 // ─── CONTRACT 12: event-bindings.js does NOT write focus state ────────────────
 
-const eventBindingsPath = join(MODULES_DIR, 'event-bindings.js');
+const eventBindingsPath = join(MODULES_DIR, 'event-bindings.ts');
 const ebWriters = scanWriters(eventBindingsPath, 'focusedNode')
   .concat(scanWriters(eventBindingsPath, 'selectedPoint'))
   .concat(scanWriters(eventBindingsPath, 'trailDepth'));
@@ -588,7 +588,7 @@ console.log('PASS CONTRACT 12: event-bindings.js does not directly write focus s
 
 // ─── CONTRACT 13: focus-pocket.js does NOT write focus state ───────────────────
 
-const focusPocketPath = join(MODULES_DIR, 'focus-pocket.js');
+const focusPocketPath = join(MODULES_DIR, 'focus-pocket.ts');
 const fpWriters = scanWriters(focusPocketPath, 'focusedNode')
   .concat(scanWriters(focusPocketPath, 'selectedPoint'))
   .concat(scanWriters(focusPocketPath, 'trailDepth'));
@@ -612,7 +612,7 @@ const focusPocketFields = [
 let fpViolations = [];
 for (const field of focusPocketFields) {
   const canonicalSet = CANONICAL_WRITERS[field] || new Set();
-  const mod = 'lifecycle.js';
+  const mod = 'lifecycle.ts';
   const modPath = join(MODULES_DIR, mod);
   try {
     const writers = scanWriters(modPath, field);
@@ -637,7 +637,7 @@ assert(fpViolations.length === 0,
   `       instead of directly assigning navState.focusPocketRoleByIndex or other focus-pocket state.`
 );
 
-console.log('PASS CONTRACT 14: focusPocket navState fields are only written by focus-pocket.js');
+console.log('PASS CONTRACT 14: focusPocket navState fields are only written by focus-pocket.ts');
 
 // ─── Summary ───────────────────────────────────────────────────────────────────
 

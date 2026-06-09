@@ -4,17 +4,17 @@
  * Keyboard shortcut handling and hint panel management.
  */
 
-import { getCurrentView, getFocusedNode, getNavState } from '../state/selectors/index.js';
-import { getCurrentSearchSummary, getSearchGlowActive } from '../state/selectors/index.js';
-import { cancelMicroDemo } from './micro-demo.js';
-import { showExperienceToast } from './ui-feedback.js';
-import { closeLegendGuide } from './legend-ui.js';
-import { hideTooltip } from './tooltip.js';
-import { hideSummaryCard } from './semantic-guide.js';
-import { setInfoPanelOpen } from './bindings/panel-bindings.js';
-import { zoomCamera } from './bindings/view-bindings.js';
-import { recenterFocusedNode } from './bindings/journey-bindings.js';
-import { traverseNeighbor } from './journey.js';
+import { getCurrentView, getFocusedNode, getNavState } from '../state/selectors/index.ts';
+import { getCurrentSearchSummary, getSearchGlowActive } from '../state/selectors/index.ts';
+import { cancelMicroDemo } from './micro-demo.ts';
+import { showExperienceToast } from './ui-feedback.ts';
+import { closeLegendGuide } from './legend-ui.ts';
+import { hideTooltip } from './tooltip.ts';
+import { hideSummaryCard } from './semantic-guide.ts';
+import { setInfoPanelOpen } from './bindings/panel-bindings.ts';
+import { zoomCamera } from './bindings/view-bindings.ts';
+import { recenterFocusedNode } from './bindings/journey-bindings.ts';
+import { traverseNeighbor } from './journey.ts';
 
 // Injected reset functions are set via initKeyboardResetOwnership() before first keydown.
 let _returnToOverview: () => void = () => {};

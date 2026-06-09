@@ -16,18 +16,19 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveSource } from './source-path.mjs';
 
 const ROOT = process.cwd();
-const svelteDemoStorePath = path.join(ROOT, 'src/lib/stores/demo.ts');
+const svelteDemoStorePath = path.join(ROOT, 'src/lib/stores/demo.svelte.ts');
 const svelteDemoComponentPath = path.join(ROOT, 'src/components/DemoChoreography.svelte');
 const hasSvelte = fs.existsSync(svelteDemoStorePath) && fs.existsSync(svelteDemoComponentPath);
 
 const appSource = hasSvelte
   ? null
-  : fs.readFileSync(path.join(ROOT, 'js/modules/app.js'), 'utf8');
+  : fs.readFileSync(resolveSource('js/modules/app.ts', ROOT), 'utf8');
 const microDemoSource = hasSvelte
   ? null
-  : fs.readFileSync(path.join(ROOT, 'js/modules/micro-demo.js'), 'utf8');
+  : fs.readFileSync(resolveSource('js/modules/micro-demo.ts', ROOT), 'utf8');
 const svelteStoreSource = hasSvelte
   ? fs.readFileSync(svelteDemoStorePath, 'utf8')
   : null;
@@ -153,8 +154,8 @@ if (hasSvelte) {
       'DemoChoreography must import shouldRunDemo from demo store');
     assert(/import[\s\S]*findDemoNode[\s\S]*from\s+['"]@lib\/stores\/demo['"]/.test(svelteComponentSource),
       'DemoChoreography must import findDemoNode from demo store');
-    assert(/findDemoNode\(\$businessRecords\)/.test(svelteComponentSource),
-      'DemoChoreography must select a validated node from businessRecords');
+    assert(/findDemoNode\(\s*getBusinessRecords\(\)\s*\)/.test(svelteComponentSource),
+      'DemoChoreography must select a validated node from getBusinessRecords()');
     assert(!/Math\.random\(\)\s*\*\s*8406/.test(svelteComponentSource),
       'DemoChoreography must not choose random raw node indices');
   });
@@ -188,13 +189,13 @@ if (hasSvelte) {
   console.log('\n=== Legacy Demo Init Seam Contract ===\n');
 
   test('app imports micro-demo for the active demo path', () => {
-    assert(/import\s+.*?['"]\.\/micro-demo\.js['"]/.test(appSource), 'app.js must import micro-demo.js');
+    assert(/import\s+.*?['"]\.\/micro-demo\.js['"]/.test(appSource), 'app.js must import micro-demo.ts');
   });
 
   test('app does not own showcase pool selection', () => {
-    assert(!/\bSHOWCASE_POOL\b/.test(appSource), 'SHOWCASE_POOL must not be defined in app.js');
-    assert(!/_selectedDemoIndex/.test(appSource), '_selectedDemoIndex must not be assigned in app.js');
-    assert(!/\bshuffleArray\b/.test(appSource), 'demo shuffle helpers must not live in app.js');
+    assert(!/\bSHOWCASE_POOL\b/.test(appSource), 'SHOWCASE_POOL must not be defined in app.ts');
+    assert(!/_selectedDemoIndex/.test(appSource), '_selectedDemoIndex must not be assigned in app.ts');
+    assert(!/\bshuffleArray\b/.test(appSource), 'demo shuffle helpers must not live in app.ts');
   });
 
   test('app does not poll overlay readiness for the demo', () => {

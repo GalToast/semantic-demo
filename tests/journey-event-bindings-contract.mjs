@@ -17,11 +17,11 @@ import fs from 'fs';
 import path from 'path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js');
-const APP_PATH            = path.join(SEMDEMO_ROOT, 'js/modules/app.js');
-const JOURNEY_PATH        = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
-const LIFECYCLE_PATH      = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
-const JOURNEY_COMPASS_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.js');
+const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.ts');
+const APP_PATH            = path.join(SEMDEMO_ROOT, 'js/modules/app.ts');
+const JOURNEY_PATH        = path.join(SEMDEMO_ROOT, 'js/modules/journey.ts');
+const LIFECYCLE_PATH      = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts');
+const JOURNEY_COMPASS_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);

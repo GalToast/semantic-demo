@@ -1,40 +1,14 @@
 /**
- * @lib/search-engine.ts — Real search engine bridging to legacy semantic search API
+ * @lib/search-engine.ts — Real search engine for the semantic search API
  *
- * Dynamically imports the legacy semantic-search-api-cache and search-mapper
- * modules to execute real API searches against the Montgomery County business
- * corpus. Falls back to local mock results if the legacy modules are unavailable
- * (e.g. static dev server without PHP backend).
+ * Executes live API searches against the Montgomery County business corpus and
+ * falls back to local mock results if the API is unavailable.
  *
  * The mapper functions are duplicated here as pure TS to avoid importing the
- * legacy search-mapper.js which depends on state.js Proxy globals. The API call
- * itself is delegated to the legacy module which handles retry, cache, and abort.
+ * legacy search-mapper.js which depends on state.js Proxy globals.
  */
 import type { SearchResult } from '@lib/types/state';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
-
-// ── Legacy Module Type Contracts ──────────────────────────────────────────────
-
-interface LegacySearchCacheModule {
-  fetchSemanticSearchResults(
-    query: string,
-    signal: AbortSignal,
-    options?: {
-      preferCachedResults?: boolean;
-      offset?: number;
-      timeoutMs?: number;
-      maxAttempts?: number;
-      onRetry?: (info: {
-        attempt: number;
-        nextAttempt: number;
-        delayMs: number;
-        retryTotal: number;
-        error: Error;
-      }) => void;
-    }
-  ): Promise<unknown>;
-  initSearchCache(): Promise<void>;
-}
 
 // ── Result Mapping (pure TS, no legacy state dependency) ──────────────────────
 
@@ -50,6 +24,16 @@ interface RawServiceRow {
   address?: string;
   naics?: string;
   isMock?: boolean;
+  [key: string]: unknown;
+}
+
+export interface SemanticSearchPayload {
+  ok: boolean;
+  query?: string;
+  results?: unknown[];
+  is_mock?: boolean;
+  dev_mode?: string;
+  error?: string;
   [key: string]: unknown;
 }
 
@@ -75,6 +59,53 @@ function getTotalMatches(
   if (typeof p.count === 'number') return p.count;
   if (typeof p.total === 'number') return p.total;
   return results.length;
+}
+
+async function fetchSemanticSearchResultsDirect(
+  query: string,
+  signal?: AbortSignal
+): Promise<SearchResult[]> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+  const onAbort = (): void => controller.abort();
+  signal?.addEventListener('abort', onAbort, { once: true });
+
+  try {
+    const response = await fetch(
+      `api.php?action=semantic_search&q=${encodeURIComponent(query)}&limit=18&offset=0`,
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+        signal: controller.signal
+      }
+    );
+    const responseText = await response.text();
+    const trimmedText = responseText.trim();
+    if (trimmedText.startsWith('<?php') || (trimmedText.includes('<?php') && trimmedText.indexOf('<?php') < 100)) {
+      throw new Error('Semantic search returned raw PHP source.');
+    }
+
+    let payload: SemanticSearchPayload;
+    try {
+      payload = JSON.parse(responseText) as SemanticSearchPayload;
+    } catch (jsonErr) {
+      throw new Error('Semantic search returned invalid JSON.', { cause: jsonErr });
+    }
+
+    if (!response.ok || !payload?.ok) {
+      throw new Error(payload?.error || 'Semantic search is unavailable right now.');
+    }
+
+    const rawRows = getPayloadResults(payload);
+    return rawRows
+      .map((row, idx) => mapServiceRow(row, idx))
+      .filter((r): r is SearchResult => r !== null)
+      .slice(0, 18);
+  } finally {
+    window.clearTimeout(timeoutId);
+    signal?.removeEventListener('abort', onAbort);
+  }
 }
 
 /**
@@ -170,43 +201,49 @@ function performMockSearch(query: string, signal: AbortSignal): Promise<SearchRe
   );
 }
 
-// ── Module State ──────────────────────────────────────────────────────────────
+function canUseStaticDevFallback(): boolean {
+  if (typeof window === 'undefined' || !window.location) return false;
+  const host = window.location.hostname;
+  if (!['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(host)) return false;
+  const params = new URLSearchParams(window.location.search || '');
+  return params.get('staticDev') !== '0';
+}
 
-let _legacyModule: LegacySearchCacheModule | null = null;
-let _moduleLoadAttempted = false;
+function raceWithStaticFallback<T>(
+  primary: Promise<T>,
+  fallback: Promise<T>,
+  signal?: AbortSignal
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const onAbort = (): void => {
+      if (settled) return;
+      settled = true;
+      signal?.removeEventListener('abort', onAbort);
+      reject(new DOMException('Aborted', 'AbortError'));
+    };
+    const finish = (value: T): void => {
+      if (settled) return;
+      settled = true;
+      signal?.removeEventListener('abort', onAbort);
+      resolve(value);
+    };
 
-/**
- * Lazily load the legacy semantic search API cache module.
- * Returns null if the module is unavailable (e.g. no PHP backend).
- */
-async function loadLegacyModule(): Promise<LegacySearchCacheModule | null> {
-  if (_moduleLoadAttempted) return _legacyModule;
-  _moduleLoadAttempted = true;
-
-  try {
-    const mod = await import('@legacy/modules/semantic-search-api-cache.js');
-    _legacyModule = mod as unknown as LegacySearchCacheModule;
-
-    // Initialize the search cache (loads IDB entries)
-    await _legacyModule.initSearchCache();
-
-    return _legacyModule;
-  } catch (err) {
-    debugWarn('[search-engine] Legacy search module unavailable, using mock fallback:', err);
-    _legacyModule = null;
-    return null;
-  }
+    signal?.addEventListener('abort', onAbort, { once: true });
+    fallback.then(finish, () => undefined);
+    primary.then(finish, () => undefined);
+  });
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
  * Initialize the search engine.
- * Loads the legacy search cache module and warms it up.
- * Called by the engine bridge during init.
+ * Kept as a no-op compatibility hook for callers that previously warmed the
+ * legacy search cache.
  */
 export async function initSearchEngine(): Promise<void> {
-  await loadLegacyModule();
+  void 0;
 }
 
 /**
@@ -229,48 +266,28 @@ export async function performSearch(
     return [];
   }
 
-  // Try the real API via legacy module
-  const legacy = await loadLegacyModule();
+  // Try the live API first. On localhost static-dev runs, race the API with the
+  // deterministic mock fallback so unavailable PHP does not strand search state.
+  const apiResults = fetchSemanticSearchResultsDirect(trimmed, signal);
 
-  if (legacy) {
-    try {
-      const payload = await legacy.fetchSemanticSearchResults(trimmed, signal, {
-        preferCachedResults: true,
-        timeoutMs: 8000,
-        maxAttempts: 2
-      });
-
-      // Map raw results to typed SearchResult[]
-      const rawRows = getPayloadResults(payload);
-      const results: SearchResult[] = rawRows
-        .map((row, idx) => mapServiceRow(row, idx))
-        .filter((r): r is SearchResult => r !== null)
-        .slice(0, 18);
-
-      return results;
-    } catch (err) {
-      // AbortError means the caller cancelled — don't fall back to mock
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        throw err;
-      }
-      debugWarn('[search-engine] Legacy API failed, falling back to mock:', err);
-      // Fall through to mock
-    }
+  if (canUseStaticDevFallback()) {
+    return raceWithStaticFallback(
+      apiResults,
+      performMockSearch(trimmed, signal),
+      signal
+    );
   }
 
-  // Mock fallback
-  return performMockSearch(trimmed, signal);
+  return apiResults;
 }
 
 /**
  * Get diagnostic info about the search engine state.
  */
 export function getSearchEngineDiagnostics(): {
-  hasLegacyModule: boolean;
-  moduleLoadAttempted: boolean;
+  canUseStaticDevFallback: boolean;
 } {
   return {
-    hasLegacyModule: _legacyModule !== null,
-    moduleLoadAttempted: _moduleLoadAttempted
+    canUseStaticDevFallback: canUseStaticDevFallback()
   };
 }

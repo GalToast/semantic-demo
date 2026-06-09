@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const URL_STATE_PATH = resolve(CWD, 'js/modules/url-state.js');
+const URL_STATE_PATH = resolve(CWD, 'js/modules/url-state.ts');
 
 const src = readFileSync(URL_STATE_PATH, 'utf-8');
 
@@ -146,7 +146,7 @@ function testNoRethrowOnClipboardFailure() {
 function testShareButtonLabelReset() {
   console.log('\n[TEST] view-bindings.js resets share button label on copy success');
 
-  const EVB_PATH = resolve(CWD, 'js/modules/bindings/view-bindings.js');
+  const EVB_PATH = resolve(CWD, 'js/modules/bindings/view-bindings.ts');
   const evbSrc = readFileSync(EVB_PATH, 'utf-8');
 
   assertContains(evbSrc, "btn.setAttribute('aria-label', 'Link copied to clipboard')",

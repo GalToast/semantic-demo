@@ -27,7 +27,7 @@ import { pathToFileURL } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const SEMDEMO_ROOT = path.resolve(__dirname, '..');
-const ENGINE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/mycelium-engine.js');
+const ENGINE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/mycelium-engine.ts');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -80,7 +80,7 @@ Object.defineProperty(globalThis, 'crypto', {
 // State
 // ---------------------------------------------------------------------------
 
-const { state } = await import('../js/state.js');
+const { state } = await import('../js/state.ts');
 
 function resetState() {
   state.points = [];

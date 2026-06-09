@@ -17,15 +17,13 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { resolveSource } from './source-path.mjs';
 
 const root = process.cwd();
-const weatherPath = path.join(root, 'js/modules/weather.js');
-const weatherUiPath = path.join(root, 'js/modules/weather-ui.js');
+const weatherPath = resolveSource('js/modules/weather.ts', root);
+const weatherUiPath = resolveSource('js/modules/weather-ui.ts', root);
 const src = fs.readFileSync(weatherPath, 'utf8');
 const uiSrc = fs.readFileSync(weatherUiPath, 'utf8');
-
-await import(pathToFileURL(weatherPath).href);
 
 assert.match(
   src,
@@ -44,12 +42,12 @@ assert.match(
 );
 assert.match(
   uiSrc,
-  /let\s+lightningGeneration\s*=\s*0;/,
-  'weather-ui.js should own a lightning generation token'
+  /let\s+lightningGeneration\s*(?::\s*number\s*)?=\s*0\s*;/,
+  'weather-ui should own a lightning generation token'
 );
 assert.match(
   uiSrc,
-  /const\s+generation\s*=\s*lightningGeneration\s*\+\s*1;[\s\S]*?if\s*\(\s*generation\s*!==\s*lightningGeneration\s*\)\s*return;/,
+  /(?:const|let)\s+generation\s*=\s*lightningGeneration\s*\+\s*1\s*;[\s\S]*?if\s*\(\s*generation\s*!==\s*lightningGeneration\s*\)\s*return/,
   'scheduleLightning should prevent stale recursive lightning callbacks from rescheduling'
 );
 assert.doesNotMatch(

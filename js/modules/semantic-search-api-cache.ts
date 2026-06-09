@@ -7,15 +7,15 @@
  * static-dev fallback, plus re-exports the cache layer.
  */
 
-import { detectStaticDevPHP, allowsStaticDevFallback, shouldLogStaticDevFallback } from './utils/ui-presentation.js';
-import { debugWarn } from './diagnostic-adapter.js';
-import { buildMockCatalogForQuery, EXPLICIT_EMPTY_QUERY_PATTERN } from './semantic-search-mock-catalog.js';
+import { detectStaticDevPHP, allowsStaticDevFallback, shouldLogStaticDevFallback } from './utils/ui-presentation.ts';
+import { debugWarn } from './diagnostic-adapter.ts';
+import { buildMockCatalogForQuery, EXPLICIT_EMPTY_QUERY_PATTERN } from './semantic-search-mock-catalog.ts';
 import {
     initSearchCache,
     getCachedSemanticSearchPayload,
     storeSemanticSearchPayload,
     getSemanticSearchCacheDiagnostics
-} from './semantic-search-cache.js';
+} from './semantic-search-cache.ts';
 
 export { initSearchCache, getSemanticSearchCacheDiagnostics };
 

@@ -25,7 +25,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js');
+const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -159,7 +159,7 @@ function testWindowTiDebugNamespace() {
 // window.exploreThreadNeighbor has been removed (Wave70).
 
 function testNoOtherWindowAssignments() {
-  console.log('\n[TEST] No other window.* direct assignments in thread-inspector.js');
+  console.log('\n[TEST] No other window.* direct assignments in thread-inspector.ts');
 
   const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
 

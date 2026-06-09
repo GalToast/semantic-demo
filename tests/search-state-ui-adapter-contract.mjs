@@ -10,10 +10,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const SEARCH_STATE_PATH = resolve(CWD, 'js/modules/search-state.js');
-const SEARCH_RESULTS_UI_PATH = resolve(CWD, 'js/modules/search-results-ui.js');
+const SEARCH_STATE_PATH = resolve(CWD, 'js/modules/search-state.ts');
+const SEARCH_RESULTS_UI_PATH = resolve(CWD, 'js/modules/search-results-ui.ts');
 const APP_PATH = resolve(CWD, 'js/modules/app.ts');
-const TOOLTIP_PATH = resolve(CWD, 'js/modules/tooltip.js');
+const TOOLTIP_PATH = resolve(CWD, 'js/modules/tooltip.ts');
 
 function assert(condition, message) {
   if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);
@@ -33,8 +33,8 @@ const appSrc = readFileSync(APP_PATH, 'utf8');
 const tooltipSrc = readFileSync(TOOLTIP_PATH, 'utf8');
 
 console.log('\n[TEST 1] search-state does not import tooltip or tooltip adapter');
-assertNotContains(searchSrc, "from './tooltip.js'", 'search-state must not import tooltip.js');
-assertNotContains(searchSrc, "from './search-ui-adapter.js'", 'search-state must not import search-ui-adapter.js');
+assertNotContains(searchSrc, "from './tooltip.ts'", 'search-state must not import tooltip.ts');
+assertNotContains(searchSrc, "from './search-ui-adapter.ts'", 'search-state must not import search-ui-adapter.ts');
 assertNotContains(searchSrc, 'adapter_hideTooltip', 'search-state must not keep tooltip adapter aliases');
 console.log('  PASS');
 

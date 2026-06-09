@@ -3,8 +3,8 @@
 // Focus pocket safe-area camera framing utilities.
 
 import * as THREE from 'three';
-import { state } from '../state.js';
-import { getViewportSize } from './environment.js';
+import { state } from '../state.ts';
+import { getViewportSize } from './environment.ts';
 
 export interface CanvasRegion {
     x: number;

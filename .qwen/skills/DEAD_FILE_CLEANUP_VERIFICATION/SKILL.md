@@ -59,17 +59,31 @@ For each candidate file, search for the **exact filename** across all relevant i
 | Svelte/HTML `<script>` or `import` | across `*.svelte`, `*.html` |
 | CSS reference (less common) | `@import` or filename in docs/comments |
 
+Also check for **same-symbol canonical ports**: if the candidate exports `findNearestCanvasFieldNode`, grep that symbol name in `src/` to find a live canonical implementation that already supersedes it.
+
 ### Step 2: Require a build confirmation
 
 Even if every search returns negative, **do not delete** if deleting a file:
 1. Was recently created or modified (high confidence it is actively wired).
 2. Exports a symbol that is named in the sweep's own "orphan" description but not searched for by filename.
+3. Has a canonical port **and** that canonical port is imported by live code — in that case, prefer deletion of the shadow over preservation, but confirm the canonical importer first.
 
 Run `npm run build` before and immediately after a deletion trial. If a deletion changes the build output (harness errors, different bundle size, or renamed asset hashes), restore the file and treat it as **NOT ORPHAN**.
 
 ### Step 3: Document why the sweep was wrong
 
 If you remove a deletion target after finding an importer, update the sweep/handoff doc with the exact missed import path and the build error that surfaced. Otherwise the same false-positive will be rediscovered in the next wave.
+
+## SHADOW_OF_SRC Deletion Option
+
+If a candidate file meets **all** of these criteria, delete it instead of adding `@ts-nocheck`:
+
+- Its functionality is **exactly duplicated** by a canonical `src/` file (same exported symbol names, same or larger line count in the canonical).
+- The canonical file is imported by at least one live consumer (not just tests).
+- The candidate file has `@ts-nocheck` already — indicating it was already excluded from strict checking.
+- The candidate has **broken legacy imports** (references to deleted `.js` files that would crash at runtime).
+
+Run `npm run check:svelte` and `npm run build:svelte` after deletion to confirm nothing regressed. Commit with a message like `chore(cleanup): remove <N> dead TS shadows superseded by src/ canonical ports`.
 
 ## Anti-patterns
 

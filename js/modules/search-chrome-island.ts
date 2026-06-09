@@ -8,7 +8,7 @@
 import { mount, unmount } from 'svelte';
 import type { Component } from 'svelte';
 import SearchChrome from './components/SearchChrome.svelte';
-import { awaitSlot, MOUNT_FLAG } from './island-mount-helper.js';
+import { awaitSlot, MOUNT_FLAG } from './island-mount-helper.ts';
 
 const SEARCH_CHROME_SLOT_ID: string = 'search-chrome-slot';
 const MOUNT_KEY: string = 'search-chrome';

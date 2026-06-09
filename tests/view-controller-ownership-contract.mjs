@@ -21,11 +21,12 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveSource } from './source-path.mjs';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/view-controller.js');
-const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
-const APP_PATH = path.join(SEMDEMO_ROOT, 'js/modules/app.js');
+const VIEW_CONTROLLER_PATH = resolveSource('js/modules/view-controller.ts', SEMDEMO_ROOT);
+const LIFECYCLE_PATH = resolveSource('js/modules/lifecycle.ts', SEMDEMO_ROOT);
+const APP_PATH = resolveSource('js/modules/app.ts', SEMDEMO_ROOT);
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -92,14 +93,14 @@ function testMapTrailSuppressesViewHandoff() {
 // ---------------------------------------------------------------------------
 
 function testLifecycleImportsFromViewController() {
-  console.log('\n[TEST] lifecycle.js imports switchView, showViewHandoff, hideViewHandoff from ./view-controller.js');
+  console.log('\n[TEST] lifecycle.js imports switchView, showViewHandoff, hideViewHandoff from ./view-controller.ts');
 
   const src = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
 
   const hasImport = /import\s+\{\s*switchView\s*,\s*showViewHandoff\s*,\s*hideViewHandoff\s*\}.*from\s+['"]\.\/view-controller\.js['"]/.test(src);
   assert(hasImport, 'lifecycle.js must import { switchView, showViewHandoff, hideViewHandoff } from "./view-controller.js"');
 
-  console.log('  OK - lifecycle.js imports all three from ./view-controller.js');
+  console.log('  OK - lifecycle.js imports all three from ./view-controller.ts');
 }
 
 // ---------------------------------------------------------------------------
@@ -167,7 +168,7 @@ function testNoCircularImportChain() {
 
   const vcSrc = fs.readFileSync(VIEW_CONTROLLER_PATH, 'utf-8');
   const lcSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
-  const jccSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.js'), 'utf-8');
+  const jccSrc = fs.readFileSync(resolveSource('js/modules/journey-compass-controller.ts', SEMDEMO_ROOT), 'utf-8');
 
   // 5a. view-controller must NOT import lifecycle
   assert(
@@ -184,7 +185,7 @@ function testNoCircularImportChain() {
   // 5c. lifecycle must import from view-controller (direction is lifecycle -> view-controller, acyclic)
   assert(
     /import\s+.*from\s+['"]\.\/view-controller\.js['"]/.test(lcSrc),
-    'lifecycle.js must import from view-controller.js'
+    'lifecycle.js must import from view-controller.ts'
   );
 
   console.log('  OK - import direction is acyclic: lifecycle -> view-controller, no cycle path');
@@ -199,11 +200,11 @@ function testNoOtherModuleImplements() {
   console.log('\n[TEST] No other module implements switchView, showViewHandoff, or hideViewHandoff');
 
   const modulesDir = path.join(SEMDEMO_ROOT, 'js/modules');
-  const files = fs.readdirSync(modulesDir).filter(f => f.endsWith('.js'));
+  const files = fs.readdirSync(modulesDir).filter(f => f.endsWith('.ts') || f.endsWith('.ts'));
 
   const problems = [];
   for (const file of files) {
-    if (file === 'view-controller.js') continue;
+    if (file === 'view-controller.ts' || file === 'view-controller.ts') continue;
     const src = fs.readFileSync(path.join(modulesDir, file), 'utf-8');
     const lines = src.split('\n');
     for (let i = 0; i < lines.length; i++) {

@@ -9,16 +9,16 @@ import './helpers/node-window-shim.mjs';
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { state } from '../js/state.js';
+import { state } from '../js/state.ts';
 import {
   buildSelectedMatchNarrative,
   getInterestingBusinessNote
-} from '../js/modules/ui-renderers.js';
+} from '../js/modules/ui-renderers.ts';
 
 const ROOT = process.cwd();
-const UI_RENDERERS = join(ROOT, 'js/modules/ui-renderers.js');
-const FOCUS_STAGE_RENDERER = join(ROOT, 'js/modules/focus-stage-renderer.js');
-const LIFECYCLE = join(ROOT, 'js/modules/lifecycle.js');
+const UI_RENDERERS = join(ROOT, 'js/modules/ui-renderers.ts');
+const FOCUS_STAGE_RENDERER = join(ROOT, 'js/modules/focus-stage-renderer.ts');
+const LIFECYCLE = join(ROOT, 'js/modules/lifecycle.ts');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -66,7 +66,7 @@ function testSourceCanonicality() {
   assert(uiSrc.includes('export function getInterestingBusinessNote'), 'ui-renderers exports note filter');
   assert(focusRendererSrc.includes('export function updateSelectedCardHeading'), 'focus-stage-renderer owns selected-card heading DOM writes');
 
-  assert(!lifeSrc.includes("from './ui-renderers.js'"), 'lifecycle does not import selected-card helpers after focus-stage transfer');
+  assert(!lifeSrc.includes("from './ui-renderers.ts'"), 'lifecycle does not import selected-card helpers after focus-stage transfer');
   assert(!lifeSrc.includes('window.buildSelectedMatchNarrative'), 'lifecycle does not use window for narrative');
 }
 

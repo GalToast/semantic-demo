@@ -3,10 +3,10 @@
  * Camera snapshot and animation helpers for the micro-demo.
  */
 
-import { state } from '../state.js';
+import { state } from '../state.ts';
 import * as THREE from 'three';
-import { easeInOutSine } from './utils/math-easing.js';
-import { prefersReducedMotion } from './environment.js';
+import { easeInOutSine } from './utils/math-easing.ts';
+import { prefersReducedMotion } from './environment.ts';
 
 interface CameraSnapshot {
     camera: THREE.Vector3;

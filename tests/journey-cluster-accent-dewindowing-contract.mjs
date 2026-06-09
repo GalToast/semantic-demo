@@ -16,9 +16,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
-const JOURNEY_SELECTED_CARD_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-selected-card.js');
-const CLUSTER_UI_ACCENT_PATH = path.join(SEMDEMO_ROOT, 'js/modules/cluster-ui-accent.js');
+const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.ts');
+const JOURNEY_SELECTED_CARD_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-selected-card.ts');
+const CLUSTER_UI_ACCENT_PATH = path.join(SEMDEMO_ROOT, 'js/modules/cluster-ui-accent.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -37,11 +37,11 @@ function assertNotHasSubstring(src, needle, label) {
 // ---------------------------------------------------------------------------
 
 function testImportExists() {
-  console.log('\n[TEST] journey-selected-card.js imports applyClusterUiAccent from cluster-ui-accent.js');
+  console.log('\n[TEST] journey-selected-card.js imports applyClusterUiAccent from cluster-ui-accent.ts');
 
   const src = fs.readFileSync(JOURNEY_SELECTED_CARD_PATH, 'utf-8');
 
-  assertHasSubstring(src, "import { applyClusterUiAccent } from './cluster-ui-accent.js';",
+  assertHasSubstring(src, "import { applyClusterUiAccent } from './cluster-ui-accent.ts';",
     'journey-selected-card.js import from cluster-ui-accent');
 
   console.log('  OK direct import verified');

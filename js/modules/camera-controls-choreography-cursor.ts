@@ -1,10 +1,10 @@
-import { state } from '../state.js'
+import { state } from '../state.ts'
 import type { Point, SemanticState } from '../../types/state'
 import {
   getNavState, getPoints, getTrailDepth, getMyceliumMode
-} from '../state/selectors/index.js'
-import { isMobile } from './environment.js'
-import { refreshMapRouteEmbodiment } from './map-state.js'
+} from '../state/selectors/index.ts'
+import { isMobile } from './environment.ts'
+import { refreshMapRouteEmbodiment } from './map-state.ts'
 import {
   refreshCompositionState,
   dispatchNavTransition,
@@ -12,14 +12,14 @@ import {
   setMyceliumMode,
   updateExplorationUi,
   syncSearchStatusForFocus
-} from './lifecycle.js'
-import { updateJourneyCompass } from './journey-compass-controller.js'
-import { applyPointFilterColors, syncFocusStage } from './journey.js'
-import { syncSemanticDiveUi } from './semantic-dive-ui.js'
-import { publish, EVENTS } from './event-bus.js'
-import { clearRouteExploration } from './camera-controls-core.js'
-import { setFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.js'
-import { animateCameraToNode } from './camera-controls-choreography-focus.js'
+} from './lifecycle.ts'
+import { updateJourneyCompass } from './journey-compass-controller.ts'
+import { applyPointFilterColors, syncFocusStage } from './journey.ts'
+import { syncSemanticDiveUi } from './semantic-dive-ui.ts'
+import { publish, EVENTS } from './event-bus.ts'
+import { clearRouteExploration } from './camera-controls-core.ts'
+import { setFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.ts'
+import { animateCameraToNode } from './camera-controls-choreography-focus.ts'
 
 // Narrow local alias for onboarding-hint dynamic properties (matches onboarding-bindings.ts pattern)
 type OnboardingHint = HTMLElement & {

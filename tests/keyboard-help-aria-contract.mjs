@@ -20,7 +20,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const KEYBOARD_HELP_PATH = resolve(CWD, 'js/modules/keyboard-help.js');
+const KEYBOARD_HELP_PATH = resolve(CWD, 'js/modules/keyboard-help.ts');
 
 const src = readFileSync(KEYBOARD_HELP_PATH, 'utf-8');
 
@@ -45,7 +45,7 @@ function testPreviouslyFocusedVariable() {
   console.log('\n[TEST] _previouslyFocused declared at module scope near panel init');
 
   assertContains(src, '_previouslyFocused',
-    '_previouslyFocused variable exists in keyboard-help.js');
+    '_previouslyFocused variable exists in keyboard-help.ts');
 }
 
 // ---------------------------------------------------------------------------

@@ -87,6 +87,12 @@
     and appends the renderer's canvas into it. The placeholder <canvas> below
     is removed by initThreeJS() and replaced with the live WebGL canvas.
   -->
+  <div
+    id="map-container"
+    class="map-container"
+    aria-hidden="true"
+    data-active-view="idle"
+  ></div>
   <!-- svelte-ignore a11y_no_interactive_element_to_noninteractive_role -->
   <div
     bind:this={containerEl}

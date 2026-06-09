@@ -116,7 +116,7 @@
  --z-chrome-overlay: 12;
  --z-chrome-elevated: 14;
  --z-chrome-popover: 20;
- --z-panels: 50;
+ --z-panels: 80; /* canonical: matches src/lib/z-index.ts + src/index.html */
  --z-panels-elevated: 90;
  --z-overlay: 100;
  --z-overlay-raised: 101;

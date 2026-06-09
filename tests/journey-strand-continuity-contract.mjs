@@ -12,13 +12,13 @@ globalThis.document = {
 globalThis.window = {};
 globalThis.performance = { now: () => 12345 };
 
-const { state } = await import('../js/state.js');
+const { state } = await import('../js/state.ts');
 const {
   setStrandContinuityState,
   clearStrandContinuityState,
-} = await import('../js/modules/strand-continuity.js');
-const journeyModule = await import('../js/modules/journey.js');
-const threadInspectorModule = await import('../js/modules/thread-inspector.js');
+} = await import('../js/modules/strand-continuity.ts');
+const journeyModule = await import('../js/modules/journey.ts');
+const threadInspectorModule = await import('../js/modules/thread-inspector.ts');
 
 const original = { strandContinuityState: state.strandContinuityState };
 

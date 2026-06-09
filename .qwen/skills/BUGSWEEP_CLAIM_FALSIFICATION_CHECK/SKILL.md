@@ -1,8 +1,8 @@
 ---
 name: Bugsweep Claim Falsification Check
-description: Before dispatching fix workers from a bugsweep report, adversarially verify every claim against actual source code — what if the bugsweep itself is wrong?
+description: Before dispatching fix workers from a bugsweep report, adversarially verify every claim against actual source code — what if the bugsweep itself is wrong? Includes pre-dispatch falsification, heterogeneous subagent matching, and structured claim triage.
 source: auto-skill
-extracted_at: '2026-06-07T00:29:26.654Z'
+extracted_at: '2026-06-08T15:43:25.482Z'
 ---
 
 # Bugsweep Claim Falsification Check
@@ -156,3 +156,44 @@ Verifying claims before dispatching fixes saves days of wasted work, prevents to
 - **STRUCTURED_BUG_SURGERY** — Use AFTER claim verification, for the verified bugs. Its Phase 1 (Verify-Before-Fix) covers per-bug spot-checking.
 - **PARALLEL_DIAGNOSTIC_BUGSWEEP** — Produces the bugsweep reports that this skill verifies.
 - **DOUBLE_WORKER_VERIFICATION** — For verifying implementation worker claims against on-disk state.
+
+## Session-Extension: Claim Triage Stopping Rule
+
+When a worker is given N claims to verify-and-fix, and finds that **more than 2 of N are stale/wrong**, the worker should STOP and report the falsification rather than shipping partial fixes or manufacturing new work. This prevents:
+
+- Partially-fixed states where 1 real fix ships alongside 3 no-ops, confusing future readers
+- "Manufactured" fixes where the worker changes something related-but-different to justify the time spent
+- Precedent that the bugsweep document is a checklist to power through rather than a hypothesis set to triage
+
+Concretely: if the worker found "3 of 4 claims are stale," the correct output is:
+
+```
+FIXES APPLIED: None. Per slice rule, I am stopping.
+SKIPPED: <each stale claim with why>
+```
+
+Do not apply the 1 real fix in isolation when the prompt was framed as a batch — surface the falsification first, then let the main lane decide whether to dispatch a narrower follow-up.
+
+## Session-Extension: Test-Environment vs Build-Environment Hash Divergence
+
+A specific falsification case that appeared repeatedly in this repo: `npm run test` fails with a "stale cache buster" message, but the actual failure is that **the test's esbuild invocation produces a different output than the build's esbuild invocation**, so the hashes will never match even after `npm run refresh:cache`.
+
+Detection signals:
+- The error message says "Run npm run build, then npm run refresh:cache" and that _still_ doesn't fix it
+- `dist/bundle.js` hash keeps changing (alternating between "stale" and "mismatched" states)
+- Reading the test source shows it calls `esbuild.build({ entryPoints, plugins: [sveltePlugin] })` while `scripts/build-app.mjs` calls the same with an additional `bundleHygienePlugin`
+- After 2 refresh cycles, the cache buster keeps failing with a *different* hash mismatch each time
+
+Fix: add the same post-build normalization plugin to the test's esbuild call so both environments produce identical output. Do NOT just keep refreshing cache busters — that aligns the manifest to the test's divergent output, which breaks the next `npm run build`.
+
+## Session-Extension: Post-Worker Verification Checklist
+
+After dispatching 2+ parallel workers on a TS port, verify the diff surface before trusting the worker's self-report:
+
+1. `git diff --stat` — confirm only the expected new TS files appear (and 0 surprise deletions of JS shadows)
+2. `grep -rn "_cleanOptionalValue" src/lib/` or equivalent — confirm the local helper is actually gone, not just renamed
+3. `grep -rn "import { cleanOptionalValue } from" src/lib/semantic-threads.ts` — confirm the canonical import is in place
+4. `npx vitest run <targeted-test>` — run the specific test that exercises the changed code, not just `npm run test`
+5. `node tests/ts-js-drift-contract.mjs --strict` — confirm 0 new drift pairs from the new TS files
+
+Do not rely on the worker's "all tests passed" summary alone — the worker may have run a different subset, or the test suite may have pre-existing failures unrelated to the slice.

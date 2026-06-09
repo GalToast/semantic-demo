@@ -88,18 +88,18 @@ globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame.bind(gl
 // Module imports
 // ---------------------------------------------------------------------------
 
-const { state, withStateMutation } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.ts');
 const {
     getFocusConstellationViewportProfile,
     getFocusConstellationPlacement,
     getFocusConstellationMotif,
     getNeighborhoodPersonality
-} = await import('../js/modules/focus-pocket.js');
+} = await import('../js/modules/focus-pocket.ts');
 
 const {
     buildFocusedPocketStagedPositions,
     buildFocusedSemanticPocket
-} = await import('../js/modules/focus-pocket-geometry.js');
+} = await import('../js/modules/focus-pocket-geometry.ts');
 
 // ---------------------------------------------------------------------------
 // Assertion helpers

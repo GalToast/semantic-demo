@@ -17,7 +17,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const LIFECYCLE_PATH = resolve(CWD, 'js/modules/lifecycle-search-sync.js');
+const LIFECYCLE_PATH = resolve(CWD, 'js/modules/lifecycle-search-sync.ts');
 
 const src = readFileSync(LIFECYCLE_PATH, 'utf-8');
 

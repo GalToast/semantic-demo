@@ -101,7 +101,7 @@ async function handleLoadThreads({ urls, attemptConfigs }, requestId) {
         const artifactName = artifactNameFromUrl(url);
         for (const config of attemptConfigs) {
             try {
-                const response = await fetch(url, config);
+                const response = await fetch(url, { cache: config });
                 if (!response.ok) throw new Error(`Thread artifact unavailable (${response.status})`);
                 if (requestId !== _activeRequestId) return null;
                 bundle = await response.json();

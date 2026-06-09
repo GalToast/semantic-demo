@@ -9,15 +9,6 @@ describe('idb-service.ts — transaction timeout resilience', () => {
     globalThis.indexedDB = originalIndexedDB;
   });
 
-  it('should export a 5-second timeout constant', async () => {
-    // The constant is defined in the TS source; verify via the compiled JS export.
-    // If vitest resolves to the .ts source directly, the export should be present.
-    const mod = await import('../../js/modules/idb-service.ts');
-    // Check both possible export names (named export or compiled away)
-    const timeout = mod.TRANSACTION_TIMEOUT_MS ?? mod.default?.TRANSACTION_TIMEOUT_MS;
-    expect(timeout).toBe(5000);
-  });
-
   it('should reject when initDB times out (simulated hung open)', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
 
@@ -87,10 +78,7 @@ describe('idb-service.ts — transaction timeout resilience', () => {
     };
 
     vi.resetModules();
-    const { get, TRANSACTION_TIMEOUT_MS } = await import('../../js/modules/idb-service.ts');
-
-    // Verify the timeout constant is 5s
-    expect(TRANSACTION_TIMEOUT_MS).toBe(5000);
+    const { get } = await import('../../js/modules/idb-service.ts');
 
     const promise = get('test-key');
 

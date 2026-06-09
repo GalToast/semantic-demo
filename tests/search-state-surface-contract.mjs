@@ -142,13 +142,13 @@ Object.defineProperty(globalThis, 'navigator', {
 
 elementsById.set('search-spinner', new FakeElement('div'));
 
-const { state } = await import('../js/state.js');
+const { state } = await import('../js/state.ts');
 const {
   getSearchResultStrength,
   getSearchResultStrengthLabel,
   applySemanticSearchDegradedState,
-} = await import('../js/modules/search-state.js');
-const { subscribe, EVENTS } = await import('../js/modules/event-bus.js');
+} = await import('../js/modules/search-state.ts');
+const { subscribe, EVENTS } = await import('../js/modules/event-bus.ts');
 
 window.recordSemanticLaneSnapshotCalls = [];
 window.semanticLaneStates = [];

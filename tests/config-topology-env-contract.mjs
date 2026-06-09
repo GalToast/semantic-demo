@@ -208,11 +208,11 @@ function readFile(rel) {
 
   // Default scanner path must still be ../js/scanner.js in both scripts.
   assert(
-    sh.includes('../js/scanner.js'),
+    sh.includes('../js/scanner.ts'),
     'deploy.sh: must retain ../js/scanner.js as backward-compatible default'
   );
   assert(
-    ps.includes('../js/scanner.js'),
+    ps.includes('../js/scanner.ts'),
     'deploy.ps1: must retain ../js/scanner.js as backward-compatible default'
   );
 

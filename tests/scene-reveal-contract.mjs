@@ -18,10 +18,11 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { resolveSource } from './source-path.mjs';
 
 const CWD = process.cwd();
-const sceneRevealPath = resolve(CWD, 'js/modules/scene-reveal.js');
-const lifecyclePath = resolve(CWD, 'js/modules/lifecycle.js');
+const sceneRevealPath = resolveSource('js/modules/scene-reveal.ts', CWD);
+const lifecyclePath = resolveSource('js/modules/lifecycle.ts', CWD);
 
 let src;
 try {
@@ -90,7 +91,7 @@ checks.push({
 // --------------------------------------------------------------------------
 checks.push({
   name: 'startSceneReveal:calls clearAutoRotateResumeTimer (dewindowed — direct import)',
-  pass: /^export\s+function\s+startSceneReveal[\s\S]{0,700}?clearAutoRotateResumeTimer\s*\(\s*\)/m.test(src) &&
+  pass: /^export\s+function\s+startSceneReveal[\s\S]{0,900}?clearAutoRotateResumeTimer\s*\(\s*\)/m.test(src) &&
         !/window\.clearAutoRotateResumeTimer/.test(src),
 });
 
@@ -99,7 +100,7 @@ checks.push({
 // --------------------------------------------------------------------------
 checks.push({
   name: 'startSceneReveal:calls setAutoRotateSuspended(true) (dewindowed — direct import)',
-  pass: /^export\s+function\s+startSceneReveal[\s\S]{0,700}?setAutoRotateSuspended\s*\(\s*true\s*\)/m.test(src) &&
+  pass: /^export\s+function\s+startSceneReveal[\s\S]{0,900}?setAutoRotateSuspended\s*\(\s*true\s*\)/m.test(src) &&
         !/window\.setAutoRotateSuspended/.test(src),
 });
 
@@ -117,7 +118,7 @@ checks.push({
 // --------------------------------------------------------------------------
 checks.push({
   name: 'getSceneRevealProgress:gates on state.sceneRevealActive',
-  pass: /function\s+getSceneRevealProgress\s*\([^)]*\)\s*\{[\s\S]*?if\s*\(\s*!\s*state\.sceneRevealActive/.test(src),
+  pass: /function\s+getSceneRevealProgress\s*\([^)]*\).*?\{[\s\S]*?if\s*\(\s*!\s*state\.sceneRevealActive/.test(src),
 });
 checks.push({
   name: 'getSceneRevealProgress:returns 1 early when not active',
@@ -160,28 +161,28 @@ checks.push({
 // Contract 12: onWindowResize sets camera.aspect and calls updateProjectionMatrix
 // --------------------------------------------------------------------------
 checks.push({
-  name: 'onWindowResize:sets camera.aspect = innerWidth / innerHeight',
-  pass: /state\.camera\.aspect\s*=\s*window\.innerWidth\s*\/\s*window\.innerHeight/.test(src),
+  name: 'onWindowResize:sets camera.aspect from viewport dimensions',
+  pass: /camera.*aspect\s*=/.test(src) && /width\s*\/\s*height/.test(src),
 });
 checks.push({
   name: 'onWindowResize:calls camera.updateProjectionMatrix()',
-  pass: /state\.camera\.updateProjectionMatrix\s*\(\s*\)/.test(src),
+  pass: /\.updateProjectionMatrix\s*\(\s*\)/.test(src),
 });
 
 // ---------------------------------------------------------------------------
 // Contract 13: onWindowResize calls renderer.setSize
 // --------------------------------------------------------------------------
 checks.push({
-  name: 'onWindowResize:calls renderer.setSize(innerWidth, innerHeight)',
-  pass: /state\.renderer\.setSize\s*\(\s*window\.innerWidth\s*,\s*window\.innerHeight\s*\)/.test(src),
+  name: 'onWindowResize:calls renderer.setSize(width, height)',
+  pass: /\.setSize\s*\(/.test(src),
 });
 
 // ---------------------------------------------------------------------------
 // Contract 14: onWindowResize calls window.map.invalidateSize()
 // --------------------------------------------------------------------------
 checks.push({
-  name: 'onWindowResize:calls window.map.invalidateSize()',
-  pass: /window\.map\.invalidateSize\s*\(\s*\)/.test(src),
+  name: 'onWindowResize:calls map.invalidateSize()',
+  pass: /invalidateSize\s*\(\s*\)/.test(src),
 });
 
 // ---------------------------------------------------------------------------

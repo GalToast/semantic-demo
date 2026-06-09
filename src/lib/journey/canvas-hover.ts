@@ -1,131 +1,82 @@
 /**
  * @lib/journey/canvas-hover.ts — Canvas field hover state management
  *
- * Ported from: js/modules/journey-canvas-hover.js
+ * Port of js/modules/journey-canvas-hover.js
  *
- * Manages hover state for canvas nodes, with stable hover sticking
- * and clear delay for smooth UX.
+ * Manages canvas hover highlight index, stable hover tracking,
+ * cursor state, and lastCanvasNodeHover for canvas pointer events.
+ * Uses canvasInteractionAdapter from canvas-hit-test for timer management.
  */
+import { state } from '@legacy/state.js';
+import { canvasInteractionAdapter } from './canvas-hit-test';
 
-/** Delay before clearing hover state (ms). */
 const CANVAS_FIELD_HOVER_CLEAR_DELAY_MS = 120;
-
-/** Distance threshold for stable hover sticking (px). */
 const STABLE_HOVER_STICKY_PX = 9;
 
-/**
- * Clear the canvas field hover state.
- * Ported from journey-canvas-hover.js clearCanvasFieldHover().
- */
 export function clearCanvasFieldHover(
-  _canvas: HTMLElement | null,
-  options: { force?: boolean } = {}
+  canvas: HTMLCanvasElement | null,
+  { force = false }: { force?: boolean } = {}
 ): void {
-  const { force = false } = options;
-  if (force) {
-    clearHoverState(null);
-  } else {
-    scheduleHoverClear();
+  if ((state as Record<string, unknown>).canvasFieldHoverClearTimer != null) {
+    canvasInteractionAdapter.clearTimer(
+      (state as Record<string, unknown>).canvasFieldHoverClearTimer as number | undefined
+    );
+    (state as Record<string, unknown>).canvasFieldHoverClearTimer = null;
   }
-}
-
-/**
- * Set the canvas field hover candidate.
- * Ported from journey-canvas-hover.js setCanvasFieldHover().
- */
-export function setCanvasFieldHover(
-  candidate: { index: number; screenX?: number; screenY?: number } | null,
-  _canvas: HTMLElement | null
-): void {
-  if (!candidate || !Number.isFinite(candidate.index)) {
-    clearCanvasFieldHover(null);
+  const clear = (): void => {
+    state.hoverHighlightIndex = -1;
+    state.stableCanvasHover = null;
+    if (canvas) canvas.style.cursor = '';
+    state.lastCanvasNodeHover = null;
+  };
+  if (force) {
+    clear();
     return;
   }
+  (state as Record<string, unknown>).canvasFieldHoverClearTimer = canvasInteractionAdapter.setTimer(
+    clear,
+    CANVAS_FIELD_HOVER_CLEAR_DELAY_MS
+  );
+}
 
-  const prev = getStableHover();
-  let stableCandidate = candidate;
+export interface HoverCandidate {
+  index: number;
+  screenX: number;
+  screenY: number;
+  source?: string;
+  reason?: string;
+}
 
+export function setCanvasFieldHover(
+  candidate: HoverCandidate | null,
+  canvas: HTMLCanvasElement | null
+): void {
+  if (!candidate || !Number.isFinite(candidate.index)) {
+    clearCanvasFieldHover(canvas);
+    return;
+  }
+  const lState = state as Record<string, unknown>;
+  if (lState.canvasFieldHoverClearTimer != null) {
+    canvasInteractionAdapter.clearTimer(lState.canvasFieldHoverClearTimer as number | undefined);
+    lState.canvasFieldHoverClearTimer = null;
+  }
+
+  const prev = state.stableCanvasHover as HoverCandidate | null;
+  let stableCandidate: HoverCandidate = candidate;
   if (prev && Number.isFinite(prev.index)) {
-    const dx = (candidate.screenX || 0) - (prev.screenX || 0);
-    const dy = (candidate.screenY || 0) - (prev.screenY || 0);
+    const dx = candidate.screenX - prev.screenX;
+    const dy = candidate.screenY - prev.screenY;
     const moved = Math.hypot(dx, dy);
     if (moved > STABLE_HOVER_STICKY_PX) {
-      setStableHover(candidate);
+      state.stableCanvasHover = candidate;
     } else {
       stableCandidate = prev;
     }
   } else {
-    setStableHover(candidate);
+    state.stableCanvasHover = candidate;
   }
 
-  setHoverHighlightIndex(stableCandidate.index);
-}
-
-// ── Internal/Global State (mimics the module-scoped vars in the JS version) ──
-
-interface StableHoverState {
-  index: number;
-  screenX: number;
-  screenY: number;
-}
-
-let _stableHover: StableHoverState | null = null;
-let _hoverHighlightIndex: number = -1;
-let _hoverClearTimer: ReturnType<typeof setTimeout> | null = null;
-
-function getStableHover(): StableHoverState | null {
-  return _stableHover;
-}
-
-function setStableHover(candidate: { index: number; screenX?: number; screenY?: number }): void {
-  _stableHover = {
-    index: candidate.index,
-    screenX: candidate.screenX ?? 0,
-    screenY: candidate.screenY ?? 0
-  };
-}
-
-function setHoverHighlightIndex(index: number): void {
-  _hoverHighlightIndex = index;
-  // Update body data attribute for CSS
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.hoverNode = index >= 0 ? String(index) : '';
-  }
-}
-
-function clearHoverState(_canvas: HTMLElement | null): void {
-  _hoverHighlightIndex = -1;
-  _stableHover = null;
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.removeAttribute('data-hover-node');
-  }
-}
-
-function scheduleHoverClear(): void {
-  if (_hoverClearTimer) {
-    clearTimeout(_hoverClearTimer);
-  }
-  _hoverClearTimer = setTimeout(() => {
-    _hoverClearTimer = null;
-    clearHoverState(null);
-  }, CANVAS_FIELD_HOVER_CLEAR_DELAY_MS);
-}
-
-/**
- * Get the current hover highlight index. Used by the engine bridge.
- */
-export function getActiveHoverIndex(): number {
-  return _hoverHighlightIndex;
-}
-
-/**
- * Clean up hover timers. Call on destroy.
- */
-export function disposeHoverState(): void {
-  if (_hoverClearTimer) {
-    clearTimeout(_hoverClearTimer);
-    _hoverClearTimer = null;
-  }
-  _stableHover = null;
-  _hoverHighlightIndex = -1;
+  state.hoverHighlightIndex = stableCandidate.index;
+  if (canvas) canvas.style.cursor = 'pointer';
+  state.lastCanvasNodeHover = stableCandidate;
 }

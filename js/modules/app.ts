@@ -1,61 +1,61 @@
 // @ts-nocheck
-import { state } from '../state.js';
-import * as journeyModule from './journey.js';
-import { initMicroDemo } from './micro-demo.js';
-import * as searchModule from './search-state.js';
-import * as cameraModule from './camera-controls.js';
-import * as focusModule from './focus-pocket.js';
-import * as dataModule from './data-loader.js';
-import * as audioModule from './audio-scape.js';
+import { state } from '../state.ts';
+import * as journeyModule from './journey.ts';
+import { initMicroDemo } from './micro-demo.ts';
+import * as searchModule from './search-state.ts';
+import * as cameraModule from './camera-controls.ts';
+import * as focusModule from './focus-pocket.ts';
+import * as dataModule from './data-loader.ts';
+import * as audioModule from './audio-scape.ts';
 // PATCH: Explicit import to satisfy tests/three-visual-polish-contract.mjs
-import * as searchAnimationsModule from './three-search-animations.js';
+import * as searchAnimationsModule from './three-search-animations.ts';
 import './tooltip.js';
-import { initThreeJS, animate, cancelAnimate, deinit, onWindowResize, getSceneRenderableDiagnostics, updateCameraViewportOffset } from './three-engine.js';
-import { initEventListeners, setInfoPanelOpen, revealSelectedBusinessCard } from './event-bindings.js';
-import { initKeyboardShortcutsHint, initKeyboardResetOwnership } from './keyboard-help.js';
-import { _getSelectedBusinessRoleLabel } from './role-label.js';
-import { debugWarn } from './diagnostic-adapter.js';
-import { updateTime, isCompactSearchViewport } from './utils/ui-presentation.js';
-import { pointHasGeocode } from './utils/geo-data.js';
-import { initJourneyLifecycleAdapter } from './journey-lifecycle-adapter.js';
-import { initClusterFilterAdapter } from './cluster-filter-adapter.js';
-import { initJourneyCompassAdapter, updateJourneyCompass } from './journey-compass-controller.js';
-import { initJourneySelectedCard, initJourneySelectedCardAdapter } from './journey-selected-card.js';
-import { initThreadInspectorAdapter } from './thread-inspector-adapter.js';
-import { initViewControllerAdapter } from './view-controller.js';
-import { initSemanticLaneAdapter } from './semantic-lane.js';
-import { setMyceliumMode, setTrailDepth, applyStoryPrompt } from './exploration-mode.js';
-import { resetExperienceState, returnToOverview, setSemanticDiveMode, refreshCompositionState, startDeferredHydration, dispatchNavTransition, NAV_TRANSITION_ACTIONS, syncSearchStatusForFocus, resetExplorationFocus, focusOnPoint, hideSummaryCard } from './lifecycle.js';
-import { loadSemanticThreads } from './semantic-threads.js';
-import { initSearchCache } from './semantic-search-api-cache.js';
-import { applyUrlState, updateUrlState } from './url-state.js';
-import { hideLoadingOverlay, setLoadingPhase, startDeferredHydration as startLoadingHydration, applyLoadingErrorState } from './loading-ui.js';
-import { hideTooltip } from './tooltip.js';
+import { initThreeJS, animate, cancelAnimate, deinit, onWindowResize, getSceneRenderableDiagnostics, updateCameraViewportOffset } from './three-engine.ts';
+import { initEventListeners, setInfoPanelOpen, revealSelectedBusinessCard } from './event-bindings.ts';
+import { initKeyboardShortcutsHint, initKeyboardResetOwnership } from './keyboard-help.ts';
+import { _getSelectedBusinessRoleLabel } from './role-label.ts';
+import { debugWarn } from './diagnostic-adapter.ts';
+import { updateTime, isCompactSearchViewport } from './utils/ui-presentation.ts';
+import { pointHasGeocode } from './utils/geo-data.ts';
+import { initJourneyLifecycleAdapter } from './journey-lifecycle-adapter.ts';
+import { initClusterFilterAdapter } from './cluster-filter-adapter.ts';
+import { initJourneyCompassAdapter, updateJourneyCompass } from './journey-compass-controller.ts';
+import { initJourneySelectedCard, initJourneySelectedCardAdapter } from './journey-selected-card.ts';
+import { initThreadInspectorAdapter } from './thread-inspector-adapter.ts';
+import { initViewControllerAdapter } from './view-controller.ts';
+import { initSemanticLaneAdapter } from './semantic-lane.ts';
+import { setMyceliumMode, setTrailDepth, applyStoryPrompt } from './exploration-mode.ts';
+import { resetExperienceState, returnToOverview, setSemanticDiveMode, refreshCompositionState, startDeferredHydration, dispatchNavTransition, NAV_TRANSITION_ACTIONS, syncSearchStatusForFocus, resetExplorationFocus, focusOnPoint, hideSummaryCard } from './lifecycle.ts';
+import { loadSemanticThreads } from './semantic-threads.ts';
+import { initSearchCache } from './semantic-search-api-cache.ts';
+import { applyUrlState, updateUrlState } from './url-state.ts';
+import { hideLoadingOverlay, setLoadingPhase, startDeferredHydration as startLoadingHydration, applyLoadingErrorState } from './loading-ui.ts';
+import { hideTooltip } from './tooltip.ts';
 import './pathfinding.js';
-import { startSceneReveal } from './scene-reveal.js';
-import * as journeyWebglModule from './journey-webgl.js';
-import { setWebGLContextRestoreHandler } from './webgl-restore-adapter.js';
-import { initSemanticDiveUiSubscriptions } from './semantic-dive-ui.js';
-import { ensureFocusStageAuxiliaryDom } from './focus-stage-dom.js';
-import { switchView } from './view-controller.js';
-import { probeSemanticLane, scheduleSemanticLaneMonitor, setSemanticLaneUiState } from './semantic-lane.js';
-import * as mapModule from './map-state.js';
-import { initClusterLabels } from './cluster-labels.js';
-import { updateLegendGuideState } from './legend-ui.js';
-import { setupMobileSearchSheetToggle } from './search-panel-adapter.js';
-import { getInterestingBusinessNote, buildSelectedMatchNarrative } from './focus-stage-renderer.js';
-import { describeThreadLensForPoint } from './journey-point-color.js';
-import { hydrateLeadContext } from './lifecycle.js';
-import { subscribeKeyed, EVENTS, publish } from './event-bus.js';
+import { startSceneReveal } from './scene-reveal.ts';
+import * as journeyWebglModule from './journey-webgl.ts';
+import { setWebGLContextRestoreHandler } from './webgl-restore-adapter.ts';
+import { initSemanticDiveUiSubscriptions } from './semantic-dive-ui.ts';
+import { ensureFocusStageAuxiliaryDom } from './focus-stage-dom.ts';
+import { switchView } from './view-controller.ts';
+import { probeSemanticLane, scheduleSemanticLaneMonitor, setSemanticLaneUiState } from './semantic-lane.ts';
+import * as mapModule from './map-state.ts';
+import { initClusterLabels } from './cluster-labels.ts';
+import { updateLegendGuideState } from './legend-ui.ts';
+import { setupMobileSearchSheetToggle } from './search-panel-adapter.ts';
+import { getInterestingBusinessNote, buildSelectedMatchNarrative } from './focus-stage-renderer.ts';
+import { describeThreadLensForPoint } from './journey-point-color.ts';
+import { hydrateLeadContext } from './lifecycle.ts';
+import { subscribeKeyed, EVENTS, publish } from './event-bus.ts';
 // Cross-bus bridge: the legacy event bus (this module) and the Svelte
 // orchestration bus are separate module instances. Re-publish key events
 // on the Svelte bus so Svelte subscribers (e.g. triggers.ts → addTrailStop)
 // fire when the legacy code drives a focus change.
-import { publish as publishSvelte, EVENTS as SVELTE_EVENTS } from '../../src/lib/orchestration/event-bus.js';
-import { requestSemanticGuide } from './semantic-guide.js';
-import { showSemanticThreadsDetail } from './connection-analysis.js';
-import { setSearchPanelState } from './search-results-ui.js';
-import { initAppSvelteIsland } from './app-svelte-island.js';
+import { publish as publishSvelte, EVENTS as SVELTE_EVENTS } from '../../src/lib/orchestration/event-bus.ts';
+import { requestSemanticGuide } from './semantic-guide.ts';
+import { showSemanticThreadsDetail } from './connection-analysis.ts';
+import { setSearchPanelState } from './search-results-ui.ts';
+import { initAppSvelteIsland } from './app-svelte-island.ts';
 
 type InitTiming = { step: string; ms: number };
 type InitSafetyContext = {
@@ -129,7 +129,7 @@ function setupInitSafetyValves(): InitSafetyContext {
     const safetyValve = setTimeout(() => {
         if (document.getElementById('loading-overlay')?.classList.contains('hidden')) return;
         const slowest = initTimings.reduce((max, t) => (t.ms > max.ms ? t : max), { step: '(none yet)', ms: 0 });
-        console.error(
+        console.warn(
             `Init safety valve: loading overlay stuck after 15s; slowest step: ${slowest.step} (${Math.round(slowest.ms)} ms). Showing error state.`
         );
         applyLoadingErrorState(new Error(`Initialization timed out after 15 seconds. Slowest step: ${slowest.step} (${Math.round(slowest.ms)} ms)`));

@@ -9,6 +9,87 @@
 
 import type { WebGLContextState } from './three-engine';
 
+// ── Shared narrow geometry / camera / renderer interfaces ────────────────
+// These model the *used* subset of THREE.Vector3, THREE.PerspectiveCamera,
+// OrbitControls, and WebGLRenderer without importing three.js types into
+// state.d.ts.  Every member is optional where not guaranteed present at
+// assignment time; the narrow shape lets TS consumers access the actual
+// runtime surface without `any`.
+
+export interface Vector3Like {
+    x: number;
+    y: number;
+    z: number;
+
+    // Mutators observed in camera choreography, focus, orbit-slack, etc.
+    clone?(): Vector3Like;
+    copy?(v: Vector3Like): Vector3Like;
+    set?(x: number, y: number, z: number): Vector3Like;
+    add?(v: Vector3Like): Vector3Like;
+    sub?(v: Vector3Like): Vector3Like;
+    multiplyScalar?(s: number): Vector3Like;
+    normalize?(): Vector3Like;
+    lerpVectors?(a: Vector3Like, b: Vector3Like, alpha: number): Vector3Like;
+    distanceTo?(v: Vector3Like): number;
+    length?(): number;
+    lengthSq?(): number;
+    setLength?(l: number): Vector3Like;
+    toArray?(array?: number[], offset?: number): number[];
+    fromArray?(array: number[], offset?: number): Vector3Like;
+}
+
+/** Plain {x,y,z} position stored in nodePositions / targetPositions / originalPositions arrays. */
+export interface NodePosition {
+    x: number;
+    y: number;
+    z: number;
+}
+
+export interface CameraLike {
+    position: Vector3Like;
+    fov?: number;
+    aspect?: number;
+    updateProjectionMatrix?(): void;
+    lookAt?(x: number, y: number, z: number): void;
+}
+
+export interface ControlsLike {
+    target: Vector3Like;
+    update(): void;
+    enabled: boolean;
+    autoRotate?: boolean;
+    autoRotateSpeed?: number;
+    minDistance?: number;
+    maxDistance?: number;
+    rotateSpeed?: number;
+    panSpeed?: number;
+    enableDamping?: boolean;
+    dampingFactor?: number;
+    zoomSpeed?: number;
+    enablePan?: boolean;
+}
+
+export interface RendererInfoMemory {
+    geometries?: number;
+    textures?: number;
+}
+
+export interface RendererInfo {
+    memory: RendererInfoMemory;
+    programs?: unknown[];
+    render?: { calls?: number; triangles?: number };
+}
+
+export interface RendererLike {
+    domElement: HTMLCanvasElement;
+    render(scene: unknown, camera: unknown): void;
+    compile?(scene: unknown, camera: unknown): void;
+    setSize?(width: number, height: number): void;
+    setPixelRatio?(ratio: number): void;
+    dispose?(): void;
+    info: RendererInfo;
+}
+
 // ── Cluster / filter types ──────────────────────────────────────────────
 
 export type ClusterName =
@@ -37,6 +118,29 @@ export type CompassPhase = 'overview' | 'search' | 'focus' | 'inside' | 'map';
 
 export type ThreadSource = 'geometric-fallback' | string;
 
+/** Runtime shape of navState.focusPocketMeta (set by focus-pocket.js). */
+export interface NavFocusPocketMeta {
+    active?: boolean;
+    viewportProfile?: {
+        key?: string;
+        targetOffsetLimit?: number;
+        [key: string]: unknown;
+    };
+    [key: string]: unknown;
+}
+
+/** Runtime shape of navState.focusFramingMeta (used by focus camera animation). */
+export interface NavFocusFramingMeta {
+    transitionStyle?: string;
+    distance?: number;
+    verticalLift?: number;
+    framingDrop?: number;
+    targetOffset?: unknown;
+    duration?: number;
+    travelVector?: unknown;
+    [key: string]: unknown;
+}
+
 export interface NavState {
     mode: string;
     focusedIndex: number | null;
@@ -49,11 +153,11 @@ export interface NavState {
     threadReasonByIndex: Map<number, string>;
     threadSource: ThreadSource;
     focusPocketIndices: number[];
-    focusPocketMeta: unknown;
+    focusPocketMeta: NavFocusPocketMeta | null;
     focusPocketRoleByIndex: Map<number, string>;
     focusPocketAnimationFrameId: number | null;
-    focusFramingMeta: unknown;
-    currentPersonality: string | null;
+    focusFramingMeta: NavFocusFramingMeta | null;
+    currentPersonality: Record<string, unknown> | null;
     neighborhoodIndices: number[];
 }
 
@@ -85,6 +189,8 @@ export interface ScenePerformanceDiagnostics {
     avgThreadUpdateMs: number;
     avgGlowMs: number;
     avgLensMs: number;
+    drawCalls?: number;
+    triangles?: number;
 }
 
 export interface FocusFrameDiagnostics {
@@ -305,9 +411,9 @@ export interface SemanticState extends StateConfig {
     mapInitialized: boolean;
     leafletAssetsPromise: Promise<unknown> | null;
     scene: unknown;
-    camera: unknown;
-    renderer: unknown;
-    controls: unknown;
+    camera: CameraLike;
+    renderer: RendererLike;
+    controls: ControlsLike;
     pointsMesh: unknown;
     pointsMaterial: unknown;
     nodeSporeMesh: unknown;
@@ -350,9 +456,9 @@ export interface SemanticState extends StateConfig {
     dataLoadAttempt: number;
 
     // ==== POSITION / GEOMETRY STATE ====
-    nodePositions: number[];
-    targetPositions: number[];
-    originalPositions: number[];
+    nodePositions: NodePosition[];
+    targetPositions: NodePosition[];
+    originalPositions: NodePosition[];
     currentView: ViewName;
     autoRotate: boolean;
     autoRotateSuspended: boolean;
@@ -463,8 +569,8 @@ export interface SemanticState extends StateConfig {
     focusCameraAssistActive: boolean;
     focusCameraAssistUntil: number;
     focusCameraAssistReason: string;
-    focusCameraOffset: unknown;
-    focusCameraTargetOffset: unknown;
+    focusCameraOffset: Vector3Like | null;
+    focusCameraTargetOffset: Vector3Like | null;
     focusPocketMotionByIndex: Map<number, unknown>;
     focusPocketTransitionStartedAt: number;
     focusLens: unknown;
@@ -511,6 +617,11 @@ export interface SemanticState extends StateConfig {
     pointIndexByLeadId: Map<string | number, number>;
 
     deferredHydrationStarted: boolean;
+
+    // ==== DYNAMIC URL-STATE PROPERTIES ====
+    // Set/read by url-state.ts at runtime (not in _rawState initialiser).
+    _deferredUrlState: { params: Record<string, string>; timestamp: number } | null;
+    _deferredUrlStateHandler: (() => void) | null;
 
     // Derived properties (defined via Object.defineProperties)
     focusedNode: number | null;

@@ -8,11 +8,12 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveSource } from './source-path.mjs';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const CAMERA_PATH = path.join(SEMDEMO_ROOT, 'js/modules/camera-controls.js');
-const CAMERA_RESTORE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/camera-controls-restore.js');
-const SCENE_REVEAL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.js');
+const CAMERA_PATH = resolveSource('js/modules/camera-controls.ts', SEMDEMO_ROOT);
+const CAMERA_RESTORE_PATH = resolveSource('js/modules/camera-controls-restore.ts', SEMDEMO_ROOT);
+const SCENE_REVEAL_PATH = resolveSource('js/modules/scene-reveal.ts', SEMDEMO_ROOT);
 
 function assert(condition, message) {
   if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);
@@ -45,8 +46,8 @@ const sceneRevealSrc = fs.readFileSync(SCENE_REVEAL_PATH, 'utf8');
 
 assertContains(
   cameraSrc,
-  "import * as restore from './camera-controls-restore.js'",
-  'camera-controls.js facade imports camera-controls-restore.js'
+  "import * as restore from './camera-controls-restore.ts'",
+  'camera-controls.js facade imports camera-controls-restore.ts'
 );
 [
   'settleCameraToOverviewPose',
@@ -80,47 +81,47 @@ assert(
 console.log('  OK startSceneReveal autorotate handoff is intact');
 
 console.log('\n[TEST] setAutoRotateSuspended owns soft-resume timestamp lifecycle');
-assertContains(setSuspended, 'state.autoRotateSuspended = suspended', 'suspend flag assignment');
-assertContains(setSuspended, 'state.autoRotateSoftResumeStartedAt = 0', 'soft resume clears when suspended');
-assertContains(setSuspended, 'state.autoRotateSoftResumeStartedAt = performance.now()', 'soft resume stamps on release');
+assertContains(setSuspended, '.autoRotateSuspended = suspended', 'suspend flag assignment');
+assertContains(setSuspended, '.autoRotateSoftResumeStartedAt = 0', 'soft resume clears when suspended');
+assertContains(setSuspended, '.autoRotateSoftResumeStartedAt = performance.now()', 'soft resume stamps on release');
 assertContains(setSuspended, 'syncOrbitAutoRotate()', 'orbit sync after state change');
 console.log('  OK soft-resume lifecycle is intact');
 
 console.log('\n[TEST] clearAutoRotateResumeTimer resets timer and due timestamp');
-assertContains(clearTimer, 'clearTimeout(state.autoRotateResumeTimer)', 'timer is cleared');
-assertContains(clearTimer, 'state.autoRotateResumeTimer = null', 'timer id reset');
-assertContains(clearTimer, 'state.autoRotateResumeDueAt = 0', 'due timestamp reset');
+assertContains(clearTimer, 'clearTimeout(', 'timer is cleared');
+assertContains(clearTimer, '.autoRotateResumeTimer = null', 'timer id reset');
+assertContains(clearTimer, '.autoRotateResumeDueAt = 0', 'due timestamp reset');
 console.log('  OK clearAutoRotateResumeTimer reset contract is intact');
 
 console.log('\n[TEST] scheduleAutoRotateResume blocks on all idle-orbit gates');
 [
   'prefersReducedMotion()',
-  '!state.autoRotate',
-  "state.currentView !== 'galaxy'",
-  'state.focusedNode !== null',
-  'state.selectedPoint !== null',
-  'state.sceneRevealActive',
-  "state.navState.mode !== 'overview'",
-  'state.navState.focusPocketMeta?.active',
-  'state.trailDepth !== 0'
+  '.autoRotate',
+  "currentView !== 'galaxy'",
+  'focusedNode !== null',
+  'selectedPoint !== null',
+  'sceneRevealActive',
+  "navState.mode !== 'overview'",
+  'navState.focusPocketMeta',
+  'trailDepth !== 0'
 ].forEach((needle) => assertContains(scheduleResume, needle, `scheduleAutoRotateResume gate ${needle}`));
-assertContains(scheduleResume, 'state.autoRotateResumeDueAt = performance.now() + delay', 'resume due timestamp set');
-assertContains(scheduleResume, 'state.autoRotateResumeTimer = setTimeout', 'resume timer scheduled');
+assertContains(scheduleResume, '.autoRotateResumeDueAt = performance.now() + delay', 'resume due timestamp set');
+assertContains(scheduleResume, '.autoRotateResumeTimer = setTimeout', 'resume timer scheduled');
 assertContains(scheduleResume, 'setAutoRotateSuspended(false)', 'resume callback releases suspension');
 console.log('  OK scheduleAutoRotateResume gate set is intact');
 
 console.log('\n[TEST] resume callback rechecks gates before releasing');
-const callbackStart = scheduleResume.indexOf('state.autoRotateResumeTimer = setTimeout');
+const callbackStart = scheduleResume.indexOf('.autoRotateResumeTimer = setTimeout');
 const callbackBlock = scheduleResume.slice(callbackStart);
 [
-  'state.autoRotate',
-  "state.currentView === 'galaxy'",
-  'state.focusedNode === null',
-  'state.selectedPoint === null',
-  "state.navState.mode === 'overview'",
-  '!state.sceneRevealActive',
-  '!state.navState.focusPocketMeta?.active',
-  'state.trailDepth === 0'
+  '.autoRotate',
+  "currentView === 'galaxy'",
+  'focusedNode === null',
+  'selectedPoint === null',
+  "navState.mode === 'overview'",
+  'sceneRevealActive',
+  'navState.focusPocketMeta',
+  'trailDepth === 0'
 ].forEach((needle) => assertContains(callbackBlock, needle, `resume callback gate ${needle}`));
 console.log('  OK resume callback rechecks idle gates');
 

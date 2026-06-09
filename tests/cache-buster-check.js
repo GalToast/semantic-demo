@@ -66,6 +66,20 @@ const sveltePlugin = {
   },
 };
 
+/** @type {import('esbuild').Plugin} */
+const bundleHygienePlugin = {
+  name: 'semantic-demo-bundle-hygiene-cache-check',
+  setup(build) {
+    build.onEnd(async (result) => {
+      if (result.errors.length > 0) return;
+      const bundlePath = path.join(root, 'dist/bundle.js');
+      const text = fs.readFileSync(bundlePath, 'utf8');
+      const normalized = normalizeGeneratedBundleText(text);
+      if (normalized !== text) fs.writeFileSync(bundlePath, normalized);
+    });
+  },
+};
+
 function reportFailuresAndExit() {
   console.error('Semantic demo cache-buster check failed:');
   for (const failure of failures) console.error(`- ${failure}`);
@@ -121,7 +135,7 @@ async function verifyBundleFresh() {
       target: 'es2020',
       format: 'esm',
       external: ['three', 'three/*'],
-      plugins: [sveltePlugin],
+      plugins: [sveltePlugin, bundleHygienePlugin],
       absWorkingDir: root,
       logLevel: 'silent',
     });

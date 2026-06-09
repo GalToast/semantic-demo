@@ -30,9 +30,8 @@ function requireExcludes(file, content, needle, reason) {
 
 const shellHtml = read(canonicalShell);
 const indexHtml = read(frontDoor);
-const lifecycleSource = read('js/modules/lifecycle.js');
-const connectionAnalysisSource = read('js/modules/connection-analysis.js');
-const connectionAnalysisAdapterSource = read('js/modules/connection-analysis-adapter.js');
+const connectionAnalysisSource = read('js/modules/connection-analysis.ts');
+const connectionAnalysisAdapterSource = read('js/modules/connection-analysis-adapter.ts');
 const appSvelteSource = read('js/modules/components/App.svelte');
 const bundleSource = read('dist/bundle.js');
 const deployDoc = read('DEPLOY.md');
@@ -48,12 +47,12 @@ requireIncludes(canonicalShell, shellHtml, 'dist/bundle.js', 'canonical shell ow
 // App.svelte at runtime rather than baked into the static HTML. The shell
 // contract is satisfied by the Svelte source owning the ID, not the static HTML.
 requireIncludes('js/modules/components/App.svelte', appSvelteSource, 'id="canvas-container"', 'App.svelte owns the WebGL app DOM');
-requireIncludes('js/modules/connection-analysis.js', connectionAnalysisSource, './connection-analysis-adapter.js', 'connection report must route DOM bindings through the adapter');
-requireIncludes('js/modules/connection-analysis-adapter.js', connectionAnalysisAdapterSource, 'summary-gemma-story', 'connection analysis adapter owns Gemma story DOM bindings');
-requireIncludes('js/modules/connection-analysis.js', connectionAnalysisSource, 'cached_trail_story', 'served runtime source accepts cached trail story artifacts');
-requireIncludes('js/modules/connection-analysis.js', connectionAnalysisSource, 'return inner();', 'showSemanticThreadsDetail must execute its async report loader when called');
-requireIncludes('js/modules/connection-analysis.js', connectionAnalysisSource, 'let semanticThreadsDetailController = null;', 'connection report abort controller must persist across calls');
-requireIncludes('js/modules/connection-analysis.js', connectionAnalysisSource, 'semanticThreadsDetailController = controller;', 'connection report must track the active request controller');
+requireIncludes('js/modules/connection-analysis.ts', connectionAnalysisSource, './connection-analysis-adapter.js', 'connection report must route DOM bindings through the adapter');
+requireIncludes('js/modules/connection-analysis-adapter.ts', connectionAnalysisAdapterSource, 'summary-gemma-story', 'connection analysis adapter owns Gemma story DOM bindings');
+requireIncludes('js/modules/connection-analysis.ts', connectionAnalysisSource, 'cached_trail_story', 'served runtime source accepts cached trail story artifacts');
+requireIncludes('js/modules/connection-analysis.ts', connectionAnalysisSource, 'return inner();', 'showSemanticThreadsDetail must execute its async report loader when called');
+requireIncludes('js/modules/connection-analysis.ts', connectionAnalysisSource, 'let semanticThreadsDetailController', 'connection report abort controller must persist across calls');
+requireIncludes('js/modules/connection-analysis.ts', connectionAnalysisSource, 'semanticThreadsDetailController = controller', 'connection report must track the active request controller');
 requireIncludes('dist/bundle.js', bundleSource, 'summary-gemma-story', 'built bundle owns Gemma story DOM bindings');
 requireIncludes('dist/bundle.js', bundleSource, 'cached_trail_story', 'built bundle accepts cached trail story artifacts');
 

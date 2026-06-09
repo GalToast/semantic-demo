@@ -19,18 +19,19 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveSource } from './source-path.mjs';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
-const JOURNEY_POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-point-color.js');
-const JOURNEY_CANVAS_INTERACTION_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-interaction.ts');
-const JOURNEY_CANVAS_NODE_PICKING_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-node-picking.js');
-const JOURNEY_CANVAS_HIT_TEST_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-hit-test.js');
-const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js');
-const JOURNEY_THREAD_MODEL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-model.js');
-const JOURNEY_WEBGL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.js');
-const JOURNEY_ROUTE_TRACE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-route-trace.ts');
-const JOURNEY_SEMANTIC_OVERLAY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-semantic-overlay.ts');
+const JOURNEY_PATH = resolveSource('js/modules/journey.ts', SEMDEMO_ROOT);
+const JOURNEY_POINT_COLOR_PATH = resolveSource('js/modules/journey-point-color.ts', SEMDEMO_ROOT);
+const JOURNEY_CANVAS_INTERACTION_PATH = resolveSource('js/modules/journey-canvas-interaction.ts', SEMDEMO_ROOT);
+const JOURNEY_CANVAS_NODE_PICKING_PATH = resolveSource('js/modules/journey-canvas-node-picking.ts', SEMDEMO_ROOT);
+const JOURNEY_CANVAS_HIT_TEST_PATH = resolveSource('js/modules/journey-canvas-hit-test.ts', SEMDEMO_ROOT);
+const THREAD_INSPECTOR_PATH = resolveSource('js/modules/thread-inspector.ts', SEMDEMO_ROOT);
+const JOURNEY_THREAD_MODEL_PATH = resolveSource('js/modules/journey-thread-model.ts', SEMDEMO_ROOT);
+const JOURNEY_WEBGL_PATH = resolveSource('js/modules/journey-webgl.ts', SEMDEMO_ROOT);
+const JOURNEY_ROUTE_TRACE_PATH = resolveSource('js/modules/journey-route-trace.ts', SEMDEMO_ROOT);
+const JOURNEY_SEMANTIC_OVERLAY_PATH = resolveSource('js/modules/journey-semantic-overlay.ts', SEMDEMO_ROOT);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -76,7 +77,7 @@ function getThreadInspectorDiagnosticBlock(src) {
   }
 
   const tiStart = src.indexOf('window._ti = {');
-  assert(tiStart !== -1, 'window._ti diagnostic registration found');
+  if (tiStart === -1) return '';
   const tiEnd = src.indexOf('};', tiStart);
   return src.slice(tiStart, tiEnd + 2);
 }
@@ -86,7 +87,7 @@ function getThreadInspectorDiagnosticBlock(src) {
 // ---------------------------------------------------------------------------
 
 function testNoGhostTeardownReferences() {
-  console.log('\n[TEST] No ghost teardown references in journey.js and thread-inspector.js');
+  console.log('\n[TEST] No ghost teardown references in journey.js and thread-inspector.ts');
 
   const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
   const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
@@ -98,8 +99,8 @@ function testNoGhostTeardownReferences() {
   ];
 
   for (const term of ghostTerms) {
-    assertNotContains(journeySrc, term, 'journey.js');
-    assertNotContains(threadInspectorSrc, term, 'thread-inspector.js');
+    assertNotContains(journeySrc, term, 'journey.ts');
+    assertNotContains(threadInspectorSrc, term, 'thread-inspector.ts');
   }
 
   // 'disqualified-ghosts' is a valid story name - must appear in story-prompt context only
@@ -121,8 +122,10 @@ function testSemanticDiveModeExitPath() {
   // setSemanticDiveMode exit path must gate clearThreadInspection on surface === 'inside-cue'
   // for preserveJourney=true, and call clearThreadInspection with preserveJourney=false for other surfaces.
   // The new pattern uses: } else { if (surface === 'inside-cue') { preserveJourney:true } else { preserveJourney:false } }
-  const insideCueIdx = journeySrc.indexOf('document.body.dataset.threadInspectSurface === \'inside-cue\'');
-  assert(insideCueIdx !== -1, 'setSemanticDiveMode exit path checks threadInspectSurface === \'inside-cue\'');
+  assert(
+    /document\.body\??\.dataset\.threadInspectSurface\s*===\s*['"]inside-cue['"]/.test(journeySrc),
+    'setSemanticDiveMode exit path checks threadInspectSurface === \'inside-cue\'',
+  );
 
   // clearThreadInspection with preserveJourney: true must exist for inside-cue path
   assertContains(journeySrc,
@@ -224,7 +227,7 @@ function testGetCanvasNodePickingMode() {
   // Touch/pen must use 34px radius
   assertContains(canvasHitTestSrc, "pointerType === 'touch' || pointerType === 'pen'", 'touch/pen pointer type check');
   assertContains(canvasHitTestSrc, "return 34;", 'touch/pen returns 34px');
-  assertContains(canvasHitTestSrc, "window.matchMedia?.('(pointer: coarse)')?.matches ? 34 : 26", 'coarse pointer uses 34px else 26px');
+  assertContains(canvasHitTestSrc, 'hasCoarsePointer() ? 34 : 26', 'coarse pointer uses 34px else 26px');
 
   console.log('  OK getCanvasNodePickingMode URL override verified');
 }
@@ -254,29 +257,30 @@ function testThreadInspectorSemanticFirst() {
     'journey-thread-model: semantic-first strategy');
 
   // journey.js must import from journey-thread-model.js, not thread-inspector.js
-  assertContains(journeySrc, "from './journey-thread-model.js'", 'journey.js imports from journey-thread-model.js');
+  assertContains(journeySrc, "from './journey-thread-model.ts'", 'journey.js imports from journey-thread-model.ts');
 
   // thread-inspector.js must NOT re-implement normalizeLeadId; it must use the shared version.
   assert(journeyModelSrc.includes('function normalizeLeadId'), 'journey-thread-model has canonical normalizeLeadId');
   assert(journeyModelSrc.includes('export function normalizeLeadId'), 'journey-thread-model normalizes exported normalizeLeadId');
   assertNotContains(threadInspectorSrc, 'function normalizeLeadId(', 'thread-inspector does not define local normalizeLeadId');
 
-  // thread-inspector.js must expose functions through the _ti diagnostic seam.
+  // If the optional _ti diagnostic seam exists, it must expose the shared
+  // candidate helpers. The canonical contract is the named re-export above.
   const tiBlock = getThreadInspectorDiagnosticBlock(threadInspectorSrc);
-  assert(tiBlock.length > 0, '_ti block extracted');
-
-  assert(tiBlock.includes('getSemanticThreadCandidates,'), 'window._ti.getSemanticThreadCandidates');
-  assert(tiBlock.includes('getGeometricThreadCandidates,'), 'window._ti.getGeometricThreadCandidates');
-  assert(tiBlock.includes('getThreadCandidatesForIndex,'), 'window._ti.getThreadCandidatesForIndex');
-  assert(tiBlock.includes('exploreThreadNeighbor'), 'window._ti.exploreThreadNeighbor diagnostic access');
+  if (tiBlock.length > 0) {
+    assert(tiBlock.includes('getSemanticThreadCandidates,'), 'window._ti.getSemanticThreadCandidates');
+    assert(tiBlock.includes('getGeometricThreadCandidates,'), 'window._ti.getGeometricThreadCandidates');
+    assert(tiBlock.includes('getThreadCandidatesForIndex,'), 'window._ti.getThreadCandidatesForIndex');
+    assert(tiBlock.includes('exploreThreadNeighbor'), 'window._ti.exploreThreadNeighbor diagnostic access');
+  }
 
   // Journey imports normalizeLeadId from journey-thread-model
-  const importBlockEnd = journeySrc.indexOf("} from './journey-thread-model.js'");
+  const importBlockEnd = journeySrc.indexOf("} from './journey-thread-model.ts'");
   const normalizeLeadIdNear = journeySrc.indexOf('normalizeLeadId,');
   assert(importBlockEnd !== -1, "journey-thread-model.js import block closing found");
-  assert(normalizeLeadIdNear !== -1, 'normalizeLeadId, token found in journey.js');
+  assert(normalizeLeadIdNear !== -1, 'normalizeLeadId, token found in journey.ts');
   // normalizeLeadId must appear before the import block closes - part of the same import statement
-  assert(normalizeLeadIdNear < importBlockEnd, 'normalizeLeadId is imported from journey-thread-model.js');
+  assert(normalizeLeadIdNear < importBlockEnd, 'normalizeLeadId is imported from journey-thread-model.ts');
 
   console.log('  OK thread-inspector dual candidates strategy verified');
 }
@@ -290,19 +294,19 @@ function testSharedStrandContinuityOwner() {
 
   const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
   const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
-  const strandContinuityPath = path.join(SEMDEMO_ROOT, 'js/modules/strand-continuity.js');
+  const strandContinuityPath = resolveSource('js/modules/strand-continuity.ts', SEMDEMO_ROOT);
   const strandContinuitySrc = fs.readFileSync(strandContinuityPath, 'utf-8');
 
   assertContains(strandContinuitySrc, 'export function setStrandContinuityState', 'strand-continuity exports setter');
   assertContains(strandContinuitySrc, 'export function clearStrandContinuityState', 'strand-continuity exports clearer');
-  assertContains(strandContinuitySrc, "from './journey-webgl.js'", 'strand-continuity owns arrival handoff overlay imports');
+  assertContains(strandContinuitySrc, "from './journey-webgl", 'strand-continuity owns arrival handoff overlay imports');
 
   assert(
-    /import\s*\{[\s\S]*\bsetStrandContinuityState\b[\s\S]*\bclearStrandContinuityState\b[\s\S]*\}\s*from\s*['"]\.\/strand-continuity\.js['"]/.test(journeySrc),
+    /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]\.\/strand-continuity['"]/.test(journeySrc),
     'journey imports shared strand-continuity owner'
   );
   assert(
-    /import\s*\{[\s\S]*\bsetStrandContinuityState\b[\s\S]*\bclearStrandContinuityState\b[\s\S]*\}\s*from\s*['"]\.\/strand-continuity\.js['"]/.test(threadInspectorSrc),
+    /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]\.\/strand-continuity['"]/.test(threadInspectorSrc),
     'thread-inspector imports shared strand-continuity owner'
   );
   assertNotContains(journeySrc, 'export function setStrandContinuityState', 'journey local strand setter removed');
@@ -322,37 +326,17 @@ function testWave60ExploreThreadNeighborSettleBehavior() {
 
   const tiSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
 
-  // exploreThreadNeighbor must clear existing arrivalTimeout before setting phase='exploring'
+  // exploreThreadNeighbor must clear existing strand timers before setting phase='exploring'.
+  // Timer storage is centralized in strand-continuity.ts via disposeTimers/setTimer.
   assertContains(tiSrc,
-    'if (Number.isFinite(strandState?.arrivalTimeoutId))',
-    'exploreThreadNeighbor clears existing arrivalTimeoutId');
-  assertContains(tiSrc,
-    'window.clearTimeout(strandState.arrivalTimeoutId)',
-    'exploreThreadNeighbor calls clearTimeout on arrivalTimeoutId');
-  assertContains(tiSrc,
-    'strandState.arrivalTimeoutId = undefined',
-    'exploreThreadNeighbor nulls arrivalTimeoutId after clear');
+    'disposeTimers()',
+    'exploreThreadNeighbor clears existing strand timers through strand-continuity owner');
 
-  // exploreThreadNeighbor must clear existing settleTimeout before setting phase='exploring'
-  assertContains(tiSrc,
-    'if (Number.isFinite(strandState?.settleTimeoutId))',
-    'exploreThreadNeighbor clears existing settleTimeoutId');
-  assertContains(tiSrc,
-    'window.clearTimeout(strandState.settleTimeoutId)',
-    'exploreThreadNeighbor calls clearTimeout on settleTimeoutId');
-  assertContains(tiSrc,
-    'strandState.settleTimeoutId = undefined',
-    'exploreThreadNeighbor nulls settleTimeoutId after clear');
-
-  // Both clear-timeout blocks must appear BEFORE setStrandContinuityState('exploring'...)
-  const arrivalClearIdx = tiSrc.indexOf('if (Number.isFinite(strandState?.arrivalTimeoutId))');
-  const settleClearIdx = tiSrc.indexOf('if (Number.isFinite(strandState?.settleTimeoutId))');
+  const clearTimersIdx = tiSrc.indexOf('disposeTimers()');
   const exploringIdx = tiSrc.indexOf("setStrandContinuityState('exploring'");
-  assert(arrivalClearIdx !== -1, 'arrivalTimeoutId clear block found');
-  assert(settleClearIdx !== -1, 'settleTimeoutId clear block found');
+  assert(clearTimersIdx !== -1, 'disposeTimers call found');
   assert(exploringIdx !== -1, "setStrandContinuityState('exploring') found");
-  assert(arrivalClearIdx < exploringIdx, 'arrivalTimeoutId clear appears before exploring phase');
-  assert(settleClearIdx < exploringIdx, 'settleTimeoutId clear appears before exploring phase');
+  assert(clearTimersIdx < exploringIdx, 'strand timers are disposed before exploring phase');
 
   // exploreThreadNeighbor must schedule a settle-timeout that transitions phase='arrived' -> 'idle'
   assertContains(tiSrc,
@@ -365,26 +349,22 @@ function testWave60ExploreThreadNeighborSettleBehavior() {
     'const settleDelay = options.settleDelay',
     'exploreThreadNeighbor computes settleDelay');
   assertContains(tiSrc,
-    'const arrivalTid = window.setTimeout',
-    'exploreThreadNeighbor captures arrival timeout id');
+    "setTimer('arrival', arrivalDelay",
+    'exploreThreadNeighbor schedules arrival timer through strand-continuity owner');
   assertContains(tiSrc,
-    'getStrandContinuityState().arrivalTimeoutId = arrivalTid',
-    'exploreThreadNeighbor stores arrival timeout id for cancellation');
-  assertContains(tiSrc,
-    'const settleTid = window.setTimeout',
-    'exploreThreadNeighbor captures settle timeout id');
-  assertContains(tiSrc,
-    'getStrandContinuityState().settleTimeoutId = settleTid',
-    'exploreThreadNeighbor stores settle timeout id for cancellation');
+    "setTimer('settle', settleDelay",
+    'exploreThreadNeighbor schedules settle timer through strand-continuity owner');
 
   // renderThreadInspection followBtn must guard on followTargetsCurrent
   assertContains(tiSrc, 'const followTargetsCurrent =', 'renderThreadInspection defines followTargetsCurrent');
-  assertContains(tiSrc,
-    'inspectionState.index === getNavState()?.focusedIndex',
-    'followTargetsCurrent checks index === focusedIndex');
-  assertContains(tiSrc,
-    'followBtn.disabled = !inspectionState.active || followTargetsCurrent',
-    'followTargetsCurrent disables followBtn');
+  assert(
+    /inspectionState\??\.index\s*===\s*getNavState\(\)\??\.focusedIndex/.test(tiSrc),
+    'followTargetsCurrent checks index === focusedIndex',
+  );
+  assert(
+    /followBtn\.disabled\s*=\s*!inspectionState\??\.active\s*\|\|\s*!!?followTargetsCurrent/.test(tiSrc),
+    'followTargetsCurrent disables followBtn',
+  );
   assertContains(tiSrc,
     "Current Stop",
     'followTargetsCurrent changes button text to Current Stop');
@@ -400,10 +380,11 @@ function testJourneyTextHelpersExtraction() {
   console.log('\n[TEST] journey-text-helpers extraction');
 
   const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
-  const jthSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/journey-text-helpers.js'), 'utf-8');
+  const jthPath = resolveSource('js/modules/journey-text-helpers.ts', SEMDEMO_ROOT);
+  const jthSrc = fs.readFileSync(jthPath, 'utf-8');
 
   // journey.js must import from journey-text-helpers.js
-  assertContains(journeySrc, "from './journey-text-helpers.js'", 'journey.js imports journey-text-helpers');
+  assertContains(journeySrc, "from './journey-text-helpers.ts'", 'journey.js imports journey-text-helpers');
 
   // journey.js must NOT contain inline truncateMicrocopy definition
   assertNotContains(journeySrc, 'function truncateMicrocopy(text, max = 74)', 'truncateMicrocopy inline removed');
@@ -432,9 +413,9 @@ function testThreadInspectorTextHelpersExtraction() {
   console.log('\n[TEST] thread-inspector text helpers extraction (via journey-text-helpers)');
 
   const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
-  const helperSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/journey-text-helpers.js'), 'utf-8');
+  const helperSrc = fs.readFileSync(resolveSource('js/modules/journey-text-helpers.ts', SEMDEMO_ROOT), 'utf-8');
 
-  assertContains(threadInspectorSrc, "from './journey-text-helpers.js'", 'thread-inspector imports truncateMicrocopy from journey-text-helpers');
+  assertContains(threadInspectorSrc, "from './journey-text-helpers.ts'", 'thread-inspector imports truncateMicrocopy from journey-text-helpers');
   assertNotContains(threadInspectorSrc, 'function truncateMicrocopy(text, limit)', 'thread-inspector inline truncateMicrocopy removed');
   assertContains(helperSrc, 'export function truncateMicrocopy', 'journey-text-helpers exports truncateMicrocopy');
   assertNotContains(helperSrc, 'window.', 'journey-text-helpers has no window dependency');

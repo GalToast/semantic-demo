@@ -1,8 +1,8 @@
 ---
 name: Parallel Bugfix Dispatch
-description: Coordinate two parallel external subagent workers to fix distinct bug sets in JS/TS/CSS, with scoped prompts, verification, and explicit non-goals to avoid scope drift.
+description: Coordinate two parallel external subagent workers to fix distinct bug sets in JS/TS/CSS, with scoped prompts, falsification-first verification, and explicit non-goals to avoid scope drift.
 source: auto-skill
-extracted_at: '2026-06-08T03:46:24.483Z'
+extracted_at: '2026-06-08T15:43:25.482Z'
 ---
 
 # Parallel Bugfix Dispatch

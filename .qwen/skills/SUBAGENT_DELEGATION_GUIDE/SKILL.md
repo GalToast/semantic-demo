@@ -27,6 +27,33 @@ Use this when dispatching external workers for implementation or audit tasks. Th
 
 Prefer the simplest supported model that fits the job. The supported external worker IDs are validated at dispatch time; use the exact ID from the router's allowed list, not a guessed slug. For higher reasoning or long-context audit tasks, use a model with stronger reasoning; for simple edits, use the lightest reliable worker.
 
+### Launch-arg gotcha: `mode` maps to `--approval-mode`, and `readonly` is rejected
+
+`external_subagent_start.mode` is serialized as `--approval-mode <value>` to the qwen-code CLI. The CLI only accepts `plan | default | auto-edit | auto | yolo`. Passing `readonly` produces a CLI argument-validation failure that prints the help text before the session-id line, which looks like a "missing session-id" error. Symptoms:
+- All dispatches fail within ~1–2 seconds.
+- stderr shows `--approval-mode` followed by a long help/output block.
+- The `--session-id` flag is actually present in the args array correctly.
+
+Fix: omit `mode` entirely, or pass `mode: "yolo"` (the documented default). Do not pass `mode: "readonly"` expecting a no-write guarantee — enforce read-only in the prompt text instead.
+
+### Verified model IDs (as of 2026-06-09)
+
+| Model ID | Behavior |
+|---|---|
+| `mimo-v2.5-free` | Free OpenCode worker that has completed both audits and edits in this session. Slower than paid passthrough, but reliable for read/write tasks. |
+| `opencode-go/mimo-v2.5` | Paid passthrough worker. May fail at the provider API layer before any prompt executes if the backend sends unsupported fields such as `reasoning_effort='max'`. Treat as unstable for edit workflows until confirmed otherwise. |
+| `opencode-go/deepseek-v4-flash` | Paid passthrough worker. In this session it did not successfully maintain a live worker process after launch (`pid_alive: false`). Treat as unreliable on the current router. |
+| `z-ai/glm-5.1` | Spawns successfully, but may enter deep research loops or struggle with whitespace-sensitive `edit` calls. Check for `pid_alive: false` immediately; if it fails to spawn, switch models rather than retrying. |
+| `nvidia/nemotron-3-ultra-550b-a55b` | Listed in the router's allowed set, but spawning has yielded `pid_alive: false` across multiple provider prefixes. Treat as an unreliable dispatch target on the current Qwen backend until a successful worker run with real output is confirmed. |
+| `nex-agi/nex-n2-pro:free` | Spawns successfully (`pid_alive=true`), but can enter a silent stall mid-task with no new stdout/stderr for several minutes after a tool call. If stdout_bytes and last_log_at are unchanged across two polls >60s apart, treat as a run failure rather than "still thinking." Cancel and fall back to in-house execution or switch model. |
+
+### Spawn-failure protocol
+
+If a subagent returns `pid_alive: false` immediately after launch:
+1. Do not retry the same model unchanged.
+2. Pick a different model from the verified-working list.
+3. If spawning fails twice in one task family, fall back to direct in-house execution and note the failure pattern for this session.
+
 ## Verification Is a Tooling Problem, Not a Worker Problem
 
 Workers' reported success is not the truth source. The main lane's in-process read/glob tools can return stale data and make successful edits look missing.

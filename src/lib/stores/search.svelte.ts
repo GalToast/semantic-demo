@@ -61,6 +61,8 @@ export interface SearchStoreState extends SearchState {
   glowTopIndex: number | null;
   /** Whether search glow is active. */
   glowActive: boolean;
+  /** Last empty query recorded (for no-results fallback suggestions). */
+  currentEmptyQuery: string | null;
   /** Search focus transition token (monotonically increasing). */
   focusTransitionToken: number;
   /** Semantic trail cue state. */
@@ -85,6 +87,7 @@ const _searchWritable = writable<SearchStoreState>({
   glowIndices: new Set(),
   glowTopIndex: null,
   glowActive: false,
+  currentEmptyQuery: null,
   focusTransitionToken: 0,
   trailCue: 'idle',
   isCompactViewport: false,
@@ -109,7 +112,7 @@ function _createSearchStore(): SearchStoreApi {
     'query', 'results', 'activeResultId', 'summary', 'status',
     'hasQuery', 'resultsRendered', 'degraded',
     'requestSequence', 'anchorIndex', 'previewIndex', 'glowIndices',
-    'glowTopIndex', 'glowActive', 'focusTransitionToken', 'trailCue',
+    'glowTopIndex', 'glowActive', 'currentEmptyQuery', 'focusTransitionToken', 'trailCue',
     'isCompactViewport', 'semanticGuideRequestSequence',
     'currentSemanticGuide', 'summaryCardTypeToken'
   ] as const;
@@ -324,6 +327,37 @@ export function bumpSummaryCardTypeToken(): void {
   _searchWritable.update(s => ({ ...s, summaryCardTypeToken: s.summaryCardTypeToken + 1 }));
 }
 
+// ── Boot-time Search Action ──────────────────────────────────────────────────
+
+/**
+ * Trigger a search from URL params or boot-time hydration.
+ * Populates the search store with results so downstream components
+ * (SearchResults, triggers.ts, MapSummary) can react.
+ *
+ * @param query   The raw search query string.
+ * @param signal  Optional AbortSignal for cancellation.
+ */
+export async function runSearch(
+  query: string,
+  signal?: AbortSignal
+): Promise<void> {
+  const trimmed = query.trim();
+  if (trimmed.length < MIN_QUERY_LENGTH) return;
+
+  setSearchQuery(trimmed);
+  setSearchStatus('searching');
+
+  try {
+    const { performSearch } = await import('@lib/search-engine');
+    const abortSignal = signal ?? AbortSignal.timeout(8000);
+    const results = await performSearch(trimmed, abortSignal);
+    setSearchResults(results);
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') return;
+    setSearchStatus('error');
+  }
+}
+
 // ── Full Clear ───────────────────────────────────────────────────────────────
 
 /** Clear all search state (full reset). */
@@ -336,6 +370,7 @@ export function clearSearch(): void {
     glowIndices: new Set(),
     glowTopIndex: null,
     glowActive: false,
+    currentEmptyQuery: null,
     focusTransitionToken: 0,
     trailCue: 'idle',
     isCompactViewport: false,

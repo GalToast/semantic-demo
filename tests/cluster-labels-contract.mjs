@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const clusterLabelsPath = resolve(CWD, 'js/modules/cluster-labels.js');
+const clusterLabelsPath = resolve(CWD, 'js/modules/cluster-labels.ts');
 const clustersCssPath  = resolve(CWD, 'css/clusters.css');
 
 // --------------------------------------------------------------------------
@@ -58,7 +58,7 @@ checks.push({
 // 1f. New DOM-element approach: _labelElements Map present
 checks.push({
   name: 'adds:_labelElements',
-  pass: /_labelElements\s*=\s*new\s+Map/.test(src),
+  pass: /_labelElements(?:\s*:\s*[^=]+)?\s*=\s*new\s+Map/.test(src),
 });
 
 // 1g. DOM elements created with .galaxy-cluster-label class

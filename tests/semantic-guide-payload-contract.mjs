@@ -17,8 +17,8 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const PAYLOAD_PATH = path.join(SEMDEMO_ROOT, 'js/modules/semantic-guide-payload.js');
-const ADAPTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/semantic-guide-payload-adapter.js');
+const PAYLOAD_PATH = path.join(SEMDEMO_ROOT, 'js/modules/semantic-guide-payload.ts');
+const ADAPTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/semantic-guide-payload-adapter.ts');
 
 // ---------------------------------------------------------------------------
 // Assertions
@@ -44,7 +44,7 @@ async function testPayloadDoesNotImportState() {
   const srcCode = fs.readFileSync(PAYLOAD_PATH, 'utf-8');
 
   // Must NOT have: import { state } from '../state.js'
-  assertNotContains(srcCode, "import { state } from '../state.js'", 'payload imports state directly');
+  assertNotContains(srcCode, "import { state } from '../state.ts'", 'payload imports state directly');
   assertNotContains(srcCode, 'from "../state.js"', 'payload imports state via relative path');
 
   console.log('  OK semantic-guide-payload.js does not import state directly');
@@ -62,7 +62,7 @@ async function testPayloadDelegatesToAdapter() {
 
   // Must import from semantic-guide-payload-adapter
   assert(
-    srcCode.includes("from './semantic-guide-payload-adapter.js'"),
+    srcCode.includes("from './semantic-guide-payload-adapter.ts'"),
     'payload imports from semantic-guide-payload-adapter'
   );
 
@@ -134,7 +134,7 @@ async function testAdapterSnapshotStructure() {
     buildSemanticGuidePayloadResult,
     mapResultIndicesToPayloadResults,
     getAnchorPoint
-  } = await import('../js/modules/semantic-guide-payload-adapter.js');
+  } = await import('../js/modules/semantic-guide-payload-adapter.ts');
 
   // getSearchContextSnapshot returns an object with currentSearchSummary and currentView
   const snap = getSearchContextSnapshot();
@@ -165,7 +165,7 @@ async function testAdapterSnapshotStructure() {
 async function testBuildResultWithProvidedSnapshot() {
   console.log('\n[RUNTIME] buildSemanticGuidePayloadResult — works with provided snapshot');
 
-  const { buildSemanticGuidePayloadResult } = await import('../js/modules/semantic-guide-payload-adapter.js');
+  const { buildSemanticGuidePayloadResult } = await import('../js/modules/semantic-guide-payload-adapter.ts');
 
   // Simulate a snapshot with points and context
   const fakePoints = [
@@ -208,7 +208,7 @@ async function testBuildResultWithProvidedSnapshot() {
 async function testMapResultIndicesToPayloadResults() {
   console.log('\n[RUNTIME] mapResultIndicesToPayloadResults — works via adapter');
 
-  const { mapResultIndicesToPayloadResults } = await import('../js/modules/semantic-guide-payload-adapter.js');
+  const { mapResultIndicesToPayloadResults } = await import('../js/modules/semantic-guide-payload-adapter.ts');
 
   const fakePoints = [
     { lead_id: 'LI_001', name: 'Biz A', city: 'Austin', cluster: 1, status: 'active', what: 'Note A' },
@@ -250,7 +250,7 @@ async function testMapResultIndicesToPayloadResults() {
 async function testGetAnchorPointViaAdapter() {
   console.log('\n[RUNTIME] getAnchorPoint — works via adapter');
 
-  const { getAnchorPoint } = await import('../js/modules/semantic-guide-payload-adapter.js');
+  const { getAnchorPoint } = await import('../js/modules/semantic-guide-payload-adapter.ts');
 
   const fakePoints = [
     { lead_id: 'LI_001', name: 'Biz A' },
@@ -285,11 +285,11 @@ async function testGetAnchorPointViaAdapter() {
 async function testPayloadHelpersHonorExplicitSummary() {
   console.log('\n[RUNTIME] payload helpers — honor explicit summary arguments');
 
-  const { state, withStateMutation } = await import('../js/state.js');
+  const { state, withStateMutation } = await import('../js/state.ts');
   const {
     getSemanticGuidePayloadResults,
     getSemanticGuideAnchorPoint
-  } = await import('../js/modules/semantic-guide-payload.js');
+  } = await import('../js/modules/semantic-guide-payload.ts');
 
   const originalPoints = state.points;
   const originalSummary = state.currentSearchSummary;
@@ -328,8 +328,8 @@ async function testPayloadHelpersHonorExplicitSummary() {
 async function testSearchContextSnapshotReturnsCurrentState() {
   console.log('\n[RUNTIME] getSearchContextSnapshot — returns current state values');
 
-  const { state, withStateMutation } = await import('../js/state.js');
-  const { getSearchContextSnapshot } = await import('../js/modules/semantic-guide-payload-adapter.js');
+  const { state, withStateMutation } = await import('../js/state.ts');
+  const { getSearchContextSnapshot } = await import('../js/modules/semantic-guide-payload-adapter.ts');
 
   // Set up state
   const originalSummary = state.currentSearchSummary;

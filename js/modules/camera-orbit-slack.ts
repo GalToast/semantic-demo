@@ -3,15 +3,15 @@
 // Focus orbit slack: pivot adjustment and distance/speed configuration.
 
 import * as THREE from 'three';
-import { state } from '../state.js';
+import { state } from '../state.ts';
 import type { CameraLike, ControlsLike, NodePosition, SemanticState } from '../../types/state';
 import {
     getNavState, getNodePositions, getOriginalPositions, getFocusedNode,
     getCurrentView, getSemanticDiveMode, getCurrentSearchSummary,
     getCamera, getControls, getOrbitMaxDistanceDefault, getOrbitMaxDistanceFree,
     getOrbitRotateSpeedFree, getOrbitPanSpeedFree, getOrbitRotateSpeedDefault, getOrbitPanSpeedDefault
-} from '../state/selectors/index.js';
-import { isMobile, prefersReducedMotion } from './environment.js';
+} from '../state/selectors/index.ts';
+import { isMobile, prefersReducedMotion } from './environment.ts';
 
 interface OrbitSlackCamera extends CameraLike {
     position: THREE.Vector3;

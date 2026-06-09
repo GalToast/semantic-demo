@@ -3,8 +3,8 @@
  * Canonical TS module — preserves export/import parity with the prior
  * journey-canvas-hover.js twin.
  */
-import { state } from '../state.js';
-import { canvasInteractionAdapter } from './journey-canvas-hit-test.js';
+import { state } from '../state.ts';
+import { canvasInteractionAdapter } from './journey-canvas-hit-test.ts';
 
 const CANVAS_FIELD_HOVER_CLEAR_DELAY_MS = 120;
 const STABLE_HOVER_STICKY_PX = 9;

@@ -150,6 +150,8 @@ export default [
                 ResizeObserver: 'readonly',
                 // Project-internal: app exposes these for the visual QA suite
                 __APP_STATE__: 'readonly',
+                // Web API available in modern Node/JSDOM test environments
+                structuredClone: 'readonly',
                 // Three.js: exposed at window.THREE in production; test code
                 // that runs in page.evaluate() bodies references it bare
                 THREE: 'readonly',

@@ -14,7 +14,7 @@
       hover preview, next-stop badge, and relationship labels
 -->
 <script lang="ts">
-  import { hasFocus, focusedIndex, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
+  import { hasFocus, focusedIndex, dispatchNavTransition, NAV_TRANSITION_ACTIONS, hasTrail } from '@lib/stores/navigation';
   import { walkHistoryIndices, threadCandidates, trailDepth, journeyPhase, threadSource } from '@lib/stores/journey';
   import { buildCompassStatus, JOURNEY_ACTIONS } from '@lib/stores/compass';
   import { threadInspectorActive, clearThreadInspector, pinThread, updateThreadInspector } from '@lib/stores/focus';
@@ -296,10 +296,23 @@
     {/if}
 
     <!-- ├─ Trail Controls ──────────────────────────────────────────────────── -->
-    {#if hasFocus()}
+    {#if hasFocus() || hasTrail()}
       <div class="trail-controls" id="trail-controls" role="toolbar" aria-label="Trail navigation">
         <button
-          class="trail-btn"
+          id="btn-focus-path"
+          class="focus-stage-action-btn"
+          type="button"
+          aria-label="Show trail"
+          onclick={() => {
+            const overlay = document.getElementById('trail-review-overlay');
+            if (overlay) overlay.hidden = !overlay.hidden;
+          }}
+        >
+          Show trail
+        </button>
+
+        <button
+          class="trail-btn focus-stage-action-btn"
           id="btn-prev-node"
           disabled={!canGoBack}
           aria-disabled={!canGoBack}
@@ -324,7 +337,7 @@
         </div>
 
         <button
-          class="trail-btn"
+          class="trail-btn focus-stage-action-btn"
           id="btn-next-node"
           disabled={!hasNext}
           aria-disabled={!hasNext}

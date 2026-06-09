@@ -33,9 +33,9 @@ function assert(cond, msg) {
 async function prepFresh(page, params = '') {
   await page.goto(`${BASE}/${params}`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(({ s, k }) => {
-    try { localStorage.removeItem(s); } catch {}
-    try { localStorage.removeItem(k); } catch {}
-    try { sessionStorage.clear(); } catch {}
+    try { localStorage.removeItem(s); } catch (_e) { /* storage may be unavailable */ }
+    try { localStorage.removeItem(k); } catch (_e) { /* storage may be unavailable */ }
+    try { sessionStorage.clear(); } catch (_e) { /* storage may be unavailable */ }
   }, { s: STORAGE_KEY, k: SESSION_KEY });
 }
 

@@ -7,7 +7,7 @@
 
 import { mount } from 'svelte';
 import App from './components/App.svelte';
-import { debugWarn } from './diagnostic-adapter.js';
+import { debugWarn } from './diagnostic-adapter.ts';
 
 let appInstance: ReturnType<typeof mount> | null = null;
 

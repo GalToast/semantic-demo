@@ -6,9 +6,9 @@
  * view, filters, story, mode, depth, record/anchor).
  */
 
-import { state } from '../state.js';
-import { withStateMutation } from '../state.js';
-import { subscribe, publish, EVENTS } from './event-bus.js';
+import { state } from '../state.ts';
+import { withStateMutation } from '../state.ts';
+import { subscribe, publish, EVENTS } from './event-bus.ts';
 import {
     MODE_DESCRIPTIONS,
     STORY_DESCRIPTIONS,
@@ -18,13 +18,13 @@ import {
     syncFilterControls,
     setMyceliumMode,
     syncSearchStatusForFocus,
-} from './lifecycle.js';
-import { switchView } from './view-controller.js';
-import { recordSemanticLaneSnapshot, setSemanticLaneOpsMode, refreshSemanticLaneOpsSummary } from './semantic-lane.js';
-import { isPointVisible } from './utils/geo-data.js';
-import { debugWarn } from './diagnostic-adapter.js';
-import { formatBusinessName, escapeHtml } from './utils/dom-formatters.js';
-import { restoreActiveFiltersFromUrl, restoreActiveClusterFilterFromUrl } from './filter-state.js';
+} from './lifecycle.ts';
+import { switchView } from './view-controller.ts';
+import { recordSemanticLaneSnapshot, setSemanticLaneOpsMode, refreshSemanticLaneOpsSummary } from './semantic-lane.ts';
+import { isPointVisible } from './utils/geo-data.ts';
+import { debugWarn } from './diagnostic-adapter.ts';
+import { formatBusinessName, escapeHtml } from './utils/dom-formatters.ts';
+import { restoreActiveFiltersFromUrl, restoreActiveClusterFilterFromUrl } from './filter-state.ts';
 import {
     activateSearchGlow,
     applyFilters,
@@ -33,11 +33,11 @@ import {
     setActiveSearchResultRow,
     updateSearchStatusMessage,
     updateSearchTrailCue,
-} from './search-state.js';
-import { updateHasQuery } from './bindings/search-bindings.js';
-import { setCurrentView } from './state-mutators.js';
-import { getCurrentView, getFocusedNode, getSelectedPoint, getPoints, getMyceliumMode, getActiveClusterFilter, getActiveFilters, getCurrentSearchSummary, getTrailDepth, getActiveStoryPrompt, getApplyingUrlState, getRestoringBrowserHistory, getUrlStateRestoreToken, getSemanticLaneOpsMode, getDeferredUrlStateHandler } from '../state/selectors/index.js';
-import { getLocation } from './environment.js';
+} from './search-state.ts';
+import { updateHasQuery } from './bindings/search-bindings.ts';
+import { setCurrentView } from './state-mutators.ts';
+import { getCurrentView, getFocusedNode, getSelectedPoint, getPoints, getMyceliumMode, getActiveClusterFilter, getActiveFilters, getCurrentSearchSummary, getTrailDepth, getActiveStoryPrompt, getApplyingUrlState, getRestoringBrowserHistory, getUrlStateRestoreToken, getSemanticLaneOpsMode, getDeferredUrlStateHandler } from '../state/selectors/index.ts';
+import { getLocation } from './environment.ts';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

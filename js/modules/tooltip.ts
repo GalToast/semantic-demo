@@ -4,10 +4,10 @@
  * Tooltip display, positioning, and event-bus integration.
  */
 
-import { formatBusinessName, cleanPublicNoteText, sanitizePublicFacingNote } from './utils/dom-formatters.js';
-import { describeCluster } from './utils/ui-presentation.js';
-import { getViewportSize } from './environment.js';
-import { subscribeKeyed, EVENTS } from './event-bus.js';
+import { formatBusinessName, cleanPublicNoteText, sanitizePublicFacingNote } from './utils/dom-formatters.ts';
+import { describeCluster } from './utils/ui-presentation.ts';
+import { getViewportSize } from './environment.ts';
+import { subscribeKeyed, EVENTS } from './event-bus.ts';
 import type { Point } from '../../types/state';
 
 let tooltipRevealFrame: number | null = null;
@@ -148,7 +148,7 @@ export function hideTooltip(): void {
  *
  * TODO: Call from app.js initEventBusSubscriptions() or lifecycle.js init.
  * Currently the caller is off-limits; add this call when those files are open:
- *   import { initTooltipEventBusSubscriptions } from './tooltip.js';
+ *   import { initTooltipEventBusSubscriptions } from './tooltip.ts';
  *   initTooltipEventBusSubscriptions();  // inside the caller's init sequence
  */
 export function initTooltipEventBusSubscriptions(): void {

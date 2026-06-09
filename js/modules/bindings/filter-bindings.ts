@@ -8,7 +8,7 @@ import {
     setActiveFilter,
     toggleActiveFilterSignal,
     resetActiveFilters
-} from '../filter-state.js';
+} from '../filter-state.ts';
 
 let initialized = false;
 

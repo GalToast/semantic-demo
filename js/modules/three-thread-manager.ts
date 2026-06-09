@@ -1,13 +1,13 @@
-import { webglContext } from './webgl-context.js';
+import { webglContext } from './webgl-context.ts';
 import * as THREE from 'three';
-import { state as _state, withStateMutation } from '../state.js';
+import { state as _state, withStateMutation } from '../state.ts';
 const state = _state as any;
 import {
     buildGeometricMyceliumEdges,
     buildSemanticMyceliumEdges,
     pushBezierLinePair
-} from './mycelium-engine.js';
-import { disposeObject3D } from './resource-tracker.js';
+} from './mycelium-engine.ts';
+import { disposeObject3D } from './resource-tracker.ts';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 

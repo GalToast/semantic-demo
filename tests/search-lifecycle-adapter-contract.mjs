@@ -10,10 +10,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const SEARCH_STATE_PATH = resolve(CWD, 'js/modules/search-state.js');
-const SEARCH_RESULTS_UI_PATH = resolve(CWD, 'js/modules/search-results-ui.js');
+const SEARCH_STATE_PATH = resolve(CWD, 'js/modules/search-state.ts');
+const SEARCH_RESULTS_UI_PATH = resolve(CWD, 'js/modules/search-results-ui.ts');
 const APP_PATH = resolve(CWD, 'js/modules/app.ts');
-const EVENT_BUS_PATH = resolve(CWD, 'js/modules/event-bus.js');
+const EVENT_BUS_PATH = resolve(CWD, 'js/modules/event-bus.ts');
 
 function assert(condition, message) {
   if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);
@@ -33,7 +33,7 @@ const appSrc = readFileSync(APP_PATH, 'utf8');
 const eventSrc = readFileSync(EVENT_BUS_PATH, 'utf8');
 
 console.log('\n[TEST 1] search-state has no runtime lifecycle adapter import');
-assertNotContains(searchSrc, "from './search-lifecycle-adapter.js'", 'search-state must be event-driven');
+assertNotContains(searchSrc, "from './search-lifecycle-adapter.ts'", 'search-state must be event-driven');
 assertNotContains(searchSrc, 'adapter_', 'search-state must not keep adapter directive aliases');
 console.log('  PASS');
 

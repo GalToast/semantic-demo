@@ -7,17 +7,18 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { resolveSource } from './source-path.mjs';
 
 const root = process.cwd();
 const source = {
-  search: readFileSync(resolve(root, 'js/modules/search-state.js'), 'utf8'),
-  searchAdapter: readFileSync(resolve(root, 'js/modules/search-panel-adapter.js'), 'utf8'),
-  sceneReveal: readFileSync(resolve(root, 'js/modules/scene-reveal.js'), 'utf8'),
-  threeSetup: readFileSync(resolve(root, 'js/modules/three-engine.js'), 'utf8'),
-  journey: readFileSync(resolve(root, 'js/modules/journey.js'), 'utf8'),
-  journeyWebgl: readFileSync(resolve(root, 'js/modules/journey-route-trace.ts'), 'utf8'),
-  lifecycle: readFileSync(resolve(root, 'js/modules/lifecycle.js'), 'utf8'),
-  journeyCompassController: readFileSync(resolve(root, 'js/modules/journey-compass-controller.js'), 'utf8'),
+  search: readFileSync(resolveSource('js/modules/search-state.ts', root), 'utf8'),
+  searchAdapter: readFileSync(resolveSource('js/modules/search-panel-adapter.ts', root), 'utf8'),
+  sceneReveal: readFileSync(resolveSource('js/modules/scene-reveal.ts', root), 'utf8'),
+  threeSetup: readFileSync(resolveSource('js/modules/three-engine.ts', root), 'utf8'),
+  journey: readFileSync(resolveSource('js/modules/journey.ts', root), 'utf8'),
+  journeyWebgl: readFileSync(resolveSource('js/modules/journey-route-trace.ts', root), 'utf8'),
+  lifecycle: readFileSync(resolveSource('js/modules/lifecycle.ts', root), 'utf8'),
+  journeyCompassController: readFileSync(resolveSource('js/modules/journey-compass-controller.ts', root), 'utf8'),
 };
 
 const checks = [

@@ -12,11 +12,11 @@ import path from 'node:path';
 const root = process.cwd();
 const modulesDir = path.join(root, 'js/modules');
 
-const lifecyclePath = path.join(modulesDir, 'lifecycle.js');
-const lifecycleModesPath = path.join(modulesDir, 'lifecycle-modes.js');
-const compassPath = path.join(modulesDir, 'journey-compass-controller.js');
-const cameraPath = path.join(modulesDir, 'camera-controls.js');
-const viewPath = path.join(modulesDir, 'view-controller.js');
+const lifecyclePath = path.join(modulesDir, 'lifecycle.ts');
+const lifecycleModesPath = path.join(modulesDir, 'lifecycle-modes.ts');
+const compassPath = path.join(modulesDir, 'journey-compass-controller.ts');
+const cameraPath = path.join(modulesDir, 'camera-controls.ts');
+const viewPath = path.join(modulesDir, 'view-controller.ts');
 
 const lifecycleSrc = fs.readFileSync(lifecyclePath, 'utf8');
 const lifecycleModesSrc = fs.readFileSync(lifecycleModesPath, 'utf8');
@@ -44,7 +44,8 @@ function listModuleFiles(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) return listModuleFiles(fullPath);
-    return entry.isFile() && entry.name.endsWith('.js') ? [fullPath] : [];
+    return entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.ts'))
+      ? [fullPath] : [];
   });
 }
 
@@ -72,13 +73,13 @@ assert(
 );
 assert(
   /export\s*\{[^}]*\bapplyCompositionState\b[^}]*\}/.test(lifecycleSrc),
-  'lifecycle.js must re-export applyCompositionState from composition-state.js'
+  'lifecycle.js must re-export applyCompositionState from composition-state.ts'
 );
 assert(
   /export function applyCompositionState\s*\(/.test(
-    fs.readFileSync(path.join(root, 'js/modules/composition-state.js'), 'utf8')
+    fs.readFileSync(path.join(root, 'js/modules/composition-state.ts'), 'utf8')
   ),
-  'composition-state.js must own applyCompositionState as the orchestrator'
+  'composition-state.ts must own applyCompositionState as the orchestrator'
 );
 
 assert(
@@ -87,7 +88,7 @@ assert(
 );
 assert(
   /setCameraAssistChoreography\('arriving', 'view-handoff'\)/.test(viewSrc),
-  'view-controller.js must delegate view-handoff camera visuals to camera-controls.js'
+  'view-controller.js must delegate view-handoff camera visuals to camera-controls.ts'
 );
 assert(
   count(viewSrc, datasetAssignmentPattern('cameraAssist')) === 0,
@@ -95,39 +96,39 @@ assert(
 );
 
 const allowedDatasetWriters = new Map(Object.entries({
-  activeView: ['js/modules/lifecycle.js', 'js/modules/view-controller.js', 'js/modules/composition-state.js'],
-  graphContext: ['js/modules/lifecycle.js', 'js/modules/composition-state.js'],
-  mapContext: ['js/modules/lifecycle.js', 'js/modules/composition-state.js'],
-  semanticDive: ['js/modules/lifecycle.js', 'js/modules/lifecycle-modes.js', 'js/modules/semantic-dive-ui.js', 'js/modules/composition-state.js'],
-  panelSurface: ['js/modules/lifecycle.js', 'js/modules/composition-state.js'],
-  panelSurfaceDetail: ['js/modules/lifecycle.js', 'js/modules/search-panel-adapter.js', 'js/modules/composition-state.js'],
-  trailState: ['js/modules/lifecycle.js', 'js/modules/composition-state.js'],
-  trailDepth: ['js/modules/lifecycle.js', 'js/modules/composition-state.js'],
-  searchGlow: ['js/modules/lifecycle.js', 'js/modules/composition-state.js', 'js/modules/search-panel-adapter.js'],
+  activeView: ['js/modules/lifecycle.ts', 'js/modules/view-controller.ts', 'js/modules/composition-state.ts'],
+  graphContext: ['js/modules/lifecycle.ts', 'js/modules/composition-state.ts'],
+  mapContext: ['js/modules/lifecycle.ts', 'js/modules/composition-state.ts'],
+  semanticDive: ['js/modules/lifecycle.ts', 'js/modules/lifecycle-modes.ts', 'js/modules/semantic-dive-ui.ts', 'js/modules/composition-state.ts'],
+  panelSurface: ['js/modules/lifecycle.ts', 'js/modules/composition-state.ts'],
+  panelSurfaceDetail: ['js/modules/lifecycle.ts', 'js/modules/search-panel-adapter.ts', 'js/modules/composition-state.ts'],
+  trailState: ['js/modules/lifecycle.ts', 'js/modules/composition-state.ts'],
+  trailDepth: ['js/modules/lifecycle.ts', 'js/modules/composition-state.ts'],
+  searchGlow: ['js/modules/lifecycle.ts', 'js/modules/composition-state.ts', 'js/modules/search-panel-adapter.ts'],
 
-  journeyPhase: ['js/modules/journey-compass-controller.js', 'js/modules/semantic-dive-ui.js'],
-  journeyCompassDensity: ['js/modules/journey-compass-controller.js'],
-  journeyCompassCopy: ['js/modules/journey-compass-controller.js'],
-  journeyNavigationOwner: ['js/modules/journey-compass-controller.js'],
+  journeyPhase: ['js/modules/journey-compass-controller.ts', 'js/modules/semantic-dive-ui.ts'],
+  journeyCompassDensity: ['js/modules/journey-compass-controller.ts'],
+  journeyCompassCopy: ['js/modules/journey-compass-controller.ts'],
+  journeyNavigationOwner: ['js/modules/journey-compass-controller.ts'],
 
-  routeDirector: ['js/modules/map-state.js'],
-  routeDirectorReason: ['js/modules/map-state.js'],
-  terrainHandoff: ['js/modules/map-state.js'],
-  terrainHandoffFrom: ['js/modules/map-state.js'],
-  terrainHandoffTo: ['js/modules/map-state.js'],
-  routeMotion: ['js/modules/journey-route-trace.js', 'js/modules/journey-route-trace.ts'],
+  routeDirector: ['js/modules/map-state.ts'],
+  routeDirectorReason: ['js/modules/map-state.ts'],
+  terrainHandoff: ['js/modules/map-state.ts'],
+  terrainHandoffFrom: ['js/modules/map-state.ts'],
+  terrainHandoffTo: ['js/modules/map-state.ts'],
+  routeMotion: ['js/modules/journey-route-trace.ts'],
 
-  cameraAssist: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js'],
-  cameraAssistReason: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js'],
-  focusTransition: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js', 'js/modules/micro-demo.js', 'js/modules/micro-demo-choreography.js'],
-  focusTransitionPhase: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js', 'js/modules/micro-demo.js', 'js/modules/micro-demo-choreography.js'],
-  routeExploration: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js'],
-  routeExplorationReason: ['js/modules/camera-controls.js', 'js/modules/camera-controls-core.js'],
-  cameraSlack: ['js/modules/camera-orbit-slack.js'],
-  cameraSlackReason: ['js/modules/camera-orbit-slack.js'],
+  cameraAssist: ['js/modules/camera-controls.ts', 'js/modules/camera-controls-core.ts'],
+  cameraAssistReason: ['js/modules/camera-controls.ts', 'js/modules/camera-controls-core.ts'],
+  focusTransition: ['js/modules/camera-controls.ts', 'js/modules/camera-controls-core.ts', 'js/modules/micro-demo.ts', 'js/modules/micro-demo-choreography.ts'],
+  focusTransitionPhase: ['js/modules/camera-controls.ts', 'js/modules/camera-controls-core.ts', 'js/modules/micro-demo.ts', 'js/modules/micro-demo-choreography.ts'],
+  routeExploration: ['js/modules/camera-controls.ts', 'js/modules/camera-controls-core.ts'],
+  routeExplorationReason: ['js/modules/camera-controls.ts', 'js/modules/camera-controls-core.ts'],
+  cameraSlack: ['js/modules/camera-orbit-slack.ts'],
+  cameraSlackReason: ['js/modules/camera-orbit-slack.ts'],
 
-  viewHandoffActive: ['js/modules/view-controller.js'],
-  insideWalkState: ['js/modules/semantic-dive-ui.js'],
+  viewHandoffActive: ['js/modules/view-controller.ts'],
+  insideWalkState: ['js/modules/semantic-dive-ui.ts'],
 }));
 
 const assignmentFindings = [];
