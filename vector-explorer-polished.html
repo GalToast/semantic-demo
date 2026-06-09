@@ -25,14 +25,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="semantic-demo.css?v=b8e54d67c5a0">
+    <link rel="stylesheet" href="semantic-demo.css?v=5814b80ffda7">
     <link rel="stylesheet" href="vector-explorer-pandora.css?v=b109ad6e2d57">
-    <link rel="stylesheet" href="css/mobile_premium__focus-dive.css?v=a88d55f98875">
-    <link rel="stylesheet" href="css/mobile_premium__chrome.css?v=8b1335b61366">
+    <link rel="stylesheet" href="css/mobile_premium__focus-dive.css?v=94d40a4e0fd3">
+    <link rel="stylesheet" href="css/mobile_premium__chrome.css?v=bd5c9da735ed">
     <link rel="stylesheet" href="css/mobile_premium__state.css?v=3af72c3c8e0a">
     <link rel="stylesheet" href="css/mobile_premium__idle.css?v=15a388fb8479">
     <link rel="stylesheet" href="css/mobile_premium__map.css?v=bb41998e40ae">
-    <link rel="stylesheet" href="css/mobile_premium__surfaces.css?v=e23ff707fd96">
+    <link rel="stylesheet" href="css/mobile_premium__surfaces.css?v=ce7b8252a575">
     <link rel="stylesheet" href="css/mobile_premium__narrow.css?v=0e7c97ab5e90">
     <link rel="stylesheet" href="css/modules/focus_stage.css?v=8aa32326c4da">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>M</text></svg>">
@@ -147,6 +147,222 @@
     </svg>
 
     <div id="app-root"></div>
+    <!--
+        Legacy focus-stage structural shell (m3 seam repair).
+        Provides the DOM roots expected by the legacy dist/bundle.js
+        runtime, by legacy CSS modules (focus_stage.css,
+        mobile_premium__focus-dive.css, journey_active.css, strands.css,
+        progressive_disclosure.css), and by headed product QA
+        (mobile-product-focus-route, mobile-product-preview-route,
+        mobile-semantic-dive-320). All IDs/classes mirror what the
+        existing JS modules (journey-selected-card.js,
+        journey-focus-ui.js, focus-stage-dom.js, semantic-dive-ui.js,
+        focus-stage-renderer.js) and the legacy CSS target. The
+        Svelte track (src/App.svelte + src/components/ThreadInspector.svelte
+        + src/components/FocusPocket.svelte) is the eventual owner of
+        #focus-stage, #focus-pocket, #thread-inspector, and
+        #focus-thread-inspector; the static shell below exists only
+        because the production runtime still loads dist/bundle.js.
+        Do not also mount the Svelte app into this shell without first
+        reconciling those four Svelte root IDs against the static roots.
+        All elements are initially hidden / inert; legacy JS unhides
+        them as state advances (focus → focus-search → semantic-dive).
+    -->
+    <div
+        id="focus-stage"
+        class="focus-stage"
+        aria-hidden="true"
+        aria-expanded="false"
+        hidden
+    >
+        <div class="focus-stage-card" hidden>
+            <div class="focus-stage-kicker" id="focus-stage-kicker"></div>
+            <div class="focus-stage-name" id="focus-stage-name"></div>
+            <div class="focus-stage-filed" id="focus-stage-filed"></div>
+            <div class="focus-stage-what" id="focus-stage-what"></div>
+            <div class="focus-stage-badges" id="focus-stage-badges"></div>
+            <div class="focus-stage-meta" id="focus-stage-meta"></div>
+            <div class="focus-stage-trivia" id="focus-stage-trivia"></div>
+            <div class="focus-stage-note" id="focus-stage-note"></div>
+            <div class="focus-stage-actions" id="focus-stage-actions"></div>
+            <div class="focus-stage-journey" id="focus-stage-journey" hidden>
+                <div class="trail-progress" id="focus-stage-progress"></div>
+                <div class="trail-next" id="focus-stage-next"></div>
+                <div class="route-state" id="focus-stage-route" data-state="idle"></div>
+                <button
+                    id="btn-focus-prev"
+                    class="focus-stage-action-btn"
+                    type="button"
+                    aria-label="Go to previous path stop"
+                    hidden
+                >Prev Stop</button>
+                <button
+                    id="btn-focus-next"
+                    class="focus-stage-action-btn"
+                    type="button"
+                    aria-label="Go to next path stop"
+                    hidden
+                >Next Stop</button>
+                <button
+                    id="btn-focus-center"
+                    class="focus-stage-action-btn"
+                    type="button"
+                    title="Recenter camera on this business"
+                    aria-label="Recenter camera on this business"
+                    hidden
+                >Center</button>
+            </div>
+            <div class="focus-stage-auxiliary-surfaces" id="focus-stage-auxiliary-surfaces">
+                <div class="focus-stage-neighbors" id="focus-stage-neighbors" aria-live="off" hidden>
+                    <div class="focus-stage-neighbor-header">
+                        <div class="focus-stage-neighbor-kicker">Nearby Stops</div>
+                        <div
+                            class="focus-stage-neighbor-count"
+                            id="focus-stage-neighbor-count"
+                        >0 visible neighbors</div>
+                    </div>
+                    <div class="focus-stage-neighbor-list" id="focus-stage-neighbor-list"></div>
+                </div>
+                <div
+                    class="focus-stage-inside-status"
+                    id="focus-stage-inside-status"
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="false"
+                    aria-hidden="true"
+                    hidden
+                >
+                    <span class="focus-stage-inside-pulse" aria-hidden="true"></span>
+                    <span
+                        class="focus-stage-inside-status-copy"
+                        id="focus-stage-inside-status-copy"
+                    >Step into this neighborhood to follow related businesses.</span>
+                </div>
+                <div
+                    class="focus-stage-inside-controls"
+                    id="focus-stage-inside-controls"
+                    aria-hidden="true"
+                    hidden
+                >
+                    <button
+                        id="btn-inside-next"
+                        class="focus-stage-inside-btn"
+                        type="button"
+                        data-journey-action="next-stop"
+                        aria-label="Move to next inside stop"
+                        hidden
+                    >Next Stop</button>
+                    <button
+                        id="btn-inside-map"
+                        class="focus-stage-inside-btn secondary"
+                        type="button"
+                        data-journey-action="open-map"
+                        aria-label="Project this trail onto the map"
+                        hidden
+                    >Map</button>
+                    <button
+                        id="btn-inside-county"
+                        class="focus-stage-inside-btn secondary"
+                        type="button"
+                        data-journey-action="county-overview"
+                        aria-label="Exit Step Inside and return to County View"
+                        hidden
+                    >County</button>
+                </div>
+                <div
+                    class="thread-inspector"
+                    id="thread-inspector"
+                    aria-label="Thread connection inspector"
+                    aria-hidden="true"
+                    hidden
+                >
+                    <section
+                        class="focus-thread-inspector"
+                        id="focus-thread-inspector"
+                        aria-labelledby="focus-thread-inspector-title"
+                    >
+                        <div class="focus-thread-inspector-kicker">Connection Preview</div>
+                        <h2
+                            class="focus-thread-inspector-title"
+                            id="focus-thread-inspector-title"
+                        >Select a nearby stop</h2>
+                        <p
+                            class="focus-thread-inspector-copy"
+                            id="focus-thread-inspector-copy"
+                        >Click a neighbor below to preview why it belongs here, then pin or follow.</p>
+                        <div
+                            class="focus-thread-inspector-meta"
+                            id="focus-thread-inspector-meta"
+                        >Preview connection</div>
+                        <div class="focus-thread-inspector-actions">
+                            <button
+                                id="btn-thread-pin"
+                                class="focus-thread-inspector-btn"
+                                type="button"
+                                aria-label="Pin this connection for later review"
+                                disabled
+                            >Pin</button>
+                            <button
+                                id="btn-thread-follow"
+                                class="focus-thread-inspector-btn primary"
+                                type="button"
+                                aria-label="Follow this connection to the next stop"
+                                disabled
+                            >Follow</button>
+                            <button
+                                id="btn-thread-clear"
+                                class="focus-thread-inspector-btn secondary"
+                                type="button"
+                                aria-label="Clear connection preview"
+                                disabled
+                            >Clear</button>
+                        </div>
+                    </section>
+                </div>
+                <div
+                    class="trail-controls"
+                    id="trail-controls"
+                    aria-label="Connection path controls"
+                >
+                    <button
+                        id="btn-prev-node"
+                        class="focus-stage-action-btn"
+                        type="button"
+                        aria-label="Go to previous path stop"
+                        disabled
+                    >Prev Stop</button>
+                    <button
+                        id="btn-next-node"
+                        class="focus-stage-action-btn"
+                        type="button"
+                        aria-label="Go to next path stop"
+                        disabled
+                    >Next Stop</button>
+                </div>
+                <div class="trail-context" id="trail-context"></div>
+                <button
+                    id="btn-focus-dive"
+                    class="focus-stage-dive-btn"
+                    type="button"
+                    aria-label="Explore the neighborhood around this business"
+                    aria-pressed="false"
+                    aria-disabled="true"
+                    tabindex="-1"
+                    hidden
+                >
+                    <span class="focus-stage-dive-label">Explore Neighborhood</span>
+                    <span class="focus-stage-dive-copy">Explore related businesses in the neighborhood.</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div
+        id="focus-pocket"
+        class="focus-pocket"
+        aria-label="Focus neighborhood"
+        aria-hidden="true"
+        hidden
+    ></div>
     <section
         id="journey-compass"
         class="journey-compass"
@@ -166,6 +382,23 @@
         </div>
         <div id="map-trail-strip" class="map-trail-strip" hidden></div>
     </section>
+    <div id="camera-controls" class="controls" role="toolbar" aria-label="Camera controls">
+        <button class="control-btn" id="btn-zoom-in" title="Zoom in" aria-label="Zoom in" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                <use href="#icon-zoom-in"/>
+            </svg>
+        </button>
+        <button class="control-btn" id="btn-zoom-out" title="Zoom out" aria-label="Zoom out" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                <use href="#icon-zoom-out"/>
+            </svg>
+        </button>
+        <button class="control-btn" id="btn-rotate" title="Toggle auto-rotate" aria-label="Toggle auto-rotate" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                <use href="#icon-rotate"/>
+            </svg>
+        </button>
+    </div>
     <div class="weather-overlay" id="weather-overlay" aria-hidden="true"></div>
     <div class="weather-widget glass-light" role="region" aria-label="Current Montgomery County weather" hidden></div>
 
@@ -180,6 +413,6 @@
         }
     }
     </script>
-    <script type="module" src="dist/bundle.js?v=ffc0b027db13"></script>
+    <script type="module" src="dist/bundle.js?v=d9bd4a5df784"></script>
 </body>
 </html>

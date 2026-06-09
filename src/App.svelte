@@ -18,11 +18,15 @@
   import { isCompact, reducedMotion, initViewportListeners } from '@lib/stores/viewport';
   import { initData } from '@lib/data-store';
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs';
+  import { applyUrlState } from '@lib/orchestration/url-state';
+  // Side-effect import: registers SEARCH_FOCUS_REQUESTED → addTrailStop subscriptions
+  import '@lib/orchestration/triggers';
 
   import Canvas from '@components/Canvas.svelte';
   import InfoPanel from '@components/InfoPanel.svelte';
   import Legend from '@components/Legend.svelte';
   import SearchBar from '@components/SearchBar.svelte';
+  import SearchResults from '@components/SearchResults.svelte';
   import JourneyChrome from '@components/JourneyChrome.svelte';
   import FocusPocket from '@components/FocusPocket.svelte';
   import ModeChips from '@components/ModeChips.svelte';
@@ -33,8 +37,6 @@
   import DemoChoreography from '@components/DemoChoreography.svelte';
   import Controls from '@components/Controls.svelte';
   import Header from '@components/Header.svelte';
-  import SearchInput from '@components/SearchInput.svelte';
-  import SearchResults from '@components/SearchResults.svelte';
   import FocusCard from '@components/FocusCard.svelte';
   import MapSummary from '@components/MapSummary.svelte';
   import SemanticOverlay from '@components/SemanticOverlay.svelte';
@@ -62,7 +64,9 @@
 
     const cleanupViewport = initViewportListeners();
     const cleanupParity = installParityAttributeSync();
-    initData().catch(console.error);
+    initData()
+      .then(() => applyUrlState())
+      .catch(console.error);
     return () => {
       cleanupViewport();
       cleanupParity();
@@ -95,15 +99,17 @@
   <!-- Layer 50: Legend panel -->
   <Legend open={false} />
 
+  <!-- Layer 50: Weather widget (top-right chrome, same layer as legend) -->
+  <WeatherWidget visible={true} />
+
   <!-- Layer 80: Info panel -->
   <InfoPanel open={true} />
 
   <!-- Layer 100: Search bar -->
-  <SearchBar expanded={false} />
+  <SearchBar />
 
-  <!-- New components: SearchInput + SearchResults (complement SearchBar) -->
-  <!-- <SearchInput /> -->
-  <!-- <SearchResults /> -->
+  <!-- Search results panel (renders `.search-result` for contract test clicks) -->
+  <SearchResults visible={true} />
 
   <!-- Header with mode chips -->
   <Header visible={true} />
@@ -123,23 +129,23 @@
     class:active={focusActive}
     aria-hidden={!focusActive ? 'true' : undefined}
   >
-    <!-- Focus card for selected business -->
-    <FocusCard visible={false} />
+    <!-- Focus card for selected business (self-gates via cardVisible = visible && isFocused) -->
+    <FocusCard visible={true} />
 
     <!-- Layer 200: Journey chrome (breadcrumb, trail indicators) -->
-    <JourneyChrome visible={false} />
+    <JourneyChrome visible={focusActive} />
 
     <!-- Layer 500: Active journey visualization — rendered by Three.js -->
 
-    <!-- Layer 600: Focus pocket -->
-    <FocusPocket visible={false} />
+    <!-- Layer 600: Focus pocket (self-gates via visible && hasFocus()) -->
+    <FocusPocket visible={true} />
   </div>
 
-  <!-- Mini-map trail -->
-  <MapSummary visible={false} />
+  <!-- Mini-map trail (self-gates via visible && hasTrail() && trail.length > 0) -->
+  <MapSummary visible={true} />
 
   <!-- Layer 700: Compass rail -->
-  <CompassRail visible={false} />
+  <CompassRail visible={focusActive} />
 
   <!--
     Legacy-compass parity surface (2026-06-06):
@@ -159,8 +165,8 @@
   <!-- Filters (positioned at bottom center) -->
   <Filters open={false} />
 
-  <!-- Thread inspector (overlay) -->
-  <ThreadInspector visible={false} />
+  <!-- Thread inspector (overlay, self-gates via visible && threadInspectorActive()) -->
+  <ThreadInspector visible={true} />
 
   <!-- Demo choreography overlay -->
   <DemoChoreography force={forceDemo} suppress={noDemo} />
@@ -169,7 +175,6 @@
   <LoadingOverlay visible={true} />
 
   <!--
-    TODO: Port weather overlay from js/modules/weather-widget.js
     TODO: Port tooltip from js/modules/tooltip.js
     TODO: Port trail review overlay from lifecycle.js
     TODO: Port experience reset toast
