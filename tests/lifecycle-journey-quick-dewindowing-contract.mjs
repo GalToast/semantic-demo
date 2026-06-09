@@ -77,7 +77,7 @@ function testPointColorAdapterSyncSearchStatusForFocus() {
   const src = fs.readFileSync(JOURNEY_POINT_COLOR_PATH, 'utf-8');
 
   assert(
-    /import\s+\{\s*publish,\s*EVENTS\s*\}\s+from\s+['"]\.\/event-bus\.js['"]/.test(src),
+    /import\s+\{\s*publish,\s*EVENTS\s*\}\s+from\s+['"]\.\/event-bus\.(?:js|ts)['"]/.test(src),
     'journey-point-color.js must import publish and EVENTS from event-bus.ts'
   );
 
@@ -102,7 +102,7 @@ function testNoLifecycleJourneyCycle() {
 
   // lifecycle.js imports from journey.js (setTrailFromSeed, syncFocusStage, etc.)
   // but must NOT re-import syncSearchStatusForFocus from there
-  const hasBadImport = /import\s+\{[^}]*\bsyncSearchStatusForFocus\b[^}]*\}\s+from\s+['"]\.\/journey\.js['"]/.test(src);
+  const hasBadImport = /import\s+\{[^}]*\bsyncSearchStatusForFocus\b[^}]*\}\s+from\s+['"]\.\/journey\.(?:js|ts)['"]/.test(src);
   assert(!hasBadImport, 'lifecycle.js must NOT import syncSearchStatusForFocus from journey.js (no cycle)');
 
   console.log('  PASS - no lifecycle to journey syncSearchStatusForFocus import cycle');
@@ -120,7 +120,7 @@ function testPointColorDoesNotDirectImportSyncSearchStatusForFocus() {
 
   // syncSearchStatusForFocus should NOT be imported from lifecycle; the event
   // bus request is the decoupled boundary.
-  const hasDirectImport = /import\s+\{[^}]*\bsyncSearchStatusForFocus\b[^}]*\}\s+from\s+['"]\.\/lifecycle\.js['"]/.test(src);
+  const hasDirectImport = /import\s+\{[^}]*\bsyncSearchStatusForFocus\b[^}]*\}\s+from\s+['"]\.\/lifecycle\.(?:js|ts)['"]/.test(src);
   assert(!hasDirectImport,
     'journey-point-color.js must NOT directly import syncSearchStatusForFocus from lifecycle');
 

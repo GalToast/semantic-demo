@@ -65,7 +65,7 @@ for (const exportName of EXPECTED_EXPORTS) {
 }
 
 assert(
-  /import\s+\{\s*state\s*,\s*withStateMutation\s*\}\s+from\s+['"]\.\.\/state\.js['"]/.test(mutatorSrc),
+  /import\s+\{\s*state\s*,\s*withStateMutation\s*\}\s+from\s+['"]\.\.\/state\.(?:js|ts)['"]/.test(mutatorSrc),
   'state-mutators.js must be the module boundary that imports withStateMutation()'
 );
 

@@ -285,8 +285,8 @@ await test('setMyceliumMode source calls recomputeBloomIndices for bloom mode', 
 // Contract 6: setMyceliumMode calls direct owner imports instead of window UI bridges
 await test('setMyceliumMode source calls direct applyPointFilterColors and updateExplorationUi owners', async () => {
   const src = fs.readFileSync(resolveSource('js/modules/lifecycle-modes.ts', process.cwd()), 'utf8');
-  const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
-  const importsApplyColors = /import\s*\{[\s\S]*?applyPointFilterColors[\s\S]*?\}\s*from\s*['"]\.\/journey\.js['"]/.test(src);
+  const setMyceliumModeBody = exportedFunctionSource(src, 'setMyceliumMode');
+  const importsApplyColors = /import\s*\{[\s\S]*?applyPointFilterColors[\s\S]*?\}\s*from\s*['"]\.\/journey\.(?:js|ts)['"]/.test(src);
   const hasApplyColors = /(?<!window\.)applyPointFilterColors\s*\(/.test(setMyceliumModeBody);
   const hasUpdateExplorationUi = /(?<!window\.)updateExplorationUi\s*\(/.test(setMyceliumModeBody);
   assert(importsApplyColors, 'lifecycle imports applyPointFilterColors from journey owner');
@@ -313,7 +313,7 @@ await test('applyStoryPrompt source resets activeFilters and activeClusterFilter
 // Contract 8: setMyceliumMode('trail') calls the direct trailDepth owner
 await test('setMyceliumMode(\'trail\') source calls direct setTrailDepth(1, ...)', async () => {
   const src = fs.readFileSync(resolveSource('js/modules/lifecycle-modes.ts', process.cwd()), 'utf8');
-  const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
+  const setMyceliumModeBody = exportedFunctionSource(src, 'setMyceliumMode');
   const hasTrailDepth1 = /mode\s*===\s*['"]trail['"][\s\S]*?(?<!window\.)setTrailDepth\s*\(\s*1\s*,/.test(setMyceliumModeBody);
   assert(hasTrailDepth1, 'setMyceliumMode with trail mode calls direct setTrailDepth(1, ...)');
   assert(!/window\.setTrailDepth\s*\(/.test(setMyceliumModeBody), 'setMyceliumMode avoids the window.setTrailDepth bridge');
@@ -322,7 +322,7 @@ await test('setMyceliumMode(\'trail\') source calls direct setTrailDepth(1, ...)
 // Contract 9: setMyceliumMode('inside') calls the direct trailDepth owner
 await test('setMyceliumMode(\'inside\') source calls direct setTrailDepth(2, { fromUserGesture: true })', async () => {
   const src = fs.readFileSync(resolveSource('js/modules/lifecycle-modes.ts', process.cwd()), 'utf8');
-  const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
+  const setMyceliumModeBody = exportedFunctionSource(src, 'setMyceliumMode');
   const hasTrailDepth2 = /mode\s*===\s*['"]inside['"][\s\S]*?(?<!window\.)setTrailDepth\s*\(\s*2\s*,[\s\S]*?fromUserGesture:\s*true/.test(setMyceliumModeBody);
   assert(hasTrailDepth2, 'setMyceliumMode with inside mode calls direct setTrailDepth(2, { fromUserGesture: true })');
   assert(!/window\.setTrailDepth\s*\(/.test(setMyceliumModeBody), 'setMyceliumMode avoids the window.setTrailDepth bridge');
@@ -331,7 +331,7 @@ await test('setMyceliumMode(\'inside\') source calls direct setTrailDepth(2, { f
 // Contract 10: setMyceliumMode publishes VIEW_CHANGED event
 await test('setMyceliumMode source publishes VIEW_CHANGED event', async () => {
   const src = fs.readFileSync(resolveSource('js/modules/lifecycle-modes.ts', process.cwd()), 'utf8');
-  const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
+  const setMyceliumModeBody = exportedFunctionSource(src, 'setMyceliumMode');
   const hasEventPublish = /publish\s*\(\s*EVENTS\.VIEW_CHANGED\s*,\s*\{[\s\S]*?myceliumMode:\s*mode\s*\}\s*\)/.test(setMyceliumModeBody);
   assert(hasEventPublish, 'setMyceliumMode publishes VIEW_CHANGED event');
   assert(!/updateUrlState\s*\(/.test(setMyceliumModeBody), 'setMyceliumMode avoids direct updateUrlState call');

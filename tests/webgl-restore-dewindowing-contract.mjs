@@ -37,7 +37,7 @@ const checks = [
   },
   {
     name: 'app imports setWebGLContextRestoreHandler',
-    pass: /import\s+\{\s*setWebGLContextRestoreHandler\s*\}\s+from\s+['"]\.\/webgl-restore-adapter\.js['"]/.test(appSrc),
+    pass: /import\s+\{\s*setWebGLContextRestoreHandler\s*\}\s+from\s+['"]\.\/webgl-restore-adapter\.(?:js|ts)['"]/.test(appSrc),
   },
   {
     name: 'app registers init as WebGL context restore handler',
@@ -49,7 +49,7 @@ const checks = [
   },
   {
     name: 'three-setup imports restoreWebGLContext',
-    pass: /import\s+\{\s*restoreWebGLContext\s*\}\s+from\s+['"]\.\/webgl-restore-adapter\.js['"]/.test(threeSetupSrc),
+    pass: /import\s+\{\s*restoreWebGLContext\s*\}\s+from\s+['"]\.\/webgl-restore-adapter\.(?:js|ts)['"]/.test(threeSetupSrc),
   },
   {
     name: 'webglcontextrestored path calls restoreWebGLContext',

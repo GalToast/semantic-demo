@@ -3656,7 +3656,7 @@ async function run() {
     const myceliumAction = box(mapFocusSearchState, '.map-trail-strip .trail-strip-btn[data-journey-action="open-mycelium"]');
     const resetAction = box(mapFocusSearchState, '.map-trail-strip .trail-strip-btn[data-journey-action="county-overview"]');
     const searchAction = box(mapFocusSearchState, '.map-trail-strip .trail-strip-btn[data-journey-action="focus-search"]');
-    const mapStripTitle = box(mapFocusSearchState, '.map-trail-strip .map-strip-title');
+    const mapStripTitle = box(mapFocusSearchState, '.map-strip-title');
     const globalControls = box(mapFocusSearchState, '.controls');
     const standaloneChrome = ['.panel-toggle', '.share-toggle', '.help-toggle', '#btn-legend', '#btn-share-view', '#btn-keyboard-help']
       .map((selector) => ({ selector, box: box(mapFocusSearchState, selector) }))
@@ -3667,6 +3667,12 @@ async function run() {
     const trailContext = box(mapFocusSearchState, '#trail-context');
     const filtersSection = box(mapFocusSearchState, '#filters-section');
     const routeEvidence = mapFocusSearchState.routeEvidence || {};
+    const isNonInteractiveTitleRendered = (targetBox) => targetBox &&
+      targetBox.display !== 'none' &&
+      targetBox.visibility !== 'hidden' &&
+      Number(targetBox.opacity || 1) > 0.05 &&
+      targetBox.width > 0 &&
+      targetBox.height > 0;
 
     if (mapFocusSearchState?.bodyDataset?.activeView === 'map') {
       pass('24-mobile-map-focus-search', 'mobile-map-focus-search-active-view');
@@ -3842,7 +3848,7 @@ async function run() {
       myceliumAction === null &&
       resetAction === null &&
       searchAction === null &&
-      isRendered(mapStripTitle)
+      isNonInteractiveTitleRendered(mapStripTitle)
     ) {
       pass('24-mobile-map-focus-search', 'mobile-map-focus-search-strip-actions:title-only');
     } else {

@@ -44,7 +44,7 @@ const checks = [
   },
   {
     name: 'app imports initThreeJS from three-engine',
-    pass: /import\s+\{[^}]*\binitThreeJS\b[^}]*\}\s+from\s+['"]\.\/three-engine\.js['"]/.test(appSrc),
+    pass: /import\s+\{[^}]*\binitThreeJS\b[^}]*\}\s+from\s+['"]\.\/three-engine\.(?:js|ts)['"]/.test(appSrc),
   },
   {
     name: 'app calls initThreeJS directly during bootstrap',
@@ -60,7 +60,7 @@ const checks = [
   },
   {
     name: 'three-engine imports switchView directly for WebGL fallback',
-    pass: /import\s+\{[^}]*\bswitchView\b[^}]*\}\s+from\s+['"]\.\/view-controller\.js['"]/.test(threeSetupSrc),
+    pass: /import\s+\{[^}]*\bswitchView\b[^}]*\}\s+from\s+['"]\.\/view-controller\.(?:js|ts)['"]/.test(threeSetupSrc),
   },
   {
     name: 'three-engine WebGL fallback calls switchView directly',

@@ -60,7 +60,7 @@ function testSearchStateExportsSetSearchPanelState() {
 function testLifecycleImportsSetSearchPanelState() {
   console.log('\n[TEST] lifecycle module imports setSearchPanelState from search-state.ts');
 
-  const importPattern = /import\s+\{[^}]*\bsetSearchPanelState\b[^}]*\}\s+from\s+['"]\.\/search-state\.js['"]/;
+  const importPattern = /import\s+\{[^}]*\bsetSearchPanelState\b[^}]*\}\s+from\s+['"]\.\/search-state\.(?:js|ts)['"]/;
 
   // After lifecycle decomposition, the import may live in lifecycle.js (facade)
   // or in lifecycle-reset.js (the extracted sub-module that actually calls it).
@@ -175,7 +175,7 @@ function testSearchStateImplementsPanelState() {
   const adapterSrc = fs.readFileSync(SEARCH_PANEL_ADAPTER_PATH, 'utf-8');
 
   assert(
-    /from\s+['"]\.\/search-panel-adapter\.js['"]/.test(src),
+    /from\s+['"]\.\/search-panel-adapter\.(?:js|ts)['"]/.test(src),
     'search-state.js must import search-panel-adapter.ts'
   );
 

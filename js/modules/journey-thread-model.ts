@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * journey-thread-model.ts — TypeScript shadow of journey-thread-model.js
  */
@@ -10,6 +9,11 @@ import type { Point } from '../../types/state.ts';
 export function normalizeLeadId(value: string | number | null | undefined): string | null {
     if (value === null || value === undefined || value === '') return null;
     return String(value);
+}
+
+function getNumericAt(values: readonly number[], index: number): number {
+    const value = values[index];
+    return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
 export interface ThreadCandidate {
@@ -108,8 +112,8 @@ export function getProjectedNeighborCandidates(index: number): number[] {
                     const otherCity = (state.points[otherIndex] as any)?.city;
                     let score = 1 / Math.max(dist, 0.0001);
                     if (normalizeCityForFilter(otherCity) === normalizeCityForFilter(selfCity)) score += 0.9;
-                    score += (Number.isFinite((state.signalScores as number[])[otherIndex]) ? (state.signalScores as number[])[otherIndex] : 0) * 0.12;
-                    score += (Number.isFinite((state.bridgeScores as number[])[otherIndex]) ? (state.bridgeScores as number[])[otherIndex] : 0) * 0.08;
+                    score += getNumericAt(state.signalScores, otherIndex) * 0.12;
+                    score += getNumericAt(state.bridgeScores, otherIndex) * 0.08;
                     const selfCluster = (state.points[index] as any)?.cluster;
                     const otherCluster = (state.points[otherIndex] as any)?.cluster;
                     if (otherCluster === selfCluster && Number.isFinite(selfCluster)) score += 0.45;
@@ -172,8 +176,8 @@ export function getGeometricThreadCandidates(index: number): ThreadCandidate[] {
         semanticScore: 0,
         sameCity: normalizeCityForFilter((state.points[candidateIndex] as any)?.city) === selfCity,
         sameStatus: ((state.points[candidateIndex] as any)?.status || 'active') === selfStatus,
-        bridgeScore: (state.bridgeScores as number[])[candidateIndex] || 0,
-        signalScore: (state.signalScores as number[])[candidateIndex] || 0,
+        bridgeScore: getNumericAt(state.bridgeScores, candidateIndex),
+        signalScore: getNumericAt(state.signalScores, candidateIndex),
         threadType: 'approximate_projected_neighbor',
         reason: 'approximate projected neighbor from the current cloud layout',
         source: 'geometric-fallback',
