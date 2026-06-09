@@ -9,27 +9,27 @@
  * track can re-render the same data from the canonical source of truth.
  */
 
-import { state } from '../state.js';
-import { publish, EVENTS } from './event-bus.js';
-import { isCompactSearchViewport } from './utils/ui-presentation.js';
-import { setSearchContainerState, setupMobileSearchSheetToggle } from './search-panel-adapter.js';
-import { recordSemanticLaneSnapshot } from './semantic-lane.js';
+import { state } from '../state.ts';
+import { publish, EVENTS } from './event-bus.ts';
+import { isCompactSearchViewport } from './utils/ui-presentation.ts';
+import { setSearchContainerState, setupMobileSearchSheetToggle } from './search-panel-adapter.ts';
+import { recordSemanticLaneSnapshot } from './semantic-lane.ts';
 import {
     searchResultsStore,
     searchSummaryStore,
     isSearchingStore,
     searchErrorStore,
     searchVisibleCountStore
-} from './stores.js';
-import { formatBusinessName } from './utils/dom-formatters.js';
+} from './stores.ts';
+import { formatBusinessName } from './utils/dom-formatters.ts';
 import {
     getSearchResultStrength,
     getSearchResultStrengthLabel,
     getSearchResultCardClasses,
     buildSearchResultSnippet,
     buildSearchRankLabel
-} from './search-result-renderer.js';
-import { updateSearchTrailCue } from './ui-renderers.js';
+} from './search-result-renderer.ts';
+import { updateSearchTrailCue } from './ui-renderers.ts';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -176,6 +176,120 @@ function buildCountLine({ total, visibleCount, mode }: { total: number; visibleC
     hidden.textContent = `${total - visibleCount} behind`;
     count.append(hidden);
     return count;
+}
+
+interface SearchStateNamespace {
+    search?: (query: string, options?: { preferCachedResults?: boolean }) => void;
+    clearSearch?: (options?: { preserveSearch?: boolean }) => void;
+    bindSearchResultInteractions?: unknown;
+}
+
+function getSearchStateNamespace(resultsEl: HTMLElement | null): SearchStateNamespace | null {
+    const namespace = (resultsEl as (HTMLElement & { _searchStateNamespace?: SearchStateNamespace }) | null)?._searchStateNamespace;
+    return namespace ?? null;
+}
+
+function appendQueryInQuotes(parent: HTMLElement, query: string): void {
+    parent.append(document.createTextNode('"'));
+    const strong = document.createElement('strong');
+    strong.textContent = query;
+    parent.append(strong);
+    parent.append(document.createTextNode('"'));
+}
+
+function buildLegacySearchErrorStateDom(errorData: SearchErrorData): HTMLElement {
+    const errorEl = document.createElement('div');
+    errorEl.className = errorData.type === 'inline' ? 'search-error-inline-retry' : 'search-error-state';
+    errorEl.dataset.searchErrorType = errorData.type;
+    errorEl.dataset.query = errorData.query;
+    errorEl.dataset.errorMessage = errorData.message;
+    errorEl.setAttribute('role', 'status');
+    errorEl.setAttribute('aria-live', 'polite');
+
+    if (errorData.type === 'inline') {
+        const message = document.createElement('span');
+        message.className = 'search-error-inline-msg';
+        message.append(document.createTextNode('Search is recovering for '));
+        appendQueryInQuotes(message, errorData.query);
+        message.append(document.createTextNode('.'));
+
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'search-error-retry-btn compact';
+        retry.setAttribute('aria-label', `Retry search for ${errorData.query}`);
+        retry.textContent = 'Retry';
+
+        errorEl.append(message, retry);
+        return errorEl;
+    }
+
+    errorEl.id = 'search-error-state';
+
+    const kicker = document.createElement('span');
+    kicker.className = 'search-error-kicker';
+    kicker.textContent = 'Retry needed';
+
+    const text = document.createElement('div');
+    text.className = 'search-error-text';
+    text.append(document.createTextNode('We could not finish '));
+    appendQueryInQuotes(text, errorData.query);
+    text.append(document.createTextNode(' just now. Retry the live search or clear it and keep exploring.'));
+
+    const actions = document.createElement('div');
+    actions.className = 'search-error-actions';
+
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'search-error-retry-btn';
+    retry.setAttribute('aria-label', `Retry search for ${errorData.query}`);
+    retry.textContent = 'Retry';
+
+    const dismiss = document.createElement('button');
+    dismiss.type = 'button';
+    dismiss.className = 'search-error-dismiss-btn';
+    dismiss.setAttribute('aria-label', 'Clear search and dismiss');
+    dismiss.textContent = 'Clear';
+
+    actions.append(retry, dismiss);
+    errorEl.append(kicker, text, actions);
+    return errorEl;
+}
+
+function attachLegacySearchErrorActions(resultsEl: HTMLElement | null, errorEl: HTMLElement): void {
+    const namespace = getSearchStateNamespace(resultsEl);
+    const query = errorEl.dataset.query || '';
+    const retry = errorEl.querySelector('.search-error-retry-btn') as HTMLButtonElement | null;
+    if (retry) {
+        retry.onclick = (event) => {
+            event.preventDefault();
+            if (namespace?.search) {
+                namespace.search(query, { preferCachedResults: false });
+            }
+        };
+    }
+
+    const dismiss = errorEl.querySelector('.search-error-dismiss-btn') as HTMLButtonElement | null;
+    if (dismiss) {
+        dismiss.onclick = (event) => {
+            event.preventDefault();
+            if (namespace?.clearSearch) {
+                namespace.clearSearch({ preserveSearch: false });
+            } else {
+                clearSearchState(resultsEl, document.getElementById('search-status'));
+            }
+        };
+    }
+}
+
+function renderLegacySearchErrorStateDom(resultsEl: HTMLElement | null, errorData: SearchErrorData): void {
+    if (!resultsEl) return;
+    const errorEl = buildLegacySearchErrorStateDom(errorData);
+    attachLegacySearchErrorActions(resultsEl, errorEl);
+    resultsEl.append(errorEl);
+    resultsEl.hidden = false;
+    resultsEl.classList.add('active');
+    resultsEl.setAttribute('aria-describedby', errorData.type === 'inline' ? 'search-status' : 'search-error-state');
+    syncSearchResultsA11y(resultsEl);
 }
 
 function buildResultButton({ result, order, topScore, topIndex, anchorIndex, trimmedQuery }: {
@@ -476,11 +590,10 @@ export function applySemanticSearchErrorState(
         resultsEl.classList.remove('is-searching-skeleton');
         resultsEl.setAttribute('aria-busy', 'false');
         clearLegacySearchResultsDom(resultsEl);
+        renderLegacySearchErrorStateDom(resultsEl, errorData);
     }
 
-    if (!preservingSameQuery) {
-        setSearchPanelState({ error: true, hasQuery: true });
-    }
+    setSearchPanelState({ error: true, degraded: true, hasQuery: true, resultsRendered: false });
 
     if (statusEl) {
         statusEl.textContent = `Search paused for "${trimmedQuery}". Try again in a moment.`;

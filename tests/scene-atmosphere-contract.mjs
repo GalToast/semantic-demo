@@ -6,11 +6,12 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { resolveSource } from './source-path.mjs';
 
 const CWD = process.cwd();
-const src = readFileSync(resolve(CWD, 'js/modules/three-engine.js'), 'utf8');
-const nodeManagerSrc = readFileSync(resolve(CWD, 'js/modules/three-node-manager.js'), 'utf8');
-const interactionSrc = readFileSync(resolve(CWD, 'js/modules/three-interaction-visuals.js'), 'utf8');
+const src = readFileSync(resolveSource('js/modules/three-engine.ts', CWD), 'utf8');
+const nodeManagerSrc = readFileSync(resolveSource('js/modules/three-node-manager.ts', CWD), 'utf8');
+const interactionSrc = readFileSync(resolveSource('js/modules/three-interaction-visuals.ts', CWD), 'utf8');
 const shellCss = readFileSync(resolve(CWD, 'css/shell.css'), 'utf8');
 
 const checks = [

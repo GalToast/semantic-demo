@@ -37,7 +37,7 @@ const OUT_DIR = resolve(ROOT, 'tmp', 'reduced-motion-interruption-proof');
 const MIME = {
   '.html': 'text/html',
   '.css':  'text/css',
-  '.js':   'application/javascript',
+  '.ts':   'application/javascript',
   '.png':  'image/png',
   '.svg':  'image/svg+xml',
 };

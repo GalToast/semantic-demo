@@ -2,7 +2,7 @@
 // TypeScript shadow of cluster-list-delegate.js
 // Click delegation for the cluster-list semantic neighborhood rail.
 
-import { setClusterFilter, clearClusterFilter } from './cluster-filter.js';
+import { setClusterFilter, clearClusterFilter } from './cluster-filter.ts';
 
 const CLUSTER_LIST_ID = 'cluster-list';
 const BOUND_FLAG = 'chromeSvelteBound';

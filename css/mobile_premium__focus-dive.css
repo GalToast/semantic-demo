@@ -493,17 +493,6 @@
         order: 30;
     }
 
-    body.is-active[data-panel-surface='focus-search'] .focus-stage-badges,
-    body.is-active[data-panel-surface='semantic-dive'] .focus-stage-badges {
-        order: 20;
-    }
-
-    body.is-active[data-panel-surface='focus-search'] .focus-stage-trivia,
-    body.is-active[data-panel-surface='semantic-dive'] .focus-stage-trivia {
-        order: 30;
-        max-height: 42px;
-        overflow: hidden;
-    }
 
     /* ----------------------------------------------------------------
        4. Focus stage — focus-search journey block
@@ -810,7 +799,6 @@
 
     body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-kicker,
     body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-name,
-    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-filed,
     body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-what,
     body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-meta,
     body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-note,
@@ -975,11 +963,7 @@
     }
 
     /* Premium focus owns focus-search meta suppression; semantic-dive hides meta with the main-stage content below. */
-    body.is-active[data-panel-surface='focus-search'] .focus-stage-filed,
-    body.is-active[data-panel-surface='focus-search'] .focus-stage-meta,
-    body.is-active[data-panel-surface='focus-search'] .focus-stage-badges,
-    body.is-active[data-panel-surface='focus-search'] .focus-stage-trivia,
-    body.is-active[data-panel-surface='semantic-dive'] .focus-stage-filed {
+    body.is-active[data-panel-surface='focus-search'] .focus-stage-meta {
         display: none;
     }
 
@@ -987,8 +971,6 @@
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage-name,
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage-what,
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage-meta,
-    body.is-active[data-panel-surface='semantic-dive'] .focus-stage-badges,
-    body.is-active[data-panel-surface='semantic-dive'] .focus-stage-trivia,
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage-note,
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage-kicker,
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage-actions,
@@ -1256,7 +1238,7 @@
     /* When trail is active, info-panel is hidden, so focus-stage returns to bottom */
     body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node'])[data-trail-state='active']
         #focus-stage.focus-stage {
-        bottom: max(12px, env(safe-area-inset-bottom, 0px));
+        bottom: max(0px, env(safe-area-inset-bottom, 0px));
         max-height: min(39dvh, 330px);
         overflow: hidden;
     }
@@ -1403,7 +1385,10 @@
         border-radius: 20px;
     }
 
-    body.is-active[data-panel-surface='focus-search'] #focus-stage.focus-stage,
+    body.is-active[data-panel-surface='focus-search'] #focus-stage.focus-stage {
+        bottom: max(0px, env(safe-area-inset-bottom, 0px));
+    }
+
     body.is-active[data-panel-surface='semantic-dive'] #focus-stage.focus-stage {
         bottom: max(6px, env(safe-area-inset-bottom, 0px));
     }
@@ -1420,10 +1405,6 @@
     body.is-active[data-panel-surface='focus-search'] .focus-stage-what,
     body.is-active[data-panel-surface='focus'] .focus-stage-meta,
     body.is-active[data-panel-surface='focus-search'] .focus-stage-meta,
-    body.is-active[data-panel-surface='focus'] .focus-stage-badges,
-    body.is-active[data-panel-surface='focus-search'] .focus-stage-badges,
-    body.is-active[data-panel-surface='focus'] .focus-stage-trivia,
-    body.is-active[data-panel-surface='focus-search'] .focus-stage-trivia,
     body.is-active[data-panel-surface='focus']:not([data-focus-panel-mode='field-node']) .focus-stage-journey-meta,
     body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) .focus-stage-journey-meta,
     body.is-active[data-panel-surface='focus']:not([data-focus-panel-mode='field-node']) .focus-stage-journey-progress,
@@ -1473,6 +1454,16 @@
         visibility: hidden;
         opacity: 0;
         pointer-events: none;
+    }
+
+    body.is-active #info-panel.info-panel {
+        box-sizing: border-box;
+        left: max(10px, env(safe-area-inset-left, 0px));
+        right: max(10px, env(safe-area-inset-right, 0px));
+        bottom: max(10px, env(safe-area-inset-bottom, 0px));
+        width: calc(100vw - max(10px, env(safe-area-inset-left, 0px)) - max(10px, env(safe-area-inset-right, 0px)));
+        max-width: calc(100vw - max(10px, env(safe-area-inset-left, 0px)) - max(10px, env(safe-area-inset-right, 0px)));
+        max-height: calc(100dvh - 20px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     }
 
     body.is-active:not(
@@ -1618,8 +1609,6 @@
     body.is-active[data-panel-surface='semantic-dive'] #focus-stage .focus-stage-name,
     body.is-active[data-panel-surface='semantic-dive'] #focus-stage .focus-stage-what,
     body.is-active[data-panel-surface='semantic-dive'] #focus-stage .focus-stage-meta,
-    body.is-active[data-panel-surface='semantic-dive'] #focus-stage .focus-stage-badges,
-    body.is-active[data-panel-surface='semantic-dive'] #focus-stage .focus-stage-trivia,
     body.is-active[data-panel-surface='semantic-dive'] #focus-stage .focus-stage-note,
     body.is-active[data-panel-surface='semantic-dive'] #focus-stage .focus-stage-kicker,
     body.is-active[data-panel-surface='semantic-dive'] #focus-stage .focus-stage-actions,

@@ -14,11 +14,11 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SOURCE = fs.readFileSync(
-    path.resolve(__dirname, '../js/modules/lifecycle.js'),
+    path.resolve(__dirname, '../js/modules/lifecycle.ts'),
     'utf8'
 );
 const URL_STATE_SOURCE = fs.readFileSync(
-    path.resolve(__dirname, '../js/modules/url-state.js'),
+    path.resolve(__dirname, '../js/modules/url-state.ts'),
     'utf8'
 );
 
@@ -143,11 +143,11 @@ function findDirectWrites(sourceText = SOURCE) {
 console.log('Verifying clearExplorationFocusSelection is exported...');
 assert(
     /export\s+function\s+clearExplorationFocusSelection/.test(URL_STATE_SOURCE),
-    'clearExplorationFocusSelection is not exported from url-state.js'
+    'clearExplorationFocusSelection is not exported from url-state.ts'
 );
 assert(
     /clearExplorationFocusSelection/.test(SOURCE) && /export\s*\{[\s\S]*clearExplorationFocusSelection/.test(SOURCE),
-    'clearExplorationFocusSelection is not re-exported from lifecycle.js'
+    'clearExplorationFocusSelection is not re-exported from lifecycle.ts'
 );
 console.log('  found url-state owner export and lifecycle re-export');
 

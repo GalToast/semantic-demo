@@ -123,13 +123,13 @@ function ds(key) {
 
 // ── Import modules ─────────────────────────────────────────────────────────────
 
-const { state, withStateMutation } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.ts');
 
 // We call refreshCompositionState() directly — it lives in lifecycle.js and is
 // exported as a named export.
 let refreshCompositionState;
 try {
-  const lc = await import('../js/modules/lifecycle.js');
+  const lc = await import('../js/modules/lifecycle.ts');
   refreshCompositionState = lc.refreshCompositionState;
 } catch (e) {
   console.error('LIFECYCLE IMPORT ERROR:', e);
@@ -313,7 +313,7 @@ elementsById.set('search-input', new FakeElement('input'));
 commitTransition('pre-reset');
 
 // Now perform the actual resetStateBeforeUrlRestore
-const { resetStateBeforeUrlRestore } = await import('../js/modules/lifecycle.js');
+const { resetStateBeforeUrlRestore } = await import('../js/modules/lifecycle.ts');
 resetStateBeforeUrlRestore({ clearSearchInput: true });
 
 // Verify state variables are cleared

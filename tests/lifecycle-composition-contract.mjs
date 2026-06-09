@@ -95,12 +95,12 @@ elementsById.set('semantic-lane-assist', laneAssist);
 elementsById.set('semantic-lane-assist-copy', new FakeElement('div'));
 elementsById.set('semantic-lane-assist-meta', new FakeElement('div'));
 
-const { state, withStateMutation } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.ts');
 
 const {
   refreshCompositionState,
   setSemanticLaneUiState,
-} = await import('../js/modules/lifecycle.js');
+} = await import('../js/modules/lifecycle.ts');
 
 withStateMutation(() => {
   state.currentView = 'galaxy';

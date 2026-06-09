@@ -110,16 +110,16 @@ function assert(cond, msg) {
 
 // ─── Load modules under test (after fake DOM is set up) ──────────────────────
 
-const { state } = await import('../js/state.js');
+const { state } = await import('../js/state.ts');
 const {
     activeFiltersStore,
     activeClusterFilterStore
-} = await import('../js/modules/stores.js');
+} = await import('../js/modules/stores.ts');
 const {
     setActiveFilter,
     setActiveClusterFilter,
     resetActiveFilters
-} = await import('../js/modules/filter-state.js');
+} = await import('../js/modules/filter-state.ts');
 
 // ─── CONTRACT 1: setActiveFilter mirrors state.activeFilters → activeFiltersStore ──
 

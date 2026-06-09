@@ -1,5 +1,6 @@
 <script lang="ts">
     import { compositionStore } from '../stores.js';
+    import SelectedBusinessDetails from './SelectedBusinessDetails.svelte';
 </script>
 
 <section class="info-panel-surface info-panel-surface-selection" data-surface-owner="selected-business" data-ownership-lane="surface content" aria-label="Selected business surface">
@@ -28,7 +29,7 @@
         </div>
 
         <div id="selected-details" class="focus-stage-details active">
-            <!-- SelectedBusinessDetails will be mounted here -->
+            <SelectedBusinessDetails />
         </div>
 
         <div class="selected-map-summary" id="selected-map-summary" hidden aria-hidden="true">

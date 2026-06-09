@@ -5,12 +5,12 @@
  * Scene reveal animation and window resize handler.
  */
 import * as THREE from 'three';
-import { state as _state } from '../state.js';
-import { clearAutoRotateResumeTimer, setAutoRotateSuspended, settleCameraToOverviewPose } from './camera-controls.js';
-import { updateCameraViewportOffset } from './three-engine.js';
-import { syncClusterSectionState } from './cluster-labels.js';
-import { updateTraversalUi } from './journey.js';
-import { getViewportSize, prefersReducedMotion, isMobileViewport } from './environment.js';
+import { state as _state } from '../state.ts';
+import { clearAutoRotateResumeTimer, setAutoRotateSuspended, settleCameraToOverviewPose } from './camera-controls.ts';
+import { updateCameraViewportOffset } from './three-engine.ts';
+import { syncClusterSectionState } from './cluster-labels.ts';
+import { updateTraversalUi } from './journey.ts';
+import { getViewportSize, prefersReducedMotion, isMobileViewport } from './environment.ts';
 
 const state = _state as any;
 

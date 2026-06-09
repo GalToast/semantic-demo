@@ -5,8 +5,8 @@
  * Weather widget DOM rendering and effects.
  */
 
-import { weatherStateStore, compositionStore } from './stores.js';
-import { seededUnit } from './utils/seeded-random.js';
+import { weatherStateStore, compositionStore } from './stores.ts';
+import { seededUnit } from './utils/seeded-random.ts';
 
 let lightningTimer: number | null = null;
 let lightningGeneration: number = 0;

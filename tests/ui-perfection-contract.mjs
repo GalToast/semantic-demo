@@ -6,7 +6,7 @@
  * 2. Smartpagination reveal (automatic scrolling).
  */
 
-import { state, withStateMutation } from '../js/state.js';
+import { state, withStateMutation } from '../js/state.ts';
 
 function assert(condition, message) {
   if (!condition) throw new Error('ASSERTION FAILED: ' + message);
@@ -70,7 +70,7 @@ async function main() {
   globalThis.sessionStorage = { removeItem: () => {}, getItem: () => null, setItem: () => {} };
   globalThis.window = { requestAnimationFrame: (cb) => cb() };
 
-  const { beginSemanticSearchUiState, finishSemanticSearchSuccessState, renderSearchResultItems } = await import('../js/modules/search-results-ui.js');
+  const { beginSemanticSearchUiState, finishSemanticSearchSuccessState, renderSearchResultItems } = await import('../js/modules/search-results-ui.ts');
 
   // 1. Test Skeleton Loading (Non-destructive)
   console.log('[TEST] Non-destructive Skeleton Loading');

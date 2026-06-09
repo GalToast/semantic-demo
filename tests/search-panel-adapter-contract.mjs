@@ -8,8 +8,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const SEARCH_STATE_PATH = resolve(CWD, 'js/modules/search-state.js');
-const PANEL_ADAPTER_PATH = resolve(CWD, 'js/modules/search-panel-adapter.js');
+const SEARCH_STATE_PATH = resolve(CWD, 'js/modules/search-state.ts');
+const PANEL_ADAPTER_PATH = resolve(CWD, 'js/modules/search-panel-adapter.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -55,7 +55,7 @@ function testAdapterExports() {
 
 function testSearchStateDelegatesPanelDomWrites() {
   const searchState = readFileSync(SEARCH_STATE_PATH, 'utf8');
-  assertContains(searchState, "from './search-panel-adapter.js'", 'search-state imports panel adapter');
+  assertContains(searchState, "from './search-panel-adapter.ts'", 'search-state imports panel adapter');
   assertContains(searchState, 'setSearchContainerState({', 'search-state delegates container classes');
   assertContains(searchState, 'setSearchGlowState(true)', 'search-state delegates active glow');
   assertContains(searchState, 'setSearchGlowState(false)', 'search-state delegates inactive glow');
@@ -91,4 +91,4 @@ testAdapterExports();
 testSearchStateDelegatesPanelDomWrites();
 testAdapterIsLeaf();
 
-console.log('PASS: search panel DOM state is routed through search-panel-adapter.js');
+console.log('PASS: search panel DOM state is routed through search-panel-adapter.ts');

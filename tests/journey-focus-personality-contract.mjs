@@ -26,8 +26,8 @@ globalThis.performance = globalThis.window.performance;
 globalThis.requestAnimationFrame = globalThis.window.requestAnimationFrame;
 globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame;
 
-const { state } = await import('../js/state.js');
-const { getNeighborhoodPersonality } = await import('../js/modules/focus-pocket.js');
+const { state } = await import('../js/state.ts');
+const { getNeighborhoodPersonality } = await import('../js/modules/focus-pocket.ts');
 
 const original = {
   points: state.points,

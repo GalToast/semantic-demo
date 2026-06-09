@@ -1,0 +1,27 @@
+{
+  "worker_id": "ocw_57c3e8d9-4ea9-49fb-917b-f0736b555ae0",
+  "name": "stale-contract-smoke-fix",
+  "status": "failed",
+  "cwd": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer",
+  "backend": "qwen",
+  "requested_model": "opencode/mimo-v2.5-free",
+  "model": "mimo-v2.5-free",
+  "attempted_models": [
+    "mimo-v2.5-free"
+  ],
+  "session_id": "c98e8eee-77ba-4ac5-a89a-7d8add3b7311",
+  "stdout_path": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer\\None\\ocw_57c3e8d9-4ea9-49fb-917b-f0736b555ae0\\stdout.log",
+  "stderr_path": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer\\None\\ocw_57c3e8d9-4ea9-49fb-917b-f0736b555ae0\\stderr.log",
+  "prompt_path": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer\\None\\ocw_57c3e8d9-4ea9-49fb-917b-f0736b555ae0\\prompt.txt",
+  "metadata_path": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer\\None\\ocw_57c3e8d9-4ea9-49fb-917b-f0736b555ae0\\metadata.json",
+  "created_at": "2026-06-09T06:38:36.016Z",
+  "updated_at": "2026-06-09T06:38:38.310Z",
+  "pid": 19664,
+  "child_pid": 19664,
+  "exit_code": 52,
+  "signal": null,
+  "error": "they read deleted js/modules/*.js files, starting with the smoke group.\\n\\nImportant constraints:\\n1. Before artifact-producing work, report the tools you can see in your harness. If expected tools such as Read, Write, Edit, Bash, Glob, Grep, Task, or Agent are missing, stop and report that harness/tool-surface defect instead of improvising fragile shell writes.\\n2. Do NOT restore deleted JS files. The active runtime source is TS when JS was retired.\\n3. Keep edits scoped to tests needed for the smoke group and any small helper test utility.\\n4. Prefer a source resolver helper like tests/source-path.mjs that maps 'js/modules/foo.js' to 'js/modules/foo.ts' when the JS file is absent.\\n5. For source-only contracts, update them to read the active TS source. For runtime import contracts, do not just change .js to .ts unless you verify Node can import it; if needed, use an esbuild temp-loader helper or convert carefully.\\n\\nTarget failing smoke files from the last run:\\n- tests/weather-lifecycle-contract.mjs\\n- tests/weather-surface-ownership-contract.mjs\\n- tests/camera-auto-rotate-settle-contract.mjs\\n- tests/scene-reveal-contract.mjs\\n- tests/motion-state-contract.mjs\\n- tests/map-flattening-raw-buffer-contract.mjs\\n- tests/loading-ui-contract.mjs already passed; leave it unless needed for the helper.\\n\\nRequired work:\\n- Inspect the failing tests and current js/modules TS replacements.\\n- Add the minimal helper needed so source-only contracts can read TS replacements.\\n- Update only the smoke contracts that need it.\\n- Run `npm run test:contract:smoke`.\\n- If smoke still fails, diagnose whether failures are product regressions or remaining stale paths.\\n- Run at least one focused build/typecheck if your edits touch source-reading helpers used by other tests.\\n- Return: changed files, commands run with pass/fail, remaining failures if any, and a concise explanation of why the fix is safe.\\n\\nDo not touch unrelated app/runtime files unless a test helper requires it.\"]\n",
+  "last_text_preview": "\u001b[?9001h\u001b[?1004h\u001b[?25l\u001b[2J\u001b[m\u001b[31m\u001b[HInvalid MCP configuration provided via --mcp-config: EISDIR: illegal operation on a directory, read\r\n\u001b]0;C:\\Program Files\\nodejs\\node.exe\u0007\u001b[?25h\u001b[m",
+  "stdout_bytes": 184,
+  "stderr_bytes": 2686
+}

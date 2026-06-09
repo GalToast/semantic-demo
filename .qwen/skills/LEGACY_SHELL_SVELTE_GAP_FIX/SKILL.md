@@ -2,7 +2,7 @@
 name: LEGACY_SHELL_SVELTE_GAP_FIX
 description: Fix live-product blockers caused by a legacy HTML shell that loads only the JS bundle while Svelte consumers/mounts are absent or CSS assumes Svelte has replaced legacy surfaces.
 source: auto-skill
-extracted_at: '2026-06-08T06:42:59.686Z'
+extracted_at: '2026-06-09T17:33:36.315Z'
 ---
 
 # Legacy Shell Svelte Gap Fix
@@ -44,6 +44,32 @@ Use when the served app shell is a plain legacy HTML page (e.g. `vector-explorer
 8. Save evidence and report.
    - Save screenshots + DOM assertions under `tmp/browser-product-qa-fix-minimax-m3/`.
    - State: files changed, exact fixes, commands with pass/fail, browser evidence paths, and remaining risks/next lanes.
+
+## New pattern (2026-06-09 search-chrome triage)
+
+Does the repaired surface depend on a body attribute that legacy code can change after mount? Then also:
+- Extract the body attribute into local state inside the Svelte component.
+- Sync it with a `MutationObserver` on the attribute.
+- Fall back to short-lived polling only during early mount, and clear it once updates are stabilizing.
+- Derive the effective surface from the observed body value, with a state fallback chain.
+- Use that derived value to render the surface rather than trusting one store read during startup.
+
+This body-attribute watch pattern is reusable for panel surfaces, focus-search states, journey phases, and similar doubled-writer transitions.
+
+## Verified cases and caveats (2026-06-08 to 2026-06-09)
+- A contract wait gate that expects the legacy shell to reveal `.journey-compass-action.primary` under `data-panel-surface="focus-search"` can still fail after Svelte surface patches if the legacy bundle hides the button during the settled route state.
+- Focus-pocket geometry updates that return new payload fields are fine once confirmed against source and motion contract; verify with `tests/focus-pocket-motion-contract.mjs` and keep `tests/real-route-contract.mjs` gated on the actual served shell behavior.
+
+## Evidence and scope (2026-06-08 playthrough verification)
+When this gap ships to a product playthrough, the failure pattern is reproducible on mobile and desktop:
+- `#focus-stage` is `null` in state JSON right after a real search-result click.
+- `.search-container` stays visible with `display:block; z-index:14` even under focus/preview/follow.
+- Journey primary action shows `Map` instead of `Inside`, and the "Inside" / `enter-inside` button is hidden.
+- `#focus-thread-inspector`, neighbor list, and walk history are all missing or idle.
+- The script output shows 404s for deleted Svelte island bundles like `dist/search-results-svelte-island.js` and `dist/selected-details-svelte-island.js`.
+- Root module: `js/modules/event-bindings.js` retains dynamic imports to those deleted island paths in a `safeImport()` block that silently catches and ignores the failure.
+
+Use the product QA run folder under `tmp/product-qa/<timestamp>/` (propriedad `ownership-assertions.json`, state JSON `boxes` maps, and `bodyDataset`) as the source of truth for which DOM containers are missing versus merely hidden.
 
 ## Why this approach
 - Keeps the served shell functional without mounting the whole Svelte app into a page that was never designed for it.

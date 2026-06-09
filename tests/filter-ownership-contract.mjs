@@ -5,7 +5,7 @@
  * activeClusterFilter writes, and enforcing the ownership boundary.
  *
  * Ownership model:
- *   filter-state.js   — CANONICAL OWNER: all writes to state.activeFilters and
+ *   filter-state.ts   — CANONICAL OWNER: all writes to state.activeFilters and
  *                        state.activeClusterFilter go through filter-state exports.
  *                        Exported API:
  *                          setActiveFilter(key, value)
@@ -15,26 +15,26 @@
  *                          restoreActiveClusterFilterFromUrl(params)
  *                        Internal helpers:
  *                          ensureActiveFilters()
- *   event-bindings.js — HELPER: calls filter-state owner APIs, never writes
+ *   event-bindings.ts — HELPER: calls filter-state owner APIs, never writes
  *                        activeFilters directly. Delegates UI trigger to
  *                        handleFilter() → setActiveFilter / toggleActiveFilterSignal
  *                        via filter-state, not by assigning state fields.
- *   url-state.js      — HELPER: calls restoreActiveFiltersFromUrl and
+ *   url-state.ts      — HELPER: calls restoreActiveFiltersFromUrl and
  *                        restoreActiveClusterFilterFromUrl from filter-state.
  *                        Does not directly assign state.activeFilters.
- *   cluster-filter.js — HELPER (filter): reads activeFilters through
+ *   cluster-filter.ts — HELPER (filter): reads activeFilters through
  *                        state.activeFilters for filtering decisions only;
  *                        calls filter-state owner APIs (resetActiveFilters,
  *                        setActiveFilter) for all mutations.
- *                        Does NOT import search-state.js.
+ *                        Does NOT import search-state.ts.
  *                        Does NOT directly assign state.activeFilters.*.
- *   lifecycle.js      — HELPER: calls filter-state APIs only.
- *   search-state.js   — READER ONLY: reads activeFilters via state.activeFilters
+ *   lifecycle.ts      — HELPER: calls filter-state APIs only.
+ *   search-state.ts   — READER ONLY: reads activeFilters via state.activeFilters
  *                        in getFilteredIndices() and applyFilters() for
  *                        filter-aware operations. Does not write activeFilters.
  *
  * The bad cycle this contract catches:
- *   cluster-filter.js importing search-state.js (which then imports cluster-filter,
+ *   cluster-filter.ts importing search-state.ts (which then imports cluster-filter,
  *   creating a circular dependency where cluster operations could leak into
  *   search state management).
  *
@@ -250,76 +250,76 @@ function scanImports(modulePath) {
 // ─── Module paths ───────────────────────────────────────────────────────────────
 
 const MODULES_DIR = join(PROJECT_ROOT, 'js', 'modules');
-const STATE_PATH  = join(PROJECT_ROOT, 'js', 'state.js');
+const STATE_PATH  = join(PROJECT_ROOT, 'js', 'state.ts');
 
 const MODULE_PATHS = {
-  'filter-state.js':     join(MODULES_DIR, 'filter-state.js'),
-  'search-state.js':     join(MODULES_DIR, 'search-state.js'),
-  'cluster-filter.js':    join(MODULES_DIR, 'cluster-filter.js'),
-  'event-bindings.js':   join(MODULES_DIR, 'bindings', 'filter-bindings.js'),
-  'filter-chrome-island.js': join(MODULES_DIR, 'filter-chrome-island.js'),
+  'filter-state.ts':     join(MODULES_DIR, 'filter-state.ts'),
+  'search-state.ts':     join(MODULES_DIR, 'search-state.ts'),
+  'cluster-filter.ts':    join(MODULES_DIR, 'cluster-filter.ts'),
+  'event-bindings.ts':   join(MODULES_DIR, 'bindings', 'filter-bindings.ts'),
+  'filter-chrome-island.ts': join(MODULES_DIR, 'filter-chrome-island.ts'),
   'filter-chrome.svelte': join(MODULES_DIR, 'components', 'FilterChrome.svelte'),
-  'url-state.js':         join(MODULES_DIR, 'url-state.js'),
-  'lifecycle.js':        join(MODULES_DIR, 'lifecycle.js'),
-  'camera-controls.js':  join(MODULES_DIR, 'camera-controls.js'),
+  'url-state.ts':         join(MODULES_DIR, 'url-state.ts'),
+  'lifecycle.ts':        join(MODULES_DIR, 'lifecycle.ts'),
+  'camera-controls.ts':  join(MODULES_DIR, 'camera-controls.ts'),
 };
 
-// ─── CONTRACT 1: filter-state.js is the canonical activeFilters writer ─────────
+// ─── CONTRACT 1: filter-state.ts is the canonical activeFilters writer ─────────
 
-const filterStateSource = readFileSync(MODULE_PATHS['filter-state.js'], 'utf8');
+const filterStateSource = readFileSync(MODULE_PATHS['filter-state.ts'], 'utf8');
 
 assert(
   filterStateSource.includes('export function setActiveFilter'),
-  'filter-state.js must export setActiveFilter'
+  'filter-state.ts must export setActiveFilter'
 );
 assert(
   filterStateSource.includes('export function toggleActiveFilterSignal'),
-  'filter-state.js must export toggleActiveFilterSignal'
+  'filter-state.ts must export toggleActiveFilterSignal'
 );
 assert(
   filterStateSource.includes('export function resetActiveFilters'),
-  'filter-state.js must export resetActiveFilters'
+  'filter-state.ts must export resetActiveFilters'
 );
 assert(
   filterStateSource.includes('export function restoreActiveFiltersFromUrl'),
-  'filter-state.js must export restoreActiveFiltersFromUrl'
+  'filter-state.ts must export restoreActiveFiltersFromUrl'
 );
 assert(
   filterStateSource.includes('export function restoreActiveClusterFilterFromUrl'),
-  'filter-state.js must export restoreActiveClusterFilterFromUrl'
+  'filter-state.ts must export restoreActiveClusterFilterFromUrl'
 );
 
 // ensureActiveFilters is internal — verify it exists and is used
 assert(
   filterStateSource.includes('function ensureActiveFilters'),
-  'filter-state.js must have internal ensureActiveFilters() helper'
+  'filter-state.ts must have internal ensureActiveFilters() helper'
 );
 
-console.log('PASS CONTRACT 1: filter-state.js exports all canonical activeFilters APIs');
+console.log('PASS CONTRACT 1: filter-state.ts exports all canonical activeFilters APIs');
 
-// ─── CONTRACT 2: filter-state.js contains all activeFilters writes in codebase ───
+// ─── CONTRACT 2: filter-state.ts contains all activeFilters writes in codebase ───
 
 // activeClusterFilter is also written by filter-state
-const activeFiltersWriters = scanWriters(MODULE_PATHS['filter-state.js'], 'activeFilters');
-const activeClusterWriters = scanWriters(MODULE_PATHS['filter-state.js'], 'activeClusterFilter');
+const activeFiltersWriters = scanWriters(MODULE_PATHS['filter-state.ts'], 'activeFilters');
+const activeClusterWriters = scanWriters(MODULE_PATHS['filter-state.ts'], 'activeClusterFilter');
 
 assert(
   activeFiltersWriters.length > 0,
-  'filter-state.js must contain activeFilters writes'
+  'filter-state.ts must contain activeFilters writes'
 );
 assert(
   activeClusterWriters.length > 0,
-  'filter-state.js must contain activeClusterFilter writes'
+  'filter-state.ts must contain activeClusterFilter writes'
 );
 
-console.log(`PASS CONTRACT 2: filter-state.js owns all activeFilters writes (${activeFiltersWriters.length}) and activeClusterFilter writes (${activeClusterWriters.length})`);
+console.log(`PASS CONTRACT 2: filter-state.ts owns all activeFilters writes (${activeFiltersWriters.length}) and activeClusterFilter writes (${activeClusterWriters.length})`);
 
 // ─── CONTRACT 3: No other module writes state.activeFilters directly ─────────────
-// Allowlist: filter-state.js (owner), lifecycle.js (reset orchestration uses filter-state APIs)
+// Allowlist: filter-state.ts (owner), lifecycle.ts (reset orchestration uses filter-state APIs)
 //            micro-demo.js (demo writes via filter-state APIs)
 
-const ALLOWED_ACTIVE_FILTERS_WRITERS = new Set(['filter-state.js', 'lifecycle.js', 'micro-demo.js']);
-const SCAN_MODULES = ['search-state.js', 'cluster-filter.js', 'event-bindings.js', 'url-state.js', 'camera-controls.js'];
+const ALLOWED_ACTIVE_FILTERS_WRITERS = new Set(['filter-state.ts', 'lifecycle.ts', 'micro-demo.ts']);
+const SCAN_MODULES = ['search-state.ts', 'cluster-filter.ts', 'event-bindings.ts', 'url-state.ts', 'camera-controls.ts'];
 
 for (const mod of SCAN_MODULES) {
   const writers = scanWriters(MODULE_PATHS[mod], 'activeFilters');
@@ -332,23 +332,23 @@ for (const mod of SCAN_MODULES) {
 
 console.log('PASS CONTRACT 3: No non-owner module writes state.activeFilters directly');
 
-// ─── CONTRACT 4: cluster-filter.js does NOT import search-state.js ─────────────
+// ─── CONTRACT 4: cluster-filter.ts does NOT import search-state.ts ─────────────
 // This catches the bad cycle: cluster-filter importing search-state would create
 // a dependency that could bleed filter decisions into search state management.
 
-const cfImports = scanImports(MODULE_PATHS['cluster-filter.js']);
+const cfImports = scanImports(MODULE_PATHS['cluster-filter.ts']);
 const cfSearchStateImport = cfImports.filter(i => i.from.includes('search-state'));
 assert(
   cfSearchStateImport.length === 0,
-  `cluster-filter.js must NOT import search-state.js — found: ${JSON.stringify(cfSearchStateImport)}`
+  `cluster-filter.ts must NOT import search-state.ts — found: ${JSON.stringify(cfSearchStateImport)}`
 );
 
-console.log('PASS CONTRACT 4: cluster-filter.js does not import search-state.js (no bad cycle)');
+console.log('PASS CONTRACT 4: cluster-filter.ts does not import search-state.ts (no bad cycle)');
 
 // ─── CONTRACT 5: filter chrome delegates to filter-state owner APIs ─────────────
 // The filter chrome's mutation entry point is a 3-file chain:
 //   bindings/filter-bindings.js  — public entry: bindFilterControls (shim)
-//   filter-chrome-island.js      — mounts the Svelte component
+//   filter-chrome-island.ts      — mounts the Svelte component
 //   components/FilterChrome.svelte — the Svelte component itself
 // At least one file in the chain must import setActiveFilter /
 // toggleActiveFilterSignal / resetActiveFilters from filter-state, AND no
@@ -358,8 +358,8 @@ console.log('PASS CONTRACT 4: cluster-filter.js does not import search-state.js 
 // importing those names as a satisficer).
 
 const CHROME_CHAIN = [
-  MODULE_PATHS['event-bindings.js'],
-  MODULE_PATHS['filter-chrome-island.js'],
+  MODULE_PATHS['event-bindings.ts'],
+  MODULE_PATHS['filter-chrome-island.ts'],
   MODULE_PATHS['filter-chrome.svelte'],
 ];
 
@@ -371,7 +371,7 @@ function chromeChainImportsFilterStateApi(path) {
   const source = readFileSync(path, 'utf8');
   if (path.endsWith('.svelte')) {
     return FILTER_STATE_API_NAMES.every((name) => source.includes(name))
-      && source.includes("from '../filter-state.js'");
+      && source.includes("from '../filter-state.ts'");
   }
   return scanImports(path).some((imp) =>
     imp.from.includes('filter-state')
@@ -398,11 +398,11 @@ assert(
 
 console.log(`PASS CONTRACT 5: filter chrome chain delegates to filter-state owner APIs (${chainWithImports.length}/${CHROME_CHAIN.length} files import the owner APIs, 0 direct writes)`);
 
-// ─── CONTRACT 6: url-state.js uses restore APIs from filter-state ───────────────
+// ─── CONTRACT 6: url-state.ts uses restore APIs from filter-state ───────────────
 // url-state must use restoreActiveFiltersFromUrl and restoreActiveClusterFilterFromUrl,
 // not direct assignments.
 
-const usImports = scanImports(MODULE_PATHS['url-state.js']);
+const usImports = scanImports(MODULE_PATHS['url-state.ts']);
 const usRestoreImports = usImports.filter(i =>
   i.from.includes('filter-state') ||
   i.spec.includes('restoreActiveFiltersFromUrl') ||
@@ -411,60 +411,60 @@ const usRestoreImports = usImports.filter(i =>
 
 assert(
   usRestoreImports.length > 0,
-  'url-state.js must import filter-state restore APIs (restoreActiveFiltersFromUrl, restoreActiveClusterFilterFromUrl)'
+  'url-state.ts must import filter-state restore APIs (restoreActiveFiltersFromUrl, restoreActiveClusterFilterFromUrl)'
 );
 
-const usSource = readFileSync(MODULE_PATHS['url-state.js'], 'utf8');
+const usSource = readFileSync(MODULE_PATHS['url-state.ts'], 'utf8');
 assert(
   usSource.includes('restoreActiveFiltersFromUrl'),
-  'url-state.js must call restoreActiveFiltersFromUrl (not direct state.activeFilters assignment)'
+  'url-state.ts must call restoreActiveFiltersFromUrl (not direct state.activeFilters assignment)'
 );
 assert(
   usSource.includes('restoreActiveClusterFilterFromUrl'),
-  'url-state.js must call restoreActiveClusterFilterFromUrl (not direct state.activeClusterFilter assignment)'
+  'url-state.ts must call restoreActiveClusterFilterFromUrl (not direct state.activeClusterFilter assignment)'
 );
 
-console.log('PASS CONTRACT 6: url-state.js uses filter-state restore APIs');
+console.log('PASS CONTRACT 6: url-state.ts uses filter-state restore APIs');
 
-// ─── CONTRACT 7: cluster-filter.js uses filter-state owner APIs for mutations ───
+// ─── CONTRACT 7: cluster-filter.ts uses filter-state owner APIs for mutations ───
 // cluster-filter calls resetActiveFilters from filter-state (line 3) and setActiveFilter
 // (line 159 via populateCityFilter). It reads state.activeFilters for filtering decisions
 // (getFilteredClusterCounts reads state.activeFilters.status/city/etc.) but does NOT
 // directly assign state.activeFilters.* = ... anywhere.
 
-const cfSource = readFileSync(MODULE_PATHS['cluster-filter.js'], 'utf8');
-const cfActiveFiltersWriters = scanWriters(MODULE_PATHS['cluster-filter.js'], 'activeFilters');
+const cfSource = readFileSync(MODULE_PATHS['cluster-filter.ts'], 'utf8');
+const cfActiveFiltersWriters = scanWriters(MODULE_PATHS['cluster-filter.ts'], 'activeFilters');
 assert(
   cfActiveFiltersWriters.length === 0,
-  `cluster-filter.js must NOT directly write state.activeFilters — found: ${JSON.stringify(cfActiveFiltersWriters)}`
+  `cluster-filter.ts must NOT directly write state.activeFilters — found: ${JSON.stringify(cfActiveFiltersWriters)}`
 );
 
 // Verify cluster-filter imports from filter-state
 const cfFilterImports = cfImports.filter(i => i.from.includes('filter-state'));
 assert(
   cfFilterImports.length > 0,
-  'cluster-filter.js must import from filter-state.js (resetActiveFilters, setActiveFilter)'
+  'cluster-filter.ts must import from filter-state.ts (resetActiveFilters, setActiveFilter)'
 );
 
 // Verify setClusterFilter uses filter-state for cluster filter mutations
 assert(
   cfSource.includes('resetActiveFilters'),
-  'cluster-filter.js clearClusterFilter must call resetActiveFilters from filter-state'
+  'cluster-filter.ts clearClusterFilter must call resetActiveFilters from filter-state'
 );
 assert(
   cfSource.includes('setActiveFilter'),
-  'cluster-filter.js populateCityFilter must call setActiveFilter from filter-state'
+  'cluster-filter.ts populateCityFilter must call setActiveFilter from filter-state'
 );
 
-console.log('PASS CONTRACT 7: cluster-filter.js uses filter-state owner APIs for all mutations');
+console.log('PASS CONTRACT 7: cluster-filter.ts uses filter-state owner APIs for all mutations');
 
-// ─── CONTRACT 8: search-state.js is a READER only, not a writer of activeFilters ─
+// ─── CONTRACT 8: search-state.ts is a READER only, not a writer of activeFilters ─
 
-const ssSource = readFileSync(MODULE_PATHS['search-state.js'], 'utf8');
-const ssActiveFiltersWriters = scanWriters(MODULE_PATHS['search-state.js'], 'activeFilters');
+const ssSource = readFileSync(MODULE_PATHS['search-state.ts'], 'utf8');
+const ssActiveFiltersWriters = scanWriters(MODULE_PATHS['search-state.ts'], 'activeFilters');
 assert(
   ssActiveFiltersWriters.length === 0,
-  `search-state.js must NOT write state.activeFilters — found: ${JSON.stringify(ssActiveFiltersWriters)}`
+  `search-state.ts must NOT write state.activeFilters — found: ${JSON.stringify(ssActiveFiltersWriters)}`
 );
 
 // Verify search-state reads activeFilters for filter-aware operations.
@@ -478,11 +478,11 @@ const ssReadsActiveFilters =
   ssSource.includes('pointMatchesActiveFilters');
 assert(
   ssReadsActiveFilters,
-  'search-state.js must read activeFilters for filter-aware operations (via getActiveFilters / pointMatchesActiveFilters / state.activeFilters)'
+  'search-state.ts must read activeFilters for filter-aware operations (via getActiveFilters / pointMatchesActiveFilters / state.activeFilters)'
 );
 
 // Verify search-state imports filter-state exports (re-export, not writing)
-const ssImports = scanImports(MODULE_PATHS['search-state.js']);
+const ssImports = scanImports(MODULE_PATHS['search-state.ts']);
 const ssFilterReexport = ssImports.filter(i =>
   i.spec.includes('setActiveFilter') ||
   i.spec.includes('resetActiveFilters') ||
@@ -490,57 +490,57 @@ const ssFilterReexport = ssImports.filter(i =>
 );
 assert(
   ssFilterReexport.length > 0,
-  'search-state.js must re-export filter-state APIs (setActiveFilter, resetActiveFilters, restoreActiveFiltersFromUrl)'
+  'search-state.ts must re-export filter-state APIs (setActiveFilter, resetActiveFilters, restoreActiveFiltersFromUrl)'
 );
 
-console.log('PASS CONTRACT 8: search-state.js reads activeFilters but does not write it');
+console.log('PASS CONTRACT 8: search-state.ts reads activeFilters but does not write it');
 
-// ─── CONTRACT 9: lifecycle.js uses syncFilterControls (re-export from cluster-filter) ───
-// lifecycle.js orchestrates filter UI sync via cluster-filter's syncFilterControls
+// ─── CONTRACT 9: lifecycle.ts uses syncFilterControls (re-export from cluster-filter) ───
+// lifecycle.ts orchestrates filter UI sync via cluster-filter's syncFilterControls
 // (which chains to filter-state). It also directly assigns state.activeFilters in
 // reset orchestration — those writes are ALLOWED per Contract 3 allowlist.
 // This contract verifies lifecycle calls syncFilterControls for UI sync.
 
-const lcSource = readFileSync(MODULE_PATHS['lifecycle.js'], 'utf8');
+const lcSource = readFileSync(MODULE_PATHS['lifecycle.ts'], 'utf8');
 // Verify lifecycle calls syncFilterControls (the re-export from cluster-filter/filter-state)
 assert(
   lcSource.includes('syncFilterControls'),
-  'lifecycle.js must call syncFilterControls (re-exported from cluster-filter -> filter-state)'
+  'lifecycle.ts must call syncFilterControls (re-exported from cluster-filter -> filter-state)'
 );
 
-console.log('PASS CONTRACT 9: lifecycle.js orchestrates filter UI via syncFilterControls (re-export chain)');
+console.log('PASS CONTRACT 9: lifecycle.ts orchestrates filter UI via syncFilterControls (re-export chain)');
 
 // ─── CONTRACT 10: ensureActiveFilters is internal to filter-state ───────────────
 // ensureActiveFilters is the private initialization helper. No other module
 // should have an identically-named helper or import it.
 
-const eaWriters = scanWriters(MODULE_PATHS['filter-state.js'], 'activeFilters');
+const eaWriters = scanWriters(MODULE_PATHS['filter-state.ts'], 'activeFilters');
 assert(
   eaWriters.length >= 2, // ensureActiveFilters + the mutation helpers
-  'filter-state.js must have multiple activeFilters write sites (ensureActiveFilters + mutation helpers)'
+  'filter-state.ts must have multiple activeFilters write sites (ensureActiveFilters + mutation helpers)'
 );
 
 // No other module should re-export ensureActiveFilters
 for (const [mod, path] of Object.entries(MODULE_PATHS)) {
-  if (mod === 'filter-state.js') continue;
+  if (mod === 'filter-state.ts') continue;
   const src = readFileSync(path, 'utf8');
   assert(
     !src.includes('ensureActiveFilters'),
-    `ensureActiveFilters must not appear in ${mod} — it is internal to filter-state.js`
+    `ensureActiveFilters must not appear in ${mod} — it is internal to filter-state.ts`
   );
 }
 
-console.log('PASS CONTRACT 10: ensureActiveFilters is internal to filter-state.js only');
+console.log('PASS CONTRACT 10: ensureActiveFilters is internal to filter-state.ts only');
 
 // ─── Intentionally allowed direct writers (documented) ─────────────────────────
 // The following modules are authorized to write state.activeFilters directly
 // (bypassing filter-state owner APIs) in specific, limited contexts:
 //
-//   filter-state.js             — canonical owner; all normal mutations
-//   lifecycle.js resetSequence() — full state reset before URL restore
+//   filter-state.ts             — canonical owner; all normal mutations
+//   lifecycle.ts resetSequence() — full state reset before URL restore
 //   micro-demo.js               — demo playback writes via filter-state APIs
 //
-// All other modules must route activeFilters writes through filter-state.js APIs.
+// All other modules must route activeFilters writes through filter-state.ts APIs.
 
 // ─── Summary ───────────────────────────────────────────────────────────────────
 
@@ -548,24 +548,24 @@ console.log('\n=== filter-ownership-contract.mjs COMPLETE ===');
 console.log('10 contracts verified. Ownership boundaries documented below.');
 console.log('');
 console.log('Ownership map:');
-console.log('  filter-state.js     — CANONICAL OWNER: setActiveFilter, toggleActiveFilterSignal,');
+console.log('  filter-state.ts     — CANONICAL OWNER: setActiveFilter, toggleActiveFilterSignal,');
 console.log('                        resetActiveFilters, restoreActiveFiltersFromUrl,');
 console.log('                        restoreActiveClusterFilterFromUrl');
 console.log('                        Internal: ensureActiveFilters() — private helper');
-console.log('  event-bindings.js   — HELPER: delegates all filter mutations to filter-state APIs');
+console.log('  event-bindings.ts   — HELPER: delegates all filter mutations to filter-state APIs');
 console.log('                        bindFilterControls → setActiveFilter / toggleActiveFilterSignal');
 console.log('                        clearFiltersBtn → resetActiveFilters');
-console.log('  url-state.js        — HELPER: calls restoreActiveFiltersFromUrl /');
+console.log('  url-state.ts        — HELPER: calls restoreActiveFiltersFromUrl /');
 console.log('                        restoreActiveClusterFilterFromUrl on URL restore');
-console.log('  cluster-filter.js   — HELPER (filter): calls filter-state APIs for mutations.');
+console.log('  cluster-filter.ts   — HELPER (filter): calls filter-state APIs for mutations.');
 console.log('                        Reads state.activeFilters for filtering decisions only.');
-console.log('                        Does NOT import search-state.js (no bad cycle).');
-console.log('  search-state.js     — READER: reads state.activeFilters in getFilteredIndices()');
+console.log('                        Does NOT import search-state.ts (no bad cycle).');
+console.log('  search-state.ts     — READER: reads state.activeFilters in getFilteredIndices()');
 console.log('                        and applyFilters() for filter-aware search operations.');
 console.log('                        Re-exports filter-state APIs. Does NOT write activeFilters.');
-console.log('  lifecycle.js        — HELPER: imports filter-state APIs for reset orchestration');
-console.log('  camera-controls.js  — READER: reads activeFilters for focus decisions only');
+console.log('  lifecycle.ts        — HELPER: imports filter-state APIs for reset orchestration');
+console.log('  camera-controls.ts  — READER: reads activeFilters for focus decisions only');
 console.log('');
 console.log('Invariant: activeFilters and activeClusterFilter writes are centralized in');
-console.log('filter-state.js. All UI triggers route through owner APIs. cluster-filter.js');
-console.log('must NOT import search-state.js (the bad cycle this contract catches).');
+console.log('filter-state.ts. All UI triggers route through owner APIs. cluster-filter.ts');
+console.log('must NOT import search-state.ts (the bad cycle this contract catches).');

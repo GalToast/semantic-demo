@@ -4,16 +4,16 @@
  * Loading overlay lifecycle, phase management, and deferred hydration.
  */
 
-import { state, withStateMutation } from '../state.js';
-import { subscribe, EVENTS } from './event-bus.js';
-import { restoreFocusTrailState, updateSelectedBusiness } from './journey.js';
-import { SCENE_READY } from './scene-events.js';
-import { loadSemanticThreads } from './semantic-threads.js';
-import { applyFilters } from './search-state.js';
-import { createMycelium } from './three-thread-manager.js';
-import { updateLoadingPhaseKey } from './state-mutators.js';
-import { initWeather } from './weather.js';
-import { escapeHtml } from './utils/dom-formatters.js';
+import { state, withStateMutation } from '../state.ts';
+import { subscribe, EVENTS } from './event-bus.ts';
+import { restoreFocusTrailState, updateSelectedBusiness } from './journey.ts';
+import { SCENE_READY } from './scene-events.ts';
+import { loadSemanticThreads } from './semantic-threads.ts';
+import { applyFilters } from './search-state.ts';
+import { createMycelium } from './three-thread-manager.ts';
+import { updateLoadingPhaseKey } from './state-mutators.ts';
+import { initWeather } from './weather.ts';
+import { escapeHtml } from './utils/dom-formatters.ts';
 import type { LoadingPhaseKey, SemanticState } from '../../types/state';
 
 // Phase 3: Declarative synchronization

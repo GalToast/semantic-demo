@@ -1,20 +1,30 @@
 'use strict';
 
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { resolveSource } from './source-path.mjs';
 
 function assert(condition, message) {
   if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);
 }
 
-const source = readFileSync(new URL('../js/modules/journey-thread-settler.js', import.meta.url), 'utf8');
+const root = resolve(fileURLToPath(new URL('../', import.meta.url)));
+const source = readFileSync(resolveSource('js/modules/journey-thread-settler.ts', root), 'utf8');
 
 function extractFunctionBody(name) {
   const signature = `export function ${name}`;
   const start = source.indexOf(signature);
   assert(start >= 0, `${name} export should exist`);
-  const bodyStart = source.indexOf(') {', start);
-  assert(bodyStart >= 0, `${name} should have a function body`);
-  const openBrace = bodyStart + 2;
+  // Find the opening brace of the function body, skipping past params and return type
+  let openBrace = -1;
+  let parenDepth = 0;
+  for (let i = start; i < source.length; i++) {
+    const ch = source[i];
+    if (ch === '(') parenDepth++;
+    else if (ch === ')') parenDepth--;
+    else if (ch === '{' && parenDepth === 0) { openBrace = i; break; }
+  }
   assert(openBrace >= 0, `${name} should have a function body`);
   let depth = 0;
   for (let index = openBrace; index < source.length; index += 1) {

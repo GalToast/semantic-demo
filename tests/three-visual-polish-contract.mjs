@@ -4,21 +4,21 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
-const appPath = path.join(repoRoot, 'js', 'modules', 'app.js');
+const appPath = path.join(repoRoot, 'js', 'modules', 'app.ts');
 const app = fs.readFileSync(appPath, 'utf8');
-const threeSetupPath = path.join(repoRoot, 'js', 'modules', 'three-engine.js');
+const threeSetupPath = path.join(repoRoot, 'js', 'modules', 'three-engine.ts');
 const threeSetup = fs.readFileSync(threeSetupPath, 'utf8');
-const nodeManagerPath = path.join(repoRoot, 'js', 'modules', 'three-node-manager.js');
+const nodeManagerPath = path.join(repoRoot, 'js', 'modules', 'three-node-manager.ts');
 const nodeManager = fs.readFileSync(nodeManagerPath, 'utf8');
-const threadManagerPath = path.join(repoRoot, 'js', 'modules', 'three-thread-manager.js');
+const threadManagerPath = path.join(repoRoot, 'js', 'modules', 'three-thread-manager.ts');
 const threadManager = fs.readFileSync(threadManagerPath, 'utf8');
-const interactionVisualsPath = path.join(repoRoot, 'js', 'modules', 'three-interaction-visuals.js');
+const interactionVisualsPath = path.join(repoRoot, 'js', 'modules', 'three-interaction-visuals.ts');
 const interactionVisuals = fs.readFileSync(interactionVisualsPath, 'utf8');
-const cameraRestorePath = path.join(repoRoot, 'js', 'modules', 'camera-controls-restore.js');
+const cameraRestorePath = path.join(repoRoot, 'js', 'modules', 'camera-controls-restore.ts');
 const cameraRestore = fs.readFileSync(cameraRestorePath, 'utf8');
-const searchAnimationsPath = path.join(repoRoot, 'js', 'modules', 'three-search-animations.js');
+const searchAnimationsPath = path.join(repoRoot, 'js', 'modules', 'three-search-animations.ts');
 const searchAnimations = fs.readFileSync(searchAnimationsPath, 'utf8');
-const myceliumEnginePath = path.join(repoRoot, 'js', 'modules', 'mycelium-engine.js');
+const myceliumEnginePath = path.join(repoRoot, 'js', 'modules', 'mycelium-engine.ts');
 const myceliumEngine = fs.readFileSync(myceliumEnginePath, 'utf8');
 
 function assert(condition, message) {
@@ -60,9 +60,9 @@ includesAll(threadManager, [
 ], 'mycelium semantic/color fade coefficients');
 
 assert(
-    (app.includes("from './three-search-animations.js'") || app.includes("import './three-search-animations.js'"))
-    && !app.includes("from './three-animations.js'") && !app.includes("import './three-animations.js'"),
-    'app.js should inject search animation dependencies from canonical three-search-animations.js'
+    (app.includes("from './three-search-animations.ts'") || app.includes("import './three-search-animations.ts'"))
+    && !app.includes("from './three-animations.ts'") && !app.includes("import './three-animations.ts'"),
+    'app.js should inject search animation dependencies from canonical three-search-animations.ts'
 );
 
 // Thread contrast contract: focus keeps global threads as background context.
@@ -90,7 +90,7 @@ includesAll(cameraRestore, [
     'target: Object.freeze([0, 0, 0])'
 ], 'overview camera restore pose should match widened overview framing');
 
-const bridgePath = path.join(repoRoot, 'src', 'lib', 'engine', 'bridge.ts');
+const bridgePath = path.join(repoRoot, 'src', 'lib', 'engine', 'adapters', 'lifecycle-bridge.ts');
 const bridge = fs.readFileSync(bridgePath, 'utf8');
 const bridgeInitSource = sectionBetween(
     bridge,
@@ -98,9 +98,9 @@ const bridgeInitSource = sectionBetween(
     'destroy(): void'
 );
 includesAll(bridgeInitSource, [
-    "const success = _threeEngine!.initThreeJS();",
-    "status = 'ready';",
-    '_threeEngine!.animate();'
+    "const success = ctx._threeEngine!.initThreeJS();",
+    "ctx.status = 'ready';",
+    'ctx._threeEngine!.animate();'
 ], 'Svelte engine bridge should start the legacy RAF loop after init');
 
 assert(

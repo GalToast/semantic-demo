@@ -8,8 +8,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
-const POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-point-color.js');
+const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.ts');
+const POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-point-color.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -33,15 +33,15 @@ function main() {
   const pointColorSrc = fs.readFileSync(POINT_COLOR_PATH, 'utf-8');
 
   assertContains(pointColorSrc, 'export function applyPointFilterColors()', 'point-color exports applyPointFilterColors');
-  assertContains(pointColorSrc, 'export function describeThreadLensForPoint(point)', 'point-color exports describeThreadLensForPoint');
-  assertContains(journeySrc, "import { applyPointFilterColors, describeThreadLensForPoint } from './journey-point-color.js';", 'journey imports point-color owner');
+  assertContains(pointColorSrc, 'export function describeThreadLensForPoint(point', 'point-color exports describeThreadLensForPoint');
+  assertContains(journeySrc, "import { applyPointFilterColors, describeThreadLensForPoint } from './journey-point-color.ts';", 'journey imports point-color owner');
   assertContains(journeySrc, 'applyPointFilterColors,', 'journey re-exports applyPointFilterColors');
   assertContains(journeySrc, 'describeThreadLensForPoint,', 'journey re-exports describeThreadLensForPoint');
 
   assertNotContains(journeySrc, 'export function applyPointFilterColors()', 'journey local applyPointFilterColors removed');
   assertNotContains(journeySrc, 'function syncNodeSporeColorsFromPointColors()', 'journey local spore color sync removed');
   assertNotContains(journeySrc, 'export function describeThreadLensForPoint(point)', 'journey local thread lens describer removed');
-  assertNotContains(pointColorSrc, "from './journey.js'", 'point-color must not import journey shim');
+  assertNotContains(pointColorSrc, "from './journey.ts'", 'point-color must not import journey shim');
 
   assertContains(pointColorSrc, 'function syncNodeSporeColorsFromPointColors()', 'spore color sync remains private in point-color owner');
   assertNotContains(pointColorSrc, 'export function syncNodeSporeColorsFromPointColors', 'spore color sync is not exported from point-color');
@@ -52,7 +52,7 @@ function main() {
   assertContains(pointColorSrc, 'isVisited ? 1.18 : (semanticFocus ? 0.24 : 0.18)', 'trail dim factor preserved');
   assertContains(pointColorSrc, 'isVisited ? 1.28 : (semanticFocus ? 0.32 : 0.22)', 'pocket dim factor preserved');
 
-  assertContains(pointColorSrc, "import { publish, EVENTS } from './event-bus.js';", 'search status routes through event bus');
+  assertContains(pointColorSrc, "import { publish, EVENTS } from './event-bus.ts';", 'search status routes through event bus');
   assertContains(pointColorSrc, 'publish(EVENTS.SEARCH_STATUS_SYNC_REQUESTED', 'search glow status event publication preserved');
   assertContains(pointColorSrc, 'options: { fromSearchResult: true, skipTraversalUiUpdate: true }', 'search glow status options preserved');
   assertNotContains(pointColorSrc, 'window.applySearchGlowVisualState', 'retired applySearchGlowVisualState bridge absent');

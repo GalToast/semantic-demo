@@ -28,18 +28,18 @@ import { MOBILE_PREMIUM_PATHS, MOBILE_PREMIUM_SPLIT } from './_fixtures/mobile-p
 
 const ROOT = path.resolve(process.cwd());
 const HTML_PATH = path.join(ROOT, 'vector-explorer-polished.html');
-const FOCUS_RENDERER_PATH = path.join(ROOT, 'js/modules/focus-stage-renderer.js');
+const FOCUS_RENDERER_PATH = path.join(ROOT, 'js/modules/focus-stage-renderer.ts');
 const INFO_PANEL_SELECTION_SURFACE_PATH = path.join(ROOT, 'js/modules/components/InfoPanelSelectionSurface.svelte');
-const UI_RENDERERS_PATH = path.join(ROOT, 'js/modules/ui-renderers.js');
-const JOURNEY_SELECTED_CARD_PATH = path.join(ROOT, 'js/modules/journey-selected-card.js');
-const JOURNEY_FOCUS_UI_PATH = path.join(ROOT, 'js/modules/journey-focus-ui.js');
-const JOURNEY_COMPASS_PATH = path.join(ROOT, 'js/modules/journey-compass-controller.js');
+const UI_RENDERERS_PATH = path.join(ROOT, 'js/modules/ui-renderers.ts');
+const JOURNEY_SELECTED_CARD_PATH = path.join(ROOT, 'js/modules/journey-selected-card.ts');
+const JOURNEY_FOCUS_UI_PATH = path.join(ROOT, 'js/modules/journey-focus-ui.ts');
+const JOURNEY_COMPASS_PATH = path.join(ROOT, 'js/modules/journey-compass-controller.ts');
 const JOURNEY_ROUTE_TRACE_PATH = path.join(ROOT, 'js/modules/journey-route-trace.ts');
-const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.js');
-const COMPOSITION_STATE_PATH = path.join(ROOT, 'js/modules/composition-state.js');
-const EVENT_BUS_PATH = path.join(ROOT, 'js/modules/event-bus.js');
-const MAP_STATE_PATH = path.join(ROOT, 'js/modules/map-state.js');
-const SEMANTIC_DIVE_UI_PATH = path.join(ROOT, 'js/modules/semantic-dive-ui.js');
+const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.ts');
+const COMPOSITION_STATE_PATH = path.join(ROOT, 'js/modules/composition-state.ts');
+const EVENT_BUS_PATH = path.join(ROOT, 'js/modules/event-bus.ts');
+const MAP_STATE_PATH = path.join(ROOT, 'js/modules/map-state.ts');
+const SEMANTIC_DIVE_UI_PATH = path.join(ROOT, 'js/modules/semantic-dive-ui.ts');
 const MOBILE_PREMIUM_PATH = MOBILE_PREMIUM_PATHS;
 const PROGRESSIVE_DISCLOSURE_PATH = path.join(ROOT, 'css/progressive_disclosure.css');
 

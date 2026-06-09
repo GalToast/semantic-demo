@@ -2,9 +2,9 @@
 // TypeScript shadow of camera-controls-core.js
 // Focus transition state, camera assist, and route exploration.
 
-import { state } from '../state.js';
+import { state } from '../state.ts';
 import type { SemanticState } from '../../types/state';
-import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-orbit-slack.js';
+import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-orbit-slack.ts';
 
 interface TransitionOptions {
     duration?: number;

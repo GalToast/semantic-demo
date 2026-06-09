@@ -6,9 +6,9 @@
  * journey-webgl.js twin.
  */
 
-import { updateRouteTraceOverlayPositions } from './journey-route-trace.js';
-import { updateArrivalHandoffOverlay } from './journey-arrival-handoff.js';
-import { setRouteArrivalOverlayUpdaters } from './route-arrival-overlay-adapter.js';
+import { updateRouteTraceOverlayPositions } from './journey-route-trace.ts';
+import { updateArrivalHandoffOverlay } from './journey-arrival-handoff.ts';
+import { setRouteArrivalOverlayUpdaters } from './route-arrival-overlay-adapter.ts';
 
 export {
     resetRouteTraceDiagnostics,
@@ -17,7 +17,7 @@ export {
     refreshRouteTraceOverlay,
     updateRouteTraceOverlayPositions,
     initRouteTraceSubscriptions
-} from './journey-route-trace.js'
+} from './journey-route-trace.ts'
 
 export {
     removeArrivalHandoffOverlay,
@@ -25,7 +25,7 @@ export {
     disposeArrivalHandoffOverlay,
     syncArrivalHandoffOverlay,
     updateArrivalHandoffOverlay
-} from './journey-arrival-handoff.js'
+} from './journey-arrival-handoff.ts'
 
 export {
     resetFocusThreadDiagnostics,
@@ -33,7 +33,7 @@ export {
     refreshFocusSemanticOverlay,
     updateFocusSemanticOverlayPositions,
     getSemanticFocusCueProbeSnapshot
-} from './journey-semantic-overlay.js'
+} from './journey-semantic-overlay.ts'
 
 setRouteArrivalOverlayUpdaters({
     updateRouteTraceOverlayPositions,

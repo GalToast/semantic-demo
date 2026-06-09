@@ -166,7 +166,7 @@ async function startServer(port) {
   const mimeTypes = {
     '.html': 'text/html',
     '.css': 'text/css',
-    '.js': 'application/javascript',
+    '.ts': 'application/javascript',
     '.png': 'image/png',
   };
 

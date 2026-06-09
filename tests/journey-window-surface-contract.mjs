@@ -19,10 +19,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
-const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js');
-const JOURNEY_THREAD_MODEL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-model.js');
-const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-state.js');
+const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.ts');
+const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.ts');
+const JOURNEY_THREAD_MODEL_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-model.ts');
+const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-state.ts');
 const VISUAL_STATE_AUDIT_PATH = path.join(SEMDEMO_ROOT, 'tests/ui-quality-contract.mjs');
 
 function assert(cond, msg) {
@@ -194,7 +194,7 @@ function testJourneyThreadModelChain() {
   assert(journeyModelSrc.includes('export function buildProjectedNeighborGrid'), 'journey-thread-model exports buildProjectedNeighborGrid');
 
   // journey.js must import from journey-thread-model.js
-  assertContains(journeySrc, "from './journey-thread-model.js'", 'journey.js imports from journey-thread-model.js');
+  assertContains(journeySrc, "from './journey-thread-model.ts'", 'journey.js imports from journey-thread-model.ts');
 
   // journey.js re-exports from journey-thread-model (export { ... } block at lines 30-38)
   // Each function name appears as a distinct token in the re-export block

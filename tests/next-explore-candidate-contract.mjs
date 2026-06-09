@@ -8,12 +8,12 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { getNextExploreCandidateForIndex } from '../js/modules/journey-thread-model.js';
+import { getNextExploreCandidateForIndex } from '../js/modules/journey-thread-model.ts';
 
 const ROOT = process.cwd();
-const THREAD_MODEL = join(ROOT, 'js/modules/journey-thread-model.js');
-const COMPASS_STATE = join(ROOT, 'js/modules/journey-compass-state.js');
-const SEMANTIC_DIVE_UI = join(ROOT, 'js/modules/semantic-dive-ui.js');
+const THREAD_MODEL = join(ROOT, 'js/modules/journey-thread-model.ts');
+const COMPASS_STATE = join(ROOT, 'js/modules/journey-compass-state.ts');
+const SEMANTIC_DIVE_UI = join(ROOT, 'js/modules/semantic-dive-ui.ts');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -79,8 +79,8 @@ function testCallerWiring() {
     ['journey-compass-state', compass, 'focusIndex'],
     ['semantic-dive-ui', dive, 'currentFocusIndex']
   ]) {
-    assertIncludes(source, "import { getNextExploreCandidateForIndex } from './journey-thread-model.js';", `${label} helper import`);
-    assertIncludes(source, "import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.js';", `${label} adapter import`);
+    assertIncludes(source, "import { getNextExploreCandidateForIndex } from './journey-thread-model.ts';", `${label} helper import`);
+    assertIncludes(source, "import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.ts';", `${label} adapter import`);
     assertIncludes(source, `getNextExploreCandidateForIndex(${focusName}, getNextWalkCandidateForIndex`, `${label} helper call`);
     assertNotIncludes(source, 'window.getNextWalkCandidateForIndex', `${label} no getNextWalk window bridge`);
     assertNotIncludes(source, 'window.getNextExploreCandidateForIndex', `${label} no getNextExplore window bridge`);

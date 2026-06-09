@@ -5,7 +5,7 @@
  * Replaces the fragile 'adapter_' pattern with typed, event-driven intent.
  */
 
-import { debugWarn } from './diagnostic-adapter.js';
+import { debugWarn } from './diagnostic-adapter.ts';
 
 /** All valid event names emitted by the application. */
 export const EVENTS = Object.freeze({

@@ -26,7 +26,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const threeSetupPath = resolve(CWD, 'js/modules/three-engine.js');
+const threeSetupPath = resolve(CWD, 'js/modules/three-engine.ts');
 
 function read(path, label) {
   try {
@@ -37,7 +37,7 @@ function read(path, label) {
   }
 }
 
-const src = read(threeSetupPath, 'js/modules/three-engine.js');
+const src = read(threeSetupPath, 'js/modules/three-engine.ts');
 
 // Retired bridges must not appear as window.* =
 

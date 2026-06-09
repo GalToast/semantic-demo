@@ -83,7 +83,7 @@ globalThis.THREE = {
 // ---------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------
-const { state, withStateMutation } = await import('../js/state.js');
+const { state, withStateMutation } = await import('../js/state.ts');
 const {
   setAutoRotateSuspended,
   scheduleAutoRotateResume,
@@ -97,7 +97,7 @@ const {
   focusCameraAssistIsActive,
   releaseFocusCameraAssist,
   syncCameraAssistDataset,
-} = await import('../js/modules/camera-controls.js');
+} = await import('../js/modules/camera-controls.ts');
 
 // ---------------------------------------------------------------------------
 // Helpers

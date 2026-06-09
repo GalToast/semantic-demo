@@ -12,6 +12,7 @@
  */
 
 import { withStateMutation } from '@lib/state/with-state-mutation';
+import workerUrl from '../../js/workers/data-worker.js?worker&url';
 import type {
   SemanticThreadBundle,
   SemanticThreadNode,
@@ -21,6 +22,7 @@ import type {
 } from '@lib/types/business';
 import { normalizeRelationshipRole } from '@lib/utils/relationship-roles';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
+import { cleanOptionalValue } from '@lib/utils/dom-formatters';
 
 // ── Legacy state singleton ────────────────────────────────────────────────────
 // The state reference is injected by the engine bridge during init via
@@ -80,7 +82,7 @@ function getWorker(): Worker | null {
   if (_dataWorker) return _dataWorker;
 
   try {
-    _dataWorker = new Worker('js/workers/data-worker.js');
+    _dataWorker = new Worker(workerUrl, { type: 'module' });
     return _dataWorker;
   } catch (err) {
     console.warn(
@@ -273,11 +275,6 @@ function _normalizeLeadId(id: unknown): string | null {
   return s.length > 0 ? s : null;
 }
 
-function _cleanOptionalValue(value: unknown): string | null {
-  if (value === null || value === undefined) return null;
-  return String(value);
-}
-
 /**
  * Build a Map<leadId, SemanticNeighborEntry> from a raw SemanticThreadBundle.
  * Writes the result into state.semanticNeighborMapByLeadId.
@@ -312,17 +309,17 @@ function _buildSemanticNeighborMap(
               bridgeScore: Number(neighbor?.bridge_score ?? 0),
               signalScore: Number(neighbor?.signal_score ?? 0),
               threadType:
-                _cleanOptionalValue(neighbor?.thread_type) ||
+                cleanOptionalValue(neighbor?.thread_type) ||
                 'local_semantic_neighbor',
               relationshipRole: normalizeRelationshipRole(
                 neighbor?.relationship_role,
               ) as SemanticNeighborDetail['relationshipRole'],
               relationshipAxis:
-                _cleanOptionalValue(neighbor?.relationship_axis) || '',
+                cleanOptionalValue(neighbor?.relationship_axis) || '',
               roleReason:
-                _cleanOptionalValue(neighbor?.role_reason) || '',
+                cleanOptionalValue(neighbor?.role_reason) || '',
               reason:
-                _cleanOptionalValue(neighbor?.reason) ||
+                cleanOptionalValue(neighbor?.reason) ||
                 'semantic neighbor',
             };
           })
@@ -362,17 +359,17 @@ function _normalizeSemanticNeighborEntries(
             bridgeScore: Number(neighbor?.bridge_score ?? 0),
             signalScore: Number(neighbor?.signal_score ?? 0),
             threadType:
-              _cleanOptionalValue(neighbor?.thread_type) ||
+              cleanOptionalValue(neighbor?.thread_type) ||
               'local_semantic_neighbor',
             relationshipRole: normalizeRelationshipRole(
               neighbor?.relationship_role,
             ) as SemanticNeighborDetail['relationshipRole'],
             relationshipAxis:
-              _cleanOptionalValue(neighbor?.relationship_axis) || '',
+              cleanOptionalValue(neighbor?.relationship_axis) || '',
             roleReason:
-              _cleanOptionalValue(neighbor?.role_reason) || '',
+              cleanOptionalValue(neighbor?.role_reason) || '',
             reason:
-              _cleanOptionalValue(neighbor?.reason) ||
+              cleanOptionalValue(neighbor?.reason) ||
               'semantic neighbor',
           }))
         : [],
@@ -519,6 +516,32 @@ function finalizeThreadLoad(): void {
   _refreshFocusedSemanticState();
 }
 
+// ── Public Getters ────────────────────────────────────────────────────────────
+
+/**
+ * Get the loaded semantic thread bundle after loadSemanticThreads() succeeds.
+ * Returns null if not yet loaded or if attachLegacyState() was never called.
+ */
+export function getSemanticThreadBundle(): SemanticThreadBundle | null {
+  return _state?.semanticThreadBundle ?? null;
+}
+
+/**
+ * Get the loaded artifact filename after loadSemanticThreads() succeeds.
+ * Returns null if not yet loaded.
+ */
+export function getSemanticThreadArtifactName(): string | null {
+  return _state?.semanticThreadArtifactName ?? null;
+}
+
+/**
+ * Get the populated neighbor map after loadSemanticThreads() succeeds.
+ * Returns an empty map if not yet loaded.
+ */
+export function getSemanticNeighborMapByLeadId(): Map<string, SemanticNeighborEntry> {
+  return _state?.semanticNeighborMapByLeadId ?? new Map<string, SemanticNeighborEntry>();
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export interface LoadSemanticThreadsOptions {
@@ -535,6 +558,21 @@ export interface LoadSemanticThreadsOptions {
 export async function loadSemanticThreads(
   options: LoadSemanticThreadsOptions = {},
 ): Promise<boolean> {
+  // Guard: if attachLegacyState() hasn't been called yet, wait briefly
+  // then degrade gracefully instead of throwing on null state.
+  if (_state === null) {
+    const start = Date.now();
+    while (_state === null && Date.now() - start < 500) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    if (_state === null) {
+      console.warn(
+        '[semantic-threads] loadSemanticThreads called before attachLegacyState(); degrading gracefully',
+      );
+      return false;
+    }
+  }
+
   const state = getState();
   if (state.semanticThreadsLoadPromise)
     return state.semanticThreadsLoadPromise as Promise<boolean>;

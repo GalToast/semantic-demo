@@ -1,5 +1,5 @@
-import { state } from '../state.js';
-import type { Point } from '../../types/state';
+import { state } from '../state.ts';
+import type { Point, SemanticState } from '../../types/state';
 
 /**
  * role-label.js
@@ -9,25 +9,27 @@ import type { Point } from '../../types/state';
  * application context (search anchor, trail step, or generic record).
  */
 export function _getSelectedBusinessRoleLabel(point: Point): string {
-    let index = state.points && Array.isArray(state.points) ? state.points.indexOf(point) : -1;
+    const _s = state as unknown as SemanticState;
+    let index = _s.points && Array.isArray(_s.points) ? _s.points.indexOf(point) : -1;
     if (index < 0 && point?.lead_id !== undefined && point?.lead_id !== null) {
         const leadId = String(point.lead_id);
-        index = (state.points && Array.isArray(state.points))
-            ? state.points.findIndex((candidate) => String(candidate.lead_id) === leadId)
+        index = (_s.points && Array.isArray(_s.points))
+            ? _s.points.findIndex((candidate) => String(candidate.lead_id) === leadId)
             : -1;
     }
-    if (index >= 0 && state.currentSearchSummary) {
-        if (state.currentSearchSummary.anchorIndex === index || state.currentSearchSummary.topIndex === index) {
+    if (index >= 0 && _s.currentSearchSummary) {
+        const summary = _s.currentSearchSummary as { anchorIndex?: number; topIndex?: number; resultIndices?: number[] };
+        if (summary.anchorIndex === index || summary.topIndex === index) {
             return 'Search Anchor';
         }
-        if ((state.currentSearchSummary.resultIndices || []).includes(index)) {
+        if ((summary.resultIndices || []).includes(index)) {
             return 'Trail Step';
         }
     }
     if (
         index >= 0
-        && state.navState?.mode === 'trail'
-        && (state.navState.walkHistoryIndices || []).includes(index)
+        && _s.navState?.mode === 'trail'
+        && (_s.navState.walkHistoryIndices || []).includes(index)
     ) {
         return 'Trail Step';
     }

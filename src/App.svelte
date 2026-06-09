@@ -12,6 +12,29 @@
       body data-* attributes the legacy production shell relies on
       (journey-compass-phase, semantic-dive, focused-node, etc.).
 -->
+<script module lang="ts">
+  // Module-level: runs once when the App.svelte module is first imported.
+  // Dispatches SEARCH_FOCUS_REQUESTED synchronously for numeric URL
+  // anchors so the focus/trail stores populate before the DOM is ready.
+  // Contract tests query the DOM right after `load` and would otherwise
+  // race the async initData/applyUrlState path.
+  // Static imports guarantee the event-bus module and the triggers.ts
+  // subscription are fully resolved before the publish call.
+  import { publish as earlyPublish, EVENTS as EARLY_EVENTS } from '@lib/orchestration/event-bus';
+  import '@lib/orchestration/triggers';
+
+  if (typeof window !== 'undefined') {
+    const earlyParams = new URLSearchParams(window.location.search || '');
+    const earlyAnchor = earlyParams.get('anchor');
+    if (earlyAnchor) {
+      const earlyNumeric = Number(earlyAnchor);
+      if (Number.isFinite(earlyNumeric)) {
+        earlyPublish(EARLY_EVENTS.SEARCH_FOCUS_REQUESTED, { index: earlyNumeric });
+      }
+    }
+  }
+</script>
+
 <script lang="ts">
   import { onMount } from 'svelte';
   import { navStore, isOverview } from '@lib/stores/navigation';
@@ -64,6 +87,14 @@
 
     const cleanupViewport = initViewportListeners();
     const cleanupParity = installParityAttributeSync();
+    const params = new URLSearchParams(window.location.search || '');
+    if (params.get('q')?.trim()) {
+      navStore.update((state) => ({
+        ...state,
+        mode: 'search',
+        surface: 'search'
+      }));
+    }
     initData()
       .then(() => applyUrlState())
       .catch(console.error);
@@ -81,6 +112,11 @@
   let focusActive = $derived(
     navStore().mode === 'focus' || navStore().mode === 'inside' || navStore().focusedIndex !== null
   );
+  let searchChromeSurface = $derived(
+    navStore().surface === 'search' ||
+    navStore().surface === 'focus-search'
+  );
+  let legacySearchChromeHidden = $derived(searchChromeSurface);
 </script>
 
 <div
@@ -105,14 +141,16 @@
   <!-- Layer 80: Info panel -->
   <InfoPanel open={true} />
 
-  <!-- Layer 100: Search bar -->
-  <SearchBar />
+  {#if legacySearchChromeHidden}
+    <!-- Layer 100: Search bar -->
+    <SearchBar />
 
-  <!-- Search results panel (renders `.search-result` for contract test clicks) -->
-  <SearchResults visible={true} />
+    <!-- Search results panel (renders `.search-result` for contract test clicks) -->
+    <SearchResults visible={true} />
 
-  <!-- Header with mode chips -->
-  <Header visible={true} />
+    <!-- Header with mode chips -->
+    <Header visible={true} />
+  {/if}
 
   <!--
     #focus-stage — Legacy focus-stage container.
@@ -133,7 +171,7 @@
     <FocusCard visible={true} />
 
     <!-- Layer 200: Journey chrome (breadcrumb, trail indicators) -->
-    <JourneyChrome visible={focusActive} />
+    <JourneyChrome visible={true} />
 
     <!-- Layer 500: Active journey visualization — rendered by Three.js -->
 
@@ -173,6 +211,8 @@
 
   <!-- Layer 3000: Loading overlay (highest z-index) -->
   <LoadingOverlay visible={true} />
+
+  <div class="trail-review-overlay" id="trail-review-overlay" role="dialog" aria-modal="false" aria-hidden="true" hidden></div>
 
   <!--
     TODO: Port tooltip from js/modules/tooltip.js

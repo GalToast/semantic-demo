@@ -9,9 +9,10 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { resolveSource } from './source-path.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SOURCE = fs.readFileSync(path.resolve(__dirname, '../js/modules/search-state.js'), 'utf8');
+const SOURCE = fs.readFileSync(resolveSource('js/modules/search-state.ts', path.resolve(__dirname, '..')), 'utf8');
 
 function assert(condition, message) {
     if (!condition) throw new Error(message);
@@ -36,10 +37,10 @@ function extractFunctionBody(functionName) {
 const helperBody = extractFunctionBody('clearSearchRelatedFocusState');
 
 console.log('Verifying clearSearchRelatedFocusState ownership...');
-assert(/state\.selectedPoint\s*=\s*null/.test(helperBody), 'helper must clear selectedPoint');
+assert(/\bstate\b[\s\S]{0,40}\.selectedPoint\s*=\s*null/.test(helperBody), 'helper must clear selectedPoint');
 assert(/publish\(EVENTS\.STATE_RESET/.test(helperBody), 'helper must request nav reset through EVENTS.STATE_RESET');
 assert(/clearTrailThreadState\s*\(\s*\)/.test(helperBody), 'helper must route trail/thread cleanup through clearTrailThreadState()');
-assert(/state\.trailIndices\.clear\s*\(\s*\)/.test(helperBody), 'helper must clear search-owned trail index set');
+assert(/(?:state\.trailIndices\.clear|getTrailIndices\(\)\?\.clear)\s*\(\s*\)/.test(helperBody), 'helper must clear search-owned trail index set');
 assert(!/adapter_dispatchNavTransition/.test(SOURCE), 'search-state must not restore adapter dispatch routing');
 
 console.log('\nScanning for direct nav writes outside search-state owner fields...');

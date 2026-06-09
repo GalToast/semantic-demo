@@ -6,8 +6,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA_COLUMNS } from '../js/modules/utils/data-schema.js';
-import { normalizeSlugName, mapRawRecordToPoint } from '../js/modules/utils/data-mapper.js';
+import { DATA_COLUMNS } from '../js/modules/utils/data-schema.ts';
+import { normalizeSlugName, mapRawRecordToPoint } from '../js/modules/utils/data-mapper.ts';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const WORKER_PATH = path.join(SEMDEMO_ROOT, 'js/workers/data-worker.js');

@@ -5,11 +5,11 @@
  * Point color management: filter colors, thread lens description.
  */
 import * as THREE from 'three';
-import { state as _state } from '../state.js';
-import { publish, EVENTS } from './event-bus.js';
-import { describeCluster } from './utils/ui-presentation.js';
-import { formatBusinessName } from './utils/dom-formatters.js';
-import { isPointVisible } from './utils/geo-data.js';
+import { state as _state } from '../state.ts';
+import { publish, EVENTS } from './event-bus.ts';
+import { describeCluster } from './utils/ui-presentation.ts';
+import { formatBusinessName } from './utils/dom-formatters.ts';
+import { isPointVisible } from './utils/geo-data.ts';
 
 const state = _state as any;
 const nodeSporeSyncColor = new THREE.Color();

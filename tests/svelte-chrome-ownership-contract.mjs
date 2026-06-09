@@ -26,7 +26,7 @@ function walk(dir, files = []) {
 }
 
 const appSource = read('js/modules/components/App.svelte');
-const appIslandSource = read('js/modules/app-svelte-island.js');
+const appIslandSource = read('js/modules/app-svelte-island.ts');
 const shellSource = read('vector-explorer-polished.html');
 
 assert(
@@ -49,8 +49,8 @@ assert(
   'app-svelte-island.js should not mount chrome panels separately'
 );
 
-assert(!exists('js/modules/info-panel-chrome-island.js'), 'obsolete info-panel-chrome-island.js should not exist');
-assert(!exists('js/modules/legend-panel-chrome-island.js'), 'obsolete legend-panel-chrome-island.js should not exist');
+assert(!exists('js/modules/info-panel-chrome-island.ts'), 'obsolete info-panel-chrome-island.js should not exist');
+assert(!exists('js/modules/legend-panel-chrome-island.ts'), 'obsolete legend-panel-chrome-island.js should not exist');
 assert(!shellSource.includes('info-panel-chrome-island'), 'HTML shell should not expose obsolete info-panel chrome slot');
 assert(!shellSource.includes('legend-panel-chrome-island'), 'HTML shell should not expose obsolete legend-panel chrome slot');
 

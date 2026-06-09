@@ -46,7 +46,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
+const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -306,10 +306,10 @@ function testNoSearchLaneCompassImports() {
 
   const src = readJourneySrc();
   const blockedModules = [
-    './search-state.js',
-    './search-panel-adapter.js',
-    './semantic-lane.js',
-    './journey-compass-controller.js',
+    './search-state.ts',
+    './search-panel-adapter.ts',
+    './semantic-lane.ts',
+    './journey-compass-controller.ts',
   ];
 
   const violations = [];
@@ -399,7 +399,7 @@ function testNoSearchLaneCompassWindowCalls() {
 // TEST 7: All allowed IDs documented, no surprises.
 
 function testNoNewIdPatterns() {
-  console.log('\n[TEST 7] No new undocumented ID patterns introduced in journey.js');
+  console.log('\n[TEST 7] No new undocumented ID patterns introduced in journey.ts');
 
   const src = readJourneySrc();
   const accesses = extractGetElementByIdAccesses(src);

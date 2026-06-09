@@ -16,7 +16,7 @@ import {
     getSearchContextSnapshot,
     buildSemanticGuidePayloadResult as buildPayloadResultFromSnapshot,
     mapResultIndicesToPayloadResults
-} from './semantic-guide-payload-adapter.js';
+} from './semantic-guide-payload-adapter.ts';
 
 export interface SemanticGuidePayloadResult {
     lead_id: string | number;

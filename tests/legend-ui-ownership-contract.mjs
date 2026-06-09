@@ -16,9 +16,9 @@ import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 
-const LEGEND_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.js');
-const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
-const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/view-controller.js');
+const LEGEND_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.ts');
+const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts');
+const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/view-controller.ts');
 const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/bindings/legend-bindings.js');
 
 function assert(cond, msg) {
@@ -47,17 +47,17 @@ function testLegendUiExportsStructuralTransitions() {
 // ── TEST 2: legend-ui.js does not import lifecycle, event-bindings, or stateful owners ────
 
 function testLegendUiDoesNotImportLifecycleOrEventBindings() {
-  console.log('\n[TEST 2] legend-ui.js does NOT import lifecycle.js or event-bindings.js');
+  console.log('\n[TEST 2] legend-ui.js does NOT import lifecycle.js or event-bindings.ts');
 
   const src = readSrc(LEGEND_UI_PATH);
 
-  assert(!src.includes('from ./lifecycle.js'), 'does not import lifecycle.js');
-  assert(!src.includes('from ./event-bindings.js'), 'does not import event-bindings.js');
+  assert(!src.includes('from ./lifecycle.ts'), 'does not import lifecycle.ts');
+  assert(!src.includes('from ./event-bindings.ts'), 'does not import event-bindings.ts');
 
   // Verify that only safe non-monolithic modules are imported
   const imports = src.match(/^import .+? from/mg) || [];
   for (const imp of imports) {
-    assert(!imp.includes('lifecycle.js') && !imp.includes('event-bindings.js'), `unauthorized import: ${imp}`);
+    assert(!imp.includes('lifecycle.ts') && !imp.includes('event-bindings.ts'), `unauthorized import: ${imp}`);
   }
 
   console.log('  OK — legend-ui.js is neutral and does not import lifecycle or event-bindings');
@@ -66,39 +66,39 @@ function testLegendUiDoesNotImportLifecycleOrEventBindings() {
 // ── TEST 3: lifecycle.js imports from legend-ui.js ───────────────────────────────────────
 
 function testLifecycleImportsFromLegendUi() {
-  console.log('\n[TEST 3] lifecycle.js imports from legend-ui.js');
+  console.log('\n[TEST 3] lifecycle.js imports from legend-ui.ts');
 
   const src = readSrc(LIFECYCLE_PATH);
 
   assert(
-    src.includes("from './legend-ui.js'"),
-    'lifecycle.js imports from legend-ui.js'
+    src.includes("from './legend-ui.ts'"),
+    'lifecycle.js imports from legend-ui.ts'
   );
   assert(
     src.includes('closeLegendPanel') && src.includes('openLegendPanel') && src.includes('restoreLegendCollapsedPanel'),
     'lifecycle.js imports closeLegendPanel, openLegendPanel, restoreLegendCollapsedPanel'
   );
 
-  console.log('  OK — lifecycle.js imports legend-ui.js');
+  console.log('  OK — lifecycle.js imports legend-ui.ts');
 }
 
 // ── TEST 4: event-bindings.js imports from legend-ui.js ───────────────────────────────────
 
 function testEventBindingsImportsFromLegendUi() {
-  console.log('\n[TEST 4] event-bindings.js imports from legend-ui.js');
+  console.log('\n[TEST 4] event-bindings.js imports from legend-ui.ts');
 
   const src = readSrc(EVENT_BINDINGS_PATH);
 
   assert(
-    src.includes("from './legend-ui.js'") || src.includes("from '../legend-ui.js'"),
-    'event-bindings.js imports from legend-ui.js'
+    src.includes("from './legend-ui.ts'") || src.includes("from '../legend-ui.ts'"),
+    'event-bindings.js imports from legend-ui.ts'
   );
   assert(
     src.includes('closeLegendPanel') && src.includes('openLegendPanel') && src.includes('restoreLegendCollapsedPanel'),
     'event-bindings.js imports closeLegendPanel, openLegendPanel, restoreLegendCollapsedPanel'
   );
 
-  console.log('  OK — event-bindings.js imports legend-ui.js');
+  console.log('  OK — event-bindings.js imports legend-ui.ts');
 }
 
 // ── TEST 5: No new lifecycle ↔ event-bindings import cycle ───────────────────────────────
@@ -108,7 +108,7 @@ function testEventBindingsImportsFromLegendUi() {
 // No new cycle introduced.
 
 function testNoNewImportCycle() {
-  console.log('\n[TEST 5] No new import cycle introduced via legend-ui.js');
+  console.log('\n[TEST 5] No new import cycle introduced via legend-ui.ts');
 
   const lifecycleSrc = readSrc(LIFECYCLE_PATH);
   const eventBindingsSrc = readSrc(EVENT_BINDINGS_PATH);

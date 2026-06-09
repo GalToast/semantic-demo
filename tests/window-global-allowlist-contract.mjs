@@ -107,7 +107,7 @@ function collectJsFiles(dir) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       files.push(...collectJsFiles(fullPath));
-    } else if (entry.isFile() && entry.name.endsWith('.js')) {
+    } else if (entry.isFile() && entry.name.endsWith('.ts')) {
       files.push(fullPath);
     }
   }

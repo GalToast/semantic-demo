@@ -3,7 +3,7 @@
  * Pure string / label transformers extracted from journey.js.
  * No state, no DOM, no THREE; only focused utility imports.
  */
-import { cleanOptionalValue } from './utils/dom-formatters.js';
+import { cleanOptionalValue } from './utils/dom-formatters.ts';
 
 export function truncateMicrocopy(text: string | null | undefined, _max: number = 74): string {
     const clean = cleanOptionalValue(text);

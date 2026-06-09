@@ -4,7 +4,7 @@
  * Utilities for mapping raw positional data records to structured point objects.
  */
 
-import { DATA_COLUMNS, type RawDatum } from './data-schema.js';
+import { DATA_COLUMNS, type RawDatum } from './data-schema.ts';
 
 function cleanOptionalValue(value: string | undefined | null): string | null {
     if (value === undefined || value === null || value === '' || value === 'NULL') return null;

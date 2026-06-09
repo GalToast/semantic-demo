@@ -17,11 +17,11 @@ import {
     getStoryNoteEl,
     getStoryTextEl,
     getStorySourceEl,
-} from './connection-analysis-adapter.js';
+} from './connection-analysis-adapter.ts';
 import {
     buildSemanticGuidePayloadResult,
     buildSemanticGuideRequestPayload
-} from './semantic-guide-payload.js';
+} from './semantic-guide-payload.ts';
 
 // ── Local boundary types ────────────────────────────────────────────────────
 

@@ -15,7 +15,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
-import { mutate } from './helpers/state-harness.js';
+import { mutate } from './helpers/state-harness.ts';
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
 let targetUrl = process.argv[2] || DEFAULT_URL;
@@ -42,7 +42,7 @@ function startServer(rootDir, port) {
         const type = {
           '.html': 'text/html',
           '.css': 'text/css',
-          '.js': 'application/javascript',
+          '.ts': 'application/javascript',
           '.json': 'application/json',
           '.dat': 'application/json',
           '.png': 'image/png',

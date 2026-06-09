@@ -4,11 +4,11 @@
  * Info panel toggle, resize, and state management.
  */
 
-import { bindClick } from './view-bindings.js';
-import { isCompactFocusStageViewport } from '../utils/ui-presentation.js';
-import { closeLegendPanel } from '../legend-ui.js';
-import { cancelMicroDemo } from '../micro-demo.js';
-import { setFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.js';
+import { bindClick } from './view-bindings.ts';
+import { isCompactFocusStageViewport } from '../utils/ui-presentation.ts';
+import { closeLegendPanel } from '../legend-ui.ts';
+import { cancelMicroDemo } from '../micro-demo.ts';
+import { setFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.ts';
 
 let _previouslyFocusedInfoPanel: Element | null = null;
 

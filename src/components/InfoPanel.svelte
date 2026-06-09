@@ -33,6 +33,7 @@
   import { publish, EVENTS } from '@lib/event-bus';
   import { onMount } from 'svelte';
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat';
+  import SearchBar from './SearchBar.svelte';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -69,6 +70,29 @@
   let testPanelSurface = $derived(testCompatStore().panelSurface || testCompatStore().navSurface);
   let testFocusedNode = $derived(testCompatStore().focusedNode);
   let testActiveView = $derived(testCompatStore().activeView || testCompatStore().mode);
+  let bodyPanelSurface = $state('');
+
+  function readBodyPanelSurface(): void {
+    if (typeof document !== 'undefined' && document.body) {
+      bodyPanelSurface = document.body.dataset.panelSurface || '';
+    }
+  }
+
+  onMount(() => {
+    let reads = 0;
+    readBodyPanelSurface();
+    const observer = new MutationObserver(readBodyPanelSurface);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface'] });
+    const poll = window.setInterval(() => {
+      readBodyPanelSurface();
+      reads += 1;
+      if (reads >= 20) window.clearInterval(poll);
+    }, 50);
+    return () => {
+      window.clearInterval(poll);
+      observer.disconnect();
+    };
+  });
 
   // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -138,9 +162,14 @@
 
   // Test-compat: derive effective surface/focus from test store if stores not initialized
   let effectiveSurface = $derived.by(() => {
+    if (bodyPanelSurface === 'search' || bodyPanelSurface === 'focus-search') return bodyPanelSurface;
     if (surface !== 'idle' && surface !== undefined) return surface;
     return testPanelSurface || 'idle';
   });
+
+  let searchChromeSurface = $derived(
+    effectiveSurface === 'search' || effectiveSurface === 'focus-search'
+  );
 
   let effectiveFocusedIdx = $derived.by(() => {
     if (currentFocusedIdx !== null) return currentFocusedIdx;
@@ -233,16 +262,28 @@
 
   // Sync test state on mount and watch for body attribute changes
   onMount(() => {
+    let reads = 0;
     syncTestStateFromBody();
-    
+    readBodyPanelSurface();
+
     const observer = new MutationObserver(() => {
       syncTestStateFromBody();
+      readBodyPanelSurface();
     });
-    observer.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface', 'data-focused-node', 'data-active-view', 'data-view-mode', 'data-nav-surface', 'data-nav-mode', 'data-graph-context', 'data-panel-surface-mode', 'data-map-context', 'data-route-exploration', 'data-journey-compass-phase', 'data-demo-phase', 'data-journey-phase', 'data-reduced-motion', 'data-mode', 'data-compact', 'data-filters-active', 'data-semantic-trail-cue', 'data-loading-phase', 'data-loading-overlay', 'data-scene-ready', 'data-view-handoff-active', 'data-camera-assist', 'data-graphics-mode'] });
-    
-    return () => observer.disconnect();
-  });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface', 'data-panel-surface-mode', 'data-focused-node', 'data-active-view', 'data-view-mode', 'data-nav-surface', 'data-nav-mode', 'data-graph-context', 'data-map-context', 'data-route-exploration', 'data-journey-compass-phase', 'data-demo-phase', 'data-journey-phase', 'data-reduced-motion', 'data-mode', 'data-compact', 'data-filters-active', 'data-semantic-trail-cue', 'data-loading-phase', 'data-loading-overlay', 'data-scene-ready', 'data-view-handoff-active', 'data-camera-assist', 'data-graphics-mode'] });
 
+    const poll = window.setInterval(() => {
+      syncTestStateFromBody();
+      readBodyPanelSurface();
+      reads += 1;
+      if (reads >= 20) window.clearInterval(poll);
+    }, 50);
+
+    return () => {
+      window.clearInterval(poll);
+      observer.disconnect();
+    };
+  });
   // ── View Model (ports legacy buildSelectedBusinessProps) ──────────────────────
 
   // Using Record<string, unknown> to match the view model's JSDoc-typed return
@@ -373,11 +414,15 @@
   aria-live="polite"
   id="info-panel"
 >
+  {#if searchChromeSurface}
+    <SearchBar expanded={true} panelContained={true} />
+  {/if}
+
   <!-- Surface wrapper for selection state (empty vs populated) -->
   <div class="info-panel-content" id="info-panel-content">
 
     <!-- Info header (hidden in search mode per contract) -->
-    <div class="info-header">
+    <div class="info-header" hidden={searchChromeSurface}>
       <h3>Business Details</h3>
     </div>
 
@@ -385,6 +430,7 @@
     <div
       id="selected-card"
       class:selected-card-empty={isEmpty}
+      hidden={searchChromeSurface}
       data-debug-focused-index={effectiveFocusedIdx ?? ''}
       data-debug-record-count={getBusinessRecords().length}
       data-debug-data-ready={String(getIsDataReady())}

@@ -1,14 +1,14 @@
 import * as THREE from 'three';
-import { state as _state } from '../state.js';
+import { state as _state } from '../state.ts';
 const state = _state as any;
-import { triggerSearchHeroMoment, disposeHeroAnimation } from './three-search-animations.js';
-import { calculateSignalScore } from './utils/geo-data.js';
+import { triggerSearchHeroMoment, disposeHeroAnimation } from './three-search-animations.ts';
+import { calculateSignalScore } from './utils/geo-data.ts';
 import {
     createFocusAnchorIndicator,
     updateFocusAnchorIndicator,
     disposeFocusAnchorIndicator
-} from './focus-anchor-indicator.js';
-import { disposeObject3D } from './resource-tracker.js';
+} from './focus-anchor-indicator.ts';
+import { disposeObject3D } from './resource-tracker.ts';
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 

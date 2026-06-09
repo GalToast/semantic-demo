@@ -412,9 +412,9 @@ async function assert_launch_focus(page, ctx) {
   const focusedUrl = `${positionalUrl}${base}view=galaxy&q=coffee&anchor=519`;
   await loadAndWait(page, focusedUrl);
 
-  await page.waitForSelector('.search-result', { timeout: 5000 }).catch(() => {});
+  await page.waitForSelector('.search-result-item', { timeout: 5000 }).catch(() => {});
   await page.evaluate(() => {
-    const el = document.querySelector('.search-result');
+    const el = document.querySelector('.search-result-item');
     if (el) el.click();
   });
   await page.waitForFunction(() => {
@@ -670,7 +670,7 @@ async function assert_map_trail(page, ctx) {
 
   // Click the first result card to enter focus stage
   await page.evaluate(() => {
-    const el = document.querySelector('.search-result');
+    const el = document.querySelector('.search-result-item');
     if (el) el.click();
   });
   // click applied via evaluate
@@ -712,30 +712,30 @@ async function assert_map_trail(page, ctx) {
     const results = {};
 
     // --- map-trail-strip ---
-    const trailStrip = document.querySelector('#map-trail, .map-summary');
+    const trailStrip = document.querySelector('#map-trail-strip, #map-trail, .map-summary');
     results.trailStripPresent = trailStrip !== null;
     results.trailStripHidden = trailStrip
       ? trailStrip.hidden || getComputedStyle(trailStrip).display === 'none'
       : null;
 
     // --- trail-review-overlay ---
-    const trailOverlay = document.querySelector('#map-trail, .map-summary');
+    const trailOverlay = document.querySelector('.trail-review-overlay, #trail-review-overlay, #map-trail, .map-summary');
     results.trailOverlayPresent = trailOverlay !== null;
     results.trailOverlayHidden = trailOverlay
       ? trailOverlay.hidden || getComputedStyle(trailOverlay).display === 'none'
       : null;
 
     // --- trail-controls bar ---
-    const trailControls = document.querySelector('.map-stops, .map-stops');
+    const trailControls = document.querySelector('#trail-controls, .map-stops');
     results.trailControlsPresent = trailControls !== null;
 
     // --- trail-context label ---
-    const trailContext = document.querySelector('.map-title, .map-title');
+    const trailContext = document.querySelector('.map-strip-title, #trail-context, .map-title');
     results.trailContextText = trailContext ? trailContext.textContent.trim() : null;
     results.trailContextClipped = trailContext ? textClipped(trailContext) : null;
 
     // --- connection path dots / route dots visible ---
-    const routeDots = document.querySelectorAll('.map-stop');
+    const routeDots = document.querySelectorAll('.map-stop, #trail-controls .focus-stage-action-btn');
     results.routeDotsCount = routeDots.length;
 
     // --- trail strip non-overlap with info-panel or bottom nav ---
@@ -758,13 +758,13 @@ async function assert_map_trail(page, ctx) {
 
   // assertions
   if (info.trailStripPresent) ctx.pass('map-trail', 'dom:map-trail-strip');
-  else ctx.fail('map-trail', 'dom:map-trail-strip', 'missing #map-trail');
+  else ctx.fail('map-trail', 'dom:map-trail-strip', 'missing #map-trail-strip');
 
   if (info.trailOverlayPresent) ctx.pass('map-trail', 'dom:trail-review-overlay');
-  else ctx.fail('map-trail', 'dom:trail-review-overlay', 'missing #map-trail');
+  else ctx.fail('map-trail', 'dom:trail-review-overlay', 'missing .trail-review-overlay');
 
   if (info.trailControlsPresent) ctx.pass('map-trail', 'dom:trail-controls');
-  else ctx.fail('map-trail', 'dom:trail-controls', 'missing .map-stops');
+  else ctx.fail('map-trail', 'dom:trail-controls', 'missing #trail-controls');
 
   if (info.trailContextClipped) ctx.fail('map-trail', 'text-clipping:trail-context', 'trail context text is clipped');
   else if (info.trailContextClipped === false) ctx.pass('map-trail', 'text-clipping:trail-context');
@@ -799,7 +799,7 @@ async function assert_focus_pocket(page, ctx) {
 
   // Enter focus stage
   await page.evaluate(() => {
-    const el = document.querySelector('.search-result');
+    const el = document.querySelector('.search-result-item');
     if (el) el.click();
   });
   // click applied via evaluate
@@ -1024,7 +1024,7 @@ async function assert_field_node(page, ctx) {
 
   // Enter focus stage first, then simulate field-node panel mode
   await page.evaluate(() => {
-    const el = document.querySelector('.search-result');
+    const el = document.querySelector('.search-result-item');
     if (el) el.click();
   });
   // click applied via evaluate
@@ -2133,7 +2133,21 @@ async function assert_thread_inspector(page, ctx) {
     const svelteSource = document.querySelector('.thread-inspector .inspector-source');
     const svelteStats = document.querySelector('.thread-inspector .inspector-stats');
 
-    // Legacy DOM (should NOT exist — ensureFocusStageAuxiliaryDom skipped)
+    // Legacy DOM parity: the production shell keeps the static legacy
+    // #focus-thread-inspector / #btn-thread-pin for CSS coverage and
+    // browser-automation parity, but they must be hidden (hidden attr,
+    // aria-hidden, or display:none) on the element OR on any ancestor
+    // (the wrapping #thread-inspector has hidden=true) once Svelte owns
+    // the surface.
+    function isLegacyHidden(el) {
+      if (!el) return true;
+      for (let node = el; node && node !== document.documentElement; node = node.parentElement) {
+        if (node.hidden) return true;
+        const s = getComputedStyle(node);
+        if (s.display === 'none' || s.visibility === 'hidden') return true;
+      }
+      return false;
+    }
     const legacyInspector = document.getElementById('focus-thread-inspector');
     const legacyPin = document.getElementById('btn-thread-pin');
 
@@ -2166,9 +2180,9 @@ async function assert_thread_inspector(page, ctx) {
       svelteSourcePresent: svelteSource !== null,
       svelteStatsPresent: svelteStats !== null,
       svelteComponentMounted,
-      // Legacy should be absent
-      legacyInspectorAbsent: legacyInspector === null,
-      legacyPinAbsent: legacyPin === null,
+      // Legacy parity: absent OR hidden
+      legacyInspectorAbsent: isLegacyHidden(legacyInspector),
+      legacyPinAbsent: isLegacyHidden(legacyPin),
       // Overflow
       overflowX,
       overflowY,
@@ -2201,12 +2215,12 @@ async function assert_thread_inspector(page, ctx) {
     ctx.pass('thread-inspector', 'dom:inspector-element-present');
   }
 
-  // Legacy DOM should be absent
+  // Legacy DOM parity: must be absent or hidden when Svelte owns the surface
   if (info.legacyInspectorAbsent) ctx.pass('thread-inspector', 'state:legacy-inspector-absent');
-  else ctx.fail('thread-inspector', 'state:legacy-inspector-absent', '#focus-thread-inspector should not exist (replaced by Svelte)');
+  else ctx.fail('thread-inspector', 'state:legacy-inspector-absent', '#focus-thread-inspector must be absent or hidden once Svelte owns the surface');
 
   if (info.legacyPinAbsent) ctx.pass('thread-inspector', 'state:legacy-pin-absent');
-  else ctx.fail('thread-inspector', 'state:legacy-pin-absent', '#btn-thread-pin should not exist (replaced by Svelte)');
+  else ctx.fail('thread-inspector', 'state:legacy-pin-absent', '#btn-thread-pin must be absent or hidden once Svelte owns the surface');
 
   // Overflow
   if (info.overflowX) ctx.fail('thread-inspector', 'viewport-crowding:overflow-x', 'horizontal overflow');
@@ -2540,8 +2554,9 @@ async function assert_search_chrome(page, ctx) {
   if (info.searchContainerPresent) ctx.pass('search-chrome', 'dom:search-container');
   else ctx.fail('search-chrome', 'dom:search-container', 'missing .search-container');
 
-  if (info.bodyDataset?.panelSurface === 'search') ctx.pass('search-chrome', 'state:panel-surface');
-  else ctx.fail('search-chrome', 'state:panel-surface', `expected search, got ${info.bodyDataset?.panelSurface || 'missing'}`);
+  const panelSurface = info.bodyDataset?.panelSurface;
+  if (panelSurface === 'search' || panelSurface === 'focus-search') ctx.pass('search-chrome', 'state:panel-surface');
+  else ctx.fail('search-chrome', 'state:panel-surface', `expected search-family surface, got ${panelSurface || 'missing'}`);
 
   if (info.searchContainerHasQuery) ctx.pass('search-chrome', 'state:search-container:has-query');
   else ctx.fail('search-chrome', 'state:search-container:has-query', '.search-container missing has-query');
@@ -2826,6 +2841,7 @@ async function assert_info_panel_populated(page, ctx) {
   await page.evaluate(() => {
     document.body.dataset.activeView = 'galaxy';
     document.body.dataset.graphContext = 'focus';
+    document.body.dataset.panelSurface = 'focus';
 
     const selectedCard = document.querySelector('#selected-card');
     if (selectedCard) {

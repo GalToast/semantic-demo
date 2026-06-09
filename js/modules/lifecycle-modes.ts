@@ -1,13 +1,13 @@
 // lifecycle-modes.js — Mode/depth setters, descriptions, bloom/bridge recomputation,
 // composition refresh, exploration UI sync, and declarative event subscriptions
-import { state, withStateMutation } from '../state.js';
-import { publish, subscribe, EVENTS } from './event-bus.js';
-import { applyCompositionState } from './composition-state.js';
-import { applyPointFilterColors } from './journey.js';
+import { state, withStateMutation } from '../state.ts';
+import { publish, subscribe, EVENTS } from './event-bus.ts';
+import { applyCompositionState } from './composition-state.ts';
+import { applyPointFilterColors } from './journey.ts';
 import {
   getMyceliumMode, getTrailDepth, getNavState,
   getSemanticDiveMode, getPoints
-} from '../state/selectors/index.js';
+} from '../state/selectors/index.ts';
 
 interface ModeOptions {
   skipUrlSync?: boolean;

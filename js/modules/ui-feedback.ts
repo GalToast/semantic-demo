@@ -5,16 +5,16 @@
  * DOM status/toast feedback operations.
  */
 
-import { state } from '../state.js';
+import { state } from '../state.ts';
 import type { Point } from '../../types/state';
 import {
     getCurrentSearchSummary, getPointIndexByLeadId, getPoints,
     getFocusedNode, getNavState, getSelectedPoint
-} from '../state/selectors/index.js';
-import { isCompactMapViewport, isCompactSearchViewport } from './utils/ui-presentation.js';
-import { formatBusinessName } from './utils/dom-formatters.js';
-import { setActiveSearchResultRow } from './ui-renderers.js';
-import { updateSearchTrailCue } from './ui-renderers.js';
+} from '../state/selectors/index.ts';
+import { isCompactMapViewport, isCompactSearchViewport } from './utils/ui-presentation.ts';
+import { formatBusinessName } from './utils/dom-formatters.ts';
+import { setActiveSearchResultRow } from './ui-renderers.ts';
+import { updateSearchTrailCue } from './ui-renderers.ts';
 
 export function showExperienceToast(title: string, copy: string): void {
     const toast = document.getElementById('experience-reset-toast');

@@ -1,9 +1,10 @@
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { resolveSource } from './source-path.mjs';
 
 const cwd = process.cwd();
-const searchStateSrc = readFileSync(resolve(cwd, 'js/modules/search-state.js'), 'utf8');
+const searchStateSrc = readFileSync(resolveSource('js/modules/search-state.ts', cwd), 'utf8');
 
 function extractFunctionBody(src, functionName) {
     const signature = `export function ${functionName}`;

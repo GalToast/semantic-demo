@@ -10,7 +10,7 @@ import { execFileSync } from 'node:child_process';
 
 const CWD = process.cwd();
 const appPath = resolve(CWD, 'js/modules/app.ts');
-const threeSetupPath = resolve(CWD, 'js/modules/three-engine.js');
+const threeSetupPath = resolve(CWD, 'js/modules/three-engine.ts');
 
 function read(path, label) {
   try {
@@ -22,7 +22,7 @@ function read(path, label) {
 }
 
 const appSrc = read(appPath, 'js/modules/app.ts');
-const threeSetupSrc = read(threeSetupPath, 'js/modules/three-engine.js');
+const threeSetupSrc = read(threeSetupPath, 'js/modules/three-engine.ts');
 
 try {
   execFileSync(process.execPath, ['--check', threeSetupPath], { stdio: 'pipe' });

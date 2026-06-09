@@ -15,9 +15,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
-const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
-const JOURNEY_POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-point-color.js');
+const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts');
+const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.ts');
+const JOURNEY_POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-point-color.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -60,7 +60,7 @@ function testLifecycleNoWindowUpdateExplorationUi() {
   assert(exportAsFunction || exportAsReexport,
     'lifecycle.js must still export updateExplorationUi as a named function (direct or re-export)');
 
-  console.log('  PASS - no window.updateExplorationUi assignment in lifecycle.js');
+  console.log('  PASS - no window.updateExplorationUi assignment in lifecycle.ts');
 }
 
 // ---------------------------------------------------------------------------
@@ -78,7 +78,7 @@ function testPointColorAdapterSyncSearchStatusForFocus() {
 
   assert(
     /import\s+\{\s*publish,\s*EVENTS\s*\}\s+from\s+['"]\.\/event-bus\.js['"]/.test(src),
-    'journey-point-color.js must import publish and EVENTS from event-bus.js'
+    'journey-point-color.js must import publish and EVENTS from event-bus.ts'
   );
 
   const hasPublication = /searchGlowActive[\s\S]{0,650}\bpublish\(EVENTS\.SEARCH_STATUS_SYNC_REQUESTED/.test(src);

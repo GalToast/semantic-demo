@@ -95,7 +95,33 @@ npm run refresh:cache --fix
 npm run check:cache
 ```
 
-### Output Format
+### Specific Worker Failure Modes (Verified 2026-06-09)
+
+During a 36-file Stage 1 TS migration inventory, two parallel deepseek-v4-flash-free workers produced SAFE-TO-COMMIT verdicts but the main-lane cross-check discovered:
+
+1. **Worker A undercounted orphans by 14x.** It reported "1 minor hazard (`camera-controls-choreography-types.ts`)" when the real count was 14 orphans. Root cause: the worker's Svelte search was likely limited to `src/` and missed `js/modules/components/*.svelte`.
+2. **Worker B missed orphans entirely.** Its hazard scan was internal-only (dynamic imports, side effects, console calls) and didn't check external importer presence. A file can be "internally clean" yet truly orphan.
+3. **Both workers agreed on the wrong file.** Worker A flagged `camera-controls-choreography-types.ts` (actually imported by 2 files). The real orphan was `chrome-timing.ts` (imported by 2 Svelte files in `js/modules/components/`).
+
+**Main-lane script bugs also caused false orphans** (PowerShell `Select-String` quoting issues, missing `-Path` scope). Always verify worker reports with at least two independent methods.
+
+### Falsification Check Pattern (Do This Before Trusting Any Worker Count)
+
+```powershell
+# Step 1: verify the count yourself with a simple working-tree search
+Get-ChildItem -Path 'js/modules' -Recurse -Filter '*.ts' -File |
+  Select-String -Pattern '<basename>' -SimpleMatch
+
+# Step 2: verify each "hazard" file — is it really orphan?
+# Search in BOTH src/ and js/modules/ for .ts, .js, .svelte, .html importers
+Get-ChildItem -Path 'src','js' -Recurse -Include '*.ts','*.js','*.svelte','*.html' -File |
+  Select-String -Pattern '<basename>' -SimpleMatch
+
+# Step 3: if the worker's claim contradicts your verification, trust your on-disk search
+# Workers can systematically miss directories (Svelte in js/modules/components/, tracked .js in git index, etc.)
+```
+
+## Output Format
 
 When reporting to the user, use a table with explicit columns:
 

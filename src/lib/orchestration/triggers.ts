@@ -25,6 +25,8 @@ import { returnToOverview, recenterFocusedNode } from './lifecycle';
 import { traverseNeighbor } from '@lib/journey/thread-settler';
 import { navStore } from '@lib/stores/navigation.svelte';
 import { activeClusterFilter } from '@lib/stores/filter.svelte';
+import { addTrailStop, setTrailDepth } from '@lib/stores/journey.svelte';
+import { getBusinessRecords } from '@lib/data-store';
 import { get } from 'svelte/store';
 
 // ── Keyboard Support ──────────────────────────────────────────────────────────
@@ -134,8 +136,20 @@ subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index: number }) => {
     ...s,
     focusedIndex: index,
     mode: 'focus',
-    surface: 'focus'
+    surface: 'focus-search',
+    trailDepth: 1
   }));
+  // Add the focused node as the first trail stop so MapSummary
+  // (which gates on hasTrail() && trail.length > 0) renders.
+  const records = getBusinessRecords();
+  const record = records[Number(index)];
+  addTrailStop({
+    index: Number(index),
+    name: record?.name ?? `Node ${index}`,
+    reason: 'search-focus',
+    visitedAt: Date.now()
+  });
+  setTrailDepth(1);
   setActiveResult(String(index));
   setSearchStatus('focusing');
   refreshCompositionState();

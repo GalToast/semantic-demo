@@ -32,38 +32,38 @@ const SEMDEMO_ROOT = path.resolve(process.cwd());
 // ── MODULE MAP ──────────────────────────────────────────────────────────────
 
 const MODULES = {
-  lifecycle:   path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js'),
-  journey:     path.join(SEMDEMO_ROOT, 'js/modules/journey.js'),
-  camera:      path.join(SEMDEMO_ROOT, 'js/modules/camera-controls.js'),
-  cameraChoreography: path.join(SEMDEMO_ROOT, 'js/modules/camera-controls-choreography-routes.js'),
-  searchState: path.join(SEMDEMO_ROOT, 'js/modules/search-state.js'),
+  lifecycle:   path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts'),
+  journey:     path.join(SEMDEMO_ROOT, 'js/modules/journey.ts'),
+  camera:      path.join(SEMDEMO_ROOT, 'js/modules/camera-controls.ts'),
+  cameraChoreography: path.join(SEMDEMO_ROOT, 'js/modules/camera-controls-choreography-routes.ts'),
+  searchState: path.join(SEMDEMO_ROOT, 'js/modules/search-state.ts'),
   eventBindings: path.join(SEMDEMO_ROOT, 'js/modules/bindings/legend-bindings.js'),
-  sceneReveal: path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.js'),
-  app:         path.join(SEMDEMO_ROOT, 'js/modules/app.js'),
+  sceneReveal: path.join(SEMDEMO_ROOT, 'js/modules/scene-reveal.ts'),
+  app:         path.join(SEMDEMO_ROOT, 'js/modules/app.ts'),
   appRuntime:  path.join(SEMDEMO_ROOT, 'js/modules/app.ts'),
-  mapState:    path.join(SEMDEMO_ROOT, 'js/modules/map-state.js'),
-  clusterFilter: path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.js'),
-  journeyCompassCtrl: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.js'),
-  journeyCompassState: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-state.js'),
-  focusPocket: path.join(SEMDEMO_ROOT, 'js/modules/focus-pocket.js'),
-  threadInspector: path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.js'),
-  strandContinuity: path.join(SEMDEMO_ROOT, 'js/modules/strand-continuity.js'),
-  journeyThreadSettler: path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-settler.js'),
+  mapState:    path.join(SEMDEMO_ROOT, 'js/modules/map-state.ts'),
+  clusterFilter: path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.ts'),
+  journeyCompassCtrl: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.ts'),
+  journeyCompassState: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-state.ts'),
+  focusPocket: path.join(SEMDEMO_ROOT, 'js/modules/focus-pocket.ts'),
+  threadInspector: path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.ts'),
+  strandContinuity: path.join(SEMDEMO_ROOT, 'js/modules/strand-continuity.ts'),
+  journeyThreadSettler: path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-settler.ts'),
   journeyCanvasInteraction: path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-interaction.ts'),
-  clusterLabels: path.join(SEMDEMO_ROOT, 'js/modules/cluster-labels.js'),
-  audio:       path.join(SEMDEMO_ROOT, 'js/modules/audio-scape.js'),
-  viewController: path.join(SEMDEMO_ROOT, 'js/modules/view-controller.js'),
-  navigationState: path.join(SEMDEMO_ROOT, 'js/modules/navigation-state.js'),
-  journeyWebgl: path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.js'),
-  legendUi: path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.js'),
-  keyboardHelp: path.join(SEMDEMO_ROOT, 'js/modules/keyboard-help.js'),
-  uiRenderers: path.join(SEMDEMO_ROOT, 'js/modules/ui-renderers.js'),
-  mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'js/modules/map-flattening-layout.js'),
-  inspectedStrandOverlayAdapter: path.join(SEMDEMO_ROOT, 'js/modules/inspected-strand-overlay-adapter.js'),
-  routeArrivalOverlayAdapter: path.join(SEMDEMO_ROOT, 'js/modules/route-arrival-overlay-adapter.js'),
-  threeSetup: path.join(SEMDEMO_ROOT, 'js/modules/three-engine.js'),
-  threeSearchAnimations: path.join(SEMDEMO_ROOT, 'js/modules/three-search-animations.js'),
-  threeInteractionVisuals: path.join(SEMDEMO_ROOT, 'js/modules/three-interaction-visuals.js'),
+  clusterLabels: path.join(SEMDEMO_ROOT, 'js/modules/cluster-labels.ts'),
+  audio:       path.join(SEMDEMO_ROOT, 'js/modules/audio-scape.ts'),
+  viewController: path.join(SEMDEMO_ROOT, 'js/modules/view-controller.ts'),
+  navigationState: path.join(SEMDEMO_ROOT, 'js/modules/navigation-state.ts'),
+  journeyWebgl: path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.ts'),
+  legendUi: path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.ts'),
+  keyboardHelp: path.join(SEMDEMO_ROOT, 'js/modules/keyboard-help.ts'),
+  uiRenderers: path.join(SEMDEMO_ROOT, 'js/modules/ui-renderers.ts'),
+  mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'js/modules/map-flattening-layout.ts'),
+  inspectedStrandOverlayAdapter: path.join(SEMDEMO_ROOT, 'js/modules/inspected-strand-overlay-adapter.ts'),
+  routeArrivalOverlayAdapter: path.join(SEMDEMO_ROOT, 'js/modules/route-arrival-overlay-adapter.ts'),
+  threeSetup: path.join(SEMDEMO_ROOT, 'js/modules/three-engine.ts'),
+  threeSearchAnimations: path.join(SEMDEMO_ROOT, 'js/modules/three-search-animations.ts'),
+  threeInteractionVisuals: path.join(SEMDEMO_ROOT, 'js/modules/three-interaction-visuals.ts'),
 };
 
 // ── HELPERS ────────────────────────────────────────────────────────────────
@@ -280,7 +280,7 @@ function testNoBareCallsInDowindowedSeams() {
 // lifecycle.js is the main orchestrator — new unguarded cross-module calls are regressions.
 
 function testLifecycleNoNewBareCalls() {
-  console.log('\n[TEST 2] No newly introduced bare window calls in lifecycle.js');
+  console.log('\n[TEST 2] No newly introduced bare window calls in lifecycle.ts');
 
   const src = read('lifecycle');
 
@@ -576,14 +576,14 @@ function testJourneyArrivalHandoffDewindowed() {
   }
   assert(
     /import\s+\{[^}]*\bsyncArrivalHandoffOverlay\b[^}]*\bdisposeArrivalHandoffOverlay\b[^}]*\}\s+from\s+['"]\.\/journey-webgl\.js['"]/.test(strandContinuitySrc),
-    'strand-continuity.js should import arrival handoff functions directly from journey-webgl.js'
+    'strand-continuity.js should import arrival handoff functions directly from journey-webgl.ts'
   );
   assert(
-    journeySrc.includes("from './strand-continuity.js'"),
+    journeySrc.includes("from './strand-continuity.ts'"),
     'journey.js should import strand continuity state from the shared owner'
   );
   assert(
-    threadInspectorSrc.includes("from './strand-continuity.js'"),
+    threadInspectorSrc.includes("from './strand-continuity.ts'"),
     'thread-inspector.js should import strand continuity state from the shared owner'
   );
   assert(
@@ -611,7 +611,7 @@ function testJourneyArrivalHandoffDewindowed() {
     'journey-webgl.js should register route/arrival overlay frame updaters with the adapter'
   );
   assert(
-    threeSetupSrc.includes("from './route-arrival-overlay-adapter.js'")
+    threeSetupSrc.includes("from './route-arrival-overlay-adapter.ts'")
       && threeSetupSrc.includes('updateRouteTraceOverlayFrame(frameNow);')
       && threeSetupSrc.includes('updateArrivalHandoffOverlayFrame(frameNow);'),
     'three-engine.js should update route/arrival overlays through the adapter'
@@ -660,7 +660,7 @@ function testInspectedStrandTopLevelBridgesRetired() {
   }
   assert(
     /import\s+\{[^}]*\bsyncInspectedStrandOverlay\b[^}]*\}\s+from\s+['"]\.\/thread-inspector\.js['"]/.test(threadSettlerSrc),
-    'journey-thread-settler.js should import syncInspectedStrandOverlay directly from thread-inspector.js'
+    'journey-thread-settler.js should import syncInspectedStrandOverlay directly from thread-inspector.ts'
   );
   assert(
     !journeySrc.includes('window.syncInspectedStrandOverlay') &&
@@ -668,8 +668,8 @@ function testInspectedStrandTopLevelBridgesRetired() {
     'journey/thread-settler modules must not call window.syncInspectedStrandOverlay'
   );
   assert(
-    threeSetupSrc.includes("import { updateInspectedStrandOverlayFrame } from './inspected-strand-overlay-adapter.js';"),
-    'three-engine.js should import the inspected-strand overlay adapter, not thread-inspector.js'
+    threeSetupSrc.includes("import { updateInspectedStrandOverlayFrame } from './inspected-strand-overlay-adapter.ts';"),
+    'three-engine.js should import the inspected-strand overlay adapter, not thread-inspector.ts'
   );
   assert(
     threeSetupSrc.includes('updateInspectedStrandOverlayFrame(frameNow);'),
@@ -718,7 +718,7 @@ function testCameraInteractionBridgesRetired() {
   );
   assert(
     /import\s+\{[^}]*\bfocusOnNode\b[^}]*\bnoteSceneInteraction\b[^}]*\breleaseFocusCameraAssist\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(canvasInteractionSrc),
-    'journey-canvas-interaction.js should import camera interaction functions directly from camera-controls.js'
+    'journey-canvas-interaction.js should import camera interaction functions directly from camera-controls.ts'
   );
 
   console.log('  OK — camera interaction bridges retired; direct imports remain');
@@ -736,7 +736,7 @@ function testViewHandoffCameraPreludeBridgeRetired() {
 
   assert(
     /import\s+\{[^}]*\banimateCameraToTerrainPrelude\b[^}]*\bfocusOnNode\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(viewControllerSrc),
-    'view-controller.js should import animateCameraToTerrainPrelude directly from camera-controls.js'
+    'view-controller.js should import animateCameraToTerrainPrelude directly from camera-controls.ts'
   );
   assert(
     !viewControllerSrc.includes('window.animateCameraToTerrainPrelude'),
@@ -747,7 +747,7 @@ function testViewHandoffCameraPreludeBridgeRetired() {
     'camera-controls.js must not expose the retired window.animateCameraToTerrainPrelude bridge'
   );
   assert(
-    viewControllerSrc.includes("import { applyMapFlatteningLayout } from './map-flattening-layout.js';"),
+    viewControllerSrc.includes("import { applyMapFlatteningLayout } from './map-flattening-layout.ts';"),
     'view-controller.js should import applyMapFlatteningLayout from the side-effect-free map-flattening-layout owner'
   );
   assert(
@@ -759,7 +759,7 @@ function testViewHandoffCameraPreludeBridgeRetired() {
     'three-engine.js must not expose the retired window.applyMapFlatteningLayout bridge'
   );
   assert(
-    mapFlatteningLayoutSrc.includes("import { state } from '../state.js';") &&
+    mapFlatteningLayoutSrc.includes("import { state } from '../state.ts';") &&
       /export function applyMapFlatteningLayout/.test(mapFlatteningLayoutSrc),
     'map-flattening-layout.js should own applyMapFlatteningLayout as a state-only named export'
   );
@@ -790,12 +790,12 @@ function testRestoreLegendCollapsedPanelBridgeRetired() {
     'legend-ui.js should keep restoreLegendCollapsedPanel as a named export'
   );
   assert(
-    lifecycleSrc.includes('restoreLegendCollapsedPanel') && lifecycleSrc.includes("from './legend-ui.js'"),
-    'lifecycle.js should import restoreLegendCollapsedPanel directly from legend-ui.js'
+    lifecycleSrc.includes('restoreLegendCollapsedPanel') && lifecycleSrc.includes("from './legend-ui.ts'"),
+    'lifecycle.js should import restoreLegendCollapsedPanel directly from legend-ui.ts'
   );
   assert(
-    eventBindingsSrc.includes('restoreLegendCollapsedPanel') && (eventBindingsSrc.includes("from './legend-ui.js'") || eventBindingsSrc.includes("from '../legend-ui.js'")),
-    'event-bindings.js should import restoreLegendCollapsedPanel directly from legend-ui.js'
+    eventBindingsSrc.includes('restoreLegendCollapsedPanel') && (eventBindingsSrc.includes("from './legend-ui.ts'") || eventBindingsSrc.includes("from '../legend-ui.ts'")),
+    'event-bindings.js should import restoreLegendCollapsedPanel directly from legend-ui.ts'
   );
 
   console.log('  OK — restoreLegendCollapsedPanel bridge retired; direct imports remain');
@@ -824,7 +824,7 @@ function testCanvasPickGlobalsRetiredFromWindow() {
     }
   }
 
-  const stateSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/state.js'), 'utf-8');
+  const stateSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/state.ts'), 'utf-8');
   for (const name of ['lastCanvasNodePick', 'lastCanvasNodeHover', 'lastCanvasNodeFocusPick']) {
     assert(
       stateSrc.includes(`${name}: null`),
@@ -863,7 +863,7 @@ function testAudioGlobalsRetiredFromWindow() {
 
   assert(
     /import\s+\{[^}]*\btriggerCorridorBloom\b[^}]*\}\s+from\s+['"]\.\/audio-scape\.js['"]/.test(searchAnimationsSrc),
-    'three-search-animations.js should import triggerCorridorBloom directly from audio-scape.js'
+    'three-search-animations.js should import triggerCorridorBloom directly from audio-scape.ts'
   );
   assert(
     /triggerCorridorBloom\(\);/.test(searchAnimationsSrc),
@@ -901,7 +901,7 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
   );
   assert(
     /import\s+\{[^}]*\bapplySemanticCentroidCamera\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(threeSetupSrc),
-    'three-engine.js should import applySemanticCentroidCamera directly from camera-controls.js'
+    'three-engine.js should import applySemanticCentroidCamera directly from camera-controls.ts'
   );
   assert(
     threeSetupSrc.includes('applySemanticCentroidCamera(frameNow);'),

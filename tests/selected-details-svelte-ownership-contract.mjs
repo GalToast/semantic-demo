@@ -22,10 +22,10 @@ function walk(dir, files = []) {
 }
 
 const componentPath = 'js/modules/components/SelectedBusinessDetails.svelte';
-const islandPath = 'js/modules/selected-details-svelte-island.js';
+const islandPath = 'js/modules/selected-details-svelte-island.ts';
 const surfacePath = 'js/modules/components/InfoPanelSelectionSurface.svelte';
-const viewModelPath = 'js/modules/view-models/selected-business-view-model.js';
-const focusRendererPath = 'js/modules/focus-stage-renderer.js';
+const viewModelPath = 'js/modules/view-models/selected-business-view-model.ts';
+const focusRendererPath = 'js/modules/focus-stage-renderer.ts';
 
 const componentSrc = read(componentPath);
 const islandSrc = read(islandPath);

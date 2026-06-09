@@ -25,11 +25,11 @@ import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 
-const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
-const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/view-controller.js');
-const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.js');
-const SEMANTIC_GUIDE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/semantic-guide.js');
-const LEGEND_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.js');
+const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts');
+const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/view-controller.ts');
+const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.ts');
+const SEMANTIC_GUIDE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/semantic-guide.ts');
+const LEGEND_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -44,7 +44,7 @@ function readSrc(p) {
 // ── TEST 1: updateLegendGuideState is defined in legend-ui.js, not semantic-guide.js ──
 
 function testUpdateLegendGuideStateOwner() {
-  console.log('\n[TEST 1] updateLegendGuideState — owned by legend-ui.js, not semantic-guide.js');
+  console.log('\n[TEST 1] updateLegendGuideState — owned by legend-ui.js, not semantic-guide.ts');
 
   const lifecycleSrc = readSrc(LIFECYCLE_PATH);
   const semanticGuideSrc = readSrc(SEMANTIC_GUIDE_PATH);
@@ -94,7 +94,7 @@ function testUpdateLegendGuideStateOwner() {
 // ── TEST 2: restoreLegendCollapsedPanel is owned by legend-ui.js ──
 
 function testRestoreLegendCollapsedPanelOwner() {
-  console.log('\n[TEST 2] restoreLegendCollapsedPanel — owned by legend-ui.js');
+  console.log('\n[TEST 2] restoreLegendCollapsedPanel — owned by legend-ui.ts');
 
   const eventBindingsSrc = readSrc(EVENT_BINDINGS_PATH);
   const legendUiSrc = readSrc(LEGEND_UI_PATH);
@@ -141,10 +141,10 @@ function testNoNewLifecycleEventBindingsImportCycle() {
   const directRestoreImport = lifecycleSrc.match(/import.*restoreLegendCollapsedPanel.*from.*event/);
   assert(
     !directRestoreImport,
-    'lifecycle.js must NOT import restoreLegendCollapsedPanel from event-bindings.js'
+    'lifecycle.js must NOT import restoreLegendCollapsedPanel from event-bindings.ts'
   );
 
-  console.log('  OK — no new direct import of restoreLegendCollapsedPanel from event-bindings.js');
+  console.log('  OK — no new direct import of restoreLegendCollapsedPanel from event-bindings.ts');
   console.log('       Note: lifecycle→event-bindings cycle pre-exists via initSemanticDemoEventListeners import');
 }
 
@@ -161,13 +161,13 @@ function testLifecycleDoesNotImportUpdateLegendGuideStateFromSemanticGuide() {
   const lifecycleSrc = readSrc(LIFECYCLE_PATH);
 
   // Check that lifecycle imports from semantic-guide — it does for other functions
-  const hasSemanticGuideImport = lifecycleSrc.includes("from './semantic-guide.js'");
+  const hasSemanticGuideImport = lifecycleSrc.includes("from './semantic-guide.ts'");
   assert(hasSemanticGuideImport, 'lifecycle.js does import from semantic-guide.js (re-exports)');
 
   // But lifecycle must NOT import updateLegendGuideState from semantic-guide
   const importDeclarations = lifecycleSrc.match(/^import[\s\S]*?;$/gm) || [];
   const badImport = importDeclarations.some((declaration) =>
-    declaration.includes("from './semantic-guide.js'") &&
+    declaration.includes("from './semantic-guide.ts'") &&
     declaration.includes('updateLegendGuideState')
   );
   assert(!badImport, 'lifecycle must NOT import updateLegendGuideState from semantic-guide.js (legend-ui.js owns it)');
@@ -197,7 +197,7 @@ function testCloseLegendGuideOwnership() {
 
   // lifecycle.js re-exports it
   assert(
-    lifecycleSrc.includes('closeLegendGuide') && (lifecycleSrc.includes("from './legend-ui.js'") || lifecycleSrc.includes('from "./legend-ui.js"')),
+    lifecycleSrc.includes('closeLegendGuide') && (lifecycleSrc.includes("from './legend-ui.ts'") || lifecycleSrc.includes('from "./legend-ui.js"')),
     'lifecycle.js re-exports closeLegendGuide for compatibility'
   );
 

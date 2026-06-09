@@ -29,7 +29,7 @@ globalThis.document = {
   visibilityState: 'visible'
 };
 
-const { resetExplorationFocus, resetExperienceState, resetNodePositions } = await import('../js/modules/lifecycle.js');
+const { resetExplorationFocus, resetExperienceState, resetNodePositions } = await import('../js/modules/lifecycle.ts');
 
 console.log('=================================================================');
 console.log('reset-callsite-routing-contract.mjs (MODERNIZED)');

@@ -27,11 +27,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.js');
-const LIFECYCLE_RESET_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle-reset.js');
-const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-state.js');
-const SEARCH_PANEL_ADAPTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-panel-adapter.js');
-const APP_PATH = path.join(SEMDEMO_ROOT, 'js/modules/app.js');
+const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts');
+const LIFECYCLE_RESET_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle-reset.ts');
+const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-state.ts');
+const SEARCH_PANEL_ADAPTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/search-panel-adapter.ts');
+const APP_PATH = path.join(SEMDEMO_ROOT, 'js/modules/app.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -58,7 +58,7 @@ function testSearchStateExportsSetSearchPanelState() {
 // ---------------------------------------------------------------------------
 
 function testLifecycleImportsSetSearchPanelState() {
-  console.log('\n[TEST] lifecycle module imports setSearchPanelState from search-state.js');
+  console.log('\n[TEST] lifecycle module imports setSearchPanelState from search-state.ts');
 
   const importPattern = /import\s+\{[^}]*\bsetSearchPanelState\b[^}]*\}\s+from\s+['"]\.\/search-state\.js['"]/;
 
@@ -75,7 +75,7 @@ function testLifecycleImportsSetSearchPanelState() {
     'lifecycle.js or lifecycle-reset.js must import setSearchPanelState from "./search-state.js"'
   );
 
-  const location = foundInLifecycle ? 'lifecycle.js' : 'lifecycle-reset.js';
+  const location = foundInLifecycle ? 'lifecycle.ts' : 'lifecycle-reset.ts';
   console.log(`  OK — ${location} imports setSearchPanelState from ./search-state.js`);
 }
 
@@ -117,7 +117,7 @@ function testLifecycleNoWindowSetSearchPanelStateCall() {
     `lifecycle.js must not call window.setSearchPanelState (bare or unguarded):\n${problems.join('\n')}`
   );
 
-  console.log('  OK — no window.setSearchPanelState call found in lifecycle.js');
+  console.log('  OK — no window.setSearchPanelState call found in lifecycle.ts');
 }
 
 // ---------------------------------------------------------------------------
@@ -140,7 +140,7 @@ function testLifecycleCallsSetSearchPanelStateDirectly() {
     'lifecycle.js or lifecycle-reset.js must call setSearchPanelState(...) directly (not window.setSearchPanelState)'
   );
 
-  const location = foundInLifecycle ? 'lifecycle.js' : 'lifecycle-reset.js';
+  const location = foundInLifecycle ? 'lifecycle.ts' : 'lifecycle-reset.ts';
   console.log(`  OK — ${location} calls setSearchPanelState directly`);
 }
 
@@ -169,14 +169,14 @@ function testAppJsDoesNotExportSetSearchPanelState() {
 // ---------------------------------------------------------------------------
 
 function testSearchStateImplementsPanelState() {
-  console.log('\n[TEST] search-state.js delegates panel DOM state through search-panel-adapter.js');
+  console.log('\n[TEST] search-state.js delegates panel DOM state through search-panel-adapter.ts');
 
   const src = fs.readFileSync(SEARCH_STATE_PATH, 'utf-8');
   const adapterSrc = fs.readFileSync(SEARCH_PANEL_ADAPTER_PATH, 'utf-8');
 
   assert(
     /from\s+['"]\.\/search-panel-adapter\.js['"]/.test(src),
-    'search-state.js must import search-panel-adapter.js'
+    'search-state.js must import search-panel-adapter.ts'
   );
 
   assert(

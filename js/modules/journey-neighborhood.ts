@@ -5,23 +5,23 @@
  * Neighborhood manifest, bounded walk candidates, trail seed, and route index derivation.
  */
 
-import { state } from '../state.js';
+import { state } from '../state.ts';
 import {
     getCurrentView, getNavState, getPoints, getActiveFilters, getNodePositions,
     getSemanticNeighborMapByLeadId, getPointIndexByLeadId, getFocusedNode
-} from '../state/selectors/index.js';
-import { isCompactFocusStageViewport } from './utils/ui-presentation.js';
-import { isPointVisible } from './utils/geo-data.js';
+} from '../state/selectors/index.ts';
+import { isCompactFocusStageViewport } from './utils/ui-presentation.ts';
+import { isPointVisible } from './utils/geo-data.ts';
 import {
     normalizeLeadId,
     getSemanticThreadCandidates,
     getGeometricThreadCandidates,
     getThreadCandidatesForIndex,
     type ThreadCandidate
-} from './journey-thread-model.js';
-import { setTrailNavState } from './navigation-state.js';
-import { setFocusPocketMeta } from './focus-pocket.js';
-import { isCompactLandscape, isUltraCompactPortrait } from './environment.js';
+} from './journey-thread-model.ts';
+import { setTrailNavState } from './navigation-state.ts';
+import { setFocusPocketMeta } from './focus-pocket.ts';
+import { isCompactLandscape, isUltraCompactPortrait } from './environment.ts';
 
 // Boundary cast: neighborhood-specific nav fields are not in the typed NavState
 // interface yet. These accessors narrow the cast to a readable shape.

@@ -1,7 +1,7 @@
 /**
  * map-flattening-layout.ts — TypeScript shadow of map-flattening-layout.js
  */
-import { state as _state } from '../state.js';
+import { state as _state } from '../state.ts';
 
 const state = _state as any;
 

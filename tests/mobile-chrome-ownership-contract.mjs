@@ -21,8 +21,8 @@ const MOBILE_PREMIUM_SPLIT = [
   'mobile_premium__narrow.css',
 ];
 const MOBILE_PREMIUM_CSS = MOBILE_PREMIUM_SPLIT.map((f) => path.join(ROOT, `css/${f}`));
-const APP_JS = path.join(ROOT, 'js/modules/app.js');
-const CAMERA_UI_BINDINGS = path.join(ROOT, 'js/modules/camera-ui-bindings.js');
+const APP_JS = path.join(ROOT, 'js/modules/app.ts');
+const CAMERA_UI_BINDINGS = path.join(ROOT, 'js/modules/camera-ui-bindings.ts');
 
 function read(filePath) {
   if (Array.isArray(filePath)) return filePath.map(read).join('\n');
@@ -92,8 +92,8 @@ function run() {
 
   console.log('\n[TEST] duplicate camera UI binding module stays retired');
   assert(!fs.existsSync(CAMERA_UI_BINDINGS), 'js/modules/camera-ui-bindings.js must not exist as an unowned duplicate binding module');
-  assert(!/camera-ui-bindings|initCameraUiBindings/.test(appSrc), 'app.js must not import or initialize camera-ui-bindings');
-  console.log('  OK - camera UI controls remain owned by bindings/view-bindings.js');
+  assert(!/camera-ui-bindings|initCameraUiBindings/.test(appSrc), 'app.ts must not import or initialize camera-ui-bindings');
+  console.log('  OK - camera UI controls remain owned by bindings/view-bindings.ts');
 
   console.log('\n=================================================================');
   console.log('ALL TESTS PASSED');

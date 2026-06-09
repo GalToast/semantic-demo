@@ -39,7 +39,7 @@ function startServer(port) {
     const mimeTypes = {
       '.html': 'text/html',
       '.css': 'text/css',
-      '.js': 'application/javascript',
+      '.ts': 'application/javascript',
     };
     const server = http.createServer((req, res) => {
       const reqPath = decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '');

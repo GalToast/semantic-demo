@@ -143,10 +143,10 @@ function rejectFetch(reason) {
 // State + adapter import
 // ---------------------------------------------------------------------------
 
-const { state } = await import('../js/state.js');
+const { state } = await import('../js/state.ts');
 const {
   getConnectionStateSnapshot,
-} = await import('../js/modules/connection-analysis-adapter.js');
+} = await import('../js/modules/connection-analysis-adapter.ts');
 
 function resetState() {
   state.currentSearchSummary = null;
@@ -221,7 +221,7 @@ async function testCachedStoryDOMRender() {
   state.focusedNode = 0;
   state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
 
-  const { showSemanticThreadsDetail } = await import('../js/modules/connection-analysis.js');
+  const { showSemanticThreadsDetail } = await import('../js/modules/connection-analysis.ts');
 
   const promise = showSemanticThreadsDetail();
 
@@ -268,7 +268,7 @@ async function testEmptyStoryRender() {
   state.focusedNode = 0;
   state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
 
-  const { showSemanticThreadsDetail } = await import('../js/modules/connection-analysis.js');
+  const { showSemanticThreadsDetail } = await import('../js/modules/connection-analysis.ts');
 
   const promise = showSemanticThreadsDetail();
 
@@ -310,7 +310,7 @@ async function testInvalidJsonRender() {
   state.focusedNode = 0;
   state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
 
-  const { showSemanticThreadsDetail } = await import('../js/modules/connection-analysis.js');
+  const { showSemanticThreadsDetail } = await import('../js/modules/connection-analysis.ts');
 
   const promise = showSemanticThreadsDetail();
 
@@ -343,7 +343,7 @@ async function testHttp500Render() {
   state.focusedNode = 0;
   state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
 
-  const { showSemanticThreadsDetail } = await import('../js/modules/connection-analysis.js');
+  const { showSemanticThreadsDetail } = await import('../js/modules/connection-analysis.ts');
 
   const promise = showSemanticThreadsDetail();
 
@@ -377,7 +377,7 @@ async function testAbortStateCleanup() {
   state.focusedNode = 0;
   state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
 
-  const { showSemanticThreadsDetail } = await import('../js/modules/connection-analysis.js');
+  const { showSemanticThreadsDetail } = await import('../js/modules/connection-analysis.ts');
 
   // First call — will be aborted
   const promise1 = showSemanticThreadsDetail();
@@ -421,7 +421,7 @@ async function testCachedGemmaStoryRender() {
   state.focusedNode = 0;
   state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
 
-  const { showSemanticThreadsDetail } = await import('../js/modules/connection-analysis.js');
+  const { showSemanticThreadsDetail } = await import('../js/modules/connection-analysis.ts');
 
   const promise = showSemanticThreadsDetail();
 

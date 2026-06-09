@@ -66,8 +66,8 @@ Object.defineProperty(globalThis, 'navigator', {
 });
 
 // Now safe to import modules
-const { state, withStateMutation } = await import('../js/state.js');
-const { setSemanticDiveMode, refreshCompositionState } = await import('../js/modules/lifecycle.js');
+const { state, withStateMutation } = await import('../js/state.ts');
+const { setSemanticDiveMode, refreshCompositionState } = await import('../js/modules/lifecycle.ts');
 
 function resetState() {
   withStateMutation(() => {

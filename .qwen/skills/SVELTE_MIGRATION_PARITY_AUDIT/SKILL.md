@@ -20,6 +20,8 @@ Check what's actually **rendered** vs what's only imported:
 
 **Key findings:** dead code, unrendered completed components, misleading doc claims.
 
+**Special pattern — Imported but never rendered:** A component can be fully implemented (all props wired, store connections live) yet never appear in the DOM because it is missing from the template despite being imported. Detection: grep the component name in the `<script>` imports list and in the template body — a hit in imports but zero template tags equals a render gap. This is a HIGH finding because users see zero behavior from a feature that the Svelte track claims to own.
+
 ### Layer 2: Store → Component Data Flow
 For every component that reads from a store:
 1. **Find all store reads** in the component's `<script>` — `$storeName`, `get(storeName)`, `$derived(...)`.

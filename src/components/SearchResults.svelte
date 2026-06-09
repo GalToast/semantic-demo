@@ -8,7 +8,7 @@
     #search-results-count, .search-results-count-anchor, .search-results-count-all,
     .search-results-count-suffix, .search-results-count-shown, .search-results-count-divider,
     .search-results-count-hidden, #search-result-list, .search-result-list,
-    .search-result-listitem, .search-result-card, .search-result-row,
+    .search-result-listitem, .search-result, .search-result-row,
     .search-result-eyebrow, .search-result-rank, .search-result-strength,
     .search-result-name, .search-result-match, .search-result-badges,
     .search-result-badge.website, .search-result-badge.email, .search-result-badge.phone,
@@ -27,6 +27,7 @@
   import { isCompact } from '@lib/stores/viewport';
   import { searchVisibleCount as searchVisibleCountFn, setSearchVisibleCount } from '@lib/stores/search';
   import { activeClusterFilter } from '@lib/stores/filter';
+  import { getBusinessRecords } from '@lib/data-store';
   import { describeCluster } from '@lib/utils/ui-presentation';
   import { formatBusinessName } from '@lib/utils/dom-formatters';
   import { publish, EVENTS } from '@lib/event-bus';
@@ -41,8 +42,12 @@
   // ── Types ──────────────────────────────────────────────────────────────────────
 
   interface SearchResult {
+    id?: string;
+    name?: string;
     index: number | string;
-    point: {
+    category?: string;
+    snippet?: string;
+    point?: {
       name?: string;
       what?: string;
       cluster?: number;
@@ -82,6 +87,7 @@
     strengthLabel: string;
     rankLabel: string;
     cardClasses: string;
+    point: NonNullable<SearchResult['point']>;
     snippetText: string;
     contextText: string;
     businessName: string;
@@ -144,10 +150,26 @@
   }
 
   function handleResultClick(index: number | string): void {
-    const point = (results as unknown as SearchResult[])[Number(index)]?.point;
+    const result = (results as unknown as SearchResult[]).find((item) => Number(item.index) === Number(index));
+    const point = result ? getResultPoint(result) : null;
     if (point) {
       publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: Number(index) } as any);
     }
+  }
+
+  function getResultPoint(result: SearchResult): NonNullable<SearchResult['point']> | null {
+    if (result.point) return result.point;
+    const record = getBusinessRecords()[Number(result.index)];
+    if (!record && !result.name) return null;
+    return {
+      name: record?.name ?? result.name ?? 'Unknown',
+      what: record?.what ?? result.snippet ?? result.category ?? '',
+      cluster: record?.cluster,
+      city: record?.city ?? result.category ?? '',
+      website: record?.website ?? undefined,
+      email: record?.email ?? undefined,
+      phone: record?.phone ?? undefined
+    };
   }
 
   function highlightSegments(text: string | undefined, query: string | undefined): HighlightSegment[] {
@@ -166,23 +188,28 @@
   }
 
   function itemModel(result: SearchResult, order: number): SearchResultProps & { highlight: HighlightSegment[]; animationDelay: string; ariaLabel: string } {
+    const point = getResultPoint(result) ?? {
+      name: result.name ?? 'Unknown',
+      what: result.snippet ?? '',
+      city: result.category ?? ''
+    };
     const deps = {
       getSearchResultStrength: (r: SearchResult) => r.score || 0,
       getSearchResultStrengthLabel: (strength: number) => strength > 0.8 ? 'Strong' : strength > 0.5 ? 'Good' : 'Weak',
       buildSearchRankLabel: (order: number, _ctx: typeof renderContext) => order === 0 ? 'Anchor' : `#${order}`,
-      getSearchResultCardClasses: () => 'search-result-card',
-      buildSearchResultSnippet: (r: SearchResult) => r.point?.what || '',
+      getSearchResultCardClasses: () => 'search-result',
+      buildSearchResultSnippet: () => point.what || result.snippet || '',
       describeCluster,
-      formatBusinessName: (name: string) => name
+      formatBusinessName
     };
 
     const strength = deps.getSearchResultStrength(result);
     const strengthLabel = deps.getSearchResultStrengthLabel(strength);
     const rankLabel = deps.buildSearchRankLabel(order, renderContext);
     const cardClasses = deps.getSearchResultCardClasses();
-    const snippetText = deps.buildSearchResultSnippet(result);
-    const contextText = result.point?.city || '';
-    const businessName = deps.formatBusinessName(result.point?.name || '');
+    const snippetText = deps.buildSearchResultSnippet();
+    const contextText = point.city || result.category || '';
+    const businessName = deps.formatBusinessName(point.name || result.name || 'Unknown');
 
     return {
       index: result.index,
@@ -191,6 +218,7 @@
       strengthLabel,
       rankLabel,
       cardClasses,
+      point,
       snippetText,
       contextText,
       businessName,
@@ -221,7 +249,7 @@
 </script>
 
 {#if visible}
-  <div class="search-results-wrapper">
+  <div id="search-results" class="search-results-wrapper" class:active={total > 0}>
     <!-- Loading state -->
     {#if isSearching}
       <div class="search-loading">
@@ -320,9 +348,9 @@
                     {/if}
                   {/each}
                 </div>
-                {#if result.point?.website || result.point?.email || result.point?.phone}
+                {#if item.point.website || item.point.email || item.point.phone}
                   <div class="search-result-badges">
-                    {#if result.point?.website}
+                    {#if item.point.website}
                       <span class="search-result-badge website" title="Website available" aria-label="Website available">
                         <svg class="search-result-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                           <circle cx="12" cy="12" r="9"></circle>
@@ -332,7 +360,7 @@
                         </svg>
                       </span>
                     {/if}
-                    {#if result.point?.email}
+                    {#if item.point.email}
                       <span class="search-result-badge email" title="Email available" aria-label="Email available">
                         <svg class="search-result-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                           <rect x="3.5" y="5.5" width="17" height="13" rx="2"></rect>
@@ -340,7 +368,7 @@
                         </svg>
                       </span>
                     {/if}
-                    {#if result.point?.phone}
+                    {#if item.point.phone}
                       <span class="search-result-badge phone" title="Phone available" aria-label="Phone available">
                         <svg class="search-result-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                           <path d="M7.5 4.5 10 7 8.4 9.1c1 2.2 2.3 3.5 4.5 4.5L15 12l2.5 2.5-.8 3.1c-.2.7-.9 1.1-1.6 1A12.5 12.5 0 0 1 5.4 8.9c-.1-.7.3-1.4 1-1.6l1.1-.3Z"></path>
@@ -381,6 +409,8 @@
   .search-results-wrapper {
     margin-top: 0.35rem;
     width: min(420px, 90vw);
+    max-height: min(52vh, 420px);
+    overflow-y: auto;
   }
 
   /* ── Status messages ──────────────────────────────────────────────────────── */

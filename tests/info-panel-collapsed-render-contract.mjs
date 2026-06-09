@@ -59,7 +59,7 @@ function startServer(dir, port) {
 
       const mimeTypes = {
         '.html': 'text/html',
-        '.js': 'application/javascript',
+        '.ts': 'application/javascript',
         '.css': 'text/css',
         '.json': 'application/json',
         '.png': 'image/png',

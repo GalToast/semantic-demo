@@ -5,25 +5,25 @@
  * dispatches its bind function during app initialization.
  */
 
-import { state as _state } from '../state.js';
+import { state as _state } from '../state.ts';
 const state = _state as any;
-import { debugWarn } from './diagnostic-adapter.js';
-import { bindViewControls, zoomCamera } from './bindings/view-bindings.js';
-import { bindFocusControls, expandNeighborhoodFromCurrentNode, recenterFocusedNode, returnToCountyView } from './bindings/journey-bindings.js';
-import { updateHasQuery, bindSearchControls } from './bindings/search-bindings.js';
-import { bindSuggestionControls } from './bindings/suggestion-bindings.js';
-import { bindSemanticLaneControls } from './bindings/semantic-lane-bindings.js';
-import { bindModeAndPromptControls } from './bindings/mode-bindings.js';
-import { bindFilterControls } from './bindings/filter-bindings.js';
-import { bindPanelControls, revealSelectedBusinessCard as _revealSelectedBusinessCard, setInfoPanelOpen as _setInfoPanelOpen } from './bindings/panel-bindings.js';
-import { bindLegendControls } from './bindings/legend-bindings.js';
-import { bindUtilityButtons } from './bindings/utility-bindings.js';
-import { bindGlobalEvents, disposeEventListeners } from './bindings/global-bindings.js';
-import { scheduleOnboardingHint } from './bindings/onboarding-bindings.js';
-import { bindFocusTrapObserver } from './bindings/focus-trap-bindings.js';
+import { debugWarn } from './diagnostic-adapter.ts';
+import { bindViewControls, zoomCamera } from './bindings/view-bindings.ts';
+import { bindFocusControls, expandNeighborhoodFromCurrentNode, recenterFocusedNode, returnToCountyView } from './bindings/journey-bindings.ts';
+import { updateHasQuery, bindSearchControls } from './bindings/search-bindings.ts';
+import { bindSuggestionControls } from './bindings/suggestion-bindings.ts';
+import { bindSemanticLaneControls } from './bindings/semantic-lane-bindings.ts';
+import { bindModeAndPromptControls } from './bindings/mode-bindings.ts';
+import { bindFilterControls } from './bindings/filter-bindings.ts';
+import { bindPanelControls, revealSelectedBusinessCard as _revealSelectedBusinessCard, setInfoPanelOpen as _setInfoPanelOpen } from './bindings/panel-bindings.ts';
+import { bindLegendControls } from './bindings/legend-bindings.ts';
+import { bindUtilityButtons } from './bindings/utility-bindings.ts';
+import { bindGlobalEvents, disposeEventListeners } from './bindings/global-bindings.ts';
+import { scheduleOnboardingHint } from './bindings/onboarding-bindings.ts';
+import { bindFocusTrapObserver } from './bindings/focus-trap-bindings.ts';
 
-import { buildLegend } from './ui-renderers.js';
-import { syncClusterSectionState } from './cluster-labels.js';
+import { buildLegend } from './ui-renderers.ts';
+import { syncClusterSectionState } from './cluster-labels.ts';
 
 export function revealSelectedBusinessCard(): void {
     setInfoPanelOpen(true);

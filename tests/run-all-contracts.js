@@ -608,9 +608,10 @@ function runContract(filename, timeoutMs, baseUrl = null) {
     // Custom browser scripts that import `playwright` directly still run as Node.
     const isPlaywrightSpec = isPlaywrightTestFile(filename, entry);
     const exec = process.execPath;
+    const TS_LOADER = './' + join('tests', 'helpers', 'ts-resolve-loader.mjs').replace(/\\/g, '/');
     const execArgs = isPlaywrightSpec
       ? [PLAYWRIGHT_CLI, 'test', `tests/${filename}`, ...PLAYWRIGHT_FLAGS]
-      : [entry];
+      : ['--loader', TS_LOADER, entry];
 
     const child = spawn(exec, execArgs, {
       stdio: ['ignore', 'pipe', 'pipe'],

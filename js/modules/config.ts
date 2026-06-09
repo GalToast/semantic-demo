@@ -4,7 +4,7 @@
  * Application-wide configuration constants.
  */
 
-import { CLUSTER_COLORS } from './design-tokens.js';
+import { CLUSTER_COLORS } from './design-tokens.ts';
 
 /** A single constellation motif used by focus pocket layout. */
 interface ConstellationMotif {

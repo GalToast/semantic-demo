@@ -20,8 +20,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = path.resolve(process.cwd());
-const KEYBOARD_HELP_PATH = path.join(ROOT, 'js/modules/keyboard-help.js');
-const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.js');
+const KEYBOARD_HELP_PATH = path.join(ROOT, 'js/modules/keyboard-help.ts');
+const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.ts');
 const APP_PATH = path.join(ROOT, 'js/modules/app.ts');
 
 function assert(cond, msg) {
@@ -80,7 +80,7 @@ try {
   // Contract Point 3: app.js owns the injection from the real init path
   console.log('\n[CONTRACT 3] app.js injects real named functions');
   assert(
-    appSrc.includes("import { initKeyboardShortcutsHint, initKeyboardResetOwnership } from './keyboard-help.js';"),
+    appSrc.includes("import { initKeyboardShortcutsHint, initKeyboardResetOwnership } from './keyboard-help.ts';"),
     'app.js must import initKeyboardResetOwnership from keyboard-help'
   );
   assert(
@@ -88,7 +88,7 @@ try {
     'app.js must call initKeyboardResetOwnership with real named functions from the real init path'
   );
   assert(
-    !lifecycle.includes("import { initKeyboardResetOwnership } from './keyboard-help.js';"),
+    !lifecycle.includes("import { initKeyboardResetOwnership } from './keyboard-help.ts';"),
     'lifecycle must not import initKeyboardResetOwnership; app.js owns the injection'
   );
   assert(
@@ -130,7 +130,7 @@ try {
   // Contract Point 5: keyboard-help calls only _ prefixed variants from key handlers
   console.log('\n[CONTRACT 5] keyboard-help calls only _returnToOverview / _resetExplorationFocus from key handlers');
   assert(
-    !src.includes("from './lifecycle.js'") && !src.includes('from "./lifecycle.js"'),
+    !src.includes("from './lifecycle.ts'") && !src.includes('from "./lifecycle.js"'),
     'keyboard-help must not import from lifecycle.js (prevents direct coupling)'
   );
   const keyHandlerSections = src.match(/function\s+handleGalaxyKeydown[\s\S]*?(?=export\s+function\s|\z)/);

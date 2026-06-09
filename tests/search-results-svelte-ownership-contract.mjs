@@ -22,12 +22,12 @@ function walk(dir, files = []) {
 }
 
 const componentPath = 'js/modules/components/SearchResultsList.svelte';
-const islandPath = 'js/modules/search-results-svelte-island.js';
+const islandPath = 'js/modules/search-results-svelte-island.ts';
 const surfacePath = 'js/modules/components/InfoPanelSearchSurface.svelte';
-const rendererPath = 'js/modules/search-result-renderer.js';
-const uiRenderersPath = 'js/modules/ui-renderers.js';
-const searchStatePath = 'js/modules/search-state.js';
-const eventBindingsPath = 'js/modules/event-bindings.js';
+const rendererPath = 'js/modules/search-result-renderer.ts';
+const uiRenderersPath = 'js/modules/ui-renderers.ts';
+const searchStatePath = 'js/modules/search-state.ts';
+const eventBindingsPath = 'js/modules/event-bindings.ts';
 
 const componentSrc = read(componentPath);
 const islandSrc = read(islandPath);
@@ -50,8 +50,8 @@ assert(
   'search-results-svelte-island.js should target #search-results'
 );
 assert(
-  (eventBindingsSrc.includes("import('./search-results-svelte-island.js')") ||
-    eventBindingsSrc.includes("from './search-results-svelte-island.js'")) &&
+  (eventBindingsSrc.includes("import('./search-results-svelte-island.ts')") ||
+    eventBindingsSrc.includes("from './search-results-svelte-island.ts'")) &&
     eventBindingsSrc.includes('initSearchResultsSvelteIsland()'),
   'event-bindings.js should initialize the search results Svelte island'
 );

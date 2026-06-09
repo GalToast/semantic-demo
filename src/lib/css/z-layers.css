@@ -46,7 +46,7 @@
   --z-legend: 50;
 
   /* Info panel and side panels */
-  --z-panels: 50;
+  --z-panels: 80; /* canonical: matches src/lib/z-index.ts + src/index.html */
 
   /* Elevated panels (popovers, dropdowns) */
   --z-panels-elevated: 90;

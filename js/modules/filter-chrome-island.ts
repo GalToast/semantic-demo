@@ -4,9 +4,9 @@
 
 import { mount, unmount } from 'svelte';
 import FilterChrome from './components/FilterChrome.svelte';
-import { bindClusterListDelegation } from './cluster-list-delegate.js';
-import { EVENTS, publish } from './event-bus.js';
-import { awaitSlot, MOUNT_FLAG } from './island-mount-helper.js';
+import { bindClusterListDelegation } from './cluster-list-delegate.ts';
+import { EVENTS, publish } from './event-bus.ts';
+import { awaitSlot, MOUNT_FLAG } from './island-mount-helper.ts';
 
 const FILTER_CHROME_SLOT_ID = 'filter-chrome-slot';
 const MOUNT_KEY = 'filter-chrome';

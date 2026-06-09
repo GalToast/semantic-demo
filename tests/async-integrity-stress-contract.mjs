@@ -4,7 +4,7 @@
  * Stress test for search race conditions and rapid view transitions.
  */
 
-import { state, withStateMutation } from '../js/state.js';
+import { state, withStateMutation } from '../js/state.ts';
 
 function assert(condition, message) {
   if (!condition) throw new Error('ASSERTION FAILED: ' + message);
@@ -42,7 +42,7 @@ async function main() {
   };
   globalThis.sessionStorage = { removeItem: () => {}, getItem: () => null };
 
-  const { search } = await import('../js/modules/search-state.js');
+  const { search } = await import('../js/modules/search-state.ts');
 
   // 1. Simulate rapid search "Query Alpha" then "Query Bravo"
   console.log('[TEST] Rapid Search Overlap (Alpha -> Bravo)');

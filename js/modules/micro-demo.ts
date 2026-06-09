@@ -5,8 +5,8 @@
  * animation live in micro-demo-choreography.ts.
  */
 
-import { state } from '../state.js';
-import { debugWarn } from './diagnostic-adapter.js';
+import { state } from '../state.ts';
+import { debugWarn } from './diagnostic-adapter.ts';
 import {
     isAppReadyForDemo,
     guardNotSeen,
@@ -15,15 +15,15 @@ import {
     guardUrlParam,
     notifyDemoUnableToStart,
     SESSION_STORAGE_KEY
-} from './micro-demo-guards.js';
+} from './micro-demo-guards.ts';
 import {
     setDemoNodeIndex,
     runDemo,
     cancelChoreography,
     isMicroDemoRunning,
     PHASE
-} from './micro-demo-choreography.js';
-import { seededUnit } from './utils/seeded-random.js';
+} from './micro-demo-choreography.ts';
+import { seededUnit } from './utils/seeded-random.ts';
 
 const DEMO_START_DELAY_MS = 25000;
 const MAX_START_RETRIES = 100;

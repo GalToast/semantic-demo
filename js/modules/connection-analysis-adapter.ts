@@ -2,7 +2,7 @@
 // TypeScript shadow of connection-analysis-adapter.js
 // Thin adapter boundary: decouples connection-analysis.js from raw global DOM ids and raw state shape.
 
-import { state as _state } from '../state.js';
+import { state as _state } from '../state.ts';
 
 const state = _state as any;
 

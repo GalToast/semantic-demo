@@ -1,10 +1,10 @@
 // lifecycle-search-sync.js — Search glow, trail review, empty search recording,
 // and declarative search event subscriptions
-import { state } from '../state.js';
-import { subscribe, EVENTS } from './event-bus.js';
-import { updateJourneyCompass } from './journey-compass-controller.js';
-import { getSearchGlowIndices } from '../state/selectors/index.js';
-import { refreshCompositionState } from './lifecycle-modes.js';
+import { state } from '../state.ts';
+import { subscribe, EVENTS } from './event-bus.ts';
+import { updateJourneyCompass } from './journey-compass-controller.ts';
+import { getSearchGlowIndices } from '../state/selectors/index.ts';
+import { refreshCompositionState } from './lifecycle-modes.ts';
 
 const _s = state as Record<string, unknown>;
 

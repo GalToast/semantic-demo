@@ -10,8 +10,8 @@ import { resolve } from 'node:path';
 
 const CWD = process.cwd();
 const appPath = resolve(CWD, 'js/modules/app.ts');
-const threeSetupPath = resolve(CWD, 'js/modules/three-engine.js');
-const adapterPath = resolve(CWD, 'js/modules/webgl-restore-adapter.js');
+const threeSetupPath = resolve(CWD, 'js/modules/three-engine.ts');
+const adapterPath = resolve(CWD, 'js/modules/webgl-restore-adapter.ts');
 
 function read(path, label) {
   try {
@@ -23,8 +23,8 @@ function read(path, label) {
 }
 
 const appSrc = read(appPath, 'js/modules/app.ts');
-const threeSetupSrc = read(threeSetupPath, 'js/modules/three-engine.js');
-const adapterSrc = read(adapterPath, 'js/modules/webgl-restore-adapter.js');
+const threeSetupSrc = read(threeSetupPath, 'js/modules/three-engine.ts');
+const adapterSrc = read(adapterPath, 'js/modules/webgl-restore-adapter.ts');
 
 const checks = [
   {

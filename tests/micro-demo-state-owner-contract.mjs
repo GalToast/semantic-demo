@@ -15,9 +15,10 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveSource } from './source-path.mjs';
 
 const ROOT = process.cwd();
-const microDemoSource = fs.readFileSync(path.join(ROOT, 'js/modules/micro-demo.js'), 'utf8');
+const microDemoSource = fs.readFileSync(resolveSource('js/modules/micro-demo.ts', ROOT), 'utf8');
 
 let passed = 0;
 let failed = 0;

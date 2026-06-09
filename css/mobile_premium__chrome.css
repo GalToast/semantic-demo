@@ -273,10 +273,18 @@
         pointer-events: none;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .journey-compass-actions {
+    body.is-active[data-panel-surface='focus-search']
+        .journey-compass-action:not(.primary):not([data-journey-action='enter-inside']) {
         display: none;
         visibility: hidden;
         pointer-events: none;
+    }
+
+    body.is-active[data-panel-surface='focus-search'] .journey-compass-action.primary,
+    body.is-active[data-panel-surface='focus-search'] .journey-compass-action[data-journey-action='enter-inside'] {
+        display: flex;
+        visibility: visible;
+        pointer-events: auto;
     }
 
     body.is-active[data-panel-surface='map-idle'] .map-empty-state {

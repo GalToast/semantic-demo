@@ -21,8 +21,8 @@ const ROOT = join(__dirname, '..');
 const svelteLoadingPath = join(ROOT, 'src/components/LoadingOverlay.svelte');
 const hasSvelte = existsSync(svelteLoadingPath);
 
-const loadingUiPath = join(ROOT, 'js/modules/loading-ui.js');
-const lifecyclePath = join(ROOT, 'js/modules/lifecycle.js');
+const loadingUiPath = join(ROOT, 'js/modules/loading-ui.ts');
+const lifecyclePath = join(ROOT, 'js/modules/lifecycle.ts');
 
 const loadingUiSource = hasSvelte ? null : await readFile(loadingUiPath, 'utf8').catch(() => null);
 const lifecycleSource = hasSvelte ? null : await readFile(lifecyclePath, 'utf8').catch(() => null);
@@ -208,7 +208,7 @@ legacyTests.push(async function testProgressWidth() {
 legacyTests.push(async function testSceneReadyDispatch() {
     const source = loadingUiSource;
     const importsSceneReady = /import\s*\{\s*SCENE_READY\s*\}\s*from\s*['"]\.\/scene-events\.js['"]/.test(source);
-    if (!importsSceneReady) throw new Error('loading-ui.js must import SCENE_READY from scene-events.js');
+    if (!importsSceneReady) throw new Error('loading-ui.js must import SCENE_READY from scene-events.ts');
     const usesConstant = /window\.dispatchEvent\(\s*new\s+CustomEvent\(\s*SCENE_READY\s*\)/.test(source);
     if (!usesConstant) throw new Error('hideLoadingOverlay must dispatch CustomEvent(SCENE_READY), not a string literal');
     const hasStringLiteral = /window\.dispatchEvent\(\s*new\s+CustomEvent\(\s*['"]scene-ready['"]/.test(source);
@@ -258,11 +258,11 @@ legacyTests.push(async function testInitWeatherViaWindow() {
 legacyTests.push(async function testRestoreFocusTrailStateImport() {
     const source = loadingUiSource;
     const hasImport = /import\s*\{[^}]*restoreFocusTrailState[^}]*\}\s*from\s*['"]\.\/journey\.js['"]/.test(source);
-    if (!hasImport) throw new Error('loading-ui.js must import restoreFocusTrailState from journey.js');
+    if (!hasImport) throw new Error('loading-ui.js must import restoreFocusTrailState from journey.ts');
     const callsViaWindow = /window\.restoreFocusTrailState\s*\(/.test(source);
     if (callsViaWindow) throw new Error('restoreFocusTrailState must not be called via window.restoreFocusTrailState');
     const isCalled = /restoreFocusTrailState\s*\(/.test(source);
-    if (!isCalled) throw new Error('restoreFocusTrailState must be called in loading-ui.js');
+    if (!isCalled) throw new Error('restoreFocusTrailState must be called in loading-ui.ts');
     ok('loading-ui.js imports restoreFocusTrailState from journey.js and calls it directly');
 });
 
@@ -275,7 +275,7 @@ legacyTests.push(async function testNoPhantomFocusOverlayCalls() {
         }
     }
     const hasLongChain = /window\.(refreshFocusBeacon|refreshFocusNextCue)/.test(source);
-    if (hasLongChain) throw new Error('Long window.* focus restore chain must not return to loading-ui.js');
+    if (hasLongChain) throw new Error('Long window.* focus restore chain must not return to loading-ui.ts');
     ok('loading-ui.js has no phantom window.refreshFocusBeaconOverlay or window.refreshFocusNextCueOverlay calls');
 });
 
@@ -310,10 +310,10 @@ legacyTests.push(async function testNoCircularDependency() {
     const source = loadingUiSource;
     const importsLifecycle = /^import\s+.*\s+from\s+['"]\.\/lifecycle\.js['"]/m.test(source)
         || /^import\s+.*\s+from\s+['"]\.\.\/lifecycle\.js['"]/m.test(source)
-        || source.includes("from './lifecycle.js'")
-        || source.includes("from '../lifecycle.js'");
+        || source.includes("from './lifecycle.ts'")
+        || source.includes("from '../lifecycle.ts'");
     if (importsLifecycle) throw new Error('loading-ui.js must not import from lifecycle.js to avoid circular dependency');
-    ok('loading-ui.js has no circular import from lifecycle.js');
+    ok('loading-ui.js has no circular import from lifecycle.ts');
 });
 
 legacyTests.push(async function testRequestIdleCallbackScheduling() {

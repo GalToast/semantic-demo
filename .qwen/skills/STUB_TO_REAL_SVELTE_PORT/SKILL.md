@@ -12,9 +12,10 @@ Use this when a JS → Svelte/TS migration has "complete" components but their d
 ## When to use
 
 - A Svelte component is marked complete but its rendered content is always empty / default.
-- You find functions in TS modules that `return null`, `return false`, `debugWarn('[journey] Stub function hit: ...')`, or similar placeholder patterns.
+- You find functions in TS modules that `return null`, `return false`, `console.warn('[lifecycle] ... is a stub')`, or similar placeholder patterns.
 - User interactions (clicks, searches, hovers) don't update the Svelte UI, but the legacy app worked fine.
 - `visible={false}` is hard-coded on a component in `App.svelte`.
+- A barrel file like `src/lib/stores/lifecycle.ts` has 10+ stubs that are actively called by `src/lib/orchestration/lifecycle.ts` and `src/lib/engine/*.ts`.
 
 ## Procedure
 

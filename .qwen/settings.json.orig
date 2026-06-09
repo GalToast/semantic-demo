@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(get-childitem *)",
+      "Bash(measure-object)",
+      "Bash(select-object *)",
+      "Bash(dir *)",
+      "Bash(find *)",
+      "Bash(\"dir /s /b \"c:\\users\\hp\\desktop\\temp)"
+    ]
+  },
+  "$version": 4
+}

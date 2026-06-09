@@ -1,5 +1,7 @@
 # M3 Bugsweep — 2026-06-07
 
+> **2026-06-08 verification:** All 8 HIGH/MEDIUM findings verified against source. H1-H3 resolved, H4 narrowed to 3 documented-intentional calls. M1 already fixed, M2 false (12 `withStateMutation` calls present), M3 fabricated (`--ext` never existed). **0 of 4 MEDIUM findings were real open issues.** See `project_bugsweep_2026-06-06_complete` memory for full table.
+
 **Scope:** diagnose-and-report on the full working tree (HEAD = `e8edf38`, plus 71 uncommitted files in `git diff HEAD`).
 **Methodology:** Per QWEN.md, every claim is verified against source via shell tools (`git ls-files`, `findstr`, `git diff HEAD`, `git log`). In-process `read_file`/`glob` were avoided per memory `feedback_mimo_edit_silent_fail.md`.
 **Prior sweeps reviewed:** 5 prior docs on disk (`2026-06-06-evening`, `2026-06-07`, `wave2`, `wave3`, `wave4`). I rejected or downgraded 9 claims from those sweeps that did not survive source verification.

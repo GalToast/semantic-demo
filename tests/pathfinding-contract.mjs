@@ -13,8 +13,8 @@
  */
 
 import assert from 'node:assert/strict';
-import { state } from '../js/state.js';
-import { findSemanticPath } from '../js/modules/pathfinding.js';
+import { state } from '../js/state.ts';
+import { findSemanticPath } from '../js/modules/pathfinding.ts';
 
 const original = {
   points: state.points,

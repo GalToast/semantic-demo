@@ -2,12 +2,12 @@
 // TypeScript shadow of composition-state.js
 // Single-responsibility composers that derive document.body dataset fields.
 
-import { state as _defaultState } from '../state.js';
+import { state as _defaultState } from '../state.ts';
 import type { SemanticState } from '../../types/state';
-import { publish, EVENTS } from './event-bus.js';
-import { getPanelSurfaceDetailFromMobileSheet } from './search-panel-adapter.js';
-import { clearMobileRouteFieldPeek } from './search-state.js';
-import { compositionStore } from './stores.js';
+import { publish, EVENTS } from './event-bus.ts';
+import { getPanelSurfaceDetailFromMobileSheet } from './search-panel-adapter.ts';
+import { clearMobileRouteFieldPeek } from './search-state.ts';
+import { compositionStore } from './stores.ts';
 
 export interface PanelSurfaceParams {
     view: string;

@@ -9,8 +9,8 @@
  * Runtime imports still target the JS shadow.
  */
 
-import { state } from '../state.js';
-import { debugWarn } from './diagnostic-adapter.js';
+import { state } from '../state.ts';
+import { debugWarn } from './diagnostic-adapter.ts';
 
 // ── Local boundary types ────────────────────────────────────────────────────
 

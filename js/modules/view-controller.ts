@@ -10,10 +10,10 @@
 // Boundary cast: state carries many dynamic/untyped properties (currentSearchSummary,
 // map, weather, etc.) that are `unknown` in state.d.ts. Cast to any at the import
 // boundary, matching the established pattern in three-engine.ts.
-import { state as _state } from '../state.js';
+import { state as _state } from '../state.ts';
 const state = _state as any;
-import { publish, EVENTS } from './event-bus.js';
-import { isMapSummarySurface } from './environment.js';
+import { publish, EVENTS } from './event-bus.ts';
+import { isMapSummarySurface } from './environment.ts';
 import {
     animateCameraToTerrainPrelude,
     focusOnNode,
@@ -22,20 +22,20 @@ import {
     animateCameraToNode,
     animateCameraToSearchCorridor,
     setCameraAssistChoreography
-} from './camera-controls.js';
-import { updateSelectedBusiness, setTrailFromSeed, syncFocusStage, setRouteChoreographyPhase } from './journey.js';
-import { clearWeatherRefreshTimer, applyWeatherEffects } from './weather.js';
-import { scheduleWeatherHydration } from './loading-ui.js';
-import { applyCompositionState } from './composition-state.js';
-import { initMap, getRouteEmbodimentIndices, setTerrainHandoffState } from './map-state.js';
+} from './camera-controls.ts';
+import { updateSelectedBusiness, setTrailFromSeed, syncFocusStage, setRouteChoreographyPhase } from './journey.ts';
+import { clearWeatherRefreshTimer, applyWeatherEffects } from './weather.ts';
+import { scheduleWeatherHydration } from './loading-ui.ts';
+import { applyCompositionState } from './composition-state.ts';
+import { initMap, getRouteEmbodimentIndices, setTerrainHandoffState } from './map-state.ts';
 import {
     invokeClearMobileRouteFieldPeek,
     scheduleMapRouteRefresh,
     getViewHandoffModel
-} from './journey-compass-controller.js';
-import { semanticGuideIcon } from './semantic-guide.js';
-import { applyMapFlatteningLayout } from './map-flattening-layout.js';
-import { setCurrentView } from './state-mutators.js';
+} from './journey-compass-controller.ts';
+import { semanticGuideIcon } from './semantic-guide.ts';
+import { applyMapFlatteningLayout } from './map-flattening-layout.ts';
+import { setCurrentView } from './state-mutators.ts';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

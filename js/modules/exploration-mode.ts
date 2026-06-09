@@ -4,9 +4,9 @@
  * TypeScript shadow of exploration-mode.js.
  * Exploration mode state management (mycelium modes, trails, stories).
  */
-import { state } from '../state.js';
-import { applyStoryPrompt as applyStoryPromptImpl } from './cluster-filter.js';
-import { setMyceliumMode as setMyceliumModeImpl, setTrailDepth as setTrailDepthImpl } from './lifecycle.js';
+import { state } from '../state.ts';
+import { applyStoryPrompt as applyStoryPromptImpl } from './cluster-filter.ts';
+import { setMyceliumMode as setMyceliumModeImpl, setTrailDepth as setTrailDepthImpl } from './lifecycle.ts';
 
 export const MODE_DESCRIPTIONS: Record<string, string> = {
     default: 'County-wide overview across all visible records.',

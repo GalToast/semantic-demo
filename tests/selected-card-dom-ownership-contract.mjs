@@ -60,11 +60,11 @@ const SVELTE_OWNED_CHILD_IDS = [
 // ── Authorized structural slot writers ──────────────────────────────────────
 // These modules are allowed to query/write the structural container IDs.
 const AUTHORIZED_SLOT_WRITERS = new Set([
-    'js/modules/focus-stage-renderer.js',
     'js/modules/focus-stage-renderer.ts',
-    'js/modules/journey-selected-card.js',
+    'js/modules/focus-stage-renderer.ts',
     'js/modules/journey-selected-card.ts',
-    'js/modules/selected-details-svelte-island.js',
+    'js/modules/journey-selected-card.ts',
+    'js/modules/selected-details-svelte-island.ts',
     'js/modules/components/InfoPanelSelectionSurface.svelte',
 ]);
 
@@ -136,9 +136,9 @@ for (const file of allFiles) {
 
 // ── Check C: focus-stage-renderer.js and journey-selected-card.js exist ─────
 // (Runtime JS must exist alongside TS for the dual-source pattern)
-const focusRendererJS = 'js/modules/focus-stage-renderer.js';
+const focusRendererJS = 'js/modules/focus-stage-renderer.ts';
 const focusRendererTS = 'js/modules/focus-stage-renderer.ts';
-const journeySelectedCardJS = 'js/modules/journey-selected-card.js';
+const journeySelectedCardJS = 'js/modules/journey-selected-card.ts';
 const journeySelectedCardTS = 'js/modules/journey-selected-card.ts';
 
 if (!fs.existsSync(path.join(root, focusRendererJS))) {

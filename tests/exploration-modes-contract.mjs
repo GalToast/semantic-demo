@@ -16,6 +16,9 @@
  *   node tests/run-from-semantic-demo.cjs exploration-modes-contract.mjs
  */
 
+import fs from 'node:fs';
+import { resolveSource } from './source-path.mjs';
+
 // ---------------------------------------------------------------------------
 // Minimal DOM/window shim
 // ---------------------------------------------------------------------------
@@ -147,17 +150,9 @@ function assertEqual(actual, expected, message) {
 }
 
 // ---------------------------------------------------------------------------
-// Load lifecycle module
+// Load lifecycle module via resolveSource (source-only; no ESM import of .ts)
 // ---------------------------------------------------------------------------
-const _basePath = 'file://' + process.cwd().replace(/\\/g, '/') + '/js/modules/lifecycle.js';
-let lifecycle;
-try {
-  const mod = await import(_basePath);
-  lifecycle = mod;
-} catch (err) {
-  console.error('Could not import lifecycle.js:', err.message);
-  process.exit(1);
-}
+const _lifecycleSrc = fs.readFileSync(resolveSource('js/modules/lifecycle-modes.ts', process.cwd()), 'utf8');
 
 // ---------------------------------------------------------------------------
 // Contract tests
@@ -203,27 +198,59 @@ function makeTestState(overrides = {}) {
   };
 }
 
-// Contract 1: MODE_DESCRIPTIONS is a non-empty exported object
+function exportedFunctionSource(src, name) {
+  const start = src.search(new RegExp(`export\\s+function\\s+${name}\\s*\\(`));
+  if (start === -1) return '';
+  const paramsOpen = src.indexOf('(', start);
+  if (paramsOpen === -1) return '';
+  let parenDepth = 0;
+  let afterParams = -1;
+  for (let i = paramsOpen; i < src.length; i++) {
+    if (src[i] === '(') parenDepth++;
+    else if (src[i] === ')') {
+      parenDepth--;
+      if (parenDepth === 0) {
+        afterParams = i + 1;
+        break;
+      }
+    }
+  }
+  if (afterParams === -1) return '';
+  const open = src.indexOf('{', afterParams);
+  if (open === -1) return '';
+  let depth = 0;
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}') {
+      depth--;
+      if (depth === 0) return src.slice(start, i + 1);
+    }
+  }
+  return '';
+}
+
+// Contract 1: MODE_DESCRIPTIONS is a non-empty exported object (source-only)
 await test('MODE_DESCRIPTIONS is exported and non-empty', () => {
-  assert(typeof lifecycle.MODE_DESCRIPTIONS === 'object', 'MODE_DESCRIPTIONS is an object');
-  assert(Object.keys(lifecycle.MODE_DESCRIPTIONS).length > 0, 'MODE_DESCRIPTIONS has keys');
-  assert(typeof lifecycle.MODE_DESCRIPTIONS.default === 'string', 'MODE_DESCRIPTIONS.default is a string');
-  assert(typeof lifecycle.MODE_DESCRIPTIONS.bloom === 'string', 'MODE_DESCRIPTIONS.bloom is a string');
-  assert(typeof lifecycle.MODE_DESCRIPTIONS.bridge === 'string', 'MODE_DESCRIPTIONS.bridge is a string');
-  assert(typeof lifecycle.MODE_DESCRIPTIONS.trail === 'string', 'MODE_DESCRIPTIONS.trail is a string');
+  const match = _lifecycleSrc.match(/export\s+(?:const|let|var)\s+MODE_DESCRIPTIONS\s*=\s*(\{[\s\S]*?\n\};)/);
+  assert(match, 'MODE_DESCRIPTIONS must be exported from lifecycle.ts');
+  const body = match[1];
+  assert(/(?:^|[\s,{])['"]?default['"]?\s*:/.test(body), 'MODE_DESCRIPTIONS has default key');
+  assert(/(?:^|[\s,{])['"]?bloom['"]?\s*:/.test(body), 'MODE_DESCRIPTIONS has bloom key');
+  assert(/(?:^|[\s,{])['"]?bridge['"]?\s*:/.test(body), 'MODE_DESCRIPTIONS has bridge key');
+  assert(/(?:^|[\s,{])['"]?trail['"]?\s*:/.test(body), 'MODE_DESCRIPTIONS has trail key');
 });
 
-// Contract 2: STORY_DESCRIPTIONS is a non-empty exported object
+// Contract 2: STORY_DESCRIPTIONS is a non-empty exported object (source-only)
 await test('STORY_DESCRIPTIONS is exported and non-empty', () => {
-  assert(typeof lifecycle.STORY_DESCRIPTIONS === 'object', 'STORY_DESCRIPTIONS is an object');
-  assert(Object.keys(lifecycle.STORY_DESCRIPTIONS).length > 0, 'STORY_DESCRIPTIONS has keys');
-  assert(typeof lifecycle.STORY_DESCRIPTIONS['signal-rich'] === 'string', 'STORY_DESCRIPTIONS has signal-rich entry');
+  const match = _lifecycleSrc.match(/export\s+(?:const|let|var)\s+STORY_DESCRIPTIONS\s*=\s*(\{[\s\S]*?\n\};)/);
+  assert(match, 'STORY_DESCRIPTIONS must be exported from lifecycle.ts');
+  const body = match[1];
+  assert(body.includes("'signal-rich'") || body.includes('"signal-rich"'), 'STORY_DESCRIPTIONS has signal-rich key');
 });
 
 // Contract 3b: setTrailDepth source has explicit gate for depth=2 escalation
 await test('setTrailDepth source has explicit fromUserGesture gate for depth=2', async () => {
-  const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
+  const src = fs.readFileSync(resolveSource('js/modules/lifecycle-modes.ts', process.cwd()), 'utf8');
   // Gate: enteringSemanticDive is derived from nextDepth/prevDepth and requires fromUserGesture.
   const hasGate = /const\s+enteringSemanticDive\s*=\s*nextDepth\s*===\s*2\s*&&\s*prevDepth\s*<\s*2/.test(src)
     && /if\s*\(\s*enteringSemanticDive\s*&&\s*!options\.fromUserGesture\s*\)\s*\{[\s\S]*?return/.test(src);
@@ -232,8 +259,7 @@ await test('setTrailDepth source has explicit fromUserGesture gate for depth=2',
 
 // Contract 4: applyStoryPrompt sets up signal-rich → bloom mapping
 await test('applyStoryPrompt source maps signal-rich to bloom mode', async () => {
-  const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/cluster-filter.js', 'utf8');
+  const src = fs.readFileSync(resolveSource('js/modules/cluster-filter.ts', process.cwd()), 'utf8');
   // story === 'signal-rich' → setMyceliumMode('bloom', ...)
   const hasSignalRichBloom = /story\s*===\s*['"]signal-rich['"]\s*[\s\S]*?setMyceliumMode\s*\(\s*['"]bloom['"]/.test(src);
   assert(hasSignalRichBloom, 'signal-rich story maps to bloom mode');
@@ -247,8 +273,7 @@ await test('applyStoryPrompt source maps signal-rich to bloom mode', async () =>
 
 // Contract 5: setMyceliumMode calls recomputeBloomIndices when mode=bloom
 await test('setMyceliumMode source calls recomputeBloomIndices for bloom mode', async () => {
-  const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
+  const src = fs.readFileSync(resolveSource('js/modules/lifecycle-modes.ts', process.cwd()), 'utf8');
   // if (mode === 'bloom') { recomputeBloomIndices(); }
   const hasBloomRecompute = /if\s*\(\s*mode\s*===\s*['"]bloom['"]\s*\)\s*\{[\s\S]*?recomputeBloomIndices\s*\(\s*\)/.test(src);
   assert(hasBloomRecompute, 'setMyceliumMode calls recomputeBloomIndices for bloom');
@@ -259,8 +284,7 @@ await test('setMyceliumMode source calls recomputeBloomIndices for bloom mode', 
 
 // Contract 6: setMyceliumMode calls direct owner imports instead of window UI bridges
 await test('setMyceliumMode source calls direct applyPointFilterColors and updateExplorationUi owners', async () => {
-  const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
+  const src = fs.readFileSync(resolveSource('js/modules/lifecycle-modes.ts', process.cwd()), 'utf8');
   const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
   const importsApplyColors = /import\s*\{[\s\S]*?applyPointFilterColors[\s\S]*?\}\s*from\s*['"]\.\/journey\.js['"]/.test(src);
   const hasApplyColors = /(?<!window\.)applyPointFilterColors\s*\(/.test(setMyceliumModeBody);
@@ -275,9 +299,8 @@ await test('setMyceliumMode source calls direct applyPointFilterColors and updat
 // Routes through filter-state owner APIs (resetActiveFilters / setActiveClusterFilter),
 // which keep state AND the Svelte store in sync (see state-store-sync-contract.mjs).
 await test('applyStoryPrompt source resets activeFilters and activeClusterFilter', async () => {
-  const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/cluster-filter.js', 'utf8');
-  const applyStoryPromptBody = src.match(/export function applyStoryPrompt\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
+  const src = fs.readFileSync(resolveSource('js/modules/cluster-filter.ts', process.cwd()), 'utf8');
+  const applyStoryPromptBody = exportedFunctionSource(src, 'applyStoryPrompt');
   const hasFilterReset = /resetActiveFilters\s*\(/.test(applyStoryPromptBody)
     || /overwriteActiveFilters\s*\(/.test(applyStoryPromptBody)
     || /state\.activeFilters\s*=\s*\{[\s\S]*?status:\s*['"]all['"]/.test(applyStoryPromptBody);
@@ -289,8 +312,7 @@ await test('applyStoryPrompt source resets activeFilters and activeClusterFilter
 
 // Contract 8: setMyceliumMode('trail') calls the direct trailDepth owner
 await test('setMyceliumMode(\'trail\') source calls direct setTrailDepth(1, ...)', async () => {
-  const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
+  const src = fs.readFileSync(resolveSource('js/modules/lifecycle-modes.ts', process.cwd()), 'utf8');
   const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
   const hasTrailDepth1 = /mode\s*===\s*['"]trail['"][\s\S]*?(?<!window\.)setTrailDepth\s*\(\s*1\s*,/.test(setMyceliumModeBody);
   assert(hasTrailDepth1, 'setMyceliumMode with trail mode calls direct setTrailDepth(1, ...)');
@@ -299,8 +321,7 @@ await test('setMyceliumMode(\'trail\') source calls direct setTrailDepth(1, ...)
 
 // Contract 9: setMyceliumMode('inside') calls the direct trailDepth owner
 await test('setMyceliumMode(\'inside\') source calls direct setTrailDepth(2, { fromUserGesture: true })', async () => {
-  const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
+  const src = fs.readFileSync(resolveSource('js/modules/lifecycle-modes.ts', process.cwd()), 'utf8');
   const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
   const hasTrailDepth2 = /mode\s*===\s*['"]inside['"][\s\S]*?(?<!window\.)setTrailDepth\s*\(\s*2\s*,[\s\S]*?fromUserGesture:\s*true/.test(setMyceliumModeBody);
   assert(hasTrailDepth2, 'setMyceliumMode with inside mode calls direct setTrailDepth(2, { fromUserGesture: true })');
@@ -309,8 +330,7 @@ await test('setMyceliumMode(\'inside\') source calls direct setTrailDepth(2, { f
 
 // Contract 10: setMyceliumMode publishes VIEW_CHANGED event
 await test('setMyceliumMode source publishes VIEW_CHANGED event', async () => {
-  const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
+  const src = fs.readFileSync(resolveSource('js/modules/lifecycle-modes.ts', process.cwd()), 'utf8');
   const setMyceliumModeBody = src.match(/export function setMyceliumMode\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
   const hasEventPublish = /publish\s*\(\s*EVENTS\.VIEW_CHANGED\s*,\s*\{[\s\S]*?myceliumMode:\s*mode\s*\}\s*\)/.test(setMyceliumModeBody);
   assert(hasEventPublish, 'setMyceliumMode publishes VIEW_CHANGED event');
@@ -319,9 +339,8 @@ await test('setMyceliumMode source publishes VIEW_CHANGED event', async () => {
 
 // Contract 11: applyStoryPrompt refreshes filter controls and reapplies filters
 await test('applyStoryPrompt source refreshes filters after story prompt changes', async () => {
-  const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/cluster-filter.js', 'utf8');
-  const applyStoryPromptBody = src.match(/export function applyStoryPrompt\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
+  const src = fs.readFileSync(resolveSource('js/modules/cluster-filter.ts', process.cwd()), 'utf8');
+  const applyStoryPromptBody = exportedFunctionSource(src, 'applyStoryPrompt');
   const hasSyncFilters = /syncFilterControls\s*\(/.test(applyStoryPromptBody);
   const hasApplyFilters = /(?<!window\.)applyFilters\s*\(/.test(applyStoryPromptBody);
   assert(hasSyncFilters, 'applyStoryPrompt calls syncFilterControls');
@@ -331,16 +350,14 @@ await test('applyStoryPrompt source refreshes filters after story prompt changes
 
 // Contract 12: recomputeBloomIndices source exists and references bloomIndices
 await test('recomputeBloomIndices source references state.bloomIndices', async () => {
-  const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
+  const src = fs.readFileSync(resolveSource('js/modules/lifecycle-modes.ts', process.cwd()), 'utf8');
   const hasBloomIndices = /state\.bloomIndices/.test(src);
   assert(hasBloomIndices, 'recomputeBloomIndices references state.bloomIndices');
 });
 
 // Contract 13: recomputeBridgeIndices source exists and references bridgeIndices
 await test('recomputeBridgeIndices source references state.bridgeIndices', async () => {
-  const { readFileSync } = await import('node:fs');
-  const src = readFileSync('js/modules/lifecycle-modes.js', 'utf8');
+  const src = fs.readFileSync(resolveSource('js/modules/lifecycle-modes.ts', process.cwd()), 'utf8');
   const hasBridgeIndices = /state\.bridgeIndices/.test(src);
   assert(hasBridgeIndices, 'recomputeBridgeIndices references state.bridgeIndices');
 });

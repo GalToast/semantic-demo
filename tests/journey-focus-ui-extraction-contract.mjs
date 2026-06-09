@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.js');
-const FOCUS_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-focus-ui.js');
+const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.ts');
+const FOCUS_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-focus-ui.ts');
 
 function assert(condition, message) {
   if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);
@@ -46,12 +46,12 @@ assert(
 );
 assert(
   !/from\s+['"]\.\/journey\.js['"]/.test(focusUiSrc),
-  'journey-focus-ui.js must not import journey.js'
+  'journey-focus-ui.js must not import journey.ts'
 );
 assert(
   /function updateWalkBreadcrumb\s*\(/.test(focusUiSrc) &&
     !/export function updateWalkBreadcrumb\s*\(/.test(focusUiSrc),
-  'walk breadcrumb should remain a private implementation detail of journey-focus-ui.js'
+  'walk breadcrumb should remain a private implementation detail of journey-focus-ui.ts'
 );
 
 const allowedIds = [

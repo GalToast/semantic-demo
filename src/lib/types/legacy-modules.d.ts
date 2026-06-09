@@ -17,6 +17,7 @@ declare module '@legacy/*' {
 }
 
 declare module '@legacy/state.js' {
-  export const state: any;
-  export function withStateMutation(fn: () => void): void;
+  import type { SemanticState } from '../../types/state.d.ts';
+  export const state: SemanticState;
+  export function withStateMutation<T>(fn: () => T): T;
 }

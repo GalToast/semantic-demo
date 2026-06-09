@@ -7,7 +7,7 @@
 // timeout fires, aborts the transaction, and resets `dbPromise` so the
 // next call re-opens the database instead of permanently blocking.
 
-import { debugWarn } from './diagnostic-adapter.js';
+import { debugWarn } from './diagnostic-adapter.ts';
 
 const DB_NAME = 'SemanticExplorerDB';
 const STORE_NAME = 'SearchCache';
@@ -206,17 +206,28 @@ export async function entries(): Promise<[IDBValidKey, unknown][]> {
     await withTxTimeout(db, 'readonly', (_tx, store) => {
         const keysReq = store.getAllKeys();
         const valsReq = store.getAll();
-        // The withTxTimeout oncomplete fires after both requests finish
-        // because they're in the same transaction.
-        keysReq.onsuccess = () => {
-            const k = keysReq.result;
-            const v = valsReq.result;
-            for (let i = 0; i < k.length; i++) {
-                const key = k[i];
+        let keys: IDBValidKey[] | null = null;
+        let values: unknown[] | null = null;
+
+        const collectIfReady = () => {
+            if (!keys || !values) return;
+            result = [];
+            for (let i = 0; i < keys.length; i++) {
+                const key = keys[i];
                 if (key !== undefined) {
-                    result.push([key, v[i]]);
+                    result.push([key, values[i]]);
                 }
             }
+        };
+
+        keysReq.onsuccess = () => {
+            keys = [...keysReq.result];
+            collectIfReady();
+        };
+
+        valsReq.onsuccess = () => {
+            values = [...valsReq.result];
+            collectIfReady();
         };
     });
     return result;

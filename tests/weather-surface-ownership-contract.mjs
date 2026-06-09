@@ -17,12 +17,13 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveSource } from './source-path.mjs';
 
 const root = process.cwd();
-const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
+const read = (relativePath) => fs.readFileSync(resolveSource(relativePath, root), 'utf8');
 
 const html = read('vector-explorer-polished.html');
-const weatherUiJs = read('js/modules/weather-ui.js');
+const weatherUiJs = read('js/modules/weather-ui.ts');
 const timeWeatherCss = read('css/time_weather.css');
 
 const widgetMatches = html.match(/class="[^"]*\bweather-widget\b[^"]*"/g) ?? [];
@@ -38,17 +39,17 @@ assert.match(
 
 assert.match(
   weatherUiJs,
-  /function\s+revealWeatherWidget\s*\(\)\s*\{[\s\S]*?document\.querySelector\(['"]\.weather-widget['"]\)[\s\S]*?widget\.hidden\s*=\s*false;/,
-  'weather-ui.js should own a revealWeatherWidget helper that clears the hidden attribute'
+  /function\s+revealWeatherWidget\s*\([^)]*\)\s*(?::\s*void\s*)?\s*\{[\s\S]*?document\.querySelector(?:<HTMLElement>)?\(['"]\.weather-widget['"]\)[\s\S]*?widget\.hidden\s*=\s*false/,
+  'weather-ui should own a revealWeatherWidget helper that clears the hidden attribute'
 );
 assert.match(
   weatherUiJs,
-  /export\s+function\s+updateWeatherUi\s*\([^)]*\)\s*\{[\s\S]*?revealWeatherWidget\(\);/,
+  /export\s+function\s+updateWeatherUi\s*\([^)]*\).*?\{[\s\S]*?revealWeatherWidget\(\);/,
   'updateWeatherUi should reveal the widget before rendering live weather state'
 );
 assert.match(
   weatherUiJs,
-  /export\s+function\s+renderWeatherFallback\s*\([^)]*\)\s*\{[\s\S]*?revealWeatherWidget\(\);/,
+  /export\s+function\s+renderWeatherFallback\s*\([^)]*\).*?\{[\s\S]*?revealWeatherWidget\(\);/,
   'renderWeatherFallback should reveal the widget for fallback weather state'
 );
 
