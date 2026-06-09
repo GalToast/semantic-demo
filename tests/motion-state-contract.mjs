@@ -44,7 +44,7 @@ const checks = [
   },
   {
     name: 'renderer completion clears scene reveal DOM state',
-    pass: /import\s*\{[^}]*setSceneRevealDataset[^}]*\}\s*from\s*['"]\.\/scene-reveal\.js['"]/.test(source.threeSetup)
+    pass: /import\s*\{[^}]*setSceneRevealDataset[^}]*\}\s*from\s*['"]\.\/scene-reveal\.(?:js|ts)['"]/.test(source.threeSetup)
       && /revealProgress\s*>=\s*1[\s\S]*?state\.sceneRevealActive\s*=\s*false[\s\S]*?setSceneRevealDataset\s*\(\s*false\s*\)/.test(source.threeSetup),
   },
   {

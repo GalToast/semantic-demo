@@ -131,7 +131,7 @@ assert(
 
 const journeyThreadModelSource = fs.readFileSync(path.join(ROOT, 'js/modules/journey-thread-model.ts'), 'utf8');
 assert(
-  /import\s+\{\s*normalizeRelationshipRole\s*\}\s+from\s+['"]\.\/relationship-roles\.js['"]/.test(journeyThreadModelSource) &&
+  /import\s+\{[^}]*normalizeRelationshipRole[^}]*\}\s+from\s+['"]\.\/relationship-roles/.test(journeyThreadModelSource) &&
     /relationshipRole:\s*normalizeRelationshipRole\(neighbor\.relationshipRole\)/.test(journeyThreadModelSource),
   'journey-thread-model.js must own semantic candidate relationship role normalization'
 );

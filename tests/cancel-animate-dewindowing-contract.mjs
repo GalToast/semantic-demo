@@ -31,7 +31,7 @@ const checks = [
   },
   {
     name: 'app imports cancelAnimate from three-engine',
-    pass: /import\s+\{[^}]*\bcancelAnimate\b[^}]*\}\s+from\s+['"]\.\/three-engine\.js['"]/.test(appSrc),
+    pass: /import\s+\{[^}]*\bcancelAnimate\b[^}]*\}\s+from\s+['"]\.\/three-engine\.(?:js|ts)['"]/.test(appSrc),
   },
   {
     name: 'app calls cancelAnimate directly before reinit',

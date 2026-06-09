@@ -16,14 +16,28 @@ function extractFunctionBody(name) {
   const signature = `export function ${name}`;
   const start = source.indexOf(signature);
   assert(start >= 0, `${name} export should exist`);
-  // Find the opening brace of the function body, skipping past params and return type
+  // Find the opening brace of the function body, skipping past params and TS return type
   let openBrace = -1;
   let parenDepth = 0;
+  let afterParams = false;
+  let typeBraceDepth = 0;
   for (let i = start; i < source.length; i++) {
     const ch = source[i];
-    if (ch === '(') parenDepth++;
-    else if (ch === ')') parenDepth--;
-    else if (ch === '{' && parenDepth === 0) { openBrace = i; break; }
+    if (!afterParams) {
+      if (ch === '(') parenDepth++;
+      else if (ch === ')') {
+        parenDepth--;
+        if (parenDepth === 0) afterParams = true;
+      }
+      continue;
+    }
+    if (ch === '{') {
+      const prior = source.slice(Math.max(start, i - 16), i).trimEnd();
+      if (typeBraceDepth === 0 && !prior.endsWith(':')) { openBrace = i; break; }
+      typeBraceDepth++;
+    } else if (ch === '}' && typeBraceDepth > 0) {
+      typeBraceDepth--;
+    }
   }
   assert(openBrace >= 0, `${name} should have a function body`);
   let depth = 0;
@@ -84,8 +98,8 @@ assert(
 
 const arrivalBlock = walkBody.slice(arrivalTimerIndex, settleTimerIndex);
 assert(
-  arrivalBlock.includes("state.strandContinuityState.phase === 'exploring'") &&
-    arrivalBlock.includes('state.strandContinuityState.targetIndex === capturedIndex'),
+  /state\.strandContinuityState(?:\s+as\s+StrandContinuityState)?\)\.phase\s*===\s*['"]exploring['"]/.test(arrivalBlock) &&
+    /state\.strandContinuityState(?:\s+as\s+StrandContinuityState)?\)\.targetIndex\s*===\s*capturedIndex/.test(arrivalBlock),
   'arrival timer should only commit when the expected exploring target is still current'
 );
 assert(
@@ -104,8 +118,8 @@ assert(
 
 const settleBlock = walkBody.slice(settleTimerIndex);
 assert(
-  settleBlock.includes("state.strandContinuityState.phase === 'arrived'") &&
-    settleBlock.includes('state.strandContinuityState.targetIndex === capturedIndex'),
+  /state\.strandContinuityState(?:\s+as\s+StrandContinuityState)?\)\.phase\s*===\s*['"]arrived['"]/.test(settleBlock) &&
+    /state\.strandContinuityState(?:\s+as\s+StrandContinuityState)?\)\.targetIndex\s*===\s*capturedIndex/.test(settleBlock),
   'settle timer should only clear when the expected arrived target is still current'
 );
 assert(

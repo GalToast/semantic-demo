@@ -35,7 +35,7 @@ const checks = [
   },
   {
     name: 'app imports animate from three-engine',
-    pass: /import\s+\{[^}]*\banimate\b[^}]*\}\s+from\s+['"]\.\/three-engine\.js['"]/.test(appSrc),
+    pass: /import\s+\{[^}]*\banimate\b[^}]*\}\s+from\s+['"]\.\/three-engine\.(?:js|ts)['"]/.test(appSrc),
   },
   {
     name: 'app calls animate directly after graphics init',

@@ -97,7 +97,7 @@ function testLifecycleImportsFromViewController() {
 
   const src = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
 
-  const hasImport = /import\s+\{\s*switchView\s*,\s*showViewHandoff\s*,\s*hideViewHandoff\s*\}.*from\s+['"]\.\/view-controller\.js['"]/.test(src);
+  const hasImport = /import\s+\{\s*switchView\s*,\s*showViewHandoff\s*,\s*hideViewHandoff\s*\}.*from\s+['"]\.\/view-controller\.(?:js|ts)['"]/.test(src);
   assert(hasImport, 'lifecycle.js must import { switchView, showViewHandoff, hideViewHandoff } from "./view-controller.js"');
 
   console.log('  OK - lifecycle.js imports all three from ./view-controller.ts');
@@ -172,19 +172,19 @@ function testNoCircularImportChain() {
 
   // 5a. view-controller must NOT import lifecycle
   assert(
-    !/^import\s+.*from\s+['"]\.\/lifecycle\.js['"]/.test(vcSrc),
+    !/^import\s+.*from\s+['"]\.\/lifecycle\.(?:js|ts)['"]/.test(vcSrc),
     'view-controller.js must not import lifecycle.js (would create cycle)'
   );
 
   // 5b. journey-compass-controller must NOT import lifecycle
   assert(
-    !/^import\s+.*from\s+['"]\.\/lifecycle\.js['"]/.test(jccSrc),
+    !/^import\s+.*from\s+['"]\.\/lifecycle\.(?:js|ts)['"]/.test(jccSrc),
     'journey-compass-controller.js must not import lifecycle.js (would complete a cycle through view-controller)'
   );
 
   // 5c. lifecycle must import from view-controller (direction is lifecycle -> view-controller, acyclic)
   assert(
-    /import\s+.*from\s+['"]\.\/view-controller\.js['"]/.test(lcSrc),
+    /import\s+.*from\s+['"]\.\/view-controller\.(?:js|ts)['"]/.test(lcSrc),
     'lifecycle.js must import from view-controller.ts'
   );
 
