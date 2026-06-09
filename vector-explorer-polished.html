@@ -25,15 +25,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="semantic-demo.css?v=5814b80ffda7">
+    <link rel="stylesheet" href="semantic-demo.css?v=deba720927f8">
     <link rel="stylesheet" href="vector-explorer-pandora.css?v=b109ad6e2d57">
     <link rel="stylesheet" href="css/mobile_premium__focus-dive.css?v=2b9e83a7cf4f">
-    <link rel="stylesheet" href="css/mobile_premium__chrome.css?v=1e7ecd7959ee">
+    <link rel="stylesheet" href="css/mobile_premium__chrome.css?v=93efa9ed6a21">
     <link rel="stylesheet" href="css/mobile_premium__state.css?v=3af72c3c8e0a">
     <link rel="stylesheet" href="css/mobile_premium__idle.css?v=15a388fb8479">
-    <link rel="stylesheet" href="css/mobile_premium__map.css?v=bb41998e40ae">
-    <link rel="stylesheet" href="css/mobile_premium__surfaces.css?v=949dc84d3641">
-    <link rel="stylesheet" href="css/mobile_premium__narrow.css?v=0e7c97ab5e90">
+    <link rel="stylesheet" href="css/mobile_premium__map.css?v=f9140b99312e">
+    <link rel="stylesheet" href="css/mobile_premium__surfaces.css?v=5327381601f4">
+    <link rel="stylesheet" href="css/mobile_premium__narrow.css?v=3e2e37ba76b3">
     <link rel="stylesheet" href="css/modules/focus_stage.css?v=5f1e371e7963">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>M</text></svg>">
 </head>
@@ -382,7 +382,31 @@
         </div>
         <div id="map-trail-strip" class="map-trail-strip" hidden></div>
     </section>
-    <div id="camera-controls" class="controls" role="toolbar" aria-label="Camera controls">
+    <div class="controls controls-rail" id="view-toggle" role="toolbar" aria-label="View toggle">
+        <button class="control-btn" id="btn-galaxy" title="Galaxy view" aria-label="Galaxy view" aria-pressed="true" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                <use href="#icon-mycelium"/>
+            </svg>
+            <span class="icon-label">Galaxy</span>
+        </button>
+        <button class="control-btn" id="btn-map" title="Map view" aria-label="Map view" aria-pressed="false" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                <use href="#icon-map"/>
+            </svg>
+            <span class="icon-label">Map</span>
+        </button>
+    </div>
+    <div class="controls controls-info" id="info-controls" role="toolbar" aria-label="Info controls">
+        <button class="control-btn" id="btn-share-view" title="Copy current view link" aria-label="Copy current view link" type="button">
+            <span class="share-toggle-label">Share</span>
+        </button>
+        <button class="control-btn" id="btn-reset" title="Reset experience" aria-label="Reset experience" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                <use href="#icon-reset"/>
+            </svg>
+        </button>
+    </div>
+    <div id="camera-controls" class="controls controls-view" role="toolbar" aria-label="Camera controls">
         <button class="control-btn" id="btn-zoom-in" title="Zoom in" aria-label="Zoom in" type="button">
             <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
                 <use href="#icon-zoom-in"/>
@@ -413,6 +437,6 @@
         }
     }
     </script>
-    <script type="module" src="dist/bundle.js?v=c49b1fc85d80"></script>
+    <script type="module" src="dist/bundle.js?v=69c9ee8bf9a0"></script>
 </body>
 </html>

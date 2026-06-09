@@ -19,10 +19,25 @@ interface BindClickOptions {
 
 type EventHandler = (event?: MouseEvent) => void;
 
+declare global {
+    interface Window {
+        __semanticDemoProd?: boolean;
+    }
+}
+
+function isStrictBindMode(): boolean {
+    return typeof window !== 'undefined' && !window.__semanticDemoProd;
+}
+
 export function bindClick(id: string, handler: EventHandler, options: BindClickOptions = {}): void {
     const element = document.getElementById(id);
     if (!element) {
-        if (!options.optional) debugWarn('[event-bindings] button not found:', id);
+        if (options.optional) return;
+        const message = `[event-bindings] required button #${id} not found in DOM`;
+        if (isStrictBindMode()) {
+            throw new Error(message);
+        }
+        debugWarn(message);
         return;
     }
     element.onclick = handler;
