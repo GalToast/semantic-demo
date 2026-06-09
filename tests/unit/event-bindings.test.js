@@ -65,7 +65,12 @@ describe('event-bindings', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.spyOn(console, 'warn').mockImplementation(() => {});
-        
+
+        // Unit test of bind logic only; full DOM coverage is the e2e test's job.
+        // Opt the unit test into prod-like bind behavior so missing required
+        // buttons warn rather than throw, keeping fixture scope tractable.
+        window.__semanticDemoProd = true;
+
         eventBindings.disposeEventListeners();
         
         withStateMutation(() => {
@@ -94,6 +99,7 @@ describe('event-bindings', () => {
 
     afterEach(() => {
         eventBindings.disposeEventListeners();
+        delete window.__semanticDemoProd;
         vi.restoreAllMocks();
     });
 
