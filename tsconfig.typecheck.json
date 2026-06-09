@@ -1,21 +1,13 @@
 {
   "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "three"]
+  },
   "include": [
     "types/**/*.d.ts",
     "scripts/build-app.mjs",
     "js/modules/**/*.ts",
-    "js/modules/search-results-svelte-island.js",
-    "js/modules/selected-details-svelte-island.js",
-    "js/modules/search-chrome-island.js",
-    "js/modules/filter-chrome-island.js",
-    "js/modules/utils/dom-builder.js",
     "js/modules/view-models/**/*.ts",
-    "js/modules/view-models/**/*.js",
-    "js/modules/event-bus.ts",
-    "js/modules/tooltip.ts",
-    "js/modules/keyboard-help.ts",
-    "js/modules/loading-ui.ts",
-    "js/modules/pathfinding.ts",
-    "js/modules/utils/geo-data.ts"
+    "js/modules/utils/**/*.ts"
   ]
 }
