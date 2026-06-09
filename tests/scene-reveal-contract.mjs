@@ -194,7 +194,7 @@ checks.push({
 });
 checks.push({
   name: 'onWindowResize:calls updateCameraViewportOffset() direct import',
-  pass: /import\s*\{\s*updateCameraViewportOffset\s*\}\s*from\s*['"]\.\/three-engine\.js['"]/.test(src) &&
+  pass: /import\s*\{\s*updateCameraViewportOffset\s*\}\s*from\s*['"]\.\/three-engine/.test(src) &&
         /function\s+onWindowResize[\s\S]{0,900}?updateCameraViewportOffset\s*\(\s*\)/.test(src) &&
         !/window\.updateCameraViewportOffset\s*\(/.test(src),
 });
@@ -204,7 +204,7 @@ checks.push({
 // --------------------------------------------------------------------------
 checks.push({
   name: 'onWindowResize:calls syncClusterSectionState() direct import',
-  pass: /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"]\.\/cluster-labels\.js['"]/.test(src) &&
+  pass: /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"]\.\/cluster-labels/.test(src) &&
         /function\s+onWindowResize[\s\S]{0,900}?syncClusterSectionState\s*\(\s*\)/.test(src) &&
         !/window\.syncClusterSectionState\s*\(/.test(src),
 });
@@ -214,7 +214,7 @@ checks.push({
 // --------------------------------------------------------------------------
 checks.push({
   name: 'onWindowResize:calls updateTraversalUi() direct import',
-  pass: /import\s*\{\s*updateTraversalUi\s*\}\s*from\s*['"]\.\/journey\.js['"]/.test(src) &&
+  pass: /import\s*\{\s*updateTraversalUi\s*\}\s*from\s*['"]\.\/journey/.test(src) &&
         /function\s+onWindowResize[\s\S]{0,900}?updateTraversalUi\s*\(\s*\)/.test(src) &&
         !/window\.updateTraversalUi\s*\(/.test(src),
 });

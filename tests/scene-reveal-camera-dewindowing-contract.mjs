@@ -1,7 +1,7 @@
 /**
  * scene-reveal-camera-dewindowing-contract.mjs
  *
- * Contract test for scene-reveal.js → camera-controls.js dewindowing.
+ * Contract test for scene-reveal.js → camera-controls.ts dewindowing.
  * Tests that scene-reveal uses direct named imports for
  * clearAutoRotateResumeTimer, setAutoRotateSuspended, and updateCameraViewportOffset.
  *
@@ -30,7 +30,7 @@ const checks = [];
 
 // ---------------------------------------------------------------------------
 // Contract A: clearAutoRotateResumeTimer and setAutoRotateSuspended are
-// imported directly from camera-controls.js (not via window)
+// imported directly from camera-controls.ts (not via window)
 // ---------------------------------------------------------------------------
 checks.push({
   name: 'imports:clearAutoRotateResumeTimer from camera-controls.ts',
@@ -73,7 +73,7 @@ checks.push({
 });
 
 // ---------------------------------------------------------------------------
-// Contract D: camera-controls.js exports clearAutoRotateResumeTimer and setAutoRotateSuspended
+// Contract D: camera-controls.ts exports clearAutoRotateResumeTimer and setAutoRotateSuspended
 // ---------------------------------------------------------------------------
 let cameraControlsSrc;
 try {
