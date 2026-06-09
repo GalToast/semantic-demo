@@ -576,6 +576,8 @@ async function captureState(page, name) {
       '.stats-row',
       '#focus-stage',
       '.focus-stage-card',
+      '#focus-stage-name',
+      '#focus-stage-what',
       '.selected-card',
       '#vector-cascade-bg',
       '.about-card',
@@ -1671,38 +1673,53 @@ async function enterSemanticDive(page) {
 }
 
 async function applyPopulatedInfoPanelState(page) {
+  await page.waitForFunction(() => {
+    const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return typeof window.__APP_ACTIONS__?.focusOnNode === 'function' && Array.isArray(appState.points) && appState.points.length > 0;
+  }, undefined, { timeout: 20000 });
+
   await page.evaluate(() => {
+    const focusNode = window.__APP_ACTIONS__?.focusOnNode;
+    const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
+    const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
+    if (typeof focusNode !== 'function') {
+      throw new Error('visual audit could not find APP_ACTIONS.focusOnNode for populated focus panel');
+    }
+    const focused = focusNode(0, { fromSearchResult: true, skipUrlSync: true }) === true;
+    if (!focused) {
+      throw new Error('visual audit could not focus node 0 for populated focus panel');
+    }
+    if (typeof setTrailDepth === 'function') {
+      setTrailDepth(1, { skipUrlSync: true });
+    }
+    refreshCompositionState?.();
+    window.updateJourneyCompass?.();
+
     document.body.dataset.activeView = 'galaxy';
     document.body.dataset.graphContext = 'focus';
     document.body.dataset.panelSurface = 'focus';
-    document.body.dataset.focusedNode = '0';
-
-    const selectedDetails = document.querySelector('#selected-details');
-    if (selectedDetails) {
-      selectedDetails.classList.add('active');
-      selectedDetails.hidden = false;
-      selectedDetails.style.display = 'block';
-      selectedDetails.style.visibility = 'visible';
+    document.body.dataset.panelSurfaceDetail = 'selected';
+    document.body.dataset.journeyPhase = 'focus';
+    const focusStage = document.querySelector('#focus-stage');
+    if (focusStage) {
+      focusStage.hidden = false;
+      focusStage.setAttribute('aria-hidden', 'false');
+      focusStage.classList.add('active');
     }
-
-    const selectedEmpty = document.querySelector('.selected-empty');
-    if (selectedEmpty) selectedEmpty.style.display = 'none';
-
-    const selectedName = document.querySelector('#selected-name');
-    if (selectedName) selectedName.textContent = 'Downtown Coffee Collective';
-
-    const selectedWhat = document.querySelector('#selected-what');
-    if (selectedWhat) selectedWhat.textContent = 'Artisan coffee shop with outdoor seating';
-
-    const selectedTheme = document.querySelector('#selected-theme');
-    if (selectedTheme) selectedTheme.textContent = 'Food & Drink - Cafes';
-
-    const selectedStatus = document.querySelector('#selected-status');
-    if (selectedStatus) selectedStatus.textContent = 'Active';
-
-    const selectedFiledAs = document.querySelector('#selected-filed-as');
-    if (selectedFiledAs) selectedFiledAs.style.display = 'none';
   });
+  await markVisualRouteEvidence(page, 'app-action', 'APP_ACTIONS.focusOnNode(0) desktop populated focus-stage route');
+  await page.waitForFunction(() => {
+    const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const card = document.querySelector('.focus-stage-card');
+    const cardStyle = card ? getComputedStyle(card) : null;
+    const focused = Number.isFinite(appState.focusedNode) || Number.isFinite(appState.navState?.focusedIndex);
+    return focused &&
+      document.body.dataset.panelSurface === 'focus' &&
+      card &&
+      !card.hidden &&
+      cardStyle.display !== 'none' &&
+      cardStyle.visibility !== 'hidden';
+  }, undefined, { timeout: 15000 }).catch(() => {});
 }
 
 async function applyLoadingOverlayState(page) {
@@ -3946,14 +3963,42 @@ async function run() {
 
   if (shouldAssert('16-desktop-info-panel-populated')) {
     const populatedState = requireState('16-desktop-info-panel-populated');
-    const populatedCard = requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-card-visible', '.selected-card');
-    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-details-visible', '#selected-details');
-    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-name-visible', '#selected-name');
-    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-what-visible', '#selected-what');
-    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-theme-visible', '#selected-theme');
-    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-status-visible', '#selected-status');
-    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-role-badge-visible', '#selected-role-badge');
-    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:selected-hero-visible', '.selected-hero');
+    const focusStage = requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:focus-stage-visible', '#focus-stage');
+    const focusStageCard = requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:focus-stage-card-visible', '.focus-stage-card');
+    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:focus-stage-name-visible', '#focus-stage-name');
+    requireRendered('16-desktop-info-panel-populated', 'info-panel-populated:focus-stage-what-visible', '#focus-stage-what');
+    const selectedCard = box(populatedState, '.selected-card');
+    const selectedDetails = box(populatedState, '#selected-details');
+
+    if (selectedCard?.dataset?.contentOwner === 'focus-stage' && selectedCard?.dataset?.contentVariant === 'focus-stage') {
+      pass('16-desktop-info-panel-populated', 'info-panel-populated:selected-card-focus-stage-owner');
+    } else {
+      fail(
+        '16-desktop-info-panel-populated',
+        'info-panel-populated:selected-card-focus-stage-owner',
+        `selected-card should declare focus-stage ownership, got ${JSON.stringify(selectedCard?.dataset || {})}`,
+      );
+    }
+
+    if (!isRendered(selectedCard) && selectedCard?.pointerEvents === 'none') {
+      pass('16-desktop-info-panel-populated', 'info-panel-populated:legacy-selected-card-hidden');
+    } else {
+      fail(
+        '16-desktop-info-panel-populated',
+        'info-panel-populated:legacy-selected-card-hidden',
+        `legacy selected-card should not compete with focus-stage, got ${JSON.stringify(selectedCard)}`,
+      );
+    }
+
+    if (!isRendered(selectedDetails)) {
+      pass('16-desktop-info-panel-populated', 'info-panel-populated:legacy-selected-details-hidden');
+    } else {
+      fail(
+        '16-desktop-info-panel-populated',
+        'info-panel-populated:legacy-selected-details-hidden',
+        `legacy selected-details should be hidden while focus-stage owns content, got ${JSON.stringify(selectedDetails)}`,
+      );
+    }
 
     const modeGrid = box(populatedState, '#mode-grid');
     if (!isRendered(modeGrid)) {
@@ -3979,10 +4024,10 @@ async function run() {
       fail('16-desktop-info-panel-populated', 'info-panel-populated:compass-note-line-height', `expected 18px, got ${compassNote?.lineHeight || 'missing'}`);
     }
 
-    if (populatedCard?.text?.includes('Downtown Coffee Collective')) {
-      pass('16-desktop-info-panel-populated', 'info-panel-populated:selected-name-text');
+    if (focusStageCard?.text && !/Business Name|What they do/.test(focusStageCard.text)) {
+      pass('16-desktop-info-panel-populated', 'info-panel-populated:focus-stage-populated-text');
     } else {
-      fail('16-desktop-info-panel-populated', 'info-panel-populated:selected-name-text', 'selected card does not include expected populated business name');
+      fail('16-desktop-info-panel-populated', 'info-panel-populated:focus-stage-populated-text', 'focus-stage card does not include populated business copy');
     }
 
     if (populatedState?.bodyDataset?.panelSurface === 'focus') {
@@ -3994,6 +4039,9 @@ async function run() {
         `expected panelSurface "focus", got "${populatedState?.bodyDataset?.panelSurface || ''}"`,
       );
     }
+
+    void focusStage;
+    void focusStageCard;
   }
 
   // ---- State diagnostics: mobile-focus-first-result ----

@@ -55,10 +55,10 @@ const RETIRED = [
   'window.__keepCorridorFns',
 ];
 
-// Preserved bridges must still appear as window.* =
+// Preserved bridges retired during TS migration (window.THREE removed from source)
 
 const PRESERVED = [
-  'window.THREE',
+  // 'window.THREE',  // retired — no longer assigned in three-engine.ts
 ];
 
 // Functions must remain exported (either named export function or in an export { ... } block)
