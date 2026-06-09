@@ -190,7 +190,7 @@ function testGap3b_applySearchGlowVisualState() {
     'journey-point-color.js must publish SEARCH_STATUS_SYNC_REQUESTED in searchGlowActive block'
   );
   assert(
-    /import\s+\{\s*publish,\s*EVENTS\s*\}\s+from\s+['"]\.\/event-bus\.js['"]/.test(pointColorSrc),
+    /import\s+\{\s*publish,\s*EVENTS\s*\}\s+from\s+['"]\.\/event-bus\.(?:js|ts)['"]/.test(pointColorSrc),
     'journey-point-color.js must import publish and EVENTS from event-bus.ts'
   );
   assert(!/search-lifecycle-adapter/.test(pointColorSrc), 'journey-point-color.js must not import retired search lifecycle adapter');
@@ -244,11 +244,11 @@ function testGap4_updateSelectedCardHeading() {
     'ui-renderers.js must not keep dummy selected-card-title markers after the focus-stage transfer'
   );
   assert(
-    /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(selectedCardSrc),
+    /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.(?:js|ts)['"]/.test(selectedCardSrc),
     'journey-selected-card.js must import updateSelectedCardHeading from ui-renderers.ts'
   );
   assert(
-    /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(journeySrc),
+    /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.(?:js|ts)['"]/.test(journeySrc),
     'journey.js must re-export updateSelectedCardHeading through the ui-renderers selected-card path'
   );
   assert(
@@ -256,7 +256,7 @@ function testGap4_updateSelectedCardHeading() {
     'lifecycle.js must refresh selected-card heading/content through COMPOSITION_UPDATED fanout, not a direct heading import'
   );
   assert(
-    !/import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.js['"]/.test(lifecycleSrc),
+    !/import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.(?:js|ts)['"]/.test(lifecycleSrc),
     'lifecycle.js must not re-own updateSelectedCardHeading after selected-card transfer'
   );
   assertNoDeadCall(lifecycleSrc, 'updateSelectedCardHeading', 'lifecycle.ts', 'Gap 4');
@@ -300,7 +300,7 @@ function testGap5_focusOnNode() {
     'search-state.js must publish SEARCH_FOCUS_REQUESTED with point and index'
   );
   assert(
-    !/import\s+\{[^}]*\bfocusOnNode\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(searchStateSrc),
+    !/import\s+\{[^}]*\bfocusOnNode\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.(?:js|ts)['"]/.test(searchStateSrc),
     'search-state.js must not re-own focusOnNode after the event migration'
   );
   assert(
