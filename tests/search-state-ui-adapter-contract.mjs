@@ -47,7 +47,7 @@ console.log('  PASS');
 console.log('\n[TEST 3] tooltip hide requests use the event bus');
 assertContains(searchSrc, 'publish(EVENTS.TOOLTIP_HIDE_REQUESTED)', 'search-state hideTooltip wrapper must publish tooltip hide');
 assertContains(resultsSrc, 'publish(EVENTS.TOOLTIP_HIDE_REQUESTED)', 'search-results-ui must publish tooltip hide');
-assertContains(tooltipSrc, 'subscribe(EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip)', 'tooltip owner must subscribe to hide requests');
+assertContains(tooltipSrc, "subscribeKeyed('tooltip:hide-requested', EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip)", 'tooltip owner must subscribe to hide requests');
 console.log('  PASS');
 
 console.log('\n[TEST 4] search result rebinding is event-driven');
