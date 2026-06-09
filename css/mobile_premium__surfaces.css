@@ -847,6 +847,11 @@ body.is-active #selected-details.active:not([hidden]) {
         pointer-events: none;
     }
 
+    body.is-active:is([data-panel-surface='semantic-dive']) #focus-stage-inside-controls,
+    body.is-active:is([data-panel-surface='semantic-dive']) .focus-stage-inside-controls {
+        display: grid;
+    }
+
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
