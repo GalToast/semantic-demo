@@ -34,12 +34,12 @@ const checks = [];
 // ---------------------------------------------------------------------------
 checks.push({
   name: 'imports:clearAutoRotateResumeTimer from camera-controls.ts',
-  pass: /import\s+\{\s*[^}]*clearAutoRotateResumeTimer[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(sceneRevealSrc),
+  pass: /import\s+\{\s*[^}]*clearAutoRotateResumeTimer[^}]*\}\s+from\s+['"]\.\/camera-controls\.(?:js|ts)['"]/.test(sceneRevealSrc),
 });
 
 checks.push({
   name: 'imports:setAutoRotateSuspended from camera-controls.ts',
-  pass: /import\s+\{\s*[^}]*setAutoRotateSuspended[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(sceneRevealSrc),
+  pass: /import\s+\{\s*[^}]*setAutoRotateSuspended[^}]*\}\s+from\s+['"]\.\/camera-controls\.(?:js|ts)['"]/.test(sceneRevealSrc),
 });
 
 // ---------------------------------------------------------------------------
@@ -48,13 +48,13 @@ checks.push({
 // ---------------------------------------------------------------------------
 checks.push({
   name: 'startSceneReveal:calls clearAutoRotateResumeTimer() directly (no window.)',
-  pass: /^export\s+function\s+startSceneReveal[\s\S]{0,700}?clearAutoRotateResumeTimer\s*\(\s*\)/m.test(sceneRevealSrc) &&
+  pass: /^export\s+function\s+startSceneReveal[^{]*\{[\s\S]{0,900}?clearAutoRotateResumeTimer\s*\(\s*\)/m.test(sceneRevealSrc) &&
         !/window\.clearAutoRotateResumeTimer/.test(sceneRevealSrc),
 });
 
 checks.push({
   name: 'startSceneReveal:calls setAutoRotateSuspended(true) directly (no window.)',
-  pass: /^export\s+function\s+startSceneReveal[\s\S]{0,700}?setAutoRotateSuspended\s*\(\s*true\s*\)/m.test(sceneRevealSrc) &&
+  pass: /^export\s+function\s+startSceneReveal[^{]*\{[\s\S]{0,900}?setAutoRotateSuspended\s*\(\s*true\s*\)/m.test(sceneRevealSrc) &&
         !/window\.setAutoRotateSuspended/.test(sceneRevealSrc),
 });
 
@@ -63,12 +63,12 @@ checks.push({
 // ---------------------------------------------------------------------------
 checks.push({
   name: 'imports:updateCameraViewportOffset from three-engine.ts',
-  pass: /import\s+\{\s*updateCameraViewportOffset\s*\}\s+from\s+['"]\.\/three-engine\.js['"]/.test(sceneRevealSrc),
+  pass: /import\s+\{\s*updateCameraViewportOffset\s*\}\s+from\s+['"]\.\/three-engine\.(?:js|ts)['"]/.test(sceneRevealSrc),
 });
 
 checks.push({
   name: 'onWindowResize:calls updateCameraViewportOffset() directly (no window.)',
-  pass: /^export\s+function\s+onWindowResize[\s\S]{0,700}?updateCameraViewportOffset\s*\(\s*\)/m.test(sceneRevealSrc) &&
+  pass: /^export\s+function\s+onWindowResize[^{]*\{[\s\S]{0,700}?updateCameraViewportOffset\s*\(\s*\)/m.test(sceneRevealSrc) &&
         !/window\.updateCameraViewportOffset/.test(sceneRevealSrc),
 });
 

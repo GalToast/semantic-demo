@@ -34,7 +34,7 @@ const checks = [
   },
   {
     name: 'node spore field does not use additive blending',
-    pass: /const\s+sporeMat\s*=\s*new\s+THREE\.MeshPhongMaterial[\s\S]{0,420}?blending:\s*THREE\.NormalBlending/.test(nodeManagerSrc),
+    pass: /const\s+sporeMat\s*=\s*new\s+THREE\.MeshPhongMaterial[\s\S]{0,620}?blending:\s*THREE\.NormalBlending/.test(nodeManagerSrc),
   },
   {
     name: 'semantic manifold is atmospheric, not additive',
@@ -51,9 +51,10 @@ const checks = [
     pass: /opacity:\s*SCENE_ATMOSPHERE\.pointOpacityScale/.test(nodeManagerSrc)
       && /const\s+isFocused\s*=\s*Number\.isFinite\(state\.focusedNode\)/.test(src)
       && /const\s+pointsOpacityScale\s*=\s*isFocused/.test(src)
-      && /state\.pointsMesh\.visible\s*=\s*pointsOpacityScale\s*>\s*0/.test(src)
+      && /webglContext\.pointsMesh\.visible\s*=\s*pointsOpacityScale\s*>\s*0/.test(src)
       && /opacity:\s*SCENE_ATMOSPHERE\.sporeOpacity/.test(nodeManagerSrc)
-      && /state\.nodeSporeMaterial\.opacity\s*=\s*SCENE_ATMOSPHERE\.sporeOpacity\s*\*\s*pointsRevealProgress\s*\*\s*focusBoost/.test(src),
+      && /const\s+targetSporeOpacity\s*=\s*SCENE_ATMOSPHERE\.sporeOpacity\s*\*\s*pointsRevealProgress\s*\*\s*focusBoost/.test(src)
+      && /webglContext\.nodeSporeMaterial\.opacity\s*\+=\s*\(targetSporeOpacity\s*-\s*webglContext\.nodeSporeMaterial\.opacity\)\s*\*\s*0\.12/.test(src),
   },
   {
     name: 'focus DOM atmosphere does not screen-blend a white veil over WebGL',

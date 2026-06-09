@@ -575,7 +575,7 @@ function testJourneyArrivalHandoffDewindowed() {
     }
   }
   assert(
-    /import\s+\{[^}]*\bsyncArrivalHandoffOverlay\b[^}]*\bdisposeArrivalHandoffOverlay\b[^}]*\}\s+from\s+['"]\.\/journey-webgl\.js['"]/.test(strandContinuitySrc),
+    /import\s+\{[^}]*\bsyncArrivalHandoffOverlay\b[^}]*\bdisposeArrivalHandoffOverlay\b[^}]*\}\s+from\s+['"]\.\/journey-webgl\.(?:js|ts)['"]/.test(strandContinuitySrc),
     'strand-continuity.js should import arrival handoff functions directly from journey-webgl.ts'
   );
   assert(
@@ -587,7 +587,7 @@ function testJourneyArrivalHandoffDewindowed() {
     'thread-inspector.js should import strand continuity state from the shared owner'
   );
   assert(
-    /import\s+\{[^}]*\bsyncFocusStage\b[^}]*\}\s+from\s+['"]\.\/lifecycle\.js['"]/.test(threadInspectorSrc),
+    /import\s+\{[^}]*\bsyncFocusStage\b[^}]*\}\s+from\s+['"]\.\/lifecycle\.(?:js|ts)['"]/.test(threadInspectorSrc),
     'thread-inspector.js should import syncFocusStage through lifecycle.js instead of the window bridge'
   );
   assert(
@@ -659,7 +659,7 @@ function testInspectedStrandTopLevelBridgesRetired() {
     );
   }
   assert(
-    /import\s+\{[^}]*\bsyncInspectedStrandOverlay\b[^}]*\}\s+from\s+['"]\.\/thread-inspector\.js['"]/.test(threadSettlerSrc),
+    /import\s+\{[^}]*\bsyncInspectedStrandOverlay\b[^}]*\}\s+from\s+['"]\.\/thread-inspector\.(?:js|ts)['"]/.test(threadSettlerSrc),
     'journey-thread-settler.js should import syncInspectedStrandOverlay directly from thread-inspector.ts'
   );
   assert(
@@ -717,7 +717,7 @@ function testCameraInteractionBridgesRetired() {
     'camera-controls-choreography.js should call noteSceneInteraction directly for search corridor animation'
   );
   assert(
-    /import\s+\{[^}]*\bfocusOnNode\b[^}]*\bnoteSceneInteraction\b[^}]*\breleaseFocusCameraAssist\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(canvasInteractionSrc),
+    /import\s+\{[^}]*\bfocusOnNode\b[^}]*\bnoteSceneInteraction\b[^}]*\breleaseFocusCameraAssist\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.(?:js|ts)['"]/.test(canvasInteractionSrc),
     'journey-canvas-interaction.js should import camera interaction functions directly from camera-controls.ts'
   );
 
@@ -735,7 +735,7 @@ function testViewHandoffCameraPreludeBridgeRetired() {
   const mapFlatteningLayoutSrc = read('mapFlatteningLayout');
 
   assert(
-    /import\s+\{[^}]*\banimateCameraToTerrainPrelude\b[^}]*\bfocusOnNode\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(viewControllerSrc),
+    /import\s+\{[^}]*\banimateCameraToTerrainPrelude\b[^}]*\bfocusOnNode\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.(?:js|ts)['"]/.test(viewControllerSrc),
     'view-controller.js should import animateCameraToTerrainPrelude directly from camera-controls.ts'
   );
   assert(
@@ -862,7 +862,7 @@ function testAudioGlobalsRetiredFromWindow() {
   const searchAnimationsSrc = read('threeSearchAnimations');
 
   assert(
-    /import\s+\{[^}]*\btriggerCorridorBloom\b[^}]*\}\s+from\s+['"]\.\/audio-scape\.js['"]/.test(searchAnimationsSrc),
+    /import\s+\{[^}]*\btriggerCorridorBloom\b[^}]*\}\s+from\s+['"]\.\/audio-scape\.(?:js|ts)['"]/.test(searchAnimationsSrc),
     'three-search-animations.js should import triggerCorridorBloom directly from audio-scape.ts'
   );
   assert(
@@ -900,7 +900,7 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
     'camera-controls.js must not expose window.applySemanticCentroidCamera'
   );
   assert(
-    /import\s+\{[^}]*\bapplySemanticCentroidCamera\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.js['"]/.test(threeSetupSrc),
+    /import\s+\{[^}]*\bapplySemanticCentroidCamera\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.(?:js|ts)['"]/.test(threeSetupSrc),
     'three-engine.js should import applySemanticCentroidCamera directly from camera-controls.ts'
   );
   assert(

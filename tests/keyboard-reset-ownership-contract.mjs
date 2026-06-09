@@ -22,6 +22,7 @@ import path from 'node:path';
 const ROOT = path.resolve(process.cwd());
 const KEYBOARD_HELP_PATH = path.join(ROOT, 'js/modules/keyboard-help.ts');
 const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.ts');
+const LIFECYCLE_RESET_PATH = path.join(ROOT, 'js/modules/lifecycle-reset.ts');
 const APP_PATH = path.join(ROOT, 'js/modules/app.ts');
 
 function assert(cond, msg) {
@@ -30,6 +31,7 @@ function assert(cond, msg) {
 
 const src = fs.readFileSync(KEYBOARD_HELP_PATH, 'utf-8');
 const lifecycle = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
+const lifecycleReset = fs.readFileSync(LIFECYCLE_RESET_PATH, 'utf-8');
 const appSrc = fs.readFileSync(APP_PATH, 'utf-8');
 
 console.log('=================================================================');
@@ -100,13 +102,17 @@ try {
   // Contract Point 4: lifecycle exports are real function declarations, not stubs
   console.log('\n[CONTRACT 4] lifecycle exports are exported function declarations, not empty stubs');
   const returnToOverviewMatch = lifecycle.match(
-    /export\s+function\s+returnToOverview\s*\(\s*\)\s*\{[^}]+\}/,
+    /export\s+function\s+returnToOverview\s*\(\s*\)(?:\s*:\s*\S[^{]*)?\s*\{[^}]+\}/,
   );
   assert(returnToOverviewMatch, 'returnToOverview must be an exported function declaration');
   assert(
     !/export\s+const\s+returnToOverview\s*=\s*\(\s*\)\s*=>\s*\{\s*\}/.test(lifecycle) &&
-    !/export\s+function\s+returnToOverview\s*\(\s*\)\s*\{\s*\}/.test(lifecycle),
+    !/export\s+function\s+returnToOverview\s*\(\s*\)(?:\s*:\s*\S[^{]*)?\s*\{\s*\}/.test(lifecycle),
     'returnToOverview must not be an empty stub'
+  );
+  assert(
+    returnToOverviewMatch[0].includes('_returnToOverviewImpl();'),
+    'returnToOverview facade must call the lifecycle-reset implementation'
   );
 
   const rfStart = lifecycle.indexOf('export function resetExplorationFocus');
@@ -114,18 +120,28 @@ try {
   const rfAfterDecl = lifecycle.slice(rfStart + 'export function resetExplorationFocus'.length);
   const rfBodyStart = rfAfterDecl.indexOf('{');
   assert(rfBodyStart !== -1, 'resetExplorationFocus must have a function body');
-  const rfBodySlice = rfAfterDecl.slice(rfBodyStart + 1, rfBodyStart + 1400);
+  const rfBodySlice = rfAfterDecl.slice(rfBodyStart + 1, rfBodyStart + 180);
   assert(
-    rfBodySlice.includes('state.navState') &&
-    rfBodySlice.includes('syncFocusStage') &&
-    rfBodySlice.includes('publish'),
-    'resetExplorationFocus must have a non-trivial body (state mutations + event publication)'
+    rfBodySlice.includes('_resetExplorationFocusImpl(options);'),
+    'resetExplorationFocus facade must call the lifecycle-reset implementation'
   );
   assert(
-    !/export\s+function\s+resetExplorationFocus\s*\([^)]*\)\s*\{\s*\}/.test(lifecycle),
+    !/export\s+function\s+resetExplorationFocus\s*\([^)]*\)(?:\s*:\s*\S[^{]*)?\s*\{\s*\}/.test(lifecycle),
     'resetExplorationFocus must not be an empty stub'
   );
-  console.log('  PASS - returnToOverview and resetExplorationFocus are real exported functions');
+  assert(
+    /import\s+\{[\s\S]*resetExplorationFocus\s+as\s+_resetExplorationFocusImpl[\s\S]*returnToOverview\s+as\s+_returnToOverviewImpl[\s\S]*\}\s+from\s+['"]\.\/lifecycle-reset\.ts['"]/.test(lifecycle),
+    'lifecycle facade must import reset/overview implementations from lifecycle-reset.ts'
+  );
+  assert(
+    /export function resetExplorationFocus\s*\([^)]*\)\s*\{[\s\S]{0,1200}state\.navState[\s\S]{0,1200}syncFocusStage[\s\S]{0,1200}publish/.test(lifecycleReset),
+    'lifecycle-reset.ts must own the non-trivial reset body (state mutations + focus sync + event publication)'
+  );
+  assert(
+    /export function returnToOverview\s*\([^)]*\)\s*\{[\s\S]{0,420}resetExperienceState\(\);[\s\S]{0,420}switchView\('galaxy'\)/.test(lifecycleReset),
+    'lifecycle-reset.ts must own the non-trivial returnToOverview body'
+  );
+  console.log('  PASS - returnToOverview and resetExplorationFocus are real exported facade functions backed by lifecycle-reset.ts');
 
   // Contract Point 5: keyboard-help calls only _ prefixed variants from key handlers
   console.log('\n[CONTRACT 5] keyboard-help calls only _returnToOverview / _resetExplorationFocus from key handlers');
