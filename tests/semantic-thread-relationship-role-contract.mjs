@@ -26,7 +26,7 @@ const VALID_ROLES = new Set([
 const UI_FALLBACK_ROLE = 'unclassified';
 
 const CODE_PROPAGATION_FILES = [
-  'js/workers/data-worker.ts',
+  'js/workers/data-worker.js',
   'js/modules/semantic-threads.ts',
   'js/modules/thread-inspector.ts',
   'js/modules/focus-pocket.ts',
@@ -99,7 +99,7 @@ assert(!/return\s+['"]bridge['"]/.test(roleCopySource),
   'relationship role normalization must not silently coerce missing/unknown roles to bridge');
 
 const bridgeFallbackSearchFiles = [
-  'js/workers/data-worker.ts',
+  'js/workers/data-worker.js',
   'js/modules/semantic-threads.ts',
   'js/modules/thread-inspector.ts',
   'js/modules/focus-pocket.ts',
@@ -142,7 +142,7 @@ assert(
 
 const threadInspectorSource = fs.readFileSync(path.join(ROOT, 'js/modules/thread-inspector.ts'), 'utf8');
 assert(
-  /from\s+['"]\.\/journey-thread-model\.js['"]/.test(threadInspectorSource) &&
+  /from\s+['"]\.\/journey-thread-model\.ts['"]/.test(threadInspectorSource) &&
     /getSemanticThreadCandidates/.test(threadInspectorSource) &&
     /getGeometricThreadCandidates/.test(threadInspectorSource) &&
     /getThreadCandidatesForIndex/.test(threadInspectorSource),

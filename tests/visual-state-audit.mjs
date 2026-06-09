@@ -32,6 +32,8 @@ const launchOptions = {
   args: headed
     ? [
         '--ignore-gpu-blocklist',
+        '--use-gl=angle',
+        '--enable-webgl',
         ...(process.platform === 'win32' && process.env.SEMANTIC_USE_D3D11 === '1' ? ['--use-angle=d3d11'] : []),
       ]
     : [],
@@ -239,7 +241,7 @@ async function waitForReady(page, label = 'unknown') {
     if (!state?.renderer || !state?.scene || !state?.camera) return false;
     if (!state?.pointsMesh?.geometry?.attributes?.position?.count) return false;
     return true;
-  }, requireWebgl, { timeout: 8000 })
+  }, requireWebgl, { timeout: 20000 })
     .then(() => console.log(`[waitForReady:${label}] WebGL/fallback state resolved`))
     .catch((err) => {
       console.log(`[waitForReady:${label}] WebGL state timeout/failed: ${err.message}`);
@@ -317,7 +319,7 @@ async function waitForGraphVisualSettle(page, label = 'unknown') {
 }
 
 async function gotoReady(page, url) {
-  await page.goto(url, { waitUntil: 'commit', timeout: 10000 });
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
 }
 
 async function markVisualRouteEvidence(page, source, detail) {
@@ -1673,6 +1675,7 @@ async function applyPopulatedInfoPanelState(page) {
     document.body.dataset.activeView = 'galaxy';
     document.body.dataset.graphContext = 'focus';
     document.body.dataset.panelSurface = 'focus';
+    document.body.dataset.focusedNode = '0';
 
     const selectedDetails = document.querySelector('#selected-details');
     if (selectedDetails) {

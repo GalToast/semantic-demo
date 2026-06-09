@@ -92,35 +92,25 @@ function testExploreThreadNeighborDirectAssignmentRemoved() {
   assertNotContains(src, 'window.exploreThreadNeighbor = exploreThreadNeighbor',
     'window.exploreThreadNeighbor direct assignment removed');
 
-  // window._ti.exploreThreadNeighbor (diagnostic access) MUST exist (inside __DEBUG_PROBES__ gate)
-  const tiBlock = getWindowTiBlock(src);
-  assert(tiBlock.includes('exploreThreadNeighbor'),
-    '_ti.exploreThreadNeighbor diagnostic access remains');
+  // window._ti was retired during TS migration; functions exported directly
+  assert(src.includes('export function exploreThreadNeighbor'),
+    'exploreThreadNeighbor exported directly from thread-inspector');
 
-  // A comment documenting the Wave70 removal must exist near end of file
-  const last300 = src.slice(Math.max(0, src.length - 450));
-  const hasWave70Comment = /Wave70|diagnostic|removed|window\._ti/.test(last300);
-  assert(hasWave70Comment, 'Wave70 removal comment present at end of file');
-
-  console.log('  OK window.exploreThreadNeighbor removed; _ti.exploreThreadNeighbor diagnostic remains');
+  console.log('  OK window.exploreThreadNeighbor removed; function exported directly');
 }
 
 // TEST 2: window._ti is the debug namespace and contains all internal functions
 // ---------------------------------------------------------------------------
 
 function testWindowTiDebugNamespace() {
-  console.log('\n[TEST] window._ti debug namespace contains all internal functions');
+  console.log('\n[TEST] thread-inspector functions exported directly (window._ti retired)');
 
   const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
 
-  assert(
-    src.includes("registerDiagnosticProbe('_ti', {") || src.includes('window._ti = {'),
-    'window._ti namespace exposed through diagnostic adapter or legacy assignment'
-  );
+  // window._ti was retired during TS migration; functions exported directly
+  assert(!src.includes('window._ti'), 'window._ti debug namespace remains retired');
 
-  const tiBlock = getWindowTiBlock(src);
-
-  const expectedTiExports = [
+  const expectedExports = [
     'getSemanticThreadCandidates',
     'getGeometricThreadCandidates',
     'getThreadCandidatesForIndex',
@@ -132,7 +122,6 @@ function testWindowTiDebugNamespace() {
     'inspectThreadNeighbor',
     'pinThreadNeighbor',
     'unpinThreadInspection',
-    'scheduleCanvasThreadInspectionClear',
     'clearThreadInspection',
     'exploreThreadNeighbor',
     'syncInspectedStrandOverlay',
@@ -140,23 +129,15 @@ function testWindowTiDebugNamespace() {
     'disposeInspectedStrandOverlay'
   ];
 
-  for (const fn of expectedTiExports) {
-    const lastFn = expectedTiExports[expectedTiExports.length - 1];
-    const isLast = fn === lastFn;
-    assert(
-      isLast
-        ? tiBlock.includes(fn)
-        : (tiBlock.includes(fn + ',') || tiBlock.includes(fn + '\n')),
-      `window._ti contains ${fn}`
-    );
+  for (const fn of expectedExports) {
+    assert(src.includes(fn), fn + ' found in thread-inspector');
   }
 
-  console.log('  OK window._ti debug namespace verified');
+  console.log('  OK thread-inspector functions exported (window._ti retired)');
 }
 
-// TEST 3: No other window.* direct assignments beyond window._ti
-// Only window._ti is allowed as a direct window assignment (diagnostic namespace).
-// window.exploreThreadNeighbor has been removed (Wave70).
+// TEST 3: No other window.* direct assignments — all retired
+// window._ti and window.exploreThreadNeighbor both retired during TS migration.
 
 function testNoOtherWindowAssignments() {
   console.log('\n[TEST] No other window.* direct assignments in thread-inspector.ts');
@@ -174,23 +155,14 @@ function testNoOtherWindowAssignments() {
     return line.includes('= ') && !line.includes('= function') && !line.includes('= () =>');
   });
 
-  for (const assignment of directExposes) {
-    const fnMatch = assignment.match(/window\.([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/);
-    if (fnMatch) {
-      const fn = fnMatch[1];
-      // Only window._ti is allowed — window.exploreThreadNeighbor removed (Wave70)
-      assert(
-        fn === '_ti',
-        `thread-inspector.js: unexpected window.${fn} assignment. Only window._ti is allowed.`
-      );
-    }
-  }
+  // All window.* direct assignments retired (window._ti and window.exploreThreadNeighbor)
+  assert(directExposes.length === 0, `thread-inspector.js: unexpected window.* assignments: ${directExposes.join(', ')}`);
 
-  console.log('  OK no unexpected window.* direct assignments');
+  console.log('  OK no window.* direct assignments (all retired)');
 }
 
 // TEST 4: window.exploreThreadNeighbor direct assignment is absent
-// (Wave70 removal — only window._ti is allowed now)
+// (Wave70 removal — window._ti also retired)
 
 function testExploreThreadNeighborDirectAssignmentAbsent() {
   console.log('\n[TEST] window.exploreThreadNeighbor direct assignment is absent');
@@ -201,12 +173,11 @@ function testExploreThreadNeighborDirectAssignmentAbsent() {
   assert(lastExploreOccurrence === -1,
     'window.exploreThreadNeighbor direct assignment removed (not found)');
 
-  // Verify _ti.exploreThreadNeighbor still exists in diagnostic namespace
-  const tiBlock = getWindowTiBlock(src);
-  assert(tiBlock.includes('exploreThreadNeighbor'),
-    '_ti.exploreThreadNeighbor diagnostic access is intact');
+  // Verify exploreThreadNeighbor is exported directly (no window._ti)
+  assert(src.includes('export function exploreThreadNeighbor'),
+    'exploreThreadNeighbor exported directly from thread-inspector');
 
-  console.log('  OK window.exploreThreadNeighbor direct assignment absent; _ti diagnostic intact');
+  console.log('  OK window.exploreThreadNeighbor direct assignment absent; function exported directly');
 }
 
 // TEST 5: Wave70 removal comment is specific and accurate

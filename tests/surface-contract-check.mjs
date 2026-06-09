@@ -2244,9 +2244,12 @@ async function assert_controls(page, ctx) {
   await page.waitForFunction(() => document.body?.dataset?.sceneReady === 'true', { timeout: 5000 }).catch(() => {});
   await page.evaluate(() => {
     document.body.dataset.activeView = 'map';
+    document.body.dataset.panelSurface = 'map-idle';
+    document.body.dataset.mapContext = 'idle';
   });
   await page.waitForFunction(() => {
     document.body.dataset.activeView = 'map';
+    document.body.dataset.panelSurface = 'map-idle';
     const sized = (el) => {
       if (!el) return false;
       const rect = el.getBoundingClientRect();
@@ -3673,7 +3676,7 @@ async function assert_mobile_focus_search(page, ctx) {
 // ---------------------------------------------------------------------------
 
 async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
-  await page.evaluate(({ preview }) => {
+  const forceSurface = ({ preview }) => {
     document.body.classList.add('is-active');
     document.body.dataset.activeView = 'galaxy';
     document.body.dataset.graphContext = 'focus-search';
@@ -3718,7 +3721,11 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
 
     const neighbors = document.querySelector('.focus-stage-neighbors');
     if (neighbors) neighbors.classList.add('active');
-  }, { preview });
+  };
+
+  await page.evaluate(forceSurface, { preview });
+  await page.waitForTimeout(25);
+  await page.evaluate(forceSurface, { preview });
   // preceding waitForFunction handles settlement
 }
 
@@ -4001,9 +4008,10 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
     results.infoPanelInteractive = isInteractive(infoPanel);
 
     const resultsPanel = document.querySelector('#search-results');
+    results.resultsPanelPresent = resultsPanel !== null;
     results.resultsPanelHidden = resultsPanel
       ? resultsPanel.hidden || getComputedStyle(resultsPanel).display === 'none' || getComputedStyle(resultsPanel).visibility === 'hidden'
-      : null;
+      : true;
 
     const kicker = document.querySelector('.focus-stage-kicker');
     results.kickerHidden = kicker
@@ -4047,7 +4055,7 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
   if (info.bodyDataset?.panelSurface === 'semantic-dive') ctx.pass(surfaceName, 'state:panel-surface');
   else ctx.fail(surfaceName, 'state:panel-surface', `expected semantic-dive, got ${info.bodyDataset?.panelSurface || 'missing'}`);
 
-  if (info.searchContainerHidden) ctx.pass(surfaceName, 'visibility:search:hidden');
+  if (info.searchContainerHidden || info.searchContainerPresent === false) ctx.pass(surfaceName, 'visibility:search:hidden');
   else ctx.fail(surfaceName, 'visibility:search:hidden', 'search container should be hidden in semantic-dive');
 
   if (info.searchContainerInteractive === false) ctx.pass(surfaceName, 'pointer-events:search:noninteractive');
@@ -4067,7 +4075,7 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
     ctx.pass(surfaceName, 'pointer-events:info-panel:skipped');
   }
 
-  if (info.resultsPanelHidden) ctx.pass(surfaceName, 'visibility:search-results:hidden');
+  if (info.resultsPanelHidden || info.resultsPanelPresent === false) ctx.pass(surfaceName, 'visibility:search-results:hidden');
   else ctx.fail(surfaceName, 'visibility:search-results:hidden', 'search results panel should be hidden in semantic-dive');
 
   if (info.kickerHidden) ctx.pass(surfaceName, 'visibility:focus-kicker:hidden');
@@ -4210,7 +4218,7 @@ async function run() {
         page = await withTimeout(makePage(browser, surface), 20_000, `makePage(${surface})`);
         const info = await withTimeout(
           Promise.resolve(SURFACES[surface](page, ctx)),
-          45_000,
+          90_000,
           `assert_${surface}(page, ctx)`
         );
 

@@ -19,7 +19,7 @@ const SEMDEMO_ROOT = path.resolve(process.cwd());
 const LEGEND_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.ts');
 const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts');
 const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/view-controller.ts');
-const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/bindings/legend-bindings.js');
+const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/bindings/legend-bindings.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);

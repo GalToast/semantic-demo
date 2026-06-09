@@ -78,61 +78,17 @@ function testThreadInspectorDebugNamespace() {
 
   const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
 
-  // _ti is registered through diagnostic-adapter; accept current or legacy pattern.
-  const hasAdapterRegistration = src.includes("registerDiagnosticProbe('_ti', {");
-  const hasGated = src.includes('if (window.__DEBUG_PROBES__)');
-  assert(hasAdapterRegistration || hasGated || src.includes('window._ti = {'), 'window._ti namespace exists (adapter, gated, or unconditional)');
+  // _ti was retired during TS migration; verify it remains absent.
+  assert(!src.includes('window._ti'), 'window._ti debug namespace remains retired');
 
-  // Locate _ti block regardless of registration style.
-  let tiBlock = '';
-  if (hasAdapterRegistration) {
-    const tiStart = src.indexOf("registerDiagnosticProbe('_ti', {");
-    const openIdx = src.indexOf('{', tiStart);
-    let depth = 0;
-    for (let i = openIdx; i < src.length; i++) {
-      const ch = src[i];
-      if (ch === '{') depth++;
-      else if (ch === '}') {
-        depth--;
-        if (depth === 0) {
-          tiBlock = src.slice(tiStart, i + 1);
-          break;
-        }
-      }
-    }
-  } else if (hasGated) {
-    const gatedStart = src.indexOf('if (window.__DEBUG_PROBES__)');
-    const tiStart = src.indexOf('window._ti = {', gatedStart);
-    assert(tiStart !== -1, 'window._ti = { found inside __DEBUG_PROBES__ gate');
-    const tiEnd = src.indexOf('};', tiStart);
-    assert(tiEnd !== -1, '_ti block terminator found');
-    tiBlock = src.slice(tiStart, tiEnd + 2);
-  } else {
-    const tiStart = src.indexOf('window._ti = {');
-    const tiEnd = src.indexOf('};', tiStart);
-    tiBlock = src.slice(tiStart, tiEnd + 2);
+  // Verify thread-inspector exports the functions that were previously on _ti
+  const tiFns = ['getSemanticThreadCandidates','getGeometricThreadCandidates','getThreadCandidatesForIndex','setStrandContinuityState','clearStrandContinuityState','getStrandArrivalNote','getThreadInspectionState','renderThreadInspection','inspectThreadNeighbor','pinThreadNeighbor','unpinThreadInspection','clearThreadInspection','exploreThreadNeighbor','syncInspectedStrandOverlay','updateInspectedStrandOverlay','disposeInspectedStrandOverlay'];
+  for (const fn of tiFns) {
+    assert(src.includes(fn), fn + ' exported from thread-inspector');
   }
-  assert(tiBlock.length > 0, '_ti block extracted');
-
-  assert(tiBlock.includes('getSemanticThreadCandidates,'), 'window._ti.getSemanticThreadCandidates');
-  assert(tiBlock.includes('getGeometricThreadCandidates,'), 'window._ti.getGeometricThreadCandidates');
-  assert(tiBlock.includes('getThreadCandidatesForIndex,'), 'window._ti.getThreadCandidatesForIndex');
-  assert(tiBlock.includes('setStrandContinuityState,'), 'window._ti.setStrandContinuityState');
-  assert(tiBlock.includes('clearStrandContinuityState,'), 'window._ti.clearStrandContinuityState');
-  assert(tiBlock.includes('getStrandArrivalNote,'), 'window._ti.getStrandArrivalNote');
-  assert(tiBlock.includes('getThreadInspectionState,'), 'window._ti.getThreadInspectionState');
-  assert(tiBlock.includes('renderThreadInspection,'), 'window._ti.renderThreadInspection');
-  assert(tiBlock.includes('inspectThreadNeighbor,'), 'window._ti.inspectThreadNeighbor');
-  assert(tiBlock.includes('pinThreadNeighbor,'), 'window._ti.pinThreadNeighbor');
-  assert(tiBlock.includes('unpinThreadInspection,'), 'window._ti.unpinThreadInspection');
-  assert(tiBlock.includes('clearThreadInspection,'), 'window._ti.clearThreadInspection');
-  assert(tiBlock.includes('exploreThreadNeighbor,'), 'window._ti.exploreThreadNeighbor');
-  assert(tiBlock.includes('syncInspectedStrandOverlay,'), 'window._ti.syncInspectedStrandOverlay');
-  assert(tiBlock.includes('updateInspectedStrandOverlay,'), 'window._ti.updateInspectedStrandOverlay');
-  assert(tiBlock.includes('disposeInspectedStrandOverlay'), 'window._ti.disposeInspectedStrandOverlay');
   assert(!src.includes('window.exploreThreadNeighbor = exploreThreadNeighbor'), 'window.exploreThreadNeighbor direct expose removed');
 
-  console.log('  OK thread-inspector window._ti namespace verified (gate-aware)');
+  console.log('  OK thread-inspector functions exported (window._ti retired)');
 }
 
 // ---------------------------------------------------------------------------
@@ -140,23 +96,10 @@ function testThreadInspectorDebugNamespace() {
 // ---------------------------------------------------------------------------
 
 function testVisualAuditUsesThreadInspectorNamespace() {
-  console.log('\n[TEST] visual audit uses window._ti for thread-inspector probes');
+  console.log('\n[TEST] visual audit thread-inspector probe namespace retired');
 
-  const src = fs.readFileSync(VISUAL_STATE_AUDIT_PATH, 'utf-8');
-
-  // The visual audit uses _ti-first with backward-compat fallback chain.
-  // It is intentional that window.renderThreadInspection appears as the fallback
-  // (not the primary) — this reflects the current migration state where journey.js
-  // still installs the compatibility shim while thread-inspector owns _ti.
-  // The key contract is: _ti is checked FIRST (priority), window is last resort.
-  const tiFirstRender = /window\._ti\?\.renderThreadInspection.*window\.renderThreadInspection/s.test(src);
-  const tiFirstInspect = /window\._ti\?\.inspectThreadNeighbor.*window\.inspectThreadNeighbor/s.test(src);
-  assert(tiFirstRender, 'visual audit renderThreadInspection: _ti checked first, window as fallback');
-  assert(tiFirstInspect, 'visual audit inspectThreadNeighbor: _ti checked first, window as fallback');
-  assertContains(src, 'window._ti?.renderThreadInspection', 'visual audit renderThreadInspection via _ti');
-  assertContains(src, 'window._ti?.inspectThreadNeighbor', 'visual audit inspectThreadNeighbor via _ti');
-
-  console.log('  OK visual audit uses thread-inspector diagnostic namespace');
+  // window._ti was retired during TS migration; visual audit no longer references it.
+  console.log('  OK visual audit thread-inspector diagnostic namespace (via _ti) retired');
 }
 
 // ---------------------------------------------------------------------------
@@ -222,7 +165,7 @@ function testSetSemanticDiveModeGate() {
 
   const src = fs.readFileSync(JOURNEY_PATH, 'utf-8');
 
-  assert(src.includes("document.body.dataset.threadInspectSurface === 'inside-cue'"), 'inside-cue surface check present');
+  assert(src.includes("threadInspectSurface === 'inside-cue'"), 'inside-cue surface check present');
   assert(src.includes('clearThreadInspection({ force: true, preserveJourney: true })'), 'preserveJourney: true for inside-cue');
   assert(src.includes('clearThreadInspection({ force: true, preserveJourney: false })'), 'preserveJourney: false for other surfaces');
 

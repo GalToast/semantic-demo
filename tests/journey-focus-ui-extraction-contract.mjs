@@ -41,7 +41,7 @@ for (const name of requiredExports) {
 }
 
 assert(
-  /from\s+['"]\.\/journey-focus-ui\.js['"]/.test(journeySrc),
+  /from\s+['"]\.\/journey-focus-ui['"]\s/.test(journeySrc),
   'journey.js should import the focus UI owner'
 );
 assert(
