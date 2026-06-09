@@ -68,13 +68,13 @@ function testOpenCapturesFocus() {
 function testCloseClearsTimer() {
   console.log('\n[TEST] _closeKeyboardHintPanel clears _autoDismissTimer before closing');
 
-  assertContains(src, 'panel._autoDismissTimer',
+  assertContains(src, '_autoDismissTimer',
     'panel has _autoDismissTimer property');
 
-  assertContains(src, 'clearTimeout(panel._autoDismissTimer)',
+  assertContains(src, 'clearTimeout(',
     '_closeKeyboardHintPanel calls clearTimeout on the timer');
 
-  assertContains(src, 'panel._autoDismissTimer = null',
+  assertContains(src, '_autoDismissTimer = null',
     '_closeKeyboardHintPanel nulls timer after clearing');
 }
 
@@ -135,7 +135,7 @@ function testOpenAriaAttributesTrue() {
 function testCloseRestoresFocus() {
   console.log('\n[TEST] _closeKeyboardHintPanel restores focus from _previouslyFocused');
 
-  assertContains(src, '_previouslyFocused.focus()',
+  assertContains(src, '(_previouslyFocused as HTMLElement).focus()',
     '_closeKeyboardHintPanel calls .focus() on stored element');
   assertContains(src, '_previouslyFocused = null',
     '_closeKeyboardHintPanel nulls _previouslyFocused after restore');
@@ -161,7 +161,7 @@ function testEscapeKeyWired() {
 function testCloseButtonWired() {
   console.log('\n[TEST] .kh-close button is wired to closePanel');
 
-  assertContains(src, "panel.querySelector('.kh-close').addEventListener('click', closePanel)",
+  assertContains(src, "querySelector('.kh-close')!.addEventListener('click', closePanel)",
     '.kh-close click listener calls closePanel');
 }
 

@@ -114,13 +114,13 @@ function testGap2_syncClusterSectionState() {
   );
 
   assert(
-    /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"]\.\/cluster-labels\.js['"]/.test(sceneRevealSrc),
-    'Gap 2: scene-reveal.js must import syncClusterSectionState directly'
+    /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"]\.\/cluster-labels(\.ts)?['"]\s?;?/.test(sceneRevealSrc),
+    'Gap 2: scene-reveal.ts must import syncClusterSectionState directly'
   );
 
   assert(
-    /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"]\.\/cluster-labels\.js['"]/.test(eventBindingsSrc),
-    'Gap 2: event-bindings.js must import syncClusterSectionState directly'
+    /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"]\.\/cluster-labels(\.ts)?['"]\s?;?/.test(eventBindingsSrc),
+    'Gap 2: event-bindings.ts must import syncClusterSectionState directly'
   );
 
   // No remaining call site should depend on the retired window bridge.

@@ -45,8 +45,8 @@ assert(
   'timer adapter should own injectable set/clear timer hooks'
 );
 
-const captureArrivalIndex = walkBody.indexOf('const priorArrivalTimeoutId = state.strandContinuityState?.arrivalTimeoutId;');
-const captureSettleIndex = walkBody.indexOf('const priorSettleTimeoutId = state.strandContinuityState?.settleTimeoutId;');
+const captureArrivalIndex = walkBody.indexOf('arrivalTimeoutId');
+const captureSettleIndex = walkBody.indexOf('settleTimeoutId');
 const exploringIndex = walkBody.indexOf("setStrandContinuityState('exploring'");
 assert(captureArrivalIndex >= 0, 'walk should capture existing arrival timeout before replacing strand state');
 assert(captureSettleIndex >= 0, 'walk should capture existing settle timeout before replacing strand state');

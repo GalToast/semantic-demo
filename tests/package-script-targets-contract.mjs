@@ -11,9 +11,7 @@ import { execFileSync } from 'node:child_process';
 
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
-const ALLOWED_UNTRACKED_TARGETS = new Set([
-  'tests/helpers/ts-resolve-loader.mjs',
-]);
+const ALLOWED_UNTRACKED_TARGETS = new Set([]);
 
 const REQUIRED_SCRIPT_INCLUDES = [
   {
