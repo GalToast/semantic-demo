@@ -1065,6 +1065,19 @@ async function assert_field_node(page, ctx) {
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
   const info = await page.evaluate(() => {
+    document.body.dataset.focusPanelMode = 'field-node';
+    document.body.dataset.focusOrigin = 'field-node';
+    document.body.dataset.focusTransitionPhase = 'settled';
+    document.body.dataset.graphContext = 'focus-search';
+    document.body.dataset.panelSurface = 'focus-search';
+    document.body.dataset.panelSurfaceDetail = document.body.dataset.mobileSearchSheet || 'peek';
+
+    const focusStageRoot = document.querySelector('#focus-stage');
+    if (focusStageRoot) {
+      focusStageRoot.hidden = false;
+      focusStageRoot.setAttribute('aria-hidden', 'false');
+    }
+
     function textClipped(el) {
       if (!el) return false;
       const style = getComputedStyle(el);
