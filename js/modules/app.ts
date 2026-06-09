@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { state } from '../state.ts';
 import * as journeyModule from './journey.ts';
-import { initMicroDemo } from './micro-demo.ts';
+import { cancelMicroDemo, initMicroDemo, isMicroDemoRunning } from './micro-demo.ts';
 import * as searchModule from './search-state.ts';
 import * as cameraModule from './camera-controls.ts';
 import * as focusModule from './focus-pocket.ts';
@@ -386,6 +386,8 @@ export async function init(): Promise<void> {
                 requestSemanticGuide,
                 showSemanticThreadsDetail
             };
+            (window as any).cancelMicroDemo = cancelMicroDemo;
+            (window as any).isMicroDemoRunning = isMicroDemoRunning;
             (window as any)._getSelectedBusinessRoleLabel = _getSelectedBusinessRoleLabel;
         });
 

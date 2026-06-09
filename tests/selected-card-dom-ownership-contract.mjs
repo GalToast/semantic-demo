@@ -61,8 +61,7 @@ const SVELTE_OWNED_CHILD_IDS = [
 // These modules are allowed to query/write the structural container IDs.
 const AUTHORIZED_SLOT_WRITERS = new Set([
     'js/modules/focus-stage-renderer.ts',
-    'js/modules/focus-stage-renderer.ts',
-    'js/modules/journey-selected-card.ts',
+    'js/modules/focus-stage-dom.ts',
     'js/modules/journey-selected-card.ts',
     'js/modules/selected-details-svelte-island.ts',
     'js/modules/components/InfoPanelSelectionSurface.svelte',

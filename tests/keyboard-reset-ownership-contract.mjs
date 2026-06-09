@@ -60,11 +60,11 @@ try {
   // Contract Point 2: Inert defaults are module-local
   console.log('\n[CONTRACT 2] inert defaults are module-local');
   assert(
-    src.includes('let _returnToOverview = () => {};'),
+    /let\s+_returnToOverview(?:\s*:\s*\(\)\s*=>\s*void)?\s*=\s*\(\)\s*=>\s*\{\s*\};/.test(src),
     'returnToOverview default must be module-local inert () => {}'
   );
   assert(
-    src.includes('let _resetExplorationFocus = () => {};'),
+    /let\s+_resetExplorationFocus(?:\s*:\s*\(\)\s*=>\s*void)?\s*=\s*\(\)\s*=>\s*\{\s*\};/.test(src),
     'resetExplorationFocus default must be module-local inert () => {}'
   );
   assert(

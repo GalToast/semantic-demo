@@ -105,9 +105,6 @@ describe('search-results-ui.ts legacy DOM rendering', () => {
             search: (query, options = {}) => {
                 resultsEl.dataset.retryQuery = query;
                 resultsEl.dataset.retryPreferCached = String(options.preferCachedResults);
-            },
-            clearSearch: (options = {}) => {
-                resultsEl.dataset.clearPreserveSearch = String(options.preserveSearch);
             }
         };
 
@@ -128,6 +125,8 @@ describe('search-results-ui.ts legacy DOM rendering', () => {
         expect(resultsEl.dataset.retryPreferCached).toBe('false');
 
         resultsEl.querySelector('.search-error-dismiss-btn')?.click();
-        expect(resultsEl.dataset.clearPreserveSearch).toBe('false');
+        expect(resultsEl.querySelector('.search-error-state')).toBeNull();
+        expect(resultsEl.classList.contains('active')).toBe(false);
+        expect(resultsEl.getAttribute('aria-hidden')).toBe('true');
     });
 });

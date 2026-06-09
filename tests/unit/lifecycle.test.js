@@ -2,6 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { state } from '../../js/state.js';
 import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, setMyceliumMode, setSemanticDiveMode, setTrailDepth } from '../../js/modules/lifecycle.js';
 
+const stateMock = vi.hoisted(() => ({
+  state: {
+    myceliumMode: 'default',
+    trailDepth: 0,
+    navState: { trailDepth: 0, mode: 'overview' }
+  },
+  withStateMutation: (fn) => fn()
+}));
+
 vi.mock('../../js/modules/environment.js', () => ({
     getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),
     requestAnimationFrame: vi.fn((cb) => setTimeout(cb, 16)),
@@ -25,14 +34,8 @@ vi.mock('../../js/modules/environment.js', () => ({
     getAspectRatio: vi.fn(() => 1.33)
 }));
 
-vi.mock('../../js/state.js', () => ({
-  state: {
-    myceliumMode: 'default',
-    trailDepth: 0,
-    navState: { trailDepth: 0, mode: 'overview' }
-  },
-  withStateMutation: (fn) => fn()
-}));
+vi.mock('../../js/state.js', () => stateMock);
+vi.mock('../../js/state.ts', () => stateMock);
 
 // Mock the internal methods that setMyceliumMode calls
 vi.mock('../../js/modules/journey-point-color.js', () => ({

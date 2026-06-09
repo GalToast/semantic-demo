@@ -45,14 +45,11 @@ assert(
   'timer adapter should own injectable set/clear timer hooks'
 );
 
-const captureArrivalIndex = walkBody.indexOf('arrivalTimeoutId');
-const captureSettleIndex = walkBody.indexOf('settleTimeoutId');
 const exploringIndex = walkBody.indexOf("setStrandContinuityState('exploring'");
-assert(captureArrivalIndex >= 0, 'walk should capture existing arrival timeout before replacing strand state');
-assert(captureSettleIndex >= 0, 'walk should capture existing settle timeout before replacing strand state');
 assert(
-  captureArrivalIndex < exploringIndex && captureSettleIndex < exploringIndex,
-  'existing timeout IDs must be captured before setStrandContinuityState replaces the state object'
+  walkBody.includes('cancelAllThreadTimers();') &&
+    walkBody.indexOf('cancelAllThreadTimers();') < exploringIndex,
+  'walk should clear tracked traversal timers before replacing strand state'
 );
 
 assert(
@@ -62,9 +59,10 @@ assert(
 );
 
 assert(
-  walkBody.includes('timerAdapter.clearTimer(priorArrivalTimeoutId)') &&
-    walkBody.includes('timerAdapter.clearTimer(priorSettleTimeoutId)'),
-  'walk should clear prior traversal timers through the timer adapter'
+  source.includes("function _trackTimer(purpose: string") &&
+    source.includes("function _clearTrackedTimer(purpose: string") &&
+    source.includes('export function cancelAllThreadTimers()'),
+  'thread timers should be centralized through tracked timer helpers'
 );
 assert(
   !walkBody.includes('clearTimeout(state.strandContinuityState.arrivalTimeoutId)') &&
@@ -79,9 +77,9 @@ assert(settleTimerIndex > arrivalTimerIndex, 'walk should schedule settle after 
 assert(walkBody.includes('}, options.arrivalDelay || 820);'), 'arrival timer delay should remain configurable with 820ms default');
 assert(walkBody.includes('}, options.settleDelay || 5200);'), 'settle timer delay should remain configurable with 5200ms default');
 assert(
-  walkBody.includes('state.strandContinuityState.arrivalTimeoutId = arrivalTid;') &&
-    walkBody.includes('state.strandContinuityState.settleTimeoutId = settleTid;'),
-  'scheduled timer IDs should be stored on strandContinuityState for later cancellation'
+  walkBody.includes("_trackTimer('arrival', arrivalTid);") &&
+    walkBody.includes("_trackTimer('settle', settleTid);"),
+  'scheduled timer IDs should be stored in the tracked timer map for later cancellation'
 );
 
 const arrivalBlock = walkBody.slice(arrivalTimerIndex, settleTimerIndex);
