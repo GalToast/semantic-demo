@@ -416,7 +416,10 @@ export function createLifecycleMethods(
       if (ctx._filterState) {
         ctx._filterState.overwriteActiveFilters(filters);
       } else {
-        ctx._state.activeFilters = { ...filters };
+        // activeFilters is a TRACKED_SUB_KEY — route through withStateMutation
+        ctx._withMutation(() => {
+          ctx._state!.activeFilters = { ...filters };
+        });
         ctx._state.filterVersion = (ctx._state.filterVersion ?? 0) + 1;
         ctx._state.filterColorVersion =
           (ctx._state.filterColorVersion ?? 0) + 1;

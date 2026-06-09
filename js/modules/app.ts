@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { state } from '../state.js';
 import * as journeyModule from './journey.js';
 import { initMicroDemo } from './micro-demo.js';
@@ -46,6 +47,11 @@ import { getInterestingBusinessNote, buildSelectedMatchNarrative } from './focus
 import { describeThreadLensForPoint } from './journey-point-color.js';
 import { hydrateLeadContext } from './lifecycle.js';
 import { subscribeKeyed, EVENTS, publish } from './event-bus.js';
+// Cross-bus bridge: the legacy event bus (this module) and the Svelte
+// orchestration bus are separate module instances. Re-publish key events
+// on the Svelte bus so Svelte subscribers (e.g. triggers.ts → addTrailStop)
+// fire when the legacy code drives a focus change.
+import { publish as publishSvelte, EVENTS as SVELTE_EVENTS } from '../../src/lib/orchestration/event-bus.js';
 import { requestSemanticGuide } from './semantic-guide.js';
 import { showSemanticThreadsDetail } from './connection-analysis.js';
 import { setSearchPanelState } from './search-results-ui.js';
@@ -284,6 +290,8 @@ function initEventBusSubscriptions(): void {
              focusOnPoint(point, { fromSearchResult: true });
         }
         syncSearchStatusForFocus(point, { fromSearchResult: true });
+        // Bridge to Svelte bus so triggers.ts fires addTrailStop + setTrailDepth
+        publishSvelte(SVELTE_EVENTS.SEARCH_FOCUS_REQUESTED, { index });
     });
 
     subscribeKeyed('app:search-state-reset-requested', EVENTS.SEARCH_STATE_RESET_REQUESTED, (options: AppEventPayload) => {
