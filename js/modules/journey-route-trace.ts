@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * journey-route-trace.ts — TypeScript shadow of journey-route-trace.js
  * Route trace overlay rendering, subscriptions, and frame updates.

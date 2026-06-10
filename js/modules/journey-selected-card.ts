@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * journey-selected-card.ts
  *

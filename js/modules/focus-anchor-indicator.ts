@@ -1,4 +1,3 @@
-// @ts-nocheck
 // focus-anchor-indicator.ts
 // TypeScript shadow of focus-anchor-indicator.js
 // Focus anchor visual treatment: ring + pulse + size cues.

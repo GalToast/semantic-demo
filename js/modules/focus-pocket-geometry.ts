@@ -1,4 +1,3 @@
-// @ts-nocheck
 // focus-pocket-geometry.ts
 // TypeScript shadow of focus-pocket-geometry.js
 // Focus constellation geometry, seeded placement, screen-bounds, thread curve points.

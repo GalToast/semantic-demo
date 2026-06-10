@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * journey-canvas-hit-test.ts — TypeScript shadow of journey-canvas-hit-test.js
  */

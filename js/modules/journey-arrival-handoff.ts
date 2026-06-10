@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * journey-arrival-handoff.ts
  * Canonical TS module — preserves export/import parity with the prior
