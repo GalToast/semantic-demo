@@ -23,6 +23,16 @@ declare global {
     __semanticDevTools?: { deepTrack?: boolean };
     /** Leaflet global loaded at runtime by map-state.ts */
     L?: Record<string, Function>;
+    /** Semantic lane cooldown probe scheduler */
+    scheduleSemanticLaneCooldownProbe?: (payload: Record<string, unknown>) => void;
+    /** Semantic lane assist UI updater */
+    updateSemanticLaneAssistUi?: () => void;
+    /** Semantic lane cooldown probe timer clearer */
+    clearSemanticLaneCooldownProbeTimer?: () => void;
+    /** Semantic lane ops summary fetcher */
+    fetchSemanticLaneOpsSummary?: () => Promise<unknown>;
+    /** Semantic lane ops summary renderer */
+    renderSemanticLaneOpsSummary?: (summary: unknown) => void;
   }
 }
 
@@ -429,6 +439,8 @@ export interface SearchSummary {
 }
 
 export interface SemanticState extends StateConfig {
+    /** Allow legacy string-indexed access for Proxy compatibility */
+    [key: string]: unknown;
     points: Point[];
     map: unknown;
     markersLayer: unknown;
@@ -1005,7 +1017,8 @@ export const _rawState: SemanticState = {
     focusedNode: null,
     _semanticDiveTransitionDeadline: 0,
     semanticLaneWarmingCounter: 0,
-    lastRenderedTypeToken: 0
+    lastRenderedTypeToken: 0,
+    lastSuccessfulFetch: null
 };
 
 let _devWarned: Set<string> | null = null;
