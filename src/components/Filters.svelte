@@ -153,18 +153,17 @@
       </select>
     </div>
 
-    <!-- Reset button -->
-    {#if $hasActiveFilters}
-      <button
-        class="filter-reset"
-        id="filter-clear-btn"
-        onclick={handleReset}
-        aria-label="Reset all filters"
-        type="button"
-      >
-        Reset ({$activeFilterCount})
-      </button>
-    {/if}
+    <!-- Reset button (always rendered for contract test parity) -->
+    <button
+      class="filter-reset"
+      id="filter-clear-btn"
+      onclick={handleReset}
+      aria-label="Reset all filters"
+      type="button"
+      disabled={!$hasActiveFilters}
+    >
+      Reset ({$activeFilterCount})
+    </button>
   </div>
 </details>
 
@@ -259,8 +258,16 @@
     transition: all 0.15s;
     white-space: nowrap;
     min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
-  .filter-reset:hover {
+  .filter-reset:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .filter-reset:hover:not(:disabled) {
     background: rgba(255, 107, 107, 0.22);
     border-color: #ff6b6b;
   }
