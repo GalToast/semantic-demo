@@ -118,6 +118,7 @@
     navStore().surface === 'idle'
   );
   let legacySearchChromeHidden = $derived(searchChromeSurface);
+  let headerChromeVisible = $derived(navStore().surface === 'idle');
 </script>
 
 <div
@@ -149,8 +150,10 @@
     <!-- Search results panel (renders `.search-result` for contract test clicks) -->
     <SearchResults visible={true} />
 
-    <!-- Header with mode chips -->
-    <Header visible={true} />
+    {#if headerChromeVisible}
+      <!-- Header with mode chips -->
+      <Header visible={true} />
+    {/if}
   {/if}
 
   <!--

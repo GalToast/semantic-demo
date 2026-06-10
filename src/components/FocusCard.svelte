@@ -15,7 +15,7 @@
     #selected-role-badge
 -->
 <script lang="ts">
-  import { hasFocus, focusedIndex } from '@lib/stores/navigation.svelte';
+  import { currentSurface, hasFocus, focusedIndex } from '@lib/stores/navigation.svelte';
   import { activeResult } from '@lib/stores/search.svelte';
   import { getBusinessRecords, getIsDataReady } from '@lib/stores/index.svelte';
   import type { BusinessRecord } from '@lib/types/business';
@@ -52,6 +52,7 @@
   let currentFocusedIdx = $derived(focusedIndex());
   let currentActiveResult = $derived(activeResult());
   let isFocused = $derived(hasFocus());
+  let surface = $derived(currentSurface());
 
   let selectedRecord = $derived.by((): BusinessRecord | null => {
     if (!getIsDataReady() || getBusinessRecords().length === 0) return null;
@@ -76,7 +77,7 @@
   });
 
   let isEmpty = $derived(!selectedRecord);
-  let cardVisible = $derived(visible && isFocused);
+  let cardVisible = $derived(visible && isFocused && surface !== 'search');
 
   // ── Display helpers ───────────────────────────────────────────────────────────
 
@@ -101,7 +102,7 @@
 
 {#if cardVisible}
   <div
-    class="focus-card selected-card"
+    class="focus-card selected-card focus-stage-card"
     id="selected-card"
     class:selected-card-empty={isEmpty}
     aria-label="Selected business"
@@ -358,16 +359,8 @@
   }
 
   @media (max-width: 768px) {
-    .focus-card {
-      bottom: auto;
-      top: 3.5rem;
-      right: 0.5rem;
-      width: min(240px, 60vw);
-      /* Leave room below so the card does not overlap with the
-         JourneyChrome rail at the bottom. */
-      max-height: calc(100dvh - 7rem);
-      overflow-y: auto;
-      overscroll-behavior: contain;
-    }
+    /* Rely on legacy mobile CSS ownership (mobile_premium__focus-dive.css) for
+       bottom-sheet layout and sizing in active states, to prevent Svelte
+       scoped CSS from breaking the bottom-flush contract. */
   }
 </style>

@@ -170,8 +170,11 @@
   .mode-chip {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.3rem;
     padding: 0.3rem 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
     background: none;
     border: 1px solid transparent;
     border-radius: 0.3rem;
@@ -223,7 +226,7 @@
       display: none;
     }
     .mode-chip {
-      padding: 0.25rem 0.4rem;
+      padding: 0.25rem;
     }
   }
 </style>

@@ -146,8 +146,8 @@
     border: 1px solid rgba(78, 205, 196, 0.2);
     color: #6a8a8a;
     font-size: 1rem;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;

@@ -101,7 +101,9 @@
   let hasQuery = $derived($searchState.hasQuery);
   let activeId = $derived($searchState.activeResultId);
   let visibleCount = $derived(searchVisibleCountFn());
-  let searchError: { type: string; query?: string } | null = $derived(null as { type: string; query?: string } | null);
+  let searchError: { type: string; query?: string } | null = $derived(
+    status === 'error' ? { type: 'full', query: $searchState.query } : null
+  );
   let isSearching = $derived(status === 'searching');
 
   const resultSlice = $derived(results.slice(0, visibleCount) as any[]);
