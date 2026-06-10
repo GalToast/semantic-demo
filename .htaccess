@@ -23,8 +23,12 @@ RedirectMatch 301 ^/semantic-demo/?$ https://mccullough.cloud/semantic-demo/case
     Require all denied
 </FilesMatch>
 
-# Block node_modules and reports directories
+# Block development and legacy directories
 RewriteEngine On
+# backups/: defense-in-depth — deploy backups are now outside public_html
+# (DEPLOY_BACKUP_DIR default: /home/u741831384/backups/semantic-demo/).
+# This rule blocks any lingering old backup dirs under the web root.
+RewriteRule ^backups/ - [F,L]
 RewriteRule ^node_modules/ - [F,L]
 RewriteRule ^reports/ - [F,L]
 
@@ -60,4 +64,18 @@ RewriteRule ^reports/ - [F,L]
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Content-Security-Policy
+    # Designed for the legacy shell (vector-explorer-polished.html):
+    #   script-src: 'self' for dist/bundle.js + worker initiator;
+    #              cdn.jsdelivr.net for three.js modules via importmap.
+    #              The inline importmap is allowed by exact sha256 hash.
+    #              No 'unsafe-inline' needed.
+    #   style-src:  'unsafe-inline' required for SVG style="..." attributes
+    #               and JS element.style.* assignments.
+    #   font-src:   fonts.gstatic.com for Google Fonts WOFF2.
+    #   img-src:    data: for inline SVG favicon.
+    #   connect-src: api.open-meteo.com for weather widget (CORS fetch).
+    #   worker-src: js/workers/data-worker.js via new Worker().
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'sha256-lGEOGKyonii9j2P4RYFKZhnwl8Yl+BS7clpvKExzXrM='; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.open-meteo.com; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'; object-src 'none';"
 </IfModule>
