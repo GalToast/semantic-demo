@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * semantic-lane.ts
  *
@@ -151,6 +150,7 @@ function sanitizeProvenanceDetail(raw: unknown): string | null {
     if (lower.includes('lane:') || lower.includes('semantic lane:') || lower.includes('ops:') ||
         lower.includes('probing') || lower.includes('cold') || lower.includes('thread') ||
         lower.includes('embed') ||
+        lower.includes('warming') || lower.includes('optimized') || lower.includes('getting ready') ||
         lower.includes('semanticlaneops') || lower.includes('semantic_lane_ops') ||
         lower.includes('0 threads') || lower.includes('ops mode')) {
         return null;
@@ -174,8 +174,9 @@ export function applySemanticLaneHealthPayload(payload: LaneHealthPayload | null
     const provenanceLabel = sanitizeProvenanceLabel(rawProvenanceLabel);
     const provenanceDetail = sanitizeProvenanceDetail(rawProvenanceDetail);
 
-    // Track consecutive warming (degraded) probes for stuck detection
-    if (laneState === 'warming' || laneState === 'degraded') {
+    // Track only true warming probes for stuck detection. A degraded lane can
+    // run indefinitely on text fallback and should not be presented as warming.
+    if (laneState === 'warming') {
         state.semanticLaneWarmingCounter = (state.semanticLaneWarmingCounter || 0) + 1;
     } else {
         state.semanticLaneWarmingCounter = 0;
@@ -219,11 +220,11 @@ export function applySemanticLaneHealthPayload(payload: LaneHealthPayload | null
     }
 
     setSemanticLaneUiState('degraded', {
-        label: options.label || provenanceLabel || 'Search warming',
+        label: options.label || provenanceLabel || 'Search degraded',
         title:
             options.title ||
             provenanceDetail ||
-            'Semantic search is still getting ready.'
+            'Using text search while semantic search reconnects.'
     });
 }
 
@@ -354,8 +355,8 @@ export function setSemanticLaneUiState(laneState: string, options: LaneUiOptions
         label = options.label || 'Search: reconnecting';
         title = options.title || 'Search is refreshing in the background.';
     } else if (laneState === 'degraded') {
-        label = options.label || 'Search: warming up';
-        title = options.title || 'Search is still getting ready.';
+        label = options.label || 'Search: degraded';
+        title = options.title || 'Using text search while semantic search reconnects.';
     } else if (laneState === 'unavailable') {
         label = options.label || 'Search: unavailable';
         title = options.title || 'Search is unavailable. Try again in a moment.';

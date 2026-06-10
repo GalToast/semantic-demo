@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * semantic-guide-ui.ts
  *

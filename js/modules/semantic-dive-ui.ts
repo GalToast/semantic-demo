@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * js/modules/semantic-dive-ui.ts
  *
@@ -193,14 +192,18 @@ export function syncSemanticDiveUi(): void {
         );
     }
     if (insideMapButton) {
-        insideMapButton.disabled = !canDive;
-        insideMapButton.setAttribute('aria-disabled', String(!canDive));
+        insideMapButton.hidden = !active;
+        insideMapButton.setAttribute('aria-hidden', active ? 'false' : 'true');
+        insideMapButton.disabled = !active;
+        insideMapButton.setAttribute('aria-disabled', String(!active));
         insideMapButton.setAttribute('aria-label', 'Project this trail onto the map');
         insideMapButton.textContent = 'Map';
     }
     if (insideCountyButton) {
-        insideCountyButton.disabled = !canDive;
-        insideCountyButton.setAttribute('aria-disabled', String(!canDive));
+        insideCountyButton.hidden = !active;
+        insideCountyButton.setAttribute('aria-hidden', active ? 'false' : 'true');
+        insideCountyButton.disabled = !active;
+        insideCountyButton.setAttribute('aria-disabled', String(!active));
         insideCountyButton.setAttribute('aria-label', 'Exit neighborhood and return to County View');
         insideCountyButton.textContent = 'County';
     }

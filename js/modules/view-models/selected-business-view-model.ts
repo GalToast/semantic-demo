@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * selected-business-view-model.ts
  *

@@ -1,4 +1,3 @@
-// @ts-nocheck
 // cluster-filter.ts
 // TypeScript shadow of cluster-filter.js
 // Cluster filter management, list rendering, city filter, and story prompts.

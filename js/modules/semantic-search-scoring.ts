@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * semantic-search-scoring.ts
  *

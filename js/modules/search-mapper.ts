@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * search-mapper.ts
  *

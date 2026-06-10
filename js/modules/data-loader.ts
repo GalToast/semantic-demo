@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * js/modules/data-loader.ts
  *
@@ -27,7 +26,7 @@ function getWorker(): Worker | null {
     if (_dataWorker) return _dataWorker;
 
     try {
-        _dataWorker = new Worker('js/workers/data-worker.js');
+        _dataWorker = new Worker(buildAssetUrl('js/workers/data-worker.js?v=20260609'));
         return _dataWorker;
     } catch (err) {
         console.warn('Web Worker instantiation failed, using main-thread fallback.', err);

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * journey-lifecycle-adapter.ts
  *

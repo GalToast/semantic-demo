@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * navigation-state.ts — TypeScript shadow of navigation-state.js
  * Nav transition reducer and state mutation helpers.
