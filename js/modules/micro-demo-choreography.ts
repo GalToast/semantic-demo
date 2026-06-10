@@ -22,14 +22,14 @@ export const PHASE = {
 };
 
 let _demoPhase = PHASE.IDLE;
-let _demoNodeIndex = null;
-let _demoTimers = [];
+let _demoNodeIndex: number | null = null;
+let _demoTimers: number[] = [];
 let _demoCancelled = false;
 
 export function getDemoPhase() { return _demoPhase; }
 export function getDemoNodeIndex() { return _demoNodeIndex; }
 export function isDemoCancelled() { return _demoCancelled; }
-export function setDemoNodeIndex(idx) { _demoNodeIndex = idx; }
+export function setDemoNodeIndex(idx: number | null) { _demoNodeIndex = idx; }
 
 export function clearDemoTimers() {
   _demoTimers.forEach((t) => window.clearTimeout(t));
@@ -59,7 +59,7 @@ function demoReset() {
   state.focusTransitionMode = 'idle';
   document.body.dataset.focusTransition = '';
   document.body.dataset.focusTransitionPhase = '';
-  if (state.controls) state.controls.enabled = true;
+  if (state.controls) (state.controls as { enabled: boolean }).enabled = true;
   updateSelectedBusiness(null);
   applyPointFilterColors();
   refreshCompositionState();
@@ -67,9 +67,9 @@ function demoReset() {
   setInfoPanelOpen(true);
 }
 
-function demoFocusSetup(demoNode) {
+function demoFocusSetup(demoNode: number) {
   const point = state.points[demoNode];
-  state.selectedPoint = point;
+  state.selectedPoint = point ?? null;
   withStateMutation(() => {
     state.navState.mode = 'focus';
     state.navState.focusedIndex = demoNode;
@@ -78,7 +78,7 @@ function demoFocusSetup(demoNode) {
   updateSelectedBusiness(point, { revealCard: true });
   applyPointFilterColors();
   updateExplorationUi();
-  updateJourneyCompass('focus');
+  updateJourneyCompass();
   refreshCompositionState();
   resetNodePositions();
   if (typeof applyLocalNeighborhoodFocus === 'function') {
@@ -98,25 +98,25 @@ function cleanup() {
   _demoCancelled = false;
 }
 
-function endDemo(notifyEvent, shouldRecordCompletion) {
+function endDemo(notifyEvent: string, shouldRecordCompletion: boolean) {
   cleanup();
   setAutoRotateSuspended(false);
   if (shouldRecordCompletion) recordCompletion();
   document.dispatchEvent(new CustomEvent(notifyEvent));
 }
 
-export function runDemo(cancelMicroDemo) {
+export function runDemo(cancelMicroDemo: (reason: string) => void) {
   injectMicroDemoStyles();
   document.body.dataset.demoActive = 'true';
   _demoPhase = PHASE.GLIDING;
   _demoCancelled = false;
   captureOverviewCameraSnapshot();
   setAutoRotateSuspended(true);
-  if (state.controls) state.controls.enabled = false;
+  if (state.controls) (state.controls as { enabled: boolean }).enabled = false;
   showVeil(true);
   showPill('Demo -- watch how it works', (reason) => cancelMicroDemo(reason));
   bindInputInterceptor((reason) => cancelMicroDemo(reason));
-  const demoNode = _demoNodeIndex;
+  const demoNode = _demoNodeIndex as number;
 
   _demoTimers.push(window.setTimeout(() => {
     if (_demoCancelled) return;

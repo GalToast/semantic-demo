@@ -6,9 +6,8 @@
  */
 
 import * as THREE from 'three';
-import { state } from '../../state.ts';
+import { state, type Point, type ActiveFilters } from '../../state.ts';
 import { cleanOptionalValue, escapeHtml } from './dom-formatters.ts';
-import type { Point, ActiveFilters } from '../../../types/state.ts';
 
 export function pointHasGeocode(point: Point): boolean {
     if (!point) return false;
@@ -144,9 +143,9 @@ export function computeOverviewScatterOffsets(sourcePoints: Point[], threshold =
         const point = sourcePoints[index]! || ({} as Point);
         if (hasRawBuffer) {
             return {
-                x: state.rawPositionsBuffer![index * 3],
-                y: state.rawPositionsBuffer![index * 3 + 1],
-                z: state.rawPositionsBuffer![index * 3 + 2]
+                x: state.rawPositionsBuffer![index * 3]!,
+                y: state.rawPositionsBuffer![index * 3 + 1]!,
+                z: state.rawPositionsBuffer![index * 3 + 2]!
             };
         }
         return {

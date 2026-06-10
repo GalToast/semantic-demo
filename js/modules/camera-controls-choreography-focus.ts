@@ -1,6 +1,5 @@
 import * as THREE from 'three'
-import { state } from '../state.ts'
-import type { NodePosition, SemanticState, NavState, NavFocusPocketMeta } from '../../types/state'
+import { state, type NodePosition, type SemanticState, type NavState, type NavFocusPocketMeta } from '../state.ts'
 import {
   getNavState
 } from '../state/selectors/index.ts'

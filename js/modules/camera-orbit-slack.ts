@@ -3,8 +3,7 @@
 // Focus orbit slack: pivot adjustment and distance/speed configuration.
 
 import * as THREE from 'three';
-import { state } from '../state.ts';
-import type { CameraLike, ControlsLike, NodePosition, SemanticState } from '../../types/state';
+import { state, type CameraLike, type ControlsLike, type NodePosition, type SemanticState } from '../state.ts';
 import {
     getNavState, getNodePositions, getOriginalPositions, getFocusedNode,
     getCurrentView, getSemanticDiveMode, getCurrentSearchSummary,

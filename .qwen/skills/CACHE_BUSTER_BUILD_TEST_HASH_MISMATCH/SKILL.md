@@ -41,6 +41,17 @@ The test's own error message is a trap — it assumes build and test produce the
 3. **Normalization runs in one path but not the other**: `normalizeGeneratedBundleText()` (trailing whitespace strip) is the most common culprit.
 4. **Build writes back to the bundle** (`.onEnd`) but the test also writes back (`.finally`), causing a toggle between two hashes.
 
+## Self-resolving transient mismatch (2026-06-10 observation)
+
+In some cases the mismatch is transient and self-resolving:
+- After `npm run build`, the test reports a stale hash.
+- After `npm run refresh:cache` (which updates HTML/CSS cache busters), the next `npm run build` produces a hash that **does** match the test's expectation.
+- The resolution happens because `refresh:cache` bumped surrounding assets, changing the effective input set so the scoped hash reads as current on the next build.
+
+Detection signal:
+- Failure alternates between "stale" and "mismatched" across build/refresh cycles, but settling after one refresh+rebuild cycle.
+Root cause is still build/test hash divergence; use the patterns below to align the pipelines, or treat the refresh+rebuild cycle as the accepted cleanup pattern if that's the repo's convention.
+
 ## Fix Strategy
 
 ### Preferred: Make test use the SAME esbuild pipeline as build

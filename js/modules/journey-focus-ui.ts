@@ -40,7 +40,7 @@ import {
 } from './journey-webgl.ts';
 import { isCompactLandscape, isUltraCompactPortrait } from './environment.ts';
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from './relationship-roles.ts';
-import type { Point, StrandContinuityState } from '../../types/state.ts';
+import type { Point, StrandContinuityState } from '../state.ts';
 
 export function isCondensedFocusStageViewport(): boolean {
     return getCurrentView() === 'galaxy' && (isCompactLandscape() || isUltraCompactPortrait());

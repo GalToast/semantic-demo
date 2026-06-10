@@ -5,8 +5,7 @@
  * DOM status/toast feedback operations.
  */
 
-import { state } from '../state.ts';
-import type { Point } from '../../types/state';
+import { state, type Point } from '../state.ts';
 import {
     getCurrentSearchSummary, getPointIndexByLeadId, getPoints,
     getFocusedNode, getNavState, getSelectedPoint
@@ -29,13 +28,13 @@ export function showExperienceToast(title: string, copy: string): void {
     if (state.experienceResetToastTimer) {
         window.clearTimeout(state.experienceResetToastTimer as unknown as number);
     }
-    (state as Record<string, unknown>).experienceResetToastTimer = window.setTimeout(() => {
+    state.experienceResetToastTimer = window.setTimeout(() => {
         toast.classList.remove('active');
         toast.setAttribute('aria-hidden', 'true');
         toast.setAttribute('aria-live', 'polite');
         if (titleEl) titleEl.textContent = '';
         if (copyEl) copyEl.textContent = '';
-        (state as Record<string, unknown>).experienceResetToastTimer = null;
+        state.experienceResetToastTimer = null;
     }, 2100);
 }
 

@@ -10,6 +10,12 @@
         opacity: 1;
     }
 
+    body.is-active[data-panel-surface='map-focus-search'] .selected-empty {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     body.is-active[data-panel-surface='map-focus-search'] #selected-map-summary[hidden] {
         display: none;
     }

@@ -52,6 +52,7 @@ interface SwitchViewOptions {
     skipUrlSync?: boolean;
     silentHandoff?: boolean;
     historyMode?: string;
+    reason?: string;
 }
 
 // ── Module-level state ─────────────────────────────────────────────────────

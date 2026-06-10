@@ -93,7 +93,7 @@ export function setTrailDepth(depth: number | string, options: ModeOptions = {})
   }
   state.trailDepth = nextDepth;
   withStateMutation(() => {
-    (state.navState as Record<string, unknown>).trailDepth = nextDepth;
+    state.navState.trailDepth = nextDepth;
     if (nextDepth >= 2) state.navState.mode = 'inside';
     else if (nextDepth > 0 && getNavState()?.mode !== 'focus') state.navState.mode = 'trail';
   });

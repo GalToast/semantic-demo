@@ -17,7 +17,7 @@ import { describeCluster } from './utils/ui-presentation.ts';
 import { getNextExploreCandidateForIndex } from './journey-thread-model.ts';
 import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.ts';
 import { seededUnit } from './utils/seeded-random.ts';
-import type { Point } from '../../types/state';
+import type { Point } from '../state.ts';
 
 let routeEmbodimentReader: () => any[] = () => [];
 

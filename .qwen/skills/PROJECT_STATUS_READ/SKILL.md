@@ -33,6 +33,9 @@ Read the **intended-state docs** first — these tell you what the project *thin
 - Is this doc up to date with what's actually on disk? (Cross-reference file paths and function names against grep results.)
 - Does the doc claim something is "fixed" or "complete" — and is that claim still the truth given git activity since?
 - Does the doc's "proposed" or "recommended" path match the real tool constraints? (E.g., does it recommend a model or harness that doesn't match agent instructions?)
+- Do plans reference destructive operations (directory deletion, entry-point flips) without feature flags or rollback?
+
+**2026-06-09 observed state for this repo:** TS migration functionally complete (152/152 runtime, 0 drift, `app.ts` init). Main production gaps are: live bundle deploy lag, svelte-check strictness errors in TS shadows after `@ts-nocheck` removal, and unaddressed visual critique items. Surface contracts can stil show stale-deferred status in docs even after fixes land.
 
 ### Angle 2: Active Plans and WIP Files
 
@@ -57,6 +60,7 @@ Doc tables lie. Always verify claimed completeness against actual files.
 3. **Bug sweep claims:** For each bug listed as "Resolved" or "Fixed":
    - Grep for the actual fix: is the function, signal parameter, or dispose call in place?
    - Check whether the test that was supposed to verify the fix actually exists and passes.
+   - Trust contract runner output over doc tables; previously-deferred surfaces may already be green.
 
 ### Angle 4: Current Test Health
 
@@ -115,3 +119,5 @@ Present the assessment as a structured report with sections per angle and a fina
 - A **categorization** (Blocker/Incomplete/Polish) with a clear next step
 
 Do not prettify the state. The most valuable thing you offer in this read is honest bad news — tests that fail, migration that's stalled, plans that are wrong. If everything is fine, say that too, but be sure you've verified it.
+
+**Anchoring rule:** When memory claims a production gap, verify with current runner output before repeating it as fact; stale memory often overstates remaining work after fixes have landed.

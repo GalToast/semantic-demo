@@ -220,10 +220,10 @@ export function revealActiveSearchResultOnCompact(resultsEl: HTMLElement, active
 }
 
 export function clearCompactSearchResultRevealTimers(): void {
-    (state as Record<string, unknown>).compactSearchRevealToken = ((state as Record<string, unknown>).compactSearchRevealToken as number || 0) + 1;
-    if ((state as Record<string, unknown>).compactSearchRevealTimers) {
-        ((state as Record<string, unknown>).compactSearchRevealTimers as number[]).forEach((timerId: number) => window.clearTimeout(timerId));
-        (state as Record<string, unknown>).compactSearchRevealTimers = [];
+    state.compactSearchRevealToken = (state.compactSearchRevealToken || 0) + 1;
+    if (state.compactSearchRevealTimers) {
+        state.compactSearchRevealTimers.forEach((timerId) => window.clearTimeout(timerId));
+        state.compactSearchRevealTimers = [];
     }
 }
 
@@ -231,9 +231,9 @@ export function scheduleCompactSearchResultReveal(resultsEl: HTMLElement, active
     if (!resultsEl || !isCompactSearchViewport()) return;
 
     clearCompactSearchResultRevealTimers();
-    const token = (state as Record<string, unknown>).compactSearchRevealToken;
+    const token = state.compactSearchRevealToken;
     const reveal = (): void => {
-        if (token !== (state as Record<string, unknown>).compactSearchRevealToken || !isCompactSearchViewport()) return;
+        if (token !== state.compactSearchRevealToken || !isCompactSearchViewport()) return;
         const row = activeIndex !== null && activeIndex !== undefined
             ? resultsEl.querySelector(`.search-result-item[data-index="${CSS.escape(String(activeIndex))}"]`) as HTMLElement | null
             : resultsEl.querySelector('.search-result-item.active-focus, .search-result-item') as HTMLElement | null;
@@ -241,9 +241,9 @@ export function scheduleCompactSearchResultReveal(resultsEl: HTMLElement, active
     };
 
     requestAnimationFrame(() => requestAnimationFrame(reveal));
-    if (!(state as Record<string, unknown>).compactSearchRevealTimers) (state as Record<string, unknown>).compactSearchRevealTimers = [];
+    if (!state.compactSearchRevealTimers) state.compactSearchRevealTimers = [];
     [80, 240, 520].forEach((delay: number) => {
-        ((state as Record<string, unknown>).compactSearchRevealTimers as number[]).push(window.setTimeout(reveal, delay));
+        state.compactSearchRevealTimers.push(window.setTimeout(reveal, delay));
     });
 }
 
@@ -253,14 +253,13 @@ export function setActiveSearchResultRow(
     { reveal = true }: { reveal?: boolean } = {}
 ): void {
     if (!resultsEl) return;
-    const s = state as Record<string, unknown>;
-    const navState = s.navState as Record<string, unknown> | undefined;
-    const isCommittedExplore = navState?.mode === 'trail' && ((navState?.explorationHistoryIndices as unknown[]) || []).length > 1;
-    const summaryResultIndices: number[] = Array.isArray((s.currentSearchSummary as SearchSummary | null)?.resultIndices)
-        ? ((s.currentSearchSummary as SearchSummary).resultIndices as number[])
+    const navState = state.navState;
+    const isCommittedExplore = navState?.mode === 'trail' && (navState.explorationHistoryIndices || []).length > 1;
+    const summaryResultIndices: number[] = Array.isArray((state.currentSearchSummary as SearchSummary | null)?.resultIndices)
+        ? ((state.currentSearchSummary as SearchSummary).resultIndices as number[])
         : [];
-    const focusedIndex = Number.isFinite(s.focusedNode)
-        ? s.focusedNode as number
+    const focusedIndex = Number.isFinite(state.focusedNode)
+        ? state.focusedNode as number
         : Number.isFinite(navState?.focusedIndex)
           ? navState!.focusedIndex as number
           : null;
@@ -307,9 +306,8 @@ export function refreshSearchResultHierarchy(resultsEl: HTMLElement): void {
     const summary = state.currentSearchSummary as unknown as SearchSummary;
     const anchorIndex = summary.anchorIndex;
     const topIndex = summary.topIndex ?? null;
-    const s = state as Record<string, unknown>;
-    const navState = s.navState as Record<string, unknown> | undefined;
-    const isCommittedExplore = navState?.mode === 'trail' && ((navState?.explorationHistoryIndices as unknown[]) || []).length > 1;
+    const navState = state.navState;
+    const isCommittedExplore = navState?.mode === 'trail' && (navState.explorationHistoryIndices || []).length > 1;
     const exploreIndex = isCommittedExplore && Number.isFinite(navState?.focusedIndex) ? navState!.focusedIndex as number : null;
 
     resultsEl.querySelectorAll('.search-result-item').forEach((row: Element) => {

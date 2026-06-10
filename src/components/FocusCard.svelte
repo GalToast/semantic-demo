@@ -101,7 +101,7 @@
 
 {#if cardVisible}
   <div
-    class="focus-card"
+    class="focus-card selected-card"
     id="selected-card"
     class:selected-card-empty={isEmpty}
     aria-label="Selected business"

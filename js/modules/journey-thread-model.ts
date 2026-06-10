@@ -1,10 +1,9 @@
 /**
  * journey-thread-model.ts — TypeScript shadow of journey-thread-model.js
  */
-import { state } from '../state.ts';
+import { state, type Point } from '../state.ts';
 import { normalizeCityForFilter } from './utils/geo-data.ts';
 import { normalizeRelationshipRole } from './relationship-roles.ts';
-import type { Point } from '../../types/state.ts';
 
 export function normalizeLeadId(value: string | number | null | undefined): string | null {
     if (value === null || value === undefined || value === '') return null;

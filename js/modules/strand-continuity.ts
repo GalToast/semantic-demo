@@ -5,8 +5,7 @@
  * Strand phase and arrival continuity state for journey and thread inspector.
  */
 
-import { state } from '../state.ts';
-import type { StrandContinuityState, Point } from '../../types/state.ts';
+import { state, type StrandContinuityState, type Point } from '../state.ts';
 import { cleanOptionalValue, formatBusinessName } from './utils/dom-formatters.ts';
 import { truncateMicrocopy } from './journey-text-helpers.ts';
 import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from './journey-webgl.ts';

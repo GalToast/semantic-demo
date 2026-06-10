@@ -55,7 +55,7 @@ export function clearTrailThreadState(): void {
     withStateMutation(() => {
         state.navState.threadCandidates = [];
         state.navState.threadReasonByIndex = new Map();
-        state.navState.threadSource = null;
+        state.navState.threadSource = '';
         state.navState.trailNeighborIndices = [];
         state.navState.trailCursor = -1;
         state.navState.trailSeedIndex = null;

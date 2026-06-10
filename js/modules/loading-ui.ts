@@ -4,7 +4,7 @@
  * Loading overlay lifecycle, phase management, and deferred hydration.
  */
 
-import { state, withStateMutation } from '../state.ts';
+import { state, withStateMutation, type LoadingPhaseKey, type SemanticState } from '../state.ts';
 import { subscribe, EVENTS } from './event-bus.ts';
 import { restoreFocusTrailState, updateSelectedBusiness } from './journey.ts';
 import { SCENE_READY } from './scene-events.ts';
@@ -14,7 +14,6 @@ import { createMycelium } from './three-thread-manager.ts';
 import { updateLoadingPhaseKey } from './state-mutators.ts';
 import { initWeather } from './weather.ts';
 import { escapeHtml } from './utils/dom-formatters.ts';
-import type { LoadingPhaseKey, SemanticState } from '../../types/state';
 
 // Phase 3: Declarative synchronization
 subscribe(EVENTS.TRANSITION_PHASE_CHANGED, (payload) => {

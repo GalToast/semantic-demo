@@ -650,14 +650,8 @@
         display: none;
     }
 
-    body.is-active:is([data-journey-navigation-owner='map-trail-strip'], [data-panel-surface='map-idle'])
+    body.is-active[data-journey-navigation-owner='map-trail-strip']
         :is(.controls, #btn-legend, #btn-keyboard-help, .panel-toggle, .time-display) {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body.is-active:is([data-journey-navigation-owner='map-trail-strip'], [data-panel-surface='map-idle']) #btn-share-view {
         display: none;
         visibility: hidden;
         pointer-events: none;

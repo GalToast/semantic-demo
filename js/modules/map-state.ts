@@ -60,13 +60,13 @@ let leafletAssetsPromise: Promise<unknown> | null = null;
 // ── Asset Loading ──────────────────────────────────────────────────────────
 
 export async function loadLeafletAssets(): Promise<unknown> {
-    if ((window as Record<string, unknown>).L) return (window as Record<string, unknown>).L;
+    if (window.L) return window.L;
     if (leafletAssetsPromise) return leafletAssetsPromise;
 
     leafletAssetsPromise = new Promise((resolve, reject) => {
         const finish = (): void => {
-            if ((window as Record<string, unknown>).L) {
-                resolve((window as Record<string, unknown>).L);
+            if (window.L) {
+                resolve(window.L);
             } else {
                 reject(new Error('Leaflet failed to initialize'));
             }
@@ -82,8 +82,8 @@ export async function loadLeafletAssets(): Promise<unknown> {
 
         let existingScript = document.getElementById('leaflet-runtime-js');
         if (existingScript) {
-            if ((window as Record<string, unknown>).L) {
-                resolve((window as Record<string, unknown>).L);
+            if (window.L) {
+                resolve(window.L);
                 return;
             }
             existingScript.addEventListener('load', finish, { once: true });
@@ -143,7 +143,7 @@ export async function initMap(): Promise<void> {
 
     try {
         await loadLeafletAssets();
-        if (typeof (window as Record<string, unknown>).L === 'undefined' || !(window as Record<string, unknown>).L) {
+        if (typeof window.L === 'undefined' || !window.L) {
             throw new Error('Leaflet not loaded');
         }
         const container = document.getElementById('map-container');
@@ -153,7 +153,7 @@ export async function initMap(): Promise<void> {
             container.innerHTML = '';
         }
 
-        const L = (window as Record<string, unknown>).L as Record<string, Function>;
+        const L = window.L!;
         state.map = L.map(container, {
             center: [30.3119, -95.4561],
             zoom: 10,
@@ -190,13 +190,13 @@ export async function initMap(): Promise<void> {
                 marker.on('mouseout', () => { if (typeof hideTooltip === 'function') hideTooltip(); });
                 marker.on('click', () => {
                     const routeSet = new Set(getRouteEmbodimentIndices());
-                    const searchSet = new Set((state.currentSearchSummary as Record<string, unknown> | null)?.resultIndices as number[] || []);
+                    const searchSet = new Set(state.currentSearchSummary?.resultIndices ?? []);
                     const selectableInTrail =
                         !state.currentSearchSummary ||
                         searchSet.has(index) ||
                         routeSet.has(index) ||
-                        (state.currentSearchSummary as Record<string, unknown>)?.anchorIndex === index ||
-                        (state.currentSearchSummary as Record<string, unknown>)?.topIndex === index ||
+                        state.currentSearchSummary?.anchorIndex === index ||
+                        state.currentSearchSummary?.topIndex === index ||
                         state.focusedNode === index;
                         
                     if (!selectableInTrail) {
@@ -304,7 +304,7 @@ export function refreshMapRouteEmbodiment(): void {
     }
 
     const latLngs = routePoints.map(({ point }: { point: Point }) => [point.lat, point.lng]);
-    const L = (window as Record<string, unknown>).L as Record<string, Function>;
+    const L = window.L!;
     if (latLngs.length >= 2) {
         L.polyline(latLngs, {
             className: 'semantic-map-route-line semantic-map-route-line-aura',
@@ -347,7 +347,7 @@ export function centerMapOnRouteAnchor(): boolean {
     if (!state.map) return false;
     const focusIndex = state.navState.focusedIndex;
     const focusIdxValid = Number.isFinite(focusIndex) && focusIndex! >= 0 && focusIndex! < state.points.length;
-    const anchorIdx = (state.currentSearchSummary as Record<string, unknown> | null)?.anchorIndex as number | undefined;
+    const anchorIdx = state.currentSearchSummary?.anchorIndex ?? undefined;
     const anchorIdxValid = Number.isFinite(anchorIdx) && anchorIdx! >= 0 && anchorIdx! < state.points.length;
     const focusPoint =
         state.selectedPoint ||
@@ -359,7 +359,7 @@ export function centerMapOnRouteAnchor(): boolean {
     if (!pointHasGeocode(focusPoint)) return false;
     const routePoints = getMapRoutePoints();
     const routeLatLngs = routePoints.map(({ point }: { point: Point }) => [point.lat, point.lng]);
-    const L = (window as Record<string, unknown>).L as Record<string, Function>;
+    const L = window.L!;
     if (routeLatLngs.length >= 2) {
         const bounds = L.latLngBounds(routeLatLngs);
         (state.map as Record<string, Function>).fitBounds(bounds.pad(0.42), {
@@ -380,7 +380,7 @@ export function refreshMapMarkers(): void {
     if (!state.points) return;
     if (!state.markersLayer) return;
     (state.markersLayer as { clearLayers(): void }).clearLayers();
-    const searchResultSet = new Set((state.currentSearchSummary as Record<string, unknown> | null)?.resultIndices as number[] || []);
+    const searchResultSet = new Set(state.currentSearchSummary?.resultIndices ?? []);
     const selectedLeadId =
         state.selectedPoint?.lead_id !== undefined && state.selectedPoint?.lead_id !== null
             ? String(state.selectedPoint.lead_id)
@@ -398,7 +398,7 @@ export function refreshMapMarkers(): void {
             const baseColor = (state.COLORS as readonly string[])[point.cluster! % (state.COLORS as readonly string[]).length];
             const isFocused = state.focusedNode === index;
             const isSelected = selectedLeadId !== null && String(point.lead_id) === selectedLeadId;
-            const isAnchor = (state.currentSearchSummary as Record<string, unknown>)?.anchorIndex === index;
+            const isAnchor = state.currentSearchSummary?.anchorIndex === index;
             const isSearchMatch = searchResultSet.has(index);
             const isTrail = state.trailIndices.has(index) || isSearchMatch;
 
@@ -556,13 +556,13 @@ export function getRouteEmbodimentIndices(): number[] {
         pushIndex(state.focusedNode!);
         (state.navState.walkHistoryIndices || []).forEach(pushIndex);
         (state.navState.trailNeighborIndices || []).slice(0, 6).forEach(pushIndex);
-        pushIndex((state.currentSearchSummary as Record<string, unknown>)?.anchorIndex as number);
-        pushIndex((state.currentSearchSummary as Record<string, unknown>)?.topIndex as number);
-        ((state.currentSearchSummary as Record<string, unknown>)?.resultIndices as number[] || []).slice(0, 6).forEach(pushIndex);
+        pushIndex(state.currentSearchSummary?.anchorIndex as number);
+        pushIndex(state.currentSearchSummary?.topIndex as number);
+        (state.currentSearchSummary?.resultIndices ?? []).slice(0, 6).forEach(pushIndex);
     } else {
-        pushIndex((state.currentSearchSummary as Record<string, unknown>)?.anchorIndex as number);
-        pushIndex((state.currentSearchSummary as Record<string, unknown>)?.topIndex as number);
-        ((state.currentSearchSummary as Record<string, unknown>)?.resultIndices as number[] || []).slice(0, 10).forEach(pushIndex);
+        pushIndex(state.currentSearchSummary?.anchorIndex as number);
+        pushIndex(state.currentSearchSummary?.topIndex as number);
+        (state.currentSearchSummary?.resultIndices ?? []).slice(0, 10).forEach(pushIndex);
         (state.navState.walkHistoryIndices || []).forEach(pushIndex);
         pushIndex(state.navState.focusedIndex!);
         pushIndex(state.focusedNode!);

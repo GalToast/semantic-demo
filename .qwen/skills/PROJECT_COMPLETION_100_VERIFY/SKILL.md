@@ -17,10 +17,11 @@ Use this when the user asks what’s left to finish/release/complete the project
 - `package.json` scripts that indicate current verification surface (`check`, `build:svelte`, `qa:*`, `test:contract:*`)
 
 ## Current calibration (2026-06-09 verified)
-- Runtime/build: `npm run build` passes for the legacy bundle as of this session. `npm run check:svelte` is `0 errors / 0 warnings`. `npm run build:svelte` also passes; `dist/svelte/index.html` includes legacy CSS links, but those links are unresolved from Vite’s build root and depend on the deploy server layout.
+- Runtime/build: `npm run build` passes; `dist/bundle.js` exists. Static gates `npm run test` pass end-to-end. Cache-buster drift can occur when bundle/CSS change without a refresh; `npm run refresh:cache` fixes it.
 - TS progress: `npm run check:ts-progress` reports 152/152 runtime TS files, 0 JS-only, 0 dual, 0 drift, with active entry `js/modules/app.ts`; `npm run ts-readiness` shows coverage at 100%. This remains a migration metric, not a release guarantee.
-- Release gates today: `npm run test` fails early in `check:shell`. `npm run check:cache` fails with a stale bundle hash. `npm run test:unit` is not fully green: current run was 337/338 with a failing lifecycle mode test. `npm run test:contract` remains 32/72 and includes both stale `.js`-file assertions and real ownership/behavior gaps. Browser-backed `npm run qa:contract:all` was blocked locally because `127.0.0.1:8795` returned `net::ERR_EMPTY_RESPONSE`.
-- Migration churn: the repo still shows large JS→TS churn in working tree/status. Do not assume the checkout is clean or deployment-ready until `git status`, contracts, and deploy guards converge.
+- Type-checking: `npm run typecheck` (`tsconfig.typecheck.json`) is 0/0. `npm run check:svelte` shows 301 errors/0 warnings in 34 files from TS migration strictness work.
+- Release gates today: `npm run test:unit` is green 339/339. `npm run run lint` is 0 errors. Contract surfaces sampled in mid-June were green: mobile-product-focus-route 7/0, mobile-product-preview-route 6/0, search-chrome 32/0, search-no-results 14/0, controls 9/0, mobile-idle 7/0, focus-pocket 11/0, field-node 24/0, compass-rail 12/0, info-panel-empty 10/0. The previously-deferred legacy list must be re-probed before release; those old doc status tables are stale.
+- Migration churn: the repo still shows moderate uncommitted TS/Test edits; do not assume deploy-ready until `git status`, contracts, and bundle hash converge.
 - Documentation risk: durability docs can lag the code. Prior completion claims have underestimated remaining work when taken as release evidence. Verify from source/runners first.
 
 ## Procedure
@@ -48,6 +49,7 @@ Use this when the user asks what’s left to finish/release/complete the project
 3. `npm run test:contract:smoke`
 4. `npm run check`
 5. `npm run build:safe`
+6. `npm run deploy:dryrun` to confirm target paths/backups before shipping.
 6. targeted browser/headed QA only after 1–5 are known
 
 ## Output format

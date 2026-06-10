@@ -108,7 +108,9 @@ Before mass-editing `../../types/state.js` files, verify **import kind** because
 2. For each candidate, determine if it contains `import type { ... } from '../../types/state.js'` vs `import { ... } from '../../types/state.js'`
 3. If ANY non-type/runtime import exists, do not apply blind drop-`.js` patch; instead create a runtime shim under `types/state.ts` or refactor with lead approval
 4. If all imports are `type` imports, the patch is reproduction-safe: drop `.js` from the import specifier
-5. Record the outcome (`import type` vs mixed/non-type) and file count in the stage output before editing
+5. **Session drift note:** In later sessions, the remaining unresolved files may instead use `types/state.ts`. Treat this as the same hazard class (extension-variant broken-import for a type-only path). The safe patch remains: confirm `import type`, then drop the `.ts` extension to resolve to `types/state.d.ts`.
+6. In-flight or in-progress file variants must be skipped even when they match the pattern.
+7. Record the outcome (`import type` vs mixed/non-type) and file count in the stage output before editing.
 
 ### D. Pre-commit staging
 

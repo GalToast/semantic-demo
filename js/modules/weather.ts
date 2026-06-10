@@ -5,8 +5,7 @@
  * Weather data fetching, normalization, and state management.
  */
 
-import { state } from '../state.ts';
-import type { Point } from '../../types/state';
+import { state, type Point } from '../state.ts';
 import { getCurrentView, getWeather, getWeatherInitialized } from '../state/selectors/index.ts';
 import { weatherStateStore } from './stores.ts';
 import {
@@ -69,7 +68,7 @@ export async function fetchWeather(): Promise<void> {
     try {
         const payload = await fetchWeatherPayload();
         const normalized = normalizeWeatherPayload(payload);
-        (state as Record<string, unknown>).weather = normalized;
+        state.weather = normalized;
         if (!normalized) throw new Error('weather payload incomplete');
         (state as Record<string, unknown>).lastSuccessfulFetch = Date.now();
 
@@ -80,7 +79,7 @@ export async function fetchWeather(): Promise<void> {
             stalenessMsg: ''
         });
     } catch (_error: unknown) {
-        (state as Record<string, unknown>).weather = null;
+        state.weather = null;
 
         weatherStateStore.set({
             weather: null,
