@@ -131,9 +131,10 @@ export async function fetchSemanticLaneHealth({ warm = false, signal = null }: {
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function isStaticDevLaneFallbackActive(): boolean {
+    const snapshot = state.semanticLaneSnapshot as Record<string, unknown> | null;
     return allowsStaticDevFallback()
-        && state.semanticLaneSnapshot?.is_mock === true
-        && state.semanticLaneSnapshot?.provenance?.label === 'Static Dev Mode';
+        && snapshot?.is_mock === true
+        && (snapshot?.provenance as Record<string, unknown> | null)?.label === 'Static Dev Mode';
 }
 
 /**
@@ -334,7 +335,7 @@ export async function probeSemanticLane({ warm = false, reason = 'interval' }: L
 export function scheduleSemanticLaneMonitor(): void {
     const win = getWindow();
     if (state.semanticLaneMonitorTimer) {
-        win?.clearInterval?.(state.semanticLaneMonitorTimer);
+        win?.clearInterval?.(state.semanticLaneMonitorTimer as number);
     }
 
     state.semanticLaneMonitorTimer = typeof win?.setInterval === 'function' ? win.setInterval(() => {
@@ -343,7 +344,7 @@ export function scheduleSemanticLaneMonitor(): void {
             warm: shouldWarmSemanticLane('interval'),
             reason: 'interval'
         });
-    }, 45000) : undefined;
+    }, 45000) as unknown as ReturnType<typeof setTimeout> : null;
 }
 
 // ── UI State ───────────────────────────────────────────────────────────────
