@@ -72,7 +72,7 @@ test.describe('semantic-guide.js fetch and fallback behavior', () => {
 
     // Trigger the semantic guide request
     await page.evaluate(() => {
-      // eslint-disable-next-line no-undef
+       
       window.requestSemanticGuide();
     });
 
@@ -115,7 +115,7 @@ test.describe('semantic-guide.js fetch and fallback behavior', () => {
 
     // Trigger the semantic guide request
     await page.evaluate(() => {
-      // eslint-disable-next-line no-undef
+       
       window.requestSemanticGuide();
     });
 
@@ -201,13 +201,13 @@ test.describe('semantic-guide.js fetch and fallback behavior', () => {
     // - Second call aborts request A and starts request B
     // The mock will respond to request B (request A's fetch was aborted before it reached the mock)
     await page.evaluate(() => {
-      // eslint-disable-next-line no-undef
+       
       window.requestSemanticGuide();
     });
 
     // Immediately call again — this aborts the first request's controller
     await page.evaluate(() => {
-      // eslint-disable-next-line no-undef
+       
       window.requestSemanticGuide();
     });
 

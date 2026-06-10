@@ -21,19 +21,19 @@ test.use({
 async function waitForReady(page) {
   await page.waitForLoadState('domcontentloaded', { timeout: 30000 });
   await page.waitForFunction(() => {
-    // eslint-disable-next-line no-undef
+     
     const body = document.body?.dataset;
     const canvas = document.querySelector('#canvas-container canvas');
     return (
       body?.graphicsMode === 'webgl' &&
       canvas &&
-      // eslint-disable-next-line no-undef
+       
       (window.__APP_STATE__ ?? window.__TEST_STATE__)?.renderer &&
-      // eslint-disable-next-line no-undef
+       
       (window.__APP_STATE__ ?? window.__TEST_STATE__)?.scene &&
-      // eslint-disable-next-line no-undef
+       
       (window.__APP_STATE__ ?? window.__TEST_STATE__)?.camera &&
-      // eslint-disable-next-line no-undef
+       
       (window.__APP_STATE__ ?? window.__TEST_STATE__)?.pointsMesh?.geometry?.attributes?.position?.count > 0
     );
   }, { timeout: 12000 });
@@ -63,7 +63,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     });
 
   await page.waitForFunction(() => {
-    // eslint-disable-next-line no-undef
+     
     const body = document.body?.dataset;
     const canvas = document.querySelector('#canvas-container canvas');
     return (
@@ -75,7 +75,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
   const baseline = await page.evaluate(() => {
       const body = document.body?.dataset || {};
       const focusStage = document.getElementById('focus-stage');
-      // eslint-disable-next-line no-undef
+       
       const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
       return {
         searchGlow: body.searchGlow,
@@ -95,7 +95,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
 
     // Trigger search & focus simulation
     await page.evaluate(() => {
-      // eslint-disable-next-line no-undef
+       
       const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
       s.currentSearchSummary = { query: 'restaurant', anchorIndex: 0, resultIndices: [0, 1, 2, 3] };
       s.searchGlowActive = true;
@@ -125,7 +125,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
 
     const afterSearch = await page.evaluate(() => {
       const body = document.body?.dataset || {};
-      // eslint-disable-next-line no-undef
+       
       const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
       return {
         searchGlow: body.searchGlow,
@@ -243,7 +243,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
       const focusStage = document.getElementById('focus-stage');
       const searchResults = document.getElementById('search-results');
       const searchInput = document.getElementById('search-input');
-      // eslint-disable-next-line no-undef
+       
       const s = window.__TEST_STATE__ || {};
       return {
         searchGlow: body.searchGlow,

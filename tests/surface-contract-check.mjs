@@ -7,22 +7,62 @@
  * text on dark panels, basic gutters, viewport crowding.
  *
  * Usage:
- *   node tests/surface-contract-check.mjs [url] [--surface=<name>] [--surfaces=a,b]
+ *   node tests/surface-contract-check.mjs [url] [--url=<url>] [--shell=svelte|legacy] [--surface=<name>] [--surfaces=a,b]
  *
  * Surfaces: mobile-idle | desktop-idle | launch-focus | search-error | search-no-results | map-trail | focus-pocket | field-node | info-panel-empty | compass-rail | loading-overlay | mode-grid | filters | thread-inspector | controls | search-chrome | info-panel-populated | global-spacing | mobile-product-focus-route | mobile-product-preview-route
- * Default URL: http://127.0.0.1:8795/vector-explorer-polished.html
+ * Default URL (legacy): http://127.0.0.1:8795/vector-explorer-polished.html
+ * Default URL (svelte): http://127.0.0.1:4173/
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
 
-const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
+const SHELL_URLS = {
+  legacy: 'http://127.0.0.1:8795/vector-explorer-polished.html',
+  svelte: 'http://127.0.0.1:4173/',
+};
+const VALUE_FLAGS = new Set(['--surface', '--surfaces', '--shell', '--url']);
+
+function flagValue(args, name) {
+  const prefix = `--${name}=`;
+  const flag = `--${name}`;
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    if (arg.startsWith(prefix)) return arg.slice(prefix.length);
+    if (arg === flag) return args[i + 1] ?? '';
+  }
+  return '';
+}
+
+function positionalArg(args) {
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    if (arg === '--') continue;
+    if (VALUE_FLAGS.has(arg)) {
+      i += 1;
+      continue;
+    }
+    if (!arg.startsWith('--')) return arg;
+  }
+  return '';
+}
+
+function shellUrl(shell) {
+  const normalized = (shell || 'legacy').trim().toLowerCase();
+  const url = SHELL_URLS[normalized];
+  if (!url) throw new Error(`Unknown --shell value "${shell}". Use "legacy" or "svelte".`);
+  return url;
+}
 
 // Argument parsing
 
 const cliArgs = process.argv.slice(2);
-const positionalUrl = cliArgs.find((arg) => !arg.startsWith('--')) || DEFAULT_URL;
+const positionalUrl =
+  flagValue(cliArgs, 'url')
+  || process.env.SURFACE_CONTRACT_URL
+  || positionalArg(cliArgs)
+  || shellUrl(flagValue(cliArgs, 'shell') || process.env.SURFACE_CONTRACT_SHELL);
 const headed = !cliArgs.includes('--headless')
   && process.env.PW_HEADLESS !== '1'
   && process.env.PLAYWRIGHT_HEADLESS !== '1';
