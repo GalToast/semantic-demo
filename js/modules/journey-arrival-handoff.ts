@@ -37,14 +37,14 @@ export function buildArrivalHandoffOverlay(fromIndex: number, targetIndex: numbe
     const from = getNodeVector(fromIndex);
     const to = getNodeVector(targetIndex);
     const scene = state.scene as { add?: (obj: any) => void } | null;
-    if (!from || !to || !scene) return;
+    if (!from || !to || !scene?.add) return;
     removeArrivalHandoffOverlay();
     const group = new THREE.Group();
     group.name = 'arrival-memory-strand';
     group.userData = { fromIndex, targetIndex };
     const positions: number[] = [];
     const colors: number[] = [];
-    const color = new THREE.Color((ROUTE_TRACE_COLORS as Record<string, string>).cue);
+    const color = new THREE.Color(ROUTE_TRACE_COLORS.cue);
     [-1, 0, 1, 2].forEach((side) => {
         pushArcSegments(positions, colors, fromIndex, targetIndex, color, {
             steps: ARRIVAL_HANDOFF_SEGMENT_STEPS,
