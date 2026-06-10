@@ -12,6 +12,8 @@ import { get } from 'svelte/store';
 import { navStore, bumpUrlStateRestoreToken } from '@lib/stores/navigation';
 import type { NavState, ViewName } from '@lib/types/state';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
+import { runSearch, searchStore } from '@lib/stores/search.svelte';
+import { publish, EVENTS } from '@lib/orchestration/event-bus';
 
 /**
  * NavState extended with the legacy `activeStoryPrompt` field that lives in
@@ -412,9 +414,6 @@ async function _restoreSearchFromParams(
   anchorId: string | null
 ): Promise<void> {
   try {
-    const { runSearch, searchStore } = await import('@lib/stores/search.svelte');
-    const { publish, EVENTS } = await import('@lib/orchestration/event-bus');
-
     // If a numeric anchor was specified, dispatch SEARCH_FOCUS_REQUESTED
     // immediately so the focus/trail stores populate synchronously with URL
     // restore. This ensures the Svelte shell renders the focus-stage
