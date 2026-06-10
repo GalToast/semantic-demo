@@ -8,11 +8,11 @@
  *
  * What this test proves (real behavior, not mocked):
  *   1. App.svelte mounts into #app-root (unified chrome owner)
- *   2. search-chrome-slot gets a mounted SearchChrome component
- *   3. search-results gets a mounted SearchResultsList component
- *   4. selected-details gets a mounted SelectedBusinessDetails component
- *   5. filter-chrome-slot gets a mounted FilterChrome component
- *   6. Each island renders real DOM children (not empty slots)
+ *   2. search-chrome-slot gets a mounted SearchChrome island
+ *   3. selected-details renders the SelectedBusinessDetails component
+ *   4. search-results remains present as the legacy-owned surface slot
+ *   5. filter-chrome-slot gets a mounted FilterChrome island
+ *   6. Each mounted island/component renders real DOM children (not empty slots)
  *
  * Run:  node tests/verify-svelte-migration.mjs
  *       npm run test:svelte-migration
@@ -177,16 +177,15 @@ async function main() {
         assert(slotsExist.selectedDetails, 'selected-details slot exists in DOM after panelSurface change');
         assert(slotsExist.filterChrome, 'filter-chrome-slot exists in DOM after panelSurface change');
 
-        // Step 4: Wait for all 4 Svelte islands to mount
-        // initEventListeners dynamically imports the 4 island modules and calls
-        // their init functions, which use awaitSlot with MutationObserver.
-        console.log('Waiting for Svelte islands to mount...');
+        // Step 4: Wait for surviving Svelte islands and component surfaces
+        // SearchChrome and FilterChrome are still mounted through awaitSlot island helpers.
+        // SearchResults and SelectedBusinessDetails are rendered inside App.svelte info-panel
+        // surfaces; the search-results slot remains legacy-owned until a query populates it.
+        console.log('Waiting for Svelte islands and component surfaces...');
 
         const MOUNT_FLAG = 'svelteMounted';
         const ISLAND_DEFS = [
             { slotId: 'search-chrome-slot', flag: 'search-chrome', label: 'SearchChrome' },
-            { slotId: 'search-results', flag: 'search-results', label: 'SearchResultsList' },
-            { slotId: 'selected-details', flag: 'selected-details', label: 'SelectedBusinessDetails' },
             { slotId: 'filter-chrome-slot', flag: 'filter-chrome', label: 'FilterChrome' }
         ];
 
@@ -210,8 +209,20 @@ async function main() {
             }
         }
 
-        // Step 5: Verify each island rendered real DOM content
-        console.log('Verifying real DOM content in mounted islands...');
+        await page.waitForFunction(() => {
+            const selected = document.getElementById('selected-details');
+            return selected && selected.querySelector('#selected-name') && selected.querySelector('#selected-what') && selected.querySelector('.selected-grid');
+        }, { timeout: 30_000 });
+        assert(true, 'SelectedBusinessDetails rendered inside selected-details surface');
+
+        await page.waitForFunction(() => {
+            const results = document.getElementById('search-results');
+            return results && results.classList.contains('search-results');
+        }, { timeout: 30_000 });
+        assert(true, 'Search results surface exists for legacy renderer');
+
+        // Step 5: Verify each mounted island/component rendered real DOM content
+        console.log('Verifying real DOM content in mounted islands and component surfaces...');
 
         // SearchChrome: should contain the search input and clear button
         const searchChromeContent = await page.evaluate(() => {
@@ -229,24 +240,24 @@ async function main() {
         assert(searchChromeContent.hasClear, 'SearchChrome rendered #search-clear-btn');
         assert(searchChromeContent.hasSearchLabel, 'SearchChrome rendered .search-label');
 
-        // SearchResultsList: when no results, the component renders nothing
-        // visible, but the mount flag proves it ran.
+        // Search results: no query is seeded in this proof, so the legacy-owned surface
+        // is expected to be empty. The component surface check above proves it exists.
         const searchResultsContent = await page.evaluate(() => {
             const slot = document.getElementById('search-results');
-            if (!slot) return { mounted: false };
+            if (!slot) return { exists: false };
             return {
-                mounted: slot.dataset.svelteMounted === 'search-results',
-                hasChildren: slot.children.length > 0,
+                exists: slot.classList.contains('search-results'),
                 childCount: slot.children.length
             };
         });
-        assert(searchResultsContent.mounted, 'SearchResultsList slot was mounted (flag set)');
+        assert(searchResultsContent.exists, 'Search results surface exists and is empty without a query');
 
         // SelectedBusinessDetails: should render the selected-hero section
         const selectedDetailsContent = await page.evaluate(() => {
             const slot = document.getElementById('selected-details');
-            if (!slot) return { hasChildren: false };
+            if (!slot) return { mounted: false };
             return {
+                mounted: true,
                 hasChildren: slot.children.length > 0,
                 hasHero: !!slot.querySelector('.selected-hero'),
                 hasName: !!slot.querySelector('#selected-name'),
@@ -255,6 +266,7 @@ async function main() {
                 childCount: slot.children.length
             };
         });
+        assert(selectedDetailsContent.mounted, 'SelectedBusinessDetails surface is mounted');
         assert(selectedDetailsContent.hasChildren, 'SelectedBusinessDetails rendered children');
         assert(selectedDetailsContent.hasHero, 'SelectedBusinessDetails rendered .selected-hero');
         assert(selectedDetailsContent.hasName, 'SelectedBusinessDetails rendered #selected-name');

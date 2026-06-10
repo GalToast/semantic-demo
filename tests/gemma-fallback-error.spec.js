@@ -17,7 +17,7 @@ async function waitForStateReady(page) {
   await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
   // __APP_STATE__ is assigned to window by app.js; wait for it to be a non-empty array
   await page.waitForFunction(() => {
-    // eslint-disable-next-line no-undef
+     
     return typeof __APP_STATE__ !== 'undefined'
       && Array.isArray(__APP_STATE__.points)
       && __APP_STATE__.points.length > 0

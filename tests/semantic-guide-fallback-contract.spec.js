@@ -59,7 +59,7 @@ test.describe('showSemanticThreadsDetail error fallback', () => {
 
     // Invoke the function under test
     await page.evaluate(() => {
-      // eslint-disable-next-line no-undef
+       
       window.showSemanticThreadsDetail();
     });
 

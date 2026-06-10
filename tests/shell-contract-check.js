@@ -126,3 +126,7 @@ if (failures.length) {
 }
 
 console.log('Semantic demo shell contract OK: src/index.html -> dist/svelte/index.html is the production app shell.');
+console.log('');
+console.log('QA NOTE: The repo\'s vector-explorer-polished.html is a LEGACY REFERENCE shell (loads dist/bundle.js).');
+console.log('The DEPLOYED vector-explorer-polished.html is the SAME as dist/svelte/index.html (Svelte production shell).');
+console.log('Production QA should target dist/svelte/index.html (local build) or live URLs, NOT the repo legacy shell.');
