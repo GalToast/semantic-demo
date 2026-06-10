@@ -218,11 +218,10 @@ async function abortInFlightSearch(page) {
   // Abort via clearSearch (the user-cancels flow)
   await page.evaluate(() => {
     if (typeof (window.__APP_ACTIONS__?.clearSearch) === 'function') {
-      (window.__APP_ACTIONS__?.clearSearch)();
+      window.__APP_ACTIONS__.clearSearch();
     }
   });
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
-}
 
 /**
  * Mock a very slow (15 s) semantic search response to verify the UI does not
@@ -258,8 +257,9 @@ async function slowSearchResponse(page) {
   await input.fill('latte');
   await page.evaluate(() => {
     if (typeof (window.__APP_ACTIONS__?.search) === 'function') {
-      (window.__APP_ACTIONS__?.search)('latte', { preferCachedResults: false });
+      window.__APP_ACTIONS__.search('latte', { preferCachedResults: false });
     }
+  });
   });
   // Wait just long enough for the UI to react to the in-flight state
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
@@ -496,5 +496,8 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
     expect(final.hasCamera).toBe(true);
     expect(final.hasMesh).toBe(true);
   });
+
+});
+
 
 });

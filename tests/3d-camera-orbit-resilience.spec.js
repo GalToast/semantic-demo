@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { BASE_URL, SEMANTIC_HEALTH_STUB, setupMockSearch, openApp, probe, isValidNodeIndex, projectedCandidates } from './helpers/3d-interaction-helpers.js';
+import { openApp, probe, isValidNodeIndex, projectedCandidates } from './helpers/3d-interaction-helpers.js';
 
 const CAMERA_ORBIT_TEST_TIMEOUT_MS = 180000;
 

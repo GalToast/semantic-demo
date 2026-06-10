@@ -399,7 +399,6 @@ test.describe('3D cluster readability', () => {
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       const top = document.elementFromPoint(cx, cy);
-      const cs = getComputedStyle(el);
       return {
         cx: Math.round(cx),
         cy: Math.round(cy),

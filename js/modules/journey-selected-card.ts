@@ -27,6 +27,15 @@
  * and must not be touched here.
  */
 
+/**
+ * Salt for the per-line vector cascade background in the focus stage.
+ * Hex `0xCA5C` is `'CASC'` as a 16-bit little-endian short — meaningful so
+ * future readers know what this salt is for. Stable: the cascade visual
+ * must be identical on every render, so do not change this value without
+ * also confirming the visual is acceptable.
+ */
+const CASCADE_VECTOR_LINE_SALT = 0xCA5C;
+
 import { getPoints, getSelectedPoint, getFocusedNode, getCurrentView } from '../state/selectors/index.ts';
 import { getActiveClusterFilter, getActiveFilters } from '../state/selectors/index.ts';
 import { subscribeKeyed, EVENTS } from './event-bus.ts';
@@ -249,7 +258,7 @@ export function updateSelectedBusiness(point: any, options: UpdateSelectedBusine
         cascadeBg.innerHTML = '';
         cascadeBg.classList.remove('active');
         cascadeBg.classList.add('active');
-        const generateVectorLine = (lineIdx: number): string => Array.from({length: 6}, (_, j) => (seededUnit(lineIdx * 6 + j, 'vector') * 2 - 1).toFixed(3)).join('  ');
+        const generateVectorLine = (lineIdx: number): string => Array.from({length: 6}, (_, j) => (seededUnit(lineIdx * 6 + j, CASCADE_VECTOR_LINE_SALT) * 2 - 1).toFixed(3)).join('  ');
         for (let i = 0; i < 8; i++) {
             setTimeout(() => {
                 const line = document.createElement('div');

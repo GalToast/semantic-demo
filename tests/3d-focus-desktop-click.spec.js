@@ -22,7 +22,7 @@
 
 import { test, expect } from '@playwright/test';
 import {
-  BASE_URL, setupMockSearch, openApp,
+  openApp,
   probe, isValidNodeIndex, isReachableScreenCoordinate, focusNodeViaApp
 } from './helpers/3d-interaction-helpers.js';
 
