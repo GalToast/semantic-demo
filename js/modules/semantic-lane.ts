@@ -247,7 +247,7 @@ export function shouldWarmSemanticLane(reason = 'interval'): boolean {
     if (reason === 'focus' || reason === 'visibility') return true;
     const doc = getDocument();
     if (doc && doc.visibilityState !== 'visible') return false;
-    const inputValue = doc?.getElementById?.('search-input')?.value?.trim() || '';
+    const inputValue = (doc?.getElementById?.('search-input') as HTMLInputElement | null)?.value?.trim() || '';
     return !!state.currentSearchSummary || inputValue.length >= 2;
 }
 
@@ -272,9 +272,10 @@ export async function probeSemanticLane({ warm = false, reason = 'interval' }: L
         reason === 'queued-warm';
 
     if (trackWarmupAttempt) {
+        const snap = state.semanticLaneSnapshot as Record<string, unknown> | null;
         const priorWarmupCount =
-            state.semanticLaneSnapshot?.retry_source === 'warmup'
-                ? Number(state.semanticLaneSnapshot.retry_count || 0)
+            snap?.retry_source === 'warmup'
+                ? Number(snap.retry_count || 0)
                 : 0;
         recordSemanticLaneSnapshot({
             retry_source: 'warmup',
@@ -446,7 +447,7 @@ export function recordSemanticLaneSnapshot(partial: LaneHealthPayload = {}): Lan
         ...partial,
         checked_at: partial.checked_at || new Date().toISOString()
     };
-    return state.semanticLaneSnapshot;
+    return state.semanticLaneSnapshot as LaneHealthPayload;
 }
 
 // ── Ops Mode ───────────────────────────────────────────────────────────────
@@ -461,7 +462,7 @@ export function setSemanticLaneOpsMode(enabled: boolean): void {
     }
     if (!state.semanticLaneOpsMode) {
         if (state.semanticLaneOpsRefreshTimer) {
-            win?.clearInterval?.(state.semanticLaneOpsRefreshTimer);
+            win?.clearInterval?.(state.semanticLaneOpsRefreshTimer as number);
             state.semanticLaneOpsRefreshTimer = null;
         }
         return;
@@ -469,7 +470,7 @@ export function setSemanticLaneOpsMode(enabled: boolean): void {
     if (!state.semanticLaneOpsRefreshTimer && typeof win?.setInterval === 'function') {
         state.semanticLaneOpsRefreshTimer = win.setInterval(() => {
             refreshSemanticLaneOpsSummary();
-        }, 60000);
+        }, 60000) as unknown as ReturnType<typeof setTimeout>;
     }
 }
 

@@ -20,6 +20,20 @@ import type {
   FocusNodeOptions,
 } from './types';
 
+// ── TS Port Imports (canonical implementations) ─────────────────────────────
+// These replace direct ctx._cameraControls references.  Each function
+// delegates to the TS port's internal lazy-loaded legacy modules.
+
+import {
+  focusOnNode as _focusOnNode,
+  settleCameraToOverviewPose as _settleCameraToOverviewPose,
+  setAutoRotateSuspended as _setAutoRotateSuspended,
+  syncOrbitAutoRotate as _syncOrbitAutoRotate,
+  zoomCamera as _zoomCamera,
+} from '../camera-controls';
+
+import { updateCameraViewportOffset as _updateCameraViewportOffset } from '../three-engine';
+
 // ── Public Factory ───────────────────────────────────────────────────────────
 
 /**
@@ -41,20 +55,13 @@ export function createCameraMethods(
     }
   }
 
-  function _assertModules(method: string): void {
-    if (!ctx._threeEngine || !ctx._cameraControls) {
-      throw new Error(`EngineBridge.${method}: legacy modules not loaded`);
-    }
-  }
-
   return {
     // ── Node Interaction (camera side) ──────────────────────────────────
 
     focusNode(index: number, options: FocusNodeOptions = {}): void {
       _assertReady('focusNode');
-      _assertModules('focusNode');
 
-      ctx._cameraControls!.focusOnNode(index, {
+      _focusOnNode(index, {
         duration: options.durationMs,
         reason: options.reason ?? 'svelte-focus',
       });
@@ -62,9 +69,8 @@ export function createCameraMethods(
 
     clearFocus(): void {
       _assertReady('clearFocus');
-      _assertModules('clearFocus');
 
-      ctx._cameraControls!.settleCameraToOverviewPose();
+      _settleCameraToOverviewPose();
     },
 
     // ── Viewport & Orbit ────────────────────────────────────────────────
@@ -77,29 +83,26 @@ export function createCameraMethods(
       ctx._state.camera.aspect = width / height;
       ctx._state.camera.updateProjectionMatrix();
       ctx._state.renderer.setSize(width, height);
-      ctx._threeEngine?.updateCameraViewportOffset();
+      _updateCameraViewportOffset();
     },
 
     setAutoRotate(enabled: boolean): void {
       _assertReady('setAutoRotate');
-      _assertModules('setAutoRotate');
 
-      ctx._cameraControls!.setAutoRotateSuspended(!enabled);
-      ctx._cameraControls!.syncOrbitAutoRotate();
+      _setAutoRotateSuspended(!enabled);
+      _syncOrbitAutoRotate();
     },
 
     zoomCamera(multiplier: number): void {
       _assertReady('zoomCamera');
-      _assertModules('zoomCamera');
 
-      ctx._cameraControls!.zoomCamera(multiplier);
+      _zoomCamera(multiplier);
     },
 
     settleToOverview(): void {
       _assertReady('settleToOverview');
-      _assertModules('settleToOverview');
 
-      ctx._cameraControls!.settleCameraToOverviewPose();
+      _settleCameraToOverviewPose();
     },
   };
 }
