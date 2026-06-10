@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * thread-inspector.ts
  *
@@ -477,3 +476,6 @@ export function exploreThreadNeighbor(index: number, options: ThreadInspectionOp
     });
     return { targetIndex: index, fromIndex, reason };
 }
+
+// Wave70: retired the direct window.exploreThreadNeighbor bridge and _ti
+// diagnostic namespace; production traversal uses walkThreadNeighbor.

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { webglContext, getLiveResourceCounts } from './webgl-context.ts';
 import { switchView } from './view-controller.ts';
 import { updateClusterLabels } from './cluster-labels.ts';
