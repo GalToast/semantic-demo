@@ -442,6 +442,7 @@ body[data-panel-surface='semantic-dive'] .selected-card {
     .snow-flake,
     .mode-grid.computing,
     .loading-thread,
+    .biofield-drift,
     .search-spinner {
         animation-name: none;
     }
