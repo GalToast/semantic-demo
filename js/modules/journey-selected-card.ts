@@ -137,10 +137,13 @@ export function syncFocusStage(point: any): void {
         || getSelectedPoint()
         || ((focusedNode !== null && focusedNode !== undefined && Number.isFinite(focusedNode) && focusedNode >= 0 && focusedNode < points.length) ? points[focusedNode] : null);
 
-    const effectiveIndex = Number.isFinite(focusedNode) && points[focusedNode] === effectivePoint
-        ? focusedNode
-        : points.indexOf(effectivePoint);
-    const isFilteredOut = Number.isFinite(effectiveIndex)
+    let effectiveIndex: number | null = null;
+    if (typeof focusedNode === 'number' && Number.isFinite(focusedNode) && points[focusedNode] === effectivePoint) {
+        effectiveIndex = focusedNode;
+    } else if (effectivePoint !== null) {
+        effectiveIndex = points.indexOf(effectivePoint);
+    }
+    const isFilteredOut = effectiveIndex !== null
         && effectiveIndex >= 0
         && !isPointVisible(effectiveIndex, points, getActiveClusterFilter(), getActiveFilters());
 
@@ -161,7 +164,7 @@ export function syncFocusStage(point: any): void {
     stage.setAttribute('aria-hidden', 'false');
 
     if (!wasActive) {
-        setPreviouslyFocusedFocusStage(document.activeElement);
+        setPreviouslyFocusedFocusStage(document.activeElement instanceof HTMLElement ? document.activeElement : null);
 
         const keydownHandler = (e: KeyboardEvent): void => {
             if (e.key !== 'Tab') return;
@@ -175,8 +178,8 @@ export function syncFocusStage(point: any): void {
                 e.preventDefault();
                 return;
             }
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
+            const first = focusable[0]!;
+            const last = focusable[focusable.length - 1]!;
             if (e.shiftKey) {
                 if (document.activeElement === first) {
                     last.focus();

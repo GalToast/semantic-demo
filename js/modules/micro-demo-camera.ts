@@ -17,8 +17,8 @@ let _overviewCameraSnapshot: CameraSnapshot | null = null;
 let _overviewCameraRafId: number | null = null;
 
 export function captureOverviewCameraSnapshot(): void {
-    const camera = state.camera as { position?: { clone: () => THREE.Vector3 } } | null;
-    const controls = state.controls as { target?: { clone: () => THREE.Vector3 } } | null;
+    const camera = state.camera as unknown as { position?: { clone: () => THREE.Vector3 } } | null;
+    const controls = state.controls as unknown as { target?: { clone: () => THREE.Vector3 } } | null;
     if (!camera?.position?.clone || !controls?.target?.clone) return;
     _overviewCameraSnapshot = {
         camera: camera.position.clone(),
@@ -40,8 +40,8 @@ export function getOverviewCameraSnapshot(): CameraSnapshot {
 }
 
 export function animateCameraToOverview(duration: number = 1000): void {
-    const camera = state.camera as { position: { clone: () => THREE.Vector3; copy: (v: THREE.Vector3) => void; lerpVectors: (a: THREE.Vector3, b: THREE.Vector3, t: number) => void }; fov?: number } | null;
-    const controls = state.controls as { target: { clone: () => THREE.Vector3; copy: (v: THREE.Vector3) => void; lerpVectors: (a: THREE.Vector3, b: THREE.Vector3, t: number) => void }; update: () => void } | null;
+    const camera = state.camera as unknown as { position: { clone: () => THREE.Vector3; copy: (v: THREE.Vector3) => void; lerpVectors: (a: THREE.Vector3, b: THREE.Vector3, t: number) => void }; fov?: number } | null;
+    const controls = state.controls as unknown as { target: { clone: () => THREE.Vector3; copy: (v: THREE.Vector3) => void; lerpVectors: (a: THREE.Vector3, b: THREE.Vector3, t: number) => void }; update: () => void } | null;
     if (!camera || !controls) return;
     const startPos = camera.position.clone();
     const startTarget = controls.target.clone();

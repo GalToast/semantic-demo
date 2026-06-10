@@ -4,7 +4,7 @@
  * TypeScript shadow of semantic-threads.js.
  * Semantic thread artifact loading with worker and main-thread fallback.
  */
-import { state } from '../state.ts';
+import { state, type SemanticNode } from '../state.ts';
 import { updateSemanticThreadsStatus } from './state-mutators.ts';
 import { normalizeRelationshipRole } from './relationship-roles.ts';
 import { recordSemanticLaneSnapshot } from './semantic-lane.ts';
@@ -21,9 +21,12 @@ function buildAssetUrl(path: string): string {
 
 function artifactNameFromUrl(url: string): string {
     try {
-        return new URL(url, window.location.href).pathname.split('/').pop() || url.split('?')[0];
+        const parsed = new URL(url, window.location.href);
+        const parts = parsed.pathname.split('/');
+        const last = parts[parts.length - 1];
+        return last ?? url.split('?')[0] ?? url;
     } catch {
-        return url.split('?')[0];
+        return url.split('?')[0] ?? url;
     }
 }
 
@@ -188,7 +191,7 @@ function _buildSemanticNeighborMap(bundle: any): void {
             status: node?.status || null,
             signalScore: Number(node?.signal_score ?? 0),
             neighbors
-        });
+        } as any);
     });
 }
 
@@ -249,7 +252,7 @@ function _scheduleSemanticThreadsRetry(reason = 'artifact-retry'): void {
         loadSemanticThreads({ reason }).catch((err: any) => {
             console.warn('loadSemanticThreads retry failed:', err);
         });
-    }, delayMs);
+    }, delayMs) as unknown as ReturnType<typeof setTimeout>;
 }
 
 export async function loadSemanticThreads(options: Record<string, any> = {}): Promise<any> {
@@ -294,6 +297,7 @@ export async function loadSemanticThreads(options: Record<string, any> = {}): Pr
 
             outer: for (let requestIndex = 0; requestIndex < requestUrls.length; requestIndex++) {
                 const requestUrl = requestUrls[requestIndex];
+                if (!requestUrl) continue;
                 const artifactName = artifactNameFromUrl(requestUrl);
                 for (let attempt = 0; attempt < attemptConfigs.length; attempt++) {
                     try {
@@ -312,6 +316,7 @@ export async function loadSemanticThreads(options: Record<string, any> = {}): Pr
             }
 
             if (!bundle) throw lastError || new Error('semantic thread artifact unavailable');
+            if (!loadedArtifactName) throw new Error('semantic thread artifact name unavailable');
 
             (state as any).semanticThreadBundle = bundle;
             state.semanticThreadArtifactName = loadedArtifactName;
@@ -337,7 +342,7 @@ export async function loadSemanticThreads(options: Record<string, any> = {}): Pr
                 thread_retry_source: options.reason || 'artifact-load',
                 thread_retry_count: (state as any).semanticThreadsRetryAttempt,
             });
-            _scheduleSemanticThreadsRetry(options.reason || 'artifact-load');
+            _scheduleSemanticThreadsRetry(options.reason ?? 'artifact-load');
             _refreshFocusedSemanticState();
             return false;
         }

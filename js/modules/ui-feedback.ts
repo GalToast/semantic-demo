@@ -26,9 +26,9 @@ export function showExperienceToast(title: string, copy: string): void {
     if (copyEl) copyEl.textContent = copy;
     toast.classList.add('active');
     if (state.experienceResetToastTimer) {
-        window.clearTimeout(state.experienceResetToastTimer as unknown as number);
+        clearTimeout(state.experienceResetToastTimer);
     }
-    state.experienceResetToastTimer = window.setTimeout(() => {
+    state.experienceResetToastTimer = setTimeout(() => {
         toast.classList.remove('active');
         toast.setAttribute('aria-hidden', 'true');
         toast.setAttribute('aria-live', 'polite');

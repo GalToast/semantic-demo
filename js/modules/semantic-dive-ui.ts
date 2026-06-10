@@ -14,7 +14,7 @@ import { cleanOptionalValue, formatBusinessName } from './utils/dom-formatters.t
 import { isCompactFocusStageViewport } from './utils/ui-presentation.ts';
 import { getNextExploreCandidateForIndex } from './journey-thread-model.ts';
 import { summarizeNeighborReason } from './journey.ts';
-import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.ts';
+import { getNextWalkCandidateForIndex } from './journey-neighborhood.ts';
 import { ensureFocusStageAuxiliaryDom, ensureDiveButton } from './focus-stage-dom.ts';
 
 function truncateDiveStatusCopy(text: string | null | undefined, max = 74): string {
@@ -27,7 +27,7 @@ function truncateDiveStatusCopy(text: string | null | undefined, max = 74): stri
 }
 
 function getShortConnectionCue(reason: any): string {
-    const reasonText = cleanOptionalValue(reason)
+    const reasonText = (cleanOptionalValue(reason) || '')
         .replace(/\bgrounded in\b/gi, 'from')
         .replace(/\bsame-city relationship\b/gi, 'same-city link')
         .replace(/\bdeep record relationship\b/gi, 'record link')
@@ -84,13 +84,13 @@ export function syncSemanticDiveUi(): void {
         document.body.dataset.journeyPhase = 'inside';
     }
 
-    const diveButton = document.getElementById('btn-focus-dive');
+    const diveButton = document.getElementById('btn-focus-dive') as HTMLButtonElement | null;
     const insideControls = document.getElementById('focus-stage-inside-controls');
     const insideStatus = document.getElementById('focus-stage-inside-status');
     const insideStatusCopy = document.getElementById('focus-stage-inside-status-copy');
-    const insideNextButton = document.getElementById('btn-inside-next');
-    const insideMapButton = document.getElementById('btn-inside-map');
-    const insideCountyButton = document.getElementById('btn-inside-county');
+    const insideNextButton = document.getElementById('btn-inside-next') as HTMLButtonElement | null;
+    const insideMapButton = document.getElementById('btn-inside-map') as HTMLButtonElement | null;
+    const insideCountyButton = document.getElementById('btn-inside-county') as HTMLButtonElement | null;
     const focusKicker = document.getElementById('focus-stage-kicker');
     const journeyCompass = document.getElementById('journey-compass');
     const journeyPhase = getStrandContinuityState()?.phase;
@@ -104,8 +104,9 @@ export function syncSemanticDiveUi(): void {
     const currentFocusIndex = Number.isFinite(getNavState()?.focusedIndex)
         ? getNavState().focusedIndex
         : getFocusedNode();
-    const nextExploreCandidate = active
-        ? getNextExploreCandidateForIndex(currentFocusIndex, getNextWalkCandidateForIndex)
+    const nextExploreCandidate = active && currentFocusIndex !== null
+        ? getNextExploreCandidateForIndex(currentFocusIndex, (idx: number | null, opts?: Record<string, unknown>) =>
+            idx === null ? null : getNextWalkCandidateForIndex(idx, opts))
         : null;
     const hasNextCandidate = active && Number.isFinite(nextExploreCandidate?.index);
     const hasWalked = (getNavState()?.explorationHistoryIndices || []).length > 1;

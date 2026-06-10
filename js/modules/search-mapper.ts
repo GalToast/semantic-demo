@@ -146,9 +146,9 @@ function getMockFallbackPointIndex(row: ServiceResultRow, order: number = 0): nu
             .map((entry) => entry.index)
         : [];
     if (scoredIndices.length) {
-        return scoredIndices[Math.max(0, order) % scoredIndices.length];
+        return scoredIndices[Math.max(0, order) % scoredIndices.length] ?? null;
     }
-    return visibleIndices[Math.max(0, order) % visibleIndices.length];
+    return visibleIndices[Math.max(0, order) % visibleIndices.length] ?? null;
 }
 
 export function mapSemanticSearchServiceResult(row: ServiceResultRow, order: number = 0): SearchResult | null {
@@ -164,7 +164,7 @@ export function mapSemanticSearchServiceResult(row: ServiceResultRow, order: num
     if (isMockRow) {
         rawPointIndex = getMockFallbackPointIndex(row, order);
         if (!(Number.isFinite(rawPointIndex) && rawPointIndex! >= 0 && rawPointIndex! < points.length)) return null;
-        point = points[rawPointIndex!];
+        point = points[rawPointIndex!]!;
     } else {
         rawPointIndex = s.pointIndexByLeadId.get(String(row.lead_id));
         if (rawPointIndex === undefined || rawPointIndex === null) return null;

@@ -134,7 +134,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
     }
 
     const personality = getNeighborhoodPersonality(index);
-    state.navState.currentPersonality = personality;
+    state.navState.currentPersonality = personality as unknown as Record<string, unknown>;
 
     if (Number.isFinite((state as any).focusPocketAnimationFrameId)) {
         cancelAnimationFrame((state as any).focusPocketAnimationFrameId);
@@ -172,7 +172,8 @@ export function applyLocalNeighborhoodFocus(index: number): void {
             });
             setFocusPocketMotionByIndex(motion);
 
-            setFocusPocketMeta(pocket.meta || {
+            const meta = pocket.meta;
+            const fallbackMeta = {
                 active: getFocusPocketIndices().length > 0,
                 nodeCount: pocket.indices.length,
                 primaryCount: Math.min(12, getFocusPocketIndices().length),
@@ -180,9 +181,10 @@ export function applyLocalNeighborhoodFocus(index: number): void {
                     0,
                     pocket.indices.length - 1 - Math.min(12, getFocusPocketIndices().length)
                 ),
-                motif: pocket.meta?.motif || 'market',
-                motifLabel: pocket.meta?.motifLabel || 'semantic constellation'
-            });
+                motif: meta?.motif || 'market',
+                motifLabel: meta?.motifLabel || 'semantic constellation'
+            };
+            setFocusPocketMeta(meta ?? fallbackMeta);
             state.nodesAreSettling = true;
             state.autoRotate = false;
         }
