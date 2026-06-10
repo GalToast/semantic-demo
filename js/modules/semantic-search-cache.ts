@@ -51,12 +51,13 @@ export async function initSearchCache(): Promise<void> {
         const dbEntries = await idb.entries();
         const now = Date.now();
         for (const [key, entry] of dbEntries) {
-            if (!entry || typeof (entry as CacheEntry).storedAt !== 'number') continue;
-            const ageMs = now - (entry as CacheEntry).storedAt;
+            const cacheEntry = entry as CacheEntry;
+            if (!entry || typeof cacheEntry.storedAt !== 'number') continue;
+            const ageMs = now - cacheEntry.storedAt;
             if (ageMs > SEMANTIC_SEARCH_CACHE_TTL_MS) {
-                idb.remove(key).catch((err: unknown) => debugWarn('[idb-service] cleanup failed:', err));
+                idb.remove(key as string).catch((err: unknown) => debugWarn('[idb-service] cleanup failed:', err));
             } else {
-                state.semanticSearchResultCache.set(key, entry as CacheEntry);
+                state.semanticSearchResultCache.set(key as string, cacheEntry);
             }
         }
     } catch (err) {
@@ -102,7 +103,8 @@ export function getCachedSemanticSearchPayload(query: string, offset: number = 0
     const key = getSemanticSearchCacheKey(query, offset);
     if (!key) return null;
 
-    const entry = state.semanticSearchResultCache.get(key);
+    const cache = state.semanticSearchResultCache as unknown as Map<string, CacheEntry>;
+    const entry = cache.get(key);
     if (!entry) {
         state.semanticSearchCacheDiagnostics.misses += 1;
         markSemanticSearchCache('miss', key);
@@ -110,24 +112,24 @@ export function getCachedSemanticSearchPayload(query: string, offset: number = 0
     }
 
     const now = Date.now();
-    const ageMs = now - entry.storedAt;
+    const ageMs = now - (entry as CacheEntry).storedAt;
     if (ageMs > SEMANTIC_SEARCH_CACHE_TTL_MS) {
-        state.semanticSearchResultCache.delete(key);
-        idb.remove(key).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err));
+        cache.delete(key);
+        idb.remove(key as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err));
 
         state.semanticSearchCacheDiagnostics.evictions += 1;
         state.semanticSearchCacheDiagnostics.misses += 1;
-        markSemanticSearchCache('expired', key, entry);
+        markSemanticSearchCache('expired', key, entry as CacheEntry);
         return null;
     }
 
-    entry.lastAccessedAt = now;
-    idb.set(key, entry).catch((err: unknown) => debugWarn('[idb-service] access update failed:', err));
+    (entry as CacheEntry).lastAccessedAt = now;
+    idb.set(key as string, entry as CacheEntry).catch((err: unknown) => debugWarn('[idb-service] access update failed:', err));
 
     state.semanticSearchCacheDiagnostics.hits += 1;
-    markSemanticSearchCache('hit', key, entry);
+    markSemanticSearchCache('hit', key, entry as CacheEntry);
 
-    const payload = cloneSemanticSearchPayload(entry.payload);
+    const payload = cloneSemanticSearchPayload((entry as CacheEntry).payload);
     if (payload && typeof payload === 'object') {
         payload.client_cache_hit = true;
         payload.client_cache_age_ms = Math.max(0, Math.round(ageMs));
