@@ -1,4 +1,3 @@
-// @ts-nocheck
 import * as THREE from 'three';
 import { state as _state } from '../state.ts';
 const state = _state as any;
@@ -344,8 +343,10 @@ export function createPoints() {
     state.pointBaseColors = new Float32Array(state.points.length * 3);
     state.pointColorStateVersion += 1;
     state.searchGlowRenderStateKey = '';
+    const rawPositionsBuffer = webglContext.rawPositionsBuffer || state.rawPositionsBuffer;
+    const rawClustersBuffer = webglContext.rawClustersBuffer || state.rawClustersBuffer;
     const scatterOffsets = computeOverviewScatterOffsets(state.points);
-    const bounds = getPointBoundsCenter(state.points, webglContext.rawPositionsBuffer);
+    const bounds = getPointBoundsCenter(state.points, rawPositionsBuffer);
     const renderCenter = bounds.center;
     state.overviewBounds = {
         sourceMin: { x: bounds.min.x, y: bounds.min.y, z: bounds.min.z },
@@ -360,8 +361,6 @@ export function createPoints() {
     webglContext.focusRingTexture = trackTexture(createFocusRingTexture(THREE));
     webglContext.focusNextCueTexture = trackTexture(createFocusNextCueTexture(THREE));
 
-    const rawPositionsBuffer = webglContext.rawPositionsBuffer;
-    const rawClustersBuffer = webglContext.rawClustersBuffer;
     const hasRawBuffers = rawPositionsBuffer && rawClustersBuffer && rawClustersBuffer.length === state.points.length;
 
     state.points.forEach((point: any, i: number) => {

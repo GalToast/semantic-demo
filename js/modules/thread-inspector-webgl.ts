@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * thread-inspector-webgl.ts
  *

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { webglContext } from './webgl-context.ts';
 'use strict';
 

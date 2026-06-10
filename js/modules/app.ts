@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { state } from '../state.ts';
 import * as journeyModule from './journey.ts';
 import { cancelMicroDemo, initMicroDemo, isMicroDemoRunning } from './micro-demo.ts';
@@ -176,15 +175,25 @@ async function initDataLayer(): Promise<boolean> {
     return true;
 }
 
-function initGraphicsAndAudio(): any {
+async function initGraphicsAndAudio(): Promise<any> {
+    // Advance progress before Three.js init (GPU/driver sync can block ~6s).
+    // Yield to the renderer first so the progress-bar update paints
+    // before the long blocking GPU context initialization.
+    setLoadingPhase('scene', { progress: 0.58 });
+    await new Promise<void>(r => setTimeout(r, 0));
+
     const graphicsReady = initThreeJS();
     if (graphicsReady !== false) {
+        setLoadingPhase('scene', { progress: 0.68 });
         journeyModule.ensureCanvasNodeInteractionBindings();
     } else {
         hideLoadingOverlay();
     }
     ensureFocusStageAuxiliaryDom();
     audioModule.initAudio();
+    // Nudge toward restore (0.76) so there is no dead gap between
+    // pre-init and the next phase transition.
+    setLoadingPhase('scene', { progress: 0.74 });
     return graphicsReady;
 }
 

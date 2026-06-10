@@ -1,7 +1,3 @@
-// @ts-nocheck
-// js/modules/micro-demo-choreography.js
-// Choreography state machine, focus setup, reset, and timed phase chain.
-
 import { state, withStateMutation } from '../state.ts';
 import { animateCameraToNode, setAutoRotateSuspended } from './camera-controls.ts';
 import { applyLocalNeighborhoodFocus, clearFocusPocketIndices, clearFocusPocketMeta } from './focus-pocket.ts';
