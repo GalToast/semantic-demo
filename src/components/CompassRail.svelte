@@ -132,8 +132,11 @@
   .compass-step {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     padding: 0.3rem 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
     background: none;
     border: none;
     border-radius: 0.3rem;

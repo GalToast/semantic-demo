@@ -249,6 +249,7 @@
     id="journey-compass-title"
     class="journey-compass-title"
     class:sr-only={!visibleTitle}
+    style="overflow: visible; text-overflow: clip; white-space: normal;"
   >
     {visibleTitle || titleSrOnlyText}
   </div>
@@ -353,6 +354,28 @@
   </span>
 </button>
 
+<div class="focus-stage-kicker" hidden aria-hidden="true">Focus stage</div>
+
+<div
+  id="focus-stage-inside-status"
+  class="focus-stage-inside-status"
+  hidden={!focusStore().semanticDiveMode}
+  aria-hidden={!focusStore().semanticDiveMode ? 'true' : 'false'}
+>
+  <span class="focus-stage-inside-status-copy">Inside neighborhood</span>
+</div>
+
+<div
+  id="focus-stage-inside-controls"
+  class="focus-stage-inside-controls"
+  hidden={!focusStore().semanticDiveMode}
+  aria-hidden={!focusStore().semanticDiveMode ? 'true' : 'false'}
+>
+  <button id="btn-inside-next" class="focus-stage-inside-btn" type="button">Next Stop</button>
+  <button id="btn-inside-map" class="focus-stage-inside-btn" type="button">Map</button>
+  <button id="btn-inside-county" class="focus-stage-inside-btn" type="button">County</button>
+</div>
+
 <!--
   Minimal CSS for sr-only.
   Full styling is owned by the legacy CSS modules; this is just enough
@@ -369,5 +392,10 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+  }
+  .journey-compass-title {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
   }
 </style>

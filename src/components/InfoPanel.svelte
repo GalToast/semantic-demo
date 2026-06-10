@@ -450,7 +450,7 @@
       </div>
 
       <!-- Populated state -->
-      <div id="selected-details" class="info-panel-surface-selection selected-details" hidden={isEmpty}>
+      <div id="selected-details" class="info-panel-surface-selection selected-details" hidden={searchChromeSurface || isEmpty}>
         <!-- Hero section (legacy selected-hero with role badge) -->
         <div class="selected-hero">
           <div class="selected-hero-main">

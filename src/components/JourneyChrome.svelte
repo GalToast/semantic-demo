@@ -297,7 +297,7 @@
 
     <!-- ├─ Trail Controls ──────────────────────────────────────────────────── -->
     {#if hasFocus() || hasTrail()}
-      <div class="trail-controls" id="trail-controls" role="toolbar" aria-label="Trail navigation">
+      <div class="trail-controls focus-stage-actions" id="trail-controls" role="toolbar" aria-label="Trail navigation">
         <button
           id="btn-focus-path"
           class="focus-stage-action-btn"
@@ -350,7 +350,7 @@
 
       <div class="route-state" id="focus-stage-route" data-state={neighborCount ? 'walking' : 'empty'}></div>
     {:else}
-      <div class="trail-controls idle" id="trail-controls">
+      <div class="trail-controls focus-stage-actions idle" id="trail-controls">
         <div class="trail-context" id="trail-context">
           <span class="trail-context-text">Pick a business, then explore its nearby neighbors.</span>
         </div>
@@ -548,6 +548,10 @@
     border-radius: 0.5rem;
     padding: 0.35rem 0.65rem;
     border: 1px solid rgba(78, 205, 196, 0.12);
+  }
+  .trail-controls.focus-stage-actions {
+    display: grid;
+    grid-auto-flow: column;
   }
   .trail-controls.idle {
     opacity: 0.6;
