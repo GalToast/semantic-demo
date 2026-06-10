@@ -34,6 +34,21 @@ The 2026-06-09 svelte-check completion assessment said 132/0 contract surfaces g
 - Entry-contract note: `check:shell` and deploy scripts confirm production is `src/index.html` -> `dist/svelte/index.html`; `check:ts-progress` still reports `js/modules/app.ts` for the separate legacy/native TS bundle readiness lane (`scripts/build-app.mjs`), not the deployed shell.
 - Live server: still on v132 from 2026-06-04 (6 days stale).
 
+## Shell Contract: Production QA vs Legacy Reference QA
+
+**Critical distinction for QA and contract testing:**
+
+| Shell | Path | What it loads | Deployed to live? | QA Target |
+|-------|------|---------------|-------------------|-----------|
+| **Svelte Production Shell** | `src/index.html` → `dist/svelte/index.html` | Vite-built Svelte 5 app (content-hashed assets) | **YES** — published as **both** `/semantic-demo/index.html` AND `/semantic-demo/vector-explorer-polished.html` | **Primary QA target** — `dist/svelte/index.html` (local build output) |
+| **Legacy Reference Shell (repo)** | `vector-explorer-polished.html` (repo root) | `dist/bundle.js` (esbuild legacy bundle with inlined Svelte) | **NO** — overwritten by deploy scripts with the Svelte production shell | **Reference only** — for rollback comparison, NOT for production QA |
+
+**Why this matters:**
+- The repo's `vector-explorer-polished.html` still references `dist/bundle.js` and serves as a rollback reference.
+- The **deployed** `/semantic-demo/vector-explorer-polished.html` is **identical to** `dist/svelte/index.html` (the Svelte production shell) — the deploy scripts copy the Vite build output to both URLs.
+- All production QA (contract tests, visual QA, e2e) should target `dist/svelte/index.html` (local build) or the live deployed URLs, **not** the repo's legacy reference shell.
+- `tests/shell-contract-check.js` validates the production shell contract (`src/index.html` → `dist/svelte/index.html`) and confirms the repo legacy shell still references `dist/bundle.js` as a rollback reference.
+
 ## Risk: this is a major version bump, not a hotfix
 
 A single deploy would land:
