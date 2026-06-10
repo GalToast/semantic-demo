@@ -6,14 +6,12 @@ import { updateJourneyCompass } from './journey-compass-controller.ts';
 import { getSearchGlowIndices } from '../state/selectors/index.ts';
 import { refreshCompositionState } from './lifecycle-modes.ts';
 
-const _s = state as Record<string, unknown>;
-
 // ── Search glow ─────────────────────────────────────────────────────────────
 
 export function activateSearchGlow(summary: Record<string, unknown>) {
-  _s.currentSearchSummary = summary;
-  _s.currentEmptyQuery = null;
-  _s.searchGlowActive = true;
+  state.currentSearchSummary = summary;
+  state.currentEmptyQuery = null;
+  state.searchGlowActive = true;
   if (summary.resultIndices) {
     state.searchGlowIndices = new Set(summary.resultIndices as Iterable<number>);
   }
@@ -21,8 +19,8 @@ export function activateSearchGlow(summary: Record<string, unknown>) {
 }
 
 export function recordEmptySearch(query: string) {
-  _s.currentEmptyQuery = query;
-  _s.currentSearchSummary = null;
+  state.currentEmptyQuery = query;
+  state.currentSearchSummary = null;
 }
 
 // ── Trail review ────────────────────────────────────────────────────────────
@@ -54,8 +52,8 @@ export function hideExploreTrailReview() {
     }
     _trailReviewReturnFocus = null;
   }
-  _s.currentSearchSummary = null;
-  _s.searchGlowActive = false;
+  state.currentSearchSummary = null;
+  state.searchGlowActive = false;
   if (getSearchGlowIndices()?.clear) getSearchGlowIndices().clear();
   refreshCompositionState();
 }

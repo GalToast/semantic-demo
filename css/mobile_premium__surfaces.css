@@ -891,15 +891,52 @@ body.is-active #selected-details.active:not([hidden]) {
             [data-thread-inspect-surface='idle']
         )
         #focus-stage
+        #thread-inspector {
+        display: block;
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-thread-inspect-surface='idle']
+        )
+        #focus-stage
         .focus-thread-inspector.active {
         display: grid;
         visibility: visible;
         opacity: 1;
-        max-height: 76px;
-        min-height: 64px;
+        max-height: min(16dvh, 124px);
+        min-height: 112px;
         padding: 6px 8px;
         gap: 3px;
         overflow: hidden;
+    }
+
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-thread-inspect-surface='idle']
+        )
+        #focus-stage
+        .focus-thread-inspector-copy,
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-thread-inspect-surface='idle']
+        )
+        #focus-stage
+        .focus-thread-inspector-meta {
+        display: block;
+        visibility: visible;
+        max-height: none;
+        overflow: visible;
+    }
+
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-thread-inspect-surface='idle']
+        )
+        #focus-stage
+        :is(#trail-controls, #trail-context) {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
     }
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(

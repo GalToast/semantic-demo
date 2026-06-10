@@ -34,7 +34,7 @@ import {
     getNextWalkCandidateForIndex
 } from './journey-neighborhood.ts';
 import { syncFocusStage } from './journey-selected-card.ts';
-import type { Point, StrandContinuityState } from '../../types/state.ts';
+import type { Point, StrandContinuityState } from '../state.ts';
 
 // Direct import sentinel for the inspected-strand overlay dewindowing contract.
 void syncInspectedStrandOverlay;

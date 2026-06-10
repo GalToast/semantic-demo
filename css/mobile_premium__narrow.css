@@ -231,4 +231,17 @@
         pointer-events: auto;
         opacity: 1;
     }
+
+    /* Semantic-dive grid collapse fix: at ≤360px, the parent
+       #focus-stage-auxiliary-surfaces column 2 min of 260px leaves
+       no room for .focus-stage-inside-controls sub-columns, causing
+       the entire element to collapse (0-size bounding rect).
+       Reducing column 2 min to 160px and giving inside-controls
+       sub-columns a 44px min-width floor keeps controls visible. */
+    body.is-active[data-panel-surface='semantic-dive'] #focus-stage-auxiliary-surfaces {
+        grid-template-columns: minmax(0, 0.9fr) minmax(160px, 1.1fr);
+    }
+    body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-controls {
+        grid-template-columns: repeat(3, minmax(44px, 1fr));
+    }
 }

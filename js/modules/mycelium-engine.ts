@@ -280,8 +280,8 @@ export function pushBezierLinePair(target: number[], colorTarget: number[], pair
     }
 
     for (let i = 0; i < samples.length - 1; i++) {
-        const start = samples[i];
-        const end = samples[i + 1];
+        const start = samples[i]!;
+        const end = samples[i + 1]!;
         target.push(start.x, start.y, start.z, end.x, end.y, end.z);
         colorTarget.push(start.r, start.g, start.b, end.r, end.g, end.b);
     }
@@ -346,7 +346,7 @@ export function updateMyceliumThreads() {
         }
 
         for (let i = 0; i < samples.length - 1; i++) {
-            verts.push(samples[i], samples[i + 1]);
+            verts.push(samples[i]!, samples[i + 1]!);
         }
         return verts;
     };
@@ -358,16 +358,16 @@ export function updateMyceliumThreads() {
         webglContext.myceliumConnectionPairs.forEach((pair) => {
             if (pair.layer !== layer) return;
             if (pair.a >= state.nodePositions.length || pair.b >= state.nodePositions.length) return;
-            const a = state.nodePositions[pair.a];
-            const b = state.nodePositions[pair.b];
+            const a = state.nodePositions[pair.a]!;
+            const b = state.nodePositions[pair.b]!;
             if (!a || !b) return;
 
             const verts = getSaggedPoint({ x: a.x, y: a.y, z: a.z, index: pair.a }, { x: b.x, y: b.y, z: b.z, index: pair.b });
             if (verts) {
                 for (let i = 0; i < verts.length; i++) {
-                    positions[offset++] = Number.isFinite(verts[i].x) ? verts[i].x : 0;
-                    positions[offset++] = Number.isFinite(verts[i].y) ? verts[i].y : 0;
-                    positions[offset++] = Number.isFinite(verts[i].z) ? verts[i].z : 0;
+                    positions[offset++] = Number.isFinite(verts[i]!.x) ? verts[i]!.x : 0;
+                    positions[offset++] = Number.isFinite(verts[i]!.y) ? verts[i]!.y : 0;
+                    positions[offset++] = Number.isFinite(verts[i]!.z) ? verts[i]!.z : 0;
                 }
             } else {
                 positions[offset++] = Number.isFinite(a.x) ? a.x : 0;

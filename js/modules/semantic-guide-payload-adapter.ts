@@ -5,8 +5,7 @@
  * Thin adapter seam: decouples semantic-guide payload builders from raw state shape.
  */
 
-import { state } from '../state.ts';
-import type { Point } from '../../types/state';
+import { state, type Point } from '../state.ts';
 import { formatBusinessName, cleanPublicNoteText, getPublicRecordStatusLabel } from './utils/dom-formatters.ts';
 import { describeCluster } from './utils/ui-presentation.ts';
 

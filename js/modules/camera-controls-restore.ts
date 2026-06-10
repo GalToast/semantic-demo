@@ -2,8 +2,7 @@
 // TypeScript shadow of camera-controls-restore.js
 // Auto-rotate state machine and camera restore utilities.
 
-import { state } from '../state.ts';
-import type { CameraLike, ControlsLike, SemanticState } from '../../types/state';
+import { state, type CameraLike, type ControlsLike, type SemanticState } from '../state.ts';
 import { prefersReducedMotion } from './environment.ts';
 import { easeInOutCubic } from './utils/math-easing.ts';
 

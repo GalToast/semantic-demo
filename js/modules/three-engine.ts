@@ -177,7 +177,7 @@ function showWebGLFallback(container: HTMLElement, detail: { supported?: boolean
     const mapButton = notice.querySelector<HTMLElement>('[data-webgl-fallback-map]');
     mapButton?.addEventListener('click', () => {
         if (typeof switchView === 'function') {
-            switchView('map', { reason: 'webgl-fallback' });
+            switchView('map');
             return;
         }
         document.getElementById('map-container')?.classList.add('active');
@@ -636,8 +636,8 @@ export function animate() {
         }
     }
 
-    if (webglContext.scene.fog) {
-        webglContext.scene.fog.density = SCENE_ATMOSPHERE.fogDensity * pointsRevealProgress;
+    if (webglContext.scene.fog && 'density' in webglContext.scene.fog) {
+        (webglContext.scene.fog as THREE.FogExp2).density = SCENE_ATMOSPHERE.fogDensity * pointsRevealProgress;
     }
     if (webglContext.nodeSporeMaterial) {
         const focusBoost = Number.isFinite(state.focusedNode) ? (state.trailDepth >= 2 ? 0.72 : 0.82) : 1.0;
@@ -661,13 +661,13 @@ export function animate() {
     const threadRevealProgress = easeOutQuint(Math.min(1.0, Math.max(0.0, (pointsRevealProgress - 0.25) / 0.5)));
     const graphProfile = getMyceliumPresentationProfile();
     if (threadsVisible) {
-        if (webglContext.myceliumCoreLines) webglContext.myceliumCoreLines.material.opacity = getThreadPulseOpacity(graphProfile.core, Math.sin(state.pulsePhase), graphProfile.pulse, threadRevealProgress);
-        if (webglContext.myceliumWispyLines) webglContext.myceliumWispyLines.material.opacity = getThreadPulseOpacity(graphProfile.wispy, Math.sin(state.pulsePhase * 0.7), graphProfile.pulse * 0.36, threadRevealProgress);
-        if (webglContext.myceliumBridgeLines) webglContext.myceliumBridgeLines.material.opacity = getThreadPulseOpacity(graphProfile.bridge, Math.sin(state.pulsePhase * 0.45), graphProfile.pulse * 0.28, threadRevealProgress);
+        if (webglContext.myceliumCoreLines) (webglContext.myceliumCoreLines.material as THREE.Material).opacity = getThreadPulseOpacity(graphProfile.core, Math.sin(state.pulsePhase), graphProfile.pulse, threadRevealProgress);
+        if (webglContext.myceliumWispyLines) (webglContext.myceliumWispyLines.material as THREE.Material).opacity = getThreadPulseOpacity(graphProfile.wispy, Math.sin(state.pulsePhase * 0.7), graphProfile.pulse * 0.36, threadRevealProgress);
+        if (webglContext.myceliumBridgeLines) (webglContext.myceliumBridgeLines.material as THREE.Material).opacity = getThreadPulseOpacity(graphProfile.bridge, Math.sin(state.pulsePhase * 0.45), graphProfile.pulse * 0.28, threadRevealProgress);
     } else {
-        if (webglContext.myceliumCoreLines) webglContext.myceliumCoreLines.material.opacity = 0;
-        if (webglContext.myceliumWispyLines) webglContext.myceliumWispyLines.material.opacity = 0;
-        if (webglContext.myceliumBridgeLines) webglContext.myceliumBridgeLines.material.opacity = 0;
+        if (webglContext.myceliumCoreLines) (webglContext.myceliumCoreLines.material as THREE.Material).opacity = 0;
+        if (webglContext.myceliumWispyLines) (webglContext.myceliumWispyLines.material as THREE.Material).opacity = 0;
+        if (webglContext.myceliumBridgeLines) (webglContext.myceliumBridgeLines.material as THREE.Material).opacity = 0;
     }
 
     if (webglContext.pointsMaterial?.userData?.shader) {
@@ -693,7 +693,7 @@ export function animate() {
         debugWarn('overlay update threw:', overlayErr);
     }
 
-    applyFocusPocketBreathing(frameNow);
+    applyFocusPocketBreathing(frameNow, state.nodePositions);
 
     if (shouldRenderThreads()) {
         updateMyceliumThreads();
@@ -708,8 +708,8 @@ export function animate() {
         webglContext.renderer.render(webglContext.scene, webglContext.camera);
         
         withStateMutation(() => {
-            state.scenePerformanceDiagnostics.drawCalls = webglContext.renderer.info.render.calls;
-            state.scenePerformanceDiagnostics.triangles = webglContext.renderer.info.render.triangles;
+            state.scenePerformanceDiagnostics.drawCalls = webglContext.renderer!.info.render.calls;
+            state.scenePerformanceDiagnostics.triangles = webglContext.renderer!.info.render.triangles;
         });
     }
 

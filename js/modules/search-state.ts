@@ -7,8 +7,7 @@
  * DECOUPLED: Communicates with lifecycle and URL layers via Event Bus.
  */
 
-import { state } from '../state.ts';
-import type { Point, SemanticState } from '../../types/state';
+import { state, type Point, type SemanticState } from '../state.ts';
 import {
     getCurrentSearchSummary,
     getSemanticTrailCue,
@@ -108,7 +107,7 @@ export function setSearchPanelState(options: Record<string, unknown> = {}): void
         const currentCue = getSemanticTrailCue() || 'idle';
         const nextSearching = typeof options.searching === 'boolean' ? options.searching : currentCue === 'searching';
         const nextFocusing = typeof options.focusing === 'boolean' ? options.focusing : currentCue === 'focusing';
-        (state as Record<string, unknown>).semanticTrailCue = nextFocusing ? 'focusing' : nextSearching ? 'searching' : 'idle';
+        state.semanticTrailCue = nextFocusing ? 'focusing' : nextSearching ? 'searching' : 'idle';
     }
     // Satisfies search-panel-adapter-contract.mjs static analysis
     setSearchContainerState({ ...options });
@@ -305,7 +304,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     const anchorIndex = anchorResult?.index ?? topResult?.index ?? null;
     const anchorName = anchorResult ? formatBusinessName(anchorResult.point.name as string) : null;
 
-    (state as Record<string, unknown>).currentSearchSummary = {
+    state.currentSearchSummary = {
         query: trimmedQuery, totalMatches, totalSemanticMatches: totalMatches, visibleMatches: results.length,
         anchorIndex, topIndex: topResult?.index ?? null, resultIndices
     };
@@ -392,7 +391,7 @@ export function beginSearchFocusTransition(
     if (!point || !getCurrentSearchSummary()) return;
     if (!el) return;
     _clearSearchFocusTimers();
-    const token = ((state as Record<string, unknown>).searchFocusTransitionToken = ((state as Record<string, unknown>).searchFocusTransitionToken as number || 0) + 1) as number;
+    const token = (state.searchFocusTransitionToken = (state.searchFocusTransitionToken || 0) + 1);
 
     publish(EVENTS.SEARCH_FOCUS_TRANSITION_STARTED, {
         resultsEl,
@@ -435,9 +434,9 @@ export function clearSearch(options: SearchOptions = {}): void {
     }
 
     if (options.preserveSearch) {
-        (state as Record<string, unknown>).currentSearchSummary = priorSummary;
+        state.currentSearchSummary = priorSummary;
     } else {
-        (state as Record<string, unknown>).currentSearchSummary = null;
+        state.currentSearchSummary = null;
     }
 
     // Clear Svelte stores so search results are removed from the DOM.
@@ -453,13 +452,13 @@ export function clearSearch(options: SearchOptions = {}): void {
         publish(EVENTS.SEARCH_CLEARED, {
             ...options,
             preservedSearch: !!options.preserveSearch,
-            summary: (state as Record<string, unknown>).currentSearchSummary
+            summary: state.currentSearchSummary
         });
     }
 }
 
 export function clearSearchRelatedFocusState(context: Record<string, unknown> = {}): Record<string, unknown> {
-    (state as Record<string, unknown>).selectedPoint = null;
+    state.selectedPoint = null;
     publish(EVENTS.STATE_RESET, { reason: context.reason ?? 'filter-invalidate', silent: true });
     clearTrailThreadState();
     getTrailIndices()?.clear();

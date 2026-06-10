@@ -111,7 +111,7 @@ function clearLegacySearchResultsDom(resultsEl: HTMLElement): void {
     if (resultsEl.dataset.legacyResultsSource === 'legacy') {
         resultsEl.replaceChildren();
     } else {
-        const own = resultsEl.querySelectorAll('[data-legacy-search-results="1"]');
+        const own = resultsEl.querySelectorAll('[data-legacy-search-results="1"], [data-legacy-search-error-state="1"]');
         own.forEach((el) => el.remove());
     }
     resultsEl.dataset.legacyResultsSource = '';
@@ -180,7 +180,6 @@ function buildCountLine({ total, visibleCount, mode }: { total: number; visibleC
 
 interface SearchStateNamespace {
     search?: (query: string, options?: { preferCachedResults?: boolean }) => void;
-    clearSearch?: (options?: { preserveSearch?: boolean }) => void;
     bindSearchResultInteractions?: unknown;
 }
 
@@ -200,6 +199,7 @@ function appendQueryInQuotes(parent: HTMLElement, query: string): void {
 function buildLegacySearchErrorStateDom(errorData: SearchErrorData): HTMLElement {
     const errorEl = document.createElement('div');
     errorEl.className = errorData.type === 'inline' ? 'search-error-inline-retry' : 'search-error-state';
+    errorEl.dataset.legacySearchErrorState = '1';
     errorEl.dataset.searchErrorType = errorData.type;
     errorEl.dataset.query = errorData.query;
     errorEl.dataset.errorMessage = errorData.message;
@@ -272,11 +272,7 @@ function attachLegacySearchErrorActions(resultsEl: HTMLElement | null, errorEl: 
     if (dismiss) {
         dismiss.onclick = (event) => {
             event.preventDefault();
-            if (namespace?.clearSearch) {
-                namespace.clearSearch({ preserveSearch: false });
-            } else {
-                clearSearchState(resultsEl, document.getElementById('search-status'));
-            }
+            clearSearchState(resultsEl, document.getElementById('search-status'));
         };
     }
 }
@@ -724,9 +720,9 @@ export function updateSearchPreviewOverlay(): void {
 }
 
 export function activateSearchGlow(resultIndices: number[] = [], anchorIndex: number | null = null): void {
-    (state as Record<string, unknown>).searchGlowActive = true;
-    (state as Record<string, unknown>).searchGlowIndices = new Set(Array.isArray(resultIndices) ? resultIndices : []);
-    (state as Record<string, unknown>).searchGlowTopIndex = Number.isFinite(anchorIndex) ? anchorIndex : ((state as Record<string, unknown>).searchGlowIndices as Set<number>).values().next().value ?? null;
+    state.searchGlowActive = true;
+    state.searchGlowIndices = new Set(Array.isArray(resultIndices) ? resultIndices : []);
+    state.searchGlowTopIndex = Number.isFinite(anchorIndex) ? anchorIndex : state.searchGlowIndices.values().next().value ?? null;
     publish(EVENTS.COMPOSITION_UPDATED, { reason: 'search-glow' });
 }
 
@@ -739,13 +735,13 @@ export function clearShortSemanticSearchState(resultsEl: HTMLElement | null, sta
 }
 
 export function startMobileRouteFieldPeek(): void {
-    (state as Record<string, unknown>).mobileRouteFieldPeekToken = ((state as Record<string, unknown>).mobileRouteFieldPeekToken as number || 0) + 1;
+    state.mobileRouteFieldPeekToken = (state.mobileRouteFieldPeekToken || 0) + 1;
     document.body.dataset.mobileRoutePeek = 'active';
 }
 
 export function clearMobileRouteFieldPeek(): void {
-    if ((state as Record<string, unknown>).mobileRouteFieldPeekTimer) clearTimeout((state as Record<string, unknown>).mobileRouteFieldPeekTimer as number);
-    (state as Record<string, unknown>).mobileRouteFieldPeekTimer = null;
+    if (state.mobileRouteFieldPeekTimer) clearTimeout(state.mobileRouteFieldPeekTimer);
+    state.mobileRouteFieldPeekTimer = null;
     delete document.body.dataset.mobileRoutePeek;
     delete document.body.dataset.mobileRoutePeekReason;
 }
@@ -755,8 +751,8 @@ export function isMobileRouteFieldPeekActive(): boolean {
 }
 
 export function clearSearchPreviewHoverTimer(): void {
-    if ((state as Record<string, unknown>).searchPreviewHoverTimer) clearTimeout((state as Record<string, unknown>).searchPreviewHoverTimer as number);
-    (state as Record<string, unknown>).searchPreviewHoverTimer = null;
+    if (state.searchPreviewHoverTimer) clearTimeout(state.searchPreviewHoverTimer);
+    state.searchPreviewHoverTimer = null;
 }
 
 export function focusSearchInputForReplacement(): void {
@@ -810,9 +806,9 @@ function nearDuplicateKey(point: SearchResultPoint): string | null {
 }
 
 export function clearSearchGlow(): void {
-    (state as Record<string, unknown>).searchGlowActive = false;
-    if ((state as Record<string, unknown>).searchGlowIndices && typeof ((state as Record<string, unknown>).searchGlowIndices as Set<number>).clear === 'function') {
-        ((state as Record<string, unknown>).searchGlowIndices as Set<number>).clear();
+    state.searchGlowActive = false;
+    if (state.searchGlowIndices && typeof state.searchGlowIndices.clear === 'function') {
+        state.searchGlowIndices.clear();
     }
     publish(EVENTS.COMPOSITION_UPDATED);
 }

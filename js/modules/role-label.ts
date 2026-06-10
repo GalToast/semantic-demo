@@ -1,5 +1,4 @@
-import { state } from '../state.ts';
-import type { Point, SemanticState } from '../../types/state';
+import { state, type Point, type SemanticState } from '../state.ts';
 
 /**
  * role-label.js

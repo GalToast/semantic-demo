@@ -7,17 +7,21 @@
  *
  * The vite.config.ts @legacy alias stays for runtime resolution.
  * TypeScript only needs to know these modules exist and what shape they have.
+ *
+ * 2026-06-10 (consolidation Phase 4 cleanup): the types/state.d.ts references
+ * below were redirected after the d.ts was deleted. With the consolidation, all
+ * legacy state types live in `js/state.ts` and are re-exported from there.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-declare module '@legacy/*' {
+declare module '@legacy/modules/*' {
   const mod: any;
   export = mod;
 }
 
 declare module '@legacy/state.js' {
-  import type { SemanticState } from '../../types/state.d.ts';
+  import type { SemanticState } from '../../../js/state.ts';
   export const state: SemanticState;
   export function withStateMutation<T>(fn: () => T): T;
 }

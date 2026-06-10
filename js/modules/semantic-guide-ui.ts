@@ -66,8 +66,8 @@ semanticGuideStateStore.subscribe((guideState: unknown) => {
 
     if (gs.isVisible && gs.config) {
         const config = gs.config;
-        if (gs.typeToken !== (state as Record<string, unknown>).lastRenderedTypeToken) {
-            (state as Record<string, unknown>).lastRenderedTypeToken = gs.typeToken;
+        if (gs.typeToken !== state.lastRenderedTypeToken) {
+            state.lastRenderedTypeToken = gs.typeToken;
             resetSummaryCardContent(elements, config);
 
             if (config.instant) {
@@ -218,12 +218,12 @@ function bindSummarySuggestionClicks(suggestionsEl: HTMLElement): void {
 }
 
 function focusSummarySuggestion(leadId: string | undefined, sourceEl: HTMLElement | null = null): boolean {
-    const targetIndex = (state as Record<string, unknown>).pointIndexByLeadId instanceof Map
-        ? ((state as Record<string, unknown>).pointIndexByLeadId as Map<string | number, number>).get(String(leadId))
+    const targetIndex = state.pointIndexByLeadId instanceof Map
+        ? state.pointIndexByLeadId.get(String(leadId))
         : undefined;
     const resultsEl = document.getElementById('search-results');
     const statusEl = document.getElementById('search-status');
-    if (!(state as Record<string, unknown>).currentSearchSummary) {
+    if (!state.currentSearchSummary) {
         const name = sourceEl?.dataset?.name || '';
         if (name) {
             search(name);
@@ -234,6 +234,6 @@ function focusSummarySuggestion(leadId: string | undefined, sourceEl: HTMLElemen
     if (targetIndex === undefined || !resultsEl || !statusEl) return false;
     const point = state.points[targetIndex];
     if (!point) return false;
-    beginSearchFocusTransition(resultsEl, statusEl, (state as Record<string, unknown>).currentSearchSummary as Record<string, unknown>, targetIndex, point, sourceEl);
+    beginSearchFocusTransition(resultsEl, statusEl, state.currentSearchSummary as Record<string, unknown>, targetIndex, point, sourceEl);
     return true;
 }

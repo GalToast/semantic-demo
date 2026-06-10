@@ -4,7 +4,7 @@
 
 import * as THREE from 'three';
 import { state } from '../state.ts';
-import type { SemanticState } from '../../types/state.ts';
+import type { SemanticState } from '../state.ts';
 import { getViewportSize } from './environment.ts';
 import { describeCluster } from './utils/ui-presentation.ts';
 import { normalizeCityForFilter } from './utils/geo-data.ts';
@@ -43,7 +43,7 @@ export interface FocusViewBasis {
 
 export function getFocusViewBasis(focusVector: THREE.Vector3): FocusViewBasis {
     const viewVector = state.camera
-        ? new THREE.Vector3().subVectors((state.camera as any).position, focusVector)
+        ? new THREE.Vector3().subVectors(state.camera.position, focusVector)
         : new THREE.Vector3(0.28, 0.2, 1);
     if (viewVector.lengthSq() < 0.0001) viewVector.set(0.28, 0.2, 1);
     viewVector.normalize();
@@ -68,7 +68,7 @@ export interface ConstellationMotif {
 }
 
 export function getFocusConstellationMotif(index: number): ConstellationMotif {
-    const point = (state.points as any)[index] || {};
+    const point = state.points[index] || {};
     const clusterLabel = (describeCluster(point.cluster) || '').toLowerCase();
     let key = 'market';
     if (/(food|hospitality|beauty|wellness|arts|culture)/.test(clusterLabel)) {
@@ -84,7 +84,7 @@ export function getFocusConstellationMotif(index: number): ConstellationMotif {
     ) {
         key = 'civic';
     }
-    const motif = (state.FOCUS_CONSTELLATION_MOTIFS as any)[key] || (state.FOCUS_CONSTELLATION_MOTIFS as any).market;
+    const motif = state.FOCUS_CONSTELLATION_MOTIFS[key] || state.FOCUS_CONSTELLATION_MOTIFS.market;
     return {
         key,
         ...motif,
@@ -96,7 +96,7 @@ export function getFocusConstellationMotifForPersonality(index: number, personal
     const fallback = getFocusConstellationMotif(index);
     const overrideKey = personality?.motifOverride;
     if (!overrideKey) return fallback;
-    const override = (state.FOCUS_CONSTELLATION_MOTIFS as any)[overrideKey];
+    const override = state.FOCUS_CONSTELLATION_MOTIFS[overrideKey];
     if (!override) return fallback;
     return {
         ...fallback,
@@ -447,8 +447,8 @@ export interface ThreadEdge {
 
 export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): THREE.Vector3 {
     if (!state.nodePositions) return new THREE.Vector3();
-    const a = (state.nodePositions as any)[edge.a];
-    const b = (state.nodePositions as any)[edge.b];
+    const a = state.nodePositions[edge.a];
+    const b = state.nodePositions[edge.b];
     if (!a || !b || edge.a === null || edge.a === undefined || edge.b === null || edge.b === undefined) return new THREE.Vector3();
 
     if (!Number.isFinite(a.x) || !Number.isFinite(a.y) || !Number.isFinite(a.z) ||
@@ -459,7 +459,7 @@ export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): THREE.Vec
     const span = new THREE.Vector3().subVectors(end, start);
     const spanLength = Math.max(span.length(), 0.001);
     const viewVector = state.camera
-        ? new THREE.Vector3().subVectors((state.camera as any).position, mid)
+        ? new THREE.Vector3().subVectors(state.camera.position, mid)
         : new THREE.Vector3(0.28, 0.2, 1);
     if (viewVector.lengthSq() < 0.0001) viewVector.set(0.28, 0.2, 1);
     viewVector.normalize();
@@ -486,9 +486,9 @@ export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): THREE.Vec
     if (
         anchorPull > 0 &&
         Number.isFinite(state.navState.focusedIndex) &&
-        (state.nodePositions as any)[state.navState.focusedIndex!]
+        state.nodePositions[state.navState.focusedIndex!]
     ) {
-        const anchor = (state.nodePositions as any)[state.navState.focusedIndex!];
+        const anchor = state.nodePositions[state.navState.focusedIndex!];
         const anchorVector = new THREE.Vector3(anchor.x, anchor.y, anchor.z);
         const stem = anchorVector.lerp(mid, 0.42 + motifBraid * 0.16);
         control.lerp(stem, Math.min(0.44, anchorPull * (1 - longArc * 0.68)));
@@ -547,7 +547,7 @@ export interface PocketStagedResult {
 
 export function buildFocusedPocketStagedPositions(index: number, pocketEntries: Map<number, PocketEntry>): PocketStagedResult {
     if (!state.points || !Array.isArray(state.points) || !state.originalPositions) return { positions: new Map(), motion: new Map(), roles: new Map(), motif: null, viewportProfile: null };
-    const focusOrig = (state.originalPositions as any)[index];
+    const focusOrig = state.originalPositions[index];
     if (!focusOrig)
         return { positions: new Map(), motion: new Map(), roles: new Map(), motif: null, viewportProfile: null };
     const focusVector = new THREE.Vector3(focusOrig.x, focusOrig.y, focusOrig.z);
@@ -565,7 +565,7 @@ export function buildFocusedPocketStagedPositions(index: number, pocketEntries: 
     const supportEntries = entries.filter((entry) => entry.kind === 'support');
     const haloEntries = entries.filter((entry) => entry.kind === 'halo');
 
-    const personality = (state.navState.currentPersonality as any) || { type: 'STANDARD', staggerMult: 1, compressionMult: 1 };
+    const personality = state.navState.currentPersonality || { type: 'STANDARD', staggerMult: 1, compressionMult: 1 };
     const motif = getFocusConstellationMotifForPersonality(index, personality);
 
     const vpProfile = getFocusConstellationViewportProfile();
@@ -582,7 +582,7 @@ export function buildFocusedPocketStagedPositions(index: number, pocketEntries: 
     });
 
     const placeEntry = (entry: PocketEntry, order: number, group: string): void => {
-        const original = (state.originalPositions as any)[entry.index];
+        const original = state.originalPositions[entry.index];
         if (!original) return;
         const score = safeUnitScore(entry.score, 0);
         const safeEntry = { ...entry, score };
@@ -663,7 +663,7 @@ export function buildFocusedPocketStagedPositions(index: number, pocketEntries: 
         const baseDelay = isPrimary ? order * 52 : isHalo ? 300 + order * 58 : 210 + order * 62;
         const baseDuration = isPrimary ? 980 : isHalo ? 1280 : 1120;
 
-        const origin = (state.nodePositions as any)[entry.index] || (state.originalPositions as any)[entry.index] || finalVector;
+        const origin = state.nodePositions[entry.index] || state.originalPositions[entry.index] || finalVector;
         motion.set(entry.index, {
             role: isPrimary ? 'primary' : isHalo ? 'halo' : 'support',
             relationshipRole: safeEntry.relationshipRole || '',
@@ -715,7 +715,7 @@ export function buildFocusedSemanticPocket(index: number): SemanticPocketResult 
         index,
         vpProfile.primaryLimit + vpProfile.haloLimit
     ).slice(vpProfile.primaryLimit);
-    const focusPoint = (Number.isFinite(index) && index >= 0 && index < state.points.length) ? (state.points as any)[index] : null;
+    const focusPoint = (Number.isFinite(index) && index >= 0 && index < state.points.length) ? state.points[index] : null;
     const focusCity = normalizeCityForFilter(focusPoint?.city);
     const pocketEntries = new Map<number, PocketEntry>();
 
@@ -727,7 +727,7 @@ export function buildFocusedSemanticPocket(index: number): SemanticPocketResult 
             relationshipRole: candidate.relationshipRole || '',
             relationshipAxis: candidate.relationshipAxis || '',
             roleReason: candidate.roleReason || '',
-            sameCity: normalizeCityForFilter((state.points as any)[candidate.index]?.city) === focusCity,
+            sameCity: normalizeCityForFilter(state.points[candidate.index]?.city) === focusCity,
             reason: candidate.reason || 'semantic neighbor'
         });
     });
@@ -739,7 +739,7 @@ export function buildFocusedSemanticPocket(index: number): SemanticPocketResult 
             const current = supportScores.get(support.index) || { count: 0, score: 0, sameCity: 0, relationshipRole: '', relationshipAxis: '', roleReason: '' };
             current.count += 1;
             current.score += support.semanticScore || support.score || 0;
-            if (normalizeCityForFilter((state.points as any)[support.index]?.city) === focusCity) current.sameCity += 1;
+            if (normalizeCityForFilter(state.points[support.index]?.city) === focusCity) current.sameCity += 1;
             if (!current.relationshipRole && support.relationshipRole) current.relationshipRole = support.relationshipRole;
             if (!current.relationshipAxis && support.relationshipAxis) current.relationshipAxis = support.relationshipAxis;
             if (!current.roleReason && support.roleReason) current.roleReason = support.roleReason;
@@ -775,7 +775,7 @@ export function buildFocusedSemanticPocket(index: number): SemanticPocketResult 
                 relationshipRole: candidate.relationshipRole || '',
                 relationshipAxis: candidate.relationshipAxis || '',
                 roleReason: candidate.roleReason || '',
-                sameCity: normalizeCityForFilter((state.points as any)[candidate.index]?.city) === focusCity,
+                sameCity: normalizeCityForFilter(state.points[candidate.index]?.city) === focusCity,
                 reason: 'outer semantic echo'
             });
         });

@@ -1,6 +1,5 @@
 import * as THREE from 'three'
-import { state } from '../state.ts'
-import type { ActiveFilters, NodePosition, Point } from '../../types/state'
+import { state, type ActiveFilters, type NodePosition, type Point } from '../state.ts'
 import {
   getCamera, getControls, getNodePositions, getOriginalPositions, getTargetPositions,
   getNavState, getCurrentView, getSemanticDiveMode, getPoints,

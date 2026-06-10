@@ -6,9 +6,8 @@
  * Uses semantic neighbor scores as edge weights.
  */
 
-import { state } from '../state.ts';
+import { state, type SemanticNeighbor } from '../state.ts';
 import { debugWarn } from './diagnostic-adapter.ts';
-import type { SemanticNeighbor } from '../../types/state';
 
 export function findSemanticPath(startLeadId: string | number, targetLeadId: string | number): string[] | null {
     if (!state.semanticNeighborMapByLeadId || !state.pointIndexByLeadId) {

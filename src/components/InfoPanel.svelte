@@ -429,6 +429,7 @@
     <!-- Selected card container -->
     <div
       id="selected-card"
+      class="selected-card"
       class:selected-card-empty={isEmpty}
       hidden={searchChromeSurface}
       data-debug-focused-index={effectiveFocusedIdx ?? ''}

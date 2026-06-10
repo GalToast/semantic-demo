@@ -12,6 +12,18 @@ import { detectStaticDevPHP, allowsStaticDevFallback, shouldLogStaticDevFallback
 import { updateSemanticLaneState } from './state-mutators.ts';
 import { debugWarn } from './diagnostic-adapter.ts';
 
+// ── Window augmentation (semantic-lane helpers attached by lifecycle.js) ────
+
+declare global {
+  interface Window {
+    scheduleSemanticLaneCooldownProbe?: (payload: Record<string, unknown>) => void;
+    updateSemanticLaneAssistUi?: () => void;
+    clearSemanticLaneCooldownProbeTimer?: () => void;
+    fetchSemanticLaneOpsSummary?: () => Promise<unknown>;
+    renderSemanticLaneOpsSummary?: (summary: unknown) => void;
+  }
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface LaneHealthPayload {

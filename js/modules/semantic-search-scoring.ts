@@ -6,8 +6,7 @@
  * semantic-search-scoring.js twin.
  */
 
-import { state } from '../state.ts';
-import type { Point } from '../../types/state.ts';
+import { state, type Point } from '../state.ts';
 import { normalizeMockSearchText, MOCK_QUERY_ALIASES, MOCK_QUERY_NAICS_PREFIX, MOCK_QUERY_NAICS_DENY } from './semantic-search-mock-catalog.ts';
 
 interface FieldWeights {

@@ -6,7 +6,7 @@
  * Extracted from lifecycle.js and connection-analysis.js to eliminate duplication.
  */
 
-import type { Point } from '../../types/state';
+import type { Point } from '../state.ts';
 import {
     formatBusinessName,
     getAnchorPoint,

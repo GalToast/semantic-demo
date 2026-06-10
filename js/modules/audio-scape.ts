@@ -11,6 +11,7 @@
 
 import { state } from '../state.ts';
 import { debugWarn } from './diagnostic-adapter.ts';
+import { seededUnit } from './utils/seeded-random.ts';
 
 // ── Local boundary types ────────────────────────────────────────────────────
 

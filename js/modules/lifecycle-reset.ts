@@ -20,13 +20,12 @@ import { refreshCompositionState, updateExplorationUi } from './lifecycle-modes.
 
 // ── Reset functions ─────────────────────────────────────────────────────────
 
-export function resetExplorationFocus(options = { preserveSearch: true }) {
+export function resetExplorationFocus(options: { preserveSearch?: boolean; skipSearchClearEvent?: boolean; skipUrlSync?: boolean } = { preserveSearch: true }) {
   const preservedSearchSummary = options.preserveSearch === false
     ? null
     : getCurrentSearchSummary();
 
   withStateMutation(() => {
-    state.navState.trailDepth = 0;
     state.navState.mode = 'overview';
   });
   state.semanticDiveMode = false;
@@ -72,7 +71,7 @@ export function resetExperienceState(options = {}) {
   state.searchPreviewIndex = null;
   state.searchGlowActive = false;
   if (getSearchGlowIndices()?.clear) getSearchGlowIndices().clear();
-  const searchInput = document.getElementById('search-input');
+  const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
   if (searchInput) searchInput.value = '';
   const searchResults = document.getElementById('search-results');
   if (searchResults) {

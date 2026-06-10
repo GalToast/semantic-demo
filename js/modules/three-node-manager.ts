@@ -135,9 +135,13 @@ export function getPointBoundsCenter(points: Array<{ x?: number; y?: number; z?:
     if (positionBuffer && positionBuffer.length >= points.length * 3) {
         const len = points.length;
         for (let i = 0; i < len; i += 1) {
-            const x = positionBuffer[i * 3];
-            const y = positionBuffer[i * 3 + 1];
-            const z = positionBuffer[i * 3 + 2];
+            const rawX = positionBuffer[i * 3];
+            const rawY = positionBuffer[i * 3 + 1];
+            const rawZ = positionBuffer[i * 3 + 2];
+            if (rawX === undefined || rawY === undefined || rawZ === undefined) continue;
+            const x = Number(rawX);
+            const y = Number(rawY);
+            const z = Number(rawZ);
             if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
             if (x < min.x) min.x = x;
             if (y < min.y) min.y = y;

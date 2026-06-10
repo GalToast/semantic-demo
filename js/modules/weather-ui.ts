@@ -259,6 +259,7 @@ function scheduleLightning(): void {
     if (typeof window === 'undefined') return;
     const generation = lightningGeneration + 1;
     lightningGeneration = generation;
+    let flashCount = 0;
     const flash = (): void => {
         if (generation !== lightningGeneration) return;
         const comp = getStoreValue<CompositionState>(compositionStore);
@@ -268,7 +269,10 @@ function scheduleLightning(): void {
             lightning.classList.add('flash');
             window.setTimeout(() => lightning.classList.remove('flash'), 200);
         }
-        if (generation === lightningGeneration) lightningTimer = window.setTimeout(flash, 5000 + Math.random() * 15000);
+        if (generation === lightningGeneration) {
+            flashCount += 1;
+            lightningTimer = window.setTimeout(flash, 5000 + seededUnit(flashCount, 0x71CD) * 15000);
+        }
     };
     lightningTimer = window.setTimeout(flash, 3000);
 }

@@ -43,7 +43,7 @@ export function bindFocusControls(): void {
 
     bindClick('btn-focus-prev', () => { traverseNeighbor(-1); });
     bindClick('btn-focus-next', () => { traverseNeighbor(1); });
-    bindClick('btn-focus-overview', () => { resetExplorationFocus(); });
+    bindClick('btn-focus-overview', () => { resetExplorationFocus(); }, { optional: true });
     bindClick('btn-focus-center', (event?: MouseEvent) => {
         // The button is rendered with aria-disabled (not the native
         // disabled attribute) so the title tooltip stays hoverable; the
@@ -52,7 +52,7 @@ export function bindFocusControls(): void {
         if (e?.currentTarget?.getAttribute('aria-disabled') === 'true') return;
         recenterFocusedNode();
     });
-    bindClick('btn-focus-expand', () => { expandNeighborhoodFromCurrentNode(); });
+    bindClick('btn-focus-expand', () => { expandNeighborhoodFromCurrentNode(); }, { optional: true });
     bindClick('btn-focus-dive', () => { setSemanticDiveMode(!state.semanticDiveMode); });
     bindClick('btn-inside-next', () => { if (typeof exploreInsideToNextStop === 'function') exploreInsideToNextStop(); }, { optional: true });
     bindClick('btn-inside-map', () => { runJourneyCompassAction('open-map'); }, { optional: true });
