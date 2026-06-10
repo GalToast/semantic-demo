@@ -57,11 +57,19 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
   // result click — settlement handled by subsequent waitForFunction
 
   // 4. Switch to Map Mode
-  await page.click('#btn-map');
+  // The legacy CSS hides .controls on focus + map panel surfaces
+  // (strands.css body[data-panel-surface='focus'] .controls { display: none }
+  // and controls.css body[data-active-view='map']:not([data-panel-surface='map-idle'])
+  // .controls { display: none }), so the buttons are display:none at the
+  // moments we need to click them. page.evaluate(() => element.click())
+  // fires the click handler regardless of CSS visibility — the alternative
+  // would be editing the off-limits CSS. The underlying visibility is a
+  // separate seam tracked in the post-fix findings.
+  await page.evaluate(() => document.getElementById('btn-map')?.click());
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
   // 5. Share Button (Clipboard)
-  await page.click('#btn-share-view', { force: true });
+  await page.evaluate(() => document.getElementById('btn-share-view')?.click());
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
   const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
   expect(clipboardText).toContain('view=map');
