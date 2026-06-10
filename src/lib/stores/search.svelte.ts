@@ -21,6 +21,7 @@ import {
   type TokenMatchResult
 } from '@lib/search/tokenizer';
 import { testCompatStore } from './test-compat.svelte';
+import { performSearch } from '@lib/search-engine';
 
 // ── Re-export tokenizer functions (typed, no `any`) ──────────────────────────
 
@@ -348,7 +349,6 @@ export async function runSearch(
   setSearchStatus('searching');
 
   try {
-    const { performSearch } = await import('@lib/search-engine');
     const abortSignal = signal ?? AbortSignal.timeout(8000);
     const results = await performSearch(trimmed, abortSignal);
     setSearchResults(results);
