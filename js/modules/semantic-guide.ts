@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * js/modules/semantic-guide.ts
  *

@@ -1,4 +1,3 @@
-// @ts-nocheck
 // lifecycle-reset.ts — Reset/overview functions and their declarative event subscriptions
 import { state, withStateMutation } from '../state.ts';
 import { publish, subscribe, EVENTS } from './event-bus.ts';

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * strand-continuity.ts
  *

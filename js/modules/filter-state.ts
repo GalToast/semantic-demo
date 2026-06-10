@@ -1,4 +1,3 @@
-// @ts-nocheck
 // filter-state.ts
 // TypeScript shadow of filter-state.js
 // Canonical filter state management with Svelte store sync.
