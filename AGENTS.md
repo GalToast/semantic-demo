@@ -100,7 +100,7 @@ Use `docs/semantic-demo-css-ownership-map.md` and `docs/semantic-demo-mobile-sta
 
 ## Quick Dev Commands
 ```bash
-npm run build         # esbuild bundle to dist/bundle.js
+npm run build         # Vite/Svelte production build to dist/svelte/
 npm run lint          # ESLint js/modules/
 npm run test          # shell/cache/CSS ownership checks
 npm run test:unit     # Vitest unit tests under tests/unit/
@@ -138,7 +138,7 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 ## Edit Safety
 - Keep edits inside the assigned slice; do not opportunistically reformat or clean unrelated files.
 - Treat `js/state.js`, `js/modules/app.js`, `js/modules/journey.js`, `js/modules/lifecycle.js`, and deploy scripts as high-risk surfaces that need explicit ownership and targeted tests.
-- CSS is split into ordered modules in `css/`; `semantic-demo.css` is an import manifest, while the `css/mobile_premium__*.css` files are loaded directly by `vector-explorer-polished.html`.
+- CSS is split into ordered modules in `css/`; `semantic-demo.css` is an import manifest, while the `css/mobile_premium__*.css` files are loaded by the Svelte app shell (`src/index.html` -> `dist/svelte/index.html`).
 - Do not move the app root until `deploy.sh` and `deploy.ps1` no longer depend on the sibling `../js/scanner.js` path.
 - **CSS state ownership**: Use `docs/semantic-demo-mobile-state-ownership.md` and `docs/semantic-demo-css-ownership-map.md` to trace which `data-*` attribute and CSS module owns a visual surface before editing.
 - **No `!important` in CSS**: Every `!important` is a signal of unresolved specificity conflict. Surface-level `!important` declarations are documented in `docs/semantic-demo-css-ownership-next-pass.md`.
@@ -247,6 +247,7 @@ With `root: 'src'` in vite.config.ts:
 - `/main.ts` resolves to `src/main.ts` (relative to root)
 - The old root `index.html` (case study redirect) is untouched
 - `/api/*` proxies to `127.0.0.1:8795` for PHP backend coexistence
+- Production builds use `npm run build` / `npm run build:svelte` and write the canonical app shell to `dist/svelte/index.html`; deploy scripts publish that file as both `/semantic-demo/index.html` and the legacy `/semantic-demo/vector-explorer-polished.html` URL.
 
 ### Z-Index Layer Architecture
 All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` -> `src/index.html` inline `<style>`. Do NOT hardcode z-index values in component `<style>` blocks — always use `var(--z-*)`.
@@ -258,6 +259,7 @@ All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` 
 4. **CSS coexistence** — body `data-*` attributes are synced from stores via `$effect()` blocks in `App.svelte`, enabling legacy CSS to style Svelte components during phased migration.
 5. **Bugs fixed in transit** — known bugs are resolved as code is ported to Svelte/TS, not patched in-place in the legacy tree.
 6. **The src/ Svelte track is canonical.** The legacy islands track (`selected-details-svelte-island`, `search-results-svelte-island`, `island-mount-helper`) was deleted in the m3 sweep on 2026-06-07. All rendering now flows through `src/components/`.
+7. **Production entry is Svelte/Vite.** Do not restore `js/modules/app.ts` or `dist/bundle.js` as the production path unless intentionally doing a legacy rollback; use `build:legacy` only for reference/rollback work.
 
 ### Bugsweep Findings (fix during migration, not separately)
 **JS HIGH:** ~~strand-continuity timer-ID drop (verified fixed via `_trackedTextures` + `disposeTextures()`); three-interaction-visuals un-cleaned listeners (verified partially fixed at lines 168-177; three-lifecycle worker to dispose `anchorBloomLight` in same module); state.js Proxy bypass (confirmed at state.js:460-497 sub-object mutation gap; state-proxy worker fixing nested-Proxy return from `get()`); three-node-manager texture leak (verified fixed via `_trackedTextures` + `disposeTextures()`).~~ **RESOLVED:** all 4 items fixed — strand-continuity Map-based, three-interaction-visuals fully disposed, state.js nested Proxy at state.js:530-531, three-node-manager textures tracked.

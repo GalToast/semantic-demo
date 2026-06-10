@@ -20,7 +20,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@lib/*": ["./src/lib/*"],
-      "@components/*": ["./src/components/*"]
+      "@components/*": ["./src/components/*"],
+      "@legacy/*": ["./js/*"]
     }
   },
   "include": ["src/**/*", "types/**/*.d.ts", "vite.config.ts"],

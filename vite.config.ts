@@ -1,7 +1,7 @@
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import { createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
+import { copyFile, cp, mkdir, stat } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { fileURLToPath } from 'url';
 import { dirname, extname, normalize, resolve } from 'path';
@@ -12,11 +12,20 @@ const __dirname = dirname(__filename);
 
 const PROJECT_ROOT = __dirname;
 const SRC_DIR = resolve(PROJECT_ROOT, 'src');
+const SVELTE_OUT_DIR = resolve(PROJECT_ROOT, 'dist/svelte');
 
-const ROOT_CSS_ASSETS = new Map<string, string>([
+const ROOT_ASSETS = new Map<string, string>([
   ['/semantic-demo.css', 'semantic-demo.css'],
   ['/vector-explorer-pandora.css', 'vector-explorer-pandora.css'],
+  ['/data.dat', 'data.dat'],
+  ['/data.dat.gz', 'data.dat.gz'],
+  ['/semantic_threads_ui.dat', 'semantic_threads_ui.dat'],
+  ['/semantic_threads.dat', 'semantic_threads.dat'],
+  ['/semantic_space_layout_manifest.json', 'semantic_space_layout_manifest.json'],
+  ['/scripts/leadEnrichment.public.json', 'scripts/leadEnrichment.public.json'],
 ]);
+
+const ROOT_ASSET_DIRS = ['css'];
 
 type RootAssetMiddleware = (
   req: IncomingMessage,
@@ -40,10 +49,55 @@ function legacyRootAssetPlugin(): Plugin {
   };
 }
 
+function copyRuntimeAssetsPlugin(): Plugin {
+  return {
+    name: 'copy-runtime-assets',
+    apply: 'build',
+    async writeBundle() {
+      await Promise.all([
+        ...Array.from(ROOT_ASSETS.values()).map(async (relativePath) => {
+          const sourcePath = normalize(resolve(PROJECT_ROOT, relativePath));
+          const targetPath = normalize(resolve(SVELTE_OUT_DIR, relativePath));
+
+          try {
+            const fileStat = await stat(sourcePath);
+            if (!fileStat.isFile()) {
+              return;
+            }
+          } catch {
+            return;
+          }
+
+          await mkdir(dirname(targetPath), { recursive: true });
+          await copyFile(sourcePath, targetPath);
+        }),
+        ...ROOT_ASSET_DIRS.map(async (relativePath) => {
+          const sourcePath = normalize(resolve(PROJECT_ROOT, relativePath));
+          const targetPath = normalize(resolve(SVELTE_OUT_DIR, relativePath));
+
+          try {
+            const fileStat = await stat(sourcePath);
+            if (!fileStat.isDirectory()) {
+              return;
+            }
+          } catch {
+            return;
+          }
+
+          await cp(sourcePath, targetPath, {
+            recursive: true,
+            force: true,
+          });
+        }),
+      ]);
+    },
+  };
+}
+
 function serveRootAssets(middlewares: RootAssetMiddlewareStack): void {
   middlewares.use(async (req, res, next) => {
     const urlPath = req.url?.split('?')[0] ?? '';
-    let relativePath = ROOT_CSS_ASSETS.get(urlPath) ?? null;
+    let relativePath = ROOT_ASSETS.get(urlPath) ?? null;
 
     if (!relativePath && urlPath.startsWith('/css/')) {
       relativePath = urlPath.slice(1);
@@ -100,8 +154,10 @@ function contentType(filePath: string): string {
 // https://vite.dev/config/
 export default defineConfig({
   root: SRC_DIR,
+  base: './',
   plugins: [
     legacyRootAssetPlugin(),
+    copyRuntimeAssetsPlugin(),
     svelte(),
   ],
   resolve: {
@@ -149,7 +205,7 @@ export default defineConfig({
   },
   build: {
     target: 'es2022',
-    outDir: resolve(__dirname, 'dist/svelte'),
+    outDir: SVELTE_OUT_DIR,
     emptyOutDir: true,
     // Vite auto-discovers index.html in the root directory (which is src/)
   }
