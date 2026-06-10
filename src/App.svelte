@@ -114,7 +114,8 @@
   );
   let searchChromeSurface = $derived(
     navStore().surface === 'search' ||
-    navStore().surface === 'focus-search'
+    navStore().surface === 'focus-search' ||
+    navStore().surface === 'idle'
   );
   let legacySearchChromeHidden = $derived(searchChromeSurface);
 </script>
