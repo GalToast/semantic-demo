@@ -164,7 +164,7 @@ export function syncFilterControls(): void {
     document.querySelectorAll('[data-signal-filter]').forEach((el) => {
         const target = el as HTMLElement;
         const key = (target as HTMLElement).dataset.signalFilter;
-        const active = Boolean((getActiveFilters() as any)[key]);
+        const active = key ? Boolean((getActiveFilters() as unknown as Record<string, unknown>)[key]) : false;
         target.classList.toggle('active', active);
         target.setAttribute('aria-pressed', String(active));
     });

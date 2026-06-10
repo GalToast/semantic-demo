@@ -114,7 +114,7 @@ export function syncJourneyCompassActions(compassState: any = {}): void {
         }
         button.dataset.journeyAction = action?.action || '';
         const disabled = !action?.action || (action.action === JOURNEY_ACTIONS.NEXT_STOP && getStrandContinuityState()?.phase === 'exploring');
-        button.disabled = false;
+        (button as HTMLButtonElement).disabled = false;
         button.setAttribute('aria-disabled', String(disabled || suppressInsideDiveActions));
         button.hidden = suppressInsideDiveActions || !action?.action;
         if (button.hidden) {
@@ -262,7 +262,7 @@ export function updateJourneyCompass(): void {
     syncJourneyCompassActions(compassState);
     syncMapTrailStrip(compassState, presentationState);
 
-    const order = getJourneyCompassPhaseOrder() || ['overview', 'search', 'focus', 'inside', 'map'];
+    const order = [...(getJourneyCompassPhaseOrder() || ['overview', 'search', 'focus', 'inside', 'map'])] as string[];
     const activeOrderIndex = order.indexOf(phase);
     const stepDescriptions: Record<string, string> = {
         overview: 'See the whole county.',
@@ -273,7 +273,8 @@ export function updateJourneyCompass(): void {
     };
     compass.querySelectorAll('[data-journey-step]').forEach((step: Element) => {
         const stepEl = step as HTMLElement;
-        const stepIndex = order.indexOf(stepEl.dataset.journeyStep!);
+        const stepName = stepEl.dataset.journeyStep || '';
+        const stepIndex = order.indexOf(stepName);
         const isCurrent = stepEl.dataset.journeyStep === phase;
         stepEl.classList.toggle('current', isCurrent);
         stepEl.classList.toggle('done', activeOrderIndex >= 0 && stepIndex >= 0 && stepIndex < activeOrderIndex);

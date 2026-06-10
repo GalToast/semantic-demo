@@ -243,7 +243,7 @@ export function scheduleCompactSearchResultReveal(resultsEl: HTMLElement, active
     requestAnimationFrame(() => requestAnimationFrame(reveal));
     if (!state.compactSearchRevealTimers) state.compactSearchRevealTimers = [];
     [80, 240, 520].forEach((delay: number) => {
-        state.compactSearchRevealTimers.push(window.setTimeout(reveal, delay));
+        state.compactSearchRevealTimers.push(window.setTimeout(reveal, delay) as unknown as ReturnType<typeof setTimeout>);
     });
 }
 
@@ -294,8 +294,9 @@ export function setActiveSearchResultRow(
         if (searchState && typeof searchState.isMobileRouteFieldPeekActive === 'function' && searchState.isMobileRouteFieldPeekActive()) {
             return;
         }
-        if (!revealActiveSearchResultOnCompact(resultsEl, activeRow)) {
-            activeRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        const rowToReveal: HTMLElement = activeRow;
+        if (!revealActiveSearchResultOnCompact(resultsEl, rowToReveal)) {
+            rowToReveal.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
         scheduleCompactSearchResultReveal(resultsEl, effectiveIndex);
     }

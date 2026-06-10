@@ -13,7 +13,8 @@ import {
     initSearchCache,
     getCachedSemanticSearchPayload,
     storeSemanticSearchPayload,
-    getSemanticSearchCacheDiagnostics
+    getSemanticSearchCacheDiagnostics,
+    type SearchPayload
 } from './semantic-search-cache.ts';
 
 export { initSearchCache, getSemanticSearchCacheDiagnostics };
@@ -181,7 +182,7 @@ export async function fetchSemanticSearchResults(
                 throw err;
             }
 
-            storeSemanticSearchPayload(trimmedQuery, payload, offset);
+            storeSemanticSearchPayload(trimmedQuery, payload as SearchPayload, offset);
             return payload;
         } catch (error) {
             if (signal?.aborted) throw error;

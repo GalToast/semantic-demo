@@ -4,7 +4,7 @@
 
 import * as THREE from 'three';
 import { state } from '../state.ts';
-import type { SemanticState } from '../state.ts';
+import type { SemanticState, ConstellationMotifName } from '../state.ts';
 import { getViewportSize } from './environment.ts';
 import { describeCluster } from './utils/ui-presentation.ts';
 import { normalizeCityForFilter } from './utils/geo-data.ts';
@@ -69,8 +69,8 @@ export interface ConstellationMotif {
 
 export function getFocusConstellationMotif(index: number): ConstellationMotif {
     const point = state.points[index] || {};
-    const clusterLabel = (describeCluster(point.cluster) || '').toLowerCase();
-    let key = 'market';
+    const clusterLabel = (describeCluster(point.cluster ?? 0) || '').toLowerCase();
+    let key: ConstellationMotifName = 'market';
     if (/(food|hospitality|beauty|wellness|arts|culture)/.test(clusterLabel)) {
         key = 'rosette';
     } else if (/(construction|trades|industrial|logistics|automotive|property|real estate)/.test(clusterLabel)) {
@@ -84,7 +84,8 @@ export function getFocusConstellationMotif(index: number): ConstellationMotif {
     ) {
         key = 'civic';
     }
-    const motif = state.FOCUS_CONSTELLATION_MOTIFS[key] || state.FOCUS_CONSTELLATION_MOTIFS.market;
+    const motifKey = key as ConstellationMotifName;
+    const motif = state.FOCUS_CONSTELLATION_MOTIFS[motifKey] || state.FOCUS_CONSTELLATION_MOTIFS.market;
     return {
         key,
         ...motif,
@@ -96,7 +97,8 @@ export function getFocusConstellationMotifForPersonality(index: number, personal
     const fallback = getFocusConstellationMotif(index);
     const overrideKey = personality?.motifOverride;
     if (!overrideKey) return fallback;
-    const override = state.FOCUS_CONSTELLATION_MOTIFS[overrideKey];
+    const overrideMotifKey = overrideKey as ConstellationMotifName;
+    const override = state.FOCUS_CONSTELLATION_MOTIFS[overrideMotifKey];
     if (!override) return fallback;
     return {
         ...fallback,
@@ -485,13 +487,15 @@ export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): THREE.Vec
 
     if (
         anchorPull > 0 &&
-        Number.isFinite(state.navState.focusedIndex) &&
-        state.nodePositions[state.navState.focusedIndex!]
+        Number.isFinite(state.navState.focusedIndex)
     ) {
-        const anchor = state.nodePositions[state.navState.focusedIndex!];
-        const anchorVector = new THREE.Vector3(anchor.x, anchor.y, anchor.z);
-        const stem = anchorVector.lerp(mid, 0.42 + motifBraid * 0.16);
-        control.lerp(stem, Math.min(0.44, anchorPull * (1 - longArc * 0.68)));
+        const focusedIndex = state.navState.focusedIndex!;
+        const anchor = state.nodePositions[focusedIndex];
+        if (anchor) {
+            const anchorVector = new THREE.Vector3(anchor.x, anchor.y, anchor.z);
+            const stem = anchorVector.lerp(mid, 0.42 + motifBraid * 0.16);
+            control.lerp(stem, Math.min(0.44, anchorPull * (1 - longArc * 0.68)));
+        }
     }
 
     if (longArc > 0.01) {
@@ -565,7 +569,17 @@ export function buildFocusedPocketStagedPositions(index: number, pocketEntries: 
     const supportEntries = entries.filter((entry) => entry.kind === 'support');
     const haloEntries = entries.filter((entry) => entry.kind === 'halo');
 
-    const personality = state.navState.currentPersonality || { type: 'STANDARD', staggerMult: 1, compressionMult: 1 };
+    const fallbackPersonality: NeighborhoodPersonality = {
+        type: 'STANDARD',
+        motifOverride: null,
+        cameraDuration: 980,
+        cameraArc: 'standard',
+        staggerMult: 1,
+        compressionMult: 1,
+        easing: 'easeInOutCubic',
+        microVariation: { rotation: 0, scale: 1 }
+    };
+    const personality = (state.navState.currentPersonality as NeighborhoodPersonality | null) || fallbackPersonality;
     const motif = getFocusConstellationMotifForPersonality(index, personality);
 
     const vpProfile = getFocusConstellationViewportProfile();

@@ -337,16 +337,16 @@ export async function probeSemanticLane({ warm = false, reason = 'interval' }: L
 export function scheduleSemanticLaneMonitor(): void {
     const win = getWindow();
     if (state.semanticLaneMonitorTimer) {
-        win?.clearInterval?.(state.semanticLaneMonitorTimer as number);
+        clearInterval(state.semanticLaneMonitorTimer);
     }
 
-    state.semanticLaneMonitorTimer = typeof win?.setInterval === 'function' ? win.setInterval(() => {
+    state.semanticLaneMonitorTimer = typeof win?.setInterval === 'function' ? setInterval(() => {
         if (isStaticDevLaneFallbackActive()) return;
         probeSemanticLane({
             warm: shouldWarmSemanticLane('interval'),
             reason: 'interval'
         });
-    }, 45000) as unknown as ReturnType<typeof setTimeout> : null;
+    }, 45000) : null;
 }
 
 // ── UI State ───────────────────────────────────────────────────────────────
@@ -463,15 +463,15 @@ export function setSemanticLaneOpsMode(enabled: boolean): void {
     }
     if (!state.semanticLaneOpsMode) {
         if (state.semanticLaneOpsRefreshTimer) {
-            win?.clearInterval?.(state.semanticLaneOpsRefreshTimer as number);
+            clearInterval(state.semanticLaneOpsRefreshTimer);
             state.semanticLaneOpsRefreshTimer = null;
         }
         return;
     }
     if (!state.semanticLaneOpsRefreshTimer && typeof win?.setInterval === 'function') {
-        state.semanticLaneOpsRefreshTimer = win.setInterval(() => {
+        state.semanticLaneOpsRefreshTimer = setInterval(() => {
             refreshSemanticLaneOpsSummary();
-        }, 60000) as unknown as ReturnType<typeof setTimeout>;
+        }, 60000);
     }
 }
 

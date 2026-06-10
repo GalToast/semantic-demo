@@ -195,7 +195,7 @@ export function getThreadInspectionState(index: number | null = getInspectedThre
 export function renderThreadInspection(index: number | null = getInspectedThreadIndex(), options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
     const inspector = document.getElementById('focus-thread-inspector');
     const inspectionState = getThreadInspectionState(index, options);
-    syncInspectedStrandOverlay(inspectionState as any, options);
+    syncInspectedStrandOverlay(inspectionState as any, { surface: options.surface ?? undefined });
     document.body.dataset.threadInspectSurface = inspectionState?.active
         ? inspectionState.surface || options.surface || 'rail'
         : 'idle';
@@ -364,7 +364,7 @@ export function scheduleCanvasThreadInspectionClear(delay: number = 1800): void 
         if (document.body.dataset.threadInspectSurface === 'canvas') {
             clearThreadInspection();
         }
-    }, delay);
+    }, delay) as unknown as ReturnType<typeof setTimeout>;
 }
 
 export function clearThreadInspection(options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
@@ -474,7 +474,7 @@ export function exploreThreadNeighbor(index: number, options: ThreadInspectionOp
             syncFocusStage(pointAtSettle || getSelectedPoint() || null);
         }
     });
-    return { targetIndex: index, fromIndex, reason };
+    return { targetIndex: index, fromIndex: fromIndex ?? null, reason };
 }
 
 // Wave70: retired the direct window.exploreThreadNeighbor bridge and _ti

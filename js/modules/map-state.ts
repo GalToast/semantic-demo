@@ -5,7 +5,7 @@
  * Manages Leaflet map initialization, marker refresh, route embodiment,
  * terrain handoff, and route director state synchronization.
  */
-import { state, withStateMutation } from '../state.ts';
+import { state, withStateMutation, type Point } from '../state.ts';
 import { subscribeKeyed, EVENTS } from './event-bus.ts';
 import { pointHasGeocode, isPointVisible } from './utils/geo-data.ts';
 import { formatBusinessName } from './utils/dom-formatters.ts';
@@ -22,15 +22,6 @@ export const LEAFLET_JS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-interface Point {
-    lat?: number;
-    lng?: number;
-    name?: string;
-    cluster?: number | null;
-    lead_id?: string | number;
-    [key: string]: unknown;
-}
-
 interface LeafletMarker {
     setStyle(style: Record<string, unknown>): void;
     addTo(layer: unknown): LeafletMarker;
@@ -39,6 +30,31 @@ interface LeafletMarker {
     openTooltip(): void;
     bringToFront?(): void;
     bringToBack?(): void;
+}
+
+interface LeafletMapInstance {
+    fitBounds(bounds: unknown, options?: Record<string, unknown>): void;
+    setView(center: [number, number], zoom: number, options?: Record<string, unknown>): void;
+    zoomIn(): void;
+    zoomOut(): void;
+}
+
+interface LeafletLayerGroup {
+    addTo(map: unknown): LeafletLayerGroup;
+    clearLayers(): void;
+}
+
+interface LeafletPolyline {
+    addTo(layer: unknown): LeafletPolyline;
+}
+
+interface LeafletApi {
+    map(container: HTMLElement, options: Record<string, unknown>): LeafletMapInstance;
+    tileLayer(url: string, options: Record<string, unknown>): { addTo(map: unknown): unknown };
+    layerGroup(): LeafletLayerGroup;
+    circleMarker(latLng: [number, number], options: Record<string, unknown>): LeafletMarker;
+    polyline(latLngs: Array<[number, number]>, options: Record<string, unknown>): LeafletPolyline;
+    latLngBounds(latLngs: Array<[number, number]>): { pad(factor: number): unknown };
 }
 
 interface TerrainHandoffOptions {
@@ -148,12 +164,13 @@ export async function initMap(): Promise<void> {
         }
         const container = document.getElementById('map-container');
         if (!container) throw new Error('Map container is missing');
-        if ((container as Record<string, unknown>)._leaflet_id) {
-            delete (container as Record<string, unknown>)._leaflet_id;
+        if ((container as unknown as { _leaflet_id?: number })._leaflet_id) {
+            delete (container as unknown as { _leaflet_id?: number })._leaflet_id;
             container.innerHTML = '';
         }
 
-        const L = window.L!;
+        const L = window.L as unknown as LeafletApi | undefined;
+        if (!L) throw new Error('Leaflet not loaded');
         state.map = L.map(container, {
             center: [30.3119, -95.4561],
             zoom: 10,
@@ -246,9 +263,11 @@ export function showMapTooltip(point: Point, marker: { bindTooltip: Function; op
 // ── Route Points ───────────────────────────────────────────────────────────
 
 export function getMapRoutePoints(): Array<{ index: number; point: Point }> {
+    const points = state.points as Point[] | undefined;
+    if (!points) return [];
     return getRouteEmbodimentIndices()
-        .map((index: number) => ({ index, point: (state.points as Point[])[index] }))
-        .filter(({ point }: { point: Point }) => pointHasGeocode(point))
+        .map((index: number) => ({ index, point: points[index] }))
+        .filter((entry): entry is { index: number; point: Point } => !!entry.point && pointHasGeocode(entry.point))
         .slice(0, isMobileViewport() ? 7 : 10);
 }
 
@@ -303,8 +322,9 @@ export function refreshMapRouteEmbodiment(): void {
         if (emptyEl) emptyEl.remove();
     }
 
-    const latLngs = routePoints.map(({ point }: { point: Point }) => [point.lat, point.lng]);
-    const L = window.L!;
+    const latLngs: [number, number][] = routePoints.map(({ point }: { point: Point }) => [point.lat!, point.lng!]);
+    const L = window.L as unknown as LeafletApi | undefined;
+    if (!L) return;
     if (latLngs.length >= 2) {
         L.polyline(latLngs, {
             className: 'semantic-map-route-line semantic-map-route-line-aura',
@@ -356,20 +376,26 @@ export function centerMapOnRouteAnchor(): boolean {
         getMapRoutePoints()[0]?.point ||
         null;
         
-    if (!pointHasGeocode(focusPoint)) return false;
+    if (!focusPoint || !pointHasGeocode(focusPoint)) return false;
     const routePoints = getMapRoutePoints();
-    const routeLatLngs = routePoints.map(({ point }: { point: Point }) => [point.lat, point.lng]);
-    const L = window.L!;
+    const routeLatLngs: [number, number][] = routePoints.map(({ point }: { point: Point }) => [point.lat!, point.lng!]);
+    const L = window.L as unknown as LeafletApi | undefined;
+    if (!L || !state.map) return false;
+    const mapApi = state.map as LeafletMapInstance;
     if (routeLatLngs.length >= 2) {
         const bounds = L.latLngBounds(routeLatLngs);
-        (state.map as Record<string, Function>).fitBounds(bounds.pad(0.42), {
+        mapApi.fitBounds(bounds.pad(0.42), {
             animate: true,
             maxZoom: 15,
             paddingTopLeft: [22, isMobileViewport() ? 250 : 96],
             paddingBottomRight: [22, 120]
         });
     } else {
-        (state.map as Record<string, Function>).setView([focusPoint!.lat, focusPoint!.lng], 15, { animate: true });
+        const lat = focusPoint.lat;
+        const lng = focusPoint.lng;
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            mapApi.setView([lat!, lng!], 15, { animate: true });
+        }
     }
     return true;
 }
@@ -386,14 +412,16 @@ export function refreshMapMarkers(): void {
             ? String(state.selectedPoint.lead_id)
             : null;
             
-    if (state.pointMarkers && Array.isArray(state.pointMarkers)) {
+    const pointMarkers = state.pointMarkers as Array<{ marker: LeafletMarker; index: number }> | undefined;
+    if (pointMarkers && Array.isArray(pointMarkers)) {
         const dimmedMarkers: LeafletMarker[] = [];
         const trailMarkers: LeafletMarker[] = [];
         const priorityMarkers: LeafletMarker[] = [];
 
-        state.pointMarkers.forEach(({ marker, index }: { marker: LeafletMarker; index: number }) => {
+        pointMarkers.forEach(({ marker, index }: { marker: LeafletMarker; index: number }) => {
             if (!isPointVisible(index, state.points as Point[], state.activeClusterFilter, state.activeFilters)) return;
             const point = (state.points as Point[])[index];
+            if (!point) return;
             if (point.cluster === null || point.cluster === undefined || !Number.isFinite(point.cluster)) point.cluster = 0;
             const baseColor = (state.COLORS as readonly string[])[point.cluster! % (state.COLORS as readonly string[]).length];
             const isFocused = state.focusedNode === index;
@@ -531,7 +559,7 @@ export function setTerrainHandoffState(phase = 'idle', options: TerrainHandoffOp
                 from: state.terrainHandoffState.from,
                 to: state.terrainHandoffState.to
             });
-        }, options.settleAfterMs);
+        }, options.settleAfterMs) as unknown as ReturnType<typeof setTimeout>;
     }
 }
 
@@ -541,8 +569,8 @@ export function getRouteEmbodimentIndices(): number[] {
     if (!state.points || !Array.isArray(state.points)) return [];
     const ordered: number[] = [];
     const pushIndex = (index: number): void => {
-        // 10/10 Polish: Pass null for cluster filter in Map view so focused routes are always visible
-        if (!Number.isFinite(index) || index < 0 || index >= state.points.length || !isPointVisible(index, state.points as Point[], null, state.activeFilters))
+        const points = state.points as Point[];
+        if (!Number.isFinite(index) || index < 0 || index >= points.length || !isPointVisible(index, points, null, state.activeFilters))
             return;
         if (!(state.nodePositions as unknown[])[index] && !(state.originalPositions as unknown[])[index]) return;
         if (!ordered.includes(index)) ordered.push(index);
@@ -590,9 +618,10 @@ export function getRouteAnchorIndex(routeIndices: number[]): number | null {
 
 export function zoomMap(multiplier: number): void {
     if (!state.map) return;
+    const mapApi = state.map as LeafletMapInstance;
     if (multiplier < 1) {
-        (state.map as Record<string, Function>).zoomIn();
+        mapApi.zoomIn();
     } else {
-        (state.map as Record<string, Function>).zoomOut();
+        mapApi.zoomOut();
     }
 }

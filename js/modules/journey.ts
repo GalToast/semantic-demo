@@ -145,7 +145,7 @@ globalThis.queueMicrotask(() => {
     })
     initJourneyCanvasInteractionAdapter({
         summarizeNeighborReason,
-        walkThreadNeighbor,
+        walkThreadNeighbor: (index, options) => !!walkThreadNeighbor(index, options),
         inspectThreadNeighbor,
         scheduleCanvasThreadInspectionClear
     })

@@ -234,6 +234,6 @@ function focusSummarySuggestion(leadId: string | undefined, sourceEl: HTMLElemen
     if (targetIndex === undefined || !resultsEl || !statusEl) return false;
     const point = state.points[targetIndex];
     if (!point) return false;
-    beginSearchFocusTransition(resultsEl, statusEl, state.currentSearchSummary?.resultIndices ?? [], targetIndex, point, sourceEl);
+    beginSearchFocusTransition(resultsEl, statusEl, state.currentSearchSummary?.resultIndices ?? [], targetIndex, point, sourceEl!);
     return true;
 }

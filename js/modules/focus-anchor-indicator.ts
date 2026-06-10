@@ -99,14 +99,16 @@ export function updateFocusAnchorIndicator(now: number, focusedNode: number | nu
         return true;
     }
 
-    const pos = state.nodePositions[focusedNode!];
+    const focusedIndex = focusedNode!;
+    const pos = state.nodePositions[focusedIndex];
+    if (!pos) return false;
     const worldPos = new THREE.Vector3(pos.x, pos.y, pos.z);
     if (state.pointsMesh?.localToWorld) {
         state.pointsMesh.localToWorld(worldPos);
     }
     group.position.copy(worldPos);
     if (state.camera) {
-        group.lookAt(state.camera.position);
+        group.lookAt(new THREE.Vector3().copy(state.camera.position as THREE.Vector3));
     }
     group.visible = true;
 
@@ -143,8 +145,9 @@ export function disposeFocusAnchorIndicator(): void {
     }
     if (state.focusAnchorRingMesh) {
         const ringMesh = state.focusAnchorRingMesh as THREE.Mesh;
+        const material = ringMesh.material as THREE.Material | THREE.Material[] | undefined;
         ringMesh.geometry?.dispose();
-        ringMesh.material?.dispose();
+        if (material && !Array.isArray(material)) material.dispose();
     }
     if (state.focusAnchorHaloSprite) {
         (state.focusAnchorHaloSprite as THREE.Sprite).material?.dispose();

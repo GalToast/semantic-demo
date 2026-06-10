@@ -181,7 +181,8 @@ function getActiveNextFocusIndex(): number | null {
             requireOnCanvas: (state as any).currentView === 'galaxy'
         })
         : null;
-    return Number.isFinite(candidate?.index) ? candidate.index : null;
+    if (!candidate) return null;
+    return Number.isFinite(candidate.index) ? candidate.index : null;
 }
 
 export function refreshFocusSemanticOverlay(): void {

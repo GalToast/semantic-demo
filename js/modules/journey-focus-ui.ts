@@ -377,7 +377,7 @@ export function updateTraversalUi(): void {
     const nav = getNavState()!;
     const currentFocusPoint: Point | null = getCurrentView() === 'map'
         ? getSelectedPoint()
-        : (Number.isFinite(nav.focusedIndex) ? points[nav.focusedIndex!] : null);
+        : (Number.isFinite(nav.focusedIndex) ? points[nav.focusedIndex!] ?? null : null);
     const hasFocus: boolean = !!currentFocusPoint;
     const neighborCount: number = nav.trailNeighborIndices?.length ?? 0;
     const coldDegradedNoRail = hasColdDegradedSemanticFallback();

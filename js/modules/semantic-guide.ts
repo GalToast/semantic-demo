@@ -17,7 +17,7 @@ function getMostFrequent(values: string[]): string | null {
         acc[value] = (acc[value] || 0) + 1;
         return acc;
     }, {});
-    return Object.keys(counts).reduce((a, b) => (counts[a] > counts[b] ? a : b));
+    return Object.keys(counts).reduce((a, b) => ((counts[a] ?? 0) > (counts[b] ?? 0) ? a : b));
 }
 
 function generateLogicalSynthesis(payload: any): string {
@@ -262,7 +262,7 @@ function showSemanticGuideFailure(payload: any, error: any): void {
         ...currentState,
         isSynthesizing: false
     });
-    const fallback = buildClientSemanticGuideFallback(payload, error?.message || 'Guide response is still warming up.');
+    const fallback = buildClientSemanticGuideFallback(payload);
     showSummaryCard(buildSemanticGuideFallbackCardConfig(fallback));
 }
 

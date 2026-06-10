@@ -70,7 +70,8 @@ function getCanvasNodeScreenCandidate(index: number, pointer: CanvasPointerPosit
         distance,
         screenX,
         screenY,
-        point: state.points[index] || null
+        point: state.points[index] || null,
+        source: 'nearest'
     };
 }
 
@@ -87,7 +88,7 @@ function findRaycastCanvasFieldNode(event: MouseEvent | PointerEvent, pointer: C
     if (sporePickMesh) {
         const sporeHits = canvasFieldRaycaster.intersectObject(sporePickMesh, false)
             .filter((hit) => Number.isFinite(hit.instanceId) && isPointVisible(hit.instanceId!, state.points, null, state.activeFilters))
-            .map((hit) => {
+            .map((hit): NodePickCandidate | null => {
                 const candidate = getCanvasNodeScreenCandidate(hit.instanceId!, pointer);
                 if (!candidate) return null;
                 return {
@@ -107,7 +108,7 @@ function findRaycastCanvasFieldNode(event: MouseEvent | PointerEvent, pointer: C
     (canvasFieldRaycaster.params as any).Points.threshold = getCanvasPointWorldThreshold(maxDistance, pointer.rect);
     const intersections = canvasFieldRaycaster.intersectObject(pointsMesh, false)
         .filter((hit) => Number.isFinite(hit.index) && isPointVisible(hit.index!, state.points, null, state.activeFilters))
-        .map((hit) => {
+        .map((hit): NodePickCandidate | null => {
             const candidate = getCanvasNodeScreenCandidate(hit.index!, pointer);
             if (!candidate) return null;
             return {

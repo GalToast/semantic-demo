@@ -86,17 +86,17 @@ const _s = state as unknown as SemanticState;
 
 // ── Canonical API Wrappers (Satisfies static contract regex: ^export function) ──
 
-export function tokenizeSearchText(...args: unknown[]): string[] { return tokenizerModule.tokenizeSearchText(...args as [unknown]); }
-export function expandSearchIntent(...args: unknown[]): string[] { return tokenizerModule.expandSearchIntent(...args as [unknown, unknown]); }
-export function countTokenMatches(...args: unknown[]): { exact: number; prefix: number } { return tokenizerModule.countTokenMatches(...args as [unknown, unknown]); }
+export function tokenizeSearchText(query: string): string[] { return tokenizerModule.tokenizeSearchText(query); }
+export function expandSearchIntent(text: string, intent: string): string[] { return tokenizerModule.expandSearchIntent(text, intent); }
+export function countTokenMatches(text: string, query: string): { exact: number; prefix: number } { return tokenizerModule.countTokenMatches(text, query); }
 
-export function getSemanticSearchServiceResults(...args: unknown[]): unknown[] { return mapperModule.getSemanticSearchServiceResults(...args as [{ results?: unknown[] } | null]); }
-export function getSemanticSearchTotalMatches(...args: unknown[]): number { return mapperModule.getSemanticSearchTotalMatches(...args as [{ count?: number } | null | undefined, unknown[]]); }
-export function isNumericOnlySearchQuery(...args: unknown[]): boolean { return mapperModule.isNumericOnlySearchQuery(...args as [unknown]); }
-export function resultMatchesNumericSearchQuery(...args: unknown[]): boolean { return mapperModule.resultMatchesNumericSearchQuery(...args as [unknown, unknown]); }
-export function mapSemanticSearchServiceResult(...args: unknown[]): SearchResult | null { return mapperModule.mapSemanticSearchServiceResult(...args as [unknown, number]); }
-export function mapSemanticSearchResults(...args: unknown[]): SearchResult[] { return mapperModule.mapSemanticSearchResults(...args as [unknown[]]); }
-export function hydrateSemanticResultContexts(...args: unknown[]): void { return mapperModule.hydrateSemanticResultContexts(...args as [unknown[]]); }
+export function getSemanticSearchServiceResults(payload: { results?: ServiceResultRow[] } | null): ServiceResultRow[] { return mapperModule.getSemanticSearchServiceResults(payload); }
+export function getSemanticSearchTotalMatches(payload: { count?: number } | null | undefined, serviceResults: ServiceResultRow[]): number { return mapperModule.getSemanticSearchTotalMatches(payload, serviceResults); }
+export function isNumericOnlySearchQuery(query: unknown): boolean { return mapperModule.isNumericOnlySearchQuery(query); }
+export function resultMatchesNumericSearchQuery(result: { point?: { lead_id?: string | number; phone?: string; lat?: number; lng?: number }; address?: string; publicNote?: string; publicDetail?: string; naics?: string } | null, query: unknown): boolean { return mapperModule.resultMatchesNumericSearchQuery(result, query); }
+export function mapSemanticSearchServiceResult(row: ServiceResultRow, order: number): SearchResult | null { return mapperModule.mapSemanticSearchServiceResult(row, order) as SearchResult | null; }
+export function mapSemanticSearchResults(serviceResults: ServiceResultRow[]): SearchResult[] { return mapperModule.mapSemanticSearchResults(serviceResults) as SearchResult[]; }
+export function hydrateSemanticResultContexts(results: { point: { lead_id?: string | number; name?: string; city?: string; status?: string }; publicNote: string; publicDetail: string; address: string; naics: string }[]): void { return mapperModule.hydrateSemanticResultContexts(results as Parameters<typeof mapperModule.hydrateSemanticResultContexts>[0]); }
 
 export function recordEmptySearch(query: string): void {
     publish(EVENTS.SEARCH_EMPTY, { query });
@@ -114,16 +114,16 @@ export function setSearchPanelState(options: Record<string, unknown> = {}): void
     return resultsUiModule.setSearchPanelState(options);
 }
 
-export function renderSearchResultItems(...args: unknown[]): void {
+export function renderSearchResultItems(resultsEl: HTMLElement, results: SearchResult[], renderContext: SearchContext, statusEl: HTMLElement | null): void {
     // Satisfies search-panel-adapter-contract.mjs static analysis
     if (typeof setupMobileSearchSheetToggle === 'function') {
         setupMobileSearchSheetToggle({ isCompactSearchViewport });
     }
-    return resultsUiModule.renderSearchResultItems(...args as [HTMLElement, unknown[], SearchContext, HTMLElement | null]);
+    return resultsUiModule.renderSearchResultItems(resultsEl, results as Parameters<typeof resultsUiModule.renderSearchResultItems>[1], renderContext as Parameters<typeof resultsUiModule.renderSearchResultItems>[2], statusEl);
 }
 
-export function beginSemanticSearchUiState(...args: unknown[]): void { return resultsUiModule.beginSemanticSearchUiState(...args as [HTMLElement | null, HTMLElement | null, string]); }
-export function updateSemanticSearchRetryState(...args: unknown[]): void { return resultsUiModule.updateSemanticSearchRetryState(...args as [unknown]); }
+export function beginSemanticSearchUiState(statusEl: HTMLElement | null, resultsEl: HTMLElement | null, mode: string): void { return resultsUiModule.beginSemanticSearchUiState(statusEl, resultsEl, mode); }
+export function updateSemanticSearchRetryState(params: { statusEl: HTMLElement | null; trimmedQuery: string; nextAttempt: number; delayMs: number }): void { return resultsUiModule.updateSemanticSearchRetryState(params); }
 export function applySemanticSearchDegradedState(...args: unknown[]): void { return resultsUiModule.applySemanticSearchDegradedState(...args as [HTMLElement | null, HTMLElement | null, string, Error | null]); }
 export function finishSemanticSearchSuccessState(...args: unknown[]): void { return resultsUiModule.finishSemanticSearchSuccessState(...args as [HTMLElement | null, string, string]); }
 export function applyEmptySemanticSearchState(...args: unknown[]): void { return resultsUiModule.applyEmptySemanticSearchState(...args as [HTMLElement | null, HTMLElement | null, string]); }
@@ -156,13 +156,13 @@ export function applyFilters(options: Record<string, unknown> = {}): void {
     return filterCoreModule.applyFilters();
 }
 export function getFilteredIndices(...args: unknown[]): number[] { return filterCoreModule.getFilteredIndices(); }
-export function pointMatchesActiveFilters(...args: unknown[]): boolean { return filterCoreModule.pointMatchesActiveFilters(...args as [unknown]); }
+export function pointMatchesActiveFilters(point: Point | null | undefined): boolean { return filterCoreModule.pointMatchesActiveFilters(point); }
 
-export function refreshSearchResultHierarchy(...args: unknown[]): void { return renderersModule.refreshSearchResultHierarchy(...args as [HTMLElement]); }
-export function setActiveSearchResultRow(...args: unknown[]): void { return renderersModule.setActiveSearchResultRow(...args as [HTMLElement, number | null, { reveal?: boolean }]); }
-export function updateSearchTrailCue(...args: unknown[]): void { return renderersModule.updateSearchTrailCue(...args as [Record<string, unknown>]); }
-export function getSearchResultStrength(...args: unknown[]): number { return renderersModule.getSearchResultStrength(...args as [unknown, number]); }
-export function getSearchResultStrengthLabel(...args: unknown[]): string { return renderersModule.getSearchResultStrengthLabel(...args as [number, number]); }
+export function refreshSearchResultHierarchy(resultsEl: HTMLElement): void { renderersModule.refreshSearchResultHierarchy(resultsEl); }
+export function setActiveSearchResultRow(resultsEl: HTMLElement, activeIndex: number | null, options?: { reveal?: boolean }): void { renderersModule.setActiveSearchResultRow(resultsEl, activeIndex, options); }
+export function updateSearchTrailCue(params: Record<string, unknown>): void { renderersModule.updateSearchTrailCue(params); }
+export function getSearchResultStrength(result: unknown, topScore: number): number { return renderersModule.getSearchResultStrength(result, topScore) as number; }
+export function getSearchResultStrengthLabel(order: number, strength: number): string { return renderersModule.getSearchResultStrengthLabel(order, strength) as string; }
 
 /**
  * Satisfies search-state-ui-adapter-contract.mjs
@@ -266,9 +266,9 @@ export async function search(query: string, options: SearchOptions = {}): Promis
             offset: options.offset,
             timeoutMs: shouldFailFastForKnownDegradedLane ? 2200 : undefined,
             maxAttempts: shouldFailFastForKnownDegradedLane ? 1 : undefined,
-            onRetry: ({ attempt, nextAttempt, delayMs, retryTotal }: { attempt: number; nextAttempt: number; delayMs: number; retryTotal: number }) => {
+            onRetry: ({ nextAttempt, delayMs }: { attempt: number; nextAttempt: number; delayMs: number; retryTotal: number }) => {
                 if (controller.signal.aborted || requestId !== getSearchRequestSequence()) return;
-                updateSemanticSearchRetryState({ statusEl, trimmedQuery, attempt, nextAttempt, delayMs, retryTotal });
+                updateSemanticSearchRetryState({ statusEl, trimmedQuery, nextAttempt, delayMs });
             }
         });
     } catch (error: unknown) {
@@ -286,9 +286,9 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     if (requestId !== getSearchRequestSequence()) return;
     stopSearchVectorScramble();
 
-    const serviceResults = getSemanticSearchServiceResults(payload) as mapperModule.ServiceResultRow[];
-    const totalMatches = getSemanticSearchTotalMatches(payload, serviceResults as unknown[]);
-    const results = mapSemanticSearchResults(serviceResults as unknown[]) as SearchResult[];
+    const serviceResults = getSemanticSearchServiceResults(payload as Parameters<typeof getSemanticSearchServiceResults>[0]) as mapperModule.ServiceResultRow[];
+    const totalMatches = getSemanticSearchTotalMatches(payload as Parameters<typeof getSemanticSearchTotalMatches>[0], serviceResults);
+    const results = mapSemanticSearchResults(serviceResults) as SearchResult[];
 
     if (requestId !== getSearchRequestSequence()) return;
     if (!results.length) {
@@ -317,7 +317,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
 
     if (results.length === 1) {
         const soleIndex = anchorIndex;
-        const soleName = anchorName || formatBusinessName(results[0].point.name as string);
+        const soleName = anchorName || formatBusinessName(results[0]!.point.name as string);
         updateSearchTrailCue({
             beat: 'focus', kicker: 'Single result',
             title: `${soleName} — only match for "${trimmedQuery}"`,
@@ -325,7 +325,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
             immediate: isCompactSearchViewport()
         });
         if (Number.isFinite(soleIndex)) {
-            publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point: results[0].point, index: soleIndex });
+            publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point: results[0]!.point, index: soleIndex });
         }
         statusEl.textContent = `1 match for "${trimmedQuery}" — ${soleName} is the only record.`;
         setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: false });
