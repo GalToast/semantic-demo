@@ -44,6 +44,8 @@
   import { applyUrlState } from '@lib/orchestration/url-state';
   // Side-effect import: registers SEARCH_FOCUS_REQUESTED → addTrailStop subscriptions
   import '@lib/orchestration/triggers';
+  // Side-effect import: biofield glow animation CSS
+  import '@lib/css/biofield.css';
 
   import Canvas from '@components/Canvas.svelte';
   import InfoPanel from '@components/InfoPanel.svelte';

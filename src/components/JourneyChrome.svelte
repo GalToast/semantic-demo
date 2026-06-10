@@ -312,7 +312,7 @@
         </button>
 
         <button
-          class="trail-btn focus-stage-action-btn"
+          class="trail-btn focus-stage-action-btn biofield-glow"
           id="btn-prev-node"
           disabled={!canGoBack}
           aria-disabled={!canGoBack}
@@ -337,7 +337,7 @@
         </div>
 
         <button
-          class="trail-btn focus-stage-action-btn"
+          class="trail-btn focus-stage-action-btn biofield-glow"
           id="btn-next-node"
           disabled={!hasNext}
           aria-disabled={!hasNext}

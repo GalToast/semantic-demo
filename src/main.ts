@@ -7,6 +7,7 @@
 import { mount, unmount } from 'svelte';
 import App from './App.svelte';
 import { testState } from '@lib/stores/index';
+import './lib/css/biofield.css';
 
 // ── URL parameter initialization ──────────────────────────────────────────────
 
