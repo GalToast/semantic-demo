@@ -92,8 +92,8 @@ import { applyPointFilterColors, describeThreadLensForPoint } from '@legacy/modu
 import { truncateMicrocopy, getSharedTrailTopicLabel } from '@legacy/modules/journey-text-helpers'
 import { setSemanticDiveMode as setSemanticDiveModeImpl } from '@legacy/modules/lifecycle'
 
-subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: { index: number }) => {
-    const index = payload.index
+subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
+    const index = typeof payload.index === 'number' ? payload.index : NaN
     if (Number.isFinite(index)) {
         setTrailFromSeed(index)
         updateTrailIndices(index)
@@ -106,7 +106,15 @@ export function initJourneyState(): void {
     state.pinnedThreadIndex ??= null
     state.canvasThreadInspectionClearTimer ??= null
     state.threadInspectorPointerInside ??= false
-    state.inspectedStrandDiagnostics ??= { active: false }
+    state.inspectedStrandDiagnostics ??= {
+        active: false,
+        source: 'idle',
+        index: null,
+        focusedIndex: null,
+        segmentCount: 0,
+        endpointCount: 0,
+        braidCount: 0
+    }
     state.arrivalHandoffDiagnostics ??= {
         active: false,
         fromIndex: null,
@@ -116,7 +124,15 @@ export function initJourneyState(): void {
         endpointCount: 0,
         opacity: 0
     }
-    state.strandContinuityState ??= { phase: 'idle', targetIndex: null, fromIndex: null, reason: '', startedAt: 0 }
+    state.strandContinuityState ??= {
+        phase: 'idle',
+        targetIndex: null,
+        fromIndex: null,
+        reason: '',
+        startedAt: 0,
+        arrivalTimeoutId: undefined,
+        settleTimeoutId: undefined
+    }
     state.myceliumMode ??= 'default'
     state.bloomIndices ??= new Set<number>()
     state.bridgeIndices ??= new Set<number>()
@@ -145,7 +161,7 @@ globalThis.queueMicrotask(() => {
     })
     initJourneyCanvasInteractionAdapter({
         summarizeNeighborReason,
-        walkThreadNeighbor,
+        walkThreadNeighbor: (index, options) => !!walkThreadNeighbor(index, options),
         inspectThreadNeighbor,
         scheduleCanvasThreadInspectionClear
     })

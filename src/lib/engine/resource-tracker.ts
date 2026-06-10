@@ -5,7 +5,7 @@ interface Disposable {
 }
 
 /** Minimal interface for objects that carry GPU resources (meshes, points, etc.) */
-interface GPUResourceHolder extends Disposable {
+interface GPUResourceHolder {
   geometry?: Disposable;
   material?: Material | Material[];
   children?: GPUResourceHolder[];

@@ -100,9 +100,10 @@ export const OVERVIEW_CAMERA_POSE: { position: number[]; target: number[] } | un
 // Sync OVERVIEW_CAMERA_POSE from legacy module once loaded
 void (async () => {
   while (!_loaded) await new Promise((r) => setTimeout(r, 10));
-  if (_restore?.OVERVIEW_CAMERA_POSE) {
-    (OVERVIEW_CAMERA_POSE as any).position = _restore.OVERVIEW_CAMERA_POSE.position;
-    (OVERVIEW_CAMERA_POSE as any).target = _restore.OVERVIEW_CAMERA_POSE.target;
+  const restoreModule = _restore as { OVERVIEW_CAMERA_POSE?: { position: number[]; target: number[] } } | null;
+  if (restoreModule?.OVERVIEW_CAMERA_POSE) {
+    (OVERVIEW_CAMERA_POSE as any).position = restoreModule.OVERVIEW_CAMERA_POSE.position;
+    (OVERVIEW_CAMERA_POSE as any).target = restoreModule.OVERVIEW_CAMERA_POSE.target;
   }
 })();
 

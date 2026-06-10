@@ -364,11 +364,15 @@ export const MYCELIUM_FIELD_SCALE = { x: 3.2, y: 2.6, z: 3.7 };
 // Sync SCENE_ATMOSPHERE from legacy module once loaded
 void (async () => {
   while (!_loaded) await new Promise((r) => setTimeout(r, 10));
-  if (_threeNodeManager?.SCENE_ATMOSPHERE) {
-    Object.assign(SCENE_ATMOSPHERE, _threeNodeManager.SCENE_ATMOSPHERE);
+  const nodeManager = _threeNodeManager as {
+    SCENE_ATMOSPHERE?: Record<string, any>;
+    MYCELIUM_FIELD_SCALE?: { x: number; y: number; z: number };
+  } | null;
+  if (nodeManager?.SCENE_ATMOSPHERE) {
+    Object.assign(SCENE_ATMOSPHERE, nodeManager.SCENE_ATMOSPHERE);
   }
-  if (_threeNodeManager?.MYCELIUM_FIELD_SCALE) {
-    Object.assign(MYCELIUM_FIELD_SCALE, _threeNodeManager.MYCELIUM_FIELD_SCALE);
+  if (nodeManager?.MYCELIUM_FIELD_SCALE) {
+    Object.assign(MYCELIUM_FIELD_SCALE, nodeManager.MYCELIUM_FIELD_SCALE);
   }
 })();
 
