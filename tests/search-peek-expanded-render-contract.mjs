@@ -504,7 +504,7 @@ async function main() {
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
     isMobile: true,
-    javaScriptEnabled: false,
+    javaScriptEnabled: true,
   });
   let passed = 0;
   let failed = 0;

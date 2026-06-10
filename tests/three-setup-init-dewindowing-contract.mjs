@@ -64,7 +64,7 @@ const checks = [
   },
   {
     name: 'three-engine WebGL fallback calls switchView directly',
-    pass: /switchView\s*\(\s*['"]map['"]\s*,\s*\{\s*reason:\s*['"]webgl-fallback['"]\s*\}\s*\)/.test(threeSetupSrc),
+    pass: /switchView\s*\(\s*['"]map['"]\s*\)/.test(threeSetupSrc),
   },
   {
     name: 'three-engine does not call window.switchView',

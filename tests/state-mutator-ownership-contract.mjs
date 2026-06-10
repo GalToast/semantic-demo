@@ -51,7 +51,7 @@ assert(
   /export\s*\{\s*withStateMutation,/.test(combinedStateSrc),
   'state.js must export withStateMutation()'
 );
-assert(/export\s+const\s+state\s*=\s*new\s+Proxy\s*\(/.test(combinedStateSrc), 'state.js must expose state through a proxy');
+assert(/export\s+const\s+state(?:\s*:\s*[^=]+)?\s*=\s*new\s+Proxy\s*\(/.test(combinedStateSrc), 'state.js must expose state through a proxy');
 
 for (const field of OWNED_FIELDS) {
   assert(combinedStateSrc.includes(`'${field}'`), `state.js critical-key set should include ${field}`);
@@ -65,7 +65,7 @@ for (const exportName of EXPECTED_EXPORTS) {
 }
 
 assert(
-  /import\s+\{\s*state\s*,\s*withStateMutation\s*\}\s+from\s+['"]\.\.\/state\.(?:js|ts)['"]/.test(mutatorSrc),
+  /import\s+\{[^}]*\bstate\b[^}]*\bwithStateMutation\b[^}]*\}\s+from\s+['"]\.\.\/state\.(?:js|ts)['"]/.test(mutatorSrc),
   'state-mutators.js must be the module boundary that imports withStateMutation()'
 );
 

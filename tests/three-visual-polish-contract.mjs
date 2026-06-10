@@ -122,7 +122,7 @@ includesAll(updateThreadsSource, [
     'five explicit segment pairs: 10 vertices / 30 floats',
     'const FLOATS_PER_BEZIER_EDGE = 30',
     'for (let i = 0; i < samples.length - 1; i++)',
-    'verts.push(samples[i], samples[i + 1])'
+    'verts.push(samples[i]!, samples[i + 1]!)'
 ], 'animated mycelium thread continuity');
 
 const semanticLensSource = interactionVisuals.match(/function getSemanticLensNeighborIndices[\s\S]*?\/\/ 4\. Step Inside anchor bloom light/)?.[0] || '';
