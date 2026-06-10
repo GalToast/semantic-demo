@@ -37,10 +37,10 @@ The deploy scripts build first, refresh the shell cache-buster query strings fro
    npm run check:cache
    ```
 
-3. **Create rollback backup** - The deploy scripts preserve the live payload before SCP at:
-   ```
-   /home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/backups/deploy-YYYYMMDD-HHMMSS
-   ```
+3. **Create rollback backup** - The deploy scripts preserve the live payload before SCP outside `public_html` at:
+    ```
+    /home/u741831384/backups/semantic-demo/deploy-YYYYMMDD-HHMMSS
+    ```
 
 4. **Push bundle** - Upload the bundle to the canonical live server path:
    ```
@@ -111,7 +111,7 @@ The backup directory contains:
 Manual rollback pattern:
 
 ```bash
-ssh -p 65002 mccullough-cloud 'cp -p "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/backups/deploy-STAMP/dist/bundle.js" "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/dist/bundle.js" && cp -p "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/backups/deploy-STAMP/semantic-demo.css" "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/semantic-demo.css" && cp -p "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/backups/deploy-STAMP/vector-explorer-polished.html" "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/vector-explorer-polished.html" && cp -p "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/backups/deploy-STAMP/.htaccess" "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/.htaccess" && cp -p "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/backups/deploy-STAMP/js/scanner.js" "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/js/scanner.js" && cp -p "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/backups/deploy-STAMP/scanner-root.js" "/home/u741831384/domains/mccullough.cloud/public_html/js/scanner.js"'
+ssh -p 65002 mccullough-cloud 'cp -p "/home/u741831384/backups/semantic-demo/deploy-STAMP/dist/bundle.js" "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/dist/bundle.js" && cp -p "/home/u741831384/backups/semantic-demo/deploy-STAMP/semantic-demo.css" "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/semantic-demo.css" && cp -p "/home/u741831384/backups/semantic-demo/deploy-STAMP/vector-explorer-polished.html" "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/vector-explorer-polished.html" && cp -p "/home/u741831384/backups/semantic-demo/deploy-STAMP/.htaccess" "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/.htaccess" && cp -p "/home/u741831384/backups/semantic-demo/deploy-STAMP/js/scanner.js" "/home/u741831384/domains/mccullough.cloud/public_html/semantic-demo/js/scanner.js" && cp -p "/home/u741831384/backups/semantic-demo/deploy-STAMP/scanner-root.js" "/home/u741831384/domains/mccullough.cloud/public_html/js/scanner.js"'
 ```
 
 After rollback, re-check live hashes for the pushed files and record the rollback evidence in the related Switchboard task or release report.

@@ -32,7 +32,11 @@ $Port       = if ($env:DEPLOY_PORT) { $env:DEPLOY_PORT } else { "65002" }
 $Target     = if ($env:DEPLOY_DOMAIN_TARGET) { $env:DEPLOY_DOMAIN_TARGET } else { "${SshTarget}:${RemoteDir}/" }
 $DomainRoot = "${SshTarget}:${RemoteRoot}/"
 $DeployStamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$BackupDir = "$RemoteDir/backups/deploy-$DeployStamp"
+# Backups go OUTSIDE public_html so they are not web-accessible.
+# Default: /home/u741831384/backups/semantic-demo/deploy-<stamp>
+# Override with DEPLOY_BACKUP_DIR to point at any private directory.
+$BackupParent = if ($env:DEPLOY_BACKUP_DIR) { $env:DEPLOY_BACKUP_DIR } else { "/home/u741831384/backups/semantic-demo" }
+$BackupDir = "$BackupParent/deploy-$DeployStamp"
 $SemanticArtifacts = @(
     "data.dat",
     "data.dat.gz",

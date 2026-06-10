@@ -40,7 +40,11 @@ if [[ "$1" == "--dryrun" ]]; then
   DRYRUN=true
 fi
 DEPLOY_STAMP="$(date +%Y%m%d-%H%M%S)"
-BACKUP_DIR="$REMOTE_DIR/backups/deploy-$DEPLOY_STAMP"
+# Backups go OUTSIDE public_html so they are not web-accessible.
+# Default: /home/u741831384/backups/semantic-demo/deploy-<stamp>
+# Override with DEPLOY_BACKUP_DIR to point at any private directory.
+BACKUP_PARENT="${DEPLOY_BACKUP_DIR:-/home/u741831384/backups/semantic-demo}"
+BACKUP_DIR="$BACKUP_PARENT/deploy-$DEPLOY_STAMP"
 
 function run() {
   if $DRYRUN; then
