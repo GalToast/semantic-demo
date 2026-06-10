@@ -371,7 +371,7 @@
   hidden={!focusStore().semanticDiveMode}
   aria-hidden={!focusStore().semanticDiveMode ? 'true' : 'false'}
 >
-  <button id="btn-inside-next" class="focus-stage-inside-btn" type="button">Next Stop</button>
+  <button id="btn-inside-next" class="focus-stage-inside-btn biofield-glow" type="button">Next Stop</button>
   <button id="btn-inside-map" class="focus-stage-inside-btn" type="button">Map</button>
   <button id="btn-inside-county" class="focus-stage-inside-btn" type="button">County</button>
 </div>
