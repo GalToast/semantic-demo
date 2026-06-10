@@ -40,7 +40,7 @@ export interface WebGLContextState {
   semanticLensGroup: Group | null;
   semanticLensGlow: Mesh | null;
   semanticLensSpokes: Group | null;
-  myceliumConnectionPairs: Array<{ a: number; b: number }>;
+  myceliumConnectionPairs: Array<{ a: number; b: number; layer: number }>;
   hemiLight: HemisphereLight | null;
   dirLight: DirectionalLight | null;
 
@@ -119,7 +119,7 @@ export const webglContext: WebGLContextState = {
   inspectedStrandGroup: null,
 };
 
-export interface LiveResourceCounts {
+export interface LiveResourceCounts extends Record<string, number> {
   geometries: number;
   textures: number;
   programs: number;
