@@ -158,36 +158,40 @@ export function storeSemanticSearchPayload(query: string, payload: SearchPayload
     state.semanticSearchCacheDiagnostics.stores += 1;
     markSemanticSearchCache('store', key);
 
-    while (state.semanticSearchResultCache.size > SEMANTIC_SEARCH_CACHE_MAX_ENTRIES) {
-        for (const [k, e] of state.semanticSearchResultCache.entries()) {
-            if (e && (now - e.storedAt > SEMANTIC_SEARCH_CACHE_TTL_MS)) {
-                state.semanticSearchResultCache.delete(k);
-                idb.remove(k).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err));
+    const cache = state.semanticSearchResultCache as unknown as Map<string, CacheEntry>;
+    while (cache.size > SEMANTIC_SEARCH_CACHE_MAX_ENTRIES) {
+        for (const [k, e] of cache.entries()) {
+            const ce = e as CacheEntry;
+            if (e && (now - ce.storedAt > SEMANTIC_SEARCH_CACHE_TTL_MS)) {
+                cache.delete(k);
+                idb.remove(k as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err));
                 state.semanticSearchCacheDiagnostics.evictions += 1;
             }
         }
-        if (state.semanticSearchResultCache.size > SEMANTIC_SEARCH_CACHE_MAX_ENTRIES) {
+        if (cache.size > SEMANTIC_SEARCH_CACHE_MAX_ENTRIES) {
             let oldestKey: string | null = null;
             let oldestTime = Infinity;
-            for (const [k, e] of state.semanticSearchResultCache.entries()) {
-                if (e && Number.isFinite(e.lastAccessedAt) && e.lastAccessedAt < oldestTime) {
-                    oldestTime = e.lastAccessedAt;
+            for (const [k, e] of cache.entries()) {
+                const ce = e as CacheEntry;
+                if (e && Number.isFinite(ce.lastAccessedAt) && ce.lastAccessedAt < oldestTime) {
+                    oldestTime = ce.lastAccessedAt;
                     oldestKey = k;
                 }
             }
             if (!oldestKey) break;
-            state.semanticSearchResultCache.delete(oldestKey);
-            idb.remove(oldestKey).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err));
+            cache.delete(oldestKey);
+            idb.remove(oldestKey as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err));
             state.semanticSearchCacheDiagnostics.evictions += 1;
         }
     }
 }
 
 export function getSemanticSearchCacheDiagnostics(): CacheDiagnosticsSnapshot {
+    const cache = state.semanticSearchResultCache as unknown as Map<string, CacheEntry>;
     return {
         ...state.semanticSearchCacheDiagnostics,
-        size: state.semanticSearchResultCache?.size || 0,
-        keys: state.semanticSearchResultCache ? Array.from(state.semanticSearchResultCache.keys()) : [],
+        size: cache?.size || 0,
+        keys: cache ? Array.from(cache.keys()) : [],
         ttlMs: SEMANTIC_SEARCH_CACHE_TTL_MS,
         maxEntries: SEMANTIC_SEARCH_CACHE_MAX_ENTRIES
     };

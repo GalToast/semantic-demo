@@ -61,6 +61,11 @@ interface FocusCameraState extends Omit<SemanticState, 'camera' | 'controls' | '
   camera: ChoreographyCamera
   controls: ChoreographyControls
   navState: FocusNavState
+  nodePositions: NodePosition[]
+  originalPositions: NodePosition[]
+  focusCameraTargetOffset: THREE.Vector3 | null
+  focusCameraAnimationToken: number
+  focusCameraOffset: THREE.Vector3 | null
 }
 
 const _s = state as unknown as FocusCameraState
