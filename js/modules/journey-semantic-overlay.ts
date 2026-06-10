@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * journey-semantic-overlay.ts — TypeScript shadow of journey-semantic-overlay.js
  * Focus-stage semantic thread overlay rendering with GLSL-enhanced Line2 material.

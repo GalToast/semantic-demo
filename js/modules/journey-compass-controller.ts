@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * js/modules/journey-compass-controller.ts
  *
@@ -156,8 +155,8 @@ export function syncMapTrailStrip(compassState: any = {}, presentationState: any
     const title = document.createElement('div');
     title.className = 'map-strip-title';
     title.textContent = compactStripTitle || stripTitle;
-    title.setAttribute('title', stripTitle);
-    title.setAttribute('aria-label', stripTitle);
+    title.setAttribute('title', title.textContent);
+    title.setAttribute('aria-label', title.textContent);
     strip.appendChild(title);
 }
 

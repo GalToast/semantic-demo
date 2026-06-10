@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * journey-focus-ui.ts
  *
