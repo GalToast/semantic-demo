@@ -189,14 +189,15 @@ export function applySemanticLaneHealthPayload(payload: LaneHealthPayload | null
 
     // Track only true warming probes for stuck detection. A degraded lane can
     // run indefinitely on text fallback and should not be presented as warming.
+    const _slw = state as unknown as Record<string, unknown>;
     if (laneState === 'warming') {
-        state.semanticLaneWarmingCounter = (state.semanticLaneWarmingCounter || 0) + 1;
+        _slw.semanticLaneWarmingCounter = ((_slw.semanticLaneWarmingCounter as number) || 0) + 1;
     } else {
-        state.semanticLaneWarmingCounter = 0;
+        _slw.semanticLaneWarmingCounter = 0;
     }
 
     // If warming persists beyond 3 consecutive probes, mark as stuck
-    if (state.semanticLaneWarmingCounter >= 3) {
+    if ((_slw.semanticLaneWarmingCounter as number) >= 3) {
         setSemanticLaneUiState('stuck', {
             label: options.label || provenanceLabel || 'Service Busy',
             title: options.title || provenanceDetail || 'Semantic search is taking longer than expected. Click to reload.'
