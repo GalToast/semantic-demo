@@ -58,7 +58,7 @@ test.describe('Extraction & De-monolith Contract Verification', () => {
     expect(exports.setActiveSearchResultRow).toBe(true);
   });
 
-  test('Module Seam: Camera Controls', async ({ page }) => {
+  test('Module Seam: Camera Controls', async () => {
     expect(cameraControlsSource).toMatch(/export\s+function\s+animateCameraToSearchCorridor\s*\(/);
     expect(cameraControlsSource).toMatch(/export\s+function\s+zoomCamera\s*\(/);
     expect(cameraControlsSource).toMatch(/export\s+function\s+animateCameraToNode\s*\(/);

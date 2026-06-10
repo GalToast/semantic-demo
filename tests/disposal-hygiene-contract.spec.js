@@ -161,7 +161,7 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {}); // wait for search results
 
     // Record disposal counts after search
-    const afterSearchStats = await getDisposalStats(page);
+    await getDisposalStats(page);
 
     // Now trigger rebuild: click first result (enters focus mode) and wait for mycelium to rebuild
     const firstResult = page.locator('.search-result-item').first();

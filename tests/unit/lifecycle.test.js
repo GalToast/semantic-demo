@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { state } from '../../js/state.js';
-import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, setMyceliumMode, setSemanticDiveMode, setTrailDepth } from '../../js/modules/lifecycle.js';
+import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, setMyceliumMode } from '../../js/modules/lifecycle.js';
 
 const stateMock = vi.hoisted(() => ({
   state: {

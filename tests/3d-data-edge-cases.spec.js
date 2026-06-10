@@ -237,7 +237,7 @@ async function slowSearchResponse(page) {
   };
 
   let resume;
-  const slowPromise = new Promise(resolve => {
+  new Promise(resolve => {
     resume = resolve;
   });
 

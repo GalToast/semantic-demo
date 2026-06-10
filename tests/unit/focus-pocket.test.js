@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as focusPocket from '../../js/modules/focus-pocket.js';
 import * as focusPocketGeometry from '../../js/modules/focus-pocket-geometry.js';
 import { state, withStateMutation } from '../../js/state.js';
-import * as environment from '../../js/modules/environment.js';
 import * as threadInspector from '../../js/modules/thread-inspector.js';
 import * as THREE from 'three';
 

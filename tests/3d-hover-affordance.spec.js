@@ -125,7 +125,7 @@ async function moveUntilHoverClears(page) {
         return cleared && cursor !== 'pointer';
       }, undefined, { timeout: 800 });
       return await getHoverState(page);
-    } catch (e) {
+    } catch (_e) {
       lastState = await getHoverState(page);
     }
   }

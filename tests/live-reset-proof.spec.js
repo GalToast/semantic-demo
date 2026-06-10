@@ -141,7 +141,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     // Call resetExplorationFocus directly (preserves search per its contract)
     await page.evaluate(() => {
-      (window.__APP_ACTIONS__?.resetExplorationFocus)();
+      window.__APP_ACTIONS__?.resetExplorationFocus?.();
     });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
@@ -179,7 +179,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     // returnToOverview = full reset (clears search too)
     await page.evaluate(() => {
-      (window.__APP_ACTIONS__?.returnToOverview)();
+      window.__APP_ACTIONS__?.returnToOverview?.();
     });
     await page.waitForFunction(
       () => document.body.dataset.activeView === 'galaxy',
