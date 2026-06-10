@@ -117,7 +117,7 @@ export function buildDatasetBackedMockResults(
         const n = point?.naics;
         if (!n) return null;
         const m = String(n).match(/^(\d{6})/);
-        return m ? m[1] : null;
+        return m?.[1] ?? null;
     };
 
     return state.points
@@ -177,7 +177,7 @@ export function buildDatasetBackedMockResults(
                 provenance: 'Static dev dataset fallback',
                 thread_type: 'Search match',
                 city: point.city ?? '',
-                naics: point.naics || point.what || '',
+                naics: String(point.naics || point.what || ''),
                 public_note: (enrichment?.business_overview as string) || point.what || '',
                 website: Boolean(point.website),
                 email: Boolean(point.email),
