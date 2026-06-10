@@ -10,7 +10,7 @@
  */
 
 import * as THREE from 'three';
-import { state as _state } from /* @vite-ignore */ '@legacy/state';
+import { state as _state } from '@legacy/state';
 const state = _state as any;
 import { webglContext } from './webgl-context';
 import { SCENE_PALETTE } from './design-tokens';

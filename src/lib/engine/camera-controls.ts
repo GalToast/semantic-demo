@@ -71,9 +71,9 @@ async function _ensureModules(): Promise<void> {
   if (_loaded) return;
   try {
     const [coreMod, restoreMod, choreoMod] = await Promise.all([
-      import(/* @vite-ignore */ '@legacy/modules/camera-controls-core'),
-      import(/* @vite-ignore */ '@legacy/modules/camera-controls-restore'),
-      import(/* @vite-ignore */ '@legacy/modules/camera-controls-choreography'),
+      import('@legacy/modules/camera-controls-core'),
+      import('@legacy/modules/camera-controls-restore'),
+      import('@legacy/modules/camera-controls-choreography'),
     ]);
     _core = coreMod as unknown as CameraControlsCoreModule;
     _restore = restoreMod as unknown as CameraControlsRestoreModule;
@@ -94,8 +94,10 @@ export function cancelFocusCameraAnimation(): any {
 
 // ── Restore functions (from legacy restore module) ───────────────────────────
 
-export const OVERVIEW_CAMERA_POSE: { position: number[]; target: number[] } | undefined =
-  undefined;
+export const OVERVIEW_CAMERA_POSE: { position: number[]; target: number[] } = {
+  position: [],
+  target: [],
+};
 
 // Sync OVERVIEW_CAMERA_POSE from legacy module once loaded
 void (async () => {
