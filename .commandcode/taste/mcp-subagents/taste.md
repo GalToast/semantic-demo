@@ -5,3 +5,13 @@
 - Prefer paid opencode-go/mimo-v2.5 model over free tiers for complex migration work. Confidence: 0.90
 - Use live_steer=true on qwen harness for paid models to enable real-time guidance. Confidence: 0.85
 - When workers get stuck at 9KB stdout (bootstrapping bottleneck), cancel and relaunch with shorter prompts or different model. Confidence: 0.80
+- Enable live_steer by default for all subagents (steering should be opt-out, not opt-in). Confidence: 0.85
+- Use a single universal key router that handles all providers (NVIDIA, Kilo, Minimax, etc.). Confidence: 0.80
+- Test NVIDIA NIM models directly via API keys, not through OpenCode harness. Confidence: 0.75
+- Rotate through multiple API keys when encountering timeouts. Confidence: 0.70
+- Use vanilla upstream OpenCode build, not a fork. Confidence: 0.80
+- Include Kilo Code as a provider option in external subagent picker. Confidence: 0.75
+- Don't arbitrarily clamp models to "high" quality - many support extended context. Confidence: 0.70
+- Initialize provider servers through MCP server launch pattern (like switchboard). Confidence: 0.75
+- Use Minimax M3 from provider directly, not free tier. Confidence: 0.70
+- Prefer PowerShell 7 for shell operations. Confidence: 0.65
