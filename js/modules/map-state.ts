@@ -576,8 +576,8 @@ export function getRouteAnchorIndex(routeIndices: number[]): number | null {
     const focusOwnsRoute = ['search-focus', 'thread-walk', 'node-focus', 'inside-pocket'].includes(routeOwner);
     const focusCandidates = [state.navState.focusedIndex, state.focusedNode];
     const searchCandidates = [
-        (state.currentSearchSummary as Record<string, unknown>)?.anchorIndex as number | undefined,
-        (state.currentSearchSummary as Record<string, unknown>)?.topIndex as number | undefined,
+        state.currentSearchSummary?.anchorIndex ?? undefined,
+        state.currentSearchSummary?.topIndex ?? undefined,
         routeIndices?.[0]
     ];
     const candidates = focusOwnsRoute
