@@ -451,7 +451,7 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
       const stack = document.elementsFromPoint(centerX, centerY);
       const topmost = stack[0] ?? null;
       const canvasContainer = document.querySelector('#canvas-container');
-      const canvas = document.querySelector('canvas');
+      const _canvas = document.querySelector('canvas');
       const isTopmostDiveBtn = Boolean(topmost && (
         topmost === diveBtn ||
         topmost.closest?.('button') === diveBtn ||

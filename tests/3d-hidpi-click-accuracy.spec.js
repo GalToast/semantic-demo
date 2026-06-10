@@ -1,11 +1,9 @@
 import { test, expect } from '@playwright/test';
 import {
   BASE_URL,
-  setupMockSearch,
   probe,
   isValidNodeIndex,
   projectedCanvasCandidates,
-  readPocketNodeScales,
   probeFocusPoint,
   probeCanvasBacking
 } from './helpers/3d-interaction-helpers.js';

@@ -591,7 +591,7 @@ async function assert_search_error(page, ctx) {
   });
 
   const base = positionalUrl.includes('?') ? '&' : '?';
-  const errorUrl = `${positionalUrl}${base}view=galaxy&q=forced-surface-contract-search-error`;
+  const errorUrl = `${positionalUrl}${base}view=galaxy&q=forced-surface-contract-search-error&staticDev=0`;
   await loadAndWait(page, errorUrl);
   await page.waitForSelector('.search-error-state', { state: 'visible', timeout: 10000 });
 
@@ -3817,7 +3817,7 @@ async function productRouteSnapshot(page, { preview = false } = {}) {
       search: rectSnapshot('.search-container'),
       infoPanel: rectSnapshot('#info-panel'),
       focusStage: rectSnapshot('#focus-stage'),
-      inspector: rectSnapshot('#thread-inspector'),
+      inspector: rectSnapshot('#thread-inspector, #focus-thread-inspector'),
       neighbors: rectSnapshot('.focus-stage-neighbors'),
       modeGrid: rectSnapshot('#mode-chips'),
       overflowX: document.documentElement.scrollWidth > window.innerWidth,

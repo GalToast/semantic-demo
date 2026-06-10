@@ -1,22 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { BASE_URL, setupMockSearch } from './helpers/3d-interaction-helpers.js';
 
-const HEALTH_OK = {
-  ok: true,
-  state: 'healthy',
-  provenance: { label: 'Search ready', detail: 'Semantic search is ready.' }
-};
-
-const SEARCH_STUB = {
-  ok: true,
-  count: 3,
-  results: [
-    { lead_id: 1, score: 0.99, semantic_score: 0.99, public_note: 'Coffee shop on Main St.' },
-    { lead_id: 2, score: 0.91, semantic_score: 0.91, public_note: 'Cafe near the park.' },
-    { lead_id: 20, score: 0.86, semantic_score: 0.86, public_note: 'Espresso bar downtown.' }
-  ]
-};
-
 async function openPage(browser, { width, height, deviceScaleFactor = 1 }) {
   const context = await browser.newContext({
     viewport: { width, height },

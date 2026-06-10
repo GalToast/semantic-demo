@@ -387,7 +387,6 @@ test.describe('3D cluster readability', () => {
       const labels = Array.from(document.querySelectorAll('.galaxy-cluster-label.visible'))
         .filter((el) => {
           const rect = el.getBoundingClientRect();
-          const cs = getComputedStyle(el);
           const cx = rect.left + rect.width / 2;
           const cy = rect.top + rect.height / 2;
           return rect.width > 0 && rect.height > 0 && cx >= 0 && cy >= 0 && cx <= window.innerWidth && cy <= window.innerHeight;
@@ -395,6 +394,7 @@ test.describe('3D cluster readability', () => {
       if (!labels.length) return null;
       const el = labels[0];
       const rect = el.getBoundingClientRect();
+      const cs = getComputedStyle(el);
       if (!rect.width || !rect.height) return null;
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;

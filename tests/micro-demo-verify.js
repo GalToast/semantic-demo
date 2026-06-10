@@ -22,7 +22,7 @@ const PATH = process.env.TEST_APP_PATH || '/vector-explorer-polished.html';
 const DEMO_FORCE = '?demo=force';
 const DEMO_NODEMO = '?nodemo';
 const STORAGE_KEY = 'moco_mycelium_demo_v1';
-const SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1';
+const _SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1';
 const PROOF_DIR = 'tmp/micro-demo-proof';
 
 let passed = 0;

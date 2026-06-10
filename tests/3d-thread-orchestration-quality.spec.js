@@ -154,7 +154,7 @@ function continuitySample(line) {
 const SAG_THRESHOLD = 0.004;
 const FLOATS_PER_VERTEX = 3;
 const VERTS_PER_EDGE = 10;
-const FLOATS_PER_EDGE = FLOATS_PER_VERTEX * VERTS_PER_EDGE; // 30
+const _FLOATS_PER_EDGE = FLOATS_PER_VERTEX * VERTS_PER_EDGE; // 30
 
 async function probeThreadSag(page) {
   return page.evaluate(({ THRESHOLD, FPV, VPE }) => {

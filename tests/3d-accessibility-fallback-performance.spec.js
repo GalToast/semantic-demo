@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { focusNodeViaApp, midpointIndex } from './helpers/3d-interaction-helpers.js';
+import { BASE_URL, focusNodeViaApp, midpointIndex } from './helpers/3d-interaction-helpers.js';
 
 const HEALTH_OK = {
   ok: true,
