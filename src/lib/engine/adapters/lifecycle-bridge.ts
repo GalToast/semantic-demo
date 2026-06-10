@@ -26,10 +26,6 @@ import type {
   ActiveFilters,
   FilterOptions,
   SceneDiagnostics,
-  ThreeEngineModule,
-  CameraControlsModule,
-  NodeManagerModule,
-  ThreadManagerModule,
   ViewControllerModule,
   FilterStateModule,
   EventBusModule,
@@ -38,47 +34,45 @@ import type {
 import { syncDataToLegacyState } from './data-bridge';
 import { attachLegacyState, loadSemanticThreads } from '@lib/semantic-threads';
 
+// ── TS Port Imports (canonical implementations) ─────────────────────────────
+// These replace the legacy module lazy-loading that previously happened in
+// loadModules().  Each port manages its own internal legacy module loading
+// via _ensureModules(), so the bridge no longer needs to duplicate that work.
+
+import {
+  initThreeJS as _initThreeJS,
+  deinit as _deinit,
+  animate as _animate,
+  getSceneRenderableDiagnostics as _getSceneRenderableDiagnostics,
+} from '../three-engine';
+
+import {
+  createMycelium as _createMycelium,
+  disposeMycelium as _disposeMycelium,
+  getGroupLineSegmentCount as _getGroupLineSegmentCount,
+} from '../thread-manager';
+
 // ── Module Loader ────────────────────────────────────────────────────────────
 
 /**
- * Dynamically import all legacy JS modules and store their typed references
- * on the shared BridgeContext.
+ * Load the legacy state singleton for data-sync and bridge-internal reads.
  *
- * Uses `Promise.all` for parallel loading.  Each module self-registers on the
- * global `state` object at import time.  The casts (`as unknown as T`) narrow
- * the inferred `any` from JS dynamic imports to our typed local interfaces.
- *
- * Also acquires the `withStateMutation` wrapper from `window` so that
- * critical state writes bypass the production Proxy guard.
+ * TS port functions (initThreeJS, createMycelium, etc.) manage their own
+ * legacy module loading via _ensureModules().  This loader only acquires
+ * the state reference that the bridge needs for data sync, resize, and
+ * diagnostic queries.
  */
 async function loadModules(ctx: BridgeContext): Promise<void> {
-  const [
-    threeEngineRaw,
-    cameraControlsRaw,
-    nodeManagerRaw,
-    threadManagerRaw,
-    viewControllerRaw,
-    filterStateRaw,
-    stateModule,
-  ] = await Promise.all([
-    import('@legacy/modules/three-engine.js'),
-    import('@legacy/modules/camera-controls.js'),
-    import('@legacy/modules/three-node-manager.js'),
-    import('@legacy/modules/three-thread-manager.js'),
-    import('@legacy/modules/view-controller.js'),
-    import('@legacy/modules/filter-state.js'),
-    import('@legacy/state.js'),
+  const [stateModule, viewControllerRaw, filterStateRaw] = await Promise.all([
+    import(/* @vite-ignore */ '@legacy/state.js'),
+    import(/* @vite-ignore */ '@legacy/modules/view-controller.js'),
+    import(/* @vite-ignore */ '@legacy/modules/filter-state.js'),
   ]);
 
-  ctx._threeEngine = threeEngineRaw as unknown as ThreeEngineModule;
-  ctx._cameraControls = cameraControlsRaw as unknown as CameraControlsModule;
-  ctx._nodeManager = nodeManagerRaw as unknown as NodeManagerModule;
-  ctx._threadManager = threadManagerRaw as unknown as ThreadManagerModule;
+  ctx._state = (stateModule as unknown as { state: LegacyState }).state;
   ctx._viewController = viewControllerRaw as unknown as ViewControllerModule;
   ctx._filterState = filterStateRaw as unknown as FilterStateModule;
-  ctx._state = (stateModule as unknown as { state: LegacyState }).state;
 
-  // Acquire the withStateMutation wrapper for critical-key writes
   _acquireWithMutation(ctx);
 }
 
@@ -244,8 +238,8 @@ export function createLifecycleMethods(
         // 3. Sync Svelte data stores into the legacy state singleton
         await syncDataToLegacyState(ctx);
 
-        // 4. Initialise the Three.js scene (creates its own renderer canvas)
-        const success = ctx._threeEngine!.initThreeJS();
+        // 4. Initialise the Three.js scene (delegates to TS port three-engine.ts)
+        const success = _initThreeJS();
         if (!success) {
           ctx.status = 'degraded';
           ctx.callbacks.onGraphicsStateChange?.('fallback');
@@ -261,13 +255,13 @@ export function createLifecycleMethods(
         }
 
         // 6. Retry mycelium thread creation if data-timing prevented it
+        //    (delegates to TS port thread-manager.ts)
         if (
-          ctx._threadManager &&
           ctx._state?.points?.length &&
           ctx._state?.nodePositions?.length
         ) {
           try {
-            ctx._threadManager.createMycelium();
+            _createMycelium();
           } catch (threadErr) {
             console.warn('[EngineBridge] thread init retry failed:', threadErr);
           }
@@ -333,9 +327,9 @@ export function createLifecycleMethods(
         // 9. Subscribe to the legacy event bus
         await bindEventBridge(ctx);
 
-        // 10. Mark ready and start the animation loop
+        // 10. Mark ready and start the animation loop (delegates to TS port)
         ctx.status = 'ready';
-        ctx._threeEngine!.animate();
+        _animate();
       } catch (err) {
         console.error('EngineBridge.init: initialization failed', err);
         unbindEventBridge(ctx);
@@ -363,21 +357,17 @@ export function createLifecycleMethods(
       }
       ctx._canvasInteractionBound = false;
 
-      // 3. Release mycelium GPU resources
-      if (ctx._threadManager) {
-        try {
-          ctx._threadManager.disposeMycelium();
-        } catch (disposalErr) {
-          console.warn('[EngineBridge] thread disposal failed:', disposalErr);
-        }
+      // 3. Release mycelium GPU resources (delegates to TS port thread-manager.ts)
+      try {
+        _disposeMycelium();
+      } catch (disposalErr) {
+        console.warn('[EngineBridge] thread disposal failed:', disposalErr);
       }
 
-      // 4. Tear down the Three.js renderer and scene
-      if (ctx._threeEngine) {
-        ctx._threeEngine.deinit();
-      }
+      // 4. Tear down the Three.js renderer and scene (delegates to TS port three-engine.ts)
+      _deinit();
 
-      // 5. Clear all module references
+      // 5. Clear module references
       ctx._threeEngine = null;
       ctx._cameraControls = null;
       ctx._nodeManager = null;
@@ -468,24 +458,18 @@ export function createLifecycleMethods(
     // ── Thread Segment Count ──────────────────────────────────────────────
 
     getThreadSegmentCount(): number {
-      if (!ctx._state || !ctx._threadManager) return 0;
+      if (!ctx._state) return 0;
 
       let total = 0;
       try {
         if (ctx._state.myceliumCoreLines) {
-          total += ctx._threadManager.getGroupLineSegmentCount(
-            ctx._state.myceliumCoreLines
-          );
+          total += _getGroupLineSegmentCount(ctx._state.myceliumCoreLines);
         }
         if (ctx._state.myceliumWispyLines) {
-          total += ctx._threadManager.getGroupLineSegmentCount(
-            ctx._state.myceliumWispyLines
-          );
+          total += _getGroupLineSegmentCount(ctx._state.myceliumWispyLines);
         }
         if (ctx._state.myceliumBridgeLines) {
-          total += ctx._threadManager.getGroupLineSegmentCount(
-            ctx._state.myceliumBridgeLines
-          );
+          total += _getGroupLineSegmentCount(ctx._state.myceliumBridgeLines);
         }
       } catch (_) {
         // best-effort: thread group references may be null after disposal
@@ -522,7 +506,7 @@ export function createLifecycleMethods(
           wispy: perf.myceliumWispySegments ?? 0,
           bridge: perf.myceliumBridgeSegments ?? 0,
         },
-        memory: ctx._threeEngine?.getSceneRenderableDiagnostics().memory ?? {},
+        memory: _getSceneRenderableDiagnostics().memory,
       };
     },
 

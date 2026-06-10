@@ -27,6 +27,10 @@ import type {
 
 import { setSearchGlow, clearSearchGlow } from '@lib/stores/search';
 
+// ── TS Port Imports (canonical implementations) ─────────────────────────────
+
+import { animateCameraToSearchCorridor as _animateCameraToSearchCorridor } from '../camera-controls';
+
 // ── Pure Helpers ─────────────────────────────────────────────────────────────
 
 /**
@@ -95,12 +99,6 @@ export function createSearchMethods(
     }
   }
 
-  function _assertModules(method: string): void {
-    if (!ctx._cameraControls) {
-      throw new Error(`EngineBridge.${method}: legacy modules not loaded`);
-    }
-  }
-
   return {
     // ── Search Glow ───────────────────────────────────────────────────────
 
@@ -117,13 +115,12 @@ export function createSearchMethods(
       options: SearchCorridorOptions = {}
     ): void {
       _assertReady('focusSearchCorridor');
-      _assertModules('focusSearchCorridor');
 
       // Apply glow for the full set (anchor + results) so the corridor
       // is visible during the camera fly-to animation.
       _applyGlow(ctx, [anchorIndex, ...resultIndices]);
 
-      ctx._cameraControls!.animateCameraToSearchCorridor(
+      _animateCameraToSearchCorridor(
         anchorIndex,
         resultIndices,
         {
