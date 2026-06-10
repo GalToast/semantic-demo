@@ -25,7 +25,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import {
-  BASE_URL, setupMockSearch, openApp,
+  openApp,
   probe, isValidNodeIndex, isReachableScreenCoordinate, focusNodeViaApp
 } from './helpers/3d-interaction-helpers.js';
 

@@ -26,8 +26,8 @@
 
 import { test, expect } from '@playwright/test';
 import {
-  BASE_URL, setupMockSearch, openApp,
-  probe, probeFocusPocket, isReachableScreenCoordinate, focusNodeViaApp
+  openApp,
+  isReachableScreenCoordinate, focusNodeViaApp
 } from './helpers/3d-interaction-helpers.js';
 
 const FOCUS_GHOST_TIMEOUT_MS = 120000;
