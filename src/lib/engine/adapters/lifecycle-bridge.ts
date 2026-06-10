@@ -64,9 +64,9 @@ import {
  */
 async function loadModules(ctx: BridgeContext): Promise<void> {
   const [stateModule, viewControllerRaw, filterStateRaw] = await Promise.all([
-    import(/* @vite-ignore */ '@legacy/state.js'),
-    import(/* @vite-ignore */ '@legacy/modules/view-controller.js'),
-    import(/* @vite-ignore */ '@legacy/modules/filter-state.js'),
+    import('@legacy/state.js'),
+    import('@legacy/modules/view-controller.js'),
+    import('@legacy/modules/filter-state.js'),
   ]);
 
   ctx._state = (stateModule as unknown as { state: LegacyState }).state;

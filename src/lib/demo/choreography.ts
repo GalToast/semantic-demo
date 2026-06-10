@@ -30,12 +30,11 @@ import type { DemoPhase } from '@lib/types/state';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const _choreography: Record<string, any> = {} as Record<string, any>;
 
-function _loadChoreography(): void {
+async function _loadChoreography(): Promise<void> {
   if ((_choreography as Record<string, unknown>).setDemoNodeIndex) return;
   try {
     // Dynamic import so the TS module doesn't hard-rely on the legacy module
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const mod = require('@legacy/modules/micro-demo-choreography.js');
+    const mod = await import('@legacy/modules/micro-demo-choreography.js');
     Object.assign(_choreography, mod);
   } catch {
     debugWarn('[demo] Failed to load legacy choreography module');
@@ -134,6 +133,10 @@ export function shouldRunMicroDemo(): boolean {
 }
 
 export function startMicroDemo(): void {
+  void _startMicroDemo();
+}
+
+async function _startMicroDemo(): Promise<void> {
   // Use demo phase from store for re-entrancy check
   const phase = get(demoPhase);
   if (phase !== 'IDLE') {
@@ -191,7 +194,7 @@ export function startMicroDemo(): void {
   startDemo(node);
 
   // Delegate to legacy choreography module
-  _loadChoreography();
+  await _loadChoreography();
   if (typeof _choreography.setDemoNodeIndex === 'function') {
     _choreography.setDemoNodeIndex(node);
   }
@@ -205,10 +208,11 @@ export function startMicroDemo(): void {
 }
 
 export function cancelMicroDemo(reason = 'user-input'): void {
-  _loadChoreography();
-  if (typeof _choreography.cancelChoreography === 'function') {
-    _choreography.cancelChoreography(reason);
-  }
+  void _loadChoreography().then(() => {
+    if (typeof _choreography.cancelChoreography === 'function') {
+      _choreography.cancelChoreography(reason);
+    }
+  });
   cancelDemo();
 }
 

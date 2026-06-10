@@ -11,13 +11,13 @@
 
 import { webglContext } from './webgl-context';
 import * as THREE from 'three';
-import { state as _state, withStateMutation } from /* @vite-ignore */ '@legacy/state';
+import { state as _state, withStateMutation } from '@legacy/state';
 const state = _state as any;
 import {
     buildGeometricMyceliumEdges,
     buildSemanticMyceliumEdges,
     pushBezierLinePair
-} from /* @vite-ignore */ '@legacy/modules/mycelium-engine';
+} from '@legacy/modules/mycelium-engine';
 import { disposeObject3D } from './resource-tracker';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
