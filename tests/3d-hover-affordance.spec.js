@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { BASE_URL, setupMockSearch, openApp, isValidNodeIndex, projectedCandidates, focusNodeViaApp } from './helpers/3d-interaction-helpers.js';
+import { openApp, isValidNodeIndex, projectedCandidates, focusNodeViaApp } from './helpers/3d-interaction-helpers.js';
 
 async function getHoverState(page) {
   return page.evaluate(() => {

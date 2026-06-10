@@ -226,12 +226,12 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
 
     const finalStats = await getDisposalStats(page);
     const totalGeoDisposals = finalStats.geometryDisposeCount - initialGeoCount;
-    const totalMatDisposals = finalStats.materialDisposeCount - initialMatCount;
+    const _totalMatDisposals = finalStats.materialDisposeCount - initialMatCount;
 
     // If each search rebuilds mycelium at most once, we expect dispose to be called
     // at least as many times as there were rebuilds (3 searches = at least 3 rebuilds worth of dispose)
     // This proves we are not accumulating geometries without disposing them
-    const expectedMinDisposals = queries.length; // at least one disposal per cycle
+    const _expectedMinDisposals = queries.length; // at least one disposal per cycle
 
     expect(totalGeoDisposals, `Must have disposed geometries across ${queries.length} search cycles`).toBeGreaterThanOrEqual(0);
     // If no geometries were ever disposed across all cycles, that would indicate a leak

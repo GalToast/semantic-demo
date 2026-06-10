@@ -28,7 +28,7 @@ async function performMockedSearch(page, query = 'coffee') {
   } catch {
     await page.evaluate((searchQuery) => {
       if (typeof (window.__APP_ACTIONS__?.search) === 'function') {
-        (window.__APP_ACTIONS__?.search)(searchQuery);
+        window.__APP_ACTIONS__.search(searchQuery);
       }
     }, query);
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });

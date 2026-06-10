@@ -364,10 +364,6 @@ test.describe('focus-neighborhood interaction', () => {
 
     expect(neighbor.hoverIndex, `short-landscape hover neighbor must not be anchor (${pre.focusedNode}), got ${neighbor.hoverIndex}`).not.toBe(pre.focusedNode);
 
-    const hoverState = await page.evaluate(() => ({
-      hoverHighlightIndex: window.__TEST_STATE__?.hoverHighlightIndex ?? null,
-      canvasCursor: window.__TEST_STATE__?.renderer?.domElement?.style?.cursor ?? ''
-    }));
     // Cursor string is racy; hoverHighlightIndex is the canonical semantic hover signal.
     const hoveredMobile = await page.evaluate(() => {
       const h = window.__TEST_STATE__?.hoverHighlightIndex;
@@ -832,10 +828,6 @@ test.describe('focus-neighborhood interaction', () => {
 
     expect(neighbor.hoverIndex, `tablet hover neighbor must not be anchor (${pre.focusedNode}), got ${neighbor.hoverIndex}`).not.toBe(pre.focusedNode);
 
-    const hoverState = await page.evaluate(() => ({
-      hoverHighlightIndex: window.__TEST_STATE__?.hoverHighlightIndex ?? null,
-      canvasCursor: window.__TEST_STATE__?.renderer?.domElement?.style?.cursor ?? ''
-    }));
     // Cursor string is racy; hoverHighlightIndex is the canonical semantic hover signal.
     const hoveredTablet = await page.evaluate(() => {
       const h = window.__TEST_STATE__?.hoverHighlightIndex;

@@ -15,8 +15,8 @@
 
 import { test, expect } from '@playwright/test';
 import {
-  BASE_URL, setupMockSearch, openApp,
-  probe, isValidNodeIndex, isReachableScreenCoordinate, focusNodeViaApp
+  openApp,
+  isValidNodeIndex, isReachableScreenCoordinate, focusNodeViaApp
 } from './helpers/3d-interaction-helpers.js';
 
 const RAPID_RESELECTION_TIMEOUT_MS = 120000;

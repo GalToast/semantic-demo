@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { BASE_URL, SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch, openApp, probe, projectedCandidates, probeFocusPocket, focusNodeViaApp } from './helpers/3d-interaction-helpers.js';
+import { openApp, probe, projectedCandidates, probeFocusPocket, focusNodeViaApp } from './helpers/3d-interaction-helpers.js';
 import { mutate } from './helpers/state-harness.js';
 
 function isValidNodeIndex(value, pointCount) {

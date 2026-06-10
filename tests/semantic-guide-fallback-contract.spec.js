@@ -16,7 +16,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, '..');
+const _ROOT = path.resolve(__dirname, '..');
 const APP_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
 
 /**

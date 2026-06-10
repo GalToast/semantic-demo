@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { BASE_URL, setupMockSearch, openApp, probe, isValidNodeIndex, projectedCanvasCandidates } from './helpers/3d-interaction-helpers.js';
+import { openApp, probe, isValidNodeIndex, projectedCanvasCandidates } from './helpers/3d-interaction-helpers.js';
 
 async function findClickableNode(page) {
   const candidates = await projectedCanvasCandidates(page);

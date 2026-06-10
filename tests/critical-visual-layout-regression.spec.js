@@ -35,14 +35,6 @@ async function probeRect(page, selector) {
   }, selector);
 }
 
-/** Returns true when two rects overlap on both axes. */
-function rectsOverlap(a, b) {
-  if (!a || !b) return false;
-  const xOverlap = a.left < b.right && b.left < a.right;
-  const yOverlap = a.top < b.bottom && b.top < a.bottom;
-  return xOverlap && yOverlap;
-}
-
 // TEST 1 - Mobile focus panel overlap (390x844, trail/inside mode)
 
 test.describe('Critical Visual Layout Regression', () => {

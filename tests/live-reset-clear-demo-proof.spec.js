@@ -64,7 +64,7 @@ async function waitForResults(page, timeout = 15000) {
   try {
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 });
   } catch {
-    await page.evaluate((q) => { if (typeof (window.__APP_ACTIONS__?.search) === 'function') (window.__APP_ACTIONS__?.search)(q); }, 'coffee');
+    await page.evaluate((q) => { if (typeof (window.__APP_ACTIONS__?.search) === 'function') window.__APP_ACTIONS__.search(q); }, 'coffee');
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: timeout });
   }
 }

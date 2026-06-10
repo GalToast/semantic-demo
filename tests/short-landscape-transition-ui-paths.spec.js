@@ -25,7 +25,7 @@ async function performSearch(page, query = 'coffee') {
       el.dispatchEvent(new Event('input', { bubbles: true }));
     }
     if (typeof (window.__APP_ACTIONS__?.search) === 'function') {
-      await (window.__APP_ACTIONS__?.search)(q, { preferCachedResults: false });
+      await window.__APP_ACTIONS__.search(q, { preferCachedResults: false });
     }
   }, query);
   await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 });
