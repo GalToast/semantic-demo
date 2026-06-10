@@ -11,6 +11,7 @@
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { createHash } from 'crypto';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -26,6 +27,8 @@ if (!cspMatch) {
 const cspRaw = cspMatch[1].replace(/\s+/g, ' ').trim();
 console.log('CSP header found in .htaccess');
 console.log(`Raw:\n  ${cspRaw}\n`);
+
+const html = readFileSync(resolve(ROOT, 'vector-explorer-polished.html'), 'utf-8');
 
 // Parse directives
 const directives = {};
@@ -79,6 +82,15 @@ const knownOrigins = {
   ],
 };
 
+const importmapMatch = html.match(/<script\s+type=["']importmap["'][^>]*>([\s\S]*?)<\/script>/i);
+if (importmapMatch) {
+  const hash = `sha256-${createHash('sha256').update(importmapMatch[1]).digest('base64')}`;
+  knownOrigins['script-src'].push({
+    origin: `'${hash}'`,
+    source: 'inline importmap in vector-explorer-polished.html',
+  });
+}
+
 // ── Verify each known origin is covered ─────────────────────────────
 let allPass = true;
 const checkDirectives = Object.keys(knownOrigins);
@@ -120,6 +132,27 @@ for (const d of requiredDirectives) {
 // ── Warn about overly permissive directives ─────────────────────────
 if (directives['default-src'] && directives['default-src'].length > 1) {
   console.warn(`WARN: default-src has ${directives['default-src'].length} sources; prefer 'self' only`);
+}
+
+const inlineScripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+  .filter(match => !/\bsrc\s*=/.test(match[1]))
+  .map(match => ({
+    attrs: match[1],
+    body: match[2],
+    isImportmap: /\btype\s*=\s*["']importmap["']/.test(match[1]),
+  }));
+
+for (const script of inlineScripts) {
+  const hash = `'sha256-${createHash('sha256').update(script.body).digest('base64')}'`;
+  const allowed = directives['script-src'] || [];
+  if (!allowed.includes(hash)) {
+    console.error(`FAIL: Inline script is not covered by script-src hash ${hash}`);
+    allPass = false;
+  } else if (script.isImportmap) {
+    console.log(`  OK: script-src covers inline importmap by hash ${hash}`);
+  } else {
+    console.log(`  OK: script-src covers inline script by hash ${hash}`);
+  }
 }
 
 console.log('');

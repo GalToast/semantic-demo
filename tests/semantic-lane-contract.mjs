@@ -22,9 +22,29 @@ globalThis.window = {
     clearInterval
 };
 const elementsById = new Map();
+class FakeElement {
+  constructor() {
+    this.dataset = {};
+    this.style = {};
+    this.hidden = false;
+    this.textContent = '';
+    this.title = '';
+    this.attributes = new Map();
+  }
+  setAttribute(name, value) {
+    this.attributes.set(name, value);
+  }
+  removeAttribute(name) {
+    this.attributes.delete(name);
+  }
+  getAttribute(name) {
+    return this.attributes.get(name) || null;
+  }
+}
 globalThis.document = {
   body: { dataset: {} },
   getElementById: (id) => elementsById.get(id) || null,
+  querySelector: () => null,
   querySelectorAll: () => [],
   visibilityState: 'visible'
 };
@@ -33,6 +53,7 @@ function resetState() {
   withStateMutation(() => {
     state.semanticLaneState = 'checking';
     state.currentSearchSummary = null;
+    state.semanticLaneWarmingCounter = 0;
   });
   document.visibilityState = 'visible';
   elementsById.clear();
@@ -73,6 +94,26 @@ try {
   elementsById.set('search-input', { value: 'a' });
   assert(lane.shouldWarmSemanticLane('interval') === false, 'search input < 2 chars does not trigger warm');
   console.log('  PASS — Active search warming confirmed');
+
+  // TEST 4: Degraded lane copy is truthful, not warming
+  resetState();
+  console.log('\n[TEST 4] Degraded lane uses text-fallback copy');
+  const pill = new FakeElement();
+  elementsById.set('semantic-lane-pill', pill);
+  lane.applySemanticLaneHealthPayload({
+    ok: true,
+    state: 'degraded',
+    search_ok: false,
+    embed_ok: false,
+    provenance: {
+      label: 'Search + embed reconnecting',
+      detail: 'The semantic engine is currently being optimized. Check back in a moment.'
+    }
+  });
+  assert(pill.textContent === 'Search degraded', 'degraded payload does not show warming label');
+  assert(pill.title === 'Using text search while semantic search reconnects.', 'degraded title explains text fallback');
+  assert(pill.dataset.state === 'degraded', 'pill state remains degraded');
+  console.log('  PASS — Degraded lane copy is truthful');
 
   console.log('\n=================================================================');
   console.log('ALL TESTS PASSED');

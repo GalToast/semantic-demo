@@ -8,33 +8,19 @@ function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
 }
 
-function walk(dir, files = []) {
-  for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
-    const relativePath = path.join(dir, entry.name).replace(/\\/g, '/');
-    if (entry.isDirectory()) {
-      if (entry.name === 'dist' || entry.name === 'node_modules') continue;
-      walk(relativePath, files);
-    } else {
-      files.push(relativePath);
-    }
-  }
-  return files;
-}
-
-const componentPath = 'js/modules/components/SearchResultsList.svelte';
-const islandPath = 'js/modules/search-results-svelte-island.ts';
+const legacyComponentPath = 'js/modules/components/SearchResultsList.svelte';
+const retiredIslandPath = 'js/modules/search-results-svelte-island.ts';
 const surfacePath = 'js/modules/components/InfoPanelSearchSurface.svelte';
-const rendererPath = 'js/modules/search-result-renderer.ts';
-const uiRenderersPath = 'js/modules/ui-renderers.ts';
+const srcComponentPath = 'src/components/SearchResults.svelte';
 const searchStatePath = 'js/modules/search-state.ts';
+const searchResultsUiPath = 'js/modules/search-results-ui.ts';
 const eventBindingsPath = 'js/modules/event-bindings.ts';
 
-const componentSrc = read(componentPath);
-const islandSrc = read(islandPath);
+const legacyComponentSrc = read(legacyComponentPath);
 const surfaceSrc = read(surfacePath);
-const rendererSrc = read(rendererPath);
-const uiRenderersSrc = read(uiRenderersPath);
+const srcComponentSrc = read(srcComponentPath);
 const searchStateSrc = read(searchStatePath);
+const searchResultsUiSrc = read(searchResultsUiPath);
 const eventBindingsSrc = read(eventBindingsPath);
 
 assert(
@@ -42,72 +28,41 @@ assert(
   'InfoPanelSearchSurface.svelte should declare the search results slot'
 );
 assert(
-  islandSrc.includes("import SearchResultsList from './components/SearchResultsList.svelte'"),
-  'search-results-svelte-island.js should mount SearchResultsList.svelte'
+  surfaceSrc.includes("import SearchChrome from './SearchChrome.svelte'") &&
+    surfaceSrc.includes('<SearchChrome />') &&
+    surfaceSrc.includes('data-svelte-mounted="search-chrome"'),
+  'InfoPanelSearchSurface.svelte should mount SearchChrome directly in the served shell'
 );
 assert(
-  islandSrc.includes("const SEARCH_RESULTS_SLOT_ID = 'search-results'"),
-  'search-results-svelte-island.js should target #search-results'
+  !fs.existsSync(path.join(root, retiredIslandPath)),
+  'retired search-results-svelte-island.ts should not be restored'
 );
 assert(
-  (eventBindingsSrc.includes("import('./search-results-svelte-island.ts')") ||
-    eventBindingsSrc.includes("from './search-results-svelte-island.ts'")) &&
-    eventBindingsSrc.includes('initSearchResultsSvelteIsland()'),
-  'event-bindings.js should initialize the search results Svelte island'
+  !eventBindingsSrc.includes('search-results-svelte-island') &&
+    !eventBindingsSrc.includes('initSearchResultsSvelteIsland'),
+  'event-bindings.ts should not initialize the retired search results island'
 );
 assert(
-  componentSrc.includes('class="search-result-listitem"') &&
-    componentSrc.includes('class={item.cardClasses}') &&
-    componentSrc.includes('id={`search-result-${Number(result.index)}`}'),
-  'SearchResultsList.svelte should own search result row markup'
-);
-
-const retiredMarkupExports = [
-  'buildSearchResultItemHtml',
-  'buildSearchLoadingMarkup',
-  'buildSearchErrorInlineMarkup',
-  'buildSearchErrorFullMarkup',
-  'buildSearchSuggestionChips',
-  'buildSearchEmptyStateMarkup',
-  'renderResultCountLineMarkup'
-];
-
-for (const name of retiredMarkupExports) {
-  assert(!rendererSrc.includes(`export function ${name}`), `search-result-renderer.js should not export ${name}`);
-  assert(!uiRenderersSrc.includes(`export function ${name}`), `ui-renderers.js should not re-export ${name}`);
-  assert(!searchStateSrc.includes(`export function ${name}`), `search-state.js should not re-export ${name}`);
-}
-
-assert(
-  rendererSrc.includes('export function setActiveSearchResultRow'),
-  'search-result-renderer.js may keep row state metadata updater'
+  searchResultsUiSrc.includes('legacy DOM is rendered directly into #search-results') &&
+    searchResultsUiSrc.includes('Svelte stores are also updated'),
+  'search-results-ui.ts should document the served-shell legacy renderer and Svelte store bridge'
 );
 assert(
-  rendererSrc.includes('querySelectorAll(\'.search-result-item\')'),
-  'search-result-renderer.js metadata updater may query Svelte-rendered rows'
+  searchStateSrc.includes('document.getElementById(\'search-results\')'),
+  'search-state.ts should still route served-shell results through #search-results'
+);
+assert(
+  legacyComponentSrc.includes('class="search-result-listitem"') &&
+    legacyComponentSrc.includes('class={item.cardClasses}') &&
+    legacyComponentSrc.includes('id={`search-result-${Number(result.index)}`}'),
+  'legacy SearchResultsList.svelte should retain DOM parity for migration reference'
+);
+assert(
+  srcComponentSrc.includes('id="search-results"') &&
+    srcComponentSrc.includes('id="search-result-list"') &&
+    srcComponentSrc.includes('class="search-result-listitem"') &&
+    srcComponentSrc.includes('id={`search-result-${Number(result.index)}`}'),
+  'src/components/SearchResults.svelte should own canonical Svelte-shell search result markup'
 );
 
-const allowedFiles = new Set([
-  componentPath,
-  islandPath,
-  surfacePath
-]);
-
-const forbiddenRenderPatterns = [
-  /#search-results[\s\S]{0,180}\.innerHTML\s*=/,
-  /getElementById\(['"]search-results['"]\)[\s\S]{0,180}\.innerHTML\s*=/,
-  /\.innerHTML\s*=[\s\S]{0,220}search-result-item/,
-  /\.innerHTML\s*=[\s\S]{0,220}search-empty-state/,
-  /\.insertAdjacentHTML\s*\(/,
-  /\.appendChild\s*\([^)]*search/i
-];
-
-for (const file of walk('js/modules').filter((candidate) => /\.(?:js|mjs|svelte|ts)$/.test(candidate))) {
-  if (allowedFiles.has(file)) continue;
-  const source = read(file);
-  for (const pattern of forbiddenRenderPatterns) {
-    assert(!pattern.test(source), `${file} should not render children into #search-results`);
-  }
-}
-
-console.log('Search results Svelte ownership contract OK.');
+console.log('Search results ownership contract OK.');

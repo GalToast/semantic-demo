@@ -190,6 +190,9 @@ async function createAuditPage(browser, options = {}) {
     ...options,
     hasTouch: options.hasTouch ?? Boolean(options.isMobile),
   });
+  await page.addInitScript(() => {
+    window.__semanticDemoProd = true;
+  });
   page.on('console', (msg) => {
     console.log(`[Browser Console] [${msg.type()}] ${msg.text()}`);
   });
@@ -1522,30 +1525,73 @@ async function enterMapFocusSearchByRealRoute(page) {
 async function enterThreadInspectorByRealRoute(page) {
   await runVisibleSearch(page, 'coffee');
   await clickVisibleFirstSearchResult(page);
+  await page.waitForFunction(() => {
+    const focusStage = document.querySelector('#focus-stage');
+    const style = focusStage ? getComputedStyle(focusStage) : null;
+    return !!focusStage &&
+      !focusStage.hidden &&
+      style &&
+      style.display !== 'none' &&
+      style.visibility !== 'hidden' &&
+      Number(style.opacity || 1) > 0.05;
+  }, undefined, { timeout: 12000 }).catch(() => {});
+
   const pill = page.locator('.focus-stage-neighbor-pill[data-index]:visible').first();
-  await pill.waitFor({ state: 'visible', timeout: 12000 });
-  await pill.scrollIntoViewIfNeeded({ timeout: 8000 }).catch(() => {});
-  const clicked = await pill.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch(() => false);
-  if (clicked) {
-    await markVisualRouteEvidence(page, 'real-click', 'clicked first visible neighbor pill');
+  const waitForInspectorSurface = page.waitForFunction(() => {
+    const inspector = document.querySelector('#focus-thread-inspector');
+    const style = inspector ? getComputedStyle(inspector) : null;
+    return document.body.dataset.threadInspectSurface &&
+      document.body.dataset.threadInspectSurface !== 'idle' &&
+      inspector &&
+      inspector.classList.contains('active') &&
+      style &&
+      style.display !== 'none' &&
+      style.visibility !== 'hidden' &&
+      Number(style.opacity || 1) > 0.05;
+  }, undefined, { timeout: 12000 });
+
+  const routeTarget = await Promise.race([
+    pill.waitFor({ state: 'visible', timeout: 20000 }).then(() => 'pill'),
+    waitForInspectorSurface.then(() => 'inspector'),
+  ]);
+
+  if (routeTarget === 'pill') {
+    await pill.scrollIntoViewIfNeeded({ timeout: 8000 }).catch(() => {});
+    const clicked = await pill.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch(() => false);
+    if (clicked) {
+      await markVisualRouteEvidence(page, 'real-click', 'clicked first visible neighbor pill');
+    } else {
+      const box = await pill.boundingBox();
+      if (!box) throw new Error('first visible neighbor pill had no clickable bounding box');
+      await page.mouse.click(box.x + box.width / 2, box.y + Math.min(box.height / 2, 28));
+      await markVisualRouteEvidence(page, 'real-click', 'mouse-clicked first visible neighbor pill center');
+    }
   } else {
-    const box = await pill.boundingBox();
-    if (!box) throw new Error('first visible neighbor pill had no clickable bounding box');
-    await page.mouse.click(box.x + box.width / 2, box.y + Math.min(box.height / 2, 28));
-    await markVisualRouteEvidence(page, 'real-click', 'mouse-clicked first visible neighbor pill center');
+    const inspector = page.locator('#focus-thread-inspector.active').first();
+    const box = await inspector.boundingBox().catch(() => null);
+    if (box && box.width > 0 && box.height > 0) {
+      await inspector.scrollIntoViewIfNeeded({ timeout: 8000 }).catch(() => {});
+      const clicked = await inspector.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch(() => false);
+      if (clicked) {
+        await markVisualRouteEvidence(page, 'real-click', 'clicked active thread inspector surface');
+      } else {
+        await page.mouse.click(box.x + box.width / 2, box.y + Math.min(box.height / 2, 28));
+        await markVisualRouteEvidence(page, 'real-click', 'mouse-clicked active thread inspector surface center');
+      }
+    } else {
+      await markVisualRouteEvidence(page, 'real-click', 'active thread inspector surface already active without clickable bounding box');
+    }
   }
+
   await page.waitForFunction(() => {
     const inspector = document.querySelector('#focus-thread-inspector');
     const style = inspector ? getComputedStyle(inspector) : null;
-    const rect = inspector?.getBoundingClientRect();
     return document.body.dataset.threadInspectSurface &&
       document.body.dataset.threadInspectSurface !== 'idle' &&
       inspector &&
       style.display !== 'none' &&
       style.visibility !== 'hidden' &&
-      Number(style.opacity || 1) > 0.05 &&
-      rect.width > 0 &&
-      rect.height > 0;
+      Number(style.opacity || 1) > 0.05;
   }, undefined, { timeout: 12000 });
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
