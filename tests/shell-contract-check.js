@@ -2,9 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
-const canonicalShell = 'vector-explorer-polished.html';
+const sourceShell = 'src/index.html';
+const productionShell = 'dist/svelte/index.html';
+const legacyShell = 'vector-explorer-polished.html';
 const frontDoor = 'index.html';
-
 const failures = [];
 
 function read(relativePath) {
@@ -28,45 +29,65 @@ function requireExcludes(file, content, needle, reason) {
   }
 }
 
-const shellHtml = read(canonicalShell);
+function localRefs(html) {
+  return [...html.matchAll(/\b(?:href|src)="([^"]+)"/g)]
+    .map((match) => match[1])
+    .filter((ref) => !/^(?:[a-z]+:|\/\/|#|data:)/i.test(ref));
+}
+
+function requireNoRootAbsoluteRefs(file, html) {
+  for (const ref of localRefs(html)) {
+    if (ref.startsWith('/')) {
+      failures.push(`${file} must not use root-absolute asset reference ${JSON.stringify(ref)}`);
+    }
+  }
+}
+
+function requireNoDevEntryRefs(file, html) {
+  for (const ref of localRefs(html)) {
+    if (ref.endsWith('.ts') || ref.includes('/main.ts') || ref === 'main.ts') {
+      failures.push(`${file} must not reference the dev TypeScript entry ${JSON.stringify(ref)}`);
+    }
+  }
+}
+
+const sourceHtml = read(sourceShell);
+const distHtml = read(productionShell);
+const legacyHtml = read(legacyShell);
 const indexHtml = read(frontDoor);
-const connectionAnalysisSource = read('js/modules/connection-analysis.ts');
-const connectionAnalysisAdapterSource = read('js/modules/connection-analysis-adapter.ts');
-const appSvelteSource = read('js/modules/components/App.svelte');
-const bundleSource = read('dist/bundle.js');
+const appSvelteSource = read('src/App.svelte');
+const packageJsonRaw = read('package.json');
 const deployDoc = read('DEPLOY.md');
 const architectureDoc = read('ARCHITECTURE.md');
-const packageJsonRaw = read('package.json');
 const stylesheetShell = read('semantic-demo.css');
 const baseStylesheet = read('css/base.css');
 
-requireIncludes(canonicalShell, shellHtml, 'semantic-demo.css', 'canonical shell owns the app stylesheet');
-requireIncludes(canonicalShell, shellHtml, 'vector-explorer-pandora.css', 'canonical shell owns the Pandora stylesheet');
-requireIncludes(canonicalShell, shellHtml, 'dist/bundle.js', 'canonical shell owns the bundled app runtime');
-// Per the chrome migration (Lane 2): the canvas container is rendered by
-// App.svelte at runtime rather than baked into the static HTML. The shell
-// contract is satisfied by the Svelte source owning the ID, not the static HTML.
-requireIncludes('js/modules/components/App.svelte', appSvelteSource, 'id="canvas-container"', 'App.svelte owns the WebGL app DOM');
-requireIncludes('js/modules/connection-analysis.ts', connectionAnalysisSource, './connection-analysis-adapter', 'connection report must route DOM bindings through the adapter');
-requireIncludes('js/modules/connection-analysis-adapter.ts', connectionAnalysisAdapterSource, 'summary-gemma-story', 'connection analysis adapter owns Gemma story DOM bindings');
-requireIncludes('js/modules/connection-analysis.ts', connectionAnalysisSource, 'cached_trail_story', 'served runtime source accepts cached trail story artifacts');
-requireIncludes('js/modules/connection-analysis.ts', connectionAnalysisSource, 'return inner();', 'showSemanticThreadsDetail must execute its async report loader when called');
-requireIncludes('js/modules/connection-analysis.ts', connectionAnalysisSource, 'let semanticThreadsDetailController', 'connection report abort controller must persist across calls');
-requireIncludes('js/modules/connection-analysis.ts', connectionAnalysisSource, 'semanticThreadsDetailController = controller', 'connection report must track the active request controller');
-requireIncludes('dist/bundle.js', bundleSource, 'summary-gemma-story', 'built bundle owns Gemma story DOM bindings');
-requireIncludes('dist/bundle.js', bundleSource, 'cached_trail_story', 'built bundle accepts cached trail story artifacts');
+requireIncludes(sourceShell, sourceHtml, 'semantic-demo.css', 'Svelte source shell owns the app stylesheet');
+requireIncludes(sourceShell, sourceHtml, 'vector-explorer-pandora.css', 'Svelte source shell owns the Pandora stylesheet');
+requireIncludes(sourceShell, sourceHtml, 'src="main.ts"', 'Svelte source shell owns the Vite entry');
+requireIncludes(sourceShell, sourceHtml, 'id="app"', 'Svelte source shell owns the app mount');
+requireIncludes(sourceShell, sourceHtml, 'id="icon-mycelium"', 'Svelte source shell owns the icon sprite');
+requireExcludes(sourceShell, sourceHtml, 'dist/bundle.js', 'Svelte production runtime must not depend on the legacy esbuild bundle');
+requireExcludes(sourceShell, sourceHtml, 'src="/main.ts"', 'Svelte shell must be subpath-safe');
+
+requireIncludes(productionShell, distHtml, './assets/', 'Vite production output must use relative hashed assets');
+requireIncludes(productionShell, distHtml, 'semantic-demo.css', 'Vite production output carries CSS coexistence links');
+requireIncludes(productionShell, distHtml, 'id="app"', 'Vite production output owns the app mount');
+requireExcludes(productionShell, distHtml, 'dist/bundle.js', 'Vite production output must not load legacy bundle');
+requireNoRootAbsoluteRefs(productionShell, distHtml);
+requireNoDevEntryRefs(productionShell, distHtml);
+
+requireIncludes('src/App.svelte', appSvelteSource, '<Canvas', 'Svelte app owns the WebGL canvas component');
+requireIncludes(legacyShell, legacyHtml, 'dist/bundle.js', 'legacy shell is preserved only as rollback/reference');
 
 requireIncludes(frontDoor, indexHtml, 'case-study.html', 'front door should send default visitors to the case study');
-requireIncludes(frontDoor, indexHtml, canonicalShell, 'front door may link to the app shell');
 requireExcludes(frontDoor, indexHtml, 'dist/bundle.js', 'front door is not an app shell');
 requireExcludes(frontDoor, indexHtml, 'semantic-demo.css', 'front door is not an app shell');
 requireExcludes(frontDoor, indexHtml, 'id="canvas-container"', 'front door is not an app shell');
-requireExcludes(frontDoor, indexHtml, 'summary-gemma-story', 'front door is not an app shell');
-requireExcludes(frontDoor, indexHtml, 'api.php?action=semantic_trail_story', 'front door must not carry app behavior');
 
-requireIncludes('DEPLOY.md', deployDoc, canonicalShell, 'deploy docs must name the canonical shell');
-requireIncludes('DEPLOY.md', deployDoc, 'One App Shell Contract', 'deploy docs must explain the shell contract');
-requireIncludes('ARCHITECTURE.md', architectureDoc, canonicalShell, 'architecture docs must name the canonical shell');
+requireIncludes('DEPLOY.md', deployDoc, 'dist/svelte', 'deploy docs must name the canonical production output');
+requireIncludes('DEPLOY.md', deployDoc, 'Svelte Production Entry Contract', 'deploy docs must explain the shell contract');
+requireIncludes('ARCHITECTURE.md', architectureDoc, legacyShell, 'architecture docs still document the legacy shell reference');
 
 requireIncludes('semantic-demo.css', stylesheetShell, 'CSS module shell', 'app stylesheet must remain the import-only module shell');
 requireIncludes('semantic-demo.css', stylesheetShell, '@import url("./css/base.css', 'app stylesheet must import the base module first');
@@ -92,6 +113,7 @@ if (stylesheetShell === baseStylesheet) {
 
 try {
   const packageJson = JSON.parse(packageJsonRaw);
+  requireIncludes('package.json', packageJson.scripts?.build || '', 'build:svelte', 'production build must use the Svelte/Vite entry');
   requireIncludes('package.json', packageJson.scripts?.['check:shell'] || '', 'shell-contract-check.js', 'package script must expose the guard');
 } catch (error) {
   failures.push(`package.json must parse as JSON: ${error.message}`);
@@ -103,4 +125,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Semantic demo shell contract OK: ${canonicalShell} is the only app shell; ${frontDoor} is a front door.`);
+console.log('Semantic demo shell contract OK: src/index.html -> dist/svelte/index.html is the production app shell.');

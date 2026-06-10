@@ -8,7 +8,7 @@ This directory is the standalone product repo for the Semantic Explorer. It was 
 Canonical local app shell:
 
 ```text
-vector-explorer-polished.html
+src/index.html -> dist/svelte/index.html
 ```
 
 Live URL:
@@ -19,19 +19,19 @@ https://mccullough.cloud/semantic-demo/vector-explorer-polished.html
 
 ## Start Here
 **New to this codebase?** Quick orientation order:
-1. `js/modules/app.js` - main entry, imports all modules in dependency order
-2. `js/state.js` - single source of truth for all global state
-3. `js/modules/micro-demo.js` - the 9-second guided first-visit experience
-4. `js/modules/journey.js` - trail state, neighbor calculation, selected-card orchestration
-5. `js/modules/ui-renderers.js` - DOM renderers for legend, search rows, and selected-card chrome
-6. `js/modules/search-state.js` - search engine, query tokenization, result rendering
+1. `src/main.ts` - Svelte/Vite app entry
+2. `src/App.svelte` - root app composition and body data-attribute sync
+3. `src/components/` - Svelte UI surfaces
+4. `src/lib/stores/` - typed Svelte stores replacing legacy UI state slices
+5. `src/lib/engine/` - TypeScript engine/legacy bridge layer
+6. `js/state.ts` - legacy engine state singleton during coexistence
 7. `AGENTS.md` - local agent guidance (module ownership, state machines, edit safety rules)
 8. `TEST_STRATEGY.md` - how to verify changes (contract vs visual audit layers)
 
 Key commands:
 ```bash
 npm install                # first setup
-npm run build              # bundle to dist/bundle.js
+npm run build              # Vite/Svelte build to dist/svelte/
 npm run test               # shell/cache/CSS ownership checks
 npm run test:contract      # structural JS/DOM contract tests (~20 test files)
 npm run serve              # local static server on 127.0.0.1:8795
@@ -54,10 +54,11 @@ New styles should be added to the appropriate file in the `css/` directory. The 
 After changing any CSS module, run `npm run refresh:cache` so the import hash in `semantic-demo.css` is updated.
 
 ### Scripts
-The JavaScript is modularized and bundled using `esbuild`.
-- Source: `js/modules/`
+The production app is built with Vite/Svelte.
+- Source: `src/`
 - Build: `npm run build`
-- Output: `dist/bundle.js`
+- Output: `dist/svelte/`
+- Legacy rollback/reference build: `npm run build:legacy`
 
 ### Audit & Verification
 The visual audit runner is `tests/visual-state-audit.mjs`. It captures screenshots and layout snapshots for named UI states.

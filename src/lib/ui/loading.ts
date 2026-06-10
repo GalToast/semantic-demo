@@ -39,6 +39,8 @@ const SCENE_READY_EVENT = 'semantic:scene-ready';
 
 let _hideToken = 0;
 let _loadingOverlayStartedAt = 0;
+let _loadingHideCancelled = false;
+let _loadingHideTimer: ReturnType<typeof setTimeout> | null = null;
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -233,4 +235,17 @@ function _escapeHtml(str: string): string {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+/**
+ * Cancel any pending loading-overlay hide. Used by the engine teardown path
+ * when `deinit()` runs while the launch transition is queued.
+ */
+export function cancelLoadingHide(): void {
+  _loadingHideCancelled = true;
+  if (_loadingHideTimer !== null) {
+    clearTimeout(_loadingHideTimer);
+    _loadingHideTimer = null;
+  }
+  _hideToken += 1;
 }

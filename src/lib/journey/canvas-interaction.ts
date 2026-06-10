@@ -8,16 +8,11 @@
 import { state } from '@legacy/state.js';
 import { isPointVisible } from '@lib/utils/geo-data';
 import type { ActiveFilters, GeoPoint } from '@lib/utils/geo-data';
-import _cameraControls from '@legacy/modules/camera-controls.js';
-const {
+import {
   focusOnNode,
   noteSceneInteraction,
   releaseFocusCameraAssist,
-} = _cameraControls as {
-  focusOnNode: (index: number, options: Record<string, unknown>) => boolean;
-  noteSceneInteraction: (idleMs?: number) => void;
-  releaseFocusCameraAssist: (reason?: string) => void;
-};
+} from '@legacy/modules/camera-controls.js';
 import {
   initJourneyCanvasInteractionAdapter,
   isThreadCandidateVisibleOnCanvas,

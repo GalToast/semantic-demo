@@ -5,7 +5,8 @@
     "paths": {
       "@/*": ["./*"],
       "@lib/*": ["./lib/*"],
-      "@components/*": ["./components/*"]
+      "@components/*": ["./components/*"],
+      "@legacy/*": ["../js/*"]
     },
     "allowImportingTsExtensions": true,
     "ignoreDeprecations": "6.0"

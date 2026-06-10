@@ -1,0 +1,979 @@
+/* Shell: canvas/map containers, handoff effects, map empty state, and trail strip. */
+#canvas-container,
+#map-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transition: opacity 0.4s ease;
+}
+#canvas-container {
+    z-index: var(--z-base);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    isolation: isolate;
+    transform: translateZ(0) scale(1);
+    transform-origin: center center;
+    transition:
+        opacity 0.42s ease,
+        filter 0.82s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.82s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Prevent browser page-bounce during Three.js touch interactions. */
+body.is-active {
+    overscroll-behavior: contain;
+}
+
+.webgl-fallback-notice {
+    position: absolute;
+    left: clamp(18px, 6vw, 76px);
+    top: 50%;
+    z-index: var(--z-chrome-elevated);
+    display: grid;
+    gap: 12px;
+    width: min(360px, calc(100vw - 36px));
+    padding: 22px;
+    border: 1px solid var(--color-primary-soft);
+    border-radius: var(--radius-tight);
+    background: rgba(6, 11, 16, 0.86);
+    box-shadow: var(--shadow-panel);
+    color: rgba(241, 250, 248, 0.92);
+    transform: translateY(-50%);
+}
+
+.webgl-fallback-kicker {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(150, 235, 227, 0.78);
+}
+
+.webgl-fallback-notice h2 {
+    margin: 0;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 24px;
+    line-height: 1.05;
+    font-weight: 700;
+}
+
+.webgl-fallback-notice p {
+    margin: 0;
+    max-width: 34ch;
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(222, 239, 236, 0.76);
+}
+
+.webgl-fallback-map {
+    justify-self: start;
+    min-height: 42px;
+    padding: 0 16px;
+    border: 1px solid var(--color-primary-ring);
+    border-radius: var(--radius-tight);
+    background: var(--color-primary-soft);
+    color: rgba(241, 250, 248, 0.94);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.webgl-fallback-map:hover,
+.webgl-fallback-map:focus-visible {
+    background: rgba(var(--color-primary-alt-rgb), 0.2);
+}
+
+/* 10/10 Polish: Sonic Boom transition for neighborhood dive */
+/* #950: Reduced intensity for motion subtraction */
+body[data-semantic-dive='transitioning'] #canvas-container {
+    filter: blur(8px) saturate(1.2) brightness(1.08);
+    transform: scale(1.04);
+    pointer-events: none;
+}
+#canvas-container.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+body[data-graphics-mode='fallback'] #canvas-container {
+    z-index: var(--z-toast);
+}
+
+#canvas-container::before,
+#canvas-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition:
+        opacity 0.35s ease,
+        transform 0.35s ease;
+}
+
+body[data-graphics-mode='fallback'] #canvas-container::before,
+body[data-graphics-mode='fallback'] #canvas-container::after {
+    display: none;
+}
+
+#canvas-container::before {
+    z-index: var(--z-base);
+    background: radial-gradient(
+        circle at 50% 50%,
+        rgba(5, 12, 18, 0) 0%,
+        rgba(5, 12, 18, 0.08) 22%,
+        rgba(5, 10, 16, 0.38) 62%,
+        rgba(4, 7, 11, 0.72) 100%
+    );
+}
+
+#canvas-container::after {
+    z-index: var(--z-base);
+    background:
+        linear-gradient(
+            90deg,
+            rgba(6, 9, 13, 0.74) 0%,
+            rgba(6, 9, 13, 0.48) 16%,
+            rgba(6, 9, 13, 0.12) 32%,
+            rgba(6, 9, 13, 0) 48%
+        ),
+        radial-gradient(
+            circle at 82% 78%,
+            rgba(5, 18, 23, 0.82) 0%,
+            rgba(5, 18, 23, 0.36) 28%,
+            rgba(5, 18, 23, 0.08) 50%,
+            transparent 66%
+        );
+    transform: scale(1.02);
+}
+
+body[data-panel-surface='search'] #canvas-container::before {
+    opacity: 0.24;
+}
+
+body[data-panel-surface='search'] #canvas-container::after {
+    opacity: 0.42;
+}
+
+body[data-route-motion='search-corridor'] #canvas-container::before {
+    opacity: 0.22;
+    background:
+        radial-gradient(
+            circle at 52% 50%,
+            rgba(5, 12, 18, 0) 0%,
+            rgba(5, 12, 18, 0.02) 22%,
+            rgba(4, 10, 15, 0.22) 58%,
+            rgba(3, 6, 10, 0.62) 100%
+        ),
+        radial-gradient(
+            circle at 52% 50%,
+            rgba(var(--color-primary-tint-rgb), 0.06) 0%,
+            rgba(var(--color-primary-tint-rgb), 0.022) 38%,
+            transparent 68%
+        );
+}
+
+body[data-route-motion='search-corridor'] #canvas-container::after {
+    opacity: 0.32;
+    transform: scale(1.018) rotate(0.001deg);
+    background:
+        radial-gradient(circle at 52% 50%, rgba(4, 7, 11, 0) 0%, rgba(4, 7, 11, 0.08) 36%, rgba(4, 7, 11, 0) 62%),
+        radial-gradient(
+            circle at 52% 50%,
+            rgba(var(--color-primary-tint-rgb), 0.045) 0%,
+            rgba(var(--color-primary-tint-rgb), 0.014) 44%,
+            transparent 72%
+        );
+}
+
+body[data-mobile-route-peek='active'][data-route-motion='search-corridor'] #canvas-container::before {
+    opacity: 0.14;
+}
+
+body[data-mobile-route-peek='active'][data-route-motion='search-corridor'] #canvas-container::after {
+    opacity: 0.22;
+}
+
+body[data-panel-surface='focus'] #canvas-container::before {
+    opacity: 0.24;
+}
+
+body[data-panel-surface='focus'] #canvas-container::after {
+    opacity: 0.38;
+}
+
+body[data-panel-surface='focus-search'] #canvas-container::before {
+    opacity: 0.34;
+    background: radial-gradient(
+        circle at 51% 50%,
+        rgba(5, 12, 18, 0) 0%,
+        rgba(5, 12, 18, 0.015) 20%,
+        rgba(5, 10, 16, 0.24) 58%,
+        rgba(3, 6, 10, 0.74) 100%
+    );
+}
+
+body[data-panel-surface='focus-search'] #canvas-container::after {
+    opacity: 0.46;
+    background:
+        linear-gradient(
+            90deg,
+            rgba(4, 7, 11, 0.72) 0%,
+            rgba(4, 7, 11, 0.42) 17%,
+            rgba(4, 7, 11, 0.08) 35%,
+            rgba(4, 7, 11, 0) 50%,
+            rgba(4, 7, 11, 0.08) 66%,
+            rgba(4, 7, 11, 0.46) 100%
+        ),
+        radial-gradient(
+            circle at 49% 52%,
+            rgba(72, 219, 207, 0.012) 0%,
+            rgba(72, 219, 207, 0.028) 22%,
+            rgba(5, 18, 23, 0.22) 48%,
+            transparent 70%
+        );
+}
+
+body[data-active-view='map'] #canvas-container::before,
+body[data-active-view='map'] #canvas-container::after {
+    opacity: 0;
+}
+
+body[data-active-view='map'] #canvas-container {
+    opacity: 0.15;
+}
+
+/* polish206: bridge mycelium to terrain before the layer swap. */
+body[data-active-view='galaxy'][data-terrain-handoff='flattening'] #canvas-container {
+    opacity: 0.82;
+    transform: translateZ(0) scale(0.965);
+}
+
+body[data-active-view='galaxy'][data-terrain-handoff='flattening'] #canvas-container::before {
+    opacity: 0.76;
+    transform: scale(0.99);
+    background:
+        radial-gradient(
+            circle at 50% 50%,
+            rgba(5, 12, 18, 0.08) 0%,
+            rgba(5, 12, 18, 0.26) 28%,
+            rgba(5, 10, 15, 0.58) 70%,
+            rgba(4, 7, 11, 0.9) 100%
+        ),
+        linear-gradient(180deg, rgba(var(--color-primary-tint-rgb), 0.06), rgba(255, 226, 132, 0.08));
+}
+
+body[data-active-view='galaxy'][data-terrain-handoff='flattening'] #canvas-container::after {
+    opacity: 0.84;
+    transform: scale(1);
+    background:
+        linear-gradient(
+            90deg,
+            rgba(4, 7, 11, 0.78) 0%,
+            rgba(4, 7, 11, 0.38) 22%,
+            rgba(4, 7, 11, 0.05) 48%,
+            rgba(4, 7, 11, 0.42) 100%
+        ),
+        linear-gradient(180deg, rgba(var(--color-primary-tint-rgb), 0.09), rgba(255, 226, 132, 0.14)),
+        radial-gradient(
+            ellipse at 50% 54%,
+            rgba(255, 226, 132, 0.16) 0%,
+            rgba(var(--color-primary-tint-rgb), 0.1) 34%,
+            transparent 62%
+        );
+}
+
+body[data-route-motion='terrain-prelude'] .biofield-atmosphere {
+    opacity: 0.78;
+}
+
+body[data-route-motion='inside-pocket'] #canvas-container::before {
+    opacity: 0.72;
+    background: radial-gradient(
+        circle at 50% 50%,
+        rgba(5, 12, 18, 0) 0%,
+        rgba(5, 12, 18, 0.12) 22%,
+        rgba(4, 10, 15, 0.52) 62%,
+        rgba(3, 6, 10, 0.88) 100%
+    );
+}
+
+body[data-route-motion='inside-pocket'] #canvas-container::after {
+    opacity: 0.88;
+    background:
+        linear-gradient(
+            90deg,
+            rgba(6, 9, 13, 0.82) 0%,
+            rgba(6, 9, 13, 0.56) 16%,
+            rgba(6, 9, 13, 0.2) 32%,
+            rgba(6, 9, 13, 0) 48%
+        ),
+        radial-gradient(
+            circle at 82% 78%,
+            rgba(5, 18, 23, 0.92) 0%,
+            rgba(5, 18, 23, 0.52) 28%,
+            rgba(5, 18, 23, 0.16) 50%,
+            transparent 66%
+        );
+}
+
+/* Step Inside atmospheric vignette — trailDepth 2 makes the scene feel pocket-contained */
+/* Reduced intensity for #950 motion subtraction */
+body[data-trail-depth='2'] #canvas-container::before {
+    opacity: 0.38;
+    background: radial-gradient(
+        circle at 50% 50%,
+        rgba(5, 12, 18, 0) 0%,
+        rgba(5, 12, 18, 0.06) 22%,
+        rgba(4, 10, 15, 0.32) 62%,
+        rgba(3, 6, 10, 0.62) 100%
+    );
+}
+
+body[data-trail-depth='2'] #canvas-container::after {
+    opacity: 0.52;
+    background:
+        linear-gradient(
+            90deg,
+            rgba(6, 9, 13, 0.58) 0%,
+            rgba(6, 9, 13, 0.36) 16%,
+            rgba(6, 9, 13, 0.1) 32%,
+            rgba(6, 9, 13, 0) 48%
+        ),
+        linear-gradient(
+            270deg,
+            rgba(6, 9, 13, 0.58) 0%,
+            rgba(6, 9, 13, 0.36) 16%,
+            rgba(6, 9, 13, 0.1) 32%,
+            rgba(6, 9, 13, 0) 48%
+        ),
+        radial-gradient(circle at 50% 50%, rgba(5, 18, 23, 0.28) 0%, rgba(5, 18, 23, 0.12) 38%, transparent 66%);
+}
+
+#map-container {
+    z-index: var(--z-base);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    overflow: hidden;
+    isolation: isolate;
+    background: radial-gradient(
+        circle at 50% 44%,
+        rgba(23, 34, 44, 0.42) 0%,
+        rgba(7, 11, 16, 0.82) 76%,
+        rgba(5, 7, 11, 0.94) 100%
+    );
+}
+
+#map-container:not(.active) * {
+    pointer-events: none;
+}
+
+#map-container.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.canvas-color-legend {
+    position: fixed;
+    left: 16px;
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    /* Lower than the info-panel (z-panels=50) so the legend sits behind
+       search results and selected-card overflow. The legend still rides
+       above the 3D canvas and the right rail of view controls. */
+    z-index: var(--z-chrome-elevated);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(9, 14, 22, 0.72);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    font-family: var(--font-sans, 'Nunito Sans', sans-serif);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.85);
+    pointer-events: none;
+    opacity: 0.85;
+    transition: opacity 0.3s ease;
+}
+
+body[data-active-view='map'] .canvas-color-legend {
+    display: none;
+}
+
+.canvas-color-legend-title {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 3px;
+}
+
+.canvas-color-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.canvas-color-legend-swatch {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--swatch-color);
+    box-shadow: 0 0 8px var(--swatch-color);
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .canvas-color-legend {
+        left: 12px;
+        top: calc(142px + env(safe-area-inset-top, 0px));
+        bottom: auto;
+        font-size: 10px;
+        padding: 8px 10px;
+    }
+}
+
+#map-container::before,
+#map-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition:
+        opacity 0.35s ease,
+        transform 0.35s ease;
+}
+
+#map-container::before {
+    z-index: var(--z-modal);
+    background: radial-gradient(
+        circle at 55% 48%,
+        rgba(255, 224, 133, 0.08) 0%,
+        rgba(17, 27, 36, 0.04) 22%,
+        rgba(5, 10, 15, 0.54) 70%,
+        rgba(4, 7, 10, 0.82) 100%
+    );
+}
+
+#map-container::after {
+    z-index: var(--z-modal);
+    background:
+        linear-gradient(
+            90deg,
+            rgba(6, 9, 13, 0.8) 0%,
+            rgba(6, 9, 13, 0.54) 18%,
+            rgba(6, 9, 13, 0.16) 34%,
+            rgba(6, 9, 13, 0) 48%
+        ),
+        radial-gradient(circle at 74% 30%, rgba(110, 220, 209, 0.18) 0%, rgba(110, 220, 209, 0.08) 20%, transparent 44%);
+    transform: scale(1.02);
+}
+
+body[data-active-view='map'] #map-container::before {
+    opacity: 0.46;
+}
+
+body[data-active-view='map'] #map-container::after {
+    opacity: 0.42;
+}
+
+body[data-active-view='map'][data-trail-state='active'] #map-container::before {
+    opacity: 0.58;
+}
+
+body[data-active-view='map'][data-trail-state='active'] #map-container::after {
+    opacity: 0.54;
+}
+
+body[data-active-view='map'][data-terrain-handoff='landing'] #map-container::before {
+    opacity: 0.76;
+    animation: terrainBridgeVeil 1.8s ease-out both;
+}
+
+body[data-active-view='map'][data-terrain-handoff='landing'] #map-container::after {
+    opacity: 0.72;
+    transform: scale(1);
+    animation: terrainBridgeHalo 1.8s ease-out both;
+}
+
+body[data-active-view='map'][data-terrain-handoff='settled'][data-trail-state='active'] #map-container::after {
+    opacity: 0.6;
+}
+
+body[data-active-view='map'] #map-container .leaflet-tile-pane {
+    filter: saturate(0.74) brightness(0.82) contrast(1.05);
+    transition: filter 0.35s ease;
+}
+
+body[data-active-view='map'][data-trail-state='active'] #map-container .leaflet-tile-pane {
+    filter: saturate(0.78) brightness(0.88) contrast(1.16);
+}
+
+body[data-active-view='map'][data-terrain-handoff='landing'] #map-container .leaflet-tile-pane {
+    filter: saturate(0.86) brightness(0.68) contrast(1.12);
+}
+
+#map-container .leaflet-control-zoom.leaflet-bar {
+    border: 1px solid var(--color-primary-soft);
+    border-radius: var(--radius-normal);
+    overflow: hidden;
+    box-shadow: var(--shadow-panel);
+}
+
+#map-container .leaflet-control-zoom.leaflet-bar a {
+    width: 44px;
+    height: 44px;
+    line-height: 42px;
+    background: var(--color-surface-panel);
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--color-border-subtle);
+}
+
+#map-container .leaflet-control-zoom.leaflet-bar a:hover {
+    background: rgba(20, 31, 39, 0.96);
+    color: #ffffff;
+}
+
+#map-container .leaflet-control-attribution {
+    background: var(--color-surface-panel);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 10px 0 0 0;
+    color: var(--color-text-muted);
+    padding: 3px 8px;
+}
+
+#map-container .leaflet-control-attribution a {
+    color: rgba(148, 232, 223, 0.88);
+}
+
+/* Map empty state */
+.map-empty-state {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: var(--z-blocker);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 28px 36px;
+    background: var(--color-surface-glass);
+    border: var(--glass-border);
+    border-radius: var(--radius-large);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    text-align: center;
+    pointer-events: none;
+    width: min(320px, calc(100vw - 48px));
+    box-sizing: border-box;
+}
+
+.map-empty-state-icon {
+    color: var(--color-primary);
+    opacity: 0.55;
+}
+
+.map-empty-state-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    letter-spacing: 0.01em;
+}
+
+.map-empty-state-note {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    max-width: 240px;
+    line-height: 1.5;
+}
+
+/* SD-005: map trail strip — compact trail navigation visible in map view
+   when the main .trail-controls are hidden by [data-trail-state="active"] rules.
+   Positioned inside #map-container above the Leaflet tile pane.
+   Post-D36 the strip is a single-column title-only surface, so the grid
+   resolves to minmax(0, 1fr) for the .map-strip-title child. */
+.map-trail-strip {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--z-blocker-backdrop);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    background: var(--color-surface-panel);
+    border: 1px solid var(--color-primary-soft);
+    border-radius: var(--radius-pill);
+    backdrop-filter: blur(10px);
+    white-space: nowrap;
+    pointer-events: auto;
+}
+
+.map-trail-strip[hidden] {
+    display: none;
+}
+
+#map-container .leaflet-interactive {
+    transition:
+        fill-opacity 0.24s ease,
+        opacity 0.24s ease,
+        stroke-opacity 0.24s ease,
+        stroke-width 0.24s ease,
+        r 0.24s ease,
+        filter 0.24s ease;
+}
+
+#map-container .leaflet-interactive.map-marker-secondary {
+    filter: saturate(0.86);
+}
+
+#map-container .leaflet-interactive.map-marker-search {
+    filter: drop-shadow(0 0 10px rgba(80, 216, 202, 0.12));
+}
+
+#map-container .leaflet-interactive.map-marker-trail {
+    filter: drop-shadow(0 0 14px rgba(84, 229, 214, 0.2));
+}
+
+#map-container .leaflet-interactive.map-marker-anchor {
+    filter: drop-shadow(0 0 16px rgba(255, 223, 133, 0.32)) drop-shadow(0 0 28px rgba(255, 223, 133, 0.16));
+}
+
+#map-container .leaflet-interactive.map-marker-focus {
+    filter: drop-shadow(0 0 18px rgba(202, 255, 246, 0.26));
+}
+
+#map-container .leaflet-interactive.semantic-map-route-line {
+    filter: drop-shadow(0 0 10px rgba(255, 226, 132, 0.24))
+        drop-shadow(0 0 18px rgba(var(--color-primary-tint-rgb), 0.18));
+    stroke-linecap: round;
+    animation: semanticMapRouteCurrent 2.8s linear infinite;
+}
+
+#map-container .leaflet-interactive.semantic-map-route-line-aura {
+    filter: blur(1px) drop-shadow(0 0 18px rgba(var(--color-primary-tint-rgb), 0.2));
+    animation: semanticMapRouteAura 4.8s ease-in-out infinite;
+}
+
+#map-container .leaflet-interactive.semantic-map-route-pulse {
+    filter: drop-shadow(0 0 16px rgba(var(--color-primary-tint-rgb), 0.22));
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: semanticMapPulse 3.2s ease-in-out infinite;
+}
+
+#map-container .leaflet-interactive.semantic-map-route-pulse.is-anchor {
+    filter: drop-shadow(0 0 20px rgba(255, 226, 132, 0.34));
+    animation-duration: 2.4s;
+}
+
+body[data-active-view='map'][data-terrain-handoff='landing']
+    #map-container
+    .leaflet-interactive.semantic-map-route-line {
+    filter: drop-shadow(0 0 16px rgba(255, 226, 132, 0.38))
+        drop-shadow(0 0 34px rgba(var(--color-primary-tint-rgb), 0.28));
+    animation-duration: 1.55s;
+}
+
+body[data-active-view='map'][data-terrain-handoff='landing']
+    #map-container
+    .leaflet-interactive.semantic-map-route-line-aura {
+    filter: blur(1.4px) drop-shadow(0 0 26px rgba(var(--color-primary-tint-rgb), 0.28));
+}
+
+body[data-active-view='map'][data-terrain-handoff='landing']
+    #map-container
+    .leaflet-interactive.semantic-map-route-pulse {
+    animation-duration: 1.65s;
+}
+
+@keyframes semanticMapRouteCurrent {
+    0% {
+        stroke-dashoffset: 0;
+        opacity: 0.48;
+    }
+    45% {
+        opacity: 0.82;
+    }
+    100% {
+        stroke-dashoffset: -30;
+        opacity: 0.5;
+    }
+}
+
+@keyframes semanticMapRouteAura {
+    0%,
+    100% {
+        opacity: 0.06;
+    }
+    50% {
+        opacity: 0.18;
+    }
+}
+
+@keyframes semanticMapPulse {
+    0%,
+    100% {
+        opacity: 0.2;
+        transform: scale(0.92);
+    }
+    50% {
+        opacity: 0.62;
+        transform: scale(1.08);
+    }
+}
+
+@keyframes terrainBridgeVeil {
+    0% {
+        opacity: 0.22;
+        transform: scale(1.04);
+    }
+    42% {
+        opacity: 0.82;
+    }
+    100% {
+        opacity: 0.58;
+        transform: scale(1);
+    }
+}
+
+@keyframes terrainBridgeHalo {
+    0% {
+        opacity: 0.18;
+        transform: scale(1.08);
+    }
+    48% {
+        opacity: 0.78;
+    }
+    100% {
+        opacity: 0.54;
+        transform: scale(1);
+    }
+}
+
+.biofield-atmosphere {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-base);
+    pointer-events: none;
+    overflow: hidden;
+    opacity: 0.62;
+    mix-blend-mode: screen;
+    contain: layout paint;
+}
+
+.biofield-atmosphere::before,
+.biofield-atmosphere::after {
+    content: '';
+    position: absolute;
+    inset: -18%;
+    opacity: 0.6;
+    transform: translate3d(0, 0, 0);
+    animation: biofield-drift 28s ease-in-out infinite alternate;
+}
+
+.biofield-atmosphere::before {
+    background:
+        radial-gradient(circle at 18% 72%, rgba(84, 229, 214, 0.16), transparent 23%),
+        radial-gradient(circle at 72% 18%, rgba(135, 231, 223, 0.13), transparent 20%),
+        radial-gradient(circle at 86% 78%, rgba(255, 225, 139, 0.08), transparent 24%);
+    filter: blur(10px);
+}
+
+.biofield-atmosphere::after {
+    background: conic-gradient(
+        from 140deg at 52% 50%,
+        transparent 0 18%,
+        rgba(var(--color-primary-tint-rgb), 0.08) 25%,
+        transparent 34% 62%,
+        rgba(255, 225, 139, 0.055) 72%,
+        transparent 82% 100%
+    );
+    opacity: 0.34;
+    filter: blur(18px);
+    animation-duration: 38s;
+    animation-direction: alternate-reverse;
+}
+
+.biofield-orb,
+.biofield-thread {
+    position: absolute;
+    display: block;
+    border-radius: 999px;
+    transform: translate3d(0, 0, 0);
+}
+
+.biofield-orb {
+    width: var(--orb-size, 9px);
+    height: var(--orb-size, 9px);
+    background: radial-gradient(
+        circle,
+        rgba(235, 255, 250, 0.92) 0 18%,
+        rgba(var(--color-primary-tint-rgb), 0.52) 19% 42%,
+        transparent 72%
+    );
+    box-shadow:
+        0 0 18px rgba(var(--color-primary-tint-rgb), 0.22),
+        0 0 42px rgba(var(--color-primary-alt-rgb), 0.1);
+    opacity: 0.72;
+    animation: biofield-spore-float 18s ease-in-out infinite;
+}
+
+.biofield-orb-a {
+    --orb-size: 8px;
+    left: 12%;
+    top: 68%;
+}
+
+.biofield-orb-b {
+    --orb-size: 11px;
+    right: 18%;
+    top: 22%;
+    animation-duration: 24s;
+    animation-delay: -7s;
+}
+
+.biofield-orb-c {
+    --orb-size: 7px;
+    right: 32%;
+    bottom: 16%;
+    animation-duration: 21s;
+    animation-delay: -12s;
+}
+
+.biofield-thread {
+    width: min(52vw, 620px);
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(var(--color-primary-tint-rgb), 0.22),
+        rgba(255, 225, 139, 0.1),
+        transparent
+    );
+    filter: blur(0.3px) drop-shadow(0 0 10px rgba(var(--color-primary-tint-rgb), 0.14));
+    opacity: 0.32;
+    animation: biofield-thread-breathe 20s ease-in-out infinite alternate;
+}
+
+.biofield-thread-a {
+    left: 18%;
+    top: 30%;
+    transform: rotate(-12deg);
+}
+
+.biofield-thread-b {
+    right: 8%;
+    bottom: 28%;
+    transform: rotate(16deg);
+    animation-delay: -8s;
+}
+
+body[data-active-view='map'] .biofield-atmosphere {
+    opacity: 0.42;
+}
+
+body[data-trail-state="active"] .biofield-atmosphere,
+body[data-panel-surface="focus"] .biofield-atmosphere,
+body[data-panel-surface="focus-search"] .biofield-atmosphere {
+    opacity: 0.18;
+    mix-blend-mode: normal;
+}
+
+body[data-panel-surface='focus'] .biofield-atmosphere::before,
+body[data-panel-surface='focus-search'] .biofield-atmosphere::before {
+    background:
+        radial-gradient(circle at 20% 70%, rgba(53, 179, 168, 0.045), transparent 24%),
+        radial-gradient(circle at 72% 18%, rgba(74, 201, 193, 0.035), transparent 22%),
+        radial-gradient(circle at 86% 78%, rgba(166, 132, 52, 0.024), transparent 26%);
+    filter: blur(14px);
+    opacity: 0.34;
+}
+
+body[data-panel-surface='focus'] .biofield-atmosphere::after,
+body[data-panel-surface='focus-search'] .biofield-atmosphere::after {
+    background: conic-gradient(
+        from 140deg at 52% 50%,
+        transparent 0 20%,
+        rgba(55, 181, 170, 0.026) 27%,
+        transparent 36% 64%,
+        rgba(146, 116, 45, 0.018) 72%,
+        transparent 82% 100%
+    );
+    filter: blur(24px);
+    opacity: 0.2;
+}
+
+body[data-route-motion='search-corridor'] .biofield-atmosphere {
+    opacity: 0.9;
+}
+
+body[data-route-motion='terrain-landing'] .biofield-atmosphere {
+    opacity: 0.5;
+}
+
+body[data-route-motion='inside-pocket'] .biofield-thread {
+    opacity: 0.48;
+}
+
+/* #950: Suppress/reduce biofield orbs in focus/trail/search-focus states */
+body[data-panel-surface="focus"] .biofield-orb,
+body[data-panel-surface="focus-search"] .biofield-orb,
+body[data-panel-surface='search'] .biofield-orb,
+body[data-trail-state='active'] .biofield-orb {
+    opacity: 0.025;
+    animation: none;
+}
+
+@keyframes biofield-drift {
+    0% {
+        transform: translate3d(-1.5%, 0.5%, 0) scale(1);
+    }
+    50% {
+        transform: translate3d(1.2%, -1%, 0) scale(1.035);
+    }
+    100% {
+        transform: translate3d(0.8%, 1.3%, 0) scale(1.02);
+    }
+}
+
+@keyframes biofield-spore-float {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(0.92);
+        opacity: 0.48;
+    }
+    42% {
+        transform: translate3d(18px, -26px, 0) scale(1.12);
+        opacity: 0.82;
+    }
+    68% {
+        transform: translate3d(-10px, -44px, 0) scale(0.98);
+        opacity: 0.62;
+    }
+}
+
+@keyframes biofield-thread-breathe {
+    0% {
+        opacity: 0.08;
+        filter: blur(0.4px) drop-shadow(0 0 7px rgba(var(--color-primary-tint-rgb), 0.06));
+    }
+    100% {
+        opacity: 0.18;
+        filter: blur(0.2px) drop-shadow(0 0 12px rgba(var(--color-primary-tint-rgb), 0.1));
+    }
+}

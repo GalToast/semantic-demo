@@ -1,298 +1,104 @@
-import crypto from 'node:crypto';
 import fs from 'node:fs';
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import * as esbuild from 'esbuild';
-import { compile } from 'svelte/compiler';
 
 const root = process.cwd();
+const distRoot = path.join(root, 'dist', 'svelte');
+const indexPath = path.join(distRoot, 'index.html');
 const fix = process.argv.includes('--fix');
-const scopeArg = process.argv.find((arg) => arg.startsWith('--assets='))?.slice('--assets='.length) || '';
-const scopedPaths = new Set(
-  scopeArg
-    .split(',')
-    .map((item) => item.trim().replace(/^\.\//, '').replace(/\\/g, '/'))
-    .filter(Boolean),
-);
-const scopedBundleRelevant = scopedPaths.size === 0 ||
-  [...scopedPaths].some((item) => item === 'dist/bundle.js' || item.startsWith('js/'));
-const shellPath = path.join(root, 'vector-explorer-polished.html');
-const requiredAssets = [
-  {
-    label: 'semantic-demo.css',
-    path: 'semantic-demo.css',
-  },
-  {
-    label: 'vector-explorer-pandora.css',
-    path: 'vector-explorer-pandora.css',
-  },
-  {
-    label: 'dist/bundle.js',
-    path: 'dist/bundle.js',
-  },
-];
-
 const failures = [];
 
-/** @type {import('esbuild').Plugin} */
-const sveltePlugin = {
-  name: 'semantic-demo-svelte-cache-check',
-  setup(build) {
-    build.onLoad({ filter: /\.svelte$/ }, async (args) => {
-      const source = await readFile(args.path, 'utf8');
-      const compiled = compile(source, {
-        filename: args.path,
-        generate: 'client',
-        css: 'injected',
-        dev: false,
-      });
+function fail(message) {
+  failures.push(message);
+}
 
-      return {
-        contents: compiled.js.code,
-        loader: 'js',
-        resolveDir: path.dirname(args.path),
-        warnings: compiled.warnings.map((warning) => ({
-          text: warning.message,
-          location: warning.start
-            ? {
-                file: args.path,
-                line: warning.start.line,
-                column: warning.start.column,
-              }
-            : undefined,
-        })),
-      };
-    });
-  },
-};
+function read(relativePath) {
+  const absolutePath = path.join(root, relativePath);
+  if (!fs.existsSync(absolutePath)) {
+    fail(`${relativePath} is missing`);
+    return '';
+  }
+  return fs.readFileSync(absolutePath, 'utf8');
+}
 
-/** @type {import('esbuild').Plugin} */
-const bundleHygienePlugin = {
-  name: 'semantic-demo-bundle-hygiene-cache-check',
-  setup(build) {
-    build.onEnd(async (result) => {
-      if (result.errors.length > 0) return;
-      const bundlePath = path.join(root, 'dist/bundle.js');
-      const text = fs.readFileSync(bundlePath, 'utf8');
-      const normalized = normalizeGeneratedBundleText(text);
-      if (normalized !== text) fs.writeFileSync(bundlePath, normalized);
-    });
-  },
-};
+function assertIncludes(file, text, needle, reason) {
+  if (!text.includes(needle)) {
+    fail(`${file} must include ${JSON.stringify(needle)} (${reason})`);
+  }
+}
 
-function reportFailuresAndExit() {
-  console.error('Semantic demo cache-buster check failed:');
+function assertExcludes(file, text, needle, reason) {
+  if (text.includes(needle)) {
+    fail(`${file} must not include ${JSON.stringify(needle)} (${reason})`);
+  }
+}
+
+function localRefs(html) {
+  return [...html.matchAll(/\b(?:href|src)="([^"]+)"/g)]
+    .map((match) => match[1])
+    .filter((ref) => !/^(?:[a-z]+:|\/\/|#|data:)/i.test(ref));
+}
+
+if (fix) {
+  console.log('Svelte/Vite production build uses content-hashed assets; no cache-buster rewrite is needed.');
+}
+
+if (!fs.existsSync(indexPath)) {
+  fail('dist/svelte/index.html is missing; run npm run build');
+} else {
+  const html = fs.readFileSync(indexPath, 'utf8');
+  assertIncludes('dist/svelte/index.html', html, './assets/', 'Vite output must use relative hashed assets for /semantic-demo/ hosting');
+  assertIncludes('dist/svelte/index.html', html, 'semantic-demo.css', 'production output must include the legacy CSS coexistence shell');
+  assertIncludes('dist/svelte/index.html', html, 'css/mobile_premium__focus-dive.css', 'production output must include the mobile premium cascade');
+
+  const assetRefs = localRefs(html);
+
+  for (const ref of assetRefs) {
+    if (ref.startsWith('/')) {
+      fail(`dist/svelte/index.html must not use root-absolute asset reference: ${ref}`);
+      continue;
+    }
+    if (ref.endsWith('.ts') || ref.includes('/main.ts') || ref === 'main.ts') {
+      fail(`dist/svelte/index.html must not reference the dev TypeScript entry: ${ref}`);
+      continue;
+    }
+    const cleanRef = ref.split('?')[0].replace(/^\.\//, '');
+    const absolutePath = path.join(distRoot, cleanRef);
+    if (!fs.existsSync(absolutePath)) {
+      fail(`dist/svelte/index.html references missing built asset: ${ref}`);
+    }
+  }
+}
+
+const srcHtml = read('src/index.html');
+assertIncludes('src/index.html', srcHtml, 'src="main.ts"', 'Svelte source shell must own the Vite entry');
+assertExcludes('src/index.html', srcHtml, 'src="/main.ts"', 'source shell should stay subpath-safe');
+assertExcludes('src/index.html', srcHtml, 'href="/semantic-demo.css"', 'source shell should stay subpath-safe');
+
+for (const requiredPath of [
+  'dist/svelte/semantic-demo.css',
+  'dist/svelte/vector-explorer-pandora.css',
+  'dist/svelte/css/mobile_premium__focus-dive.css',
+  'dist/svelte/css/modules/focus_stage.css',
+  'dist/svelte/data.dat',
+  'dist/svelte/data.dat.gz',
+  'dist/svelte/semantic_threads.dat',
+  'dist/svelte/semantic_threads_ui.dat',
+  'dist/svelte/semantic_space_layout_manifest.json',
+  'dist/svelte/scripts/leadEnrichment.public.json',
+]) {
+  if (!fs.existsSync(path.join(root, requiredPath))) {
+    fail(`${requiredPath} is missing from the production Svelte build output`);
+  }
+}
+
+if (fs.existsSync(path.join(distRoot, '.git'))) {
+  fail('dist/svelte/.git must not exist; production deploy output cannot contain repository metadata');
+}
+
+if (failures.length) {
+  console.error('Semantic demo production build check failed:');
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
 
-function shaPrefix(relativePath) {
-  const buffer = fs.readFileSync(path.join(root, relativePath));
-  return crypto.createHash('sha256').update(buffer).digest('hex').slice(0, 12);
-}
-
-function isLocalAsset(reference) {
-  return !/^(?:[a-z]+:|\/\/|#|data:)/i.test(reference);
-}
-
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function toPosixPath(value) {
-  return value.replace(/\\/g, '/');
-}
-
-function normalizeLocalPath(value) {
-  return toPosixPath(value).replace(/^\.\//, '');
-}
-
-function normalizeGeneratedBundleText(text) {
-  return text.replace(/[ \t]+(?=\r?\n)/g, '');
-}
-
-function resolveCssImport(ownerPath, reference) {
-  const ownerDir = path.posix.dirname(toPosixPath(ownerPath));
-  return path.posix.normalize(path.posix.join(ownerDir === '.' ? '' : ownerDir, reference));
-}
-
-async function verifyBundleFresh() {
-  const currentBundlePath = path.join(root, 'dist/bundle.js');
-  if (!fs.existsSync(currentBundlePath)) {
-    failures.push('dist/bundle.js is missing; run npm run build');
-    return;
-  }
-
-  const currentBundle = fs.readFileSync(currentBundlePath);
-
-  try {
-    await esbuild.build({
-      entryPoints: ['js/modules/app.ts'],
-      bundle: true,
-      minify: true,
-      keepNames: true,
-      outfile: currentBundlePath,
-      target: 'es2020',
-      format: 'esm',
-      external: ['three', 'three/*'],
-      plugins: [sveltePlugin, bundleHygienePlugin],
-      absWorkingDir: root,
-      logLevel: 'silent',
-    });
-
-    const current = normalizeGeneratedBundleText(currentBundle.toString('utf8'));
-    const generated = normalizeGeneratedBundleText(fs.readFileSync(currentBundlePath, 'utf8'));
-    if (current !== generated) {
-      const currentHash = crypto.createHash('sha256').update(current).digest('hex').slice(0, 12);
-      const generatedHash = crypto.createHash('sha256').update(generated).digest('hex').slice(0, 12);
-      failures.push(
-        `dist/bundle.js is stale relative to js/modules/app.ts and its imports; ` +
-        `expected build hash ${generatedHash}, found ${currentHash}. Run npm run build, then npm run refresh:cache.`,
-      );
-    }
-  } catch (error) {
-    failures.push(`dist/bundle.js freshness build failed: ${error?.message || String(error)}`);
-  } finally {
-    fs.writeFileSync(currentBundlePath, currentBundle);
-  }
-}
-
-const cssImpactCache = new Map();
-
-function refreshCssImports(relativePath, seen = new Set()) {
-  relativePath = normalizeLocalPath(relativePath);
-  if (cssImpactCache.has(relativePath)) return cssImpactCache.get(relativePath);
-  if (seen.has(relativePath)) return scopedPaths.has(relativePath);
-  seen.add(relativePath);
-
-  const absolutePath = path.join(root, relativePath);
-  if (!fs.existsSync(absolutePath)) {
-    failures.push(`${relativePath} is missing`);
-    cssImpactCache.set(relativePath, false);
-    return false;
-  }
-
-  const css = fs.readFileSync(absolutePath, 'utf8');
-  const importPattern = /(@import\s+url\(\s*['"]?)([^'")]+\.css)(?:\?v=([^'")]*))?(['"]?\s*\)\s*;)/g;
-  let changed = false;
-  const selfImpacted = scopedPaths.size === 0 || scopedPaths.has(relativePath);
-  let impacted = selfImpacted;
-
-  const nextCss = css.replace(importPattern, (full, prefix, reference, current = '', suffix) => {
-    if (!isLocalAsset(reference)) return full;
-
-    const importedPath = resolveCssImport(relativePath, reference.replace(/^\.\//, ''));
-    const importedAbsolutePath = path.join(root, importedPath);
-    if (!fs.existsSync(importedAbsolutePath)) {
-      failures.push(`${relativePath} imports missing local stylesheet ${importedPath}`);
-      return full;
-    }
-
-    const childImpacted = refreshCssImports(importedPath, seen);
-    impacted = impacted || childImpacted;
-    const expected = shaPrefix(importedPath);
-    if (current === expected) return full;
-    const shouldTouchReference = scopedPaths.size === 0 ||
-      selfImpacted ||
-      childImpacted ||
-      scopedPaths.has(importedPath);
-    if (!shouldTouchReference) return full;
-
-    if (fix) {
-      changed = true;
-      return `${prefix}${reference}?v=${expected}${suffix}`;
-    }
-
-    failures.push(`${relativePath} import ${importedPath} cache buster must be ${expected}, found ${current || 'none'}`);
-    return full;
-  });
-
-  if (fix && changed) {
-    fs.writeFileSync(absolutePath, nextCss);
-    console.log(`Updated ${relativePath} import cache busters.`);
-    impacted = true;
-  }
-  cssImpactCache.set(relativePath, impacted);
-  return impacted;
-}
-
-if (scopedBundleRelevant) {
-  await verifyBundleFresh();
-  if (failures.length) reportFailuresAndExit();
-}
-
-let shellHtml = fs.readFileSync(shellPath, 'utf8');
-let nextHtml = shellHtml;
-
-const assets = new Map();
-for (const asset of requiredAssets) {
-  assets.set(asset.path, { ...asset });
-}
-
-const assetPattern = /\b(href|src)="([^"]+\.(?:css|js))(?:\?v=([^"]*))?"/g;
-for (const match of shellHtml.matchAll(assetPattern)) {
-  const [, attribute, reference] = match;
-  if (!isLocalAsset(reference)) continue;
-  const localPath = reference.replace(/^\.\//, '');
-  const absolutePath = path.join(root, localPath);
-  if (!fs.existsSync(absolutePath)) {
-    failures.push(`vector-explorer-polished.html references missing local asset ${localPath}`);
-    continue;
-  }
-  assets.set(localPath, {
-    label: localPath,
-    path: localPath,
-    attribute,
-  });
-}
-
-for (const requiredAsset of requiredAssets) {
-  if (!assets.has(requiredAsset.path)) {
-    failures.push(`vector-explorer-polished.html must reference ${requiredAsset.label}`);
-  }
-}
-
-const impactedShellAssets = new Set();
-for (const asset of assets.values()) {
-  if (asset.path.endsWith('.css')) {
-    const impacted = refreshCssImports(asset.path);
-    if (impacted) impactedShellAssets.add(asset.path);
-  }
-}
-
-for (const asset of assets.values()) {
-  const expected = shaPrefix(asset.path);
-  const attribute = asset.attribute || (asset.path.endsWith('.css') ? 'href' : 'src');
-  const pattern = new RegExp(`(${attribute}="${escapeRegExp(asset.path)})(?:\\?v=([^"]*))?(")`);
-  const match = nextHtml.match(pattern);
-
-  if (!match) {
-    failures.push(`vector-explorer-polished.html must reference ${asset.label}`);
-    continue;
-  }
-
-  const current = match[2] || '';
-  if (current !== expected) {
-    const shouldTouchReference = scopedPaths.size === 0 ||
-      scopedPaths.has(asset.path) ||
-      impactedShellAssets.has(asset.path);
-    if (!shouldTouchReference) continue;
-
-    if (fix) {
-      nextHtml = nextHtml.replace(pattern, `$1?v=${expected}$3`);
-    } else {
-      failures.push(`${asset.label} cache buster must be ${expected}, found ${current || 'none'}`);
-    }
-  }
-}
-
-if (fix && nextHtml !== shellHtml) {
-  fs.writeFileSync(shellPath, nextHtml);
-  console.log('Updated vector-explorer-polished.html cache busters.');
-}
-
-if (failures.length) {
-  reportFailuresAndExit();
-}
-
-console.log('Semantic demo cache-buster check OK.');
+console.log('Semantic demo production build check OK: dist/svelte is the canonical Vite output.');

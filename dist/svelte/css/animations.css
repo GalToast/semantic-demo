@@ -1,0 +1,108 @@
+/* Animations: prefers-reduced-motion overrides. */
+
+@media (prefers-reduced-motion: reduce) {
+    body #loading-overlay,
+    body #loading-overlay *,
+    body #micro-demo-veil,
+    body #weather-overlay,
+    body #canvas-container,
+    body #map-container,
+    body #view-handoff,
+    body #journey-compass,
+    body .view-toggle,
+    body .view-toggle *,
+    body #btn-legend,
+    body .journey-compass-action,
+    body .journey-compass-step,
+    body .info-panel,
+    body .info-header,
+    body .info-toggle-icon,
+    body .demo-starters,
+    body .launch-btn,
+    body .legend-panel,
+    body .legend-item,
+    body .search-container,
+    body .search-input-wrapper,
+    body .search-input,
+    body .search-results,
+    body .weather-widget,
+    body .weather-widget *,
+    body .experience-reset-toast {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* Relocated prefers-reduced-motion rules (Slice 6) */
+
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+    body[data-active-view='galaxy'] .info-panel,
+    body[data-active-view='galaxy'] .journey-compass {
+        transition: none;
+        transition-duration: 0.01ms;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body #search-input,
+    body #search-input.search-input,
+    body .filter-chip,
+    body .loading-phase-chip,
+    body .loading-phase-chip.is-active,
+    body .loading-phase-chip.is-complete,
+    body #city-filter,
+    body #city-filter.filter-select,
+    body .filter-select,
+    body .filter-clear-btn,
+    body .search-results,
+    body .search-results.active,
+    body .search-results.searching,
+    body .search-results.focusing,
+    body .search-results .search-result-item,
+    body .search-container .search-input-wrapper,
+    body .search-container .search-results,
+    body .search-container .search-input {
+        transition-duration: 0.01ms;
+        animation-duration: 0.01ms;
+        transition: none;
+        animation: none;
+    }
+}
+
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+    body[data-active-view='galaxy'] .journey-compass[data-phase='overview'],
+    body[data-active-view='galaxy'] .journey-compass[data-density='compact'] {
+        transition: none;
+        transition-duration: 0.01ms;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body .focus-stage,
+    body .focus-stage-card,
+    body .focus-stage-action-btn,
+    body .focus-stage-dive-btn,
+    body .focus-stage-inside-btn,
+    body[data-panel-surface='semantic-dive'] #btn-inside-next.focus-stage-inside-btn[aria-busy='true'],
+    body .focus-stage-neighbor-pill {
+        animation: none;
+        transition: none;
+    }
+
+    body[data-active-view='galaxy'] .focus-stage,
+    body[data-active-view='galaxy'] .focus-stage-card {
+        transition: none;
+        transition-duration: 0.01ms;
+    }
+
+    body[data-active-view='galaxy'][data-semantic-dive='transitioning'] .focus-stage-card {
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+        transition: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
