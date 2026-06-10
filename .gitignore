@@ -69,3 +69,8 @@ semantic-sweep-*
 
 # Qwen worker runtime logs and caches (deeply nested bun cache exceeds Windows MAX_PATH)
 .qwen/worker-logs/
+.qwen/skills/
+
+# Svelte/Vite build artifacts
+dist/svelte/assets/
+dist/svelte/.git/
