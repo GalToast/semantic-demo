@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import * as loadingUi from '../../js/modules/loading-ui.js';
 import { state, withStateMutation } from '../../js/state.js';
 import { SCENE_READY } from '../../js/modules/scene-events.js';
-import * as journey from '../../js/modules/journey.js';
 import * as semanticThreads from '../../js/modules/semantic-threads.js';
 import * as searchState from '../../js/modules/search-state.js';
 import * as threeThreadManager from '../../js/modules/three-thread-manager.js';

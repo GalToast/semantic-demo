@@ -3,7 +3,6 @@ import * as journeyNeighborhood from '../../js/modules/journey-neighborhood.js';
 import { state, withStateMutation } from '../../js/state.js';
 import * as geoData from '../../js/modules/utils/geo-data.js';
 import * as journeyThreadModel from '../../js/modules/journey-thread-model.js';
-import * as environment from '../../js/modules/environment.js';
 
 vi.mock('../../js/modules/utils/geo-data.js', () => ({
     isPointVisible: vi.fn(() => true)

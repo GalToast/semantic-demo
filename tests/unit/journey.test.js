@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { state } from '../../js/state.js';
 import { initJourneyState } from '../../js/modules/journey.js';
 
