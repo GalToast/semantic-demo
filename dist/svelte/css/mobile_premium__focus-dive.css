@@ -803,8 +803,7 @@
     body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-meta,
     body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-note,
     body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-dive-btn,
-    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-neighbors,
-    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] #trail-controls {
+    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-neighbors {
         display: none;
     }
 
