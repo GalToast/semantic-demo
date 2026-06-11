@@ -79,11 +79,11 @@
     font-family: 'Nunito Sans', system-ui, sans-serif;
   }
   .search-container.is-compact {
-    width: 100%;
-    top: 0;
-    left: 0;
+    width: calc(100% - 1rem);
+    top: calc(7.25rem + env(safe-area-inset-top, 0px));
+    left: 0.5rem;
     transform: none;
-    padding: 0.5rem;
+    padding: 0;
   }
   .search-container.info-panel-contained {
     position: sticky;

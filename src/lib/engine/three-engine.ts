@@ -24,6 +24,22 @@ if (typeof window !== 'undefined') {
 import { webglContext, getLiveResourceCounts } from '@lib/engine/webgl-context';
 import { CONFIG } from '@lib/engine/config';
 import { disposeObject3D } from '@lib/engine/resource-tracker';
+import {
+  compilePointMaterialForReadiness as compilePointMaterialForReadinessPort,
+  createPoints as createPointsPort,
+  disposeNodeVisuals as disposeNodeVisualsPort,
+  MYCELIUM_FIELD_SCALE as PORT_MYCELIUM_FIELD_SCALE,
+  SCENE_ATMOSPHERE as PORT_SCENE_ATMOSPHERE,
+  setNodeSporeInstanceMatrix as setNodeSporeInstanceMatrixPort,
+} from '@lib/engine/node-manager';
+import {
+  createMycelium as createMyceliumPort,
+  getMyceliumPresentationProfile as getMyceliumPresentationProfilePort,
+  getThreadOpacityEnvelope as getThreadOpacityEnvelopePort,
+  getThreadPulseOpacity as getThreadPulseOpacityPort,
+  shouldRenderBridgeThreads as shouldRenderBridgeThreadsPort,
+  shouldRenderThreads as shouldRenderThreadsPort,
+} from '@lib/engine/thread-manager';
 import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
@@ -135,24 +151,6 @@ interface RouteArrivalModule {
   updateRouteTraceOverlayFrame(now: number): void;
 }
 
-interface ThreeNodeManagerModule {
-  createPoints(): void;
-  disposeNodeVisuals(): void;
-  setNodeSporeInstanceMatrix(index: number, mesh?: any): void;
-  compilePointMaterialForReadiness(): void;
-  MYCELIUM_FIELD_SCALE: { x: number; y: number; z: number };
-  SCENE_ATMOSPHERE: Record<string, any>;
-}
-
-interface ThreeThreadManagerModule {
-  createMycelium(): void;
-  shouldRenderThreads(): boolean;
-  shouldRenderBridgeThreads(): boolean;
-  getThreadPulseOpacity(base: any, pulse: number, amount: number, reveal: number): number;
-  getThreadOpacityEnvelope(): any;
-  getMyceliumPresentationProfile(): any;
-}
-
 interface ThreeSearchAnimationsModule {
   triggerSearchHeroMoment(): void;
   triggerCorridorNodeGlow(now: number): void;
@@ -199,8 +197,6 @@ let _webglRestore: WebGLRestoreModule | null = null;
 let _inspectedStrand: InspectedStrandModule | null = null;
 let _focusAnchor: FocusAnchorModule | null = null;
 let _routeArrival: RouteArrivalModule | null = null;
-let _threeNodeManager: ThreeNodeManagerModule | null = null;
-let _threeThreadManager: ThreeThreadManagerModule | null = null;
 let _threeSearchAnimations: ThreeSearchAnimationsModule | null = null;
 let _audioScape: AudioScapeModule | null = null;
 let _eventBindings: EventBindingsModule | null = null;
@@ -227,8 +223,6 @@ async function _ensureModules(): Promise<void> {
       isMod,
       faMod,
       raMod,
-      tnmMod,
-      ttmMod,
       tsaMod,
       asMod,
       ebMod,
@@ -249,8 +243,6 @@ async function _ensureModules(): Promise<void> {
       import('@legacy/modules/inspected-strand-overlay-adapter'),
       import('@legacy/modules/focus-anchor-indicator'),
       import('@legacy/modules/route-arrival-overlay-adapter'),
-      import('@legacy/modules/three-node-manager'),
-      import('@legacy/modules/three-thread-manager'),
       import('@legacy/modules/three-search-animations'),
       import('@legacy/modules/audio-scape'),
       import('@legacy/modules/event-bindings'),
@@ -273,8 +265,6 @@ async function _ensureModules(): Promise<void> {
     _inspectedStrand = isMod as unknown as InspectedStrandModule;
     _focusAnchor = faMod as unknown as FocusAnchorModule;
     _routeArrival = raMod as unknown as RouteArrivalModule;
-    _threeNodeManager = tnmMod as unknown as ThreeNodeManagerModule;
-    _threeThreadManager = ttmMod as unknown as ThreeThreadManagerModule;
     _threeSearchAnimations = tsaMod as unknown as ThreeSearchAnimationsModule;
     _audioScape = asMod as unknown as AudioScapeModule;
     _eventBindings = ebMod as unknown as EventBindingsModule;
@@ -339,42 +329,30 @@ export function initSemanticManifold(): void {
 }
 
 export function shouldRenderThreads(): boolean {
-  return _threeThreadManager?.shouldRenderThreads() ?? false;
+  return shouldRenderThreadsPort();
 }
 
 export function shouldRenderBridgeThreads(): boolean {
-  return _threeThreadManager?.shouldRenderBridgeThreads() ?? false;
+  return shouldRenderBridgeThreadsPort();
 }
 
 export function createPoints(): void {
-  _threeNodeManager?.createPoints();
+  createPointsPort();
 }
 
 export function createMycelium(): void {
-  _threeThreadManager?.createMycelium();
+  createMyceliumPort();
 }
 
 export function getThreadOpacityEnvelope(): any {
-  return _threeThreadManager?.getThreadOpacityEnvelope() ?? null;
+  return getThreadOpacityEnvelopePort();
 }
 
 export const SCENE_ATMOSPHERE: Record<string, any> = {};
 export const MYCELIUM_FIELD_SCALE = { x: 3.2, y: 2.6, z: 3.7 };
 
-// Sync SCENE_ATMOSPHERE from legacy module once loaded
-void (async () => {
-  while (!_loaded) await new Promise((r) => setTimeout(r, 10));
-  const nodeManager = _threeNodeManager as {
-    SCENE_ATMOSPHERE?: Record<string, any>;
-    MYCELIUM_FIELD_SCALE?: { x: number; y: number; z: number };
-  } | null;
-  if (nodeManager?.SCENE_ATMOSPHERE) {
-    Object.assign(SCENE_ATMOSPHERE, nodeManager.SCENE_ATMOSPHERE);
-  }
-  if (nodeManager?.MYCELIUM_FIELD_SCALE) {
-    Object.assign(MYCELIUM_FIELD_SCALE, nodeManager.MYCELIUM_FIELD_SCALE);
-  }
-})();
+Object.assign(SCENE_ATMOSPHERE, PORT_SCENE_ATMOSPHERE);
+Object.assign(MYCELIUM_FIELD_SCALE, PORT_MYCELIUM_FIELD_SCALE);
 
 // ── Module-level Mutable State ───────────────────────────────────────────────
 
@@ -497,24 +475,27 @@ interface ScenePerformanceTimings {
 
 function sampleScenePerformance(frameMs: number, timings: ScenePerformanceTimings = {}) {
   if (!_state) return;
-  const diagnostics = _state.scenePerformanceDiagnostics;
-  diagnostics.active = !!(
-    _state.renderer && _state.scene && _state.camera && _state.currentView === 'galaxy'
-  );
-  diagnostics.reason = diagnostics.active ? 'sampling' : 'inactive-view';
-  diagnostics.sampleCount = Math.min(600, (diagnostics.sampleCount || 0) + 1);
-  diagnostics.avgFrameMs = smoothDiagnosticValue(diagnostics.avgFrameMs || 0, frameMs, diagnostics.sampleCount);
-  diagnostics.maxFrameMs = Math.max(frameMs, (diagnostics.maxFrameMs || 0) * SCENE_PERF_EMA_DECAY);
-  diagnostics.avgControlsMs = smoothDiagnosticValue(diagnostics.avgControlsMs || 0, timings.controlsMs || 0, diagnostics.sampleCount);
-  diagnostics.avgNodeMotionMs = smoothDiagnosticValue(diagnostics.avgNodeMotionMs || 0, timings.nodeMotionMs || 0, diagnostics.sampleCount);
-  diagnostics.avgThreadUpdateMs = smoothDiagnosticValue(diagnostics.avgThreadUpdateMs || 0, timings.threadUpdateMs || 0, diagnostics.sampleCount);
-  diagnostics.avgGlowMs = smoothDiagnosticValue(diagnostics.avgGlowMs || 0, timings.glowMs || 0, diagnostics.sampleCount);
-  diagnostics.avgLensMs = smoothDiagnosticValue(diagnostics.avgLensMs || 0, timings.lensMs || 0, diagnostics.sampleCount);
-  diagnostics.avgUpdateMs = smoothDiagnosticValue(diagnostics.avgUpdateMs || 0, timings.updateMs || 0, diagnostics.sampleCount);
-  diagnostics.maxUpdateMs = Math.max(timings.updateMs || 0, (diagnostics.maxUpdateMs || 0) * SCENE_PERF_EMA_DECAY);
-  diagnostics.avgRenderMs = smoothDiagnosticValue(diagnostics.avgRenderMs || 0, timings.renderMs || 0, diagnostics.sampleCount);
-  diagnostics.maxRenderMs = Math.max(timings.renderMs || 0, (diagnostics.maxRenderMs || 0) * SCENE_PERF_EMA_DECAY);
-  diagnostics.renderables = getSceneRenderableDiagnostics();
+  _withStateMutation?.(() => {
+    if (!_state) return;
+    const diagnostics = _state.scenePerformanceDiagnostics;
+    diagnostics.active = !!(
+      _state.renderer && _state.scene && _state.camera && _state.currentView === 'galaxy'
+    );
+    diagnostics.reason = diagnostics.active ? 'sampling' : 'inactive-view';
+    diagnostics.sampleCount = Math.min(600, (diagnostics.sampleCount || 0) + 1);
+    diagnostics.avgFrameMs = smoothDiagnosticValue(diagnostics.avgFrameMs || 0, frameMs, diagnostics.sampleCount);
+    diagnostics.maxFrameMs = Math.max(frameMs, (diagnostics.maxFrameMs || 0) * SCENE_PERF_EMA_DECAY);
+    diagnostics.avgControlsMs = smoothDiagnosticValue(diagnostics.avgControlsMs || 0, timings.controlsMs || 0, diagnostics.sampleCount);
+    diagnostics.avgNodeMotionMs = smoothDiagnosticValue(diagnostics.avgNodeMotionMs || 0, timings.nodeMotionMs || 0, diagnostics.sampleCount);
+    diagnostics.avgThreadUpdateMs = smoothDiagnosticValue(diagnostics.avgThreadUpdateMs || 0, timings.threadUpdateMs || 0, diagnostics.sampleCount);
+    diagnostics.avgGlowMs = smoothDiagnosticValue(diagnostics.avgGlowMs || 0, timings.glowMs || 0, diagnostics.sampleCount);
+    diagnostics.avgLensMs = smoothDiagnosticValue(diagnostics.avgLensMs || 0, timings.lensMs || 0, diagnostics.sampleCount);
+    diagnostics.avgUpdateMs = smoothDiagnosticValue(diagnostics.avgUpdateMs || 0, timings.updateMs || 0, diagnostics.sampleCount);
+    diagnostics.maxUpdateMs = Math.max(timings.updateMs || 0, (diagnostics.maxUpdateMs || 0) * SCENE_PERF_EMA_DECAY);
+    diagnostics.avgRenderMs = smoothDiagnosticValue(diagnostics.avgRenderMs || 0, timings.renderMs || 0, diagnostics.sampleCount);
+    diagnostics.maxRenderMs = Math.max(timings.renderMs || 0, (diagnostics.maxRenderMs || 0) * SCENE_PERF_EMA_DECAY);
+    diagnostics.renderables = getSceneRenderableDiagnostics();
+  });
 }
 
 function bindWebGLContextResilience(renderer: THREE.WebGLRenderer) {
@@ -733,7 +714,7 @@ export function initThreeJS() {
     _state.myceliumBridgeLines = webglContext.myceliumBridgeLines;
     _state.myceliumConnectionPairs = webglContext.myceliumConnectionPairs;
   }
-  _threeNodeManager?.compilePointMaterialForReadiness();
+  compilePointMaterialForReadinessPort();
   initSemanticLens();
   initSemanticManifold();
   document.body.dataset.graphicsMode = 'webgl';
@@ -819,7 +800,7 @@ export function deinit() {
       _state.inspectedStrandGroup = null;
     }
   }
-  _threeNodeManager?.disposeNodeVisuals();
+  disposeNodeVisualsPort();
   _threeInteractionVisuals?.disposeInteractionVisuals();
   _audioScape?.disposeAudio();
   _eventBindings?.disposeEventListeners();
@@ -879,16 +860,16 @@ export function animate() {
         pos.x += dx * lerpFactor;
         pos.y += dy * lerpFactor;
         pos.z += dz * lerpFactor;
-        _threeNodeManager?.setNodeSporeInstanceMatrix(i);
+        setNodeSporeInstanceMatrixPort(i);
         anyNodeMoved = true;
       }
     });
 
     if (_focusPocket?.applyFocusPocketBreathing(frameNow, _state.nodePositions)) {
       _state.focusPocketMotionByIndex.forEach((_: any, idx: number) => {
-        _threeNodeManager?.setNodeSporeInstanceMatrix(idx);
+        setNodeSporeInstanceMatrixPort(idx);
         if (webglContext.nodeSporeHitMesh && _state!.navState.focusPocketIndices?.includes(idx)) {
-          _threeNodeManager?.setNodeSporeInstanceMatrix(idx, webglContext.nodeSporeHitMesh);
+          setNodeSporeInstanceMatrixPort(idx, webglContext.nodeSporeHitMesh);
         }
       });
       anyNodeMoved = true;
@@ -953,11 +934,11 @@ export function animate() {
   if (_state) _state.pulsePhase = (_state.pulsePhase + pulseIncrement) % (Math.PI * 2);
 
   const threadRevealProgress = easeOutQuint(Math.min(1.0, Math.max(0.0, (pointsRevealProgress - 0.25) / 0.5)));
-  const graphProfile = _threeThreadManager?.getMyceliumPresentationProfile() ?? {};
+  const graphProfile = getMyceliumPresentationProfilePort();
   if (threadsVisible) {
-    if (webglContext.myceliumCoreLines) (webglContext.myceliumCoreLines.material as THREE.Material).opacity = _threeThreadManager?.getThreadPulseOpacity((graphProfile as any).core, Math.sin(_state?.pulsePhase ?? 0), (graphProfile as any).pulse, threadRevealProgress) ?? 0;
-    if (webglContext.myceliumWispyLines) (webglContext.myceliumWispyLines.material as THREE.Material).opacity = _threeThreadManager?.getThreadPulseOpacity((graphProfile as any).wispy, Math.sin((_state?.pulsePhase ?? 0) * 0.7), (graphProfile as any).pulse * 0.36, threadRevealProgress) ?? 0;
-    if (webglContext.myceliumBridgeLines) (webglContext.myceliumBridgeLines.material as THREE.Material).opacity = _threeThreadManager?.getThreadPulseOpacity((graphProfile as any).bridge, Math.sin((_state?.pulsePhase ?? 0) * 0.45), (graphProfile as any).pulse * 0.28, threadRevealProgress) ?? 0;
+    if (webglContext.myceliumCoreLines) (webglContext.myceliumCoreLines.material as THREE.Material).opacity = getThreadPulseOpacityPort((graphProfile as any).core, Math.sin(_state?.pulsePhase ?? 0), (graphProfile as any).pulse, threadRevealProgress) ?? 0;
+    if (webglContext.myceliumWispyLines) (webglContext.myceliumWispyLines.material as THREE.Material).opacity = getThreadPulseOpacityPort((graphProfile as any).wispy, Math.sin((_state?.pulsePhase ?? 0) * 0.7), (graphProfile as any).pulse * 0.36, threadRevealProgress) ?? 0;
+    if (webglContext.myceliumBridgeLines) (webglContext.myceliumBridgeLines.material as THREE.Material).opacity = getThreadPulseOpacityPort((graphProfile as any).bridge, Math.sin((_state?.pulsePhase ?? 0) * 0.45), (graphProfile as any).pulse * 0.28, threadRevealProgress) ?? 0;
   } else {
     if (webglContext.myceliumCoreLines) (webglContext.myceliumCoreLines.material as THREE.Material).opacity = 0;
     if (webglContext.myceliumWispyLines) (webglContext.myceliumWispyLines.material as THREE.Material).opacity = 0;

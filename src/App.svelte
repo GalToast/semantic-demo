@@ -38,6 +38,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { navStore, isOverview } from '@lib/stores/navigation';
+  import { searchStore } from '@lib/stores/search.svelte';
   import { isCompact, reducedMotion, initViewportListeners } from '@lib/stores/viewport';
   import { initData } from '@lib/data-store';
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs';
@@ -50,6 +51,7 @@
   import Canvas from '@components/Canvas.svelte';
   import InfoPanel from '@components/InfoPanel.svelte';
   import Legend from '@components/Legend.svelte';
+  import MapView from '@components/MapView.svelte';
   import SearchBar from '@components/SearchBar.svelte';
   import SearchResults from '@components/SearchResults.svelte';
   import JourneyChrome from '@components/JourneyChrome.svelte';
@@ -67,6 +69,7 @@
   import SemanticOverlay from '@components/SemanticOverlay.svelte';
   import WeatherWidget from '@components/WeatherWidget.svelte';
   import LegacyCompassSurface from '@components/LegacyCompassSurface.svelte';
+  import { legendOpen } from '@lib/stores/legend.svelte';
 
   interface Props {
     /** Force demo to run regardless of eligibility */
@@ -168,20 +171,45 @@
     sync();
     return () => obs.disconnect();
   });
+  // ── Reactive nav store state (mirror of mapModeActive pattern) ──
+  // `navStore` is a svelte/store writable; $derived(navStore().x) is NOT
+  // reactive because get() reads the current value but does not register as a
+  // Svelte 5 dependency. We subscribe once per mount via $effect.
+  let navSurface = $state('idle');
+  let navMode = $state('overview');
+  let navView = $state('galaxy');
+  let navFocusedIndex = $state<number | null>(null);
+
+  let _navUnsub: (() => void) | null = null;
+  $effect(() => {
+    _navUnsub?.();
+    _navUnsub = navStore.subscribe((s) => {
+      navSurface = s.surface;
+      navMode = s.mode;
+      navView = s.currentView;
+      navFocusedIndex = s.focusedIndex;
+    });
+    return () => { _navUnsub?.(); _navUnsub = null; };
+  });
+
+  let mapModeActive = $derived(navView === 'map');
+  let searchSurfaceActive = $derived(navSurface === 'search' || bodyPanelSurface === 'search' || bodyPanelSurface === 'focus-search');
+  let idleSurfaceActive = $derived(navSurface === 'idle' && !searchSurfaceActive);
+
+  // Search only shows when explicitly in search AND has content
+  let searchHasQuery = $derived(searchStore.query?.length > 0 || searchStore.results?.length > 0);
+  let searchVisible = $derived(searchSurfaceActive && searchHasQuery);
+  let searchBarVisible = $derived(searchSurfaceActive || idleSurfaceActive);
+
+  // Focus stage: only when in focus/inside/trail or a node is explicitly focused
   let focusActive = $derived(
-    navStore().mode === 'focus' || navStore().mode === 'inside' || navStore().mode === 'trail' || navStore().focusedIndex !== null || bodyFocusPanelMode === 'field-node' || bodyPanelSurface === 'semantic-dive'
+    navMode === 'focus' || navMode === 'inside' || navMode === 'trail' || navFocusedIndex !== null || bodyFocusPanelMode === 'field-node' || bodyPanelSurface === 'semantic-dive'
   );
-  let searchChromeSurface = $derived(
-    navStore().surface === 'search' ||
-    navStore().surface === 'idle' ||
-    bodyPanelSurface === 'search' ||
-    bodyPanelSurface === 'focus-search'
-  );
-  let legacySearchChromeHidden = $derived(searchChromeSurface);
-  let headerChromeVisible = $derived(navStore().surface === 'idle');
-  let controlsVisible = $derived(
-    navStore().surface !== 'focus-search'
-  );
+
+  // Header chrome belongs to the idle overview; search and focus surfaces own
+  // their own controls.
+  let headerVisible = $derived(idleSurfaceActive);
+  let controlsVisible = $derived(navSurface !== 'focus-search');
 </script>
 
 <div
@@ -197,8 +225,13 @@
   <!-- Layer 30: Semantic overlays (manifold, lens) -->
   <SemanticOverlay visible={true} />
 
+  <!-- Full-screen map view (Map chip) -->
+  {#if mapModeActive}
+    <MapView />
+  {/if}
+
   <!-- Layer 50: Legend panel -->
-  <Legend open={false} />
+  <Legend open={$legendOpen} />
 
   <!-- Layer 50: Weather widget (top-right chrome, same layer as legend) -->
   <WeatherWidget visible={true} />
@@ -206,17 +239,22 @@
   <!-- Layer 80: Info panel -->
   <InfoPanel open={true} />
 
-  {#if legacySearchChromeHidden}
-    <!-- Layer 100: Search bar -->
+  {#if searchBarVisible}
+    <!--
+      Layer 100: Search bar.
+      SearchBar composes <SearchInput> + <SearchResults>, so the result list
+      lives inside the same positioning context as the input and inherits the
+      container's stacking order. Rendering an additional <SearchResults>
+      sibling here previously caused a duplicate result list to drop to the
+      top-left of the document (y≈5px) and intercept pointer events against
+      the absolutely-positioned search input.
+    -->
     <SearchBar />
+  {/if}
 
-    <!-- Search results panel (renders `.search-result` for contract test clicks) -->
-    <SearchResults visible={true} />
-
-    {#if headerChromeVisible}
-      <!-- Header with mode chips -->
-      <Header visible={true} />
-    {/if}
+  {#if headerVisible}
+    <!-- Header with mode chips -->
+    <Header visible={true} />
   {/if}
 
   <!--
@@ -233,6 +271,7 @@
     class="focus-stage"
     class:active={focusActive}
     aria-hidden={!focusActive ? 'true' : undefined}
+    style:pointer-events={bodyPanelSurface === 'focus-search' ? 'none' : undefined}
   >
     <!-- Focus card for selected business (self-gates via cardVisible = visible && isFocused) -->
     <FocusCard visible={true} forceSemanticDiveVisible={semanticDiveContractForced} />
@@ -329,7 +368,7 @@
   .focus-stage.active {
     position: absolute;
     inset: 0;
-    pointer-events: none;
+    pointer-events: auto;
   }
   :global(.focus-stage.active > *) {
     pointer-events: auto;

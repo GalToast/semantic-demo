@@ -23,6 +23,44 @@ import type {
 import { type Readable, writable, get } from 'svelte/store';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
+// ── Legacy state fallback (transitional, until Svelte stores are fully populated by the legacy init path) ──
+// The legacy js/state.js is the single source of truth during the migration.
+// When the Svelte journey store is empty, fall back to legacy state so the
+// journey chrome (neighbor rail, map summary, focus card) reflects real data.
+interface LegacyNavState {
+  threadCandidates?: ReadonlyArray<unknown>;
+  trailNeighborIndices?: ReadonlyArray<number>;
+  walkHistoryIndices?: ReadonlyArray<number>;
+  threadSource?: string;
+  trailDepth?: number;
+  focusedIndex?: number | null;
+  currentView?: string;
+  mode?: string;
+  surface?: string;
+  trail?: ReadonlyArray<unknown>;
+}
+interface LegacyState {
+  navState?: LegacyNavState;
+}
+function readLegacyNavState(): LegacyNavState | null {
+  try {
+    if (typeof window === 'undefined') return null;
+    const w = window as unknown as {
+      __semanticState?: LegacyState;
+      state?: LegacyState;
+      __APP_STATE__?: LegacyState;
+      __TEST_STATE__?: LegacyState;
+    };
+    return w.__semanticState?.navState
+      ?? w.state?.navState
+      ?? w.__APP_STATE__?.navState
+      ?? w.__TEST_STATE__?.navState
+      ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
 export const JOURNEY_CONFIG = {
@@ -159,12 +197,50 @@ export const compassPhase = () => get(_journeyWritable).compass.phase;
 export const journeyNeighbors = () => get(_journeyWritable).neighbors;
 export const journeySelectedId = () => get(_journeyWritable).selectedId;
 export const walkHistory = () => get(_journeyWritable).walkHistory;
-export const trailDepth = () => get(_journeyWritable).trailDepth;
+export const trailDepth = () => {
+  const local = get(_journeyWritable).trailDepth;
+  if (local && local > 0) return local;
+  const legacy = readLegacyNavState();
+  if (legacy && Number.isFinite(legacy.trailDepth) && (legacy.trailDepth ?? 0) > 0) {
+    return legacy.trailDepth as number;
+  }
+  return local;
+};
 export const trailSeedIndex = () => get(_journeyWritable).trailSeedIndex;
-export const trailNeighborIndices = () => get(_journeyWritable).trailNeighborIndices;
-export const threadCandidates = () => get(_journeyWritable).threadCandidates;
-export const threadSource = () => get(_journeyWritable).threadSource;
-export const walkHistoryIndices = () => get(_journeyWritable).walkHistoryIndices;
+export const trailNeighborIndices = () => {
+  const local = get(_journeyWritable).trailNeighborIndices;
+  if (local && local.length > 0) return local;
+  const legacy = readLegacyNavState();
+  if (legacy?.trailNeighborIndices && legacy.trailNeighborIndices.length > 0) {
+    return legacy.trailNeighborIndices;
+  }
+  return local;
+};
+export const threadCandidates = () => {
+  const local = get(_journeyWritable).threadCandidates;
+  if (local && local.length > 0) return local;
+  const legacy = readLegacyNavState();
+  if (legacy?.threadCandidates && legacy.threadCandidates.length > 0) {
+    return legacy.threadCandidates as ReadonlyArray<number>;
+  }
+  return local;
+};
+export const threadSource = () => {
+  const local = get(_journeyWritable).threadSource;
+  if (local && local !== 'geometric-fallback') return local;
+  const legacy = readLegacyNavState();
+  if (legacy?.threadSource) return legacy.threadSource;
+  return local;
+};
+export const walkHistoryIndices = () => {
+  const local = get(_journeyWritable).walkHistoryIndices;
+  if (local && local.length > 0) return local;
+  const legacy = readLegacyNavState();
+  if (legacy?.walkHistoryIndices && legacy.walkHistoryIndices.length > 0) {
+    return legacy.walkHistoryIndices;
+  }
+  return local;
+};
 
 // ── Compass State Machine ────────────────────────────────────────────────────
 

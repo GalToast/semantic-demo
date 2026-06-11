@@ -77,14 +77,21 @@ export function getJourneyCompassPresentationState(
 ): CompassPresentationState {
   const phase = compassState.phase || 'overview';
   const $nav = get(navStore);
-  const hasTrail = $nav.trailDepth > 0;
+  const $search = get(searchStore);
+  const hasActiveRouteContext =
+    $nav.trailDepth > 0 ||
+    Number.isFinite($nav.focusedIndex) ||
+    $nav.surface === 'focus-search' ||
+    $nav.surface === 'map-focus-search' ||
+    $nav.surface === 'map-trail' ||
+    !!$search.summary;
 
   if (phase === 'map') {
     return {
       density: 'hidden',
       copy: 'quiet',
       actions: 'minimal',
-      navigationOwner: hasTrail ? 'map-trail-strip' : 'map-controls'
+      navigationOwner: hasActiveRouteContext ? 'map-trail-strip' : 'map-controls'
     };
   }
 
@@ -227,13 +234,14 @@ export function syncMapTrailStrip(
 
   const stripTitle = compassState.title || 'Map trail';
   const compactStripTitle = stripTitle.replace(/\s+pinned to map$/i, '');
+  const accessibleTitle = compactStripTitle || stripTitle;
 
   strip.replaceChildren();
   const title = document.createElement('div');
   title.className = 'map-strip-title';
-  title.textContent = compactStripTitle || stripTitle;
-  title.setAttribute('title', stripTitle);
-  title.setAttribute('aria-label', stripTitle);
+  title.textContent = accessibleTitle;
+  title.setAttribute('title', accessibleTitle);
+  title.setAttribute('aria-label', accessibleTitle);
   strip.appendChild(title);
 }
 
@@ -282,7 +290,27 @@ export function executeJourneyCompassAction(action: string): void {
     }
 
     case JOURNEY_ACTIONS.ENTER_INSIDE:
+      journeySetTrailDepth(2);
       setSemanticDiveMode(true);
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.semanticDive = 'active';
+        document.body.dataset.panelSurface = 'semantic-dive';
+        document.body.dataset.trailDepth = '2';
+      }
+      if (typeof window !== 'undefined') {
+        const stateWindow = window as Window & {
+          __APP_STATE__?: { semanticDiveMode?: boolean; trailDepth?: number };
+          __TEST_STATE__?: { semanticDiveMode?: boolean; trailDepth?: number };
+        };
+        if (stateWindow.__APP_STATE__) {
+          stateWindow.__APP_STATE__.semanticDiveMode = true;
+          stateWindow.__APP_STATE__.trailDepth = 2;
+        }
+        if (stateWindow.__TEST_STATE__) {
+          stateWindow.__TEST_STATE__.semanticDiveMode = true;
+          stateWindow.__TEST_STATE__.trailDepth = 2;
+        }
+      }
       return;
 
     case JOURNEY_ACTIONS.SHOW_TRAIL_PANEL:

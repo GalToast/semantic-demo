@@ -33,7 +33,6 @@
   import { publish, EVENTS } from '@lib/event-bus';
   import { onMount } from 'svelte';
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat';
-  import SearchBar from './SearchBar.svelte';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -167,27 +166,10 @@
     return testPanelSurface || 'idle';
   });
 
-  // Direct DOM sync for contract tests: when body.dataset.panelSurface changes to search
-  // or focus-search, immediately hide the selected-card/details without waiting for
-  // Svelte's MutationObserver-based reactivity. This ensures contract tests that set the
-  // dataset via page.evaluate see the change synchronously.
-  $effect(() => {
-    if (typeof document === 'undefined') return;
-    const syncSelectedCardVisibility = () => {
-      const isSearch = document.body.dataset.panelSurface === 'search' ||
-                        document.body.dataset.panelSurface === 'focus-search';
-      const selectedCard = document.querySelector<HTMLElement>('#selected-card');
-      const selectedDetails = document.querySelector<HTMLElement>('#selected-details');
-      if (selectedCard) selectedCard.hidden = isSearch;
-      if (selectedDetails) selectedDetails.hidden = isSearch;
-    };
-    const observer = new MutationObserver(syncSelectedCardVisibility);
-    observer.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface'] });
-    syncSelectedCardVisibility(); // run once on mount
-    return () => observer.disconnect();
-  });
-
-  let searchChromeSurface = $derived(
+  // Search-family surfaces are owned by the App-level SearchBar. Keep the info
+  // panel shell present for layout contracts, but suppress selected-business
+  // content so it cannot render underneath the search drawer.
+  let selectionSuppressed = $derived(
     effectiveSurface === 'search' || effectiveSurface === 'focus-search'
   );
 
@@ -434,15 +416,19 @@
   aria-live="polite"
   id="info-panel"
 >
-  {#if searchChromeSurface}
-    <SearchBar expanded={true} panelContained={true} />
-  {/if}
+  <!--
+    The App-level <SearchBar> in src/App.svelte is the sole search input on
+    the page. This panel no longer mounts its own SearchBar to avoid
+    duplicate `id="search-input"` / `id="search-results"` elements. During
+    search-family surfaces, #selected-card is hidden below so the search
+    drawer is the only visible content owner.
+  -->
 
   <!-- Surface wrapper for selection state (empty vs populated) -->
   <div class="info-panel-content" id="info-panel-content">
 
-    <!-- Info header (hidden in search mode per contract) -->
-    <div class="info-header" hidden={searchChromeSurface}>
+    <!-- Info header (always visible — the panel always carries detail chrome) -->
+    <div class="info-header">
       <h3>Business Details</h3>
     </div>
 
@@ -451,7 +437,10 @@
       id="selected-card"
       class="selected-card"
       class:selected-card-empty={isEmpty}
-      hidden={searchChromeSurface}
+      hidden={selectionSuppressed}
+      aria-hidden={selectionSuppressed ? 'true' : undefined}
+      data-content-owner={effectiveSurface === 'focus' ? 'focus-stage' : 'info-panel'}
+      data-content-variant={effectiveSurface === 'focus' ? 'focus-stage' : 'info-panel'}
       data-debug-focused-index={effectiveFocusedIdx ?? ''}
       data-debug-record-count={getBusinessRecords().length}
       data-debug-data-ready={String(getIsDataReady())}
@@ -460,17 +449,20 @@
     >
 
       <!-- Empty state -->
-      <div id="selected-empty" class="selected-empty" hidden={!isEmpty}>
-        <svg class="empty-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 16v-4M12 8h.01"/>
-        </svg>
-        <p class="selected-empty-headline">Select a business to see details.</p>
-        <p class="selected-empty-sub">Click a node in the field or choose a search result.</p>
-      </div>
+      {#if isEmpty}
+        <div id="selected-empty" class="selected-empty">
+          <svg class="empty-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4M12 8h.01"/>
+          </svg>
+          <p class="selected-empty-headline">Select a business to see details.</p>
+          <p class="selected-empty-sub">Click a node in the field or choose a search result.</p>
+        </div>
+      {/if}
 
       <!-- Populated state -->
-      <div id="selected-details" class="info-panel-surface-selection selected-details" hidden={searchChromeSurface || isEmpty}>
+      {#if !isEmpty}
+      <div id="selected-details" class="info-panel-surface-selection selected-details">
         <!-- Hero section (legacy selected-hero with role badge) -->
         <div class="selected-hero">
           <div class="selected-hero-main">
@@ -563,6 +555,7 @@
           <div class="selected-trivia" id="selected-trivia">{viewModel.trivia}</div>
         {/if}
       </div>
+      {/if}
     </div>
   </div>
 </aside>
@@ -645,9 +638,8 @@
     flex-direction: column;
     gap: 0.6rem;
   }
-  .selected-empty[hidden],
-  .selected-card[hidden],
-  .selected-details[hidden],
+  :global(#selected-card[hidden]),
+  :global(#selected-details[hidden]),
   .selected-sensitivity[hidden],
   .selected-match-panel[hidden],
   .selected-action-row[hidden] {

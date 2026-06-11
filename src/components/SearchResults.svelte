@@ -31,6 +31,7 @@
   import { describeCluster } from '@lib/utils/ui-presentation';
   import { formatBusinessName } from '@lib/utils/dom-formatters';
   import { publish, EVENTS } from '@lib/event-bus';
+  import { getSearchEngineEmptyStateSuggestions } from '@lib/search-engine';
 
   interface Props {
     /** Whether the results panel is visible */
@@ -121,7 +122,12 @@
   const isEmpty = $derived(!isSearching && total === 0 && summary?.query && !searchError);
 
   const suggestions = $derived.by(() => {
-    const list: string[] = ['Coffee', 'Roof repair', 'Childcare', 'Dog friendly'];
+    // Top 5 categories from the live 8,406-record corpus, falling back to
+    // the static "high-signal" starter set if the records haven't loaded.
+    const liveSuggestions = getSearchEngineEmptyStateSuggestions();
+    const list: string[] = liveSuggestions.length > 0
+      ? liveSuggestions.slice(0, 5)
+      : ['Coffee', 'Roof repair', 'Childcare', 'Dog friendly'];
     if ($activeClusterFilter !== null) {
       const label = describeCluster(Number($activeClusterFilter)).toLowerCase();
       if (!list.includes(label)) list.push(label);
@@ -408,9 +414,24 @@
 {/if}
 
 <style>
+  /*
+   * Anchor the result list directly under the search input.
+   *
+   * The parent .search-container is `position: absolute; top: 1rem; z-index: 100`
+   * (see SearchBar.svelte). The input lives inside the same container, so
+   * anchoring this wrapper to the container's top and offsetting by the
+   * input's full height pins the dropdown visually below the input field.
+   *
+   * z-index sits one notch below --z-search so the result panel never covers
+   * the input it belongs to.
+   */
   .search-results-wrapper {
-    margin-top: 0.35rem;
-    width: min(420px, 90vw);
+    position: absolute;
+    top: calc(1rem + 44px + 0.35rem);
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: calc(var(--z-search, 100) - 1);
     max-height: min(52vh, 420px);
     overflow-y: auto;
   }

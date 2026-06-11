@@ -118,7 +118,25 @@ subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, () => {
 // These were previously in compass-controller.ts at module scope.
 // Moving them here keeps all cross-module event wiring in one place.
 
-subscribe(EVENTS.CAMERA_NODE_FOCUSED, updateJourneyCompass);
+// CAMERA_NODE_FOCUSED is published by the legacy focusOnNode() (called from
+// canvas clicks, traversal, and the search focus pipeline). The Svelte
+// navStore needs a mirror so FocusPocket, ThreadInspector, and the focus
+// stage render with the new anchor. We preserve an existing 'focus-search'
+// surface so a search-result click that emits CAMERA_NODE_FOCUSED right
+// after SEARCH_FOCUS_REQUESTED keeps its search context.
+subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: { index?: number; point?: unknown; options?: Record<string, unknown> } = {} as any) => {
+  const index = Number((payload as any)?.index);
+  if (Number.isFinite(index) && index >= 0) {
+    navStore.update((s) => ({
+      ...s,
+      focusedIndex: index,
+      mode: 'focus',
+      surface: s.surface === 'focus-search' ? s.surface : 'focus',
+      trailDepth: Math.max(1, s.trailDepth ?? 0)
+    }));
+  }
+  updateJourneyCompass();
+});
 subscribe(EVENTS.EXPLORATION_DEPTH_CHANGED, updateJourneyCompass);
 subscribe(EVENTS.STATE_RESET, updateJourneyCompass);
 

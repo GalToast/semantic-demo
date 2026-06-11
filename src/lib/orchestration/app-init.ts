@@ -21,6 +21,17 @@ import { get } from 'svelte/store';
 import { initData, setLoadingPhase } from '@lib/data-store.svelte';
 import { navStore } from '@lib/stores/navigation.svelte';
 import { focusStore } from '@lib/stores/focus.svelte';
+import { clearSearch as clearSearchAction } from '@lib/stores/search';
+import { returnToOverview as returnToOverviewAction } from '@lib/stores/lifecycle';
+import {
+  focusOnNode as focusOnNodeAction,
+  refreshCompositionState as refreshCompositionStateAction,
+  resetExperienceState as resetExperienceStateAction,
+  resetExplorationFocus as resetExplorationFocusAction,
+  setSemanticDiveMode as setSemanticDiveModeAction,
+  setTrailDepth as setTrailDepthAction,
+} from '@lib/orchestration/lifecycle';
+import { switchView as switchViewAction } from '@lib/orchestration/view-controller';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -136,17 +147,36 @@ function installWindowGlobals(): () => void {
     },
   };
 
-  // __APP_ACTIONS__: action handles for Playwright test automation.
-  // Lazy imports avoid pulling the full orchestration layer into the
-  // top-level bundle.
+  // __APP_ACTIONS__: synchronous action handles for Playwright test automation.
+  // Contract tests call these inside page.evaluate() without awaiting returned
+  // promises, so these wrappers must not use lazy dynamic imports.
   (window as any).__APP_ACTIONS__ = {
-    switchView: async (view: string) => {
-      const mod = await import('@lib/orchestration/view-controller');
-      mod.switchView(view as any);
+    switchView: (view: string) => {
+      switchViewAction(view as any);
     },
-    returnToOverview: async () => {
-      const mod = await import('@lib/stores/lifecycle');
-      mod.returnToOverview();
+    focusOnNode: (index: number, options?: Record<string, unknown>) => {
+      return focusOnNodeAction(index, options);
+    },
+    setTrailDepth: (depth: number, _options?: Record<string, unknown>) => {
+      setTrailDepthAction(depth);
+    },
+    setSemanticDiveMode: (enabled: boolean) => {
+      setSemanticDiveModeAction(enabled);
+    },
+    refreshCompositionState: () => {
+      refreshCompositionStateAction();
+    },
+    resetExplorationFocus: (options?: Record<string, unknown>) => {
+      resetExplorationFocusAction(options);
+    },
+    resetExperienceState: () => {
+      resetExperienceStateAction();
+    },
+    clearSearch: () => {
+      clearSearchAction();
+    },
+    returnToOverview: () => {
+      returnToOverviewAction();
     },
   };
 

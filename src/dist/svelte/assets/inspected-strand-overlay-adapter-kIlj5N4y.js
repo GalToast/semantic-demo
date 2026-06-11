@@ -1,0 +1,1 @@
+import{Ut as e}from"./index-9NzmlZXn.js";var t=e({setInspectedStrandOverlayUpdater:()=>r,updateInspectedStrandOverlayFrame:()=>i}),n=null;function r(e){n=typeof e==`function`?e:null}function i(e=performance.now()){n&&n(e)}export{r as n,t};
