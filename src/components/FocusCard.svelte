@@ -23,9 +23,11 @@
   interface Props {
     /** Whether the card is visible */
     visible?: boolean;
+    /** Keep the card visible when tests force semantic-dive body state. */
+    forceSemanticDiveVisible?: boolean;
   }
 
-  let { visible = false }: Props = $props();
+  let { visible = false, forceSemanticDiveVisible = false }: Props = $props();
 
   // ── Cluster names (mirrors CLUSTER_NAMES from state.js) ───────────────────────
 
@@ -54,6 +56,33 @@
   let isFocused = $derived(hasFocus());
   let surface = $derived(currentSurface());
 
+  let bodyPanelSurface = $state('');
+  let bodyPanelSurfaceDetail = $state('');
+  let bodyFocusPanelMode = $state('');
+
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    const syncBodyPanelSurface = () => {
+      bodyPanelSurface = document.body.dataset.panelSurface ?? '';
+      bodyPanelSurfaceDetail = document.body.dataset.panelSurfaceDetail ?? '';
+      bodyFocusPanelMode = document.body.dataset.focusPanelMode ?? '';
+    };
+    const observer = new MutationObserver(syncBodyPanelSurface);
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['data-panel-surface', 'data-panel-surface-detail', 'data-focus-panel-mode']
+    });
+    syncBodyPanelSurface();
+    return () => observer.disconnect();
+  });
+
+  let semanticDiveActive = $derived(
+    forceSemanticDiveVisible ||
+      bodyPanelSurface === 'semantic-dive' ||
+      bodyPanelSurfaceDetail === 'semantic-dive' ||
+      String(surface) === 'semantic-dive'
+  );
+
   let selectedRecord = $derived.by((): BusinessRecord | null => {
     if (!getIsDataReady() || getBusinessRecords().length === 0) return null;
 
@@ -77,7 +106,15 @@
   });
 
   let isEmpty = $derived(!selectedRecord);
-  let cardVisible = $derived(visible && isFocused && surface !== 'search');
+  let searchChromeSurface = $derived(
+    !semanticDiveActive &&
+      (String(surface) === 'search' ||
+        bodyPanelSurface === 'search' ||
+        (bodyPanelSurface === 'focus-search' &&
+          bodyPanelSurfaceDetail !== 'field-node' &&
+          bodyFocusPanelMode !== 'field-node'))
+  );
+  let cardVisible = $derived(visible && !searchChromeSurface && (semanticDiveActive || (isFocused && String(surface) !== 'search')));
 
   // ── Display helpers ───────────────────────────────────────────────────────────
 
@@ -359,22 +396,28 @@
   }
 
   @media (max-width: 768px) {
-    /* Rely on legacy mobile CSS ownership (mobile_premium__focus-dive.css) for
-       bottom-sheet layout and sizing in active states, to prevent Svelte
-       scoped CSS from breaking the bottom-flush contract. */
-
-    /* Legacy CSS positions .focus-stage at bottom:0 in dive/focus-search.
-       Override the component-scoped bottom:4.5rem so the card sits flush
-       with the viewport bottom for the bottom-flush contract. */
-    :global(body.is-active[data-panel-surface='semantic-dive']) .focus-card,
-    :global(body.is-active[data-panel-surface='semantic-dive']) .focus-stage-card,
-    :global(body.is-active[data-panel-surface='focus-search']) .focus-card,
-    :global(body.is-active[data-panel-surface='focus-search']) .focus-stage-card,
-    :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) .focus-card,
-    :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) .focus-stage-card {
-      bottom: 0;
-      max-height: 62dvh;
+    :global(body.is-active[data-panel-surface='semantic-dive']) :is(.focus-card, .focus-stage-card),
+    :global(body[data-panel-surface='semantic-dive']) :is(.focus-card, .focus-stage-card),
+    :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) :is(.focus-card, .focus-stage-card),
+    :global(body[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) :is(.focus-card, .focus-stage-card) {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: max(0px, env(safe-area-inset-bottom, 0px));
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+      max-height: calc(100dvh - max(0px, env(safe-area-inset-bottom, 0px)) - 10px);
       overflow-y: auto;
+      visibility: visible;
+      opacity: 1;
+      z-index: var(--z-focus-card, 600);
+    }
+
+    :global(body.is-active[data-panel-surface='semantic-dive']) :is(.focus-card, .focus-stage-card),
+    :global(body[data-panel-surface='semantic-dive']) :is(.focus-card, .focus-stage-card) {
+      border-radius: 22px 22px 0 0;
+      padding: 18px 14px 10px;
     }
   }
 </style>

@@ -92,13 +92,11 @@
   }
 </script>
 
-<details
+<div
   class="filters-section rail-section"
   id="filters-section"
   aria-label="Business filters"
-  open={true}
 >
-  <summary hidden>Filters</summary>
   <div class="filter-toolbar">
     <!-- Status filter chips -->
     <div class="filter-group">
@@ -164,7 +162,7 @@
       Reset ({$activeFilterCount})
     </button>
   </div>
-</details>
+</div>
 
 <style>
   .filters-section {
@@ -200,7 +198,7 @@
     margin: 0;
   }
   .filter-chip {
-    padding: 0.2rem 0.5rem;
+    padding: 0 0.5rem;
     background: rgba(78, 205, 196, 0.08);
     border: 1px solid rgba(78, 205, 196, 0.15);
     border-radius: 0.3rem;
@@ -209,11 +207,14 @@
     font-family: 'Nunito Sans', sans-serif;
     cursor: pointer;
     transition: all 0.15s;
-    min-height: 44px;
+    height: 44px;
     min-width: 44px;
+    width: auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
+    line-height: 44px;
   }
   .filter-chip:hover {
     border-color: rgba(78, 205, 196, 0.35);
@@ -231,8 +232,9 @@
     color: #b0d0d0;
     font-size: 0.65rem;
     font-family: 'Nunito Sans', sans-serif;
-    min-height: 44px;
+    height: 44px;
     cursor: pointer;
+    box-sizing: border-box;
   }
   .city-filter:focus {
     border-color: rgba(78, 205, 196, 0.5);

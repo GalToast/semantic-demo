@@ -49,14 +49,24 @@
         gap: 7px;
     }
 
+    /* Touch target sizing for filter controls — all modes */
+    .filter-chip,
+    .filter-clear-btn,
+    #city-filter {
+        height: 44px;
+        min-width: 44px;
+        box-sizing: border-box;
+    }
+
     body.is-active[data-panel-surface='idle'] .filter-chip,
     body.is-active[data-panel-surface='idle'] .filter-clear-btn,
     body.is-active[data-panel-surface='idle'] #city-filter.filter-select {
-        min-height: 44px;
+        height: 44px;
         border-radius: 8px;
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         font-weight: 700;
         letter-spacing: 0;
+        box-sizing: border-box;
     }
 
     body.is-active[data-panel-surface='idle'] .filter-chip {
