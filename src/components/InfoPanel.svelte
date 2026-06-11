@@ -176,8 +176,8 @@
     const syncSelectedCardVisibility = () => {
       const isSearch = document.body.dataset.panelSurface === 'search' ||
                         document.body.dataset.panelSurface === 'focus-search';
-      const selectedCard = document.querySelector('#selected-card');
-      const selectedDetails = document.querySelector('#selected-details');
+      const selectedCard = document.querySelector<HTMLElement>('#selected-card');
+      const selectedDetails = document.querySelector<HTMLElement>('#selected-details');
       if (selectedCard) selectedCard.hidden = isSearch;
       if (selectedDetails) selectedDetails.hidden = isSearch;
     };
@@ -646,6 +646,7 @@
     gap: 0.6rem;
   }
   .selected-empty[hidden],
+  .selected-card[hidden],
   .selected-details[hidden],
   .selected-sensitivity[hidden],
   .selected-match-panel[hidden],
@@ -823,6 +824,11 @@
     }
     .info-panel-content {
       padding-top: 1rem;
+    }
+    .selected-card {
+      max-height: min(30dvh, 253px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
     .selected-card-name {
       font-size: 1.1rem;

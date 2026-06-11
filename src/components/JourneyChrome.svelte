@@ -297,7 +297,13 @@
 
     <!-- ├─ Trail Controls ──────────────────────────────────────────────────── -->
     {#if hasFocus() || hasTrail()}
-      <div class="trail-controls focus-stage-actions" id="trail-controls" role="toolbar" aria-label="Trail navigation" style="display: grid; grid-auto-flow: column;">
+      <div
+        class="trail-controls focus-stage-actions"
+        id="trail-controls"
+        class:active={hasFocus() || hasTrail()}
+        role="toolbar"
+        aria-label="Trail navigation"
+      >
         <button
           id="btn-focus-path"
           class="focus-stage-action-btn"
@@ -350,7 +356,7 @@
 
       <div class="route-state" id="focus-stage-route" data-state={neighborCount ? 'walking' : 'empty'}></div>
     {:else}
-      <div class="trail-controls focus-stage-actions idle" id="trail-controls" style="display: grid; grid-auto-flow: column;">
+      <div class="trail-controls focus-stage-actions idle" id="trail-controls">
         <div class="trail-context" id="trail-context">
           <span class="trail-context-text">Pick a business, then explore its nearby neighbors.</span>
         </div>
@@ -558,6 +564,11 @@
      Higher specificity than the legacy rule to ensure grid display wins. */
   :global(body.is-active[data-panel-surface='focus-search'] #trail-controls.focus-stage-actions) {
     display: grid;
+  }
+  :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-actions) {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
   .trail-controls.idle {
     opacity: 0.6;
