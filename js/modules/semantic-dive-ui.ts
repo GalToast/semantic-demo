@@ -14,7 +14,7 @@ import { cleanOptionalValue, formatBusinessName } from './utils/dom-formatters.t
 import { isCompactFocusStageViewport } from './utils/ui-presentation.ts';
 import { getNextExploreCandidateForIndex } from './journey-thread-model.ts';
 import { summarizeNeighborReason } from './journey.ts';
-import { getNextWalkCandidateForIndex } from './journey-neighborhood.ts';
+import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.ts';
 import { ensureFocusStageAuxiliaryDom, ensureDiveButton } from './focus-stage-dom.ts';
 
 function truncateDiveStatusCopy(text: string | null | undefined, max = 74): string {
@@ -105,8 +105,7 @@ export function syncSemanticDiveUi(): void {
         ? getNavState().focusedIndex
         : getFocusedNode();
     const nextExploreCandidate = active && currentFocusIndex !== null
-        ? getNextExploreCandidateForIndex(currentFocusIndex, (idx: number | null, opts?: Record<string, unknown>) =>
-            idx === null ? null : getNextWalkCandidateForIndex(idx, opts))
+        ? getNextExploreCandidateForIndex(currentFocusIndex, getNextWalkCandidateForIndex)
         : null;
     const hasNextCandidate = active && Number.isFinite(nextExploreCandidate?.index);
     const hasWalked = (getNavState()?.explorationHistoryIndices || []).length > 1;
