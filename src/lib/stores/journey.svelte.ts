@@ -216,12 +216,15 @@ export const trailNeighborIndices = () => {
   }
   return local;
 };
-export const threadCandidates = () => {
+export const threadCandidates = (): ReadonlyArray<number> => {
   const local = get(_journeyWritable).threadCandidates;
   if (local && local.length > 0) return local;
   const legacy = readLegacyNavState();
   if (legacy?.threadCandidates && legacy.threadCandidates.length > 0) {
-    return legacy.threadCandidates as ReadonlyArray<number>;
+    // Legacy threadCandidates are objects { index, score, ... } — extract just the indices
+    return (legacy.threadCandidates as Array<Record<string, unknown>>)
+      .map((c) => Number(c.index))
+      .filter((n) => Number.isFinite(n));
   }
   return local;
 };

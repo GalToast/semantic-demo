@@ -156,18 +156,18 @@ export const hasFocus = () => {
   return false;
 };
 export const hasTrail = () => get(_navWritable).trailDepth > 0;
-export const currentMode = () => {
+export const currentMode = (): string => {
   const local = get(_navWritable).mode;
   if (local) return local;
   const legacy = readLegacyNavField<string>('mode');
-  if (legacy) return legacy as NavState['mode'];
+  if (legacy) return legacy;
   return local;
 };
-export const currentSurface = () => {
+export const currentSurface = (): string => {
   const local = get(_navWritable).surface;
   if (local) return local;
   const legacy = readLegacyNavField<string>('surface');
-  if (legacy) return legacy as NavState['surface'];
+  if (legacy) return legacy;
   return local;
 };
 export const focusedIndex = () => {
@@ -177,11 +177,11 @@ export const focusedIndex = () => {
   if (legacy != null && Number.isFinite(legacy)) return legacy;
   return local;
 };
-export const currentView = () => {
+export const currentView = (): string => {
   const local = get(_navWritable).currentView;
   if (local) return local;
   const legacy = readLegacyNavField<string>('currentView');
-  if (legacy) return legacy as NavState['currentView'];
+  if (legacy) return legacy;
   return local;
 };
 export const myceliumMode = () => get(_navWritable).myceliumMode;
