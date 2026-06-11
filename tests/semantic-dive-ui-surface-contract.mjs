@@ -155,6 +155,7 @@ withStateMutation(() => {
   state.focusedNode = 4;
   state.navState.focusedIndex = 4;
   state.trailDepth = 2;
+  state.semanticDiveMode = true;
 });
 window.getCurrentTrailFocusIndex = () => 4;
 initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: (index, options) => {
@@ -190,6 +191,7 @@ withStateMutation(() => {
   state.focusedNode = 4;
   state.navState.focusedIndex = 4;
   state.trailDepth = 2;
+  state.semanticDiveMode = true;
 });
 const fallbackCalls = [];
 initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: (index, options) => {
@@ -227,6 +229,7 @@ withStateMutation(() => {
   state.focusedNode = 4;
   state.navState.focusedIndex = 4;
   state.trailDepth = 2;
+  state.semanticDiveMode = true;
   state.strandContinuityState = { phase: 'walking' };
 });
 initJourneyLifecycleAdapter({ getNextWalkCandidateForIndex: () => ({ index: 8 }) });

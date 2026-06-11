@@ -98,9 +98,9 @@ const bridgeInitSource = sectionBetween(
     'destroy(): void'
 );
 includesAll(bridgeInitSource, [
-    "const success = ctx._threeEngine!.initThreeJS();",
+    "const success = _initThreeJS();",
     "ctx.status = 'ready';",
-    'ctx._threeEngine!.animate();'
+    '_animate();'
 ], 'Svelte engine bridge should start the legacy RAF loop after init');
 
 assert(
