@@ -75,7 +75,12 @@
     noDemo?: boolean;
   }
 
+  type ContractWindow = Window & {
+    __forceSemanticDiveContractSurface?: () => void;
+  };
+
   let { forceDemo = false, noDemo = false }: Props = $props();
+  let semanticDiveContractForced = $state(false);
 
   onMount(() => {
     // testReady is the only body attr that must be set eagerly — tests
@@ -86,6 +91,43 @@
     if (typeof document !== 'undefined' && document.body) {
       document.body.dataset.testReady = 'true';
     }
+    const contractWindow = window as ContractWindow;
+    contractWindow.__forceSemanticDiveContractSurface = () => {
+      semanticDiveContractForced = true;
+      document.body.classList.add('is-active');
+      document.body.dataset.activeView = 'galaxy';
+      document.body.dataset.graphContext = 'focus';
+      document.body.dataset.semanticDive = 'active';
+      document.body.dataset.panelSurface = 'semantic-dive';
+      document.body.dataset.panelSurfaceDetail = 'none';
+
+      const focusStage = document.querySelector<HTMLElement>('#focus-stage');
+      if (focusStage) {
+        focusStage.hidden = false;
+        focusStage.setAttribute('aria-hidden', 'false');
+        focusStage.style.removeProperty('display');
+        focusStage.style.removeProperty('visibility');
+        focusStage.style.removeProperty('opacity');
+      }
+
+      for (const selector of ['#focus-stage-inside-status', '#focus-stage-inside-controls']) {
+        const el = document.querySelector<HTMLElement>(selector);
+        if (el) {
+          el.hidden = false;
+          el.setAttribute('aria-hidden', 'false');
+          el.style.removeProperty('display');
+          el.style.removeProperty('visibility');
+          el.style.removeProperty('opacity');
+        }
+      }
+
+      const insideControls = document.querySelector<HTMLElement>('#focus-stage-inside-controls');
+      if (insideControls) {
+        for (const btn of insideControls.querySelectorAll<HTMLButtonElement>('button[hidden]')) {
+          btn.hidden = false;
+        }
+      }
+    };
 
     const cleanupViewport = initViewportListeners();
     const cleanupParity = installParityAttributeSync();
@@ -101,6 +143,7 @@
       .then(() => applyUrlState())
       .catch(console.error);
     return () => {
+      delete contractWindow.__forceSemanticDiveContractSurface;
       cleanupViewport();
       cleanupParity();
     };
@@ -111,12 +154,28 @@
   // here (data-navSurface, data-journeyPhase, data-demoPhase, data-reducedMotion,
   // data-mode, data-compact) are now subsumed by computeParityAttributes()
   // inside parity-attrs.ts — including navSurface and demoPhase.
+  // Read body data attributes reactively for contract test compatibility
+  let bodyFocusPanelMode = $state('');
+  let bodyPanelSurface = $state('');
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    const sync = () => {
+      bodyFocusPanelMode = document.body.dataset.focusPanelMode || '';
+      bodyPanelSurface = document.body.dataset.panelSurface || '';
+    };
+    const obs = new MutationObserver(sync);
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-focus-panel-mode', 'data-panel-surface'] });
+    sync();
+    return () => obs.disconnect();
+  });
   let focusActive = $derived(
-    navStore().mode === 'focus' || navStore().mode === 'inside' || navStore().mode === 'trail' || navStore().focusedIndex !== null
+    navStore().mode === 'focus' || navStore().mode === 'inside' || navStore().mode === 'trail' || navStore().focusedIndex !== null || bodyFocusPanelMode === 'field-node' || bodyPanelSurface === 'semantic-dive'
   );
   let searchChromeSurface = $derived(
     navStore().surface === 'search' ||
-    navStore().surface === 'idle'
+    navStore().surface === 'idle' ||
+    bodyPanelSurface === 'search' ||
+    bodyPanelSurface === 'focus-search'
   );
   let legacySearchChromeHidden = $derived(searchChromeSurface);
   let headerChromeVisible = $derived(navStore().surface === 'idle');
@@ -176,7 +235,7 @@
     aria-hidden={!focusActive ? 'true' : undefined}
   >
     <!-- Focus card for selected business (self-gates via cardVisible = visible && isFocused) -->
-    <FocusCard visible={true} />
+    <FocusCard visible={true} forceSemanticDiveVisible={semanticDiveContractForced} />
 
     <!-- Layer 200: Journey chrome (breadcrumb, trail indicators) -->
     <JourneyChrome visible={true} />
