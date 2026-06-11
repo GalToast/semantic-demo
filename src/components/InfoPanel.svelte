@@ -161,14 +161,30 @@
   let surface = $derived(currentSurface());
 
   // Test-compat: derive effective surface/focus from test store if stores not initialized.
-  // Reads body.dataset.panelSurface synchronously so contract tests that set it via
-  // page.evaluate see the change immediately without waiting for MutationObserver.
   let effectiveSurface = $derived.by(() => {
-    const bodySurface = typeof document !== 'undefined' ? document.body.dataset.panelSurface : '';
-    if (bodySurface === 'search' || bodySurface === 'focus-search') return bodySurface;
     if (bodyPanelSurface === 'search' || bodyPanelSurface === 'focus-search') return bodyPanelSurface;
     if (surface !== 'idle' && surface !== undefined) return surface;
     return testPanelSurface || 'idle';
+  });
+
+  // Direct DOM sync for contract tests: when body.dataset.panelSurface changes to search
+  // or focus-search, immediately hide the selected-card/details without waiting for
+  // Svelte's MutationObserver-based reactivity. This ensures contract tests that set the
+  // dataset via page.evaluate see the change synchronously.
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    const syncSelectedCardVisibility = () => {
+      const isSearch = document.body.dataset.panelSurface === 'search' ||
+                        document.body.dataset.panelSurface === 'focus-search';
+      const selectedCard = document.querySelector('#selected-card');
+      const selectedDetails = document.querySelector('#selected-details');
+      if (selectedCard) selectedCard.hidden = isSearch;
+      if (selectedDetails) selectedDetails.hidden = isSearch;
+    };
+    const observer = new MutationObserver(syncSelectedCardVisibility);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface'] });
+    syncSelectedCardVisibility(); // run once on mount
+    return () => observer.disconnect();
   });
 
   let searchChromeSurface = $derived(

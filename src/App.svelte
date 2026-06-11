@@ -266,6 +266,16 @@
     --transition-duration: 0s;
   }
 
+  /* Focus stage — when active, establish positioned context for absolute children */
+  .focus-stage.active {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  :global(.focus-stage.active > *) {
+    pointer-events: auto;
+  }
+
   /* Hover tooltip */
   .hover-tooltip {
     position: absolute;

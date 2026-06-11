@@ -221,7 +221,7 @@
 -->
 <section
   id="journey-compass"
-  class="journey-compass"
+  class="journey-compass glass-heavy"
   data-phase={phase}
   data-density={density}
   data-copy={copy}
