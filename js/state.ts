@@ -1086,8 +1086,7 @@ function _makeProdProxy(obj: Record<string, unknown>, path: string): unknown {
 // Proxy uses dynamic property access incompatible with strict SemanticState indexing;
 // handler body is intentionally untyped at the parameter level.
 export const state: SemanticState = new Proxy(_rawState, {
-  // @ts-expect-error — Proxy handler traps receive string | symbol; TS ProxyHandler uses string
-  set(target: any, prop: any, value: any, receiver: any) {
+    set(target: any, prop: any, value: any, receiver: any) {
     if (CRITICAL_KEYS_SET.has(String(prop)) && !_isMutatingRef.value) {
       throw new Error(`[State Error] Illegal direct mutation of critical property '${String(prop)}'. You must use withStateMutation() to modify core state.`);
     }
@@ -1110,8 +1109,7 @@ export const state: SemanticState = new Proxy(_rawState, {
     }
     return Reflect.set(target, prop, value, receiver);
   },
-  // @ts-expect-error — Proxy handler traps receive string | symbol; TS ProxyHandler uses string
-  get(target: any, prop: any) {
+    get(target: any, prop: any) {
     if (prop === 'semanticDiveMode') {
       return target.trailDepth === 2;
     }
