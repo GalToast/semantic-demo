@@ -108,13 +108,23 @@
   let isEmpty = $derived(!selectedRecord);
   let searchChromeSurface = $derived(
     !semanticDiveActive &&
+    !isFocused &&
       (String(surface) === 'search' ||
         bodyPanelSurface === 'search' ||
         (bodyPanelSurface === 'focus-search' &&
           bodyPanelSurfaceDetail !== 'field-node' &&
           bodyFocusPanelMode !== 'field-node'))
   );
-  let cardVisible = $derived(visible && !searchChromeSurface && (semanticDiveActive || (isFocused && String(surface) !== 'search')));
+  // When a business is focused, always show the card regardless of search surface.
+  // The focused business should never be hidden behind the search chrome.
+  let cardVisible = $derived(
+    visible && (
+      isFocused ||
+      (semanticDiveActive ||
+        bodyPanelSurface === 'focus' ||
+        (String(surface) !== 'search' && bodyPanelSurface !== 'search' && bodyPanelSurface !== 'focus-search'))
+    )
+  );
 
   // ── Display helpers ───────────────────────────────────────────────────────────
 
@@ -145,7 +155,8 @@
     aria-label="Selected business"
   >
     <!-- Empty state -->
-    <div id="selected-empty" class="selected-empty" hidden={!isEmpty}>
+    {#if isEmpty}
+    <div id="selected-empty" class="selected-empty">
       <svg class="empty-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
         <circle cx="12" cy="12" r="10"/>
         <path d="M12 16v-4M12 8h.01"/>
@@ -153,9 +164,11 @@
       <p class="selected-empty-headline">Select a node</p>
       <p class="selected-empty-sub">Click a business in the field to explore.</p>
     </div>
+    {/if}
 
     <!-- Populated state -->
-    <div id="selected-details" class="selected-details" hidden={isEmpty}>
+    {#if !isEmpty}
+    <div id="selected-details" class="selected-details">
       {#if selectedRecord}
         <div class="selected-hero">
           <span class="selected-role-badge" id="selected-role-badge">
@@ -163,10 +176,10 @@
           </span>
         </div>
 
-        <h2 class="selected-card-name" id="selected-name" aria-live="polite">{selectedRecord.name}</h2>
+        <h2 class="selected-card-name focus-stage-name" id="focus-stage-name" aria-live="polite">{selectedRecord.name}</h2>
 
         {#if selectedRecord.what}
-          <p class="selected-card-what" id="selected-what">{selectedRecord.what}</p>
+          <p class="selected-card-what focus-stage-what" id="focus-stage-what">{selectedRecord.what}</p>
         {/if}
 
         <p class="selected-card-category" id="selected-theme">{buildTheme(selectedRecord)}</p>
@@ -235,6 +248,7 @@
         {/if}
       {/if}
     </div>
+    {/if}
   </div>
 {/if}
 

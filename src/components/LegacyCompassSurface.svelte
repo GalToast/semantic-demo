@@ -11,10 +11,10 @@
       <div class="journey-compass-actions">
         <button id="btn-journey-primary"></button>
         <button id="btn-journey-secondary"></button>
-        <button id="btn-journey-tertiary"></button>
+    <button id="btn-journey-tertiary"></button>
       </div>
-      <div id="map-trail-strip" hidden></div>
     </section>
+    <div id="map-trail-strip" hidden></div>
     <button id="btn-focus-dive" hidden>...</button>
 
   This is the Svelte-side replacement for the DOM that
@@ -38,6 +38,7 @@
   import { navStore } from '@lib/stores/navigation';
   import { journeyStore, JOURNEY_COMPASS_PHASE_ORDER } from '@lib/stores/journey';
   import { focusStore } from '@lib/stores/focus';
+  import { isCompact } from '@lib/stores/viewport';
   import {
     getJourneyCompassState,
     type CompassStateContext
@@ -56,11 +57,35 @@
   // the EVENT bus fires on every state change.
   // The reactive $effect below recomputes both on every store change.
   let compass: CompassStateContext = $state(getJourneyCompassState());
+  let navState = $state(navStore());
+  let journeyState = $state(journeyStore());
+  let focusState = $state(focusStore());
 
-  // Subscribe to all the stores that the legacy updateJourneyCompass()
-  // reacts to. $effect tracks reactive reads automatically.
+  // Subscribe to all stores that the legacy updateJourneyCompass() reacts to.
+  // The hybrid callable stores return snapshots, so explicit subscriptions keep
+  // this parity surface current after focus and trail transitions.
   $effect(() => {
-    compass = getJourneyCompassState();
+    const refreshCompass = () => {
+      compass = getJourneyCompassState();
+    };
+    const unsubNav = navStore.subscribe((state) => {
+      navState = state;
+      refreshCompass();
+    });
+    const unsubJourney = journeyStore.subscribe((state) => {
+      journeyState = state;
+      refreshCompass();
+    });
+    const unsubFocus = focusStore.subscribe((state) => {
+      focusState = state;
+      refreshCompass();
+    });
+    refreshCompass();
+    return () => {
+      unsubNav();
+      unsubJourney();
+      unsubFocus();
+    };
   });
 
   // Presentation is derived from the live compass state. This avoids
@@ -77,27 +102,29 @@
   let copy = $derived(presentation.copy);
   let actionsProfile = $derived(presentation.actions);
   let navigationOwner = $derived(presentation.navigationOwner);
-  let navSurface = $state(navStore().surface);
+  let navSurface = $derived(navState.surface);
   let bodyPanelSurface = $state('');
+  let bodyFocusedNode = $state('');
+  let bodyTrailDepth = $state('');
+  let bodySemanticDive = $state('');
 
   function readBodyPanelSurface(): void {
     if (typeof document !== 'undefined' && document.body) {
       bodyPanelSurface = document.body.dataset.panelSurface || '';
+      bodyFocusedNode = document.body.dataset.focusedNode || '';
+      bodyTrailDepth = document.body.dataset.trailDepth || '';
+      bodySemanticDive = document.body.dataset.semanticDive || '';
     }
   }
-
-  $effect(() => {
-    const unsub = navStore.subscribe((state) => {
-      navSurface = state.surface;
-    });
-    return unsub;
-  });
 
   onMount(() => {
     let reads = 0;
     readBodyPanelSurface();
     const observer = new MutationObserver(readBodyPanelSurface);
-    observer.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface'] });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['data-panel-surface', 'data-focused-node', 'data-trail-depth', 'data-semantic-dive']
+    });
     const poll = window.setInterval(() => {
       readBodyPanelSurface();
       reads += 1;
@@ -133,32 +160,47 @@
 
   // Mirrors legacy semantic-dive-ui.js showDiveButton rule:
   //   showDiveButton = getTrailDepth() >= 1 && hasFocus && !active
+  let bodyFocusedIndex = $derived(Number(bodyFocusedNode));
+  let activeTrailDepth = $derived(Math.max(Number(journeyState.trailDepth || 0), Number(bodyTrailDepth || 0)));
+  let semanticDiveActive = $derived(focusState.semanticDiveMode || bodySemanticDive === 'active');
+  let hasDiveFocus = $derived(focusState.semanticDiveMode || navState.focusedIndex !== null || Number.isFinite(bodyFocusedIndex));
   let canDive = $derived(
-    navStore().currentView === 'galaxy'
-      && (focusStore().semanticDiveMode || navStore().focusedIndex !== null)
+    navState.currentView === 'galaxy'
+      && hasDiveFocus
   );
   let showDiveButton = $derived(
-    journeyStore().trailDepth >= 1
-      && (navStore().focusedIndex !== null || focusStore().semanticDiveMode)
-      && !focusStore().semanticDiveMode
+    activeTrailDepth >= 1
+      && hasDiveFocus
+      && !semanticDiveActive
+  );
+  let primaryAction = $derived<CompassAction>(
+    showDiveButton
+      ? { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE }
+      : compass.primaryAction
   );
 
   // Suppress dive button inside the inside phase / semantic-dive surface
   let suppressInsideDiveActions = $derived(
-    phase === 'inside' && focusStore().semanticDiveMode
+    phase === 'inside' && semanticDiveActive
   );
 
   // ── Map trail strip ─────────────────────────────────────────────────────
 
-  let showMapTrailStrip = $derived(
-    navStore().currentView === 'map' && navigationOwner === 'map-trail-strip'
-  );
+  let showMapTrailStrip = $derived.by(() => {
+    return navState.currentView === 'map' && (
+      navigationOwner === 'map-trail-strip' ||
+      navState.surface === 'focus-search' ||
+      navState.surface === 'map-trail' ||
+      navState.surface === 'map-focus-search'
+    );
+  });
 
   // The strip carries the connection-trail label. Action buttons duplicate
   // the right panel chip rail and global view-toggle, so we render the
   // title only.
   let stripTitle = $derived(compass.title || 'Map trail');
   let compactStripTitle = $derived(stripTitle.replace(/\s+pinned to map$/i, ''));
+  let stripAccessibleTitle = $derived(compactStripTitle || stripTitle);
 
   // ── Action button state ──────────────────────────────────────────────────
 
@@ -166,7 +208,7 @@
     if (!action?.action) return true;
     if (
       action.action === JOURNEY_ACTIONS.NEXT_STOP
-      && focusStore().strandContinuityPhase === 'exploring'
+      && focusState.strandContinuityPhase === 'exploring'
     ) {
       return true;
     }
@@ -262,20 +304,24 @@
     {compass.note || 'Search to open one semantic trail.'}
   </div>
 
-  <div class="journey-compass-actions">
+  <div
+    class="journey-compass-actions"
+    class:standard-flex={!isCompact() && actionsProfile === 'standard'}
+  >
     <button
       id="btn-journey-primary"
       class="journey-compass-action primary"
       type="button"
-      data-journey-action={actionKey(compass.primaryAction)}
-      hidden={buttonHidden(compass.primaryAction, 'primary')}
-      aria-disabled={buttonDisabled(compass.primaryAction) || suppressInsideDiveActions}
-      tabindex={buttonHidden(compass.primaryAction, 'primary') ? -1 : 0}
-      aria-hidden={buttonHidden(compass.primaryAction, 'primary') ? 'true' : 'false'}
-      aria-label={buttonLabel(compass.primaryAction, 'primary')}
-      onclick={() => handleAction(compass.primaryAction)}
+      data-journey-action={actionKey(primaryAction)}
+      data-mobile-label={actionKey(primaryAction) === JOURNEY_ACTIONS.ENTER_INSIDE ? 'Inside' : undefined}
+      hidden={buttonHidden(primaryAction, 'primary')}
+      aria-disabled={buttonDisabled(primaryAction) || suppressInsideDiveActions}
+      tabindex={buttonHidden(primaryAction, 'primary') ? -1 : 0}
+      aria-hidden={buttonHidden(primaryAction, 'primary') ? 'true' : 'false'}
+      aria-label={buttonLabel(primaryAction, 'primary')}
+      onclick={() => handleAction(primaryAction)}
     >
-      {buttonLabel(compass.primaryAction, 'primary')}
+      {buttonLabel(primaryAction, 'primary')}
     </button>
     <button
       id="btn-journey-secondary"
@@ -308,19 +354,20 @@
     </button>
   </div>
 
-  <div
-    id="map-trail-strip"
-    class="map-trail-strip"
-    hidden={!showMapTrailStrip}
-    aria-hidden={!showMapTrailStrip ? 'true' : 'false'}
-  >
-    {#if showMapTrailStrip}
-      <div class="map-strip-title" title={stripTitle} aria-label={stripTitle}>
-        {compactStripTitle || stripTitle}
-      </div>
-    {/if}
-  </div>
 </section>
+
+<div
+  id="map-trail-strip"
+  class="map-trail-strip"
+  hidden={!showMapTrailStrip}
+  aria-hidden={!showMapTrailStrip ? 'true' : 'false'}
+>
+  {#if showMapTrailStrip}
+    <div class="map-strip-title" title={stripAccessibleTitle} aria-label={stripAccessibleTitle}>
+      {stripAccessibleTitle}
+    </div>
+  {/if}
+</div>
 
 <!--
   Step Inside / focus-dive button.
@@ -332,35 +379,37 @@
     - The body data-semantic-dive attribute must be 'active' or
       'transitioning' when the click reaches the engine
 -->
-<button
-  id="btn-focus-dive"
-  class="focus-stage-dive-btn"
-  type="button"
-  data-journey-action="enter-inside"
-  hidden={!showDiveButton}
-  aria-hidden={!showDiveButton ? 'true' : 'false'}
-  aria-pressed={focusStore().semanticDiveMode ? 'true' : 'false'}
-  aria-disabled={!canDive ? 'true' : 'false'}
-  aria-label="Explore the neighborhood around this business"
-  onclick={handleStepInside}
->
-  <span class="focus-stage-dive-label">
-    {focusStore().semanticDiveMode ? 'Inside Neighborhood' : 'Explore Neighborhood'}
-  </span>
-  <span class="focus-stage-dive-copy">
-    {focusStore().semanticDiveMode
-      ? 'Use Next Stop to continue or County to exit.'
-      : 'Explore related businesses in the neighborhood.'}
-  </span>
-</button>
+{#if actionKey(primaryAction) !== JOURNEY_ACTIONS.ENTER_INSIDE || !isCompact()}
+  <button
+    id="btn-focus-dive"
+    class="focus-stage-dive-btn"
+    type="button"
+    data-journey-action="enter-inside"
+    hidden={!showDiveButton}
+    aria-hidden={!showDiveButton ? 'true' : 'false'}
+    aria-pressed={semanticDiveActive ? 'true' : 'false'}
+    aria-disabled={!canDive ? 'true' : 'false'}
+    aria-label="Explore the neighborhood around this business"
+    onclick={handleStepInside}
+  >
+    <span class="focus-stage-dive-label">
+      {semanticDiveActive ? 'Inside Neighborhood' : 'Explore Neighborhood'}
+    </span>
+    <span class="focus-stage-dive-copy">
+      {semanticDiveActive
+        ? 'Use Next Stop to continue or County to exit.'
+        : 'Explore related businesses in the neighborhood.'}
+    </span>
+  </button>
+{/if}
 
 <div class="focus-stage-kicker" hidden aria-hidden="true">Focus stage</div>
 
 <div
   id="focus-stage-inside-status"
   class="focus-stage-inside-status"
-  hidden={!focusStore().semanticDiveMode}
-  aria-hidden={!focusStore().semanticDiveMode ? 'true' : 'false'}
+  hidden={!semanticDiveActive}
+  aria-hidden={!semanticDiveActive ? 'true' : 'false'}
 >
   <span class="focus-stage-inside-status-copy">Inside neighborhood</span>
 </div>
@@ -368,8 +417,8 @@
 <div
   id="focus-stage-inside-controls"
   class="focus-stage-inside-controls"
-  hidden={!focusStore().semanticDiveMode}
-  aria-hidden={!focusStore().semanticDiveMode ? 'true' : 'false'}
+  hidden={!semanticDiveActive}
+  aria-hidden={!semanticDiveActive ? 'true' : 'false'}
 >
   <button id="btn-inside-next" class="focus-stage-inside-btn biofield-glow" type="button">Next Stop</button>
   <button id="btn-inside-map" class="focus-stage-inside-btn" type="button">Map</button>
@@ -397,5 +446,15 @@
     overflow: visible;
     text-overflow: clip;
     white-space: normal;
+  }
+  .journey-compass-actions.standard-flex {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .focus-stage-dive-btn[hidden] {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
   }
 </style>

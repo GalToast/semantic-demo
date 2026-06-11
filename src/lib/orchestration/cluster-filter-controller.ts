@@ -20,6 +20,7 @@ import { normalizeCityForFilter } from "@lib/utils/geo-data";
 import { describeCluster } from "@lib/utils/ui-presentation";
 import { clearShortSemanticSearchState } from "@lib/orchestration/search-filter-core";
 import { el, setChildren } from "@lib/utils/dom-builder";
+import { state as legacyState, withStateMutation } from "@legacy/state.js";
 import type { BusinessRecord } from "@lib/types/business";
 import type { ActiveFilters } from "@lib/types/state";
 
@@ -74,7 +75,17 @@ export function setClusterFilter(cluster: number | null): void {
   const toggledCluster = currentCluster === toggledClusterStr ? null : nextCluster;
   
   storeSetClusterFilter(toggledCluster !== null ? String(toggledCluster) : null);
-  
+
+  // Mirror to legacy state — the WebGL engine (map-state.ts, three-engine.js)
+  // reads isPointVisible(state.points, state.activeClusterFilter, ...) from
+  // js/state.js. Without this sync the cluster filter is set in the Svelte
+  // store but the canvas keeps rendering every cluster as if no filter were
+  // active. This was the visible half of P0-5: legend click would dim the
+  // legend row but leave the mycelium field untouched.
+  withStateMutation(() => {
+    legacyState.activeClusterFilter = toggledCluster;
+  });
+
   // Clear story prompt when cluster filter changes
   navStore.update((s) => ({ ...s, activeStoryPrompt: null }));
   

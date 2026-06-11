@@ -13,6 +13,38 @@
 import type { NavState, NavMode, PanelSurface } from '@lib/types/state';
 import { writable, get, type Readable } from 'svelte/store';
 
+// Legacy state fallback (transitional). The legacy js/state.js is the
+// single source of truth during the migration. When the Svelte navigation
+// store hasn't been populated by an init handler, fall back to it so the
+// focused card / compass / surface attrs reflect real data.
+function readLegacyNavField<T>(legacyKey: keyof LegacyNavState): T | undefined {
+  try {
+    if (typeof window === 'undefined') return undefined;
+    const w = window as unknown as {
+      __semanticState?: { navState?: LegacyNavState };
+      state?: { navState?: LegacyNavState };
+      __APP_STATE__?: { navState?: LegacyNavState };
+      __TEST_STATE__?: { navState?: LegacyNavState };
+    };
+    const nav = w.__semanticState?.navState
+      ?? w.state?.navState
+      ?? w.__APP_STATE__?.navState
+      ?? w.__TEST_STATE__?.navState;
+    return nav?.[legacyKey] as T | undefined;
+  } catch {
+    return undefined;
+  }
+}
+interface LegacyNavState {
+  focusedIndex?: number | null;
+  surface?: string;
+  mode?: string;
+  currentView?: string;
+  panelSurface?: string;
+  panelSurfaceDetail?: string;
+  focusPanelMode?: string;
+}
+
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
 export const NAVIGATION_CONFIG = {
@@ -112,13 +144,46 @@ export const navStore: NavStoreApi = _createNavStore();
 export const isOverview = () => get(_navWritable).mode === 'overview';
 export const isExploration = () => 
   get(_navWritable).mode === 'trail' || get(_navWritable).mode === 'focus' || get(_navWritable).mode === 'inside';
-export const hasFocus = () => 
-  get(_navWritable).mode === 'focus' || get(_navWritable).mode === 'inside' || get(_navWritable).focusedIndex !== null;
+export const hasFocus = () => {
+  const local = get(_navWritable);
+  if (local.mode === 'focus' || local.mode === 'inside' || local.focusedIndex !== null) {
+    return true;
+  }
+  const legacyMode = readLegacyNavField<string>('mode');
+  if (legacyMode === 'focus' || legacyMode === 'inside') return true;
+  const legacyFocused = readLegacyNavField<number | null>('focusedIndex');
+  if (legacyFocused != null && Number.isFinite(legacyFocused)) return true;
+  return false;
+};
 export const hasTrail = () => get(_navWritable).trailDepth > 0;
-export const currentMode = () => get(_navWritable).mode;
-export const currentSurface = () => get(_navWritable).surface;
-export const focusedIndex = () => get(_navWritable).focusedIndex;
-export const currentView = () => get(_navWritable).currentView;
+export const currentMode = () => {
+  const local = get(_navWritable).mode;
+  if (local) return local;
+  const legacy = readLegacyNavField<string>('mode');
+  if (legacy) return legacy as NavState['mode'];
+  return local;
+};
+export const currentSurface = () => {
+  const local = get(_navWritable).surface;
+  if (local) return local;
+  const legacy = readLegacyNavField<string>('surface');
+  if (legacy) return legacy as NavState['surface'];
+  return local;
+};
+export const focusedIndex = () => {
+  const local = get(_navWritable).focusedIndex;
+  if (local != null && Number.isFinite(local)) return local;
+  const legacy = readLegacyNavField<number | null>('focusedIndex');
+  if (legacy != null && Number.isFinite(legacy)) return legacy;
+  return local;
+};
+export const currentView = () => {
+  const local = get(_navWritable).currentView;
+  if (local) return local;
+  const legacy = readLegacyNavField<string>('currentView');
+  if (legacy) return legacy as NavState['currentView'];
+  return local;
+};
 export const myceliumMode = () => get(_navWritable).myceliumMode;
 export const isMapMode = () => get(_navWritable).currentView === 'map';
 export const loadingPhase = () => get(_navWritable).loadingPhaseKey;
@@ -291,6 +356,41 @@ export function dispatchNavTransition(
         const view: 'galaxy' | 'map' = payload.view;
         _navWritable.update(s => ({ ...s, currentView: view }));
       }
+      break;
+    case 'set-surface': {
+      const surface = payload.surface ?? 'idle';
+      _navWritable.update(s => ({
+        ...s,
+        previousSurface: s.surface,
+        surface: surface as PanelSurface,
+        // Derive mode from surface: search→search, focus→focus, inside→inside,
+        // trail→trail, idle→overview. Map surfaces preserve current mode.
+        mode: surface === 'search' ? 'search' :
+              surface === 'focus' ? 'focus' :
+              surface === 'inside' ? 'inside' :
+              // Cast to string: 'trail' is a valid NavMode but PanelSurface
+              // doesn't include it; dispatch code uses 'as any' to pass it.
+              (surface as string) === 'trail' ? 'trail' :
+              surface === 'idle' ? 'overview' :
+              s.mode as NavMode
+      }));
+      break;
+    }
+    case 'traverse-neighbor':
+      _navWritable.update(s => ({
+        ...s,
+        focusedIndex: payload.index ?? s.focusedIndex,
+        mode: 'trail' as NavMode,
+        surface: 'trail' as PanelSurface
+      }));
+      break;
+    case 'walk-thread':
+      _navWritable.update(s => ({
+        ...s,
+        focusedIndex: payload.index ?? s.focusedIndex,
+        mode: 'trail' as NavMode,
+        surface: 'trail' as PanelSurface
+      }));
       break;
     case 'reset':
       resetNavState();

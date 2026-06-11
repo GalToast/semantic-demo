@@ -134,6 +134,10 @@ void _ensureModules();
 let _insideCentroidTarget: THREE.Vector3 | null = null;
 let _insideCentroidLerpToken = 0;
 
+function normalizeIndexArray(indices: unknown): number[] {
+  return Array.isArray(indices) ? Array.prototype.slice.call(indices) : [];
+}
+
 // ── animateCameraToSearchCorridor ────────────────────────────────────────────
 
 export function animateCameraToSearchCorridor(
@@ -331,11 +335,11 @@ export function applySemanticCentroidCamera(now: number = performance.now()): vo
     return;
   }
   const navState = _selectors.getNavState();
-  const indices = navState.focusPocketIndices;
+  const indices = normalizeIndexArray(navState.focusPocketIndices);
   if (!indices || !indices.length) return;
 
   const anchorIdx = navState.focusedIndex;
-  const pocketIndices = anchorIdx !== null && anchorIdx !== undefined ? [anchorIdx, ...indices] : indices;
+  const pocketIndices = anchorIdx !== null && anchorIdx !== undefined ? [anchorIdx].concat(indices) : indices;
 
   let cx = 0, cy = 0, cz = 0, count = 0;
   for (const idx of pocketIndices) {

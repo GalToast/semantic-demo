@@ -10,8 +10,17 @@
 -->
 <script lang="ts">
   import type { NavMode } from '@lib/types/state';
-  import { currentMode, currentSurface, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
+  import {
+    currentMode,
+    currentSurface,
+    dispatchNavTransition,
+    NAV_TRANSITION_ACTIONS,
+    navStore,
+    type NavStoreApi
+  } from '@lib/stores/navigation';
   import { isCompact } from '@lib/stores/viewport';
+  import { legendOpen, toggleLegend } from '@lib/stores/legend.svelte';
+  import { updateUrlState } from '@lib/orchestration/url-state';
 
   interface Props {
     /** Whether the header is visible */
@@ -45,9 +54,22 @@
     { id: 'map', label: 'Map', description: 'Geographic map view of the county.', icon: 'G' }
   ];
 
+  // Subscribe to navStore for reactive updates in Svelte 5 runes.
+  // Using $derived with get() doesn't work for svelte/store writables.
+  let activeMode = $state(currentMode());
+  let activeSurface = $state(currentSurface());
+
+  $effect(() => {
+    const unsub = navStore.subscribe((s) => {
+      activeMode = s.mode;
+      activeSurface = s.surface;
+    });
+    return () => unsub();
+  });
+
   function isActive(modeId: NavMode | 'map'): boolean {
-    if (modeId === 'map') return currentSurface() === 'map';
-    return currentMode() === modeId;
+    if (modeId === 'map') return activeSurface === 'map';
+    return activeMode === modeId;
   }
 
   function selectMode(modeId: NavMode | 'map'): void {
@@ -59,12 +81,21 @@
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'focus' });
     } else if (modeId === 'inside') {
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'inside' });
+    } else if (modeId === 'trail') {
+      // 'trail' is a valid NavMode but not in PanelSurface; cast to match the type
+      dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'trail' as any });
     } else if (modeId === 'map') {
       // Map is a view-level switch (galaxy ↔ map), not just a surface change.
       // SET_VIEW updates currentView; SET_SURFACE sets surface='map' for
       // isActive('map') which checks $currentSurface.
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'map' });
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map' });
+    }
+    // Sync URL after mode change so the browser bar reflects the new state
+    try {
+      updateUrlState({}, { reason: 'mode-switch' });
+    } catch (e) {
+      console.warn('Header.selectMode: URL update failed', e);
     }
   }
 
@@ -86,6 +117,21 @@
       {#if !isCompact()}
         <span class="brand-label">Semantic Explorer</span>
       {/if}
+      <button
+        class="legend-toggle"
+        class:active={$legendOpen}
+        onclick={toggleLegend}
+        type="button"
+        aria-label={$legendOpen ? 'Close category legend' : 'Open category legend'}
+        title={$legendOpen ? 'Close legend' : 'Open legend'}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <rect x="1" y="1" width="4" height="4" rx="1" fill="currentColor" opacity="0.6"/>
+          <rect x="1" y="9" width="4" height="4" rx="1" fill="currentColor" opacity="0.6"/>
+          <rect x="7" y="1" width="6" height="4" rx="1" fill="currentColor" opacity="0.6"/>
+          <rect x="7" y="9" width="6" height="4" rx="1" fill="currentColor" opacity="0.6"/>
+        </svg>
+      </button>
     </div>
 
     <div
@@ -159,6 +205,33 @@
     font-weight: 600;
     color: #e0f0f0;
     white-space: nowrap;
+  }
+
+  /* ── Legend toggle ─────────────────────────────────────────────────────── */
+  .legend-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: none;
+    border: 1px solid rgba(78, 205, 196, 0.15);
+    border-radius: 0.25rem;
+    color: #6a8a8a;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .legend-toggle:hover {
+    color: #b0d0d0;
+    border-color: rgba(78, 205, 196, 0.3);
+    background: rgba(78, 205, 196, 0.06);
+  }
+  .legend-toggle.active {
+    color: #4ecdc4;
+    border-color: rgba(78, 205, 196, 0.4);
+    background: rgba(78, 205, 196, 0.1);
   }
 
   /* ── Mode chips ────────────────────────────────────────────────────────── */

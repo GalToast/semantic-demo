@@ -8,7 +8,7 @@
 <script lang="ts">
   import { focusPocketNodes, anchorIndicator, clearPocketNodes } from '@lib/stores/focus';
   import { hasFocus, focusedIndex } from '@lib/stores/navigation';
-  import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket';
+  import { applyLocalNeighborhoodFocus, mirrorFocusPocketToSvelteStore } from '@lib/focus/pocket';
 
   interface Props {
     visible?: boolean;
@@ -26,6 +26,9 @@
     if (focused && Number.isFinite(idx) && idx !== null && idx !== lastFocusIndex) {
       lastFocusIndex = idx;
       applyLocalNeighborhoodFocus(idx);
+      // Mirror the legacy focusPocketIndices/positions into the Svelte
+      // focusStore.pocketNodes so the constellation actually renders.
+      mirrorFocusPocketToSvelteStore();
     } else if (!focused && lastFocusIndex !== null) {
       lastFocusIndex = null;
       clearPocketNodes();

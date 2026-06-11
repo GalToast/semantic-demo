@@ -13,6 +13,9 @@ import type { Vector3 } from 'three';
 import { state, withStateMutation } from '@legacy/state.js';
 import { prefersReducedMotion } from '@lib/utils/environment';
 import { normalizeCityForFilter } from '@lib/utils/geo-data';
+import { getBusinessRecords } from '@lib/data-store';
+import { setPocketNodes } from '@lib/stores/focus.svelte';
+import type { FocusPocketNode } from '@lib/types/state';
 import {
   clampNumber,
   easeOutQuint,
@@ -56,7 +59,8 @@ export {
 // through these functions. No direct assignment outside this API.
 
 export function getFocusPocketIndices(): number[] {
-  return (state.navState as Record<string, unknown>).focusPocketIndices as number[] ?? [];
+  const indices = (state.navState as Record<string, unknown>).focusPocketIndices;
+  return Array.isArray(indices) ? indices : [];
 }
 
 export function setFocusPocketIndices(indices: number[]): void {
@@ -151,8 +155,11 @@ export function applyLocalNeighborhoodFocus(index: number): void {
 
   // --- TRAVERSAL CONTINUITY: capture previous pocket before reset ---
   const prevPocketMeta = navState.focusPocketMeta as Record<string, unknown> | null;
+  const prevPocketIndexArray = Array.isArray(navState.focusPocketIndices)
+    ? (navState.focusPocketIndices as number[])
+    : [];
   const prevPocketIndices = prevPocketMeta?.active
-    ? new Set<number>([index, ...((navState.focusPocketIndices as number[]) ?? [])])
+    ? new Set<number>([index, ...prevPocketIndexArray])
     : new Set<number>();
   const prevTargetByIndex = new Map<number, { x: number; y: number; z: number }>();
   if (prevPocketIndices.size > 0) {
@@ -384,6 +391,63 @@ export function applyLocalNeighborhoodFocus(index: number): void {
   withStateMutation(() => {
     (lState as Record<string, unknown>).nodesAreSettling = true;
   });
+}
+
+// ── Mirror Legacy Pocket → Svelte Store ─────────────────────────────────────
+
+/**
+ * Read the legacy `state.navState.focusPocketIndices` + `targetPositions`
+ * + `focusPocketRoleByIndex` and push a derived `FocusPocketNode[]` into
+ * the Svelte `focusStore.pocketNodes`. The constellation UI in
+ * `FocusPocket.svelte` reads from that Svelte store, so without this
+ * mirror the pocket renders empty even when the legacy engine has built
+ * the constellation.
+ */
+export function mirrorFocusPocketToSvelteStore(): void {
+  const lState = state as Record<string, unknown>;
+  const navState = lState.navState as Record<string, unknown> | undefined;
+  if (!navState) return;
+  const indices = (navState.focusPocketIndices as number[] | undefined) ?? [];
+  const roles =
+    (navState.focusPocketRoleByIndex as Map<number, string> | undefined) ?? new Map<number, string>();
+  const targetPositions = lState.targetPositions as Array<{ x: number; y: number; z: number }> | undefined;
+  const nodePositions = lState.nodePositions as Array<{ x: number; y: number; z: number }> | undefined;
+  const originalPositions = lState.originalPositions as Array<{ x: number; y: number; z: number }> | undefined;
+  const records = getBusinessRecords();
+  const anchorIndex = Number.isFinite(navState.focusedIndex as number)
+    ? (navState.focusedIndex as number)
+    : null;
+  if (indices.length === 0 || anchorIndex == null) {
+    setPocketNodes([]);
+    return;
+  }
+  const nodes: FocusPocketNode[] = [];
+  for (const idx of indices) {
+    if (!Number.isFinite(idx) || idx < 0) continue;
+    if (idx === anchorIndex) continue; // anchor is rendered separately
+    const position =
+      targetPositions?.[idx] ?? nodePositions?.[idx] ?? originalPositions?.[idx] ?? null;
+    if (!position) continue;
+    const legacyRole = (roles.get(idx) || 'support').toLowerCase();
+    const role: FocusPocketNode['role'] =
+      legacyRole === 'primary' || legacyRole === 'direct'
+        ? 'direct'
+        : legacyRole === 'civic'
+        ? 'civic'
+        : 'support';
+    const record = records[idx];
+    const label = record?.name ?? `Node ${idx}`;
+    nodes.push({
+      index: idx,
+      position: [position.x ?? 0, position.y ?? 0, position.z ?? 0],
+      role,
+      score: 0.62,
+      label,
+      rotationSeed: (idx * 7919) % 360,
+      scaleSeed: ((idx * 104729) % 1000) / 1000
+    });
+  }
+  setPocketNodes(nodes);
 }
 
 // ── Focus Pocket Breathing ──────────────────────────────────────────────────

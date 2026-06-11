@@ -6,7 +6,12 @@
  * from data-loader.ts, orchestrated by initData().
  */
 
-import { writable, get, type Writable } from 'svelte/store';
+import { get, type Writable } from 'svelte/store';
+import {
+  businessRecords,
+  loadingPhaseStore,
+  graphicsModeStore,
+} from './data-store';
 import type {
   BusinessRecord,
   BusinessDataResult,
@@ -41,9 +46,12 @@ export interface DataLoadState {
 
 // ── Stores ────────────────────────────────────────────────────────────────────
 
-/** Raw business records loaded from data.dat */
-let businessRecords = $state<readonly BusinessRecord[]>([]);
-export function getBusinessRecords() { return businessRecords; }
+/** Raw business records loaded from data.dat. Svelte writable so module-level
+ *  state propagates reactively to consumers (a module-level $state rune read
+ *  through a function does not always track in $derived callbacks). */
+/** Re-export the canonical writable from data-store.ts so all consumers share the same instance. */
+export const businessRecordsStore = businessRecords;
+export function getBusinessRecords() { return get(businessRecordsStore); }
 
 /** Float32Array of interleaved [x,y,z] positions in [0,1] unit cube */
 let positionBuffer = $state<Float32Array | null>(null);
@@ -92,14 +100,8 @@ export function getDataLoadState() { return _dataLoadState; }
  * Four-phase loading progression: records → scene → restore → launch.
  * The LoadingOverlay and parity-attrs layer read from this store.
  */
-export const loadingPhaseStore: Writable<LoadingPhase> = writable('records');
+export { loadingPhaseStore, graphicsModeStore };
 export function getLoadingPhaseStore() { return get(loadingPhaseStore); }
-
-/**
- * Graphics mode: 'webgl' when GPU rendering is available, 'fallback' otherwise.
- * The engine bridge should set this during init; parity-attrs reads it.
- */
-export const graphicsModeStore: Writable<'webgl' | 'fallback'> = writable('webgl');
 export function getGraphicsModeStore() { return get(graphicsModeStore); }
 
 /**
@@ -125,7 +127,7 @@ export function setGraphicsMode(mode: 'webgl' | 'fallback'): void {
 // ── Derived Stores ────────────────────────────────────────────────────────────
 
 /** Number of loaded business records */
-const _recordCount = $derived(businessRecords.length);
+const _recordCount = $derived(get(businessRecordsStore).length);
 export function getRecordCount() { return _recordCount; }
 
 /** Whether all data is ready */
@@ -168,7 +170,7 @@ export function getNeighborMapSize() { return _neighborMapSize; }
  * Set business data from a load result.
  */
 export function setBusinessData(result: BusinessDataResult): void {
-  businessRecords = result.records;
+  businessRecordsStore.set(result.records);
   positionBuffer = result.positionsBuffer;
   clustersBuffer = result.clustersBuffer;
   pointIndexByLeadId = result.pointIndexByLeadId;
@@ -210,7 +212,7 @@ export function setDataLoadError(error: string): void {
  * Reset all data stores to initial state.
  */
 export function resetDataStores(): void {
-  businessRecords = [];
+  businessRecordsStore.set([]);
   positionBuffer = null;
   clustersBuffer = null;
   pointIndexByLeadId = new Map();

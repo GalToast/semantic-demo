@@ -99,19 +99,33 @@ export const isUltraCompactPortrait = () => {
 
 // ── Actions ──────────────────────────────────────────────────────────────────
 
-/** Re-read the viewport from the browser and update the store. */
+/** Re-read the viewport from the browser and update the store. Also syncs
+ *  body data-compact / data-mobile so legacy CSS coexistence stays correct
+ *  after a window resize. */
 export function syncViewport(): void {
   if (typeof window === 'undefined') return;
+
+  const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isCompact = window.innerWidth <= MOBILE_BREAKPOINT;
+  const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+  const isLandscape = window.innerWidth > window.innerHeight;
 
   _viewportWritable.set({
     width: window.innerWidth,
     height: window.innerHeight,
-    dpr: Math.min(window.devicePixelRatio || 1, MAX_DPR),
-    reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-    isCompact: window.innerWidth <= MOBILE_BREAKPOINT,
-    isMobile: window.innerWidth <= MOBILE_BREAKPOINT,
-    isLandscape: window.innerWidth > window.innerHeight
+    dpr,
+    reducedMotion,
+    isCompact,
+    isMobile,
+    isLandscape
   });
+
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.dataset.compact = String(isCompact);
+    document.body.dataset.mobile = String(isMobile);
+    document.body.dataset.reducedMotion = String(reducedMotion);
+  }
 }
 
 /**

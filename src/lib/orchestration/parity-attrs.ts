@@ -195,6 +195,13 @@ export function computeParityAttributes(
   })();
 
   const panelSurfaceMode = ((): string => {
+    if (nav.currentView === 'map') {
+      if (nav.surface === 'focus-search' || nav.surface === 'search' || search.summary) return 'map-search';
+      if (nav.surface === 'focus') return 'map-focus';
+      if (nav.surface === 'map-focus-search') return 'map-focus-search';
+      if (nav.surface === 'map-trail') return 'map-trail';
+      if (nav.surface === 'map') return 'map';
+    }
     if (nav.surface === 'focus-search') return 'focus-search';
     // 'semantic-dive' is a legacy string the canvas-hit-test contract
     // asserts on body.dataset.panelSurface. It is set by the legacy
@@ -211,7 +218,10 @@ export function computeParityAttributes(
     return 'idle';
   })();
 
-  const trailState = journey.trailDepth > 0 ? 'active' : 'inactive';
+  const trailState =
+    journey.trailDepth > 0 || presentation.navigationOwner === 'map-trail-strip'
+      ? 'active'
+      : 'inactive';
   const semanticDive = focus.semanticDiveMode
     ? 'active'
     : (journey.trailDepth >= 2 ? 'transitioning' : 'inactive');
@@ -246,7 +256,7 @@ export function computeParityAttributes(
 
     navMode: nav.mode,
     navSurface: nav.surface,
-    panelSurface: nav.surface,
+    panelSurface: panelSurfaceMode,
     panelSurfaceMode,
     activeView: nav.currentView,
     viewMode: nav.currentView,

@@ -68,7 +68,8 @@ const _state = state as unknown as SemanticState & {
 };
 
 export function getFocusPocketIndices(): number[] {
-    return _state.navState.focusPocketIndices ?? [];
+    const indices = _state.navState.focusPocketIndices;
+    return Array.isArray(indices) ? indices : [];
 }
 
 export function setFocusPocketIndices(indices: number[]): void {
@@ -130,8 +131,11 @@ export function clearFocusPocketMeta(): void {
 }
 
 export function applyLocalNeighborhoodFocus(index: number): void {
+    const prevPocketIndexArray = Array.isArray(_state.navState.focusPocketIndices)
+        ? _state.navState.focusPocketIndices
+        : [];
     const prevPocketIndices = _state.navState.focusPocketMeta?.active
-        ? new Set([index, ..._state.navState.focusPocketIndices])
+        ? new Set([index, ...prevPocketIndexArray])
         : new Set<number>();
     const prevTargetByIndex = new Map<number, { x: number; y: number; z: number }>();
     if (prevPocketIndices.size > 0) {

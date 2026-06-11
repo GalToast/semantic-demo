@@ -22,6 +22,10 @@
     clearSearch
   } from '@lib/stores/search';
   import { performSearch } from '@lib/search-engine';
+  import {
+    dispatchNavTransition,
+    NAV_TRANSITION_ACTIONS
+  } from '@lib/stores/navigation';
 
   interface Props {
     /** Placeholder text for the input */
@@ -43,6 +47,7 @@
   let queryInput = $state('');
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let searchAbortController: AbortController | null = null;
+  let surfaceSwitchedToSearch = false;
 
   // ── Derived ───────────────────────────────────────────────────────────────────
 
@@ -70,17 +75,27 @@
 
     if (trimmed.length === 0) {
       clearSearch();
+      if (surfaceSwitchedToSearch) {
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'idle' });
+        surfaceSwitchedToSearch = false;
+      }
       return;
     }
 
     if (trimmed.length < 2) {
       setSearchStatus('idle');
+      if (surfaceSwitchedToSearch) {
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'idle' });
+        surfaceSwitchedToSearch = false;
+      }
       return;
     }
 
     searchAbortController = new AbortController();
     const signal = searchAbortController.signal;
     setSearchStatus('searching');
+    dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' });
+    surfaceSwitchedToSearch = true;
 
     performSearch(trimmed, signal)
       .then((results) => {
@@ -126,6 +141,10 @@
       searchAbortController = null;
     }
     clearSearch();
+    if (surfaceSwitchedToSearch) {
+      dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'idle' });
+      surfaceSwitchedToSearch = false;
+    }
     requestAnimationFrame(() => {
       document.getElementById('search-input')?.focus();
     });
@@ -215,11 +234,16 @@
 </div>
 
 <style>
+  /*
+   * The .search-container wrapper in SearchBar.svelte already provides
+   * position: absolute; z-index: var(--z-search). The input container
+   * flows inside it; only the input field itself needs to be above the
+   * canvas, not the status/label chrome. Decoupling lets the result
+   * dropdown sit in the same flow as the input without being painted
+   * over by a sibling stacking context.
+   */
   .search-input-container {
-    position: absolute;
-    top: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative;
     z-index: var(--z-search, 100);
     width: min(420px, 90vw);
     font-family: 'Nunito Sans', system-ui, sans-serif;
@@ -234,6 +258,9 @@
     background: rgba(78, 205, 196, 0.08);
     border-radius: 0.25rem;
     margin-bottom: 0.25rem;
+    /* lane pill is decorative; don't intercept pointer events from the
+     * result list that visually sits below it. */
+    pointer-events: none;
   }
   .lane-pill-dot {
     width: 6px;
@@ -251,6 +278,8 @@
     font-weight: 600;
     display: block;
     margin-bottom: 0.25rem;
+    /* label is decorative; let clicks fall through to whatever sits below */
+    pointer-events: none;
   }
 
   /* ── Input wrapper ────────────────────────────────────────────────────────── */
@@ -330,6 +359,10 @@
     font-size: 0.75rem;
     color: #4ecdc4;
     margin-top: 0.35rem;
+    /* status is a11y-only (aria-live); clicks should fall through to the
+     * result list which sits in the same visual region once the user has
+     * a query. */
+    pointer-events: none;
   }
 
   /* ── Spinner ──────────────────────────────────────────────────────────────── */
