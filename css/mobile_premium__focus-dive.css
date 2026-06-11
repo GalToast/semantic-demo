@@ -378,6 +378,10 @@
             inset 0 1px 0 var(--glass-reflection-muted),
             0 -10px 34px var(--shadow-penumbra),
             0 0 22px rgba(255, 210, 77, 0.08);
+        /* Position card flush with viewport bottom for bottom-flush contract */
+        bottom: 0;
+        max-height: 62dvh;
+        overflow-y: auto;
     }
 
     /* Focus stage card — top bar pseudo-element */
@@ -1412,10 +1416,10 @@
     body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) .focus-stage-next,
     body.is-active[data-panel-surface='focus'] .focus-thread-inspector,
     body.is-active[data-panel-surface='focus-search'] .focus-thread-inspector,
-    body.is-active[data-panel-surface='focus'] #trail-controls,
-    body.is-active[data-panel-surface='focus-search'] #trail-controls,
-    body.is-active[data-panel-surface='focus'] .trail-controls,
-    body.is-active[data-panel-surface='focus-search'] .trail-controls,
+    body.is-active[data-panel-surface='focus']:not([data-focus-panel-mode='field-node']) #trail-controls,
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) #trail-controls,
+    body.is-active[data-panel-surface='focus']:not([data-focus-panel-mode='field-node']) .trail-controls,
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) .trail-controls,
     body.is-active[data-panel-surface='focus']:not([data-focus-panel-mode='field-node']) .focus-stage-actions,
     body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) .focus-stage-actions,
     body.is-active[data-panel-surface='focus'] .focus-stage-journey.active,
