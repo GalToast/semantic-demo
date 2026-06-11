@@ -20,6 +20,8 @@
  * into the adapter safely discards extras.
  */
 
+import type { ThreadCandidate } from './journey-thread-model.ts';
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 /** Subset of Point used by adapter delegates. */
@@ -47,7 +49,7 @@ interface WalkCandidateOptions {
  */
 interface AdapterDelegate {
     previewInsideNextThread: (options?: PreviewInsideOptions) => void;
-    getNextWalkCandidateForIndex: (currentIndex: number, options?: WalkCandidateOptions) => number | null;
+    getNextWalkCandidateForIndex: (currentIndex: number, options?: WalkCandidateOptions) => ThreadCandidate | null;
     getInterestingBusinessNote: (point: Point) => string | null;
     buildSelectedMatchNarrative: (point: Point) => string;
     getPreviouslyFocusedFocusStage: () => HTMLElement | null;
@@ -62,7 +64,7 @@ let previouslyFocusedFocusStage: HTMLElement | null = null;
 
 let adapter: AdapterDelegate = {
     previewInsideNextThread: (_options?: PreviewInsideOptions) => {},
-    getNextWalkCandidateForIndex: (_currentIndex: number, _options?: WalkCandidateOptions): number | null => null,
+    getNextWalkCandidateForIndex: (_currentIndex: number, _options?: WalkCandidateOptions): ThreadCandidate | null => null,
     getInterestingBusinessNote: (_point: Point): string | null => null,
     buildSelectedMatchNarrative: (_point: Point): string => '',
     getPreviouslyFocusedFocusStage: (): HTMLElement | null => previouslyFocusedFocusStage,
@@ -81,7 +83,8 @@ export function previewInsideNextThread(options?: PreviewInsideOptions): void {
     adapter.previewInsideNextThread(options);
 }
 
-export function getNextWalkCandidateForIndex(currentIndex: number, options?: WalkCandidateOptions): number | null {
+export function getNextWalkCandidateForIndex(currentIndex: number | null, options?: WalkCandidateOptions): ThreadCandidate | null {
+    if (currentIndex === null) return null;
     return adapter.getNextWalkCandidateForIndex(currentIndex, options);
 }
 

@@ -4,42 +4,46 @@ The Semantic Explorer is a highly polished, browser-based WebGL/DOM application 
 
 ## Directory Structure
 ```
-ops/remote-staging/mccullough.cloud/public_html/semantic-demo/
-├── vector-explorer-polished.html # The primary layout and DOM structure
-├── index.html                    # Front door only; not an app shell
+semantic-demo/
+├── index.html                    # Built Svelte/Vite production shell
+├── vector-explorer-polished.html # Back-compat URL; deployed from the same Svelte build output
 ├── case-study.html               # The narrative wrapper and portfolio presentation
 ├── semantic-demo.css             # Import sheet only; loads the CSS modules
 ├── vector-explorer-pandora.css   # Separate Pandora experiment stylesheet
 ├── css/                          # Extracted CSS modules loaded through semantic-demo.css
-├── js/
-│   ├── state.js                  # Centralized, mutable global state store
-│   ├── utils.js                  # Pure utility functions (formatting, normalization)
-│   └── modules/                  # Modularized application logic
+├── assets/                       # Vite content-hashed JS/CSS chunks
+├── css/                          # Copied CSS modules loaded by the built shell
+├── data.dat*                     # Semantic corpus artifacts
+└── semantic_threads*.dat         # Semantic relationship artifacts
 ```
 
 ## One App Shell Contract
 
-`vector-explorer-polished.html` is the single canonical app shell. It owns the live explorer DOM, the app CSS links, and `dist/bundle.js`. `semantic-demo.css` is the import sheet for cache-busted modules under `css/`; `vector-explorer-pandora.css` is a separate top-level stylesheet linked by the shell. Both top-level stylesheets and the `css/` module directory are part of the deploy payload.
+The production app shell is `src/index.html`, built by Vite to `dist/svelte/index.html`. Deploy publishes that built shell to both live routes:
 
-`index.html` is not an app shell. It is a routing/front-door page for `/semantic-demo/` and may link to the explorer, but it must not include canvas DOM, `dist/bundle.js`, `semantic-demo.css`, or Semantic API behavior.
+- `/semantic-demo/index.html`
+- `/semantic-demo/vector-explorer-polished.html`
+
+The repo-root `vector-explorer-polished.html` is a legacy reference/rollback shell only. It still loads `dist/bundle.js` by design, but it is not the production runtime entry and should not be used for production QA. `semantic-demo.css` is the import sheet for cache-busted modules under `css/`; `vector-explorer-pandora.css` is a separate top-level stylesheet linked by the Svelte shell. Both top-level stylesheets and the `css/` module directory are part of the deploy payload.
+
+The repo-root `index.html` is not an app shell. It is a routing/front-door page for the repository preview and may link to the explorer, but it must not include canvas DOM, `dist/bundle.js`, `semantic-demo.css`, or Semantic API behavior.
 
 Run `npm run build` and `npm run check:shell` before deploy or shell-level edits. The deploy scripts build first, then call this guard before uploading.
 
-## JavaScript Modules (The Frontend Engine)
+## Runtime Modules (Svelte Shell + Legacy Engine Bridge)
 
-The frontend is broken down into distinct modules to handle the complexity of synchronizing a Three.js scene with a reactive DOM overlay.
+The production runtime starts in `src/main.ts`, mounts `src/App.svelte`, and composes typed Svelte components under `src/components/`. The Svelte app owns the app shell, body `data-*` synchronization, and DOM surface rendering. The legacy `js/modules/` tree remains the imperative engine/business-logic layer during migration and is reached through bridge/adapters, not through `dist/bundle.js` in production.
 
-*   **`app.js`**: The main entry point. Coordinates initialization (`init()`), handles global error recovery, and binds all exposed module functions to the `window` object for HTML inline handler compatibility.
-*   **`three-setup.js`**: The core WebGL engine. Manages the Three.js scene, camera, renderer, custom shaders (including the score-reactive thread inspector and semantic lens), and the high-density instanced meshes for business nodes.
-*   **`camera-controls.js`**: Advanced camera choreography. Handles smooth transitions (`animateCameraToNode`), the "Sonic Boom" map prelude (`animateCameraToTerrainPrelude`), auto-rotation, and orbit slack.
-*   **`journey.js`**: The "Business Logic" of exploration. Manages the state of the user's semantic trail, calculates nearest semantic neighbors, and updates the `journey-compass` UI to reflect the current phase of exploration.
-*   **`lifecycle.js`**: Application state machine. Controls the loading overlay, view switching (Galaxy vs. Map), the "Semantic Guide" synthesis card, and polls the `/api.php` for semantic lane health.
-*   **`search-state.js`**: The search engine. Handles query tokenization, filters the dataset, manages the `search-results` DOM, and orchestrates the `search-trail-cue` narrative framing.
-*   **`semantic-threads.js`**: Artifact loading. Fetches and processes the pre-calculated semantic relationships (threads) from the backend data pipeline.
-*   **`thread-inspector.js`**: Visualizing connections. Renders the pulsing, score-reactive WebGL lines between nodes when exploring semantic neighborhoods.
-*   **`url-state.js`**: Routing. Synchronizes the application state (view, active search, filters, selected node) with the browser's URL query parameters for shareability.
-*   **`data-loader.js`**: Initial payload fetching. Responsible for downloading the core business corpus and coordinate maps.
-*   **`event-bindings.js`**: Centralized DOM event listeners to keep the HTML clean and manage user interactions cleanly.
+*   **`src/main.ts`**: Vite entry; initializes URL/demo flags and mounts the Svelte app.
+*   **`src/App.svelte`**: Root Svelte composition; syncs body state attributes and renders the app surfaces.
+*   **`src/lib/stores/`**: Typed Svelte stores replacing `state.js` slices for UI state.
+*   **`src/lib/engine/bridge.ts`**: Imperative bridge to the legacy Three.js/data modules.
+*   **`src/components/Canvas.svelte`**: Owns WebGL canvas lifecycle through the bridge.
+*   **`js/modules/three-engine.js`**: Core WebGL engine used behind the bridge.
+*   **`js/modules/camera-controls.js`**: Camera choreography, transitions, auto-rotation, and orbit slack.
+*   **`js/modules/journey*.js` / `*.ts`**: Exploration/trail business logic while the migration continues.
+*   **`js/modules/search-state.js`**: Search engine and result derivation backing Svelte search surfaces.
+*   **`js/modules/semantic-threads.js`**: Artifact loading for pre-calculated semantic relationships.
 
 ## Key Architecture Patterns
 
@@ -57,4 +61,3 @@ The app uses two communication mechanisms. Both are intentional; do not "unify" 
 - **Adapters (`*-adapter.js`)** — for breaking module-to-module circular dependencies. Each adapter holds module-private closure state for dependency functions, injected at app init via `init*Adapter(deps)`. Consumers import the adapter module and call `adapter.foo()` (or destructured `adapter_foo()`); the adapter delegates to the injected implementation with a safe no-op fallback. Used for: thread-inspector ↔ journey, cluster-filter ↔ search/url-state, search-panel ↔ lifecycle, etc. The key contract: a cycle that can't be broken by direct import goes through an adapter.
 
 The `docs/semantic-demo-dewindowing-inventory.md` documents which window globals have been retired; the 6 corresponding adapters were deleted (2026-05) because they only existed to wrap those globals. The 10 remaining adapters are unrelated to dewindowing — they serve the cycle-breaking role above.
-
