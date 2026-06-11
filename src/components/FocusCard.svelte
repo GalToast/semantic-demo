@@ -362,5 +362,13 @@
     /* Rely on legacy mobile CSS ownership (mobile_premium__focus-dive.css) for
        bottom-sheet layout and sizing in active states, to prevent Svelte
        scoped CSS from breaking the bottom-flush contract. */
+
+    /* Legacy CSS positions .focus-stage at bottom:0 in dive/focus-search.
+       Override the component-scoped bottom:4.5rem so the card sits flush
+       with the viewport bottom for the bottom-flush contract. */
+    :global(body.is-active[data-panel-surface='semantic-dive']) .focus-card,
+    :global(body.is-active[data-panel-surface='focus-search']) .focus-card {
+      bottom: 0;
+    }
   }
 </style>

@@ -549,7 +549,8 @@
     padding: 0.35rem 0.65rem;
     border: 1px solid rgba(78, 205, 196, 0.12);
   }
-  .trail-controls.focus-stage-actions {
+  .trail-controls.focus-stage-actions,
+  #trail-controls {
     display: grid;
     grid-auto-flow: column;
   }
