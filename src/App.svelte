@@ -112,15 +112,17 @@
   // data-mode, data-compact) are now subsumed by computeParityAttributes()
   // inside parity-attrs.ts — including navSurface and demoPhase.
   let focusActive = $derived(
-    navStore().mode === 'focus' || navStore().mode === 'inside' || navStore().focusedIndex !== null
+    navStore().mode === 'focus' || navStore().mode === 'inside' || navStore().mode === 'trail' || navStore().focusedIndex !== null
   );
   let searchChromeSurface = $derived(
     navStore().surface === 'search' ||
-    navStore().surface === 'focus-search' ||
     navStore().surface === 'idle'
   );
   let legacySearchChromeHidden = $derived(searchChromeSurface);
   let headerChromeVisible = $derived(navStore().surface === 'idle');
+  let controlsVisible = $derived(
+    navStore().surface !== 'focus-search'
+  );
 </script>
 
 <div
@@ -204,7 +206,7 @@
   <LegacyCompassSurface />
 
   <!-- Layer 800: Camera controls -->
-  <Controls visible={true} />
+  <Controls visible={controlsVisible} />
 
   <!-- Filters (positioned at bottom center) -->
   <Filters open={false} />

@@ -92,14 +92,11 @@
   }
 </script>
 
-<details
+<div
   class="filters-section"
   id="filters-section"
-  open={open}
   aria-label="Business filters"
 >
-  <summary class="filters-summary">Filters</summary>
-
   <div class="filter-toolbar">
     <!-- Status filter chips -->
     <div class="filter-group">
@@ -165,7 +162,7 @@
       Reset ({$activeFilterCount})
     </button>
   </div>
-</details>
+</div>
 
 <style>
   .filters-section {
@@ -174,9 +171,6 @@
     left: 50%;
     transform: translateX(-50%);
     z-index: var(--z-controls, 50);
-  }
-  .filters-summary {
-    display: none; /* Hidden by default; shown only when needed */
   }
   .filter-toolbar {
     display: flex;

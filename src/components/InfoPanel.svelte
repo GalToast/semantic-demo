@@ -160,8 +160,12 @@
   let isFocused = $derived(hasFocus());
   let surface = $derived(currentSurface());
 
-  // Test-compat: derive effective surface/focus from test store if stores not initialized
+  // Test-compat: derive effective surface/focus from test store if stores not initialized.
+  // Reads body.dataset.panelSurface synchronously so contract tests that set it via
+  // page.evaluate see the change immediately without waiting for MutationObserver.
   let effectiveSurface = $derived.by(() => {
+    const bodySurface = typeof document !== 'undefined' ? document.body.dataset.panelSurface : '';
+    if (bodySurface === 'search' || bodySurface === 'focus-search') return bodySurface;
     if (bodyPanelSurface === 'search' || bodyPanelSurface === 'focus-search') return bodyPanelSurface;
     if (surface !== 'idle' && surface !== undefined) return surface;
     return testPanelSurface || 'idle';
