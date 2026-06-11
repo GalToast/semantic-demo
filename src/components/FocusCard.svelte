@@ -367,7 +367,9 @@
        Override the component-scoped bottom:4.5rem so the card sits flush
        with the viewport bottom for the bottom-flush contract. */
     :global(body.is-active[data-panel-surface='semantic-dive']) .focus-card,
-    :global(body.is-active[data-panel-surface='focus-search']) .focus-card {
+    :global(body.is-active[data-panel-surface='focus-search']) .focus-card,
+    :global(body.is-active[data-panel-surface='semantic-dive']) .focus-stage-card,
+    :global(body.is-active[data-panel-surface='focus-search']) .focus-stage-card {
       bottom: 0;
     }
   }
