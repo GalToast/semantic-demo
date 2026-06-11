@@ -44,11 +44,51 @@ export interface DataLoadState {
 /** Raw business records loaded from data.dat */
 export const businessRecords = writable<readonly BusinessRecord[]>([]);
 
+/**
+ * Hydrate the Svelte stores from the legacy state.
+ * The Svelte build is layered on top of the legacy code; during the
+ * migration the legacy init path still loads records into __APP_STATE__.points
+ * and the Svelte stores need to be populated from that source so reactive
+ * components can read the data.
+ */
+export function hydrateFromLegacyState(): void {
+  if (typeof window === 'undefined') return;
+  const w = window as unknown as {
+    __APP_STATE__?: {
+      points?: readonly BusinessRecord[];
+      semanticNeighborMapByLeadId?: Map<string, unknown>;
+      semanticThreadsStatus?: string;
+      semanticSpaceLayoutManifest?: unknown;
+      threadCandidates?: readonly number[];
+      threadSource?: string;
+    };
+  };
+  const appState = w.__APP_STATE__;
+  if (!appState) return;
+  if (Array.isArray(appState.points) && appState.points.length > 0) {
+    businessRecords.set(appState.points as BusinessRecord[]);
+  }
+  if (appState.semanticNeighborMapByLeadId instanceof Map) {
+    semanticNeighborMap.set(appState.semanticNeighborMapByLeadId as Map<string, SemanticNeighborEntry>);
+  }
+}
+
 /** Synchronous snapshot of business records. */
 export function getBusinessRecords(): readonly BusinessRecord[] {
   let result: readonly BusinessRecord[] = [];
   const unsub = businessRecords.subscribe((v) => { result = v; });
   unsub();
+  if (result.length > 0) return result;
+  // Fallback: read from the legacy state when the Svelte store is empty.
+  // (Hydration may not have run yet for components created before main.ts calls
+  // hydrateFromLegacyState.)
+  if (typeof window !== 'undefined') {
+    const w = window as unknown as { __APP_STATE__?: { points?: readonly BusinessRecord[] } };
+    const points = w.__APP_STATE__?.points;
+    if (Array.isArray(points) && points.length > 0) {
+      return points;
+    }
+  }
   return result;
 }
 
@@ -144,7 +184,19 @@ export function getDataLoadState(): DataLoadState { return get(dataLoadState); }
 export function getLoadingPhaseStore(): LoadingPhase { return get(loadingPhaseStore); }
 export function getGraphicsModeStore(): 'webgl' | 'fallback' { return get(graphicsModeStore); }
 export function getRecordCount(): number { return get(recordCount); }
-export function getIsDataReady(): boolean { return get(isDataReady); }
+export function getIsDataReady(): boolean {
+  const local = get(isDataReady);
+  if (local) return true;
+  // Fallback: if the Svelte dataLoadState hasn't been initialized but the
+  // legacy state has the data loaded, treat the data as ready.
+  if (typeof window !== 'undefined') {
+    const w = window as unknown as { __APP_STATE__?: { points?: readonly unknown[] } };
+    if (Array.isArray(w.__APP_STATE__?.points) && (w.__APP_STATE__?.points?.length ?? 0) > 0) {
+      return true;
+    }
+  }
+  return false;
+}
 export function getIsLoading(): boolean { return get(isLoading); }
 export function getPositionDescriptor(): PositionBufferDescriptor | null { return get(positionDescriptor); }
 export function getThreadEdgeCount(): number { return get(threadEdgeCount); }

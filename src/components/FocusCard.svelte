@@ -51,7 +51,14 @@
 
   // ── Derived state ─────────────────────────────────────────────────────────────
 
-  let currentFocusedIdx = $derived(focusedIndex());
+  let currentFocusedIdx = $derived.by(() => {
+    // Read bodyFocusedNode to register a reactive dependency on the body's
+    // data-focused-node attribute. focusedIndex() falls back to the legacy
+    // __APP_STATE__ which is non-reactive, so without this dep the derived
+    // would cache null and not update when the legacy focus state changes.
+    void bodyFocusedNode;
+    return focusedIndex();
+  });
   let currentActiveResult = $derived(activeResult());
   let isFocused = $derived(hasFocus());
   let surface = $derived(currentSurface());
@@ -59,6 +66,8 @@
   let bodyPanelSurface = $state('');
   let bodyPanelSurfaceDetail = $state('');
   let bodyFocusPanelMode = $state('');
+  let bodyFocusedNode = $state('');
+  let bodyNavMode = $state('');
 
   $effect(() => {
     if (typeof document === 'undefined') return;
@@ -66,15 +75,27 @@
       bodyPanelSurface = document.body.dataset.panelSurface ?? '';
       bodyPanelSurfaceDetail = document.body.dataset.panelSurfaceDetail ?? '';
       bodyFocusPanelMode = document.body.dataset.focusPanelMode ?? '';
+      bodyFocusedNode = document.body.dataset.focusedNode ?? '';
+      bodyNavMode = document.body.dataset.navMode ?? '';
     };
     const observer = new MutationObserver(syncBodyPanelSurface);
     observer.observe(document.body, {
       attributes: true,
-      attributeFilter: ['data-panel-surface', 'data-panel-surface-detail', 'data-focus-panel-mode']
+      attributeFilter: ['data-panel-surface', 'data-panel-surface-detail', 'data-focus-panel-mode', 'data-focused-node', 'data-nav-mode']
     });
     syncBodyPanelSurface();
     return () => observer.disconnect();
   });
+
+  // Reactive focus detection: read from body data-attrs so Svelte re-evaluates
+  // when the legacy code updates the DOM. isFocused = $derived(hasFocus())
+  // would cache because hasFocus() reads window.__APP_STATE__ (non-reactive).
+  let isFocusedReactive = $derived(
+    bodyFocusedNode !== '' ||
+    bodyNavMode === 'focus' ||
+    bodyNavMode === 'inside' ||
+    isFocused
+  );
 
   let semanticDiveActive = $derived(
     forceSemanticDiveVisible ||
@@ -108,7 +129,7 @@
   let isEmpty = $derived(!selectedRecord);
   let searchChromeSurface = $derived(
     !semanticDiveActive &&
-    !isFocused &&
+    !isFocusedReactive &&
       (String(surface) === 'search' ||
         bodyPanelSurface === 'search' ||
         (bodyPanelSurface === 'focus-search' &&
@@ -119,10 +140,10 @@
   // The focused business should never be hidden behind the search chrome.
   let cardVisible = $derived(
     visible && (
-      isFocused ||
-      (semanticDiveActive ||
-        bodyPanelSurface === 'focus' ||
-        (String(surface) !== 'search' && bodyPanelSurface !== 'search' && bodyPanelSurface !== 'focus-search'))
+      isFocusedReactive ||
+      semanticDiveActive ||
+      bodyPanelSurface === 'focus' ||
+      (String(surface) !== 'search' && bodyPanelSurface !== 'search' && bodyPanelSurface !== 'focus-search')
     )
   );
 

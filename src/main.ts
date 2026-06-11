@@ -8,6 +8,7 @@ import { mount, unmount } from 'svelte';
 import App from './App.svelte';
 import { testState } from '@lib/stores/index';
 import { installWindowActions } from '@lib/orchestration/window-actions';
+import { hydrateFromLegacyState } from '@lib/data-store';
 import './lib/css/biofield.css';
 
 // ── URL parameter initialization ──────────────────────────────────────────────
@@ -32,6 +33,21 @@ if (mountTarget) {
     props: { forceDemo, noDemo }
   });
 }
+
+// Hydrate Svelte stores from the legacy state after mount.
+// The legacy init path sets __APP_STATE__ asynchronously; retry until the
+// data is present or the cap is reached.
+let hydrateAttempts = 0;
+let hydrateSuccess = false;
+const tryHydrate = (): void => {
+  hydrateFromLegacyState();
+  hydrateAttempts += 1;
+  if (hydrateSuccess) return;
+  if (hydrateAttempts < 60) {
+    window.setTimeout(tryHydrate, 500);
+  }
+};
+tryHydrate();
 
 // ── __TEST_STATE__ sync (visual settle for Playwright surface/visual tests) ──
 
