@@ -1070,38 +1070,32 @@ function _makeProdProxy(obj: Record<string, unknown>, path: string): unknown {
       return Reflect.set(t, p, v, r);
     },
     get(t, p) {
-      // @ts-ignore — dynamic property access on narrowed proxy target
-      const v = t[p];
+      const key = String(p);
+      const v = t[key];
       if (v && typeof v === 'object' && !(v instanceof Set) && !(v instanceof Map)
           && !(v instanceof Date) && !(v instanceof RegExp)) {
-        // @ts-ignore — v is narrowed to object after checks
-        return _makeProdProxy(v, path + '.' + String(p));
+        return _makeProdProxy(v as Record<string, unknown>, path + '.' + key);
       }
       return v;
     }
   });
-  _prodProxyCache?.set(obj, proxy);
+  _prodProxyCache!.set(obj, proxy);
   return proxy;
 }
 
 // Proxy uses dynamic property access incompatible with strict SemanticState indexing;
 // handler body is intentionally untyped at the parameter level.
-// @ts-ignore
 export const state: SemanticState = new Proxy(_rawState, {
-// @ts-ignore
-  set(target, prop, value, receiver) {
-// @ts-ignore
-    if (CRITICAL_KEYS_SET.has(prop) && !_isMutatingRef.value) {
-// @ts-ignore
-      throw new Error(`[State Error] Illegal direct mutation of critical property '${prop}'. You must use withStateMutation() to modify core state.`);
+  // @ts-expect-error — Proxy handler traps receive string | symbol; TS ProxyHandler uses string
+  set(target: any, prop: any, value: any, receiver: any) {
+    if (CRITICAL_KEYS_SET.has(String(prop)) && !_isMutatingRef.value) {
+      throw new Error(`[State Error] Illegal direct mutation of critical property '${String(prop)}'. You must use withStateMutation() to modify core state.`);
     }
-// @ts-ignore
-    if (TRACKED_SUB_KEYS_SET.has(prop) && !_isMutatingRef.value && _devWarned) {
-// @ts-ignore
+    if (TRACKED_SUB_KEYS_SET.has(String(prop)) && !_isMutatingRef.value && _devWarned) {
       const k = 'state.' + String(prop);
-      if (!_devWarned.has(k)) {
+      if (_devWarned && !_devWarned.has(k)) {
         console.warn('[State Bypass] ' + k + ' — wholesale reassignment detected; use store .update()');
-        _devWarned.add(k);
+        _devWarned!.add(k);
       }
     }
     if (prop === 'semanticDiveMode') {
@@ -1114,23 +1108,19 @@ export const state: SemanticState = new Proxy(_rawState, {
       }
       return true;
     }
-// @ts-ignore
     return Reflect.set(target, prop, value, receiver);
   },
-// @ts-ignore
-  get(target, prop) {
+  // @ts-expect-error — Proxy handler traps receive string | symbol; TS ProxyHandler uses string
+  get(target: any, prop: any) {
     if (prop === 'semanticDiveMode') {
       return target.trailDepth === 2;
     }
     if (prop === 'focusedNode') {
       return target.navState?.focusedIndex ?? null;
     }
-// @ts-ignore
-    const value = target[prop];
-// @ts-ignore
-    if (!_devTrackingActive && TRACKED_SUB_KEYS_SET.has(prop) && value && typeof value === 'object') {
-// @ts-ignore
-      return _makeProdProxy(value, 'state.' + String(prop));
+    const value = target[String(prop)];
+    if (!_devTrackingActive && TRACKED_SUB_KEYS_SET.has(String(prop)) && value && typeof value === 'object') {
+      return _makeProdProxy(value as Record<string, unknown>, 'state.' + String(prop));
     }
     return value;
   }
@@ -1158,28 +1148,23 @@ if (typeof window !== 'undefined') {
       }
       if (_devProxyCache?.has(obj)) return _devProxyCache.get(obj);
       const proxy = new Proxy(obj as Record<string, unknown>, {
-        set(t, p, v) {
+        set(t: any, p: any, v: any) {
           const k = path + '.' + String(p);
-          // @ts-ignore — _devWarned is guaranteed non-null in dev-mode block
-          if (!_devWarned.has(k)) {
-            // @ts-ignore
+          if (_devWarned && !_devWarned.has(k)) {
             console.warn('[State Bypass] ' + k + ' — use store .update()');
-            // @ts-ignore
             _devWarned.add(k);
           }
-          // @ts-ignore — dynamic property set on narrowed object
-          t[p] = v; return true;
+          t[String(p)] = v; return true;
         },
-        get(t, p) {
+        get(t: any, p: any) {
           if (p === '__target__') return t;
-          // @ts-ignore — dynamic property access on narrowed object
-          const v = t[p];
-          if (v && typeof v === 'object' && !(v instanceof Set) && !(v instanceof Map)) return _track(v, path + '.' + String(p));
+          const key = String(p);
+          const v = t[key];
+          if (v && typeof v === 'object' && !(v instanceof Set) && !(v instanceof Map)) return _track(v, path + '.' + key);
           return v;
         }
       });
-      // @ts-ignore — _devProxyCache is guaranteed non-null in dev-mode block
-      _devProxyCache.set(obj, proxy);
+      _devProxyCache!.set(obj, proxy);
       return proxy;
     };
     const _trackSub = (key: string) => {
