@@ -224,8 +224,12 @@
       && hasDiveFocus
       && !semanticDiveActive)
   );
+  let primaryCanStepInside = $derived(
+    !semanticDiveActive
+      && (canDive || bodyPanelSurface === 'focus' || bodyPanelSurface === 'focus-search')
+  );
   let primaryAction = $derived<CompassAction>(
-    showDiveButton
+    primaryCanStepInside
       ? { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE }
       : compass.primaryAction
   );

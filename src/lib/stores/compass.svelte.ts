@@ -184,15 +184,17 @@ export function buildCompassStatus(params: {
     let tertiaryAction: CompassAction | null = null;
 
     if (isSearchAnchor) {
-      primaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
-      secondaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
+      primaryAction = { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE };
+      secondaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
+      tertiaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
     } else if (isTrailStop && hasAnchor) {
-      primaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
-      secondaryAction = { label: 'Center on anchor', action: JOURNEY_ACTIONS.CENTER_ANCHOR, hint: 'Return to search starting point' };
-      tertiaryAction = { label: 'County View', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW, hint: 'Exit path' };
+      primaryAction = { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE };
+      secondaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
+      tertiaryAction = { label: 'Center on anchor', action: JOURNEY_ACTIONS.CENTER_ANCHOR, hint: 'Return to search starting point' };
     } else {
-      primaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
-      secondaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
+      primaryAction = { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE };
+      secondaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
+      tertiaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
     }
 
     return {

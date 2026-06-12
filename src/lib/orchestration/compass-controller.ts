@@ -155,6 +155,14 @@ export function syncJourneyCompassActions(
     compassState.phase === 'inside' && isSemanticDiveSurface();
   const $focus = focusStore();
 
+  const panelSurface =
+    typeof document !== 'undefined' && document.body
+      ? document.body.dataset.panelSurface || ''
+      : '';
+  const focusedSurfaceCanStepInside =
+    (panelSurface === 'focus' || panelSurface === 'focus-search') &&
+    !isSemanticDiveSurface();
+
   const buttons: Array<[HTMLButtonElement | null, CompassAction | null | undefined, string]> = [
     [document.getElementById('btn-journey-primary') as HTMLButtonElement | null, compassState.primaryAction, 'primary'],
     [document.getElementById('btn-journey-secondary') as HTMLButtonElement | null, compassState.secondaryAction, 'secondary'],
@@ -164,8 +172,13 @@ export function syncJourneyCompassActions(
   buttons.forEach(([button, action, role]) => {
     if (!button) return;
 
-    const fullLabel = action?.label || (role === 'primary' ? 'Search' : role === 'secondary' ? 'Map' : 'Navigate');
-    const mobileLabel = action?.action ? getMobileJourneyActionLabel(action, fullLabel) : '';
+    const effectiveAction =
+      role === 'primary' && focusedSurfaceCanStepInside
+        ? { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE }
+        : action;
+
+    const fullLabel = effectiveAction?.label || (role === 'primary' ? 'Search' : role === 'secondary' ? 'Map' : 'Navigate');
+    const mobileLabel = effectiveAction?.action ? getMobileJourneyActionLabel(effectiveAction, fullLabel) : '';
 
     button.textContent = fullLabel;
 
@@ -177,16 +190,16 @@ export function syncJourneyCompassActions(
       delete button.dataset.fullLabel;
     }
 
-    button.dataset.journeyAction = action?.action || '';
+    button.dataset.journeyAction = effectiveAction?.action || '';
 
     const disabled =
-      !action?.action ||
-      (action.action === JOURNEY_ACTIONS.NEXT_STOP &&
+      !effectiveAction?.action ||
+      (effectiveAction.action === JOURNEY_ACTIONS.NEXT_STOP &&
         $focus.strandContinuityPhase === 'exploring');
 
     button.disabled = disabled || suppressInsideDiveActions;
     button.setAttribute('aria-disabled', String(disabled || suppressInsideDiveActions));
-    button.hidden = suppressInsideDiveActions || !action?.action;
+    button.hidden = suppressInsideDiveActions || !effectiveAction?.action;
 
     if (button.hidden) {
       button.setAttribute('tabindex', '-1');
@@ -196,9 +209,9 @@ export function syncJourneyCompassActions(
       button.removeAttribute('aria-hidden');
     }
 
-    if (action?.hint) {
-      button.setAttribute('aria-label', `${fullLabel} - ${action.hint}`);
-      button.setAttribute('title', action.hint);
+    if (effectiveAction?.hint) {
+      button.setAttribute('aria-label', `${fullLabel} - ${effectiveAction.hint}`);
+      button.setAttribute('title', effectiveAction.hint);
     } else {
       button.setAttribute('aria-label', fullLabel);
       button.removeAttribute('title');

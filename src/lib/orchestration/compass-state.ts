@@ -185,8 +185,9 @@ export function getJourneyCompassState(): CompassStateContext {
           }
         : { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
     } else {
-      primaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
-      secondaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
+      primaryAction = { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE };
+      secondaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
+      tertiaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
     }
 
     return {
