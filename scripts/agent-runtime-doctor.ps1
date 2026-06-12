@@ -6,10 +6,7 @@ $manifestPath = Join-Path $repoRoot "tools/agent-runtime/runtime-topology.json"
 
 function Test-PathStatus {
     param([Parameter(Mandatory=$true)][string]$Path)
-    [pscustomobject]@{
-        path = $Path
-        exists = Test-Path -LiteralPath $Path
-    }
+    [pscustomobject]@{ path = $Path; exists = Test-Path -LiteralPath $Path }
 }
 
 function Redact-CommandLine {
@@ -21,7 +18,6 @@ function Redact-CommandLine {
 }
 
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
-
 $paths = @(
     $manifest.current_runtime.external_subagents_mcp.current_source,
     $manifest.current_runtime.local_key_router.current_source,
