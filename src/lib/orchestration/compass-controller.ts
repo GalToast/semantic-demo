@@ -243,17 +243,6 @@ export function syncMapTrailStrip(
   title.setAttribute('title', accessibleTitle);
   title.setAttribute('aria-label', accessibleTitle);
   strip.appendChild(title);
-
-  const resetButton = document.createElement('button');
-  resetButton.type = 'button';
-  resetButton.className = 'trail-strip-btn';
-  resetButton.dataset.journeyAction = JOURNEY_ACTIONS.COUNTY_OVERVIEW;
-  resetButton.textContent = 'County';
-  resetButton.setAttribute('aria-label', 'Return to county overview');
-  resetButton.addEventListener('click', () => {
-    executeJourneyCompassAction(JOURNEY_ACTIONS.COUNTY_OVERVIEW);
-  });
-  strip.appendChild(resetButton);
 }
 
 // ── Execute Action ────────────────────────────────────────────────────────
@@ -336,7 +325,24 @@ export function executeJourneyCompassAction(action: string): void {
     }
 
     case JOURNEY_ACTIONS.OPEN_MAP:
-      _switchView('map');
+      setSemanticDiveMode(false);
+      journeySetTrailDepth(1);
+      navStore.update((state) => ({
+        ...state,
+        currentView: 'map',
+        mode: 'trail',
+        surface: 'map-trail',
+        trailDepth: Math.max(Number(state.trailDepth) || 0, 1)
+      }));
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.semanticDive = 'inactive';
+        document.body.dataset.activeView = 'map';
+        document.body.dataset.viewMode = 'map';
+        document.body.dataset.panelSurface = 'map-trail';
+        document.body.dataset.panelSurfaceMode = 'map-trail';
+        document.body.dataset.graphContext = 'map';
+        document.body.dataset.trailDepth = '1';
+      }
       return;
 
     case JOURNEY_ACTIONS.OPEN_MYCELIUM:
