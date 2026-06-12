@@ -1148,7 +1148,7 @@ if (typeof window !== 'undefined') {
       const proxy = new Proxy(obj as Record<string, unknown>, {
         set(t: any, p: any, v: any) {
           const k = path + '.' + String(p);
-          if (!_isMutatingRef.value && _devWarned && !_devWarned.has(k)) {
+          if (_devWarned && !_devWarned.has(k)) {
             console.warn('[State Bypass] ' + k + ' — use store .update()');
             _devWarned.add(k);
           }
