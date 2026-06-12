@@ -9,6 +9,7 @@
     "lint:fix": "eslint \"{js,tests}/**/*.{js,ts}\" --fix",
     "lint:tests": "eslint \"tests/**/*.{js,ts}\" --no-warn-ignored",
     "lint:all": "npm run lint",
+    "sg": "ast-grep",
     "mcp:recover": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mcp-recover.ps1",
     "mcp:doctor": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/browser-mcp-doctor.ps1",
     "format": "prettier --write \"{js,tests}/**/*.{js,ts,css}\"",
@@ -190,6 +191,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@ast-grep/cli": "^0.43.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.60.0",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
