@@ -60,8 +60,8 @@ function createLineSegments(positions: any, colors: any, opacity: any) {
         transparent: true,
         opacity,
         linewidth: 1,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending
+        depthWrite: true,
+        blending: THREE.NormalBlending
     }));
 }
 
