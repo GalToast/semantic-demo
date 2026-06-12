@@ -151,7 +151,7 @@ The 2026-06-05 bug sweep flagged several surfaces as "known pre-existing failure
 |---|---|---|---|
 | `compass-rail` | 5 pass / 4 fail | 12 pass / 0 fail | **Resolved** — server was serving JSON |
 | `info-panel-empty` | 6 pass / 2 fail | 10 pass / 0 fail | **Resolved** — server was serving JSON |
-| `field-node` | 12 pass / 2 fail | 24 pass / 0 fail | **Resolved** — field-node focus-stage flush and compass hidden in field-node mode |
+| `field-node` | 12 pass / 2 fail | 23 pass / 1 fail | **Partially resolved** — 1 real issue remains (see §5.1) |
 | `thread-inspector` | 5 pass / 1 fail | 6 pass / 0 fail | **Resolved** — server was serving JSON |
 | `mode-grid` | 8 pass / 1 fail | 9 pass / 0 fail | **Resolved** — server was serving JSON |
 | `focus-pocket` | 10 pass / 0 fail | 11 pass / 0 fail | **Clean** — was already passing |
@@ -161,31 +161,46 @@ The 2026-06-05 bug sweep flagged several surfaces as "known pre-existing failure
 
 ---
 
-## 5. Resolved Findings
+## 5. Active Findings
 
-### 5.1 `field-node` → `layout:focus-stage-card-bottom-flush` (RESOLVED)
+### 5.1 `field-node` → `layout:focus-stage-card-bottom-flush` (HIGH)
 
-- **Symptom:** `focus-stage-card` had a 534px bottom inset in an 844px viewport (mobile 390×844).
-- **Where:** `body[data-focus-panel-mode="field-node"]` state.
-- **Root cause:** The focus-stage card was anchored through max-height/top positioning instead of pinning to the viewport bottom.
-- **Fix:** `css/mobile_premium__focus-dive.css` pins the field-node focus-stage card to the viewport bottom and preserves focus/search field-node geometry.
-- **Tests:** `field-node` contract passes; `03-mobile-focus-first-result` visual state shows no remaining bottom-flush issue.
+- **Symptom:** `focus-stage-card` has a 534px bottom inset in a 844px viewport (mobile 390×844)
+- **Where:** `body.focusPanelMode="field-node"` state
+- **Root cause hypothesis:** `--focus-stage-card-max-height: min(46dvh, 400px)` in `css/mobile_premium__focus-dive.css:1138` caps the card at 400px, but the card's bottom anchor is positioned at y=310 (486+358=844), so the card extends to the viewport bottom in the DOM but is visually 534px above the actual bottom because the card *content* doesn't fill the 358px height — there's a 534px gap between the bottom of the card content and the bottom of the viewport
+- **Test note:** `focusStageBottomAnchor.flush = true` (passes) but `focusStageCardBottomAnchor.flush = false` (fails)
+- **Owning seam:** `css/mobile_premium__focus-dive.css` + `js/modules/focus-stage-renderer.js`
+- **Recommended fix:** Either reduce `--focus-stage-card-max-height` to fit the content, or remove the max-height cap and let the card size to its content, or anchor the card to `bottom: 0` instead of `top: <calculated>`
 
-### 5.2 `.journey-compass` mobile focus overlap/overflow (RESOLVED)
+### 5.2 `.journey-compass` right-edge overflow on mobile focus (HIGH)
 
-- **Symptom:** `.journey-compass` clipped the mobile viewport edge and overlapped the focus-stage card in field-node focus.
-- **Where:** `03-mobile-focus-first-result` / field-node focus state.
-- **Root cause:** The compass was visible in a state whose focus-stage field-node layout owns the interaction surface.
-- **Fix:** `css/mobile_premium__focus-dive.css` hides `.journey-compass` for field-node focus/focus-search, and the focus-stage neighbor rail is promoted as the active surface.
-- **Tests:** `compass-rail` and `field-node` contracts pass; visual audit shows no remaining compass overlap.
+- **Symptom:** `.journey-compass` has `width: 390` and `left: 16` → right edge at 406, but viewport is 390px wide → 16px overflow
+- **Where:** `03-mobile-focus-first-result` state, `body[data-focus-origin="field-node"]`
+- **Root cause:** The compass bar inherits the focus-stage's left/right padding offset (16px) but doesn't subtract it from its own width
+- **Owning seam:** `css/mobile_premium__focus-dive.css` (compass layout in focus state)
+- **Recommended fix:** Set `.journey-compass` to `width: calc(100% - 32px)` or `right: 16` when nested in focus context
 
-### 5.3 Desktop `#camera-controls` 148px band overlaps chrome (RESOLVED)
+### 5.3 `.journey-compass` overlaps `#focus-stage` at 93.3% (MEDIUM)
 
-- **Symptom:** `#camera-controls` rendered as a 1440×148 full-width band at z=100 and overlapped journey compass, info panel, search chrome, and legend.
-- **Where:** `07-desktop-idle`.
-- **Root cause:** The `.controls-view` / `.controls-info` reset matched `#camera-controls` because it uses `controls controls-view` as modifier classes, not because it contains child wrapper elements.
-- **Fix:** `css/mobile_base.css` scopes the reset to `.controls > .controls-view` and `.controls > .controls-info`.
-- **Tests:** `desktop-idle` visual state is clean; `#camera-controls` renders as a 44×148 column.
+- **Symptom:** Compass bar (z=90, 58px tall) sits *over* the focus-stage card (z=100, 358px tall) at full overlap
+- **Where:** `03-mobile-focus-first-result`
+- **Root cause:** Compass is z=90 and focus-stage is z=100, so the card should render above. But the 93.3% overlap ratio means the compass is *inside* the focus-stage's vertical region. This is z-index behavior working correctly, but the visual stacking is wrong because the compass should not be present in the field-node focus state at all, or it should sit above the card
+- **Owning seam:** `css/mobile_premium__focus-dive.css` (compass visibility gates) + `js/modules/journey-compass-state.js` (visibility derivation)
+- **Recommended fix:** Hide `.journey-compass` in `body[data-focus-panel-mode="field-node"]` or move it to z=110 so it floats above the card
+
+### 5.4 Desktop `#camera-controls` 148px band overlaps chrome (MEDIUM)
+
+- **Symptom:** `#camera-controls` (1440×148 at z=100) overlaps `#journey-compass`, `#info-panel`, `.search-container`, `#btn-legend`
+- **Where:** `07-desktop-idle` and presumably all desktop states
+- **Root cause:** The controls bar is 148px tall full-width and sits at y=96-244. The journey-compass starts at y=98 and extends to y=172 — fully inside the controls band. Same for info-panel (y=116-324) and search-container (y=187-296). This is a layout band issue, not a z-index issue
+- **Owning seam:** `css/desktop*.css` + `js/modules/camera-controls.js`
+- **Recommended fix:** Either reduce `#camera-controls` height, or push other chrome down to y≥244
+
+### 5.5 `surface-overlap:.journey-compass:.focus-stage-card` (MEDIUM)
+
+- **Symptom:** Companion check to 5.3 — the compass overlaps the lower panel surface in field-node
+- **Where:** `03-mobile-focus-first-result`
+- **Owning seam:** Same as 5.3
 
 ---
 
@@ -214,7 +229,7 @@ The `qa:contract:*` npm scripts assume a server is running on 8795 but don't ver
 
 The following states/surfaces have not been re-audited in this run and may have issues that haven't been captured:
 
-- 12 remaining visual states blocked on headed WebGL capture
+- All 22 remaining visual states (only 3 of 25 were run)
 - Visual states at 320px width (`22-mobile-semantic-dive-320`)
 - Short landscape (`23-mobile-short-landscape`)
 - Loading overlay capture (`18-mobile-loading-overlay`)
@@ -285,10 +300,10 @@ These correlate with the `state.js` Proxy bypass findings from the 2026-06-05 bu
 
 1. ~~**Run all 25 visual states** — currently only 3 of 25 were captured~~ — **DONE (13/25)** — see §3.0 for the 12 missing states blocked on headless WebGL
 2. **Run visual audit in headed mode** — to capture the 12 blocked states (`enterSemanticDiveViaVisibleControl` needs real WebGL)
-3. ~~**Investigate `[State Bypass]` warnings** — see §8 for current list. Confirmed real bypasses in `journey-point-color.ts` and `focus-pocket.ts` from v2 subagent diagnosis (`ocw_ee70b953`)~~ — **DONE** — 2 real bypasses in `focus-pocket.ts` fixed via `withStateMutation()`
-4. ~~**Update `atomic-coverage-protocol.md`** with the surface-by-state coverage matrix~~ — **DONE**
+3. ~~**Investigate `[State Bypass]` warnings** — see §8 for current list. Confirmed real bypasses in `journey-point-color.ts` and `focus-pocket.ts` from v2 subagent diagnosis (`ocw_ee70b953`)~~ — **DONE** — 2 real bypasses in `focus-pocket.ts` fixed via `withStateMutation()` (commit `3fa9f46`)
+4. ~~**Update `atomic-coverage-protocol.md`** with the surface-by-state coverage matrix~~ — **DONE** (commit `7c00482`)
 5. ~~**Add server health check** to `surface-contract-check.mjs` to prevent the JSON-vs-HTML silent failure mode~~ — **DONE** at `tests/surface-contract-check.mjs:4258-4284` (pre-flight fetch with content-type guard, fails fast with `[FATAL]`)
-6. ~~**Resolve desktop `#camera-controls` band** (§3.2) — 1440×148 band at z=100; lower-z elements appear above it visually but the contract test flags unexpected overlap~~ — **DONE** — selector scope fix, camera-controls now 44×148
+6. ~~**Resolve desktop `#camera-controls` band** (§3.2) — 1440×148 band at z=100; lower-z elements appear above it visually but the contract test flags unexpected overlap~~ — **DONE** (commit `b5b9615`) — selector scope fix, camera-controls now 44×148
 
 **Remaining cleanup (lower priority):**
 - Investigate 7 false-positive state-bypass warnings (`scenePerformanceDiagnostics.*`, `navState.*` sub-property writes) — cosmetic noise from sub-property writes; nested Proxy at `state.js:530-531` catches top-level writes correctly
