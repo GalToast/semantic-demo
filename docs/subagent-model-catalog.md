@@ -2,6 +2,20 @@
 
 Working notes for external-subagent model performance in this repo. Do not store API keys, account details, raw headers, or full transcripts here. Treat each row as evidence from one observed launch, not a permanent provider guarantee.
 
+## 2026-06-12 -- Current Routing State
+
+This section records the active routing defaults as of the most recent cross-gateway test day (2026-06-12). Entries here override any older catalog entries when they conflict.
+
+| Use case | Default model | Lock status | Escalation rule |
+|---|---|---|---|
+| Paid (reliable implementation work) | `opencode-go/mimo-v2.5` | Locked -- user approved paid tier on 2026-06-12 | No escalation needed; this is the safety net |
+| Free memory consolidation | `kilo/nvidia/nemotron-3-ultra-550b-a55b:free` | Locked -- set in `~/.pi/agent/settings.json` (llmModelOverride) | Do not change without explicit user request |
+| Free subagent dispatches | `kilo/nvidia/nemotron-3-ultra-550b-a55b:free` | Locked -- replaces prior `opencode-zen/nemotron-3-ultra-free` preference | Worker failure/429 → escalate to paid with user approval |
+
+**Known-bad free routes under load (2026-06-12):**
+- `opencode-zen/mimo-v2.5-free` -- 429s within minutes when multiple workers run concurrently on the same gateway.
+- `opencode-zen/deepseek-v4-flash-free` -- same 429 pattern under load.
+
 Related inventory: [nvidia-nim-capability-catalog.md](nvidia-nim-capability-catalog.md) tracks NVIDIA NIM models and non-chat capabilities exposed by the local NVIDIA lane or NVIDIA Build.
 
 ## Rating Guide
@@ -37,6 +51,8 @@ Related inventory: [nvidia-nim-capability-catalog.md](nvidia-nim-capability-cata
 | 2026-06-12 | `modelscope/Qwen/Qwen3-VL-8B-Instruct` | ModelScope | Pi | Report-only repo probe | Timed out | No assistant or tool output in 180s | None observed | Silent timeout | Not useful for coding subagents yet | Broken |
 | 2026-06-12 | `mistral/devstral-latest` | Mistral direct | Pi | Report-only repo probe | Timed out | No assistant or tool output in 180s | None observed | Silent timeout in previous probe | Retest with smaller smoke and route diagnostics | Limited |
 
+All free-tier recommendations in the table above are conditional on traffic volume. Under load (multiple concurrent workers on the same gateway), free routes may return 429. See Cross-Gateway 429 Patterns below for mitigation.
+
 ## Current Live Catalog Snapshot
 
 Observed from `external_subagent_free_models compact=true` on 2026-06-12:
@@ -47,9 +63,18 @@ Observed from `external_subagent_free_models compact=true` on 2026-06-12:
 - NVIDIA live catalog exposes broad accessible refs including `nvidia/moonshotai/kimi-k2.6`, `nvidia/minimaxai/minimax-m2.7`, `nvidia/deepseek-ai/deepseek-v4-flash`, `nvidia/deepseek-ai/deepseek-v4-pro`, `nvidia/z-ai/glm-5.1`, and many vision models.
 - ModelScope live catalog exposes broad accessible refs including DeepSeek V4, MiniMax, Nex N2 Pro, GLM, Qwen, and Xiaomi MiMo routes.
 
+## Cross-Gateway 429 Patterns
+
+Observed on 2026-06-12:
+
+When 2+ workers run in parallel on the same gateway, expect 429s on the free tier within minutes. This was observed with both `opencode-zen/mimo-v2.5-free` and `opencode-zen/deepseek-v4-flash-free`.
+
+Mitigation: pick different gateways per worker (e.g., kilo, opencode-zen, nvidia). When a paid option is available for the task, default to paid for reliability under load.
+
 ## Open Questions To Keep Testing
 
 - Which Pi routes perform reliable tool calls and clean final answers after multiple tool turns?
 - Which routes have native vision usable through the current harness/tool stack?
 - Which routes stream huge logs that need broker-side summarization or stronger final-output parsing?
 - Which free routes are stale catalog entries and should be hidden from small-model pickers?
+- Should we adopt a paid-default-only policy for workers that touch production-bound code paths? (e.g., skill-doctor -- paid mimo 2.5 completed successfully; if we had used free and hit 429, the skill would not be there yet.)

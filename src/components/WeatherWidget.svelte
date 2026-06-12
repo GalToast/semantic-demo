@@ -174,4 +174,13 @@
     top: 0.25rem;
     right: 0.25rem;
   }
+
+  @media (max-width: 768px) {
+    :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) .weather-widget,
+    :global(body[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) .weather-widget {
+      display: none;
+      visibility: hidden;
+      pointer-events: none;
+    }
+  }
 </style>

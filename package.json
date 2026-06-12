@@ -186,7 +186,9 @@
     "capture:visual": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/visual-state-audit.mjs --headed",
     "dev:svelte": "vite --config vite.config.ts",
     "build:svelte": "vite build --config vite.config.ts",
-    "preview:svelte": "vite preview --config vite.config.ts"
+    "preview:svelte": "vite preview --config vite.config.ts",
+    "git:hook:check": "pwsh -NoLogo -NoProfile -File scripts/git-hooks/pre-commit.ps1",
+    "git:hook:install": "pwsh -NoLogo -NoProfile -Command \"Copy-Item -Path scripts/git-hooks/pre-commit.ps1 -Destination .git/hooks/pre-commit -Force; Write-Host 'Git pre-commit hook installed successfully.'\""
   },
   "keywords": [],
   "author": "",

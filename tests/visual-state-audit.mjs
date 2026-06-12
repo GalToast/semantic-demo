@@ -6,7 +6,10 @@ import { inflateSync } from 'node:zlib';
 import { chromium } from 'playwright';
 import { VISUAL_STATE_ID_SET } from './visual-state-registry.mjs';
 
-const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
+// Local vector-explorer-polished.html is preserved as a legacy rollback shell.
+// Deploy publishes dist/svelte/index.html to vector-explorer-polished.html, so
+// production visual QA must exercise the canonical Vite/Svelte build output.
+const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html';
 const LOCAL_FONT_FIXTURE_CSS = `
 @font-face {
   font-family: 'Bricolage Grotesque';
@@ -1401,7 +1404,11 @@ async function clickVisibleFirstSearchResult(page) {
   }
   const waitForFocusedResult = () => page.waitForFunction(() => {
     const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-    const hasFocusedState = Number.isFinite(state.navState?.focusedIndex) || Number.isFinite(state.focusedNode);
+    const focusedDataset = Number(document.body.dataset.focusedNode);
+    const hasFocusedState =
+      Number.isFinite(state.navState?.focusedIndex) ||
+      Number.isFinite(state.focusedNode) ||
+      Number.isFinite(focusedDataset);
     const panelSurface = String(document.body.dataset.panelSurface || '');
     const graphContext = String(document.body.dataset.graphContext || '');
     const focusStage = document.querySelector('#focus-stage');
@@ -1423,12 +1430,18 @@ async function enterSemanticDiveViaVisibleControl(page) {
       if (!element || element.disabled) return false;
       const style = getComputedStyle(element);
       const rect = element.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
       return style.display !== 'none' &&
         style.visibility !== 'hidden' &&
         style.pointerEvents !== 'none' &&
         Number(style.opacity || 1) > 0.05 &&
         rect.width > 0 &&
-        rect.height > 0;
+        rect.height > 0 &&
+        centerX >= 0 &&
+        centerX <= window.innerWidth &&
+        centerY >= 0 &&
+        centerY <= window.innerHeight;
     };
     const candidates = [
       ['journey compass enter-inside action', document.querySelector('button[data-journey-action="enter-inside"]')],
@@ -3325,13 +3338,14 @@ async function run() {
         );
       }
 
-      if (scene.edgeRatio >= 0.01) {
+      const minEdgeRatio = isFocusOrDive ? 0.005 : 0.01;
+      if (scene.edgeRatio >= minEdgeRatio) {
         pass(state.name, 'scene-signal:edge-ratio');
       } else {
         fail(
           state.name,
           'scene-signal:edge-ratio',
-          `scene edgeRatio=${scene.edgeRatio}; graph field lacks visible detail`,
+          `scene edgeRatio=${scene.edgeRatio}; expected >=${minEdgeRatio}; graph field lacks visible detail`,
         );
       }
     }

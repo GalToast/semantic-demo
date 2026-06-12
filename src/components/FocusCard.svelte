@@ -285,6 +285,15 @@
     bottom: 7rem;
   }
 
+  @media (max-width: 768px) {
+    :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) .focus-card.selected-card-empty,
+    :global(body[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) .focus-card.selected-card-empty {
+      display: none;
+      visibility: hidden;
+      pointer-events: none;
+    }
+  }
+
   @keyframes card-enter {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }

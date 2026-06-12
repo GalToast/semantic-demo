@@ -10,8 +10,8 @@
  *   node tests/surface-contract-check.mjs [url] [--url=<url>] [--shell=svelte|legacy] [--surface=<name>] [--surfaces=a,b]
  *
  * Surfaces: mobile-idle | desktop-idle | launch-focus | search-error | search-no-results | map-trail | focus-pocket | field-node | info-panel-empty | compass-rail | loading-overlay | mode-grid | filters | thread-inspector | controls | search-chrome | info-panel-populated | global-spacing | mobile-product-focus-route | mobile-product-preview-route
+ * Default URL (svelte): http://127.0.0.1:8795/dist/svelte/index.html
  * Default URL (legacy): http://127.0.0.1:8795/vector-explorer-polished.html
- * Default URL (svelte): http://127.0.0.1:4173/
  */
 
 import fs from 'node:fs';
@@ -20,7 +20,7 @@ import { chromium } from 'playwright';
 
 const SHELL_URLS = {
   legacy: 'http://127.0.0.1:8795/vector-explorer-polished.html',
-  svelte: 'http://127.0.0.1:4173/',
+  svelte: 'http://127.0.0.1:8795/dist/svelte/index.html',
 };
 const VALUE_FLAGS = new Set(['--surface', '--surfaces', '--shell', '--url']);
 
@@ -49,7 +49,7 @@ function positionalArg(args) {
 }
 
 function shellUrl(shell) {
-  const normalized = (shell || 'legacy').trim().toLowerCase();
+  const normalized = (shell || 'svelte').trim().toLowerCase();
   const url = SHELL_URLS[normalized];
   if (!url) throw new Error(`Unknown --shell value "${shell}". Use "legacy" or "svelte".`);
   return url;

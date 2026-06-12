@@ -15,6 +15,7 @@ import type { NavState, ViewName } from '@lib/types/state';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { runSearch, searchStore } from '@lib/stores/search.svelte';
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
+import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket';
 
 /**
  * NavState extended with the legacy `activeStoryPrompt` field that lives in
@@ -450,6 +451,18 @@ async function _restoreSearchFromParams(
       const numericId = Number(anchorId);
       if (Number.isFinite(numericId)) {
         publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: numericId });
+        // Also call applyLocalNeighborhoodFocus directly. The Svelte trigger
+        // updates the Svelte nav store and body data attrs, but the Svelte
+        // FocusPocket shell's $effect (which calls applyLocalNeighborhoodFocus
+        // when the focused index changes) doesn't reliably re-fire across
+        // the legacy→Svelte bridge race. Calling the function here guarantees
+        // the focus pocket builds with data already loaded (this runs after
+        // initData in App.svelte's onMount chain).
+        try {
+          applyLocalNeighborhoodFocus(numericId);
+        } catch (e) {
+          debugWarn('[url-state] applyLocalNeighborhoodFocus failed for anchor', numericId, e);
+        }
       }
     }
 
