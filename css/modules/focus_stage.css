@@ -1140,10 +1140,7 @@ body[data-trail-state='active'] .focus-stage-neighbor-pill {
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])[data-focus-panel-mode='field-node']
         #focus-stage
-        #trail-controls.focus-stage-actions,
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])[data-focus-panel-mode='field-node']
-        #focus-stage
-        .trail-controls.focus-stage-actions {
+        .trail-controls.focus-stage-actions:not(#trail-controls) {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -1173,10 +1170,7 @@ body[data-trail-state='active'] .focus-stage-neighbor-pill {
 
     html body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])[data-focus-panel-mode='field-node']
         #focus-stage
-        #trail-controls.focus-stage-actions,
-    html body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])[data-focus-panel-mode='field-node']
-        #focus-stage
-        .trail-controls.focus-stage-actions {
+        .trail-controls.focus-stage-actions:not(#trail-controls) {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -1199,11 +1193,7 @@ body[data-trail-state='active'] .focus-stage-neighbor-pill {
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])[data-thread-inspect-surface='idle']
         #focus-stage
         .focus-stage-journey.active:has(.focus-stage-neighbors.active)
-        #trail-controls.focus-stage-actions,
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])[data-thread-inspect-surface='idle']
-        #focus-stage
-        .focus-stage-journey.active:has(.focus-stage-neighbors.active)
-        .trail-controls.focus-stage-actions {
+        .trail-controls.focus-stage-actions:not(#trail-controls) {
         display: none;
         visibility: hidden;
         pointer-events: none;
