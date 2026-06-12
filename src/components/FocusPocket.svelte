@@ -49,7 +49,7 @@
         tabindex={0}
         aria-label="{node.label} ({node.role})"
       >
-        <span class="node-dot"></span>
+        <!-- node-dot removed: 3D spores are the canonical visual -->
         <span class="node-label">{node.label}</span>
       </div>
     {/each}
@@ -85,8 +85,9 @@
     cursor: pointer;
     transition: opacity 0.3s, transform 0.3s;
   }
-  .focus-node.direct .node-dot { background: #4ecdc4; box-shadow: 0 0 8px rgba(78, 205, 196, 0.6); }
-  .focus-node.support .node-dot { background: #ffd93d; box-shadow: 0 0 6px rgba(255, 217, 61, 0.4); }
+  .focus-node.direct .node-dot { display: none; }
+  .focus-node.support .node-dot { display: none; }
+  .focus-node.civic .node-dot { display: none; }
   .focus-node.civic .node-dot { background: #ff6b6b; box-shadow: 0 0 6px rgba(255, 107, 107, 0.4); }
   .node-dot {
     width: 10px;
