@@ -92,10 +92,11 @@
   }
 </script>
 
-<div
+<details
   class="filters-section rail-section"
   id="filters-section"
   aria-label="Business filters"
+  {open}
 >
   <div class="filter-toolbar">
     <!-- Status filter chips -->
@@ -162,7 +163,7 @@
       Reset ({$activeFilterCount})
     </button>
   </div>
-</div>
+</details>
 
 <style>
   .filters-section {
