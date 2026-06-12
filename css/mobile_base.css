@@ -117,7 +117,7 @@ body[data-panel-surface] .controls-rail {
    element itself (e.g. #camera-controls has class="controls controls-view"). */
 body[data-panel-surface] .controls > .controls-view,
 body[data-panel-surface] .controls > .controls-info,
-body[data-panel-surface] [data-controls-rail] > .controls {
+body[data-panel-surface] .controls > .controls-rail {
     flex-direction: column;
     background: transparent;
     border: 0;
@@ -127,17 +127,6 @@ body[data-panel-surface] [data-controls-rail] > .controls {
     position: static;
     display: flex;
     gap: 8px;
-}
-
-/* view-toggle is a direct child of [data-controls-rail] and needs ID-level
-   specificity to override the base .controls position:fixed rule. The
-   sibling .controls-info / .controls-view children are reset by the block
-   above; view-toggle has .controls-rail (not .controls-info/.controls-view)
-   so it needs this targeted rule. */
-body[data-panel-surface] #view-toggle {
-    position: static;
-    right: auto;
-    bottom: auto;
 }
 
 /* The legend/share/help/help-toggle buttons each have their own
