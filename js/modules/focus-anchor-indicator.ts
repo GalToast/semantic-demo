@@ -16,6 +16,28 @@ const FADE_RATE = 0.12;
 
 let _initialized = false;
 
+/**
+ * Procedural soft radial glow — no external texture dependency.
+ */
+function createGlowTexture(): THREE.CanvasTexture {
+    const size = 256;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+    const center = size / 2;
+    const gradient = ctx.createRadialGradient(center, center, 0, center, center, center);
+    gradient.addColorStop(0.0, 'rgba(255, 255, 255, 0.9)');
+    gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.4)');
+    gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.1)');
+    gradient.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+}
+
 export function createFocusAnchorIndicator(): void {
     if (_initialized) return;
     if (!state.scene) return;
@@ -52,15 +74,15 @@ export function createFocusAnchorIndicator(): void {
     group.add(ringMesh);
     state.focusAnchorRingMesh = ringMesh;
 
+    const glowTexture = createGlowTexture();
     const spriteMat = new THREE.SpriteMaterial({
-        map: (state.focusRingTexture || state.focusBeaconTexture || null) as THREE.Texture | null,
+        map: glowTexture,
         color: 0x8ff8ed,
         transparent: true,
         opacity: 0.0,
         depthWrite: false,
         depthTest: false,
-        blending: THREE.AdditiveBlending,
-        visible: (state.focusRingTexture || state.focusBeaconTexture) !== null
+        blending: THREE.AdditiveBlending
     });
     const haloSprite = new THREE.Sprite(spriteMat);
     haloSprite.name = 'focus-anchor-halo-sprite';
@@ -151,7 +173,12 @@ export function disposeFocusAnchorIndicator(): void {
         if (material && !Array.isArray(material)) material.dispose();
     }
     if (state.focusAnchorHaloSprite) {
-        (state.focusAnchorHaloSprite as THREE.Sprite).material?.dispose();
+        const haloMat = (state.focusAnchorHaloSprite as THREE.Sprite).material as THREE.SpriteMaterial;
+        if (haloMat.map) {
+            haloMat.map.dispose();
+            haloMat.map = null;
+        }
+        haloMat.dispose();
     }
     state.focusAnchorGroup = null;
     state.focusAnchorRingMesh = null;
