@@ -9,6 +9,7 @@
 - Avoid broad recursive filesystem searches in this workspace; prefer shallow, scoped probes and exact path checks unless a full inventory is requested. If a command hangs, stop and switch to narrower checks.
 - Pi harness is fully customizable: dispatch a focused subagent or edit the relevant harness files when an immediate upgrade, fix, optimization, or user-friendly polish is available, then verify with targeted tests before continuing product work.
 - Look for opportunities to create or update reusable Pi harness skills so the agent keeps evolving across sessions.
+- For Pi's executable JavaScript scratch tool, use the `js-repl` skill instead of embedding REPL safety rules in broad project instructions.
 
 ## Dev Environment Hardening
 - **Static Dev Mode**: The app includes a JS-side fallback for static Python development servers. If `api.php` returns raw PHP source code, the `detectStaticDevPHP` utility triggers a mock healthy state and provides high-synergy search results.
