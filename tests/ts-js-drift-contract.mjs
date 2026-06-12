@@ -300,7 +300,7 @@ if (progressMode) {
     }
   }
   console.log('');
-  console.log(`  Active build entry:     ${buildUsesAppTs ? 'js/modules/app.ts' : 'not js/modules/app.ts'}`);
+  console.log(`  Legacy bundle entry:    ${buildUsesAppTs ? 'js/modules/app.ts' : 'not js/modules/app.ts'}`);
   console.log(`  app.ts present:         ${appTsExists ? 'YES' : 'NO'}`);
   console.log(`  app.js retired:         ${appJsExists ? 'NO' : 'YES'}`);
   if (appJsExists) {
@@ -309,9 +309,9 @@ if (progressMode) {
       console.log(`  Blocked (no .ts yet):   ${entryBlocked.join(', ')}`);
     }
   }
-  console.log(`  Native TS entry ready:  ${nativeEntryReady ? 'YES' : 'NO'}`);
+  console.log(`  Legacy TS entry ready:  ${nativeEntryReady ? 'YES' : 'NO'}`);
   console.log('');
-  console.log('  App entry status:');
+  console.log('  Legacy bundle entry status:');
   if (!buildUsesAppTs) {
     console.log('    1. Update scripts/build-app.mjs to use js/modules/app.ts as entryPoints[0]');
   } else if (!appTsExists) {
@@ -322,10 +322,10 @@ if (progressMode) {
        console.log(`       - js/modules/${name}.js → .ts`);
     }
   } else {
-    console.log('    ✓ build-app.mjs uses app.ts as the active entry');
-    console.log('    ✓ app.ts owns the runtime init body');
+    console.log('    ✓ build-app.mjs uses app.ts as the legacy bundle entry');
+    console.log('    ✓ app.ts owns the legacy runtime init body');
     console.log(`    ${appJsExists ? '• app.js compatibility wrapper still exists' : '✓ app.js compatibility wrapper retired'}`);
-    console.log('    Next: migrate remaining JS-path tests/contracts to the native TS entry');
+    console.log('    Note: production remains the Svelte/Vite shell; this is the rollback/reference bundle lane');
   }
   console.log('');
   process.exit(0);
