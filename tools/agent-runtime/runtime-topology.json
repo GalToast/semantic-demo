@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "updated": "2026-06-12",
+  "purpose": "Non-secret source-of-truth for local agent runtime ownership and migration targets.",
+  "current_runtime": {
+    "external_subagents_mcp": {
+      "current_source": "C:/Users/HP/repos/opencode/packages/opencode/src/mcp/mmx.ts",
+      "current_launcher": "bun run --conditions=browser C:/Users/HP/repos/opencode/packages/opencode/src/mcp/mmx.ts",
+      "configured_in": [
+        "C:/Users/HP/.codex/config.toml",
+        "C:/Users/HP/.qwen/settings.json",
+        "C:/Users/HP/.config/opencode/opencode.json"
+      ],
+      "target_source": "tools/agent-runtime/external-subagents/"
+    },
+    "local_key_router": {
+      "current_source": "C:/Users/HP/.config/opencode/routers/opencode-key-router.mjs",
+      "ports": {
+        "provider_router": 8788,
+        "gemini_router": 8789,
+        "cloudflare_router": 8790
+      },
+      "configured_provider_paths": [
+        "http://127.0.0.1:8788/opencode-zen/v1",
+        "http://127.0.0.1:8788/nvidia/v1",
+        "http://127.0.0.1:8788/mistral/v1",
+        "http://127.0.0.1:8788/kilo/v1",
+        "http://127.0.0.1:8788/modelscope/v1",
+        "http://127.0.0.1:8789",
+        "http://127.0.0.1:8790/v1"
+      ],
+      "target_source": "tools/agent-runtime/key-router/"
+    },
+    "pi_harness": {
+      "current_source": "C:/Users/HP/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
+      "current_launcher_shape": "node <global pi cli> --approve --mode rpc --model <model> --session-id <uuid>",
+      "target_source": "tools/agent-runtime/harnesses/pi/"
+    },
+    "browser_mcps": {
+      "current_sources": [
+        "C:/Users/HP/.codex/mcp-runtimes/launch-playwright-mcp.ps1",
+        "C:/Users/HP/.codex/mcp-runtimes/launch-chrome-devtools-mcp.ps1"
+      ],
+      "target_source": "tools/agent-runtime/mcp/browser/"
+    },
+    "web_search_mcp": {
+      "current_source": "C:/Users/HP/.codex/mcp-servers/searxng-mcp/index.js",
+      "target_source": "tools/agent-runtime/mcp/web-search/"
+    }
+  },
+  "migration_order": [
+    "Extract external-subagent parser and worker metadata tests into tools/agent-runtime/external-subagents.",
+    "Move MCP server entry to repo-local path and update Codex/Qwen/OpenCode MCP configs.",
+    "Move key-router source behind repo-local launch script while keeping secrets in user env/config.",
+    "Add repo-local smoke tests for start, poll, read, steer, cancel, and provider route identity.",
+    "Only after green smoke, remove old opencode-repo MCP path from user configs."
+  ]
+}
