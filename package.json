@@ -204,10 +204,14 @@
     "playwright": "^1.60.0",
     "prettier": "^3.8.3",
     "rollup-plugin-visualizer": "^7.0.1",
+    "spectorjs": "^0.9.30",
     "svelte": "^5.56.1",
     "svelte-check": "^4.1.0",
     "three": "^0.184.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.7"
+  },
+  "dependencies": {
+    "postprocessing": "^6.39.1"
   }
 }
