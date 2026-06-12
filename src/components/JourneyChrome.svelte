@@ -18,7 +18,7 @@
   import { hasFocus, focusedIndex, dispatchNavTransition, NAV_TRANSITION_ACTIONS, hasTrail } from '@lib/stores/navigation';
   import { walkHistoryIndices, threadCandidates, trailDepth, journeyPhase, threadSource } from '@lib/stores/journey';
   import { buildCompassStatus, JOURNEY_ACTIONS } from '@lib/stores/compass';
-  import { threadInspectorActive, clearThreadInspector, pinThread, updateThreadInspector } from '@lib/stores/focus';
+  import { threadInspector, threadInspectorActive, clearThreadInspector, pinThread, updateThreadInspector } from '@lib/stores/focus';
   import { getBusinessRecords, selectedPointStore } from '@lib/stores';
   import { isCompact, isMobile, isCompactLandscape, isUltraCompactPortrait } from '@lib/stores/viewport';
   import { searchSummary, isSearching } from '@lib/stores/search';
@@ -175,7 +175,7 @@
   const showNeighborRail = $derived(
     chromeHasFocus &&
     filteredCandidates.length > 0 &&
-    !threadInspectorActive()
+    (!threadInspectorActive() || threadInspector().source === 'rail-hover')
   );
 
   function getPointForIndex(idx: number): BusinessRecord | null {
@@ -223,6 +223,18 @@
       braidCount: 0,
       endpointCount: 2
     });
+  }
+
+  function inspectCandidateFromEvent(event: MouseEvent | PointerEvent | KeyboardEvent, idx: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation?.();
+    inspectCandidate(idx);
+  }
+
+  function stopRailSurfaceEvent(event: Event): void {
+    event.stopPropagation();
+    event.stopImmediatePropagation?.();
   }
 
   function pinCandidate(idx: number): void {
@@ -287,7 +299,20 @@
 </script>
 
 {#if visible}
-  <div class="journey-chrome" id="journey-chrome" aria-label="Journey navigation">
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <div
+    class="journey-chrome"
+    id="journey-chrome"
+    role="group"
+    tabindex="-1"
+    aria-label="Journey navigation"
+    onpointerdown={stopRailSurfaceEvent}
+    onpointerup={stopRailSurfaceEvent}
+    onmousedown={stopRailSurfaceEvent}
+    onmouseup={stopRailSurfaceEvent}
+    onclick={stopRailSurfaceEvent}
+    onkeydown={stopRailSurfaceEvent}
+  >
     <!-- ├─ Compass Status Header ────────────────────────────────────────────── -->
     <div class="journey-header" id="journey-header">
       <span class="journey-kicker">{compassStatus.kicker}</span>
@@ -413,12 +438,13 @@
               tabindex="0"
               data-index={idx}
               aria-label={isNextStop ? `Next stop: ${name}` : `Explore ${name}`}
+              onpointerdown={stopRailSurfaceEvent}
               onmouseenter={() => scheduleInspection(idx)}
               onmouseleave={cancelInspection}
               onfocus={() => scheduleInspection(idx)}
               onblur={cancelInspection}
-              onclick={() => inspectCandidate(idx)}
-              onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inspectCandidate(idx); } }}
+              onclick={(e) => inspectCandidateFromEvent(e, idx)}
+              onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') inspectCandidateFromEvent(e, idx); }}
             >
               <span class="focus-stage-neighbor-main">
                 <span class="focus-stage-neighbor-index">{String(i + 1).padStart(2, '0')}</span>
