@@ -10,6 +10,7 @@
 - Pi harness is fully customizable: dispatch a focused subagent or edit the relevant harness files when an immediate upgrade, fix, optimization, or user-friendly polish is available, then verify with targeted tests before continuing product work.
 - Look for opportunities to create or update reusable Pi harness skills so the agent keeps evolving across sessions.
 - For Pi's executable JavaScript scratch tool, use the `js-repl` skill instead of embedding REPL safety rules in broad project instructions.
+- For external/community research (library version quirks, bundler config gotchas, known bugs), use the `websearch` MCP server (5 tools: `websearch_web_search`, `websearch_web_fetch`, `websearch_content_search`, `websearch_company_search`, `websearch_web_search_status`). Connect via `mcp({connect: "websearch"})` if not already connected. Tavily is the most reliable backend; Exa may 402 on credit limits. Search aggressively and early — don't burn cycles reinventing what the community already documented. Query pattern: `"<library> <version> <exact symptom>"` (e.g., `vite three.js webgpu build pulls in three.core.js`). Cross-reference web answers against local code before applying.
 
 ## Dev Environment Hardening
 - **Static Dev Mode**: The app includes a JS-side fallback for static Python development servers. If `api.php` returns raw PHP source code, the `detectStaticDevPHP` utility triggers a mock healthy state and provides high-synergy search results.

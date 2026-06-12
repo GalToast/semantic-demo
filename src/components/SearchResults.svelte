@@ -436,6 +436,15 @@
     overflow-y: auto;
   }
 
+  :global(.search-container.info-panel-contained) .search-results-wrapper {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    z-index: calc(var(--z-search, 100) + 1);
+    margin-top: 0.5rem;
+  }
+
   /* Mobile: constrain results to prevent overlapping with mode chips */
   @media (max-width: 768px) {
     .search-results-wrapper {

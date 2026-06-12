@@ -461,29 +461,27 @@
     - The body data-semantic-dive attribute must be 'active' or
       'transitioning' when the click reaches the engine
 -->
-{#if actionKey(primaryAction) !== JOURNEY_ACTIONS.ENTER_INSIDE || !isCompact()}
-  <button
-    id="btn-focus-dive"
-    class="focus-stage-dive-btn"
-    type="button"
-    data-journey-action="enter-inside"
-    hidden={!showDiveButton}
-    aria-hidden={!showDiveButton ? 'true' : 'false'}
-    aria-pressed={semanticDiveActive ? 'true' : 'false'}
-    aria-disabled={!canDive ? 'true' : 'false'}
-    aria-label="Explore the neighborhood around this business"
-    onclick={handleStepInside}
-  >
-    <span class="focus-stage-dive-label">
-      {semanticDiveActive ? 'Inside Neighborhood' : 'Explore Neighborhood'}
-    </span>
-    <span class="focus-stage-dive-copy">
-      {semanticDiveActive
-        ? 'Use Next Stop to continue or County to exit.'
-        : 'Explore related businesses in the neighborhood.'}
-    </span>
-  </button>
-{/if}
+<button
+  id="btn-focus-dive"
+  class="focus-stage-dive-btn"
+  type="button"
+  data-journey-action="enter-inside"
+  hidden={!showDiveButton}
+  aria-hidden={!showDiveButton ? 'true' : 'false'}
+  aria-pressed={semanticDiveActive ? 'true' : 'false'}
+  aria-disabled={!canDive ? 'true' : 'false'}
+  aria-label="Explore the neighborhood around this business"
+  onclick={handleStepInside}
+>
+  <span class="focus-stage-dive-label">
+    {semanticDiveActive ? 'Inside Neighborhood' : 'Explore Neighborhood'}
+  </span>
+  <span class="focus-stage-dive-copy">
+    {semanticDiveActive
+      ? 'Use Next Stop to continue or County to exit.'
+      : 'Explore related businesses in the neighborhood.'}
+  </span>
+</button>
 
 <div class="focus-stage-kicker" hidden aria-hidden="true">Focus stage</div>
 
