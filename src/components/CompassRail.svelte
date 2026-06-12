@@ -143,8 +143,10 @@
     backdrop-filter: blur(10px);
     border-radius: 0.5rem;
     border: 1px solid rgba(78, 205, 196, 0.12);
+    pointer-events: none;
   }
   .compass-step {
+    pointer-events: auto; /* buttons remain clickable while rail passes through */
     display: flex;
     align-items: center;
     justify-content: center;
