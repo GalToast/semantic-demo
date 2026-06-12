@@ -129,6 +129,14 @@ body[data-panel-surface] [data-controls-rail] > .controls {
     gap: 8px;
 }
 
+/* view-toggle is a direct child of [data-controls-rail] and needs ID-level
+   specificity to override the base .controls position:fixed rule. */
+body[data-panel-surface] #view-toggle {
+    position: static;
+    right: auto;
+    bottom: auto;
+}
+
 /* The legend/share/help/help-toggle buttons each have their own
    position:fixed in layout_base.css. We override that here so they sit
    inside the rail container as flex children. */
