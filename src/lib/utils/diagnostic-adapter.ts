@@ -34,3 +34,8 @@ export function debugWarn(...args: unknown[]): void {
   if (!isDebugProbesEnabled()) return;
   console.warn(...args);
 }
+
+export function debugInfo(...args: unknown[]): void {
+  if (!isDebugProbesEnabled()) return;
+  console.info(...args);
+}
