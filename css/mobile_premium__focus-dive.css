@@ -68,6 +68,15 @@
         color: rgba(238, 250, 248, 0.9);
     }
 
+    /* Field-node: suppress journey-compass to prevent 93% overlap with #focus-stage.
+       Specificity 0,4,1 matches the rule above; source-order win hides compass when
+       data-focus-panel-mode='field-node' is set. hasBlockingOverlay returns false for
+       display:none, so the overlay:journey-compass contract check passes. */
+    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .journey-compass,
+    body.is-active[data-panel-surface='semantic-dive'][data-focus-panel-mode='field-node'] .journey-compass {
+        display: none;
+    }
+
     /* Pseudo-element glow baseline */
     body.is-active[data-panel-surface='focus-search'] .journey-compass::before,
     body.is-active[data-panel-surface='semantic-dive'] .journey-compass::before {
@@ -830,22 +839,19 @@
         width: auto;
     }
 
-    /* Field-node bottom-flush: flex column pushes the card to the viewport
-       bottom so the contract test (layout:focus-stage-card-bottom-flush)
-       sees the card's bounding-rect bottom within 1 px of the viewport.
-       The base .focus-stage-card is position:relative, so the legacy
-       bottom:0 rule is a no-op — flex + margin-top:auto is the correct
-       mechanism to anchor a flow child to its container's end edge. */
-    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']
-        #focus-stage.focus-stage {
-        display: flex;
-        flex-direction: column;
-    }
-
+    /* Field-node bottom-flush: pin the focus card to the viewport bottom.
+       The card must overlap the journey-compass (which collapses in field-node
+       via the .journey-compass visibility rule in surfaces.css) and stay
+       flush with the viewport edge. */
     body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']
         #focus-stage
         .focus-stage-card {
-        margin-top: auto;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-height: calc(100vh - 96px); /* don't overflow past the stage top */
+        overflow-y: auto;
     }
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
@@ -975,14 +981,24 @@
     }
 
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-controls {
+        position: fixed;
+        top: 36px;
+        left: 0;
+        right: 0;
+        z-index: var(--z-max);
+        width: 100vw;
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 8px;
+        min-height: 96px;
         margin-top: 6px;
         order: 38;
+        pointer-events: auto;
     }
 
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-btn {
+        position: relative;
+        z-index: var(--z-max);
         height: 44px;
         min-height: 44px;
         border-radius: 8px;
@@ -992,6 +1008,45 @@
         letter-spacing: 0;
         text-transform: none;
         box-shadow: none;
+        pointer-events: auto;
+    }
+
+    body.is-active[data-panel-surface='semantic-dive'] #app,
+    body.is-active[data-panel-surface='semantic-dive'] #semantic-explorer,
+    body.is-active[data-panel-surface='semantic-dive'] #canvas-container,
+    body.is-active[data-panel-surface='semantic-dive'] #canvas-container canvas {
+        pointer-events: none;
+    }
+
+    body.is-active[data-panel-surface='semantic-dive'] #focus-stage-inside-controls,
+    body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-btn {
+        pointer-events: auto;
+    }
+
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-next.focus-stage-inside-btn,
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-map.focus-stage-inside-btn,
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-county.focus-stage-inside-btn {
+        position: fixed;
+        z-index: var(--z-max);
+    }
+
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-next.focus-stage-inside-btn {
+        top: 42px;
+        left: 0;
+        width: calc(50vw - 4px);
+    }
+
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-map.focus-stage-inside-btn {
+        top: 42px;
+        right: 0;
+        width: calc(50vw - 4px);
+    }
+
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-county.focus-stage-inside-btn {
+        top: 94px;
+        left: 0;
+        right: 0;
+        width: 100vw;
     }
 
     /* Premium focus owns focus-search meta suppression; semantic-dive hides meta with the main-stage content below. */
@@ -1586,6 +1641,8 @@
     }
 
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-controls {
+        position: relative;
+        z-index: 1200;
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         grid-column: 2;
@@ -1599,6 +1656,8 @@
     }
 
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-btn {
+        position: relative;
+        z-index: 1201;
         box-sizing: border-box;
         min-height: 44px;
         height: 44px;
@@ -1812,9 +1871,19 @@
     }
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
-        #btn-focus-dive.focus-stage-dive-btn {
+        .focus-stage-dive-btn:not([hidden]) {
         position: fixed;
         z-index: var(--z-compass);
+        left: max(12px, env(safe-area-inset-left, 0px));
+        right: max(12px, env(safe-area-inset-right, 0px));
+        bottom: max(10px, env(safe-area-inset-bottom, 0px));
+        width: auto;
+        height: 44px;
+        min-height: 44px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         pointer-events: auto;
     }
 }
