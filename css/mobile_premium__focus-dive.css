@@ -990,6 +990,7 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 8px;
+        min-height: 96px;
         margin-top: 6px;
         order: 38;
         pointer-events: auto;
