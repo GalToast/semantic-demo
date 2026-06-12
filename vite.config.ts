@@ -1,5 +1,6 @@
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import basicSsl from '@vitejs/plugin-basic-ssl';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { createReadStream } from 'node:fs';
 import { copyFile, cp, mkdir, stat } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -159,6 +160,16 @@ export default defineConfig({
     legacyRootAssetPlugin(),
     copyRuntimeAssetsPlugin(),
     svelte(),
+    // Bundle analyzer — generates dist/svelte/stats.html with a treemap of
+    // every module in the production bundle. Open in any browser to read.
+    // Tree-shaking still applies (it's a build-time plugin), so the stats
+    // reflect exactly what ships. Gated to `npm run build:svelte` (not dev).
+    visualizer({
+      filename: 'dist/svelte/stats.html',
+      gzipSize: true,
+      brotliSize: true,
+      template: 'treemap',
+    }),
   ],
   resolve: {
     alias: {
