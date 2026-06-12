@@ -111,9 +111,12 @@ body[data-panel-surface] .controls-rail {
 }
 
 /* Each subgroup stacks vertically inside the rail. Selector order, not
-   !important. */
-body[data-panel-surface] .controls-view,
-body[data-panel-surface] .controls-info {
+   !important.
+   NOTE: scoped to .controls > .controls-view (direct child) so this reset
+   doesn't apply when controls-view is a modifier on the root .controls
+   element itself (e.g. #camera-controls has class="controls controls-view"). */
+body[data-panel-surface] .controls > .controls-view,
+body[data-panel-surface] .controls > .controls-info {
     flex-direction: column;
     background: transparent;
     border: 0;
@@ -133,6 +136,30 @@ body[data-panel-surface] .controls-info .legend-toggle,
 body[data-panel-surface] .controls-info .share-toggle,
 body[data-panel-surface] .controls-info .help-toggle {
     position: static;
+}
+
+/* Rail wrapper: when the 3 controls (view-toggle, info-controls,
+   camera-controls) are wrapped in a [data-controls-rail] parent, they
+   flow inside the rail as flex children instead of stacking at the
+   same right:16/bottom:16 fixed position. The attribute selector
+   bumps specificity (0,3,1) over the base .controls rule (0,2,1). */
+body[data-panel-surface] [data-controls-rail] > .controls {
+    position: static;
+    right: auto;
+    bottom: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ID-level reset for view-toggle: it has class "controls controls-rail"
+   so the .controls > .controls-* rules don't match it (they require
+   .controls-view or .controls-info children). The ID selector (1,0,0)
+   beats the base .controls rule (0,2,1). */
+body[data-panel-surface] #view-toggle {
+    position: static;
+    right: auto;
+    bottom: auto;
 }
 
 /* Hairline divider between view and overlay groups. aria-hidden so it
