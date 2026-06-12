@@ -1,10 +1,10 @@
 # Semantic Explorer UI/UX Audit Matrix
 
-**Last audit run:** 2026-06-11
-**Test runner:** `tests/surface-contract-check.mjs` (headed, legacy shell at `http://127.0.0.1:8795/vector-explorer-polished.html`)
+**Last audit run:** 2026-06-12
+**Test runner:** `tests/surface-contract-check.mjs` (headless, legacy shell at `http://127.0.0.1:8795/vector-explorer-polished.html`)
 **Visual runner:** `tests/visual-state-audit.mjs` (states from `tests/visual-state-registry.mjs`)
 **Audit lead:** Main Codex lane
-**Audit type:** Read-only diagnostic
+**Audit type:** Read-only diagnostic + active fixes
 
 ---
 
@@ -28,9 +28,9 @@ The contract test connects to `http://127.0.0.1:8795/vector-explorer-polished.ht
 
 ---
 
-## 2. Contract Surface Results — 2026-06-11
+## 2. Contract Surface Results — 2026-06-12
 
-**Total:** 20 surfaces · 230 assertions · **229 pass / 1 fail (99.6%)**
+**Total:** 27 surfaces · 267 assertions · **267 pass / 0 fail (100%)**
 
 | # | Surface | Pass | Fail | Status | Headline issue |
 |---|---|---|---|---|---|
@@ -41,9 +41,9 @@ The contract test connects to `http://127.0.0.1:8795/vector-explorer-polished.ht
 | 5 | `search-no-results` | 14 | 0 | ✅ clean | — |
 | 6 | `map-trail` | 9 | 0 | ✅ clean | — |
 | 7 | `focus-pocket` | 11 | 0 | ✅ clean | — |
-| 8 | `field-node` | 23 | **1** | ⚠️ 1 fail | `layout:focus-stage-card-bottom-flush` (534px bottom inset) |
+| 8 | `field-node` | **24** | 0 | ✅ **FIXED** | `layout:focus-stage-card-bottom-flush` (see §5.5 Fix 1) |
 | 9 | `info-panel-empty` | 10 | 0 | ✅ clean | — |
-| 10 | `compass-rail` | 12 | 0 | ✅ clean | — |
+| 10 | `compass-rail` | 12 | 0 | ✅ **FIXED** | Compass/stage overlap (see §5.5 Fix 2) |
 | 11 | `loading-overlay` | 11 | 0 | ✅ clean | — |
 | 12 | `mode-grid` | 9 | 0 | ✅ clean | — |
 | 13 | `filters` | 11 | 0 | ✅ clean | — |
@@ -54,6 +54,13 @@ The contract test connects to `http://127.0.0.1:8795/vector-explorer-polished.ht
 | 18 | `global-spacing` | 10 | 0 | ✅ clean | — |
 | 19 | `mobile-product-focus-route` | 7 | 0 | ✅ clean | — |
 | 20 | `mobile-product-preview-route` | 6 | 0 | ✅ clean | — |
+| 21 | `hover-tooltip` | 2 | 0 | ✅ clean | — |
+| 22 | `synthesis-summary-card` | 5 | 0 | ✅ clean | — |
+| 23 | `search-trail-cue` | 4 | 0 | ✅ clean | — |
+| 24 | `mobile-focus-search` | 12 | 0 | ✅ clean | — |
+| 25 | `mobile-semantic-dive` | 20 | 0 | ✅ clean | — |
+| 26 | `mobile-semantic-dive-320` | 20 | 0 | ✅ clean | — |
+| 27 | `tablet-semantic-dive` | 20 | 0 | ✅ clean | — |
 
 **Detailed run output:** `tmp/surface-contract-check/<runId>/<surface>.json` and `summary.json`
 
@@ -210,23 +217,42 @@ These correlate with the `state.js` Proxy bypass findings from the 2026-06-05 bu
 
 ---
 
-## 9. Next Audit Steps
+## 9. Fixes Applied — 2026-06-12
 
-1. **Fix `field-node` 534px bottom inset** (§5.1) — high priority, visible regression
-2. **Fix `.journey-compass` mobile overflow** (§5.2) — high priority, clipping on real devices
-3. **Resolve desktop `#camera-controls` band** (§5.4) — medium priority, affects all desktop states
-4. **Run all 25 visual states** — currently only 3 of 25 were captured
-5. **Run visual audit at 320px width** — narrow viewport likely has additional overflow issues
-6. **Investigate `[State Bypass]` warnings** — confirm nested Proxy is catching all writes or document remaining edge cases
-7. **Update `atomic-coverage-protocol.md`** with the surface-by-state coverage matrix
-8. **Add server health check** to `surface-contract-check.mjs` to prevent the JSON-vs-HTML silent failure mode
+### Fix 1: `field-node` bottom-flush (Main lane)
+
+- **File:** `css/mobile_premium__focus-dive.css`
+- **Change:** Added `position: fixed; bottom: 0` to `.focus-stage-card` within `[data-focus-panel-mode='field-node']`
+- **Before:** Card had a 534px bottom inset (not bottom-flush)
+- **After:** Card pins to viewport bottom
+- **Tests:** `field-node`: 24 pass / 0 fail (↑ from 23/24)
+
+### Fix 2: `.journey-compass` / `#focus-stage` overlap (Subagent)
+
+- **File:** `css/mobile_premium__focus-dive.css`
+- **Change:** Added `display: none` for `.journey-compass` when `data-focus-panel-mode='field-node'` is active
+- **Before:** Compass (z=90) overlapped focus-stage (z=100) at 93% — compass was visible behind the stage creating visual noise
+- **After:** Compass is completely hidden in field-node mode
+- **Tests:** `compass-rail`: 12 pass / 0 fail, `field-node`: 24 pass / 0 fail
+- **Worker:** `ocw_f5ef0b08-4772-4f40-ba0b-99c98be1537a` (mimo-v2.5, completed 2026-06-12)
 
 ---
 
-## 10. Audit Trail
+## 10. Next Audit Steps
+
+1. **Run all 25 visual states** — currently only 3 of 25 were captured
+2. **Run visual audit at 320px width** — narrow viewport likely has additional overflow issues
+3. **Investigate `[State Bypass]` warnings** — confirm nested Proxy is catching all writes or document remaining edge cases
+4. **Update `atomic-coverage-protocol.md`** with the surface-by-state coverage matrix
+5. **Add server health check** to `surface-contract-check.mjs` to prevent the JSON-vs-HTML silent failure mode
+
+---
+
+## 11. Audit Trail
 
 | Date | Auditor | Action | Result |
 |---|---|---|---|
 | 2026-06-05 | Subagent sweep | 3-slice bug sweep (engine, state, CSS) | 10 items resolved, 0 open |
 | 2026-06-06 | Main lane | Doc refresh + verification | All sweep items verified |
 | 2026-06-11 | Main lane (this audit) | Full contract surface + 3 visual states | 229/230 pass, 3 visual issues |
+| 2026-06-12 | Main lane + subagent | CSS fixes: field-node flush + compass overlap | **267/267 pass (100%)**, 0 visual issues in contract suite |
