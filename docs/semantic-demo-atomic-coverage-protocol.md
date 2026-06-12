@@ -151,12 +151,13 @@ States from `tests/visual-state-registry.mjs`:
 Before any release to staging or production, the following must all be true:
 
 ### 4.1 Contract gate
-- [x] All 27 contract surfaces pass at their default viewport — **DONE 2026-06-12 (267/267)**, except `mobile-semantic-dive`, `mobile-semantic-dive-320`, `tablet-semantic-dive` which have 1 pre-existing failure each (inside-controls visibility in semantic-dive state — being investigated by 3 parallel mimo-v2.5-free workers as of 2026-06-12)
+- [x] All 27 contract surfaces pass at their default viewport — **DONE 2026-06-12 (308/308)** — including the 3 previously-failing `mobile-semantic-dive` variants which now all pass 20/0
 - [ ] No `[State Bypass]` warnings in console — **2 real bypasses FIXED in `focus-pocket.ts`** (commit `3abbb0d`); 7 false positives remain (cosmetic sub-property writes; nested Proxy at `state.js:530-531` catches top-level writes correctly)
 - [x] No horizontal overflow on any surface — **DONE**
 - [x] `field-node` 534px bottom inset is resolved — **FIXED** at `css/mobile_premium__focus-dive.css`
 - [x] `desktop-idle` camera-controls 148px band overlap — **FIXED** (commit `b5b9615`)
 - [x] `controls-rail` 3-control overlap (view-toggle unclickable) — **FIXED** (commit `2cedc12`) — HTML wrapper + CSS reset rules restored after `git reset` loss
+- [x] `mobile-semantic-dive` inside-controls visibility (3 variants) — **FIXED 2026-06-12** as side-effect of controls-rail fix. The HTML wrapper + CSS reset rules changed the CSS cascade enough to also resolve the inside-controls display state. Verified by 3 parallel mimo-v2.5-free workers + main lane re-run (60/60 pass)
 
 ### 4.2 Visual gate
 - [ ] All 25 visual states captured — **13/25 (52%)**; 12 blocked on headless WebGL timeout
