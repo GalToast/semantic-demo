@@ -49,6 +49,10 @@ export function focusOnNode(index: number, options: FocusNodeOptions = {}): bool
   if (!Number.isFinite(index) || index < 0 || !points || index >= points.length) return false
   const point = points[index]
   if (!point) return false
+  const suppressCanvasFocusUntil = Number((_s as any).suppressCanvasFocusUntil) || 0
+  if (options.fromCanvasNode && typeof performance !== 'undefined' && performance.now() < suppressCanvasFocusUntil) {
+    return false
+  }
 
   _s.selectedPoint = point
   _s.hoverHighlightIndex = -1
