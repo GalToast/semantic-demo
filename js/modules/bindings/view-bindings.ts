@@ -69,14 +69,22 @@ export function bindViewControls(): void {
     bindClick('btn-share-view', () => {
         const btn = document.getElementById('btn-share-view');
         if (!btn) return;
-        const originalHTML = btn.innerHTML;
+        const originalChildren = Array.from(btn.childNodes);
         const originalLabel = btn.getAttribute('aria-label') || 'Copy current view link';
         if (typeof copyCurrentViewLink === 'function') {
             copyCurrentViewLink().then(() => {
-                btn.innerHTML = `<span class="share-toggle-label" aria-hidden="true">Copied</span>`;
+                btn.textContent = '';
+                const copiedSpan = document.createElement('span');
+                copiedSpan.className = 'share-toggle-label';
+                copiedSpan.setAttribute('aria-hidden', 'true');
+                copiedSpan.textContent = 'Copied';
+                btn.appendChild(copiedSpan);
                 btn.setAttribute('aria-label', 'Link copied to clipboard');
                 setTimeout(() => {
-                    btn.innerHTML = originalHTML;
+                    btn.textContent = '';
+                    for (const child of originalChildren) {
+                        btn.appendChild(child);
+                    }
                     btn.setAttribute('aria-label', originalLabel);
                 }, 2000);
             }).catch(() => {
