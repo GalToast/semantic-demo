@@ -38,7 +38,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { navStore, isOverview } from '@lib/stores/navigation';
-  import { searchStore } from '@lib/stores/search.svelte';
   import { setSemanticDiveMode } from '@lib/stores/focus.svelte';
   import { isCompact, reducedMotion, initViewportListeners } from '@lib/stores/viewport';
   import { initData } from '@lib/data-store';
@@ -54,10 +53,8 @@
   import Legend from '@components/Legend.svelte';
   import MapView from '@components/MapView.svelte';
   import SearchBar from '@components/SearchBar.svelte';
-  import SearchResults from '@components/SearchResults.svelte';
   import JourneyChrome from '@components/JourneyChrome.svelte';
   import FocusPocket from '@components/FocusPocket.svelte';
-  import ModeChips from '@components/ModeChips.svelte';
   import Filters from '@components/Filters.svelte';
   import CompassRail from '@components/CompassRail.svelte';
   import LoadingOverlay from '@components/LoadingOverlay.svelte';
@@ -71,6 +68,7 @@
   import WeatherWidget from '@components/WeatherWidget.svelte';
   import LegacyCompassSurface from '@components/LegacyCompassSurface.svelte';
   import DevGui from '@components/DevGui.svelte';
+  import SpectorInspector from '@components/SpectorInspector.svelte';
   import { legendOpen } from '@lib/stores/legend.svelte';
 
   interface Props {
@@ -210,8 +208,6 @@
   let idleSurfaceActive = $derived(navSurface === 'idle' && !searchSurfaceActive);
 
   // Search only shows when explicitly in search AND has content
-  let searchHasQuery = $derived(searchStore.query?.length > 0 || searchStore.results?.length > 0);
-  let searchVisible = $derived(searchSurfaceActive && searchHasQuery);
   let idleSearchVisible = $derived(idleSurfaceActive);
 
   // Focus stage: only when in focus/inside/trail or a node is explicitly focused
@@ -306,7 +302,7 @@
   </div>
 
   <!-- Mini-map trail (self-gates via visible && hasTrail() && trail.length > 0) -->
-  <MapSummary visible={true} />
+  <MapSummary visible={!mapModeActive} />
 
   <!-- Layer 700: Compass rail -->
   <CompassRail visible={focusActive} />
@@ -336,7 +332,10 @@
   <DemoChoreography force={forceDemo} suppress={noDemo} />
 
   <!-- Dev-only runtime parameter panel (lil-gui). Tree-shaken in prod. -->
-  <DevGui visible={import.meta.env.DEV} />
+  <DevGui visible={import.meta.env.MODE === 'development'} />
+
+  <!-- Dev-only WebGL frame inspector (Spector.js). Tree-shaken in prod. -->
+  <SpectorInspector visible={import.meta.env.MODE === 'development'} />
 
   <!-- Layer 3000: Loading overlay (highest z-index) -->
   <LoadingOverlay visible={true} />
