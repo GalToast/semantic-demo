@@ -117,14 +117,6 @@ const SCENE_PERF_EMA_DECAY = 0.992;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function getScenePerformanceProbe() {
-    return {
-        drawCalls: webglContext.renderer?.info?.render?.calls || 0,
-        triangles: webglContext.renderer?.info?.render?.triangles || 0,
-        memory: getLiveResourceCounts()
-    };
-}
-
 function detectWebGLSupport() {
     if (typeof document === 'undefined') return { supported: false, reason: 'document-unavailable' };
     const canvas = document.createElement('canvas');
@@ -172,12 +164,37 @@ function showWebGLFallback(container: HTMLElement, detail: { supported?: boolean
     notice.className = 'webgl-fallback-notice';
     notice.setAttribute('role', 'status');
     notice.setAttribute('aria-live', 'polite');
-    notice.innerHTML = `
-        <div class="webgl-fallback-kicker">Graphics fallback</div>
-        <h2>3D view is unavailable on this device.</h2>
-        <p>The county records still load. Use the map view while graphics acceleration is blocked or unavailable.</p>
-        <button type="button" class="webgl-fallback-map" data-webgl-fallback-map>Open map view</button>
-    `;
+    // Build the fallback notice with DOM APIs (not innerHTML) so the
+    // structure cannot accidentally become an XSS vector if a future
+    // change interpolates a dynamic value. The content here is fully
+    // static today, but using createElement/textContent makes it
+    // impossible to regress. The data-attribute below preserves the
+    // diagnostic reason for any tooling that wants to surface it.
+    const kicker = document.createElement('div');
+    kicker.className = 'webgl-fallback-kicker';
+    kicker.textContent = 'Graphics fallback';
+
+    const heading = document.createElement('h2');
+    heading.textContent = '3D view is unavailable on this device.';
+
+    const body = document.createElement('p');
+    body.textContent =
+        'The county records still load. Use the map view while graphics acceleration is blocked or unavailable.';
+
+    const mapActionButton = document.createElement('button');
+    mapActionButton.type = 'button';
+    mapActionButton.className = 'webgl-fallback-map';
+    mapActionButton.setAttribute('data-webgl-fallback-map', '');
+    mapActionButton.textContent = 'Open map view';
+
+    if (detail.reason) {
+        notice.setAttribute('data-webgl-fallback-reason', detail.reason);
+    }
+
+    notice.appendChild(kicker);
+    notice.appendChild(heading);
+    notice.appendChild(body);
+    notice.appendChild(mapActionButton);
     container.appendChild(notice);
 
     const mapButton = notice.querySelector<HTMLElement>('[data-webgl-fallback-map]');
@@ -243,34 +260,6 @@ function sampleScenePerformance(frameMs: number, timings: ScenePerformanceTiming
     diagnostics.avgRenderMs = smoothDiagnosticValue(diagnostics.avgRenderMs || 0, timings.renderMs || 0, diagnostics.sampleCount);
     diagnostics.maxRenderMs = Math.max(timings.renderMs || 0, (diagnostics.maxRenderMs || 0) * SCENE_PERF_EMA_DECAY);
     diagnostics.renderables = getSceneRenderableDiagnostics();
-}
-
-function bindWebGLContextResilience(renderer: THREE.WebGLRenderer) {
-    const canvas = renderer.domElement;
-    if (!canvas || canvas.dataset.webglContextGuardBound === 'true') return;
-    canvas.dataset.webglContextGuardBound = 'true';
-
-    canvas.addEventListener('webglcontextlost', (event: Event) => {
-        event.preventDefault();
-        _webglContextLost = true;
-        if (_rafId !== null) {
-            window.cancelAnimationFrame(_rafId);
-            _rafId = null;
-        }
-        withStateMutation(() => { state.scenePerformanceDiagnostics.reason = 'webgl-context-lost'; });
-        showExperienceToast('Graphics context paused', 'The scene will restore automatically.');
-    }, false);
-
-    canvas.addEventListener('webglcontextrestored', () => {
-        _webglContextLost = false;
-        withStateMutation(() => { state.scenePerformanceDiagnostics.reason = 'webgl-context-restored'; });
-        if (_webglRestoreTimer) window.clearTimeout(_webglRestoreTimer);
-        _webglRestoreTimer = window.setTimeout(() => {
-            _webglRestoreTimer = null;
-            showExperienceToast('Graphics context restored', 'Rebuilding the semantic scene.');
-            restoreWebGLContext().catch((err: unknown) => console.error('WebGL context restore reinit failed:', err));
-        }, 80);
-    }, false);
 }
 
 export function updateCameraViewportOffset() {
