@@ -1011,8 +1011,6 @@
         pointer-events: auto;
     }
 
-    body.is-active[data-panel-surface='semantic-dive'] #app,
-    body.is-active[data-panel-surface='semantic-dive'] #semantic-explorer,
     body.is-active[data-panel-surface='semantic-dive'] #canvas-container,
     body.is-active[data-panel-surface='semantic-dive'] #canvas-container canvas {
         pointer-events: none;
