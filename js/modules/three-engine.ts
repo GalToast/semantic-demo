@@ -107,6 +107,8 @@ let _rafId: number | null = null;
 let _webglContextLost = false;
 let _circuitBreakerTripped = false;
 let _webglRestoreTimer: number | null = null;
+let _lastHoveredNode: number | null = null;
+let _hoverEmissiveFlash = 0;
 
 // EMA decay applied to peak frame/update/render timings so the running max
 // is weighted toward recent samples. A single constant keeps the three
@@ -511,6 +513,8 @@ export function cancelAnimate() {
     webglContext.nodeSporeMesh = null;
     webglContext.nodeSporeHitMesh = null;
     webglContext.nodeSporeMaterial = null;
+    _lastHoveredNode = null;
+    _hoverEmissiveFlash = 0;
 }
 
 export function deinit() {
@@ -647,6 +651,25 @@ export function animate() {
     
     const hoveredNode = state.hoverHighlightIndex;
     const focusedNode = state.focusedNode;
+
+    // ── Hover emissive flash (spore material) ───────────────────────────────
+    const hasHover = Number.isFinite(hoveredNode) && hoveredNode >= 0;
+    const lastHadHover = _lastHoveredNode !== null && Number.isFinite(_lastHoveredNode) && _lastHoveredNode >= 0;
+    if (hasHover !== lastHadHover || (hasHover && hoveredNode !== _lastHoveredNode)) {
+        _hoverEmissiveFlash = 1.0;
+    }
+    _lastHoveredNode = hoveredNode;
+    if (_hoverEmissiveFlash > 0.001 && webglContext.nodeSporeMaterial) {
+        const baseIntensity = 0.34;
+        const flashPeak = 1.8; // peak emissive multiplier during flash
+        const targetIntensity = baseIntensity + (flashPeak - baseIntensity) * _hoverEmissiveFlash;
+        (webglContext.nodeSporeMaterial as THREE.MeshPhongMaterial).emissiveIntensity = targetIntensity;
+        _hoverEmissiveFlash *= 0.92; // decay each frame
+        if (_hoverEmissiveFlash < 0.005) {
+            _hoverEmissiveFlash = 0;
+            (webglContext.nodeSporeMaterial as THREE.MeshPhongMaterial).emissiveIntensity = baseIntensity;
+        }
+    }
 
     const threadsVisible = shouldRenderThreads();
     if (webglContext.myceliumGroup) {
