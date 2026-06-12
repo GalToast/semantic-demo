@@ -36,6 +36,17 @@ interface LifecycleDeps {
 
 let lifecycleDeps: LifecycleDeps = {};
 
+function copyFiniteIndexHistory(value: unknown): number[] {
+    if (!value || typeof (value as { length?: unknown }).length !== 'number') return [];
+    const length = Math.max(0, Number((value as { length: number }).length) || 0);
+    const history: number[] = [];
+    for (let i = 0; i < length; i += 1) {
+        const index = Number((value as Record<number, unknown>)[i]);
+        if (Number.isFinite(index)) history.push(index);
+    }
+    return history;
+}
+
 export function initNavigationState(deps: LifecycleDeps): void {
     lifecycleDeps = deps;
 }
@@ -139,7 +150,7 @@ function navTransitionReducer(action: string, payload: Record<string, any> = {})
                 if (restoreHistory) {
                     // preserve existing
                 } else if (appendHistory) {
-                    const history = [...((state.navState as any).explorationHistoryIndices || [])];
+                    const history = copyFiniteIndexHistory((state.navState as any).explorationHistoryIndices);
                     if (history[history.length - 1] !== index) history.push(index);
                     (state.navState as any).explorationHistoryIndices = history;
                 } else {
@@ -154,7 +165,7 @@ function navTransitionReducer(action: string, payload: Record<string, any> = {})
                 if (Array.isArray(restoreHistoryIndices)) {
                     state.navState.walkHistoryIndices = restoreHistoryIndices.filter((value: any) => Number.isFinite(value));
                 } else if (appendHistory !== false) {
-                    const history = [...(state.navState.walkHistoryIndices || [])];
+                    const history = copyFiniteIndexHistory(state.navState.walkHistoryIndices);
                     if (Number.isFinite(fromIndex) && history[history.length - 1] !== fromIndex) history.push(fromIndex);
                     if (history[history.length - 1] !== index) history.push(index);
                     state.navState.walkHistoryIndices = history;
@@ -167,7 +178,7 @@ function navTransitionReducer(action: string, payload: Record<string, any> = {})
             const { step, restoreHistory } = payload;
             withStateMutation(() => {
                 if (step < 0 && restoreHistory) {
-                    const history = [...(state.navState.walkHistoryIndices || [])];
+                    const history = copyFiniteIndexHistory(state.navState.walkHistoryIndices);
                     if (history.length > 0) history.pop();
                     state.navState.walkHistoryIndices = history;
                 }

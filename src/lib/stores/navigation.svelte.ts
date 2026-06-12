@@ -389,7 +389,7 @@ export function dispatchNavTransition(
         ...s,
         focusedIndex: payload.index ?? s.focusedIndex,
         mode: 'trail' as NavMode,
-        surface: 'trail' as PanelSurface
+        surface: 'focus' as PanelSurface
       }));
       break;
     case 'reset':
