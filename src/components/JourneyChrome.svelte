@@ -14,10 +14,10 @@
       hover preview, next-stop badge, and relationship labels
 -->
 <script lang="ts">
-  import { onMount } from 'svelte';
+
   import { hasFocus, focusedIndex, dispatchNavTransition, NAV_TRANSITION_ACTIONS, hasTrail } from '@lib/stores/navigation';
   import { walkHistoryIndices, threadCandidates, trailDepth, journeyPhase, threadSource } from '@lib/stores/journey';
-  import { buildCompassStatus, JOURNEY_ACTIONS } from '@lib/stores/compass';
+  import { buildCompassStatus } from '@lib/stores/compass';
   import { threadInspector, threadInspectorActive, clearThreadInspector, pinThread, updateThreadInspector } from '@lib/stores/focus';
   import { getBusinessRecords, selectedPointStore } from '@lib/stores';
   import { isCompact, isMobile, isCompactLandscape, isUltraCompactPortrait } from '@lib/stores/viewport';
@@ -30,34 +30,17 @@
 
   let { visible = false }: Props = $props();
 
-  let neighborIndex = $state(0);
   let hoverTimer: ReturnType<typeof setTimeout> | null = $state(null);
   let inspectedIndex = $state<number | null>(null);
   let inspectionLocked = $state(false);
-  let legacyRefreshTick = $state(0);
-
-  onMount(() => {
-    const id = window.setInterval(() => {
-      legacyRefreshTick += 1;
-    }, 250);
-    return () => window.clearInterval(id);
-  });
 
   const currentPoint = $derived(selectedPointStore());
-  const currentName = $derived(currentPoint?.name ?? '');
-  const chromeHasFocus = $derived.by(() => {
-    void legacyRefreshTick;
-    return hasFocus();
-  });
-  const chromeHasTrail = $derived.by(() => {
-    void legacyRefreshTick;
-    return hasTrail();
-  });
+  const chromeHasFocus = $derived(hasFocus());
+  const chromeHasTrail = $derived(hasTrail());
 
   // ── Walk breadcrumb ────────────────────────────────────────────────────────
 
   const dedupedWalkHistory = $derived.by(() => {
-    void legacyRefreshTick;
     const indices = walkHistoryIndices();
     const seen = new Set<number>();
     const result: number[] = [];
@@ -82,7 +65,7 @@
     chromeHasFocus && walkHistoryIndices().length > 1
   );
 
-  function walkToBreadcrumbIndex(targetIndex: number, targetOrder: number): void {
+  function walkToBreadcrumbIndex(targetIndex: number, _targetOrder: number): void {
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_THREAD, {
       index: targetIndex
     });
@@ -90,18 +73,11 @@
 
   // ── Trail controls ────────────────────────────────────────────────────────
 
-  const canGoBack = $derived.by(() => {
-    void legacyRefreshTick;
-    return walkHistoryIndices().length > 1;
-  });
-  const neighborCount = $derived.by(() => {
-    void legacyRefreshTick;
-    return threadCandidates().length;
-  });
+  const canGoBack = $derived(walkHistoryIndices().length > 1);
+  const neighborCount = $derived(threadCandidates().length);
   const hasNext = $derived(neighborCount > 0);
 
   const trailContextText = $derived.by(() => {
-    void legacyRefreshTick;
     if (!chromeHasFocus || !currentPoint) return '';
     const name = currentPoint?.name || 'this business';
     const walkLen = walkHistoryIndices().length;
@@ -119,7 +95,6 @@
   });
 
   const progressText = $derived.by(() => {
-    void legacyRefreshTick;
     if (!chromeHasFocus) return 'Pick a business, then explore its nearby neighbors.';
     if (trailDepth() >= 1 && walkHistoryIndices().length >= 0) {
       return `Stop ${walkHistoryIndices().length + 1} of ${neighborCount}`;
@@ -130,7 +105,6 @@
   });
 
   const nextStopName = $derived.by(() => {
-    void legacyRefreshTick;
     if (!chromeHasFocus || neighborCount === 0) return null;
     const first = threadCandidates()[0];
     if (first == null || !Number.isFinite(first)) return null;
@@ -164,7 +138,6 @@
   });
 
   const filteredCandidates = $derived.by(() => {
-    void legacyRefreshTick;
     const candidates = threadCandidates();
     const focusIdx = focusedIndex();
     return candidates
@@ -241,13 +214,7 @@
     pinThread(idx);
   }
 
-  function walkToCandidate(idx: number): void {
-    inspectionLocked = false;
-    dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
-      index: idx,
-      reason: 'neighbor-rail'
-    });
-  }
+  // walkToCandidate removed — neighbor rail uses inspectCandidate instead
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────
 
