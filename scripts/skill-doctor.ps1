@@ -18,7 +18,16 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$skillsRoot = Join-Path $env:USERPROFILE '.pi\agent\skills'
+# Skills can live in several roots under the Pi agent home. The plain
+# `skills/` directory only catches user-installed skills; the bulk live under
+# `pi-hermes-memory/skills/` (the local companion package) and the `npm/`
+# module tree (npm-installed packages like context-mode and pi-lens).
+# Keep this list in sync with `~/.pi/agent/` if new skill hosts appear.
+$skillRoots = @(
+    @{ Path = (Join-Path $env:USERPROFILE '.pi\agent\skills');             Scope = 'user'    }
+    @{ Path = (Join-Path $env:USERPROFILE '.pi\agent\pi-hermes-memory\skills'); Scope = 'user'    }
+    @{ Path = (Join-Path $env:USERPROFILE '.pi\agent\npm');                Scope = 'package' }
+)
 
 # ---------- helpers ----------
 
@@ -162,18 +171,36 @@ function Repair-SkillFile {
 
 # ---------- main ----------
 
-$files = Get-ChildItem -LiteralPath $skillsRoot -Recurse -Filter 'SKILL.md' -ErrorAction SilentlyContinue
-if (-not $files -or $files.Count -eq 0) {
-    Write-Host "skill-doctor: No SKILL.md files found under $skillsRoot"
+# Discover SKILL.md files across all configured roots. Files are tagged with
+# their scope so the fix pass can avoid writing into package-managed trees.
+$allFiles = [System.Collections.Generic.List[object]]::new()
+foreach ($root in $skillRoots) {
+    if (-not (Test-Path -LiteralPath $root.Path)) { continue }
+    $found = @(Get-ChildItem -LiteralPath $root.Path -Recurse -Filter 'SKILL.md' -ErrorAction SilentlyContinue)
+    foreach ($f in $found) {
+        $allFiles.Add([pscustomobject]@{ File = $f; Scope = $root.Scope; Root = $root.Path }) | Out-Null
+    }
+}
+
+if ($allFiles.Count -eq 0) {
+    Write-Host "skill-doctor: No SKILL.md files found under any configured root"
+    foreach ($root in $skillRoots) {
+        Write-Host "  - $($root.Path)"
+    }
     exit 0
 }
 
-$total = $files.Count
-$valid = 0
+$total       = $allFiles.Count
+$valid       = 0
 $problemFiles = [System.Collections.Generic.List[pscustomobject]]::new()
-$fixLog = [System.Collections.Generic.List[string]]::new()
+$fixLog       = [System.Collections.Generic.List[string]]::new()
+$rootCounts  = @{}
+foreach ($root in $skillRoots) { $rootCounts[$root.Path] = 0 }
 
-foreach ($file in $files) {
+foreach ($entry in $allFiles) {
+    $file  = $entry.File
+    $scope = $entry.Scope
+    $rootCounts[$entry.Root]++
     $issues = Test-Frontmatter -FilePath $file.FullName
     if ($issues.Count -eq 0) {
         $valid++
@@ -182,6 +209,8 @@ foreach ($file in $files) {
         $problemFiles.Add([pscustomobject]@{
             Path   = $file.FullName
             Issues = $issues
+            Scope  = $scope
+            Root   = $entry.Root
         })
     }
 }
@@ -192,13 +221,18 @@ Write-Host "skill-doctor: scan complete"
 Write-Host "  Total scanned : $total"
 Write-Host "  Valid         : $valid"
 Write-Host "  With issues   : $($problemFiles.Count)"
+Write-Host "  Roots covered :"
+foreach ($root in $skillRoots) {
+    Write-Host ("    {0,-90} {1} files" -f $root.Path, ($rootCounts[$root.Path] ?? 0))
+}
 
 if ($problemFiles.Count -gt 0) {
     Write-Host ""
     Write-Host "Issues:"
     foreach ($pf in $problemFiles) {
         $short = $pf.Path.Replace("$env:USERPROFILE\", '~\')
-        Write-Host "  $short"
+        $tag   = if ($pf.Scope -eq 'package') { ' [package -- --fix disabled]' } else { '' }
+        Write-Host "  $short$tag"
         foreach ($issue in $pf.Issues) {
             Write-Host "    - $issue"
         }
@@ -207,11 +241,33 @@ if ($problemFiles.Count -gt 0) {
     # ---------- fix pass ----------
 
     if ($Fix) {
+        $fixable    = @($problemFiles | Where-Object { $_.Scope -eq 'user'    })
+        $nonFixable = @($problemFiles | Where-Object { $_.Scope -eq 'package' })
+
         Write-Host ""
-        Write-Host "Planned fixes:"
-        foreach ($pf in $problemFiles) {
-            $short = $pf.Path.Replace("$env:USERPROFILE\", '~\')
-            Write-Host "  $short  ->  $($pf.Issues -join ', ')"
+        Write-Host "Fixable (user scope):"
+        if ($fixable.Count -eq 0) {
+            Write-Host "  (none)"
+        } else {
+            foreach ($pf in $fixable) {
+                $short = $pf.Path.Replace("$env:USERPROFILE\", '~\')
+                Write-Host "  $short  ->  $($pf.Issues -join ', ')"
+            }
+        }
+
+        if ($nonFixable.Count -gt 0) {
+            Write-Host ""
+            Write-Host "Detection only (package scope, --fix disabled to avoid writing to package-managed trees):"
+            foreach ($pf in $nonFixable) {
+                $short = $pf.Path.Replace("$env:USERPROFILE\", '~\')
+                Write-Host "  $short  ->  $($pf.Issues -join ', ')"
+            }
+        }
+
+        if ($fixable.Count -eq 0) {
+            Write-Host ""
+            Write-Host "skill-doctor: No fixable issues. No files changed."
+            exit 1
         }
 
         if (-not $Yes) {
@@ -223,7 +279,7 @@ if ($problemFiles.Count -gt 0) {
             }
         }
 
-        foreach ($pf in $problemFiles) {
+        foreach ($pf in $fixable) {
             Repair-SkillFile -FilePath $pf.Path -Issues $pf.Issues -FixLog ([ref]$fixLog)
         }
 

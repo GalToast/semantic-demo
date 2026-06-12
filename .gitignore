@@ -71,6 +71,10 @@ semantic-sweep-*
 .qwen/worker-logs/
 .qwen/skills/
 
+# Subagent scratch (switchboard / external-subagents / qwen / minimax runtimes drop
+# runtime artifacts here: metadata.json, prompt.txt, stderr/stdout.log, vendor bins).
+.agents/
+
 # Svelte/Vite build artifacts
 dist/svelte/assets/
 dist/svelte/.git/
