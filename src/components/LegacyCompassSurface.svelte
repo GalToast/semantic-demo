@@ -234,9 +234,7 @@
   let suppressInsideDiveActions = $derived(
     phase === 'inside' && semanticDiveActive
   );
-  let showInsideControls = $derived(
-    semanticDiveActive && navState.currentView === 'galaxy'
-  );
+  let showInsideControls = $derived(semanticDiveActive);
 
   $effect(() => {
     if (typeof window === 'undefined' || !showInsideControls) return;
@@ -502,44 +500,43 @@
   hidden={!showInsideControls}
   aria-hidden={!showInsideControls ? 'true' : 'false'}
 >
+  <button
+    id="btn-inside-next"
+    class="focus-stage-inside-btn biofield-glow"
+    type="button"
+    data-journey-action={JOURNEY_ACTIONS.NEXT_STOP}
+    hidden={!showInsideControls}
+    aria-hidden={!showInsideControls ? 'true' : 'false'}
+    aria-disabled={buttonDisabled({ label: 'Next Stop', action: JOURNEY_ACTIONS.NEXT_STOP })}
+    onclick={handleInsideNext}
+  >
+    Next Stop
+  </button>
+  <button
+    id="btn-inside-map"
+    class="focus-stage-inside-btn"
+    type="button"
+    data-journey-action={JOURNEY_ACTIONS.OPEN_MAP}
+    hidden={!showInsideControls}
+    aria-hidden={!showInsideControls ? 'true' : 'false'}
+    aria-disabled={!showInsideControls ? 'true' : 'false'}
+    onclick={handleInsideMap}
+  >
+    Map
+  </button>
+  <button
+    id="btn-inside-county"
+    class="focus-stage-inside-btn"
+    type="button"
+    data-journey-action={JOURNEY_ACTIONS.COUNTY_OVERVIEW}
+    hidden={!showInsideControls}
+    aria-hidden={!showInsideControls ? 'true' : 'false'}
+    aria-disabled={!showInsideControls ? 'true' : 'false'}
+    onclick={handleInsideCounty}
+  >
+    County
+  </button>
 </div>
-
-<button
-  id="btn-inside-next"
-  class="focus-stage-inside-btn biofield-glow"
-  type="button"
-  data-journey-action={JOURNEY_ACTIONS.NEXT_STOP}
-  hidden={!showInsideControls}
-  aria-hidden={!showInsideControls ? 'true' : 'false'}
-  aria-disabled={buttonDisabled({ label: 'Next Stop', action: JOURNEY_ACTIONS.NEXT_STOP })}
-  onclick={handleInsideNext}
->
-  Next Stop
-</button>
-<button
-  id="btn-inside-map"
-  class="focus-stage-inside-btn"
-  type="button"
-  data-journey-action={JOURNEY_ACTIONS.OPEN_MAP}
-  hidden={!showInsideControls}
-  aria-hidden={!showInsideControls ? 'true' : 'false'}
-  aria-disabled={!showInsideControls ? 'true' : 'false'}
-  onclick={handleInsideMap}
->
-  Map
-</button>
-<button
-  id="btn-inside-county"
-  class="focus-stage-inside-btn"
-  type="button"
-  data-journey-action={JOURNEY_ACTIONS.COUNTY_OVERVIEW}
-  hidden={!showInsideControls}
-  aria-hidden={!showInsideControls ? 'true' : 'false'}
-  aria-disabled={!showInsideControls ? 'true' : 'false'}
-  onclick={handleInsideCounty}
->
-  County
-</button>
 
 <!--
   Minimal CSS for sr-only.
