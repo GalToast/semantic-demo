@@ -5,7 +5,7 @@
  * Thread walk traversal, neighbor timers, inspection settle flow, and inside preview state.
  */
 
-import { state } from '../state.ts';
+import { state, withStateMutation } from '../state.ts';
 import { formatBusinessName, cleanOptionalValue } from './utils/dom-formatters.ts';
 import { normalizeCityForFilter } from './utils/geo-data.ts';
 import { focusOnNode } from './camera-controls.ts';
@@ -63,6 +63,17 @@ function _clearTrackedTimer(purpose: string): void {
         if (id !== undefined) timerAdapter.clearTimer(id);
         _threadTimers.delete(purpose);
     }
+}
+
+function copyFiniteIndexHistory(value: unknown): number[] {
+    if (!value || typeof (value as { length?: unknown }).length !== 'number') return [];
+    const length = Math.max(0, Number((value as { length: number }).length) || 0);
+    const history: number[] = [];
+    for (let i = 0; i < length; i += 1) {
+        const index = Number((value as Record<number, unknown>)[i]);
+        if (Number.isFinite(index)) history.push(index);
+    }
+    return history;
 }
 
 export function cancelAllThreadTimers(): void {
@@ -204,6 +215,8 @@ export function walkThreadNeighbor(index: number, options: WalkThreadNeighborOpt
         'nearby business relationship';
     (state as any).pinnedThreadIndex = null;
     (state as any).inspectedThreadIndex = null;
+    (state as any).suppressCanvasFocusUntil =
+        typeof performance !== 'undefined' ? performance.now() + 1200 : Date.now() + 1200;
     cancelAllThreadTimers();
     setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason });
     dispatchNavTransition('WALK_TO', { index, fromIndex, appendHistory: !options.restoreHistory });
@@ -228,6 +241,55 @@ export function walkThreadNeighbor(index: number, options: WalkThreadNeighborOpt
             fromIndex
         });
     }
+    withStateMutation(() => {
+        const navState = state.navState as any;
+        const nextHistory = copyFiniteIndexHistory(navState.walkHistoryIndices);
+        if (typeof fromIndex === 'number' && Number.isFinite(fromIndex) && nextHistory.length === 0) {
+            nextHistory.push(fromIndex);
+        }
+        if (nextHistory[nextHistory.length - 1] !== index) {
+            nextHistory.push(index);
+        }
+        navState.focusedIndex = index;
+        navState.mode = 'trail';
+        navState.surface = 'focus';
+        navState.trailDepth = Math.max(1, Number(navState.trailDepth) || 0);
+        navState.walkHistoryIndices = nextHistory;
+        navState.lastTraversalReason = reason;
+        (state as any).focusedNode = index;
+        (state as any).trailDepth = Math.max(1, Number((state as any).trailDepth) || 0);
+        (state as any).inspectedThreadIndex = null;
+        (state as any).pinnedThreadIndex = null;
+    });
+    const reassertThreadTarget = (): void => {
+        const point = (Number.isFinite(index) && index >= 0 && index < (state.points as any).length)
+            ? (state.points as any)[index]
+            : null;
+        withStateMutation(() => {
+            const navState = state.navState as any;
+            const nextHistory = copyFiniteIndexHistory(navState.walkHistoryIndices);
+            if (typeof fromIndex === 'number' && Number.isFinite(fromIndex) && nextHistory.length === 0) {
+                nextHistory.push(fromIndex);
+            }
+            if (nextHistory[nextHistory.length - 1] !== index) nextHistory.push(index);
+            navState.focusedIndex = index;
+            navState.mode = 'trail';
+            navState.surface = 'focus';
+            navState.trailDepth = Math.max(1, Number(navState.trailDepth) || 0);
+            navState.walkHistoryIndices = nextHistory;
+            navState.lastTraversalReason = reason;
+            (state as any).focusedNode = index;
+            (state as any).selectedPoint = point || (state as any).selectedPoint;
+            (state as any).trailDepth = Math.max(1, Number((state as any).trailDepth) || 0);
+            (state as any).inspectedThreadIndex = null;
+            (state as any).pinnedThreadIndex = null;
+        });
+        syncFocusStage(point || state.selectedPoint || null);
+        syncSemanticDiveUi();
+        updateJourneyCompass();
+    };
+    window.setTimeout(reassertThreadTarget, 120);
+    window.setTimeout(reassertThreadTarget, 420);
     clearThreadInspection({ preserveJourney: true });
     syncSemanticDiveUi();
     updateJourneyCompass();
@@ -283,9 +345,10 @@ export function traverseNeighbor(step: number): void {
             });
             return;
         }
-        if (((state.navState as any).walkHistoryIndices || []).length <= 1) return;
-        const previousIndex = (state.navState as any).walkHistoryIndices?.[(state.navState as any).walkHistoryIndices.length - 2];
-        if (!Number.isFinite(previousIndex)) return;
+        const walkHistory = copyFiniteIndexHistory((state.navState as any).walkHistoryIndices);
+        if (walkHistory.length <= 1) return;
+        const previousIndex = walkHistory[walkHistory.length - 2];
+        if (typeof previousIndex !== 'number' || !Number.isFinite(previousIndex)) return;
         dispatchNavTransition('BACKTRACK', { step: -1, fromIndex: currentIndex, targetIndex: previousIndex, restoreHistory: true });
         walkThreadNeighbor(previousIndex, {
             fromIndex: currentIndex,
