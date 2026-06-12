@@ -16,6 +16,7 @@
   import { hasFocus, focusedIndex } from '@lib/stores/navigation';
   import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket';
   import { clearPocketNodes } from '@lib/stores/focus.svelte';
+  import { getDataLoadState } from '@lib/data-store.svelte';
 
   interface Props {
     visible?: boolean;
@@ -27,8 +28,20 @@
   let lastFocusIndex: number | null = null;
 
   $effect(() => {
+    // Read _dataLoadState.status directly so the $effect re-fires once
+    // initData() resolves. The data store mutates the $state's .status field
+    // when loading completes; reading the property inside a Svelte 5 $effect
+    // tracks that mutation. Without this dep, the URL ?q=...&anchor=...
+    // restore path races the data load: the SEARCH_FOCUS_REQUESTED trigger
+    // updates the Svelte nav store at module-init time (before initData runs),
+    // the $effect captures focusedIndex=519, but applyLocalNeighborhoodFocus
+    // early-returns because state.points is still null. The effect would never
+    // re-fire because no Svelte-tracked dep changes after data loads.
+    const dataReady = getDataLoadState().status === 'ready';
     const idx = focusedIndex();
     const focused = hasFocus();
+
+    if (!dataReady) return;
 
     if (focused && Number.isFinite(idx) && idx !== null && idx !== lastFocusIndex) {
       lastFocusIndex = idx;
