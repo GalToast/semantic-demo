@@ -193,6 +193,12 @@
         visibility: visible;
         pointer-events: auto;
         opacity: 1;
+        left: 10px;
+        right: 10px;
+        width: calc(100vw - 20px);
+        max-width: calc(100vw - 20px);
+        box-sizing: border-box;
+        transform: none;
     }
     body.is-active[data-panel-surface='focus'] .journey-compass.glass-heavy .journey-compass-rail,
     body.is-active[data-panel-surface='focus-search'] .journey-compass.glass-heavy .journey-compass-rail,
