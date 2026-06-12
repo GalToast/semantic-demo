@@ -31,7 +31,7 @@
   import { buildSelectedMatchNarrative as buildPointMatchNarrative } from '@lib/orchestration/lifecycle';
   import { buildSelectedBusinessProps } from '@lib/view-models/selected-business-view-model';
   import { publish, EVENTS } from '@lib/event-bus';
-  import { onMount } from 'svelte';
+  import { onMount, type Snippet } from 'svelte';
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
@@ -39,9 +39,11 @@
   interface Props {
     /** Whether the panel is open */
     open?: boolean;
+    /** Optional app-owned panel content, e.g. the search drawer in search-family surfaces */
+    content?: Snippet;
   }
 
-  let { open = false }: Props = $props();
+  let { open = false, content }: Props = $props();
 
   // ── Cluster names (mirrors CLUSTER_NAMES from state.js) ───────────────────────
 
@@ -257,7 +259,7 @@
   });
 
   /** Whether the panel should visually appear open */
-  let panelOpen = $derived(open || isFocused || currentActiveResult !== null || testPanelSurface !== null);
+  let panelOpen = $derived(open || isFocused || currentActiveResult !== null || Boolean(testPanelSurface && testPanelSurface !== 'idle'));
 
   /** Whether to show the empty state */
   let isEmpty = $derived(!selectedRecord);
@@ -320,7 +322,7 @@
       const showFiledAs = false;
       const what = sanitizePublicFacingNote(selectedRecord.what ?? '');
       const theme = describeCluster(selectedRecord.cluster);
-      const status = getPublicRecordStatusLabel(selectedRecord.status ?? 'active');
+      const status = formatStatus(selectedRecord.status ?? 'active');
       const role = 'Business';
       const trivia = (getInterestingBusinessNote(selectedRecord) as string) || '';
       const showTrivia = Boolean(trivia);
@@ -411,21 +413,21 @@
 <aside
   class="info-panel"
   class:open={panelOpen}
+  hidden={!panelOpen}
   aria-hidden={!panelOpen}
   aria-label="Business information"
   aria-live="polite"
   id="info-panel"
 >
   <!--
-    The App-level <SearchBar> in src/App.svelte is the sole search input on
-    the page. This panel no longer mounts its own SearchBar to avoid
-    duplicate `id="search-input"` / `id="search-results"` elements. During
-    search-family surfaces, #selected-card is hidden below so the search
+    The App-level <SearchBar> is provided through the content snippet in
+    search-family surfaces. This panel suppresses selected-business content so the search
     drawer is the only visible content owner.
   -->
 
   <!-- Surface wrapper for selection state (empty vs populated) -->
   <div class="info-panel-content" id="info-panel-content">
+    {@render content?.()}
 
     <!-- Info header (always visible — the panel always carries detail chrome) -->
     <div class="info-header">
@@ -461,7 +463,7 @@
       {/if}
 
       <!-- Populated state -->
-      {#if !isEmpty}
+      {#if !isEmpty || effectiveSurface === 'focus'}
       <div id="selected-details" class="info-panel-surface-selection selected-details">
         <!-- Hero section (legacy selected-hero with role badge) -->
         <div class="selected-hero">

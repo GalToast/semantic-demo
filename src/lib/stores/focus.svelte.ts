@@ -301,6 +301,22 @@ export function updateThreadInspector(
   patch: Partial<ThreadInspectorState>
 ): void {
   _focusWritable.update(s => ({ ...s, threadInspector: { ...s.threadInspector, ...patch } }));
+
+  if (typeof document !== 'undefined' && document.body) {
+    const nextActive = patch.active ?? get(_focusWritable).threadInspector.active;
+    const nextSource = patch.source ?? get(_focusWritable).threadInspector.source;
+    const nextInspected = patch.inspectedIndex ?? get(_focusWritable).threadInspector.inspectedIndex;
+    document.body.dataset.threadInspectSurface = nextActive ? (nextSource || 'rail') : 'idle';
+    if (nextActive) {
+      document.body.dataset.threadInspect = 'active';
+      if (nextInspected !== null && Number.isFinite(nextInspected)) {
+        document.body.dataset.inspectedThreadIndex = String(nextInspected);
+      }
+    } else {
+      document.body.removeAttribute('data-thread-inspect');
+      document.body.removeAttribute('data-inspected-thread-index');
+    }
+  }
 }
 
 export function clearThreadInspector(): void {
@@ -314,6 +330,8 @@ export function clearThreadInspector(): void {
 
   if (typeof document !== 'undefined' && document.body) {
     document.body.removeAttribute('data-thread-inspect');
+    document.body.removeAttribute('data-inspected-thread-index');
+    document.body.dataset.threadInspectSurface = 'idle';
   }
 }
 
@@ -330,6 +348,11 @@ export function pinThread(index: number): void {
       pinnedIndex: index
     }
   }));
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.dataset.threadInspect = 'active';
+    document.body.dataset.threadInspectSurface = 'pinned';
+    document.body.dataset.inspectedThreadIndex = String(index);
+  }
 }
 
 /** Unpin the currently pinned thread. */
@@ -342,6 +365,9 @@ export function unpinThread(): void {
       pinnedIndex: null
     }
   }));
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.dataset.threadInspectSurface = get(_focusWritable).threadInspector.active ? 'rail' : 'idle';
+  }
 }
 
 // ── Actions: Orbit Slack ─────────────────────────────────────────────────────

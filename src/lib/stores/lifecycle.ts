@@ -13,7 +13,7 @@ import { get } from 'svelte/store';
 import { navStore, updateNavState, switchView, currentView, setMyceliumMode as _setMyceliumMode } from './navigation.svelte';
 import { setSemanticDiveMode as _setSemanticDiveMode, focusStore, resetFocus } from './focus.svelte';
 import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './search.svelte';
-import { setTrailDepth as _setTrailDepth } from './journey.svelte';
+import { resetJourney, setTrailDepth as _setTrailDepth } from './journey.svelte';
 import { publish, EVENTS } from '../orchestration/event-bus';
 
 // ── Delegates to real stores ─────────────────────────────────────────────────
@@ -172,10 +172,23 @@ export function resetExplorationFocus(
 ): void {
   const preserveSearch = options?.preserveSearch !== false;
 
-  updateNavState({ trailDepth: 0, mode: 'overview' });
+  updateNavState({
+    focusedIndex: null,
+    trailDepth: 0,
+    trailDepthFromExploration: 0,
+    mode: 'overview',
+    surface: 'idle',
+    previousSurface: 'idle',
+    walkHistoryIndices: [],
+    threadCandidates: [],
+    trailNeighborIndices: [],
+    threadReasonByIndex: new Map(),
+    threadSource: ''
+  });
 
   _setSemanticDiveMode(false);
   _setTrailDepth(0);
+  resetJourney();
 
   resetFocus();
   clearSearchGlow();
@@ -190,6 +203,35 @@ export function resetExplorationFocus(
 
   if (!options?.skipUrlSync) {
     publish(EVENTS.STATE_RESET, { reason: 'manual-reset', options });
+  }
+
+  if (typeof window !== 'undefined') {
+    const stateWindow = window as Window & {
+      __APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> };
+      __TEST_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> };
+      state?: Record<string, unknown> & { navState?: Record<string, unknown> };
+    };
+    for (const appState of [stateWindow.__APP_STATE__, stateWindow.__TEST_STATE__, stateWindow.state]) {
+      if (!appState) continue;
+      appState.trailDepth = 0;
+      appState.semanticDiveMode = false;
+      appState.focusedNode = null;
+      if (appState.navState) {
+        appState.navState.focusedIndex = null;
+        appState.navState.trailDepth = 0;
+        appState.navState.walkHistoryIndices = [];
+        appState.navState.threadCandidates = [];
+        appState.navState.trailNeighborIndices = [];
+        appState.navState.surface = 'idle';
+        appState.navState.mode = 'overview';
+      }
+    }
+  }
+
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.dataset.threadInspectSurface = 'idle';
+    document.body.dataset.mapContext = 'idle';
+    document.body.removeAttribute('data-focused-node');
   }
 
   refreshCompositionState();

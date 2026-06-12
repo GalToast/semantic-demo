@@ -22,6 +22,7 @@ import {
 } from '@lib/search/tokenizer';
 import { testCompatStore } from './test-compat.svelte';
 import { performSearch } from '@lib/search-engine';
+import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from './navigation.svelte';
 
 // ── Re-export tokenizer functions (typed, no `any`) ──────────────────────────
 
@@ -347,6 +348,7 @@ export async function runSearch(
 
   setSearchQuery(trimmed);
   setSearchStatus('searching');
+  dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' });
 
   try {
     const abortSignal = signal ?? AbortSignal.timeout(8000);

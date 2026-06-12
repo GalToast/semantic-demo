@@ -95,6 +95,17 @@ export interface SearchResult {
   score: number;
   category: string;
   snippet: string;
+  point?: SearchResultPoint;
+}
+
+export interface SearchResultPoint {
+  name?: string;
+  what?: string;
+  cluster?: number;
+  city?: string;
+  website?: string;
+  email?: string;
+  phone?: string;
 }
 
 export interface SearchSummary {

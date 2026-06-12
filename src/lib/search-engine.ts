@@ -70,10 +70,15 @@ function getTotalMatches(
 
 async function fetchSemanticSearchResultsDirect(
   query: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  timeoutMs = 8000
 ): Promise<SearchResult[]> {
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+  let timedOut = false;
+  const timeoutId = window.setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
   const onAbort = (): void => controller.abort();
   signal?.addEventListener('abort', onAbort, { once: true });
 
@@ -109,6 +114,11 @@ async function fetchSemanticSearchResultsDirect(
       .map((row, idx) => mapServiceRow(row, idx))
       .filter((r): r is SearchResult => r !== null)
       .slice(0, 18);
+  } catch (err) {
+    if (timedOut && err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error(`Semantic search timed out after ${timeoutMs}ms.`);
+    }
+    throw err;
   } finally {
     window.clearTimeout(timeoutId);
     signal?.removeEventListener('abort', onAbort);
@@ -126,10 +136,18 @@ function mapServiceRow(row: RawServiceRow, order: number): SearchResult | null {
   return {
     id: String(row.lead_id ?? row.name ?? `result-${order}`),
     name: String(row.name || row.lead_id || 'Unknown'),
-    index: Number.isFinite(row.index) ? Number(row.index) : order,
+    index: order,
     score: Number(row.score ?? row.semantic_score ?? 0),
     category: String(row.category ?? ''),
-    snippet: String(row.public_note ?? row.public_detail ?? row.address ?? '')
+    snippet: String(row.public_note ?? row.public_detail ?? row.address ?? ''),
+    point: {
+      name: row.name ? String(row.name) : undefined,
+      what: row.public_note || row.public_detail || row.address ? String(row.public_note ?? row.public_detail ?? row.address ?? '') : undefined,
+      city: row.city ? String(row.city) : undefined,
+      website: row.website ? String(row.website) : undefined,
+      email: row.email ? String(row.email) : undefined,
+      phone: row.phone ? String(row.phone) : undefined
+    }
   };
 }
 
@@ -668,6 +686,25 @@ export async function performSearch(
   }
 
   const preferLive = shouldPreferLiveSearch();
+  const staticDevFallbackAllowed = canUseStaticDevFallback();
+
+  // When `staticDev=0` is present, surface API failures instead of silently
+  // replacing them with local mock/index results. Contract tests use this to
+  // force `.search-error-state` on the production preview shell.
+  if (!staticDevFallbackAllowed) {
+    try {
+      const apiResults = await fetchSemanticSearchResultsDirect(trimmed, signal, 8000);
+      if (apiResults && apiResults.length > 0) {
+        return apiResults;
+      }
+      throw new Error('Semantic search returned no results from the live API.');
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        throw err;
+      }
+      throw err;
+    }
+  }
 
   // Try the live API first. If `VITE_USE_LIVE_SEARCH` is enabled, the API
   // is the source of truth and any non-OK response throws so we can fall
@@ -688,7 +725,8 @@ export async function performSearch(
     // Dev / static-dev path: still attempt the API for parity, but on any
     // error (502, raw PHP, network) skip directly to the local index.
     try {
-      const apiResults = await fetchSemanticSearchResultsDirect(trimmed, signal);
+      const apiTimeoutMs = canUseStaticDevFallback() ? 1200 : 8000;
+      const apiResults = await fetchSemanticSearchResultsDirect(trimmed, signal, apiTimeoutMs);
       if (apiResults && apiResults.length > 0) {
         return apiResults;
       }

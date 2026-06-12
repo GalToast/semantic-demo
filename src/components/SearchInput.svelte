@@ -53,7 +53,6 @@
 
   let status = $derived($searchState.status);
   let showLoading = $derived(status === 'searching');
-  let showSearchStatus = $derived(status !== 'idle');
   let hasQuery = $derived(queryInput.trim().length > 0);
 
   $effect(() => {
@@ -161,7 +160,9 @@
   $effect(() => {
     return () => {
       if (debounceTimer !== null) clearTimeout(debounceTimer);
-      if (searchAbortController) searchAbortController.abort();
+      // Do not abort an in-flight search just because this input remounts
+      // during the intentional idle -> search surface transition. The result
+      // store is global and should be allowed to settle.
     };
   });
 
@@ -218,19 +219,16 @@
     {/if}
   </div>
 
-  <!-- Loading state -->
-  {#if showSearchStatus}
-    <div class="search-status" id="search-status" role="status" aria-live="polite">
-      <span class="search-spinner" id="search-spinner" aria-hidden={status !== 'searching'}></span>
-      {status === 'searching'
-        ? 'Searching semantic field...'
-        : status === 'error'
-          ? 'Search is unavailable right now.'
-          : status === 'empty'
-            ? 'No matching businesses found.'
-            : 'Search results loaded.'}
-    </div>
-  {/if}
+  <div class="search-status search-hint" id="search-status" role="status" aria-live="polite" hidden={status === 'idle' || status === 'results' || $searchState.results.length > 0}>
+    <span class="search-spinner" id="search-spinner" aria-hidden={status !== 'searching'}></span>
+    {status === 'searching'
+      ? 'Searching semantic field...'
+      : status === 'error'
+        ? 'Search is unavailable right now.'
+        : status === 'empty'
+          ? 'No matching businesses found.'
+          : ''}
+  </div>
 </div>
 
 <style>

@@ -10,6 +10,7 @@
 
 import { get } from 'svelte/store';
 import { navStore, bumpUrlStateRestoreToken } from '@lib/stores/navigation';
+import { setJourneyPhase } from '@lib/stores/journey.svelte';
 import type { NavState, ViewName } from '@lib/types/state';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { runSearch, searchStore } from '@lib/stores/search.svelte';
@@ -194,6 +195,8 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
     if (query && query.trim().length >= 2) {
       await _restoreSearchFromParams(query, anchorId);
     }
+
+    preserveDomForcedFocusSearchSurface();
 
     // URL sync after apply
     if (!options.fromHistory) {
@@ -403,6 +406,29 @@ function _restoreClusterFilter(clusterStr: string): void {
   }
 }
 
+function isDomForcedFocusSearchSurface(): boolean {
+  if (typeof document === 'undefined' || !document.body) return false;
+  return document.body.dataset.focusSearchForced === 'true'
+    || (document.body.dataset.panelSurface === 'focus-search'
+      && document.body.dataset.journeyPhase === 'search');
+}
+
+function preserveDomForcedFocusSearchSurface(): void {
+  if (!isDomForcedFocusSearchSurface()) return;
+
+  document.body.dataset.graphContext = 'focus-search';
+  document.body.dataset.panelSurface = 'focus-search';
+  document.body.dataset.journeyPhase = 'search';
+
+  navStore.update((s) => ({
+    ...s,
+    mode: 'search',
+    surface: 'focus-search',
+    previousSurface: s.surface === 'focus-search' ? s.previousSurface : s.surface,
+  }));
+  setJourneyPhase('search');
+}
+
 /**
  * Restore search state from URL `q` param and optionally focus the `anchor`.
  * Fires the Svelte search engine, populates the search store, and if an
@@ -427,8 +453,10 @@ async function _restoreSearchFromParams(
       }
     }
 
+    const domForcedFocusSearchSurface = isDomForcedFocusSearchSurface();
     const signal = AbortSignal.timeout(30000);
     await runSearch(query, signal);
+    if (domForcedFocusSearchSurface) preserveDomForcedFocusSearchSurface();
 
     // If an anchor was specified by id (non-numeric), focus it once results
     // are available. Numeric anchors are already handled above.
@@ -441,6 +469,7 @@ async function _restoreSearchFromParams(
         }
       }
     }
+    preserveDomForcedFocusSearchSurface();
   } catch (err) {
     debugWarn('[url-state] Search restore from URL failed:', err);
   }
