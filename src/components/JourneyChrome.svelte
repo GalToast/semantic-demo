@@ -18,7 +18,7 @@
   import { hasFocus, focusedIndex, dispatchNavTransition, NAV_TRANSITION_ACTIONS, hasTrail } from '@lib/stores/navigation';
   import { walkHistoryIndices, threadCandidates, trailDepth, journeyPhase, threadSource } from '@lib/stores/journey';
   import { buildCompassStatus } from '@lib/stores/compass';
-  import { threadInspector, threadInspectorActive, clearThreadInspector, pinThread, updateThreadInspector } from '@lib/stores/focus';
+  import { threadInspector, threadInspectorActive, pinThread, updateThreadInspector } from '@lib/stores/focus';
   import { getBusinessRecords, selectedPointStore } from '@lib/stores';
   import { isCompact, isMobile, isCompactLandscape, isUltraCompactPortrait } from '@lib/stores/viewport';
   import { searchSummary, isSearching } from '@lib/stores/search';
@@ -31,8 +31,6 @@
   let { visible = false }: Props = $props();
 
   let hoverTimer: ReturnType<typeof setTimeout> | null = $state(null);
-  let inspectedIndex = $state<number | null>(null);
-  let inspectionLocked = $state(false);
 
   const currentPoint = $derived(selectedPointStore());
   const chromeHasFocus = $derived(hasFocus());
@@ -156,38 +154,11 @@
     return (getBusinessRecords()[idx] as BusinessRecord | undefined) ?? null;
   }
 
-  function scheduleInspection(idx: number): void {
-    if (inspectionLocked) return;
-    if (hoverTimer) clearTimeout(hoverTimer);
-    hoverTimer = setTimeout(() => {
-      inspectedIndex = idx;
-      updateThreadInspector({
-        active: true,
-        inspectedIndex: idx,
-        source: 'rail-hover',
-        segmentCount: 1,
-        braidCount: 0,
-        endpointCount: 2
-      });
-    }, 80);
-  }
-
-  function cancelInspection(): void {
-    if (inspectionLocked) return;
-    if (hoverTimer) {
-      clearTimeout(hoverTimer);
-      hoverTimer = null;
-    }
-    if (inspectedIndex !== null) {
-      clearThreadInspector();
-      inspectedIndex = null;
-    }
-  }
+  // scheduleInspection / cancelInspection removed — neighbor pill
+  // no longer has hover-to-inspect; use inner Inspect button instead.
 
   function inspectCandidate(idx: number): void {
     if (hoverTimer) clearTimeout(hoverTimer);
-    inspectionLocked = true;
-    inspectedIndex = idx;
     updateThreadInspector({
       active: true,
       inspectedIndex: idx,
@@ -198,12 +169,8 @@
     });
   }
 
-  function inspectCandidateFromEvent(event: MouseEvent | PointerEvent | KeyboardEvent, idx: number): void {
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation?.();
-    inspectCandidate(idx);
-  }
+  // inspectCandidateFromEvent removed — neighbor pill no longer has
+  // outer click handler; inner buttons handle their own events.
 
   function stopRailSurfaceEvent(event: Event): void {
     event.stopPropagation();
@@ -401,17 +368,7 @@
             <div
               class="focus-stage-neighbor-pill"
               class:is-next-stop={isNextStop}
-              role="button"
-              tabindex="0"
               data-index={idx}
-              aria-label={isNextStop ? `Next stop: ${name}` : `Explore ${name}`}
-              onpointerdown={stopRailSurfaceEvent}
-              onmouseenter={() => scheduleInspection(idx)}
-              onmouseleave={cancelInspection}
-              onfocus={() => scheduleInspection(idx)}
-              onblur={cancelInspection}
-              onclick={(e) => inspectCandidateFromEvent(e, idx)}
-              onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') inspectCandidateFromEvent(e, idx); }}
             >
               <span class="focus-stage-neighbor-main">
                 <span class="focus-stage-neighbor-index">{String(i + 1).padStart(2, '0')}</span>

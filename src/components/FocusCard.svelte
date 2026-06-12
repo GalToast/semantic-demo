@@ -65,7 +65,7 @@
 
   let bodyPanelSurface = $state('');
   let bodyPanelSurfaceDetail = $state('');
-  let bodyFocusPanelMode = $state('');
+
   let bodyFocusedNode = $state('');
   let bodyNavMode = $state('');
 
@@ -74,14 +74,13 @@
     const syncBodyPanelSurface = () => {
       bodyPanelSurface = document.body.dataset.panelSurface ?? '';
       bodyPanelSurfaceDetail = document.body.dataset.panelSurfaceDetail ?? '';
-      bodyFocusPanelMode = document.body.dataset.focusPanelMode ?? '';
       bodyFocusedNode = document.body.dataset.focusedNode ?? '';
       bodyNavMode = document.body.dataset.navMode ?? '';
     };
     const observer = new MutationObserver(syncBodyPanelSurface);
     observer.observe(document.body, {
       attributes: true,
-      attributeFilter: ['data-panel-surface', 'data-panel-surface-detail', 'data-focus-panel-mode', 'data-focused-node', 'data-nav-mode']
+      attributeFilter: ['data-panel-surface', 'data-panel-surface-detail', 'data-focused-node', 'data-nav-mode']
     });
     syncBodyPanelSurface();
     return () => observer.disconnect();
@@ -127,15 +126,6 @@
   });
 
   let isEmpty = $derived(!selectedRecord);
-  let searchChromeSurface = $derived(
-    !semanticDiveActive &&
-    !isFocusedReactive &&
-      (String(surface) === 'search' ||
-        bodyPanelSurface === 'search' ||
-        (bodyPanelSurface === 'focus-search' &&
-          bodyPanelSurfaceDetail !== 'field-node' &&
-          bodyFocusPanelMode !== 'field-node'))
-  );
   // When a business is focused, always show the card regardless of search surface.
   // The focused business should never be hidden behind the search chrome.
   let cardVisible = $derived(
@@ -287,6 +277,12 @@
     padding: 0.75rem;
     pointer-events: auto;
     animation: card-enter 0.25s ease-out;
+  }
+  /* Offset focus card above journey chrome when both are active
+     to avoid vertical collision on narrow viewports. */
+  :global(body.is-active[data-panel-surface='focus']) .focus-card,
+  :global(body.is-active[data-panel-surface='focus-search']) .focus-card {
+    bottom: 7rem;
   }
 
   @keyframes card-enter {
