@@ -150,20 +150,23 @@
     }
 
     body[data-panel-surface='search']:not([data-panel-surface-detail]) #info-panel.info-panel,
-    body[data-panel-surface='search'][data-panel-surface-detail='none'] #info-panel.info-panel {
+    body[data-panel-surface='search'][data-panel-surface-detail='none'] #info-panel.info-panel,
+    body[data-panel-surface='search'][data-panel-surface-detail='focus-search'] #info-panel.info-panel {
         height: min(57dvh, 480px);
         max-height: min(57dvh, 480px);
     }
 
     body[data-panel-surface='search']:not([data-panel-surface-detail]) #info-panel .info-content,
-    body[data-panel-surface='search'][data-panel-surface-detail='none'] #info-panel .info-content {
+    body[data-panel-surface='search'][data-panel-surface-detail='none'] #info-panel .info-content,
+    body[data-panel-surface='search'][data-panel-surface-detail='focus-search'] #info-panel .info-content {
         height: 100%;
         min-height: 0;
         overflow: hidden;
     }
 
     body[data-panel-surface='search']:not([data-panel-surface-detail]) .search-container.has-query,
-    body[data-panel-surface='search'][data-panel-surface-detail='none'] .search-container.has-query {
+    body[data-panel-surface='search'][data-panel-surface-detail='none'] .search-container.has-query,
+    body[data-panel-surface='search'][data-panel-surface-detail='focus-search'] .search-container.has-query {
         display: flex;
         flex-direction: column;
         height: 100%;

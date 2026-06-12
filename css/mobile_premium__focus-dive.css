@@ -679,6 +679,17 @@
         pointer-events: auto;
     }
 
+    body[data-panel-surface='focus-search'] #btn-focus-dive.focus-stage-dive-btn:not([hidden]) {
+        position: fixed;
+        z-index: var(--z-compass);
+        left: max(12px, env(safe-area-inset-left, 0px));
+        right: max(12px, env(safe-area-inset-right, 0px));
+        bottom: max(12px, env(safe-area-inset-bottom, 0px));
+        width: auto;
+        min-height: 44px;
+        pointer-events: auto;
+    }
+
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .focus-stage-neighbors.active {
         order: 54;
         display: block;
@@ -1883,5 +1894,39 @@
         align-items: center;
         justify-content: center;
         pointer-events: auto;
+    }
+
+    body[data-panel-surface='focus-search'] .focus-stage-dive-btn:not([hidden]) {
+        position: fixed;
+        z-index: var(--z-compass);
+        left: max(12px, env(safe-area-inset-left, 0px));
+        right: max(12px, env(safe-area-inset-right, 0px));
+        bottom: max(10px, env(safe-area-inset-bottom, 0px));
+        width: auto;
+        height: 44px;
+        min-height: 44px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: auto;
+    }
+
+    body[data-panel-surface='focus'] #info-panel.info-panel {
+        pointer-events: none;
+    }
+
+    body[data-panel-surface='focus'] #focus-stage.focus-stage {
+        position: fixed;
+        inset: 0;
+        z-index: var(--z-compass);
+        width: 100vw;
+        height: 100dvh;
+        pointer-events: none;
+    }
+
+    body[data-panel-surface='focus'] #canvas-container,
+    body[data-panel-surface='focus'] #canvas-container canvas {
+        pointer-events: none;
     }
 }
