@@ -1,1 +1,0 @@
-import{Ut as e}from"./index-9NzmlZXn.js";var t=e({restoreWebGLContext:()=>i,setWebGLContextRestoreHandler:()=>r}),n=null;function r(e){n=typeof e==`function`?e:null}function i(){return n?Promise.resolve(n()).then(()=>!0):Promise.resolve(!1)}export{t};

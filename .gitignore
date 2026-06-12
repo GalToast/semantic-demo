@@ -80,3 +80,7 @@ dist/svelte/assets/
 dist/svelte/.git/
 # rollup-plugin-visualizer output (npm run build:svelte generates this)
 dist/svelte/stats.html
+# Stale misconfigured build output (vite outDir relative to src/ when
+# root: 'src' is set). The canonical build is dist/svelte/ above. Anything
+# under src/dist/ is from a stale build and should not be tracked.
+src/dist/
