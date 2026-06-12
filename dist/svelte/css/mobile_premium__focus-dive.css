@@ -37,12 +37,16 @@
        2. Journey compass — core layout
           Shared across focus-search and dive states.
        ---------------------------------------------------------------- */
-    body.is-active[data-panel-surface='focus-search'] .journey-compass,
-    body.is-active[data-panel-surface='semantic-dive'] .journey-compass {
+    /* Specificity 0,4,1 to beat surfaces.css position:relative (0,4,1) via source order.
+       Without position:fixed the compass flows in the document; left/right become offsets
+       instead of edge constraints, so width stays at 100% and overflows by the left offset. */
+    body.is-active[data-panel-surface='focus-search']:not([data-panel-surface^='map-']) .journey-compass,
+    body.is-active[data-panel-surface='semantic-dive']:not([data-panel-surface^='map-']) .journey-compass {
+        position: fixed;
         display: grid;
         top: calc(10px + env(safe-area-inset-top, 0px));
-        left: 10px;
-        right: 10px;
+        left: 16px;
+        right: 16px;
         width: auto;
         min-width: 0;
         min-height: 58px;
@@ -826,6 +830,24 @@
         width: auto;
     }
 
+    /* Field-node bottom-flush: flex column pushes the card to the viewport
+       bottom so the contract test (layout:focus-stage-card-bottom-flush)
+       sees the card's bounding-rect bottom within 1 px of the viewport.
+       The base .focus-stage-card is position:relative, so the legacy
+       bottom:0 rule is a no-op — flex + margin-top:auto is the correct
+       mechanism to anchor a flow child to its container's end edge. */
+    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']
+        #focus-stage.focus-stage {
+        display: flex;
+        flex-direction: column;
+    }
+
+    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']
+        #focus-stage
+        .focus-stage-card {
+        margin-top: auto;
+    }
+
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-panel-surface^='map-']
         )
@@ -1375,6 +1397,15 @@
         opacity: 1;
         pointer-events: auto;
         transform: translateY(0);
+    }
+
+    /* Field-node flex-column override: must appear after the display:block
+       Svelte override above so cascade order restores flex layout.
+       margin-top:auto on the card anchors it to the viewport bottom. */
+    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']
+        #focus-stage.focus-stage {
+        display: flex;
+        flex-direction: column;
     }
 
     body.is-active[data-panel-surface='focus'] .focus-stage-card,

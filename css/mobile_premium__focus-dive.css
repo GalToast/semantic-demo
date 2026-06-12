@@ -1399,6 +1399,15 @@
         transform: translateY(0);
     }
 
+    /* Field-node flex-column override: must appear after the display:block
+       Svelte override above so cascade order restores flex layout.
+       margin-top:auto on the card anchors it to the viewport bottom. */
+    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']
+        #focus-stage.focus-stage {
+        display: flex;
+        flex-direction: column;
+    }
+
     body.is-active[data-panel-surface='focus'] .focus-stage-card,
     body.is-active[data-panel-surface='focus-search'] .focus-stage-card,
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage-card,

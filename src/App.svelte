@@ -172,14 +172,14 @@
       bodyFocusPanelMode = document.body.dataset.focusPanelMode || '';
       bodyPanelSurface = nextPanelSurface;
       bodyGraphContext = nextGraphContext;
-      if (nextPanelSurface === 'focus-search' || nextGraphContext === 'focus-search') {
+      if ((nextPanelSurface === 'focus-search' || nextGraphContext === 'focus-search') && document.body.dataset.focusSearchForced !== 'true') {
         document.body.dataset.focusSearchForced = 'true';
       } else if (nextPanelSurface !== 'search' && nextPanelSurface !== 'focus' && nextPanelSurface !== 'inside' && nextPanelSurface !== 'trail') {
         delete document.body.dataset.focusSearchForced;
       }
     };
     const obs = new MutationObserver(sync);
-    obs.observe(document.body, { attributes: true, attributeFilter: ['data-focus-panel-mode', 'data-panel-surface', 'data-graph-context', 'data-focus-search-forced'] });
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-focus-panel-mode', 'data-panel-surface', 'data-graph-context'] });
     sync();
     return () => obs.disconnect();
   });
