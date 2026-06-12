@@ -12,6 +12,7 @@
     "sg": "ast-grep",
     "mcp:recover": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mcp-recover.ps1",
     "mcp:doctor": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/browser-mcp-doctor.ps1",
+    "skill:doctor": "pwsh -NoLogo -NoProfile -File scripts/skill-doctor.ps1",
     "format": "prettier --write \"{js,tests}/**/*.{js,ts,css}\"",
     "check:shell": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/shell-contract-check.js",
     "check:manifest": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-manifest-contract.mjs && node --loader ./tests/helpers/ts-resolve-loader.mjs tests/package-script-targets-contract.mjs && node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-self-reference-check.mjs",
