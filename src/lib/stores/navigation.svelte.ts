@@ -26,10 +26,10 @@ function readLegacyNavField<T>(legacyKey: keyof LegacyNavState): T | undefined {
       __APP_STATE__?: { navState?: LegacyNavState };
       __TEST_STATE__?: { navState?: LegacyNavState };
     };
-    const nav = w.__semanticState?.navState
-      ?? w.state?.navState
-      ?? w.__APP_STATE__?.navState
-      ?? w.__TEST_STATE__?.navState;
+    const nav = w.__APP_STATE__?.navState
+      ?? w.__TEST_STATE__?.navState
+      ?? w.__semanticState?.navState
+      ?? w.state?.navState;
     return nav?.[legacyKey] as T | undefined;
   } catch {
     return undefined;

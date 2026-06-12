@@ -88,9 +88,9 @@ export function getJourneyCompassPresentationState(
 
   if (phase === 'map') {
     return {
-      density: 'hidden',
+      density: hasActiveRouteContext ? 'compact' : 'hidden',
       copy: 'quiet',
-      actions: 'minimal',
+      actions: hasActiveRouteContext ? 'primary-secondary' : 'minimal',
       navigationOwner: hasActiveRouteContext ? 'map-trail-strip' : 'map-controls'
     };
   }
@@ -243,6 +243,17 @@ export function syncMapTrailStrip(
   title.setAttribute('title', accessibleTitle);
   title.setAttribute('aria-label', accessibleTitle);
   strip.appendChild(title);
+
+  const resetButton = document.createElement('button');
+  resetButton.type = 'button';
+  resetButton.className = 'trail-strip-btn';
+  resetButton.dataset.journeyAction = JOURNEY_ACTIONS.COUNTY_OVERVIEW;
+  resetButton.textContent = 'County';
+  resetButton.setAttribute('aria-label', 'Return to county overview');
+  resetButton.addEventListener('click', () => {
+    executeJourneyCompassAction(JOURNEY_ACTIONS.COUNTY_OVERVIEW);
+  });
+  strip.appendChild(resetButton);
 }
 
 // ── Execute Action ────────────────────────────────────────────────────────

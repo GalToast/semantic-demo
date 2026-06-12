@@ -28,6 +28,20 @@
 
   let { visible = false }: Props = $props();
 
+  let bodyPanelSurface = $state('');
+  let bodyGraphContext = $state('');
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    const sync = () => {
+      bodyPanelSurface = document.body.dataset.panelSurface || '';
+      bodyGraphContext = document.body.dataset.graphContext || '';
+    };
+    const obs = new MutationObserver(sync);
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface', 'data-graph-context'] });
+    sync();
+    return () => obs.disconnect();
+  });
+
   // Track pending timeouts so they can be cleared on unmount.
   const pendingTimers: ReturnType<typeof setTimeout>[] = [];
 
@@ -89,7 +103,7 @@
 
 {#if visible}
   <div
-    class="compass-rail"
+    class="compass-rail compass-steps"
     class:active={compassPhase() === 'active'}
     class:checking={compassPhase() === 'checking'}
     class:synthesizing={compassPhase() === 'synthesizing'}
@@ -100,6 +114,7 @@
     {#each compassSteps() as step (step.phase)}
       <button
         class="compass-step"
+        class:primary={step.phase === 'search' && (bodyPanelSurface === 'focus-search' || bodyGraphContext === 'focus-search') || step.state === 'current' || step.state === 'done'}
         class:current={step.state === 'current'}
         class:done={step.state === 'done'}
         onclick={() => handleAction(step.phase)}

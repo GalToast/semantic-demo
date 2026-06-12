@@ -9,12 +9,20 @@
     pinThread,
     unpinThread
   } from '@lib/stores/focus.svelte';
+  import { dispatchNavTransition, focusedIndex, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
+  import { addWalkHistoryIndex, setTrailDepth, trailDepth, walkHistoryIndices } from '@lib/stores/journey';
 
   interface Props {
     visible?: boolean;
   }
 
   let { visible = false }: Props = $props();
+
+  function bodyInspectedIndex(): number | null {
+    if (typeof document === 'undefined') return null;
+    const value = Number(document.body.dataset.inspectedThreadIndex);
+    return Number.isFinite(value) ? value : null;
+  }
 
   function handlePin(index: number | null, pinnedIndex: number | null): void {
     if (index === null || !Number.isFinite(index)) return;
@@ -24,12 +32,27 @@
 
   function handleFollow(event: MouseEvent): void {
     event.preventDefault();
+    const inspectedIndex = threadInspector().inspectedIndex ?? bodyInspectedIndex();
+    if (inspectedIndex === null || !Number.isFinite(inspectedIndex)) return;
+
+    const currentIndex = focusedIndex();
+    const history = walkHistoryIndices();
+    if (history.length === 0 && currentIndex !== null && Number.isFinite(currentIndex)) {
+      addWalkHistoryIndex(currentIndex);
+    }
+    addWalkHistoryIndex(inspectedIndex);
+    setTrailDepth(Math.max(1, trailDepth()));
+    dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_THREAD, {
+      index: inspectedIndex,
+      reason: 'thread-inspector-follow'
+    });
+    clearThreadInspector();
   }
 </script>
 
 {#if visible && threadInspectorActive()}
   {@const inspector = threadInspector()}
-  {@const inspectedIndex = inspector.inspectedIndex}
+  {@const inspectedIndex = inspector.inspectedIndex ?? bodyInspectedIndex()}
   {@const pinned = inspectedIndex !== null && inspector.pinnedIndex === inspectedIndex}
   <div
     class="thread-inspector"
@@ -63,7 +86,7 @@
         <button
           id="btn-thread-pin"
           type="button"
-          class="thread-action"
+          class="thread-action primary"
           onclick={() => handlePin(inspectedIndex, inspector.pinnedIndex)}
           disabled={inspectedIndex === null}
         >
@@ -177,5 +200,15 @@
     cursor: default;
     color: #6a8a8a;
     background: rgba(255, 255, 255, 0.04);
+  }
+  .thread-action.primary {
+    border-color: rgba(78, 205, 196, 0.45);
+    background: rgba(78, 205, 196, 0.18);
+    color: #7eeee6;
+  }
+  .thread-action.primary:disabled {
+    color: #6a8a8a;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(78, 205, 196, 0.22);
   }
 </style>

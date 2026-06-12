@@ -29,8 +29,8 @@ import { debugWarn } from '@lib/utils/diagnostic-adapter';
 // journey chrome (neighbor rail, map summary, focus card) reflects real data.
 interface LegacyNavState {
   threadCandidates?: ReadonlyArray<unknown>;
-  trailNeighborIndices?: ReadonlyArray<number>;
-  walkHistoryIndices?: ReadonlyArray<number>;
+  trailNeighborIndices?: Iterable<unknown> | ReadonlyArray<unknown>;
+  walkHistoryIndices?: Iterable<unknown> | ReadonlyArray<unknown>;
   threadSource?: string;
   trailDepth?: number;
   focusedIndex?: number | null;
@@ -51,14 +51,51 @@ function readLegacyNavState(): LegacyNavState | null {
       __APP_STATE__?: LegacyState;
       __TEST_STATE__?: LegacyState;
     };
-    return w.__semanticState?.navState
-      ?? w.state?.navState
-      ?? w.__APP_STATE__?.navState
+    return w.__APP_STATE__?.navState
       ?? w.__TEST_STATE__?.navState
+      ?? w.__semanticState?.navState
+      ?? w.state?.navState
       ?? null;
   } catch {
     return null;
   }
+}
+
+function toFiniteIndex(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function toIndexArray(value: unknown): readonly number[] {
+  if (!value) return [];
+  const source = Array.isArray(value)
+    ? value
+    : typeof (value as Iterable<unknown>)[Symbol.iterator] === 'function'
+      ? Array.from(value as Iterable<unknown>)
+      : [];
+  return source
+    .map(toFiniteIndex)
+    .filter((n): n is number => n !== null);
+}
+
+function toCandidateIndexArray(value: unknown): readonly number[] {
+  if (!value) return [];
+  const source = Array.isArray(value)
+    ? value
+    : typeof (value as Iterable<unknown>)[Symbol.iterator] === 'function'
+      ? Array.from(value as Iterable<unknown>)
+      : [];
+  return source
+    .map((candidate) => {
+      if (typeof candidate === 'number' || typeof candidate === 'string') {
+        return toFiniteIndex(candidate);
+      }
+      if (candidate && typeof candidate === 'object') {
+        return toFiniteIndex((candidate as { index?: unknown }).index);
+      }
+      return null;
+    })
+    .filter((n): n is number => n !== null);
 }
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
@@ -211,8 +248,9 @@ export const trailNeighborIndices = () => {
   const local = get(_journeyWritable).trailNeighborIndices;
   if (local && local.length > 0) return local;
   const legacy = readLegacyNavState();
-  if (legacy?.trailNeighborIndices && legacy.trailNeighborIndices.length > 0) {
-    return legacy.trailNeighborIndices;
+  const legacyIndices = toIndexArray(legacy?.trailNeighborIndices);
+  if (legacyIndices.length > 0) {
+    return legacyIndices;
   }
   return local;
 };
@@ -220,11 +258,9 @@ export const threadCandidates = (): ReadonlyArray<number> => {
   const local = get(_journeyWritable).threadCandidates;
   if (local && local.length > 0) return local;
   const legacy = readLegacyNavState();
-  if (legacy?.threadCandidates && legacy.threadCandidates.length > 0) {
-    // Legacy threadCandidates are objects { index, score, ... } — extract just the indices
-    return (legacy.threadCandidates as Array<Record<string, unknown>>)
-      .map((c) => Number(c.index))
-      .filter((n) => Number.isFinite(n));
+  const legacyIndices = toCandidateIndexArray(legacy?.threadCandidates);
+  if (legacyIndices.length > 0) {
+    return legacyIndices;
   }
   return local;
 };
@@ -239,8 +275,9 @@ export const walkHistoryIndices = () => {
   const local = get(_journeyWritable).walkHistoryIndices;
   if (local && local.length > 0) return local;
   const legacy = readLegacyNavState();
-  if (legacy?.walkHistoryIndices && legacy.walkHistoryIndices.length > 0) {
-    return legacy.walkHistoryIndices;
+  const legacyIndices = toIndexArray(legacy?.walkHistoryIndices);
+  if (legacyIndices.length > 0) {
+    return legacyIndices;
   }
   return local;
 };

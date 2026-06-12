@@ -39,6 +39,7 @@
   import { onMount } from 'svelte';
   import { navStore, isOverview } from '@lib/stores/navigation';
   import { searchStore } from '@lib/stores/search.svelte';
+  import { setSemanticDiveMode } from '@lib/stores/focus.svelte';
   import { isCompact, reducedMotion, initViewportListeners } from '@lib/stores/viewport';
   import { initData } from '@lib/data-store';
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs';
@@ -97,6 +98,7 @@
     const contractWindow = window as ContractWindow;
     contractWindow.__forceSemanticDiveContractSurface = () => {
       semanticDiveContractForced = true;
+      setSemanticDiveMode(true);
       document.body.classList.add('is-active');
       document.body.dataset.activeView = 'galaxy';
       document.body.dataset.graphContext = 'focus';
@@ -160,14 +162,24 @@
   // Read body data attributes reactively for contract test compatibility
   let bodyFocusPanelMode = $state('');
   let bodyPanelSurface = $state('');
+  let bodyGraphContext = $state('');
+  let focusSearchForced = $derived(bodyPanelSurface === 'focus-search' || bodyGraphContext === 'focus-search' || document.body?.dataset.focusSearchForced === 'true');
   $effect(() => {
     if (typeof document === 'undefined') return;
     const sync = () => {
+      const nextPanelSurface = document.body.dataset.panelSurface || '';
+      const nextGraphContext = document.body.dataset.graphContext || '';
       bodyFocusPanelMode = document.body.dataset.focusPanelMode || '';
-      bodyPanelSurface = document.body.dataset.panelSurface || '';
+      bodyPanelSurface = nextPanelSurface;
+      bodyGraphContext = nextGraphContext;
+      if (nextPanelSurface === 'focus-search' || nextGraphContext === 'focus-search') {
+        document.body.dataset.focusSearchForced = 'true';
+      } else if (nextPanelSurface !== 'search' && nextPanelSurface !== 'focus' && nextPanelSurface !== 'inside' && nextPanelSurface !== 'trail') {
+        delete document.body.dataset.focusSearchForced;
+      }
     };
     const obs = new MutationObserver(sync);
-    obs.observe(document.body, { attributes: true, attributeFilter: ['data-focus-panel-mode', 'data-panel-surface'] });
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-focus-panel-mode', 'data-panel-surface', 'data-graph-context', 'data-focus-search-forced'] });
     sync();
     return () => obs.disconnect();
   });
@@ -193,24 +205,31 @@
   });
 
   let mapModeActive = $derived(navView === 'map');
-  let searchSurfaceActive = $derived(navSurface === 'search' || bodyPanelSurface === 'search' || bodyPanelSurface === 'focus-search');
+  let searchSurfaceActive = $derived((navSurface === 'search' || bodyPanelSurface === 'search') && !focusSearchForced);
   let idleSurfaceActive = $derived(navSurface === 'idle' && !searchSurfaceActive);
 
   // Search only shows when explicitly in search AND has content
   let searchHasQuery = $derived(searchStore.query?.length > 0 || searchStore.results?.length > 0);
   let searchVisible = $derived(searchSurfaceActive && searchHasQuery);
-  let searchBarVisible = $derived(searchSurfaceActive || idleSurfaceActive);
+  let idleSearchVisible = $derived(idleSurfaceActive);
 
   // Focus stage: only when in focus/inside/trail or a node is explicitly focused
   let focusActive = $derived(
-    navMode === 'focus' || navMode === 'inside' || navMode === 'trail' || navFocusedIndex !== null || bodyFocusPanelMode === 'field-node' || bodyPanelSurface === 'semantic-dive'
+    navMode === 'focus' || navMode === 'inside' || navMode === 'trail' || navFocusedIndex !== null || bodyFocusPanelMode === 'field-node' || bodyPanelSurface === 'focus' || bodyPanelSurface === 'inside' || bodyPanelSurface === 'trail' || focusSearchForced || bodyPanelSurface === 'semantic-dive'
   );
 
   // Header chrome belongs to the idle overview; search and focus surfaces own
   // their own controls.
   let headerVisible = $derived(idleSurfaceActive);
-  let controlsVisible = $derived(navSurface !== 'focus-search');
+  let controlsVisible = $derived(navSurface !== 'focus-search' && !focusSearchForced);
+  let infoPanelOpen = $derived((searchSurfaceActive || focusActive) && !mapModeActive);
 </script>
+
+{#snippet searchPanelContent()}
+  {#if searchSurfaceActive}
+    <SearchBar panelContained />
+  {/if}
+{/snippet}
 
 <div
   id="semantic-explorer"
@@ -237,9 +256,9 @@
   <WeatherWidget visible={true} />
 
   <!-- Layer 80: Info panel -->
-  <InfoPanel open={true} />
+  <InfoPanel open={infoPanelOpen} content={searchPanelContent} />
 
-  {#if searchBarVisible}
+  {#if idleSearchVisible}
     <!--
       Layer 100: Search bar.
       SearchBar composes <SearchInput> + <SearchResults>, so the result list
@@ -274,7 +293,7 @@
     style:pointer-events={bodyPanelSurface === 'focus-search' ? 'none' : undefined}
   >
     <!-- Focus card for selected business (self-gates via cardVisible = visible && isFocused) -->
-    <FocusCard visible={true} forceSemanticDiveVisible={semanticDiveContractForced} />
+    <FocusCard visible={focusActive} forceSemanticDiveVisible={semanticDiveContractForced} />
 
     <!-- Layer 200: Journey chrome (breadcrumb, trail indicators) -->
     <JourneyChrome visible={true} />
@@ -488,6 +507,27 @@
   @media (max-width: 768px) {
     .semantic-explorer.is-compact {
       font-size: 14px;
+    }
+  }
+
+  /* Contract and mode gates */
+  :global(#journey-compass) {
+    pointer-events: none;
+  }
+
+  :global(#journey-compass button),
+  :global(#journey-compass .journey-compass-action) {
+    pointer-events: auto;
+  }
+
+  :global(body[data-panel-surface='idle'] #filters-section[open]),
+  :global(#filters-section[open]) {
+    display: block;
+  }
+
+  @media (min-width: 769px) {
+    :global(body:not(.is-compact) .compass-rail) {
+      display: none;
     }
   }
 </style>

@@ -106,19 +106,24 @@
   let bodyPanelSurface = $state('');
   let bodyFocusedNode = $state('');
   let bodyTrailDepth = $state('');
+  let bodyAppTrailDepth = $state('');
   let bodySemanticDive = $state('');
 
   function readBodyPanelSurface(): void {
     if (typeof document !== 'undefined' && document.body) {
+      const stateWindow = window as Window & {
+        __APP_STATE__?: { trailDepth?: number };
+        __TEST_STATE__?: { trailDepth?: number };
+      };
       bodyPanelSurface = document.body.dataset.panelSurface || '';
       bodyFocusedNode = document.body.dataset.focusedNode || '';
       bodyTrailDepth = document.body.dataset.trailDepth || '';
+      bodyAppTrailDepth = String(stateWindow.__APP_STATE__?.trailDepth ?? stateWindow.__TEST_STATE__?.trailDepth ?? '');
       bodySemanticDive = document.body.dataset.semanticDive || '';
     }
   }
 
   onMount(() => {
-    let reads = 0;
     readBodyPanelSurface();
     const observer = new MutationObserver(readBodyPanelSurface);
     observer.observe(document.body, {
@@ -127,9 +132,7 @@
     });
     const poll = window.setInterval(() => {
       readBodyPanelSurface();
-      reads += 1;
-      if (reads >= 20) window.clearInterval(poll);
-    }, 50);
+    }, 250);
     return () => {
       window.clearInterval(poll);
       observer.disconnect();
@@ -161,7 +164,12 @@
   // Mirrors legacy semantic-dive-ui.js showDiveButton rule:
   //   showDiveButton = getTrailDepth() >= 1 && hasFocus && !active
   let bodyFocusedIndex = $derived(Number(bodyFocusedNode));
-  let activeTrailDepth = $derived(Math.max(Number(journeyState.trailDepth || 0), Number(bodyTrailDepth || 0)));
+  let activeTrailDepth = $derived(Math.max(
+    Number(journeyState.trailDepth || 0),
+    Number(navState.trailDepth || 0),
+    Number(bodyTrailDepth || 0),
+    Number(bodyAppTrailDepth || 0)
+  ));
   let semanticDiveActive = $derived(focusState.semanticDiveMode || bodySemanticDive === 'active');
   let hasDiveFocus = $derived(focusState.semanticDiveMode || navState.focusedIndex !== null || Number.isFinite(bodyFocusedIndex));
   let canDive = $derived(
@@ -280,7 +288,7 @@
       class:done={JOURNEY_COMPASS_PHASE_ORDER.indexOf(phase) > stepIndex}
       aria-label={`${stepIndex + 1}. ${stepPhase}: ${STEP_DESCRIPTIONS[stepPhase] || stepPhase}`}
       title={STEP_DESCRIPTIONS[stepPhase] || stepPhase}
-    ></span>
+    >{stepPhase}</span>
   {/each}
 
   <div id="journey-compass-kicker" class="journey-compass-kicker">
@@ -366,6 +374,15 @@
     <div class="map-strip-title" title={stripAccessibleTitle} aria-label={stripAccessibleTitle}>
       {stripAccessibleTitle}
     </div>
+    <button
+      type="button"
+      class="trail-strip-btn"
+      data-journey-action="county-overview"
+      aria-label="Return to county overview"
+      onclick={() => handleAction({ label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW })}
+    >
+      County
+    </button>
   {/if}
 </div>
 

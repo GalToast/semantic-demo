@@ -168,6 +168,7 @@ export function computeParityAttributes(): ParityAttributeMap {
       if (nav.surface === 'map-focus-search') return 'map-focus-search';
       if (nav.surface === 'map-trail') return 'map-trail';
       if (nav.surface === 'map') return 'map';
+      return 'map-idle';
     }
     if (nav.surface === 'focus-search') return 'focus-search';
     if (focus.semanticDiveMode) return 'semantic-dive';

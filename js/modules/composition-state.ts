@@ -154,6 +154,10 @@ export function applyCompositionState(params: { state?: any; root?: HTMLElement 
     const { state: ctxParam, root = document.body } = params;
     if (!root?.dataset) return;
     const ctx = ctxParam || _defaultState;
+    const forcedFocusSearchSurface = root.dataset.focusSearchForced === 'true'
+        || (root.dataset.panelSurface === 'focus-search'
+            && (root.dataset.graphContext === 'focus-search'
+                || root.dataset.journeyPhase === 'search'));
 
     const flags = composeViewFlags(ctx, root);
     const { activeView, hasFocusRecord, searchIntent, hasActiveTrailState } = flags;
@@ -172,6 +176,24 @@ export function applyCompositionState(params: { state?: any; root?: HTMLElement 
     };
 
     const isLiveRoute = ctx.currentSearchSummary || hasFocusRecord;
+    if (forcedFocusSearchSurface) {
+        root.classList.add('is-active');
+        if (!root.dataset.panelSurfaceDetail) {
+            root.dataset.panelSurfaceDetail = 'peek';
+        }
+        derivedResult = {
+            ...derivedResult,
+            activeView: root.dataset.activeView || 'galaxy',
+            graphContext: 'focus-search',
+            mapContext: root.dataset.mapContext || 'idle',
+            panelSurface: 'focus-search',
+            panelSurfaceDetail: root.dataset.panelSurfaceDetail || 'peek',
+            isActive: true
+        };
+        compositionStore.set(derivedResult);
+        syncSharedCompositionUi();
+        return;
+    }
     if (isLiveRoute) {
         composeOnboardingHints();
 

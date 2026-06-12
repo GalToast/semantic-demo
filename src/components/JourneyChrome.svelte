@@ -14,6 +14,7 @@
       hover preview, next-stop badge, and relationship labels
 -->
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { hasFocus, focusedIndex, dispatchNavTransition, NAV_TRANSITION_ACTIONS, hasTrail } from '@lib/stores/navigation';
   import { walkHistoryIndices, threadCandidates, trailDepth, journeyPhase, threadSource } from '@lib/stores/journey';
   import { buildCompassStatus, JOURNEY_ACTIONS } from '@lib/stores/compass';
@@ -32,13 +33,31 @@
   let neighborIndex = $state(0);
   let hoverTimer: ReturnType<typeof setTimeout> | null = $state(null);
   let inspectedIndex = $state<number | null>(null);
+  let inspectionLocked = $state(false);
+  let legacyRefreshTick = $state(0);
+
+  onMount(() => {
+    const id = window.setInterval(() => {
+      legacyRefreshTick += 1;
+    }, 250);
+    return () => window.clearInterval(id);
+  });
 
   const currentPoint = $derived(selectedPointStore());
   const currentName = $derived(currentPoint?.name ?? '');
+  const chromeHasFocus = $derived.by(() => {
+    void legacyRefreshTick;
+    return hasFocus();
+  });
+  const chromeHasTrail = $derived.by(() => {
+    void legacyRefreshTick;
+    return hasTrail();
+  });
 
   // ── Walk breadcrumb ────────────────────────────────────────────────────────
 
   const dedupedWalkHistory = $derived.by(() => {
+    void legacyRefreshTick;
     const indices = walkHistoryIndices();
     const seen = new Set<number>();
     const result: number[] = [];
@@ -60,7 +79,7 @@
   });
 
   const showBreadcrumb = $derived(
-    hasFocus() && walkHistoryIndices().length > 1
+    chromeHasFocus && walkHistoryIndices().length > 1
   );
 
   function walkToBreadcrumbIndex(targetIndex: number, targetOrder: number): void {
@@ -71,12 +90,19 @@
 
   // ── Trail controls ────────────────────────────────────────────────────────
 
-  const canGoBack = $derived(walkHistoryIndices().length > 1);
-  const neighborCount = $derived(threadCandidates().length);
+  const canGoBack = $derived.by(() => {
+    void legacyRefreshTick;
+    return walkHistoryIndices().length > 1;
+  });
+  const neighborCount = $derived.by(() => {
+    void legacyRefreshTick;
+    return threadCandidates().length;
+  });
   const hasNext = $derived(neighborCount > 0);
 
   const trailContextText = $derived.by(() => {
-    if (!hasFocus() || !currentPoint) return '';
+    void legacyRefreshTick;
+    if (!chromeHasFocus || !currentPoint) return '';
     const name = currentPoint?.name || 'this business';
     const walkLen = walkHistoryIndices().length;
     const focusIdx = focusedIndex();
@@ -93,7 +119,8 @@
   });
 
   const progressText = $derived.by(() => {
-    if (!hasFocus()) return 'Pick a business, then explore its nearby neighbors.';
+    void legacyRefreshTick;
+    if (!chromeHasFocus) return 'Pick a business, then explore its nearby neighbors.';
     if (trailDepth() >= 1 && walkHistoryIndices().length >= 0) {
       return `Stop ${walkHistoryIndices().length + 1} of ${neighborCount}`;
     }
@@ -103,7 +130,8 @@
   });
 
   const nextStopName = $derived.by(() => {
-    if (!hasFocus() || neighborCount === 0) return null;
+    void legacyRefreshTick;
+    if (!chromeHasFocus || neighborCount === 0) return null;
     const first = threadCandidates()[0];
     if (first == null || !Number.isFinite(first)) return null;
     const pt = getBusinessRecords()[first];
@@ -111,7 +139,7 @@
   });
 
   function goPrev(): void {
-    if (!hasFocus() || !canGoBack) return;
+    if (!chromeHasFocus || !canGoBack) return;
     const history = walkHistoryIndices();
     if (history.length <= 1) return;
     const prevIdx = history[history.length - 2];
@@ -120,7 +148,7 @@
   }
 
   function goNext(): void {
-    if (!hasFocus() || !hasNext) return;
+    if (!chromeHasFocus || !hasNext) return;
     const first = threadCandidates()[0];
     if (first == null || !Number.isFinite(first)) return;
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, { index: first });
@@ -136,6 +164,7 @@
   });
 
   const filteredCandidates = $derived.by(() => {
+    void legacyRefreshTick;
     const candidates = threadCandidates();
     const focusIdx = focusedIndex();
     return candidates
@@ -144,7 +173,7 @@
   });
 
   const showNeighborRail = $derived(
-    hasFocus() &&
+    chromeHasFocus &&
     filteredCandidates.length > 0 &&
     !threadInspectorActive()
   );
@@ -155,6 +184,7 @@
   }
 
   function scheduleInspection(idx: number): void {
+    if (inspectionLocked) return;
     if (hoverTimer) clearTimeout(hoverTimer);
     hoverTimer = setTimeout(() => {
       inspectedIndex = idx;
@@ -170,6 +200,7 @@
   }
 
   function cancelInspection(): void {
+    if (inspectionLocked) return;
     if (hoverTimer) {
       clearTimeout(hoverTimer);
       hoverTimer = null;
@@ -182,6 +213,7 @@
 
   function inspectCandidate(idx: number): void {
     if (hoverTimer) clearTimeout(hoverTimer);
+    inspectionLocked = true;
     inspectedIndex = idx;
     updateThreadInspector({
       active: true,
@@ -198,6 +230,7 @@
   }
 
   function walkToCandidate(idx: number): void {
+    inspectionLocked = false;
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
       index: idx,
       reason: 'neighbor-rail'
@@ -218,7 +251,7 @@
     const summary = searchSummary() as ({ query?: string; anchorIndex?: number | null; resultCount?: number } | null);
     const summaryRec = summary as Record<string, unknown> | null;
     const queryLabel = summaryRec?.query ? `"${String(summaryRec.query)}"` : 'semantic search';
-    const isFocus = hasFocus();
+    const isFocus = chromeHasFocus;
     const journeyPh = journeyPhase();
     const insideActive = journeyPh === 'inside' && isFocus;
     const walkLen = walkHistoryIndices().length;
@@ -267,7 +300,7 @@
     </div>
 
     <!-- ├─ Journey inner container (activation wrapper) ─────────────────────── -->
-    <div class="focus-stage-journey" id="focus-stage-journey" class:active={hasFocus()}>
+    <div class="focus-stage-journey" id="focus-stage-journey" class:active={chromeHasFocus}>
     <!-- ├─ Walk Breadcrumb ─────────────────────────────────────────────────── -->
     {#if showBreadcrumb}
       <div class="walk-breadcrumb" id="walk-breadcrumb" class:visible={showBreadcrumb} role="navigation" aria-label="Trail history">
@@ -296,11 +329,11 @@
     {/if}
 
     <!-- ├─ Trail Controls ──────────────────────────────────────────────────── -->
-    {#if hasFocus() || hasTrail()}
+    {#if chromeHasFocus || chromeHasTrail}
       <div
         class="trail-controls focus-stage-actions"
         id="trail-controls"
-        class:active={hasFocus() || hasTrail()}
+        class:active={chromeHasFocus || chromeHasTrail}
         role="toolbar"
         aria-label="Trail navigation"
       >
@@ -384,8 +417,8 @@
               onmouseleave={cancelInspection}
               onfocus={() => scheduleInspection(idx)}
               onblur={cancelInspection}
-              onclick={() => walkToCandidate(idx)}
-              onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); walkToCandidate(idx); } }}
+              onclick={() => inspectCandidate(idx)}
+              onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inspectCandidate(idx); } }}
             >
               <span class="focus-stage-neighbor-main">
                 <span class="focus-stage-neighbor-index">{String(i + 1).padStart(2, '0')}</span>
@@ -424,7 +457,7 @@
           {/each}
         </div>
       </div>
-    {:else if hasFocus() && filteredCandidates.length === 0 && !threadInspectorActive()}
+    {:else if chromeHasFocus && filteredCandidates.length === 0 && !threadInspectorActive()}
       <div class="focus-stage-neighbors" id="focus-stage-neighbors">
         <div class="neighbor-count" id="focus-stage-neighbor-count">0 visible neighbors</div>
         <div class="focus-stage-neighbor-list" id="focus-stage-neighbor-list">
@@ -607,10 +640,15 @@
     color: #b0d0d0;
     text-align: center;
     line-height: 1.3;
-    max-width: 280px;
+    max-width: 320px;
+    /* Wrap instead of ellipsis so the full trail context stays readable.
+       Cap at 2 lines to keep the journey chrome height bounded. */
+    white-space: normal;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
   .progress-text {
     font-family: 'JetBrains Mono', monospace;

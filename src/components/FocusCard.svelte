@@ -257,9 +257,9 @@
           </div>
         {/if}
 
-        {#if currentFocusedIdx !== null}
+        {#if selectedRecord}
           <div class="selected-card-footer">
-            <span class="footer-index">Node {currentFocusedIdx}</span>
+            <span class="footer-cluster">{formatClusterName(selectedRecord.cluster)}{selectedRecord.category ? ` · ${selectedRecord.category}` : ''}</span>
             {#if selectionSource === 'field'}
               <span class="footer-source">Field focus</span>
             {:else if selectionSource === 'search'}
@@ -420,10 +420,10 @@
     border-top: 1px solid rgba(78, 205, 196, 0.08);
     margin-top: 0.2rem;
   }
-  .footer-index {
+  .footer-cluster {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.6rem;
-    color: rgba(224, 240, 240, 0.3);
+    color: rgba(224, 240, 240, 0.45);
   }
   .footer-source {
     font-size: 0.55rem;
@@ -453,6 +453,13 @@
     :global(body[data-panel-surface='semantic-dive']) :is(.focus-card, .focus-stage-card) {
       border-radius: 22px 22px 0 0;
       padding: 18px 14px 10px;
+    }
+
+    /* Bottom-sheet radius applied to focus-search + field-node for visual
+       consistency with the semantic-dive bottom-sheet (Phase 1 #11). */
+    :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) :is(.focus-card, .focus-stage-card),
+    :global(body[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) :is(.focus-card, .focus-stage-card) {
+      border-radius: 22px 22px 0 0;
     }
   }
 </style>
