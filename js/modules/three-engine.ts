@@ -320,7 +320,9 @@ export function initThreeJS() {
 
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height);
-    renderer.setClearColor(SCENE_ATMOSPHERE.fogColor, SCENE_ATMOSPHERE.clearAlpha);
+    // Keep the canvas slightly translucent so the subtle radial gradient behind
+    // #canvas-container can bleed through without changing scene fog/lighting.
+    renderer.setClearColor(SCENE_ATMOSPHERE.fogColor, 0.96);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = SCENE_ATMOSPHERE.toneExposure;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
