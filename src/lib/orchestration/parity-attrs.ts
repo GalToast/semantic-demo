@@ -198,6 +198,11 @@ export function computeParityAttributes(
   })();
 
   const panelSurfaceMode = ((): string => {
+    // 'semantic-dive' is the highest-priority surface — it must take
+    // precedence over focus-search/map-focus-search so parity-attrs
+    // doesn't overwrite the manually-set body[data-panel-surface='semantic-dive']
+    // when the user enters semantic-dive from another surface.
+    if (focus.semanticDiveMode) return 'semantic-dive';
     if (nav.currentView === 'map') {
       if (nav.surface === 'focus-search' || nav.surface === 'search' || search.summary) return 'map-search';
       if (nav.surface === 'focus') return 'map-focus';
@@ -207,11 +212,6 @@ export function computeParityAttributes(
       return 'map-idle';
     }
     if (nav.surface === 'focus-search') return 'focus-search';
-    // 'semantic-dive' is a legacy string the canvas-hit-test contract
-    // asserts on body.dataset.panelSurface. It is set by the legacy
-    // semantic-dive-ui / composition-state modules when active. The Svelte
-    // focus store tracks semanticDiveMode; mirror that here.
-    if (focus.semanticDiveMode) return 'semantic-dive';
     if (nav.surface === 'map-focus-search') return 'map-focus-search';
     if (nav.surface === 'map-trail') return 'map-trail';
     if (nav.surface === 'thread-inspect') return 'thread-inspect';
