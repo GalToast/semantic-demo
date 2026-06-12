@@ -231,6 +231,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
         (lState as Record<string, unknown>).nodesAreSettling = true;
         (lState as Record<string, unknown>).autoRotate = false;
       });
+      syncPocketNodesToStore();
       return;
     }
   }
@@ -242,6 +243,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
       (lState as Record<string, unknown>).nodesAreSettling = false;
       (lState as Record<string, unknown>).autoRotate = true;
     });
+    syncPocketNodesToStore();
     return;
   }
 
@@ -306,6 +308,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
       (lState as Record<string, unknown>).nodesAreSettling = true;
       (lState as Record<string, unknown>).autoRotate = false;
     });
+    syncPocketNodesToStore();
     return;
   }
 
@@ -391,19 +394,21 @@ export function applyLocalNeighborhoodFocus(index: number): void {
   withStateMutation(() => {
     (lState as Record<string, unknown>).nodesAreSettling = true;
   });
+  syncPocketNodesToStore();
 }
 
-// ── Mirror Legacy Pocket → Svelte Store ─────────────────────────────────────
+// ── Sync Pocket Nodes → Svelte Store ────────────────────────────────────────
 
 /**
  * Read the legacy `state.navState.focusPocketIndices` + `targetPositions`
  * + `focusPocketRoleByIndex` and push a derived `FocusPocketNode[]` into
- * the Svelte `focusStore.pocketNodes`. The constellation UI in
- * `FocusPocket.svelte` reads from that Svelte store, so without this
- * mirror the pocket renders empty even when the legacy engine has built
- * the constellation.
+ * the Svelte `focusStore.pocketNodes`. Called from the normal exit points
+ * of `applyLocalNeighborhoodFocus` so the a11y layer (which reads the
+ * Svelte store) stays in sync with the legacy engine state. Replaces the
+ * previous public `mirrorFocusPocketToSvelteStore` which the FocusPocket
+ * HTML overlay invoked after the build step.
  */
-export function mirrorFocusPocketToSvelteStore(): void {
+function syncPocketNodesToStore(): void {
   const lState = state as Record<string, unknown>;
   const navState = lState.navState as Record<string, unknown> | undefined;
   if (!navState) return;

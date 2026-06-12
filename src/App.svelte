@@ -55,6 +55,7 @@
   import SearchBar from '@components/SearchBar.svelte';
   import JourneyChrome from '@components/JourneyChrome.svelte';
   import FocusPocket from '@components/FocusPocket.svelte';
+  import FocusPocketA11y from '@components/FocusPocketA11y.svelte';
   import Filters from '@components/Filters.svelte';
   import CompassRail from '@components/CompassRail.svelte';
   import LoadingOverlay from '@components/LoadingOverlay.svelte';
@@ -302,12 +303,26 @@
 
     <!-- Layer 500: Active journey visualization — rendered by Three.js -->
 
-    <!-- Layer 600: Focus pocket (self-gates via visible && hasFocus()) -->
+    <!--
+      Layer 600: Focus pocket DOM anchor (hollow shell post-Phase-2 migration).
+      The constellation is 3D-only; the visible HTML overlay was removed in
+      Phase 2 of focus-pocket-rendering-decision-2026-06-12.md. This component
+      retains the #focus-pocket element as a contract-test parent hook and
+      rebuilds the pocket (via applyLocalNeighborhoodFocus) when focusedIndex
+      changes. The keyboard/screen-reader surface lives in FocusPocketA11y.
+    -->
     <FocusPocket visible={true} />
   </div>
 
   <!-- Mini-map trail (self-gates via visible && hasTrail() && trail.length > 0) -->
   <MapSummary visible={!mapModeActive} />
+
+  <!--
+    Focus pocket accessibility surface (Phase 4 of focus-pocket-rendering-decision-2026-06-12.md).
+    Shadow list for screen readers + keyboard users; "View as list" toggle reveals
+    the same list visibly for users who prefer text-based navigation.
+  -->
+  <FocusPocketA11y />
 
   <!-- Layer 700: Compass rail -->
   <CompassRail visible={focusActive} />

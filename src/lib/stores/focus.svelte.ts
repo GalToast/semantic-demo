@@ -162,6 +162,8 @@ export interface FocusStoreState extends FocusState {
   selectedBusiness: SelectedBusinessCard | null;
   /** Whether the info panel is open. */
   infoPanelOpen: boolean;
+  /** Whether the a11y pocket list is visible (opt-in toggle). */
+  pocketListVisible: boolean;
 }
 
 export interface PocketMotionData {
@@ -201,7 +203,8 @@ const _focusWritable = writable<FocusStoreState>({
   threadInspectorPointerInside: false,
   canvasThreadInspectionClearTimer: null,
   selectedBusiness: null,
-  infoPanelOpen: true
+  infoPanelOpen: true,
+  pocketListVisible: false
 });
 
 // ── FocusStore API ──────────────────────────────────────────────────────────
@@ -275,6 +278,10 @@ export function clearPocketNodes(): void {
     pocketNodes: [],
     pocketMotionByIndex: new Map()
   }));
+}
+
+export function setPocketListVisible(visible: boolean): void {
+  _focusWritable.update(s => ({ ...s, pocketListVisible: visible }));
 }
 
 export function setSettling(settling: boolean): void {
@@ -460,7 +467,8 @@ export function resetFocus(): void {
     threadInspectorPointerInside: false,
     canvasThreadInspectionClearTimer: null,
     selectedBusiness: null,
-    infoPanelOpen: true
+    infoPanelOpen: true,
+    pocketListVisible: false
   });
   if (typeof document !== 'undefined' && document.body) {
     document.body.dataset.focusTransition = '';

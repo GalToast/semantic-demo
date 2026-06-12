@@ -1,14 +1,21 @@
 <!--
-  @components/FocusPocket.svelte — Focus pocket constellation
+  @components/FocusPocket.svelte — Focus pocket DOM anchor (post-Phase-2 hollow shell)
 
-  Self-populating: when a focused index is established, calls
-  applyLocalNeighborhoodFocus() to build the deterministic constellation.
-  Clears pocket nodes when focus is released.
+  Phase 1 of the 3D-only focus-pocket migration (focus-pocket-rendering-decision-2026-06-12.md)
+  landed role color tinting on the 3D spore render. Phase 2 removes the visible HTML overlay
+  and the `mirrorFocusPocketToSvelteStore` indirection. This component remains as a DOM
+  contract anchor (#focus-pocket element) that thread-inspector and other tests rely on as
+  a parent element, but it no longer renders focus nodes. The constellation is 3D-only;
+  the keyboard/screen-reader surface lives in `FocusPocketA11y.svelte`.
+
+  The $effect below still rebuilds the focus pocket when `focusedIndex()` changes, so the
+  a11y shadow list and the 3D engine stay in lockstep. Clicking a node in the a11y list
+  calls `setFocusedIndex()` → this effect fires → `applyLocalNeighborhoodFocus` rebuilds.
 -->
 <script lang="ts">
-  import { focusPocketNodes, anchorIndicator, clearPocketNodes } from '@lib/stores/focus';
   import { hasFocus, focusedIndex } from '@lib/stores/navigation';
-  import { applyLocalNeighborhoodFocus, mirrorFocusPocketToSvelteStore } from '@lib/focus/pocket';
+  import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket';
+  import { clearPocketNodes } from '@lib/stores/focus.svelte';
 
   interface Props {
     visible?: boolean;
@@ -26,9 +33,6 @@
     if (focused && Number.isFinite(idx) && idx !== null && idx !== lastFocusIndex) {
       lastFocusIndex = idx;
       applyLocalNeighborhoodFocus(idx);
-      // Mirror the legacy focusPocketIndices/positions into the Svelte
-      // focusStore.pocketNodes so the constellation actually renders.
-      mirrorFocusPocketToSvelteStore();
     } else if (!focused && lastFocusIndex !== null) {
       lastFocusIndex = null;
       clearPocketNodes();
@@ -37,75 +41,11 @@
 </script>
 
 {#if visible && hasFocus()}
-  <div class="focus-pocket" id="focus-pocket" aria-label="Focus neighborhood">
-    {#each focusPocketNodes() as node (node.index)}
-      <div
-        class="focus-node"
-        class:direct={node.role === 'direct'}
-        class:support={node.role === 'support'}
-        class:civic={node.role === 'civic'}
-        style="left: {((node.position[0] + 1) / 2) * 100}%; top: {((1 - node.position[1]) / 2) * 100}%"
-        role="button"
-        tabindex={0}
-        aria-label="{node.label} ({node.role})"
-      >
-        <!-- node-dot removed: 3D spores are the canonical visual -->
-        <span class="node-label">{node.label}</span>
-      </div>
-    {/each}
-
-    {#if anchorIndicator().active && anchorIndicator().position}
-      {@const pos = anchorIndicator().position!}
-      <div
-        class="anchor-indicator"
-        style="left: {((pos[0] + 1) / 2) * 100}%; top: {((1 - pos[1]) / 2) * 100}%"
-        aria-hidden="true"
-      ></div>
-    {/if}
-  </div>
+  <!--
+    Hollow #focus-pocket element. Preserved as a parent DOM hook for the
+    thread-inspector contract test and any other contract that queries
+    #focus-pocket as an ancestor. The constellation is rendered by Three.js;
+    the keyboard/screen-reader list lives in FocusPocketA11y.svelte.
+  -->
+  <div id="focus-pocket" aria-hidden="true"></div>
 {/if}
-
-<style>
-  .focus-pocket {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: var(--z-focus-card);
-    pointer-events: none;
-  }
-  .focus-node {
-    position: absolute;
-    transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    pointer-events: auto;
-    cursor: pointer;
-    transition: opacity 0.3s, transform 0.3s;
-  }
-  .node-label {
-    font-size: 0.55rem;
-    color: #b0d0d0;
-    margin-top: 0.2rem;
-    white-space: nowrap;
-    max-width: 80px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-  }
-  .anchor-indicator {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    border: 2px solid #4ecdc4;
-    transform: translate(-50%, -50%);
-    animation: anchor-pulse 1.5s ease-in-out infinite;
-  }
-  @keyframes anchor-pulse {
-    0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
-  }
-</style>
