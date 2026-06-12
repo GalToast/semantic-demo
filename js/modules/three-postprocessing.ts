@@ -2,8 +2,10 @@
  * three-postprocessing.ts — EffectComposer wrapper for Semantic Explorer.
  *
  * Wraps the existing Three.js renderer with postprocessing library v6 effects:
- *   - BloomEffect (atmospheric glow on focus pocket / bright elements)
- *   - DepthOfFieldEffect (depth-of-field, gated behind premium mode toggle)
+ *   - VignetteEffect (subtle dark edges, always on in premium mode)
+ *   - ChromaticAberrationEffect (subtle RGB channel offset, always on in premium)
+ *   - BloomEffect (atmospheric glow on bright elements, opt-in via params)
+ *   - DepthOfFieldEffect (depth-of-field, opt-in even within premium mode)
  *
  * All effects are opt-in via `data-premium-mode` on <body>. When premium mode
  * is OFF the render loop falls back to plain `renderer.render()` with zero
@@ -20,6 +22,8 @@ import {
     EffectPass,
     BloomEffect,
     DepthOfFieldEffect,
+    VignetteEffect,
+    ChromaticAberrationEffect,
 } from 'postprocessing';
 import { debugWarn } from './diagnostic-adapter.ts';
 
@@ -28,11 +32,24 @@ import { debugWarn } from './diagnostic-adapter.ts';
 let _composer: EffectComposer | null = null;
 let _bloomEffect: BloomEffect | null = null;
 let _dofEffect: DepthOfFieldEffect | null = null;
+let _vignetteEffect: VignetteEffect | null = null;
+let _chromaticAberrationEffect: ChromaticAberrationEffect | null = null;
 let _renderPass: RenderPass | null = null;
 let _initialized = false;
 let _premiumMode = false;
 
 // ── Default effect parameters ────────────────────────────────────────────────
+
+/** Vignette: darken edges subtly, with smooth falloff. Offset 0.5, darkness 0.6. */
+const VIGNETTE_DEFAULTS = {
+    offset: 0.5,
+    darkness: 0.6,
+};
+
+/** ChromaticAberration: subtle RGB channel offset (lens distortion feel). */
+const CHROMATIC_ABERRATION_DEFAULTS = {
+    offset: new THREE.Vector2(0.0015, 0.0015),
+};
 
 /** Conservative atmospheric glow — subtle on the focus pocket, not Las Vegas. */
 const BLOOM_DEFAULTS = {
@@ -107,7 +124,26 @@ export function initPostProcessing(
         _renderPass.enabled = _premiumMode;
         _composer.addPass(_renderPass);
 
-        // BloomEffect — atmospheric glow
+        // VignetteEffect — soft dark edges, always on in premium mode
+        _vignetteEffect = new VignetteEffect({
+            offset: VIGNETTE_DEFAULTS.offset,
+            darkness: VIGNETTE_DEFAULTS.darkness,
+        });
+        const vignettePass = new EffectPass(camera, _vignetteEffect);
+        vignettePass.enabled = _premiumMode;
+        _composer.addPass(vignettePass);
+
+        // ChromaticAberrationEffect — subtle RGB channel offset
+        _chromaticAberrationEffect = new ChromaticAberrationEffect({
+            offset: CHROMATIC_ABERRATION_DEFAULTS.offset,
+            radialModulation: false,
+            modulationOffset: 0,
+        });
+        const chromaticAberrationPass = new EffectPass(camera, _chromaticAberrationEffect);
+        chromaticAberrationPass.enabled = _premiumMode;
+        _composer.addPass(chromaticAberrationPass);
+
+        // BloomEffect — atmospheric glow (only fires on bright elements)
         _bloomEffect = new BloomEffect({
             luminanceThreshold: BLOOM_DEFAULTS.luminanceThreshold,
             intensity: BLOOM_DEFAULTS.intensity,
@@ -135,6 +171,8 @@ export function initPostProcessing(
             (window as any).__semanticPostprocessing = {
                 setPremiumMode,
                 updateBloomParams,
+                updateVignetteParams,
+                updateChromaticAberrationParams,
                 setDofEnabled,
                 isPremiumMode,
             };
@@ -145,7 +183,7 @@ export function initPostProcessing(
             document.body.dataset.premiumMode = 'true';
         }
 
-        debugWarn('[postprocessing] initialized — bloom + DOF ready');
+        debugWarn('[postprocessing] initialized — vignette + CA + bloom + DOF ready');
     } catch (err) {
         console.error('[postprocessing] init failed, falling back to vanilla renderer:', err);
         disposePostProcessing();
