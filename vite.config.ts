@@ -1,5 +1,4 @@
 import { svelte } from '@sveltejs/vite-plugin-svelte';
-import basicSsl from '@vitejs/plugin-basic-ssl';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { createReadStream } from 'node:fs';
 import { copyFile, cp, mkdir, stat } from 'node:fs/promises';
@@ -176,7 +175,15 @@ export default defineConfig({
       '@': SRC_DIR,
       '@lib': resolve(SRC_DIR, 'lib'),
       '@components': resolve(SRC_DIR, 'components'),
-      '@legacy': resolve(__dirname, 'js')
+      '@legacy': resolve(__dirname, 'js'),
+      // Three.js dedup (Win #2 from tmp/bundle-decomposition-2026-06-12.md)
+      // is still pending deeper investigation. Initial attempts with
+      // `resolve.alias['three/build/three.core.js']` and
+      // `resolve.dedupe: ['three']` did not collapse the duplicate, even
+      // with `optimizeDeps.exclude: ['three']`. The webgpu build in
+      // node_modules/three/build/three.webgpu.js does
+      // `import './three.core.js'`, which is the source of the dup, but
+      // we don't use the webgpu build. Tracking this as follow-up work.
     }
   },
   server: {
