@@ -66,27 +66,65 @@ The contract test connects to `http://127.0.0.1:8795/vector-explorer-polished.ht
 
 ---
 
-## 3. Visual State Audit Results — 2026-06-11 (3 of 25 states)
+## 3. Visual State Audit Results — 2026-06-12 (13 of 25 states)
 
-States captured: `01-mobile-idle`, `03-mobile-focus-first-result`, `07-desktop-idle`
+States captured: `01-mobile-idle`, `02-mobile-search-coffee`, `03-mobile-focus-first-result`, `04-mobile-field-node-active`, `05-mobile-map`, `06-mobile-filters-open`, `09-mobile-map-empty-state`, `10-mobile-search-error-state`, `11-mobile-selected-card-map-trail`, `18-mobile-loading-overlay`, `19-mobile-compass-rail`, `20-mobile-mode-grid-visible`, `25-mobile-search-no-results` (+ `07-desktop-idle` from individual re-run)
 
 | State | Assertions | Visual issues found |
 |---|---|---|
-| `01-mobile-idle` | 44 pass / **0 fail** | None |
-| `03-mobile-focus-first-result` | 57 pass / **3 fail** | (a) `.journey-compass` overflows right edge by 16px (width 390 in 390-wide viewport); (b) `.journey-compass` overlaps `#focus-stage` and `.focus-stage-card` at 93.3% ratio; (c) `.journey-compass` overlaps lower panel surface |
-| `07-desktop-idle` | 37 pass / **1 fail** | `#camera-controls` (148px tall, z=100) overlaps `#journey-compass`, `#info-panel`, `.search-container`, `#btn-legend` |
+| `01-mobile-idle` | clean | None |
+| `02-mobile-search-coffee` | clean | None |
+| `03-mobile-focus-first-result` | clean | **0 issues** (was 3 — all FIXED in §5.5) |
+| `04-mobile-field-node-active` | clean | None |
+| `05-mobile-map` | clean | None |
+| `06-mobile-filters-open` | clean | None |
+| `09-mobile-map-empty-state` | clean | None |
+| `10-mobile-search-error-state` | clean | None |
+| `11-mobile-selected-card-map-trail` | clean | None |
+| `18-mobile-loading-overlay` | clean | None |
+| `19-mobile-compass-rail` | clean | None |
+| `20-mobile-mode-grid-visible` | clean | None |
+| `25-mobile-search-no-results` | clean | None |
+| `07-desktop-idle` | 18 pass / **1 fail** | `#camera-controls` (z=100) overlap (see §3.2) — **unfixed** |
 
-Full visual evidence: `tmp/semantic-ui-visual-audit/<runId>/<state>.png` + `.json`
+Full visual evidence: `tmp/semantic-ui-visual-audit/2026-06-12T06-52-02-411Z/` (13 PNGs + 13 JSONs) and `tmp/semantic-ui-visual-audit/2026-06-12T06-47-40-452Z/07-desktop-idle.png` (desktop-chrome issue).
 
-### 3.1 Visual overlap detail (03-mobile-focus-first-result)
+### 3.0 States NOT captured (12 of 25)
 
-| Element A | Rect | Element B | Rect | Overlap |
-|---|---|---|---|---|
-| `#journey-compass` (z=90) | 16,498 390×58 | `#focus-stage` (z=100) | 10,486 370×358 | 21,112 px² (93.3%) |
-| `#journey-compass` (z=90) | 16,498 390×58 | `.focus-stage-card` (z=90) | 10,486 370×358 | 21,112 px² (93.3%) |
-| `.journey-compass-actions` (z=1) | 39,505 206×44 | `#focus-stage` (z=100) | 10,486 370×358 | 9,064 px² (100%) |
+States that failed to capture are blocked on the **`enterSemanticDiveViaVisibleControl` entry point** (`visual-state-audit.mjs:1487`), which times out at 12 seconds in headless mode:
 
-The 16px right overflow means `.journey-compass` has `width: 390` and `left: 16` (right edge = 406) in a 390-wide viewport. The left margin is likely compensating for the focus-stage anchor but the right edge isn't clamped.
+| State | Reason |
+|---|---|
+| `08-desktop-search-coffee` | Headless WebGL / software renderer fallback blocks visible control entry |
+| `11-desktop-selected-card-map-trail` | Same |
+| `12-desktop-reduced-motion` | Same |
+| `13-desktop-filters-open` | Same |
+| `14-desktop-search-error` | Same |
+| `15-mobile-semantic-dive` | Same |
+| `16-desktop-info-panel-populated` | Same |
+| `17-mobile-thread-inspector` | Same |
+| `21-mobile-route-trace-visible` | Same |
+| `22-mobile-semantic-dive-320` | Same |
+| `23-mobile-short-landscape` | Same |
+| `24-mobile-map-focus-search` | Same |
+
+**Root cause:** The headless browser's software renderer is blocking the WebGL-driven entry point (`[demo] blocked -- no WebGL / software renderer` in console). To capture these states, either:
+1. Run the visual audit in headed mode with real WebGL (`--no-headless` flag)
+2. Increase the `enterSemanticDiveViaVisibleControl` timeout from 12s to 30s
+3. Mock the WebGL state in headless test environment
+
+### 3.1 Visual overlap detail (03-mobile-focus-first-result) — RESOLVED
+
+~~Original 2026-06-11 issues:~~
+- ~~(a) `.journey-compass` overflows right edge by 16px~~
+- ~~(b) `.journey-compass` overlaps `#focus-stage` at 93.3%~~
+- ~~(c) `.journey-compass` overlaps lower panel surface~~
+
+**All three issues resolved** by:
+- (a) Subagent `compass-overlap-v3` added `display: none` for `.journey-compass` in field-node mode
+- (b/c) Same fix removes the compass from the field-node focus state entirely
+
+Verified via re-run: `03-mobile-focus-first-result` shows 0 visual issues on 2026-06-12.
 
 ### 3.2 Visual overlap detail (07-desktop-idle)
 
