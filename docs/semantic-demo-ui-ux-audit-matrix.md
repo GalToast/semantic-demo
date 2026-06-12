@@ -278,11 +278,12 @@ These correlate with the `state.js` Proxy bypass findings from the 2026-06-05 bu
 
 ## 10. Next Audit Steps
 
-1. **Run all 25 visual states** — currently only 3 of 25 were captured
-2. **Run visual audit at 320px width** — narrow viewport likely has additional overflow issues
-3. **Investigate `[State Bypass]` warnings** — confirm nested Proxy is catching all writes or document remaining edge cases
+1. ~~**Run all 25 visual states** — currently only 3 of 25 were captured~~ — **DONE (13/25)** — see §3.0 for the 12 missing states blocked on headless WebGL
+2. **Run visual audit in headed mode** — to capture the 12 blocked states (`enterSemanticDiveViaVisibleControl` needs real WebGL)
+3. **Investigate `[State Bypass]` warnings** — see §8 for current list. Confirmed real bypasses in `journey-point-color.ts` and `focus-pocket.ts` from v2 subagent diagnosis (`ocw_ee70b953`)
 4. **Update `atomic-coverage-protocol.md`** with the surface-by-state coverage matrix
-5. **Add server health check** to `surface-contract-check.mjs` to prevent the JSON-vs-HTML silent failure mode
+5. ~~**Add server health check** to `surface-contract-check.mjs` to prevent the JSON-vs-HTML silent failure mode~~ — **DONE** at `tests/surface-contract-check.mjs:4258-4284` (pre-flight fetch with content-type guard, fails fast with `[FATAL]`)
+6. **Resolve desktop `#camera-controls` band** (§3.2) — 1440×148 band at z=100; lower-z elements appear above it visually but the contract test flags unexpected overlap
 
 ---
 
