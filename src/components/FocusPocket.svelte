@@ -85,16 +85,6 @@
     cursor: pointer;
     transition: opacity 0.3s, transform 0.3s;
   }
-  .focus-node.direct .node-dot { display: none; }
-  .focus-node.support .node-dot { display: none; }
-  .focus-node.civic .node-dot { display: none; }
-  .focus-node.civic .node-dot { background: #ff6b6b; box-shadow: 0 0 6px rgba(255, 107, 107, 0.4); }
-  .node-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-  }
   .node-label {
     font-size: 0.55rem;
     color: #b0d0d0;
