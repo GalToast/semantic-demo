@@ -41,6 +41,7 @@ body.is-active #selected-details.active:not([hidden]) {
         right: 16px;
         top: calc(18px + env(safe-area-inset-top, 0px));
         width: auto;
+        box-sizing: border-box;
         transform: none;
         height: auto;
         min-height: 52px;
@@ -60,7 +61,7 @@ body.is-active #selected-details.active:not([hidden]) {
         align-items: center;
         gap: 0;
         overflow: visible;
-        position: relative;
+        position: fixed;
         transition:
             background-color 0.7s cubic-bezier(0.16, 1, 0.3, 1),
             border-color 0.7s cubic-bezier(0.16, 1, 0.3, 1),
