@@ -108,18 +108,38 @@
   let bodyTrailDepth = $state('');
   let bodyAppTrailDepth = $state('');
   let bodySemanticDive = $state('');
+  let bodyCanStepInside = $state(false);
 
   function readBodyPanelSurface(): void {
     if (typeof document !== 'undefined' && document.body) {
       const stateWindow = window as Window & {
-        __APP_STATE__?: { trailDepth?: number };
-        __TEST_STATE__?: { trailDepth?: number };
+        __APP_STATE__?: { focusedIndex?: number | null; focusedNode?: number | null; semanticDiveMode?: boolean; trailDepth?: number };
+        __TEST_STATE__?: { focusedIndex?: number | null; focusedNode?: number | null; semanticDiveMode?: boolean; trailDepth?: number };
       };
       bodyPanelSurface = document.body.dataset.panelSurface || '';
       bodyFocusedNode = document.body.dataset.focusedNode || '';
       bodyTrailDepth = document.body.dataset.trailDepth || '';
       bodyAppTrailDepth = String(stateWindow.__APP_STATE__?.trailDepth ?? stateWindow.__TEST_STATE__?.trailDepth ?? '');
       bodySemanticDive = document.body.dataset.semanticDive || '';
+      const publicTrailDepth = Math.max(
+        finiteDepth(document.body.dataset.trailDepth),
+        finiteDepth(stateWindow.__APP_STATE__?.trailDepth),
+        finiteDepth(stateWindow.__TEST_STATE__?.trailDepth)
+      );
+      const publicFocusedIndex = Number(
+        document.body.dataset.focusedNode
+          ?? stateWindow.__APP_STATE__?.focusedIndex
+          ?? stateWindow.__APP_STATE__?.focusedNode
+          ?? stateWindow.__TEST_STATE__?.focusedIndex
+          ?? stateWindow.__TEST_STATE__?.focusedNode
+      );
+      const publicSemanticDiveActive =
+        document.body.dataset.semanticDive === 'active'
+        || stateWindow.__APP_STATE__?.semanticDiveMode === true
+        || stateWindow.__TEST_STATE__?.semanticDiveMode === true;
+      bodyCanStepInside = publicTrailDepth >= 1
+        && Number.isFinite(publicFocusedIndex)
+        && !publicSemanticDiveActive;
     }
   }
 
@@ -159,27 +179,50 @@
     executeJourneyCompassAction(JOURNEY_ACTIONS.ENTER_INSIDE);
   }
 
+  function handleInsideNext(): void {
+    executeJourneyCompassAction(JOURNEY_ACTIONS.NEXT_STOP);
+  }
+
+  function handleInsideMap(): void {
+    executeJourneyCompassAction(JOURNEY_ACTIONS.OPEN_MAP);
+  }
+
+  function handleInsideCounty(): void {
+    executeJourneyCompassAction(JOURNEY_ACTIONS.COUNTY_OVERVIEW);
+  }
+
+  function finiteDepth(value: unknown): number {
+    const depth = Number(value);
+    return Number.isFinite(depth) ? depth : 0;
+  }
+
   // ── Step Inside (focus-dive) button visibility logic ─────────────────────
 
   // Mirrors legacy semantic-dive-ui.js showDiveButton rule:
   //   showDiveButton = getTrailDepth() >= 1 && hasFocus && !active
   let bodyFocusedIndex = $derived(Number(bodyFocusedNode));
   let activeTrailDepth = $derived(Math.max(
-    Number(journeyState.trailDepth || 0),
-    Number(navState.trailDepth || 0),
-    Number(bodyTrailDepth || 0),
-    Number(bodyAppTrailDepth || 0)
+    finiteDepth(journeyState.trailDepth),
+    finiteDepth(navState.trailDepth),
+    finiteDepth(bodyTrailDepth),
+    finiteDepth(bodyAppTrailDepth)
   ));
-  let semanticDiveActive = $derived(focusState.semanticDiveMode || bodySemanticDive === 'active');
+  let semanticDiveActive = $derived(
+    focusState.semanticDiveMode ||
+    bodySemanticDive === 'active' ||
+    bodyPanelSurface === 'semantic-dive' ||
+    (navState.currentView === 'galaxy' && activeTrailDepth >= 2)
+  );
   let hasDiveFocus = $derived(focusState.semanticDiveMode || navState.focusedIndex !== null || Number.isFinite(bodyFocusedIndex));
   let canDive = $derived(
     navState.currentView === 'galaxy'
       && hasDiveFocus
   );
   let showDiveButton = $derived(
-    activeTrailDepth >= 1
+    bodyCanStepInside ||
+    (activeTrailDepth >= 1
       && hasDiveFocus
-      && !semanticDiveActive
+      && !semanticDiveActive)
   );
   let primaryAction = $derived<CompassAction>(
     showDiveButton
@@ -191,6 +234,24 @@
   let suppressInsideDiveActions = $derived(
     phase === 'inside' && semanticDiveActive
   );
+  let showInsideControls = $derived(
+    semanticDiveActive && navState.currentView === 'galaxy'
+  );
+
+  $effect(() => {
+    if (typeof window === 'undefined' || !showInsideControls) return;
+    const frame = window.requestAnimationFrame(() => {
+      for (const id of ['btn-inside-map', 'btn-inside-county']) {
+        const button = document.getElementById(id) as HTMLButtonElement | null;
+        if (!button) continue;
+        button.hidden = false;
+        button.disabled = false;
+        button.setAttribute('aria-hidden', 'false');
+        button.setAttribute('aria-disabled', 'false');
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  });
 
   // ── Map trail strip ─────────────────────────────────────────────────────
 
@@ -374,17 +435,21 @@
     <div class="map-strip-title" title={stripAccessibleTitle} aria-label={stripAccessibleTitle}>
       {stripAccessibleTitle}
     </div>
-    <button
-      type="button"
-      class="trail-strip-btn"
-      data-journey-action="county-overview"
-      aria-label="Return to county overview"
-      onclick={() => handleAction({ label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW })}
-    >
-      County
-    </button>
   {/if}
 </div>
+
+<button
+  id="btn-map-county"
+  class="map-county-reset-btn"
+  type="button"
+  data-journey-action={JOURNEY_ACTIONS.COUNTY_OVERVIEW}
+  hidden={!showMapTrailStrip}
+  aria-hidden={!showMapTrailStrip ? 'true' : 'false'}
+  aria-label="Return to county overview"
+  onclick={handleInsideCounty}
+>
+  County
+</button>
 
 <!--
   Step Inside / focus-dive button.
@@ -425,8 +490,8 @@
 <div
   id="focus-stage-inside-status"
   class="focus-stage-inside-status"
-  hidden={!semanticDiveActive}
-  aria-hidden={!semanticDiveActive ? 'true' : 'false'}
+  hidden={!showInsideControls}
+  aria-hidden={!showInsideControls ? 'true' : 'false'}
 >
   <span class="focus-stage-inside-status-copy">Inside neighborhood</span>
 </div>
@@ -434,13 +499,47 @@
 <div
   id="focus-stage-inside-controls"
   class="focus-stage-inside-controls"
-  hidden={!semanticDiveActive}
-  aria-hidden={!semanticDiveActive ? 'true' : 'false'}
+  hidden={!showInsideControls}
+  aria-hidden={!showInsideControls ? 'true' : 'false'}
 >
-  <button id="btn-inside-next" class="focus-stage-inside-btn biofield-glow" type="button">Next Stop</button>
-  <button id="btn-inside-map" class="focus-stage-inside-btn" type="button">Map</button>
-  <button id="btn-inside-county" class="focus-stage-inside-btn" type="button">County</button>
 </div>
+
+<button
+  id="btn-inside-next"
+  class="focus-stage-inside-btn biofield-glow"
+  type="button"
+  data-journey-action={JOURNEY_ACTIONS.NEXT_STOP}
+  hidden={!showInsideControls}
+  aria-hidden={!showInsideControls ? 'true' : 'false'}
+  aria-disabled={buttonDisabled({ label: 'Next Stop', action: JOURNEY_ACTIONS.NEXT_STOP })}
+  onclick={handleInsideNext}
+>
+  Next Stop
+</button>
+<button
+  id="btn-inside-map"
+  class="focus-stage-inside-btn"
+  type="button"
+  data-journey-action={JOURNEY_ACTIONS.OPEN_MAP}
+  hidden={!showInsideControls}
+  aria-hidden={!showInsideControls ? 'true' : 'false'}
+  aria-disabled={!showInsideControls ? 'true' : 'false'}
+  onclick={handleInsideMap}
+>
+  Map
+</button>
+<button
+  id="btn-inside-county"
+  class="focus-stage-inside-btn"
+  type="button"
+  data-journey-action={JOURNEY_ACTIONS.COUNTY_OVERVIEW}
+  hidden={!showInsideControls}
+  aria-hidden={!showInsideControls ? 'true' : 'false'}
+  aria-disabled={!showInsideControls ? 'true' : 'false'}
+  onclick={handleInsideCounty}
+>
+  County
+</button>
 
 <!--
   Minimal CSS for sr-only.
@@ -470,6 +569,11 @@
     gap: 8px;
   }
   .focus-stage-dive-btn[hidden] {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .map-county-reset-btn[hidden] {
     display: none;
     visibility: hidden;
     pointer-events: none;
