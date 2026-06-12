@@ -29,7 +29,10 @@
 + * (e.g. `try { 1/0 } catch { Write-Host ('caught: ' + $_.Exception.Message) }`).
 + * The wrapper is intentionally minimal: verbatim write, no env-var processing
 + * or command-prefix injection. Cursor's agent shell broke because their
-+ * wrapper was too clever; we keep this one boring. See
++ * wrapper was too clever; we keep this one boring. `-ExecutionPolicy Bypass`
++ * is scoped to this single pwsh invocation and does not persist; it only
++ * matters for users who explicitly set `Restricted` or `AllSigned` policy
++ * (rare on PowerShell 7, which defaults to `RemoteSigned`). See
 + * docs/bash-tool-design-review-2026-06-12.md for the design rationale.
 + */
 +function stagePowerShellFile(shell, baseArgs, command) {
@@ -42,7 +45,7 @@
 +    const dir = mkdtempSync(join(tmpdir(), "pi-bash-"));
 +    const file = join(dir, "script.ps1");
 +    writeFileSync(file, command, "utf8");
-+    return { args: ["-NoLogo", "-NoProfile", "-File", file], tempDir: dir };
++    return { args: ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", file], tempDir: dir };
 +}
 +
  export function createLocalBashOperations(options) {
