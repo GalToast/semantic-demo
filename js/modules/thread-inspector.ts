@@ -233,6 +233,16 @@ export function renderThreadInspection(index: number | null = getInspectedThread
         inspector.addEventListener('pointerenter', pointerEnter);
         inspector.addEventListener('pointerleave', pointerLeave);
     }
+    if (!inspector.dataset.surfaceEventGuardBound) {
+        inspector.dataset.surfaceEventGuardBound = 'true';
+        const stopSurfaceEvent = (event: Event): void => {
+            event.stopPropagation();
+            event.stopImmediatePropagation?.();
+        };
+        for (const eventName of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'touchstart', 'touchend']) {
+            inspector.addEventListener(eventName, stopSurfaceEvent);
+        }
+    }
     if (inspectionState?.active && getCanvasThreadInspectionClearTimer()) {
         window.clearTimeout(getCanvasThreadInspectionClearTimer()!);
         state.canvasThreadInspectionClearTimer = null;
