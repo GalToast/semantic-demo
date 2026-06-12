@@ -213,6 +213,13 @@ export function updateFocusNeighborRail(): void {
 
     list.querySelectorAll('[data-index]').forEach((button: Element) => {
         const btn = button as HTMLButtonElement;
+        const prefersExplicitPreview = (): boolean => {
+            try {
+                return new URLSearchParams(window.location.search || '').has('productqa');
+            } catch {
+                return false;
+            }
+        };
         const scheduleInspect = () => {
             cancelHoverIntent();
             hoverIntentTimer = setTimeout(() => {
@@ -243,6 +250,10 @@ export function updateFocusNeighborRail(): void {
         btn.addEventListener('mouseenter', scheduleInspect);
         btn.addEventListener('focus', scheduleInspect);
         btn.addEventListener('pointerup', (event: PointerEvent) => {
+            if (prefersExplicitPreview()) {
+                inspectIndex();
+                return;
+            }
             if (supportsHoverPreview()) return;
             if ((event.target as HTMLElement)?.closest?.('[data-neighbor-action]')) return;
             inspectIndex();
@@ -262,6 +273,10 @@ export function updateFocusNeighborRail(): void {
 
         btn.onclick = (event: MouseEvent) => {
             if ((event.target as HTMLElement)?.closest?.('[data-neighbor-action]')) return;
+            if (prefersExplicitPreview()) {
+                inspectIndex();
+                return;
+            }
             if (!supportsHoverPreview()) {
                 inspectIndex();
                 return;
