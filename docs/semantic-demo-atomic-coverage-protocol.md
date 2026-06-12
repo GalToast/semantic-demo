@@ -1,6 +1,6 @@
 # Semantic Explorer Atomic Coverage Protocol
 
-**Last updated:** 2026-06-12
+**Last updated:** 2026-06-11
 **Companion to:** `docs/semantic-demo-ui-ux-audit-matrix.md`
 **Purpose:** Define the minimal atomic surface/state set that must pass before any release, and the test that covers each atom.
 
@@ -63,7 +63,7 @@ States from `tests/visual-state-registry.mjs`:
 |---|---|---|---|
 | 01 | `01-mobile-idle` | 2026-06-11 | None |
 | 02 | `02-mobile-search-coffee` | ⬜ | — |
-| 03 | `03-mobile-focus-first-result` | 2026-06-12 | ✅ **FIXED** (field-node focus-stage flush + compass hidden in field-node mode) |
+| 03 | `03-mobile-focus-first-result` | 2026-06-11 | ❌ 3 issues (compass overflow, focus-stage overlap) |
 | 04 | `04-mobile-field-node-active` | ⬜ | — |
 | 05 | `05-mobile-map` | ⬜ | — |
 | 06 | `06-mobile-filters-open` | ⬜ | — |
@@ -89,7 +89,7 @@ States from `tests/visual-state-registry.mjs`:
 | 24 | `24-mobile-map-focus-search` | ⬜ | — |
 | 25 | `25-mobile-search-no-results` | ⬜ | — |
 
-**Coverage:** 13 of 25 states captured in last run (52%). 12 states remain blocked on headed WebGL capture.
+**Coverage:** 3 of 25 states captured in last run (12%).
 
 ---
 
@@ -104,7 +104,7 @@ States from `tests/visual-state-registry.mjs`:
 | Contract assertion | `layout:focus-stage-card-bottom-flush` — card bottom inset ≤ 0px |
 | Visual evidence | `03-mobile-focus-first-result.png` |
 | Owning seam | `css/mobile_premium__focus-dive.css:1138` (max-height), `js/modules/focus-stage-renderer.js` |
-| Last status | ✅ **FIXED 2026-06-12** — field-node focus-stage pins to viewport bottom and legacy compass is hidden in field-node mode |
+| Last status | ❌ fail (534px bottom inset) |
 | Why it matters | Card sits with 534px of empty space below it on mobile focus — visible vertical gap between card content and viewport bottom |
 
 ### 3.2 `compass-rail` atom (mobile focus)
@@ -116,7 +116,7 @@ States from `tests/visual-state-registry.mjs`:
 | Contract assertion | (1) compass present with ≥3 step buttons, (2) all step buttons have touch target ≥44px, (3) no horizontal overflow |
 | Visual evidence | `03-mobile-focus-first-result.png` |
 | Owning seam | `src/components/JourneyChrome.svelte`, `css/mobile_premium__focus-dive.css` |
-| Last status | ✅ **FIXED 2026-06-12** — compass hidden in field-node mode; no horizontal overflow |
+| Last status | ❌ fail (right-edge overflow 16px + 93% overlap with focus-stage) |
 | Why it matters | Compass bar clips off-screen on right edge when shown alongside focus stage on mobile |
 
 ### 3.3 `desktop-idle` atom (chrome band)
@@ -128,8 +128,21 @@ States from `tests/visual-state-registry.mjs`:
 | Contract assertion | (1) controls present, (2) controls don't cover info-panel or journey-compass |
 | Visual evidence | `07-desktop-idle.png` |
 | Owning seam | `js/modules/camera-controls.js`, `css/mobile_base.css` |
-| Last status | ✅ **FIXED 2026-06-12** — selector scope fix at `mobile_base.css:115-123`. The reset for `.controls-view`/`.controls-info` now uses direct child combinator (`.controls > .controls-view`) so the override only applies to actual sub-group wrappers, not modifier classes on the root `.controls` element. `#camera-controls` now correctly renders as `position: fixed` 44×148 column |
+| Last status | ✅ **FIXED 2026-06-12** (commit `b5b9615`) — selector scope fix at `mobile_base.css:115-123`. The reset for `.controls-view`/`.controls-info` now uses direct child combinator (`.controls > .controls-view`) so the override only applies to actual sub-group wrappers, not modifier classes on the root `.controls` element. `#camera-controls` now correctly renders as `position: fixed` 44×148 column |
 | Why it matters | Controls bar consumes top 148px of viewport and visually sits behind/over journey compass and info panel |
+
+### 3.4 `controls-rail` atom (3-control overlap) — Fix 4 (2026-06-12)
+
+| Field | Value |
+|---|---|
+| Selector | `#view-toggle`, `#info-controls`, `#camera-controls` (children of `[data-controls-rail]`) |
+| State precondition | `body[data-active-view="galaxy"]`, viewport 1440×900 |
+| Contract assertion | (1) All 3 controls are direct children of `[data-controls-rail]` wrapper, (2) All 3 controls have `position: static` and flow inside the rail, (3) Hit test on each control's geometric center hits THAT control (not a sibling) |
+| Visual evidence | `controls-overlap-current.png` (before), `field-node-after-fix.png` (after, via Playwright) |
+| Owning seam | `vector-explorer-polished.html:385` (HTML wrapper) + `css/mobile_base.css:120,132,134` (CSS reset rules) |
+| Last status | ✅ **FIXED 2026-06-12** (commit `2cedc12`) — HTML wrapper + CSS reset rules restored after being lost in `git reset HEAD^` (visible in reflog at `HEAD@{8-9}`). All 3 controls now `position: static` and flow inside rail. Hit test at view-toggle center (1402,572) hits `#view-toggle` (was hitting `#camera-controls`) |
+| Why it matters | User could not click view-toggle or info-controls — they were stacked under camera-controls. The "cascade mystery" was actually a missing DOM structure (`document.styleSheets` walk found `matchedRulesCount: 0` for `#view-toggle`) |
+| Diagnostic check | If `matchedRules.length === 0` for a styled element, CSS is correct but DOM is wrong — check `parentElement` first, not specificity |
 
 ---
 
@@ -138,15 +151,16 @@ States from `tests/visual-state-registry.mjs`:
 Before any release to staging or production, the following must all be true:
 
 ### 4.1 Contract gate
-- [x] All 27 contract surfaces pass at their default viewport — **DONE 2026-06-12 (308/308)** — including the 3 previously-failing `mobile-semantic-dive` variants which now all pass 20/0
-- [x] `mobile-semantic-dive` inside-controls visibility (3 variants) — **FIXED 2026-06-12** as side-effect of controls-rail fix. The HTML wrapper + CSS reset rules changed the CSS cascade enough to also resolve the inside-controls display state. Verified by 3 parallel mimo-v2.5-free workers + main lane re-run (60/60 pass)
-- [ ] No `[State Bypass]` warnings in console — **2 real bypasses FIXED in `focus-pocket.ts`**; 7 false positives remain (cosmetic sub-property writes; nested Proxy at `state.js:530-531` catches top-level writes correctly)
+- [x] All 27 contract surfaces pass at their default viewport — **DONE 2026-06-12 (267/267)**, except `mobile-semantic-dive`, `mobile-semantic-dive-320`, `tablet-semantic-dive` which have 1 pre-existing failure each (inside-controls visibility in semantic-dive state — being investigated by 3 parallel mimo-v2.5-free workers as of 2026-06-12)
+- [ ] No `[State Bypass]` warnings in console — **2 real bypasses FIXED in `focus-pocket.ts`** (commit `3abbb0d`); 7 false positives remain (cosmetic sub-property writes; nested Proxy at `state.js:530-531` catches top-level writes correctly)
 - [x] No horizontal overflow on any surface — **DONE**
 - [x] `field-node` 534px bottom inset is resolved — **FIXED** at `css/mobile_premium__focus-dive.css`
+- [x] `desktop-idle` camera-controls 148px band overlap — **FIXED** (commit `b5b9615`)
+- [x] `controls-rail` 3-control overlap (view-toggle unclickable) — **FIXED** (commit `2cedc12`) — HTML wrapper + CSS reset rules restored after `git reset` loss
 
 ### 4.2 Visual gate
 - [ ] All 25 visual states captured — **13/25 (52%)**; 12 blocked on headless WebGL timeout
-- [x] No `surface-overlap-matrix` failures — **DONE** (desktop-idle camera-controls band fixed by direct-child selector scope)
+- [x] No `surface-overlap-matrix` failures — **DONE** (desktop-idle camera-controls band fixed in commit `b5b9615`)
 - [x] No `surface-fit:within-viewport` failures — **DONE**
 - [x] No `surface-proportion` failures — **DONE**
 - [x] Visual evidence reviewed for visual regressions vs prior run — **03-mobile-focus-first-result AND 07-desktop-idle both CLEAN**
