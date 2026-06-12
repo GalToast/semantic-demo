@@ -262,13 +262,19 @@
     background: rgba(255, 255, 255, 0.04);
   }
   .thread-action.primary {
-    border-color: rgba(78, 205, 196, 0.45);
-    background: rgba(78, 205, 196, 0.18);
-    color: #7eeee6;
+    border-color: rgba(78, 205, 196, 0.65);
+    background: rgba(78, 205, 196, 0.35);
+    color: #caf4f1;
+    box-shadow: 0 0 8px rgba(78, 205, 196, 0.2);
+  }
+  .thread-action.primary:hover:not(:disabled) {
+    background: rgba(78, 205, 196, 0.45);
+    box-shadow: 0 0 12px rgba(78, 205, 196, 0.35);
   }
   .thread-action.primary:disabled {
     color: #6a8a8a;
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba(78, 205, 196, 0.22);
+    box-shadow: none;
   }
 </style>
