@@ -234,7 +234,9 @@
   let suppressInsideDiveActions = $derived(
     phase === 'inside' && semanticDiveActive
   );
-  let showInsideControls = $derived(semanticDiveActive);
+  let showInsideControls = $derived(
+    semanticDiveActive && navState.currentView === 'galaxy'
+  );
 
   $effect(() => {
     if (typeof window === 'undefined' || !showInsideControls) return;
