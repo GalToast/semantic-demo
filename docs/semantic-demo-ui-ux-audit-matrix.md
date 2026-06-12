@@ -202,6 +202,23 @@ The 2026-06-05 bug sweep flagged several surfaces as "known pre-existing failure
 - **Where:** `03-mobile-focus-first-result`
 - **Owning seam:** Same as 5.3
 
+### 5.6 Controls-rail 3-control overlap on desktop (MEDIUM) — Fix 4 (2026-06-12)
+
+- **Symptom:** `#view-toggle`, `#info-controls`, `#camera-controls` all share `position: fixed; right: 16px; bottom: 16px; z=100` and stack on top of each other. Hit test on `view-toggle` center (1402,572) hits `#camera-controls` — user cannot click view-toggle or info-controls
+- **Where:** `desktop-idle` and all desktop states
+- **Visual evidence:** `controls-overlap-current.png` shows 3 buttons overlapping in lower-right corner
+- **Root cause (NOT `!important` hack):** The HTML wrapper `<div class="controls controls-rail" data-controls-rail>` was lost from `vector-explorer-polished.html` via a `git reset HEAD^` operation (visible in reflog at `HEAD@{8-9}`). The CSS reset rules in `css/mobile_base.css` (lines 120, 132, 134) were still on disk and correct, but had no parent element to match. The "cascade mystery" was actually a missing DOM structure
+- **Diagnostic check:** `document.styleSheets` walk found `matchedRulesCount: 0` for `#view-toggle` — the smoking gun for "CSS is correct but DOM is wrong"
+- **Owning seam:** `vector-explorer-polished.html:385` (HTML wrapper) + `css/mobile_base.css:120,132,134` (CSS reset rules)
+- **Fix applied (commit `2cedc12`):**
+  1. Added HTML wrapper `<div class="controls controls-rail" data-controls-rail>` at `vector-explorer-polished.html:385`
+  2. Verified CSS reset rules at `css/mobile_base.css:120` (`body[data-panel-surface] .controls > .controls-view, .controls > .controls-info`), `:132` (`body[data-panel-surface] [data-controls-rail] > .controls`, specificity 0,3,1), `:134` (`body[data-panel-surface] #view-toggle`, specificity 1,0,0)
+  3. Bumped cache-bust in `semantic-demo.css` to `?v=rail-fix-restored-2026-06-12`
+  4. Merged with upstream master (remote was ahead with build/cache-buster commits) and pushed
+- **Why NOT `!important`:** Would have masked the real DOM structure bug. The user explicitly pushed back: "!important declarations are hack jobs aren't they, covering up a larger root cause?" — the fix had to be structural (add the wrapper), not a CSS escape hatch
+- **Verification:** `desktop-idle` 5/5 pass. Computed styles: `viewToggle position: static`, `parentTag: DIV[data-controls-rail]`, hit test at view-toggle center (1402,572) hits `#view-toggle` (was hitting `#camera-controls`)
+- **Build reversion pattern:** The HTML wrapper keeps getting reverted by the build/cache-buster process. After any edit, commit and push immediately. If the build process stages changes (commits like "chore(build): refresh Svelte preview shell after final fixes"), the wrapper may be re-applied automatically, or you may need to re-apply manually
+
 ---
 
 ## 6. Pre-Run Diagnostic — Server State Recovery
