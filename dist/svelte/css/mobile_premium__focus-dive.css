@@ -378,6 +378,10 @@
             inset 0 1px 0 var(--glass-reflection-muted),
             0 -10px 34px var(--shadow-penumbra),
             0 0 22px rgba(255, 210, 77, 0.08);
+        /* Position card flush with viewport bottom for bottom-flush contract */
+        bottom: 0;
+        max-height: 62dvh;
+        overflow-y: auto;
     }
 
     /* Focus stage card — top bar pseudo-element */
@@ -653,6 +657,13 @@
         letter-spacing: 0;
         text-transform: none;
         color: rgba(249, 255, 252, 0.94);
+    }
+
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
+        #btn-focus-dive.focus-stage-dive-btn {
+        position: fixed;
+        z-index: var(--z-compass);
+        pointer-events: auto;
     }
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .focus-stage-neighbors.active {
@@ -1412,10 +1423,10 @@
     body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) .focus-stage-next,
     body.is-active[data-panel-surface='focus'] .focus-thread-inspector,
     body.is-active[data-panel-surface='focus-search'] .focus-thread-inspector,
-    body.is-active[data-panel-surface='focus'] #trail-controls,
-    body.is-active[data-panel-surface='focus-search'] #trail-controls,
-    body.is-active[data-panel-surface='focus'] .trail-controls,
-    body.is-active[data-panel-surface='focus-search'] .trail-controls,
+    body.is-active[data-panel-surface='focus']:not([data-focus-panel-mode='field-node']) #trail-controls,
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) #trail-controls,
+    body.is-active[data-panel-surface='focus']:not([data-focus-panel-mode='field-node']) .trail-controls,
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) .trail-controls,
     body.is-active[data-panel-surface='focus']:not([data-focus-panel-mode='field-node']) .focus-stage-actions,
     body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) .focus-stage-actions,
     body.is-active[data-panel-surface='focus'] .focus-stage-journey.active,
@@ -1767,5 +1778,12 @@
         display: none;
         visibility: hidden;
         pointer-events: none;
+    }
+
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
+        #btn-focus-dive.focus-stage-dive-btn {
+        position: fixed;
+        z-index: var(--z-compass);
+        pointer-events: auto;
     }
 }

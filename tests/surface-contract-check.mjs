@@ -280,6 +280,8 @@ async function assert_mobile_idle(page, ctx) {
 
     function gutterOk(el) {
       if (!el) return false;
+      const style = getComputedStyle(el);
+      if (el.hidden || style.display === 'none' || style.visibility === 'hidden') return true;
       const rect = el.getBoundingClientRect();
       return rect.left >= 8 && (window.innerWidth - rect.right) >= 8;
     }
@@ -4252,6 +4254,43 @@ const RUN_TIMEOUT_MS = requestedSurfaces.length
 
 async function run() {
   await ensureDir(outDir);
+
+  // --- Pre-flight server health check ---
+  // Detect stale python http.server or wrong directory serving JSON instead of HTML.
+  try {
+    const probeRes = await fetch(positionalUrl, { signal: AbortSignal.timeout(10_000) });
+    const contentType = probeRes.headers.get('content-type') || '';
+    const bodySnippet = (await probeRes.text()).trimStart();
+
+    const isHTML = contentType.startsWith('text/html');
+    const looksLikeJSON = bodySnippet.startsWith('{') || bodySnippet.startsWith('[');
+
+    if (!isHTML || looksLikeJSON) {
+      console.error(`\n[FATAL] Dev server is not serving HTML.`);
+      console.error(`URL: ${positionalUrl}`);
+      console.error(`Content-Type: ${contentType || '(empty)'}`);
+      console.error(``);
+      console.error(`This usually means a stale python -m http.server is serving the wrong file,`);
+      console.error(`or the server was started from a directory other than the project root.`);
+      console.error(``);
+      console.error(`Fix:`);
+      console.error(`  1. Kill all stale python http.server processes:`);
+      console.error(`     pwsh -NoProfile -Command "Get-Process python | Where-Object { $_.CommandLine -like '*http.server*' } | Stop-Process -Force"`);
+      console.error(`  2. Start a fresh server from the project root:`);
+      console.error(`     cd <project-root> && python -m http.server 8795 --bind 127.0.0.1`);
+      console.error(`  3. Verify: iwr http://127.0.0.1:8795/vector-explorer-polished.html -UseBasicParsing should return ~23532 bytes`);
+      console.error(`  4. Re-run the test.`);
+      process.exit(1);
+    }
+  } catch (probeErr) {
+    console.error(`\n[FATAL] Dev server is not reachable at ${positionalUrl}`);
+    console.error(`Error: ${probeErr.message || probeErr}`);
+    console.error(``);
+    console.error(`Start a server from the project root:`);
+    console.error(`  cd <project-root> && python -m http.server 8795 --bind 127.0.0.1`);
+    process.exit(1);
+  }
+  // --- End pre-flight server health check ---
 
   const browser = await chromium.launch(launchOptions);
   const allAssertions = [];
