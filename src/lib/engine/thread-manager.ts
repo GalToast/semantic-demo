@@ -74,20 +74,7 @@ export function getThreadPulseOpacity(baseOpacity: any, pulse: any, requestedAmp
     );
     return Math.max(0, safeBase + pulse * amplitude) * safeReveal;
 }
-
-/**
- * Returns the four named mycelium thread opacity profiles used by the visual
- * polish contract.  Each profile is keyed by visibility stage name.
- * These are frozen design constants — not runtime-derived.
- */
-export function getThreadOpacityEnvelope() {
-    return {
-        overview: { core: 0.13, wispy: 0.055, bridge: 0.08, pulse: 0.028 },
-        focused: { core: 0.14, wispy: 0.045, bridge: 0.07, pulse: 0.006 },
-        searchActive: { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 },
-        trailActive: { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
-    };
-}
+// getThreadOpacityEnvelope removed — it was never called at runtime.
 
 export function getMyceliumPresentationProfile() {
     const currentMode = getNavigationMode();

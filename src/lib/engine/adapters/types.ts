@@ -53,7 +53,7 @@ export interface NodeManagerModule {
   disposeNodeVisuals(): void;
 }
 
-/** Mycelium thread lines and opacity profiles (three-thread-manager.js). */
+/** Mycelium thread lines and presentation profiles (three-thread-manager.js). */
 export interface ThreadManagerModule {
   createMycelium(): void;
   disposeMycelium(): void;
@@ -65,7 +65,6 @@ export interface ThreadManagerModule {
     requestedAmplitude: number,
     revealProgress?: number
   ): number;
-  getThreadOpacityEnvelope(): Record<string, { core: number; wispy: number; bridge: number; pulse: number }>;
   getMyceliumPresentationProfile(): { core: number; wispy: number; bridge: number; pulse: number };
   getGroupLineSegmentCount(group: unknown): number;
 }

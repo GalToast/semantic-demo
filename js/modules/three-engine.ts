@@ -51,7 +51,6 @@ import {
     shouldRenderThreads,
     shouldRenderBridgeThreads,
     getThreadPulseOpacity,
-    getThreadOpacityEnvelope,
     getMyceliumPresentationProfile
 } from './three-thread-manager.ts';
 
@@ -99,7 +98,6 @@ export {
     shouldRenderBridgeThreads,
     createPoints,
     createMycelium,
-    getThreadOpacityEnvelope,
     SCENE_ATMOSPHERE,
     MYCELIUM_FIELD_SCALE
 };
@@ -404,7 +402,7 @@ export function initThreeJS() {
     const glowMat = new THREE.MeshBasicMaterial({
         color: 0x0d2024,
         transparent: true,
-        opacity: 0.026,
+        opacity: 0.13,
         side: THREE.BackSide
     });
     const glowSphere = new THREE.Mesh(glowGeo, glowMat);
@@ -417,7 +415,7 @@ export function initThreeJS() {
         color: 0x4ecdc4,
         wireframe: true,
         transparent: true,
-        opacity: 0.0045,
+        opacity: 0.03,
         depthWrite: false,
         blending: THREE.AdditiveBlending
     });

@@ -60,7 +60,6 @@ export {
   shouldRenderBridgeThreads,
   createPoints,
   createMycelium,
-  getThreadOpacityEnvelope,
   SCENE_ATMOSPHERE,
   MYCELIUM_FIELD_SCALE,
 } from './three-engine';

@@ -35,7 +35,7 @@ import {
 import {
   createMycelium as createMyceliumPort,
   getMyceliumPresentationProfile as getMyceliumPresentationProfilePort,
-  getThreadOpacityEnvelope as getThreadOpacityEnvelopePort,
+
   getThreadPulseOpacity as getThreadPulseOpacityPort,
   shouldRenderBridgeThreads as shouldRenderBridgeThreadsPort,
   shouldRenderThreads as shouldRenderThreadsPort,
@@ -357,10 +357,6 @@ export function createPoints(): void {
 
 export function createMycelium(): void {
   createMyceliumPort();
-}
-
-export function getThreadOpacityEnvelope(): any {
-  return getThreadOpacityEnvelopePort();
 }
 
 export const SCENE_ATMOSPHERE: Record<string, any> = {};
