@@ -14,6 +14,15 @@ import { isPointVisible } from './utils/geo-data.ts';
 const state = _state as any;
 const nodeSporeSyncColor = new THREE.Color();
 
+function toIndexArray(value: unknown): number[] {
+    if (Array.isArray(value)) return value.filter(Number.isFinite);
+    if (value instanceof Set) return Array.from(value).filter(Number.isFinite) as number[];
+    if (value && typeof (value as Iterable<unknown>)[Symbol.iterator] === 'function') {
+        return Array.from(value as Iterable<unknown>).filter(Number.isFinite) as number[];
+    }
+    return [];
+}
+
 function syncNodeSporeColorsFromPointColors(): void {
     if (!state.nodeSporeMesh || !state.pointsMesh?.geometry?.attributes?.color) return;
     const colors = (state.pointsMesh as any).geometry.attributes.color.array;
@@ -31,6 +40,9 @@ function syncNodeSporeColorsFromPointColors(): void {
 
 export function applyPointFilterColors(): void {
     if (!state.pointsMesh || !state.pointBaseColors) return;
+    const trailNeighborIndices = toIndexArray(state.navState.trailNeighborIndices);
+    const focusPocketIndices = toIndexArray(state.navState.focusPocketIndices);
+    const walkHistoryIndices = toIndexArray(state.navState.walkHistoryIndices);
     const colorStateKey = [
         state.filterVersion,
         state.navState.mode || 'overview',
@@ -39,21 +51,21 @@ export function applyPointFilterColors(): void {
         state.trailDepth ?? 0,
         state.myceliumMode || 'default',
         state.navState.threadSource || 'none',
-        (state.navState.trailNeighborIndices || []).slice(0, 12).join(','),
-        (state.navState.focusPocketIndices || []).slice(0, 18).join(','),
-        (state.navState.walkHistoryIndices || []).slice(-6).join(',')
+        trailNeighborIndices.slice(0, 12).join(','),
+        focusPocketIndices.slice(0, 18).join(','),
+        walkHistoryIndices.slice(-6).join(',')
     ].join('|');
     if (state.filterColorStateKey === colorStateKey) return;
     const colors = (state.pointsMesh as any).geometry.attributes.color.array;
     const focusLocalIndices = state.navState.focusedIndex !== null
         ? new Set([
             state.navState.focusedIndex,
-            ...state.navState.trailNeighborIndices.slice(0, 12),
-            ...(state.navState.focusPocketIndices || [])
+            ...trailNeighborIndices.slice(0, 12),
+            ...focusPocketIndices
         ])
         : new Set<number>();
 
-    const historySet = new Set(state.navState.walkHistoryIndices || []);
+    const historySet = new Set(walkHistoryIndices);
 
     if (!state.points || !state.pointBaseColors || (state.pointBaseColors as any).length < state.points.length * 3) return;
     const signalScores: number[] = (state as any).signalScores || [];
@@ -76,7 +88,7 @@ export function applyPointFilterColors(): void {
                         ? ((state as any).trailIndices.has(i) ? (i === state.navState.focusedIndex ? 2.14 : (semanticFocus ? 1.74 : 1.48)) : (isVisited ? 1.18 : (semanticFocus ? 0.24 : 0.18)))
                         : (isVisited ? 1.18 : 0.28);
                 } else {
-                    const inPocket = state.navState.focusPocketIndices?.includes(i);
+                    const inPocket = focusPocketIndices.includes(i);
                     const role = state.navState.focusPocketRoleByIndex?.get(i);
                     const raw = focusLocalIndices.has(i)
                         ? (i === state.navState.focusedIndex

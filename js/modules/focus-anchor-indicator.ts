@@ -59,7 +59,8 @@ export function createFocusAnchorIndicator(): void {
         opacity: 0.0,
         depthWrite: false,
         depthTest: false,
-        blending: THREE.AdditiveBlending
+        blending: THREE.AdditiveBlending,
+        visible: (state.focusRingTexture || state.focusBeaconTexture) !== null
     });
     const haloSprite = new THREE.Sprite(spriteMat);
     haloSprite.name = 'focus-anchor-halo-sprite';
