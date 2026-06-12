@@ -25,7 +25,7 @@ import {
     VignetteEffect,
     ChromaticAberrationEffect,
 } from 'postprocessing';
-import { debugWarn } from './diagnostic-adapter.ts';
+import { debugInfo, debugWarn } from './diagnostic-adapter.ts';
 
 // ── Module-scoped state ──────────────────────────────────────────────────────
 
@@ -183,7 +183,7 @@ export function initPostProcessing(
             document.body.dataset.premiumMode = 'true';
         }
 
-        debugWarn('[postprocessing] initialized — vignette + CA + bloom + DOF ready');
+        debugInfo('[postprocessing] initialized — vignette + CA + bloom + DOF ready');
     } catch (err) {
         console.error('[postprocessing] init failed, falling back to vanilla renderer:', err);
         disposePostProcessing();
