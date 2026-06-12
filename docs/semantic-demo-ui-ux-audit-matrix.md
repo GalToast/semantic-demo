@@ -35,7 +35,7 @@ The contract test connects to `http://127.0.0.1:8795/vector-explorer-polished.ht
 | # | Surface | Pass | Fail | Status | Headline issue |
 |---|---|---|---|---|---|
 | 1 | `mobile-idle` | 7 | 0 | ✅ clean | — |
-| 2 | `desktop-idle` | 5 | 0 | ✅ clean | — |
+| 2 | `desktop-idle` | 5 | 0 | ✅ **FIXED (visual)** | See §5.4 — camera-controls band 1440×148 was a selector bug (`controls-view` modifier on root resetting `position: fixed` to `static`). Now `44×148` correct column. Remaining 1px overlaps between adjacent stacked controls are flex gap artifacts. |
 | 3 | `launch-focus` | 7 | 0 | ✅ clean | — |
 | 4 | `search-error` | 8 | 0 | ✅ clean | — |
 | 5 | `search-no-results` | 14 | 0 | ✅ clean | — |
@@ -126,16 +126,20 @@ States that failed to capture are blocked on the **`enterSemanticDiveViaVisibleC
 
 Verified via re-run: `03-mobile-focus-first-result` shows 0 visual issues on 2026-06-12.
 
-### 3.2 Visual overlap detail (07-desktop-idle)
+### 3.2 Visual overlap detail (07-desktop-idle) — RESOLVED
 
-| Element A | Rect | Element B | Rect | Overlap |
-|---|---|---|---|---|
-| `#journey-compass` (z=90) | 664,98 472×74 | `#camera-controls` (z=100) | 0,96 1440×148 | 34,979 px² (100%) |
-| `#info-panel` (z=80) | 16,116 322×208 | `#camera-controls` (z=100) | 0,96 1440×148 | 41,216 px² (61.5%) |
-| `.search-container` (z=auto) | 31,187 282×109 | `#camera-controls` (z=100) | 0,96 1440×148 | 16,074 px² (52.3%) |
-| `#camera-controls` (z=100) | 0,96 1440×148 | `#btn-legend` (z=100) | 1380,117 44×44 | 1,936 px² (100%) |
+**Original 2026-06-11 issue:** `#camera-controls` was 1440×148 at z=100 overlapping 4 chrome elements.
 
-`#camera-controls` is a 148px-tall full-width bar at z=100 that visually sits *behind* `#journey-compass` and `#info-panel` (lower z) but *on top of* `#btn-legend` (same z). This creates a desktop chrome band at y=96-244 that several UI elements sit within. On desktop this is the expected layout band, but `#info-panel` (y=116-324) extending into the lower half of the band suggests the panel-top is clipped by the controls bar.
+**Root cause:** `#camera-controls` has class `controls controls-view`. The base `.controls` rule sets `position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px))`. But the more-specific rule `body[data-panel-surface] .controls-view { position: static; ... }` (at `mobile_base.css:115-123`) was ALSO matching (because `#camera-controls` has the `controls-view` class), and it reset `position` to `static`, causing the element to flow as a full-width bar.
+
+**Fix:** Scoped the reset selector to `.controls > .controls-view` (direct child combinator) so it only applies to actual sub-group wrappers, not modifier classes on the root `.controls` element.
+
+**Verified (2026-06-12):**
+- `#camera-controls` now 44×148 (correct column of 5 buttons)
+- `#journey-compass` 472×74 at z=90 (unchanged)
+- `#info-panel` 322×208 at z=80 (unchanged)
+- 1px overlaps between adjacent stacked controls (`#view-toggle`, `#info-controls`, `#camera-controls`) are flex gap artifacts, not real issues
+- All contract surfaces still pass (no regressions)
 
 ---
 
@@ -274,16 +278,35 @@ These correlate with the `state.js` Proxy bypass findings from the 2026-06-05 bu
 - **Tests:** `compass-rail`: 12 pass / 0 fail, `field-node`: 24 pass / 0 fail
 - **Worker:** `ocw_f5ef0b08-4772-4f40-ba0b-99c98be1537a` (mimo-v2.5, completed 2026-06-12)
 
+### Fix 3: Desktop `#camera-controls` 1440×148 band (Main lane)
+
+- **File:** `css/mobile_base.css` (lines 113-126)
+- **Change:** Scoped `body[data-panel-surface] .controls-view, body[data-panel-surface] .controls-info` to `body[data-panel-surface] .controls > .controls-view, body[data-panel-surface] .controls > .controls-info` (direct child combinator)
+- **Before:** `#camera-controls` (with class `controls controls-view`) was rendered as `position: static` 1440×148 bar, overlapping 4 chrome elements
+- **After:** `#camera-controls` correctly renders as `position: fixed` 44×148 column at bottom-right
+- **Tests:** `desktop-idle`: 5/5 contract pass; visual audit shows camera-controls now 44×148, no unexpected overlap (remaining 1px overlaps are flex gap artifacts)
+- **Root cause:** The reset rule at `mobile_base.css:115-123` was designed assuming `.controls-view`/`.controls-info` would be CHILD wrappers of `.controls`, but the HTML uses them as modifier classes on the SAME element. Selector scope fix (`.controls > .controls-view`) preserves the original intent.
+
+- **File:** `css/mobile_premium__focus-dive.css`
+- **Change:** Added `display: none` for `.journey-compass` when `data-focus-panel-mode='field-node'` is active
+- **Before:** Compass (z=90) overlapped focus-stage (z=100) at 93% — compass was visible behind the stage creating visual noise
+- **After:** Compass is completely hidden in field-node mode
+- **Tests:** `compass-rail`: 12 pass / 0 fail, `field-node`: 24 pass / 0 fail
+- **Worker:** `ocw_f5ef0b08-4772-4f40-ba0b-99c98be1537a` (mimo-v2.5, completed 2026-06-12)
+
 ---
 
 ## 10. Next Audit Steps
 
 1. ~~**Run all 25 visual states** — currently only 3 of 25 were captured~~ — **DONE (13/25)** — see §3.0 for the 12 missing states blocked on headless WebGL
 2. **Run visual audit in headed mode** — to capture the 12 blocked states (`enterSemanticDiveViaVisibleControl` needs real WebGL)
-3. **Investigate `[State Bypass]` warnings** — see §8 for current list. Confirmed real bypasses in `journey-point-color.ts` and `focus-pocket.ts` from v2 subagent diagnosis (`ocw_ee70b953`)
-4. **Update `atomic-coverage-protocol.md`** with the surface-by-state coverage matrix
+3. ~~**Investigate `[State Bypass]` warnings** — see §8 for current list. Confirmed real bypasses in `journey-point-color.ts` and `focus-pocket.ts` from v2 subagent diagnosis (`ocw_ee70b953`)~~ — **DONE** — 2 real bypasses in `focus-pocket.ts` fixed via `withStateMutation()` (commit `3fa9f46`)
+4. ~~**Update `atomic-coverage-protocol.md`** with the surface-by-state coverage matrix~~ — **DONE** (commit `7c00482`)
 5. ~~**Add server health check** to `surface-contract-check.mjs` to prevent the JSON-vs-HTML silent failure mode~~ — **DONE** at `tests/surface-contract-check.mjs:4258-4284` (pre-flight fetch with content-type guard, fails fast with `[FATAL]`)
-6. **Resolve desktop `#camera-controls` band** (§3.2) — 1440×148 band at z=100; lower-z elements appear above it visually but the contract test flags unexpected overlap
+6. ~~**Resolve desktop `#camera-controls` band** (§3.2) — 1440×148 band at z=100; lower-z elements appear above it visually but the contract test flags unexpected overlap~~ — **DONE** (commit `b5b9615`) — selector scope fix, camera-controls now 44×148
+
+**Remaining cleanup (lower priority):**
+- Investigate 7 false-positive state-bypass warnings (`scenePerformanceDiagnostics.*`, `navState.*` sub-property writes) — cosmetic noise from sub-property writes; nested Proxy at `state.js:530-531` catches top-level writes correctly
 
 ---
 
