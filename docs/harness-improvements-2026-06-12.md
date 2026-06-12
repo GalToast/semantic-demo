@@ -110,6 +110,47 @@ fi
 
 ---
 
+## Improvement 3: js-repl Worker Auto-Reset on const/let Conflict (LANDED 2026-06-12)
+
+### Friction
+Pi's `js-repl-worker.mjs` and `code_eval` use Node's `vm.runInContext` with a **persistent** context. When a subagent or user declares `const fs = require('fs')` in one call, the `const fs` binding is added to the context's lexical scope. The **next call** with the same `const fs` throws `SyntaxError: Identifier 'fs' has already been declared`. The REPL is permanently poisoned — every subsequent call inherits the polluted context.
+
+**Real impact**: a nemotron-3-ultra-free subagent died mid-task on 2026-06-12 because of this. The fix is now applied and committed.
+
+### Root Cause
+- `vm.runInContext` keeps the lexical scope across calls (this is the design intent — persistent REPL state)
+- No recovery path in the original code
+- Errors come from the VM's realm, so `err instanceof SyntaxError` returns `false` in the outer realm — must check `err.name === 'SyntaxError'`
+
+### Fix Applied
+Modified `C:\Users\HP\.pi\agent\extensions\js-repl-worker.mjs` (line ~143 area, the `handleEval` function):
+- Wrapped `vm.runInContext` call in try/catch
+- On `SyntaxError` with pattern `/Identifier '.*' has already been declared/`, call `context = createContext()` + `installPolicy(policy, logs)` and **retry once**
+- All other errors re-thrown normally
+- Verified working: `const x = 1` then `const x = 2` both succeed (second one auto-resets)
+
+Also updated `C:\Users\HP\.pi\agent\pi-hermes-memory\skills\js-repl\SKILL.md` (Pitfalls section) to document the new auto-reset behavior + the `var` workaround for transitions.
+
+### Commit
+- `a89d19a fix(js-repl): auto-reset VM context on const/let redeclaration conflict` in `C:\Users\HP\.pi\agent`
+- **Status: Committed locally, NOT pushed** (no `origin` remote configured for the pi-coding-agent fork at that path — user must add the remote and push manually)
+
+### Verification
+- Reset context with `js_reset`
+- Declared `const x = 1` — succeeded
+- Declared `const x = 2` — **auto-reset worked**, succeeded (previously would throw)
+- Confirmed auto-reset only fires once per call (no infinite retry)
+
+### Implementation Note
+- The fix uses `err.name === 'SyntaxError'` as the primary check with `err instanceof SyntaxError` as a fallback. The `instanceof` check fails for VM-realm errors.
+- The running worker process retains old code in memory — `js_cancel` is required after editing `js-repl-worker.mjs` for changes to take effect.
+
+### Effort
+- **Applied:** 30 min (worker did it)
+- **Push:** Manual (user adds `origin` remote to `C:\Users\HP\.pi\agent` and pushes)
+
+---
+
 ## How to Use This Document
 
 1. **For quick wins:** Apply Option A of Improvement 1 (5 min) — unblocks memory consolidation today

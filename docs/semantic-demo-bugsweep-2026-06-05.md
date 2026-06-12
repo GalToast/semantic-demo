@@ -134,6 +134,7 @@ No cross-seam findings were returned from any of the 3 slices. All findings stay
 | Focus stage z-index literal (focus_stage.css:53) | LOW | **Resolved — verified 2026-06-06** | Now uses `var(--z-field-nodes)` at focus_stage.css:53 |
 | Search z-index literal (search.css:576) | LOW | **Resolved — verified 2026-06-06** | Now uses `var(--z-canvas)` at search.css:576; all 14 z-index declarations use tokens |
 | narrow.css bare class selectors (lines 9-26) | LOW | **Resolved — verified 2026-06-06** | All selectors in ≤360px block now use `body.is-active[data-panel-surface]` gates (commit f9ddf6a) |
+| `bindings/panel-bindings.ts:69` resize listener leak | MEDIUM | **Resolved — verified 2026-06-12** | Added `unbindPanelControls()` with `AbortController` pattern; `_resizeAbortController.abort()` tears down the window resize listener + cancels pending rAF (commit `1682f31`). Note: the 2026-06-06 "binding-listeners fix wave" claim was incorrect — this module was missed |
 
 ---
 
