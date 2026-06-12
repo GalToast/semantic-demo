@@ -117,7 +117,7 @@ body[data-panel-surface] .controls-rail {
    element itself (e.g. #camera-controls has class="controls controls-view"). */
 body[data-panel-surface] .controls > .controls-view,
 body[data-panel-surface] .controls > .controls-info,
-body[data-panel-surface] .controls > .controls-rail {
+body[data-panel-surface] [data-controls-rail] > .controls {
     flex-direction: column;
     background: transparent;
     border: 0;
