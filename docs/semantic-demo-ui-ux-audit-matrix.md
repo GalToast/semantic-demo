@@ -30,7 +30,7 @@ The contract test connects to `http://127.0.0.1:8795/vector-explorer-polished.ht
 
 ## 2. Contract Surface Results — 2026-06-12
 
-**Total:** 27 surfaces · 267 assertions · **267 pass / 0 fail (100%)**
+**Total:** 27 surfaces · 308 assertions · **308 pass / 0 fail (100%)** — including the 3 previously-failing `mobile-semantic-dive` variants (FIXED as side-effect of controls-rail fix)
 
 | # | Surface | Pass | Fail | Status | Headline issue |
 |---|---|---|---|---|---|
