@@ -417,16 +417,22 @@ function showWebGLFallback(container: HTMLElement, detail: { supported?: boolean
   notice.className = 'webgl-fallback-notice';
   notice.setAttribute('role', 'status');
   notice.setAttribute('aria-live', 'polite');
-  notice.innerHTML = `
-    <div class="webgl-fallback-kicker">Graphics fallback</div>
-    <h2>3D view is unavailable on this device.</h2>
-    <p>The county records still load. Use the map view while graphics acceleration is blocked or unavailable.</p>
-    <button type="button" class="webgl-fallback-map" data-webgl-fallback-map>Open map view</button>
-  `;
+  const kicker = document.createElement('div');
+  kicker.className = 'webgl-fallback-kicker';
+  kicker.textContent = 'Graphics fallback';
+  const heading = document.createElement('h2');
+  heading.textContent = '3D view is unavailable on this device.';
+  const body = document.createElement('p');
+  body.textContent = 'The county records still load. Use the map view while graphics acceleration is blocked or unavailable.';
+  const mapButton = document.createElement('button');
+  mapButton.type = 'button';
+  mapButton.className = 'webgl-fallback-map';
+  mapButton.setAttribute('data-webgl-fallback-map', '');
+  mapButton.textContent = 'Open map view';
+  notice.append(kicker, heading, body, mapButton);
   container.appendChild(notice);
 
-  const mapButton = notice.querySelector<HTMLElement>('[data-webgl-fallback-map]');
-  mapButton?.addEventListener('click', () => {
+  mapButton.addEventListener('click', () => {
     if (_viewController?.switchView) {
       _viewController.switchView('map');
       return;
@@ -719,6 +725,34 @@ export function initThreeJS() {
   initSemanticManifold();
   document.body.dataset.graphicsMode = 'webgl';
   updateCameraViewportOffset();
+
+  // Dev-only: expose engine handle for the Spector.js frame-capture bridge.
+  // Lets SpectorInspector force a render call before captureContext() so
+  // Spector's frame-finder always sees an in-flight draw. Tree-shaken from
+  // production by the import.meta.env.DEV guard (Vite dead-code-eliminates
+  // the false branch during the production build).
+  if (import.meta.env.DEV && typeof window !== 'undefined') {
+    (window as unknown as { __semanticEngine?: unknown }).__semanticEngine = {
+      get renderer() {
+        return webglContext.renderer;
+      },
+      get scene() {
+        return webglContext.scene;
+      },
+      get camera() {
+        return webglContext.camera;
+      },
+      get canvas() {
+        return webglContext.renderer?.domElement ?? null;
+      },
+      renderOnce: () => {
+        if (webglContext.renderer && webglContext.scene && webglContext.camera) {
+          webglContext.renderer.render(webglContext.scene, webglContext.camera);
+        }
+      },
+    };
+  }
+
   return true;
 }
 
