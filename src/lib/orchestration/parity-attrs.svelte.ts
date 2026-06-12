@@ -85,6 +85,9 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
 
   // Strand journey (legacy strand-continuity.js — CSS journey_steps.css reads data-strand-journey)
   { key: 'strandJourney', description: 'Strand journey phase (idle|preview|pinned|exploring|arrived|returning)', source: 'focusStore.strandContinuityPhase' },
+  { key: 'threadInspect', description: 'Whether the thread inspector is active', source: 'focusStore.threadInspector' },
+  { key: 'threadInspectSurface', description: 'Thread inspector surface owner (idle|rail|canvas|pinned|inside-cue)', source: 'focusStore.threadInspector' },
+  { key: 'inspectedThreadIndex', description: 'Currently inspected thread index, or removed when inactive', source: 'focusStore.threadInspector' },
 
   // Journey phase
   { key: 'journeyPhase', description: 'Journey phase lifecycle (idle|overview|search|focus|inside|map|thread-inspect|walking|arriving|settling)', source: 'journeyStore.phase' },
@@ -189,6 +192,8 @@ export function computeParityAttributes(): ParityAttributeMap {
   const semanticDive = focus.semanticDiveMode
     ? 'active'
     : (journey.trailDepth >= 2 ? 'transitioning' : 'inactive');
+  const threadInspectionActive = focus.threadInspector.active;
+  const inspectedThreadIndex = focus.threadInspector.inspectedIndex;
 
   const mode = nav.mode;
 
@@ -233,6 +238,11 @@ export function computeParityAttributes(): ParityAttributeMap {
     searchStatus: search.status || 'idle',
 
     strandJourney: focus.strandContinuityPhase || 'idle',
+    threadInspect: threadInspectionActive ? 'active' : null,
+    threadInspectSurface: threadInspectionActive ? (focus.threadInspector.source || 'rail') : 'idle',
+    inspectedThreadIndex: threadInspectionActive && inspectedThreadIndex !== null
+      ? String(inspectedThreadIndex)
+      : null,
     journeyPhase: journey.phase || 'idle',
     terrainHandoff: journey.terrainHandoffPhase || 'idle',
     demoPhase,
