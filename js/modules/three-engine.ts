@@ -74,6 +74,12 @@ import {
     initSemanticLens,
     initSemanticManifold
 } from './three-interaction-visuals.ts';
+import {
+    initPostProcessing,
+    renderPostProcessing,
+    disposePostProcessing,
+    resizePostProcessing,
+} from './three-postprocessing.ts';
 import { CONFIG } from './config.ts';
 
 export {
@@ -446,6 +452,8 @@ export function initThreeJS() {
     compilePointMaterialForReadiness();
     initSemanticLens();
     initSemanticManifold();
+    // Initialize postprocessing composer (effects start disabled until premium mode)
+    initPostProcessing(renderer, scene, camera);
     document.body.dataset.graphicsMode = 'webgl';
     updateCameraViewportOffset();
     return true;
@@ -463,6 +471,7 @@ export function onWindowResize() {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     renderer.setSize(width, height);
+    resizePostProcessing(width, height);
 }
 
 export function cancelAnimate() {
@@ -501,6 +510,8 @@ export function cancelAnimate() {
     state.nodeSporeMesh = null;
     state.nodeSporeHitMesh = null;
     state.nodeSporeMaterial = null;
+    // Dispose postprocessing composer before tearing down the renderer
+    disposePostProcessing();
     // Also clean webglContext intermediary used by the TS module
     webglContext.scene = null;
     webglContext.camera = null;
@@ -705,7 +716,11 @@ export function animate() {
     const renderStart = performance.now();
 
     if (webglContext.renderer && webglContext.scene && webglContext.camera) {
-        webglContext.renderer.render(webglContext.scene, webglContext.camera);
+        // Premium mode: render through EffectComposer; fallback: vanilla render
+        const renderedViaComposer = renderPostProcessing();
+        if (!renderedViaComposer) {
+            webglContext.renderer.render(webglContext.scene, webglContext.camera);
+        }
         
         withStateMutation(() => {
             state.scenePerformanceDiagnostics.drawCalls = webglContext.renderer!.info.render.calls;
