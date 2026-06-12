@@ -2,14 +2,16 @@
   @components/ThreadInspector.svelte — Connection inspector
 -->
 <script lang="ts">
+  import { onMount, tick } from 'svelte';
   import {
+    focusStore,
     threadInspector,
-    threadInspectorActive,
     clearThreadInspector,
     pinThread,
     unpinThread
   } from '@lib/stores/focus.svelte';
-  import { dispatchNavTransition, focusedIndex, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
+  import type { FocusStoreState } from '@lib/stores/focus.svelte';
+  import { dispatchNavTransition, focusedIndex, NAV_TRANSITION_ACTIONS, updateNavState } from '@lib/stores/navigation';
   import { addWalkHistoryIndex, setTrailDepth, trailDepth, walkHistoryIndices } from '@lib/stores/journey';
 
   interface Props {
@@ -17,6 +19,28 @@
   }
 
   let { visible = false }: Props = $props();
+  let focusSnapshot = $state<FocusStoreState>(focusStore());
+
+  function removeLegacyInspectorDuplicates(): void {
+    if (typeof document === 'undefined') return;
+    for (const legacyInspector of document.querySelectorAll<HTMLElement>('#focus-thread-inspector')) {
+      if (!legacyInspector.closest('#thread-inspector')) legacyInspector.remove();
+    }
+  }
+
+  onMount(removeLegacyInspectorDuplicates);
+
+  $effect(() => {
+    if (!visible || !focusSnapshot.threadInspector.active) return;
+    void tick().then(removeLegacyInspectorDuplicates);
+  });
+
+  $effect(() => {
+    const unsubscribe = focusStore.subscribe((next) => {
+      focusSnapshot = next;
+    });
+    return unsubscribe;
+  });
 
   function bodyInspectedIndex(): number | null {
     if (typeof document === 'undefined') return null;
@@ -32,16 +56,41 @@
 
   function handleFollow(event: MouseEvent): void {
     event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation?.();
     const inspectedIndex = threadInspector().inspectedIndex ?? bodyInspectedIndex();
     if (inspectedIndex === null || !Number.isFinite(inspectedIndex)) return;
+    const actions = (window as unknown as {
+      __APP_ACTIONS__?: {
+        walkThreadNeighbor?: (index: number, options?: Record<string, unknown>) => unknown;
+        clearThreadInspection?: (options?: Record<string, unknown>) => unknown;
+      };
+    }).__APP_ACTIONS__;
 
     const currentIndex = focusedIndex();
     const history = walkHistoryIndices();
+    const nextHistory = [...history];
     if (history.length === 0 && currentIndex !== null && Number.isFinite(currentIndex)) {
       addWalkHistoryIndex(currentIndex);
+      nextHistory.push(currentIndex);
     }
     addWalkHistoryIndex(inspectedIndex);
-    setTrailDepth(Math.max(1, trailDepth()));
+    nextHistory.push(inspectedIndex);
+    const nextTrailDepth = Math.max(1, trailDepth());
+    setTrailDepth(nextTrailDepth);
+    actions?.walkThreadNeighbor?.(inspectedIndex, {
+      surface: 'thread-inspector',
+      reason: 'thread-inspector-follow'
+    });
+    actions?.clearThreadInspection?.({ force: true, preserveJourney: false });
+    updateNavState({
+      focusedIndex: inspectedIndex,
+      mode: 'trail',
+      surface: 'focus',
+      trailDepth: nextTrailDepth,
+      walkHistoryIndices: nextHistory,
+      lastTraversalReason: 'thread-inspector-follow'
+    });
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_THREAD, {
       index: inspectedIndex,
       reason: 'thread-inspector-follow'
@@ -50,8 +99,8 @@
   }
 </script>
 
-{#if visible && threadInspectorActive()}
-  {@const inspector = threadInspector()}
+{#if visible && focusSnapshot.threadInspector.active}
+  {@const inspector = focusSnapshot.threadInspector}
   {@const inspectedIndex = inspector.inspectedIndex ?? bodyInspectedIndex()}
   {@const pinned = inspectedIndex !== null && inspector.pinnedIndex === inspectedIndex}
   <div
@@ -96,6 +145,7 @@
           id="btn-thread-follow"
           type="button"
           class="thread-action"
+          onpointerdown={handleFollow}
           onclick={handleFollow}
           disabled={inspectedIndex === null}
         >
@@ -119,7 +169,7 @@
     position: absolute;
     top: 1rem;
     left: 1rem;
-    z-index: var(--z-overlays);
+    z-index: var(--z-compass);
     background: rgba(7, 16, 24, 0.92);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(78, 205, 196, 0.2);
