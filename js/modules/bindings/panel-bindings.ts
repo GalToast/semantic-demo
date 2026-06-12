@@ -61,13 +61,28 @@ export function setInfoPanelOpen(open?: boolean | undefined, options: SetInfoPan
 
 let _activeResizeHandler: (() => void) | null = null;
 let _resizeRafId: number | null = null;
+let _resizeAbortController: AbortController | null = null;
 
 type WindowResizeHandler = () => void;
 
-export function bindPanelControls(onWindowResize: WindowResizeHandler): void {
-    if (_activeResizeHandler) {
-        window.removeEventListener('resize', _activeResizeHandler);
+export function unbindPanelControls(): void {
+    if (_resizeAbortController) {
+        _resizeAbortController.abort();
+        _resizeAbortController = null;
     }
+    if (_resizeRafId !== null) {
+        cancelAnimationFrame(_resizeRafId);
+        _resizeRafId = null;
+    }
+    _activeResizeHandler = null;
+}
+
+export function bindPanelControls(onWindowResize: WindowResizeHandler): void {
+    // Tear down any prior binding first so this stays idempotent and leak-free
+    unbindPanelControls();
+
+    const controller = new AbortController();
+    _resizeAbortController = controller;
 
     // Debounce the resize handler with requestAnimationFrame to prevent layout thrashing
     _activeResizeHandler = () => {
@@ -78,7 +93,7 @@ export function bindPanelControls(onWindowResize: WindowResizeHandler): void {
         });
     };
 
-    window.addEventListener('resize', _activeResizeHandler);
+    window.addEventListener('resize', _activeResizeHandler, { signal: controller.signal });
 
     bindClick('info-panel-toggle', () => {
         cancelMicroDemo('user-input');
