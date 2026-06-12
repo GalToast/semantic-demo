@@ -43,6 +43,21 @@ import {
 import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
+// ── Postprocessing Module Import ────────────────────────────────────────────
+//
+// The postprocessing module is a singleton wrapper around vanruesc/postprocessing's
+// EffectComposer (vignette + chromatic aberration + bloom + DOF). Static import
+// so the dev server can resolve the legacy .ts file via the `@legacy` alias.
+// `initPostProcessing()` must run AFTER renderer/scene/camera are created;
+// `renderPostProcessing()` is called from the animate loop with a vanilla
+// `renderer.render()` fallback when premium mode is off.
+import {
+  initPostProcessing as _initPostProcessing,
+  renderPostProcessing as _renderPostProcessing,
+  disposePostProcessing as _disposePostProcessing,
+  resizePostProcessing as _resizePostProcessing,
+} from '@legacy/modules/three-postprocessing';
+
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 
 interface LegacyState {
@@ -365,14 +380,6 @@ const SCENE_PERF_EMA_DECAY = 0.992;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function getScenePerformanceProbe() {
-  return {
-    drawCalls: webglContext.renderer?.info?.render?.calls || 0,
-    triangles: webglContext.renderer?.info?.render?.triangles || 0,
-    memory: getLiveResourceCounts(),
-  };
-}
-
 function detectWebGLSupport() {
   if (typeof document === 'undefined') return { supported: false, reason: 'document-unavailable' };
   const canvas = document.createElement('canvas');
@@ -502,38 +509,6 @@ function sampleScenePerformance(frameMs: number, timings: ScenePerformanceTiming
     diagnostics.maxRenderMs = Math.max(timings.renderMs || 0, (diagnostics.maxRenderMs || 0) * SCENE_PERF_EMA_DECAY);
     diagnostics.renderables = getSceneRenderableDiagnostics();
   });
-}
-
-function bindWebGLContextResilience(renderer: THREE.WebGLRenderer) {
-  const canvas = renderer.domElement;
-  if (!canvas || canvas.dataset.webglContextGuardBound === 'true') return;
-  canvas.dataset.webglContextGuardBound = 'true';
-
-  canvas.addEventListener('webglcontextlost', (event: Event) => {
-    event.preventDefault();
-    _webglContextLost = true;
-    if (_rafId !== null) {
-      window.cancelAnimationFrame(_rafId);
-      _rafId = null;
-    }
-    _withStateMutation?.(() => {
-      if (_state) _state.scenePerformanceDiagnostics.reason = 'webgl-context-lost';
-    });
-    _uiFeedback?.showExperienceToast('Graphics context paused', 'The scene will restore automatically.');
-  }, false);
-
-  canvas.addEventListener('webglcontextrestored', () => {
-    _webglContextLost = false;
-    _withStateMutation?.(() => {
-      if (_state) _state.scenePerformanceDiagnostics.reason = 'webgl-context-restored';
-    });
-    if (_webglRestoreTimer) window.clearTimeout(_webglRestoreTimer);
-    _webglRestoreTimer = window.setTimeout(() => {
-      _webglRestoreTimer = null;
-      _uiFeedback?.showExperienceToast('Graphics context restored', 'Rebuilding the semantic scene.');
-      _webglRestore?.restoreWebGLContext().catch((err: unknown) => console.error('WebGL context restore reinit failed:', err));
-    }, 80);
-  }, false);
 }
 
 export function updateCameraViewportOffset() {
@@ -726,6 +701,17 @@ export function initThreeJS() {
   document.body.dataset.graphicsMode = 'webgl';
   updateCameraViewportOffset();
 
+  // Postprocessing composer: wraps renderer/scene/camera in an EffectComposer
+  // (vignette + chromatic aberration + bloom + DOF). Effects stay disabled
+  // until premium mode is toggled on via the body data-attribute. The
+  // composer's render path is invoked from the animate loop below; if
+  // premium mode is off, the loop falls through to vanilla renderer.render().
+  try {
+    _initPostProcessing(renderer, scene, camera);
+  } catch (ppErr) {
+    debugWarn('[three-engine] postprocessing init failed, vanilla render will be used:', ppErr);
+  }
+
   // Dev-only: expose engine handle for the Spector.js frame-capture bridge.
   // Lets SpectorInspector force a render call before captureContext() so
   // Spector's frame-finder always sees an in-flight draw. Tree-shaken from
@@ -768,6 +754,7 @@ export function onWindowResize() {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
+  _resizePostProcessing(width, height);
 }
 
 export function cancelAnimate() {
@@ -797,6 +784,14 @@ export function cancelAnimate() {
   }
   disposeObject3D(scene as any);
   _focusAnchor?.disposeFocusAnchorIndicator();
+  // Dispose postprocessing composer BEFORE renderer.dispose() so the
+  // composer's GL framebuffer/texture resources release cleanly while the
+  // underlying WebGL context is still valid.
+  try {
+    _disposePostProcessing();
+  } catch (ppErr) {
+    debugWarn('[three-engine] postprocessing dispose failed:', ppErr);
+  }
   if (renderer) {
     renderer.dispose();
     const canvas = renderer.domElement;
@@ -1014,7 +1009,13 @@ export function animate() {
   const renderStart = performance.now();
 
   if (webglContext.renderer && webglContext.scene && webglContext.camera) {
-    webglContext.renderer.render(webglContext.scene, webglContext.camera);
+    // Premium mode: render through EffectComposer. When premium mode is off
+    // (or composer is not yet initialized), renderPostProcessing() returns
+    // false and we fall through to the vanilla renderer.render() path.
+    const renderedViaComposer = _renderPostProcessing();
+    if (!renderedViaComposer) {
+      webglContext.renderer.render(webglContext.scene, webglContext.camera);
+    }
 
     _withStateMutation?.(() => {
       if (!_state) return;
