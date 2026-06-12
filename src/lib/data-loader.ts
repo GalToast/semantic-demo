@@ -16,7 +16,7 @@ import type {
   SemanticNeighborDetail,
   LayoutManifest,
 } from '@lib/types/business';
-import { debugWarn } from '@lib/utils/diagnostic-adapter';
+import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter';
 import { cleanOptionalValue } from '@lib/utils/dom-formatters';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -176,7 +176,7 @@ export async function loadBusinessData(): Promise<BusinessDataResult> {
 
   checkDataBounds(positionsBuffer);
 
-  debugWarn(
+  debugInfo(
     `[data-loader] Loaded ${count.toLocaleString()} business records, ` +
     `${pointIndexByLeadId.size.toLocaleString()} with lead IDs`
   );
@@ -248,7 +248,7 @@ export async function loadSemanticThreads(): Promise<SemanticThreadDataResult> {
   // Build normalized neighbor map
   const neighborMap = buildSemanticNeighborMap(bundle);
 
-  debugWarn(
+  debugInfo(
     `[data-loader] Loaded semantic threads: ${artifactName}, ` +
     `${neighborMap.size.toLocaleString()} node entries`
   );

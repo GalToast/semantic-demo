@@ -27,7 +27,7 @@ import {
   loadSemanticThreads,
   loadLayoutManifest,
 } from '@lib/data-loader';
-import { debugWarn } from '@lib/utils/diagnostic-adapter';
+import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // ── Status Types ──────────────────────────────────────────────────────────────
 
@@ -248,7 +248,7 @@ export async function initData(): Promise<void> {
 
   setDataLoadStatus('loading');
   setLoadingPhase('records');
-  debugWarn('[data-store] Starting data initialization...');
+  debugInfo('[data-store] Starting data initialization...');
 
   try {
     // Load business records (required) and semantic threads (optional) in parallel.
@@ -262,7 +262,7 @@ export async function initData(): Promise<void> {
     if (businessResult.status === 'fulfilled') {
       setBusinessData(businessResult.value);
       setLoadingPhase('scene');
-      debugWarn('[data-store] Business records loaded.');
+      debugInfo('[data-store] Business records loaded.');
     } else {
       const msg =
         businessResult.reason instanceof Error
@@ -283,7 +283,7 @@ export async function initData(): Promise<void> {
       }
       setSemanticThreadData(threadData);
       setLoadingPhase('restore');
-      debugWarn('[data-store] Semantic threads loaded.');
+      debugInfo('[data-store] Semantic threads loaded.');
     } else {
       const msg =
         threadResult.reason instanceof Error
@@ -300,7 +300,7 @@ export async function initData(): Promise<void> {
     setLoadingPhase('launch');
     _dataLoadState.status = 'ready';
     _dataLoadState.error = null;
-    debugWarn('[data-store] Data initialization complete.');
+    debugInfo('[data-store] Data initialization complete.');
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[data-store] Unexpected error during init:', msg);

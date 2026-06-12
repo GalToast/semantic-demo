@@ -73,11 +73,17 @@ export function initSemanticDiveUiSubscriptions(): void {
 export function syncSemanticDiveUi(): void {
     ensureFocusStageAuxiliaryDom();
     ensureDiveButton();
+    const publicFocusedNode = Number(document.body?.dataset?.focusedNode);
     const hasFocus = getFocusedNode() !== null && getFocusedNode() !== undefined
-        || Number.isFinite(getNavState()?.focusedIndex);
+        || Number.isFinite(getNavState()?.focusedIndex)
+        || Number.isFinite(publicFocusedNode);
     const canDive = getCurrentView() === 'galaxy' && hasFocus;
 
-    const active = getSemanticDiveMode() && canDive;
+    const publicSemanticDiveActive =
+        document.body?.dataset?.semanticDive === 'active'
+        || document.body?.dataset?.panelSurface === 'semantic-dive'
+        || Number(document.body?.dataset?.trailDepth || 0) >= 2;
+    const active = publicSemanticDiveActive || (getSemanticDiveMode() && canDive);
     const deadline = state._semanticDiveTransitionDeadline || 0;
     const isTransitioning = active && deadline > 0 && Date.now() < deadline;
     if (active && !isTransitioning && document.body) {
