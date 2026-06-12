@@ -138,7 +138,8 @@ States from `tests/visual-state-registry.mjs`:
 Before any release to staging or production, the following must all be true:
 
 ### 4.1 Contract gate
-- [x] All 27 contract surfaces pass at their default viewport — **DONE 2026-06-12 (267/267)**
+- [x] All 27 contract surfaces pass at their default viewport — **DONE 2026-06-12 (308/308)** — including the 3 previously-failing `mobile-semantic-dive` variants which now all pass 20/0
+- [x] `mobile-semantic-dive` inside-controls visibility (3 variants) — **FIXED 2026-06-12** as side-effect of controls-rail fix. The HTML wrapper + CSS reset rules changed the CSS cascade enough to also resolve the inside-controls display state. Verified by 3 parallel mimo-v2.5-free workers + main lane re-run (60/60 pass)
 - [ ] No `[State Bypass]` warnings in console — **2 real bypasses FIXED in `focus-pocket.ts`**; 7 false positives remain (cosmetic sub-property writes; nested Proxy at `state.js:530-531` catches top-level writes correctly)
 - [x] No horizontal overflow on any surface — **DONE**
 - [x] `field-node` 534px bottom inset is resolved — **FIXED** at `css/mobile_premium__focus-dive.css`
