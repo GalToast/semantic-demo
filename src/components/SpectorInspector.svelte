@@ -26,13 +26,31 @@
 
   let { visible = false }: Props = $props();
 
+  // Track the inspector's lifecycle so failures are visible to the dev
+  // instead of silently disappearing into console. The previous version
+  // swallowed import errors with console.warn and left no UI feedback,
+  // which made it hard to tell whether Spector had actually loaded.
+  type LoadPhase = 'idle' | 'loading' | 'ready' | 'unsupported' | 'error';
+  let phase = $state<LoadPhase>('idle');
+  let loadError = $state<string | null>(null);
+  let loadDetail = $state<string | null>(null);
+
   let spectorInstance: unknown = null;
   let isReady = $state(false);
   let lastCapture: unknown = null;
   let activeCanvas: HTMLCanvasElement | null = null;
+  let lastCommandCount = $state(0);
+  let lastCaptureAt = $state<number | null>(null);
 
   onMount(async () => {
-    if (!visible || !import.meta.env.DEV) return;
+    if (!visible || !import.meta.env.DEV) {
+      phase = 'idle';
+      return;
+    }
+
+    phase = 'loading';
+    loadError = null;
+    loadDetail = null;
 
     try {
       // Spector.js v0.9.30 exports the class as a named export `Spector`.
@@ -53,8 +71,28 @@
         getCurrentResult: () => unknown;
       };
       spectorInstance = new Ctor();
+      // Record which shape we used so the dev can tell from the status
+      // panel whether the named export or the default export was the
+      // working one. Useful for debugging future spectorjs upgrades.
+      loadDetail =
+        candidate === mod.Spector
+          ? 'named-export'
+          : candidate === (mod.default as Record<string, unknown> | undefined)?.Spector
+            ? 'default.Spector'
+            : candidate === mod.default
+              ? 'default'
+              : 'namespace';
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      // Two distinct failure modes: the import itself failed (network /
+      // bundler / missing dep), or the candidate shape was unusable
+      // (e.g. a future spectorjs version drops both named + default).
+      // The latter is rare but the dev panel can show which one hit.
+      const isImportError = err instanceof TypeError && /import|fetch|module/i.test(message);
+      loadError = isImportError ? 'import-failed' : 'init-failed';
+      phase = 'error';
       console.warn('[spector-inspector] failed to load spectorjs', err);
+      publishStatus();
       return;
     }
 
@@ -150,7 +188,17 @@
               onCapture?: SpectorEventHandle;
               onError?: SpectorEventHandle;
             };
-            spectorWithEvents.onCapture?.add(onCapture as unknown as (...args: unknown[]) => void);
+            // Track capture metadata so the dev-only status panel can
+            // show the most recent command count and capture timestamp
+            // without needing a Playwright probe.
+            const onCaptureTracked = (capture: unknown) => {
+              const cmds = (capture as { commands?: unknown[] } | null)?.commands ?? [];
+              lastCommandCount = cmds.length;
+              lastCaptureAt = Date.now();
+              publishStatus();
+              onCapture(capture);
+            };
+            spectorWithEvents.onCapture?.add(onCaptureTracked as unknown as (...args: unknown[]) => void);
             spectorWithEvents.onError?.add(((err: unknown) => {
               clearTimeout(timeout);
               resolve({ ok: false, reason: 'spector-error', error: String(err) });
@@ -184,12 +232,40 @@
     };
 
     (window as unknown as { __spector: typeof bridge }).__spector = bridge;
+    phase = 'ready';
+    publishStatus();
     console.log('[spector-inspector] ready; call window.__spector.capture() to begin');
   });
+
+  // Publish a read-only status snapshot on window.__spectorStatus so
+  // headless tests and the dev panel can both observe lifecycle state
+  // without having to introspect the bridge internals. Kept deliberately
+  // minimal — the bridge is the authoritative API.
+  function publishStatus() {
+    if (typeof window === 'undefined') return;
+    (window as unknown as {
+      __spectorStatus: {
+        phase: LoadPhase;
+        loadError: string | null;
+        loadDetail: string | null;
+        lastCommandCount: number;
+        lastCaptureAt: number | null;
+        bridgeReady: boolean;
+      };
+    }).__spectorStatus = {
+      phase,
+      loadError,
+      loadDetail,
+      lastCommandCount,
+      lastCaptureAt,
+      bridgeReady: isReady,
+    };
+  }
 
   onDestroy(() => {
     if (typeof window !== 'undefined') {
       delete (window as unknown as { __spector?: unknown }).__spector;
+      delete (window as unknown as { __spectorStatus?: unknown }).__spectorStatus;
     }
   });
 </script>
@@ -198,10 +274,82 @@
   <!--
     Spector.js builds its own UI panel when used interactively. For
     headless agent access we skip that panel and expose the API on
-    window.__spector. No visual chrome needed.
+    window.__spector. The small status badge below is dev-only and
+    disappears entirely when visible={false}, so it's tree-shaken out
+    of the production bundle via the {#if visible} gate.
   -->
+  <aside class="spector-status" data-phase={phase} aria-live="polite">
+    <span class="spector-status__dot" aria-hidden="true"></span>
+    <span class="spector-status__label">
+      Spector: {phase}
+      {#if loadDetail}<span class="spector-status__detail">({loadDetail})</span>{/if}
+      {#if loadError}<span class="spector-status__error">— {loadError}</span>{/if}
+      {#if lastCaptureAt}
+        <span class="spector-status__last">
+          · last: {lastCommandCount} cmd
+          {Math.round((Date.now() - lastCaptureAt) / 1000)}s ago
+        </span>
+      {/if}
+    </span>
+  </aside>
 {/if}
 
 <style>
-  /* No styles — Spector manages its own UI. */
+  /*
+   * Status badge. Dev-only via the {#if visible} gate. Pointer-events:none
+   * so the badge never intercepts canvas clicks or pointer events. The
+   * low z-index keeps it below the canvas surface chrome; the data-phase
+   * attribute lets the dev-tools stylesheet color it appropriately.
+   */
+  .spector-status {
+    position: fixed;
+    top: 6px;
+    right: 6px;
+    z-index: 5;
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    font: 11px/1.2 ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+    background: rgba(20, 20, 28, 0.78);
+    color: #e8e8f0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    backdrop-filter: blur(4px);
+  }
+  .spector-status__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #6a6a78;
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  .spector-status[data-phase="loading"] .spector-status__dot {
+    background: #f0b94e;
+    animation: spector-pulse 1.2s ease-in-out infinite;
+  }
+  .spector-status[data-phase="ready"] .spector-status__dot {
+    background: #4ecdc4;
+  }
+  .spector-status[data-phase="error"] .spector-status__dot,
+  .spector-status[data-phase="unsupported"] .spector-status__dot {
+    background: #e26d6d;
+  }
+  .spector-status__detail {
+    color: #9aa0aa;
+    margin-left: 4px;
+  }
+  .spector-status__error {
+    color: #ff9a9a;
+    margin-left: 4px;
+  }
+  .spector-status__last {
+    color: #8fb3a8;
+    margin-left: 4px;
+  }
+  @keyframes spector-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
 </style>
