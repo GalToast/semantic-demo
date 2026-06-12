@@ -36,6 +36,14 @@ const NODE_SPORE_BASE_RADIUS = 0.0019;
 const NODE_SPORE_COLOR_LIFT = new THREE.Color(SCENE_PALETTE.sporeLift);
 const THREAD_TINT_COLOR = SCENE_PALETTE.threadTint;
 
+// Phase 1 of the focus-pocket 3D-only migration: pocket-node role tints.
+// Mirrors the HTML overlay's .direct/.support/.civic CSS class colors
+// (FocusPocket.svelte) so the 3D render carries the same role identity
+// before the overlay is removed in Phase 2.
+const NODE_SPORE_ROLE_TINT_PRIMARY = new THREE.Color(0x4ecdc4); // teal — .direct
+const NODE_SPORE_ROLE_TINT_SUPPORT = new THREE.Color(0xffd93d); // amber — .support
+const NODE_SPORE_ROLE_TINT_HALO    = new THREE.Color(0xff6b6b); // rose — .civic
+
 // Reduced segment counts: at the rendered size (~2 px) the lower-poly
 // spheres read identically to the former 10x8 meshes but save ~60% of
 // triangle throughput on the GPU.
@@ -121,10 +129,19 @@ export function getNodeSporeColor(index: any, factor = 1) {
     const baseG = state.pointBaseColors?.[colorOffset + 1] ?? 0.82;
     const baseB = state.pointBaseColors?.[colorOffset + 2] ?? 0.78;
     const lift = 0.015 + seededUnit(index, 9.7) * 0.045;
-    return _nodeSporeColor
+    _nodeSporeColor
         .setRGB(baseR, baseG, baseB)
         .lerp(NODE_SPORE_COLOR_LIFT, lift)
         .multiplyScalar(THREE.MathUtils.clamp(factor, 0.04, 2.6));
+    // Role-based hue tint for focus-pocket nodes. Small lerp (0.18-0.22)
+    // preserves the cluster identity underneath while making primary/support/
+    // halo roles visually distinct. Non-pocket nodes (no role entry) keep
+    // the unmodified cluster color.
+    const role = state.navState.focusPocketRoleByIndex?.get(index);
+    if (role === 'primary') _nodeSporeColor.lerp(NODE_SPORE_ROLE_TINT_PRIMARY, 0.22);
+    else if (role === 'support') _nodeSporeColor.lerp(NODE_SPORE_ROLE_TINT_SUPPORT, 0.18);
+    else if (role === 'halo') _nodeSporeColor.lerp(NODE_SPORE_ROLE_TINT_HALO, 0.20);
+    return _nodeSporeColor;
 }
 
 export function getPointBoundsCenter(points: Array<{ x?: number; y?: number; z?: number }>, positionBuffer: Float32Array | null = null) {
