@@ -74,3 +74,5 @@ semantic-sweep-*
 # Svelte/Vite build artifacts
 dist/svelte/assets/
 dist/svelte/.git/
+# rollup-plugin-visualizer output (npm run build:svelte generates this)
+dist/svelte/stats.html
