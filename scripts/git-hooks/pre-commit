@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+#
+# Git pre-commit hook — branch guard + high-reversion-risk file warning.
+# Cross-platform: runs natively on macOS/Linux/git-bash.
+# On Windows, the installed .cmd wrapper invokes pwsh on the .ps1 shim instead.
+
+set -euo pipefail
+
+# ── Verify we're in a git repository ────────────────────────────────────────
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    exit 0
+fi
+
+# ── Get current branch ──────────────────────────────────────────────────────
+branch=$(git branch --show-current)
+expectedBranch="master"
+allowAnyBranch=false
+skipHighRiskCheck=false
+
+# Parse flags passed from the .ps1 shim or .cmd wrapper
+for arg in "$@"; do
+    case "$arg" in
+        --AllowAnyBranch) allowAnyBranch=true ;;
+        --SkipHighRiskCheck) skipHighRiskCheck=true ;;
+    esac
+done
+
+# ── Branch guard ────────────────────────────────────────────────────────────
+if [ "$branch" != "$expectedBranch" ] && [ "$allowAnyBranch" = false ]; then
+    echo "Warning: You are on branch '$branch', not '$expectedBranch'."
+    echo "This branch may have unmerged changes that could be overwritten by a build."
+    printf "Continue? [y/N] "
+    read -r response
+    if [ "$response" != "y" ] && [ "$response" != "Y" ]; then
+        echo "Commit blocked."
+        exit 1
+    fi
+fi
+
+# ── High-reversion-risk file check ─────────────────────────────────────────
+stagedFiles=$(git diff --cached --name-only)
+matchingFiles=""
+
+for file in $stagedFiles; do
+    case "$file" in
+        vector-explorer-polished.html|\
+        css/mobile_premium_*.css|\
+        css/journey_active.css|\
+        css/journey_steps.css|\
+        css/strands.css|\
+        css/progressive_disclosure.css|\
+        css/mobile_*.css|\
+        css/focus_*.css)
+            matchingFiles="$matchingFiles $file"
+            ;;
+    esac
+done
+
+matchingCount=0
+for f in $matchingFiles; do
+    matchingCount=$((matchingCount + 1))
+done
+
+if [ "$matchingCount" -gt 0 ] && [ "$skipHighRiskCheck" = false ]; then
+    echo "Reminder: these files have a history of build reversion."
+    echo "Commit and push immediately, or pass --SkipHighRiskCheck to bypass."
+    echo "Files:"
+    for f in $matchingFiles; do
+        echo "  $f"
+    done
+fi
+
+echo "reversion-guard: OK (branch=$branch, high-risk files=$matchingCount)"
+exit 0

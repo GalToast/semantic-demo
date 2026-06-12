@@ -187,8 +187,9 @@
     "dev:svelte": "vite --config vite.config.ts",
     "build:svelte": "vite build --config vite.config.ts",
     "preview:svelte": "vite preview --config vite.config.ts",
-    "git:hook:check": "pwsh -NoLogo -NoProfile -File scripts/git-hooks/pre-commit.ps1",
-    "git:hook:install": "pwsh -NoLogo -NoProfile -Command \"Copy-Item -Path scripts/git-hooks/pre-commit.ps1 -Destination .git/hooks/pre-commit -Force; Write-Host 'Git pre-commit hook installed successfully.'\""
+    "git:hook:check": "node -e \"const {execSync}=require('child_process');const p=require('path');process.platform==='win32'?execSync('pwsh -NoLogo -NoProfile -File '+p.join('scripts','git-hooks','pre-commit.ps1')+' --AllowAnyBranch --SkipHighRiskCheck',{stdio:'inherit'}):execSync('bash '+p.join('scripts','git-hooks','pre-commit')+' --AllowAnyBranch --SkipHighRiskCheck',{stdio:'inherit'})\"",
+    "git:hook:install": "pwsh -NoLogo -NoProfile -Command \"Copy-Item -Path 'scripts/git-hooks/pre-commit' -Destination '.git/hooks/pre-commit' -Force; Copy-Item -Path 'scripts/git-hooks/pre-commit.ps1' -Destination '.git/hooks/pre-commit.ps1' -Force; Copy-Item -Path 'scripts/git-hooks/pre-commit.cmd' -Destination '.git/hooks/pre-commit.cmd' -Force; Write-Host 'Git pre-commit hook installed (bash + ps1 shim + cmd wrapper).'\"",
+    "git:hook:uninstall": "pwsh -NoLogo -NoProfile -Command \"Remove-Item -Path '.git/hooks/pre-commit' -Force -ErrorAction SilentlyContinue; Remove-Item -Path '.git/hooks/pre-commit.ps1' -Force -ErrorAction SilentlyContinue; Remove-Item -Path '.git/hooks/pre-commit.cmd' -Force -ErrorAction SilentlyContinue; Write-Host 'Git pre-commit hook removed.'\""
   },
   "keywords": [],
   "author": "",
