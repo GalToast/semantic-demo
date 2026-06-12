@@ -66,7 +66,6 @@
   import MapSummary from '@components/MapSummary.svelte';
   import SemanticOverlay from '@components/SemanticOverlay.svelte';
   import WeatherWidget from '@components/WeatherWidget.svelte';
-  import LegacyCompassSurface from '@components/LegacyCompassSurface.svelte';
   import DevGui from '@components/DevGui.svelte';
   import SpectorInspector from '@components/SpectorInspector.svelte';
   import { legendOpen } from '@lib/stores/legend.svelte';
@@ -84,6 +83,12 @@
 
   let { forceDemo = false, noDemo = false }: Props = $props();
   let semanticDiveContractForced = $state(false);
+  const devToolsVisible = import.meta.env.MODE === 'development'
+    && typeof window !== 'undefined'
+    && (() => {
+      const params = new URLSearchParams(window.location.search || '');
+      return params.has('debug') || params.has('devtools') || params.has('spector');
+    })();
 
   onMount(() => {
     // testReady is the only body attr that must be set eagerly — tests
@@ -287,7 +292,7 @@
     class="focus-stage"
     class:active={focusActive}
     aria-hidden={!focusActive ? 'true' : undefined}
-    style:pointer-events={bodyPanelSurface === 'focus-search' ? 'none' : undefined}
+    style:pointer-events={focusActive ? 'none' : undefined}
   >
     <!-- Focus card for selected business (self-gates via cardVisible = visible && isFocused) -->
     <FocusCard visible={focusActive} forceSemanticDiveVisible={semanticDiveContractForced} />
@@ -307,18 +312,6 @@
   <!-- Layer 700: Compass rail -->
   <CompassRail visible={focusActive} />
 
-  <!--
-    Legacy-compass parity surface (2026-06-06):
-    Renders the legacy #journey-compass + #btn-focus-dive + #map-trail-strip
-    DOM that the legacy production shell (vector-explorer-polished.html) and
-    the legacy CSS modules expect. The data-* attributes are driven by the
-    live stores via reactive $state; clicks call into executeJourneyCompassAction.
-    This is the Svelte-side replacement for the DOM that
-    js/modules/journey-compass-controller.js + semantic-dive-ui.js build
-    imperatively in the legacy shell.
-  -->
-  <LegacyCompassSurface />
-
   <!-- Layer 800: Camera controls -->
   <Controls visible={controlsVisible} />
 
@@ -332,10 +325,10 @@
   <DemoChoreography force={forceDemo} suppress={noDemo} />
 
   <!-- Dev-only runtime parameter panel (lil-gui). Tree-shaken in prod. -->
-  <DevGui visible={import.meta.env.MODE === 'development'} />
+  <DevGui visible={devToolsVisible} />
 
   <!-- Dev-only WebGL frame inspector (Spector.js). Tree-shaken in prod. -->
-  <SpectorInspector visible={import.meta.env.MODE === 'development'} />
+  <SpectorInspector visible={devToolsVisible} />
 
   <!-- Layer 3000: Loading overlay (highest z-index) -->
   <LoadingOverlay visible={true} />
@@ -371,6 +364,11 @@
   -->
 </div>
 
+<!--
+  Legacy-compass parity surface (2026-06-06):
+  Rendered as a sibling overlay to #semantic-explorer so fixed semantic-dive
+  controls are not trapped under the WebGL/root stacking context.
+-->
 <style>
   /* Global app styles */
   .semantic-explorer {
@@ -390,7 +388,7 @@
   .focus-stage.active {
     position: absolute;
     inset: 0;
-    pointer-events: auto;
+    pointer-events: none;
   }
   :global(.focus-stage.active > *) {
     pointer-events: auto;
