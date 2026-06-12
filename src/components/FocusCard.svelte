@@ -451,10 +451,11 @@
       padding: 18px 14px 10px;
     }
 
-    /* Bottom-sheet radius applied to focus-search + field-node for visual
-       consistency with the semantic-dive bottom-sheet (Phase 1 #11). */
-    :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) :is(.focus-card, .focus-stage-card),
-    :global(body[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) :is(.focus-card, .focus-stage-card) {
+    /* Bottom-sheet radius for all mobile focus states */
+    :global(body.is-active[data-panel-surface='focus-search']) :is(.focus-card, .focus-stage-card),
+    :global(body[data-panel-surface='focus-search']) :is(.focus-card, .focus-stage-card),
+    :global(body.is-active[data-panel-surface='focus']) :is(.focus-card, .focus-stage-card),
+    :global(body[data-panel-surface='focus']) :is(.focus-card, .focus-stage-card) {
       border-radius: 22px 22px 0 0;
     }
   }
