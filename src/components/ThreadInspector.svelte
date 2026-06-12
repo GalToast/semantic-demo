@@ -48,6 +48,16 @@
     return Number.isFinite(value) ? value : null;
   }
 
+  function localizeSource(source: string | undefined): string {
+    switch (source) {
+      case 'rail-hover': return 'hovering a neighbor';
+      case 'rail-inspect': return 'inspecting a neighbor';
+      case 'semantic-search': return 'your search anchor';
+      case 'trail-step': return 'your last trail step';
+      default: return 'focus';
+    }
+  }
+
   function handlePin(index: number | null, pinnedIndex: number | null): void {
     if (index === null || !Number.isFinite(index)) return;
     if (pinnedIndex === index) unpinThread();
@@ -123,7 +133,7 @@
       </h2>
       <p id="focus-thread-inspector-copy" class="focus-thread-inspector-copy">
         {inspectedIndex !== null
-          ? `Previewing the semantic connection from ${inspector.source || 'focus'} to node ${inspectedIndex}.`
+          ? `Previewing the semantic connection from ${localizeSource(inspector.source)} to node ${inspectedIndex}.`
           : 'Preview why this nearby stop belongs in the current focus path.'}
       </p>
       <div id="focus-thread-inspector-meta" class="focus-thread-inspector-meta">
