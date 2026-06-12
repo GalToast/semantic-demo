@@ -53,7 +53,9 @@ export function getFocusPocketIndices(): number[] {
 }
 
 export function setFocusPocketIndices(indices: number[]): void {
-    state.navState.focusPocketIndices = indices;
+    withStateMutation(() => {
+        state.navState.focusPocketIndices = indices;
+    });
 }
 
 export function getFocusPocketRoleByIndex(): Map<number, string> {
@@ -61,18 +63,24 @@ export function getFocusPocketRoleByIndex(): Map<number, string> {
 }
 
 export function setFocusPocketRoleByIndex(map: Map<number, string>): void {
-    state.navState.focusPocketRoleByIndex = map;
+    withStateMutation(() => {
+        state.navState.focusPocketRoleByIndex = map;
+    });
 }
 
 export function setFocusPocketRoleForIndex(index: number, role: string): void {
-    if (!(state.navState.focusPocketRoleByIndex instanceof Map)) {
-        state.navState.focusPocketRoleByIndex = new Map();
-    }
-    state.navState.focusPocketRoleByIndex.set(index, role);
+    withStateMutation(() => {
+        if (!(state.navState.focusPocketRoleByIndex instanceof Map)) {
+            state.navState.focusPocketRoleByIndex = new Map();
+        }
+        state.navState.focusPocketRoleByIndex.set(index, role);
+    });
 }
 
 export function clearFocusPocketRoleByIndex(): void {
-    state.navState.focusPocketRoleByIndex = new Map();
+    withStateMutation(() => {
+        state.navState.focusPocketRoleByIndex = new Map();
+    });
 }
 
 export function getFocusPocketMotionByIndex(): Map<number, any> {
@@ -80,22 +88,30 @@ export function getFocusPocketMotionByIndex(): Map<number, any> {
 }
 
 export function setFocusPocketMotionByIndex(map: Map<number, any>): void {
-    (state as any).focusPocketMotionByIndex = map;
+    withStateMutation(() => {
+        (state as any).focusPocketMotionByIndex = map;
+    });
 }
 
 export function setFocusPocketMotionForIndex(index: number, motion: any): void {
-    if (!((state as any).focusPocketMotionByIndex instanceof Map)) {
-        (state as any).focusPocketMotionByIndex = new Map();
-    }
-    (state as any).focusPocketMotionByIndex.set(index, motion);
+    withStateMutation(() => {
+        if (!((state as any).focusPocketMotionByIndex instanceof Map)) {
+            (state as any).focusPocketMotionByIndex = new Map();
+        }
+        (state as any).focusPocketMotionByIndex.set(index, motion);
+    });
 }
 
 export function clearFocusPocketMotionByIndex(): void {
-    (state as any).focusPocketMotionByIndex = new Map();
+    withStateMutation(() => {
+        (state as any).focusPocketMotionByIndex = new Map();
+    });
 }
 
 export function clearFocusPocketIndices(): void {
-    state.navState.focusPocketIndices = [];
+    withStateMutation(() => {
+        state.navState.focusPocketIndices = [];
+    });
 }
 
 export function getFocusPocketMeta(): any {
@@ -103,11 +119,15 @@ export function getFocusPocketMeta(): any {
 }
 
 export function setFocusPocketMeta(meta: any): void {
-    state.navState.focusPocketMeta = meta;
+    withStateMutation(() => {
+        state.navState.focusPocketMeta = meta;
+    });
 }
 
 export function clearFocusPocketMeta(): void {
-    state.navState.focusPocketMeta = null;
+    withStateMutation(() => {
+        state.navState.focusPocketMeta = null;
+    });
 }
 
 export function applyLocalNeighborhoodFocus(index: number): void {
