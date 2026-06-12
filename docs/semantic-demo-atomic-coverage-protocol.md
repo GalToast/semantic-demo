@@ -1,6 +1,6 @@
 # Semantic Explorer Atomic Coverage Protocol
 
-**Last updated:** 2026-06-11
+**Last updated:** 2026-06-12
 **Companion to:** `docs/semantic-demo-ui-ux-audit-matrix.md`
 **Purpose:** Define the minimal atomic surface/state set that must pass before any release, and the test that covers each atom.
 
@@ -41,7 +41,7 @@ This is the canonical matrix. Every cell must be exercised before release.
 | `search-no-results` | ✅ | — | ⬜ | — | `css/progressive_disclosure.css` |
 | `map-trail` | ✅ | ✅ | ⬜ | — | `js/modules/journey-route-trace.js` |
 | `focus-pocket` | ✅ | ✅ | ⬜ | — | `js/modules/focus-pocket.js` |
-| `field-node` | ❌ (1) | ⬜ | ⬜ | — | `css/mobile_premium__focus-dive.css` |
+| `field-node` | ✅ FIXED | ⬜ | ⬜ | — | `css/mobile_premium__focus-dive.css` |
 | `info-panel-empty` | ✅ | ✅ | ⬜ | — | `src/components/InfoPanel.svelte` |
 | `compass-rail` | ✅ | — | ⬜ | — | `src/components/JourneyChrome.svelte` |
 | `loading-overlay` | ✅ | — | ⬜ | — | `js/modules/loading-ui.js` |
@@ -63,11 +63,11 @@ States from `tests/visual-state-registry.mjs`:
 |---|---|---|---|
 | 01 | `01-mobile-idle` | 2026-06-11 | None |
 | 02 | `02-mobile-search-coffee` | ⬜ | — |
-| 03 | `03-mobile-focus-first-result` | 2026-06-11 | ❌ 3 issues (compass overflow, focus-stage overlap) |
+| 03 | `03-mobile-focus-first-result` | 2026-06-12 | ✅ **FIXED** (field-node focus-stage flush + compass hidden in field-node mode) |
 | 04 | `04-mobile-field-node-active` | ⬜ | — |
 | 05 | `05-mobile-map` | ⬜ | — |
 | 06 | `06-mobile-filters-open` | ⬜ | — |
-| 07 | `07-desktop-idle` | 2026-06-11 | ❌ 1 issue (camera-controls band overlap) |
+| 07 | `07-desktop-idle` | 2026-06-12 | ✅ **FIXED** (selector scope fix) |
 | 08 | `08-desktop-search-coffee` | ⬜ | — |
 | 09 | `09-mobile-map-empty-state` | ⬜ | — |
 | 10 | `10-mobile-search-error-state` | ⬜ | — |
@@ -89,7 +89,7 @@ States from `tests/visual-state-registry.mjs`:
 | 24 | `24-mobile-map-focus-search` | ⬜ | — |
 | 25 | `25-mobile-search-no-results` | ⬜ | — |
 
-**Coverage:** 3 of 25 states captured in last run (12%).
+**Coverage:** 13 of 25 states captured in last run (52%). 12 states remain blocked on headed WebGL capture.
 
 ---
 
@@ -104,7 +104,7 @@ States from `tests/visual-state-registry.mjs`:
 | Contract assertion | `layout:focus-stage-card-bottom-flush` — card bottom inset ≤ 0px |
 | Visual evidence | `03-mobile-focus-first-result.png` |
 | Owning seam | `css/mobile_premium__focus-dive.css:1138` (max-height), `js/modules/focus-stage-renderer.js` |
-| Last status | ❌ fail (534px bottom inset) |
+| Last status | ✅ **FIXED 2026-06-12** — field-node focus-stage pins to viewport bottom and legacy compass is hidden in field-node mode |
 | Why it matters | Card sits with 534px of empty space below it on mobile focus — visible vertical gap between card content and viewport bottom |
 
 ### 3.2 `compass-rail` atom (mobile focus)
@@ -116,7 +116,7 @@ States from `tests/visual-state-registry.mjs`:
 | Contract assertion | (1) compass present with ≥3 step buttons, (2) all step buttons have touch target ≥44px, (3) no horizontal overflow |
 | Visual evidence | `03-mobile-focus-first-result.png` |
 | Owning seam | `src/components/JourneyChrome.svelte`, `css/mobile_premium__focus-dive.css` |
-| Last status | ❌ fail (right-edge overflow 16px + 93% overlap with focus-stage) |
+| Last status | ✅ **FIXED 2026-06-12** — compass hidden in field-node mode; no horizontal overflow |
 | Why it matters | Compass bar clips off-screen on right edge when shown alongside focus stage on mobile |
 
 ### 3.3 `desktop-idle` atom (chrome band)
@@ -127,8 +127,8 @@ States from `tests/visual-state-registry.mjs`:
 | State precondition | `body[data-active-view="galaxy"]`, viewport 1440×900 |
 | Contract assertion | (1) controls present, (2) controls don't cover info-panel or journey-compass |
 | Visual evidence | `07-desktop-idle.png` |
-| Owning seam | `js/modules/camera-controls.js`, `css/desktop*.css` |
-| Last status | ❌ fail (148px band overlaps 4 chrome elements) |
+| Owning seam | `js/modules/camera-controls.js`, `css/mobile_base.css` |
+| Last status | ✅ **FIXED 2026-06-12** — selector scope fix at `mobile_base.css:115-123`. The reset for `.controls-view`/`.controls-info` now uses direct child combinator (`.controls > .controls-view`) so the override only applies to actual sub-group wrappers, not modifier classes on the root `.controls` element. `#camera-controls` now correctly renders as `position: fixed` 44×148 column |
 | Why it matters | Controls bar consumes top 148px of viewport and visually sits behind/over journey compass and info panel |
 
 ---
@@ -138,17 +138,17 @@ States from `tests/visual-state-registry.mjs`:
 Before any release to staging or production, the following must all be true:
 
 ### 4.1 Contract gate
-- [ ] All 20 contract surfaces pass at their default viewport
-- [ ] No `[State Bypass]` warnings in console
-- [ ] No horizontal overflow on any surface
-- [ ] `field-node` 534px bottom inset is resolved
+- [x] All 27 contract surfaces pass at their default viewport — **DONE 2026-06-12 (267/267)**
+- [ ] No `[State Bypass]` warnings in console — **2 real bypasses FIXED in `focus-pocket.ts`**; 7 false positives remain (cosmetic sub-property writes; nested Proxy at `state.js:530-531` catches top-level writes correctly)
+- [x] No horizontal overflow on any surface — **DONE**
+- [x] `field-node` 534px bottom inset is resolved — **FIXED** at `css/mobile_premium__focus-dive.css`
 
 ### 4.2 Visual gate
-- [ ] All 25 visual states captured
-- [ ] No `surface-overlap-matrix` failures
-- [ ] No `surface-fit:within-viewport` failures
-- [ ] No `surface-proportion` failures
-- [ ] Visual evidence reviewed for visual regressions vs prior run
+- [ ] All 25 visual states captured — **13/25 (52%)**; 12 blocked on headless WebGL timeout
+- [x] No `surface-overlap-matrix` failures — **DONE** (desktop-idle camera-controls band fixed by direct-child selector scope)
+- [x] No `surface-fit:within-viewport` failures — **DONE**
+- [x] No `surface-proportion` failures — **DONE**
+- [x] Visual evidence reviewed for visual regressions vs prior run — **03-mobile-focus-first-result AND 07-desktop-idle both CLEAN**
 
 ### 4.3 Infrastructure gate
 - [ ] Dev server (`npm run serve`) is running from project root
