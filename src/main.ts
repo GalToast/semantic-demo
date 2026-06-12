@@ -6,6 +6,7 @@
  */
 import { mount, unmount } from 'svelte';
 import App from './App.svelte';
+import LegacyCompassSurface from '@components/LegacyCompassSurface.svelte';
 import { testState } from '@lib/stores/index';
 import { installWindowActions } from '@lib/orchestration/window-actions';
 import { hydrateFromLegacyState } from '@lib/data-store';
@@ -25,12 +26,20 @@ function parseUrlParams(): { forceDemo: boolean; noDemo: boolean } {
 
 const { forceDemo, noDemo } = parseUrlParams();
 const mountTarget = document.getElementById('app') ?? document.getElementById('app-root');
+const overlayTarget = document.body;
 let app: ReturnType<typeof mount> | undefined;
+let legacyCompassSurface: ReturnType<typeof mount> | undefined;
 
 if (mountTarget) {
   app = mount(App, {
     target: mountTarget,
     props: { forceDemo, noDemo }
+  });
+}
+
+if (overlayTarget) {
+  legacyCompassSurface = mount(LegacyCompassSurface, {
+    target: overlayTarget
   });
 }
 
@@ -62,6 +71,7 @@ window.addEventListener('beforeunload', () => {
   unsubTestState();
   cleanupWindowActions();
   if (app) unmount(app);
+  if (legacyCompassSurface) unmount(legacyCompassSurface);
 });
 
 export default app;

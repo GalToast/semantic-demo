@@ -40,6 +40,20 @@ export function bindFocusControls(): void {
             executeJourneyCompassAction(action);
         }
     };
+    const stopThreadActionPointer = (id: string): void => {
+        const element = document.getElementById(id);
+        if (!element) return;
+        const stop = (event: Event) => {
+            event.stopPropagation();
+            event.stopImmediatePropagation?.();
+        };
+        element.onpointerdown = stop;
+        element.onpointerup = stop;
+        element.onmousedown = stop;
+        element.onmouseup = stop;
+        element.ontouchstart = stop;
+        element.ontouchend = stop;
+    };
 
     bindClick('btn-focus-prev', () => { traverseNeighbor(-1); });
     bindClick('btn-focus-next', () => { traverseNeighbor(1); });
@@ -84,7 +98,13 @@ export function bindFocusControls(): void {
         }
     });
 
-    bindClick('btn-thread-follow', () => {
+    stopThreadActionPointer('btn-thread-pin');
+    stopThreadActionPointer('btn-thread-follow');
+    stopThreadActionPointer('btn-thread-clear');
+
+    bindClick('btn-thread-follow', (event?: MouseEvent) => {
+        event?.preventDefault();
+        event?.stopPropagation();
         const index = state.inspectedThreadIndex;
         if (!Number.isFinite(index)) return;
         const phase = state.strandContinuityState?.phase;
