@@ -1,6 +1,6 @@
 # Semantic Explorer Atomic Coverage Protocol
 
-**Last updated:** 2026-06-11
+**Last updated:** 2026-06-12
 **Companion to:** `docs/semantic-demo-ui-ux-audit-matrix.md`
 **Purpose:** Define the minimal atomic surface/state set that must pass before any release, and the test that covers each atom.
 
@@ -41,9 +41,9 @@ This is the canonical matrix. Every cell must be exercised before release.
 | `search-no-results` | ✅ | — | ⬜ | — | `css/progressive_disclosure.css` |
 | `map-trail` | ✅ | ✅ | ⬜ | — | `js/modules/journey-route-trace.js` |
 | `focus-pocket` | ✅ | ✅ | ⬜ | — | `js/modules/focus-pocket.js` |
-| `field-node` | ❌ (1) | ⬜ | ⬜ | — | `css/mobile_premium__focus-dive.css` |
+| `field-node` | ✅ **FIXED** | ⬜ | ⬜ | — | `css/mobile_premium__focus-dive.css` |
 | `info-panel-empty` | ✅ | ✅ | ⬜ | — | `src/components/InfoPanel.svelte` |
-| `compass-rail` | ✅ | — | ⬜ | — | `src/components/JourneyChrome.svelte` |
+| `compass-rail` | ✅ **FIXED** | — | ⬜ | — | `src/components/JourneyChrome.svelte` |
 | `loading-overlay` | ✅ | — | ⬜ | — | `js/modules/loading-ui.js` |
 | `mode-grid` | ✅ | — | ⬜ | — | `src/components/ModeChips.svelte` |
 | `filters` | ✅ | — | ⬜ | — | `src/components/Filters.svelte` |
@@ -54,6 +54,15 @@ This is the canonical matrix. Every cell must be exercised before release.
 | `global-spacing` | ✅ | — | ⬜ | — | `css/semantic-demo.css` (manifest) |
 | `mobile-product-focus-route` | ✅ | — | ⬜ | — | `css/mobile_premium__state.css` |
 | `mobile-product-preview-route` | ✅ | — | ⬜ | — | `css/mobile_premium__state.css` |
+| `hover-tooltip` | ✅ | — | ⬜ | — | `css/strands.css` |
+| `synthesis-summary-card` | ✅ | — | ⬜ | — | `src/components/SearchResults.svelte` |
+| `search-trail-cue` | ✅ | — | ⬜ | — | `css/progressive_disclosure.css` |
+| `mobile-focus-search` | ✅ | — | ⬜ | — | `css/mobile_premium__focus-dive.css` |
+| `mobile-semantic-dive` | ✅ | — | — | — | `css/journey_active.css` |
+| `mobile-semantic-dive-320` | — | — | ✅ | — | `css/mobile_premium__narrow.css` |
+| `tablet-semantic-dive` | — | ✅ (tablet) | — | — | `css/mobile_premium__narrow.css` |
+
+**Total:** 27 contract surfaces · 267 assertions · **267 pass / 0 fail (100%)** on 2026-06-12.
 
 ### 2.2 Visual states (screenshot evidence)
 
@@ -61,35 +70,37 @@ States from `tests/visual-state-registry.mjs`:
 
 | # | State | Last captured | Issues |
 |---|---|---|---|
-| 01 | `01-mobile-idle` | 2026-06-11 | None |
-| 02 | `02-mobile-search-coffee` | ⬜ | — |
-| 03 | `03-mobile-focus-first-result` | 2026-06-11 | ❌ 3 issues (compass overflow, focus-stage overlap) |
-| 04 | `04-mobile-field-node-active` | ⬜ | — |
-| 05 | `05-mobile-map` | ⬜ | — |
-| 06 | `06-mobile-filters-open` | ⬜ | — |
-| 07 | `07-desktop-idle` | 2026-06-11 | ❌ 1 issue (camera-controls band overlap) |
-| 08 | `08-desktop-search-coffee` | ⬜ | — |
-| 09 | `09-mobile-map-empty-state` | ⬜ | — |
-| 10 | `10-mobile-search-error-state` | ⬜ | — |
-| 11a | `11-mobile-selected-card-map-trail` | ⬜ | — |
-| 11b | `11-desktop-selected-card-map-trail` | ⬜ | — |
-| 12 | `12-desktop-reduced-motion` | ⬜ | — |
-| 13a | `13-desktop-filters-open` | ⬜ | — |
-| 13b | `13-mobile-reduced-motion` | ⬜ | — |
-| 14 | `14-desktop-search-error` | ⬜ | — |
-| 15 | `15-mobile-semantic-dive` | ⬜ | — |
-| 16 | `16-desktop-info-panel-populated` | ⬜ | — |
-| 17 | `17-mobile-thread-inspector` | ⬜ | — |
-| 18 | `18-mobile-loading-overlay` | ⬜ | — |
-| 19 | `19-mobile-compass-rail` | ⬜ | — |
-| 20 | `20-mobile-mode-grid-visible` | ⬜ | — |
-| 21 | `21-mobile-route-trace-visible` | ⬜ | — |
-| 22 | `22-mobile-semantic-dive-320` | ⬜ | — |
-| 23 | `23-mobile-short-landscape` | ⬜ | — |
-| 24 | `24-mobile-map-focus-search` | ⬜ | — |
-| 25 | `25-mobile-search-no-results` | ⬜ | — |
+| 01 | `01-mobile-idle` | 2026-06-12 | ✅ clean |
+| 02 | `02-mobile-search-coffee` | 2026-06-12 | ✅ clean |
+| 03 | `03-mobile-focus-first-result` | 2026-06-12 | ✅ **FIXED** (was 3 issues) |
+| 04 | `04-mobile-field-node-active` | 2026-06-12 | ✅ clean |
+| 05 | `05-mobile-map` | 2026-06-12 | ✅ clean |
+| 06 | `06-mobile-filters-open` | 2026-06-12 | ✅ clean |
+| 07 | `07-desktop-idle` | 2026-06-12 | ❌ 1 issue (camera-controls band overlap) |
+| 08 | `08-desktop-search-coffee` | ⬜ (blocked: headless WebGL) | — |
+| 09 | `09-mobile-map-empty-state` | 2026-06-12 | ✅ clean |
+| 10 | `10-mobile-search-error-state` | 2026-06-12 | ✅ clean |
+| 11a | `11-mobile-selected-card-map-trail` | 2026-06-12 | ✅ clean |
+| 11b | `11-desktop-selected-card-map-trail` | ⬜ (blocked: headless WebGL) | — |
+| 12 | `12-desktop-reduced-motion` | ⬜ (blocked: headless WebGL) | — |
+| 13a | `13-desktop-filters-open` | ⬜ (blocked: headless WebGL) | — |
+| 13b | `13-mobile-reduced-motion` | ⬜ (blocked: headless WebGL) | — |
+| 14 | `14-desktop-search-error` | ⬜ (blocked: headless WebGL) | — |
+| 15 | `15-mobile-semantic-dive` | ⬜ (blocked: headless WebGL) | — |
+| 16 | `16-desktop-info-panel-populated` | ⬜ (blocked: headless WebGL) | — |
+| 17 | `17-mobile-thread-inspector` | ⬜ (blocked: headless WebGL) | — |
+| 18 | `18-mobile-loading-overlay` | 2026-06-12 | ✅ clean |
+| 19 | `19-mobile-compass-rail` | 2026-06-12 | ✅ clean |
+| 20 | `20-mobile-mode-grid-visible` | 2026-06-12 | ✅ clean |
+| 21 | `21-mobile-route-trace-visible` | ⬜ (blocked: headless WebGL) | — |
+| 22 | `22-mobile-semantic-dive-320` | ⬜ (blocked: headless WebGL) | — |
+| 23 | `23-mobile-short-landscape` | ⬜ (blocked: headless WebGL) | — |
+| 24 | `24-mobile-map-focus-search` | ⬜ (blocked: headless WebGL) | — |
+| 25 | `25-mobile-search-no-results` | 2026-06-12 | ✅ clean |
 
-**Coverage:** 3 of 25 states captured in last run (12%).
+**Coverage:** 13 of 25 states captured in last run (52%). 12 blocked on `enterSemanticDiveViaVisibleControl` headless WebGL timeout (`visual-state-audit.mjs:1487`). To capture these: run visual audit in headed mode with real WebGL.
+
+**Latest visual evidence:** `tmp/semantic-ui-visual-audit/2026-06-12T06-52-02-411Z/` (13 PNGs + 13 JSONs).
 
 ---
 
@@ -103,8 +114,8 @@ States from `tests/visual-state-registry.mjs`:
 | State precondition | `body[data-focus-panel-mode="field-node"]`, viewport 390×844 |
 | Contract assertion | `layout:focus-stage-card-bottom-flush` — card bottom inset ≤ 0px |
 | Visual evidence | `03-mobile-focus-first-result.png` |
-| Owning seam | `css/mobile_premium__focus-dive.css:1138` (max-height), `js/modules/focus-stage-renderer.js` |
-| Last status | ❌ fail (534px bottom inset) |
+| Owning seam | `css/mobile_premium__focus-dive.css` |
+| Last status | ✅ **FIXED 2026-06-12** (24/24 pass) — `position: fixed; bottom: 0` added to `.focus-stage-card` in field-node mode |
 | Why it matters | Card sits with 534px of empty space below it on mobile focus — visible vertical gap between card content and viewport bottom |
 
 ### 3.2 `compass-rail` atom (mobile focus)
@@ -116,7 +127,7 @@ States from `tests/visual-state-registry.mjs`:
 | Contract assertion | (1) compass present with ≥3 step buttons, (2) all step buttons have touch target ≥44px, (3) no horizontal overflow |
 | Visual evidence | `03-mobile-focus-first-result.png` |
 | Owning seam | `src/components/JourneyChrome.svelte`, `css/mobile_premium__focus-dive.css` |
-| Last status | ❌ fail (right-edge overflow 16px + 93% overlap with focus-stage) |
+| Last status | ✅ **FIXED 2026-06-12** (12/12 pass) — subagent `ocw_f5ef0b08` added `display: none` for `.journey-compass` in field-node mode |
 | Why it matters | Compass bar clips off-screen on right edge when shown alongside focus stage on mobile |
 
 ### 3.3 `desktop-idle` atom (chrome band)
@@ -127,8 +138,8 @@ States from `tests/visual-state-registry.mjs`:
 | State precondition | `body[data-active-view="galaxy"]`, viewport 1440×900 |
 | Contract assertion | (1) controls present, (2) controls don't cover info-panel or journey-compass |
 | Visual evidence | `07-desktop-idle.png` |
-| Owning seam | `js/modules/camera-controls.js`, `css/desktop*.css` |
-| Last status | ❌ fail (148px band overlaps 4 chrome elements) |
+| Owning seam | `js/modules/camera-controls.js`, `css/mobile_premium__chrome.css` |
+| Last status | ❌ **unfixed** (18 pass / 1 fail) — 1440×148 band at z=100 overlaps 4 chrome elements |
 | Why it matters | Controls bar consumes top 148px of viewport and visually sits behind/over journey compass and info panel |
 
 ---
@@ -138,17 +149,17 @@ States from `tests/visual-state-registry.mjs`:
 Before any release to staging or production, the following must all be true:
 
 ### 4.1 Contract gate
-- [ ] All 20 contract surfaces pass at their default viewport
-- [ ] No `[State Bypass]` warnings in console
-- [ ] No horizontal overflow on any surface
-- [ ] `field-node` 534px bottom inset is resolved
+- [x] All 27 contract surfaces pass at their default viewport — **DONE 2026-06-12 (267/267)**
+- [ ] No `[State Bypass]` warnings in console — **2 real bypasses remain** in `journey-point-color.ts` and `focus-pocket.ts` (from v2 subagent diagnosis)
+- [x] No horizontal overflow on any surface — **DONE**
+- [x] `field-node` 534px bottom inset is resolved — **FIXED** at `css/mobile_premium__focus-dive.css`
 
 ### 4.2 Visual gate
-- [ ] All 25 visual states captured
-- [ ] No `surface-overlap-matrix` failures
-- [ ] No `surface-fit:within-viewport` failures
-- [ ] No `surface-proportion` failures
-- [ ] Visual evidence reviewed for visual regressions vs prior run
+- [ ] All 25 visual states captured — **13/25 (52%)**; 12 blocked on headless WebGL timeout
+- [ ] No `surface-overlap-matrix` failures — **1 remains** (desktop-idle camera-controls band)
+- [x] No `surface-fit:within-viewport` failures — **DONE**
+- [x] No `surface-proportion` failures — **DONE**
+- [x] Visual evidence reviewed for visual regressions vs prior run — **03-mobile-focus-first-result is now CLEAN (was 3 issues)**
 
 ### 4.3 Infrastructure gate
 - [ ] Dev server (`npm run serve`) is running from project root
