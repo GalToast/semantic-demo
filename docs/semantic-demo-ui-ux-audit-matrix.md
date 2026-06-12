@@ -30,7 +30,7 @@ The contract test connects to `http://127.0.0.1:8795/vector-explorer-polished.ht
 
 ## 2. Contract Surface Results — 2026-06-12
 
-**Total:** 27 surfaces · 267 assertions · **267 pass / 0 fail (100%)**
+**Total:** 27 surfaces · 308 assertions · **308 pass / 0 fail (100%)** — including the 3 previously-failing `mobile-semantic-dive` variants (FIXED as side-effect of controls-rail fix)
 
 | # | Surface | Pass | Fail | Status | Headline issue |
 |---|---|---|---|---|---|
@@ -302,4 +302,4 @@ These correlate with the `state.js` Proxy bypass findings from the 2026-06-05 bu
 | 2026-06-05 | Subagent sweep | 3-slice bug sweep (engine, state, CSS) | 10 items resolved, 0 open |
 | 2026-06-06 | Main lane | Doc refresh + verification | All sweep items verified |
 | 2026-06-11 | Main lane (this audit) | Full contract surface + 3 visual states | 229/230 pass, 3 visual issues |
-| 2026-06-12 | Main lane + subagent | CSS fixes: field-node flush + compass overlap | **267/267 pass (100%)**, 0 visual issues in contract suite |
+| 2026-06-12 | Main lane + subagent | CSS fixes: field-node flush + compass overlap + controls-rail (3-control overlap) | **308/308 pass (100%)** including 3 mobile-semantic-dive variants fixed as side-effect of controls-rail fix, 0 visual issues in contract suite |
