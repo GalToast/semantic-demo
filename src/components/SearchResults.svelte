@@ -45,7 +45,7 @@
   interface SearchResult {
     id?: string;
     name?: string;
-    index: number | string;
+    index: number;
     category?: string;
     snippet?: string;
     point?: {
@@ -203,8 +203,8 @@
     };
     const deps = {
       getSearchResultStrength: (r: SearchResult) => r.score || 0,
-      getSearchResultStrengthLabel: (strength: number) => strength > 0.8 ? 'Strong' : strength > 0.5 ? 'Good' : 'Weak',
-      buildSearchRankLabel: (order: number, _ctx: typeof renderContext) => order === 0 ? 'Anchor' : `#${order}`,
+      getSearchResultStrengthLabel: (strength: number) => strength > 0.8 ? 'Strong match' : strength > 0.5 ? 'Good match' : 'Related',
+      buildSearchRankLabel: (order: number, _ctx: typeof renderContext) => order === 0 ? 'Top match' : `Match ${order + 1}`,
       getSearchResultCardClasses: () => 'search-result',
       buildSearchResultSnippet: () => point.what || result.snippet || '',
       describeCluster,
@@ -214,7 +214,7 @@
     const strength = deps.getSearchResultStrength(result);
     const strengthLabel = deps.getSearchResultStrengthLabel(strength);
     const rankLabel = deps.buildSearchRankLabel(order, renderContext);
-    const cardClasses = deps.getSearchResultCardClasses();
+    const cardClasses = `${deps.getSearchResultCardClasses()} search-result-item`;
     const snippetText = deps.buildSearchResultSnippet();
     const contextText = point.city || result.category || '';
     const businessName = deps.formatBusinessName(point.name || result.name || 'Unknown');
@@ -312,9 +312,9 @@
 
       <div id="search-results-count" class="search-results-count" role="status" aria-live="polite" aria-atomic="true">
         {#if total === 1}
-          <span class="search-results-count-anchor">1 anchor</span>
+          <span class="search-results-count-anchor">Top match</span>
         {:else if (summary as any)?.mode === 'peek'}
-          <span class="search-results-count-anchor">Anchor</span>
+          <span class="search-results-count-anchor">Top match</span>
           <span class="search-results-count-divider" aria-hidden="true">·</span>
           <span class="search-results-count-hidden">{total - visibleCount} more</span>
         {:else if visibleCount >= total}
@@ -434,6 +434,13 @@
     z-index: calc(var(--z-search, 100) - 1);
     max-height: min(52vh, 420px);
     overflow-y: auto;
+  }
+
+  /* Mobile: constrain results to prevent overlapping with mode chips */
+  @media (max-width: 768px) {
+    .search-results-wrapper {
+      max-height: min(40vh, 320px);
+    }
   }
 
   /* ── Status messages ──────────────────────────────────────────────────────── */

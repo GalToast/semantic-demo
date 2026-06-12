@@ -11,7 +11,7 @@ import path from 'node:path';
 import { inflateSync } from 'node:zlib';
 import { chromium } from '@playwright/test';
 
-const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html?view=galaxy&nodemo=1';
+const DEFAULT_URL = 'http://127.0.0.1:5173/?view=galaxy&nodemo=1';
 const targetUrl = process.env.PRODUCT_QA_URL || DEFAULT_URL;
 const REAL_ROUTE_VISUAL = process.argv.includes('--real-route-visual');
 const VISUAL_ERGONOMICS = process.argv.includes('--visual-ergonomics');
@@ -729,10 +729,16 @@ async function capture(page, label, artifacts) {
       };
     };
     const app = window.__APP_STATE__ || window.__TEST_STATE__ || {};
+    const toArray = (value) => {
+      if (Array.isArray(value)) return value;
+      if (value && typeof value[Symbol.iterator] === 'function') return Array.from(value);
+      return [];
+    };
     const bodyDataset = { ...document.body.dataset };
     const viewport = { width: window.innerWidth, height: window.innerHeight };
     const focusedIndex = app.navState?.focusedIndex ?? app.focusedNode ?? null;
-    const focusedPoint = Number.isFinite(focusedIndex) ? app.points?.[focusedIndex] : null;
+    const points = toArray(app.points);
+    const focusedPoint = Number.isFinite(focusedIndex) ? points[focusedIndex] : null;
     const selectors = [
       '#canvas-container',
       '#loading-overlay',
@@ -1103,7 +1109,7 @@ async function capture(page, label, artifacts) {
         overflowY: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
       },
       appState: {
-        points: app.points?.length ?? 0,
+        points: points.length,
         semanticThreads: app.semanticNeighborMapByLeadId?.size ?? 0,
         semanticThreadsStatus: app.semanticThreadsStatus || '',
         semanticSpaceLayoutStatus: app.semanticSpaceLayoutStatus || '',
@@ -1121,7 +1127,7 @@ async function capture(page, label, artifacts) {
         trailDepth: app.trailDepth ?? null,
         threadSource: app.navState?.threadSource || '',
         candidateCount: app.navState?.threadCandidates?.length ?? 0,
-        walkHistory: [...(app.navState?.walkHistoryIndices || [])],
+        walkHistory: toArray(app.navState?.walkHistoryIndices),
         lastTraversalReason: app.navState?.lastTraversalReason || '',
       },
       routeEvidence: {
