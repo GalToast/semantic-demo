@@ -1114,12 +1114,6 @@ body[data-trail-state='active'] .focus-stage-neighbor-pill {
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])[data-focus-panel-mode='field-node']
         #focus-stage
-        .focus-pocket {
-        max-height: 100dvh;
-    }
-
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])[data-focus-panel-mode='field-node']
-        #focus-stage
         .journey-chrome {
         z-index: var(--z-compass);
     }

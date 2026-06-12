@@ -194,7 +194,6 @@ export interface FocusState {
   transitionStartedAt: number;
   orbitSlack: FocusOrbitSlackState;
   threadInspector: ThreadInspectorState;
-  anchorIndicator: FocusAnchorIndicator;
 }
 
 export interface FocusPocketNode {
@@ -229,12 +228,6 @@ export interface ThreadInspectorState {
   segmentCount: number;
   braidCount: number;
   endpointCount: number;
-}
-
-export interface FocusAnchorIndicator {
-  active: boolean;
-  position: [number, number, number] | null;
-  pulsePhase: number;
 }
 
 // ── Demo State Machine ────────────────────────────────────────────────────────

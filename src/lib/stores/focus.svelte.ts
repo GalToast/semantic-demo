@@ -16,9 +16,7 @@ import type {
   FocusPocketNode,
   FocusTransitionMode,
   ThreadInspectorState,
-  FocusOrbitSlackState,
-  FocusAnchorIndicator,
-  FocusPocketMeta
+  FocusOrbitSlackState
 } from '@lib/types/state';
 import { writable, get, type Readable } from 'svelte/store';
 
@@ -129,12 +127,7 @@ const INITIAL_FOCUS: FocusState = {
   transitionMode: 'idle',
   transitionStartedAt: 0,
   orbitSlack: { ...INITIAL_ORBIT_SLACK },
-  threadInspector: { ...INITIAL_THREAD_INSPECTOR },
-  anchorIndicator: {
-    active: false,
-    position: null,
-    pulsePhase: 0
-  }
+  threadInspector: { ...INITIAL_THREAD_INSPECTOR }
 };
 
 // ── Extended Focus Store ─────────────────────────────────────────────────────
@@ -246,7 +239,6 @@ export const isSettling = () => get(_focusWritable).settling;
 export const threadInspector = () => get(_focusWritable).threadInspector;
 export const threadInspectorActive = () => get(_focusWritable).threadInspector.active;
 export const orbitSlack = () => get(_focusWritable).orbitSlack;
-export const anchorIndicator = () => get(_focusWritable).anchorIndicator;
 export const selectedBusiness = () => get(_focusWritable).selectedBusiness;
 export const infoPanelOpen = () => get(_focusWritable).infoPanelOpen;
 export const semanticDiveMode = () => get(_focusWritable).semanticDiveMode;
@@ -276,7 +268,8 @@ export function clearPocketNodes(): void {
   _focusWritable.update(s => ({
     ...s,
     pocketNodes: [],
-    pocketMotionByIndex: new Map()
+    pocketMotionByIndex: new Map(),
+    pocketListVisible: false
   }));
 }
 
@@ -385,14 +378,6 @@ export function updateOrbitSlack(patch: Partial<FocusOrbitSlackState>): void {
 
 export function resetOrbitSlack(): void {
   _focusWritable.update(s => ({ ...s, orbitSlack: { ...INITIAL_ORBIT_SLACK } }));
-}
-
-// ── Actions: Anchor Indicator ────────────────────────────────────────────────
-
-export function setAnchorIndicator(
-  indicator: Partial<FocusAnchorIndicator>
-): void {
-  _focusWritable.update(s => ({ ...s, anchorIndicator: { ...s.anchorIndicator, ...indicator } }));
 }
 
 // ── Actions: Selected Business ───────────────────────────────────────────────
