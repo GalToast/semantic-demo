@@ -67,6 +67,10 @@ vector-explorer-polished.html.restored
 # QA sweep artifacts
 semantic-sweep-*
 
+# Generated walkthrough and planning artifacts
+plans/
+walkthrough-*/
+
 # Qwen worker runtime logs and caches (deeply nested bun cache exceeds Windows MAX_PATH)
 .qwen/worker-logs/
 .qwen/skills/
