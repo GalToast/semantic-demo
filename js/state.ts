@@ -1052,20 +1052,14 @@ function _makeProdProxy(obj: Record<string, unknown>, path: string): unknown {
       if (!_isMutatingRef.value) {
         const k = path + '.' + String(p);
         if (isCritical) {
-          if (_devWarned) {
-            if (!_devWarned.has(k)) {
-              console.warn('[State Bypass] ' + k + ' — use withStateMutation() to modify critical sub-state');
-              _devWarned.add(k);
-            }
-          }
           throw new Error(`[State Error] Illegal direct mutation of critical sub-property '${k}'. You must use withStateMutation() to modify core state.`);
         }
-        if (_devWarned) {
-          if (!_devWarned.has(k)) {
-            console.warn('[State Bypass] ' + k + ' — sub-object mutation detected; consider withStateMutation() for batch writes');
-            _devWarned.add(k);
-          }
-        }
+        // Soft warning silenced 2026-06-12: the throw-error path above already
+        // protects CRITICAL_KEYS, and legacy paths (e.g. journey-thread-settler
+        // writing to strandContinuityState.arrivalTimeoutId) intentionally write
+        // sub-properties outside withStateMutation. The top-level wholesale
+        // reassignment warning (line ~1096) catches real "should use store.update()"
+        // cases; this soft warning was dev-only noise. See commits 636d9f2+ for context.
       }
       return Reflect.set(t, p, v, r);
     },
@@ -1147,11 +1141,12 @@ if (typeof window !== 'undefined') {
       if (_devProxyCache?.has(obj)) return _devProxyCache.get(obj);
       const proxy = new Proxy(obj as Record<string, unknown>, {
         set(t: any, p: any, v: any) {
-          const k = path + '.' + String(p);
-          if (!_isMutatingRef.value && _devWarned && !_devWarned.has(k)) {
-            console.warn('[State Bypass] ' + k + ' — use store .update()');
-            _devWarned.add(k);
-          }
+          // Deep-track dev proxy — sub-property warning silenced 2026-06-12.
+          // This proxy only exists on localhost / __semanticDevTools.deepTrack
+          // and emitted a [State Bypass] warning for EVERY sub-property write,
+          // including correct ones from legacy code paths. The prod proxy
+          // (above) and the top-level wholesale-reassignment warning catch
+          // real bypasses; this dev-only noise was redundant.
           t[String(p)] = v; return true;
         },
         get(t: any, p: any) {
