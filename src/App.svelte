@@ -70,6 +70,7 @@
   import SemanticOverlay from '@components/SemanticOverlay.svelte';
   import WeatherWidget from '@components/WeatherWidget.svelte';
   import LegacyCompassSurface from '@components/LegacyCompassSurface.svelte';
+  import DevGui from '@components/DevGui.svelte';
   import { legendOpen } from '@lib/stores/legend.svelte';
 
   interface Props {
@@ -334,6 +335,9 @@
   <!-- Demo choreography overlay -->
   <DemoChoreography force={forceDemo} suppress={noDemo} />
 
+  <!-- Dev-only runtime parameter panel (lil-gui). Tree-shaken in prod. -->
+  <DevGui visible={import.meta.env.DEV} />
+
   <!-- Layer 3000: Loading overlay (highest z-index) -->
   <LoadingOverlay visible={true} />
 
@@ -528,6 +532,39 @@
   @media (min-width: 769px) {
     :global(body:not(.is-compact) .compass-rail) {
       display: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    :global(body.is-active[data-panel-surface='focus-search'] .journey-compass) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      max-width: calc(100vw - 32px);
+    }
+
+    :global(body.is-active[data-panel-surface='focus-search'] .journey-compass .journey-compass-actions) {
+      display: grid;
+      justify-content: end;
+      gap: 6px;
+      padding-left: 8px;
+    }
+
+    :global(body.is-active[data-panel-surface='focus-search'] .journey-compass .journey-compass-action.primary[data-journey-action='open-map']) {
+      width: 48px;
+      min-width: 48px;
+      max-width: 48px;
+      flex: 0 0 48px;
+      height: 44px;
+      min-height: 44px;
+      padding: 0 8px;
+    }
+
+    :global(body.is-active[data-panel-surface='focus-search'] .journey-compass .journey-compass-step:not(.primary)) {
+      display: none;
+      visibility: hidden;
+      pointer-events: none;
     }
   }
 </style>
