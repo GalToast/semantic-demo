@@ -324,11 +324,19 @@
   <!-- Demo choreography overlay -->
   <DemoChoreography force={forceDemo} suppress={noDemo} />
 
-  <!-- Dev-only runtime parameter panel (lil-gui). Tree-shaken in prod. -->
-  <DevGui visible={devToolsVisible} />
-
-  <!-- Dev-only WebGL frame inspector (Spector.js). Tree-shaken in prod. -->
-  <SpectorInspector visible={devToolsVisible} />
+  <!--
+    Dev-only runtime tooling (lil-gui + Spector). Wrapped in
+    {#if import.meta.env.DEV} so Vite/Rollup tree-shake the entire
+    component imports (including the dynamic `import('lil-gui')` and
+    `import('spectorjs')` calls inside them) out of production builds.
+    Bundle win: ~189 kB gzip (180 kB spectorjs + 9 kB lil-gui).
+    The runtime `visible` prop on each component still controls whether
+    the UI panel is shown in dev (gated by ?dev URL param).
+  -->
+  {#if import.meta.env.DEV}
+    <DevGui visible={devToolsVisible} />
+    <SpectorInspector visible={devToolsVisible} />
+  {/if}
 
   <!-- Layer 3000: Loading overlay (highest z-index) -->
   <LoadingOverlay visible={true} />
