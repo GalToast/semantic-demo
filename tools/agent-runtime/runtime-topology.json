@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "updated": "2026-06-12",
+  "purpose": "Non-secret source-of-truth for local agent runtime ownership and migration targets.",
+  "rules": [
+    "Do not store API keys, bearer tokens, account IDs, or secret file contents here.",
+    "Use this manifest to answer where a runtime component lives before searching globally.",
+    "Move components into tools/agent-runtime in small, tested slices."
+  ],
+  "current_runtime": {
+    "external_subagents_mcp": {
+      "status": "external-source",
+      "current_source": "C:/Users/HP/repos/opencode/packages/opencode/src/mcp/mmx.ts",
+      "current_launcher": "bun run --conditions=browser C:/Users/HP/repos/opencode/packages/opencode/src/mcp/mmx.ts",
+      "configured_in": [
+        "C:/Users/HP/.codex/config.toml",
+        "C:/Users/HP/.qwen/settings.json",
+        "C:/Users/HP/.config/opencode/opencode.json"
+      ],
+      "target_source": "tools/agent-runtime/external-subagents/",
+      "notes": [
+        "Owns worker lifecycle, model catalog, Pi/Qwen/OpenCode harness adapters, log parsing, steering, polling, and cleanup.",
+        "Parser fixes should be ported here before this repo switches config to the local entry."
+      ]
+    },
+    "local_key_router": {
+      "status": "external-config",
+      "current_source": "C:/Users/HP/.config/opencode/routers/opencode-key-router.mjs",
+      "ports": {
+        "provider_router": 8788,
+        "gemini_router": 8789,
+        "cloudflare_router": 8790
+      },
+      "configured_provider_paths": [
+        "http://127.0.0.1:8788/opencode-zen/v1",
+        "http://127.0.0.1:8788/nvidia/v1",
+        "http://127.0.0.1:8788/mistral/v1",
+        "http://127.0.0.1:8788/kilo/v1",
+        "http://127.0.0.1:8788/modelscope/v1",
+        "http://127.0.0.1:8789",
+        "http://127.0.0.1:8790/v1"
+      ],
+      "target_source": "tools/agent-runtime/key-router/",
+      "notes": [
+        "Routes Qwen, Pi, OpenCode, and external subagents through the same provider lanes.",
+        "Secrets must stay in user config/env, not in this repo."
+      ]
+    },
+    "pi_harness": {
+      "status": "global-npm-package",
+      "current_source": "C:/Users/HP/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
+      "current_launcher_shape": "node <global pi cli> --approve --mode rpc --model <model> --session-id <uuid>",
+      "target_source": "tools/agent-runtime/harnesses/pi/",
+      "notes": [
+        "Primary worker harness for external subagents.",
+        "Windows shell behavior, RPC stream parsing, MCP progressive disclosure, and foreground-tool observability belong in this seam."
+      ]
+    },
+    "browser_mcps": {
+      "status": "codex-runtime",
+      "current_sources": [
+        "C:/Users/HP/.codex/mcp-runtimes/launch-playwright-mcp.ps1",
+        "C:/Users/HP/.codex/mcp-runtimes/launch-chrome-devtools-mcp.ps1"
+      ],
+      "target_source": "tools/agent-runtime/mcp/browser/",
+      "notes": [
+        "Keep session-scoped browser profiles and broad MCP flags.",
+        "Do not auto-open docked DevTools panels during visual QA."
+      ]
+    },
+    "web_search_mcp": {
+      "status": "codex-runtime",
+      "current_source": "C:/Users/HP/.codex/mcp-servers/searxng-mcp/index.js",
+      "target_source": "tools/agent-runtime/mcp/web-search/",
+      "notes": [
+        "Rotates configured search providers and falls back to SearXNG.",
+        "Do not commit provider keys."
+      ]
+    }
+  },
+  "migration_order": [
+    "Create repo-local doctor and topology manifest.",
+    "Extract external-subagent parser and worker metadata tests into tools/agent-runtime/external-subagents.",
+    "Move MCP server entry to repo-local path and update Codex/Qwen/OpenCode MCP configs.",
+    "Move key-router source behind repo-local launch script while keeping secrets in user env/config.",
+    "Add repo-local smoke tests for start, poll, read, steer, cancel, and provider route identity.",
+    "Only after green smoke, remove old opencode-repo MCP path from user configs."
+  ]
+}
