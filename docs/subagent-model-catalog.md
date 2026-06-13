@@ -2,19 +2,26 @@
 
 Working notes for external-subagent model performance in this repo. Do not store API keys, account details, raw headers, or full transcripts here. Treat each row as evidence from one observed launch, not a permanent provider guarantee.
 
-## 2026-06-12 -- Current Routing State
+## 2026-06-13 -- Current Routing State
 
-This section records the active routing defaults as of the most recent cross-gateway test day (2026-06-12). Entries here override any older catalog entries when they conflict.
+This section records the active routing defaults as of the most recent cross-gateway test day (2026-06-13). Entries here override any older catalog entries when they conflict.
 
 | Use case | Default model | Lock status | Escalation rule |
 |---|---|---|---|
 | Paid (reliable implementation work) | `opencode-go/mimo-v2.5` | Locked -- user approved paid tier on 2026-06-12 | No escalation needed; this is the safety net |
 | Free memory consolidation | `kilo/nvidia/nemotron-3-ultra-550b-a55b:free` | Locked -- set in `~/.pi/agent/settings.json` (llmModelOverride) | Do not change without explicit user request |
-| Free subagent dispatches | `kilo/nvidia/nemotron-3-ultra-550b-a55b:free` | Locked -- replaces prior `opencode-zen/nemotron-3-ultra-free` preference | Worker failure/429 → escalate to paid with user approval |
+| Free subagent dispatches (default) | `openrouter/owl-alpha` | Updated 2026-06-13 -- replaces `kilo/nvidia/nemotron-3-ultra-550b-a55b:free` which suffered silent failure (0 tokens) in the both-pattern campaign | Worker failure/429 → escalate to paid with user approval |
+| Free subagent dispatches (diversity pick) | `modelscope/deepseek-ai/DeepSeek-V4-Flash` | Updated 2026-06-13 -- new gold-quality alternative, different architecture from owl-alpha | Use when 4+ parallel dispatches need model-family diversity |
+| Free subagent dispatches (code-archeology) | `nvidia/meta/llama-3.3-70b-instruct` | Updated 2026-06-13 -- solid code comprehension but UNRELIABLE write step; only use for read-only probes with manual report extraction | Do NOT use for unattended deliverables requiring disk writes |
 
-**Known-bad free routes under load (2026-06-12):**
+**Known-bad free routes (2026-06-13 update):**
 - `opencode-zen/mimo-v2.5-free` -- 429s within minutes when multiple workers run concurrently on the same gateway.
 - `opencode-zen/deepseek-v4-flash-free` -- same 429 pattern under load.
+- `openrouter/qwen/qwen3-coder:free` -- rate-limited upstream in both verification and both-pattern campaigns; 13KB stdout, no report. Don't use for now on this gateway.
+- `openrouter/meta-llama/llama-3.3-70b-instruct:free` -- rate-limited (14KB stdout, no report) in the both-pattern round 1. Unreliable on this gateway.
+- `nvidia/nemotron-3-ultra-550b-a55b:free` (kilo) -- silent failure: 1.9MB stdout, stopped with 0 tokens (`stopReason: 'stop'`, no output). Unreliable for subagent dispatches despite size. Removed from free subagent default.
+- `mistral/codestral-2508` -- barely started in both-pattern campaign (37 tokens produced). Broken for this workload; prefer other code-specialized options.
+- `nvidia/nemotron-3-super-120b-a12b` -- produces 1077+ tokens but doesn't write report files reliably. Use for read-only investigations only, not write-up tasks.
 
 Related inventory: [nvidia-nim-capability-catalog.md](nvidia-nim-capability-catalog.md) tracks NVIDIA NIM models and non-chat capabilities exposed by the local NVIDIA lane or NVIDIA Build.
 
@@ -88,6 +95,50 @@ Observed from `external_subagent_free_models compact=true` on 2026-06-13:
 
 All three routes produce very large stdout. The followup pattern (`external_subagent_followup` with `session_id`) is the canonical recovery path when a fresh worker burns its budget on context-gathering and dies at the write-call boundary.
 
+**2026-06-13 inventory wave (semantic-explorer 97-file repo inventory, 4 lanes + 2 followups, dispatched across different model families as a meta-experiment):**
+
+| 2026-06-13 | `openrouter/qwen/qwen3-next-80b-a3b-instruct:free` | OpenRouter (free) | Pi | Inventory pass Lane A — active src/ WIP (22 items) | **Failed at launch** — openrouter 429 "temporarily rate-limited upstream"; 0 tokens produced, 0 inference calls | Pi RPC + transport worked; no model text/tool calls; `rate_limited: true` in stream summary | n/a | Free-tier burst rate limit on a single worker (not multi-worker); failed at first model call before any inference. New finding: 429 is not just a parallel-load issue, it can hit a single fresh launch | Do not use as a default openrouter pick; only safe in low-traffic single-shot context. Consider `openai/gpt-oss-120b:free` (Lane A followup) as a sibling replacement | Limited |
+| 2026-06-13 | `openrouter/nousresearch/hermes-3-llama-3.1-405b:free` | OpenRouter (free) | Pi | Inventory pass Lane B — legacy BOTH pattern (50 items) | **Failed at launch** — "404 No endpoints found that support tool use. Try disabling 'read'"; 0 tokens produced | Pi RPC + transport worked; no model text; openrouter returned 404 because free Hermes 405B endpoints do not expose tool use | n/a | Free-tier endpoints do not expose tool use; Pi workers that need file reading cannot start. New finding — Hermes 405B is on the openrouter free catalog but is effectively unusable for any tool-using worker | Unusable for any Pi worker that needs read/grep/glob/bash; might still work for direct chat API without tools. Lane B followup is `meta-llama/llama-3.3-70b-instruct:free` | Limited |
+| 2026-06-13 | `openrouter/poolside/laguna-m.1:free` | OpenRouter (free) | Pi | Inventory pass Lane C — tests + tooling (19 items) | **In flight at time of catalog update** — at 83708 input / 44 output, actively reading test files (tokenizeSearchText, expandSearchIntent, countTokenMatches); 2MB+ stdout | Read worked; bash being used; `rate_limited: false`; thinking_preview: "Let me continue reading the remaining files..." | Stable reading; low output-per-input ratio (good for absorbing dense code) | Heavy stdout (2MB+); not yet verified for write/tool completion | Inventory/recon on dense code files; needs write-bench before being a default followup choice | Promising (in flight, session `7d8b70c7-8ee2-4598-b628-188aa9615e00`) |
+| 2026-06-13 | `openrouter/openai/gpt-oss-120b:free` | OpenRouter (free) | Pi | Inventory pass Lane A followup — recovery from qwen3-80b 429 (same `session_id` 907bad9d-d2b7-41a4-9f5e-9b58f01a7195, fresh model) | **In flight at time of catalog update** — launched at 16:56:11 UTC, route `pi:direct-openrouter/openai/gpt-oss-120b:free` | Read/bash not yet observed; transport started cleanly | n/a yet | n/a yet | n/a yet | Promising (in flight, session `907bad9d-d2b7-41a4-9f5e-9b58f01a7195`) |
+| 2026-06-13 | `openrouter/meta-llama/llama-3.3-70b-instruct:free` | OpenRouter (free) | Pi | Inventory pass Lane B followup — recovery from hermes-405b no-tool-use (same `session_id` 86a7808b-da5f-4f90-9192-6b9e1079b876, fresh model) | **In flight at time of catalog update** — launched at 16:56:11 UTC, route `pi:direct-openrouter/meta-llama/llama-3.3-70b-instruct:free` | Read/bash not yet observed; transport started cleanly | n/a yet | n/a yet | n/a yet | Promising (in flight, session `86a7808b-da5f-4f90-9192-6b9e1079b876`) |
+| 2026-06-13 | `opencode-go/mimo-v2.5` | OpenCode Go paid | Pi | Inventory pass Lane D — docs + memory + dist + loose ends (15 items) | **In flight at time of catalog update** — at 1150 input / 531 output, ran `ls` on `dist/svelte/assets/`, saw all the tiny chunk files; `last_tool_name: bash`; `rate_limited: false` | Bash worked; hit PowerShell-vs-bash confusion (catalog-documented issue) but recovered; cost ~$0.0005 | Reliable, paid; no rate-limit | Same as prior 2026-06-13 entries: huge stdout, needs review | Inventory with known-good model; good baseline anchor for meta-experiments | Strong (3 prior Strong + 1 prior Promising; this wave's run consistent so far) |
+
+## 2026-06-13 -- Post-router-recovery snapshot
+
+While the inventory wave was in flight, the 127.0.0.1:8788 key router (operator-owned external process) was down. While down, the `external_subagent_free_models` catalog probe reported `ok: false` ("Unable to connect") for 6 of 7 providers — only `openrouter` was reachable. After restart via `~/.config/opencode/routers/start-opencode-key-router.ps1` (PID 20064, all 5 key pools reloaded), the catalog went from "1 live, 6 dark" to "6 live, 1 expected-dark":
+
+| Provider | Before (router down) | After (router up) | Best pick per live catalog | Catalog evidence |
+|---|---|---|---|---|
+| `opencode-zen` | unreachable | 7 accessible (catalog 48) | `big-pickle` | **None** — automated recommendation, zero observed runs in this catalog |
+| `nvidia` | unreachable | 121 accessible (full catalog) | `nemotron-3-super-120b-a12b` | 1 prior Strong + 1 prior Limited run |
+| `mistral` | unreachable | 58 accessible (full catalog) | `codestral-2508` | 1 prior Strong + 1 prior Stale (recovered) run |
+| `openrouter` | 24 (live) | 24 (live, same) | `owl-alpha` | 1 prior Promising + 1 prior Stale (recovered) run |
+| `kilo` | unreachable | 11 accessible | `nvidia/nemotron-3-ultra-550b-a55b:free` | 1 prior Limited + 1 prior Promising (kilo/nex-n2-pro) run |
+| `modelscope` | unreachable | 60 accessible (full catalog) | `deepseek-ai/DeepSeek-V4-Flash` | 2 prior Promising + 1 prior Limited + 1 prior Strong runs |
+| `zenmux` | unreachable | 503 (no keys configured) | n/a | intentional empty config, not a fault |
+
+**Caveat on `best_free_coding: opencode-zen/big-pickle`:** The live catalog's automated `best_free_coding` recommendation is **not a tested/Strong pick** — this catalog has **zero observations** of `big-pickle`. The other "best" picks (nvidia, mistral, openrouter, modelscope) have prior catalog evidence; `big-pickle` does not. Do **not** claim it as a preferred first pick until at least one successful run with positive verification. The 2026-06-13 inventory wave did not dispatch to `big-pickle` because of this. User explicitly flagged this on 2026-06-13: "big pickle is not preferred, we don't have enough data to claim that."
+
+**Failure modes captured this wave (in the Tested Routes table above):**
+- `openrouter/qwen/qwen3-next-80b-a3b-instruct:free` — openrouter free-tier 429 on first model call, even for a single worker (new finding: 429 is not just a parallel-load issue)
+- `openrouter/nousresearch/hermes-3-llama-3.1-405b:free` — free endpoints do not expose tool use; Pi workers that need file reading cannot start
+
+**Recovery pattern (validated this wave):** When a fresh worker dies at the first model call (rate limit or capability gap), the canonical recovery is `external_subagent_followup` with the same `session_id` (preserves lineage) and a new `model` (different family / capability). The followup's same-session_id inheritance avoids re-reading the prompt. The catalog-doc note about "use the followup pattern... to recover" also applies for write-boundary timeouts. **The key router being down is independent of worker success** — in-flight `direct-` workers (Lanes A and B followups, Lane C, Lane D) continued working through the outage because they bypass the gateway.
+
+**Architecture note (in-process vs external 8788):** The `opencode-zen-key-rotation.ts` source in `C:\Users\HP\repos\opencode\packages\opencode\src\session\` is the **in-process complement** to the external 8788 gateway; it owns per-provider key pools, load-sharing, and failover. The module's docstring is explicit: "The 127.0.0.1:8788 gateway that aggregates keys ... is a separate process owned by the operator. This module is the in-process complement." The .ts module does NOT call `.listen(` (verified by content search) — it's library code, not a server. If a future session shows `ok: false` for nvidia/mistral/modelscope/kilo in the catalog probe, the external gateway is likely down; running `start-opencode-key-router.ps1` brings it back. The script is idempotent (checks for existing instance via `Get-CimInstance`).
+
+**2026-06-13 both-pattern investigation wave (8 dispatches across 2 rounds, 3 different model families, both-pattern hot-path/stub/dead-shim audit):**
+
+| 2026-06-13 | `openrouter/owl-alpha` | OpenRouter | Pi | Both-pattern round 1 Lane 1 — hot-path classification of `@legacy/*` import sites | Completed with gold-quality 21KB report; HOT/WARM/COLD classification of all import sites | Read/edit/bash worked; produced structured classification with per-file import counts | Strong static analysis; good file-level granularity; correctly identified `three-engine.ts` render loop as highest-value target | 9 of 18 "HOT" imports were actually COLD (caught by mimo triangulation); missed 4 source files; fabricated one import reference (line 37 of `engine/demo-choreography.ts` was a JSDoc comment) | Stable free default for code pattern searches and static analysis; use alongside a paid triangulation pass for classification accuracy | Strong |
+| 2026-06-13 | `openrouter/qwen/qwen3-coder:free` | OpenRouter (free) | Pi | Both-pattern round 1 Lane 2 — two-source shim deep-dive | **Failed: 429 rate-limited** upstream; 13KB stdout, no report file | None — transport blocked before prompt resolution | n/a | Hit OpenRouter free-tier quota gate on first model call; independent of input length | Do not use for now; prefer `openrouter/owl-alpha` or `modelscope/deepseek-ai/DeepSeek-V4-Flash` for code work | Stale route |
+| 2026-06-13 | `openrouter/nvidia/nemotron-3-ultra-550b-a55b:free` | OpenRouter (free) | Pi | Both-pattern round 1 Lane 3 — full inventory of `@legacy/*` usage | **Failed: stopped with 0 tokens** (stopReason: 'stop', no output); 1.9MB stdout but no assistant text or tool calls | Transport launched; no model inference observed | None confirmed | Silent failure mode — model stopped immediately despite being the largest free option (550B). New finding: size does not correlate with reliability. Removed from free subagent default | Do not use for subagent dispatches; unreliable despite parameter count | Broken |
+| 2026-06-13 | `openrouter/meta-llama/llama-3.3-70b-instruct:free` | OpenRouter (free) | Pi | Both-pattern round 1 Lane 4 — stub-mis-wire detection | **Failed: 429 rate-limited** upstream; 14KB stdout, no report file | None — transport blocked before prompt resolution | n/a | Hit OpenRouter free-tier quota gate on first model call; same gateway as qwen3-coder (both on openrouter free tier) | Do not use on this gateway under load; consider `nvidia/meta/llama-3.3-70b-instruct` (paid NVIDIA NIM) for same model family | Stale route |
+| 2026-06-13 | `opencode-go/mimo-v2.5` | OpenCode Go paid | Pi | Both-pattern round 2 Lane 1-rerun — corrected hot-path classification (triangulation against owl-alpha) | Completed with gold-quality 30KB report; corrected 9 HOT→COLD misclassifications, found 4 missed files, caught fabrication in owl-alpha's first report | Read/edit/bash worked; deep call-context inspection of `requestAnimationFrame` loop; ast-grep tracing across 132 import sites | Gold standard for code archaeology; catches errors in other models' reports; correct HOT/WARM/COLD classification with line-level justification | Huge logs (30KB); needs main-lane review for synthesis | Use for synthesis, triangulation, porting, and any task requiring deep code comprehension. **User's preferred paid model.** | Strong |
+| 2026-06-13 | `nvidia/nemotron-3-super-120b-a12b` | NVIDIA NIM (paid) | Pi | Both-pattern round 2 Lane 2 — two-source shim consumer trace | **Failed: produced 1077 tokens of work but stopped without writing report file** | Read/bash worked; visible thinking rails in stream; correct understanding of task scope | Strong code comprehension; produced substantial analysis text | Silent write failure — model completed analysis but never called write tool; no file on disk. New finding: this failure mode is independent of budget (240s was sufficient for analysis, not for write) | Use for read-only investigations where the main lane can extract findings from stdout; do NOT use for unattended deliverables requiring disk writes | Limited |
+| 2026-06-13 | `mistral/codestral-2508` | Mistral direct | Pi | Both-pattern round 2 Lane 3 — consumer inventory per-subsystem rollup | **Failed: barely started** (37 tokens produced); no report file | None — barely initiated before stopping | n/a | Extremely low output; model did not meaningfully begin the task. Previous run (verification task, 2026-06-13) was Strong — this failure appears task-dependent, not systemic | Do not use for now; retest with smaller smoke before trusting for production work | Broken |
+| 2026-06-13 | `modelscope/deepseek-ai/DeepSeek-V4-Flash` | ModelScope | Pi | Both-pattern round 2 Lane 4 — comprehensive stub inventory and dead-shim detection | Completed with gold-quality 18.8KB report; full stub inventory (30 functions across 5 files), dead-shim inventory (8 confirmed dead), mis-wire root cause analysis, PR recommendation | Read/edit/bash worked; hybrid method (rg + ctx_execute JS sandbox + manual source inspection) | Comprehensive analysis; produced actionable PR recommendation; correctly identified the BOTH-pattern root cause (shims point at stub src/ versions instead of legacy real impls); different architecture from mimo/Qwen/Nemotron | Not yet proven for implementation work in this repo; read-only analysis only so far | **Fully viable alternative** for diversity when 4+ parallel dispatches are needed; different family than mimo/owl-alpha | Strong |
+
 ## Cross-Gateway 429 Patterns
 
 Observed on 2026-06-12:
@@ -95,6 +146,368 @@ Observed on 2026-06-12:
 When 2+ workers run in parallel on the same gateway, expect 429s on the free tier within minutes. This was observed with both `opencode-zen/mimo-v2.5-free` and `opencode-zen/deepseek-v4-flash-free`.
 
 Mitigation: pick different gateways per worker (e.g., kilo, opencode-zen, nvidia). When a paid option is available for the task, default to paid for reliability under load.
+
+## All Available Subagent Choices (Live Catalog 2026-06-13)
+
+Quick-glance view of every launch ref in the live `external_subagent_free_models` catalog. For full per-run details (workload, tool behavior, strengths/weaknesses), see the **Tested Routes** table above.
+
+**Status legend:**
+- ✅ **Strong** — useful for real repo work with normal verification
+- 🟡 **Promising** — can contribute, but needs steering or smaller prompts
+- 🟠 **Limited** — useful only for narrow report-only probes or tiny edits
+- ❌ **Broken** — launches but fails to produce usable work
+- 🚫 **Stale** — catalog entry exists but provider/router rejected it
+- 🛑 **429** — rate-limited; do not retry without cooldown
+- ⏱️ **Timeout** — silent timeout, no useful output
+- ⏳ **In flight** — currently testing in this campaign
+- ⚪ **Untested** — no observations yet; safe candidate for a new test
+- 🔧 **Specialized** — embedding/moderation/OCR/ASR/image, not general chat
+
+**Tallies (2026-06-13):**
+- Total launch refs: **283**
+- Tested (✅/🟡/🟠): **35**
+- In flight (⏳): **5**
+- Untested (⚪): **220**
+- Broken / Stale / 429 / Timeout: **14**
+- Specialized (🔧): **9** (most are NVIDIA NIM non-chat lanes; some Mistral audio/embed and Qwen vision)
+
+### Paid (opencode-go) — 2 launch refs
+
+| Launch ref | Free? | Status | Last observation / best use |
+|---|---|---|---|
+| `opencode-go/mimo-v2.5` | ❌ | ✅ Strong (5+ runs) | Default paid baseline; synthesis + triangulation + porting. User's preferred paid model. |
+| `opencode-go/deepseek-v4-flash` | ❌ | ⚪ Untested | Catalog lists as paid alternative; 0 observations yet |
+
+### opencode-zen — 7 launch refs
+
+| Launch ref | Free? | Status | Last observation / best use |
+|---|---|---|---|
+| `opencode-zen/big-pickle` | yes | ⏳ In flight (lane C) | Catalog's automated `best_free_coding`; 0 prior obs; sprint plan task in flight |
+| `opencode-zen/deepseek-v4-flash-free` | yes | 🛑 429 | 429s under load (per current routing state) |
+| `opencode-zen/mimo-v2.5-free` | yes | 🛑 429 | 429s under load; do not use |
+| `opencode-zen/minimax-m3-free` | yes | ⚪ Untested | 0 obs; MiniMax-M3 family untested |
+| `opencode-zen/nemotron-3-ultra-free` | yes | ⚪ Untested | 0 obs on this gateway; note kilo variant is Broken |
+| `opencode-zen/north-mini-code-free` | yes | 🟠 Limited | Too command-happy for fragile prompts |
+| `opencode-zen/qwen3.6-plus-free` | yes | 🚫 Stale | Free promotion ended; provider 401 |
+
+### nvidia — 121 launch refs
+
+| Launch ref | Free? | Status | Last observation / best use |
+|---|---|---|---|
+| `nvidia/01-ai/yi-large` | yes | ⚪ Untested | 0 obs |
+| `nvidia/abacusai/dracarys-llama-3.1-70b-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/adept/fuyu-8b` | yes | ⚪ Untested | 0 obs (small vision model) |
+| `nvidia/ai-synthetic-video-detector` | yes | 🔧 Specialized | video detection, not chat |
+| `nvidia/ai21labs/jamba-1.5-large-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/aisingapore/sea-lion-7b-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/baai/bge-m3` | yes | 🔧 Specialized | embedding model |
+| `nvidia/bigcode/starcoder2-15b` | yes | ⚪ Untested | 0 obs; code-specialized |
+| `nvidia/bytedance/seed-oss-36b-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/cosmos-reason2-8b` | yes | ⚪ Untested | 0 obs; reasoning-specialized |
+| `nvidia/databricks/dbrx-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/deepseek-ai/deepseek-coder-6.7b-instruct` | yes | ⚪ Untested | 0 obs; code-specialized |
+| `nvidia/deepseek-ai/deepseek-v4-flash` | yes | 🟡 Promising (1 prior) | Cheap focused repo probe; slow first output, accurate diagnosis |
+| `nvidia/deepseek-ai/deepseek-v4-pro` | yes | ⚪ Untested | 0 obs (different from `modelscope/deepseek-ai/DeepSeek-V4-Pro` which is Strong) |
+| `nvidia/embed-qa-4` | yes | 🔧 Specialized | embedding |
+| `nvidia/gliner-pii` | yes | 🔧 Specialized | PII detection |
+| `nvidia/google/codegemma-1.1-7b` | yes | ⚪ Untested | 0 obs; code-specialized |
+| `nvidia/google/codegemma-7b` | yes | ⚪ Untested | 0 obs; code-specialized |
+| `nvidia/google/deplot` | yes | 🔧 Specialized | image-to-text |
+| `nvidia/google/diffusiongemma-26b-a4b-it` | yes | ❌ Broken | silent timeout, 180s, no output |
+| `nvidia/google/gemma-2-2b-it` | yes | ⚪ Untested | 0 obs |
+| `nvidia/google/gemma-2b` | yes | ⚪ Untested | 0 obs |
+| `nvidia/google/gemma-3-12b-it` | yes | ⚪ Untested | 0 obs |
+| `nvidia/google/gemma-3-4b-it` | yes | ⚪ Untested | 0 obs |
+| `nvidia/google/gemma-3n-e2b-it` | yes | ⚪ Untested | 0 obs |
+| `nvidia/google/gemma-3n-e4b-it` | yes | ⚪ Untested | 0 obs |
+| `nvidia/google/gemma-4-31b-it` | yes | ⚪ Untested | 0 obs |
+| `nvidia/google/recurrentgemma-2b` | yes | ⚪ Untested | 0 obs |
+| `nvidia/ibm/granite-3.0-3b-a800m-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/ibm/granite-3.0-8b-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/ibm/granite-34b-code-instruct` | yes | ⚪ Untested | 0 obs; code-specialized |
+| `nvidia/ibm/granite-8b-code-instruct` | yes | ⚪ Untested | 0 obs; code-specialized |
+| `nvidia/ising-calibration-1-35b-a3b` | yes | 🔧 Specialized | calibration model |
+| `nvidia/llama-3.1-nemoguard-8b-content-safety` | yes | 🔧 Specialized | content safety |
+| `nvidia/llama-3.1-nemoguard-8b-topic-control` | yes | 🔧 Specialized | topic control |
+| `nvidia/llama-3.1-nemotron-51b-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/llama-3.1-nemotron-70b-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/llama-3.1-nemotron-nano-8b-v1` | yes | ⚪ Untested | 0 obs |
+| `nvidia/llama-3.1-nemotron-nano-vl-8b-v1` | yes | ⚪ Untested | 0 obs; vision-language |
+| `nvidia/llama-3.1-nemotron-safety-guard-8b-v3` | yes | 🔧 Specialized | safety guard |
+| `nvidia/llama-3.1-nemotron-ultra-253b-v1` | yes | ⚪ Untested | 0 obs |
+| `nvidia/llama-3.2-nemoretriever-1b-vlm-embed-v1` | yes | 🔧 Specialized | embedding |
+| `nvidia/llama-3.2-nv-embedqa-1b-v1` | yes | 🔧 Specialized | embedding QA |
+| `nvidia/llama-3.3-nemotron-super-49b-v1` | yes | ⚪ Untested | 0 obs |
+| `nvidia/llama-3.3-nemotron-super-49b-v1.5` | yes | ⚪ Untested | 0 obs |
+| `nvidia/llama-nemotron-embed-1b-v2` | yes | 🔧 Specialized | embedding |
+| `nvidia/llama-nemotron-embed-vl-1b-v2` | yes | 🔧 Specialized | vision-language embedding |
+| `nvidia/llama3-chatqa-1.5-70b` | yes | ⚪ Untested | 0 obs; QA-specialized |
+| `nvidia/meta/codellama-70b` | yes | ⚪ Untested | 0 obs; code-specialized |
+| `nvidia/meta/llama-3.1-70b-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/meta/llama-3.1-8b-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/meta/llama-3.2-11b-vision-instruct` | yes | ⚪ Untested | 0 obs; vision |
+| `nvidia/meta/llama-3.2-1b-instruct` | yes | ⚪ Untested | 0 obs; small |
+| `nvidia/meta/llama-3.2-3b-instruct` | yes | ⚪ Untested | 0 obs; small |
+| `nvidia/meta/llama-3.2-90b-vision-instruct` | yes | ⚪ Untested | 0 obs; vision |
+| `nvidia/meta/llama-3.3-70b-instruct` | yes | 🟠 Limited (3 prior) | Code comprehension solid; UNRELIABLE write step. Read-only probes only. |
+| `nvidia/meta/llama-4-maverick-17b-128e-instruct` | yes | ⚪ Untested | 0 obs; lane D test blocked by ZenMux 503 (model not in allowed list) |
+| `nvidia/meta/llama-guard-4-12b` | yes | 🔧 Specialized | safety guard |
+| `nvidia/meta/llama2-70b` | yes | ⚪ Untested | 0 obs (legacy) |
+| `nvidia/microsoft/kosmos-2` | yes | 🔧 Specialized | vision-language |
+| `nvidia/microsoft/phi-3-vision-128k-instruct` | yes | ⚪ Untested | 0 obs; vision |
+| `nvidia/microsoft/phi-3.5-moe-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/microsoft/phi-4-mini-instruct` | yes | ⚪ Untested | 0 obs; small |
+| `nvidia/microsoft/phi-4-multimodal-instruct` | yes | ⚪ Untested | 0 obs; vision |
+| `nvidia/minimaxai/minimax-m2.7` | yes | ❌ Broken | Stuck at `rpc_response:prompt`; no model output |
+| `nvidia/minimaxai/minimax-m3` | yes | ⚪ Untested | 0 obs; newer MiniMax generation |
+| `nvidia/mistral-nemo-minitron-8b-8k-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/mistralai/codestral-22b-instruct-v0.1` | yes | ⚪ Untested | 0 obs; code-specialized |
+| `nvidia/mistralai/ministral-14b-instruct-2512` | yes | ⚪ Untested | 0 obs |
+| `nvidia/mistralai/mistral-7b-instruct-v0.3` | yes | ⚪ Untested | 0 obs (legacy) |
+| `nvidia/mistralai/mistral-large` | yes | ⚪ Untested | 0 obs (legacy mistral-large) |
+| `nvidia/mistralai/mistral-large-2-instruct` | yes | ⚪ Untested | 0 obs (legacy) |
+| `nvidia/mistralai/mistral-large-3-675b-instruct-2512` | yes | ⚪ Untested | 0 obs; flagship 675B |
+| `nvidia/mistralai/mistral-medium-3.5-128b` | yes | ⚪ Untested | 0 obs |
+| `nvidia/mistralai/mistral-nemotron` | yes | ⚪ Untested | 0 obs; hybrid nemotron-mistral |
+| `nvidia/mistralai/mistral-small-4-119b-2603` | yes | ⚪ Untested | 0 obs |
+| `nvidia/mistralai/mixtral-8x22b-v0.1` | yes | ⚪ Untested | 0 obs (legacy) |
+| `nvidia/mistralai/mixtral-8x7b-instruct-v0.1` | yes | ⚪ Untested | 0 obs (legacy) |
+| `nvidia/moonshotai/kimi-k2.6` | yes | ✅ Strong (2 prior) | High-value scout; good code/UI/vision reasoning. Use followup pattern. |
+| `nvidia/nemoretriever-parse` | yes | 🔧 Specialized | document parsing |
+| `nvidia/nemotron-3-content-safety` | yes | 🔧 Specialized | content safety |
+| `nvidia/nemotron-3-nano-30b-a3b` | yes | ⚪ Untested | 0 obs |
+| `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` | yes | ⚪ Untested | 0 obs; reasoning-specialized |
+| `nvidia/nemotron-3-super-120b-a12b` | yes | 🟠 Limited (3 prior) | Strong code comprehension but no-write-file pattern. 600s+ budget required. |
+| `nvidia/nemotron-3-ultra-550b-a55b` | yes | ❌ Broken | 0 tokens on kilo variant; nvidia lane untested (likely same failure mode) |
+| `nvidia/nemotron-3.5-content-safety` | yes | 🔧 Specialized | content safety |
+| `nvidia/nemotron-4-340b-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/nemotron-4-340b-reward` | yes | 🔧 Specialized | reward model |
+| `nvidia/nemotron-content-safety-reasoning-4b` | yes | 🔧 Specialized | content safety reasoning |
+| `nvidia/nemotron-mini-4b-instruct` | yes | ⚪ Untested | 0 obs; small |
+| `nvidia/nemotron-nano-12b-v2-vl` | yes | ⚪ Untested | 0 obs; vision-language |
+| `nvidia/nemotron-nano-3-30b-a3b` | yes | ⚪ Untested | 0 obs |
+| `nvidia/nemotron-parse` | yes | 🔧 Specialized | document parsing |
+| `nvidia/neva-22b` | yes | ⚪ Untested | 0 obs; vision |
+| `nvidia/nv-embed-v1` | yes | 🔧 Specialized | embedding |
+| `nvidia/nv-embedcode-7b-v1` | yes | 🔧 Specialized | code embedding |
+| `nvidia/nv-embedqa-e5-v5` | yes | 🔧 Specialized | embedding QA |
+| `nvidia/nv-embedqa-mistral-7b-v2` | yes | 🔧 Specialized | embedding QA |
+| `nvidia/nv-mistralai/mistral-nemo-12b-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/nvclip` | yes | 🔧 Specialized | vision-language |
+| `nvidia/nvidia-nemotron-nano-9b-v2` | yes | ⚪ Untested | 0 obs; small |
+| `nvidia/openai/gpt-oss-120b` | yes | ✅ Strong (1 prior) | Reliable writer; first-choice alternative when codestral-2508 throttled |
+| `nvidia/openai/gpt-oss-20b` | yes | ⏳ In flight (lane D-retry) | Smaller sibling of gpt-oss-120b; state retirement audit in flight |
+| `nvidia/qwen/qwen3-next-80b-a3b-instruct` | yes | ⚪ Untested | 0 obs (different from openrouter:free which 429'd) |
+| `nvidia/qwen/qwen3.5-122b-a10b` | yes | ⚪ Untested | 0 obs |
+| `nvidia/qwen/qwen3.5-397b-a17b` | yes | ⚪ Untested | 0 obs; 397B parameter |
+| `nvidia/riva-translate-4b-instruct` | yes | 🔧 Specialized | translation |
+| `nvidia/riva-translate-4b-instruct-v1.1` | yes | 🔧 Specialized | translation |
+| `nvidia/sarvamai/sarvam-m` | yes | ⚪ Untested | 0 obs; Indian-language family |
+| `nvidia/snowflake/arctic-embed-l` | yes | 🔧 Specialized | embedding |
+| `nvidia/stepfun-ai/step-3.5-flash` | yes | ⚪ Untested | 0 obs |
+| `nvidia/stepfun-ai/step-3.7-flash` | yes | ⚪ Untested | 0 obs (different from kilo/step-3.7-flash:free which is Promising) |
+| `nvidia/stockmark/stockmark-2-100b-instruct` | yes | ⚪ Untested | 0 obs; Japanese-specialized |
+| `nvidia/upstage/solar-10.7b-instruct` | yes | ⚪ Untested | 0 obs |
+| `nvidia/vila` | yes | 🔧 Specialized | vision-language |
+| `nvidia/writer/palmyra-creative-122b` | yes | ⚪ Untested | 0 obs; creative writing |
+| `nvidia/writer/palmyra-fin-70b-32k` | yes | ⚪ Untested | 0 obs; finance |
+| `nvidia/writer/palmyra-med-70b` | yes | ⚪ Untested | 0 obs; medical |
+| `nvidia/writer/palmyra-med-70b-32k` | yes | ⚪ Untested | 0 obs; medical 32k |
+| `nvidia/z-ai/glm-5.1` | yes | 🟡 Promising (1 prior) | Strong reading + synthesis when steered; runaway log volume needs scope discipline |
+| `nvidia/zyphra/zamba2-7b-instruct` | yes | ⚪ Untested | 0 obs |
+
+### mistral — 58 launch refs
+
+| Launch ref | Free? | Status | Last observation / best use |
+|---|---|---|---|
+| `mistral/codestral-2508` | yes | ✅ Strong (2 prior) | First-choice Mistral route for tight-deadline verification; ±10 line citation drift expected |
+| `mistral/codestral-embed` | yes | 🔧 Specialized | embedding |
+| `mistral/codestral-embed-2505` | yes | 🔧 Specialized | embedding |
+| `mistral/codestral-latest` | yes | ⏳ In flight (lane F-retry) | 19-import refactor plan task in flight; 0 prior obs |
+| `mistral/devstral-2512` | yes | ⏳ In flight (lane E) | Regression test for dismiss-in-COMPLETE bug; 1 prior Limited (300s timeout on bash scoping) |
+| `mistral/devstral-latest` | yes | 🟠 Limited (1 prior) | Silent timeout, 180s, no output |
+| `mistral/devstral-medium-latest` | yes | ⚪ Untested | 0 obs |
+| `mistral/labs-leanstral-2603` | yes | ⚪ Untested | 0 obs |
+| `mistral/magistral-medium-2509` | yes | ⚪ Untested | 0 obs |
+| `mistral/magistral-medium-latest` | yes | ⚪ Untested | 0 obs |
+| `mistral/magistral-small-2509` | yes | ⚪ Untested | 0 obs |
+| `mistral/magistral-small-latest` | yes | ⚪ Untested | 0 obs |
+| `mistral/ministral-14b-2512` | yes | ⚪ Untested | 0 obs |
+| `mistral/ministral-14b-latest` | yes | ⚪ Untested | 0 obs |
+| `mistral/ministral-3b-2512` | yes | ⚪ Untested | 0 obs; small |
+| `mistral/ministral-3b-latest` | yes | ⚪ Untested | 0 obs; small |
+| `mistral/ministral-8b-2512` | yes | ⚪ Untested | 0 obs |
+| `mistral/ministral-8b-latest` | yes | ⚪ Untested | 0 obs |
+| `mistral/mistral-code-agent-latest` | yes | 🟡 Promising (3 prior) | Fast, coherent code summarizer; can edit focused test seams; needs nullish-assertion check |
+| `mistral/mistral-code-fim-latest` | yes | ⚪ Untested | 0 obs; fill-in-middle code |
+| `mistral/mistral-code-latest` | yes | ⚪ Untested | 0 obs |
+| `mistral/mistral-embed` | yes | 🔧 Specialized | embedding |
+| `mistral/mistral-embed-2312` | yes | 🔧 Specialized | embedding (legacy) |
+| `mistral/mistral-large-2512` | yes | ⚪ Untested | 0 obs; flagship 2512 generation |
+| `mistral/mistral-large-latest` | yes | ⚪ Untested | 0 obs; flagship latest |
+| `mistral/mistral-medium` | yes | ⚪ Untested | 0 obs (legacy) |
+| `mistral/mistral-medium-2505` | yes | ⚪ Untested | 0 obs |
+| `mistral/mistral-medium-2508` | yes | ⚪ Untested | 0 obs |
+| `mistral/mistral-medium-2604` | yes | ⚪ Untested | 0 obs |
+| `mistral/mistral-medium-3` | yes | ⚪ Untested | 0 obs |
+| `mistral/mistral-medium-3-5` | yes | ⚪ Untested | 0 obs |
+| `mistral/mistral-medium-3.5` | yes | ⚪ Untested | 0 obs |
+| `mistral/mistral-medium-latest` | yes | ⚪ Untested | 0 obs |
+| `mistral/mistral-moderation-2411` | yes | 🔧 Specialized | moderation |
+| `mistral/mistral-moderation-2603` | yes | 🔧 Specialized | moderation |
+| `mistral/mistral-moderation-latest` | yes | 🔧 Specialized | moderation |
+| `mistral/mistral-ocr-2512` | yes | 🔧 Specialized | OCR |
+| `mistral/mistral-ocr-latest` | yes | 🔧 Specialized | OCR |
+| `mistral/mistral-small-2506` | yes | ⚪ Untested | 0 obs |
+| `mistral/mistral-small-2603` | yes | ⚪ Untested | 0 obs |
+| `mistral/mistral-small-latest` | yes | ⚪ Untested | 0 obs |
+| `mistral/mistral-tiny-2407` | yes | ⚪ Untested | 0 obs (legacy) |
+| `mistral/mistral-tiny-latest` | yes | ⚪ Untested | 0 obs (legacy) |
+| `mistral/mistral-vibe-cli-fast` | yes | 🟡 Promising (1 prior) | Quick read-only reconnaissance; clean final answer; log-heavy |
+| `mistral/mistral-vibe-cli-latest` | yes | ⚪ Untested | 0 obs |
+| `mistral/mistral-vibe-cli-with-tools` | yes | ⚪ Untested | 0 obs |
+| `mistral/open-mistral-nemo` | yes | ⚪ Untested | 0 obs |
+| `mistral/open-mistral-nemo-2407` | yes | ⚪ Untested | 0 obs |
+| `mistral/voxtral-mini-2507` | yes | 🔧 Specialized | audio (ASR/TTS) |
+| `mistral/voxtral-mini-2602` | yes | 🔧 Specialized | audio |
+| `mistral/voxtral-mini-latest` | yes | 🔧 Specialized | audio |
+| `mistral/voxtral-mini-realtime-2602` | yes | 🔧 Specialized | realtime audio |
+| `mistral/voxtral-mini-realtime-latest` | yes | 🔧 Specialized | realtime audio |
+| `mistral/voxtral-mini-transcribe-realtime-2602` | yes | 🔧 Specialized | realtime transcription |
+| `mistral/voxtral-mini-tts-2603` | yes | 🔧 Specialized | TTS |
+| `mistral/voxtral-mini-tts-latest` | yes | 🔧 Specialized | TTS |
+| `mistral/voxtral-small-2507` | yes | 🔧 Specialized | audio |
+| `mistral/voxtral-small-latest` | yes | 🔧 Specialized | audio |
+
+### openrouter — 24 launch refs
+
+| Launch ref | Free? | Status | Last observation / best use |
+|---|---|---|---|
+| `openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition:free` | yes | ⚪ Untested | 0 obs; uncensored variant |
+| `openrouter/free` | yes | ⚪ Untested | 0 obs; auto-routing free tier |
+| `openrouter/google/gemma-4-26b-a4b-it:free` | yes | ⚪ Untested | 0 obs |
+| `openrouter/google/gemma-4-31b-it:free` | yes | ⚪ Untested | 0 obs |
+| `openrouter/liquid/lfm-2.5-1.2b-instruct:free` | yes | ⚪ Untested | 0 obs; small |
+| `openrouter/liquid/lfm-2.5-1.2b-thinking:free` | yes | ⚪ Untested | 0 obs; thinking-specialized |
+| `openrouter/meta-llama/llama-3.2-3b-instruct:free` | yes | ⚪ Untested | 0 obs; small |
+| `openrouter/meta-llama/llama-3.3-70b-instruct:free` | yes | 🛑 429 | 14KB stdout, no report; rate-limited upstream |
+| `openrouter/nex-agi/nex-n2-pro:free` | yes | 🟡 Promising (1 prior via kilo) | Intelligent, tool-calling heavy, brute-force recovery; poor steering compliance |
+| `openrouter/nousresearch/hermes-3-llama-3.1-405b:free` | yes | 🟠 Limited (1 prior) | Free endpoints do NOT expose tool use; unusable for Pi workers that need read/grep/glob/bash |
+| `openrouter/nvidia/nemotron-3-nano-30b-a3b:free` | yes | ⚪ Untested | 0 obs |
+| `openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | yes | ⚪ Untested | 0 obs; reasoning |
+| `openrouter/nvidia/nemotron-3-super-120b-a12b:free` | yes | ⏳ In flight (lane B) | Coverage audit; 3 prior Limited (no-write-file) |
+| `openrouter/nvidia/nemotron-3-ultra-550b-a55b:free` | yes | ❌ Broken | Silent failure, 0 tokens despite 550B params; removed from free default |
+| `openrouter/nvidia/nemotron-3.5-content-safety:free` | yes | ⚪ Untested | 0 obs; content safety |
+| `openrouter/nvidia/nemotron-nano-12b-v2-vl:free` | yes | ⚪ Untested | 0 obs; vision-language |
+| `openrouter/nvidia/nemotron-nano-9b-v2:free` | yes | ⚪ Untested | 0 obs; small |
+| `openrouter/openai/gpt-oss-120b:free` | yes | ⚪ Untested | 0 obs (different from `nvidia/openai/gpt-oss-120b` which is Strong) |
+| `openrouter/openai/gpt-oss-20b:free` | yes | ⚪ Untested | 0 obs; small sibling |
+| `openrouter/owl-alpha` | yes | ✅ Strong (3+ prior) | Stable free default for code pattern searches; static analysis; use followup pattern |
+| `openrouter/poolside/laguna-m.1:free` | yes | 🟡 Promising (1 prior) | Stable reading on dense code; needs write-bench before being a default followup |
+| `openrouter/poolside/laguna-xs.2:free` | yes | ⚪ Untested | 0 obs |
+| `openrouter/qwen/qwen3-coder:free` | yes | 🛑 429 | Rate-limited upstream; 13KB stdout, no report; do not retry on this gateway |
+| `openrouter/qwen/qwen3-next-80b-a3b-instruct:free` | yes | 🟠 Limited (1 prior) | 429 at transport layer; failed at first model call before inference |
+| `openrouter/z-ai/glm-4.5-air:free` | yes | ⚪ Untested | 0 obs (in catalog but not in current first-pick list) |
+
+### kilo — 11 launch refs
+
+| Launch ref | Free? | Status | Last observation / best use |
+|---|---|---|---|
+| `kilo/kilo-auto/free` | yes | ⚪ Untested | 0 obs; auto-routing free tier |
+| `kilo/nex-agi/nex-n2-pro:free` | yes | 🟡 Promising (1 prior) | High-effort brute-force investigation; needs strict path limits and long timeout |
+| `kilo/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | yes | ⚪ Untested | 0 obs |
+| `kilo/nvidia/nemotron-3-super-120b-a12b:free` | yes | ⏳ In flight (lane B) | Same Limited rating as openrouter variant; 3 prior |
+| `kilo/nvidia/nemotron-3-ultra-550b-a55b:free` | yes | ❌ Broken | Was the locked free default before both-pattern wave; silent failure, 0 tokens |
+| `kilo/nvidia/nemotron-3.5-content-safety:free` | yes | ⚪ Untested | 0 obs; content safety |
+| `kilo/openrouter/free` | yes | ⚪ Untested | 0 obs |
+| `kilo/openrouter/owl-alpha` | yes | ✅ Strong (3+ prior) | Same model as `openrouter/owl-alpha`; Kilo-routed |
+| `kilo/poolside/laguna-m.1:free` | yes | ⚪ Untested | 0 obs |
+| `kilo/poolside/laguna-xs.2:free` | yes | ⚪ Untested | 0 obs |
+| `kilo/stepfun/step-3.7-flash:free` | yes | 🟡 Promising (1 prior) | Lightweight read-only diagnostics; good concise synthesis; free lane caveats apply |
+
+### modelscope — 60 launch refs
+
+| Launch ref | Free? | Status | Last observation / best use |
+|---|---|---|---|
+| `modelscope/deepseek-ai/DeepSeek-V3.1` | yes | ⚪ Untested | 0 obs |
+| `modelscope/deepseek-ai/DeepSeek-V3.2` | yes | ⚪ Untested | 0 obs |
+| `modelscope/deepseek-ai/DeepSeek-V3.2-Exp` | yes | ⚪ Untested | 0 obs |
+| `modelscope/deepseek-ai/DeepSeek-V4-Flash` | yes | 🟡 Promising (3 prior) | Best free ModelScope route for code-archeology; some tasks hit write-boundary timeouts |
+| `modelscope/deepseek-ai/DeepSeek-V4-Pro` | yes | ✅ Strong (1 prior) | Methodical, precise analysis; first-choice free ModelScope route for code-archeology |
+| `modelscope/iic/Tongyi-DeepResearch-30B-A3B` | yes | ⚪ Untested | 0 obs; research-specialized |
+| `modelscope/Menlo/Jan-nano` | yes | 🚫 Stale | Provider `400 Invalid model id: Menlo/Jan-nano`; hide or remap |
+| `modelscope/MiniMax/MiniMax-M1-80k` | yes | ⚪ Untested | 0 obs; 80k context |
+| `modelscope/MiniMax/MiniMax-M2.5` | yes | ⚪ Untested | 0 obs |
+| `modelscope/MiniMax/MiniMax-M2.7` | yes | 🚫 Stale | Provider `400 Model id ... has no provider supported` |
+| `modelscope/MusePublic/Qwen-Image-Edit` | yes | 🔧 Specialized | image editing |
+| `modelscope/nex-agi/Nex-N2-Pro` | yes | ⚪ Untested | 0 obs (different from `openrouter/nex-agi/nex-n2-pro:free` which is Promising via kilo) |
+| `modelscope/opencompass/CompassJudger-1-32B-Instruct` | yes | ⚪ Untested | 0 obs; judge model |
+| `modelscope/OpenGVLab/InternVL3_5-241B-A28B` | yes | 🔧 Specialized | vision-language |
+| `modelscope/PaddlePaddle/ERNIE-4.5-0.3B-PT` | yes | ⚪ Untested | 0 obs; pre-trained, not instruct |
+| `modelscope/PaddlePaddle/ERNIE-4.5-21B-A3B-PT` | yes | ⚪ Untested | 0 obs; pre-trained |
+| `modelscope/PaddlePaddle/ERNIE-4.5-300B-A47B-PT` | yes | ⚪ Untested | 0 obs; pre-trained 300B |
+| `modelscope/PaddlePaddle/ERNIE-4.5-VL-28B-A3B-PT` | yes | 🔧 Specialized | vision-language |
+| `modelscope/Qwen-Ambassador/Qwen3.7-Max` | yes | ⚪ Untested | 0 obs; flagship |
+| `modelscope/Qwen-Ambassador/Qwen3.7-Plus` | yes | ⚪ Untested | 0 obs; flagship-plus |
+| `modelscope/Qwen/QVQ-72B-Preview` | yes | 🔧 Specialized | vision-language |
+| `modelscope/Qwen/Qwen-Image-Edit` | yes | 🔧 Specialized | image editing |
+| `modelscope/Qwen/Qwen2.5-14B-Instruct` | yes | ⚪ Untested | 0 obs |
+| `modelscope/Qwen/Qwen2.5-14B-Instruct-1M` | yes | ⚪ Untested | 0 obs; 1M context |
+| `modelscope/Qwen/Qwen2.5-32B-Instruct` | yes | ⚪ Untested | 0 obs |
+| `modelscope/Qwen/Qwen2.5-72B-Instruct` | yes | ⚪ Untested | 0 obs |
+| `modelscope/Qwen/Qwen2.5-7B-Instruct` | yes | ⚪ Untested | 0 obs; small |
+| `modelscope/Qwen/Qwen2.5-7B-Instruct-1M` | yes | ⚪ Untested | 0 obs; small 1M context |
+| `modelscope/Qwen/Qwen2.5-Coder-14B-Instruct` | yes | ⚪ Untested | 0 obs; code-specialized |
+| `modelscope/Qwen/Qwen2.5-Coder-32B-Instruct` | yes | ⚪ Untested | 0 obs; code-specialized |
+| `modelscope/Qwen/Qwen2.5-Coder-7B-Instruct` | yes | ⚪ Untested | 0 obs; small code-specialized |
+| `modelscope/Qwen/Qwen2.5-VL-32B-Instruct` | yes | 🔧 Specialized | vision-language |
+| `modelscope/Qwen/Qwen2.5-VL-3B-Instruct` | yes | 🔧 Specialized | vision-language |
+| `modelscope/Qwen/Qwen2.5-VL-72B-Instruct` | yes | 🔧 Specialized | vision-language |
+| `modelscope/Qwen/Qwen2.5-VL-7B-Instruct` | yes | 🔧 Specialized | vision-language |
+| `modelscope/Qwen/Qwen3-0.6B` | yes | ⚪ Untested | 0 obs; small |
+| `modelscope/Qwen/Qwen3-1.7B` | yes | ⚪ Untested | 0 obs; small |
+| `modelscope/Qwen/Qwen3-14B` | yes | ⚪ Untested | 0 obs |
+| `modelscope/Qwen/Qwen3-235B-A22B` | yes | ⚪ Untested | 0 obs; 235B parameter |
+| `modelscope/Qwen/Qwen3-235B-A22B-Instruct-2507` | yes | ⚪ Untested | 0 obs; flagship instruct |
+| `modelscope/Qwen/Qwen3-235B-A22B-Thinking-2507` | yes | ⚪ Untested | 0 obs; thinking mode |
+| `modelscope/Qwen/Qwen3-30B-A3B` | yes | ⚪ Untested | 0 obs |
+| `modelscope/Qwen/Qwen3-30B-A3B-Thinking-2507` | yes | ⚪ Untested | 0 obs; thinking |
+| `modelscope/Qwen/Qwen3-32B` | yes | ⚪ Untested | 0 obs |
+| `modelscope/Qwen/Qwen3-4B` | yes | ⚪ Untested | 0 obs; small |
+| `modelscope/Qwen/Qwen3-8B` | yes | ⚪ Untested | 0 obs; small |
+| `modelscope/Qwen/Qwen3-Coder-30B-A3B-Instruct` | yes | 🟡 Promising (2 prior) | Stable launch; concise final; secondary reviewer on read-only lanes |
+| `modelscope/Qwen/Qwen3-Next-80B-A3B-Instruct` | yes | 🟠 Limited (1 prior) | 429'd on openrouter; same model via modelscope untested |
+| `modelscope/Qwen/Qwen3-Next-80B-A3B-Thinking` | yes | ⚪ Untested | 0 obs; thinking mode |
+| `modelscope/Qwen/Qwen3-VL-235B-A22B-Instruct` | yes | 🔧 Specialized | vision-language |
+| `modelscope/Qwen/Qwen3-VL-8B-Instruct` | yes | ❌ Broken | Silent timeout, 180s, no output |
+| `modelscope/Qwen/Qwen3-VL-8B-Thinking` | yes | 🔧 Specialized | vision-language thinking |
+| `modelscope/Shanghai_AI_Laboratory/Intern-S1` | yes | ⚪ Untested | 0 obs |
+| `modelscope/Shanghai_AI_Laboratory/Intern-S1-mini` | yes | ⚪ Untested | 0 obs; small |
+| `modelscope/stepfun-ai/Step-3.5-Flash` | yes | ⚪ Untested | 0 obs |
+| `modelscope/stepfun-ai/step3` | yes | ⚪ Untested | 0 obs |
+| `modelscope/XiaomiMiMo/MiMo-V2-Flash` | yes | ⚪ Untested | 0 obs |
+| `modelscope/zai-org/GLM-4.7-Flash` | yes | ⚪ Untested | 0 obs; flash tier |
+| `modelscope/zai-org/GLM-5` | yes | ⚪ Untested | 0 obs; new flagship |
+| `modelscope/zai-org/GLM-5.1` | yes | ⚪ Untested | 0 obs (different from `nvidia/z-ai/glm-5.1` which is Promising — different provider routing) |
+
+### Cross-reference: 2026-06-13 campaign dispatches (in-flight + completed)
+
+This campaign's active dispatches are listed below. When they complete, observations land in the **Tested Routes** table above and the **Status** column here updates from "⏳ In flight" to the final rating.
+
+| Lane | Model | Status as of 2026-06-13 18:42 UTC | Output file | Filling which gap |
+|---|---|---|---|---|
+| Lane A | `opencode-go/mimo-v2.5` (paid) | ✅ Completed (catalog enrichment) | `docs/subagent-model-catalog.md` (8 new rows) | Catalog metadata; not a new model |
+| Lane B | `nvidia/nemotron-3-super-120b-a12b` | ⏳ In flight (139K input / 7K output, heavy analysis) | `tmp/both-pattern-investigation-2026-06-13/coverage-audit.md` | Adds a 4th observation of nemotron-3-super-120b |
+| Lane C | `opencode-zen/big-pickle` | ⏳ In flight (at write tool) | `tmp/subagent-catalog-buildout-2026-06-13/sprint-plan.md` | **First observation** of big-pickle (catalog's `best_free_coding`) |
+| Lane D-retry | `nvidia/openai/gpt-oss-20b` | ⏳ In flight (just launched) | `tmp/subagent-catalog-buildout-2026-06-13/state-retirement-audit.md` | **First observation** of gpt-oss-20b |
+| Lane E | `mistral/devstral-2512` | ⏳ In flight (at write tool) | `tests/dismiss-in-complete-state-contract.mjs` | 2nd observation of devstral-2512 (was Limited on first) |
+| Lane F-retry | `mistral/codestral-latest` | ⏳ In flight (just launched) | `tmp/subagent-catalog-buildout-2026-06-13/three-engine-238-256-plan.md` | **First observation** of codestral-latest |
+
+### Maintenance
+
+This section is regenerated whenever a new test completes. The Status column is the at-a-glance truth: `✅ 🟡 🟠 ⚪` for tiers, `❌ 🚫 🛑 ⏱️` for failure modes, `⏳` for in-flight, `🔧` for non-chat specialized.
+
+When you see ⚪ Untested on a model you want to try, just dispatch a subagent on it and the output back-fills this table + the Tested Routes table above.
 
 ## Open Questions To Keep Testing
 
