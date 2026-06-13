@@ -3,7 +3,7 @@ import * as loadingUi from '../../js/modules/loading-ui.js';
 import { state, withStateMutation } from '../../js/state.js';
 import { SCENE_READY } from '../../js/modules/scene-events.js';
 import * as semanticThreads from '../../js/modules/semantic-threads.js';
-import * as searchState from '../../js/modules/search-state.js';
+import * as searchState from '../../js/modules/search-state.ts';
 import * as threeThreadManager from '../../js/modules/three-thread-manager.js';
 import * as stateMutators from '../../js/modules/state-mutators.js';
 import * as weather from '../../js/modules/weather.js';
@@ -17,7 +17,7 @@ vi.mock('../../js/modules/semantic-threads.js', () => ({
     loadSemanticThreads: vi.fn(() => Promise.resolve())
 }));
 
-vi.mock('../../js/modules/search-state.js', () => ({
+vi.mock('../../js/modules/search-state.ts', () => ({
     applyFilters: vi.fn()
 }));
 

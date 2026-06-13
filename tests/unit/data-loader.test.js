@@ -10,7 +10,7 @@ vi.mock('../../js/modules/cluster-filter.js', () => ({
 vi.mock('../../js/modules/ui-renderers.js', () => ({
     buildLegend: vi.fn()
 }));
-vi.mock('../../js/modules/search-state.js', () => ({
+vi.mock('../../js/modules/search-state.ts', () => ({
     applyFilters: vi.fn()
 }));
 

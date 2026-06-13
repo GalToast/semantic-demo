@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
-    import { search, clearSearch } from '../search-state.js';
+    import { search, clearSearch } from '../search-state.ts';
     import { returnToOverview } from '../lifecycle.js';
     import { isCompactSearchViewport } from '../utils/ui-presentation.js';
     import { setMobileSearchSheetMode, setSearchContainerState } from '../search-panel-adapter.js';

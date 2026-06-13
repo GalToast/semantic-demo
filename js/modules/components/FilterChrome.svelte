@@ -3,7 +3,7 @@
     import { state as appState } from '../../state.js';
     import { activeFiltersStore } from '../stores.js';
     import { publish, EVENTS } from '../event-bus.js';
-    import { applyFilters, clearSearchGlow } from '../search-state.js';
+    import { applyFilters, clearSearchGlow } from '../search-state.ts';
     import {
         setActiveFilter,
         toggleActiveFilterSignal,

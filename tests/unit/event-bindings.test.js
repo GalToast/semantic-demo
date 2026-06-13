@@ -4,7 +4,7 @@ import * as eventBindings from '../../js/modules/event-bindings.js';
 import { state, withStateMutation } from '../../js/state.js';
 import * as viewController from '../../js/modules/view-controller.js';
 import * as cameraControls from '../../js/modules/camera-controls.js';
-import * as searchState from '../../js/modules/search-state.js';
+import * as searchState from '../../js/modules/search-state.ts';
 import * as journey from '../../js/modules/journey.js';
 
 vi.mock('../../js/modules/environment.js', () => ({
@@ -41,8 +41,7 @@ vi.mock('../../js/modules/camera-controls.js', () => ({
     settleCameraToOverviewPose: vi.fn()
 }));
 
-vi.mock('../../js/modules/search-state.js', () => ({
-    search: vi.fn(),
+vi.mock('../../js/modules/search-state.ts', () => ({
     clearSearch: vi.fn(),
     clearShortSemanticSearchState: vi.fn(),
     clearSearchGlow: vi.fn(),

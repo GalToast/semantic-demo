@@ -62,7 +62,7 @@ async function loadLegacyActionModules(): Promise<LegacyActionModules> {
 
   loadPromise = Promise.all([
     import('../../../js/modules/lifecycle.js'),
-    import('../../../js/modules/search-state.js'),
+    import('../../../js/modules/search-state.ts'),
     import('../../../js/modules/journey.js')
   ]).then(([lifecycle, search, journey]) => {
     legacyModules = {

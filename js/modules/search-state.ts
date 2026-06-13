@@ -1,10 +1,15 @@
 /**
  * search-state.ts
  *
- * Typed sibling of search-state.js.
+ * @deprecated — Canonical import: @lib/search-engine for search execution,
+ * @lib/stores/search.svelte for search state, @lib/search-cache for caching.
+ *
  * Orchestration layer for semantic search.
  * This module coordinates the search pipeline and provides a stable canonical API.
  * DECOUPLED: Communicates with lifecycle and URL layers via Event Bus.
+ *
+ * After Ticket 5: search() delegates to performSearch() from @lib/search-engine,
+ * eliminating the dual-path through semantic-search-api-cache.ts.
  */
 
 import { state, type Point, type SemanticState } from '../state.ts';
@@ -17,7 +22,6 @@ import {
     getTrailDepth,
     getMyceliumMode,
     getSearchRequestSequence,
-    getSemanticLaneState,
     getCurrentView,
     getSearchFocusTransitionToken,
     getTrailIndices
@@ -25,10 +29,8 @@ import {
 import { publish, EVENTS } from './event-bus.ts';
 import { formatBusinessName } from './utils/dom-formatters.ts';
 import { isCompactSearchViewport } from './utils/ui-presentation.ts';
-import {
-    fetchSemanticSearchResults,
-    getSemanticSearchCacheDiagnostics
-} from './semantic-search-api-cache.ts';
+import { performSearch } from '../../src/lib/search-engine.ts';
+import { getSearchCacheDiagnostics } from '../../src/lib/search-cache.ts';
 import { recordSemanticLaneSnapshot } from './semantic-lane.ts';
 import { clearTrailThreadState } from './navigation-state.ts';
 import {
@@ -171,7 +173,7 @@ export function hideTooltip(): void { publish(EVENTS.TOOLTIP_HIDE_REQUESTED); }
 export function positionTooltip(): void { /* Managed by UI */ }
 export function updateTooltipContent(): void { /* Managed by UI */ }
 
-export { getSemanticSearchCacheDiagnostics };
+export { getSearchCacheDiagnostics as getSemanticSearchCacheDiagnostics };
 
 // ── Focus Transition Timer Management ───────────────────────────────────────
 const _searchFocusTransitionTimers: ReturnType<typeof setTimeout>[] = [];
@@ -184,7 +186,7 @@ function _clearSearchFocusTimers(): void {
 // ── Search Orchestration ───────────────────────────────────────────────────
 
 export async function search(query: string, options: SearchOptions = {}): Promise<void> {
-    try { sessionStorage.removeItem('searchVisibleCount'); } catch {}
+    try { sessionStorage.removeItem('searchVisibleCount'); } catch (_e) { /* sessionStorage may be unavailable */ }
     const trimmedQuery = String(query || '').trim();
     const resultsEl = document.getElementById('search-results');
     const statusEl = document.getElementById('search-status');
@@ -257,20 +259,11 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     publish(EVENTS.SEARCH_STARTED, { resultsEl, statusEl, query: trimmedQuery });
     startSearchVectorScramble();
 
-    let payload: { results?: unknown[]; count?: number; client_cache_hit?: boolean } | undefined;
+    let searchResults: SearchResult[];
     try {
-        const laneState = String(getSemanticLaneState() || '').toLowerCase();
-        const shouldFailFastForKnownDegradedLane = ['degraded', 'unavailable', 'reconnecting'].includes(laneState);
-        payload = await fetchSemanticSearchResults(trimmedQuery, controller.signal, {
-            preferCachedResults: options.preferCachedResults !== false,
-            offset: options.offset,
-            timeoutMs: shouldFailFastForKnownDegradedLane ? 2200 : undefined,
-            maxAttempts: shouldFailFastForKnownDegradedLane ? 1 : undefined,
-            onRetry: ({ nextAttempt, delayMs }: { attempt: number; nextAttempt: number; delayMs: number; retryTotal: number }) => {
-                if (controller.signal.aborted || requestId !== getSearchRequestSequence()) return;
-                updateSemanticSearchRetryState({ statusEl, trimmedQuery, nextAttempt, delayMs });
-            }
-        });
+        // Single-track: use performSearch from @lib/search-engine which goes
+        // through the canonical search-cache.ts (not the legacy api-cache).
+        searchResults = await performSearch(trimmedQuery, controller.signal, 0, options.offset ?? 0) as unknown as SearchResult[];
     } catch (error: unknown) {
         if (controller.signal.aborted || requestId !== getSearchRequestSequence()) return;
         stopSearchVectorScramble();
@@ -286,9 +279,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     if (requestId !== getSearchRequestSequence()) return;
     stopSearchVectorScramble();
 
-    const serviceResults = getSemanticSearchServiceResults(payload as Parameters<typeof getSemanticSearchServiceResults>[0]) as mapperModule.ServiceResultRow[];
-    const totalMatches = getSemanticSearchTotalMatches(payload as Parameters<typeof getSemanticSearchTotalMatches>[0], serviceResults);
-    const results = mapSemanticSearchResults(serviceResults) as SearchResult[];
+    const results = searchResults;
 
     if (requestId !== getSearchRequestSequence()) return;
     if (!results.length) {
@@ -305,14 +296,14 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     const anchorName = anchorResult ? formatBusinessName(anchorResult.point.name as string) : null;
 
     state.currentSearchSummary = {
-        query: trimmedQuery, totalMatches, totalSemanticMatches: totalMatches, visibleMatches: results.length,
+        query: trimmedQuery, totalMatches: results.length, totalSemanticMatches: results.length, visibleMatches: results.length,
         anchorIndex, topIndex: topResult?.index ?? null, resultIndices
     };
 
     publish(EVENTS.SEARCH_SUCCESS, {
         resultsEl,
         query: trimmedQuery,
-        source: payload?.client_cache_hit ? 'memory-cache' : 'network'
+        source: 'search-engine'
     });
 
     if (results.length === 1) {
