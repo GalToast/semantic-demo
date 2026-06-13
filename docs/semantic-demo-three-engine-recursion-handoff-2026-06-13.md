@@ -59,12 +59,54 @@ The minified harness's `Hj` is the Three.js Vector3.applyMatrix4 path traversed 
   - Run `Get-ChildItem js/modules/*.js | Select-String "export \* from.*\\.ts'";Get-ChildItem src -Recurse -Filter X.ts;Test-Path`
   - Any missing target creates a similar cycle surface
 
+## Confirmed: cycle via runtime, NOT a missing TS file — Lane B correction (2026-06-13)
+
+Lane Z's initial hypothesis was that `js/modules/camera-controls-restore.js:1` re-exports `'../../src/lib/engine/camera-controls-restore.ts'` and that TS file is ENOENT.
+
+**Direct inspection disproves the missing-file path:**
+- `js/modules/camera-controls-restore.js:1` reads `export * from '../../src/lib/engine/camera-controls.ts';` (no `-restore` suffix)
+- `Test-Path src/lib/engine/camera-controls-restore.ts` returns **False** — confirmed missing as a file under src/lib/engine/
+- `Test-Path src/lib/engine/camera-controls.ts` returns **True** — confirmed present
+- The `.js` shim does NOT point at the missing file; it points at the facade
+
+**Lane B peer review (commit parent of this section):** Independently verified by `modelscope/deepseek-ai/DeepSeek-V4-Pro` reading the same four files in parallel. Lane B's verdict corrects the cycle diagram above:
+
+> "The facade's dynamic imports use `.ts` extension (`@legacy/modules/camera-controls-restore.ts`), and the `.ts` files are standalone implementations that do NOT re-import the facade — so the source-level cycle path claimed in the handoff doc does not close as diagrammed."
+
+Lane B cites `src/lib/engine/camera-controls.ts:84-86`:
+```
+import('@legacy/modules/camera-controls-core.ts'),
+import('@legacy/modules/camera-controls-restore.ts'),
+import('@legacy/modules/camera-controls-choreography.ts'),
+```
+
+These imports go straight to `js/modules/*.ts` legacy files (with `.ts` extension). The `js/modules/*.ts` files themselves do NOT re-import the facade. So my "the cycle closes through the facade" path is incorrect.
+
+**Real cycle closure** (Lane A + Lane B combined reading):
+- `animate()` (somewhere in src/lib/engine/three-*-module or in legacy three-engine.ts)
+- calls `_restore?.updateAutoRotateSoftResume(frameNow)` (or uses legacy `camera-controls-ts.updateAutoRotateSoftResume`)
+- reads/`mutates` `_s.controls.autoRotateSpeed` / `_s.controls.autoRotate`
+- `_s.controls` is the THREE.OrbitControls instance, attached to camera and renderer on init
+- controls.update() runs inside renderer.render(), which is inside `animate()`
+- **Cycle closes via the shared `_s.controls` reference at runtime, NOT through the JS module graph**
+
+This actually moves the bug fix OUT of the src/lib/engine camera-controls surface and INTO either:
+- (a) the `js/modules/camera-controls-restore.ts` standalone implementation (Option 2 in this doc, slightly revised), or
+- (b) the `_s.controls` ownership, possibly in `js/state.ts` or `js/modules/three-engine.ts`
+
+## Revised three fix options ranked by risk
+
+1. **Stub `src/lib/engine/camera-controls-restore.ts` with no-op exports** — terminates the cycle at the bridge layer IF the cycle IS actually closed via the src/ facade. ~30 lines. **LOW risk** based on original hypothesis, but Lane B's correction suggests this may not be where the cycle closes — evaluate before applying.
+2. **Mirror the legacy `js/modules/camera-controls-restore.ts` into `src/lib/engine/camera-controls-restore.ts`** — re-export everything from `src/lib/engine/camera-controls-core.ts` and re-implement the soft-resume surface. **MEDIUM risk**: matches the apparent intent. ~120 lines. Caveat: requires the engine team to verify the auto-rotate parameters from camera.svelte.ts leader.
+3. **Trace into `js/modules/three-engine.ts` and `js/state.ts`** — find where `_s.controls` is set + reassigned, then break the animate→controls.update→re-render→animate cycle at the source. **HIGH risk**: changes the shared state mutation pattern that the engine team owns. **Run only if options 1/2 fail.**
+
 ## Verification gate (post-fix)
 
 Once a stub lands:
 - `npm run build:svelte → dist/svelte/assets/index-*.js` should have NO Hj recursion in the animate loop
 - Playwright load of `?anchor=519` should reach `body.dataset.graphicsMode === 'webgl'` AND a `dataReady === true` event within 30s
 - The full smoke in `docs/semantic-demo-url-anchor-regression-2026-06-12.md` (post-fix verification protocol) should pass all four assertions
+- NEW: Drop a log marker at the start of `js/modules/camera-controls-restore.ts:updateAutoRotateSoftResume` (and the corresponding src/ stub if it exists). Confirm the recursion occurs INSIDE this function and the marker shows on stack frame 2 of the Hj call chain before fix, and does NOT appear after fix.
 
 ## References
 
