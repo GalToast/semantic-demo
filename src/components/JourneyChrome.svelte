@@ -15,8 +15,8 @@
 -->
 <script lang="ts">
 
-  import { hasFocus, focusedIndex, dispatchNavTransition, NAV_TRANSITION_ACTIONS, hasTrail } from '@lib/stores/navigation';
-  import { walkHistoryIndices, threadCandidates, trailDepth, journeyPhase, threadSource } from '@lib/stores/journey';
+  import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
+  import { journeyStore, journeyPhase } from '@lib/stores/journey';
   import { buildCompassStatus } from '@lib/stores/compass';
   import { threadInspector, threadInspectorActive, pinThread, updateThreadInspector } from '@lib/stores/focus';
   import { getBusinessRecords, selectedPointStore } from '@lib/stores';
@@ -33,18 +33,38 @@
   let hoverTimer: ReturnType<typeof setTimeout> | null = $state(null);
 
   const currentPoint = $derived(selectedPointStore());
-  const chromeHasFocus = $derived(hasFocus());
-  const chromeHasTrail = $derived(hasTrail());
+  const navSnapshot = $derived($navStore);
+  const journeySnapshot = $derived($journeyStore);
+  const currentFocusedIndex = $derived(navSnapshot.focusedIndex);
+  const currentTrailDepth = $derived(Math.max(navSnapshot.trailDepth ?? 0, journeySnapshot.trailDepth ?? 0));
+  const currentWalkHistory = $derived(
+    journeySnapshot.walkHistoryIndices.length > 0
+      ? journeySnapshot.walkHistoryIndices
+      : navSnapshot.walkHistoryIndices
+  );
+  const currentThreadCandidates = $derived(
+    journeySnapshot.threadCandidates.length > 0
+      ? journeySnapshot.threadCandidates
+      : navSnapshot.threadCandidates
+  );
+  const currentThreadSource = $derived(journeySnapshot.threadSource || navSnapshot.threadSource);
+  const chromeHasFocus = $derived(
+    navSnapshot.mode === 'focus' ||
+    navSnapshot.mode === 'inside' ||
+    navSnapshot.mode === 'trail' ||
+    currentFocusedIndex !== null
+  );
+  const chromeHasTrail = $derived(currentTrailDepth > 0);
 
   // ── Walk breadcrumb ────────────────────────────────────────────────────────
 
   const dedupedWalkHistory = $derived.by(() => {
-    const indices = walkHistoryIndices();
+    const indices = currentWalkHistory;
     const seen = new Set<number>();
     const result: number[] = [];
     for (const idx of indices) {
       if (!Number.isFinite(idx)) continue;
-      if (idx === focusedIndex() && result.length > 0 && result[result.length - 1] === idx) {
+      if (idx === currentFocusedIndex && result.length > 0 && result[result.length - 1] === idx) {
         continue;
       }
       if (seen.has(idx)) {
@@ -60,7 +80,7 @@
   });
 
   const showBreadcrumb = $derived(
-    chromeHasFocus && walkHistoryIndices().length > 1
+    chromeHasFocus && currentWalkHistory.length > 1
   );
 
   function walkToBreadcrumbIndex(targetIndex: number, _targetOrder: number): void {
@@ -71,22 +91,22 @@
 
   // ── Trail controls ────────────────────────────────────────────────────────
 
-  const canGoBack = $derived(walkHistoryIndices().length > 1);
-  const neighborCount = $derived(threadCandidates().length);
+  const canGoBack = $derived(currentWalkHistory.length > 1);
+  const neighborCount = $derived(currentThreadCandidates.length);
   const hasNext = $derived(neighborCount > 0);
 
   const trailContextText = $derived.by(() => {
     if (!chromeHasFocus || !currentPoint) return '';
     const name = currentPoint?.name || 'this business';
-    const walkLen = walkHistoryIndices().length;
-    const focusIdx = focusedIndex();
+    const walkLen = currentWalkHistory.length;
+    const focusIdx = currentFocusedIndex;
     const lastReason = (focusIdx !== null && focusIdx >= 0 && focusIdx < getBusinessRecords().length)
       ? (getBusinessRecords()[focusIdx] as BusinessRecord)?.name ?? ''
       : '';
-    if (trailDepth() >= 1 && walkLen >= 1) {
-      return `Stop ${walkLen + 1}: ${name}. ${lastReason ? `Source: ${threadSource()}` : ''}`;
+    if (currentTrailDepth >= 1 && walkLen >= 1) {
+      return `Stop ${walkLen + 1}: ${name}. ${lastReason ? `Source: ${currentThreadSource}` : ''}`;
     }
-    if (neighborCount === 0 && threadSource() === 'semantic') {
+    if (neighborCount === 0 && currentThreadSource === 'semantic') {
       return `Semantic connections exist around ${name}, but none survive the current slice.`;
     }
     return `${neighborCount} candidate steps around ${name}.`;
@@ -94,8 +114,8 @@
 
   const progressText = $derived.by(() => {
     if (!chromeHasFocus) return 'Pick a business, then explore its nearby neighbors.';
-    if (trailDepth() >= 1 && walkHistoryIndices().length >= 0) {
-      return `Stop ${walkHistoryIndices().length + 1} of ${neighborCount}`;
+    if (currentTrailDepth >= 1 && currentWalkHistory.length >= 0) {
+      return `Stop ${currentWalkHistory.length + 1} of ${neighborCount}`;
     }
     return neighborCount
       ? `${neighborCount} nearby ready`
@@ -104,7 +124,7 @@
 
   const nextStopName = $derived.by(() => {
     if (!chromeHasFocus || neighborCount === 0) return null;
-    const first = threadCandidates()[0];
+    const first = currentThreadCandidates[0];
     if (first == null || !Number.isFinite(first)) return null;
     const pt = getBusinessRecords()[first];
     return pt?.name ?? null;
@@ -112,7 +132,7 @@
 
   function goPrev(): void {
     if (!chromeHasFocus || !canGoBack) return;
-    const history = walkHistoryIndices();
+    const history = currentWalkHistory;
     if (history.length <= 1) return;
     const prevIdx = history[history.length - 2];
     if (!Number.isFinite(prevIdx)) return;
@@ -121,7 +141,7 @@
 
   function goNext(): void {
     if (!chromeHasFocus || !hasNext) return;
-    const first = threadCandidates()[0];
+    const first = currentThreadCandidates[0];
     if (first == null || !Number.isFinite(first)) return;
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, { index: first });
   }
@@ -140,8 +160,8 @@
   });
 
   const filteredCandidates = $derived.by(() => {
-    const candidates = threadCandidates();
-    const focusIdx = focusedIndex();
+    const candidates = currentThreadCandidates;
+    const focusIdx = currentFocusedIndex;
     return candidates
       .filter((c) => c != null && Number.isFinite(c) && c !== focusIdx)
       .slice(0, candidateLimit);
@@ -204,7 +224,7 @@
     const isFocus = chromeHasFocus;
     const journeyPh = journeyPhase();
     const insideActive = journeyPh === 'inside' && isFocus;
-    const walkLen = walkHistoryIndices().length;
+    const walkLen = currentWalkHistory.length;
 
     const currentPtName = currentPoint?.name || 'this business';
     const clusterNames = ['Food & Dining', 'Professional Services', 'Retail & Shopping', 'Health & Medical', 'Other'];
@@ -223,11 +243,11 @@
       resultCount: summary?.resultCount ?? 0,
       walkDepth: walkLen,
       isSearchFocus: !!summary && walkLen === 0,
-      isSearchAnchor: summary?.anchorIndex != null && focusedIndex() === summary.anchorIndex,
+      isSearchAnchor: summary?.anchorIndex != null && currentFocusedIndex === summary.anchorIndex,
       isTrailStop: walkLen > 1,
       hasAnchor: !!summary,
       clusterName,
-      routeCount: walkHistoryIndices().length,
+      routeCount: currentWalkHistory.length,
       nextPointName: nextStopName,
       idleNote: 'Start wide, then search by need or clue to open one trail through the network.',
       isDiscovery: false,
@@ -274,7 +294,7 @@
           {/if}
           {@const point = getPointForIndex(idx)}
           {@const name = point?.name ?? 'Stop'}
-          {@const isCurrent = idx === focusedIndex()}
+          {@const isCurrent = idx === currentFocusedIndex}
           <button
             class="walk-breadcrumb-chip"
             class:current={isCurrent}
@@ -373,6 +393,11 @@
               class="focus-stage-neighbor-pill"
               class:is-next-stop={isNextStop}
               data-index={idx}
+              role="button"
+              tabindex="0"
+              aria-label={`Inspect connection to ${name}`}
+              onclick={() => inspectCandidate(idx)}
+              onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inspectCandidate(idx); } }}
             >
               <span class="focus-stage-neighbor-main">
                 <span class="focus-stage-neighbor-index">{String(i + 1).padStart(2, '0')}</span>

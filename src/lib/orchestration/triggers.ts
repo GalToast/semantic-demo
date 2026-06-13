@@ -25,8 +25,18 @@ import { returnToOverview, recenterFocusedNode } from './lifecycle';
 import { traverseNeighbor } from '@lib/journey/thread-settler';
 import { navStore } from '@lib/stores/navigation.svelte';
 import { activeClusterFilter } from '@lib/stores/filter.svelte';
-import { addTrailStop, setTrailDepth } from '@lib/stores/journey.svelte';
+import {
+  addTrailStop,
+  setThreadCandidates,
+  setTrailDepth,
+  setTrailNeighborIndices
+} from '@lib/stores/journey.svelte';
 import { getBusinessRecords } from '@lib/data-store';
+import {
+  buildNeighborhoodManifest,
+  getSemanticThreadDisplayLimit
+} from '@lib/journey/neighborhood';
+import { state as legacyState, withStateMutation } from '@legacy/state.js';
 import { get } from 'svelte/store';
 
 // ── Keyboard Support ──────────────────────────────────────────────────────────
@@ -150,13 +160,47 @@ subscribe(EVENTS.STATE_RESET, updateJourneyCompass);
 
 subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index: number }) => {
   if (!Number.isFinite(index)) return;
+  const manifest = buildNeighborhoodManifest(index, [], {
+    displayLimit: getSemanticThreadDisplayLimit()
+  });
+  const candidateIndices = manifest?.candidateIndices ?? [];
+  const threadSource = manifest && manifest.anchorEdgeCount > 0 ? 'semantic' : 'geometric-fallback';
+  const threadReasonByIndex = new Map(
+    candidateIndices.map((candidateIndex) => [
+      candidateIndex,
+      threadSource === 'semantic' ? 'semantic neighbor' : 'geometric proximity'
+    ])
+  );
   navStore.update((s) => ({
     ...s,
     focusedIndex: index,
     mode: 'focus',
     surface: 'focus-search',
-    trailDepth: 1
+    trailDepth: 1,
+    trailSeedIndex: index,
+    trailNeighborIndices: candidateIndices,
+    threadCandidates: candidateIndices,
+    threadReasonByIndex,
+    threadSource
   }));
+  withStateMutation(() => {
+    const nav = legacyState.navState as unknown as {
+      trailSeedIndex?: number | null;
+      trailNeighborIndices?: number[];
+      threadCandidates?: Array<{ index: number; source: string; reason: string }>;
+      threadReasonByIndex?: Map<number, string>;
+      threadSource?: string;
+    };
+    nav.trailSeedIndex = index;
+    nav.trailNeighborIndices = [...candidateIndices];
+    nav.threadCandidates = candidateIndices.map((candidateIndex) => ({
+      index: candidateIndex,
+      source: threadSource,
+      reason: threadReasonByIndex.get(candidateIndex) ?? 'nearby business relationship'
+    }));
+    nav.threadReasonByIndex = threadReasonByIndex;
+    nav.threadSource = threadSource;
+  });
   // Add the focused node as the first trail stop so MapSummary
   // (which gates on hasTrail() && trail.length > 0) renders.
   const records = getBusinessRecords();
@@ -167,6 +211,8 @@ subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index: number }) => {
     reason: 'search-focus',
     visitedAt: Date.now()
   });
+  setTrailNeighborIndices(candidateIndices);
+  setThreadCandidates(candidateIndices, threadSource, threadReasonByIndex);
   setTrailDepth(1);
   setActiveResult(String(index));
   setSearchStatus('focusing');
