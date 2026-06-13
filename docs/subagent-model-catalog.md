@@ -149,6 +149,15 @@ While the inventory wave was in flight, the 127.0.0.1:8788 key router (operator-
 
 The 4th nemotron-3-super-120b no-write observation is now a confirmed systematic failure mode, not a one-off. The model is producing substantial analysis (19785 output tokens in this run, more than the 1077 of the both-pattern round 2 lane 2) but the write tool is never called. For unattended deliverables requiring disk writes, this model is unreliable. **Status on the nvidia lane and the openrouter:free variant is now upgraded from "Limited" to "Broken"** for the deliverable-write use case specifically; the model remains useful for read-only archaeology where the main lane can hand-extract findings from stdout.
 
+**2026-06-13 catalog buildout wave 2 (4 dispatches, all NEW-to-catalog picks, filling sparse data on 4 different model families):**
+
+| 2026-06-13 | `nvidia/qwen/qwen3.5-397b-a17b` | NVIDIA NIM | Pi | T3-specific execution risk analysis for 19-import retirement | **STALE — 2 attempts, both hit output token cap before file write.** Analysis is in stdout (notes on camera-choreography, duplicate `@legacy/state.js` in demo-choreography.ts, sequencing priorities) but no file. The followup pattern did not recover it. | ast_grep_search, bash, write all available | Substantial analysis (59K input tokens absorbed) | **Output token cap truncates the response before the write call**, even on a tight followup. Different from nemotron-3-super-120b's hesitation pattern — this one runs out of output budget. Recovery via followup didn't help because the cap is per-response, not per-session | Use for read-only analysis where stdout extraction is acceptable; NOT for unattended deliverable-write tasks. Distinct failure mode from nemotron (length vs. hesitation) | Broken (length-cap no-write) |
+| 2026-06-13 | `modelscope/zai-org/GLM-5` | ModelScope | Pi | Dead-shim re-cross-check audit (verify 8 deleted shims + scan for new dead) | Completed with 9688-byte report. All 8 lane-4 dead shims confirmed gone; 2 real discrepancies surfaced. | ast_grep + bash + write worked; effective use of structural search | **Real findings** — (1) README claims `camera-framing-utils.ts` and `camera-math-utils.ts` exist in `src/lib/utils/` but they don't (never did or were deleted-by-merge); (2) lane 4's Part C "18 stub deletions" was overstated — `traverseNeighbor` (10 LIVE callers in `js/modules/`) and `previewInsideNextThread` (2 LIVE callers) are NOT dead; only `walkInsideToNextStop` is truly dead | ast-grep searches scoped to `src/` only, missed legacy callers in `js/modules/`. Did not trace relative imports like `./thread-model`. Result: declared 2 LIVE functions as candidates for deletion | **First observation** of GLM-5. Adequate for verification but requires full-codebase scope (src/ + js/modules/). For followup: the lane 4 miscount is a real BOTH-pattern issue — needs a Part C fix wave to actually delete `walkInsideToNextStop` and keep the other two. Add a follow-up ticket. | Limited (3/5) |
+| 2026-06-13 | `mistral/mistral-large-2512` | Mistral direct | Pi | Refactor roadmap for 30 stub functions across 5 files (synthesize hot/warm/cold into phased plan) | Completed with 11914-byte report. 3-phase plan over 4-5 days: Phase 1 (delete 18 dead + 8 internal), Phase 2 (port 2 WARM), Phase 3 (port 2 HOT with full QA). Highest-risk stubs: `syncFocusStage` (15 callers), `updateTraversalUi` (4 callers render-loop), `clearThreadInspection` (14 callers). | Read/write worked; structured synthesis output | Accurate retirement strategy classification; correct highest-risk identification; clear phases with verification steps | Initially over-recommended bridge modules for functions that could be ported natively; under-recommended deletion for zero-consumer functions; conflated WARM priorities (recommended re-export shims where none were needed) | **First observation** of Mistral flagship 2512. Strong for synthesis tasks (roadmaps, design docs, audit reports). Less suited for fine-grained code analysis without explicit legacy-dependency guidance. Corrected after review, suggesting it benefits from a "review the legacy deps first" steer | Strong (4/5) |
+| 2026-06-13 | `openrouter/openai/gpt-oss-120b:free` | OpenRouter free | Pi | Search-rerank Go/No-Go decision document | **STOPPED at tool-check step** — worker strictly interpreted "Read, Grep, Glob, Bash, Write" as required tool names; harness exposes only Read/Bash/Write/Edit; worker refused to fall back to bash for grep/glob. No deliverable produced. | None — worker stopped before any tool work | Strict interpretation of the prompt's tool surface; correctly identified the gap | Did not degrade gracefully to bash-based grep/glob the way every other model in this campaign did. Stopped at the tool check instead of proceeding. This is a "literal interpreter" model behavior | **First observation** of gpt-oss-120b:free (different from the paid `nvidia/openai/gpt-oss-120b` which is Strong). Useful when you want a worker to REFUSE rather than improvise. Problematic when the harness surface changes mid-campaign. **Prompt fix needed for future dispatches:** explicitly say "use bash for grep/glob; do NOT stop on missing dedicated Grep/Glob tools" | Limited (strict interpreter) |
+
+**Wave 2 summary:** 2 of 4 dispatches delivered usable files (GLM-5, mistral-large-2512). 1 of 4 hit a length-cap pattern (qwen3.5-397b — confirmed systematic, distinct from nemotron's hesitation). 1 of 4 stopped at tool-check (gpt-oss-120b:free — strict interpreter, not a fail, just a behavior note). **3 new-to-catalog models** (qwen3.5-397b broken for this workload, GLM-5 limited, mistral-large-2512 strong, gpt-oss-120b:free limited). 1 real BOTH-pattern finding surfaced (lane 4's stub-deletion count overstated; needs follow-up fix wave).
+
 ## Cross-Gateway 429 Patterns
 
 Observed on 2026-06-12:
@@ -309,7 +318,7 @@ Quick-glance view of every launch ref in the live `external_subagent_free_models
 | `nvidia/openai/gpt-oss-20b` | yes | 🟠 Limited (1 prior) | **NEW 2026-06-13**: Coherent inventory on multi-file audit, but flattened dependency trees (state.navState vs state.theme). Manual cross-check required |
 | `nvidia/qwen/qwen3-next-80b-a3b-instruct` | yes | ⚪ Untested | 0 obs (different from openrouter:free which 429'd) |
 | `nvidia/qwen/qwen3.5-122b-a10b` | yes | ⚪ Untested | 0 obs |
-| `nvidia/qwen/qwen3.5-397b-a17b` | yes | ⚪ Untested | 0 obs; 397B parameter |
+| `nvidia/qwen/qwen3.5-397b-a17b` | yes | ❌ Broken (1 prior) | **NEW 2026-06-13**: Output token cap truncates response before write call (2 attempts, same failure). Different from nemotron hesitation. Use for read-only analysis with stdout extraction only |
 | `nvidia/riva-translate-4b-instruct` | yes | 🔧 Specialized | translation |
 | `nvidia/riva-translate-4b-instruct-v1.1` | yes | 🔧 Specialized | translation |
 | `nvidia/sarvamai/sarvam-m` | yes | ⚪ Untested | 0 obs; Indian-language family |
@@ -353,7 +362,7 @@ Quick-glance view of every launch ref in the live `external_subagent_free_models
 | `mistral/mistral-code-latest` | yes | ⚪ Untested | 0 obs |
 | `mistral/mistral-embed` | yes | 🔧 Specialized | embedding |
 | `mistral/mistral-embed-2312` | yes | 🔧 Specialized | embedding (legacy) |
-| `mistral/mistral-large-2512` | yes | ⚪ Untested | 0 obs; flagship 2512 generation |
+| `mistral/mistral-large-2512` | yes | ✅ Strong (1 prior) | **NEW 2026-06-13**: Strong synthesis (4/5). 3-phase refactor roadmap for 30 stubs. Initially over-recommended bridge modules, corrected after review. Ideal for roadmaps/design docs |
 | `mistral/mistral-large-latest` | yes | ⚪ Untested | 0 obs; flagship latest |
 | `mistral/mistral-medium` | yes | ⚪ Untested | 0 obs (legacy) |
 | `mistral/mistral-medium-2505` | yes | ⚪ Untested | 0 obs |
@@ -410,7 +419,7 @@ Quick-glance view of every launch ref in the live `external_subagent_free_models
 | `openrouter/nvidia/nemotron-3.5-content-safety:free` | yes | ⚪ Untested | 0 obs; content safety |
 | `openrouter/nvidia/nemotron-nano-12b-v2-vl:free` | yes | ⚪ Untested | 0 obs; vision-language |
 | `openrouter/nvidia/nemotron-nano-9b-v2:free` | yes | ⚪ Untested | 0 obs; small |
-| `openrouter/openai/gpt-oss-120b:free` | yes | ⚪ Untested | 0 obs (different from `nvidia/openai/gpt-oss-120b` which is Strong) |
+| `openrouter/openai/gpt-oss-120b:free` | yes | 🟠 Limited (1 prior) | **NEW 2026-06-13**: Strict tool-surface interpreter. Stopped at tool check rather than degrade to bash. Useful when you want refusal not improv. Update prompts to not require dedicated Grep/Glob |
 | `openrouter/openai/gpt-oss-20b:free` | yes | ⚪ Untested | 0 obs; small sibling |
 | `openrouter/owl-alpha` | yes | ✅ Strong (3+ prior) | Stable free default for code pattern searches; static analysis; use followup pattern |
 | `openrouter/poolside/laguna-m.1:free` | yes | 🟡 Promising (1 prior) | Stable reading on dense code; needs write-bench before being a default followup |
@@ -497,7 +506,7 @@ Quick-glance view of every launch ref in the live `external_subagent_free_models
 | `modelscope/stepfun-ai/step3` | yes | ⚪ Untested | 0 obs |
 | `modelscope/XiaomiMiMo/MiMo-V2-Flash` | yes | ⚪ Untested | 0 obs |
 | `modelscope/zai-org/GLM-4.7-Flash` | yes | ⚪ Untested | 0 obs; flash tier |
-| `modelscope/zai-org/GLM-5` | yes | ⚪ Untested | 0 obs; new flagship |
+| `modelscope/zai-org/GLM-5` | yes | 🟠 Limited (1 prior) | **NEW 2026-06-13**: Adequate dead-shim audit (3/5) but ast-grep scoped to src/ missed legacy callers. Found README discrepancy + Part C miscount |
 | `modelscope/zai-org/GLM-5.1` | yes | ⚪ Untested | 0 obs (different from `nvidia/z-ai/glm-5.1` which is Promising — different provider routing) |
 
 ### Cross-reference: 2026-06-13 catalog buildout wave (5 dispatches — all settled)
@@ -512,6 +521,17 @@ Quick-glance view of every launch ref in the live `external_subagent_free_models
 | Lane F-retry | `mistral/codestral-latest` | ✅ Strong (1 prior) | `tmp/subagent-catalog-buildout-2026-06-13/three-engine-238-256-plan.md` (6685 bytes) | **First observation** of codestral-latest; strong for tight-deadline refactor planning |
 
 **Wave summary:** 4 of 5 dispatches delivered usable files. 1 of 5 (nemotron-3-super) confirmed a systematic no-write-file pattern. **4 new models added to the catalog** (big-pickle, gpt-oss-20b, codestral-latest) plus 1 rating upgrade (devstral-2512 Limited → Strong). 1 nemotron rating upgrade (Limited → Broken for deliverable-write).
+
+### Cross-reference: 2026-06-13 catalog buildout wave 2 (4 dispatches — all settled)
+
+| Lane | Model | Final status (2026-06-13 19:01 UTC) | Output file | Filling which gap |
+|---|---|---|---|---|
+| Lane G | `nvidia/qwen/qwen3.5-397b-a17b` | ❌ Stale (no file written; 2 attempts) | _none — output token cap truncates before write_ | First observation of qwen3.5-397b; Broken for this workload (different from nemotron: length cap not hesitation) |
+| Lane H | `modelscope/zai-org/GLM-5` | 🟠 Limited (1 prior, 3/5) | `tmp/subagent-catalog-buildout-2026-06-13/dead-shim-recrosscheck-2026-06-13.md` (9688 bytes) | First observation of GLM-5; found 2 real BOTH-pattern discrepancies (README error + lane 4's stub-count overstatement) |
+| Lane I | `mistral/mistral-large-2512` | ✅ Strong (1 prior, 4/5) | `tmp/subagent-catalog-buildout-2026-06-13/stub-refactoring-roadmap.md` (11914 bytes) | First observation of Mistral flagship 2512; ideal for synthesis tasks |
+| Lane J | `openrouter/openai/gpt-oss-120b:free` | 🟠 Limited (1 prior) | _none — stopped at tool check (strict interpreter)_ | First observation of free-tier gpt-oss-120b; behavior note (refuse-not-improvise) |
+
+**BOTH-pattern follow-up surfaced by lane H GLM-5 finding:** Lane 4's `tmp/both-pattern-investigation-2026-06-13/lane-4-deepseek.md` claimed 18 dead stubs were deleted in Part C, but re-cross-check shows only `walkInsideToNextStop` is truly dead in `thread-settler-adapter.ts`. `traverseNeighbor` (10 LIVE callers in `js/modules/`) and `previewInsideNextThread` (2 LIVE callers) were misclassified. **Add to `docs/both-pattern-follow-ups-2026-06-13.md` as a new ticket** before Part C is fully closed.
 
 ### Maintenance
 
