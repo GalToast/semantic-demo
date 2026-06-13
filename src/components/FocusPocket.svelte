@@ -8,12 +8,13 @@
   a parent element, but it no longer renders focus nodes. The constellation is 3D-only;
   the keyboard/screen-reader surface lives in `FocusPocketA11y.svelte`.
 
-  The $effect below still rebuilds the focus pocket when `focusedIndex()` changes, so the
-  a11y shadow list and the 3D engine stay in lockstep. Clicking a node in the a11y list
-  calls `setFocusedIndex()` → this effect fires → `applyLocalNeighborhoodFocus` rebuilds.
+  The rebuild $effect below is triggered through a `navStore` → `$state` mirror, because
+  `navStore` is a regular svelte/store writable and reading it via `get(navStore)` inside
+  an `$effect` does NOT register a tracked dependency under Svelte 5 runes. The mirror
+  is the same bridge shape App.svelte uses for its nav-store surface sync.
 -->
 <script lang="ts">
-  import { hasFocus, focusedIndex } from '@lib/stores/navigation';
+  import { navStore } from '@lib/stores/navigation';
   import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket';
   import { clearPocketNodes } from '@lib/stores/focus.svelte';
   import { getDataLoadState } from '@lib/data-store.svelte';
@@ -24,36 +25,50 @@
 
   let { visible = false }: Props = $props();
 
-  // Track the last focused index to avoid redundant rebuilds
+  // Reactive navStore mirror — bridge from svelte/store writable (non-tracking)
+  // into a Svelte 5 $state rune (tracks inside $effect).
+  let nav = $state(navStore());
+  $effect(() => navStore.subscribe(($s) => (nav = $s)));
+
+  // Same shape as navStore's focusedIndex()/hasFocus() readers, kept local so
+  // $derived composes cleanly with $effect's tracked deps.
+  const focusedIndex_ = $derived.by(() => {
+    if (typeof nav.focusedIndex === 'number' && Number.isFinite(nav.focusedIndex)) {
+      return nav.focusedIndex;
+    }
+    try {
+      const legacyWindow = window as Window & {
+        __APP_STATE__?: { navState?: { focusedIndex?: unknown } };
+      };
+      const legacy = (typeof window !== 'undefined')
+        ? legacyWindow.__APP_STATE__?.navState?.focusedIndex
+        : null;
+      return typeof legacy === 'number' && Number.isFinite(legacy) ? legacy : null;
+    } catch {
+      return null;
+    }
+  });
+  const hasFocus_ = $derived(
+    nav.mode === 'focus' || nav.mode === 'inside' || focusedIndex_ !== null
+  );
+
+  // Last-applied index prevents redundant rebuilds on data-status ticks.
   let lastFocusIndex: number | null = null;
 
   $effect(() => {
-    // Read _dataLoadState.status directly so the $effect re-fires once
-    // initData() resolves. The data store mutates the $state's .status field
-    // when loading completes; reading the property inside a Svelte 5 $effect
-    // tracks that mutation. Without this dep, the URL ?q=...&anchor=...
-    // restore path races the data load: the SEARCH_FOCUS_REQUESTED trigger
-    // updates the Svelte nav store at module-init time (before initData runs),
-    // the $effect captures focusedIndex=519, but applyLocalNeighborhoodFocus
-    // early-returns because state.points is still null. The effect would never
-    // re-fire because no Svelte-tracked dep changes after data loads.
-    const dataReady = getDataLoadState().status === 'ready';
-    const idx = focusedIndex();
-    const focused = hasFocus();
-
-    if (!dataReady) return;
-
-    if (focused && Number.isFinite(idx) && idx !== null && idx !== lastFocusIndex) {
+    if (getDataLoadState().status !== 'ready') return;
+    const idx = focusedIndex_;
+    if (hasFocus_ && idx !== null && idx !== lastFocusIndex) {
       lastFocusIndex = idx;
       applyLocalNeighborhoodFocus(idx);
-    } else if (!focused && lastFocusIndex !== null) {
+    } else if (!hasFocus_ && lastFocusIndex !== null) {
       lastFocusIndex = null;
       clearPocketNodes();
     }
   });
 </script>
 
-{#if visible && hasFocus()}
+{#if visible && hasFocus_}
   <!--
     Hollow #focus-pocket element. Preserved as a parent DOM hook for the
     thread-inspector contract test and any other contract that queries
@@ -62,3 +77,4 @@
   -->
   <div id="focus-pocket" aria-hidden="true"></div>
 {/if}
+

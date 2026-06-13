@@ -190,9 +190,19 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
       navStore.update((s) => ({ ...s, trailDepthFromExploration: depth }));
     }
 
-    // Search query + anchor restoration
+    // Anchor restoration runs whenever ?anchor is present (independent of ?q).
+    // Split this out of the search-restoration branch so bare-anchor URLs and
+    // search URLs share the same focus path. Numeric and non-numeric anchor
+    // ids take different routes; see helpers below.
     const query = params.get('q');
     const anchorId = params.get('anchor');
+    if (anchorId) {
+      await _restoreAnchorFromParams(anchorId);
+    }
+
+    // Search-query restoration runs only when there's a query to fulfill.
+    // It still resolves non-numeric anchors against the search results, but
+    // numeric anchors are already settled by `_restoreAnchorFromParams`.
     if (query && query.trim().length >= 2) {
       await _restoreSearchFromParams(query, anchorId);
     }
@@ -431,48 +441,59 @@ function preserveDomForcedFocusSearchSurface(): void {
 }
 
 /**
- * Restore search state from URL `q` param and optionally focus the `anchor`.
- * Fires the Svelte search engine, populates the search store, and if an
- * anchor id is provided, dispatches SEARCH_FOCUS_REQUESTED so that
- * triggers.ts can populate the trail stores.
+ * _restoreAnchorFromParams — restore focus for a numeric anchor id,
+ * independent of any `q` query.
+ *
+ * Why a separate helper: the previous design routed anchor handling through
+ * `_restoreSearchFromParams`, which only ran when `q?.trim().length >= 2`.
+ * Bare `?anchor=<id>` URLs (no query) silently skipped focus dispatch and the
+ * focus pocket never rebuilt. Splitting the path means anchor restoration now
+ * runs whenever `?anchor` is present, regardless of whether a query followed.
+ *
+ * Numeric anchor flow:
+ *   1. Publish `SEARCH_FOCUS_REQUESTED` synchronously so trail / search stores
+ *      populate before any `?q` round-trip latency.
+ *   2. Direct `applyLocalNeighborhoodFocus` call as a defensive reflection of
+ *      the FocusPocket `$effect` rebuild — closes the URL→focus race even
+ *      when the navStore update races the data-ready transition.
+ *
+ * Non-numeric ids (e.g. a lead_id string) are resolved against search results
+ * inside `_restoreSearchFromParams` after the search round-trip, because they
+ * need a result list to map against.
+ */
+async function _restoreAnchorFromParams(anchorId: string): Promise<void> {
+  const numericId = Number(anchorId);
+  if (!Number.isFinite(numericId)) return;
+
+  publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: numericId });
+  try {
+    applyLocalNeighborhoodFocus(numericId);
+  } catch (e) {
+    debugWarn('[url-state] applyLocalNeighborhoodFocus failed for anchor', numericId, e);
+  }
+}
+
+/**
+ * Restore the in-flight `q` query, and resolve non-numeric anchors against
+ * the result list once the search round-trip completes.
+ *
+ * Numeric anchor handling moved out to `_restoreAnchorFromParams` so anchor
+ * restore fires unconditionally and search restore stays focused on query
+ * fulfillment only.
  */
 async function _restoreSearchFromParams(
   query: string,
   anchorId: string | null
 ): Promise<void> {
   try {
-    // If a numeric anchor was specified, dispatch SEARCH_FOCUS_REQUESTED
-    // immediately so the focus/trail stores populate synchronously with URL
-    // restore. This ensures the Svelte shell renders the focus-stage
-    // trail controls without waiting for the (potentially slow) search
-    // request to complete — contract tests query the DOM right after
-    // load, and would otherwise race the async search.
-    if (anchorId) {
-      const numericId = Number(anchorId);
-      if (Number.isFinite(numericId)) {
-        publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: numericId });
-        // Also call applyLocalNeighborhoodFocus directly. The Svelte trigger
-        // updates the Svelte nav store and body data attrs, but the Svelte
-        // FocusPocket shell's $effect (which calls applyLocalNeighborhoodFocus
-        // when the focused index changes) doesn't reliably re-fire across
-        // the legacy→Svelte bridge race. Calling the function here guarantees
-        // the focus pocket builds with data already loaded (this runs after
-        // initData in App.svelte's onMount chain).
-        try {
-          applyLocalNeighborhoodFocus(numericId);
-        } catch (e) {
-          debugWarn('[url-state] applyLocalNeighborhoodFocus failed for anchor', numericId, e);
-        }
-      }
-    }
-
     const domForcedFocusSearchSurface = isDomForcedFocusSearchSurface();
     const signal = AbortSignal.timeout(30000);
     await runSearch(query, signal);
     if (domForcedFocusSearchSurface) preserveDomForcedFocusSearchSurface();
 
-    // If an anchor was specified by id (non-numeric), focus it once results
-    // are available. Numeric anchors are already handled above.
+    // Non-numeric anchor: focus it once results are available. Numeric
+    // anchors are settled by `_restoreAnchorFromParams` in `applyUrlState`
+    // before this helper ever runs.
     if (anchorId && !Number.isFinite(Number(anchorId))) {
       const results = searchStore.results;
       if (results && results.length > 0) {
