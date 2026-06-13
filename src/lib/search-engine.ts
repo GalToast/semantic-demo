@@ -16,6 +16,12 @@ import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { shouldLogStaticDevFallback } from '@lib/utils/ui-presentation';
 import { getBusinessRecords } from '@lib/data-store.svelte';
 import type { BusinessRecord } from '@lib/types/business';
+import {
+  getCachedSearch,
+  setCachedSearch,
+  getPendingSearch,
+  setPendingSearch,
+} from '@lib/search-cache';
 
 // ── Result Mapping (pure TS, no legacy state dependency) ──────────────────────
 
@@ -68,11 +74,34 @@ function getTotalMatches(
   return results.length;
 }
 
+// ── Pagination ─────────────────────────────────────────────────────────────────
+
+/** Default page size for search results. */
+const PAGE_SIZE = 18;
+
+function normalizeSearchPage(page: number): number {
+  return Number.isFinite(page) ? Math.max(0, Math.floor(page)) : 0;
+}
+
+function normalizeSearchOffset(page: number, offset: number): number {
+  const explicitOffset = Number.isFinite(offset) ? Math.max(0, Math.floor(offset)) : 0;
+  if (explicitOffset > 0) return explicitOffset;
+  return normalizeSearchPage(page) * PAGE_SIZE;
+}
+
+function normalizeSearchLimit(limit: number): number {
+  return Number.isFinite(limit) ? Math.max(1, Math.floor(limit)) : PAGE_SIZE;
+}
+
 async function fetchSemanticSearchResultsDirect(
   query: string,
   signal?: AbortSignal,
-  timeoutMs = 8000
+  timeoutMs = 8000,
+  offset = 0,
+  limit = 18
 ): Promise<SearchResult[]> {
+  const safeOffset = Math.max(0, Math.floor(offset));
+  const safeLimit = normalizeSearchLimit(limit);
   const controller = new AbortController();
   let timedOut = false;
   const timeoutId = window.setTimeout(() => {
@@ -84,7 +113,7 @@ async function fetchSemanticSearchResultsDirect(
 
   try {
     const response = await fetch(
-      `/api.php?action=semantic_search&q=${encodeURIComponent(query)}&limit=18&offset=0`,
+      `/api.php?action=semantic_search&q=${encodeURIComponent(query)}&limit=${safeLimit}&offset=${safeOffset}`,
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
@@ -113,7 +142,7 @@ async function fetchSemanticSearchResultsDirect(
     return rawRows
       .map((row, idx) => mapServiceRow(row, idx))
       .filter((r): r is SearchResult => r !== null)
-      .slice(0, 18);
+      .slice(0, safeLimit);
   } catch (err) {
     if (timedOut && err instanceof DOMException && err.name === 'AbortError') {
       throw new Error(`Semantic search timed out after ${timeoutMs}ms.`);
@@ -206,7 +235,7 @@ function scoreBusiness(biz: MockBusiness, queryLower: string): number {
   return Math.min(0.80, 0.20 + keywordHits * 0.12);
 }
 
-function performMockSearch(query: string, signal: AbortSignal): Promise<SearchResult[]> {
+function performMockSearch(query: string, signal: AbortSignal, offset = 0, limit = 10): Promise<SearchResult[]> {
   const trimmed = query.trim();
   if (trimmed.length < 2) return Promise.resolve([]);
   const queryLower = trimmed.toLowerCase();
@@ -215,7 +244,7 @@ function performMockSearch(query: string, signal: AbortSignal): Promise<SearchRe
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || a.biz.name.localeCompare(b.biz.name));
   return sleep(80 + Math.random() * 170, signal).then(() =>
-    scored.slice(0, 10).map(({ biz, score }) => ({
+    scored.slice(offset, offset + limit).map(({ biz, score }) => ({
       id: biz.id,
       name: biz.name,
       index: biz.index,
@@ -490,7 +519,7 @@ interface LocalSearchHit {
  * Returns null when the index is unavailable (no records loaded yet) so
  * callers can decide to fall back to a different strategy.
  */
-function performLocalIndexSearch(query: string): LocalSearchHit[] | null {
+function performLocalIndexSearch(query: string, offset = 0, limit = 18): LocalSearchHit[] | null {
   const idx = getLocalIndex();
   if (!idx) return null;
   const { index, records } = idx;
@@ -591,7 +620,7 @@ function performLocalIndexSearch(query: string): LocalSearchHit[] | null {
 
   // 4. Rank + return top 18.
   const ranked = Array.from(scored.values()).sort((a, b) => b.score - a.score);
-  return ranked.slice(0, 18);
+  return ranked.slice(offset, offset + limit);
 }
 
 /**
@@ -677,7 +706,9 @@ export async function initSearchEngine(): Promise<void> {
  */
 export async function performSearch(
   query: string,
-  signal: AbortSignal
+  signal: AbortSignal,
+  page = 0,
+  offset = 0
 ): Promise<SearchResult[]> {
   const trimmed = query.trim();
 
@@ -685,75 +716,105 @@ export async function performSearch(
     return [];
   }
 
+  const normalizedPage = normalizeSearchPage(page);
+  const effectiveOffset = normalizeSearchOffset(normalizedPage, offset);
+
+  // ── Cache check ──────────────────────────────────────────────────────────
+  // Cache key is composite: {query, page, offset}.  This prevents page 2
+  // from overwriting page 1 in the cache, and keeps pagination isolated.
+  const cached = getCachedSearch(trimmed, normalizedPage, effectiveOffset);
+  if (cached) return cached;
+
+  // Advisory deduplication: if an identical key is already in-flight,
+  // piggyback on that promise instead of issuing a duplicate fetch.
+  const pending = getPendingSearch(trimmed, normalizedPage, effectiveOffset);
+  if (pending) return pending;
+
+  const searchPromise = _executeSearch(trimmed, signal, normalizedPage, effectiveOffset);
+  setPendingSearch(trimmed, normalizedPage, effectiveOffset, searchPromise);
+  return searchPromise;
+}
+
+/** Internal search execution — called through the cache/dedup wrapper. */
+async function _executeSearch(
+  trimmed: string,
+  signal: AbortSignal,
+  page: number,
+  offset: number
+): Promise<SearchResult[]> {
   const preferLive = shouldPreferLiveSearch();
   const staticDevFallbackAllowed = canUseStaticDevFallback();
+  let results: SearchResult[] = [];
+  const limit = normalizeSearchLimit(PAGE_SIZE);
 
   // When `staticDev=0` is present, surface API failures instead of silently
   // replacing them with local mock/index results. Contract tests use this to
   // force `.search-error-state` on the production preview shell.
   if (!staticDevFallbackAllowed) {
     try {
-      const apiResults = await fetchSemanticSearchResultsDirect(trimmed, signal, 8000);
+      const apiResults = await fetchSemanticSearchResultsDirect(trimmed, signal, 8000, offset, limit);
       if (apiResults && apiResults.length > 0) {
-        return apiResults;
+        results = apiResults;
+      } else {
+        throw new Error('Semantic search returned no results from the live API.');
       }
-      throw new Error('Semantic search returned no results from the live API.');
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         throw err;
       }
       throw err;
     }
-  }
-
-  // Try the live API first. If `VITE_USE_LIVE_SEARCH` is enabled, the API
-  // is the source of truth and any non-OK response throws so we can fall
-  // through to the local index below.
-  if (preferLive) {
-    try {
-      return await fetchSemanticSearchResultsDirect(trimmed, signal);
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        throw err;
-      }
-      if (shouldLogStaticDevFallback()) {
-        console.warn('[search-engine] Live search failed, falling back to local index for:', trimmed, err);
-      }
-      // fall through to local index
-    }
   } else {
-    // Dev / static-dev path: still attempt the API for parity, but on any
-    // error (502, raw PHP, network) skip directly to the local index.
-    try {
-      const apiTimeoutMs = canUseStaticDevFallback() ? 1200 : 8000;
-      const apiResults = await fetchSemanticSearchResultsDirect(trimmed, signal, apiTimeoutMs);
-      if (apiResults && apiResults.length > 0) {
-        return apiResults;
+    // Try the live API first. If `VITE_USE_LIVE_SEARCH` is enabled, the API
+    // is the source of truth and any non-OK response throws so we can fall
+    // through to the local index below.
+    if (preferLive) {
+      try {
+        results = await fetchSemanticSearchResultsDirect(trimmed, signal, 8000, offset, limit);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          throw err;
+        }
+        if (shouldLogStaticDevFallback()) {
+          console.warn('[search-engine] Live search failed, falling back to local index for:', trimmed, err);
+        }
       }
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        throw err;
+    } else {
+      // Dev / static-dev path: still attempt the API for parity, but on any
+      // error (502, raw PHP, network) skip directly to the local index.
+      try {
+        const apiTimeoutMs = canUseStaticDevFallback() ? 1200 : 8000;
+        const apiResults = await fetchSemanticSearchResultsDirect(trimmed, signal, apiTimeoutMs, offset, limit);
+        if (apiResults && apiResults.length > 0) {
+          results = apiResults;
+        }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          throw err;
+        }
+        if (canUseStaticDevFallback() && shouldLogStaticDevFallback()) {
+          console.warn('[search-engine] API unavailable on static dev, using local index for:', trimmed, err);
+        }
       }
-      if (canUseStaticDevFallback() && shouldLogStaticDevFallback()) {
-        console.warn('[search-engine] API unavailable on static dev, using local index for:', trimmed, err);
+    }
+
+    // Local index fallback
+    if (results.length === 0) {
+      const localHits = performLocalIndexSearch(trimmed, offset, limit);
+      if (localHits && localHits.length > 0) {
+        results = localHitsToResults(localHits);
       }
-      // fall through to local index
+    }
+
+    // Mock fallback
+    if (results.length === 0) {
+      results = await performMockSearch(trimmed, signal, offset, limit);
     }
   }
 
-  // Local index over the 8,406-record Svelte businessRecords writable.
-  // This is the new primary fallback: it walks name/what/category/city
-  // with exact → prefix → whole-word → substring priority, plus a light
-  // Levenshtein fuzzy pass for short typos like "cofee" → "coffee".
-  const localHits = performLocalIndexSearch(trimmed);
-  if (localHits && localHits.length > 0) {
-    return localHitsToResults(localHits);
-  }
-
-  // Final legacy fallback: the 20-row hand-curated mock set. Kept so
-  // production with `VITE_USE_LIVE_SEARCH=1` and a dead API still returns
-  // *something* useful.
-  return performMockSearch(trimmed, signal);
+  // Cache results so subsequent requests for the same key are instant
+  setCachedSearch(trimmed, page, offset, results);
+  return results;
 }
 
 /**
