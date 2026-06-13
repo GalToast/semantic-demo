@@ -106,6 +106,8 @@ export function getInsideRelationshipLabel(
     };
     const label = roleLabels[candidate.relationshipRole];
     if (label) return label;
+    // Return the raw relationshipRole if not in the predefined mapping
+    return candidate.relationshipRole;
   }
 
   if (candidate.sameCity) return 'On the same trail';
