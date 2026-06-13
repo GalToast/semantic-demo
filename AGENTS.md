@@ -283,5 +283,24 @@ All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` 
 - **Islands track:** 12/12 complete (all `js/modules/components/` mounted via helpers)
 - **src/ scaffold:** 21/21 complete
 - **Stores+types+orchestration:** 12/12 stores, 4/4 types, 4/4 orchestration, engine/bridge.ts 1212 lines
-- **Architecture state:** InfoPanel is single-track (src/ only — 767L). The legacy islands (`selected-details-svelte-island.{ts,js}`, `search-results-svelte-island.{ts,js}`, `island-mount-helper.{ts,js}`) are 100% orphan (zero live references) and were deleted in the m3 sweep on 2026-06-07
+- **Architecture state:** InfoPanel is single-track (src/ only — 767L). The legacy islands (`selected-details-svelte-island.{ts,js}`, `search-results-svelte-island.{ts,js}`, `island-mount-helper.{ts,js}`) were marked 100% orphan by the m3 sweep on 2026-06-07, deleted in `b8a50ba`, then restored by the `ec520da` revert on 2026-06-12. Per the BOTH pattern below, they are part of the in-flight migration, not confirmed dead
 - `docs/migration-plan.md` — being written by migration-architect worker
+
+## JS/TS Coexistence: The BOTH Pattern
+
+`js/modules/**` runs an in-flight `js → ts` migration with deliberate dual files:
+- `.ts` is the typed source (Vite resolves it first when an import has no extension; the `@legacy/*` path alias points here)
+- `.js` is the runtime stub (what currently ships)
+
+Stages (per commit `790f746`):
+- **Stage 3b**: 21 BROKEN-only `.ts` files unblocked by 2 state shims
+- **Stage 3c**: 16 deferred `.ts` files waiting on a 3rd shim (`../../types/state.js`)
+- **50 BOTH files**: `.js` + `.ts` running in parallel during the migration
+
+**Rule for "is this dead?" sweeps:** A `.ts` under `js/modules/` is NOT dead if ANY of these hold:
+1. Resolvable via the `@legacy/*` path alias (Vite's resolution chain — see `src/lib/engine/adapters/lifecycle-bridge.ts`, `src/lib/engine/demo-choreography.ts` for ~92 import sites)
+2. Has a sibling `.js` in worktree or HEAD (the BOTH pattern)
+3. Referenced by name in `src/`, `docs/`, or `tests/` (non-import grep)
+4. Has a commit in the last 60 days
+
+**M3 bugsweep H2 was wrong** to blanket-call 145 .ts files "dead shadows" based on "zero explicit .ts importers + tsconfig excludes js." Both signals are real but neither is conclusive — the @legacy path alias alone covers 60+ files. The 2026-06-12 audit on the post-revert tree found 0 truly orphan candidates out of 155 tracked .ts files; the deletion was reverted as `ec520da` with full context in the message. **Never repeat the blanket-deleted pattern.** Use the 4-signal audit before any future "dead code" sweep.
