@@ -4,7 +4,6 @@
   import { completeCameraTransition } from '@lib/stores/camera';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
   import { setGraphicsMode, setLoadingPhase } from '@lib/data-store';
-  import { createEngineBridge } from '@lib/engine';
   import type { EngineBridge, EngineCallbacks } from '@lib/engine';
   import type { LoadingPhase } from '@lib/types/state';
 
@@ -55,6 +54,8 @@
     mounted = true;
     if (!canvasEl) return;
     try {
+      const { createEngineBridge } = await import('@lib/engine');
+      if (!mounted || !canvasEl) return;
       bridge = createEngineBridge(callbacks);
       await bridge.init(canvasEl);
       bridge.resize(viewportWidth(), viewportHeight());

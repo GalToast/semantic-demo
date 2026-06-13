@@ -145,6 +145,24 @@
 
   onMount(() => {
     readBodyPanelSurface();
+    const routeInsideMapHit = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      if (target?.closest?.('#btn-inside-map')) return;
+      if (!semanticDiveActive || navState.currentView !== 'galaxy') return;
+      const button = document.getElementById('btn-inside-map') as HTMLButtonElement | null;
+      if (!button || button.hidden || button.disabled || button.getAttribute('aria-hidden') === 'true') return;
+      const rect = button.getBoundingClientRect();
+      const inside =
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom;
+      if (!inside) return;
+      event.preventDefault();
+      event.stopPropagation();
+      handleInsideMap();
+    };
+    document.addEventListener('click', routeInsideMapHit, true);
     const observer = new MutationObserver(readBodyPanelSurface);
     observer.observe(document.body, {
       attributes: true,
@@ -154,6 +172,7 @@
       readBodyPanelSurface();
     }, 250);
     return () => {
+      document.removeEventListener('click', routeInsideMapHit, true);
       window.clearInterval(poll);
       observer.disconnect();
     };

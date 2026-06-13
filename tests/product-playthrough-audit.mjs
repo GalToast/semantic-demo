@@ -523,6 +523,15 @@ async function followInspectedNeighbor(page) {
   return false;
 }
 
+async function clickLocatorCenter(page, locator, timeout = 8000) {
+  await locator.waitFor({ state: 'visible', timeout });
+  await locator.scrollIntoViewIfNeeded().catch(() => {});
+  const box = await locator.boundingBox();
+  if (!box) return false;
+  await page.mouse.click(box.x + box.width / 2, box.y + Math.min(box.height / 2, 28));
+  return true;
+}
+
 async function waitForSemanticDiveState(page, timeout = 12000) {
   return page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
@@ -614,13 +623,13 @@ async function enterMap(page) {
   let clicked = false;
   const insideMap = page.locator('#btn-inside-map:visible').first();
   if (await insideMap.count()) {
-    clicked = await insideMap.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch(() => false);
+    clicked = await clickLocatorCenter(page, insideMap, 8000).then(() => true).catch(() => false);
     if (clicked) await markRouteEvidence(page, 'real-click', 'clicked semantic-dive inside Map button');
   }
   if (!clicked) {
     const mapAction = page.locator('button[data-journey-action="open-map"]:visible').first();
     if (await mapAction.count()) {
-      clicked = await mapAction.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch(() => false);
+      clicked = await clickLocatorCenter(page, mapAction, 8000).then(() => true).catch(() => false);
       if (clicked) await markRouteEvidence(page, 'real-click', 'clicked journey open-map action');
     }
   }
@@ -647,11 +656,11 @@ async function enterMap(page) {
 async function clickVisibleMap(page) {
   const insideMap = page.locator('#btn-inside-map:visible').first();
   if (await insideMap.count()) {
-    await insideMap.click({ timeout: 8000, noWaitAfter: true });
+    await clickLocatorCenter(page, insideMap, 8000);
     await markRouteEvidence(page, 'real-click', 'clicked semantic-dive inside Map button');
   } else {
     const mapAction = page.locator('button[data-journey-action="open-map"]:visible').first();
-    await mapAction.click({ timeout: 8000, noWaitAfter: true });
+    await clickLocatorCenter(page, mapAction, 8000);
     await markRouteEvidence(page, 'real-click', 'clicked journey open-map action');
   }
   await page.waitForFunction(() => document.body.dataset.activeView === 'map', null, { timeout: 12000 });

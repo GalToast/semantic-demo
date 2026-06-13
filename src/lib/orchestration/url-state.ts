@@ -14,7 +14,7 @@ import { setJourneyPhase } from '@lib/stores/journey.svelte';
 import type { NavState, ViewName } from '@lib/types/state';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { runSearch, searchStore } from '@lib/stores/search.svelte';
-import { publish, EVENTS } from '@lib/orchestration/event-bus';
+import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket';
 
 /**
@@ -374,6 +374,30 @@ export function initUrlStateSync(): void {
     });
   }) as EventListener);
 }
+
+// Keep the browser URL aligned with Svelte-owned lifecycle/search events.
+// The legacy URL module already performs this cleanup; the Svelte shell needs
+// the same behavior so remounted search inputs do not restore stale ?q params.
+subscribe(EVENTS.SEARCH_CLEARED, () => {
+  updateUrlState({ q: null, offset: null }, { reason: 'search-clear' });
+});
+
+subscribe(EVENTS.SEARCH_SUCCESS, () => {
+  updateUrlState({ offset: null }, { reason: 'search-payload' });
+});
+
+subscribe(EVENTS.SEARCH_EMPTY, () => {
+  updateUrlState({ offset: null }, { reason: 'search' });
+});
+
+subscribe(EVENTS.STATE_RESET, ({ options }: { options?: { skipUrlSync?: boolean } }) => {
+  if (!options?.skipUrlSync) {
+    updateUrlState(
+      { q: null, record: null, anchor: null, depth: null },
+      { mode: 'push', reason: 'reset' }
+    );
+  }
+});
 
 // ── Internal Helpers ──────────────────────────────────────────────────────────
 
