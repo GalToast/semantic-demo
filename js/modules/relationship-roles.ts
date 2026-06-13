@@ -1,6 +1,31 @@
 /**
  * relationship-roles.ts — TypeScript shadow of relationship-roles.js
  * Relationship role normalization and copy.
+ *
+ * COEXISTENCE PLAN (Ticket 4 — 2026-06-13)
+ * ──────────────────────────────────────────
+ * This legacy file holds an 8-role vocabulary (trail/peer semantics).
+ * The Svelte superset at src/lib/utils/relationship-roles.ts has 27 roles.
+ * Both files are alive and actively imported. No deletion until all UI
+ * consumers migrate to the Svelte vocabulary.
+ *
+ * LEGACY CALLERS (5 files) — migrate each to src/lib/utils/relationship-roles:
+ *   js/modules/journey-thread-model.ts    — normalizeRelationshipRole
+ *   js/modules/journey-focus-ui.ts        — getRelationshipRoleLabel, normalizeRelationshipRole
+ *   js/modules/semantic-threads.ts        — normalizeRelationshipRole
+ *   js/modules/thread-inspector.ts        — getRelationshipRoleLabel, normalizeRelationshipRole
+ *   js/modules/journey-thread-settler.ts  — normalizeRelationshipRole, getRelationshipRoleCopy,
+ *                                           describeRelationshipRoleReason, getRelationshipRoleLabel
+ *
+ * SVELTE CALLERS (4 import sites, 3 files) — already on Svelte vocabulary:
+ *   src/lib/data-loader.ts
+ *   src/lib/journey/thread-model.ts
+ *   src/lib/types/business.ts (type-only)
+ *   src/lib/semantic-threads.ts
+ *
+ * MIGRATION ORDER: journey-thread-settler → thread-inspector → journey-focus-ui →
+ *                   semantic-threads → journey-thread-model
+ * DELETE after last consumer migrates. Estimated: 1-2 days across future PRs.
  */
 
 export const UNCLASSIFIED_RELATIONSHIP_ROLE = 'unclassified';
