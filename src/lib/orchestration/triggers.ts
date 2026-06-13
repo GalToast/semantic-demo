@@ -22,7 +22,7 @@ import { refreshCompositionState } from '@lib/stores/lifecycle/modes';
 import { recordEmptySearch } from '@lib/stores/lifecycle/search-sync';
 import { setActiveResult, setSearchStatus } from '@lib/stores/search.svelte';
 import { returnToOverview, recenterFocusedNode } from './lifecycle';
-import { traverseNeighbor } from '@lib/journey/thread-settler';
+import { traverseNeighbor } from '@lib/journey/thread-settler-adapter';
 import { navStore } from '@lib/stores/navigation.svelte';
 import { activeClusterFilter } from '@lib/stores/filter.svelte';
 import {

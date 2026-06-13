@@ -8,7 +8,7 @@ import { bindClick } from './view-bindings.ts';
 import { hideSummaryCard, resetExplorationFocus, hideExploreTrailReview } from '../lifecycle.ts';
 import { closeLegendGuide } from '../legend-ui.ts';
 import { requestSemanticGuide } from '../../../src/lib/journey/semantic-guide.ts';
-import { traverseNeighbor } from '../journey.ts';
+import { traverseNeighbor } from '../../../src/lib/journey/thread-settler-adapter';
 
 export function bindUtilityButtons(): void {
     bindClick('btn-close-summary', () => {

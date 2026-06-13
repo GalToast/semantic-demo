@@ -27,9 +27,9 @@ import { switchView, showViewHandoff, hideViewHandoff } from './view-controller.
 import {
     updateSelectedBusiness,
     syncFocusStage,
-    traverseNeighbor,
     walkThreadNeighbor
 } from './journey.ts';
+import { traverseNeighbor } from '../../src/lib/journey/thread-settler-adapter';
 import { clearSearch } from './search-state.ts';
 import { getPanelSurfaceDetailFromMobileSheet } from './search-panel-adapter.ts';
 import { applyCompositionState, derivePanelSurface } from './composition-state.ts';

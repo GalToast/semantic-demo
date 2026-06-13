@@ -16,10 +16,10 @@ import type { BusinessRecord } from '@lib/types/business';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { getStrandContinuityManager } from '@lib/utils/strand-continuity';
 
-// ── Thread Traversal Re-exports (legacy real impls) ──────────────────────────
+// ── Thread Traversal Delegating Shims (legacy real impls) ───────────────────
 
 /**
- * Re-export the 3 thread-traversal functions from the legacy real impl.
+ * Delegating shims for traverseNeighbor and previewInsideNextThread.
  *
  * The Svelte path previously held silent no-op stubs for these (warned
  * `[journey] Stub function hit: traverseNeighbor` / etc.). The legacy
@@ -27,17 +27,32 @@ import { getStrandContinuityManager } from '@lib/utils/strand-continuity';
  * orchestration — bound to `state.navState`, `state.semanticDiveMode`,
  * `walkHistoryIndices`, and the strand continuity manager.
  *
- * LIVE callers in the Svelte path:
- *   - `src/lib/orchestration/triggers.ts:67,70` (ArrowLeft / ArrowRight)
- *   - `src/lib/journey/journey.ts:198` (setSemanticDiveMode preview)
+ * These are delegating shims (same strategy as c5a04a3) that forward
+ * args + return value to the legacy real impl. Once the full traversal
+ * orchestration is ported, these become direct implementations.
  *
- * The `walkThreadNeighbor` function below is NOT re-exported — it is a
- * native Svelte helper used by the ThreadSettler class.
+ * LIVE callers (12 total):
+ *   - src/lib/orchestration/triggers.ts (2)
+ *   - src/lib/journey/journey.ts (1)
+ *   - js/modules/lifecycle.ts (1)
+ *   - js/modules/bindings/utility-bindings.ts (2)
+ *   - js/modules/bindings/journey-bindings.ts (2)
+ *   - js/modules/keyboard-help.ts (2)
+ *   - js/modules/journey.ts (1)
+ *   - js/modules/journey-thread-settler.ts (1)
  */
-export {
-	traverseNeighbor,
-	previewInsideNextThread
+import {
+	traverseNeighbor as _traverseNeighborImpl,
+	previewInsideNextThread as _previewInsideNextThreadImpl
 } from '@legacy/modules/journey-thread-settler';
+
+export function traverseNeighbor(step: number): void {
+	return _traverseNeighborImpl(step);
+}
+
+export function previewInsideNextThread(options?: { force?: boolean; [key: string]: unknown }): any {
+	return _previewInsideNextThreadImpl(options);
+}
 
 // ── Timer Bridge ──────────────────────────────────────────────────────────────
 

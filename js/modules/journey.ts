@@ -35,10 +35,9 @@ import {
     getStrandArrivalNote,
     getInsideRelationshipLabel,
     summarizeNeighborReason,
-    walkThreadNeighbor,
-    traverseNeighbor,
-    previewInsideNextThread
+    walkThreadNeighbor
 } from './journey-thread-settler.ts'
+import { traverseNeighbor, previewInsideNextThread } from '../../src/lib/journey/thread-settler-adapter'
 import {
     getThreadInspectionState,
     renderThreadInspection,

@@ -14,7 +14,7 @@ import { hideSummaryCard } from '../../src/lib/journey/semantic-guide.ts';
 import { setInfoPanelOpen } from './bindings/panel-bindings.ts';
 import { zoomCamera } from './bindings/view-bindings.ts';
 import { recenterFocusedNode } from './bindings/journey-bindings.ts';
-import { traverseNeighbor } from './journey.ts';
+import { traverseNeighbor } from '../../src/lib/journey/thread-settler-adapter';
 
 // Injected reset functions are set via initKeyboardResetOwnership() before first keydown.
 let _returnToOverview: () => void = () => {};
