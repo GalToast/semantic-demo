@@ -28,7 +28,7 @@ import { focusOnNode } from './camera-controls.ts';
 import { dispatchNavTransition, focusOnPoint, syncFocusStage } from './lifecycle.ts';
 import { updateJourneyCompass } from './journey-compass-controller.ts';
 import { showExperienceToast } from './ui-feedback.ts';
-import { syncSemanticDiveUi } from './semantic-dive-ui.ts';
+import { syncSemanticDiveUi } from '../../src/lib/journey/semantic-dive.ts';
 import {
     syncInspectedStrandOverlay,
     updateInspectedStrandOverlay,

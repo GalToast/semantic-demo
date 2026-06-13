@@ -14,7 +14,7 @@ import {
 } from './lifecycle.ts'
 import { updateJourneyCompass } from './journey-compass-controller.ts'
 import { applyPointFilterColors, syncFocusStage } from './journey.ts'
-import { syncSemanticDiveUi } from './semantic-dive-ui.ts'
+import { syncSemanticDiveUi } from '../../src/lib/journey/semantic-dive.ts'
 import { publish, EVENTS } from './event-bus.ts'
 import { clearRouteExploration } from './camera-controls-core.ts'
 import { setFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.ts'

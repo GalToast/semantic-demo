@@ -13,8 +13,9 @@
 
 import { animateCameraToNode } from './focus';
 import * as legacyStateModule from '@legacy/state.js';
+import * as selectorsStaticModule from '@legacy/state/selectors/index.js';
 import * as mapStateStaticModule from '@legacy/modules/map-state.js';
-import * as semanticDiveUiStaticModule from '@legacy/modules/semantic-dive-ui.js';
+import * as semanticDiveUiStaticModule from '@lib/journey/semantic-dive';
 import * as cameraControlsCoreStaticModule from '@legacy/modules/camera-controls-core.ts';
 import * as focusPanelModeStaticModule from '@legacy/modules/focus-panel-mode.js';
 
@@ -145,14 +146,12 @@ async function _ensureModules(): Promise<void> {
   if (_loaded) return;
   try {
     const [
-      selMod,
       envMod,
       lifecycleMod,
       journeyMod,
       compassMod,
       busMod,
     ] = await Promise.all([
-      import('../../../../js/state/selectors/index.js'),
       import('../../../../js/modules/environment.js'),
       import('../../../../js/modules/lifecycle.js'),
       import('../../../../js/modules/journey.js'),
@@ -160,7 +159,7 @@ async function _ensureModules(): Promise<void> {
       import('../../../../js/modules/event-bus.js'),
     ]);
     _state = (legacyStateModule as unknown as { state: LegacyState }).state;
-    _selectors = selMod as unknown as SelectorsModule;
+    _selectors = selectorsStaticModule as unknown as SelectorsModule;
     _environment = envMod as unknown as EnvironmentModule;
     _lifecycle = lifecycleMod as unknown as LifecycleModule;
     _journey = journeyMod as unknown as JourneyModule;

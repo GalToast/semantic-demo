@@ -22,7 +22,7 @@ import {
 import { clearMobileRouteFieldPeek as clearMobileRouteFieldPeekState } from './search-state.ts';
 import { focusOnNode, getRouteLayerOrigin } from './camera-controls.ts';
 import { setSemanticDiveMode } from './journey.ts';
-import { syncSemanticDiveUi } from './semantic-dive-ui.ts';
+import { syncSemanticDiveUi } from '../../src/lib/journey/semantic-dive.ts';
 import { recenterFocusedNode } from './bindings/journey-bindings.ts';
 import { exploreInsideToNextStop, resetExplorationFocus, setTrailDepth } from './lifecycle.ts';
 

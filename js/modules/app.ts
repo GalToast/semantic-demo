@@ -34,7 +34,7 @@ import './pathfinding.js';
 import { startSceneReveal } from './scene-reveal.ts';
 import * as journeyWebglModule from './journey-webgl.ts';
 import { setWebGLContextRestoreHandler } from './webgl-restore-adapter.ts';
-import { initSemanticDiveUiSubscriptions } from './semantic-dive-ui.ts';
+import { initSemanticDiveUiSubscriptions } from '../../src/lib/journey/semantic-dive.ts';
 import { ensureFocusStageAuxiliaryDom } from './focus-stage-dom.ts';
 import { switchView } from './view-controller.ts';
 import { probeSemanticLane, scheduleSemanticLaneMonitor, setSemanticLaneUiState } from './semantic-lane.ts';
@@ -51,7 +51,7 @@ import { subscribeKeyed, EVENTS, publish } from './event-bus.ts';
 // on the Svelte bus so Svelte subscribers (e.g. triggers.ts → addTrailStop)
 // fire when the legacy code drives a focus change.
 import { publish as publishSvelte, EVENTS as SVELTE_EVENTS } from '../../src/lib/orchestration/event-bus.ts';
-import { requestSemanticGuide } from './semantic-guide.ts';
+import { requestSemanticGuide } from '../../src/lib/journey/semantic-guide.ts';
 import { showSemanticThreadsDetail } from './connection-analysis.ts';
 import { setSearchPanelState } from './search-results-ui.ts';
 import { initAppSvelteIsland } from './app-svelte-island.ts';
