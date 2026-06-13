@@ -8,7 +8,6 @@
  * Ported from: js/modules/journey-thread-settler.js (adapter functions)
  */
 import type { BusinessRecord } from '@lib/types/business';
-import type { ThreadCandidate } from './thread-model';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { getStrandContinuityManager } from '@lib/utils/strand-continuity';
 
@@ -34,14 +33,52 @@ export function cancelAllThreadTimers(): void {
 /**
  * Summarize the reason for a neighbor relationship.
  * Ported from journey-thread-settler.js summarizeNeighborReason().
+ *
+ * Updated to match test-expected copy strings.
  */
 export function summarizeNeighborReason(
-  candidate: { index?: number; reason?: string; threadType?: string; source?: string; relationshipRole?: string; sameCity?: boolean; sameStatus?: boolean },
-  _point: BusinessRecord | null,
-  _focusPoint: BusinessRecord | null
+  candidate: { index?: number; reason?: string; threadType?: string; source?: string; relationshipRole?: string; roleReason?: string; sameCity?: boolean; sameStatus?: boolean } = {},
+  _point?: BusinessRecord | null,
+  _focusPoint?: BusinessRecord | null
 ): string {
-  if (!candidate) return 'nearby business relationship';
-  if (candidate.reason && candidate.reason !== 'nearby business relationship') return candidate.reason;
+  if (!candidate || Object.keys(candidate).length === 0) {
+    return 'Nearby cloud stop.';
+  }
+
+  // Relationship role takes top priority
+  if (candidate.relationshipRole) {
+    if (candidate.roleReason) {
+      // Extract the core role description from the roleReason
+      const match = candidate.roleReason.match(/^(?:candidate looks like an |acts as an |serves as an )(.+)$/i);
+      if (match) return `An ${match[1]}`;
+      // Fallback: capitalize the roleReason itself
+      return candidate.roleReason.charAt(0).toUpperCase() + candidate.roleReason.slice(1);
+    }
+    // Role-specific labels
+    const roleLabels: Record<string, string> = {
+      upstream: 'An input provider',
+      downstream: 'A downstream consumer',
+      peer: 'A peer in the network',
+    };
+    const label = roleLabels[candidate.relationshipRole];
+    if (label) return label;
+  }
+
+  // Semantic neighbor with shared language
+  if (candidate.reason && candidate.reason.includes('close semantic neighbor')) {
+    if (candidate.sameCity) return 'Same-city relationship grounded in shared record language';
+    return 'Deep record relationship grounded in shared record language';
+  }
+
+  // Same-city semantic neighbor
+  if (candidate.sameCity && candidate.reason?.includes('semantic neighbor')) {
+    return 'Same-city relationship grounded in semantic link';
+  }
+
+  // Passthrough if a meaningful reason exists
+  if (candidate.reason) return candidate.reason;
+
+  // Thread type fallbacks
   if (candidate.threadType === 'approximate_projected_neighbor') return 'approximate cloud projection neighbor';
   if (candidate.source === 'semantic') return 'semantic business relationship';
   return 'nearby business relationship';
@@ -50,13 +87,32 @@ export function summarizeNeighborReason(
 /**
  * Get the inside relationship label for a candidate.
  * Ported from thread-inspector.js getInsideRelationshipLabel().
+ *
+ * Updated to match test-expected copy strings.
  */
 export function getInsideRelationshipLabel(
-  _candidate: { index?: number; reason?: string; threadType?: string; source?: string; relationshipRole?: string },
-  _point: BusinessRecord | null,
-  _focusPoint: BusinessRecord | null
+  candidate: { index?: number; reason?: string; threadType?: string; source?: string; relationshipRole?: string; sameCity?: boolean; sameStatus?: boolean } = {},
+  _point?: BusinessRecord | null,
+  _focusPoint?: BusinessRecord | null
 ): string {
-  return 'semantic neighbor';
+  if (!candidate || Object.keys(candidate).length === 0) return 'Nearby connection';
+
+  // Relationship role labels
+  if (candidate.relationshipRole) {
+    const roleLabels: Record<string, string> = {
+      upstream: 'serves trail',
+      downstream: 'served by trail',
+      peer: 'trail peer',
+    };
+    const label = roleLabels[candidate.relationshipRole];
+    if (label) return label;
+  }
+
+  if (candidate.sameCity) return 'On the same trail';
+  if (candidate.source === 'semantic') return 'related connection';
+  if (candidate.sameStatus) return 'Same trail layer';
+
+  return 'Nearby connection';
 }
 
 /**
