@@ -266,7 +266,24 @@ export function computeParityAttributes(
     panelSurfaceMode,
     activeView: nav.currentView,
     viewMode: nav.currentView,
-    focusedNode: nav.focusedIndex !== null ? String(nav.focusedIndex) : null,
+    focusedNode: (() => {
+      // Primary: Svelte navStore rune (set by Svelte-side focus flows).
+      if (nav.focusedIndex !== null && Number.isFinite(nav.focusedIndex)) {
+        return String(nav.focusedIndex);
+      }
+      // Fallback: legacy `__APP_STATE__.navState.focusedIndex`. Legacy
+      // `applyLocalNeighborhoodFocus` / `navigation-state.ts:146` writes to
+      // the legacy state but the Svelte navStore is not updated by the
+      // legacy code path, so this fallback is what actually carries the
+      // focus index in production. Mirrors the same pattern in
+      // FocusCard.svelte::currentFocusedIdx.
+      try {
+        const w = window as unknown as { __APP_STATE__?: { navState?: { focusedIndex?: unknown } } };
+        const legacy = w.__APP_STATE__?.navState?.focusedIndex;
+        if (typeof legacy === 'number' && Number.isFinite(legacy)) return String(legacy);
+      } catch { /* ignore */ }
+      return null;
+    })(),
     graphContext,
     routeExploration: journey.routeExplorationPhase || 'idle',
 
