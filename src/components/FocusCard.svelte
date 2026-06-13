@@ -321,11 +321,13 @@
 
 <style>
   .focus-card {
-    position: absolute;
+    position: fixed;
     bottom: 4.5rem;
     right: 1rem;
     z-index: var(--z-focus-card, 600);
     width: 260px;
+    max-width: 260px;
+    min-width: 0;
     background: rgba(7, 16, 24, 0.92);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(78, 205, 196, 0.18);
@@ -409,6 +411,8 @@
     color: #e0f0f0;
     margin: 0;
     line-height: 1.25;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .selected-card-category {

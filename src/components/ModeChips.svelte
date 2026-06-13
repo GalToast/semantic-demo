@@ -131,4 +131,25 @@
     max-width: 10rem;
     white-space: normal;
   }
+
+  /* P1 #3 fix: at narrow viewports the long-label chips (OVERVIEW/SEARCH/
+     FOCUS/INSIDE/MAP) overflow the viewport and clip MAP off the right
+     edge. Condense to icon-only at <=480px to match the mobile-idle
+     icon-condensed treatment. */
+  @media (max-width: 480px) {
+    .chip-label,
+    .chip-description {
+      display: none;
+    }
+    .mode-chip {
+      padding: 0.4rem 0.55rem;
+      gap: 0;
+      min-width: 2.2rem;
+      justify-content: center;
+    }
+    .chip-icon {
+      font-size: 0.78rem;
+      opacity: 0.95;
+    }
+  }
 </style>
