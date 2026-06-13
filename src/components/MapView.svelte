@@ -1,150 +1,167 @@
 <!--
-  @components/MapView.svelte — Full-screen map view for the G Map mode chip
+  @components/MapView.svelte - Leaflet map view chrome
 
-  Renders when the user clicks the Map chip (data-active-view === 'map').
-  A self-contained SVG visualization of Montgomery County TX with business
-  record dots (positionsBuffer → lat/lng via leadEnrichment) and a back-to-
-  overview action. No new dependencies; the SVG is hand-coded against the
-  Montgomery County bounding box (NW: ~30.65, -95.90 / SE: ~30.05, -95.05).
-
-  Why a hand-coded SVG:
-  - The AGENTS.md / no-`npm install` constraint forbids Leaflet / Mapbox
-  - The data shape is small (8,406 businesses within one county)
-  - The map is a stylized journey/compass surface, not a real GPS map
-  - The user signal: "Map view under construction with an exit button" is
-    a perfectly acceptable landing surface for the Map chip
+  The real map is owned by #map-container in Canvas.svelte and the Leaflet
+  lifecycle in @lib/engine/map-state.ts. This component mounts only while the
+  Svelte nav view is "map"; it activates the shared view controller, initializes
+  Leaflet, and renders lightweight controls above the tile surface.
 -->
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { getBusinessRecords, businessRecordsStore } from '@lib/data-store.svelte';
-  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, currentView } from '@lib/stores/navigation';
-  import { viewport, isCompact } from '@lib/stores/viewport';
+  import { onMount, tick } from 'svelte';
+  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
+  import { viewport } from '@lib/stores/viewport';
+  import { switchView } from '@lib/orchestration/view-controller';
 
-  // ── Constants (Montgomery County TX bounding box) ───────────────────────────
-  const NW_LAT = 30.65;
-  const NW_LNG = -95.90;
-  const SE_LAT = 30.05;
-  const SE_LNG = -95.05;
-  const SVG_W = 1200;
-  const SVG_H = 800;
-  const DOTS_MAX = 600;
+  type MapStatus = 'loading' | 'ready' | 'error';
 
-  interface MapDot {
-    x: number;
-    y: number;
-    r: number;
-    cluster: number;
+  interface RuntimeMap {
+    invalidateSize?: () => void;
   }
 
-  function projectLatLng(lat: number, lng: number): { x: number; y: number } {
-    const x = ((lng - NW_LNG) / (SE_LNG - NW_LNG)) * SVG_W;
-    const y = ((NW_LAT - lat) / (NW_LAT - SE_LAT)) * SVG_H;
-    return { x, y };
+  interface RuntimeState {
+    currentView?: string;
+    map?: RuntimeMap | null;
   }
 
-  const CLUSTER_COLORS: readonly string[] = [
-    '#4ecdc4', '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff',
-    '#ff8c42', '#a66cff', '#ff6b9d', '#45b7d1', '#96ceb4',
-    '#ffeaa7', '#74b9ff', '#fd79a8', '#00b894', '#e17055'
-  ];
-
-  function clusterColor(idx: number): string {
-    return CLUSTER_COLORS[idx % CLUSTER_COLORS.length] ?? '#888';
+  interface RuntimeStateModule {
+    state: RuntimeState;
+    withStateMutation<T>(fn: () => T): T;
   }
 
-  // ── Reactive dots — re-runs when business records load ─────────────────────
-  let dots: MapDot[] = $derived.by(() => {
-    const records = $businessRecordsStore;
-    if (!records.length) return [];
-    const out: MapDot[] = [];
-    const step = Math.max(1, Math.floor(records.length / DOTS_MAX));
-    for (let i = 0; i < records.length; i += step) {
-      const rec: any = records[i];
-      if (!rec) continue;
-      const lat = rec.lat;
-      const lng = rec.lng;
-      if (typeof lat !== 'number' || typeof lng !== 'number') continue;
-      if (lat < SE_LAT || lat > NW_LAT || lng < NW_LNG || lng > SE_LNG) continue;
-      const { x, y } = projectLatLng(lat, lng);
-      out.push({ x, y, r: 1.5, cluster: rec.cluster });
+  let status = $state<MapStatus>('loading');
+  let statusDetail = $state('Loading county terrain');
+  let mounted = false;
+  let activationToken = 0;
+  let legacyStateModule: RuntimeStateModule | null = null;
+
+  function activateMapShell(): void {
+    switchView('map', {
+      skipTerrainPrelude: true,
+      skipUrlSync: true,
+      silentHandoff: true,
+    });
+
+    const mapContainer = document.getElementById('map-container');
+    if (mapContainer) {
+      mapContainer.classList.add('active');
+      mapContainer.classList.remove('arriving');
+      mapContainer.setAttribute('aria-hidden', 'false');
+      mapContainer.dataset.activeView = 'map';
+      mapContainer.style.removeProperty('opacity');
+      mapContainer.style.removeProperty('pointer-events');
     }
-    return out;
-  });
+  }
 
-  let totalRecords = $derived($businessRecordsStore.length);
-  let totalInBounds = $derived(dots.length * Math.max(1, Math.floor(($businessRecordsStore.length || 1) / dots.length || 1)));
+  function setLegacyView(view: 'galaxy' | 'map'): void {
+    legacyStateModule?.withStateMutation(() => {
+      legacyStateModule!.state.currentView = view;
+    });
+  }
+
+  function deactivateMapShell(): void {
+    const mapContainer = document.getElementById('map-container');
+    if (mapContainer) {
+      mapContainer.classList.remove('active', 'arriving');
+      mapContainer.setAttribute('aria-hidden', 'true');
+      mapContainer.dataset.activeView = 'idle';
+    }
+
+    const canvasContainer = document.getElementById('canvas-container');
+    if (canvasContainer) {
+      canvasContainer.classList.remove('hidden');
+    }
+
+    setLegacyView('galaxy');
+  }
+
+  async function activateLeafletMap(): Promise<void> {
+    const token = ++activationToken;
+    status = 'loading';
+    statusDetail = 'Loading county terrain';
+
+    try {
+      await tick();
+      if (!mounted || token !== activationToken) return;
+
+      activateMapShell();
+
+      const [mapEngine, stateModule] = await Promise.all([
+        import('@lib/engine/map-state'),
+        import('@legacy/state'),
+      ]);
+
+      if (!mounted || token !== activationToken) return;
+
+      legacyStateModule = stateModule as RuntimeStateModule;
+      setLegacyView('map');
+
+      mapEngine.initMapStateSubscriptions();
+      await mapEngine.initMap();
+
+      if (!mounted || token !== activationToken) return;
+
+      mapEngine.refreshMapMarkers();
+      mapEngine.refreshMapRouteEmbodiment();
+      mapEngine.centerMapOnRouteAnchor();
+
+      requestAnimationFrame(() => {
+        const map = legacyStateModule?.state.map;
+        map?.invalidateSize?.();
+        setTimeout(() => map?.invalidateSize?.(), 120);
+      });
+
+      status = 'ready';
+      statusDetail = 'County terrain active';
+    } catch (error) {
+      console.warn('MapView Leaflet activation failed:', error);
+      status = 'error';
+      statusDetail = error instanceof Error ? error.message : 'Map failed to load';
+    }
+  }
 
   function returnToOverview(): void {
+    activationToken += 1;
+    switchView('galaxy', {
+      skipUrlSync: true,
+      silentHandoff: true,
+    });
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
-    dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'galaxy' });
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'idle' });
   }
 
-  let mounted = $state(false);
-  onMount(() => { mounted = true; });
+  onMount(() => {
+    mounted = true;
+    void activateLeafletMap();
+
+    return () => {
+      mounted = false;
+      activationToken += 1;
+      deactivateMapShell();
+    };
+  });
 </script>
 
 <section
   class="map-view"
   class:is-compact={$viewport.isCompact}
+  class:is-loading={status === 'loading'}
+  class:is-error={status === 'error'}
   aria-label="Geographic map view of Montgomery County"
 >
   <header class="map-view-header">
     <div class="map-view-kicker">MAP | MONTGOMERY COUNTY</div>
-    <h2 class="map-view-title">Montgomery County, Texas</h2>
-    <p class="map-view-note">
-      {totalRecords.toLocaleString()} businesses
-      {#if totalInBounds !== totalRecords}
-        · {totalInBounds.toLocaleString()} mapped
-      {/if}
-      · zoom to inspect density, hover for details.
-    </p>
+    <h2 class="map-view-title">County terrain</h2>
   </header>
 
-  <div class="map-canvas" role="img" aria-label="Map of Montgomery County showing business locations">
-    <svg
-      viewBox="0 0 {SVG_W} {SVG_H}"
-      xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="xMidYMid meet"
-      class="map-svg"
-    >
-      <!-- Background gradient -->
-      <defs>
-        <radialGradient id="map-bg" cx="50%" cy="50%" r="60%">
-          <stop offset="0%" stop-color="rgba(78, 205, 196, 0.05)" />
-          <stop offset="100%" stop-color="rgba(7, 16, 24, 0.95)" />
-        </radialGradient>
-      </defs>
-      <rect x="0" y="0" width={SVG_W} height={SVG_H} fill="url(#map-bg)" />
-
-      <!-- County border outline -->
-      <rect
-        x="40" y="40" width={SVG_W - 80} height={SVG_H - 80}
-        fill="none"
-        stroke="rgba(78, 205, 196, 0.25)"
-        stroke-width="2"
-        stroke-dasharray="6 6"
-        rx="20"
-      />
-
-      <!-- Cardinal labels -->
-      <text x="60" y="60" fill="rgba(108, 138, 138, 0.6)" font-size="20" font-family="JetBrains Mono">NW</text>
-      <text x={SVG_W - 100} y="60" fill="rgba(108, 138, 138, 0.6)" font-size="20" font-family="JetBrains Mono">NE</text>
-      <text x="60" y={SVG_H - 40} fill="rgba(108, 138, 138, 0.6)" font-size="20" font-family="JetBrains Mono">SW</text>
-      <text x={SVG_W - 100} y={SVG_H - 40} fill="rgba(108, 138, 138, 0.6)" font-size="20" font-family="JetBrains Mono">SE</text>
-
-      <!-- Business dots -->
-      {#each dots as dot, i (i)}
-        <circle
-          cx={dot.x}
-          cy={dot.y}
-          r={dot.r}
-          fill={clusterColor(dot.cluster)}
-          opacity="0.7"
-        />
-      {/each}
-    </svg>
-  </div>
+  {#if status !== 'ready'}
+    <div class="map-status" class:is-error={status === 'error'} role="status" aria-live="polite">
+      <span class="map-status-dot" aria-hidden="true"></span>
+      <span>{statusDetail}</span>
+      {#if status === 'error'}
+        <button class="map-retry-btn" type="button" onclick={activateLeafletMap}>Retry</button>
+      {/if}
+    </div>
+  {/if}
 
   <footer class="map-view-footer">
     <button
@@ -153,11 +170,9 @@
       onclick={returnToOverview}
       aria-label="Return to overview"
     >
-      ← Back to overview
+      Overview
     </button>
-    <span class="map-attribution">
-      Stylized SVG · no external map tiles · Montgomery County, TX
-    </span>
+    <span class="map-attribution">OpenStreetMap | CARTO</span>
   </footer>
 </section>
 
@@ -166,103 +181,194 @@
     position: absolute;
     inset: 0;
     z-index: var(--z-overlay-100, 50);
-    background: rgba(7, 16, 24, 0.94);
-    backdrop-filter: blur(8px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem 2rem;
-    color: #e0f0f0;
+    pointer-events: none;
+    color: #e7f7f2;
     font-family: 'Nunito Sans', system-ui, sans-serif;
   }
-  .map-view.is-compact {
-    padding: 0.75rem;
+
+  .map-view::before,
+  .map-view::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+  }
+
+  .map-view::before {
+    top: 0;
+    height: 140px;
+    background: linear-gradient(180deg, rgba(4, 9, 12, 0.74), rgba(4, 9, 12, 0));
+  }
+
+  .map-view::after {
+    bottom: 0;
+    height: 132px;
+    background: linear-gradient(0deg, rgba(4, 9, 12, 0.7), rgba(4, 9, 12, 0));
+  }
+
+  .map-view-header,
+  .map-view-footer,
+  .map-status {
+    position: absolute;
+    pointer-events: auto;
+    z-index: 1;
   }
 
   .map-view-header {
-    text-align: center;
-    margin-bottom: 1rem;
-    max-width: 600px;
-  }
-  .map-view-kicker {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem;
-    color: #4ecdc4;
-    letter-spacing: 0.15em;
-    margin-bottom: 0.4rem;
-  }
-  .map-view-title {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 2rem;
-    font-weight: 600;
-    margin: 0 0 0.5rem 0;
-  }
-  .map-view-note {
-    font-size: 0.85rem;
-    color: #6a8a8a;
-    margin: 0;
-    line-height: 1.4;
-  }
-  .map-view.is-compact .map-view-title {
-    font-size: 1.25rem;
+    top: calc(24px + env(safe-area-inset-top, 0px));
+    left: 24px;
+    display: grid;
+    gap: 6px;
+    max-width: min(420px, calc(100vw - 48px));
   }
 
-  .map-canvas {
-    flex: 1 1 auto;
-    width: 100%;
-    max-width: 1200px;
-    max-height: 70vh;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(78, 205, 196, 0.2);
-    border-radius: 0.5rem;
-    padding: 0.5rem;
-    overflow: hidden;
+  .map-view-kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: rgba(126, 231, 219, 0.9);
   }
-  .map-svg {
-    width: 100%;
-    height: 100%;
-    display: block;
+
+  .map-view-title {
+    margin: 0;
+    font-family: 'Bricolage Grotesque', 'Nunito Sans', sans-serif;
+    font-size: clamp(1.25rem, 2.4vw, 2rem);
+    font-weight: 650;
+    letter-spacing: 0;
+    color: #f5fff9;
+    text-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  }
+
+  .map-status {
+    left: 50%;
+    top: 50%;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    max-width: min(420px, calc(100vw - 32px));
+    padding: 10px 14px;
+    border: 1px solid rgba(126, 231, 219, 0.22);
+    border-radius: 8px;
+    background: rgba(7, 16, 24, 0.82);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+    transform: translate(-50%, -50%);
+    color: rgba(238, 255, 251, 0.9);
+    font-size: 0.86rem;
+    font-weight: 700;
+    backdrop-filter: blur(20px) saturate(150%);
+  }
+
+  .map-status.is-error {
+    border-color: rgba(255, 151, 107, 0.38);
+    color: #ffe1d1;
+  }
+
+  .map-status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: #7ee7db;
+    box-shadow: 0 0 18px rgba(126, 231, 219, 0.9);
+    animation: mapStatusPulse 1.3s ease-in-out infinite;
+  }
+
+  .map-status.is-error .map-status-dot {
+    background: #ff976b;
+    box-shadow: 0 0 18px rgba(255, 151, 107, 0.75);
+    animation: none;
   }
 
   .map-view-footer {
+    left: 24px;
+    right: 24px;
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    margin-top: 1rem;
-    width: 100%;
-    max-width: 1200px;
+    gap: 14px;
   }
-  .map-back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    background: rgba(78, 205, 196, 0.12);
-    border: 1px solid rgba(78, 205, 196, 0.4);
-    color: #4ecdc4;
-    padding: 0.6rem 1rem;
-    border-radius: 0.3rem;
-    font-family: inherit;
-    font-size: 0.85rem;
-    font-weight: 600;
+
+  .map-back-btn,
+  .map-retry-btn {
+    min-height: 42px;
+    border: 1px solid rgba(126, 231, 219, 0.35);
+    border-radius: 8px;
+    background: rgba(10, 23, 29, 0.78);
+    color: #eafffb;
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: 0;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+    transition:
+      background 0.16s ease,
+      border-color 0.16s ease,
+      transform 0.16s ease;
   }
-  .map-back-btn:hover {
-    background: rgba(78, 205, 196, 0.2);
-    border-color: rgba(78, 205, 196, 0.6);
+
+  .map-back-btn {
+    padding: 0 16px;
   }
+
+  .map-retry-btn {
+    min-height: 34px;
+    padding: 0 12px;
+  }
+
+  .map-back-btn:hover,
+  .map-retry-btn:hover {
+    background: rgba(17, 41, 47, 0.92);
+    border-color: rgba(126, 231, 219, 0.64);
+    transform: translateY(-1px);
+  }
+
   .map-attribution {
-    font-size: 0.7rem;
-    color: #4a5a5a;
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: rgba(4, 10, 13, 0.55);
+    color: rgba(218, 239, 234, 0.72);
     font-family: 'JetBrains Mono', monospace;
+    font-size: 0.66rem;
   }
+
+  .map-view.is-compact .map-view-header {
+    top: calc(14px + env(safe-area-inset-top, 0px));
+    left: 14px;
+  }
+
   .map-view.is-compact .map-view-footer {
-    flex-direction: column;
-    gap: 0.5rem;
+    left: 14px;
+    right: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   }
+
   .map-view.is-compact .map-attribution {
-    text-align: center;
+    display: none;
+  }
+
+  :global(#map-container.active) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  :global(#map-container .leaflet-container) {
+    background: #071018;
+  }
+
+  @keyframes mapStatusPulse {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: scale(0.82);
+    }
+
+    50% {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 </style>

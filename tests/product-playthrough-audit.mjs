@@ -753,6 +753,12 @@ async function capture(page, label, artifacts) {
     const focusedPoint = Number.isFinite(focusedIndex) ? points[focusedIndex] : null;
     const selectors = [
       '#canvas-container',
+      '#map-container',
+      '#map-container.leaflet-container',
+      '#map-container .leaflet-tile-pane',
+      '.map-view',
+      '.map-view .map-svg',
+      '.map-view .map-canvas',
       '#loading-overlay',
       '#info-panel',
       '.search-container',
@@ -1109,6 +1115,24 @@ async function capture(page, label, artifacts) {
         overflowY: Math.max(0, el.scrollHeight - el.clientHeight),
       };
     }).filter(Boolean);
+    const mapSurface = (() => {
+      const container = document.querySelector('#map-container');
+      const leafletContainer = document.querySelector('#map-container.leaflet-container');
+      const tilePane = document.querySelector('#map-container .leaflet-tile-pane');
+      const placeholderSvg = document.querySelector('.map-view .map-svg');
+      return {
+        container: rectFromElement(container),
+        containerActive: Boolean(container?.classList.contains('active')),
+        leafletLoaded: Boolean(window.L),
+        leafletRuntimeScriptPresent: Boolean(document.getElementById('leaflet-runtime-js')),
+        leafletRuntimeCssPresent: Boolean(document.getElementById('leaflet-runtime-css')),
+        leafletContainer: rectFromElement(leafletContainer),
+        leafletTilePane: rectFromElement(tilePane),
+        leafletTilePanePresent: Boolean(tilePane),
+        placeholderSvgPresent: Boolean(placeholderSvg),
+        placeholderSvgVisible: visible(placeholderSvg),
+      };
+    })();
     return {
       url: location.href,
       title: document.title,
@@ -1148,6 +1172,7 @@ async function capture(page, label, artifacts) {
       },
       journeyActions,
       mapStrip,
+      mapSurface,
       focusText: document.querySelector('#focus-stage')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 1200) || '',
       inspectorText: document.querySelector('#focus-thread-inspector')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 700) || '',
       searchText: document.querySelector('#search-results')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 1000) || '',
@@ -1539,9 +1564,18 @@ function assertProductOwnership(artifacts) {
   if (mobileMap) {
     const trailStrip = rect(mobileMap, '.map-trail-strip');
     const search = rect(mobileMap, '.search-container');
+    const mapSurface = mobileMap.mapSurface || {};
     const routeEvidence = mobileMap.routeEvidence || {};
     if (mobileMap.bodyDataset?.activeView === 'map') pass('08-mobile-map-after-dive', 'mobile-map:active-view');
     else fail('08-mobile-map-after-dive', 'mobile-map:active-view', `expected map active view, got ${mobileMap.bodyDataset?.activeView || 'none'}`);
+    if (mapSurface.containerActive && rendered(mapSurface.container)) pass('08-mobile-map-after-dive', 'mobile-map:container-active');
+    else fail('08-mobile-map-after-dive', 'mobile-map:container-active', `expected active #map-container, got ${JSON.stringify(mapSurface.container)}`);
+    if (mapSurface.leafletLoaded && rendered(mapSurface.leafletContainer)) pass('08-mobile-map-after-dive', 'mobile-map:leaflet-container-visible');
+    else fail('08-mobile-map-after-dive', 'mobile-map:leaflet-container-visible', `expected visible Leaflet container, got loaded=${mapSurface.leafletLoaded} container=${JSON.stringify(mapSurface.leafletContainer)}`);
+    if (mapSurface.leafletTilePanePresent) pass('08-mobile-map-after-dive', 'mobile-map:leaflet-tile-pane-present');
+    else fail('08-mobile-map-after-dive', 'mobile-map:leaflet-tile-pane-present', `expected Leaflet tile pane, got ${JSON.stringify(mapSurface.leafletTilePane)}`);
+    if (!mapSurface.placeholderSvgPresent && !mapSurface.placeholderSvgVisible) pass('08-mobile-map-after-dive', 'mobile-map:no-svg-placeholder');
+    else fail('08-mobile-map-after-dive', 'mobile-map:no-svg-placeholder', 'Svelte MapView rendered .map-svg placeholder instead of exposing Leaflet');
     if (!rendered(search) || insideViewport(search, mobileMap.viewport)) pass('08-mobile-map-after-dive', 'mobile-map:search-not-offscreen');
     else fail('08-mobile-map-after-dive', 'mobile-map:search-not-offscreen', `.search-container is outside viewport, got ${JSON.stringify(search)}`);
     if (!rendered(trailStrip) || trailStrip.height <= 72) pass('08-mobile-map-after-dive', 'mobile-map:trail-strip-compact');
