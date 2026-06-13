@@ -60,6 +60,18 @@ import * as audioScapeMod from '@legacy/modules/audio-scape';
 import * as eventBindingsMod from '@legacy/modules/event-bindings';
 import * as loadingUiMod from '@legacy/modules/loading-ui';
 
+// ── Static @legacy/* imports (HOT — render-loop, consumed by ensureModules) ──
+import * as stateMod from '@legacy/state';
+import * as clusterLabelsMod from '@legacy/modules/cluster-labels';
+import * as focusPocketMod from '@legacy/modules/focus-pocket';
+import * as sceneRevealMod from '@legacy/modules/scene-reveal';
+import * as cameraControlsMod from '@legacy/modules/camera-controls';
+import * as myceliumEngineMod from '@legacy/modules/mycelium-engine';
+import * as inspectedStrandMod from '@legacy/modules/inspected-strand-overlay-adapter';
+import * as routeArrivalMod from '@legacy/modules/route-arrival-overlay-adapter';
+import * as threeSearchAnimationsMod from '@legacy/modules/three-search-animations';
+import * as threeInteractionVisualsMod from '@legacy/modules/three-interaction-visuals';
+
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 
 interface LegacyState {
@@ -222,53 +234,29 @@ let _threeInteractionVisuals: ThreeInteractionVisualsModule | null = null;
 
 let _loaded = false;
 
-async function _ensureModules(): Promise<void> {
+function _ensureModules(): void {
   if (_loaded) return;
   try {
-    const [
-      stateMod,
-      cpMod,
-      fpMod,
-      srMod,
-      ccMod,
-      meMod,
-      isMod,
-      raMod,
-      tsaMod,
-      tivMod,
-    ] = await Promise.all([
-      import('@legacy/state'),
-      import('@legacy/modules/cluster-labels'),
-      import('@legacy/modules/focus-pocket'),
-      import('@legacy/modules/scene-reveal'),
-      import('@legacy/modules/camera-controls'),
-      import('@legacy/modules/mycelium-engine'),
-      import('@legacy/modules/inspected-strand-overlay-adapter'),
-      import('@legacy/modules/route-arrival-overlay-adapter'),
-      import('@legacy/modules/three-search-animations'),
-      import('@legacy/modules/three-interaction-visuals'),
-    ]);
-
-    _state = (stateMod as any).state as LegacyState;
-    _withStateMutation = (stateMod as any).withStateMutation as WithStateMutationFn;
+    _state = stateMod.state as unknown as LegacyState;
+    _withStateMutation = stateMod.withStateMutation as unknown as WithStateMutationFn;
     _viewController = viewControllerMod as unknown as ViewControllerModule;
-    _clusterLabels = cpMod as unknown as ClusterLabelsModule;
-    _focusPocket = fpMod as unknown as FocusPocketModule;
-    _sceneReveal = srMod as unknown as SceneRevealModule;
-    _cameraControls = ccMod as unknown as CameraControlsModule;
+    _clusterLabels = clusterLabelsMod as unknown as ClusterLabelsModule;
+    _focusPocket = focusPocketMod as unknown as FocusPocketModule;
+    _sceneReveal = sceneRevealMod as unknown as SceneRevealModule;
+    _cameraControls = cameraControlsMod as unknown as CameraControlsModule;
     _mapState = mapStateMod as unknown as MapStateModule;
-    _myceliumEngine = meMod as unknown as MyceliumEngineModule;
+    _myceliumEngine = myceliumEngineMod as unknown as MyceliumEngineModule;
     _uiFeedback = uiFeedbackMod as unknown as UiFeedbackModule;
     _mapFlattening = mapFlatteningMod as unknown as MapFlatteningModule;
     _webglRestore = webglRestoreMod as unknown as WebGLRestoreModule;
-    _inspectedStrand = isMod as unknown as InspectedStrandModule;
+    _inspectedStrand = inspectedStrandMod as unknown as InspectedStrandModule;
     _focusAnchor = focusAnchorMod as unknown as FocusAnchorModule;
-    _routeArrival = raMod as unknown as RouteArrivalModule;
-    _threeSearchAnimations = tsaMod as unknown as ThreeSearchAnimationsModule;
+    _routeArrival = routeArrivalMod as unknown as RouteArrivalModule;
+    _threeSearchAnimations = threeSearchAnimationsMod as unknown as ThreeSearchAnimationsModule;
     _audioScape = audioScapeMod as unknown as AudioScapeModule;
     _eventBindings = eventBindingsMod as unknown as EventBindingsModule;
     _loadingUi = loadingUiMod as unknown as LoadingUiModule;
-    _threeInteractionVisuals = tivMod as unknown as ThreeInteractionVisualsModule;
+    _threeInteractionVisuals = threeInteractionVisualsMod as unknown as ThreeInteractionVisualsModule;
     _loaded = true;
   } catch (err) {
     console.error('[three-engine] Failed to load legacy modules:', err);
