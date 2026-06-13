@@ -44,6 +44,12 @@ This doc captures the open tickets left over after commit `2a91873` (8 dead shim
 
 **Verification:** ast-grep verify zero callers before deletion. After deletion, `rg "Stub function hit" src/lib/` should drop by 18.
 
+**⚠️ GLM-5 cross-check finding (2026-06-13):** Lane H GLM-5 re-audited the stub-deletion scope and found that **only `walkInsideToNextStop` is truly dead** in `thread-settler-adapter.ts`. The other two have LIVE legacy callers that lane 4 missed:
+- `traverseNeighbor` has **10 LIVE callers** in `js/modules/` (full caller trace in `tmp/subagent-catalog-buildout-2026-06-13/dead-shim-recrosscheck-2026-06-13.md`)
+- `previewInsideNextThread` has **2 LIVE callers** in `js/modules/`
+
+**Corrected scope:** Delete only `walkInsideToNextStop` from `thread-settler-adapter.ts`. Keep `traverseNeighbor` and `previewInsideNextThread` (or migrate them in Ticket 1 if they are stub-mis-wires). Adjust the ticket 2 stub count from 18 to 16.
+
 ### 🟡 Ticket 3: Retire 19 `@legacy/*` imports in `three-engine.ts:238-256` (Part D)
 
 **Priority:** HIGH — biggest single Tier-1 retirement target
