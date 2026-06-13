@@ -221,7 +221,9 @@ export function walkThreadNeighbor(index: number, options: WalkThreadNeighborOpt
     setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason });
     dispatchNavTransition('WALK_TO', { index, fromIndex, appendHistory: !options.restoreHistory });
     renderThreadInspection(null, { force: true, surface: 'idle' });
-    (state.navState as any).lastTraversalReason = reason;
+    withStateMutation(() => {
+        (state.navState as any).lastTraversalReason = reason;
+    });
     const preserveNeighborhood: boolean =
         state.currentView === 'galaxy' && isBoundedNeighborhoodActive() && !options.expandNeighborhood;
     if (state.currentView === 'map') {
