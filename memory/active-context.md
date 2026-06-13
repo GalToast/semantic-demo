@@ -1,20 +1,24 @@
 # Active Context — semantic-explorer
 
-**Last updated:** 2026-06-09
+**Last updated:** 2026-06-13
 **⚠ Update-prone:** Refresh this file whenever migration state, demo readiness, or blockers change.
 
 ## Migration status (Svelte + TypeScript)
-- **Scaffold:** 21/21 Svelte components complete under `src/components/`
+- **Scaffold:** 25 Svelte components currently present under `src/components/`
 - **Stores/types:** 12/12 stores, 4/4 type files, 4/4 orchestration files complete
 - **Bridge:** `src/lib/engine/bridge.ts` ~1212 lines, imperative legacy bridge
-- **svelte-check:** 0 errors in `src/` code (50 errors in legacy `js/modules/*.ts` — out of scope)
-- **Legacy islands track:** Deleted in m3 sweep (2026-06-07). All rendering flows through `src/components/`.
-- **InfoPanel:** Single-track (src/ only, ~764L). Legacy island orphans removed.
-- **Migration plan:** `docs/migration-plan.md` — 6-phase plan (Phase 0–6), written by migration-architect worker
+- **Svelte check:** `npm run check:svelte` passes with 0 errors / 0 warnings as of 2026-06-13.
+- **Build:** `npm run build:svelte` passes as of 2026-06-13; ineffective dynamic import warnings are down to 5 after orchestration, camera, and demo/window import cleanup.
+- **Legacy TS progress:** `npm run check:ts-progress` reports 153 runtime modules, 104 TS-only, 49 BOTH (`.ts` + `.js` shadow), 0 JS-only, 0 drift pairs.
+- **Legacy entry:** `js/modules/app.ts` is the legacy/reference bundle entry; production remains the Svelte/Vite shell.
+- **Legacy islands track:** retired as a product direction, but some `js/modules/components/*` compatibility surfaces still exist in the reference/rollback lane. Do not classify them as dead without checking import reachability and BOTH-pattern rules.
+- **InfoPanel:** Single-track product surface in `src/components/InfoPanel.svelte`; keep legacy compatibility artifacts separate from product ownership.
+- **Migration plan:** `docs/phase56-migration-plan.md` is the latest bridge-elimination plan; verify against live `check:ts-progress` before executing old advice.
 
 ## Demo readiness
-- Micro-demo (`micro-demo.js`) is functional with verified state machine.
-- Known pre-existing contract test failures: thread-inspector, field-node, search-no-results, compass-rail, focus-pocket, info-panel-empty, mode-grid (under investigation).
+- Svelte demo store/choreography regression for dismiss-in-COMPLETE state passes via `node tests/dismiss-in-complete-state-contract.mjs` as of 2026-06-13.
+- Micro-demo legacy/reference path remains functional with verified state machine unless current contract runs prove otherwise.
+- Do not reuse the old 2026-06-09 contract-failure list without re-running the focused contracts; current quick checks passed.
 - Bugsweep 2026-06-05 resolved all 4 HIGH JS bugs (strand-continuity, three-interaction-visuals, state.js Proxy, three-node-manager textures).
 
 ## High-risk surfaces (lead approval required to touch)
@@ -24,6 +28,6 @@
 - Deploy scripts (`deploy.sh`, `deploy.ps1`)
 
 ## Known blockers / open items
-- Root-slice TS migration: 90 broken imports traced to 2 barrel shims (`js/state.ts`, `js/modules/app.ts`) — staged commit plan in progress (2026-06-08/09)
-- Subagent spawn regression: after ~5 successful spawns, harness rejects subsequent launches with "params/timeout_seconds must be integer" (2026-06-09)
-- Parallel visual-state audits saturate local browser; prefer sequential runs
+- Bridge elimination remains the main migration seam. Remaining build warnings are now concentrated in `js/state.js`, `src/lib/orchestration/window-actions.ts` (`semantic-guide`, `connection-analysis`), and legacy journey/event bindings. Current warning snapshot: `tmp/bridge-import-warnings-after-demo-window-camera.txt`; owner plan: `tmp/warning-owner-plan-20260613.md`; journey/event cycle report: `tmp/journey-event-warning-report-20260613.md`.
+- Dirty worktree contains prior migration/archive/test additions under `legacy-reference/`, `tests/unit-active/`, `tests/unit/README.md`, `tests/dismiss-in-complete-state-contract.mjs`, and `vitest.legacy.config.js`. Treat as existing user/worker work; do not revert casually.
+- Parallel visual-state audits can saturate local browser; prefer sequential headed runs for visual QA.
