@@ -786,7 +786,7 @@
             [data-panel-surface='semantic-dive']
         )
         .search-container.search-container,
-    body.is-active[data-panel-surface='search'] .journey-compass.journey-compass {
+    body.is-active[data-panel-surface='search'] #journey-compass.journey-compass {
         display: none;
         visibility: hidden;
         pointer-events: none;
