@@ -60,8 +60,104 @@ tryHydrate();
 
 // ── __TEST_STATE__ sync (visual settle for Playwright surface/visual tests) ──
 
+type TestCompatWindow = Window & {
+  __APP_STATE__?: unknown;
+  __TEST_STATE__?: unknown;
+  __LEGACY_APP_STATE__?: unknown;
+  __refreshTestCompatState__?: () => void;
+};
+
+let latestTestState: unknown = null;
+let testCompatProxy: Record<string, unknown> | null = null;
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+}
+
+function getCompatSources(): {
+  legacyState: Record<string, unknown>;
+  svelteState: Record<string, unknown>;
+} {
+  const w = window as TestCompatWindow;
+  return {
+    legacyState: asRecord(w.__LEGACY_APP_STATE__),
+    svelteState: asRecord(latestTestState),
+  };
+}
+
+function getCompatNavState(): Record<string, unknown> {
+  const { legacyState, svelteState } = getCompatSources();
+  return {
+    ...asRecord(legacyState.navState),
+    ...asRecord(svelteState.navState),
+  };
+}
+
+function getCompatValue(prop: string | symbol): unknown {
+  if (typeof prop !== 'string') return undefined;
+  const { legacyState, svelteState } = getCompatSources();
+  if (prop === 'navState') return getCompatNavState();
+  if (prop === 'state') {
+    return {
+      ...asRecord(legacyState.state),
+      ...asRecord(svelteState.state),
+      currentView: svelteState.currentView ?? legacyState.currentView,
+      navState: getCompatNavState(),
+    };
+  }
+  const svelteValue = svelteState[prop];
+  return svelteValue !== undefined ? svelteValue : legacyState[prop];
+}
+
+function createTestCompatProxy(): Record<string, unknown> {
+  return new Proxy(
+    {},
+    {
+      get(_target, prop) {
+        return getCompatValue(prop);
+      },
+      set(_target, prop, value) {
+        if (typeof prop !== 'string') return false;
+        const { legacyState } = getCompatSources();
+        legacyState[prop] = value;
+        return true;
+      },
+      has(_target, prop) {
+        if (typeof prop !== 'string') return false;
+        const { legacyState, svelteState } = getCompatSources();
+        return prop in legacyState || prop in svelteState || prop === 'state';
+      },
+      ownKeys() {
+        const { legacyState, svelteState } = getCompatSources();
+        return Array.from(new Set([...Reflect.ownKeys(legacyState), ...Reflect.ownKeys(svelteState), 'state']));
+      },
+      getOwnPropertyDescriptor(_target, prop) {
+        return {
+          configurable: true,
+          enumerable: true,
+          value: getCompatValue(prop),
+        };
+      },
+      deleteProperty(_target, prop) {
+        if (typeof prop !== 'string') return false;
+        const { legacyState } = getCompatSources();
+        return delete legacyState[prop];
+      },
+    }
+  );
+}
+
+function publishTestCompatState(): void {
+  const w = window as TestCompatWindow;
+  testCompatProxy ??= createTestCompatProxy();
+  w.__TEST_STATE__ = testCompatProxy;
+  w.__APP_STATE__ = testCompatProxy;
+}
+
+((window as unknown) as TestCompatWindow).__refreshTestCompatState__ = publishTestCompatState;
 const unsubTestState = testState.subscribe((value) => {
-  (window as any).__TEST_STATE__ = value;
+  latestTestState = value;
+  publishTestCompatState();
 });
 const cleanupWindowActions = installWindowActions();
 

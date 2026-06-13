@@ -10,11 +10,8 @@ const JS_DIR = resolve(__dirname, 'js')
 
 export default defineConfig({
   plugins: [svelte()],
-  // 2026-06-06: Mirror the @lib / @components / @ aliases from vite.config.ts
-  // so the focused svelte-parity-attrs unit test can resolve the
-  // parity-attrs.ts module's transitive imports. Without these aliases
-  // vitest's import-analysis cannot resolve @lib/... and the test suite
-  // errors out before any test runs.
+  // Mirror the @lib / @components / @ aliases from vite.config.ts so active
+  // Svelte/TS unit tests resolve the same module graph as the app.
   resolve: {
     alias: {
       '@': SRC_DIR,
@@ -34,11 +31,10 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    include: ['tests/unit/**/*.test.js'],
+    include: ['tests/unit-active/**/*.{test,spec}.{js,mjs,ts}'],
     globals: true,
-    // 2026-06-06: setupFiles runs before any test file. The svelte-parity-attrs
-    // test imports src/lib/stores/viewport.ts, which calls window.matchMedia at
-    // module init. Without this stub, vitest errors before any test runs.
+    // setupFiles runs before any test file. Store tests import modules that
+    // call window.matchMedia during module initialization.
     setupFiles: ['tests/unit/vitest.setup.js'],
   },
 })

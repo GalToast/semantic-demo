@@ -21,7 +21,7 @@ const MOBILE_PREMIUM_SPLIT = [
   'mobile_premium__narrow.css',
 ];
 const MOBILE_PREMIUM_CSS = MOBILE_PREMIUM_SPLIT.map((f) => path.join(ROOT, `css/${f}`));
-const APP_JS = path.join(ROOT, 'js/modules/app.ts');
+const APP_SHELL = path.join(ROOT, 'src/App.svelte');
 const CAMERA_UI_BINDINGS = path.join(ROOT, 'js/modules/camera-ui-bindings.ts');
 
 function read(filePath) {
@@ -44,7 +44,7 @@ function run() {
   console.log('=================================================================');
 
   const mobilePremiumSrc = read(MOBILE_PREMIUM_CSS);
-  const appSrc = read(APP_JS);
+  const appSrc = read(APP_SHELL);
 
   console.log('\n[TEST] map-owned surfaces suppress standalone utility chrome');
   // Check that map-trail-strip/map-idle suppress utility chrome
@@ -90,9 +90,9 @@ function run() {
   console.log('  OK - idle and search suppression owners are explicit');
 
   console.log('\n[TEST] duplicate camera UI binding module stays retired');
-  assert(!fs.existsSync(CAMERA_UI_BINDINGS), 'js/modules/camera-ui-bindings.js must not exist as an unowned duplicate binding module');
-  assert(!/camera-ui-bindings|initCameraUiBindings/.test(appSrc), 'app.ts must not import or initialize camera-ui-bindings');
-  console.log('  OK - camera UI controls remain owned by bindings/view-bindings.ts');
+  assert(!fs.existsSync(CAMERA_UI_BINDINGS), 'js/modules/camera-ui-bindings.ts must not exist as an unowned duplicate binding module');
+  assert(!/camera-ui-bindings|initCameraUiBindings/.test(appSrc), 'App.svelte must not import or initialize camera-ui-bindings');
+  console.log('  OK - camera UI controls remain owned by the Svelte shell and Controls component');
 
   console.log('\n=================================================================');
   console.log('ALL TESTS PASSED');

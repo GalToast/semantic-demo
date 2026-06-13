@@ -1,5 +1,5 @@
-// Native TS source of truth (js/modules/design-tokens.ts) — the legacy
-// design-tokens.js shadow was retired in the bd86917 cleanup wave. This
+// Native TS source of truth (src/lib/engine/design-tokens.ts) — the legacy
+// js/modules design-token owner was retired during the Svelte cutover. This
 // contract verifies that the native-TS tokens preserve all legacy visual
 // values (frozen, color hex codes, vec3 shader strings, 29-entry cluster
 // palette) so a future refactor cannot silently change product visuals.
@@ -9,8 +9,8 @@ import {
   FOCUS_SEMANTIC_COLORS,
   ROUTE_TRACE_COLORS,
   SCENE_PALETTE
-} from '../js/modules/design-tokens.ts';
-import * as tokens from '../js/modules/design-tokens.ts';
+} from '../src/lib/engine/design-tokens.ts';
+import * as tokens from '../src/lib/engine/design-tokens.ts';
 
 const legacyClusterColors = [
   '#4ecdc4', '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff8c42', '#a66cff', '#ff6b9d',

@@ -11,6 +11,13 @@ export const UNCLASSIFIED_RELATIONSHIP_ROLE = 'unclassified';
 
 export const RELATIONSHIP_ROLES = [
 	'unclassified',
+	'core_peer',
+	'upstream',
+	'downstream',
+	'complement',
+	'same_market',
+	'geo_echo',
+	'bridge',
 	'direct',
 	'support',
 	'civic',
@@ -134,6 +141,41 @@ const ROLE_COPY: Record<RelationshipRole, { label: string; title: string; reason
 		label: 'City bridge',
 		title: 'Cross-city link',
 		reason: 'Connects businesses across city boundaries with shared service patterns.'
+	},
+	core_peer: {
+		label: 'Peer',
+		title: 'Same beat',
+		reason: 'High-similarity peer in the same local business ecosystem.'
+	},
+	upstream: {
+		label: 'Anchor',
+		title: 'Anchors the trail',
+		reason: 'Likely input, infrastructure, or support provider for this trail.'
+	},
+	downstream: {
+		label: 'Served by',
+		title: 'Served by trail',
+		reason: 'Likely customer, beneficiary, or demand-side market for this trail.'
+	},
+	complement: {
+		label: 'Pairs',
+		title: 'Pairs with trail',
+		reason: 'Adjacent sector that often appears in the same customer journey.'
+	},
+	same_market: {
+		label: 'Same lane',
+		title: 'Same lane',
+		reason: 'Same market signal with local context.'
+	},
+	geo_echo: {
+		label: 'Echo',
+		title: 'Echo elsewhere',
+		reason: 'Same market signal across different towns.'
+	},
+	bridge: {
+		label: 'Bridge',
+		title: 'Bridges towns',
+		reason: 'Cross-market or cross-city semantic bridge.'
 	}
 };
 
@@ -142,7 +184,7 @@ const ROLE_COPY: Record<RelationshipRole, { label: string; title: string; reason
  */
 export function normalizeRelationshipRole(role: string | null | undefined): RelationshipRole {
 	if (!role) return UNCLASSIFIED_RELATIONSHIP_ROLE;
-	const normalized = role.toLowerCase().replace(/[-\s]+/g, '_');
+	const normalized = role.trim().toLowerCase().replace(/[-\s]+/g, '_');
 	if (RELATIONSHIP_ROLES.includes(normalized as RelationshipRole)) {
 		return normalized as RelationshipRole;
 	}

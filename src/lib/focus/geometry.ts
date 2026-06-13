@@ -12,6 +12,7 @@ import type { ConstellationMotif } from '@lib/stores/focus';
 import type { FocusPersonality, MicroVariation } from './personality';
 
 export { easeOutQuint, clampNumber } from '@lib/utils/math-easing';
+export { seededUnit } from '@lib/utils/seeded-random';
 
 // ── Bridge accessor for state fields not yet in stores ──────────────────────
 

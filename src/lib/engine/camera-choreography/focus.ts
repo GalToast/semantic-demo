@@ -174,7 +174,7 @@ async function _ensureModules(): Promise<void> {
       import('../../../../js/modules/environment.js'),
       import('../../../../js/modules/camera-framing-utils.js'),
       import('../../../../js/modules/camera-math-utils.js'),
-      import('../../../../js/modules/camera-controls-core.js'),
+      import('../../../../js/modules/camera-controls-core.ts'),
     ]);
     _state = (stateMod as unknown as { state: LegacyState }).state;
     _selectors = selMod as unknown as SelectorsModule;

@@ -4,6 +4,24 @@ Generated 2026-06-12 from the official NVIDIA NIM API reference page `https://do
 
 This is the exhaustive endpoint checklist from the official API reference sidebar as parsed this run. It intentionally includes endpoints that are not currently exposed by our local OpenAI-compatible router.
 
+## Build Catalog Free Endpoint Delta
+
+The public Build model catalog can expose new `Free Endpoint` cards before they appear in this parsed official-sidebar inventory. Treat this section as a manually verified delta, not as a replacement for a fresh catalog sync.
+
+Video/media endpoints confirmed from the Build catalog on 2026-06-13:
+- nvidia / cosmos3-nano </nvidia/cosmos3-nano> — text/image-to-video world generation; hosted endpoint returns MP4 as `b64_video`.
+- nvidia / cosmos-transfer2.5-2b </nvidia/cosmos-transfer2_5-2b> — video/world transfer from scenario/control inputs.
+- nvidia / cosmos-transfer1-7b </nvidia/cosmos-transfer1-7b> — video/world transfer from text and control video inputs.
+- nvidia / cosmos-predict1-5b </nvidia/cosmos-predict1-5b> — future-frame/world prediction from image or short video prompt.
+- nvidia / lipsync </nvidia/lipsync> — lip dubbing from video plus audio.
+- nvidia / relighting </nvidia/relighting> — video relighting against target HDRI environment.
+- nvidia / synthetic-video-detector </nvidia/synthetic-video-detector> — synthetic video detection.
+- nvidia / active-speaker-detection </nvidia/active-speaker-detection> — detects and tracks speaker identities in video.
+
+Safe wiring rule: these belong in dedicated NVIDIA MCP tools or local enrichment scripts, not in the chat model picker or app runtime. Keep `execute=false` dry-runs as the default while discovering request schemas.
+
+Live smoke note, 2026-06-13: `nvidia/cosmos3-nano` is not exposed through the guessed `https://ai.api.nvidia.com/v1/genai/nvidia/cosmos3-nano`, `https://integrate.api.nvidia.com/v1/videos/generations`, or `https://ai.api.nvidia.com/v1/videos/generations` routes; all returned 404. The Build page embeds NVCF function id `d09cd49d-d7f2-4361-928f-ea22af707249`, but local NVIDIA keys returned account-scoped 404 (`Function ... not found for account`) across the full local key pool. Treat Cosmos hosted preview as requiring a separate Build entitlement/key flow until proven otherwise.
+
 ## Counts
 
 - Official API reference parent endpoints: 138

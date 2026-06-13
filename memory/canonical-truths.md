@@ -6,12 +6,16 @@ Stable repo invariants. Update only when architecture materially changes.
 3D semantic mycelium visualization for exploring Montgomery County TX business relationships. 8,406-point network rendered via Three.js instanced meshes, driven by UMAP/PCA projection in `[0,1]³` unit-cube space.
 
 ## Production shell
-`ops/remote-staging/mccullough.cloud/public_html/semantic-demo/vector-explorer-polished.html` — canonical served app shell. Not `index.html`.
+Production is the Svelte/Vite shell: `src/index.html` -> `dist/svelte/index.html`.
+Deploy scripts publish that built file as both `/semantic-demo/index.html` and
+`/semantic-demo/vector-explorer-polished.html`. The repo-root
+`vector-explorer-polished.html` / `dist/bundle.js` path is legacy reference only,
+not the production entry.
 
 ## Key file roles
 | Path | Role |
 |---|---|
-| `js/modules/app.js` | Legacy JS entry; imports all modules |
+| `js/modules/app.js` | Legacy JS reference entry; not the production entry |
 | `js/state.js` | Single source of truth for all global state (Proxy-based) |
 | `js/modules/lifecycle.js` | App orchestration, view handoff, scene-reveal |
 | `js/modules/micro-demo.js` | Sole demo entry point; owns first-visit guard + choreography |

@@ -161,7 +161,7 @@ async function _ensureModules(): Promise<void> {
       import('../../../../js/modules/map-state.js'),
       import('../../../../js/modules/semantic-dive-ui.js'),
       import('../../../../js/modules/event-bus.js'),
-      import('../../../../js/modules/camera-controls-core.js'),
+      import('../../../../js/modules/camera-controls-core.ts'),
       import('../../../../js/modules/focus-panel-mode.js'),
     ]);
     _state = (stateMod as unknown as { state: LegacyState }).state;

@@ -411,7 +411,8 @@ async function focusFirstSearchResult(page) {
   }
   const focused = await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
-    return Number.isFinite(state.navState?.focusedIndex ?? state.focusedNode) &&
+    const focusedIndex = state.navState?.focusedIndex ?? state.focusedNode ?? Number(document.body.dataset.focusedNode);
+    return Number.isFinite(focusedIndex) &&
       String(document.body.dataset.graphContext || '').startsWith('focus');
   }, null, { timeout: 5000 }).then(() => true).catch(() => false);
   await waitForPanelSurface(page, ['focus', 'focus-search', 'map-focus', 'map-focus-search'], 8000).catch(() => {});
@@ -434,7 +435,8 @@ async function clickVisibleFirstSearchResult(page) {
   }
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
-    return Number.isFinite(state.navState?.focusedIndex ?? state.focusedNode) &&
+    const focusedIndex = state.navState?.focusedIndex ?? state.focusedNode ?? Number(document.body.dataset.focusedNode);
+    return Number.isFinite(focusedIndex) &&
       String(document.body.dataset.graphContext || '').startsWith('focus');
   }, null, { timeout: 8000 });
   await waitForPanelSurface(page, ['focus', 'focus-search', 'map-focus', 'map-focus-search'], 8000).catch(() => {});
@@ -455,7 +457,8 @@ async function forceFocusVisibleResult(page) {
   await markRouteEvidence(page, 'test-forced-state', 'forceFocusVisibleResult fallback');
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
-    return Number.isFinite(state.navState?.focusedIndex ?? state.focusedNode) &&
+    const focusedIndex = state.navState?.focusedIndex ?? state.focusedNode ?? Number(document.body.dataset.focusedNode);
+    return Number.isFinite(focusedIndex) &&
       String(document.body.dataset.graphContext || '').startsWith('focus');
   }, null, { timeout: 12000 });
   await waitForPanelSurface(page, ['focus', 'focus-search'], 8000).catch(() => {});

@@ -21,7 +21,9 @@ import { cleanOptionalValue } from './dom-formatters';
  *   "1845 SOLUTIONS"           → "1845 SOLUTIONS" (unchanged — not a slug)
  *   "BLOOMIN' BREWS COFFEE LLC" → unchanged
  */
-export function normalizeSlugName(name: string | null): string | null {
+export function normalizeSlugName(name: undefined): undefined;
+export function normalizeSlugName(name: string | null): string | null;
+export function normalizeSlugName(name: string | null | undefined): string | null | undefined {
   if (!name || typeof name !== 'string') return name;
   // Only process names matching slug pattern: optional digit hyphen prefix
   // followed by two or more lowercase words joined by hyphens.

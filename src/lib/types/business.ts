@@ -4,6 +4,8 @@
  * Represents the 8,406 Montgomery County business records in the semantic field.
  */
 
+import type { RelationshipRole } from '@lib/utils/relationship-roles';
+
 /** Cluster/category index matching CLUSTER_NAMES in state.js */
 export type ClusterIndex = number;
 
@@ -170,7 +172,7 @@ export interface SemanticNeighborDetail {
   bridgeScore: number;
   signalScore: number;
   threadType: string;
-  relationshipRole: 'direct' | 'support' | 'civic' | 'geometric-fallback';
+  relationshipRole: RelationshipRole;
   relationshipAxis: string;
   roleReason: string;
   reason: string;

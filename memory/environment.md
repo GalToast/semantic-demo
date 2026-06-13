@@ -12,9 +12,10 @@ Local dev commands and environment details safe to store. No secrets.
 ## Build commands
 | Command | Output |
 |---|---|
-| `npm run build` | `dist/bundle.js` (esbuild, legacy JS) |
+| `npm run build` | `dist/svelte/` (Vite, Svelte/TS production shell) |
 | `npm run build:svelte` | `dist/svelte/` (Vite, Svelte/TS) |
-| `npm run watch` | esbuild watch mode (legacy JS) |
+| `npm run build:legacy` | `dist/bundle.js` (esbuild, legacy JS reference/rollback) |
+| `npm run watch` | Vite build watch mode |
 
 ## Lint / format
 | Command | Description |

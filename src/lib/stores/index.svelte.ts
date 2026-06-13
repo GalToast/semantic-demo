@@ -301,13 +301,12 @@ import { searchStore } from './search.svelte';
 import { journeyStore } from './journey.svelte';
 import { demoState } from './demo.svelte';
 import { viewport } from './viewport.svelte';
-import { get, writable, type Writable } from 'svelte/store';
+import { derived, get, type Readable } from 'svelte/store';
 import { focusStore } from './focus.svelte';
 
 /**
  * Test state store — snapshot of visual state for Playwright surface tests.
- * Replaced $derived.by with a writable so it exports cleanly as a Svelte store.
- * TODO: wire reactivity once dependent stores are migrated to writable/derived.
+ * Derived from the Svelte store owners so window.__TEST_STATE__ stays live.
  */
 function getTestStateSnapshot() {
   const nav = get(navStore);
@@ -354,14 +353,18 @@ function getTestStateSnapshot() {
       lastTraversalReason: nav.lastTraversalReason,
     },
     semanticDiveMode: focus.semanticDiveMode,
-    trailDepth: journey.trailDepth,
+    trailDepth: nav.trailDepth,
     walkHistory: [...journey.walkHistoryIndices],
     currentView: nav.currentView,
     loadingPhaseKey: nav.loadingPhaseKey,
   };
 }
 
-export const testState: Writable<ReturnType<typeof getTestStateSnapshot>> = writable(getTestStateSnapshot());
+export const testState: Readable<ReturnType<typeof getTestStateSnapshot>> = derived(
+  [navStore, searchStore, journeyStore, demoState, viewport, focusStore],
+  () => getTestStateSnapshot(),
+  getTestStateSnapshot()
+);
 
 // ── Filter ───────────────────────────────────────────────────────────────────
 export {

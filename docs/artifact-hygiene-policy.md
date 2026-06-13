@@ -9,7 +9,7 @@
 
 | Directory | Purpose | Git-tracked? | Retention |
 |-----------|---------|--------------|-----------|
-| `dist/` | Built output (`bundle.js`) | Yes (built artifact) | Rebuilt from source; do not edit manually |
+| `dist/` | Built output (`dist/svelte/` plus legacy `bundle.js` when built) | Yes (built artifact) | Rebuilt from source; do not edit manually |
 | `tmp/` | Runtime/QA artifacts (screenshots, JSON reports, audit docs) | No (gitignored) | Ephemeral — may be deleted at any time |
 | `reports/` | Static analysis output | No (gitignored) | Ephemeral |
 | `test-results/` | Contract runner output | No (gitignored) | Ephemeral |
@@ -22,7 +22,8 @@
 
 ### Build Artifacts (`dist/`)
 
-- `dist/bundle.js` is a built artifact — **do not edit manually**
+- `dist/svelte/` is the production built artifact — **do not edit manually**
+- `dist/bundle.js` is the legacy reference/rollback built artifact — **do not edit manually**
 - Rebuild via `npm run build` before any deploy
 - The `.map` file is gitignored (`dist/*.map`)
 - `dist/` content is not automatically cleaned; it reflects the last successful build
@@ -106,8 +107,8 @@ npm run prune:artifacts:now    # immediate cleanup (--execute --yes)
 ## Anti-patterns
 
 - **Do not** commit screenshot files without `.png` extension — they bypass `*.png` gitignore glob
-- **Do not** edit `dist/bundle.js` directly — always rebuild from source
-- **Do not** add build artifacts (`.js` bundles) manually to git beyond the tracked `dist/bundle.js`
+- **Do not** edit `dist/svelte/` or `dist/bundle.js` directly — always rebuild from source
+- **Do not** add build artifacts manually beyond the tracked production/legacy outputs
 
 ---
 

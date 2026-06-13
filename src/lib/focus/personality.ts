@@ -39,6 +39,8 @@ export interface FocusPersonality {
   microVariation: MicroVariation;
 }
 
+export type NeighborhoodPersonality = FocusPersonality;
+
 /** Multi-arg seeded hash matching the JS focus-pocket-geometry implementation. */
 function seededUnitMulti(...values: number[]): number {
   const seed = values.reduce((sum, value, index) => sum + (Number(value) || 0) * (index + 1) * 12.9898, 78.233);
