@@ -111,8 +111,8 @@ async function _ensureModules(): Promise<void> {
       import('../../../../js/state.js'),
       import('../../../../js/state/selectors/index.js'),
       import('../../../../js/modules/environment.js'),
-      import('../../../../js/modules/camera-controls-core.js'),
-      import('../../../../js/modules/camera-controls-restore.js'),
+      import('../../../../js/modules/camera-controls-core.ts'),
+      import('../../../../js/modules/camera-controls-restore.ts'),
       import('../../../../js/modules/event-bus.js'),
     ]);
     _state = (stateMod as unknown as { state: LegacyState }).state;
@@ -181,7 +181,7 @@ export function animateCameraToSearchCorridor(
     .map((index) => targetPositions?.[index] || nodePositions?.[index] || originalPositions?.[index])
     .filter(Boolean)
     .map((pos) => new THREE.Vector3(pos!.x, pos!.y, pos!.z));
-  if (!vectors.length) return null as unknown as boolean;
+  if (!vectors.length) return false;
   const box = new THREE.Box3().setFromPoints(vectors);
   const boundsCenter = new THREE.Vector3();
   const boundsSize = new THREE.Vector3();
