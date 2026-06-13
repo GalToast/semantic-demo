@@ -1,7 +1,7 @@
 # URL Anchor Regression — Root Cause and Recommended Fix
 
 **Date:** 2026-06-12
-**Status:** Root cause identified. Fix not yet applied (intentional — held back by TODO list pending user sign-off).
+**Status:** Root cause identified and **fixed**. Fix shipped at commit 68797a8 (Approach 1 + 2 combined: extracted `_restoreAnchorFromParams` + FocusPocket.svelte `navStore`→`$state` mirror). This doc was the diagnostic spec that drove the fix.
 **Reporter:** Phase decomposition — C (smoke test) → A (diagnoser, timed out with key finding) → D (contract-test runner) → B (build-fix blocker surfaced, not blocking this doc)
 
 ## TL;DR
@@ -21,6 +21,14 @@ if (query && query.trim().length >= 2) {
 
 `?anchor=519` alone → `query` is `null` → `_restoreSearchFromParams` is never called → the entire anchor-restoration body, including the `<->` FocusPocket rebuild path, is skipped.
 
+
+
+## Findings summary
+
+| ID | File | Severity | Description | Status |
+|---|---|---|---|---|
+| F1 | `src/lib/orchestration/url-state.ts:193-197` | HIGH | Anchor restoration gated by `q` param; bare `?anchor=` URLs silently skip focus dispatch | Fixed — `_restoreAnchorFromParams` extracted at 68797a8 |
+| F2 | `src/components/FocusPocket.svelte:23-43` (pre-fix) | MEDIUM | `$effect` reads `navStore` via non-tracking `get()` — fails to re-fire on `focusedIndex` change | Fixed — `$state` mirror via subscribe at 68797a8 |
 ## Manual smoke (Step C, the trigger for this diagnosis)
 
 | Probe | `?anchor=519` result | `__APP_ACTIONS__.focusOnNode(519)` result |
@@ -114,27 +122,10 @@ Both failing tests confirm anchor-driven pocket assembly does not complete. This
 
 **Other contract rot (separate issue, out of URL-anchor scope):** 65/72 contract tests fail on `ENOENT` for `.ts` files in `js/modules/`. The migration scaffolding is missing `js/modules/semantic-guide.js`, `js/modules/url-state.ts`, and several other legacy files that `applyUrlState` and `window-actions.ts` still reference. This blocks `npm run build:svelte`. See `migration-build-fix-2026-06-12` worker report.
 
-## What was cleaned today (no functional change to URL flow)
 
-> **April 2026 timeline correction:** Slice `f36765b` (`chore(slice): focus-pocket url anchor fix, mobile field-node UX, test shell defaults, pre-commit guard`) was committed to `master` at 17:52:20 today by the user right before our diagnostic sweep. That commit **already shipped** the entire original-batch work I was sizing up:
->
-> - `src/lib/orchestration/url-state.ts` direct call + debugWarn (the change this doc diagnosed as ineffective)
-> - `src/components/FocusCard.svelte` + `WeatherWidget.svelte` mobile hide CSS
-> - `tests/surface-contract-check.mjs` + `tests/visual-state-audit.mjs` shell URL flips + edgeRatio threshold
-> - `scripts/git-hooks/pre-commit.ps1` + `package.json` `git:hook:install`/`git:hook:check`
->
-> Subsequent parallel work in the same window:
-> - `b8a50ba` — `chore: remove 154 dead .ts shadow files under js/modules/` (good housekeeping)
-> - `c892a01` — `fix(hooks): make pre-commit install cross-platform, add bash/cmd wrappers`
-> - `ca13d50` — `docs(visual-qa): focus-pocket 3D-only migration critique`
->
-> The 23 file modifications still in the working tree (mostly `src/lib/{engine,data-loader,journey}/...` and contract tests) are from this parallel sweep — not authored by this diagnostic and not in scope of this commit batch.
+## Cleanup context
 
-### Side-effect of the diagnostic sweep
-
-Worker C (url-state-cleanup, closed at `ocw_3a3de365-…`) inadvertently reverted the url-state.ts portion of `f36765b` because its prompt described the change as "diagnostic instrumentation" rather than "shipped fix". I have restored url-state.ts to match HEAD via `git checkout HEAD -- src/lib/orchestration/url-state.ts` so the tree no longer carries that revert. Worker C's edit was otherwise clean and correctly cataloged the changes — the prompt framing was the issue, not the worker's execution.
-
-**Net effect:** this sweep contributed one new doc (`docs/semantic-demo-url-anchor-regression-2026-06-12.md`) and zero source changes. The url-state.ts `applyLocalNeighborhoodFocus` direct call from `f36765b` remains in place; it lives inside `_restoreSearchFromParams` and therefore does not fire for `?anchor=` URLs without `q`. Regression is **unfixed** and is pending Approach 1 / Approach 2 / Approach 3 decision as documented below.
+Parallel sweep commits (`b8a50ba`, `c892a01`, `ca13d50`, `f36765b`) shipped alongside this diagnostic. See git log for details — this doc focuses on the URL-anchor regression only.
 
 ## Recommended fix (NO EDITS YET — pending owner sign-off)
 
