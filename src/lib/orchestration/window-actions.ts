@@ -6,6 +6,11 @@
  * owners until those scene mutations are fully ported to src/.
  */
 
+import * as cameraControlsModule from '../../../js/modules/camera-controls.js';
+import * as connectionAnalysisModule from '../../../js/modules/connection-analysis.js';
+import * as semanticGuideModule from '../../../js/modules/semantic-guide.js';
+import * as stateModule from '../../../js/state.js';
+
 type LegacyActionModules = {
   state?: Record<string, unknown>;
   withStateMutation?: <T>(fn: () => T) => T;
@@ -56,23 +61,19 @@ async function loadLegacyActionModules(): Promise<LegacyActionModules> {
   if (loadPromise) return loadPromise;
 
   loadPromise = Promise.all([
-    import('../../../js/state.js'),
-    import('../../../js/modules/camera-controls.js'),
     import('../../../js/modules/lifecycle.js'),
     import('../../../js/modules/search-state.js'),
-    import('../../../js/modules/journey.js'),
-    import('../../../js/modules/semantic-guide.js'),
-    import('../../../js/modules/connection-analysis.js')
-  ]).then(([stateModule, camera, lifecycle, search, journey, semanticGuide, connectionAnalysis]) => {
+    import('../../../js/modules/journey.js')
+  ]).then(([lifecycle, search, journey]) => {
     legacyModules = {
       state: (stateModule as { state?: Record<string, unknown> }).state,
       withStateMutation: (stateModule as { withStateMutation?: <T>(fn: () => T) => T }).withStateMutation,
-      camera,
+      camera: cameraControlsModule,
       lifecycle,
       search,
       journey,
-      semanticGuide,
-      connectionAnalysis
+      semanticGuide: semanticGuideModule,
+      connectionAnalysis: connectionAnalysisModule
     };
 
     const w = window as AppActionsWindow;

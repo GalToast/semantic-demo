@@ -81,8 +81,8 @@ import {
     initFocusNeighborRailSubscriptions,
     shouldUseFloatingFocusJourneyOnly
 } from './journey-focus-ui.ts'
-// Lazy import to break circular dependency:
-// journey.ts → journey-canvas-interaction.ts → journey-canvas-hit-test.ts → ... → journey.ts
+// Deferred init: this module is already pulled into the main chunk through
+// journey-focus-ui.ts, but the canvas adapter should bind after journey setup.
 let _loadCanvasInteraction: Promise<typeof import('./journey-canvas-interaction.ts')> | null = null;
 let _canvasInteractionModule: typeof import('./journey-canvas-interaction.ts') | null = null;
 function _ensureCanvasInteraction(): Promise<typeof import('./journey-canvas-interaction.ts')> {

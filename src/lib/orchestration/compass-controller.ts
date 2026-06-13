@@ -305,6 +305,10 @@ export function executeJourneyCompassAction(action: string): void {
     case JOURNEY_ACTIONS.ENTER_INSIDE:
       journeySetTrailDepth(2);
       setSemanticDiveMode(true);
+      navStore.update((state) => ({
+        ...state,
+        trailDepth: 2
+      }));
       if (typeof document !== 'undefined' && document.body) {
         document.body.dataset.semanticDive = 'active';
         document.body.dataset.panelSurface = 'semantic-dive';

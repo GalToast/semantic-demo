@@ -18,7 +18,26 @@ import { publish, EVENTS } from '../orchestration/event-bus';
 
 // ── Delegates to real stores ─────────────────────────────────────────────────
 
-export const setTrailDepth = _setTrailDepth;
+export function setTrailDepth(depth: number): void {
+  const nextDepth = Math.max(0, Number(depth) || 0);
+  _setTrailDepth(nextDepth);
+  updateNavState({ trailDepth: nextDepth });
+
+  if (typeof window !== 'undefined') {
+    const stateWindow = window as Window & {
+      __LEGACY_APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> };
+      __semanticState?: Record<string, unknown> & { navState?: Record<string, unknown> };
+      state?: Record<string, unknown> & { navState?: Record<string, unknown> };
+    };
+    for (const appState of [stateWindow.__LEGACY_APP_STATE__, stateWindow.__semanticState, stateWindow.state]) {
+      if (!appState) continue;
+      appState.trailDepth = nextDepth;
+      if (appState.navState) {
+        appState.navState.trailDepth = nextDepth;
+      }
+    }
+  }
+}
 export const setSemanticDiveMode = _setSemanticDiveMode;
 export const setMyceliumMode = _setMyceliumMode;
 

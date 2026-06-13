@@ -14,11 +14,11 @@ import { searchStore, clearSearchGlow } from "@lib/stores/search";
 import { navStore } from "@lib/stores/navigation";
 import { publish, subscribe, EVENTS } from "@lib/orchestration/event-bus";
 import { setMyceliumMode } from "@lib/stores/lifecycle";
-import { applyFilters } from "@lib/orchestration/search-filter-core";
+import { businessRecords } from "@lib/data-store";
+import { applyFilters, clearShortSemanticSearchState, getFilteredClusterCounts } from "@lib/orchestration/search-filter-core";
 import { updateUrlState } from "@lib/orchestration/url-state";
 import { normalizeCityForFilter } from "@lib/utils/geo-data";
 import { describeCluster } from "@lib/utils/ui-presentation";
-import { clearShortSemanticSearchState } from "@lib/orchestration/search-filter-core";
 import { el, setChildren } from "@lib/utils/dom-builder";
 import { state as legacyState, withStateMutation } from "@legacy/state.js";
 import type { BusinessRecord } from "@lib/types/business";
@@ -120,7 +120,6 @@ export async function updateClusterList(): Promise<void> {
   const clusterList = document.getElementById("cluster-list");
   if (!clusterList) return;
 
-  const { getFilteredClusterCounts } = await import("@lib/orchestration/search-filter-core");
   const counts = getFilteredClusterCounts();
   
   const rows = Array.from(counts.entries())
@@ -207,7 +206,6 @@ export function syncCityFilterUi(): void {
  * Populate the city filter select with unique cities from business data.
  */
 export async function populateCityFilter(): Promise<void> {
-  const { businessRecords } = await import("@lib/data-store");
   const points = get(businessRecords);
   if (!points) return;
   

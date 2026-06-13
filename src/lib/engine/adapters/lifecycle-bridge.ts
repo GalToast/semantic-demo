@@ -33,6 +33,7 @@ import type {
 
 import { syncDataToLegacyState } from './data-bridge';
 import { attachLegacyState, loadSemanticThreads } from '@lib/semantic-threads';
+import * as legacyStateModule from '@legacy/state.js';
 import * as legacyViewControllerModule from '@legacy/modules/view-controller';
 
 // ── TS Port Imports (canonical implementations) ─────────────────────────────
@@ -64,12 +65,9 @@ import {
  * diagnostic queries.
  */
 async function loadModules(ctx: BridgeContext): Promise<void> {
-  const [stateModule, filterStateRaw] = await Promise.all([
-    import('@legacy/state.js'),
-    import('@legacy/modules/filter-state.js'),
-  ]);
+  const filterStateRaw = await import('@legacy/modules/filter-state.js');
 
-  ctx._state = (stateModule as unknown as { state: LegacyState }).state;
+  ctx._state = (legacyStateModule as unknown as { state: LegacyState }).state;
   ctx._viewController =
     legacyViewControllerModule as unknown as ViewControllerModule;
   ctx._filterState = filterStateRaw as unknown as FilterStateModule;

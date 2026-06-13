@@ -13,6 +13,10 @@
 
 // ── Re-export ported choreography functions ──────────────────────────────────
 
+import * as cameraControlsCoreModule from '@legacy/modules/camera-controls-core.ts';
+import * as cameraControlsRestoreModule from '@legacy/modules/camera-controls-restore.ts';
+import * as cameraControlsChoreographyModule from '@legacy/modules/camera-controls-choreography.ts';
+
 export {
   animateCameraToNode,
   focusOnNode,
@@ -61,27 +65,15 @@ interface CameraControlsChoreographyModule {
 
 // ── Lazy Module Cache ────────────────────────────────────────────────────────
 
-let _core: CameraControlsCoreModule | null = null;
-let _restore: CameraControlsRestoreModule | null = null;
-let _choreography: CameraControlsChoreographyModule | null = null;
+let _core: CameraControlsCoreModule | null = cameraControlsCoreModule as unknown as CameraControlsCoreModule;
+let _restore: CameraControlsRestoreModule | null = cameraControlsRestoreModule as unknown as CameraControlsRestoreModule;
+let _choreography: CameraControlsChoreographyModule | null =
+  cameraControlsChoreographyModule as unknown as CameraControlsChoreographyModule;
 
-let _loaded = false;
+let _loaded = true;
 
 async function _ensureModules(): Promise<void> {
-  if (_loaded) return;
-  try {
-    const [coreMod, restoreMod, choreoMod] = await Promise.all([
-      import('@legacy/modules/camera-controls-core.ts'),
-      import('@legacy/modules/camera-controls-restore.ts'),
-      import('@legacy/modules/camera-controls-choreography.ts'),
-    ]);
-    _core = coreMod as unknown as CameraControlsCoreModule;
-    _restore = restoreMod as unknown as CameraControlsRestoreModule;
-    _choreography = choreoMod as unknown as CameraControlsChoreographyModule;
-    _loaded = true;
-  } catch (err) {
-    console.error('[camera-controls] Failed to load legacy modules:', err);
-  }
+  return;
 }
 
 void _ensureModules();

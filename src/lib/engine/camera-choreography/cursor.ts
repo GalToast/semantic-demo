@@ -12,6 +12,11 @@
  */
 
 import { animateCameraToNode } from './focus';
+import * as legacyStateModule from '@legacy/state.js';
+import * as mapStateStaticModule from '@legacy/modules/map-state.js';
+import * as semanticDiveUiStaticModule from '@legacy/modules/semantic-dive-ui.js';
+import * as cameraControlsCoreStaticModule from '@legacy/modules/camera-controls-core.ts';
+import * as focusPanelModeStaticModule from '@legacy/modules/focus-panel-mode.js';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 
@@ -128,11 +133,11 @@ let _environment: EnvironmentModule | null = null;
 let _lifecycle: LifecycleModule | null = null;
 let _journey: JourneyModule | null = null;
 let _journeyCompass: JourneyCompassControllerModule | null = null;
-let _mapState: MapStateModule | null = null;
-let _semanticDiveUi: SemanticDiveUiModule | null = null;
+let _mapState: MapStateModule | null = mapStateStaticModule as unknown as MapStateModule;
+let _semanticDiveUi: SemanticDiveUiModule | null = semanticDiveUiStaticModule as unknown as SemanticDiveUiModule;
 let _eventBus: EventBusModule | null = null;
-let _cameraCore: CameraCoreModule | null = null;
-let _focusPanelMode: FocusPanelModeModule | null = null;
+let _cameraCore: CameraCoreModule | null = cameraControlsCoreStaticModule as unknown as CameraCoreModule;
+let _focusPanelMode: FocusPanelModeModule | null = focusPanelModeStaticModule as unknown as FocusPanelModeModule;
 
 let _loaded = false;
 
@@ -140,41 +145,27 @@ async function _ensureModules(): Promise<void> {
   if (_loaded) return;
   try {
     const [
-      stateMod,
       selMod,
       envMod,
       lifecycleMod,
       journeyMod,
       compassMod,
-      mapStateMod,
-      diveUiMod,
       busMod,
-      coreMod,
-      panelModeMod,
     ] = await Promise.all([
-      import('../../../../js/state.js'),
       import('../../../../js/state/selectors/index.js'),
       import('../../../../js/modules/environment.js'),
       import('../../../../js/modules/lifecycle.js'),
       import('../../../../js/modules/journey.js'),
       import('../../../../js/modules/journey-compass-controller.js'),
-      import('../../../../js/modules/map-state.js'),
-      import('../../../../js/modules/semantic-dive-ui.js'),
       import('../../../../js/modules/event-bus.js'),
-      import('../../../../js/modules/camera-controls-core.ts'),
-      import('../../../../js/modules/focus-panel-mode.js'),
     ]);
-    _state = (stateMod as unknown as { state: LegacyState }).state;
+    _state = (legacyStateModule as unknown as { state: LegacyState }).state;
     _selectors = selMod as unknown as SelectorsModule;
     _environment = envMod as unknown as EnvironmentModule;
     _lifecycle = lifecycleMod as unknown as LifecycleModule;
     _journey = journeyMod as unknown as JourneyModule;
     _journeyCompass = compassMod as unknown as JourneyCompassControllerModule;
-    _mapState = mapStateMod as unknown as MapStateModule;
-    _semanticDiveUi = diveUiMod as unknown as SemanticDiveUiModule;
     _eventBus = busMod as unknown as EventBusModule;
-    _cameraCore = coreMod as unknown as CameraCoreModule;
-    _focusPanelMode = panelModeMod as unknown as FocusPanelModeModule;
     _loaded = true;
   } catch (err) {
     console.error('[camera-choreography/cursor] Failed to load legacy modules:', err);

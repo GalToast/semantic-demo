@@ -11,6 +11,9 @@ import {
   easeInOutCubic,
   quadraticBezierComponent,
 } from '@lib/utils/math-easing';
+import * as legacyStateModule from '@legacy/state.js';
+import * as cameraControlsCoreStaticModule from '@legacy/modules/camera-controls-core.ts';
+import * as cameraControlsRestoreStaticModule from '@legacy/modules/camera-controls-restore.ts';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 
@@ -98,8 +101,8 @@ interface EventBusModule {
 let _state: LegacyState | null = null;
 let _selectors: SelectorsModule | null = null;
 let _environment: EnvironmentModule | null = null;
-let _cameraCore: CameraCoreModule | null = null;
-let _cameraRestore: CameraRestoreModule | null = null;
+let _cameraCore: CameraCoreModule | null = cameraControlsCoreStaticModule as unknown as CameraCoreModule;
+let _cameraRestore: CameraRestoreModule | null = cameraControlsRestoreStaticModule as unknown as CameraRestoreModule;
 let _eventBus: EventBusModule | null = null;
 
 let _loaded = false;
@@ -107,19 +110,14 @@ let _loaded = false;
 async function _ensureModules(): Promise<void> {
   if (_loaded) return;
   try {
-    const [stateMod, selMod, envMod, coreMod, restoreMod, busMod] = await Promise.all([
-      import('../../../../js/state.js'),
+    const [selMod, envMod, busMod] = await Promise.all([
       import('../../../../js/state/selectors/index.js'),
       import('../../../../js/modules/environment.js'),
-      import('../../../../js/modules/camera-controls-core.ts'),
-      import('../../../../js/modules/camera-controls-restore.ts'),
       import('../../../../js/modules/event-bus.js'),
     ]);
-    _state = (stateMod as unknown as { state: LegacyState }).state;
+    _state = (legacyStateModule as unknown as { state: LegacyState }).state;
     _selectors = selMod as unknown as SelectorsModule;
     _environment = envMod as unknown as EnvironmentModule;
-    _cameraCore = coreMod as unknown as CameraCoreModule;
-    _cameraRestore = restoreMod as unknown as CameraRestoreModule;
     _eventBus = busMod as unknown as EventBusModule;
     _loaded = true;
   } catch (err) {

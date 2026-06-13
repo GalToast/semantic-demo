@@ -13,6 +13,10 @@ import {
   easeOutBack,
   easeOutQuint,
 } from '@lib/utils/math-easing';
+import * as legacyStateModule from '@legacy/state.js';
+import * as cameraFramingUtilsStaticModule from '@legacy/modules/camera-framing-utils.js';
+import * as cameraMathUtilsStaticModule from '@legacy/modules/camera-math-utils.js';
+import * as cameraControlsCoreStaticModule from '@legacy/modules/camera-controls-core.ts';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 
@@ -159,29 +163,22 @@ interface CameraCoreModule {
 let _state: LegacyState | null = null;
 let _selectors: SelectorsModule | null = null;
 let _environment: EnvironmentModule | null = null;
-let _framingUtils: FramingUtilsModule | null = null;
-let _mathUtils: MathUtilsModule | null = null;
-let _cameraCore: CameraCoreModule | null = null;
+let _framingUtils: FramingUtilsModule | null = cameraFramingUtilsStaticModule as unknown as FramingUtilsModule;
+let _mathUtils: MathUtilsModule | null = cameraMathUtilsStaticModule as unknown as MathUtilsModule;
+let _cameraCore: CameraCoreModule | null = cameraControlsCoreStaticModule as unknown as CameraCoreModule;
 
 let _loaded = false;
 
 async function _ensureModules(): Promise<void> {
   if (_loaded) return;
   try {
-    const [stateMod, selMod, envMod, framingMod, mathMod, coreMod] = await Promise.all([
-      import('../../../../js/state.js'),
+    const [selMod, envMod] = await Promise.all([
       import('../../../../js/state/selectors/index.js'),
       import('../../../../js/modules/environment.js'),
-      import('../../../../js/modules/camera-framing-utils.js'),
-      import('../../../../js/modules/camera-math-utils.js'),
-      import('../../../../js/modules/camera-controls-core.ts'),
     ]);
-    _state = (stateMod as unknown as { state: LegacyState }).state;
+    _state = (legacyStateModule as unknown as { state: LegacyState }).state;
     _selectors = selMod as unknown as SelectorsModule;
     _environment = envMod as unknown as EnvironmentModule;
-    _framingUtils = framingMod as unknown as FramingUtilsModule;
-    _mathUtils = mathMod as unknown as MathUtilsModule;
-    _cameraCore = coreMod as unknown as CameraCoreModule;
     _loaded = true;
   } catch (err) {
     console.error('[camera-choreography/focus] Failed to load legacy modules:', err);

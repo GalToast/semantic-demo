@@ -18,6 +18,9 @@
  */
 
 import type { DemoPhase } from '@lib/types/state';
+import * as legacyStateModule from '@legacy/state.js';
+import * as cameraControlsStaticModule from '@legacy/modules/camera-controls.js';
+import * as focusPocketStaticModule from '@legacy/modules/focus-pocket.js';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 //
@@ -162,23 +165,19 @@ export function resetRetryState(): void {
 // ── Internal Helpers ──────────────────────────────────────────────────────────
 
 async function getLegacyState(): Promise<LegacyState> {
-  const mod = await import('@legacy/state.js');
-  return (mod as unknown as { state: LegacyState }).state;
+  return (legacyStateModule as unknown as { state: LegacyState }).state;
 }
 
 async function getWithStateMutation(): Promise<(fn: () => void) => void> {
-  const mod = await import('@legacy/state.js');
-  return (mod as { withStateMutation: (fn: () => void) => void }).withStateMutation;
+  return (legacyStateModule as { withStateMutation: (fn: () => void) => void }).withStateMutation;
 }
 
 async function loadCameraControls(): Promise<CameraControlsModule> {
-  const mod = await import('@legacy/modules/camera-controls.js');
-  return mod as unknown as CameraControlsModule;
+  return cameraControlsStaticModule as unknown as CameraControlsModule;
 }
 
 async function loadFocusPocket(): Promise<FocusPocketModule> {
-  const mod = await import('@legacy/modules/focus-pocket.js');
-  return mod as unknown as FocusPocketModule;
+  return focusPocketStaticModule as unknown as FocusPocketModule;
 }
 
 async function loadLifecycle(): Promise<LifecycleModule> {
