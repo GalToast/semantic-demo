@@ -956,14 +956,20 @@
         grid-template-columns: auto minmax(0, 1fr);
         align-items: center;
         gap: 7px;
-        position: relative;
+        position: fixed;
+        top: max(6px, env(safe-area-inset-top, 0px));
+        left: 0;
+        right: 0;
+        z-index: var(--z-max);
+        width: 100vw;
         min-height: 30px;
-        margin-top: 0;
+        margin: 0;
         padding: 5px 10px;
         border-radius: 8px;
         border-color: rgba(255, 210, 77, 0.22);
         background: rgba(6, 18, 22, 0.4);
         box-shadow: none;
+        pointer-events: auto;
     }
 
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-status-copy {
@@ -993,7 +999,7 @@
 
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-controls {
         position: fixed;
-        top: 36px;
+        top: max(42px, calc(36px + env(safe-area-inset-top, 0px)));
         left: 0;
         right: 0;
         z-index: var(--z-max);
@@ -1002,7 +1008,7 @@
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 8px;
         min-height: 96px;
-        margin-top: 6px;
+        margin: 0;
         order: 38;
         pointer-events: auto;
     }
@@ -1027,6 +1033,24 @@
         pointer-events: none;
     }
 
+    body.is-active[data-panel-surface='semantic-dive'] #canvas-container {
+        filter: brightness(3.2) contrast(2.35) saturate(1.45);
+    }
+
+    body.is-active[data-panel-surface='semantic-dive'] #canvas-container::after {
+        opacity: 0.58;
+        background:
+            radial-gradient(circle, rgba(var(--color-primary-tint-rgb), 0.18) 0 2.4px, transparent 3.6px) 0 0 / 26px 26px,
+            radial-gradient(circle, rgba(90, 150, 255, 0.14) 0 2px, transparent 3.2px) 13px 9px / 34px 34px,
+            linear-gradient(
+                90deg,
+                rgba(6, 9, 13, 0.42) 0%,
+                rgba(6, 9, 13, 0.22) 18%,
+                rgba(6, 9, 13, 0) 48%
+            );
+        mix-blend-mode: screen;
+    }
+
     body.is-active[data-panel-surface='semantic-dive'] #focus-stage-inside-controls,
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-btn {
         pointer-events: auto;
@@ -1040,19 +1064,19 @@
     }
 
     body.is-active[data-panel-surface='semantic-dive'] #btn-inside-next.focus-stage-inside-btn {
-        top: 42px;
+        top: max(42px, calc(36px + env(safe-area-inset-top, 0px)));
         left: 0;
         width: calc(50vw - 4px);
     }
 
     body.is-active[data-panel-surface='semantic-dive'] #btn-inside-map.focus-stage-inside-btn {
-        top: 42px;
+        top: max(42px, calc(36px + env(safe-area-inset-top, 0px)));
         right: 0;
         width: calc(50vw - 4px);
     }
 
     body.is-active[data-panel-surface='semantic-dive'] #btn-inside-county.focus-stage-inside-btn {
-        top: 94px;
+        top: max(94px, calc(88px + env(safe-area-inset-top, 0px)));
         left: 0;
         right: 0;
         width: 100vw;
@@ -1893,6 +1917,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        gap: 8px;
         pointer-events: auto;
     }
 
@@ -1909,7 +1934,32 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        gap: 8px;
         pointer-events: auto;
+    }
+
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
+        .focus-stage-dive-btn:not([hidden])
+        .focus-stage-dive-copy {
+        display: none;
+    }
+
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
+        .focus-stage-dive-btn:not([hidden])
+        .focus-stage-dive-label {
+        display: block;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    body.is-active[data-active-view='galaxy']:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
+        #canvas-container {
+        filter: brightness(1.75) contrast(1.35) saturate(1.25);
+    }
+
+    body.is-active[data-active-view='galaxy']:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
+        #canvas-container::after {
+        opacity: 0.42;
     }
 
     body[data-panel-surface='focus'] #info-panel.info-panel {
@@ -1928,5 +1978,59 @@
     body[data-panel-surface='focus'] #canvas-container,
     body[data-panel-surface='focus'] #canvas-container canvas {
         pointer-events: none;
+    }
+
+    body.is-active[data-active-view='galaxy'][data-panel-surface='semantic-dive'] #focus-stage.focus-stage {
+        position: fixed;
+        inset: 0;
+        z-index: var(--z-compass);
+        width: 100vw;
+        height: 100dvh;
+        max-height: 100dvh;
+        min-height: 100dvh;
+        overflow: visible;
+        pointer-events: none;
+    }
+
+    body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-status {
+        position: fixed;
+        top: max(6px, env(safe-area-inset-top, 0px));
+        left: max(10px, env(safe-area-inset-left, 0px));
+        right: max(10px, env(safe-area-inset-right, 0px));
+        z-index: var(--z-max);
+        width: auto;
+        min-height: 30px;
+        margin: 0;
+        pointer-events: auto;
+    }
+
+    body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-controls {
+        position: fixed;
+        top: max(42px, calc(36px + env(safe-area-inset-top, 0px)));
+        left: max(10px, env(safe-area-inset-left, 0px));
+        right: max(10px, env(safe-area-inset-right, 0px));
+        z-index: var(--z-max);
+        width: auto;
+        min-height: 44px;
+        height: 44px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin: 0;
+        pointer-events: auto;
+    }
+
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-next.focus-stage-inside-btn,
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-map.focus-stage-inside-btn,
+    body.is-active[data-panel-surface='semantic-dive'] #btn-inside-county.focus-stage-inside-btn {
+        position: relative;
+        top: auto;
+        left: auto;
+        right: auto;
+        width: auto;
+        min-width: 0;
+        height: 44px;
+        min-height: 44px;
+        margin: 0;
     }
 }
