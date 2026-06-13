@@ -23,6 +23,7 @@ import {
 } from './guards';
 import { seededUnit } from '@lib/utils/seeded-random';
 import { demoPhase, isDemoActive, startDemo, cancelDemo } from '@lib/stores/demo';
+import * as microDemoChoreographyModule from '@legacy/modules/micro-demo-choreography.js';
 import type { DemoPhase } from '@lib/types/state';
 
 // ── Legacy Choreography Bridge ──────────────────────────────────────────────
@@ -33,9 +34,7 @@ const _choreography: Record<string, any> = {} as Record<string, any>;
 async function _loadChoreography(): Promise<void> {
   if ((_choreography as Record<string, unknown>).setDemoNodeIndex) return;
   try {
-    // Dynamic import so the TS module doesn't hard-rely on the legacy module
-    const mod = await import('@legacy/modules/micro-demo-choreography.js');
-    Object.assign(_choreography, mod);
+    Object.assign(_choreography, microDemoChoreographyModule);
   } catch {
     debugWarn('[demo] Failed to load legacy choreography module');
   }

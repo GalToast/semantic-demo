@@ -35,6 +35,8 @@ import { syncDataToLegacyState } from './data-bridge';
 import { attachLegacyState, loadSemanticThreads } from '@lib/semantic-threads';
 import * as legacyStateModule from '@legacy/state.js';
 import * as legacyViewControllerModule from '@legacy/modules/view-controller';
+import * as legacyFilterStateModule from '@legacy/modules/filter-state.js';
+import * as legacyEventBusModule from '@legacy/modules/event-bus.js';
 
 // ── TS Port Imports (canonical implementations) ─────────────────────────────
 // These replace the legacy module lazy-loading that previously happened in
@@ -65,12 +67,10 @@ import {
  * diagnostic queries.
  */
 async function loadModules(ctx: BridgeContext): Promise<void> {
-  const filterStateRaw = await import('@legacy/modules/filter-state.js');
-
   ctx._state = (legacyStateModule as unknown as { state: LegacyState }).state;
   ctx._viewController =
     legacyViewControllerModule as unknown as ViewControllerModule;
-  ctx._filterState = filterStateRaw as unknown as FilterStateModule;
+  ctx._filterState = legacyFilterStateModule as unknown as FilterStateModule;
 
   _acquireWithMutation(ctx);
 }
@@ -103,8 +103,7 @@ async function bindEventBridge(ctx: BridgeContext): Promise<void> {
   if (typeof window === 'undefined') return;
 
   try {
-    const mod = await import('@legacy/modules/event-bus.js');
-    const bus = mod as unknown as EventBusModule;
+    const bus = legacyEventBusModule as unknown as EventBusModule;
 
     const evtCameraFocused = bus.EVENTS['CAMERA_NODE_FOCUSED']!;
     const evtTransitionPhase = bus.EVENTS['TRANSITION_PHASE_CHANGED']!;
@@ -268,7 +267,8 @@ export function createLifecycleMethods(
 
         // 7. Wire canvas click/hover handlers for node picking
         try {
-          const interactionMod = await import(
+          // dynamic import retained: journey.ts ↔ journey-canvas-interaction.ts cycle; see Ticket 9B scope
+        const interactionMod = await import(
             '@legacy/modules/journey-canvas-interaction.js'
           );
           if (

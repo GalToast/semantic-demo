@@ -11,6 +11,7 @@
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
   import { viewport } from '@lib/stores/viewport';
   import { switchView } from '@lib/orchestration/view-controller';
+  import * as legacyStateStaticModule from '@legacy/state.js';
 
   type MapStatus = 'loading' | 'ready' | 'error';
 
@@ -85,14 +86,11 @@
 
       activateMapShell();
 
-      const [mapEngine, stateModule] = await Promise.all([
-        import('@lib/engine/map-state'),
-        import('@legacy/state'),
-      ]);
+      const mapEngine = await import('@lib/engine/map-state');
 
       if (!mounted || token !== activationToken) return;
 
-      legacyStateModule = stateModule as RuntimeStateModule;
+      legacyStateModule = legacyStateStaticModule as RuntimeStateModule;
       setLegacyView('map');
 
       mapEngine.initMapStateSubscriptions();
