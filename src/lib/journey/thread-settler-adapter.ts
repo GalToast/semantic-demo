@@ -17,6 +17,30 @@ import type { BusinessRecord } from '@lib/types/business';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { getStrandContinuityManager } from '@lib/utils/strand-continuity';
 
+// ── Thread Traversal Re-exports (legacy real impls) ──────────────────────────
+
+/**
+ * Re-export the 3 thread-traversal functions from the legacy real impl.
+ *
+ * The Svelte path previously held silent no-op stubs for these (warned
+ * `[journey] Stub function hit: traverseNeighbor` / etc.). The legacy
+ * canonical at `@legacy/modules/journey-thread-settler` has the real
+ * orchestration — bound to `state.navState`, `state.semanticDiveMode`,
+ * `walkHistoryIndices`, and the strand continuity manager.
+ *
+ * LIVE callers in the Svelte path:
+ *   - `src/lib/orchestration/triggers.ts:67,70` (ArrowLeft / ArrowRight)
+ *   - `src/lib/journey/journey.ts:198` (setSemanticDiveMode preview)
+ *
+ * The `walkThreadNeighbor` function below is NOT re-exported — it is a
+ * native Svelte helper used by the ThreadSettler class.
+ */
+export {
+	traverseNeighbor,
+	walkInsideToNextStop,
+	previewInsideNextThread
+} from '@legacy/modules/journey-thread-settler';
+
 // ── Timer Bridge ──────────────────────────────────────────────────────────────
 
 export function setTimer(purpose: string, ms: number, callback: () => void): void {
@@ -153,47 +177,6 @@ export function walkThreadNeighbor(
 		fromIndex: options.fromIndex,
 		reason: options.reason || 'walk'
 	};
-}
-
-// ── Walk / Traverse Stubs (LIVE consumers in triggers.ts + journey.ts) ────
-
-/**
- * Traverse to the next/previous neighbor step.
- *
- * Stubs that warn on call; the Svelte path does not yet implement the
- * neighbor-traversal orchestration. The 2 LIVE consumers (triggers.ts:67,70
- * for ArrowLeft/ArrowRight keyboard nav) silently no-op for now.
- * Real impl lives in `js/modules/thread-settler.ts` (private method).
- */
-export function traverseNeighbor(
-	_step: number,
-	_options: { fromIndex?: number; surface?: string } = {}
-): void {
-	debugWarn('[journey] Stub function hit: traverseNeighbor');
-}
-
-/**
- * Walk inside mode to the next stop.
- *
- * Stub that warns on call; the Svelte path does not yet implement
- * inside-cue stepping. The 1 LIVE consumer (journey.ts:294, called from
- * the thread-settler integration) silently no-ops for now.
- */
-export function walkInsideToNextStop(): void {
-	debugWarn('[journey] Stub function hit: walkInsideToNextStop');
-}
-
-/**
- * Preview the next inside thread candidate.
- *
- * Stubs that warn on call; the Svelte path does not yet implement
- * inside-cue preview. The 1 LIVE consumer (journey.ts:198, called from
- * setSemanticDiveMode when entering semantic-dive mode) silently returns
- * null for now. Real impl lives in `js/modules/thread-settler.ts` (private).
- */
-export function previewInsideNextThread(): { index: number; reason: string } | null {
-	debugWarn('[journey] Stub function hit: previewInsideNextThread');
-	return null;
 }
 
 // ── Re-export common types from thread-model ─────────────────────────────────
