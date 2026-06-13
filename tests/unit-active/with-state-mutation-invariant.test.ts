@@ -149,7 +149,12 @@ function scanFile(filePath: string): Violation[] {
         const lineNum = i + 1;
 
         // 1. Check for withStateMutation opening; push to stack.
-        const wsmOpen = /\bwithStateMutation\s*\(/.exec(line);
+        //    The codebase has 2 names for the same function:
+        //    `withStateMutation` (canonical) and `withMutation` (a
+        //    local alias used in src/lib/engine/demo-choreography.ts
+        //    where the file destructures getWithStateMutation() as
+        //    `withMutation` for terseness). Both open a wsm block.
+        const wsmOpen = /\b(?:withStateMutation|withMutation)\s*\(/.exec(line);
         if (wsmOpen) {
             const indent = line.search(/\S/);
             wsmStack.push({ indent: indent < 0 ? 0 : indent, depth: 0 });

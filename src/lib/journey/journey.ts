@@ -121,51 +121,53 @@ subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
 })
 
 export function initJourneyState(): void {
-    state.trailIndices = state.trailIndices ?? new Set<number>()
-    state.inspectedThreadIndex ??= null
-    state.pinnedThreadIndex ??= null
-    state.canvasThreadInspectionClearTimer ??= null
-    state.threadInspectorPointerInside ??= false
-    state.inspectedStrandDiagnostics ??= {
-        active: false,
-        source: 'idle',
-        index: null,
-        focusedIndex: null,
-        segmentCount: 0,
-        endpointCount: 0,
-        braidCount: 0
-    }
-    state.arrivalHandoffDiagnostics ??= {
-        active: false,
-        fromIndex: null,
-        targetIndex: null,
-        phase: 'idle',
-        segmentCount: 0,
-        endpointCount: 0,
-        opacity: 0
-    }
-    state.strandContinuityState ??= {
-        phase: 'idle',
-        targetIndex: null,
-        fromIndex: null,
-        reason: '',
-        startedAt: 0,
-        arrivalTimeoutId: undefined,
-        settleTimeoutId: undefined
-    }
-    state.myceliumMode ??= 'default'
-    state.bloomIndices ??= new Set<number>()
-    state.bridgeIndices ??= new Set<number>()
-    state.projectedNeighborGrid ??= null
-    state.projectedNeighborCache ??= new Map()
-    state.canvasFieldHoverClearTimer ??= null
-    state.stableCanvasHover ??= null
-    state.pointIndexByLeadId ??= new Map()
-    state.signalScores ??= []
-    state.bridgeScores ??= []
-    state.semanticDiveMode ??= false
-    state.focusPocketTransitionStartedAt ??= 0
-    state.focusPocketMotionByIndex ??= new Map()
+    withStateMutation(() => {
+        state.trailIndices = state.trailIndices ?? new Set<number>()
+        state.inspectedThreadIndex ??= null
+        state.pinnedThreadIndex ??= null
+        state.canvasThreadInspectionClearTimer ??= null
+        state.threadInspectorPointerInside ??= false
+        state.inspectedStrandDiagnostics ??= {
+            active: false,
+            source: 'idle',
+            index: null,
+            focusedIndex: null,
+            segmentCount: 0,
+            endpointCount: 0,
+            braidCount: 0
+        }
+        state.arrivalHandoffDiagnostics ??= {
+            active: false,
+            fromIndex: null,
+            targetIndex: null,
+            phase: 'idle',
+            segmentCount: 0,
+            endpointCount: 0,
+            opacity: 0
+        }
+        state.strandContinuityState ??= {
+            phase: 'idle',
+            targetIndex: null,
+            fromIndex: null,
+            reason: '',
+            startedAt: 0,
+            arrivalTimeoutId: undefined,
+            settleTimeoutId: undefined
+        }
+        state.myceliumMode ??= 'default'
+        state.bloomIndices ??= new Set<number>()
+        state.bridgeIndices ??= new Set<number>()
+        state.projectedNeighborGrid ??= null
+        state.projectedNeighborCache ??= new Map()
+        state.canvasFieldHoverClearTimer ??= null
+        state.stableCanvasHover ??= null
+        state.pointIndexByLeadId ??= new Map()
+        state.signalScores ??= []
+        state.bridgeScores ??= []
+        state.semanticDiveMode ??= false
+        state.focusPocketTransitionStartedAt ??= 0
+        state.focusPocketMotionByIndex ??= new Map()
+    })
 }
 
 globalThis.queueMicrotask(async () => {
@@ -211,7 +213,9 @@ function restoreFocusTrailState(priorFocused: number | null = getFocusedNode()):
 
     publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused! } as never)
 
-    state.navState.lastTraversalReason = getNavState()?.lastTraversalReason || null
+    withStateMutation(() => {
+        state.navState.lastTraversalReason = getNavState()?.lastTraversalReason || null
+    })
     updateTrailIndices(priorFocused!)
     refreshFocusSemanticOverlay()
     applyLocalNeighborhoodFocus(priorFocused!)

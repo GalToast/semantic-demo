@@ -4,7 +4,7 @@
  * TypeScript shadow of journey.js.
  * Facade module for the Semantic Journey / Exploration Trail feature set.
  */
-import { state } from '../state.ts'
+import { state, withStateMutation } from '../state.ts'
 import { getFocusedNode, getPoints, getNavState, getSelectedPoint } from '../state/selectors/index.ts'
 import { subscribe, publish, EVENTS } from './event-bus.ts'
 import {
@@ -179,7 +179,9 @@ function restoreFocusTrailState(priorFocused: number | null = getFocusedNode()):
 
     publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused, point: getPoints()[priorFocused!] })
 
-    state.navState.lastTraversalReason = getNavState()?.lastTraversalReason || null
+    withStateMutation(() => {
+        state.navState.lastTraversalReason = getNavState()?.lastTraversalReason || null
+    })
     updateTrailIndices(priorFocused!)
     refreshFocusSemanticOverlay()
     applyLocalNeighborhoodFocus(priorFocused!)

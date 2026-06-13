@@ -154,7 +154,9 @@ export function applyLocalNeighborhoodFocus(index: number): void {
     }
 
     const personality = getNeighborhoodPersonality(index);
-    state.navState.currentPersonality = personality as unknown as Record<string, unknown>;
+    withStateMutation(() => {
+        state.navState.currentPersonality = personality as unknown as Record<string, unknown>;
+    });
 
     if (Number.isFinite((state as any).focusPocketAnimationFrameId)) {
         cancelAnimationFrame((state as any).focusPocketAnimationFrameId);
