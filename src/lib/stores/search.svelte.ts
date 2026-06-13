@@ -24,6 +24,14 @@ import { testCompatStore } from './test-compat.svelte';
 import { performSearch } from '@lib/search-engine';
 import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from './navigation.svelte';
 
+// ── Rerank Feature Flag ─────────────────────────────────────────────────────
+
+/**
+ * A/B test toggle for NIM rerank. Off by default.
+ * Override via ?rerank=1 URL param or localStorage.semantic_explorer_rerank_v1.
+ */
+export const searchUseRerank = writable(false);
+
 // ── Re-export tokenizer functions (typed, no `any`) ──────────────────────────
 
 export { tokenizeRaw as tokenizeSearchText, expandRaw as expandSearchIntent, countRaw as countTokenMatches };

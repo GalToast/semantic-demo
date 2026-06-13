@@ -13,6 +13,9 @@
  */
 import type { SearchResult } from '@lib/types/state';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
+import { rerankResults } from '@lib/utils/rerank';
+import { searchUseRerank } from '@lib/stores/search.svelte';
+import { get } from 'svelte/store';
 import { shouldLogStaticDevFallback } from '@lib/utils/ui-presentation';
 import { getBusinessRecords } from '@lib/data-store.svelte';
 import type { BusinessRecord } from '@lib/types/business';
@@ -682,6 +685,33 @@ function shouldPreferLiveSearch(): boolean {
   }
 }
 
+// ── Rerank Gate ──────────────────────────────────────────────────────────────
+
+/**
+ * Determine whether the rerank step should run.
+ * Priority: URL param > localStorage > store flag > default (off).
+ */
+function shouldApplyRerank(): boolean {
+  try {
+    // 1. URL param ?rerank=1 → force-on for QA
+    if (typeof window !== 'undefined' && window.location) {
+      const params = new URLSearchParams(window.location.search || '');
+      if (params.get('rerank') === '1') return true;
+    }
+    // 2. localStorage power-user opt-in
+    if (
+      typeof localStorage !== 'undefined' &&
+      localStorage.getItem('semantic_explorer_rerank_v1') === '1'
+    ) {
+      return true;
+    }
+    // 3. Store flag (A/B test toggle, default false)
+    return get(searchUseRerank);
+  } catch {
+    return false;
+  }
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
@@ -809,6 +839,18 @@ async function _executeSearch(
     // Mock fallback
     if (results.length === 0) {
       results = await performMockSearch(trimmed, signal, offset, limit);
+    }
+  }
+
+  // ── Rerank step ──────────────────────────────────────────────────────────
+  // Re-ranks top results via NIM when enabled. Runs AFTER all result paths
+  // converge and BEFORE caching. The rerank is a nice-to-have: on any failure
+  // the original results are returned unchanged by rerankResults() itself.
+  if (results.length > 0 && shouldApplyRerank()) {
+    try {
+      results = await rerankResults(trimmed, results);
+    } catch (_err) {
+      // belt-and-suspenders: rerankResults already catches internally
     }
   }
 

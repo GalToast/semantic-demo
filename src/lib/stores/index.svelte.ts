@@ -86,7 +86,8 @@ export {
   tokenizeSearchText,
   expandSearchIntent,
   countTokenMatches,
-  SEARCH_STOP_WORDS
+  SEARCH_STOP_WORDS,
+  searchUseRerank
 } from './search.svelte';
 
 export type {
