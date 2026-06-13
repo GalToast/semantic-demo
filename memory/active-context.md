@@ -17,6 +17,7 @@
 
 ## Demo readiness
 - Svelte demo store/choreography regression for dismiss-in-COMPLETE state passes via `node tests/dismiss-in-complete-state-contract.mjs` as of 2026-06-13.
+- Headed Svelte product playthrough now gets past the Step Inside semantic-dive wait after syncing `navStore.trailDepth` with journey trail depth. Latest full run artifact: `tmp/product-qa/2026-06-13T21-02-33-214Z`.
 - Micro-demo legacy/reference path remains functional with verified state machine unless current contract runs prove otherwise.
 - Do not reuse the old 2026-06-09 contract-failure list without re-running the focused contracts; current quick checks passed.
 - Bugsweep 2026-06-05 resolved all 4 HIGH JS bugs (strand-continuity, three-interaction-visuals, state.js Proxy, three-node-manager textures).
@@ -29,5 +30,6 @@
 
 ## Known blockers / open items
 - Bridge elimination remains the main migration seam. Remaining ineffective dynamic import warnings are the accepted legacy journey/event lazy imports: `js/modules/journey-canvas-interaction.ts` via `js/modules/journey.ts`, and `js/modules/event-bindings.ts` via `js/modules/journey-selected-card.ts`. Current warning snapshot: `tmp/bridge-import-warnings-after-window-static-20260613.txt`; owner plan: `tmp/warning-owner-plan-20260613.md`; journey/event cycle report: `tmp/journey-event-warning-report-20260613.md`.
+- Product playthrough still has a route ownership seam after the Step Inside fix: mobile neighbor preview/follow do not populate thread inspector, candidate pills, or walk history, and the map assertion still reaches via debug-probe instead of a real user route. Start next pass from `05-mobile-neighbor-preview.json`, `06-mobile-neighbor-follow.json`, and `08-mobile-map-after-dive.json` in the latest product QA artifact.
 - Dirty worktree contains prior migration/archive/test additions under `legacy-reference/`, `tests/unit-active/`, `tests/unit/README.md`, `tests/dismiss-in-complete-state-contract.mjs`, and `vitest.legacy.config.js`. Treat as existing user/worker work; do not revert casually.
 - Parallel visual-state audits can saturate local browser; prefer sequential headed runs for visual QA.
