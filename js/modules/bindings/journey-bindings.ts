@@ -26,8 +26,21 @@ export function recenterFocusedNode(): void {
     animateCameraToNode(index, { transitionStyle: 'focus' });
 }
 
+function resetCountyOverview(): void {
+    const actions = (window as unknown as {
+        __APP_ACTIONS__?: {
+            resetExplorationFocus?: (options?: { preserveSearch?: boolean }) => void;
+        };
+    }).__APP_ACTIONS__;
+    if (typeof actions?.resetExplorationFocus === 'function') {
+        actions.resetExplorationFocus({ preserveSearch: false });
+        return;
+    }
+    resetExplorationFocus({ preserveSearch: false });
+}
+
 export function returnToCountyView(): void {
-    resetExplorationFocus();
+    resetCountyOverview();
 }
 
 interface ClickEvent extends MouseEvent {
@@ -57,7 +70,7 @@ export function bindFocusControls(): void {
 
     bindClick('btn-focus-prev', () => { traverseNeighbor(-1); });
     bindClick('btn-focus-next', () => { traverseNeighbor(1); });
-    bindClick('btn-focus-overview', () => { resetExplorationFocus(); }, { optional: true });
+    bindClick('btn-focus-overview', () => { resetCountyOverview(); }, { optional: true });
     bindClick('btn-focus-center', (event?: MouseEvent) => {
         // The button is rendered with aria-disabled (not the native
         // disabled attribute) so the title tooltip stays hoverable; the

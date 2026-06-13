@@ -2,7 +2,7 @@
 // TypeScript shadow of filter-state.js
 // Canonical filter state management with Svelte store sync.
 
-import { state, type ActiveFilters } from '../state.ts';
+import { state, withStateMutation, type ActiveFilters } from '../state.ts';
 import { activeClusterFilterStore, activeFiltersStore } from './stores.ts';
 
 const FILTER_DEFAULTS: ActiveFilters = Object.freeze({
@@ -19,7 +19,9 @@ const STATUS_FILTER_VALUES = new Set<string>(['all', 'active', 'disqualified']);
 
 function ensureActiveFilters(): ActiveFilters {
     if (!state.activeFilters || typeof state.activeFilters !== 'object') {
-        state.activeFilters = { ...FILTER_DEFAULTS };
+        withStateMutation(() => {
+            state.activeFilters = { ...FILTER_DEFAULTS };
+        });
     }
     return state.activeFilters;
 }
@@ -37,7 +39,9 @@ export function getActiveFilters(): ActiveFilters {
 }
 
 export function overwriteActiveFilters(nextFilters: Partial<ActiveFilters> = {}): ActiveFilters {
-    state.activeFilters = { ...FILTER_DEFAULTS, ...nextFilters };
+    withStateMutation(() => {
+        state.activeFilters = { ...FILTER_DEFAULTS, ...nextFilters };
+    });
     syncActiveFiltersStore();
     return state.activeFilters;
 }
@@ -59,7 +63,9 @@ export function toggleActiveFilterSignal(key: string): boolean | undefined {
 }
 
 export function resetActiveFilters(): void {
-    state.activeFilters = { ...FILTER_DEFAULTS };
+    withStateMutation(() => {
+        state.activeFilters = { ...FILTER_DEFAULTS };
+    });
     syncActiveFiltersStore();
 }
 

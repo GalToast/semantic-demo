@@ -9,7 +9,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as THREE from 'three';
-import { state } from '../state.ts';
+import { state, withStateMutation } from '../state.ts';
 import { adapter_getFocusThreadCurvePoint } from './thread-inspector-adapter.ts';
 import {
     getNavState, getFocusConstellationMotifs, getFocusThreadSegments,
@@ -236,19 +236,21 @@ export function syncInspectedStrandOverlay(inspectionState: any, options: { surf
         }
     });
     updateInspectedStrandEndpointSprites();
-    state.inspectedStrandDiagnostics = {
-        active: true,
-        source:
-            getPinnedThreadIndex() === inspectionState.index
-                ? 'pinned'
-                : (getInspectedStrandGroup() as any)?.userData.source || 'rail',
-        index: inspectionState.index,
-        focusedIndex: inspectionState.focusedIndex,
-        segmentCount: getFocusThreadSegments() * 4,
-        braidCount: 4,
-        endpointCount: 2,
-        pinned: getPinnedThreadIndex() === inspectionState.index
-    };
+    withStateMutation(() => {
+        state.inspectedStrandDiagnostics = {
+            active: true,
+            source:
+                getPinnedThreadIndex() === inspectionState.index
+                    ? 'pinned'
+                    : (getInspectedStrandGroup() as any)?.userData.source || 'rail',
+            index: inspectionState.index,
+            focusedIndex: inspectionState.focusedIndex,
+            segmentCount: getFocusThreadSegments() * 4,
+            braidCount: 4,
+            endpointCount: 2,
+            pinned: getPinnedThreadIndex() === inspectionState.index
+        };
+    });
 }
 
 export function updateInspectedStrandOverlay(now: number = performance.now()): void {
@@ -279,15 +281,17 @@ export function updateInspectedStrandOverlay(now: number = performance.now()): v
 export function disposeInspectedStrandOverlay(): void {
     const strandGroup = getInspectedStrandGroup() as any;
     if (!strandGroup) {
-        state.inspectedStrandDiagnostics = {
-            active: false,
-            source: 'none',
-            index: null,
-            focusedIndex: null,
-            segmentCount: 0,
-            braidCount: 0,
-            endpointCount: 0
-        };
+        withStateMutation(() => {
+            state.inspectedStrandDiagnostics = {
+                active: false,
+                source: 'none',
+                index: null,
+                focusedIndex: null,
+                segmentCount: 0,
+                braidCount: 0,
+                endpointCount: 0
+            };
+        });
         return;
     }
     const scene = getScene() as any;
@@ -297,13 +301,15 @@ export function disposeInspectedStrandOverlay(): void {
         if (child.material) child.material.dispose();
     });
     state.inspectedStrandGroup = null;
-    state.inspectedStrandDiagnostics = {
-        active: false,
-        source: 'none',
-        index: null,
-        focusedIndex: null,
-        segmentCount: 0,
-        braidCount: 0,
-        endpointCount: 0
-    };
+    withStateMutation(() => {
+        state.inspectedStrandDiagnostics = {
+            active: false,
+            source: 'none',
+            index: null,
+            focusedIndex: null,
+            segmentCount: 0,
+            braidCount: 0,
+            endpointCount: 0
+        };
+    });
 }

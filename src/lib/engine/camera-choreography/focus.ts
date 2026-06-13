@@ -14,6 +14,7 @@ import {
   easeOutQuint,
 } from '@lib/utils/math-easing';
 import * as legacyStateModule from '@legacy/state.js';
+import * as selectorsStaticModule from '@legacy/state/selectors/index.js';
 import * as cameraFramingUtilsStaticModule from '@legacy/modules/camera-framing-utils.js';
 import * as cameraMathUtilsStaticModule from '@legacy/modules/camera-math-utils.js';
 import * as cameraControlsCoreStaticModule from '@legacy/modules/camera-controls-core.ts';
@@ -172,12 +173,11 @@ let _loaded = false;
 async function _ensureModules(): Promise<void> {
   if (_loaded) return;
   try {
-    const [selMod, envMod] = await Promise.all([
-      import('../../../../js/state/selectors/index.js'),
+    const [envMod] = await Promise.all([
       import('../../../../js/modules/environment.js'),
     ]);
     _state = (legacyStateModule as unknown as { state: LegacyState }).state;
-    _selectors = selMod as unknown as SelectorsModule;
+    _selectors = selectorsStaticModule as unknown as SelectorsModule;
     _environment = envMod as unknown as EnvironmentModule;
     _loaded = true;
   } catch (err) {

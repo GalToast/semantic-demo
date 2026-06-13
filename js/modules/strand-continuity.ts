@@ -5,7 +5,7 @@
  * Strand phase and arrival continuity state for journey and thread inspector.
  */
 
-import { state, type StrandContinuityState, type Point } from '../state.ts';
+import { state, withStateMutation, type StrandContinuityState, type Point } from '../state.ts';
 import { cleanOptionalValue, formatBusinessName } from './utils/dom-formatters.ts';
 import { truncateMicrocopy } from './journey-text-helpers.ts';
 import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from './journey-webgl.ts';
@@ -46,13 +46,15 @@ interface StrandContinuityOptions {
 
 export function setStrandContinuityState(phase: string = 'idle', options: StrandContinuityOptions = {}): StrandContinuityState {
     const normalizedPhase = STRAND_CONTINUITY_PHASES.has(phase) ? phase : 'idle';
-    state.strandContinuityState = {
-        phase: normalizedPhase,
-        targetIndex: Number.isFinite(options.targetIndex) ? options.targetIndex ?? null : null,
-        fromIndex: Number.isFinite(options.fromIndex) ? options.fromIndex ?? null : null,
-        reason: cleanOptionalValue(options.reason) || '',
-        startedAt: performance.now()
-    } as StrandContinuityState;
+    withStateMutation(() => {
+        state.strandContinuityState = {
+            phase: normalizedPhase,
+            targetIndex: Number.isFinite(options.targetIndex) ? options.targetIndex ?? null : null,
+            fromIndex: Number.isFinite(options.fromIndex) ? options.fromIndex ?? null : null,
+            reason: cleanOptionalValue(options.reason) || '',
+            startedAt: performance.now()
+        } as StrandContinuityState;
+    });
     if (document.body) {
         document.body.dataset.strandJourney = normalizedPhase;
         document.body.dataset.strandJourneyTarget = Number.isFinite(state.strandContinuityState.targetIndex)

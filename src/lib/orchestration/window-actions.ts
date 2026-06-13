@@ -11,6 +11,11 @@ import * as connectionAnalysisModule from '../../../js/modules/connection-analys
 import * as searchStateModule from '../../../js/modules/search-state.ts';
 import * as semanticGuideModule from '@lib/journey/semantic-guide';
 import * as stateModule from '../../../js/state.js';
+import {
+  resetExperienceState as resetSvelteExperienceState,
+  resetExplorationFocus as resetSvelteExplorationFocus
+} from '@lib/stores/lifecycle';
+import { clearSearch as clearSvelteSearch } from '@lib/stores/search';
 
 type LegacyActionModules = {
   state?: Record<string, unknown>;
@@ -122,6 +127,7 @@ export function installWindowActions(): () => void {
       return getLegacyModules()?.search?.search?.(query, options);
     },
     clearSearch: (options?: Record<string, unknown>) => {
+      clearSvelteSearch();
       getLegacyModules()?.search?.clearSearch?.(options);
     },
     switchView: (view: string, options?: Record<string, unknown>) => {
@@ -148,9 +154,11 @@ export function installWindowActions(): () => void {
       getLegacyModules()?.lifecycle?.returnToOverview?.();
     },
     resetExperienceState: () => {
+      resetSvelteExperienceState();
       getLegacyModules()?.lifecycle?.resetExperienceState?.();
     },
     resetExplorationFocus: (options?: Record<string, unknown>) => {
+      resetSvelteExplorationFocus(options);
       getLegacyModules()?.lifecycle?.resetExplorationFocus?.(options);
     },
     refreshCompositionState: () => {

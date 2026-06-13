@@ -51,6 +51,7 @@ export interface WalkCandidateOptions {
 	requireSemantic?: boolean;
 	requireOnCanvas?: boolean;
 	commitNeighborhood?: boolean;
+	[key: string]: unknown;
 }
 
 export interface WalkCandidate {

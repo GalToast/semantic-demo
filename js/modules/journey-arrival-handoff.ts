@@ -3,7 +3,7 @@
  * Canonical TS module — preserves export/import parity with the prior
  * journey-arrival-handoff.js twin.
  */
-import { state } from '../state.ts';
+import { state, withStateMutation } from '../state.ts';
 import * as THREE from 'three';
 import { ROUTE_TRACE_COLORS } from './design-tokens.ts';
 import {
@@ -22,15 +22,17 @@ export function removeArrivalHandoffOverlay(): void {
     const group = state.arrivalHandoffGroup as { traverse?: (cb: (child: any) => void) => void };
     group.traverse?.((child: any) => disposeLineObject(child));
     state.arrivalHandoffGroup = null;
-    state.arrivalHandoffDiagnostics = {
-        active: false,
-        fromIndex: null,
-        targetIndex: null,
-        phase: 'idle',
-        segmentCount: 0,
-        endpointCount: 0,
-        opacity: 0
-    };
+    withStateMutation(() => {
+        state.arrivalHandoffDiagnostics = {
+            active: false,
+            fromIndex: null,
+            targetIndex: null,
+            phase: 'idle',
+            segmentCount: 0,
+            endpointCount: 0,
+            opacity: 0
+        };
+    });
 }
 
 export function buildArrivalHandoffOverlay(fromIndex: number, targetIndex: number): void {
@@ -66,15 +68,17 @@ export function buildArrivalHandoffOverlay(fromIndex: number, targetIndex: numbe
     group.add(new THREE.LineSegments(geometry, material));
     scene.add(group);
     state.arrivalHandoffGroup = group;
-    state.arrivalHandoffDiagnostics = {
-        active: true,
-        fromIndex,
-        targetIndex,
-        phase: state.strandContinuityState.phase,
-        segmentCount: getLineSegmentCount((group.children as any[])[0]),
-        endpointCount: 2,
-        opacity: material.opacity
-    };
+    withStateMutation(() => {
+        state.arrivalHandoffDiagnostics = {
+            active: true,
+            fromIndex,
+            targetIndex,
+            phase: state.strandContinuityState.phase,
+            segmentCount: getLineSegmentCount((group.children as any[])[0]),
+            endpointCount: 2,
+            opacity: material.opacity
+        };
+    });
 }
 
 export function disposeArrivalHandoffOverlay(): void {
@@ -135,13 +139,15 @@ export function updateArrivalHandoffOverlay(): void {
         ? 0.5
         : THREE.MathUtils.clamp(0.5 - Math.max(0, age - 650) / 6200, 0.12, 0.5);
     line.material.opacity = opacity;
-    state.arrivalHandoffDiagnostics = {
-        active: true,
-        fromIndex,
-        targetIndex,
-        phase,
-        segmentCount: getLineSegmentCount(line),
-        endpointCount: 2,
-        opacity
-    };
+    withStateMutation(() => {
+        state.arrivalHandoffDiagnostics = {
+            active: true,
+            fromIndex,
+            targetIndex,
+            phase,
+            segmentCount: getLineSegmentCount(line),
+            endpointCount: 2,
+            opacity
+        };
+    });
 }

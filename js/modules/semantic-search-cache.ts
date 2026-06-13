@@ -35,15 +35,17 @@ export interface CacheDiagnosticsSnapshot extends SemanticSearchCacheDiagnostics
 
 if (!state.semanticSearchResultCache) state.semanticSearchResultCache = new Map<string, CacheEntry>();
 if (!state.semanticSearchCacheDiagnostics) {
-    state.semanticSearchCacheDiagnostics = {
-        hits: 0,
-        misses: 0,
-        stores: 0,
-        evictions: 0,
-        lastKey: null,
-        lastSource: null,
-        lastAgeMs: null
-    };
+    withStateMutation(() => {
+        state.semanticSearchCacheDiagnostics = {
+            hits: 0,
+            misses: 0,
+            stores: 0,
+            evictions: 0,
+            lastKey: null,
+            lastSource: null,
+            lastAgeMs: null
+        };
+    });
 }
 
 export async function initSearchCache(): Promise<void> {

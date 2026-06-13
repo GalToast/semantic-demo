@@ -3,7 +3,7 @@
 // Focus orbit slack: pivot adjustment and distance/speed configuration.
 
 import * as THREE from 'three';
-import { state, type CameraLike, type ControlsLike, type NodePosition, type SemanticState } from '../state.ts';
+import { state, withStateMutation, type CameraLike, type ControlsLike, type NodePosition, type SemanticState } from '../state.ts';
 import {
     getNavState, getNodePositions, getOriginalPositions, getFocusedNode,
     getCurrentView, getSemanticDiveMode, getCurrentSearchSummary,
@@ -131,18 +131,20 @@ export function applyFocusOrbitSlack(reason: string = 'user-control'): boolean {
     controls.panSpeed = getOrbitPanSpeedFree();
     controls.update();
 
-    _s.focusOrbitSlackState = {
-        phase: 'free-pivot',
-        reason,
-        startedAt: performance.now(),
-        targetShift: Number(targetDelta.length().toFixed(4)),
-        cameraShift: Number(cameraDelta.length().toFixed(4)),
-        distanceBefore: Number(distanceBefore.toFixed(4)),
-        distanceAfter: Number(camera.position.distanceTo(controls.target).toFixed(4)),
-        maxDistance: Number((controls.maxDistance || getOrbitMaxDistanceFree()).toFixed(2)),
-        rotateSpeed: Number((controls.rotateSpeed || getOrbitRotateSpeedFree()).toFixed(2)),
-        panSpeed: Number((controls.panSpeed || getOrbitPanSpeedFree()).toFixed(2))
-    };
+    withStateMutation(() => {
+        _s.focusOrbitSlackState = {
+            phase: 'free-pivot',
+            reason,
+            startedAt: performance.now(),
+            targetShift: Number(targetDelta.length().toFixed(4)),
+            cameraShift: Number(cameraDelta.length().toFixed(4)),
+            distanceBefore: Number(distanceBefore.toFixed(4)),
+            distanceAfter: Number(camera.position.distanceTo(controls.target).toFixed(4)),
+            maxDistance: Number((controls.maxDistance || getOrbitMaxDistanceFree()).toFixed(2)),
+            rotateSpeed: Number((controls.rotateSpeed || getOrbitRotateSpeedFree()).toFixed(2)),
+            panSpeed: Number((controls.panSpeed || getOrbitPanSpeedFree()).toFixed(2))
+        };
+    });
     document.body.dataset.cameraSlack = 'free-pivot';
     document.body.dataset.cameraSlackReason = reason;
     return true;
@@ -153,18 +155,20 @@ export function clearFocusOrbitSlack(reason: string = 'clear'): void {
     const controls = getTypedControls();
     const safeTarget = controls?.target ?? camera?.position ?? null;
     if (safeTarget === null || !camera) {
-        _s.focusOrbitSlackState = {
-            phase: 'idle',
-            reason,
-            startedAt: performance.now(),
-            targetShift: 0,
-            cameraShift: 0,
-            distanceBefore: 0,
-            distanceAfter: 0,
-            maxDistance: getOrbitMaxDistanceDefault(),
-            rotateSpeed: getOrbitRotateSpeedDefault(),
-            panSpeed: getOrbitPanSpeedDefault()
-        };
+        withStateMutation(() => {
+            _s.focusOrbitSlackState = {
+                phase: 'idle',
+                reason,
+                startedAt: performance.now(),
+                targetShift: 0,
+                cameraShift: 0,
+                distanceBefore: 0,
+                distanceAfter: 0,
+                maxDistance: getOrbitMaxDistanceDefault(),
+                rotateSpeed: getOrbitRotateSpeedDefault(),
+                panSpeed: getOrbitPanSpeedDefault()
+            };
+        });
         if (document.body) {
             document.body.dataset.cameraSlack = 'idle';
             document.body.dataset.cameraSlackReason = reason;
@@ -172,18 +176,20 @@ export function clearFocusOrbitSlack(reason: string = 'clear'): void {
         return;
     }
     const dist = camera.position.distanceTo(safeTarget);
-    _s.focusOrbitSlackState = {
-        phase: 'idle',
-        reason,
-        startedAt: performance.now(),
-        targetShift: 0,
-        cameraShift: 0,
-        distanceBefore: Number(dist.toFixed(4)),
-        distanceAfter: Number(dist.toFixed(4)),
-        maxDistance: getOrbitMaxDistanceDefault(),
-        rotateSpeed: getOrbitRotateSpeedDefault(),
-        panSpeed: getOrbitPanSpeedDefault()
-    };
+    withStateMutation(() => {
+        _s.focusOrbitSlackState = {
+            phase: 'idle',
+            reason,
+            startedAt: performance.now(),
+            targetShift: 0,
+            cameraShift: 0,
+            distanceBefore: Number(dist.toFixed(4)),
+            distanceAfter: Number(dist.toFixed(4)),
+            maxDistance: getOrbitMaxDistanceDefault(),
+            rotateSpeed: getOrbitRotateSpeedDefault(),
+            panSpeed: getOrbitPanSpeedDefault()
+        };
+    });
     document.body.dataset.cameraSlack = 'idle';
     document.body.dataset.cameraSlackReason = reason;
     if (controls && !getSemanticDiveMode()) {

@@ -81,32 +81,17 @@ import {
     initFocusNeighborRailSubscriptions,
     shouldUseFloatingFocusJourneyOnly
 } from './journey-focus-ui.ts'
-// Deferred init: this module is already pulled into the main chunk through
-// journey-focus-ui.ts, but the canvas adapter should bind after journey setup.
-let _loadCanvasInteraction: Promise<typeof import('./journey-canvas-interaction.ts')> | null = null;
-let _canvasInteractionModule: typeof import('./journey-canvas-interaction.ts') | null = null;
-function _ensureCanvasInteraction(): Promise<typeof import('./journey-canvas-interaction.ts')> {
-    if (!_loadCanvasInteraction) {
-        _loadCanvasInteraction = import('./journey-canvas-interaction.ts').then((mod) => {
-            _canvasInteractionModule = mod;
-            return mod;
-        });
-    }
-    return _loadCanvasInteraction;
-}
+import {
+    initJourneyCanvasInteractionAdapter,
+    isThreadCandidateVisibleOnCanvas as isCanvasThreadCandidateVisibleOnCanvas,
+    ensureCanvasNodeInteractionBindings as ensureCanvasNodeInteractionBindingsImpl
+} from './journey-canvas-interaction.ts'
+
 export function isThreadCandidateVisibleOnCanvas(index: number, margin: number = 18): boolean {
-    if (_canvasInteractionModule) {
-        return _canvasInteractionModule.isThreadCandidateVisibleOnCanvas(index, margin);
-    }
-    void _ensureCanvasInteraction();
-    return true;
+    return isCanvasThreadCandidateVisibleOnCanvas(index, margin);
 }
 export function ensureCanvasNodeInteractionBindings(): void {
-    if (_canvasInteractionModule) {
-        _canvasInteractionModule.ensureCanvasNodeInteractionBindings();
-        return;
-    }
-    void _ensureCanvasInteraction().then((mod) => mod.ensureCanvasNodeInteractionBindings());
+    ensureCanvasNodeInteractionBindingsImpl();
 }
 import { applyLocalNeighborhoodFocus } from './focus-pocket.ts'
 import { applyPointFilterColors, describeThreadLensForPoint } from './journey-point-color.ts';
@@ -153,11 +138,10 @@ export function initJourneyState(): void {
     state.focusPocketMotionByIndex ??= new Map()
 }
 
-globalThis.queueMicrotask(async () => {
+globalThis.queueMicrotask(() => {
     initJourneyState()
-    const canvasMod = await _ensureCanvasInteraction()
     initJourneyNeighborhoodAdapter({
-        isThreadCandidateVisibleOnCanvas: canvasMod.isThreadCandidateVisibleOnCanvas,
+        isThreadCandidateVisibleOnCanvas: isCanvasThreadCandidateVisibleOnCanvas,
         setTrailFromSeed,
         applyLocalNeighborhoodFocus
     })
@@ -165,7 +149,7 @@ globalThis.queueMicrotask(async () => {
         getStrandArrivalNote,
         updateTraversalUi
     })
-    canvasMod.initJourneyCanvasInteractionAdapter({
+    initJourneyCanvasInteractionAdapter({
         summarizeNeighborReason,
         walkThreadNeighbor: (index, options) => !!walkThreadNeighbor(index, options),
         inspectThreadNeighbor,

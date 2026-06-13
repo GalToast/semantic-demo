@@ -2,7 +2,7 @@
 // TypeScript shadow of camera-controls-core.js
 // Focus transition state, camera assist, and route exploration.
 
-import { state, type SemanticState } from '../state.ts';
+import { state, withStateMutation, type SemanticState } from '../state.ts';
 import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-orbit-slack.ts';
 
 interface TransitionOptions {
@@ -108,11 +108,13 @@ export function setCameraAssistChoreography(phase: string = 'free', reason: stri
 export function setRouteExplorationState(phase: string = 'idle', reason: string = ''): void {
     const normalizedPhase = String(phase || 'idle').replace(/[^a-z0-9-]/gi, '') || 'idle';
     const normalizedReason = String(reason || '').replace(/[^a-z0-9-]/gi, '') || '';
-    _s.routeExplorationState = {
-        phase: normalizedPhase,
-        reason: normalizedReason,
-        startedAt: performance.now()
-    };
+    withStateMutation(() => {
+        _s.routeExplorationState = {
+            phase: normalizedPhase,
+            reason: normalizedReason,
+            startedAt: performance.now()
+        };
+    });
     document.body.dataset.routeExploration = normalizedPhase;
     document.body.dataset.routeExplorationReason = normalizedReason;
 }

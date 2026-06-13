@@ -529,13 +529,15 @@ export function setTerrainHandoffState(phase = 'idle', options: TerrainHandoffOp
         ? options.routeCount
         : getRouteEmbodimentIndices().length;
         
-    state.terrainHandoffState = {
-        phase: normalizedPhase,
-        from: options.from || state.terrainHandoffState?.from || 'overview',
-        to: options.to || state.terrainHandoffState?.to || state.currentView || 'galaxy',
-        routeCount: routeCount!,
-        startedAt: performance.now()
-    };
+    withStateMutation(() => {
+        state.terrainHandoffState = {
+            phase: normalizedPhase,
+            from: options.from || state.terrainHandoffState?.from || 'overview',
+            to: options.to || state.terrainHandoffState?.to || state.currentView || 'galaxy',
+            routeCount: routeCount!,
+            startedAt: performance.now()
+        };
+    });
 
     document.body.dataset.terrainHandoff = state.terrainHandoffState.phase;
     document.body.dataset.terrainHandoffFrom = state.terrainHandoffState.from;
