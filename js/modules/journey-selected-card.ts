@@ -41,9 +41,17 @@ import { getActiveClusterFilter, getActiveFilters } from '../state/selectors/ind
 import { subscribeKeyed, EVENTS } from './event-bus.ts';
 import { isPointVisible } from './utils/geo-data.ts';
 import { getPreviouslyFocusedFocusStage, setPreviouslyFocusedFocusStage } from './journey-lifecycle-adapter.ts';
-import { revealSelectedBusinessCard } from './event-bindings.ts';
-import { updateDocumentMeta } from './utils/ui-presentation.ts';
+// Lazy import to break circular dependency:
+// journey.ts → journey-selected-card.ts → event-bindings.ts → journey-bindings.ts → journey.ts
+let _revealSelectedBusinessCardCached: (() => void) | null = null;
+async function _loadRevealSelectedBusinessCard(): Promise<void> {
+    if (!_revealSelectedBusinessCardCached) {
+        const mod = await import('./event-bindings.ts');
+        _revealSelectedBusinessCardCached = mod.revealSelectedBusinessCard;
+    }
+}
 import { sanitizePublicFacingNote, getBusinessNamePresentation } from './utils/dom-formatters.ts';
+import { updateDocumentMeta } from './utils/ui-presentation.ts';
 import {
     triggerSelectedCardFade,
     updateSelectedCardHeading,
@@ -278,7 +286,9 @@ export function updateSelectedBusiness(point: any, options: UpdateSelectedBusine
 
     const suppressAutoRevealForFieldNode = options.revealCard !== true && false;
     if (options.revealCard !== false && !suppressAutoRevealForFieldNode) {
-        revealSelectedBusinessCard();
+        void _loadRevealSelectedBusinessCard().then(() => {
+            if (_revealSelectedBusinessCardCached) _revealSelectedBusinessCardCached();
+        });
     }
     syncFocusStage(point);
 
