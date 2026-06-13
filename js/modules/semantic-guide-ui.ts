@@ -8,7 +8,7 @@
 import { semanticGuideStateStore } from './stores.ts';
 import { state } from '../state.ts';
 import { search, beginSearchFocusTransition } from './search-state.ts';
-import { semanticGuideIcon } from './semantic-guide.ts';
+import { semanticGuideIcon } from '../../src/lib/journey/semantic-guide.ts';
 import { escapeHtml } from './utils/dom-formatters.ts';
 
 interface SummaryCardElements {

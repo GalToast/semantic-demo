@@ -12,7 +12,7 @@ import { getCurrentSemanticGuide as _getCurrentSemanticGuide, getActiveClusterFi
 import { subscribeKeyed, EVENTS } from './event-bus.ts';
 import { escapeHtml } from './utils/dom-formatters.ts';
 import { describeCluster } from './utils/ui-presentation.ts';
-import { getSemanticGuideTitle } from './semantic-guide.ts';
+import { getSemanticGuideTitle } from '../../src/lib/journey/semantic-guide.ts';
 import { getFilteredClusterCounts, setClusterFilter } from './cluster-filter.ts';
 import { setFocusPanelMode, getFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.ts';
 import { getViewportSize } from './environment.ts';

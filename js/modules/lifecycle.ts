@@ -45,7 +45,7 @@ import {
 } from './legend-ui.ts';
 import {
     hideSummaryCard as hideSummaryCardImpl
-} from './semantic-guide.ts';
+} from '../../src/lib/journey/semantic-guide.ts';
 import {
     showExperienceToast as showExperienceToastImpl,
     syncSearchStatusForFocus as syncSearchStatusForFocusImpl

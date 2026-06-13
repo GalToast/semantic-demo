@@ -10,7 +10,7 @@ import { cancelMicroDemo } from './micro-demo.ts';
 import { showExperienceToast } from './ui-feedback.ts';
 import { closeLegendGuide } from './legend-ui.ts';
 import { hideTooltip } from './tooltip.ts';
-import { hideSummaryCard } from './semantic-guide.ts';
+import { hideSummaryCard } from '../../src/lib/journey/semantic-guide.ts';
 import { setInfoPanelOpen } from './bindings/panel-bindings.ts';
 import { zoomCamera } from './bindings/view-bindings.ts';
 import { recenterFocusedNode } from './bindings/journey-bindings.ts';

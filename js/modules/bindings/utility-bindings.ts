@@ -7,7 +7,7 @@
 import { bindClick } from './view-bindings.ts';
 import { hideSummaryCard, resetExplorationFocus, hideExploreTrailReview } from '../lifecycle.ts';
 import { closeLegendGuide } from '../legend-ui.ts';
-import { requestSemanticGuide } from '../semantic-guide.ts';
+import { requestSemanticGuide } from '../../../src/lib/journey/semantic-guide.ts';
 import { traverseNeighbor } from '../journey.ts';
 
 export function bindUtilityButtons(): void {

@@ -33,7 +33,7 @@ import {
     scheduleMapRouteRefresh,
     getViewHandoffModel
 } from './journey-compass-controller.ts';
-import { semanticGuideIcon } from './semantic-guide.ts';
+import { semanticGuideIcon } from '../../src/lib/journey/semantic-guide.ts';
 import { applyMapFlatteningLayout } from './map-flattening-layout.ts';
 import { setCurrentView } from './state-mutators.ts';
 
