@@ -73,11 +73,12 @@ Lane Z's initial hypothesis was that `js/modules/camera-controls-restore.js:1` r
 
 > "The facade's dynamic imports use `.ts` extension (`@legacy/modules/camera-controls-restore.ts`), and the `.ts` files are standalone implementations that do NOT re-import the facade — so the source-level cycle path claimed in the handoff doc does not close as diagrammed."
 
-Lane B cites `src/lib/engine/camera-controls.ts:84-86`:
+Lane B cites lines near `src/lib/engine/camera-controls.ts` dynamic imports. **Off-by-10 line-citation correction applied 2026-06-13 wave-routes-fresh-c main-lane verification: actual lines are 74-76, not 84-86.** The MCP harness appears to add 10 phantom ctx lines in read-offset reporting. (Workers in 2026-06-13 wave-routes-fresh-c cited 84-86 / 88-89 / 92-93; main lane verified actual lines 74-76 / 78-79.)
+
 ```
-import('@legacy/modules/camera-controls-core.ts'),
-import('@legacy/modules/camera-controls-restore.ts'),
-import('@legacy/modules/camera-controls-choreography.ts'),
+import('@legacy/modules/camera-controls-core.ts'),         // line 74
+import('@legacy/modules/camera-controls-restore.ts'),      // line 75
+import('@legacy/modules/camera-controls-choreography.ts'), // line 76
 ```
 
 These imports go straight to `js/modules/*.ts` legacy files (with `.ts` extension). The `js/modules/*.ts` files themselves do NOT re-import the facade. So my "the cycle closes through the facade" path is incorrect.
