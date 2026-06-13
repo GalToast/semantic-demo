@@ -139,6 +139,16 @@ While the inventory wave was in flight, the 127.0.0.1:8788 key router (operator-
 | 2026-06-13 | `mistral/codestral-2508` | Mistral direct | Pi | Both-pattern round 2 Lane 3 — consumer inventory per-subsystem rollup | **Failed: barely started** (37 tokens produced); no report file | None — barely initiated before stopping | n/a | Extremely low output; model did not meaningfully begin the task. Previous run (verification task, 2026-06-13) was Strong — this failure appears task-dependent, not systemic | Do not use for now; retest with smaller smoke before trusting for production work | Broken |
 | 2026-06-13 | `modelscope/deepseek-ai/DeepSeek-V4-Flash` | ModelScope | Pi | Both-pattern round 2 Lane 4 — comprehensive stub inventory and dead-shim detection | Completed with gold-quality 18.8KB report; full stub inventory (30 functions across 5 files), dead-shim inventory (8 confirmed dead), mis-wire root cause analysis, PR recommendation | Read/edit/bash worked; hybrid method (rg + ctx_execute JS sandbox + manual source inspection) | Comprehensive analysis; produced actionable PR recommendation; correctly identified the BOTH-pattern root cause (shims point at stub src/ versions instead of legacy real impls); different architecture from mimo/Qwen/Nemotron | Not yet proven for implementation work in this repo; read-only analysis only so far | **Fully viable alternative** for diversity when 4+ parallel dispatches are needed; different family than mimo/owl-alpha | Strong |
 
+**2026-06-13 catalog buildout wave (5 dispatches, all NEW-to-catalog models except devstral; filling sparse data on previously-untested picks):**
+
+| 2026-06-13 | `opencode-zen/big-pickle` | OpenCode Zen | Pi | Sprint plan synthesis from 3 follow-up docs (35K chars) + 1 synthesis (18KB) | Completed with 300-line structured sprint-plan at `tmp/subagent-catalog-buildout-2026-06-13/sprint-plan.md`. Sequenced 6 of 7 follow-up tickets (T7 optional) into critical path T1+2 (1.5d) → T3 (3d) → T5 (1d) → T6 (0.5d) with T4 parallel to T3. | Read/write worked; no ast-grep needed (planning-only); no steer required, completed in one pass | Excellent context retention across 4 documents; accurate recall of specific numbers (41 call sites, 10 HOT, 9 COLD, 18 dead stubs, 3 user-facing bugs); verbose structured output with tables, dependency chains, risk matrices | Tends toward verbose output (upper bound of length spec); not evaluated for code-generation or ast-grep proficiency (planning-only deliverable) | **First observation of catalog's `best_free_coding` recommendation** — fills 0-obs gap on the opencode-zen gateway. Strong fit for planning/synthesis, sprint plans, architecture reviews, multi-document analysis | Strong |
+| 2026-06-13 | `nvidia/openai/gpt-oss-20b` | NVIDIA NIM | Pi | `@legacy/state` retirement audit (132 import sites across 14-16 files) | Completed with 8197-byte audit at `tmp/subagent-catalog-buildout-2026-06-13/state-retirement-audit.md`. Consumer inventory, Svelte store mapping, risk matrix, migration order, effort estimate, perf note. | Read/write worked; time short, output slightly terser than lane C big-pickle but still substantive | Coherent inventory; produced all hot-loop classifications; structured delivery | Flattened some dependency trees (e.g., conflated `state.navState` vs `state.theme` namespaces); omitted selector-repurposing nuances that required manual cross-check against `lane-1-rerun-mimo.md` | **First observation** of gpt-oss-20b (smaller sibling of gpt-oss-120b). Useful for high-level roadmap; manual verification required for selector decisions. Not ready as primary synthesis engine | Limited |
+| 2026-06-13 | `mistral/devstral-2512` | Mistral direct | Pi | Regression test author for dismiss-in-COMPLETE bug (commit `6becd18`) | Completed with `tests/dismiss-in-complete-state-contract.mjs`. 10/10 tests pass with fix; 8/10 fail without fix (regression-confirmed). Test covers `isDemoActive` excluding COMPLETE, dismiss-button unmount, edge cases for CANCELLED state. | Read/write worked; correctly chose Node.js contract test over Playwright; no steer needed | Correctly identified test framework pattern from existing contract tests; understood both parts of the fix (template `isDemoActive` subscription + `cancelDemo` guard); comprehensive edge cases; proper regression notes; good balance between testing and documenting | None significant | **2nd observation** of devstral-2512 (was Limited on first try with 300s timeout on bash scoping; this 2nd run is Strong on focused test-writing). Use for focused regression test writing where understanding codebase patterns matters | Strong |
+| 2026-06-13 | `mistral/codestral-latest` | Mistral direct | Pi | 19-import refactor plan for `src/lib/engine/three-engine.ts:238-256` (Part D of fix-wave PR) | Completed with 6685-byte plan at `tmp/subagent-catalog-buildout-2026-06-13/three-engine-238-256-plan.md`. Per-import decision matrix (A/B/C retirement strategy), migration order, risk callouts, test plan. | Read/write worked; sharp focused output | Sharp prioritized list; correctly classified HOT vs COLD by tracing inside `animate()`; identified circular-import risk accurately; no over-recommending or under-recommending | None significant; tight focused plan with no fluff | **First observation** of codestral-latest (different from `mistral/codestral-2508` which is Strong in catalog). Strong fit for tight-deadline refactor planning on 10-20 import sites in a single file | Strong |
+| 2026-06-13 | `nvidia/nemotron-3-super-120b-a12b` | NVIDIA NIM (paid) | Pi | Coverage audit of `docs/subagent-model-catalog.md` (the catalog meta-task itself) | **STALE — PID dead, no file written. 4TH confirmation of no-write-file pattern.** | Read/bash worked; visible thinking rails listing all 230+ model refs in the live catalog | n/a (no deliverable) | n/a (no deliverable) | Same failure mode as the 3 prior nemotron-3-super runs in the both-pattern and inventory waves. **Pattern now confirmed systematic**: model completes analysis in thinking rails (19785 output tokens) but never calls the write tool before timing out or being killed. The text content IS in the stream — extractable from stdout — but the disk-side confirmation is missing. **For any deliverable that requires a file on disk, do NOT use nemotron-3-super-120b-a12b unattended.** | Broken (systematic no-write pattern) |
+
+The 4th nemotron-3-super-120b no-write observation is now a confirmed systematic failure mode, not a one-off. The model is producing substantial analysis (19785 output tokens in this run, more than the 1077 of the both-pattern round 2 lane 2) but the write tool is never called. For unattended deliverables requiring disk writes, this model is unreliable. **Status on the nvidia lane and the openrouter:free variant is now upgraded from "Limited" to "Broken"** for the deliverable-write use case specifically; the model remains useful for read-only archaeology where the main lane can hand-extract findings from stdout.
+
 ## Cross-Gateway 429 Patterns
 
 Observed on 2026-06-12:
@@ -182,7 +192,7 @@ Quick-glance view of every launch ref in the live `external_subagent_free_models
 
 | Launch ref | Free? | Status | Last observation / best use |
 |---|---|---|---|
-| `opencode-zen/big-pickle` | yes | ⏳ In flight (lane C) | Catalog's automated `best_free_coding`; 0 prior obs; sprint plan task in flight |
+| `opencode-zen/big-pickle` | yes | ✅ Strong (1 prior) | **NEW 2026-06-13**: Long-context planning/synthesis. Excellent 35K-char retention, structured output, no steering needed. Tends verbose; untested on code-gen |
 | `opencode-zen/deepseek-v4-flash-free` | yes | 🛑 429 | 429s under load (per current routing state) |
 | `opencode-zen/mimo-v2.5-free` | yes | 🛑 429 | 429s under load; do not use |
 | `opencode-zen/minimax-m3-free` | yes | ⚪ Untested | 0 obs; MiniMax-M3 family untested |
@@ -277,7 +287,7 @@ Quick-glance view of every launch ref in the live `external_subagent_free_models
 | `nvidia/nemotron-3-content-safety` | yes | 🔧 Specialized | content safety |
 | `nvidia/nemotron-3-nano-30b-a3b` | yes | ⚪ Untested | 0 obs |
 | `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` | yes | ⚪ Untested | 0 obs; reasoning-specialized |
-| `nvidia/nemotron-3-super-120b-a12b` | yes | 🟠 Limited (3 prior) | Strong code comprehension but no-write-file pattern. 600s+ budget required. |
+| `nvidia/nemotron-3-super-120b-a12b` | yes | ❌ Broken (4 prior) | **UPGRADED 2026-06-13**: 4th no-write-file confirmation. 19785 output tokens but never called write tool. Pattern is systematic. Do NOT use for unattended disk-write deliverables |
 | `nvidia/nemotron-3-ultra-550b-a55b` | yes | ❌ Broken | 0 tokens on kilo variant; nvidia lane untested (likely same failure mode) |
 | `nvidia/nemotron-3.5-content-safety` | yes | 🔧 Specialized | content safety |
 | `nvidia/nemotron-4-340b-instruct` | yes | ⚪ Untested | 0 obs |
@@ -296,7 +306,7 @@ Quick-glance view of every launch ref in the live `external_subagent_free_models
 | `nvidia/nvclip` | yes | 🔧 Specialized | vision-language |
 | `nvidia/nvidia-nemotron-nano-9b-v2` | yes | ⚪ Untested | 0 obs; small |
 | `nvidia/openai/gpt-oss-120b` | yes | ✅ Strong (1 prior) | Reliable writer; first-choice alternative when codestral-2508 throttled |
-| `nvidia/openai/gpt-oss-20b` | yes | ⏳ In flight (lane D-retry) | Smaller sibling of gpt-oss-120b; state retirement audit in flight |
+| `nvidia/openai/gpt-oss-20b` | yes | 🟠 Limited (1 prior) | **NEW 2026-06-13**: Coherent inventory on multi-file audit, but flattened dependency trees (state.navState vs state.theme). Manual cross-check required |
 | `nvidia/qwen/qwen3-next-80b-a3b-instruct` | yes | ⚪ Untested | 0 obs (different from openrouter:free which 429'd) |
 | `nvidia/qwen/qwen3.5-122b-a10b` | yes | ⚪ Untested | 0 obs |
 | `nvidia/qwen/qwen3.5-397b-a17b` | yes | ⚪ Untested | 0 obs; 397B parameter |
@@ -323,8 +333,8 @@ Quick-glance view of every launch ref in the live `external_subagent_free_models
 | `mistral/codestral-2508` | yes | ✅ Strong (2 prior) | First-choice Mistral route for tight-deadline verification; ±10 line citation drift expected |
 | `mistral/codestral-embed` | yes | 🔧 Specialized | embedding |
 | `mistral/codestral-embed-2505` | yes | 🔧 Specialized | embedding |
-| `mistral/codestral-latest` | yes | ⏳ In flight (lane F-retry) | 19-import refactor plan task in flight; 0 prior obs |
-| `mistral/devstral-2512` | yes | ⏳ In flight (lane E) | Regression test for dismiss-in-COMPLETE bug; 1 prior Limited (300s timeout on bash scoping) |
+| `mistral/codestral-latest` | yes | ✅ Strong (1 prior) | **NEW 2026-06-13**: Tight-deadline refactor planning. Sharp prioritized list, correctly traced inside `animate()`, identified circular-import risk. No fluff |
+| `mistral/devstral-2512` | yes | ✅ Strong (2 prior) | **NEW 2026-06-13**: Focused regression test writing. 10/10 pass with fix, 8/10 fail without. Chose Node.js contract over Playwright. 2nd obs upgrades prior Limited rating |
 | `mistral/devstral-latest` | yes | 🟠 Limited (1 prior) | Silent timeout, 180s, no output |
 | `mistral/devstral-medium-latest` | yes | ⚪ Untested | 0 obs |
 | `mistral/labs-leanstral-2603` | yes | ⚪ Untested | 0 obs |
@@ -395,7 +405,7 @@ Quick-glance view of every launch ref in the live `external_subagent_free_models
 | `openrouter/nousresearch/hermes-3-llama-3.1-405b:free` | yes | 🟠 Limited (1 prior) | Free endpoints do NOT expose tool use; unusable for Pi workers that need read/grep/glob/bash |
 | `openrouter/nvidia/nemotron-3-nano-30b-a3b:free` | yes | ⚪ Untested | 0 obs |
 | `openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | yes | ⚪ Untested | 0 obs; reasoning |
-| `openrouter/nvidia/nemotron-3-super-120b-a12b:free` | yes | ⏳ In flight (lane B) | Coverage audit; 3 prior Limited (no-write-file) |
+| `openrouter/nvidia/nemotron-3-super-120b-a12b:free` | yes | ❌ Broken (4 prior) | **UPGRADED 2026-06-13**: 4th no-write-file confirmation (lane B coverage audit went stale). Same systematic failure as nvidia-lane variant |
 | `openrouter/nvidia/nemotron-3-ultra-550b-a55b:free` | yes | ❌ Broken | Silent failure, 0 tokens despite 550B params; removed from free default |
 | `openrouter/nvidia/nemotron-3.5-content-safety:free` | yes | ⚪ Untested | 0 obs; content safety |
 | `openrouter/nvidia/nemotron-nano-12b-v2-vl:free` | yes | ⚪ Untested | 0 obs; vision-language |
@@ -416,7 +426,7 @@ Quick-glance view of every launch ref in the live `external_subagent_free_models
 | `kilo/kilo-auto/free` | yes | ⚪ Untested | 0 obs; auto-routing free tier |
 | `kilo/nex-agi/nex-n2-pro:free` | yes | 🟡 Promising (1 prior) | High-effort brute-force investigation; needs strict path limits and long timeout |
 | `kilo/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | yes | ⚪ Untested | 0 obs |
-| `kilo/nvidia/nemotron-3-super-120b-a12b:free` | yes | ⏳ In flight (lane B) | Same Limited rating as openrouter variant; 3 prior |
+| `kilo/nvidia/nemotron-3-super-120b-a12b:free` | yes | ❌ Broken (4 prior) | **UPGRADED 2026-06-13**: Same systematic no-write-file pattern via kilo route |
 | `kilo/nvidia/nemotron-3-ultra-550b-a55b:free` | yes | ❌ Broken | Was the locked free default before both-pattern wave; silent failure, 0 tokens |
 | `kilo/nvidia/nemotron-3.5-content-safety:free` | yes | ⚪ Untested | 0 obs; content safety |
 | `kilo/openrouter/free` | yes | ⚪ Untested | 0 obs |
@@ -490,18 +500,18 @@ Quick-glance view of every launch ref in the live `external_subagent_free_models
 | `modelscope/zai-org/GLM-5` | yes | ⚪ Untested | 0 obs; new flagship |
 | `modelscope/zai-org/GLM-5.1` | yes | ⚪ Untested | 0 obs (different from `nvidia/z-ai/glm-5.1` which is Promising — different provider routing) |
 
-### Cross-reference: 2026-06-13 campaign dispatches (in-flight + completed)
+### Cross-reference: 2026-06-13 catalog buildout wave (5 dispatches — all settled)
 
-This campaign's active dispatches are listed below. When they complete, observations land in the **Tested Routes** table above and the **Status** column here updates from "⏳ In flight" to the final rating.
-
-| Lane | Model | Status as of 2026-06-13 18:42 UTC | Output file | Filling which gap |
+| Lane | Model | Final status (2026-06-13 18:49 UTC) | Output file | Filling which gap |
 |---|---|---|---|---|
 | Lane A | `opencode-go/mimo-v2.5` (paid) | ✅ Completed (catalog enrichment) | `docs/subagent-model-catalog.md` (8 new rows) | Catalog metadata; not a new model |
-| Lane B | `nvidia/nemotron-3-super-120b-a12b` | ⏳ In flight (139K input / 7K output, heavy analysis) | `tmp/both-pattern-investigation-2026-06-13/coverage-audit.md` | Adds a 4th observation of nemotron-3-super-120b |
-| Lane C | `opencode-zen/big-pickle` | ⏳ In flight (at write tool) | `tmp/subagent-catalog-buildout-2026-06-13/sprint-plan.md` | **First observation** of big-pickle (catalog's `best_free_coding`) |
-| Lane D-retry | `nvidia/openai/gpt-oss-20b` | ⏳ In flight (just launched) | `tmp/subagent-catalog-buildout-2026-06-13/state-retirement-audit.md` | **First observation** of gpt-oss-20b |
-| Lane E | `mistral/devstral-2512` | ⏳ In flight (at write tool) | `tests/dismiss-in-complete-state-contract.mjs` | 2nd observation of devstral-2512 (was Limited on first) |
-| Lane F-retry | `mistral/codestral-latest` | ⏳ In flight (just launched) | `tmp/subagent-catalog-buildout-2026-06-13/three-engine-238-256-plan.md` | **First observation** of codestral-latest |
+| Lane B | `nvidia/nemotron-3-super-120b-a12b` | ❌ Stale (no file written) | _none — 4th no-write confirmation_ | Confirmed systematic no-write-file pattern; rating upgraded Limited → Broken for deliverable-write use case |
+| Lane C | `opencode-zen/big-pickle` | ✅ Strong (1 prior) | `tmp/subagent-catalog-buildout-2026-06-13/sprint-plan.md` (300 lines) | **First observation** of big-pickle (catalog's `best_free_coding`); now Strong for planning/synthesis |
+| Lane D-retry | `nvidia/openai/gpt-oss-20b` | 🟠 Limited (1 prior) | `tmp/subagent-catalog-buildout-2026-06-13/state-retirement-audit.md` (8197 bytes) | **First observation** of gpt-oss-20b; useful for high-level roadmap, manual cross-check required |
+| Lane E | `mistral/devstral-2512` | ✅ Strong (2 prior) | `tests/dismiss-in-complete-state-contract.mjs` (10/10 pass, 8/10 fail without fix) | 2nd observation of devstral-2512; prior Limited rating upgraded to Strong on focused test-writing workload |
+| Lane F-retry | `mistral/codestral-latest` | ✅ Strong (1 prior) | `tmp/subagent-catalog-buildout-2026-06-13/three-engine-238-256-plan.md` (6685 bytes) | **First observation** of codestral-latest; strong for tight-deadline refactor planning |
+
+**Wave summary:** 4 of 5 dispatches delivered usable files. 1 of 5 (nemotron-3-super) confirmed a systematic no-write-file pattern. **4 new models added to the catalog** (big-pickle, gpt-oss-20b, codestral-latest) plus 1 rating upgrade (devstral-2512 Limited → Strong). 1 nemotron rating upgrade (Limited → Broken for deliverable-write).
 
 ### Maintenance
 
