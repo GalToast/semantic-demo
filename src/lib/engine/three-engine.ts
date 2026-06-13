@@ -49,6 +49,17 @@ import {
 import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
+// ── Static @legacy/* imports (COLD — init-only, consumed by ensureModules) ──
+import * as viewControllerMod from '@legacy/modules/view-controller';
+import * as mapStateMod from '@legacy/modules/map-state';
+import * as uiFeedbackMod from '@legacy/modules/ui-feedback';
+import * as mapFlatteningMod from '@legacy/modules/map-flattening-layout';
+import * as webglRestoreMod from '@legacy/modules/webgl-restore-adapter';
+import * as focusAnchorMod from '@legacy/modules/focus-anchor-indicator';
+import * as audioScapeMod from '@legacy/modules/audio-scape';
+import * as eventBindingsMod from '@legacy/modules/event-bindings';
+import * as loadingUiMod from '@legacy/modules/loading-ui';
+
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 
 interface LegacyState {
@@ -216,65 +227,47 @@ async function _ensureModules(): Promise<void> {
   try {
     const [
       stateMod,
-      vcMod,
       cpMod,
       fpMod,
       srMod,
       ccMod,
-      msMod,
       meMod,
-      ufMod,
-      mfMod,
-      wrMod,
       isMod,
-      faMod,
       raMod,
       tsaMod,
-      asMod,
-      ebMod,
-      luMod,
       tivMod,
     ] = await Promise.all([
       import('@legacy/state'),
-      import('@legacy/modules/view-controller'),
       import('@legacy/modules/cluster-labels'),
       import('@legacy/modules/focus-pocket'),
       import('@legacy/modules/scene-reveal'),
       import('@legacy/modules/camera-controls'),
-      import('@legacy/modules/map-state'),
       import('@legacy/modules/mycelium-engine'),
-      import('@legacy/modules/ui-feedback'),
-      import('@legacy/modules/map-flattening-layout'),
-      import('@legacy/modules/webgl-restore-adapter'),
       import('@legacy/modules/inspected-strand-overlay-adapter'),
-      import('@legacy/modules/focus-anchor-indicator'),
       import('@legacy/modules/route-arrival-overlay-adapter'),
       import('@legacy/modules/three-search-animations'),
-      import('@legacy/modules/audio-scape'),
-      import('@legacy/modules/event-bindings'),
-      import('@legacy/modules/loading-ui'),
       import('@legacy/modules/three-interaction-visuals'),
     ]);
 
     _state = (stateMod as any).state as LegacyState;
     _withStateMutation = (stateMod as any).withStateMutation as WithStateMutationFn;
-    _viewController = vcMod as unknown as ViewControllerModule;
+    _viewController = viewControllerMod as unknown as ViewControllerModule;
     _clusterLabels = cpMod as unknown as ClusterLabelsModule;
     _focusPocket = fpMod as unknown as FocusPocketModule;
     _sceneReveal = srMod as unknown as SceneRevealModule;
     _cameraControls = ccMod as unknown as CameraControlsModule;
-    _mapState = msMod as unknown as MapStateModule;
+    _mapState = mapStateMod as unknown as MapStateModule;
     _myceliumEngine = meMod as unknown as MyceliumEngineModule;
-    _uiFeedback = ufMod as unknown as UiFeedbackModule;
-    _mapFlattening = mfMod as unknown as MapFlatteningModule;
-    _webglRestore = wrMod as unknown as WebGLRestoreModule;
+    _uiFeedback = uiFeedbackMod as unknown as UiFeedbackModule;
+    _mapFlattening = mapFlatteningMod as unknown as MapFlatteningModule;
+    _webglRestore = webglRestoreMod as unknown as WebGLRestoreModule;
     _inspectedStrand = isMod as unknown as InspectedStrandModule;
-    _focusAnchor = faMod as unknown as FocusAnchorModule;
+    _focusAnchor = focusAnchorMod as unknown as FocusAnchorModule;
     _routeArrival = raMod as unknown as RouteArrivalModule;
     _threeSearchAnimations = tsaMod as unknown as ThreeSearchAnimationsModule;
-    _audioScape = asMod as unknown as AudioScapeModule;
-    _eventBindings = ebMod as unknown as EventBindingsModule;
-    _loadingUi = luMod as unknown as LoadingUiModule;
+    _audioScape = audioScapeMod as unknown as AudioScapeModule;
+    _eventBindings = eventBindingsMod as unknown as EventBindingsModule;
+    _loadingUi = loadingUiMod as unknown as LoadingUiModule;
     _threeInteractionVisuals = tivMod as unknown as ThreeInteractionVisualsModule;
     _loaded = true;
   } catch (err) {

@@ -1,0 +1,57 @@
+
+> semantic-explorer@1.0.0 build:svelte
+> vite build --config vite.config.ts
+
+9:33:45 PM [vite-plugin-svelte] no Svelte config found at C:/Users/HP/Desktop/Temp while my comp is at the shop/semantic-explorer/src - using default configuration.
+[36mvite v8.0.14 [32mbuilding client environment for production...[36m[39m
+[2Ktransforming...✓ 499 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/svelte/assets/data-worker-DZlRVm_N.js                           3.34 kB
+dist/svelte/index.html                                               8.77 kB │ gzip:   2.88 kB
+dist/svelte/assets/index-DDk6Jlnf.css                               46.95 kB │ gzip:   8.18 kB
+dist/svelte/assets/audio-scape-TZt7hL1S.js                           0.04 kB │ gzip:   0.06 kB
+dist/svelte/assets/semantic-dive-ui-BIiJvc01.js                      0.04 kB │ gzip:   0.06 kB
+dist/svelte/assets/event-bindings-BPE1Xw3K.js                        0.04 kB │ gzip:   0.06 kB
+dist/svelte/assets/map-flattening-layout-f3FBnfbN.js                 0.05 kB │ gzip:   0.07 kB
+dist/svelte/assets/webgl-restore-adapter-zI4yT4mg.js                 0.05 kB │ gzip:   0.07 kB
+dist/svelte/assets/focus-anchor-indicator-CQ1ASMc_.js                0.05 kB │ gzip:   0.07 kB
+dist/svelte/assets/inspected-strand-overlay-adapter-CYfIMy32.js      0.06 kB │ gzip:   0.08 kB
+dist/svelte/assets/semantic-guide-CwgkrXFk.js                        0.09 kB │ gzip:   0.09 kB
+dist/svelte/assets/connection-analysis-BDSSwMk1.js                   0.10 kB │ gzip:   0.11 kB
+dist/svelte/assets/route-arrival-overlay-adapter-D3AlmaTz.js         0.10 kB │ gzip:   0.10 kB
+dist/svelte/assets/ui-feedback-BdCyaFu6.js                           0.11 kB │ gzip:   0.12 kB
+dist/svelte/assets/mycelium-engine-BS_eBK8Y.js                       0.13 kB │ gzip:   0.11 kB
+dist/svelte/assets/focus-panel-mode-DZhLgMcQ.js                      0.13 kB │ gzip:   0.12 kB
+dist/svelte/assets/three-interaction-visuals-BvjktD3Z.js             0.17 kB │ gzip:   0.12 kB
+dist/svelte/assets/view-controller-pM_XVwIf.js                       0.19 kB │ gzip:   0.15 kB
+dist/svelte/assets/ui-renderers-DWLLcztE.js                          0.20 kB │ gzip:   0.12 kB
+dist/svelte/assets/loading-ui-BFGXzYjX.js                            0.20 kB │ gzip:   0.14 kB
+dist/svelte/assets/event-bus-CSZlE9xf.js                             0.23 kB │ gzip:   0.17 kB
+dist/svelte/assets/camera-controls-choreography-DytCU79D.js          0.27 kB │ gzip:   0.18 kB
+dist/svelte/assets/camera-framing-utils-CpfiMAlA.js                  0.30 kB │ gzip:   0.23 kB
+dist/svelte/assets/three-search-animations-C25In0cy.js               0.32 kB │ gzip:   0.15 kB
+dist/svelte/assets/island-mount-helper-BOMstosm.js                   0.35 kB │ gzip:   0.25 kB
+dist/svelte/assets/camera-math-utils-rCI1bz78.js                     0.40 kB │ gzip:   0.24 kB
+dist/svelte/assets/journey-compass-controller-B3kptEFT.js            0.42 kB │ gzip:   0.26 kB
+dist/svelte/assets/environment-CLB1tqU4.js                           0.59 kB │ gzip:   0.33 kB
+dist/svelte/assets/filter-state-BRJjA4iw.js                          0.75 kB │ gzip:   0.37 kB
+dist/svelte/assets/camera-controls-core-GFeWi6Et.js                  1.10 kB │ gzip:   0.54 kB
+dist/svelte/assets/camera-controls-restore-GFeWi6Et.js               1.10 kB │ gzip:   0.54 kB
+dist/svelte/assets/camera-controls-Bt_mDB0h.js                       1.15 kB │ gzip:   0.57 kB
+dist/svelte/assets/scene-reveal-DfO5WSkt.js                          1.26 kB │ gzip:   0.66 kB
+dist/svelte/assets/ui-feedback-CIAGvRuu.js                           2.49 kB │ gzip:   1.04 kB
+dist/svelte/assets/lifecycle-eLYgk6z5.js                             2.64 kB │ gzip:   1.21 kB
+dist/svelte/assets/cluster-labels-B3QVqcGp.js                        3.03 kB │ gzip:   1.45 kB
+dist/svelte/assets/filter-state-D7JaIRU7.js                          3.11 kB │ gzip:   1.28 kB
+dist/svelte/assets/search-chrome-island-CSSkfugq.js                  3.98 kB │ gzip:   1.65 kB
+dist/svelte/assets/filter-chrome-island-DjdGYnJk.js                  4.66 kB │ gzip:   2.15 kB
+dist/svelte/assets/focus-pocket-DBl53fYq.js                          7.47 kB │ gzip:   2.70 kB
+dist/svelte/assets/url-state-B_qZujdc.js                             8.71 kB │ gzip:   3.25 kB
+dist/svelte/assets/selectors-DV41y-WQ.js                             8.89 kB │ gzip:   3.23 kB
+dist/svelte/assets/journey-DsMY9W5t.js                               9.83 kB │ gzip:   3.63 kB
+dist/svelte/assets/map-state-C5na_ie6.js                            11.12 kB │ gzip:   4.21 kB
+dist/svelte/assets/journey-canvas-interaction-Bf8Wxcn3.js           14.90 kB │ gzip:   5.07 kB
+dist/svelte/assets/search-state-CzmZk3M3.js                        271.76 kB │ gzip:  83.63 kB
+dist/svelte/assets/index-D4rRnhzX.js                             1,102.37 kB │ gzip: 306.47 kB
+

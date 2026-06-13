@@ -74,7 +74,6 @@ const liveProduct = new Set([
   'updateTooltipContent',
   'updateTrailIndices',
   'updateWeatherStaleness',
-  'walkInsideToNextStop',
   'walkThreadNeighbor',
   'returnToOverview',
   'resetExplorationFocus',
