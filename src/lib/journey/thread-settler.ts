@@ -14,10 +14,10 @@ import { normalizeCityForFilter } from '@lib/utils/geo-data';
 import { getStrandContinuityManager } from '@lib/utils/strand-continuity';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { summarizeNeighborReason, getInsideRelationshipLabel, cancelAllThreadTimers, setTimer, clearTimer, getStrandArrivalNote } from './thread-settler-adapter';
-import { walkThreadNeighbor, traverseNeighbor, walkInsideToNextStop, previewInsideNextThread } from './thread-settler-adapter';
+import { walkThreadNeighbor, traverseNeighbor, walkInsideToNextStop } from './thread-settler-adapter';
 import type { ThreadCandidate, WalkCandidate } from './thread-model';
 
-export { summarizeNeighborReason, getInsideRelationshipLabel, cancelAllThreadTimers, setTimer, clearTimer, getStrandArrivalNote, walkThreadNeighbor, traverseNeighbor, walkInsideToNextStop, previewInsideNextThread };
+export { summarizeNeighborReason, getInsideRelationshipLabel, cancelAllThreadTimers, setTimer, clearTimer, getStrandArrivalNote, walkThreadNeighbor, traverseNeighbor, walkInsideToNextStop };
 
 // Re-export types
 export type { ThreadCandidate, WalkCandidate };

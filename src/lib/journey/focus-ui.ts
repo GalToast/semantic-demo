@@ -3,93 +3,21 @@
  *
  * Ported from: js/modules/journey-focus-ui.js
  *
- * Bridge/stub for focus stage UI updates. During migration,
- * the actual DOM manipulation is handled by the Svelte components.
+ * Bridge for focus stage UI updates. The Svelte path delegates to the
+ * legacy real implementation via the BOTH-pattern shim, so any consumer
+ * of @legacy/modules/journey-focus-ui gets the real work (trail controls
+ * visibility, neighbor rail updates, focus progress copy, focus journey
+ * toggle) instead of the prior silent no-op stub.
+ *
+ * The 7 dead stubs (isCondensedFocusStageViewport,
+ * shouldUseSingleNeighborFocusRail, etc.) were deleted as part of Part C
+ * of the 2026-06-13 fix-wave PR — they had zero external consumers per
+ * ast-grep structural trace.
+ *
+ * Future work: port the function body from the legacy .ts to a native
+ * Svelte helper. For now, re-exporting is the lowest-risk fix for the
+ * render-loop bug (updateTraversalUi was stubbed out but called every
+ * frame from the scene-reveal path).
  */
 
-import { debugWarn } from '@lib/utils/diagnostic-adapter';
-
-/**
- * Check if the viewport is in condensed focus stage mode.
- * Ported from journey-focus-ui.js isCondensedFocusStageViewport().
- */
-export function isCondensedFocusStageViewport(): boolean {
-  if (typeof window === 'undefined') return false;
-  debugWarn('[journey] Stub function hit: isCondensedFocusStageViewport');
-  return false;
-}
-
-/**
- * Check if the focus neighbor rail should use single-item mode.
- * Ported from journey-focus-ui.js shouldUseSingleNeighborFocusRail().
- */
-export function shouldUseSingleNeighborFocusRail(): boolean {
-  if (typeof document === 'undefined') return false;
-  debugWarn('[journey] Stub function hit: shouldUseSingleNeighborFocusRail');
-  return false;
-}
-
-/**
- * Check if the selected business neighbor rail should be suppressed.
- * Ported from journey-focus-ui.js shouldSuppressSelectedBusinessNeighborRail().
- */
-export function shouldSuppressSelectedBusinessNeighborRail(): boolean {
-  debugWarn('[journey] Stub function hit: shouldSuppressSelectedBusinessNeighborRail');
-  return false;
-}
-
-/**
- * Check if there is a cold degraded semantic fallback.
- * Ported from journey-focus-ui.js hasColdDegradedSemanticFallback().
- */
-export function hasColdDegradedSemanticFallback(): boolean {
-  debugWarn('[journey] Stub function hit: hasColdDegradedSemanticFallback');
-  return false;
-}
-
-/**
- * Check if floating focus journey only mode should be used.
- * Ported from journey-focus-ui.js shouldUseFloatingFocusJourneyOnly().
- */
-export function shouldUseFloatingFocusJourneyOnly(): boolean {
-  debugWarn('[journey] Stub function hit: shouldUseFloatingFocusJourneyOnly');
-  return false;
-}
-
-/**
- * Initialize focus neighbor rail subscriptions.
- * Ported from journey-focus-ui.js initFocusNeighborRailSubscriptions().
- */
-export function initFocusNeighborRailSubscriptions(): void {
-  debugWarn('[journey] Stub function hit: initFocusNeighborRailSubscriptions');
-}
-
-/**
- * Update the focus neighbor rail.
- * Ported from journey-focus-ui.js updateFocusNeighborRail().
- */
-export function updateFocusNeighborRail(
-  _options?: {
-    focusedIndex?: number | null;
-    threadCandidates?: readonly unknown[];
-    threadInspectorActive?: boolean;
-  }
-): void {
-  debugWarn('[journey] Stub function hit: updateFocusNeighborRail');
-}
-
-/**
- * Update the traversal UI.
- * Ported from journey-focus-ui.js updateTraversalUi().
- */
-export function updateTraversalUi(
-  _options?: {
-    hasFocus?: boolean;
-    walkHistoryIndices?: readonly number[];
-    neighborCount?: number;
-    currentName?: string;
-    threadSource?: string;
-  }
-): void {
-  debugWarn('[journey] Stub function hit: updateTraversalUi');
-}
+export { updateTraversalUi } from '@legacy/modules/journey-focus-ui';
