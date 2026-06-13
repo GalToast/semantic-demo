@@ -89,7 +89,57 @@ habits"). Confirmed major inferences only.
   server" means stop the exact PID, not `taskkill /IM node.exe`.
 - **Don't open with a giant preamble.** Start with the action or
   the answer, not "I will help you with that."
+- **Don't fight parallel-session auto-commits.** When the working tree
+  flips between `git status` calls because a parallel main-lane session
+  is committing (Ticket 3 hot follow-up, Ticket 4 unification,
+  Ticket 5 single-track, Ticket 6 rerank all landed this way during the
+  2026-06-13 wave), reconcile by reading the new commits, not by
+  force-re-running your planned commits. If your staging map no longer
+  matches reality, re-audit before `git commit` or the worker-policy
+  review gate will reject the diff.
+- **Don't push before confirming tickets close as a unit.** The
+  2026-06-13 wave shipped Tickets 1, 2, 3, 4, 5, 6 as a coordinated
+  stack. Pushing `28faffc` mid-wave + Ticket 6 later would have split
+  the review diff and unblocked no one. The user's instinct to hold
+  the push and let the rerank worker finish alongside was the right
+  call.
 
+## Worker routing (2026-06-13 wave evidence)
+
+- **mimo-v2.5 (`opencode-go/mimo-v2.5`) is the productive default for
+  focused refactors.** Three-engine.ts Ticket 3 cold/hot retirements,
+  lifecycle-bridge HOT follow-up, and the BOTH-pattern baseline all
+  landed clean with mimo. Tool use is reliable, AST reasoning is
+  sharp on engine plumbing. Switched Worker A followup to mimo when
+  the openrouter/free route hit a dead model slug.
+- **`openrouter/free` resolves to `z-ai/glm-4.5-air:free` which 404s.**
+  Worker A's first call errored at startup with `404 This model is
+  unavailable for free. The paid version is available now - use this
+  slug instead: z-ai/glm-4.5-air`. Always `external_subagent_followup`
+  to a known-clean route rather than spawning fresh; the same
+  session_id preserves tool surface + working dir.
+- **Bigger sweave = run mimo-v2.5 with `live_steer: true` and high
+  timeout_seconds (3600-5400).** Workers that try to do a 19-import
+  retirement + commit + verify + push in <15 minutes compress the
+  verification margin. Better: 1-hour budget with steer for blockers.
+
+## Bash tool quirks (2026-06-13)
+
+- `head` is not on the default `bash` shell PATH on this Windows
+  harness. Piping `rg | head -N` and `2>&1 | rg | head` fail with
+  `The term 'head' is not recognized`. Use the rg-only form, fetch
+  bounded output, or grep via PowerShell `Select-Object -First`.
+- `$_.Name`, `$.Line`, and other PowerShell member-access chains break
+  when the heredoc reaches the bash tool because of context-mode
+  stripping the `$_`. Prefer simple `Select-Object Name,Length` or
+  write the script to a file and execute it.
+- Vite dev server PID stays alive across the session (`npm run
+  dev:svelte` backgrounded via `pi-bg-*` jobs). When `dist/svelte/`
+  is rebuilt mid-commit, the file watcher can land uncommitted edits
+  to index.html and CSS even when no agent is touching them. Treat
+  these as expected re-touches.
+
+##
 ## Confirm-with-user items (uncertain inferences)
 
 These are working hypotheses from one session, not yet confirmed:

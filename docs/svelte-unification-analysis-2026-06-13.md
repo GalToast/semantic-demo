@@ -143,6 +143,22 @@ Once the Svelte impl exists, the legacy `semantic-guide.ts` can be retired whole
 
 **Total unification effort:** ~4-5 days spread across future PRs.
 
+---
+
+## Completion Status (2026-06-13)
+
+**Ticket 4 — IMPLEMENTED**
+
+| Action | Status | Commit |
+|---|---|---|
+| Port syncSemanticDiveUi to src/lib/journey/semantic-dive.ts | ✅ Done | `4074ae1` |
+| Port semantic-guide to src/lib/journey/semantic-guide.ts | ✅ Done | `b93e077` |
+| Delete legacy semantic-dive-ui.ts + semantic-guide.ts | ✅ Done | `2cb6db2` |
+| relationship-roles coexistence documented | ✅ Done | `2cb6db2` |
+
+**Net retirement:** 553 lines of legacy code deleted (semantic-dive-ui.ts: 251L + semantic-guide.ts: 302L).
+**relationship-roles:** both files alive; migration plan documented in legacy file comment.
+
 **Net retirement of BOTH-pattern files:**
 - 8 dead shims already deleted (commit `2a91873`)
 - After #3: ~600 more lines of legacy code retired
