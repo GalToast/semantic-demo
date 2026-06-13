@@ -273,3 +273,44 @@ window.__APP_ACTIONS__.focusOnNode(519);
 | Test for Approach 2 | Not written — pending fix decision |
 
 This doc is intentionally prescriptive without being prescriptive-edited. Owner decides which approach to take.
+
+
+## Post-fix verification protocol (after build is unbricked)
+
+When the build comes back online, here is the one-shot smoke that proves the
+fix landed. Cut and paste as a single Playwright eval block against
+http://127.0.0.1:8795/?anchor=519:
+
+`js
+// 1. App is data-ready
+const dataReady = await page.waitForFunction(
+  () => window.__APP_STATE__?.liveDataReady === true,
+  { timeout: 20000 }
+);
+
+// 2. Bare ?anchor=<id> URLs (no ?q) seed navStore.focusedIndex
+const navIdx = await page.evaluate(() =>
+  window.__APP_STATE__?.navState?.focusedIndex
+);
+console.assert(navIdx === 519, are anchor navStore.focusedIndex= (want 519));
+
+// 3. focusPocketIndices non-empty (constellation rebuilt in 3D)
+const pocketCount = await page.evaluate(
+  () => window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0
+);
+console.assert(pocketCount > 0, pocket is empty (count=));
+
+// 4. document.body.dataset title carries the focus name
+const titleChanged = await page.evaluate(() =>
+  /Angel Hands Birth/.test(document.title) || /Focus:/.test(document.title)
+);
+console.assert(titleChanged, 	itle did not update: );
+`
+
+If all four assertions pass, the Approach-2 ship is verified. If any fail,
+the regression doc + commit 68797a8 together give a focused bisection map.
+
+Run the same probe against ?q=coffee&anchor=519 to confirm the search path
+still works (numeric anchors should be settled by _restoreAnchorFromParams,
+not duplicated by _restoreSearchFromParams). Pass criteria: same four
+assertions plus currentSearchSummary.query === 'coffee'.

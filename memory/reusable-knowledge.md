@@ -2,16 +2,21 @@
 
 Durable workflow notes. Update when conventions change.
 
-## Dual-track dev model
-Two parallel app tracks coexist:
-1. **Legacy JS track** — `js/modules/`, served via `npm run serve` (Python static server on `127.0.0.1:8795`), bundled via `npm run build` (esbuild → `dist/bundle.js`).
-2. **Svelte/TS track** — `src/`, served via `npm run dev:svelte` (Vite on `localhost:5173`), built via `npm run build:svelte`.
+## Production / legacy model
+The Svelte/TS track is canonical production:
+1. **Production track** — `src/`, served via `npm run dev:svelte` (Vite on `localhost:5173`) and built via `npm run build` / `npm run build:svelte` to `dist/svelte/`.
+2. **Legacy reference track** — repo-root `vector-explorer-polished.html` + `js/modules/` + `dist/bundle.js`, built only with `npm run build:legacy` for rollback/reference work.
+
+Deploy scripts publish `dist/svelte/index.html` as both `/semantic-demo/index.html`
+and `/semantic-demo/vector-explorer-polished.html`; do not use the repo-root
+legacy shell as the production QA target.
 
 The legacy engine runs via `src/lib/engine/bridge.ts` until fully replaced. Body `data-*` attributes are synced from Svelte stores via `$effect()` in `App.svelte` for CSS coexistence.
 
 ## Test command preferences
 - **Fast static checks:** `npm run test` (shell, manifest, cache, config-topology, ownership, tokens, surface-styles, semantic-space, typecheck)
-- **Unit tests:** `npm run test:unit` (Vitest)
+- **Unit tests:** `npm run test:unit` (Vitest active suite under `tests/unit-active/`)
+- **Cached legacy unit tests:** `npm run test:unit:legacy` (preserved pre-Svelte suite under `tests/unit/`; use for assertion mining, not the normal production gate)
 - **Contract tests (fast DOM/layout):** `npm run qa:contract:all` (Playwright, all surfaces)
 - **Single surface contract:** `npm run qa:contract:mobile-idle` (or other named surface)
 - **Visual screenshot audit:** `npm run qa:surface:all` (headed, full suite — run sequentially to avoid browser saturation)
@@ -37,6 +42,26 @@ Run `npm run refresh:cache` after CSS/JS changes if stale cache headers are susp
 
 ## MCP recovery
 If `mcp__chrome-devtools__*` or `mcp__playwright__*` tools go missing: run `npm run mcp:recover`, then restart the client. The MCP node process is owned by the client lifecycle.
+
+## Svelte 5 + non-rune store reactivity caveat
+Reading a classic `svelte/store` writable via `get(store)` inside a `$effect` does
+NOT register a tracked dependency under Svelte 5 runes — the effect runs once,
+captures the initial value, and never re-fires on `store.set()` updates. The
+working pattern is to mirror the store into a `$state` rune via `subscribe`:
+
+```ts
+let nav = $state(storeValue());
+$effect(() => store.subscribe(($s) => (nav = $s)));
+```
+
+Then derive computed values with `$derived` so the rest of the component reads
+the rune-tracked proxy. This is the bridge pattern used in `App.svelte:159-173`
+and was first adopted in `FocusPocket.svelte` for the URL-anchor restore path.
+
+When delegating URL-state / focus-store work, tell the worker explicitly that
+the `applyLocalNeighborhoodFocus(...)` call inside `_restoreSearchFromParams`
+is HEAD-canonical defense against this caveat — not diagnostic instrumentation.
+Reverting it breaks the bare-`?anchor=<id>` restore path.
 
 ## Browser QA
 - Run Playwright/Chromium tests headed for visual QA.
