@@ -247,8 +247,19 @@ export function startDemo(nodeIndex: number): boolean {
   return transitionDemo('GLIDING');
 }
 
-/** Cancel the demo from any active phase. */
+/** Cancel the demo from any active phase.
+ *
+ * Mirrors the legacy `cancelChoreography` guard in
+ * `js/modules/micro-demo-choreography.ts` — silently no-ops when the demo
+ * is already in a terminal state (IDLE / COMPLETE / CANCELLED) so callers
+ * (e.g. the dismiss button) don't fire the `Invalid transition` warning
+ * when the user clicks after auto-completion.
+ */
 export function cancelDemo(): boolean {
+  const current = get(demoState).phase;
+  if (current === 'IDLE' || current === 'COMPLETE' || current === 'CANCELLED') {
+    return false;
+  }
   return transitionDemo('CANCELLED');
 }
 

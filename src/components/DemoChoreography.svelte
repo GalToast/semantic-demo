@@ -3,6 +3,7 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { get } from 'svelte/store';
   import {
     demoPhase,
     isDemoActive,
@@ -110,13 +111,13 @@
 
   onDestroy(() => {
     cancelAllDemoTimers();
-    if (isDemoActive) {
+    if (get(isDemoActive)) {
       cancelDemo();
     }
   });
 </script>
 
-{#if eligible && isDemoActive}
+{#if eligible && $isDemoActive}
   <div
     class="demo-choreography"
     id="demo-choreography"
