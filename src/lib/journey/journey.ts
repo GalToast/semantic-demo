@@ -37,7 +37,6 @@ import {
     summarizeNeighborReason,
     walkThreadNeighbor,
     traverseNeighbor,
-    walkInsideToNextStop,
     previewInsideNextThread
 } from '@legacy/modules/journey-thread-settler'
 import {
@@ -96,14 +95,14 @@ function _ensureCanvasInteraction(): Promise<typeof import('@legacy/modules/jour
     }
     return _loadCanvasInteraction
 }
-function isThreadCandidateVisibleOnCanvas(index: number, margin: number = 18): boolean {
+export function isThreadCandidateVisibleOnCanvas(index: number, margin: number = 18): boolean {
     if (_canvasInteractionModule) {
         return _canvasInteractionModule.isThreadCandidateVisibleOnCanvas(index, margin)
     }
     void _ensureCanvasInteraction()
     return true
 }
-function ensureCanvasNodeInteractionBindings(): void {
+export function ensureCanvasNodeInteractionBindings(): void {
     if (_canvasInteractionModule) {
         _canvasInteractionModule.ensureCanvasNodeInteractionBindings()
         return
@@ -291,8 +290,5 @@ export {
     clearThreadInspection,
     walkThreadNeighbor,
     traverseNeighbor,
-    walkInsideToNextStop,
-    previewInsideNextThread,
-    isThreadCandidateVisibleOnCanvas,
-    ensureCanvasNodeInteractionBindings
+    previewInsideNextThread
 }

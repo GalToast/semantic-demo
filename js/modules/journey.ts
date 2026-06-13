@@ -37,7 +37,6 @@ import {
     summarizeNeighborReason,
     walkThreadNeighbor,
     traverseNeighbor,
-    walkInsideToNextStop,
     previewInsideNextThread
 } from './journey-thread-settler.ts'
 import {
@@ -85,11 +84,29 @@ import {
 // Lazy import to break circular dependency:
 // journey.ts → journey-canvas-interaction.ts → journey-canvas-hit-test.ts → ... → journey.ts
 let _loadCanvasInteraction: Promise<typeof import('./journey-canvas-interaction.ts')> | null = null;
+let _canvasInteractionModule: typeof import('./journey-canvas-interaction.ts') | null = null;
 function _ensureCanvasInteraction(): Promise<typeof import('./journey-canvas-interaction.ts')> {
     if (!_loadCanvasInteraction) {
-        _loadCanvasInteraction = import('./journey-canvas-interaction.ts');
+        _loadCanvasInteraction = import('./journey-canvas-interaction.ts').then((mod) => {
+            _canvasInteractionModule = mod;
+            return mod;
+        });
     }
     return _loadCanvasInteraction;
+}
+export function isThreadCandidateVisibleOnCanvas(index: number, margin: number = 18): boolean {
+    if (_canvasInteractionModule) {
+        return _canvasInteractionModule.isThreadCandidateVisibleOnCanvas(index, margin);
+    }
+    void _ensureCanvasInteraction();
+    return true;
+}
+export function ensureCanvasNodeInteractionBindings(): void {
+    if (_canvasInteractionModule) {
+        _canvasInteractionModule.ensureCanvasNodeInteractionBindings();
+        return;
+    }
+    void _ensureCanvasInteraction().then((mod) => mod.ensureCanvasNodeInteractionBindings());
 }
 import { applyLocalNeighborhoodFocus } from './focus-pocket.ts'
 import { applyPointFilterColors, describeThreadLensForPoint } from './journey-point-color.ts';
@@ -256,8 +273,5 @@ export {
     clearThreadInspection,
     walkThreadNeighbor,
     traverseNeighbor,
-    walkInsideToNextStop,
-    previewInsideNextThread,
-    isThreadCandidateVisibleOnCanvas,
-    ensureCanvasNodeInteractionBindings
+    previewInsideNextThread
 };

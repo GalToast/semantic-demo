@@ -185,6 +185,7 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 - Overlapping read scope is fine. Overlapping write scope needs an explicit lead, a file owner, or a serial handoff so patches do not trample each other.
 - Before the main lane stabilizes or commits a high-risk file, verify no worker is still running with write scope over that file. Pause or cancel the worker before local edits continue.
 - Main Codex lane should coordinate, answer worker blockers, review returned diffs, rerun acceptance checks, and synthesize the final decision.
+- Paid Mimo and paid DeepSeek worker routes are available for normal delegated work when they fit the slice. When workers exercise a model during meaningful Semantic Explorer work, capture concise model-catalog notes from the actual task outcome rather than running synthetic benchmark chores.
 
 ### Worker Prompt Boundary
 

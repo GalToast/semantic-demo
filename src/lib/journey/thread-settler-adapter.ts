@@ -6,11 +6,10 @@
  *
  * Ported from: js/modules/journey-thread-settler.js (adapter functions)
  *
- * As part of the 2026-06-13 fix-wave PR Part C, the 3 dead stubs in this
- * file (traverseNeighbor, walkInsideToNextStop, previewInsideNextThread)
- * were deleted — they had zero external consumers per ast-grep structural
- * trace. The remaining exports (timer bridge, neighbor reason summaries,
- * walk/traverse facades) are the live API.
+ * The traversal exports below intentionally bridge to the legacy real
+ * implementations until the full traversal orchestration is ported. Caller
+ * audits confirmed traverseNeighbor and previewInsideNextThread are live;
+ * walkInsideToNextStop was the only dead public helper and was retired.
  */
 
 import type { BusinessRecord } from '@lib/types/business';
@@ -37,7 +36,6 @@ import { getStrandContinuityManager } from '@lib/utils/strand-continuity';
  */
 export {
 	traverseNeighbor,
-	walkInsideToNextStop,
 	previewInsideNextThread
 } from '@legacy/modules/journey-thread-settler';
 

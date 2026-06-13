@@ -71,9 +71,9 @@ async function _ensureModules(): Promise<void> {
   if (_loaded) return;
   try {
     const [coreMod, restoreMod, choreoMod] = await Promise.all([
-      import('@legacy/modules/camera-controls-core'),
-      import('@legacy/modules/camera-controls-restore'),
-      import('@legacy/modules/camera-controls-choreography'),
+      import('@legacy/modules/camera-controls-core.ts'),
+      import('@legacy/modules/camera-controls-restore.ts'),
+      import('@legacy/modules/camera-controls-choreography.ts'),
     ]);
     _core = coreMod as unknown as CameraControlsCoreModule;
     _restore = restoreMod as unknown as CameraControlsRestoreModule;

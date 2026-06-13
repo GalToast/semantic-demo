@@ -14,10 +14,10 @@ import { normalizeCityForFilter } from '@lib/utils/geo-data';
 import { getStrandContinuityManager } from '@lib/utils/strand-continuity';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { summarizeNeighborReason, getInsideRelationshipLabel, cancelAllThreadTimers, setTimer, clearTimer, getStrandArrivalNote } from './thread-settler-adapter';
-import { walkThreadNeighbor, traverseNeighbor, walkInsideToNextStop } from './thread-settler-adapter';
+import { walkThreadNeighbor, traverseNeighbor } from './thread-settler-adapter';
 import type { ThreadCandidate, WalkCandidate } from './thread-model';
 
-export { summarizeNeighborReason, getInsideRelationshipLabel, cancelAllThreadTimers, setTimer, clearTimer, getStrandArrivalNote, walkThreadNeighbor, traverseNeighbor, walkInsideToNextStop };
+export { summarizeNeighborReason, getInsideRelationshipLabel, cancelAllThreadTimers, setTimer, clearTimer, getStrandArrivalNote, walkThreadNeighbor, traverseNeighbor };
 
 // Re-export types
 export type { ThreadCandidate, WalkCandidate };
@@ -87,11 +87,6 @@ export class ThreadSettler {
 			return;
 		}
 		this.walkThreadNeighbor(nextCandidate.index, { fromIndex: currentIndex, surface: 'neighborhood-loop', reason: nextCandidate.reason });
-	}
-
-	walkInsideToNextStop(): void {
-		// Delegate to traverseNeighbor for inside mode
-		this.traverseNeighbor(1);
 	}
 
 	previewInsideNextThread(): WalkCandidate | null {

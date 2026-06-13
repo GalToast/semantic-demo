@@ -40,23 +40,14 @@ import {
   shouldRenderBridgeThreads as shouldRenderBridgeThreadsPort,
   shouldRenderThreads as shouldRenderThreadsPort,
 } from '@lib/engine/thread-manager';
-import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing';
-import { debugWarn } from '@lib/utils/diagnostic-adapter';
-
-// ── Postprocessing Module Import ────────────────────────────────────────────
-//
-// The postprocessing module is a singleton wrapper around vanruesc/postprocessing's
-// EffectComposer (vignette + chromatic aberration + bloom + DOF). Static import
-// so the dev server can resolve the legacy .ts file via the `@legacy` alias.
-// `initPostProcessing()` must run AFTER renderer/scene/camera are created;
-// `renderPostProcessing()` is called from the animate loop with a vanilla
-// `renderer.render()` fallback when premium mode is off.
 import {
   initPostProcessing as _initPostProcessing,
   renderPostProcessing as _renderPostProcessing,
   disposePostProcessing as _disposePostProcessing,
   resizePostProcessing as _resizePostProcessing,
-} from '@legacy/modules/three-postprocessing';
+} from '@lib/engine/three-postprocessing';
+import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 

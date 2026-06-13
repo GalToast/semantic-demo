@@ -378,18 +378,6 @@ export function traverseNeighbor(step: number): void {
     });
 }
 
-export function walkInsideToNextStop(): void {
-    if (
-        state.semanticDiveMode
-        && Number.isFinite((state as any).inspectedThreadIndex)
-        && document.body.dataset.threadInspectSurface === 'inside-cue'
-    ) {
-        walkThreadNeighbor((state as any).inspectedThreadIndex, { surface: 'inside-cue' });
-        return;
-    }
-    traverseNeighbor(1);
-}
-
 interface PreviewInsideOptions {
     force?: boolean;
     [key: string]: unknown;

@@ -18,6 +18,7 @@ import type {
 } from '@lib/types/business';
 import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter';
 import { cleanOptionalValue } from '@lib/utils/dom-formatters';
+import { normalizeRelationshipRole } from '@lib/utils/relationship-roles';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -131,14 +132,27 @@ export async function loadBusinessData(): Promise<BusinessDataResult> {
   const clustersBuffer = new Uint16Array(count);
   const pointIndexByLeadId = new Map<string, number>();
 
+  // Option (b): track vertices with missing coordinates so we can replace
+  // the (0,0,0) sentinel with the bounds center after the loop.  This is
+  // smaller blast radius than option (a) (boolean mask + buffer compaction)
+  // because the Float32Array layout and all downstream readers stay unchanged.
+  const invalidPositionIndices = new Set<number>();
+
   const records: BusinessRecord[] = new Array(count);
 
   for (let i = 0; i < count; i++) {
     const p = raw[i] as unknown[];
-    const x = parseFinite(p[COL.X]) ?? 0;
-    const y = parseFinite(p[COL.Y]) ?? 0;
-    const z = parseFinite(p[COL.Z]) ?? 0;
+    const xVal = parseFinite(p[COL.X]);
+    const yVal = parseFinite(p[COL.Y]);
+    const zVal = parseFinite(p[COL.Z]);
+    const x = xVal ?? 0;
+    const y = yVal ?? 0;
+    const z = zVal ?? 0;
     const cluster = parseInt(String(p[COL.CLUSTER] ?? '0'), 10) || 0;
+
+    if (xVal === null || yVal === null || zVal === null) {
+      invalidPositionIndices.add(i);
+    }
 
     positionsBuffer[i * 3] = x;
     positionsBuffer[i * 3 + 1] = y;
@@ -175,6 +189,42 @@ export async function loadBusinessData(): Promise<BusinessDataResult> {
   }
 
   checkDataBounds(positionsBuffer);
+
+  // Replace sentinel (0,0,0) positions with bounds center for vertices that
+  // had missing coordinates.  Keeps phantom nodes from skewing rendering,
+  // hit-testing, and getPointBoundsCenter while preserving buffer layout.
+  if (invalidPositionIndices.size > 0) {
+    let minX = Infinity, minY = Infinity, minZ = Infinity;
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    let validCount = 0;
+    for (let i = 0; i < count; i++) {
+      if (invalidPositionIndices.has(i)) continue;
+      const bx = positionsBuffer[i * 3]!;
+      const by = positionsBuffer[i * 3 + 1]!;
+      const bz = positionsBuffer[i * 3 + 2]!;
+      if (bx < minX) minX = bx;
+      if (by < minY) minY = by;
+      if (bz < minZ) minZ = bz;
+      if (bx > maxX) maxX = bx;
+      if (by > maxY) maxY = by;
+      if (bz > maxZ) maxZ = bz;
+      validCount++;
+    }
+    if (validCount > 0) {
+      const cx = (minX + maxX) / 2;
+      const cy = (minY + maxY) / 2;
+      const cz = (minZ + maxZ) / 2;
+      for (const idx of invalidPositionIndices) {
+        positionsBuffer[idx * 3] = cx;
+        positionsBuffer[idx * 3 + 1] = cy;
+        positionsBuffer[idx * 3 + 2] = cz;
+      }
+      debugWarn(
+        `[data-loader] ${invalidPositionIndices.size} vertex(es) had missing coordinates; ` +
+        `replaced with bounds center [${cx.toFixed(3)}, ${cy.toFixed(3)}, ${cz.toFixed(3)}].`
+      );
+    }
+  }
 
   debugInfo(
     `[data-loader] Loaded ${count.toLocaleString()} business records, ` +
@@ -384,7 +434,7 @@ function buildSemanticNeighborMap(
               bridgeScore: Number(n?.bridge_score ?? 0),
               signalScore: Number(n?.signal_score ?? 0),
               threadType: cleanOptional(n?.thread_type) ?? 'local_semantic_neighbor',
-              relationshipRole: normalizeRole(n?.relationship_role),
+              relationshipRole: normalizeRelationshipRole(cleanOptional(n?.relationship_role)),
               relationshipAxis: cleanOptional(n?.relationship_axis) ?? '',
               roleReason: cleanOptional(n?.role_reason) ?? '',
               reason: cleanOptional(n?.reason) ?? 'semantic neighbor',
@@ -410,16 +460,6 @@ function normalizeLeadId(id: unknown): string | null {
   if (id === null || id === undefined) return null;
   const s = String(id).trim();
   return s.length > 0 ? s : null;
-}
-
-function normalizeRole(
-  role: unknown
-): 'direct' | 'support' | 'civic' | 'geometric-fallback' {
-  const s = String(role ?? '').trim().toLowerCase();
-  if (s === 'direct') return 'direct';
-  if (s === 'support') return 'support';
-  if (s === 'civic') return 'civic';
-  return 'geometric-fallback';
 }
 
 function delay(ms: number): Promise<void> {

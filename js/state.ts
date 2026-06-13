@@ -2,7 +2,7 @@
 // All types previously in types/state.d.ts are now declared and exported here.
 // src/lib/state/with-state-mutation.ts provides the mutation guard.
 
-import { CLUSTER_COLORS } from './modules/design-tokens.ts';
+import { CLUSTER_COLORS } from '../src/lib/engine/design-tokens.ts';
 import {
   _isMutatingRef,
   withStateMutation,

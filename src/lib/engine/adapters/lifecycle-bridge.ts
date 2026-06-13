@@ -302,10 +302,11 @@ export function createLifecycleMethods(
 
         // 8. Expose legacy state for visual audit / test tools
         if (ctx._state) {
-          (window as unknown as Record<string, unknown>).__APP_STATE__ =
-            ctx._state;
-          (window as unknown as Record<string, unknown>).__TEST_STATE__ =
-            ctx._state;
+          const testWindow = window as unknown as Record<string, unknown>;
+          testWindow.__LEGACY_APP_STATE__ = ctx._state;
+          if (typeof testWindow.__refreshTestCompatState__ === 'function') {
+            (testWindow.__refreshTestCompatState__ as () => void)();
+          }
         }
 
         // 8a. Wire the TS semantic-threads port into the legacy state.

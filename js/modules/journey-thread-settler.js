@@ -1,5 +1,5 @@
-export * from '../../src/lib/journey/thread-settler-adapter.ts';
-import { summarizeNeighborReason as _summarizeNeighborReason, getInsideRelationshipLabel as _getInsideRelationshipLabel } from '../../src/lib/journey/thread-settler-adapter.ts';
+export * from './journey-thread-settler.ts';
+import { summarizeNeighborReason as _summarizeNeighborReason, getInsideRelationshipLabel as _getInsideRelationshipLabel } from './journey-thread-settler.ts';
 import { state } from '../../js/state.js';
 
 export function summarizeNeighborReason(candidate, point, focusPoint) {

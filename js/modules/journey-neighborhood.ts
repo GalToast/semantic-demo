@@ -5,7 +5,7 @@
  * Neighborhood manifest, bounded walk candidates, trail seed, and route index derivation.
  */
 
-import { state } from '../state.ts';
+import { state, withStateMutation } from '../state.ts';
 import {
     getCurrentView, getNavState, getPoints, getActiveFilters, getNodePositions,
     getSemanticNeighborMapByLeadId, getPointIndexByLeadId, getFocusedNode
@@ -27,6 +27,20 @@ import { isCompactLandscape, isUltraCompactPortrait } from './environment.ts';
 // interface yet. These accessors narrow the cast to a readable shape.
 function navNeighborhood(): any {
     return getNavState() as any;
+}
+
+function toIndexSet(value: unknown): Set<number> {
+    if (!value) return new Set();
+    const values = Array.isArray(value)
+        ? value
+        : value instanceof Set
+            ? [...value]
+            : typeof (value as any)?.[Symbol.iterator] === 'function'
+                ? [...(value as Iterable<unknown>)]
+                : typeof value === 'object'
+                    ? Object.values(value as Record<string, unknown>)
+                    : [];
+    return new Set(values.filter((index): index is number => Number.isFinite(index)));
 }
 
 interface NeighborhoodAdapter {
@@ -333,7 +347,11 @@ export function getBoundedNeighborhoodWalkCandidate(step: number = 1, currentInd
     const fromCursor = currentCursor >= 0 ? currentCursor : navNeighborhood().neighborhoodCursor || 0;
     const direction = step < 0 ? -1 : 1;
     const nextCursor = (fromCursor + direction + route.length) % route.length;
-    if (options.commit) navNeighborhood().neighborhoodCursor = nextCursor;
+    if (options.commit) {
+        withStateMutation(() => {
+            navNeighborhood().neighborhoodCursor = nextCursor;
+        });
+    }
     return getNeighborhoodCandidateForIndex(route[nextCursor]!);
 }
 
@@ -342,7 +360,7 @@ export function getNextWalkCandidateForIndex(currentIndex: number, options: { al
     if (options.allowNeighborhood !== false && isBoundedNeighborhoodActive()) {
         return getBoundedNeighborhoodWalkCandidate(1, currentIndex, { commit: !!options.commitNeighborhood });
     }
-    const historySet = new Set<number>((state.navState as any).walkHistoryIndices || []);
+    const historySet = toIndexSet((state.navState as any).walkHistoryIndices);
     const allCandidates = getThreadCandidatesForIndex(currentIndex)
         .filter((candidate: ThreadCandidate) => candidate.index !== currentIndex)
         .sort((a: ThreadCandidate, b: ThreadCandidate) => {
@@ -427,20 +445,22 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
     if (!pocketRoute.length) return;
     const manifest = buildNeighborhoodManifest(seedIndex, pocketRoute, { displayLimit: limit });
     if (!manifest?.candidateIndices?.length) return;
-    navNeighborhood().neighborhoodAnchorIndex = seedIndex;
-    navNeighborhood().neighborhoodIndices = manifest.candidateIndices;
-    navNeighborhood().neighborhoodCursor = 0;
-    navNeighborhood().neighborhoodReasonByIndex = new Map(
-        manifest.candidateIndices.map((candidateIndex: number) => [
-            candidateIndex,
-            manifest.candidates?.get(candidateIndex)?.reason ||
-            navNeighborhood().threadReasonByIndex?.get(candidateIndex) ||
-                getNeighborhoodCandidateForIndex(candidateIndex)?.reason ||
-                'tied stop in this selected neighborhood'
-        ])
-    );
-    navNeighborhood().neighborhoodSource = 'semantic';
-    navNeighborhood().neighborhoodManifest = manifest;
+    withStateMutation(() => {
+        navNeighborhood().neighborhoodAnchorIndex = seedIndex;
+        navNeighborhood().neighborhoodIndices = manifest.candidateIndices;
+        navNeighborhood().neighborhoodCursor = 0;
+        navNeighborhood().neighborhoodReasonByIndex = new Map(
+            manifest.candidateIndices.map((candidateIndex: number) => [
+                candidateIndex,
+                manifest.candidates?.get(candidateIndex)?.reason ||
+                navNeighborhood().threadReasonByIndex?.get(candidateIndex) ||
+                    getNeighborhoodCandidateForIndex(candidateIndex)?.reason ||
+                    'tied stop in this selected neighborhood'
+            ])
+        );
+        navNeighborhood().neighborhoodSource = 'semantic';
+        navNeighborhood().neighborhoodManifest = manifest;
+    });
     setFocusPocketMeta({
             ...((getNavState() as any).focusPocketMeta || {}),
         boundedLoop: true,
