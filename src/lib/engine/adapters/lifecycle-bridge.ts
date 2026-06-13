@@ -37,6 +37,10 @@ import * as legacyStateModule from '@legacy/state.js';
 import * as legacyViewControllerModule from '@legacy/modules/view-controller';
 import * as legacyFilterStateModule from '@legacy/modules/filter-state.js';
 import * as legacyEventBusModule from '@legacy/modules/event-bus.js';
+import {
+  ensureCanvasNodeInteractionBindings,
+  removeCanvasNodeInteractionBindings,
+} from '@legacy/modules/journey-canvas-interaction.js';
 
 // ── TS Port Imports (canonical implementations) ─────────────────────────────
 // These replace the legacy module lazy-loading that previously happened in
@@ -267,28 +271,10 @@ export function createLifecycleMethods(
 
         // 7. Wire canvas click/hover handlers for node picking
         try {
-          // dynamic import retained: journey.ts ↔ journey-canvas-interaction.ts cycle; see Ticket 9B scope
-        const interactionMod = await import(
-            '@legacy/modules/journey-canvas-interaction.js'
-          );
-          if (
-            typeof interactionMod.ensureCanvasNodeInteractionBindings === 'function'
-          ) {
-            interactionMod.ensureCanvasNodeInteractionBindings();
-            ctx._canvasInteractionBound = true;
-            if (
-              typeof interactionMod.removeCanvasNodeInteractionBindings === 'function'
-            ) {
-              ctx._removeCanvasInteraction =
-                interactionMod.removeCanvasNodeInteractionBindings;
-            }
-            // Keep callback subscriptions only when bindings are active.
-          }
-          if (!ctx._canvasInteractionBound) {
-            throw new Error(
-              'Canvas interaction binding API unavailable or did not bind.'
-            );
-          }
+          ensureCanvasNodeInteractionBindings();
+          ctx._canvasInteractionBound = true;
+          ctx._removeCanvasInteraction =
+            removeCanvasNodeInteractionBindings;
         } catch (interactionErr) {
           console.warn(
             '[EngineBridge] Canvas interaction binding failed:',

@@ -80,32 +80,17 @@ import {
     initFocusNeighborRailSubscriptions,
     shouldUseFloatingFocusJourneyOnly
 } from '@legacy/modules/journey-focus-ui'
-// Deferred init: this module is already pulled into the main chunk through
-// journey-focus-ui, but the canvas adapter should bind after journey setup.
-let _loadCanvasInteraction: Promise<typeof import('@legacy/modules/journey-canvas-interaction')> | null = null
-let _canvasInteractionModule: typeof import('@legacy/modules/journey-canvas-interaction') | null = null
-function _ensureCanvasInteraction(): Promise<typeof import('@legacy/modules/journey-canvas-interaction')> {
-    if (!_loadCanvasInteraction) {
-        _loadCanvasInteraction = import('@legacy/modules/journey-canvas-interaction').then((mod) => {
-            _canvasInteractionModule = mod
-            return mod
-        })
-    }
-    return _loadCanvasInteraction
-}
+import {
+    ensureCanvasNodeInteractionBindings as _ensureCanvasNodeInteractionBindings,
+    isThreadCandidateVisibleOnCanvas as _isThreadCandidateVisibleOnCanvas,
+    initJourneyCanvasInteractionAdapter
+} from '@legacy/modules/journey-canvas-interaction'
+
 export function isThreadCandidateVisibleOnCanvas(index: number, margin: number = 18): boolean {
-    if (_canvasInteractionModule) {
-        return _canvasInteractionModule.isThreadCandidateVisibleOnCanvas(index, margin)
-    }
-    void _ensureCanvasInteraction()
-    return true
+    return _isThreadCandidateVisibleOnCanvas(index, margin)
 }
 export function ensureCanvasNodeInteractionBindings(): void {
-    if (_canvasInteractionModule) {
-        _canvasInteractionModule.ensureCanvasNodeInteractionBindings()
-        return
-    }
-    void _ensureCanvasInteraction().then((mod) => mod.ensureCanvasNodeInteractionBindings())
+    _ensureCanvasNodeInteractionBindings()
 }
 import { applyLocalNeighborhoodFocus } from '@legacy/modules/focus-pocket'
 import { applyPointFilterColors, describeThreadLensForPoint } from '@legacy/modules/journey-point-color'
@@ -170,15 +155,14 @@ export function initJourneyState(): void {
     })
 }
 
-globalThis.queueMicrotask(async () => {
+globalThis.queueMicrotask(() => {
     initJourneyState()
-    const canvasMod = await _ensureCanvasInteraction()
     initJourneyNeighborhoodAdapter({
-        isThreadCandidateVisibleOnCanvas: canvasMod.isThreadCandidateVisibleOnCanvas,
+        isThreadCandidateVisibleOnCanvas: _isThreadCandidateVisibleOnCanvas,
         setTrailFromSeed,
         applyLocalNeighborhoodFocus
     })
-    canvasMod.initJourneyCanvasInteractionAdapter({
+    initJourneyCanvasInteractionAdapter({
         summarizeNeighborReason: summarizeNeighborReason as unknown as (
             candidate: Record<string, unknown> | null,
             candidatePoint: Record<string, unknown> | null,
