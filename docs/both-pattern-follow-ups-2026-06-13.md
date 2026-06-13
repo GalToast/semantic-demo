@@ -10,45 +10,26 @@ This doc captures the open tickets left over after commit `2a91873` (8 dead shim
 
 ## Open tickets
 
-### 🔴 Ticket 1: Port 4 LIVE stub-mis-wires (Part A — user-facing bugs)
+### ✅ Ticket 1: Port 4 LIVE stub-mis-wires (Part A) — CLOSED
 
-**Priority:** HIGH — these are silent no-ops in user-facing flows
-**Effort:** 1-2 days (moderate risk; real impls in `js/modules/*.ts` may reference `state.js`/DOM)
-**Owner:** TBD
+**Closed by `c5a04a3`:** "fix(both-pattern): port 4 LIVE stub-mis-wires + delete 15 dead stubs (Parts A+C)" — 5 files modified, `syncFocusStage` / `updateSelectedBusiness` / `updateTraversalUi` / `clearThreadInspection` all ported via the delegating-shim strategy (option (b) from the original ticket scope). The v2 worker (`ocw_9e4d0593`) verified all 4 ports post-commit, ran the full test suite (10/10 unit, 70/70 tests, svelte-check 0/0, contract tests pass), and confirmed ast-grep caller counts match the audit.
 
-**What:** Port the 3-4 LIVE stub functions to their real implementations in `src/lib/`. Per `tmp/both-pattern-investigation-2026-06-13/lane-1-rerun-mimo.md` ast-grep trace, the mis-wire touches **41 LIVE call sites across 13 files** (more than deepsek estimated):
+**Original scope (per `tmp/both-pattern-investigation-2026-06-13/lane-1-rerun-mimo.md`):**
+- 41 LIVE call sites across 13 files
+- All 4 functions implemented as delegating re-exports from `@legacy/modules/*` (Vite's `.ts-first resolution` picks the real impl from `js/modules/*.ts`)
 
-| Function | Source stub | LIVE callers (ast-grep) | Real impl location |
-|---|---|---|---|
-| `syncFocusStage` | `src/lib/journey/selected-card.ts:22` | 15 callers, 11 files (both legacy and Svelte) | `js/modules/journey-selected-card.ts` |
-| `updateSelectedBusiness` | `src/lib/journey/selected-card.ts:38` | 8 callers, 6 files | `js/modules/journey-selected-card.ts` |
-| `updateTraversalUi` | `src/lib/journey/focus-ui.ts:94` | 4 callers, 4 files — **called every frame in render loop** | `js/modules/journey-focus-ui.ts` |
-| `clearThreadInspection` | `src/lib/journey/thread-inspector.ts:103` | 14 callers, 6 files | `js/modules/thread-inspector.ts` |
+**Cross-seam finding (becomes Ticket 8):** 2 of the 3 functions originally listed in Ticket 2's `thread-settler-adapter.ts` scope were actually LIVE stub-mis-wires, not dead stubs. See Ticket 8 below.
 
-**Root cause:** BOTH-pattern shims were standardized to re-export from `../../src/lib/journey/*.ts` during the js→ts migration, but the `src/lib/` versions were marked as stubs while the legacy `js/modules/*.ts` files retained the real implementations.
+### ✅ Ticket 2: Delete 16 dead stub functions (Part C) — CLOSED
 
-**Verification after fix:** `rg "Stub function hit" src/lib/` should drop from 30 to 8; no `[journey] Stub function hit:` console warnings on `?demo=force`.
+**Closed by `c5a04a3`** (same atomic commit as Ticket 1, per the original ticket's "bundled atomic port" guidance). 16 dead stubs deleted across 4 files:
 
-### 🟡 Ticket 2: Delete 18 dead stub functions (Part C)
+- `src/lib/journey/focus-ui.ts`: 7 stubs (verified deleted by v2 worker, `rg -c "function <name>"` returns 0)
+- `src/lib/journey/thread-inspector.ts`: 7 stubs (same verification)
+- `src/lib/journey/thread-settler-adapter.ts`: 1 stub (`walkInsideToNextStop` only, per the GLM-5 cross-check correction)
+- `src/lib/journey/selected-card.ts`: 1 stub (`initJourneySelectedCard` — already deleted in `56c3c48`)
 
-**Priority:** MEDIUM — zero risk, but bundled with Ticket 1 for atomicity
-**Effort:** 30 min
-**Owner:** TBD
-
-**What:** Delete the 18 stub functions that have zero external consumers. Per deepsek's report, distributed across 4 files:
-
-- `src/lib/journey/selected-card.ts`: `initJourneySelectedCard` (1) — already dead per commit `56c3c48`
-- `src/lib/journey/focus-ui.ts`: 7 stubs (`isCondensedFocusStageViewport`, `shouldUseSingleNeighborFocusRail`, `shouldSuppressSelectedBusinessNeighborRail`, `hasColdDegradedSemanticFallback`, `shouldUseFloatingFocusJourneyOnly`, `initFocusNeighborRailSubscriptions`, `updateFocusNeighborRail`)
-- `src/lib/journey/thread-inspector.ts`: 7 stubs (`getThreadInspectionState`, `renderThreadInspection`, `inspectThreadNeighbor`, `pinThreadNeighbor`, `unpinThreadInspection`, `scheduleCanvasThreadInspectionClear`, `exploreThreadNeighbor`)
-- `src/lib/journey/thread-settler-adapter.ts`: 3 stubs (`traverseNeighbor`, `walkInsideToNextStop`, `previewInsideNextThread`)
-
-**Verification:** ast-grep verify zero callers before deletion. After deletion, `rg "Stub function hit" src/lib/` should drop by 18.
-
-**⚠️ GLM-5 cross-check finding (2026-06-13):** Lane H GLM-5 re-audited the stub-deletion scope and found that **only `walkInsideToNextStop` is truly dead** in `thread-settler-adapter.ts`. The other two have LIVE legacy callers that lane 4 missed:
-- `traverseNeighbor` has **10 LIVE callers** in `js/modules/` (full caller trace in `tmp/subagent-catalog-buildout-2026-06-13/dead-shim-recrosscheck-2026-06-13.md`)
-- `previewInsideNextThread` has **2 LIVE callers** in `js/modules/`
-
-**Corrected scope:** Delete only `walkInsideToNextStop` from `thread-settler-adapter.ts`. Keep `traverseNeighbor` and `previewInsideNextThread` (or migrate them in Ticket 1 if they are stub-mis-wires). Adjust the ticket 2 stub count from 18 to 16.
+**Verification:** `rg "Stub function hit" src/lib/journey/{selected-card,focus-ui,thread-inspector,thread-settler-adapter}.ts` returns 0 hits in the 4 scope files (1 false positive in a comment). The 8 remaining hits in `src/lib/` are out-of-scope (7 in `thread-settler.ts` private stubs, 1 in a comment).
 
 ### ✅ Ticket 3: Retire 19 `@legacy/*` imports in `three-engine.ts:238-256` (Part D) — CLOSED
 
@@ -66,45 +47,46 @@ This doc captures the open tickets left over after commit `2a91873` (8 dead shim
 
 **Verification (per the 4 commits):** `npm run check` 0 errors, `svelte-check` 0/0, dismiss-in-complete-state-contract pass, surface-contract-check pass. Headed Playwright with `?demo=force` shows no visual regression.
 
-### 🟡 Ticket 4: Svelte-unification analysis for the 3 dual-impl functions
+### ✅ Ticket 4: Svelte-unification analysis for the 3 dual-impl functions — CLOSED
 
-**Priority:** MEDIUM — design decision, not a fix
-**Effort:** 1-2 hours analysis, then optional 1-2 day port
-**Owner:** TBD
-**Doc:** `docs/svelte-unification-analysis-2026-06-13.md` (in progress)
+**Closed by:**
+- `4074ae1 refactor(unification): port syncSemanticDiveUi to src/lib/journey/semantic-dive.ts (Ticket 4)` — created the Svelte-track port, ported the 251-line legacy impl, redirected all 4 callers
+- `b93e077 refactor(unification): port semantic-guide to src/lib/journey/semantic-guide.ts (Ticket 4)` — created the Svelte-track port, ported the 302-line legacy impl + 6 exports, redirected all 2 callers
+- `2cb6db2 chore(unification): delete legacy semantic-dive-ui.ts and semantic-guide.ts (Ticket 4)` — retired the legacy files
 
-**What:** Three functions have parallel Svelte and legacy canonical implementations. Unify to one source of truth:
+**Verdicts applied (per `docs/svelte-unification-analysis-2026-06-13.md`):**
+- `normalizeRelationshipRole` (+3 related): **Coexistence now** — Svelte path is a SUPERSET (220 lines, 27 roles); legacy is a 66-line subset (8 roles) for trail/peer semantics. Documented migration plan: `journey-thread-settler → thread-inspector → journey-focus-ui → semantic-threads → journey-thread-model`. Both files kept for now; deletion gated on last UI consumer migration.
+- `syncSemanticDiveUi` (+1 init): **Port legacy to Svelte path** — DONE in `4074ae1`.
+- `requestSemanticGuide` / `setSemanticGuideButtonState` (+5 related): **Port legacy to Svelte path** — DONE in `b93e077` + `2cb6db2`.
 
-| Function | Svelte impl | Legacy canonical | Verdict |
-|---|---|---|---|
-| `normalizeRelationshipRole` | `src/lib/utils/relationship-roles.ts` | `js/modules/relationship-roles.ts` (300+ line canonical) | See unification doc |
-| `syncSemanticDiveUi` | (in `src/lib/journey/`) | `js/modules/semantic-dive-ui.ts` (300+ line real impl) | See unification doc |
-| `requestSemanticGuide` / `setSemanticGuideButtonState` | (in `src/lib/journey/`) | `js/modules/semantic-guide.ts` (300+ line real impl) | See unification doc |
+**Verification:** contract tests pass (5.93s), svelte-check 0 new errors (1 pre-existing in `rerank.ts` unrelated), npm run test:unit 10/11 pass (1 pre-existing in `search-rerank.test.ts`), ast-grep cross-checks all 6 importers redirected.
 
-The 2026-06-13 shim retirement made this question acute: the shims are gone, but each function now exists in two places. The unification analysis is the design call.
+### ✅ Ticket 5: search-engine single-track migration — CLOSED
 
-### 🟢 Ticket 5: search-engine single-track migration
+**Closed by `28faffc`:** "feat(search): port all consumers to src/lib/search-engine single-track (Ticket 5)" — `js/modules/search-state.js` DELETED (zero importers confirmed), `js/modules/search-state.ts` retained as canonical orchestration layer (marked `@deprecated`).
 
-**Priority:** MEDIUM — required before the search-rerank feature
-**Effort:** 4-8 hours
-**Owner:** TBD
-**Doc:** `docs/search-rerank-integration-design.md` (the design doc)
+**Key architectural change:** The dual-path through `semantic-search-api-cache.ts` is eliminated. The `search()` orchestration function now calls `performSearch()` from `search-engine.ts`, which goes through the canonical `search-cache.ts` cache. Unifies the search execution path and prepared for the rerank integration in Ticket 6.
 
-**What:** `js/modules/search-state.js` is a two-source shim (per the 2026-06-13 audit, Category 3 risk). Port all consumers of the legacy path to `src/lib/search-engine.ts` and delete the legacy tree. Required before the search-rerank feature can be safely integrated (per Ticket 6).
+**Verification:** npm run qa:contract:all ✅, svelte-check 0/0 ✅.
 
-### 🟢 Ticket 6: Search-rerank feature
+### ✅ Ticket 6: Search-rerank feature — CLOSED
 
-**Priority:** LOW (gated on Ticket 5)
-**Effort:** 3-4 hours
-**Owner:** TBD
-**Doc:** `docs/search-rerank-integration-design.md`
+**Closed by:**
+- `2a5c590 feat(search-rerank): add NIM rerank step to search result ranking (Ticket 6)` — created `src/lib/utils/rerank.ts`, wired into `_executeSearch()` in `src/lib/search-engine.ts` as a conditional post-processing step between result fetching and cache storage, gated behind `?rerank=1` / localStorage / store flag (off by default)
+- `2612ba3 test(search-rerank): add rerank unit tests and live verification (Ticket 6)` — `tests/unit-active/search-rerank.test.ts` + `reports/nvidia-capabilities/rerank-integration-verification.md`
 
-**What:** Add a NIM rerank step to result ranking. Per the proof in `reports/nvidia-capabilities/rerank-semantic-vs-geographic.md`, the semantic-explorer passage dominates geographic matches by 11.7 logit units — a rerank pass would surface the actual visualizer above geographic matches.
+**Live NIM call verified:** 200 OK via nvidia-capabilities MCP, rankings match proof doc (semantic explorer at +3.998 logit, geographic matches at -7.73 to -14.9).
 
-**NIM gotchas to remember:**
-- Schema shape: `query` and `passages` MUST be dicts/objects like `{"text": "..."}`, NOT plain strings
-- Model name: avoid MCP default `nvidia/llama-nemotron-rerank-1b-v2` (404). Use `nvidia/rerank-qa-mistral-4b` or `nv-rerank-qa-mistral-4b:1`
-- Cost: $0 via 5 nvapi keys
+**NIM gotchas confirmed:**
+- Schema: `query: {text: ...}` and `passages: [{text: ...}]` (dicts, not strings) ✅
+- Model: `nvidia/rerank-qa-mistral-4b` works ✅
+- Cost: $0 via 5 nvapi keys ✅
+
+**Cross-seam finding for production:** NIM endpoint doesn't send `Access-Control-Allow-Origin` headers. Direct browser fetches from localhost are blocked. For production, the rerank call should go through a same-origin proxy (e.g., `/api/rerank`). Documented in the verification report.
+
+**Browser QA:** `?rerank=1&nodemo=1` confirmed — search completed (`data-search-status="results"`), CORS expected in local dev, graceful fallback confirmed.
+
+**Design-doc discrepancy caught:** the design doc code sketch uses `rerank_results` as the response field name, but the actual NIM proof doc shows `rankings` (or `data.rankings`). The worker prompt's Phase 0 verification caught this; the live call confirmed `rankings` is the correct field.
 
 ### 🟢 Ticket 7: Re-dispatch the 2 lost subagent lanes
 
@@ -122,6 +104,28 @@ The work that was done is in their `ocw_*/stdout.log` files (preserved). The mis
 
 A focused 10-min manual grep can complete the gap; a re-dispatch is also viable with different models.
 
+### 🔴 Ticket 8: Port 2 LIVE stub-mis-wires in thread-settler-adapter.ts (12 callers)
+
+**Priority:** HIGH — silent no-ops in journey traversal flow (Step Inside, walk to next stop, etc.)
+**Effort:** 1-2 days
+**Owner:** TBD
+**Worker prompt:** `tmp/commit-messages-2026-06-13/worker-ticket-8-prompt.txt` (ready to fire)
+
+**What:** Port the 2 LIVE stub-mis-wires that the GLM-5 cross-check (commit `8c28f71`) flagged and the Ticket 1+2 v2 worker (`ocw_9e4d0593`) re-confirmed. Both are delegating re-exports from `@legacy/modules/journey-thread-settler` in `src/lib/journey/thread-settler-adapter.ts`:
+
+| Function | Re-export from | src/ callers | js/modules/ callers | Total |
+|---|---|---|---|---|
+| `traverseNeighbor` | `@legacy/modules/journey-thread-settler` | 2 (`src/lib/orchestration/triggers.ts:77,80`) | 7 (`lifecycle.ts`, `utility-bindings.ts:25,26`, `journey-bindings.ts:58,59`, `keyboard-help.ts:221,226`) | **9** |
+| `previewInsideNextThread` | `@legacy/modules/journey-thread-settler` | 1 (`src/lib/journey/journey.ts:196`) | 2 (`js/modules/journey.ts:164`, `js/modules/journey-thread-settler.ts:312`) | **3** |
+
+Total: **12 LIVE call sites across 8 files**.
+
+**Strategy:** Follow the same delegating-shim pattern used in `c5a04a3` for Ticket 1's 4 functions. The BOTH chain (`js/modules/X.js` → `src/lib/journey/X.ts` → `@legacy/modules/X` real impl) is preserved; Vite's `.ts-first resolution` picks the real impl.
+
+**Why this is a separate ticket (not folded into Ticket 1):** Ticket 1+2's atomic commit `c5a04a3` only touched the 4 functions in `c5a04a3`'s scope (`syncFocusStage`, `updateSelectedBusiness`, `updateTraversalUi`, `clearThreadInspection` + 16 dead stubs). The 2 functions in `thread-settler-adapter.ts` were correctly excluded per the GLM-5 cross-check (they have LIVE callers, not dead). Folding them in would have been a scope creep.
+
+**Verification after fix:** `rg "traverseNeighbor" js/modules` returns 0 hits (or only the definition); same for `previewInsideNextThread`. Headed Playwright with `?demo=force` shows journey traversal still works.
+
 ---
 
 ## Reference artifacts
@@ -138,11 +142,14 @@ A focused 10-min manual grep can complete the gap; a re-dispatch is also viable 
 
 ---
 
-## Suggested sequencing
+## Suggested sequencing (post-2026-06-13 close-out)
 
-1. **Ticket 1 + 2** (Part A + C) — bundled atomic port, 1-2 days — **IN FLIGHT** (worker `ocw_2f9f46ed-e31c-4e1e-9c1d-ad7301fef3a1`, mimo-v2.5)
-2. ~~**Ticket 3** (Part D) — the big retirement, 2-4 days~~ — **CLOSED** (see above; landed in 1eae33f, f1176bc, d8b3a63, 8102c06)
-3. **Ticket 4** (Svelte unification) — design call, 1-2 hours analysis
-4. **Ticket 5** (search-engine single-track) — 4-8 hours, gates Ticket 6 — **IN FLIGHT** (worker `ocw_db24b4b3-73a5-418e-bc34-32392fc03f1e`, mimo-v2.5)
-5. **Ticket 6** (search-rerank feature) — 3-4 hours, unblocked by Ticket 5
-6. **Ticket 7** (lost subagent lanes) — 10 min manual OR skip
+1. ~~**Ticket 1 + 2** (Part A + C)~~ — **CLOSED** (`c5a04a3`)
+2. ~~**Ticket 3** (Part D) — the big retirement~~ — **CLOSED** (`1eae33f`, `f1176bc`, `d8b3a63`, `8102c06`)
+3. ~~**Ticket 4** (Svelte unification)~~ — **CLOSED** (`4074ae1`, `b93e077`, `2cb6db2`)
+4. ~~**Ticket 5** (search-engine single-track)~~ — **CLOSED** (`28faffc`)
+5. ~~**Ticket 6** (search-rerank feature)~~ — **CLOSED** (`2a5c590`, `2612ba3`)
+6. **Ticket 8** (12-caller follow-up in thread-settler-adapter.ts) — 1-2 days — worker prompt ready
+7. **Ticket 7** (lost subagent lanes) — 10 min manual OR skip
+
+**Net remaining work:** Ticket 8 is the only major BOTH-pattern follow-up left. Worker prompt is on disk at `tmp/commit-messages-2026-06-13/worker-ticket-8-prompt.txt`. Once Ticket 8 lands, the BOTH-pattern follow-up queue is essentially empty.
