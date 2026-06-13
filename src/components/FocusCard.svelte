@@ -15,10 +15,40 @@
     #selected-role-badge
 -->
 <script lang="ts">
-  import { currentSurface, hasFocus, focusedIndex } from '@lib/stores/navigation.svelte';
+  import { navStore } from '@lib/stores/navigation.svelte';
   import { activeResult } from '@lib/stores/search.svelte';
-  import { getBusinessRecords, getIsDataReady } from '@lib/stores/index.svelte';
+  import { getBusinessRecords } from '@lib/stores/index.svelte';
   import type { BusinessRecord } from '@lib/types/business';
+
+  // ── Legacy data fallback ──────────────────────────────────────────────
+  // The Svelte data-store hydration can fail (Vite module-identity issues),
+  // leaving getBusinessRecords() empty even though __APP_STATE__.points is
+  // populated. Fall back to the legacy window state so selectedRecord can
+  // resolve the focused business when the Svelte store is empty.
+  //
+  // The function is called inside a $derived, so its result is cached. We
+  // keep a $state rune for the records array and refresh it in an $effect
+  // whenever the body data-scene-ready attribute flips (which is the
+  // canonical "data is hydrated" signal from the legacy init path).
+  function _getRecordsWithFallback(): readonly BusinessRecord[] {
+    const svelte = getBusinessRecords();
+    if (svelte.length > 0) return svelte;
+    try {
+      const w = window as unknown as { __APP_STATE__?: { points?: readonly BusinessRecord[] } };
+      const pts = w.__APP_STATE__?.points;
+      if (Array.isArray(pts) && pts.length > 0) return pts;
+    } catch { /* ignore */ }
+    return [];
+  }
+
+  let _records = $state<readonly BusinessRecord[]>([]);
+  $effect(() => {
+    // Re-evaluate when bodySceneReady flips, OR when currentFocusedIdx changes
+    // (which can happen before the body signal arrives).
+    void bodySceneReady;
+    void currentFocusedIdx;
+    _records = _getRecordsWithFallback();
+  });
 
   interface Props {
     /** Whether the card is visible */
@@ -28,6 +58,13 @@
   }
 
   let { visible = false, forceSemanticDiveVisible = false }: Props = $props();
+
+  // ── navStore → $state bridge (5c51450 pattern) ──────────────────────────
+  // navStore is a regular svelte/store writable. Reading it via get() inside
+  // a $derived does NOT register as a tracked dependency under Svelte 5 runes.
+  // Mirror it into a $state rune so $derived/$effect track its changes.
+  let nav = $state(navStore());
+  $effect(() => navStore.subscribe(($s) => (nav = $s)));
 
   // ── Cluster names (mirrors CLUSTER_NAMES from state.js) ───────────────────────
 
@@ -50,24 +87,37 @@
   ];
 
   // ── Derived state ─────────────────────────────────────────────────────────────
+  // Primary source: body data attribute (parity attrs write this from the
+  //   legacy code path; reading it registers a dep on bodyFocusedNode so the
+  //   $derived re-evaluates when the body attribute changes).
+  // Secondary: navStore rune (5c51450 pattern, mirrors FocusPocket.svelte).
+  // Tertiary: legacy __APP_STATE__.navState.focusedIndex for completeness.
 
   let currentFocusedIdx = $derived.by(() => {
-    // Read bodyFocusedNode to register a reactive dependency on the body's
-    // data-focused-node attribute. focusedIndex() falls back to the legacy
-    // __APP_STATE__ which is non-reactive, so without this dep the derived
-    // would cache null and not update when the legacy focus state changes.
     void bodyFocusedNode;
-    return focusedIndex();
+    const fromBody = bodyFocusedNode !== '' ? Number(bodyFocusedNode) : null;
+    if (fromBody !== null && Number.isFinite(fromBody)) return fromBody;
+    const fromNav = nav.focusedIndex;
+    if (typeof fromNav === 'number' && Number.isFinite(fromNav)) return fromNav;
+    try {
+      const w = window as unknown as { __APP_STATE__?: { navState?: { focusedIndex?: unknown } } };
+      const legacy = w.__APP_STATE__?.navState?.focusedIndex;
+      if (typeof legacy === 'number' && Number.isFinite(legacy)) return legacy;
+    } catch { /* ignore */ }
+    return null;
   });
   let currentActiveResult = $derived(activeResult());
-  let isFocused = $derived(hasFocus());
-  let surface = $derived(currentSurface());
+  let isFocused = $derived(
+    nav.mode === 'focus' || nav.mode === 'inside' || currentFocusedIdx !== null
+  );
+  let surface = $derived(nav.surface ?? 'idle');
 
   let bodyPanelSurface = $state('');
   let bodyPanelSurfaceDetail = $state('');
 
   let bodyFocusedNode = $state('');
   let bodyNavMode = $state('');
+  let bodySceneReady = $state('');
 
   $effect(() => {
     if (typeof document === 'undefined') return;
@@ -76,11 +126,12 @@
       bodyPanelSurfaceDetail = document.body.dataset.panelSurfaceDetail ?? '';
       bodyFocusedNode = document.body.dataset.focusedNode ?? '';
       bodyNavMode = document.body.dataset.navMode ?? '';
+      bodySceneReady = document.body.dataset.sceneReady ?? '';
     };
     const observer = new MutationObserver(syncBodyPanelSurface);
     observer.observe(document.body, {
       attributes: true,
-      attributeFilter: ['data-panel-surface', 'data-panel-surface-detail', 'data-focused-node', 'data-nav-mode']
+      attributeFilter: ['data-panel-surface', 'data-panel-surface-detail', 'data-focused-node', 'data-nav-mode', 'data-scene-ready']
     });
     syncBodyPanelSurface();
     return () => observer.disconnect();
@@ -104,16 +155,21 @@
   );
 
   let selectedRecord = $derived.by((): BusinessRecord | null => {
-    if (!getIsDataReady() || getBusinessRecords().length === 0) return null;
+    // Read _records (a $state rune) so this $derived is registered as a
+    // dep on it. _records is updated in the $effect above when the body
+    // data-scene-ready signal flips, which is when the legacy init path
+    // finishes hydrating __APP_STATE__.points.
+    void _records;
+    if (_records.length === 0) return null;
 
     // Use search result if available
     if (currentActiveResult !== null) {
-      return getBusinessRecords()[currentActiveResult.index] ?? null;
+      return _records[currentActiveResult.index] ?? null;
     }
 
     // Otherwise use field focus
     if (currentFocusedIdx !== null && currentFocusedIdx >= 0) {
-      return getBusinessRecords()[currentFocusedIdx] ?? null;
+      return _records[currentFocusedIdx] ?? null;
     }
 
     return null;
