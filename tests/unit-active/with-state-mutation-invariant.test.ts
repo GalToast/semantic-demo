@@ -20,17 +20,16 @@
  * of those keys outside a withStateMutation block.
  *
  * What counts as a direct mutation:
- *   - `state.<KEY> = ...` assignment (left-hand side)
- *   - `state.<KEY>.<subkey> = ...` (deeper) — still illegal if KEY is
- *     in TRACKED_SUB_KEYS (the parent is wrapped in a nested Proxy)
+ *   - `state.<KEY> = ...` assignment
+ *   - `state.<KEY>.<subkey> = ...` (deeper) — illegal if KEY is in
+ *     TRACKED_SUB_KEYS (parent wrapped in nested Proxy)
+ *   - `state.<KEY> ??= ...` (nullish)
+ *   - `state.<KEY>.<subkey> ??= ...` (subkey nullish)
  *
  * What's a "withStateMutation block":
- *   - The mutation is on a line lexically between an opening
- *     `withStateMutation(...)` (or `withStateMutation(() =>`) and the
- *     matching closing `})` of that call.
- *   - Heuristic: the assignment is at an indentation level >= the
- *     indentation of the withStateMutation line. This catches
- *     top-level mutations while permitting properly-nested ones.
+ *   - The mutation is between an opening `withStateMutation(...)`
+ *     and the matching `})` of that call. The block can span
+ *     multiple lines OR be single-line `withStateMutation(() => { ... })`.
  *
  * Run: npx vitest run tests/unit-active/with-state-mutation-invariant.test.ts
  */
@@ -115,11 +114,17 @@ function collectFiles(root: string): string[] {
  *
  * Heuristic for "inside a withStateMutation block":
  *   - Track the withStateMutation call stack as we scan line by line.
- *   - On `withStateMutation(...)` opening, push the current line
- *     indent + 1 (children must be more indented than the call).
- *   - On `})` closing at the withStateMutation indent, pop.
- *   - A direct mutation line is "inside" if there's >= 1 withStateMutation
- *     block open at that point.
+ *   - On `withStateMutation(...)` opening, push to the stack.
+ *   - On `{` opens at indent >= wsm-indent, increment depth for the wsm.
+ *   - On `}` closes, decrement depth; pop when depth returns to 0.
+ *   - A direct mutation line is "inside" if there's >= 1 wsm
+ *     call open at that point.
+ *
+ * KEY INSIGHT: the mutation check must happen BEFORE applying this
+ * line's brace delta. Otherwise, a single-line wsm call
+ * (`withStateMutation(() => { state.X = ... })`) would have its
+ * wsm popped before we check the mutation, producing a false
+ * positive for the very pattern the test is meant to verify.
  */
 function scanFile(filePath: string): Violation[] {
     const rel = relative(repoRoot, filePath);
@@ -134,50 +139,71 @@ function scanFile(filePath: string): Violation[] {
     const lines = text.split(/\r?\n/);
     const violations: Violation[] = [];
 
-    // Stack of withStateMutation open indents. Each entry is the
-    // indent of the line that opened the call; the call's body must
-    // be more indented. We approximate close by counting braces per
-    // line and popping when depth returns to the opening level.
-    const wsmStack: number[] = [];
-
-    // Track brace depth from the last withStateMutation open so we
-    // know when to pop. Index matches wsmStack.
-    const wsmOpenBraceDepth: number[] = [];
+    // Stack of withStateMutation open indent + brace depth. Each
+    // entry is {indent, depth}. The wsm call's body must be more
+    // indented than `indent` (children).
+    const wsmStack: Array<{ indent: number; depth: number }> = [];
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const lineNum = i + 1;
 
-        // Update wsmStack based on the line's content.
-        // Heuristic: look for `withStateMutation` opening (call start),
-        // and `})` closing at the withStateMutation indent level.
+        // 1. Check for withStateMutation opening; push to stack.
         const wsmOpen = /\bwithStateMutation\s*\(/.exec(line);
         if (wsmOpen) {
-            // Capture the opening indent (count leading whitespace).
             const indent = line.search(/\S/);
-            wsmStack.push(indent < 0 ? 0 : indent);
-            wsmOpenBraceDepth.push(0);
+            wsmStack.push({ indent: indent < 0 ? 0 : indent, depth: 0 });
         }
 
-        // Count brace balance for this line (excluding string contents).
-        // Approximation: only count `{` and `}` outside of `'` and `"`.
+        // 2. CHECK MUTATIONS — BEFORE applying this line's brace
+        //    delta. This handles single-line wsm patterns correctly.
+        for (const key of PROTECTED_KEYS) {
+            // Match an assignment to `state.<KEY>` (with optional
+            // `.subkey` chain). Allowed assignment operators:
+            //   - simple: `state.X = ...`
+            //   - subkey: `state.X.subkey = ...`
+            //   - nullish: `state.X ??= ...`
+            //   - nullish subkey: `state.X.subkey ??= ...`
+            // The `=` MUST be preceded by either whitespace (simple)
+            // or `?` (nullish), and MUST NOT be followed by another
+            // `=` (filters out `==` and `===`).
+            // This filters out:
+            //   - reads: `(state.X as any).threadCandidates`
+            //   - comparisons: `state.X === 'foo'`
+            //   - ternary: `state.X ? a : b`
+            //   - method calls: `state.X.toString()`
+            const re = new RegExp(
+                `\\bstate\\.${key}\\b(?:\\.[A-Za-z_][A-Za-z0-9_]*)*(?:\\s*=(?!=)|\\?=(?!=))`
+            );
+            const match = re.exec(line);
+            if (!match) continue;
+
+            const column = match.index + 1;
+
+            // Inside a withStateMutation block?
+            if (wsmStack.length > 0) continue;
+
+            violations.push({
+                file: rel,
+                line: lineNum,
+                column,
+                matchedLine: line.trim(),
+                key,
+            });
+        }
+
+        // 3. Count brace balance for this line. The wsm call's
+        //    body is between the opening `{` (or `=> {` of the
+        //    arrow function) and the matching `}`. We track the
+        //    depth of the wsm call's body braces; the call is
+        //    "open" while depth > 0.
         let depthDelta = 0;
         let inSingle = false;
         let inDouble = false;
         let inTemplate = false;
-        let inLineComment = false;
-        let inBlockComment = false;
         for (let j = 0; j < line.length; j++) {
             const c = line[j];
             const prev = j > 0 ? line[j - 1] : '';
-            if (inLineComment) break;
-            if (inBlockComment) {
-                if (c === '*' && line[j + 1] === '/') {
-                    inBlockComment = false;
-                    j++;
-                }
-                continue;
-            }
             if (inSingle) {
                 if (c === "'" && prev !== '\\') inSingle = false;
                 continue;
@@ -191,12 +217,19 @@ function scanFile(filePath: string): Violation[] {
                 continue;
             }
             if (c === '/' && line[j + 1] === '/') {
-                inLineComment = true;
+                // Line comment — skip the rest of the line.
                 break;
             }
             if (c === '/' && line[j + 1] === '*') {
-                inBlockComment = true;
-                j++;
+                // Block comment — skip the comment span.
+                j += 2;
+                while (j < line.length) {
+                    if (line[j] === '*' && line[j + 1] === '/') {
+                        j++;
+                        break;
+                    }
+                    j++;
+                }
                 continue;
             }
             if (c === "'") {
@@ -216,45 +249,12 @@ function scanFile(filePath: string): Violation[] {
         }
         // Apply depth delta to the topmost withStateMutation if any.
         for (let k = wsmStack.length - 1; k >= 0; k--) {
-            wsmOpenBraceDepth[k] += depthDelta;
+            wsmStack[k].depth += depthDelta;
             // Pop when depth returns to 0 (matching close).
-            if (wsmOpenBraceDepth[k] <= 0) {
+            if (wsmStack[k].depth <= 0) {
                 wsmStack.splice(k, 1);
-                wsmOpenBraceDepth.splice(k, 1);
                 break; // only one close per line
             }
-        }
-
-        // Check for direct mutations of protected keys.
-        for (const key of PROTECTED_KEYS) {
-            // Match `state.<key>` (not `state.<key>.<subkey>`, not
-            // `state.<key>foo`). Use word boundary on the right.
-            const re = new RegExp(`\\bstate\\.${key}\\b(?!\\.|[A-Za-z0-9_])`);
-            const match = re.exec(line);
-            if (!match) continue;
-
-            // Confirm the line is an assignment. Look for `=` after
-            // the match, skipping over `==` and `===` and `=>`.
-            const after = line.slice(match.index + match[0].length);
-            const assignMatch = /(?<![=>])=(?!=)/.exec(after);
-            if (!assignMatch) continue;
-
-            const column = match.index + 1;
-
-            // Inside a withStateMutation block?
-            if (wsmStack.length > 0) continue;
-
-            // Skip commented lines (already filtered above, but
-            // double-check for /* ... */ on this exact line).
-            if (inLineComment || inBlockComment) continue;
-
-            violations.push({
-                file: rel,
-                line: lineNum,
-                column,
-                matchedLine: line.trim(),
-                key,
-            });
         }
     }
     return violations;
