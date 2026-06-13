@@ -50,19 +50,21 @@ This doc captures the open tickets left over after commit `2a91873` (8 dead shim
 
 **Corrected scope:** Delete only `walkInsideToNextStop` from `thread-settler-adapter.ts`. Keep `traverseNeighbor` and `previewInsideNextThread` (or migrate them in Ticket 1 if they are stub-mis-wires). Adjust the ticket 2 stub count from 18 to 16.
 
-### 🟡 Ticket 3: Retire 19 `@legacy/*` imports in `three-engine.ts:238-256` (Part D)
+### ✅ Ticket 3: Retire 19 `@legacy/*` imports in `three-engine.ts:238-256` (Part D) — CLOSED
 
-**Priority:** HIGH — biggest single Tier-1 retirement target
-**Effort:** 2-4 days (10 HOT imports need careful render-loop port; 9 COLD imports are easier)
-**Owner:** TBD
+**Closed by:**
+- `1eae33f` — 9 COLD imports in `three-engine.ts:238-256`
+- `f1176bc` — 10 HOT imports in `same dynamic import block`
+- `d8b3a63` — sibling warm edge in `src/lib/engine/adapters/lifecycle-bridge.ts` (view-controller)
+- `8102c06` — Ticket 3 hot follow-up: 6 additional `@legacy/*` retirements across `camera-choreography/{cursor,focus,routes}.ts`, `camera-controls.ts`, `orchestration/window-actions.ts`, plus `lifecycle-bridge.ts` state import
 
-**What:** Per mimo's corrected counts (`tmp/both-pattern-investigation-2026-06-13/lane-1-rerun-mimo.md`):
-- **10 HOT** (in render loop): `state`, `camera-controls`, `scene-reveal`, `focus-pocket`, `cluster-labels`, `three-interaction-visuals`, `three-search-animations`, `inspected-strand-overlay-adapter`, `route-arrival-overlay-adapter`, `mycelium-engine`
-- **9 COLD** (init-only, in same file): `view-controller`, `map-state`, `ui-feedback`, `map-flattening-layout`, `webgl-restore-adapter`, `focus-anchor-indicator`, `audio-scape`, `event-bindings`, `loading-ui`
+**Original scope (per mimo's corrected counts `tmp/both-pattern-investigation-2026-06-13/lane-1-rerun-mimo.md`):**
+- 10 HOT (render loop): `state`, `camera-controls`, `scene-reveal`, `focus-pocket`, `cluster-labels`, `three-interaction-visuals`, `three-search-animations`, `inspected-strand-overlay-adapter`, `route-arrival-overlay-adapter`, `mycelium-engine`
+- 9 COLD (init-only): `view-controller`, `map-state`, `ui-feedback`, `map-flattening-layout`, `webgl-restore-adapter`, `focus-anchor-indicator`, `audio-scape`, `event-bindings`, `loading-ui`
 
-All 19 can be retired in a single PR. The 9 COLD are bonus — same file, can ride along.
+**All 19 retired and verified.** Tier-1 `@legacy/*` retirement target for `three-engine.ts` and the camera-choreography / orchestration tree is now complete. The remaining 2 ineffective dynamic import warnings in `memory/active-context.md` are accepted legacy lazy imports (`journey-canvas-interaction`, `event-bindings`) — these are intentional and not `@legacy/*` retirements.
 
-**Verification:** Playwright headed with `?demo=force`, no `console.warn` from the retired paths, no visual regression in scene reveal / focus pocket / thread inspection.
+**Verification (per the 4 commits):** `npm run check` 0 errors, `svelte-check` 0/0, dismiss-in-complete-state-contract pass, surface-contract-check pass. Headed Playwright with `?demo=force` shows no visual regression.
 
 ### 🟡 Ticket 4: Svelte-unification analysis for the 3 dual-impl functions
 
@@ -138,9 +140,9 @@ A focused 10-min manual grep can complete the gap; a re-dispatch is also viable 
 
 ## Suggested sequencing
 
-1. **Ticket 1 + 2** (Part A + C) — bundled atomic port, 1-2 days
-2. **Ticket 3** (Part D) — the big retirement, 2-4 days
+1. **Ticket 1 + 2** (Part A + C) — bundled atomic port, 1-2 days — **IN FLIGHT** (worker `ocw_2f9f46ed-e31c-4e1e-9c1d-ad7301fef3a1`, mimo-v2.5)
+2. ~~**Ticket 3** (Part D) — the big retirement, 2-4 days~~ — **CLOSED** (see above; landed in 1eae33f, f1176bc, d8b3a63, 8102c06)
 3. **Ticket 4** (Svelte unification) — design call, 1-2 hours analysis
-4. **Ticket 5** (search-engine single-track) — 4-8 hours, gates Ticket 6
-5. **Ticket 6** (search-rerank feature) — 3-4 hours
+4. **Ticket 5** (search-engine single-track) — 4-8 hours, gates Ticket 6 — **IN FLIGHT** (worker `ocw_db24b4b3-73a5-418e-bc34-32392fc03f1e`, mimo-v2.5)
+5. **Ticket 6** (search-rerank feature) — 3-4 hours, unblocked by Ticket 5
 6. **Ticket 7** (lost subagent lanes) — 10 min manual OR skip
