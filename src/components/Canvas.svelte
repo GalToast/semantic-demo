@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { viewportWidth, viewportHeight, dpr } from '@lib/stores/viewport';
+  import { viewport, viewportWidth, viewportHeight, dpr } from '@lib/stores/viewport';
   import { completeCameraTransition } from '@lib/stores/camera';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
   import { setGraphicsMode, setLoadingPhase } from '@lib/data-store';
@@ -64,8 +64,13 @@
   });
 
   $effect(() => {
-    const w = viewportWidth();
-    const h = viewportHeight();
+    // Use $viewport auto-subscription so the effect re-runs on viewport
+    // changes. Calling viewportWidth()/viewportHeight() here is a snapshot
+    // read (get(store).x) and is NOT tracked by $effect in Svelte 5 runes
+    // mode — that's why the bridge never received resize events from the
+    // viewport store on its own. See qa-screenshots/REPORT.md bug 1.
+    const w = $viewport.width;
+    const h = $viewport.height;
     if (bridge?.isReady()) {
       bridge.resize(w, h);
     }
