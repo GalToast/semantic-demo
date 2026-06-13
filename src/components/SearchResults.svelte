@@ -24,7 +24,6 @@
 <script lang="ts">
   import { searchState, hasResults, activeResult, setActiveResult, clearSearch } from '@lib/stores/search';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
-  import { isCompact } from '@lib/stores/viewport';
   import { searchVisibleCount as searchVisibleCountFn, setSearchVisibleCount } from '@lib/stores/search';
   import { activeClusterFilter } from '@lib/stores/filter';
   import { getBusinessRecords } from '@lib/data-store';
@@ -161,6 +160,14 @@
     const result = (results as unknown as SearchResult[]).find((item) => Number(item.index) === Number(index));
     const point = result ? getResultPoint(result) : null;
     if (point) {
+      const actions = typeof window !== 'undefined'
+        ? (window as unknown as {
+            __APP_ACTIONS__?: {
+              focusOnNode?: (nodeIndex: number, options?: Record<string, unknown>) => unknown;
+            };
+          }).__APP_ACTIONS__
+        : undefined;
+      actions?.focusOnNode?.(Number(index), { fromSearchResult: true });
       publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: Number(index) } as any);
     }
   }

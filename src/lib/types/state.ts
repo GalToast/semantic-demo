@@ -289,6 +289,12 @@ export interface ViewportState {
   isCompact: boolean;
   isMobile: boolean;
   isLandscape: boolean;
+  // Derived viewport shapes (computed by syncViewport). Exposed on the
+  // store so reactive consumers can read them via $viewport.* in Svelte
+  // templates / $derived / $effect (calling isUltraCompactPortrait() as a
+  // function getter is a snapshot read and is NOT tracked in runes mode).
+  isCompactLandscape: boolean;
+  isUltraCompactPortrait: boolean;
 }
 
 // ── Strand Continuity State ───────────────────────────────────────────────────

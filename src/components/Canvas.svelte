@@ -108,8 +108,8 @@
     <canvas
       bind:this={canvasEl}
       class="semantic-canvas"
-      width={viewportWidth() * dpr()}
-      height={viewportHeight() * dpr()}
+      width={$viewport.width * $viewport.dpr}
+      height={$viewport.height * $viewport.dpr}
       role="application"
       aria-label="3D semantic business explorer"
       tabindex={interactive ? 0 : -1}

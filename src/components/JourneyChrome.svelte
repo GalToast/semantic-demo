@@ -20,7 +20,7 @@
   import { buildCompassStatus } from '@lib/stores/compass';
   import { threadInspector, threadInspectorActive, pinThread, updateThreadInspector } from '@lib/stores/focus';
   import { getBusinessRecords, selectedPointStore } from '@lib/stores';
-  import { isCompact, isMobile, isCompactLandscape, isUltraCompactPortrait } from '@lib/stores/viewport';
+  import { viewport, isCompact, isMobile, isCompactLandscape, isUltraCompactPortrait } from '@lib/stores/viewport';
   import { searchSummary, isSearching } from '@lib/stores/search';
   import type { BusinessRecord } from '@lib/types/business';
 
@@ -128,10 +128,14 @@
 
   // ── Neighbor rail ─────────────────────────────────────────────────────────
 
+  // Use $viewport auto-subscription so the derived re-runs on viewport changes.
+  // (Calling isCompact()/isMobile()/etc. in a $derived.by is a snapshot read
+  // in Svelte 5 runes mode — they don't track the store.) See the audit at
+  // qa-screenshots/AUDIT.md for the full pattern.
   const candidateLimit = $derived.by(() => {
-    if (isCompact() && !isUltraCompactPortrait()) return 1;
-    if (isCompactLandscape() || isUltraCompactPortrait()) return 2;
-    if (isMobile() && isCompact()) return 4;
+    if ($viewport.isCompact && !$viewport.isUltraCompactPortrait) return 1;
+    if ($viewport.isCompactLandscape || $viewport.isUltraCompactPortrait) return 2;
+    if ($viewport.isMobile && $viewport.isCompact) return 4;
     return 5;
   });
 

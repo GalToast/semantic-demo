@@ -15,7 +15,7 @@
   import { searchState } from '@lib/stores/search';
   import SearchInput from './SearchInput.svelte';
   import SearchResults from './SearchResults.svelte';
-  import { isCompact } from '@lib/stores/viewport';
+  import { viewport, isCompact } from '@lib/stores/viewport';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -57,7 +57,7 @@
   class:has-query={hasQuery}
   class:results-rendered={showResults}
   class:searching={showLoading}
-  class:is-compact={isCompact()}
+  class:is-compact={$viewport.isCompact}
   class:info-panel-contained={panelContained}
   role="search"
   aria-label="Search businesses in the semantic field"

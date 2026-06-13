@@ -4,7 +4,7 @@
 <script lang="ts">
   import { cameraState, setAutoRotate, startCameraTransition, resetCamera } from '@lib/stores/camera';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
-  import { isCompact } from '@lib/stores/viewport';
+  import { viewport, isCompact } from '@lib/stores/viewport';
 
   interface Props {
     visible?: boolean;
@@ -44,7 +44,7 @@
 {#if visible}
   <div
     class="controls"
-    class:compact={isCompact()}
+    class:compact={$viewport.isCompact}
     id="camera-controls"
     role="toolbar"
     aria-label="Camera controls"

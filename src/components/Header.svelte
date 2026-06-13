@@ -18,7 +18,7 @@
     navStore,
     type NavStoreApi
   } from '@lib/stores/navigation';
-  import { isCompact } from '@lib/stores/viewport';
+  import { viewport, isCompact } from '@lib/stores/viewport';
   import { legendOpen, toggleLegend } from '@lib/stores/legend.svelte';
   import { updateUrlState } from '@lib/orchestration/url-state';
 
@@ -109,12 +109,12 @@
 {#if visible}
   <header
     class="app-header"
-    class:compact={isCompact()}
+    class:compact={$viewport.isCompact}
     id="app-header"
   >
     <div class="header-brand">
       <span class="brand-mark">SE</span>
-      {#if !isCompact()}
+      {#if !$viewport.isCompact}
         <span class="brand-label">Semantic Explorer</span>
       {/if}
       <button
@@ -155,7 +155,7 @@
       {/each}
     </div>
 
-    {#if activeDescription && !isCompact()}
+    {#if activeDescription && !$viewport.isCompact}
       <span class="header-description">{activeDescription}</span>
     {/if}
   </header>

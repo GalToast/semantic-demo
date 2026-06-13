@@ -39,7 +39,7 @@
   import { onMount } from 'svelte';
   import { navStore, isOverview } from '@lib/stores/navigation';
   import { setSemanticDiveMode } from '@lib/stores/focus.svelte';
-  import { isCompact, reducedMotion, initViewportListeners } from '@lib/stores/viewport';
+  import { viewport, isCompact, reducedMotion, initViewportListeners } from '@lib/stores/viewport';
   import { initData } from '@lib/data-store';
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs';
   import { applyUrlState } from '@lib/orchestration/url-state';
@@ -211,6 +211,7 @@
 
   let mapModeActive = $derived(navView === 'map');
   let searchSurfaceActive = $derived((navSurface === 'search' || bodyPanelSurface === 'search') && !focusSearchForced);
+  let searchFamilySurfaceActive = $derived(searchSurfaceActive || focusSearchForced);
   let idleSurfaceActive = $derived(navSurface === 'idle' && !searchSurfaceActive);
 
   // Search only shows when explicitly in search AND has content
@@ -229,7 +230,7 @@
 </script>
 
 {#snippet searchPanelContent()}
-  {#if searchSurfaceActive}
+  {#if searchFamilySurfaceActive}
     <SearchBar panelContained />
   {/if}
 {/snippet}
@@ -237,9 +238,9 @@
 <div
   id="semantic-explorer"
   class="semantic-explorer"
-  class:is-compact={isCompact()}
-  class:reduced-motion={reducedMotion()}
-  class:is-overview={isOverview()}
+  class:is-compact={$viewport.isCompact}
+  class:reduced-motion={$viewport.reducedMotion}
+  class:is-overview={$navStore.mode === 'overview'}
 >
   <!-- Layer 0: WebGL canvas -->
   <Canvas interactive={true} />

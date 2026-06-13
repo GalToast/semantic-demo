@@ -38,7 +38,7 @@
   import { navStore } from '@lib/stores/navigation';
   import { journeyStore, JOURNEY_COMPASS_PHASE_ORDER } from '@lib/stores/journey';
   import { focusStore } from '@lib/stores/focus';
-  import { isCompact } from '@lib/stores/viewport';
+  import { viewport, isCompact } from '@lib/stores/viewport';
   import {
     getJourneyCompassState,
     type CompassStateContext
@@ -379,7 +379,7 @@
 
   <div
     class="journey-compass-actions"
-    class:standard-flex={!isCompact() && actionsProfile === 'standard'}
+    class:standard-flex={!$viewport.isCompact && actionsProfile === 'standard'}
   >
     <button
       id="btn-journey-primary"

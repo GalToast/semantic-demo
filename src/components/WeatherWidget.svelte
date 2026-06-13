@@ -20,7 +20,7 @@
     fetchWeather
   } from '@lib/stores/weather.svelte';
   import type { WeatherCondition } from '@lib/stores/weather.svelte';
-  import { isCompact } from '@lib/stores/viewport.svelte';
+  import { viewport, isCompact } from '@lib/stores/viewport.svelte';
 
   interface Props {
     /** Whether the widget is visible */
@@ -53,7 +53,7 @@
   <div
     class="weather-widget"
     class:expanded
-    class:compact={isCompact()}
+    class:compact={$viewport.isCompact}
     id="weather-widget"
     aria-label="Weather conditions"
   >

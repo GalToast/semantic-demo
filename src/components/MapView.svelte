@@ -18,7 +18,7 @@
   import { onMount } from 'svelte';
   import { getBusinessRecords, businessRecordsStore } from '@lib/data-store.svelte';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, currentView } from '@lib/stores/navigation';
-  import { isCompact } from '@lib/stores/viewport';
+  import { viewport, isCompact } from '@lib/stores/viewport';
 
   // ── Constants (Montgomery County TX bounding box) ───────────────────────────
   const NW_LAT = 30.65;
@@ -86,7 +86,7 @@
 
 <section
   class="map-view"
-  class:is-compact={isCompact()}
+  class:is-compact={$viewport.isCompact}
   aria-label="Geographic map view of Montgomery County"
 >
   <header class="map-view-header">

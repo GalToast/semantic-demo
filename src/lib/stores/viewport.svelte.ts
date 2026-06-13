@@ -28,18 +28,26 @@ function getInitialViewport(): ViewportState {
       reducedMotion: false,
       isCompact: false,
       isMobile: false,
-      isLandscape: true
+      isLandscape: true,
+      isCompactLandscape: false,
+      isUltraCompactPortrait: false
     };
   }
-
+  const width = window.innerWidth;
+  const height = window.innerHeight;
   return {
-    width: window.innerWidth,
-    height: window.innerHeight,
+    width,
+    height,
     dpr: Math.min(window.devicePixelRatio || 1, MAX_DPR),
     reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-    isCompact: window.innerWidth <= MOBILE_BREAKPOINT,
-    isMobile: window.innerWidth <= MOBILE_BREAKPOINT,
-    isLandscape: window.innerWidth > window.innerHeight
+    isCompact: width <= MOBILE_BREAKPOINT,
+    isMobile: width <= MOBILE_BREAKPOINT,
+    isLandscape: width > height,
+    isCompactLandscape: width <= MOBILE_BREAKPOINT && height <= COMPACT_LANDSCAPE_MAX_HEIGHT,
+    isUltraCompactPortrait:
+      width <= ULTRA_COMPACT_MAX_WIDTH &&
+      height >= ULTRA_COMPACT_MIN_HEIGHT &&
+      height <= ULTRA_COMPACT_MAX_HEIGHT
   };
 }
 
@@ -105,20 +113,29 @@ export const isUltraCompactPortrait = () => {
 export function syncViewport(): void {
   if (typeof window === 'undefined') return;
 
+  const width = window.innerWidth;
+  const height = window.innerHeight;
   const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const isCompact = window.innerWidth <= MOBILE_BREAKPOINT;
-  const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
-  const isLandscape = window.innerWidth > window.innerHeight;
+  const isCompact = width <= MOBILE_BREAKPOINT;
+  const isMobile = width <= MOBILE_BREAKPOINT;
+  const isLandscape = width > height;
+  const isCompactLandscape = isCompact && height <= COMPACT_LANDSCAPE_MAX_HEIGHT;
+  const isUltraCompactPortrait =
+    width <= ULTRA_COMPACT_MAX_WIDTH &&
+    height >= ULTRA_COMPACT_MIN_HEIGHT &&
+    height <= ULTRA_COMPACT_MAX_HEIGHT;
 
   _viewportWritable.set({
-    width: window.innerWidth,
-    height: window.innerHeight,
+    width,
+    height,
     dpr,
     reducedMotion,
     isCompact,
     isMobile,
-    isLandscape
+    isLandscape,
+    isCompactLandscape,
+    isUltraCompactPortrait
   });
 
   if (typeof document !== 'undefined' && document.body) {

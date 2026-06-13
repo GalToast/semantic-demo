@@ -12,7 +12,7 @@
 <script lang="ts">
   import { hasFocus, focusedIndex, currentSurface } from '@lib/stores/navigation';
   import { threadInspectorActive } from '@lib/stores/focus';
-  import { isCompact } from '@lib/stores/viewport';
+  import { viewport, isCompact } from '@lib/stores/viewport';
 
   interface Props {
     /** Whether the overlay chrome is visible */
@@ -77,7 +77,7 @@
       </div>
     {/if}
 
-    {#if !isCompact()}
+    {#if !$viewport.isCompact}
       <div class="overlay-hint">
         {#if overlayMode === 'manifold'}
           Semantic proximity active
