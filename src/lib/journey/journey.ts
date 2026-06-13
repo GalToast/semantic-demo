@@ -82,11 +82,34 @@ import {
     initFocusNeighborRailSubscriptions,
     shouldUseFloatingFocusJourneyOnly
 } from '@legacy/modules/journey-focus-ui'
-import {
-    initJourneyCanvasInteractionAdapter,
-    isThreadCandidateVisibleOnCanvas,
-    ensureCanvasNodeInteractionBindings
-} from '@legacy/modules/journey-canvas-interaction'
+// Lazy import to break circular dependency:
+// src/lib/journey/journey.ts → @legacy/modules/journey-canvas-interaction →
+//   @legacy/modules/journey-canvas-hit-test → ... → src/lib/journey/journey.ts
+let _loadCanvasInteraction: Promise<typeof import('@legacy/modules/journey-canvas-interaction')> | null = null
+let _canvasInteractionModule: typeof import('@legacy/modules/journey-canvas-interaction') | null = null
+function _ensureCanvasInteraction(): Promise<typeof import('@legacy/modules/journey-canvas-interaction')> {
+    if (!_loadCanvasInteraction) {
+        _loadCanvasInteraction = import('@legacy/modules/journey-canvas-interaction').then((mod) => {
+            _canvasInteractionModule = mod
+            return mod
+        })
+    }
+    return _loadCanvasInteraction
+}
+function isThreadCandidateVisibleOnCanvas(index: number, margin: number = 18): boolean {
+    if (_canvasInteractionModule) {
+        return _canvasInteractionModule.isThreadCandidateVisibleOnCanvas(index, margin)
+    }
+    void _ensureCanvasInteraction()
+    return true
+}
+function ensureCanvasNodeInteractionBindings(): void {
+    if (_canvasInteractionModule) {
+        _canvasInteractionModule.ensureCanvasNodeInteractionBindings()
+        return
+    }
+    void _ensureCanvasInteraction().then((mod) => mod.ensureCanvasNodeInteractionBindings())
+}
 import { applyLocalNeighborhoodFocus } from '@legacy/modules/focus-pocket'
 import { applyPointFilterColors, describeThreadLensForPoint } from '@legacy/modules/journey-point-color'
 import { truncateMicrocopy, getSharedTrailTopicLabel } from '@legacy/modules/journey-text-helpers'
@@ -148,10 +171,11 @@ export function initJourneyState(): void {
     state.focusPocketMotionByIndex ??= new Map()
 }
 
-globalThis.queueMicrotask(() => {
+globalThis.queueMicrotask(async () => {
     initJourneyState()
+    const canvasMod = await _ensureCanvasInteraction()
     initJourneyNeighborhoodAdapter({
-        isThreadCandidateVisibleOnCanvas,
+        isThreadCandidateVisibleOnCanvas: canvasMod.isThreadCandidateVisibleOnCanvas,
         setTrailFromSeed,
         applyLocalNeighborhoodFocus
     })
@@ -159,9 +183,13 @@ globalThis.queueMicrotask(() => {
         getStrandArrivalNote,
         updateTraversalUi
     })
-    initJourneyCanvasInteractionAdapter({
-        summarizeNeighborReason,
-        walkThreadNeighbor: (index, options) => !!walkThreadNeighbor(index, options),
+    canvasMod.initJourneyCanvasInteractionAdapter({
+        summarizeNeighborReason: summarizeNeighborReason as unknown as (
+            candidate: Record<string, unknown> | null,
+            candidatePoint: Record<string, unknown> | null,
+            focusPoint: Record<string, unknown> | null
+        ) => string,
+        walkThreadNeighbor: (index: number, options?: Record<string, unknown>) => !!walkThreadNeighbor(index, options),
         inspectThreadNeighbor,
         scheduleCanvasThreadInspectionClear
     })
@@ -171,7 +199,7 @@ export function setSemanticDiveMode(enabled: boolean): boolean {
     setSemanticDiveModeImpl(enabled)
     const active = Boolean(enabled)
     if (active) {
-        previewInsideNextThread({ force: true })
+        previewInsideNextThread()
     } else if (document.body?.dataset.threadInspectSurface === 'inside-cue') {
         clearThreadInspection({ force: true, preserveJourney: true })
     } else {
@@ -188,7 +216,7 @@ function restoreFocusTrailState(priorFocused: number | null = getFocusedNode()):
     if (!Number.isFinite(priorFocused) || priorFocused! < 0 || priorFocused! >= getPoints().length) return
     setTrailFromSeed(priorFocused!)
 
-    publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused, point: getPoints()[priorFocused!] })
+    publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused! } as never)
 
     state.navState.lastTraversalReason = getNavState()?.lastTraversalReason || null
     updateTrailIndices(priorFocused!)
@@ -196,7 +224,7 @@ function restoreFocusTrailState(priorFocused: number | null = getFocusedNode()):
     applyLocalNeighborhoodFocus(priorFocused!)
     applyPointFilterColors()
     const priorPoint = getPoints()[priorFocused!] || null
-    syncFocusStage(priorPoint || getSelectedPoint() || null)
+    syncFocusStage((priorPoint || getSelectedPoint() || null) as never)
     updateTraversalUi()
 }
 
