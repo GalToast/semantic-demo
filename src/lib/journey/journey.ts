@@ -66,7 +66,7 @@ import {
     setTrailFromSeed,
     updateTrailIndices
 } from '@legacy/modules/journey-neighborhood'
-import { initJourneySelectedCardAdapter, updateSelectedBusiness, syncFocusStage } from '@legacy/modules/journey-selected-card'
+import { updateSelectedBusiness, syncFocusStage } from '@legacy/modules/journey-selected-card'
 import {
     updateSelectedCardHeading,
     renderSelectedMetaStrip,
@@ -178,10 +178,6 @@ globalThis.queueMicrotask(async () => {
         isThreadCandidateVisibleOnCanvas: canvasMod.isThreadCandidateVisibleOnCanvas,
         setTrailFromSeed,
         applyLocalNeighborhoodFocus
-    })
-    initJourneySelectedCardAdapter({
-        getStrandArrivalNote,
-        updateTraversalUi
     })
     canvasMod.initJourneyCanvasInteractionAdapter({
         summarizeNeighborReason: summarizeNeighborReason as unknown as (
