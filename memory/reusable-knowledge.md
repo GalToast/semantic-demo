@@ -63,6 +63,26 @@ the `applyLocalNeighborhoodFocus(...)` call inside `_restoreSearchFromParams`
 is HEAD-canonical defense against this caveat — not diagnostic instrumentation.
 Reverting it breaks the bare-`?anchor=<id>` restore path.
 
+## Test pinning for URL-anchor behavior
+Three test surfaces pin the post-68797a8 behavior; regression coverage is in
+place before the live smoke is feasible:
+
+  - `tests/url-anchor-bare-regression.spec.js` (Svelte shell, 3 cases).
+    Crisp unit-style Playwright spec authored after workers timed out writing
+    it in the 2026-06-13 wave — handed off via followup-with-session_id
+    pattern (skill: `global:subagent-followup-recovery`).
+  - `tests/surface-contract-check.mjs --surface=launch-focus` (optional shell):
+    newly tightened at `:560-586` to assert `panelSurface in {focus,focus-search,semantic-dive}`
+    and `graphContext contains 'focus'` after anchor restore — mirrors the spec.
+  - `tests/live-url-state-reconstruction.spec.js` (legacy shell): unchanged.
+    Pre-fix regression documented here before the parallel team rebuilt the
+    shell contract.
+
+When allocating follow-up cleanup, sequencing rule: Smart fix lands first,
+spec lands in same sweep, surface-contract tightening lands in following
+sweep. Never the other order — the spec proves the fix; the tightening
+proves the spec does not regress.
+
 ## Browser QA
 - Run Playwright/Chromium tests headed for visual QA.
 - Default to 1 active tab; max 2 during compare/debug.

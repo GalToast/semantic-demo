@@ -556,6 +556,31 @@ async function assert_launch_focus(page, ctx) {
 
   ctx.pass('launch-focus', info.overflowY ? 'viewport-scroll:overflow-y' : 'viewport-scroll:no-overflow-y');
 
+  // Regression pin for commit 68797a8 â€” bare ?anchor=<id> URLs must trigger
+  // focus dispatch (panelSurface=focus-search). Graph context must reflect
+  // focus intent (focus or focus-search or semantic-dive). Skipped on shell
+  // variants where the data-attr isn't part of the state machine.
+  if (info.bodyDataset?.panelSurface) {
+    const isFocusSurface = info.bodyDataset.panelSurface === 'focus' ||
+                           info.bodyDataset.panelSurface === 'focus-search' ||
+                           info.bodyDataset.panelSurface === 'semantic-dive';
+    if (isFocusSurface) {
+      ctx.pass('launch-focus', 'regression:68797a8:panel-surface:focus');
+    } else {
+      ctx.fail('launch-focus', 'regression:68797a8:panel-surface:focus',
+        `expected panelSurface in {focus,focus-search,semantic-dive} after anchor URL restore, got "${info.bodyDataset.panelSurface}"`);
+    }
+  }
+  if (info.bodyDataset?.graphContext) {
+    const isFocusCtx = info.bodyDataset.graphContext.includes('focus');
+    if (isFocusCtx) {
+      ctx.pass('launch-focus', 'regression:68797a8:graph-context:focus');
+    } else {
+      ctx.fail('launch-focus', 'regression:68797a8:graph-context:focus',
+        `expected graphContext to contain 'focus' after anchor URL restore, got "${info.bodyDataset.graphContext}"`);
+    }
+  }
+
   return info;
 }
 
