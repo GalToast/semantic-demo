@@ -1,12 +1,17 @@
 # Wave 10 Legacy Runtime Audit — Ticket W1
 
 **Date:** 2026-06-13
-**Outcome:** BLOCKED — js/ cannot be archived
+**Outcome:** Partially retired — BOTH-pattern shadows archived in W2; engine kernel remains active
 **Auditor:** Pi main lane
+**Companion docs:**
+- `legacy-reference/js-both-shadows-2026-06-13/README.md` — W2 archive record
+- `docs/wave-10-legacy-retirement.md` — W3 retirement record (companion to this audit)
 
 ## Summary
 
-The `js/` directory is **not dead legacy code**. It is the **active Three.js engine runtime** that the Svelte UI layer wraps via the imperative bridge in `src/lib/engine/`. Archiving it would break the entire application.
+The `js/` directory is **not dead legacy code**. It is the **active Three.js engine runtime** (the kernel) that the Svelte UI layer wraps via the imperative bridge in `src/lib/engine/`. Archiving `js/` entirely would break the application.
+
+However, the W1 audit found **50 BOTH-pattern `.js` shadow files** in `js/` that were vestigial — thin `export * from './X.ts'` re-exports of their `.ts` siblings, kept around for the original migration's bundler resolution. These were retired + archived in W2 (commit `7fc7b9d`); the `.ts` files remain as the canonical engine kernel implementations.
 
 ## Audit Findings
 
@@ -83,9 +88,19 @@ To archive `js/`, the entire Three.js engine would need to be ported to `src/` f
 
 This is likely a multi-wave effort (W2+), not a single ticket.
 
+## What Actually Happened in W2
+
+The W1 audit was correct that `js/` is the active runtime, but the BOTH-pattern shadow files within `js/` (50 total) were the **vestigial part** — thin `export * from './X.ts'` re-exports that no live code actually needed. Those were:
+
+1. **Moved to `legacy-reference/js-both-shadows-2026-06-13/`** via `git mv` (history preserved)
+2. **All explicit `from 'X.js'` imports in src/ and tests/ updated to extensionless** so Vite resolves to the `.ts` directly
+3. **README added to the archive** explaining the BOTH-pattern retirement
+
+**Result:** The `.ts` is the canonical implementation; the `.js` shadows are reference material in the archive. The engine kernel (`js/modules/*.ts` + `js/state.ts` + `js/state/`) remains active. The Svelte UI → Svelte bridge → engine kernel architecture is now clean and explicit.
+
 ## Recommendation
 
-1. **Do NOT archive js/** — it's the active runtime
-2. **Reclassify Wave 10** — the js/ directory is not "legacy runtime to retire" but "active engine to eventually port"
-3. **Create W2 ticket** to begin porting the most-imported js/ modules (state.js, event-bus, lifecycle, camera-controls) into src/lib/engine/ so the bridge can be thinned
+1. ✅ **BOTH-pattern shadows retired** (W2 done, commit `7fc7b9d`)
+2. ⏭️ **Wave 10 close-out** — rewrite the retirement record, update AGENTS.md to document the engine-as-kernel architecture (W3-W5)
+3. ⏸️ **Engine port (future arc)** — porting the engine kernel to `src/` is a separate multi-week effort, not Wave 10's scope
 4. **Update AGENTS.md** to clarify that js/ is the active engine, not dead legacy
