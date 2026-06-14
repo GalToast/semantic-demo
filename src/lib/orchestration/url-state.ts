@@ -16,6 +16,7 @@ import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { runSearch, searchStore } from '@lib/stores/search.svelte';
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket';
+import { overwriteActiveFilters } from '@lib/stores/filter.svelte';
 
 /**
  * NavState extended with the legacy `activeStoryPrompt` field that lives in
@@ -408,23 +409,14 @@ function _restoreFiltersFromParams(params: URLSearchParams): void {
   const email = params.get('email');
   const geocoded = params.get('geocoded');
 
-  // Filters are restored via the legacy bridge during phased migration.
-  // TODO: Replace with direct store mutations once filter-state.ts is ported.
   if (status || city || website || email || geocoded) {
-    // Dispatch a custom event for the filter owner to handle
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(
-        new CustomEvent('semantic:filters-restore-requested', {
-          detail: {
-            status: status || undefined,
-            city: city || undefined,
-            website: website === '1',
-            email: email === '1',
-            geocoded: geocoded === '1',
-          },
-        })
-      );
-    }
+    overwriteActiveFilters({
+      status: status || 'all',
+      city: city || '',
+      website: website === '1',
+      email: email === '1',
+      geocoded: geocoded === '1',
+    });
   }
 }
 
