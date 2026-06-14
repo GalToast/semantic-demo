@@ -1,9 +1,5 @@
 /**
- * chrome-timing.ts
- *
- * TypeScript shadow of chrome-timing.js.
- * Centralized timing constants for the filter + search chrome.
+ * chrome-timing.ts — thin re-export shim
+ * Canonical location: src/lib/utils/chrome-timing.ts
  */
-
-export const SEARCH_INPUT_DEBOUNCE_MS: number = 300;
-export const FILTER_DEBOUNCE_MS: number = 150;
+export { SEARCH_INPUT_DEBOUNCE_MS, FILTER_DEBOUNCE_MS } from '@lib/utils/chrome-timing';

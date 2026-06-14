@@ -4,7 +4,7 @@
     import { returnToOverview } from '../lifecycle.js';
     import { isCompactSearchViewport } from '../utils/ui-presentation.js';
     import { setMobileSearchSheetMode, setSearchContainerState } from '../search-panel-adapter.js';
-    import { SEARCH_INPUT_DEBOUNCE_MS } from '../chrome-timing.js';
+    import { SEARCH_INPUT_DEBOUNCE_MS } from '@lib/utils/chrome-timing';
 
     interface SearchChromeProps {
         debounceMs?: number;

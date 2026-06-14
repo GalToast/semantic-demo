@@ -11,7 +11,7 @@
         incrementFilterVersion
     } from '../filter-state.js';
     import { normalizeCityForFilter } from '../utils/geo-data.js';
-    import { FILTER_DEBOUNCE_MS } from '../chrome-timing.js';
+    import { FILTER_DEBOUNCE_MS } from '@lib/utils/chrome-timing';
 
     interface FilterChromeProps {
         debounceMs?: number;

@@ -98,6 +98,14 @@ export {
   getThreadCategoryColor
 } from './ui-presentation';
 export type { GraphPresentationState, GraphPresentationProfile } from './ui-presentation';
+export {
+  SCENE_PALETTE,
+  CORRIDOR_TRAIL_SHADER_COLORS,
+  ROUTE_TRACE_COLORS,
+  FOCUS_SEMANTIC_COLORS,
+  CLUSTER_COLORS,
+} from './design-tokens';
+export { SEARCH_INPUT_DEBOUNCE_MS, FILTER_DEBOUNCE_MS } from './chrome-timing';
 export { DATA_COLUMNS } from './data-schema';
 export type { RawDatum, DataColumnKey } from './data-schema';
 export {
@@ -106,6 +114,15 @@ export {
   extractRawCoordinates,
 } from './data-mapper';
 export type { MappedPoint, RawCoordinates } from './data-mapper';
+export {
+  UNCLASSIFIED_RELATIONSHIP_ROLE,
+  RELATIONSHIP_ROLES,
+  normalizeRelationshipRole,
+  getRelationshipRoleLabel,
+  getRelationshipRoleCopy,
+  describeRelationshipRoleReason,
+} from './relationship-roles';
+export type { RelationshipRole } from './relationship-roles';
 export { el, setChildren } from './dom-builder';
 export type { DomChild, DomEventHandler, DomAttributes } from './dom-builder';
 export { FOCUSABLE_SELECTORS, setupFocusTrap, releaseFocusTrap } from './focus-trap';
