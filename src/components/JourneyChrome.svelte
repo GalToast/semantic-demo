@@ -655,13 +655,6 @@
   .focus-stage-neighbors.active {
     display: flex;
   }
-  :global(body[data-panel-surface='map-trail']) .focus-stage-neighbors,
-  :global(body[data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip'])
-    .focus-stage-neighbors {
-    display: none;
-    visibility: hidden;
-    pointer-events: none;
-  }
   .neighbor-count {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.55rem;
