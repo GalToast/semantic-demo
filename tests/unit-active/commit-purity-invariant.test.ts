@@ -60,6 +60,12 @@ const EXEMPTED_SHAS = new Set<string>([
     // under a docs prefix. The test change is mechanical and
     // co-located with the close-out; same failure mode as b5ad93e.
     'c19767f892da49c51eb460e84e866c1dcee6c5ef',
+    // 5218e35 — docs(ui-ux): M3 perspective audit ... — Bundled
+    // legacy-reference/js-both-shadows-2026-06-13/relationship-roles.ts
+    // (0 line changes, just a touch) under a docs prefix. The file
+    // was already in the archive; the touch is from a parallel-agent
+    // pass that landed concurrently. Same failure mode as b5ad93e.
+    '5218e35da58b9d336f2940d0db6fd2d8f5257861',
 ]);
 
 // Conventional-commit prefix regex. Captures:
