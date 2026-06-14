@@ -266,6 +266,8 @@
   {/if}
 {/snippet}
 
+<main id="main-content" class="semantic-main" tabindex="-1" aria-label="Semantic explorer application">
+<h1 class="sr-only">Semantic Explorer</h1>
 <div
   id="semantic-explorer"
   class="semantic-explorer"
@@ -419,6 +421,7 @@
 
   <!-- Toast is rendered at layer 1200 (see <Toast /> above the hover tooltip) -->
 </div>
+</main>
 
 <!--
   Legacy-compass parity surface (2026-06-06):
@@ -433,6 +436,14 @@
     height: 100%;
     overflow: hidden;
     background: #071018;
+  }
+
+  .semantic-main {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    outline: none;
   }
 
   .semantic-explorer.reduced-motion {
