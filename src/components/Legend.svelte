@@ -12,9 +12,10 @@
 
   interface Props {
     open?: boolean;
+    mapView?: boolean;
   }
 
-  let { open = false }: Props = $props();
+  let { open = false, mapView = false }: Props = $props();
 
   /** 15-entry cluster names matching CLUSTER_NAMES from state.js / InfoPanel.svelte */
   const CLUSTER_NAMES: string[] = [
@@ -102,6 +103,7 @@
 <aside
   class="legend"
   class:open
+  class:map-view={mapView}
   aria-hidden={!open}
   aria-label="Business category legend"
   id="legend-panel"
@@ -144,6 +146,12 @@
     overflow-y: auto;
     transform: translateX(-120%);
     transition: transform 0.3s ease;
+  }
+  .legend.map-view {
+    left: auto;
+    right: 1rem;
+    bottom: calc(122px + env(safe-area-inset-bottom, 0px));
+    max-height: 38vh;
   }
   .legend.open {
     transform: translateX(0);

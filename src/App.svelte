@@ -285,7 +285,7 @@
   {/if}
 
   <!-- Layer 50: Legend panel -->
-  <Legend open={$legendOpen} />
+  <Legend open={$legendOpen} mapView={mapModeActive} />
 
   <!-- Layer 50: Weather widget (top-right chrome, same layer as legend) -->
   <WeatherWidget visible={true} />
