@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { cleanOptionalValue } from '../../js/modules/utils/dom-formatters.js';
+import { cleanOptionalValue } from '../../src/lib/utils/dom-formatters.ts';
 import { cleanOptionalValue as canonicalTs } from '../../src/lib/utils/dom-formatters.ts';
 
 const canonicalImplementations = [
