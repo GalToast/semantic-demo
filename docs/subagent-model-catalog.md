@@ -25,6 +25,20 @@ This section records the active routing defaults as of the most recent cross-gat
 
 Related inventory: [nvidia-nim-capability-catalog.md](nvidia-nim-capability-catalog.md) tracks NVIDIA NIM models and non-chat capabilities exposed by the local NVIDIA lane or NVIDIA Build.
 
+## 2026-06-13 -- Clip / Screenshot Diagnostic Rotation
+
+Use clips as evidence artifacts, not as a replacement for deterministic DOM/layout checks. Capture short Playwright/Chrome clips or screenshots to `tmp/`, then send them to a vision-capable subagent with a narrow prompt: identify the top 3 layout/interaction defects, cite timestamps or screen regions, and separate product bugs from capture/env artifacts.
+
+| Priority | Launch ref | Best diagnostic use | Source/capability note | Current caveat |
+|---|---|---|---|---|
+| 1 | `nvidia/moonshotai/kimi-k2.6` | Combined code + UI/video scout for hard visual seams | Official Kimi post describes K2.6 as an open-source long-horizon coding model; NVIDIA Build describes the hosted route as native multimodal with image/video input support. Sources: <https://www.kimi.com/blog/kimi-k2-6>, <https://build.nvidia.com/moonshotai/kimi-k2.6/modelcard> | Strong prior repo runs, but log-heavy. Verify claims locally before patching UI. |
+| 2 | `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` | First dedicated clip-understanding smoke | NVIDIA Build says it unifies video, audio, image, and text understanding for Q&A, summarization, transcription, GUI/OCR, and rich enterprise content. Source: <https://build.nvidia.com/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning/modelcard> | Untested as a Pi worker; confirm chat payload support before relying on it. |
+| 3 | `nvidia/nemotron-nano-12b-v2-vl` | Fast screenshot, multi-image, document-style UI critique | NVIDIA Build lists image/video/text inputs and a 2025-10-28 release; it explicitly says reasoning is not supported for video inputs. Source: <https://build.nvidia.com/nvidia/nemotron-nano-12b-v2-vl/modelcard> | Good candidate for visual QA, but video reasoning has a documented limitation. |
+| 4 | `modelscope/Qwen/Qwen3-VL-235B-A22B-Instruct` | High-end screenshot critique and spatial/layout reasoning | Qwen's Qwen3-VL announcement describes stronger visual perception, video dynamics comprehension, and agent interaction; ModelScope exposes the launch ref locally. Sources: <https://qwen.ai/blog?from=research.latest-advancements-list&id=99f0335c4ad9ff6153e517418d48535ab6d8afef>, <https://www.modelscope.ai/models/Qwen/Qwen3-VL-235B-A22B-Instruct> | ModelScope quota/runtime reliability must be smoke-tested per route. |
+| 5 | `nvidia/cosmos-reason2-8b` / Build `cosmos3-nano-reasoner` | Video/image physical-world reasoning, less likely needed for normal UI polish | NVIDIA Build currently redirects the exposed route to a Cosmos reasoner page for structured reasoning on videos/images. Source: <https://build.nvidia.com/nvidia/cosmos-reason2-8b/modelcard> | Naming/route mapping is ambiguous; treat as a direct API smoke target before assigning product QA. |
+
+Keep actual video generation/editing, relighting, lip sync, ASR/TTS, and synthetic-video detection out of the default subagent loop until we have endpoint-specific clients and tiny payload tests. Those are media APIs, not guaranteed chat-completions workers.
+
 ## Rating Guide
 
 | Rating | Meaning |
@@ -546,4 +560,3 @@ When you see ⚪ Untested on a model you want to try, just dispatch a subagent o
 - Which routes stream huge logs that need broker-side summarization or stronger final-output parsing?
 - Which free routes are stale catalog entries and should be hidden from small-model pickers?
 - Should we adopt a paid-default-only policy for workers that touch production-bound code paths? (e.g., skill-doctor -- paid mimo 2.5 completed successfully; if we had used free and hit 429, the skill would not be there yet.)
-

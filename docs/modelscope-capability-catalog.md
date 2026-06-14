@@ -13,6 +13,15 @@ The local ModelScope lane currently exposes 60 model IDs through the router. Thi
 
 Observed issue: a delegated ModelScope DeepSeek V4 Flash inventory worker launched successfully, dumped the catalog, then hit a ModelScope quota error on the actual model call. Treat `/v1/models` exposure as catalog availability, not runtime reliability. Cooldown/key rotation still needs testing before ModelScope becomes a heavy subagent lane.
 
+## Verified Public Source Notes (2026-06-13)
+
+| Route / family | Public date | Official source | Capability note for this repo |
+|---|---|---|---|
+| `modelscope/deepseek-ai/DeepSeek-V4-Flash` / `modelscope/deepseek-ai/DeepSeek-V4-Pro` | DeepSeek API support dated 2026-04-24 | <https://api-docs.deepseek.com/updates> | Strong code/reasoning lane when ModelScope quota is healthy; not a visual QA model. |
+| `modelscope/Qwen/Qwen3-VL-235B-A22B-Instruct` | Qwen announcement was published in 2025; source checked 2026-06-13 | <https://qwen.ai/blog?from=research.latest-advancements-list&id=99f0335c4ad9ff6153e517418d48535ab6d8afef>, <https://www.modelscope.ai/models/Qwen/Qwen3-VL-235B-A22B-Instruct> | Highest-value ModelScope visual QA candidate for screenshot/spatial reasoning and possibly video-dynamics critique after smoke. |
+| `modelscope/Qwen/Qwen3-VL-8B-Instruct` / `modelscope/Qwen/Qwen3-VL-8B-Thinking` | Same Qwen3-VL family as above | <https://qwen.ai/blog?from=research.latest-advancements-list&id=99f0335c4ad9ff6153e517418d48535ab6d8afef> | Cheaper visual QA smoke target before spending on 235B. |
+| `modelscope/XiaomiMiMo/MiMo-V2-Flash` / direct MiMo V2.5 family | Xiaomi docs list `mimo-v2.5` and `mimo-v2.5-pro` releases on 2026-04-23 | <https://mimo.mi.com/docs/en-US/updates/model> | Direct paid MiMo is the proven implementation baseline; ModelScope MiMo routes still need tool-call/runtime smokes before product use. |
+
 ## Capability Groups
 
 ### DeepSeek / Coding / Reasoning

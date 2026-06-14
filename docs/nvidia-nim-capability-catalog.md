@@ -23,6 +23,21 @@ Important distinction:
 - **Router-exposed now:** available through our local OpenAI-compatible NVIDIA route, at least at `/v1/models`. These still need endpoint-specific smoke tests before we call them reliable.
 - **NVIDIA Build free endpoint, not currently in our chat router:** may require a dedicated NVIDIA API client because media/speech/video endpoints often are not plain chat-completions models.
 
+## Verified Public Source Notes (2026-06-13)
+
+These are source-backed notes for the models most relevant to Semantic Explorer subagents and visual diagnostics:
+
+| Route / family | Public date | Official source | Capability note for this repo |
+|---|---|---|---|
+| `nvidia/moonshotai/kimi-k2.6` | Kimi site lists 2026-04-20; NVIDIA Build lists 2026-04-29 for its hosted card | <https://www.kimi.com/blog/kimi-k2-6>, <https://build.nvidia.com/moonshotai/kimi-k2.6/modelcard> | Best current dual-purpose scout: long-horizon coding plus image/video-capable multimodal reasoning, with prior strong repo runs. |
+| `nvidia/deepseek-ai/deepseek-v4-flash` / `nvidia/deepseek-ai/deepseek-v4-pro` | DeepSeek API support dated 2026-04-24 | <https://api-docs.deepseek.com/updates>, <https://build.nvidia.com/deepseek-ai/deepseek-v4-flash/modelcard> | Coding/reasoning agents, not visual models. Use for code archaeology and implementation review. |
+| `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` | Public card did not expose a simple date in the fetched page; source checked 2026-06-13 | <https://build.nvidia.com/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning/modelcard> | Dedicated omni-modal candidate for clip diagnostics: video, audio, image, text, GUI/OCR, transcription, and document intelligence are described on the card. |
+| `nvidia/nemotron-nano-12b-v2-vl` | 2025-10-28 | <https://build.nvidia.com/nvidia/nemotron-nano-12b-v2-vl/modelcard> | Good screenshot/multi-image candidate. The card lists video input but says reasoning is not supported for video inputs, so do not use it as the first video-reasoning pick. |
+| `nvidia/cosmos-reason2-8b` / `cosmos3-nano-reasoner` | Build card search result reports 2026-01-05 for Build and 2025-12-18 for Hugging Face; source checked 2026-06-13 | <https://build.nvidia.com/nvidia/cosmos-reason2-8b/modelcard> | Physical-world video/image reasoning candidate. Route/card naming is ambiguous in Build, so smoke before relying on it. |
+| Mistral direct `mistral-large-2512` / `devstral-2512` | Mistral changelog: 2025-12-02 for Large 3, 2025-12-09 for Devstral 2 | <https://docs.mistral.ai/resources/changelogs> | Strong text/code subagent routes; not primary visual QA models. |
+
+When a model card says video input exists, still run a route-specific Pi smoke with an actual tiny clip before making it part of the default UI QA loop.
+
 ## Best First Coding / Agentic Picks
 
 Prioritize these for semantic-explorer subagents and repo work:
@@ -33,8 +48,8 @@ Prioritize these for semantic-explorer subagents and repo work:
 | `nvidia/deepseek-ai/deepseek-v4-pro` | Heavier coding/reasoning | Use for harder code review or debugging after flash scout. |
 | `nvidia/moonshotai/kimi-k2.6` | Long-horizon coding + multimodal reasoning | Public catalog describes agentic tool use and image/video understanding; likely high-value but may need steering. |
 | `nvidia/z-ai/glm-5.1` | Agentic coding/reasoning | Already observed as useful but very log-heavy through Pi. |
-| `nvidia/nemotron-3-ultra-550b-a55b` | Heavy agentic reasoning, planning, tool calling | NVIDIA catalog positions it as 1M-context agent/coding/planning model. |
-| `nvidia/nemotron-3-super-120b-a12b` | Agentic reasoning | Candidate when Ultra is rate-limited. |
+| `nvidia/nemotron-3-ultra-550b-a55b` | Heavy agentic reasoning, planning, tool calling | NVIDIA catalog positions it as 1M-context agent/coding/planning model, but our subagent runs have seen silent/no-output failures on related Ultra routes. Smoke before use. |
+| `nvidia/nemotron-3-super-120b-a12b` | Read-only archaeology only | Repeated subagent runs produced analysis but failed to write report files. Do not use for unattended disk-write deliverables. |
 | `nvidia/minimaxai/minimax-m2.7` | Coding/reasoning/office work | NVIDIA route may work even when ModelScope route rejected. |
 | `nvidia/mistralai/mistral-medium-3.5-128b` | Coding/agentic text | NVIDIA-hosted Mistral option distinct from direct Mistral provider. |
 | `nvidia/mistralai/mistral-small-4-119b-2603` | Smaller fast assistant | Good scout candidate. |
