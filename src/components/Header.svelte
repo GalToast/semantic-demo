@@ -21,7 +21,7 @@
   import { viewport, isCompact } from '@lib/stores/viewport';
   import { legendOpen, toggleLegend } from '@lib/stores/legend.svelte';
   import { updateUrlState } from '@lib/orchestration/url-state';
-  import { initKeyboardShortcutsHint, showKeyboardShortcutsHint } from '../../js/modules/keyboard-help.ts';
+  import { initKeyboardShortcutsHint, showKeyboardShortcutsHint } from '@lib/engine/keyboard-help-bridge';
 
   interface Props {
     /** Whether the header is visible */
@@ -228,7 +228,8 @@
         id="mode-chips"
         role="radiogroup"
         aria-label="View mode"
-        aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End"
+        aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End Control+1 Control+2 Control+3 Control+4 Control+5 Control+6"
+        tabindex="-1"
         onkeydown={handleModeKeydown}
         onfocusin={handleModeFocusin}
       >
@@ -313,8 +314,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 44px;
+    height: 44px;
     padding: 0;
     background: none;
     border: 1px solid rgba(78, 205, 196, 0.15);

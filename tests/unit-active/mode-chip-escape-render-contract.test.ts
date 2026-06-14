@@ -30,9 +30,10 @@ describe('A2-4: Escape returns to Overview mode', () => {
 
   it('dispatches RETURN_OVERVIEW on Escape when not already in idle', () => {
     expect(src).toContain('NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW');
-    // Must be inside the Escape branch
+    // Must be inside the Escape branch (after the Escape key check)
     const escapeIdx = src.indexOf("e.key === 'Escape'");
-    const returnIdx = src.indexOf('NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW');
+    // Find RETURN_OVERVIEW that appears AFTER the Escape check
+    const returnIdx = src.indexOf('NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW', escapeIdx);
     expect(returnIdx).toBeGreaterThan(escapeIdx);
   });
 
@@ -43,7 +44,7 @@ describe('A2-4: Escape returns to Overview mode', () => {
 
   it('clears the search input text before returning to overview', () => {
     const escapeIdx = src.indexOf("e.key === 'Escape'");
-    const returnIdx = src.indexOf('NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW');
+    const returnIdx = src.indexOf('NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW', escapeIdx);
     const escapeBlock = src.slice(escapeIdx, returnIdx);
     expect(escapeBlock).toContain('searchInput');
     expect(escapeBlock).toContain("searchInput.value = ''");

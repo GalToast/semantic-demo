@@ -169,6 +169,25 @@
       const isFormField = tag === 'input' || tag === 'textarea' || tag === 'select'
         || target?.isContentEditable === true;
 
+      // A2-4: Ctrl/Cmd+1-6 keyboard shortcuts for mode switching.
+      // Fires before all other handlers so shortcuts are never masked.
+      if ((e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)) {
+        if (isFormField) return;
+        e.preventDefault();
+        switch (e.key) {
+          case '1': dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW); break;
+          case '2': dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' }); break;
+          case '3': dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'trail' as any }); break;
+          case '4': dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'focus' }); break;
+          case '5': dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'inside' }); break;
+          case '6':
+            dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'map' });
+            dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map' });
+            break;
+        }
+        return;
+      }
+
       if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField) {
         e.preventDefault();
         document.getElementById('search-input')?.focus();
@@ -263,7 +282,7 @@
   // escape affordances exist for the mobile/short-landscape CSS contracts.
   let headerVisible = $derived(!mapModeActive && (idleSurfaceActive || searchFamilySurfaceActive || focusActive));
   let controlsVisible = $derived(navSurface !== 'focus-search' && !focusSearchForced);
-  let infoPanelOpen = $derived((searchSurfaceActive || (focusActive && !bodyCompact && !$viewport.isCompact)) && !mapModeActive);
+  let infoPanelOpen = $derived((idleSurfaceActive || searchSurfaceActive || (focusActive && !bodyCompact && !$viewport.isCompact)) && !mapModeActive);
 </script>
 
 {#snippet searchPanelContent()}
