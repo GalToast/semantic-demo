@@ -41,7 +41,7 @@ const SKIP_PATTERNS = [
 
 // Baseline count of approved `!important` uses. Update this when
 // approving a new use (see comment in the test body).
-const APPROVED_BASELINE = 7;
+const APPROVED_BASELINE = 0;
 
 interface ImportantUse {
     file: string;
@@ -79,6 +79,41 @@ function collectCssFiles(root: string): string[] {
     return out;
 }
 
+/**
+ * Strip comment regions from a CSS line, returning the non-comment portion.
+ * Tracks multi-line /* *​/ state across calls via the inBlockComment flag.
+ */
+function stripComments(
+    line: string,
+    inBlockComment: boolean
+): { cleaned: string; inBlockComment: boolean } {
+    let cleaned = line;
+    // If we're continuing from a previous block comment, consume up to its close
+    if (inBlockComment) {
+        const closeIdx = cleaned.indexOf('*/');
+        if (closeIdx !== -1) {
+            cleaned = cleaned.substring(closeIdx + 2);
+            inBlockComment = false;
+        } else {
+            return { cleaned: '', inBlockComment: true };
+        }
+    }
+    // Remove inline /* ... */ comments (non-greedy)
+    cleaned = cleaned.replace(/\/\*[\s\S]*?\*\//g, '');
+    // Check if a /* opens but doesn't close (entering block comment)
+    const openIdx = cleaned.indexOf('/*');
+    if (openIdx !== -1) {
+        cleaned = cleaned.substring(0, openIdx);
+        inBlockComment = true;
+    }
+    // Remove // line comments
+    const slashIdx = cleaned.indexOf('//');
+    if (slashIdx !== -1) {
+        cleaned = cleaned.substring(0, slashIdx);
+    }
+    return { cleaned, inBlockComment };
+}
+
 function findImportantUses(): ImportantUse[] {
     const uses: ImportantUse[] = [];
     for (const dir of SCAN_DIRS) {
@@ -100,25 +135,30 @@ function findImportantUses(): ImportantUse[] {
                 continue;
             }
             const lines = text.split(/\r?\n/);
+            let inBlockComment = false;
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
-                // Match `!important` in a value position (not in a
-                // comment, not in a selector). Approximation: just
-                // match the literal `!important` substring. Comments
-                // containing it are rare and tolerable as false
-                // positives (the developer can move the use).
                 const idx = line.indexOf('!important');
-                if (idx === -1) continue;
-                // Skip lines that are pure CSS comments.
-                const trimmed = line.trim();
-                if (trimmed.startsWith('/*') || trimmed.startsWith('//') ||
-                    trimmed.startsWith('*')) continue;
-                uses.push({
-                    file: rel,
-                    line: i + 1,
-                    column: idx + 1,
-                    matchedLine: line.trim(),
-                });
+                if (idx === -1) {
+                    // Still need to update block comment state
+                    const result = stripComments(line, inBlockComment);
+                    inBlockComment = result.inBlockComment;
+                    continue;
+                }
+                const { cleaned, inBlockComment: nextInBlock } = stripComments(
+                    line,
+                    inBlockComment
+                );
+                inBlockComment = nextInBlock;
+                // Only count if !important appears in non-comment code
+                if (cleaned.indexOf('!important') !== -1) {
+                    uses.push({
+                        file: rel,
+                        line: i + 1,
+                        column: idx + 1,
+                        matchedLine: line.trim(),
+                    });
+                }
             }
         }
     }
