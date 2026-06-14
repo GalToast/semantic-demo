@@ -12,12 +12,30 @@
  */
 import type { NavState, NavMode, PanelSurface } from '@lib/types/state';
 import { writable, get, type Readable } from 'svelte/store';
+import { appState } from '@lib/state/app.svelte.ts';
 
 // Legacy state fallback (transitional). The legacy js/state.js is the
 // single source of truth during the migration. When the Svelte navigation
 // store hasn't been populated by an init handler, fall back to it so the
 // focused card / compass / surface attrs reflect real data.
 function readLegacyNavField<T>(legacyKey: keyof LegacyNavState): T | undefined {
+  try {
+    // First, try to read from the new Svelte 5 state class singleton.
+    if (appState && appState.navState) {
+      const nav = appState.navState;
+      const value = (nav as unknown as Record<string, unknown>)[legacyKey] as T | undefined;
+      if (value !== undefined) {
+        return value;
+      }
+    }
+  } catch {
+    // ignore and fall through to legacy
+  }
+
+  // Legacy fallback (transitional). The legacy js/state.js is the
+  // single source of truth during the migration. When the Svelte navigation
+  // store hasn't been populated by an init handler, fall back to it so the
+  // focused card / compass / surface attrs reflect real data.
   try {
     if (typeof window === 'undefined') return undefined;
     const w = window as unknown as {
@@ -278,7 +296,7 @@ export function completeSceneReveal(): void {
 }
 
 /** Set the active story prompt (for UI sync). */
-export function setActiveStoryPrompt(id: string | null): void {
+export function setActiveStoryPrompt(_id: string | null): void {
   // Logic to handle story prompt mapping if needed
 }
 
@@ -304,7 +322,7 @@ export function bumpUrlStateRestoreToken(): number {
 }
 
 /** Set focus pocket specific indices. */
-export function setFocusPocketIndices(indices: number[]): void {
+export function setFocusPocketIndices(_indices: number[]): void {
   // Implementation for focus pocket state
 }
 
@@ -314,7 +332,7 @@ export function clearFocusPocketIndices(): void {
 }
 
 /** Set focus pocket metadata. */
-export function setFocusPocketMeta(meta: any): void {
+export function setFocusPocketMeta(_meta: unknown): void {
   // Implementation for focus pocket state
 }
 
