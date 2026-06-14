@@ -37,7 +37,7 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { navStore } from '@lib/stores/navigation';
+  import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
   import { setSemanticDiveMode } from '@lib/stores/focus.svelte';
   import { viewport, initViewportListeners } from '@lib/stores/viewport';
   import { initData } from '@lib/data-store';
@@ -176,10 +176,16 @@
       }
 
       if (e.key === 'Escape') {
+        // A2-4: Escape always returns to Overview from any non-idle mode.
+        // If the search input is focused, clear its text as a side effect.
         const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
         if (searchInput && document.activeElement === searchInput) {
           searchInput.value = '';
           searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        const { mode, surface } = navStore();
+        if (mode !== 'overview' || surface !== 'idle') {
+          dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
         }
       }
     }
@@ -266,6 +272,11 @@
   {/if}
 {/snippet}
 
+{#if headerVisible}
+  <!-- Header with mode chips — outside <main> as its own banner landmark -->
+  <Header visible={true} utilityOnly={!idleSurfaceActive} />
+{/if}
+
 <main id="main-content" class="semantic-main" tabindex="-1" aria-label="Semantic explorer application">
 <h1 class="sr-only">Semantic Explorer</h1>
 <div
@@ -306,11 +317,6 @@
       the absolutely-positioned search input.
     -->
     <SearchBar />
-  {/if}
-
-  {#if headerVisible}
-    <!-- Header with mode chips -->
-    <Header visible={true} utilityOnly={!idleSurfaceActive} />
   {/if}
 
   <!--
