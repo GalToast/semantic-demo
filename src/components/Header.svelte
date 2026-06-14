@@ -228,7 +228,7 @@
         id="mode-chips"
         role="radiogroup"
         aria-label="View mode"
-        aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End Control+1 Control+2 Control+3 Control+4 Control+5 Control+6"
+        aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End"
         tabindex="-1"
         onkeydown={handleModeKeydown}
         onfocusin={handleModeFocusin}
