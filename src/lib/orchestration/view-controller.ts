@@ -10,6 +10,7 @@
 
 import { get } from 'svelte/store';
 import { navStore } from '@lib/stores/navigation';
+import { semanticGuideIcon } from '@lib/journey/semantic-guide';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -279,19 +280,11 @@ export function getViewHandoffModel(view: ViewName): HandoffModel {
     };
   }
   return {
-    icon: 'galaxy',
+    icon: 'mycelium',
     kicker: 'Switching views',
     title: 'Returning to mycelium',
     note: 'Semantic network is restoring.',
   };
 }
 
-// ── Placeholder: Semantic Guide Icon ──────────────────────────────────────────
-
-/**
- * Placeholder for the semantic guide icon SVG.
- * TODO: Port from js/modules/semantic-guide.js
- */
-function semanticGuideIcon(_icon: string, _label: string): string {
-  return `<span class="semantic-guide-icon" aria-label="${_label}"><!-- TODO: port SVG --></span>`;
-}
+// semanticGuideIcon is imported from @lib/journey/semantic-guide (uses SVG sprite <use href>)

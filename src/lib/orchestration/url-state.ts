@@ -17,6 +17,7 @@ import { runSearch, searchStore } from '@lib/stores/search.svelte';
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket';
 import { overwriteActiveFilters } from '@lib/stores/filter.svelte';
+import { showExperienceToast } from '@lib/orchestration/toast';
 
 /**
  * NavState extended with the legacy `activeStoryPrompt` field that lives in
@@ -526,9 +527,9 @@ async function _restoreSearchFromParams(
 }
 
 /**
- * Minimal toast notification. TODO: Port from lifecycle.js showExperienceToast.
+ * Minimal toast notification. Ported to Svelte Toast component
+ * (see src/components/Toast.svelte, src/lib/orchestration/toast.ts).
  */
-function _showToast(_title: string, _message: string): void {
-  // Placeholder — will be replaced by the notification system
-  console.info(`[Toast] ${_title}: ${_message}`);
+function _showToast(title: string, message: string): void {
+  showExperienceToast(title, message);
 }

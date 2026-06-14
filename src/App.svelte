@@ -37,9 +37,9 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { navStore, isOverview } from '@lib/stores/navigation';
+  import { navStore } from '@lib/stores/navigation';
   import { setSemanticDiveMode } from '@lib/stores/focus.svelte';
-  import { viewport, isCompact, reducedMotion, initViewportListeners } from '@lib/stores/viewport';
+  import { viewport, initViewportListeners } from '@lib/stores/viewport';
   import { initData } from '@lib/data-store';
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs';
   import { applyUrlState } from '@lib/orchestration/url-state';
@@ -67,6 +67,7 @@
   import MapSummary from '@components/MapSummary.svelte';
   import SemanticOverlay from '@components/SemanticOverlay.svelte';
   import WeatherWidget from '@components/WeatherWidget.svelte';
+  import Toast from '@components/Toast.svelte';
   import DevGui from '@components/DevGui.svelte';
   import SpectorInspector from '@components/SpectorInspector.svelte';
   import { legendOpen } from '@lib/stores/legend.svelte';
@@ -361,6 +362,9 @@
 
   <div class="trail-review-overlay" id="trail-review-overlay" role="dialog" aria-modal="false" aria-hidden="true" hidden></div>
 
+  <!-- Layer 1200: Toast notification -->
+  <Toast />
+
   <!-- Hover tooltip for canvas node hover (port of js/modules/tooltip.js) -->
   <div id="hover-tooltip" class="hover-tooltip" role="tooltip" aria-hidden="true" hidden>
     <div id="tooltip-name" class="tooltip-name"></div>
@@ -385,9 +389,7 @@
     <div class="search-trail-cue-note" id="search-trail-cue-note">The first strong match becomes the anchor; from there you can center it and explore the neighborhood.</div>
   </div>
 
-  <!--
-    TODO: Port experience reset toast
-  -->
+  <!-- Toast is rendered at layer 1200 (see <Toast /> above the hover tooltip) -->
 </div>
 
 <!--
