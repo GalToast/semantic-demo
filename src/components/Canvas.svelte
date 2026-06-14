@@ -113,6 +113,7 @@
       height={$viewport.height * $viewport.dpr}
       role="application"
       aria-label="3D semantic business explorer"
+      aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End Plus Minus"
       tabindex={interactive ? 0 : -1}
     ></canvas>
   </div>
