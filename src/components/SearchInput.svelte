@@ -210,6 +210,7 @@
       aria-label="Search businesses"
       aria-controls="search-result-list"
     />
+    <kbd class="search-shortcut-hint" aria-hidden="true">/</kbd>
     {#if hasQuery}
       <button class="search-clear" id="search-clear-btn" onclick={handleClear} aria-label="Clear search" type="button">
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
@@ -295,7 +296,7 @@
   }
   .search-input-wrap:focus-within {
     border-color: rgba(78, 205, 196, 0.6);
-    box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.12);
+    box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.18);
   }
   .searching .search-input-wrap {
     border-color: rgba(78, 205, 196, 0.35);
@@ -328,6 +329,30 @@
   }
   .search-input::-webkit-search-cancel-button {
     display: none;
+  }
+
+  /* ── Shortcut hint chip ──────────────────────────────────────────────────── */
+  .search-shortcut-hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.55);
+    font-family: 'Bricolage Grotesque', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: auto;
+    pointer-events: none;
+    flex-shrink: 0;
+    transition: opacity 0.2s ease;
+  }
+  .search-input-wrap:focus-within .search-shortcut-hint {
+    opacity: 0;
   }
 
   .search-clear {
