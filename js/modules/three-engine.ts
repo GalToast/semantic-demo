@@ -324,7 +324,7 @@ export function initThreeJS() {
     renderer.setSize(width, height);
     // Keep the canvas slightly translucent so the subtle radial gradient behind
     // #canvas-container can bleed through without changing scene fog/lighting.
-    renderer.setClearColor(SCENE_ATMOSPHERE.fogColor, 0.96);
+    renderer.setClearColor(SCENE_ATMOSPHERE.fogColor, SCENE_ATMOSPHERE.clearAlpha);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = SCENE_ATMOSPHERE.toneExposure;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -630,8 +630,8 @@ export function animate() {
     if (webglContext.pointsMaterial) {
         const isFocused = Number.isFinite(state.focusedNode);
         const isSemanticDive = state.trailDepth >= 2;
-        const pointsOpacityScale = isFocused ? (isSemanticDive ? 0.16 : 0.24) : 1.0;
-        const pointsSizeScale = isFocused ? (isSemanticDive ? 0.52 : 0.62) : 1.0;
+        const pointsOpacityScale = isFocused ? (isSemanticDive ? 0.16 : 0.46) : 1.0;
+        const pointsSizeScale = isFocused ? (isSemanticDive ? 0.52 : 0.8) : 1.0;
         if (webglContext.pointsMesh) webglContext.pointsMesh.visible = pointsOpacityScale > 0;
         webglContext.pointsMaterial.opacity = 0.32 * SCENE_ATMOSPHERE.pointOpacityScale * pointsRevealProgress * pointsOpacityScale;
         webglContext.pointsMaterial.size = CONFIG.POINTS_MATERIAL_BASE_SIZE * (1.06 + pointsRevealProgress * 0.46) * pointsSizeScale;
@@ -644,7 +644,7 @@ export function animate() {
         (webglContext.scene.fog as THREE.FogExp2).density = SCENE_ATMOSPHERE.fogDensity * pointsRevealProgress;
     }
     if (webglContext.nodeSporeMaterial) {
-        const focusBoost = Number.isFinite(state.focusedNode) ? (state.trailDepth >= 2 ? 0.72 : 0.82) : 1.0;
+        const focusBoost = Number.isFinite(state.focusedNode) ? (state.trailDepth >= 2 ? 0.72 : 1.0) : 1.0;
         const targetSporeOpacity = SCENE_ATMOSPHERE.sporeOpacity * pointsRevealProgress * focusBoost;
         webglContext.nodeSporeMaterial.opacity += (targetSporeOpacity - webglContext.nodeSporeMaterial.opacity) * 0.12;
     }

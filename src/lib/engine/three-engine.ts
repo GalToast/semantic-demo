@@ -547,7 +547,7 @@ export function initThreeJS() {
   // #canvas-container can bleed through without changing scene fog/lighting.
   renderer.setClearColor(
     (SCENE_ATMOSPHERE as any).fogColor ?? 0x0d2024,
-    0.96,
+    (SCENE_ATMOSPHERE as any).clearAlpha ?? 0.96,
   );
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = (SCENE_ATMOSPHERE as any).toneExposure ?? 1.0;
@@ -905,8 +905,8 @@ export function animate() {
   if (webglContext.pointsMaterial) {
     const isFocused = Number.isFinite(_state?.focusedNode);
     const isSemanticDive = (_state?.trailDepth ?? 0) >= 2;
-    const pointsOpacityScale = isFocused ? (isSemanticDive ? 0.16 : 0.24) : 1.0;
-    const pointsSizeScale = isFocused ? (isSemanticDive ? 0.52 : 0.62) : 1.0;
+    const pointsOpacityScale = isFocused ? (isSemanticDive ? 0.16 : 0.46) : 1.0;
+    const pointsSizeScale = isFocused ? (isSemanticDive ? 0.52 : 0.8) : 1.0;
     webglContext.pointsMaterial.opacity = 0.32 * (SCENE_ATMOSPHERE.pointOpacityScale ?? 1) * pointsRevealProgress * pointsOpacityScale;
     webglContext.pointsMaterial.size = CONFIG.POINTS_MATERIAL_BASE_SIZE * (1.06 + pointsRevealProgress * 0.46) * pointsSizeScale;
     if (webglContext.pointsMaterial.userData.shader) {
@@ -918,7 +918,7 @@ export function animate() {
     (webglContext.scene.fog as THREE.FogExp2).density = (SCENE_ATMOSPHERE.fogDensity ?? 0.62) * pointsRevealProgress;
   }
   if (webglContext.nodeSporeMaterial) {
-    const focusBoost = Number.isFinite(_state?.focusedNode) ? ((_state?.trailDepth ?? 0) >= 2 ? 0.72 : 0.82) : 1.0;
+    const focusBoost = Number.isFinite(_state?.focusedNode) ? ((_state?.trailDepth ?? 0) >= 2 ? 0.72 : 1.0) : 1.0;
     const targetSporeOpacity = (SCENE_ATMOSPHERE.sporeOpacity ?? 0.5) * pointsRevealProgress * focusBoost;
     webglContext.nodeSporeMaterial.opacity += (targetSporeOpacity - webglContext.nodeSporeMaterial.opacity) * 0.12;
   }

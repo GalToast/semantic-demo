@@ -296,7 +296,7 @@ export function getMyceliumPresentationProfile() {
         return { core: 0.112, wispy: 0.047, bridge: 0.068, pulse: 0.022 };
     }
     if (state.focusedNode !== null && state.focusedNode !== undefined) {
-        return { core: 0.14, wispy: 0.045, bridge: 0.07, pulse: 0.006 };
+        return { core: 0.16, wispy: 0.055, bridge: 0.085, pulse: 0.008 };
     }
     if (state.currentSearchSummary || state.searchGlowActive) {
         return { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 };

@@ -168,6 +168,7 @@
   let bodyFocusPanelMode = $state('');
   let bodyPanelSurface = $state('');
   let bodyGraphContext = $state('');
+  let bodyCompact = $state(false);
   let focusSearchForced = $derived(bodyPanelSurface === 'focus-search' || bodyGraphContext === 'focus-search' || document.body?.dataset.focusSearchForced === 'true');
   $effect(() => {
     if (typeof document === 'undefined') return;
@@ -177,6 +178,7 @@
       bodyFocusPanelMode = document.body.dataset.focusPanelMode || '';
       bodyPanelSurface = nextPanelSurface;
       bodyGraphContext = nextGraphContext;
+      bodyCompact = document.body.dataset.compact === 'true';
       if ((nextPanelSurface === 'focus-search' || nextGraphContext === 'focus-search') && document.body.dataset.focusSearchForced !== 'true') {
         document.body.dataset.focusSearchForced = 'true';
       } else if (nextPanelSurface !== 'search' && nextPanelSurface !== 'focus' && nextPanelSurface !== 'inside' && nextPanelSurface !== 'trail') {
@@ -184,7 +186,7 @@
       }
     };
     const obs = new MutationObserver(sync);
-    obs.observe(document.body, { attributes: true, attributeFilter: ['data-focus-panel-mode', 'data-panel-surface', 'data-graph-context'] });
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-compact', 'data-focus-panel-mode', 'data-panel-surface', 'data-graph-context'] });
     sync();
     return () => obs.disconnect();
   });
@@ -226,7 +228,7 @@
   // their own controls.
   let headerVisible = $derived(idleSurfaceActive);
   let controlsVisible = $derived(navSurface !== 'focus-search' && !focusSearchForced);
-  let infoPanelOpen = $derived((searchSurfaceActive || focusActive) && !mapModeActive);
+  let infoPanelOpen = $derived((searchSurfaceActive || (focusActive && !bodyCompact && !$viewport.isCompact)) && !mapModeActive);
 </script>
 
 {#snippet searchPanelContent()}
@@ -326,7 +328,7 @@
   <FocusPocketA11y />
 
   <!-- Layer 700: Compass rail -->
-  <CompassRail visible={focusActive} />
+  <CompassRail visible={focusActive && !$viewport.isCompact} />
 
   <!-- Layer 800: Camera controls -->
   <Controls visible={controlsVisible} />

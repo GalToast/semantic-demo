@@ -32,7 +32,7 @@ export const MYCELIUM_FIELD_SCALE = Object.freeze({
 export const SCENE_ATMOSPHERE = Object.freeze({
     fogColor: SCENE_PALETTE.fog,
     fogDensity: 0.0028,
-    clearAlpha: 1,
+    clearAlpha: 0.96,
     toneExposure: 0.78,
     pointOpacityScale: 1.0,
     sporeOpacity: 0.05

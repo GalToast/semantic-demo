@@ -20,8 +20,8 @@ const checks = [
     pass: /export\s+const\s+SCENE_ATMOSPHERE\s*=\s*Object\.freeze\s*\(\s*\{/.test(nodeManagerSrc),
   },
   {
-    name: 'renderer clear alpha is opaque so fog does not composite over page white',
-    pass: /clearAlpha:\s*1\b/.test(nodeManagerSrc)
+    name: 'renderer clear alpha is centralized for translucent atmosphere',
+    pass: /clearAlpha:\s*0\.96\b/.test(nodeManagerSrc)
       && /setClearColor\s*\(\s*SCENE_ATMOSPHERE\.fogColor\s*,\s*SCENE_ATMOSPHERE\.clearAlpha\s*\)/.test(src),
   },
   {
