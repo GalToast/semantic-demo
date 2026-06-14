@@ -1,6 +1,6 @@
 # Active Context — semantic-explorer
 
-**Last updated:** 2026-06-13 (post-BOTH-wave, post-A, pre-S6-arc)
+**Last updated:** 2026-06-13 (post-S1+S2+S3+S4; S5 prompt staged, S6 arc effectively closed)
 **⚠ Update-prone:** Refresh this file whenever migration state, demo readiness, or blockers change.
 
 ## Migration status (Svelte + TypeScript)
@@ -23,7 +23,7 @@
 - **`with-state-mutation-invariant.test.ts`** — scans for direct mutations of `CRITICAL_KEYS` / `TRACKED_SUB_KEYS` (per `src/lib/state/with-state-mutation.ts`) outside a `withStateMutation(() => { ... })` block. Supports the local alias `withMutation` (used in `demo-choreography.ts`). Catches regressions in the AGENTS.md invariant: "All mutations to navState, strandContinuityState, and other TRACKED_SUB_KEYS in state.js MUST be wrapped in withStateMutation()." Current: 0 violations.
 - **`css-important-invariant.test.ts`** — regression detector for the AGENTS.md rule "Avoid `!important` as a default CSS fix." Counts `!important` uses across `css/` and `src/lib/css/`; fails on increase. Current: 7 uses (matches baseline; no new uses).
 - **`commit-purity-invariant.test.ts`** — meta-test that scans `git log` for commit title prefixes (e.g., `docs(...)`, `fix(...)`) and asserts the prefix matches the file classes in the commit. HARD FAIL: `docs(...)` or `test(...)` must be 100% file-class match. SOFT WARN: `feat/fix/refactor(...)` should have ≥50% parenthetical-scope match. Motivation: the `b5ad93e → 0761a80` failure mode. The test is grandfathered with `EXEMPTED_SHAS` for known exceptions.
-- **`todo-without-ticket-invariant.test.ts`** — scans source dirs (js/modules, src/lib, src/components, src/App.svelte, vite.config.ts, vitest.config.js) for TODO comments without a ticket reference (T-XXX, #XXX, "Ticket XXX", "Issue #XXX", "BOTH-XXX", "Wave X"). Fails if the count grows. Current baseline: 10 (all in-flight S6-arc ports). After S6 completes, the baseline drops to 0.
+- **`todo-without-ticket-invariant.test.ts`** — scans source dirs (js/modules, src/lib, src/components, src/App.svelte, vite.config.ts, vitest.config.js) for TODO comments without a ticket reference (T-XXX, #XXX, "Ticket XXX", "Issue #XXX", "BOTH-XXX", "Wave X"). Fails if the count grows. **Current baseline: 0** (S6 arc closed on 2026-06-13; all 10 S6-arc TODOs resolved).
 - **`both-bridge-shape-invariant.test.ts`** — scans src/, vite.config.ts, vitest.config.js, and src/tsconfig.json for any `@legacy` or `@legacy-js` reference. Fails on any match. Locks in the Wave 9 retirement.
 
 To add a sixth invariant test: follow the same pattern (read the AGENTS.md rule, write a regex/scanner test, fail with a clear error message). Examples: off-limits-files guard, no-Math.random()-in-WebGL guard, seededUnit() invariant in geometry code.
@@ -57,22 +57,26 @@ To add a sixth invariant test: follow the same pattern (read the AGENTS.md rule,
 - Parallel visual-state audits can saturate local browser; prefer sequential headed runs for visual QA.
 - **Dev server noise:** The Svelte/Vite dev server (port 5173) re-touches `dist/svelte/*` via HMR. For close-out commits, use explicit `git add <files>` (never `git add -A`). See `dev-server-drift-handling` skill.
 
-## S6 arc — Svelte migration close-out (in flight, 2026-06-13)
+## S6 arc — Svelte migration close-out (CLOSED, 2026-06-13)
 
-The S6 arc finishes the Svelte migration by porting the 10 remaining TODO-without-ticket violations. 5 tickets:
+The S6 arc finishes the Svelte migration by porting the 10 remaining TODO-without-ticket violations. **All 5 tickets DONE.**
 
-| Ticket | File(s) | What | Status |
-|---|---|---|---|
-| **S1** | `src/lib/ui/loading.ts` (3 TODOs) | Port weather + thread hydration flow into the Svelte loading pipeline | ✅ DONE — `3ccccac` |
-| **S2** | `src/lib/orchestration/url-state.ts:412` | Switch URL-state to direct Svelte filter store mutations | ✅ DONE — `e5e01ad` |
-| **S3** | `src/lib/orchestration/view-controller.ts:293,296` + `src/App.svelte:389` + `src/lib/orchestration/url-state.ts:529` | Toast notifications + semantic-guide icon (4 TODOs) | 🟡 Worker running |
-| **S4** | `js/modules/legend-ui.ts:287` + `js/modules/tooltip.ts:149` | Move legacy call sites to Svelte component lifecycle | ✅ DONE — `ce7747d` |
-| **S5** | `tests/unit-active/todo-without-ticket-invariant.test.ts` + `memory/active-context.md` + `docs/both-pattern-follow-ups-2026-06-13.md` | Drop baseline to 0; close-out | Prompt drafted, fires after S3 |
+| Ticket | File(s) | What | Status | Commit |
+|---|---|---|---|---|
+| **S1** | `src/lib/ui/loading.ts` (3 TODOs) | Port weather + thread hydration flow | ✅ DONE | `3ccccac` |
+| **S2** | `src/lib/orchestration/url-state.ts:412` | Switch URL-state to direct Svelte filter store mutations | ✅ DONE | `e5e01ad` |
+| **S3** | `src/lib/orchestration/view-controller.ts:293,296` + `src/App.svelte:389` + `src/lib/orchestration/url-state.ts:529` | Toast notifications + semantic-guide icon (4 TODOs) | ✅ DONE | `3c6253c` |
+| **S4** | `js/modules/legend-ui.ts:287` + `js/modules/tooltip.ts:149` | Move legacy call sites to Svelte component lifecycle | ✅ DONE | `ce7747d` |
+| **S5** | `tests/unit-active/todo-without-ticket-invariant.test.ts` + `memory/active-context.md` + `docs/both-pattern-follow-ups-2026-06-13.md` | Drop baseline to 0; close-out | ✅ DONE | (this commit) |
 
-S1, S2, S4 all landed. 6 of 10 TODOs resolved. 4 remain (S3's scope).
-The S3 worker created a new `Toast.svelte` + `toast.ts` orchestrator; inlined the semantic-guide SVG; wired the body data-attribute bridge mirroring the existing `bodyFocusPanelMode` pattern.
-**Surprises from S1**: pre-existing `_loadingHideCancelled` build error (now fixed in passing), `@legacy/*` tsconfig alias not resolved by tsc (used relative path).
-**Surprises from S4**: `tooltip.js` stub didn't follow the BOTH pattern (no `export * from './tooltip.ts'`) — worker added the re-export to match `view-controller.js`.
+**S6 is complete.** The Svelte track is fully canonical. 0 TODO-without-ticket violations remain. The legacy `js/modules/*` tree is the only remaining retirement work (next arc: Wave 10).
+
+**S3 design**: New `Toast.svelte` component + `toast.ts` orchestrator with body data-attribute bridge (mirroring the `bodyFocusPanelMode` pattern). Inlined semantic-guide SVG from `src/lib/journey/semantic-guide.ts` into `view-controller.ts`. Fixed `icon: 'galaxy'` → `'mycelium'` to match the SVG sprite.
+
+**S3 surprises**: Worker initially thrashed on pre-existing linter warnings in App.svelte (unused imports) and view-controller.ts (innerHTML); steered to skip them and move on. 2 live steers applied.
+
+**S1 surprises**: Fixed pre-existing `_loadingHideCancelled` build error; `@legacy/*` tsconfig alias doesn't resolve for tsc (used relative path instead).
+**S4 surprises**: `tooltip.js` stub didn't follow the BOTH pattern; worker added the `export * from './tooltip.ts'` re-export to match `view-controller.js`.
 
 Pre-staged worker prompts at `tmp/commit-messages-2026-06-13/worker-ticket-S{1..5}-*.txt`.
 
@@ -80,12 +84,12 @@ Pre-staged worker prompts at `tmp/commit-messages-2026-06-13/worker-ticket-S{1..
 - **14 ready-to-fire worker prompts** in `tmp/commit-messages-2026-06-13/` (1+2, 1+2-v2, 4, 5, 6, 8, 9C, 9D, 9E, S1, S2, S3, S4, S5)
 - **3 memories + 2 skills + 1 profile doc** saved (bash-detach, v2-prompt recovery, session summary; bash-detach-handling + dev-server-drift-handling skills; `notes/fred-profile.md`)
 - **Key router running** at `127.0.0.1:8788` with 18 keys across 5 providers (OpenCode Zen, NVIDIA NIM, Mistral, ModelScope, Kilo). The session has been using `pi:direct-opencode-go/mimo-v2.5` direct (bypasses the router); future work on nvidia/mistral/modelscope/kilo routes can use the router.
-- **55 commits this session** (target: 57+ after S3 + S5 land), all pushed to origin. Wave included the BOTH-pattern follow-ups (1+2, 3, 4, 5, 6, 8), Wave 9 (9A, 9B, 9C, 9D, 9E), the A worker (9D-Option-B), 5 invariant tests, the S1+S2+S4 worker trio, the S6-arc prompt drafting, and the docs close-out + retirement publication.
+- **58+ commits this session** (target: 60+ after S5 close-out), all pushed to origin. Wave included the BOTH-pattern follow-ups (1+2, 3, 4, 5, 6, 8), Wave 9 (9A, 9B, 9C, 9D, 9E), the A worker (9D-Option-B), 5 invariant tests, the S1+S2+S3+S4 worker quad, the S5 close-out, and the docs close-out + retirement publication.
 
-## Next session entry (post-S1+S2+S4, pre-S3+S5)
+## Next session entry (post-S6, pre-Wave 10)
 
 1. **A is COMPLETE.** Worker `ocw_b4e07b6e` finished. 35 source files rewritten; BOTH bridge gone from src/, vite.config.ts, vitest.config.js; both-bridge-shape-invariant test added.
 2. **5 invariant tests in place.** withStateMutation, !important, commit-purity, todo-without-ticket, both-bridge-shape.
-3. **S6 arc: 3 of 5 tickets landed.** S1 (loading flow), S2 (URL state mutations), S4 (legend/tooltip lifecycle) all done. 6 of 10 TODOs resolved. S3 (toast + semantic-guide icon, 4 TODOs) is in flight. S5 (close-out, 15 min) fires after S3.
+3. **S6 arc CLOSED.** All 5 tickets landed (S1, S2, S3, S4, S5). 0 TODO-without-ticket violations. Svelte track is fully canonical.
 4. **Test suite green:** 18/18 files, 130/130 tests. svelte-check 0/0.
-5. **After S6:** Wave 10 (legacy runtime retirement) is the next big arc. The legacy `js/modules/*` tree is the only remaining retirement work.
+5. **Next arc: Wave 10 (legacy runtime retirement).** The legacy `js/modules/*` tree is the only remaining retirement work. Similar to Wave 9 but for the runtime, not the alias.

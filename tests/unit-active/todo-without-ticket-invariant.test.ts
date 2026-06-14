@@ -73,18 +73,9 @@ const TODO_REGEX = /\bTODO\b/;
 // re-derives the same scan). Update this when approving a new use
 // (see comment in the test body).
 //
-// CURRENT VIOLATIONS (10, all from the in-flight Svelte migration):
-//   - js/modules/legend-ui.ts:287 (call from app.js)
-//   - js/modules/tooltip.ts:149 (call from app.js)
-//   - src/lib/ui/loading.ts:144 (port loadSemanticThreads etc.)
-//   - src/lib/ui/loading.ts:161 (check weatherInitialized flag)
-//   - src/lib/ui/loading.ts:163 (port initWeather)
-//   - src/lib/orchestration/url-state.ts:412 (direct store mutations)
-//   - src/lib/orchestration/url-state.ts:537 (port showExperienceToast)
-//   - src/lib/orchestration/view-controller.ts:293 (port semantic-guide)
-//   - src/lib/orchestration/view-controller.ts:296 (port SVG)
-//   - src/App.svelte:389 (port experience reset toast)
-const APPROVED_BASELINE = 10;
+// All 10 S6-arc TODOs resolved as of 2026-06-13. Baseline is now 0;
+// any new TODO without a ticket will fail this test.
+const APPROVED_BASELINE = 0;
 
 interface TodoUse {
     file: string;

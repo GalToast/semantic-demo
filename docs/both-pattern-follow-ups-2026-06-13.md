@@ -164,3 +164,35 @@ A focused 10-min manual grep can complete the gap; a re-dispatch is also viable 
 Future work in this repo is now Svelte-track feature work, not BOTH-pattern migration.
 
 **Signal #4 satisfied:** `docs/legacy-runtime-retirement.md` exists naming the retirement commits, consumer surface, and verification (Ticket 9E, 2026-06-13).
+
+---
+
+## S6 arc — Svelte migration close-out (2026-06-13)
+
+**Status:** CLOSED — 5 of 5 tickets done, 10 of 10 TODOs resolved, baseline dropped to 0.
+
+The S6 arc finishes the Svelte migration by porting the 10 remaining TODO-without-ticket violations. The Svelte track is now fully canonical. The legacy `js/modules/*` tree is the only remaining retirement work (next arc: Wave 10).
+
+| Ticket | Subject | Commit |
+|---|---|---|
+| **S1** | fix(svelte-loading): wire deferred hydration to Svelte bridge (3 TODOs in `src/lib/ui/loading.ts`) | `3ccccac` |
+| **S2** | fix(url-state): direct Svelte filter store mutations (`url-state.ts:412` CustomEvent → `overwriteActiveFilters`) | `e5e01ad` |
+| **S3** | fix(svelte-toast+icon): port showExperienceToast + semantic-guide SVG (4 TODOs across 3 files) | `3c6253c` |
+| **S4** | fix(legend+tooltip): drive legacy init from Svelte component lifecycle (2 TODOs in `js/modules/legend-ui.ts:287` + `js/modules/tooltip.ts:149`) | `ce7747d` |
+| **S5** | docs(close-out): Svelte migration complete — drop TODO baseline to 0 (this update + `tests/unit-active/todo-without-ticket-invariant.test.ts` baseline 10→0) | (S5 close-out commit) |
+
+**New files created in S6:**
+- `src/components/Toast.svelte` — transient toast component (body data-attr bridge, MutationObserver pattern mirroring `bodyFocusPanelMode`)
+- `src/lib/orchestration/toast.ts` — toast orchestrator that sets `body.dataset.toastMessage` + `body.dataset.toastState` for Toast.svelte to observe
+
+**Pre-existing issues fixed in S6 (passing):**
+- S1: `_loadingHideCancelled` build error
+- S4: `tooltip.js` was missing the `export * from './tooltip.ts'` BOTH re-export (now matches `view-controller.js`)
+
+**Verification:**
+- `npm run test:unit`: 18/18 files, 130/130 tests pass
+- `svelte-check`: 0 errors, 0 warnings
+- `npm run check`: clean
+- `rg "TODO" js/modules/ src/lib/ src/components/ src/App.svelte`: 0 matches
+
+**Total session commits after S6:** 60+, all pushed to origin.
