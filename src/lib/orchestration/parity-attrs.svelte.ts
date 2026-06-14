@@ -20,14 +20,14 @@
 
 import { get } from 'svelte/store';
 import { navStore } from '@lib/stores/navigation.svelte';
-import type { NavState } from '@lib/types/state';
+// NavState type removed after direct store reads were inlined
 import { journeyStore } from '@lib/stores/journey.svelte';
 import { focusStore } from '@lib/stores/focus.svelte';
 import { searchStore } from '@lib/stores/search.svelte';
 import { filterState } from '@lib/stores/filter.svelte';
 import { viewport } from '@lib/stores/viewport.svelte';
 import { cameraStore } from '@lib/stores/camera.svelte';
-import { demoPhase as demoPhaseStore } from '@lib/stores/demo.svelte';
+import { demoStore, demoPhase as demoPhaseGetter } from '@lib/stores/demo.svelte';
 import {
   getJourneyCompassState
 } from './compass-state';
@@ -144,11 +144,11 @@ export function computeParityAttributes(): ParityAttributeMap {
   const nav = navStore();
   const journey = journeyStore();
   const focus = focusStore();
-  const search = searchStore;
+  const search = get(searchStore);
   const filters = get(filterState);
   const vp = viewport();
-  const demoPhaseValue: string = get(demoPhaseStore);
-  const camera = cameraStore;
+  const demoPhaseValue: string = demoPhaseGetter();
+  const camera = get(cameraStore);
 
   const compassStateVal = getJourneyCompassState();
   const presentation: CompassPresentationState = getJourneyCompassPresentationState(compassStateVal);
@@ -159,7 +159,7 @@ export function computeParityAttributes(): ParityAttributeMap {
 
   // graph-context: legacy uses these values across CSS hooks
   const graphContext = (() => {
-    if (vp.isCompact && journey.routeExplorationPhase === 'exploring') return 'corridor';
+    if (vp.isCompact && camera.routeExplorationPhase === 'exploring') return 'corridor';
     if (nav.currentView === 'map') return 'map';
     if (nav.mode === 'inside') return 'inside';
     if (nav.mode === 'focus' || nav.mode === 'trail') return 'focus';
@@ -190,12 +190,12 @@ export function computeParityAttributes(): ParityAttributeMap {
   })();
 
   const trailState =
-    journey.trailDepth > 0 || presentation.navigationOwner === 'map-trail-strip'
+    journey.depth > 0 || presentation.navigationOwner === 'map-trail-strip'
       ? 'active'
       : 'inactive';
   const semanticDive = focus.semanticDiveMode
     ? 'active'
-    : (journey.trailDepth >= 2 ? 'transitioning' : 'inactive');
+    : (journey.depth >= 2 ? 'transitioning' : 'inactive');
   const threadInspectionActive = focus.threadInspector.active;
   const inspectedThreadIndex = focus.threadInspector.inspectedIndex;
 
@@ -276,7 +276,7 @@ export function computeParityAttributes(): ParityAttributeMap {
     graphContext,
     routeExploration: journey.routeExplorationPhase || 'idle',
 
-    trailDepth: String(journey.trailDepth),
+    trailDepth: String(journey.depth),
     trailState,
 
     semanticDive,
@@ -437,9 +437,9 @@ export function installParityAttributeSync(
     const unsubFocus = focusStore.subscribe(scheduleSync);
     const unsubSearch = searchStore.subscribe(scheduleSync);
     const unsubFilter = filterState.subscribe(scheduleSync);
-    const unsubViewport = viewport.subscribe(scheduleSync);
-    const unsubDemo = demoPhaseStore.subscribe(scheduleSync);
-    const unsubCamera = cameraStore.subscribe(scheduleSync);
+    const unsubViewport = (viewport as any).subscribe(scheduleSync);
+    const unsubDemo = (demoStore as any).subscribe(scheduleSync);
+    const unsubCamera = (cameraStore as any).subscribe(scheduleSync);
 
     if (initialSync) {
       // Force an initial compute on install

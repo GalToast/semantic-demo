@@ -21,7 +21,7 @@
 <script lang="ts">
   import { hasFocus, currentSurface } from '@lib/stores/navigation';
   import { focusedIndex } from '@lib/stores/navigation';
-  import { activeResult } from '@lib/stores/search';
+  import { activeResult, searchSummary } from '@lib/stores/search';
   import { getBusinessRecords, getIsDataReady, selectedPointStore } from '@lib/stores';
   import type { BusinessRecord } from '@lib/types/business';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, getPublicRecordStatusLabel } from '@lib/utils';
@@ -71,7 +71,6 @@
 
   let testPanelSurface = $derived(testCompatStore().panelSurface || testCompatStore().navSurface);
   let testFocusedNode = $derived(testCompatStore().focusedNode);
-  let testActiveView = $derived(testCompatStore().activeView || testCompatStore().mode);
   let bodyPanelSurface = $state('');
 
   function readBodyPanelSurface(): void {
@@ -114,25 +113,6 @@
     public_note?: string;
     zip?: string;
     category?: string;
-  }
-
-  interface SelectedBusinessProps {
-    name: string;
-    filedAs: string;
-    showFiledAs: boolean;
-    what: string;
-    role: string;
-    theme: string;
-    status: string;
-    trivia: string;
-    showTrivia: boolean;
-    matchNarrative: string;
-    showMatchPanel: boolean;
-    facts: Record<string, unknown>[];
-    sensitivityBadges: Record<string, unknown>[];
-    mapText: string;
-    threadText: string;
-    isPopulated: boolean;
   }
 
   // ── Adapters ──────────────────────────────────────────────────────────────────
@@ -246,8 +226,7 @@
     }
 
     if (effectiveSurface === 'search' && currentActiveResult !== null) {
-      const searchIndex = currentActiveResult.index;
-      return getBusinessRecords()[searchIndex] ?? null;
+      return getBusinessRecords()[Number(currentActiveResult)] ?? null;
     }
 
     if (effectiveFocusedIdx !== null && effectiveFocusedIdx >= 0) {
@@ -341,8 +320,9 @@
       const role = 'Business';
       const trivia = (getInterestingBusinessNote(selectedRecord) as string) || '';
       const showTrivia = Boolean(trivia);
-      const matchNarrative = selectionSource === 'search' && currentActiveResult?.snippet
-        ? buildSearchMatchNarrative(currentActiveResult.snippet, currentActiveResult.score || 0)
+      const summary = searchSummary();
+      const matchNarrative = selectionSource === 'search' && currentActiveResult !== null && summary
+        ? buildSearchMatchNarrative('', summary.topScore)
         : '';
       const showMatchPanel = Boolean(matchNarrative);
       const facts: Record<string, unknown>[] = [];
@@ -412,17 +392,9 @@
     }
   }
 
-  function formatClusterName(cluster: number): string {
-    return CLUSTER_NAMES[cluster % CLUSTER_NAMES.length] ?? 'Uncategorized';
-  }
+  // ── Helpers
 
-  /** Build a theme string like "Food & Drink · Cafes" */
-  function buildTheme(record: BusinessRecord): string {
-    const cluster = formatClusterName(record.cluster);
-    return record.category
-      ? `${cluster} · ${record.category}`
-      : cluster;
-  }
+  /** Build a theme string like "Food & Drink · Cafes */
 </script>
 
 <aside
