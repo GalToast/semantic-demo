@@ -12,19 +12,19 @@
  *   - requestSemanticGuide()                  — async request + render cycle
  *
  * Dependencies still in legacy path (will migrate later):
- *   - @legacy-js/state.ts (global state singleton)
- *   - @legacy-js/modules/semantic-guide-payload.ts (buildSemanticGuideRequestPayload)
- *   - @legacy-js/modules/legend-ui.ts (updateLegendGuideState)
- *   - @legacy-js/modules/connection-analysis.ts (showSemanticThreadsDetail)
- *   - @legacy-js/modules/stores.ts (semanticGuideStateStore)
+ *   - ../../../js/state.ts (global state singleton)
+ *   - ../../../js/modules/semantic-guide-payload.ts (buildSemanticGuideRequestPayload)
+ *   - ../../../js/modules/legend-ui.ts (updateLegendGuideState)
+ *   - ../../../js/modules/connection-analysis.ts (showSemanticThreadsDetail)
+ *   - ../../../js/modules/stores.ts (semanticGuideStateStore)
  */
 
-import { state } from '@legacy-js/state';
+import { state } from '../../../js/state';
 import { escapeHtml } from '@lib/utils/dom-formatters';
-import { buildSemanticGuideRequestPayload } from '@legacy-js/modules/semantic-guide-payload';
-import { updateLegendGuideState } from '@legacy-js/modules/legend-ui';
-import { showSemanticThreadsDetail } from '@legacy-js/modules/connection-analysis';
-import { semanticGuideStateStore } from '@legacy-js/modules/stores';
+import { buildSemanticGuideRequestPayload } from '../../../js/modules/semantic-guide-payload';
+import { updateLegendGuideState } from '../../../js/modules/legend-ui';
+import { showSemanticThreadsDetail } from '../../../js/modules/connection-analysis';
+import { semanticGuideStateStore } from '../../../js/modules/stores';
 
 function getMostFrequent(values: string[]): string | null {
     if (!values?.length) return null;

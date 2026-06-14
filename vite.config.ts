@@ -175,7 +175,6 @@ export default defineConfig({
       '@': SRC_DIR,
       '@lib': resolve(SRC_DIR, 'lib'),
       '@components': resolve(SRC_DIR, 'components'),
-      '@legacy-js': resolve(__dirname, 'js'),
       // Three.js dedup (Win #2 from tmp/bundle-decomposition-2026-06-12.md)
       // is still pending deeper investigation. Initial attempts with
       // `resolve.alias['three/build/three.core.js']` and

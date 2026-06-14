@@ -6,12 +6,12 @@
  *
  * Import strategy:
  *   - @lib/*   for engine-local modules
- *   - @legacy-js/* for modules still owned by the legacy tree
+ *   - ../../../js/* for modules still owned by the legacy tree
  */
 
 import { webglContext } from './webgl-context';
 import * as THREE from 'three';
-import { state as _state, withStateMutation } from '@legacy-js/state';
+import { state as _state, withStateMutation } from '../../../js/state';
 const state = _state as any;
 import { CONFIG } from './config';
 import { disposeObject3D } from './resource-tracker';

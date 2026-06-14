@@ -10,7 +10,7 @@
  */
 import * as THREE from 'three';
 import type { Vector3 } from 'three';
-import { state, withStateMutation } from '@legacy-js/state.js';
+import { state, withStateMutation } from '../../../js/state.js';
 import { prefersReducedMotion } from '@lib/utils/environment';
 import { normalizeCityForFilter } from '@lib/utils/geo-data';
 import { getBusinessRecords } from '@lib/data-store';
@@ -59,29 +59,29 @@ export {
 // through these functions. No direct assignment outside this API.
 
 export function getFocusPocketIndices(): number[] {
-  const indices = (state.navState as Record<string, unknown>).focusPocketIndices;
+  const indices = (state.navState as unknown as Record<string, unknown>).focusPocketIndices;
   return Array.isArray(indices) ? indices : [];
 }
 
 export function setFocusPocketIndices(indices: number[]): void {
   withStateMutation(() => {
-    ((state as Record<string, unknown>).navState as Record<string, unknown>).focusPocketIndices = indices;
+    ((state as unknown as Record<string, unknown>).navState as unknown as Record<string, unknown>).focusPocketIndices = indices;
   });
 }
 
 export function getFocusPocketRoleByIndex(): Map<number, string> {
-  return ((state.navState as Record<string, unknown>).focusPocketRoleByIndex as Map<number, string>) ?? new Map();
+  return ((state.navState as unknown as Record<string, unknown>).focusPocketRoleByIndex as Map<number, string>) ?? new Map();
 }
 
 export function setFocusPocketRoleByIndex(map: Map<number, string>): void {
   withStateMutation(() => {
-    ((state as Record<string, unknown>).navState as Record<string, unknown>).focusPocketRoleByIndex = map;
+    ((state as unknown as Record<string, unknown>).navState as unknown as Record<string, unknown>).focusPocketRoleByIndex = map;
   });
 }
 
 export function setFocusPocketRoleForIndex(index: number, role: string): void {
   withStateMutation(() => {
-    const navState = (state as Record<string, unknown>).navState as Record<string, unknown>;
+    const navState = (state as unknown as Record<string, unknown>).navState as unknown as Record<string, unknown>;
     if (!(navState.focusPocketRoleByIndex instanceof Map)) {
       navState.focusPocketRoleByIndex = new Map();
     }
@@ -91,23 +91,23 @@ export function setFocusPocketRoleForIndex(index: number, role: string): void {
 
 export function clearFocusPocketRoleByIndex(): void {
   withStateMutation(() => {
-    ((state as Record<string, unknown>).navState as Record<string, unknown>).focusPocketRoleByIndex = new Map();
+    ((state as unknown as Record<string, unknown>).navState as unknown as Record<string, unknown>).focusPocketRoleByIndex = new Map();
   });
 }
 
 export function getFocusPocketMotionByIndex(): Map<number, Record<string, unknown>> {
-  return ((state as Record<string, unknown>).focusPocketMotionByIndex as Map<number, Record<string, unknown>>) ?? new Map();
+  return ((state as unknown as Record<string, unknown>).focusPocketMotionByIndex as Map<number, Record<string, unknown>>) ?? new Map();
 }
 
 export function setFocusPocketMotionByIndex(map: Map<number, Record<string, unknown>>): void {
   withStateMutation(() => {
-    (state as Record<string, unknown>).focusPocketMotionByIndex = map;
+    (state as unknown as Record<string, unknown>).focusPocketMotionByIndex = map;
   });
 }
 
 export function setFocusPocketMotionForIndex(index: number, motion: Record<string, unknown>): void {
   withStateMutation(() => {
-    const s = state as Record<string, unknown>;
+    const s = state as unknown as Record<string, unknown>;
     if (!(s.focusPocketMotionByIndex instanceof Map)) {
       s.focusPocketMotionByIndex = new Map();
     }
@@ -117,44 +117,44 @@ export function setFocusPocketMotionForIndex(index: number, motion: Record<strin
 
 export function clearFocusPocketMotionByIndex(): void {
   withStateMutation(() => {
-    (state as Record<string, unknown>).focusPocketMotionByIndex = new Map();
+    (state as unknown as Record<string, unknown>).focusPocketMotionByIndex = new Map();
   });
 }
 
 export function clearFocusPocketIndices(): void {
   withStateMutation(() => {
-    ((state as Record<string, unknown>).navState as Record<string, unknown>).focusPocketIndices = [];
+    ((state as unknown as Record<string, unknown>).navState as unknown as Record<string, unknown>).focusPocketIndices = [];
   });
 }
 
 export function getFocusPocketMeta(): Record<string, unknown> | null {
-  return ((state.navState as Record<string, unknown>).focusPocketMeta as Record<string, unknown>) ?? null;
+  return ((state.navState as unknown as Record<string, unknown>).focusPocketMeta as unknown as Record<string, unknown>) ?? null;
 }
 
 export function setFocusPocketMeta(meta: Record<string, unknown> | null): void {
   withStateMutation(() => {
-    ((state as Record<string, unknown>).navState as Record<string, unknown>).focusPocketMeta = meta;
+    ((state as unknown as Record<string, unknown>).navState as unknown as Record<string, unknown>).focusPocketMeta = meta;
   });
 }
 
 export function clearFocusPocketMeta(): void {
   withStateMutation(() => {
-    ((state as Record<string, unknown>).navState as Record<string, unknown>).focusPocketMeta = null;
+    ((state as unknown as Record<string, unknown>).navState as unknown as Record<string, unknown>).focusPocketMeta = null;
   });
 }
 
 // ── Apply Local Neighborhood Focus ──────────────────────────────────────────
 
 export function applyLocalNeighborhoodFocus(index: number): void {
-  const lState = state as Record<string, unknown>;
-  const navState = lState.navState as Record<string, unknown>;
+  const lState = state as unknown as Record<string, unknown>;
+  const navState = lState.navState as unknown as Record<string, unknown>;
   const points = lState.points as Array<Record<string, unknown>> | undefined;
   const originalPositions = lState.originalPositions as Array<{ x: number; y: number; z: number }> | undefined;
   const nodePositions = lState.nodePositions as Array<{ x: number; y: number; z: number }> | undefined;
   const targetPositions = lState.targetPositions as Array<{ x: number; y: number; z: number }> | undefined;
 
   // --- TRAVERSAL CONTINUITY: capture previous pocket before reset ---
-  const prevPocketMeta = navState.focusPocketMeta as Record<string, unknown> | null;
+  const prevPocketMeta = navState.focusPocketMeta as unknown as Record<string, unknown> | null;
   const prevPocketIndexArray = Array.isArray(navState.focusPocketIndices)
     ? (navState.focusPocketIndices as number[])
     : [];
@@ -191,7 +191,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
   clearFocusPocketRoleByIndex();
   clearFocusPocketMotionByIndex();
   withStateMutation(() => {
-    (lState as Record<string, unknown>).focusPocketTransitionStartedAt = performance.now();
+    (lState as unknown as Record<string, unknown>).focusPocketTransitionStartedAt = performance.now();
   });
 
   if (navState.threadSource === 'semantic') {
@@ -228,8 +228,8 @@ export function applyLocalNeighborhoodFocus(index: number): void {
 
       setFocusPocketMeta(pocket.meta);
       withStateMutation(() => {
-        (lState as Record<string, unknown>).nodesAreSettling = true;
-        (lState as Record<string, unknown>).autoRotate = false;
+        (lState as unknown as Record<string, unknown>).nodesAreSettling = true;
+        (lState as unknown as Record<string, unknown>).autoRotate = false;
       });
       syncPocketNodesToStore();
       return;
@@ -240,8 +240,8 @@ export function applyLocalNeighborhoodFocus(index: number): void {
   const focusPos = originalPositions?.[index];
   if (!focusPos) {
     withStateMutation(() => {
-      (lState as Record<string, unknown>).nodesAreSettling = false;
-      (lState as Record<string, unknown>).autoRotate = true;
+      (lState as unknown as Record<string, unknown>).nodesAreSettling = false;
+      (lState as unknown as Record<string, unknown>).autoRotate = true;
     });
     syncPocketNodesToStore();
     return;
@@ -259,15 +259,15 @@ export function applyLocalNeighborhoodFocus(index: number): void {
   neighborhoodCandidates.forEach((candidate) => {
     if (!candidate || !Number.isFinite(candidate.index as number) || (candidate.index as number) === index) return;
     const point = (Number.isFinite(candidate.index as number) && (candidate.index as number) >= 0 && (candidate.index as number) < (points?.length ?? 0))
-      ? points?.[candidate.index as number] || ({} as Record<string, unknown>)
-      : ({} as Record<string, unknown>);
+      ? points?.[candidate.index as number] || ({} as unknown as Record<string, unknown>)
+      : ({} as unknown as Record<string, unknown>);
     fallbackPocketEntries.set(candidate.index as number, {
       index: candidate.index as number,
       kind: 'primary',
-      score: Number((candidate as Record<string, unknown>).semanticScore ?? (candidate as Record<string, unknown>).score ?? 0.62),
-      relationshipRole: String((candidate as Record<string, unknown>).relationshipRole || ''),
-      relationshipAxis: String((candidate as Record<string, unknown>).relationshipAxis || ''),
-      roleReason: String((candidate as Record<string, unknown>).roleReason || ''),
+      score: Number((candidate as unknown as Record<string, unknown>).semanticScore ?? (candidate as unknown as Record<string, unknown>).score ?? 0.62),
+      relationshipRole: String((candidate as unknown as Record<string, unknown>).relationshipRole || ''),
+      relationshipAxis: String((candidate as unknown as Record<string, unknown>).relationshipAxis || ''),
+      roleReason: String((candidate as unknown as Record<string, unknown>).roleReason || ''),
       sameCity:
         normalizeCityForFilter(point.city as string) ===
         normalizeCityForFilter(
@@ -275,7 +275,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
             ? (points?.[index]?.city as string)
             : undefined
         ),
-      reason: String((candidate as Record<string, unknown>).reason || 'nearby business relationship'),
+      reason: String((candidate as unknown as Record<string, unknown>).reason || 'nearby business relationship'),
     });
   });
 
@@ -303,10 +303,10 @@ export function applyLocalNeighborhoodFocus(index: number): void {
       motif: fallbackPocket.motif?.key || 'market',
       motifLabel: fallbackPocket.motif?.label || 'threaded neighborhood',
       viewportProfile: fallbackPocket.viewportProfile || viewportProfile,
-    } as Record<string, unknown>);
+    } as unknown as Record<string, unknown>);
     withStateMutation(() => {
-      (lState as Record<string, unknown>).nodesAreSettling = true;
-      (lState as Record<string, unknown>).autoRotate = false;
+      (lState as unknown as Record<string, unknown>).nodesAreSettling = true;
+      (lState as unknown as Record<string, unknown>).autoRotate = false;
     });
     syncPocketNodesToStore();
     return;
@@ -321,9 +321,9 @@ export function applyLocalNeighborhoodFocus(index: number): void {
       {
         role: 'anchor',
         delay: 0,
-        duration: (personality as Record<string, unknown>).cameraDuration as number * 0.7,
+        duration: (personality as unknown as Record<string, unknown>).cameraDuration as number * 0.7,
         speed: 0.38,
-        personality: (personality as Record<string, unknown>).type as string,
+        personality: (personality as unknown as Record<string, unknown>).type as string,
       },
     ],
   ]));
@@ -334,8 +334,8 @@ export function applyLocalNeighborhoodFocus(index: number): void {
     supportCount: supportIndices.length,
     haloCount: 0,
     viewportProfile,
-    personality: (personality as Record<string, unknown>).type as string,
-  } as Record<string, unknown>);
+    personality: (personality as unknown as Record<string, unknown>).type as string,
+  } as unknown as Record<string, unknown>);
 
   const focusPosX = Number.isFinite(focusPos.x) ? focusPos.x : 0;
   const focusPosY = Number.isFinite(focusPos.y) ? focusPos.y : 0;
@@ -356,16 +356,16 @@ export function applyLocalNeighborhoodFocus(index: number): void {
     setFocusPocketRoleForIndex(i, isPrimary ? 'primary' : 'support');
 
     const baseDelay = isPrimary ? primaryIndices.indexOf(i) * 34 : 160;
-    const staggerMult = (personality as Record<string, unknown>).staggerMult as number ?? 1;
-    const cameraDuration = (personality as Record<string, unknown>).cameraDuration as number ?? 980;
-    const compressionMult = (personality as Record<string, unknown>).compressionMult as number ?? 1;
+    const staggerMult = (personality as unknown as Record<string, unknown>).staggerMult as number ?? 1;
+    const cameraDuration = (personality as unknown as Record<string, unknown>).cameraDuration as number ?? 980;
+    const compressionMult = (personality as unknown as Record<string, unknown>).compressionMult as number ?? 1;
 
     setFocusPocketMotionForIndex(i, {
       role: isPrimary ? 'primary' : 'support',
       delay: baseDelay * staggerMult,
       duration: (isPrimary ? 980 : 1120) * (cameraDuration / 980),
       speed: isPrimary ? 0.22 : 0.16,
-      personality: (personality as Record<string, unknown>).type as string,
+      personality: (personality as unknown as Record<string, unknown>).type as string,
     });
 
     let compression = isPrimary
@@ -377,7 +377,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
         : 0.18;
 
     // Step Inside: tighter pocket geometry at trailDepth 2
-    if ((lState as Record<string, unknown>).trailDepth === 2) {
+    if ((lState as unknown as Record<string, unknown>).trailDepth === 2) {
       compression *= isPrimary ? 0.4 : 0.52;
     }
 
@@ -392,7 +392,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
     }
   }
   withStateMutation(() => {
-    (lState as Record<string, unknown>).nodesAreSettling = true;
+    (lState as unknown as Record<string, unknown>).nodesAreSettling = true;
   });
   syncPocketNodesToStore();
 }
@@ -409,8 +409,8 @@ export function applyLocalNeighborhoodFocus(index: number): void {
  * HTML overlay invoked after the build step.
  */
 function syncPocketNodesToStore(): void {
-  const lState = state as Record<string, unknown>;
-  const navState = lState.navState as Record<string, unknown> | undefined;
+  const lState = state as unknown as Record<string, unknown>;
+  const navState = lState.navState as unknown as Record<string, unknown> | undefined;
   if (!navState) return;
   const indices = (navState.focusPocketIndices as number[] | undefined) ?? [];
   const roles =
@@ -461,9 +461,9 @@ export function applyFocusPocketBreathing(
   now: number,
   positions: Array<{ x: number; y: number; z: number }> | null
 ): boolean {
-  const lState = state as Record<string, unknown>;
-  const navState = lState.navState as Record<string, unknown>;
-  const focusPocketMeta = navState.focusPocketMeta as Record<string, unknown> | null;
+  const lState = state as unknown as Record<string, unknown>;
+  const navState = lState.navState as unknown as Record<string, unknown>;
+  const focusPocketMeta = navState.focusPocketMeta as unknown as Record<string, unknown> | null;
   const focusPocketMotionByIndex = lState.focusPocketMotionByIndex as Map<number, Record<string, unknown>> | undefined;
   const targetPositions = lState.targetPositions as Array<{ x: number; y: number; z: number }> | undefined;
   const nodePositions = lState.nodePositions as Array<{ x: number; y: number; z: number }> | undefined;
@@ -472,7 +472,7 @@ export function applyFocusPocketBreathing(
   if (!focusPocketMeta?.active || !focusPocketMotionByIndex?.size || !positions) return false;
   if (prefersReducedMotion()) return false;
 
-  const age = now - ((lState as Record<string, unknown>).focusPocketTransitionStartedAt as number);
+  const age = now - ((lState as unknown as Record<string, unknown>).focusPocketTransitionStartedAt as number);
   const anchorIndex = Number.isFinite(navState.focusedIndex as number) ? (navState.focusedIndex as number) : null;
   const anchor = (anchorIndex != null)
     ? (targetPositions?.[anchorIndex] || nodePositions?.[anchorIndex] || originalPositions?.[anchorIndex])
@@ -540,7 +540,7 @@ export function applyFocusPocketBreathing(
 
 export function syncRuntimeState(snapshot: Record<string, unknown> = {}): void {
   withStateMutation(() => {
-    const s = state as Record<string, unknown>;
+    const s = state as unknown as Record<string, unknown>;
     Object.entries(snapshot).forEach(([key, value]) => {
       s[key] = value;
     });
@@ -548,7 +548,7 @@ export function syncRuntimeState(snapshot: Record<string, unknown> = {}): void {
 }
 
 export function getRuntimeStateSnapshot(): Record<string, unknown> {
-  const lState = state as Record<string, unknown>;
+  const lState = state as unknown as Record<string, unknown>;
   return {
     navState: lState.navState,
     targetPositions: lState.targetPositions,

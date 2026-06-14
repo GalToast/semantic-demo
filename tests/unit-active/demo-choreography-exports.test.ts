@@ -58,7 +58,7 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
     expect(legacyDynamic).toHaveLength(0);
   });
 
-  it('statically imports all 7 legacy modules', () => {
+  it('statically imports all 7 legacy modules via relative paths', () => {
     const src = readSource();
     const expectedModules = [
       'lifecycle.js',
@@ -70,15 +70,15 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
       'micro-demo-ui.js',
     ];
     for (const mod of expectedModules) {
-      expect(src).toContain(`from '@legacy-js/modules/${mod}'`);
+      expect(src).toContain(`from '../../../js/modules/${mod}'`);
     }
   });
 
-  it('also statically imports the 3 previously-converted modules', () => {
+  it('also statically imports the 3 previously-converted modules via relative paths', () => {
     const src = readSource();
-    expect(src).toContain("from '@legacy-js/state.js'");
-    expect(src).toContain("from '@legacy-js/modules/camera-controls.js'");
-    expect(src).toContain("from '@legacy-js/modules/focus-pocket.js'");
+    expect(src).toContain("from '../../../js/state.js'");
+    expect(src).toContain("from '../../../js/modules/camera-controls.js'");
+    expect(src).toContain("from '../../../js/modules/focus-pocket.js'");
   });
 });
 

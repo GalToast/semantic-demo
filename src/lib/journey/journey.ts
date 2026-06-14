@@ -4,9 +4,9 @@
  * TypeScript port of js/modules/journey.ts.
  * Facade module for the Semantic Journey / Exploration Trail feature set.
  */
-import { state, withStateMutation } from '@legacy-js/state'
-import { getFocusedNode, getPoints, getNavState, getSelectedPoint } from '@legacy-js/state/selectors'
-import { subscribe, publish, EVENTS } from '@legacy-js/modules/event-bus'
+import { state, withStateMutation } from '../../../js/state'
+import { getFocusedNode, getPoints, getNavState, getSelectedPoint } from '../../../js/state/selectors'
+import { subscribe, publish, EVENTS } from '../../../js/modules/event-bus'
 import {
     resetRouteTraceDiagnostics,
     removeRouteTraceOverlay,
@@ -20,7 +20,7 @@ import {
     syncArrivalHandoffOverlay,
     updateArrivalHandoffOverlay,
     disposeArrivalHandoffOverlay
-} from '@legacy-js/modules/journey-webgl'
+} from '../../../js/modules/journey-webgl'
 import {
     normalizeLeadId,
     buildSpatialGrid,
@@ -29,14 +29,14 @@ import {
     getGeometricThreadCandidates,
     getSemanticThreadCandidates,
     getThreadCandidatesForIndex
-} from '@legacy-js/modules/journey-thread-model'
+} from '../../../js/modules/journey-thread-model'
 import {
     initJourneyTimerAdapter,
     getStrandArrivalNote,
     getInsideRelationshipLabel,
     summarizeNeighborReason,
     walkThreadNeighbor
-} from '@legacy-js/modules/journey-thread-settler'
+} from '../../../js/modules/journey-thread-settler'
 import { traverseNeighbor, previewInsideNextThread } from './thread-settler-adapter'
 import {
     getThreadInspectionState,
@@ -46,8 +46,8 @@ import {
     unpinThreadInspection,
     scheduleCanvasThreadInspectionClear,
     clearThreadInspection
-} from '@legacy-js/modules/thread-inspector'
-import { setStrandContinuityState, clearStrandContinuityState } from '@legacy-js/modules/strand-continuity'
+} from '../../../js/modules/thread-inspector'
+import { setStrandContinuityState, clearStrandContinuityState } from '../../../js/modules/strand-continuity'
 import {
     initJourneyNeighborhoodAdapter,
     getSemanticThreadDisplayLimit,
@@ -63,15 +63,15 @@ import {
     primeBoundedSemanticNeighborhoodForTraversal,
     setTrailFromSeed,
     updateTrailIndices
-} from '@legacy-js/modules/journey-neighborhood'
-import { updateSelectedBusiness, syncFocusStage } from '@legacy-js/modules/journey-selected-card'
+} from '../../../js/modules/journey-neighborhood'
+import { updateSelectedBusiness, syncFocusStage } from '../../../js/modules/journey-selected-card'
 import {
     updateSelectedCardHeading,
     renderSelectedMetaStrip,
     renderSelectedMatchPanel,
     renderSelectedActionRow,
     syncSelectedCardContentVariant
-} from '@legacy-js/modules/ui-renderers'
+} from '../../../js/modules/ui-renderers'
 import {
     isCondensedFocusStageViewport,
     hasColdDegradedSemanticFallback,
@@ -79,12 +79,12 @@ import {
     updateTraversalUi,
     initFocusNeighborRailSubscriptions,
     shouldUseFloatingFocusJourneyOnly
-} from '@legacy-js/modules/journey-focus-ui'
+} from '../../../js/modules/journey-focus-ui'
 import {
     ensureCanvasNodeInteractionBindings as _ensureCanvasNodeInteractionBindings,
     isThreadCandidateVisibleOnCanvas as _isThreadCandidateVisibleOnCanvas,
     initJourneyCanvasInteractionAdapter
-} from '@legacy-js/modules/journey-canvas-interaction'
+} from '../../../js/modules/journey-canvas-interaction'
 
 export function isThreadCandidateVisibleOnCanvas(index: number, margin: number = 18): boolean {
     return _isThreadCandidateVisibleOnCanvas(index, margin)
@@ -92,10 +92,10 @@ export function isThreadCandidateVisibleOnCanvas(index: number, margin: number =
 export function ensureCanvasNodeInteractionBindings(): void {
     _ensureCanvasNodeInteractionBindings()
 }
-import { applyLocalNeighborhoodFocus } from '@legacy-js/modules/focus-pocket'
-import { applyPointFilterColors, describeThreadLensForPoint } from '@legacy-js/modules/journey-point-color'
-import { truncateMicrocopy, getSharedTrailTopicLabel } from '@legacy-js/modules/journey-text-helpers'
-import { setSemanticDiveMode as setSemanticDiveModeImpl } from '@legacy-js/modules/lifecycle'
+import { applyLocalNeighborhoodFocus } from '../../../js/modules/focus-pocket'
+import { applyPointFilterColors, describeThreadLensForPoint } from '../../../js/modules/journey-point-color'
+import { truncateMicrocopy, getSharedTrailTopicLabel } from '../../../js/modules/journey-text-helpers'
+import { setSemanticDiveMode as setSemanticDiveModeImpl } from '../../../js/modules/lifecycle'
 
 subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
     const index = typeof payload.index === 'number' ? payload.index : NaN

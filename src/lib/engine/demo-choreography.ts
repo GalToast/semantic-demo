@@ -18,16 +18,16 @@
  */
 
 import type { DemoPhase } from '@lib/types/state';
-import * as legacyStateModule from '@legacy-js/state.js';
-import * as cameraControlsStaticModule from '@legacy-js/modules/camera-controls.js';
-import * as focusPocketStaticModule from '@legacy-js/modules/focus-pocket.js';
-import * as lifecycleStaticModule from '@legacy-js/modules/lifecycle.js';
-import * as journeyCompassStaticModule from '@legacy-js/modules/journey-compass-controller.js';
-import * as journeyStaticModule from '@legacy-js/modules/journey.js';
-import * as panelBindingsStaticModule from '@legacy-js/modules/bindings/panel-bindings.js';
-import * as microDemoGuardsStaticModule from '@legacy-js/modules/micro-demo-guards.js';
-import * as microDemoCameraStaticModule from '@legacy-js/modules/micro-demo-camera.js';
-import * as microDemoUiStaticModule from '@legacy-js/modules/micro-demo-ui.js';
+import * as legacyStateModule from '../../../js/state.js';
+import * as cameraControlsStaticModule from '../../../js/modules/camera-controls.js';
+import * as focusPocketStaticModule from '../../../js/modules/focus-pocket.js';
+import * as lifecycleStaticModule from '../../../js/modules/lifecycle.js';
+import * as journeyCompassStaticModule from '../../../js/modules/journey-compass-controller.js';
+import * as journeyStaticModule from '../../../js/modules/journey.js';
+import * as panelBindingsStaticModule from '../../../js/modules/bindings/panel-bindings.js';
+import * as microDemoGuardsStaticModule from '../../../js/modules/micro-demo-guards.js';
+import * as microDemoCameraStaticModule from '../../../js/modules/micro-demo-camera.js';
+import * as microDemoUiStaticModule from '../../../js/modules/micro-demo-ui.js';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 //

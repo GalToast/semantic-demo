@@ -5,14 +5,14 @@
  *
  * Re-exports core adapters from extracted modules and owns canvas DOM event binding lifecycle.
  */
-import { state } from '@legacy-js/state.js';
+import { state } from '../../../js/state.js';
 import { isPointVisible } from '@lib/utils/geo-data';
 import type { ActiveFilters, GeoPoint } from '@lib/utils/geo-data';
 import {
   focusOnNode,
   noteSceneInteraction,
   releaseFocusCameraAssist,
-} from '@legacy-js/modules/camera-controls.js';
+} from '../../../js/modules/camera-controls.js';
 import {
   initJourneyCanvasInteractionAdapter,
   isThreadCandidateVisibleOnCanvas,
@@ -75,22 +75,22 @@ export function ensureCanvasNodeInteractionBindings(): void {
     !Number.isFinite(event.button) || event.button <= 0;
 
   const walkCanvasThreadFromPointerEvent = (event: PointerEvent): boolean => {
-    if (state.currentView !== 'galaxy' || !Number.isFinite((state.navState as Record<string, unknown>).focusedIndex as number)) return false;
+    if (state.currentView !== 'galaxy' || !Number.isFinite((state.navState as unknown as Record<string, unknown>).focusedIndex as number)) return false;
     let candidate: ReturnType<typeof getNearestCanvasThreadCandidate> = null;
     const stable = state.stableCanvasHover as { index: number; screenX: number; screenY: number; source?: string; reason?: string; [key: string]: unknown } | null;
     const stableIsThreadNeighbor =
       !!(stable
         && Number.isFinite(stable.index)
-        && stable.index !== (state.navState as Record<string, unknown>).focusedIndex
+        && stable.index !== (state.navState as unknown as Record<string, unknown>).focusedIndex
         && isPointVisible(stable.index, getPoints(), null, getActiveFilters())
-        && ((state.navState as Record<string, unknown>).threadCandidates as Array<Record<string, unknown>> || []).some((item) => item && item.index === stable.index));
+        && ((state.navState as unknown as Record<string, unknown>).threadCandidates as Array<Record<string, unknown>> || []).some((item) => item && item.index === stable.index));
     if (stableIsThreadNeighbor) {
       const stableDistance = Math.hypot(
         (stable.screenX ?? event.clientX) - event.clientX,
         (stable.screenY ?? event.clientY) - event.clientY
       );
       if (stableDistance <= 96) {
-        const threadCandidate = ((state.navState as Record<string, unknown>).threadCandidates as Array<Record<string, unknown>> || []).find(
+        const threadCandidate = ((state.navState as unknown as Record<string, unknown>).threadCandidates as Array<Record<string, unknown>> || []).find(
           (item) => item && item.index === stable.index
         );
         candidate = {
@@ -109,7 +109,7 @@ export function ensureCanvasNodeInteractionBindings(): void {
     }
     if (!candidate && (document.body.dataset.threadInspectSurface === 'canvas') && Number.isFinite((state as unknown as { inspectedThreadIndex?: number }).inspectedThreadIndex)) {
       const ti = (state as unknown as { inspectedThreadIndex?: number }).inspectedThreadIndex!;
-      const inspectedCandidate = ((state.navState as Record<string, unknown>).threadCandidates as Array<Record<string, unknown>> || []).find(
+      const inspectedCandidate = ((state.navState as unknown as Record<string, unknown>).threadCandidates as Array<Record<string, unknown>> || []).find(
         (item) => item && item.index === ti
       );
       candidate = {
@@ -165,7 +165,7 @@ export function ensureCanvasNodeInteractionBindings(): void {
       return;
     }
     noteSceneInteraction((state as unknown as { AUTO_ROTATE_MANUAL_IDLE_MS?: number }).AUTO_ROTATE_MANUAL_IDLE_MS ?? 3000);
-    if (Number.isFinite((state.navState as Record<string, unknown>).focusedIndex as number)) {
+    if (Number.isFinite((state.navState as unknown as Record<string, unknown>).focusedIndex as number)) {
       const candidate = getNearestCanvasThreadCandidate(event);
       if (candidate) {
         setCanvasFieldHover(candidate as HoverCandidate, canvas);

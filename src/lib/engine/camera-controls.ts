@@ -13,9 +13,9 @@
 
 // ── Re-export ported choreography functions ──────────────────────────────────
 
-import * as cameraControlsCoreModule from '@legacy-js/modules/camera-controls-core.ts';
-import * as cameraControlsRestoreModule from '@legacy-js/modules/camera-controls-restore.ts';
-import * as cameraControlsChoreographyModule from '@legacy-js/modules/camera-controls-choreography.ts';
+import * as cameraControlsCoreModule from '../../../js/modules/camera-controls-core.ts';
+import * as cameraControlsRestoreModule from '../../../js/modules/camera-controls-restore.ts';
+import * as cameraControlsChoreographyModule from '../../../js/modules/camera-controls-choreography.ts';
 
 export {
   animateCameraToNode,

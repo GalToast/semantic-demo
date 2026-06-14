@@ -6,11 +6,11 @@
  * becomes visible, and resizes the renderer + camera when the window changes.
  */
 import * as THREE from 'three';
-import { state, type SemanticState } from '@legacy-js/state';
+import { state, type SemanticState } from '../../../js/state';
 import { clearAutoRotateResumeTimer, setAutoRotateSuspended, settleCameraToOverviewPose } from '../engine/camera-controls';
 import { updateCameraViewportOffset } from './three-engine';
-import { syncClusterSectionState } from '@legacy-js/modules/cluster-labels';
-import { updateTraversalUi } from '@legacy-js/modules/journey';
+import { syncClusterSectionState } from '../../../js/modules/cluster-labels';
+import { updateTraversalUi } from '../../../js/modules/journey';
 import { getViewportSize, prefersReducedMotion, isMobileViewport } from '@lib/utils/environment';
 
 const _state = state as unknown as SemanticState & {

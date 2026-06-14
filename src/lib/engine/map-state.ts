@@ -5,13 +5,13 @@
  * Manages Leaflet map initialization, marker refresh, route embodiment,
  * terrain handoff, and route director state synchronization.
  */
-import { state, withStateMutation, type Point } from '@legacy-js/state';
-import { subscribeKeyed, EVENTS } from '@legacy-js/modules/event-bus';
-import { pointHasGeocode, isPointVisible } from '@legacy-js/modules/utils/geo-data';
+import { state, withStateMutation, type Point } from '../../../js/state';
+import { subscribeKeyed, EVENTS } from '../../../js/modules/event-bus';
+import { pointHasGeocode, isPointVisible } from '../../../js/modules/utils/geo-data';
 import { formatBusinessName } from '@lib/utils/dom-formatters';
 import { showExperienceToast } from '@lib/ui/ui-feedback';
 import { focusOnPoint } from '@lib/orchestration/lifecycle';
-import { hideTooltip } from '@legacy-js/modules/tooltip';
+import { hideTooltip } from '../../../js/modules/tooltip';
 import { hideViewHandoff } from '@lib/orchestration/view-controller';
 import { isMobileViewport } from '@lib/utils/environment';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';

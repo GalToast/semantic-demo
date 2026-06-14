@@ -8,7 +8,7 @@
  */
 import * as THREE from 'three';
 import type { Camera, Object3D } from 'three';
-import { state } from '@legacy-js/state.js';
+import { state } from '../../../js/state.js';
 import { isPointVisible } from '@lib/utils/geo-data';
 import { getSemanticThreadDisplayLimit } from '@lib/journey/neighborhood';
 import { hasCoarsePointer } from '@lib/utils/environment';
@@ -78,7 +78,7 @@ export function isThreadCandidateVisibleOnCanvas(index: number, margin = 18): bo
   if (state.currentView !== 'galaxy') return true;
   if (!Number.isFinite(index)) return false;
 
-  const lState = state as Record<string, unknown>;
+  const lState = state as unknown as Record<string, unknown>;
   const position =
     (lState.nodePositions as Array<{ x: number; y: number; z: number } | undefined> | undefined)?.[index] ??
     (lState.targetPositions as Array<{ x: number; y: number; z: number } | undefined> | undefined)?.[index] ??
@@ -124,12 +124,12 @@ interface ScreenCandidate {
 }
 
 function getFocusThreadScreenCandidates(): ScreenCandidate[] {
-  const lState = state as Record<string, unknown>;
+  const lState = state as unknown as Record<string, unknown>;
   const camera = (lState as { camera?: Camera }).camera;
   const canvas = ((lState.renderer as { domElement?: HTMLCanvasElement } | undefined)?.domElement) as HTMLCanvasElement | undefined;
   if (!canvas || !camera) return [];
   const rect = canvas.getBoundingClientRect();
-  const navState = lState.navState as Record<string, unknown> | undefined;
+  const navState = lState.navState as unknown as Record<string, unknown> | undefined;
   const focusIndex = navState?.focusedIndex != null && Number.isFinite(navState.focusedIndex as number)
     ? (navState.focusedIndex as number)
     : null;
@@ -182,8 +182,8 @@ function getFocusThreadScreenCandidates(): ScreenCandidate[] {
         index: ci,
         reason: canvasInteractionAdapter.summarizeNeighborReason(
           candidate,
-          candidatePoint as Record<string, unknown> | null,
-          focusPointForReason as Record<string, unknown> | null
+          candidatePoint as unknown as Record<string, unknown> | null,
+          focusPointForReason as unknown as Record<string, unknown> | null
         ),
         source: candidate.source as string,
         screenX,
@@ -225,7 +225,7 @@ export interface CanvasPointerPosition {
 }
 
 export function getCanvasPointerPosition(event: { clientX: number; clientY: number }): CanvasPointerPosition | null {
-  const lState = state as Record<string, unknown>;
+  const lState = state as unknown as Record<string, unknown>;
   const canvas = ((lState.renderer as { domElement?: HTMLCanvasElement } | undefined)?.domElement) as HTMLCanvasElement | undefined;
   if (!canvas || !event) return null;
   const rect = canvas.getBoundingClientRect();

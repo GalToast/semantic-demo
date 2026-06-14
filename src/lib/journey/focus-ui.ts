@@ -5,7 +5,7 @@
  *
  * Bridge for focus stage UI updates. The Svelte path delegates to the
  * legacy real implementation via the BOTH-pattern shim, so any consumer
- * of @legacy-js/modules/journey-focus-ui gets the real work (trail controls
+ * of ../../../js/modules/journey-focus-ui gets the real work (trail controls
  * visibility, neighbor rail updates, focus progress copy, focus journey
  * toggle) instead of the prior silent no-op stub.
  *
@@ -20,4 +20,4 @@
  * frame from the scene-reveal path).
  */
 
-export { updateTraversalUi } from '@legacy-js/modules/journey-focus-ui';
+export { updateTraversalUi } from '../../../js/modules/journey-focus-ui';

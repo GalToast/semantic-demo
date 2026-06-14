@@ -6,7 +6,7 @@
  * Checks: app readiness, lifetime guard, reduced motion, WebGL/software renderer, URL param.
  */
 import { get } from 'svelte/store';
-import { state } from '@legacy-js/state.js';
+import { state } from '../../../js/state.js';
 import { prefersReducedMotion } from '@lib/utils/environment';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
@@ -14,13 +14,13 @@ export const STORAGE_KEY = 'moco_mycelium_demo_v1';
 export const SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1';
 
 export function isAppReadyForDemo(): boolean {
-  const lState = state as Record<string, unknown>;
+  const lState = state as unknown as Record<string, unknown>;
   const overlay = document.getElementById('loading-overlay');
   return (
     lState.currentView === 'galaxy' &&
     (lState as unknown as { focusedNode?: unknown }).focusedNode === null &&
     !(lState as unknown as { currentSearchSummary?: unknown }).currentSearchSummary &&
-    (lState.navState as Record<string, unknown>)?.mode === 'overview' &&
+    (lState.navState as unknown as Record<string, unknown>)?.mode === 'overview' &&
     !(lState as unknown as { sceneRevealActive?: boolean }).sceneRevealActive &&
     Array.isArray(lState.points) &&
     (lState.points as Array<unknown>).length > 0 &&
@@ -47,7 +47,7 @@ export function guardReducedMotion(): boolean {
 }
 
 export function guardWebGL(): boolean {
-  const lState = state as Record<string, unknown>;
+  const lState = state as unknown as Record<string, unknown>;
   const renderer = lState.renderer as { domElement?: HTMLCanvasElement; getContext?: () => WebGLRenderingContext | null } | undefined;
   if (!renderer?.domElement) return false;
   const gl = renderer.getContext?.();

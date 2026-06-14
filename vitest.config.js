@@ -17,11 +17,6 @@ export default defineConfig({
       '@': SRC_DIR,
       '@lib': resolve(SRC_DIR, 'lib'),
       '@components': resolve(SRC_DIR, 'components'),
-      // @legacy maps to the project root js/ directory so dynamic imports
-      // like import('@legacy/modules/view-controller.js') resolve correctly
-      // during unit tests.  The ambient type declaration in
-      // src/lib/types/legacy-modules.d.ts provides type safety.
-      '@legacy-js': JS_DIR
     },
     // Resolve .svelte.ts extension so stores like search.svelte.ts can be
     // imported as @lib/stores/search without the explicit extension.

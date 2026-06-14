@@ -21,13 +21,16 @@
   import { viewport, isCompact } from '@lib/stores/viewport';
   import { legendOpen, toggleLegend } from '@lib/stores/legend.svelte';
   import { updateUrlState } from '@lib/orchestration/url-state';
+  import { initKeyboardShortcutsHint, showKeyboardShortcutsHint } from '../../js/modules/keyboard-help.ts';
 
   interface Props {
     /** Whether the header is visible */
     visible?: boolean;
+    /** Render only floating utility controls, without brand or mode chips */
+    utilityOnly?: boolean;
   }
 
-  let { visible = true }: Props = $props();
+  let { visible = true, utilityOnly = false }: Props = $props();
 
   /** Mode descriptions ported from lifecycle.js MODE_DESCRIPTIONS */
   const MODE_DESCRIPTIONS: Record<NavMode, string> = {
@@ -104,20 +107,33 @@
     const active = modes.find((m) => isActive(m.id));
     return active?.description ?? '';
   });
+
+  function openKeyboardHelp(): void {
+    try {
+      initKeyboardShortcutsHint();
+      showKeyboardShortcutsHint();
+    } catch (error) {
+      console.warn('Header.openKeyboardHelp: keyboard help unavailable', error);
+    }
+  }
 </script>
 
 {#if visible}
   <header
     class="app-header"
     class:compact={$viewport.isCompact}
+    class:utility-only={utilityOnly}
     id="app-header"
   >
-    <div class="header-brand">
-      <span class="brand-mark">SE</span>
-      {#if !$viewport.isCompact}
-        <span class="brand-label">Semantic Explorer</span>
+    <div class="header-brand" class:utility-only={utilityOnly}>
+      {#if !utilityOnly}
+        <span class="brand-mark">SE</span>
+        {#if !$viewport.isCompact}
+          <span class="brand-label">Semantic Explorer</span>
+        {/if}
       {/if}
       <button
+        id="btn-legend"
         class="legend-toggle"
         class:active={$legendOpen}
         onclick={toggleLegend}
@@ -132,31 +148,47 @@
           <rect x="7" y="9" width="6" height="4" rx="1" fill="currentColor" opacity="0.6"/>
         </svg>
       </button>
+      <button
+        id="btn-keyboard-help"
+        class="help-toggle"
+        onclick={openKeyboardHelp}
+        type="button"
+        aria-label="Open keyboard shortcuts"
+        title="Keyboard shortcuts"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <circle cx="7" cy="7" r="5.75" stroke="currentColor" stroke-width="1.25"/>
+          <path d="M5.4 5.35a1.7 1.7 0 0 1 3.22.78c0 1.45-1.62 1.4-1.62 2.55" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          <circle cx="7" cy="10.55" r="0.55" fill="currentColor"/>
+        </svg>
+      </button>
     </div>
 
-    <div
-      class="mode-chips"
-      id="mode-chips"
-      role="radiogroup"
-      aria-label="View mode"
-    >
-      {#each modes as mode (mode.id)}
-        <button
-          class="mode-chip"
-          class:active={isActive(mode.id)}
-          role="radio"
-          aria-checked={isActive(mode.id)}
-          title={mode.description}
-          onclick={() => selectMode(mode.id)}
-        >
-          <span class="chip-icon">{mode.icon}</span>
-          <span class="chip-label">{mode.label}</span>
-        </button>
-      {/each}
-    </div>
+    {#if !utilityOnly}
+      <div
+        class="mode-chips"
+        id="mode-chips"
+        role="radiogroup"
+        aria-label="View mode"
+      >
+        {#each modes as mode (mode.id)}
+          <button
+            class="mode-chip"
+            class:active={isActive(mode.id)}
+            role="radio"
+            aria-checked={isActive(mode.id)}
+            title={mode.description}
+            onclick={() => selectMode(mode.id)}
+          >
+            <span class="chip-icon">{mode.icon}</span>
+            <span class="chip-label">{mode.label}</span>
+          </button>
+        {/each}
+      </div>
 
-    {#if activeDescription && !$viewport.isCompact}
-      <span class="header-description">{activeDescription}</span>
+      {#if activeDescription && !$viewport.isCompact}
+        <span class="header-description">{activeDescription}</span>
+      {/if}
     {/if}
   </header>
 {/if}
@@ -179,6 +211,10 @@
   .app-header.compact {
     padding: 0.4rem 0.5rem;
     gap: 0.5rem;
+  }
+  .app-header.utility-only,
+  .header-brand.utility-only {
+    display: contents;
   }
 
   /* ── Brand ─────────────────────────────────────────────────────────────── */
@@ -207,8 +243,9 @@
     white-space: nowrap;
   }
 
-  /* ── Legend toggle ─────────────────────────────────────────────────────── */
-  .legend-toggle {
+  /* ── Utility toggles ───────────────────────────────────────────────────── */
+  .legend-toggle,
+  .help-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -223,7 +260,8 @@
     transition: all 0.15s;
     flex-shrink: 0;
   }
-  .legend-toggle:hover {
+  .legend-toggle:hover,
+  .help-toggle:hover {
     color: #b0d0d0;
     border-color: rgba(78, 205, 196, 0.3);
     background: rgba(78, 205, 196, 0.06);

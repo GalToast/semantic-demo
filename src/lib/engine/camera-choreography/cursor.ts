@@ -12,12 +12,12 @@
  */
 
 import { animateCameraToNode } from './focus';
-import * as legacyStateModule from '@legacy-js/state.js';
-import * as selectorsStaticModule from '@legacy-js/state/selectors/index.js';
-import * as mapStateStaticModule from '@legacy-js/modules/map-state.js';
+import * as legacyStateModule from '../../../../js/state.js';
+import * as selectorsStaticModule from '../../../../js/state/selectors/index.js';
+import * as mapStateStaticModule from '../../../../js/modules/map-state.js';
 import * as semanticDiveUiStaticModule from '@lib/journey/semantic-dive';
-import * as cameraControlsCoreStaticModule from '@legacy-js/modules/camera-controls-core.ts';
-import * as focusPanelModeStaticModule from '@legacy-js/modules/focus-panel-mode.js';
+import * as cameraControlsCoreStaticModule from '../../../../js/modules/camera-controls-core.ts';
+import * as focusPanelModeStaticModule from '../../../../js/modules/focus-panel-mode.js';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 

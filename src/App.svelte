@@ -224,9 +224,9 @@
     navMode === 'focus' || navMode === 'inside' || navMode === 'trail' || navFocusedIndex !== null || bodyFocusPanelMode === 'field-node' || bodyPanelSurface === 'focus' || bodyPanelSurface === 'inside' || bodyPanelSurface === 'trail' || focusSearchForced || bodyPanelSurface === 'semantic-dive'
   );
 
-  // Header chrome belongs to the idle overview; search and focus surfaces own
-  // their own controls.
-  let headerVisible = $derived(idleSurfaceActive);
+  // Idle owns the full header. Search/focus keep only utility chrome so the
+  // escape affordances exist for the mobile/short-landscape CSS contracts.
+  let headerVisible = $derived(!mapModeActive && (idleSurfaceActive || searchFamilySurfaceActive || focusActive));
   let controlsVisible = $derived(navSurface !== 'focus-search' && !focusSearchForced);
   let infoPanelOpen = $derived((searchSurfaceActive || (focusActive && !bodyCompact && !$viewport.isCompact)) && !mapModeActive);
 </script>
@@ -279,7 +279,7 @@
 
   {#if headerVisible}
     <!-- Header with mode chips -->
-    <Header visible={true} />
+    <Header visible={true} utilityOnly={!idleSurfaceActive} />
   {/if}
 
   <!--

@@ -26,7 +26,7 @@ import { cleanOptionalValue } from '@lib/utils/dom-formatters';
 
 // ── Legacy state singleton ────────────────────────────────────────────────────
 // The state reference is injected by the engine bridge during init via
-// attachLegacyState().  Do NOT import directly from @legacy-js/state.js —
+// attachLegacyState().  Do NOT import directly from ../../js/state.js —
 // the CJS require fails under Vite's ESM pipeline and creates a second
 // stateProxy instance that diverges from the live one.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

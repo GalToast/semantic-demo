@@ -7,7 +7,7 @@
  * cursor state, and lastCanvasNodeHover for canvas pointer events.
  * Uses canvasInteractionAdapter from canvas-hit-test for timer management.
  */
-import { state } from '@legacy-js/state.js';
+import { state } from '../../../js/state.js';
 import { canvasInteractionAdapter } from './canvas-hit-test';
 
 const CANVAS_FIELD_HOVER_CLEAR_DELAY_MS = 120;
@@ -17,11 +17,11 @@ export function clearCanvasFieldHover(
   canvas: HTMLCanvasElement | null,
   { force = false }: { force?: boolean } = {}
 ): void {
-  if ((state as Record<string, unknown>).canvasFieldHoverClearTimer != null) {
+  if ((state as unknown as Record<string, unknown>).canvasFieldHoverClearTimer != null) {
     canvasInteractionAdapter.clearTimer(
-      (state as Record<string, unknown>).canvasFieldHoverClearTimer as number | undefined
+      (state as unknown as Record<string, unknown>).canvasFieldHoverClearTimer as number | undefined
     );
-    (state as Record<string, unknown>).canvasFieldHoverClearTimer = null;
+    (state as unknown as Record<string, unknown>).canvasFieldHoverClearTimer = null;
   }
   const clear = (): void => {
     state.hoverHighlightIndex = -1;
@@ -33,7 +33,7 @@ export function clearCanvasFieldHover(
     clear();
     return;
   }
-  (state as Record<string, unknown>).canvasFieldHoverClearTimer = canvasInteractionAdapter.setTimer(
+  (state as unknown as Record<string, unknown>).canvasFieldHoverClearTimer = canvasInteractionAdapter.setTimer(
     clear,
     CANVAS_FIELD_HOVER_CLEAR_DELAY_MS
   );
@@ -55,7 +55,7 @@ export function setCanvasFieldHover(
     clearCanvasFieldHover(canvas);
     return;
   }
-  const lState = state as Record<string, unknown>;
+  const lState = state as unknown as Record<string, unknown>;
   if (lState.canvasFieldHoverClearTimer != null) {
     canvasInteractionAdapter.clearTimer(lState.canvasFieldHoverClearTimer as number | undefined);
     lState.canvasFieldHoverClearTimer = null;
@@ -68,15 +68,15 @@ export function setCanvasFieldHover(
     const dy = candidate.screenY - prev.screenY;
     const moved = Math.hypot(dx, dy);
     if (moved > STABLE_HOVER_STICKY_PX) {
-      state.stableCanvasHover = candidate;
+      state.stableCanvasHover = candidate as unknown as typeof state.stableCanvasHover;
     } else {
       stableCandidate = prev;
     }
   } else {
-    state.stableCanvasHover = candidate;
+    state.stableCanvasHover = candidate as unknown as typeof state.stableCanvasHover;
   }
 
   state.hoverHighlightIndex = stableCandidate.index;
   if (canvas) canvas.style.cursor = 'pointer';
-  state.lastCanvasNodeHover = stableCandidate;
+  state.lastCanvasNodeHover = stableCandidate as unknown as typeof state.lastCanvasNodeHover;
 }
