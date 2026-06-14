@@ -834,7 +834,8 @@
         :is(#btn-legend, #btn-keyboard-help) {
         position: fixed;
         top: calc(18px + env(safe-area-inset-top, 0px));
-        right: 14px;
+        left: 14px;
+        right: auto;
         width: 44px;
         height: 44px;
         z-index: var(--z-toast);

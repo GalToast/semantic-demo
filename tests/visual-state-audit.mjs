@@ -1278,29 +1278,31 @@ function wantsAny(names) {
   return !requestedStates.size || names.some((name) => requestedStates.has(name));
 }
 
-async function enterFocusFromSearch(page) {
+async function enterFocusFromSearch(page, targetIndexOverride = null) {
   await page.waitForFunction(() => {
     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return typeof window.__APP_ACTIONS__?.focusOnNode === 'function' && Array.isArray(appState.points) && appState.points.length > 0;
   }, undefined, { timeout: 20000 }).catch(() => {});
-  await page.waitForFunction(() => {
-    const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-    if (Number.isFinite(appState.currentSearchSummary?.anchorIndex)) return true;
-    // Match both legacy .search-result-item and Svelte .search-result selectors
-    const row = [...document.querySelectorAll('.search-result-item, .search-result')].find((candidate) => {
-      const style = getComputedStyle(candidate);
-      const rect = candidate.getBoundingClientRect();
-      return style.display !== 'none' &&
-        style.visibility !== 'hidden' &&
-        Number(style.opacity || 1) > 0.05 &&
-        rect.width > 0 &&
-        rect.height > 0 &&
-        Number.isFinite(Number(candidate.dataset.index));
-    });
-    return !!row;
-  }, undefined, { timeout: 15000 });
+  if (!Number.isFinite(Number(targetIndexOverride))) {
+    await page.waitForFunction(() => {
+      const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+      if (Number.isFinite(appState.currentSearchSummary?.anchorIndex)) return true;
+      // Match both legacy .search-result-item and Svelte .search-result selectors
+      const row = [...document.querySelectorAll('.search-result-item, .search-result')].find((candidate) => {
+        const style = getComputedStyle(candidate);
+        const rect = candidate.getBoundingClientRect();
+        return style.display !== 'none' &&
+          style.visibility !== 'hidden' &&
+          Number(style.opacity || 1) > 0.05 &&
+          rect.width > 0 &&
+          rect.height > 0 &&
+          Number.isFinite(Number(candidate.dataset.index));
+      });
+      return !!row;
+    }, undefined, { timeout: 15000 });
+  }
 
-  await page.evaluate(() => {
+  await page.evaluate((overrideIndex) => {
     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     const summaryAnchor = appState.currentSearchSummary?.anchorIndex;
     // Match both legacy .search-result-item and Svelte .search-result selectors
@@ -1315,7 +1317,8 @@ async function enterFocusFromSearch(page) {
         Number.isFinite(Number(candidate.dataset.index));
     });
     const rowIndex = Number(visibleRow?.dataset.index);
-    const targetIndex = Number.isFinite(summaryAnchor) ? summaryAnchor : rowIndex;
+    const forcedIndex = Number(overrideIndex);
+    const targetIndex = Number.isFinite(forcedIndex) ? forcedIndex : Number.isFinite(summaryAnchor) ? summaryAnchor : rowIndex;
     const focusNode = window.__APP_ACTIONS__?.focusOnNode;
     const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
     const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
@@ -1336,7 +1339,7 @@ async function enterFocusFromSearch(page) {
     }
     refreshCompositionState?.();
     window.updateJourneyCompass?.();
-  });
+  }, targetIndexOverride);
   await markVisualRouteEvidence(page, 'app-action', 'APP_ACTIONS.focusOnNode plus setTrailDepth');
 
   await page.waitForFunction(() => {
@@ -2364,7 +2367,7 @@ async function run() {
         await gotoReady(slPage, withParams(targetUrl, { view: 'galaxy', q: 'coffee', anchor: '519' }));
 
         await waitForReady(slPage, '23-mobile-short-landscape:prepare');
-        await enterFocusFromSearch(slPage);
+        await enterFocusFromSearch(slPage, 519);
         await captureMaybe(states, slPage, '23-mobile-short-landscape');
         await slPage.close();
       } finally {

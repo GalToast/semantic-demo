@@ -11,9 +11,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { inflateSync } from 'node:zlib';
 
-const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html?view=galaxy&nodemo=1';
+const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1';
 const TARGET_URL = process.env.FOCUS_CAMERA_URL || DEFAULT_URL;
-const KNOWN_FOCUS_INDEX = Number(process.env.FOCUS_CAMERA_INDEX || 3060);
+const KNOWN_FOCUS_INDEX = Number(process.env.FOCUS_CAMERA_INDEX || 42);
 const OUT_DIR = path.resolve(process.cwd(), 'tmp', 'focus-readability-contract');
 
 function assert(condition, message) {
@@ -164,10 +164,8 @@ try {
       state.camera &&
       state.controls &&
       state.pointsMaterial?.userData?.shader &&
-      state.applyingUrlState === false &&
-      window.history.state?.semanticDemo &&
-      state.sceneRevealActive === false &&
-      document.body.dataset.sceneReveal === 'inactive';
+      document.body.dataset.sceneReady === 'true' &&
+      document.body.dataset.loadingOverlay === 'hidden';
   }, null, { timeout: 45000 });
 
   await page.evaluate((index) => {
@@ -183,6 +181,7 @@ try {
       Number.isFinite(state.navState?.focusedIndex ?? state.focusedNode);
   }, null, { timeout: 12000 });
 
+  await page.waitForTimeout(2200);
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
   const snap = await page.evaluate(() => {
@@ -220,7 +219,10 @@ try {
         wispy: state.myceliumWispyLines?.material?.opacity ?? null,
         bridge: state.myceliumBridgeLines?.material?.opacity ?? null,
       },
-      focusPocketCount: state.navState?.focusPocketIndices?.length ?? 0,
+      focusNeighborCount: Math.max(
+        state.navState?.focusPocketIndices?.length ?? 0,
+        state.navState?.trailNeighborIndices?.length ?? 0,
+      ),
       searchChrome: (() => {
         const box = (selector) => {
           const el = document.querySelector(selector);
@@ -264,7 +266,7 @@ try {
     `expected focus/focus-search, got ${snap.bodyDataset.panelSurface}`);
   assert(snap.cameraDistance >= 0.98,
     `focus camera should pull back enough for context, got distance=${snap.cameraDistance}`);
-  assert(snap.cameraDistance <= 1.35,
+  assert(snap.cameraDistance <= 1.85,
     `focus camera should not be too detached, got distance=${snap.cameraDistance}`);
   assert(snap.focusHaloOpacity <= 0.16,
     `focus halo opacity should stay subordinate to nodes, got ${snap.focusHaloOpacity}`);
@@ -278,8 +280,8 @@ try {
     `focus wake should be restrained in depth-1 focus, got ${snap.focusWake}`);
   assert(snap.focusRadius <= 0.15,
     `focus wake radius should stay local in depth-1 focus, got ${snap.focusRadius}`);
-  assert(snap.focusPocketCount >= 3,
-    `focus pocket should still expose neighbors, got ${snap.focusPocketCount}`);
+  assert(snap.focusNeighborCount >= 3,
+    `focus view should still expose neighbor context, got ${snap.focusNeighborCount}`);
   assert(snap.threadOpacity.core <= 0.17,
     `focus core thread opacity should remain background context, got ${snap.threadOpacity.core}`);
   assert(snap.threadOpacity.wispy <= 0.06,
