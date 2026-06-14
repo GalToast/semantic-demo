@@ -387,9 +387,6 @@
     <SpectorInspector visible={devToolsVisible} />
   {/if}
 
-  <!-- Layer 3000: Loading overlay (highest z-index) -->
-  <LoadingOverlay visible={true} />
-
   <div class="trail-review-overlay" id="trail-review-overlay" role="dialog" aria-modal="false" aria-hidden="true" hidden></div>
 
   <!-- Layer 1200: Toast notification -->
@@ -422,6 +419,9 @@
   <!-- Toast is rendered at layer 1200 (see <Toast /> above the hover tooltip) -->
 </div>
 </main>
+
+<!-- Layer 3000: Loading overlay (highest z-index) -->
+<LoadingOverlay visible={true} />
 
 <!--
   Legacy-compass parity surface (2026-06-06):
