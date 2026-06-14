@@ -7,12 +7,9 @@
  *
  * Compass steps are the 5 journey milestones in the rail:
  *   overview → search → focus → inside → map
- *
- * Separated from journey.ts so the compass SM can evolve independently
- * during the Svelte migration.
  */
 import { journeyPhase } from './journey.svelte';
-import { currentSurface } from './navigation.svelte';
+import { appState } from '@lib/state/app.svelte.ts';
 import type { CompassPhase as CompassPhaseType } from '@lib/types/state';
 
 // ── Re-export type ───────────────────────────────────────────────────────────
@@ -67,18 +64,17 @@ export interface CompassStatus {
 const STEP_ORDER: readonly string[] = ['overview', 'search', 'focus', 'inside', 'map'];
 
 /**
- * Derived rune computing the 5 compass step states from journeyPhase
- * and currentSurface. Each step gets a done/current/upcoming state based
- * on the current journey phase position in the step order.
+ * Derived rune computing the 5 compass step states.
  */
 export function compassSteps(): CompassStep[] {
-  const activeIndex = STEP_ORDER.indexOf(journeyPhase());
+  const activePhase = appState.navState.mode;
+  const activeIndex = STEP_ORDER.indexOf(activePhase);
 
   return STEP_ORDER.map((phase) => {
     const idx = STEP_ORDER.indexOf(phase);
     let state: 'done' | 'current' | 'upcoming';
 
-    if (phase === journeyPhase()) {
+    if (phase === activePhase) {
       state = 'current';
     } else if (activeIndex >= 0 && idx >= 0 && idx < activeIndex) {
       state = 'done';
@@ -90,18 +86,8 @@ export function compassSteps(): CompassStep[] {
   });
 }
 
-// ── Compass Status Builder (from journey-compass-state.js) ───────────────────
-
 /**
  * Build the full compass status description from current app state.
- *
- * This is a pure function that reads from the stores and produces a
- * CompassStatus object. It replaces getJourneyCompassState() from the
- * legacy journey-compass-state.js.
- *
- * Parameters provide the necessary context — the caller reads from
- * stores and passes values in, keeping this function free of direct
- * store subscriptions.
  */
 export function buildCompassStatus(params: {
   currentView: string;

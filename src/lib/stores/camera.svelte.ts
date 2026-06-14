@@ -10,12 +10,13 @@
  * and transition lifecycle. The actual Three.js camera is owned by the engine;
  * the bridge translates between these stores and the imperative engine calls.
  */
-import { writable, get, type Readable, type Subscriber, type Unsubscriber } from 'svelte/store';
+import { get, type Readable, type Subscriber, type Unsubscriber, toStore } from 'svelte/store';
 import type {
   CameraState,
   CameraTransition,
   FocusOrbitSlackState
 } from '@lib/types/state';
+import { appState } from '@lib/state/app.svelte.ts';
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
@@ -118,9 +119,24 @@ const INITIAL_STORE: CameraStoreState = {
   cameraIdleOrbitAllowed: true
 };
 
-// ── Store (writable-backed) ──────────────────────────────────────────────────
+// ── Store (reactive binding) ──────────────────────────────────────────────────
 
-const _cameraWritable = writable<CameraStoreState>({ ...INITIAL_STORE });
+/** Reactive binding to the Svelte 5 state kernel. */
+const _cameraWritable = toStore(
+  () => ({
+    ...INITIAL_STORE,
+    autoRotate: appState.autoRotate,
+    autoRotateSuspended: appState.autoRotateSuspended,
+    autoResumeDueAt: appState.autoRotateResumeDueAt,
+    softResumeStartedAt: appState.autoRotateSoftResumeStartedAt
+  }),
+  (val) => appState.withMutation(() => {
+    appState.autoRotate = val.autoRotate;
+    appState.autoRotateSuspended = val.autoRotateSuspended;
+    appState.autoRotateResumeDueAt = val.autoResumeDueAt;
+    appState.autoRotateSoftResumeStartedAt = val.softResumeStartedAt;
+  })
+);
 
 /** CameraStore type: Readable + property accessors + Writable-ish. */
 export type CameraStoreApi = Readable<CameraStoreState> & {

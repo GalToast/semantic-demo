@@ -9,4 +9,5 @@
 export {
   traverseNeighbor,
   previewInsideNextThread,
+  walkThreadNeighbor,
 } from '../../../js/modules/journey-thread-settler';

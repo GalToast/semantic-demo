@@ -5,4 +5,4 @@
  * This shim preserves backward compatibility for engine kernel importers.
  */
 
-export { setWebGLContextRestoreHandler, restoreWebGLContext } from '../src/lib/utils/webgl-restore-adapter';
+export { setWebGLContextRestoreHandler, restoreWebGLContext } from '../../src/lib/utils/webgl-restore-adapter';

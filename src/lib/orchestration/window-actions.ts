@@ -2,21 +2,33 @@
  * Svelte production shell compatibility actions.
  *
  * The headed scene and visual contracts drive the live Three.js scene through
- * window.__APP_ACTIONS__. Keep these wrappers pointed at the legacy engine
- * owners until those scene mutations are fully ported to src/.
+ * window.__APP_ACTIONS__. Keep these wrappers pointed at the sanctioned engine
+ * bridge until those scene mutations are fully ported to src/.
  */
 
-import * as cameraControlsModule from '../../../js/modules/camera-controls';
-import * as connectionAnalysisModule from '../../../js/modules/connection-analysis.js';
-import * as searchStateModule from '../../../js/modules/search-state.ts';
-// Static imports for the two modules flagged INEFFECTIVE_DYNAMIC_IMPORT
-// when dynamically loaded here (lifecycle.js + journey.js are already
-// statically imported elsewhere in the imperative bridge graph, so the
-// dynamic form bought nothing and only added an extra hop).
-import * as lifecycleModule from '../../../js/modules/lifecycle.js';
-import * as journeyModule from '../../../js/modules/journey.js';
+import {
+  state as legacyState,
+  withStateMutation,
+  focusOnNode,
+  search,
+  clearSearch,
+  switchView,
+  setTrailDepth,
+  setSemanticDiveMode,
+  returnToOverview,
+  resetExperienceState,
+  resetExplorationFocus,
+  refreshCompositionState,
+  setTrailFromSeed,
+  traverseNeighbor,
+  inspectThreadNeighbor,
+  pinThreadNeighbor,
+  unpinThreadInspection,
+  clearThreadInspection,
+  walkThreadNeighbor,
+  showSemanticThreadsDetail,
+} from '@lib/engine/window-actions-bridge';
 import * as semanticGuideModule from '@lib/journey/semantic-guide';
-import * as stateModule from '../../../js/state';
 import {
   resetExperienceState as resetSvelteExperienceState,
   resetExplorationFocus as resetSvelteExplorationFocus
@@ -72,19 +84,32 @@ async function loadLegacyActionModules(): Promise<LegacyActionModules> {
   if (legacyModules) return legacyModules;
   if (loadPromise) return loadPromise;
 
-  loadPromise = Promise.all([
-    Promise.resolve(lifecycleModule),
-    Promise.resolve(journeyModule)
-  ]).then(([lifecycle, journey]) => {
+  loadPromise = Promise.resolve().then(() => {
     legacyModules = {
-      state: (stateModule as { state?: Record<string, unknown> }).state,
-      withStateMutation: (stateModule as { withStateMutation?: <T>(fn: () => T) => T }).withStateMutation,
-      camera: cameraControlsModule,
-      lifecycle,
-      search: searchStateModule,
-      journey,
+      state: legacyState,
+      withStateMutation,
+      camera: { focusOnNode },
+      lifecycle: {
+        switchView,
+        setTrailDepth,
+        setSemanticDiveMode,
+        returnToOverview,
+        resetExperienceState,
+        resetExplorationFocus,
+        refreshCompositionState,
+      },
+      search: { search, clearSearch },
+      journey: {
+        setTrailFromSeed,
+        traverseNeighbor,
+        inspectThreadNeighbor,
+        pinThreadNeighbor,
+        unpinThreadInspection,
+        clearThreadInspection,
+        walkThreadNeighbor,
+      },
       semanticGuide: semanticGuideModule,
-      connectionAnalysis: connectionAnalysisModule
+      connectionAnalysis: { showSemanticThreadsDetail }
     };
 
     const w = window as AppActionsWindow;

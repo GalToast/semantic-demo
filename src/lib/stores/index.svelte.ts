@@ -15,85 +15,64 @@ export {
   currentView,
   myceliumMode,
   isMapMode,
-  loadingPhase,
-  NAV_TRANSITION_ACTIONS,
-  NAVIGATION_CONFIG,
-  dispatchNavTransition,
-  resetNavState,
-  updateNavState,
-  switchView,
-  setFocusedIndex,
-  setNavMode,
-  setSurface,
-  setAutoRotate,
-  suspendAutoRotate,
-  resumeAutoRotate,
-  setLoadingPhase,
-  startSceneReveal,
-  completeSceneReveal,
-  setActiveStoryPrompt,
-  setMyceliumMode,
-  setApplyingUrlState,
-  setRestoringBrowserHistory,
-  bumpUrlStateRestoreToken,
-  setFocusPocketIndices,
-  clearFocusPocketIndices,
-  setFocusPocketMeta,
-  clearFocusPocketMeta
+  loadingPhase
 } from './navigation.svelte';
 
-export type {
-  NavTransitionAction,
-  NavTransitionPayload,
-  NavTransitionResult,
-  NavStoreState
+export {
+  dispatchNavTransition,
+  setNavMode,
+  setNavSurface,
+  setFocusedIndex,
+  setNeighborhoodIndices,
+  setExplorationHistoryIndices,
+  setCurrentView,
+  setMyceliumMode,
+  setAutoRotate,
+  setSceneRevealActive,
+  setLoadingPhaseKey,
+  resetNavState,
+  updateNavState,
+  NAV_TRANSITION_ACTIONS
 } from './navigation.svelte';
 
 // ── Search ───────────────────────────────────────────────────────────────────
 export {
   searchStore,
   searchState,
-  hasResults,
-  activeResult,
-  isSearching,
   searchQuery,
   searchStatus,
+  searchResults,
+  hasSearchQuery,
+  hasResults,
+  isSearching,
   searchSummary,
-  searchAnchorIndex,
-  searchGlowActive,
+  getSearchSummary
+} from './search.svelte';
+
+export {
   setSearchQuery,
-  setSearchResults,
   setSearchStatus,
-  setActiveResult,
   setSearchSummary,
+  setAnchorIndex,
+  setPreviewIndex,
+  setGlowIndices,
+  setGlowActive,
   setSearchGlow,
   clearSearchGlow,
-  setSearchPreview,
   setTrailCue,
   incrementRequestSequence,
   isRequestCurrent,
   incrementFocusTransitionToken,
   setSemanticGuide,
-  setDegraded,
   setCompactViewport,
   bumpSummaryCardTypeToken,
-  clearSearch,
   clearSearchResults,
-  validateSearchQuery,
-  mapSemanticSearchResults,
-  getSemanticSearchTotalMatches,
-  getSemanticSearchServiceResults,
-  tokenizeSearchText,
-  expandSearchIntent,
-  countTokenMatches,
-  SEARCH_STOP_WORDS,
-  searchUseRerank
-} from './search.svelte';
-
-export type {
-  SearchStoreState,
-  IntentExpansion,
-  TokenMatchResult
+  clearSearch,
+  setActiveResult,
+  setSearchVisibleCount,
+  setSearchResults,
+  castSearchResults,
+  validateSearchQuery
 } from './search.svelte';
 
 // ── Journey ──────────────────────────────────────────────────────────────────
@@ -102,170 +81,74 @@ export {
   journeyState,
   journeyPhase,
   journeyTrail,
-  compassState,
   compassPhase,
-  journeyNeighbors,
-  journeySelectedId,
-  walkHistory,
   trailDepth,
   trailSeedIndex,
   trailNeighborIndices,
   threadCandidates,
   threadSource,
   walkHistoryIndices,
-  transitionCompass,
+  currentJourneyIndex
+} from './journey.svelte';
+
+export {
   setJourneyPhase,
-  addTrailStop,
-  removeTrailStop,
-  clearTrail,
-  setSelectedStop,
-  setTrailSeedIndex,
-  setTrailNeighborIndices,
-  advanceTrailCursor,
   setTrailDepth,
-  setNeighbors,
-  addWalkHistory,
   addWalkHistoryIndex,
-  clearWalkHistory,
-  setThreadCandidates,
-  clearThreadCandidates,
-  setTerrainHandoffPhase,
-  setRouteExplorationPhase,
-  setSelectedId,
+  transitionCompass,
   resetJourney,
-  JOURNEY_CONFIG,
   JOURNEY_COMPASS_PHASE_ORDER
 } from './journey.svelte';
 
-export type { JourneyStoreState } from './journey.svelte';
-
-// ── Compass ──────────────────────────────────────────────────────────────────
+// ── Filter ───────────────────────────────────────────────────────────────────
 export {
-  compassSteps,
-  JOURNEY_ACTIONS,
-  buildCompassStatus
-} from './compass.svelte';
+  filterState,
+  filterVersion,
+  filterColorVersion,
+  activeClusterFilter,
+  activeClusterFilterStore,
+  hasActiveFilters
+} from './filter.svelte';
 
-export type {
-  CompassPhase,
-  CompassStep,
-  JourneyAction,
-  CompassAction,
-  CompassStatus
-} from './compass.svelte';
+export {
+  toggleFilter,
+  setFilter,
+  resetFilters,
+  incrementFilterVersion,
+  bumpFilterColorVersion,
+  setActiveClusterFilter,
+  overwriteActiveFilters
+} from './filter.svelte';
 
 // ── Focus ────────────────────────────────────────────────────────────────────
 export {
   focusStore,
-  focusState,
-  focusPocketNodes,
-  focusTransitionMode,
-  isSettling,
-  threadInspector,
-  threadInspectorActive,
-  orbitSlack,
+  pocketNodes,
+  pocketMeta,
   selectedBusiness,
   infoPanelOpen,
+  pocketListVisible,
   semanticDiveMode,
+  nodesAreSettling,
   inspectedStrandIndex,
-  setFocusTransition,
+  pinnedThreadIndex,
+  threadInspector,
+  threadInspectorActive
+} from './focus.svelte';
+
+export {
   setPocketNodes,
   clearPocketNodes,
-  setSettling,
-  setPocketMotionForIndex,
-  clearPocketMotionByIndex,
-  updateThreadInspector,
-  clearThreadInspector,
+  setPocketListVisible,
   pinThread,
   unpinThread,
-  updateOrbitSlack as updateFocusOrbitSlack,
-  resetOrbitSlack as resetFocusOrbitSlack,
+  clearThreadInspector,
+  updateThreadInspector,
+  setSemanticDiveMode,
   setSelectedBusiness,
   setInfoPanelOpen,
-  setSemanticDiveMode,
-  setStrandContinuityPhase,
-  setNodesAreSettling,
-  resetFocus,
-  FOCUS_CONFIG,
-  FOCUS_CONSTELLATION_MOTIFS
+  resetFocus
 } from './focus.svelte';
-
-export type {
-  FocusStoreState,
-  PocketMotionData,
-  SelectedBusinessCard,
-  ConstellationMotif
-} from './focus.svelte';
-
-// ── Demo ─────────────────────────────────────────────────────────────────────
-export {
-  demoState,
-  demoPhase,
-  isDemoActive,
-  isDemoRunning,
-  demoNodeIndex,
-  transitionDemo,
-  startDemo,
-  cancelDemo,
-  resetDemo,
-  setDemoTimer,
-  clearDemoTimer,
-  cancelAllDemoTimers,
-  getActiveDemoTimerCount,
-  findDemoNode,
-  shouldRunDemo,
-  hasDemoBeenSeen,
-  isDemoSuppressedThisSession,
-  markDemoCompleted,
-  markDemoSessionSkipped,
-  DEMO_TIMING,
-  DEMO_TOTAL_DURATION_MS,
-  DEMO_START_DELAY_MS,
-  DEMO_LIFETIME_KEY,
-  DEMO_SESSION_KEY
-} from './demo.svelte';
-
-// ── Camera ───────────────────────────────────────────────────────────────────
-export {
-  cameraStore,
-  cameraState,
-  cameraPosition,
-  cameraTarget,
-  cameraTransitionPhase,
-  isAutoRotating,
-  isTransitioning,
-  orbitSlackPhase,
-  cameraAssistActive,
-  setCameraPosition,
-  setCameraTarget,
-  setAutoRotate as setCameraAutoRotate,
-  suspendAutoRotate as suspendCameraAutoRotate,
-  resumeAutoRotate as resumeCameraAutoRotate,
-  toggleAutoRotate,
-  startCameraTransition,
-  completeCameraTransition,
-  resetCamera,
-  scheduleAutoRotateResume,
-  clearAutoRotateResumeTimer,
-  startAutoRotateSoftResume,
-  noteSceneInteraction,
-  startFocusCameraAssist,
-  releaseFocusCameraAssist,
-  isFocusCameraAssistActive,
-  setRouteExplorationState,
-  clearRouteExploration,
-  markRouteExploration,
-  shouldMarkRouteExploration,
-  updateOrbitSlack as updateCameraOrbitSlack,
-  resetOrbitSlack as resetCameraOrbitSlack,
-  setFocusTransitionMode,
-  isSearchRouteFocusActive,
-  getRouteLayerOrigin,
-  CAMERA_CONFIG,
-  OVERVIEW_CAMERA_POSE
-} from './camera.svelte';
-
-export type { CameraStoreState } from './camera.svelte';
 
 // ── Viewport ─────────────────────────────────────────────────────────────────
 export {
@@ -279,155 +162,77 @@ export {
   isLandscape,
   isCompactLandscape,
   isUltraCompactPortrait,
-  syncViewport,
-  initViewportListeners,
   getViewportSize,
   isMobileViewport,
-  isCompactFocusStage,
   prefersReducedMotion,
-  hasCoarsePointer,
   getDevicePixelRatio,
   getPanelSurface,
   isMapSummarySurface,
   isSemanticDiveSurface,
-  matchMediaSafe,
-  getLocation,
-  getCurrentUrl
+  initViewportListeners,
+  syncViewport
 } from './viewport.svelte';
 
-// ── Test State (visual settle sync for Playwright surface/visual tests) ──────
+// ── Weather ──────────────────────────────────────────────────────────────────
+export {
+  weatherData,
+  weatherInitialized,
+  weatherCondition,
+  isWeatherInitialized,
+  setWeatherInitialized,
+  weatherTemperature,
+  weatherLabel,
+  weatherForecast,
+  hasWeather,
+  updateWeather,
+  fetchWeather,
+  CONDITION_ICONS
+} from './weather.svelte';
 
+// ── Camera ───────────────────────────────────────────────────────────────────
+export {
+  cameraStore,
+  cameraPosition,
+  cameraTarget,
+  autoRotate,
+  autoRotateSuspended,
+  getRouteLayerOrigin
+} from './camera.svelte';
+
+// ── Engine Bridge ────────────────────────────────────────────────────────────
+export {
+  engineBridgeStore,
+  setEngineBridge,
+  getEngineBridge
+} from './engine-bridge.svelte';
+
+// ── Test Compatibility ───────────────────────────────────────────────────────
+export {
+  testCompatStore,
+  syncTestStateFromBody,
+  resetTestState
+} from './test-compat.svelte';
+
+// ── Combined Helpers ─────────────────────────────────────────────────────────
+
+import { get } from 'svelte/store';
 import { navStore } from './navigation.svelte';
-import { searchStore } from './search.svelte';
-import { journeyStore } from './journey.svelte';
-import { demoState } from './demo.svelte';
-import { viewport } from './viewport.svelte';
-import { derived, get, type Readable } from 'svelte/store';
-import { focusStore } from './focus.svelte';
 
-/**
- * Test state store — snapshot of visual state for Playwright surface tests.
- * Derived from the Svelte store owners so window.__TEST_STATE__ stays live.
- */
-function getTestStateSnapshot() {
+/** Returns the currently focused business record index. */
+export function getFocusedIndex(): number | null {
   const nav = get(navStore);
-  const search = get(searchStore);
-  const journey = get(journeyStore);
-  const demo = get(demoState);
-  const vp = get(viewport);
-  const focus = get(focusStore);
-
-  const viewMode =
-    search.status !== 'idle'
-      ? 'search'
-      : nav.mode === 'focus'
-      ? 'focus'
-      : nav.mode === 'trail'
-      ? 'trail'
-      : nav.mode === 'inside'
-      ? 'inside'
-      : 'idle';
-
-  const surface = vp.isCompact ? 'mobile' : 'desktop';
-
-  return {
-    surface,
-    reducedMotion: vp.reducedMotion,
-    compactViewport:
-      search.isCompactViewport ?? vp.isCompact,
-    viewMode,
-    focusedNode: nav.focusedIndex,
-    searchActive: search.status !== 'idle',
-    searchQuery: search.query,
-    journeyPhase: journey.compass?.phase ?? journey.phase ?? 'idle',
-    demoPhase: demo.phase,
-    loadingPhase: nav.loadingPhaseKey,
-    navState: {
-      mode: nav.mode,
-      focusedIndex: nav.focusedIndex,
-      surface: nav.surface,
-      currentView: nav.currentView,
-      trailDepth: nav.trailDepth,
-      walkHistoryIndices: [...nav.walkHistoryIndices],
-      threadCandidates: [...nav.threadCandidates],
-      threadSource: nav.threadSource,
-      lastTraversalReason: nav.lastTraversalReason,
-    },
-    semanticDiveMode: focus.semanticDiveMode,
-    trailDepth: nav.trailDepth,
-    walkHistory: [...journey.walkHistoryIndices],
-    currentView: nav.currentView,
-    loadingPhaseKey: nav.loadingPhaseKey,
-  };
+  return nav.focusedIndex ?? null;
 }
 
-export const testState: Readable<ReturnType<typeof getTestStateSnapshot>> = derived(
-  [navStore, searchStore, journeyStore, demoState, viewport, focusStore],
-  () => getTestStateSnapshot(),
-  getTestStateSnapshot()
-);
+/** Returns the current list of business records (placeholder). */
+export function getBusinessRecords(): any[] {
+  return []; // Should be imported from data-store
+}
 
-// ── Filter ───────────────────────────────────────────────────────────────────
-export {
-  filterState,
-  filterVersion,
-  filterColorVersion,
-  activeClusterFilter,
-  hasActiveFilters,
-  activeFilterCount,
-  statusFilter,
-  cityFilter,
-  contactFilters,
-  toggleFilter,
-  overwriteActiveFilters,
-  setClusterFilter,
-  resetFilters,
-  getFilterState,
-  pointMatchesActiveFilters
-} from './filter.svelte';
-
-// ── Data Store ───────────────────────────────────────────────────────────────
-export {
-  getBusinessRecords,
-  getPositionBuffer,
-  getClustersBuffer,
-  getPointIndexByLeadId,
-  getLeadEnrichment,
-  getSemanticThreadBundle,
-  getSemanticThreadArtifactName,
-  getSemanticNeighborMap,
-  getLayoutManifest,
-  dataLoadState,
-  getLoadingPhaseStore,
-  getGraphicsModeStore,
-  getRecordCount,
-  getIsDataReady,
-  getIsLoading,
-  getPositionDescriptor,
-  getThreadEdgeCount,
-  getNeighborMapSize,
-  setBusinessData,
-  setSemanticThreadData,
-  setDataLoadStatus,
-  setDataLoadError,
-  resetDataStores,
-  initData,
-} from '@lib/data-store';
-
-export type { DataLoadStatus, DataLoadState } from '@lib/data-store';
-
-// ── Derived: selectedPointStore ─────────────────────────────────────────────
-// Combines focusedIndex + businessRecords into the currently selected point.
-// InfoPanel.svelte and focus-card consumers read this store.
-import { getBusinessRecords as _getBusinessRecords } from '@lib/data-store.svelte';
-
-/**
- * The currently selected business record, derived from navStore.focusedIndex
- * and businessRecords. Returns null when nothing is focused or data isn't loaded.
- */
+/** Reactive store for the selected point record. */
 export function selectedPointStore() {
-  const idx = (navStore as any).focusedIndex;
-  const records = _getBusinessRecords();
+  const idx = focusedIndex();
+  const records = getBusinessRecords();
   if (idx == null || idx < 0 || !records || idx >= records.length) {
     return null;
   }

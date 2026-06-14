@@ -4,8 +4,6 @@
 
 import type {
   SemanticState,
-  NavState,
-  ActiveFilters,
   ViewName,
   ClusterName,
   Point,
@@ -33,13 +31,57 @@ import type {
   SearchSummary,
   SemanticNode,
 } from '../../../js/state';
+import type { NavState, ActiveFilters, SearchStatus } from '@lib/types/state';
 import { CLUSTER_COLORS } from '@lib/utils/design-tokens';
 import { withStateMutation } from './with-state-mutation';
 
 // ── App State class ─────────────────────────────────────────────────────────
 
 class AppState {
-  // ==== SCENE / THREE.JS ====
+  // ==== SEARCH / SEMANTIC LANE STATE ====
+  searchRequestSequence = $state<number>(0);
+  searchAnchorIndex = $state<number | null>(null);
+  searchPreviewIndex = $state<number | null>(null);
+  searchGlowIndices = $state<Set<number>>(new Set());
+  searchGlowTopIndex = $state<number | null>(null);
+  searchGlowActive = $state<boolean>(false);
+  searchFocusTransitionToken = $state<number>(0);
+  searchStatus = $state<SearchStatus>('idle');
+  currentEmptyQuery = $state<string | null>(null);
+  isCompactViewport = $state<boolean>(false);
+  semanticGuideRequestSequence = $state<number>(0);
+  currentSemanticGuide = $state<string | null>(null);
+  summaryCardTypeToken = $state<number>(0);
+  searchTimeout = $state<ReturnType<typeof setTimeout> | null>(null);
+  searchAbortController = $state<AbortController | null>(null);
+  currentSearchSummary = $state<SearchSummary | null>(null);
+  semanticTrailCue = $state<string>('idle');
+  searchGlowRenderStateKey = $state<string>('');
+  searchPreviewHoverTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+  searchVectorScrambleInterval = $state<ReturnType<typeof setInterval> | null>(null);
+  searchVectorScrambleTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+  compactSearchRevealToken = $state<number>(0);
+  compactSearchRevealTimers = $state<Array<ReturnType<typeof setTimeout>>>([]);
+  semanticLaneMonitorTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+  semanticLaneProbePromise = $state<Promise<unknown> | null>(null);
+  semanticLaneOpsMode = $state<boolean>(false);
+  semanticLaneOpsFetchPromise = $state<Promise<unknown> | null>(null);
+  semanticLaneOpsRefreshTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+  semanticLanePendingWarm = $state<boolean>(false);
+  semanticLaneState = $state<string>('checking');
+  semanticLaneSnapshot = $state<unknown>(null);
+  semanticSearchResultCache = $state<Map<string, unknown>>(new Map());
+  semanticSearchCacheDiagnostics = $state<SemanticSearchCacheDiagnostics>({
+    hits: 0, misses: 0, stores: 0, evictions: 0,
+    lastKey: null, lastSource: null, lastAgeMs: null,
+  });
+  semanticResultContextByLeadId = $state<Map<string, unknown>>(new Map());
+  semanticGuideAbortController = $state<AbortController | null>(null);
+  semanticTrailStoryAbortController = $state<AbortController | null>(null);
+  semanticTrailStoryRequestSequence = $state<number>(0);
+  semanticLaneWarmingCounter = $state<number>(0);
+
+  // ==== POSITION / GEOMETRY STATE ====
   points = $state<Point[]>([]);
   map = $state<unknown>(null);
   markersLayer = $state<unknown>(null);
@@ -72,6 +114,85 @@ class AppState {
   myceliumDirty = $state<boolean>(true);
   hemiLight = $state<SemanticState['hemiLight']>(null as unknown as SemanticState['hemiLight']);
   dirLight = $state<SemanticState['dirLight']>(null as unknown as SemanticState['dirLight']);
+  nodePositions = $state<NodePosition[]>([]);
+  targetPositions = $state<NodePosition[]>([]);
+  originalPositions = $state<NodePosition[]>([]);
+  currentView = $state<ViewName>('galaxy');
+  autoRotate = $state<boolean>(false);
+  autoRotateSuspended = $state<boolean>(false);
+  weather = $state<unknown>(null);
+  weatherInitialized = $state<boolean>(false);
+  clockTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+  selectedPoint = $state<Point | null>(null);
+  rippleActive = $state<boolean>(false);
+  rippleStartTime = $state<number>(0);
+  bloomPulseStartTime = $state<number>(0);
+  bridgePulseStartTime = $state<number>(0);
+  rippleCenter = $state<unknown>(null);
+  pointColorStateVersion = $state<number>(0);
+  pulsePhase = $state<number>(0);
+  nodesAreSettling = $state<boolean>(false);
+  _settlingMaxDelta = $state<number>(0);
+  _settlingWatchdogStartedAt = $state<number | null>(null);
+  _settlingLowFrames = $state<number>(0);
+  pointBaseColors = $state<Float32Array | number[] | null>(null);
+  hoverHighlightIndex = $state<number>(-1);
+  hoverHighlightTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+  hoveredCluster = $state<number | null>(null);
+  stableCanvasHover = $state<CanvasHoverCandidate | null>(null);
+  lastCanvasNodeHover = $state<CanvasHoverCandidate | null>(null);
+  lastCanvasNodePick = $state<CanvasHoverCandidate | null>(null);
+  lastCanvasNodeFocusPick = $state<CanvasHoverCandidate | null>(null);
+  focusTargetVector = $state<Vector3Like | null>(null);
+  desiredCameraVector = $state<Vector3Like | null>(null);
+  loadingOverlayStartedAt = $state<number>(0);
+  loadingPhaseKey = $state<LoadingPhaseKey>('records');
+  eventListenersInitialized = $state<boolean>(false);
+
+  // ==== NAV STATE (nested substate) ====
+  navState = $state<NavState>({
+    mode: 'overview',
+    surface: 'idle',
+    previousSurface: 'idle',
+    focusedIndex: null,
+    trailDepth: 0,
+    trailSeedIndex: null,
+    trailNeighborIndices: [],
+    trailCursor: -1,
+    walkHistoryIndices: [],
+    explorationHistoryIndices: [],
+    lastTraversalReason: null,
+    threadCandidates: [],
+    threadReasonByIndex: new Map<number, string>(),
+    threadSource: 'geometric-fallback',
+    focusPocketIndices: [],
+    focusPocketMeta: null,
+    focusPocketRoleByIndex: new Map<number, string>(),
+    focusPocketAnimationFrameId: null,
+    focusFramingMeta: null,
+    currentPersonality: null,
+    neighborhoodIndices: [],
+    currentView: 'galaxy',
+    myceliumMode: 'dormant',
+    autoRotate: true,
+    autoRotateSuspended: false,
+    trailDepthFromExploration: 0,
+    sceneRevealActive: false,
+    sceneRevealStartedAt: 0,
+    loadingPhaseKey: 'records',
+    applyingUrlState: false,
+    restoringBrowserHistory: false,
+    urlStateRestoreToken: 0
+  });
+
+  // ==== ACTIVE FILTERS (nested substate) ====
+  activeFilters = $state<ActiveFilters>({
+    status: 'all',
+    city: 'all',
+    website: false,
+    email: false,
+    geocoded: false,
+  });
 
   // ==== PERFORMANCE DIAGNOSTICS ====
   scenePerformanceDiagnostics = $state<ScenePerformanceDiagnostics>({
@@ -83,19 +204,11 @@ class AppState {
   focusThreadDiagnostics = $state<FocusThreadDiagnostics>({
     active: false, reason: 'not-built', edgeCount: 0, directEdgeCount: 0, supportEdgeCount: 0, subduedEdgeCount: 0, segmentCount: 0, vertexCount: 0, overlayNodeCount: 0, nextCueSegments: 0, denseBundleMode: false, buildMs: 0, avgFrameMs: 0, maxFrameMs: 0,
   });
-
-  // ==== SEMANTIC THREAD ARTIFACT ====
-  semanticThreadBundle = $state<unknown>(null);
-  semanticThreadArtifactName = $state<string | null>(null);
-  semanticSpaceLayoutManifest = $state<unknown>(null);
-  semanticSpaceLayoutStatus = $state<string>('idle');
-  semanticSpaceLayoutError = $state<string | null>(null);
-  semanticNeighborMapByLeadId = $state<Map<string, SemanticNode>>(new Map());
-  semanticThreadsLoadPromise = $state<Promise<unknown> | null>(null);
-  semanticThreadsStatus = $state<string>('idle');
-  semanticThreadsRetryAttempt = $state<number>(0);
-  semanticThreadsRetryTimer = $state<ReturnType<typeof setTimeout> | null>(null);
-  dataLoadAttempt = $state<number>(0);
+  routeTraceDiagnostics = $state<RouteTraceDiagnostics>({
+    active: false, reason: 'not-built', phase: 'overview',
+    indexCount: 0, edgeCount: 0, segmentCount: 0,
+    anchorIndex: null, mapPointCount: 0, mapPathActive: false,
+  });
 
   // ==== CONFIGURATION CONSTANTS ====
   MAP_HANDOFF_PRELUDE_MS = $state(430);
@@ -120,48 +233,6 @@ class AppState {
   ORBIT_PAN_SPEED_FREE = $state(0.68);
   SEARCH_TRAIL_CUE_MIN_DWELL_MS = $state(920);
   JOURNEY_COMPASS_PHASE_ORDER = $state<string[]>(['overview', 'search', 'focus', 'inside', 'map']);
-  FOCUS_CONSTELLATION_MOTIFS = $state({
-    rosette: {
-      label: 'semantic rosette',
-      directLift: 0.82,
-      supportLift: 0.46,
-      directPriority: 0.78,
-      supportPriority: 0.36,
-      braid: 0.72,
-    },
-    lattice: {
-      label: 'trade lattice',
-      directLift: 0.58,
-      supportLift: 0.3,
-      directPriority: 0.72,
-      supportPriority: 0.42,
-      braid: 0.5,
-    },
-    delta: {
-      label: 'county delta',
-      directLift: 0.7,
-      supportLift: 0.38,
-      directPriority: 0.74,
-      supportPriority: 0.34,
-      braid: 0.62,
-    },
-    market: {
-      label: 'market ring',
-      directLift: 0.64,
-      supportLift: 0.36,
-      directPriority: 0.7,
-      supportPriority: 0.32,
-      braid: 0.58,
-    },
-    civic: {
-      label: 'civic orbit',
-      directLift: 0.62,
-      supportLift: 0.34,
-      directPriority: 0.68,
-      supportPriority: 0.3,
-      braid: 0.54,
-    },
-  });
   SCENE_REVEAL_DURATION_MS = $state(1650);
   LOADING_MIN_VISIBLE_MS = $state(1320);
   POINTS_MATERIAL_BASE_SIZE = $state(0.03);
@@ -182,92 +253,6 @@ class AppState {
     'Foundations', 'Arts & Culture', 'Economic Development', 'Public Agencies', 'Enterprise Brands',
   ]);
 
-  // ==== LOADING PHASE META ====
-  LOADING_PHASE_META = $state({
-    records: { progress: 0.2, note: 'Gathering records...', foot: 'County records are arriving first.' },
-    scene: { progress: 0.48, note: 'Raising the cloud...', foot: 'Shaping the scene.' },
-    restore: { progress: 0.76, note: 'Restoring view...', foot: 'Restoring last known path.' },
-    launch: { progress: 1, note: 'Awake.', foot: 'Threads are live.' },
-  });
-
-  // ==== POSITION / GEOMETRY STATE ====
-  nodePositions = $state<NodePosition[]>([]);
-  targetPositions = $state<NodePosition[]>([]);
-  originalPositions = $state<NodePosition[]>([]);
-  currentView = $state<ViewName>('galaxy');
-  autoRotate = $state<boolean>(false);
-  autoRotateSuspended = $state<boolean>(false);
-  weather = $state<unknown>(null);
-  weatherInitialized = $state<boolean>(false);
-  clockTimer = $state<ReturnType<typeof setTimeout> | null>(null);
-  selectedPoint = $state<Point | null>(null);
-  rippleActive = $state<boolean>(false);
-  rippleStartTime = $state<number>(0);
-  bloomPulseStartTime = $state<number>(0);
-  bridgePulseStartTime = $state<number>(0);
-  rippleCenter = $state<unknown>(null);
-  pointColorStateVersion = $state<number>(0);
-  pulsePhase = $state<number>(0);
-  nodesAreSettling = $state<boolean>(false);
-  _settlingMaxDelta = $state<number>(0);
-  _settlingWatchdogStartedAt = $state<number | null>(null);
-  _settlingLowFrames = $state<number>(0);
-  pointBaseColors = $state<Float32Array | number[] | null>(null);
-  hoverHighlightIndex = $state<number>(-1);
-  hoveredCluster = $state<number | null>(null);
-  stableCanvasHover = $state<CanvasHoverCandidate | null>(null);
-  lastCanvasNodeHover = $state<CanvasHoverCandidate | null>(null);
-  lastCanvasNodePick = $state<CanvasHoverCandidate | null>(null);
-  lastCanvasNodeFocusPick = $state<CanvasHoverCandidate | null>(null);
-  focusTargetVector = $state<Vector3Like | null>(null);
-  desiredCameraVector = $state<Vector3Like | null>(null);
-  searchTimeout = $state<ReturnType<typeof setTimeout> | null>(null);
-  searchAbortController = $state<AbortController | null>(null);
-  currentSearchSummary = $state<SearchSummary | null>(null);
-  currentEmptyQuery = $state<string | null>(null);
-  semanticTrailCue = $state<string>('idle');
-  applyingUrlState = $state<boolean>(false);
-  restoringBrowserHistory = $state<boolean>(false);
-  urlStateRestoreToken = $state<number>(0);
-  eventListenersInitialized = $state<boolean>(false);
-  searchGlowActive = $state<boolean>(false);
-  searchGlowRenderStateKey = $state<string>('');
-  searchGlowTopIndex = $state<number | null>(null);
-  loadingOverlayStartedAt = $state<number>(0);
-  loadingPhaseKey = $state<LoadingPhaseKey>('records');
-
-  // ==== NAV STATE (nested substate) ====
-  navState = $state<NavState>({
-    mode: 'overview',
-    focusedIndex: null,
-    trailDepth: 0,
-    trailSeedIndex: null,
-    trailNeighborIndices: [],
-    trailCursor: -1,
-    walkHistoryIndices: [],
-    explorationHistoryIndices: [],
-    lastTraversalReason: null,
-    threadCandidates: [],
-    threadReasonByIndex: new Map<number, string>(),
-    threadSource: 'geometric-fallback',
-    focusPocketIndices: [],
-    focusPocketMeta: null,
-    focusPocketRoleByIndex: new Map<number, string>(),
-    focusPocketAnimationFrameId: null,
-    focusFramingMeta: null,
-    currentPersonality: null,
-    neighborhoodIndices: [],
-  });
-
-  // ==== ACTIVE FILTERS (nested substate) ====
-  activeFilters = $state<ActiveFilters>({
-    status: 'all',
-    city: 'all',
-    website: false,
-    email: false,
-    geocoded: false,
-  });
-
   // ==== FILTER / MODE STATE ====
   filterVersion = $state<number>(0);
   filterColorVersion = $state<number>(0);
@@ -282,99 +267,7 @@ class AppState {
   STORY_DESCRIPTIONS = $state<Record<string, string>>({});
   pointMarkers = $state<unknown[]>([]);
 
-  // ==== SEARCH / SEMANTIC LANE STATE ====
-  searchRequestSequence = $state<number>(0);
-  searchAnchorIndex = $state<number | null>(null);
-  searchPreviewIndex = $state<number | null>(null);
-  searchGlowIndices = $state<Set<number>>(new Set());
-  searchFocusTransitionToken = $state<number>(0);
-  searchPreviewHoverTimer = $state<ReturnType<typeof setTimeout> | null>(null);
-  searchVectorScrambleInterval = $state<ReturnType<typeof setInterval> | null>(null);
-  searchVectorScrambleTimer = $state<ReturnType<typeof setTimeout> | null>(null);
-  compactSearchRevealToken = $state<number>(0);
-  compactSearchRevealTimers = $state<Array<ReturnType<typeof setTimeout>>>([]);
-  mobileRouteFieldPeekTimer = $state<ReturnType<typeof setTimeout> | null>(null);
-  mobileRouteFieldPeekToken = $state<number>(0);
-  semanticLaneMonitorTimer = $state<ReturnType<typeof setTimeout> | null>(null);
-  semanticLaneProbePromise = $state<Promise<unknown> | null>(null);
-  semanticLaneOpsMode = $state<boolean>(false);
-  semanticLaneOpsFetchPromise = $state<Promise<unknown> | null>(null);
-  semanticLaneOpsRefreshTimer = $state<ReturnType<typeof setTimeout> | null>(null);
-  semanticLanePendingWarm = $state<boolean>(false);
-  semanticLaneState = $state<string>('checking');
-  semanticLaneSnapshot = $state<unknown>(null);
-  semanticSearchResultCache = $state<Map<string, unknown>>(new Map());
-  semanticSearchCacheDiagnostics = $state<SemanticSearchCacheDiagnostics>({
-    hits: 0, misses: 0, stores: 0, evictions: 0,
-    lastKey: null, lastSource: null, lastAgeMs: null,
-  });
-  semanticResultContextByLeadId = $state<Map<string, unknown>>(new Map());
-  semanticGuideAbortController = $state<AbortController | null>(null);
-  semanticGuideRequestSequence = $state<number>(0);
-  semanticTrailStoryAbortController = $state<AbortController | null>(null);
-  semanticTrailStoryRequestSequence = $state<number>(0);
-  currentSemanticGuide = $state<unknown>(null);
-  summaryCardTypeToken = $state<number>(0);
-
-  // ==== ANIMATION / ROUTE STATE ====
-  autoRotateResumeTimer = $state<ReturnType<typeof setTimeout> | null>(null);
-  autoRotateResumeDueAt = $state<number>(0);
-  autoRotateSoftResumeStartedAt = $state<number>(0);
-  sceneRevealActive = $state<boolean>(false);
-  sceneRevealStartedAt = $state<number>(0);
-  sceneRevealCameraStart = $state<Vector3Like | null>(null);
-  sceneRevealCameraEnd = $state<Vector3Like | null>(null);
-  routeCameraAnimationToken = $state<number>(0);
-  viewHandoffTimer = $state<ReturnType<typeof setTimeout> | null>(null);
-  viewSwitchPreludeTimer = $state<ReturnType<typeof setTimeout> | null>(null);
-  terrainHandoffTimer = $state<ReturnType<typeof setTimeout> | null>(null);
-  terrainHandoffState = $state<TerrainHandoffState>({
-    phase: 'idle', from: 'overview', to: 'galaxy', routeCount: 0, startedAt: 0,
-  });
-  routeExplorationState = $state<RouteExplorationState>({
-    phase: 'idle', reason: '', startedAt: 0,
-  });
-  routeChoreographyState = $state<RouteChoreographyState>({
-    phase: 'overview', reason: 'initial', startedAt: 0,
-    anchorIndex: null, indexCount: 0, lastCameraMove: null,
-  });
-  experienceResetToastTimer = $state<ReturnType<typeof setTimeout> | null>(null);
-
-  // ==== FOCUS / THREAD / ROUTE DIAGNOSTIC STATE ====
-  focusCameraAnimationToken = $state<number>(0);
-  focusCameraAssistActive = $state<boolean>(false);
-  focusCameraAssistUntil = $state<number>(0);
-  focusCameraAssistReason = $state<string>('idle');
-  focusCameraOffset = $state<Vector3Like | null>(null);
-  focusCameraTargetOffset = $state<Vector3Like | null>(null);
-  focusPocketMotionByIndex = $state<Map<number, unknown>>(new Map());
-  focusPocketTransitionStartedAt = $state<number>(0);
-  focusLens = $state<SemanticState['focusLens']>(null as unknown as SemanticState['focusLens']);
-  focusHalo = $state<SemanticState['focusHalo']>(null as unknown as SemanticState['focusHalo']);
-  focusCore = $state<SemanticState['focusCore']>(null as unknown as SemanticState['focusCore']);
-  focusMoteGroup = $state<SemanticState['focusMoteGroup']>(null as unknown as SemanticState['focusMoteGroup']);
-  focusMotes = $state<SemanticState['focusMotes']>([]);
-  focusPetalGroup = $state<SemanticState['focusPetalGroup']>(null as unknown as SemanticState['focusPetalGroup']);
-  focusPetals = $state<SemanticState['focusPetals']>([]);
-  focusFilaments = $state<SemanticState['focusFilaments']>(null as unknown as SemanticState['focusFilaments']);
-  focusAnchorGroup = $state<SemanticState['focusAnchorGroup']>(null as unknown as SemanticState['focusAnchorGroup']);
-  focusAnchorRingMesh = $state<SemanticState['focusAnchorRingMesh']>(null as unknown as SemanticState['focusAnchorRingMesh']);
-  focusAnchorHaloSprite = $state<SemanticState['focusAnchorHaloSprite']>(null as unknown as SemanticState['focusAnchorHaloSprite']);
-  hoverHalo = $state<SemanticState['hoverHalo']>(null as unknown as SemanticState['hoverHalo']);
-  focusBeaconTexture = $state<SemanticState['focusBeaconTexture']>(null as unknown as SemanticState['focusBeaconTexture']);
-  focusRingTexture = $state<SemanticState['focusRingTexture']>(null as unknown as SemanticState['focusRingTexture']);
-  focusNextCueTexture = $state<SemanticState['focusNextCueTexture']>(null as unknown as SemanticState['focusNextCueTexture']);
-  semanticManifold = $state<SemanticState['semanticManifold']>(null as unknown as SemanticState['semanticManifold']);
-  routeTraceLines = $state<SemanticState['routeTraceLines']>(null as unknown as SemanticState['routeTraceLines']);
-  arrivalHandoffGroup = $state<SemanticState['arrivalHandoffGroup']>(null as unknown as SemanticState['arrivalHandoffGroup']);
-  routeTraceConnectionPairs = $state<Array<{ a: number; b: number; layer: number }>>([]);
-  routeTraceRenderStateKey = $state<string>('');
-  routeTraceDiagnostics = $state<RouteTraceDiagnostics>({
-    active: false, reason: 'not-built', phase: 'overview',
-    indexCount: 0, edgeCount: 0, segmentCount: 0,
-    anchorIndex: null, mapPointCount: 0, mapPathActive: false,
-  });
-  inspectedStrandGroup = $state<SemanticState['inspectedStrandGroup']>(null as unknown as SemanticState['inspectedStrandGroup']);
+  // ==== FOCUS / THREAD STATE ====
   inspectedThreadIndex = $state<number | null>(null);
   pinnedThreadIndex = $state<number | null>(null);
   canvasThreadInspectionClearTimer = $state<ReturnType<typeof setTimeout> | null>(null);
@@ -412,9 +305,51 @@ class AppState {
   _deferredUrlState = $state<{ params: Record<string, string>; timestamp: number } | null>(null);
   _deferredUrlStateHandler = $state<EventListener | null>(null);
   _semanticDiveTransitionDeadline = $state<number>(0);
-  semanticLaneWarmingCounter = $state<number>(0);
   lastRenderedTypeToken = $state<number>(0);
   lastSuccessfulFetch = $state<string | null>(null);
+
+  // ==== VIEWPORT / ENVIRONMENT STATE ====
+  viewportWidth = $state<number>(1920);
+  viewportHeight = $state<number>(1080);
+  viewportDpr = $state<number>(1);
+  viewportReducedMotion = $state<boolean>(false);
+  viewportIsCompact = $state<boolean>(false);
+
+  // ==== UI COMPONENT STATE ====
+  legendOpen = $state<boolean>(false);
+  demoPhase = $state<string>('IDLE');
+  engineBridge = $state<unknown>(null); // Cast to EngineBridge in stores
+
+  // ==== newly consolidated state (MIGRATED FROM INDIVIDUAL STORES) ====
+  pocketMotionByIndex = $state<Map<number, any>>(new Map());
+  pocketTransitionStartedAt = $state<number>(0);
+  infoPanelOpen = $state<boolean>(true);
+  pocketListVisible = $state<boolean>(false);
+  semanticNeighborMapByLeadId = $state<Map<string, any>>(new Map());
+
+  // ==== CAMERA / ANIMATION STATE ====
+  autoRotateResumeTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+  autoRotateResumeDueAt = $state<number>(0);
+  autoRotateSoftResumeStartedAt = $state<number>(0);
+  sceneRevealActive = $state<boolean>(false);
+  sceneRevealStartedAt = $state<number>(0);
+  sceneRevealCameraStart = $state<Vector3Like | null>(null);
+  sceneRevealCameraEnd = $state<Vector3Like | null>(null);
+  routeCameraAnimationToken = $state<number>(0);
+  viewHandoffTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+  viewSwitchPreludeTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+  terrainHandoffTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+  terrainHandoffState = $state<TerrainHandoffState>({
+    phase: 'idle', from: 'overview', to: 'galaxy', routeCount: 0, startedAt: 0,
+  });
+  routeExplorationState = $state<RouteExplorationState>({
+    phase: 'idle', reason: '', startedAt: 0,
+  });
+  routeChoreographyState = $state<RouteChoreographyState>({
+    phase: 'overview', reason: 'initial', startedAt: 0,
+    anchorIndex: null, indexCount: 0, lastCameraMove: null,
+  });
+  experienceResetToastTimer = $state<ReturnType<typeof setTimeout> | null>(null);
 
   // ==== DERIVED STATE (replaces Proxy getters from legacy state) ====
 

@@ -5,6 +5,7 @@
  * In production this would fetch from a weather API; currently provides
  * realistic mock data for UI rendering.
  */
+import { appState } from '@lib/state/app.svelte.ts';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -48,27 +49,39 @@ const INITIAL_WEATHER: WeatherData = {
   updatedAt: 0
 };
 
-// ── Store ─────────────────────────────────────────────────────────────────────
+// ── Store (reactive binding) ──────────────────────────────────────────────────
 
-export let weatherData = $state<WeatherData>({ ...INITIAL_WEATHER });
+/** 
+ * Weather data proxy. In Svelte 5, components can read properties directly.
+ * We cast appState.weather (which is unknown in the kernel) to WeatherData.
+ */
+export const weatherData = {
+  get temperature() { return (appState.weather as WeatherData)?.temperature ?? 0; },
+  get condition() { return (appState.weather as WeatherCondition) ?? 'clear'; },
+  get label() { return (appState.weather as WeatherData)?.label ?? '--'; },
+  get forecast() { return (appState.weather as WeatherData)?.forecast ?? ''; },
+  get updatedAt() { return (appState.weather as WeatherData)?.updatedAt ?? 0; }
+};
 
 // ── Initialization guard ──────────────────────────────────────────────────────
 
-let _initialized = $state(false);
-
 /** Whether weather has been initialized (prevents double-init). */
-export function isWeatherInitialized(): boolean { return _initialized; }
+export function isWeatherInitialized(): boolean { return appState.weatherInitialized; }
 
 /** Mark weather as initialized. Called after first successful initWeather(). */
-export function setWeatherInitialized(value: boolean): void { _initialized = value; }
+export function setWeatherInitialized(value: boolean): void { 
+  appState.withMutation(() => {
+    appState.weatherInitialized = value;
+  });
+}
 
 // ── Derived ───────────────────────────────────────────────────────────────────
 
-export function weatherTemperature(): number { return (weatherData as any).temperature; }
-export function weatherCondition(): WeatherCondition { return (weatherData as any).condition; }
-export function weatherLabel(): string { return (weatherData as any).label; }
-export function weatherForecast(): string { return (weatherData as any).forecast; }
-export function hasWeather(): boolean { return (weatherData as any).updatedAt > 0; }
+export function weatherTemperature(): number { return weatherData.temperature; }
+export function weatherCondition(): WeatherCondition { return weatherData.condition; }
+export function weatherLabel(): string { return weatherData.label; }
+export function weatherForecast(): string { return weatherData.forecast; }
+export function hasWeather(): boolean { return weatherData.updatedAt > 0; }
 
 // ── Condition icon mapping ────────────────────────────────────────────────────
 
@@ -76,7 +89,7 @@ export const CONDITION_ICONS: Record<WeatherCondition, string> = {
   clear: '\u2600',
   clouds: '\u2601',
   rain: '\u{1F327}',
-  storm: '\u26C8',
+  storm: '\u2608',
   fog: '\u{1F32B}',
   wind: '\u{1F32C}'
 };
@@ -88,8 +101,11 @@ export const CONDITION_ICONS: Record<WeatherCondition, string> = {
  * poller. For development, simulates realistic Montgomery County weather.
  */
 export function updateWeather(data: Partial<WeatherData>): void {
-  Object.assign(weatherData, data, { updatedAt: performance.now() });
-  _initialized = true;
+  appState.withMutation(() => {
+    const current = (appState.weather as WeatherData) || { ...INITIAL_WEATHER };
+    appState.weather = { ...current, ...data, updatedAt: performance.now() };
+    appState.weatherInitialized = true;
+  });
 }
 
 /**

@@ -2,21 +2,23 @@
  * @lib/stores/engine-bridge.svelte.ts — Shared engine bridge reference (Svelte 5 runes)
  *
  * Holds the single EngineBridge instance created by Canvas.svelte.
- * Other components (ThreadInspector, SemanticOverlay, etc.) read
- * from this store to access the bridge for WebGL operations.
  */
-import type { EngineBridge } from '@lib/engine';
+import { toStore } from 'svelte/store';
+import type { EngineBridge } from '@lib/engine/adapters/types';
+import { appState } from '@lib/state/app.svelte.ts';
 
-export let engineBridgeStore = $state<EngineBridge | null>(null);
+/** Reactive binding to the engine bridge instance in the kernel. */
+export const engineBridgeStore = toStore(
+  () => appState.engineBridge as EngineBridge | null,
+  (v) => appState.withMutation(() => { appState.engineBridge = v; })
+);
 
-export const hasEngineBridge = $derived(engineBridgeStore !== null);
-
-/** Set the bridge instance (called by Canvas.svelte after init). */
+/** Set the global engine bridge instance. */
 export function setEngineBridge(bridge: EngineBridge | null): void {
-  engineBridgeStore = bridge;
+  engineBridgeStore.set(bridge);
 }
 
-/** Get the current bridge value (non-reactive, for imperative calls). */
+/** Get the current bridge value (non-reactive). */
 export function getEngineBridge(): EngineBridge | null {
-  return engineBridgeStore;
+  return appState.engineBridge as EngineBridge | null;
 }

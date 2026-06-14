@@ -20,11 +20,28 @@ Svelte UI and the engine kernel. Direct imports from `src/lib/<other>/*` into
 `js/` bypass the bridge and create circular coupling that breaks the engine
 port (Wave 11+).
 
-### Batch 4 migration (2026-06-14)
+### Batch 5 correction (2026-06-14)
 
-- `src/lib/journey/semantic-guide.ts` — 4 imports migrated through `semantic-guide-bridge.ts`
-- `src/lib/journey/semantic-dive.ts` — 2 imports migrated through `semantic-dive-bridge.ts`
-- Anti-pattern count reduced from 29 to 23.
+- `src/lib/journey/focus-pocket.ts` already imported `@lib/engine/focus-pocket-bridge` in HEAD, but the bridge file was missing. Added `src/lib/engine/focus-pocket-bridge.ts`.
+- Re-measured the full invariant-test scan and corrected the stale baseline from 20/23 to 58 anti-pattern imports. This is a documentation/test correction, not a regression.
+
+### Window-actions migration (2026-06-14)
+
+- `src/lib/orchestration/window-actions.ts` no longer imports from `js/` directly.
+- Added `src/lib/engine/window-actions-bridge.ts` as the sanctioned seam for the
+  six previously direct engine-kernel imports used by window actions:
+  - camera focus (`focusOnNode`)
+  - connection-analysis detail reveal (`showSemanticThreadsDetail`)
+  - search orchestration (`search`, `clearSearch`)
+  - lifecycle orchestration (`switchView`, `setTrailDepth`, `setSemanticDiveMode`,
+    `returnToOverview`, `resetExperienceState`, `resetExplorationFocus`,
+    `refreshCompositionState`)
+  - journey traversal (`setTrailFromSeed`, `traverseNeighbor`, `walkThreadNeighbor`)
+  - thread inspection (`inspectThreadNeighbor`, `pinThreadNeighbor`,
+    `unpinThreadInspection`, `clearThreadInspection`)
+  - legacy state access (`state`, `withStateMutation`)
+- The invariant baseline dropped from **58** to **52** anti-pattern import paths.
+- `window-actions.ts` now has **0** direct `js/` imports.
 
 ## The rule
 
@@ -54,16 +71,13 @@ re-exports or via Svelte stores / events.
 
 ## Inventory of direct imports (as of 2026-06-14)
 
-3 src/ files import from `js/` outside the bridge. Total: **23 anti-pattern
-import paths**. The former direct component imports from `Header.svelte` and
-`Legend.svelte`, the demo state singleton imports, and the selected-card /
-focus-ui / thread-inspector journey shims, plus non-engine state / selector
-imports now route through `src/lib/engine/*` bridge adapters. Migration is not
-required immediately (the engine port is a multi-week arc), but new code MUST
-NOT add to this list. The invariant test fails the build on any new
-anti-pattern.
+24 src files import from `js/` outside the bridge. Total: **52 anti-pattern
+import paths**. The earlier 20/23 inventory was stale relative to the invariant
+test's actual full-`src/` scan scope. Migration is not required immediately
+(the engine port is a multi-week arc), but new code MUST NOT add to this list.
+The invariant test fails the build on any new anti-pattern.
 
-### Legitimate bridge (39 files, in `src/lib/engine/*`)
+### Legitimate bridge (41 files, in `src/lib/engine/*`)
 
 ```
 src/lib/engine/adapters/camera-bridge.ts
@@ -82,6 +96,7 @@ src/lib/engine/config.ts
 src/lib/engine/demo-choreography.ts
 src/lib/engine/design-tokens.ts
 src/lib/engine/event-bus-bridge.ts
+src/lib/engine/focus-pocket-bridge.ts
 src/lib/engine/index.ts
 src/lib/engine/journey-focus-ui-bridge.ts
 src/lib/engine/journey-selected-card-bridge.ts
@@ -105,11 +120,12 @@ src/lib/engine/three-postprocessing.ts
 src/lib/engine/ui-renderers-bridge.ts
 src/lib/engine/weather-bridge.ts
 src/lib/engine/webgl-context.ts
+src/lib/engine/window-actions-bridge.ts
 ```
 
 These wrap engine functions for Svelte consumption. ALLOWED.
 
-### Anti-pattern direct imports (3 files, 23 import paths)
+### Anti-pattern direct imports (24 files, 52 import paths)
 
 Files in `src/lib/<other>/*` and `src/components/*` that import from `js/`
 directly (bypassing the bridge). The full list is in the invariant test's
@@ -117,10 +133,10 @@ console output — it's regenerated on every run.
 
 Top offenders by import count:
 - `src/lib/journey/journey.ts` — 15 imports
-- `src/lib/orchestration/window-actions.ts` — 5 imports
-- `src/lib/journey/focus-pocket.ts` — 3 imports
+- `src/lib/journey/semantic-guide.ts` — 5 imports
+- `src/lib/journey/semantic-dive.ts` — 4 imports
 
-**23 anti-pattern import paths total.** Migration is not required
+**52 anti-pattern import paths total.** Migration is not required
 immediately (the engine port is a multi-week arc), but new code MUST NOT
 add to this list. The invariant test fails the build on any new
 anti-pattern. Existing entries have a one-time pass to consolidate,

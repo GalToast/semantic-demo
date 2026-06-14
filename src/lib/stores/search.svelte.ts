@@ -1,17 +1,8 @@
 /**
  * @lib/stores/search.svelte.ts — Search engine, tokenization, and result state store (Svelte 5 runes)
- *
- * Replaces:
- *   - js/modules/search-state.js (state management + orchestration)
- *   - js/modules/search-tokenizer.js (tokenization logic)
- *   - Search slices from js/state.js
- *
- * The search store owns the query, results, active result, and search lifecycle.
- * The actual search API calls live in the engine bridge; this store manages
- * the Svelte-side truth for search state.
  */
 import type { SearchState, SearchResult, SearchSummary, SearchStatus } from '@lib/types/state';
-import { writable, get, type Readable, type Subscriber, type Unsubscriber } from 'svelte/store';
+import { get, type Readable, type Subscriber, type Unsubscriber, toStore, writable } from 'svelte/store';
 import {
   tokenizeSearchText as tokenizeRaw,
   expandSearchIntent as expandRaw,
@@ -22,17 +13,16 @@ import {
 } from '@lib/search/tokenizer';
 import { testCompatStore } from './test-compat.svelte';
 import { performSearch } from '@lib/search-engine';
-import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from './navigation.svelte';
+import { appState } from '@lib/state/app.svelte.ts';
 
 // ── Rerank Feature Flag ─────────────────────────────────────────────────────
 
 /**
  * A/B test toggle for NIM rerank. Off by default.
- * Override via ?rerank=1 URL param or localStorage.semantic_explorer_rerank_v1.
  */
 export const searchUseRerank = writable(false);
 
-// ── Re-export tokenizer functions (typed, no `any`) ──────────────────────────
+// ── Re-export tokenizer functions ───────────────────────────────────────────
 
 export { tokenizeRaw as tokenizeSearchText, expandRaw as expandSearchIntent, countRaw as countTokenMatches };
 export { SEARCH_STOP_WORDS };
@@ -71,89 +61,113 @@ export interface SearchStoreState extends SearchState {
   glowTopIndex: number | null;
   /** Whether search glow is active. */
   glowActive: boolean;
-  /** Last empty query recorded (for no-results fallback suggestions). */
+  /** Last empty query recorded. */
   currentEmptyQuery: string | null;
-  /** Search focus transition token (monotonically increasing). */
+  /** Search focus transition token. */
   focusTransitionToken: number;
   /** Semantic trail cue state. */
   trailCue: 'idle' | 'searching' | 'focusing';
   /** Whether search input is compact viewport. */
   isCompactViewport: boolean;
-  /** Semantic guide abort controller (for cancelling guide requests). */
+  /** Semantic guide abort controller. */
   semanticGuideRequestSequence: number;
   /** Current semantic guide text. */
   currentSemanticGuide: string | null;
-  /** Summary card type token (for re-rendering). */
+  /** Summary card type token. */
   summaryCardTypeToken: number;
 }
 
 // ── Store ────────────────────────────────────────────────────────────────────
 
-const _searchWritable = writable<SearchStoreState>({
-  ...INITIAL_SEARCH_STATE,
-  requestSequence: 0,
-  anchorIndex: null,
-  previewIndex: null,
-  glowIndices: new Set(),
-  glowTopIndex: null,
-  glowActive: false,
-  currentEmptyQuery: null,
-  focusTransitionToken: 0,
-  trailCue: 'idle',
-  isCompactViewport: false,
-  semanticGuideRequestSequence: 0,
-  currentSemanticGuide: null,
-  summaryCardTypeToken: 0
-});
-
-// ── SearchStore API ─────────────────────────────────────────────────────────
-// searchStore is a hybrid: satisfies Readable<SearchStoreState> + .update()/.set()
-// for .ts orchestration consumers, while exposing state properties as getters
-// so callers can use searchStore.status, searchStore.results, etc. directly.
-
-/** SearchStore type: Readable + state properties + Writable-ish for svelte/store compatibility. */
-export type SearchStoreApi = Readable<SearchStoreState> & SearchStoreState & {
-  update(fn: (s: SearchStoreState) => SearchStoreState): void;
-  set(value: SearchStoreState): void;
-};
-
-function _createSearchStore(): SearchStoreApi {
-  const stateKeys = [
-    'query', 'results', 'activeResultId', 'summary', 'status',
-    'hasQuery', 'resultsRendered', 'degraded',
-    'requestSequence', 'anchorIndex', 'previewIndex', 'glowIndices',
-    'glowTopIndex', 'glowActive', 'currentEmptyQuery', 'focusTransitionToken', 'trailCue',
-    'isCompactViewport', 'semanticGuideRequestSequence',
-    'currentSemanticGuide', 'summaryCardTypeToken'
-  ] as const;
-
-  const api: Record<string, unknown> = {
-    subscribe: (listener: Subscriber<SearchStoreState>): Unsubscriber => {
-      return _searchWritable.subscribe(listener);
-    },
-    update: (updater: (s: SearchStoreState) => SearchStoreState): void => {
-      _searchWritable.update(updater);
-    },
-    set: (value: SearchStoreState): void => {
-      _searchWritable.set(value);
+/** Reactive binding to the Svelte 5 state kernel. */
+const _searchWritable = toStore(
+  () => ({
+    ...INITIAL_SEARCH_STATE,
+    query: appState.currentSearchSummary?.query ?? '',
+    results: (appState.currentSearchSummary?.resultIndices as any) ?? [],
+    activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null,
+    summary: appState.currentSearchSummary ? { ...$state.snapshot(appState.currentSearchSummary) } : null,
+    status: appState.searchStatus,
+    hasQuery: (appState.currentSearchSummary?.query ?? '').length > 0,
+    resultsRendered: (appState.currentSearchSummary?.resultIndices as any)?.length > 0,
+    requestSequence: appState.searchRequestSequence,
+    anchorIndex: appState.searchAnchorIndex,
+    previewIndex: appState.searchPreviewIndex,
+    glowIndices: $state.snapshot(appState.searchGlowIndices),
+    glowTopIndex: appState.searchGlowTopIndex,
+    glowActive: appState.searchGlowActive,
+    currentEmptyQuery: appState.currentEmptyQuery,
+    focusTransitionToken: appState.searchFocusTransitionToken,
+    trailCue: appState.semanticTrailCue as any,
+    isCompactViewport: appState.isCompactViewport,
+    semanticGuideRequestSequence: appState.semanticGuideRequestSequence,
+    currentSemanticGuide: appState.currentSemanticGuide as string | null,
+    summaryCardTypeToken: appState.summaryCardTypeToken
+  }),
+  (val) => appState.withMutation(() => {
+    if (appState.currentSearchSummary) {
+      appState.currentSearchSummary.query = val.query;
+      if (val.summary) {
+        appState.currentSearchSummary.resultCount = val.summary.resultCount;
+        appState.currentSearchSummary.topScore = val.summary.topScore;
+        appState.currentSearchSummary.summaryType = val.summary.summaryType;
+      }
     }
+    appState.searchRequestSequence = val.requestSequence;
+    appState.searchAnchorIndex = val.anchorIndex;
+    appState.searchPreviewIndex = val.previewIndex;
+    appState.searchGlowIndices = val.glowIndices;
+    appState.searchGlowTopIndex = val.glowTopIndex;
+    appState.searchGlowActive = val.glowActive;
+    appState.currentEmptyQuery = val.currentEmptyQuery;
+    appState.searchFocusTransitionToken = val.focusTransitionToken;
+    appState.searchStatus = val.status;
+    appState.isCompactViewport = val.isCompactViewport;
+    appState.semanticGuideRequestSequence = val.semanticGuideRequestSequence;
+    appState.currentSemanticGuide = val.currentSemanticGuide;
+    appState.summaryCardTypeToken = val.summaryCardTypeToken;
+    appState.semanticTrailCue = val.trailCue;
+  })
+);
+
+/** SearchStore type: callable function + Readable + actions. */
+export type SearchStoreApi = (() => SearchStoreState) &
+  Readable<SearchStoreState> & {
+    update(fn: (s: SearchStoreState) => SearchStoreState): void;
+    set(value: SearchStoreState): void;
   };
 
-  // Create getter for each state property — reads snapshot from the writable
-  for (const key of stateKeys) {
-    Object.defineProperty(api, key, {
-      get() {
-        let snapshot: SearchStoreState | undefined;
-        const unsub = _searchWritable.subscribe(v => { snapshot = v; });
-        unsub();
-        return (snapshot as any)?.[key];
-      },
-      enumerable: true,
-      configurable: true
-    });
-  }
+function _createSearchStore(): SearchStoreApi {
+  // Function call: returns fresh sync snapshot from kernel
+  const fn = (() => ({
+    ...INITIAL_SEARCH_STATE,
+    query: appState.currentSearchSummary?.query ?? '',
+    results: (appState.currentSearchSummary?.resultIndices as any) ?? [],
+    activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null,
+    summary: appState.currentSearchSummary ? { ...$state.snapshot(appState.currentSearchSummary) } : null,
+    status: appState.searchStatus,
+    hasQuery: (appState.currentSearchSummary?.query ?? '').length > 0,
+    resultsRendered: (appState.currentSearchSummary?.resultIndices as any)?.length > 0,
+    requestSequence: appState.searchRequestSequence,
+    anchorIndex: appState.searchAnchorIndex,
+    previewIndex: appState.searchPreviewIndex,
+    glowIndices: $state.snapshot(appState.searchGlowIndices),
+    glowTopIndex: appState.searchGlowTopIndex,
+    glowActive: appState.searchGlowActive,
+    currentEmptyQuery: appState.currentEmptyQuery,
+    focusTransitionToken: appState.searchFocusTransitionToken,
+    trailCue: appState.semanticTrailCue as any,
+    isCompactViewport: appState.isCompactViewport,
+    semanticGuideRequestSequence: appState.semanticGuideRequestSequence,
+    currentSemanticGuide: appState.currentSemanticGuide as string | null,
+    summaryCardTypeToken: appState.summaryCardTypeToken
+  })) as unknown as SearchStoreApi;
 
-  return api as unknown as SearchStoreApi;
+  fn.subscribe = _searchWritable.subscribe as any;
+  fn.update = _searchWritable.update as any;
+  fn.set = _searchWritable.set as any;
+
+  return fn;
 }
 
 /** Single reactive instance of the search state. */
@@ -162,260 +176,165 @@ export const searchStore: SearchStoreApi = _createSearchStore();
 /** Backwards-compatible alias. */
 export const searchState: SearchStoreApi = searchStore;
 
-/** Visible count of search results (for "Show more" pagination). */
-const _searchVisibleCountWritable = writable(10);
-export const searchVisibleCount = () => get(_searchVisibleCountWritable);
-export const setSearchVisibleCount = (count: number) => { _searchVisibleCountWritable.set(count); };
-
 // ── Derived Getters ──────────────────────────────────────────────────────────
 
-export const hasResults = () => get(_searchWritable).results.length > 0;
-export const activeResult = () => {
-  const state = get(_searchWritable);
-  return state.results.find((r: SearchResult) => r.id === state.activeResultId) ?? null;
-};
-export const isSearching = () => get(_searchWritable).status === 'searching';
-export const searchQuery = () => get(_searchWritable).query;
+export const searchQuery = () => appState.currentSearchSummary?.query ?? '';
+export const searchStatus = () => appState.searchStatus;
+export const searchResults = () => appState.currentSearchSummary?.resultIndices ?? [];
+export const hasSearchQuery = () => (appState.currentSearchSummary?.query ?? '').length > 0;
+export const hasResults = () => (appState.currentSearchSummary?.resultIndices?.length ?? 0) > 0;
+export const isSearching = () => appState.searchStatus === 'searching';
+export const searchSummary = () => appState.currentSearchSummary;
 
-export function searchStatus(): SearchStatus {
-  const state = get(_searchWritable);
-  if (state.status !== 'idle') return state.status;
+/** Returns the current search summary, or null. */
+export function getSearchSummary(): SearchSummary | null {
+  if (appState.currentSearchSummary) return appState.currentSearchSummary as SearchSummary;
   const testState = testCompatStore();
-  if (testState.loadingPhase === 'searching') return 'searching';
-  if (testState.loadingPhase === 'error') return 'error';
-  if (testState.loadingPhase === 'empty') return 'empty';
-  return 'idle';
+  // @ts-ignore
+  return (testState?.searchState?.summary as SearchSummary) ?? null;
 }
 
-export function searchSummary(): SearchSummary | null {
-  const state = get(_searchWritable);
-  if (state.summary) return state.summary;
-  const testState = testCompatStore();
-  if (testState.loadingPhase === 'results') {
-    return { query: '', resultCount: 0, resultIndices: [], topScore: 0, anchorIndex: null, summaryType: 'semantic' };
-  }
-  return null;
-}
+// ── Actions ──────────────────────────────────────────────────────────────────
 
-export const searchAnchorIndex = () => get(_searchWritable).anchorIndex;
-export const searchGlowActive = () => get(_searchWritable).glowActive;
-
-// ── Query Validation ─────────────────────────────────────────────────────────
-
-/** Validate a search query. Returns null if valid, or an error message. */
-export function validateSearchQuery(query: string): string | null {
-  const trimmed = query.trim();
-  if (trimmed.length === 0) return null;
-  if (trimmed.length < MIN_QUERY_LENGTH) return `Type at least ${MIN_QUERY_LENGTH} characters to search`;
-  if (trimmed.length > MAX_QUERY_LENGTH) return 'Search query is too long. Try a shorter phrase.';
-  return null;
-}
-
-// ── Actions: Query ───────────────────────────────────────────────────────────
-
-/** Set the search query string. */
 export function setSearchQuery(query: string): void {
-  _searchWritable.update(s => ({ ...s, query, hasQuery: query.length > 0 }));
+  appState.withMutation(() => {
+    if (!appState.currentSearchSummary) {
+      appState.currentSearchSummary = {
+        query: '', totalMatches: 0, totalSemanticMatches: 0, visibleMatches: 0,
+        resultCount: 0, topScore: 0, anchorIndex: null, topIndex: null,
+        resultIndices: [], summaryType: 'text'
+      };
+    }
+    appState.currentSearchSummary.query = query;
+  });
 }
 
-// ── Actions: Results ─────────────────────────────────────────────────────────
-
-/** Set search results. */
-export function setSearchResults(results: readonly SearchResult[]): void {
-  const hasResults = results.length > 0;
-  _searchWritable.update(s => ({ ...s, results, status: hasResults ? 'results' : 'empty', resultsRendered: hasResults }));
-}
-
-/** Set the search status. */
 export function setSearchStatus(status: SearchStatus): void {
-  _searchWritable.update(s => ({ ...s, status }));
+  appState.withMutation(() => { appState.searchStatus = status; });
 }
 
-/** Set the active (selected) result. */
-export function setActiveResult(id: string | null): void {
-  _searchWritable.update(s => ({ ...s, activeResultId: id }));
-}
-
-/** Set the search summary. */
 export function setSearchSummary(summary: SearchSummary | null): void {
-  _searchWritable.update(s => ({ ...s, summary, status: summary ? 'results' : s.status }));
+  appState.withMutation(() => {
+    appState.currentSearchSummary = summary as any;
+    if (summary) appState.searchStatus = 'results';
+  });
 }
 
-// ── Actions: Glow ────────────────────────────────────────────────────────────
-
-/** Set the glow indices and activate search glow. */
-export function setSearchGlow(indices: number[], topIndex: number | null = null): void {
-  _searchWritable.update(s => ({
-    ...s,
-    glowIndices: new Set(indices),
-    glowTopIndex: topIndex ?? indices[0] ?? null,
-    glowActive: indices.length > 0
-  }));
+export function setAnchorIndex(index: number | null): void {
+  appState.withMutation(() => { appState.searchAnchorIndex = index; });
 }
 
-/** Clear search glow. */
+export function setPreviewIndex(index: number | null): void {
+  appState.withMutation(() => { appState.searchPreviewIndex = index; });
+}
+
+export function setGlowIndices(indices: Set<number>): void {
+  appState.withMutation(() => { appState.searchGlowIndices = indices; });
+}
+
+export function setGlowActive(active: boolean): void {
+  appState.withMutation(() => { appState.searchGlowActive = active; });
+}
+
+export function setSearchGlow(indices: readonly number[], topIndex: number | null = indices[0] ?? null): void {
+  appState.withMutation(() => {
+    appState.searchGlowIndices = new Set(indices);
+    appState.searchGlowTopIndex = topIndex;
+    appState.searchGlowActive = indices.length > 0;
+  });
+}
+
 export function clearSearchGlow(): void {
-  _searchWritable.update(s => ({ ...s, glowIndices: new Set(), glowTopIndex: null, glowActive: false }));
+  appState.withMutation(() => {
+    appState.searchGlowIndices = new Set();
+    appState.searchGlowTopIndex = null;
+    appState.searchGlowActive = false;
+  });
 }
 
-// ── Actions: Preview ─────────────────────────────────────────────────────────
-
-/** Set the preview index (hovered result). */
-export function setSearchPreview(index: number | null): void {
-  _searchWritable.update(s => ({ ...s, previewIndex: index }));
-}
-
-// ── Actions: Trail Cue ───────────────────────────────────────────────────────
-
-/** Set the semantic trail cue state. */
 export function setTrailCue(cue: SearchStoreState['trailCue']): void {
-  _searchWritable.update(s => ({ ...s, trailCue: cue }));
-
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.semanticTrailCue = cue;
-  }
+  appState.withMutation(() => { appState.semanticTrailCue = cue; });
 }
 
-// ── Actions: Request Lifecycle ───────────────────────────────────────────────
-
-/** Increment the request sequence (cancels stale requests). */
 export function incrementRequestSequence(): number {
-  let result = 0;
-  _searchWritable.update(s => {
-    const next = s.requestSequence + 1;
-    result = next;
-    return { ...s, requestSequence: next };
+  let next = 0;
+  appState.withMutation(() => {
+    appState.searchRequestSequence += 1;
+    next = appState.searchRequestSequence;
   });
-  return result;
+  return next;
 }
 
-/** Check if the given sequence is still current. */
 export function isRequestCurrent(sequence: number): boolean {
-  return get(_searchWritable).requestSequence === sequence;
+  return appState.searchRequestSequence === sequence;
 }
 
-/** Increment the focus transition token. */
 export function incrementFocusTransitionToken(): number {
-  let result = 0;
-  _searchWritable.update(s => {
-    const next = s.focusTransitionToken + 1;
-    result = next;
-    return { ...s, focusTransitionToken: next };
+  let next = 0;
+  appState.withMutation(() => {
+    appState.searchFocusTransitionToken += 1;
+    next = appState.searchFocusTransitionToken;
   });
-  return result;
+  return next;
 }
 
-// ── Actions: Semantic Guide ──────────────────────────────────────────────────
-
-/** Set the current semantic guide text. */
-export function setSemanticGuide(guide: string | null): void {
-  _searchWritable.update(s => ({
-    ...s,
-    currentSemanticGuide: guide,
-    semanticGuideRequestSequence: s.semanticGuideRequestSequence + 1
-  }));
+export function setSemanticGuide(text: string | null): void {
+  appState.withMutation(() => { appState.currentSemanticGuide = text; });
 }
 
-// ── Actions: Degraded State ──────────────────────────────────────────────────
-
-/** Set the search as degraded (API failure). */
-export function setDegraded(degraded: boolean): void {
-  _searchWritable.update(s => ({ ...s, degraded }));
+export function setCompactViewport(value: boolean): void {
+  appState.withMutation(() => { appState.isCompactViewport = value; });
 }
 
-// ── Actions: Compact Viewport ────────────────────────────────────────────────
-
-/** Set whether the search viewport is compact. */
-export function setCompactViewport(compact: boolean): void {
-  _searchWritable.update(s => ({ ...s, isCompactViewport: compact }));
+export function bumpSummaryCardTypeToken(): number {
+  let next = 0;
+  appState.withMutation(() => {
+    appState.summaryCardTypeToken += 1;
+    next = appState.summaryCardTypeToken;
+  });
+  return next;
 }
 
-// ── Actions: Summary Card ────────────────────────────────────────────────────
-
-/** Bump the summary card type token (triggers re-render). */
-export function bumpSummaryCardTypeToken(): void {
-  _searchWritable.update(s => ({ ...s, summaryCardTypeToken: s.summaryCardTypeToken + 1 }));
-}
-
-// ── Boot-time Search Action ──────────────────────────────────────────────────
-
-/**
- * Trigger a search from URL params or boot-time hydration.
- * Populates the search store with results so downstream components
- * (SearchResults, triggers.ts, MapSummary) can react.
- *
- * @param query   The raw search query string.
- * @param signal  Optional AbortSignal for cancellation.
- */
-export async function runSearch(
-  query: string,
-  signal?: AbortSignal
-): Promise<void> {
-  const trimmed = query.trim();
-  if (trimmed.length < MIN_QUERY_LENGTH) return;
-
-  setSearchQuery(trimmed);
-  setSearchStatus('searching');
-  dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' });
-
-  try {
-    const abortSignal = signal ?? AbortSignal.timeout(8000);
-    const results = await performSearch(trimmed, abortSignal);
-    setSearchResults(results);
-  } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') return;
-    setSearchStatus('error');
-  }
-}
-
-// ── Full Clear ───────────────────────────────────────────────────────────────
-
-/** Clear all search state (full reset). */
 export function clearSearch(): void {
-  _searchWritable.set({
-    ...INITIAL_SEARCH_STATE,
-    requestSequence: 0,
-    anchorIndex: null,
-    previewIndex: null,
-    glowIndices: new Set(),
-    glowTopIndex: null,
-    glowActive: false,
-    currentEmptyQuery: null,
-    focusTransitionToken: 0,
-    trailCue: 'idle',
-    isCompactViewport: false,
-    semanticGuideRequestSequence: 0,
-    currentSemanticGuide: null,
-    summaryCardTypeToken: 0
+  appState.withMutation(() => {
+    appState.currentSearchSummary = null;
+    appState.searchStatus = 'idle';
+    appState.searchAnchorIndex = null;
+    appState.searchPreviewIndex = null;
+    appState.searchGlowIndices = new Set();
+    appState.searchGlowActive = false;
   });
 }
 
-/** Clear search results but preserve the query. */
-export function clearSearchResults(): void {
-  _searchWritable.update(s => ({
-    ...s,
-    results: [],
-    activeResultId: null,
-    summary: null,
-    status: 'idle',
-    resultsRendered: false,
-    anchorIndex: null,
-    previewIndex: null,
-    glowIndices: new Set(),
-    glowTopIndex: null,
-    glowActive: false
-  }));
+export function setActiveResult(id: string | null): void {
+  appState.withMutation(() => {
+    appState.navState.focusedIndex = id ? Number(id) : null;
+  });
 }
 
-// ── Semantic Search Service Helpers ──────────────────────────────────────────
+export function setSearchVisibleCount(n: number): void {
+  // Compatibility placeholder
+}
 
-/**
- * Map raw semantic search service results to typed SearchResult[].
- * Pure function — no store dependency.
- */
-export function mapSemanticSearchResults(
+export function setSearchResults(results: SearchResult[]): void {
+  appState.withMutation(() => {
+    if (!appState.currentSearchSummary) {
+      appState.currentSearchSummary = {
+        query: '', totalMatches: 0, totalSemanticMatches: 0, visibleMatches: 0,
+        resultCount: 0, topScore: 0, anchorIndex: null, topIndex: null,
+        resultIndices: [], summaryType: 'text'
+      };
+    }
+    appState.currentSearchSummary.resultIndices = results.map(r => r.index);
+    appState.currentSearchSummary.resultCount = results.length;
+    appState.searchStatus = 'results';
+  });
+}
+
+/** Utility to clean and cast search results from a service payload. */
+export function castSearchResults(
   serviceResults: Array<{
-    index: number;
+    index: number | string;
     name?: string;
     score?: number;
     category?: string;
@@ -432,29 +351,4 @@ export function mapSemanticSearchResults(
     category: String(r.category ?? ''),
     snippet: String(r.snippet ?? '')
   }));
-}
-
-/**
- * Compute the total matches from a service payload.
- * Pure function — no store dependency.
- */
-export function getSemanticSearchTotalMatches(
-  payload: { total?: number; count?: number } | null,
-  results: readonly SearchResult[]
-): number {
-  if (payload?.total !== undefined) return Number(payload.total);
-  if (payload?.count !== undefined) return Number(payload.count);
-  return results.length;
-}
-
-/**
- * Extract service results from the payload.
- * Pure function — no store dependency.
- */
-export function getSemanticSearchServiceResults(
-  payload: { results?: unknown[]; data?: unknown[] } | null
-): Array<Record<string, unknown>> {
-  if (!payload) return [];
-  const raw = (payload.results ?? payload.data ?? []) as unknown[];
-  return raw.filter(Boolean) as Array<Record<string, unknown>>;
 }

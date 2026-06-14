@@ -7,7 +7,7 @@
 
 // ── Navigation State ──────────────────────────────────────────────────────────
 
-export type NavMode = 'overview' | 'search' | 'trail' | 'focus' | 'inside';
+export type NavMode = 'overview' | 'search' | 'trail' | 'focus' | 'inside' | 'map' | 'bridge';
 
 export type PanelSurface =
   | 'idle'
@@ -19,7 +19,10 @@ export type PanelSurface =
   | 'map-focus'
   | 'map-focus-search'
   | 'inside'
-  | 'thread-inspect';
+  | 'thread-inspect'
+  | 'walking'
+  | 'arriving'
+  | 'settling';
 
 export interface NavState {
   mode: NavMode;
@@ -32,7 +35,7 @@ export interface NavState {
   trailDepth: number;
   walkHistoryIndices: readonly number[];
   lastTraversalReason: string | null;
-  threadCandidates: readonly number[];
+  threadCandidates: any[]; // Matches kernel and engine
   threadReasonByIndex: Map<number, string>;
   threadSource: string;
   focusPocketIndices: readonly number[];
@@ -110,10 +113,14 @@ export interface SearchResultPoint {
 
 export interface SearchSummary {
   query: string;
+  totalMatches: number;
+  totalSemanticMatches: number;
+  visibleMatches: number;
   resultCount: number;
-  resultIndices: readonly number[];
   topScore: number;
   anchorIndex: number | null;
+  topIndex: number | null;
+  resultIndices: number[];
   summaryType: 'semantic' | 'text' | 'mixed';
 }
 
@@ -129,11 +136,19 @@ export type JourneyPhase =
   | 'thread-inspect'
   | 'walking'
   | 'arriving'
-  | 'settling';
+  | 'settling'
+  | 'trail'
+  | 'bridge';
 
 export interface JourneyState {
-  phase: JourneyPhase;
+  phase: NavMode;
   trail: readonly TrailStop[];
+  cursor: number;
+  depth: number;
+  threadCandidates: readonly number[];
+  threadReasonByIndex: Map<number, string>;
+  threadSource: string;
+  lastTraversalReason: string | null;
   selectedId: string | null;
   selectedStopIndex: number | null;
   neighbors: readonly NeighborEntry[];
@@ -143,9 +158,9 @@ export interface JourneyState {
 
 export interface TrailStop {
   index: number;
-  name: string;
-  reason: string;
-  visitedAt: number | null;
+  name?: string;
+  reason?: string;
+  visitedAt?: number | null;
 }
 
 export interface NeighborEntry {
@@ -188,7 +203,21 @@ export interface CompassState {
 export type FocusTransitionMode = 'idle' | 'entering' | 'settling' | 'inside' | 'exiting';
 
 export interface FocusState {
-  pocketNodes: readonly FocusPocketNode[];
+  pocketNodes: readonly any[];
+  pocketMeta: FocusPocketMeta | null;
+  pocketRoleByIndex: Map<number, string>;
+  pocketMotionByIndex: Map<number, any>;
+  pocketTransitionStartedAt: number;
+  nodesAreSettling: boolean;
+  semanticDiveMode: boolean;
+  strandContinuityPhase: 'idle' | 'exploring' | 'arrived' | 'departing';
+  inspectedStrandIndex: number | null;
+  pinnedThreadIndex: number | null;
+  threadInspectorPointerInside: boolean;
+  canvasThreadInspectionClearTimer: ReturnType<typeof setTimeout> | null;
+  selectedBusiness: any | null;
+  infoPanelOpen: boolean;
+  pocketListVisible: boolean;
   settling: boolean;
   transitionMode: FocusTransitionMode;
   transitionStartedAt: number;
@@ -289,10 +318,6 @@ export interface ViewportState {
   isCompact: boolean;
   isMobile: boolean;
   isLandscape: boolean;
-  // Derived viewport shapes (computed by syncViewport). Exposed on the
-  // store so reactive consumers can read them via $viewport.* in Svelte
-  // templates / $derived / $effect (calling isUltraCompactPortrait() as a
-  // function getter is a snapshot read and is NOT tracked in runes mode).
   isCompactLandscape: boolean;
   isUltraCompactPortrait: boolean;
 }

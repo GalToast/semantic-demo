@@ -5,7 +5,9 @@
  * Manages status, city, and contact-feature filters for the business network.
  * Canonical owner for filter ↔ state sync.
  */
-import { writable, derived, type Writable, type Readable } from 'svelte/store';
+import { derived, type Readable } from 'svelte/store';
+import { toStore } from 'svelte/store';
+import { appState } from '@lib/state/app.svelte.ts';
 import type { ActiveFilters } from '@lib/types/state';
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -21,19 +23,31 @@ const INITIAL_FILTERS: ActiveFilters = {
 // ── Core Stores ───────────────────────────────────────────────────────────────
 
 /** Version counter — incremented on every filter change. */
-export const filterVersion: Writable<number> = writable(0);
+export const filterVersion = toStore(
+  () => appState.filterVersion,
+  (v) => appState.withMutation(() => { appState.filterVersion = v; })
+);
 
 /** Color recompute version — incremented when cluster colors should recalc. */
-export const filterColorVersion: Writable<number> = writable(0);
+export const filterColorVersion = toStore(
+  () => appState.filterColorVersion,
+  (v) => appState.withMutation(() => { appState.filterColorVersion = v; })
+);
 
 /** Active cluster filter (null = show all clusters). */
-export const activeClusterFilter: Writable<string | null> = writable(null);
+export const activeClusterFilter = toStore(
+  () => appState.activeClusterFilter !== null ? String(appState.activeClusterFilter) : null,
+  (v) => appState.withMutation(() => { appState.activeClusterFilter = v !== null ? Number(v) : null; })
+);
 
 /** Alias for compatibility with legacy SearchResultsList. */
 export const activeClusterFilterStore = activeClusterFilter;
 
 /** Active filters — the single source of truth for filter state. */
-export const filterState: Writable<ActiveFilters> = writable({ ...INITIAL_FILTERS });
+export const filterState = toStore(
+  () => ({ ...appState.activeFilters }),
+  (val) => appState.withMutation(() => { appState.activeFilters = val; })
+);
 
 // ── Derived Convenience Stores ─────────────────────────────────────────────────
 

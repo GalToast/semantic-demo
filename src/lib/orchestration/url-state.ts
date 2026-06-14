@@ -18,6 +18,7 @@ import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket';
 import { overwriteActiveFilters } from '@lib/stores/filter.svelte';
 import { showExperienceToast } from '@lib/orchestration/toast';
+import { appState } from '@lib/state/app.svelte';
 
 /**
  * NavState extended with the legacy `activeStoryPrompt` field that lives in
@@ -481,6 +482,41 @@ function preserveDomForcedFocusSearchSurface(): void {
 async function _restoreAnchorFromParams(anchorId: string): Promise<void> {
   const numericId = Number(anchorId);
   if (!Number.isFinite(numericId)) return;
+
+  // A3-3: Validate the anchor index against the loaded dataset.
+  // Out-of-range, negative, or dataset-not-yet-loaded indices fall back to
+  // overview so the app never hangs in a broken focus state.
+  const pointCount = appState?.points?.length ?? 0;
+  if (pointCount === 0 || numericId < 0 || numericId >= pointCount) {
+    debugWarn(
+      '[url-state] A3-3: anchor', numericId,
+      'out of range (dataset has', pointCount, 'points) — falling back to overview'
+    );
+    showExperienceToast(
+      'Anchor not available',
+      `Business #${numericId} isn't available in this dataset.`
+    );
+    // Return to overview mode so the app is usable.
+    navStore.update((s) => ({
+      ...s,
+      mode: 'overview',
+      focusedIndex: null,
+      surface: 'idle',
+    }));
+    // Strip the invalid ?anchor= from the URL so refresh doesn't repeat.
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('anchor');
+      window.history.replaceState(
+        window.history.state ?? {},
+        '',
+        `${url.pathname}${url.search}`
+      );
+    } catch {
+      // URL rewrite is best-effort
+    }
+    return;
+  }
 
   publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: numericId });
   try {

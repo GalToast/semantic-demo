@@ -13,6 +13,7 @@ export default defineConfig({
   // Mirror the @lib / @components / @ aliases from vite.config.ts so active
   // Svelte/TS unit tests resolve the same module graph as the app.
   resolve: {
+    conditions: ['browser', 'svelte'],
     alias: {
       '@': SRC_DIR,
       '@lib': resolve(SRC_DIR, 'lib'),

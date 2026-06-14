@@ -18,6 +18,8 @@
     trail: 'Focused path of related business entities.',
     focus: 'Living records with high relationship potential.',
     inside: 'Immersive exploration of local neighborhoods.',
+    map: 'Geographic map view of the county.',
+    bridge: 'Transitioning between navigation states.'
   };
 
   interface ModeOption {

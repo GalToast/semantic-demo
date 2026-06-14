@@ -101,13 +101,14 @@ describe('JourneyChrome idle-hide guard (UI-1)', () => {
     expect(following).toContain('$derived');
   });
 
-  it('hides when both journey.phase and compass.phase are idle', () => {
+  it('hides when both journey.phase and compass.phase are idle/overview', () => {
     const state = journeyStore();
-    expect(state.phase).toBe('idle');
+    // In the consolidated state, mode defaults to 'overview'
+    expect(state.phase).toBe('overview');
     expect(state.compass?.phase).toBe('idle');
 
     const isJourneyIdle =
-      (state.phase ?? 'idle') === 'idle' &&
+      (state.phase === 'idle' || state.phase === 'overview') &&
       (state.compass?.phase ?? 'idle') === 'idle';
     expect(isJourneyIdle).toBe(true);
   });
@@ -117,7 +118,7 @@ describe('JourneyChrome idle-hide guard (UI-1)', () => {
     const state = journeyStore();
 
     const isJourneyIdle =
-      (state.phase ?? 'idle') === 'idle' &&
+      (state.phase === 'idle' || state.phase === 'overview') &&
       (state.compass?.phase ?? 'idle') === 'idle';
     expect(isJourneyIdle).toBe(false);
   });
@@ -130,7 +131,7 @@ describe('JourneyChrome idle-hide guard (UI-1)', () => {
     const state = journeyStore();
 
     const isJourneyIdle =
-      (state.phase ?? 'idle') === 'idle' &&
+      (state.phase === 'idle' || state.phase === 'overview') &&
       (state.compass?.phase ?? 'idle') === 'idle';
     expect(isJourneyIdle).toBe(false);
   });
@@ -144,7 +145,7 @@ describe('JourneyChrome idle-hide guard (UI-1)', () => {
     const state = journeyStore();
 
     const isJourneyIdle =
-      (state.phase ?? 'idle') === 'idle' &&
+      (state.phase === 'idle' || state.phase === 'overview') &&
       (state.compass?.phase ?? 'idle') === 'idle';
     expect(isJourneyIdle).toBe(false);
   });

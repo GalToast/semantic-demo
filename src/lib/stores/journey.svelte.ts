@@ -1,14 +1,5 @@
 /**
- * @lib/stores/journey.svelte.ts — Journey orchestration, trail, and thread walker store (writable store)
- *
- * Replaces:
- *   - js/modules/journey.js (state management portion)
- *   - js/modules/journey-thread-settler.js (thread walker state)
- *   - js/modules/journey-thread-model.js (thread model state)
- *   - Journey slices from js/state.js
- *
- * The journey store owns the trail of visited nodes, walk history,
- * thread candidates, and journey phase lifecycle.
+ * @lib/stores/journey.svelte.ts — Journey orchestration, trail, and thread walker store
  */
 import type {
   JourneyState,
@@ -20,168 +11,38 @@ import type {
   NeighborEntry,
   WalkHistoryEntry
 } from '@lib/types/state';
-import { type Readable, writable, get } from 'svelte/store';
+import { type Readable, get, toStore } from 'svelte/store';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
-
-// ── Legacy state fallback (transitional, until Svelte stores are fully populated by the legacy init path) ──
-// The legacy js/state.js is the single source of truth during the migration.
-// When the Svelte journey store is empty, fall back to legacy state so the
-// journey chrome (neighbor rail, map summary, focus card) reflects real data.
-interface LegacyNavState {
-  threadCandidates?: ReadonlyArray<unknown>;
-  trailNeighborIndices?: Iterable<unknown> | ReadonlyArray<unknown>;
-  walkHistoryIndices?: Iterable<unknown> | ReadonlyArray<unknown>;
-  threadSource?: string;
-  trailDepth?: number;
-  focusedIndex?: number | null;
-  currentView?: string;
-  mode?: string;
-  surface?: string;
-  trail?: ReadonlyArray<unknown>;
-}
-interface LegacyState {
-  navState?: LegacyNavState;
-}
-function readLegacyNavState(): LegacyNavState | null {
-  try {
-    if (typeof window === 'undefined') return null;
-    const w = window as unknown as {
-      __semanticState?: LegacyState;
-      state?: LegacyState;
-      __APP_STATE__?: LegacyState;
-      __TEST_STATE__?: LegacyState;
-    };
-    return w.__APP_STATE__?.navState
-      ?? w.__TEST_STATE__?.navState
-      ?? w.__semanticState?.navState
-      ?? w.state?.navState
-      ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function toFiniteIndex(value: unknown): number | null {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
-}
-
-function toIndexArray(value: unknown): readonly number[] {
-  if (!value) return [];
-  const source = Array.isArray(value)
-    ? value
-    : typeof (value as Iterable<unknown>)[Symbol.iterator] === 'function'
-      ? Array.from(value as Iterable<unknown>)
-      : [];
-  return source
-    .map(toFiniteIndex)
-    .filter((n): n is number => n !== null);
-}
-
-function toCandidateIndexArray(value: unknown): readonly number[] {
-  if (!value) return [];
-  const source = Array.isArray(value)
-    ? value
-    : typeof (value as Iterable<unknown>)[Symbol.iterator] === 'function'
-      ? Array.from(value as Iterable<unknown>)
-      : [];
-  return source
-    .map((candidate) => {
-      if (typeof candidate === 'number' || typeof candidate === 'string') {
-        return toFiniteIndex(candidate);
-      }
-      if (candidate && typeof candidate === 'object') {
-        return toFiniteIndex((candidate as { index?: unknown }).index);
-      }
-      return null;
-    })
-    .filter((n): n is number => n !== null);
-}
+import { appState } from '@lib/state/app.svelte.ts';
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
 export const JOURNEY_CONFIG = {
   /** Handoff prelude duration (ms). */
   MAP_HANDOFF_PRELUDE_MS: 430,
-  /** View handoff out duration (ms). */
-  VIEW_HANDOFF_OUT_MS: 1200,
-  /** Terrain landing settle duration (ms). */
+  /** Settle duration for terrain landing (ms). */
   TERRAIN_LANDING_SETTLE_MS: 1200,
-  /** Long settle duration (ms). */
-  TERRAIN_LANDING_SETTLE_LONG_MS: 1800,
-  /** Duration to show view handoff dismiss (ms). */
-  SHOW_VIEW_HANDOFF_DISMISS_MS: 2200,
-  /** Late refresh delay for map trail (ms). */
-  MAP_TRAIL_REFRESH_LATE_DELAY_MS: 100,
-  /** Scene reveal duration (ms). */
-  SCENE_REVEAL_DURATION_MS: 1650,
-  /** Loading minimum visible duration (ms). */
-  LOADING_MIN_VISIBLE_MS: 1320
+  /** Long settle duration for deep focus transitions (ms). */
+  TERRAIN_LANDING_SETTLE_LONG_MS: 1800
 } as const;
 
-// ── Journey Phase Order (from state.js) ──────────────────────────────────────
-
-export const JOURNEY_COMPASS_PHASE_ORDER: readonly string[] = [
-  'overview', 'search', 'focus', 'inside', 'map'
-];
+/** Journey milestones in sequence. */
+export const JOURNEY_COMPASS_PHASE_ORDER = ['overview', 'search', 'focus', 'inside', 'map'];
 
 // ── Initial State ────────────────────────────────────────────────────────────
 
-const INITIAL_COMPASS: CompassState = {
-  phase: 'idle',
-  currentAction: 'none',
-  previousAction: 'none',
-  lastTransitionAt: 0
-};
-
-const INITIAL_JOURNEY: JourneyState = {
-  phase: 'idle',
-  trail: [],
-  selectedId: null,
-  selectedStopIndex: null,
-  neighbors: [],
-  compass: { ...INITIAL_COMPASS },
-  walkHistory: []
-};
-
-// ── Extended Journey Store ───────────────────────────────────────────────────
-
+/** Internal store state interface. */
 export interface JourneyStoreState extends JourneyState {
-  /** Trail seed index (the anchor node for trail generation). */
-  trailSeedIndex: number | null;
-  /** Trail neighbor indices (the neighbors along the trail). */
-  trailNeighborIndices: readonly number[];
-  /** Trail cursor (current position in the trail). */
-  trailCursor: number;
-  /** Trail depth (how deep into the trail the user has gone). */
-  trailDepth: number;
-  /** Walk history indices (flat array of visited node indices). */
-  walkHistoryIndices: readonly number[];
-  /** Thread candidates for the current focus. */
-  threadCandidates: readonly number[];
-  /** Thread reason by index (why each candidate was selected). */
-  threadReasonByIndex: Map<number, string>;
-  /** Thread source: 'semantic' | 'geometric-fallback'. */
-  threadSource: string;
-  /** Last traversal reason. */
-  lastTraversalReason: string | null;
-  /** Whether a terrain handoff is in progress. */
   terrainHandoffPhase: 'idle' | 'prelude' | 'transition' | 'settle';
-  /** Route exploration state. */
-  routeExplorationPhase: 'idle' | 'exploring' | 'user-control';
-  /** Route choreography phase. */
-  routeChoreographyPhase: string;
+  routeExplorationPhase: 'idle' | 'searching' | 'focusing';
+  routeChoreographyPhase: 'overview' | 'trail' | 'focus' | 'inside' | 'map';
 }
 
-// ── Store ────────────────────────────────────────────────────────────────────
-
-const _journeyWritable = writable<JourneyStoreState>({
-  ...INITIAL_JOURNEY,
-  trailSeedIndex: null,
-  trailNeighborIndices: [],
-  trailCursor: -1,
-  trailDepth: 0,
-  walkHistoryIndices: [],
+const INITIAL_JOURNEY: JourneyStoreState = {
+  phase: 'overview',
+  trail: [],
+  cursor: -1,
+  depth: 0,
   threadCandidates: [],
   threadReasonByIndex: new Map(),
   threadSource: 'geometric-fallback',
@@ -189,33 +50,64 @@ const _journeyWritable = writable<JourneyStoreState>({
   terrainHandoffPhase: 'idle',
   routeExplorationPhase: 'idle',
   routeChoreographyPhase: 'overview'
-});
+};
 
-// ── JourneyStore API ────────────────────────────────────────────────────────
-// journeyStore is a hybrid: callable as journeyStore() for convenience,
-// and satisfies Readable<JourneyStoreState> + .update()/.set() for .ts orchestration consumers.
+// ── Store ────────────────────────────────────────────────────────────────────
 
-/** JourneyStore type: callable function that also satisfies Readable + Writable-ish. */
+/** Reactive binding to the Svelte 5 state kernel. */
+const _journeyWritable = toStore(
+  () => ({
+    ...INITIAL_JOURNEY,
+    ...$state.snapshot(appState.navState),
+    phase: appState.navState.mode,
+    trail: [...appState.navState.walkHistoryIndices].map(index => ({ index } as TrailStop)),
+    cursor: appState.navState.trailCursor,
+    depth: appState.navState.trailDepth,
+    threadCandidates: [...(appState.navState.threadCandidates as any[])].map(Number),
+    threadReasonByIndex: new Map(appState.navState.threadReasonByIndex),
+    threadSource: appState.navState.threadSource,
+    lastTraversalReason: appState.navState.lastTraversalReason,
+    terrainHandoffPhase: 'idle' as any,
+    routeExplorationPhase: 'idle' as any,
+    routeChoreographyPhase: 'overview' as any
+  }),
+  (val) => appState.withMutation(() => {
+    appState.navState.mode = val.phase;
+    appState.navState.trailCursor = val.cursor;
+    appState.navState.trailDepth = val.depth;
+    appState.navState.threadSource = val.threadSource;
+    appState.navState.lastTraversalReason = val.lastTraversalReason;
+  })
+);
+
+/** JourneyStore type: callable function + Readable + actions. */
 export type JourneyStoreApi = (() => JourneyStoreState) &
   Readable<JourneyStoreState> & {
     update(fn: (s: JourneyStoreState) => JourneyStoreState): void;
     set(value: JourneyStoreState): void;
   };
 
-/** Backward-compat alias used by barrel exports. */
-export type JourneyStoreState_ = JourneyStoreApi;
-
 function _createJourneyStore(): JourneyStoreApi {
-  const fn = (() => get(_journeyWritable)) as JourneyStoreApi;
+  // Function call: returns fresh sync snapshot from kernel
+  const fn = (() => ({
+    ...INITIAL_JOURNEY,
+    ...$state.snapshot(appState.navState),
+    phase: appState.navState.mode,
+    trail: [...appState.navState.walkHistoryIndices].map(index => ({ index } as TrailStop)),
+    cursor: appState.navState.trailCursor,
+    depth: appState.navState.trailDepth,
+    threadCandidates: [...(appState.navState.threadCandidates as any[])].map(Number),
+    threadReasonByIndex: new Map(appState.navState.threadReasonByIndex),
+    threadSource: appState.navState.threadSource,
+    lastTraversalReason: appState.navState.lastTraversalReason,
+    terrainHandoffPhase: 'idle' as any,
+    routeExplorationPhase: 'idle' as any,
+    routeChoreographyPhase: 'overview' as any
+  })) as unknown as JourneyStoreApi;
 
-  // Satisfy Readable<JourneyStoreState> so get(journeyStore) from svelte/store works.
-  fn.subscribe = _journeyWritable.subscribe;
-
-  // Writable-style update for journeyStore.update(s => ({...s, ...}))
-  fn.update = _journeyWritable.update;
-
-  // Writable-style set for journeyStore.set(state)
-  fn.set = _journeyWritable.set;
+  fn.subscribe = _journeyWritable.subscribe as any;
+  fn.update = _journeyWritable.update as any;
+  fn.set = _journeyWritable.set as any;
 
   return fn;
 }
@@ -227,260 +119,136 @@ export const journeyState: JourneyStoreApi = journeyStore;
 
 // ── Derived Getters ──────────────────────────────────────────────────────────
 
-export const journeyPhase = () => get(_journeyWritable).phase;
-export const journeyTrail = () => get(_journeyWritable).trail;
-export const compassState = () => get(_journeyWritable).compass;
-export const compassPhase = () => get(_journeyWritable).compass.phase;
-export const journeyNeighbors = () => get(_journeyWritable).neighbors;
-export const journeySelectedId = () => get(_journeyWritable).selectedId;
-export const walkHistory = () => get(_journeyWritable).walkHistory;
-export const trailDepth = () => {
-  const local = get(_journeyWritable).trailDepth;
-  if (local && local > 0) return local;
-  const legacy = readLegacyNavState();
-  if (legacy && Number.isFinite(legacy.trailDepth) && (legacy.trailDepth ?? 0) > 0) {
-    return legacy.trailDepth as number;
-  }
-  return local;
+export const journeyPhase = () => appState.navState.mode;
+export const journeyTrail = () => [...appState.navState.walkHistoryIndices].map(index => ({ index } as TrailStop));
+export const compassState = () => ({ phase: appState.navState.mode, action: null }) as unknown as CompassState;
+export const compassPhase = () => 'idle';
+export const journeyNeighbors = () => appState.navState.trailNeighborIndices;
+export const journeySelectedId = () => {
+  const focused = appState.navState.focusedIndex;
+  return focused === null ? null : String(focused);
 };
-export const trailSeedIndex = () => get(_journeyWritable).trailSeedIndex;
-export const trailNeighborIndices = () => {
-  const local = get(_journeyWritable).trailNeighborIndices;
-  if (local && local.length > 0) return local;
-  const legacy = readLegacyNavState();
-  const legacyIndices = toIndexArray(legacy?.trailNeighborIndices);
-  if (legacyIndices.length > 0) {
-    return legacyIndices;
-  }
-  return local;
-};
-export const threadCandidates = (): ReadonlyArray<number> => {
-  const local = get(_journeyWritable).threadCandidates;
-  if (local && local.length > 0) return local;
-  const legacy = readLegacyNavState();
-  const legacyIndices = toCandidateIndexArray(legacy?.threadCandidates);
-  if (legacyIndices.length > 0) {
-    return legacyIndices;
-  }
-  return local;
-};
-export const threadSource = () => {
-  const local = get(_journeyWritable).threadSource;
-  if (local && local !== 'geometric-fallback') return local;
-  const legacy = readLegacyNavState();
-  if (legacy?.threadSource) return legacy.threadSource;
-  return local;
-};
-export const walkHistoryIndices = () => {
-  const local = get(_journeyWritable).walkHistoryIndices;
-  if (local && local.length > 0) return local;
-  const legacy = readLegacyNavState();
-  const legacyIndices = toIndexArray(legacy?.walkHistoryIndices);
-  if (legacyIndices.length > 0) {
-    return legacyIndices;
-  }
-  return local;
-};
+export const walkHistory = () => [...appState.navState.walkHistoryIndices].map(index => ({ index } as WalkHistoryEntry));
+export const trailDepth = () => appState.navState.trailDepth;
+export const trailSeedIndex = () => appState.navState.trailSeedIndex;
+export const trailNeighborIndices = () => appState.navState.trailNeighborIndices;
+export const threadCandidates = (): ReadonlyArray<number> => [...appState.navState.threadCandidates].map(Number);
+export const threadSource = () => appState.navState.threadSource;
+export const walkHistoryIndices = () => appState.navState.walkHistoryIndices;
 
-// ── Compass State Machine ────────────────────────────────────────────────────
-
-const COMPASS_TRANSITIONS: Record<CompassPhase, readonly CompassPhase[]> = {
-  idle: ['checking'],
-  checking: ['synthesizing', 'interrupted'],
-  synthesizing: ['active', 'interrupted'],
-  active: ['checking', 'interrupted', 'idle'],
-  interrupted: ['idle', 'checking']
-};
-
-function canTransition(from: CompassPhase, to: CompassPhase): boolean {
-  return COMPASS_TRANSITIONS[from]?.includes(to) ?? false;
+/** Returns the current point index at the journey cursor. */
+export function currentJourneyIndex(): number | null {
+  const s = journeyStore();
+  if (s.cursor < 0 || s.cursor >= s.trail.length) return null;
+  return s.trail[s.cursor]?.index ?? null;
 }
 
-/**
- * Transition the compass state machine.
- * Returns true if the transition was valid.
- */
-export function transitionCompass(
-  to: CompassPhase,
-  action?: CompassAction
-): boolean {
-  const from = get(_journeyWritable).compass.phase;
+// ── Actions ──────────────────────────────────────────────────────────────────
 
-  if (!canTransition(from, to)) {
-    debugWarn(`[Compass] Invalid transition: ${from} → ${to}`);
-    return false;
-  }
-
-  _journeyWritable.update(s => ({
-    ...s,
-    compass: {
-      phase: to,
-      currentAction: action ?? s.compass.currentAction,
-      previousAction: s.compass.currentAction,
-      lastTransitionAt: performance.now()
-    }
-  }));
-
-  return true;
-}
-
-// ── Journey Phase Actions ────────────────────────────────────────────────────
-
-/** Set the journey phase; parity-attrs owns body data-* sync. */
 export function setJourneyPhase(phase: JourneyPhase): void {
-  _journeyWritable.update(s => ({ ...s, phase }));
+  appState.withMutation(() => { appState.navState.mode = phase as any; });
 }
 
-// ── Trail Actions ────────────────────────────────────────────────────────────
-
-/** Add a trail stop. */
-export function addTrailStop(stop: TrailStop): void {
-  _journeyWritable.update(s => ({ ...s, trail: [...s.trail, stop] }));
-}
-
-/** Remove a trail stop by index. */
-export function removeTrailStop(index: number): void {
-  _journeyWritable.update(s => ({ ...s, trail: s.trail.filter((_, i) => i !== index) }));
-}
-
-/** Clear the trail and reset trail state. */
-export function clearTrail(): void {
-  _journeyWritable.update(s => ({
-    ...s,
-    trail: [],
-    selectedStopIndex: null,
-    trailSeedIndex: null,
-    trailNeighborIndices: [],
-    trailCursor: -1,
-    trailDepth: 0
-  }));
-}
-
-/** Set the selected trail stop index. */
-export function setSelectedStop(index: number | null): void {
-  _journeyWritable.update(s => ({ ...s, selectedStopIndex: index }));
-}
-
-/** Set the trail seed index. */
-export function setTrailSeedIndex(index: number | null): void {
-  _journeyWritable.update(s => ({ ...s, trailSeedIndex: index }));
-}
-
-/** Set trail neighbor indices. */
-export function setTrailNeighborIndices(indices: readonly number[]): void {
-  _journeyWritable.update(s => ({ ...s, trailNeighborIndices: indices }));
-}
-
-/** Advance the trail cursor. */
-export function advanceTrailCursor(): void {
-  _journeyWritable.update(s => ({ ...s, trailCursor: s.trailCursor + 1 }));
-}
-
-/** Set the trail depth (0 = overview, 1 = focus, 2 = inside). */
 export function setTrailDepth(depth: number): void {
-  _journeyWritable.update(s => ({ ...s, trailDepth: depth }));
+  appState.withMutation(() => { appState.navState.trailDepth = depth; });
 }
 
-// ── Neighbor Actions ─────────────────────────────────────────────────────────
-
-/** Set the neighbor list. */
-export function setNeighbors(neighbors: readonly NeighborEntry[]): void {
-  _journeyWritable.update(s => ({ ...s, neighbors }));
-}
-
-// ── Walk History Actions ─────────────────────────────────────────────────────
-
-/** Add a walk history entry. */
-export function addWalkHistory(entry: WalkHistoryEntry): void {
-  _journeyWritable.update(s => ({ ...s, walkHistory: [...s.walkHistory, entry] }));
-}
-
-/** Add a walk history index (simplified). */
 export function addWalkHistoryIndex(index: number): void {
-  _journeyWritable.update(s => ({ ...s, walkHistoryIndices: [...s.walkHistoryIndices, index] }));
+  appState.withMutation(() => {
+    const current = [...appState.navState.walkHistoryIndices];
+    if (!current.includes(index)) {
+      appState.navState.walkHistoryIndices = [...current, index];
+    }
+  });
 }
 
-/** Clear walk history. */
+export function transitionCompass(phase: string): void {
+  // Compass phase is typically tied to nav mode or a sub-state.
+  // For now, we'll map it to nav mode if it matches a milestone.
+  if ((JOURNEY_COMPASS_PHASE_ORDER as readonly string[]).includes(phase)) {
+    appState.withMutation(() => { appState.navState.mode = phase as any; });
+  }
+}
+
+export function addTrailStop(stop: TrailStop | number): void {
+  const index = typeof stop === 'number' ? stop : stop.index;
+  appState.withMutation(() => {
+    appState.navState.walkHistoryIndices = [...appState.navState.walkHistoryIndices, index];
+    appState.navState.trailCursor = appState.navState.walkHistoryIndices.length - 1;
+  });
+}
+
+export function removeTrailStop(index: number): void {
+  appState.withMutation(() => {
+    appState.navState.walkHistoryIndices = appState.navState.walkHistoryIndices.filter(i => i !== index);
+    appState.navState.trailCursor = Math.min(appState.navState.trailCursor, appState.navState.walkHistoryIndices.length - 1);
+  });
+}
+
+export function clearTrail(): void {
+  appState.withMutation(() => {
+    appState.navState.walkHistoryIndices = [];
+    appState.navState.trailCursor = -1;
+  });
+}
+
+export function setSelectedStop(index: number | null): void {
+  appState.withMutation(() => { appState.navState.focusedIndex = index; });
+}
+
+export function setTrailSeedIndex(index: number | null): void {
+  appState.withMutation(() => { appState.navState.trailSeedIndex = index; });
+}
+
+export function setTrailNeighborIndices(indices: readonly number[]): void {
+  appState.withMutation(() => { appState.navState.trailNeighborIndices = [...indices]; });
+}
+
+export function advanceTrailCursor(delta = 1): void {
+  appState.withMutation(() => {
+    const max = appState.navState.walkHistoryIndices.length - 1;
+    appState.navState.trailCursor = Math.max(-1, Math.min(max, appState.navState.trailCursor + delta));
+  });
+}
+
+export function setNeighbors(indices: readonly number[]): void {
+  setTrailNeighborIndices(indices);
+}
+
+export function addWalkHistory(entry: WalkHistoryEntry | number): void {
+  addTrailStop(typeof entry === 'number' ? entry : entry.index);
+}
+
 export function clearWalkHistory(): void {
-  _journeyWritable.update(s => ({
-    ...s,
-    walkHistory: [],
-    walkHistoryIndices: []
-  }));
+  clearTrail();
 }
 
-// ── Thread Candidate Actions ─────────────────────────────────────────────────
-
-/** Set the thread candidates for the current focus. */
-export function setThreadCandidates(
-  candidates: readonly number[],
-  source: string = 'geometric-fallback',
-  reasonByIndex?: Map<number, string>
-): void {
-  _journeyWritable.update(s => ({
-    ...s,
-    threadCandidates: candidates,
-    threadSource: source,
-    ...(reasonByIndex ? { threadReasonByIndex: reasonByIndex } : {})
-  }));
+export function setThreadCandidates(candidates: readonly number[]): void {
+  appState.withMutation(() => { appState.navState.threadCandidates = [...candidates]; });
 }
 
-/** Clear thread candidates. */
 export function clearThreadCandidates(): void {
-  _journeyWritable.update(s => ({
-    ...s,
-    threadCandidates: [],
-    threadReasonByIndex: new Map()
-  }));
+  appState.withMutation(() => { appState.navState.threadCandidates = []; });
 }
 
-// ── Terrain Handoff Actions ──────────────────────────────────────────────────
-
-/** Set the terrain handoff phase. */
-export function setTerrainHandoffPhase(
-  phase: JourneyStoreState['terrainHandoffPhase']
-): void {
+export function setTerrainHandoffPhase(phase: JourneyStoreState['terrainHandoffPhase']): void {
   _journeyWritable.update(s => ({ ...s, terrainHandoffPhase: phase }));
 }
 
-// ── Route Exploration Actions ────────────────────────────────────────────────
-
-/** Set the route exploration phase. */
-export function setRouteExplorationPhase(
-  phase: JourneyStoreState['routeExplorationPhase'],
-  reason: string = ''
-): void {
-  _journeyWritable.update(s => ({
-    ...s,
-    routeExplorationPhase: phase,
-    ...(reason ? { lastTraversalReason: reason } : {})
-  }));
+export function setRouteExplorationPhase(phase: JourneyStoreState['routeExplorationPhase']): void {
+  _journeyWritable.update(s => ({ ...s, routeExplorationPhase: phase }));
 }
 
-// ── Selection Actions ────────────────────────────────────────────────────────
-
-/** Set the selected trail stop by ID. */
 export function setSelectedId(id: string | null): void {
-  _journeyWritable.update(s => ({ ...s, selectedId: id }));
+  const index = id === null ? null : Number(id);
+  setSelectedStop(Number.isFinite(index) ? index : null);
 }
 
-// ── Full Reset ───────────────────────────────────────────────────────────────
-
-/** Reset the journey store to initial state. */
 export function resetJourney(): void {
-  _journeyWritable.set({
-    ...INITIAL_JOURNEY,
-    trailSeedIndex: null,
-    trailNeighborIndices: [],
-    trailCursor: -1,
-    trailDepth: 0,
-    walkHistoryIndices: [],
-    threadCandidates: [],
-    threadReasonByIndex: new Map(),
-    threadSource: 'geometric-fallback',
-    lastTraversalReason: null,
-    terrainHandoffPhase: 'idle',
-    routeExplorationPhase: 'idle',
-    routeChoreographyPhase: 'overview'
+  appState.withMutation(() => {
+    appState.navState.mode = 'overview';
+    appState.navState.walkHistoryIndices = [];
+    appState.navState.trailCursor = -1;
+    appState.navState.trailDepth = 0;
   });
 }

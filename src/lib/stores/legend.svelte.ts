@@ -4,17 +4,14 @@
  * Manages whether the category legend panel is open.
  * Default: open on desktop (>768px), closed on mobile.
  */
-import { writable } from 'svelte/store';
+import { toStore } from 'svelte/store';
+import { appState } from '@lib/state/app.svelte.ts';
 
-function getInitialState(): boolean {
-  if (typeof window !== 'undefined') {
-    return window.innerWidth > 768;
-  }
-  return false;
-}
-
-/** Whether the legend panel is open. */
-export const legendOpen = writable<boolean>(getInitialState());
+/** Whether the legend panel is open. Reactive binding to the kernel. */
+export const legendOpen = toStore(
+  () => appState.legendOpen,
+  (v) => appState.withMutation(() => { appState.legendOpen = v; })
+);
 
 /** Toggle the legend panel open/closed. */
 export function toggleLegend(): void {

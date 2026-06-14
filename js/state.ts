@@ -156,6 +156,8 @@ export interface NavFocusFramingMeta {
 
 export interface NavState {
     mode: string;
+    surface?: string;
+    previousSurface?: string;
     focusedIndex: number | null;
     trailDepth: number;
     trailSeedIndex: number | null;
@@ -174,6 +176,17 @@ export interface NavState {
     focusFramingMeta: NavFocusFramingMeta | null;
     currentPersonality: Record<string, unknown> | null;
     neighborhoodIndices: number[];
+    currentView?: string;
+    myceliumMode?: string;
+    autoRotate?: boolean;
+    autoRotateSuspended?: boolean;
+    trailDepthFromExploration?: number;
+    sceneRevealActive?: boolean;
+    sceneRevealStartedAt?: number;
+    loadingPhaseKey?: string;
+    applyingUrlState?: boolean;
+    restoringBrowserHistory?: boolean;
+    urlStateRestoreToken?: number;
 }
 
 export interface CanvasHoverCandidate {
@@ -436,9 +449,12 @@ export interface SearchSummary {
     totalMatches: number;
     totalSemanticMatches: number;
     visibleMatches: number;
+    resultCount: number;
+    topScore: number;
     anchorIndex: number | null;
     topIndex: number | null;
     resultIndices: number[];
+    summaryType: 'semantic' | 'text' | 'mixed';
 }
 
 export interface SemanticState extends StateConfig {
@@ -847,6 +863,8 @@ export const _rawState: SemanticState = {
     loadingPhaseKey: 'records',
     navState: {
         mode: 'overview',
+        surface: 'idle',
+        previousSurface: 'idle',
         focusedIndex: null,
         trailDepth: 0,
         trailSeedIndex: null,
@@ -864,8 +882,20 @@ export const _rawState: SemanticState = {
         focusPocketAnimationFrameId: null,
         focusFramingMeta: null,
         currentPersonality: null,
-        neighborhoodIndices: []
+        neighborhoodIndices: [],
+        currentView: 'galaxy',
+        myceliumMode: 'dormant',
+        autoRotate: true,
+        autoRotateSuspended: false,
+        trailDepthFromExploration: 0,
+        sceneRevealActive: false,
+        sceneRevealStartedAt: 0,
+        loadingPhaseKey: 'records',
+        applyingUrlState: false,
+        restoringBrowserHistory: false,
+        urlStateRestoreToken: 0
     } satisfies NavState,
+
     activeFilters: {
         status: 'all',
         city: 'all',

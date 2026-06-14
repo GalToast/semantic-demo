@@ -349,7 +349,7 @@
         </div>
       </div>
     {:else if isEmpty}
-      <div class="search-empty-state fade-in">
+      <div class="search-empty-state fade-in" role="status" aria-live="polite">
         <div class="search-empty-icon-wrap">
           <svg class="search-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
             <circle cx="11" cy="11" r="7"></circle>
@@ -357,8 +357,8 @@
             <path d="M7 11h8" stroke-opacity="0.5"></path>
           </svg>
         </div>
-        <p class="search-empty-title">No direct matches found</p>
-        <p class="search-empty-note">Try a broader term or one of these high-signal categories to open a new trail:</p>
+        <p class="search-empty-title">No results found for "{summary?.query || ''}"</p>
+        <p class="search-empty-note">Try clearing filters or searching nearby categories:</p>
         <div class="search-empty-suggestions">
           <div class="search-suggestion-buttons">
             {#each suggestions as suggestion}
