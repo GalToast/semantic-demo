@@ -32,14 +32,14 @@ import {
   resetParityAttributeCache
 } from '@lib/orchestration/parity-attrs';
 
-import { navStore } from '@lib/stores/navigation';
-import { journeyStore } from '@lib/stores/journey';
-import { focusStore } from '@lib/stores/focus';
+import { navStore, resetNavState } from '@lib/stores/navigation';
+import { journeyStore, resetJourney } from '@lib/stores/journey';
+import { focusStore, resetFocus } from '@lib/stores/focus';
 import { searchStore } from '@lib/stores/search';
-import { filterState } from '@lib/stores/filter';
+import { filterState, resetFilters } from '@lib/stores/filter';
 import { viewport } from '@lib/stores/viewport';
-import { demoPhase as demoPhaseStore } from '@lib/stores/demo';
-import { cameraStore } from '@lib/stores/camera';
+import { demoStore as demoPhaseStore, resetDemo } from '@lib/stores/demo';
+import { cameraStore, resetCamera } from '@lib/stores/camera';
 import { loadingPhaseStore, graphicsModeStore } from '@lib/data-store';
 
 // ── Helpers ──────────────────────────────────────────────────────────────
@@ -78,6 +78,13 @@ beforeEach(() => {
   // Clean DOM and reset the installer's internal cache
   setBodyDataset({});
   resetParityAttributeCache();
+  // Reset singleton stores so mutations from prior tests don't leak
+  resetNavState();
+  resetJourney();
+  resetFocus();
+  resetFilters();
+  resetDemo();
+  resetCamera();
 });
 
 afterEach(() => {

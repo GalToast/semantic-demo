@@ -42,7 +42,7 @@ import { searchStore } from '@lib/stores/search';
 import { filterState } from '@lib/stores/filter';
 import { viewport } from '@lib/stores/viewport';
 import { cameraStore } from '@lib/stores/camera';
-import { demoPhase as demoPhaseStore } from '@lib/stores/demo';
+import { demoStore as demoPhaseStore } from '@lib/stores/demo';
 import {
   loadingPhaseStore,
   graphicsModeStore
@@ -92,7 +92,7 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
   { key: 'routeExploration', description: 'Route exploration phase', source: 'journeyStore.routeExplorationPhase' },
 
   // Trail (legacy lifecycle.js + setTrailDepth)
-  { key: 'trailDepth', description: 'Current trail depth (0|1|2+)', source: 'journeyStore.trailDepth' },
+  { key: 'trailDepth', description: 'Current trail depth (0|1|2+)', source: 'journeyStore.depth' },
   { key: 'trailState', description: 'Trail state (inactive|active)', source: 'derived' },
 
   // Semantic dive (legacy semantic-dive-ui.js)
@@ -188,7 +188,7 @@ export function computeParityAttributes(
 
   // graph-context: legacy uses these values across CSS hooks
   const graphContext = (() => {
-    if (vp.isCompact && journey.routeExplorationPhase === 'exploring') return 'corridor';
+    if (vp.isCompact && journey.routeExplorationPhase === 'searching') return 'corridor';
     if (nav.currentView === 'map') return 'map';
     if (nav.mode === 'inside') return 'inside';
     if (nav.mode === 'focus' || nav.mode === 'trail') return 'focus';
@@ -223,12 +223,12 @@ export function computeParityAttributes(
   })();
 
   const trailState =
-    journey.trailDepth > 0 || presentation.navigationOwner === 'map-trail-strip'
+    journey.depth > 0 || presentation.navigationOwner === 'map-trail-strip'
       ? 'active'
       : 'inactive';
   const semanticDive = focus.semanticDiveMode
     ? 'active'
-    : (journey.trailDepth >= 2 ? 'transitioning' : 'inactive');
+    : (journey.depth >= 2 ? 'transitioning' : 'inactive');
   const threadInspectionActive = focus.threadInspector.active;
   const inspectedThreadIndex = focus.threadInspector.inspectedIndex;
 
@@ -287,7 +287,7 @@ export function computeParityAttributes(
     graphContext,
     routeExploration: journey.routeExplorationPhase || 'idle',
 
-    trailDepth: String(journey.trailDepth),
+    trailDepth: String(journey.depth),
     trailState,
 
     semanticDive,
@@ -389,11 +389,11 @@ export function installParityAttributeSync(
       navStore(),
       journeyStore(),
       focusStore(),
-      searchStore,
+      searchStore as unknown as SearchValue,
       get(filterState),
       viewport(),
       get(loadingPhaseStore),
-      get(demoPhaseStore),
+      get(demoPhaseStore) as unknown as string,
       get(graphicsModeStore),
       cameraStore
     );

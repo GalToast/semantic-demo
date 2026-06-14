@@ -216,3 +216,7 @@ export function resetFocus(): void {
     appState.pocketListVisible = false;
   });
 }
+
+// ── Re-exports ───────────────────────────────────────────────────────────────
+/** Constellation motifs defined in the engine config. */
+export { FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config';
