@@ -1,27 +1,41 @@
 /**
  * navigation-state-class-migration.test.ts
  *
- * Validates the W11-T4 pilot: navigation store reads from the new Svelte 5
- * state class (AppState singleton) with legacy fallback preserved for contract tests.
+ * Verified T4-template test for the navigation store's read paths.
+ * Validates the canonical migration shape:
+ *   1. Local Svelte store (writable) is the write-path target
+ *   2. `readLegacyNavField` reads appState first, then falls back to
+ *      window.__APP_STATE__ → window.__TEST_STATE__ → window.__semanticState
+ *      → window.state (in priority order)
+ *   3. Public getters prefer the local store; if local is empty/falsy,
+ *      they fall through to readLegacyNavField
  *
- * The migration changed `readLegacyNavField` to first try `appState.navState[key]`,
- * then fall back to `window.__APP_STATE__.navState` etc.
+ * This test DOES NOT use Svelte 5 `$state` runes (test files end in .ts,
+ * not .svelte.ts). The appState mock is a plain object that the test
+ * mutates to simulate state-class transitions.
  *
- * This test:
- * 1. Mocks the AppState singleton to provide navState values.
- * 2. Verifies navigation store getters read from the mocked AppState.
- * 3. Verifies legacy fallback works when AppState.navState lacks the field.
- * 4. Ensures window.__APP_STATE__.navState still works (contract preservation).
+ * Pattern contract:
+ *   - vi.hoisted() exposes a plain object the test can mutate
+ *   - vi.mock() provides a stub for `@lib/state/app.svelte.ts` that
+ *     exposes a getter returning the hoisted object
+ *   - Tests verify getter behavior under various appState/window state combos
  */
+
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// vi.hoisted ensures this variable is available when vi.mock is hoisted
-const { mockNavState } = vi.hoisted(() => ({
-  mockNavState: {
+// ── Mock factory for appState (plain JS, no runes) ────────────────────────────
+//
+// The hoisted factory runs before vi.mock is hoisted, so the mock state
+// is available inside the vi.mock factory. The hoisted object is mutated
+// in tests to simulate state-class transitions; the mock returns it as
+// the `navState` field, so the production read path sees the changes.
+
+const mockState = vi.hoisted(() => ({
+  navState: {
     mode: 'overview',
     surface: 'idle',
     previousSurface: 'idle',
-    focusedIndex: null,
+    focusedIndex: null as number | null,
     trailDepth: 0,
     currentView: 'galaxy',
     myceliumMode: 'default',
@@ -30,128 +44,126 @@ const { mockNavState } = vi.hoisted(() => ({
 
 vi.mock('@lib/state/app.svelte.ts', () => ({
   appState: {
-    navState: mockNavState,
+    get navState() { return mockState.navState; },
+    withMutation: (fn: () => unknown) => fn(),
   },
 }));
 
-// Now import the navigation store (will use mocked appState)
+// Import the store AFTER the mock is set up so it sees the stubbed appState.
 import {
   currentMode,
   currentSurface,
-  focusedIndex,
   currentView,
   hasFocus,
+  focusedIndex,
   resetNavState,
   setNavMode,
+  navStore,
 } from '@lib/stores/navigation';
 
-describe('Navigation store state-class migration (W11-T4 pilot)', () => {
+describe('Navigation store — T4 migration to Svelte 5 state class', () => {
   beforeEach(() => {
-    // Reset the navigation store to initial state
+    // Reset store to initial state (clears the local writable).
     resetNavState();
-    // Clear any legacy fallback state
-    delete (window as any).__APP_STATE__;
-    delete (window as any).__TEST_STATE__;
-    delete (window as any).__semanticState__;
-    delete (window as any).state;
-    // Reset mockNavState to defaults
-    mockNavState.mode = 'overview';
-    mockNavState.surface = 'idle';
-    mockNavState.previousSurface = 'idle';
-    mockNavState.focusedIndex = null;
-    mockNavState.trailDepth = 0;
-    mockNavState.currentView = 'galaxy';
-    mockNavState.myceliumMode = 'default';
+    // Clear legacy fallback paths.
+    delete (window as unknown as Record<string, unknown>).__APP_STATE__;
+    delete (window as unknown as Record<string, unknown>).__TEST_STATE__;
+    delete (window as unknown as Record<string, unknown>).__semanticState;
+    delete (window as unknown as Record<string, unknown>).state;
+    // Reset mock appState to defaults.
+    mockState.navState = {
+      mode: 'overview',
+      surface: 'idle',
+      previousSurface: 'idle',
+      focusedIndex: null,
+      trailDepth: 0,
+      currentView: 'galaxy',
+      myceliumMode: 'default',
+    };
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('reads mode from AppState.navState (new source of truth)', () => {
-    // Mock AppState has mode: 'overview'
-    expect(currentMode()).toBe('overview');
-  });
+  // ── 1. Local store drives getters when set ─────────────────────────────
 
-  it('reads surface from AppState.navState', () => {
-    expect(currentSurface()).toBe('idle');
-  });
-
-  it('reads focusedIndex from AppState.navState', () => {
-    expect(focusedIndex()).toBeNull();
-  });
-
-  it('reads currentView from AppState.navState', () => {
-    expect(currentView()).toBe('galaxy');
-  });
-
-  it('hasFocus returns false when focusedIndex is null', () => {
-    expect(hasFocus()).toBe(false);
-  });
-
-  it('hasFocus returns true when focusedIndex is set', () => {
-    mockNavState.focusedIndex = 42;
-    expect(hasFocus()).toBe(true);
-  });
-
-  it('updates in store propagate via setter', () => {
-    // Set mode via store setter
+  it('currentMode() reads from local store after setNavMode', () => {
     setNavMode('search');
-    // The store's own getters (currentMode) read from the writable first
     expect(currentMode()).toBe('search');
   });
 
-  it('readLegacyNavField reads from AppState.navState first (unit path)', () => {
-    // delete mock AppState mode to test that readLegacyNavField checks AppState first
-    delete mockNavState.mode;
-    // The currentMode getter only calls readLegacyNavField when local is falsy.
-    // Since INITIAL_NAV_STATE sets mode='overview', we verify the new code path
-    // exists by checking that when local mode is cleared AND AppState has a value,
-    // the AppState value is returned.
-    mockNavState.mode = '';
-    // With mode='' in the writable, currentMode() sees falsy local,
-    // then reads from AppState.navState which we set to 'from-appstate'
-    mockNavState.mode = 'from-appstate';
-    // The writable still has 'overview' from the previous test. Reset and use
-    // updateNavState to clear mode.
-    resetNavState();
-    // Directly update the writable to have empty mode - we need the store API
-    // But we can also just verify that the read path exists by reading focusedIndex
-    // which is null (falsy) and thus triggers the fallback path
+  it('currentSurface() reads from local store after setNavMode', () => {
+    setNavMode('focus');
+    expect(currentSurface()).not.toBe('');
   });
 
-  it('legacy fallback works when AppState.navState lacks a field AND local is falsy', () => {
-    // focusedIndex is null (falsy) in the initial state, so the getter falls through
-    // to readLegacyNavField. When AppState.navState also lacks it, legacy window is used.
-    delete mockNavState.focusedIndex;
-    (window as any).__APP_STATE__ = { navState: { focusedIndex: 999 } };
-    expect(focusedIndex()).toBe(999);
+  it('focusedIndex() returns null when local is null', () => {
+    expect(focusedIndex()).toBeNull();
   });
 
-  it('contract test: window.__APP_STATE__.navState still works via legacy fallback', () => {
-    // focusedIndex is null (falsy) in the writable, so getter falls through.
-    // AppState.navState.focusedIndex is also null, so it falls to legacy window.
-    delete mockNavState.focusedIndex;
-    (window as any).__APP_STATE__ = { navState: { focusedIndex: 777 } };
-    expect(focusedIndex()).toBe(777);
+  it('currentView() reads from local store default', () => {
+    expect(currentView()).toBe('galaxy');
   });
 
-  it('AppState.navState takes precedence over legacy when both present (fallback path)', () => {
-    // Both AppState and legacy have focusedIndex (which is null/falsy in local store)
-    mockNavState.focusedIndex = 555;
-    (window as any).__APP_STATE__ = { navState: { focusedIndex: 888 } };
-    
-    // AppState should win (first check in readLegacyNavField)
-    expect(focusedIndex()).toBe(555);
+  it('hasFocus() returns false when local mode is overview and focusedIndex is null', () => {
+    expect(hasFocus()).toBe(false);
   });
 
-  it('multiple legacy fallback paths work (priority order)', () => {
-    // Test that the highest-priority legacy path wins when AppState lacks the field.
-    // focusedIndex is null/falsy in local, so getter falls through to readLegacyNavField.
-    delete mockNavState.focusedIndex;
-    
-    // Set __APP_STATE__ (highest priority) directly
-    (window as any).__APP_STATE__ = { navState: { focusedIndex: 333 } };
-    expect(focusedIndex()).toBe(333);
+  it('hasFocus() returns true when local focusedIndex is set', () => {
+    navStore.update((s) => ({ ...s, focusedIndex: 42 }));
+    expect(hasFocus()).toBe(true);
+  });
+
+  // ── 2. readLegacyNavField priority chain (appState first) ──────────────
+
+  it('readLegacyNavField prefers appState over window globals (mode)', () => {
+    // Set both: appState has 'search', window.__APP_STATE__ has 'overview'.
+    mockState.navState.mode = 'search';
+    (window as unknown as { __APP_STATE__: { navState: { mode: string } } }).__APP_STATE__ = {
+      navState: { mode: 'overview' },
+    };
+    // Setting local to empty triggers fallback through readLegacyNavField.
+    // currentMode returns local || readLegacyNavField('mode') || local.
+    // With local set to 'overview' (default), currentMode returns 'overview'.
+    // To test the fallback path, we mutate the local store to clear mode.
+    navStore.set({ ...navStore(), mode: '' });
+    // Now local mode is '' (falsy), so fallback runs. appState wins.
+    expect(currentMode()).toBe('search');
+  });
+
+  it('readLegacyNavField falls back to window.__APP_STATE__ when appState lacks field', () => {
+    // appState has no 'mode' field; legacy window has it.
+    delete mockState.navState.mode;
+    (window as unknown as { __APP_STATE__: { navState: { mode: string } } }).__APP_STATE__ = {
+      navState: { mode: 'from-app-state-window' },
+    };
+    navStore.set({ ...navStore(), mode: '' });
+    expect(currentMode()).toBe('from-app-state-window');
+  });
+
+  it('readLegacyNavField falls back to window.__TEST_STATE__ when __APP_STATE__ is empty', () => {
+    delete mockState.navState.mode;
+    (window as unknown as { __TEST_STATE__: { navState: { mode: string } } }).__TEST_STATE__ = {
+      navState: { mode: 'from-test-state-window' },
+    };
+    navStore.set({ ...navStore(), mode: '' });
+    expect(currentMode()).toBe('from-test-state-window');
+  });
+
+  // ── 3. focusedIndex fallback path ──────────────────────────────────────
+
+  it('focusedIndex() falls back to appState when local is null', () => {
+    // Local focusedIndex is null (default). appState has a value.
+    mockState.navState.focusedIndex = 7;
+    expect(focusedIndex()).toBe(7);
+  });
+
+  it('focusedIndex() falls back to window.__APP_STATE__ when appState lacks it', () => {
+    delete mockState.navState.focusedIndex;
+    (window as unknown as { __APP_STATE__: { navState: { focusedIndex: number } } }).__APP_STATE__ = {
+      navState: { focusedIndex: 99 },
+    };
+    expect(focusedIndex()).toBe(99);
   });
 });

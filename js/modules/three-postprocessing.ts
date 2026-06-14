@@ -183,7 +183,12 @@ export function initPostProcessing(
             document.body.dataset.premiumMode = 'true';
         }
 
-        debugWarn('[postprocessing] initialized — vignette + CA + bloom + DOF ready');
+        // Init log uses console.debug (filtered by default in DevTools); not
+        // routed through diagnostic-adapter's debugWarn gate so the typical
+        // localhost dev loop stays quiet unless the user explicitly enables
+        // verbose level. To re-enable: open DevTools console and select
+        // "Verbose" log level.
+        console.debug('[postprocessing] initialized — vignette + CA + bloom + DOF ready');
     } catch (err) {
         console.error('[postprocessing] init failed, falling back to vanilla renderer:', err);
         disposePostProcessing();
