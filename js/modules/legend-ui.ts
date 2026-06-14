@@ -284,10 +284,9 @@ const syncLegend = (): void => {
  * Registers all legend event-bus subscriptions.
  * Must be called once during app init (after DOM is ready).
  *
- * TODO: Call from app.js initEventBusSubscriptions() or lifecycle.js init.
- * Currently the caller is off-limits; add this call when those files are open:
- *   import { initLegendEventBusSubscriptions } from './legend-ui.ts';
- *   initLegendEventBusSubscriptions();  // inside the caller's init sequence
+ * Called from src/components/Legend.svelte onMount (Svelte-track owner).
+ * The previous app.js / lifecycle.js caller is off-limits; the Svelte
+ * component lifecycle now drives this initialization.
  */
 export function initLegendEventBusSubscriptions(): void {
     subscribeKeyed('legend:view-changed', EVENTS.VIEW_CHANGED, () => {

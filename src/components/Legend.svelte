@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { businessRecordsStore } from '@lib/data-store.svelte';
   import { hasActiveFilters, activeClusterFilter } from '@lib/stores/filter';
+  import { initLegendEventBusSubscriptions } from '../../js/modules/legend-ui';
   // The full filter pipeline lives in cluster-filter-controller; the
   // stub in @lib/stores/filter only writes the writable without clearing
   // search glow, applying the filter to the mycelium, or updating the URL.
@@ -82,7 +84,7 @@
 
   let filtered = $derived($hasActiveFilters);
 
-  function toggleCluster(name: string, index: number): void {
+  function toggleCluster(_name: string, index: number): void {
     // activeClusterFilter is stored as the cluster index (number-as-string)
     // so the engine's isPointVisible(pointCluster, activeClusterFilter)
     // comparison can match. The old code wrote the name string and the
@@ -91,6 +93,10 @@
     const isActive = current !== null && Number(current) === index;
     applyClusterFilter(isActive ? null : index);
   }
+
+  onMount(() => {
+    initLegendEventBusSubscriptions();
+  });
 </script>
 
 <aside

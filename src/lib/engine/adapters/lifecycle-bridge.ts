@@ -41,6 +41,7 @@ import {
   ensureCanvasNodeInteractionBindings,
   removeCanvasNodeInteractionBindings,
 } from '../../../../js/modules/journey-canvas-interaction.js';
+import { initTooltipEventBusSubscriptions } from '../../../../js/modules/tooltip';
 
 // ── TS Port Imports (canonical implementations) ─────────────────────────────
 // These replace the legacy module lazy-loading that previously happened in
@@ -312,6 +313,9 @@ export function createLifecycleMethods(
 
         // 9. Subscribe to the legacy event bus
         await bindEventBridge(ctx);
+
+        // 9b. Wire tooltip event-bus subscriptions (DOM #hover-tooltip is ready)
+        initTooltipEventBusSubscriptions();
 
         // 10. Mark ready and start the animation loop (delegates to TS port)
         ctx.status = 'ready';

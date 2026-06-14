@@ -146,10 +146,9 @@ export function hideTooltip(): void {
  * Registers all tooltip event-bus subscriptions.
  * Must be called once during app init (after DOM is ready).
  *
- * TODO: Call from app.js initEventBusSubscriptions() or lifecycle.js init.
- * Currently the caller is off-limits; add this call when those files are open:
- *   import { initTooltipEventBusSubscriptions } from './tooltip.ts';
- *   initTooltipEventBusSubscriptions();  // inside the caller's init sequence
+ * Called from src/lib/engine/adapters/lifecycle-bridge.ts init() step 9b
+ * (Svelte-track owner). The previous app.js / lifecycle.js caller is
+ * off-limits; the engine bridge lifecycle now drives this initialization.
  */
 export function initTooltipEventBusSubscriptions(): void {
     subscribeKeyed('tooltip:hide-requested', EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip);
