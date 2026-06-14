@@ -62,11 +62,21 @@
   // Using $derived with get() doesn't work for svelte/store writables.
   let activeMode = $state(currentMode());
   let activeSurface = $state(currentSurface());
+  let activeIndex = $state(Math.max(0, modes.findIndex((m) => {
+    if (m.id === 'map') return currentSurface() === 'map';
+    return currentMode() === m.id;
+  })));
 
   $effect(() => {
     const unsub = navStore.subscribe((s) => {
       activeMode = s.mode;
       activeSurface = s.surface;
+      // Keep roving tabindex index in sync with the active mode
+      const idx = modes.findIndex((m) => {
+        if (m.id === 'map') return s.surface === 'map';
+        return s.mode === m.id;
+      });
+      if (idx >= 0) activeIndex = idx;
     });
     return () => unsub();
   });
@@ -74,6 +84,50 @@
   function isActive(modeId: NavMode | 'map'): boolean {
     if (modeId === 'map') return activeSurface === 'map';
     return activeMode === modeId;
+  }
+
+  /** Roving tabindex keyboard handler for the mode-chip radiogroup */
+  function handleModeKeydown(e: KeyboardEvent): void {
+    let newIndex = activeIndex;
+
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        e.preventDefault();
+        newIndex = (activeIndex + 1) % modes.length;
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        e.preventDefault();
+        newIndex = (activeIndex - 1 + modes.length) % modes.length;
+        break;
+      case 'Home':
+        e.preventDefault();
+        newIndex = 0;
+        break;
+      case 'End':
+        e.preventDefault();
+        newIndex = modes.length - 1;
+        break;
+      default:
+        return; // Let Enter/Space pass through to native button click behavior
+    }
+
+    activeIndex = newIndex;
+    const target = modes[newIndex];
+    if (!target) return;
+    const chip = document.querySelector<HTMLElement>(`.mode-chip[data-mode="${target.id}"]`);
+    chip?.focus();
+  }
+
+  /** Sync activeIndex when a chip receives focus (roving tabindex pattern) */
+  function handleModeFocusin(e: FocusEvent): void {
+    const target = e.target as HTMLElement;
+    if (!target?.classList.contains('mode-chip')) return;
+    const modeId = target.getAttribute('data-mode');
+    if (!modeId) return;
+    const idx = modes.findIndex((m) => m.id === modeId);
+    if (idx >= 0) activeIndex = idx;
   }
 
   function selectMode(modeId: NavMode | 'map'): void {
@@ -101,6 +155,9 @@
     } catch (e) {
       console.warn('Header.selectMode: URL update failed', e);
     }
+    // Keep roving tabindex index in sync with the selected mode
+    const idx = modes.findIndex((m) => m.id === modeId);
+    if (idx >= 0) activeIndex = idx;
   }
 
   /** Find the active mode description for the tooltip */
@@ -171,15 +228,20 @@
         id="mode-chips"
         role="radiogroup"
         aria-label="View mode"
+        aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End"
+        onkeydown={handleModeKeydown}
+        onfocusin={handleModeFocusin}
       >
         {#each modes as mode (mode.id)}
           <button
             class="mode-chip"
             class:active={isActive(mode.id)}
             role="radio"
+            tabindex={isActive(mode.id) ? 0 : -1}
             aria-checked={isActive(mode.id)}
             aria-label={mode.label}
             title={mode.description}
+            data-mode={mode.id}
             onclick={() => selectMode(mode.id)}
           >
             <svg class="chip-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{mode.iconId}"/></svg>
