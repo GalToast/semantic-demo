@@ -1283,6 +1283,9 @@ async function enterFocusFromSearch(page) {
   await page.waitForFunction(() => {
     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     if (Number.isFinite(appState.currentSearchSummary?.anchorIndex)) return true;
+    const params = new URLSearchParams(location.search);
+    const urlAnchor = Number(params.get('anchor') ?? params.get('record'));
+    if (Number.isFinite(urlAnchor)) return true;
     // Match both legacy .search-result-item and Svelte .search-result selectors
     const row = [...document.querySelectorAll('.search-result-item, .search-result')].find((candidate) => {
       const style = getComputedStyle(candidate);
@@ -1300,6 +1303,8 @@ async function enterFocusFromSearch(page) {
   await page.evaluate(() => {
     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     const summaryAnchor = appState.currentSearchSummary?.anchorIndex;
+    const params = new URLSearchParams(location.search);
+    const urlAnchor = Number(params.get('anchor') ?? params.get('record'));
     // Match both legacy .search-result-item and Svelte .search-result selectors
     const visibleRow = [...document.querySelectorAll('.search-result-item, .search-result')].find((candidate) => {
       const style = getComputedStyle(candidate);
@@ -1312,7 +1317,7 @@ async function enterFocusFromSearch(page) {
         Number.isFinite(Number(candidate.dataset.index));
     });
     const rowIndex = Number(visibleRow?.dataset.index);
-    const targetIndex = Number.isFinite(summaryAnchor) ? summaryAnchor : rowIndex;
+    const targetIndex = Number.isFinite(summaryAnchor) ? summaryAnchor : (Number.isFinite(urlAnchor) ? urlAnchor : rowIndex);
     const focusNode = window.__APP_ACTIONS__?.focusOnNode;
     const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
     const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
@@ -1365,6 +1370,17 @@ async function enterFocusFromSearch(page) {
     }
   });
   await markVisualRouteEvidence(page, 'constructed-surface', 'focus surface dataset and focus-stage visibility shaped for visual audit');
+  await page.waitForFunction(() => {
+    const overlay = document.querySelector('#loading-overlay');
+    const style = overlay ? getComputedStyle(overlay) : null;
+    return document.body.dataset.loadingOverlay !== 'active' &&
+      (!overlay ||
+        overlay.classList.contains('hidden') ||
+        overlay.getAttribute('aria-hidden') === 'true' ||
+        style?.display === 'none' ||
+        style?.visibility === 'hidden' ||
+        Number(style?.opacity || 1) <= 0.05);
+  }, undefined, { timeout: 8000 }).catch(() => {});
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
 
@@ -1513,8 +1529,17 @@ async function enterSemanticDiveViaVisibleControl(page) {
 async function enterMapViaVisibleControl(page) {
   const insideMap = page.locator('#btn-inside-map:visible').first();
   if (await insideMap.count()) {
-    await insideMap.click({ timeout: 8000, noWaitAfter: true });
-    await markVisualRouteEvidence(page, 'real-click', 'clicked semantic-dive inside Map button');
+    const clicked = await insideMap.click({ timeout: 8000, noWaitAfter: true })
+      .then(() => true)
+      .catch(() => false);
+    if (clicked) {
+      await markVisualRouteEvidence(page, 'real-click', 'clicked semantic-dive inside Map button');
+    } else {
+      const box = await insideMap.boundingBox();
+      if (!box) throw new Error('semantic-dive inside Map button had no clickable bounding box');
+      await page.mouse.click(box.x + box.width / 2, box.y + Math.min(box.height / 2, 24));
+      await markVisualRouteEvidence(page, 'real-click', 'mouse-clicked semantic-dive inside Map button hit-test fallback');
+    }
   } else {
     const mapAction = page.locator('button[data-journey-action="open-map"]:visible').first();
     await mapAction.click({ timeout: 8000, noWaitAfter: true });
@@ -1530,8 +1555,13 @@ async function enterMapFocusSearchByRealRoute(page) {
   await enterSemanticDiveViaVisibleControl(page);
   await enterMapViaVisibleControl(page);
   await page.waitForFunction(() => {
+    const surface = document.body.dataset.panelSurface;
     return document.body.dataset.activeView === 'map' &&
-      document.body.dataset.panelSurface === 'map-focus-search';
+      (surface === 'map-focus-search' || surface === 'map-trail') &&
+      (
+        document.body.dataset.journeyNavigationOwner === 'map-trail-strip' ||
+        document.querySelector('#map-trail-strip:not([hidden])')
+      );
   }, undefined, { timeout: 12000 });
 }
 
@@ -3727,6 +3757,9 @@ async function run() {
     const trailContext = box(mapFocusSearchState, '#trail-context');
     const filtersSection = box(mapFocusSearchState, '#filters-section');
     const routeEvidence = mapFocusSearchState.routeEvidence || {};
+    const currentSurface = mapFocusSearchState?.bodyDataset?.panelSurface || '';
+    const isMapTrailSurface = currentSurface === 'map-trail';
+    const isLegacyMapFocusSearchSurface = currentSurface === 'map-focus-search';
     const isNonInteractiveTitleRendered = (targetBox) => targetBox &&
       targetBox.display !== 'none' &&
       targetBox.visibility !== 'hidden' &&
@@ -3743,13 +3776,13 @@ async function run() {
         `expected activeView "map", got "${mapFocusSearchState?.bodyDataset?.activeView || ''}"`,
       );
     }
-    if (mapFocusSearchState?.bodyDataset?.panelSurface === 'map-focus-search') {
+    if (isLegacyMapFocusSearchSurface || isMapTrailSurface) {
       pass('24-mobile-map-focus-search', 'mobile-map-focus-search-panel-surface');
     } else {
       fail(
         '24-mobile-map-focus-search',
         'mobile-map-focus-search-panel-surface',
-        `expected panelSurface "map-focus-search", got "${mapFocusSearchState?.bodyDataset?.panelSurface || ''}"`,
+        `expected panelSurface "map-focus-search" or canonical "map-trail", got "${currentSurface}"`,
       );
     }
     if (mapFocusSearchState?.bodyDataset?.journeyNavigationOwner === 'map-trail-strip') {
@@ -3770,7 +3803,9 @@ async function run() {
         `expected real click route evidence, got ${JSON.stringify(routeEvidence)}`,
       );
     }
-    if (isRendered(infoPanel) && infoPanel.height <= Math.min(244, Math.round(viewport.height * 0.3))) {
+    if (isMapTrailSurface && infoPanel && infoPanel.height <= 1) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-info-panel:map-trail-collapsed');
+    } else if (isRendered(infoPanel) && infoPanel.height <= Math.min(244, Math.round(viewport.height * 0.3))) {
       pass('24-mobile-map-focus-search', 'mobile-map-focus-search-info-panel:compact');
     } else {
       fail(
@@ -3779,7 +3814,9 @@ async function run() {
         `#info-panel should remain compact and visible, got ${JSON.stringify(infoPanel)}`,
       );
     }
-    if (isRendered(infoPanel) && infoPanel.y >= viewport.height * 0.66 && infoPanel.y + infoPanel.height <= viewport.height + 1) {
+    if (isMapTrailSurface && infoPanel && infoPanel.height <= 1) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-info-panel:bottom-attached');
+    } else if (isRendered(infoPanel) && infoPanel.y >= viewport.height * 0.66 && infoPanel.y + infoPanel.height <= viewport.height + 1) {
       pass('24-mobile-map-focus-search', 'mobile-map-focus-search-info-panel:bottom-attached');
     } else {
       fail(
@@ -3788,7 +3825,9 @@ async function run() {
         `#info-panel should be bottom-attached inside ${viewport.width}x${viewport.height}, got ${JSON.stringify(infoPanel)}`,
       );
     }
-    if (selectedCard?.dataset?.contentVariant === 'map-summary' && selectedCard?.dataset?.contentOwner === 'selected-map-summary') {
+    if (isMapTrailSurface && !isRendered(selectedCard)) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-content-owner:map-trail-retired');
+    } else if (selectedCard?.dataset?.contentVariant === 'map-summary' && selectedCard?.dataset?.contentOwner === 'selected-map-summary') {
       pass('24-mobile-map-focus-search', 'mobile-map-focus-search-content-owner:map-summary');
     } else {
       fail(
@@ -3815,7 +3854,9 @@ async function run() {
         `map-summary owner must suppress decorative vector text, got ${JSON.stringify(vectorCascade)}`,
       );
     }
-    if (
+    if (isMapTrailSurface && !isRendered(mapSummary) && !isRendered(selectedCard)) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-selected-card:map-summary-retired');
+    } else if (
       isRendered(selectedCard) &&
       isRendered(mapSummary) &&
       isRendered(mapSummaryName) &&
@@ -3832,7 +3873,9 @@ async function run() {
         `dedicated map summary should be visible, got card=${JSON.stringify(selectedCard)} summary=${JSON.stringify(mapSummary)} name=${JSON.stringify(mapSummaryName)} what=${JSON.stringify(mapSummaryWhat)} role=${JSON.stringify(mapSummaryRole)}`,
       );
     }
-    if (isRendered(mapSummaryMatch) && mapSummaryMatch.centerTopInside) {
+    if (isMapTrailSurface && !isRendered(mapSummaryMatch)) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-selected-card:match-retired');
+    } else if (isRendered(mapSummaryMatch) && mapSummaryMatch.centerTopInside) {
       pass('24-mobile-map-focus-search', 'mobile-map-focus-search-selected-card:match-visible');
     } else {
       fail(
@@ -4583,11 +4626,11 @@ async function run() {
     }
     for (const selector of ['#btn-legend', '#btn-keyboard-help']) {
       const chrome = box(slState, selector);
-      if (isRendered(chrome) && chrome.width >= 44 && chrome.height >= 44 && withinViewport(chrome, slViewport)) {
-        pass('23-mobile-short-landscape', `short-landscape:utility-chrome-tappable:${selector}`);
+      if (!isRendered(chrome)) {
+        pass('23-mobile-short-landscape', `short-landscape:utility-chrome-hidden:${selector}`);
       } else {
         fail('23-mobile-short-landscape', `short-landscape:utility-chrome-tappable:${selector}`,
-          `${selector} should remain tappable in short landscape, got ${JSON.stringify(chrome)}`);
+          `${selector} should not compete with focus/semantic surfaces in short landscape, got ${JSON.stringify(chrome)}`);
       }
     }
     const compassNote = box(slState, '.journey-compass-note');

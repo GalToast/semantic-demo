@@ -95,4 +95,22 @@
     margin: -2rem -1rem 0;
     padding: 0 1rem;
   }
+
+  :global(body[data-panel-surface='map-trail']) .search-container.info-panel-contained,
+  :global(body[data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip'])
+    .search-container.info-panel-contained {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    top: calc(148px + env(safe-area-inset-top, 0px));
+    bottom: auto;
+    width: auto;
+    max-width: none;
+    max-height: min(34dvh, 288px);
+    margin: 0;
+    padding: 0 16px;
+    transform: none;
+    pointer-events: auto;
+    z-index: var(--z-overlay-elevated, 90);
+  }
 </style>

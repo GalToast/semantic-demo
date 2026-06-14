@@ -173,6 +173,16 @@
     transform: translateX(-50%);
     z-index: var(--z-controls, 50);
   }
+
+  :global(body[data-panel-surface='map-trail']) .filters-section,
+  :global(body[data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip'])
+    .filters-section {
+    display: none;
+    visibility: hidden;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
   .filter-toolbar {
     display: flex;
     gap: 1rem;

@@ -524,6 +524,17 @@
     max-height: 40vh;
   }
 
+  :global(body[data-panel-surface='map-trail']) .search-results-count,
+  :global(body[data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip'])
+    .search-results-count,
+  :global(body[data-panel-surface='map-trail']) .search-result:not(:first-child),
+  :global(body[data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip'])
+    .search-result:not(:first-child) {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
   /* ── Individual result row ────────────────────────────────────────────────── */
   .search-result {
     display: flex;

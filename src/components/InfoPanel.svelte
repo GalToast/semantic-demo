@@ -590,6 +590,41 @@
   .info-panel.open {
     transform: translateX(0);
   }
+
+  :global(body[data-panel-surface='map-trail']) .info-panel,
+  :global(body[data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip'])
+    .info-panel {
+    display: block;
+    visibility: visible;
+    pointer-events: none;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    width: 100%;
+    height: 0;
+    min-height: 0;
+    max-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    overflow: visible;
+  }
+
+  :global(body[data-panel-surface='map-trail']) .info-panel-content,
+  :global(body[data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip'])
+    .info-panel-content {
+    display: block;
+    height: 0;
+    min-height: 0;
+    max-height: 0;
+    padding: 0;
+    overflow: visible;
+    pointer-events: none;
+  }
   .info-panel-content {
     padding-top: 3rem;
   }
@@ -597,6 +632,20 @@
   /* ── Info header (hidden in search mode per contract) ──────────────────── */
   .info-header {
     margin-bottom: 0.75rem;
+  }
+
+  :global(body[data-panel-surface='map-trail']) .info-header,
+  :global(body[data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip'])
+    .info-header,
+  :global(body[data-panel-surface='map-trail']) .selected-card,
+  :global(body[data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip'])
+    .selected-card,
+  :global(body[data-panel-surface='map-trail']) .selected-empty,
+  :global(body[data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip'])
+    .selected-empty {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
   }
   .info-header h3 {
     font-family: 'Bricolage Grotesque', sans-serif;
