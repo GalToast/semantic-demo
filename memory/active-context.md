@@ -12,13 +12,16 @@
 - **Legacy TS progress:** `npm run check:ts-progress` reports 151 runtime modules, 103 TS-only, 48 BOTH (`.ts` + `.js` shadow), 0 JS-only, 0 drift pairs.
 - **Legacy entry:** `js/modules/app.ts` is the legacy/reference bundle entry; production remains the Svelte/Vite shell.
 - **BOTH-pattern follow-up queue: EMPTY.** All 6 tickets closed (1+2, 3, 4, 5, 6, 8). See `docs/both-pattern-follow-ups-2026-06-13.md`.
-- **Wave 9 (legacy-runtime retirement):** in flight per `docs/legacy-runtime-retirement-roadmap-2026-06-13.md`. 9A and 9B landed; 9C in flight; 9D + 9E remaining. **0 dynamic `@legacy/*` imports remain in `src/`** (down from 15 pre-wave). 36 files still touch the static `@legacy/*` alias (the BOTH bridge).
+- **Wave 9 (legacy-runtime retirement): CLOSED.** All 5 tickets done (9A, 9B, 9C, 9D, 9E) per `docs/legacy-runtime-retirement-roadmap-2026-06-13.md` and `docs/legacy-runtime-retirement.md`. **0 dynamic `@legacy/*` imports remain in `src/`** (down from 15 pre-wave). 39 files now use the renamed `@legacy-js/*` alias (the BOTH bridge). Full retirement record at `docs/legacy-runtime-retirement.md`.
 - **InfoPanel:** Single-track product surface in `src/components/InfoPanel.svelte`; keep legacy compatibility artifacts separate from product ownership.
 - **Migration plan:** `docs/phase56-migration-plan.md` is the latest bridge-elimination plan; verify against live `check:ts-progress` before executing old advice.
 
 ## Invariant tests (in `tests/unit-active/`, run with `npm run test:unit`)
 - **`with-state-mutation-invariant.test.ts`** — scans for direct mutations of `CRITICAL_KEYS` / `TRACKED_SUB_KEYS` (per `src/lib/state/with-state-mutation.ts`) outside a `withStateMutation(() => { ... })` block. Supports the local alias `withMutation` (used in `demo-choreography.ts`). Catches regressions in the AGENTS.md invariant: "All mutations to navState, strandContinuityState, and other TRACKED_SUB_KEYS in state.js MUST be wrapped in withStateMutation()." Current: 0 violations.
 - **`css-important-invariant.test.ts`** — regression detector for the AGENTS.md rule "Avoid `!important` as a default CSS fix." Counts `!important` uses across `css/` and `src/lib/css/`; fails on increase. Current: 7 uses (matches baseline; no new uses).
+- **`commit-purity-invariant.test.ts`** — meta-test that scans `git log` for commit title prefixes (e.g., `docs(...)`, `fix(...)`) and asserts the prefix matches the file classes in the commit. HARD FAIL: `docs(...)` or `test(...)` must be 100% file-class match. SOFT WARN: `feat/fix/refactor(...)` should have ≥50% parenthetical-scope match. Motivation: the `b5ad93e → 0761a80` failure mode (a `docs(roadmap)` commit that bundled 7 noise files). The test is grandfathered with `EXEMPTED_SHAS` for known exceptions.
+
+To add a fourth invariant test: follow the same pattern (read the AGENTS.md rule, write a regex/scanner test, fail with a clear error message). Examples: off-limits-files guard, no TODO without ticket number, BOTH-bridge shape.
 
 To add a third invariant test: follow the same pattern (read the AGENTS.md rule, write a regex/scanner test, fail with a clear error message). Examples: off-limits-files guard, BOTH-bridge shape (no @legacy imports outside the documented list), no TODO without ticket number.
 
@@ -42,7 +45,8 @@ To add a third invariant test: follow the same pattern (read the AGENTS.md rule,
 - Deploy scripts (`deploy.sh`, `deploy.ps1`)
 
 ## Known blockers / open items
-- **Wave 9 in flight.** Ticket 9C consolidates 7 dynamic imports in `demo-choreography.ts` into a single `_ensureLoaded()` Promise.all (worker `ocw_3c52c3da` running). Ticket 9D drops the `@legacy/*` alias from `vite.config.ts` (1-2 h, low risk). Ticket 9E writes the retirement doc `docs/legacy-runtime-retirement.md` (30 min, no risk).
+- **BOTH-bridge retirement (Ticket 9D Option B).** The renamed `@legacy-js/*` alias is still in `vite.config.ts`. 39 files still touch it. A future wave could rewrite them as relative paths and drop the alias entirely. Estimated 1-2 hours, low risk. Pre-staged prompt not yet drafted.
+- **Main chunk still large.** Next bridge target is reducing the main entry chunk size. Current `engine-*.js` chunk separation helps but the index-*.js chunk is still 1.4 MB pre-gzip.
 - **Main chunk still large.** Next bridge target is reducing the main entry chunk size. Current `engine-*.js` chunk separation helps but the index-*.js chunk is still 1.4 MB pre-gzip.
 - Product route ownership seam is closed in the Svelte path. Next product seam is cleanup/hardening around semantic dive state ownership and bridge coupling.
 - Dirty worktree contains prior migration/archive/test additions under `legacy-reference/`, `tests/unit-active/`, `tests/unit/README.md`, `tests/dismiss-in-complete-state-contract.mjs`, and `vitest.legacy.config.js`. Treat as existing user/worker work; do not revert casually.
@@ -50,7 +54,16 @@ To add a third invariant test: follow the same pattern (read the AGENTS.md rule,
 - **Dev server noise:** The Svelte/Vite dev server (port 5173) re-touches `dist/svelte/*` via HMR. For close-out commits, use explicit `git add <files>` (never `git add -A`). See `dev-server-drift-handling` skill.
 
 ## Session artifacts (2026-06-13 wave)
-- **7 ready-to-fire worker prompts** in `tmp/commit-messages-2026-06-13/` (1+2, 1+2-v2, 4, 5, 6, 8, 9C)
+- **9 ready-to-fire worker prompts** in `tmp/commit-messages-2026-06-13/` (1+2, 1+2-v2, 4, 5, 6, 8, 9C, 9D, 9E)
 - **3 memories + 2 skills + 1 profile doc** saved (bash-detach, v2-prompt recovery, session summary; bash-detach-handling + dev-server-drift-handling skills; `notes/fred-profile.md`)
 - **Key router running** at `127.0.0.1:8788` with 18 keys across 5 providers (OpenCode Zen, NVIDIA NIM, Mistral, ModelScope, Kilo). The session has been using `pi:direct-opencode-go/mimo-v2.5` direct (bypasses the router); future work on nvidia/mistral/modelscope/kilo routes can use the router.
-- **37 commits this session**, all pushed to origin. Wave included the BOTH-pattern follow-ups (1+2, 3, 4, 5, 6, 8), the cleanup wave (`1befce2` withStateMutation wrappings + `@legacy/*` retirements), the components wave (`00cfb5c` engine bridge + route handler), and the docs close-out + roadmap publication.
+- **48 commits this session**, all pushed to origin. Wave included the BOTH-pattern follow-ups (1+2, 3, 4, 5, 6, 8), Wave 9 (9A, 9B, 9C, 9D, 9E), the cleanup wave (withStateMutation wrappings, `@legacy-js` alias rename), 3 invariant tests, and the docs close-out + retirement publication.
+
+## Next session entry (2026-06-13 →)
+
+1. **Triage the 3 remaining worktree mods** (Vite HMR + 1 touched file with empty diff). All noise.
+2. **Decide the next arc.** Options:
+   - **A. BOTH-bridge retirement (Option B from 9D).** Rewrite the 39 static `@legacy-js/*` imports as relative paths, drop the alias from `vite.config.ts`. 1-2 hours, low risk. Closes the BOTH bridge fully.
+   - **B. Svelte-track product feature work.** The BOTH infrastructure is done. Pivot to product features (visual diagnostic features, main chunk split, relationship-roles finalization, CORS production proxy for rerank). Needs your direction on the specific feature.
+   - **C. Another invariant test.** `off-limits-files guard` (the AGENTS.md worker policy boundaries), `no TODO without ticket number`, or a BOTH-bridge shape test (asserts no new `@legacy-js` consumers).
+3. **Run the test suite** (`npm run test:unit`) to verify 16/16 files, 123/123 tests still pass.
