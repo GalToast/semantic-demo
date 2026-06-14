@@ -817,6 +817,13 @@
     .info-panel.open {
       transform: translateY(0);
     }
+    :global(body[data-panel-surface='focus'][data-compact='true']) .info-panel.open,
+    :global(body[data-panel-surface='semantic-dive'][data-compact='true']) .info-panel.open {
+      display: none;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
     .info-panel-content {
       padding-top: 1rem;
     }

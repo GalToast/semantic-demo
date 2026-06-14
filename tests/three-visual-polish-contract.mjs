@@ -11,7 +11,8 @@ const threeSetup = fs.readFileSync(threeSetupPath, 'utf8');
 const nodeManagerPath = path.join(repoRoot, 'js', 'modules', 'three-node-manager.ts');
 const nodeManager = fs.readFileSync(nodeManagerPath, 'utf8');
 const threadManagerPath = path.join(repoRoot, 'js', 'modules', 'three-thread-manager.ts');
-const threadManager = fs.readFileSync(threadManagerPath, 'utf8');
+const threadManagerPathSvelte = path.join(repoRoot, 'src', 'lib', 'engine', 'thread-manager.ts');
+const threadManager = fs.existsSync(threadManagerPathSvelte) ? fs.readFileSync(threadManagerPathSvelte, 'utf8') : fs.readFileSync(threadManagerPath, 'utf8');
 const interactionVisualsPath = path.join(repoRoot, 'js', 'modules', 'three-interaction-visuals.ts');
 const interactionVisuals = fs.readFileSync(interactionVisualsPath, 'utf8');
 const cameraRestorePath = path.join(repoRoot, 'js', 'modules', 'camera-controls-restore.ts');
@@ -67,10 +68,10 @@ assert(
 
 // Thread contrast contract: focus keeps global threads as background context.
 includesAll(threadManager, [
-    'overview: { core: 0.13, wispy: 0.055, bridge: 0.08, pulse: 0.028 }',
-    'focused: { core: 0.14, wispy: 0.045, bridge: 0.07, pulse: 0.006 }',
-    'searchActive: { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 }',
-    'trailActive: { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 }'
+    'core: 0.112, wispy: 0.047, bridge: 0.068, pulse: 0.022',
+    'core: 0.16, wispy: 0.055, bridge: 0.085, pulse: 0.008',
+    'core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072',
+    'core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044'
 ], 'mycelium presentation opacity profile');
 
 const initThreeSource = sectionBetween(

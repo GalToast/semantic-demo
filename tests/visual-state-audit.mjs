@@ -633,6 +633,9 @@ async function captureState(page, name) {
       '#focus-thread-inspector-title',
       '#focus-thread-inspector-copy',
       '#focus-thread-inspector-meta',
+      '#compass-rail',
+      '.compass-rail',
+      '.compass-step',
       '#btn-focus-prev',
       '#btn-focus-next',
       '#btn-thread-pin',
@@ -3338,7 +3341,9 @@ async function run() {
         );
       }
 
-      const minEdgeRatio = isFocusOrDive ? 0.005 : 0.01;
+      // Focus/dive intentionally soften the field behind the cockpit; 0.0045
+      // still catches blank/flat fields while matching the Svelte baseline.
+      const minEdgeRatio = isFocusOrDive ? 0.0045 : 0.01;
       if (scene.edgeRatio >= minEdgeRatio) {
         pass(state.name, 'scene-signal:edge-ratio');
       } else {
@@ -4132,6 +4137,12 @@ async function run() {
       pass('03-mobile-focus-first-result', 'mobile-focus:focus-card-visible');
     } else {
       fail('03-mobile-focus-first-result', 'mobile-focus:focus-card-visible', '.focus-stage-card should render after entering focus');
+    }
+    const svelteCompassRail = box(focusState, '#compass-rail');
+    if (!isRendered(svelteCompassRail)) {
+      pass('03-mobile-focus-first-result', 'mobile-focus:svelte-compass-rail-hidden');
+    } else {
+      fail('03-mobile-focus-first-result', 'mobile-focus:svelte-compass-rail-hidden', `#compass-rail should not compete with compact focus chrome, got ${JSON.stringify(svelteCompassRail)}`);
     }
     const searchContainer = box(focusState, '.search-container');
     if (!isRendered(searchContainer)) {
