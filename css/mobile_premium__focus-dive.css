@@ -1363,6 +1363,29 @@
         overflow: hidden;
     }
 
+    /* Focus-search active trail uses two mobile lanes:
+       the selected business card stays readable at the top, and journey
+       chrome starts below it. Without this explicit contract the fixed
+       focus card can be clipped above the viewport while journey chrome
+       cuts across the card footer/contact rows. */
+    body[data-panel-surface='focus-search'][data-trail-state='active']
+        .focus-card.focus-stage-card {
+        top: max(10px, env(safe-area-inset-top, 0px));
+        bottom: auto;
+        max-height: min(22dvh, 186px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    body[data-panel-surface='focus-search'][data-trail-state='active']
+        #journey-chrome.journey-chrome {
+        position: fixed;
+        top: clamp(214px, 27dvh, 240px);
+        bottom: auto;
+        max-height: calc(100dvh - 294px - env(safe-area-inset-bottom, 0px));
+        overflow-y: auto;
+    }
+
     /* Field node returns to bottom when trail is active */
     body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'][data-trail-state='active']
         #focus-stage.focus-stage {

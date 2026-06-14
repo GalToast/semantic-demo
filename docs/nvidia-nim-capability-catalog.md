@@ -29,9 +29,9 @@ These are source-backed notes for the models most relevant to Semantic Explorer 
 
 | Route / family | Public date | Official source | Capability note for this repo |
 |---|---|---|---|
-| `nvidia/moonshotai/kimi-k2.6` | Kimi site lists 2026-04-20; NVIDIA Build lists 2026-04-29 for its hosted card | <https://www.kimi.com/blog/kimi-k2-6>, <https://build.nvidia.com/moonshotai/kimi-k2.6/modelcard> | Best current dual-purpose scout: long-horizon coding plus image/video-capable multimodal reasoning, with prior strong repo runs. |
+| `nvidia/moonshotai/kimi-k2.6` | Kimi site lists 2026-04-20; NVIDIA Build lists 2026-04-29 for its hosted card | <https://www.kimi.com/blog/kimi-k2-6>, <https://build.nvidia.com/moonshotai/kimi-k2.6/modelcard> | Best current dual-purpose scout: long-horizon coding plus static UI vision. 2026-06-13 Pi/browser smoke correctly critiqued a Semantic Explorer mobile PNG; WEBM video was not inspected, so video is still unproven through Pi. |
 | `nvidia/deepseek-ai/deepseek-v4-flash` / `nvidia/deepseek-ai/deepseek-v4-pro` | DeepSeek API support dated 2026-04-24 | <https://api-docs.deepseek.com/updates>, <https://build.nvidia.com/deepseek-ai/deepseek-v4-flash/modelcard> | Coding/reasoning agents, not visual models. Use for code archaeology and implementation review. |
-| `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` | Public card did not expose a simple date in the fetched page; source checked 2026-06-13 | <https://build.nvidia.com/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning/modelcard> | Dedicated omni-modal candidate for clip diagnostics: video, audio, image, text, GUI/OCR, transcription, and document intelligence are described on the card. |
+| `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` | Public card did not expose a simple date in the fetched page; source checked 2026-06-13 | <https://build.nvidia.com/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning/modelcard> | Official omni-modal candidate for clip diagnostics, but 2026-06-13 Pi/browser worker smoke failed with garbled unusable output. Next test should bypass Pi worker chat and send a tiny direct media payload. |
 | `nvidia/nemotron-nano-12b-v2-vl` | 2025-10-28 | <https://build.nvidia.com/nvidia/nemotron-nano-12b-v2-vl/modelcard> | Good screenshot/multi-image candidate. The card lists video input but says reasoning is not supported for video inputs, so do not use it as the first video-reasoning pick. |
 | `nvidia/cosmos-reason2-8b` / `cosmos3-nano-reasoner` | Build card search result reports 2026-01-05 for Build and 2025-12-18 for Hugging Face; source checked 2026-06-13 | <https://build.nvidia.com/nvidia/cosmos-reason2-8b/modelcard> | Physical-world video/image reasoning candidate. Route/card naming is ambiguous in Build, so smoke before relying on it. |
 | Mistral direct `mistral-large-2512` / `devstral-2512` | Mistral changelog: 2025-12-02 for Large 3, 2025-12-09 for Devstral 2 | <https://docs.mistral.ai/resources/changelogs> | Strong text/code subagent routes; not primary visual QA models. |
@@ -71,8 +71,8 @@ These model IDs are available from the local NVIDIA `/v1/models` list. Some appe
 
 High-priority vision probes:
 
-- `nvidia/moonshotai/kimi-k2.6` even though the local model name is not explicitly vision-tagged; NVIDIA Build describes it as multimodal with image/video understanding.
-- `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` because NVIDIA describes it as understanding images, video, speech, and text.
+- `nvidia/moonshotai/kimi-k2.6` even though the local model name is not explicitly vision-tagged; NVIDIA Build describes it as multimodal with image/video understanding, and our Pi/browser smoke has proven PNG screenshot critique.
+- `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` because NVIDIA describes it as understanding images, video, speech, and text; use a direct media payload smoke, not the current Pi worker path, until the garbled-output failure is explained.
 - `nvidia/google/gemma-4-31b-it`, `nvidia/meta/llama-3.2-90b-vision-instruct`, `nvidia/microsoft/phi-4-multimodal-instruct`, `nvidia/nemotron-nano-12b-v2-vl`.
 
 ### Embeddings, Retrieval, Rerank, Similarity
@@ -205,12 +205,13 @@ These are not model endpoints, but they may be useful for Codex/Pi skills if we 
 
 ### Vision / UI QA Reliability
 
-1. `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`
-2. `nvidia/nemotron-nano-12b-v2-vl`
-3. `nvidia/google/gemma-4-31b-it`
-4. `nvidia/meta/llama-3.2-90b-vision-instruct`
-5. `nvidia/microsoft/phi-4-multimodal-instruct`
-6. `nvidia/cosmos-reason2-8b`
+1. `nvidia/moonshotai/kimi-k2.6` -- proven useful for PNG screenshot critique through Pi; next smoke should verify true WEBM/video support.
+2. `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` -- direct media-payload smoke only; Pi/browser worker path failed with garbled output.
+3. `nvidia/nemotron-nano-12b-v2-vl`
+4. `nvidia/google/gemma-4-31b-it`
+5. `nvidia/meta/llama-3.2-90b-vision-instruct`
+6. `nvidia/microsoft/phi-4-multimodal-instruct`
+7. `nvidia/cosmos-reason2-8b`
 
 ### Non-Chat API Wiring
 
