@@ -5,7 +5,8 @@
  * Manages Leaflet map initialization, marker refresh, route embodiment,
  * terrain handoff, and route director state synchronization.
  */
-import { state, withStateMutation, type Point } from '../../../js/state';
+import { appState as state } from '@lib/state/app.svelte.ts';
+import type { Point } from '../../../js/state';
 import { subscribeKeyed, EVENTS } from '../../../js/modules/event-bus';
 import { pointHasGeocode, isPointVisible } from '../../../js/modules/utils/geo-data';
 import { formatBusinessName } from '@lib/utils/dom-formatters';
@@ -262,7 +263,7 @@ export function getMapRoutePoints(): Array<{ index: number; point: Point }> {
 
 export function refreshMapRouteEmbodiment(): void {
     if (!state.map || !state.mapRouteLayer) {
-        withStateMutation(() => {
+        state.withMutation(() => {
             state.routeTraceDiagnostics.mapPointCount = 0;
             state.routeTraceDiagnostics.mapPathActive = false;
         });
@@ -270,7 +271,7 @@ export function refreshMapRouteEmbodiment(): void {
     }
     (state.mapRouteLayer as { clearLayers(): void }).clearLayers();
     if (state.currentView !== 'map') {
-        withStateMutation(() => {
+        state.withMutation(() => {
             state.routeTraceDiagnostics.mapPointCount = 0;
             state.routeTraceDiagnostics.mapPathActive = false;
         });
@@ -278,7 +279,7 @@ export function refreshMapRouteEmbodiment(): void {
     }
 
     const routePoints = getMapRoutePoints();
-    withStateMutation(() => {
+    state.withMutation(() => {
         state.routeTraceDiagnostics.mapPointCount = routePoints.length;
         state.routeTraceDiagnostics.mapPathActive = routePoints.length >= 2;
     });
@@ -496,7 +497,7 @@ export function setTerrainHandoffState(phase = 'idle', options: TerrainHandoffOp
         ? options.routeCount
         : getRouteEmbodimentIndices().length;
 
-    withStateMutation(() => {
+    state.withMutation(() => {
         state.terrainHandoffState = {
             phase: normalizedPhase,
             from: options.from || state.terrainHandoffState?.from || 'overview',
