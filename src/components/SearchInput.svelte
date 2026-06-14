@@ -37,7 +37,7 @@
   }
 
   let {
-    placeholder = 'Search businesses...',
+    placeholder = 'Search (press /)',
     debounceMs = 300,
     expanded = false
   }: Props = $props();

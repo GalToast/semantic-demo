@@ -160,6 +160,34 @@
     };
   });
 
+  // ── Global keyboard shortcuts ──────────────────────────────────────────────
+  // P1: `/` focuses the search input; `Esc` clears it when focused.
+  $effect(() => {
+    function handleGlobalKeydown(e: KeyboardEvent): void {
+      const target = e.target as HTMLElement;
+      const tag = target?.tagName?.toLowerCase();
+      const isFormField = tag === 'input' || tag === 'textarea' || tag === 'select'
+        || target?.isContentEditable === true;
+
+      if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField) {
+        e.preventDefault();
+        document.getElementById('search-input')?.focus();
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+        if (searchInput && document.activeElement === searchInput) {
+          searchInput.value = '';
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleGlobalKeydown);
+    return () => window.removeEventListener('keydown', handleGlobalKeydown);
+  });
+
   // The parity-attrs installer is the single source of truth for all body
   // data-* attributes.  All pre-parity $effect blocks that previously lived
   // here (data-navSurface, data-journeyPhase, data-demoPhase, data-reducedMotion,
