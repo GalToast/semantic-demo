@@ -18,6 +18,12 @@ import * as mapStateStaticModule from '../../../../js/modules/map-state';
 import * as semanticDiveUiStaticModule from '@lib/journey/semantic-dive';
 import * as cameraControlsCoreStaticModule from '../../../../js/modules/camera-controls-core.ts';
 import * as focusPanelModeStaticModule from '../../../../js/modules/focus-panel-mode.js';
+// Static imports for the two modules flagged INEFFECTIVE_DYNAMIC_IMPORT
+// when dynamically loaded here (lifecycle.js + journey.js are already
+// statically imported elsewhere in the imperative bridge graph, so the
+// dynamic form bought nothing and only added an extra hop).
+import * as lifecycleStaticModule from '../../../../js/modules/lifecycle.js';
+import * as journeyStaticModule from '../../../../js/modules/journey.js';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 
@@ -153,8 +159,8 @@ async function _ensureModules(): Promise<void> {
       busMod,
     ] = await Promise.all([
       import('../../../../js/modules/environment.js'),
-      import('../../../../js/modules/lifecycle.js'),
-      import('../../../../js/modules/journey.js'),
+      lifecycleStaticModule as unknown as LifecycleModule,
+      journeyStaticModule as unknown as JourneyModule,
       import('../../../../js/modules/journey-compass-controller.js'),
       import('../../../../js/modules/event-bus.js'),
     ]);

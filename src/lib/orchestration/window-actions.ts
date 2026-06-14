@@ -9,6 +9,12 @@
 import * as cameraControlsModule from '../../../js/modules/camera-controls';
 import * as connectionAnalysisModule from '../../../js/modules/connection-analysis.js';
 import * as searchStateModule from '../../../js/modules/search-state.ts';
+// Static imports for the two modules flagged INEFFECTIVE_DYNAMIC_IMPORT
+// when dynamically loaded here (lifecycle.js + journey.js are already
+// statically imported elsewhere in the imperative bridge graph, so the
+// dynamic form bought nothing and only added an extra hop).
+import * as lifecycleModule from '../../../js/modules/lifecycle.js';
+import * as journeyModule from '../../../js/modules/journey.js';
 import * as semanticGuideModule from '@lib/journey/semantic-guide';
 import * as stateModule from '../../../js/state';
 import {
@@ -67,8 +73,8 @@ async function loadLegacyActionModules(): Promise<LegacyActionModules> {
   if (loadPromise) return loadPromise;
 
   loadPromise = Promise.all([
-    import('../../../js/modules/lifecycle.js'),
-    import('../../../js/modules/journey.js')
+    Promise.resolve(lifecycleModule),
+    Promise.resolve(journeyModule)
   ]).then(([lifecycle, journey]) => {
     legacyModules = {
       state: (stateModule as { state?: Record<string, unknown> }).state,
