@@ -22,6 +22,7 @@
     .search-loading, .search-loading-spinner, .search-loading-text
 -->
 <script lang="ts">
+  import { tick } from 'svelte';
   import { searchState, hasResults, activeResult, setActiveResult, clearSearch } from '@lib/stores/search';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
   import { searchVisibleCount as searchVisibleCountFn, setSearchVisibleCount } from '@lib/stores/search';
@@ -137,6 +138,43 @@
   let isFullError = $derived(searchError != null && searchError.type === 'full');
   let isInlineError = $derived(searchError != null && searchError.type === 'inline');
 
+  // ── Roving tabindex active index ──────────────────────────────────────────────
+
+  /** Index within resultSlice of the currently active (tabbable) result. */
+  let activeIndex = $derived.by(() => {
+    if (resultSlice.length === 0) return -1;
+    // Find the result matching the store's activeResultId
+    const matchIdx = (resultSlice as SearchResult[]).findIndex(
+      (r) => r.id === activeId
+    );
+    return matchIdx >= 0 ? matchIdx : 0;
+  });
+
+  /** Set the active result by its position in the visible slice. */
+  function setActiveResultByIndex(idx: number): void {
+    const clamped = Math.max(0, Math.min(idx, resultSlice.length - 1));
+    const result = (resultSlice as SearchResult[])[clamped];
+    if (result?.id) {
+      setActiveResult(result.id);
+    }
+  }
+
+  // Sync DOM focus with the roving active index (runs after each render).
+  $effect(() => {
+    const idx = activeIndex;
+    if (idx < 0) return;
+    // Use tick() to ensure the DOM has updated before focusing.
+    void tick().then(() => {
+      const list = document.getElementById('search-result-list');
+      const btn = list?.querySelector(
+        `[data-order="${idx}"]`
+      ) as HTMLElement | null;
+      if (btn && document.activeElement !== btn) {
+        btn.focus({ preventScroll: false });
+      }
+    });
+  });
+
   // ── Handlers ──────────────────────────────────────────────────────────────────
 
   function handleShowMore(): void {
@@ -154,6 +192,34 @@
       const firstNewItem = document.querySelector(`[data-index="${(results as unknown as SearchResult[])[firstNewIndex]?.index}"]`);
       if (firstNewItem) firstNewItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
+  }
+
+  function handleContainerKeyDown(event: KeyboardEvent): void {
+    const count = resultSlice.length;
+    if (count === 0) return;
+
+    const key = event.key;
+
+    if (key === 'ArrowDown' || key === 'ArrowRight') {
+      event.preventDefault();
+      setActiveResultByIndex(activeIndex < count - 1 ? activeIndex + 1 : 0);
+    } else if (key === 'ArrowUp' || key === 'ArrowLeft') {
+      event.preventDefault();
+      setActiveResultByIndex(activeIndex > 0 ? activeIndex - 1 : count - 1);
+    } else if (key === 'Home') {
+      event.preventDefault();
+      setActiveResultByIndex(0);
+    } else if (key === 'End') {
+      event.preventDefault();
+      setActiveResultByIndex(count - 1);
+    } else if (key === 'Enter' || key === ' ') {
+      event.preventDefault();
+      if (activeIndex >= 0) {
+        const active = (resultSlice as SearchResult[])[activeIndex];
+        if (active) handleResultClick(active.index);
+      }
+    }
+    // Do NOT preventDefault for Tab — let Tab move to the next landmark.
   }
 
   function handleResultClick(index: number | string): void {
@@ -334,17 +400,25 @@
         {/if}
       </div>
 
-      <div id="search-result-list" class="search-result-list" role="list" aria-label="Search result businesses">
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <div
+        id="search-result-list"
+        class="search-result-list"
+        role="listbox"
+        aria-label="Search result businesses"
+        aria-activedescendant={activeIndex >= 0 ? `search-result-${Number((resultSlice as SearchResult[])[activeIndex]?.index)}` : undefined}
+        onkeydown={handleContainerKeyDown}
+      >
         {#each resultSlice as result, order (result.index ?? order)}
           {@const item = itemModel(result, order)}
-          <div class="search-result-listitem" role="listitem">
+          <div class="search-result-listitem" role="option" id={`search-result-option-${order}`} aria-selected={order === activeIndex}>
             <button
               class={item.cardClasses}
               id={`search-result-${Number(result.index)}`}
               data-index={result.index}
               data-order={order}
               type="button"
-              tabindex="0"
+              tabindex={order === activeIndex ? 0 : -1}
               aria-label={item.ariaLabel}
               style={`animation-delay: ${item.animationDelay}`}
               onclick={() => handleResultClick(result.index)}
