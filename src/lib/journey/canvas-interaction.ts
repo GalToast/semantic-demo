@@ -12,7 +12,7 @@ import {
   focusOnNode,
   noteSceneInteraction,
   releaseFocusCameraAssist,
-} from '../../../js/modules/camera-controls';
+} from '@lib/engine/camera-controls';
 import {
   initJourneyCanvasInteractionAdapter,
   isThreadCandidateVisibleOnCanvas,
