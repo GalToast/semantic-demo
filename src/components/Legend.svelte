@@ -18,6 +18,8 @@
   }
 
   let { open = false, mapView = false, concealedByFocus = false }: Props = $props();
+  let activeLegendButtonIndex = $state(0);
+  let legendButtons: HTMLButtonElement[] = [];
 
   /** 15-entry cluster names matching CLUSTER_NAMES from state.js / InfoPanel.svelte */
   const CLUSTER_NAMES: string[] = [
@@ -87,6 +89,42 @@
 
   let filtered = $derived($hasActiveFilters);
 
+  $effect(() => {
+    if (activeLegendButtonIndex >= clusterEntries.length) {
+      activeLegendButtonIndex = Math.max(0, clusterEntries.length - 1);
+    }
+  });
+
+  function focusLegendButton(index: number): void {
+    if (!clusterEntries.length) return;
+    const nextIndex = (index + clusterEntries.length) % clusterEntries.length;
+    activeLegendButtonIndex = nextIndex;
+    legendButtons[nextIndex]?.focus();
+  }
+
+  function handleLegendKeydown(event: KeyboardEvent, index: number): void {
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        event.preventDefault();
+        focusLegendButton(index + 1);
+        break;
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        event.preventDefault();
+        focusLegendButton(index - 1);
+        break;
+      case 'Home':
+        event.preventDefault();
+        focusLegendButton(0);
+        break;
+      case 'End':
+        event.preventDefault();
+        focusLegendButton(clusterEntries.length - 1);
+        break;
+    }
+  }
+
   function toggleCluster(_name: string, index: number): void {
     // activeClusterFilter is stored as the cluster index (number-as-string)
     // so the engine's isPointVisible(pointCluster, activeClusterFilter)
@@ -115,13 +153,19 @@
   {#if filtered}
     <span class="legend-filtered-badge">filtered</span>
   {/if}
-  <div class="legend-list">
-    {#each clusterEntries as entry (entry.name)}
+  <div class="legend-list" role="group" aria-label="Business categories. Use arrow keys to move between categories.">
+    {#each clusterEntries as entry, i (entry.name)}
       <button
+        bind:this={legendButtons[i]}
         class="legend-item"
         class:inactive={$activeClusterFilter !== null && Number($activeClusterFilter) === entry.index}
         onclick={() => toggleCluster(entry.name, entry.index)}
+        onfocus={() => {
+          activeLegendButtonIndex = i;
+        }}
+        onkeydown={(event) => handleLegendKeydown(event, i)}
         type="button"
+        tabindex={open && !concealedByFocus && i === activeLegendButtonIndex ? 0 : -1}
         aria-pressed={$activeClusterFilter !== null && Number($activeClusterFilter) === entry.index}
       >
         <span
