@@ -162,3 +162,5 @@ A focused 10-min manual grep can complete the gap; a re-dispatch is also viable 
 - All dual-impl Svelte/legacy functions have a documented verdict (port, delete, or coexist)
 
 Future work in this repo is now Svelte-track feature work, not BOTH-pattern migration.
+
+**Signal #4 satisfied:** `docs/legacy-runtime-retirement.md` exists naming the retirement commits, consumer surface, and verification (Ticket 9E, 2026-06-13).
