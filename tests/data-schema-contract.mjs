@@ -6,7 +6,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA_COLUMNS } from '../js/modules/utils/data-schema.ts';
+import { DATA_COLUMNS } from '../src/lib/utils/data-schema.ts';
 import { normalizeSlugName, mapRawRecordToPoint } from '../js/modules/utils/data-mapper.ts';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());

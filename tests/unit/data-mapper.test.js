@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeSlugName, mapRawRecordToPoint } from '../../js/modules/utils/data-mapper.js';
-import { DATA_COLUMNS } from '../../js/modules/utils/data-schema.js';
+import { DATA_COLUMNS } from '../../src/lib/utils/data-schema';
 
 describe('normalizeSlugName', () => {
 
