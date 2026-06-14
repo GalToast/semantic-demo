@@ -5,7 +5,7 @@ import {
     getRelationshipRoleCopy,
     getRelationshipRoleLabel,
     describeRelationshipRoleReason
-} from '../../js/modules/relationship-roles.js';
+} from '../../src/lib/utils/relationship-roles';
 
 describe('relationship-roles', () => {
     describe('normalizeRelationshipRole', () => {
