@@ -84,12 +84,34 @@ Pre-staged worker prompts at `tmp/commit-messages-2026-06-13/worker-ticket-S{1..
 - **14 ready-to-fire worker prompts** in `tmp/commit-messages-2026-06-13/` (1+2, 1+2-v2, 4, 5, 6, 8, 9C, 9D, 9E, S1, S2, S3, S4, S5)
 - **3 memories + 2 skills + 1 profile doc** saved (bash-detach, v2-prompt recovery, session summary; bash-detach-handling + dev-server-drift-handling skills; `notes/fred-profile.md`)
 - **Key router running** at `127.0.0.1:8788` with 18 keys across 5 providers (OpenCode Zen, NVIDIA NIM, Mistral, ModelScope, Kilo). The session has been using `pi:direct-opencode-go/mimo-v2.5` direct (bypasses the router); future work on nvidia/mistral/modelscope/kilo routes can use the router.
-- **58+ commits this session** (target: 60+ after S5 close-out), all pushed to origin. Wave included the BOTH-pattern follow-ups (1+2, 3, 4, 5, 6, 8), Wave 9 (9A, 9B, 9C, 9D, 9E), the A worker (9D-Option-B), 5 invariant tests, the S1+S2+S3+S4 worker quad, the S5 close-out, and the docs close-out + retirement publication.
+- **64+ commits this session** (target: 65+ after W6 close-out), all pushed to origin. Wave included the BOTH-pattern follow-ups (1+2, 3, 4, 5, 6, 8), Wave 9 (9A, 9B, 9C, 9D, 9E), the A worker (9D-Option-B), 5 invariant tests, the S1+S2+S3+S4 worker quad, the S5 close-out, Wave 10 W1+W2+W3 (audit + BOTH-shadow retirement + retirement record), and the docs close-out + retirement publication.
 
-## Next session entry (post-S6, pre-Wave 10)
+## Next session entry (post-Wave 10 W2+W3, pre-W6)
 
-1. **A is COMPLETE.** Worker `ocw_b4e07b6e` finished. 35 source files rewritten; BOTH bridge gone from src/, vite.config.ts, vitest.config.js; both-bridge-shape-invariant test added.
-2. **5 invariant tests in place.** withStateMutation, !important, commit-purity, todo-without-ticket, both-bridge-shape.
-3. **S6 arc CLOSED.** All 5 tickets landed (S1, S2, S3, S4, S5). 0 TODO-without-ticket violations. Svelte track is fully canonical.
-4. **Test suite green:** 18/18 files, 130/130 tests. svelte-check 0/0.
-5. **Next arc: Wave 10 (legacy runtime retirement).** The legacy `js/modules/*` tree is the only remaining retirement work. Similar to Wave 9 but for the runtime, not the alias.
+1. **Wave 9 CLOSED** (alias retirement, commit `cbc6509`)
+2. **A worker CLOSED** (9D-Option-B BOTH bridge drop, 35 files rewritten)
+3. **S6 arc CLOSED** (Svelte migration, S1-S5, 0 TODO violations)
+4. **Wave 10 W1 CLOSED** (audit, commit `3df8336`) — found that `js/` is the **active engine kernel**, not legacy
+5. **Wave 10 W2 CLOSED** (BOTH-pattern `.js` shadows retired, commit `7fc7b9d`) — 50 .js shadows archived to `legacy-reference/js-both-shadows-2026-06-13/`
+6. **Wave 10 W3 CLOSED** (retirement record, commit `d49c953`) — `docs/wave-10-legacy-retirement.md` published
+7. **5 invariant tests in place**, all passing
+8. **Test suite green:** 18/18 files, 130/130 tests. svelte-check 0/0
+9. **64+ commits this session** (target: 65+ after W6 close-out), all pushed to origin
+
+## Wave 10 outcome (partially closed)
+
+- **BOTH-pattern shadows**: RETIRED (50 files archived)
+- **Engine kernel** (`js/modules/*.ts` + `js/state.ts` + `js/state/*` + `js/workers/*`): REMAINS ACTIVE
+- **Svelte UI → Svelte bridge → engine kernel architecture**: NOW EXPLICIT in AGENTS.md
+
+The `js/` directory is NOT dead legacy code — it's the active Three.js engine runtime wrapped by the Svelte UI via the imperative bridge in `src/lib/engine/`. Future engine unification (porting the kernel into `src/lib/engine/`) is a separate multi-week arc, not Wave 10's scope.
+
+## Next session entry (post-Wave 10, pre-product features)
+
+1. **W6 close-out commit** — refresh active-context + push (this commit)
+2. **Migration infrastructure: COMPLETE** — BOTH bridge gone, BOTH shadows retired, Svelte UI canonical
+3. **5 invariant tests in place**
+4. **Test suite green:** 18/18 files, 130/130 tests. svelte-check 0/0
+5. **Next arc: product features** (the migration is done; time to ship product work)
+   - Specific candidates: new visual diagnostic features, main chunk split, relationship-roles finalization (now unblocked), CORS production proxy for rerank
+6. **Engine port (separate multi-week arc)** — porting the kernel from `js/modules/*.ts` to `src/lib/engine/*.ts` and thinning the bridge. Not this project's scope.

@@ -288,21 +288,45 @@ All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` 
 - **Architecture state:** InfoPanel is single-track (src/ only — 767L). The legacy islands (`selected-details-svelte-island.{ts,js}`, `search-results-svelte-island.{ts,js}`, `island-mount-helper.{ts,js}`) were marked 100% orphan by the m3 sweep on 2026-06-07, deleted in `b8a50ba`, then restored by the `ec520da` revert on 2026-06-12. Per the BOTH pattern below, they are part of the in-flight migration, not confirmed dead
 - `docs/migration-plan.md` — being written by migration-architect worker
 
-## JS/TS Coexistence: The BOTH Pattern
+## Engine Kernel Architecture (replaces old BOTH-pattern section)
 
-`js/modules/**` runs an in-flight `js → ts` migration with deliberate dual files:
-- `.ts` is the typed source (Vite resolves it first when an import has no extension; the `@legacy/*` path alias points here)
-- `.js` is the runtime stub (what currently ships)
+**As of Wave 10 W2 (commit `7fc7b9d`, 2026-06-13):** The BOTH-pattern shadows are retired. The `.ts` files in `js/modules/*` are now the **single source of truth** for the engine kernel. The `.js` siblings have been moved to `legacy-reference/js-both-shadows-2026-06-13/` for reference (preserved via `git mv`).
 
-Stages (per commit `790f746`):
-- **Stage 3b**: 21 BROKEN-only `.ts` files unblocked by 2 state shims
-- **Stage 3c**: 16 deferred `.ts` files waiting on a 3rd shim (`../../types/state.js`)
-- **50 BOTH files**: `.js` + `.ts` running in parallel during the migration
+### What lives where
 
-**Rule for "is this dead?" sweeps:** A `.ts` under `js/modules/` is NOT dead if ANY of these hold:
-1. Resolvable via the `@legacy/*` path alias (Vite's resolution chain — see `src/lib/engine/adapters/lifecycle-bridge.ts`, `src/lib/engine/demo-choreography.ts` for ~92 import sites)
-2. Has a sibling `.js` in worktree or HEAD (the BOTH pattern)
-3. Referenced by name in `src/`, `docs/`, or `tests/` (non-import grep)
-4. Has a commit in the last 60 days
+| Layer | Path | Role |
+|---|---|---|
+| **Svelte UI** | `src/lib/components/*`, `src/lib/stores/*` | Reactive UI shell (Svelte 5 runes) |
+| **Svelte bridge** | `src/lib/engine/*` | Imperative wrapper that calls into the engine kernel (12 of 14 files have 0 js/ imports; the rest delegate) |
+| **Engine kernel** | `js/modules/*.ts` (125+ files), `js/state.ts`, `js/state/*`, `js/workers/*` | Three.js scene, camera, shaders, instanced meshes, journey, search, weather — the active runtime |
+| **Archived shadows** | `legacy-reference/js-both-shadows-2026-06-13/*` | 50 BOTH-pattern `.js` files; reference material only |
 
-**M3 bugsweep H2 was wrong** to blanket-call 145 .ts files "dead shadows" based on "zero explicit .ts importers + tsconfig excludes js." Both signals are real but neither is conclusive — the @legacy path alias alone covers 60+ files. The 2026-06-12 audit on the post-revert tree found 0 truly orphan candidates out of 155 tracked .ts files; the deletion was reverted as `ec520da` with full context in the message. **Never repeat the blanket-deleted pattern.** Use the 4-signal audit before any future "dead code" sweep.
+### Why this is intentional architecture
+
+The Svelte UI is reactive; the engine kernel is imperative + WebGL-bound. Wrapping one with the other requires an **imperative seam** — the bridge. Calling it "legacy" implied it should be replaced. The W1 audit (`3df8336`) proved otherwise: 38 src/ files import from `js/`, ~80 unique import paths, the entire bridge layer is built on the kernel. **The kernel is not stale coupling; it's the working system.**
+
+The Svelte UI calls into the bridge, which calls into the kernel. This is the same shape as the Svelte → adapter → engine pattern in many production apps. Future "engine port" work (if desired) is a separate multi-week arc, not this project's scope.
+
+### Rule for future "is this dead?" sweeps on `js/`
+
+A file under `js/` is NOT dead if ANY of these hold:
+1. It's a `.ts` file in `js/modules/*` (engine kernel — active runtime)
+2. It's a `.ts` file in `js/state/*` (state kernel — active runtime)
+3. It's a `.js` file in `js/workers/*` (worker kernel — active runtime)
+4. It's imported by name in `src/`, `docs/`, `tests/`, or `legacy-reference/` (any reference)
+5. It has a commit in the last 60 days
+
+A file under `js/` IS dead and can be removed if:
+- No `.ts` sibling (i.e., not a BOTH pattern)
+- No imports in `src/`, `docs/`, `tests/`
+- No recent commits
+
+### BOTH-pattern history (preserved for reference)
+
+The BOTH pattern was the original migration design:
+- `.ts` is the typed source (Vite resolves it first when an import has no extension)
+- `.js` is the runtime stub (thin `export * from './X.ts'` re-export)
+- The `@legacy/*` path alias pointed to the `.ts` (retired in 9D-Option-B, commit `cbc6509`)
+- The `.js` shadows were the only vestigial part after 9D-Option-B; retired in Wave 10 W2 (commit `7fc7b9d`)
+
+**Never repeat the blanket-deleted pattern.** The 2026-06-12 M3 bugsweep H2 was wrong to blanket-call 145 .ts files "dead shadows" based on "zero explicit .ts importers + tsconfig excludes js." Both signals are real but neither is conclusive. Use the 4-signal audit before any future "dead code" sweep on `js/`.
