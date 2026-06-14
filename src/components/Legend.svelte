@@ -13,9 +13,11 @@
   interface Props {
     open?: boolean;
     mapView?: boolean;
+    /** When true, Legend is hidden to avoid bottom-left collision with JourneyChrome/MapSummary in focus states */
+    concealedByFocus?: boolean;
   }
 
-  let { open = false, mapView = false }: Props = $props();
+  let { open = false, mapView = false, concealedByFocus = false }: Props = $props();
 
   /** 15-entry cluster names matching CLUSTER_NAMES from state.js / InfoPanel.svelte */
   const CLUSTER_NAMES: string[] = [
@@ -104,7 +106,8 @@
   class="legend"
   class:open
   class:map-view={mapView}
-  aria-hidden={!open}
+  class:concealed-by-focus={concealedByFocus}
+  aria-hidden={!open || concealedByFocus}
   aria-label="Business category legend"
   id="legend-panel"
 >
@@ -155,6 +158,9 @@
   }
   .legend.open {
     transform: translateX(0);
+  }
+  .legend.concealed-by-focus {
+    display: none;
   }
   .legend-title {
     font-family: 'Bricolage Grotesque', sans-serif;

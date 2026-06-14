@@ -284,8 +284,8 @@
     <MapView />
   {/if}
 
-  <!-- Layer 50: Legend panel -->
-  <Legend open={$legendOpen} mapView={mapModeActive} />
+  <!-- Layer 50: Legend panel (UI-2: concealed in focus states to resolve bottom-left triple collision) -->
+  <Legend open={$legendOpen} mapView={mapModeActive} concealedByFocus={focusActive} />
 
   <!-- Layer 50: Weather widget (top-right chrome, same layer as legend) -->
   <WeatherWidget visible={true} />
