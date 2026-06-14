@@ -19,7 +19,7 @@
 
   let { open = false, mapView = false, concealedByFocus = false }: Props = $props();
   let activeLegendButtonIndex = $state(0);
-  let legendButtons: HTMLButtonElement[] = [];
+  let legendButtons: HTMLButtonElement[] = $state([]);
 
   /** 15-entry cluster names matching CLUSTER_NAMES from state.js / InfoPanel.svelte */
   const CLUSTER_NAMES: string[] = [

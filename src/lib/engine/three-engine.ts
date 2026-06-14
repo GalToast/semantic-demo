@@ -54,7 +54,7 @@ import * as viewControllerMod from '../../../js/modules/view-controller';
 import * as mapStateMod from '../../../js/modules/map-state';
 import * as uiFeedbackMod from '../../../js/modules/ui-feedback';
 import * as mapFlatteningMod from '../../../js/modules/map-flattening-layout';
-import * as webglRestoreMod from '../../../js/modules/webgl-restore-adapter';
+import * as webglRestoreMod from '@lib/utils/webgl-restore-adapter';
 import * as focusAnchorMod from '../../../js/modules/focus-anchor-indicator';
 import * as audioScapeMod from '../../../js/modules/audio-scape';
 import * as eventBindingsMod from '../../../js/modules/event-bindings';

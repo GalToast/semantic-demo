@@ -1,17 +1,8 @@
 /**
- * js/modules/webgl-restore-adapter.ts
+ * webgl-restore-adapter.ts — Thin re-export shim
  *
- * TypeScript shadow of webgl-restore-adapter.js.
- * WebGL context restore handler registry.
+ * Canonical implementation moved to src/lib/utils/webgl-restore-adapter.ts (W11-T1b).
+ * This shim preserves backward compatibility for engine kernel importers.
  */
 
-let _restoreHandler: (() => Promise<unknown> | unknown) | null = null;
-
-export function setWebGLContextRestoreHandler(fn: (() => Promise<any> | any) | null): void {
-    _restoreHandler = typeof fn === 'function' ? fn : null;
-}
-
-export function restoreWebGLContext(): Promise<boolean> {
-    if (!_restoreHandler) return Promise.resolve(false);
-    return Promise.resolve(_restoreHandler()).then(() => true);
-}
+export { setWebGLContextRestoreHandler, restoreWebGLContext } from '../src/lib/utils/webgl-restore-adapter';

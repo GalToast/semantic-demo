@@ -115,3 +115,7 @@ export {
   createFocusRingTexture,
   createFocusNextCueTexture,
 } from './three-textures';
+export {
+  setWebGLContextRestoreHandler,
+  restoreWebGLContext,
+} from './webgl-restore-adapter';
