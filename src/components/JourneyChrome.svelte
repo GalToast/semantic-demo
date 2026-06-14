@@ -36,10 +36,10 @@
   const navSnapshot = $derived($navStore);
   const journeySnapshot = $derived($journeyStore);
   const currentFocusedIndex = $derived(navSnapshot.focusedIndex);
-  const currentTrailDepth = $derived(Math.max(navSnapshot.trailDepth ?? 0, journeySnapshot.trailDepth ?? 0));
+  const currentTrailDepth = $derived(Math.max(navSnapshot.trailDepth ?? 0, journeySnapshot.depth ?? 0));
   const currentWalkHistory = $derived(
-    journeySnapshot.walkHistoryIndices.length > 0
-      ? journeySnapshot.walkHistoryIndices
+    journeySnapshot.trail.length > 0
+      ? journeySnapshot.trail.map(t => t.index)
       : navSnapshot.walkHistoryIndices
   );
   const currentThreadCandidates = $derived(
@@ -61,8 +61,8 @@
   // duplicating content from #journey-compass. Hidden when both
   // data-journey-phase and data-journey-compass are 'idle'.
   const isJourneyIdle = $derived(
-    (journeySnapshot.phase ?? 'idle') === 'idle' &&
-    (journeySnapshot.compass?.phase ?? 'idle') === 'idle'
+    ((journeySnapshot.phase ?? 'idle') as string) === 'idle' &&
+    ((journeySnapshot.compass?.phase ?? 'idle') as string) === 'idle'
   );
 
   // ── Walk breadcrumb ────────────────────────────────────────────────────────

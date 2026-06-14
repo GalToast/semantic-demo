@@ -137,7 +137,7 @@ export function startMicroDemo(): void {
 
 async function _startMicroDemo(): Promise<void> {
   // Use demo phase from store for re-entrancy check
-  const phase = get(demoPhase);
+  const phase = demoPhase();
   if (phase !== 'IDLE') {
     debugWarn('[demo] already active or completed');
     return;
@@ -190,7 +190,7 @@ async function _startMicroDemo(): Promise<void> {
   try { sessionStorage.setItem(SESSION_STORAGE_KEY, new Date().toISOString()); } catch { /* ignore */ }
 
   // Update store
-  startDemo(node);
+  startDemo();
 
   // Delegate to legacy choreography module
   await _loadChoreography();
@@ -216,5 +216,5 @@ export function cancelMicroDemo(reason = 'user-input'): void {
 }
 
 export function isMicroDemoRunning(): boolean {
-  return get(isDemoActive);
+  return isDemoActive();
 }

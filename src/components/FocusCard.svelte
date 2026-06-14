@@ -164,7 +164,7 @@
 
     // Use search result if available
     if (currentActiveResult !== null) {
-      return _records[currentActiveResult.index] ?? null;
+      return _records[Number(currentActiveResult)] ?? null;
     }
 
     // Otherwise use field focus

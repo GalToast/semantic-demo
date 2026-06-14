@@ -6,15 +6,32 @@
  */
 import * as THREE from 'three';
 import type { NavState } from '@lib/types/state';
-import type { ActiveFilters } from '@lib/types/state';
+// ActiveFilters removed — was unused in this bridge file
 import {
   easeInOutCubic,
   quadraticBezierComponent,
 } from '@lib/utils/math-easing';
-import * as selectorsStaticModule from '../../../../js/state/selectors/index';
-import * as legacyStateModule from '../../../../js/state';
-import * as cameraControlsCoreStaticModule from '../../../../js/modules/camera-controls-core.ts';
-import * as cameraControlsRestoreStaticModule from '../../../../js/modules/camera-controls-restore.ts';
+import {
+  getCamera,
+  getControls,
+  getNodePositions,
+  getOriginalPositions,
+  getTargetPositions,
+  getNavState,
+  getCurrentView,
+  getSemanticDiveMode,
+  getPoints,
+  getTrailDepth,
+  getActiveClusterFilter,
+  // getActiveFilters removed — unused in bridge
+  getRouteCameraAnimationToken,
+  getMapHandoffPreludeMs,
+  getOrbitMinDistanceDefault,
+  getOrbitMaxDistanceDefault,
+} from '@lib/engine/state-selectors-bridge';
+import { state as legacyState } from '@lib/engine/state-bridge';
+import { setFocusTransitionMode } from '@lib/engine/camera-controls-core-bridge';
+import { noteSceneInteraction } from '@lib/engine/camera-controls-restore-bridge';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 
@@ -55,40 +72,12 @@ interface LegacyState {
   navState: ChoreographyNavState;
 }
 
-/** Selectors module shape. */
-interface SelectorsModule {
-  getCamera(): { position: THREE.Vector3 } | null;
-  getControls(): { target: THREE.Vector3; update(): void; minDistance: number; maxDistance: number } | null;
-  getNodePositions(): Array<{ x: number; y: number; z: number }> | null;
-  getOriginalPositions(): Array<{ x: number; y: number; z: number }> | null;
-  getTargetPositions(): Array<{ x: number; y: number; z: number }> | null;
-  getNavState(): ChoreographyNavState;
-  getCurrentView(): string;
-  getSemanticDiveMode(): boolean;
-  getPoints(): Point[] | null;
-  getTrailDepth(): number;
-  getActiveClusterFilter(): number | null;
-  getActiveFilters(): ActiveFilters;
-  getRouteCameraAnimationToken(): number;
-  getMapHandoffPreludeMs(): number;
-  getOrbitMinDistanceDefault(): number;
-  getOrbitMaxDistanceDefault(): number;
-}
+
 
 /** Environment module shape. */
 interface EnvironmentModule {
   isMobile(): boolean;
   prefersReducedMotion(): boolean;
-}
-
-/** Camera controls core module shape. */
-interface CameraCoreModule {
-  setFocusTransitionMode(mode: string, options?: { duration?: number }): void;
-}
-
-/** Camera controls restore module shape. */
-interface CameraRestoreModule {
-  noteSceneInteraction(delay: number): void;
 }
 
 /** Event bus module shape. */
@@ -100,10 +89,7 @@ interface EventBusModule {
 // ── Lazy Module Cache ────────────────────────────────────────────────────────
 
 let _state: LegacyState | null = null;
-let _selectors: SelectorsModule | null = null;
 let _environment: EnvironmentModule | null = null;
-let _cameraCore: CameraCoreModule | null = cameraControlsCoreStaticModule as unknown as CameraCoreModule;
-let _cameraRestore: CameraRestoreModule | null = cameraControlsRestoreStaticModule as unknown as CameraRestoreModule;
 let _eventBus: EventBusModule | null = null;
 
 let _loaded = false;
@@ -115,8 +101,7 @@ async function _ensureModules(): Promise<void> {
       import('../../../../js/modules/environment.js'),
       import('../../../../js/modules/event-bus.js'),
     ]);
-    _state = (legacyStateModule as unknown as { state: LegacyState }).state;
-    _selectors = selectorsStaticModule as unknown as SelectorsModule;
+    _state = legacyState as unknown as LegacyState;
     _environment = envMod as unknown as EnvironmentModule;
     _eventBus = busMod as unknown as EventBusModule;
     _loaded = true;
@@ -129,7 +114,6 @@ void _ensureModules();
 
 // ── Module-level Mutable State ───────────────────────────────────────────────
 
-let _insideCentroidTarget: THREE.Vector3 | null = null;
 let _insideCentroidLerpToken = 0;
 
 function normalizeIndexArray(indices: unknown): number[] {
@@ -143,9 +127,9 @@ export function animateCameraToSearchCorridor(
   resultIndices: number[] = [],
   options: { duration?: number; reason?: string } = {},
 ): boolean {
-  if (!_loaded || !_selectors || !_environment || !_cameraCore || !_cameraRestore || !_eventBus) return false;
-  if (!_selectors.getCamera() || !_selectors.getControls() || _selectors.getCurrentView() !== 'galaxy') return false;
-  if (!Number.isFinite(anchorIndex) || _selectors.getNavState().focusedIndex !== null || _selectors.getSemanticDiveMode()) return false;
+  if (!_loaded || !_environment || !_eventBus) return false;
+  if (!getCamera() || !getControls() || getCurrentView() !== 'galaxy') return false;
+  if (!Number.isFinite(anchorIndex) || getNavState().focusedIndex !== null || getSemanticDiveMode()) return false;
 
   const isPointVisible = (index: number, points: Point[], clusterFilter: number | null): boolean => {
     if (!Number.isFinite(index) || index < 0 || index >= points.length) return false;
@@ -158,7 +142,7 @@ export function animateCameraToSearchCorridor(
     return true;
   };
 
-  const allPoints = _selectors.getPoints();
+  const allPoints = getPoints();
   if (!allPoints) return false;
 
   const routeIndices = [...new Set([anchorIndex, ...(resultIndices || [])])]
@@ -167,13 +151,13 @@ export function animateCameraToSearchCorridor(
         Number.isFinite(index) &&
         index >= 0 &&
         index < allPoints.length &&
-        isPointVisible(index, allPoints, _selectors!.getActiveClusterFilter()),
+        isPointVisible(index, allPoints, getActiveClusterFilter()),
     )
     .slice(0, _environment.isMobile() ? 8 : 12);
 
-  const targetPositions = _selectors.getTargetPositions();
-  const nodePositions = _selectors.getNodePositions();
-  const originalPositions = _selectors.getOriginalPositions();
+  const targetPositions = getTargetPositions();
+  const nodePositions = getNodePositions();
+  const originalPositions = getOriginalPositions();
 
   const vectors = routeIndices
     .map((index) => targetPositions?.[index] || nodePositions?.[index] || originalPositions?.[index])
@@ -238,15 +222,15 @@ export function animateCameraToSearchCorridor(
       lastCameraMove: 'search-corridor',
     },
   });
-  _cameraRestore.noteSceneInteraction(duration + 1200);
+  noteSceneInteraction(duration + 1200);
 
   const controlTarget = startTarget.clone().lerp(endTarget, 0.56).add(worldUp.clone().multiplyScalar(0.025));
 
   function step(now: number): void {
     if (
-      animationToken !== _selectors!.getRouteCameraAnimationToken() ||
-      _selectors!.getNavState().focusedIndex !== null ||
-      _selectors!.getCurrentView() !== 'galaxy'
+      animationToken !== getRouteCameraAnimationToken() ||
+      getNavState().focusedIndex !== null ||
+      getCurrentView() !== 'galaxy'
     )
       return;
     if (!_state?.controls?.target || !_state?.camera?.position) return;
@@ -269,10 +253,10 @@ export function animateCameraToSearchCorridor(
 export function animateCameraToTerrainPrelude(
   options: { duration?: number } = {},
 ): void {
-  if (!_loaded || !_selectors || !_environment || !_cameraCore || !_eventBus) return;
+  if (!_loaded || !_environment || !_eventBus) return;
 
   const reducedMotion = _environment.prefersReducedMotion();
-  const duration = reducedMotion ? 1 : options.duration || _selectors.getMapHandoffPreludeMs() || 1200;
+  const duration = reducedMotion ? 1 : options.duration || getMapHandoffPreludeMs() || 1200;
 
   _eventBus.publish(_eventBus.EVENTS['TRANSITION_PHASE_CHANGED']!, { phase: 'map-prelude', options: { duration } });
 
@@ -294,7 +278,7 @@ export function animateCameraToTerrainPrelude(
     const animationToken = ++_state.focusCameraAnimationToken;
     const startTime = performance.now();
 
-    _cameraCore!.setFocusTransitionMode('map-prelude', { duration });
+    setFocusTransitionMode('map-prelude', { duration });
 
     const priorControlsEnabled = _state.controls.enabled;
     _state.controls.enabled = false;
@@ -326,13 +310,12 @@ export function animateCameraToTerrainPrelude(
 // ── applySemanticCentroidCamera ───────────────────────────────────────────────
 
 export function applySemanticCentroidCamera(now: number = performance.now()): void {
-  if (!_loaded || !_state || !_selectors || !_environment) return;
+  if (!_loaded || !_state || !_environment) return;
   if (!_state.camera || !_state.controls) return;
-  if (_selectors.getTrailDepth() !== 2) {
-    _insideCentroidTarget = null;
+  if (getTrailDepth() !== 2) {
     return;
   }
-  const navState = _selectors.getNavState();
+  const navState = getNavState();
   const indices = normalizeIndexArray(navState.focusPocketIndices);
   if (!indices || !indices.length) return;
 
@@ -341,7 +324,7 @@ export function applySemanticCentroidCamera(now: number = performance.now()): vo
 
   let cx = 0, cy = 0, cz = 0, count = 0;
   for (const idx of pocketIndices) {
-    const pos = _selectors.getNodePositions()?.[idx] || _selectors.getOriginalPositions()?.[idx];
+    const pos = getNodePositions()?.[idx] || getOriginalPositions()?.[idx];
     if (!pos) continue;
     cx += Number.isFinite(pos.x) ? pos.x : 0;
     cy += Number.isFinite(pos.y) ? pos.y : 0;
@@ -354,7 +337,7 @@ export function applySemanticCentroidCamera(now: number = performance.now()): vo
 
   const anchorPos =
     anchorIdx !== null && anchorIdx !== undefined
-      ? _selectors.getNodePositions()?.[anchorIdx] || _selectors.getOriginalPositions()?.[anchorIdx]
+      ? getNodePositions()?.[anchorIdx] || getOriginalPositions()?.[anchorIdx]
       : null;
   if (!anchorPos) return;
 
@@ -400,26 +383,28 @@ export function applySemanticCentroidCamera(now: number = performance.now()): vo
 // ── zoomCamera ───────────────────────────────────────────────────────────────
 
 export function zoomCamera(multiplier: number): void {
-  if (!_loaded || !_selectors) return;
-  const camera = _selectors.getCamera();
-  const controls = _selectors.getControls();
+  if (!_loaded) return;
+  const camera = getCamera() as THREE.Camera | null;
+  const controls = getControls() as unknown as { target: THREE.Vector3 | undefined; minDistance?: number; maxDistance?: number } | null;
   if (!camera || !controls) return;
   const target = controls.target;
   if (!target) return;
   const camPos = camera.position;
   if (!Number.isFinite(camPos.x + camPos.y + camPos.z + target.x + target.y + target.z)) return;
-  const direction = camPos.clone().sub(target).normalize();
-  const currentDistance = camPos.distanceTo(target);
+  const clonedPos = camPos.clone();
+  const direction = (clonedPos as THREE.Vector3).sub(target as THREE.Vector3).normalize();
+  const currentDistance = (camPos as THREE.Vector3).distanceTo(target as THREE.Vector3);
   const newDistance = currentDistance * multiplier;
-  const minDist = controls.minDistance || _selectors.getOrbitMinDistanceDefault() || 0.5;
-  const maxDist = controls.maxDistance || _selectors.getOrbitMaxDistanceDefault() || 8.0;
+  const minDist = controls.minDistance || getOrbitMinDistanceDefault() || 0.5;
+  const maxDist = controls.maxDistance || getOrbitMaxDistanceDefault() || 8.0;
   const clampedDistance = Math.max(minDist, Math.min(maxDist, newDistance));
-  camera.position.copy(target.clone().add(direction.multiplyScalar(clampedDistance)));
+  const offset = (direction as THREE.Vector3).multiplyScalar(clampedDistance);
+  const newPos = (target as THREE.Vector3).clone().add(offset as THREE.Vector3);
+  (camera as THREE.Camera).position.copy(newPos as THREE.Vector3);
 }
 
 // ── clearInsideCentroid ──────────────────────────────────────────────────────
 
 export function clearInsideCentroid(): void {
-  _insideCentroidTarget = null;
   _insideCentroidLerpToken++;
 }

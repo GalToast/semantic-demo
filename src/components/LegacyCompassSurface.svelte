@@ -221,7 +221,7 @@
   //   showDiveButton = getTrailDepth() >= 1 && hasFocus && !active
   let bodyFocusedIndex = $derived(Number(bodyFocusedNode));
   let activeTrailDepth = $derived(Math.max(
-    finiteDepth(journeyState.trailDepth),
+    finiteDepth(journeyState.depth),
     finiteDepth(navState.trailDepth),
     finiteDepth(bodyTrailDepth),
     finiteDepth(bodyAppTrailDepth)

@@ -380,8 +380,16 @@ export function setActiveResult(id: string | null): void {
   });
 }
 
+export function searchVisibleCount(): number {
+  try {
+    const v = sessionStorage.getItem('searchVisibleCount');
+    if (v) return Number(v) || 10;
+  } catch { /* ignore */ }
+  return 10;
+}
+
 export function setSearchVisibleCount(n: number): void {
-  // Compatibility placeholder
+  try { sessionStorage.setItem('searchVisibleCount', String(n)); } catch { /* ignore */ }
 }
 
 export function setSearchResults(results: SearchResult[]): void {

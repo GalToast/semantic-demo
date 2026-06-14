@@ -8,11 +8,11 @@ import type {
   CompassPhase,
   CompassAction,
   TrailStop,
-  NeighborEntry,
+
   WalkHistoryEntry
 } from '@lib/types/state';
-import { type Readable, get, toStore } from 'svelte/store';
-import { debugWarn } from '@lib/utils/diagnostic-adapter';
+import { type Readable, toStore } from 'svelte/store';
+// debugWarn removed — was unused in this store
 import { appState } from '@lib/state/app.svelte.ts';
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
@@ -49,7 +49,12 @@ const INITIAL_JOURNEY: JourneyStoreState = {
   lastTraversalReason: null,
   terrainHandoffPhase: 'idle',
   routeExplorationPhase: 'idle',
-  routeChoreographyPhase: 'overview'
+  routeChoreographyPhase: 'overview',
+  selectedId: null,
+  selectedStopIndex: null,
+  neighbors: [],
+  compass: { phase: 'idle' as CompassPhase, currentAction: 'none' as CompassAction, previousAction: 'none' as CompassAction, lastTransitionAt: 0 },
+  walkHistory: []
 };
 
 // ── Store ────────────────────────────────────────────────────────────────────
@@ -128,7 +133,13 @@ export const journeySelectedId = () => {
   const focused = appState.navState.focusedIndex;
   return focused === null ? null : String(focused);
 };
-export const walkHistory = () => [...appState.navState.walkHistoryIndices].map(index => ({ index } as WalkHistoryEntry));
+export const walkHistory = () =>
+  [...appState.navState.walkHistoryIndices].map<WalkHistoryEntry>(index => ({
+    fromIndex: -1,
+    toIndex: index,
+    reason: '',
+    timestamp: Date.now()
+  }));
 export const trailDepth = () => appState.navState.trailDepth;
 export const trailSeedIndex = () => appState.navState.trailSeedIndex;
 export const trailNeighborIndices = () => appState.navState.trailNeighborIndices;
@@ -216,7 +227,7 @@ export function setNeighbors(indices: readonly number[]): void {
 }
 
 export function addWalkHistory(entry: WalkHistoryEntry | number): void {
-  addTrailStop(typeof entry === 'number' ? entry : entry.index);
+  addTrailStop(typeof entry === 'number' ? entry : entry.toIndex);
 }
 
 export function clearWalkHistory(): void {
