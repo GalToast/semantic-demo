@@ -523,6 +523,14 @@
         pointer-events: none;
     }
 
+    /* UI-4: Legend translated off-screen on mobile but still display:block.
+       display:none frees compositor/GPU resources when not visible.
+       #legend-panel ID wins over Svelte scoped .legend:not(.open) via
+       equal specificity + later load order. */
+    #legend-panel:not(.open) {
+        display: none;
+    }
+
     body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .info-content,
     body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .info-content {
         height: calc(100dvh - 20px);
