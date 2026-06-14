@@ -726,6 +726,16 @@ body[data-trail-state='active'] .focus-stage-neighbor-pill {
         pointer-events: none;
     }
 
+    /* UI-2: Hide legend panel in focus mode to prevent bottom-left collision.
+       The legend is a category reference not needed during focused business
+       exploration. Trail controls and focus-pocket own the left side. */
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+        #legend-panel {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     body[data-panel-surface='focus'] .focus-stage-card::-webkit-scrollbar,
     body[data-panel-surface='focus-search'] .focus-stage-card::-webkit-scrollbar,
     body[data-panel-surface='semantic-dive'] .focus-stage-card::-webkit-scrollbar {

@@ -1,0 +1,129 @@
+- generic [active] [ref=e1] [box=0,0,1440,900]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer] [box=0,-40,185,38]:
+    - /url: "#main-content"
+  - generic [ref=e4] [box=0,0,1440,900]:
+    - application "Semantic business visualization of Montgomery County businesses. Use arrow keys to navigate." [ref=e164] [box=0,0,1440,900]
+    - complementary "Business category legend" [ref=e7] [box=16,451,200,433]:
+      - heading "Categories" [level=3] [ref=e8] [box=28,463,176,15]
+      - generic [ref=e9] [box=28,486,176,386]:
+        - button "Food & Dining 2531" [ref=e165] [cursor=pointer] [box=28,486,176,20]:
+          - generic [ref=e12] [box=45,489,75,14]: Food & Dining
+          - generic [ref=e13] [box=181,489,23,13]: "2531"
+        - button "Professional Services 879" [ref=e166] [cursor=pointer] [box=28,512,176,20]:
+          - generic [ref=e16] [box=45,515,114,14]: Professional Services
+          - generic [ref=e17] [box=186,516,17,13]: "879"
+        - button "Retail & Shopping 524" [ref=e167] [cursor=pointer] [box=28,538,176,20]:
+          - generic [ref=e20] [box=45,541,95,14]: Retail & Shopping
+          - generic [ref=e21] [box=186,542,17,13]: "524"
+        - button "Health & Medical 775" [ref=e168] [cursor=pointer] [box=28,564,176,20]:
+          - generic [ref=e24] [box=45,567,88,14]: Health & Medical
+          - generic [ref=e25] [box=186,568,17,13]: "775"
+        - button "Home & Garden 1089" [ref=e169] [cursor=pointer] [box=28,590,176,20]:
+          - generic [ref=e28] [box=45,594,83,14]: Home & Garden
+          - generic [ref=e29] [box=181,594,23,13]: "1089"
+        - button "Automotive 122" [ref=e170] [cursor=pointer] [box=28,617,176,20]:
+          - generic [ref=e32] [box=45,620,61,14]: Automotive
+          - generic [ref=e33] [box=186,620,17,13]: "122"
+        - button "Education & Childcare 599" [ref=e171] [cursor=pointer] [box=28,643,176,20]:
+          - generic [ref=e36] [box=45,646,117,14]: Education & Childcare
+          - generic [ref=e37] [box=186,646,17,13]: "599"
+        - button "Entertainment & Events 707" [ref=e172] [cursor=pointer] [box=28,669,176,20]:
+          - generic [ref=e40] [box=45,672,124,14]: Entertainment & Events
+          - generic [ref=e41] [box=186,672,17,13]: "707"
+        - button "Construction & Trades 211" [ref=e173] [cursor=pointer] [box=28,695,176,20]:
+          - generic [ref=e44] [box=45,698,118,14]: Construction & Trades
+          - generic [ref=e45] [box=186,699,17,13]: "211"
+        - button "Real Estate 269" [ref=e174] [cursor=pointer] [box=28,721,176,20]:
+          - generic [ref=e48] [box=45,724,59,14]: Real Estate
+          - generic [ref=e49] [box=186,725,17,13]: "269"
+        - button "Nonprofit & Civic 118" [ref=e175] [cursor=pointer] [box=28,747,176,20]:
+          - generic [ref=e52] [box=45,750,90,14]: Nonprofit & Civic
+          - generic [ref=e53] [box=186,751,17,13]: "118"
+        - button "Technology 38" [ref=e176] [cursor=pointer] [box=28,773,176,20]:
+          - generic [ref=e56] [box=45,777,61,14]: Technology
+          - generic [ref=e57] [box=192,777,12,13]: "38"
+        - button "Manufacturing & Industrial 43" [ref=e177] [cursor=pointer] [box=28,800,176,20]:
+          - generic [ref=e60] [box=45,803,139,14]: Manufacturing & Industrial
+          - generic [ref=e61] [box=192,803,12,13]: "43"
+        - button "Financial Services 70" [ref=e178] [cursor=pointer] [box=28,826,176,20]:
+          - generic [ref=e64] [box=45,829,96,14]: Financial Services
+          - generic [ref=e65] [box=192,829,12,13]: "70"
+        - button "Agriculture & Land 20" [ref=e179] [cursor=pointer] [box=28,852,176,20]:
+          - generic [ref=e68] [box=45,855,99,14]: Agriculture & Land
+          - generic [ref=e69] [box=192,856,12,13]: "20"
+    - generic "Weather conditions" [ref=e70] [box=1314,8,118,63]:
+      - button "Toggle weather details" [ref=e71] [cursor=pointer] [box=1325,13,97,53]:
+        - generic [ref=e72] [box=1333,18,40,42]: ☀
+        - generic [ref=e73] [box=1378,30,34,19]: 78°
+    - complementary [box=338,116,322,208]:
+      - generic [box=355,133,288,110]:
+        - generic [box=355,181,288,50]:
+          - heading [level=3] [box=370,198,128,15]: Business Details
+    - search "Search businesses in the semantic field" [ref=e74] [box=510,16,420,126]:
+      - generic [ref=e75] [box=523,29,420,101]:
+        - generic [box=523,29,420,14]: Search
+        - generic [ref=e76] [box=523,46,420,62]:
+          - img [ref=e77] [box=536,69,16,16]
+          - searchbox "Search businesses" [ref=e80] [box=536,55,394,44]
+        - status [box=523,114,420,16]
+    - banner [ref=e81] [box=0,0,1440,61]:
+      - generic [ref=e82] [box=16,20,148,21]:
+        - generic [ref=e83] [box=16,20,27,21]: SE
+        - generic [ref=e84] [box=50,22,114,15]: Semantic Explorer
+        - button "Close category legend" [ref=e85] [cursor=pointer] [box=1396,117,28,28]:
+          - img [ref=e86] [box=1403,124,14,14]
+        - button "Open keyboard shortcuts" [ref=e91] [cursor=pointer] [box=1396,169,28,28]:
+          - img [ref=e92] [box=1403,176,14,14]
+      - radiogroup "View mode" [ref=e96] [box=180,8,375,44]:
+        - radio "M Overview" [checked] [ref=e97] [cursor=pointer] [box=180,8,77,44]:
+          - generic [ref=e98] [box=188,24,6,13]: M
+          - generic [ref=e99] [box=199,22,49,15]: Overview
+        - radio "S Search" [ref=e100] [cursor=pointer] [box=261,8,62,44]:
+          - generic [ref=e101] [box=269,24,6,13]: S
+          - generic [ref=e102] [box=280,22,34,15]: Search
+        - radio "T Trail" [ref=e103] [cursor=pointer] [box=327,8,50,44]:
+          - generic [ref=e104] [box=336,24,6,13]: T
+          - generic [ref=e105] [box=346,22,22,15]: Trail
+        - radio "F Focus" [ref=e106] [cursor=pointer] [box=381,8,57,44]:
+          - generic [ref=e107] [box=390,24,6,13]: F
+          - generic [ref=e108] [box=400,22,29,15]: Focus
+        - radio "I Inside" [ref=e109] [cursor=pointer] [box=442,8,58,44]:
+          - generic [ref=e110] [box=451,24,6,13]: I
+          - generic [ref=e111] [box=461,22,30,15]: Inside
+        - radio "G Map" [ref=e112] [cursor=pointer] [box=504,8,50,44]:
+          - generic [ref=e113] [box=513,24,6,13]: G
+          - generic [ref=e114] [box=523,22,22,15]: Map
+      - generic [ref=e115] [box=1217,24,207,12]: County-wide overview across all visible records.
+    - group [ref=e180] [box=1175,681,166,151]:
+      - generic [ref=e181] [box=1175,681,166,95]:
+        - generic [ref=e182] [box=1189,688,137,22]: Overview | Montgomery County
+        - generic [ref=e183] [box=1203,713,111,16]: The MoCo Mycelium
+        - generic [ref=e184] [box=1189,732,137,37]: Start wide, then search by need or clue to open one trail through the network.
+      - generic [box=0,0,0,0]:
+        - generic [box=1175,794,166,38]:
+          - generic [box=1186,801,144,25]:
+            - generic [box=1186,801,144,25]: Pick a business, then explore its nearby neighbors.
+    - list "Neighborhood businesses" [ref=e116] [box=-1,-1,1,1]
+    - toolbar "Camera controls" [ref=e117] [box=1369,605,55,279]:
+      - button "Zoom in" [ref=e118] [cursor=pointer] [box=1374,610,44,44]:
+        - img [ref=e119] [box=1388,624,16,16]
+      - button "Zoom out" [ref=e123] [cursor=pointer] [box=1374,662,44,44]:
+        - img [ref=e124] [box=1388,676,16,16]
+      - button "Reset view" [ref=e127] [cursor=pointer] [box=1374,714,44,44]:
+        - img [ref=e128] [box=1388,728,16,16]
+      - button "Toggle auto-rotate" [ref=e131] [cursor=pointer] [box=1374,782,44,44]:
+        - img [ref=e132] [box=1388,796,16,16]
+      - button "Share link" [ref=e135] [cursor=pointer] [box=1374,834,44,44]:
+        - img [ref=e136] [box=1388,848,16,16]
+    - status [box=540,861,360,23]
+  - generic [box=664,98,472,334]:
+    - 'generic "1. overview: See the whole county." [box=689,113,422,32]': overview
+    - 'generic "2. search: Find and center on a business." [box=689,154,422,32]': search
+    - 'generic "3. focus: Inspect a centered anchor." [box=689,195,422,32]': focus
+    - 'generic "4. inside: Explore the neighborhood." [box=689,236,422,32]': inside
+    - 'generic "5. map: View the geographic layer." [box=689,277,422,32]': map
+    - generic [box=689,318,422,14]: Overview | Montgomery County
+    - generic [box=689,342,422,21]: The MoCo Mycelium
+    - generic [box=689,373,422,44]:
+      - button "Step Inside" [ref=e162] [box=932,373,108,44]
+      - button "Map" [ref=e163] [box=1047,373,64,44]
