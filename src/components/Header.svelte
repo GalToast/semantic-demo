@@ -45,16 +45,17 @@
     id: NavMode | 'map';
     label: string;
     description: string;
-    icon: string;
+    /** SVG sprite symbol id (e.g. 'icon-mycelium') */
+    iconId: string;
   }
 
   const modes: ModeOption[] = [
-    { id: 'overview', label: 'Overview', description: MODE_DESCRIPTIONS.overview, icon: 'M' },
-    { id: 'search', label: 'Search', description: MODE_DESCRIPTIONS.search, icon: 'S' },
-    { id: 'trail', label: 'Trail', description: MODE_DESCRIPTIONS.trail, icon: 'T' },
-    { id: 'focus', label: 'Focus', description: MODE_DESCRIPTIONS.focus, icon: 'F' },
-    { id: 'inside', label: 'Inside', description: MODE_DESCRIPTIONS.inside, icon: 'I' },
-    { id: 'map', label: 'Map', description: 'Geographic map view of the county.', icon: 'G' }
+    { id: 'overview', label: 'Overview', description: MODE_DESCRIPTIONS.overview, iconId: 'icon-mycelium' },
+    { id: 'search', label: 'Search', description: MODE_DESCRIPTIONS.search, iconId: 'icon-search' },
+    { id: 'trail', label: 'Trail', description: MODE_DESCRIPTIONS.trail, iconId: 'icon-trail-bloom' },
+    { id: 'focus', label: 'Focus', description: MODE_DESCRIPTIONS.focus, iconId: 'icon-orbit' },
+    { id: 'inside', label: 'Inside', description: MODE_DESCRIPTIONS.inside, iconId: 'icon-zoom-in' },
+    { id: 'map', label: 'Map', description: 'Geographic map view of the county.', iconId: 'icon-map' }
   ];
 
   // Subscribe to navStore for reactive updates in Svelte 5 runes.
@@ -180,7 +181,7 @@
             title={mode.description}
             onclick={() => selectMode(mode.id)}
           >
-            <span class="chip-icon">{mode.icon}</span>
+            <svg class="chip-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{mode.iconId}"/></svg>
             <span class="chip-label">{mode.label}</span>
           </button>
         {/each}
@@ -307,9 +308,10 @@
     font-weight: 600;
   }
   .chip-icon {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    opacity: 0.7;
+    display: none;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
   }
   .chip-label {
     font-size: 0.7rem;
@@ -336,8 +338,12 @@
     .mode-chip .chip-label {
       display: none;
     }
+    .mode-chip .chip-icon {
+      display: block;
+    }
     .mode-chip {
       padding: 0.25rem;
+      justify-content: center;
     }
   }
 </style>
