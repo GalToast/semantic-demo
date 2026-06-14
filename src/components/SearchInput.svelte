@@ -191,6 +191,18 @@
 
   <!-- Input row -->
   <div class="search-input-wrap">
+    <!-- Back button (visible only in search state) -->
+    <button
+      class="search-back-btn"
+      onclick={handleClear}
+      aria-label="Back to overview"
+      type="button"
+      tabindex="0"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M19 12H5M12 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
     <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="10.5" cy="10.5" r="5.8" fill="none" stroke="currentColor" stroke-width="2"/>
       <path d="m15 15 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -369,6 +381,39 @@
   }
   .search-clear:hover {
     color: #ff6b6b;
+  }
+
+  /* ── Back button (visible only in search state) ──────────────────────────── */
+  .search-back-btn {
+    display: none;               /* hidden in idle */
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: rgba(78, 205, 196, 0.1);
+    border: 1px solid rgba(78, 205, 196, 0.25);
+    border-radius: 0.375rem;
+    color: #4ecdc4;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .search-back-btn:hover {
+    background: rgba(78, 205, 196, 0.2);
+    border-color: rgba(78, 205, 196, 0.5);
+  }
+  .search-back-btn:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline-offset: 2px;
+  }
+  .search-back-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  /* Show back button only in search state */
+  :global(body[data-panel-surface='search']) .search-back-btn {
+    display: inline-flex;
   }
 
   /* ── Status messages ──────────────────────────────────────────────────────── */
