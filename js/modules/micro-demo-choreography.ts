@@ -123,20 +123,20 @@ export function runDemo(cancelMicroDemo: (reason: string) => void) {
     document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {
       detail: { index: demoNode, phase: 'glow' }
     }));
-  }, 200));
+  }, 50));
 
   _demoTimers.push(window.setTimeout(() => {
     if (_demoCancelled) return;
     animateCameraToNode(demoNode, {
       transitionStyle: 'focus',
-      duration: 1600,
+      duration: 1200,
       verticalLift: 0.05,
       distance: 0.45
     });
     document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {
       detail: { index: demoNode, phase: 'gliding' }
     }));
-  }, 800));
+  }, 100));
 
   _demoTimers.push(window.setTimeout(() => {
     if (_demoCancelled) return;
@@ -146,18 +146,18 @@ export function runDemo(cancelMicroDemo: (reason: string) => void) {
     document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {
       detail: { index: demoNode, phase: 'arrived' }
     }));
-  }, 2400));
+  }, 1400));
 
   _demoTimers.push(window.setTimeout(() => {
     if (_demoCancelled) return;
     _demoPhase = PHASE.CARD_VISIBLE;
     document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'));
-  }, 3000));
+  }, 1520));
 
   _demoTimers.push(window.setTimeout(() => {
     if (_demoCancelled) return;
     document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'));
-  }, 4500));
+  }, 2520));
 
   _demoTimers.push(window.setTimeout(() => {
     if (_demoCancelled) return;
@@ -168,7 +168,7 @@ export function runDemo(cancelMicroDemo: (reason: string) => void) {
       distance: 1.8,
       verticalLift: 0.12
     });
-  }, 6000));
+  }, 3320));
 
   _demoTimers.push(window.setTimeout(() => {
     if (_demoCancelled) return;
@@ -177,7 +177,7 @@ export function runDemo(cancelMicroDemo: (reason: string) => void) {
       detail: { index: demoNode, phase: 'wide_view' }
     }));
     setInfoPanelOpen(false);
-  }, 7200));
+  }, 4520));
 
   _demoTimers.push(window.setTimeout(() => {
     if (_demoCancelled) return;
@@ -187,14 +187,14 @@ export function runDemo(cancelMicroDemo: (reason: string) => void) {
     document.dispatchEvent(new CustomEvent('micro-demo-node-highlight', {
       detail: { index: demoNode, phase: 'cleanup' }
     }));
-  }, 7800));
+  }, 4870));
 
   _demoTimers.push(window.setTimeout(() => {
     if (_demoCancelled) return;
     _demoPhase = PHASE.COMPLETE;
     showEndToast();
     endDemo('demo-complete', true);
-  }, 8800));
+  }, 5870));
 }
 
 export function cancelChoreography(reason = 'user-input') {

@@ -360,7 +360,7 @@ export async function runDemo(
 
   const demoNode = _demoNodeIndex as number;
 
-  // 200ms — glow highlight
+  // 50ms — glow highlight
   _demoTimers.push(
     window.setTimeout(() => {
       if (_demoCancelled) return;
@@ -369,16 +369,16 @@ export async function runDemo(
           detail: { index: demoNode, phase: 'glow' },
         })
       );
-    }, 200)
+    }, 50)
   );
 
-  // 800ms — start camera glide
+  // 100ms — start camera glide (1200ms animation, arrives at ~1400ms)
   _demoTimers.push(
     window.setTimeout(() => {
       if (_demoCancelled) return;
       camera.animateCameraToNode(demoNode, {
         transitionStyle: 'focus',
-        duration: 1600,
+        duration: 1200,
         verticalLift: 0.05,
         distance: 0.45,
       });
@@ -387,10 +387,10 @@ export async function runDemo(
           detail: { index: demoNode, phase: 'gliding' },
         })
       );
-    }, 800)
+    }, 100)
   );
 
-  // 2400ms — arrived, setup focus
+  // 1400ms — arrived, setup focus (GLIDING_MS)
   _demoTimers.push(
     window.setTimeout(() => {
       if (_demoCancelled) return;
@@ -403,27 +403,27 @@ export async function runDemo(
           detail: { index: demoNode, phase: 'arrived' },
         })
       );
-    }, 2400)
+    }, 1400)
   );
 
-  // 3000ms — card visible pulse
+  // 1520ms — card visible (GLIDING_MS + ARRIVED_HOLD_MS)
   _demoTimers.push(
     window.setTimeout(() => {
       if (_demoCancelled) return;
       _demoPhase = PHASE.CARD_VISIBLE;
       document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'));
-    }, 3000)
+    }, 1520)
   );
 
-  // 4500ms — second name pulse
+  // 2520ms — second name pulse (midway through CARD_VISIBLE)
   _demoTimers.push(
     window.setTimeout(() => {
       if (_demoCancelled) return;
       document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'));
-    }, 4500)
+    }, 2520)
   );
 
-  // 6000ms — pullback
+  // 3320ms — pullback (GLIDING_MS + ARRIVED_HOLD_MS + CARD_VISIBLE_MS)
   _demoTimers.push(
     window.setTimeout(() => {
       if (_demoCancelled) return;
@@ -434,10 +434,10 @@ export async function runDemo(
         distance: 1.8,
         verticalLift: 0.12,
       });
-    }, 6000)
+    }, 3320)
   );
 
-  // 7200ms — wide view
+  // 4520ms — wide view (above + PULLBACK_MS)
   _demoTimers.push(
     window.setTimeout(() => {
       if (_demoCancelled) return;
@@ -448,10 +448,10 @@ export async function runDemo(
         })
       );
       panel.setInfoPanelOpen(false);
-    }, 7200)
+    }, 4520)
   );
 
-  // 7800ms — returning to overview
+  // 4870ms — returning to overview (above + WIDE_VIEW_HOLD_MS)
   _demoTimers.push(
     window.setTimeout(() => {
       if (_demoCancelled) return;
@@ -464,10 +464,10 @@ export async function runDemo(
           detail: { index: demoNode, phase: 'cleanup' },
         })
       );
-    }, 7800)
+    }, 4870)
   );
 
-  // 8800ms — complete
+  // 5870ms — complete (above + RETURNING_MS)
   _demoTimers.push(
     window.setTimeout(() => {
       if (_demoCancelled) return;
@@ -475,7 +475,7 @@ export async function runDemo(
       ui.showEndToast();
       // Fire-and-forget: endDemo is async but the demo is complete at this point.
       void endDemo('demo-complete', true);
-    }, 8800)
+    }, 5870)
   );
 }
 
