@@ -86,7 +86,7 @@ const MAP_DESCRIPTOR: InfoPanelContentDescriptor = {
   selectionSuppressed: true,
 };
 
-const FALLBACK_DESCRIPTOR: InfoPanelContentDescriptor = CONTENT_BY_SURFACE.idle;
+const FALLBACK_DESCRIPTOR: InfoPanelContentDescriptor = CONTENT_BY_SURFACE.idle!;
 
 /**
  * Given a panelSurface string (from body[data-panel-surface]),
