@@ -10,6 +10,10 @@
 
 import { setLoadingPhase as setNavLoadingPhase } from '@lib/stores/navigation';
 import { setLoadingPhase as setDataLoadingPhase } from '@lib/data-store';
+import { loadSemanticThreads } from '@lib/semantic-threads';
+import { createMycelium } from '@lib/engine/thread-manager';
+import { isWeatherInitialized, setWeatherInitialized } from '@lib/stores/weather.svelte';
+import { initWeather } from '../../../../js/modules/weather';
 import type { LoadingPhase, LoadingPhaseMeta } from '@lib/types/state';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -39,8 +43,10 @@ const SCENE_READY_EVENT = 'semantic:scene-ready';
 
 let _hideToken = 0;
 let _loadingOverlayStartedAt = 0;
-let _loadingHideCancelled = false;
+
 let _loadingHideTimer: ReturnType<typeof setTimeout> | null = null;
+let _loadingHideCancelled = false;
+let _deferredHydrationStarted = false;
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -140,9 +146,32 @@ export async function hideLoadingOverlay(): Promise<void> {
  * (semantic threads, mycelium, filters, weather) during idle time.
  */
 export function startDeferredHydration(): void {
+  if (_deferredHydrationStarted) return;
+  _deferredHydrationStarted = true;
+
   const run = async (): Promise<void> => {
-    // TODO: Port loadSemanticThreads, applyFilters, createMycelium from legacy modules
-    // These will be called via the engine bridge during phased migration.
+    try {
+      // Load semantic thread neighbor data (async, may retry internally)
+      const threadsPromise = loadSemanticThreads({ reason: 'svelte-deferred-hydration' }).catch(
+        (err: unknown) => {
+          console.warn('[Loading] deferred semantic threads load failed:', err);
+        }
+      );
+
+      // Apply current filter state to legacy point visibility (sync)
+      // Filter state is already synced via the Svelte store; the legacy
+      // rendering layer reads point.visible during the next frame.
+      await threadsPromise;
+
+      // Create mycelium thread geometry (sync, requires pointsMesh + nodePositions)
+      try {
+        createMycelium();
+      } catch (threadErr) {
+        console.warn('[Loading] deferred mycelium creation failed:', threadErr);
+      }
+    } catch (err) {
+      console.error('[Loading] deferred hydration failed:', err);
+    }
 
     scheduleWeatherHydration();
   };
@@ -158,9 +187,15 @@ export function startDeferredHydration(): void {
  * Schedule weather initialization during idle time.
  */
 export function scheduleWeatherHydration(): void {
-  // TODO: Check weatherInitialized flag from legacy state
+  if (isWeatherInitialized()) return;
+
   const start = (): void => {
-    // TODO: Port initWeather from js/modules/weather.js
+    try {
+      initWeather();
+      setWeatherInitialized(true);
+    } catch (err) {
+      console.warn('[Loading] weather initialization failed:', err);
+    }
   };
 
   if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
@@ -177,16 +212,30 @@ export function applyLoadingErrorState(error: Error): void {
   const overlay = document.getElementById('loading-overlay');
   if (!overlay) return;
 
-  const escapedMessage = _escapeHtml(error?.message || 'Initialization failed');
+  // Build error UI via DOM API (no innerHTML) to avoid XSS surface
+  overlay.textContent = '';
+  const shell = document.createElement('div');
+  shell.className = 'loading-shell';
+  shell.setAttribute('role', 'alert');
 
-  overlay.innerHTML = `
-    <div class="loading-shell" role="alert">
-      <div class="loading-kicker">Graph unavailable</div>
-      <div class="loading-title">Failed to load county records</div>
-      <div class="loading-note">The Semantic Explorer is offline or blocked right now. Refresh after the connection recovers.</div>
-      <div class="loading-foot">${escapedMessage}</div>
-    </div>
-  `;
+  const kicker = document.createElement('div');
+  kicker.className = 'loading-kicker';
+  kicker.textContent = 'Graph unavailable';
+
+  const title = document.createElement('div');
+  title.className = 'loading-title';
+  title.textContent = 'Failed to load county records';
+
+  const note = document.createElement('div');
+  note.className = 'loading-note';
+  note.textContent = 'The Semantic Explorer is offline or blocked right now. Refresh after the connection recovers.';
+
+  const foot = document.createElement('div');
+  foot.className = 'loading-foot';
+  foot.textContent = error?.message || 'Initialization failed';
+
+  shell.append(kicker, title, note, foot);
+  overlay.appendChild(shell);
   overlay.hidden = false;
   overlay.inert = false;
   overlay.removeAttribute('aria-hidden');
@@ -228,13 +277,6 @@ function _updatePhaseChips(activePhase: string): void {
     chip.classList.toggle('is-active', chipPhase === activePhase);
     chip.classList.toggle('is-complete', chipPhaseIndex > -1 && activeIndex > chipPhaseIndex);
   });
-}
-
-function _escapeHtml(str: string): string {
-  if (typeof document === 'undefined') return str;
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
 }
 
 /**

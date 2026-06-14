@@ -52,6 +52,16 @@ const INITIAL_WEATHER: WeatherData = {
 
 export let weatherData = $state<WeatherData>({ ...INITIAL_WEATHER });
 
+// ── Initialization guard ──────────────────────────────────────────────────────
+
+let _initialized = $state(false);
+
+/** Whether weather has been initialized (prevents double-init). */
+export function isWeatherInitialized(): boolean { return _initialized; }
+
+/** Mark weather as initialized. Called after first successful initWeather(). */
+export function setWeatherInitialized(value: boolean): void { _initialized = value; }
+
 // ── Derived ───────────────────────────────────────────────────────────────────
 
 export function weatherTemperature(): number { return (weatherData as any).temperature; }
@@ -79,6 +89,7 @@ export const CONDITION_ICONS: Record<WeatherCondition, string> = {
  */
 export function updateWeather(data: Partial<WeatherData>): void {
   Object.assign(weatherData, data, { updatedAt: performance.now() });
+  _initialized = true;
 }
 
 /**
