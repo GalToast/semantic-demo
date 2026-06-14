@@ -243,7 +243,7 @@
           </span>
         </div>
 
-        <h2 class="selected-card-name focus-stage-name" id="focus-stage-name" aria-live="polite">{selectedRecord.name}</h2>
+        <h2 class="selected-card-name focus-stage-name" id="focus-stage-name" aria-live="polite" title={selectedRecord.name} aria-label={selectedRecord.name}>{selectedRecord.name}</h2>
 
         {#if selectedRecord.what}
           <p class="selected-card-what focus-stage-what" id="focus-stage-what">{selectedRecord.what}</p>

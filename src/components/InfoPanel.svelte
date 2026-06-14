@@ -172,6 +172,19 @@
   // Per-state content descriptor (replaces static hardcoded copy)
   let contentDescriptor: InfoPanelContentDescriptor = $derived(getInfoPanelContent(effectiveSurface));
 
+  // A11y: contextual aria-label for the complementary landmark, keyed on surface
+  const ARIA_LABEL_BY_SURFACE: Record<string, string> = {
+    idle: 'Business context panel',
+    focus: 'Focused business details',
+    'focus-search': 'Focused business details',
+    search: 'Business search panel',
+    'semantic-dive': 'Semantic dive exploration',
+    'map-idle': 'Business map panel',
+    'map-focus': 'Business map panel',
+    'map-search': 'Business map panel',
+  };
+  let panelAriaLabel = $derived(ARIA_LABEL_BY_SURFACE[effectiveSurface] ?? 'Business information');
+
   // Search-family surfaces are owned by the App-level SearchBar. Keep the info
   // panel shell present for layout contracts, but suppress selected-business
   // content so it cannot render underneath the search drawer.
@@ -418,7 +431,7 @@
   class:active={panelOpen}
   hidden={!panelOpen}
   aria-hidden={!panelOpen}
-  aria-label="Business information"
+  aria-label={panelAriaLabel}
   aria-live="polite"
   id="info-panel"
 >

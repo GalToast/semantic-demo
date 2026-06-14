@@ -178,6 +178,7 @@
             class:active={isActive(mode.id)}
             role="radio"
             aria-checked={isActive(mode.id)}
+            aria-label={mode.label}
             title={mode.description}
             onclick={() => selectMode(mode.id)}
           >
