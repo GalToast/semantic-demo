@@ -171,4 +171,7 @@ export interface ScenePerformanceDiagnostics {
   avgThreadUpdateMs: number;
   avgGlowMs: number;
   avgLensMs: number;
+  myceliumCoreSegments: number;
+  myceliumWispySegments: number;
+  myceliumBridgeSegments: number;
 }

@@ -11,8 +11,7 @@
 
 import { webglContext } from './webgl-context';
 import * as THREE from 'three';
-import { state as _state, withStateMutation } from '../../../js/state';
-const state = _state as any;
+import { appState as state } from '@lib/state/app.svelte.ts';
 import { CONFIG } from './config';
 import { disposeObject3D } from './resource-tracker';
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation';
@@ -59,7 +58,10 @@ function buildGeometricMyceliumEdges(clusterMembers: Map<number, number[]>, clus
                     const bucket = grid.get(`${cx + dx},${cy + dy},${cz + dz}`);
                     if (!bucket) continue;
                     for (const j of bucket) {
-                        if (j <= i || !state.points[i] || !state.points[j] || state.points[i].cluster !== state.points[j].cluster) continue;
+                        if (j <= i) continue;
+                        const p1 = state.points[i];
+                        const p2 = state.points[j];
+                        if (!p1 || !p2 || p1.cluster !== p2.cluster) continue;
                         const other = state.nodePositions[j];
                         if (!other) continue;
                         const dist = Math.hypot(pos.x - other.x, pos.y - other.y, pos.z - other.z);
@@ -244,7 +246,7 @@ function pushBezierLinePair(positions: number[], colors: number[], pair: EdgePai
 }
 
 function getNavigationMode() {
-    return state.navState?.mode ?? state.navState?.currentMode;
+    return state.navState?.mode;
 }
 
 function getLineSegmentCount(line: any) {
@@ -407,7 +409,7 @@ export function createMycelium() {
     if (!webglContext.scene) return;
     webglContext.pointsMesh.add(webglContext.myceliumGroup);
 
-    withStateMutation(() => {
+    state.withMutation(() => {
         state.scenePerformanceDiagnostics.myceliumCoreSegments = coreConnections.length / 6;
         state.scenePerformanceDiagnostics.myceliumWispySegments = wispyConnections.length / 6;
         state.scenePerformanceDiagnostics.myceliumBridgeSegments = bridgeConnections.length / 6;

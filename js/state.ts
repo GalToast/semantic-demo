@@ -226,6 +226,9 @@ export interface ScenePerformanceDiagnostics {
     avgThreadUpdateMs: number;
     avgGlowMs: number;
     avgLensMs: number;
+    myceliumCoreSegments: number;
+    myceliumWispySegments: number;
+    myceliumBridgeSegments: number;
     drawCalls?: number;
     triangles?: number;
 }
@@ -688,7 +691,7 @@ export const _rawState: SemanticState = {
     dirLight: null as unknown as SemanticState['dirLight'],
 
     // ==== PERFORMANCE DIAGNOSTICS ====
-    scenePerformanceDiagnostics: { active: false, reason: 'not-sampled', lastFrameAt: 0, sampleCount: 0, avgFrameMs: 0, maxFrameMs: 0, avgUpdateMs: 0, maxUpdateMs: 0, avgRenderMs: 0, maxRenderMs: 0, avgControlsMs: 0, avgNodeMotionMs: 0, avgThreadUpdateMs: 0, avgGlowMs: 0, avgLensMs: 0 },
+    scenePerformanceDiagnostics: { active: false, reason: 'not-sampled', lastFrameAt: 0, sampleCount: 0, avgFrameMs: 0, maxFrameMs: 0, avgUpdateMs: 0, maxUpdateMs: 0, avgRenderMs: 0, maxRenderMs: 0, avgControlsMs: 0, avgNodeMotionMs: 0, avgThreadUpdateMs: 0, avgGlowMs: 0, avgLensMs: 0, myceliumCoreSegments: 0, myceliumWispySegments: 0, myceliumBridgeSegments: 0 },
     focusFrameDiagnostics: { lastFrameAt: 0, sampleCount: 0, avgFrameMs: 0, maxFrameMs: 0 },
     focusThreadDiagnostics: { active: false, reason: 'not-built', edgeCount: 0, directEdgeCount: 0, supportEdgeCount: 0, subduedEdgeCount: 0, segmentCount: 0, vertexCount: 0, overlayNodeCount: 0, nextCueSegments: 0, denseBundleMode: false, buildMs: 0, avgFrameMs: 0, maxFrameMs: 0 },
 

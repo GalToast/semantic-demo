@@ -75,7 +75,7 @@ class AppState {
 
   // ==== PERFORMANCE DIAGNOSTICS ====
   scenePerformanceDiagnostics = $state<ScenePerformanceDiagnostics>({
-    active: false, reason: 'not-sampled', lastFrameAt: 0, sampleCount: 0, avgFrameMs: 0, maxFrameMs: 0, avgUpdateMs: 0, maxUpdateMs: 0, avgRenderMs: 0, maxRenderMs: 0, avgControlsMs: 0, avgNodeMotionMs: 0, avgThreadUpdateMs: 0, avgGlowMs: 0, avgLensMs: 0,
+    active: false, reason: 'not-sampled', lastFrameAt: 0, sampleCount: 0, avgFrameMs: 0, maxFrameMs: 0, avgUpdateMs: 0, maxUpdateMs: 0, avgRenderMs: 0, maxRenderMs: 0, avgControlsMs: 0, avgNodeMotionMs: 0, avgThreadUpdateMs: 0, avgGlowMs: 0, avgLensMs: 0, myceliumCoreSegments: 0, myceliumWispySegments: 0, myceliumBridgeSegments: 0,
   });
   focusFrameDiagnostics = $state<FocusFrameDiagnostics>({
     lastFrameAt: 0, sampleCount: 0, avgFrameMs: 0, maxFrameMs: 0,
