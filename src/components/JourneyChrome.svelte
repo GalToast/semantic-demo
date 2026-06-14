@@ -56,6 +56,15 @@
   );
   const chromeHasTrail = $derived(currentTrailDepth > 0);
 
+  // ── Idle gate: hide chrome when journey and compass are both idle ───────
+  // Per M3 audit (UI-1): journey-chrome was visible in idle state,
+  // duplicating content from #journey-compass. Hidden when both
+  // data-journey-phase and data-journey-compass are 'idle'.
+  const isJourneyIdle = $derived(
+    (journeySnapshot.phase ?? 'idle') === 'idle' &&
+    (journeySnapshot.compass?.phase ?? 'idle') === 'idle'
+  );
+
   // ── Walk breadcrumb ────────────────────────────────────────────────────────
 
   const dedupedWalkHistory = $derived.by(() => {
@@ -256,7 +265,7 @@
   });
 </script>
 
-{#if visible}
+{#if visible && !isJourneyIdle}
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <div
     class="journey-chrome"
