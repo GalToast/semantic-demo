@@ -1,0 +1,140 @@
+You are completing **Ticket A2-8: Search results arrow-key navigation**. One HIGH-severity a11y issue.
+
+## Goal
+
+Implement arrow-key navigation within the search results list so keyboard users don't have to Tab through every result.
+
+## Working directory
+
+`C:\Users\HP\Desktop\Temp while my comp is at the shop\semantic-explorer`
+
+## Background
+
+The a11y audit (2026-06-14) found:
+- **A2-8 (HIGH):** When search results appear, each result is a separate Tab stop (`<button tabindex="0">`). With 10+ results, keyboard users must Tab through every result to reach the next landmark. The standard ARIA pattern for a list of results is roving tabindex with arrow-key navigation.
+
+**WCAG:** 2.1.1 Keyboard (Level A)
+
+**Evidence:**
+```
+#search-result-list: role="list", aria-label="Search result businesses"
+Each result: <div role="listitem"> → <button tabindex="0">
+No keydown handler on the list container
+10 results = 10 Tab stops between search input and legend toggle
+```
+
+## Specific steps
+
+### Step 1: Read SearchResults.svelte
+
+Read `src/components/SearchResults.svelte` in full. Understand:
+- The current result rendering structure
+- The `resultSlice` derived value
+- The existing click/keyboard handlers on each result
+- The `#search-result-list` container
+
+### Step 2: Implement arrow-key navigation
+
+Follow the WAI-ARIA `listbox` pattern or `grid` pattern:
+
+1. Only the active (focused) result should have `tabindex="0"`
+2. All other results should have `tabindex="-1"`
+3. Arrow key handlers on the list container (or each result):
+   - ArrowDown: Move focus to next result
+   - ArrowUp: Move focus to previous result
+   - Home: Move focus to first result
+   - End: Move focus to last result
+4. When focus moves, update `tabindex` on the old and new results
+5. Tab should EXIT the list to the next landmark (not move to the next result)
+
+**Implementation approach:**
+- Add `let activeResultIndex = $state(0)` to track which result has focus
+- Add `tabindex={i === activeResultIndex ? 0 : -1}` to each result button
+- Add `onkeydown` handler to the `#search-result-list` container
+- On ArrowDown: increment `activeResultIndex`, focus the new result
+- On ArrowUp: decrement `activeResultIndex`, focus the new result
+- On Home: set `activeResultIndex = 0`, focus
+- On End: set `activeResultIndex = last`, focus
+- On Tab: let default behavior exit the list
+
+### Step 3: Handle dynamic result count
+
+The result list changes as the user types. When results update:
+- Reset `activeResultIndex` to 0
+- Focus the first result (if the list is visible)
+
+### Step 4: Verify
+
+All MUST pass clean:
+- `npm run check` → 0 errors
+- `svelte-check` → 0 errors in `src/`
+- `npm run test:unit` → all tests pass
+- `npm run test:contract` → all tests pass
+
+### Step 5: Verify with Playwright
+
+Use Playwright MCP to verify:
+1. Navigate to `http://localhost:5173/?nodemo=1`
+2. Focus the search input and type "restaurant"
+3. Wait for results to appear
+4. Press ArrowDown — focus should move to the first result
+5. Press ArrowDown again — focus should move to the second result
+6. Press ArrowUp — focus should move back to the first result
+7. Press End — focus should move to the last result
+8. Press Home — focus should move to the first result
+9. Press Tab — focus should EXIT the list to the next landmark
+10. Verify only 1 result has `tabindex="0"` at any time
+
+### Step 6: Commit + push
+
+Suggested commit message:
+```
+fix(a11y): implement arrow-key navigation for search results (A2-8)
+
+Per a11y audit 2026-06-14, search results were individual Tab stops,
+forcing keyboard users to Tab through every result.
+
+Now:
+- Only the focused result has tabindex="0"
+- ArrowDown/ArrowUp navigate between results
+- Home/End jump to first/last result
+- Tab exits the list to the next landmark
+- Follows WAI-ARIA listbox pattern
+
+Verified: svelte-check 0 errors, unit tests pass, Playwright confirms
+arrow key navigation works.
+```
+
+Push to `origin master`.
+
+## Out of scope (DO NOT TOUCH)
+
+- The 7 off-limits state writers (per AGENTS.md)
+- The engine kernel (js/modules/*)
+- Legend (A2-3 is a separate ticket)
+- Mode chips (A2-5 is a separate ticket)
+- The search input itself (already has good a11y)
+
+## File scope
+
+You CAN edit:
+- `src/components/SearchResults.svelte` (primary)
+- `src/components/SearchInput.svelte` (if needed for focus management)
+
+You CAN add:
+- Nothing new
+
+## Tool surface check
+
+Report exposed tools at start. If Read/Write/Edit/Bash/Glob/Grep are missing, stop and report.
+
+## Reporting
+
+When done, return:
+1. The commit SHA
+2. Verification gates pass/fail
+3. Playwright evidence (arrow key navigation in search results)
+4. The exact files changed
+5. Any surprises
+
+If you hit a blocker, return BLOCKED: with details. Do not commit broken state.

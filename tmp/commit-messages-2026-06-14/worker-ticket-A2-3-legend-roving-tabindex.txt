@@ -1,8 +1,8 @@
-You are completing **Ticket A2-3: Legend roving tabindex**. A HIGH-severity a11y fix that collapses 15 tab stops into 1.
+You are completing **Ticket A2-3: Legend roving tabindex**. One HIGH-severity a11y issue.
 
 ## Goal
 
-Implement roving tabindex on the legend category button group so that only one button is in the Tab order at a time. Arrow keys navigate between buttons within the group.
+Implement roving tabindex on the legend category list so 15 individual Tab stops collapse into 1.
 
 ## Working directory
 
@@ -11,86 +11,49 @@ Implement roving tabindex on the legend category button group so that only one b
 ## Background
 
 The a11y audit (2026-06-14) found:
-- **A2-3 (HIGH):** In idle state, there are 15 individual legend category buttons, each a separate Tab stop. Keyboard users must Tab through all 15 before reaching search, mode chips, or camera controls.
+- **A2-3 (HIGH):** Each of the 15 legend category buttons is a separate Tab stop. In idle state, a keyboard user must Tab through all 15 before reaching the search input, mode chips, or camera controls. This makes the app extremely tedious to navigate.
 
 **WCAG:** 2.1.1 Keyboard (Level A)
 
-**Tab order evidence:**
+**Evidence:**
 ```
 Tab 1: Skip link
 Tab 2: Canvas (role=application)
-Tabs 3-17: 15× Legend category buttons ← THE PROBLEM
+Tabs 3-17: 15× Legend category buttons (Food & Dining, Professional Services, ...)
 Tab 18: Weather toggle
 Tab 19: Search input
 ...
 ```
 
-**Current code:** `src/components/Legend.svelte` renders `<button>` elements in an `{#each}` loop. All buttons have natural `tabindex="0"` (default for `<button>`).
+34 visible focusable elements in idle. 15 of them are legend buttons.
 
 ## Specific steps
 
-### Step 1: Read the Legend component
+### Step 1: Read Legend.svelte
 
-Read `src/components/Legend.svelte` in full. Identify the `{#each}` loop that renders category buttons and any existing keyboard handling.
+Read `src/components/Legend.svelte` in full. Understand the current structure:
+- Each category is a `<button class="legend-item">` inside a container
+- Clicking a button filters the visualization by that category
+- The legend has a toggle button that opens/closes the panel
 
 ### Step 2: Implement roving tabindex
 
-The pattern:
-1. Only the FIRST button (or the currently active/filtering button) gets `tabindex="0"`.
-2. All other buttons get `tabindex="-1"`.
-3. Add `onkeydown` handler for ArrowDown/ArrowRight (next), ArrowUp/ArrowLeft (previous), Home (first), End (last).
-4. On arrow key press: prevent default, set current button to `tabindex="-1"`, set target button to `tabindex="0"`, call `target.focus()`.
+The legend category list should behave like a `role="radiogroup"` (single-select) or `role="listbox"` (multi-select) pattern:
 
-**Example pattern:**
-```svelte
-<script>
-  let focusIndex = $state(0);
-  
-  function handleKeydown(event, index) {
-    const buttons = /* get all button elements */;
-    let next = index;
-    
-    switch (event.key) {
-      case 'ArrowDown':
-      case 'ArrowRight':
-        event.preventDefault();
-        next = (index + 1) % buttons.length;
-        break;
-      case 'ArrowUp':
-      case 'ArrowLeft':
-        event.preventDefault();
-        next = (index - 1 + buttons.length) % buttons.length;
-        break;
-      case 'Home':
-        event.preventDefault();
-        next = 0;
-        break;
-      case 'End':
-        event.preventDefault();
-        next = buttons.length - 1;
-        break;
-      default:
-        return;
-    }
-    
-    focusIndex = next;
-    buttons[next]?.focus();
-  }
-</script>
+1. Only the first legend button (or the currently active/filtered button) should have `tabindex="0"`
+2. All other legend buttons should have `tabindex="-1"`
+3. Arrow key handlers:
+   - ArrowDown/ArrowRight: Move focus to next button
+   - ArrowUp/ArrowLeft: Move focus to previous button
+   - Home: Move focus to first button
+   - End: Move focus to last button
+4. When focus moves, update `tabindex` on the old and new buttons
 
-{#each entries as entry, i}
-  <button
-    tabindex={i === focusIndex ? 0 : -1}
-    onkeydown={(e) => handleKeydown(e, i)}
-    ...
-  >
-```
-
-**Important considerations:**
-- When the legend opens/closes, reset `focusIndex` to 0 or the active filter.
-- When a filter is active, set `focusIndex` to the active button's index.
-- The existing `aria-pressed` on each button should be preserved.
-- Don't break the existing click handler.
+**Implementation approach:**
+- Add a `let activeLegendIndex = $state(0)` to track which button has focus
+- Add `tabindex={i === activeLegendIndex ? 0 : -1}` to each button
+- Add `onkeydown` handler to the container (or each button) that manages arrow key navigation
+- On focus (via `onfocus` or `onmouseenter`), update `activeLegendIndex`
 
 ### Step 3: Verify
 
@@ -102,29 +65,33 @@ All MUST pass clean:
 
 ### Step 4: Verify with Playwright
 
+Use Playwright MCP to verify:
 1. Navigate to `http://localhost:5173/?nodemo=1`
-2. Tab to the legend (should be Tab 3 after skip link + canvas)
-3. Press ArrowDown — focus should move to the next category
-4. Press ArrowUp — focus should move back
-5. Press End — focus should move to the last category
-6. Press Home — focus should move to the first
-7. Press Tab — focus should EXIT the legend group (go to weather toggle)
-8. Take a snapshot to confirm only one legend button has `tabindex="0"`
+2. Tab to the first legend button
+3. Press ArrowDown — focus should move to the next legend button (not Tab to it)
+4. Press End — focus should move to the last legend button
+5. Press Home — focus should move to the first legend button
+6. Press Tab — focus should EXIT the legend and move to the next landmark (weather toggle)
+7. Verify only 1 legend button has `tabindex="0"` at any time
 
 ### Step 5: Commit + push
 
 Suggested commit message:
 ```
-fix(a11y): legend roving tabindex — 15 tab stops → 1 (A2-3)
+fix(a11y): implement roving tabindex on legend category list (A2-3)
 
-Per a11y audit 2026-06-14, the legend had 15 individual tab stops,
-making keyboard navigation tedious. Now uses roving tabindex:
-- Only one button is in the Tab order at a time
-- Arrow keys navigate between buttons
-- Home/End jump to first/last
-- Tab exits the group
+Per a11y audit 2026-06-14, the legend had 15 individual Tab stops,
+making keyboard navigation tedious.
 
-Verified: svelte-check 0, tests pass, Playwright confirms roving pattern.
+Now:
+- Only the focused legend button has tabindex="0"
+- Arrow keys navigate between legend buttons
+- Home/End jump to first/last button
+- Tab exits the legend to the next landmark
+- 15 tab stops collapsed to 1
+
+Verified: svelte-check 0 errors, unit tests pass, Playwright confirms
+arrow key navigation works.
 ```
 
 Push to `origin master`.
@@ -133,8 +100,8 @@ Push to `origin master`.
 
 - The 7 off-limits state writers (per AGENTS.md)
 - The engine kernel (js/modules/*)
-- Other components (only Legend.svelte)
-- CSS changes (unless needed for focus indicator on the roving items)
+- Mode chips (A2-5 is a separate ticket)
+- Search results (A2-8 is a separate ticket)
 
 ## File scope
 
@@ -142,7 +109,7 @@ You CAN edit:
 - `src/components/Legend.svelte` (primary)
 
 You CAN add:
-- Nothing new (unless a test file is needed)
+- Nothing new
 
 ## Tool surface check
 
@@ -153,7 +120,8 @@ Report exposed tools at start. If Read/Write/Edit/Bash/Glob/Grep are missing, st
 When done, return:
 1. The commit SHA
 2. Verification gates pass/fail
-3. Playwright evidence (tab order before/after)
+3. Playwright evidence (arrow key navigation)
 4. The exact files changed
+5. Any surprises
 
 If you hit a blocker, return BLOCKED: with details. Do not commit broken state.

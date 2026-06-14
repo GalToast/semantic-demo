@@ -1,8 +1,8 @@
-You are completing **Ticket A2-7: Canvas aria-keyshortcuts**. A MEDIUM-severity a11y fix for the 3D canvas.
+You are completing **Ticket A2-7: Canvas aria-keyshortcuts**. One MEDIUM-severity a11y issue.
 
 ## Goal
 
-Add `aria-keyshortcuts` to the canvas element to declare available keyboard shortcuts for screen readers.
+Add `aria-keyshortcuts` to the canvas element so screen reader users know what keyboard shortcuts are available.
 
 ## Working directory
 
@@ -11,83 +11,105 @@ Add `aria-keyshortcuts` to the canvas element to declare available keyboard shor
 ## Background
 
 The a11y audit (2026-06-14) found:
-- **A2-7 (MEDIUM):** The canvas `role="application"` responds to Arrow keys, Home, End, +/- for camera control, but doesn't declare these via `aria-keyshortcuts`.
+- **A2-7 (MEDIUM):** The canvas `role="application"` element responds to Arrow keys (navigate), Home (reset view), End (recenter), +/- (zoom), but doesn't declare these shortcuts via `aria-keyshortcuts`. Screen reader users don't know what keys are available.
 
-**Current canvas attributes:**
+**WCAG:** 4.1.2 Name, Role, Value (Level A)
+
+**Current attributes:**
 ```
 role="application"
-aria-label="Semantic business visualization of Montgomery County businesses. Use arrow keys to navigate."
+aria-label="3D semantic business explorer"
 tabindex="0"
 ```
 
 **Missing:** `aria-keyshortcuts`
 
-**WCAG:** 4.1.2 Name, Role, Value (Level A)
-
 ## Specific steps
 
-### Step 1: Read the Canvas component
+### Step 1: Read Canvas.svelte
 
-Read `src/components/Canvas.svelte`. Find where the canvas element is created and its attributes are set.
+Read `src/components/Canvas.svelte` in full. Find the `<canvas>` element and its attributes.
 
 ### Step 2: Add aria-keyshortcuts
 
-Add `aria-keyshortcuts` to the canvas element listing the supported shortcuts:
-```
-aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Home End"
+Add the `aria-keyshortcuts` attribute to the canvas element listing all supported keyboard shortcuts:
+
+```svelte
+<canvas
+  bind:this={canvasEl}
+  class="semantic-canvas"
+  width={$viewport.width * $viewport.dpr}
+  height={$viewport.height * $viewport.dpr}
+  role="application"
+  aria-label="3D semantic business explorer"
+  aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Home End"
+  tabindex={interactive ? 0 : -1}
+></canvas>
 ```
 
-Note: `+` and `-` are not standard key shortcut names. Use `Equal` (for `+=`) and `Minus` (for `-`) if needed, or just omit them — the arrow keys and Home/End are the most important to declare.
+**Note:** The `+` and `-` keys are also supported for zoom, but `aria-keyshortcuts` doesn't have standard names for these. You can include them as `"Equal Minus"` (their key codes) or omit them if the screen reader doesn't support them.
 
 ### Step 3: Verify
 
+All MUST pass clean:
 - `npm run check` → 0 errors
 - `svelte-check` → 0 errors in `src/`
 - `npm run test:unit` → all tests pass
+- `npm run test:contract` → all tests pass
 
 ### Step 4: Verify with Playwright
 
+Use Playwright MCP to verify:
 1. Navigate to `http://localhost:5173/?nodemo=1`
-2. Tab to the canvas
-3. Evaluate: `document.querySelector('canvas').getAttribute('aria-keyshortcuts')`
-4. Verify it contains the expected shortcuts
+2. Run `document.querySelector('[role="application"]').getAttribute('aria-keyshortcuts')` to verify the attribute exists
+3. Take a snapshot to confirm the shortcuts appear in the accessibility tree
 
 ### Step 5: Commit + push
 
 Suggested commit message:
 ```
-fix(a11y): add aria-keyshortcuts to canvas (A2-7)
+fix(a11y): add aria-keyshortcuts to canvas element (A2-7)
 
-Per a11y audit 2026-06-14, the canvas role="application" didn't
-declare its keyboard shortcuts. Now lists Arrow keys, Home, End
-via aria-keyshortcuts for screen reader users.
+Per a11y audit 2026-06-14, the canvas role="application" element
+didn't declare its keyboard shortcuts via aria-keyshortcuts.
 
-Verified: svelte-check 0, tests pass, Playwright confirms attribute.
+Now:
+- Canvas declares ArrowLeft/Right/Up/Down, Home, End shortcuts
+- Screen reader users know what keys are available
+- Follows WAI-ARIA application pattern
+
+Verified: svelte-check 0 errors, unit tests pass, Playwright confirms
+aria-keyshortcuts attribute exists.
 ```
 
 Push to `origin master`.
 
-## Out of scope
+## Out of scope (DO NOT TOUCH)
 
-- The 7 off-limits state writers
-- The engine kernel (js/modules/*) — this is a Svelte component change only
-- Other components
+- The 7 off-limits state writers (per AGENTS.md)
+- The engine kernel (js/modules/*)
+- The keyboard shortcut handlers in `js/modules/camera-controls.js`
+- The keyboard help panel
 
 ## File scope
 
 You CAN edit:
-- `src/components/Canvas.svelte` (primary — add attribute)
+- `src/components/Canvas.svelte` (add aria-keyshortcuts attribute)
+
+You CAN add:
+- Nothing new
 
 ## Tool surface check
 
-Report exposed tools at start.
+Report exposed tools at start. If Read/Write/Edit/Bash/Glob/Grep are missing, stop and report.
 
 ## Reporting
 
 When done, return:
 1. The commit SHA
-2. Verification gates
-3. Playwright evidence
-4. Files changed
+2. Verification gates pass/fail
+3. Playwright evidence (aria-keyshortcuts attribute)
+4. The exact files changed
+5. Any surprises
 
-If you hit a blocker, return BLOCKED: with details.
+If you hit a blocker, return BLOCKED: with details. Do not commit broken state.
