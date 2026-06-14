@@ -3,7 +3,8 @@
  */
 import { state, type Point } from '../state.ts';
 import { normalizeCityForFilter } from './utils/geo-data.ts';
-import { normalizeRelationshipRole } from './relationship-roles.ts';
+import { normalizeRelationshipRole } from '@lib/utils/relationship-roles';
+import type { RelationshipRole } from '@lib/utils/relationship-roles';
 
 export function normalizeLeadId(value: string | number | null | undefined): string | null {
     if (value === null || value === undefined || value === '') return null;
@@ -24,7 +25,7 @@ export interface ThreadCandidate {
     bridgeScore: number;
     signalScore: number;
     threadType: string;
-    relationshipRole: string;
+    relationshipRole: RelationshipRole;
     relationshipAxis: string;
     roleReason: string;
     reason: string;

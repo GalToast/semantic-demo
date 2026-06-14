@@ -37,7 +37,7 @@ import {
 import { setInspectedStrandOverlayUpdater } from './inspected-strand-overlay-adapter.ts';
 import { setStrandContinuityState, clearStrandContinuityState, setTimer, disposeTimers, clearTimer } from './strand-continuity.ts';
 import { getStrandArrivalNote } from './strand-continuity.ts';
-import { getRelationshipRoleLabel, normalizeRelationshipRole } from './relationship-roles.ts';
+import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles';
 import {
     adapter_summarizeNeighborReason,
     adapter_getInsideRelationshipLabel,

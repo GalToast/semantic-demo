@@ -6,7 +6,7 @@
  */
 import { state, type SemanticNode } from '../state.ts';
 import { updateSemanticThreadsStatus } from './state-mutators.ts';
-import { normalizeRelationshipRole } from './relationship-roles.ts';
+import { normalizeRelationshipRole } from '@lib/utils/relationship-roles';
 import { recordSemanticLaneSnapshot } from './semantic-lane.ts';
 import { debugWarn } from './diagnostic-adapter.ts';
 

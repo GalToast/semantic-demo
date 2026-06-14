@@ -25,7 +25,7 @@ import {
     getRelationshipRoleLabel,
     describeRelationshipRoleReason,
     UNCLASSIFIED_RELATIONSHIP_ROLE
-} from './relationship-roles.ts';
+} from '@lib/utils/relationship-roles';
 import {
     getCurrentTrailFocusIndex,
     isBoundedNeighborhoodActive,

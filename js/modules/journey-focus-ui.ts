@@ -39,7 +39,8 @@ import {
     resetFocusThreadDiagnostics
 } from './journey-webgl.ts';
 import { isCompactLandscape, isUltraCompactPortrait } from './environment.ts';
-import { getRelationshipRoleLabel, normalizeRelationshipRole } from './relationship-roles.ts';
+import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles';
+import type { RelationshipRole } from '@lib/utils/relationship-roles';
 import type { Point, StrandContinuityState } from '../state.ts';
 
 export function isCondensedFocusStageViewport(): boolean {
@@ -167,7 +168,7 @@ export function updateFocusNeighborRail(): void {
         button.tabIndex = 0;
         button.dataset.index = String(candidate.index);
         button.dataset.role = (nav as any).focusPocketRoleByIndex?.get(candidate.index) || 'trail';
-        const relationshipRole: string = normalizeRelationshipRole(candidate.relationshipRole);
+        const relationshipRole: RelationshipRole = normalizeRelationshipRole(candidate.relationshipRole);
         button.dataset.relationshipRole = relationshipRole;
         button.dataset.reason = candidate.reason || 'semantic neighbor';
         const name: string = formatBusinessName((point as Point)?.name || 'Nearby business');
