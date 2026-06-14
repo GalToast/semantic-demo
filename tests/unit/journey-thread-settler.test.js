@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { summarizeNeighborReason, getInsideRelationshipLabel } from '../../js/modules/journey-thread-settler.js';
-import { state, withStateMutation } from '../../js/state.js';
+import { summarizeNeighborReason, getInsideRelationshipLabel } from '../../js/modules/journey-thread-settler';
+import { state, withStateMutation } from '../../js/state';
 
 vi.mock('../../js/modules/environment.js', () => ({
     getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),

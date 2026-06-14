@@ -6,7 +6,7 @@ import {
     mapSemanticSearchResults,
     hydrateSemanticResultContexts
 } from '../../js/modules/search-mapper.js';
-import { state } from '../../js/state.js';
+import { state } from '../../js/state';
 
 describe('search-mapper', () => {
     beforeEach(() => {

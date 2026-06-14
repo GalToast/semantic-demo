@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { state } from '../../js/state.js'
+import { state } from '../../js/state'
 import {
     getCachedSemanticSearchPayload,
     storeSemanticSearchPayload,

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { state } from '../../js/state.js'
+import { state } from '../../js/state'
 import { loadData } from '../../js/modules/data-loader.js'
 
 // Mock the UI functions that are called at the end of loadData

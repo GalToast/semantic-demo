@@ -12,9 +12,9 @@
  */
 
 import { animateCameraToNode } from './focus';
-import * as legacyStateModule from '../../../../js/state.js';
-import * as selectorsStaticModule from '../../../../js/state/selectors/index.js';
-import * as mapStateStaticModule from '../../../../js/modules/map-state.js';
+import * as legacyStateModule from '../../../../js/state';
+import * as selectorsStaticModule from '../../../../js/state/selectors/index';
+import * as mapStateStaticModule from '../../../../js/modules/map-state';
 import * as semanticDiveUiStaticModule from '@lib/journey/semantic-dive';
 import * as cameraControlsCoreStaticModule from '../../../../js/modules/camera-controls-core.ts';
 import * as focusPanelModeStaticModule from '../../../../js/modules/focus-panel-mode.js';

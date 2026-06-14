@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import * as journeyCompassState from '../../js/modules/journey-compass-state.js';
-import { state, withStateMutation } from '../../js/state.js';
+import * as journeyCompassState from '../../js/modules/journey-compass-state';
+import { state, withStateMutation } from '../../js/state';
 
 vi.mock('../../js/modules/utils/dom-formatters.js', () => ({
     formatBusinessName: vi.fn(n => n)

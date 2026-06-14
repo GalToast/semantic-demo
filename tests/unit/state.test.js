@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { state, withStateMutation, _rawState } from '../../js/state.js';
+import { state, withStateMutation, _rawState } from '../../js/state';
 
 describe('state.js', () => {
     let originalWarn;

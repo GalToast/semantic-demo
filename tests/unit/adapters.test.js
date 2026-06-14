@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { isDebugProbesEnabled, registerDiagnosticProbe } from '../../js/modules/diagnostic-adapter.js';
-import { setWebGLContextRestoreHandler, restoreWebGLContext } from '../../js/modules/webgl-restore-adapter.js';
+import { setWebGLContextRestoreHandler, restoreWebGLContext } from '../../js/modules/webgl-restore-adapter';
 import { setSearchContainerState, setSearchGlowState, setMobileSearchSheetMode, clearMobileSearchSheetState } from '../../js/modules/search-panel-adapter.js';
 
 describe('Adapters', () => {

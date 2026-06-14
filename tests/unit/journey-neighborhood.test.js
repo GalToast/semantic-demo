@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import * as journeyNeighborhood from '../../js/modules/journey-neighborhood.js';
-import { state, withStateMutation } from '../../js/state.js';
-import * as geoData from '../../js/modules/utils/geo-data.js';
-import * as journeyThreadModel from '../../js/modules/journey-thread-model.js';
+import * as journeyNeighborhood from '../../js/modules/journey-neighborhood';
+import { state, withStateMutation } from '../../js/state';
+import * as geoData from '../../js/modules/utils/geo-data';
+import * as journeyThreadModel from '../../js/modules/journey-thread-model';
 
-vi.mock('../../js/modules/utils/geo-data.js', () => ({
+vi.mock('../../js/modules/utils/geo-data', () => ({
     isPointVisible: vi.fn(() => true)
 }));
 
-vi.mock('../../js/modules/journey-thread-model.js', () => ({
+vi.mock('../../js/modules/journey-thread-model', () => ({
     normalizeLeadId: vi.fn(id => id),
     getSemanticThreadCandidates: vi.fn(() => []),
     getGeometricThreadCandidates: vi.fn(() => []),

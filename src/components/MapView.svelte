@@ -11,7 +11,7 @@
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
   import { viewport } from '@lib/stores/viewport';
   import { switchView } from '@lib/orchestration/view-controller';
-  import * as legacyStateStaticModule from '../../js/state.js';
+  import * as legacyStateStaticModule from '../../js/state';
 
   type MapStatus = 'loading' | 'ready' | 'error';
 

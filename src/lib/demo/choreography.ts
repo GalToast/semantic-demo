@@ -10,7 +10,7 @@
  * Uses the demoStore for canonical demo state (get(demoPhase)).
  */
 import { get } from 'svelte/store';
-import { state } from '../../../js/state.js';
+import { state } from '../../../js/state';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import {
   isAppReadyForDemo,
@@ -23,7 +23,7 @@ import {
 } from './guards';
 import { seededUnit } from '@lib/utils/seeded-random';
 import { demoPhase, isDemoActive, startDemo, cancelDemo } from '@lib/stores/demo';
-import * as microDemoChoreographyModule from '../../../js/modules/micro-demo-choreography.js';
+import * as microDemoChoreographyModule from '../../../js/modules/micro-demo-choreography';
 import type { DemoPhase } from '@lib/types/state';
 
 // ── Legacy Choreography Bridge ──────────────────────────────────────────────

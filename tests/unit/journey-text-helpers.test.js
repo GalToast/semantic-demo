@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { truncateMicrocopy, getSharedTrailTopicLabel } from '../../js/modules/journey-text-helpers.js';
+import { truncateMicrocopy, getSharedTrailTopicLabel } from '../../js/modules/journey-text-helpers';
 
 vi.mock('../../js/modules/utils/dom-formatters.js', () => ({
     cleanOptionalValue: vi.fn((v) => (v == null || String(v).trim() === '' || String(v).trim() === '-') ? '' : String(v).trim())

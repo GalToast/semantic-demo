@@ -1,29 +1,29 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import * as journeyCanvasInteraction from '../../js/modules/journey-canvas-interaction.js';
+import * as journeyCanvasInteraction from '../../js/modules/journey-canvas-interaction';
 import * as journeyCanvasHitTest from '../../js/modules/journey-canvas-hit-test.js';
 import { setNodeSporeInstanceMatrix } from '../../js/modules/three-node-manager.js';
-import { state, withStateMutation } from '../../js/state.js';
-import * as geoData from '../../js/modules/utils/geo-data.js';
-import * as cameraControls from '../../js/modules/camera-controls.js';
-import * as journeyNeighborhood from '../../js/modules/journey-neighborhood.js';
-import * as environment from '../../js/modules/environment.js';
+import { state, withStateMutation } from '../../js/state';
+import * as geoData from '../../js/modules/utils/geo-data';
+import * as cameraControls from '../../js/modules/camera-controls';
+import * as journeyNeighborhood from '../../js/modules/journey-neighborhood';
+import * as environment from '../../js/modules/environment';
 import * as THREE from 'three';
 
-vi.mock('../../js/modules/utils/geo-data.js', () => ({
+vi.mock('../../js/modules/utils/geo-data', () => ({
     isPointVisible: vi.fn(() => true)
 }));
 
-vi.mock('../../js/modules/camera-controls.js', () => ({
+vi.mock('../../js/modules/camera-controls', () => ({
     focusOnNode: vi.fn(),
     noteSceneInteraction: vi.fn(),
     releaseFocusCameraAssist: vi.fn()
 }));
 
-vi.mock('../../js/modules/journey-neighborhood.js', () => ({
+vi.mock('../../js/modules/journey-neighborhood', () => ({
     getSemanticThreadDisplayLimit: vi.fn(() => 10)
 }));
 
-vi.mock('../../js/modules/environment.js', () => ({
+vi.mock('../../js/modules/environment', () => ({
     hasCoarsePointer: vi.fn(() => false),
     getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),
     requestAnimationFrame: vi.fn((cb) => setTimeout(cb, 16)),

@@ -6,11 +6,11 @@
  * owners until those scene mutations are fully ported to src/.
  */
 
-import * as cameraControlsModule from '../../../js/modules/camera-controls.js';
+import * as cameraControlsModule from '../../../js/modules/camera-controls';
 import * as connectionAnalysisModule from '../../../js/modules/connection-analysis.js';
 import * as searchStateModule from '../../../js/modules/search-state.ts';
 import * as semanticGuideModule from '@lib/journey/semantic-guide';
-import * as stateModule from '../../../js/state.js';
+import * as stateModule from '../../../js/state';
 import {
   resetExperienceState as resetSvelteExperienceState,
   resetExplorationFocus as resetSvelteExplorationFocus

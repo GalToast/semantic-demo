@@ -20,7 +20,7 @@ import { updateUrlState } from "@lib/orchestration/url-state";
 import { normalizeCityForFilter } from "@lib/utils/geo-data";
 import { describeCluster } from "@lib/utils/ui-presentation";
 import { el, setChildren } from "@lib/utils/dom-builder";
-import { state as legacyState, withStateMutation } from "../../../js/state.js";
+import { state as legacyState, withStateMutation } from '../../../js/state';
 import type { BusinessRecord } from "@lib/types/business";
 import type { ActiveFilters } from "@lib/types/state";
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { state } from '../../js/state.js';
-import { initJourneyState } from '../../js/modules/journey.js';
+import { state } from '../../js/state';
+import { initJourneyState } from '../../js/modules/journey';
 
 // Mock sub-modules so we don't accidentally run their side-effects
 vi.mock('../../js/modules/journey-lifecycle-adapter.js', () => ({ applyLocalNeighborhoodFocus: vi.fn() }));

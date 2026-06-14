@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import * as focusPocket from '../../js/modules/focus-pocket.js';
-import * as focusPocketGeometry from '../../js/modules/focus-pocket-geometry.js';
-import { state, withStateMutation } from '../../js/state.js';
-import * as threadInspector from '../../js/modules/thread-inspector.js';
+import * as focusPocket from '../../js/modules/focus-pocket';
+import * as focusPocketGeometry from '../../js/modules/focus-pocket-geometry';
+import { state, withStateMutation } from '../../js/state';
+import * as threadInspector from '../../js/modules/thread-inspector';
 import * as THREE from 'three';
 
 vi.mock('../../js/modules/environment.js', () => ({
@@ -28,7 +28,7 @@ vi.mock('../../js/modules/environment.js', () => ({
     getAspectRatio: vi.fn(() => 1.33)
 }));
 
-vi.mock('../../js/modules/thread-inspector.js', () => ({
+vi.mock('../../js/modules/thread-inspector', () => ({
     getSemanticThreadCandidates: vi.fn(() => [])
 }));
 

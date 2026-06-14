@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import * as svelte from 'svelte';
-import * as eventBindings from '../../js/modules/event-bindings.js';
-import { state, withStateMutation } from '../../js/state.js';
-import * as viewController from '../../js/modules/view-controller.js';
-import * as cameraControls from '../../js/modules/camera-controls.js';
+import * as eventBindings from '../../js/modules/event-bindings';
+import { state, withStateMutation } from '../../js/state';
+import * as viewController from '../../js/modules/view-controller';
+import * as cameraControls from '../../js/modules/camera-controls';
 import * as searchState from '../../js/modules/search-state.ts';
-import * as journey from '../../js/modules/journey.js';
+import * as journey from '../../js/modules/journey';
 
 vi.mock('../../js/modules/environment.js', () => ({
     getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),
@@ -30,11 +30,11 @@ vi.mock('../../js/modules/environment.js', () => ({
     getAspectRatio: vi.fn(() => 1.33)
 }));
 
-vi.mock('../../js/modules/view-controller.js', () => ({
+vi.mock('../../js/modules/view-controller', () => ({
     switchView: vi.fn()
 }));
 
-vi.mock('../../js/modules/camera-controls.js', () => ({
+vi.mock('../../js/modules/camera-controls', () => ({
     toggleAutoRotate: vi.fn(),
     focusOnNode: vi.fn(),
     animateCameraToNode: vi.fn(),
@@ -51,7 +51,7 @@ vi.mock('../../js/modules/search-state.ts', () => ({
     updateSearchStatusMessage: vi.fn()
 }));
 
-vi.mock('../../js/modules/journey.js', () => ({
+vi.mock('../../js/modules/journey', () => ({
     traverseNeighbor: vi.fn(),
     setSemanticDiveMode: vi.fn(),
     pinThreadNeighbor: vi.fn(),

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import * as uiRenderers from '../../js/modules/ui-renderers.js';
+import * as uiRenderers from '../../js/modules/ui-renderers';
 import * as searchRendererModule from '../../js/modules/search-result-renderer.js';
 import * as legendRendererModule from '../../js/modules/legend-ui.js';
 import * as focusRendererModule from '../../js/modules/focus-stage-renderer.js';

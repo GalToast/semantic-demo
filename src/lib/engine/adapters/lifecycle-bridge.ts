@@ -33,14 +33,14 @@ import type {
 
 import { syncDataToLegacyState } from './data-bridge';
 import { attachLegacyState, loadSemanticThreads } from '@lib/semantic-threads';
-import * as legacyStateModule from '../../../../js/state.js';
+import * as legacyStateModule from '../../../../js/state';
 import * as legacyViewControllerModule from '../../../../js/modules/view-controller';
-import * as legacyFilterStateModule from '../../../../js/modules/filter-state.js';
-import * as legacyEventBusModule from '../../../../js/modules/event-bus.js';
+import * as legacyFilterStateModule from '../../../../js/modules/filter-state';
+import * as legacyEventBusModule from '../../../../js/modules/event-bus';
 import {
   ensureCanvasNodeInteractionBindings,
   removeCanvasNodeInteractionBindings,
-} from '../../../../js/modules/journey-canvas-interaction.js';
+} from '../../../../js/modules/journey-canvas-interaction';
 import { initTooltipEventBusSubscriptions } from '../../../../js/modules/tooltip';
 
 // ── TS Port Imports (canonical implementations) ─────────────────────────────

@@ -55,6 +55,11 @@ const EXEMPTED_SHAS = new Set<string>([
     // report .md alongside test files. Borderline but legitimate for
     // a test-and-verify commit.
     '2612ba33f809c16e89a72f79123da0cdbb4f2738',
+    // c19767f — docs(close-out): ... — Svelte migration close-out
+    // (Ticket S5). Bundled 1 test file (APPROVED_BASELINE 10→0)
+    // under a docs prefix. The test change is mechanical and
+    // co-located with the close-out; same failure mode as b5ad93e.
+    'c19767f892da49c51eb460e84e866c1dcee6c5ef',
 ]);
 
 // Conventional-commit prefix regex. Captures:

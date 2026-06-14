@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import * as threadSettler from '../../js/modules/journey-thread-settler.js';
-import { state, withStateMutation } from '../../js/state.js';
+import * as threadSettler from '../../js/modules/journey-thread-settler';
+import { state, withStateMutation } from '../../js/state';
 
 vi.mock('../../js/modules/utils/dom-formatters.js', () => ({
     formatBusinessName: vi.fn((v) => v || 'Unknown'),

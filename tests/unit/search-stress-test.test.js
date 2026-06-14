@@ -8,7 +8,7 @@
  * 4. Mock-catalog consistency audit against data.dat schema
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { state } from '../../js/state.js';
+import { state } from '../../js/state';
 import {
     tokenizeSearchText,
     expandSearchIntent,

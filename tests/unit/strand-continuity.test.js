@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import * as strandContinuity from '../../js/modules/strand-continuity.js';
-import { state } from '../../js/state.js';
-import * as journeyWebgl from '../../js/modules/journey-webgl.js';
+import * as strandContinuity from '../../js/modules/strand-continuity';
+import { state } from '../../js/state';
+import * as journeyWebgl from '../../js/modules/journey-webgl';
 
-vi.mock('../../js/modules/journey-webgl.js', () => ({
+vi.mock('../../js/modules/journey-webgl', () => ({
     syncArrivalHandoffOverlay: vi.fn(),
     disposeArrivalHandoffOverlay: vi.fn()
 }));

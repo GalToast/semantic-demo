@@ -5,14 +5,14 @@
  *
  * Re-exports core adapters from extracted modules and owns canvas DOM event binding lifecycle.
  */
-import { state } from '../../../js/state.js';
+import { state } from '../../../js/state';
 import { isPointVisible } from '@lib/utils/geo-data';
 import type { ActiveFilters, GeoPoint } from '@lib/utils/geo-data';
 import {
   focusOnNode,
   noteSceneInteraction,
   releaseFocusCameraAssist,
-} from '../../../js/modules/camera-controls.js';
+} from '../../../js/modules/camera-controls';
 import {
   initJourneyCanvasInteractionAdapter,
   isThreadCandidateVisibleOnCanvas,

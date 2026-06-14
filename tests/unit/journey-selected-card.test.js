@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import * as journeySelectedCard from '../../js/modules/journey-selected-card.js';
-import { state, withStateMutation } from '../../js/state.js';
+import * as journeySelectedCard from '../../js/modules/journey-selected-card';
+import { state, withStateMutation } from '../../js/state';
 
 vi.mock('../../js/modules/utils/ui-presentation.js', () => ({
     describeCluster: vi.fn((c) => `Cluster ${c}`),

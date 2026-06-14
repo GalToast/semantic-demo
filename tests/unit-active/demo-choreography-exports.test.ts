@@ -58,27 +58,27 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
     expect(legacyDynamic).toHaveLength(0);
   });
 
-  it('statically imports all 7 legacy modules via relative paths', () => {
+  it('statically imports all 7 legacy modules via relative paths (extensionless, Vite resolves to .ts)', () => {
     const src = readSource();
     const expectedModules = [
-      'lifecycle.js',
-      'journey-compass-controller.js',
-      'journey.js',
-      'bindings/panel-bindings.js',
-      'micro-demo-guards.js',
-      'micro-demo-camera.js',
-      'micro-demo-ui.js',
+      'lifecycle',
+      'journey-compass-controller',
+      'journey',
+      'bindings/panel-bindings',
+      'micro-demo-guards',
+      'micro-demo-camera',
+      'micro-demo-ui',
     ];
     for (const mod of expectedModules) {
       expect(src).toContain(`from '../../../js/modules/${mod}'`);
     }
   });
 
-  it('also statically imports the 3 previously-converted modules via relative paths', () => {
+  it('also statically imports the 3 previously-converted modules via relative paths (extensionless)', () => {
     const src = readSource();
-    expect(src).toContain("from '../../../js/state.js'");
-    expect(src).toContain("from '../../../js/modules/camera-controls.js'");
-    expect(src).toContain("from '../../../js/modules/focus-pocket.js'");
+    expect(src).toContain("from '../../../js/state'");
+    expect(src).toContain("from '../../../js/modules/camera-controls'");
+    expect(src).toContain("from '../../../js/modules/focus-pocket'");
   });
 });
 

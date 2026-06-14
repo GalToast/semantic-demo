@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { state } from '../../js/state.js';
-import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, setMyceliumMode } from '../../js/modules/lifecycle.js';
+import { state } from '../../js/state';
+import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, setMyceliumMode } from '../../js/modules/lifecycle';
 
 const stateMock = vi.hoisted(() => ({
   state: {
@@ -34,7 +34,7 @@ vi.mock('../../js/modules/environment.js', () => ({
     getAspectRatio: vi.fn(() => 1.33)
 }));
 
-vi.mock('../../js/state.js', () => stateMock);
+vi.mock('../../js/state', () => stateMock);
 vi.mock('../../js/state.ts', () => stateMock);
 
 // Mock the internal methods that setMyceliumMode calls

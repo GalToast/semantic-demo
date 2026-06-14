@@ -11,8 +11,8 @@ import {
   easeInOutCubic,
   quadraticBezierComponent,
 } from '@lib/utils/math-easing';
-import * as selectorsStaticModule from '../../../../js/state/selectors/index.js';
-import * as legacyStateModule from '../../../../js/state.js';
+import * as selectorsStaticModule from '../../../../js/state/selectors/index';
+import * as legacyStateModule from '../../../../js/state';
 import * as cameraControlsCoreStaticModule from '../../../../js/modules/camera-controls-core.ts';
 import * as cameraControlsRestoreStaticModule from '../../../../js/modules/camera-controls-restore.ts';
 

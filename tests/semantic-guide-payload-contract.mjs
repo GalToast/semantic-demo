@@ -43,7 +43,7 @@ async function testPayloadDoesNotImportState() {
   const fs = await import('node:fs');
   const srcCode = fs.readFileSync(PAYLOAD_PATH, 'utf-8');
 
-  // Must NOT have: import { state } from '../state.js'
+  // Must NOT have: import { state } from '../state'
   assertNotContains(srcCode, "import { state } from '../state.ts'", 'payload imports state directly');
   assertNotContains(srcCode, 'from "../state.js"', 'payload imports state via relative path');
 
