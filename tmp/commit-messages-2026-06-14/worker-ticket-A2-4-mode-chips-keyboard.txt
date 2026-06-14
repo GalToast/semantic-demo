@@ -1,0 +1,133 @@
+You are completing **Ticket A2-4 + A2-5: Mode chips keyboard accessibility**. Two related HIGH/MEDIUM a11y issues with a combined fix.
+
+## Goal
+
+1. **A2-4 (HIGH):** Keep mode chips accessible in all app states (Search, Focus, Inside modes) so keyboard users can always switch modes.
+2. **A2-5 (MEDIUM):** Implement proper radiogroup keyboard pattern — arrow keys within the group instead of Tab.
+
+## Working directory
+
+`C:\Users\HP\Desktop\Temp while my comp is at the shop\semantic-explorer`
+
+## Background
+
+The a11y audit (2026-06-14) found:
+- **A2-4 (HIGH):** When switching to Search or Focus mode, the `#banner` header collapses to `width: 0; height: 0`, hiding mode chips from keyboard navigation. There are no keyboard shortcuts to switch modes, so keyboard users are trapped.
+
+**Evidence:**
+```
+Search mode: banner computed size = 0×0
+Mode chips: not reachable via Tab
+Global keyboard shortcuts: Arrow, Home, End, +/- (no mode switch)
+Escape key: clears search input, does NOT exit search mode
+```
+
+- **A2-5 (MEDIUM):** Mode chips use `role="radiogroup"` + `role="radio"` + `aria-checked` (correct semantics) but are navigated with Tab (incorrect keyboard pattern). Per WAI-ARIA, radiogroups should use arrow keys.
+
+**WCAG:** 2.1.1 Keyboard (Level A), 4.1.2 Name, Role, Value (Level A)
+
+## Specific steps
+
+### Step 1: Read the current mode chip code
+
+Read these files:
+- `src/components/ModeChips.svelte` (the mode chip component)
+- `src/components/Header.svelte` (the header that contains mode chips)
+- Search for CSS that controls banner visibility in search/focus modes: `grep -rn 'banner\|header.*0.*0\|display.*contents' css/ src/`
+
+### Step 2: Fix mode chip visibility (A2-4)
+
+The banner header is hidden in non-idle modes. Options:
+1. **Keep the mode chips always visible** — move them out of the banner into a fixed-position element that's always reachable
+2. **Add keyboard shortcuts** — e.g., `Ctrl+1` through `Ctrl+6` for each mode, or `Escape` to return to Overview
+3. **Show a compact mode switcher** in non-idle modes — a minimal toolbar that appears when the full header is hidden
+
+**Recommended approach:** Option 3 — show a compact mode chip bar when in Search/Focus/Inside modes. This is the least disruptive change and maintains the current layout.
+
+The compact bar should:
+- Be positioned at the top-center (where the full header was)
+- Show only the mode chip icons (not full labels)
+- Be keyboard-navigable
+- Have proper ARIA (same radiogroup semantics)
+
+### Step 3: Implement arrow key navigation (A2-5)
+
+Within the radiogroup, replace Tab navigation with arrow keys:
+1. Only the active radio button gets `tabindex="0"`
+2. All other radios get `tabindex="-1"`
+3. Left/ArrowUp selects the previous mode
+4. Right/ArrowDown selects the next mode
+5. Home selects the first mode (Overview)
+6. End selects the last mode (Map)
+
+**Pattern reference:** WAI-ARIA Radio Group Pattern
+https://www.w3.org/WAI/ARIA/apg/patterns/radio/
+
+### Step 4: Verify
+
+All MUST pass clean:
+- `npm run check` → 0 errors
+- `svelte-check` → 0 errors in `src/`
+- `npm run test:unit` → all tests pass
+- `npm run test:contract` → all tests pass
+
+### Step 5: Verify with Playwright
+
+1. Navigate to `http://localhost:5173/?nodemo=1`
+2. Tab to the mode chips (radiogroup)
+3. Press Right Arrow — focus should move to next mode, `aria-checked` should update
+4. Press Left Arrow — focus should move back
+5. Switch to Search mode (click or Enter)
+6. Verify mode chips are still visible and keyboard-accessible
+7. Press Escape or Left Arrow to return to Overview
+8. Take snapshots in each state
+
+### Step 6: Commit + push
+
+Suggested commit message:
+```
+fix(a11y): mode chips always accessible + arrow key navigation (A2-4 + A2-5)
+
+Per a11y audit 2026-06-14:
+- A2-4 (HIGH): Mode chips were hidden in Search/Focus modes, trapping
+  keyboard users. Now a compact mode switcher is always visible.
+- A2-5 (MEDIUM): Radiogroup was using Tab instead of arrow keys.
+  Now implements WAI-ARIA radio pattern with arrow key navigation.
+
+Verified: svelte-check 0, tests pass, Playwright confirms mode chips
+accessible in all states with proper arrow key navigation.
+```
+
+Push to `origin master`.
+
+## Out of scope (DO NOT TOUCH)
+
+- The 7 off-limits state writers (per AGENTS.md)
+- The engine kernel (js/modules/*)
+- The Canvas component
+- CSS files not related to mode chip/banner visibility
+
+## File scope
+
+You CAN edit:
+- `src/components/ModeChips.svelte` (primary — keyboard pattern)
+- `src/components/Header.svelte` (visibility logic)
+- `src/App.svelte` (if mode chip container needs to move)
+- Related CSS files for mode chip positioning
+
+You CAN add:
+- A new test file if needed
+
+## Tool surface check
+
+Report exposed tools at start. If Read/Write/Edit/Bash/Glob/Grep are missing, stop and report.
+
+## Reporting
+
+When done, return:
+1. The commit SHA
+2. Verification gates pass/fail
+3. Playwright evidence (mode chips in Search mode + arrow key nav)
+4. The exact files changed
+
+If you hit a blocker, return BLOCKED: with details. Do not commit broken state.

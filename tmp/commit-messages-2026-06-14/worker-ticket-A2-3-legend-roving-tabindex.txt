@@ -1,0 +1,159 @@
+You are completing **Ticket A2-3: Legend roving tabindex**. A HIGH-severity a11y fix that collapses 15 tab stops into 1.
+
+## Goal
+
+Implement roving tabindex on the legend category button group so that only one button is in the Tab order at a time. Arrow keys navigate between buttons within the group.
+
+## Working directory
+
+`C:\Users\HP\Desktop\Temp while my comp is at the shop\semantic-explorer`
+
+## Background
+
+The a11y audit (2026-06-14) found:
+- **A2-3 (HIGH):** In idle state, there are 15 individual legend category buttons, each a separate Tab stop. Keyboard users must Tab through all 15 before reaching search, mode chips, or camera controls.
+
+**WCAG:** 2.1.1 Keyboard (Level A)
+
+**Tab order evidence:**
+```
+Tab 1: Skip link
+Tab 2: Canvas (role=application)
+Tabs 3-17: 15× Legend category buttons ← THE PROBLEM
+Tab 18: Weather toggle
+Tab 19: Search input
+...
+```
+
+**Current code:** `src/components/Legend.svelte` renders `<button>` elements in an `{#each}` loop. All buttons have natural `tabindex="0"` (default for `<button>`).
+
+## Specific steps
+
+### Step 1: Read the Legend component
+
+Read `src/components/Legend.svelte` in full. Identify the `{#each}` loop that renders category buttons and any existing keyboard handling.
+
+### Step 2: Implement roving tabindex
+
+The pattern:
+1. Only the FIRST button (or the currently active/filtering button) gets `tabindex="0"`.
+2. All other buttons get `tabindex="-1"`.
+3. Add `onkeydown` handler for ArrowDown/ArrowRight (next), ArrowUp/ArrowLeft (previous), Home (first), End (last).
+4. On arrow key press: prevent default, set current button to `tabindex="-1"`, set target button to `tabindex="0"`, call `target.focus()`.
+
+**Example pattern:**
+```svelte
+<script>
+  let focusIndex = $state(0);
+  
+  function handleKeydown(event, index) {
+    const buttons = /* get all button elements */;
+    let next = index;
+    
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        event.preventDefault();
+        next = (index + 1) % buttons.length;
+        break;
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        event.preventDefault();
+        next = (index - 1 + buttons.length) % buttons.length;
+        break;
+      case 'Home':
+        event.preventDefault();
+        next = 0;
+        break;
+      case 'End':
+        event.preventDefault();
+        next = buttons.length - 1;
+        break;
+      default:
+        return;
+    }
+    
+    focusIndex = next;
+    buttons[next]?.focus();
+  }
+</script>
+
+{#each entries as entry, i}
+  <button
+    tabindex={i === focusIndex ? 0 : -1}
+    onkeydown={(e) => handleKeydown(e, i)}
+    ...
+  >
+```
+
+**Important considerations:**
+- When the legend opens/closes, reset `focusIndex` to 0 or the active filter.
+- When a filter is active, set `focusIndex` to the active button's index.
+- The existing `aria-pressed` on each button should be preserved.
+- Don't break the existing click handler.
+
+### Step 3: Verify
+
+All MUST pass clean:
+- `npm run check` → 0 errors
+- `svelte-check` → 0 errors in `src/`
+- `npm run test:unit` → all tests pass
+- `npm run test:contract` → all tests pass
+
+### Step 4: Verify with Playwright
+
+1. Navigate to `http://localhost:5173/?nodemo=1`
+2. Tab to the legend (should be Tab 3 after skip link + canvas)
+3. Press ArrowDown — focus should move to the next category
+4. Press ArrowUp — focus should move back
+5. Press End — focus should move to the last category
+6. Press Home — focus should move to the first
+7. Press Tab — focus should EXIT the legend group (go to weather toggle)
+8. Take a snapshot to confirm only one legend button has `tabindex="0"`
+
+### Step 5: Commit + push
+
+Suggested commit message:
+```
+fix(a11y): legend roving tabindex — 15 tab stops → 1 (A2-3)
+
+Per a11y audit 2026-06-14, the legend had 15 individual tab stops,
+making keyboard navigation tedious. Now uses roving tabindex:
+- Only one button is in the Tab order at a time
+- Arrow keys navigate between buttons
+- Home/End jump to first/last
+- Tab exits the group
+
+Verified: svelte-check 0, tests pass, Playwright confirms roving pattern.
+```
+
+Push to `origin master`.
+
+## Out of scope (DO NOT TOUCH)
+
+- The 7 off-limits state writers (per AGENTS.md)
+- The engine kernel (js/modules/*)
+- Other components (only Legend.svelte)
+- CSS changes (unless needed for focus indicator on the roving items)
+
+## File scope
+
+You CAN edit:
+- `src/components/Legend.svelte` (primary)
+
+You CAN add:
+- Nothing new (unless a test file is needed)
+
+## Tool surface check
+
+Report exposed tools at start. If Read/Write/Edit/Bash/Glob/Grep are missing, stop and report.
+
+## Reporting
+
+When done, return:
+1. The commit SHA
+2. Verification gates pass/fail
+3. Playwright evidence (tab order before/after)
+4. The exact files changed
+
+If you hit a blocker, return BLOCKED: with details. Do not commit broken state.

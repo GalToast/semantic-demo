@@ -1,0 +1,93 @@
+You are completing **Ticket A2-7: Canvas aria-keyshortcuts**. A MEDIUM-severity a11y fix for the 3D canvas.
+
+## Goal
+
+Add `aria-keyshortcuts` to the canvas element to declare available keyboard shortcuts for screen readers.
+
+## Working directory
+
+`C:\Users\HP\Desktop\Temp while my comp is at the shop\semantic-explorer`
+
+## Background
+
+The a11y audit (2026-06-14) found:
+- **A2-7 (MEDIUM):** The canvas `role="application"` responds to Arrow keys, Home, End, +/- for camera control, but doesn't declare these via `aria-keyshortcuts`.
+
+**Current canvas attributes:**
+```
+role="application"
+aria-label="Semantic business visualization of Montgomery County businesses. Use arrow keys to navigate."
+tabindex="0"
+```
+
+**Missing:** `aria-keyshortcuts`
+
+**WCAG:** 4.1.2 Name, Role, Value (Level A)
+
+## Specific steps
+
+### Step 1: Read the Canvas component
+
+Read `src/components/Canvas.svelte`. Find where the canvas element is created and its attributes are set.
+
+### Step 2: Add aria-keyshortcuts
+
+Add `aria-keyshortcuts` to the canvas element listing the supported shortcuts:
+```
+aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Home End"
+```
+
+Note: `+` and `-` are not standard key shortcut names. Use `Equal` (for `+=`) and `Minus` (for `-`) if needed, or just omit them — the arrow keys and Home/End are the most important to declare.
+
+### Step 3: Verify
+
+- `npm run check` → 0 errors
+- `svelte-check` → 0 errors in `src/`
+- `npm run test:unit` → all tests pass
+
+### Step 4: Verify with Playwright
+
+1. Navigate to `http://localhost:5173/?nodemo=1`
+2. Tab to the canvas
+3. Evaluate: `document.querySelector('canvas').getAttribute('aria-keyshortcuts')`
+4. Verify it contains the expected shortcuts
+
+### Step 5: Commit + push
+
+Suggested commit message:
+```
+fix(a11y): add aria-keyshortcuts to canvas (A2-7)
+
+Per a11y audit 2026-06-14, the canvas role="application" didn't
+declare its keyboard shortcuts. Now lists Arrow keys, Home, End
+via aria-keyshortcuts for screen reader users.
+
+Verified: svelte-check 0, tests pass, Playwright confirms attribute.
+```
+
+Push to `origin master`.
+
+## Out of scope
+
+- The 7 off-limits state writers
+- The engine kernel (js/modules/*) — this is a Svelte component change only
+- Other components
+
+## File scope
+
+You CAN edit:
+- `src/components/Canvas.svelte` (primary — add attribute)
+
+## Tool surface check
+
+Report exposed tools at start.
+
+## Reporting
+
+When done, return:
+1. The commit SHA
+2. Verification gates
+3. Playwright evidence
+4. Files changed
+
+If you hit a blocker, return BLOCKED: with details.

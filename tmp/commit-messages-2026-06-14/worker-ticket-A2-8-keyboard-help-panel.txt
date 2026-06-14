@@ -1,0 +1,109 @@
+You are completing **Ticket A2-8: Keyboard shortcuts panel toggle**. A LOW-severity a11y fix.
+
+## Goal
+
+Fix the keyboard shortcuts panel so it actually becomes visible when the "Open keyboard shortcuts" button is clicked.
+
+## Working directory
+
+`C:\Users\HP\Desktop\Temp while my comp is at the shop\semantic-explorer`
+
+## Background
+
+The a11y audit (2026-06-14) found:
+- **A2-8 (LOW):** The "Open keyboard shortcuts" button exists with proper `aria-label`, but clicking it doesn't make the panel visible. The panel stays `visibility: hidden; opacity: 0; aria-hidden: true`.
+
+**Evidence:**
+```
+Button: <button id="btn-keyboard-help" aria-label="Open keyboard shortcuts">
+Panel: <div id="keyboard-hint-panel" role="region" aria-label="Keyboard shortcuts" aria-hidden="true">
+Panel computed: visibility=hidden, opacity=0, display=block
+After click: no change (panel remains hidden)
+```
+
+**WCAG:** 2.1.1 Keyboard (Level A) — the help content should be accessible
+
+## Specific steps
+
+### Step 1: Find the toggle logic
+
+Search for the keyboard shortcuts panel toggle:
+```bash
+grep -rn 'keyboard-hint-panel\|btn-keyboard-help\|keyboard.*help\|keyboard.*shortcut' src/ js/
+```
+
+Also read `src/components/Header.svelte` for the button and any related CSS for the panel styling.
+
+### Step 2: Debug and fix the toggle
+
+The panel DOM exists but isn't becoming visible. Possible causes:
+1. CSS transition not triggering (missing class toggle)
+2. JavaScript event handler not wired up
+3. CSS specificity issue keeping `visibility: hidden`
+4. The panel is in a different component than the button
+
+Find the toggle handler and ensure:
+- Clicking the button toggles a class or attribute on the panel
+- The CSS transitions `visibility` and `opacity` when the class is present
+- `aria-hidden` is updated to `"false"` when visible
+- A close button or Escape key dismisses the panel
+- Focus is trapped in the panel when open (or at least focus moves to it)
+
+### Step 3: Verify
+
+- `npm run check` → 0 errors
+- `svelte-check` → 0 errors in `src/`
+- `npm run test:unit` → all tests pass
+
+### Step 4: Verify with Playwright
+
+1. Navigate to `http://localhost:5173/?nodemo=1`
+2. Click the "Open keyboard shortcuts" button
+3. Verify the panel is now visible (screenshot)
+4. Verify `aria-hidden="false"` on the panel
+5. Press Escape or click close — verify panel hides
+6. Verify `aria-hidden="true"` when closed
+
+### Step 5: Commit + push
+
+Suggested commit message:
+```
+fix(a11y): keyboard shortcuts panel toggle now works (A2-8)
+
+Per a11y audit 2026-06-14, the keyboard shortcuts panel didn't
+become visible when its button was clicked. Fixed the toggle logic
+so the panel opens/closes correctly with proper aria-hidden state.
+
+Verified: svelte-check 0, tests pass, Playwright confirms panel
+toggles visible/hidden.
+```
+
+Push to `origin master`.
+
+## Out of scope
+
+- The 7 off-limits state writers
+- The engine kernel (js/modules/*)
+- Adding new keyboard shortcuts (just fix the panel toggle)
+- Other components
+
+## File scope
+
+You CAN edit:
+- `src/components/Header.svelte` (likely where the button lives)
+- Related CSS files for the keyboard-hint-panel
+- Any binding file that wires the button click
+
+## Tool surface check
+
+Report exposed tools at start.
+
+## Reporting
+
+When done, return:
+1. The commit SHA
+2. Verification gates
+3. Playwright evidence (panel toggles)
+4. Files changed
+
+If you hit a blocker, return BLOCKED: with details.
