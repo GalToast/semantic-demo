@@ -176,7 +176,7 @@
   const ARIA_LABEL_BY_SURFACE: Record<string, string> = {
     idle: 'Business context panel',
     focus: 'Focused business details',
-    'focus-search': 'Focused business details',
+    'focus-search': 'Business search panel',
     search: 'Business search panel',
     'semantic-dive': 'Semantic dive exploration',
     'map-idle': 'Business map panel',
@@ -834,7 +834,7 @@
     .info-panel.open {
       transform: translateY(0);
     }
-    :global(body[data-panel-surface='focus'][data-compact='true']) .info-panel.open,
+    :global(body[data-panel-surface='focus'][data-compact='true'][data-focused-node]:not([data-focused-node=''])) .info-panel.open,
     :global(body[data-panel-surface='semantic-dive'][data-compact='true']) .info-panel.open {
       display: none;
       visibility: hidden;

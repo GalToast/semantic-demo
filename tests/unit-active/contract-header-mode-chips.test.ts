@@ -51,7 +51,7 @@ describe('A2-5b: Header mode-chip roving tabindex radiogroup', () => {
     });
 
     it('container has aria-keyshortcuts covering all navigation keys', () => {
-      expect(src).toMatch(/aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End"/);
+      expect(src).toMatch(/aria-keyshortcuts="[^"]*ArrowUp[^"]*ArrowDown[^"]*ArrowLeft[^"]*ArrowRight[^"]*Home[^"]*End[^"]*"/);
     });
 
     it('container has onkeydown={handleModeKeydown}', () => {
