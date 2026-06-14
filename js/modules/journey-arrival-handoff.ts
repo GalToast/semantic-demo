@@ -5,7 +5,7 @@
  */
 import { state, withStateMutation } from '../state.ts';
 import * as THREE from 'three';
-import { ROUTE_TRACE_COLORS } from './design-tokens.ts';
+import { ROUTE_TRACE_COLORS } from '@lib/utils/design-tokens';
 import {
     ARRIVAL_HANDOFF_SEGMENT_STEPS,
     disposeLineObject,

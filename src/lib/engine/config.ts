@@ -1,4 +1,4 @@
-import { CLUSTER_COLORS } from './design-tokens.js';
+import { CLUSTER_COLORS } from '@lib/utils/design-tokens';
 
 export interface ConstellationMotif {
   readonly label: string;

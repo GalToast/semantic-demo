@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { state as _state } from '../state.ts';
 const state = _state as any;
 import { webglContext } from './webgl-context.ts';
-import { SCENE_PALETTE } from './design-tokens.ts';
+import { SCENE_PALETTE } from '@lib/utils/design-tokens';
 import { computeOverviewScatterOffsets } from './utils/geo-data.ts';
 import { getThreadCategoryColor } from './utils/ui-presentation.ts';
 import { createSporeTexture, createFocusRingTexture, createFocusNextCueTexture } from './utils/three-textures.ts';

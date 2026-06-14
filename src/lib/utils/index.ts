@@ -104,7 +104,7 @@ export {
   ROUTE_TRACE_COLORS,
   FOCUS_SEMANTIC_COLORS,
   CLUSTER_COLORS,
-} from './design-tokens';
+} from '../engine/design-tokens';
 export { SEARCH_INPUT_DEBOUNCE_MS, FILTER_DEBOUNCE_MS } from './chrome-timing';
 export { DATA_COLUMNS } from './data-schema';
 export type { RawDatum, DataColumnKey } from './data-schema';

@@ -11,7 +11,7 @@ import {
 import { subscribeKeyed, EVENTS } from './event-bus.ts';
 import * as THREE from 'three';
 import { isPointVisible } from './utils/geo-data.ts';
-import { ROUTE_TRACE_COLORS } from './design-tokens.ts';
+import { ROUTE_TRACE_COLORS } from '@lib/utils/design-tokens';
 import {
     ROUTE_TRACE_SEGMENT_STEPS,
     getLineSegmentCount,

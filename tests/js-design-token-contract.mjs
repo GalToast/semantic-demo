@@ -1,4 +1,4 @@
-// Native TS source of truth (src/lib/engine/design-tokens.ts) — the legacy
+// Native TS source of truth (src/lib/utils/design-tokens.ts) — the legacy
 // js/modules design-token owner was retired during the Svelte cutover. This
 // contract verifies that the native-TS tokens preserve all legacy visual
 // values (frozen, color hex codes, vec3 shader strings, 29-entry cluster
@@ -9,8 +9,8 @@ import {
   FOCUS_SEMANTIC_COLORS,
   ROUTE_TRACE_COLORS,
   SCENE_PALETTE
-} from '../src/lib/engine/design-tokens.ts';
-import * as tokens from '../src/lib/engine/design-tokens.ts';
+} from '../src/lib/utils/design-tokens.ts';
+import * as tokens from '../src/lib/utils/design-tokens.ts';
 
 const legacyClusterColors = [
   '#4ecdc4', '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff8c42', '#a66cff', '#ff6b9d',

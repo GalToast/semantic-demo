@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import { state as _state } from '../../../js/state';
 const state = _state as any;
 import { webglContext } from './webgl-context';
-import { SCENE_PALETTE } from './design-tokens';
+import { SCENE_PALETTE } from '@lib/utils/design-tokens';
 import { computeOverviewScatterOffsets } from '@lib/utils/geo-data';
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation';
 import { createSporeTexture, createFocusRingTexture, createFocusNextCueTexture } from '@lib/utils/three-textures';

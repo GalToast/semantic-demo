@@ -33,7 +33,7 @@ import type {
   SearchSummary,
   SemanticNode,
 } from '../../../js/state';
-import { CLUSTER_COLORS } from '../engine/design-tokens';
+import { CLUSTER_COLORS } from '@lib/utils/design-tokens';
 import { withStateMutation } from './with-state-mutation';
 
 // ── App State class ─────────────────────────────────────────────────────────
