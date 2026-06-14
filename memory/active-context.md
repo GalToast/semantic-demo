@@ -1,6 +1,6 @@
 # Active Context — semantic-explorer
 
-**Last updated:** 2026-06-13 (post-S1+S2+S3+S4; S5 prompt staged, S6 arc effectively closed)
+**Last updated:** 2026-06-14 (S6 arc CLOSED; S5 landed; arc-review confirms clean single-purpose S1–S4)
 **⚠ Update-prone:** Refresh this file whenever migration state, demo readiness, or blockers change.
 
 ## Migration status (Svelte + TypeScript)
