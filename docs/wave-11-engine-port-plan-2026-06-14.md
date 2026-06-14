@@ -35,14 +35,14 @@ The narrow framing (move 28,665 LOC of imperative `.ts` from `js/modules/*` to `
 | **W11-T1** ✅ | State kernel Svelte 5 class | `src/lib/state/app.svelte.ts` — Svelte 5 class with 289 fields, `withMutation` method, `$derived` for `focusedNode`/`semanticDiveMode` | LOW | DONE. Committed `9a67a63`. Worker model worked. |
 | **W11-T2** ✅ | Migrate the smallest bridge file | thread-manager.ts: import, mutation guard, narrowing, dead-code removal. Also fixed `ScenePerformanceDiagnostics` type sync (added 3 missing fields). | LOW | DONE. Committed `da0e283`. Exposed 5 type bugs the `as any` was hiding — all fixed. |
 | **W11-T3** ✅ | Migrate a 1-state + 5-wsm bridge file | map-state.ts: import split (type-only `Point` from legacy), 4 `state.withMutation()` calls. | LOW | DONE. Committed `5f8494d`. **CLEANER than W11-T2** — no type bugs surfaced (the structural `as unknown as` cast is valid for the Svelte 5 class). |
-| W11-T3 | Migrate Svelte stores to the new state | The 12 Svelte stores (`navigation.svelte.ts`, `filter.svelte.ts`, etc.) currently mirror `js/state`; switch them to read from the Svelte 5 class. The mirror disappears. | MED | Thins the bridge in 12+ places. Tests: `state.test.js` covers the kernel. |
-| W11-T4 | Migrate the rest of the bridge | Update the other 11 bridge files (`three-engine.ts` 19 imports, `demo-choreography.ts` 10, etc.) to use the Svelte 5 state class. | MED-HIGH | The `three-engine.ts` 19-import migration is the biggest single chunk; consider splitting per bridge file. |
-| W11-T5 | Camera subsystem Svelte 5 port | Port `camera-controls-*` (~11 files) to Svelte 5 rune classes where possible; keep imperative for the choreography animations. | MED | Resolves the choreography split |
-| W11-T6 | Focus subsystem Svelte 5 port | Port `focus-pocket`, `focus-stage-renderer`, `focus-anchor-indicator`, `focus-panel-mode` to Svelte 5 rune classes. | MED | `focus-pocket.test.js` exists; good test coverage. |
-| W11-T7 | Search subsystem Svelte 5 port | Port `search-state`, `search-results-ui`, `search-panel-adapter`, etc. to Svelte 5. **Resolves the two-source shim problem** flagged in the W1 audit. | MED-HIGH | Critical consolidation move. |
-| W11-T8 | Journey subsystem Svelte 5 port | Port `journey-*` (~20 files, 4,634 LOC) to Svelte 5. The largest subsystem. | HIGH | Many domain tests; complex. Consider splitting per file. |
-| W11-T9 | Three.js render loop | Port `three-engine.ts:animate()` + 20+ render-loop callees. **Last, because it depends on all subsystems.** | HIGHEST | Render loop must stay imperative; the port is about thinning the surrounding infrastructure, not the loop itself. |
-| W11-T10 | Worker + build:legacy retirement | Port `data-worker.js`, retire `app.ts` + `scripts/build-app.mjs` + `package.json:build:legacy` entries + untrack `dist/bundle.js`. Closes the engine-port arc + the deferred T1b from earlier. | MED | Closes the loop on the engine-port arc. |
+| **W11-T4** | Migrate Svelte stores to the new state | The 12 Svelte stores (`navigation.svelte.ts`, `filter.svelte.ts`, etc.) currently mirror `js/state`; switch them to read from the Svelte 5 class. The mirror disappears. | MED | Thins the bridge in 12+ places. Tests: `state.test.js` covers the kernel. |
+| **W11-T5** | Migrate the rest of the bridge | Update the other 9 bridge files (in order: `scene-reveal.ts`, 3× `camera-choreography/*.ts`, `demo-choreography.ts`, `lifecycle-bridge.ts`, `data-bridge.ts`+`types.ts`, **then `three-engine.ts` LAST**). | MED | The `three-engine.ts` 1-import + 8-wsm migration is the biggest single chunk; do it last. |
+| **W11-T6** | Camera subsystem Svelte 5 port | Port `camera-controls-*` (~11 files) to Svelte 5 rune classes where possible; keep imperative for the choreography animations. | MED | Resolves the choreography split |
+| **W11-T7** | Focus subsystem Svelte 5 port | Port `focus-pocket`, `focus-stage-renderer`, `focus-anchor-indicator`, `focus-panel-mode` to Svelte 5 rune classes. | MED | `focus-pocket.test.js` exists; good test coverage. |
+| **W11-T8** | Search subsystem Svelte 5 port | Port `search-state`, `search-results-ui`, `search-panel-adapter`, etc. to Svelte 5. **Resolves the two-source shim problem** flagged in the W1 audit. | MED-HIGH | Critical consolidation move. |
+| **W11-T9** | Journey subsystem Svelte 5 port | Port `journey-*` (~20 files, 4,634 LOC) to Svelte 5. The largest subsystem. | HIGH | Many domain tests; complex. Consider splitting per file. |
+| **W11-T10** | Three.js render loop | Port `three-engine.ts:animate()` + 20+ render-loop callees. **Last, because it depends on all subsystems.** | HIGHEST | Render loop must stay imperative; the port is about thinning the surrounding infrastructure, not the loop itself. |
+| **W11-T11** | Worker + build:legacy retirement | Port `data-worker.js`, retire `app.ts` + `scripts/build-app.mjs` + `package.json:build:legacy` entries + untrack `dist/bundle.js`. Closes the engine-port arc + the deferred T1b from earlier. | MED | Closes the loop on the engine-port arc. |
 
 ## The end state
 
@@ -84,9 +84,28 @@ Every ticket must pass:
 
 - W11-T1 worker: `ocw_6cc02569-5c2e-4bd1-82b1-923d9403624e` (mimo-v2.5, yolo, 90 min timeout, live_steer) — DONE in 4 min
 - W11-T2: done by main lane (3-line scope was below worker overhead threshold)
-- Pattern: for W11-T3+, the parallel-workers are doing related work (relationship-roles migration = Ticket 4 of a separate workstream). Coordinate to avoid stomping.
+- W11-T3: done by main lane (cleaner than W11-T2 — no new type bugs)
+- Pattern: for W11-T4+, the parallel-workers are doing related work (relationship-roles migration = Ticket 4 of a separate workstream). Coordinate to avoid stomping.
 
-## W11-T2 lessons learned (saved to project memory)
+## W11-T2 + W11-T3 lessons learned (saved to project memory)
+
+W11-T2 (thread-manager) exposed 5 type bugs the `as any` was hiding. W11-T3 (map-state) was clean — no type bugs surfaced. The difference: map-state used `as unknown as` (a structural cast that's still valid for the Svelte 5 class) instead of `as any` (a wildcard that hides everything). The pattern is more "is the bridge file using `as any` anywhere?" — if yes, expect type bugs on migration; if no, the migration will be clean.
+
+**Bridge files remaining (in priority order for W11-T4+):**
+
+| File | State imports | wsm calls | Notes |
+|---|---|---|---|
+| `scene-reveal.ts` | 1 | 0 | Smallest; pure state-reads, no mutation |
+| `camera-choreography/cursor.ts` | 1 | 0 | Per-frame render-loop camera updates |
+| `camera-choreography/focus.ts` | 1 | 0 | Focus camera assist |
+| `camera-choreography/routes.ts` | 1 | 0 | Route camera |
+| `demo-choreography.ts` | 1 | 3 | Micro-demo entry; bootstrap |
+| `adapters/lifecycle-bridge.ts` | 1 | 4 | Bootstrap; high-importance |
+| `adapters/data-bridge.ts` | 0 | 1 | Just wsm; might be type-only |
+| `adapters/types.ts` | 0 | 1 | Just wsm; might be type-only |
+| `three-engine.ts` | 1 | 8 | The biggest; render loop init. LAST. |
+
+**Migration success rate so far:** 2/2 bridge files migrated cleanly (when the shim pattern + @lib/* alias are used). W11-T4+ will be the same pattern unless a file uses `as any`.
 
 1. **The shim pattern is mandatory** — every `*.svelte.ts` Svelte 5 module needs a `*.ts` shim that does `export * from './foo.svelte.ts';`. The TypeScript `*.svelte` module declaration only knows about default exports. The W11-T1 worker missed this; I added `src/lib/state/app.ts` as part of W11-T2.
 2. **`@lib/*` aliasing + explicit `.ts` extension is the safe import path** — bypasses the `*.svelte` declaration entirely.
