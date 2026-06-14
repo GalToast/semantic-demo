@@ -10,7 +10,7 @@
  */
 import * as THREE from 'three';
 import type { Vector3 } from 'three';
-import { state, withStateMutation } from '@legacy/state.js';
+import { state, withStateMutation } from '@legacy-js/state.js';
 import { prefersReducedMotion } from '@lib/utils/environment';
 import { normalizeCityForFilter } from '@lib/utils/geo-data';
 import { getBusinessRecords } from '@lib/data-store';

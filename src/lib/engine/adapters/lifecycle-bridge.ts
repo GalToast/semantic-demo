@@ -33,14 +33,14 @@ import type {
 
 import { syncDataToLegacyState } from './data-bridge';
 import { attachLegacyState, loadSemanticThreads } from '@lib/semantic-threads';
-import * as legacyStateModule from '@legacy/state.js';
-import * as legacyViewControllerModule from '@legacy/modules/view-controller';
-import * as legacyFilterStateModule from '@legacy/modules/filter-state.js';
-import * as legacyEventBusModule from '@legacy/modules/event-bus.js';
+import * as legacyStateModule from '@legacy-js/state.js';
+import * as legacyViewControllerModule from '@legacy-js/modules/view-controller';
+import * as legacyFilterStateModule from '@legacy-js/modules/filter-state.js';
+import * as legacyEventBusModule from '@legacy-js/modules/event-bus.js';
 import {
   ensureCanvasNodeInteractionBindings,
   removeCanvasNodeInteractionBindings,
-} from '@legacy/modules/journey-canvas-interaction.js';
+} from '@legacy-js/modules/journey-canvas-interaction.js';
 
 // ── TS Port Imports (canonical implementations) ─────────────────────────────
 // These replace the legacy module lazy-loading that previously happened in

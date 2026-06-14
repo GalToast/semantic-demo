@@ -13,11 +13,11 @@ import {
   easeOutBack,
   easeOutQuint,
 } from '@lib/utils/math-easing';
-import * as legacyStateModule from '@legacy/state.js';
-import * as selectorsStaticModule from '@legacy/state/selectors/index.js';
-import * as cameraFramingUtilsStaticModule from '@legacy/modules/camera-framing-utils.js';
-import * as cameraMathUtilsStaticModule from '@legacy/modules/camera-math-utils.js';
-import * as cameraControlsCoreStaticModule from '@legacy/modules/camera-controls-core.ts';
+import * as legacyStateModule from '@legacy-js/state.js';
+import * as selectorsStaticModule from '@legacy-js/state/selectors/index.js';
+import * as cameraFramingUtilsStaticModule from '@legacy-js/modules/camera-framing-utils.js';
+import * as cameraMathUtilsStaticModule from '@legacy-js/modules/camera-math-utils.js';
+import * as cameraControlsCoreStaticModule from '@legacy-js/modules/camera-controls-core.ts';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 

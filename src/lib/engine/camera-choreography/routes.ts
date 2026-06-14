@@ -11,10 +11,10 @@ import {
   easeInOutCubic,
   quadraticBezierComponent,
 } from '@lib/utils/math-easing';
-import * as selectorsStaticModule from '@legacy/state/selectors/index.js';
-import * as legacyStateModule from '@legacy/state.js';
-import * as cameraControlsCoreStaticModule from '@legacy/modules/camera-controls-core.ts';
-import * as cameraControlsRestoreStaticModule from '@legacy/modules/camera-controls-restore.ts';
+import * as selectorsStaticModule from '@legacy-js/state/selectors/index.js';
+import * as legacyStateModule from '@legacy-js/state.js';
+import * as cameraControlsCoreStaticModule from '@legacy-js/modules/camera-controls-core.ts';
+import * as cameraControlsRestoreStaticModule from '@legacy-js/modules/camera-controls-restore.ts';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 

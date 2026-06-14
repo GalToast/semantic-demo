@@ -6,11 +6,11 @@
  *
  * Import strategy:
  *   - @lib/*   for engine-local and utility modules with TS ports
- *   - @legacy/* for modules still owned by the legacy tree
+ *   - @legacy-js/* for modules still owned by the legacy tree
  */
 
 import * as THREE from 'three';
-import { state as _state } from '@legacy/state';
+import { state as _state } from '@legacy-js/state';
 const state = _state as any;
 import { webglContext } from './webgl-context';
 import { SCENE_PALETTE } from './design-tokens';

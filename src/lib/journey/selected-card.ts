@@ -5,7 +5,7 @@
  *
  * Bridge for selected business card management. The Svelte path delegates
  * to the legacy real implementation via the BOTH-pattern shim, so any
- * consumer of @legacy/modules/journey-selected-card gets the real work
+ * consumer of @legacy-js/modules/journey-selected-card gets the real work
  * (focus-stage sync, traversal UI updates, lead hydration, cascade animation,
  * page meta) instead of the prior silent no-op stubs.
  *
@@ -20,4 +20,4 @@
 export {
 	syncFocusStage,
 	updateSelectedBusiness
-} from '@legacy/modules/journey-selected-card';
+} from '@legacy-js/modules/journey-selected-card';

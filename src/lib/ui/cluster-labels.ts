@@ -15,8 +15,8 @@ import {
     getColors,
     getClusterNames,
     getCamera,
-} from '@legacy/state/selectors/index';
-import { subscribe, EVENTS } from '@legacy/modules/event-bus';
+} from '@legacy-js/state/selectors/index';
+import { subscribe, EVENTS } from '@legacy-js/modules/event-bus';
 import { getViewportSize, isMobileViewport } from '@lib/utils/environment';
 
 interface ClusterStats {

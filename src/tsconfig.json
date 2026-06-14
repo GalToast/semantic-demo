@@ -6,7 +6,7 @@
       "@/*": ["./*"],
       "@lib/*": ["./lib/*"],
       "@components/*": ["./components/*"],
-      "@legacy/*": ["../js/*"]
+      "@legacy-js/*": ["../js/*"]
     },
     "allowImportingTsExtensions": true,
     "ignoreDeprecations": "6.0"

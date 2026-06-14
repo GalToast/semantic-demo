@@ -1,1 +1,1 @@
-export * from '@legacy/modules/three-postprocessing';
+export * from '@legacy-js/modules/three-postprocessing';

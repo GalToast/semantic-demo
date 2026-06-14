@@ -49,28 +49,28 @@ import {
 import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
-// ── Static @legacy/* imports (COLD — init-only, consumed by ensureModules) ──
-import * as viewControllerMod from '@legacy/modules/view-controller';
-import * as mapStateMod from '@legacy/modules/map-state';
-import * as uiFeedbackMod from '@legacy/modules/ui-feedback';
-import * as mapFlatteningMod from '@legacy/modules/map-flattening-layout';
-import * as webglRestoreMod from '@legacy/modules/webgl-restore-adapter';
-import * as focusAnchorMod from '@legacy/modules/focus-anchor-indicator';
-import * as audioScapeMod from '@legacy/modules/audio-scape';
-import * as eventBindingsMod from '@legacy/modules/event-bindings';
-import * as loadingUiMod from '@legacy/modules/loading-ui';
+// ── Static @legacy-js/* imports (COLD — init-only, consumed by ensureModules) ──
+import * as viewControllerMod from '@legacy-js/modules/view-controller';
+import * as mapStateMod from '@legacy-js/modules/map-state';
+import * as uiFeedbackMod from '@legacy-js/modules/ui-feedback';
+import * as mapFlatteningMod from '@legacy-js/modules/map-flattening-layout';
+import * as webglRestoreMod from '@legacy-js/modules/webgl-restore-adapter';
+import * as focusAnchorMod from '@legacy-js/modules/focus-anchor-indicator';
+import * as audioScapeMod from '@legacy-js/modules/audio-scape';
+import * as eventBindingsMod from '@legacy-js/modules/event-bindings';
+import * as loadingUiMod from '@legacy-js/modules/loading-ui';
 
-// ── Static @legacy/* imports (HOT — render-loop, consumed by ensureModules) ──
-import * as stateMod from '@legacy/state';
-import * as clusterLabelsMod from '@legacy/modules/cluster-labels';
-import * as focusPocketMod from '@legacy/modules/focus-pocket';
-import * as sceneRevealMod from '@legacy/modules/scene-reveal';
-import * as cameraControlsMod from '@legacy/modules/camera-controls';
-import * as myceliumEngineMod from '@legacy/modules/mycelium-engine';
-import * as inspectedStrandMod from '@legacy/modules/inspected-strand-overlay-adapter';
-import * as routeArrivalMod from '@legacy/modules/route-arrival-overlay-adapter';
-import * as threeSearchAnimationsMod from '@legacy/modules/three-search-animations';
-import * as threeInteractionVisualsMod from '@legacy/modules/three-interaction-visuals';
+// ── Static @legacy-js/* imports (HOT — render-loop, consumed by ensureModules) ──
+import * as stateMod from '@legacy-js/state';
+import * as clusterLabelsMod from '@legacy-js/modules/cluster-labels';
+import * as focusPocketMod from '@legacy-js/modules/focus-pocket';
+import * as sceneRevealMod from '@legacy-js/modules/scene-reveal';
+import * as cameraControlsMod from '@legacy-js/modules/camera-controls';
+import * as myceliumEngineMod from '@legacy-js/modules/mycelium-engine';
+import * as inspectedStrandMod from '@legacy-js/modules/inspected-strand-overlay-adapter';
+import * as routeArrivalMod from '@legacy-js/modules/route-arrival-overlay-adapter';
+import * as threeSearchAnimationsMod from '@legacy-js/modules/three-search-animations';
+import * as threeInteractionVisualsMod from '@legacy-js/modules/three-interaction-visuals';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 

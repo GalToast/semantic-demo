@@ -6,7 +6,7 @@
  * Checks: app readiness, lifetime guard, reduced motion, WebGL/software renderer, URL param.
  */
 import { get } from 'svelte/store';
-import { state } from '@legacy/state.js';
+import { state } from '@legacy-js/state.js';
 import { prefersReducedMotion } from '@lib/utils/environment';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 

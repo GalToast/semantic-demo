@@ -7,7 +7,7 @@
  * cursor state, and lastCanvasNodeHover for canvas pointer events.
  * Uses canvasInteractionAdapter from canvas-hit-test for timer management.
  */
-import { state } from '@legacy/state.js';
+import { state } from '@legacy-js/state.js';
 import { canvasInteractionAdapter } from './canvas-hit-test';
 
 const CANVAS_FIELD_HOVER_CLEAR_DELAY_MS = 120;

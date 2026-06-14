@@ -21,7 +21,7 @@ export default defineConfig({
       // like import('@legacy/modules/view-controller.js') resolve correctly
       // during unit tests.  The ambient type declaration in
       // src/lib/types/legacy-modules.d.ts provides type safety.
-      '@legacy': JS_DIR
+      '@legacy-js': JS_DIR
     },
     // Resolve .svelte.ts extension so stores like search.svelte.ts can be
     // imported as @lib/stores/search without the explicit extension.

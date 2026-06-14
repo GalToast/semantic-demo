@@ -7,7 +7,7 @@
  * animates camera back to overview with easing, and cancels in-progress animations.
  */
 import * as THREE from 'three';
-import { state } from '@legacy/state.js';
+import { state } from '@legacy-js/state.js';
 import { easeInOutSine } from '@lib/utils/math-easing';
 import { prefersReducedMotion } from '@lib/utils/environment';
 

@@ -9,25 +9,25 @@
  *     focus kicker, next-stop button, map/county buttons, and status copy.
  *
  * Dependencies that are still in the legacy path (will migrate later):
- *   - @legacy/state/selectors/index (state selectors)
- *   - @legacy/state.ts (global state singleton)
- *   - @legacy/modules/journey-lifecycle-adapter.ts (getNextWalkCandidateForIndex)
- *   - @legacy/modules/focus-stage-dom.ts (ensureFocusStageAuxiliaryDom, ensureDiveButton)
+ *   - @legacy-js/state/selectors/index (state selectors)
+ *   - @legacy-js/state.ts (global state singleton)
+ *   - @legacy-js/modules/journey-lifecycle-adapter.ts (getNextWalkCandidateForIndex)
+ *   - @legacy-js/modules/focus-stage-dom.ts (ensureFocusStageAuxiliaryDom, ensureDiveButton)
  */
 
 import {
     getFocusedNode, getNavState, getCurrentView, getSemanticDiveMode,
     getStrandContinuityState, getTrailDepth, getPoints
-} from '@legacy/state/selectors/index';
-import { state } from '@legacy/state';
+} from '@legacy-js/state/selectors/index';
+import { state } from '@legacy-js/state';
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import type { BusinessRecord } from '@lib/types/business';
 import { cleanOptionalValue, formatBusinessName } from '@lib/utils/dom-formatters';
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation';
 import { getNextExploreCandidateForIndex } from './thread-model';
 import { summarizeNeighborReason } from './thread-settler';
-import { getNextWalkCandidateForIndex } from '@legacy/modules/journey-lifecycle-adapter';
-import { ensureFocusStageAuxiliaryDom, ensureDiveButton } from '@legacy/modules/focus-stage-dom';
+import { getNextWalkCandidateForIndex } from '@legacy-js/modules/journey-lifecycle-adapter';
+import { ensureFocusStageAuxiliaryDom, ensureDiveButton } from '@legacy-js/modules/focus-stage-dom';
 
 function truncateDiveStatusCopy(text: string | null | undefined, max = 74): string {
     const clean = cleanOptionalValue(text);

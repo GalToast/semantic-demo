@@ -23,7 +23,7 @@ import { getStrandContinuityManager } from '@lib/utils/strand-continuity';
  *
  * The Svelte path previously held silent no-op stubs for these (warned
  * `[journey] Stub function hit: traverseNeighbor` / etc.). The legacy
- * canonical at `@legacy/modules/journey-thread-settler` has the real
+ * canonical at `@legacy-js/modules/journey-thread-settler` has the real
  * orchestration — bound to `state.navState`, `state.semanticDiveMode`,
  * `walkHistoryIndices`, and the strand continuity manager.
  *
@@ -44,7 +44,7 @@ import { getStrandContinuityManager } from '@lib/utils/strand-continuity';
 import {
 	traverseNeighbor as _traverseNeighborImpl,
 	previewInsideNextThread as _previewInsideNextThreadImpl
-} from '@legacy/modules/journey-thread-settler';
+} from '@legacy-js/modules/journey-thread-settler';
 
 export function traverseNeighbor(step: number): void {
 	return _traverseNeighborImpl(step);

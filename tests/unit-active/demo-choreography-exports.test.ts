@@ -43,17 +43,17 @@ function readSource(): string {
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 describe('demo-choreography — static import invariant (Ticket 9C)', () => {
-  it('has zero dynamic @legacy/* imports in the source file', () => {
+  it('has zero dynamic @legacy-js/* imports in the source file', () => {
     const src = readSource();
-    const dynamicLegacyImports = src.match(/import\(['"]@legacy\//g);
+    const dynamicLegacyImports = src.match(/import\(['"]@legacy-js\//g);
     expect(dynamicLegacyImports).toBeNull();
   });
 
-  it('has zero dynamic import() calls targeting any @legacy module', () => {
+  it('has zero dynamic import() calls targeting any @legacy-js module', () => {
     const src = readSource();
     const allDynamicImports = src.match(/import\(['"][^'"]+['"]\)/g) ?? [];
     const legacyDynamic = allDynamicImports.filter((imp) =>
-      imp.includes('@legacy/')
+      imp.includes('@legacy-js/')
     );
     expect(legacyDynamic).toHaveLength(0);
   });
@@ -70,15 +70,15 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
       'micro-demo-ui.js',
     ];
     for (const mod of expectedModules) {
-      expect(src).toContain(`from '@legacy/modules/${mod}'`);
+      expect(src).toContain(`from '@legacy-js/modules/${mod}'`);
     }
   });
 
   it('also statically imports the 3 previously-converted modules', () => {
     const src = readSource();
-    expect(src).toContain("from '@legacy/state.js'");
-    expect(src).toContain("from '@legacy/modules/camera-controls.js'");
-    expect(src).toContain("from '@legacy/modules/focus-pocket.js'");
+    expect(src).toContain("from '@legacy-js/state.js'");
+    expect(src).toContain("from '@legacy-js/modules/camera-controls.js'");
+    expect(src).toContain("from '@legacy-js/modules/focus-pocket.js'");
   });
 });
 

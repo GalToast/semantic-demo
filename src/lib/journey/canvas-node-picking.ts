@@ -8,7 +8,7 @@
  */
 import * as THREE from 'three';
 import type { Camera, Intersection, Object3D, InstancedMesh } from 'three';
-import { state } from '@legacy/state.js';
+import { state } from '@legacy-js/state.js';
 import { isPointVisible } from '@lib/utils/geo-data';
 import { getCanvasPointerPosition, getCanvasFieldNodeClickRadius } from './canvas-hit-test';
 import type { CanvasPointerPosition } from './canvas-hit-test';

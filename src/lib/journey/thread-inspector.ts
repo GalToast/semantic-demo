@@ -5,7 +5,7 @@
  *
  * Bridge for thread inspection state. The Svelte path delegates to the
  * legacy real implementation via the BOTH-pattern shim, so any consumer
- * of @legacy/modules/thread-inspector gets the real work (state reset,
+ * of @legacy-js/modules/thread-inspector gets the real work (state reset,
  * pinned/unpinned thread transitions, strand continuity clearing,
  * canvas timer cleanup, sync focus stage + sync semantic dive UI) instead
  * of the prior silent no-op stub.
@@ -21,4 +21,4 @@
  * from ThreadInspector.svelte + 13 other sites).
  */
 
-export { clearThreadInspection } from '@legacy/modules/thread-inspector';
+export { clearThreadInspection } from '@legacy-js/modules/thread-inspector';
