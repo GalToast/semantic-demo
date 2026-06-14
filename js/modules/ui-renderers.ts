@@ -11,7 +11,9 @@ import * as focusRendererModule from './focus-stage-renderer.ts';
 import * as trailCueRendererModule from './search-trail-cue-renderer.ts';
 
 import './weather-ui.js';
-import './semantic-guide-ui.js';
+// semantic-guide-ui.js was deleted in f230a3b; Svelte track owns the summary
+// card (view-controller + body data-attr bridge). No side-effect replacement
+// needed in the legacy engine.
 
 type RendererFn = (...args: unknown[]) => unknown;
 type RendererModule = Record<string, RendererFn>;
