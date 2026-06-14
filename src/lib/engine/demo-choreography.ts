@@ -21,6 +21,13 @@ import type { DemoPhase } from '@lib/types/state';
 import * as legacyStateModule from '@legacy/state.js';
 import * as cameraControlsStaticModule from '@legacy/modules/camera-controls.js';
 import * as focusPocketStaticModule from '@legacy/modules/focus-pocket.js';
+import * as lifecycleStaticModule from '@legacy/modules/lifecycle.js';
+import * as journeyCompassStaticModule from '@legacy/modules/journey-compass-controller.js';
+import * as journeyStaticModule from '@legacy/modules/journey.js';
+import * as panelBindingsStaticModule from '@legacy/modules/bindings/panel-bindings.js';
+import * as microDemoGuardsStaticModule from '@legacy/modules/micro-demo-guards.js';
+import * as microDemoCameraStaticModule from '@legacy/modules/micro-demo-camera.js';
+import * as microDemoUiStaticModule from '@legacy/modules/micro-demo-ui.js';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 //
@@ -181,38 +188,31 @@ async function loadFocusPocket(): Promise<FocusPocketModule> {
 }
 
 async function loadLifecycle(): Promise<LifecycleModule> {
-  const mod = await import('@legacy/modules/lifecycle.js');
-  return mod as unknown as LifecycleModule;
+  return lifecycleStaticModule as unknown as LifecycleModule;
 }
 
 async function loadJourneyCompass(): Promise<JourneyCompassModule> {
-  const mod = await import('@legacy/modules/journey-compass-controller.js');
-  return mod as unknown as JourneyCompassModule;
+  return journeyCompassStaticModule as unknown as JourneyCompassModule;
 }
 
 async function loadJourney(): Promise<JourneyModule> {
-  const mod = await import('@legacy/modules/journey.js');
-  return mod as unknown as JourneyModule;
+  return journeyStaticModule as unknown as JourneyModule;
 }
 
 async function loadPanelBindings(): Promise<PanelBindingsModule> {
-  const mod = await import('@legacy/modules/bindings/panel-bindings.js');
-  return mod as unknown as PanelBindingsModule;
+  return panelBindingsStaticModule as unknown as PanelBindingsModule;
 }
 
 async function loadMicroDemoGuards(): Promise<MicroDemoGuardsModule> {
-  const mod = await import('@legacy/modules/micro-demo-guards.js');
-  return mod as unknown as MicroDemoGuardsModule;
+  return microDemoGuardsStaticModule as unknown as MicroDemoGuardsModule;
 }
 
 async function loadMicroDemoCamera(): Promise<MicroDemoCameraModule> {
-  const mod = await import('@legacy/modules/micro-demo-camera.js');
-  return mod as unknown as MicroDemoCameraModule;
+  return microDemoCameraStaticModule as unknown as MicroDemoCameraModule;
 }
 
 async function loadMicroDemoUi(): Promise<MicroDemoUiModule> {
-  const mod = await import('@legacy/modules/micro-demo-ui.js');
-  return mod as unknown as MicroDemoUiModule;
+  return microDemoUiStaticModule as unknown as MicroDemoUiModule;
 }
 
 // ── demoReset ─────────────────────────────────────────────────────────────────
