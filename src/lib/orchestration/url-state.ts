@@ -506,6 +506,17 @@ async function _restoreSearchFromParams(
     const domForcedFocusSearchSurface = isDomForcedFocusSearchSurface();
     const signal = AbortSignal.timeout(30000);
     await runSearch(query, signal);
+
+    // UI-7: Directly populate the search input from the URL ?q= param.
+    // runSearch sets the store query, but the SearchInput component may not
+    // have mounted yet or its reactive sync may not have propagated to the
+    // DOM <input> value. Setting it here guarantees the input reflects the URL.
+    const input = document.getElementById('search-input') as HTMLInputElement | null;
+    if (input && input.value !== query) {
+      input.value = query;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
     if (domForcedFocusSearchSurface) preserveDomForcedFocusSearchSurface();
 
     // Non-numeric anchor: focus it once results are available. Numeric
