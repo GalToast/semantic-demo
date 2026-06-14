@@ -16,7 +16,7 @@ import {
 import * as legacyStateModule from '../../../../js/state';
 import * as selectorsStaticModule from '../../../../js/state/selectors/index';
 import * as cameraFramingUtilsStaticModule from '../../../../js/modules/camera-framing-utils.js';
-import * as cameraMathUtilsStaticModule from '../../../../js/modules/camera-math-utils.js';
+import * as cameraMathUtilsStaticModule from '@lib/utils/camera-math-utils';
 import * as cameraControlsCoreStaticModule from '../../../../js/modules/camera-controls-core.ts';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
