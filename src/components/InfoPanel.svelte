@@ -33,6 +33,7 @@
   import { publish, EVENTS } from '@lib/event-bus';
   import { onMount, type Snippet } from 'svelte';
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat';
+  import { getInfoPanelContent, type InfoPanelContentDescriptor } from '@lib/orchestration/info-panel-state';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -168,12 +169,13 @@
     return testPanelSurface || 'idle';
   });
 
+  // Per-state content descriptor (replaces static hardcoded copy)
+  let contentDescriptor: InfoPanelContentDescriptor = $derived(getInfoPanelContent(effectiveSurface));
+
   // Search-family surfaces are owned by the App-level SearchBar. Keep the info
   // panel shell present for layout contracts, but suppress selected-business
   // content so it cannot render underneath the search drawer.
-  let selectionSuppressed = $derived(
-    effectiveSurface === 'search' || effectiveSurface === 'focus-search'
-  );
+  let selectionSuppressed = $derived(contentDescriptor.selectionSuppressed);
 
   let effectiveFocusedIdx = $derived.by(() => {
     if (currentFocusedIdx !== null) return currentFocusedIdx;
@@ -430,10 +432,12 @@
   <div class="info-panel-content" id="info-panel-content">
     {@render content?.()}
 
-    <!-- Info header (always visible — the panel always carries detail chrome) -->
+    <!-- Info header (hidden in search mode per contract; text varies by surface) -->
+    {#if contentDescriptor.headerVisible}
     <div class="info-header">
-      <h3>Business Details</h3>
+      <h3>{contentDescriptor.headerText}</h3>
     </div>
+    {/if}
 
     <!-- Selected card container -->
     <div
@@ -451,15 +455,15 @@
       data-debug-selected-record={selectedRecord?.name ?? ''}
     >
 
-      <!-- Empty state -->
+      <!-- Empty state (copy adapts to panel surface) -->
       {#if isEmpty}
         <div id="selected-empty" class="selected-empty">
           <svg class="empty-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
             <circle cx="12" cy="12" r="10"/>
             <path d="M12 16v-4M12 8h.01"/>
           </svg>
-          <p class="selected-empty-headline">Select a business to see details.</p>
-          <p class="selected-empty-sub">Click a node in the field or choose a search result.</p>
+          <p class="selected-empty-headline">{contentDescriptor.emptyHeadline}</p>
+          <p class="selected-empty-sub">{contentDescriptor.emptySubtext}</p>
         </div>
       {/if}
 
