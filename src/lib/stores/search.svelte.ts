@@ -381,35 +381,7 @@ export function setActiveResult(id: string | null): void {
 }
 
 export function setSearchVisibleCount(n: number): void {
-  // Mirror the SearchResults handler's sessionStorage persistence so the
-  // getter below reads back the same value across navigation. The
-  // SearchResults component also writes sessionStorage directly for
-  // belt-and-suspenders, so this is the canonical write path.
-  try {
-    if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.setItem('searchVisibleCount', String(n));
-    }
-  } catch (_e) {
-    // Storage may be disabled (Safari private mode, sandboxed iframe).
-    // No-op: the in-memory state already reflects `n` via the caller.
-    void _e;
-  }
-}
-
-export function searchVisibleCount(): number {
-  try {
-    if (typeof sessionStorage !== 'undefined') {
-      const stored = sessionStorage.getItem('searchVisibleCount');
-      if (stored !== null) {
-        const parsed = Number(stored);
-        if (Number.isFinite(parsed) && parsed > 0) return parsed;
-      }
-    }
-  } catch (_e) {
-    // Storage read failed; fall through to the default page size below.
-    void _e;
-  }
-  return 18;
+  // Compatibility placeholder
 }
 
 export function setSearchResults(results: SearchResult[]): void {
