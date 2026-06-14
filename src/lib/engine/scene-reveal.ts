@@ -6,18 +6,17 @@
  * becomes visible, and resizes the renderer + camera when the window changes.
  */
 import * as THREE from 'three';
-import { state, type SemanticState } from '../../../js/state';
+import { appState as state } from '@lib/state/app.svelte.ts';
+import type { SemanticState } from '../../../js/state';
 import { clearAutoRotateResumeTimer, setAutoRotateSuspended, settleCameraToOverviewPose } from '../engine/camera-controls';
 import { updateCameraViewportOffset } from './three-engine';
 import { syncClusterSectionState } from '../../../js/modules/cluster-labels';
 import { updateTraversalUi } from '../../../js/modules/journey';
 import { getViewportSize, prefersReducedMotion, isMobileViewport } from '@lib/utils/environment';
 
-const _state = state as unknown as SemanticState & {
-    sceneRevealStartedAt: number;
-    sceneRevealCameraStart: THREE.Vector3;
-    sceneRevealCameraEnd: THREE.Vector3;
-};
+// Note: `state` (Svelte 5 AppState) is structurally a `SemanticState` (the
+// interface from the legacy state). The structural cast is no longer
+// needed — the Svelte 5 class is properly typed.
 
 export function setSceneRevealDataset(active: boolean): void {
     if (typeof document !== 'undefined' && document.body?.dataset) {
@@ -26,17 +25,17 @@ export function setSceneRevealDataset(active: boolean): void {
 }
 
 export function startSceneReveal(): void {
-    const camera = _state.camera as { position: THREE.Vector3 } | null;
-    if (!camera || _state.currentView !== 'galaxy') return;
-    _state.sceneRevealActive = true;
+    const camera = state.camera as { position: THREE.Vector3 } | null;
+    if (!camera || state.currentView !== 'galaxy') return;
+    state.sceneRevealActive = true;
     setSceneRevealDataset(true);
-    _state.sceneRevealStartedAt = performance.now();
-    _state.sceneRevealCameraEnd = camera.position.clone();
+    state.sceneRevealStartedAt = performance.now();
+    state.sceneRevealCameraEnd = camera.position.clone();
 
-    _state.sceneRevealCameraStart = (() => {
-        const cx = _state.sceneRevealCameraEnd.x;
-        const cy = _state.sceneRevealCameraEnd.y;
-        const cz = _state.sceneRevealCameraEnd.z;
+    state.sceneRevealCameraStart = (() => {
+        const cx = state.sceneRevealCameraEnd.x;
+        const cy = state.sceneRevealCameraEnd.y;
+        const cz = state.sceneRevealCameraEnd.z;
         if (!Number.isFinite(cx) || !Number.isFinite(cy) || !Number.isFinite(cz)) {
             return new THREE.Vector3(0, 0, 1);
         }
@@ -48,19 +47,19 @@ export function startSceneReveal(): void {
 }
 
 export function getSceneRevealProgress(frameNow: number): number {
-    if (!_state.sceneRevealActive || !_state.sceneRevealStartedAt) return 1;
+    if (!state.sceneRevealActive || !state.sceneRevealStartedAt) return 1;
     if (prefersReducedMotion()) {
         setSceneRevealDataset(false);
-        _state.sceneRevealActive = false;
+        state.sceneRevealActive = false;
         return 1.0;
     }
-    const elapsed = frameNow - _state.sceneRevealStartedAt;
+    const elapsed = frameNow - state.sceneRevealStartedAt;
     return Math.min(1, Math.max(0, elapsed / 2800));
 }
 
 export function onWindowResize(): void {
-    const camera = _state.camera as { aspect: number; updateProjectionMatrix(): void } | null;
-    const renderer = _state.renderer as { setSize(w: number, h: number): void } | null;
+    const camera = state.camera as { aspect: number; updateProjectionMatrix(): void } | null;
+    const renderer = state.renderer as { setSize(w: number, h: number): void } | null;
     if (!camera || !renderer) return;
     const { width, height } = getViewportSize();
     const isMobile = isMobileViewport();
