@@ -109,6 +109,7 @@ export type { MappedPoint, RawCoordinates } from './data-mapper';
 export { el, setChildren } from './dom-builder';
 export type { DomChild, DomEventHandler, DomAttributes } from './dom-builder';
 export { FOCUSABLE_SELECTORS, setupFocusTrap, releaseFocusTrap } from './focus-trap';
+export { bindFocusTrapObserver, disposeFocusTrapBindings } from './focus-trap-bindings';
 export {
   createSporeTexture,
   createFocusRingTexture,
