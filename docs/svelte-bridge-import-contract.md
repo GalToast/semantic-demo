@@ -20,6 +20,12 @@ Svelte UI and the engine kernel. Direct imports from `src/lib/<other>/*` into
 `js/` bypass the bridge and create circular coupling that breaks the engine
 port (Wave 11+).
 
+### Batch 4 migration (2026-06-14)
+
+- `src/lib/journey/semantic-guide.ts` — 4 imports migrated through `semantic-guide-bridge.ts`
+- `src/lib/journey/semantic-dive.ts` — 2 imports migrated through `semantic-dive-bridge.ts`
+- Anti-pattern count reduced from 29 to 23.
+
 ## The rule
 
 **`src/lib/<NOT engine>/*` MUST NOT import from `js/`.**
@@ -48,46 +54,73 @@ re-exports or via Svelte stores / events.
 
 ## Inventory of direct imports (as of 2026-06-14)
 
-27 src/ files import from `js/` outside the bridge. Total: **63 anti-pattern
-import paths**. Of these, 60 are in `src/lib/<other>/*` and 3 are in
-`src/components/*`. Migration is not required immediately (the engine port
-is a multi-week arc), but new code MUST NOT add to this list. The invariant
-test fails the build on any new anti-pattern.
+3 src/ files import from `js/` outside the bridge. Total: **23 anti-pattern
+import paths**. The former direct component imports from `Header.svelte` and
+`Legend.svelte`, the demo state singleton imports, and the selected-card /
+focus-ui / thread-inspector journey shims, plus non-engine state / selector
+imports now route through `src/lib/engine/*` bridge adapters. Migration is not
+required immediately (the engine port is a multi-week arc), but new code MUST
+NOT add to this list. The invariant test fails the build on any new
+anti-pattern.
 
-### Legitimate bridge (11 files, in `src/lib/engine/*`)
+### Legitimate bridge (39 files, in `src/lib/engine/*`)
 
 ```
-src/lib/engine/demo-choreography.ts
-src/lib/engine/camera-controls.ts
-src/lib/engine/map-state.ts
-src/lib/engine/node-manager.ts
-src/lib/engine/camera-choreography/cursor.ts
-src/lib/engine/camera-choreography/routes.ts
-src/lib/engine/camera-choreography/focus.ts
+src/lib/engine/adapters/camera-bridge.ts
+src/lib/engine/adapters/core.ts
+src/lib/engine/adapters/data-bridge.ts
 src/lib/engine/adapters/lifecycle-bridge.ts
+src/lib/engine/adapters/search-bridge.ts
+src/lib/engine/adapters/types.ts
+src/lib/engine/bridge.ts
+src/lib/engine/camera-choreography/cursor.ts
+src/lib/engine/camera-choreography/focus.ts
+src/lib/engine/camera-choreography/index.ts
+src/lib/engine/camera-choreography/routes.ts
+src/lib/engine/camera-controls.ts
+src/lib/engine/config.ts
+src/lib/engine/demo-choreography.ts
+src/lib/engine/design-tokens.ts
+src/lib/engine/event-bus-bridge.ts
+src/lib/engine/index.ts
+src/lib/engine/journey-focus-ui-bridge.ts
+src/lib/engine/journey-selected-card-bridge.ts
+src/lib/engine/journey-thread-settler-bridge.ts
+src/lib/engine/keyboard-help-bridge.ts
+src/lib/engine/legend-bridge.ts
+src/lib/engine/map-state.ts
+src/lib/engine/micro-demo-choreography-bridge.ts
+src/lib/engine/node-manager.ts
+src/lib/engine/resource-tracker.ts
 src/lib/engine/scene-reveal.ts
-src/lib/engine/three-postprocessing.ts
+src/lib/engine/semantic-dive-bridge.ts
+src/lib/engine/semantic-guide-bridge.ts
+src/lib/engine/semantic-threads-worker-bridge.ts
+src/lib/engine/state-bridge.ts
+src/lib/engine/state-selectors-bridge.ts
+src/lib/engine/thread-inspector-bridge.ts
+src/lib/engine/thread-manager.ts
 src/lib/engine/three-engine.ts
+src/lib/engine/three-postprocessing.ts
+src/lib/engine/ui-renderers-bridge.ts
+src/lib/engine/weather-bridge.ts
+src/lib/engine/webgl-context.ts
 ```
 
 These wrap engine functions for Svelte consumption. ALLOWED.
 
-### Anti-pattern direct imports (27 files, 63 import paths)
+### Anti-pattern direct imports (3 files, 23 import paths)
 
 Files in `src/lib/<other>/*` and `src/components/*` that import from `js/`
 directly (bypassing the bridge). The full list is in the invariant test's
 console output — it's regenerated on every run.
 
 Top offenders by import count:
-- `src/lib/journey/journey.ts` — 16 imports
-- `src/lib/orchestration/window-actions.ts` — 6 imports
-- `src/lib/journey/semantic-guide.ts` — 5 imports
-- `src/lib/journey/focus-pocket.ts` — 4 imports
-- `src/lib/journey/semantic-dive.ts` — 4 imports
-- `src/lib/ui/ui-feedback.ts` — 3 imports
-- 22 other files with 1-2 imports each
+- `src/lib/journey/journey.ts` — 15 imports
+- `src/lib/orchestration/window-actions.ts` — 5 imports
+- `src/lib/journey/focus-pocket.ts` — 3 imports
 
-**63 anti-pattern import paths total.** Migration is not required
+**23 anti-pattern import paths total.** Migration is not required
 immediately (the engine port is a multi-week arc), but new code MUST NOT
 add to this list. The invariant test fails the build on any new
 anti-pattern. Existing entries have a one-time pass to consolidate,

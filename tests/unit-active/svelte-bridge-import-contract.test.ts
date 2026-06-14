@@ -13,7 +13,7 @@
  *   2. Fails the build if a NEW anti-pattern import is added
  *   3. Provides a baseline to track migration progress
  *
- * Anti-patterns are ALLOWED at the current count (27 of 38), so workers
+ * Anti-patterns are ALLOWED at the current approved count, so workers
  * aren't blocked. But new anti-patterns fail the test. Migration tickets
  * reduce the count over time.
  */
@@ -32,7 +32,7 @@ const BRIDGE_ALLOWLIST = new Set([
 ]);
 
 /** Current anti-pattern import count — workers SHOULD reduce this over time */
-const APPROVED_ANTIPATTERN_COUNT = 63;
+const APPROVED_ANTIPATTERN_COUNT = 23;
 
 interface ImportViolation {
   file: string;
@@ -116,9 +116,14 @@ describe('Svelte-bridge import contract (S7)', () => {
     // If a worker added a new anti-pattern import, this fails.
     // Migration tickets reduce the count; update APPROVED_ANTIPATTERN_COUNT
     // in lockstep with the migration commit.
-    // Baseline established 2026-06-14 by inventory of 27+ src/ files
-    // importing 63 paths from js/; 11 are bridge (in src/lib/engine/*),
-    // 63 are anti-pattern. Migration tickets should reduce this over time.
+    // Baseline established 2026-06-14 and reduced by adapter waves.
+    // 23 are anti-pattern after Legend/Header, demo state,
+    // selected-card/focus-ui/thread-inspector journey shims,
+    // non-engine state/selectors/camera-controls imports moved through engine bridges,
+    // Batch 2 ui-renderers/event-bus/weather imports,
+    // Batch 3 micro-demo-choreography/journey-thread-settler imports,
+    // semantic-threads worker URL bridge,
+    // and Batch 4 semantic-guide/semantic-dive bridge migration.
     expect(violations.length).toBe(APPROVED_ANTIPATTERN_COUNT);
   });
 
