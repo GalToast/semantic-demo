@@ -7,10 +7,13 @@
  * role map, and breathing animation.
  */
 import * as THREE from 'three';
-import { state, withStateMutation, type NavFocusPocketMeta, type Point, type SemanticState } from '../../../js/state';
-import { prefersReducedMotion } from '@lib/utils/environment';
-import { normalizeCityForFilter } from '../../../js/modules/utils/geo-data';
 import {
+    state,
+    withStateMutation,
+    type NavFocusPocketMeta,
+    type Point,
+    type SemanticState,
+    normalizeCityForFilter,
     buildFocusedPocketStagedPositions,
     buildFocusedSemanticPocket,
     clampNumber,
@@ -27,12 +30,11 @@ import {
     applyRelationshipRolePlacementBias,
     getFocusThreadCurvePoint,
     type PocketEntry,
-} from '../../../js/modules/focus-pocket-geometry';
-import {
     getNeighborhoodPersonality,
     getSemanticCandidateSlice,
     type NeighborhoodPersonality,
-} from '../../../js/modules/focus-pocket-personality';
+} from '@lib/engine/focus-pocket-bridge';
+import { prefersReducedMotion } from '@lib/utils/environment';
 
 export {
     clampNumber,

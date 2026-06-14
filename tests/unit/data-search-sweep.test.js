@@ -7,7 +7,7 @@
  * 3. IndexedDB dbPromise reset on failure (module structure)
  */
 import { describe, it, expect } from 'vitest';
-import { tokenizeSearchText } from '../../js/modules/utils/geo-data';
+import { tokenizeSearchText } from '../../src/lib/utils/geo-data';
 
 describe('geo-data tokenizeSearchText — NFC + Unicode', () => {
     it('tokenizes ASCII normally (regression guard)', () => {
