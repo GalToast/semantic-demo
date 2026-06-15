@@ -12,4 +12,4 @@ export {
   updateTraversalUi,
   initFocusNeighborRailSubscriptions,
   shouldUseFloatingFocusJourneyOnly,
-} from '../../../js/modules/journey-focus-ui';
+} from '@lib/journey/focus-ui';
