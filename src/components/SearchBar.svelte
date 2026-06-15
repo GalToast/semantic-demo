@@ -11,7 +11,7 @@
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat';
+  import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat.svelte.ts';
   import { searchState } from '@lib/stores/search.svelte';
   import SearchInput from './SearchInput.svelte';
   import SearchResults from './SearchResults.svelte';

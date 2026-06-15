@@ -32,7 +32,7 @@
   import { buildSelectedBusinessProps } from '@lib/view-models/selected-business-view-model';
   import { publish, EVENTS } from '@lib/event-bus';
   import { onMount, type Snippet } from 'svelte';
-  import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat';
+  import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat.svelte.ts';
   import { getInfoPanelContent, type InfoPanelContentDescriptor } from '@lib/orchestration/info-panel-state';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
