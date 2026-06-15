@@ -26,7 +26,7 @@ import { resolveSource } from './source-path.mjs';
 const CWD = process.cwd();
 const TARGET_PATH = resolveSource('js/modules/map-flattening-layout.ts', CWD);
 const DATA_LOADER_PATH = resolveSource('js/modules/data-loader.ts', CWD);
-const DATA_WORKER_PATH = resolve(CWD, 'js/workers/data-worker.js');
+const DATA_WORKER_PATH = resolve(CWD, 'js/workers/data-worker.ts');
 
 let targetSrc;
 try {

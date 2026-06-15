@@ -10,6 +10,7 @@ if (typeof window !== 'undefined') {
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { state as _state, withStateMutation } from '../state.ts';
+import { appState } from '@lib/state/app.svelte.ts';
 const state = _state as any;
 import { debugWarn } from './diagnostic-adapter.ts';
 import {
@@ -552,7 +553,7 @@ export function animate() {
         _rafId = null;
         return;
     }
-    if (state.currentView !== 'galaxy' && !state.forceAnimate) {
+    if (appState.currentView !== 'galaxy' && !(appState as any).forceAnimate) {
         _rafId = null;
         return;
     }
@@ -562,10 +563,10 @@ export function animate() {
 
     const frameStart = performance.now();
     const frameNow = frameStart;
-    const sceneFrameMs = state.scenePerformanceDiagnostics.lastFrameAt
-        ? Math.min(250, Math.max(0, frameNow - state.scenePerformanceDiagnostics.lastFrameAt))
+    const sceneFrameMs = appState.scenePerformanceDiagnostics.lastFrameAt
+        ? Math.min(250, Math.max(0, frameNow - appState.scenePerformanceDiagnostics.lastFrameAt))
         : 0;
-    withStateMutation(() => { state.scenePerformanceDiagnostics.lastFrameAt = frameNow; });
+    appState.scenePerformanceDiagnostics.lastFrameAt = frameNow;
 
     updateAutoRotateSoftResume(frameNow);
     focusCameraAssistIsActive(frameNow);
@@ -579,10 +580,10 @@ export function animate() {
     const cameraRevealProgress = easeInOutCubic(Math.min(1, Math.max(0, revealProgress)));
 
     let anyNodeMoved = false;
-    if (state.nodePositions && state.targetPositions) {
-        const lerpFactor = state.nodesAreSettling ? 0.14 : 0.08;
-        state.nodePositions.forEach((pos: any, i: number) => {
-            const target = state.targetPositions[i];
+    if (appState.nodePositions && appState.targetPositions) {
+        const lerpFactor = appState.nodesAreSettling ? 0.14 : 0.08;
+        appState.nodePositions.forEach((pos: any, i: number) => {
+            const target = appState.targetPositions[i];
             if (!target) return;
             const dx = target.x - pos.x;
             const dy = target.y - pos.y;
@@ -596,10 +597,10 @@ export function animate() {
             }
         });
 
-        if (applyFocusPocketBreathing(frameNow, state.nodePositions)) {
-            state.focusPocketMotionByIndex.forEach((_: any, idx: number) => {
+        if (applyFocusPocketBreathing(frameNow, appState.nodePositions)) {
+            appState.pocketMotionByIndex.forEach((_: any, idx: number) => {
                 setNodeSporeInstanceMatrix(idx);
-                if (webglContext.nodeSporeHitMesh && state.navState.focusPocketIndices?.includes(idx)) {
+                if (webglContext.nodeSporeHitMesh && appState.navState.focusPocketIndices?.includes(idx)) {
                     setNodeSporeInstanceMatrix(idx, webglContext.nodeSporeHitMesh);
                 }
             });
@@ -609,27 +610,27 @@ export function animate() {
         if (anyNodeMoved) {
             if (webglContext.nodeSporeMesh) webglContext.nodeSporeMesh.instanceMatrix.needsUpdate = true;
             if (webglContext.nodeSporeHitMesh) webglContext.nodeSporeHitMesh.instanceMatrix.needsUpdate = true;
-            state.myceliumDirty = true;
+            appState.myceliumDirty = true;
         }
     }
 
-    if (state.sceneRevealActive && state.sceneRevealCameraStart && state.sceneRevealCameraEnd && state.focusedNode === null) {
-        webglContext.camera.position.lerpVectors(state.sceneRevealCameraStart, state.sceneRevealCameraEnd, cameraRevealProgress);
+    if (appState.sceneRevealActive && appState.sceneRevealCameraStart && appState.sceneRevealCameraEnd && appState.focusedNode === null) {
+        webglContext.camera.position.lerpVectors(appState.sceneRevealCameraStart, appState.sceneRevealCameraEnd, cameraRevealProgress);
         if (webglContext.controls) {
             webglContext.controls.target.set(0, 0, 0);
         }
         if (revealProgress >= 1) {
-            state.sceneRevealActive = false;
+            appState.sceneRevealActive = false;
             setSceneRevealDataset(false);
-            state.sceneRevealCameraStart = null;
-            state.sceneRevealCameraEnd = null;
+            appState.sceneRevealCameraStart = null;
+            appState.sceneRevealCameraEnd = null;
             scheduleAutoRotateResume(1200);
         }
     }
 
     if (webglContext.pointsMaterial) {
-        const isFocused = Number.isFinite(state.focusedNode);
-        const isSemanticDive = state.trailDepth >= 2;
+        const isFocused = Number.isFinite(appState.focusedNode);
+        const isSemanticDive = appState.trailDepth >= 2;
         const pointsOpacityScale = isFocused ? (isSemanticDive ? 0.16 : 0.46) : 1.0;
         const pointsSizeScale = isFocused ? (isSemanticDive ? 0.52 : 0.8) : 1.0;
         if (webglContext.pointsMesh) webglContext.pointsMesh.visible = pointsOpacityScale > 0;
@@ -644,13 +645,13 @@ export function animate() {
         (webglContext.scene.fog as THREE.FogExp2).density = SCENE_ATMOSPHERE.fogDensity * pointsRevealProgress;
     }
     if (webglContext.nodeSporeMaterial) {
-        const focusBoost = Number.isFinite(state.focusedNode) ? (state.trailDepth >= 2 ? 0.72 : 1.0) : 1.0;
+        const focusBoost = Number.isFinite(appState.focusedNode) ? (appState.trailDepth >= 2 ? 0.72 : 1.0) : 1.0;
         const targetSporeOpacity = SCENE_ATMOSPHERE.sporeOpacity * pointsRevealProgress * focusBoost;
         webglContext.nodeSporeMaterial.opacity += (targetSporeOpacity - webglContext.nodeSporeMaterial.opacity) * 0.12;
     }
     
-    const hoveredNode = state.hoverHighlightIndex;
-    const focusedNode = state.focusedNode;
+    const hoveredNode = appState.hoverHighlightIndex;
+    const focusedNode = appState.focusedNode;
 
     // ── Hover emissive flash (spore material) ───────────────────────────────
     const hasHover = Number.isFinite(hoveredNode) && hoveredNode >= 0;
@@ -677,9 +678,9 @@ export function animate() {
     }
     const prefersReduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
     const basePulseSpeed = prefersReduced ? 0.0 : 0.015;
-    const windSpeed = state.weather?.wind_speed_10m ?? 8.0;
+    const windSpeed = (appState.weather as any)?.wind_speed_10m ?? 8.0;
     const pulseIncrement = basePulseSpeed * (0.6 + (windSpeed / 15.0));
-    state.pulsePhase = (state.pulsePhase + pulseIncrement) % (Math.PI * 2);
+    appState.pulsePhase = (appState.pulsePhase + pulseIncrement) % (Math.PI * 2);
 
     // Sync resolution and uTime for LineMaterial-based mycelium threads
     if (webglContext.renderer) {
@@ -705,8 +706,8 @@ export function animate() {
             if (mat.resolution) mat.resolution.set(width, height);
             if (mat.uniforms?.uTime) mat.uniforms.uTime.value = nowSecs;
         }
-        if (state.focusSemanticLines) {
-            const mat = state.focusSemanticLines.material as any;
+        if (appState.focusSemanticLines) {
+            const mat = appState.focusSemanticLines.material as any;
             if (mat.resolution) mat.resolution.set(width, height);
             if (mat.uniforms?.time) mat.uniforms.time.value = nowSecs;
         }
@@ -715,9 +716,9 @@ export function animate() {
     const threadRevealProgress = easeOutQuint(Math.min(1.0, Math.max(0.0, (pointsRevealProgress - 0.25) / 0.5)));
     const graphProfile = getMyceliumPresentationProfile();
     if (threadsVisible) {
-        if (webglContext.myceliumCoreLines) (webglContext.myceliumCoreLines.material as THREE.Material).opacity = getThreadPulseOpacity(graphProfile.core, Math.sin(state.pulsePhase), graphProfile.pulse, threadRevealProgress);
-        if (webglContext.myceliumWispyLines) (webglContext.myceliumWispyLines.material as THREE.Material).opacity = getThreadPulseOpacity(graphProfile.wispy, Math.sin(state.pulsePhase * 0.7), graphProfile.pulse * 0.36, threadRevealProgress);
-        if (webglContext.myceliumBridgeLines) (webglContext.myceliumBridgeLines.material as THREE.Material).opacity = getThreadPulseOpacity(graphProfile.bridge, Math.sin(state.pulsePhase * 0.45), graphProfile.pulse * 0.28, threadRevealProgress);
+        if (webglContext.myceliumCoreLines) (webglContext.myceliumCoreLines.material as THREE.Material).opacity = getThreadPulseOpacity(graphProfile.core, Math.sin(appState.pulsePhase), graphProfile.pulse, threadRevealProgress);
+        if (webglContext.myceliumWispyLines) (webglContext.myceliumWispyLines.material as THREE.Material).opacity = getThreadPulseOpacity(graphProfile.wispy, Math.sin(appState.pulsePhase * 0.7), graphProfile.pulse * 0.36, threadRevealProgress);
+        if (webglContext.myceliumBridgeLines) (webglContext.myceliumBridgeLines.material as THREE.Material).opacity = getThreadPulseOpacity(graphProfile.bridge, Math.sin(appState.pulsePhase * 0.45), graphProfile.pulse * 0.28, threadRevealProgress);
     } else {
         if (webglContext.myceliumCoreLines) (webglContext.myceliumCoreLines.material as THREE.Material).opacity = 0;
         if (webglContext.myceliumWispyLines) (webglContext.myceliumWispyLines.material as THREE.Material).opacity = 0;
@@ -729,8 +730,8 @@ export function animate() {
         const hasHover = Number.isFinite(hoveredNode) && hoveredNode >= 0;
         const targetBoost = hasHover ? 1.5 : 1.0;
         shader.uniforms.uHoverBoost.value += (targetBoost - shader.uniforms.uHoverBoost.value) * 0.2;
-        if (hasHover && state.nodePositions[hoveredNode]) {
-            const hoverPos = state.nodePositions[hoveredNode];
+        if (hasHover && appState.nodePositions[hoveredNode]) {
+            const hoverPos = appState.nodePositions[hoveredNode];
             shader.uniforms.uHoverNodePos.value.set(hoverPos.x, hoverPos.y, hoverPos.z);
         }
     }
@@ -747,7 +748,7 @@ export function animate() {
         debugWarn('overlay update threw:', overlayErr);
     }
 
-    applyFocusPocketBreathing(frameNow, state.nodePositions);
+    applyFocusPocketBreathing(frameNow, appState.nodePositions);
 
     if (shouldRenderThreads()) {
         updateMyceliumThreads();
@@ -765,10 +766,8 @@ export function animate() {
             webglContext.renderer.render(webglContext.scene, webglContext.camera);
         }
         
-        withStateMutation(() => {
-            state.scenePerformanceDiagnostics.drawCalls = webglContext.renderer!.info.render.calls;
-            state.scenePerformanceDiagnostics.triangles = webglContext.renderer!.info.render.triangles;
-        });
+        appState.scenePerformanceDiagnostics.drawCalls = webglContext.renderer!.info.render.calls;
+        appState.scenePerformanceDiagnostics.triangles = webglContext.renderer!.info.render.triangles;
     }
 
     const renderEnd = performance.now();

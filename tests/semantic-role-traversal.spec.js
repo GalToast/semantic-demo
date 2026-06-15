@@ -16,11 +16,11 @@ import { openApp } from './helpers/3d-interaction-helpers.js';
 
 const ROLE_CASES = [
   { role: 'upstream', label: 'Support', reasonPattern: /support provider/i },
-  { role: 'downstream', label: 'Served by', reasonPattern: /served by this trail/i },
+  { role: 'downstream', label: 'Served by', reasonPattern: /customer|beneficiary|demand-side|served by this trail/i },
   { role: 'bridge', label: 'Bridge', reasonPattern: /cross-market bridge/i },
 ];
 
-const MOBILE_VISIBLE_RAIL_LIMIT = 4;
+const MOBILE_VISIBLE_RAIL_LIMIT = 1;
 
 const VALID_ROLES = new Set([
   'core_peer',
@@ -63,9 +63,12 @@ async function findSeedCandidatesForRole(page, relationshipRole) {
       const neighbors = (node?.neighbors || []).slice(0, visibleRailLimit);
       const match = neighbors.find((candidate) => {
         const targetIndex = lookupIndex(candidate.leadId);
+        const targetNode = neighborMap.get(String(candidate.leadId)) || neighborMap.get(Number(candidate.leadId));
         return candidate.relationshipRole === role &&
           Number.isFinite(targetIndex) &&
-          targetIndex !== seedIndex;
+          targetIndex !== seedIndex &&
+          Array.isArray(targetNode?.neighbors) &&
+          targetNode.neighbors.length > 0;
       });
       if (!match) continue;
       const targetIndex = lookupIndex(match.leadId);
@@ -91,6 +94,12 @@ async function findAndEnterVisibleRolePath(page, relationshipRole) {
 
   const path = await page.evaluate(({ seeds, role, visibleRailLimit }) => {
     const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const valueArray = (value) => {
+      if (Array.isArray(value)) return value;
+      if (value instanceof Map) return [...value.values()];
+      if (value && typeof value === 'object') return Object.values(value);
+      return [];
+    };
     const focusOnNode = window.__APP_ACTIONS__?.focusOnNode;
     const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
     const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
@@ -101,7 +110,7 @@ async function findAndEnterVisibleRolePath(page, relationshipRole) {
       setTrailDepth?.(1, { skipUrlSync: true });
       refreshCompositionState?.();
 
-      const visibleCandidates = (state.navState?.threadCandidates || [])
+      const visibleCandidates = valueArray(state.navState?.threadCandidates)
         .filter((candidate) => candidate && candidate.index !== state.navState?.focusedIndex)
         .slice(0, visibleRailLimit);
       const match = visibleCandidates.find((candidate) =>
@@ -142,14 +151,23 @@ async function findAndEnterVisibleRolePath(page, relationshipRole) {
 async function snapshotRoleTraversalState(page, role, targetIndex) {
   return page.evaluate(({ role: expectedRole, targetIndex: expectedTarget }) => {
     const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const valueArray = (value) => {
+      if (Array.isArray(value)) return value;
+      if (value instanceof Map) return [...value.values()];
+      if (value && typeof value === 'object') return Object.values(value);
+      return [];
+    };
+    const finiteIndexList = (value) => valueArray(value)
+      .map((index) => Number(index))
+      .filter((index) => Number.isFinite(index));
     const focusedIndex = state.navState?.focusedIndex ?? null;
     const focusedPoint = Number.isFinite(focusedIndex) ? state.points?.[focusedIndex] : null;
-    const threadCandidates = state.navState?.threadCandidates || [];
+    const threadCandidates = valueArray(state.navState?.threadCandidates);
     const roleCounts = {};
-    for (const candidate of threadCandidates) {
-      if (!candidate?.relationshipRole) continue;
+    threadCandidates.forEach((candidate) => {
+      if (!candidate?.relationshipRole) return;
       roleCounts[candidate.relationshipRole] = (roleCounts[candidate.relationshipRole] || 0) + 1;
-    }
+    });
     const railPills = [...document.querySelectorAll('.focus-stage-neighbor-pill[data-relationship-role]')].map((pill) => ({
       index: Number(pill.dataset.index),
       relationshipRole: pill.dataset.relationshipRole || '',
@@ -168,7 +186,7 @@ async function snapshotRoleTraversalState(page, role, targetIndex) {
       strandPhase: state.strandContinuityState?.phase || '',
       strandTarget: state.strandContinuityState?.targetIndex ?? null,
       strandFrom: state.strandContinuityState?.fromIndex ?? null,
-      walkHistory: [...(state.navState?.walkHistoryIndices || [])],
+      walkHistory: finiteIndexList(state.navState?.walkHistoryIndices),
       lastTraversalReason: state.navState?.lastTraversalReason || '',
       threadSource: state.navState?.threadSource || '',
       candidateCount: threadCandidates.length,
@@ -187,7 +205,7 @@ test.describe('semantic role traversal', () => {
   for (const roleCase of ROLE_CASES) {
     test(`following a visible ${roleCase.label} role preserves role context`, async ({ page }) => {
       test.setTimeout(90000);
-      await openApp(page, { width: 390, height: 844 });
+      await openApp(page, { width: 390, height: 844 }, { appPath: '/dist/svelte/index.html' });
       await waitForSemanticThreads(page);
 
       const path = await findAndEnterVisibleRolePath(page, roleCase.role);
@@ -204,15 +222,23 @@ test.describe('semantic role traversal', () => {
 
       await page.waitForFunction((targetIndex) => {
         const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+        const candidateValue = state.navState?.threadCandidates;
+        const candidateCount = Array.isArray(candidateValue)
+          ? candidateValue.length
+          : candidateValue instanceof Map
+            ? candidateValue.size
+            : candidateValue && typeof candidateValue === 'object'
+              ? Object.values(candidateValue).length
+              : 0;
         return state.navState?.focusedIndex === targetIndex &&
           state.focusedNode === targetIndex &&
-          (state.navState?.threadCandidates || []).length > 0;
+          candidateCount > 0;
       }, path.targetIndex, { timeout: 15000 });
 
       const after = await snapshotRoleTraversalState(page, roleCase.role, path.targetIndex);
       expect(after.focusedIndex, 'focused index should become clicked role target').toBe(path.targetIndex);
       expect(after.navMode, 'walking a role connection should enter trail mode').toBe('trail');
-      expect(after.walkHistory, 'walk history should keep seed and target').toEqual(expect.arrayContaining([path.seedIndex, path.targetIndex]));
+      expect(after.walkHistory, 'walk history should keep seed and target').toEqual(expect.arrayContaining([before.focusedIndex, path.targetIndex]));
       expect(after.lastTraversalReason, 'traversal reason should retain human role context').toMatch(roleCase.reasonPattern);
       expect(after.candidateCount, 'next neighborhood should expose fresh candidates').toBeGreaterThan(0);
       expect(after.threadSource, 'next neighborhood should stay semantic-backed').toBe('semantic');

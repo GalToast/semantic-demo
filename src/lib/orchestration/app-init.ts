@@ -45,6 +45,7 @@ import {
   unpinThreadInspection,
   clearThreadInspection,
 } from '@lib/engine/thread-inspector-bridge';
+import { updateTraversalUi } from '@lib/engine/journey-focus-ui-bridge';
 import { requestSemanticGuide } from '@lib/journey/semantic-guide';
 import { showSemanticThreadsDetail } from '@lib/engine/semantic-guide-bridge';
 
@@ -83,6 +84,14 @@ let _initCalled = false;
 let _safetyTimers: SafetyTimers | null = null;
 let _unsubWindowGlobals: (() => void) | null = null;
 let _unsubWebglRestore: (() => void) | null = null;
+
+function refreshTraversalUiForCompatAction(action: string): void {
+  try {
+    updateTraversalUi();
+  } catch (error) {
+    debugWarn('AppInit', `${action}: traversal UI refresh failed`, error);
+  }
+}
 
 // ── Safety Valves ────────────────────────────────────────────────────────────
 
@@ -199,16 +208,20 @@ function installWindowGlobals(): () => void {
       switchViewAction(view as any);
     },
     focusOnNode: (index: number, options?: Record<string, unknown>) => {
-      return focusOnNodeAction(index, options);
+      const result = focusOnNodeAction(index, options);
+      refreshTraversalUiForCompatAction('focusOnNode');
+      return result;
     },
     setTrailDepth: (depth: number, _options?: Record<string, unknown>) => {
       setTrailDepthAction(depth);
+      refreshTraversalUiForCompatAction('setTrailDepth');
     },
     setSemanticDiveMode: (enabled: boolean) => {
       setSemanticDiveModeAction(enabled);
     },
     refreshCompositionState: () => {
       refreshCompositionStateAction();
+      refreshTraversalUiForCompatAction('refreshCompositionState');
     },
     resetExplorationFocus: (options?: Record<string, unknown>) => {
       resetExplorationFocusAction(options);

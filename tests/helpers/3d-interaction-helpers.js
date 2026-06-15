@@ -3,11 +3,12 @@ export const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').r
 import { SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch } from './mock-semantic-search.js';
 export { SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch };
 
-export async function openApp(page, viewport = { width: 1440, height: 900 }) {
+export async function openApp(page, viewport = { width: 1440, height: 900 }, options = {}) {
+  const appPath = options.appPath || '/vector-explorer-polished.html';
   page.on('console', msg => console.log('BROWSER:', msg.text()));
   await setupMockSearch(page);
   await page.setViewportSize(viewport);
-  await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE_URL}${appPath}?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return (

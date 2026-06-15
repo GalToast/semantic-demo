@@ -31,6 +31,35 @@ export const JOURNEY_CONFIG = {
 /** Journey milestones in sequence. */
 export const JOURNEY_COMPASS_PHASE_ORDER = ['overview', 'search', 'focus', 'inside', 'map'];
 
+function valueArray(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (value instanceof Map) return [...value.values()];
+  if (value && typeof (value as Iterable<unknown>)[Symbol.iterator] === 'function') {
+    return [...(value as Iterable<unknown>)];
+  }
+  if (value && typeof value === 'object') return Object.values(value);
+  return [];
+}
+
+function finiteIndexList(value: unknown): number[] {
+  return valueArray(value)
+    .map((index) => Number(index))
+    .filter((index) => Number.isFinite(index));
+}
+
+function candidateIndex(candidate: unknown): number | null {
+  if (typeof candidate === 'number' && Number.isFinite(candidate)) return candidate;
+  if (!candidate || typeof candidate !== 'object') return null;
+  const index = Number((candidate as { index?: unknown }).index);
+  return Number.isFinite(index) ? index : null;
+}
+
+function candidateIndexList(value: unknown): number[] {
+  return valueArray(value)
+    .map(candidateIndex)
+    .filter((index): index is number => index !== null);
+}
+
 // ── Initial State ────────────────────────────────────────────────────────────
 
 /** Internal store state interface. */
@@ -82,17 +111,18 @@ const INITIAL_JOURNEY: JourneyStoreState = {
 
 /** Read the current journey state from appState (shared by initial value and callable getter). */
 function _readJourneyFromAppState(): JourneyStoreState {
+  const walkIndices = finiteIndexList(appState.navState.walkHistoryIndices);
   return {
     ...INITIAL_JOURNEY,
     ...$state.snapshot(appState.navState),
     phase: appState.navState.mode,
-    trail: [...appState.navState.walkHistoryIndices].map(index => ({ index } as TrailStop)),
+    trail: walkIndices.map(index => ({ index } as TrailStop)),
     cursor: appState.navState.trailCursor,
     depth: appState.navState.trailDepth,
     trailDepth: appState.navState.trailDepth,
-    walkHistoryIndices: [...appState.navState.walkHistoryIndices],
+    walkHistoryIndices: walkIndices,
     trailSeedIndex: appState.navState.trailSeedIndex ?? null,
-    threadCandidates: [...(appState.navState.threadCandidates as any[])].map(Number),
+    threadCandidates: valueArray(appState.navState.threadCandidates) as any[],
     threadReasonByIndex: new Map(appState.navState.threadReasonByIndex),
     threadSource: appState.navState.threadSource,
     lastTraversalReason: appState.navState.lastTraversalReason,
@@ -172,16 +202,16 @@ export const journeyState: JourneyStoreApi = journeyStore;
 // ── Derived Getters ──────────────────────────────────────────────────────────
 
 export const journeyPhase = () => appState.navState.mode;
-export const journeyTrail = () => [...appState.navState.walkHistoryIndices].map(index => ({ index } as TrailStop));
+export const journeyTrail = () => finiteIndexList(appState.navState.walkHistoryIndices).map(index => ({ index } as TrailStop));
 export const compassState = () => ({ phase: appState.navState.mode, action: null }) as unknown as CompassState;
 export const compassPhase = () => 'idle';
-export const journeyNeighbors = () => appState.navState.trailNeighborIndices;
+export const journeyNeighbors = () => finiteIndexList(appState.navState.trailNeighborIndices);
 export const journeySelectedId = () => {
   const focused = appState.navState.focusedIndex;
   return focused === null ? null : String(focused);
 };
 export const walkHistory = () =>
-  [...appState.navState.walkHistoryIndices].map<WalkHistoryEntry>(index => ({
+  finiteIndexList(appState.navState.walkHistoryIndices).map<WalkHistoryEntry>(index => ({
     fromIndex: -1,
     toIndex: index,
     reason: '',
@@ -189,10 +219,10 @@ export const walkHistory = () =>
   }));
 export const trailDepth = () => appState.navState.trailDepth;
 export const trailSeedIndex = () => appState.navState.trailSeedIndex;
-export const trailNeighborIndices = () => appState.navState.trailNeighborIndices;
-export const threadCandidates = (): ReadonlyArray<number> => [...appState.navState.threadCandidates].map(Number);
+export const trailNeighborIndices = () => finiteIndexList(appState.navState.trailNeighborIndices);
+export const threadCandidates = (): ReadonlyArray<number> => candidateIndexList(appState.navState.threadCandidates);
 export const threadSource = () => appState.navState.threadSource;
-export const walkHistoryIndices = () => appState.navState.walkHistoryIndices;
+export const walkHistoryIndices = () => finiteIndexList(appState.navState.walkHistoryIndices);
 
 /** Returns the current point index at the journey cursor. */
 export function currentJourneyIndex(): number | null {

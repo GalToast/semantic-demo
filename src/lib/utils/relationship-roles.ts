@@ -148,7 +148,7 @@ const ROLE_COPY: Record<RelationshipRole, { label: string; title: string; reason
 		reason: 'High-similarity peer in the same local business ecosystem.'
 	},
 	upstream: {
-		label: 'Anchor',
+		label: 'Support',
 		title: 'Anchors the trail',
 		reason: 'Likely input, infrastructure, or support provider for this trail.'
 	},

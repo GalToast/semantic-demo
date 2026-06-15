@@ -21,10 +21,12 @@
 
 import { state } from '@lib/engine/state-bridge';
 import { escapeHtml } from '@lib/utils/dom-formatters';
-import { buildSemanticGuideRequestPayload } from '@lib/engine/semantic-guide-bridge';
-import { updateLegendGuideState } from '@lib/engine/semantic-guide-bridge';
-import { showSemanticThreadsDetail } from '@lib/engine/semantic-guide-bridge';
-import { semanticGuideStateStore } from '@lib/engine/semantic-guide-bridge';
+import {
+  buildSemanticGuideRequestPayload,
+  updateLegendGuideState,
+  showSemanticThreadsDetail,
+  semanticGuideStateStore
+} from '@lib/engine/lifecycle-bridge';
 
 function getMostFrequent(values: string[]): string | null {
     if (!values?.length) return null;

@@ -33,6 +33,8 @@ import {
   resetExplorationFocus as resetSvelteExplorationFocus
 } from '@lib/stores/lifecycle';
 import { clearSearch as clearSvelteSearch } from '@lib/stores/search.svelte';
+import { navStore } from '@lib/stores/navigation.svelte';
+import { journeyStore } from '@lib/stores/journey.svelte';
 
 type LegacyActionModules = {
   state?: Record<string, unknown>;
@@ -145,6 +147,90 @@ function normalizeLegacyNavState(): void {
   });
 }
 
+function valueArray(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (value instanceof Map) return [...value.values()];
+  if (value && typeof (value as Iterable<unknown>)[Symbol.iterator] === 'function') {
+    return [...(value as Iterable<unknown>)];
+  }
+  if (value && typeof value === 'object') return Object.values(value);
+  return [];
+}
+
+function finiteIndexList(value: unknown): number[] {
+  return valueArray(value)
+    .map((index) => Number(index))
+    .filter((index) => Number.isFinite(index));
+}
+
+function asFiniteNumber(value: unknown): number | null {
+  const index = Number(value);
+  return Number.isFinite(index) ? index : null;
+}
+
+function syncSvelteNavFromLegacy(): void {
+  const navState = (getLegacyModules()?.state as { navState?: Record<string, unknown> } | undefined)?.navState;
+  if (!navState) return;
+
+  const focusedIndex = asFiniteNumber(navState.focusedIndex);
+  navStore.update((state) => ({
+    ...state,
+    mode: (navState.mode as typeof state.mode | undefined) ?? state.mode,
+    surface: (navState.surface as typeof state.surface | undefined) ?? state.surface,
+    focusedIndex,
+    trailSeedIndex: asFiniteNumber(navState.trailSeedIndex),
+    trailNeighborIndices: finiteIndexList(navState.trailNeighborIndices),
+    trailCursor: asFiniteNumber(navState.trailCursor) ?? state.trailCursor,
+    trailDepth: asFiniteNumber(navState.trailDepth) ?? state.trailDepth,
+    walkHistoryIndices: finiteIndexList(navState.walkHistoryIndices),
+    lastTraversalReason: typeof navState.lastTraversalReason === 'string'
+      ? navState.lastTraversalReason
+      : state.lastTraversalReason,
+    threadCandidates: valueArray(navState.threadCandidates) as any[],
+    threadReasonByIndex: navState.threadReasonByIndex instanceof Map
+      ? navState.threadReasonByIndex as Map<number, string>
+      : state.threadReasonByIndex,
+    threadSource: typeof navState.threadSource === 'string'
+      ? navState.threadSource
+      : state.threadSource,
+    focusPocketIndices: finiteIndexList(navState.focusPocketIndices),
+    focusPocketMeta: (navState.focusPocketMeta as typeof state.focusPocketMeta | undefined) ?? state.focusPocketMeta,
+    focusPocketRoleByIndex: navState.focusPocketRoleByIndex instanceof Map
+      ? navState.focusPocketRoleByIndex as Map<number, string>
+      : state.focusPocketRoleByIndex,
+    neighborhoodIndices: finiteIndexList(navState.neighborhoodIndices),
+  }));
+
+  journeyStore.update((state) => ({
+    ...state,
+    phase: (navState.mode as typeof state.phase | undefined) ?? state.phase,
+    depth: asFiniteNumber(navState.trailDepth) ?? state.depth,
+    trailDepth: asFiniteNumber(navState.trailDepth) ?? state.trailDepth,
+    trailSeedIndex: asFiniteNumber(navState.trailSeedIndex),
+    trail: finiteIndexList(navState.walkHistoryIndices).map((index) => ({ index })),
+    cursor: asFiniteNumber(navState.trailCursor) ?? state.cursor,
+    walkHistoryIndices: finiteIndexList(navState.walkHistoryIndices),
+    threadCandidates: valueArray(navState.threadCandidates) as any[],
+    threadReasonByIndex: navState.threadReasonByIndex instanceof Map
+      ? navState.threadReasonByIndex as Map<number, string>
+      : state.threadReasonByIndex,
+    threadSource: typeof navState.threadSource === 'string'
+      ? navState.threadSource
+      : state.threadSource,
+    lastTraversalReason: typeof navState.lastTraversalReason === 'string'
+      ? navState.lastTraversalReason
+      : state.lastTraversalReason,
+  }));
+
+  if (typeof document !== 'undefined' && document.body) {
+    const depth = asFiniteNumber(navState.trailDepth) ?? 0;
+    document.body.dataset.trailDepth = String(depth);
+    document.body.dataset.trailState = depth > 0 ? 'active' : 'inactive';
+  }
+
+  (window as Window & { __refreshTestCompatState__?: () => void }).__refreshTestCompatState__?.();
+}
+
 export function installWindowActions(): () => void {
   if (typeof window === 'undefined') return () => {};
 
@@ -163,25 +249,32 @@ export function installWindowActions(): () => void {
     switchView: (view: string, options?: Record<string, unknown>) => {
       normalizeLegacyNavState();
       getLegacyModules()?.lifecycle?.switchView?.(view, options);
+      syncSvelteNavFromLegacy();
     },
     focusOnNode: (index: number, options?: Record<string, unknown>) => {
       normalizeLegacyNavState();
-      return getLegacyModules()?.camera?.focusOnNode?.(index, options) ?? false;
+      const result = getLegacyModules()?.camera?.focusOnNode?.(index, options) ?? false;
+      syncSvelteNavFromLegacy();
+      return result;
     },
     setTrailFromSeed: (index: number) => {
       getLegacyModules()?.journey?.setTrailFromSeed?.(index);
+      syncSvelteNavFromLegacy();
     },
     setTrailDepth: (depth: number, options?: Record<string, unknown>) => {
       normalizeLegacyNavState();
       const lifecycle = getLegacyModules()?.lifecycle;
       lifecycle?.setTrailDepth?.(depth, options);
       lifecycle?.refreshCompositionState?.();
+      syncSvelteNavFromLegacy();
     },
     setSemanticDiveMode: (enabled: boolean) => {
       getLegacyModules()?.lifecycle?.setSemanticDiveMode?.(enabled);
+      syncSvelteNavFromLegacy();
     },
     returnToOverview: () => {
       getLegacyModules()?.lifecycle?.returnToOverview?.();
+      syncSvelteNavFromLegacy();
     },
     resetExperienceState: () => {
       resetSvelteExperienceState();
@@ -193,9 +286,11 @@ export function installWindowActions(): () => void {
     },
     refreshCompositionState: () => {
       getLegacyModules()?.lifecycle?.refreshCompositionState?.();
+      syncSvelteNavFromLegacy();
     },
     traverseNeighbor: (step: number) => {
       getLegacyModules()?.journey?.traverseNeighbor?.(step);
+      syncSvelteNavFromLegacy();
     },
     inspectThreadNeighbor: (index: number, options?: Record<string, unknown>) => {
       return getLegacyModules()?.journey?.inspectThreadNeighbor?.(index, options);
@@ -210,7 +305,9 @@ export function installWindowActions(): () => void {
       return getLegacyModules()?.journey?.clearThreadInspection?.(options);
     },
     walkThreadNeighbor: (index: number, options?: Record<string, unknown>) => {
-      return getLegacyModules()?.journey?.walkThreadNeighbor?.(index, options);
+      const result = getLegacyModules()?.journey?.walkThreadNeighbor?.(index, options);
+      syncSvelteNavFromLegacy();
+      return result;
     },
     requestSemanticGuide: (point?: unknown) => {
       getLegacyModules()?.semanticGuide?.requestSemanticGuide?.(point);

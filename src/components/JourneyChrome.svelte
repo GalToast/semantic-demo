@@ -22,7 +22,26 @@
   import { getBusinessRecords, selectedPointStore } from '@lib/stores/index.svelte.ts';
   import { viewport, isCompact, isMobile, isCompactLandscape, isUltraCompactPortrait } from '@lib/stores/viewport.svelte.ts';
   import { searchSummary, isSearching } from '@lib/stores/search.svelte';
+  import { walkThreadNeighbor } from '@lib/engine/journey-thread-settler-bridge';
+  import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles';
   import type { BusinessRecord } from '@lib/types/business';
+  import type { RelationshipRole } from '@lib/utils/relationship-roles';
+
+  type CandidateLike = number | {
+    index?: number;
+    relationshipRole?: string;
+    relationshipAxis?: string;
+    roleReason?: string;
+    reason?: string;
+  };
+
+  type NormalizedCandidate = {
+    index: number;
+    relationshipRole: RelationshipRole;
+    relationshipAxis: string;
+    roleReason: string;
+    reason: string;
+  };
 
   interface Props {
     visible?: boolean;
@@ -31,6 +50,42 @@
   let { visible = false }: Props = $props();
 
   let hoverTimer: ReturnType<typeof setTimeout> | null = $state(null);
+
+  function valueArray(value: unknown): unknown[] {
+    if (Array.isArray(value)) return value;
+    if (value instanceof Map) return [...value.values()];
+    if (value && typeof (value as Iterable<unknown>)[Symbol.iterator] === 'function') {
+      return [...(value as Iterable<unknown>)];
+    }
+    if (value && typeof value === 'object') return Object.values(value);
+    return [];
+  }
+
+  function candidateIndex(candidate: CandidateLike | unknown): number | null {
+    if (typeof candidate === 'number' && Number.isFinite(candidate)) return candidate;
+    if (!candidate || typeof candidate !== 'object') return null;
+    const index = Number((candidate as { index?: unknown }).index);
+    return Number.isFinite(index) ? index : null;
+  }
+
+  function normalizeCandidates(value: unknown): NormalizedCandidate[] {
+    return valueArray(value)
+      .map((candidate): NormalizedCandidate | null => {
+        const index = candidateIndex(candidate);
+        if (index === null) return null;
+        const detail = candidate && typeof candidate === 'object'
+          ? candidate as Record<string, unknown>
+          : {};
+        return {
+          index,
+          relationshipRole: normalizeRelationshipRole(String(detail.relationshipRole || '')),
+          relationshipAxis: String(detail.relationshipAxis || ''),
+          roleReason: String(detail.roleReason || ''),
+          reason: String(detail.reason || 'Neighborhood connection')
+        };
+      })
+      .filter((candidate): candidate is NormalizedCandidate => candidate !== null);
+  }
 
   const currentPoint = $derived(selectedPointStore());
   const navSnapshot = $derived($navStore);
@@ -42,11 +97,12 @@
       ? journeySnapshot.trail.map(t => t.index)
       : navSnapshot.walkHistoryIndices
   );
-  const currentThreadCandidates = $derived(
-    journeySnapshot.threadCandidates.length > 0
-      ? journeySnapshot.threadCandidates
-      : navSnapshot.threadCandidates
-  );
+  const currentThreadCandidates = $derived.by(() => {
+    const journeyCandidates = normalizeCandidates(journeySnapshot.threadCandidates);
+    return journeyCandidates.length
+      ? journeyCandidates
+      : normalizeCandidates(navSnapshot.threadCandidates);
+  });
   const currentThreadSource = $derived(journeySnapshot.threadSource || navSnapshot.threadSource);
   const chromeHasFocus = $derived(
     navSnapshot.mode === 'focus' ||
@@ -61,6 +117,7 @@
   // duplicating content from #journey-compass. Hidden when the journey phase
   // is idle or overview and the compass phase is idle.
   const isJourneyIdle = $derived(
+    !chromeHasFocus &&
     (((journeySnapshot.phase ?? 'idle') as string) === 'idle' ||
       ((journeySnapshot.phase ?? 'overview') as string) === 'overview') &&
     ((journeySnapshot.compass?.phase ?? 'idle') as string) === 'idle'
@@ -135,8 +192,8 @@
   const nextStopName = $derived.by(() => {
     if (!chromeHasFocus || neighborCount === 0) return null;
     const first = currentThreadCandidates[0];
-    if (first == null || !Number.isFinite(first)) return null;
-    const pt = getBusinessRecords()[first];
+    if (!first || !Number.isFinite(first.index)) return null;
+    const pt = getBusinessRecords()[first.index];
     return pt?.name ?? null;
   });
 
@@ -152,8 +209,11 @@
   function goNext(): void {
     if (!chromeHasFocus || !hasNext) return;
     const first = currentThreadCandidates[0];
-    if (first == null || !Number.isFinite(first)) return;
-    dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, { index: first });
+    if (!first || !Number.isFinite(first.index)) return;
+    walkThreadNeighbor(first.index, {
+      surface: 'rail',
+      reason: first.roleReason || first.reason || 'nearby business relationship'
+    });
   }
 
   // ── Neighbor rail ─────────────────────────────────────────────────────────
@@ -173,7 +233,7 @@
     const candidates = currentThreadCandidates;
     const focusIdx = currentFocusedIndex;
     return candidates
-      .filter((c) => c != null && Number.isFinite(c) && c !== focusIdx)
+      .filter((c) => Number.isFinite(c.index) && c.index !== focusIdx)
       .slice(0, candidateLimit);
   });
 
@@ -215,7 +275,12 @@
     pinThread(idx);
   }
 
-  // walkToCandidate removed — neighbor rail uses inspectCandidate instead
+  function walkToCandidate(candidate: NormalizedCandidate): void {
+    walkThreadNeighbor(candidate.index, {
+      surface: 'rail',
+      reason: candidate.roleReason || candidate.reason || 'nearby business relationship'
+    });
+  }
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────
 
@@ -394,20 +459,26 @@
       <div class="focus-stage-neighbors active" id="focus-stage-neighbors" role="navigation" aria-label="Nearby neighbors">
         <div class="neighbor-count" id="focus-stage-neighbor-count" aria-live="polite">{filteredCandidates.length} visible {filteredCandidates.length === 1 ? 'neighbor' : 'neighbors'}</div>
         <div class="focus-stage-neighbor-list" id="focus-stage-neighbor-list">
-          {#each filteredCandidates as idx, i}
+          {#each filteredCandidates as candidate, i}
+            {@const idx = candidate.index}
             {@const point = getPointForIndex(idx)}
             {@const name = point?.name ?? 'Nearby business'}
             {@const city = point?.city ?? 'Montgomery County'}
             {@const isNextStop = i === 0}
+            {@const relationshipRole = candidate.relationshipRole}
+            {@const relationshipLabel = getRelationshipRoleLabel(relationshipRole, 'rail')}
+            {@const reasonLabel = candidate.roleReason || candidate.reason || 'Neighborhood connection'}
             <div
               class="focus-stage-neighbor-pill"
               class:is-next-stop={isNextStop}
               data-index={idx}
+              data-relationship-role={relationshipRole}
+              data-reason={reasonLabel}
               role="button"
               tabindex="0"
-              aria-label={`Inspect connection to ${name}`}
-              onclick={() => inspectCandidate(idx)}
-              onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inspectCandidate(idx); } }}
+              aria-label={`Walk to ${name}`}
+              onclick={() => walkToCandidate(candidate)}
+              onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); walkToCandidate(candidate); } }}
             >
               <span class="focus-stage-neighbor-main">
                 <span class="focus-stage-neighbor-index">{String(i + 1).padStart(2, '0')}</span>
@@ -415,11 +486,12 @@
                   <span class="focus-stage-neighbor-name">
                     {name}
                     <span class="focus-stage-neighbor-city">{city}</span>
+                    <span class="focus-stage-neighbor-role">{relationshipLabel}</span>
                     {#if isNextStop}
                       <span class="focus-stage-neighbor-next-stop-badge">Next stop</span>
                     {/if}
                   </span>
-                  <span class="focus-stage-neighbor-reason">Neighborhood connection</span>
+                  <span class="focus-stage-neighbor-reason">{reasonLabel}</span>
                 </span>
               </span>
               <span class="focus-stage-neighbor-actions" aria-label="Strand actions">

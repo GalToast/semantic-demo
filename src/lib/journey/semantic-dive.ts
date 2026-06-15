@@ -26,8 +26,11 @@ import { cleanOptionalValue, formatBusinessName } from '@lib/utils/dom-formatter
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation';
 import { getNextExploreCandidateForIndex } from './thread-model';
 import { summarizeNeighborReason } from './thread-settler';
-import { getNextWalkCandidateForIndex } from '@lib/engine/semantic-dive-bridge';
-import { ensureFocusStageAuxiliaryDom, ensureDiveButton } from '@lib/engine/semantic-dive-bridge';
+import {
+  getNextWalkCandidateForIndex,
+  ensureFocusStageAuxiliaryDom,
+  ensureDiveButton
+} from '@lib/engine/lifecycle-bridge';
 
 function truncateDiveStatusCopy(text: string | null | undefined, max = 74): string {
     const clean = cleanOptionalValue(text);

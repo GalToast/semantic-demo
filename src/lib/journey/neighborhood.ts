@@ -39,6 +39,37 @@ let boundedNeighborhoodCandidates: number[] = [];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+type ThreadCandidateLike = number | { index?: number };
+
+function valueArray(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (value instanceof Map) return [...value.values()];
+  if (value && typeof (value as Iterable<unknown>)[Symbol.iterator] === 'function') {
+    return [...(value as Iterable<unknown>)];
+  }
+  if (value && typeof value === 'object') return Object.values(value);
+  return [];
+}
+
+function candidateIndex(candidate: ThreadCandidateLike | unknown): number | null {
+  if (typeof candidate === 'number' && Number.isFinite(candidate)) return candidate;
+  if (!candidate || typeof candidate !== 'object') return null;
+  const index = Number((candidate as { index?: unknown }).index);
+  return Number.isFinite(index) ? index : null;
+}
+
+function normalizeThreadCandidates(value: unknown): number[] {
+  return valueArray(value)
+    .map(candidateIndex)
+    .filter((index): index is number => index !== null);
+}
+
+function finiteIndexList(value: unknown): number[] {
+  return valueArray(value)
+    .map((index) => Number(index))
+    .filter((index) => Number.isFinite(index));
+}
+
 /**
  * Resolve neighbor indices from the semantic neighbor map for a given anchor.
  * Returns up to `limit` candidate indices sorted by semantic score descending.
@@ -184,11 +215,11 @@ export function isBoundedNeighborhoodActive(
 
   // Derive from journey store state
   const js = journeyStore();
-  if (js.trailDepth > 0 && js.walkHistoryIndices.length > 0) return true;
+  if (js.trailDepth > 0 && finiteIndexList(js.walkHistoryIndices).length > 0) return true;
 
   // Check nav state for trail activity
   const nav = get(navStore);
-  if (nav.trailDepth > 0 && nav.trailNeighborIndices.length > 0) return true;
+  if (nav.trailDepth > 0 && finiteIndexList(nav.trailNeighborIndices).length > 0) return true;
 
   return false;
 }
@@ -217,7 +248,7 @@ export function getNeighborhoodCandidateForIndex(
 
   // Check thread candidates in the journey store
   const js = journeyStore();
-  if (js.threadCandidates.includes(idx)) {
+  if (normalizeThreadCandidates(js.threadCandidates).includes(idx)) {
     const reason = js.threadReasonByIndex.get(idx) ?? 'semantic neighbor';
     return { index: idx, reason, source: js.threadSource };
   }
@@ -250,7 +281,7 @@ export function getNextWalkCandidateForIndex(
 
   // Build exclusion set (already visited)
   const visited = new Set<number>([
-    ...js.walkHistoryIndices,
+    ...finiteIndexList(js.walkHistoryIndices),
     idx
   ]);
 
@@ -500,7 +531,7 @@ export function getBoundedNeighborhoodWalkCandidate(
   if (!Number.isFinite(idx)) return null;
 
   const js = journeyStore();
-  const visited = new Set<number>([...js.walkHistoryIndices, idx]);
+  const visited = new Set<number>([...finiteIndexList(js.walkHistoryIndices), idx]);
 
   // Walk candidate list from the step offset or from the start
   const start = (step !== undefined && Number.isFinite(step) && step > 0) ? step : 0;
@@ -661,7 +692,7 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
       appState.withMutation(() => {
         nav.neighborhoodManifest = buildNeighborhoodManifest(
           seedIndex,
-          (nav.neighborhoodIndices || []).filter(Number.isFinite),
+          finiteIndexList(nav.neighborhoodIndices),
           { displayLimit: getSemanticThreadDisplayLimit() }
         ) as any;
       });
@@ -671,14 +702,15 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
   if (!nav.focusPocketMeta?.active) return;
   const hasSemanticSource =
     nav.threadSource === 'semantic' ||
-    (nav.threadCandidates || []).some((candidate: any) => candidate?.source === 'semantic') ||
+    valueArray(nav.threadCandidates).some((candidate: any) => candidate?.source === 'semantic') ||
     (nav.focusPocketMeta.motifLabel || '').toLowerCase().includes('semantic');
   if (!hasSemanticSource) return;
   const limit = getSemanticThreadDisplayLimit();
-  const threadRoute = (nav.threadCandidates || [])
+  const threadRoute = valueArray(nav.threadCandidates)
     .filter((candidate: any) => candidate?.source === 'semantic')
-    .map((candidate: any) => candidate.index);
-  const pocketRoute = [...threadRoute, ...(nav.focusPocketIndices || [])]
+    .map((candidate: any) => candidateIndex(candidate))
+    .filter((index): index is number => index !== null);
+  const pocketRoute = [...threadRoute, ...finiteIndexList(nav.focusPocketIndices)]
     .filter((candidateIndex: number) => Number.isFinite(candidateIndex) && candidateIndex !== seedIndex)
     .filter((candidateIndex: number) => {
       const role = nav.focusPocketRoleByIndex?.get(candidateIndex);
@@ -767,11 +799,12 @@ export function updateTrailIndices(seedIndex: number | null = getCurrentTrailFoc
     if (!isPointVisible(seedIndex, records, null, filters)) return;
     appState.trailIndices.add(seedIndex);
     const limit = getSemanticThreadDisplayLimit();
-    const candidates = nav.threadCandidates.length
-      ? nav.threadCandidates
+    const candidates = valueArray(nav.threadCandidates).length
+      ? valueArray(nav.threadCandidates)
       : getThreadCandidatesForIndex(seedIndex).slice(0, limit);
     candidates
-      .filter((candidate: any) => isPointVisible(candidate.index, records, null, filters))
-      .forEach((candidate: any) => appState.trailIndices.add(candidate.index));
+      .map((candidate: any) => candidateIndex(candidate))
+      .filter((index): index is number => index !== null && isPointVisible(index, records, null, filters))
+      .forEach((index: number) => appState.trailIndices.add(index));
   });
 }
