@@ -25,5 +25,5 @@ export {
   pinThreadNeighbor,
   unpinThreadInspection,
   clearThreadInspection,
-} from '../../../js/modules/thread-inspector.ts';
-export { showSemanticThreadsDetail } from './semantic-guide-bridge';
+} from './thread-inspector-bridge';
+export { showSemanticThreadsDetail } from './lifecycle-bridge';

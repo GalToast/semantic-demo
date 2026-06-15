@@ -34,7 +34,7 @@ export {
     refreshFocusSemanticOverlay,
     updateFocusSemanticOverlayPositions,
     getSemanticFocusCueProbeSnapshot
-} from '../../../js/modules/journey-semantic-overlay';
+} from './semantic-overlay';
 
 setRouteArrivalOverlayUpdaters({
     updateRouteTraceOverlayPositions,
