@@ -10,7 +10,7 @@ import { DATA_COLUMNS } from '../src/lib/utils/data-schema.ts';
 import { normalizeSlugName, mapRawRecordToPoint } from '../js/modules/utils/data-mapper.ts';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const WORKER_PATH = path.join(SEMDEMO_ROOT, 'js/workers/data-worker.js');
+const WORKER_PATH = path.join(SEMDEMO_ROOT, 'js/workers/data-worker.ts');
 
 function assert(cond, msg) {
     if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
