@@ -5,7 +5,7 @@
  *
  * Re-exports core adapters from extracted modules and owns canvas DOM event binding lifecycle.
  */
-import { state } from '@lib/engine/state-bridge';
+import { state } from '../../../js/state';
 import { isPointVisible } from '@lib/utils/geo-data';
 import type { ActiveFilters, GeoPoint } from '@lib/utils/geo-data';
 import {

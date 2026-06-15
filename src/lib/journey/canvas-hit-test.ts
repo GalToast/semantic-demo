@@ -8,7 +8,7 @@
  */
 import * as THREE from 'three';
 import type { Camera, Object3D } from 'three';
-import { state } from '@lib/engine/state-bridge';
+import { state } from '../../../js/state';
 import { isPointVisible } from '@lib/utils/geo-data';
 import { getSemanticThreadDisplayLimit } from '@lib/journey/neighborhood';
 import { hasCoarsePointer } from '@lib/utils/environment';
