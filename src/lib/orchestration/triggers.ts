@@ -15,15 +15,24 @@
  * Import this module from App.svelte (or another init entry) to install
  * the subscriptions. The subscriptions are registered at import time
  * (module side-effect) matching the original search-sync.ts pattern.
+ *
+ * Strangler-fig port (W11-T6, 2026-06-15): the four new subscriptions
+ * at the bottom (EXPLORATION_FOCUS_SYNC, SEARCH_STATE_RESET_REQUESTED,
+ * SUMMARY_CARD_HIDE_REQUESTED, SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED)
+ * are Svelte-native mirrors of the legacy
+ * `initEventBusSubscriptions()` calls in js/modules/app.ts. The legacy
+ * subscribers stay in place during the transition; the Svelte subscribers
+ * are the new canonical handlers. Once all callers publish to the
+ * Svelte bus, the legacy `subscribeKeyed` calls can be retired.
  */
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller';
 import { refreshCompositionState } from '@lib/stores/lifecycle/modes';
 import { recordEmptySearch } from '@lib/stores/lifecycle/search-sync';
 import { setActiveResult, setSearchStatus } from '@lib/stores/search.svelte';
-import { returnToOverview, recenterFocusedNode } from './lifecycle';
+import { returnToOverview, recenterFocusedNode, resetExplorationFocus, hideSummaryCard } from './lifecycle';
 import { traverseNeighbor } from '@lib/journey/thread-settler-adapter';
-import { navStore } from '@lib/stores/navigation.svelte';
+import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
 import { activeClusterFilter } from '@lib/stores/filter.svelte';
 import {
   addTrailStop,
@@ -218,4 +227,63 @@ subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index: number }) => {
   setSearchStatus('focusing');
   refreshCompositionState();
   updateJourneyCompass();
+});
+
+// ── Engine → Nav Sync Subscriptions ──────────────────────────────────────────
+//
+// Ported from js/modules/app.ts::initEventBusSubscriptions().
+// The engine kernel publishes these events from the legacy track; the
+// Svelte track needs to mirror the side effects so the Svelte navStore
+// and the Svelte focus card stay in lockstep with the engine's
+// exploration state.
+
+/**
+ * EXPLORATION_FOCUS_SYNC is published by the engine after a canvas node
+ * pick, a search-result focus, or a thread traversal. The legacy code
+ * used it to dispatch a NAV_TRANSITION_ACTIONS.FOCUS_NODE with
+ * skipHistory: true so the navigation history isn't pushed twice. The
+ * Svelte navStore handles focusedIndex / mode / surface via the FOCUS_NODE
+ * branch of dispatchNavTransition, so we mirror that here.
+ */
+subscribe(EVENTS.EXPLORATION_FOCUS_SYNC, (payload: { index: number; skipHistory?: boolean } = {} as any) => {
+  const index = Number((payload as any)?.index);
+  if (!Number.isFinite(index) || index < 0) return;
+  dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
+    index,
+    // The Svelte navStore does not have a skipHistory flag, but
+    // appendHistory:false is the closest equivalent and prevents
+    // duplicate history entries when the engine has already recorded
+    // the focus.
+    appendHistory: (payload as any)?.skipHistory === true ? false : true
+  });
+});
+
+/**
+ * SEARCH_STATE_RESET_REQUESTED is published by the search pipeline when
+ * a clear-search action should also clear exploration focus. The Svelte
+ * resetExplorationFocus preserves the current search summary by default,
+ * matching the legacy preserveSearch:true default in lifecycle-reset.ts.
+ */
+subscribe(EVENTS.SEARCH_STATE_RESET_REQUESTED, (options: Record<string, unknown> = {}) => {
+  resetExplorationFocus(options as Parameters<typeof resetExplorationFocus>[0]);
+});
+
+/**
+ * SUMMARY_CARD_HIDE_REQUESTED is published when the summary card should
+ * be hidden. The Svelte focus store already owns the selected business
+ * state; hideSummaryCard is a no-op proxy that lives in the orchestration
+ * layer for API symmetry with the legacy event-bus contract.
+ */
+subscribe(EVENTS.SUMMARY_CARD_HIDE_REQUESTED, () => {
+  hideSummaryCard();
+});
+
+/**
+ * SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED is published when the semantic
+ * guide button should change state. The Svelte guide UI is reactive and
+ * owns its own state via the focus store, so this subscription is a
+ * documented no-op (matches the legacy stub at app.ts:228-231).
+ */
+subscribe(EVENTS.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED, () => {
+  // Handled reactively by the Svelte focus store and semantic-guide component.
 });
