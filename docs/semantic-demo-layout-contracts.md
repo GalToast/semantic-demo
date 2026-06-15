@@ -77,26 +77,22 @@ When `data-panel-surface` is `focus`, `focus-search`, or `semantic-dive`, the Le
 
 Desktop (in `css/modules/focus_stage.css`):
 ```css
-@media (min-width: 769px) {
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
         #legend-panel {
-        display: none !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
     }
-}
 ```
 
 Mobile (in `css/mobile_premium__focus-dive.css`):
 ```css
-@media (max-width: 768px) {
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
         #legend-panel {
-        display: none !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
     }
-}
 ```
 
 ### Verification
