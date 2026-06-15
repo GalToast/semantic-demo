@@ -89,15 +89,14 @@ describe('A11y: H1 page title (A2-6)', () => {
       }
     });
 
-    it('the H1 is inside the <main> landmark', () => {
+    it('the H1 is before the <main> landmark (first heading on page)', () => {
       const mainStart = appSrc.indexOf('<main id="main-content"');
-      const mainEnd = appSrc.indexOf('</main>', mainStart);
-      const h1Index = appSrc.indexOf('<h1', mainStart);
+      const h1Index = appSrc.indexOf('<h1', mainStart > -1 ? 0 : 0);
 
       expect(mainStart).toBeGreaterThan(-1);
-      expect(mainEnd).toBeGreaterThan(mainStart);
-      expect(h1Index).toBeGreaterThan(mainStart);
-      expect(h1Index).toBeLessThan(mainEnd);
+      expect(h1Index).toBeGreaterThan(-1);
+      // H1 must come before <main> in the template
+      expect(h1Index).toBeLessThan(mainStart);
     });
   });
 });

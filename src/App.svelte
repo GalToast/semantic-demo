@@ -301,13 +301,15 @@
   {/if}
 {/snippet}
 
+<!-- A2-6: H1 page title — first heading, visible to screen readers and sighted users -->
+<h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
+
 {#if headerVisible}
   <!-- Header with mode chips — outside <main> as its own banner landmark -->
   <Header visible={true} utilityOnly={!idleSurfaceActive} />
 {/if}
 
 <main id="main-content" class="semantic-main" tabindex="-1" aria-label="Semantic explorer application">
-<h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
 <div
   id="semantic-explorer"
   class="semantic-explorer"
