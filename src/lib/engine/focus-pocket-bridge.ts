@@ -34,4 +34,5 @@ export {
   getNeighborhoodPersonality,
   getSemanticCandidateSlice,
   type NeighborhoodPersonality,
-} from '../../../js/modules/focus-pocket-personality';
+  type SemanticCandidate,
+} from '@lib/focus/pocket-personality';

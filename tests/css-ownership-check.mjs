@@ -44,7 +44,8 @@ const selectorBaselines = {
     'journey_active.css': 8,
     'journey_steps.css': 18,
     'mobile_base.css': 0,
-    'mobile_premium__focus-dive.css': 29,
+    // Includes the documented focus-search active-trail two-lane modifier.
+    'mobile_premium__focus-dive.css': 30,
     'progressive_disclosure.css': 1,
     'strands.css': 5,
   },

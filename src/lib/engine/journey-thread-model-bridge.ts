@@ -1,7 +1,7 @@
 /**
  * @lib/engine/journey-thread-model-bridge.ts — Bridge for journey thread model functions.
  *
- * Re-exports engine-kernel symbols consumed by src/lib/journey/journey.ts
+ * Re-exports native port symbols consumed by src/lib/journey/journey.ts
  * so that journey-layer code does not import directly from js/.
  */
 
@@ -13,4 +13,4 @@ export {
   getGeometricThreadCandidates,
   getSemanticThreadCandidates,
   getThreadCandidatesForIndex,
-} from '../../../js/modules/journey-thread-model';
+} from '@lib/journey/thread-model';

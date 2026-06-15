@@ -168,6 +168,8 @@ export const hasFocus = () => {
   if (local.mode === 'focus' || local.mode === 'inside' || local.focusedIndex !== null) {
     return true;
   }
+  // Mode fallback: engine-side WALK_TO/BACKTRACK/SET_DEPTH paths still mutate
+  // legacy state.navState.mode without writing to navStore.
   const legacyMode = readLegacyNavField<string>('mode');
   if (legacyMode === 'focus' || legacyMode === 'inside') return true;
   const legacyFocused = readLegacyNavField<number | null>('focusedIndex');
@@ -178,6 +180,9 @@ export const hasTrail = () => get(_navWritable).trailDepth > 0;
 export const currentMode = (): string => {
   const local = get(_navWritable).mode;
   if (local) return local;
+  // Fallback: engine-side WALK_TO/BACKTRACK/SET_DEPTH/ENTER_INSIDE/EXIT_INSIDE
+  // paths in js/modules/navigation-state.ts mutate legacy state.navState.mode
+  // without writing to navStore. Remove once those reducers are store-native.
   const legacy = readLegacyNavField<string>('mode');
   if (legacy) return legacy;
   return local;
@@ -185,6 +190,9 @@ export const currentMode = (): string => {
 export const currentSurface = (): string => {
   const local = get(_navWritable).surface;
   if (local) return local;
+  // Fallback: engine-side navTransitionReducer mutates legacy state.navState
+  // surface fields independently. Remove once all surface writes go through
+  // dispatchNavTransition in src/lib/stores/navigation.svelte.ts.
   const legacy = readLegacyNavField<string>('surface');
   if (legacy) return legacy;
   return local;
@@ -197,11 +205,10 @@ export const focusedIndex = () => {
   return local;
 };
 export const currentView = (): string => {
-  const local = get(_navWritable).currentView;
-  if (local) return local;
-  const legacy = readLegacyNavField<string>('currentView');
-  if (legacy) return legacy;
-  return local;
+  // No legacy fallback: currentView is fully bridged.
+  // src/lib/orchestration/view-controller.ts:152 writes directly to
+  // navStore on every switchView, and url-state.ts:159 restores it.
+  return get(_navWritable).currentView;
 };
 export const myceliumMode = () => get(_navWritable).myceliumMode;
 export const isMapMode = () => get(_navWritable).currentView === 'map';

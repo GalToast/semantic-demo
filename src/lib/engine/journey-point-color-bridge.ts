@@ -8,4 +8,4 @@
 export {
   applyPointFilterColors,
   describeThreadLensForPoint,
-} from '../../../js/modules/journey-point-color';
+} from '@lib/journey/point-color';

@@ -7,20 +7,51 @@
  * animates camera back to overview with easing, and cancels in-progress animations.
  */
 import * as THREE from 'three';
-import { state } from '@lib/engine/state-bridge';
+import { appState } from '@lib/state/app.svelte';
 import { easeInOutSine } from '@lib/utils/math-easing';
 import { prefersReducedMotion } from '@lib/utils/environment';
 
 let _overviewCameraSnapshot: { camera: THREE.Vector3; target: THREE.Vector3 } | null = null;
 let _overviewCameraRafId: number | null = null;
 
+interface DemoCameraControls {
+  target: THREE.Vector3;
+  update: () => void;
+}
+
+function isThreeVector(value: unknown): value is THREE.Vector3 {
+  const vector = value as Partial<THREE.Vector3> | null;
+  return Boolean(
+    vector &&
+      typeof vector.x === 'number' &&
+      typeof vector.y === 'number' &&
+      typeof vector.z === 'number' &&
+      typeof vector.clone === 'function' &&
+      typeof vector.copy === 'function' &&
+      typeof vector.lerpVectors === 'function'
+  );
+}
+
+function getDemoCameraPosition(): THREE.Vector3 | null {
+  const camera = appState.camera as unknown as { position?: unknown } | null;
+  return isThreeVector(camera?.position) ? camera.position : null;
+}
+
+function getDemoControls(): DemoCameraControls | null {
+  const controls = appState.controls as unknown as { target?: unknown; update?: unknown } | null;
+  if (!isThreeVector(controls?.target) || typeof controls?.update !== 'function') return null;
+  return {
+    target: controls.target,
+    update: controls.update.bind(controls)
+  };
+}
+
 export function captureOverviewCameraSnapshot(): void {
-  const lState = state as Record<string, unknown>;
-  const camera = (lState as { camera?: THREE.PerspectiveCamera }).camera;
-  const controls = (lState as { controls?: { target: THREE.Vector3; update: () => void } }).controls;
-  if (!camera?.position?.clone || !controls?.target?.clone) return;
+  const cameraPosition = getDemoCameraPosition();
+  const controls = getDemoControls();
+  if (!cameraPosition || !controls) return;
   _overviewCameraSnapshot = {
-    camera: camera.position.clone(),
+    camera: cameraPosition.clone(),
     target: controls.target.clone()
   };
 }
@@ -28,8 +59,8 @@ export function captureOverviewCameraSnapshot(): void {
 export function getOverviewCameraSnapshot(): { camera: THREE.Vector3; target: THREE.Vector3 } {
   if (_overviewCameraSnapshot?.camera?.clone && _overviewCameraSnapshot?.target?.clone) {
     return {
-      camera: _overviewCameraSnapshot.camera.clone(),
-      target: _overviewCameraSnapshot.target.clone()
+      camera: _overviewCameraSnapshot.camera.clone() as THREE.Vector3,
+      target: _overviewCameraSnapshot.target.clone() as THREE.Vector3
     };
   }
   return {
@@ -39,19 +70,20 @@ export function getOverviewCameraSnapshot(): { camera: THREE.Vector3; target: TH
 }
 
 export function animateCameraToOverview(duration = 1000): void {
-  const lState = state as Record<string, unknown>;
-  const camera = (lState as { camera?: THREE.PerspectiveCamera }).camera;
-  const controls = (lState as { controls?: { target: THREE.Vector3; update: () => void } }).controls;
-  if (!camera || !controls) return;
+  const cameraPosition = getDemoCameraPosition();
+  const controls = getDemoControls();
+  if (!cameraPosition || !controls) return;
+  const animationCameraPosition: THREE.Vector3 = cameraPosition;
+  const animationControls: DemoCameraControls = controls;
 
-  const startPos = camera.position.clone();
-  const startTarget = controls.target.clone();
+  const startPos = animationCameraPosition.clone();
+  const startTarget = animationControls.target.clone();
   const { camera: overviewPos, target: overviewTarget } = getOverviewCameraSnapshot();
 
   if (prefersReducedMotion()) {
-    camera.position.copy(overviewPos);
-    controls.target.copy(overviewTarget);
-    controls.update();
+    animationCameraPosition.copy(overviewPos);
+    animationControls.target.copy(overviewTarget);
+    animationControls.update();
     return;
   }
 
@@ -69,9 +101,9 @@ export function animateCameraToOverview(duration = 1000): void {
     const raw = (now - startTime) / duration;
     const t = Math.min(Math.max(raw, 0), 1);
     const eased = easeInOutSine(t);
-    camera!.position.lerpVectors(startPos, overviewPos, eased);
-    controls!.target.lerpVectors(startTarget, overviewTarget, eased);
-    controls!.update();
+    animationCameraPosition.lerpVectors(startPos, overviewPos, eased);
+    animationControls.target.lerpVectors(startTarget, overviewTarget, eased);
+    animationControls.update();
     if (t < 0.999) {
       _overviewCameraRafId = requestAnimationFrame(step);
     } else {
