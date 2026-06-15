@@ -30,7 +30,7 @@ import type {
   Vector3Like,
   SearchSummary,
   SemanticNode,
-} from '../../../js/state';
+} from '@lib/engine/state-bridge';
 import type { NavState, ActiveFilters, SearchStatus } from '@lib/types/state';
 import { CLUSTER_COLORS } from '@lib/utils/design-tokens';
 import { withStateMutation } from './with-state-mutation';
