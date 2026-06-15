@@ -59,7 +59,7 @@ import {
   resetNavState,
   setNavMode,
   navStore,
-} from '@lib/stores/navigation';
+} from '@lib/stores/navigation.svelte.ts';
 
 describe('Navigation store — T4 migration to Svelte 5 state class', () => {
   beforeEach(() => {

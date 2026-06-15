@@ -34,7 +34,7 @@
 // ── Store Imports (re-exported for consumers) ─────────────────────────────────
 
 import { get } from 'svelte/store';
-import { navStore } from '@lib/stores/navigation';
+import { navStore } from '@lib/stores/navigation.svelte.ts';
 import type { NavState } from '@lib/types/state';
 import { journeyStore } from '@lib/stores/journey.svelte.ts';
 import { focusStore } from '@lib/stores/focus.svelte.ts';

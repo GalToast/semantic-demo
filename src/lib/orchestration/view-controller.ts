@@ -9,7 +9,7 @@
  */
 
 import { get } from 'svelte/store';
-import { navStore } from '@lib/stores/navigation';
+import { navStore } from '@lib/stores/navigation.svelte.ts';
 import { semanticGuideIcon } from '@lib/journey/semantic-guide';
 
 // ── Types ─────────────────────────────────────────────────────────────────────

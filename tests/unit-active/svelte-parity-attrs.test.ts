@@ -32,7 +32,7 @@ import {
   resetParityAttributeCache
 } from '@lib/orchestration/parity-attrs';
 
-import { navStore, resetNavState } from '@lib/stores/navigation';
+import { navStore, resetNavState } from '@lib/stores/navigation.svelte.ts';
 import { journeyStore, resetJourney } from '@lib/stores/journey.svelte.ts';
 import { focusStore, resetFocus } from '@lib/stores/focus.svelte.ts';
 import { searchStore } from '@lib/stores/search.svelte';

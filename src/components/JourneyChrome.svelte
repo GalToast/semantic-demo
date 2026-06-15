@@ -15,7 +15,7 @@
 -->
 <script lang="ts">
 
-  import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
+  import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { journeyStore, journeyPhase } from '@lib/stores/journey.svelte.ts';
   import { buildCompassStatus } from '@lib/stores/compass.svelte.ts';
   import { threadInspector, threadInspectorActive, pinThread, updateThreadInspector } from '@lib/stores/focus.svelte.ts';

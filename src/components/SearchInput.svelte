@@ -25,7 +25,7 @@
   import {
     dispatchNavTransition,
     NAV_TRANSITION_ACTIONS
-  } from '@lib/stores/navigation';
+  } from '@lib/stores/navigation.svelte.ts';
 
   interface Props {
     /** Placeholder text for the input */

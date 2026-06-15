@@ -9,7 +9,7 @@
  */
 
 import { get } from 'svelte/store';
-import { navStore, bumpUrlStateRestoreToken } from '@lib/stores/navigation';
+import { navStore, bumpUrlStateRestoreToken } from '@lib/stores/navigation.svelte.ts';
 import { setJourneyPhase } from '@lib/stores/journey.svelte';
 import type { NavState, ViewName } from '@lib/types/state';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';

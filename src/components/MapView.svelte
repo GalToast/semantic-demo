@@ -8,7 +8,7 @@
 -->
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
+  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { switchView } from '@lib/orchestration/view-controller';
   import { state as engineState, withStateMutation } from '@lib/engine/state-bridge';

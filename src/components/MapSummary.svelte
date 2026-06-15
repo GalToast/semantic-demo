@@ -10,7 +10,7 @@
 -->
 <script lang="ts">
   import { journeyTrail } from '@lib/stores/journey.svelte.ts';
-  import { hasTrail, focusedIndex } from '@lib/stores/navigation';
+  import { hasTrail, focusedIndex } from '@lib/stores/navigation.svelte.ts';
   import { getBusinessRecords, getIsDataReady } from '@lib/stores/index.svelte.ts';
   import type { TrailStop } from '@lib/types/state';
 

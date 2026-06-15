@@ -14,7 +14,7 @@
   is the same bridge shape App.svelte uses for its nav-store surface sync.
 -->
 <script lang="ts">
-  import { navStore } from '@lib/stores/navigation';
+  import { navStore } from '@lib/stores/navigation.svelte.ts';
   import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket';
   import { clearPocketNodes } from '@lib/stores/focus.svelte';
   import { getDataLoadState } from '@lib/data-store.svelte';

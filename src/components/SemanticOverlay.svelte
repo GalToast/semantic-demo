@@ -10,7 +10,7 @@
   bridge — this component only manages the UI chrome and visibility state.
 -->
 <script lang="ts">
-  import { hasFocus, focusedIndex, currentSurface } from '@lib/stores/navigation';
+  import { hasFocus, focusedIndex, currentSurface } from '@lib/stores/navigation.svelte.ts';
   import { threadInspectorActive } from '@lib/stores/focus.svelte.ts';
   import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
 

@@ -19,8 +19,8 @@
     #selected-map, #selected-thread, #selected-trivia
 -->
 <script lang="ts">
-  import { hasFocus, currentSurface } from '@lib/stores/navigation';
-  import { focusedIndex } from '@lib/stores/navigation';
+  import { hasFocus, currentSurface } from '@lib/stores/navigation.svelte.ts';
+  import { focusedIndex } from '@lib/stores/navigation.svelte.ts';
   import { activeResult, searchSummary } from '@lib/stores/search.svelte';
   import { getBusinessRecords, getIsDataReady, selectedPointStore } from '@lib/stores/index.svelte.ts';
   import type { BusinessRecord } from '@lib/types/business';

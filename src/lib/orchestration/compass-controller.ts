@@ -8,7 +8,7 @@
  * journey actions (search focus, anchor center, map switch, etc.).
  */
 import { get } from 'svelte/store';
-import { navStore, switchView as navSwitchView } from '@lib/stores/navigation';
+import { navStore, switchView as navSwitchView } from '@lib/stores/navigation.svelte.ts';
 import { searchStore } from '@lib/stores/search.svelte';
 import {
   JOURNEY_COMPASS_PHASE_ORDER,

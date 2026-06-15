@@ -37,7 +37,7 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
+  import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { setSemanticDiveMode } from '@lib/stores/focus.svelte';
   import { viewport, initViewportListeners } from '@lib/stores/viewport.svelte.ts';
   import { initData } from '@lib/data-store';

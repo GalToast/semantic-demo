@@ -24,8 +24,11 @@ describe('A2-4: Escape returns to Overview mode', () => {
   });
 
   it('imports dispatchNavTransition and NAV_TRANSITION_ACTIONS from navigation store', () => {
-    expect(src).toMatch(/import\s*\{[^}]*dispatchNavTransition[^}]*\}\s*from\s*'@\/?lib\/stores\/navigation'/);
-    expect(src).toMatch(/import\s*\{[^}]*NAV_TRANSITION_ACTIONS[^}]*\}\s*from\s*'@\/?lib\/stores\/navigation'/);
+    // W11-T8 Wave 2H: the bare @lib/stores/navigation shim was deleted;
+    // consumers now import the canonical @lib/stores/navigation.svelte.ts.
+    // Accept either the bare shim path (legacy) or the .svelte.ts path.
+    expect(src).toMatch(/import\s*\{[^}]*dispatchNavTransition[^}]*\}\s*from\s*'@\/?lib\/stores\/navigation(?:\.svelte\.ts)?'/);
+    expect(src).toMatch(/import\s*\{[^}]*NAV_TRANSITION_ACTIONS[^}]*\}\s*from\s*'@\/?lib\/stores\/navigation(?:\.svelte\.ts)?'/);
   });
 
   it('dispatches RETURN_OVERVIEW on Escape when not already in idle', () => {

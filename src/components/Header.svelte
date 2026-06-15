@@ -17,7 +17,7 @@
     NAV_TRANSITION_ACTIONS,
     navStore,
     type NavStoreApi
-  } from '@lib/stores/navigation';
+  } from '@lib/stores/navigation.svelte.ts';
   import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
   import { legendOpen, toggleLegend } from '@lib/stores/legend.svelte';
   import { updateUrlState } from '@lib/orchestration/url-state';

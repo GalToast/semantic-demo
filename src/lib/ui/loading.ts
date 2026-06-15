@@ -8,7 +8,7 @@
  * Keeps navStore and data-store loading phase state aligned.
  */
 
-import { setLoadingPhase as setNavLoadingPhase } from '@lib/stores/navigation';
+import { setLoadingPhase as setNavLoadingPhase } from '@lib/stores/navigation.svelte.ts';
 import { setLoadingPhase as setDataLoadingPhase } from '@lib/data-store';
 import { loadSemanticThreads } from '@lib/semantic-threads';
 import { createMycelium } from '@lib/engine/thread-manager';

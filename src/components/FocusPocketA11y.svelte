@@ -19,7 +19,7 @@
 -->
 <script lang="ts">
   import { focusStore, setPocketListVisible } from '@lib/stores/focus.svelte';
-  import { setFocusedIndex } from '@lib/stores/navigation';
+  import { setFocusedIndex } from '@lib/stores/navigation.svelte.ts';
   import type { FocusPocketNode } from '@lib/types/state';
 
   function focusOnNode(node: FocusPocketNode): void {

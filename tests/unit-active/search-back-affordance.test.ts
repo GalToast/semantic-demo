@@ -112,7 +112,10 @@ describe('search-back-affordance (UI-9)', () => {
     });
 
     it('imports dispatchNavTransition for surface switching', () => {
-      expect(source).toContain("from '@lib/stores/navigation'");
+      // W11-T8 Wave 2H: the bare @lib/stores/navigation shim was deleted;
+      // consumers now import the canonical @lib/stores/navigation.svelte.ts.
+      // Accept either the bare shim path (legacy) or the .svelte.ts path.
+      expect(source).toMatch(/from\s+['"]@lib\/stores\/navigation(?:\.svelte\.ts)?['"]/);
       expect(source).toContain('dispatchNavTransition');
       expect(source).toContain('NAV_TRANSITION_ACTIONS');
     });

@@ -13,7 +13,7 @@
  */
 
 import { get } from "svelte/store";
-import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS, setAutoRotate, suspendAutoRotate, resumeAutoRotate } from "@lib/stores/navigation";
+import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS, setAutoRotate, suspendAutoRotate, resumeAutoRotate } from "@lib/stores/navigation.svelte.ts";
 import { searchStore } from "@lib/stores/search.svelte";
 import { focusStore, setSemanticDiveMode as setFocusDiveMode, setSelectedBusiness } from "@lib/stores/focus.svelte.ts";
 import { publish, EVENTS } from "@lib/orchestration/event-bus";
@@ -28,7 +28,7 @@ import {
   invokeClearMobileRouteFieldPeek
 } from "@lib/orchestration/compass-controller";
 import { switchView, showViewHandoff, hideViewHandoff } from "@lib/orchestration/view-controller";
-import { setLoadingPhase, startSceneReveal } from "@lib/stores/navigation";
+import { setLoadingPhase, startSceneReveal } from "@lib/stores/navigation.svelte.ts";
 import { hideLoadingOverlay, startDeferredHydration, scheduleWeatherHydration } from "@lib/ui/loading";
 import { syncViewport } from "@lib/stores/viewport.svelte.ts";
 import { copyCurrentViewLink, resetStateBeforeUrlRestore, clearExplorationFocusSelection } from "@lib/orchestration/url-state";

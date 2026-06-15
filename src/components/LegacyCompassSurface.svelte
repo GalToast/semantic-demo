@@ -35,7 +35,7 @@
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { navStore } from '@lib/stores/navigation';
+  import { navStore } from '@lib/stores/navigation.svelte.ts';
   import { journeyStore, JOURNEY_COMPASS_PHASE_ORDER } from '@lib/stores/journey.svelte.ts';
   import { focusStore } from '@lib/stores/focus.svelte.ts';
   import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
