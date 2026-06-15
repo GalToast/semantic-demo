@@ -6,7 +6,7 @@
  */
 
 import { state } from '@lib/engine/state-bridge';
-import { subscribe, EVENTS } from '@lib/engine/event-bus-bridge';
+import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
