@@ -39,7 +39,7 @@ const BRIDGE_ALLOWLIST = new Set([
 ]);
 
 /** Current anti-pattern import count — workers SHOULD reduce this over time */
-const APPROVED_ANTIPATTERN_COUNT = 23;
+const APPROVED_ANTIPATTERN_COUNT = 0;
 
 interface ImportViolation {
   file: string;
@@ -133,12 +133,11 @@ describe('Svelte-bridge import contract (S7)', () => {
     // Soft contract: violations should not grow beyond the current approved
     // baseline. Migration tickets reduce the count; update
     // APPROVED_ANTIPATTERN_COUNT in lockstep with the migration commit.
-    // Baseline 58→23 on 2026-06-14 by restoring 19 sanctioned bridges in
-    // src/lib/engine/* and rewiring the top 6 consumer files (journey,
-    // window-actions, semantic-guide, semantic-dive, focus-pocket,
-    // ui-feedback) to consume through them. Remaining 23 are mostly
-    // single-import one-offs in svelte components and small lib files —
-    // future migration tickets should bring this number down further.
+    // Baseline 58→0 on 2026-06-14 by restoring all sanctioned bridges in
+    // src/lib/engine/* and rewiring every consumer file (journey, demo,
+    // keyboard, orchestration, ui) to consume through them. Zero
+    // anti-patterns remain; any new direct js/ import outside engine is a
+    // regression and must be rejected.
     // The hard contract is the upper-bound assertion above; this test
     // just makes sure the count matches what was approved at last commit.
     expect(violations.length).toBeLessThanOrEqual(APPROVED_ANTIPATTERN_COUNT);
