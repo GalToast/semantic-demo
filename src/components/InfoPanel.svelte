@@ -22,7 +22,7 @@
   import { hasFocus, currentSurface } from '@lib/stores/navigation';
   import { focusedIndex } from '@lib/stores/navigation';
   import { activeResult, searchSummary } from '@lib/stores/search.svelte';
-  import { getBusinessRecords, getIsDataReady, selectedPointStore } from '@lib/stores';
+  import { getBusinessRecords, getIsDataReady, selectedPointStore } from '@lib/stores/index.svelte.ts';
   import type { BusinessRecord } from '@lib/types/business';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, getPublicRecordStatusLabel } from '@lib/utils';
   import { describeCluster } from '@lib/utils';

@@ -30,7 +30,7 @@ import {
 import { switchView, showViewHandoff, hideViewHandoff } from "@lib/orchestration/view-controller";
 import { setLoadingPhase, startSceneReveal } from "@lib/stores/navigation";
 import { hideLoadingOverlay, startDeferredHydration, scheduleWeatherHydration } from "@lib/ui/loading";
-import { syncViewport } from "@lib/stores/viewport";
+import { syncViewport } from "@lib/stores/viewport.svelte.ts";
 import { copyCurrentViewLink, resetStateBeforeUrlRestore, clearExplorationFocusSelection } from "@lib/orchestration/url-state";
 import {
   setTrailDepth,

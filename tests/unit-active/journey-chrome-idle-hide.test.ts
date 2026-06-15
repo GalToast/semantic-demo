@@ -16,8 +16,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { journeyStore } from '@lib/stores/journey';
-import type { JourneyStoreState } from '@lib/stores/journey';
+import { journeyStore } from '@lib/stores/journey.svelte.ts';
+import type { JourneyStoreState } from '@lib/stores/journey.svelte.ts';
 
 // -- Helpers -----------------------------------------------------------------
 

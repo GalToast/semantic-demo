@@ -19,7 +19,7 @@
     DEMO_START_DELAY_MS,
     MAX_START_RETRIES
   } from '@lib/stores/demo.svelte.ts';
-  import { getBusinessRecords } from '@lib/stores';
+  import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
   import type { DemoPhase } from '@lib/types/state';
 
   interface Props {

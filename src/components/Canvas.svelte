@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { viewport, viewportWidth, viewportHeight, dpr } from '@lib/stores/viewport';
+  import { viewport, viewportWidth, viewportHeight, dpr } from '@lib/stores/viewport.svelte.ts';
   import { completeCameraTransition } from '@lib/stores/camera.svelte.ts';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
   import { setGraphicsMode, setLoadingPhase } from '@lib/data-store';

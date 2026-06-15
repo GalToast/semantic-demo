@@ -7,7 +7,7 @@
 import { mount, unmount } from 'svelte';
 import App from './App.svelte';
 import LegacyCompassSurface from '@components/LegacyCompassSurface.svelte';
-import { testState } from '@lib/stores/index';
+import { testState } from '@lib/stores/index.svelte.ts';
 import { installWindowActions } from '@lib/orchestration/window-actions';
 import { hydrateFromLegacyState } from '@lib/data-store';
 import './lib/css/biofield.css';

@@ -4,7 +4,7 @@
 <script lang="ts">
   import { cameraState, setAutoRotate, startCameraTransition, resetCamera } from '@lib/stores/camera.svelte.ts';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
-  import { viewport, isCompact } from '@lib/stores/viewport';
+  import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
 
   interface Props {
     visible?: boolean;

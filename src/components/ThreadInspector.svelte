@@ -12,7 +12,7 @@
   } from '@lib/stores/focus.svelte';
   import type { FocusStoreState } from '@lib/stores/focus.svelte';
   import { dispatchNavTransition, focusedIndex, NAV_TRANSITION_ACTIONS, updateNavState } from '@lib/stores/navigation';
-  import { addWalkHistoryIndex, setTrailDepth, trailDepth, walkHistoryIndices } from '@lib/stores/journey';
+  import { addWalkHistoryIndex, setTrailDepth, trailDepth, walkHistoryIndices } from '@lib/stores/journey.svelte.ts';
 
   interface Props {
     visible?: boolean;

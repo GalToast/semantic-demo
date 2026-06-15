@@ -12,7 +12,7 @@
 import { get } from 'svelte/store';
 import { semanticNeighborMap, businessRecords, pointIndexByLeadId, positionBuffer } from '@lib/data-store';
 import { navStore } from '@lib/stores/navigation';
-import { journeyStore, setTrailSeedIndex, setTrailNeighborIndices } from '@lib/stores/journey';
+import { journeyStore, setTrailSeedIndex, setTrailNeighborIndices } from '@lib/stores/journey.svelte.ts';
 
 // ── Configuration ────────────────────────────────────────────────────────────
 

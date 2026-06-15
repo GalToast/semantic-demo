@@ -39,7 +39,7 @@
   import { onMount } from 'svelte';
   import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
   import { setSemanticDiveMode } from '@lib/stores/focus.svelte';
-  import { viewport, initViewportListeners } from '@lib/stores/viewport';
+  import { viewport, initViewportListeners } from '@lib/stores/viewport.svelte.ts';
   import { initData } from '@lib/data-store';
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs';
   import { applyUrlState } from '@lib/orchestration/url-state';

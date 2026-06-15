@@ -18,7 +18,7 @@
     navStore,
     type NavStoreApi
   } from '@lib/stores/navigation';
-  import { viewport, isCompact } from '@lib/stores/viewport';
+  import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
   import { legendOpen, toggleLegend } from '@lib/stores/legend.svelte';
   import { updateUrlState } from '@lib/orchestration/url-state';
   import { initKeyboardShortcutsHint, showKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';

@@ -15,7 +15,7 @@
   import { searchState } from '@lib/stores/search.svelte';
   import SearchInput from './SearchInput.svelte';
   import SearchResults from './SearchResults.svelte';
-  import { viewport, isCompact } from '@lib/stores/viewport';
+  import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
 

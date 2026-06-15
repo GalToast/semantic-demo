@@ -14,7 +14,7 @@ import {
   JOURNEY_COMPASS_PHASE_ORDER,
   JOURNEY_CONFIG,
   setTrailDepth as journeySetTrailDepth
-} from '@lib/stores/journey';
+} from '@lib/stores/journey.svelte.ts';
 import {
   focusStore,
   setSemanticDiveMode
@@ -22,7 +22,7 @@ import {
 import {
   isMapSummarySurface,
   isSemanticDiveSurface
-} from '@lib/stores/viewport';
+} from '@lib/stores/viewport.svelte.ts';
 import { resetExplorationFocus } from '@lib/orchestration/lifecycle';
 import {
   getJourneyCompassState,

@@ -36,11 +36,11 @@
 import { get } from 'svelte/store';
 import { navStore } from '@lib/stores/navigation';
 import type { NavState } from '@lib/types/state';
-import { journeyStore } from '@lib/stores/journey';
+import { journeyStore } from '@lib/stores/journey.svelte.ts';
 import { focusStore } from '@lib/stores/focus.svelte.ts';
 import { searchStore } from '@lib/stores/search.svelte';
 import { filterState } from '@lib/stores/filter.svelte';
-import { viewport } from '@lib/stores/viewport';
+import { viewport } from '@lib/stores/viewport.svelte.ts';
 import { cameraStore } from '@lib/stores/camera.svelte.ts';
 import { demoStore as demoPhaseStore } from '@lib/stores/demo.svelte.ts';
 import {

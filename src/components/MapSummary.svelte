@@ -9,9 +9,9 @@
   Positioned in the bottom-left corner above the legend.
 -->
 <script lang="ts">
-  import { journeyTrail } from '@lib/stores/journey';
+  import { journeyTrail } from '@lib/stores/journey.svelte.ts';
   import { hasTrail, focusedIndex } from '@lib/stores/navigation';
-  import { getBusinessRecords, getIsDataReady } from '@lib/stores';
+  import { getBusinessRecords, getIsDataReady } from '@lib/stores/index.svelte.ts';
   import type { TrailStop } from '@lib/types/state';
 
   interface Props {
