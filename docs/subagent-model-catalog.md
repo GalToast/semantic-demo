@@ -51,6 +51,18 @@ Keep actual video generation/editing, relighting, lip sync, ASR/TTS, and synthet
 
 ## Tested Routes
 
+### 2026-06-15 low-data Semantic Explorer worker wave
+
+Read-only wave against real Semantic Explorer seams while the worktree was dirty and parallel sessions were active.
+
+- `opencode-go/deepseek-v4-flash` / direct OpenCode Go / Pi: completed bridge-integrity review. Read + bash worked, `npm run check:bridges` ran, and the worker correctly found `src/lib/engine/focus-pocket-bridge.ts` deletion safe by visible imports. It identified `src/lib/engine/focus-pocket-direct-bridge.ts` -> `src/lib/journey/journey.ts` as the next focus-pocket bridge seam. Useful paid baseline; stdout hit the retained cap but final was extractable. Rating: Strong for read-only bridge review; implementation still untested in this repo.
+- `nvidia/stepfun-ai/step-3.7-flash` / NVIDIA catalog ref / Pi: failed before model output. The broker launched `router-opencode-zen/nvidia/stepfun-ai/step-3.7-flash`; provider returned `401 Model nvidia/stepfun-ai/step-3.7-flash is not supported`. Treat as a Pi route-mapping/catalog-selectability defect, not a model-quality result.
+- `nvidia/zyphra/zamba2-7b-instruct` / NVIDIA catalog ref / Pi: same failure shape as direct Stepfun; launched through `router-opencode-zen/...` and returned `401 model not supported`. Treat as route-mapping defect.
+- `zydit-v4/qwen/qwen3.6-flash` / Zydit v4 / Pi: launched but returned `Stream closed without response` with zero tokens. Keep untrusted until direct route/API shape is verified.
+- `openrouter/nex-agi/nex-n2-pro:free` / OpenRouter / Pi: returned zero-token `stop` with no assistant output and held a live PID; canceled by exact worker ID. Treat OpenRouter Nex as unreliable through current Pi worker path.
+- `kilo/stepfun/step-3.7-flash:free` and `modelscope/nex-agi/Nex-N2-Pro` / Pi: both failed at Pi startup with `Model "... " not found` despite catalog/history entries. Treat as stale Pi selectable-model sync or route-name drift until the Pi model provider schema is refreshed.
+- Follow-up `opencode-go/deepseek-v4-flash` / direct OpenCode Go / Pi on the focus-pocket bridge retirement also completed read-only review. It correctly treated the `focus-pocket-direct-bridge.ts` import swap/delete as safe and independently flagged `src/lib/engine/adapter-deps-bridge.ts` as a dead legacy focus-pocket entry point. The main lane deleted both bridges and all bridge/import checks passed. Rating remains Strong for read-only migration review.
+
 | Date | Launch ref | Provider lane | Harness | Workload | Result | Tool behavior | Strengths | Weaknesses / failure mode | Best use | Rating |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-06-12 | `opencode-go/mimo-v2.5` | OpenCode Go paid | Pi | External-subagent MCP keepalive implementation | Completed with useful code changes | Read/edit/bash worked; live steering landed via Pi RPC; produced huge logs | Capable cheap implementer for focused broker work | Needed narrowed steering; placed tests in wrong location before cleanup; main-lane review required | Focused implementation with explicit file ownership and verification | Promising |

@@ -349,3 +349,11 @@ The BOTH pattern was the original migration design:
 - The `.js` shadows were the only vestigial part after 9D-Option-B; retired in Wave 10 W2 (commit `7fc7b9d`)
 
 **Never repeat the blanket-deleted pattern.** The 2026-06-12 M3 bugsweep H2 was wrong to blanket-call 145 .ts files "dead shadows" based on "zero explicit .ts importers + tsconfig excludes js." Both signals are real but neither is conclusive. Use the 4-signal audit before any future "dead code" sweep on `js/`.
+
+## Pi Tool Output Hygiene
+
+The `pi_background_jobs` tool and the `/jobs`, `/job`, `/kill-job`, `/clear-jobs` slash commands return a **compact summary** (counts + bounded previews + a note), not the raw job record. The full record grows over time and a raw dump floods the chat transcript. The summarize-don't-enumerate fix lives in `C:\Users\HP\.pi\agent\local-packages\pi-background-detach\index.ts`.
+
+**Do not "fix" the summarized output by re-injecting the raw list.** The transcript flood was the original bug. If a more verbose output is genuinely needed for one specific job, query the underlying helpers directly via `node -e` against the package, or extend the `summarizeJob` / `summarizeJobs` previews with explicit fields — never bypass the summarize contract.
+
+`/tail-job <jobId>` and `pi_background_jobs action=tail` stay raw because the user asked for that specific log.
