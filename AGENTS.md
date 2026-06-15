@@ -13,6 +13,23 @@
 - For structural code pattern searches in this repo, prefer the ast-grep tools (`ast_grep_search`, `ast_grep_replace`, `ast_dump`) over `rg`/Bash. ast-grep is structural (TS/TSX/Svelte-aware) and matches the BOTH-pattern codebase much better than text-grep. Three installed skills: `ast-grep` (pattern syntax, metavars, gotchas), `ast-grep-decision-tree` (when to use ast-grep vs `rg` vs `ctx_execute` vs LSP), `write-ast-grep-rule` (custom YAML rules). Common gotchas: metavars (`$X`) don't work inside string literals — use literal path strings; bare identifier patterns trigger "Multiple AST nodes are detected" — wrap in a call/import structure (e.g., `foo($X)` or `import $X from "..."`); check metavar captures appear under each match line. Example patterns that work: `syncFocusStage($$$ARGS)` for call sites, `import { $NAMES } from $PATH` for named imports, `function $NAME($$$) { $$$ }` for declarations. Fall back to `rg` only for: partial string matches, comments, URLs, or after one simplified ast-grep retry returns zero. See `~/.pi/agent/skills/ast-grep-decision-tree/SKILL.md` for tool routing.
 - For external/community research (library version quirks, bundler config gotchas, known bugs), use the `websearch` MCP server (5 tools: `websearch_web_search`, `websearch_web_fetch`, `websearch_content_search`, `websearch_company_search`, `websearch_web_search_status`). Connect via `mcp({connect: "websearch"})` if not already connected. Tavily is the most reliable backend; Exa may 402 on credit limits. Search aggressively and early — don't burn cycles reinventing what the community already documented. Query pattern: `"<library> <version> <exact symptom>"` (e.g., `vite three.js webgpu build pulls in three.core.js`). Cross-reference web answers against local code before applying.
 
+## Parallel Session Serial Gate
+
+When multiple Pi / Codex / subagent sessions share this repo, a parallel session worker may continuously commit to `master` while the main lane performs reads and edits. This creates race conditions, phantom diffs, and overwritten work.
+
+### Rule
+1. Before any non-trivial `git commit` or `git push`, run:
+   ```bash
+   git log --since="3 hours ago" --oneline
+   git status --short
+   ```
+2. If 5+ unseen commits exist since your last verified `HEAD` → **queue work but DO NOT commit** until the parallel stream quiesces.
+3. If `git status --short` shows tracked-file modifications that you did not create → **pause and pick a different seam**.
+4. Only commit after `git log` stabilizes (no new commits in ~60 seconds) AND your working tree matches intended changes.
+
+### Why
+The wave-absorption pattern (parallel session closing tickets faster than main lane reads) creates stale-HEAD commits. The serial gate prevents the main lane from landing on outdated ground truth.
+
 ## Dev Environment Hardening
 - **Static Dev Mode**: The app includes a JS-side fallback for static Python development servers. If `api.php` returns raw PHP source code, the `detectStaticDevPHP` utility triggers a mock healthy state and provides high-synergy search results.
 - **Hardware Resilience**: GPU textures are tracked and disposed in `js/modules/three-node-manager.js` (`_trackedTextures` + `disposeTextures()`). Event listeners in `event-bindings.js` use an `AbortController` for `global-bindings.js`. As of 2026-06-05 sweep, 4 binding modules (legend, onboarding, journey, panel) registered listeners outside the signal — all fixed in the binding-listeners fix wave (verified resolved).
