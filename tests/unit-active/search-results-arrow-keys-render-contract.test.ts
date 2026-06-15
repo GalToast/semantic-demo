@@ -63,6 +63,20 @@ describe('A2-8: search results arrow-key navigation', () => {
     expect(src).toContain('handleResultClick');
   });
 
+  it('keydown handler clears search on Escape', () => {
+    expect(src).toContain("'Escape'");
+    expect(src).toContain('onClear');
+  });
+
+  it('declares aria-keyshortcuts on the listbox container', () => {
+    expect(src).toContain('aria-keyshortcuts=');
+    expect(src).toMatch(/aria-keyshortcuts="ArrowDown ArrowUp/);
+  });
+
+  it('applies visual focus indicator via active class on focused result', () => {
+    expect(src).toMatch(/activeIndex.*' active'/);
+  });
+
   it('does not trap Tab — lets it move to the next landmark', () => {
     expect(src).toContain('Do NOT preventDefault for Tab');
   });

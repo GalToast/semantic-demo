@@ -218,6 +218,13 @@
         const active = (resultSlice as SearchResult[])[activeIndex];
         if (active) handleResultClick(active.index);
       }
+    } else if (key === 'Escape') {
+      event.preventDefault();
+      onClear();
+      // Return focus to the search input after clearing.
+      requestAnimationFrame(() => {
+        document.getElementById('search-input')?.focus();
+      });
     }
     // Do NOT preventDefault for Tab — let Tab move to the next landmark.
   }
@@ -411,13 +418,14 @@
         tabindex="-1"
         aria-label="Search result businesses"
         aria-activedescendant={activeIndex >= 0 ? `search-result-${Number((resultSlice as SearchResult[])[activeIndex]?.index)}` : undefined}
+        aria-keyshortcuts="ArrowDown ArrowUp ArrowLeft ArrowRight Home End Enter Escape"
         onkeydown={handleContainerKeyDown}
       >
         {#each resultSlice as result, order (result.index ?? order)}
           {@const item = itemModel(result, order)}
           <div class="search-result-listitem" role="option" id={`search-result-option-${order}`} aria-selected={order === activeIndex}>
             <button
-              class={item.cardClasses}
+              class={`${item.cardClasses}${order === activeIndex ? ' active' : ''}`}
               id={`search-result-${Number(result.index)}`}
               data-index={result.index}
               data-order={order}
