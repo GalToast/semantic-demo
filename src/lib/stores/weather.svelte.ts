@@ -57,7 +57,7 @@ const INITIAL_WEATHER: WeatherData = {
  */
 export const weatherData = {
   get temperature() { return (appState.weather as WeatherData)?.temperature ?? 0; },
-  get condition() { return (appState.weather as WeatherCondition) ?? 'clear'; },
+  get condition() { return (appState.weather as WeatherData)?.condition ?? 'clear'; },
   get label() { return (appState.weather as WeatherData)?.label ?? '--'; },
   get forecast() { return (appState.weather as WeatherData)?.forecast ?? ''; },
   get updatedAt() { return (appState.weather as WeatherData)?.updatedAt ?? 0; }
