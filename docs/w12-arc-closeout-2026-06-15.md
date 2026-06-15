@@ -35,13 +35,15 @@ The sweep identified 9 W12 tickets (T1–T9), of which 7 were completed in this 
 
 ## 3. Tickets Deferred
 
-### T2 — W13 Porting Arc
+### T2 — W13 Porting Arc (LANDED via Parallel Session, 2026-06-15)
 
-`js/modules/thread-inspector-webgl.ts` (315 LOC) imports 12 state selectors from `js/state/selectors/index.ts`:
-- 11 of 12 selectors (`getNavState`, `getFocusConstellationMotifs`, `getFocusThreadSegments`, `getInspectedStrandGroup`, `getNodePositions`, `getCurrentView`, `getFocusRingTexture`, `getFocusNextCueTexture`, `getFocusBeaconTexture`, `getPinnedThreadIndex`, `getPulsePhase`) — **only `getScene` exists in src/**
-- Plus: `state` from `'../state.ts'`, `withStateMutation`, `adapter_getFocusThreadCurvePoint` from thread-inspector-adapter
+The webgl-bridge T2 porting was re-scoped to W13 in this session, but the parallel session picked it up and completed the porting:
+- `src/lib/journey/thread-inspector-webgl.ts` (15,484 bytes, 346 lines) — full port of `js/modules/thread-inspector-webgl.ts`
+- `src/lib/journey/inspected-strand-overlay-adapter.ts` (21 lines) — adapter folded
+- `src/lib/journey/route-arrival-overlay-adapter.ts` (36 lines) — adapter folded
+- `src/lib/engine/journey-webgl-bridge.ts` (8 line changes) — bridge updated to import from src/
 
-**Re-scoped:** This is a multi-day W13 porting arc, not W12 cleanup. The W13 charter (in flight via subagent) will produce a porting plan.
+**Verified:** svelte-check 0 errors, 0 warnings after the T2 porting. **T2 effectively done** in 2026-06-15; the W13 charter (separate work) will cover the broader 231 state-selectors porting.
 
 ### T9 — Branch Cleanup (Pending Parallel Session)
 
@@ -60,7 +62,7 @@ W12-T8 surfaced a real type lie in `src/lib/journey/neighborhood.ts:getNextWalkC
 - **Consumer expects:** Full `ThreadCandidate | null` (12+ fields)
 - **Workaround in adapter-deps.ts:** Cast `as ThreadCandidate | null` acknowledges the lie
 
-Fixing this requires the W13 state-selectors porting arc (the function depends on `state` which still has legacy shape).
+Fixing this requires the W13 state-selectors porting arc (the function depends on `state` which still has legacy shape). The W13 charter (in flight) proposes fixing this in W13-T5 as part of the legacy retirement.
 
 ## 5. Subagent Doctrine — Final Validation
 
