@@ -174,10 +174,10 @@ subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index: number }) => {
   const manifest = buildNeighborhoodManifest(index, [], {
     displayLimit: getSemanticThreadDisplayLimit()
   });
-  const candidateIndices = manifest?.candidateIndices ?? [];
+  const candidateIndices: number[] = [...(manifest?.candidateIndices ?? [])];
   const threadSource = manifest && manifest.anchorEdgeCount > 0 ? 'semantic' : 'geometric-fallback';
-  const threadReasonByIndex = new Map(
-    candidateIndices.map((candidateIndex) => [
+  const threadReasonByIndex = new Map<number, string>(
+    candidateIndices.map((candidateIndex: number) => [
       candidateIndex,
       threadSource === 'semantic' ? 'semantic neighbor' : 'geometric proximity'
     ])
@@ -204,7 +204,7 @@ subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index: number }) => {
     };
     nav.trailSeedIndex = index;
     nav.trailNeighborIndices = [...candidateIndices];
-    nav.threadCandidates = candidateIndices.map((candidateIndex) => ({
+    nav.threadCandidates = candidateIndices.map((candidateIndex: number) => ({
       index: candidateIndex,
       source: threadSource,
       reason: threadReasonByIndex.get(candidateIndex) ?? 'nearby business relationship'
@@ -311,14 +311,14 @@ subscribe(EVENTS.URL_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => 
  * SEARCH_UI_SYNC_REQUESTED is published when search result DOM elements
  * need their click/hover interactions rebound.
  *
- * TODO: legacy function — engine bridge not yet wired.
+ * TODO (Wave 2): legacy function — engine bridge not yet wired.
  * The Svelte search orchestration module (src/lib/search/orchestration.ts)
  * exports bindSearchResultInteractions, but it has a broken transitive
  * dependency (./results-ui does not exist). Once that file is created or
  * the import is resolved, replace this no-op with the imported function.
  */
 subscribe(EVENTS.SEARCH_UI_SYNC_REQUESTED, () => {
-  // TODO: legacy function — engine bridge not yet wired.
+  // TODO (Wave 2): legacy function — engine bridge not yet wired.
   // const { resultsEl, statusEl, results, renderContext } = payload as any;
   // bindSearchResultInteractions(resultsEl, statusEl, results, renderContext);
 });
@@ -350,6 +350,6 @@ subscribe(EVENTS.SEMANTIC_LANE_STATE_REQUESTED, (payload: Record<string, unknown
  * src/lib/, replace this no-op with the imported function.
  */
 subscribe(EVENTS.TOOLTIP_HIDE_REQUESTED, () => {
-  // TODO: legacy function — engine bridge not yet wired.
+  // TODO (Wave 2): legacy function — engine bridge not yet wired.
   // hideTooltip();
 });

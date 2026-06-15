@@ -75,7 +75,7 @@ const TODO_REGEX = /\bTODO\b/;
 //
 // All 10 S6-arc TODOs resolved as of 2026-06-13. Baseline is now 0;
 // any new TODO without a ticket will fail this test.
-const APPROVED_BASELINE = 3; // Bumped from 0 on 2026-06-15 (W11-T8): 3 TODOs in src/lib/orchestration/triggers.ts are W11-T6 in-flight work that have not yet landed a W11-T6 reference. The W11-T6 worker should add the reference when they revisit, or this baseline should be revisited in a future ticket.
+const APPROVED_BASELINE = 0; // W11-T6 Wave 2: TODOs in triggers.ts now carry (Wave 2) ticket refs. Reset to 0 on 2026-06-15.
 
 interface TodoUse {
     file: string;
