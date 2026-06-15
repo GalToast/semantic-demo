@@ -1,13 +1,72 @@
 /**
- * data-worker.js
+ * data-worker.ts
  *
  * Background worker for fetching and parsing large datasets.
  * Prevents main-thread blocking during application loading.
  */
 
+// ── Types ───────────────────────────────────────────────────────────────────
+
+interface PointRecord {
+    cluster: number;
+    name: string | null;
+    what: string;
+    city: string;
+    lead_id: string | null;
+    lat: number | null;
+    lng: number | null;
+    website: string | null;
+    email: string | null;
+    phone: string | null;
+    trivia: string | null;
+    status: string;
+    naics: string | null;
+}
+
+interface LoadRecordsResult {
+    points: PointRecord[];
+    pointIndexByLeadId: Record<string, number>;
+    positionsBuffer: Float32Array;
+    clustersBuffer: Uint16Array;
+}
+
+interface NeighborEntry {
+    leadId: string;
+    name: string | null;
+    city: string | null;
+    status: string | null;
+    signalScore: number;
+    neighbors: Array<{
+        leadId: string;
+        score: number;
+        semanticScore: number;
+        sameCity: boolean;
+        sameStatus: boolean;
+        bridgeScore: number;
+        signalScore: number;
+        threadType: string;
+        relationshipRole: string;
+        relationshipAxis: string;
+        roleReason: string;
+        reason: string;
+    }>;
+}
+
+interface LoadThreadsResult {
+    neighborEntries: Array<[string, NeighborEntry]>;
+    artifactName: string | null;
+    bundle: unknown;
+}
+
+interface AttemptConfig {
+    cache?: string;
+}
+
+// ── Worker body ─────────────────────────────────────────────────────────────
+
 let _activeRequestId = 0;
 
-self.onmessage = async (event) => {
+self.onmessage = async (event: MessageEvent) => {
     const { type, payload } = event.data;
     const requestId = ++_activeRequestId;
 
@@ -25,24 +84,26 @@ self.onmessage = async (event) => {
             if (requestId !== _activeRequestId) return;
             self.postMessage({ type: 'LOAD_THREADS_SUCCESS', payload: result });
         }
-    } catch (error) {
+    } catch (error: unknown) {
         if (requestId !== _activeRequestId) return;
+        const err = error instanceof Error ? error : new Error(String(error));
         self.postMessage({
             type: 'ERROR',
-            payload: { message: error.message, stack: error.stack }
+            payload: { message: err.message, stack: err.stack }
         });
     }
 };
 
-async function handleLoadRecords({ url }) {
+async function handleLoadRecords({ url }: { url: string }): Promise<LoadRecordsResult> {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Failed to fetch records: ${response.status}`);
 
-    let raw;
+    let raw: unknown;
     try {
         raw = await response.json();
-    } catch (jsonErr) {
-        throw new Error(`Invalid JSON in data.dat: ${jsonErr.message}`, { cause: jsonErr });
+    } catch (jsonErr: unknown) {
+        const msg = jsonErr instanceof Error ? jsonErr.message : String(jsonErr);
+        throw new Error(`Invalid JSON in data.dat: ${msg}`, { cause: jsonErr });
     }
     if (!raw || !Array.isArray(raw)) throw new Error('Invalid records payload');
 
@@ -50,11 +111,11 @@ async function handleLoadRecords({ url }) {
     const positionsBuffer = new Float32Array(count * 3);
     const clustersBuffer = new Uint16Array(count);
 
-    const points = raw.map((p, i) => {
+    const points: PointRecord[] = raw.map((p: unknown[], i: number) => {
         const x = p.length > 0 ? parseFiniteNumber(p[0]) : 0;
         const y = p.length > 1 ? parseFiniteNumber(p[1]) : 0;
         const z = p.length > 2 ? parseFiniteNumber(p[2]) : 0;
-        const cluster = p.length > 3 ? (parseInt(p[3], 10) || 0) : 0;
+        const cluster = p.length > 3 ? (parseInt(p[3] as string, 10) || 0) : 0;
 
         positionsBuffer[i * 3] = x;
         positionsBuffer[i * 3 + 1] = y;
@@ -66,7 +127,7 @@ async function handleLoadRecords({ url }) {
             name: p.length > 4 ? cleanOptionalValue(p[4]) : null,
             what: p.length > 5 ? cleanOptionalValue(p[5]) || 'Montgomery County business' : 'Montgomery County business',
             city: p.length > 6 ? cleanOptionalValue(p[6]) || 'Montgomery County' : 'Montgomery County',
-            lead_id: p.length > 7 ? p[7] : null,
+            lead_id: p.length > 7 ? p[7] as string : null,
             lat: p.length > 8 ? parseFiniteNumber(p[8]) : null,
             lng: p.length > 9 ? parseFiniteNumber(p[9]) : null,
             website: p.length > 10 ? cleanOptionalValue(p[10]) : null,
@@ -81,7 +142,7 @@ async function handleLoadRecords({ url }) {
         };
     });
 
-    const pointIndexByLeadId = {};
+    const pointIndexByLeadId: Record<string, number> = {};
     points.forEach((point, index) => {
         if (point.lead_id !== null && point.lead_id !== undefined && point.lead_id !== '') {
             pointIndexByLeadId[String(point.lead_id)] = index;
@@ -91,18 +152,21 @@ async function handleLoadRecords({ url }) {
     return { points, pointIndexByLeadId, positionsBuffer, clustersBuffer };
 }
 
-async function handleLoadThreads({ urls, attemptConfigs }, requestId) {
-    let bundle = null;
-    let loadedArtifactName = null;
-    let lastError = null;
+async function handleLoadThreads(
+    { urls, attemptConfigs }: { urls: string[]; attemptConfigs: (string | AttemptConfig)[] },
+    requestId: number
+): Promise<LoadThreadsResult | null> {
+    let bundle: unknown = null;
+    let loadedArtifactName: string | null = null;
+    let lastError: unknown = null;
 
     outer: for (const url of urls) {
         if (requestId !== _activeRequestId) return null;
         const artifactName = artifactNameFromUrl(url);
         for (const config of attemptConfigs) {
             try {
-                const cacheMode = typeof config === 'string' ? config : config?.cache;
-                const response = await fetch(url, cacheMode ? { cache: cacheMode } : undefined);
+                const cacheMode = typeof config === 'string' ? config : (config as AttemptConfig)?.cache;
+                const response = await fetch(url, cacheMode ? { cache: cacheMode as RequestCache } : undefined);
                 if (!response.ok) throw new Error(`Thread artifact unavailable (${response.status})`);
                 if (requestId !== _activeRequestId) return null;
                 bundle = await response.json();
@@ -119,15 +183,18 @@ async function handleLoadThreads({ urls, attemptConfigs }, requestId) {
     if (!bundle) throw lastError || new Error('No thread artifacts could be loaded');
 
     // Transform node map to entries for Map reconstruction on main thread
-    const neighborEntries = [];
-    if (bundle.nodes && typeof bundle.nodes === 'object') {
-        Object.entries(bundle.nodes).forEach(([fallbackLeadId, node]) => {
-            const leadId = normalizeLeadId(node?.lead_id ?? fallbackLeadId);
+    const neighborEntries: Array<[string, NeighborEntry]> = [];
+    const bundleObj = bundle as { nodes?: Record<string, unknown> };
+    if (bundleObj.nodes && typeof bundleObj.nodes === 'object') {
+        Object.entries(bundleObj.nodes).forEach(([fallbackLeadId, node]) => {
+            const n = node as Record<string, unknown>;
+            const leadId = normalizeLeadId((n?.lead_id as string) ?? fallbackLeadId);
             if (!leadId) return;
 
-            const neighbors = Array.isArray(node?.neighbors)
-                ? node.neighbors.map((neighbor) => ({
-                    leadId: normalizeLeadId(neighbor?.lead_id),
+            const rawNeighbors = Array.isArray(n?.neighbors) ? n.neighbors as Record<string, unknown>[] : [];
+            const neighbors = rawNeighbors
+                .map((neighbor) => ({
+                    leadId: normalizeLeadId(neighbor?.lead_id as string) as string,
                     score: Number(neighbor?.score ?? 0),
                     semanticScore: Number(neighbor?.semantic_score ?? 0),
                     sameCity: Boolean(neighbor?.same_city),
@@ -139,15 +206,15 @@ async function handleLoadThreads({ urls, attemptConfigs }, requestId) {
                     relationshipAxis: String(neighbor?.relationship_axis || '') || '',
                     roleReason: String(neighbor?.role_reason || '') || '',
                     reason: String(neighbor?.reason || '') || 'semantic neighbor'
-                })).filter((neighbor) => neighbor.leadId)
-                : [];
+                }))
+                .filter((neighbor) => neighbor.leadId);
 
             neighborEntries.push([leadId, {
                 leadId,
-                name: node?.name || null,
-                city: node?.city || null,
-                status: node?.status || null,
-                signalScore: Number(node?.signal_score ?? 0),
+                name: (n?.name as string) || null,
+                city: (n?.city as string) || null,
+                status: (n?.status as string) || null,
+                signalScore: Number(n?.signal_score ?? 0),
                 neighbors
             }]);
         });
@@ -158,11 +225,11 @@ async function handleLoadThreads({ urls, attemptConfigs }, requestId) {
 
 // ── UTILS ───────────────────────────────────────────────────────────────────
 
-const NULLISH_SENTINELS = new Set([
+const NULLISH_SENTINELS: ReadonlySet<string> = new Set([
     'unknown', 'not found', 'none', 'none detected', 'n/a', 'null'
 ]);
 
-function cleanOptionalValue(value) {
+function cleanOptionalValue(value: unknown): string | null {
     if (value === undefined || value === null || value === '') return null;
     const text = String(value).trim();
     if (!text || text === 'NULL' || NULLISH_SENTINELS.has(text.toLowerCase())) {
@@ -171,18 +238,18 @@ function cleanOptionalValue(value) {
     return text;
 }
 
-function parseFiniteNumber(value) {
-    const num = parseFloat(value);
+function parseFiniteNumber(value: unknown): number | null {
+    const num = parseFloat(value as string);
     return Number.isFinite(num) ? num : null;
 }
 
-function normalizeLeadId(id) {
+function normalizeLeadId(id: unknown): string | null {
     if (id === null || id === undefined) return null;
     const s = String(id).trim();
     return s.length > 0 ? s : null;
 }
 
-function artifactNameFromUrl(url) {
+function artifactNameFromUrl(url: string): string {
     try {
         return new URL(url).pathname.split('/').pop() || url.split('?')[0];
     } catch {

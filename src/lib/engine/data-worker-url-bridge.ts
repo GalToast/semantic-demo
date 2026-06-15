@@ -13,4 +13,4 @@
  *
  * Special case documented: 2026-06-14, Bridge-Debt Batch 3.
  */
-export { default as workerUrl } from '../../../js/workers/data-worker.js?worker&url';
+export { default as workerUrl } from '../../../js/workers/data-worker.ts?worker&url';

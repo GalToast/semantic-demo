@@ -48,29 +48,30 @@ import {
 } from '@lib/engine/three-postprocessing';
 import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
+import { appState } from '@lib/state/app.svelte';
 
 // ── Static ../../../js/* imports (COLD — init-only, consumed by ensureModules) ──
-import * as viewControllerMod from '../../../js/modules/view-controller';
-import * as mapStateMod from '../../../js/modules/map-state';
-import * as uiFeedbackMod from '../../../js/modules/ui-feedback';
-import * as mapFlatteningMod from '../../../js/modules/map-flattening-layout';
+import * as viewControllerMod from '@lib/orchestration/view-controller';
+import * as mapStateMod from '@lib/engine/map-state';
+import * as uiFeedbackMod from '@lib/engine/ui-feedback-bridge';
+import * as mapFlatteningMod from '@lib/engine/map-flattening-layout-bridge';
 import * as webglRestoreMod from '@lib/utils/webgl-restore-adapter';
-import * as focusAnchorMod from '../../../js/modules/focus-anchor-indicator';
-import * as audioScapeMod from '../../../js/modules/audio-scape';
-import * as eventBindingsMod from '../../../js/modules/event-bindings';
-import * as loadingUiMod from '../../../js/modules/loading-ui';
+import * as focusAnchorMod from '@lib/engine/focus-anchor-indicator-bridge';
+import * as audioScapeMod from '@lib/engine/audio-scape-bridge';
+import * as eventBindingsMod from '@lib/engine/event-bindings-bridge';
+import * as loadingUiMod from './loading-ui-bridge';
 
 // ── Static ../../../js/* imports (HOT — render-loop, consumed by ensureModules) ──
-import * as stateMod from '../../../js/state';
-import * as clusterLabelsMod from '../../../js/modules/cluster-labels';
-import * as focusPocketMod from '../../../js/modules/focus-pocket';
-import * as sceneRevealMod from '../../../js/modules/scene-reveal';
-import * as cameraControlsMod from '../../../js/modules/camera-controls';
-import * as myceliumEngineMod from '../../../js/modules/mycelium-engine';
-import * as inspectedStrandMod from '../../../js/modules/inspected-strand-overlay-adapter';
-import * as routeArrivalMod from '../../../js/modules/route-arrival-overlay-adapter';
-import * as threeSearchAnimationsMod from '../../../js/modules/three-search-animations';
-import * as threeInteractionVisualsMod from '../../../js/modules/three-interaction-visuals';
+import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge';
+import * as clusterLabelsMod from '@lib/engine/cluster-labels-bridge';
+import * as focusPocketMod from '@lib/engine/focus-pocket-bridge';
+import * as sceneRevealMod from '@lib/engine/scene-reveal-bridge';
+import * as cameraControlsMod from '@lib/engine/camera-controls';
+import * as myceliumEngineMod from '@lib/engine/mycelium-engine-bridge';
+import * as inspectedStrandMod from '@lib/engine/inspected-strand-overlay-bridge';
+import * as routeArrivalMod from '@lib/engine/route-arrival-overlay-bridge';
+import * as threeSearchAnimationsMod from '@lib/engine/three-search-animations-bridge';
+import * as threeInteractionVisualsMod from '@lib/engine/three-interaction-visuals-bridge';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 
@@ -237,8 +238,12 @@ let _loaded = false;
 function _ensureModules(): void {
   if (_loaded) return;
   try {
-    _state = stateMod.state as unknown as LegacyState;
-    _withStateMutation = stateMod.withStateMutation as unknown as WithStateMutationFn;
+    _state = legacyState as unknown as LegacyState;
+    if (typeof window !== 'undefined') {
+      (window as unknown as { __LEGACY_APP_STATE__?: unknown }).__LEGACY_APP_STATE__ = legacyState;
+      (window as unknown as { __refreshTestCompatState__?: () => void }).__refreshTestCompatState__?.();
+    }
+    _withStateMutation = withStateMutation as unknown as WithStateMutationFn;
     _viewController = viewControllerMod as unknown as ViewControllerModule;
     _clusterLabels = clusterLabelsMod as unknown as ClusterLabelsModule;
     _focusPocket = focusPocketMod as unknown as FocusPocketModule;
@@ -457,12 +462,10 @@ interface ScenePerformanceTimings {
 }
 
 function sampleScenePerformance(frameMs: number, timings: ScenePerformanceTimings = {}) {
-  if (!_state) return;
-  _withStateMutation?.(() => {
-    if (!_state) return;
-    const diagnostics = _state.scenePerformanceDiagnostics;
+  appState.withMutation(() => {
+    const diagnostics = appState.scenePerformanceDiagnostics;
     diagnostics.active = !!(
-      _state.renderer && _state.scene && _state.camera && _state.currentView === 'galaxy'
+      appState.renderer && appState.scene && appState.camera && appState.currentView === 'galaxy'
     );
     diagnostics.reason = diagnostics.active ? 'sampling' : 'inactive-view';
     diagnostics.sampleCount = Math.min(600, (diagnostics.sampleCount || 0) + 1);
@@ -477,12 +480,16 @@ function sampleScenePerformance(frameMs: number, timings: ScenePerformanceTiming
     diagnostics.maxUpdateMs = Math.max(timings.updateMs || 0, (diagnostics.maxUpdateMs || 0) * SCENE_PERF_EMA_DECAY);
     diagnostics.avgRenderMs = smoothDiagnosticValue(diagnostics.avgRenderMs || 0, timings.renderMs || 0, diagnostics.sampleCount);
     diagnostics.maxRenderMs = Math.max(timings.renderMs || 0, (diagnostics.maxRenderMs || 0) * SCENE_PERF_EMA_DECAY);
-    diagnostics.renderables = getSceneRenderableDiagnostics();
+    (diagnostics as any).renderables = getSceneRenderableDiagnostics();
+
+    if (_state) {
+      Object.assign(_state.scenePerformanceDiagnostics, diagnostics);
+    }
   });
 }
 
 export function updateCameraViewportOffset() {
-  const camera = webglContext.camera || _state?.camera;
+  const camera = (webglContext.camera || appState.camera) as any;
   if (!camera) return;
   const panel = document.querySelector('.info-panel');
   const width = window.innerWidth;
@@ -519,12 +526,14 @@ export function initThreeJS() {
     (SCENE_ATMOSPHERE as any).fogDensity ?? 0.62,
   );
   webglContext.scene = scene;
+  appState.scene = scene;
   if (_state) _state.scene = scene;
 
   const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
   camera.position.set(2.05, 1.55, 2.75);
   camera.lookAt(0, 0, 0);
   webglContext.camera = camera;
+  (appState as any).camera = camera;
   if (_state) _state.camera = camera;
 
   let renderer: THREE.WebGLRenderer;
@@ -560,6 +569,7 @@ export function initThreeJS() {
   renderer.domElement.setAttribute('role', 'application');
   container.appendChild(renderer.domElement);
   webglContext.renderer = renderer;
+  appState.renderer = renderer as any;
   if (_state) _state.renderer = renderer;
 
   renderer.domElement.addEventListener('webglcontextlost', (event) => {
@@ -588,15 +598,17 @@ export function initThreeJS() {
   controls.enablePan = true;
   controls.panSpeed = CONFIG.ORBIT_PAN_SPEED_DEFAULT;
   webglContext.controls = controls;
+  appState.controls = controls as any;
   if (_state) _state.controls = controls;
 
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+    appState.autoRotate = false;
     if (_state) _state.autoRotate = false;
     const rotateBtn = document.getElementById('btn-rotate');
     if (rotateBtn) rotateBtn.setAttribute('aria-pressed', 'false');
   }
 
-  controls.autoRotate = !!(_state?.autoRotate && !_state?.autoRotateSuspended);
+  controls.autoRotate = !!((appState.autoRotate || _state?.autoRotate) && !(appState.autoRotateSuspended || _state?.autoRotateSuspended));
   controls.autoRotateSpeed = CONFIG.AUTO_ROTATE_BASE_SPEED;
   controls.addEventListener('start', () => {
     _cameraControls?.releaseFocusCameraAssist('user-control');
@@ -610,19 +622,27 @@ export function initThreeJS() {
   hemiLight.position.set(0, 20, 0);
   scene.add(hemiLight);
   webglContext.hemiLight = hemiLight;
+  (appState as any).hemiLight = hemiLight;
   if (_state) _state.hemiLight = hemiLight;
 
   const dirLight = new THREE.DirectionalLight(0xffffff, 0);
   dirLight.position.set(5, 5, 5);
   scene.add(dirLight);
   webglContext.dirLight = dirLight;
+  (appState as any).dirLight = dirLight;
   if (_state) _state.dirLight = dirLight;
 
-  _withStateMutation?.(() => {
-    if (!_state) return;
-    _state.scenePerformanceDiagnostics.active = true;
-    _state.scenePerformanceDiagnostics.renderer = support.renderer;
-    _state.scenePerformanceDiagnostics.vendor = support.vendor;
+  appState.withMutation(() => {
+    const diagnostics = appState.scenePerformanceDiagnostics as any;
+    diagnostics.active = true;
+    diagnostics.renderer = support.renderer;
+    diagnostics.vendor = support.vendor;
+
+    if (_state) {
+      _state.scenePerformanceDiagnostics.active = true;
+      (_state.scenePerformanceDiagnostics as any).renderer = support.renderer;
+      (_state.scenePerformanceDiagnostics as any).vendor = support.vendor;
+    }
   });
 
   const glowGeo = new THREE.SphereGeometry(3.15, 32, 16);
@@ -652,6 +672,11 @@ export function initThreeJS() {
   scene.add(refSphere);
 
   createPoints();
+  appState.pointsMesh = webglContext.pointsMesh;
+  appState.pointsMaterial = webglContext.pointsMaterial;
+  appState.nodeSporeMesh = webglContext.nodeSporeMesh;
+  appState.nodeSporeHitMesh = webglContext.nodeSporeHitMesh;
+  appState.nodeSporeMaterial = webglContext.nodeSporeMaterial;
   if (_state) {
     _state.pointsMesh = webglContext.pointsMesh;
     _state.pointsMaterial = webglContext.pointsMaterial;
@@ -660,6 +685,11 @@ export function initThreeJS() {
     _state.nodeSporeMaterial = webglContext.nodeSporeMaterial;
   }
   createMycelium();
+  appState.myceliumGroup = webglContext.myceliumGroup;
+  appState.myceliumCoreLines = webglContext.myceliumCoreLines;
+  appState.myceliumWispyLines = webglContext.myceliumWispyLines;
+  appState.myceliumBridgeLines = webglContext.myceliumBridgeLines;
+  (appState as any).myceliumConnectionPairs = webglContext.myceliumConnectionPairs;
   if (_state) {
     _state.myceliumGroup = webglContext.myceliumGroup;
     _state.myceliumCoreLines = webglContext.myceliumCoreLines;

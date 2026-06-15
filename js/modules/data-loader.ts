@@ -26,7 +26,7 @@ function getWorker(): Worker | null {
     if (_dataWorker) return _dataWorker;
 
     try {
-        _dataWorker = new Worker(buildAssetUrl('js/workers/data-worker.js?v=20260609'));
+        _dataWorker = new Worker(buildAssetUrl('js/workers/data-worker.ts?v=20260615'));
         return _dataWorker;
     } catch (err) {
         console.warn('Web Worker instantiation failed, using main-thread fallback.', err);

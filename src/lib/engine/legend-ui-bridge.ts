@@ -1,9 +1,8 @@
 /**
  * @lib/engine/legend-ui-bridge.ts - Bridge adapter for legacy legend UI module.
  *
- * Re-exports the subset of js/modules/legend-ui consumed by
- * src/components/Legend.svelte, keeping the direct legacy import behind
- * the engine boundary.
+ * Re-exports the subset of Svelte-side legend UI functions, keeping
+ * the direct legacy import behind the engine boundary.
  */
 
-export { initLegendEventBusSubscriptions } from '../../../js/modules/legend-ui';
+export { initLegendEventBusSubscriptions } from '@lib/journey/legend-ui';
