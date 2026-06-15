@@ -18,7 +18,7 @@ import { updateTime, isCompactSearchViewport } from './utils/ui-presentation.ts'
 import { pointHasGeocode } from './utils/geo-data.ts';
 import { initJourneyLifecycleAdapter } from './journey-lifecycle-adapter.ts';
 import { initClusterFilterAdapter } from './cluster-filter-adapter.ts';
-import { initJourneyCompassAdapter, updateJourneyCompass } from './journey-compass-controller.ts';
+import { initJourneyCompassAdapter, updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge';
 import { initJourneySelectedCard, initJourneySelectedCardAdapter } from './journey-selected-card.ts';
 import { initThreadInspectorAdapter } from './thread-inspector-adapter.ts';
 import { initViewControllerAdapter } from './view-controller.ts';
