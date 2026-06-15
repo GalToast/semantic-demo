@@ -6,12 +6,10 @@
  * bridge until those scene mutations are fully ported to src/.
  */
 
+import { state as legacyState, withStateMutation } from '../../../js/state';
+import { focusOnNode } from '@lib/engine/camera-controls';
+import { search, clearSearch } from '../../../js/modules/search-state';
 import {
-  state as legacyState,
-  withStateMutation,
-  focusOnNode,
-  search,
-  clearSearch,
   switchView,
   setTrailDepth,
   setSemanticDiveMode,
@@ -19,15 +17,16 @@ import {
   resetExperienceState,
   resetExplorationFocus,
   refreshCompositionState,
-  setTrailFromSeed,
-  traverseNeighbor,
+} from '../../../js/modules/lifecycle';
+import { setTrailFromSeed } from '../../../js/modules/journey-neighborhood';
+import { traverseNeighbor, walkThreadNeighbor } from '../../../js/modules/journey-thread-settler';
+import {
   inspectThreadNeighbor,
   pinThreadNeighbor,
   unpinThreadInspection,
   clearThreadInspection,
-  walkThreadNeighbor,
-  showSemanticThreadsDetail,
-} from '@lib/engine/window-actions-bridge';
+} from '../../../js/modules/thread-inspector';
+import { showSemanticThreadsDetail } from '../../../js/modules/connection-analysis';
 import * as semanticGuideModule from '@lib/journey/semantic-guide';
 import {
   resetExperienceState as resetSvelteExperienceState,
