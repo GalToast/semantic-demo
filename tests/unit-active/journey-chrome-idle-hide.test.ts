@@ -103,8 +103,11 @@ describe('JourneyChrome idle-hide guard (UI-1)', () => {
 
   it('hides when both journey.phase and compass.phase are idle/overview', () => {
     const state = journeyStore();
-    // In the consolidated state, mode defaults to 'overview'
-    expect(state.phase).toBe('overview');
+    // Post-W11-T4 default: mode starts as 'idle' (the W11-T4 migration
+    // tightened the initial state from 'overview' to 'idle' so the
+    // chrome is hidden on first paint without waiting for a phase
+    // promotion). Compass still defaults to 'idle'.
+    expect(state.phase).toBe('idle');
     expect(state.compass?.phase).toBe('idle');
 
     const isJourneyIdle =

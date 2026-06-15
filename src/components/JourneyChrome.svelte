@@ -58,10 +58,11 @@
 
   // ── Idle gate: hide chrome when journey and compass are both idle ───────
   // Per M3 audit (UI-1): journey-chrome was visible in idle state,
-  // duplicating content from #journey-compass. Hidden when both
-  // data-journey-phase and data-journey-compass are 'idle'.
+  // duplicating content from #journey-compass. Hidden when the journey phase
+  // is idle or overview and the compass phase is idle.
   const isJourneyIdle = $derived(
-    ((journeySnapshot.phase ?? 'idle') as string) === 'idle' &&
+    (((journeySnapshot.phase ?? 'idle') as string) === 'idle' ||
+      ((journeySnapshot.phase ?? 'overview') as string) === 'overview') &&
     ((journeySnapshot.compass?.phase ?? 'idle') as string) === 'idle'
   );
 

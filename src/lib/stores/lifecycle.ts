@@ -356,12 +356,19 @@ export function getCurrentEmptyQuery(): string | null {
 /**
  * Record an empty search query so the UI can show suggestions.
  * Matches the legacy `recordEmptySearch` in lifecycle-search-sync.js.
+ *
+ * Note (A3-2 fix, 2026-06-15): do NOT nullify `summary` here. `setSearchResults([])`
+ * has just populated it with `{query, resultCount: 0, resultIndices: []}`,
+ * which the elaborate `search-empty-state` branch in `SearchResults.svelte:351-360`
+ * reads via `$searchState.summary?.query` to render. Nullifying here made
+ * `$searchState.summary` (subscribed to the writable) diverge from
+ * `appState.currentSearchSummary` and prevented the empty state from firing
+ * after the static-dev fallback returned zero results.
  */
 export function recordEmptySearch(query?: string): void {
   searchStore.update(s => ({
     ...s,
     currentEmptyQuery: query ?? null,
-    summary: null,
   }));
 }
 

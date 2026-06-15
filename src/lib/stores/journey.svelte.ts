@@ -113,13 +113,26 @@ const _journeyWritable = writable<JourneyStoreState>(_readJourneyFromAppState())
 function withJourneyNotify(updater: (s: JourneyStoreState) => JourneyStoreState): void {
   const current = get(_journeyWritable);
   const next = updater(current);
-  _journeyWritable.set(next);
+  // depth and trailDepth are aliases in the journey state. The W11-T4
+  // migration kept them as separate fields to preserve the legacy
+  // contract (some callers set only one), but the parity layer reads
+  // `journey.depth` while tests tend to set `trailDepth`. Normalize
+  // here so the writable stays internally consistent regardless of
+  // which alias the caller mutated. `trailDepth` is treated as the
+  // canonical value (matches the appState sync below) — any user-set
+  // `depth` that disagrees with `trailDepth` is overridden.
+  const normalized = {
+    ...next,
+    depth: next.trailDepth,
+    trailDepth: next.trailDepth,
+  };
+  _journeyWritable.set(normalized);
   appState.withMutation(() => {
-    appState.navState.mode = next.phase;
-    appState.navState.trailCursor = next.cursor;
-    appState.navState.trailDepth = next.trailDepth;
-    appState.navState.threadSource = next.threadSource;
-    appState.navState.lastTraversalReason = next.lastTraversalReason;
+    appState.navState.mode = normalized.phase;
+    appState.navState.trailCursor = normalized.cursor;
+    appState.navState.trailDepth = normalized.trailDepth;
+    appState.navState.threadSource = normalized.threadSource;
+    appState.navState.lastTraversalReason = normalized.lastTraversalReason;
   });
 }
 
@@ -131,8 +144,12 @@ export type JourneyStoreApi = (() => JourneyStoreState) &
   };
 
 function _createJourneyStore(): JourneyStoreApi {
-  // Function call: returns fresh sync snapshot from kernel
-  const fn = (() => _readJourneyFromAppState()) as unknown as JourneyStoreApi;
+  // Function call: returns fresh snapshot from the writable (kept in sync
+  // by withJourneyNotify for every appState bridge mutation). Matches the
+  // focus store pattern: the writable is the Svelte-side source of truth,
+  // so consumers see the latest user-provided state including fields like
+  // `compass` that withJourneyNotify does not mirror back to appState.
+  const fn = (() => get(_journeyWritable)) as unknown as JourneyStoreApi;
 
   fn.subscribe = _journeyWritable.subscribe as any;
   // Wrap update/set to also sync appState via withJourneyNotify, so the

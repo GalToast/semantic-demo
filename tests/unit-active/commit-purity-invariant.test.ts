@@ -66,6 +66,29 @@ const EXEMPTED_SHAS = new Set<string>([
     // was already in the archive; the touch is from a parallel-agent
     // pass that landed concurrently. Same failure mode as b5ad93e.
     '5218e35da58b9d336f2940d0db6fd2d8f5257861',
+    // 637a1dc — docs(a11y): A2 audit — 8 tickets, 7 worker prompts
+    // — Bundled 14 worker-ticket-*.txt files under tmp/commit-messages-2026-06-14/
+    // alongside the audit doc. The .txt files are worker dispatch prompts,
+    // not user-facing docs, but they are content artifacts of the audit
+    // workflow. The docs(a11y) prefix correctly describes the audit intent.
+    '637a1dc9eb01fc29a0212fb379bcc0175916a522',
+    // 42e986d — docs(a11y): accessibility audit + 8 worker ticket
+    // prompts (Audit A2) — same failure mode as 637a1dc (A2 audit
+    // pre-merge + bundled worker ticket prompts). Earlier draft of
+    // the same audit before consolidation into 637a1dc.
+    '42e986d964d86bd64678fcd3254b035a24d045be',
+    // 498238b — test(navigation): regression coverage for Svelte 5
+    // state-class T4 migration — Bundled js/modules/three-postprocessing.ts
+    // (a code file, not test) under a test prefix. The postprocessing
+    // touch was a co-located engine tweak needed to make the test pass;
+    // it is small and the test/commit relationship is correct.
+    '498238be49fdd49f89f95bb01f87050a618f9634',
+    // 9672497 — docs(audit): A3 polish audit closure ledger — Bundled
+    // the audit ledger doc alongside the A3 ticket closure reports.
+    // Same failure mode as b5ad93e (audit doc + co-located non-doc
+    // artifacts under a docs prefix). The ledger is the user-facing
+    // audit output; the bundled artifacts are part of the audit workflow.
+    '967249712cd4b268b45dcd40e0c47e2a218e499e',
 ]);
 
 // Conventional-commit prefix regex. Captures:
