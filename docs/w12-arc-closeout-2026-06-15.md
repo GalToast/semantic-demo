@@ -37,13 +37,21 @@ The sweep identified 9 W12 tickets (T1–T9), of which 7 were completed in this 
 
 ### T2 — W13 Porting Arc (LANDED via Parallel Session, 2026-06-15)
 
-The webgl-bridge T2 porting was re-scoped to W13 in this session, but the parallel session picked it up and completed the porting:
-- `src/lib/journey/thread-inspector-webgl.ts` (15,484 bytes, 346 lines) — full port of `js/modules/thread-inspector-webgl.ts`
+(Continued below)
 - `src/lib/journey/inspected-strand-overlay-adapter.ts` (21 lines) — adapter folded
 - `src/lib/journey/route-arrival-overlay-adapter.ts` (36 lines) — adapter folded
 - `src/lib/engine/journey-webgl-bridge.ts` (8 line changes) — bridge updated to import from src/
 
 **Verified:** svelte-check 0 errors, 0 warnings after the T2 porting. **T2 effectively done** in 2026-06-15; the W13 charter (separate work) will cover the broader 231 state-selectors porting.
+
+### W13-T1 (Timer Retirement) — IN FLIGHT via Parallel Session
+
+The parallel session started W13-T1 (timer retirement, zero-risk per the W13 charter) and is in the working tree:
+- `js/state/selectors/timers.js` — deleted (48 LOC)
+- `js/state/selectors/index.ts` — `export * from './timers.js'` removed
+- `js/modules/thread-inspector.ts` — 10 `getCanvasThreadInspectionClearTimer()` calls replaced with `state.canvasThreadInspectionClearTimer` direct access; import removed
+
+**Verified:** svelte-check 0 errors, 0 warnings with these changes. Will land when the parallel session commits their W11-T7 + W13-T1 batch.
 
 ### T9 — Branch Cleanup (Pending Parallel Session)
 
