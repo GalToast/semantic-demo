@@ -98,7 +98,7 @@ export function getDataLoadState() { return _dataLoadState; }
 
 /**
  * Four-phase loading progression: records → scene → restore → launch.
- * The LoadingOverlay and parity-attrs layer read from this store.
+ * The LoadingOverlay and parity-attrs.svelte.ts layer read from this store.
  */
 export { loadingPhaseStore, graphicsModeStore };
 export function getLoadingPhaseStore() { return get(loadingPhaseStore); }

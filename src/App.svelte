@@ -43,7 +43,7 @@
   import { initData } from '@lib/data-store';
   import { state as legacyState } from '@lib/engine/state-bridge';
   import { appState } from '@lib/state/app.svelte.ts';
-  import { installParityAttributeSync } from '@lib/orchestration/parity-attrs';
+  import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts';
   import { applyUrlState } from '@lib/orchestration/url-state';
   // Side-effect import: registers SEARCH_FOCUS_REQUESTED → addTrailStop subscriptions
   import '@lib/orchestration/triggers';
@@ -99,7 +99,7 @@
     // wait for it before proceeding. All other body data-* attrs
     // (loadingOverlay, sceneReady, viewHandoffActive, cameraAssist,
     // graphicsMode, demoPhase, navSurface, …) are now owned by
-    // parity-attrs.ts which installs and syncs on the same tick.
+    // parity-attrs.svelte.ts which installs and syncs on the same tick.
     if (typeof document !== 'undefined' && document.body) {
       document.body.dataset.testReady = 'true';
     }
@@ -227,7 +227,7 @@
   // data-* attributes.  All pre-parity $effect blocks that previously lived
   // here (data-navSurface, data-journeyPhase, data-demoPhase, data-reducedMotion,
   // data-mode, data-compact) are now subsumed by computeParityAttributes()
-  // inside parity-attrs.ts — including navSurface and demoPhase.
+  // inside parity-attrs.svelte.ts — including navSurface and demoPhase.
   // Read body data attributes reactively for contract test compatibility
   let bodyFocusPanelMode = $state('');
   let bodyPanelSurface = $state('');

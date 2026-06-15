@@ -129,14 +129,14 @@ export const dataLoadState = writable<DataLoadState>({
 
 /**
  * Four-phase loading progression: records → scene → restore → launch.
- * The LoadingOverlay and parity-attrs layer read from this store.
+ * The LoadingOverlay and parity-attrs.svelte.ts layer read from this store.
  * Replaces the collapsed 2-state derivation that only had records/launch.
  */
 export const loadingPhaseStore = writable<LoadingPhase>('records');
 
 /**
  * Graphics mode: 'webgl' when GPU rendering is available, 'fallback' otherwise.
- * The engine bridge should set this during init; parity-attrs reads it.
+ * The engine bridge should set this during init; parity-attrs.svelte.ts reads it.
  */
 export const graphicsModeStore = writable<'webgl' | 'fallback'>('webgl');
 

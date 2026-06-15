@@ -67,7 +67,7 @@ export function hideViewHandoff(): void {
     clearTimeout(_viewHandoffTimer);
     _viewHandoffTimer = null;
   }
-  // body.dataset.viewHandoffActive is owned by parity-attrs.ts.
+  // body.dataset.viewHandoffActive is owned by parity-attrs.svelte.ts.
   if (!handoff) return;
   handoff.classList.remove('active');
   handoff.setAttribute('aria-hidden', 'true');
@@ -100,12 +100,12 @@ export function showViewHandoff(view: ViewName): void {
 
   handoff.setAttribute('aria-hidden', 'false');
   handoff.classList.add('active');
-  // body.dataset.viewHandoffActive is owned by parity-attrs.ts.
+  // body.dataset.viewHandoffActive is owned by parity-attrs.svelte.ts.
 
   _viewHandoffTimer = setTimeout(() => {
     handoff.classList.remove('active');
     handoff.setAttribute('aria-hidden', 'true');
-    // body.dataset.viewHandoffActive is owned by parity-attrs.ts.
+    // body.dataset.viewHandoffActive is owned by parity-attrs.svelte.ts.
     _viewHandoffTimer = null;
   }, CONFIG.SHOW_VIEW_HANDOFF_DISMISS_MS);
 }

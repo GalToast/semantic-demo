@@ -309,13 +309,13 @@ export function focusOnNode(index: number, _options?: Record<string, unknown>): 
 /**
  * Sync semantic dive UI.
  * Legacy proxy — body data attribute sync is now handled by the parity layer
- * (parity-attrs.ts). This function is kept for API compat but no longer
+ * (parity-attrs.svelte.ts). This function is kept for API compat but no longer
  * writes directly to document.body.dataset.semanticDive, which previously
  * produced wrong vocabulary ("true"/"false") instead of the parity contract
  * ("inactive"|"transitioning"|"active").
  */
 export function syncSemanticDiveUi(): void {
-  // Intentional no-op: parity-attrs.ts owns this body attribute.
+  // Intentional no-op: parity-attrs.svelte.ts owns this body attribute.
 }
 
 /**

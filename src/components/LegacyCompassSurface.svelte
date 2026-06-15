@@ -30,7 +30,7 @@
        the legacy executeJourneyCompassAction() handles.
 
   The body data-* attribute mirror lives in
-  src/lib/orchestration/parity-attrs.ts (single source of
+  src/lib/orchestration/parity-attrs.svelte.ts (single source of
   truth for the parity layer).
 -->
 <script lang="ts">

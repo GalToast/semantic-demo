@@ -393,8 +393,8 @@ export function updateJourneyCompass(): void {
   const phase = compassState.phase || 'overview';
   const presentationState = getJourneyCompassPresentationState(compassState);
 
-  // body data-* attribute writes are owned by parity-attrs.ts.
-  // parity-attrs subscribes to navStore/journeyStore/compass-controller
+  // body data-* attribute writes are owned by parity-attrs.svelte.ts.
+  // parity-attrs.svelte.ts subscribes to navStore/journeyStore/compass-controller
   // outputs and mirrors journeyPhase / journeyCompass* / journeyNavigationOwner
   // to <body>. Do not write them here.
 

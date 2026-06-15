@@ -4,7 +4,7 @@
   Mirrors the legacy #loading-overlay DOM structure for contract test compat.
   Reads from loadingPhaseStore for the 4-phase loading progression
   (records → scene → restore → launch). Body dataset attrs are owned
-  exclusively by parity-attrs.ts — this component only controls its own
+  exclusively by parity-attrs.svelte.ts — this component only controls its own
   DOM structure and visibility.
   Shows kicker, title, note, progress bar, phase chips, and foot text.
 
@@ -49,7 +49,7 @@
   let activePhaseIndex = $derived(PHASE_ORDER.indexOf(phase));
 
   // NOTE: body.dataset attributes (loadingOverlay, sceneReady, viewHandoffActive,
-  // cameraAssist, graphicsMode) are now owned exclusively by parity-attrs.ts.
+  // cameraAssist, graphicsMode) are now owned exclusively by parity-attrs.svelte.ts.
   // This component only controls its own DOM structure and visibility.
 </script>
 
