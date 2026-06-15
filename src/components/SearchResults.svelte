@@ -30,7 +30,7 @@
   import { getBusinessRecords } from '@lib/data-store';
   import { describeCluster } from '@lib/utils/ui-presentation';
   import { formatBusinessName } from '@lib/utils/dom-formatters';
-  import { publish, EVENTS } from '@lib/event-bus';
+  import { publish, EVENTS } from '@lib/orchestration/event-bus';
   import { getSearchEngineEmptyStateSuggestions } from '@lib/search-engine';
 
   interface Props {

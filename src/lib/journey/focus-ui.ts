@@ -10,7 +10,7 @@ import {
     getActiveFilters, getSelectedPoint, getTrailDepth,
     getSemanticLaneSnapshot, getSemanticThreadsStatus
 } from '@lib/engine/state-selectors-bridge';
-import { subscribeKeyed, EVENTS } from '@lib/engine/event-bus-bridge';
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { formatBusinessName, escapeHtml, cleanOptionalValue } from '@lib/utils/dom-formatters';
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation';
 import { isPointVisible } from '@lib/utils/geo-data';

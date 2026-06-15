@@ -6,7 +6,7 @@
  */
 import { state, withStateMutation } from '@lib/engine/state-bridge'
 import { getFocusedNode, getPoints, getNavState, getSelectedPoint } from '@lib/engine/state-selectors-bridge'
-import { subscribe, publish, EVENTS } from '@lib/engine/event-bus-bridge'
+import { subscribe, publish, EVENTS } from '@lib/orchestration/event-bus'
 import {
     resetRouteTraceDiagnostics,
     removeRouteTraceOverlay,

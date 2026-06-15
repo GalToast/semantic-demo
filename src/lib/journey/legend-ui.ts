@@ -2,7 +2,7 @@
  * @lib/journey/legend-ui.ts — Native Svelte 5 Legend UI event subscriptions
  */
 
-import { subscribe, EVENTS } from '@lib/engine/event-bus-bridge';
+import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { setLegendOpen } from '@lib/stores/legend.svelte';
 
 /**

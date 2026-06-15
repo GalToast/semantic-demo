@@ -10,7 +10,7 @@ import {
     getCurrentSearchSummary,
     getMyceliumGroup
 } from '@lib/engine/state-selectors-bridge';
-import { subscribeKeyed, EVENTS } from '@lib/engine/event-bus-bridge';
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import * as THREE from 'three';
 import { isPointVisible } from '@lib/utils/geo-data';
 import { ROUTE_TRACE_COLORS } from '@lib/utils/design-tokens';

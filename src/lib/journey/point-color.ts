@@ -6,7 +6,7 @@
  */
 import * as THREE from 'three';
 import { state } from '@lib/engine/state-bridge';
-import { publish, EVENTS } from '@lib/engine/event-bus-bridge';
+import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { describeCluster } from '@lib/utils/ui-presentation';
 import { formatBusinessName } from '@lib/utils/dom-formatters';
 import { isPointVisible } from '@lib/utils/geo-data';

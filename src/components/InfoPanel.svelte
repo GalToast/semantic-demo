@@ -30,7 +30,7 @@
   import { describeThreadLensForPoint } from '@lib/journey-point-color';
   import { buildSelectedMatchNarrative as buildPointMatchNarrative } from '@lib/orchestration/lifecycle';
   import { buildSelectedBusinessProps } from '@lib/view-models/selected-business-view-model';
-  import { publish, EVENTS } from '@lib/event-bus';
+  import { publish, EVENTS } from '@lib/orchestration/event-bus';
   import { onMount, type Snippet } from 'svelte';
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat.svelte.ts';
   import { getInfoPanelContent, type InfoPanelContentDescriptor } from '@lib/orchestration/info-panel-state';
