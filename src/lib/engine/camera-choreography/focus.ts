@@ -5,10 +5,8 @@
  * Ported from: js/modules/camera-controls-choreography-focus.ts
  */
 import * as THREE from 'three'
-import { state, type NodePosition, type SemanticState, type NavState, type NavFocusPocketMeta } from '../../../../js/state.ts'
-import {
-  getNavState
-} from '../../../../js/state/selectors/index.ts'
+import { appState } from '@lib/state/app.svelte'
+import type { NodePosition, NavFocusPocketMeta } from '../../../../js/state.ts'
 import { prefersReducedMotion } from '../../../../js/modules/environment.ts'
 import {
   type AppStateLike,
@@ -60,27 +58,19 @@ interface FocusPersonality extends ChoreographyPersonality {
 }
 
 /** Narrowed navState for focus camera animation. Overrides base types with camera-specific shapes. */
-interface FocusNavState extends NavState {
-  focusFramingMeta: Partial<FocusFramingOptions> | null
+interface FocusNavState {
+  mode: string
+  focusedIndex: number | null
+  threadSource: string
+  focusPocketIndices: number[]
   focusPocketMeta: (NavFocusPocketMeta & { viewportProfile?: FocusPocketProfile }) | null
+  focusFramingMeta: Partial<FocusFramingOptions> | null
   currentPersonality: FocusPersonality | null
+  [key: string]: unknown
 }
-
-interface FocusCameraState extends Omit<SemanticState, 'camera' | 'controls' | 'navState'> {
-  camera: ChoreographyCamera
-  controls: ChoreographyControls
-  navState: FocusNavState
-  nodePositions: NodePosition[]
-  originalPositions: NodePosition[]
-  focusCameraTargetOffset: THREE.Vector3 | null
-  focusCameraAnimationToken: number
-  focusCameraOffset: THREE.Vector3 | null
-}
-
-const _s = state as unknown as FocusCameraState
 
 function getTypedNavState(): FocusNavState {
-  return getNavState() as FocusNavState
+  return appState.navState as unknown as FocusNavState
 }
 
 // -----------------------------------------------------------------------------
@@ -97,8 +87,10 @@ export function cancelFocusCameraAnimation() {
 }
 
 export function animateCameraToNode(index: number, options: FocusFramingOptions = {}) {
-  if (!_s.camera || !_s.controls) return
-  const targetPosition: NodePosition | undefined = _s.nodePositions[index] || _s.originalPositions[index]
+  if (!appState.camera || !appState.controls) return
+  const camera = appState.camera as unknown as ChoreographyCamera
+  const controls = appState.controls as unknown as ChoreographyControls
+  const targetPosition: NodePosition | undefined = appState.nodePositions[index] || appState.originalPositions[index]
   if (!targetPosition) return
   const framing = {
     ...(getTypedNavState().focusFramingMeta || {}),
@@ -108,10 +100,10 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
   const tx = targetPosition.x, ty = targetPosition.y, tz = targetPosition.z
   if (!Number.isFinite(tx) || !Number.isFinite(ty) || !Number.isFinite(tz)) return
   const nodePos = new THREE.Vector3(tx, ty, tz)
-  if (!_s.controls?.target || !_s.camera?.position) return
-  const startTarget = _s.controls.target.clone()
-  const startPos = _s.camera.position.clone()
-  const currentHeading = _s.camera.position.clone().sub(_s.controls.target).normalize()
+  if (!controls.target || !camera.position) return
+  const startTarget = controls.target.clone()
+  const startPos = camera.position.clone()
+  const currentHeading = camera.position.clone().sub(controls.target).normalize()
 
   let defaultDistance = 0.86
   if (transitionStyle === 'search') defaultDistance = 1.08
@@ -126,7 +118,7 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
     .clone()
     .add(framingOffset)
     .add(new THREE.Vector3(0, -framingDrop, 0))
-  if (!_s.focusCameraTargetOffset?.copy) _s.focusCameraTargetOffset = new THREE.Vector3()
+  if (!appState.focusCameraTargetOffset?.copy) appState.focusCameraTargetOffset = new THREE.Vector3()
   let heading = currentHeading.clone()
   let stageRightVector: THREE.Vector3 | null = null
   let safeTargetOffset: THREE.Vector3 | null = null
@@ -137,17 +129,17 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
     const pocketBounds = computeFocusPocketScreenBounds(
       navState.focusedIndex,
       navState.focusPocketIndices,
-      _s as unknown as AppStateLike
+      appState as unknown as AppStateLike
     )
     if (pocketBounds) {
       const region = getCanvasUnobstructedRegion()
-      const camDist = _s.camera.position.distanceTo(_s.controls.target)
+      const camDist = camera.position.distanceTo(controls.target)
       const safeOffset = computeSafeAreaCameraTargetOffset(
         pocketBounds,
         region,
         camDist,
-        _s.camera,
-        _s.controls
+        camera,
+        controls
       )
       if (safeOffset) {
         const pocketProfile = navState.focusPocketMeta?.viewportProfile || {}
@@ -209,19 +201,19 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
   const prefersReducedCameraMotion = prefersReducedMotion()
   const duration = prefersReducedCameraMotion ? 1 : baseDuration
 
-  const animationToken = ++_s.focusCameraAnimationToken
-  _s.focusCameraOffset = desiredCamPos.clone().sub(focusTarget)
-  if (!_s.focusCameraTargetOffset || typeof _s.focusCameraTargetOffset.copy !== 'function') {
-    _s.focusCameraTargetOffset = new THREE.Vector3()
+  const animationToken = ++appState.focusCameraAnimationToken
+  appState.focusCameraOffset = desiredCamPos.clone().sub(focusTarget)
+  if (!appState.focusCameraTargetOffset || typeof appState.focusCameraTargetOffset.copy !== 'function') {
+    appState.focusCameraTargetOffset = new THREE.Vector3()
   }
-  if (_s.focusCameraTargetOffset) {
-    _s.focusCameraTargetOffset?.copy?.(focusTarget.clone().sub(nodePos))
+  if (appState.focusCameraTargetOffset) {
+    appState.focusCameraTargetOffset?.copy?.(focusTarget.clone().sub(nodePos))
   }
   setFocusTransitionMode(transitionStyle, { duration })
   if (prefersReducedCameraMotion) {
-    _s.controls.target.copy(focusTarget)
-    _s.camera.position.copy(desiredCamPos)
-    _s.controls.update()
+    controls.target.copy(focusTarget)
+    camera.position.copy(desiredCamPos)
+    controls.update()
     return
   }
 
@@ -256,7 +248,7 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
   let targetControlPoint: THREE.Vector3 | null = null
 
   if (stageArcActive) {
-    const pocketProfile = _s.navState.focusPocketMeta?.viewportProfile || {}
+    const pocketProfile = (appState.navState as any).focusPocketMeta?.viewportProfile || {}
     const res = computeCameraArcControlPoints(
       startPos, startTarget, desiredCamPos, focusTarget,
       currentHeading, distance, transitionStyle, personality, pocketProfile, stageRightVector
@@ -266,7 +258,7 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
   }
 
   function step(now: number) {
-    if (animationToken !== _s.focusCameraAnimationToken) return
+    if (animationToken !== appState.focusCameraAnimationToken) return
     const t = Math.min((now - startTime) / duration, 1)
 
     const personalityEasing =
@@ -286,33 +278,33 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
           : personalityEasing
 
     if (cameraControlPoint && targetControlPoint) {
-      _s.controls.target.set(
+      controls.target.set(
         quadraticBezierComponent(startTarget.x, targetControlPoint.x, focusTarget.x, eased),
         quadraticBezierComponent(startTarget.y, targetControlPoint.y, focusTarget.y, eased),
         quadraticBezierComponent(startTarget.z, targetControlPoint.z, focusTarget.z, eased)
       )
-      _s.camera.position.set(
+      camera.position.set(
         quadraticBezierComponent(startPos.x, cameraControlPoint.x, desiredCamPos.x, eased),
         quadraticBezierComponent(startPos.y, cameraControlPoint.y, desiredCamPos.y, eased),
         quadraticBezierComponent(startPos.z, cameraControlPoint.z, desiredCamPos.z, eased)
       )
     } else {
-      _s.controls.target.lerpVectors(startTarget, focusTarget, eased)
-      _s.camera.position.lerpVectors(startPos, desiredCamPos, eased)
+      controls.target.lerpVectors(startTarget, focusTarget, eased)
+      camera.position.lerpVectors(startPos, desiredCamPos, eased)
     }
 
     if (t > 0.85 && stageArcActive && !prefersReducedCameraMotion) {
       const driftIntensity = (t - 0.85) * 0.15
       const worldUp = new THREE.Vector3(0, 1, 0)
       const driftDir = new THREE.Vector3().crossVectors(worldUp, currentHeading).normalize()
-      _s.camera.position.add(driftDir.multiplyScalar(driftIntensity * 0.02))
+      camera.position.add(driftDir.multiplyScalar(driftIntensity * 0.02))
     }
 
-    _s.controls.update()
+    controls.update()
     if (t < 1) {
       _focusCameraRafId = requestAnimationFrame(step)
     } else {
-      _s.focusCameraOffset = null
+      appState.focusCameraOffset = null
     }
   }
   _focusCameraRafId = requestAnimationFrame(step)

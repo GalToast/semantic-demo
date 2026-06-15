@@ -90,7 +90,10 @@
       return;
     }
 
-    startDemo();
+    // Atomic guard: startDemo() returns false if another attempt already
+    // claimed the guard (race between retry loop and a parallel start path).
+    // If blocked, silently drop — the winning start owns the sequence.
+    if (!startDemo()) return;
     runDemoSequence();
   }
 

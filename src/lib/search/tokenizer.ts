@@ -70,13 +70,28 @@ export function tokenizeSearchText(
 		.replace(/\s+/g, ' ')               // collapse all whitespace
 		.trim();
 
+	if (!input) return [];
+
+	// Word-level segmentation via Intl.Segmenter when available — respects
+	// grapheme boundaries so multi-code-point characters (NFC or NFD) stay
+	// as single tokens. Falls back to the Unicode-aware regex path.
+	let words: string[];
+	if (typeof Intl !== 'undefined' && (Intl as any).Segmenter) {
+		const segmenter = new (Intl as any).Segmenter(undefined, { granularity: 'word' });
+		words = Array.from(segmenter.segment(input) as Iterable<{ segment: string; isWordLike: boolean }>)
+			.filter((s) => s.isWordLike)
+			.map((s) => s.segment);
+	} else {
+		words = (input.match(/[\p{L}0-9]+/gu) || []) as string[];
+	}
+
 	return [
 		...new Set(
-			(input.match(/[\p{L}0-9]+/gu) || []) as string[]
+			words
+				.filter(Boolean)
+				.filter((token) => token.length > 1 && !stopWords.has(token))
 		)
-	]
-		.filter(Boolean)
-		.filter((token) => token.length > 1 && !stopWords.has(token));
+	];
 }
 
 export function expandSearchIntent(

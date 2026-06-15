@@ -8,6 +8,9 @@ import {
     pushBezierLinePair
 } from './mycelium-engine.ts';
 import { disposeObject3D } from './resource-tracker.ts';
+import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -39,19 +42,79 @@ export function getGroupLineSegmentCount(group: any) {
     return total;
 }
 
-function createLineSegments(positions: any, colors: any, opacity: any) {
+function createLineSegments(positions: any, colors: any, opacity: any, linewidth = 1.0) {
     if (!positions.length) return null;
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    return new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({
+    const geometry = new LineSegmentsGeometry();
+    geometry.setPositions(positions);
+    geometry.setColors(colors);
+
+    // Add progress attribute for custom shader animation
+    const segmentCount = Math.floor(positions.length / 6);
+    const progressArr = new Float32Array(segmentCount * 2);
+    for (let i = 0; i < segmentCount; i++) {
+        progressArr[i * 2] = 0;
+        progressArr[i * 2 + 1] = 1;
+    }
+    geometry.setAttribute('progress', new THREE.InstancedBufferAttribute(progressArr, 1));
+
+    const material = new LineMaterial({
+        color: 0xffffff,
+        linewidth: linewidth,
         vertexColors: true,
         transparent: true,
-        opacity,
-        linewidth: 1,
+        opacity: opacity,
         depthWrite: true,
         blending: THREE.NormalBlending
-    }));
+    } as any);
+
+    const renderer = webglContext.renderer;
+    if (renderer) {
+        const size = new THREE.Vector2();
+        renderer.getSize(size);
+        const dpr = renderer.getPixelRatio();
+        material.resolution.set(size.x * dpr, size.y * dpr);
+    }
+
+    material.uniforms.uTime = { value: performance.now() / 1000 };
+    material.onBeforeCompile = (shader: any) => {
+        shader.vertexShader = shader.vertexShader.replace(
+            'void main() {',
+            `attribute float progress;
+            varying float vProgress;
+            void main() {`
+        );
+        shader.vertexShader = shader.vertexShader.replace(
+            '#include <color_pars_vertex>',
+            `#include <color_pars_vertex>
+            varying float vProgress;`
+        );
+        shader.vertexShader = shader.vertexShader.replace(
+            'gl_Position = clip;',
+            `vProgress = progress;
+            gl_Position = clip;`
+        );
+        shader.fragmentShader = shader.fragmentShader.replace(
+            'uniform float opacity;',
+            `uniform float opacity;
+            uniform float uTime;
+            varying float vProgress;`
+        );
+        shader.fragmentShader = shader.fragmentShader.replace(
+            'vec4 diffuseColor = vec4( diffuse, alpha );',
+            `vec4 diffuseColor = vec4( diffuse, alpha );
+            
+            // Subtle premium ambient waving bioluminescent pulse
+            float wave = sin(uTime * 1.34 + vProgress * 6.28) * 0.14 + 0.86;
+            alpha = alpha * wave;
+            diffuseColor = vec4(diffuseColor.rgb, alpha);`
+        );
+
+        shader.uniforms.uTime = material.uniforms.uTime;
+        material.userData.shader = shader;
+    };
+
+    const lineSegments = new LineSegments2(geometry, material);
+    return lineSegments;
 }
 
 export function getThreadPulseOpacity(baseOpacity: any, pulse: any, requestedAmplitude: any, revealProgress = 1) {

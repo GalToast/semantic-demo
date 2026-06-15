@@ -74,9 +74,10 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
     }
   });
 
-  it('also statically imports the 3 previously-converted modules via relative paths (extensionless)', () => {
+  it('also statically imports the previously-converted modules via relative paths (extensionless)', () => {
     const src = readSource();
-    expect(src).toContain("from '../../../js/state'");
+    // Ticket W11-T5: state import migrated to appState
+    expect(src).toContain("from '@lib/state/app.svelte'");
     expect(src).toContain("from '../../../js/modules/camera-controls'");
     expect(src).toContain("from '../../../js/modules/focus-pocket'");
   });

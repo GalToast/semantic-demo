@@ -295,6 +295,12 @@ class AppState {
   focusTransitionMode = $state<string>('idle');
   focusTransitionStartedAt = $state<number>(0);
   focusTransitionSettleTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+  focusCameraAnimationToken = $state<number>(0);
+  focusCameraAssistActive = $state<boolean>(false);
+  focusCameraAssistUntil = $state<number>(0);
+  focusCameraAssistReason = $state<string>('idle');
+  focusCameraOffset = $state<Vector3Like | null>(null);
+  focusCameraTargetOffset = $state<Vector3Like | null>(null);
   recentArrangements = $state<unknown[]>([]);
   signalScores = $state<number[]>([]);
   bridgeScores = $state<number[]>([]);

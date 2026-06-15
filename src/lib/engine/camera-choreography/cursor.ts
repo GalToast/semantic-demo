@@ -8,10 +8,9 @@
  * triggers the camera animation (delegated to focus.ts).
  */
 
-import { state, type Point, type SemanticState } from '../../../../js/state.ts'
-import {
-  getNavState, getPoints, getTrailDepth, getMyceliumMode
-} from '../../../../js/state/selectors/index.ts'
+import { appState } from '@lib/state/app.svelte';
+import type { Point } from '../../../../js/state.ts'
+import { getPoints, getTrailDepth } from '../../../../js/state/selectors/index.ts'
 import { isMobile } from '../../../../js/modules/environment.ts'
 import { refreshMapRouteEmbodiment } from '../../../../js/modules/map-state.ts'
 import {
@@ -50,7 +49,6 @@ export interface FocusOnNodeOptions {
   [key: string]: unknown
 }
 
-const _s = state as unknown as SemanticState
 
 // -----------------------------------------------------------------------------
 // FOCUS NODE ORCHESTRATOR — focusOnNode
@@ -61,14 +59,16 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
   if (!Number.isFinite(index) || index < 0 || !points || index >= points.length) return false
   const point = points[index]
   if (!point) return false
-  const suppressCanvasFocusUntil = Number((_s as any).suppressCanvasFocusUntil) || 0
+  const suppressCanvasFocusUntil = Number((appState as any).suppressCanvasFocusUntil) || 0
   if (options.fromCanvasNode && typeof performance !== 'undefined' && performance.now() < suppressCanvasFocusUntil) {
     return false
   }
 
-  _s.selectedPoint = point
-  _s.hoverHighlightIndex = -1
-  _s.pinnedThreadIndex = null
+  appState.withMutation(() => {
+    appState.selectedPoint = point
+    appState.hoverHighlightIndex = -1
+    appState.pinnedThreadIndex = null
+  })
 
   dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
     index,
@@ -83,7 +83,7 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
     setTrailDepth(1, { skipUrlSync: true })
   }
 
-  if (getNavState().mode === 'trail' && getMyceliumMode() !== 'trail') {
+  if ((appState as any).navState?.mode === 'trail' && appState.myceliumMode !== 'trail') {
     setMyceliumMode('trail', { skipUrlSync: true })
   }
 

@@ -18,7 +18,7 @@
  */
 
 import type { DemoPhase } from '@lib/types/state';
-import * as legacyStateModule from '../../../js/state';
+import { appState } from '@lib/state/app.svelte';
 import * as cameraControlsStaticModule from '../../../js/modules/camera-controls';
 import * as focusPocketStaticModule from '../../../js/modules/focus-pocket';
 import * as lifecycleStaticModule from '../../../js/modules/lifecycle';
@@ -95,25 +95,6 @@ interface MicroDemoUiModule {
   injectMicroDemoStyles(): void;
 }
 
-/** Minimal shape for the global state singleton used by choreography. */
-interface LegacyState {
-  selectedPoint: unknown;
-  points: Array<{ x: number; y: number; z: number; name?: string }> | null;
-  navState: {
-    mode: string;
-    focusedIndex: number | null;
-    trailSeedIndex: number | null;
-    trailNeighborIndices: number[];
-    trailCursor: number;
-    walkHistoryIndices: number[];
-  };
-  focusCameraAssistActive: boolean;
-  focusCameraOffset: unknown;
-  focusTransitionMode: string;
-  camera: unknown;
-  controls: { enabled: boolean } | null;
-}
-
 // ── Phase Constants ──────────────────────────────────────────────────────────
 
 export const PHASE: Record<DemoPhase, DemoPhase> = {
@@ -171,14 +152,6 @@ export function resetRetryState(): void {
 
 // ── Internal Helpers ──────────────────────────────────────────────────────────
 
-async function getLegacyState(): Promise<LegacyState> {
-  return (legacyStateModule as unknown as { state: LegacyState }).state;
-}
-
-async function getWithStateMutation(): Promise<(fn: () => void) => void> {
-  return (legacyStateModule as { withStateMutation: (fn: () => void) => void }).withStateMutation;
-}
-
 async function loadCameraControls(): Promise<CameraControlsModule> {
   return cameraControlsStaticModule as unknown as CameraControlsModule;
 }
@@ -219,10 +192,8 @@ async function loadMicroDemoUi(): Promise<MicroDemoUiModule> {
 // Resets all demo-related state and UI chrome back to overview.
 
 async function demoReset(): Promise<void> {
-  const [state, withMutation, focusPocket, lifecycle, compass, journey, panel] =
+  const [focusPocket, lifecycle, compass, journey, panel] =
     await Promise.all([
-      getLegacyState(),
-      getWithStateMutation(),
       loadFocusPocket(),
       loadLifecycle(),
       loadJourneyCompass(),
@@ -230,28 +201,28 @@ async function demoReset(): Promise<void> {
       loadPanelBindings(),
     ]);
 
-  state.selectedPoint = null;
-  // navState is a TRACKED_SUB_KEY; batch mutations under withStateMutation
+  appState.selectedPoint = null;
+  // navState is a TRACKED_SUB_KEY; batch mutations under withMutation
   // to avoid the production Proxy throwing on direct sub-property writes.
-  withMutation(() => {
-    state.navState.mode = 'overview';
-    state.navState.focusedIndex = null;
-    state.navState.trailSeedIndex = null;
-    state.navState.trailNeighborIndices = [];
-    state.navState.trailCursor = -1;
-    state.navState.walkHistoryIndices = [];
+  appState.withMutation(() => {
+    appState.navState.mode = 'overview';
+    appState.navState.focusedIndex = null;
+    appState.navState.trailSeedIndex = null;
+    appState.navState.trailNeighborIndices = [];
+    appState.navState.trailCursor = -1;
+    appState.navState.walkHistoryIndices = [];
   });
 
   focusPocket.clearFocusPocketIndices();
   focusPocket.clearFocusPocketMeta();
 
-  state.focusCameraAssistActive = false;
-  state.focusCameraOffset = null;
-  state.focusTransitionMode = 'idle';
+  appState.focusCameraAssistActive = false;
+  appState.focusCameraOffset = null;
+  appState.focusTransitionMode = 'idle';
   document.body.dataset.focusTransition = '';
   document.body.dataset.focusTransitionPhase = '';
 
-  if (state.controls) state.controls.enabled = true;
+  if (appState.controls) appState.controls.enabled = true;
 
   journey.updateSelectedBusiness(null);
   journey.applyPointFilterColors();
@@ -264,23 +235,21 @@ async function demoReset(): Promise<void> {
 // Enters focus mode on the given demo node.
 
 async function demoFocusSetup(demoNode: number): Promise<void> {
-  const [state, withMutation, focusPocket, lifecycle, compass, journey] =
+  const [focusPocket, lifecycle, compass, journey] =
     await Promise.all([
-      getLegacyState(),
-      getWithStateMutation(),
       loadFocusPocket(),
       loadLifecycle(),
       loadJourneyCompass(),
       loadJourney(),
     ]);
 
-  const point = state.points?.[demoNode] ?? null;
-  state.selectedPoint = point;
-  // navState is a TRACKED_SUB_KEY; batch mutations under withStateMutation.
-  withMutation(() => {
-    state.navState.mode = 'focus';
-    state.navState.focusedIndex = demoNode;
-    state.navState.walkHistoryIndices = [demoNode];
+  const point = appState.points?.[demoNode] ?? null;
+  appState.selectedPoint = point;
+  // navState is a TRACKED_SUB_KEY; batch mutations under withMutation.
+  appState.withMutation(() => {
+    appState.navState.mode = 'focus';
+    appState.navState.focusedIndex = demoNode;
+    appState.navState.walkHistoryIndices = [demoNode];
   });
 
   journey.updateSelectedBusiness(point, { revealCard: true });
@@ -334,9 +303,8 @@ export async function runDemo(
 ): Promise<void> {
   // Pre-load all modules needed directly in this function.
   // demoFocusSetup and demoReset load their own dependencies internally.
-  const [state, camera, microDemoCamera, ui, panel] =
+  const [camera, microDemoCamera, ui, panel] =
     await Promise.all([
-      getLegacyState(),
       loadCameraControls(),
       loadMicroDemoCamera(),
       loadMicroDemoUi(),
@@ -350,10 +318,10 @@ export async function runDemo(
 
   microDemoCamera.captureOverviewCameraSnapshot();
   camera.setAutoRotateSuspended(true);
-  if (state.controls) state.controls.enabled = false;
+  if (appState.controls) appState.controls.enabled = false;
 
   ui.showVeil(true);
-  ui.showPill('Demo -- watch how it works', (reason: string) =>
+  ui.showPill('Demo -- watch it works', (reason: string) =>
     cancelMicroDemo(reason)
   );
   ui.bindInputInterceptor((reason: string) => cancelMicroDemo(reason));
@@ -492,10 +460,7 @@ export async function cancelChoreography(
     return false;
   }
 
-  const [state, microDemoCamera] = await Promise.all([
-    getLegacyState(),
-    loadMicroDemoCamera(),
-  ]);
+  const microDemoCamera = await loadMicroDemoCamera();
 
   _demoCancelled = true;
   _demoPhase = PHASE.CANCELLED;
@@ -503,8 +468,8 @@ export async function cancelChoreography(
   await demoReset();
 
   if (
-    state.camera &&
-    state.controls &&
+    appState.camera &&
+    appState.controls &&
     (reason === 'escape-key' || reason === 'user-input')
   ) {
     microDemoCamera.animateCameraToOverview(800);

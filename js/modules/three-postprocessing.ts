@@ -24,8 +24,28 @@ import {
     DepthOfFieldEffect,
     VignetteEffect,
     ChromaticAberrationEffect,
+    Effect,
 } from 'postprocessing';
 import { debugWarn } from './diagnostic-adapter.ts';
+
+// ── Custom Effects ──────────────────────────────────────────────────────────
+
+/**
+ * Custom DitherEffect to disperse visual gradient color banding in dark indigo regions.
+ */
+class DitherEffect extends Effect {
+    constructor() {
+        super('DitherEffect', `
+            void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+                // High-performance, high-quality triangle dithering
+                // Adds a tiny fraction of an 8-bit color-step in pseudo-random noise to blend boundaries
+                float rand = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
+                float noise = (rand - 0.5) / 255.0;
+                outputColor = vec4(inputColor.rgb + vec3(noise), inputColor.a);
+            }
+        `);
+    }
+}
 
 // ── Module-scoped state ──────────────────────────────────────────────────────
 
@@ -34,6 +54,7 @@ let _bloomEffect: BloomEffect | null = null;
 let _dofEffect: DepthOfFieldEffect | null = null;
 let _vignetteEffect: VignetteEffect | null = null;
 let _chromaticAberrationEffect: ChromaticAberrationEffect | null = null;
+let _ditherEffect: DitherEffect | null = null;
 let _renderPass: RenderPass | null = null;
 let _initialized = false;
 let _premiumMode = false;
@@ -164,6 +185,12 @@ export function initPostProcessing(
         dofPass.enabled = false; // opt-in even within premium mode
         _composer.addPass(dofPass);
 
+        // DitherEffect — high-performance noise to eliminate banding
+        _ditherEffect = new DitherEffect();
+        const ditherPass = new EffectPass(camera, _ditherEffect);
+        ditherPass.enabled = _premiumMode;
+        _composer.addPass(ditherPass);
+
         _initialized = true;
 
         // Expose API on window for DevGui bridge
@@ -236,6 +263,7 @@ export function disposePostProcessing(): void {
     _dofEffect = null;
     _vignetteEffect = null;
     _chromaticAberrationEffect = null;
+    _ditherEffect = null;
     _renderPass = null;
     _initialized = false;
 }

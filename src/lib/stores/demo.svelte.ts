@@ -69,6 +69,10 @@ const INITIAL_DEMO: DemoStoreState = {
  */
 const _demoWritable = writable<DemoStoreState>({ ...INITIAL_DEMO });
 
+/** Atomic start guard — prevents stacked retry loops from causing double-starts.
+ *  Set synchronously when startDemo() is called; checked before any timer fires. */
+let _startGuardClaimed = false;
+
 /**
  * Push mutations to both `_demoWritable` and `appState`.
  * The writable notifies subscribers; the appState sync keeps the kernel
@@ -129,8 +133,22 @@ export function setDemoPhase(phase: DemoPhase): void {
   withDemoNotify(s => ({ ...s, phase }));
 }
 
-export function startDemo(): void {
+export function startDemo(): boolean {
+  // Atomic guard: prevent stacked retry loops from causing double-starts.
+  // If a prior attempt (or an in-flight retry) already claimed the guard,
+  // bail out synchronously before any timer fires.
+  if (_startGuardClaimed) return false;
+  _startGuardClaimed = true;
+
+  // Set the per-session guard immediately so a race between this call and
+  // any other start path (URL param, button click, auto-start) sees the
+  // same barrier.
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.setItem(DEMO_SESSION_KEY, '1');
+  }
+
   withDemoNotify(s => ({ ...s, phase: 'GLIDING', startTime: performance.now() }));
+  return true;
 }
 
 export function cancelDemo(): void {
@@ -188,6 +206,7 @@ export function markDemoSessionSkipped(): void {
 }
 
 export function resetDemo(): void {
+  _startGuardClaimed = false;
   _demoWritable.set({ ...INITIAL_DEMO });
   appState.withMutation(() => {
     appState.demoPhase = INITIAL_DEMO.phase;

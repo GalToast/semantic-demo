@@ -18,56 +18,7 @@ import { isMobile, prefersReducedMotion } from '@lib/utils/environment';
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { noteSceneInteraction } from '@lib/engine/camera-controls-restore';
 import { setFocusTransitionMode } from '@lib/engine/camera-controls-core';
-import * as legacyStateModule from '../../../../js/state';
-import * as selectorsStaticModule from '../../../../js/state/selectors/index';
-
-// ── Selectors ────────────────────────────────────────────────────────────────
-
-const getCamera = selectorsStaticModule.getCamera;
-const getControls = selectorsStaticModule.getControls;
-const getNodePositions = selectorsStaticModule.getNodePositions;
-const getOriginalPositions = selectorsStaticModule.getOriginalPositions;
-const getTargetPositions = selectorsStaticModule.getTargetPositions;
-const getNavState = selectorsStaticModule.getNavState;
-const getCurrentView = selectorsStaticModule.getCurrentView;
-const getSemanticDiveMode = selectorsStaticModule.getSemanticDiveMode;
-const getPoints = selectorsStaticModule.getPoints;
-const getTrailDepth = selectorsStaticModule.getTrailDepth;
-const getActiveClusterFilter = selectorsStaticModule.getActiveClusterFilter;
-const getRouteCameraAnimationToken = selectorsStaticModule.getRouteCameraAnimationToken;
-const getMapHandoffPreludeMs = selectorsStaticModule.getMapHandoffPreludeMs;
-const getOrbitMinDistanceDefault = selectorsStaticModule.getOrbitMinDistanceDefault;
-const getOrbitMaxDistanceDefault = selectorsStaticModule.getOrbitMaxDistanceDefault;
-
-// ── State ────────────────────────────────────────────────────────────────────
-
-const state = legacyStateModule.state;
-
-// ── Typed Accessors ──────────────────────────────────────────────────────────
-
-function getTypedCamera(): ChoreographyCamera | null {
-  return getCamera() as ChoreographyCamera | null;
-}
-
-function getTypedControls(): ChoreographyControls | null {
-  return getControls() as ChoreographyControls | null;
-}
-
-function getTypedNodePositions(): NodePosition[] {
-  return getNodePositions() as NodePosition[];
-}
-
-function getTypedOriginalPositions(): NodePosition[] {
-  return getOriginalPositions() as NodePosition[];
-}
-
-function getTypedTargetPositions(): NodePosition[] {
-  return getTargetPositions() as NodePosition[];
-}
-
-function getTypedPoints(): Point[] {
-  return getPoints() as Point[];
-}
+import { appState } from '@lib/state/app.svelte';
 
 // ── Local Types ──────────────────────────────────────────────────────────────
 
@@ -101,12 +52,12 @@ export function animateCameraToSearchCorridor(
   resultIndices: number[] = [],
   options: RouteOptions = {},
 ): boolean {
-  const camera = getTypedCamera();
-  const controls = getTypedControls();
-  if (!camera || !controls || getCurrentView() !== 'galaxy') return false;
+  const camera = appState.camera as ChoreographyCamera | null;
+  const controls = appState.controls as ChoreographyControls | null;
+  if (!camera || !controls || appState.currentView !== 'galaxy') return false;
   const activeCamera: ChoreographyCamera = camera;
   const activeControls: ChoreographyControls = controls;
-  if (!Number.isFinite(anchorIndex) || getNavState().focusedIndex !== null || getSemanticDiveMode()) return false;
+  if (!Number.isFinite(anchorIndex) || appState.navState.focusedIndex !== null || appState.semanticDiveMode) return false;
 
   const isPointVisible = (
     index: number,
@@ -123,18 +74,22 @@ export function animateCameraToSearchCorridor(
     return true;
   };
 
+  const allPoints = appState.points as Point[];
   const routeIndices = [...new Set([anchorIndex, ...(resultIndices || [])])]
     .filter(
       (index) =>
         Number.isFinite(index) &&
         index >= 0 &&
-        index < getTypedPoints().length &&
-        isPointVisible(index, getTypedPoints(), getActiveClusterFilter()),
+        index < allPoints.length &&
+        isPointVisible(index, allPoints, appState.activeClusterFilter),
     )
     .slice(0, isMobile() ? 8 : 12);
 
+  const allTargetPositions = appState.targetPositions as NodePosition[];
+  const allNodePositions = appState.nodePositions as NodePosition[];
+  const allOriginalPositions = appState.originalPositions as NodePosition[];
   const vectors = routeIndices
-    .map((index) => getTypedTargetPositions()[index] || getTypedNodePositions()[index] || getTypedOriginalPositions()[index])
+    .map((index) => allTargetPositions[index] || allNodePositions[index] || allOriginalPositions[index])
     .filter((pos): pos is NodePosition => Boolean(pos))
     .map((pos) => new THREE.Vector3(pos.x, pos.y, pos.z));
   if (!vectors.length) return false;
@@ -146,7 +101,7 @@ export function animateCameraToSearchCorridor(
   const radius = Math.max(0.08, boundsSize.length() * 0.5);
 
   const anchorPosition =
-    getTypedTargetPositions()[anchorIndex] || getTypedNodePositions()[anchorIndex] || getTypedOriginalPositions()[anchorIndex];
+    allTargetPositions[anchorIndex] || allNodePositions[anchorIndex] || allOriginalPositions[anchorIndex];
   if (
     !anchorPosition ||
     !Number.isFinite(anchorPosition.x) ||
@@ -185,7 +140,11 @@ export function animateCameraToSearchCorridor(
     .add(rightVector.clone().multiplyScalar(compact ? 0.035 : 0.065));
   const duration = options.duration || (compact ? 1180 : 1320);
   const startTime = performance.now();
-  const animationToken = (state.routeCameraAnimationToken = (state.routeCameraAnimationToken || 0) + 1);
+  let animationToken = 0;
+  appState.withMutation(() => {
+    appState.routeCameraAnimationToken = (appState.routeCameraAnimationToken || 0) + 1;
+    animationToken = appState.routeCameraAnimationToken;
+  });
 
   publish(EVENTS.TRANSITION_PHASE_CHANGED, {
     phase: 'search-corridor',
@@ -202,9 +161,9 @@ export function animateCameraToSearchCorridor(
 
   function step(now: number) {
     if (
-      animationToken !== getRouteCameraAnimationToken() ||
-      getNavState().focusedIndex !== null ||
-      getCurrentView() !== 'galaxy'
+      animationToken! !== appState.routeCameraAnimationToken ||
+      appState.navState.focusedIndex !== null ||
+      appState.currentView !== 'galaxy'
     )
       return;
     if (!activeControls.target || !activeCamera.position) return;
@@ -228,13 +187,13 @@ export function animateCameraToTerrainPrelude(
   options: RouteOptions = {},
 ): void {
   const reducedMotion = prefersReducedMotion();
-  const duration = reducedMotion ? 1 : options.duration || getMapHandoffPreludeMs() || 1200;
+  const duration = reducedMotion ? 1 : options.duration || appState.MAP_HANDOFF_PRELUDE_MS || 1200;
 
   publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'map-prelude', options: { duration } } as any);
 
   try {
-    const camera = getTypedCamera();
-    const controls = getTypedControls();
+    const camera = appState.camera as ChoreographyCamera | null;
+    const controls = appState.controls as ChoreographyControls | null;
     if (!camera || !controls) return;
     const activeCamera: ChoreographyCamera = camera;
     const activeControls: ChoreographyControls = controls;
@@ -251,7 +210,7 @@ export function animateCameraToTerrainPrelude(
       return;
     }
 
-    const animationToken = ++state.focusCameraAnimationToken;
+    const animationToken = ++appState.focusCameraAnimationToken;
     const startTime = performance.now();
 
     setFocusTransitionMode('map-prelude', { duration });
@@ -260,7 +219,7 @@ export function animateCameraToTerrainPrelude(
     activeControls.enabled = false;
 
     function step(now: number) {
-      if (animationToken !== state.focusCameraAnimationToken) {
+      if (animationToken !== appState.focusCameraAnimationToken) {
         activeControls.enabled = priorControlsEnabled;
         return;
       }
@@ -286,23 +245,25 @@ export function animateCameraToTerrainPrelude(
 // ── applySemanticCentroidCamera ───────────────────────────────────────────────
 
 export function applySemanticCentroidCamera(now = performance.now()): void {
-  const camera = getTypedCamera();
-  const controls = getTypedControls();
+  const camera = appState.camera as ChoreographyCamera | null;
+  const controls = appState.controls as ChoreographyControls | null;
   if (!camera || !controls) return;
   const activeControls: ChoreographyControls = controls;
-  if (getTrailDepth() !== 2) {
+  if (appState.trailDepth !== 2) {
     return;
   }
-  const navState = getNavState();
+  const navState = appState.navState;
   const indices = navState.focusPocketIndices;
   if (!indices || !indices.length) return;
 
   const anchorIdx = navState.focusedIndex;
   const pocketIndices = anchorIdx !== null && anchorIdx !== undefined ? [anchorIdx, ...indices] : indices;
 
+  const allNodePositions = appState.nodePositions as NodePosition[];
+  const allOriginalPositions = appState.originalPositions as NodePosition[];
   let cx = 0, cy = 0, cz = 0, count = 0;
   for (const idx of pocketIndices) {
-    const pos = getTypedNodePositions()[idx] || getTypedOriginalPositions()[idx];
+    const pos = allNodePositions[idx] || allOriginalPositions[idx];
     if (!pos) continue;
     cx += Number.isFinite(pos.x) ? pos.x : 0;
     cy += Number.isFinite(pos.y) ? pos.y : 0;
@@ -315,7 +276,7 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
 
   const anchorPos =
     anchorIdx !== null && anchorIdx !== undefined
-      ? getTypedNodePositions()[anchorIdx] || getTypedOriginalPositions()[anchorIdx]
+      ? allNodePositions[anchorIdx] || allOriginalPositions[anchorIdx]
       : null;
   if (!anchorPos) return;
 
@@ -325,7 +286,7 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
     Number.isFinite(anchorPos.z) ? anchorPos.z : 0,
   );
 
-  const personality = (state.navState.currentPersonality || {}) as ChoreographyPersonality;
+  const personality = ((appState.navState as any).currentPersonality || {}) as ChoreographyPersonality;
   let centroidWeight: number;
   if (personality.type === 'TIGHT_CLUSTER') {
     centroidWeight = 0.12;
@@ -361,8 +322,8 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
 // ── zoomCamera ───────────────────────────────────────────────────────────────
 
 export function zoomCamera(multiplier: number): void {
-  const camera = getTypedCamera();
-  const controls = getTypedControls();
+  const camera = appState.camera as ChoreographyCamera | null;
+  const controls = appState.controls as ChoreographyControls | null;
   if (!camera || !controls) return;
   const target = controls.target;
   if (!target) return;
@@ -371,8 +332,8 @@ export function zoomCamera(multiplier: number): void {
   const direction = camPos.clone().sub(target).normalize();
   const currentDistance = camPos.distanceTo(target);
   const newDistance = currentDistance * multiplier;
-  const minDist = controls.minDistance || getOrbitMinDistanceDefault() || 0.5;
-  const maxDist = controls.maxDistance || getOrbitMaxDistanceDefault() || 8.0;
+  const minDist = controls.minDistance || appState.ORBIT_MIN_DISTANCE_DEFAULT || 0.5;
+  const maxDist = controls.maxDistance || appState.ORBIT_MAX_DISTANCE_DEFAULT || 8.0;
   const clampedDistance = Math.max(minDist, Math.min(maxDist, newDistance));
   camera.position.copy(target.clone().add(direction.multiplyScalar(clampedDistance)));
 }
