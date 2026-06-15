@@ -12,7 +12,7 @@
  */
 
 import { withStateMutation } from '@lib/state/with-state-mutation';
-import workerUrl from '../../js/workers/data-worker.js?worker&url';
+import { workerUrl } from '@lib/engine/data-worker-url-bridge';
 import type {
   SemanticThreadBundle,
   SemanticThreadNode,

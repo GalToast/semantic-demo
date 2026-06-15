@@ -23,22 +23,13 @@ import {
 } from './guards';
 import { seededUnit } from '@lib/utils/seeded-random';
 import { demoPhase, isDemoActive, startDemo, cancelDemo } from '@lib/stores/demo';
-import * as microDemoChoreographyModule from '../../../js/modules/micro-demo-choreography';
+import { setDemoNodeIndex, runDemo, cancelChoreography as _cancelChoreographyLegacy } from '@lib/engine/micro-demo-choreography-bridge';
 import type { DemoPhase } from '@lib/types/state';
 
 // ── Legacy Choreography Bridge ──────────────────────────────────────────────
-// The actual timed camera/UI choreography is still in the legacy JS module.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const _choreography: Record<string, any> = {} as Record<string, any>;
-
-async function _loadChoreography(): Promise<void> {
-  if ((_choreography as Record<string, unknown>).setDemoNodeIndex) return;
-  try {
-    Object.assign(_choreography, microDemoChoreographyModule);
-  } catch {
-    debugWarn('[demo] Failed to load legacy choreography module');
-  }
-}
+// The actual timed camera/UI choreography is still in the legacy JS module,
+// accessed via the engine bridge (micro-demo-choreography-bridge).
+// Static imports are resolved by Vite at bundle time; no lazy loading needed.
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -192,14 +183,9 @@ async function _startMicroDemo(): Promise<void> {
   // Update store
   startDemo();
 
-  // Delegate to legacy choreography module
-  await _loadChoreography();
-  if (typeof _choreography.setDemoNodeIndex === 'function') {
-    _choreography.setDemoNodeIndex(node);
-  }
-  if (typeof _choreography.runDemo === 'function') {
-    _choreography.runDemo(cancelMicroDemo);
-  }
+  // Delegate to legacy choreography module via engine bridge
+  setDemoNodeIndex(node);
+  runDemo(cancelMicroDemo);
 
   _startGuardClaimed = false;
   _startRetryDeadline = 0;
@@ -207,11 +193,7 @@ async function _startMicroDemo(): Promise<void> {
 }
 
 export function cancelMicroDemo(reason = 'user-input'): void {
-  void _loadChoreography().then(() => {
-    if (typeof _choreography.cancelChoreography === 'function') {
-      _choreography.cancelChoreography(reason);
-    }
-  });
+  _cancelChoreographyLegacy(reason);
   cancelDemo();
 }
 
