@@ -6,7 +6,6 @@
 export * from './renderer.js';
 export * from './navigation.js';
 export * from './search.js';
-export * from './timers.js';
 export * from './diagnostics.js';
 export * from './config.js';
 export * from './filter-mode.js';

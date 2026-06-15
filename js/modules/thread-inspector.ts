@@ -15,9 +15,9 @@ import {
     getStrandContinuityState,
     getPinnedThreadIndex, getInspectedThreadIndex,
     getThreadInspectorPointerInside,
-    getCanvasThreadInspectionClearTimer,
     getPoints, getInspectedStrandDiagnostics
 } from '../state/selectors/index.ts';
+
 import { formatBusinessName, stripTerminalPunctuation } from './utils/dom-formatters.ts';
 import {
     getGeometricThreadCandidates,
@@ -219,8 +219,8 @@ export function renderThreadInspection(index: number | null = getInspectedThread
         inspector.dataset.pointerGuardBound = 'true';
         const pointerEnter = (): void => {
             state.threadInspectorPointerInside = true;
-            if (getCanvasThreadInspectionClearTimer()) {
-                window.clearTimeout(getCanvasThreadInspectionClearTimer()!);
+            if (state.canvasThreadInspectionClearTimer) {
+                window.clearTimeout(state.canvasThreadInspectionClearTimer!);
                 state.canvasThreadInspectionClearTimer = null;
             }
         };
@@ -243,8 +243,8 @@ export function renderThreadInspection(index: number | null = getInspectedThread
             inspector.addEventListener(eventName, stopSurfaceEvent);
         }
     }
-    if (inspectionState?.active && getCanvasThreadInspectionClearTimer()) {
-        window.clearTimeout(getCanvasThreadInspectionClearTimer()!);
+    if (inspectionState?.active && state.canvasThreadInspectionClearTimer) {
+        window.clearTimeout(state.canvasThreadInspectionClearTimer!);
         state.canvasThreadInspectionClearTimer = null;
     }
     inspector.classList.toggle('active', !!inspectionState?.active);
@@ -335,8 +335,8 @@ export function inspectThreadNeighbor(index: number, options: ThreadInspectionOp
 
 export function pinThreadNeighbor(index: number, options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
     if (!Number.isFinite(index)) return clearThreadInspection({ force: true });
-    if (getCanvasThreadInspectionClearTimer()) {
-        window.clearTimeout(getCanvasThreadInspectionClearTimer()!);
+    if (state.canvasThreadInspectionClearTimer) {
+        window.clearTimeout(state.canvasThreadInspectionClearTimer!);
         state.canvasThreadInspectionClearTimer = null;
     }
     state.pinnedThreadIndex = index;
@@ -352,8 +352,8 @@ export function pinThreadNeighbor(index: number, options: ThreadInspectionOption
 }
 
 export function unpinThreadInspection(): ThreadInspectionState | null {
-    if (getCanvasThreadInspectionClearTimer()) {
-        window.clearTimeout(getCanvasThreadInspectionClearTimer()!);
+    if (state.canvasThreadInspectionClearTimer) {
+        window.clearTimeout(state.canvasThreadInspectionClearTimer!);
         state.canvasThreadInspectionClearTimer = null;
     }
     state.pinnedThreadIndex = null;
@@ -367,7 +367,7 @@ export function unpinThreadInspection(): ThreadInspectionState | null {
 }
 
 export function scheduleCanvasThreadInspectionClear(delay: number = 1800): void {
-    if (getCanvasThreadInspectionClearTimer()) window.clearTimeout(getCanvasThreadInspectionClearTimer()!);
+    if (state.canvasThreadInspectionClearTimer) window.clearTimeout(state.canvasThreadInspectionClearTimer!);
     state.canvasThreadInspectionClearTimer = window.setTimeout(() => {
         state.canvasThreadInspectionClearTimer = null;
         if (getThreadInspectorPointerInside() || getPinnedThreadIndex() !== null) return;
@@ -386,8 +386,8 @@ export function clearThreadInspection(options: ThreadInspectionOptions = {}): Th
     }
     clearingThreadInspection = true;
     try {
-    if (options.force && getCanvasThreadInspectionClearTimer()) {
-        window.clearTimeout(getCanvasThreadInspectionClearTimer()!);
+    if (options.force && state.canvasThreadInspectionClearTimer) {
+        window.clearTimeout(state.canvasThreadInspectionClearTimer!);
         state.canvasThreadInspectionClearTimer = null;
     }
     if (options.force) {
