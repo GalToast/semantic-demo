@@ -6,11 +6,11 @@
  * Builds a deterministic constellation of nearby business nodes around
  * a focused anchor. Delegates geometry to focus/geometry.ts and personality
  * to focus/personality.ts. All state writes to navState.focusPocket* and
- * related tracked sub-objects are wrapped in withStateMutation().
+ * related tracked sub-objects are wrapped in appState.withMutation().
  */
 import * as THREE from 'three';
 import type { Vector3 } from 'three';
-import { state, withStateMutation } from '../../../js/state';
+import { appState } from '@lib/state/app.svelte';
 import { prefersReducedMotion } from '@lib/utils/environment';
 import { normalizeCityForFilter } from '@lib/utils/geo-data';
 import { getBusinessRecords } from '@lib/data-store';
@@ -55,33 +55,33 @@ export {
 };
 
 // ── Focus Pocket Getter/Setter API ──────────────────────────────────────────
-// All writes to navState.focusPocket* and focusPocketMotionByIndex must flow
+// All writes to navState.focusPocket* and pocketMotionByIndex must flow
 // through these functions. No direct assignment outside this API.
 
 export function getFocusPocketIndices(): number[] {
-  const indices = (state.navState as unknown as Record<string, unknown>).focusPocketIndices;
+  const indices = appState.navState.focusPocketIndices;
   return Array.isArray(indices) ? indices : [];
 }
 
 export function setFocusPocketIndices(indices: number[]): void {
-  withStateMutation(() => {
-    ((state as unknown as Record<string, unknown>).navState as unknown as Record<string, unknown>).focusPocketIndices = indices;
+  appState.withMutation(() => {
+    appState.navState.focusPocketIndices = indices;
   });
 }
 
 export function getFocusPocketRoleByIndex(): Map<number, string> {
-  return ((state.navState as unknown as Record<string, unknown>).focusPocketRoleByIndex as Map<number, string>) ?? new Map();
+  return (appState.navState.focusPocketRoleByIndex as Map<number, string>) ?? new Map();
 }
 
 export function setFocusPocketRoleByIndex(map: Map<number, string>): void {
-  withStateMutation(() => {
-    ((state as unknown as Record<string, unknown>).navState as unknown as Record<string, unknown>).focusPocketRoleByIndex = map;
+  appState.withMutation(() => {
+    appState.navState.focusPocketRoleByIndex = map;
   });
 }
 
 export function setFocusPocketRoleForIndex(index: number, role: string): void {
-  withStateMutation(() => {
-    const navState = (state as unknown as Record<string, unknown>).navState as unknown as Record<string, unknown>;
+  appState.withMutation(() => {
+    const navState = appState.navState as unknown as Record<string, unknown>;
     if (!(navState.focusPocketRoleByIndex instanceof Map)) {
       navState.focusPocketRoleByIndex = new Map();
     }
@@ -90,63 +90,63 @@ export function setFocusPocketRoleForIndex(index: number, role: string): void {
 }
 
 export function clearFocusPocketRoleByIndex(): void {
-  withStateMutation(() => {
-    ((state as unknown as Record<string, unknown>).navState as unknown as Record<string, unknown>).focusPocketRoleByIndex = new Map();
+  appState.withMutation(() => {
+    appState.navState.focusPocketRoleByIndex = new Map();
   });
 }
 
 export function getFocusPocketMotionByIndex(): Map<number, Record<string, unknown>> {
-  return ((state as unknown as Record<string, unknown>).focusPocketMotionByIndex as Map<number, Record<string, unknown>>) ?? new Map();
+  return (appState.pocketMotionByIndex as Map<number, Record<string, unknown>>) ?? new Map();
 }
 
 export function setFocusPocketMotionByIndex(map: Map<number, Record<string, unknown>>): void {
-  withStateMutation(() => {
-    (state as unknown as Record<string, unknown>).focusPocketMotionByIndex = map;
+  appState.withMutation(() => {
+    appState.pocketMotionByIndex = map;
   });
 }
 
 export function setFocusPocketMotionForIndex(index: number, motion: Record<string, unknown>): void {
-  withStateMutation(() => {
-    const s = state as unknown as Record<string, unknown>;
-    if (!(s.focusPocketMotionByIndex instanceof Map)) {
-      s.focusPocketMotionByIndex = new Map();
+  appState.withMutation(() => {
+    const s = appState;
+    if (!(s.pocketMotionByIndex instanceof Map)) {
+      s.pocketMotionByIndex = new Map();
     }
-    (s.focusPocketMotionByIndex as Map<number, Record<string, unknown>>).set(index, motion);
+    (s.pocketMotionByIndex as Map<number, Record<string, unknown>>).set(index, motion);
   });
 }
 
 export function clearFocusPocketMotionByIndex(): void {
-  withStateMutation(() => {
-    (state as unknown as Record<string, unknown>).focusPocketMotionByIndex = new Map();
+  appState.withMutation(() => {
+    appState.pocketMotionByIndex = new Map();
   });
 }
 
 export function clearFocusPocketIndices(): void {
-  withStateMutation(() => {
-    ((state as unknown as Record<string, unknown>).navState as unknown as Record<string, unknown>).focusPocketIndices = [];
+  appState.withMutation(() => {
+    appState.navState.focusPocketIndices = [];
   });
 }
 
 export function getFocusPocketMeta(): Record<string, unknown> | null {
-  return ((state.navState as unknown as Record<string, unknown>).focusPocketMeta as unknown as Record<string, unknown>) ?? null;
+  return (appState.navState.focusPocketMeta as unknown as Record<string, unknown>) ?? null;
 }
 
 export function setFocusPocketMeta(meta: Record<string, unknown> | null): void {
-  withStateMutation(() => {
-    ((state as unknown as Record<string, unknown>).navState as unknown as Record<string, unknown>).focusPocketMeta = meta;
+  appState.withMutation(() => {
+    appState.navState.focusPocketMeta = meta;
   });
 }
 
 export function clearFocusPocketMeta(): void {
-  withStateMutation(() => {
-    ((state as unknown as Record<string, unknown>).navState as unknown as Record<string, unknown>).focusPocketMeta = null;
+  appState.withMutation(() => {
+    appState.navState.focusPocketMeta = null;
   });
 }
 
 // ── Apply Local Neighborhood Focus ──────────────────────────────────────────
 
 export function applyLocalNeighborhoodFocus(index: number): void {
-  const lState = state as unknown as Record<string, unknown>;
+  const lState = appState;
   const navState = lState.navState as unknown as Record<string, unknown>;
   const points = lState.points as Array<Record<string, unknown>> | undefined;
   const originalPositions = lState.originalPositions as Array<{ x: number; y: number; z: number }> | undefined;
@@ -182,7 +182,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
 
   // --- POLISH 312: Determine Personality ---
   const personality = getNeighborhoodPersonality(index);
-  withStateMutation(() => {
+  appState.withMutation(() => {
     navState.currentPersonality = personality;
   });
 
@@ -190,8 +190,8 @@ export function applyLocalNeighborhoodFocus(index: number): void {
   clearFocusPocketMeta();
   clearFocusPocketRoleByIndex();
   clearFocusPocketMotionByIndex();
-  withStateMutation(() => {
-    (lState as unknown as Record<string, unknown>).focusPocketTransitionStartedAt = performance.now();
+  appState.withMutation(() => {
+    appState.pocketTransitionStartedAt = performance.now();
   });
 
   if (navState.threadSource === 'semantic') {
@@ -227,7 +227,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
       setFocusPocketMotionByIndex(motion);
 
       setFocusPocketMeta(pocket.meta);
-      withStateMutation(() => {
+      appState.withMutation(() => {
         (lState as unknown as Record<string, unknown>).nodesAreSettling = true;
         (lState as unknown as Record<string, unknown>).autoRotate = false;
       });
@@ -239,7 +239,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
   // Fallback: geometric/thread-candidate path
   const focusPos = originalPositions?.[index];
   if (!focusPos) {
-    withStateMutation(() => {
+    appState.withMutation(() => {
       (lState as unknown as Record<string, unknown>).nodesAreSettling = false;
       (lState as unknown as Record<string, unknown>).autoRotate = true;
     });
@@ -304,7 +304,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
       motifLabel: fallbackPocket.motif?.label || 'threaded neighborhood',
       viewportProfile: fallbackPocket.viewportProfile || viewportProfile,
     } as unknown as Record<string, unknown>);
-    withStateMutation(() => {
+    appState.withMutation(() => {
       (lState as unknown as Record<string, unknown>).nodesAreSettling = true;
       (lState as unknown as Record<string, unknown>).autoRotate = false;
     });
@@ -391,7 +391,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
       };
     }
   }
-  withStateMutation(() => {
+  appState.withMutation(() => {
     (lState as unknown as Record<string, unknown>).nodesAreSettling = true;
   });
   syncPocketNodesToStore();
@@ -409,7 +409,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
  * HTML overlay invoked after the build step.
  */
 function syncPocketNodesToStore(): void {
-  const lState = state as unknown as Record<string, unknown>;
+  const lState = appState;
   const navState = lState.navState as unknown as Record<string, unknown> | undefined;
   if (!navState) return;
   const indices = (navState.focusPocketIndices as number[] | undefined) ?? [];
@@ -461,15 +461,15 @@ export function applyFocusPocketBreathing(
   now: number,
   positions: Array<{ x: number; y: number; z: number }> | null
 ): boolean {
-  const lState = state as unknown as Record<string, unknown>;
+  const lState = appState;
   const navState = lState.navState as unknown as Record<string, unknown>;
   const focusPocketMeta = navState.focusPocketMeta as unknown as Record<string, unknown> | null;
-  const focusPocketMotionByIndex = lState.focusPocketMotionByIndex as Map<number, Record<string, unknown>> | undefined;
+  const pocketMotionByIndex = lState.pocketMotionByIndex as Map<number, Record<string, unknown>> | undefined;
   const targetPositions = lState.targetPositions as Array<{ x: number; y: number; z: number }> | undefined;
   const nodePositions = lState.nodePositions as Array<{ x: number; y: number; z: number }> | undefined;
   const originalPositions = lState.originalPositions as Array<{ x: number; y: number; z: number }> | undefined;
 
-  if (!focusPocketMeta?.active || !focusPocketMotionByIndex?.size || !positions) return false;
+  if (!focusPocketMeta?.active || !pocketMotionByIndex?.size || !positions) return false;
   if (prefersReducedMotion()) return false;
 
   const age = now - ((lState as unknown as Record<string, unknown>).focusPocketTransitionStartedAt as number);
@@ -487,7 +487,7 @@ export function applyFocusPocketBreathing(
   }
 
   let changed = false;
-  focusPocketMotionByIndex.forEach((motion, idx) => {
+  pocketMotionByIndex.forEach((motion, idx) => {
     const basePosition = targetPositions?.[idx] || nodePositions?.[idx] || originalPositions?.[idx];
     if (!basePosition) return;
     if (idx === anchorIndex || !anchor) return;
@@ -539,8 +539,8 @@ export function applyFocusPocketBreathing(
 // ── Runtime State Sync ──────────────────────────────────────────────────────
 
 export function syncRuntimeState(snapshot: Record<string, unknown> = {}): void {
-  withStateMutation(() => {
-    const s = state as unknown as Record<string, unknown>;
+  appState.withMutation(() => {
+    const s = appState;
     Object.entries(snapshot).forEach(([key, value]) => {
       s[key] = value;
     });
@@ -548,11 +548,11 @@ export function syncRuntimeState(snapshot: Record<string, unknown> = {}): void {
 }
 
 export function getRuntimeStateSnapshot(): Record<string, unknown> {
-  const lState = state as unknown as Record<string, unknown>;
+  const lState = appState;
   return {
     navState: lState.navState,
     targetPositions: lState.targetPositions,
-    focusPocketMotionByIndex: lState.focusPocketMotionByIndex,
+    pocketMotionByIndex: lState.pocketMotionByIndex,
     focusPocketTransitionStartedAt: lState.focusPocketTransitionStartedAt,
     nodesAreSettling: lState.nodesAreSettling,
     autoRotate: lState.autoRotate,

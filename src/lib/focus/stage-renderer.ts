@@ -24,8 +24,7 @@
  * Svelte component from the `selectedPointStore`.
  */
 
-import { getCurrentView, getSelectedPoint, getPoints, getCurrentSearchSummary } from '../../../js/state/selectors/index';
-import { getSelectedCardFadeMs, getLeadEnrichment } from '../../../js/state/selectors/index';
+import { appState } from '@lib/state/app.svelte';
 import { getBusinessNamePresentation, sanitizePublicFacingNote } from '@lib/utils/dom-formatters';
 import { getPanelSurface, isMapSummarySurface } from '@lib/utils/environment';
 
@@ -42,7 +41,7 @@ interface TriviaBlocklist {
 // ── Renderers ──────────────────────────────────────────────────────────────
 
 export function renderSignalBadges(point: any): string {
-    if (getCurrentView() === 'map') return '';
+    if (appState.currentView === 'map') return '';
     if (!point) return '';
     const badges: string[] = [];
     if (point.website) badges.push('<span class="signal-badge meta" title="Website present">Website present</span>');
@@ -55,21 +54,21 @@ export function updateSelectedCardHeading(point: any = null): void {
     const titleEl = document.getElementById('selected-card-title');
     if (!titleEl) return;
 
-    const activePoint = point || getSelectedPoint() || null;
-    const points: any[] = Array.isArray(getPoints()) ? (getPoints() as any[]) : [];
+    const activePoint = point || appState.selectedPoint || null;
+    const points: any[] = Array.isArray(appState.points) ? (appState.points as any[]) : [];
     const activeIndex = activePoint && points.length > 0
         ? points.indexOf(activePoint)
         : -1;
-    const summary = getCurrentSearchSummary() || {} as any;
+    const summary = appState.currentSearchSummary || {} as any;
     const resultIndices: number[] = Array.isArray(summary.resultIndices) ? summary.resultIndices : [];
 
     if (!activePoint) {
-        titleEl.textContent = getCurrentView() === 'map' ? 'Map Selection' : 'Selection';
+        titleEl.textContent = appState.currentView === 'map' ? 'Map Selection' : 'Selection';
     } else if (Number.isFinite(summary.anchorIndex) && activeIndex === summary.anchorIndex) {
         titleEl.textContent = 'Search Anchor';
     } else if (resultIndices.includes(activeIndex)) {
         titleEl.textContent = 'Related Match';
-    } else if (getCurrentView() === 'map') {
+    } else if (appState.currentView === 'map') {
         titleEl.textContent = 'Map Selection';
     } else {
         titleEl.textContent = 'Focused Business';
@@ -112,7 +111,7 @@ function scheduleFrame(callback: FrameRequestCallback | (() => void)): void {
 
 export function triggerSelectedCardFade(cardEl: HTMLElement): void {
     if (!cardEl) return;
-    cardEl.style.setProperty('--selected-card-fade-ms', `${getSelectedCardFadeMs()}ms`);
+    cardEl.style.setProperty('--selected-card-fade-ms', `${appState.SELECTED_CARD_FADE_MS}ms`);
     cardEl.classList.add('is-fading');
     scheduleFrame(() => {
         scheduleFrame(() => {
@@ -122,25 +121,25 @@ export function triggerSelectedCardFade(cardEl: HTMLElement): void {
 }
 
 function focusStageOwnsSelectedContent(surface: string): boolean {
-    return getCurrentView() === 'galaxy'
+    return appState.currentView === 'galaxy'
         && ['focus', 'focus-search', 'semantic-dive'].includes(surface);
 }
 
 function getSelectedMapSummaryRole(point: any): string {
-    const points: any[] = Array.isArray(getPoints()) ? (getPoints() as any[]) : [];
+    const points: any[] = Array.isArray(appState.points) ? (appState.points as any[]) : [];
     if (!point || points.length === 0) return 'Trail match';
     const idx = points.indexOf(point);
-    const summary: any = getCurrentSearchSummary() || {};
+    const summary: any = appState.currentSearchSummary || {};
     if (Number.isFinite(summary.anchorIndex) && idx === summary.anchorIndex) return 'Search anchor';
     if (Array.isArray(summary.resultIndices) && summary.resultIndices.includes(idx)) return 'Related match';
     return 'Trail match';
 }
 
 function getSelectedMapSummaryCopy(point: any): string {
-    const points: any[] = Array.isArray(getPoints()) ? (getPoints() as any[]) : [];
+    const points: any[] = Array.isArray(appState.points) ? (appState.points as any[]) : [];
     if (!point || points.length === 0) return 'This record is connected to the current semantic search trail.';
     const idx = points.indexOf(point);
-    const summary: any = getCurrentSearchSummary() || {};
+    const summary: any = appState.currentSearchSummary || {};
     if (Number.isFinite(summary.anchorIndex) && idx === summary.anchorIndex) {
         return 'This record anchors the current semantic trail on the county map.';
     }
@@ -173,7 +172,7 @@ export function syncSelectedCardContentVariant(point: any = null): void {
     const summaryEl = document.getElementById('selected-map-summary');
     const cascadeEl = document.getElementById('vector-cascade-bg');
     const surface = getPanelSurface();
-    const isMapSummary = Boolean(point) && getCurrentView() === 'map' && isMapSummarySurface();
+    const isMapSummary = Boolean(point) && appState.currentView === 'map' && isMapSummarySurface();
     const isFocusStageOwner = Boolean(point) && focusStageOwnsSelectedContent(surface);
 
     if (cardEl) {
@@ -331,7 +330,7 @@ export function getInterestingBusinessNote(point: any): string | null {
     // Bug Sweep 33: prefer the lead's own one-liner from the enrichment
     // (snapshot > business_overview > observations) over the database
     // trivia field, which is often database noise.
-    const enrichment: any = getLeadEnrichment();
+    const enrichment: any = appState.leadEnrichment;
     if (enrichment) {
         const enr: any = enrichment[String(point.lead_id)];
         if (enr) {
@@ -361,7 +360,7 @@ export function getInterestingBusinessNote(point: any): string | null {
  */
 export function buildSelectedMatchNarrative(point: any): string {
     if (!point) return '';
-    const summary: any = getCurrentSearchSummary();
+    const summary: any = appState.currentSearchSummary;
     if (summary?.reason) return summary.reason;
     return '';
 }

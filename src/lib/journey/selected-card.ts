@@ -20,4 +20,4 @@
 export {
 	syncFocusStage,
 	updateSelectedBusiness
-} from '@lib/engine/journey-selected-card-bridge';
+} from '../../../js/modules/journey-selected-card';
