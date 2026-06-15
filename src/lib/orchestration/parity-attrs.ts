@@ -407,14 +407,29 @@ export function installParityAttributeSync(
   };
 
   // Standard svelte stores (Writable/Readable) — reactive via .subscribe()
-  unsubs.push(navStore.subscribe(recomputeAndApply));
-  unsubs.push(journeyStore.subscribe(recomputeAndApply));
-  unsubs.push(focusStore.subscribe(recomputeAndApply));
-  unsubs.push(searchStore.subscribe(recomputeAndApply));
-  unsubs.push(filterState.subscribe(recomputeAndApply));
-  unsubs.push(loadingPhaseStore.subscribe(recomputeAndApply));
-  unsubs.push(demoPhaseStore.subscribe(recomputeAndApply));
-  unsubs.push(graphicsModeStore.subscribe(recomputeAndApply));
+  // W11 WIP safety net: some migrated stores may not have .subscribe() yet.
+  // The initial recomputeAndApply() below still reads every store imperatively,
+  // so dropping a subscription only loses future reactivity (not the first read).
+  const safeSubscribe = (store: unknown, label: string): void => {
+    try {
+      if (store && typeof (store as { subscribe?: unknown }).subscribe === 'function') {
+        unsubs.push((store as { subscribe: (fn: () => void) => () => void }).subscribe(recomputeAndApply));
+      } else {
+        // Rune-based store (no .subscribe); read imperatively via initial recompute below.
+        console.debug?.(`[parity-attrs] skipping non-subscribable store: ${label}`);
+      }
+    } catch (err) {
+      console.warn?.(`[parity-attrs] failed to subscribe to ${label}:`, err);
+    }
+  };
+  safeSubscribe(navStore, 'navStore');
+  safeSubscribe(journeyStore, 'journeyStore');
+  safeSubscribe(focusStore, 'focusStore');
+  safeSubscribe(searchStore, 'searchStore');
+  safeSubscribe(filterState, 'filterState');
+  safeSubscribe(loadingPhaseStore, 'loadingPhaseStore');
+  safeSubscribe(demoPhaseStore, 'demoPhaseStore');
+  safeSubscribe(graphicsModeStore, 'graphicsModeStore');
   // Rune-based stores — read imperatively; not subscribable from plain .ts.
   // The .svelte.ts sibling uses $effect.root() for full reactivity.
 

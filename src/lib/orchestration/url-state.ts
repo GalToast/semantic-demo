@@ -559,9 +559,9 @@ async function _restoreSearchFromParams(
     // anchors are settled by `_restoreAnchorFromParams` in `applyUrlState`
     // before this helper ever runs.
     if (anchorId && !Number.isFinite(Number(anchorId))) {
-      const results = searchStore.results;
+      const results = searchStore().results;
       if (results && results.length > 0) {
-        const byId = results.find((r) => r.id === anchorId);
+        const byId = results.find((r: any) => r.id === anchorId);
         if (byId) {
           publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: byId.index });
         }

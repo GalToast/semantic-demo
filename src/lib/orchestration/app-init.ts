@@ -75,7 +75,10 @@ function setupSafetyValves(): SafetyTimers {
   const slowProgress = setTimeout(() => {
     if (typeof document === 'undefined') return;
     const overlay = document.getElementById('loading-overlay');
-    if (overlay?.classList.contains('hidden')) return;
+    // When the Svelte LoadingOverlay hides via {#if actuallyVisible}, the
+    // DOM element is removed entirely. Treat a missing overlay the same as
+    // a hidden one — the overlay has already been dismissed.
+    if (!overlay || overlay.classList.contains('hidden')) return;
 
     setLoadingPhase('restore');
     // Push overrides via DOM (matches legacy setLoadingPhase override pattern)

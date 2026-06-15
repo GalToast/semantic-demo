@@ -80,7 +80,7 @@ export function getFocusedJourneyPoint(): Record<string, unknown> | null {
  */
 export function getJourneyCompassState(): CompassStateContext {
   const $nav = navStore();
-  const $search = searchStore;
+  const $search = searchStore();
   const $journey = journeyStore();
   const $focus = focusStore();
 
@@ -96,7 +96,7 @@ export function getJourneyCompassState(): CompassStateContext {
   const hasSearch = !!summary || isSearchingState;
   const hasFocus = !!focusedPoint;
   const insideActive = $focus.semanticDiveMode && $nav.currentView === 'galaxy' && hasFocus;
-  const currentTrailDepth = $journey.trailDepth ?? 0;
+  const currentTrailDepth = $journey.depth ?? 0;
   const walkHistory = Array.isArray($nav.walkHistoryIndices)
     ? $nav.walkHistoryIndices
     : [];
@@ -236,18 +236,11 @@ export function getJourneyCompassState(): CompassStateContext {
 
   // ── Empty Query ───────────────────────────────────────────────────────────
 
-  const currentEmptyQuery = $search.query === '' ? null : null; // derived from legacy state
-  if (currentEmptyQuery) {
-    const label = `"${currentEmptyQuery}"`;
-    return {
-      phase: 'search',
-      kicker: `Search | ${label}`,
-      title: `No results for ${label}`,
-      note: 'Try a broader term or one of the suggested high-signal categories below.',
-      primaryAction: { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH },
-      secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
-      tertiaryAction: null
-    };
+  const currentQuery = $search.query;
+  if (currentQuery === '') {
+    // Overview case handled below
+  } else {
+    // No results case handled above in hasSearch if summary exists
   }
 
   // ── Overview (Idle) ───────────────────────────────────────────────────────

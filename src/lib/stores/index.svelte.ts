@@ -171,7 +171,7 @@ export {
   isSemanticDiveSurface,
   initViewportListeners,
   syncViewport
-} from './viewport.svelte';
+} from './viewport.svelte.ts';
 
 // ── Weather ──────────────────────────────────────────────────────────────────
 export {
@@ -187,7 +187,7 @@ export {
   updateWeather,
   fetchWeather,
   CONDITION_ICONS
-} from './weather.svelte';
+} from './weather.svelte.ts';
 
 // ── Camera ───────────────────────────────────────────────────────────────────
 export {
@@ -197,26 +197,31 @@ export {
   autoRotate,
   autoRotateSuspended,
   getRouteLayerOrigin
-} from './camera.svelte';
+} from './camera.svelte.ts';
 
 // ── Engine Bridge ────────────────────────────────────────────────────────────
 export {
   engineBridgeStore,
   setEngineBridge,
   getEngineBridge
-} from './engine-bridge.svelte';
+} from './engine-bridge.svelte.ts';
 
 // ── Test Compatibility ───────────────────────────────────────────────────────
 export {
   testCompatStore,
+  testCompatStore as testState,
   syncTestStateFromBody,
   resetTestState
-} from './test-compat.svelte';
+} from './test-compat.svelte.ts';
 
 // ── Combined Helpers ─────────────────────────────────────────────────────────
 
 import { get } from 'svelte/store';
 import { navStore } from './navigation.svelte';
+import {
+  getBusinessRecords as getDataBusinessRecords,
+  getIsDataReady as getDataIsReady
+} from '../data-store';
 
 /** Returns the currently focused business record index. */
 export function getFocusedIndex(): number | null {
@@ -224,14 +229,19 @@ export function getFocusedIndex(): number | null {
   return nav.focusedIndex ?? null;
 }
 
-/** Returns the current list of business records (placeholder). */
+/** Returns the current list of business records. */
 export function getBusinessRecords(): any[] {
-  return []; // Should be imported from data-store
+  return [...getDataBusinessRecords()];
+}
+
+/** Returns whether records are ready for UI consumption. */
+export function getIsDataReady(): boolean {
+  return getDataIsReady();
 }
 
 /** Reactive store for the selected point record. */
 export function selectedPointStore() {
-  const idx = focusedIndex();
+  const idx = getFocusedIndex();
   const records = getBusinessRecords();
   if (idx == null || idx < 0 || !records || idx >= records.length) {
     return null;

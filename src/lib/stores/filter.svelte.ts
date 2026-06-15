@@ -171,10 +171,40 @@ export function overwriteActiveFilters(filters: ActiveFilters): void {
   }
 }
 
+/** Set a single filter field without toggle semantics. */
+export function setFilter<K extends keyof ActiveFilters>(type: K, value: ActiveFilters[K]): void {
+  filterState.update((current) => ({ ...current, [type]: value }));
+  incrementFilterVersion();
+  bumpFilterColorVersion();
+}
+
+/** Increment the public filter version counter. */
+export function incrementFilterVersion(): number {
+  let next = 0;
+  filterVersion.update((v) => {
+    next = v + 1;
+    return next;
+  });
+  return next;
+}
+
+/** Increment the public filter color version counter. */
+export function bumpFilterColorVersion(): number {
+  let next = 0;
+  filterColorVersion.update((v) => {
+    next = v + 1;
+    return next;
+  });
+  return next;
+}
+
 /** Set the active cluster filter. */
 export function setClusterFilter(cluster: string | null): void {
   activeClusterFilter.set(cluster);
 }
+
+/** Backward-compatible alias used by the store barrel. */
+export const setActiveClusterFilter = setClusterFilter;
 
 /** Reset all filters to their initial (inactive) state. */
 export function resetFilters(): void {

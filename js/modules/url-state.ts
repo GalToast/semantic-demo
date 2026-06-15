@@ -21,7 +21,7 @@ import {
 } from './lifecycle.ts';
 import { switchView } from './view-controller.ts';
 import { recordSemanticLaneSnapshot, setSemanticLaneOpsMode, refreshSemanticLaneOpsSummary } from './semantic-lane.ts';
-import { isPointVisible } from './utils/geo-data.ts';
+import { isPointVisible, type GeoPoint } from './utils/geo-data.ts';
 import { debugWarn } from './diagnostic-adapter.ts';
 import { formatBusinessName, escapeHtml } from './utils/dom-formatters.ts';
 import { restoreActiveFiltersFromUrl, restoreActiveClusterFilterFromUrl } from './filter-state.ts';
@@ -57,7 +57,7 @@ interface UpdateUrlStateOptions {
     force?: boolean;
 }
 
-interface Point {
+interface Point extends GeoPoint {
     lead_id?: string | number;
     name?: string;
     [key: string]: unknown;
@@ -416,11 +416,12 @@ function restoreRecordFocusFromParams(params: URLSearchParams, options: UrlState
         return false;
     }
 
-    if (!isPointVisible((getPoints() as Point[]).indexOf(target), getPoints() as Point[], getActiveClusterFilter(), getActiveFilters())) {
+    const points = getPoints() as Point[];
+    const targetIndex = points.indexOf(target);
+    if (!isPointVisible(targetIndex, points as GeoPoint[], getActiveClusterFilter(), getActiveFilters())) {
         return false;
     }
 
-    const targetIndex = (getPoints() as Point[]).indexOf(target);
     focusOnPoint(target, { skipUrlSync: true, revealCard: true });
     const currentSearchSummary = getSearchSummaryView();
     const resultIndices = Array.isArray(currentSearchSummary?.resultIndices)

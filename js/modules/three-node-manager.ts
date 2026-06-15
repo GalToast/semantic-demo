@@ -377,10 +377,10 @@ export function createPoints() {
         count: bounds.count
     };
 
-    const sporeTexture = trackTexture(createSporeTexture(THREE));
+    const sporeTexture = trackTexture(createSporeTexture());
     webglContext.focusBeaconTexture = sporeTexture;
-    webglContext.focusRingTexture = trackTexture(createFocusRingTexture(THREE));
-    webglContext.focusNextCueTexture = trackTexture(createFocusNextCueTexture(THREE));
+    webglContext.focusRingTexture = trackTexture(createFocusRingTexture());
+    webglContext.focusNextCueTexture = trackTexture(createFocusNextCueTexture());
 
     const hasRawBuffers = rawPositionsBuffer && rawClustersBuffer && rawClustersBuffer.length === state.points.length;
 

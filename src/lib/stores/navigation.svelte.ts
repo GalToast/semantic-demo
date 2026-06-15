@@ -250,6 +250,9 @@ export function switchView(view: 'galaxy' | 'map'): void {
   _navWritable.update(s => ({ ...s, currentView: view }));
 }
 
+/** Backward-compatible alias for callers that still use the state mutator name. */
+export const setCurrentView = switchView;
+
 /** Set the focused node index. */
 export function setFocusedIndex(index: number | null): void {
   _navWritable.update(s => ({ ...s, focusedIndex: index }));
@@ -263,6 +266,19 @@ export function setNavMode(mode: NavMode): void {
 /** Set the active panel surface. */
 export function setSurface(surface: PanelSurface): void {
   _navWritable.update(s => ({ ...s, previousSurface: s.surface, surface }));
+}
+
+/** Backward-compatible alias for migrated orchestration imports. */
+export const setNavSurface = setSurface;
+
+/** Set the current neighborhood index list. */
+export function setNeighborhoodIndices(indices: number[]): void {
+  _navWritable.update(s => ({ ...s, neighborhoodIndices: [...indices] }));
+}
+
+/** Set the exploration history index list. */
+export function setExplorationHistoryIndices(indices: number[]): void {
+  _navWritable.update(s => ({ ...s, explorationHistoryIndices: [...indices] }));
 }
 
 /** Enable or disable auto-rotation. */
@@ -285,6 +301,9 @@ export function setLoadingPhase(phase: string): void {
   _navWritable.update(s => ({ ...s, loadingPhaseKey: phase }));
 }
 
+/** Backward-compatible alias for callers using the legacy nav-state field name. */
+export const setLoadingPhaseKey = setLoadingPhase;
+
 /** Start the scene reveal sequence. */
 export function startSceneReveal(): void {
   _navWritable.update(s => ({ ...s, sceneRevealActive: true, sceneRevealStartedAt: Date.now() }));
@@ -293,6 +312,15 @@ export function startSceneReveal(): void {
 /** Complete the scene reveal sequence. */
 export function completeSceneReveal(): void {
   _navWritable.update(s => ({ ...s, sceneRevealActive: false }));
+}
+
+/** Directly set scene reveal active state. */
+export function setSceneRevealActive(active: boolean): void {
+  _navWritable.update(s => ({
+    ...s,
+    sceneRevealActive: active,
+    sceneRevealStartedAt: active ? (s.sceneRevealStartedAt || Date.now()) : s.sceneRevealStartedAt
+  }));
 }
 
 /** Set the active story prompt (for UI sync). */

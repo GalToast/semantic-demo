@@ -296,8 +296,16 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     const anchorName = anchorResult ? formatBusinessName(anchorResult.point.name as string) : null;
 
     state.currentSearchSummary = {
-        query: trimmedQuery, totalMatches: results.length, totalSemanticMatches: results.length, visibleMatches: results.length,
-        anchorIndex, topIndex: topResult?.index ?? null, resultIndices
+        query: trimmedQuery,
+        totalMatches: results.length,
+        totalSemanticMatches: results.length,
+        visibleMatches: results.length,
+        resultCount: results.length,
+        topScore: topResult?.score ?? 0,
+        anchorIndex,
+        topIndex: topResult?.index ?? null,
+        resultIndices,
+        summaryType: 'semantic'
     };
 
     publish(EVENTS.SEARCH_SUCCESS, {

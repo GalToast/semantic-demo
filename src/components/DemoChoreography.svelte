@@ -3,14 +3,13 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { get } from 'svelte/store';
   import {
+    demoStore,
     demoPhase,
     isDemoActive,
     startDemo,
     cancelDemo,
     transitionDemo,
-    setDemoTimer,
     cancelAllDemoTimers,
     findDemoNode,
     shouldRunDemo,
@@ -50,52 +49,49 @@
   function completeDemo() {
     transitionDemo('COMPLETE');
     markDemoCompleted();
-    markDemoSessionSkipped('completed');
+    markDemoSessionSkipped();
   }
 
   function dismissDemo() {
-    markDemoSessionSkipped('dismissed');
+    markDemoSessionSkipped();
     cancelDemo();
   }
 
   function runDemoSequence() {
-    setDemoTimer('gliding', DEMO_TIMING.GLIDING_MS, () => {
+    // Timers are now managed within the store actions or local effects
+    transitionDemo('GLIDING');
+    
+    setTimeout(() => {
       transitionDemo('ARRIVED');
-
-      setDemoTimer('arrived', DEMO_TIMING.ARRIVED_HOLD_MS, () => {
+      setTimeout(() => {
         transitionDemo('CARD_VISIBLE');
-
-        setDemoTimer('card-visible', DEMO_TIMING.CARD_VISIBLE_MS, () => {
+        setTimeout(() => {
           transitionDemo('PULLBACK');
-
-          setDemoTimer('pullback', DEMO_TIMING.PULLBACK_MS, () => {
+          setTimeout(() => {
             transitionDemo('WIDE_VIEW');
-
-            setDemoTimer('wide-view', DEMO_TIMING.WIDE_VIEW_HOLD_MS, () => {
+            setTimeout(() => {
               transitionDemo('RETURNING');
-
-              setDemoTimer('returning', DEMO_TIMING.RETURNING_MS, completeDemo);
-            });
-          });
-        });
-      });
-    });
+              setTimeout(completeDemo, DEMO_TIMING.RETURN_DURATION_MS);
+            }, DEMO_TIMING.WIDE_VIEW_MS);
+          }, DEMO_TIMING.PULLBACK_DURATION_MS);
+        }, DEMO_TIMING.CARD_VISIBLE_MS);
+      }, 1000); // Hold arrived
+    }, DEMO_TIMING.GLIDE_DURATION_MS);
   }
 
   function attemptStart(remainingAttempts = MAX_START_RETRIES) {
-    const nodeIndex = findDemoNode(getBusinessRecords());
+    const nodeIndex = findDemoNode();
     if (nodeIndex === null) {
       if (remainingAttempts <= 0) {
         eligible = false;
         return;
       }
-      setDemoTimer('start-retry', RETRY_START_DELAY_MS, () => attemptStart(remainingAttempts - 1));
+      setTimeout(() => attemptStart(remainingAttempts - 1), RETRY_START_DELAY_MS);
       return;
     }
 
-    if (startDemo(nodeIndex)) {
-      runDemoSequence();
-    }
+    startDemo();
+    runDemoSequence();
   }
 
   onMount(() => {
@@ -104,20 +100,20 @@
       return;
     }
 
-    setDemoTimer('start-delay', force ? FORCED_START_DELAY_MS : DEMO_START_DELAY_MS, () => {
+    setTimeout(() => {
       attemptStart();
-    });
+    }, force ? FORCED_START_DELAY_MS : DEMO_START_DELAY_MS);
   });
 
   onDestroy(() => {
     cancelAllDemoTimers();
-    if (get(isDemoActive)) {
+    if (isDemoActive()) {
       cancelDemo();
     }
   });
 </script>
 
-{#if eligible && $isDemoActive}
+{#if eligible && isDemoActive()}
   <div
     class="demo-choreography"
     id="demo-choreography"
@@ -125,7 +121,7 @@
     aria-label="Guided demo"
   >
     <button class="demo-dismiss" onclick={dismissDemo} aria-label="Dismiss demo">&times;</button>
-    <p class="demo-status">{phaseLabels[$demoPhase] ?? $demoPhase}</p>
+    <p class="demo-status">{phaseLabels[demoPhase()] ?? demoPhase()}</p>
   </div>
 {/if}
 

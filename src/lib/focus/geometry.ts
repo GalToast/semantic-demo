@@ -105,7 +105,7 @@ export function getFocusConstellationMotif(index: number): ConstellationMotifRes
     key = 'civic';
   }
 
-  const motif = (FOCUS_CONSTELLATION_MOTIFS[key] ?? FOCUS_CONSTELLATION_MOTIFS.market)!;
+  const motif = (FOCUS_CONSTELLATION_MOTIFS[key as keyof typeof FOCUS_CONSTELLATION_MOTIFS] ?? FOCUS_CONSTELLATION_MOTIFS.market)!;
   return {
     key,
     label: motif.label,
@@ -125,7 +125,7 @@ export function getFocusConstellationMotifForPersonality(
   const fallback = getFocusConstellationMotif(index);
   const overrideKey = personality?.motifOverride;
   if (!overrideKey) return fallback;
-  const override = FOCUS_CONSTELLATION_MOTIFS[overrideKey];
+  const override = FOCUS_CONSTELLATION_MOTIFS[overrideKey as keyof typeof FOCUS_CONSTELLATION_MOTIFS];
   if (!override) return fallback;
   return { ...fallback, ...override, key: overrideKey };
 }

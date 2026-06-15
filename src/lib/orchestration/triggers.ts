@@ -212,7 +212,7 @@ subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index: number }) => {
     visitedAt: Date.now()
   });
   setTrailNeighborIndices(candidateIndices);
-  setThreadCandidates(candidateIndices, threadSource, threadReasonByIndex);
+  setThreadCandidates(candidateIndices);
   setTrailDepth(1);
   setActiveResult(String(index));
   setSearchStatus('focusing');

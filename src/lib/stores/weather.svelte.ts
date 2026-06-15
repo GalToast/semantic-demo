@@ -68,6 +68,9 @@ export const weatherData = {
 /** Whether weather has been initialized (prevents double-init). */
 export function isWeatherInitialized(): boolean { return appState.weatherInitialized; }
 
+/** Backward-compatible derived getter exported by the store barrel. */
+export const weatherInitialized = isWeatherInitialized;
+
 /** Mark weather as initialized. Called after first successful initWeather(). */
 export function setWeatherInitialized(value: boolean): void { 
   appState.withMutation(() => {
