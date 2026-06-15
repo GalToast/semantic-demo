@@ -5,4 +5,4 @@
  * Keeps direct legacy imports behind the engine boundary.
  */
 
-export { subscribe, publish, EVENTS } from '../../../js/modules/event-bus';
+export { subscribe, subscribeKeyed, publish, EVENTS } from '../../../js/modules/event-bus';
