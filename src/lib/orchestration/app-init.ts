@@ -34,7 +34,8 @@ import {
 } from '@lib/orchestration/lifecycle';
 import { switchView as switchViewAction } from '@lib/orchestration/view-controller';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
-// ── Additional __APP_ACTIONS__ imports (W11-T8 Wave 1) ──────────────────────
+import { initAdapters } from '@lib/orchestration/adapters';
+import { buildAdapterDeps } from '@lib/orchestration/adapter-deps';
 import { search } from '@lib/engine/window-actions-bridge';
 import { setTrailFromSeed } from '@lib/engine/journey-neighborhood-bridge';
 import { traverseNeighbor, walkThreadNeighbor } from '@lib/engine/journey-thread-settler-bridge';
@@ -113,14 +114,33 @@ function setupSafetyValves(): SafetyTimers {
     );
 
     // Apply error state to the overlay (matches legacy applyLoadingErrorState)
-    overlay.innerHTML = `
-      <div class="loading-shell" role="alert">
-        <div class="loading-kicker">Graph unavailable</div>
-        <div class="loading-title">Failed to load</div>
-        <div class="loading-note">Initialization timed out after 15 seconds. Refresh after the connection recovers.</div>
-        <div class="loading-foot">Safety valve triggered.</div>
-      </div>
-    `;
+    // — built with DOM API per pi-lens innerHTML safety rule.
+    const shell = document.createElement('div');
+    shell.setAttribute('role', 'alert');
+    shell.className = 'loading-shell';
+
+    const kicker = document.createElement('div');
+    kicker.className = 'loading-kicker';
+    kicker.textContent = 'Graph unavailable';
+    shell.appendChild(kicker);
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'loading-title';
+    titleEl.textContent = 'Failed to load';
+    shell.appendChild(titleEl);
+
+    const noteEl = document.createElement('div');
+    noteEl.className = 'loading-note';
+    noteEl.textContent =
+      'Initialization timed out after 15 seconds. Refresh after the connection recovers.';
+    shell.appendChild(noteEl);
+
+    const footEl = document.createElement('div');
+    footEl.className = 'loading-foot';
+    footEl.textContent = 'Safety valve triggered.';
+    shell.appendChild(footEl);
+
+    overlay.replaceChildren(shell);
     overlay.hidden = false;
     overlay.inert = false;
     overlay.removeAttribute('aria-hidden');
@@ -231,7 +251,7 @@ function installWindowGlobals(): () => void {
   (window as any).__APP_ACTIONS__.walkThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
     return walkThreadNeighbor(index, options);
   };
-  (window as any).__APP_ACTIONS__.requestSemanticGuide = (point?: unknown) => {
+  (window as any).__APP_ACTIONS__.requestSemanticGuide = (_point?: unknown) => {
     return requestSemanticGuide();
   };
   (window as any).__APP_ACTIONS__.showSemanticThreadsDetail = () => {
@@ -350,6 +370,9 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     console.error('[app-init] initData failed:', err);
     // Non-fatal: data-store sets error state; UI shows error overlay
   });
+
+  // ── Phase 3.5: Adapter initialization ─────────────────────────────────
+  initAdapters(buildAdapterDeps());
 
   // ── Phase 4: URL state (after data is ready) ──────────────────────────────
   //

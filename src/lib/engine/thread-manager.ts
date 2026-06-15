@@ -11,7 +11,8 @@
 
 import { webglContext } from './webgl-context';
 import * as THREE from 'three';
-import { appState as state } from '@lib/state/app.svelte.ts';
+import { state as _state, withStateMutation } from '../../../js/state';
+const state = _state as any;
 import { CONFIG } from './config';
 import { disposeObject3D } from './resource-tracker';
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation';
@@ -409,7 +410,7 @@ export function createMycelium() {
     if (!webglContext.scene) return;
     webglContext.pointsMesh.add(webglContext.myceliumGroup);
 
-    state.withMutation(() => {
+    withStateMutation(() => {
         state.scenePerformanceDiagnostics.myceliumCoreSegments = coreConnections.length / 6;
         state.scenePerformanceDiagnostics.myceliumWispySegments = wispyConnections.length / 6;
         state.scenePerformanceDiagnostics.myceliumBridgeSegments = bridgeConnections.length / 6;

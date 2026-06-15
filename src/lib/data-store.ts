@@ -23,6 +23,7 @@ import {
   loadLayoutManifest,
 } from '@lib/data-loader';
 import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter';
+import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge';
 
 // ── Status Types ──────────────────────────────────────────────────────────────
 
@@ -242,6 +243,20 @@ export function setBusinessData(result: BusinessDataResult): void {
   clustersBuffer.set(result.clustersBuffer);
   pointIndexByLeadId.set(result.pointIndexByLeadId);
   leadEnrichment.set(result.enrichment);
+
+  // Sync back to legacy state so legacy engine selectors (getPoints())
+  // and focus flows (focusOnNode) see the data.
+  try {
+    withStateMutation(() => {
+      (legacyState as any).points = result.records;
+      (legacyState as any).rawPositionsBuffer = result.positionsBuffer;
+      (legacyState as any).rawClustersBuffer = result.clustersBuffer;
+      (legacyState as any).leadEnrichment = result.enrichment;
+      (legacyState as any).pointIndexByLeadId = result.pointIndexByLeadId;
+    });
+  } catch (e) {
+    console.warn('[data-store] Legacy state sync failed:', e);
+  }
   dataLoadState.update((s) => ({
     ...s,
     businessLoaded: true,
@@ -259,6 +274,18 @@ export function setSemanticThreadData(
   semanticThreadArtifactName.set(result.artifactName);
   semanticNeighborMap.set(result.neighborMap);
   layoutManifest.set(result.layoutManifest);
+
+  // Sync back to legacy state so legacy neighborhood / thread builders see the data.
+  try {
+    withStateMutation(() => {
+      (legacyState as any).semanticNeighborMapByLeadId = result.neighborMap;
+      (legacyState as any).semanticThreadBundle = result.bundle;
+      (legacyState as any).semanticThreadArtifactName = result.artifactName;
+    });
+  } catch (e) {
+    console.warn('[data-store] Legacy semantic thread sync failed:', e);
+  }
+
   dataLoadState.update((s) => ({
     ...s,
     threadsLoaded: true,

@@ -1269,7 +1269,7 @@
             [data-thread-inspect-surface='idle']
         )
         .focus-thread-inspector.active {
-        max-height: min(14dvh, 112px);
+        max-height: min(20dvh, 172px);
         overflow-y: auto;
         overscroll-behavior: contain;
         padding: 8px 9px;

@@ -121,9 +121,12 @@ interface SearchStoreSnapshot {
 }
 
 function snapshotStore(): SearchStoreSnapshot {
-  const s = searchStore() as unknown as SearchStoreSnapshot;
+  const s = searchStore() as unknown as any;
+  const results = Array.isArray(s.results)
+    ? s.results.map((r: any) => (r && typeof r === 'object' && 'index' in r ? r.index : r))
+    : [];
   return {
-    results: Array.isArray(s.results) ? [...s.results] : [],
+    results,
     status: s.status,
     hasQuery: !!s.hasQuery,
     resultsRendered: !!s.resultsRendered,

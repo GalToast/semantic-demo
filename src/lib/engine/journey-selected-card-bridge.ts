@@ -1,11 +1,12 @@
 /**
  * @lib/engine/journey-selected-card-bridge.ts - Legacy selected-card bridge.
  *
- * Keep direct legacy imports behind the engine boundary while the Svelte
- * journey layer is still being ported.
+ * Flipped to export directly from the native Svelte 5 implementation under @lib/journey/selected-card.
  */
 
 export {
 	syncFocusStage,
-	updateSelectedBusiness
-} from '../../../js/modules/journey-selected-card';
+	updateSelectedBusiness,
+	initJourneySelectedCard,
+	initJourneySelectedCardAdapter
+} from '../journey/selected-card';

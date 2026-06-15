@@ -10,6 +10,9 @@ import LegacyCompassSurface from '@components/LegacyCompassSurface.svelte';
 import { testState } from '@lib/stores/index.svelte.ts';
 import { installWindowActions } from '@lib/orchestration/window-actions';
 import { hydrateFromLegacyState } from '@lib/data-store';
+import { appState } from '@lib/state/app.svelte.ts';
+import { state as legacyState } from '@lib/engine/state-bridge';
+import { initRouteTraceSubscriptions } from '@lib/engine/adapters-bridge';
 import './lib/css/biofield.css';
 
 // ── URL parameter initialization ──────────────────────────────────────────────
@@ -30,6 +33,13 @@ const overlayTarget = document.body;
 let app: ReturnType<typeof mount> | undefined;
 let legacyCompassSurface: ReturnType<typeof mount> | undefined;
 
+// Ensure legacy state is exposed on window before any async data loads
+// so that semantic-threads.ts (which may fall back to window.__APP_STATE__)
+// writes to the real state object instead of an empty placeholder.
+if (typeof window !== 'undefined') {
+  (window as any).__LEGACY_APP_STATE__ = legacyState;
+}
+
 if (mountTarget) {
   app = mount(App, {
     target: mountTarget,
@@ -42,6 +52,11 @@ if (overlayTarget) {
     target: overlayTarget
   });
 }
+
+// Initialize legacy route trace event subscriptions so the Svelte track
+// still builds WebGL route trace overlays and writes routeTraceDiagnostics
+// for visual-audit compatibility.
+initRouteTraceSubscriptions();
 
 // Hydrate Svelte stores from the legacy state after mount.
 // The legacy init path sets __APP_STATE__ asynchronously; retry until the
@@ -106,7 +121,11 @@ function getCompatValue(prop: string | symbol): unknown {
     };
   }
   const svelteValue = svelteState[prop];
-  return svelteValue !== undefined ? svelteValue : legacyState[prop];
+  if (svelteValue !== undefined) return svelteValue;
+  const legacyValue = legacyState[prop];
+  if (legacyValue !== undefined) return legacyValue;
+  // Fallback to Svelte appState for properties not synced to legacy/testState
+  return (appState as any)[prop];
 }
 
 function createTestCompatProxy(): Record<string, unknown> {

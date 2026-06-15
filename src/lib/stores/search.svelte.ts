@@ -15,6 +15,7 @@ import { testCompatStore } from './test-compat.svelte';
 import { performSearch } from '@lib/search-engine';
 import { appState } from '@lib/state/app.svelte.ts';
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
+import { getBusinessRecords } from '@lib/data-store';
 
 // ── Rerank Feature Flag ─────────────────────────────────────────────────────
 
@@ -127,12 +128,40 @@ export type SearchStoreApi = (() => SearchStoreState) &
     set(value: SearchStoreState): void;
   };
 
+function buildSearchResultsFromIndices(indices: number[] | undefined): SearchResult[] {
+  if (!indices || !indices.length) return [];
+  const records = (getBusinessRecords() || []) as any[];
+  return indices.map((idx) => {
+    const index = Number(idx);
+    const record = records[index];
+    return {
+      id: String(index),
+      name: record?.name ?? 'Unknown',
+      index,
+      score: 0,
+      category: record?.category ?? '',
+      snippet: record?.what ?? '',
+      point: record
+        ? {
+            name: record.name,
+            what: record.what,
+            cluster: record.cluster,
+            city: record.city,
+            website: record.website,
+            email: record.email,
+            phone: record.phone,
+          }
+        : undefined,
+    };
+  });
+}
+
 function _createSearchStore(): SearchStoreApi {
   // Function call: returns fresh sync snapshot from kernel
   const fn = (() => ({
     ...INITIAL_SEARCH_STATE,
     query: appState.currentSearchSummary?.query ?? '',
-    results: (appState.currentSearchSummary?.resultIndices as any) ?? [],
+    results: buildSearchResultsFromIndices(appState.currentSearchSummary?.resultIndices as number[] | undefined) ?? [],
     activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null,
     summary: appState.currentSearchSummary ? { ...$state.snapshot(appState.currentSearchSummary) } : null,
     status: appState.searchStatus,
@@ -211,7 +240,7 @@ function withSearchNotify<T>(fn: () => T): T {
   const fresh = (() => ({
     ...INITIAL_SEARCH_STATE,
     query: appState.currentSearchSummary?.query ?? '',
-    results: (appState.currentSearchSummary?.resultIndices as any) ?? [],
+    results: buildSearchResultsFromIndices(appState.currentSearchSummary?.resultIndices as number[] | undefined) ?? [],
     activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null,
     summary: appState.currentSearchSummary ? { ...appState.currentSearchSummary } : null,
     status: appState.searchStatus,

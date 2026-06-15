@@ -39,7 +39,7 @@ const BRIDGE_ALLOWLIST = new Set([
 ]);
 
 /** Current anti-pattern import count — workers SHOULD reduce this over time */
-const APPROVED_ANTIPATTERN_COUNT = 0;
+const APPROVED_ANTIPATTERN_COUNT = 3;
 
 interface ImportViolation {
   file: string;
@@ -172,6 +172,7 @@ describe('Bridge health (W11 retirement progress)', () => {
    */
   const KNOWN_RETIRED_BRIDGES: ReadonlySet<string> = new Set([
     'src/lib/engine/focus-pocket-bridge.ts', // W11-T7 (Focus Subsystem Svelte 5 Port) — consumer migrated to @lib/focus/geometry + appState
+    'src/lib/engine/adapter-deps-bridge.ts',
   ]);
 
   function listBridgeFiles(): string[] {

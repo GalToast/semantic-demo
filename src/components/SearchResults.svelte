@@ -233,8 +233,11 @@
             };
           }).__APP_ACTIONS__
         : undefined;
-      actions?.focusOnNode?.(Number(index), { fromSearchResult: true });
+      // Publish focus-request event BEFORE calling the legacy focusOnNode so
+      // triggers.ts can populate legacy navState (threadCandidates, etc.) before
+      // the route-trace overlay refreshes in response to CAMERA_NODE_FOCUSED.
       publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: Number(index) } as any);
+      actions?.focusOnNode?.(Number(index), { fromSearchResult: true });
     }
   }
 

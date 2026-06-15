@@ -92,7 +92,7 @@ export function isThreadCandidateVisibleOnCanvas(index: number, margin: number =
 export function ensureCanvasNodeInteractionBindings(): void {
     _ensureCanvasNodeInteractionBindings()
 }
-import { applyLocalNeighborhoodFocus } from '@lib/engine/focus-pocket-direct-bridge'
+import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket'
 import { applyPointFilterColors, describeThreadLensForPoint } from '@lib/engine/journey-point-color-bridge'
 import { truncateMicrocopy, getSharedTrailTopicLabel } from '@lib/journey/text-helpers'
 import { setSemanticDiveMode as setSemanticDiveModeImpl } from '@lib/engine/lifecycle-bridge'

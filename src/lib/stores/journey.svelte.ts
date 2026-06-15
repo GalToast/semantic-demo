@@ -298,10 +298,12 @@ export function clearWalkHistory(): void {
 }
 
 export function setThreadCandidates(candidates: readonly number[]): void {
+  _journeyWritable.update(s => ({ ...s, threadCandidates: [...candidates] }));
   appState.withMutation(() => { appState.navState.threadCandidates = [...candidates]; });
 }
 
 export function clearThreadCandidates(): void {
+  _journeyWritable.update(s => ({ ...s, threadCandidates: [] }));
   appState.withMutation(() => { appState.navState.threadCandidates = []; });
 }
 

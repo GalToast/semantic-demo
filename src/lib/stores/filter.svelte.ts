@@ -291,3 +291,13 @@ function normalizeCityForFilter(city: string | undefined): string {
     .trim()
     .replace(/,?\s*tx$/, '');
 }
+
+/** Backwards-compatible alias for getFilterState. */
+export function getActiveFilters(): ActiveFilters {
+  return getFilterState();
+}
+
+/** Backwards-compatible getter for the active cluster filter. */
+export function getActiveClusterFilter(): string | null {
+  return get(activeClusterFilter);
+}

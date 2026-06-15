@@ -89,14 +89,13 @@ describe('W11-T6: lifecycle orchestration event-bus port (triggers.ts)', () => {
       expect(handlerPattern.test(src)).toBe(true);
     });
 
-    it('subscribes to SEARCH_UI_SYNC_REQUESTED (legacy bridge TODO — broken transitive dep)', () => {
+    it('subscribes to SEARCH_UI_SYNC_REQUESTED with a search result rebind handler', () => {
       const src = readSource();
       const subscriptionPattern = /subscribe\(\s*EVENTS\.SEARCH_UI_SYNC_REQUESTED\s*,/;
-      // The Svelte search orchestration module has a broken transitive dependency
-      // (./results-ui does not exist), so the handler is a documented no-op.
-      const todoPattern = /SEARCH_UI_SYNC_REQUESTED[\s\S]*?TODO.*engine bridge not yet wired/;
+      const handlerPattern =
+        /subscribe\(\s*EVENTS\.SEARCH_UI_SYNC_REQUESTED\s*,[\s\S]*?bindSearchResultInteractions\(/;
       expect(subscriptionPattern.test(src)).toBe(true);
-      expect(todoPattern.test(src)).toBe(true);
+      expect(handlerPattern.test(src)).toBe(true);
     });
 
     it('subscribes to SEARCH_STATUS_SYNC_REQUESTED with a syncSearchStatusForFocus handler', () => {

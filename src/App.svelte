@@ -41,6 +41,8 @@
   import { setSemanticDiveMode } from '@lib/stores/focus.svelte';
   import { viewport, initViewportListeners } from '@lib/stores/viewport.svelte.ts';
   import { initData } from '@lib/data-store';
+  import { state as legacyState } from '@lib/engine/state-bridge';
+  import { appState } from '@lib/state/app.svelte.ts';
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs';
   import { applyUrlState } from '@lib/orchestration/url-state';
   // Side-effect import: registers SEARCH_FOCUS_REQUESTED → addTrailStop subscriptions
@@ -151,7 +153,15 @@
       }));
     }
     initData()
-      .then(() => applyUrlState())
+      .then(() => {
+        if ((legacyState as any).semanticNeighborMapByLeadId instanceof Map) {
+          appState.semanticNeighborMapByLeadId = (legacyState as any).semanticNeighborMapByLeadId;
+        }
+        if ((legacyState as any).pointIndexByLeadId instanceof Map) {
+          appState.pointIndexByLeadId = (legacyState as any).pointIndexByLeadId;
+        }
+        applyUrlState();
+      })
       .catch(console.error);
     return () => {
       delete contractWindow.__forceSemanticDiveContractSurface;

@@ -366,7 +366,9 @@ export async function init(): Promise<void> {
         await measureStep('setLoadingPhase(restore)', () => setLoadingPhase('restore'));
         await measureStep('updateTime', updateTime);
 
-        await measureStep('initAdapters', initAdapters);
+        // W11-T7 Phase 2: Retired — adapters.ts-init side-effects now handled by
+        // the Svelte path via src/lib/orchestration/app-init.ts. Legacy kept as reference.
+        // await measureStep('initAdapters', initAdapters);
         // W11-T6 Phase 2: Retired — triggers.ts side-effects now handle subscriptions
         // via the Svelte shell. Legacy function kept as reference below.
         // await measureStep('initEventBusSubscriptions', initEventBusSubscriptions);

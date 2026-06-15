@@ -20,4 +20,4 @@ export {
   primeBoundedSemanticNeighborhoodForTraversal,
   setTrailFromSeed,
   updateTrailIndices,
-} from '../../../js/modules/journey-neighborhood';
+} from '@lib/journey/neighborhood';

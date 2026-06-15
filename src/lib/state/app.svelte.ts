@@ -377,4 +377,10 @@ class AppState {
 }
 
 // Singleton opt-in instance — consumers can import and use this instead of the legacy state.
-export const appState = new AppState();
+const GLOBAL_APP_STATE_KEY = '__SEMANTIC_EXPLORER_APP_STATE_V1__';
+const existingAppState: AppState | null =
+  (typeof window !== 'undefined' && (window as any)[GLOBAL_APP_STATE_KEY]) || null;
+export const appState: AppState = existingAppState || new AppState();
+if (typeof window !== 'undefined' && !(window as any)[GLOBAL_APP_STATE_KEY]) {
+  (window as any)[GLOBAL_APP_STATE_KEY] = appState;
+}

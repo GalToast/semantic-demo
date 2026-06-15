@@ -43,11 +43,13 @@ import {
   setTrailNeighborIndices
 } from '@lib/stores/journey.svelte';
 import { getBusinessRecords } from '@lib/data-store';
+import { appState } from '@lib/state/app.svelte.ts';
 import {
   buildNeighborhoodManifest,
   getSemanticThreadDisplayLimit
 } from '@lib/journey/neighborhood';
 import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge';
+import { bindSearchResultInteractions } from '@lib/search/orchestration';
 import { get } from 'svelte/store';
 
 // ── Keyboard Support ──────────────────────────────────────────────────────────
@@ -171,7 +173,9 @@ subscribe(EVENTS.STATE_RESET, updateJourneyCompass);
 
 subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index: number }) => {
   if (!Number.isFinite(index)) return;
-  const manifest = buildNeighborhoodManifest(index, [], {
+  const searchSummary = appState.currentSearchSummary;
+  const resultIndices = (searchSummary?.resultIndices as number[] | undefined) || [];
+  const manifest = buildNeighborhoodManifest(index, resultIndices, {
     displayLimit: getSemanticThreadDisplayLimit()
   });
   const candidateIndices: number[] = [...(manifest?.candidateIndices ?? [])];
@@ -311,16 +315,13 @@ subscribe(EVENTS.URL_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => 
  * SEARCH_UI_SYNC_REQUESTED is published when search result DOM elements
  * need their click/hover interactions rebound.
  *
- * TODO (Wave 2): legacy function — engine bridge not yet wired.
- * The Svelte search orchestration module (src/lib/search/orchestration.ts)
- * exports bindSearchResultInteractions, but it has a broken transitive
- * dependency (./results-ui does not exist). Once that file is created or
- * the import is resolved, replace this no-op with the imported function.
+ * The Svelte search orchestration module owns rebinding for DOM results
+ * rendered outside the component lifecycle.
  */
-subscribe(EVENTS.SEARCH_UI_SYNC_REQUESTED, () => {
-  // TODO (Wave 2): legacy function — engine bridge not yet wired.
-  // const { resultsEl, statusEl, results, renderContext } = payload as any;
-  // bindSearchResultInteractions(resultsEl, statusEl, results, renderContext);
+subscribe(EVENTS.SEARCH_UI_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
+  const { resultsEl, statusEl, results, renderContext } = payload as any;
+  if (!resultsEl || !statusEl || !Array.isArray(results) || !renderContext) return;
+  bindSearchResultInteractions(resultsEl, statusEl, results, renderContext);
 });
 
 /**

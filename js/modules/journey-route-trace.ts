@@ -209,6 +209,9 @@ function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): vo
         mapPointCount: (state as any).routeTraceDiagnostics?.mapPointCount || 0,
         mapPathActive: !!(state as any).routeTraceDiagnostics?.mapPathActive
     };
+    if (document.body?.dataset) {
+        (document.body.dataset as any).routeMotion = getCurrentView() === 'galaxy' ? 'focus' : 'inactive';
+    }
 }
 
 export function updateRouteTraceOverlayPositions(now: number = performance.now()): void {

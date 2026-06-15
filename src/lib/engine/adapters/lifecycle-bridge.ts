@@ -33,6 +33,7 @@ import type {
 
 import { syncDataToLegacyState } from './data-bridge';
 import { attachLegacyState, loadSemanticThreads } from '@lib/semantic-threads';
+import { appState } from '@lib/state/app.svelte.ts';
 import * as legacyStateModule from '../../../../js/state';
 import * as legacyViewControllerModule from '../../../../js/modules/view-controller';
 import * as legacyFilterStateModule from '../../../../js/modules/filter-state';
@@ -247,6 +248,17 @@ export function createLifecycleMethods(
           ctx.status = 'degraded';
           ctx.callbacks.onGraphicsStateChange?.('fallback');
           return;
+        }
+
+        // 4a. Sync geometry from legacy state to Svelte appState
+        if (ctx._state) {
+          const legacyGeometryState = ctx._state as typeof ctx._state & {
+            targetPositions?: unknown;
+            originalPositions?: unknown;
+          };
+          if (Array.isArray(legacyGeometryState.nodePositions)) appState.nodePositions = legacyGeometryState.nodePositions;
+          if (Array.isArray(legacyGeometryState.targetPositions)) appState.targetPositions = legacyGeometryState.targetPositions;
+          if (Array.isArray(legacyGeometryState.originalPositions)) appState.originalPositions = legacyGeometryState.originalPositions;
         }
 
         // 5. Ensure the live renderer canvas fills its container

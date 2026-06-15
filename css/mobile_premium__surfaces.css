@@ -993,11 +993,11 @@ body.is-active #selected-details.active:not([hidden]) {
         display: grid;
         visibility: visible;
         opacity: 1;
-        max-height: min(16dvh, 124px);
+        max-height: min(22dvh, 176px);
         min-height: 112px;
         padding: 6px 8px;
         gap: 3px;
-        overflow: hidden;
+        overflow-y: auto;
     }
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
