@@ -32,7 +32,7 @@ import {
     invokeClearMobileRouteFieldPeek,
     scheduleMapRouteRefresh,
     getViewHandoffModel
-} from './journey-compass-controller.ts';
+} from '@lib/engine/journey-compass-controller-bridge';
 import { semanticGuideIcon } from '../../src/lib/journey/semantic-guide.ts';
 import { applyMapFlatteningLayout } from './map-flattening-layout.ts';
 import { setCurrentView } from './state-mutators.ts';

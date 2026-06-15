@@ -22,7 +22,7 @@ import { appState } from '@lib/state/app.svelte';
 import * as cameraControlsStaticModule from '../../../js/modules/camera-controls';
 import * as focusPocketStaticModule from '../../../js/modules/focus-pocket';
 import * as lifecycleStaticModule from '../../../js/modules/lifecycle';
-import * as journeyCompassStaticModule from '../../../js/modules/journey-compass-controller';
+import * as journeyCompassStaticModule from '@lib/engine/journey-compass-controller-bridge';
 import * as journeyStaticModule from '../../../js/modules/journey';
 import * as panelBindingsStaticModule from '../../../js/modules/bindings/panel-bindings';
 import * as microDemoGuardsStaticModule from '../../../js/modules/micro-demo-guards';

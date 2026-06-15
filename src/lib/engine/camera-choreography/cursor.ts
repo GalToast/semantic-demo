@@ -22,7 +22,7 @@ import {
   updateExplorationUi,
   syncSearchStatusForFocus
 } from '../../../../js/modules/lifecycle.ts'
-import { updateJourneyCompass } from '../../../../js/modules/journey-compass-controller.ts'
+import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge'
 import { applyPointFilterColors, syncFocusStage } from '../../../../js/modules/journey.ts'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { publish, EVENTS } from '../../../../js/modules/event-bus.ts'

@@ -7,7 +7,7 @@
 import { state as _state } from '../../state.ts';
 const state = _state as any;
 import { bindClick } from './view-bindings.ts';
-import { executeJourneyCompassAction } from '../journey-compass-controller.ts';
+import { executeJourneyCompassAction } from '@lib/engine/journey-compass-controller-bridge';
 import { setSemanticDiveMode, pinThreadNeighbor, unpinThreadInspection, walkThreadNeighbor } from '../journey.ts';
 import { traverseNeighbor } from '../../../src/lib/journey/thread-settler-adapter';
 import { applyLocalNeighborhoodFocus } from '../focus-pocket.ts';

@@ -18,7 +18,7 @@
 
 export { initJourneyLifecycleAdapter } from '../../../js/modules/journey-lifecycle-adapter';
 export { initClusterFilterAdapter } from '../../../js/modules/cluster-filter-adapter';
-export { initJourneyCompassAdapter } from '../../../js/modules/journey-compass-controller';
+export { initJourneyCompassAdapter } from '@lib/engine/journey-compass-controller-bridge';
 export { initJourneySelectedCard } from '../../../js/modules/journey-selected-card';
 export { initFocusNeighborRailSubscriptions } from '../../../js/modules/journey-focus-ui';
 export { initRouteTraceSubscriptions } from '../../../js/modules/journey-route-trace';

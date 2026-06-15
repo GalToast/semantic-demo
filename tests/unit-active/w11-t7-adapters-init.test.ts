@@ -113,9 +113,9 @@ describe('W11-T7: adapters-bridge.ts imports from correct source modules', () =>
     expect(src).toContain("from '../../../js/modules/cluster-filter-adapter'");
   });
 
-  it('re-exports initJourneyCompassAdapter from journey-compass-controller', () => {
+  it('re-exports initJourneyCompassAdapter from journey-compass-controller-bridge', () => {
     const src = readBridgeSource();
-    expect(src).toContain("from '../../../js/modules/journey-compass-controller'");
+    expect(src).toContain("from '@lib/engine/journey-compass-controller-bridge'");
   });
 
   it('re-exports initSemanticDiveUiSubscriptions from src/lib/journey/semantic-dive', () => {

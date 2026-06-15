@@ -2,7 +2,7 @@
 // and declarative search event subscriptions
 import { state, type SearchSummary } from '../state.ts';
 import { subscribe, EVENTS } from './event-bus.ts';
-import { updateJourneyCompass } from './journey-compass-controller.ts';
+import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge';
 import { getSearchGlowIndices } from '../state/selectors/index.ts';
 import { refreshCompositionState } from './lifecycle-modes.ts';
 

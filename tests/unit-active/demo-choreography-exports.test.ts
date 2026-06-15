@@ -62,7 +62,6 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
     const src = readSource();
     const expectedModules = [
       'lifecycle',
-      'journey-compass-controller',
       'journey',
       'bindings/panel-bindings',
       'micro-demo-guards',
@@ -72,6 +71,11 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
     for (const mod of expectedModules) {
       expect(src).toContain(`from '../../../js/modules/${mod}'`);
     }
+  });
+
+  it('imports journey-compass-controller via the bridge (not direct legacy path)', () => {
+    const src = readSource();
+    expect(src).toContain("from '@lib/engine/journey-compass-controller-bridge'");
   });
 
   it('also statically imports the previously-converted modules via relative paths (extensionless)', () => {

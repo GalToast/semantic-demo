@@ -13,7 +13,7 @@ import {
   updateExplorationUi,
   syncSearchStatusForFocus
 } from './lifecycle.ts'
-import { updateJourneyCompass } from './journey-compass-controller.ts'
+import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge'
 import { applyPointFilterColors, syncFocusStage } from './journey.ts'
 import { syncSemanticDiveUi } from '../../src/lib/journey/semantic-dive.ts'
 import { publish, EVENTS } from './event-bus.ts'

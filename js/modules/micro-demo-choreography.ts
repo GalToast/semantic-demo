@@ -2,7 +2,7 @@ import { state, withStateMutation } from '../state.ts';
 import { animateCameraToNode, setAutoRotateSuspended } from './camera-controls.ts';
 import { applyLocalNeighborhoodFocus, clearFocusPocketIndices, clearFocusPocketMeta } from './focus-pocket.ts';
 import { refreshCompositionState, updateExplorationUi, resetNodePositions } from './lifecycle.ts';
-import { updateJourneyCompass } from './journey-compass-controller.ts';
+import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge';
 import { updateSelectedBusiness, applyPointFilterColors } from './journey.ts';
 import { setInfoPanelOpen } from './bindings/panel-bindings.ts';
 import { recordCompletion } from './micro-demo-guards.ts';
