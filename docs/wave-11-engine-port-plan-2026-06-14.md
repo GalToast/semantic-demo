@@ -1,5 +1,7 @@
 # Wave 11 — Engine Port Plan (2026-06-14)
 
+> **Strategic clarification (added 2026-06-14):** the W11 end state is to retire `js/`. The bridges (`src/lib/engine/*-bridge.ts`) are **the migration seam, not the cleanup target.** They get **flipped** to point at `src/lib/...` (Svelte 5 port) the moment the port lands, and only deleted when zero consumers reference them. Deleting bridges mid-migration locks consumers into the legacy `js/` path, which is the opposite of retirement. See "The 3-step retirement path" section below. This corrects a course taken in the Ticket 9 arc (2026-06-14) where bridges were inlined into consumers; the course has been reverted and the bridges are back.
+
 **Status:** W11-T1 ✅ DONE (commit `9a67a63`). W11-T2 ✅ DONE (commit `da0e283`).
 **Companion docs:**
 **Companion docs:**
@@ -51,11 +53,34 @@ After all 10 tickets:
 - **Engine kernel in Svelte 5 idioms** (state, lifecycle, derivations, DOM helpers as Svelte components) — 65% of LOC
 - **Engine kernel imperative** (render loop, WebGL ops) — 25% of LOC, unchanged
 - **Mixed** (focus pocket, camera, micro-demo) — 10% of LOC, rune classes with imperative methods
-- **Bridge thinned** to direct re-exports / one-line calls (no parameter-passing boilerplate)
 - **`@legacy-js/*` alias fully retired** (no callers)
 - **`app.ts` + `scripts/build-app.mjs` + `dist/bundle.js` retired** (build:legacy lane gone)
 - **Single source of truth for state** (no more `js/state.ts` ↔ Svelte-store mirror)
 - **Net LOC delta:** -8,000 to -12,000 (idiomatic Svelte 5 is shorter)
+
+## The 3-step retirement path (for each kernel module)
+
+The W11 retirement of a single kernel module (e.g. `journey-thread-settler`) follows this sequence:
+
+1. **Bridge exists pointing at legacy.** Today:
+   ```ts
+   // src/lib/engine/journey-thread-settler-bridge.ts
+   export { walkThreadNeighbor, ... } from '../../../js/modules/journey-thread-settler';
+   ```
+   Consumers (e.g. `src/lib/journey/journey.ts`) go through the bridge. The kernel is `js/modules/journey-thread-settler.ts`.
+
+2. **Svelte 5 port lands, bridge flips.** The kernel is ported to `src/lib/journey/thread-settler.ts` (Svelte 5 idioms). The bridge is updated to re-export from the Svelte 5 port:
+   ```ts
+   // src/lib/engine/journey-thread-settler-bridge.ts (after port)
+   export { walkThreadNeighbor, ... } from '../../journey/thread-settler';
+   ```
+   Consumers don't change — they still go through the bridge. The bridge is now a 1-line re-export.
+
+3. **Consumers migrate, bridge is dead.** Consumers that have migrated to `import { walkThreadNeighbor } from '@lib/journey/thread-settler';` no longer use the bridge. Once zero consumers reference the bridge, it can be deleted in a follow-up.
+
+**Total consumers touched per module:** 1 flip (the bridge), then N consumer migrations. Each consumer is rewritten exactly once, not N times during the kernel port.
+
+**Anti-pattern:** deleting the bridge mid-migration (step 1 or early step 2). This forces consumers to import `js/modules/X` directly, locks them into the legacy path, and makes retirement require N independent rewrites.
 
 ## Risks the user should know about
 

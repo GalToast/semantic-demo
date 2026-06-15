@@ -15,7 +15,7 @@ import {
     getColors,
     getClusterNames,
     getCamera,
-} from '../../../js/state/selectors/index';
+} from '@lib/engine/state-selectors-bridge';
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { getViewportSize, isMobileViewport } from '@lib/utils/environment';
 

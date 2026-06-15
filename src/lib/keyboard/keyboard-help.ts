@@ -44,4 +44,4 @@ export {
   initKeyboardShortcutsHint,
   showKeyboardShortcutsHint,
   initKeyboardResetOwnership,
-} from '../../../js/modules/keyboard-help';
+} from '@lib/engine/keyboard-help-bridge';

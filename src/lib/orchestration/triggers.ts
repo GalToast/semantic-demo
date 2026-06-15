@@ -36,7 +36,7 @@ import {
   buildNeighborhoodManifest,
   getSemanticThreadDisplayLimit
 } from '@lib/journey/neighborhood';
-import { state as legacyState, withStateMutation } from '../../../js/state';
+import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge';
 import { get } from 'svelte/store';
 
 // ── Keyboard Support ──────────────────────────────────────────────────────────

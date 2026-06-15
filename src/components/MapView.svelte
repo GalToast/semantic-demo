@@ -11,7 +11,7 @@
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
   import { viewport } from '@lib/stores/viewport';
   import { switchView } from '@lib/orchestration/view-controller';
-  import * as legacyStateStaticModule from '../../js/state';
+  import { state as engineState, withStateMutation } from '@lib/engine/state-bridge';
 
   type MapStatus = 'loading' | 'ready' | 'error';
 
@@ -24,16 +24,10 @@
     map?: RuntimeMap | null;
   }
 
-  interface RuntimeStateModule {
-    state: RuntimeState;
-    withStateMutation<T>(fn: () => T): T;
-  }
-
   let status = $state<MapStatus>('loading');
   let statusDetail = $state('Loading county terrain');
   let mounted = false;
   let activationToken = 0;
-  let legacyStateModule: RuntimeStateModule | null = null;
 
   function activateMapShell(): void {
     switchView('map', {
@@ -54,8 +48,8 @@
   }
 
   function setLegacyView(view: 'galaxy' | 'map'): void {
-    legacyStateModule?.withStateMutation(() => {
-      legacyStateModule!.state.currentView = view;
+    withStateMutation(() => {
+      (engineState as RuntimeState).currentView = view;
     });
   }
 
@@ -90,7 +84,6 @@
 
       if (!mounted || token !== activationToken) return;
 
-      legacyStateModule = legacyStateStaticModule as RuntimeStateModule;
       setLegacyView('map');
 
       mapEngine.initMapStateSubscriptions();
@@ -103,7 +96,7 @@
       mapEngine.centerMapOnRouteAnchor();
 
       requestAnimationFrame(() => {
-        const map = legacyStateModule?.state.map;
+        const map = (engineState as any).map;
         map?.invalidateSize?.();
         setTimeout(() => map?.invalidateSize?.(), 120);
       });

@@ -6,6 +6,9 @@
  * Keeps direct legacy imports behind the engine boundary.
  */
 
+export { state, withStateMutation } from './state-bridge';
+export type { NavFocusPocketMeta, Point, SemanticState } from './state-bridge';
+
 export { normalizeCityForFilter } from '../../../js/modules/utils/geo-data';
 
 export {

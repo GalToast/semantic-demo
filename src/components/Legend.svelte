@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { businessRecordsStore } from '@lib/data-store.svelte';
   import { hasActiveFilters, activeClusterFilter } from '@lib/stores/filter';
-  import { initLegendEventBusSubscriptions } from '../../js/modules/legend-ui';
+  import { initLegendEventBusSubscriptions } from '@lib/engine/legend-ui-bridge';
   // The full filter pipeline lives in cluster-filter-controller; the
   // stub in @lib/stores/filter only writes the writable without clearing
   // search glow, applying the filter to the mycelium, or updating the URL.
