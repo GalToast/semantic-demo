@@ -1,37 +1,38 @@
 // js/state/selectors/filter-mode.js
 // Read-only selectors for active filters, cluster filter, mycelium mode, bloom/bridge indices.
-import { state } from '../../state.js';
+// Now reads from appState (Svelte 5) instead of legacy state singleton.
+import { appState } from '@lib/state/app.svelte.ts';
 
 // ── Active Filters ──
-export const getActiveFilters = () => state.activeFilters;
+export const getActiveFilters = () => appState.activeFilters;
 
 // ── Active Cluster Filter ──
-export const getActiveClusterFilter = () => state.activeClusterFilter;
+export const getActiveClusterFilter = () => appState.activeClusterFilter;
 
 // ── Filter Version ──
-export const getFilterVersion = () => state.filterVersion;
-export const getFilterColorVersion = () => state.filterColorVersion;
+export const getFilterVersion = () => appState.filterVersion;
+export const getFilterColorVersion = () => appState.filterColorVersion;
 
 // ── Registered Events ──
-export const getRegisteredEvents = () => state.registeredEvents;
+export const getRegisteredEvents = () => appState.registeredEvents;
 
 // ── Active Story Prompt ──
-export const getActiveStoryPrompt = () => state.activeStoryPrompt;
+export const getActiveStoryPrompt = () => appState.activeStoryPrompt;
 
 // ── Mycelium Mode ──
-export const getMyceliumMode = () => state.myceliumMode;
+export const getMyceliumMode = () => appState.myceliumMode;
 
 // ── Bloom / Bridge Indices ──
-export const getBloomIndices = () => state.bloomIndices;
-export const getBridgeIndices = () => state.bridgeIndices;
+export const getBloomIndices = () => appState.bloomIndices;
+export const getBridgeIndices = () => appState.bridgeIndices;
 
 // ── Bridge / Signal Scores ──
-export const getBridgeScores = () => state.bridgeScores;
-export const getSignalScores = () => state.signalScores;
+export const getBridgeScores = () => appState.bridgeScores;
+export const getSignalScores = () => appState.signalScores;
 
 // ── Point Color State ──
-export const getPointColorStateVersion = () => state.pointColorStateVersion;
-export const getPointBaseColors = () => state.pointBaseColors;
+export const getPointColorStateVersion = () => appState.pointColorStateVersion;
+export const getPointBaseColors = () => appState.pointBaseColors;
 
 // ── Recent Arrangements ──
-export const getRecentArrangements = () => state.recentArrangements;
+export const getRecentArrangements = () => appState.recentArrangements;

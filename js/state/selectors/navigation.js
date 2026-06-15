@@ -1,57 +1,58 @@
 // js/state/selectors/navigation.js
 // Read-only selectors for current view, navState, focus state, strand continuity.
-import { state } from '../../state.js';
+// Now reads from appState (Svelte 5) instead of legacy state singleton.
+import { appState } from '@lib/state/app.svelte.ts';
 
 // ── View ──
-export const getCurrentView = () => state.currentView;
+export const getCurrentView = () => appState.currentView;
 
 // ── NavState (object reference — subkeys accessed directly) ──
-export const getNavState = () => state.navState;
+export const getNavState = () => appState.navState;
 
 // ── Focused Node (computed getter from navState.focusedIndex) ──
-export const getFocusedNode = () => state.focusedNode;
+export const getFocusedNode = () => appState.focusedNode;
 
 // ── Selected Point ──
-export const getSelectedPoint = () => state.selectedPoint;
+export const getSelectedPoint = () => appState.selectedPoint;
 
 // ── Strand Continuity ──
-export const getStrandContinuityState = () => state.strandContinuityState;
+export const getStrandContinuityState = () => appState.strandContinuityState;
 
 // ── Focus Transition ──
-export const getFocusTransitionMode = () => state.focusTransitionMode;
-export const getFocusTransitionStartedAt = () => state.focusTransitionStartedAt;
+export const getFocusTransitionMode = () => appState.focusTransitionMode;
+export const getFocusTransitionStartedAt = () => appState.focusTransitionStartedAt;
 
 // ── Focus Camera ──
-export const getFocusCameraAnimationToken = () => state.focusCameraAnimationToken;
-export const getFocusCameraAssistActive = () => state.focusCameraAssistActive;
-export const getFocusCameraAssistUntil = () => state.focusCameraAssistUntil;
-export const getFocusCameraAssistReason = () => state.focusCameraAssistReason;
-export const getFocusCameraOffset = () => state.focusCameraOffset;
-export const getFocusCameraTargetOffset = () => state.focusCameraTargetOffset;
+export const getFocusCameraAnimationToken = () => appState.focusCameraAnimationToken;
+export const getFocusCameraAssistActive = () => appState.focusCameraAssistActive;
+export const getFocusCameraAssistUntil = () => appState.focusCameraAssistUntil;
+export const getFocusCameraAssistReason = () => appState.focusCameraAssistReason;
+export const getFocusCameraOffset = () => appState.focusCameraOffset;
+export const getFocusCameraTargetOffset = () => appState.focusCameraTargetOffset;
 
 // ── Focus Orbit Slack ──
-export const getFocusOrbitSlackState = () => state.focusOrbitSlackState;
+export const getFocusOrbitSlackState = () => appState.focusOrbitSlackState;
 
 // ── Thread Inspection ──
-export const getPinnedThreadIndex = () => state.pinnedThreadIndex;
-export const getInspectedThreadIndex = () => state.inspectedThreadIndex;
+export const getPinnedThreadIndex = () => appState.pinnedThreadIndex;
+export const getInspectedThreadIndex = () => appState.inspectedThreadIndex;
 
 // ── Route Trace ──
-export const getRouteTraceConnectionPairs = () => state.routeTraceConnectionPairs;
-export const getRouteTraceRenderStateKey = () => state.routeTraceRenderStateKey;
+export const getRouteTraceConnectionPairs = () => appState.routeTraceConnectionPairs;
+export const getRouteTraceRenderStateKey = () => appState.routeTraceRenderStateKey;
 
 // ── Terrain / Route Exploration ──
-export const getTerrainHandoffState = () => state.terrainHandoffState;
-export const getRouteExplorationState = () => state.routeExplorationState;
-export const getRouteChoreographyState = () => state.routeChoreographyState;
+export const getTerrainHandoffState = () => appState.terrainHandoffState;
+export const getRouteExplorationState = () => appState.routeExplorationState;
+export const getRouteChoreographyState = () => appState.routeChoreographyState;
 
 // ── Trail Depth & Dive Mode ──
-export const getTrailDepth = () => state.trailDepth;
-export const getSemanticDiveMode = () => state.semanticDiveMode;
+export const getTrailDepth = () => appState.trailDepth;
+export const getSemanticDiveMode = () => appState.semanticDiveMode;
 
 // ── Focus Pocket ──
-export const getFocusPocketMotionByIndex = () => state.focusPocketMotionByIndex;
-export const getFocusPocketTransitionStartedAt = () => state.focusPocketTransitionStartedAt;
+export const getFocusPocketMotionByIndex = () => appState.focusPocketMotionByIndex;
+export const getFocusPocketTransitionStartedAt = () => appState.focusPocketTransitionStartedAt;
 
 // ── Thread Inspector Pointer ──
-export const getThreadInspectorPointerInside = () => state.threadInspectorPointerInside;
+export const getThreadInspectorPointerInside = () => appState.threadInspectorPointerInside;

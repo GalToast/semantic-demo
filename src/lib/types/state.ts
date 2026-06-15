@@ -68,6 +68,7 @@ export interface FocusPocketMeta {
   directPriority: number;
   supportPriority: number;
   braid: number;
+  [key: string]: unknown;
 }
 
 export interface FocusFramingMeta {
