@@ -31,7 +31,7 @@ import {
 } from './journey-neighborhood.ts';
 import { ensureCanvasNodeInteractionBindings } from './journey-canvas-interaction.ts';
 import { focusOnNode } from './camera-controls.ts';
-import { dispatchNavTransition } from './lifecycle.ts';
+import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from './lifecycle.ts';
 import {
     refreshFocusSemanticOverlay,
     updateFocusSemanticOverlayPositions,
@@ -363,7 +363,7 @@ function updateWalkBreadcrumb(hasFocus: boolean = false): void {
             const targetIndex = Number(chipBtn.dataset.walkIndex);
             const targetOrder = Number(chipBtn.dataset.walkOrder);
             if (!Number.isFinite(targetIndex) || !Number.isFinite(targetOrder)) return;
-            dispatchNavTransition('WALK_TO', {
+            dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_TO, {
                 index: targetIndex,
                 restoreHistoryIndices: history.slice(0, targetOrder + 1),
                 appendHistory: false

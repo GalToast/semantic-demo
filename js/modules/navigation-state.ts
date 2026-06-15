@@ -3,20 +3,10 @@
  * Nav transition reducer and state mutation helpers.
  */
 import { state, withStateMutation } from '../state.ts';
+import { NAV_TRANSITION_ACTIONS, type NavTransitionAction } from '../../src/lib/navigation-actions.ts';
 
-export const NAV_TRANSITION_ACTIONS = Object.freeze({
-    FOCUS_NODE: 'FOCUS_NODE',
-    SET_DEPTH: 'SET_DEPTH',
-    WALK_TO: 'WALK_TO',
-    BACKTRACK: 'BACKTRACK',
-    RESET_FOCUS: 'RESET_FOCUS',
-    RESET_EXPERIENCE: 'RESET_EXPERIENCE',
-    ENTER_INSIDE: 'ENTER_INSIDE',
-    EXIT_INSIDE: 'EXIT_INSIDE',
-    RESTORE_EXPLORATION_HISTORY: 'RESTORE_EXPLORATION_HISTORY',
-} as const);
-
-export type NavTransitionAction = typeof NAV_TRANSITION_ACTIONS[keyof typeof NAV_TRANSITION_ACTIONS];
+export { NAV_TRANSITION_ACTIONS };
+export type { NavTransitionAction };
 
 export interface NavTransitionResult {
     action: string;

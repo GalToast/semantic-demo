@@ -13,6 +13,7 @@
 import type { NavState, NavMode, PanelSurface } from '@lib/types/state';
 import { writable, get, type Readable } from 'svelte/store';
 import { appState } from '@lib/state/app.svelte.ts';
+import { NAV_TRANSITION_ACTIONS, type NavTransitionAction } from '@lib/navigation-actions';
 
 // Legacy state fallback (transitional). The legacy js/state.js is the
 // single source of truth during the migration. When the Svelte navigation
@@ -208,17 +209,12 @@ export const loadingPhase = () => get(_navWritable).loadingPhaseKey;
 
 // ── Navigation Transition Actions (typed replacement for lifecycle.js) ───────
 
-export const NAV_TRANSITION_ACTIONS = {
-  FOCUS_NODE: 'focus-node',
-  RETURN_OVERVIEW: 'return-overview',
-  TRAVERSE_NEIGHBOR: 'traverse-neighbor',
-  WALK_THREAD: 'walk-thread',
-  SET_SURFACE: 'set-surface',
-  SET_VIEW: 'set-view',
-  RESET: 'reset'
-} as const;
+export { NAV_TRANSITION_ACTIONS };
+export type { NavTransitionAction };
 
-export type NavTransitionAction = typeof NAV_TRANSITION_ACTIONS[keyof typeof NAV_TRANSITION_ACTIONS];
+// Re-export the canonical constants so consumers can import from either location.
+// (The canonical source is @lib/navigation-actions; this re-export preserves
+// backward compatibility for existing imports from @lib/stores/navigation.)
 
 export interface NavTransitionPayload {
   index?: number | null;
@@ -226,6 +222,20 @@ export interface NavTransitionPayload {
   surface?: PanelSurface;
   view?: 'galaxy' | 'map';
   reason?: string | null;
+  fromTraversal?: boolean;
+  fromCanvasNode?: boolean;
+  appendHistory?: boolean;
+  restoreHistory?: boolean;
+  preserveMode?: boolean;
+  depth?: number;
+  fromUserGesture?: boolean;
+  allowDiveExit?: boolean;
+  skipUrlSync?: boolean;
+  step?: number;
+  fromIndex?: number;
+  targetIndex?: number;
+  restoreHistoryIndices?: number[];
+  history?: number[];
 }
 
 /** Result of a navigation transition (for async orchestration). */
@@ -378,18 +388,21 @@ export function dispatchNavTransition(
   payload: NavTransitionPayload = {}
 ): NavTransitionResult {
   const previousMode = get(_navWritable).mode;
-  
-  // High-level state machine logic (simplified for initial port)
+
   switch (action) {
-    case 'focus-node':
+    case NAV_TRANSITION_ACTIONS.FOCUS_NODE:
       _navWritable.update(s => ({
         ...s,
         ...(payload.index !== undefined ? { focusedIndex: payload.index } : {}),
-        mode: 'focus' as NavMode,
-        surface: payload.surface ?? 'focus' as PanelSurface
+        mode: payload.mode ?? ('focus' as NavMode),
+        surface: payload.surface ?? ('focus' as PanelSurface),
+        // Mirror engine-side explorationHistoryIndices behavior
+        ...(payload.fromTraversal || payload.fromCanvasNode
+          ? { activeStoryPrompt: null as any }
+          : {})
       }));
       break;
-    case 'return-overview':
+    case NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW:
       _navWritable.update(s => ({
         ...s,
         focusedIndex: null,
@@ -397,32 +410,28 @@ export function dispatchNavTransition(
         surface: 'idle' as PanelSurface
       }));
       break;
-    case 'set-view':
+    case NAV_TRANSITION_ACTIONS.SET_VIEW:
       if (payload.view) {
         const view: 'galaxy' | 'map' = payload.view;
         _navWritable.update(s => ({ ...s, currentView: view }));
       }
       break;
-    case 'set-surface': {
+    case NAV_TRANSITION_ACTIONS.SET_SURFACE: {
       const surface = payload.surface ?? 'idle';
       _navWritable.update(s => ({
         ...s,
         previousSurface: s.surface,
         surface: surface as PanelSurface,
-        // Derive mode from surface: search→search, focus→focus, inside→inside,
-        // trail→trail, idle→overview. Map surfaces preserve current mode.
         mode: surface === 'search' ? 'search' :
               surface === 'focus' ? 'focus' :
               surface === 'inside' ? 'inside' :
-              // Cast to string: 'trail' is a valid NavMode but PanelSurface
-              // doesn't include it; dispatch code uses 'as any' to pass it.
               (surface as string) === 'trail' ? 'trail' :
               surface === 'idle' ? 'overview' :
               s.mode as NavMode
       }));
       break;
     }
-    case 'traverse-neighbor':
+    case NAV_TRANSITION_ACTIONS.TRAVERSE_NEIGHBOR:
       _navWritable.update(s => ({
         ...s,
         focusedIndex: payload.index ?? s.focusedIndex,
@@ -430,15 +439,78 @@ export function dispatchNavTransition(
         surface: 'trail' as PanelSurface
       }));
       break;
-    case 'walk-thread':
+    case NAV_TRANSITION_ACTIONS.WALK_THREAD:
+    case NAV_TRANSITION_ACTIONS.WALK_TO:
       _navWritable.update(s => ({
         ...s,
         focusedIndex: payload.index ?? s.focusedIndex,
         mode: 'trail' as NavMode,
-        surface: 'focus' as PanelSurface
+        surface: 'focus' as PanelSurface,
+        // Accumulate walk history when appendHistory is true
+        ...(payload.appendHistory !== false && payload.index != null
+          ? {
+              walkHistoryIndices: s.walkHistoryIndices[s.walkHistoryIndices.length - 1] === payload.index
+                ? s.walkHistoryIndices
+                : [...s.walkHistoryIndices, payload.index]
+            }
+          : {})
       }));
       break;
-    case 'reset':
+    case NAV_TRANSITION_ACTIONS.BACKTRACK:
+      _navWritable.update(s => {
+        if (payload.step != null && payload.step < 0) {
+          const history = [...s.walkHistoryIndices];
+          if (history.length > 0) history.pop();
+          return { ...s, walkHistoryIndices: history };
+        }
+        return s;
+      });
+      break;
+    case NAV_TRANSITION_ACTIONS.SET_DEPTH:
+      _navWritable.update(s => ({
+        ...s,
+        trailDepth: payload.depth ?? 0
+      }));
+      break;
+    case NAV_TRANSITION_ACTIONS.ENTER_INSIDE:
+      _navWritable.update(s => ({
+        ...s,
+        semanticDiveMode: true,
+        mode: 'inside' as NavMode,
+        surface: 'inside' as PanelSurface
+      }));
+      break;
+    case NAV_TRANSITION_ACTIONS.EXIT_INSIDE:
+      _navWritable.update(s => ({
+        ...s,
+        semanticDiveMode: false,
+        mode: s.focusedIndex != null ? ('focus' as NavMode) : ('overview' as NavMode),
+        surface: s.focusedIndex != null ? ('focus' as PanelSurface) : ('idle' as PanelSurface)
+      }));
+      break;
+    case NAV_TRANSITION_ACTIONS.RESET_FOCUS:
+      _navWritable.update(s => ({
+        ...s,
+        focusedIndex: null,
+        trailSeedIndex: null,
+        trailNeighborIndices: [],
+        trailCursor: -1,
+        walkHistoryIndices: [],
+        lastTraversalReason: null
+      }));
+      break;
+    case NAV_TRANSITION_ACTIONS.RESET_EXPERIENCE:
+      resetNavState();
+      break;
+    case NAV_TRANSITION_ACTIONS.RESTORE_EXPLORATION_HISTORY:
+      _navWritable.update(s => ({
+        ...s,
+        explorationHistoryIndices: Array.isArray(payload.restoreHistoryIndices)
+          ? payload.restoreHistoryIndices.filter((value: unknown) => Number.isFinite(value))
+          : []
+      }));
+      break;
+    case NAV_TRANSITION_ACTIONS.RESET:
       resetNavState();
       break;
   }

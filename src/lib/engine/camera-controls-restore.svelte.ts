@@ -15,7 +15,7 @@
  */
 
 import { state, type CameraLike, type ControlsLike, type SemanticState } from '../../../js/state.ts';
-import { prefersReducedMotion } from '../../../js/modules/environment.ts';
+import { prefersReducedMotion } from '@lib/utils/environment';
 import { easeInOutCubic } from '@lib/utils/math-easing';
 
 // ── Constants ────────────────────────────────────────────────────────────────
