@@ -20,7 +20,7 @@
     setSearchStatus,
     setSearchResults,
     clearSearch
-  } from '@lib/stores/search';
+  } from '@lib/stores/search.svelte';
   import { performSearch } from '@lib/search-engine';
   import {
     dispatchNavTransition,

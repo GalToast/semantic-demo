@@ -17,7 +17,7 @@
     toggleFilter,
     resetFilters,
     getFilterState
-  } from '@lib/stores/filter';
+  } from '@lib/stores/filter.svelte';
 
   interface Props {
     /** Whether the filter panel is open */

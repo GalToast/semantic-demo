@@ -23,10 +23,10 @@
 -->
 <script lang="ts">
   import { tick } from 'svelte';
-  import { searchState, hasResults, activeResult, setActiveResult, clearSearch } from '@lib/stores/search';
+  import { searchState, hasResults, activeResult, setActiveResult, clearSearch } from '@lib/stores/search.svelte';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
-  import { searchVisibleCount as searchVisibleCountFn, setSearchVisibleCount } from '@lib/stores/search';
-  import { activeClusterFilter } from '@lib/stores/filter';
+  import { searchVisibleCount as searchVisibleCountFn, setSearchVisibleCount } from '@lib/stores/search.svelte';
+  import { activeClusterFilter } from '@lib/stores/filter.svelte';
   import { getBusinessRecords } from '@lib/data-store';
   import { describeCluster } from '@lib/utils/ui-presentation';
   import { formatBusinessName } from '@lib/utils/dom-formatters';

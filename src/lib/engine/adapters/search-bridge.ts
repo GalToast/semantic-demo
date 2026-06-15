@@ -25,7 +25,7 @@ import type {
   SearchCorridorOptions,
 } from './types';
 
-import { setSearchGlow, clearSearchGlow } from '@lib/stores/search';
+import { setSearchGlow, clearSearchGlow } from '@lib/stores/search.svelte';
 
 // ── TS Port Imports (canonical implementations) ─────────────────────────────
 

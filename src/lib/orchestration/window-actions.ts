@@ -32,7 +32,7 @@ import {
   resetExperienceState as resetSvelteExperienceState,
   resetExplorationFocus as resetSvelteExplorationFocus
 } from '@lib/stores/lifecycle';
-import { clearSearch as clearSvelteSearch } from '@lib/stores/search';
+import { clearSearch as clearSvelteSearch } from '@lib/stores/search.svelte';
 
 type LegacyActionModules = {
   state?: Record<string, unknown>;

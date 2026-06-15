@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { businessRecordsStore } from '@lib/data-store.svelte';
-  import { hasActiveFilters, activeClusterFilter } from '@lib/stores/filter';
+  import { hasActiveFilters, activeClusterFilter } from '@lib/stores/filter.svelte';
   import { initLegendEventBusSubscriptions } from '@lib/engine/legend-ui-bridge';
   // The full filter pipeline lives in cluster-filter-controller; the
   // stub in @lib/stores/filter only writes the writable without clearing

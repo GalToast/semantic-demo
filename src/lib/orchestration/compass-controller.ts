@@ -9,7 +9,7 @@
  */
 import { get } from 'svelte/store';
 import { navStore, switchView as navSwitchView } from '@lib/stores/navigation';
-import { searchStore } from '@lib/stores/search';
+import { searchStore } from '@lib/stores/search.svelte';
 import {
   JOURNEY_COMPASS_PHASE_ORDER,
   JOURNEY_CONFIG,

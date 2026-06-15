@@ -12,7 +12,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat';
-  import { searchState } from '@lib/stores/search';
+  import { searchState } from '@lib/stores/search.svelte';
   import SearchInput from './SearchInput.svelte';
   import SearchResults from './SearchResults.svelte';
   import { viewport, isCompact } from '@lib/stores/viewport';

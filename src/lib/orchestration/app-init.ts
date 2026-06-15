@@ -22,7 +22,7 @@ import { initData, setLoadingPhase } from '@lib/data-store.svelte';
 import { navStore } from '@lib/stores/navigation.svelte';
 import { focusStore } from '@lib/stores/focus.svelte';
 import { appState } from '@lib/state/app.svelte';
-import { clearSearch as clearSearchAction } from '@lib/stores/search';
+import { clearSearch as clearSearchAction } from '@lib/stores/search.svelte';
 import { returnToOverview as returnToOverviewAction } from '@lib/stores/lifecycle';
 import {
   focusOnNode as focusOnNodeAction,

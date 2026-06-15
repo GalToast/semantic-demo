@@ -21,7 +21,7 @@
   import { threadInspector, threadInspectorActive, pinThread, updateThreadInspector } from '@lib/stores/focus';
   import { getBusinessRecords, selectedPointStore } from '@lib/stores';
   import { viewport, isCompact, isMobile, isCompactLandscape, isUltraCompactPortrait } from '@lib/stores/viewport';
-  import { searchSummary, isSearching } from '@lib/stores/search';
+  import { searchSummary, isSearching } from '@lib/stores/search.svelte';
   import type { BusinessRecord } from '@lib/types/business';
 
   interface Props {

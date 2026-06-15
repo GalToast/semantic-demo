@@ -9,8 +9,8 @@
  */
 
 import { get } from "svelte/store";
-import { filterState, activeClusterFilter, toggleFilter, overwriteActiveFilters, setClusterFilter as storeSetClusterFilter, resetFilters } from "@lib/stores/filter";
-import { searchStore, clearSearchGlow } from "@lib/stores/search";
+import { filterState, activeClusterFilter, toggleFilter, overwriteActiveFilters, setClusterFilter as storeSetClusterFilter, resetFilters } from "@lib/stores/filter.svelte";
+import { searchStore, clearSearchGlow } from "@lib/stores/search.svelte";
 import { navStore } from "@lib/stores/navigation";
 import { publish, subscribe, EVENTS } from "@lib/orchestration/event-bus";
 import { setMyceliumMode } from "@lib/stores/lifecycle";

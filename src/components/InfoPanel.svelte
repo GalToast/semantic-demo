@@ -21,7 +21,7 @@
 <script lang="ts">
   import { hasFocus, currentSurface } from '@lib/stores/navigation';
   import { focusedIndex } from '@lib/stores/navigation';
-  import { activeResult, searchSummary } from '@lib/stores/search';
+  import { activeResult, searchSummary } from '@lib/stores/search.svelte';
   import { getBusinessRecords, getIsDataReady, selectedPointStore } from '@lib/stores';
   import type { BusinessRecord } from '@lib/types/business';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, getPublicRecordStatusLabel } from '@lib/utils';

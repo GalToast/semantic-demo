@@ -14,8 +14,8 @@
 
 import { get } from "svelte/store";
 import { businessRecords } from "@lib/data-store";
-import { filterState, pointMatchesActiveFilters } from "@lib/stores/filter";
-import { searchStore } from "@lib/stores/search";
+import { filterState, pointMatchesActiveFilters } from "@lib/stores/filter.svelte";
+import { searchStore } from "@lib/stores/search.svelte";
 import type { BusinessRecord } from "@lib/types/business";
 import type { ActiveFilters } from "@lib/types/state";
 
