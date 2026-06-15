@@ -21,6 +21,7 @@ import { get } from 'svelte/store';
 import { initData, setLoadingPhase } from '@lib/data-store.svelte';
 import { navStore } from '@lib/stores/navigation.svelte';
 import { focusStore } from '@lib/stores/focus.svelte';
+import { appState } from '@lib/state/app.svelte';
 import { clearSearch as clearSearchAction } from '@lib/stores/search';
 import { returnToOverview as returnToOverviewAction } from '@lib/stores/lifecycle';
 import {
@@ -140,12 +141,19 @@ function installWindowGlobals(): () => void {
 
   // Expose a read-only snapshot of the current nav state for tests that
   // read window.__APP_STATE__ for mode/view/focus state.
+  // Note: `routeTraceLines` lives on the legacy state for now; the Svelte 5
+  // port hasn't been updated to carry it yet. Cast through `any` to avoid a
+  // type-blocker until the W11-T8 search/journey subsubsystem migration adds
+  // it to the AppState class.
   (window as any).__APP_STATE__ = {
     get state() {
       return {
         currentView: get(navStore).currentView,
         navState: get(navStore),
         activeFilters: focusStore(),
+        routeTraceDiagnostics: appState.routeTraceDiagnostics,
+        routeTraceLines: (appState as any).routeTraceLines,
+        points: appState.points,
       };
     },
   };

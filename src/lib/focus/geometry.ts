@@ -1,20 +1,21 @@
 import * as THREE from 'three';
 import { seededUnit } from '@lib/utils/seeded-random';
-import { easeOutQuint, clampNumber } from '@lib/utils/math-easing';
+import { clampNumber } from '@lib/utils/math-easing';
 import { getViewportSize } from '@lib/utils/environment';
 import { describeCluster } from '@lib/utils/ui-presentation';
 import { normalizeCityForFilter } from '@lib/utils/geo-data';
 import { getSemanticCandidateSlice } from './personality';
 import { getFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode';
 import { FOCUS_CONSTELLATION_MOTIFS } from '@lib/stores/focus';
+import { appState } from '@lib/state/app.svelte';
 
 import type { ConstellationMotif } from '@lib/stores/focus';
-import type { FocusPersonality, MicroVariation } from './personality';
+import type { FocusPersonality } from './personality';
 
 export { easeOutQuint, clampNumber } from '@lib/utils/math-easing';
 export { seededUnit } from '@lib/utils/seeded-random';
 
-// ── Bridge accessor for state fields not yet in stores ──────────────────────
+// ── State accessor: native Svelte 5 appState ───────────────────────────────
 
 interface LegacyPoint {
   x: number;
@@ -39,8 +40,17 @@ interface LegacyState {
   trailDepth: number;
 }
 
-function getLegacyState(): LegacyState | null {
-  return (globalThis as Record<string, unknown>).__semanticState as LegacyState | null ?? null;
+/**
+ * Returns the canonical focus-geometry state snapshot by reading the
+ * Svelte 5 appState singleton. The LegacyState interface is preserved
+ * to avoid touching every readsite; appState exposes the same field
+ * names (camera, points, originalPositions, nodePositions, navState,
+ * trailDepth, recentArrangements).
+ */
+function getFocusGeometryState(): LegacyState | null {
+  const s = appState as unknown as LegacyState;
+  if (!s || !s.navState) return null;
+  return s;
 }
 
 // ── Pure geometry/easing utilities ──────────────────────────────────────────
@@ -58,7 +68,7 @@ export function getFocusViewBasis(focusVector: THREE.Vector3): {
   rightVector: THREE.Vector3;
   upVector: THREE.Vector3;
 } {
-  const state = getLegacyState();
+  const state = getFocusGeometryState();
   const viewVector = state?.camera
     ? new THREE.Vector3().subVectors(state.camera.position, focusVector)
     : new THREE.Vector3(0.28, 0.2, 1);
@@ -86,7 +96,7 @@ export interface ConstellationMotifResult {
 }
 
 export function getFocusConstellationMotif(index: number): ConstellationMotifResult {
-  const state = getLegacyState();
+  const state = getFocusGeometryState();
   const point = (state?.points?.[index] ?? {}) as LegacyPoint;
   const clusterLabel = (describeCluster(point.cluster as number) || '').toLowerCase();
 
@@ -459,7 +469,7 @@ export interface ThreadEdge {
 }
 
 export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): THREE.Vector3 {
-  const state = getLegacyState();
+  const state = getFocusGeometryState();
   if (!state?.nodePositions) return new THREE.Vector3();
   const a = state.nodePositions[edge.a];
   const b = state.nodePositions[edge.b];
@@ -597,7 +607,7 @@ export function buildFocusedPocketStagedPositions(
   index: number,
   pocketEntries: Map<number, PocketEntry>,
 ): PocketLayout {
-  const state = getLegacyState();
+  const state = getFocusGeometryState();
   if (!state?.points || !Array.isArray(state.points) || !state.originalPositions) {
     return { positions: new Map(), motion: new Map(), roles: new Map(), motif: null, viewportProfile: null };
   }
@@ -789,7 +799,7 @@ export interface SemanticPocketResult {
 }
 
 export function buildFocusedSemanticPocket(index: number): SemanticPocketResult | null {
-  const state = getLegacyState();
+  const state = getFocusGeometryState();
   const viewportProfile = getFocusConstellationViewportProfile();
 
   const primaryCandidates = getSemanticCandidateSlice(index, viewportProfile.primaryLimit);

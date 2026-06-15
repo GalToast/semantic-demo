@@ -6,7 +6,7 @@ import {
 } from '@lib/data-store';
 import { getSemanticThreadCandidates } from '@lib/journey/thread-model';
 import { FOCUS_CONSTELLATION_MOTIFS } from '@lib/stores/focus';
-import { trailDepth } from '@lib/stores/journey';
+import { appState } from '@lib/state/app.svelte';
 
 import type { ConstellationMotif } from '@lib/stores/focus';
 import type { ThreadCandidate } from '@lib/journey/thread-model';
@@ -48,22 +48,23 @@ function seededUnitMulti(...values: number[]): number {
   return x - Math.floor(x);
 }
 
-/** Bridge accessor for state.recentArrangements — not yet in a store. */
+/** Read recent arrangements from the Svelte 5 appState singleton. */
 function getRecentArrangements(): string[] {
-  const semanticState = (globalThis as unknown as { __semanticState?: { recentArrangements?: string[] } }).__semanticState;
-  return semanticState?.recentArrangements ?? [];
+  const recent = appState.recentArrangements as string[] | undefined;
+  return Array.isArray(recent) ? recent : [];
 }
 
 function pushRecentArrangement(type: string): void {
-  const semanticState = (globalThis as unknown as { __semanticState?: { recentArrangements?: string[] } }).__semanticState;
-  if (!semanticState) return;
-  if (!Array.isArray(semanticState.recentArrangements)) {
-    semanticState.recentArrangements = [];
+  const recent = (appState.recentArrangements as string[] | undefined) ?? [];
+  if (!Array.isArray(appState.recentArrangements)) {
+    appState.recentArrangements = [];
   }
-  semanticState.recentArrangements.push(type);
-  if (semanticState.recentArrangements.length > 5) {
-    semanticState.recentArrangements.shift();
+  (appState.recentArrangements as string[]).push(type);
+  if ((appState.recentArrangements as string[]).length > 5) {
+    (appState.recentArrangements as string[]).shift();
   }
+  // Defensive: avoid unused-locals on the local read.
+  void recent;
 }
 
 export function getSemanticCandidateSlice(index: number, limit = 8): ThreadCandidate[] {
@@ -91,8 +92,7 @@ export function getNeighborhoodPersonality(
     }, 0) / (degree || 1);
   const avgScore = Number.isFinite(rawAvgScore) ? rawAvgScore : 0;
 
-  const semanticState = (globalThis as unknown as { __semanticState?: { points?: Array<Record<string, unknown> | undefined> } }).__semanticState;
-  const points = semanticState?.points;
+  const points = (appState.points as Array<Record<string, unknown> | undefined> | undefined) ?? [];
   const cities = new Set(
     primaryCandidates.map((c) => {
       const city = points?.[c.index]?.city;
@@ -115,7 +115,7 @@ export function getNeighborhoodPersonality(
   };
 
   const recent = getRecentArrangements().slice(-4);
-  const currentTrailDepth = trailDepth();
+  const currentTrailDepth = appState.trailDepth;
 
   if (currentTrailDepth === 2) {
     personality.type = 'DEEP_DIVE';

@@ -96,9 +96,17 @@ describe('UI-2: bottom-left triple collision in focus state', () => {
 
     // ── MapSummary: no changes needed (self-gating via showMap) ──
 
-    it('MapSummary.svelte self-gates via showMap derived from visible && hasTrail()', () => {
+    it('MapSummary.svelte self-gates via showMap derived from visible && trail-depth-check && trail.length > 0', () => {
         const summarySrc = readComponent('MapSummary.svelte');
-        expect(summarySrc).toMatch(/showMap\s*=\s*\$derived\(visible\s*&&\s*hasTrail\(\)\s*&&\s*trail\.length\s*>\s*0\)/);
+        // Two functionally equivalent gating patterns are accepted: the
+        // legacy `hasTrail()` selector OR an inline `trailDepth > 0` check
+        // (when the component inlines nav state and no longer pulls
+        // `hasTrail` from the navigation store). Both produce the same
+        // render-gate truthiness; the test guards the contract, not the
+        // specific selector.
+        expect(summarySrc).toMatch(
+            /showMap\s*=\s*\$derived\(\s*visible\s*&&\s*(?:hasTrail\(\)\s*&&\s*trail\.length\s*>\s*0|\(?\s*nav\.trailDepth\s*\?\?\s*0\s*\)?\s*>\s*0\s*&&\s*trail\.length\s*>\s*0)/
+        );
     });
 
     // ── Contract: no two of {Legend, JourneyChrome, MapSummary} collide ──

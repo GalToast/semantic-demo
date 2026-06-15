@@ -5,7 +5,8 @@
  * Provides `showExperienceToast` (transient toast) and `syncSearchStatusForFocus`
  * (announces the focused point's relationship to the active search stack).
  */
-import { state, type Point } from '@lib/engine/state-bridge';
+import { appState } from '@lib/state/app.svelte';
+import type { Point } from '@lib/engine/state-bridge';
 import {
     getCurrentSearchSummary,
     getPointIndexByLeadId,
@@ -28,16 +29,16 @@ export function showExperienceToast(title: string, copy: string): void {
     if (titleEl) titleEl.textContent = title;
     if (copyEl) copyEl.textContent = copy;
     toast.classList.add('active');
-    if (state.experienceResetToastTimer) {
-        clearTimeout(state.experienceResetToastTimer);
+    if (appState.experienceResetToastTimer) {
+        clearTimeout(appState.experienceResetToastTimer);
     }
-    state.experienceResetToastTimer = setTimeout(() => {
+    appState.experienceResetToastTimer = setTimeout(() => {
         toast.classList.remove('active');
         toast.setAttribute('aria-hidden', 'true');
         toast.setAttribute('aria-live', 'polite');
         if (titleEl) titleEl.textContent = '';
         if (copyEl) copyEl.textContent = '';
-        state.experienceResetToastTimer = null;
+        appState.experienceResetToastTimer = null;
     }, 2100);
 }
 
