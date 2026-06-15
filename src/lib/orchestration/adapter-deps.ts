@@ -34,7 +34,7 @@ export function buildAdapterDeps(): AdapterDeps {
     journeyLifecycle: {
       previewInsideNextThread,
       getNextWalkCandidateForIndex: (currentIndex: number, options?: unknown) =>
-        getNextWalkCandidateForIndex(currentIndex, options as never),
+        getNextWalkCandidateForIndex(currentIndex, options as never) as import('@lib/journey/thread-model').ThreadCandidate | null,
       applyLocalNeighborhoodFocus: (...args: unknown[]) => applyLocalNeighborhoodFocus(Number(args[0])),
       setSemanticDiveMode: (mode: unknown) => setSemanticDiveMode(Boolean(mode)),
       getInterestingBusinessNote: (point: unknown) => getInterestingBusinessNote(point as Record<string, unknown> | null),

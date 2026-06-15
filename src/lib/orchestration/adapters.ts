@@ -1,10 +1,11 @@
-// @ts-nocheck — W11-T7 in-flight work: the AdapterDeps / adapter-init dep types are
-// mid-reconciliation between the orchestration layer and the engine-kernel
-// adapter signatures. The contract is intentionally loose (unknown / [key: string]
-// escape hatches) so the bridge layer is full-typed and decoupled from the
-// engine-kernel concrete types. Remove this directive when v3 of the engine
-// kernel adapter contracts stabilize and a strict AdapterDeps type can replace
-// the loose aliases.
+/**
+ * @lib/orchestration/adapters.ts — Adapter initialization contracts.
+ *
+ * W12-T8: removed @ts-nocheck and tightened types. Any remaining `unknown`
+ * parameters reflect a real type contract (rest-args, setters accepting
+ * arbitrary data, or external bridge layer where the concrete type is
+ * not yet available in the Svelte layer).
+ */
 import {
   initJourneyLifecycleAdapter,
   initClusterFilterAdapter,
@@ -18,20 +19,51 @@ import {
   initViewControllerAdapter,
   setupMobileSearchSheetToggle,
 } from '@lib/engine/adapters-bridge';
+import type { ThreadCandidate, WalkCandidateOptions } from '@lib/journey/thread-model';
+
+/**
+ * Loose 3D point — matches the structural shape of the legacy
+ * `Point3D` in `js/modules/thread-inspector-adapter.ts` (optional x/y/z).
+ * The strict `Point3D` in `@lib/types/webgl` is required x/y/z, which is
+ * narrower than the bridge contract. Use this loose form for adapter
+ * bridges until the consumer is tightened.
+ */
+type LoosePoint3D = { x?: number; y?: number; z?: number };
+
+/**
+ * Loose neighbor candidate — matches the structural shape of the legacy
+ * `NeighborCandidate` in `js/modules/thread-inspector-adapter.ts`. The
+ * legacy type allows `reason?: string` and arbitrary extra fields.
+ */
+type LooseNeighborCandidate = { reason?: string; [key: string]: unknown };
+
+/**
+ * Loose business point — used where the legacy `Point` type from
+ * `js/state.ts` is consumed. No direct Svelte-5 equivalent exists yet;
+ * `BusinessRecord` from `@lib/types/business` is the canonical
+ * replacement once the consumer is tightened.
+ */
+type LoosePoint = Record<string, unknown>;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 /**
  * Dependencies for the journey lifecycle adapter (14+ functions).
  * These bridge journey, focus, search, and rendering concerns.
+ *
+ * `unknown` types are kept for:
+ * - Rest-args functions (`...args: unknown[]`) — variadic input
+ * - Setters (`(val: unknown) => void`) — generic store writers
+ * - Boolean-like setters (`(mode: unknown) => void`) — accepts coerced boolean
+ * - Bridge layers where the concrete type is not yet available
  */
 export interface JourneyLifecycleDeps {
   previewInsideNextThread: (options?: unknown) => void;
-  getNextWalkCandidateForIndex: (currentIndex: number, options?: unknown) => unknown;
+  getNextWalkCandidateForIndex: (currentIndex: number, options?: WalkCandidateOptions) => ThreadCandidate | null;
   applyLocalNeighborhoodFocus: (...args: unknown[]) => void;
   setSemanticDiveMode: (mode: unknown) => void;
-  getInterestingBusinessNote: (point: unknown) => string | null;
-  buildSelectedMatchNarrative: (point: unknown) => string;
+  getInterestingBusinessNote: (point: LoosePoint) => string | null;
+  buildSelectedMatchNarrative: (point: LoosePoint) => string;
   hasColdDegradedSemanticFallback: () => boolean;
   getColdDegradedRouteCopy: () => null;
   getSelectedBusinessRoleLabel: (point: unknown) => string;
@@ -43,7 +75,6 @@ export interface JourneyLifecycleDeps {
   setLastCanvasNodePick: (val: unknown) => void;
   setLastCanvasNodeHover: (val: unknown) => void;
   setLastCanvasNodeFocusPick: (val: unknown) => void;
-  [key: string]: unknown;
 }
 
 /**
@@ -54,18 +85,19 @@ export interface ClusterFilterDeps {
   clearSearchGlow: () => void;
   updateUrlState: (extra: Record<string, unknown>, options: Record<string, unknown>) => void;
   clearShortSemanticSearchState: (resultsEl: Element | null, statusEl: Element | null) => void;
-  [key: string]: unknown;
 }
 
 /**
  * Dependencies for the thread inspector adapter (4 functions).
+ *
+ * `edge: unknown` is kept because the thread edge type is heterogeneous
+ * across the legacy adapter layer (sometimes Edge, sometimes Record).
  */
 export interface ThreadInspectorDeps {
-  summarizeNeighborReason: (candidate: unknown, point: unknown, focusPoint: unknown) => string;
-  getInsideRelationshipLabel: (candidate: unknown, point: unknown, focusPoint: unknown) => string;
+  summarizeNeighborReason: (candidate: LooseNeighborCandidate, point: LoosePoint3D, focusPoint: LoosePoint3D) => string;
+  getInsideRelationshipLabel: (candidate: LooseNeighborCandidate, point: LoosePoint3D, focusPoint: LoosePoint3D) => string;
   getCurrentTrailFocusIndex: () => number | null;
-  getFocusThreadCurvePoint: (edge: unknown, t: number) => unknown;
-  [key: string]: unknown;
+  getFocusThreadCurvePoint: (edge: unknown, t: number) => LoosePoint3D | null;
 }
 
 /**
