@@ -71,7 +71,7 @@ import {
     renderSelectedMatchPanel,
     renderSelectedActionRow,
     syncSelectedCardContentVariant
-} from '@lib/engine/ui-renderers-bridge'
+} from '@lib/engine/lifecycle-bridge'
 import {
     isCondensedFocusStageViewport,
     hasColdDegradedSemanticFallback,

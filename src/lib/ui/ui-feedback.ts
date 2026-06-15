@@ -17,7 +17,7 @@ import {
 } from '@lib/engine/state-selectors-bridge';
 import { isCompactMapViewport, isCompactSearchViewport } from '@lib/utils/ui-presentation';
 import { formatBusinessName } from '@lib/utils/dom-formatters';
-import { setActiveSearchResultRow, updateSearchTrailCue } from '@lib/engine/ui-renderers-bridge';
+import { setActiveSearchResultRow, updateSearchTrailCue } from '@lib/engine/lifecycle-bridge';
 
 export function showExperienceToast(title: string, copy: string): void {
     const toast = document.getElementById('experience-reset-toast');

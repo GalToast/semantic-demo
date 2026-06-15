@@ -176,11 +176,13 @@ describe('Bridge health (W11 retirement progress)', () => {
     'src/lib/engine/data-worker-url-bridge.ts', // W11-T5 Wave 1 — Vite ?worker&url magic import; trivial wrapper, no Svelte path needed
     'src/lib/engine/keyboard-help-bridge.ts', // W11-T5 Wave 1 — DOM event handlers; trivial wrapper, no Svelte port justified
     'src/lib/engine/weather-bridge.ts', // W11-T5 Wave 1 — weather widget fetch; trivial wrapper, no Svelte port justified
-    'src/lib/engine/ui-feedback-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
-    'src/lib/engine/map-flattening-layout-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
-    'src/lib/engine/focus-anchor-indicator-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
-    'src/lib/engine/audio-scape-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
-    'src/lib/engine/event-bindings-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/ui-renderers-bridge.ts', // Retired ui-renderers-bridge — logic relocated to lifecycle-bridge
+    'src/lib/engine/semantic-dive-bridge.ts', // Retired semantic-dive-bridge — logic relocated to lifecycle-bridge
+    'src/lib/engine/ui-feedback-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/map-flattening-layout-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/focus-anchor-indicator-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/audio-scape-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/event-bindings-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
 
     'src/lib/engine/cluster-labels-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
     'src/lib/engine/focus-pocket-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; Svelte 5 port exists in @lib/focus/pocket but render loop still uses legacy module surface
@@ -190,6 +192,9 @@ describe('Bridge health (W11 retirement progress)', () => {
     'src/lib/engine/route-arrival-overlay-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
     'src/lib/engine/three-search-animations-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
     'src/lib/engine/three-interaction-visuals-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
+    // ── W11-T5 Wave 2 ─────────────────────────────────────────
+    'src/lib/engine/event-bus-bridge.ts', // W11-T5 Wave 2 — T9 retires when journey files land
+    'src/lib/engine/micro-demo-choreography-bridge.ts', // W11-T5 Wave 2 — sanctioned passthrough (micro-demo legacy)
   ]);
 
   function listBridgeFiles(): string[] {

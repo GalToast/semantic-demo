@@ -58,7 +58,7 @@ import * as webglRestoreMod from '@lib/utils/webgl-restore-adapter';
 import * as focusAnchorMod from '@lib/engine/focus-anchor-indicator-bridge';
 import * as audioScapeMod from '@lib/engine/audio-scape-bridge';
 import * as eventBindingsMod from '@lib/engine/event-bindings-bridge';
-import * as loadingUiMod from '../../../js/modules/loading-ui';
+import * as loadingUiMod from './loading-ui-bridge';
 
 // ── Static ../../../js/* imports (HOT — render-loop, consumed by ensureModules) ──
 import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge';
