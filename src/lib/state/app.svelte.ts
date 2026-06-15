@@ -106,6 +106,9 @@ class AppState {
   myceliumWispyLines = $state<SemanticState['myceliumWispyLines']>(null as unknown as SemanticState['myceliumWispyLines']);
   myceliumBridgeLines = $state<SemanticState['myceliumBridgeLines']>(null as unknown as SemanticState['myceliumBridgeLines']);
   focusSemanticLines = $state<SemanticState['focusSemanticLines']>(null as unknown as SemanticState['focusSemanticLines']);
+  focusAnchorGroup = $state<SemanticState['focusAnchorGroup']>(null as unknown as SemanticState['focusAnchorGroup']);
+  focusAnchorRingMesh = $state<SemanticState['focusAnchorRingMesh']>(null as unknown as SemanticState['focusAnchorRingMesh']);
+  focusAnchorHaloSprite = $state<SemanticState['focusAnchorHaloSprite']>(null as unknown as SemanticState['focusAnchorHaloSprite']);
   focusSemanticConnectionPairs = $state<Array<{ a: number; b: number; layer: number }>>([]);
   semanticLensGroup = $state<SemanticState['semanticLensGroup']>(null as unknown as SemanticState['semanticLensGroup']);
   semanticLensGlow = $state<SemanticState['semanticLensGlow']>(null as unknown as SemanticState['semanticLensGlow']);

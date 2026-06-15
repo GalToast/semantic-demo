@@ -9,8 +9,7 @@
  *
  * Uses the demoStore for canonical demo state (get(demoPhase)).
  */
-import { get } from 'svelte/store';
-import { state } from '../../../js/state';
+// ── Legacy Choreography Bridge ──────────────────────────────────────────────
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import {
   isAppReadyForDemo,
@@ -24,7 +23,7 @@ import {
 import { seededUnit } from '@lib/utils/seeded-random';
 import { demoPhase, isDemoActive, startDemo, cancelDemo } from '@lib/stores/demo';
 import { setDemoNodeIndex, runDemo, cancelChoreography as _cancelChoreographyLegacy } from '@lib/engine/micro-demo-choreography-bridge';
-import type { DemoPhase } from '@lib/types/state';
+import { appState } from '@lib/state/app.svelte';
 
 // ── Legacy Choreography Bridge ──────────────────────────────────────────────
 // The actual timed camera/UI choreography is still in the legacy JS module,
@@ -69,8 +68,7 @@ function _clearRetryTimer(): void {
 }
 
 function _getDemoNode(): number | null {
-  const lState = state as Record<string, unknown>;
-  const points = lState.points as Array<Record<string, unknown>> | undefined;
+  const points = appState.points as Array<Record<string, unknown>> | undefined;
   if (!points) return null;
 
   for (const idx of _shuffledPool) {
