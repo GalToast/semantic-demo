@@ -93,10 +93,22 @@ const EXEMPTED_SHAS = new Set<string>([
 
 // Conventional-commit prefix regex. Captures:
 //   [1] prefix  — feat|fix|docs|chore|test|refactor|ci|build|style|perf
+//                 OR a Wave 11 ticket identifier (W\d+-T\d+) used during
+//                 the W11 Svelte migration arc.
 //   [2] scope   — inside parentheses (may contain + for compound scopes)
 //   [3] subject — rest of the title after the colon+space
+//
+// The W11 ticket prefix is accepted because the W11 arc (started 2026-06-12)
+// uses `<ticket-id> (<scope>): <subject>` to keep ticket traceability
+// in the git log, e.g. "W11-T6 (Lifecycle Orchestration, Phase 2): ...".
+// The W11 format allows an optional space between the ticket id and the
+// scope (e.g. "W11-T6 Wave 2H: Delete ..." uses no scope parens, which
+// still parses as a wave-style title and is handled by the scope-less
+// fallback below). Without the ticket alternative, the parseable ratio
+// drops below 0.5 during active W11 waves (observed 2026-06-15 with
+// 22/50 conventional).
 const CONVENTIONAL_PREFIX_RE =
-    /^(feat|fix|docs|chore|test|refactor|ci|build|style|perf)\(([^)]+)\):\s*(.*)$/;
+    /^((?:feat|fix|docs|chore|test|refactor|ci|build|style|perf)|W\d+-T\d+)\s*\(([^)]+)\):\s*(.*)$/;
 
 // Revert prefix detection (grandfathered — skip entirely).
 const REVERT_PREFIX_RE = /^Revert\s+/;
