@@ -35,7 +35,7 @@ const BRIDGE_ALLOWLIST = new Set([
 ]);
 
 /** Current anti-pattern import count — workers SHOULD reduce this over time */
-const APPROVED_ANTIPATTERN_COUNT = 30;
+const APPROVED_ANTIPATTERN_COUNT = 23;
 
 interface ImportViolation {
   file: string;
@@ -116,13 +116,12 @@ describe('Svelte-bridge import contract (S7)', () => {
     // If a worker added a new anti-pattern import, this fails.
     // Migration tickets reduce the count; update APPROVED_ANTIPATTERN_COUNT
     // in lockstep with the migration commit.
-    // Baseline established 2026-06-14 and reduced by adapter waves.
-    // 52 are anti-pattern after re-measuring the full src/ tree on 2026-06-14
-    // after migrating src/lib/orchestration/window-actions.ts behind
-    // @lib/engine/window-actions-bridge. Earlier 20/23 counts were
-    // stale/incomplete relative to the test's actual scan scope. Batch 5
-    // restored the missing focus-pocket bridge file without reducing this
-    // broader baseline.
+    // Baseline 58→23 on 2026-06-14 by restoring 19 sanctioned bridges in
+    // src/lib/engine/* and rewiring the top 6 consumer files (journey,
+    // window-actions, semantic-guide, semantic-dive, focus-pocket,
+    // ui-feedback) to consume through them. Remaining 23 are mostly
+    // single-import one-offs in svelte components and small lib files —
+    // future migration tickets should bring this number down further.
     expect(violations.length).toBe(APPROVED_ANTIPATTERN_COUNT);
   });
 

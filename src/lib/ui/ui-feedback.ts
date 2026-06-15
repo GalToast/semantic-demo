@@ -5,7 +5,7 @@
  * Provides `showExperienceToast` (transient toast) and `syncSearchStatusForFocus`
  * (announces the focused point's relationship to the active search stack).
  */
-import { state, type Point } from '../../../js/state';
+import { state, type Point } from '@lib/engine/state-bridge';
 import {
     getCurrentSearchSummary,
     getPointIndexByLeadId,
@@ -13,10 +13,10 @@ import {
     getFocusedNode,
     getNavState,
     getSelectedPoint,
-} from '../../../js/state/selectors/index';
+} from '@lib/engine/state-selectors-bridge';
 import { isCompactMapViewport, isCompactSearchViewport } from '@lib/utils/ui-presentation';
 import { formatBusinessName } from '@lib/utils/dom-formatters';
-import { setActiveSearchResultRow, updateSearchTrailCue } from '../../../js/modules/ui-renderers';
+import { setActiveSearchResultRow, updateSearchTrailCue } from '@lib/engine/ui-renderers-bridge';
 
 export function showExperienceToast(title: string, copy: string): void {
     const toast = document.getElementById('experience-reset-toast');

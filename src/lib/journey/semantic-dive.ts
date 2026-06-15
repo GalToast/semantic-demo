@@ -18,16 +18,16 @@
 import {
     getFocusedNode, getNavState, getCurrentView, getSemanticDiveMode,
     getStrandContinuityState, getTrailDepth, getPoints
-} from '../../../js/state/selectors/index';
-import { state } from '../../../js/state';
+} from '@lib/engine/state-selectors-bridge';
+import { state } from '@lib/engine/state-bridge';
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import type { BusinessRecord } from '@lib/types/business';
 import { cleanOptionalValue, formatBusinessName } from '@lib/utils/dom-formatters';
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation';
 import { getNextExploreCandidateForIndex } from './thread-model';
 import { summarizeNeighborReason } from './thread-settler';
-import { getNextWalkCandidateForIndex } from '../../../js/modules/journey-lifecycle-adapter';
-import { ensureFocusStageAuxiliaryDom, ensureDiveButton } from '../../../js/modules/focus-stage-dom';
+import { getNextWalkCandidateForIndex } from '@lib/engine/semantic-dive-bridge';
+import { ensureFocusStageAuxiliaryDom, ensureDiveButton } from '@lib/engine/semantic-dive-bridge';
 
 function truncateDiveStatusCopy(text: string | null | undefined, max = 74): string {
     const clean = cleanOptionalValue(text);
