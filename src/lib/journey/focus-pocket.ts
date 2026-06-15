@@ -8,9 +8,9 @@
  *
  * Wave 11 W11-T7: migrated from the legacy `state` singleton + `withStateMutation`
  * to the Svelte 5 `appState` class with `appState.withMutation()` for tracked
- * sub-object writes. The consumer previously routed through
- * `@lib/engine/focus-pocket-bridge`; that bridge is now dead for this file
- * and will be deleted in a follow-up ticket per the Wave 11 retirement path.
+ * sub-object writes. The prior bridge indirection is now retired per the
+ * Wave 11 3-step retirement path; the corresponding bridge file in
+ * `src/lib/engine/` is dead and a deletion candidate for a follow-up ticket.
  */
 import * as THREE from 'three';
 import { appState } from '@lib/state/app.svelte';
