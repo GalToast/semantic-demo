@@ -89,6 +89,16 @@ const EXEMPTED_SHAS = new Set<string>([
     // artifacts under a docs prefix). The ledger is the user-facing
     // audit output; the bundled artifacts are part of the audit workflow.
     '967249712cd4b268b45dcd40e0c47e2a218e499e',
+    // 59d0471 — docs(w13): state-selectors porting charter ... —
+    // Bundled 1074 lines of code (W13-T1 starter: 3 new src/lib/journey/
+    // adapter files, scripts/check-legacy-ts-budget.mjs, journey-webgl-bridge
+    // + webgl.ts tweaks, package.json script) under a docs(...) prefix.
+    // The commit description claims "read-only" but actually shipped the
+    // first slice of W13-T1 implementation. Splitting into docs(only) +
+    // feat(w13-t1) would require a rebase. Exempt as a transitional
+    // grant; future W13 commits must use feat() or chore() prefixes when
+    // touching code.
+    '59d0471923fd96f3378ecd24ac65bdcccc3a4bbf',
 ]);
 
 // Conventional-commit prefix regex. Captures:
