@@ -21,7 +21,7 @@ import {
   SESSION_STORAGE_KEY,
 } from './guards';
 import { seededUnit } from '@lib/utils/seeded-random';
-import { demoPhase, isDemoActive, startDemo, cancelDemo } from '@lib/stores/demo';
+import { demoPhase, isDemoActive, startDemo, cancelDemo } from '@lib/stores/demo.svelte.ts';
 import { setDemoNodeIndex, runDemo, cancelChoreography as _cancelChoreographyLegacy } from '@lib/engine/micro-demo-choreography-bridge';
 import { appState } from '@lib/state/app.svelte';
 

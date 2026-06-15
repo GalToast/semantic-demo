@@ -41,8 +41,8 @@ import { focusStore } from '@lib/stores/focus';
 import { searchStore } from '@lib/stores/search.svelte';
 import { filterState } from '@lib/stores/filter.svelte';
 import { viewport } from '@lib/stores/viewport';
-import { cameraStore } from '@lib/stores/camera';
-import { demoStore as demoPhaseStore } from '@lib/stores/demo';
+import { cameraStore } from '@lib/stores/camera.svelte.ts';
+import { demoStore as demoPhaseStore } from '@lib/stores/demo.svelte.ts';
 import {
   loadingPhaseStore,
   graphicsModeStore

@@ -16,7 +16,7 @@ import {
   type CompassStatus,
   type CompassAction,
   type JourneyAction
-} from '@lib/stores/compass';
+} from '@lib/stores/compass.svelte.ts';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 

@@ -29,7 +29,7 @@ import {
   getFocusedJourneyPoint,
   type CompassStateContext
 } from './compass-state';
-import { JOURNEY_ACTIONS, type CompassAction } from '@lib/stores/compass';
+import { JOURNEY_ACTIONS, type CompassAction } from '@lib/stores/compass.svelte.ts';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 

@@ -38,8 +38,8 @@ import { focusStore, resetFocus } from '@lib/stores/focus';
 import { searchStore } from '@lib/stores/search.svelte';
 import { filterState, resetFilters } from '@lib/stores/filter.svelte';
 import { viewport } from '@lib/stores/viewport';
-import { demoStore as demoPhaseStore, resetDemo } from '@lib/stores/demo';
-import { cameraStore, resetCamera } from '@lib/stores/camera';
+import { demoStore as demoPhaseStore, resetDemo } from '@lib/stores/demo.svelte.ts';
+import { cameraStore, resetCamera } from '@lib/stores/camera.svelte.ts';
 import { loadingPhaseStore, graphicsModeStore } from '@lib/data-store';
 
 // ── Helpers ──────────────────────────────────────────────────────────────

@@ -48,7 +48,7 @@
     executeJourneyCompassAction,
     type CompassPresentationState
   } from '@lib/orchestration/compass-controller';
-  import { JOURNEY_ACTIONS, type CompassAction } from '@lib/stores/compass';
+  import { JOURNEY_ACTIONS, type CompassAction } from '@lib/stores/compass.svelte.ts';
 
   // ── Reactive state ────────────────────────────────────────────────────────
 

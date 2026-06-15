@@ -18,7 +18,7 @@
     DEMO_TIMING,
     DEMO_START_DELAY_MS,
     MAX_START_RETRIES
-  } from '@lib/stores/demo';
+  } from '@lib/stores/demo.svelte.ts';
   import { getBusinessRecords } from '@lib/stores';
   import type { DemoPhase } from '@lib/types/state';
 
