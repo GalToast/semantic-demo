@@ -1,6 +1,7 @@
 node_modules/
 dist/*.map
 dist/meta.json
+dist/bundle.js
 .env
 
 # Local/runtime evidence
