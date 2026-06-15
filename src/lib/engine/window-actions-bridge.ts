@@ -6,7 +6,7 @@
  * the sanctioned engine bridge side of the import contract.
  */
 
-export { state, withStateMutation } from './state-bridge';
+export { state, withStateMutation } from '../../../js/state';
 export { focusOnNode } from './camera-controls';
 export { search, clearSearch } from '../../../js/modules/search-state.ts';
 export {

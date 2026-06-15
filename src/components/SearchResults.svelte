@@ -405,6 +405,7 @@
         id="search-result-list"
         class="search-result-list"
         role="listbox"
+        tabindex="-1"
         aria-label="Search result businesses"
         aria-activedescendant={activeIndex >= 0 ? `search-result-${Number((resultSlice as SearchResult[])[activeIndex]?.index)}` : undefined}
         onkeydown={handleContainerKeyDown}
