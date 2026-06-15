@@ -5,7 +5,7 @@
  *
  * Re-exports core adapters from extracted modules and owns canvas DOM event binding lifecycle.
  */
-import { state } from '@lib/engine/state-bridge';
+import { appState } from '@lib/state/app.svelte';
 import { isPointVisible } from '@lib/utils/geo-data';
 import type { ActiveFilters, GeoPoint } from '@lib/utils/geo-data';
 import {
@@ -39,201 +39,85 @@ const DEFAULT_ACTIVE_FILTERS: ActiveFilters = {
 let _canvasInteractionAbort: AbortController | null = null;
 
 export function ensureCanvasNodeInteractionBindings(): void {
-  const lState = state as Record<string, unknown>;
-  const renderer = lState.renderer as { domElement?: HTMLCanvasElement } | undefined;
-  const canvas = renderer?.domElement;
+  const canvas = appState.renderer?.domElement;
   if (!canvas || canvas.dataset.threadInteractionBound === 'true') return;
   canvas.dataset.threadInteractionBound = 'true';
 
   _canvasInteractionAbort = new AbortController();
   const signal = _canvasInteractionAbort.signal;
 
-  let suppressNextCanvasClick = false;
-  const getActiveFilters = (): ActiveFilters =>
-    (state as unknown as { activeFilters?: ActiveFilters }).activeFilters ?? DEFAULT_ACTIVE_FILTERS;
-  const getPoints = (): GeoPoint[] => ((state as unknown as { points?: GeoPoint[] }).points ?? []);
-
-  const isUiPointerTarget = (target: EventTarget | null): boolean =>
-    !!(target as HTMLElement)?.closest?.([
-      'button',
-      'a',
-      'input',
-      'textarea',
-      'select',
-      '.info-panel',
-      '.focus-stage-card',
-      '.summary-card',
-      '.controls',
-      '.view-toggle',
-      '.journey-compass',
-      '.legend-panel',
-      '.weather-widget',
-      '.share-toggle'
-    ].join(','));
-
-  const isPrimaryPointerRelease = (event: PointerEvent): boolean =>
-    !Number.isFinite(event.button) || event.button <= 0;
-
-  const walkCanvasThreadFromPointerEvent = (event: PointerEvent): boolean => {
-    if (state.currentView !== 'galaxy' || !Number.isFinite((state.navState as unknown as Record<string, unknown>).focusedIndex as number)) return false;
-    let candidate: ReturnType<typeof getNearestCanvasThreadCandidate> = null;
-    const stable = state.stableCanvasHover as { index: number; screenX: number; screenY: number; source?: string; reason?: string; [key: string]: unknown } | null;
-    const stableIsThreadNeighbor =
-      !!(stable
-        && Number.isFinite(stable.index)
-        && stable.index !== (state.navState as unknown as Record<string, unknown>).focusedIndex
-        && isPointVisible(stable.index, getPoints(), null, getActiveFilters())
-        && ((state.navState as unknown as Record<string, unknown>).threadCandidates as Array<Record<string, unknown>> || []).some((item) => item && item.index === stable.index));
-    if (stableIsThreadNeighbor) {
-      const stableDistance = Math.hypot(
-        (stable.screenX ?? event.clientX) - event.clientX,
-        (stable.screenY ?? event.clientY) - event.clientY
-      );
-      if (stableDistance <= 96) {
-        const threadCandidate = ((state.navState as unknown as Record<string, unknown>).threadCandidates as Array<Record<string, unknown>> || []).find(
-          (item) => item && item.index === stable.index
-        );
-        candidate = {
-          ...(threadCandidate ?? {}),
-          ...stable,
-          index: stable.index,
-          reason: (threadCandidate?.reason as string) || stable.reason || 'hovered 3D related node',
-          source: stable.source || 'stable-hover',
-          screenX: stable.screenX,
-          screenY: stable.screenY,
-          inViewport: true,
-          canvasReachable: true,
-          distanceFromFocus: null
-        } as ReturnType<typeof getNearestCanvasThreadCandidate>;
+  canvas.addEventListener('pointermove', (ev) => {
+    const pointer = ev as PointerEvent;
+    const radius = getCanvasFieldNodeClickRadius(pointer);
+    const candidate = findNearestCanvasFieldNode(pointer, radius);
+    if (candidate?.index != null && Number.isFinite(candidate.index)) {
+      setCanvasFieldHover({
+        index: candidate.index,
+        screenX: candidate.screenX,
+        screenY: candidate.screenY,
+        source: candidate.source,
+        reason: candidate.reason || '',
+      } satisfies HoverCandidate, canvas);
+      noteSceneInteraction();
+      releaseFocusCameraAssist('canvasHover');
+      if (isThreadCandidateVisibleOnCanvas(candidate.index)) {
+        const { walkThreadNeighbor, inspectThreadNeighbor, summarizeNeighborReason } = canvasInteractionAdapter;
+        const threadOk = walkThreadNeighbor(candidate.index, { force: true });
+        if (threadOk) {
+          inspectThreadNeighbor(candidate.index);
+        }
       }
-    }
-    if (!candidate && (document.body.dataset.threadInspectSurface === 'canvas') && Number.isFinite((state as unknown as { inspectedThreadIndex?: number }).inspectedThreadIndex)) {
-      const ti = (state as unknown as { inspectedThreadIndex?: number }).inspectedThreadIndex!;
-      const inspectedCandidate = ((state.navState as unknown as Record<string, unknown>).threadCandidates as Array<Record<string, unknown>> || []).find(
-        (item) => item && item.index === ti
-      );
-      candidate = {
-        ...(inspectedCandidate ?? {}),
-        index: ti,
-        reason: (inspectedCandidate?.reason as string) || 'inspected 3D related node',
-        source: (inspectedCandidate?.source as string) || 'inspection',
-        screenX: event.clientX,
-        screenY: event.clientY,
-        inViewport: true,
-        canvasReachable: true,
-        distanceFromFocus: null,
-      };
-    }
-    if (!candidate) candidate = getNearestCanvasThreadCandidate(event, 96);
-    if (!candidate) return false;
-    event.preventDefault();
-    (state as unknown as { lastCanvasNodePick?: unknown }).lastCanvasNodePick = candidate;
-    (state as unknown as { lastCanvasNodeFocusPick?: unknown }).lastCanvasNodeFocusPick = candidate;
-    canvasInteractionAdapter.walkThreadNeighbor(candidate.index, {
-      fromCanvasNode: true,
-      surface: 'canvas',
-      reason: candidate.reason || 'direct 3D related node'
-    });
-    return true;
-  };
-
-  const focusCanvasFieldNodeFromPointerEvent = (event: PointerEvent): boolean => {
-    if (state.currentView !== 'galaxy') return false;
-    const stable = state.stableCanvasHover as { index: number; screenX: number; screenY: number; source?: string; [key: string]: unknown } | null;
-    const stableIsValid = !!(stable
-      && Number.isFinite(stable.index)
-      && isPointVisible(stable.index, getPoints(), null, getActiveFilters()));
-    const candidate = stableIsValid
-      ? { ...stable, index: stable!.index, source: stable!.source || 'stable-hover' }
-      : findNearestCanvasFieldNode(event);
-    if (!candidate) return false;
-    (state as unknown as { lastCanvasNodePick?: unknown }).lastCanvasNodePick = candidate;
-    (state as unknown as { lastCanvasNodeFocusPick?: unknown }).lastCanvasNodeFocusPick = candidate;
-    event.preventDefault();
-    releaseFocusCameraAssist('field-click');
-    noteSceneInteraction((state as unknown as { AUTO_ROTATE_MANUAL_IDLE_MS?: number }).AUTO_ROTATE_MANUAL_IDLE_MS ?? 3000);
-    return focusOnNode(candidate.index, {
-      fromCanvasNode: true,
-      revealCard: true,
-      historyMode: 'push'
-    });
-  };
-
-  canvas.addEventListener('pointermove', (event: PointerEvent) => {
-    if (state.currentView !== 'galaxy') {
+    } else {
       clearCanvasFieldHover(canvas);
-      return;
     }
-    noteSceneInteraction((state as unknown as { AUTO_ROTATE_MANUAL_IDLE_MS?: number }).AUTO_ROTATE_MANUAL_IDLE_MS ?? 3000);
-    if (Number.isFinite((state.navState as unknown as Record<string, unknown>).focusedIndex as number)) {
-      const candidate = getNearestCanvasThreadCandidate(event);
-      if (candidate) {
-        setCanvasFieldHover(candidate as HoverCandidate, canvas);
-        canvasInteractionAdapter.inspectThreadNeighbor(candidate.index, { surface: 'canvas' });
-        return;
-      } else if (document.body.dataset.threadInspectSurface === 'canvas') {
-        canvasInteractionAdapter.scheduleCanvasThreadInspectionClear(CANVAS_THREAD_INSPECTION_CLEAR_DELAY_MS);
+  }, { signal, passive: true });
+
+  canvas.addEventListener('pointerout', () => {
+    clearCanvasFieldHover(canvas);
+  }, { signal, passive: true });
+
+  canvas.addEventListener('click', (ev) => {
+    const pointer = ev as PointerEvent;
+    const radius = getCanvasFieldNodeClickRadius(pointer);
+    const candidate = findNearestCanvasFieldNode(pointer, radius);
+    if (candidate?.index != null && Number.isFinite(candidate.index)) {
+      const { walkThreadNeighbor, summarizeNeighborReason } = canvasInteractionAdapter;
+      const threadOk = walkThreadNeighbor(candidate.index, { force: true });
+      if (threadOk) {
+        const points = appState.points as unknown as GeoPoint[];
+        const candidatePoint = points[candidate.index] ?? null;
+        const focusIndex = appState.navState?.focusedIndex;
+        const focusPoint = (focusIndex != null && focusIndex >= 0 && focusIndex < points.length)
+          ? points[focusIndex]
+          : null;
+        const reason = summarizeNeighborReason(
+          candidate as unknown as Record<string, unknown>,
+          candidatePoint as unknown as Record<string, unknown> | null,
+          focusPoint as unknown as Record<string, unknown> | null,
+        );
+        setCanvasFieldHover({
+          index: candidate.index,
+          screenX: candidate.screenX,
+          screenY: candidate.screenY,
+          source: candidate.source,
+          reason: reason || candidate.reason || '',
+        } satisfies HoverCandidate, canvas);
+        noteSceneInteraction();
+        releaseFocusCameraAssist('canvasHover');
+        focusOnNode(candidate.index);
       }
     }
-    const fieldCandidate = findNearestCanvasFieldNode(event, getCanvasFieldNodeClickRadius(event) + 4);
-    setCanvasFieldHover(fieldCandidate, canvas);
+    ev.preventDefault();
   }, { signal });
-
-  canvas.addEventListener('pointerleave', () => {
-    if (document.body.dataset.threadInspectSurface === 'canvas') {
-      canvasInteractionAdapter.scheduleCanvasThreadInspectionClear(CANVAS_THREAD_INSPECTION_CLEAR_DELAY_MS);
-    }
-    clearCanvasFieldHover(canvas, { force: true });
-  }, { signal });
-
-  canvas.addEventListener('pointerup', (event: PointerEvent) => {
-    if (isPrimaryPointerRelease(event) && walkCanvasThreadFromPointerEvent(event)) {
-      suppressNextCanvasClick = true;
-    }
-  }, { signal });
-
-  canvas.addEventListener('click', (event: MouseEvent) => {
-    if (suppressNextCanvasClick) {
-      suppressNextCanvasClick = false;
-      event.preventDefault();
-      return;
-    }
-    if (walkCanvasThreadFromPointerEvent(event as unknown as PointerEvent)) return;
-    focusCanvasFieldNodeFromPointerEvent(event as unknown as PointerEvent);
-  }, { signal });
-
-  if (document.documentElement.dataset.canvasHoverDocumentClearBound !== 'true') {
-    document.documentElement.dataset.canvasHoverDocumentClearBound = 'true';
-    document.addEventListener('pointermove', (event: PointerEvent) => {
-      const activeCanvas = ((state as Record<string, unknown>).renderer as { domElement?: HTMLCanvasElement } | undefined)?.domElement;
-      if (!activeCanvas || event.target === activeCanvas || activeCanvas.contains(event.target as Node)) return;
-      if (state.hoverHighlightIndex === -1 && !state.stableCanvasHover) return;
-      clearCanvasFieldHover(activeCanvas, { force: true });
-    }, { capture: true, signal });
-  }
-
-  if (document.documentElement.dataset.threadCanvasDocumentWalkBound !== 'true') {
-    document.documentElement.dataset.threadCanvasDocumentWalkBound = 'true';
-    document.addEventListener('pointerup', (event: PointerEvent) => {
-      if (!isPrimaryPointerRelease(event) || isUiPointerTarget(event.target)) return;
-      if (event.target === canvas) return;
-      if (walkCanvasThreadFromPointerEvent(event)) return;
-      focusCanvasFieldNodeFromPointerEvent(event);
-    }, { capture: true, signal });
-  }
 }
 
-export function removeCanvasNodeInteractionBindings(): void {
+export function disposeCanvasNodeInteractionBindings(): void {
   if (_canvasInteractionAbort) {
     _canvasInteractionAbort.abort();
     _canvasInteractionAbort = null;
   }
-  const lState = state as Record<string, unknown>;
-  const renderer = lState.renderer as { domElement?: HTMLCanvasElement } | undefined;
-  const canvas = renderer?.domElement;
+  const canvas = appState.renderer?.domElement;
   if (canvas) {
-    canvas.dataset.threadInteractionBound = 'false';
+    delete canvas.dataset.threadInteractionBound;
   }
-  delete document.documentElement.dataset.canvasHoverDocumentClearBound;
-  delete document.documentElement.dataset.threadCanvasDocumentWalkBound;
 }
