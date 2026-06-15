@@ -2,7 +2,12 @@
 
 > **Date:** 2026-06-05
 > **Author:** Migration Architect
-> **Status:** Ready for execution
+> **Status:** Historical reference — W11 arc is in progress (T1-T9 done, T10-T11 partially done). See `docs/w11-arc-closeout-2026-06-15.md` for current status and `docs/w11-t10-thinnability-strategy.md` for T10 scope.
+
+**W11 progress (2026-06-15):**
+- T1-T9: ALL DONE (state kernel, stores, camera, lifecycle, focus, search, journey subsystems)
+- T10: render loop thinnability (state-touch footprint reduction) — prep done, waves ready
+- T11: build:legacy retirement — data-worker port done (`70d0b5e`), build:legacy removed from package.json (`22d4833`), dist/bundle.js gitignored (`e9f9d49`)
 
 ---
 

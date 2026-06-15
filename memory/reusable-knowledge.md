@@ -3,9 +3,9 @@
 Durable workflow notes. Update when conventions change.
 
 ## Production / legacy model
-The Svelte/TS track is canonical production:
+The Svelte/TS track is the sole production and development path:
 1. **Production track** — `src/`, served via `npm run dev:svelte` (Vite on `localhost:5173`) and built via `npm run build` / `npm run build:svelte` to `dist/svelte/`.
-2. **Legacy reference track** — repo-root `vector-explorer-polished.html` + `js/modules/` + `dist/bundle.js`, built only with `npm run build:legacy` for rollback/reference work.
+2. **Legacy reference** — repo-root `vector-explorer-polished.html` + `js/modules/*.ts` engine kernel. The `dist/bundle.js` esbuild bundle is gitignored and no longer built; `build:legacy` was removed from package.json in W11-T11 (commit `22d4833`). The legacy shell exists only for rollback comparison.
 
 Deploy scripts publish `dist/svelte/index.html` as both `/semantic-demo/index.html`
 and `/semantic-demo/vector-explorer-polished.html`; do not use the repo-root

@@ -14,7 +14,6 @@ Local dev commands and environment details safe to store. No secrets.
 |---|---|
 | `npm run build` | `dist/svelte/` (Vite, Svelte/TS production shell) |
 | `npm run build:svelte` | `dist/svelte/` (Vite, Svelte/TS) |
-| `npm run build:legacy` | `dist/bundle.js` (esbuild, legacy JS reference/rollback) |
 | `npm run watch` | Vite build watch mode |
 
 ## Lint / format
@@ -44,8 +43,7 @@ Local dev commands and environment details safe to store. No secrets.
 
 ## Toolchain
 - **Runtime:** Node.js (ESM via `"type": "module"`)
-- **Bundler (legacy):** esbuild
-- **Bundler (Svelte):** Vite
+- **Bundler:** Vite
 - **UI framework:** Svelte 5
 - **3D engine:** Three.js (`three` package, matched `@types/three`)
 - **Testing:** Vitest (unit), Playwright (contract/visual), Node contract checks

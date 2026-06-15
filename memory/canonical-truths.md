@@ -9,8 +9,9 @@ Stable repo invariants. Update only when architecture materially changes.
 Production is the Svelte/Vite shell: `src/index.html` -> `dist/svelte/index.html`.
 Deploy scripts publish that built file as both `/semantic-demo/index.html` and
 `/semantic-demo/vector-explorer-polished.html`. The repo-root
-`vector-explorer-polished.html` / `dist/bundle.js` path is legacy reference only,
-not the production entry.
+`vector-explorer-polished.html` is legacy reference only (it previously loaded
+`dist/bundle.js`, now gitignored and no longer built). The `js/modules/*.ts`
+engine kernel remains active runtime, accessed via `src/lib/engine/bridge.ts`.
 
 ## Key file roles
 | Path | Role |
