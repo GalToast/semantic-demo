@@ -351,10 +351,25 @@ export function updateMyceliumThreads() {
         return verts;
     };
 
-    const updateLayer = (lines: THREE.LineSegments | null, layer: number) => {
-        if (!lines?.geometry?.attributes?.position) return;
-        const positions = lines.geometry.attributes.position.array;
+    const updateLayer = (lines: any, layer: number) => {
+        if (!lines) return;
+
+        const isLineSegments2 = typeof lines.geometry?.setPositions === 'function';
+        let positions: any;
         let offset = 0;
+
+        if (!isLineSegments2) {
+            if (!lines.geometry?.attributes?.position) return;
+            positions = lines.geometry.attributes.position.array;
+        } else {
+            // Count matching layer pairs to size the float32 array
+            let count = 0;
+            webglContext.myceliumConnectionPairs.forEach((pair) => {
+                if (pair.layer === layer) count++;
+            });
+            positions = new Float32Array(count * FLOATS_PER_BEZIER_EDGE);
+        }
+
         webglContext.myceliumConnectionPairs.forEach((pair) => {
             if (pair.layer !== layer) return;
             if (pair.a >= state.nodePositions.length || pair.b >= state.nodePositions.length) return;
@@ -380,7 +395,12 @@ export function updateMyceliumThreads() {
                 for (let z = 0; z < remaining; z++) positions[offset++] = 0;
             }
         });
-        lines.geometry.attributes.position.needsUpdate = true;
+
+        if (isLineSegments2) {
+            lines.geometry.setPositions(positions);
+        } else {
+            lines.geometry.attributes.position.needsUpdate = true;
+        }
     };
 
     updateLayer(webglContext.myceliumCoreLines, 0);
