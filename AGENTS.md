@@ -58,6 +58,37 @@ The wave-absorption pattern (parallel session closing tickets faster than main l
 
 **Tool surface check before artifact-producing work.** Subagents may not inherit MCP/browser tools depending on the dispatch profile. Have the worker report its exposed tools before it starts writing files; if expected tools (Read/Write/Edit/Bash/Glob/Grep or needed MCP tools) are missing, the worker stops and reports the harness defect instead of improvising with fragile shell writes.
 
+## Worktree Coordination (added 2026-06-15)
+
+**Stale worktrees block T9 (fix/* branch cleanup) and T-style porting work.** This pattern bit W12: 4 parallel-session worktrees had 11+1 uncommitted items, blocking `git worktree remove --force` + `git branch -D` for ~30 minutes.
+
+**The protocol:**
+1. **Before any T9 work**, run `git worktree list --porcelain` to see all worktrees + their HEAD.
+2. **For each worktree**, run `cd <path> && git status --short | wc -l` to count uncommitted items.
+3. **Clean worktrees (0 uncommitted)** are safe to `git worktree remove --force` + `git branch -D` immediately.
+4. **Dirty worktrees (uncommitted)** need coordination with the parallel session before removal:
+   - If the uncommitted work is real (modified M files), the parallel session needs to commit first.
+   - If the uncommitted work is build artifacts (dist/, .svelte-check), the worktree owner can `git checkout HEAD -- <path>` to discard.
+   - Untracked files (?? in status) can be deleted with `git worktree remove --force` only if you've verified they're not load-bearing scratch (e.g., vitest.legacy.config.js written by a worker).
+5. **Document the partial state** in the next-session-prompt so the next session knows what's left.
+
+**Why:** `git worktree remove` on a dirty worktree fails by default; `--force` discards uncommitted work. Force-remove is destructive. The cost of waiting for the parallel session to land is 5 min; the cost of force-removing a parallel session's WIP is hours of regression hunting.
+
+## Memory Tool Quirk (added 2026-06-15)
+
+**The `memory` tool's `remove` and `replace` actions have a matching quirk.** `old_text` is matched against stored entry text, but:
+
+- **Long old_text (>500 chars) often fails to match** even when the text exists. Try a shorter, unique substring.
+- **Trailing HTML comments** like `<!-- created=2026-06-15, last=2026-06-15 -->` in stored entries (added by the memory tool itself for duplicate tracking) are NOT part of the searchable text. Including them in `old_text` causes "No entry matched" errors.
+- **Multi-line `old_text` may need exact whitespace**. Trailing newlines or leading spaces break the match.
+
+**The protocol:**
+1. For duplicate entries, use a short, unique **first line** as the `old_text` anchor.
+2. If that fails, use `replace` with a short unique phrase to mark one duplicate, then `remove` the marked one.
+3. If both fail, the audit is on disk (`tmp/memory-triage/AUDIT.md`) and can be re-attempted in a future session.
+
+**Why this matters:** memory is at 99% capacity (50K of 50K chars), so consolidation is required to save new lessons. Tool quirk blocks the obvious path; the protocol above unblocks it.
+
 ## Dev Environment Hardening
 - **Static Dev Mode**: The app includes a JS-side fallback for static Python development servers. If `api.php` returns raw PHP source code, the `detectStaticDevPHP` utility triggers a mock healthy state and provides high-synergy search results.
 - **Hardware Resilience**: GPU textures are tracked and disposed in `js/modules/three-node-manager.js` (`_trackedTextures` + `disposeTextures()`). Event listeners in `event-bindings.js` use an `AbortController` for `global-bindings.js`. As of 2026-06-05 sweep, 4 binding modules (legend, onboarding, journey, panel) registered listeners outside the signal — all fixed in the binding-listeners fix wave (verified resolved).
