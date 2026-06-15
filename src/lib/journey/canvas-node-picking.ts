@@ -8,7 +8,7 @@
  */
 import * as THREE from 'three';
 import type { Camera, Intersection, Object3D, InstancedMesh } from 'three';
-import { state } from '@lib/engine/state-bridge';
+import { appState } from '@lib/state/app.svelte';
 import { isPointVisible } from '@lib/utils/geo-data';
 import { getCanvasPointerPosition, getCanvasFieldNodeClickRadius } from './canvas-hit-test';
 import type { CanvasPointerPosition } from './canvas-hit-test';
@@ -62,9 +62,8 @@ function getCanvasNodePickingMode(): 'nearest' | 'raycast' {
 // ── World Threshold ─────────────────────────────────────────────────────────
 
 function getCanvasPointWorldThreshold(pixelRadius: number, rect: DOMRect): number {
-  const lState = state as Record<string, unknown>;
-  const camera = (lState as { camera?: Camera }).camera as THREE.PerspectiveCamera | undefined;
-  const pointsMesh = (lState as { pointsMesh?: Object3D }).pointsMesh;
+  const camera = appState.camera as unknown as THREE.PerspectiveCamera | undefined;
+  const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined;
   if (!camera || !rect?.height) return 0.035;
   const cloudCenter = pointsMesh?.position || new THREE.Vector3(0, 0, 0);
   const distance = Math.max(0.25, camera.position.distanceTo(cloudCenter));
@@ -87,11 +86,9 @@ function getCanvasNodeScreenCandidate(
   index: number,
   pointer: CanvasPointerPosition
 ): NodeScreenCandidate | null {
-  const lState = state as Record<string, unknown>;
-  const nodePositions = lState.nodePositions as Array<{ x: number; y: number; z: number }> | undefined;
-  const position = nodePositions?.[index];
-  const camera = (lState as { camera?: Camera }).camera;
-  const pointsMesh = (lState as { pointsMesh?: Object3D }).pointsMesh;
+  const position = appState.nodePositions[index];
+  const camera = appState.camera as unknown as Camera | undefined;
+  const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined;
   if (!position || !camera || !pointsMesh) return null;
 
   const vector = new THREE.Vector3(position.x, position.y, position.z);
@@ -103,8 +100,8 @@ function getCanvasNodeScreenCandidate(
   const screenY = ((-projected.y + 1) / 2) * pointer.rect.height + pointer.rect.top;
   const distance = Math.hypot(screenX - pointer.x, screenY - pointer.y);
 
-  const points = (lState.points as GeoPoint[] | undefined) ?? [];
-  return { index, distance, screenX, screenY, point: points?.[index] ?? null };
+  const points = appState.points as unknown as GeoPoint[];
+  return { index, distance, screenX, screenY, point: points[index] ?? null };
 }
 
 // ── Raycast Picking ─────────────────────────────────────────────────────────
@@ -114,10 +111,9 @@ function findRaycastCanvasFieldNode(
   pointer: CanvasPointerPosition,
   maxDistance: number
 ): CanvasNodePickCandidate | null {
-  const lState = state as Record<string, unknown>;
-  const camera = (lState as { camera?: Camera }).camera as THREE.PerspectiveCamera | undefined;
-  const pointsMesh = (lState as { pointsMesh?: Object3D }).pointsMesh;
-  const points = (lState.points as GeoPoint[] | undefined) ?? [];
+  const camera = appState.camera as unknown as THREE.PerspectiveCamera | undefined;
+  const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined;
+  const points = appState.points as unknown as GeoPoint[];
   if (!camera || !pointsMesh || !points?.length) return null;
 
   const ndc = new THREE.Vector2(
@@ -126,11 +122,11 @@ function findRaycastCanvasFieldNode(
   );
   canvasFieldRaycaster.setFromCamera(ndc, camera);
 
-  const activeFilters = (lState as { activeFilters?: ActiveFilters }).activeFilters ?? DEFAULT_ACTIVE_FILTERS;
+  const activeFilters = appState.activeFilters ?? DEFAULT_ACTIVE_FILTERS;
 
   // Try instanced mesh picking first
-  const sporePickMesh = ((lState as unknown) as { nodeSporeHitMesh?: InstancedMesh; nodeSporeMesh?: InstancedMesh }).nodeSporeHitMesh
-    ?? ((lState as unknown) as { nodeSporeHitMesh?: InstancedMesh; nodeSporeMesh?: InstancedMesh }).nodeSporeMesh;
+  const sporePickMesh = appState.nodeSporeHitMesh as unknown as InstancedMesh | undefined
+    ?? appState.nodeSporeMesh as unknown as InstancedMesh | undefined;
   if (sporePickMesh) {
     const sporeHits = canvasFieldRaycaster.intersectObject(sporePickMesh, false)
       .filter((hit: Intersection) =>
@@ -191,25 +187,24 @@ export function findNearestCanvasFieldNode(
   event: PointerEvent,
   maxDistance: number = getCanvasFieldNodeClickRadius(event)
 ): CanvasNodePickCandidate | null {
-  const lState = state as Record<string, unknown>;
   const pointer = getCanvasPointerPosition(event);
-  const camera = (lState as { camera?: Camera }).camera;
-  const pointsMesh = (lState as { pointsMesh?: Object3D }).pointsMesh;
-  const nodePositions = lState.nodePositions as Array<{ x: number; y: number; z: number }> | undefined;
+  const camera = appState.camera as unknown as Camera | undefined;
+  const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined;
+  const nodePositions = appState.nodePositions;
   if (!pointer || !camera || !pointsMesh || !nodePositions?.length) return null;
 
   if (getCanvasNodePickingMode() === 'raycast') {
     const raycastCandidate = findRaycastCanvasFieldNode(event, pointer, maxDistance);
     if (raycastCandidate) {
-      (lState as unknown as { lastCanvasNodePick?: CanvasNodePickCandidate }).lastCanvasNodePick = raycastCandidate;
+      appState.lastCanvasNodePick = raycastCandidate as unknown as typeof appState.lastCanvasNodePick;
       return raycastCandidate;
     }
   }
 
   let nearest: CanvasNodePickCandidate | null = null;
   let nearestDistance = Infinity;
-  const points = (lState.points as GeoPoint[] | undefined) ?? [];
-  const activeFilters = (lState as { activeFilters?: ActiveFilters }).activeFilters ?? DEFAULT_ACTIVE_FILTERS;
+  const points = appState.points as unknown as GeoPoint[];
+  const activeFilters = appState.activeFilters ?? DEFAULT_ACTIVE_FILTERS;
 
   nodePositions.forEach((position, index) => {
     if (!position || !isPointVisible(index, points, null, activeFilters)) return;
@@ -226,6 +221,6 @@ export function findNearestCanvasFieldNode(
   });
 
   const resolved = nearest && nearestDistance <= maxDistance ? nearest : null;
-  (lState as unknown as { lastCanvasNodePick?: CanvasNodePickCandidate | null }).lastCanvasNodePick = resolved;
+  appState.lastCanvasNodePick = resolved as unknown as typeof appState.lastCanvasNodePick;
   return resolved;
 }

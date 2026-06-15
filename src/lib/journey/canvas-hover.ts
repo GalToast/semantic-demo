@@ -7,33 +7,33 @@
  * cursor state, and lastCanvasNodeHover for canvas pointer events.
  * Uses canvasInteractionAdapter from canvas-hit-test for timer management.
  */
-import { state } from '@lib/engine/state-bridge';
+import { appState } from '@lib/state/app.svelte';
 import { canvasInteractionAdapter } from './canvas-hit-test';
 
 const CANVAS_FIELD_HOVER_CLEAR_DELAY_MS = 120;
 const STABLE_HOVER_STICKY_PX = 9;
 
+let _canvasFieldHoverClearTimer: number | undefined = undefined;
+
 export function clearCanvasFieldHover(
   canvas: HTMLCanvasElement | null,
   { force = false }: { force?: boolean } = {}
 ): void {
-  if ((state as unknown as Record<string, unknown>).canvasFieldHoverClearTimer != null) {
-    canvasInteractionAdapter.clearTimer(
-      (state as unknown as Record<string, unknown>).canvasFieldHoverClearTimer as number | undefined
-    );
-    (state as unknown as Record<string, unknown>).canvasFieldHoverClearTimer = null;
+  if (_canvasFieldHoverClearTimer != null) {
+    canvasInteractionAdapter.clearTimer(_canvasFieldHoverClearTimer);
+    _canvasFieldHoverClearTimer = undefined;
   }
   const clear = (): void => {
-    state.hoverHighlightIndex = -1;
-    state.stableCanvasHover = null;
+    appState.hoverHighlightIndex = -1;
+    appState.stableCanvasHover = null;
     if (canvas) canvas.style.cursor = '';
-    state.lastCanvasNodeHover = null;
+    appState.lastCanvasNodeHover = null;
   };
   if (force) {
     clear();
     return;
   }
-  (state as unknown as Record<string, unknown>).canvasFieldHoverClearTimer = canvasInteractionAdapter.setTimer(
+  _canvasFieldHoverClearTimer = canvasInteractionAdapter.setTimer(
     clear,
     CANVAS_FIELD_HOVER_CLEAR_DELAY_MS
   );
@@ -55,28 +55,27 @@ export function setCanvasFieldHover(
     clearCanvasFieldHover(canvas);
     return;
   }
-  const lState = state as unknown as Record<string, unknown>;
-  if (lState.canvasFieldHoverClearTimer != null) {
-    canvasInteractionAdapter.clearTimer(lState.canvasFieldHoverClearTimer as number | undefined);
-    lState.canvasFieldHoverClearTimer = null;
+  if (_canvasFieldHoverClearTimer != null) {
+    canvasInteractionAdapter.clearTimer(_canvasFieldHoverClearTimer);
+    _canvasFieldHoverClearTimer = undefined;
   }
 
-  const prev = state.stableCanvasHover as HoverCandidate | null;
+  const prev = appState.stableCanvasHover as HoverCandidate | null;
   let stableCandidate: HoverCandidate = candidate;
   if (prev && Number.isFinite(prev.index)) {
     const dx = candidate.screenX - prev.screenX;
     const dy = candidate.screenY - prev.screenY;
     const moved = Math.hypot(dx, dy);
     if (moved > STABLE_HOVER_STICKY_PX) {
-      state.stableCanvasHover = candidate as unknown as typeof state.stableCanvasHover;
+      appState.stableCanvasHover = candidate as unknown as typeof appState.stableCanvasHover;
     } else {
       stableCandidate = prev;
     }
   } else {
-    state.stableCanvasHover = candidate as unknown as typeof state.stableCanvasHover;
+    appState.stableCanvasHover = candidate as unknown as typeof appState.stableCanvasHover;
   }
 
-  state.hoverHighlightIndex = stableCandidate.index;
+  appState.hoverHighlightIndex = stableCandidate.index;
   if (canvas) canvas.style.cursor = 'pointer';
-  state.lastCanvasNodeHover = stableCandidate as unknown as typeof state.lastCanvasNodeHover;
+  appState.lastCanvasNodeHover = stableCandidate as unknown as typeof appState.lastCanvasNodeHover;
 }

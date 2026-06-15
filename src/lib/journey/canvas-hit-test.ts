@@ -8,7 +8,7 @@
  */
 import * as THREE from 'three';
 import type { Camera, Object3D } from 'three';
-import { state } from '@lib/engine/state-bridge';
+import { appState } from '@lib/state/app.svelte';
 import { isPointVisible } from '@lib/utils/geo-data';
 import { getSemanticThreadDisplayLimit } from '@lib/journey/neighborhood';
 import { hasCoarsePointer } from '@lib/utils/environment';
@@ -75,21 +75,20 @@ export function initJourneyCanvasInteractionAdapter(
 // ── Thread Candidate Visibility ─────────────────────────────────────────────
 
 export function isThreadCandidateVisibleOnCanvas(index: number, margin = 18): boolean {
-  if (state.currentView !== 'galaxy') return true;
+  if (appState.currentView !== 'galaxy') return true;
   if (!Number.isFinite(index)) return false;
 
-  const lState = state as unknown as Record<string, unknown>;
   const position =
-    (lState.nodePositions as Array<{ x: number; y: number; z: number } | undefined> | undefined)?.[index] ??
-    (lState.targetPositions as Array<{ x: number; y: number; z: number } | undefined> | undefined)?.[index] ??
-    (lState.originalPositions as Array<{ x: number; y: number; z: number } | undefined> | undefined)?.[index];
-  const canvas = (lState.renderer as { domElement?: HTMLCanvasElement } | undefined)?.domElement;
-  const camera = (lState as { camera?: Camera }).camera;
+    appState.nodePositions[index] ??
+    appState.targetPositions[index] ??
+    appState.originalPositions[index];
+  const canvas = appState.renderer?.domElement;
+  const camera = appState.camera as unknown as Camera | undefined;
   if (!position || !camera || !canvas?.getBoundingClientRect) return true;
 
   const rect = canvas.getBoundingClientRect();
   const worldPosition = new THREE.Vector3(position.x, position.y, position.z);
-  const pointsMesh = (lState as { pointsMesh?: Object3D }).pointsMesh;
+  const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined;
   if (pointsMesh?.localToWorld) pointsMesh.localToWorld(worldPosition);
   const projection = worldPosition.project(camera);
   if (projection.z < -1 || projection.z > 1) return false;
@@ -124,22 +123,21 @@ interface ScreenCandidate {
 }
 
 function getFocusThreadScreenCandidates(): ScreenCandidate[] {
-  const lState = state as unknown as Record<string, unknown>;
-  const camera = (lState as { camera?: Camera }).camera;
-  const canvas = ((lState.renderer as { domElement?: HTMLCanvasElement } | undefined)?.domElement) as HTMLCanvasElement | undefined;
+  const camera = appState.camera as unknown as Camera | undefined;
+  const canvas = appState.renderer?.domElement as HTMLCanvasElement | undefined;
   if (!canvas || !camera) return [];
   const rect = canvas.getBoundingClientRect();
-  const navState = lState.navState as unknown as Record<string, unknown> | undefined;
-  const focusIndex = navState?.focusedIndex != null && Number.isFinite(navState.focusedIndex as number)
-    ? (navState.focusedIndex as number)
+  const navState = appState.navState;
+  const focusIndex = navState?.focusedIndex != null && Number.isFinite(navState.focusedIndex)
+    ? navState.focusedIndex
     : null;
-  const points = (lState.points as GeoPoint[]) ?? [];
+  const points = appState.points as unknown as GeoPoint[];
   const threadCandidates = (navState?.threadCandidates as Array<Record<string, unknown>>) ?? [];
-  const pointsMesh = (lState as { pointsMesh?: Object3D }).pointsMesh;
-  const nodePositions = lState.nodePositions as Array<{ x: number; y: number; z: number }> | undefined;
-  const targetPositions = lState.targetPositions as Array<{ x: number; y: number; z: number }> | undefined;
-  const originalPositions = lState.originalPositions as Array<{ x: number; y: number; z: number }> | undefined;
-  const activeFilters = (lState as { activeFilters?: ActiveFilters }).activeFilters ?? DEFAULT_ACTIVE_FILTERS;
+  const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined;
+  const nodePositions = appState.nodePositions;
+  const targetPositions = appState.targetPositions;
+  const originalPositions = appState.originalPositions;
+  const activeFilters = appState.activeFilters ?? DEFAULT_ACTIVE_FILTERS;
 
   return threadCandidates
     .filter((candidate: Record<string, unknown>) =>
@@ -151,7 +149,7 @@ function getFocusThreadScreenCandidates(): ScreenCandidate[] {
     .slice(0, getSemanticThreadDisplayLimit())
     .map((candidate: Record<string, unknown>): ScreenCandidate | null => {
       const ci = candidate.index as number;
-      const pos = nodePositions?.[ci] ?? targetPositions?.[ci] ?? originalPositions?.[ci];
+      const pos = nodePositions[ci] ?? targetPositions[ci] ?? originalPositions[ci];
       if (!pos) return null;
       const px = Number.isFinite(pos.x) ? pos.x : 0;
       const py = Number.isFinite(pos.y) ? pos.y : 0;
@@ -170,7 +168,7 @@ function getFocusThreadScreenCandidates(): ScreenCandidate[] {
       const focusPointForReason = (focusIndex != null && focusIndex >= 0 && focusIndex < points.length)
         ? points[focusIndex]
         : null;
-      const focusPos = focusIndex != null ? nodePositions?.[focusIndex] : undefined;
+      const focusPos = focusIndex != null ? nodePositions[focusIndex] : undefined;
       const distFocus = focusIndex != null && focusPos
         ? new THREE.Vector3(px, py, pz).distanceTo(new THREE.Vector3(
             Number.isFinite(focusPos.x) ? focusPos.x : 0,
@@ -225,8 +223,7 @@ export interface CanvasPointerPosition {
 }
 
 export function getCanvasPointerPosition(event: { clientX: number; clientY: number }): CanvasPointerPosition | null {
-  const lState = state as unknown as Record<string, unknown>;
-  const canvas = ((lState.renderer as { domElement?: HTMLCanvasElement } | undefined)?.domElement) as HTMLCanvasElement | undefined;
+  const canvas = appState.renderer?.domElement as HTMLCanvasElement | undefined;
   if (!canvas || !event) return null;
   const rect = canvas.getBoundingClientRect();
   const clientX = Number(event.clientX);

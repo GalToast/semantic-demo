@@ -5,7 +5,7 @@
  * Exactly matches the legacy API surface consumed by the bridge.
  */
 
-import { state } from '@lib/engine/state-bridge';
+import { appState } from '@lib/state/app.svelte';
 import { normalizeCityForFilter } from '@lib/utils/geo-data';
 import { getSemanticThreadCandidates } from '@lib/engine/journey-thread-model-bridge';
 import { getFocusConstellationViewportProfile } from '@lib/focus/geometry';
@@ -74,7 +74,7 @@ export function getNeighborhoodPersonality(index: number): NeighborhoodPersonali
 
     const cities = new Set(
         primaryCandidates.map((c: SemanticCandidate) =>
-            normalizeCityForFilter((state.points as any)[c.index]?.city),
+            normalizeCityForFilter((appState.points as any)[c.index]?.city),
         ),
     );
 
@@ -92,9 +92,9 @@ export function getNeighborhoodPersonality(index: number): NeighborhoodPersonali
         },
     };
 
-    const recent = (state.recentArrangements as string[]).slice(-4);
+    const recent = (appState.recentArrangements as string[]).slice(-4);
 
-    if (state.trailDepth === 2) {
+    if (appState.trailDepth === 2) {
         personality.type = 'DEEP_DIVE';
         personality.motifOverride = 'rosette';
         personality.compressionMult = 0.84;
@@ -166,10 +166,10 @@ export function getNeighborhoodPersonality(index: number): NeighborhoodPersonali
         break;
     }
 
-    if (Array.isArray(state.recentArrangements)) {
-        (state.recentArrangements as string[]).push(personality.type);
-        if ((state.recentArrangements as string[]).length > 5)
-            (state.recentArrangements as string[]).shift();
+    if (Array.isArray(appState.recentArrangements)) {
+        (appState.recentArrangements as string[]).push(personality.type);
+        if ((appState.recentArrangements as string[]).length > 5)
+            (appState.recentArrangements as string[]).shift();
     }
 
     return personality;
