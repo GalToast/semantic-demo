@@ -19,18 +19,21 @@
 | T6 adapter-deps cross-layer → bridge | ✅ | `ff56ca6` | -29 |
 | T7 triggers dedup | ✅ | `267c2f1` | -1 |
 | T8 adapters.ts type tightening | ✅ | `ed419b2` | +32 |
-| T9 fix/* branch cleanup | 🟡 2/4 | `145b10f`, `4bc5766` | (worktrees) |
+| T9 fix/* branch cleanup | ✅ DONE | `145b10f`, `4bc5766`, `d31e9cc` | (worktrees removed) |
+| T5 phase 2 via parallel | ✅ | `45597aa` | semantic-overlay + shims |
 | W12 charter | ✅ | `8524e29`, `e83b766` | doc |
 | W12 closeout | ✅ | `908ca9c`, `43a95fa`, `106d474`, `4bc5766` | doc |
 | W13 charter (231 selectors) | ✅ | `59d0471` | doc |
 | W13-T1 timer retirement | ✅ (parallel) | `f6b3089` | -48 |
 | Visual QA closeout (B- → B) | ✅ | `52d8d22` | doc |
+| Bridge consumer count script | ✅ | `e10458d` | tool |
+| Commit-purity test update | ✅ | `9bda15d` | test |
 
 **Net W12 cleanup: -255 LOC across 7 source commits + 6 docs/audits.**
 
 ### What remains for W12 closeout
 
-- **T9 final 2 branches** — `seamfix-gpt` (11 uncommitted) + `semantic-explorer-canvastdz` (1 untracked `vitest.legacy.config.js`). Wait for parallel session to land W11-T7, then `git worktree remove --force` + `git branch -D`. ~5 min.
+- ✅ **T9 final 2 branches** — COMPLETED in `d31e9cc` (parallel session). All 4 branches removed, all 4 worktrees cleaned up. W12 is now fully closed.
 
 ### W13 scorecard (in progress)
 
@@ -48,13 +51,7 @@ W13 charter at `docs/w13-state-selectors-charter-2026-06-15.md` — comprehensiv
 
 1. **Verify parallel session's W11-T7 + W13-T2 batch landed** — check `git log --oneline origin/master..HEAD`, should see ~15-20 new commits. Confirm `svelte-check 0/0` and `npm run test:unit 652+/652+ pass`.
 
-2. **T9 final cleanup** (5 min):
-   ```bash
-   git worktree remove --force "C:/Users/HP/Desktop/Temp while my comp is at the shop/seamfix-gpt"
-   git worktree remove --force "C:/Users/HP/Desktop/Temp while my comp is at the shop/semantic-explorer-canvastdz"
-   git branch -D fix/tests-seamfix-gpt
-   git branch -D fix/canvas-tdz-nemotron
-   ```
+2. ~~**T9 final cleanup** (5 min)~~ — ✅ DONE in `d31e9cc` by parallel session. All 4 branches + worktrees removed.
 
 3. **Memory consolidation** (5 min, BLOCKED this session) — see `tmp/memory-triage/AUDIT.md`. The memory tool's `old_text` matching has a quirk (long text + HTML-comment-trailing duplicates don't match). Try a different approach:
    - For each duplicate pair, use `replace` to add a unique marker to ONE copy, then `remove` that one.
