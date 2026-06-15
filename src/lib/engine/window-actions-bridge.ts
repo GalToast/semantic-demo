@@ -26,4 +26,4 @@ export {
   unpinThreadInspection,
   clearThreadInspection,
 } from '../../../js/modules/thread-inspector.ts';
-export { showSemanticThreadsDetail } from './semantic-guide-bridge';
+export { showSemanticThreadsDetail } from '../../../js/modules/connection-analysis';

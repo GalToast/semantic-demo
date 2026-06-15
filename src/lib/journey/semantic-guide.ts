@@ -19,12 +19,12 @@
  *   - ../../../js/modules/stores.ts (semanticGuideStateStore)
  */
 
-import { state } from '@lib/engine/state-bridge';
+import { state } from '../../../js/state';
 import { escapeHtml } from '@lib/utils/dom-formatters';
-import { buildSemanticGuideRequestPayload } from '@lib/engine/semantic-guide-bridge';
-import { updateLegendGuideState } from '@lib/engine/semantic-guide-bridge';
-import { showSemanticThreadsDetail } from '@lib/engine/semantic-guide-bridge';
-import { semanticGuideStateStore } from '@lib/engine/semantic-guide-bridge';
+import { buildSemanticGuideRequestPayload } from '../../../js/modules/semantic-guide-payload';
+import { updateLegendGuideState } from '../../../js/modules/legend-ui';
+import { showSemanticThreadsDetail } from '../../../js/modules/connection-analysis';
+import { semanticGuideStateStore } from '../../../js/modules/stores';
 
 function getMostFrequent(values: string[]): string | null {
     if (!values?.length) return null;
