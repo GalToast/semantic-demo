@@ -1,7 +1,7 @@
 /**
  * @lib/stores/demo.svelte.ts — Micro-demo state machine store (Svelte 5 runes)
  */
-import { get, type Readable, toStore } from 'svelte/store';
+import { get, writable, type Readable } from 'svelte/store';
 import { appState } from '@lib/state/app.svelte.ts';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -55,16 +55,33 @@ const INITIAL_DEMO: DemoStoreState = {
 
 // ── Store ────────────────────────────────────────────────────────────────────
 
-/** Reactive binding to the Svelte 5 state kernel. */
-const _demoWritable = toStore(
-  () => ({
-    ...INITIAL_DEMO,
-    phase: appState.demoPhase as DemoPhase
-  }),
-  (val) => appState.withMutation(() => {
-    appState.demoPhase = val.phase;
-  })
-);
+/**
+ * Why a plain `writable` instead of `toStore(getter, setter)`:
+ *   `toStore` replaces the writable's notifying `set` with the user's custom
+ *   setter. In Svelte runtime this works because the render_effect re-reads the
+ *   getter after mutations and calls the underlying writable's `set`. But in
+ *   jsdom/vitest there is no render_effect, so `store.update()` writes to
+ *   appState but subscribers never wake up — `get(store)` returns stale values.
+ *
+ *   A plain `writable` + `withDemoNotify()` wrapper fixes both: runtime
+ *   subscribers are notified by the writable's own `.set()`, and test
+ *   environments get synchronous notification too.
+ */
+const _demoWritable = writable<DemoStoreState>({ ...INITIAL_DEMO });
+
+/**
+ * Push mutations to both `_demoWritable` and `appState`.
+ * The writable notifies subscribers; the appState sync keeps the kernel
+ * in sync for legacy readers and the engine bridge.
+ */
+function withDemoNotify(updater: (s: DemoStoreState) => DemoStoreState): void {
+  const current = get(_demoWritable);
+  const next = updater(current);
+  _demoWritable.set(next);
+  appState.withMutation(() => {
+    appState.demoPhase = next.phase;
+  });
+}
 
 /**
  * Demo store: callable as `demo()` for direct state access,
@@ -77,14 +94,16 @@ export type DemoStoreApi = (() => DemoStoreState) &
   };
 
 function _createDemoStore(): DemoStoreApi {
-  const fn = (() => ({
-    ...INITIAL_DEMO,
-    phase: appState.demoPhase as DemoPhase
-  })) as unknown as DemoStoreApi;
+  const fn = (() => get(_demoWritable)) as unknown as DemoStoreApi;
 
   fn.subscribe = _demoWritable.subscribe as any;
-  fn.update = _demoWritable.update as any;
-  fn.set = _demoWritable.set as any;
+  fn.update = (updater: (s: DemoStoreState) => DemoStoreState) => withDemoNotify(updater);
+  fn.set = (value: DemoStoreState) => {
+    _demoWritable.set(value);
+    appState.withMutation(() => {
+      appState.demoPhase = value.phase;
+    });
+  };
 
   return fn;
 }
@@ -107,18 +126,15 @@ export const isDemoActive = () => {
 // ── Helper Actions ───────────────────────────────────────────────────────────
 
 export function setDemoPhase(phase: DemoPhase): void {
-  appState.withMutation(() => { appState.demoPhase = phase; });
+  withDemoNotify(s => ({ ...s, phase }));
 }
 
 export function startDemo(): void {
-  appState.withMutation(() => {
-    appState.demoPhase = 'GLIDING';
-    // Logic for start time can be added if needed in kernel
-  });
+  withDemoNotify(s => ({ ...s, phase: 'GLIDING', startTime: performance.now() }));
 }
 
 export function cancelDemo(): void {
-  appState.withMutation(() => { appState.demoPhase = 'CANCELLED'; });
+  withDemoNotify(s => ({ ...s, phase: 'CANCELLED' }));
 }
 
 export function transitionDemo(nextPhase: DemoPhase): void {
@@ -172,5 +188,8 @@ export function markDemoSessionSkipped(): void {
 }
 
 export function resetDemo(): void {
-  appState.withMutation(() => { appState.demoPhase = 'IDLE'; });
+  _demoWritable.set({ ...INITIAL_DEMO });
+  appState.withMutation(() => {
+    appState.demoPhase = INITIAL_DEMO.phase;
+  });
 }

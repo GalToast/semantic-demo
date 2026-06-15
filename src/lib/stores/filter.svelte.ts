@@ -5,8 +5,7 @@
  * Manages status, city, and contact-feature filters for the business network.
  * Canonical owner for filter ↔ state sync.
  */
-import { derived, type Readable } from 'svelte/store';
-import { toStore } from 'svelte/store';
+import { derived, get, writable, type Readable } from 'svelte/store';
 import { appState } from '@lib/state/app.svelte.ts';
 import type { ActiveFilters } from '@lib/types/state';
 
@@ -22,32 +21,70 @@ const INITIAL_FILTERS: ActiveFilters = {
 
 // ── Core Stores ───────────────────────────────────────────────────────────────
 
+/**
+ * Why a plain `writable` instead of `toStore(getter, setter)`:
+ *   `toStore` replaces the writable's notifying `set` with the user's custom
+ *   setter. In Svelte runtime this works because the render_effect re-reads the
+ *   getter after mutations and calls the underlying writable's `set`. But in
+ *   jsdom/vitest there is no render_effect, so `store.update()` writes to
+ * *   appState but subscribers never wake up — `get(store)` returns stale values.
+ *
+ *   A plain `writable` + notify wrapper fixes both: runtime subscribers are
+ *   notified by the writable's own `.set()`, and test environments get
+ *   synchronous notification too. (A3-1 fix pattern.)
+ */
+
 /** Version counter — incremented on every filter change. */
-export const filterVersion = toStore(
-  () => appState.filterVersion,
-  (v) => appState.withMutation(() => { appState.filterVersion = v; })
-);
+export const filterVersion = writable(appState.filterVersion);
 
 /** Color recompute version — incremented when cluster colors should recalc. */
-export const filterColorVersion = toStore(
-  () => appState.filterColorVersion,
-  (v) => appState.withMutation(() => { appState.filterColorVersion = v; })
-);
+export const filterColorVersion = writable(appState.filterColorVersion);
 
 /** Active cluster filter (null = show all clusters). */
-export const activeClusterFilter = toStore(
-  () => appState.activeClusterFilter !== null ? String(appState.activeClusterFilter) : null,
-  (v) => appState.withMutation(() => { appState.activeClusterFilter = v !== null ? Number(v) : null; })
+const _activeClusterFilterWritable = writable<string | null>(
+  appState.activeClusterFilter !== null ? String(appState.activeClusterFilter) : null
 );
+
+/** Active cluster filter exposed as a Readable + set action. */
+export const activeClusterFilter: Readable<string | null> & { set(value: string | null): void } = {
+  subscribe: _activeClusterFilterWritable.subscribe,
+  set: (value: string | null) => {
+    _activeClusterFilterWritable.set(value);
+    appState.withMutation(() => {
+      appState.activeClusterFilter = value !== null ? Number(value) : null;
+    });
+  }
+};
 
 /** Alias for compatibility with legacy SearchResultsList. */
 export const activeClusterFilterStore = activeClusterFilter;
 
 /** Active filters — the single source of truth for filter state. */
-export const filterState = toStore(
-  () => ({ ...appState.activeFilters }),
-  (val) => appState.withMutation(() => { appState.activeFilters = val; })
-);
+const _filterStateWritable = writable<ActiveFilters>({ ...INITIAL_FILTERS });
+
+/** Push filterState mutations to both writable and appState. */
+function withFilterStateNotify(updater: (s: ActiveFilters) => ActiveFilters): void {
+  const next = updater(get(_filterStateWritable));
+  _filterStateWritable.set(next);
+  appState.withMutation(() => {
+    appState.activeFilters = next;
+  });
+}
+
+/** Active filters exposed as a Readable + update/set actions. */
+export const filterState: Readable<ActiveFilters> & {
+  update(fn: (s: ActiveFilters) => ActiveFilters): void;
+  set(value: ActiveFilters): void;
+} = {
+  subscribe: _filterStateWritable.subscribe,
+  update: (updater: (s: ActiveFilters) => ActiveFilters) => withFilterStateNotify(updater),
+  set: (value: ActiveFilters) => {
+    _filterStateWritable.set(value);
+    appState.withMutation(() => {
+      appState.activeFilters = value;
+    });
+  }
+};
 
 // ── Derived Convenience Stores ─────────────────────────────────────────────────
 

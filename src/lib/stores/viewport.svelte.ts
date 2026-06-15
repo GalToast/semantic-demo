@@ -5,7 +5,7 @@
  * Single source of truth for viewport state. Syncs body data-* attributes
  * via $effect for CSS coexistence during migration.
  */
-import { get, type Readable, toStore } from 'svelte/store';
+import { get, writable, type Readable } from 'svelte/store';
 import type { ViewportState } from '@lib/types/state';
 import { appState } from '@lib/state/app.svelte.ts';
 
@@ -20,9 +20,21 @@ const MAX_DPR = 3;
 
 // ── Store (reactive binding to kernel) ───────────────────────────────────────
 
-/** Reactive binding to the Svelte 5 state kernel. */
-const _viewportWritable = toStore(
-  () => ({
+/**
+ * Why a plain `writable` instead of `toStore(getter, setter)`:
+ *   `toStore` replaces the writable's notifying `set` with the user's custom
+ *   setter. In Svelte runtime this works because the render_effect re-reads the
+ *   getter after mutations and calls the underlying writable's `set`. But in
+ *   jsdom/vitest there is no render_effect, so `store.update()` writes to
+ *   appState but subscribers never wake up — `get(store)` returns stale values.
+ *
+ *   A plain `writable` + notify wrapper fixes both: runtime subscribers are
+ *   notified by the writable's own `.set()`, and test environments get
+ *   synchronous notification too. (A3-1 fix pattern.)
+ */
+
+function _readViewportFromKernel(): ViewportState {
+  return {
     width: appState.viewportWidth,
     height: appState.viewportHeight,
     dpr: appState.viewportDpr,
@@ -35,15 +47,24 @@ const _viewportWritable = toStore(
       appState.viewportWidth <= ULTRA_COMPACT_MAX_WIDTH &&
       appState.viewportHeight >= ULTRA_COMPACT_MIN_HEIGHT &&
       appState.viewportHeight <= ULTRA_COMPACT_MAX_HEIGHT
-  }),
-  (val) => appState.withMutation(() => {
-    appState.viewportWidth = val.width;
-    appState.viewportHeight = val.height;
-    appState.viewportDpr = val.dpr;
-    appState.viewportReducedMotion = val.reducedMotion;
-    appState.viewportIsCompact = val.isCompact;
-  })
-);
+  };
+}
+
+const _viewportWritable = writable<ViewportState>(_readViewportFromKernel());
+
+/** Push viewport mutations to both writable and appState. */
+function withViewportNotify(updater: (s: ViewportState) => ViewportState): void {
+  const current = get(_viewportWritable);
+  const next = updater(current);
+  _viewportWritable.set(next);
+  appState.withMutation(() => {
+    appState.viewportWidth = next.width;
+    appState.viewportHeight = next.height;
+    appState.viewportDpr = next.dpr;
+    appState.viewportReducedMotion = next.reducedMotion;
+    appState.viewportIsCompact = next.isCompact;
+  });
+}
 
 /**
  * Viewport store: callable as `viewport()` for direct state access,
@@ -72,8 +93,17 @@ function _createViewportStore(): ViewportStoreApi {
   })) as unknown as ViewportStoreApi;
 
   fn.subscribe = _viewportWritable.subscribe as any;
-  fn.update = _viewportWritable.update as any;
-  fn.set = _viewportWritable.set as any;
+  fn.update = (updater: (s: ViewportState) => ViewportState) => withViewportNotify(updater);
+  fn.set = (value: ViewportState) => {
+    _viewportWritable.set(value);
+    appState.withMutation(() => {
+      appState.viewportWidth = value.width;
+      appState.viewportHeight = value.height;
+      appState.viewportDpr = value.dpr;
+      appState.viewportReducedMotion = value.reducedMotion;
+      appState.viewportIsCompact = value.isCompact;
+    });
+  };
 
   return fn;
 }
