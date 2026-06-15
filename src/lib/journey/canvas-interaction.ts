@@ -56,7 +56,7 @@ export function ensureCanvasNodeInteractionBindings(): void {
         screenX: candidate.screenX,
         screenY: candidate.screenY,
         source: candidate.source,
-        reason: candidate.reason || '',
+        reason: candidate.source || '',
       } satisfies HoverCandidate, canvas);
       noteSceneInteraction();
       releaseFocusCameraAssist('canvasHover');
@@ -100,7 +100,7 @@ export function ensureCanvasNodeInteractionBindings(): void {
           screenX: candidate.screenX,
           screenY: candidate.screenY,
           source: candidate.source,
-          reason: reason || candidate.reason || '',
+          reason: reason || candidate.source || '',
         } satisfies HoverCandidate, canvas);
         noteSceneInteraction();
         releaseFocusCameraAssist('canvasHover');
