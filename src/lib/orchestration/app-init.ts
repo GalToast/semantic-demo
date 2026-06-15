@@ -34,6 +34,18 @@ import {
 } from '@lib/orchestration/lifecycle';
 import { switchView as switchViewAction } from '@lib/orchestration/view-controller';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
+// ── Additional __APP_ACTIONS__ imports (W11-T8 Wave 1) ──────────────────────
+import { search } from '@lib/engine/window-actions-bridge';
+import { setTrailFromSeed } from '@lib/engine/journey-neighborhood-bridge';
+import { traverseNeighbor, walkThreadNeighbor } from '@lib/engine/journey-thread-settler-bridge';
+import {
+  inspectThreadNeighbor,
+  pinThreadNeighbor,
+  unpinThreadInspection,
+  clearThreadInspection,
+} from '@lib/engine/thread-inspector-bridge';
+import { requestSemanticGuide } from '@lib/journey/semantic-guide';
+import { showSemanticThreadsDetail } from '@lib/engine/semantic-guide-bridge';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,6 +81,7 @@ const SAFETY_VALVE_MS = 15_000;
 let _initCalled = false;
 let _safetyTimers: SafetyTimers | null = null;
 let _unsubWindowGlobals: (() => void) | null = null;
+let _unsubWebglRestore: (() => void) | null = null;
 
 // ── Safety Valves ────────────────────────────────────────────────────────────
 
@@ -191,6 +204,40 @@ function installWindowGlobals(): () => void {
     },
   };
 
+  // ── Extended actions (W11-T8 Wave 1) ────────────────────────────────────
+  // These fill the gap between the initial 9-action skeleton and the full
+  // legacy __APP_ACTIONS__ set (js/modules/app.ts:377-396).
+  (window as any).__APP_ACTIONS__.search = (query: string, options?: Record<string, unknown>) => {
+    return search(query, options);
+  };
+  (window as any).__APP_ACTIONS__.setTrailFromSeed = (index: number) => {
+    setTrailFromSeed(index);
+  };
+  (window as any).__APP_ACTIONS__.traverseNeighbor = (step: number) => {
+    traverseNeighbor(step);
+  };
+  (window as any).__APP_ACTIONS__.inspectThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
+    return inspectThreadNeighbor(index, options);
+  };
+  (window as any).__APP_ACTIONS__.pinThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
+    return pinThreadNeighbor(index, options);
+  };
+  (window as any).__APP_ACTIONS__.unpinThreadInspection = () => {
+    return unpinThreadInspection();
+  };
+  (window as any).__APP_ACTIONS__.clearThreadInspection = (options?: Record<string, unknown>) => {
+    return clearThreadInspection(options);
+  };
+  (window as any).__APP_ACTIONS__.walkThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
+    return walkThreadNeighbor(index, options);
+  };
+  (window as any).__APP_ACTIONS__.requestSemanticGuide = (point?: unknown) => {
+    return requestSemanticGuide();
+  };
+  (window as any).__APP_ACTIONS__.showSemanticThreadsDetail = () => {
+    return showSemanticThreadsDetail();
+  };
+
   // No cleanup needed — window globals persist for the page lifetime.
   return () => {
     delete (window as any).__APP_STATE__;
@@ -212,6 +259,47 @@ async function applyUrlStateAfterData(): Promise<void> {
   } catch (err) {
     console.error('[app-init] applyUrlState failed during init:', err);
   }
+}
+
+// ── WebGL Context Restore ─────────────────────────────────────────────────
+
+/**
+ * Subscribe to WebGL context lost/restored events on the canvas.
+ * On restore, re-run the Svelte-first init to re-create the Three.js scene.
+ *
+ * This mirrors the legacy setWebGLContextRestoreHandler(init) call at the
+ * bottom of js/modules/app.ts.
+ *
+ * @returns A cleanup function that removes the event listeners.
+ */
+function setupWebglContextRestore(): () => void {
+  const canvas = document.querySelector<HTMLCanvasElement>('canvas');
+  if (!canvas) return () => {};
+
+  const handleContextLost = (event: Event) => {
+    event.preventDefault();
+    console.warn('[app-init] WebGL context lost');
+  };
+
+  const handleContextRestored = async () => {
+    console.warn('[app-init] WebGL context restored; reinitializing');
+    // Re-run the Svelte-first init. The init guard (_initCalled) will
+    // prevent double-init, so we reset it first.
+    _initCalled = false;
+    try {
+      await appInit();
+    } catch (err) {
+      console.error('[app-init] WebGL restore reinit failed:', err);
+    }
+  };
+
+  canvas.addEventListener('webglcontextlost', handleContextLost);
+  canvas.addEventListener('webglcontextrestored', handleContextRestored);
+
+  return () => {
+    canvas.removeEventListener('webglcontextlost', handleContextLost);
+    canvas.removeEventListener('webglcontextrestored', handleContextRestored);
+  };
 }
 
 // ── Main Init ────────────────────────────────────────────────────────────────
@@ -271,7 +359,10 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
   await dataReadyPromise;
   await applyUrlStateAfterData();
 
-  // ── Phase 5: First-paint coordination ─────────────────────────────────────
+  // ── Phase 5: WebGL context restore handler ────────────────────────────────
+  _unsubWebglRestore = setupWebglContextRestore();
+
+  // ── Phase 6: First-paint coordination ─────────────────────────────────────
   //
   // The LoadingOverlay component hides itself when loadingPhaseStore = 'launch'.
   // The Canvas bridge fires onLoadingPhase('launch') once WebGL is ready.
@@ -290,6 +381,7 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     clearSafetyTimers(_safetyTimers);
     _safetyTimers = null;
     _unsubWindowGlobals?.();
+    _unsubWebglRestore?.();
     _initCalled = false;
   };
 }
