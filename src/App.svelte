@@ -45,8 +45,6 @@
   import { appState } from '@lib/state/app.svelte.ts';
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts';
   import { applyUrlState } from '@lib/orchestration/url-state';
-  // Side-effect import: registers SEARCH_FOCUS_REQUESTED → addTrailStop subscriptions
-  import '@lib/orchestration/triggers';
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
 
