@@ -140,9 +140,11 @@ async function findAndEnterVisibleRolePath(page, relationshipRole) {
 
   await page.waitForFunction(({ seedIndex, targetIndex, role }) => {
     const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    const pillVisible = [...document.querySelectorAll(`.focus-stage-neighbor-pill[data-index="${targetIndex}"][data-relationship-role="${role}"]`)]
+      .some((pill) => !!(pill.offsetWidth || pill.offsetHeight || pill.getClientRects().length));
     return state.navState?.focusedIndex === seedIndex &&
       state.navState?.threadSource === 'semantic' &&
-      document.querySelector(`.focus-stage-neighbor-pill[data-index="${targetIndex}"][data-relationship-role="${role}"]`);
+      pillVisible;
   }, path, { timeout: 5000 });
 
   return path;
@@ -175,8 +177,9 @@ async function snapshotRoleTraversalState(page, role, targetIndex) {
       inspected: pill.classList.contains('is-inspected'),
       pinned: pill.classList.contains('is-pinned'),
       exploring: pill.classList.contains('is-exploring'),
+      visible: !!(pill.offsetWidth || pill.offsetHeight || pill.getClientRects().length),
     }));
-    const targetRail = railPills.find((pill) => pill.index === expectedTarget && pill.relationshipRole === expectedRole) || null;
+    const targetRail = railPills.find((pill) => pill.index === expectedTarget && pill.relationshipRole === expectedRole && pill.visible) || null;
     const inspector = document.querySelector('#focus-thread-inspector');
     return {
       focusedIndex,
@@ -215,7 +218,7 @@ test.describe('semantic role traversal', () => {
       expect(before.targetRail, `${roleCase.role} rail pill should be visible before traversal`).not.toBeNull();
       expect(before.targetRail.label, `${roleCase.role} rail pill should display human role label`).toContain(roleCase.label);
 
-      const targetPill = page.locator(`.focus-stage-neighbor-pill[data-index="${path.targetIndex}"][data-relationship-role="${roleCase.role}"]`).first();
+      const targetPill = page.locator(`.focus-stage-neighbor-pill[data-index="${path.targetIndex}"][data-relationship-role="${roleCase.role}"]:visible`).first();
       await expect(targetPill, `${roleCase.role} role pill should be clickable`).toBeVisible({ timeout: 5000 });
       await targetPill.scrollIntoViewIfNeeded();
       await targetPill.click({ position: { x: 24, y: 24 } });
