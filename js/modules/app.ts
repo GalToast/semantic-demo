@@ -367,7 +367,9 @@ export async function init(): Promise<void> {
         await measureStep('updateTime', updateTime);
 
         await measureStep('initAdapters', initAdapters);
-        await measureStep('initEventBusSubscriptions', initEventBusSubscriptions);
+        // W11-T6 Phase 2: Retired — triggers.ts side-effects now handle subscriptions
+        // via the Svelte shell. Legacy function kept as reference below.
+        // await measureStep('initEventBusSubscriptions', initEventBusSubscriptions);
 
         await measureStep('initBridgeRegistry', () => {
             // Inline bridge setup (was initBridgeRegistry from bridge-registry.js).
