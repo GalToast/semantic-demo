@@ -1,89 +1,142 @@
 # Next-session seam prompt
 
-We left off with `cc16c3f` pushed — all 5 seams from the previous prompt are closed:
+We left off with `1e47022` pushed to origin/master — 6 commits ahead in this session.
 
-- ✅ svelte-check: 0 errors, 0 warnings (was 5 in legacy + 13 in src/)
-- ✅ svelte-parity-attrs.test.ts: 19/19 passing (was 15/19)
-- ✅ W11-T4 (focus + journey store migration to `writable + notify`): done in `4f5aba4`
-- ✅ 4 missing engine bridge files committed: `camera-controls-core-bridge.ts`, `camera-controls-restore-bridge.ts`, `focus-pocket-bridge.ts`, `window-actions-bridge.ts`
-- ✅ 3 legacy `js/modules/` fixes: `SearchSummary` props, `createSporeTexture` arity, `Point[]` vs `GeoPoint[]`
-- ✅ Working tree: clean except `dist/svelte/*` deletions (BOTH-pattern retirement, build artifacts — not source) and `notes/next-session-prompt.md`
+## What landed in this session (2026-06-15)
 
-## What was in cc16c3f
+```
+1e47022 feat(journey): port 3 mid-tier utilities to src/lib/journey/ (W11-T9 Wave 2) — 4 files, 532 insertions
+72314a0 feat(journey): port 3 leaf utilities to src/lib/journey/ (W11-T9 Wave 1) — 3 files, 345 insertions
+ba5e27f fix(orchestration): restore buildAdapterDeps with W11-T7 Phase 2 ticket refs (ME)
+14c7d62 docs(harness): pi tool output hygiene rule + 2026-06-15 subagent model catalog notes (ME)
+9128d2b W11-T6 (Lifecycle Orchestration, Wave 2): Search subsystem Svelte port + focus-pocket bridge retirement + journey selected-card native port (PARALLEL)
+e67d796 test(commit-purity): accept W\d+-T\d+ Wave 11 ticket prefixes in conventional commit regex (PARALLEL)
+```
 
-`fix(w11+t3+t4): focus/journey store migration back-compat + legacy 5-error closure`
+**W11-T9 progress: 6 of 11 tickets done, Wave 1+2 just landed, Wave 3 ready to dispatch.**
 
-19 files: 15 modified + 4 new bridges. Back-compat aliases for callers of pre-migration store APIs (e.g. `setCurrentView = switchView`, `searchStore()` instead of `searchStore.results`).
+## W11 scorecard (updated 2026-06-15)
 
-## What I intentionally did NOT commit (reverted or deleted)
+| Ticket | Status | Latest |
+|---|---|---|
+| T1 State kernel Svelte 5 class | ✅ | `9a67a63` |
+| T2 thread-manager | ✅ | `da0e283` |
+| T3 map-state | ✅ | `5f8494d` |
+| T4 stores → writable+notify (8 stores) | ✅ | `1989d9d` |
+| T5 camera subsystem port | ✅ | `ccd0b1a` |
+| T6 lifecycle → triggers.ts | ✅ | `7e77160`, `99b68e3`, `e67d796` |
+| T7 focus subsystem port | ✅ | `9128d2b` |
+| T8 search subsystem port | ✅ | `9128d2b` |
+| **T9 journey subsystem port** | **🔄 2/4 waves done** | `72314a0`, `1e47022` (Waves 1+2); Wave 3 ready; Wave 4 deferred |
+| T10 Three.js render loop | ⬜ | depends on T9 |
+| T11 build:legacy retirement | ⬜ | punctuation |
 
-- `src/lib/engine/camera-choreography/cursor.ts` and `focus.ts` — used `@lib/engine/camera-controls-core` port (separately scoped W11-T5)
-- `src/components/SearchResults.svelte` — added `tabindex="-1"` (unrelated UI fix)
-- `css/mobile_premium__surfaces.css` and `css/strands.css` — A3-6 changes ("hide compass steps in idle") — not W11 work, separate ticket
-- `dist/svelte/*` deletions — build artifacts from Vite, not source
-- All zero-byte scratch files (`1`, `semantic-explorer@1.0.0`, `svelte-check`)
-- Browser console logs (`console-5173.txt`, `console-after-fix.txt`, `console-reload.txt`)
-- `rg_out.txt` (rg search output)
-- `src/lib/engine/camera-framing-utils-bridge.ts` and `src/lib/engine/camera-controls-core.ts` — restored then deleted because no consumers after the cursor/focus reverts
-- `tests/unit-active/camera-choreography-focus-bridge-import.test.ts` — depends on the deleted bridge files
+## W11-T9 — Wave 1 (✅ done) + Wave 2 (✅ done) + Wave 3 (ready) + Wave 4 (deferred)
 
-## ✅ Resolved since last prompt
+### Wave 1 — 3 leaf-utility files (commit 72314a0)
+- `src/lib/journey/webgl-utils.ts` (84 LOC)
+- `src/lib/journey/lifecycle-adapter.ts` (107 LOC)
+- `src/lib/journey/arrival-handoff.ts` (155 LOC)
+- Worker drift: 3 off-seam files reverted (journey-webgl-bridge, adapter-deps-bridge, thread-inspector 525-LOC re-port). Prompt boundary lesson saved to memory.
 
-**Worker completed W11-T4 second wave.** The "in flight" worker that I flagged at the end of the previous session committed its work as `8c3483d refactor(w11-t4): migrate remaining 5 stores from toStore to writable + notify` covering:
+### Wave 2 — 3 mid-tier files + 1 bridge addition (commit 1e47022)
+- `src/lib/journey/route-trace.ts` (253 LOC)
+- `src/lib/journey/compass-state.ts` (236 LOC)
+- `src/lib/journey/webgl.ts` (42 LOC, the barrel)
+- `src/lib/engine/event-bus-bridge.ts` (+1 line: added `subscribeKeyed` to export list — **legitimate in-scope bridge addition** because the new `route-trace.ts` uses `subscribeKeyed` for 9 namespace-prefixed subscriptions)
+- Worker drift: 4 off-seam files initially drifted, all reverted (or in the case of `event-bus-bridge`, the modification was legitimate). Live steer caught the drift mid-execution before commit. Prompt boundary lesson reinforced.
+- Worker also created a post-commit test modification that tried to "relax" the bridge-retirement test by adding 4 still-existing bridges to the KNOWN_RETIRED_BRIDGES set. **REVERTED** (would have hidden future drift).
 
-- `src/lib/stores/filter.svelte.ts` (4 stores: filterVersion, filterColorVersion, activeClusterFilter, filterState)
-- `src/lib/stores/viewport.svelte.ts`
-- `src/lib/stores/demo.svelte.ts`
-- `src/lib/stores/engine-bridge.svelte.ts`
-- `src/lib/stores/legend.svelte.ts`
+### Wave 3 — READY TO DISPATCH (single commit, 10 file changes)
+**The big shift:** No porting work needed. The Svelte 5 port of `compass-controller` already exists at `src/lib/orchestration/compass-controller.ts` (20KB, 10 exports, 1:1 with the legacy), created in W11-T8 Wave 2C (commit `5b8348e`). Wave 3 is just **bridge + 9 consumer flips + main-lane flip for 1 off-limits**.
 
-The worker also created a project skill: `~/.pi/agent/projects-memory/semantic-explorer/skills/tostore-migration-pattern/` to document the writable+withNotify wrapper convention. Worth a look for the next migration.
+**Worker scope:**
+1. **Create** `src/lib/engine/journey-compass-controller-bridge.ts` (thin re-export of the Svelte 5 port)
+2. **Flip 9 in-scope consumers** to use the new bridge (pure import-path changes, 1 line each):
+   - 6 in `js/modules/`: `view-controller.ts`, `thread-inspector.ts`, `micro-demo-choreography.ts`, `lifecycle-search-sync.ts`, `camera-controls-choreography-cursor.ts`, `bindings/journey-bindings.ts`
+   - 3 in `src/lib/engine/`: `demo-choreography.ts`, `adapters-bridge.ts`, `camera-choreography/cursor.ts`
+3. **DO NOT touch** the 1 off-limits consumer: `js/modules/app.ts` — main lane will flip it after the worker commits
+4. **DO NOT touch** `js/modules/lifecycle.ts` (already on the Svelte 5 path via `@lib/orchestration/compass-controller`, not the legacy)
 
-Verified after the worker's commit: svelte-check 0 errors / 0 warnings, 19/19 parity-attrs passing, 8/8 A3-1 passing. All 8 stores that used toStore are now migrated.
+**Main-lane follow-up after Wave 3:**
+- Flip `js/modules/app.ts` to use the new bridge (1 line change, off-limits surface)
+- This is the only post-Wave-3 commit needed
 
-## Next seams (in order)
+**Prompt ready at:** `tmp/w11-t9-wave3/WORKER-PROMPT.md` (10.5KB, 247 lines)
 
-1. **A3-6 CSS — RESOLVED, NOT A SEAM**
-   - **Audit verdict was correct** (verified by subagent `ocw_a9f3b16f-0ef0-47d0-bba2-c6876cb8799f` on 2026-06-14): A3-6 was correctly closed as an "audit misread" in commit `9672497`. The "5 journey-step tooltips" the audit described are actually the CompassRail navigation rail, which is always-visible UI by design — not stale hints.
-   - The uncommitted A3-6 CSS changes from earlier sessions no longer exist in the working tree (reverted in a prior cleanup). The audit's "No fix required" verdict held.
-   - **No action needed.** Don't commit anything for A3-6.
+### Wave 4 — DEFERRED
+Three files deferred from W11-T9 because they're more complex and benefit from a pre-emption sweep:
+- `src/lib/journey/focus-ui.ts` (23-LOC thin re-export shell with 515 LOC still in `js/modules/journey-focus-ui.ts` — needs FULL RE-PORT)
+- `src/lib/journey/thread-inspector.ts` (24-LOC thin re-export shell with similar pattern)
+- `src/lib/journey/semantic-overlay.ts` (468 LOC, complex WebGL shaders)
+- **Pre-emption sweep required** before Wave 4: check if these are already ported at `src/lib/orchestration/*.ts` (lessons from the W11-T8 pre-emption finding)
 
-2. **W11-T5 camera-controls-core port — DONE in `ccd0b1a`**
-   - Worker ported 10 camera files (cursor, focus, routes, framing-utils, controls-core, controls-restore, controls) from `js/modules/` to `src/lib/engine/`. Substantial diff: 1105 insertions, 861 deletions across 7 files.
-   - Approach: incremental (ported deps use `@lib/`, unported deps keep relative paths to `js/modules/`). Removed lazy-loading infrastructure throughout.
-   - 3 workers dispatched in parallel (cursor+focus, routes+framing, core+restore) — no write overlap, all completed clean.
-   - Companion regression test for A3-2 fix committed in `1d5fa87` (4 new tests; vitest 371→375 passing).
+## W11-T8 pre-emption finding (CRITICAL for Wave 4 planning)
 
-3. **`dist/svelte/*` — NOT A SEAM (was misframed)**
-   - The 141M lives in `dist/svelte/assets/` which is already gitignored (`dist/svelte/assets/`, `dist/svelte/.git/`, `dist/svelte/stats.html` are all in `.gitignore`).
-   - The 34 remaining tracked files (138.6 MB of CSS + dat + json) are the **deployable artifact** that `deploy.sh` pushes to production. They SHOULD be tracked.
-   - The only "noise" the build creates: after `npm run build`, dist/svelte/css/* gets re-copied from `css/`. If you touched source CSS recently, the dist copies show as modified. Fix: `git checkout HEAD -- dist/svelte/` after each verification build.
-   - **No action needed.** The gitignore is already set up correctly.
+**Insight:** W11-T8 created Svelte 5 ports at `src/lib/orchestration/*.ts` for some files that PREFLIGHT thought still needed porting. Concrete example: `js/modules/journey-compass-controller.ts` (372 LOC, 10 exports) — port already exists at `src/lib/orchestration/compass-controller.ts` (20KB), created in W11-T8 Wave 2C. W11-T9 Wave 3 was over-estimated by ~373 LOC.
 
-4. **Wider test sweep beyond the active unit suite**
-   - `npm run test` runs shell + cache + CSS ownership checks (not just vitest)
-   - `npm run qa:contract:all` and `npm run qa:surface:all` for broader contract/visual coverage
-   - `npm run build` confirmed clean on 2026-06-14 after W11-T5 (build clean, 0 errors)
-   - vitest: 375/375 passing
+**Current Svelte 5 port inventory:**
+- `src/lib/orchestration/`: 17 files, 139 exports
+- `src/lib/journey/`: 23 files, 152 exports (includes the 5 Wave 1+2 new ports)
+- Legacy kernel: 19 `js/modules/journey-*.ts` files
 
-## Subagent decision policy (saved 2026-06-14)
+**Pre-emption check command for Wave 4 planning:**
+```bash
+# For each candidate, check if a Svelte 5 port already exists
+rg "^export" src/lib/orchestration/*.ts src/lib/journey/*.ts | wc -l
+# For each UNTOUCHED file from PREFLIGHT, grep its exports in the Svelte 5 paths
+for f in journey-{focus-ui,thread-inspector,semantic-overlay}; do
+  rg "from.*$f" src/lib/orchestration/*.ts src/lib/journey/*.ts 2>/dev/null
+done
+```
 
-See `~/.pi/agent/memory/` (target=memory, category=convention): "Subagent decision policy". The short version:
+Lesson saved to project memory. The W11-T9 PREFLIGHT missed this because it didn't cross-reference existing Svelte 5 ports.
 
-- **Dispatch subagents** for: tasks >30 min with no urgent blocker, parallelizable independent subtasks, long-running verification the main lane doesn't need to block on, sustained focus on one arc >1 hr, audit/verification work that benefits from a second perspective, high-risk seam work.
-- **Do inline** for: <2 min tasks, tightly coupled follow-ups, mid-task user decisions, single tool calls, explicit user request to handle inline.
-- **For this project specifically:** W11-T5, A3 audit cross-checks, dist/svelte cleanup = subagent tasks. Single-file diagnostics, single commands like `npm run build` = inline.
-- **Default model:** mimo-v2.5 paid, yolo mode, mcp_profile="default".
+## Worker behavior lessons (saved as project memories)
 
-## Key context (still relevant)
+1. **Worker off-seam drift pattern** — workers tend to exceed scope, doing good work that's not in the prompt. Three recurring shapes: speculative bridge exports, defensive dead bridges, scope-creep re-ports. Prompt language alone is insufficient; **live steer is the actual mitigation**.
 
-- Bash auto-detaches at 15s for long commands — use `background: true` and poll with `pi_background_jobs`
+2. **W11 worker drift persists despite prompt boundaries** — direct evidence from Wave 1 (3 off-seam files) + Wave 2 (4 off-seam files). The mimo-v2.5 model has a "do all related work" tendency. **Always use `live_steer: true`** + main lane monitoring + immediate-steer-on-drift.
+
+3. **W11-T8 pre-emption check** — before planning a port, check if the Svelte 5 port already exists at `src/lib/orchestration/*.ts` or `src/lib/journey/*.ts`.
+
+## Coordination note (read this first if resuming)
+
+The dirty tree I started with had a **parallel session** already working — 5 bare `console.log` debug calls, a high-risk `js/state.ts` window-key change, and a `src/lib/orchestration/adapter-deps.ts` scratch file with unticketed TODOs. I stripped the debug logs, reverted `js/state.ts`, deleted the scratch. The parallel session then committed `9128d2b`, which added an `initAdapters(buildAdapterDeps())` call in `app-init.ts` — I had to restore `adapter-deps.ts` with W11-T7 Phase 2 ticket refs to keep the build green (commit `ba5e27f`).
+
+**Lesson saved to failure memory:** "When stripping debug residue or deleting untracked files in a dirty tree with parallel-session work, sweep for uncommitted consumers before `rm`."
+
+## Current verification status
+
+- svelte-check: 0 errors, 0 warnings ✅
+- vite build: clean (8.88s) ✅
+- vitest: 641/641 tests passed ✅
+- Working tree: clean
+
+## Operational contract (still relevant)
+
+- Bash auto-detaches at 15s — use `background: true` and poll with `pi_background_jobs`
 - DO NOT touch: `src/lib/orchestration/parity-attrs.svelte.ts`, `parity-attrs.ts`, `routes.ts`
+- AGENTS.md off-limits write surface: `app.ts`, `state.js`, `lifecycle.js`, `journey.js`, `ui-renderers.js`, `focus-pocket.js`, `journey-compass-state.js`, mobile CSS cascade, deploy scripts
 - Branch: `master` tracking `origin/master`
-- Latest commit: `1d5fa87` (A3-2 regression test) — branch pushed to origin/master
+- Latest commit: `1e47022` (W11-T9 Wave 2) — pushed to origin
 - svelte-check: 0 errors / 0 warnings
-- vitest: 375/375 passing (was 371; +4 from the A3-2 test)
-- npm run build: clean after W11-T5 port
-- W11-T5 (camera subsystem) complete in `ccd0b1a`
-- Another worker is mid-flight on a new W11 engine port (data-worker-url-bridge + src/lib/{demo,journey,semantic-threads}.ts) — let it land
-- **No remaining seams.** The original 5-step plan is closed; A3-6 is a non-issue; W11-T4 + W11-T5 are done; dist/svelte is correctly handled.
+- vitest: 641/641 passing
+- npm run build: clean
+
+## Recommended next move
+
+**Dispatch W11-T9 Wave 3 with the prepared prompt.** Suggested:
+- Model: `opencode-go/mimo-v2.5`
+- Mode: `yolo`
+- MCP profile: `default`
+- Prompt: `tmp/w11-t9-wave3/WORKER-PROMPT.md` (with main-lane prompt preamble)
+- Timeout: 3600s (worker should land in 20-30 min)
+- Live steer: true (mandatory per the drift pattern memory)
+- After worker lands: verify 10 file changes (1 new + 9 modified), no off-seam drift, then commit + push
+- Main lane follows up: flip `js/modules/app.ts` to use the new bridge (1 line, off-limits surface)
+
+After Wave 3:
+- Pre-emption sweep for Wave 4 (focus-ui, thread-inspector, semantic-overlay) — check `src/lib/orchestration/*.ts` for existing ports
+- Wave 4 work scope: depends on pre-emption findings
+- T10 (Three.js render loop) and T11 (build:legacy retirement) — separate arc, after T9 closes

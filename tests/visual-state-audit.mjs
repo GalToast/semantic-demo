@@ -1555,6 +1555,12 @@ async function enterThreadInspectorByRealRoute(page) {
       Number(style.opacity || 1) > 0.05;
   }, undefined, { timeout: 12000 }).catch(() => {});
 
+  // Debug screenshot before thread-inspector race
+  try {
+    await page.screenshot({ path: 'tmp-audit-debug.png', fullPage: false });
+    console.log('[DEBUG] Screenshot saved to tmp-audit-debug.png before thread-inspector race');
+  } catch (_e) {}
+
   const pill = page.locator('.focus-stage-neighbor-pill[data-index]:visible').first();
   const waitForInspectorSurface = page.waitForFunction(() => {
     const inspector = document.querySelector('#focus-thread-inspector');

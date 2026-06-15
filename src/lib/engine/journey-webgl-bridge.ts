@@ -19,3 +19,13 @@ export {
   updateArrivalHandoffOverlay,
   disposeArrivalHandoffOverlay,
 } from '../../../js/modules/journey-webgl';
+
+export {
+  syncInspectedStrandOverlay,
+  updateInspectedStrandOverlay,
+  disposeInspectedStrandOverlay,
+} from '../../../js/modules/thread-inspector-webgl';
+
+export {
+  setInspectedStrandOverlayUpdater,
+} from '../../../js/modules/inspected-strand-overlay-adapter';

@@ -13,4 +13,4 @@ export {
   unpinThreadInspection,
   scheduleCanvasThreadInspectionClear,
   clearThreadInspection,
-} from '../../../js/modules/thread-inspector';
+} from '@lib/journey/thread-inspector';
