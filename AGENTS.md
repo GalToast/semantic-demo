@@ -30,6 +30,34 @@ When multiple Pi / Codex / subagent sessions share this repo, a parallel session
 ### Why
 The wave-absorption pattern (parallel session closing tickets faster than main lane reads) creates stale-HEAD commits. The serial gate prevents the main lane from landing on outdated ground truth.
 
+## Subagent Throughput Doctrine
+
+**We use subagents aggressively — for throughput AND quality, not just speed.** Default to decomposition: any meaningful work should be sliced and dispatched in parallel unless it is quick enough, safe enough, and cheap enough to do in-lane. The main lane coordinates, verifies, and synthesizes; subagents do the focused work.
+
+**Subagents increase quality, not just speed:**
+- Isolated scope prevents cross-seam drift (worker can't see the rest of the codebase to drift into)
+- Forced evidence (worker writes reports to `tmp/`, main lane reviews the diff + reruns checks)
+- Parallel investigation (multiple hypotheses in flight at once beats serial "tried it, didn't work, try next")
+- Focused context (a 50K-token worker prompt beats a 500K-token main-lane context for deep dives)
+
+**When to dispatch (project examples):**
+- Verification: "run svelte-check + test:unit on the orphan tip in a worktree, report pass/fail counts"
+- Investigation: "find the commit that introduced the garbage filenames `'` and `'+s.slice(Math.max(0`"
+- Comparison: "diff `fix/seam-X` against master and report which commits are subsumed by W11 work"
+- Cleanup: "delete all `safe-snapshot-*` branches that are 0 ahead of master, list what you deleted"
+- "Haven't tried" research: "rg src/lib/orchestration/ for Svelte 5 ports that might exist for any W12 pre-emption sweep"
+
+**When to do in-lane:**
+- Quick file reads / 1-line edits
+- Coordinating, synthesizing, making a decision
+- Anything that needs the user's input or context the subagent can't see
+
+**The full subagent pattern (TypeScript template, $0.27–$0.50 per worker, live_steer protocol, prompt boundary rules, followup recovery) lives in the global `AGENTS.md` → "Subagents" section.** This file only carries the project-level doctrine and the project-specific examples above.
+
+**Live steer is the actual mitigation for off-seam drift.** Prompt language is necessary but insufficient. Main lane must poll every 60–90 s during worker execution and steer immediately when drift appears. Cost: a few minutes of attention per worker. Benefit: an order-of-magnitude more throughput and significantly fewer cross-seam regressions.
+
+**Tool surface check before artifact-producing work.** Subagents may not inherit MCP/browser tools depending on the dispatch profile. Have the worker report its exposed tools before it starts writing files; if expected tools (Read/Write/Edit/Bash/Glob/Grep or needed MCP tools) are missing, the worker stops and reports the harness defect instead of improvising with fragile shell writes.
+
 ## Dev Environment Hardening
 - **Static Dev Mode**: The app includes a JS-side fallback for static Python development servers. If `api.php` returns raw PHP source code, the `detectStaticDevPHP` utility triggers a mock healthy state and provides high-synergy search results.
 - **Hardware Resilience**: GPU textures are tracked and disposed in `js/modules/three-node-manager.js` (`_trackedTextures` + `disposeTextures()`). Event listeners in `event-bindings.js` use an `AbortController` for `global-bindings.js`. As of 2026-06-05 sweep, 4 binding modules (legend, onboarding, journey, panel) registered listeners outside the signal — all fixed in the binding-listeners fix wave (verified resolved).
