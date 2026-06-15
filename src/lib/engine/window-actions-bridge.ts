@@ -19,7 +19,7 @@ export {
   refreshCompositionState,
 } from '../../../js/modules/lifecycle.ts';
 export { setTrailFromSeed } from '../../../js/modules/journey-neighborhood.ts';
-export { traverseNeighbor, walkThreadNeighbor } from './journey-thread-settler-bridge';
+export { traverseNeighbor, walkThreadNeighbor } from '../../../js/modules/journey-thread-settler';
 export {
   inspectThreadNeighbor,
   pinThreadNeighbor,

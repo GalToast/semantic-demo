@@ -13,7 +13,9 @@ import {
     type NavFocusPocketMeta,
     type Point,
     type SemanticState,
-    normalizeCityForFilter,
+} from '../../../js/state';
+import { normalizeCityForFilter } from '../../../js/modules/utils/geo-data';
+import {
     buildFocusedPocketStagedPositions,
     buildFocusedSemanticPocket,
     clampNumber,
@@ -30,10 +32,12 @@ import {
     applyRelationshipRolePlacementBias,
     getFocusThreadCurvePoint,
     type PocketEntry,
+} from '../../../js/modules/focus-pocket-geometry';
+import {
     getNeighborhoodPersonality,
     getSemanticCandidateSlice,
     type NeighborhoodPersonality,
-} from '@lib/engine/focus-pocket-bridge';
+} from '../../../js/modules/focus-pocket-personality';
 import { prefersReducedMotion } from '@lib/utils/environment';
 
 export {

@@ -44,7 +44,7 @@ import { getStrandContinuityManager } from '@lib/utils/strand-continuity';
 import {
 	traverseNeighbor as _traverseNeighborImpl,
 	previewInsideNextThread as _previewInsideNextThreadImpl
-} from '@lib/engine/journey-thread-settler-bridge';
+} from '../../../js/modules/journey-thread-settler';
 
 export function traverseNeighbor(step: number): void {
 	return _traverseNeighborImpl(step);

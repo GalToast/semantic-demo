@@ -13,7 +13,7 @@ import { setLoadingPhase as setDataLoadingPhase } from '@lib/data-store';
 import { loadSemanticThreads } from '@lib/semantic-threads';
 import { createMycelium } from '@lib/engine/thread-manager';
 import { isWeatherInitialized, setWeatherInitialized } from '@lib/stores/weather.svelte';
-import { initWeather } from '@lib/engine/weather-bridge';
+import { initWeather } from '../../../js/modules/weather';
 import type { LoadingPhase, LoadingPhaseMeta } from '@lib/types/state';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
