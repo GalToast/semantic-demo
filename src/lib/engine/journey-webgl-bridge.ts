@@ -3,6 +3,8 @@
  *
  * Re-exports engine-kernel symbols consumed by src/lib/journey/journey.ts
  * so that journey-layer code does not import directly from js/.
+ *
+ * W12-T2: All js/ imports removed. Now imports from src/lib/journey/.
  */
 
 export {
@@ -18,14 +20,14 @@ export {
   syncArrivalHandoffOverlay,
   updateArrivalHandoffOverlay,
   disposeArrivalHandoffOverlay,
-} from '../../../js/modules/journey-webgl';
+} from '@lib/journey/webgl';
 
 export {
   syncInspectedStrandOverlay,
   updateInspectedStrandOverlay,
   disposeInspectedStrandOverlay,
-} from '../../../js/modules/thread-inspector-webgl';
+} from '@lib/journey/thread-inspector-webgl';
 
 export {
   setInspectedStrandOverlayUpdater,
-} from '../../../js/modules/inspected-strand-overlay-adapter';
+} from '@lib/journey/inspected-strand-overlay-adapter';

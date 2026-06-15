@@ -28,6 +28,7 @@
     "check": "npm run check:svelte && npm run build:svelte",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "check:ts-progress": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/ts-js-drift-contract.mjs --progress",
+    "check:legacy-budget": "node scripts/check-legacy-ts-budget.mjs",
     "build:safe": "npm run check",
     "qa:visual": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/visual-state-audit.mjs --headed",
     "qa:surface": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/visual-state-audit.mjs --headed",

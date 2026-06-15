@@ -9,7 +9,7 @@
 
 import { updateRouteTraceOverlayPositions } from './route-trace';
 import { updateArrivalHandoffOverlay } from './arrival-handoff';
-import { setRouteArrivalOverlayUpdaters } from '../../../js/modules/route-arrival-overlay-adapter';
+import { setRouteArrivalOverlayUpdaters } from './route-arrival-overlay-adapter';
 
 export {
     resetRouteTraceDiagnostics,
