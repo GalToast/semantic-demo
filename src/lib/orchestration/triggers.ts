@@ -30,7 +30,9 @@ import { updateJourneyCompass } from '@lib/orchestration/compass-controller';
 import { refreshCompositionState } from '@lib/stores/lifecycle/modes';
 import { recordEmptySearch } from '@lib/stores/lifecycle/search-sync';
 import { setActiveResult, setSearchStatus } from '@lib/stores/search.svelte';
-import { returnToOverview, recenterFocusedNode, resetExplorationFocus, hideSummaryCard } from './lifecycle';
+import { returnToOverview, recenterFocusedNode, resetExplorationFocus, hideSummaryCard, setSemanticLaneUiState } from './lifecycle';
+import { updateUrlState } from '@lib/orchestration/url-state';
+import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback';
 import { traverseNeighbor } from '@lib/journey/thread-settler-adapter';
 import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
 import { activeClusterFilter } from '@lib/stores/filter.svelte';
@@ -286,4 +288,68 @@ subscribe(EVENTS.SUMMARY_CARD_HIDE_REQUESTED, () => {
  */
 subscribe(EVENTS.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED, () => {
   // Handled reactively by the Svelte focus store and semantic-guide component.
+});
+
+// ── W11-T6 Wave 2: Remaining event-bus subscriptions ────────────────────────
+//
+// Ported from js/modules/app.ts::initEventBusSubscriptions() lines 289-339.
+// These five subscriptions complete the Svelte-native mirror of the legacy
+// event-bus wiring. The legacy subscribeKeyed calls stay in place until all
+// callers publish to the Svelte bus.
+
+/**
+ * URL_SYNC_REQUESTED is published when the URL hash/state should be
+ * synchronized. The Svelte url-state module owns URL updates; we
+ * forward params and options directly.
+ */
+subscribe(EVENTS.URL_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
+  const { params, reason, mode } = payload as any;
+  updateUrlState(params ?? {}, { reason, mode });
+});
+
+/**
+ * SEARCH_UI_SYNC_REQUESTED is published when search result DOM elements
+ * need their click/hover interactions rebound.
+ *
+ * TODO: legacy function — engine bridge not yet wired.
+ * The Svelte search orchestration module (src/lib/search/orchestration.ts)
+ * exports bindSearchResultInteractions, but it has a broken transitive
+ * dependency (./results-ui does not exist). Once that file is created or
+ * the import is resolved, replace this no-op with the imported function.
+ */
+subscribe(EVENTS.SEARCH_UI_SYNC_REQUESTED, () => {
+  // TODO: legacy function — engine bridge not yet wired.
+  // const { resultsEl, statusEl, results, renderContext } = payload as any;
+  // bindSearchResultInteractions(resultsEl, statusEl, results, renderContext);
+});
+
+/**
+ * SEARCH_STATUS_SYNC_REQUESTED is published when the search status
+ * display should update to reflect focus on a specific point. The Svelte
+ * ui-feedback module owns the status DOM sync.
+ */
+subscribe(EVENTS.SEARCH_STATUS_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
+  const { point, options } = payload as any;
+  syncSearchStatusForFocus(point, options);
+});
+
+/**
+ * SEMANTIC_LANE_STATE_REQUESTED is published when the semantic lane
+ * health state should update. The Svelte lifecycle module owns this
+ * as a no-op (state is managed reactively in the Svelte store).
+ */
+subscribe(EVENTS.SEMANTIC_LANE_STATE_REQUESTED, (payload: Record<string, unknown> = {}) => {
+  const { laneState, options } = payload as any;
+  setSemanticLaneUiState(laneState, options);
+});
+
+/**
+ * TOOLTIP_HIDE_REQUESTED is published when the tooltip should be hidden.
+ * The real hideTooltip lives in js/modules/tooltip.ts and is not yet
+ * exposed via a Svelte/TS bridge. Once a tooltip bridge exists in
+ * src/lib/, replace this no-op with the imported function.
+ */
+subscribe(EVENTS.TOOLTIP_HIDE_REQUESTED, () => {
+  // TODO: legacy function — engine bridge not yet wired.
+  // hideTooltip();
 });

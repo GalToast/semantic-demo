@@ -24,9 +24,9 @@ import {
   getSubscriberCount
 } from '../../src/lib/orchestration/event-bus';
 import { navStore } from '../../src/lib/stores/navigation.svelte';
-// Side-effect import: registers the 14 subscriptions in triggers.ts
-// (including the 4 new W11-T6 ones). The test then publishes events
-// to verify the subscriptions fire.
+// Side-effect import: registers the 19 subscriptions in triggers.ts
+// (including the 4 W11-T6 Wave 1 + 5 Wave 2 new ones). The test then
+// publishes events to verify the subscriptions fire.
 import '../../src/lib/orchestration/triggers';
 
 // ── Source file path for structural checks ────────────────────────────────────
@@ -79,6 +79,55 @@ describe('W11-T6: lifecycle orchestration event-bus port (triggers.ts)', () => {
     });
   });
 
+  describe('structural: 5 Wave 2 subscriptions present in triggers.ts', () => {
+    it('subscribes to URL_SYNC_REQUESTED with an updateUrlState handler', () => {
+      const src = readSource();
+      const subscriptionPattern = /subscribe\(\s*EVENTS\.URL_SYNC_REQUESTED\s*,/;
+      const handlerPattern =
+        /subscribe\(\s*EVENTS\.URL_SYNC_REQUESTED\s*,[\s\S]*?updateUrlState\(/;
+      expect(subscriptionPattern.test(src)).toBe(true);
+      expect(handlerPattern.test(src)).toBe(true);
+    });
+
+    it('subscribes to SEARCH_UI_SYNC_REQUESTED (legacy bridge TODO — broken transitive dep)', () => {
+      const src = readSource();
+      const subscriptionPattern = /subscribe\(\s*EVENTS\.SEARCH_UI_SYNC_REQUESTED\s*,/;
+      // The Svelte search orchestration module has a broken transitive dependency
+      // (./results-ui does not exist), so the handler is a documented no-op.
+      const todoPattern = /SEARCH_UI_SYNC_REQUESTED[\s\S]*?TODO.*engine bridge not yet wired/;
+      expect(subscriptionPattern.test(src)).toBe(true);
+      expect(todoPattern.test(src)).toBe(true);
+    });
+
+    it('subscribes to SEARCH_STATUS_SYNC_REQUESTED with a syncSearchStatusForFocus handler', () => {
+      const src = readSource();
+      const subscriptionPattern = /subscribe\(\s*EVENTS\.SEARCH_STATUS_SYNC_REQUESTED\s*,/;
+      const handlerPattern =
+        /subscribe\(\s*EVENTS\.SEARCH_STATUS_SYNC_REQUESTED\s*,[\s\S]*?syncSearchStatusForFocus\(/;
+      expect(subscriptionPattern.test(src)).toBe(true);
+      expect(handlerPattern.test(src)).toBe(true);
+    });
+
+    it('subscribes to SEMANTIC_LANE_STATE_REQUESTED with a setSemanticLaneUiState handler', () => {
+      const src = readSource();
+      const subscriptionPattern = /subscribe\(\s*EVENTS\.SEMANTIC_LANE_STATE_REQUESTED\s*,/;
+      const handlerPattern =
+        /subscribe\(\s*EVENTS\.SEMANTIC_LANE_STATE_REQUESTED\s*,[\s\S]*?setSemanticLaneUiState\(/;
+      expect(subscriptionPattern.test(src)).toBe(true);
+      expect(handlerPattern.test(src)).toBe(true);
+    });
+
+    it('subscribes to TOOLTIP_HIDE_REQUESTED (legacy bridge TODO)', () => {
+      const src = readSource();
+      const subscriptionPattern = /subscribe\(\s*EVENTS\.TOOLTIP_HIDE_REQUESTED\s*,/;
+      // The Svelte side has no tooltip bridge yet; the handler is a documented
+      // no-op with a TODO comment, matching the estrangler-fig gap pattern.
+      const handlerPattern = /subscribe\(\s*EVENTS\.TOOLTIP_HIDE_REQUESTED\s*,/;
+      expect(subscriptionPattern.test(src)).toBe(true);
+      expect(handlerPattern.test(src)).toBe(true);
+    });
+  });
+
   describe('runtime: subscribers are registered when triggers.ts is loaded', () => {
     // We can't re-import triggers.ts in vitest (module cache), so we verify
     // subscriber counts on the events we care about. The App.svelte side-
@@ -107,6 +156,31 @@ describe('W11-T6: lifecycle orchestration event-bus port (triggers.ts)', () => {
 
     it('SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED has at least 1 subscriber', () => {
       const count = getSubscriberCount(EVENTS.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED);
+      expect(count).toBeGreaterThanOrEqual(1);
+    });
+
+    it('URL_SYNC_REQUESTED has at least 1 subscriber', () => {
+      const count = getSubscriberCount(EVENTS.URL_SYNC_REQUESTED);
+      expect(count).toBeGreaterThanOrEqual(1);
+    });
+
+    it('SEARCH_UI_SYNC_REQUESTED has at least 1 subscriber', () => {
+      const count = getSubscriberCount(EVENTS.SEARCH_UI_SYNC_REQUESTED);
+      expect(count).toBeGreaterThanOrEqual(1);
+    });
+
+    it('SEARCH_STATUS_SYNC_REQUESTED has at least 1 subscriber', () => {
+      const count = getSubscriberCount(EVENTS.SEARCH_STATUS_SYNC_REQUESTED);
+      expect(count).toBeGreaterThanOrEqual(1);
+    });
+
+    it('SEMANTIC_LANE_STATE_REQUESTED has at least 1 subscriber', () => {
+      const count = getSubscriberCount(EVENTS.SEMANTIC_LANE_STATE_REQUESTED);
+      expect(count).toBeGreaterThanOrEqual(1);
+    });
+
+    it('TOOLTIP_HIDE_REQUESTED has at least 1 subscriber', () => {
+      const count = getSubscriberCount(EVENTS.TOOLTIP_HIDE_REQUESTED);
       expect(count).toBeGreaterThanOrEqual(1);
     });
   });
