@@ -109,7 +109,7 @@ import {
   setSearchStatus,
   clearSearch,
   searchStore
-} from '@lib/stores/search';
+} from '@lib/stores/search.svelte';
 import { performSearch } from '@lib/search-engine';
 
 interface SearchStoreSnapshot {

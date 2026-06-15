@@ -104,7 +104,10 @@ describe('search-back-affordance (UI-9)', () => {
 
   describe('state machine integration', () => {
     it('imports clearSearch from search store', () => {
-      expect(source).toContain("from '@lib/stores/search'");
+      // W11-T8: the two-source shim was deleted; consumers now import
+      // the Svelte 5 rune-class source directly. Accept either the
+      // bare shim path (legacy) or the new .svelte.ts source path.
+      expect(source).toMatch(/from\s+['"]@lib\/stores\/search(?:\.svelte)?(?:\.ts)?['"]/);
       expect(source).toContain('clearSearch');
     });
 

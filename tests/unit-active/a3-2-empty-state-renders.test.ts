@@ -133,7 +133,7 @@ vi.mock('@lib/stores/journey.svelte', () => ({
 }));
 
 // Import the store AFTER the mock is set up so it sees the stubbed appState.
-import { setSearchResults, setSearchQuery, searchStore } from '@lib/stores/search';
+import { setSearchResults, setSearchQuery, searchStore } from '@lib/stores/search.svelte';
 import { recordEmptySearch } from '@lib/stores/lifecycle';
 
 interface WritableSnapshot {
