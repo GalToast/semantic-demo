@@ -50,22 +50,23 @@ import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // ── Static ../../../js/* imports (COLD — init-only, consumed by ensureModules) ──
-import * as viewControllerMod from '../../../js/modules/view-controller';
-import * as mapStateMod from '../../../js/modules/map-state';
-import * as uiFeedbackMod from '../../../js/modules/ui-feedback';
-import * as mapFlatteningMod from '../../../js/modules/map-flattening-layout';
+import * as viewControllerMod from '@lib/orchestration/view-controller';
+import * as mapStateMod from '@lib/engine/map-state';
+import * as uiFeedbackMod from '@lib/engine/ui-feedback-bridge';
+import * as mapFlatteningMod from '@lib/engine/map-flattening-layout-bridge';
 import * as webglRestoreMod from '@lib/utils/webgl-restore-adapter';
-import * as focusAnchorMod from '../../../js/modules/focus-anchor-indicator';
-import * as audioScapeMod from '../../../js/modules/audio-scape';
-import * as eventBindingsMod from '../../../js/modules/event-bindings';
+import * as focusAnchorMod from '@lib/engine/focus-anchor-indicator-bridge';
+import * as audioScapeMod from '@lib/engine/audio-scape-bridge';
+import * as eventBindingsMod from '@lib/engine/event-bindings-bridge';
 import * as loadingUiMod from '../../../js/modules/loading-ui';
 
 // ── Static ../../../js/* imports (HOT — render-loop, consumed by ensureModules) ──
-import * as stateMod from '../../../js/state';
+import { appState } from '@lib/state/app.svelte';
+import { withStateMutation } from '@lib/state/with-state-mutation';
 import * as clusterLabelsMod from '../../../js/modules/cluster-labels';
 import * as focusPocketMod from '../../../js/modules/focus-pocket';
 import * as sceneRevealMod from '../../../js/modules/scene-reveal';
-import * as cameraControlsMod from '../../../js/modules/camera-controls';
+import * as cameraControlsMod from '@lib/engine/camera-controls';
 import * as myceliumEngineMod from '../../../js/modules/mycelium-engine';
 import * as inspectedStrandMod from '../../../js/modules/inspected-strand-overlay-adapter';
 import * as routeArrivalMod from '../../../js/modules/route-arrival-overlay-adapter';
@@ -237,8 +238,8 @@ let _loaded = false;
 function _ensureModules(): void {
   if (_loaded) return;
   try {
-    _state = stateMod.state as unknown as LegacyState;
-    _withStateMutation = stateMod.withStateMutation as unknown as WithStateMutationFn;
+    _state = appState as unknown as LegacyState;
+    _withStateMutation = withStateMutation as unknown as WithStateMutationFn;
     _viewController = viewControllerMod as unknown as ViewControllerModule;
     _clusterLabels = clusterLabelsMod as unknown as ClusterLabelsModule;
     _focusPocket = focusPocketMod as unknown as FocusPocketModule;

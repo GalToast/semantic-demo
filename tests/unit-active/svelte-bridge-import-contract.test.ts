@@ -176,6 +176,11 @@ describe('Bridge health (W11 retirement progress)', () => {
     'src/lib/engine/data-worker-url-bridge.ts', // W11-T5 Wave 1 â€” Vite ?worker&url magic import; trivial wrapper, no Svelte path needed
     'src/lib/engine/keyboard-help-bridge.ts', // W11-T5 Wave 1 â€” DOM event handlers; trivial wrapper, no Svelte port justified
     'src/lib/engine/weather-bridge.ts', // W11-T5 Wave 1 â€” weather widget fetch; trivial wrapper, no Svelte port justified
+    'src/lib/engine/ui-feedback-bridge.ts', // W11-T10 Wave 1 — COLD sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/map-flattening-layout-bridge.ts', // W11-T10 Wave 1 — COLD sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/focus-anchor-indicator-bridge.ts', // W11-T10 Wave 1 — COLD sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/audio-scape-bridge.ts', // W11-T10 Wave 1 — COLD sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/event-bindings-bridge.ts', // W11-T10 Wave 1 — COLD sanctioned passthrough; no Svelte path yet
   ]);
 
   function listBridgeFiles(): string[] {
