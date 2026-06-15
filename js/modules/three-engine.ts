@@ -681,6 +681,37 @@ export function animate() {
     const pulseIncrement = basePulseSpeed * (0.6 + (windSpeed / 15.0));
     state.pulsePhase = (state.pulsePhase + pulseIncrement) % (Math.PI * 2);
 
+    // Sync resolution and uTime for LineMaterial-based mycelium threads
+    if (webglContext.renderer) {
+        const size = new THREE.Vector2();
+        webglContext.renderer.getSize(size);
+        const dpr = webglContext.renderer.getPixelRatio();
+        const width = size.x * dpr;
+        const height = size.y * dpr;
+        const nowSecs = frameNow / 1000;
+
+        if (webglContext.myceliumCoreLines) {
+            const mat = webglContext.myceliumCoreLines.material as any;
+            if (mat.resolution) mat.resolution.set(width, height);
+            if (mat.uniforms?.uTime) mat.uniforms.uTime.value = nowSecs;
+        }
+        if (webglContext.myceliumWispyLines) {
+            const mat = webglContext.myceliumWispyLines.material as any;
+            if (mat.resolution) mat.resolution.set(width, height);
+            if (mat.uniforms?.uTime) mat.uniforms.uTime.value = nowSecs;
+        }
+        if (webglContext.myceliumBridgeLines) {
+            const mat = webglContext.myceliumBridgeLines.material as any;
+            if (mat.resolution) mat.resolution.set(width, height);
+            if (mat.uniforms?.uTime) mat.uniforms.uTime.value = nowSecs;
+        }
+        if (state.focusSemanticLines) {
+            const mat = state.focusSemanticLines.material as any;
+            if (mat.resolution) mat.resolution.set(width, height);
+            if (mat.uniforms?.time) mat.uniforms.time.value = nowSecs;
+        }
+    }
+
     const threadRevealProgress = easeOutQuint(Math.min(1.0, Math.max(0.0, (pointsRevealProgress - 0.25) / 0.5)));
     const graphProfile = getMyceliumPresentationProfile();
     if (threadsVisible) {
