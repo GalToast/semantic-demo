@@ -181,6 +181,15 @@ describe('Bridge health (W11 retirement progress)', () => {
     'src/lib/engine/focus-anchor-indicator-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
     'src/lib/engine/audio-scape-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
     'src/lib/engine/event-bindings-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
+
+    'src/lib/engine/cluster-labels-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/focus-pocket-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; Svelte 5 port exists in @lib/focus/pocket but render loop still uses legacy module surface
+    'src/lib/engine/scene-reveal-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; Svelte 5 port exists in @lib/engine/scene-reveal but render loop still uses legacy module surface
+    'src/lib/engine/mycelium-engine-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/inspected-strand-overlay-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/route-arrival-overlay-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/three-search-animations-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/three-interaction-visuals-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
   ]);
 
   function listBridgeFiles(): string[] {

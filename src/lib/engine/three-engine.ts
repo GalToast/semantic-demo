@@ -61,17 +61,16 @@ import * as eventBindingsMod from '@lib/engine/event-bindings-bridge';
 import * as loadingUiMod from '../../../js/modules/loading-ui';
 
 // ── Static ../../../js/* imports (HOT — render-loop, consumed by ensureModules) ──
-import { appState } from '@lib/state/app.svelte';
-import { withStateMutation } from '@lib/state/with-state-mutation';
-import * as clusterLabelsMod from '../../../js/modules/cluster-labels';
-import * as focusPocketMod from '../../../js/modules/focus-pocket';
-import * as sceneRevealMod from '../../../js/modules/scene-reveal';
+import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge';
+import * as clusterLabelsMod from '@lib/engine/cluster-labels-bridge';
+import * as focusPocketMod from '@lib/engine/focus-pocket-bridge';
+import * as sceneRevealMod from '@lib/engine/scene-reveal-bridge';
 import * as cameraControlsMod from '@lib/engine/camera-controls';
-import * as myceliumEngineMod from '../../../js/modules/mycelium-engine';
-import * as inspectedStrandMod from '../../../js/modules/inspected-strand-overlay-adapter';
-import * as routeArrivalMod from '../../../js/modules/route-arrival-overlay-adapter';
-import * as threeSearchAnimationsMod from '../../../js/modules/three-search-animations';
-import * as threeInteractionVisualsMod from '../../../js/modules/three-interaction-visuals';
+import * as myceliumEngineMod from '@lib/engine/mycelium-engine-bridge';
+import * as inspectedStrandMod from '@lib/engine/inspected-strand-overlay-bridge';
+import * as routeArrivalMod from '@lib/engine/route-arrival-overlay-bridge';
+import * as threeSearchAnimationsMod from '@lib/engine/three-search-animations-bridge';
+import * as threeInteractionVisualsMod from '@lib/engine/three-interaction-visuals-bridge';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 
@@ -238,7 +237,11 @@ let _loaded = false;
 function _ensureModules(): void {
   if (_loaded) return;
   try {
-    _state = appState as unknown as LegacyState;
+    _state = legacyState as unknown as LegacyState;
+    if (typeof window !== 'undefined') {
+      (window as unknown as { __LEGACY_APP_STATE__?: unknown }).__LEGACY_APP_STATE__ = legacyState;
+      (window as unknown as { __refreshTestCompatState__?: () => void }).__refreshTestCompatState__?.();
+    }
     _withStateMutation = withStateMutation as unknown as WithStateMutationFn;
     _viewController = viewControllerMod as unknown as ViewControllerModule;
     _clusterLabels = clusterLabelsMod as unknown as ClusterLabelsModule;
