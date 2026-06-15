@@ -1,15 +1,25 @@
 /**
  * @lib/stores/focus.svelte.ts — Focus pocket, thread inspector, and selected card store
+ *
+ * Why a plain `writable` instead of `toStore(getter, setter)`:
+ *   `toStore` replaces the writable's notifying `set` with the user's custom
+ *   setter. In Svelte runtime this works because the render_effect re-reads the
+ *   getter after mutations and calls the underlying writable's `set`. But in
+ *   jsdom/vitest there is no render_effect, so `store.update()` writes to
+ *   appState but subscribers never wake up — `get(store)` returns stale values.
+ *
+ *   A plain `writable` + `withFocusNotify()` wrapper fixes both: runtime
+ *   subscribers are notified by the writable's own `.set()`, and test
+ *   environments get synchronous notification too. (A3-1 fix pattern, canonical
+ *   in search.svelte.ts and camera.svelte.ts.)
  */
 import type {
   FocusState,
   FocusPocketNode,
   FocusTransitionMode,
-  ThreadInspectorState,
-  FocusOrbitSlackState,
-  FocusPocketMeta
+  FocusOrbitSlackState
 } from '@lib/types/state';
-import { get, type Readable, toStore } from 'svelte/store';
+import { get, writable, type Readable } from 'svelte/store';
 import { appState } from '@lib/state/app.svelte.ts';
 
 // ── Initial State ────────────────────────────────────────────────────────────
@@ -49,12 +59,13 @@ const INITIAL_FOCUS: FocusStoreState = {
 
 // ── Store ────────────────────────────────────────────────────────────────────
 
-/** Reactive binding to the Svelte 5 state kernel. */
-const _focusWritable = toStore(
-  () => ({
+/** Read a fresh snapshot from the state kernel (appState). */
+function _readFocusSnapshot(): FocusStoreState {
+  return {
     ...INITIAL_FOCUS,
-    ...$state.snapshot(appState.navState),
     pocketNodes: [...appState.navState.focusPocketIndices] as any[],
+    pocketMeta: appState.navState.focusPocketMeta,
+    pocketRoleByIndex: new Map(appState.navState.focusPocketRoleByIndex),
     selectedBusiness: appState.selectedPoint as any,
     inspectedStrandIndex: appState.inspectedThreadIndex,
     pinnedThreadIndex: appState.pinnedThreadIndex,
@@ -66,7 +77,7 @@ const _focusWritable = toStore(
     pocketListVisible: appState.pocketListVisible,
     transitionMode: appState.focusTransitionMode as FocusTransitionMode,
     transitionStartedAt: appState.focusTransitionStartedAt,
-    orbitSlack: $state.snapshot(appState.focusOrbitSlackState),
+    orbitSlack: { ...appState.focusOrbitSlackState } as FocusOrbitSlackState,
     threadInspector: {
       active: appState.inspectedStrandDiagnostics.active,
       source: appState.inspectedStrandDiagnostics.source,
@@ -77,21 +88,48 @@ const _focusWritable = toStore(
       braidCount: appState.inspectedStrandDiagnostics.braidCount,
       endpointCount: appState.inspectedStrandDiagnostics.endpointCount
     }
-  }),
-  (val) => appState.withMutation(() => {
-    appState.navState.focusPocketIndices = val.pocketNodes;
-    appState.selectedPoint = val.selectedBusiness;
-    appState.inspectedThreadIndex = val.inspectedStrandIndex;
-    appState.pinnedThreadIndex = val.pinnedThreadIndex;
-    appState.nodesAreSettling = val.nodesAreSettling;
-    appState.pocketMotionByIndex = val.pocketMotionByIndex;
-    appState.pocketTransitionStartedAt = val.pocketTransitionStartedAt;
-    appState.infoPanelOpen = val.infoPanelOpen;
-    appState.pocketListVisible = val.pocketListVisible;
-    appState.focusTransitionMode = val.transitionMode;
-    appState.focusTransitionStartedAt = val.transitionStartedAt;
-  })
-);
+  };
+}
+
+/** Reactive binding to the Svelte 5 state kernel. */
+const _focusWritable = writable<FocusStoreState>(_readFocusSnapshot());
+
+/**
+ * Push mutations to both `_focusWritable` and `appState`.
+ * The writable notifies subscribers; the appState sync keeps the kernel
+ * in sync for legacy readers and the engine bridge.
+ */
+function withFocusNotify(updater: (s: FocusStoreState) => FocusStoreState): void {
+  const current = get(_focusWritable);
+  const next = updater(current);
+  _focusWritable.set(next);
+  // Sync all bridged properties back to appState
+  appState.withMutation(() => {
+    appState.navState.focusPocketIndices = next.pocketNodes;
+    appState.selectedPoint = next.selectedBusiness;
+    appState.inspectedThreadIndex = next.inspectedStrandIndex;
+    appState.pinnedThreadIndex = next.pinnedThreadIndex;
+    appState.nodesAreSettling = next.nodesAreSettling;
+    appState.pocketMotionByIndex = next.pocketMotionByIndex;
+    appState.pocketTransitionStartedAt = next.pocketTransitionStartedAt;
+    appState.infoPanelOpen = next.infoPanelOpen;
+    appState.pocketListVisible = next.pocketListVisible;
+    appState.focusTransitionMode = next.transitionMode;
+    appState.focusTransitionStartedAt = next.transitionStartedAt;
+    // Reverse-map semanticDiveMode → navState.trailDepth
+    if (next.semanticDiveMode !== current.semanticDiveMode) {
+      if (next.semanticDiveMode) appState.navState.trailDepth = 2;
+      else if (appState.navState.trailDepth === 2) appState.navState.trailDepth = 1;
+    }
+    // Sync thread inspector diagnostics
+    appState.inspectedStrandDiagnostics.active = next.threadInspector.active;
+    appState.inspectedStrandDiagnostics.source = next.threadInspector.source;
+    appState.inspectedStrandDiagnostics.segmentCount = next.threadInspector.segmentCount;
+    appState.inspectedStrandDiagnostics.braidCount = next.threadInspector.braidCount;
+    appState.inspectedStrandDiagnostics.endpointCount = next.threadInspector.endpointCount;
+    appState.threadInspectorPointerInside = next.threadInspector.pointerInside;
+  });
+}
 
 /** FocusStore type: callable function + Readable + actions. */
 export type FocusStoreApi = (() => FocusStoreState) &
@@ -101,38 +139,35 @@ export type FocusStoreApi = (() => FocusStoreState) &
   };
 
 function _createFocusStore(): FocusStoreApi {
-  // Function call: returns fresh sync snapshot from kernel
-  const fn = (() => ({
-    ...INITIAL_FOCUS,
-    ...$state.snapshot(appState.navState),
-    pocketNodes: [...appState.navState.focusPocketIndices] as any[],
-    selectedBusiness: appState.selectedPoint as any,
-    inspectedStrandIndex: appState.inspectedThreadIndex,
-    pinnedThreadIndex: appState.pinnedThreadIndex,
-    semanticDiveMode: appState.navState.trailDepth === 2,
-    nodesAreSettling: appState.nodesAreSettling,
-    pocketMotionByIndex: new Map(appState.pocketMotionByIndex),
-    pocketTransitionStartedAt: appState.pocketTransitionStartedAt,
-    infoPanelOpen: appState.infoPanelOpen,
-    pocketListVisible: appState.pocketListVisible,
-    transitionMode: appState.focusTransitionMode as FocusTransitionMode,
-    transitionStartedAt: appState.focusTransitionStartedAt,
-    orbitSlack: $state.snapshot(appState.focusOrbitSlackState),
-    threadInspector: {
-      active: appState.inspectedStrandDiagnostics.active,
-      source: appState.inspectedStrandDiagnostics.source,
-      inspectedIndex: appState.inspectedThreadIndex,
-      pinnedIndex: appState.pinnedThreadIndex,
-      pointerInside: appState.threadInspectorPointerInside,
-      segmentCount: appState.inspectedStrandDiagnostics.segmentCount,
-      braidCount: appState.inspectedStrandDiagnostics.braidCount,
-      endpointCount: appState.inspectedStrandDiagnostics.endpointCount
-    }
-  })) as unknown as FocusStoreApi;
+  // Function call: returns fresh snapshot from the writable (kept in sync
+  // by withFocusNotify for every appState bridge mutation).
+  const fn = (() => get(_focusWritable)) as unknown as FocusStoreApi;
 
   fn.subscribe = _focusWritable.subscribe as any;
-  fn.update = _focusWritable.update as any;
-  fn.set = _focusWritable.set as any;
+  fn.update = (updater: (s: FocusStoreState) => FocusStoreState) => withFocusNotify(updater);
+  fn.set = (value: FocusStoreState) => {
+    _focusWritable.set(value);
+    // Sync all bridged properties back to appState (same as withFocusNotify)
+    appState.withMutation(() => {
+      appState.navState.focusPocketIndices = value.pocketNodes;
+      appState.selectedPoint = value.selectedBusiness;
+      appState.inspectedThreadIndex = value.inspectedStrandIndex;
+      appState.pinnedThreadIndex = value.pinnedThreadIndex;
+      appState.nodesAreSettling = value.nodesAreSettling;
+      appState.pocketMotionByIndex = value.pocketMotionByIndex;
+      appState.pocketTransitionStartedAt = value.pocketTransitionStartedAt;
+      appState.infoPanelOpen = value.infoPanelOpen;
+      appState.pocketListVisible = value.pocketListVisible;
+      appState.focusTransitionMode = value.transitionMode;
+      appState.focusTransitionStartedAt = value.transitionStartedAt;
+      appState.inspectedStrandDiagnostics.active = value.threadInspector.active;
+      appState.inspectedStrandDiagnostics.source = value.threadInspector.source;
+      appState.inspectedStrandDiagnostics.segmentCount = value.threadInspector.segmentCount;
+      appState.inspectedStrandDiagnostics.braidCount = value.threadInspector.braidCount;
+      appState.inspectedStrandDiagnostics.endpointCount = value.threadInspector.endpointCount;
+      appState.threadInspectorPointerInside = value.threadInspector.pointerInside;
+    });
+  };
 
   return fn;
 }
@@ -157,66 +192,57 @@ export const threadInspectorActive = () => appState.inspectedStrandDiagnostics.a
 // ── Actions ──────────────────────────────────────────────────────────────────
 
 export function setPocketNodes(nodes: readonly FocusPocketNode[]): void {
-  appState.withMutation(() => { appState.navState.focusPocketIndices = nodes as any; });
+  withFocusNotify(s => ({ ...s, pocketNodes: nodes as any[] }));
 }
 
 export function clearPocketNodes(): void {
-  appState.withMutation(() => { appState.navState.focusPocketIndices = []; });
+  withFocusNotify(s => ({ ...s, pocketNodes: [] }));
 }
 
 export function setPocketListVisible(visible: boolean): void {
-  appState.withMutation(() => { appState.pocketListVisible = visible; });
+  withFocusNotify(s => ({ ...s, pocketListVisible: visible }));
 }
 
 export function pinThread(index: number): void {
-  appState.withMutation(() => { appState.pinnedThreadIndex = index; });
+  withFocusNotify(s => ({ ...s, pinnedThreadIndex: index }));
 }
 
 export function unpinThread(): void {
-  appState.withMutation(() => { appState.pinnedThreadIndex = null; });
+  withFocusNotify(s => ({ ...s, pinnedThreadIndex: null }));
 }
 
 export function clearThreadInspector(): void {
-  appState.withMutation(() => {
-    appState.inspectedThreadIndex = null;
-    appState.inspectedStrandDiagnostics.active = false;
-  });
+  withFocusNotify(s => ({
+    ...s,
+    inspectedStrandIndex: null,
+    threadInspector: { ...s.threadInspector, active: false }
+  }));
 }
 
 export function updateThreadInspector(patch: any): void {
-  appState.withMutation(() => {
-    Object.assign(appState.inspectedStrandDiagnostics, patch);
-  });
+  withFocusNotify(s => ({
+    ...s,
+    threadInspector: { ...s.threadInspector, ...patch }
+  }));
 }
 
 export function setSemanticDiveMode(active: boolean): void {
-  // Usually tied to trail depth, but can be forced
-  appState.withMutation(() => {
-    if (active) appState.navState.trailDepth = 2;
-    else if (appState.navState.trailDepth === 2) appState.navState.trailDepth = 1;
-  });
+  withFocusNotify(s => ({ ...s, semanticDiveMode: active }));
 }
 
 export function setSelectedBusiness(business: any): void {
-  appState.withMutation(() => { appState.selectedPoint = business; });
+  withFocusNotify(s => ({ ...s, selectedBusiness: business }));
 }
 
 export function setInfoPanelOpen(open: boolean): void {
-  appState.withMutation(() => { appState.infoPanelOpen = open; });
+  withFocusNotify(s => ({ ...s, infoPanelOpen: open }));
 }
 
 export function resetFocus(): void {
-  appState.withMutation(() => {
-    appState.navState.focusPocketIndices = [];
-    appState.navState.focusPocketMeta = null;
-    appState.selectedPoint = null;
-    appState.inspectedThreadIndex = null;
-    appState.pinnedThreadIndex = null;
-    appState.infoPanelOpen = true;
-    appState.pocketListVisible = false;
-  });
+  withFocusNotify(() => ({ ...INITIAL_FOCUS }));
 }
 
 // ── Re-exports ───────────────────────────────────────────────────────────────
 /** Constellation motifs defined in the engine config. */
 export { FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config';
+export type { ConstellationMotif } from '@lib/engine/config';

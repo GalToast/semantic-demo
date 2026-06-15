@@ -11,7 +11,7 @@ import type {
 
   WalkHistoryEntry
 } from '@lib/types/state';
-import { type Readable, toStore } from 'svelte/store';
+import { get, type Readable, writable } from 'svelte/store';
 // debugWarn removed — was unused in this store
 import { appState } from '@lib/state/app.svelte.ts';
 
@@ -23,7 +23,9 @@ export const JOURNEY_CONFIG = {
   /** Settle duration for terrain landing (ms). */
   TERRAIN_LANDING_SETTLE_MS: 1200,
   /** Long settle duration for deep focus transitions (ms). */
-  TERRAIN_LANDING_SETTLE_LONG_MS: 1800
+  TERRAIN_LANDING_SETTLE_LONG_MS: 1800,
+  /** Delay before late trail refresh on map transition (ms). */
+  MAP_TRAIL_REFRESH_LATE_DELAY_MS: 100
 } as const;
 
 /** Journey milestones in sequence. */
@@ -36,6 +38,12 @@ export interface JourneyStoreState extends JourneyState {
   terrainHandoffPhase: 'idle' | 'prelude' | 'transition' | 'settle';
   routeExplorationPhase: 'idle' | 'searching' | 'focusing';
   routeChoreographyPhase: 'overview' | 'trail' | 'focus' | 'inside' | 'map';
+  /** Direct trail depth accessor (mirrors navState.trailDepth). */
+  trailDepth: number;
+  /** Walk history indices (mirrors navState.walkHistoryIndices). */
+  walkHistoryIndices: number[];
+  /** Trail seed index (mirrors navState.trailSeedIndex). */
+  trailSeedIndex: number | null;
 }
 
 const INITIAL_JOURNEY: JourneyStoreState = {
@@ -54,20 +62,36 @@ const INITIAL_JOURNEY: JourneyStoreState = {
   selectedStopIndex: null,
   neighbors: [],
   compass: { phase: 'idle' as CompassPhase, currentAction: 'none' as CompassAction, previousAction: 'none' as CompassAction, lastTransitionAt: 0 },
-  walkHistory: []
+  walkHistory: [],
+  trailDepth: 0,
+  walkHistoryIndices: [],
+  trailSeedIndex: null
 };
 
 // ── Store ────────────────────────────────────────────────────────────────────
 
-/** Reactive binding to the Svelte 5 state kernel. */
-const _journeyWritable = toStore(
-  () => ({
+/**
+ * Why a plain `writable` instead of `toStore(getter, setter)`:
+ *   `toStore` creates a render_effect that only fires in the Svelte runtime
+ *   (browser). In jsdom/vitest there is no render_effect, so store.update()
+ *   writes to appState but subscribers never wake up — get(store) returns
+ *   stale values. A plain `writable` + `withJourneyNotify()` fixes both:
+ *   runtime subscribers are notified by the writable's own .set(), and test
+ *   environments get synchronous notification too.
+ */
+
+/** Read the current journey state from appState (shared by initial value and callable getter). */
+function _readJourneyFromAppState(): JourneyStoreState {
+  return {
     ...INITIAL_JOURNEY,
     ...$state.snapshot(appState.navState),
     phase: appState.navState.mode,
     trail: [...appState.navState.walkHistoryIndices].map(index => ({ index } as TrailStop)),
     cursor: appState.navState.trailCursor,
     depth: appState.navState.trailDepth,
+    trailDepth: appState.navState.trailDepth,
+    walkHistoryIndices: [...appState.navState.walkHistoryIndices],
+    trailSeedIndex: appState.navState.trailSeedIndex ?? null,
     threadCandidates: [...(appState.navState.threadCandidates as any[])].map(Number),
     threadReasonByIndex: new Map(appState.navState.threadReasonByIndex),
     threadSource: appState.navState.threadSource,
@@ -75,15 +99,29 @@ const _journeyWritable = toStore(
     terrainHandoffPhase: 'idle' as any,
     routeExplorationPhase: 'idle' as any,
     routeChoreographyPhase: 'overview' as any
-  }),
-  (val) => appState.withMutation(() => {
-    appState.navState.mode = val.phase;
-    appState.navState.trailCursor = val.cursor;
-    appState.navState.trailDepth = val.depth;
-    appState.navState.threadSource = val.threadSource;
-    appState.navState.lastTraversalReason = val.lastTraversalReason;
-  })
-);
+  };
+}
+
+const _journeyWritable = writable<JourneyStoreState>(_readJourneyFromAppState());
+
+/**
+ * Push journey mutations to both `_journeyWritable` and `appState`.
+ * The writable notifies subscribers; the appState mutation keeps the kernel
+ * in sync. The 5 bridged properties are: mode, trailCursor, trailDepth,
+ * threadSource, lastTraversalReason.
+ */
+function withJourneyNotify(updater: (s: JourneyStoreState) => JourneyStoreState): void {
+  const current = get(_journeyWritable);
+  const next = updater(current);
+  _journeyWritable.set(next);
+  appState.withMutation(() => {
+    appState.navState.mode = next.phase;
+    appState.navState.trailCursor = next.cursor;
+    appState.navState.trailDepth = next.trailDepth;
+    appState.navState.threadSource = next.threadSource;
+    appState.navState.lastTraversalReason = next.lastTraversalReason;
+  });
+}
 
 /** JourneyStore type: callable function + Readable + actions. */
 export type JourneyStoreApi = (() => JourneyStoreState) &
@@ -94,25 +132,17 @@ export type JourneyStoreApi = (() => JourneyStoreState) &
 
 function _createJourneyStore(): JourneyStoreApi {
   // Function call: returns fresh sync snapshot from kernel
-  const fn = (() => ({
-    ...INITIAL_JOURNEY,
-    ...$state.snapshot(appState.navState),
-    phase: appState.navState.mode,
-    trail: [...appState.navState.walkHistoryIndices].map(index => ({ index } as TrailStop)),
-    cursor: appState.navState.trailCursor,
-    depth: appState.navState.trailDepth,
-    threadCandidates: [...(appState.navState.threadCandidates as any[])].map(Number),
-    threadReasonByIndex: new Map(appState.navState.threadReasonByIndex),
-    threadSource: appState.navState.threadSource,
-    lastTraversalReason: appState.navState.lastTraversalReason,
-    terrainHandoffPhase: 'idle' as any,
-    routeExplorationPhase: 'idle' as any,
-    routeChoreographyPhase: 'overview' as any
-  })) as unknown as JourneyStoreApi;
+  const fn = (() => _readJourneyFromAppState()) as unknown as JourneyStoreApi;
 
   fn.subscribe = _journeyWritable.subscribe as any;
-  fn.update = _journeyWritable.update as any;
-  fn.set = _journeyWritable.set as any;
+  // Wrap update/set to also sync appState via withJourneyNotify, so the
+  // callable getter (which reads appState) returns fresh values immediately.
+  fn.update = ((updater: (s: JourneyStoreState) => JourneyStoreState) => {
+    withJourneyNotify(updater);
+  }) as any;
+  fn.set = ((value: JourneyStoreState) => {
+    withJourneyNotify(() => value);
+  }) as any;
 
   return fn;
 }
@@ -157,19 +187,23 @@ export function currentJourneyIndex(): number | null {
 // ── Actions ──────────────────────────────────────────────────────────────────
 
 export function setJourneyPhase(phase: JourneyPhase): void {
-  appState.withMutation(() => { appState.navState.mode = phase as any; });
+  withJourneyNotify(s => ({ ...s, phase: phase as any }));
 }
 
 export function setTrailDepth(depth: number): void {
-  appState.withMutation(() => { appState.navState.trailDepth = depth; });
+  withJourneyNotify(s => ({ ...s, depth, trailDepth: depth }));
 }
 
 export function addWalkHistoryIndex(index: number): void {
-  appState.withMutation(() => {
-    const current = [...appState.navState.walkHistoryIndices];
-    if (!current.includes(index)) {
-      appState.navState.walkHistoryIndices = [...current, index];
-    }
+  withJourneyNotify(s => {
+    if (s.walkHistoryIndices.includes(index)) return s;
+    const walkHistoryIndices = [...s.walkHistoryIndices, index];
+    return {
+      ...s,
+      walkHistoryIndices,
+      trail: walkHistoryIndices.map(i => ({ index: i } as TrailStop)),
+      cursor: walkHistoryIndices.length - 1
+    };
   });
 }
 
@@ -177,30 +211,42 @@ export function transitionCompass(phase: string): void {
   // Compass phase is typically tied to nav mode or a sub-state.
   // For now, we'll map it to nav mode if it matches a milestone.
   if ((JOURNEY_COMPASS_PHASE_ORDER as readonly string[]).includes(phase)) {
-    appState.withMutation(() => { appState.navState.mode = phase as any; });
+    withJourneyNotify(s => ({ ...s, phase: phase as any }));
   }
 }
 
 export function addTrailStop(stop: TrailStop | number): void {
   const index = typeof stop === 'number' ? stop : stop.index;
-  appState.withMutation(() => {
-    appState.navState.walkHistoryIndices = [...appState.navState.walkHistoryIndices, index];
-    appState.navState.trailCursor = appState.navState.walkHistoryIndices.length - 1;
+  withJourneyNotify(s => {
+    const walkHistoryIndices = [...s.walkHistoryIndices, index];
+    return {
+      ...s,
+      walkHistoryIndices,
+      trail: walkHistoryIndices.map(i => ({ index: i } as TrailStop)),
+      cursor: walkHistoryIndices.length - 1
+    };
   });
 }
 
 export function removeTrailStop(index: number): void {
-  appState.withMutation(() => {
-    appState.navState.walkHistoryIndices = appState.navState.walkHistoryIndices.filter(i => i !== index);
-    appState.navState.trailCursor = Math.min(appState.navState.trailCursor, appState.navState.walkHistoryIndices.length - 1);
+  withJourneyNotify(s => {
+    const walkHistoryIndices = s.walkHistoryIndices.filter(i => i !== index);
+    return {
+      ...s,
+      walkHistoryIndices,
+      trail: walkHistoryIndices.map(i => ({ index: i } as TrailStop)),
+      cursor: Math.min(s.cursor, walkHistoryIndices.length - 1)
+    };
   });
 }
 
 export function clearTrail(): void {
-  appState.withMutation(() => {
-    appState.navState.walkHistoryIndices = [];
-    appState.navState.trailCursor = -1;
-  });
+  withJourneyNotify(s => ({
+    ...s,
+    walkHistoryIndices: [],
+    trail: [],
+    cursor: -1
+  }));
 }
 
 export function setSelectedStop(index: number | null): void {
@@ -216,9 +262,9 @@ export function setTrailNeighborIndices(indices: readonly number[]): void {
 }
 
 export function advanceTrailCursor(delta = 1): void {
-  appState.withMutation(() => {
-    const max = appState.navState.walkHistoryIndices.length - 1;
-    appState.navState.trailCursor = Math.max(-1, Math.min(max, appState.navState.trailCursor + delta));
+  withJourneyNotify(s => {
+    const max = s.walkHistoryIndices.length - 1;
+    return { ...s, cursor: Math.max(-1, Math.min(max, s.cursor + delta)) };
   });
 }
 
@@ -256,6 +302,7 @@ export function setSelectedId(id: string | null): void {
 }
 
 export function resetJourney(): void {
+  _journeyWritable.set({ ...INITIAL_JOURNEY });
   appState.withMutation(() => {
     appState.navState.mode = 'overview';
     appState.navState.walkHistoryIndices = [];
