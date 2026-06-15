@@ -38,7 +38,6 @@ import {
   refreshCompositionState,
   resetExplorationFocus,
   returnToOverview,
-  recordEmptySearch,
   showExploreTrailReview,
   hideExploreTrailReview
 } from "@lib/stores/lifecycle";
@@ -67,7 +66,6 @@ export {
 
 export {
   activateSearchGlow,
-  recordEmptySearch,
   showExploreTrailReview,
   hideExploreTrailReview,
   getCurrentEmptyQuery
@@ -113,14 +111,6 @@ export function deriveLifecyclePanelSurfaceContext(
   if (hasSearchIntent) return "search";
   if (hasFocus) return "focus";
   return "idle";
-}
-
-/**
- * Get the mobile search sheet detail from panel surface adapter.
- * Returns empty string in the store port — the engine bridge resolves.
- */
-export function getMobileSearchSheetDetail(): string {
-  return "";
 }
 
 // ── Semantic Dive Proxy (uses focus store) ────────────────────────────────────
@@ -210,42 +200,10 @@ export function probeSemanticLane(_options?: Record<string, unknown>): Promise<u
 }
 
 /**
- * Schedule a semantic lane health monitor.
- * Legacy stub — actual implementation lives in the engine bridge.
- */
-export function scheduleSemanticLaneMonitor(): void {
-  // No-op in store port
-}
-
-/**
  * Set the semantic lane UI state.
  * Legacy stub — actual implementation lives in the engine bridge.
  */
 export function setSemanticLaneUiState(_laneState: string, _options?: Record<string, unknown>): void {
-  // No-op in store port
-}
-
-/**
- * Record a semantic lane snapshot.
- * Legacy stub — actual implementation lives in the engine bridge.
- */
-export function recordSemanticLaneSnapshot(): void {
-  // No-op in store port
-}
-
-/**
- * Set semantic lane ops mode.
- * Legacy stub — actual implementation lives in the engine bridge.
- */
-export function setSemanticLaneOpsMode(_mode: string): void {
-  // No-op in store port
-}
-
-/**
- * Refresh semantic lane ops summary.
- * Legacy stub — actual implementation lives in the engine bridge.
- */
-export function refreshSemanticLaneOpsSummary(): void {
   // No-op in store port
 }
 
@@ -274,48 +232,12 @@ export function showExperienceToast(_message: string, _detail?: string): void {
 }
 
 /**
- * Set semantic guide button state.
- * Legacy stub — actual implementation lives in semantic-guide.js.
- */
-export function setSemanticGuideButtonState(_state: string): void {
-  // No-op in store port
-}
-
-/**
- * Show the summary card.
- * Legacy stub — actual implementation lives in semantic-guide.js.
- */
-export function showSummaryCard(_point: Record<string, unknown> | null): void {
-  // No-op in store port
-}
-
-/**
- * Request semantic guide for a point.
- * Legacy stub — actual implementation lives in semantic-guide.js.
- */
-export function requestSemanticGuide(_point: Record<string, unknown> | null): void {
-  // No-op in store port
-}
-
-/**
  * Focus on node by index.
  * Delegates to dispatchNavTransition.
  */
 export function focusOnNode(index: number, _options?: Record<string, unknown>): boolean {
   const result = dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, { index });
   return result.ok;
-}
-
-/**
- * Sync semantic dive UI.
- * Legacy proxy — body data attribute sync is now handled by the parity layer
- * (parity-attrs.svelte.ts). This function is kept for API compat but no longer
- * writes directly to document.body.dataset.semanticDive, which previously
- * produced wrong vocabulary ("true"/"false") instead of the parity contract
- * ("inactive"|"transitioning"|"active").
- */
-export function syncSemanticDiveUi(): void {
-  // Intentional no-op: parity-attrs.svelte.ts owns this body attribute.
 }
 
 /**
@@ -405,14 +327,6 @@ export function _openTrailReview(): void {
  */
 export function _closeTrailReview(): void {
   hideExploreTrailReview();
-}
-
-/**
- * Show semantic threads detail.
- * Window bridge function from lifecycle.js.
- */
-export function showSemanticThreadsDetail(): void {
-  // No-op in store port — engine bridge handles
 }
 
 // ── Event Subscriptions ───────────────────────────────────────────────────────
