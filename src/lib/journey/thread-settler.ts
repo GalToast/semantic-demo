@@ -13,6 +13,7 @@ import { formatBusinessName, cleanOptionalValue } from '@lib/utils/dom-formatter
 import { normalizeCityForFilter } from '@lib/utils/geo-data';
 import { getStrandContinuityManager } from '@lib/utils/strand-continuity';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
+import { NAV_TRANSITION_ACTIONS } from '@lib/navigation-actions';
 import { summarizeNeighborReason, getInsideRelationshipLabel, cancelAllThreadTimers, setTimer, clearTimer, getStrandArrivalNote } from './thread-settler-adapter';
 import { walkThreadNeighbor, traverseNeighbor } from './thread-settler-adapter';
 import type { ThreadCandidate, WalkCandidate } from './thread-model';
@@ -53,7 +54,7 @@ export class ThreadSettler {
 		this.clearAllTimers();
 
 		this.manager.setPhase('exploring', { targetIndex: index, fromIndex, reason });
-		this.dispatchNavTransition('WALK_TO', { index, fromIndex, appendHistory: !options.restoreHistory });
+		this.dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_TO, { index, fromIndex, appendHistory: !options.restoreHistory });
 		this.callbacks.onFocus?.(targetPoint);
 		this.manager.setPhase('arrived', { targetIndex: index, fromIndex, reason });
 		this.callbacks.onFocus?.(targetPoint);

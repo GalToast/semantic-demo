@@ -25,7 +25,7 @@ import {
     getThreadCandidatesForIndex
 } from './journey-thread-model.ts';
 import { focusOnNode } from './camera-controls.ts';
-import { dispatchNavTransition, focusOnPoint, syncFocusStage } from './lifecycle.ts';
+import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, focusOnPoint, syncFocusStage } from './lifecycle.ts';
 import { updateJourneyCompass } from './journey-compass-controller.ts';
 import { showExperienceToast } from './ui-feedback.ts';
 import { syncSemanticDiveUi } from '../../src/lib/journey/semantic-dive.ts';
@@ -439,7 +439,7 @@ export function exploreThreadNeighbor(index: number, options: ThreadInspectionOp
     state.pinnedThreadIndex = null;
     state.inspectedThreadIndex = index;
     setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason });
-    dispatchNavTransition('WALK_TO', { index, fromIndex, appendHistory: !options.restoreHistory } as any);
+    dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_TO, { index, fromIndex, appendHistory: !options.restoreHistory } as any);
     renderThreadInspection(index, { force: true, surface: options.surface || 'explore' });
     withStateMutation(() => { state.navState.lastTraversalReason = reason; });
     if (getCurrentView() === 'map') {

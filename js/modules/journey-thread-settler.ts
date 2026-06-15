@@ -219,7 +219,7 @@ export function walkThreadNeighbor(index: number, options: WalkThreadNeighborOpt
         typeof performance !== 'undefined' ? performance.now() + 1200 : Date.now() + 1200;
     cancelAllThreadTimers();
     setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason });
-    dispatchNavTransition('WALK_TO', { index, fromIndex, appendHistory: !options.restoreHistory });
+    dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_TO, { index, fromIndex, appendHistory: !options.restoreHistory });
     renderThreadInspection(null, { force: true, surface: 'idle' });
     withStateMutation(() => {
         (state.navState as any).lastTraversalReason = reason;
@@ -351,7 +351,7 @@ export function traverseNeighbor(step: number): void {
         if (walkHistory.length <= 1) return;
         const previousIndex = walkHistory[walkHistory.length - 2];
         if (typeof previousIndex !== 'number' || !Number.isFinite(previousIndex)) return;
-        dispatchNavTransition('BACKTRACK', { step: -1, fromIndex: currentIndex, targetIndex: previousIndex, restoreHistory: true });
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.BACKTRACK, { step: -1, fromIndex: currentIndex, targetIndex: previousIndex, restoreHistory: true });
         walkThreadNeighbor(previousIndex, {
             fromIndex: currentIndex,
             restoreHistory: true,

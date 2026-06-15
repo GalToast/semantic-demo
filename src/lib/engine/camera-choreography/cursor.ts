@@ -17,6 +17,7 @@ import { refreshMapRouteEmbodiment } from '../../../../js/modules/map-state.ts'
 import {
   refreshCompositionState,
   dispatchNavTransition,
+  NAV_TRANSITION_ACTIONS,
   setTrailDepth,
   setMyceliumMode,
   updateExplorationUi,
@@ -69,7 +70,7 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
   _s.hoverHighlightIndex = -1
   _s.pinnedThreadIndex = null
 
-  dispatchNavTransition('FOCUS_NODE', {
+  dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
     index,
     preserveMode: !!options.preserveMode,
     fromTraversal: !!options.fromTraversal,
