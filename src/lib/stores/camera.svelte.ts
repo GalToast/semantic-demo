@@ -10,7 +10,7 @@
  * and transition lifecycle. The actual Three.js camera is owned by the engine;
  * the bridge translates between these stores and the imperative engine calls.
  */
-import { get, type Readable, type Subscriber, type Unsubscriber, toStore } from 'svelte/store';
+import { get, writable, type Readable, type Subscriber, type Unsubscriber } from 'svelte/store';
 import type {
   CameraState,
   CameraTransition,
@@ -121,22 +121,38 @@ const INITIAL_STORE: CameraStoreState = {
 
 // ── Store (reactive binding) ──────────────────────────────────────────────────
 
-/** Reactive binding to the Svelte 5 state kernel. */
-const _cameraWritable = toStore(
-  () => ({
-    ...INITIAL_STORE,
-    autoRotate: appState.autoRotate,
-    autoRotateSuspended: appState.autoRotateSuspended,
-    autoResumeDueAt: appState.autoRotateResumeDueAt,
-    softResumeStartedAt: appState.autoRotateSoftResumeStartedAt
-  }),
-  (val) => appState.withMutation(() => {
-    appState.autoRotate = val.autoRotate;
-    appState.autoRotateSuspended = val.autoRotateSuspended;
-    appState.autoRotateResumeDueAt = val.autoResumeDueAt;
-    appState.autoRotateSoftResumeStartedAt = val.softResumeStartedAt;
-  })
-);
+/**
+ * Why a plain `writable` instead of `toStore(getter, setter)`:
+ *   `toStore` replaces the writable's notifying `set` with the user's custom
+ *   setter. In Svelte runtime this works because the render_effect re-reads the
+ *   getter after mutations and calls the underlying writable's `set`. But in
+ *   jsdom/vitest there is no render_effect, so `store.update()` writes to
+ *   appState but subscribers never wake up — `get(store)` returns stale values.
+ *
+ *   A plain `writable` + `withCameraNotify()` wrapper fixes both: runtime
+ *   subscribers are notified by the writable's own `.set()`, and test
+ *   environments get synchronous notification too.
+ */
+const _cameraWritable = writable<CameraStoreState>({ ...INITIAL_STORE });
+
+/**
+ * Push autoRotate-related mutations to both `_cameraWritable` and `appState`.
+ * Called by actions that change autoRotate/suspended/resume properties.
+ * Other camera state (position, target, transition, orbitSlack) lives only
+ * in `_cameraWritable` and doesn't need the appState bridge.
+ */
+function withCameraNotify(updater: (s: CameraStoreState) => CameraStoreState): void {
+  const current = get(_cameraWritable);
+  const next = updater(current);
+  _cameraWritable.set(next);
+  // Sync the 4 autoRotate properties that appState owns
+  appState.withMutation(() => {
+    appState.autoRotate = next.autoRotate;
+    appState.autoRotateSuspended = next.autoRotateSuspended;
+    appState.autoRotateResumeDueAt = next.autoResumeDueAt;
+    appState.autoRotateSoftResumeStartedAt = next.softResumeStartedAt;
+  });
+}
 
 /** CameraStore type: Readable + property accessors + Writable-ish. */
 export type CameraStoreApi = Readable<CameraStoreState> & {
@@ -185,6 +201,8 @@ export const cameraState = cameraStore;
 
 export function cameraPosition(): [number, number, number] { return get(_cameraWritable).position; }
 export function cameraTarget(): [number, number, number] { return get(_cameraWritable).target; }
+export function autoRotate(): boolean { return get(_cameraWritable).autoRotate; }
+export function autoRotateSuspended(): boolean { return get(_cameraWritable).autoRotateSuspended; }
 export function cameraTransitionPhase(): string { return get(_cameraWritable).transition.phase; }
 export function isAutoRotating(): boolean { const s = get(_cameraWritable); return s.autoRotate && !s.autoRotateSuspended; }
 export function isTransitioning(): boolean { return get(_cameraWritable).transition.phase === 'transitioning'; }
@@ -202,19 +220,19 @@ export function setCameraTarget(target: [number, number, number]): void {
 }
 
 export function setAutoRotate(enabled: boolean): void {
-  _cameraWritable.update(s => ({ ...s, autoRotate: enabled }));
+  withCameraNotify(s => ({ ...s, autoRotate: enabled }));
 }
 
 export function suspendAutoRotate(): void {
-  _cameraWritable.update(s => ({ ...s, autoRotateSuspended: true }));
+  withCameraNotify(s => ({ ...s, autoRotateSuspended: true }));
 }
 
 export function resumeAutoRotate(): void {
-  _cameraWritable.update(s => ({ ...s, autoRotateSuspended: false }));
+  withCameraNotify(s => ({ ...s, autoRotateSuspended: false }));
 }
 
 export function toggleAutoRotate(): void {
-  _cameraWritable.update(s => ({ ...s, autoRotate: !s.autoRotate, autoRotateSuspended: false }));
+  withCameraNotify(s => ({ ...s, autoRotate: !s.autoRotate, autoRotateSuspended: false }));
 }
 
 /**
@@ -261,6 +279,13 @@ export function completeCameraTransition(): void {
 /** Reset camera to initial state. */
 export function resetCamera(): void {
   _cameraWritable.set({ ...INITIAL_STORE });
+  // Sync autoRotate properties back to appState
+  appState.withMutation(() => {
+    appState.autoRotate = INITIAL_STORE.autoRotate;
+    appState.autoRotateSuspended = INITIAL_STORE.autoRotateSuspended;
+    appState.autoRotateResumeDueAt = INITIAL_STORE.autoResumeDueAt;
+    appState.autoRotateSoftResumeStartedAt = INITIAL_STORE.softResumeStartedAt;
+  });
   if (typeof document !== 'undefined' && document.body) {
     document.body.dataset.cameraTransition = 'idle';
     document.body.dataset.cameraSlack = 'idle';
@@ -271,17 +296,17 @@ export function resetCamera(): void {
 
 /** Schedule auto-rotate resume after a delay (ms). */
 export function scheduleAutoRotateResume(delayMs: number): void {
-  _cameraWritable.update(s => ({ ...s, autoResumeDueAt: performance.now() + delayMs }));
+  withCameraNotify(s => ({ ...s, autoResumeDueAt: performance.now() + delayMs }));
 }
 
 /** Clear any pending auto-rotate resume. */
 export function clearAutoRotateResumeTimer(): void {
-  _cameraWritable.update(s => ({ ...s, autoResumeDueAt: 0 }));
+  withCameraNotify(s => ({ ...s, autoResumeDueAt: 0 }));
 }
 
 /** Start the soft resume of auto-rotate (gradual speed-up). */
 export function startAutoRotateSoftResume(): void {
-  _cameraWritable.update(s => ({ ...s, softResumeStartedAt: performance.now() }));
+  withCameraNotify(s => ({ ...s, softResumeStartedAt: performance.now() }));
 }
 
 /** Note a scene interaction — suspends auto-rotate and schedules resume. */
@@ -360,7 +385,7 @@ export function markRouteExploration(reason: string = 'user-control'): void {
 }
 
 /** Check if route exploration should be marked (not already active). */
-export function shouldMarkRouteExploration(reason: string = ''): boolean {
+export function shouldMarkRouteExploration(_reason: string = ''): boolean {
   return get(_cameraWritable).routeExplorationPhase !== 'user-control';
 }
 
