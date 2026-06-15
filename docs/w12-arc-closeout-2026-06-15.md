@@ -57,11 +57,18 @@ The parallel session started W13-T1 (timer retirement, zero-risk per the W13 cha
 
 4 `fix/*` branches all confirmed FULLY SUBSUMED by master:
 - `fix/canvas-tdz-nemotron` (tip in master, 0 ahead)
-- `fix/tests-seamfix-deepseek` (tip in master, 0 ahead)
+- `fix/tests-seamfix-deepseek` (tip in master, 0 ahead) — ✅ REMOVED in 145b10f
 - `fix/tests-seamfix-gpt` (tip in master, 0 ahead)
-- `fix/tests-seamfix-mistral` (1 commit ahead; 2-line fix subsumed by `src/lib/journey/thread-settler.ts:155`)
+- `fix/tests-seamfix-mistral` (1 commit ahead; 2-line fix subsumed by `src/lib/journey/thread-settler.ts:155`) — ✅ REMOVED in 145b10f
 
-**Coordination required:** 4 worktrees are still active (`seamfix-deepseek`, `seamfix-gpt`, `seamfix-mistral`, `semantic-explorer-canvastdz`). Need to coordinate with the 4 parallel sessions before `git worktree remove --force` + `git branch -D`.
+**T9 partial progress (commit 145b10f):**
+- ✅ Removed 2 worktrees + 2 branches: `seamfix-deepseek` and `seamfix-mistral` (both clean)
+- ⏸️ Remaining 2 worktrees have uncommitted work from parallel session's W11-T7 follow-on:
+  - `seamfix-gpt`: 11 uncommitted changes
+  - `semantic-explorer-canvastdz`: 1 untracked file (vitest.legacy.config.js)
+- ⏸️ Remaining 2 branches (`fix/tests-seamfix-gpt`, `fix/canvas-tdz-nemotron`) await worktree cleanup
+
+**Defer T9 full cleanup to next session** when the parallel sessions land their W11-T7 + W13-T1 batch.
 
 ## 4. Real Type Lie Surfaced (Follow-up for W13)
 
