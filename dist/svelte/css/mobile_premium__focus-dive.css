@@ -34,6 +34,17 @@
     }
 
     /* ----------------------------------------------------------------
+       1a. UI-2: Hide legend panel in focus mode on mobile
+            to prevent bottom-left collision with focus-stage-card.
+       ---------------------------------------------------------------- */
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+        #legend-panel {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    /* ----------------------------------------------------------------
        2. Journey compass — core layout
           Shared across focus-search and dive states.
        ---------------------------------------------------------------- */
