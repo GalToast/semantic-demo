@@ -9,7 +9,6 @@
  * related tracked sub-objects are wrapped in appState.withMutation().
  */
 import * as THREE from 'three';
-import type { Vector3 } from 'three';
 import { appState } from '@lib/state/app.svelte';
 import { prefersReducedMotion } from '@lib/utils/environment';
 import { normalizeCityForFilter } from '@lib/utils/geo-data';
@@ -133,7 +132,7 @@ export function getFocusPocketMeta(): Record<string, unknown> | null {
 
 export function setFocusPocketMeta(meta: Record<string, unknown> | null): void {
   appState.withMutation(() => {
-    appState.navState.focusPocketMeta = meta;
+    appState.navState.focusPocketMeta = meta as unknown as any;
   });
 }
 
@@ -472,7 +471,7 @@ export function applyFocusPocketBreathing(
   if (!focusPocketMeta?.active || !pocketMotionByIndex?.size || !positions) return false;
   if (prefersReducedMotion()) return false;
 
-  const age = now - ((lState as unknown as Record<string, unknown>).focusPocketTransitionStartedAt as number);
+  const age = now - (appState.pocketTransitionStartedAt as number);
   const anchorIndex = Number.isFinite(navState.focusedIndex as number) ? (navState.focusedIndex as number) : null;
   const anchor = (anchorIndex != null)
     ? (targetPositions?.[anchorIndex] || nodePositions?.[anchorIndex] || originalPositions?.[anchorIndex])
@@ -480,7 +479,7 @@ export function applyFocusPocketBreathing(
   if (anchor && !(Number.isFinite(anchor.x) && Number.isFinite(anchor.y) && Number.isFinite(anchor.z))) return false;
 
   // Prepare camera view vector for rotation
-  const camera = (lState as { camera?: THREE.PerspectiveCamera }).camera;
+  const camera = (appState.camera as unknown as THREE.PerspectiveCamera | undefined);
   const viewVec = new THREE.Vector3(0, 0, 1);
   if (camera && anchor) {
     viewVec.subVectors(camera.position, new THREE.Vector3(anchor.x, anchor.y, anchor.z)).normalize();
@@ -542,7 +541,7 @@ export function syncRuntimeState(snapshot: Record<string, unknown> = {}): void {
   appState.withMutation(() => {
     const s = appState;
     Object.entries(snapshot).forEach(([key, value]) => {
-      s[key] = value;
+      (s as unknown as Record<string, unknown>)[key] = value;
     });
   });
 }
@@ -553,7 +552,7 @@ export function getRuntimeStateSnapshot(): Record<string, unknown> {
     navState: lState.navState,
     targetPositions: lState.targetPositions,
     pocketMotionByIndex: lState.pocketMotionByIndex,
-    focusPocketTransitionStartedAt: lState.focusPocketTransitionStartedAt,
+    pocketTransitionStartedAt: lState.pocketTransitionStartedAt,
     nodesAreSettling: lState.nodesAreSettling,
     autoRotate: lState.autoRotate,
   };

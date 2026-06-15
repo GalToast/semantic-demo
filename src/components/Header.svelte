@@ -21,7 +21,7 @@
   import { viewport, isCompact } from '@lib/stores/viewport';
   import { legendOpen, toggleLegend } from '@lib/stores/legend.svelte';
   import { updateUrlState } from '@lib/orchestration/url-state';
-  import { initKeyboardShortcutsHint, showKeyboardShortcutsHint } from '@lib/engine/keyboard-help-bridge';
+  import { initKeyboardShortcutsHint, showKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
 
   interface Props {
     /** Whether the header is visible */
