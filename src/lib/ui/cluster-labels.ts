@@ -16,7 +16,7 @@ import {
     getClusterNames,
     getCamera,
 } from '../../../js/state/selectors/index';
-import { subscribe, EVENTS } from '../../../js/modules/event-bus';
+import { subscribe, EVENTS } from '@lib/engine/event-bus-bridge';
 import { getViewportSize, isMobileViewport } from '@lib/utils/environment';
 
 interface ClusterStats {

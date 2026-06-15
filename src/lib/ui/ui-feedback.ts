@@ -16,7 +16,7 @@ import {
 } from '../../../js/state/selectors/index';
 import { isCompactMapViewport, isCompactSearchViewport } from '@lib/utils/ui-presentation';
 import { formatBusinessName } from '@lib/utils/dom-formatters';
-import { setActiveSearchResultRow, updateSearchTrailCue } from '../../../js/modules/ui-renderers';
+import { setActiveSearchResultRow, updateSearchTrailCue } from '@lib/engine/ui-renderers-bridge';
 
 export function showExperienceToast(title: string, copy: string): void {
     const toast = document.getElementById('experience-reset-toast');
