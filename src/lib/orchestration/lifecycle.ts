@@ -15,7 +15,7 @@
 import { get } from "svelte/store";
 import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS, setAutoRotate, suspendAutoRotate, resumeAutoRotate } from "@lib/stores/navigation";
 import { searchStore } from "@lib/stores/search.svelte";
-import { focusStore, setSemanticDiveMode as setFocusDiveMode, setSelectedBusiness } from "@lib/stores/focus";
+import { focusStore, setSemanticDiveMode as setFocusDiveMode, setSelectedBusiness } from "@lib/stores/focus.svelte.ts";
 import { publish, EVENTS } from "@lib/orchestration/event-bus";
 import { getFocusedJourneyPoint, getJourneyCompassState, JOURNEY_ACTIONS } from "@lib/orchestration/compass-state";
 import {

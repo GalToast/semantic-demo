@@ -18,7 +18,7 @@
   import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation';
   import { journeyStore, journeyPhase } from '@lib/stores/journey';
   import { buildCompassStatus } from '@lib/stores/compass.svelte.ts';
-  import { threadInspector, threadInspectorActive, pinThread, updateThreadInspector } from '@lib/stores/focus';
+  import { threadInspector, threadInspectorActive, pinThread, updateThreadInspector } from '@lib/stores/focus.svelte.ts';
   import { getBusinessRecords, selectedPointStore } from '@lib/stores';
   import { viewport, isCompact, isMobile, isCompactLandscape, isUltraCompactPortrait } from '@lib/stores/viewport';
   import { searchSummary, isSearching } from '@lib/stores/search.svelte';

@@ -34,7 +34,7 @@ import {
 
 import { navStore, resetNavState } from '@lib/stores/navigation';
 import { journeyStore, resetJourney } from '@lib/stores/journey';
-import { focusStore, resetFocus } from '@lib/stores/focus';
+import { focusStore, resetFocus } from '@lib/stores/focus.svelte.ts';
 import { searchStore } from '@lib/stores/search.svelte';
 import { filterState, resetFilters } from '@lib/stores/filter.svelte';
 import { viewport } from '@lib/stores/viewport';

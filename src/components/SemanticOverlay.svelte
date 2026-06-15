@@ -11,7 +11,7 @@
 -->
 <script lang="ts">
   import { hasFocus, focusedIndex, currentSurface } from '@lib/stores/navigation';
-  import { threadInspectorActive } from '@lib/stores/focus';
+  import { threadInspectorActive } from '@lib/stores/focus.svelte.ts';
   import { viewport, isCompact } from '@lib/stores/viewport';
 
   interface Props {

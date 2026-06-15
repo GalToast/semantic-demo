@@ -18,7 +18,7 @@ import {
 import {
   focusStore,
   setSemanticDiveMode
-} from '@lib/stores/focus';
+} from '@lib/stores/focus.svelte.ts';
 import {
   isMapSummarySurface,
   isSemanticDiveSurface

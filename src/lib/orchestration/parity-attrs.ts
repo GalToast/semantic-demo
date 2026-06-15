@@ -37,7 +37,7 @@ import { get } from 'svelte/store';
 import { navStore } from '@lib/stores/navigation';
 import type { NavState } from '@lib/types/state';
 import { journeyStore } from '@lib/stores/journey';
-import { focusStore } from '@lib/stores/focus';
+import { focusStore } from '@lib/stores/focus.svelte.ts';
 import { searchStore } from '@lib/stores/search.svelte';
 import { filterState } from '@lib/stores/filter.svelte';
 import { viewport } from '@lib/stores/viewport';

@@ -37,7 +37,7 @@
   import { onMount } from 'svelte';
   import { navStore } from '@lib/stores/navigation';
   import { journeyStore, JOURNEY_COMPASS_PHASE_ORDER } from '@lib/stores/journey';
-  import { focusStore } from '@lib/stores/focus';
+  import { focusStore } from '@lib/stores/focus.svelte.ts';
   import { viewport, isCompact } from '@lib/stores/viewport';
   import {
     getJourneyCompassState,

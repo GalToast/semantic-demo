@@ -5,10 +5,7 @@ import {
   getSemanticNeighborMap,
 } from '@lib/data-store';
 import { getSemanticThreadCandidates } from '@lib/journey/thread-model';
-import { FOCUS_CONSTELLATION_MOTIFS } from '@lib/stores/focus';
 import { appState } from '@lib/state/app.svelte';
-
-import type { ConstellationMotif } from '@lib/stores/focus';
 import type { ThreadCandidate } from '@lib/journey/thread-model';
 
 export interface MicroVariation {

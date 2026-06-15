@@ -6,10 +6,10 @@ import { describeCluster } from '@lib/utils/ui-presentation';
 import { normalizeCityForFilter } from '@lib/utils/geo-data';
 import { getSemanticCandidateSlice } from './personality';
 import { getFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode';
-import { FOCUS_CONSTELLATION_MOTIFS } from '@lib/stores/focus';
+import { FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config';
 import { appState } from '@lib/state/app.svelte';
 
-import type { ConstellationMotif } from '@lib/stores/focus';
+import type { ConstellationMotif } from '@lib/engine/config';
 import type { FocusPersonality } from './personality';
 
 export { easeOutQuint, clampNumber } from '@lib/utils/math-easing';
