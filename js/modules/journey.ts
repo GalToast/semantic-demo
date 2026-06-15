@@ -100,6 +100,14 @@ import { setSemanticDiveMode as setSemanticDiveModeImpl } from './lifecycle.ts'
 subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: any) => {
     const index = payload.index
     if (Number.isFinite(index)) {
+        const strandState = state.strandContinuityState as { phase?: string; targetIndex?: number | null } | null
+        if (
+            strandState?.phase === 'exploring' &&
+            Number.isFinite(strandState.targetIndex) &&
+            strandState.targetIndex !== index
+        ) {
+            return
+        }
         setTrailFromSeed(index)
         updateTrailIndices(index)
     }
