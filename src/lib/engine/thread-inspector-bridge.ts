@@ -5,4 +5,12 @@
  * journey layer is still being ported.
  */
 
-export { clearThreadInspection } from '../../../js/modules/thread-inspector';
+export {
+  getThreadInspectionState,
+  renderThreadInspection,
+  inspectThreadNeighbor,
+  pinThreadNeighbor,
+  unpinThreadInspection,
+  scheduleCanvasThreadInspectionClear,
+  clearThreadInspection,
+} from '../../../js/modules/thread-inspector';

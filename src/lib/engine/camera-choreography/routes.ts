@@ -16,8 +16,8 @@ import {
 } from '@lib/utils/math-easing';
 import { isMobile, prefersReducedMotion } from '@lib/utils/environment';
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
-import { noteSceneInteraction } from '@lib/engine/camera-controls-restore-bridge';
-import { setFocusTransitionMode } from '@lib/engine/camera-controls-core-bridge';
+import { noteSceneInteraction } from '@lib/engine/camera-controls-restore';
+import { setFocusTransitionMode } from '@lib/engine/camera-controls-core';
 import * as legacyStateModule from '../../../../js/state';
 import * as selectorsStaticModule from '../../../../js/state/selectors/index';
 

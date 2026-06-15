@@ -20,4 +20,4 @@
  * frame from the scene-reveal path).
  */
 
-export { updateTraversalUi } from '../../../js/modules/journey-focus-ui';
+export { updateTraversalUi } from '@lib/engine/journey-focus-ui-bridge';

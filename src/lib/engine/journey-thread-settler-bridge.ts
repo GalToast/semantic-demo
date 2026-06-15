@@ -7,7 +7,11 @@
  */
 
 export {
+  initJourneyTimerAdapter,
+  getStrandArrivalNote,
+  getInsideRelationshipLabel,
+  summarizeNeighborReason,
+  walkThreadNeighbor,
   traverseNeighbor,
   previewInsideNextThread,
-  walkThreadNeighbor,
 } from '../../../js/modules/journey-thread-settler';

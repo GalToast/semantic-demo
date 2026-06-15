@@ -5,4 +5,12 @@
  * Keeps direct legacy imports behind the engine boundary.
  */
 
-export { setActiveSearchResultRow, updateSearchTrailCue } from '../../../js/modules/ui-renderers';
+export {
+  setActiveSearchResultRow,
+  updateSearchTrailCue,
+  updateSelectedCardHeading,
+  renderSelectedMetaStrip,
+  renderSelectedMatchPanel,
+  renderSelectedActionRow,
+  syncSelectedCardContentVariant,
+} from '../../../js/modules/ui-renderers';

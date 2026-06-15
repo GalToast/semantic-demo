@@ -35,7 +35,7 @@ const BRIDGE_ALLOWLIST = new Set([
 ]);
 
 /** Current anti-pattern import count — workers SHOULD reduce this over time */
-const APPROVED_ANTIPATTERN_COUNT = 46;
+const APPROVED_ANTIPATTERN_COUNT = 13;
 
 interface ImportViolation {
   file: string;

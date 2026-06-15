@@ -5,4 +5,11 @@
  * journey layer is still being ported.
  */
 
-export { updateTraversalUi } from '../../../js/modules/journey-focus-ui';
+export {
+  isCondensedFocusStageViewport,
+  hasColdDegradedSemanticFallback,
+  updateFocusNeighborRail,
+  updateTraversalUi,
+  initFocusNeighborRailSubscriptions,
+  shouldUseFloatingFocusJourneyOnly,
+} from '../../../js/modules/journey-focus-ui';
