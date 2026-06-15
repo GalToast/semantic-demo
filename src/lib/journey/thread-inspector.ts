@@ -21,4 +21,4 @@
  * from ThreadInspector.svelte + 13 other sites).
  */
 
-export { clearThreadInspection } from '../../../js/modules/thread-inspector';
+export { clearThreadInspection } from '@lib/engine/thread-inspector-bridge';

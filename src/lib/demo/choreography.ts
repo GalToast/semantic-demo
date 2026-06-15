@@ -22,7 +22,7 @@ import {
 } from './guards';
 import { seededUnit } from '@lib/utils/seeded-random';
 import { demoPhase, isDemoActive, startDemo, cancelDemo } from '@lib/stores/demo';
-import { setDemoNodeIndex, runDemo, cancelChoreography as _cancelChoreographyLegacy } from '../../../js/modules/micro-demo-choreography';
+import { setDemoNodeIndex, runDemo, cancelChoreography as _cancelChoreographyLegacy } from '@lib/engine/micro-demo-choreography-bridge';
 import { appState } from '@lib/state/app.svelte';
 
 // ── Legacy Choreography Bridge ──────────────────────────────────────────────
