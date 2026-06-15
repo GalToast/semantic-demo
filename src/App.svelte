@@ -307,7 +307,7 @@
 {/if}
 
 <main id="main-content" class="semantic-main" tabindex="-1" aria-label="Semantic explorer application">
-<h1 class="sr-only">Semantic Explorer</h1>
+<h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
 <div
   id="semantic-explorer"
   class="semantic-explorer"
@@ -479,6 +479,20 @@
     height: 100%;
     overflow: hidden;
     outline: none;
+  }
+
+  /* A2-6: Visible H1 page title — first heading on the page */
+  .app-title {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e0f0f0;
+    padding: 0.5rem 1rem;
+    margin: 0;
+    background: rgba(7, 16, 24, 0.85);
+    border-bottom: 1px solid rgba(78, 205, 196, 0.12);
+    position: relative;
+    z-index: var(--z-legend, 50);
   }
 
   .semantic-explorer.reduced-motion {
