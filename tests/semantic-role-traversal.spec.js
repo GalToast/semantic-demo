@@ -140,8 +140,8 @@ async function findAndEnterVisibleRolePath(page, relationshipRole) {
 
   await page.waitForFunction(({ seedIndex, targetIndex, role }) => {
     const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-    const pillVisible = [...document.querySelectorAll(`.focus-stage-neighbor-pill[data-index="${targetIndex}"][data-relationship-role="${role}"]`)]
-      .some((pill) => !!(pill.offsetWidth || pill.offsetHeight || pill.getClientRects().length));
+    const pill = document.querySelector(`.focus-stage-neighbor-pill[data-index="${targetIndex}"][data-relationship-role="${role}"]`);
+    const pillVisible = !!pill && !!(pill.offsetWidth || pill.offsetHeight || pill.getClientRects().length);
     return state.navState?.focusedIndex === seedIndex &&
       state.navState?.threadSource === 'semantic' &&
       pillVisible;
