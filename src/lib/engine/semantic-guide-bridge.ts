@@ -1,11 +1,15 @@
 /**
- * @lib/engine/semantic-guide-bridge.ts — Thin bridge for semantic guide legacy imports.
+ * @lib/engine/semantic-guide-bridge.ts — Thin bridge for semantic guide Svelte 5 logic.
  *
- * Re-exports engine-kernel symbols consumed by src/lib/journey/semantic-guide.ts
- * so that journey-layer code does not import directly from js/.
+ * Re-exports native Svelte 5 symbols so that legacy engine code or Svelte
+ * orchestration can call them.
  */
 
-export { buildSemanticGuideRequestPayload } from '../../../js/modules/semantic-guide-payload';
-export { updateLegendGuideState } from '../../../js/modules/legend-ui';
-export { showSemanticThreadsDetail } from '../../../js/modules/connection-analysis';
-export { semanticGuideStateStore } from '../../../js/modules/stores';
+export {
+  semanticGuideIcon,
+  setSemanticGuideButtonState,
+  getSemanticGuideTitle,
+  showSummaryCard,
+  hideSummaryCard,
+  requestSemanticGuide,
+} from '@lib/journey/semantic-guide';

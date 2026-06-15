@@ -31,4 +31,4 @@ export { setupMobileSearchSheetToggle } from '../../../js/modules/search-panel-a
 // initSemanticDiveUiSubscriptions already lives in src/lib/; re-exported
 // here for a unified import target from the orchestration layer.
 
-export { initSemanticDiveUiSubscriptions } from '../journey/semantic-dive';
+export { initSemanticDiveUiSubscriptions } from './semantic-dive-bridge';

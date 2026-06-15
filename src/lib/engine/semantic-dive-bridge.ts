@@ -1,9 +1,11 @@
 /**
- * @lib/engine/semantic-dive-bridge.ts — Thin bridge for semantic dive legacy imports.
+ * @lib/engine/semantic-dive-bridge.ts — Thin bridge for semantic dive Svelte 5 logic.
  *
- * Re-exports engine-kernel symbols consumed by src/lib/journey/semantic-dive.ts
- * so that journey-layer code does not import directly from js/.
+ * Re-exports native Svelte 5 symbols so that legacy engine code or Svelte
+ * orchestration can call them.
  */
 
-export { getNextWalkCandidateForIndex } from '../../../js/modules/journey-lifecycle-adapter';
-export { ensureFocusStageAuxiliaryDom, ensureDiveButton } from '../../../js/modules/focus-stage-dom';
+export {
+  initSemanticDiveUiSubscriptions,
+  syncSemanticDiveUi,
+} from '@lib/journey/semantic-dive';

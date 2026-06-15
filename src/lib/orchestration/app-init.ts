@@ -46,7 +46,7 @@ import {
   clearThreadInspection,
 } from '@lib/engine/thread-inspector-bridge';
 import { requestSemanticGuide } from '@lib/journey/semantic-guide';
-import { showSemanticThreadsDetail } from '@lib/engine/semantic-guide-bridge';
+import { showSemanticThreadsDetail } from '@lib/engine/lifecycle-bridge';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
