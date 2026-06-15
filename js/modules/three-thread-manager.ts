@@ -72,7 +72,7 @@ function createLineSegments(positions: any, colors: any, opacity: any, linewidth
         const size = new THREE.Vector2();
         renderer.getSize(size);
         const dpr = renderer.getPixelRatio();
-        material.resolution.set(size.x * dpr, size.y * dpr);
+        (material as any).resolution.set(size.x * dpr, size.y * dpr);
     }
 
     material.uniforms.uTime = { value: performance.now() / 1000 };
@@ -113,8 +113,8 @@ function createLineSegments(positions: any, colors: any, opacity: any, linewidth
         material.userData.shader = shader;
     };
 
-    const lineSegments = new LineSegments2(geometry, material);
-    return lineSegments;
+    const lineSegments = new LineSegments2(geometry as any, material as any);
+    return lineSegments as any;
 }
 
 export function getThreadPulseOpacity(baseOpacity: any, pulse: any, requestedAmplitude: any, revealProgress = 1) {
@@ -251,9 +251,9 @@ export function createMycelium() {
 
     webglContext.myceliumGroup = new THREE.Group();
     const profile = getMyceliumPresentationProfile();
-    webglContext.myceliumCoreLines = createLineSegments(coreConnections, coreColors, profile.core);
-    webglContext.myceliumWispyLines = createLineSegments(wispyConnections, wispyColors, profile.wispy);
-    webglContext.myceliumBridgeLines = createLineSegments(bridgeConnections, bridgeColors, profile.bridge);
+    webglContext.myceliumCoreLines = createLineSegments(coreConnections, coreColors, profile.core, 1.35);
+    webglContext.myceliumWispyLines = createLineSegments(wispyConnections, wispyColors, profile.wispy, 0.8);
+    webglContext.myceliumBridgeLines = createLineSegments(bridgeConnections, bridgeColors, profile.bridge, 1.15);
 
     if (webglContext.myceliumCoreLines) webglContext.myceliumGroup.add(webglContext.myceliumCoreLines);
     if (webglContext.myceliumWispyLines) webglContext.myceliumGroup.add(webglContext.myceliumWispyLines);
