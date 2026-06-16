@@ -71,7 +71,7 @@ import {
     renderSelectedMatchPanel,
     renderSelectedActionRow,
     syncSelectedCardContentVariant
-} from './ui-renderers.ts'
+} from './focus-stage-renderer.ts'
 import {
     isCondensedFocusStageViewport,
     hasColdDegradedSemanticFallback,
@@ -184,9 +184,10 @@ export function setTrailDepth(depth: number, options: any = {}): void {
 
 function restoreFocusTrailState(priorFocused: number | null = appState.focusedNode): void {
     if (!Number.isFinite(priorFocused) || priorFocused! < 0 || priorFocused! >= appState.points.length) return
-    setTrailFromSeed(priorFocused!)
+    const idx = priorFocused as number
+    setTrailFromSeed(idx)
 
-    publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused, point: appState.points[priorFocused!] })
+    publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: idx, point: appState.points[idx] })
 
     withStateMutation(() => {
         state.navState.lastTraversalReason = appState.navState?.lastTraversalReason || null

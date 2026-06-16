@@ -47,7 +47,7 @@ import {
     triggerSelectedCardFade,
     updateSelectedCardHeading,
     syncSelectedCardContentVariant,
-} from './ui-renderers.ts';
+} from './focus-stage-renderer.ts';
 import { applyClusterUiAccent } from './cluster-ui-accent.ts';
 import { isMapSummarySurface } from './environment.ts';
 import { selectedPointStore } from './stores.ts';

@@ -36,12 +36,13 @@ import {
     setupMobileSearchSheetToggle
 } from './search-panel-adapter.ts';
 
-import * as tokenizerModule from './search-tokenizer.ts';
-import * as mapperModule from './search-mapper.ts';
-import type { ServiceResultRow } from './search-mapper.ts';
-import * as resultsUiModule from './search-results-ui.ts';
-import * as filterCoreModule from './search-filter-core.ts';
-import * as renderersModule from './ui-renderers.ts';
+import * as tokenizerModule from '@lib/search/tokenizer';
+import * as mapperModule from '@lib/search/mapper';
+import type { ServiceResultRow } from '@lib/search/mapper';
+import * as resultsUiModule from '@lib/search/results-ui';
+import * as filterCoreModule from '@lib/orchestration/search-filter-core';
+import { refreshSearchResultHierarchy as refreshSearchResultHierarchyImpl, setActiveSearchResultRow as setActiveSearchResultRowImpl, getSearchResultStrength as getSearchResultStrengthImpl, getSearchResultStrengthLabel as getSearchResultStrengthLabelImpl } from '../../src/lib/search/result-renderer.ts';
+import { updateSearchTrailCue as updateSearchTrailCueImpl } from './search-trail-cue-renderer.ts';
 import { appState } from '@lib/state/app.svelte';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -149,11 +150,11 @@ export function applyFilters(options: Record<string, unknown> = {}): void {
 export function getFilteredIndices(...args: unknown[]): number[] { return filterCoreModule.getFilteredIndices(); }
 export function pointMatchesActiveFilters(point: Point | null | undefined): boolean { return filterCoreModule.pointMatchesActiveFilters(point); }
 
-export function refreshSearchResultHierarchy(resultsEl: HTMLElement): void { renderersModule.refreshSearchResultHierarchy(resultsEl); }
-export function setActiveSearchResultRow(resultsEl: HTMLElement, activeIndex: number | null, options?: { reveal?: boolean }): void { renderersModule.setActiveSearchResultRow(resultsEl, activeIndex, options); }
-export function updateSearchTrailCue(params: Record<string, unknown>): void { renderersModule.updateSearchTrailCue(params); }
-export function getSearchResultStrength(result: unknown, topScore: number): number { return renderersModule.getSearchResultStrength(result, topScore) as number; }
-export function getSearchResultStrengthLabel(order: number, strength: number): string { return renderersModule.getSearchResultStrengthLabel(order, strength) as string; }
+export function refreshSearchResultHierarchy(resultsEl: HTMLElement): void { refreshSearchResultHierarchyImpl(resultsEl); }
+export function setActiveSearchResultRow(resultsEl: HTMLElement, activeIndex: number | null, options?: { reveal?: boolean }): void { setActiveSearchResultRowImpl(resultsEl, activeIndex); }
+export function updateSearchTrailCue(params: Record<string, unknown>): void { updateSearchTrailCueImpl(params as any); }
+export function getSearchResultStrength(result: unknown, topScore: number): number { return getSearchResultStrengthImpl(result as any, topScore); }
+export function getSearchResultStrengthLabel(order: number, strength: number): string { return getSearchResultStrengthLabelImpl(order, strength); }
 
 /**
  * Satisfies search-state-ui-adapter-contract.mjs
