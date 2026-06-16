@@ -39,26 +39,47 @@ W13 is the state-selectors porting arc — retire the legacy `js/state/selectors
 
 The T5 work is bigger than the charter indicated. A mimo-v2.5 read-only audit found:
 
-- **211 total selectors** (not 183 as charter estimated) — +28 surplus from fields classified as 'timer' but aren't
-- **3 files still import from legacy `state` singleton** (not appState): `data.js` (18), `diagnostics.js` (7), `url-state.js` (8) = 33 selectors
-- **`config.js` is NOT a state pass-through** — it reads from `@lib/engine/config` + `@lib/stores/lifecycle`. T5 cannot "delete config.js" the same way.
-- **9 data-loading fields missing from AppState** — must be ported before `data.js` can be safely deleted: `semanticThreadBundle`, `semanticThreadArtifactName`, `semanticSpaceLayoutManifest`, `semanticSpaceLayoutStatus`, `semanticSpaceLayoutError`, `semanticThreadsLoadPromise`, `semanticThreadsStatus`, `semanticThreadsRetryAttempt`, `dataLoadAttempt`
-- **AppState is a structural superset of SemanticState** (289 vs ~230 fields) but does NOT formally `implements SemanticState`
-- **32 consumer files** reference selectors (1 bridge + 1 cursor.ts + 24 js/modules/ + 7 src/ via bridge)
-- **Bridge is trivial** (single `export *`, 19 LOC) — can be deleted after consumers repointed
-- **Net LOC reduction: -331 to -391** after T5 (451 deleted, ~100 modified across 32 files)
+-   **211 total selectors** (not 183 as charter estimated) — +28 surplus from fields classified as 'timer' but aren't
+-   **3 files still import from legacy `state` singleton** (not appState): `data.js` (18), `diagnostics.js` (7), `url-state.js` (8) = 33 selectors
+-   **`config.js` is NOT a state pass-through** — it reads from `@lib/engine/config` + `@lib/stores/lifecycle`. T5 cannot "delete config.js" the same way.
+-   **9 data-loading fields missing from AppState** — must be ported before `data.js` can be safely deleted: `semanticThreadBundle`, `semanticThreadArtifactName`, `semanticSpaceLayoutManifest`, `semanticSpaceLayoutStatus`, `semanticSpaceLayoutError`, `semanticThreadsLoadPromise`, `semanticThreadsStatus`, `semanticThreadsRetryAttempt`, `dataLoadAttempt`
+-   **AppState is a structural superset of SemanticState** (289 vs ~230 fields) but does NOT formally `implements SemanticState`
+-   **32 consumer files** reference selectors (1 bridge + 1 cursor.ts + 24 js/modules/ + 7 src/ via bridge)
+-   **Bridge is trivial** (single `export *`, 19 LOC) — can be deleted after consumers repointed
+-   **Net LOC reduction: -331 to -391** after T5 (451 deleted, ~100 modified across 32 files)
 
 **HIGH risks for T5:**
+
 1. Deleting `data.js` without porting the 9 missing fields to AppState will break consumers at runtime
 2. `config.js` needs special handling — consumers must be repointed to `@lib/engine/config` directly
 
 **Recommended T5 ticket split** (4 sub-tickets):
-- **T5a:** Port data.js to appState (15 LOC, low risk) — prerequisite
-- **T5b:** Repoint config.js consumers to CONFIG directly (20 LOC, medium risk)
-- **T5c:** Delete legacy + bridge, repoint 32 consumers (-451 + ~100, HIGH risk)
-- **T5d:** Type unification — AppState implements SemanticState (5-10 LOC, medium risk)
+
+-   **T5a:** Port data.js to appState (15 LOC, low risk) — prerequisite
+-   **T5b:** Repoint config.js consumers to CONFIG directly (20 LOC, medium risk)
+-   **T5c:** Delete legacy + bridge, repoint 32 consumers (-451 + ~100, HIGH risk)
+-   **T5d:** Type unification — AppState implements SemanticState (5-10 LOC, medium risk)
 
 **Recommended order:** T5a → T5b → T5c → T5d
+
+### Main Lane Audit Correction (2026-06-15 22:00, after audit)
+
+A deeper audit of the 33 'still on legacy state' fields revealed most are already migrated to Svelte 5 stores. The audit was correct in flagging the gap, but overstated the work:
+
+| Legacy file | Fields | Already on Svelte 5 | Truly missing |
+| --- | --- | --- | --- |
+| `diagnostics.js` (7 fields) | 7 | **7** (all on AppState) | **0** ✅ |
+| `url-state.js` (8 fields) | 8 | **8** (5 on AppState + 3 in `navigation.svelte.ts`) | **0** ✅ |
+| `data.js` (18 fields) | 18 | **17** (5 in data-store.svelte.ts + 4 in semantic-threads.ts + 4 in engine/map-state.ts + 4 elsewhere) | **1** (`dataLoadAttempt` only) |
+
+**The T5a "port 9 fields to AppState" recommendation was wrong.** Most fields already exist in Svelte 5 stores. The actual T5a is:
+
+-   **T5a (revised):** Add `dataLoadAttempt = $state<number>(0)` to AppState (1 line, trivial)
+-   **T5b:** Repoint config.js consumers to CONFIG directly (unchanged)
+-   **T5c:** Delete legacy + bridge, repoint 32 consumers (unchanged, but lower risk)
+-   **T5d:** Type unification (unchanged)
+
+**Net T5 LOC reduction is still -331 to -391**, but T5a is essentially zero risk now.
 
 ## 3. What Changed in W13
 
