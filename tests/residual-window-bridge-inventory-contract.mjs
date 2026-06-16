@@ -47,7 +47,7 @@ const MODULES = {
     journeyCompassState: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-state.ts'),
     focusPocket: path.join(SEMDEMO_ROOT, 'src/lib/journey/focus-pocket.ts'),
     threadInspector: path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.ts'),
-    strandContinuity: path.join(SEMDEMO_ROOT, 'js/modules/strand-continuity.ts'),
+    strandContinuity: path.join(SEMDEMO_ROOT, 'src/lib/utils/strand-continuity.ts'),
     journeyThreadSettler: path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-settler.ts'),
     journeyCanvasInteraction: path.join(SEMDEMO_ROOT, 'src/lib/journey/canvas-interaction.ts'),
     clusterLabels: path.join(SEMDEMO_ROOT, 'src/lib/ui/cluster-labels.ts'),
@@ -55,7 +55,7 @@ const MODULES = {
     viewController: path.join(SEMDEMO_ROOT, 'js/modules/view-controller.ts'),
     navigationState: path.join(SEMDEMO_ROOT, 'js/modules/navigation-state.ts'),
     journeyWebgl: path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.ts'),
-    legendUi: path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.ts'),
+    legendUi: path.join(SEMDEMO_ROOT, 'src/lib/journey/legend-ui.ts'),
     keyboardHelp: path.join(SEMDEMO_ROOT, 'src/lib/keyboard/keyboard-help.ts'),
     uiRenderers: path.join(SEMDEMO_ROOT, 'src/lib/ui-renderers.ts'),
     mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'js/modules/map-flattening-layout.ts'),
@@ -76,217 +76,6 @@ function read(mod) {
     return fs.readFileSync(MODULES[mod], 'utf-8')
 }
 
-/**
- * Scan source for all window.fn references.
- * Returns array of { name, line (0-indexed), isCall, isAssignment, isGuarded }
- * isGuarded = preceded by typeof or followed by ?. within same logical expression
- */
-function scanWindowRefs(src, filename) {
-    const lines = src.split('\n')
-    const refs = []
-
-    for (let i = 0; i < lines.length; i++) {
-        const raw = lines[i]
-        const t = raw.trim()
-        if (!t || t.startsWith('//') || t.startsWith('*')) continue
-
-        // Find window.foo patterns
-        const pattern = /window\.([a-zA-Z_$][a-zA-Z0-9_$]*)/g
-        let m
-        while ((m = pattern.exec(t)) !== null) {
-            const name = m[1]
-            const pos = m.index
-            const before = t.substring(0, pos)
-
-            // Assignment: window.fn = ... (but not ===)
-            const isAssign = /window\.\w+\s*=(?!=)/.test(t.slice(pos - 10, pos + 40)) && t.includes('=')
-
-            // Call: window.fn( or window.fn?.(
-            const callMatch = t.slice(pos + name.length).match(/^(\?)?\./)
-            // Already matched by the pattern, check for ( or ?.(
-            const isCall =
-                /\(\s*$/.test(t.slice(pos + name.length + 2)) ||
-                /\?\.\(/.test(t.slice(pos + name.length)) ||
-                /\(\s*[,)]/.test(t.slice(pos + name.length))
-
-            // Guarded: typeof window.fn === 'function' or window.fn?.( or preceding line has typeof
-            let isGuarded = before.includes('typeof') || before.includes('?.')
-            if (!isGuarded) {
-                for (let j = Math.max(0, i - 3); j < i; j++) {
-                    const prev = lines[j].trim()
-                    if (prev.includes('typeof') || prev.includes('?.') || prev.includes('===')) {
-                        isGuarded = true
-                        break
-                    }
-                }
-            }
-
-            refs.push({
-                name,
-                line: i,
-                col: pos,
-                raw: t,
-                isCall,
-                isAssignment: isAssign && !t.includes('==='),
-                isGuarded
-            })
-        }
-    }
-    return refs
-}
-
-// ── KNOWN COMPATIBILITY EXPORTS (app.js bootstrap) ─────────────────────────
-// These are window assignments in app.js that are thin re-exports.
-// They are NOT extraction candidates — they are intentional compatibility bridges.
-
-const KNOWN_APP_BOOTSTRAP_EXPORTS = new Set([
-    'state',
-    '_cc',
-    '_ti',
-    '_ms',
-    '_weather',
-    'initAudio',
-    'applyClusterUiAccent',
-    'getSelectedBusinessRoleLabel',
-    'findClusterByKeyword',
-    // lifecycle re-exports (thin aliases)
-    'setMyceliumMode',
-    'setTrailDepth',
-    'applyStoryPrompt',
-    // camera re-exports
-    'focusOnNode',
-    'animateCameraToNode',
-    'toggleAutoRotate',
-    'setFocusTransitionMode',
-    // map re-exports
-    'initMap',
-    'refreshMapMarkers',
-    'refreshMapRouteEmbodiment',
-    'centerMapOnRouteAnchor',
-    'getRouteEmbodimentIndices',
-    'getRouteAnchorIndex',
-    'getRouteDirectorState',
-    'syncRouteDirectorState',
-    'setTerrainHandoffState',
-    // weather re-exports
-    'initWeather',
-    'fetchWeather',
-    'applyWeatherEffects',
-    'clearWeatherEffects',
-    // search re-exports
-    'search',
-    'applyFilters',
-    'getFilteredIndices',
-    'normalizeCityForFilter',
-    'activateSearchGlow',
-    'clearSearchGlow',
-    'updateSearchStatusMessage',
-    'updateSearchTrailCue',
-    'clearShortSemanticSearchState',
-    'resetSemanticGuideUi',
-    'beginSearchFocusTransition',
-    '__semanticSearchCacheProbe',
-    'clearSearch',
-    'clearSearchPreviewHoverTimer',
-    'isMobileRouteFieldPeekActive',
-    // thread re-exports
-    'loadSemanticThreads',
-    'getFocusThreadCurvePoint',
-    'getProjectedNeighborCandidates',
-    // lifecycle navigation re-exports
-    'switchView',
-    'updateUrlState',
-    'resetExperienceState',
-    'returnToOverview',
-    'resetExplorationFocus',
-    'getSceneRevealProgress',
-    'refreshCompositionState',
-    'clearClusterFilter',
-    'updateHasQuery',
-    // extras
-    'loadData'
-])
-
-// ── KNOWN INTENTIONAL FALLBACKS (typeof-guarded, not extraction candidates) ──
-// These window calls are correctly guarded and represent the standard cross-module
-// bridge pattern. They are NOT residual debt to extract.
-
-const KNOWN_FALLBACKS = new Set([
-    // event-bindings.js guards — intentional cross-module UI bridge pattern
-    'copyCurrentViewLink',
-    'executeJourneyCompassAction',
-    'resetExplorationFocus',
-    'recenterFocusedNode',
-    'setSemanticDiveMode',
-    'exploreInsideToNextStop',
-    'returnToCountyView',
-    'loadSemanticThreads',
-    'probeSemanticLane',
-    'applyStoryPrompt',
-    'updateUrlState',
-    'clearClusterFilter',
-    'showSemanticThreadsDetail',
-    'returnToOverview',
-    'traverseNeighbor',
-    'animateCameraToNode',
-    'zoomMap',
-    'expandNeighborhoodFromCurrentNode',
-    'focusSearchInputForReplacement',
-    'handleSemanticLaneWindowFocus',
-    'applyUrlState',
-    'handleSemanticLaneVisibilityChange',
-    'hideSummaryCard',
-    'closeLegendGuide',
-    'buildLegend',
-    'updateTrailIndices',
-    // lifecycle.js guards
-    'animateCameraToNode',
-    'previewInsideNextThread',
-    'clearThreadInspection',
-    'switchView',
-    'hideTooltip',
-    'clearSearchPreviewOverlay',
-    'resetNodePositions',
-    'getRouteLayerOrigin',
-    'setRouteChoreographyPhase',
-    'clearRouteExploration',
-    'animateCameraToSearchCorridor',
-    'updateLegendGuideState',
-    'updateTraversalUi',
-    // journey.js guards
-    'syncArrivalHandoffOverlay',
-    'disposeArrivalHandoffOverlay',
-    'syncInspectedStrandOverlay',
-    'updateJourneyCompass',
-    'previewInsideNextThread',
-    'applyLocalNeighborhoodFocus',
-    'setSemanticDiveMode',
-    'applyClusterUiAccent',
-    'getInterestingBusinessNote',
-    'buildSelectedMatchNarrative',
-    'hasColdDegradedSemanticFallback',
-    'revealSelectedBusinessCard',
-    'describeThreadLensForPoint',
-    'hydrateLeadContext',
-    'shouldUseFloatingFocusJourneyOnly',
-    'isFieldNodeFocusContext',
-    'getFocusThreadCurvePoint',
-    'syncSearchStatusForFocus',
-    'walkThreadNeighbor',
-    // scene-reveal.js guards
-    'clearAutoRotateResumeTimer',
-    'setAutoRotateSuspended',
-    // journey-compass-controller.js guards
-    'clearMobileRouteFieldPeek',
-    'refreshRouteTraceOverlay',
-    'updateFocusNeighborRail'
-])
-
-// ── DEWINDOWED SEAMS (already extracted, no new bare window calls allowed) ──
-// These seams have been dewindowed. Any NEW unguarded window.fn() call in these
-// modules is a regression.
-
-const DEWINDOWED_SEAMS = ['searchState'] // search-state.js is fully dewindowed
 
 // ── EXTRACTION CANDIDATES (documented residual debt) ────────────────────────
 // These are window calls that COULD be direct module imports instead.
@@ -730,18 +519,20 @@ function testJourneyArrivalHandoffDewindowed() {
         }
     }
     assert(
-        /import\s+\{[^}]*\bsyncArrivalHandoffOverlay\b[^}]*\bdisposeArrivalHandoffOverlay\b[^}]*\}\s+from\s+['"]\.\/journey-webgl\.(?:js|ts)['"]/.test(
+        /import\s+\{[^}]*\bsyncArrivalHandoffOverlay\b[^}]*\bdisposeArrivalHandoffOverlay\b[^}]*\}\s+from\s+['"](?:\.\/journey-webgl\.(?:js|ts)|@lib\/engine\/journey-webgl-bridge)['"]/.test(
             strandContinuitySrc
         ),
-        'strand-continuity.js should import arrival handoff functions directly from journey-webgl.ts'
+        'strand-continuity.ts should import arrival handoff functions directly from journey-webgl (legacy or bridge alias)'
     )
     assert(
-        journeySrc.includes("from './strand-continuity.ts'"),
-        'journey.js should import strand continuity state from the shared owner'
+        journeySrc.includes("from './strand-continuity.ts'") ||
+            journeySrc.includes("from '@lib/engine/strand-continuity-bridge'"),
+        'journey.ts should import strand continuity state from the shared owner (legacy or bridge alias)'
     )
     assert(
-        threadInspectorSrc.includes("from './strand-continuity.ts'"),
-        'thread-inspector.js should import strand continuity state from the shared owner'
+        threadInspectorSrc.includes("from './strand-continuity.ts'") ||
+            threadInspectorSrc.includes("from '@lib/engine/strand-continuity-bridge'"),
+        'thread-inspector.ts should import strand continuity state from the shared owner (legacy or bridge alias)'
     )
     assert(
         /import\s+\{[^}]*\bsyncFocusStage\b[^}]*\}\s+from\s+['"]\.\/lifecycle\.(?:js|ts)['"]/.test(threadInspectorSrc),
@@ -946,18 +737,30 @@ function testRestoreLegendCollapsedPanelBridgeRetired() {
         !legendUiSrc.includes('window.restoreLegendCollapsedPanel'),
         'legend-ui.js must not expose window.restoreLegendCollapsedPanel'
     )
-    assert(
-        /export function restoreLegendCollapsedPanel/.test(legendUiSrc),
-        'legend-ui.js should keep restoreLegendCollapsedPanel as a named export'
+    // The function was relocated to src/lib/stores/legend-panel.svelte.ts during the
+    // W14-T2 closeout (W15 Wave E). The legacy `legend-ui.ts` no longer owns it.
+    const legendPanelSrc = fs.readFileSync(
+        path.join(SEMDEMO_ROOT, 'src/lib/stores/legend-panel.svelte.ts'),
+        'utf-8'
     )
     assert(
-        lifecycleSrc.includes('restoreLegendCollapsedPanel') && lifecycleSrc.includes("from './legend-ui.ts'"),
-        'lifecycle.js should import restoreLegendCollapsedPanel directly from legend-ui.ts'
+        /export function restoreLegendCollapsedPanel/.test(legendPanelSrc),
+        'src/lib/stores/legend-panel.svelte.ts should keep restoreLegendCollapsedPanel as a named export'
+    )
+    assert(
+        lifecycleSrc.includes('restoreLegendCollapsedPanel') &&
+            (lifecycleSrc.includes("from './legend-ui.ts'") ||
+                lifecycleSrc.includes("from '@lib/stores/legend-panel'") ||
+                lifecycleSrc.includes("from '@lib/engine/legend-ui-bridge'")),
+        'lifecycle.js should import restoreLegendCollapsedPanel from the shared owner (legacy or bridge alias)'
     )
     assert(
         eventBindingsSrc.includes('restoreLegendCollapsedPanel') &&
-            (eventBindingsSrc.includes("from './legend-ui.ts'") || eventBindingsSrc.includes("from '../legend-ui.ts'")),
-        'event-bindings.js should import restoreLegendCollapsedPanel directly from legend-ui.ts'
+            (eventBindingsSrc.includes("from './legend-ui.ts'") ||
+                eventBindingsSrc.includes("from '../legend-ui.ts'") ||
+                eventBindingsSrc.includes("from '@lib/stores/legend-panel'") ||
+                eventBindingsSrc.includes("from '@lib/engine/legend-ui-bridge'")),
+        'event-bindings.js should import restoreLegendCollapsedPanel from the shared owner (legacy or bridge alias)'
     )
 
     console.log('  OK — restoreLegendCollapsedPanel bridge retired; direct imports remain')
