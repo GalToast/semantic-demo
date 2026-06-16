@@ -8,7 +8,7 @@ import { state as _state } from '../../state.ts';
 const state = _state as any;
 import { bindClick } from './view-bindings.ts';
 import { focusOnNode } from '../camera-controls.ts';
-import { clearShortSemanticSearchState } from '../search-state.ts';
+import { clearShortSemanticSearchState } from '@lib/engine/search-state-bridge';
 import { showSemanticThreadsDetail } from '../connection-analysis.ts';
 
 interface SuggestionEvent extends MouseEvent {

@@ -198,6 +198,7 @@ describe('Bridge health (W11 retirement progress)', () => {
     'src/lib/engine/micro-demo-choreography-bridge.ts', // W11-T5 Wave 2 — sanctioned passthrough (micro-demo legacy)
     // ── W15-T-SEARCH-STATE (partial port, 2026-06-15) ────────
     'src/lib/engine/search-state-bridge.ts', // W15-T-SEARCH-STATE — bridge created with clearSearch(options) signature fix; consumers in js/modules/* still use the old path; rewiring is a follow-up ticket
+    'src/lib/engine/semantic-search-api-cache-bridge.ts', // W15-T-SEARCH-STATE auxiliary — bridge to semantic-search-api-cache; no consumer yet
   ]);
 
   function listBridgeFiles(): string[] {
