@@ -379,17 +379,17 @@ T1 is the independent first mover. T6 (state.ts) is the capstone that depends on
 
 ### MEDIUM Risk
 
-4. **WebGL/Three.js code:** Runtime-sensitive. Porting `three-engine.ts`, `three-interaction-visuals.ts`, etc. requires visual QA, not just build verification. **Mitigation:** Visual regression testing for each WebGL ticket.
+1. **WebGL/Three.js code:** Runtime-sensitive. Porting `three-engine.ts`, `three-interaction-visuals.ts`, etc. requires visual QA, not just build verification. **Mitigation:** Visual regression testing for each WebGL ticket.
 
-5. **Camera choreography (530+ LOC without src/ counterparts):** `camera-controls-choreography-focus.ts` (311 LOC), `camera-controls-choreography-routes.ts` (335 LOC) have no src/ equivalents. These need genuine porting, not just rewiring. **Mitigation:** src/lib/engine/camera-choreography/ already has cursor.ts, framing-utils.ts, types.ts, routes.ts — check if these cover the choreography files.
+2. **Camera choreography (530+ LOC without src/ counterparts):** `camera-controls-choreography-focus.ts` (311 LOC), `camera-controls-choreography-routes.ts` (335 LOC) have no src/ equivalents. These need genuine porting, not just rewiring. **Mitigation:** src/lib/engine/camera-choreography/ already has cursor.ts, framing-utils.ts, types.ts, routes.ts — check if these cover the choreography files.
 
-6. **Lifecycle hooks:** `lifecycle.ts` (42 src refs) is a hub. Retirement must verify all lifecycle hooks still fire correctly. **Mitigation:** The orchestration/lifecycle.ts (339 LOC) already mirrors this file; verify parity before deleting.
+3. **Lifecycle hooks:** `lifecycle.ts` (42 src refs) is a hub. Retirement must verify all lifecycle hooks still fire correctly. **Mitigation:** The orchestration/lifecycle.ts (339 LOC) already mirrors this file; verify parity before deleting.
 
 ### LOW Risk
 
-7. **Zero dead code:** All 123 files are referenced at least once. No orphaned files to simply delete.
+1. **Zero dead code:** All 123 files are referenced at least once. No orphaned files to simply delete.
 
-8. **Thin files (<60 LOC):** 24 files under 60 LOC. Most are type exports, adapters, or pass-throughs. These are safe to retire once their src/ counterpart is verified as a 1:1 match.
+2. **Thin files (<60 LOC):** 24 files under 60 LOC. Most are type exports, adapters, or pass-throughs. These are safe to retire once their src/ counterpart is verified as a 1:1 match.
 
 ---
 
@@ -486,6 +486,7 @@ Visual QA Round 3 flagged two keyboard regressions. After investigation:
 - **Escape not returning to Overview (new finding):** The `RETURN_OVERVIEW` nav transition updated `mode`/`surface` but left `currentView: 'map'` in the store, so the URL retained `?view=map`. Fixed by adding `currentView: 'galaxy'` to the `RETURN_OVERVIEW` case in `navigation.svelte.ts` and calling `updateUrlState({}, { reason: 'return-overview' })` from `App.svelte`.
 
 **A2-7 Targeted Verification (all green):**
+
 | Test | Result |
 |---|---|
 | '?' key opens keyboard help | ✅ PASS |
@@ -514,3 +515,21 @@ T9 was the final charter ticket. The engine kernel retirement arc for W14 is off
 - Remaining DEATH-BRIDGE cleanup (`js/modules/camera-controls.ts` consumers — 14 files)
 - Contract test hardening for `search-error` and `controls` surfaces
 - W15 Visual QA Round 4 (full sweep now that A2-7 is verified)
+
+---
+
+## W14 Session Closeout — 2026-06-16
+
+**Completed:**
+
+- ✅ T9: `js/modules/three-engine.ts` retired (T9a+T9b in `31a32f6`)
+- ✅ T8: A2-7 keyboard regression fixed (`70477e5`)
+- ✅ T10: controls contract test false failures removed (`c962e92`)
+- ✅ Camera-controls bridge validated: zero `src/` consumers touch old `js/modules/` path
+- ✅ Pushed to `origin/master`
+
+**Remaining:**
+
+- controls surface still has 2 real failures (`#camera-controls` visibility in static test context)
+- search-error surface needs interaction-aware testing (not a static DOM surface)
+- W15: visual QA round 4, continue Tier-3 kernel porting
