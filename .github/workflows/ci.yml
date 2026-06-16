@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master, main]
+  push:
+    branches: [master, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: svelte-check
+        run: npx svelte-check --tsconfig ./tsconfig.json --threshold error
+
+      - name: Vitest
+        run: npm run test:unit -- --run
+
+      - name: Build
+        run: npm run build:svelte
+
+      - name: Bridge references check
+        run: node scripts/check-bridge-references.mjs
+
+      - name: Legacy TS budget check
+        run: node scripts/check-legacy-ts-budget.mjs
