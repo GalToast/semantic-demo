@@ -1,8 +1,8 @@
-import { webglContext, getLiveResourceCounts } from './webgl-context.ts';
+import { webglContext, getLiveResourceCounts } from '@lib/engine/webgl-context';
 import { switchView } from './view-controller.ts';
 import { updateClusterLabels } from './cluster-labels.ts';
 import { applyFocusPocketBreathing } from './focus-pocket.ts';
-import { getSceneRevealProgress, setSceneRevealDataset } from './scene-reveal.ts';
+import { getSceneRevealProgress, setSceneRevealDataset } from '@lib/engine/scene-reveal';
 import * as THREE from 'three';
 if (typeof window !== 'undefined') {
     (window as any).THREE = THREE;
@@ -21,22 +21,22 @@ import {
     updateAutoRotateSoftResume,
     applySemanticCentroidCamera,
     cancelFocusCameraAnimation
-} from './camera-controls.ts';
+} from '@lib/engine/camera-controls';
 import { initMap } from './map-state.ts';
 import { easeInOutCubic, easeOutQuint } from './utils/math-easing.ts';
 import {
     updateMyceliumThreads
 } from './mycelium-engine.ts';
-import { showExperienceToast } from './ui-feedback.ts';
+import { showExperienceToast } from '@lib/ui/ui-feedback';
 import { applyMapFlatteningLayout } from './map-flattening-layout.ts';
-import { restoreWebGLContext } from './webgl-restore-adapter.ts';
-import { disposeObject3D } from './resource-tracker.ts';
+import { restoreWebGLContext } from '@lib/utils/webgl-restore-adapter';
+import { disposeObject3D } from '@lib/engine/resource-tracker';
 import { updateInspectedStrandOverlayFrame } from './inspected-strand-overlay-adapter.ts';
 import { disposeFocusAnchorIndicator } from './focus-anchor-indicator.ts';
 import {
     updateArrivalHandoffOverlayFrame,
     updateRouteTraceOverlayFrame
-} from './route-arrival-overlay-adapter.ts';
+} from '@lib/journey/route-arrival-overlay-adapter';
 
 import {
     createPoints,
@@ -79,7 +79,7 @@ import {
     renderPostProcessing,
     disposePostProcessing,
     resizePostProcessing,
-} from './three-postprocessing.ts';
+} from '@lib/engine/three-postprocessing';
 import { CONFIG } from './config.ts';
 
 export {

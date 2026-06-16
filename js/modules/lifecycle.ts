@@ -17,7 +17,7 @@ import {
     startSceneReveal,
     getSceneRevealProgress,
     onWindowResize
-} from './scene-reveal.ts';
+} from '@lib/engine/scene-reveal';
 import {
     copyCurrentViewLink,
     resetStateBeforeUrlRestore,
@@ -35,7 +35,7 @@ import { getPanelSurfaceDetailFromMobileSheet } from './search-panel-adapter.ts'
 import { applyCompositionState, derivePanelSurface } from './composition-state.ts';
 import {
     focusOnNode
-} from './camera-controls.ts';
+} from '@lib/engine/camera-controls';
 import {
     updateLegendGuideState,
     closeLegendGuide,
@@ -49,7 +49,7 @@ import {
 import {
     showExperienceToast as showExperienceToastImpl,
     syncSearchStatusForFocus as syncSearchStatusForFocusImpl
-} from './ui-feedback.ts';
+} from '@lib/ui/ui-feedback';
 import {
     fetchSemanticLaneHealth,
     applySemanticLaneHealthPayload,
@@ -76,12 +76,8 @@ import {
     getJourneyCompassPresentationState,
     invokeClearMobileRouteFieldPeek
 } from './journey-compass-controller.ts';
-import {
-    getStrandContinuityState,
-    getInspectedThreadIndex,
-    getSemanticDiveMode,
-    getPoints
-} from '../state/selectors/index.ts';
+import { getInspectedThreadIndex } from '../state/selectors/index.ts'
+import { appState } from '@lib/state/app.svelte';
 import {
     clearClusterFilter,
     updateClusterList,
@@ -187,7 +183,7 @@ export function setSemanticDiveMode(enabled: boolean): void {
         if (document.body) document.body.dataset.semanticDive = 'transitioning';
         setTrailDepth(2, { fromUserGesture: true });
         window.setTimeout(() => {
-            if (getSemanticDiveMode() && document.body?.dataset.semanticDive === 'transitioning') {
+            if (appState.semanticDiveMode && document.body?.dataset.semanticDive === 'transitioning') {
                 document.body.dataset.semanticDive = 'active';
             }
         }, 820);
@@ -269,9 +265,9 @@ export function hydrateLeadContext(point: any): void {
 }
 
 export function exploreInsideToNextStop(): void {
-    if (getStrandContinuityState()?.phase === 'exploring') return;
+    if (appState.strandContinuityState?.phase === 'exploring') return;
     if (
-        getSemanticDiveMode()
+        appState.semanticDiveMode
         && Number.isFinite(getInspectedThreadIndex())
         && document.body?.dataset.threadInspectSurface === 'inside-cue'
     ) {
@@ -283,7 +279,7 @@ export function exploreInsideToNextStop(): void {
 
 export function focusOnPoint(point: any, options: any = {}): boolean {
     if (!point) return false;
-    const pointIndex = getPoints().indexOf(point);
+    const pointIndex = appState.points.indexOf(point);
     state.selectedPoint = point;
     if (pointIndex >= 0) return focusOnNode(pointIndex, options);
     updateSelectedBusiness(point, options);
