@@ -136,11 +136,13 @@
           ? `Previewing the semantic connection from ${localizeSource(inspector.source)} to node ${inspectedIndex}.`
           : 'Preview why this nearby stop belongs in the current focus path.'}
       </p>
-      <div id="focus-thread-inspector-meta" class="focus-thread-inspector-meta">
-        <span>{inspector.segmentCount} segments</span>
-        <span>{inspector.braidCount} braids</span>
-        <span>{inspector.endpointCount} endpoints</span>
-      </div>
+      {#if inspector.segmentCount > 0 || inspector.braidCount > 0 || inspector.endpointCount > 0}
+        <div id="focus-thread-inspector-meta" class="focus-thread-inspector-meta">
+          <span>{inspector.segmentCount} segments</span>
+          <span>{inspector.braidCount} braids</span>
+          <span>{inspector.endpointCount} endpoints</span>
+        </div>
+      {/if}
       <div class="focus-thread-inspector-actions" aria-label="Thread actions">
         <button
           id="btn-thread-pin"

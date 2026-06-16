@@ -67,11 +67,12 @@
         class:active={isActive(mode.id)}
         role="radio"
         aria-checked={isActive(mode.id)}
+        aria-label={mode.label}
         title={mode.description}
         onclick={() => selectMode(mode.id)}
       >
         <svg class="chip-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{mode.iconId}"/></svg>
-        <span class="chip-label">{mode.label}</span>
+        <span class="chip-label" aria-hidden="true">{mode.label}</span>
       </button>
       {#if isActive(mode.id) && mode.description}
         <span class="chip-description">{mode.description}</span>
