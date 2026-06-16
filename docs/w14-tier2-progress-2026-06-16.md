@@ -1,19 +1,25 @@
 # W14 Tier-2 Progress — 2026-06-16
 
-> **Status:** 🚧 IN PROGRESS. W14 Tier-1 (js/modules/three-engine.ts retirement, 49 files, 917+/1594-) landed in `31a32f6` by the parallel session. Tier-2 is in flight across both lanes.
+> **Status:** ✅ camera-controls death-bridge RETIRED. W14 Tier-1 landed in `31a32f6` (parallel). Tier-2 is in flight across both lanes; camera-controls arc complete, parallel session handling other retirements in parallel.
 
-## What landed this turn (W14-dea-1 through W14-dea-4, by Fred)
+## What landed this turn (W14-dea-1 through W14-dea-6, by Fred)
 
-The 131-LOC `js/modules/camera-controls.ts` death-bridge (left from W16 #4) is now functionally retired. 13 of 14 source consumers were rewired to canonical Svelte 5 paths.
+The 131-LOC `js/modules/camera-controls.ts` death-bridge (left from W16 #4) is now FULLY RETIRED. 14 of 14 source consumers were rewired to canonical Svelte 5 paths and the death-bridge file itself was deleted.
 
-| Commit | What | Files | Δ |
-|---|---|---|---|
-| `4c1d166` | **w14-dea-1**: 3 `js/modules/bindings/*` consumers | 3 | +3/-3 |
-| `3e6ca58` | **w14-dea-2**: 5 single-function consumers | 6 (+config.ts deletion side-effect) | +5/-112 |
-| `4898ec3` | **w14-dea-3**: 3 multi-function consumers (2-7 funcs each) | 4 (+environment.ts deletion) | +12/-151 |
-| `d322cf7` | **w14-dea-4**: `demo-choreography` namespace refactor + test update | 2 | +6/-2 |
+| Commit    | What                                                                | Files                               | Δ        |
+| --------- | ------------------------------------------------------------------- | ----------------------------------- | -------- |
+| `4c1d166` | **w14-dea-1**: 3 `js/modules/bindings/*` consumers                  | 3                                   | +3/-3    |
+| `3e6ca58` | **w14-dea-2**: 5 single-function consumers                          | 6 (+config.ts deletion side-effect) | +5/-112  |
+| `4898ec3` | **w14-dea-3**: 3 multi-function consumers (2-7 funcs each)          | 4 (+environment.ts deletion)        | +12/-151 |
+| `d322cf7` | **w14-dea-4**: `demo-choreography` namespace refactor + test update | 2                                   | +6/-2    |
+| `f0c9803` | **w14-tier2-progress doc** (this file)                              | 1                                   | +95      |
+| `67133ed` | **w14-dea-5**: rewired final consumer `src/lib/engine/index.ts` (24 funcs) | 1                            | +28/-2   |
+| `4534cb3` | **w14-dea-5b**: DELETED `js/modules/camera-controls.ts` (131 LOC)    | 1 (deletion)                        | -131     |
+| `3879da5` | **w14-dea-6**: rewired `view-bindings` map-state import              | 1                                   | +1/-1    |
 
-**Net effect:** 13 of 14 source consumers rewired. 1 remaining: `src/lib/engine/index.ts` (24 functions, 1 line).
+**Net effect:** 14 of 14 source consumers rewired. Death-bridge file deleted (131 LOC removed). W16 #4 follow-up COMPLETE.
+
+**Bonus:** w14-dea-6 also rewired the last `js/modules/map-state.ts` consumer not in the parallel session's WIP. The parallel session is handling the other 2 consumers; once they land, `js/modules/map-state.ts` (630 LOC) can be retired.
 
 ## Per-file rewire map
 
@@ -67,12 +73,12 @@ canonical imports above the export block. Then delete
 The parallel session also retired 4 legacy `js/modules/*.ts` files where
 the canonical version already lived in `src/lib/`:
 
-| Commit | What |
-|---|---|
-| `7a0a25e` | retire `js/modules/config.ts` (107 LOC) → `src/lib/engine/config.ts` |
-| `127523e` | retire `js/modules/environment.ts` (144 LOC) → `src/lib/utils/environment.ts` |
+| Commit    | What                                                                                   |
+| --------- | -------------------------------------------------------------------------------------- |
+| `7a0a25e` | retire `js/modules/config.ts` (107 LOC) → `src/lib/engine/config.ts`                   |
+| `127523e` | retire `js/modules/environment.ts` (144 LOC) → `src/lib/utils/environment.ts`          |
 | `adbc6fe` | retire `js/modules/focus-panel-mode.ts` (31 LOC) → `src/lib/utils/focus-panel-mode.ts` |
-| `705e9b7` | retire `js/modules/cluster-labels.ts` (275 LOC) → `src/lib/ui/cluster-labels.ts` |
+| `705e9b7` | retire `js/modules/cluster-labels.ts` (275 LOC) → `src/lib/ui/cluster-labels.ts`       |
 
 Pattern: same as the W14 charter's Tier-2 Bridge Teardown — Utilities &
 Config section. The session is systematically retiring legacy `js/modules/`
@@ -81,6 +87,7 @@ files that have exact canonical counterparts in `src/lib/`.
 ## Verification gates
 
 After my 4 commits (each verified before push):
+
 - svelte-check: 0 errors, 0 warnings
 - vitest: 60 files / 652 tests / 0 errors
 - bridge contract: 5/5
