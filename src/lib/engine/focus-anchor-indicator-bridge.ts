@@ -1,10 +1,12 @@
 /**
- * @lib/engine/focus-anchor-indicator-bridge.ts — Sanctioned passthrough (W11-T10 Wave 1).
- * Re-exports the legacy focus-anchor-indicator module. Will retire when T10-Wave 3
- * ports the module natively.
+ * focus-anchor-indicator-bridge.ts
+ *
+ * Imperative bridge: re-exports canonical focus-anchor-indicator for legacy callers.
+ * Canonical source: src/lib/journey/focus-anchor-indicator.ts
  */
+
 export {
-  createFocusAnchorIndicator,
-  updateFocusAnchorIndicator,
-  disposeFocusAnchorIndicator,
-} from '../../../js/modules/focus-anchor-indicator';
+    createFocusAnchorIndicator,
+    updateFocusAnchorIndicator,
+    disposeFocusAnchorIndicator
+} from '@lib/journey/focus-anchor-indicator';

@@ -1,13 +1,15 @@
 /**
- * @lib/engine/audio-scape-bridge.ts — Sanctioned passthrough (W11-T10 Wave 1).
- * Re-exports the legacy audio-scape module. Will retire when T10-Wave 3
- * ports the module natively.
+ * audio-scape-bridge.ts
+ *
+ * Imperative bridge: re-exports canonical audio-scape for legacy callers.
+ * Canonical source: src/lib/audio/audio-scape.ts
  */
+
 export {
-  initAudio,
-  setAudioMuted,
-  triggerCorridorBloom,
-  trigger,
-  play,
-  disposeAudio,
-} from '../../../js/modules/audio-scape';
+    initAudio,
+    setAudioMuted,
+    triggerCorridorBloom,
+    trigger,
+    play,
+    disposeAudio
+} from '@lib/audio/audio-scape';
