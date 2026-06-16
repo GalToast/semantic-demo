@@ -25,7 +25,7 @@
 
 
 import { getBusinessNamePresentation, sanitizePublicFacingNote } from './utils/dom-formatters.ts';
-import { getPanelSurface, isMapSummarySurface } from './environment.ts';
+import { getPanelSurface, isMapSummarySurface } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte';
 import { CONFIG } from '@lib/engine/config';
 

@@ -7,7 +7,7 @@
 import * as THREE from 'three'
 import { appState } from '@lib/state/app.svelte'
 import type { NodePosition, NavFocusPocketMeta } from '@lib/state/state-types'
-import { prefersReducedMotion } from '../../../../js/modules/environment.ts'
+import { prefersReducedMotion } from '@lib/utils/environment'
 import {
   type AppStateLike,
   getCanvasUnobstructedRegion,

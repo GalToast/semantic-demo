@@ -7,7 +7,7 @@ import * as cameraControls from '../../js/modules/camera-controls';
 import * as searchState from '../../js/modules/search-state.ts';
 import * as journey from '../../js/modules/journey';
 
-vi.mock('../../js/modules/environment.js', () => ({
+vi.mock('../../src/lib/utils/environment', () => ({
     getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),
     requestAnimationFrame: vi.fn((cb) => setTimeout(cb, 16)),
     cancelAnimationFrame: vi.fn((id) => clearTimeout(id)),

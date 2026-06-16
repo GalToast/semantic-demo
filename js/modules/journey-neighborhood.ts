@@ -18,7 +18,7 @@ import {
 } from './journey-thread-model.ts';
 import { setTrailNavState } from './navigation-state.ts';
 import { setFocusPocketMeta } from '@lib/journey/focus-pocket';
-import { isCompactLandscape, isUltraCompactPortrait } from './environment.ts';
+import { isCompactLandscape, isUltraCompactPortrait } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte';
 
 // Boundary cast: neighborhood-specific nav fields are not in the typed NavState

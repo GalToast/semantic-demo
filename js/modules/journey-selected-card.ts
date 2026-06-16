@@ -49,7 +49,7 @@ import {
     syncSelectedCardContentVariant,
 } from './focus-stage-renderer.ts';
 import { applyClusterUiAccent } from './cluster-ui-accent.ts';
-import { isMapSummarySurface } from './environment.ts';
+import { isMapSummarySurface } from '@lib/utils/environment'
 import { selectedPointStore } from './stores.ts';
 import { seededUnit } from './utils/seeded-random.ts';
 import { appState } from '@lib/state/app.svelte';

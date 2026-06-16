@@ -15,7 +15,7 @@ vi.mock('../../js/modules/journey-thread-model', () => ({
     getThreadCandidatesForIndex: vi.fn(() => [])
 }));
 
-vi.mock('../../js/modules/environment.js', () => ({
+vi.mock('../../src/lib/utils/environment', () => ({
   isCompactLandscape: vi.fn(() => false),
   isUltraCompactPortrait: vi.fn(() => false),
   getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),

@@ -33,7 +33,7 @@ import {
     removeFocusSemanticOverlay,
     resetFocusThreadDiagnostics
 } from './journey-webgl.ts';
-import { isCompactLandscape, isUltraCompactPortrait } from './environment.ts';
+import { isCompactLandscape, isUltraCompactPortrait } from '@lib/utils/environment'
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles';
 import type { RelationshipRole } from '@lib/utils/relationship-roles';
 import type { Point, StrandContinuityState } from '@lib/state/state-types';

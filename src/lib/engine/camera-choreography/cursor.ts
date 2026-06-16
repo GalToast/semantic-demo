@@ -11,7 +11,7 @@
 import { appState } from '@lib/state/app.svelte';
 import type { Point } from '@lib/state/state-types'
 
-import { isMobile } from '../../../../js/modules/environment.ts'
+import { isMobile } from '@lib/utils/environment'
 import { refreshMapRouteEmbodiment } from '../../../../js/modules/map-state.ts'
 import {
   refreshCompositionState,

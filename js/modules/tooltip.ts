@@ -6,7 +6,7 @@
 
 import { formatBusinessName, cleanPublicNoteText, sanitizePublicFacingNote } from './utils/dom-formatters.ts';
 import { describeCluster } from './utils/ui-presentation.ts';
-import { getViewportSize } from './environment.ts';
+import { getViewportSize } from '@lib/utils/environment'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import type { Point } from '@lib/state/state-types';
 

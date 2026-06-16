@@ -7,7 +7,7 @@
 
 import { writable } from 'svelte/store';
 import type { Writable } from 'svelte/store';
-import { getViewportSize } from './environment.ts';
+import { getViewportSize } from '@lib/utils/environment'
 import type { ActiveFilters } from '@lib/state/state-types';
 
 interface CompositionState {

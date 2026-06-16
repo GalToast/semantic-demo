@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { summarizeNeighborReason, getInsideRelationshipLabel } from '../../js/modules/journey-thread-settler';
 import { state, withStateMutation } from '../../js/state';
 
-vi.mock('../../js/modules/environment.js', () => ({
+vi.mock('../../src/lib/utils/environment', () => ({
     getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),
     requestAnimationFrame: vi.fn((cb) => setTimeout(cb, 16)),
     cancelAnimationFrame: vi.fn((id) => clearTimeout(id)),

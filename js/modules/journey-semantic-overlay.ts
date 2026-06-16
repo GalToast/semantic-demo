@@ -12,7 +12,7 @@ import { isPointVisible } from './utils/geo-data.ts';
 import { getThreadCandidatesForIndex } from './journey-thread-model.ts';
 import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from './journey.ts';
 import { getFocusThreadCurvePoint } from '@lib/journey/focus-pocket';
-import { prefersReducedMotion } from './environment.ts';
+import { prefersReducedMotion } from '@lib/utils/environment'
 import { CLUSTER_COLORS, FOCUS_SEMANTIC_COLORS } from '@lib/utils/design-tokens';
 import { getLineSegmentCount } from './journey-webgl-utils.ts';
 import { registerDiagnosticProbe } from '@lib/utils/diagnostic-adapter';

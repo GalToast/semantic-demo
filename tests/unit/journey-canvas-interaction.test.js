@@ -6,7 +6,7 @@ import { state, withStateMutation } from '../../js/state';
 import * as geoData from '../../js/modules/utils/geo-data';
 import * as cameraControls from '../../js/modules/camera-controls';
 import * as journeyNeighborhood from '../../js/modules/journey-neighborhood';
-import * as environment from '../../js/modules/environment';
+import * as environment from '../../src/lib/utils/environment';
 import * as THREE from 'three';
 
 vi.mock('../../js/modules/utils/geo-data', () => ({
@@ -23,7 +23,7 @@ vi.mock('../../js/modules/journey-neighborhood', () => ({
     getSemanticThreadDisplayLimit: vi.fn(() => 10)
 }));
 
-vi.mock('../../js/modules/environment', () => ({
+vi.mock('../../src/lib/utils/environment', () => ({
     hasCoarsePointer: vi.fn(() => false),
     getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),
     requestAnimationFrame: vi.fn((cb) => setTimeout(cb, 16)),

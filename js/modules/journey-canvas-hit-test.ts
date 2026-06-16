@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { state } from '@lib/engine/state-bridge';
 import { isPointVisible } from './utils/geo-data.ts';
 import { getSemanticThreadDisplayLimit } from './journey-neighborhood.ts';
-import { hasCoarsePointer } from './environment.ts';
+import { hasCoarsePointer } from '@lib/utils/environment'
 import type { ThreadCandidate } from './journey-thread-model.ts';
 
 export interface CanvasInteractionAdapter {

@@ -11,7 +11,7 @@ const stateMock = vi.hoisted(() => ({
   withStateMutation: (fn) => fn()
 }));
 
-vi.mock('../../js/modules/environment.js', () => ({
+vi.mock('../../src/lib/utils/environment', () => ({
     getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),
     requestAnimationFrame: vi.fn((cb) => setTimeout(cb, 16)),
     cancelAnimationFrame: vi.fn((id) => clearTimeout(id)),

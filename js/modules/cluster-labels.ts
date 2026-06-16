@@ -12,7 +12,7 @@ import { appState } from '@lib/state/app.svelte';
 
 
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
-import { getViewportSize, isMobileViewport } from './environment.ts';
+import { getViewportSize, isMobileViewport } from '@lib/utils/environment'
 import { CONFIG } from '@lib/engine/config';
 
 // ── Types ──────────────────────────────────────────────────────────────────

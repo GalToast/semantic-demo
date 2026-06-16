@@ -13,7 +13,7 @@ import { formatBusinessName } from './utils/dom-formatters.ts';
 import { showExperienceToast, focusOnPoint } from './lifecycle.ts';
 import { hideTooltip } from './tooltip.ts';
 import { hideViewHandoff } from './view-controller.ts';
-import { isMobileViewport } from './environment.ts';
+import { isMobileViewport } from '@lib/utils/environment'
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // js/modules/map-state.ts

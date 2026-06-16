@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { state } from '@lib/engine/state-bridge';
 import type { SemanticState, ConstellationMotifName } from '@lib/state/state-types';
-import { getViewportSize } from './environment.ts';
+import { getViewportSize } from '@lib/utils/environment'
 import { describeCluster } from './utils/ui-presentation.ts';
 import { normalizeCityForFilter } from './utils/geo-data.ts';
 import { getSemanticCandidateSlice, type NeighborhoodPersonality, type SemanticCandidate } from './focus-pocket-personality.ts';

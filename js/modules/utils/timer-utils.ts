@@ -6,7 +6,7 @@
  * to prevent memory leaks and race conditions.
  */
 
-import { requestAnimationFrame, cancelAnimationFrame } from '../environment.ts';
+import { requestAnimationFrame, cancelAnimationFrame } from '@lib/utils/environment';
 
 /** Internal representation of a tracked timer. */
 interface TrackedTimer {

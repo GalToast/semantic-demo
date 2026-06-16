@@ -5,7 +5,7 @@ import { state, withStateMutation } from '../../js/state';
 import * as threadInspector from '../../js/modules/thread-inspector';
 import * as THREE from 'three';
 
-vi.mock('../../js/modules/environment.js', () => ({
+vi.mock('../../src/lib/utils/environment', () => ({
     getViewportSize: vi.fn(() => ({ width: 1024, height: 768 })),
     prefersReducedMotion: vi.fn(() => false),
     getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),

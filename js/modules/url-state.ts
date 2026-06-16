@@ -36,7 +36,7 @@ import {
 } from '@lib/engine/search-state-bridge';
 import { updateHasQuery } from './bindings/search-bindings.ts';
 import { setCurrentView } from './state-mutators.ts';
-import { getLocation } from './environment.ts';
+import { getLocation } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte';
 
 // ── Types ──────────────────────────────────────────────────────────────────

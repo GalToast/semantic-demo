@@ -4,7 +4,7 @@
 
 import * as THREE from 'three';
 import { state } from '@lib/engine/state-bridge';
-import { prefersReducedMotion } from './environment.ts';
+import { prefersReducedMotion } from '@lib/utils/environment'
 
 const RING_BASE_SCALE = 0.13;
 const RING_OUTER_RADIUS = 0.085;

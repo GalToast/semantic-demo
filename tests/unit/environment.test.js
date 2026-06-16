@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import * as environment from '../../js/modules/environment';
+import * as environment from '../../src/lib/utils/environment';
 
 describe('environment', () => {
     let originalInnerWidth;

@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import * as journeyFocusUi from '../../js/modules/journey-focus-ui';
 import { state, withStateMutation } from '../../js/state';
-import * as environment from '../../js/modules/environment';
+import * as environment from '../../src/lib/utils/environment';
 
 vi.mock('../../js/modules/utils/geo-data.js', () => ({
     isPointVisible: vi.fn(() => true),
     normalizeCityForFilter: vi.fn((v) => (v || '').toLowerCase().trim())
 }));
 
-vi.mock('../../js/modules/environment', () => ({
+vi.mock('../../src/lib/utils/environment', () => ({
   isCompactLandscape: vi.fn(() => false),
   isUltraCompactPortrait: vi.fn(() => false),
   matchMedia: vi.fn(() => null),
