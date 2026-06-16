@@ -159,6 +159,23 @@
     }
   }
 
+  // ── Reset active index when query changes (A2-8) ──────────────────────────────
+  // When the user types a new search query, the keyboard highlight should
+  // reset so stale highlights from a previous query don't persist.
+  let lastQuery = $state($searchState.query);
+  $effect(() => {
+    const currentQuery = $searchState.query;
+    if (currentQuery !== lastQuery) {
+      lastQuery = currentQuery;
+      // Defer to next tick so resultSlice has updated with new results.
+      void tick().then(() => {
+        if (resultSlice.length > 0) {
+          setActiveResultByIndex(0);
+        }
+      });
+    }
+  });
+
   // Sync DOM focus with the roving active index (runs after each render).
   $effect(() => {
     const idx = activeIndex;
@@ -636,6 +653,11 @@
   .search-result.active {
     background: rgba(78, 205, 196, 0.14);
     border-left: 2px solid #4ecdc4;
+  }
+  /* A2-8: Visible focus ring for keyboard navigation on active result */
+  .search-result.active:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.8);
+    outline-offset: -2px;
   }
 
   .result-main {
