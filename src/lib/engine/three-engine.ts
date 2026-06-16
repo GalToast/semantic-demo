@@ -1111,7 +1111,12 @@ export function animate() {
             debugWarn('overlay update threw:', overlayErr)
         }
 
-        _focusPocket?.applyFocusPocketBreathing(frameNow, _state?.nodePositions)
+        // Note: _focusPocket.applyFocusPocketBreathing(...) is already called inside
+        // the node-position lerp block above (around L951) where its boolean return
+        // drives per-pocket instance-matrix updates. A second invocation here would
+        // re-write pocket positions without ever pushing them to the GPU buffers,
+        // doubling the per-frame breathing cost (50-200ms in QA). Removed per
+        // W15-T1 focus-deadlock diagnosis (tmp/w15-focus-deadlock-diagnosis.md).
 
         if (shouldRenderThreads()) {
             updateMyceliumThreads()
