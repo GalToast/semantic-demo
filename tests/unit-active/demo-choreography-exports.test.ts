@@ -79,7 +79,9 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
     const src = readSource();
     // Ticket W11-T5: state import migrated to appState
     expect(src).toContain("from '@lib/state/app.svelte'");
-    expect(src).toContain("from './camera-controls'");
+    // W14-Tier-2: camera-controls death-bridge retired; canonical paths now
+    expect(src).toContain("from '@lib/engine/camera-choreography'");
+    expect(src).toContain("from '@lib/engine/camera-controls-restore-bridge'");
     expect(src).toContain("from '@lib/journey/focus-pocket'");
     expect(src).toContain("from '@lib/demo/guards'");
     expect(src).toContain("from '@lib/demo/camera'");

@@ -19,7 +19,9 @@
 
 import type { DemoPhase } from '@lib/types/state';
 import { appState } from '@lib/state/app.svelte';
-import * as cameraControlsStaticModule from './camera-controls';
+import { animateCameraToNode } from '@lib/engine/camera-choreography';
+import { setAutoRotateSuspended } from '@lib/engine/camera-controls-restore-bridge';
+const cameraControlsStaticModule = { animateCameraToNode, setAutoRotateSuspended };
 import * as focusPocketStaticModule from '@lib/journey/focus-pocket';
 import * as lifecycleStaticModule from '../../../js/modules/lifecycle';
 import * as journeyCompassStaticModule from '@lib/engine/journey-compass-controller-bridge';
