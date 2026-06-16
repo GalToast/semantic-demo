@@ -232,7 +232,7 @@ if (progressMode) {
         const hasJs = fs.existsSync(path.join(dir, base + '.js'));
         if (hasJs) dual.push(base);
         else tsOnly.push(base);
-      } else if (e.name.endsWith('.ts')) {
+      } else if (e.name.endsWith('.js')) {
         const base = e.name.slice(0, -3);
         const hasTs = fs.existsSync(path.join(dir, base + '.ts'));
         if (!hasTs) jsOnly.push(base);
@@ -247,13 +247,21 @@ if (progressMode) {
     ? (((all.tsOnly.length + all.dual.length) / totalModules) * 100).toFixed(1)
     : '0.0';
 
-  // Entry readiness: check the active native-TS build entry.
+  // Entry readiness: check the active Svelte/Vite native TS entry.
+  const srcRoot = path.resolve('src');
+  const indexHtmlPath = path.join(srcRoot, 'index.html');
+  const mainTsPath = path.join(srcRoot, 'main.ts');
+  const viteConfigPath = path.resolve('vite.config.ts');
+  const indexHtmlSource = fs.existsSync(indexHtmlPath) ? fs.readFileSync(indexHtmlPath, 'utf8') : '';
+  const viteConfigSource = fs.existsSync(viteConfigPath) ? fs.readFileSync(viteConfigPath, 'utf8') : '';
+  const indexUsesMainTs = /<script\s+type=["']module["']\s+src=["'](?:\.\/)?main\.ts["']/.test(indexHtmlSource);
+  const viteUsesSrcRoot = /root:\s*(?:['"]src['"]|SRC_DIR)\b/.test(viteConfigSource);
+  const mainTsExists = fs.existsSync(mainTsPath);
+  const nativeEntryReady = indexUsesMainTs && viteUsesSrcRoot && mainTsExists;
+
+  // Legacy app.js import readiness is retained only as contextual fallback
+  // detail when that compatibility wrapper exists.
   const appJsPath = path.join(root, 'app.js');
-  const appTsPath = path.join(root, 'app.ts');
-  const buildScriptPath = path.resolve('scripts/build-app.mjs');
-  const buildScriptSource = fs.existsSync(buildScriptPath) ? fs.readFileSync(buildScriptPath, 'utf8') : '';
-  const buildUsesAppTs = /entryPoints:\s*\[\s*['"]js\/modules\/app\.ts['"]\s*\]/.test(buildScriptSource);
-  const appTsExists = fs.existsSync(appTsPath);
   const appJsExists = fs.existsSync(appJsPath);
   const appSource = fs.existsSync(appJsPath) ? fs.readFileSync(appJsPath, 'utf8') : '';
   const entryImports = [];
@@ -275,8 +283,6 @@ if (progressMode) {
     return fs.existsSync(path.join(root, ...n.split('/')) + '.ts');
   }).length;
   const entryBlocked = entryImports.filter(n => !fs.existsSync(path.join(root, ...n.split('/')) + '.ts'));
-  const nativeEntryReady = buildUsesAppTs && appTsExists && !appJsExists;
-
   // Drift state
   const { drift } = computeDrift();
   const driftCount = Object.keys(drift).length;
@@ -300,8 +306,9 @@ if (progressMode) {
     }
   }
   console.log('');
-  console.log(`  Legacy bundle entry:    ${buildUsesAppTs ? 'js/modules/app.ts' : 'not js/modules/app.ts'}`);
-  console.log(`  app.ts present:         ${appTsExists ? 'YES' : 'NO'}`);
+  console.log(`  Svelte/Vite entry:      ${indexUsesMainTs ? 'src/main.ts' : 'not src/main.ts'}`);
+  console.log(`  Vite root:              ${viteUsesSrcRoot ? 'src/' : 'not src/'}`);
+  console.log(`  src/main.ts present:    ${mainTsExists ? 'YES' : 'NO'}`);
   console.log(`  app.js retired:         ${appJsExists ? 'NO' : 'YES'}`);
   if (appJsExists) {
     console.log(`  app.js entry imports:   ${entryReadyCount}/${entryImports.length} have TS siblings`);
@@ -309,23 +316,25 @@ if (progressMode) {
       console.log(`  Blocked (no .ts yet):   ${entryBlocked.join(', ')}`);
     }
   }
-  console.log(`  Legacy TS entry ready:  ${nativeEntryReady ? 'YES' : 'NO'}`);
+  console.log(`  Native TS entry ready:  ${nativeEntryReady ? 'YES' : 'NO'}`);
   console.log('');
-  console.log('  Legacy bundle entry status:');
-  if (!buildUsesAppTs) {
-    console.log('    1. Update scripts/build-app.mjs to use js/modules/app.ts as entryPoints[0]');
-  } else if (!appTsExists) {
-    console.log('    1. Restore js/modules/app.ts before declaring the native TS runtime ready');
+  console.log('  Native entry status:');
+  if (!indexUsesMainTs) {
+    console.log('    1. Update src/index.html to load ./main.ts as its module entry');
+  } else if (!viteUsesSrcRoot) {
+    console.log('    1. Update vite.config.ts so root is src/');
+  } else if (!mainTsExists) {
+    console.log('    1. Restore src/main.ts before declaring the native TS runtime ready');
   } else if (appJsExists && entryBlocked.length > 0) {
     console.log(`    1. Convert ${entryBlocked.length} blocked modules to .ts:`);
     for (const name of entryBlocked.sort()) {
        console.log(`       - js/modules/${name}.js → .ts`);
     }
   } else {
-    console.log('    ✓ build-app.mjs uses app.ts as the legacy bundle entry');
-    console.log('    ✓ app.ts owns the legacy runtime init body');
+    console.log('    ✓ src/index.html loads src/main.ts');
+    console.log('    ✓ vite.config.ts uses src/ as the app root');
     console.log(`    ${appJsExists ? '• app.js compatibility wrapper still exists' : '✓ app.js compatibility wrapper retired'}`);
-    console.log('    Note: production remains the Svelte/Vite shell; this is the rollback/reference bundle lane');
+    console.log('    ✓ production uses the Svelte/Vite shell');
   }
   console.log('');
   process.exit(0);
