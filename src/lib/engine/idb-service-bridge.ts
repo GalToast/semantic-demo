@@ -7,4 +7,4 @@
  * service itself is ported in a future wave.
  */
 
-export * from '../../../js/modules/idb-service';
+export * from '../utils/idb-service';

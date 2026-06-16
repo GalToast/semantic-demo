@@ -5,4 +5,4 @@
  * Keeps direct legacy imports behind the engine boundary.
  */
 
-export { initWeather } from '../../../js/modules/weather';
+export { initWeather } from '../utils/weather';
