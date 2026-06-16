@@ -20,7 +20,6 @@ import { isCompactSearchViewport } from '@lib/utils/ui-presentation';
 import {
   // Orchestration exports (canonical names)
   search,
-  clearSearch,
   bindSearchResultInteractions,
   beginSearchFocusTransition,
   clearSearchRelatedFocusState,
@@ -47,6 +46,10 @@ import {
   setActiveSearchResultRow,
   updateSearchTrailCue
 } from '../search/orchestration';
+// `clearSearch` is taken from the state facade (which preserves the
+// legacy `SearchOptions` argument shape) rather than the orchestration
+// store re-export, because the store's clearSearch takes no args.
+import { clearSearch } from '../search/state';
 import {
   // Legacy kernel public API (tokenizer, mapper, filter, result-renderer)
   tokenizeSearchText,
