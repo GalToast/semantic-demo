@@ -7,7 +7,7 @@
 
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { formatBusinessName, cleanPublicNoteText } from './utils/dom-formatters.ts';
-import { isMapSummarySurface, isSemanticDiveSurface } from './environment.ts';
+import { isMapSummarySurface, isSemanticDiveSurface } from '@lib/utils/environment'
 import { getFocusedJourneyPoint, getJourneyCompassState, JOURNEY_ACTIONS } from './journey-compass-state.ts';
 import {
     refreshMapRouteEmbodiment,
@@ -16,7 +16,8 @@ import {
     syncRouteDirectorState
 } from './map-state.ts';
 import { clearMobileRouteFieldPeek as clearMobileRouteFieldPeekState } from './search-state.ts';
-import { focusOnNode, getRouteLayerOrigin } from './camera-controls.ts';
+import { focusOnNode } from '@lib/engine/camera-choreography';
+import { getRouteLayerOrigin } from '@lib/engine/camera-controls-core';
 import { setSemanticDiveMode } from './journey.ts';
 import { syncSemanticDiveUi } from '../../src/lib/journey/semantic-dive.ts';
 import { recenterFocusedNode } from './bindings/journey-bindings.ts';

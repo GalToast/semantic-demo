@@ -4,7 +4,9 @@
  */
 import { state } from '@lib/engine/state-bridge';
 import { isPointVisible } from './utils/geo-data.ts';
-import { focusOnNode, noteSceneInteraction, releaseFocusCameraAssist } from './camera-controls.ts';
+import { focusOnNode } from '@lib/engine/camera-choreography';
+import { noteSceneInteraction } from '@lib/engine/camera-controls-restore-bridge';
+import { releaseFocusCameraAssist } from '@lib/engine/camera-controls-core';
 import {
     initJourneyCanvasInteractionAdapter,
     isThreadCandidateVisibleOnCanvas,

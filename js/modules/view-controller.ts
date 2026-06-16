@@ -13,16 +13,18 @@
 import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
-import { isMapSummarySurface } from './environment.ts';
+import { isMapSummarySurface } from '@lib/utils/environment'
 import {
     animateCameraToTerrainPrelude,
     focusOnNode,
+    animateCameraToNode,
+    animateCameraToSearchCorridor
+} from '@lib/engine/camera-choreography';
+import {
     getRouteLayerOrigin,
     clearRouteExploration,
-    animateCameraToNode,
-    animateCameraToSearchCorridor,
     setCameraAssistChoreography
-} from './camera-controls.ts';
+} from '@lib/engine/camera-controls-core';
 import { updateSelectedBusiness, setTrailFromSeed, syncFocusStage, setRouteChoreographyPhase } from './journey.ts';
 import { clearWeatherRefreshTimer, applyWeatherEffects } from './weather.ts';
 import { scheduleWeatherHydration } from './loading-ui.ts';
