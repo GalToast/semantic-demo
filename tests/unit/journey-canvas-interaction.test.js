@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import * as journeyCanvasInteraction from '../../js/modules/journey-canvas-interaction';
+import * as journeyCanvasInteraction from '../../src/lib/journey/canvas-interaction';
 import * as journeyCanvasHitTest from '../../js/modules/journey-canvas-hit-test.js';
 import { setNodeSporeInstanceMatrix } from '../../js/modules/three-node-manager.js';
 import { state, withStateMutation } from '../../js/state';
 import * as geoData from '../../js/modules/utils/geo-data';
-import * as cameraControls from '../../js/modules/camera-controls';
-import * as journeyNeighborhood from '../../js/modules/journey-neighborhood';
+import * as cameraControls from '../../src/lib/engine/camera-controls';
+import * as journeyNeighborhood from '../../src/lib/journey/neighborhood';
 import * as environment from '../../src/lib/utils/environment';
 import * as THREE from 'three';
 
@@ -13,7 +13,7 @@ vi.mock('../../js/modules/utils/geo-data', () => ({
     isPointVisible: vi.fn(() => true)
 }));
 
-vi.mock('../../js/modules/camera-controls', () => ({
+vi.mock('../../src/lib/engine/camera-controls', () => ({
     focusOnNode: vi.fn(),
     noteSceneInteraction: vi.fn(),
     releaseFocusCameraAssist: vi.fn()

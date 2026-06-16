@@ -3,7 +3,7 @@ import * as svelte from 'svelte'
 import * as eventBindings from '../../js/modules/event-bindings'
 import { state, withStateMutation } from '../../js/state'
 import * as viewController from '../../js/modules/view-controller'
-import * as cameraControls from '../../js/modules/camera-controls'
+import * as cameraControls from '../../src/lib/engine/camera-controls'
 import * as searchState from '../../src/lib/engine/search-state-bridge'
 import * as journey from '../../js/modules/journey'
 
@@ -34,7 +34,7 @@ vi.mock('../../js/modules/view-controller', () => ({
     switchView: vi.fn()
 }))
 
-vi.mock('../../js/modules/camera-controls', () => ({
+vi.mock('../../src/lib/engine/camera-controls', () => ({
     toggleAutoRotate: vi.fn(),
     focusOnNode: vi.fn(),
     animateCameraToNode: vi.fn(),
