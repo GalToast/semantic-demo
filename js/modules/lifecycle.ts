@@ -5,7 +5,7 @@
  * Semantic Demo Lifecycle & Global State Bridge.
  * Thin facade: re-exports from extracted sub-modules + remaining local logic.
  */
-import { state, withStateMutation } from '../state.ts';
+import { state, withStateMutation } from '@lib/engine/state-bridge';
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import {
     setLoadingPhase,
@@ -76,7 +76,6 @@ import {
     getJourneyCompassPresentationState,
     invokeClearMobileRouteFieldPeek
 } from './journey-compass-controller.ts';
-import { getInspectedThreadIndex } from '../state/selectors/index.ts'
 import { appState } from '@lib/state/app.svelte';
 import {
     clearClusterFilter,
@@ -268,10 +267,10 @@ export function exploreInsideToNextStop(): void {
     if (appState.strandContinuityState?.phase === 'exploring') return;
     if (
         appState.semanticDiveMode
-        && Number.isFinite(getInspectedThreadIndex())
+        && Number.isFinite(appState.inspectedThreadIndex)
         && document.body?.dataset.threadInspectSurface === 'inside-cue'
     ) {
-        if (typeof walkThreadNeighbor === 'function') walkThreadNeighbor(getInspectedThreadIndex()!, { surface: 'inside-cue' });
+        if (typeof walkThreadNeighbor === 'function') walkThreadNeighbor(appState.inspectedThreadIndex!, { surface: 'inside-cue' });
         return;
     }
     if (typeof traverseNeighbor === 'function') traverseNeighbor(1);

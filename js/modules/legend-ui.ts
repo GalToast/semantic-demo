@@ -18,7 +18,7 @@ import { getFilteredClusterCounts, setClusterFilter } from './cluster-filter.ts'
 import { getActiveClusterFilter } from './filter-state.ts';
 import { setFocusPanelMode, getFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.ts';
 import { getViewportSize } from './environment.ts';
-import { getColors, getClusterNames } from '../state/selectors/config.js';
+import { CONFIG } from '@lib/engine/config';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -152,7 +152,7 @@ export function buildLegend(): void {
             ${rows.map(([cluster, count]) => {
                 const active = activeCluster !== null && activeCluster === cluster;
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const colors = getColors() as string[];
+                const colors = CONFIG.COLORS as string[];
                 const color = colors[cluster % colors.length] || '#4ecdc4';
                 return `
                     <button class="legend-item${active ? ' active' : ''}" type="button" data-legend-cluster="${cluster}" aria-pressed="${String(active)}">
@@ -231,9 +231,9 @@ export function buildCanvasColorLegend(): void {
     if (!root) return;
     const counts = getFilteredClusterCounts();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const colors: string[] = Array.isArray(getColors()) ? (getColors() as string[]) : [];
+    const colors: string[] = Array.isArray(CONFIG.COLORS) ? (CONFIG.COLORS as string[]) : [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const names: string[] = Array.isArray(getClusterNames()) ? (getClusterNames() as unknown as string[]) : [];
+    const names: string[] = Array.isArray(CONFIG.CLUSTER_NAMES) ? (CONFIG.CLUSTER_NAMES as unknown as string[]) : [];
 
     let top: number[] | null = counts && counts.size > 0
         ? Array.from(counts.entries())

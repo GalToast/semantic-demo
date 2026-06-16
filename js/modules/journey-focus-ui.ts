@@ -5,7 +5,6 @@
  * Focus/traversal DOM UI, neighbor rail rendering, and walk breadcrumb internals.
  */
 
-import { getSemanticThreadsStatus } from '../state/selectors/index.ts'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { formatBusinessName, escapeHtml, cleanOptionalValue } from './utils/dom-formatters.ts';
 import { isCompactFocusStageViewport } from './utils/ui-presentation.ts';
@@ -37,7 +36,8 @@ import {
 import { isCompactLandscape, isUltraCompactPortrait } from './environment.ts';
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles';
 import type { RelationshipRole } from '@lib/utils/relationship-roles';
-import type { Point, StrandContinuityState } from '../state.ts';
+import type { Point, StrandContinuityState } from '@lib/state/state-types';
+import { state } from '@lib/engine/state-bridge';
 import { appState } from '@lib/state/app.svelte';
 
 export function isCondensedFocusStageViewport(): boolean {
@@ -484,7 +484,7 @@ export function updateTraversalUi(): void {
         focusProgressEl.textContent = `No visible nearby records from ${currentName} in this slice.`;
         if (focusNextEl) focusNextEl.textContent = 'No visible next stop in this filtered slice.';
     } else {
-        const fallbackLeadIn: string = getSemanticThreadsStatus() === 'loading'
+        const fallbackLeadIn: string = state.semanticThreadsStatus === 'loading'
             ? 'Semantic connections are still loading, so this is a temporary cloud fallback.'
             : 'Semantic relationship data is missing here, so this trail is using the current cloud as an approximate fallback.';
         const focusPocketMeta = (nav as any).focusPocketMeta;

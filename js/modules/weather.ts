@@ -5,8 +5,8 @@
  * Weather data fetching, normalization, and state management.
  */
 
-import { state, type Point } from '../state.ts';
-import { getWeather, getWeatherInitialized } from '../state/selectors/index.ts'
+import { state } from '@lib/engine/state-bridge'
+import type { Point } from '@lib/state/state-types'
 import { weatherStateStore } from './stores.ts';
 import { appState } from '@lib/state/app.svelte';
 import {
@@ -50,7 +50,7 @@ export interface WeatherCondition {
 
 export function initWeather(): void {
     if (typeof window === 'undefined') return;
-    if (getWeatherInitialized() && weatherRefreshTimer) return;
+    if (appState.weatherInitialized && weatherRefreshTimer) return;
     clearWeatherRefreshTimer();
     state.weatherInitialized = true;
     fetchWeather();
@@ -74,7 +74,7 @@ export async function fetchWeather(): Promise<void> {
         (state as Record<string, unknown>).lastSuccessfulFetch = Date.now();
 
         weatherStateStore.set({
-            weather: getWeather() as Record<string, unknown> | null,
+            weather: appState.weather as Record<string, unknown> | null,
             lastFetch: (state as Record<string, unknown>).lastSuccessfulFetch as number,
             fallback: false,
             stalenessMsg: ''
@@ -92,12 +92,12 @@ export async function fetchWeather(): Promise<void> {
 }
 
 export function updateWeatherUi(): void {
-    if (!getWeather()) {
+    if (!appState.weather) {
         renderWeatherFallback();
         return;
     }
     updateWeatherUiState({
-        weather: getWeather() as unknown as Record<string, unknown>,
+        weather: appState.weather as unknown as Record<string, unknown>,
         lastFetch: (state as Record<string, unknown>).lastSuccessfulFetch as number,
         fallback: false,
         stalenessMsg: ''
@@ -118,8 +118,8 @@ export function updateWeatherStaleness(): void {
 }
 
 export function applyWeatherEffects(): void {
-    if (appState.currentView !== 'map' || !getWeather()) return;
-    applyWeatherEffectsForWeather(getWeather() as unknown as Record<string, unknown>);
+    if (appState.currentView !== 'map' || !appState.weather) return;
+    applyWeatherEffectsForWeather(appState.weather as unknown as Record<string, unknown>);
 }
 
 export { clearWeatherEffects };

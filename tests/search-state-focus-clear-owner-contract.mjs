@@ -40,7 +40,7 @@ console.log('Verifying clearSearchRelatedFocusState ownership...');
 assert(/\bstate\b[\s\S]{0,40}\.selectedPoint\s*=\s*null/.test(helperBody), 'helper must clear selectedPoint');
 assert(/publish\(EVENTS\.STATE_RESET/.test(helperBody), 'helper must request nav reset through EVENTS.STATE_RESET');
 assert(/clearTrailThreadState\s*\(\s*\)/.test(helperBody), 'helper must route trail/thread cleanup through clearTrailThreadState()');
-assert(/(?:state\.trailIndices\.clear|getTrailIndices\(\)\?\.clear)\s*\(\s*\)/.test(helperBody), 'helper must clear search-owned trail index set');
+assert(/(?:appState\.trailIndices\?\.clear|state\.trailIndices\.clear|getTrailIndices\(\)\?\.clear)\s*\(\s*\)/.test(helperBody), 'helper must clear search-owned trail index set');
 assert(!/adapter_dispatchNavTransition/.test(SOURCE), 'search-state must not restore adapter dispatch routing');
 
 console.log('\nScanning for direct nav writes outside search-state owner fields...');

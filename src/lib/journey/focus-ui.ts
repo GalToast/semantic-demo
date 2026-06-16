@@ -5,7 +5,6 @@
  */
 
 import { get } from 'svelte/store';
-import { getSemanticThreadsStatus } from '@lib/engine/state-selectors-bridge'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { formatBusinessName, escapeHtml, cleanOptionalValue } from '@lib/utils/dom-formatters';
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation';
@@ -40,6 +39,7 @@ import type { RelationshipRole } from '@lib/utils/relationship-roles';
 import type { BusinessRecord } from '@lib/types/business';
 import type { NavState, StrandContinuityState } from '@lib/types/state';
 import { appState } from '@lib/state/app.svelte';
+import { state } from '@lib/engine/state-bridge';
 
 export function isCondensedFocusStageViewport(): boolean {
     return appState.currentView === 'galaxy' && (isCompactLandscape() || isUltraCompactPortrait());
@@ -484,7 +484,7 @@ export function updateTraversalUi(): void {
         focusProgressEl.textContent = `No visible nearby records from ${currentName} in this slice.`;
         if (focusNextEl) focusNextEl.textContent = 'No visible next stop in this filtered slice.';
     } else {
-        const fallbackLeadIn = getSemanticThreadsStatus() === 'loading'
+        const fallbackLeadIn = state.semanticThreadsStatus === 'loading'
             ? 'Semantic connections are still loading, so this is a temporary cloud fallback.'
             : 'Semantic relationship data is missing here, so this trail is using the current cloud as an approximate fallback.';
         const focusPocketMeta = (nav as any).focusPocketMeta;

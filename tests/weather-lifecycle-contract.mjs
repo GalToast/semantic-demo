@@ -16,7 +16,6 @@
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import path from 'node:path';
 import { resolveSource } from './source-path.mjs';
 
 const root = process.cwd();
@@ -27,7 +26,7 @@ const uiSrc = fs.readFileSync(weatherUiPath, 'utf8');
 
 assert.match(
   src,
-  /if\s*\(\s*getWeatherInitialized\(\)\s*&&\s*weatherRefreshTimer\s*\)\s*return/,
+  /if\s*\(\s*appState\.weatherInitialized\s*&&\s*weatherRefreshTimer\s*\)\s*return/,
   'initWeather should only no-op when initialized state and its refresh timer are present'
 );
 assert.match(

@@ -1,9 +1,10 @@
 // lifecycle-search-sync.js — Search glow, trail review, empty search recording,
 // and declarative search event subscriptions
-import { state, type SearchSummary } from '../state.ts';
+import { state } from '@lib/engine/state-bridge'
+import type { SearchSummary } from '@lib/state/state-types'
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge';
-import { getSearchGlowIndices } from '../state/selectors/index.ts';
+import { appState } from '@lib/state/app.svelte';
 import { refreshCompositionState } from './lifecycle-modes.ts';
 
 // ── Search glow ─────────────────────────────────────────────────────────────
@@ -54,7 +55,7 @@ export function hideExploreTrailReview() {
   }
   state.currentSearchSummary = null;
   state.searchGlowActive = false;
-  if (getSearchGlowIndices()?.clear) getSearchGlowIndices().clear();
+  if (appState.searchGlowIndices?.clear) appState.searchGlowIndices.clear();
   refreshCompositionState();
 }
 

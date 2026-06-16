@@ -1,5 +1,5 @@
 // lifecycle-reset.ts — Reset/overview functions and their declarative event subscriptions
-import { state, withStateMutation } from '../state.ts';
+import { state, withStateMutation } from '@lib/engine/state-bridge';
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { clearExplorationFocusSelection } from './url-state.ts';
 import { switchView } from './view-controller.ts';
@@ -13,7 +13,6 @@ import {
   updateSearchStatusMessage
 } from './search-state.ts';
 import { settleCameraToOverviewPose } from './camera-controls.ts';
-import { getSearchGlowIndices } from '../state/selectors/index.ts'
 import { refreshCompositionState, updateExplorationUi } from './lifecycle-modes.ts';
 import { appState } from '@lib/state/app.svelte';
 
@@ -69,7 +68,7 @@ export function resetExperienceState(options = {}) {
   state.searchAnchorIndex = null;
   state.searchPreviewIndex = null;
   state.searchGlowActive = false;
-  if (getSearchGlowIndices()?.clear) getSearchGlowIndices().clear();
+  if (appState.searchGlowIndices?.clear) appState.searchGlowIndices.clear();
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
   if (searchInput) searchInput.value = '';
   const searchResults = document.getElementById('search-results');

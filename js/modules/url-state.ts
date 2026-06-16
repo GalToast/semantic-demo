@@ -6,8 +6,8 @@
  * view, filters, story, mode, depth, record/anchor).
  */
 
-import { state } from '../state.ts';
-import { withStateMutation } from '../state.ts';
+import { state } from '@lib/engine/state-bridge';
+import { withStateMutation } from '@lib/engine/state-bridge';
 import { subscribe, publish, EVENTS } from '@lib/orchestration/event-bus';
 import {
     MODE_DESCRIPTIONS,
@@ -36,7 +36,6 @@ import {
 } from '@lib/engine/search-state-bridge';
 import { updateHasQuery } from './bindings/search-bindings.ts';
 import { setCurrentView } from './state-mutators.ts';
-import { getSemanticLaneOpsMode } from '../state/selectors/index.ts'
 import { getLocation } from './environment.ts';
 import { appState } from '@lib/state/app.svelte';
 
@@ -298,7 +297,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         const story = params.get('story');
         if (story && STORY_DESCRIPTIONS && (STORY_DESCRIPTIONS as Record<string, unknown>)[story]) {
             applyStoryPrompt(story, { skipUrlSync: true });
-            if (getSemanticLaneOpsMode()) {
+            if (appState.semanticLaneOpsMode) {
                 refreshSemanticLaneOpsSummary().catch((err: unknown) => console.error('refreshSemanticLaneOpsSummary failed:', err));
             }
             if (!options.fromHistory) {
@@ -307,7 +306,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
             return;
         }
 
-        if (getSemanticLaneOpsMode()) {
+        if (appState.semanticLaneOpsMode) {
             refreshSemanticLaneOpsSummary().catch((err: unknown) => console.error('refreshSemanticLaneOpsSummary failed:', err));
         }
         if (!options.fromHistory) {
@@ -328,7 +327,7 @@ export function updateUrlState(extra: Record<string, unknown> = {}, options: Upd
 
     const params = new URLSearchParams(getLocation()?.search || '');
     params.set('view', appState.currentView);
-    if (getSemanticLaneOpsMode()) params.set('ops', '1');
+    if (appState.semanticLaneOpsMode) params.set('ops', '1');
     else params.delete('ops');
 
     const currentSearchSummary = getSearchSummaryView();

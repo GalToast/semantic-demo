@@ -9,8 +9,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { state, withStateMutation } from '../state.ts';
-import { getInspectedThreadIndex } from '../state/selectors/index.ts'
+import { state, withStateMutation } from '@lib/engine/state-bridge';
 import { formatBusinessName, stripTerminalPunctuation } from './utils/dom-formatters.ts';
 import {
     getGeometricThreadCandidates,
@@ -103,7 +102,7 @@ function getInsideRelationshipLabel(candidate: any, point: any, focusPoint: any)
     return adapter_getInsideRelationshipLabel(candidate, point, focusPoint);
 }
 
-export function getThreadInspectionState(index: number | null = getInspectedThreadIndex(), options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
+export function getThreadInspectionState(index: number | null = appState.inspectedThreadIndex, options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
     const pts = appState.points;
     if (!pts || !Array.isArray(pts) || pts.length === 0) return null;
     const focusedIndex = Number.isFinite(appState.navState?.focusedIndex) ? appState.navState?.focusedIndex : null;
@@ -186,7 +185,7 @@ export function getThreadInspectionState(index: number | null = getInspectedThre
     };
 }
 
-export function renderThreadInspection(index: number | null = getInspectedThreadIndex(), options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
+export function renderThreadInspection(index: number | null = appState.inspectedThreadIndex, options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
     const inspector = document.getElementById('focus-thread-inspector');
     const inspectionState = getThreadInspectionState(index, options);
     syncInspectedStrandOverlay(inspectionState as any, { surface: options.surface ?? undefined });
@@ -317,14 +316,14 @@ export function inspectThreadNeighbor(index: number, options: ThreadInspectionOp
         return renderThreadInspection(appState.pinnedThreadIndex, { surface: 'pinned', pinned: true });
     }
     state.inspectedThreadIndex = Number.isFinite(index) ? index : null;
-    if (Number.isFinite(getInspectedThreadIndex()) && !options.preserveJourney) {
+    if (Number.isFinite(appState.inspectedThreadIndex) && !options.preserveJourney) {
         setStrandContinuityState('preview', {
-            targetIndex: getInspectedThreadIndex(),
+            targetIndex: appState.inspectedThreadIndex,
             fromIndex: appState.navState?.focusedIndex,
             reason: options.surface || 'inspect'
         });
     }
-    return renderThreadInspection(getInspectedThreadIndex(), options);
+    return renderThreadInspection(appState.inspectedThreadIndex, options);
 }
 
 export function pinThreadNeighbor(index: number, options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
