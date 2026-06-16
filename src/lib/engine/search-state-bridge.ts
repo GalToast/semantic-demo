@@ -7,7 +7,9 @@
  * during the W14-T8 search domain port.
  *
  * Architecture: orchestration logic lives in `src/lib/search/orchestration.ts`
- * (search/clearSearch/bind/begin transitions/etc.). Public-facing wrapper
+ * (search/bind/begin transitions/etc.). The state facade in
+ * `src/lib/search/state.ts` re-exports the canonical names with the legacy
+ * `clearSearch(options)` argument signature preserved. Public-facing wrapper
  * functions that the kernel re-exported live in `src/lib/search/legacy-exports.ts`
  * (tokenize/expandSearchIntent/countTokenMatches/mapper re-exports/etc.).
  * The bridge re-exports from both, then forwards a handful of values and
@@ -18,11 +20,11 @@ import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { formatBusinessName } from '@lib/utils/dom-formatters';
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation';
 import {
-  // Orchestration exports (canonical names)
+  // Canonical state facade (preserves the legacy clearSearch(options) shape)
   search,
+  clearSearch,
   bindSearchResultInteractions,
   beginSearchFocusTransition,
-  clearSearchRelatedFocusState,
   setSearchPanelState,
   renderSearchResultItems,
   beginSemanticSearchUiState,
@@ -44,17 +46,21 @@ import {
   focusSearchInputForReplacement,
   updateSearchStatusMessage,
   setActiveSearchResultRow,
-  updateSearchTrailCue
-} from '../search/orchestration';
-// `clearSearch` is taken from the state facade (which preserves the
-// legacy `SearchOptions` argument shape) rather than the orchestration
-// store re-export, because the store's clearSearch takes no args.
-import { clearSearch } from '../search/state';
+  updateSearchTrailCue,
+  applyFilters,
+  getFilteredIndices,
+  pointMatchesActiveFilters,
+  refreshSearchResultHierarchy,
+  getSearchResultStrength,
+  getSearchResultStrengthLabel,
+  getSemanticSearchCacheDiagnostics,
+  type SearchOptions,
+  type SearchContext
+} from '../search/state';
 import {
-  // Legacy kernel public API (tokenizer, mapper, filter, result-renderer)
-  tokenizeSearchText,
-  expandSearchIntent,
-  countTokenMatches,
+  // Legacy kernel public API (tokenizer, mapper, filter, result-renderer,
+  // tooltip, hide/position/update, etc.) — names that the parallel-session
+  // state facade does not surface directly.
   getSemanticSearchServiceResults,
   getSemanticSearchTotalMatches,
   isNumericOnlySearchQuery,
@@ -63,23 +69,26 @@ import {
   mapSemanticSearchResults,
   hydrateSemanticResultContexts,
   recordEmptySearch,
-  pointMatchesActiveFilters,
-  applyFilters,
-  getFilteredIndices,
-  refreshSearchResultHierarchy,
-  getSearchResultStrength,
-  getSearchResultStrengthLabel,
   hideTooltip,
   positionTooltip,
-  updateTooltipContent,
-  getSemanticSearchCacheDiagnostics
+  updateTooltipContent
 } from '../search/legacy-exports';
+// Filter-state legacy exports. These live in `js/modules/filter-state.ts`
+// and are not yet ported to a Svelte store. The bridge re-exports them
+// so the W14-T8 search port can retire the search-state kernel without
+// forcing a parallel filter-state port. The bridge remains the single
+// seam that legacy consumers should depend on.
 import {
   setActiveFilter,
   toggleActiveFilterSignal,
   resetActiveFilters,
   restoreActiveFiltersFromUrl
-} from '@lib/stores/filter.svelte';
+} from '../../../js/modules/filter-state';
+// `clearSearchRelatedFocusState` is a legacy-side-effect helper. The
+// canonical implementation lives in legacy-exports.ts for now (see
+// that module for the side-effect contract). Re-export it here so the
+// bridge surface matches the deprecated search-state kernel.
+import { clearSearchRelatedFocusState } from '../search/legacy-exports';
 
 // Re-export the entire public API. The bridge is the single seam that
 // 11 legacy kernel importers switch to during the W14-T8 search port.
@@ -144,3 +153,4 @@ export {
 
 // Type re-exports
 export type { Point, ServiceResultRow } from '../search/legacy-exports';
+export type { SearchOptions, SearchContext } from '../search/state';

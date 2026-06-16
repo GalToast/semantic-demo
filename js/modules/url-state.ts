@@ -33,7 +33,7 @@ import {
     setActiveSearchResultRow,
     updateSearchStatusMessage,
     updateSearchTrailCue,
-} from './search-state.ts';
+} from '@lib/engine/search-state-bridge';
 import { updateHasQuery } from './bindings/search-bindings.ts';
 import { setCurrentView } from './state-mutators.ts';
 import { getSemanticLaneOpsMode } from '../state/selectors/index.ts'
