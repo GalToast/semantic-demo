@@ -5,7 +5,7 @@
  * Neighborhood manifest, bounded walk candidates, trail seed, and route index derivation.
  */
 
-import { state, withStateMutation } from '../state.ts';
+import { state, withStateMutation } from '@lib/engine/state-bridge';
 
 import { isCompactFocusStageViewport } from './utils/ui-presentation.ts';
 import { isPointVisible } from './utils/geo-data.ts';

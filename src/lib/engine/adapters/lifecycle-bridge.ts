@@ -34,7 +34,7 @@ import type {
 import { syncDataToLegacyState } from './data-bridge';
 import { attachLegacyState, loadSemanticThreads } from '@lib/semantic-threads';
 import { appState } from '@lib/state/app.svelte.ts';
-import * as legacyStateModule from '../../../../js/state';
+import { state as legacyState } from '@lib/engine/state-bridge';
 import * as legacyViewControllerModule from '../../../../js/modules/view-controller';
 import * as legacyFilterStateModule from '../../../../js/modules/filter-state';
 import * as legacyEventBusModule from '@lib/orchestration/event-bus';
@@ -73,7 +73,7 @@ import {
  * diagnostic queries.
  */
 async function loadModules(ctx: BridgeContext): Promise<void> {
-  ctx._state = (legacyStateModule as unknown as { state: LegacyState }).state;
+  ctx._state = legacyState as unknown as LegacyState;
   ctx._viewController =
     legacyViewControllerModule as unknown as ViewControllerModule;
   ctx._filterState = legacyFilterStateModule as unknown as FilterStateModule;

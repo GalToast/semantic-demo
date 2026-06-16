@@ -6,7 +6,7 @@
  * terrain handoff, and route director state synchronization.
  */
 import { appState as state } from '@lib/state/app.svelte.ts';
-import type { Point } from '../../../js/state';
+import type { Point } from '@lib/state/state-types';
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { pointHasGeocode, isPointVisible } from '@lib/utils/geo-data';
 import { formatBusinessName } from '@lib/utils/dom-formatters';

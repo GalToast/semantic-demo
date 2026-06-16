@@ -2,7 +2,7 @@
  * journey-route-trace.ts — TypeScript shadow of journey-route-trace.js
  * Route trace overlay rendering, subscriptions, and frame updates.
  */
-import { state } from '../state.ts';
+import { state } from '@lib/engine/state-bridge';
 
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import * as THREE from 'three';

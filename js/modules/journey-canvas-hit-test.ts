@@ -2,7 +2,7 @@
  * journey-canvas-hit-test.ts — TypeScript shadow of journey-canvas-hit-test.js
  */
 import * as THREE from 'three';
-import { state } from '../state.ts';
+import { state } from '@lib/engine/state-bridge';
 import { isPointVisible } from './utils/geo-data.ts';
 import { getSemanticThreadDisplayLimit } from './journey-neighborhood.ts';
 import { hasCoarsePointer } from './environment.ts';

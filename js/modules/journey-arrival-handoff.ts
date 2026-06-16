@@ -3,7 +3,7 @@
  * Canonical TS module — preserves export/import parity with the prior
  * journey-arrival-handoff.js twin.
  */
-import { state, withStateMutation } from '../state.ts';
+import { state, withStateMutation } from '@lib/engine/state-bridge';
 import * as THREE from 'three';
 import { ROUTE_TRACE_COLORS } from '@lib/utils/design-tokens';
 import {

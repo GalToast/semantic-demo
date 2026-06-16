@@ -6,11 +6,7 @@
  */
 import * as THREE from 'three';
 import { getViewportSize } from '@lib/utils/environment';
-import * as legacyStateModule from '../../../../js/state';
-
-// ── State ────────────────────────────────────────────────────────────────────
-
-const state = legacyStateModule.state;
+import { state } from '@lib/engine/state-bridge';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

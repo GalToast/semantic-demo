@@ -4,7 +4,7 @@
  * TypeScript shadow of journey.js.
  * Facade module for the Semantic Journey / Exploration Trail feature set.
  */
-import { state, withStateMutation } from '../state.ts'
+import { state, withStateMutation } from '@lib/engine/state-bridge'
 
 import { subscribe, publish, EVENTS } from '@lib/orchestration/event-bus'
 import {

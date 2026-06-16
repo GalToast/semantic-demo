@@ -3,7 +3,7 @@
  * Shared WebGL utilities for journey overlays.
  */
 import * as THREE from 'three';
-import { state } from '../state.ts';
+import { state } from '@lib/engine/state-bridge';
 
 export const ROUTE_TRACE_SEGMENT_STEPS: number = 7;
 export const ARRIVAL_HANDOFF_SEGMENT_STEPS: number = 9;

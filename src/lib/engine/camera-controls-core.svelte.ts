@@ -14,7 +14,8 @@
  * Body dataset writes are side effects, not $effect — they stay in method bodies.
  */
 
-import { state, withStateMutation, type SemanticState } from '../../../js/state.ts';
+import { state, withStateMutation } from '@lib/engine/state-bridge';
+import type { SemanticState } from '@lib/state/state-types';
 import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-orbit-slack-bridge';
 
 // ── Types ────────────────────────────────────────────────────────────────────

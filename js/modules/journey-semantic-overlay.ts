@@ -2,7 +2,7 @@
  * journey-semantic-overlay.ts — TypeScript shadow of journey-semantic-overlay.js
  * Focus-stage semantic thread overlay rendering with GLSL-enhanced Line2 material.
  */
-import { state } from '../state.ts';
+import { state } from '@lib/engine/state-bridge';
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';

@@ -14,7 +14,8 @@
  * stay imperative — they're not Svelte state.
  */
 
-import { state, type CameraLike, type ControlsLike, type SemanticState } from '../../../js/state.ts';
+import { state } from '@lib/engine/state-bridge';
+import type { CameraLike, ControlsLike, SemanticState } from '@lib/state/state-types';
 import { prefersReducedMotion } from '@lib/utils/environment';
 import { easeInOutCubic } from '@lib/utils/math-easing';
 

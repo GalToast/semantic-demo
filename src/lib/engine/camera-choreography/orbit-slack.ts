@@ -10,7 +10,8 @@
  */
 
 import * as THREE from 'three'
-import { state, withStateMutation, type SemanticState } from '../../../../js/state.ts'
+import { state, withStateMutation } from '@lib/engine/state-bridge';
+import type { SemanticState } from '@lib/state/state-types'
 import { appState } from '@lib/state/app.svelte'
 import { CONFIG } from '@lib/engine/config'
 import { isMobile, prefersReducedMotion } from '@lib/utils/environment'

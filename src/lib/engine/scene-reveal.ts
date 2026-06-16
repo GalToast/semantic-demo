@@ -7,7 +7,7 @@
  */
 import * as THREE from 'three';
 import { appState as state } from '@lib/state/app.svelte.ts';
-import type { SemanticState } from '../../../js/state';
+import type { SemanticState } from '@lib/state/state-types';
 import { clearAutoRotateResumeTimer, setAutoRotateSuspended, settleCameraToOverviewPose } from '../engine/camera-controls';
 import { updateCameraViewportOffset } from './three-engine';
 import { syncClusterSectionState } from '../../../js/modules/cluster-labels';

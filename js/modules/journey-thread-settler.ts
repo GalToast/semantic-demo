@@ -5,7 +5,7 @@
  * Thread walk traversal, neighbor timers, inspection settle flow, and inside preview state.
  */
 
-import { state, withStateMutation } from '../state.ts';
+import { state, withStateMutation } from '@lib/engine/state-bridge';
 import { formatBusinessName, cleanOptionalValue } from './utils/dom-formatters.ts';
 import { normalizeCityForFilter } from './utils/geo-data.ts';
 import { focusOnNode } from './camera-controls.ts';
@@ -34,7 +34,7 @@ import {
     getNextWalkCandidateForIndex
 } from './journey-neighborhood.ts';
 import { syncFocusStage } from './journey-selected-card.ts';
-import type { Point, StrandContinuityState } from '../state.ts';
+import type { Point, StrandContinuityState } from '@lib/state/state-types';
 
 // Direct import sentinel for the inspected-strand overlay dewindowing contract.
 void syncInspectedStrandOverlay;

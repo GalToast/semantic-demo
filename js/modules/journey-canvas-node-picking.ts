@@ -4,7 +4,7 @@
  * journey-canvas-node-picking.js twin.
  */
 import * as THREE from 'three';
-import { state } from '../state.ts';
+import { state } from '@lib/engine/state-bridge';
 import { isPointVisible } from './utils/geo-data.ts';
 import { getCanvasPointerPosition, getCanvasFieldNodeClickRadius } from './journey-canvas-hit-test.ts';
 import type { CanvasPointerPosition } from './journey-canvas-hit-test.ts';

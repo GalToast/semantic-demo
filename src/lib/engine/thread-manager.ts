@@ -11,7 +11,7 @@
 
 import { webglContext } from './webgl-context';
 import * as THREE from 'three';
-import { state as _state, withStateMutation } from '../../../js/state';
+import { state as _state, withStateMutation } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { CONFIG } from './config';
 import { disposeObject3D } from './resource-tracker';

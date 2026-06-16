@@ -5,7 +5,7 @@
  * Point color management: filter colors, thread lens description.
  */
 import * as THREE from 'three';
-import { state as _state } from '../state.ts';
+import { state as _state } from '@lib/engine/state-bridge';
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { describeCluster } from './utils/ui-presentation.ts';
 import { formatBusinessName } from './utils/dom-formatters.ts';

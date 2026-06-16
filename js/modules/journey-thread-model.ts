@@ -1,7 +1,8 @@
 /**
  * journey-thread-model.ts — TypeScript shadow of journey-thread-model.js
  */
-import { state, type Point } from '../state.ts';
+import { state } from '@lib/engine/state-bridge'
+import type { Point } from '@lib/state/state-types'
 import { normalizeCityForFilter } from './utils/geo-data.ts';
 import { normalizeRelationshipRole } from '@lib/utils/relationship-roles';
 import type { RelationshipRole } from '@lib/utils/relationship-roles';

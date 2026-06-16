@@ -2,7 +2,7 @@
  * journey-canvas-interaction.ts — TypeScript shadow of journey-canvas-interaction.js
  * Canvas pointer event bindings for thread walking and field-node focus.
  */
-import { state } from '../state.ts';
+import { state } from '@lib/engine/state-bridge';
 import { isPointVisible } from './utils/geo-data.ts';
 import { focusOnNode, noteSceneInteraction, releaseFocusCameraAssist } from './camera-controls.ts';
 import {
