@@ -64,7 +64,33 @@ export {
   MYCELIUM_FIELD_SCALE,
 } from './three-engine';
 
-// ── TS port re-exports: camera-controls ──────────────────────────────────────
+import { cancelFocusCameraAnimation } from '@lib/engine/camera-choreography';
+import {
+  settleCameraToOverviewPose,
+  isCameraIdleOrbitAllowed,
+  syncOrbitAutoRotate,
+  setAutoRotateSuspended,
+  clearAutoRotateResumeTimer,
+  scheduleAutoRotateResume,
+  noteSceneInteraction,
+  updateAutoRotateSoftResume,
+  toggleAutoRotate,
+  OVERVIEW_CAMERA_POSE,
+} from '@lib/engine/camera-controls-restore-bridge';
+import {
+  setFocusTransitionMode,
+  getFocusTransitionProgress,
+  startFocusCameraAssist,
+  releaseFocusCameraAssist,
+  focusCameraAssistIsActive,
+  syncCameraAssistDataset,
+  setCameraAssistChoreography,
+  setRouteExplorationState,
+  clearRouteExploration,
+  markRouteExploration,
+  shouldMarkRouteExploration,
+  getRouteLayerOrigin,
+} from '@lib/engine/camera-controls-core';
 
 export {
   cancelFocusCameraAnimation,
@@ -90,7 +116,7 @@ export {
   shouldMarkRouteExploration,
   getRouteLayerOrigin,
   OVERVIEW_CAMERA_POSE,
-} from './camera-controls';
+};
 
 // ── TS port re-exports: node-manager ─────────────────────────────────────────
 
