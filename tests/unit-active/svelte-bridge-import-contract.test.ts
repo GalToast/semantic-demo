@@ -199,6 +199,8 @@ describe('Bridge health (W11 retirement progress)', () => {
     // ── W15-T-SEARCH-STATE (partial port, 2026-06-15) ────────
     'src/lib/engine/search-state-bridge.ts', // W15-T-SEARCH-STATE — bridge created with clearSearch(options) signature fix; consumers in js/modules/* still use the old path; rewiring is a follow-up ticket
     'src/lib/engine/semantic-search-api-cache-bridge.ts', // W15-T-SEARCH-STATE auxiliary — bridge to semantic-search-api-cache; no consumer yet
+    'src/lib/engine/semantic-search-cache-bridge.ts', // W15-T-SEARCH-STATE auxiliary — bridge to semantic-search-cache; no consumer yet (canonical implementation lives in src/lib/search/cache.ts)
+    'src/lib/engine/camera-controls-restore-bridge.ts', // W16-T-CAM-3 — bridge for js/modules/camera-controls-restore.ts retirement; canonical Svelte 5 implementation lives in camera-controls-restore.svelte.ts; kernel consumers wired in W16 follow-up
   ]);
 
   function listBridgeFiles(): string[] {

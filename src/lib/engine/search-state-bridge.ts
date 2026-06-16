@@ -69,6 +69,9 @@ import {
   mapSemanticSearchResults,
   hydrateSemanticResultContexts,
   recordEmptySearch,
+  tokenizeSearchText,
+  expandSearchIntent,
+  countTokenMatches,
   hideTooltip,
   positionTooltip,
   updateTooltipContent

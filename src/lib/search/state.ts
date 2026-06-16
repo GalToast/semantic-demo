@@ -31,7 +31,8 @@ export function clearSearch(options: SearchOptions = {}): void {
   }
 }
 
-export { search, bindSearchResultInteractions, beginSearchFocusTransition, setActiveSearchResultRow, type SearchContext } from './orchestration';
+export { search, bindSearchResultInteractions, beginSearchFocusTransition, type SearchContext } from './orchestration';
+export { setActiveSearchResultRow } from './result-renderer';
 
 export {
   setSearchPanelState, renderSearchResultItems, beginSemanticSearchUiState,
