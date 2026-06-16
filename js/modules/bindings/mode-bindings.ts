@@ -4,7 +4,7 @@
  * Mode chip and demo query binding controls.
  */
 
-import { state as _state } from '../../state.ts';
+import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { applyStoryPrompt } from '../lifecycle.ts';
 import { focusSearchInputForReplacement, search } from '../search-state.ts';

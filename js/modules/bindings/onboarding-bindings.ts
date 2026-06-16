@@ -4,7 +4,7 @@
  * Onboarding hint scheduling and interaction tracking.
  */
 
-import { state as _state } from '../../state.ts';
+import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 
 let _onboardingIdleTimer: ReturnType<typeof setTimeout> | null = null;

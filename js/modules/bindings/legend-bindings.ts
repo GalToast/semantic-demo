@@ -4,7 +4,7 @@
  * Legend panel toggle, open/close, and keyboard/pointer dismissal.
  */
 
-import { state as _state } from '../../state.ts';
+import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { isCompactFocusStageViewport } from '../utils/ui-presentation.ts';
 import { closeLegendPanel, openLegendPanel, restoreLegendCollapsedPanel, setPreviouslyFocusedLegend, getPreviouslyFocusedLegend, closeLegendGuide } from '../legend-ui.ts';

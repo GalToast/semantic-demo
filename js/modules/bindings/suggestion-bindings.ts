@@ -4,7 +4,7 @@
  * Random/similar/neighbor suggestion controls.
  */
 
-import { state as _state } from '../../state.ts';
+import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { bindClick } from './view-bindings.ts';
 import { focusOnNode } from '../camera-controls.ts';

@@ -4,7 +4,7 @@
  * Journey navigation, focus controls, thread inspector, and compass delegation.
  */
 
-import { state as _state } from '../../state.ts';
+import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { bindClick } from './view-bindings.ts';
 import { executeJourneyCompassAction } from '@lib/engine/journey-compass-controller-bridge';

@@ -4,7 +4,7 @@
  * Core click helper, zoom, and view controls.
  */
 
-import { state as _state } from '../../state.ts'
+import { state as _state } from '@lib/engine/state-bridge'
 const state = _state as any
 import { switchView } from '../view-controller.ts'
 import { toggleAutoRotate } from '../camera-controls.ts'
