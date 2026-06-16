@@ -104,10 +104,11 @@ habits"). Confirmed major inferences only.
   the push and let the rerank worker finish alongside was the right
   call.
 
-## Worker routing (2026-06-13 wave evidence)
+## Worker routing (2026-06-16 wave evidence)
 
-- **mimo-v2.5 (`opencode-go/mimo-v2.5`) is the productive default for
-  focused refactors.** Three-engine.ts Ticket 3 cold/hot retirements,
+- **Swarm mode is the default at end-of-day.** Dispatching 2-3 subagents simultaneously (Three.js pair, lifecycle recon, bridge flips) with live-steer on is now standard. User signals readiness with "let's hit it" or "dispatch." Main lane reviews and commits while swarm churns.
+- **Quality gate enforcement is expected.** User catches when subagent output isn't reviewed ("You're not really reviewing"). The fix: add `grep "from.*js/modules"` verification directly into the worker prompt so the gate is hard-coded, not trust-based.
+- **mimo-v2.5 is the productive default for focused refactors.** Three-engine.ts Ticket 3 cold/hot retirements,
   lifecycle-bridge HOT follow-up, and the BOTH-pattern baseline all
   landed clean with mimo. Tool use is reliable, AST reasoning is
   sharp on engine plumbing. Switched Worker A followup to mimo when
@@ -140,6 +141,7 @@ habits"). Confirmed major inferences only.
   these as expected re-touches.
 
 ##
+
 ## Confirm-with-user items (uncertain inferences)
 
 These are working hypotheses from one session, not yet confirmed:
