@@ -66,11 +66,11 @@ The T5 work is bigger than the charter indicated. A mimo-v2.5 read-only audit fo
 
 A deeper audit of the 33 'still on legacy state' fields revealed most are already migrated to Svelte 5 stores. The audit was correct in flagging the gap, but overstated the work:
 
-| Legacy file | Fields | Already on Svelte 5 | Truly missing |
-| --- | --- | --- | --- |
-| `diagnostics.js` (7 fields) | 7 | **7** (all on AppState) | **0** ✅ |
-| `url-state.js` (8 fields) | 8 | **8** (5 on AppState + 3 in `navigation.svelte.ts`) | **0** ✅ |
-| `data.js` (18 fields) | 18 | **17** (5 in data-store.svelte.ts + 4 in semantic-threads.ts + 4 in engine/map-state.ts + 4 elsewhere) | **1** (`dataLoadAttempt` only) |
+| Legacy file                 | Fields | Already on Svelte 5                                                                                    | Truly missing                  |
+| --------------------------- | ------ | ------------------------------------------------------------------------------------------------------ | ------------------------------ |
+| `diagnostics.js` (7 fields) | 7      | **7** (all on AppState)                                                                                | **0** ✅                       |
+| `url-state.js` (8 fields)   | 8      | **8** (5 on AppState + 3 in `navigation.svelte.ts`)                                                    | **0** ✅                       |
+| `data.js` (18 fields)       | 18     | **17** (5 in data-store.svelte.ts + 4 in semantic-threads.ts + 4 in engine/map-state.ts + 4 elsewhere) | **1** (`dataLoadAttempt` only) |
 
 **The T5a "port 9 fields to AppState" recommendation was wrong.** Most fields already exist in Svelte 5 stores. The actual T5a is:
 
@@ -80,6 +80,43 @@ A deeper audit of the 33 'still on legacy state' fields revealed most are alread
 -   **T5d:** Type unification (unchanged)
 
 **Net T5 LOC reduction is still -331 to -391**, but T5a is essentially zero risk now.
+
+### Dead Code Discovery (2026-06-15 22:30, after main-lane selector audit)
+
+A main-lane audit counted actual consumers of every selector in the 9 legacy files. The result is dramatic:
+
+**147 of 211 selectors are DEAD CODE (70%).** No consumer anywhere in `js/` or `src/` references them.
+
+| File | Total | Dead | Used | % Dead |
+| --- | --- | --- | --- | --- |
+| `animation.js` | 26 | 23 | 3 | 88% |
+| `config.js` | 37 | 22 | 15 | 60% |
+| `data.js` | 18 | 11 | 7 | 61% |
+| `diagnostics.js` | 7 | 5 | 2 | 71% |
+| `filter-mode.js` | 14 | 7 | 7 | 50% |
+| `navigation.js` | 26 | 14 | 12 | 54% |
+| `renderer.js` | 47 | 38 | 9 | 81% |
+| `search.js` | 28 | 23 | 5 | 82% |
+| `url-state.js` | 8 | 4 | 4 | 50% |
+| **TOTAL** | **211** | **147** | **64** | **70%** |
+
+**T5a is now essentially a no-op:**
+- 147 selectors can be deleted with NO consumer changes
+- 64 used selectors need migration to Svelte 5 stores
+- Of the 64 used: 8 already in `data-store.svelte.ts`, 4 in `semantic-threads.ts`, 4 in `engine/map-state.ts`, 5 on AppState, 3 in `navigation.svelte.ts`, 1 (`dataLoadAttempt`) is internal-only with zero consumers
+- The 9 `.js` files can be deleted once the 64 used selectors are migrated
+
+**The 13 truly-migratable selectors** (the rest of the 64 are in src/ already):
+- `getDataLoadAttempt` (0 consumers, internal only — safe to delete)
+- 12 others — need to be moved to appropriate Svelte 5 store
+
+**Updated T5 work breakdown:**
+- T5a: Delete 147 dead selectors (no-op for consumers, just file edits)
+- T5b: Repoint config.js consumers to CONFIG directly (unchanged)
+- T5c: Migrate 64 used selectors to Svelte 5 stores, delete 9 .js files (-451 + ~50)
+- T5d: Type unification (unchanged)
+
+**Risk: now LOW overall.** Most of T5c is migration of 64 used selectors to existing Svelte 5 stores. The 147 dead selectors require no migration.
 
 ## 3. What Changed in W13
 
