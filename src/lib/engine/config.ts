@@ -104,6 +104,18 @@ export const CONFIG = {
   // ==== COLORS / CLUSTER NAMES ====
   COLORS: CLUSTER_COLORS,
 
+  // ==== LOADING PHASE META ====
+  // Per-phase metadata shown in the loading-overlay chrome. Migrated from
+  // the legacy js/state.LOADING_PHASE_META (now retired by W13-T4). The
+  // private COPY in src/lib/ui/loading.ts is kept for backwards-compat
+  // reads inside the loading module; new code should import CONFIG.
+  LOADING_PHASE_META: {
+    records: { progress: 0.2, note: 'Gathering records...', foot: 'County records are arriving first.' },
+    scene: { progress: 0.48, note: 'Raising the cloud...', foot: 'Shaping the scene.' },
+    restore: { progress: 0.76, note: 'Restoring view...', foot: 'Restoring last known path.' },
+    launch: { progress: 1, note: 'Awake.', foot: 'Threads are live.' },
+  } as const,
+
   CLUSTER_NAMES: [
     'General Business',
     'Professional Services',
