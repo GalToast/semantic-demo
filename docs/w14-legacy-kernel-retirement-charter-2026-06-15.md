@@ -433,3 +433,49 @@ The distinction is critical: W11/W13 dealt with `.js` legacy artifacts. W14 deal
 
 **Other (remaining ~3,700 LOC):**
 - semantic-lane.ts (503), mycelium-engine.ts (412), thread-inspector-adapter.ts (65), audio-scape.ts (250), weather-ui.ts (278), cluster-filter-adapter.ts (105), cluster-list-delegate.ts (52), cluster-ui-accent.ts (53), loading-ui.ts (189), tooltip.ts (158), idb-service.ts (245), pathfinding.ts (86), connection-analysis-adapter.ts (54), semantic-guide-payload.ts (76), semantic-guide-payload-adapter.ts (112), exploration-mode.ts (33), map-flattening-layout.ts (45), lifecycle-modes.ts (156), lifecycle-reset.ts (110), semantic-search-mock-catalog.ts (141), connection-analysis.ts (174), cluster-filter.ts (227), filter-chrome-island.ts (52), search-chrome-island.ts (42), thread-inspector-adapter.ts (65)
+
+---
+
+## Status Update — 2026-06-16
+
+### T9: Render Loop Retirement — ✅ COMPLETE
+
+**Commit:** `31a32f6` — `chore(t9): delete legacy js/modules/three-engine.ts — render loop already ported to canonical bridge`
+
+The legacy `js/modules/three-engine.ts` (783 LOC) has been retired. The Three.js render loop and all associated WebGL orchestration now live under `src/lib/engine/`. No `js/modules/` references to the old three-engine remain in the active source tree.
+
+### A2-7: Keyboard Help + Escape Regression — ✅ VERIFIED FIXED
+
+**Commit:** `70477e5` — `fix(a2-7): Escape → Overview routing + URL sync`
+
+Visual QA Round 3 flagged two keyboard regressions. After investigation:
+- **`?` keybinding:** Opens keyboard shortcuts overlay correctly (verified via Playwright)
+- **Escape to about:blank:** Fixed by `e.preventDefault()` in the Escape handler (A2-7 original fix)
+- **Escape not returning to Overview (new finding):** The `RETURN_OVERVIEW` nav transition updated `mode`/`surface` but left `currentView: 'map'` in the store, so the URL retained `?view=map`. Fixed by adding `currentView: 'galaxy'` to the `RETURN_OVERVIEW` case in `navigation.svelte.ts` and calling `updateUrlState({}, { reason: 'return-overview' })` from `App.svelte`.
+
+**A2-7 Targeted Verification (all green):**
+| Test | Result |
+|---|---|
+| '?' key opens keyboard help | ✅ PASS |
+| Escape in map mode → no about:blank | ✅ PASS |
+| Escape in map mode → returns to overview | ✅ PASS |
+
+### Contract Test Snapshot (2026-06-16)
+
+**Surfaces verified clean:**
+- `info-panel-populated`: 17/17 pass ✅
+
+**Surfaces with remaining issues:**
+- `search-error`: timeout on `.search-error-state` — requires interaction to trigger error state, not a static rendering path
+- `controls`: 4 DOM failures (`dom:view-toggle`, `dom:view-toggle-buttons`, `dom:btn-journey-primary`, `dom:btn-journey-secondary`) — selector drift, possibly related to Svelte component restructuring
+
+### W14 Charter Closure
+
+All charter tickets are now either closed or transitioned to follow-up tracking. The remaining contract-test gaps (`search-error`, `controls`) are pre-existing surface issues, not charter blockers.
+
+T9 was the final charter ticket. The engine kernel retirement arc for W14 is officially **done**.
+
+**Next arc candidates:**
+- Remaining DEATH-BRIDGE cleanup (`js/modules/camera-controls.ts` consumers — 14 files)
+- Contract test hardening for `search-error` and `controls` surfaces
+- W15 Visual QA Round 4 (full sweep now that A2-7 is verified)
