@@ -176,3 +176,24 @@ Running `npm run qa:contract:all` against the W15-cumulative state showed 5 surf
 | NEW | `src/lib/search/legacy-exports.ts` | +91 |
 | MODIFIED | `src/lib/engine/search-state-bridge.ts` (in 1eb1e79) | +4/-1 |
 | MODIFIED | `tests/unit-active/svelte-bridge-import-contract.test.ts` | +3 |
+
+## W15 Follow-up (2026-06-16) — `e5228ab`, `91e0fed`, `294d857`
+
+The W15 closeout's "deferred to W16" section was closed on 2026-06-16 in 3 commits:
+
+1. **`e5228ab` chore(w15-search-state): retire search-state.ts to death-bridge + commit deferred search aux files**
+   - `js/modules/search-state.ts` 502→52 LOC DEATH-BRIDGE
+   - 5 new files: `src/lib/search/{api-cache,cache}.ts` + 3 bridges
+   - Real bug fix: `setActiveSearchResultRow` re-export moved from `./orchestration` to `./result-renderer`
+   - Mock-catalog bridge: added `buildMockCatalogForQuery` + `EXPLICIT_EMPTY_QUERY_PATTERN` exports (api-cache.ts was importing them but bridge didn't export)
+   - Test whitelist: `semantic-search-cache-bridge` + `camera-controls-restore-bridge` (W16 prep)
+
+2. **`91e0fed` chore(w16-t-cam-3): prep camera-controls-restore-bridge for kernel retirement**
+   - 21-LOC bridge re-exporting from `camera-controls-restore.svelte.ts`
+   - Sets up W16 #1 pick: rewire 5 kernel consumers and delete `js/modules/camera-controls-restore.ts`
+
+3. **`294d857` chore(w11-t11): update ts-js-drift entry readiness to Svelte/Vite native**
+   - Active readiness check: `indexUsesMainTs && viteUsesSrcRoot && mainTsExists`
+   - Drift direction inverted: orphan .js files (legacy shims) instead of orphan .ts files (BOTH pattern retired)
+
+**End state after follow-up**: Working tree clean, `master` at `294d857` on origin. `js/modules/search-state.ts` is now a 52-LOC DEATH-BRIDGE awaiting deletion in W16 once all consumers are rewired.
